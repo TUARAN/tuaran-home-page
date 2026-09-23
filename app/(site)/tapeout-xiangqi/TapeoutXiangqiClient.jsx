@@ -2,37 +2,18 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import {
   TAPEOUT_XIANGQI_PLAN,
   TAPEOUT_XIANGQI_RELEASE,
   TAPEOUT_XIANGQI_SNAPSHOTS,
-  createInitialPieces,
-  legalMovesForPiece,
-  movePiece,
-  pieceAt,
 } from '../../../lib/tapeoutXiangqi'
 
-const TWEET_DRAFT = `我把中国象棋游戏上区块链了。♟️
-
-这是一个完整可玩的链上静态游戏：棋盘、走子规则、将军判定、悔棋和着法记录，全部写入 BNB Chain 上的 TapeOut / TapeKit 容器。
-
-TapeID 122.6 · 122.6.tape
-
-我和 Codex 把从 NAND 铸造、Tapeout、ERC-6551 容器、putFile 到域名激活的过程都公开记录了下来。Codex 负责实现、压缩、哈希校验和链上验收，我负责每一笔钱包授权。
-
-现在就能玩：https://122-6.tapekit.org/
-
-感谢 @TapeOutWorld @XLayerOfficial @Blonskr
-
-#TapeOut #OnchainGaming #BNBChain #中国象棋`
-
 const TABS = [
-  { id: 'game', label: '试玩' },
-  { id: 'plan', label: '执行计划' },
+  { id: 'release', label: '发布记录' },
   { id: 'snapshots', label: '过程快照' },
-  { id: 'access', label: '授权清单' },
+  { id: 'access', label: '授权记录' },
 ]
 
 const OWNER_META = {
@@ -112,186 +93,6 @@ const AUTHORIZATION_STEPS = [
     result: '已完成·红兵 1:7→1:6 实际走子验收通过。',
   },
 ]
-
-function colorLabel(color) {
-  return color === 'red' ? '红方' : '黑方'
-}
-
-const BOARD_MARKERS = [
-  [2, 1], [2, 7], [3, 0], [3, 2], [3, 4], [3, 6], [3, 8],
-  [6, 0], [6, 2], [6, 4], [6, 6], [6, 8], [7, 1], [7, 7],
-]
-
-function markerPath(row, col) {
-  const x = 50 + col * 100
-  const y = 50 + row * 100
-  const left = col > 0 ? `M ${x - 12} ${y - 24} v 12 h -12 M ${x - 24} ${y + 12} h 12 v 12` : ''
-  const right = col < 8 ? `M ${x + 12} ${y - 24} v 12 h 12 M ${x + 24} ${y + 12} h -12 v 12` : ''
-  return `${left} ${right}`
-}
-
-function Board({ pieces, selectedId, legalMoves, onSquareClick, winner, turn }) {
-  const legalKeys = new Set(legalMoves.map((move) => `${move.row}:${move.col}`))
-
-  return (
-    <div className="relative mx-auto aspect-[9/10] w-full max-w-[520px] overflow-hidden rounded-[1.75rem] border border-amber-200/30 bg-[#d7ae68] shadow-[inset_0_0_45px_rgba(117,66,20,0.2),0_36px_100px_rgba(0,0,0,0.45)]">
-      <svg
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        viewBox="0 0 900 1000"
-        preserveAspectRatio="none"
-      >
-        <g fill="none" stroke="#68411f" strokeLinecap="square">
-          <rect x="38" y="38" width="824" height="924" strokeWidth="3" opacity="0.48" />
-          {Array.from({ length: 10 }, (_, row) => (
-            <line key={`rank-${row}`} x1="50" y1={50 + row * 100} x2="850" y2={50 + row * 100} strokeWidth="2" opacity="0.62" />
-          ))}
-          <line x1="50" y1="50" x2="50" y2="950" strokeWidth="2" opacity="0.62" />
-          <line x1="850" y1="50" x2="850" y2="950" strokeWidth="2" opacity="0.62" />
-          {Array.from({ length: 7 }, (_, index) => {
-            const x = 150 + index * 100
-            return (
-              <g key={`file-${x}`} strokeWidth="2" opacity="0.62">
-                <line x1={x} y1="50" x2={x} y2="450" />
-                <line x1={x} y1="550" x2={x} y2="950" />
-              </g>
-            )
-          })}
-          <path d="M350 50 L550 250 M550 50 L350 250 M350 750 L550 950 M550 750 L350 950" strokeWidth="2" opacity="0.62" />
-          {BOARD_MARKERS.map(([row, col]) => (
-            <path key={`marker-${row}-${col}`} d={markerPath(row, col)} strokeWidth="3" opacity="0.58" />
-          ))}
-        </g>
-        <g fill="#68411f" fontFamily="serif" fontSize="42" fontWeight="700" opacity="0.66">
-          <text x="250" y="514" textAnchor="middle">楚 河</text>
-          <text x="650" y="514" textAnchor="middle">汉 界</text>
-        </g>
-      </svg>
-      <div className="relative z-10 grid h-full grid-cols-9 grid-rows-10">
-        {Array.from({ length: 90 }, (_, index) => {
-          const row = Math.floor(index / 9)
-          const col = index % 9
-          const current = pieceAt(pieces, row, col)
-          const selected = current?.id === selectedId
-          const legal = legalKeys.has(`${row}:${col}`)
-          return (
-            <button
-              key={`${row}-${col}`}
-              type="button"
-              onClick={() => onSquareClick(row, col)}
-              disabled={Boolean(winner)}
-              aria-label={current ? `${colorLabel(current.color)}${current.label}` : `第 ${col + 1} 路第 ${row + 1} 行交点`}
-              className="relative flex min-h-0 items-center justify-center disabled:cursor-default"
-            >
-              {legal ? <span className="absolute z-20 h-3 w-3 rounded-full bg-emerald-700/80 ring-4 ring-emerald-200/35" /> : null}
-              {current ? (
-                <span
-                  className={`relative z-10 flex aspect-square w-[78%] items-center justify-center rounded-full border-2 bg-[#f5d99e] font-serif text-[clamp(0.75rem,4vw,1.65rem)] font-black shadow-[0_4px_0_#805126,0_6px_12px_rgba(55,30,10,0.38)] transition-transform ${
-                    current.color === 'red' ? 'border-[#a6332c] text-[#a6332c]' : 'border-[#27231e] text-[#27231e]'
-                  } ${selected ? '-translate-y-1 scale-110 ring-4 ring-cyan-300/75' : 'hover:-translate-y-0.5'}`}
-                >
-                  {current.label}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
-      <span className="sr-only">当前轮到 {colorLabel(turn)}</span>
-    </div>
-  )
-}
-
-function GamePanel() {
-  const [pieces, setPieces] = useState(() => createInitialPieces())
-  const [turn, setTurn] = useState('red')
-  const [selectedId, setSelectedId] = useState(null)
-  const [history, setHistory] = useState([])
-  const [moves, setMoves] = useState([])
-  const [winner, setWinner] = useState(null)
-  const [check, setCheck] = useState(false)
-
-  const legalMoves = useMemo(
-    () => (selectedId ? legalMovesForPiece(pieces, selectedId, turn) : []),
-    [pieces, selectedId, turn],
-  )
-
-  function onSquareClick(row, col) {
-    if (winner) return
-    const current = pieceAt(pieces, row, col)
-    if (current?.color === turn) {
-      setSelectedId(current.id)
-      return
-    }
-    if (!selectedId) return
-    const result = movePiece(pieces, selectedId, row, col, turn)
-    if (!result) return
-    setHistory((items) => [...items, { pieces, turn, moves, winner, check }])
-    setPieces(result.pieces)
-    setTurn(result.turn)
-    setWinner(result.winner)
-    setCheck(result.check)
-    setMoves((items) => [...items, result.notation])
-    setSelectedId(null)
-  }
-
-  function resetGame() {
-    setPieces(createInitialPieces())
-    setTurn('red')
-    setSelectedId(null)
-    setHistory([])
-    setMoves([])
-    setWinner(null)
-    setCheck(false)
-  }
-
-  function undo() {
-    const previous = history.at(-1)
-    if (!previous) return
-    setPieces(previous.pieces)
-    setTurn(previous.turn)
-    setMoves(previous.moves)
-    setWinner(previous.winner)
-    setCheck(previous.check)
-    setSelectedId(null)
-    setHistory((items) => items.slice(0, -1))
-  }
-
-  return (
-    <section className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Board pieces={pieces} selectedId={selectedId} legalMoves={legalMoves} onSquareClick={onSquareClick} winner={winner} turn={turn} />
-      <aside className="flex flex-col gap-4">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-5">
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/60">Local playable build</p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">
-            {winner ? `${colorLabel(winner)}胜` : `${colorLabel(turn)}走子`}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            {winner ? '对局已结束，可以悔棋或重开。' : check ? '将军：必须立即解除威胁。' : '点一枚棋子，再点亮起的合法落点。'}
-          </p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <button type="button" onClick={undo} disabled={!history.length} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-35">悔棋</button>
-            <button type="button" onClick={resetGame} className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">重新开始</button>
-          </div>
-        </div>
-
-        <div className="min-h-[220px] flex-1 rounded-3xl border border-white/10 bg-black/20 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="font-medium text-white">着法记录</h3>
-            <span className="font-mono text-xs text-slate-500">{moves.length} PLY</span>
-          </div>
-          {moves.length ? (
-            <ol className="mt-4 grid max-h-64 grid-cols-2 gap-x-4 gap-y-2 overflow-y-auto font-mono text-xs text-slate-400">
-              {moves.map((move, index) => <li key={`${move}-${index}`}><span className="mr-2 text-slate-600">{index + 1}.</span>{move}</li>)}
-            </ol>
-          ) : (
-            <p className="mt-8 text-sm leading-6 text-slate-500">尚未走子。这个原型已经可以离线运行，不依赖接口或 CDN。</p>
-          )}
-        </div>
-      </aside>
-    </section>
-  )
-}
 
 function PlanPanel() {
   const finished = TAPEOUT_XIANGQI_PLAN.filter((item) => item.status === 'done').length
@@ -450,32 +251,8 @@ function AccessPanel() {
   )
 }
 
-function AnnouncementCard({ copyLabel, onCopy }) {
-  return (
-    <section className="mt-6 overflow-hidden rounded-[2rem] border border-cyan-300/15 bg-white/[0.04]">
-      <Image src="/images/tapeout-xiangqi-launch.png" alt="中国象棋上链 TapeOut 122.6.tape 发布配图" width={1672} height={941} priority className="h-auto w-full" />
-      <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-[1fr_auto] lg:items-start">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">X announcement draft</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">可直接发布的推文草稿</h2>
-          <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-300">{TWEET_DRAFT}</p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2 lg:w-44 lg:flex-col">
-          <button type="button" onClick={onCopy} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950">{copyLabel}</button>
-          <a href="/images/tapeout-xiangqi-launch.png" download className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-sm text-white">下载发布配图</a>
-          <a href="https://x.com/TapeOutWorld" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@TapeOutWorld ↗</a>
-          <a href="https://x.com/XLayerOfficial" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@XLayerOfficial ↗</a>
-          <a href="https://x.com/Blonskr" target="_blank" rel="noopener noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-center text-xs text-cyan-100">@Blonskr ↗</a>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 export default function TapeoutXiangqiClient() {
-  const [tab, setTab] = useState('game')
-  const [copyLabel, setCopyLabel] = useState('复制页面链接')
-  const [tweetCopyLabel, setTweetCopyLabel] = useState('复制推文')
+  const [tab, setTab] = useState('release')
 
   function downloadSnapshot() {
     const snapshot = {
@@ -486,7 +263,6 @@ export default function TapeoutXiangqiClient() {
       release: TAPEOUT_XIANGQI_RELEASE,
       plan: TAPEOUT_XIANGQI_PLAN,
       snapshots: TAPEOUT_XIANGQI_SNAPSHOTS,
-      tweetDraft: TWEET_DRAFT,
       boundaries: { codex: '代码、构建、只读验证、上传包', human: '钱包、资产选择、主网签名、费用确认' },
     }
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' })
@@ -498,30 +274,13 @@ export default function TapeoutXiangqiClient() {
     URL.revokeObjectURL(url)
   }
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      setCopyLabel('已复制')
-      window.setTimeout(() => setCopyLabel('复制页面链接'), 1800)
-    } catch {
-      setCopyLabel('请从地址栏复制')
-    }
-  }
-
-  async function copyTweet() {
-    try {
-      await navigator.clipboard.writeText(TWEET_DRAFT)
-      setTweetCopyLabel('已复制')
-      window.setTimeout(() => setTweetCopyLabel('复制推文'), 1800)
-    } catch {
-      setTweetCopyLabel('请手动复制')
-    }
-  }
-
   return (
     <main className="min-h-screen bg-[#07101c] text-slate-200 selection:bg-cyan-300 selection:text-slate-950">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_5%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_86%_18%,rgba(168,85,247,0.10),transparent_24%)]" />
       <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-5 sm:px-6 lg:px-8">
+        <div className="mb-6 overflow-hidden rounded-[2rem] border border-cyan-300/15 shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
+          <Image src="/images/tapeout-xiangqi-launch.png" alt="中国象棋上链 TapeOut 122.6.tape" width={1672} height={941} priority className="aspect-[16/9] w-full object-cover" />
+        </div>
         <header className="rounded-[2rem] border border-white/10 bg-white/[0.045] px-5 py-6 shadow-[0_30px_100px_rgba(0,0,0,0.28)] backdrop-blur sm:px-8 sm:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/resources/tapeout-protocol" className="text-sm text-slate-400 transition hover:text-cyan-200">← TapeOut Protocol</Link>
@@ -537,12 +296,8 @@ export default function TapeoutXiangqiClient() {
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200">打开链上象棋 ↗</a>
-            <button type="button" onClick={() => setTab('game')} className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white hover:bg-white/10">站内试玩</button>
-            <button type="button" onClick={copyLink} className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white hover:bg-white/10">{copyLabel}</button>
           </div>
         </header>
-
-        <AnnouncementCard copyLabel={tweetCopyLabel} onCopy={copyTweet} />
 
         <nav className="sticky top-3 z-30 mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-[#0a1422]/90 p-1.5 shadow-xl backdrop-blur [scrollbar-width:none]">
           <div className="flex min-w-max gap-1">
@@ -553,8 +308,7 @@ export default function TapeoutXiangqiClient() {
         </nav>
 
         <div className="mt-8">
-          {tab === 'game' ? <GamePanel /> : null}
-          {tab === 'plan' ? <PlanPanel /> : null}
+          {tab === 'release' ? <PlanPanel /> : null}
           {tab === 'snapshots' ? <SnapshotPanel onDownload={downloadSnapshot} /> : null}
           {tab === 'access' ? <AccessPanel /> : null}
         </div>

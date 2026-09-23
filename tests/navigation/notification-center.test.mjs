@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
+import { isAdminHostPathAllowed } from '../../lib/adminRoutes.js'
+
 const pageSource = await readFile(
   new URL('../../app/(site)/notifications/page.jsx', import.meta.url),
   'utf8'
@@ -99,4 +101,5 @@ test('recent notifications show unread items and reading waits for the destinati
   assert.doesNotMatch(headerSource, /markNotificationsRead\?\.\(\{ id: item\.id \}\)/)
   assert.match(weeklySource, /notificationTargetReady=\{!loading && !error/)
   assert.match(opsSource, /notificationTargetReady=\{!loading && !error/)
+  assert.equal(isAdminHostPathAllowed('/api/notifications'), true)
 })

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readFileSync, statSync } from 'node:fs'
 import test from 'node:test'
 
@@ -45,10 +46,13 @@ test('move result changes the turn and records notation', () => {
 })
 
 test('public dashboard keeps execution times and human authorization gates visible', () => {
-  assert.ok(TAPEOUT_XIANGQI_PLAN.every((step) => step.status === 'done'))
+  assert.equal(TAPEOUT_XIANGQI_PLAN.filter((step) => step.status === 'done').length, 8)
+  assert.equal(TAPEOUT_XIANGQI_PLAN.at(-1).status, 'done')
   assert.equal(TAPEOUT_XIANGQI_RELEASE.status, 'live')
-  assert.equal(TAPEOUT_XIANGQI_RELEASE.transactions.length, 5)
-  assert.equal(TAPEOUT_XIANGQI_RELEASE.costSummary.total, '约 0.012522635 BNB')
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.transactions.length, 6)
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.costSummary.total, '约 0.012681086939 BNB')
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.latestUpgrade.transactions, 1)
+  assert.equal(TAPEOUT_XIANGQI_RELEASE.latestUpgrade.gasCost, '0.00015845193915685 BNB')
   assert.ok(TAPEOUT_XIANGQI_PLAN.every((step) => step.planned && step.actual))
   const source = readFileSync('app/(site)/tapeout-xiangqi/TapeoutXiangqiClient.jsx', 'utf8')
   assert.match(source, /下载 JSON 快照/)
@@ -62,7 +66,9 @@ test('public dashboard keeps execution times and human authorization gates visib
   assert.match(source, /Container Opener/)
   assert.match(source, /SiteRegistry/)
   assert.match(source, /DomainBinding/)
-  assert.match(source, /实际主网执行约 45 分钟/)
+  assert.match(source, /首次主网执行约 45 分钟/)
+  assert.match(source, /AI 对弈升级 · 已写入原容器/)
+  assert.match(source, /以后修改如何计费/)
   assert.match(source, /发布记录/)
   assert.doesNotMatch(source, /label: '试玩'/)
   assert.doesNotMatch(source, /label: '执行计划'/)
@@ -72,10 +78,18 @@ test('on-chain game is a self-contained first-chunk site artifact', () => {
   const path = 'public/tapeout-xiangqi-onchain/index.html'
   const source = readFileSync(path, 'utf8')
   const script = source.match(/<script>([\s\S]*)<\/script>/)?.[1]
+  const sha256 = createHash('sha256').update(source).digest('hex')
 
   assert.ok(statSync(path).size <= 24_000)
+  assert.equal(statSync(path).size, TAPEOUT_XIANGQI_RELEASE.latestUpgrade.fileSize)
+  assert.equal(sha256, TAPEOUT_XIANGQI_RELEASE.latestUpgrade.sha256)
   assert.doesNotMatch(source, /https?:\/\//)
+  assert.doesNotMatch(source, /fetch\s*\(/)
   assert.match(source, /122\.6\.tape/)
+  assert.match(source, /人机对弈 · 你执红/)
+  assert.match(source, /function chooseAI\(\)/)
+  assert.match(source, /function search\(/)
+  assert.match(source, /mode==='ai'&&turn==='b'/)
   assert.match(source, /<svg/)
   assert.ok(script)
   assert.doesNotThrow(() => new Function(script))

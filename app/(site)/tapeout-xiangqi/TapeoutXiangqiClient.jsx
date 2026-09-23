@@ -92,6 +92,17 @@ const AUTHORIZATION_STEPS = [
     handoff: '你打开最终地址做一次玩法验收；通过后即可分享。',
     result: '已完成·红兵 1:7→1:6 实际走子验收通过。',
   },
+  {
+    id: 'ai-upgrade',
+    title: '覆盖更新本地 AI 版本',
+    estimate: '5–10 分钟·预计 1 笔交易',
+    href: 'https://bscscan.com/address/0xd006ffdd5Ae313B17729621A00999cD3C71CE5e6',
+    linkLabel: '核对 SiteRegistry 合约',
+    action: 'Codex 已将默认人机对弈、双人模式和整回合悔棋压缩到新的 index.html。继续使用原 TapeID、原容器和原网址，只覆盖同一路径文件。',
+    walletPrompt: '网络应为 BSC Mainnet；目标必须是 SiteRegistry；方法必须是 putFile；容器必须为 0xFC74…DfD7。交易不应携带 BNB，也不需要 approve、Tapeout、Open 或 Bind。',
+    handoff: '你确认 1 笔 putFile 后，Codex 记录 TxID、实际 Gas，并逐字节核对 11,512 bytes 与 SHA-256。',
+    result: '已完成·Tx 0x49f8086c…2f456ee3·0 BNB + 0.00015845193915685 BNB Gas。',
+  },
 ]
 
 function PlanPanel() {
@@ -100,8 +111,8 @@ function PlanPanel() {
     <section>
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Metric value={`${finished}/${TAPEOUT_XIANGQI_PLAN.length}`} label="阶段完成" />
-        <Metric value="4" label="Codex 已完成" />
-        <Metric value="5" label="人工交易已确认" accent />
+        <Metric value="5" label="Codex 已完成" />
+        <Metric value="6" label="人工交易已确认" accent />
       </div>
       <div className="mb-6 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.045] p-5 sm:p-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
@@ -121,6 +132,26 @@ function PlanPanel() {
           <div className="rounded-xl bg-black/20 p-3"><span className="block text-[10px] uppercase tracking-[0.15em] text-slate-600">合计</span><strong className="mt-1 block font-mono text-sm text-emerald-200">{TAPEOUT_XIANGQI_RELEASE.costSummary.total}</strong></div>
         </div>
         <p className="mt-2 text-[10px] leading-5 text-slate-600">{TAPEOUT_XIANGQI_RELEASE.costSummary.note}</p>
+        <div className="mt-5 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.06] p-4">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+            <div>
+              <p className="text-xs font-medium text-emerald-100">AI 对弈升级 · 已写入原容器</p>
+              <p className="mt-2 text-xs leading-6 text-slate-400">1 笔 SiteRegistry.putFile，金额 0 BNB，实际 Gas {TAPEOUT_XIANGQI_RELEASE.latestUpgrade.gasCost}。</p>
+            </div>
+            <a href={`https://bscscan.com/tx/${TAPEOUT_XIANGQI_RELEASE.latestUpgrade.transactionHash}`} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-full bg-emerald-200/10 px-3 py-1.5 font-mono text-[11px] text-emerald-100">查看升级交易 ↗</a>
+          </div>
+          <p className="mt-3 break-all font-mono text-[10px] leading-5 text-slate-500">{TAPEOUT_XIANGQI_RELEASE.latestUpgrade.fileSize.toLocaleString()} bytes · SHA-256 {TAPEOUT_XIANGQI_RELEASE.latestUpgrade.sha256}</p>
+        </div>
+        <div className="mt-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.04] p-4">
+          <p className="text-xs font-medium text-cyan-100">以后修改如何计费</p>
+          <div className="mt-3 grid gap-2 text-xs leading-6 text-slate-400 md:grid-cols-2">
+            <p>{TAPEOUT_XIANGQI_RELEASE.updatePolicy.protocolFee}。</p>
+            <p>{TAPEOUT_XIANGQI_RELEASE.updatePolicy.payment}。</p>
+            <p>{TAPEOUT_XIANGQI_RELEASE.updatePolicy.singleTransactionLimit}。</p>
+            <p>{TAPEOUT_XIANGQI_RELEASE.updatePolicy.chunkedUpdate}。</p>
+            <p className="md:col-span-2">{TAPEOUT_XIANGQI_RELEASE.updatePolicy.unchanged}。</p>
+          </div>
+        </div>
         <div className="mt-5 grid gap-2 md:grid-cols-2 xl:grid-cols-5">
           {TAPEOUT_XIANGQI_RELEASE.transactions.map((tx) => (
             <a key={tx.hash} href={`https://bscscan.com/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-black/20 p-3 transition hover:bg-black/30">
@@ -198,10 +229,10 @@ function AccessPanel() {
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">Authorization runbook</p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">从钱包到分享，六步已完成</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">实际主网执行约 45 分钟，共完成 5 笔由持有人最终确认的交易。下方保留授权方法、预估时间与实际结果，便于复盘。</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">首次发布与 AI 升级均已完成</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">首次主网执行约 45 分钟，共完成 5 笔持有人交易；AI 版本随后用 1 笔 putFile 原地升级。下方保留每次授权方法、实际结果与支出。</p>
           </div>
-          <div className="shrink-0 rounded-2xl border border-cyan-200/15 bg-black/20 px-4 py-3 text-sm text-cyan-100">预计主网签名 <strong className="ml-1 text-xl">3–N 笔</strong></div>
+          <div className="shrink-0 rounded-2xl border border-emerald-200/15 bg-black/20 px-4 py-3 text-sm text-emerald-100">累计人工交易 <strong className="ml-1 text-xl">6 笔</strong></div>
         </div>
         <div className="mt-7 space-y-4">
           {AUTHORIZATION_STEPS.map((item, index) => (
@@ -225,7 +256,7 @@ function AccessPanel() {
                 <div className="rounded-xl bg-emerald-300/[0.04] p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-emerald-200/55">完成后交给 Codex</p><p className="mt-2 text-sm leading-6 text-slate-300">{item.handoff}</p></div>
               </div>
               {item.note ? <p className="mt-4 rounded-xl border border-violet-300/10 bg-violet-300/[0.04] px-4 py-3 text-xs leading-5 text-violet-100/70">{item.note}</p> : null}
-              <p className="mt-4 rounded-xl border border-emerald-300/10 bg-emerald-300/[0.05] px-4 py-3 text-xs leading-5 text-emerald-100/80">{item.result}</p>
+              <p className={`mt-4 rounded-xl border px-4 py-3 text-xs leading-5 ${item.pending ? 'border-amber-300/15 bg-amber-300/[0.05] text-amber-100/80' : 'border-emerald-300/10 bg-emerald-300/[0.05] text-emerald-100/80'}`}>{item.result}</p>
             </article>
           ))}
         </div>
@@ -287,12 +318,13 @@ export default function TapeoutXiangqiClient() {
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200 ring-1 ring-inset ring-emerald-200/20">主网已发布</span>
               <span className="rounded-full bg-cyan-300/10 px-3 py-1.5 text-xs text-cyan-200 ring-1 ring-inset ring-cyan-200/20">TapeID 122.6</span>
+              <span className="rounded-full bg-violet-300/10 px-3 py-1.5 text-xs text-violet-100 ring-1 ring-inset ring-violet-200/20">AI 对弈已上线</span>
             </div>
           </div>
           <div className="relative z-10 mt-16 max-w-3xl sm:mt-20">
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200/70">Tapeout · build in public · snapshot 09</p>
+            <p className="font-mono text-xs uppercase tracking-[0.28em] text-cyan-200/70">Tapeout · build in public · snapshot 12</p>
             <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">中国象棋，<br /><span className="text-cyan-200">已经上链了。</span></h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">棋盘、规则、走子与对局记录已作为 8,920 bytes 静态文件写入 BNB Chain。这里保留完整的计划、实际耗时、消费、交易凭证与人机授权边界。</p>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">棋盘、规则、本地 AI 与对局记录已作为 11,512 bytes 静态文件写入 BNB Chain。默认玩家执红、机器执黑，也可切换双人同屏。</p>
           </div>
           <div className="relative z-10 mt-8 flex flex-wrap gap-3">
             <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200">打开链上象棋 ↗</a>
@@ -314,7 +346,7 @@ export default function TapeoutXiangqiClient() {
         </div>
 
         <footer className="mt-16 flex flex-col justify-between gap-4 border-t border-white/10 pt-6 text-xs leading-5 text-slate-600 sm:flex-row">
-          <p>当前公开快照：2026-09-23 11:32 CST · 主网发布与实际走子验收完成</p>
+          <p>当前公开快照：2026-09-23 14:58 CST · AI 对弈版本已在原容器完成升级与链上验收</p>
           <a href={TAPEOUT_XIANGQI_RELEASE.publicUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-200">122-6.tapekit.org ↗</a>
         </footer>
       </div>

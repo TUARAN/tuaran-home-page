@@ -13,6 +13,7 @@ import {
   listResearchFilesFromTree,
   loadGitHubResearchIndex,
   parseResearchSourcePath,
+  paginatePublishedResearch,
   researchPathsFromChangedFiles,
   resetResearchGitHubCaches,
   storedResearchTitle,
@@ -56,6 +57,27 @@ test('approval queue treats unpublished and recently touched published files as 
     ['live', 'updated', '线上已发布'],
     ['draft', 'draft', '草稿标题'],
   ])
+})
+
+test('published research is filtered and paginated without returning the whole library', () => {
+  const files = Array.from({ length: 95 }, (_, index) => ({
+    title: index === 41 ? '特别标题' : `调研 ${index}`,
+    slug: `item-${index}`,
+    filename: `2026-09-${String((index % 28) + 1).padStart(2, '0')}-item-${index}.md`,
+    sourcePath: `research/topics/2026-09-${String((index % 28) + 1).padStart(2, '0')}-item-${index}.md`,
+  }))
+  const queue = { files, pending: [files[0]] }
+  const first = paginatePublishedResearch(queue, { page: 1, pageSize: 40 })
+  assert.equal(first.items.length, 40)
+  assert.equal(first.total, 94)
+  assert.equal(first.hasMore, true)
+  assert.equal(first.items.some((item) => item.sourcePath === files[0].sourcePath), false)
+  const last = paginatePublishedResearch(queue, { page: 3, pageSize: 40 })
+  assert.equal(last.items.length, 14)
+  assert.equal(last.hasMore, false)
+  const matched = paginatePublishedResearch(queue, { query: '特别标题' })
+  assert.deepEqual(matched.items.map((item) => item.slug), ['item-41'])
+  assert.equal(matched.total, 1)
 })
 
 test('approval queue only keeps recently touched published files when GitHub body differs', async () => {
@@ -198,4 +220,3 @@ test('GitHub research index is reused until an explicit refresh', async () => {
     resetResearchGitHubCaches()
   }
 })
-

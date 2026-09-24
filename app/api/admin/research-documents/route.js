@@ -4,7 +4,7 @@ import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { resolveReservedArticleSlug } from '../../../../lib/articleReservedSlugs'
 import { getD1 } from '../../../../lib/d1'
 import { normalizeResearchSnapshot } from '../../../../lib/researchDocument.mjs'
-import { ResearchGitHubError, buildResearchApprovalQueue, fetchGitHubResearchFile, parseResearchSourcePath, publicationStatus } from '../../../../lib/researchGitHubQueue'
+import { ResearchGitHubError, buildResearchApprovalQueue, fetchGitHubResearchFile, paginatePublishedResearch, parseResearchSourcePath, publicationStatus } from '../../../../lib/researchGitHubQueue'
 import { publishResearchSnapshot } from '../../../../lib/researchPublication'
 import { prepareResearchSourcePublication } from '../../../../lib/researchSourcePublication'
 
@@ -52,13 +52,25 @@ export async function GET(req) {
   const sourcePath = url.searchParams.get('sourcePath')
   const key = url.searchParams.get('key')
   try {
-    if (url.searchParams.get('queue') === '1') {
+    if (url.searchParams.get('queue') === '1' || url.searchParams.get('published') === '1') {
       const queue = await buildResearchApprovalQueue(
         requestEnv(),
         await listStoredResearch(getD1()),
         { refresh: url.searchParams.get('refresh') === '1' },
       )
-      return Response.json(queue, { headers })
+      if (url.searchParams.get('published') === '1') {
+        return Response.json({
+          repo: queue.repo,
+          fetchedAt: queue.fetchedAt,
+          ...paginatePublishedResearch(queue, {
+            page: url.searchParams.get('page'),
+            pageSize: url.searchParams.get('pageSize'),
+            query: url.searchParams.get('q'),
+          }),
+        }, { headers })
+      }
+      const { files: _files, ...summary } = queue
+      return Response.json(summary, { headers })
     }
     if (sourcePath) {
       const parsed = parseResearchSourcePath(sourcePath)

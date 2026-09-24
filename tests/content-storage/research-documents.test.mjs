@@ -187,6 +187,7 @@ test('Owner approval API lists GitHub pending docs and publishes from sourcePath
     resolveReservedArticleSlug:async()=>({reserved:false}),
     ResearchGitHubError:class extends Error{constructor(code,message,status=500){super(message);this.code=code;this.status=status}},
     buildResearchApprovalQueue:async(_env,_documents,options={})=>{seenRefresh=options;return queued},
+    paginatePublishedResearch:(queue)=>({items:queue.files,total:queue.files.length,page:1,pageSize:40,hasMore:false}),
     fetchGitHubResearchFile:async()=>({category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath:'research/topics/2026-09-10-sample.md',raw:'ignored'}),
     parseResearchSourcePath:(sourcePath)=>sourcePath==='research/topics/2026-09-10-sample.md'?{category:'topics',filename:'2026-09-10-sample.md',slug:'sample',sourcePath}:null,
     publicationStatus:(value)=>value||'published',
@@ -194,7 +195,13 @@ test('Owner approval API lists GitHub pending docs and publishes from sourcePath
   },['GET','POST'])
   const queue=await api.GET(new Request('https://example.com/api/admin/research-documents?queue=1'))
   assert.equal(queue.status,200)
-  assert.deepEqual((await queue.json()).pending[0].reason,'new')
+  const queueBody=await queue.json()
+  assert.deepEqual(queueBody.pending[0].reason,'new')
+  assert.equal(queueBody.files,undefined)
+  const library=await api.GET(new Request('https://example.com/api/admin/research-documents?published=1&page=1&pageSize=40'))
+  const libraryBody=await library.json()
+  assert.equal(libraryBody.items.length,1)
+  assert.equal(libraryBody.hasMore,false)
   const refreshed=await api.GET(new Request('https://example.com/api/admin/research-documents?queue=1&refresh=1'))
   assert.equal(refreshed.status,200)
   assert.deepEqual(seenRefresh,{refresh:true})

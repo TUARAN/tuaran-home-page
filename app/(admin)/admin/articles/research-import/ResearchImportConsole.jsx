@@ -24,9 +24,10 @@ const labels = { draft: '草稿', published: '已发布', retired: '已撤回' }
 const reasonLabels = { new: '待审批', draft: '草稿', retired: '已撤回', updated: '正文已改' }
 const categoryLabels = { topics: '话题', companies: '公司', people: '人物' }
 const STATUS_TONE = { draft: 'warning', published: 'success', retired: 'danger' }
-const QUEUE_CACHE_KEY = 'admin-research-approval-queue-v1'
+const QUEUE_CACHE_KEY = 'admin-research-approval-queue-v2'
 const QUEUE_CACHE_TTL_MS = 5 * 60 * 1000
 const QUEUE_FRESH_MS = 20 * 1000
+const PUBLISHED_PAGE_SIZE = 40
 const paneClass = 'admin-section flex max-h-[70vh] min-h-0 flex-col overflow-hidden rounded-xl border lg:h-full lg:max-h-none'
 
 function errorText(data, fallback) {
@@ -198,6 +199,12 @@ export default function ResearchImportConsole({ embedded = false }) {
   const [sourcePath, setSourcePath] = useState(requestedPath)
   const [filter, setFilter] = useState('')
   const [listMode, setListMode] = useState('pending')
+  const [publishedItems, setPublishedItems] = useState([])
+  const [publishedTotal, setPublishedTotal] = useState(0)
+  const [publishedPage, setPublishedPage] = useState(0)
+  const [publishedHasMore, setPublishedHasMore] = useState(false)
+  const [publishedLoading, setPublishedLoading] = useState(false)
+  const [publishedReload, setPublishedReload] = useState(0)
   const [snapshot, setSnapshot] = useState(null)
   const [current, setCurrent] = useState(null)
   const [unchanged, setUnchanged] = useState(false)
@@ -214,22 +221,13 @@ export default function ResearchImportConsole({ embedded = false }) {
   const forceDocumentRefreshRef = useRef(false)
   const sourceBucketRef = useRef('')
 
-  const pending = queue?.pending || []
-  const files = queue?.files || []
+  const pending = useMemo(() => queue?.pending || [], [queue?.pending])
   const query = filter.trim().toLowerCase()
   const visiblePending = useMemo(() => {
     if (!query) return pending
     return pending.filter((item) => [item.title, item.slug, item.filename, item.sourcePath, item.reason].some((value) => String(value || '').toLowerCase().includes(query)))
   }, [pending, query])
-  const library = useMemo(() => {
-    const pendingPaths = new Set(pending.map((item) => item.sourcePath))
-    return files.filter((item) => !pendingPaths.has(item.sourcePath))
-  }, [files, pending])
-  const visibleFiles = useMemo(() => {
-    if (!query) return library
-    return library.filter((item) => [item.title, item.slug, item.filename, item.sourcePath].some((value) => String(value || '').toLowerCase().includes(query)))
-  }, [library, query])
-  const selectedMeta = pending.find((item) => item.sourcePath === sourcePath) || files.find((item) => item.sourcePath === sourcePath)
+  const selectedMeta = pending.find((item) => item.sourcePath === sourcePath) || publishedItems.find((item) => item.sourcePath === sourcePath)
   const liveHref = snapshot ? `/articles/research/${snapshot.entry.category}/${snapshot.entry.slug}` : ''
   const liveStatus = ready ? (current ? current.status : null) : null
   const githubHref = queue?.repo && sourcePath ? `https://github.com/${queue.repo}/blob/main/${sourcePath}` : ''
@@ -239,15 +237,15 @@ export default function ResearchImportConsole({ embedded = false }) {
     () => pending.filter((item) => selectedPaths.has(item.sourcePath)),
     [pending, selectedPaths],
   )
-  const visibleList = listMode === 'published' ? visibleFiles : visiblePending
+  const visibleList = listMode === 'published' ? publishedItems : visiblePending
 
   const applyQueue = useCallback((data, nextPath = requestedPath) => {
     const nextQueue = { ...data, fetchedAt: Number(data.fetchedAt) || Date.now() }
     setQueue(nextQueue)
     writeQueueCache(nextQueue)
     setSourcePath((currentPath) => {
-      if (currentPath && (nextQueue.pending.some((item) => item.sourcePath === currentPath) || nextQueue.files.some((item) => item.sourcePath === currentPath))) return currentPath
-      if (nextPath && (nextQueue.pending.some((item) => item.sourcePath === nextPath) || nextQueue.files.some((item) => item.sourcePath === nextPath))) return nextPath
+      if (currentPath) return currentPath
+      if (nextPath) return nextPath
       return nextQueue.pending[0]?.sourcePath || currentPath || ''
     })
   }, [requestedPath])
@@ -288,6 +286,43 @@ export default function ResearchImportConsole({ embedded = false }) {
       })
     return () => { active = false }
   }, [applyQueue, reload, requestedPath])
+
+  useEffect(() => {
+    if (listMode !== 'published' || !queue) return undefined
+    const controller = new AbortController()
+    setPublishedLoading(true)
+    setPublishedItems([])
+    setPublishedHasMore(false)
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams({
+        published: '1',
+        page: '1',
+        pageSize: String(PUBLISHED_PAGE_SIZE),
+      })
+      if (query) params.set('q', query)
+      fetch(`/api/admin/research-documents?${params}`, { cache: 'no-store', signal: controller.signal })
+        .then(async (response) => {
+          const data = await response.json()
+          if (!response.ok) throw new Error(errorText(data, '读取已发布列表失败'))
+          setPublishedItems(data.items || [])
+          setPublishedTotal(Number(data.total) || 0)
+          setPublishedPage(Number(data.page) || 1)
+          setPublishedHasMore(Boolean(data.hasMore))
+        })
+        .catch((error) => {
+          if (error.name === 'AbortError') return
+          setMessageTone('danger')
+          setMessage(error.message)
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setPublishedLoading(false)
+        })
+    }, query ? 250 : 0)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [listMode, publishedReload, query, queue])
 
   useEffect(() => {
     let active = true
@@ -405,7 +440,34 @@ export default function ResearchImportConsole({ embedded = false }) {
     setCurrent(null)
     forceRefreshRef.current = true
     forceDocumentRefreshRef.current = true
+    setPublishedItems([])
+    setPublishedReload((value) => value + 1)
     setReload((value) => value + 1)
+  }
+
+  async function loadMorePublished() {
+    if (publishedLoading || !publishedHasMore) return
+    setPublishedLoading(true)
+    try {
+      const params = new URLSearchParams({
+        published: '1',
+        page: String(publishedPage + 1),
+        pageSize: String(PUBLISHED_PAGE_SIZE),
+      })
+      if (query) params.set('q', query)
+      const response = await fetch(`/api/admin/research-documents?${params}`, { cache: 'no-store' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(errorText(data, '读取更多已发布调研失败'))
+      setPublishedItems((items) => [...items, ...(data.items || [])])
+      setPublishedTotal(Number(data.total) || 0)
+      setPublishedPage(Number(data.page) || publishedPage + 1)
+      setPublishedHasMore(Boolean(data.hasMore))
+    } catch (error) {
+      setMessageTone('danger')
+      setMessage(error.message)
+    } finally {
+      setPublishedLoading(false)
+    }
   }
 
   function patchQueueAfterSave(targetPath, status, revision, { wasPublished } = {}) {
@@ -414,18 +476,22 @@ export default function ResearchImportConsole({ embedded = false }) {
       const target = currentQueue.pending.find((item) => item.sourcePath === targetPath)
       const publishedBefore = wasPublished ?? target?.d1Status === 'published'
       let publishedCount = currentQueue.publishedCount
+      let libraryCount = currentQueue.libraryCount
       if (status === 'published' && !publishedBefore) publishedCount += 1
       if (status !== 'published' && publishedBefore) publishedCount = Math.max(0, publishedCount - 1)
+      if (status === 'published' && target) libraryCount += 1
+      if (status !== 'published' && publishedBefore && !target) libraryCount = Math.max(0, libraryCount - 1)
       const pendingItems = currentQueue.pending
         .map((item) => {
           if (item.sourcePath !== targetPath) return item
           return { ...item, reason: status === 'published' ? 'updated' : status, d1Status: status, revision }
         })
         .filter((item) => item.sourcePath !== targetPath || status !== 'published')
-      const nextQueue = { ...currentQueue, pending: pendingItems, publishedCount }
+      const nextQueue = { ...currentQueue, pending: pendingItems, publishedCount, libraryCount }
       writeQueueCache(nextQueue)
       return nextQueue
     })
+    setPublishedReload((value) => value + 1)
   }
 
   function applyPublishedDocument(targetPath, data, status) {
@@ -525,7 +591,7 @@ export default function ResearchImportConsole({ embedded = false }) {
         <div className="flex min-w-0 rounded-lg bg-[#f1f2ea] p-0.5 dark:bg-[#1a222d]" role="tablist" aria-label="队列">
           {[
             ['pending', '待审批', pending.length],
-            ['published', '已发布', library.length],
+            ['published', '已发布', queue?.libraryCount ?? queue?.publishedCount ?? 0],
           ].map(([id, label, count]) => {
             const selected = listMode === id
             return (
@@ -572,7 +638,7 @@ export default function ResearchImportConsole({ embedded = false }) {
         ) : (
           <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-500">
             {queue?.repo || 'GitHub main'}
-            {query ? ` · 匹配 ${visibleFiles.length} 篇` : ''}
+            {query ? ` · 匹配 ${publishedTotal} 篇` : ` · 已加载 ${publishedItems.length}/${publishedTotal || queue?.libraryCount || 0}`}
             {syncedLabel ? ` · ${syncedLabel}` : ''}
           </p>
         )}
@@ -610,16 +676,14 @@ export default function ResearchImportConsole({ embedded = false }) {
           {listMode === 'pending' && query && !visiblePending.length && pending.length ? (
             <EmptyState
               title="待审批里没有匹配"
-              description={visibleFiles.length ? `已发布里有 ${visibleFiles.length} 篇。` : '换个标题、slug 或文件名。'}
-              action={visibleFiles.length ? (
-                <AdminButton type="button" size="sm" onClick={() => setListMode('published')}>在已发布中查看</AdminButton>
-              ) : null}
+              description="可以继续到已发布列表中搜索。"
+              action={<AdminButton type="button" size="sm" onClick={() => setListMode('published')}>在已发布中查看</AdminButton>}
             />
           ) : null}
-          {listMode === 'published' && queue && !library.length ? (
+          {listMode === 'published' && !publishedLoading && !query && !publishedTotal ? (
             <EmptyState title="还没有已发布的调研" description="审批通过后会出现在这里。" />
           ) : null}
-          {listMode === 'published' && query && library.length && !visibleFiles.length ? (
+          {listMode === 'published' && !publishedLoading && query && !publishedTotal ? (
             <EmptyState title="没有匹配的调研" description="换个标题、slug 或文件名。" />
           ) : null}
           <ul className="space-y-0.5 px-1.5 py-1.5">
@@ -646,7 +710,7 @@ export default function ResearchImportConsole({ embedded = false }) {
                   />
                 </li>
               )
-            }) : visibleFiles.map((item) => (
+            }) : publishedItems.map((item) => (
               <li key={item.sourcePath}>
                 <QueueRow
                   item={item}
@@ -657,6 +721,14 @@ export default function ResearchImportConsole({ embedded = false }) {
               </li>
             ))}
           </ul>
+          {listMode === 'published' && publishedLoading ? <LoadingState className="my-3" compact label="正在读取已发布调研" /> : null}
+          {listMode === 'published' && publishedHasMore && !publishedLoading ? (
+            <div className="flex justify-center px-3 py-3">
+              <AdminButton type="button" size="sm" variant="ghost" onClick={loadMorePublished}>
+                加载更多
+              </AdminButton>
+            </div>
+          ) : null}
         </div>
       )}
 

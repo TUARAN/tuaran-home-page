@@ -64,7 +64,8 @@ const CONFIG = {
   eyebrow: 'Agent Capabilities', title: 'Agent 能力集',
   description: '可复用的方法、可连接的服务和可复制的任务模板集中在这里。按能力类型查找，再进入对应页面使用或配置。',
   countLabel: '个入口', filterAriaLabel: '筛选 Agent 能力集', searchPlaceholder: '搜索能力、类型或用途',
-  resultTitle: '全部能力', actionLabel: '查看详情', layout: 'catalog',
+  resultTitle: '全部能力', categoryTabs: true, categoryTabsAriaLabel: 'Agent 能力类别',
+  actionLabel: '查看详情', layout: 'catalog',
   analyticsSurface: 'capability_directory', analyticsEvent: 'capability_open', destinationKind: 'capability',
 }
 

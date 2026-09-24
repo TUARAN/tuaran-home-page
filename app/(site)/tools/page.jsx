@@ -59,6 +59,8 @@ const CONFIG = {
   filterAriaLabel: '筛选工具',
   searchPlaceholder: '搜索工具、用途或标签',
   resultTitle: '全部工具',
+  categoryTabs: true,
+  categoryTabsAriaLabel: '工具类别',
   actionLabel: '打开工具',
   layout: 'catalog',
   analyticsSurface: 'tool_directory',

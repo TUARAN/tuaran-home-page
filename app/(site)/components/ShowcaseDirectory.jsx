@@ -256,10 +256,12 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                 <button type="button" onClick={() => setView('grid')} aria-label="卡片视图" aria-pressed={view === 'grid'} className={`rounded-lg p-2 transition ${view === 'grid' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconGridDots size={17} /></button>
                 <button type="button" onClick={() => setView('list')} aria-label="列表视图" aria-pressed={view === 'list'} className={`rounded-lg p-2 transition ${view === 'list' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconLayoutList size={17} /></button>
               </div>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label="按类别筛选">
-                <option value="all">类别 · 全部</option>
-                {categories.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-              </select>
+              {!config.categoryTabs ? (
+                <select value={category} onChange={(event) => setCategory(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label="按类别筛选">
+                  <option value="all">类别 · 全部</option>
+                  {categories.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              ) : null}
               {secondaryFilter ? (
                 <select value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label={secondaryFilter.ariaLabel}>
                   <option value="all">{secondaryFilter.label} · 全部</option>
@@ -274,10 +276,33 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
           </div>
         </section>
 
-        <div className="mb-5 flex items-center gap-4">
-          <h2 className="mb-0 text-[17px] font-bold">{hasFilters ? '筛选结果' : config.resultTitle}</h2>
-          <span className="text-[12px] text-[var(--site-faint)]">{filteredItems.length} 个</span>
-          <div className="h-px flex-1 bg-[#dedfd9] dark:bg-[#27303a]" />
+        <div className="mb-5">
+          <div className="flex items-center gap-4">
+            <h2 className="mb-0 text-[17px] font-bold">{config.categoryTabs ? config.resultTitle : (hasFilters ? '筛选结果' : config.resultTitle)}</h2>
+            <span className="text-[12px] text-[var(--site-faint)]">{filteredItems.length} 个</span>
+            <div className="h-px flex-1 bg-[#dedfd9] dark:bg-[#27303a]" />
+          </div>
+          {config.categoryTabs ? (
+            <div className="-mx-3 mt-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div role="tablist" aria-label={config.categoryTabsAriaLabel || `${config.title}类别`} className="flex w-max min-w-full items-center gap-1 border-b border-[#dedfd9] dark:border-[#27303a]">
+                {[{ id: 'all', title: '全部' }, ...categories].map((item) => {
+                  const active = category === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setCategory(item.id)}
+                      className={`relative shrink-0 px-3 py-2.5 text-[13px] font-semibold transition ${active ? 'text-[var(--site-ink)] after:absolute after:inset-x-2 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-[var(--site-accent-strong)]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}
+                    >
+                      {item.title}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {filteredItems.length ? (

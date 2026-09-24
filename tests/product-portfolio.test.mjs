@@ -50,11 +50,15 @@ test('tools directory uses compact catalog cards while the portfolio keeps galle
     readFile(new URL('app/(site)/components/ShowcaseDirectory.jsx', root), 'utf8'),
   ])
   assert.match(toolsSource, /layout: 'catalog'/)
+  assert.match(toolsSource, /categoryTabs: true/)
+  assert.match(worksSource, /categoryTabs: true/)
   assert.doesNotMatch(worksSource, /layout: 'catalog'/)
   assert.match(directorySource, /layout === 'catalog'/)
   assert.match(directorySource, /h-8 w-8/)
   assert.match(directorySource, /xl:grid-cols-4/)
   assert.match(directorySource, /sm:grid-cols-2 lg:grid-cols-3/)
+  assert.match(directorySource, /role="tablist"/)
+  assert.match(directorySource, /aria-selected=\{active\}/)
 })
 
 test('capabilities reuse the compact directory and keep the four former centers reachable', async () => {
@@ -63,6 +67,7 @@ test('capabilities reuse the compact directory and keep the four former centers 
     readFile(new URL('app/(site)/components/AgentCenterHero.jsx', root), 'utf8'),
   ])
   assert.match(source, /layout: 'catalog'/)
+  assert.match(source, /categoryTabs: true/)
   for (const path of ['/skill-center', '/mcp-center', '/prompt-center', '/workbuddy-publish-center']) {
     assert.ok(source.includes(`href: '${path}'`))
   }

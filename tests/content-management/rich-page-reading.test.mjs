@@ -16,6 +16,10 @@ const DIRECTORY_PATH = new URL(
   '../../app/(site)/components/ShowcaseDirectory.jsx',
   import.meta.url,
 )
+const RICH_PAGES_DIRECTORY_PATH = new URL(
+  '../../app/(site)/rich-pages/RichPagesDirectory.jsx',
+  import.meta.url,
+)
 
 test('every rich page resolves to a registered reading-count category', async () => {
   const registry = await readFile(CONTENT_REGISTRY_PATH, 'utf8')
@@ -42,4 +46,11 @@ test('rich pages report visits and the directory batch-loads counts', async () =
   assert.match(directory, /阅读量 \{formatPv\(pv\)\}/)
   assert.match(directory, /md:grid-cols-\[280px_minmax\(0,1fr\)\]/)
   assert.doesNotMatch(directory, /minmax\(280px,auto\)/)
+})
+
+test('rich page categories use the shared secondary tabs', async () => {
+  const source = await readFile(RICH_PAGES_DIRECTORY_PATH, 'utf8')
+
+  assert.match(source, /categoryTabs: true/)
+  assert.match(source, /categoryTabsAriaLabel: '互动专题类别'/)
 })

@@ -64,6 +64,8 @@ const CONFIG = {
   filterAriaLabel: '筛选产品集',
   searchPlaceholder: '搜索产品、作品或标签',
   resultTitle: '全部作品',
+  categoryTabs: true,
+  categoryTabsAriaLabel: '产品集类别',
   actionLabel: '打开',
   analyticsSurface: 'portfolio_directory',
   analyticsEvent: 'portfolio_open',

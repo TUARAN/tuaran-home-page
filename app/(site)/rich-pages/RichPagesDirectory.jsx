@@ -37,6 +37,8 @@ const CONFIG = {
   filterAriaLabel: '筛选作品',
   searchPlaceholder: '搜索作品、主题或标签',
   resultTitle: '全部作品',
+  categoryTabs: true,
+  categoryTabsAriaLabel: '互动专题类别',
   actionLabel: '打开作品',
   analyticsSurface: 'interactive_directory',
   analyticsEvent: 'entry_click',

@@ -64,15 +64,15 @@ function cryptoIdentity(entry) {
 
 function ContentList({ id, title, description, href, count, items }) {
   return (
-    <section id={id} className="grid min-w-0 scroll-mt-28 gap-5 border-t border-[var(--site-line)] py-6 lg:grid-cols-[168px_minmax(0,1fr)] lg:gap-7">
-      <div className="flex items-start justify-between gap-4 lg:block">
+    <section id={id} className="min-w-0 scroll-mt-28 border-t border-[var(--site-line)] py-6">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-[var(--site-ink)]">{title}</h3>
           <p className="mt-1 text-xs leading-5 text-[var(--site-faint)]">{description}</p>
         </div>
-        <div className="shrink-0 text-right lg:mt-4 lg:text-left">
-          <span className="block font-mono text-[11px] text-[var(--site-faint)]">{count} 篇</span>
-          <Link href={href} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--site-ink)] no-underline hover:underline">
+        <div className="flex shrink-0 items-center gap-4">
+          <span className="font-mono text-[11px] text-[var(--site-faint)]">{count} 篇</span>
+          <Link href={href} className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--site-ink)] no-underline hover:underline">
             查看全部 <IconArrowUpRight size={13} />
           </Link>
         </div>

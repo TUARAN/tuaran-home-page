@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import DesktopPetDemo from './DesktopPetDemo'
 
 export const dynamic = 'force-static'
@@ -44,6 +45,7 @@ export default function DesktopPetPage() {
               <strong>当前进度</strong>：Electron 桌宠原型已实现，网页可体验摸摸鹿鹿与文字互动。桌面安装包尚未开放；WorkBuddy 真账号接入还需应用审核与用户授权。
             </div>
             <a href="https://github.com/TUARAN/tuaran-home-page/tree/main/tools/workbuddy-desktop-pet" target="_blank" rel="noreferrer" className="mt-5 inline-flex rounded-full border border-[#263f39] px-5 py-2.5 text-sm font-semibold transition hover:bg-[#263f39] hover:text-white dark:border-[#f7edd8] dark:hover:bg-[#f7edd8] dark:hover:text-[#263f39]">查看原型源码 ↗</a>
+            <Link href="/tools/workbuddy-desktop-pet/hardware-roadmap" className="ml-3 mt-5 inline-flex rounded-full bg-[#d98a55] px-5 py-2.5 text-sm font-semibold text-[#2c332f] transition hover:bg-[#efad7e]">查看硬件化路线图 →</Link>
           </div>
           <DesktopPetDemo />
         </div>

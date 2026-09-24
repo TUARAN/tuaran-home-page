@@ -3,8 +3,8 @@ import TapeoutXiangqiClient from './TapeoutXiangqiClient'
 
 export const dynamic = 'force-static'
 
-const title = 'TapeOut 中国象棋上链计划｜公开执行驾驶舱'
-const description = '可试玩的中国象棋原型，以及 TapeOut 上链的计划时间、实际时间、过程快照与人机授权边界。'
+const title = '链上中国象棋｜TapeOut 主网发布记录'
+const description = '已运行在 BNB Chain 的中国象棋：公开 TapeID、容器、版本哈希、发布交易、实际支出、过程快照与升级记录。'
 
 export const metadata = {
   title,

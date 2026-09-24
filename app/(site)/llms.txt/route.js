@@ -44,7 +44,7 @@ export function GET() {
     `- [统一内容目录](${SITE_URL}/articles): 按内容主题和内容类型浏览`,
     `- [内容说明](${SITE_URL}/help#editorial): 作者责任、工具使用与更正机制`,
     `- [RSS](${SITE_URL}/rss.xml): 订阅源`,
-    `- [内容账本](${SITE_URL}/onchain-blog): 可验证内容发布与开放测试`,
+    `- [链上作品](${SITE_URL}/onchain-blog): 中国象棋等可直接使用并可核对发布记录的链上作品合集`,
     `- [CNT 白皮书](${SITE_URL}/onchain-blog/whitepaper): CNT 内容生态代币经济白皮书正式完整版`,
     `- [Agent 验证说明](${SITE_URL}/verify.txt): 内容凭证协议、信任边界与离线验证命令`,
     `- [内容凭证发现](${SITE_URL}/.well-known/content-proof.json): well-known 发现文档`,

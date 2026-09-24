@@ -72,7 +72,7 @@ const jsonLd = {
       name: TITLE,
       description: DESCRIPTION,
       inLanguage: 'zh-CN',
-      isPartOf: { '@type': 'WebPage', name: '万物上链', url: 'https://2aran.com/onchain-blog' },
+      isPartOf: { '@type': 'CollectionPage', name: '链上作品', url: 'https://2aran.com/onchain-blog' },
       mainEntity: { '@id': `${RESOURCE_URL}#paper` },
     },
   ],
@@ -90,7 +90,7 @@ export default function CntWhitepaperPage() {
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
             <Link href="/" className="no-underline hover:text-white">TUARAN</Link>
             <span>/</span>
-            <Link href="/onchain-blog" className="no-underline hover:text-white">万物上链</Link>
+            <Link href="/onchain-blog" className="no-underline hover:text-white">链上作品</Link>
             <span>/</span>
             <span>WHITEPAPER</span>
           </div>
@@ -158,7 +158,7 @@ export default function CntWhitepaperPage() {
       <section className="border-t border-[#d8d0c2] bg-[var(--site-panel)] dark:border-[#2a313b]">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-start justify-between gap-6 px-5 py-10 md:flex-row md:items-center">
           <div>
-            <p className="font-serif text-2xl font-semibold">内容指纹与批次存证仍可在万物上链页核对。</p>
+            <p className="font-serif text-2xl font-semibold">内容指纹与批次存证仍可在链上作品页核对。</p>
             <p className="mt-2 text-sm text-[#665f55] dark:text-[#aaa49a]">公开文章已有内容指纹、站点签名和测试网批次记录。</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -170,7 +170,7 @@ export default function CntWhitepaperPage() {
               下载白皮书
             </a>
             <Link href="/onchain-blog" className="rounded-full border border-[#9d835b] px-5 py-3 text-sm font-semibold text-[#5d4523] no-underline hover:bg-[#f8f3e9] dark:border-[#8d774f] dark:text-[#dbbd86] dark:hover:bg-white/[0.05]">
-              返回万物上链 →
+              返回链上作品 →
             </Link>
           </div>
         </div>

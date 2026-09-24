@@ -199,6 +199,10 @@ test('homepage announcement expires after its scheduled window', () => {
   assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-22')?.id, 'credit-preview')
   assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-23')?.id, 'credit-preview')
   assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-24'), null)
+  assert.equal(
+    pickHomeFeaturedEvent(parsed.events.filter((event) => event.status === 'confirmed'), '2026-09-12'),
+    null,
+  )
 
   const expiredCard = homeCardModel(parsed, '2026-09-24')
   assert.equal(expiredCard.featured, null)
@@ -249,6 +253,7 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.match(card, /home-codex-reset-panel/)
   assert.match(card, /home-codex-reset-strip/)
   assert.match(card, /homeStripHeadline|homeStripSubline/)
+  assert.match(card, /if \(!model\.featured\) return null/)
   assert.doesNotMatch(card, /home-opinion-heading|home-builder-panel/)
   assert.match(home, /<HomeCodexResetCard\s*\/>\s*\n\s*<BuilderAndSignalsPanel/)
   assert.match(nav, /href: '\/codex-reset'[\s\S]*label: 'Codex 重置'/)

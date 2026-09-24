@@ -50,6 +50,8 @@ export default function HomeCodexResetCard() {
   const subline = homeStripSubline(model)
   const summary = subline ? `${headline} · ${subline}` : headline
 
+  if (!model.featured) return null
+
   return (
     <section className="home-section home-codex-reset-panel" aria-label="Codex reset">
       <div className="home-codex-reset-panel-head">

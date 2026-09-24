@@ -213,10 +213,10 @@ export default function OnchainBlogPage() {
               </Link>
               <a
                 href={WHITEPAPER_DOWNLOAD}
-                download="CNT内容生态代币经济白皮书.md"
+                download="CNT内容生态代币经济白皮书-v1.0.md"
                 className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-white/10"
               >
-                下载正式完整版
+                下载 v1.0 完整版
               </a>
             </div>
           </div>

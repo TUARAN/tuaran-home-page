@@ -12,11 +12,12 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'cnt-whitepaper'
 const RESOURCE_PATH = '/onchain-blog/whitepaper'
 const RESOURCE_URL = `https://2aran.com${RESOURCE_PATH}`
-const TITLE = 'CNT内容生态代币经济白皮书（正式完整版）'
+const TITLE = 'CNT内容生态代币经济白皮书（v1.0 正式版）'
 const DESCRIPTION =
-  'CNT（Content Token）内容生态代币经济白皮书正式完整版：总量 10 亿封顶、双因子衰减挖矿、质量加权贡献分、四层反女巫、销毁与持币分红、DAO 治理，以及 24 个智能合约模块清单。'
+  'CNT（Content Token）内容生态代币经济白皮书 v1.0：总量 10 亿封顶、双因子衰减挖矿、质量加权贡献分、四层反女巫、销毁与持币分红、DAO 治理，以及 24 个智能合约模块清单。'
 
 const doc = getResourceDocument(RESOURCE_SLUG)
+const VERSION = doc.version || 'v1.0'
 const article = buildCntWhitepaperArticle(loadResourceMarkdown(RESOURCE_SLUG))
 const toc = article.toc || []
 const chapterToc = toc.filter((item) => item.depth === 2)
@@ -53,7 +54,8 @@ const jsonLd = {
       description: DESCRIPTION,
       inLanguage: 'zh-CN',
       datePublished: '2026-09-21',
-      dateModified: '2026-09-21',
+      dateModified: '2026-09-24',
+      version: VERSION,
       url: RESOURCE_URL,
       author: { '@type': 'Person', name: 'TUARAN', url: 'https://2aran.com' },
       encoding: {
@@ -96,7 +98,7 @@ export default function CntWhitepaperPage() {
           <div className="mt-10 max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-[#d9b66c]/55 bg-black/35 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#f0cd88]">
-                正式完整版
+                {VERSION} · 正式版
               </span>
               <span className="font-mono text-[11px] tracking-[0.16em] text-white/50">CONTENT TOKEN · CNT</span>
             </div>
@@ -129,7 +131,7 @@ export default function CntWhitepaperPage() {
                 download={doc.downloadName}
                 className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white no-underline hover:bg-white/10"
               >
-                下载正式完整版
+                下载 {VERSION} 完整版
               </a>
               <SharePageButton title={TITLE} text={DESCRIPTION} url={RESOURCE_URL} size="md" idleLabel="分享" />
             </div>
@@ -139,7 +141,7 @@ export default function CntWhitepaperPage() {
 
       <section className="mx-auto w-full max-w-[1180px] px-5 py-12 md:py-16">
         <p className="mb-6 text-sm text-[#665f55] dark:text-[#aaa49a]">
-          {doc.author} · {doc.wordCount} · 2026-09-21 · <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
+          {doc.author} · {doc.wordCount} · {VERSION} · 2026-09-21 · <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} display />
         </p>
         {article.html ? (
           <ResourceLongformReader toc={toc} html={article.html} />

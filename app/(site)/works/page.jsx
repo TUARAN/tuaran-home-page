@@ -56,6 +56,18 @@ const VISUALS = {
   },
 }
 
+const PRODUCT_SCREENSHOTS = {
+  webhp: '/images/works/webhp.webp',
+  'blogger-alliance': '/images/works/blogger-alliance.webp',
+  syncblog: '/images/works/syncblog.webp',
+  matrixlink: '/images/works/matrixlink.webp',
+  weekly: '/images/works/weekly.webp',
+  rank: '/images/works/rank.webp',
+  gptplus: '/images/works/gptplus.webp',
+  poemcn: '/images/works/poemcn.webp',
+  workbuddy: '/images/works/workbuddy.webp',
+}
+
 const CONFIG = {
   eyebrow: '2aran Portfolio',
   title: '产品集',
@@ -86,6 +98,7 @@ function buildProductItems() {
       ...item,
       category: 'product',
       categoryLabel: '独立产品',
+      coverImage: PRODUCT_SCREENSHOTS[item.id],
       coverLabel: item.role || '独立产品',
       meta: ['独立产品', item.role].filter(Boolean),
       badgeLabel: WORK_STATUS_META[item.status] || item.status,
@@ -103,6 +116,7 @@ function buildProductItems() {
       href: site.href,
       category: 'product',
       categoryLabel: '独立产品',
+      coverImage: PRODUCT_SCREENSHOTS[site.id],
       coverLabel: site.category,
       meta: ['独立产品', site.category],
       status: 'operating',

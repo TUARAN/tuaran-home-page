@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import {
   IconActivity,
@@ -73,7 +74,33 @@ function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
 
   return (
     <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${isCatalog ? 'showcase-cover--catalog' : ''} ${compact ? (isCatalog ? 'h-full min-h-[108px]' : 'h-full min-h-[132px]') : (isCatalog ? 'h-[72px]' : 'aspect-[16/9]')}`}>
-      {isCatalog ? (
+      {item.coverImage && !isCatalog ? (
+        <>
+          <Image
+            src={item.coverImage}
+            alt={`${item.title} 网站页面截图`}
+            fill
+            unoptimized
+            sizes={compact ? '(min-width: 768px) 280px, 100vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'}
+            className="object-cover object-top transition duration-500 group-hover:scale-[1.025]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/75" />
+          <div className="showcase-cover-inner relative flex h-full flex-col justify-between p-5 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.55)]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="rounded-full border border-white/25 bg-black/20 px-2.5 py-1 font-mono text-[9px] font-black tracking-[0.18em] backdrop-blur-sm">{visual?.eyebrow || 'OPEN'}</span>
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-black/20 backdrop-blur-sm">
+                <Icon size={iconSize} stroke={1.7} aria-hidden="true" />
+              </span>
+            </div>
+            <div>
+              <p className={`mb-0 max-w-[88%] font-bold leading-tight ${compact ? 'line-clamp-2 text-[20px]' : 'line-clamp-2 text-[23px] md:text-[26px]'}`}>{item.title}</p>
+              <span className="mt-3 inline-block rounded-full border border-white/30 bg-black/20 px-2.5 py-1 text-[10px] font-semibold backdrop-blur-sm">
+                {item.coverLabel || item.categoryLabel}
+              </span>
+            </div>
+          </div>
+        </>
+      ) : isCatalog ? (
         compact ? (
           <>
             <div className="absolute -right-8 -top-10 h-24 w-24 rounded-full border border-current opacity-10" />

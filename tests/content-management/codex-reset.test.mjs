@@ -13,6 +13,7 @@ import {
   monthStats,
   newestPostOnDate,
   parseCodexResetsPayload,
+  pickHomeFeaturedEvent,
   pickFeaturedEvent,
   shiftYearMonth,
 } from '../../lib/codexResets.js'
@@ -191,6 +192,19 @@ test('featured upcoming announcement beats an older confirmed reset', () => {
   assert.equal(stillOpen.id, 'credit-preview')
   const confirmedOnly = pickFeaturedEvent(parsed.events.filter((event) => event.status === 'confirmed'), '2026-09-23')
   assert.equal(confirmedOnly.id, 'reset-confirmed')
+})
+
+test('homepage announcement expires after its scheduled window', () => {
+  const parsed = parseCodexResetsPayload(FIXTURE)
+  assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-22')?.id, 'credit-preview')
+  assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-23')?.id, 'credit-preview')
+  assert.equal(pickHomeFeaturedEvent(parsed.events, '2026-09-24'), null)
+
+  const expiredCard = homeCardModel(parsed, '2026-09-24')
+  assert.equal(expiredCard.featured, null)
+  assert.equal(expiredCard.kicker, '查看历史')
+  assert.equal(homeStripHeadline(expiredCard, '2026-09-24'), '暂无新预告')
+  assert.equal(homeStripSubline(expiredCard), '')
 })
 
 test('page uses rich-page infrastructure but belongs only to the tools directory', async () => {

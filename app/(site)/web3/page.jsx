@@ -165,27 +165,27 @@ function CategoryDirectorySection({ category, items, selected }) {
     .filter(Boolean)
   return (
     <section id={category.id} className={`scroll-mt-28 border-t py-7 first:border-t-0 ${selected ? 'border-[var(--site-accent)]' : 'border-[var(--site-line)]'}`}>
-      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)] md:gap-8">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--site-faint)]">{category.eyebrow}</p>
           <h3 className="mt-1 text-lg font-semibold text-[var(--site-ink)]">{category.label}</h3>
-          <p className="mt-1 text-xs text-[var(--site-faint)]">{items.length} 篇相关内容</p>
         </div>
-        <div className="min-w-0">
-          {items.length ? (
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              {items.map((item) => (
-                <ArticlePreview key={item.href} item={item} label={category.label} />
-              ))}
-            </div>
-          ) : <p className="py-2 text-sm text-[var(--site-faint)]">暂无相关专题文章。</p>}
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-            {resources.map((resource) => (
-              <a key={resource.name} href={resource.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)] hover:underline">
-                {resource.name} <IconExternalLink size={11} />
-              </a>
+        <p className="text-xs text-[var(--site-faint)]">{items.length} 篇相关内容</p>
+      </div>
+      <div className="min-w-0">
+        {items.length ? (
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {items.map((item) => (
+              <ArticlePreview key={item.href} item={item} label={category.label} />
             ))}
           </div>
+        ) : <p className="py-2 text-sm text-[var(--site-faint)]">暂无相关专题文章。</p>}
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          {resources.map((resource) => (
+            <a key={resource.name} href={resource.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)] hover:underline">
+              {resource.name} <IconExternalLink size={11} />
+            </a>
+          ))}
         </div>
       </div>
     </section>

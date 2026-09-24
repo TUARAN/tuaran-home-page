@@ -391,7 +391,7 @@ export default function ArticlesIndexClient({
           <Filters orientation="stack" />
         </aside>
 
-        <div className="min-w-0 space-y-4 md:mt-3 lg:mt-0">
+        <div className="flex min-w-0 flex-col gap-4 md:mt-3 lg:mt-0">
           <MobileFilterStrip />
           <section className="mt-3 hidden rounded-lg border border-[var(--site-line)] bg-white/80 text-xs md:block lg:hidden dark:border-gray-800 dark:bg-[#121821]">
             <div className="border-b border-[var(--site-line)] px-3 py-2 dark:border-gray-800">

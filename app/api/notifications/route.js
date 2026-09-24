@@ -158,6 +158,25 @@ export async function PATCH(req) {
       return Response.json({ ok: true, changed: result?.meta?.changes || 0 })
     }
 
+    if (body?.rssFeedId !== undefined) {
+      const feedId = String(body.rssFeedId || '').trim()
+      if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(feedId)) {
+        return Response.json({ error: 'INVALID_RSS_FEED_ID' }, { status: 400 })
+      }
+      const result = await db
+        .prepare(
+          `UPDATE comment_notifications
+           SET read_at = ?1
+           WHERE recipient_user_id = ?2
+             AND type = 'rss_update'
+             AND read_at IS NULL
+             AND substr(article_key, 1, length(?3)) = ?3`
+        )
+        .bind(now, String(user.id), `rss:${feedId}:`)
+        .run()
+      return Response.json({ ok: true, changed: result?.meta?.changes || 0 })
+    }
+
     if (Array.isArray(body?.ids)) {
       const ids = [...new Set(body.ids.map(Number))]
       if (!ids.length || ids.length > 100 || ids.some((id) => !Number.isInteger(id) || id <= 0)) {

@@ -1,7 +1,9 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
+import { useSessionAccount } from '../../components/SessionProvider'
 
 /**
  * RSS 订阅墙 + 内置 mini 阅读器。
@@ -13,12 +15,33 @@ import { useCallback, useEffect, useState } from 'react'
 export default function RssBlogroll({ fallback = [] }) {
   const searchParams = useSearchParams()
   const focusFeedId = String(searchParams.get('feed') || '').trim()
+  const focusEntryGuid = String(searchParams.get('entry') || '').trim()
+  const { user, markNotificationsRead } = useSessionAccount()
   const [feeds, setFeeds] = useState(fallback)
   const [copiedId, setCopiedId] = useState('')
   const [unreadNotificationId, setUnreadNotificationId] = useState(null)
   const [notificationChecked, setNotificationChecked] = useState(false)
   // feedId -> { open, loading, error, entries }
   const [reader, setReader] = useState({})
+
+  const visibleFeeds = useMemo(() => {
+    if (!focusFeedId) return feeds
+    const focused = feeds.find((feed) => feed.id === focusFeedId)
+    return focused ? [focused, ...feeds.filter((feed) => feed.id !== focusFeedId)] : feeds
+  }, [feeds, focusFeedId])
+
+  const markFeedNotificationsRead = useCallback((feedId) => {
+    markNotificationsRead({ rssFeedId: feedId })
+  }, [markNotificationsRead])
+
+  useEffect(() => {
+    if (!user?.id) return
+    for (const [feedId, state] of Object.entries(reader)) {
+      if (state.open && !state.loading && state.entries?.length) {
+        markFeedNotificationsRead(feedId)
+      }
+    }
+  }, [user?.id, reader, markFeedNotificationsRead])
 
   useEffect(() => {
     const id = Number(searchParams.get('notification'))
@@ -121,8 +144,11 @@ export default function RssBlogroll({ fallback = [] }) {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:gap-5">
-      {feeds.map((feed) => {
+      {visibleFeeds.map((feed) => {
         const state = reader[feed.id] || {}
+        const entries = focusFeedId === feed.id && focusEntryGuid
+          ? [...(state.entries || [])].sort((a, b) => Number(b.guid === focusEntryGuid) - Number(a.guid === focusEntryGuid))
+          : state.entries
         return (
           <section
             id={`rss-feed-${feed.id}`}
@@ -181,10 +207,13 @@ export default function RssBlogroll({ fallback = [] }) {
               <div className="mt-4 border-t border-[#f0f0ec] pt-3 dark:border-gray-800">
                 {state.loading ? (
                   <p className="text-xs text-[#999] dark:text-gray-500">正在抓取最新文章…</p>
-                ) : state.entries?.length ? (
+                ) : entries?.length ? (
                   <ul className="divide-y divide-[#f3f3ef] dark:divide-gray-800">
-                    {state.entries.map((entry, idx) => (
-                      <li key={entry.link || idx} className="py-2.5 first:pt-0">
+                    {entries.map((entry, idx) => (
+                      <li
+                        key={entry.link || idx}
+                        className={entry.guid === focusEntryGuid ? 'rounded-md bg-emerald-50 px-2 py-2.5 first:pt-0 dark:bg-emerald-950/30' : 'py-2.5 first:pt-0'}
+                      >
                         <a
                           href={entry.link || feed.siteUrl || feed.rssUrl}
                           target="_blank"

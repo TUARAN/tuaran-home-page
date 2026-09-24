@@ -64,6 +64,10 @@ test('notification keys and hrefs stay stable', () => {
     guid: 'https://info.v2ex.pro/abc',
   })
   assert.equal(rssUpdateHref('v2ex-newsletter'), '/crypto-research/rss?feed=v2ex-newsletter')
+  assert.equal(
+    rssUpdateHref('v2ex-newsletter', 'https://info.v2ex.pro/abc?a=1'),
+    '/crypto-research/rss?feed=v2ex-newsletter&entry=https%3A%2F%2Finfo.v2ex.pro%2Fabc%3Fa%3D1',
+  )
   assert.equal(shouldNotifyRssFeed('tuaran-home'), false)
   assert.equal(shouldNotifyRssFeed('v2ex-newsletter'), true)
 })

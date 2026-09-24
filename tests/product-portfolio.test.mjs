@@ -8,9 +8,10 @@ import { INTERACTIVE_DIRECTORY_WORKS } from '../lib/engineeringWorks.js'
 import { TOOL_ITEMS } from '../lib/toolItems.js'
 
 const root = new URL('../', import.meta.url)
-const [worksSource, sitesSource] = await Promise.all([
+const [worksSource, sitesSource, workItemsSource] = await Promise.all([
   readFile(new URL('app/(site)/works/page.jsx', root), 'utf8'),
   readFile(new URL('app/(site)/sites/page.jsx', root), 'utf8'),
+  readFile(new URL('lib/workItems.js', root), 'utf8'),
 ])
 
 test('portfolio contains products and works without duplicating the tools directory', () => {
@@ -19,6 +20,10 @@ test('portfolio contains products and works without duplicating the tools direct
   assert.match(worksSource, /PRODUCT_WORK_ITEMS/)
   assert.match(worksSource, /SECONDARY_SITES/)
   assert.doesNotMatch(worksSource, /TOOL_ITEMS|title: '站内工具'/)
+})
+
+test('individual OpenClaw pull requests are not listed as portfolio products', () => {
+  assert.doesNotMatch(workItemsSource, /openclaw-pr-90517|OpenClaw PR #90517/)
 })
 
 test('every public subsite can enter the product portfolio', () => {

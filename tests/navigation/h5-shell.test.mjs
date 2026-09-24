@@ -27,7 +27,9 @@ test('H5 tab bar covers the five high-frequency destinations', () => {
 test('home mobile channels stay on reading destinations', () => {
   assert.match(navSource, /href: '\/#articles'[\s\S]*label: '推荐'/)
   assert.match(navSource, /href: '\/frontend-weekly'[\s\S]*label: '周看'/)
-  assert.match(navSource, /href: '\/a-share-research'[\s\S]*label: 'A股'/)
+  assert.match(navSource, /href: '\/web3'[\s\S]*label: '市场'/)
+  assert.doesNotMatch(navSource, /href: '\/a-share-research'[\s\S]*label: 'A股'/)
+  assert.doesNotMatch(navSource, /href: '\/crypto-research'[\s\S]*label: '加密'/)
   assert.doesNotMatch(navSource, /本站为什么|接下来/)
 })
 

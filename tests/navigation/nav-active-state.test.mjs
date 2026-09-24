@@ -37,6 +37,16 @@ test('public opinion and Codex reset select their own analysis entries', () => {
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/multi-ip'), '/tools')
 })
 
+test('Web3 is a secondary entry owned by the content channel', () => {
+  const content = SITE_CHANNELS.find((channel) => channel.key === 'content')
+  const sections = sectionsFor('content')
+  assert.equal(SITE_CHANNELS.some((channel) => channel.key === 'web3'), false)
+  assert.equal(content.match('/web3', new URLSearchParams()), true)
+  assert.equal(content.match('/a-share-research', new URLSearchParams()), true)
+  assert.equal(content.match('/crypto-research', new URLSearchParams()), true)
+  assert.equal(getActiveNavHref(sections, '/web3', new URLSearchParams()), '/web3')
+})
+
 test('x automation retrospective selects content interactives channel', () => {
   assert.equal(getActiveNavHref(sectionsFor('content'), '/x-automation-retrospective'), '/rich-pages')
 })

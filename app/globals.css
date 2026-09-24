@@ -6827,6 +6827,13 @@
     @apply [&_.mermaid-diagram[data-mermaid-error]]:bg-[#fff7f7] dark:[&_.mermaid-diagram[data-mermaid-error]]:bg-[#24191b];
   }
 
+  /* 长 API 路径或 URL 不能撑出正文列并覆盖右侧栏。只处理行内 code，代码块仍由 pre 自行滚动。 */
+  .prose-tuaran :where(code):not(:where(pre *)) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+  }
+
   .prose-tuaran .research-risk-note {
     margin: 0.65rem 0 1.1rem;
     color: #8a8c86;

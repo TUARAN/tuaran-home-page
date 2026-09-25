@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { getSpacexTimeline, normalizeLl2Launch, SPACEX_ARCHIVED_LAUNCHES } from '../../lib/spacexTimeline.js'
+import { getSpacexTimeline, normalizeLl2Launch, SPACEX_ARCHIVED_LAUNCHES, SPACEX_EDITORIAL_ENTRIES } from '../../lib/spacexTimeline.js'
 import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../lib/spacexArchivePrompt.js'
 import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
 
@@ -68,6 +68,9 @@ test('archived launches keep exact mission facts and playable video', async () =
   const classifiedLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-ussf-259-2026-09-17')
   const romanLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-roman-space-telescope-2026-08-30')
   const mpowerLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-o3b-mpower-11-13-2026-09-13')
+  const starshipLaunch = SPACEX_ARCHIVED_LAUNCHES.find((entry) => entry.id === 'spacex-flight-13-2026-07-24')
+  const flightFive = SPACEX_EDITORIAL_ENTRIES.find((entry) => entry.id === 'spacex-starship-flight-five')
+  const holyGrail = SPACEX_EDITORIAL_ENTRIES.find((entry) => entry.id === 'spacex-holy-grail-of-rocketry-2026')
   const client = await readFile(new URL('../../app/(site)/spacex/SpaceXTimelineClient.jsx', import.meta.url), 'utf8')
 
   assert.equal(launch.publishedAt, '2026-09-20T01:47:00Z')
@@ -84,9 +87,20 @@ test('archived launches keep exact mission facts and playable video', async () =
   assert.equal(mpowerLaunch.videos[0].src, '/videos/o3b-mpower-11-13-liftoff-2026-09-13.mp4')
   assert.match(mpowerLaunch.summary, /第 700 次发射/)
   assert.equal(mpowerLaunch.video.src, '/videos/o3b-mpower-11-13-2026-09-13.mp4')
+  assert.equal(starshipLaunch.topic, 'Starship')
+  assert.equal(starshipLaunch.publishedAt, '2026-07-24T22:51:00Z')
+  assert.equal(starshipLaunch.video.src, '/videos/flight-13-2026-07-24.mp4')
+  assert.equal(starshipLaunch.video.postUrl, 'https://x.com/SpaceX/status/2080788166584267075')
+  assert.match(starshipLaunch.summary, /20 颗量产型 Starlink V3 卫星/)
+  assert.match(starshipLaunch.summary, /Ship 40 在印度洋软溅落并保持完整/)
+  assert.equal(flightFive.video.src, '/videos/starship-flight-5-first-booster-catch-2024-10-13.mp4')
+  assert.equal(flightFive.video.postUrl, 'https://x.com/SpaceX/status/1845922924315938922')
+  assert.equal(holyGrail.video.src, '/videos/starship-holy-grail-of-rocketry-2026-09-16.mp4')
+  assert.equal(holyGrail.video.postUrl, 'https://x.com/SpaceX/status/2100334792646549729')
   assert.match(client, /video\.src/)
   assert.match(client, /video\.postUrl/)
   assert.match(client, /controls playsInline preload="metadata"/)
+  assert.match(client, /object-contain/)
   assert.match(client, /id="dashboard"/)
   assert.match(client, /SpaceX 章节与里程碑/)
   assert.match(client, /sticky top-0 max-h-screen/)
@@ -112,7 +126,7 @@ test('SpaceX dashboard exposes source totals and archive progress', async () => 
   }))
 
   assert.equal(result.stats.historicalLaunchCount, 730)
-  assert.equal(result.stats.archivedVideoCount, 6)
+  assert.equal(result.stats.archivedVideoCount, 9)
   assert.equal(result.stats.upcomingLaunchCount, 0)
 })
 

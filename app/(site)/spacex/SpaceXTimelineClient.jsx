@@ -103,7 +103,7 @@ function TimelineCard({ entry, index }) {
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400 md:text-[15px]">{summary}</p>
         {[...(entry.videos || []), ...(entry.video ? [entry.video] : [])].map((video) => (
           <figure key={video.src} className="mt-6 max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-black">
-            <video className="aspect-video w-full object-cover" controls playsInline preload="metadata" aria-label={video.label || `${title} 发射影像`}>
+            <video className="aspect-video max-h-[70vh] w-full bg-black object-contain" controls playsInline preload="metadata" aria-label={video.label || `${title} 发射影像`}>
               <source src={video.src} type="video/mp4" />
             </video>
             <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-[11px] text-slate-500">

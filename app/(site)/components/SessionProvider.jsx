@@ -87,11 +87,36 @@ export function SessionProvider({ children }) {
   }, [])
 
   const markNotificationsRead = useCallback(async (payload = { all: true }) => {
+    const targetIds = new Set(
+      Array.isArray(payload?.ids)
+        ? payload.ids.map(Number).filter((id) => Number.isInteger(id) && id > 0)
+        : Number.isInteger(Number(payload?.id)) && Number(payload?.id) > 0
+          ? [Number(payload.id)]
+          : []
+    )
+    if (payload?.all || targetIds.size) {
+      setState((prev) => {
+        const visibleItems = Array.isArray(prev.notifications?.items) ? prev.notifications.items : []
+        const removed = payload?.all
+          ? visibleItems.length
+          : visibleItems.filter((item) => targetIds.has(Number(item.id))).length
+        return {
+          ...prev,
+          notifications: {
+            ...prev.notifications,
+            unread: payload?.all ? 0 : Math.max(0, (Number(prev.notifications?.unread) || 0) - removed),
+            items: payload?.all ? [] : visibleItems.filter((item) => !targetIds.has(Number(item.id))),
+          },
+        }
+      })
+    }
+
     try {
       const res = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
+        keepalive: true,
         body: JSON.stringify(payload),
       })
       if (res.ok) {
@@ -99,8 +124,9 @@ export function SessionProvider({ children }) {
         await refreshNotifications()
         return true
       }
+      await refreshNotifications()
     } catch {
-      // best-effort UI refresh only
+      await refreshNotifications()
     }
     return false
   }, [refreshNotifications])

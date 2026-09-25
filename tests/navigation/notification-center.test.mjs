@@ -91,14 +91,16 @@ test('article comments only surface this article’s interaction notices and scr
   assert.match(apiSource, /article_key = \?/)
 })
 
-test('recent notifications show unread items and reading waits for the destination', () => {
+test('recent notifications clear on click and destination arrival remains a fallback', () => {
   assert.match(providerSource, /unreadOnly=1&limit=2/)
   assert.match(headerSource, /items\.filter\(\(item\) => !item\.readAt\)/)
   assert.match(apiSource, /notificationOpenHref/)
   assert.match(arrivalSource, /targetInView/)
   assert.match(arrivalSource, /dataset\.notificationReady/)
   assert.match(arrivalSource, /markNotificationsRead\(\{ id: notificationId \}\)/)
-  assert.doesNotMatch(headerSource, /markNotificationsRead\?\.\(\{ id: item\.id \}\)/)
+  assert.match(headerSource, /account\.markNotificationsRead\(\{ id \}\)/)
+  assert.match(clientSource, /onClick=\{\(\) => onOpen\?\.\(item\.id\)\}/)
+  assert.match(providerSource, /keepalive: true/)
   assert.match(weeklySource, /notificationTargetReady=\{!loading && !error/)
   assert.match(opsSource, /notificationTargetReady=\{!loading && !error/)
   assert.equal(isAdminHostPathAllowed('/api/notifications'), true)

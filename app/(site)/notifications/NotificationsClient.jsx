@@ -44,7 +44,7 @@ function absoluteTime(ts) {
   }
 }
 
-function NotificationCard({ item }) {
+function NotificationCard({ item, onOpen }) {
   const unread = !item.readAt
   const href = item.href || '/notifications'
   const when = relativeTime(item.createdAt)
@@ -53,6 +53,7 @@ function NotificationCard({ item }) {
   return (
     <Link
       href={href}
+      onClick={() => onOpen?.(item.id)}
       aria-label={`${item.title}${item.destinationLabel ? `，${item.destinationLabel}` : ''}`}
       className={[
         'notification-inbox-item',
@@ -102,6 +103,17 @@ export default function NotificationsClient() {
   const loadingMoreRef = useRef(false)
   const loadMoreRef = useRef(null)
   const sentinelRef = useRef(null)
+
+  const openNotification = useCallback((id) => {
+    const notificationId = Number(id)
+    if (!Number.isInteger(notificationId) || notificationId <= 0) return
+    const openedItem = items.find((item) => Number(item.id) === notificationId)
+    setItems((current) => current.map((item) => (
+      Number(item.id) === notificationId ? { ...item, readAt: item.readAt || Date.now() } : item
+    )))
+    if (openedItem && !openedItem.readAt) setUnread((current) => Math.max(0, current - 1))
+    void markNotificationsRead({ id: notificationId })
+  }, [items, markNotificationsRead])
 
   const fetchPage = useCallback(async (offset, requestId) => {
     const typeParam = filter !== 'all' ? `&type=${filter}` : ''
@@ -313,7 +325,7 @@ export default function NotificationsClient() {
         <>
           <div className="notification-inbox">
             {items.map((item) => (
-              <NotificationCard key={item.id} item={item} />
+              <NotificationCard key={item.id} item={item} onOpen={openNotification} />
             ))}
           </div>
           {items.length < total ? (

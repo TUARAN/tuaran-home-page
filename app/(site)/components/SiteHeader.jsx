@@ -321,7 +321,7 @@ function formatNotificationTime(ts) {
   }
 }
 
-function NotificationList({ notifications, onNavigate, emptyLabel }) {
+function NotificationList({ notifications, onNavigate, onRead, emptyLabel }) {
   const items = Array.isArray(notifications?.items) ? notifications.items.filter((item) => !item.readAt).slice(0, 2) : []
   if (!items.length) {
     return <p className="site-notification-empty">{emptyLabel}</p>
@@ -335,7 +335,10 @@ function NotificationList({ notifications, onNavigate, emptyLabel }) {
           <Link
             key={item.id}
             href={item.href || '/notifications'}
-            onClick={onNavigate}
+            onClick={() => {
+              onRead?.(item.id)
+              onNavigate?.()
+            }}
             className={`site-notification-item ${unread ? 'site-notification-item-unread' : ''}`}
           >
             {unread ? <span className="site-notification-unread-dot" aria-label="未读" /> : null}
@@ -437,6 +440,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
             <NotificationList
               notifications={notifications}
               onNavigate={onClose}
+              onRead={(id) => { void account.markNotificationsRead({ id }) }}
               emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />
             <Link
@@ -595,6 +599,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <NotificationList
               notifications={notifications}
               onNavigate={onNavigate}
+              onRead={(id) => { void account.markNotificationsRead({ id }) }}
               emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
             />
           </div>

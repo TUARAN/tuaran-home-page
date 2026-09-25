@@ -117,16 +117,18 @@ export default function PublishedArticle({ article, siteUrl }) {
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <main className="min-w-0">
-          {article.coverUrl ? (
-            <figure className="mb-10">
-              {/* 后台文章封面可以来自 Owner 自定义的 HTTPS/R2 域名，不限制在 Next Image 白名单。 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" />
-            </figure>
-          ) : null}
           <div className="flex flex-col gap-6 md:flex-row">
             <ArticleToc items={tocItems} />
-            <ArticlePostBody content={article.content} className="min-w-0 flex-1" />
+            <div className="min-w-0 flex-1">
+              {article.coverUrl ? (
+                <figure className="mb-10">
+                  {/* 后台文章封面可以来自 Owner 自定义的 HTTPS/R2 域名，不限制在 Next Image 白名单。 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={article.coverUrl} alt={`${article.title} 封面`} className="h-auto w-full rounded-lg border border-[#eee] object-cover dark:border-gray-800" />
+                </figure>
+              ) : null}
+              <ArticlePostBody content={article.content} />
+            </div>
           </div>
         </main>
         <ArticleEngagementPanel articleKey={articleKey} />

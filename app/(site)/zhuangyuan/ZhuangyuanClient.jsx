@@ -32,6 +32,51 @@ function dynastyOf(id) {
   return DYNASTIES.find((item) => item.id === id)
 }
 
+function PersonDossier({ person, texts }) {
+  const meta = dynastyOf(person.dynasty)
+  const tone = TONE[person.caution.level] || 'amber'
+  return (
+    <article className={styles.dossierBody}>
+      <header className={styles.dossierHead}>
+        <Mark person={person} />
+        <div>
+          <p style={{ color: meta.color }}>{meta.label} · {person.exam} · {person.year}</p>
+          <h3>{person.name}</h3>
+          <p>{person.place} · {person.headline}</p>
+        </div>
+      </header>
+      {person.image ? (
+        <div className={styles.dossierFigure}>
+          <Image src={person.image} alt={person.imageAlt} fill sizes="(max-width: 800px) 100vw, 720px" className={styles.portraitImage} />
+          {person.imageCredit ? <a href={person.imageCredit} target="_blank" rel="noreferrer">图像文件页 <IconExternalLink size={13} /></a> : null}
+        </div>
+      ) : null}
+      <p className={styles.dossierSummary}>{person.summary}</p>
+      <dl className={styles.dossierFacts}>
+        <div><dt>中式之后</dt><dd>{person.after}</dd></div>
+        <div><dt>可核对</dt><dd>{person.fact}</dd></div>
+      </dl>
+      <div className={`${styles.caution} ${styles[`tone${tone}`]}`}>
+        <span>{person.caution.level}</span>
+        <strong>{person.caution.title}</strong>
+        <p>{person.caution.text}</p>
+      </div>
+      <a className={styles.dossierLink} href={person.source} target="_blank" rel="noreferrer">{person.sourceLabel} <IconArrowUpRight size={14} /></a>
+      {texts.map((item) => (
+        <section key={item.id} className={styles.dossierText}>
+          <p className={styles.textMeta}>{item.kind} · {item.meta}</p>
+          <h4>{item.title}</h4>
+          {item.original.split('\n').map((line) => <p key={line} className={styles.original}>{line}</p>)}
+          <h4>释义</h4>
+          <p className={styles.gloss}>{item.gloss}</p>
+          <div className={styles.note}><IconInfoCircle size={18} /><p>{item.note}</p></div>
+          <a href={item.href} target="_blank" rel="noreferrer">{item.hrefLabel} <IconExternalLink size={14} /></a>
+        </section>
+      ))}
+    </article>
+  )
+}
+
 function Mark({ person }) {
   if (person.image) {
     return (
@@ -91,6 +136,17 @@ export default function ZhuangyuanClient() {
 
   const activeText = TEXTS.find((item) => item.id === textId) || TEXTS[0]
   const portraits = PEOPLE.filter((person) => person.image)
+  const selected = visible.find((person) => person.id === activeId) || visible[0] || null
+  const selectedTexts = selected ? TEXTS.filter((item) => item.personId === selected.id) : []
+  const directory = DYNASTIES
+    .map((item) => ({ ...item, people: visible.filter((person) => person.dynasty === item.id) }))
+    .filter((item) => item.people.length)
+
+  function openPerson(id) {
+    setActiveId(id)
+    const match = TEXTS.find((item) => item.personId === id)
+    if (match) setTextId(match.id)
+  }
 
   return (
     <main className={styles.page}>
@@ -114,7 +170,7 @@ export default function ZhuangyuanClient() {
           </div>
           <div className={styles.heroPortraits}>
             {portraits.map((person) => (
-              <a key={person.id} href={`#person-${person.id}`} className={styles.heroPortrait}>
+              <a key={person.id} href="#archive" className={styles.heroPortrait} onClick={() => openPerson(person.id)}>
                 <Image src={person.image} alt={person.imageAlt} fill sizes="120px" className={styles.portraitImage} />
                 <span>{person.name}</span>
               </a>
@@ -173,62 +229,48 @@ export default function ZhuangyuanClient() {
           <div><span>03 / ARCHIVE</span><h2>十六份能回到出处的档案</h2></div>
           <p>这不是全名单。选入的人要么本传写明名次，要么争议已经被标明。搜索可以试“三元”“末科”“除名”。</p>
         </div>
-        <div className={styles.filters}>
-          <label className={styles.searchBox}>
-            <IconSearch size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜人名、籍贯、科年、争议…" />
-            {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={15} /></button> : null}
-          </label>
-          <div className={styles.phaseFilters}>
-            <span><IconFilter size={14} /> 朝代</span>
-            <button type="button" className={dynasty === 'all' ? styles.filterActive : ''} onClick={() => setDynasty('all')}>全部</button>
-            {DYNASTIES.map((item) => (
-              <button type="button" key={item.id} className={dynasty === item.id ? styles.filterActive : ''} onClick={() => setDynasty(item.id)}>{item.label}</button>
-            ))}
+        <div className={styles.reader}>
+          <aside className={styles.toc} aria-label="状元目录">
+            <label className={styles.searchBox}>
+              <IconSearch size={17} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜人名、籍贯、科年…" />
+              {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={15} /></button> : null}
+            </label>
+            <div className={styles.phaseFilters}>
+              <span><IconFilter size={14} /> 朝代</span>
+              <button type="button" className={dynasty === 'all' ? styles.filterActive : ''} onClick={() => setDynasty('all')}>全部</button>
+              {DYNASTIES.map((item) => (
+                <button type="button" key={item.id} className={dynasty === item.id ? styles.filterActive : ''} onClick={() => setDynasty(item.id)}>{item.label}</button>
+              ))}
+            </div>
+            <p className={styles.resultNote}>{visible.length} 人</p>
+            <div className={styles.tocList}>
+              {directory.map((group) => (
+                <div key={group.id}>
+                  <h3 style={{ color: group.color }}>{group.label}</h3>
+                  {group.people.map((person) => (
+                    <button
+                      type="button"
+                      key={person.id}
+                      id={`person-${person.id}`}
+                      className={selected?.id === person.id ? styles.tocItemActive : styles.tocItem}
+                      aria-current={selected?.id === person.id ? 'true' : undefined}
+                      onClick={() => openPerson(person.id)}
+                    >
+                      <small>{person.year}</small>
+                      <strong>{person.name}</strong>
+                      <span>{person.place}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {!visible.length ? <div className={styles.empty}>没有匹配的人。试试“三元”或“末科”。</div> : null}
+            </div>
+          </aside>
+          <div className={styles.dossier}>
+            {selected ? <PersonDossier person={selected} texts={selectedTexts} /> : <div className={styles.empty}>从左边选一位状元。</div>}
           </div>
         </div>
-        <p className={styles.resultNote}>{visible.length} 人</p>
-        <div className={styles.cardGrid}>
-          {visible.map((person) => {
-            const meta = dynastyOf(person.dynasty)
-            const open = activeId === person.id
-            const tone = TONE[person.caution.level] || 'amber'
-            return (
-              <article key={person.id} id={`person-${person.id}`} className={`${styles.personCard} ${open ? styles.personCardOpen : ''}`}>
-                <button type="button" className={styles.cardMain} onClick={() => setActiveId(open ? null : person.id)} aria-expanded={open}>
-                  <div className={styles.cardTopline}>
-                    <span style={{ color: meta.color }}>{meta.label} · {person.exam}</span>
-                    <small>{person.year}</small>
-                  </div>
-                  <div className={styles.cardIdentity}>
-                    <Mark person={person} />
-                    <div>
-                      <h3>{person.name}</h3>
-                      <p>{person.place}</p>
-                    </div>
-                  </div>
-                  <p className={styles.cardHeadline}>{person.headline}</p>
-                </button>
-                {open ? (
-                  <div className={styles.cardDetail}>
-                    <p>{person.summary}</p>
-                    <dl>
-                      <div><dt>中式之后</dt><dd>{person.after}</dd></div>
-                      <div><dt>可核对</dt><dd>{person.fact}</dd></div>
-                    </dl>
-                    <div className={`${styles.caution} ${styles[`tone${tone}`]}`}>
-                      <span>{person.caution.level}</span>
-                      <strong>{person.caution.title}</strong>
-                      <p>{person.caution.text}</p>
-                    </div>
-                    <a href={person.source} target="_blank" rel="noreferrer">{person.sourceLabel} <IconArrowUpRight size={14} /></a>
-                  </div>
-                ) : null}
-              </article>
-            )
-          })}
-        </div>
-        {!visible.length ? <div className={styles.empty}>没有匹配的人。试试“三元”或“末科”。</div> : null}
       </section>
 
       <section id="texts" className={styles.section}>

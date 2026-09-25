@@ -5,8 +5,12 @@ import { notFound } from 'next/navigation'
 import { articles } from '../articles/articlesData'
 import { YEAR_SUMMARY_ARTICLES, YEAR_SUMMARY_COLUMN } from '../articles/year-summary/yearSummaryData'
 import { avatarAbsoluteUrl } from '../../../lib/avatar'
+import { getPublishedArticlePostBySlug } from '../../../lib/articlePosts'
+import { isMarkdownDocument } from '../../../lib/articleDocument.mjs'
+import { diaryContentFromMarkdown } from '../../../lib/legacyArticleMigration.mjs'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
@@ -109,6 +113,22 @@ function buildDiaryEntries(content) {
   })
 
   return entries
+}
+
+async function readDiary() {
+  const post = await getPublishedArticlePostBySlug(DIARY_SLUG)
+  if (post) {
+    const markdown = isMarkdownDocument(post.content) ? post.content.markdown : post.contentText
+    return {
+      slug: post.slug,
+      title: post.title,
+      summary: post.summary,
+      cover: post.coverUrl,
+      date: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 10) : '',
+      content: diaryContentFromMarkdown(markdown),
+    }
+  }
+  return articles.find((item) => item.slug === DIARY_SLUG)
 }
 
 function buildDiaryTimelineEntries(diary) {
@@ -304,8 +324,8 @@ function DiaryBlocks({ blocks, diary }) {
   })
 }
 
-export function generateMetadata() {
-  const diary = articles.find((item) => item.slug === DIARY_SLUG)
+export async function generateMetadata() {
+  const diary = await readDiary()
 
   if (!diary) {
     return {
@@ -350,8 +370,8 @@ export function generateMetadata() {
   }
 }
 
-export default function DiaryPage() {
-  const diary = articles.find((item) => item.slug === DIARY_SLUG)
+export default async function DiaryPage() {
+  const diary = await readDiary()
 
   if (!diary) {
     notFound()

@@ -55,7 +55,9 @@ export async function PUT(req, { params }) {
   const now = Date.now()
   const publishedAt = current.published_at || (status === 'published' ? now : null)
   const nextSlug = slug || current.slug
-  if (await isReservedArticleSlug(nextSlug)) return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
+  if (nextSlug !== current.slug && await isReservedArticleSlug(nextSlug)) {
+    return Response.json({ error: 'RESERVED_SLUG' }, { status: 409 })
+  }
   if (current.published_at && nextSlug !== current.slug) return Response.json({ error: 'PUBLISHED_SLUG_IMMUTABLE' }, { status: 409 })
   const tags = normalizeTags(body?.tags)
   try {

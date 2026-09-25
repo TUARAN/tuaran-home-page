@@ -108,21 +108,21 @@ function readingMinutes(text) {
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
-  const catalog = await readContentCatalog()
+  const [catalog, publishedArticle] = await Promise.all([
+    readContentCatalog(),
+    getPublishedArticlePostBySlug(resolvedParams.slug),
+  ])
   const article = catalog.articles.find((item) => item.slug === resolvedParams.slug)
-  const researchRedirect = !article ? catalog.researchRedirects[resolvedParams.slug] : null
-  const publishedArticle = !article && !researchRedirect
-    ? await getPublishedArticlePostBySlug(resolvedParams.slug)
-    : null
+  const researchRedirect = !publishedArticle && !article ? catalog.researchRedirects[resolvedParams.slug] : null
 
-  if (!article && !researchRedirect && !publishedArticle) {
+  if (!publishedArticle && !article && !researchRedirect) {
     return {
       title: `文章未找到 · ${SITE_TITLE}`,
       robots: { index: false, follow: false },
     }
   }
 
-  if (researchRedirect) {
+  if (!publishedArticle && researchRedirect) {
     return {
       title: `分析文章 · ${SITE_TITLE}`,
       alternates: { canonical: `${SITE_URL}${researchRedirect}` },
@@ -219,17 +219,15 @@ export async function generateMetadata({ params }) {
 
 export default async function ArticleDetailPage({ params }) {
   const resolvedParams = await params
+  const publishedArticle = await getPublishedArticlePostBySlug(resolvedParams.slug)
+  if (publishedArticle) return <PublishedArticle article={publishedArticle} siteUrl={SITE_URL} />
+
   const catalog = await readContentCatalog()
   const article = await getArchivedArticle(resolvedParams.slug, catalog)
   const researchRedirect = !article ? catalog.researchRedirects[resolvedParams.slug] : null
 
   if (researchRedirect) {
     redirect(researchRedirect)
-  }
-
-  if (!article) {
-    const publishedArticle = await getPublishedArticlePostBySlug(resolvedParams.slug)
-    if (publishedArticle) return <PublishedArticle article={publishedArticle} siteUrl={SITE_URL} />
   }
 
   if (!article) {

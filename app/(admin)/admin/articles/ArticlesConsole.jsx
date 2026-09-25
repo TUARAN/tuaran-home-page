@@ -125,26 +125,17 @@ function ContentSourceGuide({ counts }) {
   const sources = [
     {
       index: '01',
-      title: '历史普通文章',
-      count: counts?.historical,
-      countSub: '构建期目录，不进入后台编辑器',
-      storage: '仓库内容与构建期目录',
-      route: '/articles/[slug]',
-      editing: '在仓库中修改，不进入“写文章”编辑器。',
-    },
-    {
-      index: '02',
-      title: '后台发布文章',
-      count: counts?.editor,
+      title: '普通文章',
+      count: counts ? counts.editor + counts.historical : null,
       countSub: counts
-        ? `已发布 ${formatCount(counts.editorPublished)} · 草稿 ${formatCount(counts.editorDraft)}`
+        ? `已发布 ${formatCount(counts.editorPublished + counts.historical)} · 草稿 ${formatCount(counts.editorDraft)}`
         : 'D1 article_posts',
       storage: 'D1 article_posts',
       route: '/articles/[slug]',
-      editing: '使用右上角“写文章”创建，可在列表中继续编辑。',
+      editing: '使用右上角“写文章”创建，历史文章与新文章都可在列表中继续编辑。',
     },
     {
-      index: '03',
+      index: '02',
       title: '调研文章',
       count: counts?.research,
       countSub: counts
@@ -158,10 +149,10 @@ function ContentSourceGuide({ counts }) {
 
   return (
     <Section
-      title="先看懂：站内有三种文章来源"
-      description={`它们在前台都是文章，但正本位置、编辑方式和公开路径不同。当前共 ${formatCount(counts?.all)} 条，下方“全部内容”会把它们合并展示。`}
+      title="站内文章来源"
+      description={`普通文章统一在后台编辑，调研文章保留独立的资料与审批流程。当前共 ${formatCount(counts?.all)} 条，下方“全部内容”合并展示。`}
     >
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         {sources.map((source) => (
           <article key={source.index} className="rounded-lg border border-[#e2e5da] bg-[#fafbf7] p-4 dark:border-[#2b3745] dark:bg-[#111923]">
             <div className="flex items-start justify-between gap-3">
@@ -298,7 +289,7 @@ function ArticlesConsoleBody() {
   return (
     <AdminPage
       title="内容管理"
-      description="统一查看历史普通文章、后台发布文章和调研文章；三者的正本与编辑方式不同。"
+      description="统一管理普通文章和调研文章：普通文章在后台编辑，调研文章按调研发布流程管理。"
       stickyHeader
       actions={(
         <AdminButton href="/admin/articles/new" variant="primary">

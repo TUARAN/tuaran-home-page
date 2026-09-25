@@ -128,6 +128,20 @@ test('permission and reserved paths reject writes; race rolls back index as well
   h.sqlite.close()
 })
 
+test('an imported article can keep and edit its existing reserved slug', async () => {
+  const h = harness()
+  h.sqlite.prepare(`INSERT INTO article_posts
+    (id, slug, title, summary, cover_url, content_json, content_text, tags_json, status, revision, created_at, updated_at, published_at)
+    VALUES ('legacy-reserved', 'reserved', 'Legacy', '', '', ?, 'old', '[]', 'published', 1, 1, 1, 1)`)
+    .run(JSON.stringify({ type: 'markdown', markdown: 'old' }))
+  const response = await h.update(req({ ...payload, slug: 'reserved', status: 'published', revision: 1 }), {
+    params: Promise.resolve({ id: 'legacy-reserved' }),
+  })
+  assert.equal(response.status, 200)
+  assert.equal(h.sqlite.prepare("SELECT title FROM article_posts WHERE id = 'legacy-reserved'").get().title, payload.title)
+  h.sqlite.close()
+})
+
 test('archive reader uses deployment binding and fails closed for a missing or mismatched asset', async () => {
   let seen
   let response = new Response(JSON.stringify({slug:'known',title:'Original',markdown:'正文'}))

@@ -16,11 +16,14 @@ jobs:
     name: POST /api/cron/a-share-research
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: write
     steps:
       - name: Trigger online automation
         env:
           A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}
           PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # 优先专用 Secret；未配置时复用舆情采集 Secret（与线上回退链一致）。
           TRIGGER_SECRET="${A_SHARE_COLLECT_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}"
@@ -35,6 +38,7 @@ jobs:
               -w '%{http_code}' \
               -X POST \
               -H "x-a-share-secret: $TRIGGER_SECRET" \
+              -H "x-github-publish-token: $GITHUB_TOKEN" \
               https://2aran.com/api/cron/a-share-research)
 
             echo "请求 $attempt/3 · HTTP $code"
@@ -44,6 +48,11 @@ jobs:
             if [ "$code" = "200" ]; then
               phase=$(jq -r '.phase // ""' /tmp/a-share-research.json)
               if [ "$phase" != "generation-locked" ] && [ "$phase" != "pool-synced" ]; then
+                auto_ok=$(jq -r '.autoPublish.ok // true' /tmp/a-share-research.json)
+                if [ "$auto_ok" != "true" ]; then
+                  echo "::error::自动发布失败：$(jq -r '.autoPublish.error // "unknown"' /tmp/a-share-research.json)"
+                  exit 1
+                fi
                 exit 0
               fi
               if [ "$phase" = "generation-locked" ]; then

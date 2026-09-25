@@ -18,8 +18,15 @@ function safeEqual(left, right) {
   return diff === 0
 }
 
+function withRequestPublishToken(env, request) {
+  const token = String(request.headers.get('x-github-publish-token') || '').trim()
+  if (!token) return env
+  return Object.assign(Object.create(env), { A_SHARE_PUBLISH_TOKEN: token })
+}
+
 async function handle(request) {
-  const env = getOptionalRequestContext()?.env || {}
+  const runtimeEnv = getOptionalRequestContext()?.env || {}
+  const env = withRequestPublishToken(runtimeEnv, request)
   // 任一已配置 secret 均可放行：GitHub Actions 侧有专用 A_SHARE_COLLECT_SECRET 时用专用值，
   // 未配置时回退 PUBLIC_OPINION_COLLECT_SECRET（与仓库现有其他定时任务同一回退链）。
   const configuredSecrets = [

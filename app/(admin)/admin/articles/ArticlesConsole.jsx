@@ -125,7 +125,7 @@ function ContentSourceGuide({ counts }) {
   const sources = [
     {
       index: '01',
-      title: '普通文章',
+      title: '原创精选',
       count: counts ? counts.editor + counts.historical : null,
       countSub: counts
         ? `已发布 ${formatCount(counts.editorPublished + counts.historical)} · 草稿 ${formatCount(counts.editorDraft)}`
@@ -136,7 +136,7 @@ function ContentSourceGuide({ counts }) {
     },
     {
       index: '02',
-      title: '调研文章',
+      title: '原创调研',
       count: counts?.research,
       countSub: counts
         ? `公司 ${formatCount(counts.researchCompanies)} · 专题 ${formatCount(counts.researchTopics)} · 人物 ${formatCount(counts.researchPeople)}${counts.researchDraft ? ` · 草稿 ${formatCount(counts.researchDraft)}` : ''}`

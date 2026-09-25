@@ -146,6 +146,8 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.match(consoleSource, /历史普通文章/)
   assert.match(consoleSource, /后台发布文章/)
   assert.match(consoleSource, /调研文章/)
+  assert.match(consoleSource, /title: '原创精选'/)
+  assert.match(consoleSource, /title: '原创调研'/)
   assert.match(consoleSource, /D1 article_posts/)
   assert.match(consoleSource, /research\/\*\.md \+ D1 发布覆盖/)
   assert.match(consoleSource, /新内容怎样上线/)

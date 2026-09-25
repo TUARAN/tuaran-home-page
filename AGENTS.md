@@ -53,6 +53,13 @@
 - 信息架构应为同一说明保留一个权威入口；重复的站点自述应合并或重定向。创作过程、路线图、维护成本、上下文记忆和内部运营记录默认下沉到页脚、个人实验区、站长入口或 `noindex` 页面。
 - 批量治理必须按 Markdown 结构和语义上下文逐项判断，不得对全库执行无差别正则替换。修改后运行 `npm run research:style-audit`，确认目标规则没有待修复项，并复核被保护的引用、安全声明和范围说明。
 
+## 普通文章发布
+
+- 普通文章必须通过 `/admin/articles` 或对应管理 API 写入线上 `article_posts`；图片通过文章上传接口进入公开 R2，发布时同步生成 `content_index` 记录。
+- `app/(site)/articles/articlesData.js` 与 `public/data/article-archive/` 只保存历史归档。不得把新文章追加到历史归档，也不得用 D1 migration 代替日常文章创建或发布。
+- 只有用户明确要求初始化系统数据、恢复历史内容或编写数据库迁移时，才允许通过 migration 写入文章相关数据。
+- 完成普通文章发布前必须核对：后台 `article_posts` 有记录、`content_index` 有对应公开索引、正文图片可访问、公开文章 URL 返回成功。仅提交代码、等待部署或留下待执行迁移不算发布完成。
+
 ## 运行时约束
 
 - 三层运行时并存：静态/ISR 页面、Cloudflare Edge API（`runtime = 'edge'`）、浏览器端推理（`/web-llm`，WebGPU）。

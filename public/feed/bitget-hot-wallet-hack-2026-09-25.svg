@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Bitget 热钱包安全事件信息卡</title>
+  <desc id="desc">约 3.516 亿美元受影响，提现暂缓，冷钱包未受影响，完整复盘待发布。</desc>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="28" x2="1120" y2="647" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#081915"/>
+      <stop offset="0.58" stop-color="#0D2822"/>
+      <stop offset="1" stop-color="#06110F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(936 118) rotate(133) scale(475 416)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16F2B3" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#16F2B3" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="675" rx="28" fill="url(#glow)"/>
+  <path d="M747 93h394M747 126h307M747 159h356" stroke="#45D6AE" stroke-opacity=".13" stroke-width="2"/>
+  <circle cx="1028" cy="512" r="178" fill="#16F2B3" fill-opacity=".07"/>
+  <circle cx="1028" cy="512" r="118" fill="none" stroke="#16F2B3" stroke-opacity=".16" stroke-width="2"/>
+  <circle cx="1028" cy="512" r="54" fill="#16F2B3" fill-opacity=".08" filter="url(#soft)"/>
+
+  <g transform="translate(72 62)">
+    <rect width="231" height="42" rx="21" fill="#16F2B3" fill-opacity=".12" stroke="#16F2B3" stroke-opacity=".5"/>
+    <circle cx="23" cy="21" r="5" fill="#16F2B3"/>
+    <text x="39" y="28" fill="#A8F8DF" font-family="Arial, 'PingFang SC', sans-serif" font-size="17" font-weight="700" letter-spacing="1">SECURITY INCIDENT</text>
+  </g>
+
+  <text x="72" y="170" fill="#FFFFFF" font-family="Arial, 'PingFang SC', sans-serif" font-size="48" font-weight="750">BITGET 热钱包安全事件</text>
+  <text x="72" y="238" fill="#16F2B3" font-family="Arial, sans-serif" font-size="82" font-weight="800" letter-spacing="-3">$351.6M</text>
+  <text x="72" y="278" fill="#A6BEB7" font-family="Arial, 'PingFang SC', sans-serif" font-size="21">平台初步评估的受影响金额</text>
+
+  <g transform="translate(72 336)" font-family="Arial, 'PingFang SC', sans-serif">
+    <g>
+      <rect width="318" height="92" rx="16" fill="#FFFFFF" fill-opacity=".055" stroke="#FFFFFF" stroke-opacity=".12"/>
+      <circle cx="34" cy="31" r="10" fill="#FFB84D"/>
+      <text x="57" y="38" fill="#FFFFFF" font-size="22" font-weight="700">提现暂时关闭</text>
+      <text x="24" y="70" fill="#96AAA4" font-size="16">等待安全核查完成</text>
+    </g>
+    <g transform="translate(338)">
+      <rect width="318" height="92" rx="16" fill="#FFFFFF" fill-opacity=".055" stroke="#FFFFFF" stroke-opacity=".12"/>
+      <circle cx="34" cy="31" r="10" fill="#16F2B3"/>
+      <text x="57" y="38" fill="#FFFFFF" font-size="22" font-weight="700">冷钱包未受影响</text>
+      <text x="24" y="70" fill="#96AAA4" font-size="16">官方确认的当前状态</text>
+    </g>
+    <g transform="translate(0 112)">
+      <rect width="318" height="92" rx="16" fill="#FFFFFF" fill-opacity=".055" stroke="#FFFFFF" stroke-opacity=".12"/>
+      <circle cx="34" cy="31" r="10" fill="#16F2B3"/>
+      <text x="57" y="38" fill="#FFFFFF" font-size="22" font-weight="700">保护基金逾 $464M</text>
+      <text x="24" y="70" fill="#96AAA4" font-size="16">平台称可覆盖本次损失</text>
+    </g>
+    <g transform="translate(338 112)">
+      <rect width="318" height="92" rx="16" fill="#FFFFFF" fill-opacity=".055" stroke="#FFFFFF" stroke-opacity=".12"/>
+      <circle cx="34" cy="31" r="10" fill="#FF6B6B"/>
+      <text x="57" y="38" fill="#FFFFFF" font-size="22" font-weight="700">完整复盘待发布</text>
+      <text x="24" y="70" fill="#96AAA4" font-size="16">根因与整改仍需验证</text>
+    </g>
+  </g>
+
+  <g transform="translate(790 252)" font-family="Arial, 'PingFang SC', sans-serif">
+    <path d="M105 0l105 38v79c0 69-43 120-105 151C43 237 0 186 0 117V38L105 0z" fill="#16F2B3" fill-opacity=".08" stroke="#16F2B3" stroke-opacity=".4" stroke-width="2"/>
+    <path d="M72 122l25 25 49-58" fill="none" stroke="#16F2B3" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="105" y="310" fill="#FFFFFF" font-size="22" font-weight="700" text-anchor="middle">02:31 UTC+8</text>
+    <text x="105" y="339" fill="#96AAA4" font-size="16" text-anchor="middle">检测到未授权转账</text>
+  </g>
+
+  <line x1="72" y1="608" x2="1128" y2="608" stroke="#FFFFFF" stroke-opacity=".12"/>
+  <text x="72" y="640" fill="#718D84" font-family="Arial, 'PingFang SC', sans-serif" font-size="15">信息截至 2026.09.25 13:44 UTC+8 · 数据来源：Bitget 官方安全公告</text>
+  <text x="1128" y="640" fill="#A8F8DF" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="end">2ARAN · WEB3</text>
+</svg>

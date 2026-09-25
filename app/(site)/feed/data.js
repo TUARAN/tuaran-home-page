@@ -82,6 +82,23 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'bitget-hot-wallet-hack-2026-09-25',
+    type: 'image',
+    category: 'web3',
+    title: 'Bitget 被盗约 3.516 亿美元，提现暂时关闭',
+    summary:
+      '北京时间 9 月 25 日 02:31，Bitget 监测到部分热钱包和温钱包发生未授权转账，初步评估涉及约 3.516 亿美元。平台称冷钱包未受影响，用户余额准确，损失在逾 4.64 亿美元的用户保护基金覆盖范围内；充值与交易继续运行，提现在安全核查完成前暂停。\n\nBitget CEO Gracy Chen 随后表示，当前调查已排除私钥泄露，攻击者侵入钱包服务的核心后端，以伪造转账数据触发授权流程。完整根因与整改报告尚未发布。接下来需要关注提现恢复时间、保护基金如何实际赔付，以及事故报告能否给出可验证的攻击路径。',
+    tags: ['Bitget', '交易所安全', '热钱包', '黑客攻击', '用户保护基金', 'Web3'],
+    date: '2026-09-25',
+    time: '13:44',
+    src: '/feed/bitget-hot-wallet-hack-2026-09-25.png',
+    aspect: '16/9',
+    source: {
+      label: 'Bitget 安全公告',
+      href: 'https://www.bitget.com/zh-CN/support/articles/12560603896024',
+    },
+  },
+  {
     id: 'stonkfly-fruit-fly-crypto',
     type: 'image',
     category: 'web3',

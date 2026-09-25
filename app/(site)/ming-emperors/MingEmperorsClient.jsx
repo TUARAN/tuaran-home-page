@@ -7,7 +7,6 @@ import {
   IconArrowUpRight,
   IconBook2,
   IconCheck,
-  IconChevronDown,
   IconCrown,
   IconExternalLink,
   IconFilter,
@@ -27,6 +26,13 @@ import styles from './ming-emperors.module.css'
 const SHARE_URL = 'https://2aran.com/ming-emperors'
 const DEFAULT_COMPARE = ['hongwu', 'yongle', 'wanli', 'chongzhen']
 const MAX_COMPARE = 4
+const SECTION_LINKS = [
+  { id: 'timeline', label: '朝代脉搏' },
+  { id: 'emperors', label: '十六帝档案' },
+  { id: 'compare', label: '横向对比' },
+  { id: 'legends', label: '史实与传闻' },
+  { id: 'sources', label: '资料来源' },
+]
 
 const LEGEND_TONES = {
   '有据争议': 'amber',
@@ -83,58 +89,45 @@ function ScoreBars({ scores }) {
   )
 }
 
-function EmperorCard({ emperor, active, selected, onOpen, onCompare }) {
+function EmperorDossier({ emperor, selected, onCompare }) {
   const phase = PHASES.find((item) => item.id === emperor.phase)
+  const years = emperor.years < 1 ? emperor.reign.match(/（(.+)）/)?.[1] || '不足一年' : `${emperor.years} 年`
   return (
-    <article className={`${styles.emperorCard} ${active ? styles.emperorCardActive : ''}`}>
-      <button type="button" className={styles.cardMain} onClick={() => onOpen(emperor.id)} aria-expanded={active}>
-        <div className={styles.cardTopline}>
-          <span>{String(emperor.order).padStart(2, '0')}</span>
-          <span style={{ color: phase.color }}>{phase.label}</span>
+    <article className={styles.dossierBody}>
+      <header className={styles.dossierHead}>
+        <EmperorMark emperor={emperor} />
+        <div>
+          <p style={{ color: phase.color }}>{String(emperor.order).padStart(2, '0')} · {phase.label}</p>
+          <h3>{emperor.era}<small>帝</small></h3>
+          <p>{emperor.temple} · {emperor.name}</p>
+          <p>{emperor.reign} · {years}</p>
         </div>
-        <div className={styles.cardIdentity}>
-          <EmperorMark emperor={emperor} compact />
-          <div>
-            <h3>{emperor.era}<small>帝</small></h3>
-            <p>{emperor.temple} · {emperor.name}</p>
-          </div>
-          <IconChevronDown className={active ? styles.chevronOpen : ''} size={18} />
+      </header>
+      <p className={styles.cardHeadline}>{emperor.headline}</p>
+      <p className={styles.detailSummary}>{emperor.summary}</p>
+      <ScoreBars scores={emperor.scores} />
+      <dl className={styles.proConGrid}>
+        <div><dt>留下什么</dt><dd>{emperor.achievement}</dd></div>
+        <div><dt>付出什么</dt><dd>{emperor.cost}</dd></div>
+      </dl>
+      <div className={styles.factBox}>
+        <IconCheck size={17} />
+        <div><strong>可核对事实</strong><p>{emperor.fact}</p></div>
+      </div>
+      <div className={`${styles.legendBox} ${styles[`legend${LEGEND_TONES[emperor.legend.level] || 'amber'}`]}`}>
+        <IconSparkles size={17} />
+        <div>
+          <span>{emperor.legend.level}</span>
+          <strong>{emperor.legend.title}</strong>
+          <p>{emperor.legend.text}</p>
         </div>
-        <p className={styles.cardHeadline}>{emperor.headline}</p>
-        <div className={styles.cardMeta}>
-          <span>{emperor.reign}</span>
-          <span>{emperor.years < 1 ? emperor.reign.match(/（(.+)）/)?.[1] || '不足一年' : `${emperor.years} 年`}</span>
-        </div>
-      </button>
-
-      {active ? (
-        <div className={styles.cardDetail}>
-          <p className={styles.detailSummary}>{emperor.summary}</p>
-          <ScoreBars scores={emperor.scores} />
-          <dl className={styles.proConGrid}>
-            <div><dt>留下什么</dt><dd>{emperor.achievement}</dd></div>
-            <div><dt>付出什么</dt><dd>{emperor.cost}</dd></div>
-          </dl>
-          <div className={styles.factBox}>
-            <IconCheck size={17} />
-            <div><strong>可核对事实</strong><p>{emperor.fact}</p></div>
-          </div>
-          <div className={`${styles.legendBox} ${styles[`legend${LEGEND_TONES[emperor.legend.level] || 'amber'}`]}`}>
-            <IconSparkles size={17} />
-            <div>
-              <span>{emperor.legend.level}</span>
-              <strong>{emperor.legend.title}</strong>
-              <p>{emperor.legend.text}</p>
-            </div>
-          </div>
-          <div className={styles.detailActions}>
-            <button type="button" onClick={() => onCompare(emperor.id)} disabled={!selected && false}>
-              {selected ? <><IconX size={15} />移出对比</> : <><IconScale size={15} />加入对比</>}
-            </button>
-            <a href={emperor.source} target="_blank" rel="noreferrer">读《明史》本纪 <IconArrowUpRight size={14} /></a>
-          </div>
-        </div>
-      ) : null}
+      </div>
+      <div className={styles.detailActions}>
+        <button type="button" onClick={() => onCompare(emperor.id)}>
+          {selected ? <><IconX size={15} />移出对比</> : <><IconScale size={15} />加入对比</>}
+        </button>
+        <a href={emperor.source} target="_blank" rel="noreferrer">读《明史》本纪 <IconArrowUpRight size={14} /></a>
+      </div>
     </article>
   )
 }
@@ -144,6 +137,7 @@ export default function MingEmperorsClient() {
   const [query, setQuery] = useState('')
   const [activeId, setActiveId] = useState('hongwu')
   const [compareIds, setCompareIds] = useState(DEFAULT_COMPARE)
+  const [activeSection, setActiveSection] = useState('timeline')
 
   useEffect(() => {
     function resetPageHorizontalOffset() {
@@ -160,6 +154,36 @@ export default function MingEmperorsClient() {
     }
   }, [])
 
+  useEffect(() => {
+    let frame = 0
+
+    function updateActiveSection() {
+      frame = 0
+      const activationLine = Math.min(window.innerHeight * 0.32, 240)
+      let current = SECTION_LINKS[0].id
+
+      SECTION_LINKS.forEach(({ id }) => {
+        const section = document.getElementById(id)
+        if (section && section.getBoundingClientRect().top <= activationLine) current = id
+      })
+
+      setActiveSection(current)
+    }
+
+    function queueUpdate() {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveSection)
+    }
+
+    updateActiveSection()
+    window.addEventListener('scroll', queueUpdate, { passive: true })
+    window.addEventListener('resize', queueUpdate)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', queueUpdate)
+      window.removeEventListener('resize', queueUpdate)
+    }
+  }, [])
+
   const visibleEmperors = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     return EMPERORS.filter((emperor) => {
@@ -171,6 +195,10 @@ export default function MingEmperorsClient() {
   }, [phase, query])
 
   const compared = compareIds.map((id) => EMPERORS.find((item) => item.id === id)).filter(Boolean)
+  const selected = visibleEmperors.find((emperor) => emperor.id === activeId) || visibleEmperors[0] || null
+  const directory = PHASES
+    .map((item) => ({ ...item, emperors: visibleEmperors.filter((emperor) => emperor.phase === item.id) }))
+    .filter((item) => item.emperors.length)
 
   function toggleCompare(id) {
     setCompareIds((current) => {
@@ -214,11 +242,20 @@ export default function MingEmperorsClient() {
       </section>
 
       <nav className={styles.sectionNav} aria-label="页面章节">
-        <a href="#timeline">朝代脉搏</a>
-        <a href="#emperors">十六帝档案</a>
-        <a href="#compare">横向对比</a>
-        <a href="#legends">史实与传闻</a>
-        <a href="#sources">资料来源</a>
+        {SECTION_LINKS.map(({ id, label }) => {
+          const active = activeSection === id
+          return (
+            <a
+              key={id}
+              href={`#${id}`}
+              className={`${styles.sectionNavLink} ${active ? styles.sectionNavLinkActive : ''}`}
+              aria-current={active ? 'location' : undefined}
+              onClick={() => setActiveSection(id)}
+            >
+              {label}
+            </a>
+          )
+        })}
       </nav>
 
       <section id="timeline" className={`${styles.section} ${styles.timelineSection}`}>
@@ -273,36 +310,52 @@ export default function MingEmperorsClient() {
       <section id="emperors" className={`${styles.section} ${styles.emperorSection}`}>
         <div className={styles.sectionHeading}>
           <div><span>02 / EMPERORS</span><h2>十六份皇权档案</h2></div>
-          <p>评分是便于比较的编辑性刻度，不是历史学定论。点击卡片查看史实、代价与一则需要辨别的传闻。</p>
+          <p>评分是便于比较的编辑性刻度，不是历史学定论。左边点年号，右边看史实、代价和一则需要辨别的传闻。</p>
         </div>
 
-        <div className={styles.filters}>
-          <label className={styles.searchBox}>
-            <IconSearch size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜年号、人名、事件…" />
-            {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={15} /></button> : null}
-          </label>
-          <div className={styles.phaseFilters} aria-label="按历史阶段筛选">
-            <span><IconFilter size={14} /> 阶段</span>
-            <button type="button" className={phase === 'all' ? styles.filterActive : ''} onClick={() => setPhase('all')}>全部</button>
-            {PHASES.map((item) => <button type="button" key={item.id} className={phase === item.id ? styles.filterActive : ''} onClick={() => setPhase(item.id)}>{item.label}</button>)}
+        <div className={styles.reader}>
+          <aside className={styles.toc} aria-label="皇帝目录">
+            <label className={styles.searchBox}>
+              <IconSearch size={17} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜年号、人名、事件…" />
+              {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={15} /></button> : null}
+            </label>
+            <div className={styles.phaseFilters} aria-label="按历史阶段筛选">
+              <span><IconFilter size={14} /> 阶段</span>
+              <button type="button" className={phase === 'all' ? styles.filterActive : ''} onClick={() => setPhase('all')}>全部</button>
+              {PHASES.map((item) => <button type="button" key={item.id} className={phase === item.id ? styles.filterActive : ''} onClick={() => setPhase(item.id)}>{item.label}</button>)}
+            </div>
+            <p className={styles.resultNote}>{visibleEmperors.length} 位 · 已选 {compareIds.length} 位对比</p>
+            <div className={styles.tocList}>
+              {directory.map((group) => (
+                <div key={group.id}>
+                  <h3 style={{ color: group.color }}>{group.label}</h3>
+                  {group.emperors.map((emperor) => (
+                    <button
+                      type="button"
+                      key={emperor.id}
+                      className={selected?.id === emperor.id ? styles.tocItemActive : styles.tocItem}
+                      aria-current={selected?.id === emperor.id ? 'true' : undefined}
+                      onClick={() => setActiveId(emperor.id)}
+                    >
+                      <small>{String(emperor.order).padStart(2, '0')}</small>
+                      <strong>{emperor.era}</strong>
+                      <span>{emperor.name}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {!visibleEmperors.length ? <div className={styles.emptyState}>没有匹配的皇帝。试试“土木堡”“海贸”或“万历”。</div> : null}
+            </div>
+          </aside>
+          <div className={styles.dossier}>
+            {selected ? (
+              <EmperorDossier emperor={selected} selected={compareIds.includes(selected.id)} onCompare={toggleCompare} />
+            ) : (
+              <div className={styles.emptyState}>从左边选一位皇帝。</div>
+            )}
           </div>
         </div>
-
-        <div className={styles.resultNote}>{visibleEmperors.length} 位皇帝 · 已选 {compareIds.length} 位对比</div>
-        <div className={styles.emperorGrid}>
-          {visibleEmperors.map((emperor) => (
-            <EmperorCard
-              key={emperor.id}
-              emperor={emperor}
-              active={activeId === emperor.id}
-              selected={compareIds.includes(emperor.id)}
-              onOpen={(id) => setActiveId((current) => current === id ? null : id)}
-              onCompare={toggleCompare}
-            />
-          ))}
-        </div>
-        {!visibleEmperors.length ? <div className={styles.emptyState}>没有匹配的皇帝。试试“土木堡”“海贸”或“万历”。</div> : null}
       </section>
 
       <section id="compare" className={`${styles.section} ${styles.compareSection}`}>

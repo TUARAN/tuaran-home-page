@@ -92,7 +92,7 @@ export const FEED_ITEMS = [
     date: '2026-09-25',
     time: '13:44',
     src: '/feed/bitget-hot-wallet-hack-2026-09-25.png',
-    aspect: '16/9',
+    aspect: '4/3',
     source: {
       label: 'Bitget 安全公告',
       href: 'https://www.bitget.com/zh-CN/support/articles/12560603896024',

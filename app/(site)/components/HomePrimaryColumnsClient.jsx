@@ -93,7 +93,7 @@ function HomeInspirations({ items }) {
           })}
         </nav>
       </div>
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0">
         <div
           id="home-inspiration-list"
           role="tabpanel"
@@ -120,7 +120,7 @@ function HomeInspirations({ items }) {
 export default function HomePrimaryColumnsClient({ catalog, inspirations }) {
   return (
     <>
-      <div className="min-w-0">
+      <div className="min-w-0 self-start">
         <HomeFeaturedReadingClient catalog={catalog} />
       </div>
       <HomeInspirations items={inspirations} />

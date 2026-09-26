@@ -58,7 +58,7 @@ export default function UsStockBook({ detail = false, linked = false }) {
         ))}
       </ul>
       <p className="mt-2 text-xs leading-5 text-[var(--site-faint)]">
-        {book.asOf} {book.venueLabel} USDT 永续，{book.marginMode}。每段宽度是该笔名义占五笔毛名义的比例。毛名义 {formatUsd(book.gross)}，保证金 {formatUsd(book.margin)}，浮动收益 <span className={pnlClass(book.pnl)}>{formatUsd(book.pnl)}</span>。Twilio 是空头。
+        {book.asOf} USDT 永续，{book.marginMode}。毛名义 {formatUsd(book.gross)}，保证金 {formatUsd(book.margin)}，浮动收益 <span className={pnlClass(book.pnl)}>{formatUsd(book.pnl)}</span>。Twilio 是空头。
       </p>
       {detail ? <PositionTable book={book} /> : null}
     </div>
@@ -68,10 +68,10 @@ export default function UsStockBook({ detail = false, linked = false }) {
 function PositionTable({ book }) {
   return (
     <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-      <table className="min-w-[920px] w-full border-collapse text-left text-xs">
+      <table className="min-w-[1100px] w-full border-collapse text-left text-xs">
         <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
           <tr>
-            {['合约', '方向', '杠杆', '数量', '标记价', '开仓均价', '名义', '占比', '保证金', '浮动收益', '强平价'].map((label) => (
+            {['合约', '方向', '杠杆', '数量', '标记价', '开仓均价', '名义', '占比', '保证金', '浮动收益', '强平价', '备注'].map((label) => (
               <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>
             ))}
           </tr>
@@ -90,6 +90,7 @@ function PositionTable({ book }) {
               <td className="px-3 py-2">{formatUsd(row.margin)}</td>
               <td className={`whitespace-nowrap px-3 py-2 ${pnlClass(row.pnl)}`}>{formatUsd(row.pnl)} ({row.pnlPercent > 0 ? '+' : ''}{row.pnlPercent.toFixed(2)}%)</td>
               <td className="px-3 py-2">{formatUsd(row.liquidation)}</td>
+              <td className="max-w-[22rem] px-3 py-2 font-sans text-[11px] leading-5 text-[var(--site-muted)]">{row.note || ''}</td>
             </tr>
           ))}
         </tbody>

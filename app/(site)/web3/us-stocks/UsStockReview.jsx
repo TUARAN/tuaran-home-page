@@ -37,7 +37,7 @@ export default function UsStockReview({ compact = false }) {
         <p className="font-mono text-sm text-[var(--site-ink)]">{latest.tier} · {formatUsd(latest.amount)}</p>
       </div>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--site-muted)]">
-        {review.goal.from} 是 {formatUsd(review.start.floor)} 到 {formatUsd(review.start.ceiling - 1)}，{review.goal.to} 是 {formatUsd(review.target.floor)} 到 {formatUsd(review.target.ceiling - 1)}。这一笔按{baseLabel(latest.assetBase)}分档。到 {review.goal.to} 门槛还要 {progress.multiple.toFixed(2)} 倍。
+        {review.goal.from} 是 {formatUsd(review.start.floor)} 到 {formatUsd(review.start.ceiling - 1)}，{review.goal.to} 是 {formatUsd(review.target.floor)} 到 {formatUsd(review.target.ceiling - 1)}。按{baseLabel(latest.assetBase)}分档。到 {review.goal.to} 门槛还要 {progress.multiple.toFixed(2)} 倍。
       </p>
       <div className="mt-4" aria-label={`从 ${review.goal.from} 到 ${review.goal.to} 的对数进度`}>
         <div className="h-2 overflow-hidden rounded-full bg-[var(--site-line)]">
@@ -53,7 +53,7 @@ export default function UsStockReview({ compact = false }) {
         <table className="w-full min-w-[720px] border-collapse text-left text-xs">
           <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
             <tr>
-              {['日期', '场所', '口径', '资产', '档位', '毛名义', '保证金', '浮动收益', '笔数'].map((label) => (
+              {['日期', '模式', '口径', '资产', '档位', '毛名义', '保证金', '浮动收益', '笔数'].map((label) => (
                 <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>
               ))}
             </tr>
@@ -62,7 +62,7 @@ export default function UsStockReview({ compact = false }) {
             {[...review.books].reverse().map((entry) => (
               <tr key={entry.snapshot.id} className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
                 <td className="whitespace-nowrap px-3 py-2">{entry.snapshot.asOf} {entry.snapshot.time}</td>
-                <td className="px-3 py-2">{entry.snapshot.venueLabel}</td>
+                <td className="px-3 py-2">{entry.snapshot.marginMode}</td>
                 <td className="px-3 py-2">{baseLabel(entry.assetBase)}</td>
                 <td className="px-3 py-2">{formatUsd(entry.amount)}</td>
                 <td className="px-3 py-2">{entry.tier}</td>
@@ -99,9 +99,7 @@ export default function UsStockReview({ compact = false }) {
             </tbody>
           </table>
         </div>
-      ) : (
-        <p className="mt-3 text-xs leading-5 text-[var(--site-faint)]">下一笔快照追加后，这里对照数量、方向和名义。</p>
-      )}
+      ) : null}
     </section>
   )
 }

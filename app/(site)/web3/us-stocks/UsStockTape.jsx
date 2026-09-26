@@ -266,7 +266,7 @@ export default function UsStockTape() {
       </section>
 
       <p className="mt-4 text-xs leading-6 text-[var(--site-faint)]">
-        日线来自 Nasdaq 公开行情。组合指数起点为 100，权重用 2026-09-26 仓位页的毛名义，Twilio 按空头记负权重；某只还没有前一交易日收盘时，该笔当日不计入。SpaceX 使用纳斯达克代码 SPCX。K 线由 TradingView Lightweight Charts 绘制。仓位数字按当日币安逐仓页面抄录。公开记录不构成开户、下单或投资建议。
+        日线来自 Nasdaq 公开行情。组合指数起点为 100，权重用 2026-09-26 仓位的毛名义，Twilio 按空头记负权重；某只还没有前一交易日收盘时，该笔当日不计入。SpaceX 使用纳斯达克代码 SPCX。K 线由 TradingView Lightweight Charts 绘制。仓位数字按当日逐仓账户抄录。公开记录不构成开户、下单或投资建议。
       </p>
     </main>
   )

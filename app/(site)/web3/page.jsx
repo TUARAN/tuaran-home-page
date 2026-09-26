@@ -310,9 +310,6 @@ export default async function Web3Page({ searchParams }) {
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--site-faint)]">US stocks</p>
             <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--site-ink)]">美股走势</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--site-muted)]">
-              下面每一段的宽度是最新一笔仓位快照里的毛名义占比。资产档位从 A4 往 A6 记，点进去看持仓和历次快照。
-            </p>
           </div>
           <Link href="/web3/us-stocks" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--site-ink)] no-underline hover:underline">
             打开走势图 <IconArrowUpRight size={15} />

@@ -8,6 +8,7 @@ const GROUPS = [
     title: '内容分类',
     items: [
       { id: 'content', label: '内容概览' },
+      { id: 'us-stocks', label: '美股走势' },
       { id: 'featured', label: '精选阅读' },
       { id: 'a-share', label: 'A 股调研' },
       { id: 'crypto', label: '加密资产' },

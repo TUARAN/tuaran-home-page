@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 196,
-    "redirects": 16,
-    "private": 54,
-    "registeredStatic": 92,
-    "indexable": 106,
-    "canonical": 121,
-    "openGraph": 61,
-    "jsonLd": 39,
-    "errors": 1,
-    "warnings": 129
+    "routes": 203,
+    "redirects": 15,
+    "private": 55,
+    "registeredStatic": 96,
+    "indexable": 112,
+    "canonical": 128,
+    "openGraph": 67,
+    "jsonLd": 44,
+    "errors": 3,
+    "warnings": 132
   },
   "routes": [
     {
@@ -246,8 +246,7 @@
     {
       "path": "/admin/articles/research-import",
       "file": "app/(admin)/admin/articles/research-import/page.jsx",
-      "kind": "redirect",
-      "redirect": "/admin/articles?panel=import",
+      "kind": "private",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1863,6 +1862,22 @@
       }
     },
     {
+      "path": "/ming-emperors",
+      "file": "app/(site)/ming-emperors/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/network-access-guide",
       "file": "app/(site)/network-access-guide/page.jsx",
       "kind": "rich-page",
@@ -2888,6 +2903,26 @@
       }
     },
     {
+      "path": "/tapeout-xiangqi",
+      "file": "app/(site)/tapeout-xiangqi/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tapeout-xiangqi"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://2aran.com/tapeout-xiangqi"
+        ]
+      }
+    },
+    {
       "path": "/tools",
       "file": "app/(site)/tools/page.jsx",
       "kind": "static",
@@ -3122,6 +3157,26 @@
       }
     },
     {
+      "path": "/tools/workbuddy-desktop-pet/hardware-roadmap",
+      "file": "app/(site)/tools/workbuddy-desktop-pet/hardware-roadmap/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/workbuddy-desktop-pet/hardware-roadmap"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com"
+        ]
+      }
+    },
+    {
       "path": "/traffic",
       "file": "app/(site)/traffic/page.jsx",
       "kind": "static",
@@ -3189,6 +3244,45 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/web3",
+      "file": "app/(site)/web3/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/web3"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/web3/us-stocks",
+      "file": "app/(site)/web3/us-stocks/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/web3/us-stocks"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/web3/us-stocks",
+          "https://2aran.com/web3/us-stocks"
+        ]
       }
     },
     {
@@ -3294,6 +3388,22 @@
       }
     },
     {
+      "path": "/x-automation-retrospective",
+      "file": "app/(site)/x-automation-retrospective/page.jsx",
+      "kind": "rich-page",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/x-mutual-aid-circle",
       "file": "app/(site)/x-mutual-aid-circle/page.jsx",
       "kind": "rich-page",
@@ -3344,6 +3454,22 @@
     {
       "path": "/zhang-juzheng-book",
       "file": "app/(site)/zhang-juzheng-book/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/zhuangyuan",
+      "file": "app/(site)/zhuangyuan/page.jsx",
       "kind": "rich-page",
       "registered": false,
       "indexable": true,
@@ -3815,6 +3941,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/tapeout-xiangqi",
+      "rule": "jsonld.missing",
+      "route": "/tapeout-xiangqi",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/tools",
       "rule": "jsonld.missing",
       "route": "/tools",
@@ -3892,6 +4025,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/web3",
+      "rule": "jsonld.missing",
+      "route": "/web3",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/workbuddy-publish-center",
       "rule": "jsonld.missing",
       "route": "/workbuddy-publish-center",
@@ -3911,6 +4051,20 @@
       "route": "/writing-monetization-2026",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "noindex.missing:/x-automation-retrospective",
+      "rule": "noindex.missing",
+      "route": "/x-automation-retrospective",
+      "severity": "error",
+      "message": "注册表要求 noindex，但页面未显式声明 index: false。"
+    },
+    {
+      "id": "og.canonical-conflict:/tools/workbuddy-desktop-pet/hardware-roadmap",
+      "rule": "og.canonical-conflict",
+      "route": "/tools/workbuddy-desktop-pet/hardware-roadmap",
+      "severity": "error",
+      "message": "Open Graph URL (https://2aran.com) 与 canonical (/tools/workbuddy-desktop-pet/hardware-roadmap) 不一致。"
     },
     {
       "id": "og.missing:/",
@@ -4238,6 +4392,13 @@
       "id": "og.missing:/tools/syncblog-publisher",
       "rule": "og.missing",
       "route": "/tools/syncblog-publisher",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
+      "id": "og.missing:/web3",
+      "rule": "og.missing",
+      "route": "/web3",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },

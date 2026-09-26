@@ -66,6 +66,7 @@ const PRODUCT_SCREENSHOTS = {
   gptplus: '/images/works/gptplus.webp',
   poemcn: '/images/works/poemcn.webp',
   workbuddy: '/images/works/workbuddy.webp',
+  'claude-code-unpacked': '/images/works/claude-code-unpacked.webp',
 }
 
 const CONFIG = {
@@ -136,6 +137,7 @@ function buildWorkItems() {
     ...item,
     category: 'work',
     categoryLabel: '作品与实验',
+    coverImage: PRODUCT_SCREENSHOTS[item.id],
     coverLabel: item.role || '工程作品',
     meta: ['作品与实验', item.role].filter(Boolean),
     badgeLabel: WORK_STATUS_META[item.status] || item.status,

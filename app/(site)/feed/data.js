@@ -91,7 +91,7 @@ export const FEED_ITEMS = [
     tags: ['Bitget', '交易所安全', '热钱包', '黑客攻击', '用户保护基金', 'Web3'],
     date: '2026-09-25',
     time: '13:44',
-    src: '/feed/bitget-hot-wallet-hack-2026-09-25.png',
+    src: '/feed/bitget-security-notice-2026-09-25.png',
     aspect: '4/3',
     source: {
       label: 'Bitget 安全公告',

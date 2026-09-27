@@ -17,7 +17,7 @@ test('H5 tab bar covers the five high-frequency destinations', () => {
   assert.match(tabsBlock, /key: 'home'[\s\S]*href: '\/'/)
   assert.match(tabsBlock, /key: 'content'[\s\S]*href: '\/articles'/)
   assert.match(tabsBlock, /key: 'tools'[\s\S]*href: '\/tools'/)
-  assert.match(tabsBlock, /key: 'community'[\s\S]*href: '\/community'/)
+  assert.match(tabsBlock, /key: 'community'[\s\S]*href: '\/circles'/)
   assert.match(tabsBlock, /key: 'me'[\s\S]*href: '\/account'/)
   assert.match(tabsBlock, /systemsChannel/)
   const tabKeys = [...tabsBlock.matchAll(/key: '(home|content|tools|community|me)'/g)].map((match) => match[1])

@@ -2,32 +2,20 @@
 
 import Link from 'next/link'
 import {
-  IconArrowRight,
   IconChevronRight,
   IconMessageCircle2,
-  IconQrcode,
-  IconSparkles,
-  IconX,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/communityTopics'
 import { commentProviderLabel } from '../../../lib/userDisplayName'
 import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
 import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
-import CommunityMembershipCard from '../components/CommunityMembershipCard'
-
-const TOPIC_ACCENTS = {
-  'x-mutual-aid-circle': '#1d9bf0',
-  'xiaohongshu-creator-circle': '#e94b68',
-  'juejin-creator-circle': '#1677ff',
-}
 
 const FEED_FILTERS = [
   { id: 'all', label: '全部' },
   { id: 'comment', label: '文章评论' },
-  { id: 'message', label: '圈子留言' },
+  { id: 'message', label: '公开留言' },
 ]
 
 function formatTime(ts) {
@@ -49,30 +37,6 @@ function Stat({ value, label }) {
   )
 }
 
-function TopicCircleCard({ topic, index }) {
-  const accent = TOPIC_ACCENTS[topic.id] || topic.accent || 'var(--site-accent)'
-  return (
-    <Link
-      href={topic.href}
-      className="community-topic-card no-underline hover:no-underline"
-      style={{ '--topic-accent': accent }}
-    >
-      <div className="community-topic-card-head">
-        <span className="community-topic-number">0{index + 1}</span>
-        <span className="community-topic-status">{topic.tag}</span>
-      </div>
-      <div>
-        <p className="community-topic-platform">{topic.eyebrow}</p>
-        <h3>{topic.label}</h3>
-        <p className="community-topic-desc">{topic.desc}</p>
-      </div>
-      <span className="community-topic-action">
-        进入圈子 <IconArrowRight size={16} aria-hidden="true" />
-      </span>
-    </Link>
-  )
-}
-
 function FeedItem({ item }) {
   const isMessage = item.type === 'message'
   const content = (
@@ -85,7 +49,7 @@ function FeedItem({ item }) {
       <div className="min-w-0 flex-1">
         <div className="community-feed-meta">
           <strong>{item.userName || '用户'}</strong>
-          <span>{isMessage ? '在圈子留言' : commentProviderLabel(item.userProvider)}</span>
+          <span>{isMessage ? '在讨论中心留言' : commentProviderLabel(item.userProvider)}</span>
           <span aria-hidden="true">·</span>
           <time>{formatTime(item.createdAt)}</time>
         </div>
@@ -105,48 +69,9 @@ function FeedItem({ item }) {
   return <Link href={item.href} className="block no-underline hover:no-underline">{content}</Link>
 }
 
-function JoinPanel({ open, onClose }) {
-  useEffect(() => {
-    if (!open) return undefined
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose, open])
-
-  if (!open) return null
-
-  return (
-    <div className="community-join-backdrop" role="presentation" onMouseDown={onClose}>
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="join-panel-title"
-        className="community-join-panel"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="community-join-head">
-          <div>
-            <p className="community-kicker">JOIN THE CIRCLE</p>
-            <h2 id="join-panel-title">付费加入圈子</h2>
-            <p>查看入圈费用、付款方式和人工核对流程。</p>
-          </div>
-          <button type="button" onClick={onClose} className="community-icon-button" aria-label="关闭加入面板">
-            <IconX size={19} aria-hidden="true" />
-          </button>
-        </div>
-
-        <CommunityMembershipCard compact />
-      </section>
-    </div>
-  )
-}
-
 export default function DiscussionHubClient() {
   const [data, setData] = useState({ status: 'loading', items: [], messages: [], threads: [], stats: null })
   const [filter, setFilter] = useState('all')
-  const [joinOpen, setJoinOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -197,115 +122,80 @@ export default function DiscussionHubClient() {
   const loading = data.status === 'loading'
 
   return (
-    <>
-      <div className="community-page">
-        <header className="community-hero">
-          <div className="community-hero-copy">
-            <p className="community-kicker"><span /> COMMUNITY</p>
-            <h1>圈子</h1>
-            <p className="community-hero-lead">找到同路的人，让一次留言变成持续的交流。</p>
-            <div className="community-hero-actions">
-              <a href="#topic-circles" className="community-primary-button">
-                浏览圈子 <IconArrowRight size={17} aria-hidden="true" />
-              </a>
-              <button type="button" className="community-secondary-button" onClick={() => setJoinOpen(true)}>
-                <IconQrcode size={17} aria-hidden="true" /> ¥99 / 年加入
-              </button>
-            </div>
+    <div className="community-page">
+      <header className="community-hero">
+        <div className="community-hero-copy">
+          <p className="community-kicker"><span /> DISCUSSIONS</p>
+          <h1>讨论中心</h1>
+          <p className="community-hero-lead">查看最新留言和文章评论，从一条具体的回复开始交流。</p>
+          <div className="community-hero-actions">
+            <a href="#community-feed-title" className="community-primary-button">
+              查看最新讨论 <IconChevronRight size={17} aria-hidden="true" />
+            </a>
           </div>
-          <div className="community-hero-side">
-            <div className="community-stats">
-              <Stat value={stats.comments} label="公开评论" />
-              <Stat value={stats.weekComments} label="近 7 天" />
-              <Stat value={stats.participants} label="参与者" />
-            </div>
+        </div>
+        <div className="community-hero-side">
+          <div className="community-stats">
+            <Stat value={stats.comments} label="公开评论" />
+            <Stat value={stats.weekComments} label="近 7 天" />
+            <Stat value={stats.participants} label="参与者" />
           </div>
-        </header>
+        </div>
+      </header>
 
-        <section id="topic-circles" className="community-section scroll-mt-24" aria-labelledby="topic-circles-title">
-          <div className="community-section-head">
-            <div>
-              <p className="community-kicker">TOPIC CIRCLES</p>
-              <h2 id="topic-circles-title">从共同话题开始</h2>
-            </div>
-            <p>每个圈子都有明确的主题和参与方式，先看看哪个更像你。</p>
+      <section id="message" className="community-section scroll-mt-24" aria-labelledby="community-feed-title">
+        <div className="community-section-head community-feed-heading">
+          <div>
+            <p className="community-kicker">NOW TALKING</p>
+            <h2 id="community-feed-title">大家最近在聊</h2>
           </div>
-          <div className="community-topic-grid">
-            {DISCUSSION_COMMUNITY_TOPICS.map((topic, index) => (
-              <TopicCircleCard key={topic.id} topic={topic} index={index} />
+          <div className="community-feed-filters" role="tablist" aria-label="筛选讨论动态">
+            {FEED_FILTERS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={filter === item.id}
+                className={filter === item.id ? 'is-active' : ''}
+                onClick={() => setFilter(item.id)}
+              >
+                {item.label}
+              </button>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="community-section" aria-label="付费入圈">
-          <CommunityMembershipCard id="join" />
-        </section>
-
-        <section className="community-section" aria-labelledby="community-feed-title">
-          <div className="community-section-head community-feed-heading">
-            <div>
-              <p className="community-kicker">NOW TALKING</p>
-              <h2 id="community-feed-title">大家最近在聊</h2>
-            </div>
-            <div className="community-feed-filters" role="tablist" aria-label="筛选圈子动态">
-              {FEED_FILTERS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={filter === item.id}
-                  className={filter === item.id ? 'is-active' : ''}
-                  onClick={() => setFilter(item.id)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+        <div className="community-content-grid">
+          <div className="community-feed" aria-live="polite">
+            {loading ? (
+              <div className="community-empty">正在收集最近的讨论…</div>
+            ) : feed.length ? (
+              feed.map((item) => <FeedItem key={`${item.type}-${item.id}`} item={item} />)
+            ) : (
+              <div className="community-empty">这个分类里还没有动态。可以先留下第一句话。</div>
+            )}
           </div>
 
-          <div className="community-content-grid">
-            <div className="community-feed" aria-live="polite">
-              {loading ? (
-                <div className="community-empty">正在收集最近的讨论…</div>
-              ) : feed.length ? (
-                feed.map((item) => <FeedItem key={`${item.type}-${item.id}`} item={item} />)
-              ) : (
-                <div className="community-empty">这个分类里还没有动态。可以先留下第一句话。</div>
-              )}
-            </div>
+          <aside className="community-rail">
+            <StompPanel onPublished={handlePublished} />
 
-            <aside className="community-rail">
-              <StompPanel onPublished={handlePublished} />
-
-              {data.threads.length ? (
-                <section className="community-thread-panel">
-                  <p className="community-kicker">ACTIVE THREADS</p>
-                  <h3>正在升温</h3>
-                  <div>
-                    {data.threads.slice(0, 4).map((thread) => (
-                      <Link key={thread.articleKey} href={thread.href || '/community'} className="community-thread-link no-underline hover:no-underline">
-                        <span className="line-clamp-2">{thread.title}</span>
-                        <strong>{thread.comments}</strong>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-
-              <button type="button" className="community-join-card" onClick={() => setJoinOpen(true)}>
-                <span><IconSparkles size={18} aria-hidden="true" /></span>
+            {data.threads.length ? (
+              <section className="community-thread-panel">
+                <p className="community-kicker">ACTIVE THREADS</p>
+                <h3>正在升温</h3>
                 <div>
-                  <strong>付费加入微信群聊</strong>
-                  <p>¥99 / 年，付款核对后按主题拉群。</p>
+                  {data.threads.slice(0, 4).map((thread) => (
+                    <Link key={thread.articleKey} href={thread.href || '/community'} className="community-thread-link no-underline hover:no-underline">
+                      <span className="line-clamp-2">{thread.title}</span>
+                      <strong>{thread.comments}</strong>
+                    </Link>
+                  ))}
                 </div>
-                <IconChevronRight size={18} aria-hidden="true" />
-              </button>
-            </aside>
-          </div>
-        </section>
-      </div>
-
-      <JoinPanel open={joinOpen} onClose={() => setJoinOpen(false)} />
-    </>
+              </section>
+            ) : null}
+          </aside>
+        </div>
+      </section>
+    </div>
   )
 }

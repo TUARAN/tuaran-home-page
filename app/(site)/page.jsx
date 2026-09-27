@@ -97,7 +97,7 @@ const HOME_EXPLORE_GROUPS = [
     tone: 'collaborate',
     items: [
       { id: 'about', href: '/about', title: '了解作者', titleEn: 'About the author', desc: '经历与长期方向', descEn: 'Background and long-term direction', icon: IconUserCircle },
-      { id: 'community', href: '/community', title: '交友进社群', titleEn: 'Join the community', desc: '认识同行、交流实践', descEn: 'Meet peers and share practice', icon: IconMessages },
+      { id: 'community', href: '/circles', title: '交友进社群', titleEn: 'Join the community', desc: '认识同行、交流实践', descEn: 'Meet peers and share practice', icon: IconMessages },
       { id: 'blogger-alliance', href: 'https://blogger-alliance.cn/', title: '合作推广', titleEn: 'Collaboration', desc: '博主联盟与项目合作', descEn: 'Blogger Alliance and partnerships', icon: IconHeartHandshake, external: true, analyticsId: 'blogger-alliance' },
     ],
   },

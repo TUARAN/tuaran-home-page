@@ -37,7 +37,7 @@ export default function CircleTopicPage({ topic }) {
     <>
       <PageContainer className="py-8 md:py-12">
         <nav className="mb-5 flex items-center gap-2 text-xs text-[var(--site-faint)]" aria-label="面包屑">
-          <Link href="/community" className="no-underline hover:text-[var(--site-ink)]">圈子</Link>
+          <Link href="/circles" className="no-underline hover:text-[var(--site-ink)]">圈子</Link>
           <span aria-hidden="true">/</span>
           <span>{topic.label}</span>
         </nav>
@@ -84,7 +84,7 @@ export default function CircleTopicPage({ topic }) {
               <p className="circle-topic-eyebrow">More circles</p>
               <h2 className="mb-0 mt-1 border-0 p-0 text-xl">其他专题圈子</h2>
             </div>
-            <Link href="/community" className="text-xs font-semibold text-[var(--site-accent-strong)] no-underline">返回圈子首页 →</Link>
+            <Link href="/circles" className="text-xs font-semibold text-[var(--site-accent-strong)] no-underline">返回圈子首页 →</Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {related.map((item) => (

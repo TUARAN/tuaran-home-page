@@ -60,9 +60,15 @@
     },
     {
       "name": "讨论中心",
-      "short_name": "圈子",
+      "short_name": "讨论",
       "url": "/community",
-      "description": "留言、评论与社群入口"
+      "description": "公开留言与文章评论"
+    },
+    {
+      "name": "圈子",
+      "short_name": "圈子",
+      "url": "/circles",
+      "description": "主题介绍与加群方式"
     }
   ]
 }

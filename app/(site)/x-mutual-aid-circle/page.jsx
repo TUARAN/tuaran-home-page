@@ -148,7 +148,7 @@ export default function XMutualAidCirclePage() {
               互动专题
             </Link>
             <span aria-hidden="true">·</span>
-            <Link href="/community" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
+            <Link href="/circles" className="underline underline-offset-4 opacity-80 hover:text-[#e7e9ea] hover:opacity-100">
               圈子
             </Link>
             <span aria-hidden="true">·</span>

@@ -4,10 +4,10 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '圈子',
+  title: '讨论中心',
   description:
-    '涂阿燃站内讨论与付费圈子中心：统一收纳留言、文章评论、回复通知和专题社群入口。',
-  keywords: ['涂阿燃', 'tuaran', '讨论', '留言', '评论', '社群', '专题圈子', '通知'],
+    '涂阿燃站内讨论中心：查看公开留言、文章评论与活跃讨论。',
+  keywords: ['涂阿燃', 'tuaran', '讨论', '留言', '文章评论'],
   alternates: {
     canonical: '/community',
   },

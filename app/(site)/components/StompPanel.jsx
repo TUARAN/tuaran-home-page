@@ -78,7 +78,7 @@ export default function StompPanel({ onPublished }) {
             rows={4}
             maxLength={280}
             placeholder="分享近况、问题或合作想法…"
-            aria-label="圈子留言"
+            aria-label="讨论中心留言"
           />
           <div className="community-composer-foot">
             <span>{remaining}</span>
@@ -89,7 +89,7 @@ export default function StompPanel({ onPublished }) {
         </form>
       ) : (
         <div className="community-login-prompt">
-          <p>登录后，可以在圈子里公开留言。</p>
+          <p>登录后，可以在讨论中心公开留言。</p>
           <button type="button" onClick={login} disabled={userLoading}>
             <IconBrandGithub size={17} aria-hidden="true" />
             {userLoading ? '正在检查…' : '使用 GitHub 登录'}

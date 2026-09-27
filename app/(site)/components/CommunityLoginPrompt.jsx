@@ -10,7 +10,7 @@ const DISMISS_KEY = 'tuaran:community-prompt-dismissed'
 const AUTO_DISMISS_SECONDS = 10
 
 /**
- * 登录后引导：提示加微信进社群（指向 /community，那里有社群码与微信号）。
+ * 登录后引导：提示加微信进社群（指向 /circles，那里有社群码与微信号）。
  * 仅对已登录的非站长用户展示，可关闭（localStorage 持久），在社群页本身不展示。
  */
 export default function CommunityLoginPrompt() {
@@ -43,6 +43,7 @@ export default function CommunityLoginPrompt() {
     user.status !== 'pending' &&
     !isOwner &&
     !dismissed &&
+    pathname !== '/circles' &&
     pathname !== '/community'
 
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function CommunityLoginPrompt() {
           欢迎回来。加微信进社群，一起聊 AI、创作与折腾。
         </p>
         <Link
-          href="/community"
+          href="/circles"
           className="inline-flex h-8 shrink-0 items-center rounded-full border border-[#d8cdb8] bg-white/75 px-3 text-xs font-semibold text-[#4a463b] no-underline transition hover:border-[#bfb29b] hover:bg-white dark:border-gray-700 dark:bg-gray-900/70 dark:text-gray-200 dark:hover:border-gray-500"
         >
           查看社群 / 加微信

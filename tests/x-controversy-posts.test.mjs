@@ -67,5 +67,6 @@ test('normalizer enforces plain short text with line breaks', () => {
   assert.equal(xControversyWithinTarget(text), true)
   const shortened = normalizeXControversyText('房价终于讲理了。\n'.repeat(80))
   assert.equal(xControversyWithinTarget(shortened), true)
-  assert.match(shortened, /…$/)
+  assert.match(shortened, /。$/)
+  assert.doesNotMatch(shortened, /…。$/)
 })

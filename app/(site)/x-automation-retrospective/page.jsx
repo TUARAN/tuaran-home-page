@@ -20,17 +20,17 @@ export default function XAutomationRetrospectivePage() {
           X Automation · 自动发推回溯
         </p>
         <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[var(--site-ink)] md:text-3xl">
-          51 天，从一条早安到五条短帖，再到暂停
+          从早安问候到每小时热点争议短帖
         </h1>
         <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">
           2026 年 8 月 4 日上线 X 每日自动发布，经历模板化、LLM 实时生成、多类型扩张、
-          十条矩阵收束、表情包配图与 9 月 18 日去模板化改造；9 月 23 日暂停。
+          十条矩阵收束、表情包配图与 9 月 18 日去模板化改造；9 月 23 日暂停，9 月 27 日以每小时纯文字争议短帖重启。
           可按概览、时间线、排期演变与运行数据四个视图交互查看。
         </p>
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
             ['起点', X_AUTOMATION_SUMMARY.startDate],
-            ['暂停', X_AUTOMATION_SUMMARY.endDate],
+            ['首次阶段结束', X_AUTOMATION_SUMMARY.endDate],
             ['运行', `${X_AUTOMATION_SUMMARY.runDays} 天`],
             ['估算发帖', X_AUTOMATION_SUMMARY.estimatedTotalPosts],
           ].map(([label, value]) => (

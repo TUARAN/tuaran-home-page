@@ -10,6 +10,7 @@ import * as culture from '../../lib/dailyCultureStory.js'
 import * as community from '../../lib/xCommunityPosts.js'
 import * as usPosts from '../../lib/xUsAudiencePosts.js'
 import * as cryptoPosts from '../../lib/xCryptoPosts.js'
+import * as controversyPosts from '../../lib/xControversyPosts.js'
 import * as postingSchedule from '../../lib/xPostingSchedule.js'
 
 import {
@@ -222,8 +223,11 @@ async function cronFixture(t, overrides = {}) {
   const calls = { images: 0, copy: 0, upload: 0, publish: 0 }
   const env = { DB: fixture.db, MEDIA: fixture.bucket, MORNING_GREETING_SECRET: 'test-secret', AI: { run: async () => { calls.images++; return { image: PNG } } } }
   const dependencies = {
-    ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts,
+    ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts, ...controversyPosts,
     ...postingSchedule,
+    // Route behavior tests exercise retired formats explicitly; schedule tests cover production activation.
+    isXPostSlotActive: () => true,
+    fetchXControversySignals: async () => [],
     saveXPostDraft: (db, asset, options) => assetLibrary.saveXPostDraft(db, asset, { ...options, random: () => 0, fetchImpl: async () => new Response(Buffer.from(PNG, 'base64')) }),
     prepareXImage: (options) => assetLibrary.prepareXImage({ ...options, random: () => 0, fetchImpl: async () => new Response(Buffer.from(PNG, 'base64')) }),
     getOptionalRequestContext: () => ({ env }),
@@ -288,7 +292,7 @@ test('all five task types select fixed pool images, publish them, then skip repe
     assert.equal((await repeated.json()).skipped, true)
   }
   assert.deepEqual(calls, { images: 0, copy: 5, upload: 5, publish: 5 })
-  assert.equal(objects.size, 15)
+  assert.equal(objects.size, assetLibrary.X_ASSET_TYPES.length * 2 + 5)
 })
 
 test('automation uses its one selected Ollama model', async (t) => {
@@ -566,7 +570,7 @@ test('all five task types can publish directly from the pool without generating 
   }
   assert.equal(fixture.calls.images, 0)
   assert.equal(fixture.calls.publish, 5)
-  assert.equal(fixture.objects.size, 10)
+  assert.equal(fixture.objects.size, assetLibrary.X_ASSET_TYPES.length * 2)
   const rows = fixture.sqlite.prepare('SELECT asset_source, fallback_error FROM x_post_assets').all()
   assert.ok(rows.every((row) => row.asset_source === 'pool' && row.fallback_error === ''))
 })
@@ -668,7 +672,7 @@ test('fallback ignores missing pool objects and never bypasses an expired lease'
 
 
 test('paused slots reject manual and old scheduled triggers before any generation', async (t) => {
-  const { invoke, calls, sqlite } = await cronFixture(t)
+  const { invoke, calls, sqlite } = await cronFixture(t, { isXPostSlotActive: postingSchedule.isXPostSlotActive })
   for (const slot of ['crypto=crypto_knowledge', 'crypto=crypto_market', 'crypto=crypto_people', 'story=culture_morning', 'us=us_morning', 'period=evening']) {
     for (const suffix of ['', `&scheduledDate=${greetings.shanghaiDateKey()}`]) {
       const response = await invoke(slot + suffix)

@@ -35,6 +35,15 @@ import {
   xCryptoLastRunKey,
 } from '../../../../../lib/xCryptoPosts'
 import {
+  buildXControversyLengthRepairMessages,
+  buildXControversyMessages,
+  fetchXControversySignals,
+  normalizeXControversySlot,
+  normalizeXControversyText,
+  xControversyLastRunKey,
+  xControversyWithinTarget,
+} from '../../../../../lib/xControversyPosts'
+import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODEL_SELECTIONS_KEY,
   DAILY_GREETING_MODE_KEY,
@@ -75,6 +84,15 @@ async function writeSetting(db, key, value, updatedBy) {
     )
     .bind(key, value, Date.now(), String(updatedBy || 'automation'))
     .run()
+}
+
+async function readRecentControversyTexts(db) {
+  const { results } = await db.prepare(
+    `SELECT text FROM x_post_assets
+     WHERE content_type = 'controversy-text' AND status = 'published' AND text != ''
+     ORDER BY updated_at DESC LIMIT 36`,
+  ).all()
+  return (results || []).map((row) => String(row.text || '').trim()).filter(Boolean)
 }
 
 async function callGreetingModel(selection, args, env) {
@@ -147,22 +165,31 @@ export async function POST(req) {
       { status: 400 },
     )
   }
-  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot), Boolean(cryptoSlot)].filter(Boolean).length > 1) {
+  const requestedControversySlot = searchParams.get('controversy')
+  const controversySlot = requestedControversySlot ? normalizeXControversySlot(requestedControversySlot) : ''
+  if (requestedControversySlot && !controversySlot) {
+    return Response.json(
+      { ok: false, error: 'INVALID_CONTROVERSY_SLOT', detail: 'controversy 仅支持 controversy_00 至 controversy_23。' },
+      { status: 400 },
+    )
+  }
+  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot), Boolean(cryptoSlot), Boolean(controversySlot)].filter(Boolean).length > 1) {
     return Response.json({ ok: false, error: 'AMBIGUOUS_CONTENT_TYPE' }, { status: 400 })
   }
   const isCommunityPost = Boolean(communitySlot)
   const isUsPost = Boolean(usSlot)
   const isCryptoPost = Boolean(cryptoSlot)
+  const isControversyPost = Boolean(controversySlot)
   const communityVariant = isCommunityPost ? pickXCommunityVariant({ slot: communitySlot, now: requestNow }) : null
   const cryptoTopic = isCryptoPost ? pickXCryptoTopic({ slot: cryptoSlot, now: requestNow }) : ''
   const requestedPeriod = searchParams.get('period')
   const period = requestedPeriod
     ? normalizeGreetingPeriod(requestedPeriod, '')
     : greetingPeriodForDate()
-  if (!isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !period) {
+  if (!isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost && !period) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
-  const runSlot = storySlot || communitySlot || cryptoSlot || usSlot || period
+  const runSlot = controversySlot || storySlot || communitySlot || cryptoSlot || usSlot || period
   if (!isXPostSlotActive(runSlot)) {
     return Response.json({ ok: true, skipped: true, reason: 'slot_paused' })
   }
@@ -173,7 +200,7 @@ export async function POST(req) {
   if (scheduledDate && (!schedule || scheduledDate !== schedule.date || !isXPostDue(schedule, requestNow))) {
     return Response.json({ ok: true, skipped: true, reason: 'outside_schedule_window' })
   }
-  const contentType = isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
+  const contentType = isControversyPost ? 'controversy-text' : isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
   const storyCategory = isCultureStory ? cultureStoryCategory({ slot: storySlot, now: requestNow }) : ''
   const lastRunKey = isCultureStory
     ? cultureStoryLastRunKey(storySlot)
@@ -181,6 +208,8 @@ export async function POST(req) {
       ? xCommunityLastRunKey(communitySlot)
       : isCryptoPost
         ? xCryptoLastRunKey(cryptoSlot)
+        : isControversyPost
+          ? xControversyLastRunKey(controversySlot)
         : isUsPost
           ? xUsAudienceLastRunKey(usSlot)
           : greetingLastRunKey(period)
@@ -300,7 +329,7 @@ export async function POST(req) {
       }
     }
     generationMode = parseGreetingModelSelection(activeModelSelection)?.provider || 'deepseek'
-    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost
+    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost
       ? pickDailyGreetingStyle()
       : null
 
@@ -310,8 +339,21 @@ export async function POST(req) {
       // Resume the saved draft so retries keep the image and copy together.
     } else {
       try {
+        const controversySignals = isControversyPost
+          ? await fetchXControversySignals({ now: requestNow })
+          : []
+        const recentControversyTexts = isControversyPost
+          ? await readRecentControversyTexts(db).catch(() => [])
+          : []
         const generationArgs = {
-          messages: isCultureStory
+          messages: isControversyPost
+            ? buildXControversyMessages({
+                slot: controversySlot,
+                signals: controversySignals,
+                recentTexts: recentControversyTexts,
+                now: requestNow,
+              })
+            : isCultureStory
             ? buildCultureStoryMessages({ slot: storySlot, now: requestNow })
             : isCommunityPost
               ? buildXCommunityMessages({ slot: communitySlot, now: requestNow, variant: communityVariant })
@@ -325,7 +367,9 @@ export async function POST(req) {
           task: {
             source: 'x-daily-greeting',
             taskType: 'direct-post-copy',
-            title: isCultureStory
+            title: isControversyPost
+              ? `X 热点争议短帖：${controversySlot}`
+              : isCultureStory
               ? `X 文化短故事：${storySlot}`
               : isCommunityPost
                 ? `X 朋友图文帖：${communitySlot}`
@@ -336,7 +380,9 @@ export async function POST(req) {
                     : `X 每日问候：${period}`,
             actorId: 'cron:x-daily-greeting',
             actorName: '线上定时自动化',
-            inputSummary: isCultureStory
+            inputSummary: isControversyPost
+              ? `时段：${controversySlot}；热点候选：${controversySignals.map((item) => item.title).join('｜').slice(0, 900) || '无，使用常青冲突题'}`
+              : isCultureStory
               ? `时段：${storySlot}；类别：${storyCategory}`
               : isCommunityPost
                 ? `时段：${communitySlot}；场景：${communityVariant.label}；标签：${communityVariant.tags.join(' ')}`
@@ -361,14 +407,18 @@ export async function POST(req) {
             metadata: { ...generationArgs.task.metadata, modelSelection: activeModelSelection },
           },
         }, env)
-        text = normalizeGeneratedGreeting(generation.content)
+        text = isControversyPost
+          ? normalizeXControversyText(generation.content)
+          : normalizeGeneratedGreeting(generation.content)
         if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
 
-        if (!greetingWithinLimit(text)) {
+        if (isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
           try {
             const repairArgs = {
               ...generationArgs,
-              messages: isUsPost
+              messages: isControversyPost
+                ? buildXControversyLengthRepairMessages({ text })
+                : isUsPost
                 ? buildXUsAudienceLengthRepairMessages({ text })
                 : buildGreetingLengthRepairMessages({ text }),
               temperature: 0.2,
@@ -381,7 +431,9 @@ export async function POST(req) {
               },
             }
             const repaired = await callGreetingModel(activeModelSelection, repairArgs, env)
-            const repairedText = normalizeGeneratedGreeting(repaired.content)
+            const repairedText = isControversyPost
+              ? normalizeXControversyText(repaired.content)
+              : normalizeGeneratedGreeting(repaired.content)
             if (repairedText) {
               text = repairedText
               generation = repaired
@@ -390,7 +442,9 @@ export async function POST(req) {
             // 压缩调用失败时继续使用原文，由下方确定性限长兜底，避免定时任务整次失败。
           }
         }
-        text = fitGeneratedGreetingToXLimit(text).text
+        text = isControversyPost
+          ? normalizeXControversyText(text)
+          : fitGeneratedGreetingToXLimit(text).text
       } catch (error) {
         const errorCode = String(error?.code || 'LLM_GENERATION_FAILED')
         if (db) {
@@ -418,7 +472,7 @@ export async function POST(req) {
         )
       }
     }
-    if (!greetingWithinLimit(text)) {
+    if (isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
       if (db) {
         await writeSetting(
           db,
@@ -440,7 +494,9 @@ export async function POST(req) {
     }
     if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot, 280, communityVariant)
 
-    const postFormat = await saveXPostDraft(db, asset, { text })
+    const postFormat = isControversyPost
+      ? (await updateXAsset(db, asset, { text, asset_source: 'text' }), 'text')
+      : await saveXPostDraft(db, asset, { text })
     let mediaId = ''
     if (postFormat === 'image') {
       stage = 'image-selection'

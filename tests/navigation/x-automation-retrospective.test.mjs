@@ -32,12 +32,12 @@ test('x automation retrospective page is registered and noindexed', async () => 
 })
 
 test('x automation retrospective data covers full run window', () => {
-  assert.equal(X_AUTOMATION_PHASES.at(-1).id, 'paused')
+  assert.equal(X_AUTOMATION_PHASES.at(-1).id, 'controversy-hourly')
   assert.equal(X_AUTOMATION_PHASES[0].date, X_AUTOMATION_SUMMARY.startDate)
   assert.ok(X_AUTOMATION_DAILY_POSTS.length >= 20)
   assert.equal(maxDailyPosts(), 14)
   assert.equal(sumDailyPosts(), X_AUTOMATION_SUMMARY.trackedPosts)
-  assert.equal(X_AUTOMATION_SCALE_MILESTONES.length, 5)
+  assert.equal(X_AUTOMATION_SCALE_MILESTONES.length, 6)
 })
 
 test('schedule snapshots reuse live slot times', () => {
@@ -63,4 +63,9 @@ test('schedule snapshots reuse live slot times', () => {
       'us_evening',
     ],
   )
+  const shrinkFive = X_AUTOMATION_SCHEDULE_SNAPSHOTS.find((item) => item.phaseId === 'shrink-five')
+  assert.equal(shrinkFive.slots.length, 5)
+  const controversyHourly = X_AUTOMATION_SCHEDULE_SNAPSHOTS.find((item) => item.phaseId === 'controversy-hourly')
+  assert.equal(controversyHourly.slots.length, 24)
+  assert.ok(controversyHourly.slots.every((slot) => slot.type === '争议短帖'))
 })

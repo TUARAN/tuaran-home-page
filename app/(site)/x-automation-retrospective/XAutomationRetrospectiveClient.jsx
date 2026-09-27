@@ -20,9 +20,9 @@ import {
 const STATS_BAR_DEFAULT = '#8a8f7a'
 const STATS_BAR_ACTIVE = '#3f6a8a'
 const STATS_BAR_HOVER = '#059669'
-const STATUS_PANEL_BORDER = '#fecdd3'
-const STATUS_PANEL_BG = '#fff1f2'
-const STATUS_PANEL_TEXT = '#be123c'
+const STATUS_PANEL_BORDER = '#a7f3d0'
+const STATUS_PANEL_BG = '#ecfdf5'
+const STATUS_PANEL_TEXT = '#047857'
 const SLOT_ACTIVE_BG = '#d1fae5'
 const SLOT_ACTIVE_TEXT = '#065f46'
 
@@ -81,16 +81,16 @@ function OverviewPanel({ onSelectPhase }) {
   return (
     <div className="space-y-6">
       <article
-        className="rounded-xl border p-4 dark:border-rose-900/40 dark:bg-rose-950/20"
+        className="rounded-xl border p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20"
         style={{ borderColor: STATUS_PANEL_BORDER, backgroundColor: STATUS_PANEL_BG }}
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: STATUS_PANEL_TEXT }}>
           Current Status · 当前状态
         </p>
-        <h2 className="mt-2 font-serif text-[20px] font-semibold text-[var(--site-ink)]">已暂停（{X_AUTOMATION_STATUS.pausedAt}）</h2>
-        <p className="mt-2 text-[13.5px] leading-7 text-[var(--site-muted)]">{X_AUTOMATION_STATUS.pausedReason}</p>
+        <h2 className="mt-2 font-serif text-[20px] font-semibold text-[var(--site-ink)]">已重启（{X_AUTOMATION_STATUS.resumedAt}）</h2>
+        <p className="mt-2 text-[13.5px] leading-7 text-[var(--site-muted)]">{X_AUTOMATION_STATUS.currentMode}；旧问候、交友、文化、加密与美区时段已停用。</p>
         <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">
-          最后一条：
+          暂停前最后一条：
           <a href={X_AUTOMATION_STATUS.lastPostUrl} target="_blank" rel="noreferrer" className="ml-1 text-[var(--site-accent)] no-underline hover:underline">
             {X_AUTOMATION_STATUS.lastPostDate} {X_AUTOMATION_STATUS.lastPostSlot}
           </a>
@@ -100,7 +100,7 @@ function OverviewPanel({ onSelectPhase }) {
       <section>
         <h2 className="font-serif text-[18px] font-semibold text-[var(--site-ink)]">规模变化</h2>
         <p className="mt-1 text-[13px] leading-6 text-[var(--site-muted)]">
-          从 8/4 的单条早安，到 8 月底的十条矩阵，再到 9/9 收束为五条。8/23–8/28 为类型扩张过渡期，完整阶段见「时间线」。
+          从 8/4 的单条早安，到 8 月底的十条矩阵、9/9 收束五条，再到 9/27 每小时一条纯文字热点争议短帖。
         </p>
         <div className="mt-4 rounded-xl border border-[var(--site-line)] p-4">
           <PhaseBar milestones={X_AUTOMATION_SCALE_MILESTONES} onSelectPhase={onSelectPhase} />
@@ -265,7 +265,7 @@ function SchedulePanel() {
       ) : null}
 
       <p className="mt-3 text-[12.5px] leading-6 text-[var(--site-faint)]">
-        基准时间来自 lib/xPostingSchedule.js 与各时段定义；各时段 ±30 分钟随机浮动，到期后最多补跑 1 小时。
+        基准时间来自 lib/xPostingSchedule.js 与各时段定义；当前每小时槽位 ±5 分钟随机浮动，到期后最多补跑 45 分钟。
       </p>
     </div>
   )

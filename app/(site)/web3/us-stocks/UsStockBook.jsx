@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 
 import { formatUsd } from '../../../../lib/usStockBasket'
@@ -68,7 +71,7 @@ export default function UsStockBook({ detail = false, linked = false }) {
 function PositionTable({ book }) {
   return (
     <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-      <table className="min-w-[1100px] w-full border-collapse text-left text-xs">
+      <table className="min-w-[920px] w-full border-collapse text-left text-xs">
         <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
           <tr>
             {['合约', '方向', '杠杆', '数量', '标记价', '开仓均价', '名义', '占比', '保证金', '浮动收益', '强平价', '备注'].map((label) => (
@@ -78,23 +81,49 @@ function PositionTable({ book }) {
         </thead>
         <tbody>
           {book.rows.map((row) => (
-            <tr key={row.symbol} className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
-              <td className="whitespace-nowrap px-3 py-2">{row.symbol}</td>
-              <td className="px-3 py-2">{row.side === 'short' ? '空' : '多'}</td>
-              <td className="px-3 py-2">{row.leverage}x</td>
-              <td className="px-3 py-2">{signedQty(row)}</td>
-              <td className="px-3 py-2">{formatUsd(row.mark)}</td>
-              <td className="px-3 py-2">{formatUsd(row.entry)}</td>
-              <td className="px-3 py-2">{formatUsd(row.notional)}</td>
-              <td className="px-3 py-2">{shareLabel(row.weight)}</td>
-              <td className="px-3 py-2">{formatUsd(row.margin)}</td>
-              <td className={`whitespace-nowrap px-3 py-2 ${pnlClass(row.pnl)}`}>{formatUsd(row.pnl)} ({row.pnlPercent > 0 ? '+' : ''}{row.pnlPercent.toFixed(2)}%)</td>
-              <td className="px-3 py-2">{formatUsd(row.liquidation)}</td>
-              <td className="max-w-[22rem] px-3 py-2 font-sans text-[11px] leading-5 text-[var(--site-muted)]">{row.note || ''}</td>
-            </tr>
+            <PositionRow key={row.symbol} row={row} />
           ))}
         </tbody>
       </table>
     </div>
+  )
+}
+
+function PositionRow({ row }) {
+  const [open, setOpen] = useState(false)
+  const note = row.note || ''
+  return (
+    <>
+      <tr className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
+        <td className="whitespace-nowrap px-3 py-2">{row.symbol}</td>
+        <td className="px-3 py-2">{row.side === 'short' ? '空' : '多'}</td>
+        <td className="px-3 py-2">{row.leverage}x</td>
+        <td className="px-3 py-2">{signedQty(row)}</td>
+        <td className="px-3 py-2">{formatUsd(row.mark)}</td>
+        <td className="px-3 py-2">{formatUsd(row.entry)}</td>
+        <td className="px-3 py-2">{formatUsd(row.notional)}</td>
+        <td className="px-3 py-2">{shareLabel(row.weight)}</td>
+        <td className="px-3 py-2">{formatUsd(row.margin)}</td>
+        <td className={`whitespace-nowrap px-3 py-2 ${pnlClass(row.pnl)}`}>{formatUsd(row.pnl)} ({row.pnlPercent > 0 ? '+' : ''}{row.pnlPercent.toFixed(2)}%)</td>
+        <td className="px-3 py-2">{formatUsd(row.liquidation)}</td>
+        <td className="px-3 py-2">
+          {note ? (
+            <button
+              type="button"
+              className="whitespace-nowrap font-sans text-[11px] text-[var(--site-faint)] underline decoration-[var(--site-line)] underline-offset-2"
+              aria-expanded={open}
+              onClick={() => setOpen((value) => !value)}
+            >
+              {open ? '收起' : '展开'}
+            </button>
+          ) : null}
+        </td>
+      </tr>
+      {open ? (
+        <tr className="border-t border-[var(--site-line)]">
+          <td colSpan={12} className="px-3 py-2 font-sans text-[11px] leading-5 text-[var(--site-muted)]">{note}</td>
+        </tr>
+      ) : null}
+    </>
   )
 }

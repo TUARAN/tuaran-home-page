@@ -261,6 +261,20 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
     setQuery('')
   }
 
+  const viewToggle = (
+    <div className="flex shrink-0 rounded-xl bg-[#e7e8e5] p-1 dark:bg-[#1d2630]" aria-label="视图方式">
+      <button type="button" onClick={() => setView('grid')} aria-label="卡片视图" aria-pressed={view === 'grid'} className={`rounded-lg p-2 transition ${view === 'grid' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconGridDots size={17} /></button>
+      <button type="button" onClick={() => setView('list')} aria-label="列表视图" aria-pressed={view === 'list'} className={`rounded-lg p-2 transition ${view === 'list' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconLayoutList size={17} /></button>
+    </div>
+  )
+
+  const searchField = (
+    <label className="flex h-10 min-w-0 items-center gap-2 rounded-xl bg-[#e7e8e5] px-3 text-[var(--site-muted)] dark:bg-[#1d2630] sm:w-[300px]">
+      <IconSearch size={18} className="shrink-0" />
+      <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={config.searchPlaceholder} className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-[var(--site-ink)] outline-none placeholder:text-[var(--site-faint)]" />
+    </label>
+  )
+
   return (
     <main className={`min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)] ${isCatalog ? 'showcase-directory--catalog' : 'showcase-directory--gallery'}`}>
       <div className={`mx-auto max-w-[1240px] px-3 pb-16 sm:px-6 lg:px-8 ${isCatalog ? 'pt-5 md:pt-9' : 'pt-5 md:pt-12'}`}>
@@ -276,61 +290,73 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
           </div>
         </header>
 
-        <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="mx-auto flex max-w-[1176px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <div className="flex rounded-xl bg-[#e7e8e5] p-1 dark:bg-[#1d2630]" aria-label="视图方式">
-                <button type="button" onClick={() => setView('grid')} aria-label="卡片视图" aria-pressed={view === 'grid'} className={`rounded-lg p-2 transition ${view === 'grid' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconGridDots size={17} /></button>
-                <button type="button" onClick={() => setView('list')} aria-label="列表视图" aria-pressed={view === 'list'} className={`rounded-lg p-2 transition ${view === 'list' ? 'bg-[#17181c] text-white shadow-sm dark:bg-[#d9deca] dark:text-[#151713]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}><IconLayoutList size={17} /></button>
+        {config.categoryTabs ? (
+          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+            <div className="mx-auto max-w-[1176px]">
+              <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
+                <h2 className="mb-0 shrink-0 text-[17px] font-bold">{config.resultTitle}</h2>
+                <span className="shrink-0 text-[12px] text-[var(--site-faint)]">{filteredItems.length} 个</span>
+                <div className="hidden h-px flex-1 bg-[#dedfd9] dark:bg-[#27303a] sm:block" />
+                <div className="w-full sm:w-auto">{searchField}</div>
               </div>
-              {!config.categoryTabs ? (
+              <div className="mt-2 flex min-w-0 items-end gap-3">
+                <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div role="tablist" aria-label={config.categoryTabsAriaLabel || `${config.title}类别`} className="flex w-max min-w-full items-center gap-1 border-b border-[#dedfd9] dark:border-[#27303a]">
+                    {[{ id: 'all', title: '全部' }, ...categories].map((item) => {
+                      const active = category === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() => setCategory(item.id)}
+                          className={`relative shrink-0 px-3 py-2.5 text-[13px] font-semibold transition ${active ? 'text-[var(--site-ink)] after:absolute after:inset-x-2 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-[var(--site-accent-strong)]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}
+                        >
+                          {item.title}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                {secondaryFilter ? (
+                  <select value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-10 max-w-[120px] shrink-0 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7] sm:max-w-none" aria-label={secondaryFilter.ariaLabel}>
+                    <option value="all">{secondaryFilter.label} · 全部</option>
+                    {secondaryFilter.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                ) : null}
+                {viewToggle}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+            <div className="mx-auto flex max-w-[1176px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                {viewToggle}
                 <select value={category} onChange={(event) => setCategory(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label="按类别筛选">
                   <option value="all">类别 · 全部</option>
                   {categories.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                 </select>
-              ) : null}
-              {secondaryFilter ? (
-                <select value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label={secondaryFilter.ariaLabel}>
-                  <option value="all">{secondaryFilter.label} · 全部</option>
-                  {secondaryFilter.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              ) : null}
+                {secondaryFilter ? (
+                  <select value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label={secondaryFilter.ariaLabel}>
+                    <option value="all">{secondaryFilter.label} · 全部</option>
+                    {secondaryFilter.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                ) : null}
+              </div>
+              {searchField}
             </div>
-            <label className="flex h-10 min-w-0 items-center gap-2 rounded-xl bg-[#e7e8e5] px-3 text-[var(--site-muted)] dark:bg-[#1d2630] lg:w-[300px]">
-              <IconSearch size={18} className="shrink-0" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={config.searchPlaceholder} className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-[var(--site-ink)] outline-none placeholder:text-[var(--site-faint)]" />
-            </label>
-          </div>
-        </section>
+          </section>
+        )}
 
-        <div className="mb-5">
+        {!config.categoryTabs ? <div className="mb-5">
           <div className="flex items-center gap-4">
-            <h2 className="mb-0 text-[17px] font-bold">{config.categoryTabs ? config.resultTitle : (hasFilters ? '筛选结果' : config.resultTitle)}</h2>
+            <h2 className="mb-0 text-[17px] font-bold">{hasFilters ? '筛选结果' : config.resultTitle}</h2>
             <span className="text-[12px] text-[var(--site-faint)]">{filteredItems.length} 个</span>
             <div className="h-px flex-1 bg-[#dedfd9] dark:bg-[#27303a]" />
           </div>
-          {config.categoryTabs ? (
-            <div className="-mx-3 mt-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div role="tablist" aria-label={config.categoryTabsAriaLabel || `${config.title}类别`} className="flex w-max min-w-full items-center gap-1 border-b border-[#dedfd9] dark:border-[#27303a]">
-                {[{ id: 'all', title: '全部' }, ...categories].map((item) => {
-                  const active = category === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setCategory(item.id)}
-                      className={`relative shrink-0 px-3 py-2.5 text-[13px] font-semibold transition ${active ? 'text-[var(--site-ink)] after:absolute after:inset-x-2 after:bottom-[-1px] after:h-0.5 after:rounded-full after:bg-[var(--site-accent-strong)]' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}
-                    >
-                      {item.title}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
-        </div>
+        </div> : null}
 
         {filteredItems.length ? (
           <div className={view === 'grid' ? (isCatalog ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3') : 'space-y-4'}>

@@ -28,15 +28,6 @@ function formatTime(ts) {
   return new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
-function Stat({ value, label }) {
-  return (
-    <div className="community-stat">
-      <strong>{value ?? '—'}</strong>
-      <span>{label}</span>
-    </div>
-  )
-}
-
 function FeedItem({ item }) {
   const isMessage = item.type === 'message'
   const content = (
@@ -70,7 +61,7 @@ function FeedItem({ item }) {
 }
 
 export default function DiscussionHubClient() {
-  const [data, setData] = useState({ status: 'loading', items: [], messages: [], threads: [], stats: null })
+  const [data, setData] = useState({ status: 'loading', items: [], messages: [], threads: [] })
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
@@ -88,7 +79,6 @@ export default function DiscussionHubClient() {
         status: discussion?.status || 'error',
         items: Array.isArray(discussion?.items) ? discussion.items : [],
         threads: Array.isArray(discussion?.threads) ? discussion.threads : [],
-        stats: discussion?.stats || null,
         messages,
       })
     })
@@ -118,31 +108,10 @@ export default function DiscussionHubClient() {
     setFilter('all')
   }
 
-  const stats = data.stats || {}
   const loading = data.status === 'loading'
 
   return (
     <div className="community-page">
-      <header className="community-hero">
-        <div className="community-hero-copy">
-          <p className="community-kicker"><span /> DISCUSSIONS</p>
-          <h1>讨论中心</h1>
-          <p className="community-hero-lead">查看最新留言和文章评论，从一条具体的回复开始交流。</p>
-          <div className="community-hero-actions">
-            <a href="#community-feed-title" className="community-primary-button">
-              查看最新讨论 <IconChevronRight size={17} aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-        <div className="community-hero-side">
-          <div className="community-stats">
-            <Stat value={stats.comments} label="公开评论" />
-            <Stat value={stats.weekComments} label="近 7 天" />
-            <Stat value={stats.participants} label="参与者" />
-          </div>
-        </div>
-      </header>
-
       <section id="message" className="community-section scroll-mt-24" aria-labelledby="community-feed-title">
         <div className="community-section-head community-feed-heading">
           <div>

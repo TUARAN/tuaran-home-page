@@ -46,15 +46,17 @@ test('news feed parser keeps recent headlines and drops stale entries', () => {
   }])
 })
 
-test('prompt demands short theatrical conflict without fabricated details or harassment', () => {
+test('prompt demands direct conflict without meta labels, fabricated details, or harassment', () => {
   const messages = buildXControversyMessages({
     slot: 'controversy_12',
     now: new Date('2026-09-27T04:00:00.000Z'),
     signals: [{ title: '多地讨论住房消费新变化', source: '公开媒体', publishedAt: Date.now() }],
   })
   assert.equal(messages.length, 2)
-  assert.match(messages[0].content, /微型讽刺剧/)
   assert.match(messages[0].content, /俏皮、戏谑/)
+  assert.match(messages[0].content, /第一句直接进入具体人物的动作、台词或冲突/)
+  assert.match(messages[0].content, /禁止出现这些套话/)
+  assert.match(messages[0].content, /不要每条都用“亲戚—我说—他说—原来”/)
   assert.match(messages[0].content, /不得造谣/)
   assert.match(messages[0].content, /不使用地域、性别、年龄、职业等群体羞辱/)
   assert.match(messages[0].content, /约 55—100 个汉字/)
@@ -69,4 +71,10 @@ test('normalizer enforces plain short text with line breaks', () => {
   assert.equal(xControversyWithinTarget(shortened), true)
   assert.match(shortened, /。$/)
   assert.doesNotMatch(shortened, /…。$/)
+})
+
+test('normalizer removes meta-writing openers before publishing', () => {
+  const text = normalizeXControversyText(`【小剧场】：\n先说结论：有事就直说。\n\n讲个故事：老板说公司是家。\n员工问：那能分房吗？`)
+  assert.equal(text, '老板说公司是家。\n员工问：那能分房吗？')
+  assert.doesNotMatch(text, /小剧场|先说结论|有事就直说|讲个故事/)
 })

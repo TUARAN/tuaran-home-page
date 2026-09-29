@@ -21,6 +21,7 @@ export default function AccessWorkspace() {
           description: '将账户权益与界面入口分开管理，避免把菜单展示误认为页面鉴权。',
           items: [
             { href: '/admin/points', title: '燃币与权益', description: '管理全站规则、资源定价、手动调整、账户流水和解锁记录。', icon: 'ranbi' },
+            { href: '/admin/rewards', title: '签到礼物', description: '上架礼物、维护库存并处理燃币兑换和实物寄送。', icon: 'ranbi' },
             { href: '/admin/nav', title: '菜单可见性', description: '决定菜单入口对访客、登录用户或站长是否显示，不改变页面自身鉴权。', icon: 'nav' },
           ],
         },

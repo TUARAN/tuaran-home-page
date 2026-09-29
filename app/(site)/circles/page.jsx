@@ -4,6 +4,7 @@ import { IconArrowRight } from '@tabler/icons-react'
 import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/communityTopics'
 import { COMMUNITY_MEMBERSHIP } from '../../../lib/communityMembership'
 import CommunityMembershipCard from '../components/CommunityMembershipCard'
+import CheckinGiftEntry from '../components/CheckinGiftEntry'
 import PageContainer from '../components/PageContainer'
 
 export const dynamic = 'force-static'
@@ -61,6 +62,7 @@ export default function CirclesPage() {
     <PageContainer className="py-4 md:py-10">
       <div className="community-page">
         <header className="community-hero">
+          <CheckinGiftEntry className="community-checkin-entry" />
           <div className="community-hero-copy">
             <p className="community-kicker"><span /> CIRCLES</p>
             <h1>圈子</h1>

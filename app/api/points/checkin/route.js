@@ -55,9 +55,13 @@ export async function POST(req) {
     return Response.json({
       ok: true,
       awarded: result.awarded,
-      gained: result.awarded ? rules.checkin : 0,
+      gained: result.gained ?? (result.awarded ? rules.checkin : 0),
+      bonus: result.bonus || 0,
       balance: result.balance ?? (await getBalance(db, userId)),
       alreadyCheckedIn: !result.awarded,
+      streak: result.streak || 0,
+      week: result.week || [],
+      nextMilestone: result.nextMilestone || null,
     })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })

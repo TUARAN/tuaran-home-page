@@ -27,8 +27,10 @@ const REASON_LABELS = {
   guest_seed: '游客初始',
   register: '注册',
   checkin: '签到',
+  checkin_bonus: '连续签到',
   comment: '评论',
   unlock: '解锁',
+  reward_redeem: '礼物兑换',
   admin: '手动',
 }
 

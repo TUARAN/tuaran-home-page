@@ -1,7 +1,7 @@
 import { getD1 } from '../../../../lib/d1'
 import { getUserFromRequest } from '../../../../lib/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/guestSession'
-import { awardGuestSeed, countCheckins, getBalance, getPointRules, hasCheckedInToday } from '../../../../lib/points'
+import { awardGuestSeed, countCheckins, getBalance, getCheckinStatus, getPointRules, hasCheckedInToday } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
 import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
 
@@ -49,9 +49,10 @@ export async function GET(req) {
 
     const userId = String(user.id)
     const isPendingEmail = user.provider === 'email' && user.status === 'pending'
-    const [balance, checkedInToday, unlocks, resourceEvents, pendingCheckins] = await Promise.all([
+    const [balance, checkedInToday, checkinStatus, unlocks, resourceEvents, pendingCheckins] = await Promise.all([
       getBalance(db, userId),
       hasCheckedInToday(db, userId),
+      getCheckinStatus(db, userId),
       listUnlocksForUser(db, userId, { limit: 100 }),
       listResourceEventsForUser(db, userId, { limit: 100 }),
       isPendingEmail ? countCheckins(db, userId) : Promise.resolve(0),
@@ -60,6 +61,7 @@ export async function GET(req) {
       authed: true,
       balance,
       checkedInToday,
+      checkinStatus,
       activationRequired: isPendingEmail,
       pendingCheckins,
       pendingCheckinLimit: isPendingEmail ? rules.pendingCheckinLimit : null,

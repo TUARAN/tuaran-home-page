@@ -42,7 +42,7 @@ export default function SiteLayout({ children }) {
       />
       <ThemeProvider>
         <LocaleProvider>
-          <SessionProvider>
+          <SessionProvider pointsEndpoint="/api/points/me">
             <SitePresenceProvider>
               <SiteBehaviorAnalytics />
               <MermaidRenderer />

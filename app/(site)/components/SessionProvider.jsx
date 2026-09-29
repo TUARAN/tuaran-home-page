@@ -21,7 +21,7 @@ const SessionContext = createContext({
 const REFRESH_EVENT = 'tuaran:session-refresh'
 const NAV_REFRESH_EVENT = 'tuaran:nav-refresh'
 
-export function SessionProvider({ children }) {
+export function SessionProvider({ children, pointsEndpoint = null }) {
   const [state, setState] = useState({
     loading: true,
     user: null,
@@ -91,10 +91,11 @@ export function SessionProvider({ children }) {
   }, [])
 
   const refreshPoints = useCallback(async () => {
+    if (!pointsEndpoint) return
     if (inFlightPointsRef.current) return inFlightPointsRef.current
     const p = (async () => {
       try {
-        const res = await fetch('/api/points/me', { cache: 'no-store', credentials: 'same-origin' })
+        const res = await fetch(pointsEndpoint, { cache: 'no-store', credentials: 'same-origin' })
         const data = await res.json().catch(() => null)
         setState((prev) => ({
           ...prev,
@@ -116,7 +117,7 @@ export function SessionProvider({ children }) {
     })()
     inFlightPointsRef.current = p
     return p
-  }, [])
+  }, [pointsEndpoint])
 
   const markNotificationsRead = useCallback(async (payload = { all: true }) => {
     const targetIds = new Set(

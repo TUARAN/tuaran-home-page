@@ -13,6 +13,12 @@ const [middlewareSource, adminGateSource, adminVerifierSource, publicVerifierSou
   readFile(new URL('../../scripts/verify-public-pages-build.cjs', import.meta.url), 'utf8'),
 ])
 
+const [sessionProviderSource, siteLayoutSource, adminLayoutSource] = await Promise.all([
+  readFile(new URL('../../app/(site)/components/SessionProvider.jsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/(site)/layout.jsx', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/(admin)/layout.jsx', import.meta.url), 'utf8'),
+])
+
 test('admin build keeps only APIs used at runtime by the admin client', () => {
   assert.match(adminBuildSource, /KEPT_API_DIRECTORY_ENTRIES/)
   assert.match(adminBuildSource, /\['cron', new Set\(\['rss-updates'\]\)\]/)
@@ -20,6 +26,13 @@ test('admin build keeps only APIs used at runtime by the admin client', () => {
   assert.match(adminBuildSource, /for \(const \[directory, keptEntries\] of KEPT_API_DIRECTORY_ENTRIES\)/)
   assert.match(adminBuildSource, /'bookmark-navigation'/)
   assert.match(adminVerifierSource, /REQUIRED_EDGE_ROUTES[\s\S]*['"]\/api\/cron\/rss-updates['"]/)
+})
+
+test('points session refresh stays in the public site bundle', () => {
+  assert.match(sessionProviderSource, /pointsEndpoint = null/)
+  assert.match(sessionProviderSource, /if \(!pointsEndpoint\) return/)
+  assert.match(siteLayoutSource, /<SessionProvider pointsEndpoint="\/api\/points\/me">/)
+  assert.doesNotMatch(adminLayoutSource, /pointsEndpoint/)
 })
 
 test('admin page authorization runs in middleware for HTML and direct RSC requests', () => {

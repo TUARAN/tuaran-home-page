@@ -6,10 +6,29 @@ import { useLocale } from './LocaleProvider'
 import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/i18n'
 import { getFooterLinks, navLabel } from '../../../lib/siteNav'
+import { useSitePresence } from './SitePresenceProvider'
 
 const FEEDBACK_ISSUES_URL = 'https://github.com/TUARAN/tuaran-home-page/issues'
 const CI_STATUS_URL = 'https://github.com/TUARAN/tuaran-home-page/actions/workflows/ci.yml'
 const PRIMARY_LINK_COUNT = 5
+
+export function OnlinePresenceStatus({ className = '' }) {
+  const { locale } = useLocale()
+  const onlineCount = useSitePresence()
+
+  if (onlineCount === null) return null
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 text-[#74786b] dark:text-gray-400 ${className}`}
+      aria-live="polite"
+      title={pick(locale, '过去 150 秒内活跃的浏览器数量', 'Browsers active in the past 150 seconds')}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+      {pick(locale, `当前 ${onlineCount} 人在线`, `${onlineCount} online now`)}
+    </span>
+  )
+}
 
 function FooterLink({ link, locale, className = '' }) {
   const classes = `opacity-80 transition-colors hover:text-[#666] hover:opacity-100 dark:hover:text-gray-300 ${className}`
@@ -30,9 +49,10 @@ function FooterLink({ link, locale, className = '' }) {
   return <Link href={link.href} className={classes}>{navLabel(link, locale)}</Link>
 }
 
-export default function SiteFooter({ className = '' }) {
+export default function SiteFooter({ className = '', showOnline = false }) {
   const { locale } = useLocale()
   const account = useSessionAccount()
+  const onlineCount = useSitePresence()
   const links = getFooterLinks(account, account?.navOverrides)
   const primaryLinks = links.slice(0, PRIMARY_LINK_COUNT)
   const moreLinks = [
@@ -49,6 +69,12 @@ export default function SiteFooter({ className = '' }) {
       ].join(' ')}
     >
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
+        {showOnline && onlineCount !== null ? (
+          <>
+            <OnlinePresenceStatus />
+            <span className="text-[#ddd] dark:text-gray-700" aria-hidden="true">·</span>
+          </>
+        ) : null}
         <span>© 2025—2026 {pick(locale, '网络日志', 'Weblog')}</span>
         {primaryLinks.map((link) => (
           <span key={link.href} className="contents">

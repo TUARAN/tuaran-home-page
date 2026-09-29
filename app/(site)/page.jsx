@@ -34,7 +34,7 @@ import HomeSpacexEgg from './components/HomeSpacexEgg'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
-import SiteFooter from './components/SiteFooter'
+import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
 import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
 import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
@@ -846,7 +846,7 @@ function ClassicHomePage({ featuredPicks }) {
       </section>
 
       <section>
-        <SiteFooter />
+        <SiteFooter showOnline />
       </section>
     </main>
   )
@@ -892,7 +892,10 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         </aside>
       </div>
 
-      <SiteFooter className="home-footer hidden md:block" />
+      <div className="home-footer flex justify-center pb-20 text-xs md:hidden">
+        <OnlinePresenceStatus />
+      </div>
+      <SiteFooter className="home-footer hidden md:block" showOnline />
     </main>
   )
 }

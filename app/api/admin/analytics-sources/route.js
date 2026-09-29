@@ -16,7 +16,9 @@ export const dynamic = 'force-dynamic'
 
 const ALLOWED_DAYS = new Set([1, 7, 30, 90])
 const DEFAULT_UMAMI_WEBSITE_ID = '8bb48b09-3e10-4ec1-9bbe-c55c87418fa9'
+const DEFAULT_UMAMI_SHARE_SLUG = '3mOsBgzrmb9wY8bI'
 const UMAMI_API_BASE = 'https://api.umami.is/api'
+const UMAMI_SHARE_API_BASE = 'https://cloud.umami.is/analytics/us/api'
 const CLOUDFLARE_GRAPHQL_URL = 'https://api.cloudflare.com/client/v4/graphql'
 
 function sourceUnavailable(source, required, message = '') {
@@ -66,14 +68,35 @@ async function loadDailyUniqueIps(env, window) {
 
 async function loadUmami(env, window) {
   const apiKey = String(env.UMAMI_API_KEY || '').trim()
-  const websiteId = String(env.UMAMI_WEBSITE_ID || DEFAULT_UMAMI_WEBSITE_ID).trim()
+  let websiteId = String(env.UMAMI_WEBSITE_ID || DEFAULT_UMAMI_WEBSITE_ID).trim()
+  let apiBase = UMAMI_API_BASE
+  let authMode = 'api-key'
+  let headers = { Accept: 'application/json', Authorization: `Bearer ${apiKey}` }
+
   if (!apiKey) {
-    return sourceUnavailable('umami', ['UMAMI_API_KEY'], '配置 Umami Cloud API Key 后显示实时站点访问。')
+    const shareSlug = String(env.UMAMI_SHARE_SLUG || DEFAULT_UMAMI_SHARE_SLUG).trim()
+    apiBase = String(env.UMAMI_SHARE_API_BASE || UMAMI_SHARE_API_BASE).replace(/\/+$/, '')
+    authMode = 'public-share'
+    try {
+      const share = await fetch(`${apiBase}/share/${encodeURIComponent(shareSlug)}`, {
+        cf: { cacheTtl: 300 },
+        signal: AbortSignal.timeout(15_000),
+      }).then((response) => readJson(response, 'UMAMI_SHARE'))
+      const shareToken = String(share?.token || '').trim()
+      websiteId = String(share?.websiteId || websiteId).trim()
+      if (!shareToken || !websiteId) throw new Error('UMAMI_SHARE_INVALID')
+      headers = {
+        Accept: 'application/json',
+        'x-umami-share-token': shareToken,
+        'x-umami-share-context': '1',
+      }
+    } catch (error) {
+      return sourceError('umami', String(error?.message || 'UMAMI_SHARE_FETCH_FAILED'))
+    }
   }
 
-  const headers = { Accept: 'application/json', Authorization: `Bearer ${apiKey}` }
   const endpoint = (path, startAt, endAt, extra = '') => (
-    `${UMAMI_API_BASE}/websites/${encodeURIComponent(websiteId)}/${path}`
+    `${apiBase}/websites/${encodeURIComponent(websiteId)}/${path}`
       + `?startAt=${startAt}&endAt=${endAt}${extra}`
   )
 
@@ -95,6 +118,7 @@ async function loadUmami(env, window) {
       source: 'umami',
       status: 'ok',
       websiteId,
+      authMode,
       current,
       previous,
       series: pageviews.map((row) => ({

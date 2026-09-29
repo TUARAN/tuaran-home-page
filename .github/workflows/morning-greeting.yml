@@ -1,4 +1,4 @@
-name: Daily friendly posts to X
+name: Mixed friendly and topic posts to X
 
 on:
   schedule:
@@ -7,24 +7,23 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: 早安、午安、认识新朋友、兴趣交流或晚间串门时段
+        description: 手动运行的槽位（如 morning、community_friends、controversy_10）
         required: true
-        type: choice
+        type: string
         default: morning
-        options: [morning, noon, community_friends, community_learning, community_growth]
 
 permissions:
   contents: read
 
 concurrency:
-  group: daily-friendly-x-${{ github.event.schedule || inputs.period }}
+  group: mixed-x-posts-${{ github.event.schedule || inputs.period }}
   cancel-in-progress: false
 
 jobs:
   post:
-    name: Publish friendly post to X
+    name: Publish mixed X post
     runs-on: ubuntu-latest
-    # 到期任务并行执行；失败由后续轮询补跑，最多延续计划时间后一小时。
+    # 每小时保留一个主槽位：5 个友好互动时段，其余 19 个为话题帖。
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +53,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日友好互动帖",
+              "taskName": "X 话题与友好互动交替发布",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

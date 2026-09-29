@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   X_CONTROVERSY_SLOTS,
+  X_CONTROVERSY_STRUCTURES,
   buildXControversyMessages,
   normalizeXControversySlot,
   normalizeXControversyText,
@@ -22,6 +23,11 @@ test('controversy slots cover every Shanghai hour with unique run keys', () => {
   assert.equal(normalizeXControversySlot('controversy_09'), 'controversy_09')
   assert.equal(normalizeXControversySlot('controversy_24'), '')
   assert.equal(new Set(slots.map((slot) => xControversyLastRunKey(slot.id))).size, 24)
+})
+
+test('topic prompts rotate through a broad set of writing structures', () => {
+  assert.equal(X_CONTROVERSY_STRUCTURES.length, 12)
+  assert.equal(new Set(X_CONTROVERSY_STRUCTURES.map((item) => item.id)).size, 12)
 })
 
 test('Baidu board parser keeps ranked public hot-search words and heat', () => {
@@ -53,13 +59,14 @@ test('prompt demands direct conflict without meta labels, fabricated details, or
     signals: [{ title: '多地讨论住房消费新变化', source: '公开媒体', publishedAt: Date.now() }],
   })
   assert.equal(messages.length, 2)
-  assert.match(messages[0].content, /俏皮、戏谑/)
-  assert.match(messages[0].content, /第一句直接进入具体人物的动作、台词或冲突/)
+  assert.match(messages[0].content, /俏皮、克制/)
+  assert.match(messages[0].content, /观察、动作、物件、选择、结果/)
   assert.match(messages[0].content, /禁止出现这些套话/)
-  assert.match(messages[0].content, /不要每条都用“亲戚—我说—他说—原来”/)
+  assert.match(messages[0].content, /近期文案既是事实去重清单，也是结构去重清单/)
   assert.match(messages[0].content, /不得造谣/)
   assert.match(messages[0].content, /不使用地域、性别、年龄、职业等群体羞辱/)
   assert.match(messages[0].content, /约 55—100 个汉字/)
+  assert.match(messages[1].content, /本次必须采用的结构/)
   assert.match(messages[1].content, /多地讨论住房消费新变化/)
 })
 

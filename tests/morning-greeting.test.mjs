@@ -375,17 +375,23 @@ test('配图素材用 tab 合并表情包和资源池，列表只加载小图', 
   assert.match(poolSource, /credentials: 'same-origin'/)
 })
 
-test('friendly posting covers the five daily greeting and community slots', async () => {
-  assert.equal(X_POST_SLOTS.length, 5)
+test('mixed posting reserves five friendly slots and uses topic posts for the other 19 hours', async () => {
+  assert.equal(X_POST_SLOTS.length, 24)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
-  assert.deepEqual(day.map((task) => task.id), ['morning', 'noon', 'community_friends', 'community_learning', 'community_growth'])
-  assert.deepEqual(day.map((task) => task.query), ['period', 'period', 'community', 'community', 'community'])
+  assert.deepEqual(day.map((task) => task.id), [
+    'controversy_00', 'controversy_01', 'controversy_02', 'controversy_03', 'controversy_04', 'controversy_05',
+    'controversy_06', 'controversy_07', 'morning', 'community_friends', 'controversy_10', 'controversy_11',
+    'noon', 'controversy_13', 'controversy_14', 'community_learning', 'controversy_16', 'controversy_17',
+    'controversy_18', 'community_growth', 'controversy_20', 'controversy_21', 'controversy_22', 'controversy_23',
+  ])
+  assert.equal(day.filter((task) => task.query === 'controversy').length, 19)
+  assert.equal(day.filter((task) => task.query !== 'controversy').length, 5)
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
   assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
   for (const task of [...day, ...nextDay]) {
     assert.ok(Number.isInteger(task.offsetMinutes))
-    assert.ok(Math.abs(task.offsetMinutes) <= 30)
+    assert.ok(Math.abs(task.offsetMinutes) <= 5)
     assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
   }
 })
@@ -396,7 +402,7 @@ test('schedule windows start at the target and reject expired or next-day trigge
   for (const task of day) {
     assert.equal(isXPostDue(task, new Date(task.scheduledAt - 1)), false)
     assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
-    assert.equal(isXPostDue(task, new Date(task.scheduledAt + 60 * 60_000 + 1)), false)
+    assert.equal(isXPostDue(task, new Date(task.scheduledAt + 45 * 60_000 + 1)), false)
   }
   const late = day.find((task) => task.id === 'community_growth')
   assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)

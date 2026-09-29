@@ -69,6 +69,10 @@ test('schedule snapshots reuse live slot times', () => {
   assert.equal(controversyHourly.slots.length, 24)
   assert.ok(controversyHourly.slots.every((slot) => slot.type === '争议短帖'))
   const friendlyV2 = X_AUTOMATION_SCHEDULE_SNAPSHOTS.find((item) => item.phaseId === 'friendly-v2')
-  assert.equal(friendlyV2.slots.length, 5)
-  assert.deepEqual(friendlyV2.slots.map((slot) => slot.id), ['morning', 'noon', 'community_friends', 'community_learning', 'community_growth'])
+  assert.equal(friendlyV2.slots.length, 24)
+  assert.equal(friendlyV2.slots.filter((slot) => slot.type === '争议短帖').length, 19)
+  assert.deepEqual(
+    friendlyV2.slots.filter((slot) => slot.type !== '争议短帖').map((slot) => slot.id),
+    ['morning', 'community_friends', 'noon', 'community_learning', 'community_growth'],
+  )
 })

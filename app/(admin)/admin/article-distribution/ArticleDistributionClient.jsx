@@ -178,13 +178,18 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
     [items, selectedKey],
   )
 
-  const detectPlugin = useCallback(async () => {
+  const detectPlugin = useCallback(async ({ reloadIfMissing = false } = {}) => {
     const extension = window.$cose
     const ready = typeof extension?.addTask === 'function' && typeof extension?.getPlatforms === 'function'
     setPlugin({ ready, version: String(extension?.version || '') })
     if (!ready) {
       setAccounts([])
-      setMessage('未检测到 2aran 文章分发助手。安装或重新加载插件后刷新页面。')
+      if (reloadIfMissing) {
+        setMessage('正在刷新当前页面并重新连接插件…')
+        window.location.reload()
+        return
+      }
+      setMessage('未检测到 2aran 文章分发助手。安装或重新加载插件后，点击“检查插件”即可重新连接。')
       return
     }
     const platforms = extension.getPlatforms() || []
@@ -193,8 +198,18 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       try {
         const result = await extension.getAccounts()
         if (Array.isArray(result) && result.length) detectedAccounts = result
-      } catch {
-        // 登录态检测失败不阻断分发，仍使用插件声明的平台能力。
+      } catch (error) {
+        // 扩展重新加载后，旧页面里的桥接对象还在，但其 Chrome runtime 已失效。
+        // 手动检查时刷新页面，让 content script 在当前标签页重新注入。
+        setPlugin({ ready: false, version: String(extension?.version || '') })
+        setAccounts([])
+        if (reloadIfMissing) {
+          setMessage('插件已更新，正在刷新当前页面并重新连接…')
+          window.location.reload()
+          return
+        }
+        setMessage(error?.message || '插件连接已失效，请点击“检查插件”重新连接。')
+        return
       }
     }
     setAccounts(detectedAccounts)
@@ -335,7 +350,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       description="从站内选择公开文章，通过浏览器中的登录态写入六个平台草稿；首期保留人工发布确认。"
       actions={(
         <>
-          <AdminButton type="button" onClick={detectPlugin} disabled={loading}>
+          <AdminButton type="button" onClick={() => detectPlugin({ reloadIfMissing: true })} disabled={loading}>
             <IconRefresh size={16} /> 检查插件
           </AdminButton>
           <AdminButton type="button" variant="primary" onClick={distribute} disabled={loading || !selectedItem || selectedPlatforms.length === 0}>
@@ -432,7 +447,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
             <ol className="mb-0 mt-4 list-decimal space-y-1 pl-5 text-xs leading-5 text-[#7b7d72] dark:text-gray-500">
               <li>下载并解压 ZIP。</li>
               <li>打开 Chrome 的扩展程序页面，开启开发者模式。</li>
-              <li>选择“加载已解压的扩展程序”，载入解压后的目录，再刷新当前页面。</li>
+              <li>选择“加载已解压的扩展程序”，载入解压后的目录，再点击页面顶部的“检查插件”。</li>
             </ol>
           </Section>
 

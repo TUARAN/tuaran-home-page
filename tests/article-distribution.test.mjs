@@ -42,6 +42,8 @@ test('后台自动化工作区和导航都登记文章一键分发', async () =>
   assert.match(page, /草稿模式/)
   assert.match(page, /2aran-article-distributor-extension-v1\.3\.6\.zip/)
   assert.match(page, /下载 Chrome 插件/)
+  assert.match(page, /detectPlugin\(\{ reloadIfMissing: true \}\)/)
+  assert.match(page, /window\.location\.reload\(\)/)
   assert.match(page, /不会自动点击平台的“发布”按钮/)
   assert.match(articleRoute, /getOwnerOrReject/)
   assert.match(articleRoute, /\^\\\/articles\\\//)

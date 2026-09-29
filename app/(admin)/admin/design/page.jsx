@@ -7,7 +7,7 @@ import motion from '../../../../docs/loading-motion-system.md?raw'
 import { countAuditTasks, isCollapsedDesignDocument } from './designDocuments'
 
 export const metadata = {
-  title: '设计与体验',
+  title: 'UI 设计',
   description: '站点设计规范、UI 交互审计与改造记录，仅站长可见。',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
@@ -105,11 +105,11 @@ function DocumentSection({ document }) {
 export default function AdminDesignPage() {
   const { completed, total } = countAuditTasks(audit)
   return (
-    <AdminPageGate label="设计与体验" returnTo="/admin/design">
+    <AdminPageGate label="UI 设计" returnTo="/admin/design">
       <AdminPage
-        title="设计与体验"
-        description="GPT6-Astra 分析与记录。集中查看设计规范、页面体验问题和改造验收，内容与项目文档保持一致。"
-        actions={<><AdminButton href="/admin/seo" size="sm">SEO 管理</AdminButton><AdminButton href="/admin/planning" size="sm">规划与待办</AdminButton></>}
+        title="UI 设计"
+        description="集中查看设计规范、界面交互问题和改造验收；运行质量与流量异常已拆分到站点体检。"
+        actions={<><AdminButton href="/admin/site-health" size="sm">站点体检</AdminButton><AdminButton href="/admin/seo" size="sm">SEO 管理</AdminButton><AdminButton href="/admin/planning" size="sm">规划与待办</AdminButton></>}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <StatCard label="归档任务进度" value={`${completed}/${total}`} sub="以审计文档的勾选记录为准" icon="planning" tone="info" />

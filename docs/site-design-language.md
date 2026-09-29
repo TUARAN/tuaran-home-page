@@ -10,7 +10,7 @@
 
 ## 权威来源
 
-站长阅读入口：后台 `/admin/design`（设计与体验）；页面随部署读取文档正本。
+站长阅读入口：后台 `/admin/design`（UI 设计）；页面随部署读取文档正本。
 
 - 全站颜色、表面、间距与壳层令牌：`app/globals.css`。
 - 主站与后台页面壳：`app/(site)/layout.jsx`、`app/(admin)/layout.jsx` 及相关共享组件。

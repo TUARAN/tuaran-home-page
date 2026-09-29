@@ -1,4 +1,4 @@
-/** 审计类文档在「设计与体验」默认折叠；规范类文档保持展开。 */
+/** 审计类文档在「UI 设计」默认折叠；规范类文档保持展开。 */
 export function isCollapsedDesignDocument(document) {
   return document?.kind === 'audit'
 }

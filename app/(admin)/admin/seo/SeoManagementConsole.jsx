@@ -63,7 +63,7 @@ export default async function SeoManagementConsole() {
       actions={(
         <>
           <AdminButton href="#growth-roadmap" size="sm">审计与改造路线图</AdminButton>
-          <AdminButton href="/admin/design" size="sm">设计与体验</AdminButton>
+          <AdminButton href="/admin/design" size="sm">UI 设计</AdminButton>
           <AdminButton href="/sitemap.xml" target="_blank" rel="noreferrer" size="sm">Sitemap</AdminButton>
           <AdminButton href="/robots.txt" target="_blank" rel="noreferrer" size="sm">Robots</AdminButton>
           <AdminButton href="/llms.txt" target="_blank" rel="noreferrer" size="sm">LLMs</AdminButton>

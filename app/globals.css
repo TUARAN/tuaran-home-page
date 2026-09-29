@@ -5418,6 +5418,10 @@
     padding-top: clamp(3.5rem, 8vw, 6.5rem);
   }
 
+  .community-section.community-feed-section {
+    padding-top: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
   .community-section-head {
     display: flex;
     align-items: flex-end;

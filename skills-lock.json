@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "qianwen-update-check": {
+      "source": "QianWen-AI/qianwen-ai",
+      "sourceType": "github",
+      "skillPath": "skills/ops/qianwen-update-check/SKILL.md",
+      "computedHash": "28880528c48e709922baefe4e4fcce102fa2669d664eb486cadb07a3a3a6b5cb"
+    }
+  }
+}

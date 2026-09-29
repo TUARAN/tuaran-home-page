@@ -112,7 +112,7 @@ export default function DiscussionHubClient() {
 
   return (
     <div className="community-page">
-      <section id="message" className="community-section scroll-mt-24" aria-labelledby="community-feed-title">
+      <section id="message" className="community-section community-feed-section scroll-mt-24" aria-labelledby="community-feed-title">
         <div className="community-section-head community-feed-heading">
           <div>
             <p className="community-kicker">NOW TALKING</p>

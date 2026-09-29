@@ -409,7 +409,7 @@ function LikedContentList({ likes, loading }) {
 }
 
 export default function ContentWeeklyClient() {
-  const [days, setDays] = useState(1)
+  const [days, setDays] = useState(7)
   const [view, setView] = useState('overview')
 
   useEffect(() => {

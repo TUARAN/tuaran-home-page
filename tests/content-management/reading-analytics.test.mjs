@@ -59,3 +59,7 @@ test('admin analytics centralizes source roles and live integrations', () => {
   assert.match(analyticsRouteSource, /CLOUDFLARE_ANALYTICS_TOKEN/)
   assert.match(analyticsRouteSource, /requestSource: 'eyeball'/)
 })
+
+test('content analytics defaults to the recent seven-day period', () => {
+  assert.match(analyticsDashboardSource, /const \[days, setDays\] = useState\(7\)/)
+})

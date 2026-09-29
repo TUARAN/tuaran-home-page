@@ -62,7 +62,7 @@ function TimelineNode({ item }) {
         }`}
         aria-hidden="true"
       />
-      <div className={`mt-1 h-full rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
+      <div className={`mt-1 rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
         <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="mb-0 flex flex-wrap items-center gap-1.5">
@@ -146,7 +146,7 @@ function TaskTimeline({ lastRuns, communityRuns }) {
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[1100px] grid-cols-5 gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[1100px] grid-cols-5 items-start gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (

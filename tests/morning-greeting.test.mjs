@@ -332,6 +332,8 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
   assert.match(clientSource, /grid-cols-5/)
+  assert.match(clientSource, /grid-cols-5 items-start/)
+  assert.doesNotMatch(clientSource, /mt-1 h-full rounded-xl/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
   assert.match(clientSource, /08:00/)

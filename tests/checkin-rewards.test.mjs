@@ -34,15 +34,18 @@ test('week view includes today and checked state', () => {
 })
 
 test('check-in entry shares session state and keeps an accessible animated gift control', async () => {
-  const [entrySource, pageSource, providerSource, cssSource] = await Promise.all([
-    readFile(new URL('../app/(site)/components/CheckinGiftEntry.jsx', import.meta.url), 'utf8'),
+  const [headerSource, circlesSource, topicSource, pageSource, providerSource, cssSource] = await Promise.all([
+    readFile(new URL('../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/circles/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/circles/CircleTopicPage.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/checkin/CheckinRewardsClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/components/SessionProvider.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/globals.css', import.meta.url), 'utf8'),
   ])
-  assert.match(entrySource, /useSessionAccount/)
-  assert.match(entrySource, /aria-label=/)
-  assert.doesNotMatch(entrySource, /fetch\('\/api\/points\/me'/)
+  assert.match(headerSource, /site-nav-checkin-gift/)
+  assert.match(headerSource, /account\.points\?\.checkedInToday/)
+  assert.doesNotMatch(circlesSource, /CheckinGiftEntry|community-checkin-entry/)
+  assert.doesNotMatch(topicSource, /CheckinGiftEntry|circle-topic-checkin-entry/)
   assert.match(pageSource, /account\.refreshPoints\(\)/)
   assert.match(providerSource, /refreshPoints/)
   assert.match(cssSource, /@keyframes checkin-gift-rock/)

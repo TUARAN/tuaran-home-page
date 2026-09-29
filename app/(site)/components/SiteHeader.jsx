@@ -11,6 +11,7 @@ import {
   IconChevronRight,
   IconDeviceDesktop,
   IconDeviceMobile,
+  IconGift,
   IconLanguage,
   IconLayoutDashboard,
   IconLogout,
@@ -273,20 +274,29 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
   )
 }
 
-function DirectChannelLink({ channel, isActive, onNavigate }) {
+function DirectChannelLink({ channel, isActive, checkedInToday, onNavigate }) {
   const { locale } = useLocale()
+  const isCheckin = channel.key === 'checkin'
   return (
     <Link
       href={channel.href}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
+      aria-label={isCheckin ? (checkedInToday ? '签到，今日已完成' : '签到有礼') : undefined}
       className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
       data-analytics-event="entry_click"
       data-analytics-surface="global_nav"
       data-analytics-destination-kind="page"
       data-analytics-destination-id={channel.href}
     >
-      <span>{navLabel(channel, locale)}</span>
+      <span className="relative">
+        {navLabel(channel, locale)}
+        {isCheckin ? (
+          <span className={`site-nav-checkin-gift ${checkedInToday ? 'is-checked' : ''}`} aria-hidden="true">
+            <IconGift size={15} stroke={2.1} />
+          </span>
+        ) : null}
+      </span>
     </Link>
   )
 }
@@ -806,6 +816,7 @@ export default function SiteHeader() {
                           key={channel.key}
                           channel={channel}
                           isActive={isActive}
+                          checkedInToday={Boolean(account.user && account.points?.checkedInToday)}
                           onNavigate={() => setOpenChannel(null)}
                         />
                       )

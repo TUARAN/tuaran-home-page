@@ -17,69 +17,23 @@
   --loading-ink: var(--site-accent, #778087);
 }
 
-/* Check-in gift entry and rewards page. Kept self-contained so the circles hero can reuse it. */
-.checkin-gift-entry {
-  display: inline-flex;
-  min-height: 2.55rem;
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid color-mix(in srgb, #d6a94f 55%, var(--site-line));
-  border-radius: 999px;
-  background: color-mix(in srgb, #fff8e5 90%, transparent);
-  box-shadow: 0 10px 28px rgba(83, 57, 14, 0.13);
-  color: #765313;
-  font-size: 12px;
-  font-weight: 720;
-  padding: 0.35rem 0.65rem 0.35rem 0.4rem;
-  text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.checkin-gift-entry:visited { color: #765313; }
-.checkin-gift-entry:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(83, 57, 14, 0.18); }
-.checkin-gift-entry.is-checked { border-color: #9dc9b5; background: #edf8f2; color: #237052; }
-.checkin-gift-entry.is-checked:visited { color: #237052; }
-
-.checkin-gift-entry-icon {
-  display: inline-flex;
-  width: 1.8rem;
-  height: 1.8rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f4c860;
-  color: #5b3e08;
-}
-
-.checkin-gift-entry.is-checked .checkin-gift-entry-icon { background: #cbe9da; color: #237052; }
-.checkin-gift-entry-icon-only {
-  position: relative;
-  width: 3rem;
-  min-height: 3rem;
-  justify-content: center;
-  padding: 0;
-}
-.checkin-gift-entry-icon-only .checkin-gift-entry-icon {
-  width: 2.05rem;
-  height: 2.05rem;
-  animation: checkin-gift-rock 2.8s ease-in-out infinite;
-  transform-origin: 50% 18%;
-}
-.checkin-gift-entry-icon-only:hover .checkin-gift-entry-icon { animation-duration: 1.2s; }
-.checkin-gift-entry-check {
+/* Small gift cue attached to the top-right of the Check-in navigation item. */
+.site-nav-checkin-gift {
   position: absolute;
-  right: .12rem;
-  bottom: .12rem;
+  top: -.9rem;
+  right: -.95rem;
   display: inline-flex;
   width: 1rem;
   height: 1rem;
   align-items: center;
   justify-content: center;
-  border: 2px solid #edf8f2;
-  border-radius: 50%;
-  background: #318564;
-  color: white;
+  color: #b87808;
+  animation: checkin-gift-rock 2.8s ease-in-out infinite;
+  transform-origin: 50% 35%;
+  pointer-events: none;
 }
+.site-nav-trigger:hover .site-nav-checkin-gift { animation-duration: 1.2s; }
+.site-nav-checkin-gift.is-checked { color: #237052; }
 @keyframes checkin-gift-rock {
   0%, 62%, 100% { transform: rotate(0deg); }
   69% { transform: rotate(-10deg); }
@@ -88,10 +42,8 @@
   90% { transform: rotate(4deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .checkin-gift-entry-icon-only .checkin-gift-entry-icon { animation: none; }
+  .site-nav-checkin-gift { animation: none; }
 }
-.community-checkin-entry,
-.circle-topic-checkin-entry { position: absolute; z-index: 4; top: 1.15rem; right: 1.15rem; }
 
 .checkin-page {
   --checkin-gold: #f1bb4a;
@@ -276,10 +228,6 @@
 }
 
 @media (max-width: 640px) {
-  .community-checkin-entry,
-  .circle-topic-checkin-entry { top: .7rem; right: .7rem; }
-  .checkin-gift-entry-icon-only { width: 2.6rem; min-height: 2.6rem; padding: 0; }
-  .checkin-gift-entry-icon-only .checkin-gift-entry-icon { width: 1.8rem; height: 1.8rem; }
   .checkin-hero { border-radius: .9rem; padding: 4rem 1rem 1rem; }
   .checkin-hero h1 { font-size: 3.35rem; }
   .checkin-hero-copy > p:not(.checkin-eyebrow) { margin-top: .85rem; font-size: .92rem; }

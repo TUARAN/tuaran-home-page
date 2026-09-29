@@ -5,7 +5,6 @@ import ContentEngagement from '../components/ContentEngagement'
 import PageContainer from '../components/PageContainer'
 import SharePageButton from '../components/SharePageButton'
 import CommunityMembershipCard from '../components/CommunityMembershipCard'
-import CheckinGiftEntry from '../components/CheckinGiftEntry'
 
 const SHARED_RULES = [
   '真人、真实账号、真实经验，不交换账号密码。',
@@ -44,7 +43,6 @@ export default function CircleTopicPage({ topic }) {
         </nav>
 
         <header className="circle-topic-hero" style={{ '--circle-accent': topic.accent }}>
-          <CheckinGiftEntry className="circle-topic-checkin-entry" />
           <div className="relative z-10 max-w-3xl">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="circle-topic-platform">{topic.eyebrow}</span>

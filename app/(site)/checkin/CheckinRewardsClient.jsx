@@ -12,6 +12,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSessionAccount } from '../components/SessionProvider'
 
 const STATUS_LABELS = {
   pending: '待确认',
@@ -36,6 +37,7 @@ function dayLabel(day) {
 }
 
 export default function CheckinRewardsClient() {
+  const account = useSessionAccount()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -59,7 +61,7 @@ export default function CheckinRewardsClient() {
   useEffect(() => { load() }, [load])
 
   async function checkin() {
-    if (!data?.authed) return
+    if (!account.user) return
     setBusy(true)
     setMessage('')
     try {
@@ -69,7 +71,7 @@ export default function CheckinRewardsClient() {
       setMessage(payload.awarded
         ? `签到成功，获得 ${payload.gained} 燃币${payload.bonus ? `（含连续签到奖励 ${payload.bonus}）` : ''}`
         : '今天已经签到啦')
-      await load()
+      await Promise.all([load(), account.refreshPoints()])
     } catch (error) {
       setMessage(String(error?.message || error))
     } finally {
@@ -94,7 +96,7 @@ export default function CheckinRewardsClient() {
       setMessage(`已兑换「${selected.title}」，站长确认后会更新进度`)
       setSelected(null)
       setForm({ recipientName: '', contact: '', shippingAddress: '', userNote: '' })
-      await load()
+      await Promise.all([load(), account.refreshPoints()])
     } catch (error) {
       setMessage(String(error?.message || error))
     } finally {
@@ -103,6 +105,9 @@ export default function CheckinRewardsClient() {
   }
 
   const status = data?.checkinStatus
+  const authed = Boolean(account.user)
+  const sessionLoading = account.loading || loading
+  const balance = data?.balance ?? account.points?.balance ?? 0
   const week = status?.week || []
   const rewards = data?.rewards || []
   const orders = data?.redemptions || []
@@ -122,12 +127,12 @@ export default function CheckinRewardsClient() {
           <p>每天来看看，领取燃币，兑换站长准备的礼物。</p>
           <div className="checkin-balance">
             <span><IconFlame size={18} fill="currentColor" /> 我的燃币</span>
-            <strong>{loading ? '…' : data?.authed ? data.balance : '—'}</strong>
+            <strong>{sessionLoading ? '…' : authed ? balance : '—'}</strong>
           </div>
         </div>
 
         <section className="checkin-action-card" aria-label="今日签到">
-          {!data?.authed && !loading ? (
+          {!authed && !sessionLoading ? (
             <>
               <IconGift className="checkin-action-icon" size={36} />
               <strong>登录后开始每日签到</strong>
@@ -141,7 +146,7 @@ export default function CheckinRewardsClient() {
               <button
                 type="button"
                 className={`checkin-main-button ${data?.checkedInToday ? 'is-done' : ''}`}
-                disabled={busy || loading || data?.checkedInToday}
+                disabled={busy || sessionLoading || data?.checkedInToday}
                 onClick={checkin}
               >
                 {data?.checkedInToday ? <><IconCheck size={18} /> 今日已签到</> : <>今日签到 · +{data?.checkinReward || 5} <IconFlame size={17} /></>}
@@ -181,7 +186,7 @@ export default function CheckinRewardsClient() {
             {rewards.map((reward) => {
               const soldOut = reward.stock === 0
               const limited = reward.perUserLimit > 0 && reward.redeemedCount >= reward.perUserLimit
-              const insufficient = Boolean(data?.authed && data.balance < reward.costPoints)
+              const insufficient = Boolean(authed && balance < reward.costPoints)
               return (
                 <article key={reward.id} className="checkin-reward-card">
                   <div className="checkin-reward-art" aria-hidden="true"><span>{reward.emoji}</span></div>
@@ -194,7 +199,7 @@ export default function CheckinRewardsClient() {
                     <p>{reward.description}</p>
                     <div className="checkin-reward-footer">
                       <strong><IconFlame size={16} fill="currentColor" /> {reward.costPoints}</strong>
-                      {!data?.authed ? (
+                      {!authed ? (
                         <Link href="/login" className="checkin-redeem-button">登录兑换</Link>
                       ) : (
                         <button type="button" className="checkin-redeem-button" disabled={soldOut || limited || insufficient} onClick={() => setSelected(reward)}>
@@ -241,7 +246,7 @@ export default function CheckinRewardsClient() {
             <span className="checkin-dialog-emoji" aria-hidden="true">{selected.emoji}</span>
             <p className="checkin-eyebrow">CONFIRM REDEMPTION</p>
             <h2>兑换「{selected.title}」</h2>
-            <p className="checkin-dialog-cost">将使用 <strong>{selected.costPoints} 燃币</strong>，当前余额 {data?.balance || 0}。</p>
+            <p className="checkin-dialog-cost">将使用 <strong>{selected.costPoints} 燃币</strong>，当前余额 {balance}。</p>
             {selected.itemType === 'physical' ? (
               <div className="checkin-form-grid">
                 <label>收件人<input required value={form.recipientName} onChange={(e) => setForm({ ...form, recipientName: e.target.value })} maxLength={80} /></label>

@@ -10,9 +10,11 @@ const SessionContext = createContext({
   isOwner: false,
   navOverrides: {},
   notifications: { unread: 0, items: [], status: 'idle' },
+  points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'idle' },
   refresh: async () => {},
   refreshNav: async () => {},
   refreshNotifications: async () => {},
+  refreshPoints: async () => {},
   markNotificationsRead: async () => {},
 })
 
@@ -26,10 +28,12 @@ export function SessionProvider({ children }) {
     isOwner: false,
     navOverrides: {},
     notifications: { unread: 0, items: [], status: 'idle' },
+    points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'idle' },
   })
   const inFlightAccountRef = useRef(null)
   const inFlightNavRef = useRef(null)
   const inFlightNotificationsRef = useRef(null)
+  const inFlightPointsRef = useRef(null)
 
   const refresh = useCallback(async () => {
     if (inFlightAccountRef.current) return inFlightAccountRef.current
@@ -83,6 +87,34 @@ export function SessionProvider({ children }) {
       }
     })()
     inFlightNotificationsRef.current = p
+    return p
+  }, [])
+
+  const refreshPoints = useCallback(async () => {
+    if (inFlightPointsRef.current) return inFlightPointsRef.current
+    const p = (async () => {
+      try {
+        const res = await fetch('/api/points/me', { cache: 'no-store', credentials: 'same-origin' })
+        const data = await res.json().catch(() => null)
+        setState((prev) => ({
+          ...prev,
+          points: {
+            balance: Number(data?.balance) || 0,
+            checkedInToday: Boolean(data?.authed && data?.checkedInToday),
+            checkinStatus: data?.checkinStatus || null,
+            status: data?.authed ? 'ok' : 'anonymous',
+          },
+        }))
+      } catch {
+        setState((prev) => ({
+          ...prev,
+          points: { ...prev.points, status: 'error' },
+        }))
+      } finally {
+        inFlightPointsRef.current = null
+      }
+    })()
+    inFlightPointsRef.current = p
     return p
   }, [])
 
@@ -158,12 +190,14 @@ export function SessionProvider({ children }) {
       refresh()
       refreshNav()
       refreshNotifications()
+      refreshPoints()
     }
     function onVisibility() {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         refresh()
         refreshNav()
         refreshNotifications()
+        refreshPoints()
       }
     }
     function onPageShow(event) {
@@ -171,6 +205,7 @@ export function SessionProvider({ children }) {
         refresh()
         refreshNav()
         refreshNotifications()
+        refreshPoints()
       }
     }
     function onSessionRefresh() { refresh() }
@@ -187,25 +222,27 @@ export function SessionProvider({ children }) {
       window.removeEventListener(REFRESH_EVENT, onSessionRefresh)
       window.removeEventListener(NAV_REFRESH_EVENT, onNavRefresh)
     }
-  }, [refresh, refreshNav, refreshNotifications])
+  }, [refresh, refreshNav, refreshNotifications, refreshPoints])
 
   useEffect(() => {
     if (state.loading) return
     if (state.user?.id) {
       refreshNotifications()
+      refreshPoints()
       const timer = window.setInterval(refreshNotifications, 60_000)
       return () => window.clearInterval(timer)
     } else {
       setState((prev) => ({
         ...prev,
         notifications: { unread: 0, items: [], status: 'anonymous' },
+        points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'anonymous' },
       }))
     }
     return undefined
-  }, [state.loading, state.user?.id, refreshNotifications])
+  }, [state.loading, state.user?.id, refreshNotifications, refreshPoints])
 
   return (
-    <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, markNotificationsRead }}>
+    <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, refreshPoints, markNotificationsRead }}>
       <Suspense fallback={null}><NotificationArrival /></Suspense>
       {children}
     </SessionContext.Provider>

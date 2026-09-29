@@ -52,7 +52,44 @@
 }
 
 .checkin-gift-entry.is-checked .checkin-gift-entry-icon { background: #cbe9da; color: #237052; }
-.checkin-gift-entry-arrow { opacity: 0.62; }
+.checkin-gift-entry-icon-only {
+  position: relative;
+  width: 3rem;
+  min-height: 3rem;
+  justify-content: center;
+  padding: 0;
+}
+.checkin-gift-entry-icon-only .checkin-gift-entry-icon {
+  width: 2.05rem;
+  height: 2.05rem;
+  animation: checkin-gift-rock 2.8s ease-in-out infinite;
+  transform-origin: 50% 18%;
+}
+.checkin-gift-entry-icon-only:hover .checkin-gift-entry-icon { animation-duration: 1.2s; }
+.checkin-gift-entry-check {
+  position: absolute;
+  right: .12rem;
+  bottom: .12rem;
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #edf8f2;
+  border-radius: 50%;
+  background: #318564;
+  color: white;
+}
+@keyframes checkin-gift-rock {
+  0%, 62%, 100% { transform: rotate(0deg); }
+  69% { transform: rotate(-10deg); }
+  76% { transform: rotate(9deg); }
+  83% { transform: rotate(-6deg); }
+  90% { transform: rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .checkin-gift-entry-icon-only .checkin-gift-entry-icon { animation: none; }
+}
 .community-checkin-entry,
 .circle-topic-checkin-entry { position: absolute; z-index: 4; top: 1.15rem; right: 1.15rem; }
 
@@ -241,9 +278,8 @@
 @media (max-width: 640px) {
   .community-checkin-entry,
   .circle-topic-checkin-entry { top: .7rem; right: .7rem; }
-  .circle-topic-checkin-entry .checkin-gift-entry-arrow { display: none; }
-  .checkin-gift-entry { min-height: 2.25rem; padding: .25rem .55rem .25rem .3rem; }
-  .checkin-gift-entry-icon { width: 1.65rem; height: 1.65rem; }
+  .checkin-gift-entry-icon-only { width: 2.6rem; min-height: 2.6rem; padding: 0; }
+  .checkin-gift-entry-icon-only .checkin-gift-entry-icon { width: 1.8rem; height: 1.8rem; }
   .checkin-hero { border-radius: .9rem; padding: 4rem 1rem 1rem; }
   .checkin-hero h1 { font-size: 3.35rem; }
   .checkin-hero-copy > p:not(.checkin-eyebrow) { margin-top: .85rem; font-size: .92rem; }

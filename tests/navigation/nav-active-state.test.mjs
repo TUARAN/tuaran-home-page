@@ -47,6 +47,14 @@ test('Web3 is a secondary entry owned by the content channel', () => {
   assert.equal(getActiveNavHref(sections, '/web3', new URLSearchParams()), '/web3')
 })
 
+test('check-in is a direct channel immediately after community', () => {
+  const keys = Array.from(SITE_CHANNELS, (channel) => channel.key)
+  const communityIndex = keys.indexOf('community')
+  assert.equal(keys[communityIndex + 1], 'checkin')
+  assert.equal(SITE_CHANNELS[communityIndex + 1].direct, true)
+  assert.equal(SITE_CHANNELS[communityIndex + 1].match('/checkin'), true)
+})
+
 test('x automation retrospective selects content interactives channel', () => {
   assert.equal(getActiveNavHref(sectionsFor('content'), '/x-automation-retrospective'), '/rich-pages')
 })

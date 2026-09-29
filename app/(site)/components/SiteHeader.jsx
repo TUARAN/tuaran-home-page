@@ -40,7 +40,7 @@ import { trackSiteEvent } from '../../../lib/siteAnalytics'
 
 const DESKTOP_CHANNEL_GROUPS = [
   SITE_CHANNELS.slice(0, 3),
-  SITE_CHANNELS.slice(3, 5),
+  SITE_CHANNELS.slice(3),
 ]
 
 function ChevronDown() {
@@ -270,6 +270,24 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
         </div>
       ) : null}
     </div>
+  )
+}
+
+function DirectChannelLink({ channel, isActive, onNavigate }) {
+  const { locale } = useLocale()
+  return (
+    <Link
+      href={channel.href}
+      onClick={onNavigate}
+      aria-current={isActive ? 'page' : undefined}
+      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
+      data-analytics-event="entry_click"
+      data-analytics-surface="global_nav"
+      data-analytics-destination-kind="page"
+      data-analytics-destination-id={channel.href}
+    >
+      <span>{navLabel(channel, locale)}</span>
+    </Link>
   )
 }
 
@@ -782,6 +800,16 @@ export default function SiteHeader() {
                 <div key={`nav-group-${groupIndex}`} className="site-nav-cluster">
                   {channels.map((channel) => {
                     const isActive = channel.match(pathname, searchParams)
+                    if (channel.direct) {
+                      return (
+                        <DirectChannelLink
+                          key={channel.key}
+                          channel={channel}
+                          isActive={isActive}
+                          onNavigate={() => setOpenChannel(null)}
+                        />
+                      )
+                    }
                     const isOpen = openChannel === channel.key
                     const align =
                       channel.key === 'content'
@@ -900,6 +928,19 @@ export default function SiteHeader() {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)
             const activeHref = channel.match(pathname, searchParams) ? getActiveNavHref(sections, pathname, searchParams) : null
+            if (channel.direct) {
+              return (
+                <Link
+                  key={channel.key}
+                  href={channel.href}
+                  aria-current={activeHref ? 'page' : undefined}
+                  className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${activeHref ? 'site-menu-item-active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {navLabel(channel, locale)}
+                </Link>
+              )
+            }
             return (
               <div key={channel.key} className="site-mobile-card rounded-2xl border">
                 <button

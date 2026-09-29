@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 
 import {
   buildCheckinWeek,
@@ -30,4 +31,20 @@ test('week view includes today and checked state', () => {
   const week = buildCheckinWeek(['2026-09-28', '2026-09-29'], '2026-09-29')
   assert.equal(week.length, 7)
   assert.deepEqual(week.at(-1), { day: '2026-09-29', checked: true, today: true })
+})
+
+test('check-in entry shares session state and keeps an accessible animated gift control', async () => {
+  const [entrySource, pageSource, providerSource, cssSource] = await Promise.all([
+    readFile(new URL('../app/(site)/components/CheckinGiftEntry.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/checkin/CheckinRewardsClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/components/SessionProvider.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/globals.css', import.meta.url), 'utf8'),
+  ])
+  assert.match(entrySource, /useSessionAccount/)
+  assert.match(entrySource, /aria-label=/)
+  assert.doesNotMatch(entrySource, /fetch\('\/api\/points\/me'/)
+  assert.match(pageSource, /account\.refreshPoints\(\)/)
+  assert.match(providerSource, /refreshPoints/)
+  assert.match(cssSource, /@keyframes checkin-gift-rock/)
+  assert.match(cssSource, /prefers-reduced-motion: reduce/)
 })

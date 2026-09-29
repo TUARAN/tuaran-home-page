@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  cumulativeAnalyticsWindow,
   detectTrafficSpike,
   equalComparisonWindow,
   normalizeUmamiStats,
@@ -9,6 +10,19 @@ import {
   shanghaiSeriesDate,
   summarizeCloudflareGroups,
 } from '../../lib/analyticsSources.mjs'
+
+test('cumulative windows cover all recorded history without a comparison period', () => {
+  const now = Date.UTC(2026, 8, 30, 4, 0, 0)
+  assert.deepEqual(cumulativeAnalyticsWindow(now), {
+    days: 'all',
+    cumulative: true,
+    timezone: 'Asia/Shanghai',
+    currentStart: 0,
+    currentEnd: now,
+    previousStart: 0,
+    previousEnd: 0,
+  })
+})
 
 test('daily visitor labels respect Shanghai midnight for offset-bearing API timestamps', () => {
   assert.equal(shanghaiSeriesDate('2026-09-03T16:00:00Z'), '2026-09-04')

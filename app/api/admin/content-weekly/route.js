@@ -5,7 +5,7 @@ import { resolveArticleKey, resolveContentKey } from '../../../../lib/articleLin
 import { getD1 } from '../../../../lib/d1'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/contentRegistry'
 import { readingVisitorName } from '../../../../lib/readingVisitorIdentity.mjs'
-import { equalComparisonWindow } from '../../../../lib/analyticsSources.mjs'
+import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../lib/analyticsSources.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -73,11 +73,11 @@ function resolveReadRows(rows, metadata) {
   })
 }
 
-function unavailable(days) {
+function unavailable(days, cumulative = false) {
   return Response.json({
     status: 'unavailable',
     generatedAt: Date.now(),
-    window: { days, timezone: 'Asia/Shanghai' },
+    window: { days, cumulative, timezone: 'Asia/Shanghai' },
     overview: { pv: 0, previousPv: 0, uv: 0, previousUv: 0, returning: 0, returnRate: 0 },
     series: [], topContent: [], byType: [], sources: [], audience: { breakdown: [], visitors: [] },
     today: { pv: 0, uv: 0, topContent: [], sources: [], visitors: [] },
@@ -91,19 +91,21 @@ export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  const requestedDays = Number(new URL(req.url).searchParams.get('days'))
-  const days = ALLOWED_DAYS.has(requestedDays) ? requestedDays : 7
+  const requestedRange = new URL(req.url).searchParams.get('days')
+  const requestedDays = Number(requestedRange)
+  const cumulative = requestedRange === 'all'
+  const days = cumulative ? 'all' : (ALLOWED_DAYS.has(requestedDays) ? requestedDays : 7)
 
   let db
   try {
     db = getD1()
   } catch {
-    return unavailable(days)
+    return unavailable(days, cumulative)
   }
 
   const now = Date.now()
   const todayStart = shanghaiDayStart(now)
-  const comparisonWindow = equalComparisonWindow(days, now)
+  const comparisonWindow = cumulative ? cumulativeAnalyticsWindow(now) : equalComparisonWindow(days, now)
   const periodStart = comparisonWindow.currentStart
   const previousStart = comparisonWindow.previousStart
   const visitorKey = visitorKeySql()
@@ -296,9 +298,9 @@ export async function GET(req) {
       status: 'ok',
       generatedAt: now,
       window: {
-        days, periodStart, previousStart, todayStart, timezone: 'Asia/Shanghai',
+        days, cumulative, periodStart, previousStart, todayStart, timezone: 'Asia/Shanghai',
         availableFrom, availableTo: Number(coverageRow?.available_to) || 0,
-        complete: Boolean(availableFrom && availableFrom <= periodStart),
+        complete: cumulative || Boolean(availableFrom && availableFrom <= periodStart),
       },
       overview: {
         pv, previousPv: Number(overviewRow?.previous_pv) || 0,
@@ -307,7 +309,9 @@ export async function GET(req) {
         viewsPerVisitor: uv ? pv / uv : 0,
         excludedLegacyPv: Number(overviewRow?.excluded_pv) || 0,
       },
-      series: buildSeries(seriesRows, periodStart, days),
+      series: cumulative && availableFrom
+        ? buildSeries(seriesRows, shanghaiDayStart(availableFrom), Math.floor((todayStart - shanghaiDayStart(availableFrom)) / DAY_MS) + 1)
+        : buildSeries(seriesRows, periodStart, days),
       topContent: resolveReadRows(contentRows, metadata),
       byType: typeRows(categoryRows),
       sources: sourceRows.map(mapSource),

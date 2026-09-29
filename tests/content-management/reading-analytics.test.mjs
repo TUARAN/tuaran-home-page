@@ -16,6 +16,10 @@ const analyticsRouteSource = await readFile(
   new URL('../../app/api/admin/analytics-sources/route.js', import.meta.url),
   'utf8',
 )
+const contentAnalyticsRouteSource = await readFile(
+  new URL('../../app/api/admin/content-weekly/route.js', import.meta.url),
+  'utf8',
+)
 
 test('anonymous readers receive a privacy-safe marker from their visitor hash', () => {
   assert.equal(readingVisitorName({
@@ -62,4 +66,11 @@ test('admin analytics centralizes source roles and live integrations', () => {
 
 test('content analytics defaults to the recent seven-day period', () => {
   assert.match(analyticsDashboardSource, /const \[days, setDays\] = useState\(7\)/)
+})
+
+test('admin analytics exposes a true cumulative history range', () => {
+  assert.match(analyticsDashboardSource, /\{ days: 'all', label: '历史累计' \}/)
+  assert.match(analyticsRouteSource, /requestedRange === 'all'/)
+  assert.match(contentAnalyticsRouteSource, /requestedRange === 'all'/)
+  assert.match(contentAnalyticsRouteSource, /cumulativeAnalyticsWindow/)
 })

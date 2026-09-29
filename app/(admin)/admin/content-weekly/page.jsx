@@ -16,7 +16,7 @@ export default async function AdminContentWeeklyPage() {
     <AdminPageGate
       label="数据统计"
       returnTo="/admin/content-weekly"
-      description="按今日、7 天、30 天和 90 天查看站点访问、有效阅读与边缘流量，仅站长本人可见。"
+      description="按今日、7 天、30 天、90 天和历史累计查看站点访问、有效阅读与边缘流量，仅站长本人可见。"
     >
       <ContentWeeklyClient />
     </AdminPageGate>

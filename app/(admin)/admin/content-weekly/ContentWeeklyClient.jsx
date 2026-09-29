@@ -25,6 +25,7 @@ const PERIODS = [
   { days: 7, label: '近 7 天' },
   { days: 30, label: '近 30 天' },
   { days: 90, label: '近 90 天' },
+  { days: 'all', label: '历史累计' },
 ]
 
 const VIEWS = [
@@ -175,6 +176,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading, view }
   const umamiViews = Number(umami?.current?.views) || 0
   const qualifiedReads = Number(contentOverview?.pv) || 0
   const edgeRequests = Number(cloudflare?.current?.requests) || 0
+  const cumulative = sourceData?.window?.cumulative === true
 
   return (
     <>
@@ -213,9 +215,9 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading, view }
             <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-700 dark:text-blue-300">主口径 · 站点访问</p><h3 className="mt-1 text-sm font-semibold">Umami</h3></div><IconChartBar size={19} className="text-blue-500" /></div>
             <SourceState source={umami}>
               <div className="grid grid-cols-3 gap-3">
-                <SourceMetric label="访客" value={loading ? '—' : number(umami?.current?.visitors)} unit="人" sub={`上期 ${number(umami?.previous?.visitors)}`} />
+                <SourceMetric label="访客" value={loading ? '—' : number(umami?.current?.visitors)} unit="人" sub={cumulative ? '历史累计' : `上期 ${number(umami?.previous?.visitors)}`} />
                 <SourceMetric label="访问" value={loading ? '—' : number(umami?.current?.visits)} unit="次" sub={`跳出 ${percent(umami?.current?.bounceRate)}`} />
-                <SourceMetric label="浏览" value={loading ? '—' : number(umami?.current?.views)} unit="次" sub={`上期 ${number(umami?.previous?.views)}`} />
+                <SourceMetric label="浏览" value={loading ? '—' : number(umami?.current?.views)} unit="次" sub={cumulative ? '历史累计' : `上期 ${number(umami?.previous?.views)}`} />
               </div>
             </SourceState>
             <a href="https://cloud.umami.is/share/3mOsBgzrmb9wY8bI" target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs underline">打开现有 Umami 独立面板</a>
@@ -224,7 +226,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading, view }
           <article className="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
             <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">主口径 · 内容消费</p><h3 className="mt-1 text-sm font-semibold">自建 D1</h3></div><IconDatabase size={19} className="text-emerald-500" /></div>
             <div className="grid grid-cols-3 gap-3">
-              <SourceMetric label="有效阅读" value={loading ? '—' : number(contentOverview?.pv)} unit="篇次" sub={`上期 ${number(contentOverview?.previousPv)}`} />
+              <SourceMetric label="有效阅读" value={loading ? '—' : number(contentOverview?.pv)} unit="篇次" sub={cumulative ? '历史累计' : `上期 ${number(contentOverview?.previousPv)}`} />
               <SourceMetric label="独立读者" value={loading ? '—' : number(contentOverview?.uv)} unit="人" sub="合格事件去重" />
               <SourceMetric label="人均阅读" value={loading ? '—' : number(contentOverview?.viewsPerVisitor, 1)} unit="篇次" sub="有效阅读 / 读者" />
             </div>
@@ -270,7 +272,7 @@ function UnifiedAnalyticsOverview({ sourceData, contentOverview, loading, view }
             <tbody>{definitions.map((item) => <tr key={item.id} className="border-b border-[#ededE7] last:border-0 dark:border-[#202a36]"><td className="py-3 pr-4 font-medium text-[#24241f] dark:text-gray-100">{item.label}</td><td className="py-3 pr-4 text-[#66685f] dark:text-gray-400">{item.source}<span className="ml-1.5 rounded bg-[#efefe9] px-1.5 py-0.5 text-[9px] dark:bg-[#1b2531]">{item.role}</span></td><td className="py-3 pr-4 leading-5 text-[#66685f] dark:text-gray-400">{item.definition}</td><td className="py-3 leading-5 text-[#8b6d42] dark:text-amber-300">{item.caveat}</td></tr>)}</tbody>
           </table>
         </div>
-        <p className="mt-3 text-[10px] text-[#95978d] dark:text-gray-600">Umami、自建阅读和边缘请求总量采用北京时间范围；环比比较相同已过时长。Cloudflare 日分组与每日独立 IP 使用 UTC，独立 IP 不提供跨日相加的总数。VibeCafé 报表的时间窗尚未核实。</p>
+        <p className="mt-3 text-[10px] text-[#95978d] dark:text-gray-600">Umami、自建阅读和边缘请求总量采用北京时间范围；非累计模式的环比比较相同已过时长。历史累计只统计各来源实际保存的全部记录，Cloudflare 边缘数据受套餐保留期限制时不展示伪累计值。Cloudflare 日分组与每日独立 IP 使用 UTC，独立 IP 不提供跨日相加的总数。VibeCafé 报表的时间窗尚未核实。</p>
         <div className="mt-3 flex flex-wrap gap-4 text-xs underline"><a href="https://docs.umami.is/docs/metric-definitions" target="_blank" rel="noreferrer">Umami 指标定义</a><a href="https://developers.cloudflare.com/analytics/graphql-api/features/data-sets/" target="_blank" rel="noreferrer">Cloudflare 数据集定义</a><a href={vibe.scriptUrl} target="_blank" rel="noreferrer">VibeCafé v1 采集脚本（2026-09-04 核对）</a></div>
       </details>
       </> : null}
@@ -282,8 +284,9 @@ function DailyChart({ rows, days, loading }) {
   if (loading) return <LoadingRows />
   if (!rows?.length) return <EmptyState title="暂无趋势数据" description="有新访问后会按北京时间自然日生成走势。" />
   const max = Math.max(...rows.map((row) => Number(row.pv) || 0), 1)
-  const labelStep = days <= 7 ? 1 : days <= 30 ? 5 : 15
-  const minWidth = days <= 7 ? 560 : days <= 30 ? 760 : 980
+  const visibleDays = days === 'all' ? rows.length : days
+  const labelStep = visibleDays <= 7 ? 1 : visibleDays <= 30 ? 5 : Math.max(15, Math.ceil(visibleDays / 8))
+  const minWidth = visibleDays <= 7 ? 560 : visibleDays <= 30 ? 760 : Math.max(980, visibleDays * 12)
   return (
     <div className="overflow-x-auto pb-1">
       <div className="flex h-52 items-end gap-1.5" style={{ minWidth }}>
@@ -467,6 +470,7 @@ export default function ContentWeeklyClient() {
   const today = data?.status === 'ok' && data.today ? data.today : { pv: null, uv: null, topContent: [], sources: [], visitors: [] }
   const todayAudience = useMemo(() => ({ breakdown: [], visitors: today.visitors || [] }), [today.visitors])
   const label = periodLabel(days)
+  const cumulative = days === 'all'
 
   return (
     <AdminPage
@@ -491,7 +495,7 @@ export default function ContentWeeklyClient() {
       </div>
       {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200">{error}</div> : null}
       {view !== 'testing' && data?.status === 'unavailable' ? <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">当前环境没有连接统计数据库，部署后才会显示真实数据。</div> : null}
-      {view === 'reading' && data?.status === 'ok' && !data.window?.complete && days > 7 ? <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">{label}维度已启用，但历史明细此前只保留约 8 天；当前最早可用数据为 {formatDateTime(data.window?.availableFrom)}，30/90 天数据会从本次升级后逐日补齐。</div> : null}
+      {view === 'reading' && data?.status === 'ok' && !cumulative && !data.window?.complete && days > 7 ? <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">{label}维度已启用，但历史明细此前只保留约 8 天；当前最早可用数据为 {formatDateTime(data.window?.availableFrom)}，30/90 天数据会从本次升级后逐日补齐。</div> : null}
 
       {view === 'overview' || view === 'sources' ? <UnifiedAnalyticsOverview sourceData={sourceData} contentOverview={data?.status === 'ok' ? overview : null} loading={loading} view={view} /> : null}
       {view === 'overview' ? <p className="text-xs leading-6 text-[#77786f] dark:text-gray-400">数据为 — 时表示尚未取得统计结果。<a href="#sources" onClick={() => setView('sources')} className="ml-1 font-medium text-emerald-700 underline underline-offset-4 dark:text-emerald-400">查看接入状态与统计规则 →</a></p> : null}
@@ -500,8 +504,8 @@ export default function ContentWeeklyClient() {
       {view === 'reading' ? <>
       <p className="mb-4 text-xs leading-6 text-[#77786f] dark:text-gray-400">自建统计 · 内容页累计可见满 8 秒后计入有效阅读。以下指标只覆盖内容阅读。</p>
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={IconEye} eyebrow={`${label}有效阅读`} value={loading ? '—' : number(overview.pv)} unit="篇次" detail={`等长上期 ${number(overview.previousPv)}`} delta={overview.pv == null ? undefined : overview.pv - overview.previousPv} accent="ink" />
-        <MetricCard icon={IconUsers} eyebrow="独立内容读者" value={loading ? '—' : number(overview.uv)} unit="人" detail={`等长上期 ${number(overview.previousUv)}`} delta={overview.uv == null ? undefined : overview.uv - overview.previousUv} accent="stone" />
+        <MetricCard icon={IconEye} eyebrow={`${label}有效阅读`} value={loading ? '—' : number(overview.pv)} unit="篇次" detail={cumulative ? '自统计启用以来' : `等长上期 ${number(overview.previousPv)}`} delta={cumulative || overview.pv == null ? undefined : overview.pv - overview.previousPv} accent="ink" />
+        <MetricCard icon={IconUsers} eyebrow="独立内容读者" value={loading ? '—' : number(overview.uv)} unit="人" detail={cumulative ? '全部已保存记录去重' : `等长上期 ${number(overview.previousUv)}`} delta={cumulative || overview.uv == null ? undefined : overview.uv - overview.previousUv} accent="stone" />
         <MetricCard icon={IconClock} eyebrow="回访读者" value={loading ? '—' : number(overview.returning)} unit="人" detail={`跨 ≥ 2 个自然日 · ${percent(overview.returnRate)}`} accent="stone" />
         <MetricCard icon={IconRoute} eyebrow="人均阅读" value={loading ? '—' : number(overview.viewsPerVisitor, 1)} unit="篇次" detail={`${label} PV / UV`} accent="stone" />
       </div>
@@ -511,8 +515,8 @@ export default function ContentWeeklyClient() {
       </Section>
 
       <div className="mb-4 grid min-w-0 gap-4 xl:grid-cols-[1.55fr_1fr]">
-        <Section title={`${label}内容排行`} description="同时看 PV、独立读者、阅读占比和与上一个等长周期的增减。" className="min-w-0 overflow-hidden">
-          <ContentTable rows={data?.topContent} loading={loading} />
+        <Section title={`${label}内容排行`} description={cumulative ? '查看全部已保存记录中的 PV、独立读者和阅读占比。' : '同时看 PV、独立读者、阅读占比和与上一个等长周期的增减。'} className="min-w-0 overflow-hidden">
+          <ContentTable rows={data?.topContent} loading={loading} showDelta={!cumulative} />
         </Section>
         <Section title="读者结构" description="登录用户可识别账号；游客使用站内稳定昵称，不展示原始指纹。" className="min-w-0">
           <AudiencePanel data={data?.audience} loading={loading} />
@@ -524,7 +528,7 @@ export default function ContentWeeklyClient() {
           <SourceList rows={data?.sources} loading={loading} />
         </Section>
         <Section title="类型分布" description="分析、资源与灵感在当前周期的阅读贡献。">
-          {loading ? <LoadingRows /> : data?.byType?.length ? <div className="space-y-3">{data.byType.map((row) => <div key={row.type} className="flex items-center justify-between rounded-xl border border-[#e8e8e1] px-3 py-3 dark:border-[#222d3a]"><div><p className="text-sm font-medium text-[#171611] dark:text-gray-100">{row.type}</p><p className="mt-0.5 text-[10px] text-[#9a9b92]">上期 {number(row.previousPv)} PV</p></div><div className="flex items-center gap-3"><strong>{number(row.pv)} <span className="text-[10px] font-normal text-[#9a9b92]">PV</span></strong><Delta value={row.delta} /></div></div>)}</div> : <EmptyState title="暂无类型数据" description="有阅读后会显示各类型的贡献。" />}
+          {loading ? <LoadingRows /> : data?.byType?.length ? <div className="space-y-3">{data.byType.map((row) => <div key={row.type} className="flex items-center justify-between rounded-xl border border-[#e8e8e1] px-3 py-3 dark:border-[#222d3a]"><div><p className="text-sm font-medium text-[#171611] dark:text-gray-100">{row.type}</p><p className="mt-0.5 text-[10px] text-[#9a9b92]">{cumulative ? '历史累计' : `上期 ${number(row.previousPv)} PV`}</p></div><div className="flex items-center gap-3"><strong>{number(row.pv)} <span className="text-[10px] font-normal text-[#9a9b92]">PV</span></strong>{cumulative ? null : <Delta value={row.delta} />}</div></div>)}</div> : <EmptyState title="暂无类型数据" description="有阅读后会显示各类型的贡献。" />}
         </Section>
       </div>
 
@@ -543,7 +547,7 @@ export default function ContentWeeklyClient() {
 
       {view === 'engagement' ? <div className="grid gap-4 xl:grid-cols-2">
         <Section title="互动与留存" description={`${label}点赞、评论与订阅沉淀，用于观察阅读后的进一步行动。`}>
-          <div className="grid grid-cols-3 gap-3"><div><p className="text-[10px] text-[#8f9187]">点赞</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.likes?.total)}</p><Delta value={(data?.likes?.total || 0) - (data?.likes?.previousTotal || 0)} /></div><div><p className="text-[10px] text-[#8f9187]">评论</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.comments?.total?.period)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">累计 {number(data?.comments?.total?.all)}</p></div><div><p className="text-[10px] text-[#8f9187]">有效订阅</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.newsletter?.active)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">周期新增 +{number(data?.newsletter?.period)}</p></div></div>
+          <div className="grid grid-cols-3 gap-3"><div><p className="text-[10px] text-[#8f9187]">点赞</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.likes?.total)}</p>{cumulative ? <p className="mt-1 text-[10px] text-[#9a9b92]">历史累计</p> : <Delta value={(data?.likes?.total || 0) - (data?.likes?.previousTotal || 0)} />}</div><div><p className="text-[10px] text-[#8f9187]">评论</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.comments?.total?.period)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">累计 {number(data?.comments?.total?.all)}</p></div><div><p className="text-[10px] text-[#8f9187]">有效订阅</p><p className="mt-1 text-xl font-semibold">{loading ? '—' : number(data?.newsletter?.active)}</p><p className="mt-1 text-[10px] text-[#9a9b92]">{cumulative ? `累计加入 ${number(data?.newsletter?.period)}` : `周期新增 +${number(data?.newsletter?.period)}`}</p></div></div>
           <div className="mt-5 border-t border-[#e5e6de] pt-4 dark:border-[#25303e]">
             <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">{label}获赞文章</h3>
             <LikedContentList likes={data?.likes} loading={loading} />

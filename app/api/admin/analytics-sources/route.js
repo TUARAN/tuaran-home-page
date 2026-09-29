@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import {
   ANALYTICS_METRIC_DEFINITIONS,
+  cumulativeAnalyticsWindow,
   detectTrafficSpike,
   equalComparisonWindow,
   normalizeUmamiStats,
@@ -40,7 +41,9 @@ async function loadDailyUniqueIps(env, window) {
   const zoneId = String(env.CLOUDFLARE_ZONE_ID || '').trim()
   if (!token || !zoneId) return sourceUnavailable('cloudflare-ips', ['CLOUDFLARE_ANALYTICS_TOKEN', 'CLOUDFLARE_ZONE_ID'], '尚未接通独立 IP 统计，不能用 Umami UV 或阅读指纹替代。')
   const endDate = new Date(window.currentEnd).toISOString().slice(0, 10)
-  const startDate = new Date(Date.parse(`${endDate}T00:00:00Z`) - (window.days - 1) * 86400000).toISOString().slice(0, 10)
+  const startDate = window.cumulative
+    ? endDate
+    : new Date(Date.parse(`${endDate}T00:00:00Z`) - (window.days - 1) * 86400000).toISOString().slice(0, 10)
   try {
     const response = await fetch(CLOUDFLARE_GRAPHQL_URL, {
       method: 'POST', signal: AbortSignal.timeout(15_000),
@@ -104,8 +107,10 @@ async function loadUmami(env, window) {
     const [currentRaw, previousRaw, seriesRaw] = await Promise.all([
       fetch(endpoint('stats', window.currentStart, window.currentEnd), { headers, cf: { cacheTtl: 60 } })
         .then((response) => readJson(response, 'UMAMI')),
-      fetch(endpoint('stats', window.previousStart, window.previousEnd), { headers, cf: { cacheTtl: 60 } })
-        .then((response) => readJson(response, 'UMAMI')),
+      window.cumulative
+        ? Promise.resolve(null)
+        : fetch(endpoint('stats', window.previousStart, window.previousEnd), { headers, cf: { cacheTtl: 60 } })
+          .then((response) => readJson(response, 'UMAMI')),
       fetch(endpoint('pageviews', window.currentStart, window.currentEnd, '&unit=day&timezone=Asia%2FShanghai'), { headers, cf: { cacheTtl: 60 } })
         .then((response) => readJson(response, 'UMAMI')),
     ])
@@ -165,6 +170,9 @@ async function loadCloudflare(env, window) {
   if (required.length) {
     return sourceUnavailable('cloudflare', required, '配置只读 Analytics Token 与 Zone ID 后显示边缘诊断数据。')
   }
+  if (window.cumulative) {
+    return sourceError('cloudflare', 'Cloudflare 边缘分析受套餐历史保留期限制，无法提供站点上线以来的可靠累计值。')
+  }
 
   const filter = (start, end) => ({
     datetime_geq: new Date(start).toISOString(),
@@ -211,10 +219,12 @@ export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
 
-  const requestedDays = Number(new URL(req.url).searchParams.get('days'))
-  const days = ALLOWED_DAYS.has(requestedDays) ? requestedDays : 7
+  const requestedRange = new URL(req.url).searchParams.get('days')
+  const requestedDays = Number(requestedRange)
+  const cumulative = requestedRange === 'all'
+  const days = cumulative ? 'all' : (ALLOWED_DAYS.has(requestedDays) ? requestedDays : 7)
   const generatedAt = Date.now()
-  const window = equalComparisonWindow(days, generatedAt)
+  const window = cumulative ? cumulativeAnalyticsWindow(generatedAt) : equalComparisonWindow(days, generatedAt)
   const env = getIntegrationEnv()
   const [umami, cloudflare, cloudflareIps] = await Promise.all([
     loadUmami(env, window),

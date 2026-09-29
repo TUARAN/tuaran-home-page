@@ -21,7 +21,7 @@ export default function CopyMarkdownButton({ markdown, html }) {
       flash(result.format === 'rich' ? 'rich' : 'plain')
       const missingImages = (result.imageCount || 0) - (result.embeddedImages || 0)
       if (missingImages > 0) {
-        window.alert?.(`正文已复制；有 ${missingImages} 张图片因跨域或体积限制无法写入剪贴板，请手动补充。`)
+        window.alert?.(`正文和表格已按 X Articles 格式复制；仍有 ${missingImages} 张图片在原地址与图片代理均读取失败，请在 X 编辑器中手动补充。`)
       }
     }
     else if (result) flash(format)

@@ -25,8 +25,8 @@ const PLATFORM_ICONS = {
   twitter: IconBrandX,
 }
 
-const EXTENSION_VERSION = '1.3.6'
-const EXTENSION_DOWNLOAD_URL = '/downloads/2aran-article-distributor-extension-v1.3.6.zip'
+const EXTENSION_VERSION = '1.3.7'
+const EXTENSION_DOWNLOAD_URL = '/downloads/2aran-article-distributor-extension-v1.3.7.zip'
 
 const SOURCE_SELECTORS = [
   'article.prose-tuaran',
@@ -53,6 +53,18 @@ const EXCLUDE_SELECTOR = [
 
 function cleanText(value) {
   return String(value || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function compareVersions(left, right) {
+  const leftParts = String(left || '').split('.').map((part) => Number(part) || 0)
+  const rightParts = String(right || '').split('.').map((part) => Number(part) || 0)
+  const length = Math.max(leftParts.length, rightParts.length)
+  for (let index = 0; index < length; index += 1) {
+    if ((leftParts[index] || 0) !== (rightParts[index] || 0)) {
+      return (leftParts[index] || 0) - (rightParts[index] || 0)
+    }
+  }
+  return 0
 }
 
 function absoluteUrl(value, sourceUrl) {
@@ -89,6 +101,15 @@ function markdownFromNode(node, sourceUrl, depth = 0) {
   if (['em', 'i'].includes(tag)) return `*${cleanText(children())}*`
   if (tag === 'code' && node.parentElement?.tagName !== 'PRE') return `\`${cleanText(children())}\``
   if (tag === 'pre') return `\n\n\`\`\`\n${String(node.textContent || '').trim()}\n\`\`\`\n\n`
+  if (tag === 'table') {
+    const rows = Array.from(node.querySelectorAll('tr'))
+      .map((row) => Array.from(row.querySelectorAll(':scope > th, :scope > td'))
+        .map((cell) => cleanText(cell.textContent))
+        .filter(Boolean)
+        .join(' ｜ '))
+      .filter(Boolean)
+    return rows.length ? `\n\n${rows.join('\n\n')}\n\n` : ''
+  }
   if (/^h[1-6]$/.test(tag)) return `\n\n${'#'.repeat(Number(tag.slice(1)))} ${cleanText(children())}\n\n`
   if (tag === 'blockquote') {
     const content = cleanText(children()).split('\n').map((line) => `> ${line}`).join('\n')
@@ -166,7 +187,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
   const [query, setQuery] = useState(requestedContentKey)
   const [selectedKey, setSelectedKey] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => ARTICLE_DISTRIBUTION_PLATFORMS.map((item) => item.id))
-  const [plugin, setPlugin] = useState({ ready: false, version: '' })
+  const [plugin, setPlugin] = useState({ ready: false, detected: false, updateRequired: false, version: '' })
   const [article, setArticle] = useState(null)
   const [accounts, setAccounts] = useState([])
   const [statusAccounts, setStatusAccounts] = useState([])
@@ -180,9 +201,12 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
 
   const detectPlugin = useCallback(async ({ reloadIfMissing = false } = {}) => {
     const extension = window.$cose
-    const ready = typeof extension?.addTask === 'function' && typeof extension?.getPlatforms === 'function'
-    setPlugin({ ready, version: String(extension?.version || '') })
-    if (!ready) {
+    const detected = typeof extension?.addTask === 'function' && typeof extension?.getPlatforms === 'function'
+    const version = String(extension?.version || '')
+    const updateRequired = detected && (!version || compareVersions(version, EXTENSION_VERSION) < 0)
+    const ready = detected && !updateRequired
+    setPlugin({ ready, detected, updateRequired, version })
+    if (!detected) {
       setAccounts([])
       if (reloadIfMissing) {
         setMessage('正在刷新当前页面并重新连接插件…')
@@ -190,6 +214,11 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
         return
       }
       setMessage('未检测到 2aran 文章分发助手。安装或重新加载插件后，点击“检查插件”即可重新连接。')
+      return
+    }
+    if (updateRequired) {
+      setAccounts([])
+      setMessage(`检测到旧版插件${version ? `（v${version}）` : ''}。当前页面需要 v${EXTENSION_VERSION} 或更高版本，请下载新版、在扩展程序页面重新加载，然后再检查。`)
       return
     }
     const platforms = extension.getPlatforms() || []
@@ -201,7 +230,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       } catch (error) {
         // 扩展重新加载后，旧页面里的桥接对象还在，但其 Chrome runtime 已失效。
         // 手动检查时刷新页面，让 content script 在当前标签页重新注入。
-        setPlugin({ ready: false, version: String(extension?.version || '') })
+        setPlugin({ ready: false, detected: true, updateRequired: false, version })
         setAccounts([])
         if (reloadIfMissing) {
           setMessage('插件已更新，正在刷新当前页面并重新连接…')
@@ -213,7 +242,7 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
       }
     }
     setAccounts(detectedAccounts)
-    setMessage(`插件已连接${extension.version ? `（v${extension.version}）` : ''}，可写入平台草稿。`)
+    setMessage(`插件 v${version} 已连接，可写入平台草稿。`)
   }, [])
 
   const loadItems = useCallback(async (search = '', preferredContentKey = '') => {
@@ -425,12 +454,51 @@ export default function ArticleDistributionClient({ requestedContentKey = '' }) 
               })}
             </div>
           </Section>
+
+          {selectedPlatforms.includes('twitter') ? (
+            <Section
+              title="X 发布格式速查"
+              description="富文本是平台能力；纯文本是兼容策略。当前分发目标是 X Articles，不是普通 Post。"
+            >
+              <div className="space-y-4 text-xs leading-6 text-[#53554d] dark:text-gray-300">
+                <div className="rounded-lg border border-[#e1e2da] bg-[#fafaf7] px-3.5 py-3 dark:border-[#263142] dark:bg-[#0d131c]">
+                  <p className="m-0 font-semibold text-[#24261f] dark:text-gray-100">X Articles（当前分发目标）</p>
+                  <p className="mb-0 mt-1">
+                    平台原生支持标题、加粗、斜体、删除线、缩进、编号或项目列表、链接，以及图片、视频、GIF 和 X 帖子嵌入；官方能力清单没有表格。
+                  </p>
+                </div>
+
+                <div>
+                  <p className="m-0 font-semibold text-[#24261f] dark:text-gray-100">同时适配 X 与模型解析</p>
+                  <ol className="mb-0 mt-1 list-decimal space-y-1 pl-5">
+                    <li>不要输出 Markdown 表格。数据改成“字段：内容”，多列对比改成“项目 A ｜ 项目 B”的逐行文本。</li>
+                    <li>插件写入时保留 X 原生标题层级；需要复制给模型时，改用“一、二、三、3.1”这类纯文本标题，不保留 #、##。</li>
+                    <li>段落之间只留一个空行；一个完整语义段落放在同一行，避免每句话单独换行。</li>
+                    <li>列表使用单层“- ”或数字序号，不嵌套多层列表。</li>
+                    <li>模型版链接使用“说明文字：https://...”完整 URL；不要只保留 Markdown 的“[文字](URL)”外壳。</li>
+                    <li>模型版不使用代码围栏、行内反引号、Markdown 分隔线和 HTML 标签；代码或参数改成“字段：值”的普通文本。</li>
+                    <li>加粗、斜体属于 X 富文本能力；模型版去掉 **、* 等 Markdown 标记，中文正文使用常规中文标点。</li>
+                    <li>正文图片由插件上传到 X。浏览器剪贴板只能尽力携带图片，粘贴后仍要核对图片数量和位置。</li>
+                  </ol>
+                </div>
+
+                <div className="rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-3 text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+                  <p className="m-0 font-semibold">普通 Post / Premium 长 Post</p>
+                  <p className="mb-0 mt-1">
+                    普通 Post 上限 280 字符；Premium 长 Post 上限 25,000 字符。两者最多附带 4 个媒体项目；完整 URL 会由 t.co 处理，并按 23 个字符计入 Post 字数。它们不使用 Articles 的章节排版流程。
+                  </p>
+                </div>
+              </div>
+            </Section>
+          ) : null}
         </div>
 
         <div className="space-y-5">
           <Section title="插件与任务状态" description="登录态保留在浏览器中，本站不保存平台 Cookie。">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusPill tone={plugin.ready ? 'success' : 'warning'}>{plugin.ready ? '插件已连接' : '插件未连接'}</StatusPill>
+              <StatusPill tone={plugin.ready ? 'success' : 'warning'}>
+                {plugin.ready ? '插件已连接' : plugin.updateRequired ? '插件需更新' : '插件未连接'}
+              </StatusPill>
               {plugin.version ? <StatusPill tone="neutral">v{plugin.version}</StatusPill> : null}
               <StatusPill tone="info">草稿模式</StatusPill>
             </div>

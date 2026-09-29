@@ -375,17 +375,17 @@ test('配图素材用 tab 合并表情包和资源池，列表只加载小图', 
   assert.match(poolSource, /credentials: 'same-origin'/)
 })
 
-test('hourly controversy posting covers all 24 hours with small daily jitter', async () => {
-  assert.equal(X_POST_SLOTS.length, 24)
+test('friendly posting covers the five daily greeting and community slots', async () => {
+  assert.equal(X_POST_SLOTS.length, 5)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
-  assert.deepEqual(day.map((task) => task.time), Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`))
-  assert.ok(day.every((task) => task.query === 'controversy'))
+  assert.deepEqual(day.map((task) => task.id), ['morning', 'noon', 'community_friends', 'community_learning', 'community_growth'])
+  assert.deepEqual(day.map((task) => task.query), ['period', 'period', 'community', 'community', 'community'])
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
   assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
   for (const task of [...day, ...nextDay]) {
     assert.ok(Number.isInteger(task.offsetMinutes))
-    assert.ok(Math.abs(task.offsetMinutes) <= 5)
+    assert.ok(Math.abs(task.offsetMinutes) <= 30)
     assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
   }
 })
@@ -396,15 +396,15 @@ test('schedule windows start at the target and reject expired or next-day trigge
   for (const task of day) {
     assert.equal(isXPostDue(task, new Date(task.scheduledAt - 1)), false)
     assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
-    assert.equal(isXPostDue(task, new Date(task.scheduledAt + 45 * 60_000 + 1)), false)
+    assert.equal(isXPostDue(task, new Date(task.scheduledAt + 60 * 60_000 + 1)), false)
   }
-  const late = day.find((task) => task.id === 'controversy_19')
+  const late = day.find((task) => task.id === 'community_growth')
   assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)
 })
 
 test('scheduler calls only due tasks, carries their date, and isolates request failures', async () => {
   const schedule = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 2)))
-  const due = schedule.find((task) => task.id === 'controversy_10')
+  const due = schedule.find((task) => task.id === 'morning')
   const requests = []
   const results = await runXAutoPosts({
     now: new Date(due.scheduledAt),
@@ -414,11 +414,11 @@ test('scheduler calls only due tasks, carries their date, and isolates request f
       assert.equal(query.get('scheduledDate'), '2026-08-29')
       assert.equal(init.headers['x-morning-greeting-secret'], 'test-secret')
       requests.push(query)
-      if (query.has('controversy')) throw new Error('network unavailable')
+      if (query.has('period')) throw new Error('network unavailable')
       return Response.json({ ok: true }, { status: 201 })
     },
   })
   assert.equal(requests.length, 1)
-  assert.deepEqual(results.map((result) => result.slot).sort(), ['controversy_10'])
+  assert.deepEqual(results.map((result) => result.slot).sort(), ['morning'])
   assert.equal(results.filter((result) => result.ok).length, 0)
 })

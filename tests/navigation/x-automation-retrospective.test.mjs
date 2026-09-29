@@ -32,12 +32,12 @@ test('x automation retrospective page is registered and noindexed', async () => 
 })
 
 test('x automation retrospective data covers full run window', () => {
-  assert.equal(X_AUTOMATION_PHASES.at(-1).id, 'controversy-hourly')
+  assert.equal(X_AUTOMATION_PHASES.at(-1).id, 'friendly-v2')
   assert.equal(X_AUTOMATION_PHASES[0].date, X_AUTOMATION_SUMMARY.startDate)
   assert.ok(X_AUTOMATION_DAILY_POSTS.length >= 20)
   assert.equal(maxDailyPosts(), 14)
   assert.equal(sumDailyPosts(), X_AUTOMATION_SUMMARY.trackedPosts)
-  assert.equal(X_AUTOMATION_SCALE_MILESTONES.length, 6)
+  assert.equal(X_AUTOMATION_SCALE_MILESTONES.length, 7)
 })
 
 test('schedule snapshots reuse live slot times', () => {
@@ -68,4 +68,7 @@ test('schedule snapshots reuse live slot times', () => {
   const controversyHourly = X_AUTOMATION_SCHEDULE_SNAPSHOTS.find((item) => item.phaseId === 'controversy-hourly')
   assert.equal(controversyHourly.slots.length, 24)
   assert.ok(controversyHourly.slots.every((slot) => slot.type === '争议短帖'))
+  const friendlyV2 = X_AUTOMATION_SCHEDULE_SNAPSHOTS.find((item) => item.phaseId === 'friendly-v2')
+  assert.equal(friendlyV2.slots.length, 5)
+  assert.deepEqual(friendlyV2.slots.map((slot) => slot.id), ['morning', 'noon', 'community_friends', 'community_learning', 'community_growth'])
 })

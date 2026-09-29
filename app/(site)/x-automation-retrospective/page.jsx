@@ -20,7 +20,7 @@ export default function XAutomationRetrospectivePage() {
           X Automation · 自动发推回溯
         </p>
         <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[var(--site-ink)] md:text-3xl">
-          从早安问候到每小时热点争议短帖
+          从早安问候、热点争议到友好互动重启
         </h1>
         <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">
           2026 年 8 月 4 日上线 X 每日自动发布，经历模板化、LLM 实时生成、多类型扩张、

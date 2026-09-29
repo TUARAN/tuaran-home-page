@@ -8,7 +8,7 @@ import { X_MEME_ASSETS } from '../../../../lib/xMemeAssets'
 import { Section } from '../../components/ui'
 
 const TABS = [
-  { id: 'memes', label: '表情包模板', description: '35 张原创表情包按早安、午安、交友、蓝 V 交流和互关串门匹配。按日期与时段轮换，重试保留已选图片。' },
+  { id: 'memes', label: '表情包模板', description: '保留原 35 张素材，并新增 30 张六画风友好表情包。自动发布优先轮换新素材，按早安、午安、认识新朋友、兴趣交流和晚间串门匹配。' },
   { id: 'pool', label: '图片资源池', description: '每条先随机选择图文或纯文本（各 50%）。图文从同主题固定模板池选取，不再在线生成新图；上传失败重试复用原图和文案。' },
   { id: 'runs', label: '选图与发布记录', description: '按时间倒序查看每次发推的选图、文案、发布状态与原图。' },
 ]

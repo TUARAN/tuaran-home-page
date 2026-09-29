@@ -1,4 +1,4 @@
-name: Hourly controversy posts to X
+name: Daily friendly posts to X
 
 on:
   schedule:
@@ -7,23 +7,24 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: 手动运行的小时槽位（controversy_00 至 controversy_23）
+        description: 早安、午安、认识新朋友、兴趣交流或晚间串门时段
         required: true
-        type: string
-        default: controversy_12
+        type: choice
+        default: morning
+        options: [morning, noon, community_friends, community_learning, community_growth]
 
 permissions:
   contents: read
 
 concurrency:
-  group: hourly-x-controversy-${{ github.event.schedule || inputs.period }}
+  group: daily-friendly-x-${{ github.event.schedule || inputs.period }}
   cancel-in-progress: false
 
 jobs:
   post:
-    name: Publish hourly controversy post to X
+    name: Publish friendly post to X
     runs-on: ubuntu-latest
-    # 到期任务并行执行；失败由后续轮询补跑，最多延续计划时间后 45 分钟。
+    # 到期任务并行执行；失败由后续轮询补跑，最多延续计划时间后一小时。
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +54,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每小时热点争议短帖",
+              "taskName": "X 每日友好互动帖",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

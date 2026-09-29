@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/xMemeAssets.js'
+import { X_ACTIVE_MEME_GROUPS, X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/xMemeAssets.js'
 
-test('nine styles contain 35 unique, uploadable PNG templates', async () => {
-  assert.equal(X_MEME_GROUPS.length, 9)
-  assert.equal(X_MEME_ASSETS.length, 35)
-  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.path)).size, 35)
-  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.id)).size, 35)
+test('catalog contains 65 unique, uploadable PNG templates including the new 30-image pack', async () => {
+  assert.equal(X_MEME_GROUPS.length, 15)
+  assert.equal(X_ACTIVE_MEME_GROUPS.length, 6)
+  assert.equal(X_MEME_ASSETS.length, 65)
+  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.path)).size, 65)
+  assert.equal(new Set(X_MEME_ASSETS.map((asset) => asset.id)).size, 65)
   for (const [index, group] of X_MEME_GROUPS.entries()) {
     if (index < 5) {
       assert.deepEqual(group.assets.map((asset) => asset.theme), ['morning', 'noon', 'friends'])
@@ -27,10 +28,10 @@ test('nine styles contain 35 unique, uploadable PNG templates', async () => {
   }
 })
 
-test('nine-day rotation covers all 35 templates while matching every slot and keeping retries stable', () => {
+test('six-day active rotation covers the new 30 templates while matching every slot and keeping retries stable', () => {
   const used = new Set()
   const perSlot = new Map()
-  for (let day = 9; day < 18; day++) {
+  for (let day = 9; day < 15; day++) {
     const date = `2026-09-${String(day).padStart(2, '0')}`
     const dailyGroups = new Set()
     for (const [slot, theme] of Object.entries(X_MEME_SLOT_THEMES)) {
@@ -44,8 +45,9 @@ test('nine-day rotation covers all 35 templates while matching every slot and ke
     }
     assert.equal(dailyGroups.size, 5)
   }
-  assert.equal(used.size, 35)
-  for (const groups of perSlot.values()) assert.equal(groups.size, 9)
+  assert.equal(used.size, 30)
+  assert.ok([...used].every((id) => id.startsWith('friendship-v2-')))
+  for (const groups of perSlot.values()) assert.equal(groups.size, 6)
   assert.equal(pickXMemeAsset({ slot: 'crypto_market', date: '2026-09-09' }), null)
   for (const date of ['', 'bad', '2026-02-30']) {
     assert.throws(() => pickXMemeAsset({ slot: 'morning', date }), /X_MEME_INVALID_DATE/)

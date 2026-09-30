@@ -61,18 +61,6 @@ export default async function RanbiPage() {
           <strong className="text-[var(--site-ink)]">固定总量 21,000,000 枚，永不增发。</strong>
           可通过点击领取、参与活动、玩游戏等免费方式获得，也可以联系站长补充。
         </p>
-        <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">
-          获取、使用、余额明细和反滥用规则参考{' '}
-          <a
-            href={POLICY.reference.url}
-            target="_blank"
-            rel="noreferrer"
-            className="font-medium text-[#7a5b1e] underline underline-offset-2 dark:text-amber-300"
-          >
-            {POLICY.reference.label}
-          </a>
-          ：把获取、使用、余额明细和反滥用放在同一页讲清楚。
-        </p>
         <div className="mt-5">
           <RanbiBalance />
         </div>

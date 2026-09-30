@@ -55,13 +55,12 @@ test('check-in is a direct channel immediately after community', () => {
   assert.equal(SITE_CHANNELS[communityIndex + 1].match('/checkin'), true)
 })
 
-test('Ranbi guide is a standalone direct channel immediately after About', () => {
-  const keys = Array.from(SITE_CHANNELS, (channel) => channel.key)
-  const aboutIndex = keys.indexOf('about')
-  assert.equal(keys[aboutIndex + 1], 'ranbi')
-  assert.equal(SITE_CHANNELS[aboutIndex + 1].direct, true)
-  assert.equal(SITE_CHANNELS[aboutIndex + 1].match('/ranbi'), true)
+test('Ranbi guide is a secondary entry owned by About', () => {
+  const about = SITE_CHANNELS.find((channel) => channel.key === 'about')
+  assert.equal(SITE_CHANNELS.some((channel) => channel.key === 'ranbi'), false)
+  assert.equal(about.match('/ranbi'), true)
   assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'community').match('/ranbi'), false)
+  assert.equal(getActiveNavHref(sectionsFor('about'), '/ranbi'), '/ranbi')
 })
 
 test('x automation retrospective selects content interactives channel', () => {

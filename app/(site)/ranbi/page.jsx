@@ -21,7 +21,21 @@ function Th({ children, className = '' }) {
 }
 
 function Td({ children, className = '' }) {
-  return <td className={`px-4 py-3.5 align-middle text-[var(--site-muted)] ${className}`}>{children}</td>
+  return <td className={`border-t border-[var(--site-line)] px-4 py-3.5 align-middle text-[var(--site-muted)] ${className}`}>{children}</td>
+}
+
+function TableRow({ children }) {
+  return <tr className="transition-colors hover:bg-[#b98928]/[0.06]">{children}</tr>
+}
+
+function TableFrame({ children }) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] shadow-[0_12px_36px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]">
+      <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-[13px]">
+        {children}
+      </table>
+    </div>
+  )
 }
 
 function formatAmount(value) {
@@ -97,29 +111,27 @@ export default async function RanbiPage() {
             </div>
           ))}
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] shadow-[0_12px_36px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]">
-          <table className="w-full min-w-[560px] border-separate border-spacing-0 text-[13px]">
+        <TableFrame>
             <thead><tr className="bg-[#b98928]/[0.08] dark:bg-amber-300/[0.06]"><Th>分配池</Th><Th>占总量</Th><Th>初始分配</Th><Th>当前库存</Th></tr></thead>
             <tbody>
               {RANBI_POOL_ALLOCATIONS.map(({ accountId, label, ratio, allocation }, index) => {
                 const account = SUPPLY?.accounts?.find((row) => row.accountId === accountId)
                 return (
-                  <tr key={accountId} className="group transition-colors hover:bg-[#b98928]/[0.06]">
-                    <Td className="border-t border-[var(--site-line)] font-medium text-[var(--site-ink)]">
+                  <TableRow key={accountId}>
+                    <Td className="font-medium text-[var(--site-ink)]">
                       <span className="flex items-center gap-2.5">
                         <i className="h-3 w-3 shrink-0 rounded-[4px] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.24)]" style={{ backgroundColor: RANBI_POOL_COLORS[index] }} />
                         {label}
                       </span>
                     </Td>
-                    <Td className="border-t border-[var(--site-line)]"><span className="inline-flex min-w-12 justify-center rounded-full bg-[#b98928]/[0.1] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#7a5b1e] dark:text-amber-200">{ratio}%</span></Td>
-                    <Td className="border-t border-[var(--site-line)] font-mono tabular-nums">{formatAmount(allocation)}</Td>
-                    <Td className="border-t border-[var(--site-line)] font-mono font-semibold tabular-nums text-[var(--site-ink)]">{account ? formatAmount(account.balance) : '—'}</Td>
-                  </tr>
+                    <Td><span className="inline-flex min-w-12 justify-center rounded-full bg-[#b98928]/[0.1] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#7a5b1e] dark:text-amber-200">{ratio}%</span></Td>
+                    <Td className="font-mono tabular-nums">{formatAmount(allocation)}</Td>
+                    <Td className="font-mono font-semibold tabular-nums text-[var(--site-ink)]">{account ? formatAmount(account.balance) : '—'}</Td>
+                  </TableRow>
                 )
               })}
             </tbody>
-          </table>
-        </div>
+        </TableFrame>
         {SUPPLY && !SUPPLY.consistent ? (
           <p className="mt-3 text-[12px] text-rose-600">供应量校验异常，实时发放已停止，请等待站长复核。</p>
         ) : null}
@@ -136,10 +148,9 @@ export default async function RanbiPage() {
           ，说明账号和用途，申请免费补充。
         </p>
         <RanbiSupplySnapshot supply={SUPPLY} />
-        <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-          <table className="w-full border-collapse text-[13px]">
+        <TableFrame>
             <thead>
-              <tr className="bg-[var(--site-panel)]">
+              <tr className="bg-[#b98928]/[0.08] dark:bg-amber-300/[0.06]">
                 <Th>方式</Th>
                 <Th className="whitespace-nowrap">燃币</Th>
                 <Th>说明</Th>
@@ -148,25 +159,23 @@ export default async function RanbiPage() {
             </thead>
             <tbody>
               {EARN_ROWS.map(([name, amount, desc, freq]) => (
-                <tr key={name} className="border-t border-[var(--site-line)]">
+                <TableRow key={name}>
                   <Td className="font-medium text-[var(--site-ink)]">{name}</Td>
                   <Td className="whitespace-nowrap font-mono font-semibold text-[#00a978]">{amount}</Td>
                   <Td>{desc}</Td>
                   <Td className="whitespace-nowrap">{freq}</Td>
-                </tr>
+                </TableRow>
               ))}
             </tbody>
-          </table>
-        </div>
+        </TableFrame>
       </section>
 
       {/* 怎么用 */}
       <section className="mb-10">
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">四、怎么使用</h2>
-        <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-          <table className="w-full border-collapse text-[13px]">
+        <TableFrame>
             <thead>
-              <tr className="bg-[var(--site-panel)]">
+              <tr className="bg-[#b98928]/[0.08] dark:bg-amber-300/[0.06]">
                 <Th>内容</Th>
                 <Th className="whitespace-nowrap">使用额度</Th>
                 <Th>说明</Th>
@@ -174,15 +183,14 @@ export default async function RanbiPage() {
             </thead>
             <tbody>
               {SPEND_ROWS.map(([name, price, desc]) => (
-                <tr key={name} className="border-t border-[var(--site-line)]">
+                <TableRow key={name}>
                   <Td className="font-medium text-[var(--site-ink)]">{name}</Td>
                   <Td className="whitespace-nowrap font-mono font-semibold text-[#7a5b1e] dark:text-amber-300">{price} 燃币</Td>
                   <Td>{desc}</Td>
-                </tr>
+                </TableRow>
               ))}
             </tbody>
-          </table>
-        </div>
+        </TableFrame>
         <p className="mt-3 text-[13px] leading-6 text-[var(--site-muted)]">
           进入有燃币门槛的内容时，余额足够会<strong className="text-[var(--site-ink)]">自动解锁并使用燃币</strong>；
           <strong className="text-[var(--site-ink)]">解锁后永久可读</strong>，反复打开、刷新都不再重复使用。工具包和安装包则在点击“领取”时才结算；壁纸、音乐等免费资源只记录领取/打开，不使用燃币。

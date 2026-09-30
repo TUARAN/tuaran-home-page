@@ -214,6 +214,19 @@ test('format draw has a 50 percent boundary and saved image drafts do not draw a
   }
 })
 
+test('a required image format overrides random and upgrades an old text draft', async (t) => {
+  const { db } = await assetFixture(t)
+  const asset = await assetLibrary.claimXAsset(db, { date: '2026-08-29', slot: 'morning', contentType: 'greeting' })
+  assert.equal(await assetLibrary.saveXPostDraft(db, asset, { text: 'Good morning.', random: () => 0.9 }), 'text')
+  assert.equal(asset.row.asset_source, 'text')
+  assert.equal(await assetLibrary.saveXPostDraft(db, asset, {
+    text: asset.row.text,
+    requiredFormat: 'image',
+    random: () => { throw new Error('required format must not draw') },
+  }), 'image')
+  assert.equal(asset.row.asset_source, 'pool')
+})
+
 async function cronFixture(t, overrides = {}) {
   const { seedPoolAssets = true, ...dependencyOverrides } = overrides
   const fixture = await assetFixture(t)
@@ -324,7 +337,7 @@ test('automation uses its one selected Ollama model', async (t) => {
   assert.equal(ollamaCalls, 1)
 })
 
-test('all five task types can publish text without AI, R2 or media upload', async (t) => {
+test('community tasks can still publish text without AI, R2 or media upload', async (t) => {
   let publishes = 0
   const { invoke, env, calls, sqlite } = await cronFixture(t, {
     saveXPostDraft: (db, asset, options) => assetLibrary.saveXPostDraft(db, asset, { ...options, random: () => 0.5 }),
@@ -335,17 +348,18 @@ test('all five task types can publish text without AI, R2 or media upload', asyn
   })
   delete env.AI
   delete env.MEDIA
-  for (const slot of postingSchedule.X_POST_SLOTS) {
+  const textSlots = postingSchedule.X_POST_SLOTS.filter((slot) => slot.query === 'community')
+  for (const slot of textSlots) {
     const response = await invoke(`${slot.query}=${slot.id}`)
     assert.equal(response.status, 201)
     assert.equal((await response.json()).imagePath, '')
     assert.equal((await invoke(`${slot.query}=${slot.id}`)).status, 200)
   }
-  assert.equal(publishes, postingSchedule.X_POST_SLOTS.length)
+  assert.equal(publishes, textSlots.length)
   assert.equal(calls.images, 0)
   assert.equal(calls.upload, 0)
   const rows = sqlite.prepare('SELECT * FROM x_post_assets').all()
-  assert.equal(rows.length, postingSchedule.X_POST_SLOTS.length)
+  assert.equal(rows.length, textSlots.length)
   assert.ok(rows.every((row) => row.asset_source === 'text' && row.status === 'published'))
 })
 
@@ -360,9 +374,9 @@ test('text retries preserve their format and draft even when the next draw would
       return { ok: true, post: { id: 'text-retry', text, url: 'https://x.com/i/web/status/123' } }
     },
   })
-  assert.equal((await invoke()).status, 429)
+  assert.equal((await invoke('community=community_friends')).status, 429)
   const draft = sqlite.prepare('SELECT * FROM x_post_assets').get()
-  assert.equal((await invoke()).status, 201)
+  assert.equal((await invoke('community=community_friends')).status, 201)
   assert.equal(sqlite.prepare('SELECT * FROM x_post_assets').get().text, draft.text)
   assert.equal(draws, 1)
   assert.equal(calls.copy, 1)

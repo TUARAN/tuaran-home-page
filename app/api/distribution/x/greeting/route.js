@@ -496,7 +496,11 @@ export async function POST(req) {
 
     const postFormat = isControversyPost
       ? (await updateXAsset(db, asset, { text, asset_source: 'text' }), 'text')
-      : await saveXPostDraft(db, asset, { text })
+      : await saveXPostDraft(db, asset, {
+          text,
+          // 每日问候固定带一张按日期和时段轮换的原创图片；同一草稿重试时复用已选图片。
+          requiredFormat: contentType === 'greeting' ? 'image' : '',
+        })
     let mediaId = ''
     if (postFormat === 'image') {
       stage = 'image-selection'

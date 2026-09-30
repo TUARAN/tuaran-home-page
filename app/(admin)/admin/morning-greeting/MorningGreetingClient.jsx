@@ -45,7 +45,7 @@ function TimelineNode({ item }) {
   const isAttention = item.state.key === 'attention'
   return (
     <article
-      className="relative min-w-0 pt-12"
+      className="relative flex h-full min-w-0 flex-col pt-12"
 
       aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
@@ -62,7 +62,7 @@ function TimelineNode({ item }) {
         }`}
         aria-hidden="true"
       />
-      <div className={`mt-1 rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
+      <div className={`mt-1 flex min-h-40 flex-1 flex-col rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
         <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="mb-0 flex flex-wrap items-center gap-1.5">
@@ -80,11 +80,10 @@ function TimelineNode({ item }) {
         <p className="mb-0 text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">
           {item.recordedAt ? `执行 ${formatTime(item.recordedAt)}` : '尚无执行记录'}
         </p>
-        {item.imageUrl ? <a href={item.imageUrl} target="_blank" rel="noreferrer" aria-label={`预览${item.label}配图`} className="mt-2 block overflow-hidden rounded-lg"><img src={item.imageUrl} alt={`${item.label}配图`} loading="lazy" className="aspect-square w-full object-contain" /></a> : <p className="mb-0 mt-2 text-[11px] text-[#96988e]">{item.recordedAt ? (item.state.key === 'success' ? '纯文本' : '该次记录无配图') : '原创表情包'}</p>}
         {item.meta ? <p className="mb-0 mt-1 break-words text-[11px] leading-5 text-[#7b7d73] dark:text-gray-400">{item.meta}</p> : null}
         {item.costMicroUsd ? <p className="mb-0 mt-1 text-[11px] font-medium tabular-nums text-[#5f6257] dark:text-gray-300">X API {formatUsd(item.costMicroUsd)} / 次</p> : null}
-        {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
         {item.detail ? <p className={`mb-0 mt-2 break-words text-[11px] leading-5 ${isAttention ? 'text-rose-600 dark:text-rose-300' : 'text-[#77796e] dark:text-gray-400'}`}>{item.detail}</p> : null}
+        {item.link ? <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto inline-flex pt-2 text-[11px] font-medium text-sky-700 hover:underline dark:text-sky-300">查看 X 内容 ↗</a> : null}
       </div>
     </article>
   )
@@ -102,7 +101,7 @@ function TaskTimeline({ lastRuns, communityRuns }) {
         id: slot.id, label: labels[slot.id], schedule: slot.time,
         type: slot.query === 'period' ? 'greeting' : 'community',
         typeLabel: slot.query === 'period' ? '早午安' : '朋友交流',
-        hasImage: Boolean(run?.imagePath), imageUrl: run?.imagePath || '',
+        hasImage: Boolean(run?.imagePath),
         state: runState(run), recordedAt: run?.at,
         meta: [run?.theme, run?.styleLabel, run?.model].filter(Boolean).join(' · '),
         link: run?.postUrl, detail: run?.error, costMicroUsd: run?.xApiCostMicroUsd,
@@ -146,7 +145,7 @@ function TaskTimeline({ lastRuns, communityRuns }) {
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[1100px] grid-cols-5 items-start gap-3 px-2 pb-1">
+        <div className="relative grid min-w-[1100px] grid-cols-5 items-stretch gap-3 px-2 pb-1">
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
@@ -253,7 +252,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天约 24 条：08:00 早安、09:30 认识新朋友、12:00 午安、15:00 兴趣交流、19:00 晚间串门；其余 19 个整点发布热点或生活话题。各时段前后 5 分钟浮动。友好帖图文和纯文本各 50% 概率，图文优先使用新版 30 张表情包；话题帖保持纯文字。加密观点、文化短故事、美区英文已暂停。"
+          description="每天约 24 条：08:00 早安、09:30 认识新朋友、12:00 午安、15:00 兴趣交流、19:00 晚间串门；其余 19 个整点发布热点或生活话题。各时段前后 5 分钟浮动。早午安固定带原创配图，并按日期和时段轮换；朋友交流图文和纯文本各 50% 概率。话题帖保持纯文字。加密观点、文化短故事、美区英文已暂停。"
           className="mb-4"
           actions={
             <>

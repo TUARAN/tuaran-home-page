@@ -7,3 +7,52 @@
 @media(max-width:1050px){.marketNav{grid-template-columns:auto 1fr auto}.navLinks{display:none}.featuredGrid,.cardGrid,.catalogGrid,.categoryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.connectSection{gap:36px}}
 @media(max-width:700px){.promoBar{justify-content:space-between;font-size:10px;padding-inline:12px}.promoBar p{display:none}.marketNav{min-height:64px;grid-template-columns:1fr auto;gap:10px;padding:10px 14px}.topSearch{grid-column:1/-1;grid-row:2;width:100%}.installButton{grid-column:2;grid-row:1;font-size:11px;padding:10px 13px}.hero{min-height:690px;padding:105px 0 80px}.hero h1{width:94vw;margin-bottom:38px;font-size:clamp(39px,10.5vw,48px);letter-spacing:-.065em}.mobileBreak{display:block}.tileRail{gap:10px}.artTileCompact{width:76px;height:76px;min-height:76px;flex-basis:76px;border-radius:14px}.artTileCompact svg{width:38px;height:38px}.tileRailSecond{margin-top:10px}.heroActions{flex-direction:column}.heroActions button,.heroActions a{min-width:220px}.contentSection{width:min(100% - 28px,1320px);padding:62px 0}.softSection:before{inset-inline:-22px;border-radius:28px}.sectionHeading,.catalogTop{align-items:flex-start;flex-direction:column}.featuredGrid,.cardGrid,.catalogGrid{grid-template-columns:1fr}.categoryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.categoryGrid button{min-height:160px;padding:17px}.catalogSearch{width:100%}.connectSection{width:min(100% - 28px,1220px);grid-template-columns:1fr;margin:30px auto 80px}.installCard{padding:20px}.finalCta{min-height:360px}}
 @media(prefers-reduced-motion:reduce){.skillCard{transition:none}.skillCard:hover{transform:none}}
+
+/* Homepage artwork marquee */
+.tileRail{display:block;width:100%;overflow:hidden;transform:none}
+.tileRailSecond{width:100%;margin-top:18px;transform:none}
+.tileTrack{display:flex;width:max-content;will-change:transform;animation:tileMarquee 44s linear infinite}
+.tileTrackReverse{animation-direction:reverse;animation-duration:50s}
+.tileGroup{display:flex;flex:none;gap:18px;padding-right:18px}
+.tileRail:hover .tileTrack{animation-play-state:paused}
+@keyframes tileMarquee{to{transform:translateX(-50%)}}
+
+/* Supported agent logo stack */
+.worksWith p{margin-bottom:14px;font-size:10px}
+.agentStack{display:flex;justify-content:center}
+.agentStack span{display:grid;width:48px;height:48px;place-items:center;margin-left:-7px;border:1px solid #d4cec5;border-radius:50%;background:#fbfaf7;box-shadow:0 3px 9px rgba(30,28,24,.11)}
+.agentStack span:first-child{margin-left:0}
+.agentStack img{display:block;width:27px;height:27px;object-fit:contain}
+.agentStack .moreAgents{color:#8d8983;font-size:13px;font-weight:800}
+
+/* Skillry-style category directory */
+.directoryView{display:grid;min-height:calc(100vh - 116px);grid-template-columns:300px minmax(0,1fr);border-bottom:1px solid var(--line)}
+.filterSidebar{border-right:1px solid var(--line);padding:34px 24px}
+.filterTitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.filterTitle strong{font-size:16px}
+.filterTitle button{display:grid;width:28px;height:28px;place-items:center;border:0;background:transparent;color:#77736c;cursor:pointer;transform:rotate(180deg)}
+.filterGroup{border-top:1px solid var(--line);padding:22px 0}
+.filterGroup:first-of-type{border-top:0}
+.filterGroup h3{margin:0 0 12px;color:#8d8982;font-size:12px;font-weight:650}
+.filterGroup button{display:grid;width:100%;grid-template-columns:23px 1fr auto;align-items:center;gap:9px;border:0;background:transparent;color:#68645e;cursor:pointer;font:inherit;font-size:13px;padding:7px 4px;text-align:left}
+.filterGroup button:hover,.filterGroup .filterActive{color:#171717}
+.filterCheck{display:grid;width:19px;height:19px;place-items:center;border:1px solid #cbc6bc;border-radius:6px;background:#faf9f5}
+.filterActive .filterCheck{border-color:#171717;background:#171717;color:#fff}
+.filterGroup small{color:#aaa59d;font-size:11px}
+.directoryResults{min-width:0;padding:38px clamp(24px,3vw,54px) 80px}
+.directoryHeading{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.directoryHeading p{margin:0;color:#77736d;font-size:17px}
+.directoryHeading p strong{color:#171717}
+.directoryHeading button{border:0;border-bottom:1px solid #777;background:transparent;color:#777;cursor:pointer;font:inherit;font-size:11px;padding:0 0 3px}
+.directoryGrid{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:28px 20px}
+.directoryGrid .skillCard{border:0;background:transparent}
+.directoryGrid .cardArtLink{padding:0}
+.directoryGrid .artTile{aspect-ratio:1.72;min-height:0}
+.directoryGrid .cardBody{padding:13px 1px}
+.directoryGrid .cardTitle{min-height:auto;font-size:15px}
+.directoryGrid .cardBody>p{display:none}
+.directoryGrid .cardFooter{border:0;padding-top:9px}
+
+@media(max-width:1050px){.directoryView{grid-template-columns:250px minmax(0,1fr)}.directoryGrid{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media(max-width:700px){.directoryView{display:block}.filterSidebar{border-right:0;border-bottom:1px solid var(--line);padding:22px 16px}.filterGroup{padding:16px 0}.directoryResults{padding:25px 14px 60px}.directoryGrid{grid-template-columns:1fr}.tileGroup{gap:10px;padding-right:10px}.agentStack span{width:40px;height:40px}.agentStack img{width:23px;height:23px}}
+@media(prefers-reduced-motion:reduce){.tileTrack{animation-play-state:paused}}

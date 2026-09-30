@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useMemo, useState } from 'react'
 import {
   IconArrowDown, IconArrowRight, IconArrowUpRight, IconBolt, IconBox, IconBraces,
@@ -22,7 +23,37 @@ const ART = [
   { bg: '#df674c', ink: '#3d1d18', Icon: IconFileText },
 ]
 
-const AGENTS = ['CX', 'CC', 'QW', 'CU', 'GM', 'OC']
+const AGENTS = [
+  { name: 'Claude Code', src: '/images/skill-center/agents/claude-code.svg' },
+  { name: 'Codex', src: '/images/skill-center/agents/codex.svg' },
+  { name: 'Cursor', src: '/images/skill-center/agents/cursor.svg' },
+  { name: 'Hermes Agent', src: '/images/skill-center/agents/hermes.svg' },
+  { name: 'Grok', src: '/images/skill-center/agents/grok.svg' },
+  { name: 'OpenCode', src: '/images/skill-center/agents/opencode.svg' },
+  { name: 'OpenClaw', src: '/images/skill-center/agents/openclaw.svg' },
+]
+
+const FILTER_GROUPS = [
+  { title: '推荐', items: [
+    { key: 'installable', label: '可安装', matches: (skill) => skill.installable },
+    { key: 'featured', label: '精选', matches: (_, index) => index < 4 },
+  ] },
+  { title: '按输出类型', items: [
+    { key: '创作与分发', label: '创作与分发', matches: (skill) => skill.category === '创作与分发' },
+    { key: '个人系统', label: '个人系统', matches: (skill) => skill.category === '个人系统' },
+    { key: '研究与分析', label: '研究与分析', matches: (skill) => skill.category === '研究与分析' },
+  ] },
+  { title: '按角色', items: [
+    { key: 'creator', label: '内容创作者', matches: (skill) => skill.category === '创作与分发' },
+    { key: 'builder', label: '开发者', matches: (skill) => skill.category === '个人系统' },
+    { key: 'researcher', label: '研究者', matches: (skill) => skill.category === '研究与分析' },
+  ] },
+  { title: '按使用场景', items: [
+    { key: 'publishing', label: '内容发布', matches: (skill) => skill.category === '创作与分发' },
+    { key: 'workflow', label: '工作流提效', matches: (skill) => skill.category === '个人系统' },
+    { key: 'research', label: '深度研究', matches: (skill) => skill.category === '研究与分析' },
+  ] },
+]
 
 function ArtTile({ skill, index, compact = false }) {
   const art = ART[index % ART.length]
@@ -56,6 +87,34 @@ function SkillCard({ skill, index }) {
   )
 }
 
+function TileMarquee({ skills, reverse = false }) {
+  const tiles = Array.from({ length: 3 }, () => skills).flat()
+  return (
+    <div className={styles.tileRail} aria-hidden="true">
+      <div className={`${styles.tileTrack} ${reverse ? styles.tileTrackReverse : ''}`}>
+        {[0, 1].map((copy) => (
+          <div className={styles.tileGroup} key={copy}>
+            {tiles.map((skill, index) => <ArtTile key={`${copy}-${skill.id}-${index}`} skill={skill} index={index + (reverse ? 3 : 0)} compact />)}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AgentStack() {
+  return (
+    <div className={styles.agentStack}>
+      {AGENTS.map((agent) => (
+        <span key={agent.name} title={agent.name}>
+          <Image src={agent.src} alt={agent.name} width={27} height={27} />
+        </span>
+      ))}
+      <span className={styles.moreAgents}>+6</span>
+    </div>
+  )
+}
+
 function SectionHeading({ eyebrow, title, description, onShowAll }) {
   return (
     <div className={styles.sectionHeading}>
@@ -73,22 +132,32 @@ export default function SkillCenterExperience({ skills }) {
   const categories = useMemo(() => ['全部', ...new Set(skills.map((skill) => skill.category))], [skills])
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('全部')
+  const [catalogView, setCatalogView] = useState(false)
+  const [activeFilters, setActiveFilters] = useState([])
+  const filterItems = useMemo(() => FILTER_GROUPS.flatMap((group) => group.items), [])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return skills.filter((skill) => {
       const matchesCategory = category === '全部' || skill.category === category
+      const matchesFilters = activeFilters.every((key) => filterItems.find((item) => item.key === key)?.matches(skill, skills.indexOf(skill)))
       const haystack = `${skill.title} ${skill.name} ${skill.desc} ${skill.category}`.toLowerCase()
-      return matchesCategory && (!needle || haystack.includes(needle))
+      return matchesCategory && matchesFilters && (!needle || haystack.includes(needle))
     })
-  }, [category, query, skills])
+  }, [activeFilters, category, filterItems, query, skills])
 
   const featured = skills.slice(0, 4)
   const installable = skills.filter((skill) => skill.installable).slice(0, 4)
 
   function revealCatalog(nextCategory = '全部') {
     setCategory(nextCategory)
-    window.setTimeout(() => document.querySelector('#skill-catalog')?.scrollIntoView({ behavior: 'smooth' }), 0)
+    setCatalogView(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function toggleFilter(key) {
+    setCategory('全部')
+    setActiveFilters((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
   }
 
   return (
@@ -108,29 +177,65 @@ export default function SkillCenterExperience({ skills }) {
         </div>
         <label className={styles.topSearch}>
           <span className="sr-only">搜索 Skill</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="想让智能体完成什么？" />
+          <input value={query} onChange={(event) => { setQuery(event.target.value); setCatalogView(true) }} placeholder="想让智能体完成什么？" />
           {query ? <button type="button" onClick={() => setQuery('')} aria-label="清空搜索"><IconX size={17} /></button> : <IconSearch size={18} />}
         </label>
         <a href="#connect" className={styles.installButton}>安装 Skill</a>
       </nav>
 
+      {catalogView ? (
+        <section className={styles.directoryView}>
+          <aside className={styles.filterSidebar}>
+            <div className={styles.filterTitle}>
+              <strong>筛选</strong>
+              <button type="button" onClick={() => setCatalogView(false)} aria-label="收起筛选"><IconArrowRight size={17} /></button>
+            </div>
+            {FILTER_GROUPS.map((group) => (
+              <div className={styles.filterGroup} key={group.title}>
+                <h3>{group.title}</h3>
+                {group.items.map((item) => {
+                  const count = skills.filter(item.matches).length
+                  const checked = activeFilters.includes(item.key)
+                  return (
+                    <button type="button" key={item.key} className={checked ? styles.filterActive : ''} onClick={() => toggleFilter(item.key)} aria-pressed={checked}>
+                      <span className={styles.filterCheck}>{checked ? <IconCheck size={14} /> : null}</span>
+                      <span>{item.label}</span>
+                      <small>{count}</small>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </aside>
+          <div className={styles.directoryResults}>
+            <div className={styles.directoryHeading}>
+              <p><strong>{filtered.length}</strong> 个 Skills</p>
+              {(activeFilters.length || query) ? <button type="button" onClick={() => { setActiveFilters([]); setQuery(''); setCategory('全部') }}>清除筛选</button> : null}
+            </div>
+            {filtered.length ? (
+              <div className={styles.directoryGrid}>
+                {filtered.map((skill, index) => <SkillCard key={skill.id} skill={skill} index={index} />)}
+              </div>
+            ) : (
+              <div className={styles.emptyState}><IconSearch size={30} /><strong>没有匹配的 Skill</strong><span>换个关键词或筛选条件试试。</span></div>
+            )}
+          </div>
+        </section>
+      ) : <>
+
       <section className={styles.hero}>
         <div className={styles.heroGlow} />
         <p className={styles.heroEyebrow}><span /> CURATED AGENT SKILLS <span /></p>
         <h1>让智能体拥有<br className={styles.mobileBreak} />真正好用的技能</h1>
-        <div className={styles.tileRail} aria-hidden="true">
-          {[...skills, ...skills.slice(0, 4)].map((skill, index) => <ArtTile key={`top-${skill.id}-${index}`} skill={skill} index={index} compact />)}
-        </div>
-        <div className={`${styles.tileRail} ${styles.tileRailSecond}`} aria-hidden="true">
-          {[...skills.slice(3), ...skills, ...skills.slice(0, 2)].map((skill, index) => <ArtTile key={`bottom-${skill.id}-${index}`} skill={skill} index={index + 3} compact />)}
-        </div>
+        <TileMarquee skills={skills} />
+        <div className={styles.tileRailSecond}><TileMarquee skills={skills} reverse /></div>
         <div className={styles.heroActions}>
           <button type="button" onClick={() => revealCatalog()}>浏览 Skills <IconArrowDown size={17} /></button>
           <a href="#connect"><IconSparkles size={17} /> 给智能体装上能力</a>
         </div>
         <div className={styles.worksWith}>
-          <p>WORKS WITH</p>
-          <div>{AGENTS.map((agent) => <span key={agent}>{agent}</span>)}<span>+6</span></div>
+          <p>支持的 AGENT</p>
+          <AgentStack />
         </div>
       </section>
 
@@ -195,6 +300,7 @@ export default function SkillCenterExperience({ skills }) {
         <IconPalette size={30} stroke={1.4} /><h2>准备好扩展你的智能体了吗？</h2><p>挑选一个真实任务，从一项 Skill 开始。</p>
         <button type="button" onClick={() => revealCatalog()}>浏览全部 Skills <IconArrowRight size={17} /></button>
       </section>
+      </>}
     </main>
   )
 }

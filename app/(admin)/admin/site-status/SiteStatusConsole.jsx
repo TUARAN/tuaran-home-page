@@ -34,7 +34,7 @@ function statusTone(status) {
   return 'warning'
 }
 
-export default function SiteStatusConsole() {
+export default function SiteStatusConsole({ embedded = false }) {
   const [data, setData] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
@@ -90,7 +90,7 @@ export default function SiteStatusConsole() {
   const inputClass = 'mt-1.5 w-full rounded-lg border border-[#caccc0] bg-white px-3 py-2 text-sm text-[#15140f] outline-none focus:border-[#7f8863] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100'
 
   return (
-    <AdminPage title="故障公告" description="故障状态保存在独立 R2 中；D1 异常时，公开页面仍然可以读取公告。">
+    <AdminPage embedded={embedded} title="故障公告" description="故障状态保存在独立 R2 中；D1 异常时，公开页面仍然可以读取公告。">
       <div className="space-y-5">
         {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{error}</div> : null}
         {notice ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">{notice}</div> : null}

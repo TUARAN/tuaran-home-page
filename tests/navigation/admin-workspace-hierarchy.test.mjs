@@ -13,16 +13,17 @@ const projectWorkspace = await readFile(
   'utf8'
 )
 
-test('AI planning is embedded in planning center instead of a separate project workspace entry', async () => {
+test('project portfolio and AI planning are embedded in the unified project center', async () => {
   const planningCenter = await readFile(
     new URL('../../app/(admin)/admin/planning/PlanningCenter.jsx', import.meta.url),
     'utf8'
   )
 
-  assert.match(projectWorkspace, /href: '\/admin\/planning', title: '规划中心'/)
+  assert.match(projectWorkspace, /getWorkspaceHubProps\('\/admin\/projects'\)/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/model-dispatch'/)
   assert.match(planningCenter, /ModelDispatchConsole/)
   assert.match(planningCenter, /<ModelDispatchConsole embedded \/>/)
+  assert.match(planningCenter, /<ProjectPortfolioConsole embedded \/>/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ops'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/deepseek-tasks'/)
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ai-workspace'/)
@@ -37,4 +38,5 @@ test('AI planning is embedded in planning center instead of a separate project w
     ]
   )
   assert.equal(getWorkspaceHubProps('/admin/automation').title, '自动化')
+  assert.equal(getWorkspaceHubProps('/admin/projects').title, '工程与运维')
 })

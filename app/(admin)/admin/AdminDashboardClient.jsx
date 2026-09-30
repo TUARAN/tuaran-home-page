@@ -283,7 +283,7 @@ export default function AdminDashboardClient() {
           <DashboardMetric index={0} label="注册用户" value={users?.count != null ? users.count : '—'} sub="全部登录账号" icon="users" href="/admin/users" />
           <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" href="/admin/content-weekly#reading" />
           <DashboardMetric index={2} label="今日读者" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly#reading" />
-          <DashboardMetric index={3} label="D1 数据库" value={dbValue(db)} sub={dbSub(db)} icon="database" tone={dbTone(db?.status)} href="/admin/db" />
+          <DashboardMetric index={3} label="D1 数据库" value={dbValue(db)} sub={dbSub(db)} icon="database" tone={dbTone(db?.status)} href="/admin/site-health?tab=data" />
           <DashboardMetric index={4} label="自动化" value={ops?.label || '—'} sub={ops?.latencyMs != null ? `${ops.latencyMs}ms 响应` : '运行台账'} icon="ops" tone={opsTone(ops?.status)} href="/admin/ops" />
         </div>
       </section>

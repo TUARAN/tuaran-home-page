@@ -48,7 +48,7 @@ const EMPTY_FORM = {
   note: '',
 }
 
-export default function IntegrationsClient() {
+export default function IntegrationsClient({ embedded = false }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -161,6 +161,7 @@ export default function IntegrationsClient() {
 
   return (
     <AdminPage
+      embedded={embedded}
       title="集成密钥"
       description="全站外部服务凭证、Webhook 与定时任务的统一台账。凭证加密落库，界面只显示掩码；环境变量探测只标记「已配置 / 未配置」。"
       actions={<AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}

@@ -147,7 +147,7 @@ function SourceState({ source, children }) {
       <div className="rounded-xl border border-dashed border-[#d6d8cf] bg-[#f8f8f4] p-3 text-xs leading-5 text-[#74766d] dark:border-[#2c3745] dark:bg-[#0d141d] dark:text-gray-400">
         <p>{source?.message || '尚未接入实时数据。'}</p>
         {required.length ? <p className="mt-1 font-mono text-[10px] text-[#989a90]">{required.join(' · ')}</p> : null}
-        <Link href="/admin/integrations" className="mt-2 inline-block font-medium text-[#536d63] hover:underline dark:text-emerald-400">查看集成配置 →</Link>
+        <Link href="/admin/settings?tab=integrations" className="mt-2 inline-block font-medium text-[#536d63] hover:underline dark:text-emerald-400">查看集成配置 →</Link>
       </div>
     )
   }

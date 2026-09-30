@@ -12,7 +12,7 @@ async function safeJson(response) {
   }
 }
 
-export default function SettingsConsole() {
+export default function SettingsConsole({ embedded = false }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -76,6 +76,7 @@ export default function SettingsConsole() {
 
   return (
     <AdminPage
+      embedded={embedded}
       title="站点设置"
       description="管理影响全站的功能开关。当前先接入广告开关；后续 SEO、第三方脚本、实验功能可以继续挂到这里。"
     >

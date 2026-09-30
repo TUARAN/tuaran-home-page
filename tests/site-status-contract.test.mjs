@@ -46,7 +46,8 @@ test('monitor route is secret protected and status storage is independent from D
   assert.match(workflow, /cron: '\*\/5 \* \* \* \*'/)
 })
 
-test('admin navigation exposes the incident console', async () => {
+test('admin navigation exposes incidents through the unified operations center', async () => {
   const routes = await read('../lib/adminRoutes.js')
-  assert.match(routes, /href: '\/admin\/site-status', label: '故障公告'/)
+  assert.match(routes, /href: '\/admin\/site-health', label: '运行中心'/)
+  assert.match(routes, /'\/admin\/site-status': '\/admin\/site-health\?tab=incidents'/)
 })

@@ -4,7 +4,9 @@
  * stickyHeader：把标题 + 右上角操作区固定在顶部（钉在 AdminTopbar 下方），
  * 适用于长列表页（如内容管理），避免滚动后头部“一会显示一会又消失”。
  */
-export default function AdminPage({ title, description, actions, children, compact = false, stickyHeader = false, notificationTargetReady }) {
+export default function AdminPage({ title, description, actions, children, compact = false, stickyHeader = false, notificationTargetReady, embedded = false }) {
+  if (embedded) return children
+
   return (
     <main
       id={notificationTargetReady === undefined ? undefined : 'notification-destination'}

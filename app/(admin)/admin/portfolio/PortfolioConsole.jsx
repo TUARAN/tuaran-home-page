@@ -282,7 +282,7 @@ function SnapshotBadge({ label = PORTFOLIO_SNAPSHOT.label }) {
   )
 }
 
-export default function ProjectPortfolioConsole() {
+export default function ProjectPortfolioConsole({ embedded = false }) {
   const [selected, setSelected] = useState('blogger-alliance')
   const [query, setQuery] = useState('')
   const [primaryView, setPrimaryView] = useState('repos')
@@ -475,6 +475,7 @@ export default function ProjectPortfolioConsole() {
 
   return (
     <AdminPage
+      embedded={embedded}
       title="AI 项目管理台"
       description="统一查看项目关系、业务状态和整合路线图。"
     >
@@ -760,7 +761,7 @@ export default function ProjectPortfolioConsole() {
                 </div>
                 {dataSource !== 'd1' ? (
                   <p className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
-                    当前为 seed 快照（只读）。线上 /admin/portfolio 连接 D1 后可编辑。
+                    当前为 seed 快照（只读）。线上项目管理的“项目组合”视图连接 D1 后可编辑。
                   </p>
                 ) : null}
                 {editDraft ? (

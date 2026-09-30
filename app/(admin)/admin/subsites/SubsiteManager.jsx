@@ -178,7 +178,7 @@ export default function SubsiteManager() {
               />
             </Section> : null}
           </>}
-          <p className="text-xs leading-6 text-[#82847a] dark:text-gray-500">运行配置可在 <Link href="/admin/cloudflare-personal-site-map" className="underline">站点架构</Link> 核对；服务凭证统一在 <Link href="/admin/integrations" className="underline">集成密钥</Link> 管理。</p>
+          <p className="text-xs leading-6 text-[#82847a] dark:text-gray-500">运行配置可在 <Link href="/admin/cloudflare-personal-site-map" className="underline">站点架构</Link> 核对；服务凭证统一在 <Link href="/admin/settings?tab=integrations" className="underline">配置中心</Link> 管理。</p>
         </div>
       </div>
     </AdminPage>

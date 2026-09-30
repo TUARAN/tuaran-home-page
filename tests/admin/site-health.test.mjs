@@ -7,12 +7,18 @@ const reportSource = await readFile(new URL('../../ai-context/site-health-audit.
 const designSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
 const nextConfigSource = await readFile(new URL('../../next.config.js', import.meta.url), 'utf8')
 
-test('UI design and site health have separate admin pages and cross-links', () => {
+test('UI design stays in engineering while runtime tools share one operations center', () => {
   assert.match(designSource, /title="UI 设计"/)
   assert.match(designSource, /href="\/admin\/site-health"/)
   assert.doesNotMatch(designSource, /site-health-audit\.md/)
-  assert.match(pageSource, /title="站点体检"/)
-  assert.match(pageSource, /href="\/admin\/design"/)
+  assert.match(pageSource, /title="运行中心"/)
+  assert.match(pageSource, /label: '站点体检'/)
+  assert.match(pageSource, /label: '数据健康'/)
+  assert.match(pageSource, /label: '可用性探测'/)
+  assert.match(pageSource, /label: '故障公告'/)
+  assert.match(pageSource, /<DbAdminClient embedded \/>/)
+  assert.match(pageSource, /<BloggerEyeConsole embedded \/>/)
+  assert.match(pageSource, /<SiteStatusConsole embedded \/>/)
   assert.match(pageSource, /site-health-audit\.md\?raw/)
   assert.match(nextConfigSource, /site-health-audit/)
 })

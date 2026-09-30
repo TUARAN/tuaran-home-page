@@ -80,7 +80,7 @@ npx wrangler deploy --config workers/poemcn/wrangler.toml`,
   },
 ]
 
-export default function DbAdminClient() {
+export default function DbAdminClient({ embedded = false }) {
   const [snapshot, setSnapshot] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -154,7 +154,7 @@ export default function DbAdminClient() {
       : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
 
   return (
-    <AdminPage
+    <AdminPage embedded={embedded}
       title="数据库管理"
       description="首屏只读取表目录。行数、字段、索引、最近记录和文本量仅在点开单表时查询，避免每次挂载扫描整库。"
       actions={

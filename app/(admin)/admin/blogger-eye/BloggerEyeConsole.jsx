@@ -29,7 +29,7 @@ function Field({ label, hint, children }) {
 
 const inputClass = 'h-10 w-full rounded-lg border border-[#caccc0] bg-[#fafaf6] px-3 text-[12px] text-[#15140f] outline-none transition focus:border-[#6f7166] dark:border-[#2d3744] dark:bg-[#0e131c] dark:text-gray-100 dark:focus:border-[#718096]'
 
-export default function BloggerEyeConsole() {
+export default function BloggerEyeConsole({ embedded = false }) {
   const [service, setService] = useState({ state: 'checking', message: '检测中', colo: 'unknown' })
   const [allowedHosts, setAllowedHosts] = useState([])
   const [runners, setRunners] = useState({ ready: false, count: 0, items: [] })
@@ -198,6 +198,7 @@ export default function BloggerEyeConsole() {
 
   return (
     <AdminPage
+      embedded={embedded}
       title="小眼睛"
       description="通过受控的云端节点检查已授权网站，不依赖本机常驻服务。"
       actions={<StatusPill tone={serviceTone}>{service.message}</StatusPill>}

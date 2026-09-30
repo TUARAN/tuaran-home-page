@@ -57,6 +57,7 @@ const VISUALS = {
 }
 
 const PRODUCT_SCREENSHOTS = {
+  'domain-service': '/images/works/domain-service.webp',
   webhp: '/images/works/webhp.webp',
   'blogger-alliance': '/images/works/blogger-alliance.webp',
   syncblog: '/images/works/syncblog.webp',

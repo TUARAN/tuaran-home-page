@@ -356,35 +356,35 @@ function WorkBoard({ items, sources, projects, onPatch, savingId }) {
 
   return (
     <>
-    <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-5">
-      {Object.entries(STATUS_META).map(([status, meta]) => (
-        <section key={status} className="flex min-w-0 flex-col rounded-xl border border-[#e2e3da] bg-white/70 dark:border-[#1e2733] dark:bg-[#10161f]/70">
-          <header className="flex items-center justify-between border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">
-            <StatusPill tone={meta.tone} size="sm">{meta.label}</StatusPill>
-            <span className="text-[12px] text-[#82847a] dark:text-gray-500">{grouped[status].length}</span>
-          </header>
-          <div className="max-h-[max(420px,calc(100vh-15rem))] min-h-[180px] space-y-2 overflow-y-auto p-2">
-            {grouped[status].slice(0, 20).map((item) => (
-              <WorkItemCard
-                key={item.id}
-                item={item}
-                onOpen={setSelectedItemId}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-    {selectedItem ? (
-      <WorkItemModal
-        item={selectedItem}
-        source={sourceMap.get(selectedItem.sourceId)}
-        projects={projects}
-        onPatch={onPatch}
-        savingId={savingId}
-        onClose={closeModal}
-      />
-    ) : null}
+      <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+        {Object.entries(STATUS_META).map(([status, meta]) => (
+          <section key={status} className="flex min-w-0 flex-col rounded-xl border border-[#e2e3da] bg-white/70 dark:border-[#1e2733] dark:bg-[#10161f]/70">
+            <header className="flex items-center justify-between border-b border-[#eceee6] px-3 py-2 dark:border-[#1b2430]">
+              <StatusPill tone={meta.tone} size="sm">{meta.label}</StatusPill>
+              <span className="text-[12px] text-[#82847a] dark:text-gray-500">{grouped[status].length}</span>
+            </header>
+            <div className="max-h-[max(420px,calc(100vh-15rem))] min-h-[180px] space-y-2 overflow-y-auto p-2">
+              {grouped[status].slice(0, 20).map((item) => (
+                <WorkItemCard
+                  key={item.id}
+                  item={item}
+                  onOpen={setSelectedItemId}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+      {selectedItem ? (
+        <WorkItemModal
+          item={selectedItem}
+          source={sourceMap.get(selectedItem.sourceId)}
+          projects={projects}
+          onPatch={onPatch}
+          savingId={savingId}
+          onClose={closeModal}
+        />
+      ) : null}
     </>
   )
 }
@@ -511,11 +511,11 @@ export default function SiteDevManagerClient() {
             />
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
+          <div className="mt-4 grid items-start gap-4 xl:grid-cols-2">
+            <Section title="绑定项目来源" description="把 portfolio_projects 里的项目绑定到 GitHub 仓库或 npm 包。">
+              <SourceForm projects={projects} onSaved={refresh} disabled={!projects.length} />
+            </Section>
             <div className="space-y-4">
-              <Section title="绑定项目来源" description="把 portfolio_projects 里的项目绑定到 GitHub 仓库或 npm 包。">
-                <SourceForm projects={projects} onSaved={refresh} disabled={!projects.length} />
-              </Section>
               <Section title="来源列表" description="GitHub issue / PR 会同步成本站待办；npm 先记录最新版本。">
                 <SourceList sources={sources} projects={projects} onSync={sync} syncingId={syncingId} />
               </Section>
@@ -523,10 +523,11 @@ export default function SiteDevManagerClient() {
                 <SyncEvents events={data?.events || []} />
               </Section>
             </div>
-            <Section title="待办看板" description="GitHub issue 默认进入 Inbox；这里的状态先只保存在本站 D1，不反写 GitHub。">
-              <WorkBoard items={items} sources={sources} projects={projects} onPatch={patchItem} savingId={savingId} />
-            </Section>
           </div>
+
+          <Section className="mt-4" title="待办看板" description="GitHub issue 默认进入 Inbox；这里的状态先只保存在本站 D1，不反写 GitHub。">
+            <WorkBoard items={items} sources={sources} projects={projects} onPatch={patchItem} savingId={savingId} />
+          </Section>
         </>
       )}
     </AdminPage>

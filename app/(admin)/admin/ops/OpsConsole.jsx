@@ -115,7 +115,7 @@ const REVIEW_OPTIONS = [
   { value: 'open', label: '免审核' },
 ]
 
-function OpsConsoleClient() {
+function OpsConsoleClient({ embedded = false }) {
   const searchParams = useSearchParams()
   const focusTask = String(searchParams.get('task') || '').trim()
   const appliedFocus = useRef('')
@@ -260,12 +260,13 @@ function OpsConsoleClient() {
 
   return (
     <AdminPage
-      title="自动化台账"
-      description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。运行记录已移到日志记录。"
+      embedded={embedded}
+      title="任务台账"
+      description="云端与本地自动化统一登记；列表紧凑展示，点击任意一行查看详情。"
       notificationTargetReady={!loading && !error && !!status}
       actions={
         <div className="flex flex-wrap gap-2">
-          <AdminButton href="/admin/logs">运行记录</AdminButton>
+          <AdminButton href="/admin/ops?tab=runs">运行记录</AdminButton>
           <AdminButton href={status?.localUrl || 'http://localhost:4179'} target="_blank" rel="noreferrer">本机控制台</AdminButton>
           <AdminButton href={status?.externalUrl || 'https://ops.2aran.com/'} target="_blank" rel="noreferrer">Tunnel 入口</AdminButton>
           <AdminButton
@@ -437,7 +438,7 @@ function OpsConsoleClient() {
       </section>
 
       <p className="mt-4 text-[12px] leading-6 text-[#858779] dark:text-gray-500">
-        调度状态表示任务是否已启用：定时任务在两次触发之间仍显示“已启用”，仅有实时执行记录时才使用“运行中”；“按需运行”表示由人工触发。最近一次执行结果见日志记录。
+        调度状态表示任务是否已启用：定时任务在两次触发之间仍显示“已启用”，仅有实时执行记录时才使用“运行中”；“按需运行”表示由人工触发。最近一次执行结果见任务中心的“最近运行”。
       </p>
     </AdminPage>
   )
@@ -602,7 +603,7 @@ function FilterChip({ current, value, count, onClick, children }) {
 
 export default function OpsConsole() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-sm text-[#77796d] dark:text-gray-400">正在打开自动化台账</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-sm text-[#77796d] dark:text-gray-400">正在打开任务台账</p>}>
       <OpsConsoleClient />
     </Suspense>
   )

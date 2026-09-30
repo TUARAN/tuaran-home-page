@@ -29,14 +29,9 @@ test('project portfolio and AI planning are embedded in the unified project cent
   assert.doesNotMatch(projectWorkspace, /href: '\/admin\/ai-workspace'/)
 
   const automation = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/automation')
-  assert.deepEqual(
-    listWorkspaceChildren(automation).slice(0, 3).map((item) => [item.href, item.label]),
-    [
-      ['/admin/ops', '自动化台账'],
-      ['/admin/deepseek-tasks', '模型服务'],
-      ['/admin/logs', '日志记录'],
-    ]
-  )
+  assert.deepEqual(listWorkspaceChildren(automation).slice(0, 1).map((item) => [item.href, item.label]), [
+    ['/admin/ops', '任务中心'],
+  ])
   assert.equal(getWorkspaceHubProps('/admin/automation').title, '自动化')
   assert.equal(getWorkspaceHubProps('/admin/projects').title, '工程与运维')
 })

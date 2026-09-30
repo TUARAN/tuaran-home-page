@@ -8,17 +8,18 @@ import OllamaProvidersPanel from './OllamaProvidersPanel'
 
 const PAGE_TAB_CLASS = 'h-9 rounded-md px-4 text-[13px] font-medium transition'
 
-export default function DeepSeekTasksClient() {
+export default function DeepSeekTasksClient({ embedded = false }) {
   const [tab, setTab] = useState('keys')
 
   return (
     <AdminPage
+      embedded={embedded}
       title="模型服务"
-      description="管理 DeepSeek 密钥与 NAS Ollama 服务。调用记录已移到日志记录。"
+      description="管理 DeepSeek 密钥与 NAS Ollama 服务。调用记录集中在任务中心。"
       actions={
         <>
           <AdminButton href="/admin/model-dispatch">AI 规划台</AdminButton>
-          <AdminButton href="/admin/logs?tab=calls">调用记录</AdminButton>
+          <AdminButton href="/admin/ops?tab=calls">调用记录</AdminButton>
         </>
       }
     >

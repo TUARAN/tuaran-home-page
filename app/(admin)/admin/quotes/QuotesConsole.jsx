@@ -72,7 +72,7 @@ export default function QuotesConsole() {
   }
 
   return (
-    <AdminPage title="名言生成" description="生成已暂停；既有原创格言继续留档，前台仍从名言池随机展示。">
+    <AdminPage title="短句内容" description="既有原创格言继续留档并供前台随机展示；自动生成已暂停。">
       <div className="mx-auto max-w-3xl space-y-5">
         {paused ? <Notice tone="warning">名言生成已暂停。定时任务和手动生成均不会新增内容，现有名言池继续展示。</Notice> : null}
         {!persistent ? <Notice tone="warning">当前环境没有可写入的 D1 数据库。</Notice> : null}

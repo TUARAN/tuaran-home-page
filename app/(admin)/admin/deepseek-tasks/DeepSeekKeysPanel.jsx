@@ -421,7 +421,7 @@ export default function DeepSeekKeysPanel() {
                     {key.note ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{key.note}</p> : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <AdminButton href={`/admin/logs?tab=calls&key=${encodeURIComponent(key.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
+                    <AdminButton href={`/admin/ops?tab=calls&key=${encodeURIComponent(key.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
                     <AdminButton type="button" variant="ghost" onClick={() => startEdit(key)} disabled={saving}>编辑</AdminButton>
                     <AdminButton type="button" variant="ghost" onClick={() => toggleKey(key)} disabled={saving}>
                       {key.status === 'active' ? '停用' : '启用'}

@@ -364,7 +364,7 @@ export default function OllamaProvidersPanel() {
                     {provider.lastCheckDetail ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{provider.lastCheckDetail}</p> : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <AdminButton href={`/admin/logs?tab=calls&provider=ollama&providerId=${encodeURIComponent(provider.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
+                    <AdminButton href={`/admin/ops?tab=calls&provider=ollama&providerId=${encodeURIComponent(provider.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={testingId === provider.id || provider.status !== 'active'} onClick={() => testProvider(provider)}>{testingId === provider.id ? '测试中…' : '测试调用'}</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={saving} onClick={() => startEdit(provider)}>编辑</AdminButton>
                     <AdminButton type="button" variant="ghost" disabled={saving} onClick={() => toggleProvider(provider)}>{provider.status === 'active' ? '停用' : '启用'}</AdminButton>

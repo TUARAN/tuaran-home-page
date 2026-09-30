@@ -33,14 +33,14 @@ test('只把插件已声明的平台解析为已勾选账号', () => {
   assert.ok(accounts.every((account) => account.checked === true))
 })
 
-test('后台自动化工作区和导航都登记文章一键分发', async () => {
+test('后台内容工作区和导航都登记文章分发', async () => {
   const [workspace, routes, page, articleRoute] = await Promise.all([
-    readFile(new URL('../app/(admin)/admin/automation/AutomationWorkspace.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/article-distribution/ArticleDistributionClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/article-distribution/article/route.js', import.meta.url), 'utf8'),
   ])
-  assert.match(workspace, /getWorkspaceHubProps\('\/admin\/automation'\)/)
+  assert.match(workspace, /getWorkspaceHubProps\('\/admin\/content'\)/)
   assert.match(routes, /\/admin\/article-distribution/)
   assert.match(page, /window\.\$cose\.addTask/)
   assert.match(page, /草稿模式/)

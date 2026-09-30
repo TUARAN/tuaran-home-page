@@ -82,7 +82,9 @@ export async function middleware(request) {
     const url = request.nextUrl.clone()
     const [targetPathname, targetSearch = ''] = legacyAdminTarget.split('?')
     url.pathname = targetPathname
-    url.search = targetSearch ? `?${targetSearch}` : ''
+    const mergedSearch = new URLSearchParams(targetSearch)
+    request.nextUrl.searchParams.forEach((value, key) => mergedSearch.set(key, value))
+    url.search = mergedSearch.toString() ? `?${mergedSearch.toString()}` : ''
     return NextResponse.redirect(url, 301)
   }
 

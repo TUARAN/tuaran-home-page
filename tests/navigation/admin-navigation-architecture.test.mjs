@@ -24,9 +24,9 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/articles/new').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/research-import').map((item) => item.label), ['内容', '审批调研'])
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
-  assert.deepEqual(resolveAdminTrail('/admin/deepseek-tasks').map((item) => item.label), ['自动化', '模型服务'])
-  assert.deepEqual(resolveAdminTrail('/admin/logs').map((item) => item.label), ['自动化', '日志记录'])
-  assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['自动化', '名言生成'])
+  assert.deepEqual(resolveAdminTrail('/admin/ops').map((item) => item.label), ['自动化', '任务中心'])
+  assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['内容', '短句内容'])
+  assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['内容', '文章分发'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '路过互动'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
@@ -87,14 +87,17 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
       '/admin/system': '/admin/projects',
       '/admin/portfolio': '/admin/planning?tab=portfolio',
       '/admin/integrations': '/admin/settings?tab=integrations',
+      '/admin/deepseek-tasks': '/admin/settings?tab=models',
       '/admin/db': '/admin/site-health?tab=data',
       '/admin/site-status': '/admin/site-health?tab=incidents',
       '/admin/blogger-eye': '/admin/site-health?tab=probe',
+      '/admin/logs': '/admin/ops?tab=runs',
     }
   )
   const middlewareSource = await readFile(new URL('../../middleware.js', import.meta.url), 'utf8')
   assert.match(middlewareSource, /legacyAdminTarget\.split\('\?'\)/)
-  assert.match(middlewareSource, /url\.search = targetSearch/)
+  assert.match(middlewareSource, /request\.nextUrl\.searchParams\.forEach/)
+  assert.match(middlewareSource, /mergedSearch\.set\(key, value\)/)
   assert.match(middlewareSource, /pathname === '\/admin\/articles' && request\.nextUrl\.searchParams\.get\('panel'\) === 'import'/)
   assert.match(middlewareSource, /url\.pathname = '\/admin\/articles\/research-import'/)
 })
@@ -120,7 +123,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '壁纸资源', '推荐管理', '分类管理', '数据统计', 'SEO 管理', '短链管理', '存档管理', 'RSS 与分发']
+    ['内容管理', '审批调研', '分类管理', '推荐管理', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '数据统计', '壁纸资源', '短句内容', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
@@ -129,13 +132,13 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
   assert.ok(listWorkspaceChildren(content).every((item) => item.sidebar !== false))
 })
 
-test('automation workspace hub and sidebar share registry, model, and log entries', () => {
+test('automation workspace hub and sidebar expose one task center plus focused pipelines', () => {
   const automation = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/automation')
   const hub = getWorkspaceHubProps('/admin/automation')
 
   assert.deepEqual(
     listWorkspaceChildren(automation).map((item) => item.label),
-    ['自动化台账', '模型服务', '日志记录', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', '文章一键分发', '名言生成', '路过互动']
+    ['任务中心', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', '路过互动']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
@@ -143,6 +146,6 @@ test('automation workspace hub and sidebar share registry, model, and log entrie
   )
   assert.deepEqual(
     hub.sections[0].items.map((item) => item.href),
-    ['/admin/ops', '/admin/deepseek-tasks', '/admin/logs']
+    ['/admin/ops']
   )
 })

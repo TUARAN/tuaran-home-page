@@ -3,13 +3,13 @@ import AutomationWorkspace from './AutomationWorkspace'
 
 export const metadata = {
   title: '自动化',
-  description: '自动任务、内容流水线、模型服务与运行记录。',
+  description: '任务调度、运行观测、自动研究与社交发布。',
   robots: { index: false, follow: false },
 }
 
 export default function AdminAutomationPage() {
   return (
-    <AdminPageGate label="自动化" returnTo="/admin/automation" description="自动任务、模型服务与运行记录，仅站长本人可见。">
+    <AdminPageGate label="自动化" returnTo="/admin/automation" description="自动任务、运行观测与内容流水线，仅站长本人可见。">
       <AutomationWorkspace />
     </AdminPageGate>
   )

@@ -5,7 +5,14 @@
  * 适用于长列表页（如内容管理），避免滚动后头部“一会显示一会又消失”。
  */
 export default function AdminPage({ title, description, actions, children, compact = false, stickyHeader = false, notificationTargetReady, embedded = false }) {
-  if (embedded) return children
+  if (embedded) {
+    if (notificationTargetReady === undefined) return children
+    return (
+      <div id="notification-destination" data-notification-ready={notificationTargetReady ? 'true' : 'false'}>
+        {children}
+      </div>
+    )
+  }
 
   return (
     <main

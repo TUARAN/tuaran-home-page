@@ -13,7 +13,7 @@ const TABS = [
 
 const PAGE_TAB_CLASS = 'h-9 rounded-md px-4 text-[13px] font-medium transition'
 
-export default function LogsClient({ initialTab = 'runs', initialCallFilters = {} }) {
+export default function LogsClient({ initialTab = 'runs', initialCallFilters = {}, embedded = false }) {
   const [tab, setTab] = useState(TABS.some((item) => item.id === initialTab) ? initialTab : 'runs')
   const [callFilters, setCallFilters] = useState(initialCallFilters)
 
@@ -34,14 +34,20 @@ export default function LogsClient({ initialTab = 'runs', initialCallFilters = {
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
+  if (embedded) {
+    return initialTab === 'calls'
+      ? <ModelCallRecordsPanel initialFilters={initialCallFilters} />
+      : <AutomationRunsPanel />
+  }
+
   return (
     <AdminPage
       title="日志记录"
       description="集中查看自动化最近运行和模型调用记录。"
       actions={
         <>
-          <AdminButton href="/admin/ops">自动化台账</AdminButton>
-          <AdminButton href="/admin/deepseek-tasks">模型服务</AdminButton>
+          <AdminButton href="/admin/ops">任务台账</AdminButton>
+          <AdminButton href="/admin/settings?tab=models">模型服务</AdminButton>
         </>
       }
     >

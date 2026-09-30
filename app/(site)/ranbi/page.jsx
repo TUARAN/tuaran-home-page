@@ -112,7 +112,7 @@ export default async function RanbiPage() {
           ))}
         </div>
         <TableFrame>
-            <thead><tr className="bg-[#b98928]/[0.08] dark:bg-amber-300/[0.06]"><Th>分配池</Th><Th>占总量</Th><Th>初始分配</Th><Th>当前库存</Th></tr></thead>
+            <thead><tr className="bg-blue-500/[0.06] dark:bg-blue-300/[0.05]"><Th>分配池</Th><Th>占总量</Th><Th>初始分配</Th><Th>当前库存</Th></tr></thead>
             <tbody>
               {RANBI_POOL_ALLOCATIONS.map(({ accountId, label, ratio, allocation }, index) => {
                 const account = SUPPLY?.accounts?.find((row) => row.accountId === accountId)
@@ -124,7 +124,14 @@ export default async function RanbiPage() {
                         {label}
                       </span>
                     </Td>
-                    <Td><span className="inline-flex min-w-12 justify-center rounded-full bg-[#b98928]/[0.1] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#7a5b1e] dark:text-amber-200">{ratio}%</span></Td>
+                    <Td>
+                      <span
+                        className="inline-flex min-w-12 justify-center rounded-full px-2 py-0.5 font-mono text-[11px] font-semibold"
+                        style={{ backgroundColor: `${RANBI_POOL_COLORS[index]}14`, color: RANBI_POOL_COLORS[index] }}
+                      >
+                        {ratio}%
+                      </span>
+                    </Td>
                     <Td className="font-mono tabular-nums">{formatAmount(allocation)}</Td>
                     <Td className="font-mono font-semibold tabular-nums text-[var(--site-ink)]">{account ? formatAmount(account.balance) : '—'}</Td>
                   </TableRow>

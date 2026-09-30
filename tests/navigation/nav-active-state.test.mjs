@@ -121,3 +121,12 @@ test('desktop and mobile render route state instead of featured styling', async 
   assert.match(css, /\.site-menu-item-active\s*\{/)
   assert.doesNotMatch(css, /site-menu-item-featured/)
 })
+
+test('onchain shortcut follows the homepage slogan instead of the global brand', async () => {
+  const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
+  const homepageSlogan = header.match(/\{pathname === '\/' \? \([\s\S]*?\) : null\}/)?.[0] || ''
+  const brandLockup = header.slice(header.indexOf('<div className="site-brand-lockup'), header.indexOf("{pathname === '/' ? ("))
+
+  assert.match(homepageSlogan, /尽在 <strong>2aran\.com<\/strong>”[\s\S]*href="\/onchain-blog"/)
+  assert.doesNotMatch(brandLockup, /href="\/onchain-blog"|site-onchain-blog-link/)
+})

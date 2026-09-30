@@ -3495,12 +3495,11 @@
   }
 
   .site-onchain-blog-link {
-    position: absolute;
-    top: -0.05rem;
-    right: 0;
-    display: none;
+    position: relative;
+    display: inline-flex;
     height: 1.35rem;
     width: 1.35rem;
+    margin-left: 0.35rem;
     align-items: center;
     justify-content: center;
     border-radius: 0.25rem;
@@ -3548,12 +3547,6 @@
   .site-onchain-blog-link:focus-visible .site-onchain-blog-tooltip {
     opacity: 1;
     transform: translate(-50%, 0);
-  }
-
-  @media (min-width: 640px) {
-    .site-onchain-blog-link {
-      display: inline-flex;
-    }
   }
 
   .site-brand-slogan {

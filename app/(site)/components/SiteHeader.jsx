@@ -773,7 +773,7 @@ export default function SiteHeader() {
           <div className="site-brand-lockup relative min-w-0 shrink-0">
             <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
               <span className="site-brand-mark" aria-hidden="true">T</span>
-              <div className="hidden min-w-0 flex-col pr-7 leading-tight sm:inline-flex">
+              <div className="hidden min-w-0 flex-col leading-tight sm:inline-flex">
                 <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
                   TUARAN
                 </span>
@@ -781,17 +781,6 @@ export default function SiteHeader() {
                   {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
                 </span>
               </div>
-            </Link>
-            <Link
-              href="/onchain-blog"
-              className="site-onchain-blog-link"
-              aria-label="中文上链博客"
-              aria-describedby="site-onchain-blog-tooltip"
-            >
-              <span aria-hidden="true">🔗</span>
-              <span id="site-onchain-blog-tooltip" role="tooltip" className="site-onchain-blog-tooltip">
-                这可能是全球第一个面向人与 AI 的中文上链博客
-              </span>
             </Link>
           </div>
 
@@ -802,6 +791,17 @@ export default function SiteHeader() {
               </span>
               <span className="site-brand-slogan-destination">
                 尽在 <strong>2aran.com</strong>”
+                <Link
+                  href="/onchain-blog"
+                  className="site-onchain-blog-link"
+                  aria-label="中文上链博客"
+                  aria-describedby="site-onchain-blog-tooltip"
+                >
+                  <span aria-hidden="true">🔗</span>
+                  <span id="site-onchain-blog-tooltip" role="tooltip" className="site-onchain-blog-tooltip">
+                    这可能是全球第一个面向人与 AI 的中文上链博客
+                  </span>
+                </Link>
               </span>
             </p>
           ) : null}

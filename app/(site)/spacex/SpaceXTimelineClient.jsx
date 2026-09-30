@@ -335,7 +335,7 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
               ['2006—2019', '早期任务 · 88 场', '从 Falcon 1 到猎鹰重型早期任务，旧链接与缺失元数据需要逐项交叉核验。'],
             ].map(([step, title, description]) => <div key={step}><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-cyan-200">{step}</p><h3 className="mt-4 text-base font-medium">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-500">{description}</p></div>)}
           </div>
-          <p className="mt-6 max-w-4xl text-xs leading-6 text-slate-600">数据口径截至 2026 年 9 月 20 日。发射总量来自 Launch Library 2 的 SpaceX 历史任务查询；影像优先采用 SpaceX 官方公开内容，并保留原帖链接与署名。著作权、平台条款与传播许可可能变化，页面仅展示理解任务所需的片段。</p>
+          <p className="mt-6 max-w-4xl text-xs leading-6 text-slate-600">数据口径截至 2026 年 9 月 28 日。发射总量来自 Launch Library 2 的 SpaceX 历史任务查询；影像优先采用 SpaceX 官方公开内容，并保留原帖链接与署名。著作权、平台条款与传播许可可能变化，页面仅展示理解任务所需的片段。</p>
         </div>
       </section>
 

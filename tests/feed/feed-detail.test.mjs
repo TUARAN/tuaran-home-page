@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const FEED_CLIENT_PATH = new URL('../../app/(site)/feed/FeedClient.jsx', import.meta.url)
+const FEED_PAGE_PATH = new URL('../../app/(site)/feed/page.jsx', import.meta.url)
 const FEED_DETAIL_PAGE_PATH = new URL('../../app/(site)/feed/[id]/page.jsx', import.meta.url)
 const CONTENT_REGISTRY_PATH = new URL('../../lib/contentRegistry.js', import.meta.url)
 
@@ -36,4 +37,18 @@ test('feed list filters by AI and Web3 before media type', async () => {
   assert.match(client, /FEED_CATEGORY_KEYS/)
   assert.match(client, /filterFeedItemsByCategory/)
   assert.match(client, /feedCategoryHref/)
+})
+
+test('feed filters use compact, visually distinct topic and format controls', async () => {
+  const [client, page] = await Promise.all([
+    readFile(FEED_CLIENT_PATH, 'utf8'),
+    readFile(FEED_PAGE_PATH, 'utf8'),
+  ])
+
+  assert.match(page, /header className="mb-3/)
+  assert.match(client, />\s*主题\s*</)
+  assert.match(client, />\s*形式\s*</)
+  assert.match(client, /bg-\[var\(--site-ink\)\] text-\[var\(--page-bg\)\]/)
+  assert.doesNotMatch(client, /home-section-tabs/)
+  assert.doesNotMatch(client, /home-tab-link/)
 })

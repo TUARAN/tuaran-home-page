@@ -760,45 +760,67 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="home-section-tabs" role="tablist" aria-label="按主题筛选灵感">
-          {FEED_CATEGORY_KEYS.map((key) => {
-            const active = categoryFilter === key
-            const meta = FEED_CATEGORY_META[key]
-            return (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => selectCategory(key)}
-                className={`home-tab-link ${active ? 'is-active' : ''}`}
-              >
-                {meta.label}
-              </button>
-            )
-          })}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">
+            主题
+          </span>
+          <div
+            className="inline-flex min-w-0 items-center gap-1 overflow-x-auto rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] p-1 shadow-sm shadow-[var(--site-shadow)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            role="tablist"
+            aria-label="按主题筛选灵感"
+          >
+            {FEED_CATEGORY_KEYS.map((key) => {
+              const active = categoryFilter === key
+              const meta = FEED_CATEGORY_META[key]
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => selectCategory(key)}
+                  className={[
+                    'inline-flex min-h-8 shrink-0 items-center justify-center rounded-full border px-4 text-[13px] font-semibold transition-colors',
+                    active
+                      ? 'border-[var(--site-ink)] bg-[var(--site-ink)] text-[var(--page-bg)]'
+                      : 'border-transparent bg-transparent text-[var(--site-muted)] hover:bg-[var(--site-panel-strong)] hover:text-[var(--site-ink)]',
+                  ].join(' ')}
+                >
+                  {meta.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1" aria-label="按类型筛选灵感">
-          {typeChips.map((chip) => {
-            const active = typeFilter === chip.key
-            return (
-              <button
-                key={chip.key}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setTypeFilter(chip.key)}
-                className={[
-                  'relative min-h-9 border-0 bg-transparent px-0 py-1.5 text-[13px] transition-colors',
-                  active
-                    ? 'font-semibold text-[var(--site-ink)] after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-[var(--site-ink)]'
-                    : 'font-normal text-[var(--site-muted)] hover:text-[var(--site-ink)]',
-                ].join(' ')}
-              >
-                {chip.label}
-              </button>
-            )
-          })}
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">
+            形式
+          </span>
+          <div
+            className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-[color-mix(in_srgb,var(--site-panel)_72%,transparent)] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="按类型筛选灵感"
+          >
+            {typeChips.map((chip) => {
+              const active = typeFilter === chip.key
+              return (
+                <button
+                  key={chip.key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setTypeFilter(chip.key)}
+                  className={[
+                    'min-h-8 shrink-0 rounded-full border px-3 text-[12px] transition-colors',
+                    active
+                      ? 'border-[var(--site-line)] bg-[var(--site-panel-strong)] font-semibold text-[var(--site-ink)] shadow-sm shadow-[var(--site-shadow)]'
+                      : 'border-transparent bg-transparent font-medium text-[var(--site-muted)] hover:text-[var(--site-ink)]',
+                  ].join(' ')}
+                >
+                  {chip.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 

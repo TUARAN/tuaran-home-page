@@ -24,8 +24,8 @@ export default function FeedPage() {
   const typesPresent = getFeedTypesPresent()
 
   return (
-    <PageContainer className="py-10">
-      <header className="mb-8 border-b border-[var(--site-line)] pb-5">
+    <PageContainer className="py-8 md:py-10">
+      <header className="mb-3 border-b border-[var(--site-line)] pb-3">
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <p className="mb-0 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--site-faint)]">
             Inspiration · 灵感流
@@ -37,7 +37,7 @@ export default function FeedPage() {
         <h1 className="font-serif text-[32px] leading-tight tracking-wide text-[var(--site-ink)] md:text-[38px]">
           灵感
         </h1>
-        <p className="mt-3 max-w-[680px] text-[14px] leading-7 text-[var(--site-muted)]">
+        <p className="mt-2 max-w-[680px] text-[14px] leading-7 text-[var(--site-muted)]">
           这个世界，究竟是怎样？应是怎样？会怎样？怎会这样？
         </p>
       </header>

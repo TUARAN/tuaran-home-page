@@ -10,7 +10,7 @@ import { AVATAR_PATH } from '../../../lib/avatar'
  */
 
 export const AUTHOR_INTRO_MARKDOWN =
-  '> **涂阿燃**  \n> 前端与智能体工程师 · 技术作者 · [个人介绍 →](https://2aran.com/about)'
+  '> **涂阿燃** · 前端与智能体工程师 · 技术作者 · [个人介绍 →](https://2aran.com/about)'
 
 export function AuthorByline() {
   return (
@@ -31,17 +31,17 @@ export function AuthorByline() {
         />
       </Link>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <Link
           href="/about"
           rel="author"
-          className="research-author-name inline-flex items-baseline gap-1.5 no-underline"
+          className="research-author-name block truncate whitespace-nowrap no-underline"
         >
           <span className="text-[13px] font-semibold">涂阿燃</span>
+          <span className="research-author-muted ml-2 text-[11px] font-normal">
+            · 前端与智能体工程师 · 技术作者
+          </span>
         </Link>
-        <p className="research-author-muted mb-0 mt-0.5 text-[11px] leading-4">
-          前端与智能体工程师 · 技术作者
-        </p>
       </div>
 
       <Link

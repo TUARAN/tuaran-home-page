@@ -12,15 +12,12 @@ const seoRoadmapSource = await readFile(new URL('../../app/(admin)/admin/seo/Seo
 const collapsibleSource = await readFile(new URL('../../app/(admin)/components/ui/CollapsibleSection.jsx', import.meta.url), 'utf8')
 const auditSource = await readFile(new URL('../../ai-context/ui-ux-audit-roadmap.md', import.meta.url), 'utf8')
 
-test('audit documents collapse by kind and later checklists can reuse the same flag', async () => {
-  const { isCollapsedDesignDocument } = await loadDesignDocuments()
-  assert.equal(isCollapsedDesignDocument({ kind: 'audit' }), true)
-  assert.equal(isCollapsedDesignDocument({ kind: 'spec' }), false)
-  assert.equal(isCollapsedDesignDocument({ title: '站点设计语言' }), false)
-  assert.match(pageSource, /kind: 'audit'/)
-  assert.match(pageSource, /isCollapsedDesignDocument\(document\)/)
-  assert.match(pageSource, /<CollapsibleSection/)
-  assert.doesNotMatch(pageSource, /kind: 'audit'[\s\S]*defaultOpen=\{true\}/)
+test('all design documents render directly without an outer collapsible layer', () => {
+  assert.doesNotMatch(pageSource, /isCollapsedDesignDocument/)
+  assert.doesNotMatch(pageSource, /kind: 'audit'/)
+  assert.match(pageSource, /<Section[\s\S]*title=\{document\.title\}/)
+  assert.match(pageSource, /showProgress: true/)
+  assert.match(pageSource, /<StatusPill tone="info" size="sm">/)
 })
 
 test('UI audit checklist progress is counted from markdown checkboxes', async () => {
@@ -33,11 +30,10 @@ test('UI audit checklist progress is counted from markdown checkboxes', async ()
   assert.deepEqual(countAuditTasks(''), { completed: 0, total: 0 })
 })
 
-test('SEO growth roadmap stays collapsed until the user expands it', () => {
-  const [outerOpen] = seoRoadmapSource.match(/<CollapsibleSection\s+id="seo-growth-roadmap"[\s\S]*?>/) || []
-  assert.match(seoRoadmapSource, /id="seo-growth-roadmap"/)
-  assert.ok(outerOpen, 'expected the outer SEO roadmap CollapsibleSection')
-  assert.doesNotMatch(outerOpen, /defaultOpen/)
+test('SEO growth roadmap renders directly without an outer collapsible layer', () => {
+  assert.match(seoRoadmapSource, /<Section[\s\S]*title="SEO \/ GEO 审计与改造路线图"/)
+  assert.doesNotMatch(seoRoadmapSource, /id="seo-growth-roadmap"/)
+  assert.match(seoRoadmapSource, /<StatusPill tone="info" size="sm">/)
 })
 
 test('collapsible section stays closed unless a matching hash targets it', () => {

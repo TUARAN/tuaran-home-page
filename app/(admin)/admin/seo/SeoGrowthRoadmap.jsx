@@ -1,7 +1,7 @@
 import CollapsibleSection from '../../components/ui/CollapsibleSection'
 import roadmap from '../../../../ai-context/seo-geo-growth-roadmap.md?raw'
 import { renderMarkdown } from '../../../../lib/research/markdown'
-import { StatusPill } from '../../components/ui'
+import { Section, StatusPill } from '../../components/ui'
 
 const sections = roadmap.split(/^## /m).slice(1).map((section, index) => {
   const newline = section.indexOf('\n')
@@ -21,8 +21,7 @@ function documentHtml(markdown) {
 export default function SeoGrowthRoadmap() {
   return (
     <div id="growth-roadmap" className="mb-5 scroll-mt-24">
-      <CollapsibleSection
-        id="seo-growth-roadmap"
+      <Section
         title="SEO / GEO 审计与改造路线图"
         description="GPT6-Astra 分析与改造 · 2026-09-08 审计基线 · 仅站长可见"
         actions={<StatusPill tone="info" size="sm">{completed}/{tasks.length} 项完成</StatusPill>}
@@ -50,7 +49,7 @@ export default function SeoGrowthRoadmap() {
         <p className="mb-0 mt-3 break-all text-xs leading-6 text-[#67695d] dark:text-gray-400">
           记录来源：ai-context/seo-geo-growth-roadmap.md。更新文档后随部署同步；勾选框仅展示记录状态。
         </p>
-      </CollapsibleSection>
+      </Section>
     </div>
   )
 }

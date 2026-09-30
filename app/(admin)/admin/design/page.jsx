@@ -1,10 +1,10 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import { AdminButton, AdminPage, CollapsibleSection, Section, StatCard } from '../../components/ui'
+import { AdminButton, AdminPage, CollapsibleSection, Section, StatCard, StatusPill } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import audit from '../../../../ai-context/ui-ux-audit-roadmap.md?raw'
 import language from '../../../../docs/site-design-language.md?raw'
 import motion from '../../../../docs/loading-motion-system.md?raw'
-import { countAuditTasks, isCollapsedDesignDocument } from './designDocuments'
+import { countAuditTasks } from './designDocuments'
 
 export const metadata = {
   title: 'UI 设计',
@@ -13,8 +13,7 @@ export const metadata = {
 }
 
 const documents = [
-  // kind: 'audit' 默认折叠。后续审计清单只要加上这个标记即可。
-  { id: 'audit', kind: 'audit', title: 'UI / 交互审计与改造清单', source: 'ai-context/ui-ux-audit-roadmap.md', markdown: audit },
+  { id: 'audit', title: 'UI / 交互审计与改造清单', source: 'ai-context/ui-ux-audit-roadmap.md', markdown: audit, showProgress: true },
   { id: 'language', title: '站点设计语言', source: 'docs/site-design-language.md', markdown: language },
   { id: 'motion', title: '加载与等待反馈规范', source: 'docs/loading-motion-system.md', markdown: motion },
 ]
@@ -77,28 +76,18 @@ function DocumentBody({ document }) {
 
 function DocumentSection({ document }) {
   const description = `记录来源：${document.source}`
-  const collapsedByDefault = isCollapsedDesignDocument(document)
   const body = <DocumentBody document={document} />
-  if (!collapsedByDefault) {
-    return (
-      <div id={document.id} className="scroll-mt-24">
-        <Section title={document.title} description={description}>
-          {body}
-        </Section>
-      </div>
-    )
-  }
   const progress = countAuditTasks(document.markdown)
   return (
-    <CollapsibleSection
-      id={document.id}
-      title={document.title}
-      description={description}
-      defaultOpen={false}
-      badge={progress.total ? `${progress.completed}/${progress.total} 项完成` : undefined}
-    >
-      {body}
-    </CollapsibleSection>
+    <div id={document.id} className="scroll-mt-24">
+      <Section
+        title={document.title}
+        description={description}
+        actions={document.showProgress && progress.total ? <StatusPill tone="info" size="sm">{progress.completed}/{progress.total} 项完成</StatusPill> : undefined}
+      >
+        {body}
+      </Section>
+    </div>
   )
 }
 
@@ -120,7 +109,7 @@ export default function AdminDesignPage() {
           {documents.map((document) => <AdminButton key={document.id} href={`#${document.id}`} size="sm">{document.title}</AdminButton>)}
         </nav>
         <p className="mb-5 text-sm leading-7 text-[var(--admin-muted)]">
-          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。审计清单默认折叠，需要时再展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
+          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。三份设计文档直接展示，各章节可按需展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
         </p>
         <div className="space-y-5">{documents.map((document) => <DocumentSection key={document.id} document={document} />)}</div>
       </AdminPage>

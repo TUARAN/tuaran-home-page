@@ -10,7 +10,6 @@ import { Section } from '../../components/ui'
 const TABS = [
   { id: 'memes', label: '表情包模板', description: '保留原 35 张素材，并新增 30 张六画风友好表情包。自动发布优先轮换新素材，按早安、午安、认识新朋友、兴趣交流和晚间串门匹配。' },
   { id: 'pool', label: '图片资源池', description: '每条先随机选择图文或纯文本（各 50%）。图文从同主题固定模板池选取，不再在线生成新图；上传失败重试复用原图和文案。' },
-  { id: 'runs', label: '选图与发布记录', description: '按时间倒序查看每次发推的选图、文案、发布状态与原图。' },
 ]
 
 export default function XImageLibrary() {
@@ -21,15 +20,15 @@ export default function XImageLibrary() {
 
   function openTab(id) {
     setTab(id)
-    if (id === 'pool' || id === 'runs') setPoolReady(true)
+    if (id === 'pool') setPoolReady(true)
   }
 
   return (
-    <Section title="配图素材" description={active.description}>
+    <Section title="配图素材" description={active.description} className="mb-4">
       <div
         role="tablist"
         aria-label="配图素材分类"
-        className="mb-4 grid grid-cols-3 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
+        className="mb-4 grid grid-cols-2 overflow-hidden rounded-lg border border-[#d5d7cd] bg-[#f7f8f2] p-1 dark:border-[#2a3544] dark:bg-[#0d131b]"
       >
         {TABS.map((item) => {
           const selected = tab === item.id
@@ -69,12 +68,12 @@ export default function XImageLibrary() {
       ) : null}
 
       <div
-        id={`x-image-library-${tab === 'runs' ? 'runs' : 'pool'}`}
+        id="x-image-library-pool"
         role="tabpanel"
-        aria-labelledby={`x-image-library-tab-${tab === 'runs' ? 'runs' : 'pool'}`}
-        hidden={tab !== 'pool' && tab !== 'runs'}
+        aria-labelledby="x-image-library-tab-pool"
+        hidden={tab !== 'pool'}
       >
-        {poolReady ? <XImagePool view={tab === 'runs' ? 'runs' : 'pool'} /> : null}
+        {poolReady ? <XImagePool /> : null}
       </div>
 
       <OriginalPreviewDialog preview={preview} onClose={() => setPreview(null)} />

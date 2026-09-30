@@ -347,21 +347,23 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
 
-test('配图素材用 tab 合并表情包和资源池，列表只加载小图', async () => {
-  const [clientSource, librarySource, thumbsSource, poolSource] = await Promise.all([
+test('配图素材只管理图片，发布记录独立成可检索表格', async () => {
+  const [clientSource, librarySource, thumbsSource, poolSource, recordsSource] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/morning-greeting/XImageLibrary.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/morning-greeting/XImageThumbs.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/morning-greeting/XImagePool.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(admin)/admin/morning-greeting/XPublicationRecords.jsx', import.meta.url), 'utf8'),
   ])
 
   assert.match(clientSource, /XImageLibrary/)
+  assert.match(clientSource, /XPublicationRecords/)
   assert.doesNotMatch(clientSource, /表情包模板 · 5 组 15 张|历史素材库/)
   assert.match(librarySource, /表情包模板/)
   assert.match(librarySource, /图片资源池/)
-  assert.match(librarySource, /选图与发布记录/)
+  assert.doesNotMatch(librarySource, /选图与发布记录/)
   assert.doesNotMatch(librarySource, /历史素材库/)
-  assert.match(librarySource, /grid-cols-3/)
+  assert.match(librarySource, /grid-cols-2/)
   assert.match(librarySource, /role="tablist"/)
   assert.match(librarySource, /meme\.thumb/)
   assert.doesNotMatch(librarySource, /<img src=\{meme\.path/)
@@ -377,6 +379,11 @@ test('配图素材用 tab 合并表情包和资源池，列表只加载小图', 
   assert.match(poolSource, /接口返回异常/)
   assert.match(poolSource, /登录状态已失效/)
   assert.match(poolSource, /credentials: 'same-origin'/)
+  assert.match(recordsSource, /title="发布记录"/)
+  assert.match(recordsSource, /type="date"/)
+  assert.match(recordsSource, /按关键词搜索/)
+  assert.match(recordsSource, /<table/)
+  assert.match(recordsSource, /scope: 'runs'/)
 })
 
 test('mixed posting reserves five friendly slots and uses topic posts for the other 19 hours', async () => {

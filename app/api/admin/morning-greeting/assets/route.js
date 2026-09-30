@@ -11,9 +11,17 @@ export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
   const params = new URL(req.url).searchParams
+  const scope = params.get('scope') || 'all'
   const type = params.get('type') || ''
   const status = params.get('status') || ''
-  if ((type && !X_ASSET_TYPES.includes(type)) || (status && !['pending', 'generating', 'ready', 'failed', 'publishing', 'publish-unknown', 'published'].includes(status))) {
+  const from = params.get('from') || ''
+  const to = params.get('to') || ''
+  const keyword = (params.get('keyword') || '').trim()
+  const validDate = (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value)
+  if (!['all', 'pool', 'runs'].includes(scope)
+    || (type && !X_ASSET_TYPES.includes(type))
+    || (status && !['pending', 'generating', 'ready', 'failed', 'publishing', 'publish-unknown', 'published'].includes(status))
+    || !validDate(from) || !validDate(to) || (from && to && from > to) || keyword.length > 100) {
     return Response.json({ error: 'INVALID_FILTER' }, { status: 400 })
   }
   const env = getOptionalRequestContext()?.env || {}
@@ -22,8 +30,10 @@ export async function GET(req) {
   try {
     const db = getD1()
     const [page, pool] = await Promise.all([
-      listXAssets(db, { type, status, before: params.get('before') || '' }),
-      listXImagePool(db, { type }),
+      scope === 'pool'
+        ? Promise.resolve({ items: [], nextCursor: '' })
+        : listXAssets(db, { type, status, from, to, keyword, before: params.get('before') || '' }),
+      scope === 'runs' ? Promise.resolve([]) : listXImagePool(db, { type }),
     ])
     return Response.json({ ...page, pool, legacy, config, available: true }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch {

@@ -201,6 +201,26 @@ test('fixed pool images persist on the draft, retries reuse them, and list pagin
   assert.equal(generated, 0)
 })
 
+test('publication records can be filtered by date range and keyword', async (t) => {
+  const { db, sqlite } = await assetFixture(t)
+  for (const [date, slot, text, error] of [
+    ['2026-08-27', 'morning', '普通早安', ''],
+    ['2026-08-28', 'community_friends', '寻找热爱摄影的新朋友', ''],
+    ['2026-08-29', 'noon', '普通午安', 'UPLOAD_TIMEOUT'],
+  ]) {
+    const asset = await assetLibrary.claimXAsset(db, { date, slot, contentType: 'greeting' })
+    sqlite.prepare('UPDATE x_post_assets SET text = ?, error = ?, status = ? WHERE id = ?')
+      .run(text, error, error ? 'failed' : 'published', asset.row.id)
+  }
+
+  const byDate = await assetLibrary.listXAssets(db, { from: '2026-08-28', to: '2026-08-29' })
+  assert.deepEqual(byDate.items.map((item) => item.date), ['2026-08-29', '2026-08-28'])
+  const byText = await assetLibrary.listXAssets(db, { keyword: '摄影' })
+  assert.deepEqual(byText.items.map((item) => item.slot), ['community_friends'])
+  const byError = await assetLibrary.listXAssets(db, { keyword: 'upload_timeout' })
+  assert.deepEqual(byError.items.map((item) => item.date), ['2026-08-29'])
+})
+
 test('format draw has a 50 percent boundary and saved image drafts do not draw again', async (t) => {
   const { db } = await assetFixture(t)
   for (const [index, draw] of [0, 0.499999, 0.5, 0.999999].entries()) {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImageLibrary from './XImageLibrary'
+import XPublicationRecords from './XPublicationRecords'
 import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
 import AutomationModelSelector from './AutomationModelSelector'
 
@@ -263,10 +264,11 @@ export default function MorningGreetingClient() {
         >
         <div className="space-y-4">
           <TaskTimeline lastRuns={lastRuns} communityRuns={communityRuns} />
-          <XImageLibrary />
-          <XApiCostPanel cost={data?.xApiCost} />
         </div>
         </Section>
+      <XImageLibrary />
+      <XPublicationRecords />
+      <XApiCostPanel cost={data?.xApiCost} />
     </AdminPage>
   )
 }

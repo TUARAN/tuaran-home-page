@@ -43,6 +43,7 @@ const CONFIG = {
   analyticsSurface: 'interactive_directory',
   analyticsEvent: 'entry_click',
   destinationKind: 'interactive',
+  gridColumns: 4,
   share: {
     title: '互动专题',
     text: '可阅读、可筛选、可操作的内容作品。',

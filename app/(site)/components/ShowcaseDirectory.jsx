@@ -227,6 +227,9 @@ function ListCard({ item, pv, visuals, config, layout }) {
 export default function ShowcaseDirectory({ items, categories, visuals, config, secondaryFilter }) {
   const layout = config.layout || 'gallery'
   const isCatalog = layout === 'catalog'
+  const gridClassName = isCatalog || config.gridColumns === 4
+    ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+    : 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3'
   const [category, setCategory] = useState('all')
   const [secondary, setSecondary] = useState('all')
   const [query, setQuery] = useState('')
@@ -359,7 +362,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
         </div> : null}
 
         {filteredItems.length ? (
-          <div className={view === 'grid' ? (isCatalog ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3') : 'space-y-4'}>
+          <div className={view === 'grid' ? gridClassName : 'space-y-4'}>
             {filteredItems.map((item) => view === 'grid'
               ? <Card key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} layout={layout} />
               : <ListCard key={item.id} item={item} pv={pvCounts[item.pvKey]} visuals={visuals} config={config} layout={layout} />)}

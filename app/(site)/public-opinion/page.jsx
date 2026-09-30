@@ -11,9 +11,9 @@ import {
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '舆情分析系统 · 全网公开内容监测与观点洞察',
+  title: '舆情分析系统 · 事件聚合、风险预警与观点洞察',
   description:
-    '基于公开内容采集、热点聚合、中文文本分析、情绪识别与立场研判的舆情分析工作台。',
+    '基于公开内容采集、跨来源事件聚合、时间衰减热度、情绪识别、风险预警与立场研判的舆情分析工作台。',
   keywords: [
     '舆情分析',
     '公开内容采集',

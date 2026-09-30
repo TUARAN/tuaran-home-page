@@ -1,496 +1,266 @@
 'use client'
 
 import {
+  IconActivity,
+  IconArrowUpRight,
+  IconBolt,
+  IconBook2,
   IconChartBar,
+  IconClock,
   IconDatabaseSearch,
   IconExternalLink,
   IconFilter,
-  IconMessageCircle2,
+  IconFlame,
+  IconListDetails,
   IconRefresh,
-  IconScale,
+  IconSearch,
+  IconShieldCheck,
+  IconSparkles,
   IconTopologyStar3,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
+import { buildPublicOpinionSnapshot, getSentimentBucket, getSentimentLabel, materializePublicOpinionPostTimes } from '../../../lib/publicOpinionData'
 
-import {
-  buildPublicOpinionSnapshot,
-  formatPercent,
-  getSentimentBucket,
-  getSentimentLabel,
-} from '../../../lib/publicOpinionData'
-
-const STANCE_META = {
-  support: { label: '支持', color: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-300' },
-  neutral: { label: '中立', color: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-300' },
-  question: { label: '质疑', color: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-300' },
-  oppose: { label: '反对', color: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-300' },
+const STANCE_LABELS = { support: '支持', neutral: '中立', question: '质疑', oppose: '反对' }
+const SENTIMENT_STYLES = {
+  positive: 'border-[#b8ddd3] bg-[#eff9f5] text-[#287365] dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300',
+  neutral: 'border-[#cbd9df] bg-[#f2f7f8] text-[#4f707a] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+  negative: 'border-[#efc7bd] bg-[#fff3ef] text-[#b9523b] dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300',
 }
-
-const SENTIMENT_META = {
-  positive: { label: '正向', color: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-300' },
-  neutral: { label: '中性', color: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-300' },
-  negative: { label: '负向', color: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-300' },
+const RISK_STYLES = {
+  高: 'border-[#e7a99b] bg-[#fff1ed] text-[#c14732] dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300',
+  中: 'border-[#e8d3a7] bg-[#fff8e9] text-[#9b692a] dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300',
+  低: 'border-[#b7dcd4] bg-[#eef8f5] text-[#277265] dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300',
 }
+const NAV_ITEMS = [
+  { id: 'selected', label: '精选舆情', icon: IconBolt, target: 'feed' },
+  { id: 'all', label: '全部动态', icon: IconListDetails, target: 'feed' },
+  { id: 'hot', label: '热点榜', icon: IconFlame, target: 'hot' },
+  { id: 'trend', label: '趋势研判', icon: IconChartBar, target: 'trend' },
+  { id: 'sources', label: '公开来源', icon: IconDatabaseSearch, target: 'sources' },
+]
 
 function numberFormat(value) {
-  return new Intl.NumberFormat('zh-CN').format(value)
+  return new Intl.NumberFormat('zh-CN').format(Number(value || 0))
 }
 
-function StatTile({ icon: Icon, label, value, note }) {
+function formatClock(value, fallback = '') {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return fallback
+  return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false }).format(date)
+}
+
+function formatDate(value) {
+  const date = value ? new Date(value) : new Date()
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
+  return {
+    date: new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric' }).format(safeDate),
+    weekday: new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'short' }).format(safeDate),
+  }
+}
+
+function scrollToSection(target) {
+  document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function BrandMark() {
   return (
-    <div className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
-      <div className="flex items-center justify-between gap-3">
-        <p className="mb-0 text-[12px] text-[#68706a] dark:text-[#98a5b6]">{label}</p>
-        <Icon className="h-4 w-4 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
+    <div className="flex items-center gap-3 px-2 py-3">
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#14343b] text-[17px] font-bold text-white shadow-sm dark:bg-[#dce9e3] dark:text-[#15211d]">舆</div>
+      <div>
+        <p className="mb-0 text-[17px] font-bold tracking-[0.08em] text-[#17252a] dark:text-gray-100">OPINION</p>
+        <p className="mb-0 text-[10px] font-semibold tracking-[0.22em] text-[#2f7d82] dark:text-[#8bc3bd]">INTELLIGENCE</p>
       </div>
-      <div className="mt-3 font-mono text-[26px] font-semibold leading-none text-[#161b1a] dark:text-gray-100">
-        {value}
-      </div>
-      <p className="mb-0 mt-2 text-[12px] leading-5 text-[#77736b] dark:text-[#8d98a8]">{note}</p>
     </div>
   )
 }
 
-function SegmentButton({ active, children, onClick, testId }) {
+function WorkspaceSidebar({ activeView, onViewChange, snapshot, connectors, dataStatus, lastUpdated }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-testid={testId}
-      className={`min-h-9 border px-3 py-1.5 text-[12px] font-medium transition ${
-        active
-          ? 'border-[#20343c] bg-[#20343c] text-white dark:border-[#d6dbc5] dark:bg-[#d6dbc5] dark:text-[#141914]'
-          : 'border-[#cfd4ca] bg-white text-[#535d59] hover:border-[#8da0a2] dark:border-[#324050] dark:bg-[#101720] dark:text-[#b8c2cf] dark:hover:border-[#536579]'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function FilterSelect({ label, value, options, onChange }) {
-  return (
-    <label className="inline-flex items-center gap-2 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
-      <span className="shrink-0">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-8 min-w-[108px] border border-[#cfd4ca] bg-white px-2 text-[12px] font-medium text-[#535d59] outline-none transition focus:border-[#20343c] dark:border-[#324050] dark:bg-[#101720] dark:text-[#b8c2cf] dark:focus:border-[#d6dbc5]"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
-function Meter({ value, color = 'bg-[#476a75]' }) {
-  const width = Math.max(4, Math.min(100, value))
-  return (
-    <div className="h-2 w-full overflow-hidden bg-[#e8e7df] dark:bg-[#263241]" aria-hidden="true">
-      <div className={`h-full ${color}`} style={{ width: `${width}%` }} />
-    </div>
-  )
-}
-
-function Distribution({ title, items, total, meta }) {
-  return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
-      <h2 className="mb-4 border-0 p-0 text-[17px] font-semibold text-[#161b1a] dark:text-gray-100">{title}</h2>
-      <div className="space-y-4">
-        {Object.entries(items).map(([key, count]) => {
-          const percent = total ? (count / total) * 100 : 0
+    <aside className="border-b border-[#dfe4e1] bg-[#fbfcfa] px-3 py-4 dark:border-[#293640] dark:bg-[#0f171e] lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:border-b-0 lg:border-r lg:px-4 lg:py-5">
+      <BrandMark />
+      <div className="mt-6 hidden text-[11px] font-medium text-[#89928e] lg:block">内容</div>
+      <nav className="mt-2 flex gap-2 overflow-x-auto pb-1 lg:grid lg:gap-1.5" aria-label="舆情工作台栏目">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon
+          const active = activeView === item.id
           return (
-            <div key={key}>
-              <div className="mb-1.5 flex items-center justify-between gap-3">
-                <span className={`text-[13px] font-medium ${meta[key].text}`}>{meta[key].label}</span>
-                <span className="font-mono text-[12px] text-[#61655d] dark:text-[#98a5b6]">
-                  {count} · {formatPercent(percent)}
-                </span>
-              </div>
-              <Meter value={percent} color={meta[key].color} />
-            </div>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function TrendPanel({ trendPoints }) {
-  const maxHeat = Math.max(...trendPoints.map((point) => point.heat), 1)
-
-  return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Discussion Trend</p>
-          <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-            大众讨论趋势
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-3 text-[12px] text-[#646b66] dark:text-[#98a5b6]">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 bg-[#476a75]" />
-            热度
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 bg-emerald-500" />
-            正向
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 bg-rose-500" />
-            负向
-          </span>
-        </div>
-      </div>
-      <div
-        className="grid min-h-[220px] items-end gap-2 overflow-x-auto border-b border-l border-[#dfe1d6] px-2 pt-2 dark:border-[#334052]"
-        style={{ gridTemplateColumns: `repeat(${trendPoints.length}, minmax(58px, 1fr))` }}
-      >
-        {trendPoints.map((point) => (
-          <div key={point.time} className="flex h-full flex-col justify-end gap-2">
-            <div className="flex h-[160px] items-end justify-center gap-1">
-              <div
-                className="w-3 bg-[#476a75]"
-                style={{ height: `${Math.max(12, (point.heat / maxHeat) * 150)}px` }}
-                title={`${point.time} 热度 ${point.heat}`}
-              />
-              <div
-                className="w-3 bg-emerald-500"
-                style={{ height: `${Math.max(12, point.positive * 1.5)}px` }}
-                title={`${point.time} 正向 ${point.positive}%`}
-              />
-              <div
-                className="w-3 bg-rose-500"
-                style={{ height: `${Math.max(12, point.negative * 1.5)}px` }}
-                title={`${point.time} 负向 ${point.negative}%`}
-              />
-            </div>
-            <span className="pb-2 text-center font-mono text-[11px] text-[#70776f] dark:text-[#8d98a8]">{point.time}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function TopicTable({ topics, activeTopicId, onSelect }) {
-  return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Hot Topics</p>
-          <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-            自动聚合热点话题
-          </h2>
-        </div>
-        <IconTopologyStar3 className="h-5 w-5 text-[#7b5d36] dark:text-[#d2b47d]" aria-hidden="true" />
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-[#dfe1d6] text-[12px] text-[#69736d] dark:border-[#303b4a] dark:text-[#98a5b6]">
-              <th className="py-2 pr-3 font-medium">话题</th>
-              <th className="py-2 pr-3 font-medium">热度</th>
-              <th className="py-2 pr-3 font-medium">情绪</th>
-              <th className="py-2 pr-3 font-medium">风险</th>
-              <th className="py-2 pr-3 font-medium">核心关键词</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topics.map((topic) => {
-              const active = activeTopicId === topic.id
-              return (
-                <tr
-                  key={topic.id}
-                  className={`border-b border-[#ecece5] transition dark:border-[#273241] ${
-                    active ? 'bg-[#eef4f1] dark:bg-[#16231f]' : 'hover:bg-[#f7f8f3] dark:hover:bg-[#151d27]'
-                  }`}
-                >
-                  <td className="py-3 pr-3">
-                    <button
-                      type="button"
-                      onClick={() => onSelect(topic.id)}
-                      className="text-left text-[14px] font-semibold text-[#17201c] hover:text-[#2f668a] dark:text-gray-100 dark:hover:text-[#9ab6d4]"
-                    >
-                      {topic.title}
-                    </button>
-                    <p className="mb-0 mt-1 text-[12px] text-[#70756d] dark:text-[#8d98a8]">{topic.category}</p>
-                  </td>
-                  <td className="py-3 pr-3">
-                    <div className="min-w-[110px]">
-                      <div className="mb-1 font-mono text-[12px] text-[#59605b] dark:text-[#98a5b6]">{topic.heat}</div>
-                      <Meter value={topic.heat} />
-                    </div>
-                  </td>
-                  <td className="py-3 pr-3">
-                    <span
-                      className={`text-[13px] font-medium ${
-                        SENTIMENT_META[getSentimentBucket(topic.sentiment)].text
-                      }`}
-                    >
-                      {topic.sentimentLabel}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-3">
-                    <span className="font-mono text-[12px] text-[#6d5f40] dark:text-[#d2b47d]">{topic.risk}</span>
-                  </td>
-                  <td className="py-3 pr-3">
-                    <div className="flex max-w-[300px] flex-wrap gap-1.5">
-                      {topic.keywords.map((keyword) => (
-                        <span
-                          key={keyword}
-                          className="border border-[#d7d9cf] bg-[#f7f7f1] px-2 py-0.5 text-[12px] text-[#59605b] dark:border-[#303b4a] dark:bg-[#151d27] dark:text-[#b8c2cf]"
-                        >
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-}
-
-function TopicDetail({ topic }) {
-  if (!topic) return null
-
-  return (
-    <section className="self-start border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
-      <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Selected Topic</p>
-      <h2 className="mb-3 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">{topic.title}</h2>
-      <p className="text-[13px] leading-6 text-[#59605b] dark:text-[#b8c2cf]">{topic.summary}</p>
-      <div className="mt-4 space-y-3">
-        {topic.coreViews.map((view, index) => (
-          <div key={view} className="border-l-2 border-[#7b5d36] pl-3 dark:border-[#d2b47d]">
-            <p className="mb-1 font-mono text-[11px] text-[#7b5d36] dark:text-[#d2b47d]">
-              Viewpoint {index + 1}
-            </p>
-            <p className="mb-0 text-[13px] leading-6 text-[#4c544f] dark:text-[#c8d1dc]">{view}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function SourceConnectors({ connectors, sourceCounts, activeSourceId, onSelect }) {
-  const max = Math.max(...Object.values(sourceCounts), 1)
-
-  return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Public Sources</p>
-          <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-            公开内容采集连接器
-          </h2>
-        </div>
-        <IconDatabaseSearch className="h-5 w-5 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
-      </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        {connectors.map((connector) => {
-          const active = activeSourceId === connector.id
-          const count = sourceCounts[connector.id] || 0
-          return (
-            <button
-              key={connector.id}
-              type="button"
-              onClick={() => onSelect(active ? 'all' : connector.id)}
-              data-testid={`public-opinion-source-${connector.id}`}
-              className={`border p-3 text-left transition ${
-                active
-                  ? 'border-[#20343c] bg-[#eef4f1] dark:border-[#d6dbc5] dark:bg-[#16231f]'
-                  : 'border-[#d7d9cf] bg-[#fbfbf7] hover:border-[#8da0a2] dark:border-[#303b4a] dark:bg-[#151d27] dark:hover:border-[#536579]'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="mb-1 text-[15px] font-semibold text-[#17201c] dark:text-gray-100">{connector.label}</h3>
-                  <p className="mb-0 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">{connector.collector}</p>
-                </div>
-                <span className="font-mono text-[12px] text-[#476a75] dark:text-[#9fc5ad]">{count}</span>
-              </div>
-              <div className="mt-3">
-                <Meter value={(count / max) * 100} />
-              </div>
-              <p className="mb-0 mt-3 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">{connector.scope}</p>
-              <p className="mb-0 mt-2 text-[11px] leading-5 text-[#7b5d36] dark:text-[#d2b47d]">{connector.compliance}</p>
+            <button key={item.id} type="button" onClick={() => { onViewChange(item.id); scrollToSection(item.target) }} className={`inline-flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-left text-[13px] font-semibold transition lg:w-full ${active ? 'bg-[#e4eeee] text-[#173e45] dark:bg-[#173038] dark:text-[#c7e4df]' : 'text-[#5f6e70] hover:bg-[#f0f3f0] dark:text-[#94a5ad] dark:hover:bg-[#18232d] dark:hover:text-gray-100'}`}>
+              <Icon className={`h-[18px] w-[18px] ${active ? 'text-[#25818a]' : ''}`} aria-hidden="true" />
+              {item.label}
             </button>
           )
         })}
-      </div>
-    </section>
-  )
-}
-
-function PostFeed({ posts, connectors, filters, onFilterChange }) {
-  const sourceOptions = [
-    { value: 'all', label: '全部来源' },
-    ...connectors.map((connector) => ({ value: connector.id, label: connector.label })),
-  ]
-  const sentimentOptions = [
-    { value: 'all', label: '全部情绪' },
-    ...Object.entries(SENTIMENT_META).map(([value, meta]) => ({ value, label: meta.label })),
-  ]
-  const stanceOptions = [
-    { value: 'all', label: '全部立场' },
-    ...Object.entries(STANCE_META).map(([value, meta]) => ({ value, label: meta.label })),
-  ]
-
-  return (
-    <section className="min-w-0 border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923] lg:col-span-2">
-      <div className="mb-4 flex flex-col gap-3 border-b border-[#dfe1d6] pb-4 dark:border-[#303b4a]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Evidence Feed</p>
-            <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-              样本观点与立场识别
-            </h2>
-            <p className="mb-0 mt-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
-              当前 {numberFormat(posts.length)} 条样本
-            </p>
-          </div>
-          <IconMessageCircle2 className="h-5 w-5 shrink-0 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterSelect
-            label="来源"
-            value={filters.source}
-            options={sourceOptions}
-            onChange={(value) => onFilterChange('source', value)}
-          />
-          <FilterSelect
-            label="情绪"
-            value={filters.sentiment}
-            options={sentimentOptions}
-            onChange={(value) => onFilterChange('sentiment', value)}
-          />
-          <FilterSelect
-            label="立场"
-            value={filters.stance}
-            options={stanceOptions}
-            onChange={(value) => onFilterChange('stance', value)}
-          />
-        </div>
-      </div>
-      <div className="max-h-[640px] space-y-3 overflow-auto pr-1">
-        {posts.length ? posts.map((post) => {
-          const sentimentKey = getSentimentBucket(post.sentiment)
-          return (
-            <article key={post.id} className="border border-[#e2e4da] bg-[#fbfbf7] p-3 dark:border-[#303b4a] dark:bg-[#151d27]">
-              <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
-                <span className="font-mono text-[#5b6762] dark:text-[#98a5b6]">{post.time}</span>
-                <span className="text-[#68706a] dark:text-[#98a5b6]">{post.platform}</span>
-                <span className={SENTIMENT_META[sentimentKey].text}>{getSentimentLabel(post.sentiment)}</span>
-                <span className={STANCE_META[post.stance].text}>{STANCE_META[post.stance].label}</span>
-                <span className="ml-auto font-mono text-[#7b5d36] dark:text-[#d2b47d]">{numberFormat(post.engagement)}</span>
-              </div>
-              <p className="mb-2 text-[14px] leading-6 text-[#242b28] dark:text-gray-100">{post.text}</p>
-              <div className="flex flex-wrap items-end justify-between gap-2">
-                <p className="mb-0 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">
-                  核心观点：{post.viewpoint}
-                </p>
-                {post.url ? (
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="no-external-arrow inline-flex items-center gap-1 text-[12px] font-medium text-[#2f668a] no-underline hover:underline dark:text-[#9ab6d4]"
-                  >
-                    查看原文
-                    <IconExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                  </a>
-                ) : null}
-              </div>
-            </article>
-          )
-        }) : (
-          <div className="border border-dashed border-[#d7d9cf] bg-[#fbfbf7] p-6 text-center text-[13px] text-[#68706a] dark:border-[#303b4a] dark:bg-[#151d27] dark:text-[#98a5b6]">
-            当前筛选条件下没有样本。
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function StackSection({ stack }) {
-  return (
-    <section className="border border-[#d7d9cf] bg-white p-4 dark:border-[#2b3644] dark:bg-[#111923]">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 text-[12px] text-[#69736d] dark:text-[#98a5b6]">Open Source Stack</p>
-          <h2 className="mb-0 border-0 p-0 text-[18px] font-semibold text-[#161b1a] dark:text-gray-100">
-            对接的主流开源项目
-          </h2>
-        </div>
-        <IconScale className="h-5 w-5 text-[#7b5d36] dark:text-[#d2b47d]" aria-hidden="true" />
-      </div>
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {stack.map((item) => (
-          <a
-            key={item.name}
-            href={item.url}
-            target="_blank"
-            rel="noreferrer"
-            className="no-external-arrow border border-[#d7d9cf] bg-[#fbfbf7] p-3 no-underline transition hover:border-[#8da0a2] dark:border-[#303b4a] dark:bg-[#151d27] dark:hover:border-[#536579]"
-          >
-            <div className="mb-2 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="mb-1 text-[15px] font-semibold text-[#17201c] dark:text-gray-100">{item.name}</h3>
-                <p className="mb-0 text-[12px] text-[#7b5d36] dark:text-[#d2b47d]">{item.type} · {item.maturity}</p>
-              </div>
-              <IconExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
+      </nav>
+      <div className="mt-7 hidden lg:block">
+        <p className="mb-3 text-[11px] font-medium text-[#89928e]">运行状态</p>
+        <div className="space-y-2 rounded-2xl border border-[#e0e5e2] bg-white p-3 dark:border-[#2c3944] dark:bg-[#111c25]">
+          {[
+            ['当前状态', dataStatus],
+            ['聚合事件', snapshot.events.length],
+            ['公开来源', connectors.length],
+          ].map(([label, value]) => (
+            <div key={label} className="flex items-center justify-between text-[12px]">
+              <span className="text-[#75817d] dark:text-[#8999a3]">{label}</span>
+              <span className="font-semibold text-[#287a7e] dark:text-[#87c6bd]">{value}</span>
             </div>
-            <p className="mb-2 text-[12px] leading-5 text-[#68706a] dark:text-[#98a5b6]">{item.role}</p>
-            <p className="mb-0 text-[12px] leading-5 text-[#4c544f] dark:text-[#c8d1dc]">{item.integration}</p>
-          </a>
+          ))}
+          <p className="mb-0 border-t border-[#edf0ee] pt-2 text-[10px] leading-4 text-[#89928e] dark:border-[#28343e]">更新于 {lastUpdated}</p>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+function TopicTabs({ topics, activeTopicId, onChange }) {
+  const options = [{ id: 'all', title: '全部' }, ...topics]
+  return (
+    <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-[#e0e5e2] bg-[#f1f3f1] p-1 dark:border-[#2d3942] dark:bg-[#151f27]">
+      {options.map((topic) => (
+        <button key={topic.id} type="button" onClick={() => onChange(topic.id)} className={`min-h-10 shrink-0 rounded-xl px-5 text-[13px] font-semibold transition ${activeTopicId === topic.id ? 'bg-white text-[#1c2b2e] shadow-sm dark:bg-[#25323d] dark:text-gray-100' : 'text-[#657275] hover:text-[#26373a] dark:text-[#91a0a9]'}`}>
+          {topic.title}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function SourceFaces({ names = [], count = 0 }) {
+  const palette = ['bg-[#1b555a]', 'bg-[#c86843]', 'bg-[#66734d]', 'bg-[#514d76]', 'bg-[#a77b36]']
+  const visible = names.slice(0, 5)
+  return (
+    <div className="flex items-center">
+      {visible.map((name, index) => (
+        <span key={`${name}-${index}`} title={name} className={`-ml-1.5 grid h-7 w-7 place-items-center rounded-full border-2 border-white text-[9px] font-bold text-white first:ml-0 dark:border-[#152029] ${palette[index % palette.length]}`}>
+          {String(name).trim().slice(0, 1).toUpperCase()}
+        </span>
+      ))}
+      {count > visible.length ? <span className="-ml-1 rounded-full border-2 border-white bg-[#f0f2ef] px-2 py-1 text-[10px] font-semibold text-[#657275] dark:border-[#152029] dark:bg-[#28353f] dark:text-[#b0bec5]">+{count - visible.length}</span> : null}
+    </div>
+  )
+}
+
+function HotRanking({ events, topics, onSelectTopic, windowLabel }) {
+  const topicMap = Object.fromEntries(topics.map((topic) => [topic.id, topic.title]))
+  return (
+    <section id="hot" className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#dce3df] bg-white shadow-[0_1px_2px_rgba(30,55,48,0.04)] dark:border-[#2b3943] dark:bg-[#111b24]">
+      <div className="flex items-center justify-between border-b border-[#eef1ef] px-5 py-4 dark:border-[#26333d]">
+        <div className="flex items-center gap-2.5"><span className="h-2.5 w-2.5 rounded-full bg-[#c84d38] shadow-[0_0_0_4px_rgba(200,77,56,0.1)]" /><h2 className="mb-0 border-0 p-0 text-[15px] font-bold text-[#263438] dark:text-gray-100">当前热点</h2></div>
+        <span className="inline-flex items-center gap-1 text-[12px] text-[#76817f] dark:text-[#91a0a9]">{windowLabel}榜单 <IconArrowUpRight className="h-4 w-4" aria-hidden="true" /></span>
+      </div>
+      <ol className="divide-y divide-[#f0f2f0] px-5 dark:divide-[#25313b]">
+        {events.slice(0, 5).map((event, index) => (
+          <li key={event.id} className="grid min-h-[58px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-2.5">
+            <span className={`font-mono text-[16px] font-bold ${index === 0 ? 'text-[#c34733]' : index < 3 ? 'text-[#a8702d]' : 'text-[#7d898b]'}`}>{index + 1}</span>
+            <div className="min-w-0">
+              <button type="button" onClick={() => onSelectTopic(event.topicId)} className="block max-w-full truncate text-left text-[14px] font-semibold text-[#29363a] hover:text-[#297a80] dark:text-gray-100 dark:hover:text-[#8ac7bf]">{event.title}</button>
+              <span className="text-[11px] text-[#909997] dark:text-[#7f909a]">{topicMap[event.topicId] || event.topicId} · {event.reportCount} 条证据</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block"><SourceFaces names={event.sourceNames} count={event.sourceCount} /></div>
+              <div className="min-w-[62px] text-right"><span className="font-mono text-[15px] font-semibold text-[#39494c] dark:text-gray-100">{event.heat}</span><span className="ml-1 text-[11px] text-[#85918e]">热度</span></div>
+              <span className={`text-[15px] ${event.trend === 'up' || event.trend === 'new' ? 'text-[#c34c38]' : 'text-[#8c9695]'}`}>{event.trend === 'up' || event.trend === 'new' ? '↗' : '—'}</span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+function FeedCard({ post, event, connectorLabel }) {
+  const sentiment = getSentimentBucket(post.sentiment)
+  const riskLevel = event?.riskLevel || '低'
+  return (
+    <article className="group rounded-2xl border border-[#dbe2de] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(30,55,48,0.035)] transition hover:border-[#aebfba] hover:shadow-[0_6px_24px_rgba(37,63,55,0.07)] dark:border-[#2b3943] dark:bg-[#111b24] dark:hover:border-[#435661] sm:px-6 sm:py-5">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#7c8987] dark:text-[#8b9ba4]">
+        <span className="inline-flex h-6 items-center rounded-full bg-[#eaf2f1] px-2.5 font-semibold text-[#36777a] dark:bg-[#193138] dark:text-[#88c2bb]">{post.platform}</span>
+        <span>{connectorLabel}</span>
+        <span className={`rounded-full border px-2 py-0.5 font-semibold ${SENTIMENT_STYLES[sentiment]}`}>{getSentimentLabel(post.sentiment)}</span>
+        <span className="rounded-full border border-[#e6dfcc] bg-[#fbf7ec] px-2 py-0.5 font-semibold text-[#8c6c31] dark:border-[#55482c] dark:bg-[#2d281c] dark:text-[#d8b873]">{STANCE_LABELS[post.stance] || '中立'}</span>
+        <span className={`ml-auto rounded-full border px-2.5 py-1 font-semibold ${RISK_STYLES[riskLevel]}`}>风险 {event?.riskScore ?? 0}</span>
+      </div>
+      <h3 className="mb-0 mt-3 text-[17px] font-bold leading-7 tracking-[-0.01em] text-[#243236] dark:text-gray-100 sm:text-[19px]">{post.text}</h3>
+      <p className="mb-0 mt-2 text-[13px] leading-6 text-[#667476] dark:text-[#a6b3ba] sm:text-[14px]">{post.viewpoint}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-[#7c8987] dark:text-[#8999a3]">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-[#287c80] dark:text-[#83c1ba]"><IconActivity className="h-4 w-4" aria-hidden="true" />最新研判</span>
+        <span>{event?.trend === 'new' ? '新事件进入观察窗口' : event?.trend === 'up' ? '讨论仍在发酵' : '讨论强度保持稳定'}</span>
+        <span>{event?.sourceCount || 1} 个独立来源</span>
+        <span>{numberFormat(post.engagement)} 互动信号</span>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#edf0ee] pt-3 dark:border-[#27343d]">
+        <p className="mb-0 text-[12px] leading-5 text-[#6b7f80] dark:text-[#91a4ab]"><span className="font-semibold text-[#4c6465] dark:text-[#acc0c5]">研判依据：</span>{event?.riskReasons?.length ? event.riskReasons.join('、') : '当前未发现需要升级处置的集中风险信号'}</p>
+        {post.url ? <a href={post.url} target="_blank" rel="noreferrer" className="no-external-arrow inline-flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-[#2b7379] no-underline hover:underline dark:text-[#8ac7bf]">查看原文 <IconExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a> : null}
+      </div>
+    </article>
+  )
+}
+
+function TimelineFeed({ posts, events, connectors }) {
+  const eventByPost = useMemo(() => {
+    const map = {}
+    for (const event of events) for (const postId of event.postIds || []) map[postId] = event
+    return map
+  }, [events])
+  const connectorMap = Object.fromEntries(connectors.map((connector) => [connector.id, connector.label]))
+  const ordered = [...posts].sort((a, b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0))
+  const header = formatDate(ordered[0]?.publishedAt)
+  return (
+    <section id="feed" className="scroll-mt-24">
+      <div className="mb-4 flex flex-wrap items-end gap-x-3 gap-y-1"><h2 className="mb-0 border-0 p-0 text-[24px] font-bold tracking-[-0.03em] text-[#243236] dark:text-gray-100">{header.date}</h2><span className="pb-0.5 text-[12px] text-[#7c8987] dark:text-[#8b9aa3]">{header.weekday} · {posts.length} 条</span></div>
+      {ordered.length ? (
+        <div className="space-y-3">
+          {ordered.map((post, index) => (
+            <div key={post.id} className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
+              <div className="relative pt-5 text-right"><span className="font-mono text-[11px] font-semibold text-[#6e7e80] dark:text-[#8fa0a9] sm:text-[12px]">{formatClock(post.publishedAt, post.time)}</span><span className="absolute right-[-8px] top-[26px] h-2.5 w-2.5 rounded-full border-2 border-[#f7f7f3] bg-[#2b858b] dark:border-[#0d151b]" />{index < ordered.length - 1 ? <span className="absolute right-[-4px] top-9 h-[calc(100%+12px)] w-px bg-[#d8e0dc] dark:bg-[#2d3b45]" /> : null}</div>
+              <FeedCard post={post} event={eventByPost[post.id]} connectorLabel={connectorMap[post.sourceId] || post.sourceId} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-[#ccd6d1] bg-white px-6 py-16 text-center dark:border-[#34444e] dark:bg-[#111b24]"><IconSearch className="mx-auto h-7 w-7 text-[#91a09d]" aria-hidden="true" /><p className="mb-0 mt-3 text-[13px] text-[#75817f] dark:text-[#91a0a9]">当前筛选条件下没有舆情证据。</p></div>
+      )}
+    </section>
+  )
+}
+
+function TrendSection({ trendPoints, snapshot }) {
+  const maxHeat = Math.max(...trendPoints.map((point) => point.heat), 1)
+  return (
+    <section id="trend" className="scroll-mt-24 rounded-2xl border border-[#dce3df] bg-white p-5 dark:border-[#2b3943] dark:bg-[#111b24]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2e7b80] dark:text-[#84c2bb]">Trend Intelligence</p><h2 className="mb-0 border-0 p-0 text-[19px] font-bold text-[#253438] dark:text-gray-100">趋势研判</h2></div>
+        <div className="flex gap-5 text-[11px] text-[#778582] dark:text-[#8e9da6]"><span>正向 {snapshot.sentimentCounts.positive}</span><span>中性 {snapshot.sentimentCounts.neutral}</span><span>负向 {snapshot.sentimentCounts.negative}</span></div>
+      </div>
+      <div className="mt-6 flex h-36 items-end gap-2 border-b border-[#e5eae7] px-2 dark:border-[#2b3943]">
+        {trendPoints.map((point) => (
+          <div key={point.time} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"><div className="flex h-24 items-end gap-1"><span className="w-2.5 rounded-t bg-[#2c7f83]" style={{ height: `${Math.max(10, (point.heat / maxHeat) * 90)}px` }} title={`热度 ${point.heat}`} /><span className="w-2.5 rounded-t bg-[#d0634c]" style={{ height: `${Math.max(8, point.negative)}px` }} title={`负向 ${point.negative}%`} /></div><span className="font-mono text-[9px] text-[#8a9693] sm:text-[10px]">{point.time}</span></div>
         ))}
       </div>
     </section>
   )
 }
 
-export default function PublicOpinionClient({
-  topics,
-  posts,
-  connectors,
-  stack,
-  trendPoints,
-  initialSnapshot,
-  initialGeneratedAt,
-}) {
-  const [data, setData] = useState({
-    source: 'fallback',
-    generatedAt: initialGeneratedAt,
-    meta: {
-      lastCollectAt: 0,
-      lastCollectStatus: 'loading',
-      isStale: true,
-      hasData: false,
-    },
-    topics,
-    posts,
-    connectors,
-    stack,
-    trendPoints,
-    snapshot: initialSnapshot,
-  })
+function SourceSection({ connectors, sourceCounts }) {
+  return (
+    <section id="sources" className="scroll-mt-24 rounded-2xl border border-[#dce3df] bg-white p-5 dark:border-[#2b3943] dark:bg-[#111b24]">
+      <div className="mb-4 flex items-center gap-2"><IconShieldCheck className="h-5 w-5 text-[#2d7d82]" aria-hidden="true" /><h2 className="mb-0 border-0 p-0 text-[19px] font-bold text-[#253438] dark:text-gray-100">公开来源与采集边界</h2></div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {connectors.map((connector) => (
+          <article key={connector.id} className="rounded-xl border border-[#e3e8e5] bg-[#fafbf9] p-4 dark:border-[#2d3a44] dark:bg-[#151f28]"><div className="flex items-start justify-between gap-3"><h3 className="mb-0 text-[14px] font-bold text-[#2a383b] dark:text-gray-100">{connector.label}</h3><span className="font-mono text-[13px] font-semibold text-[#2d7d82] dark:text-[#87c3bc]">{sourceCounts[connector.id] || 0}</span></div><p className="mb-0 mt-2 text-[11px] leading-5 text-[#72807e] dark:text-[#91a0a9]">{connector.scope}</p><p className="mb-0 mt-2 text-[10px] leading-4 text-[#987242] dark:text-[#ceb17a]">{connector.compliance}</p></article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export default function PublicOpinionClient({ topics, posts, connectors, stack, trendPoints, initialSnapshot, initialGeneratedAt }) {
+  const [data, setData] = useState({ source: 'fallback', generatedAt: initialGeneratedAt, meta: { lastCollectAt: 0, lastCollectStatus: 'loading', isStale: true, hasData: false }, topics, posts, connectors, stack, trendPoints, snapshot: initialSnapshot })
+  const [activeView, setActiveView] = useState('selected')
   const [activeTopicId, setActiveTopicId] = useState('all')
-  const [activeSourceId, setActiveSourceId] = useState('all')
-  const [activeSentiment, setActiveSentiment] = useState('all')
-  const [activeStance, setActiveStance] = useState('all')
+  const [query, setQuery] = useState('')
+  const [timeWindow, setTimeWindow] = useState('48h')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState('')
 
@@ -500,8 +270,7 @@ export default function PublicOpinionClient({
     try {
       const response = await fetch('/api/public-opinion', { cache: 'no-store' })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const nextData = await response.json()
-      setData(nextData)
+      setData(await response.json())
     } catch (error) {
       setRefreshError(error.message || '刷新失败')
     } finally {
@@ -509,168 +278,62 @@ export default function PublicOpinionClient({
     }
   }, [])
 
-  useEffect(() => {
-    refreshData()
-  }, [refreshData])
+  useEffect(() => { refreshData() }, [refreshData])
+
+  const timedPosts = useMemo(
+    () => materializePublicOpinionPostTimes(data.posts, data.generatedAt),
+    [data.generatedAt, data.posts],
+  )
 
   const filteredPosts = useMemo(() => {
-    return data.posts.filter((post) => {
+    const normalizedQuery = query.trim().toLowerCase()
+    const windowMs = timeWindow === '6h' ? 6 * 60 * 60 * 1000 : timeWindow === '24h' ? 24 * 60 * 60 * 1000 : 48 * 60 * 60 * 1000
+    const parsedReference = Date.parse(data.generatedAt)
+    const referenceTime = Number.isFinite(parsedReference) ? parsedReference : Date.now()
+    const topicSearchText = Object.fromEntries(data.topics.map((topic) => [topic.id, `${topic.title} ${topic.category} ${(topic.keywords || []).join(' ')}`.toLowerCase()]))
+    return timedPosts.filter((post) => {
       if (activeTopicId !== 'all' && post.topicId !== activeTopicId) return false
-      if (activeSourceId !== 'all' && post.sourceId !== activeSourceId) return false
-      if (activeSentiment !== 'all' && getSentimentBucket(post.sentiment) !== activeSentiment) return false
-      if (activeStance !== 'all' && post.stance !== activeStance) return false
+      if (referenceTime - Date.parse(post.publishedAt) > windowMs) return false
+      if (normalizedQuery && !`${post.text} ${post.viewpoint} ${post.platform} ${topicSearchText[post.topicId] || ''}`.toLowerCase().includes(normalizedQuery)) return false
       return true
     })
-  }, [activeSentiment, activeSourceId, activeStance, activeTopicId, data.posts])
+  }, [activeTopicId, data.generatedAt, data.topics, query, timedPosts, timeWindow])
 
-  const handleEvidenceFilterChange = useCallback((key, value) => {
-    if (key === 'source') setActiveSourceId(value)
-    if (key === 'sentiment') setActiveSentiment(value)
-    if (key === 'stance') setActiveStance(value)
-  }, [])
-
-  const snapshot = useMemo(
-    () => buildPublicOpinionSnapshot(filteredPosts, data.topics, data.connectors),
-    [data.connectors, data.topics, filteredPosts],
-  )
-  const allTopicSnapshot = data.snapshot
-  const activeTopic = snapshot.topicCards.find((topic) => topic.id === activeTopicId) || snapshot.topicCards[0]
-  const averageSentimentLabel = getSentimentLabel(snapshot.averageSentiment || 0)
-  const lastUpdated = data.meta?.lastCollectAt
-    ? new Intl.DateTimeFormat('zh-CN', {
-        timeZone: 'Asia/Shanghai',
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(new Date(data.meta.lastCollectAt * 1000))
-    : '等待首次采集'
-  const dataStatus =
-    data.source === 'd1'
-      ? data.meta?.isStale
-        ? '数据已过期'
-        : data.meta?.lastCollectStatus === 'partial'
-          ? '部分数据源可用'
-          : '定时采集中'
-      : '降级数据'
+  const snapshot = useMemo(() => buildPublicOpinionSnapshot(filteredPosts, data.topics, data.connectors), [data.connectors, data.topics, filteredPosts])
+  const lastUpdated = data.meta?.lastCollectAt ? new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(data.meta.lastCollectAt * 1000)) : '等待首次采集'
+  const dataStatus = data.source === 'd1' ? (data.meta?.isStale ? '数据待更新' : data.meta?.lastCollectStatus === 'partial' ? '部分可用' : '实时运行') : '演示数据'
 
   return (
-    <main className="mx-auto w-full max-w-[1360px] px-4 py-8 sm:px-6 sm:py-10">
-      <header className="border-b border-[#d7d9cf] pb-6 dark:border-[#2b3644]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="mb-2 text-[12px] font-semibold uppercase text-[#476a75] dark:text-[#9fc5ad]">
-              Public Opinion Intelligence
-            </p>
-            <h1 className="max-w-4xl text-[28px] font-semibold leading-tight text-[#121817] dark:text-gray-100 sm:text-[36px]">
-              舆情分析工作台
-            </h1>
-            <p className="mt-4 max-w-3xl text-[14px] leading-7 text-[#59605b] dark:text-[#b8c2cf]">
-              每小时从公开新闻与开发者社区采集数据，自动完成热点聚合、情绪识别和立场分析。
-              数据保留来源链接；外部数据源异常时自动降级到内置样本。
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#68706a] dark:text-[#98a5b6]">
-              <span className="font-medium text-[#476a75] dark:text-[#9fc5ad]">{dataStatus}</span>
-              <span>最后采集：{lastUpdated}</span>
-              {refreshError ? <span className="text-rose-700 dark:text-rose-300">刷新失败：{refreshError}</span> : null}
+    <main className="min-h-screen bg-[#f7f7f3] text-[#253236] dark:bg-[#0c141a]">
+      <div className="mx-auto grid w-full max-w-[1680px] lg:grid-cols-[232px_minmax(0,1fr)]">
+        <WorkspaceSidebar activeView={activeView} onViewChange={setActiveView} snapshot={snapshot} connectors={data.connectors} dataStatus={dataStatus} lastUpdated={lastUpdated} />
+        <div className="min-w-0 px-4 py-7 sm:px-6 lg:px-8 lg:py-9 xl:px-10">
+          <header>
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+              <div><div className="flex items-center gap-2"><IconSparkles className="h-5 w-5 text-[#2a7d82]" aria-hidden="true" /><p className="mb-0 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2c7c81] dark:text-[#82c0b9]">Public Opinion Selection</p></div><h1 className="mt-2 text-[30px] font-bold tracking-[-0.04em] text-[#223135] dark:text-gray-100 sm:text-[36px]">舆情精选</h1></div>
+              <label className="flex h-12 w-full items-center gap-2 rounded-2xl border border-[#e0e5e2] bg-[#f0f2ef] px-4 xl:max-w-[330px] dark:border-[#2c3943] dark:bg-[#151f27]"><IconSearch className="h-4 w-4 shrink-0 text-[#74817f]" aria-hidden="true" /><span className="sr-only">搜索舆情</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、摘要、来源…" className="min-w-0 flex-1 bg-transparent text-[13px] text-[#29373a] outline-none placeholder:text-[#8d9795] dark:text-gray-100" /><kbd className="rounded-md border border-[#d2d9d5] bg-white px-2 py-0.5 font-mono text-[10px] text-[#87918f] dark:border-[#384651] dark:bg-[#202c35]">/</kbd></label>
             </div>
+            <div className="mt-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <TopicTabs topics={data.topics} activeTopicId={activeTopicId} onChange={setActiveTopicId} />
+              <div className="flex items-center gap-1 rounded-xl border border-[#e0e5e2] bg-white p-1 dark:border-[#2c3943] dark:bg-[#111b24]">
+                {['6h', '24h', '48h'].map((value) => <button key={value} type="button" aria-pressed={timeWindow === value} onPointerDown={() => setTimeWindow(value)} onClick={() => setTimeWindow(value)} className={`rounded-lg px-3 py-2 text-[11px] font-semibold transition ${timeWindow === value ? 'bg-[#193d43] text-white dark:bg-[#d4e6df] dark:text-[#18231f]' : 'text-[#74817f] hover:bg-[#f1f3f1] dark:text-[#93a2aa] dark:hover:bg-[#1c2831]'}`}>{value === '6h' ? '6 小时' : value === '24h' ? '24 小时' : '48 小时'}</button>)}
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[12px] text-[#71807e] dark:text-[#8d9ca5]">
+              <p className="mb-0">先看研判摘要，再打开感兴趣的原始证据。<span className="ml-2 font-semibold text-[#2a7d82] dark:text-[#83c0b9]">当前 {filteredPosts.length} 条 · {snapshot.events.length} 个事件</span></p>
+              <button type="button" onClick={refreshData} disabled={isRefreshing} className="inline-flex items-center gap-2 rounded-xl border border-[#d9e0dc] bg-white px-3 py-2 font-semibold text-[#536466] transition hover:border-[#9fb4ae] dark:border-[#34424c] dark:bg-[#111b24] dark:text-[#a8b7bd]">{isRefreshing ? <LoadingSpinner size="sm" /> : <IconRefresh className="h-4 w-4" aria-hidden="true" />}{isRefreshing ? '刷新中' : '刷新数据'}</button>
+              {refreshError ? <span className="text-[#bf4d3a]">刷新失败：{refreshError}</span> : null}
+            </div>
+          </header>
+          <div className="mt-6 space-y-8">
+            <HotRanking events={snapshot.events} topics={data.topics} onSelectTopic={setActiveTopicId} windowLabel={timeWindow === '6h' ? '6 小时' : timeWindow === '24h' ? '24 小时' : '48 小时'} />
+            <TimelineFeed posts={filteredPosts} events={snapshot.events} connectors={data.connectors} />
+            <TrendSection trendPoints={data.trendPoints} snapshot={snapshot} />
+            <SourceSection connectors={data.connectors} sourceCounts={snapshot.sourceCounts} />
+            <section className="rounded-2xl border border-[#dce3df] bg-[#eef4f1] px-5 py-4 dark:border-[#2b3943] dark:bg-[#132229]">
+              <div className="flex flex-wrap items-center gap-3"><IconBook2 className="h-5 w-5 text-[#2b7b80]" aria-hidden="true" /><p className="mb-0 flex-1 text-[12px] leading-6 text-[#5f7172] dark:text-[#9fb0b6]">研判基于公开标题、摘要、来源数量、互动信号与时间衰减计算；高风险结论需要多来源或足够热度支持，单一低热度负面内容不会直接升级。</p><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconFilter className="h-4 w-4" />事件级去重</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconClock className="h-4 w-4" />48 小时衰减</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconTopologyStar3 className="h-4 w-4" />独立来源计数</span></div>
+            </section>
           </div>
-          <button
-            type="button"
-            onClick={refreshData}
-            disabled={isRefreshing}
-            className="inline-flex min-h-10 items-center justify-center gap-2 border border-[#20343c] bg-[#20343c] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#2e4c57] dark:border-[#d6dbc5] dark:bg-[#d6dbc5] dark:text-[#141914] dark:hover:bg-[#e6ead6]"
-          >
-            {isRefreshing ? <LoadingSpinner size="sm" /> : <IconRefresh className="h-4 w-4" aria-hidden="true" />}
-            {isRefreshing ? '刷新中' : '刷新数据'}
-          </button>
-        </div>
-      </header>
-
-      <div className="mt-6 grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <section className="border border-[#d7d9cf] bg-[#fbfbf7] p-4 dark:border-[#2b3644] dark:bg-[#101720]">
-            <div className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-[#17201c] dark:text-gray-100">
-              <IconFilter className="h-4 w-4 text-[#476a75] dark:text-[#9fc5ad]" aria-hidden="true" />
-              筛选视图
-            </div>
-            <div className="grid gap-2">
-              <SegmentButton
-                active={activeTopicId === 'all'}
-                onClick={() => setActiveTopicId('all')}
-                testId="public-opinion-topic-all"
-              >
-                全部话题
-              </SegmentButton>
-              {data.topics.map((topic) => (
-                <SegmentButton
-                  key={topic.id}
-                  active={activeTopicId === topic.id}
-                  onClick={() => setActiveTopicId(topic.id)}
-                  testId={`public-opinion-topic-${topic.id}`}
-                >
-                  {topic.title}
-                </SegmentButton>
-              ))}
-            </div>
-          </section>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <StatTile
-              icon={IconDatabaseSearch}
-              label="公开采集连接器"
-              value={data.connectors.length}
-              note={data.connectors.map((connector) => connector.label).join('、')}
-            />
-            <StatTile
-              icon={IconTopologyStar3}
-              label="热点话题"
-              value={allTopicSnapshot.topicCards.length}
-              note={`当前最高热度：${allTopicSnapshot.topTopic.title}`}
-            />
-            <StatTile
-              icon={IconMessageCircle2}
-              label="分析样本"
-              value={numberFormat(snapshot.totalPosts)}
-              note={`互动量 ${numberFormat(snapshot.totalEngagement)}`}
-            />
-            <StatTile
-              icon={IconChartBar}
-              label="综合情绪"
-              value={averageSentimentLabel}
-              note={`均值 ${Number.isFinite(snapshot.averageSentiment) ? snapshot.averageSentiment.toFixed(2) : '0.00'}`}
-            />
-          </div>
-        </aside>
-
-        <div className="min-w-0">
-          <section className="grid gap-4 lg:grid-cols-3">
-            <TrendPanel trendPoints={data.trendPoints} />
-            <Distribution title="情绪倾向" items={snapshot.sentimentCounts} total={snapshot.totalPosts} meta={SENTIMENT_META} />
-            <TopicTable topics={snapshot.topicCards} activeTopicId={activeTopicId} onSelect={setActiveTopicId} />
-            <Distribution title="网民立场" items={snapshot.stanceCounts} total={snapshot.totalPosts} meta={STANCE_META} />
-          </section>
-
-          <section className="mt-4 grid items-start gap-4 lg:grid-cols-3">
-            <TopicDetail topic={activeTopic} />
-            <PostFeed
-              posts={filteredPosts}
-              connectors={data.connectors}
-              filters={{ source: activeSourceId, sentiment: activeSentiment, stance: activeStance }}
-              onFilterChange={handleEvidenceFilterChange}
-            />
-          </section>
-
-          <section className="mt-4">
-            <SourceConnectors
-              connectors={data.connectors}
-              sourceCounts={snapshot.sourceCounts}
-              activeSourceId={activeSourceId}
-              onSelect={setActiveSourceId}
-            />
-          </section>
-
-          <section className="mt-4">
-            <StackSection stack={data.stack} />
-          </section>
         </div>
       </div>
     </main>

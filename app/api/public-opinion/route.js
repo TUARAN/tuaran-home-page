@@ -28,6 +28,7 @@ function formatTime(value) {
 }
 
 function fallbackPayload(reason = 'D1 暂不可用，正在展示内置样本') {
+  const snapshot = buildPublicOpinionSnapshot(OPINION_POSTS, OPINION_TOPICS, SOURCE_CONNECTORS)
   return {
     source: 'fallback',
     generatedAt: new Date().toISOString(),
@@ -38,7 +39,9 @@ function fallbackPayload(reason = 'D1 暂不可用，正在展示内置样本') 
       isStale: true,
       hasData: false,
     },
-    snapshot: buildPublicOpinionSnapshot(OPINION_POSTS, OPINION_TOPICS, SOURCE_CONNECTORS),
+    snapshot,
+    events: snapshot.events,
+    brief: snapshot.brief,
     topics: OPINION_TOPICS,
     posts: OPINION_POSTS,
     connectors: SOURCE_CONNECTORS,
@@ -123,6 +126,7 @@ export async function GET() {
 
     const lastCollectAt = Number(meta.last_collect_at || 0)
     const isStale = !lastCollectAt || Date.now() / 1000 - lastCollectAt > 2 * 60 * 60
+    const snapshot = buildPublicOpinionSnapshot(posts, OPINION_TOPICS, SOURCE_CONNECTORS)
     return Response.json(
       {
         source: 'd1',
@@ -135,7 +139,9 @@ export async function GET() {
           isStale,
           hasData: true,
         },
-        snapshot: buildPublicOpinionSnapshot(posts, OPINION_TOPICS, SOURCE_CONNECTORS),
+        snapshot,
+        events: snapshot.events,
+        brief: snapshot.brief,
         topics: OPINION_TOPICS,
         posts,
         connectors: SOURCE_CONNECTORS,

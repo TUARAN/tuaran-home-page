@@ -83,10 +83,12 @@ export default function PublishingCheckinClient() {
   const [pending, setPending] = useState({})
   const [draftUrls, setDraftUrls] = useState({})
   const [message, setMessage] = useState('')
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const load = useCallback(async (targetMonth) => {
     setLoading(true)
     setMessage('')
+    setLoadFailed(false)
     try {
       const response = await fetch(`/api/publishing-checkins?month=${encodeURIComponent(targetMonth)}`, {
         cache: 'no-store', credentials: 'same-origin',
@@ -98,6 +100,7 @@ export default function PublishingCheckinClient() {
       if (payload?.today) setToday(payload.today)
     } catch (error) {
       setMessage('记录加载失败，请稍后重试')
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -134,6 +137,7 @@ export default function PublishingCheckinClient() {
     const before = records
     setPending((current) => ({ ...current, [platform.key]: true }))
     setMessage('')
+    setLoadFailed(false)
     setRecords((current) => completed
       ? [...current.filter((item) => !(item.checkinDate === selectedDay && item.platform === platform.key)), { checkinDate: selectedDay, platform: platform.key, postUrl }]
       : current.filter((item) => !(item.checkinDate === selectedDay && item.platform === platform.key)))
@@ -154,6 +158,7 @@ export default function PublishingCheckinClient() {
     if (!canEdit || !existing || postUrl === existing.postUrl) return
     setPending((current) => ({ ...current, [platform.key]: true }))
     setMessage('')
+    setLoadFailed(false)
     try {
       await persist(platform.key, true, postUrl)
       setRecords((current) => current.map((item) => (
@@ -173,6 +178,7 @@ export default function PublishingCheckinClient() {
     if (!missing.length) return
     setBulkBusy(true)
     setMessage('')
+    setLoadFailed(false)
     try {
       await Promise.all(missing.map((platform) => persist(
         platform.key,
@@ -213,7 +219,16 @@ export default function PublishingCheckinClient() {
         </div>
       </header>
 
-      {message ? <div className={styles.message} role="status">{message}</div> : null}
+      {message ? (
+        <div className={styles.message} role={loadFailed ? 'alert' : 'status'}>
+          <span>{message}</span>
+          {loadFailed ? (
+            <button type="button" onClick={() => load(month)} disabled={loading}>
+              {loading ? '重试中…' : '重试'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className={styles.workspace}>
         <section className={styles.calendarPanel} aria-labelledby="publishing-calendar-title">

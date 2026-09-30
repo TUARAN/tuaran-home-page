@@ -125,13 +125,35 @@
 .heroStats small { margin-top: .2rem; color: var(--site-faint); font-size: 9px; }
 
 .message {
-  margin-top: 1rem;
+  position: fixed;
+  z-index: 120;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  display: flex;
+  max-width: min(24rem, calc(100vw - 2rem));
+  align-items: center;
+  gap: .8rem;
   border: 1px solid color-mix(in srgb, var(--habit-green) 35%, var(--site-line));
-  border-radius: .8rem;
-  background: color-mix(in srgb, var(--habit-green-soft) 72%, var(--site-panel));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--habit-green-soft) 88%, var(--site-panel-strong));
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--site-shadow) 40%, transparent);
   color: color-mix(in srgb, var(--habit-green) 90%, var(--site-ink));
   font-size: 12px;
-  padding: .8rem 1rem;
+  padding: .65rem .7rem .65rem 1rem;
+}
+
+.message button {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--habit-green);
+  color: white;
+  font: 700 11px/1 ui-sans-serif, sans-serif;
+  padding: .55rem .75rem;
+}
+
+.message button:disabled {
+  opacity: .55;
 }
 
 .workspace {

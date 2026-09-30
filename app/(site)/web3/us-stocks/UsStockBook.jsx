@@ -70,9 +70,9 @@ export default function UsStockBook({ detail = false, linked = false }) {
 
 function PositionTable({ book }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-      <table className="min-w-[920px] w-full border-collapse text-left text-xs">
-        <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
+    <div className="site-data-table-frame mt-4">
+      <table className="site-data-table min-w-[920px] w-full text-left text-xs">
+        <thead className="text-[var(--site-faint)]">
           <tr>
             {['合约', '方向', '杠杆', '数量', '标记价', '开仓均价', '名义', '占比', '保证金', '浮动收益', '强平价', '备注'].map((label) => (
               <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>
@@ -94,7 +94,7 @@ function PositionRow({ row }) {
   const note = row.note || ''
   return (
     <>
-      <tr className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
+      <tr className="font-mono text-[var(--site-ink)]">
         <td className="whitespace-nowrap px-3 py-2">{row.symbol}</td>
         <td className="px-3 py-2">{row.side === 'short' ? '空' : '多'}</td>
         <td className="px-3 py-2">{row.leverage}x</td>
@@ -120,7 +120,7 @@ function PositionRow({ row }) {
         </td>
       </tr>
       {open ? (
-        <tr className="border-t border-[var(--site-line)]">
+        <tr>
           <td colSpan={12} className="px-3 py-2 font-sans text-[11px] leading-5 text-[var(--site-muted)]">{note}</td>
         </tr>
       ) : null}

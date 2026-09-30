@@ -49,9 +49,9 @@ export default function UsStockReview({ compact = false }) {
           <span>{review.goal.to} {formatUsd(review.target.floor)}</span>
         </div>
       </div>
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-        <table className="w-full min-w-[720px] border-collapse text-left text-xs">
-          <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
+      <div className="site-data-table-frame mt-4">
+        <table className="site-data-table w-full min-w-[720px] text-left text-xs">
+          <thead className="text-[var(--site-faint)]">
             <tr>
               {['日期', '模式', '口径', '资产', '档位', '毛名义', '保证金', '浮动收益', '笔数'].map((label) => (
                 <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>
@@ -60,7 +60,7 @@ export default function UsStockReview({ compact = false }) {
           </thead>
           <tbody>
             {[...review.books].reverse().map((entry) => (
-              <tr key={entry.snapshot.id} className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
+              <tr key={entry.snapshot.id} className="font-mono text-[var(--site-ink)]">
                 <td className="whitespace-nowrap px-3 py-2">{entry.snapshot.asOf} {entry.snapshot.time}</td>
                 <td className="px-3 py-2">{entry.snapshot.marginMode}</td>
                 <td className="px-3 py-2">{baseLabel(entry.assetBase)}</td>
@@ -76,10 +76,10 @@ export default function UsStockReview({ compact = false }) {
         </table>
       </div>
       {review.changes.length ? (
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-          <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+        <div className="site-data-table-frame mt-4">
+          <table className="site-data-table w-full min-w-[640px] text-left text-xs">
             <caption className="px-3 py-2 text-left text-[var(--site-faint)]">相对上一笔 {review.previous.snapshot.asOf}</caption>
-            <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
+            <thead className="text-[var(--site-faint)]">
               <tr>
                 {['标的', '变化', '上一笔数量', '这一笔数量', '名义变化'].map((label) => (
                   <th key={label} className="whitespace-nowrap px-3 py-2 font-medium">{label}</th>
@@ -88,7 +88,7 @@ export default function UsStockReview({ compact = false }) {
             </thead>
             <tbody>
               {review.changes.map((change) => (
-                <tr key={change.underlying} className="border-t border-[var(--site-line)] font-mono text-[var(--site-ink)]">
+                <tr key={change.underlying} className="font-mono text-[var(--site-ink)]">
                   <td className="px-3 py-2">{change.name}</td>
                   <td className="px-3 py-2">{CHANGE_LABEL[change.change]}</td>
                   <td className="px-3 py-2">{formatQty(change.previousQty)}</td>

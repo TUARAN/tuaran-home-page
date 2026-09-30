@@ -7060,8 +7060,6 @@
     @apply [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit;
 
     @apply prose-table:text-sm;
-    @apply prose-th:text-[#444] dark:prose-th:text-gray-200;
-    @apply prose-td:text-[#666] dark:prose-td:text-gray-300;
 
     @apply [&_.research-inline-image]:my-8 [&_.research-inline-image]:overflow-hidden;
     @apply [&_.research-inline-image]:rounded-md [&_.research-inline-image]:border [&_.research-inline-image]:border-[#dee0db] dark:[&_.research-inline-image]:border-gray-800;
@@ -7367,7 +7365,14 @@
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    margin: 1.65rem 0;
+    border: 1px solid var(--site-line);
+    border-radius: 0.9rem;
+    background: var(--site-panel);
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--site-shadow) 32%, transparent);
     -webkit-overflow-scrolling: touch;
+    scrollbar-color: var(--site-line-strong) transparent;
+    scrollbar-width: thin;
   }
 
   .prose-tuaran .table-scroll > table {
@@ -7375,6 +7380,60 @@
     min-width: 100%;
     max-width: none;
     margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--site-panel);
+    color: var(--site-ink);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .prose-tuaran .table-scroll > table thead {
+    background: color-mix(in srgb, var(--site-ink) 6%, var(--site-panel));
+  }
+
+  .prose-tuaran .table-scroll > table th {
+    padding: 0.72rem 0.85rem;
+    border-bottom: 1px solid var(--site-line-strong);
+    color: var(--site-muted);
+    font-size: 0.69rem;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .prose-tuaran .table-scroll > table td {
+    padding: 0.72rem 0.85rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--site-line) 82%, transparent);
+    color: var(--site-muted);
+    vertical-align: top;
+  }
+
+  .prose-tuaran .table-scroll > table tbody tr:nth-child(even) > td {
+    background: color-mix(in srgb, var(--page-bg) 25%, var(--site-panel));
+  }
+
+  .prose-tuaran .table-scroll > table tbody tr:hover > td {
+    background: color-mix(in srgb, var(--site-accent) 7%, var(--site-panel));
+  }
+
+  .prose-tuaran .table-scroll > table tbody tr:last-child > td {
+    border-bottom: 0;
+  }
+
+  .prose-tuaran .table-scroll > table :where(th, td):first-child {
+    padding-left: 1rem;
+  }
+
+  .prose-tuaran .table-scroll > table :where(th, td):last-child {
+    padding-right: 1rem;
+  }
+
+  .prose-tuaran .table-scroll > table td:first-child {
+    color: var(--site-ink);
+    font-weight: 550;
   }
 
   /* H5（flex-col 布局，min-width:0 不约束宽度）下用视口单位锁死宽度，
@@ -7382,7 +7441,63 @@
   @media (max-width: 767px) {
     .prose-tuaran .table-scroll {
       max-width: calc(100vw - 2rem);
+      border-radius: 0.75rem;
+      box-shadow: none;
     }
+  }
+
+  /* 公共数据表：正文 Markdown 与手写页面共用同一套表格语言。
+     role=grid 的热力图、棋盘等可视化，以及显式 custom 的表格不参与。 */
+  .site-data-table-frame {
+    overflow-x: auto;
+    border: 1px solid var(--site-line);
+    border-radius: 0.9rem;
+    background: var(--site-panel);
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--site-shadow) 32%, transparent);
+    scrollbar-color: var(--site-line-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  .site-data-table,
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom'])) {
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--site-panel);
+  }
+
+  .site-data-table :where(thead),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > thead) {
+    background: color-mix(in srgb, var(--site-ink) 6%, var(--site-panel));
+    color: var(--site-muted);
+  }
+
+  .site-data-table :where(th),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > thead th) {
+    border-bottom: 1px solid var(--site-line-strong);
+    font-size: 0.69rem;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    line-height: 1.4;
+  }
+
+  .site-data-table :where(tbody tr > td),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > tbody tr > td) {
+    border-bottom: 1px solid color-mix(in srgb, var(--site-line) 82%, transparent);
+  }
+
+  .site-data-table :where(tbody tr:nth-child(even) > td),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > tbody tr:nth-child(even) > td) {
+    background: color-mix(in srgb, var(--page-bg) 25%, var(--site-panel));
+  }
+
+  .site-data-table :where(tbody tr:hover > td),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > tbody tr:hover > td) {
+    background: color-mix(in srgb, var(--site-accent) 7%, var(--site-panel));
+  }
+
+  .site-data-table :where(tbody tr:last-child > td),
+  .site-public-content :where(table:has(> thead):not([role='grid']):not([data-table-style='custom']) > tbody tr:last-child > td) {
+    border-bottom: 0;
   }
 
   /* 长文资料（如《置身钉内》）：卷章标题加重、小节分层 */

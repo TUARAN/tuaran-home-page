@@ -3534,13 +3534,19 @@
     flex: 1 1 auto;
     align-items: center;
     justify-content: flex-start;
+    gap: 0.45rem;
     margin: 0 clamp(0.45rem, 0.9vw, 1rem);
+    padding: 0.38rem 0.68rem;
+    border: 1px solid color-mix(in srgb, var(--site-accent) 38%, var(--site-line));
+    border-radius: 0.55rem;
+    background: color-mix(in srgb, var(--site-accent) 10%, var(--site-panel-strong));
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--site-shadow) 18%, transparent);
     white-space: nowrap;
     font-family: "Kaiti SC", STKaiti, KaiTi, "Songti SC", STSong, serif;
-    font-size: clamp(0.78rem, 0.86vw, 0.98rem);
-    font-weight: 700;
+    font-size: clamp(0.88rem, 0.94vw, 1.05rem);
+    font-weight: 800;
     line-height: 1.2;
-    letter-spacing: 0.045em;
+    letter-spacing: 0.055em;
     color: var(--site-ink);
   }
 
@@ -3548,6 +3554,18 @@
     display: inline-flex;
     align-items: baseline;
     color: var(--site-ink);
+  }
+
+  .site-brand-slogan-destination {
+    color: var(--site-accent-strong);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .site-brand-slogan-destination strong {
+    font-weight: 850;
   }
 
   @media (min-width: 1180px) {
@@ -3560,9 +3578,11 @@
     .site-brand-slogan {
       flex-direction: column;
       align-items: flex-start;
+      gap: 0.08rem;
       margin-right: 0.65rem;
       margin-left: 0.65rem;
-      font-size: 0.84rem;
+      padding: 0.28rem 0.55rem;
+      font-size: 0.88rem;
       letter-spacing: 0.018em;
     }
 

@@ -69,6 +69,26 @@
   padding: clamp(1.4rem, 5vw, 4.5rem);
 }
 
+.checkin-hero::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--site-panel-strong) 99%, transparent) 0%,
+      color-mix(in srgb, var(--site-panel-strong) 91%, transparent) 35%,
+      color-mix(in srgb, var(--site-panel-strong) 28%, transparent) 56%,
+      transparent 76%),
+    url('/images/checkin/daily-rewards-hero.webp') 56% center / cover no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+.dark .checkin-hero::before {
+  filter: brightness(.46) saturate(.72);
+  opacity: .82;
+}
+
 .checkin-hero-glow {
   position: absolute;
   width: 15rem;
@@ -222,12 +242,28 @@
 
 @media (max-width: 800px) {
   .checkin-hero { min-height: 0; grid-template-columns: 1fr; gap: 1.4rem; }
+  .checkin-hero::before {
+    background:
+      linear-gradient(105deg,
+        color-mix(in srgb, var(--site-panel-strong) 98%, transparent) 0%,
+        color-mix(in srgb, var(--site-panel-strong) 83%, transparent) 52%,
+        color-mix(in srgb, var(--site-panel-strong) 36%, transparent) 100%),
+      url('/images/checkin/daily-rewards-hero.webp') 64% center / auto 100% no-repeat;
+  }
   .checkin-action-card { min-height: 15rem; }
   .checkin-reward-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {
   .checkin-hero { border-radius: .9rem; padding: 4rem 1rem 1rem; }
+  .checkin-hero::before {
+    background:
+      linear-gradient(105deg,
+        color-mix(in srgb, var(--site-panel-strong) 99%, transparent) 0%,
+        color-mix(in srgb, var(--site-panel-strong) 91%, transparent) 50%,
+        color-mix(in srgb, var(--site-panel-strong) 48%, transparent) 100%),
+      url('/images/checkin/daily-rewards-hero.webp') 67% top / auto 76% no-repeat;
+  }
   .checkin-hero h1 { font-size: 3.35rem; }
   .checkin-hero-copy > p:not(.checkin-eyebrow) { margin-top: .85rem; font-size: .92rem; }
   .checkin-balance { margin-top: 1.25rem; }

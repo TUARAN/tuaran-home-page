@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
+import RanbiSupplySnapshot from './RanbiSupplySnapshot'
 import { getD1 } from '../../../lib/d1'
-import { getPointPolicy, getPointRules, getRanbiSupplySummary, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
+import { getPointPolicy, getPointRules, getRanbiSupplySummary, RANBI_POOL_ALLOCATIONS, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -100,18 +101,12 @@ export default async function RanbiPage() {
           <table className="w-full border-collapse text-[13px]">
             <thead><tr className="bg-[var(--site-panel)]"><Th>分配池</Th><Th>比例</Th><Th>初始分配</Th><Th>当前剩余</Th></tr></thead>
             <tbody>
-              {[
-                ['pool:community', '社区参与池', '30%', 6300000],
-                ['pool:owner', '站长与长期维护池', '30%', 6300000],
-                ['pool:contributors', '内容与资源贡献池', '20%', 4200000],
-                ['pool:ecosystem', '生态活动池', '10%', 2100000],
-                ['pool:reserve', '长期储备池', '10%', 2100000],
-              ].map(([accountId, label, ratio, allocation]) => {
+              {RANBI_POOL_ALLOCATIONS.map(({ accountId, label, ratio, allocation }) => {
                 const account = SUPPLY?.accounts?.find((row) => row.accountId === accountId)
                 return (
                   <tr key={accountId} className="border-t border-[var(--site-line)]">
                     <Td className="font-medium text-[var(--site-ink)]">{label}</Td>
-                    <Td>{ratio}</Td>
+                    <Td>{ratio}%</Td>
                     <Td className="font-mono">{formatAmount(allocation)}</Td>
                     <Td className="font-mono">{account ? formatAmount(account.balance) : '—'}</Td>
                   </tr>
@@ -135,6 +130,7 @@ export default async function RanbiPage() {
           <Link href="/help#contact" className="underline underline-offset-2">联系站长</Link>
           ，说明账号和用途，申请免费补充。
         </p>
+        <RanbiSupplySnapshot supply={SUPPLY} />
         <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
           <table className="w-full border-collapse text-[13px]">
             <thead>

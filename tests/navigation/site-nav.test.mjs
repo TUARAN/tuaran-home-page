@@ -36,12 +36,13 @@ test('different taxonomy dimensions are not presented as one resource hierarchy'
 
 test('every public channel defines one featured overview entry in its grid', () => {
   const featuredEntries = source.match(/^\s+\{[^\n]*featured: true/gm) || []
-  assert.equal(featuredEntries.length, 4)
+  assert.equal(featuredEntries.length, 5)
   assert.match(source, /href: '\/tools'[^}\n]*featured: true/)
   assert.match(source, /href: '\/works'[^}\n]*label: '产品集'[^}\n]*featured: true/)
   assert.match(source, /href: '\/works'[^\n]*\n\s*\{ href: '\/capabilities', label: 'Agent 能力集'/)
   assert.doesNotMatch(source, /href: '\/(?:skill-center|mcp-center|prompt-center|workbuddy-publish-center)'/)
   assert.match(source, /href: '\/circles'[^}\n]*featured: true/)
+  assert.match(source, /href: '\/checkin'[^}\n]*featured: true/)
   assert.match(source, /href: '\/help'[^}\n]*featured: true/)
   assert.doesNotMatch(source, /href: '\/sites'[^}\n]*label: '二级站点'/)
 })

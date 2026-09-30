@@ -24,6 +24,26 @@
   padding: clamp(1.5rem, 5vw, 4.5rem);
 }
 
+.hero::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--site-panel-strong) 99%, transparent) 0%,
+      color-mix(in srgb, var(--site-panel-strong) 91%, transparent) 38%,
+      color-mix(in srgb, var(--site-panel-strong) 27%, transparent) 58%,
+      transparent 78%),
+    url('/images/checkin/publishing-habit-hero.webp') 55% center / cover no-repeat;
+  content: '';
+  pointer-events: none;
+}
+
+:global(.dark) .hero::before {
+  filter: brightness(.42) saturate(.7);
+  opacity: .84;
+}
+
 .heroGrid {
   position: absolute;
   inset: 0;
@@ -325,11 +345,27 @@
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 1.5rem; }
+  .hero::before {
+    background:
+      linear-gradient(105deg,
+        color-mix(in srgb, var(--site-panel-strong) 98%, transparent) 0%,
+        color-mix(in srgb, var(--site-panel-strong) 84%, transparent) 52%,
+        color-mix(in srgb, var(--site-panel-strong) 38%, transparent) 100%),
+      url('/images/checkin/publishing-habit-hero.webp') 64% center / auto 100% no-repeat;
+  }
   .workspace { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {
   .hero { min-height: 0; border-radius: 1rem; padding: 3.5rem 1rem 1rem; }
+  .hero::before {
+    background:
+      linear-gradient(105deg,
+        color-mix(in srgb, var(--site-panel-strong) 99%, transparent) 0%,
+        color-mix(in srgb, var(--site-panel-strong) 91%, transparent) 50%,
+        color-mix(in srgb, var(--site-panel-strong) 49%, transparent) 100%),
+      url('/images/checkin/publishing-habit-hero.webp') 68% top / auto 76% no-repeat;
+  }
   .hero h1 { font-size: 3.5rem; }
   .hero blockquote { margin-top: 1.1rem; font-size: 1rem; }
   .heroStats div { min-height: 7.5rem; }

@@ -47,23 +47,26 @@ test('Web3 is a secondary entry owned by the content channel', () => {
   assert.equal(getActiveNavHref(sections, '/web3', new URLSearchParams()), '/web3')
 })
 
-test('check-in is a dropdown channel with center and publishing habit entries', () => {
+test('check-in is a dropdown channel with center, publishing habit and Ranbi guide entries', () => {
   const keys = Array.from(SITE_CHANNELS, (channel) => channel.key)
   const communityIndex = keys.indexOf('community')
   const checkin = SITE_CHANNELS[communityIndex + 1]
   assert.equal(checkin.key, 'checkin')
   assert.equal(checkin.direct, undefined)
   assert.equal(checkin.match('/checkin/publishing'), true)
-  assert.deepEqual(Array.from(sectionsFor('checkin')[0].items, (item) => item.label), ['签到中心', '发文打卡'])
+  assert.deepEqual(Array.from(sectionsFor('checkin')[0].items, (item) => item.label), ['签到中心', '发文打卡', '燃币说明'])
   assert.equal(getActiveNavHref(sectionsFor('checkin'), '/checkin/publishing'), '/checkin/publishing')
+  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/ranbi'), '/ranbi')
 })
 
-test('Ranbi guide is a secondary entry owned by About', () => {
+test('Ranbi guide is a secondary entry owned by Check-in', () => {
+  const checkin = SITE_CHANNELS.find((channel) => channel.key === 'checkin')
   const about = SITE_CHANNELS.find((channel) => channel.key === 'about')
   assert.equal(SITE_CHANNELS.some((channel) => channel.key === 'ranbi'), false)
-  assert.equal(about.match('/ranbi'), true)
+  assert.equal(checkin.match('/ranbi'), true)
+  assert.equal(about.match('/ranbi'), false)
   assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'community').match('/ranbi'), false)
-  assert.equal(getActiveNavHref(sectionsFor('about'), '/ranbi'), '/ranbi')
+  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/ranbi'), '/ranbi')
 })
 
 test('x automation retrospective selects content interactives channel', () => {

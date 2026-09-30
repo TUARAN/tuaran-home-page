@@ -179,7 +179,6 @@
   background: var(--card);
   box-shadow: 0 14px 30px rgba(24, 51, 47, 0.055);
 }
-.activityCard:nth-child(2) { transform: translateY(12px); }
 .activityMeta { display: flex; align-items: center; justify-content: space-between; color: #84918c; font-family: ui-monospace, monospace; font-size: 0.7rem; }
 .activityMeta span:last-child { display: inline-flex; align-items: center; gap: 0.3rem; }
 .activityCard h3 { margin: 2.6rem 0 0.7rem; font-family: ui-serif, Georgia, serif; font-size: 1.5rem; }
@@ -311,7 +310,6 @@
   .sectionHeading { grid-template-columns: 1fr; }
   .sectionHeading > p { grid-column: auto; }
   .todayGrid, .showGrid, .cnAbroad, .methodLayout { grid-template-columns: 1fr; }
-  .activityCard:nth-child(2) { transform: none; }
   .weekList { grid-template-columns: 1fr 1fr; }
   .weekList button { min-height: 165px; }
   .stageSelector { grid-template-columns: 1fr 1fr; }

@@ -14,6 +14,7 @@ import {
   IconGift,
   IconLanguage,
   IconLayoutDashboard,
+  IconLink,
   IconLogout,
   IconMessageCircle,
   IconRobot,
@@ -770,29 +771,35 @@ export default function SiteHeader() {
     <>
       <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
         <div className="mx-auto flex h-[var(--site-header-height)] w-full max-w-[1880px] items-center justify-between gap-2 px-3 py-1 sm:px-6 sm:gap-4 lg:px-10">
-          <Link href="/" className="group flex min-w-0 shrink-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
-            <span className="site-brand-mark" aria-hidden="true">T</span>
-            <div className="hidden min-w-0 flex-col leading-tight sm:inline-flex">
-              <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
-                TUARAN
+          <div className="site-brand-lockup relative min-w-0 shrink-0">
+            <Link href="/" className="group flex min-w-0 items-center gap-2.5 no-underline hover:no-underline" aria-label={pick(locale, '返回首页', 'Back to home')}>
+              <span className="site-brand-mark" aria-hidden="true">T</span>
+              <div className="hidden min-w-0 flex-col pr-7 leading-tight sm:inline-flex">
+                <span className="site-brand-text font-serif text-base font-semibold tracking-wide sm:text-lg">
+                  TUARAN
+                </span>
+                <span className="site-brand-subtitle hidden w-full text-[11px] font-medium [text-align-last:justify] sm:block">
+                  {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
+                </span>
+              </div>
+            </Link>
+            <Link
+              href="/onchain-blog"
+              className="site-onchain-blog-link"
+              aria-label="这是一个面向人与 AI 的中文上链博客，可以点击"
+              aria-describedby="site-onchain-blog-tooltip"
+            >
+              <IconLink size={15} stroke={1.8} aria-hidden="true" />
+              <span id="site-onchain-blog-tooltip" role="tooltip" className="site-onchain-blog-tooltip">
+                这是一个面向人与 AI 的中文上链博客，可以点击
               </span>
-              <span className="site-brand-subtitle hidden w-full text-[11px] font-medium [text-align-last:justify] sm:block">
-                {pick(locale, '涂阿燃 · 网络日志', 'Weblog')}
-              </span>
-            </div>
-          </Link>
+            </Link>
+          </div>
 
           {pathname === '/' ? (
-            <p className="site-brand-slogan" aria-label="这可能是全球第一个面向人与 AI 的中文上链博客。">
+            <p className="site-brand-slogan" aria-label="资讯！资源！判断与见解！">
               <span className="site-brand-slogan-message">
-                <span aria-hidden="true">“</span>
-                <span className="site-brand-slogan-claim">这可能是全球第一个面向人与 AI 的</span>
-                <strong>
-                  <Link href="/onchain-blog" className="site-brand-slogan-link">
-                    中文上链博客。
-                  </Link>
-                </strong>
-                <span aria-hidden="true">”</span>
+                资讯！资源！判断与见解！
               </span>
             </p>
           ) : null}

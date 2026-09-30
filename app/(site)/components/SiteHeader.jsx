@@ -786,8 +786,12 @@ export default function SiteHeader() {
               href="/onchain-blog"
               className="site-onchain-blog-link"
               aria-label="中文上链博客"
+              aria-describedby="site-onchain-blog-tooltip"
             >
               <span aria-hidden="true">🔗</span>
+              <span id="site-onchain-blog-tooltip" role="tooltip" className="site-onchain-blog-tooltip">
+                这可能是全球第一个面向人与 AI 的中文上链博客
+              </span>
             </Link>
           </div>
 

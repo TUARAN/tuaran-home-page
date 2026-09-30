@@ -3520,6 +3520,36 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 22%, transparent);
   }
 
+  .site-onchain-blog-tooltip {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    left: 50%;
+    z-index: 20;
+    width: max-content;
+    max-width: min(18rem, calc(100vw - 2rem));
+    padding: 0.48rem 0.65rem;
+    border: 1px solid var(--site-line);
+    border-radius: 0.55rem;
+    background: var(--site-panel-strong);
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--site-shadow) 72%, transparent);
+    color: var(--site-ink);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -0.2rem);
+    transition: opacity 140ms ease, transform 140ms ease;
+  }
+
+  .site-onchain-blog-link:hover .site-onchain-blog-tooltip,
+  .site-onchain-blog-link:focus-visible .site-onchain-blog-tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
   @media (min-width: 640px) {
     .site-onchain-blog-link {
       display: inline-flex;

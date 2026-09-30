@@ -796,12 +796,12 @@ export default function SiteHeader() {
           </div>
 
           {pathname === '/' ? (
-            <p className="site-brand-slogan" aria-label="资讯！资源！判断与见解！尽在 2aran.com">
+            <p className="site-brand-slogan" aria-label="“资讯！资源！判断与见解！尽在 2aran.com”">
               <span className="site-brand-slogan-message">
-                资讯！资源！判断与见解！
+                “资讯！资源！判断与见解！
               </span>
               <span className="site-brand-slogan-destination">
-                尽在 <strong>2aran.com</strong>
+                尽在 <strong>2aran.com</strong>”
               </span>
             </p>
           ) : null}

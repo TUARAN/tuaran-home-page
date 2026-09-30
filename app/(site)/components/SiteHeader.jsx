@@ -14,7 +14,6 @@ import {
   IconGift,
   IconLanguage,
   IconLayoutDashboard,
-  IconLink,
   IconLogout,
   IconMessageCircle,
   IconRobot,
@@ -786,13 +785,9 @@ export default function SiteHeader() {
             <Link
               href="/onchain-blog"
               className="site-onchain-blog-link"
-              aria-label="这是一个面向人与 AI 的中文上链博客，可以点击"
-              aria-describedby="site-onchain-blog-tooltip"
+              aria-label="中文上链博客"
             >
-              <IconLink size={15} stroke={1.8} aria-hidden="true" />
-              <span id="site-onchain-blog-tooltip" role="tooltip" className="site-onchain-blog-tooltip">
-                这是一个面向人与 AI 的中文上链博客，可以点击
-              </span>
+              <span aria-hidden="true">🔗</span>
             </Link>
           </div>
 

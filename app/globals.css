@@ -2592,26 +2592,36 @@
   }
 
   .home-opinion-sample-meta {
-    @apply mb-1.5 flex items-center gap-1.5 font-mono text-[9px] leading-none;
+    @apply mb-1.5 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 font-mono text-[9px] leading-none;
     color: var(--site-faint);
   }
 
-  .home-opinion-sample-meta span:nth-last-child(-n+2) {
-    @apply rounded-full px-1.5 py-1;
-    background: color-mix(in srgb, var(--site-panel-strong) 76%, transparent);
+  .home-opinion-sample-source {
+    @apply truncate;
   }
 
-  .home-opinion-sample-meta .is-positive,
-  .home-opinion-sample-meta .is-support {
+  .home-opinion-sample-time {
+    @apply whitespace-nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .home-opinion-sample-signal {
+    @apply inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-1.5 font-sans text-[9px] font-semibold leading-none;
+    border-color: color-mix(in srgb, currentColor 18%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .home-opinion-sample-signal.is-positive,
+  .home-opinion-sample-signal.is-support {
     color: #3f7b54;
   }
 
-  .home-opinion-sample-meta .is-negative,
-  .home-opinion-sample-meta .is-oppose {
+  .home-opinion-sample-signal.is-negative,
+  .home-opinion-sample-signal.is-oppose {
     color: #a65358;
   }
 
-  .home-opinion-sample-meta .is-question {
+  .home-opinion-sample-signal.is-question {
     color: #987138;
   }
 

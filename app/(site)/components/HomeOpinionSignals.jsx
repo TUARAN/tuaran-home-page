@@ -84,10 +84,13 @@ export default function HomeOpinionSignals() {
             <a key={post.id} href={post.url} target="_blank" rel="noreferrer"
               className="home-opinion-sample no-external-arrow" tabIndex={hidden ? -1 : undefined}>
               <span className="home-opinion-sample-meta">
-                <span>{post.platform}</span>
-                <span>{post.time}</span>
-                <span className={`is-${sentiment}`}><T {...SENTIMENTS[sentiment]} /></span>
-                <span className={`is-${stance}`}><T {...STANCES[stance]} /></span>
+                <span className="home-opinion-sample-source">{post.platform}</span>
+                <span className="home-opinion-sample-time">{post.time}</span>
+                <span className={`home-opinion-sample-signal is-${sentiment} is-${stance}`}>
+                  <T {...SENTIMENTS[sentiment]} />
+                  <span aria-hidden="true">·</span>
+                  <T {...STANCES[stance]} />
+                </span>
               </span>
               <strong>{post.text}</strong>
               <small>

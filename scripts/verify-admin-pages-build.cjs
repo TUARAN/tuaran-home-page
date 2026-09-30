@@ -16,6 +16,8 @@ const buildLogPath = path.join(workerRoot, 'nop-build-log.json')
 const REQUIRED_EDGE_ROUTES = [
   '/admin/logs',
   '/admin/planning',
+  '/admin/settings',
+  '/admin/site-health',
   '/api/admin/deepseek-tasks/local-sync',
   '/api/admin/planning',
   '/api/admin/planning/import',
@@ -38,6 +40,8 @@ const ALLOWED_DYNAMIC_ADMIN_PAGES = new Set([
   '/admin/articles/[id]/edit',
   '/admin/logs',
   '/admin/planning',
+  '/admin/settings',
+  '/admin/site-health',
   '/admin/soft-sticker',
   '/admin/stock-analysis/[slug]',
 ])

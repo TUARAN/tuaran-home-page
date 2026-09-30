@@ -7,6 +7,8 @@ import DbAdminClient from '../db/DbConsole'
 import SiteStatusConsole from '../site-status/SiteStatusConsole'
 import BloggerEyeConsole from '../blogger-eye/BloggerEyeConsole'
 
+export const runtime = 'edge'
+
 export const metadata = {
   title: '运行中心',
   description: '站点体检、数据健康、可用性探测与故障公告。',

@@ -4,6 +4,8 @@ import { AdminPage } from '../../components/ui'
 import SettingsConsole from './SettingsConsole'
 import IntegrationsClient from '../integrations/IntegrationsClient'
 
+export const runtime = 'edge'
+
 export const metadata = {
   title: '配置中心',
   description: '管理站点功能开关、第三方服务、凭证与 Webhook。',

@@ -12,6 +12,38 @@ import {
 import { AdminButton, EmptyState, StatusPill } from '../../components/ui'
 import { buildTodoBoardModel, formatPlanningDate } from './planningUi'
 
+const D1_RECOVERY_MILESTONE_ID = 'milestone:d1-quota-recovery-2026-10-01'
+const D1_RECOVERY_NOTICE_FROM = Date.parse('2026-09-30T00:00:00.000Z')
+const D1_RECOVERY_NOTICE_UNTIL = Date.parse('2026-10-02T00:00:00.000Z')
+
+function D1RecoveryNotice({ milestone, forceVisible = false }) {
+  if (!forceVisible && (!milestone || ['completed', 'cancelled', 'archived'].includes(milestone.status))) return null
+  return (
+    <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950/25 dark:text-amber-100" aria-labelledby="d1-recovery-title">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">10 月 1 日 · 08:00 后执行</p>
+          <h2 id="d1-recovery-title" className="mb-0 mt-1 font-serif text-lg font-semibold">D1 配额恢复清单</h2>
+          <p className="mb-0 mt-2 max-w-3xl text-sm leading-6">
+            Cloudflare Pages、D1 和 GitHub Actions 都无需手动重启。定时任务会自行继续；历史失败运行不会自动补跑。先观察自动运行，只对仍失败的任务逐个补跑。
+          </p>
+          <ol className="mb-0 mt-3 grid gap-1 pl-5 text-xs leading-5 sm:grid-cols-2">
+            <li>08:00 确认 D1 恢复写入</li>
+            <li>08:10 观察 X 自动发布</li>
+            <li>08:17 观察舆情采集</li>
+            <li>09:00 检查首小时写入量</li>
+            <li>12:00 完成半日复查</li>
+          </ol>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <AdminButton href="/admin/site-health" size="sm">检查站点健康</AdminButton>
+          <AdminButton href="/admin/ops" size="sm" variant="primary">查看自动化</AdminButton>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const COLUMNS = [
   { id: 'planned', label: '待办', empty: '暂无待办', tone: 'neutral' },
   { id: 'doing', label: '进行中', empty: '暂无进行中的任务', tone: 'info' },
@@ -81,12 +113,18 @@ export default function PlanningTodoBoard({ snapshot, onCreateTask, onEdit, onSt
   const [draggingId, setDraggingId] = useState('')
   const [dropTarget, setDropTarget] = useState('')
   const [pendingMoves, setPendingMoves] = useState({})
+  const [showD1RecoveryFallback, setShowD1RecoveryFallback] = useState(false)
 
   useEffect(() => {
     if (!availableMilestones.some((item) => item.id === milestoneId)) {
       setMilestoneId(availableMilestones[0]?.id || '')
     }
   }, [availableMilestones, milestoneId])
+
+  useEffect(() => {
+    const now = Date.now()
+    setShowD1RecoveryFallback(now >= D1_RECOVERY_NOTICE_FROM && now < D1_RECOVERY_NOTICE_UNTIL)
+  }, [])
 
   const effectiveSnapshot = useMemo(() => ({
     ...snapshot,
@@ -97,6 +135,7 @@ export default function PlanningTodoBoard({ snapshot, onCreateTask, onEdit, onSt
     projectId,
     includeCompleted,
   }), [effectiveSnapshot, includeCompleted, projectId, query])
+  const d1RecoveryMilestone = (snapshot.milestones || []).find((item) => item.id === D1_RECOVERY_MILESTONE_ID)
 
   async function submitQuickTask(event) {
     event.preventDefault()
@@ -142,6 +181,8 @@ export default function PlanningTodoBoard({ snapshot, onCreateTask, onEdit, onSt
 
   return (
     <div className="space-y-4">
+      <D1RecoveryNotice milestone={d1RecoveryMilestone} forceVisible={!d1RecoveryMilestone && showD1RecoveryFallback} />
+
       <section className="rounded-2xl border bg-[var(--admin-surface)] p-4">
         <form onSubmit={submitQuickTask} className="grid gap-2 lg:grid-cols-[minmax(240px,1fr)_minmax(220px,320px)_auto]">
           <label className="relative block">

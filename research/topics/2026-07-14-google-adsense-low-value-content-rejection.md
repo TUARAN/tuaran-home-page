@@ -7,6 +7,7 @@ time: 10:25
 tags: [Google AdSense, 低价值内容, 网站审核, 内容质量, AI 内容, SEO, 广告变现]
 summary: AdSense 的“低价值内容”是整站审核结论，不等于某篇文章字数不足。Google 要看原创价值、站点主题、导航、作者可信度和广告页面是否以发布者内容为中心；对 2aran.com 来说，优先事项是收窄审核范围、增加亲历证据、淡化批量资料整理的印象，并在复审期间隐藏广告位。
 tldr: 2aran.com 不缺页面。先不要机械补字或继续批量发文；优先重做 20—30 篇能证明本人经验的核心内容，补代码、截图、数据和修订记录，合并或退出偏题薄内容，关闭自动广告并隐藏手动广告位，再申请复审。
+subjects: [site_engineering]
 content_type: build_log
 assistance: codex
 model: gpt-5.5

@@ -60,6 +60,7 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('workbuddy'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))
+  assert.ok(SUBJECT_KEYS.includes('site_engineering'))
   assert.ok(SUBJECT_KEYS.includes('product_experience'))
   assert.ok(SUBJECT_KEYS.includes('business_market'))
   assert.ok(SUBJECT_KEYS.includes('company_research'))

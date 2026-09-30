@@ -1,11 +1,13 @@
 import { RANBI_POOL_ALLOCATIONS, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
 
-const POOL_COLORS = ['#b98928', '#d5a947', '#64806d', '#91a48d', '#c67c62']
+export const RANBI_POOL_COLORS = ['#8f6419', '#a97721', '#bb8d32', '#cba64f', '#dcc27b']
 const STATE_COLORS = {
   reserve: '#b98928',
-  circulating: '#64806d',
-  burned: '#9d5a45',
+  circulating: '#4f7d67',
+  burned: '#b45e48',
 }
+
+const SUMMARY_COLORS = ['#b98928', '#b45e48', '#4f7d67']
 
 function formatAmount(value) {
   return new Intl.NumberFormat('zh-CN').format(Number(value || 0))
@@ -40,7 +42,7 @@ export default function RanbiSupplySnapshot({ supply }) {
       allocation,
       balance,
       released: Math.max(0, allocation - balance),
-      color: POOL_COLORS[index],
+      color: RANBI_POOL_COLORS[index],
     }
   })
   const reserveBalance = pools.reduce((sum, pool) => sum + pool.balance, 0)
@@ -70,9 +72,13 @@ export default function RanbiSupplySnapshot({ supply }) {
           ['固定总量', total, '100%'],
           ['已消耗', burned, `${(burned / total * 100).toFixed(3)}%`],
           ['当前存量', stock, `${(stock / total * 100).toFixed(3)}%`],
-        ].map(([label, value, ratio]) => (
-          <div key={label} className="min-w-0 rounded-xl bg-[var(--site-panel)] p-2.5 sm:p-3.5">
-            <p className="m-0 truncate text-[10px] text-[var(--site-muted)] sm:text-[11px]">{label}</p>
+        ].map(([label, value, ratio], index) => (
+          <div key={label} className="relative min-w-0 overflow-hidden rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-2.5 sm:p-3.5">
+            <span className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: SUMMARY_COLORS[index] }} />
+            <p className="m-0 flex items-center gap-1.5 truncate text-[10px] text-[var(--site-muted)] sm:text-[11px]">
+              <i className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: SUMMARY_COLORS[index] }} />
+              {label}
+            </p>
             <p className="mb-0 mt-1 truncate font-mono text-[13px] font-semibold text-[var(--site-ink)] sm:text-[19px]">{formatAmount(value)}</p>
             <p className="mb-0 mt-0.5 font-mono text-[9px] text-[var(--site-faint)] sm:text-[10px]">{ratio}</p>
           </div>
@@ -100,10 +106,20 @@ export default function RanbiSupplySnapshot({ supply }) {
           </div>
         </section>
 
+        <div className="relative flex items-center justify-center py-1" aria-label="从初始分配到当前状态的变化过程">
+          <span className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[var(--site-line)]" />
+          <div className="relative flex max-w-full items-center gap-2 rounded-full border border-[var(--site-line)] bg-[var(--site-panel-strong)] px-3 py-2 text-[10px] leading-4 text-[var(--site-muted)] shadow-sm sm:px-4 sm:text-[11px]">
+            <svg className="h-4 w-4 shrink-0 text-[#b98928]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2v13m0 0-4-4m4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span><strong className="font-semibold text-[#8b6927] dark:text-amber-300">储备池发放</strong>后进入<strong className="font-semibold text-[#4f7d67] dark:text-emerald-300">用户流通</strong>，使用后进入<strong className="font-semibold text-[#a8513d] dark:text-rose-300">销毁账户</strong></span>
+          </div>
+        </div>
+
         <section aria-labelledby="ranbi-state-title">
           <div className="mb-2 flex items-baseline justify-between gap-3">
             <h4 id="ranbi-state-title" className="text-[13px] font-semibold text-[var(--site-ink)]">当前总量状态</h4>
-            <span className="font-mono text-[10px] text-[var(--site-faint)]">库存 + 流通 + 消耗 = 总量</span>
+            <span className="font-mono text-[10px] text-[var(--site-faint)]">由上方初始分配演变而来</span>
           </div>
           <div className="flex h-8 overflow-hidden rounded-lg bg-[var(--site-line)]" role="img" aria-label={`分配池库存 ${formatAmount(reserveBalance)}，用户流通 ${formatAmount(circulating)}，已消耗 ${formatAmount(burned)}`}>
             {state.map((item) => (
@@ -112,7 +128,8 @@ export default function RanbiSupplySnapshot({ supply }) {
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {state.map((item) => (
-              <div key={item.key} className="rounded-lg border border-[var(--site-line)] px-3 py-2">
+              <div key={item.key} className="relative overflow-hidden rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-2">
+                <span className="absolute inset-y-0 left-0 w-0.5" style={{ backgroundColor: STATE_COLORS[item.key] }} />
                 <span className="flex items-center gap-2 text-[10px] text-[var(--site-muted)]"><i className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: STATE_COLORS[item.key] }} />{item.label}</span>
                 <strong className="mt-1 block truncate font-mono text-[10px] text-[var(--site-ink)] sm:text-[12px]">{formatAmount(item.value)}</strong>
               </div>
@@ -121,7 +138,10 @@ export default function RanbiSupplySnapshot({ supply }) {
         </section>
 
         <section aria-labelledby="ranbi-pool-title">
-          <h4 id="ranbi-pool-title" className="mb-3 text-[13px] font-semibold text-[var(--site-ink)]">各分配池库存</h4>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h4 id="ranbi-pool-title" className="text-[13px] font-semibold text-[var(--site-ink)]">分配池库存明细</h4>
+            <span className="text-[10px] text-[var(--site-faint)]">金色系对应上方五个初始分配池</span>
+          </div>
           <div className="space-y-3">
             {pools.map((pool) => (
               <div key={pool.accountId}>

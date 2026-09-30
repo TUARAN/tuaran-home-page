@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
-import RanbiSupplySnapshot from './RanbiSupplySnapshot'
+import RanbiSupplySnapshot, { RANBI_POOL_COLORS } from './RanbiSupplySnapshot'
 import { getD1 } from '../../../lib/d1'
 import { getPointPolicy, getPointRules, getRanbiSupplySummary, RANBI_POOL_ALLOCATIONS, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
 
@@ -17,11 +17,11 @@ export const metadata = {
 }
 
 function Th({ children, className = '' }) {
-  return <th className={`p-3 text-left font-semibold text-[var(--site-ink)] ${className}`}>{children}</th>
+  return <th className={`px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--site-muted)] ${className}`}>{children}</th>
 }
 
 function Td({ children, className = '' }) {
-  return <td className={`p-3 align-top text-[var(--site-muted)] ${className}`}>{children}</td>
+  return <td className={`px-4 py-3.5 align-middle text-[var(--site-muted)] ${className}`}>{children}</td>
 }
 
 function formatAmount(value) {
@@ -97,18 +97,23 @@ export default async function RanbiPage() {
             </div>
           ))}
         </div>
-        <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-          <table className="w-full border-collapse text-[13px]">
-            <thead><tr className="bg-[var(--site-panel)]"><Th>分配池</Th><Th>比例</Th><Th>初始分配</Th><Th>当前剩余</Th></tr></thead>
+        <div className="overflow-x-auto rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] shadow-[0_12px_36px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]">
+          <table className="w-full min-w-[560px] border-separate border-spacing-0 text-[13px]">
+            <thead><tr className="bg-[#b98928]/[0.08] dark:bg-amber-300/[0.06]"><Th>分配池</Th><Th>占总量</Th><Th>初始分配</Th><Th>当前库存</Th></tr></thead>
             <tbody>
-              {RANBI_POOL_ALLOCATIONS.map(({ accountId, label, ratio, allocation }) => {
+              {RANBI_POOL_ALLOCATIONS.map(({ accountId, label, ratio, allocation }, index) => {
                 const account = SUPPLY?.accounts?.find((row) => row.accountId === accountId)
                 return (
-                  <tr key={accountId} className="border-t border-[var(--site-line)]">
-                    <Td className="font-medium text-[var(--site-ink)]">{label}</Td>
-                    <Td>{ratio}%</Td>
-                    <Td className="font-mono">{formatAmount(allocation)}</Td>
-                    <Td className="font-mono">{account ? formatAmount(account.balance) : '—'}</Td>
+                  <tr key={accountId} className="group transition-colors hover:bg-[#b98928]/[0.06]">
+                    <Td className="border-t border-[var(--site-line)] font-medium text-[var(--site-ink)]">
+                      <span className="flex items-center gap-2.5">
+                        <i className="h-3 w-3 shrink-0 rounded-[4px] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.24)]" style={{ backgroundColor: RANBI_POOL_COLORS[index] }} />
+                        {label}
+                      </span>
+                    </Td>
+                    <Td className="border-t border-[var(--site-line)]"><span className="inline-flex min-w-12 justify-center rounded-full bg-[#b98928]/[0.1] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#7a5b1e] dark:text-amber-200">{ratio}%</span></Td>
+                    <Td className="border-t border-[var(--site-line)] font-mono tabular-nums">{formatAmount(allocation)}</Td>
+                    <Td className="border-t border-[var(--site-line)] font-mono font-semibold tabular-nums text-[var(--site-ink)]">{account ? formatAmount(account.balance) : '—'}</Td>
                   </tr>
                 )
               })}

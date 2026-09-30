@@ -27,13 +27,12 @@
   height: 1rem;
   align-items: center;
   justify-content: center;
-  color: #b87808;
+  color: #237052;
   animation: checkin-gift-rock 2.8s ease-in-out infinite;
   transform-origin: 50% 35%;
   pointer-events: none;
 }
 .site-nav-trigger:hover .site-nav-checkin-gift { animation-duration: 1.2s; }
-.site-nav-checkin-gift.is-checked { color: #237052; }
 @keyframes checkin-gift-rock {
   0%, 62%, 100% { transform: rotate(0deg); }
   69% { transform: rotate(-10deg); }

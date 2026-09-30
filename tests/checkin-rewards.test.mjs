@@ -50,4 +50,6 @@ test('check-in entry shares session state and keeps an accessible animated gift 
   assert.match(providerSource, /refreshPoints/)
   assert.match(cssSource, /@keyframes checkin-gift-rock/)
   assert.match(cssSource, /prefers-reduced-motion: reduce/)
+  assert.match(cssSource, /\.site-nav-checkin-gift\s*\{[\s\S]*?color:\s*#237052;/)
+  assert.doesNotMatch(headerSource, /site-nav-checkin-gift.*is-checked/)
 })

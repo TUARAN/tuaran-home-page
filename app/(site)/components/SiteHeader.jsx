@@ -292,7 +292,7 @@ function DirectChannelLink({ channel, isActive, checkedInToday, onNavigate }) {
       <span className="relative">
         {navLabel(channel, locale)}
         {isCheckin ? (
-          <span className={`site-nav-checkin-gift ${checkedInToday ? 'is-checked' : ''}`} aria-hidden="true">
+          <span className="site-nav-checkin-gift" aria-hidden="true">
             <IconGift size={15} stroke={2.1} />
           </span>
         ) : null}

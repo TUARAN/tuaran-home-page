@@ -35,6 +35,15 @@ test('legacy and delivery-based interactive links resolve to the independent gro
   assert.match(directoryFiltersSource, /delivery === 'interact'[\s\S]*\? 'interactive'/)
 })
 
+test('kids English roadmap is discoverable as a learning interactive', () => {
+  const roadmapWork = worksSource.match(/\{\s*id: 'kids-english-roadmap',[\s\S]*?\n  \},/)?.[0] || ''
+  assert.match(roadmapWork, /category: 'learning-tool'/)
+  assert.match(roadmapWork, /subjects: \['life_family'\]/)
+  assert.match(roadmapWork, /href: '\/kids-english-roadmap'/)
+  assert.doesNotMatch(roadmapWork, /primaryDirectory:/)
+  assert.doesNotMatch(roadmapWork, /audience: 'owner'/)
+})
+
 test('2026 quiz is public, tagged, and discoverable', () => {
   const quizWork = worksSource.match(/\{\s*id: 'quiz',[\s\S]*?\n  \},/)?.[0] || ''
   assert.match(quizWork, /category: 'learning-tool'/)

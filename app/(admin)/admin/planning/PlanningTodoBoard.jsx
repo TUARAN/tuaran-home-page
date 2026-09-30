@@ -29,6 +29,7 @@ function D1RecoveryNotice({ milestone, forceVisible = false }) {
           </p>
           <ol className="mb-0 mt-3 grid gap-1 pl-5 text-xs leading-5 sm:grid-cols-2">
             <li>08:00 确认 D1 恢复写入</li>
+            <li>08:05 应用 X 回复任务迁移 0103</li>
             <li>08:10 观察 X 自动发布</li>
             <li>08:17 观察舆情采集</li>
             <li>09:00 检查首小时写入量</li>

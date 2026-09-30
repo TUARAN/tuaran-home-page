@@ -189,7 +189,7 @@ function useNearViewport(rootMargin = '0px') {
   return [ref, isNear]
 }
 
-function LazyVideo({ item, eager = false }) {
+function LazyVideo({ item, eager = false, onSelect }) {
   const [frameRef, isNearViewport] = useNearViewport(VIDEO_PRELOAD_ROOT_MARGIN)
   const videoRef = useRef(null)
   const [activated, setActivated] = useState(false)
@@ -236,10 +236,14 @@ function LazyVideo({ item, eager = false }) {
           type="button"
           className="absolute inset-0 block h-full w-full overflow-hidden bg-[#282824] text-left text-white"
           onClick={() => {
+            if (onSelect) {
+              onSelect(item.id)
+              return
+            }
             setLoadFailed(false)
             setActivated(true)
           }}
-          aria-label={`加载视频：${item.title}`}
+          aria-label={onSelect ? `设为主视觉：${item.title}` : `加载视频：${item.title}`}
         >
           {item.poster ? (
             // 静态 poster 已经是视频缩略图，这里用原生 img 避免给 feed 卡片引入 next/image 包装尺寸。
@@ -425,17 +429,42 @@ function HeadlineCard({ item, showPv = false, detailMode = false }) {
   )
 }
 
-function VideoCard({ item }) {
+function selectCardFromSurface(event, item, onSelect) {
+  if (!onSelect || event.target.closest('a, button, video, details, summary')) return
+  onSelect(item.id)
+}
+
+function FeedSelectionLink({ item, onSelect, className, children }) {
   return (
-    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50">
-      <LazyVideo item={item} />
+    <a
+      href={onSelect ? `#${item.id}` : `/feed/${item.id}`}
+      className={className}
+      onClick={(event) => {
+        if (!onSelect) return
+        event.preventDefault()
+        onSelect(item.id)
+      }}
+    >
+      {children}
+    </a>
+  )
+}
+
+function VideoCard({ item, onSelect }) {
+  return (
+    <article
+      id={item.id}
+      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50 ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
+    >
+      <LazyVideo item={item} onSelect={onSelect} />
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
           <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-            <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
+            <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">
               {item.title}
-            </Link>
+            </FeedSelectionLink>
           </h2>
         </div>
         {item.summary ? (
@@ -449,23 +478,27 @@ function VideoCard({ item }) {
   )
 }
 
-function ImageCard({ item }) {
+function ImageCard({ item, onSelect }) {
   return (
-    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50">
-      <Link href={`/feed/${item.id}`} className="block no-underline">
+    <article
+      id={item.id}
+      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50 ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
+    >
+      <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
         <MediaFrame aspect={item.aspect}>
           {/* 静态资源，沿用站内 <img> 约定 */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="absolute inset-0 h-full w-full object-cover" src={item.src} alt={item.title} loading="lazy" />
         </MediaFrame>
-      </Link>
+      </FeedSelectionLink>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mt-3 flex items-center gap-2">
           <TypeBadge type={item.type} />
           <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-            <Link href={`/feed/${item.id}`} className="no-underline hover:underline">
+            <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">
               {item.title}
-            </Link>
+            </FeedSelectionLink>
           </h2>
         </div>
         {item.summary ? (
@@ -479,23 +512,27 @@ function ImageCard({ item }) {
   )
 }
 
-function LinkCard({ item }) {
+function LinkCard({ item, onSelect }) {
   return (
-    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50">
+    <article
+      id={item.id}
+      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50 ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
+    >
       <div className="flex min-h-0 flex-1 flex-col p-4">
         <div className="block">
           {item.image ? (
-            <Link href={`/feed/${item.id}`} className="block no-underline">
+            <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
               <MediaFrame aspect={item.aspect || '16/9'}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
               </MediaFrame>
-            </Link>
+            </FeedSelectionLink>
           ) : null}
           <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
             <TypeBadge type={item.type} />
             <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-              <Link href={`/feed/${item.id}`} className="no-underline hover:underline">{item.title}</Link>
+              <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">{item.title}</FeedSelectionLink>
             </h2>
           </div>
         </div>
@@ -510,15 +547,19 @@ function LinkCard({ item }) {
   )
 }
 
-function QuoteCard({ item }) {
+function QuoteCard({ item, onSelect }) {
   return (
-    <article id={item.id} className="flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50">
+    <article
+      id={item.id}
+      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50 ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
+    >
       <div className="mb-3"><TypeBadge type={item.type} /></div>
-      <Link href={`/feed/${item.id}`} className="block no-underline">
+      <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
         <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
           {item.quote || item.summary}
         </blockquote>
-      </Link>
+      </FeedSelectionLink>
       {item.author ? (
         <p className="mb-0 mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
       ) : null}
@@ -529,11 +570,11 @@ function QuoteCard({ item }) {
   )
 }
 
-function FeedCard({ item }) {
-  if (item.type === 'video') return <VideoCard item={item} />
-  if (item.type === 'image') return <ImageCard item={item} />
-  if (item.type === 'link') return <LinkCard item={item} />
-  if (item.type === 'quote') return <QuoteCard item={item} />
+function FeedCard({ item, onSelect }) {
+  if (item.type === 'video') return <VideoCard item={item} onSelect={onSelect} />
+  if (item.type === 'image') return <ImageCard item={item} onSelect={onSelect} />
+  if (item.type === 'link') return <LinkCard item={item} onSelect={onSelect} />
+  if (item.type === 'quote') return <QuoteCard item={item} onSelect={onSelect} />
   return null
 }
 
@@ -585,6 +626,8 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
   const [typeFilter, setTypeFilter] = useState('all')
   const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
+  const headlineRef = useRef(null)
+  const shouldScrollToHeadlineRef = useRef(false)
   const activeFeaturedItemId = featuredItemId || hashFeaturedItemId
 
   useEffect(() => {
@@ -620,6 +663,29 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
   useEffect(() => {
     setVisibleCount(INITIAL_RENDER_COUNT)
   }, [categoryFilter, typeFilter, activeFeaturedItemId])
+
+  useEffect(() => {
+    if (!shouldScrollToHeadlineRef.current || !activeFeaturedItemId) return
+    shouldScrollToHeadlineRef.current = false
+
+    const frame = window.requestAnimationFrame(() => {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      headlineRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [activeFeaturedItemId])
+
+  function selectFeaturedItem(itemId) {
+    if (!itemId || detailMode) return
+    shouldScrollToHeadlineRef.current = true
+    setHashFeaturedItemId(itemId)
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.hash = itemId
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+  }
 
   function selectCategory(next) {
     const category = normalizeFeedCategory(next)
@@ -743,14 +809,14 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
       ) : (
         <div className="space-y-5">
           {/* 首条作为头条，占满整行大版面 */}
-          <HeadlineCard
-            item={visibleItems[0]}
-          />
+          <div ref={headlineRef} className="scroll-mt-24">
+            <HeadlineCard item={visibleItems[0]} />
+          </div>
 
           {visibleItems.length > 1 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {visibleItems.slice(1).map((item) => (
-                <FeedCard key={item.id} item={item} />
+                <FeedCard key={item.id} item={item} onSelect={selectFeaturedItem} />
               ))}
             </div>
           ) : null}

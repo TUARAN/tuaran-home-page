@@ -82,6 +82,19 @@ function feedMediaUrl(objectKey) {
 
 export const FEED_ITEMS = [
   {
+    id: 'white-house-ai-safety-agreement-2026-09-29',
+    type: 'video',
+    category: 'ai',
+    title: 'Anthropic、Meta、Google 签署白宫 AI 安全协议：内部审查加外部审计，企业自愿执行',
+    summary:
+      '9 月 29 日，Anthropic CEO Dario Amodei、Meta CEO 马克·扎克伯格和 Google CEO Sundar Pichai 在白宫与特朗普会面后，一起向媒体介绍当天签署的“白宫 AI 安全开发协议”。\n\n扎克伯格概括的机制分为三层：企业先建立发现 AI 异常的内部控制，再进行公司内部风险审查，并引入外部审计方和评估机构；审计报告最终交由各公司董事会独立审阅。他说，这套做法旨在让公众和客户确认 AI 按设计方式运行，目前只是行业能够共同接受的起点。\n\nPichai 将其类比为公司财务管控，把成熟的流程和审计制度移植到 AI 开发。Dario 强调 AI 在医疗等领域有巨大价值，也承认技术风险真实存在，具体应对机制仍在讨论中：“我们可以赢，而且可以安全地赢。”\n\n协议由企业自愿执行，视频没有公布协议全文和完整签署名单。记者两次追问企业自我监管是否足够，特朗普回应称，出问题会让这些公司付出巨大代价，各家公司也会互相监督。',
+    tags: ['Anthropic', 'Meta', 'Google', 'AI 安全', '外部审计', '白宫'],
+    date: '2026-09-29',
+    src: feedMediaUrl('feed/white-house-ai-safety-agreement-2026-09-29.mp4'),
+    poster: '/feed/posters/white-house-ai-safety-agreement-2026-09-29.jpg',
+    aspect: '16/9',
+  },
+  {
     id: 'bitget-hot-wallet-hack-2026-09-25',
     type: 'image',
     category: 'web3',

@@ -22,7 +22,7 @@ export function OnlinePresenceStatus({ className = '' }) {
     <span
       className={`inline-flex items-center gap-1.5 text-[#74786b] dark:text-gray-400 ${className}`}
       aria-live="polite"
-      title={pick(locale, '过去 150 秒内活跃的浏览器数量', 'Browsers active in the past 150 seconds')}
+      title={pick(locale, '过去 25 分钟内活跃的浏览器数量', 'Browsers active in the past 25 minutes')}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
       {pick(locale, `当前 ${onlineCount} 人在线`, `${onlineCount} online now`)}

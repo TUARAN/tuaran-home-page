@@ -3,7 +3,7 @@ import {
   normalizeOnlineCount,
   normalizePresenceVisitorKey,
   presenceCutoff,
-  SITE_PRESENCE_RETENTION_MS,
+  SITE_PRESENCE_MIN_WRITE_INTERVAL_MS,
 } from '../../../lib/sitePresence'
 
 export const runtime = 'edge'
@@ -37,15 +37,14 @@ export async function POST(req) {
       db.prepare(
         `INSERT INTO site_presence (visitor_key, last_seen)
          VALUES (?1, ?2)
-         ON CONFLICT(visitor_key) DO UPDATE SET last_seen = excluded.last_seen`
-      ).bind(visitorKey, now),
-      db.prepare('DELETE FROM site_presence WHERE last_seen < ?1')
-        .bind(now - SITE_PRESENCE_RETENTION_MS),
+         ON CONFLICT(visitor_key) DO UPDATE SET last_seen = excluded.last_seen
+         WHERE site_presence.last_seen < ?3`
+      ).bind(visitorKey, now, now - SITE_PRESENCE_MIN_WRITE_INTERVAL_MS),
       db.prepare('SELECT COUNT(*) AS count FROM site_presence WHERE last_seen >= ?1')
         .bind(presenceCutoff(now)),
     ])
 
-    const count = normalizeOnlineCount(results?.[2]?.results?.[0]?.count)
+    const count = normalizeOnlineCount(results?.[1]?.results?.[0]?.count)
     return Response.json({ count }, { headers: RESPONSE_HEADERS })
   } catch {
     return Response.json(

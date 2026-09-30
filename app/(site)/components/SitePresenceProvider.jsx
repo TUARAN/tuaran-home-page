@@ -36,9 +36,13 @@ export function SitePresenceProvider({ children }) {
     const visitorKey = getVisitorKey()
     let stopped = false
     let requestInFlight = false
+    let lastHeartbeatAt = 0
 
     async function heartbeat() {
       if (stopped || requestInFlight || document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastHeartbeatAt < SITE_PRESENCE_HEARTBEAT_MS) return
+      lastHeartbeatAt = now
       requestInFlight = true
       try {
         const response = await fetch('/api/presence', {

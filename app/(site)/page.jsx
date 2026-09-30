@@ -35,6 +35,7 @@ import { HomeHeroGoal } from './components/HomeHeroGoal'
 import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
 import { T } from './components/LocaleProvider'
 import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
+import { SitePresenceProvider } from './components/SitePresenceProvider'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
 import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
 import { HOME_MOBILE_CHANNELS } from '../../lib/siteMobileNav'
@@ -904,5 +905,9 @@ export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
   const inspirations = getLatestFeedItems(HOME_RECOMMENDATION_MAX_BATCH_SIZE)
 
-  return <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
+  return (
+    <SitePresenceProvider>
+      <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
+    </SitePresenceProvider>
+  )
 }

@@ -26,8 +26,19 @@ test('controversy slots cover every Shanghai hour with unique run keys', () => {
 })
 
 test('topic prompts rotate through a broad set of writing structures', () => {
-  assert.equal(X_CONTROVERSY_STRUCTURES.length, 12)
-  assert.equal(new Set(X_CONTROVERSY_STRUCTURES.map((item) => item.id)).size, 12)
+  assert.equal(X_CONTROVERSY_STRUCTURES.length, 14)
+  assert.equal(new Set(X_CONTROVERSY_STRUCTURES.map((item) => item.id)).size, 14)
+  assert.ok(X_CONTROVERSY_STRUCTURES.some((item) => item.id === 'curious-hook' && item.guide.includes('不懂就问：')))
+  assert.ok(X_CONTROVERSY_STRUCTURES.some((item) => item.id === 'hot-take-hook' && item.guide.includes('说个暴论：')))
+
+  const labels = new Set(Array.from({ length: 24 }, (_, hour) => {
+    const messages = buildXControversyMessages({
+      slot: `controversy_${String(hour).padStart(2, '0')}`,
+      now: new Date('2026-09-30T00:00:00.000Z'),
+    })
+    return messages[1].content.match(/本次必须采用的结构：([^。]+)/)?.[1]
+  }))
+  assert.equal(labels.size, 14)
 })
 
 test('Baidu board parser keeps ranked public hot-search words and heat', () => {
@@ -61,6 +72,7 @@ test('prompt demands direct conflict without meta labels, fabricated details, or
   assert.equal(messages.length, 2)
   assert.match(messages[0].content, /俏皮、克制/)
   assert.match(messages[0].content, /观察、动作、物件、选择、结果/)
+  assert.match(messages[0].content, /不懂就问.*说个暴论/)
   assert.match(messages[0].content, /禁止出现这些套话/)
   assert.match(messages[0].content, /近期文案既是事实去重清单，也是结构去重清单/)
   assert.match(messages[0].content, /不得造谣/)

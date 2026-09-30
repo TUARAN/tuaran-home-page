@@ -4,13 +4,17 @@ import { useCallback, useEffect, useState } from 'react'
 
 import ModelSelector from '../../components/ModelSelector'
 
+const DEEPSEEK_FALLBACK = Object.freeze([
+  { id: 'deepseek', label: 'DeepSeek', hint: 'deepseek-v4-flash · 线上 API' },
+])
+
 async function safeJson(response) {
   try { return await response.json() } catch { return null }
 }
 
 export default function AutomationModelSelector() {
-  const [options, setOptions] = useState([])
-  const [value, setValue] = useState('')
+  const [options, setOptions] = useState(DEEPSEEK_FALLBACK)
+  const [value, setValue] = useState('deepseek')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -22,8 +26,8 @@ export default function AutomationModelSelector() {
       const response = await fetch('/api/admin/morning-greeting/model-selection', { cache: 'no-store' })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
-      setOptions(payload.options || [])
-      setValue(payload.selectedModelId || '')
+      setOptions(payload.options?.length ? payload.options : DEEPSEEK_FALLBACK)
+      setValue(payload.selectedModelId || 'deepseek')
     } catch (fetchError) {
       setError(fetchError?.message || '模型列表读取失败')
     } finally {

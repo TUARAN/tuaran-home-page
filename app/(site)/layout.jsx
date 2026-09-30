@@ -7,7 +7,6 @@ import { ThemeProvider } from './components/ThemeProvider'
 import MermaidRenderer from './components/MermaidRenderer'
 import SiteBehaviorAnalytics from './components/SiteBehaviorAnalytics'
 import SiteStatusBanner from './components/SiteStatusBanner'
-import { SitePresenceProvider } from './components/SitePresenceProvider'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃的网络日志'
@@ -43,12 +42,10 @@ export default function SiteLayout({ children }) {
       <ThemeProvider>
         <LocaleProvider>
           <SessionProvider pointsEndpoint="/api/points/me">
-            <SitePresenceProvider>
-              <SiteBehaviorAnalytics />
-              <MermaidRenderer />
-              <SiteStatusBanner />
-              <LayoutChrome>{children}</LayoutChrome>
-            </SitePresenceProvider>
+            <SiteBehaviorAnalytics />
+            <MermaidRenderer />
+            <SiteStatusBanner />
+            <LayoutChrome>{children}</LayoutChrome>
           </SessionProvider>
         </LocaleProvider>
       </ThemeProvider>

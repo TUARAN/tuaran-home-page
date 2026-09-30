@@ -8,12 +8,14 @@
 @media(max-width:700px){.promoBar{justify-content:space-between;font-size:10px;padding-inline:12px}.promoBar p{display:none}.marketNav{min-height:64px;grid-template-columns:1fr auto;gap:10px;padding:10px 14px}.topSearch{grid-column:1/-1;grid-row:2;width:100%}.installButton{grid-column:2;grid-row:1;font-size:11px;padding:10px 13px}.hero{min-height:690px;padding:105px 0 80px}.hero h1{width:94vw;margin-bottom:38px;font-size:clamp(39px,10.5vw,48px);letter-spacing:-.065em}.mobileBreak{display:block}.tileRail{gap:10px}.artTileCompact{width:76px;height:76px;min-height:76px;flex-basis:76px;border-radius:14px}.artTileCompact svg{width:38px;height:38px}.tileRailSecond{margin-top:10px}.heroActions{flex-direction:column}.heroActions button,.heroActions a{min-width:220px}.contentSection{width:min(100% - 28px,1320px);padding:62px 0}.softSection:before{inset-inline:-22px;border-radius:28px}.sectionHeading,.catalogTop{align-items:flex-start;flex-direction:column}.featuredGrid,.cardGrid,.catalogGrid{grid-template-columns:1fr}.categoryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.categoryGrid button{min-height:160px;padding:17px}.catalogSearch{width:100%}.connectSection{width:min(100% - 28px,1220px);grid-template-columns:1fr;margin:30px auto 80px}.installCard{padding:20px}.finalCta{min-height:360px}}
 @media(prefers-reduced-motion:reduce){.skillCard{transition:none}.skillCard:hover{transform:none}}
 
-/* Homepage artwork marquee */
-.tileRail{display:block;width:100%;overflow:hidden;transform:none}
-.tileRailSecond{width:100%;margin-top:18px;transform:none}
-.tileTrack{display:flex;width:max-content;will-change:transform;animation:tileMarquee 44s linear infinite}
-.tileTrackReverse{animation-direction:reverse;animation-duration:50s}
-.tileGroup{display:flex;flex:none;gap:18px;padding-right:18px}
+/* Homepage artwork marquee — mirrors the original Skillry hero artwork. */
+.tileRail{--hero-logo-gap:clamp(.7rem,1.4vw,1.2rem);--hero-logo-size:clamp(4.6rem,7.2vw,7rem);display:block;width:100%;overflow:hidden;padding-block:.35rem;transform:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8% 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8% 92%,transparent)}
+.tileRailSecond{width:100%;margin-top:clamp(12px,1.4vw,16px);transform:none}
+.tileTrack{display:flex;width:max-content;will-change:transform;animation:tileMarquee 52s linear infinite}
+.tileTrackReverse{animation-direction:reverse;animation-duration:49s}
+.tileGroup{display:flex;flex:none;gap:var(--hero-logo-gap);padding-right:var(--hero-logo-gap)}
+.heroSkillLogo{width:var(--hero-logo-size);aspect-ratio:1;overflow:hidden;flex:none;border-radius:20%;background:#ebe7de;box-shadow:0 10px 26px rgba(18,19,19,.08);transform:translateZ(0)}
+.heroSkillLogo img{display:block;width:100%;height:100%;object-fit:cover}
 .tileRail:hover .tileTrack{animation-play-state:paused}
 @keyframes tileMarquee{to{transform:translateX(-50%)}}
 
@@ -54,5 +56,5 @@
 .directoryGrid .cardFooter{border:0;padding-top:9px}
 
 @media(max-width:1050px){.directoryView{grid-template-columns:250px minmax(0,1fr)}.directoryGrid{grid-template-columns:repeat(2,minmax(220px,1fr))}}
-@media(max-width:700px){.directoryView{display:block}.filterSidebar{border-right:0;border-bottom:1px solid var(--line);padding:22px 16px}.filterGroup{padding:16px 0}.directoryResults{padding:25px 14px 60px}.directoryGrid{grid-template-columns:1fr}.tileGroup{gap:10px;padding-right:10px}.agentStack span{width:40px;height:40px}.agentStack img{width:23px;height:23px}}
-@media(prefers-reduced-motion:reduce){.tileTrack{animation-play-state:paused}}
+@media(max-width:700px){.directoryView{display:block}.filterSidebar{border-right:0;border-bottom:1px solid var(--line);padding:22px 16px}.filterGroup{padding:16px 0}.directoryResults{padding:25px 14px 60px}.directoryGrid{grid-template-columns:1fr}.agentStack span{width:40px;height:40px}.agentStack img{width:23px;height:23px}}
+@media(prefers-reduced-motion:reduce){.tileTrack{will-change:auto;animation:none;transform:translateX(-10%)}.tileTrackReverse{transform:translateX(-38%)}}

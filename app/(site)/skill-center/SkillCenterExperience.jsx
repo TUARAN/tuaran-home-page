@@ -23,6 +23,11 @@ const ART = [
   { bg: '#df674c', ink: '#3d1d18', Icon: IconFileText },
 ]
 
+const HERO_LOGO_ROWS = [
+  Array.from({ length: 15 }, (_, index) => index + 1),
+  Array.from({ length: 14 }, (_, index) => index + 16),
+]
+
 const AGENTS = [
   { name: 'Claude Code', src: '/images/skill-center/agents/claude-code.svg' },
   { name: 'Codex', src: '/images/skill-center/agents/codex.svg' },
@@ -87,14 +92,23 @@ function SkillCard({ skill, index }) {
   )
 }
 
-function TileMarquee({ skills, reverse = false }) {
-  const tiles = Array.from({ length: 3 }, () => skills).flat()
+function TileMarquee({ logoNumbers, reverse = false }) {
   return (
     <div className={styles.tileRail} aria-hidden="true">
       <div className={`${styles.tileTrack} ${reverse ? styles.tileTrackReverse : ''}`}>
         {[0, 1].map((copy) => (
           <div className={styles.tileGroup} key={copy}>
-            {tiles.map((skill, index) => <ArtTile key={`${copy}-${skill.id}-${index}`} skill={skill} index={index + (reverse ? 3 : 0)} compact />)}
+            {logoNumbers.map((number) => (
+              <div className={styles.heroSkillLogo} key={`${copy}-${number}`}>
+                <Image
+                  src={`/images/skill-center/hero-skill-logos/skill-logo-${String(number).padStart(2, '0')}.webp`}
+                  alt=""
+                  width={420}
+                  height={420}
+                  priority={copy === 0 && (number <= 6 || (number >= 16 && number <= 17))}
+                />
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -227,8 +241,8 @@ export default function SkillCenterExperience({ skills }) {
         <div className={styles.heroGlow} />
         <p className={styles.heroEyebrow}><span /> CURATED AGENT SKILLS <span /></p>
         <h1>让智能体拥有<br className={styles.mobileBreak} />真正好用的技能</h1>
-        <TileMarquee skills={skills} />
-        <div className={styles.tileRailSecond}><TileMarquee skills={skills} reverse /></div>
+        <TileMarquee logoNumbers={HERO_LOGO_ROWS[0]} />
+        <div className={styles.tileRailSecond}><TileMarquee logoNumbers={HERO_LOGO_ROWS[1]} reverse /></div>
         <div className={styles.heroActions}>
           <button type="button" onClick={() => revealCatalog()}>浏览 Skills <IconArrowDown size={17} /></button>
           <a href="#connect"><IconSparkles size={17} /> 给智能体装上能力</a>

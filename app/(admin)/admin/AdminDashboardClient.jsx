@@ -79,9 +79,18 @@ const toneClasses = {
 function DashboardMetric({ label, value, sub, icon, tone = 'neutral', href, index }) {
   const body = (
     <>
-      <span className="flex items-center gap-2 text-[11.5px] font-medium text-[#77796d] dark:text-gray-400">
-        <AdminIcon name={icon} size={15} className={toneClasses[tone]} />
-        {label}
+      <span className="flex items-center justify-between gap-2 text-[11.5px] font-medium text-[#77796d] dark:text-gray-400">
+        <span className="flex min-w-0 items-center gap-2">
+          <AdminIcon name={icon} size={15} className={toneClasses[tone]} />
+          {label}
+        </span>
+        {href ? (
+          <IconArrowRight
+            size={14}
+            className="shrink-0 text-[#b0b2a6] transition-transform group-hover:translate-x-0.5 group-hover:text-[#67695d] group-focus-visible:translate-x-0.5 group-focus-visible:text-[#15140f] dark:text-gray-600 dark:group-hover:text-gray-300 dark:group-focus-visible:text-gray-100"
+            aria-hidden="true"
+          />
+        ) : null}
       </span>
       <span className={`mt-2 block text-[1.45rem] font-semibold leading-none tabular-nums ${toneClasses[tone]}`}>
         {value}
@@ -98,10 +107,10 @@ function DashboardMetric({ label, value, sub, icon, tone = 'neutral', href, inde
         : index % 2 === 1
           ? 'border-l border-t border-[#e6e7df] dark:border-[#1b2430] md:border-t-0'
           : 'border-t border-[#e6e7df] dark:border-[#1b2430] md:border-l md:border-t-0'
-  const className = `group min-w-0 px-4 py-3.5 transition hover:bg-[#f8f8f4] dark:hover:bg-[#131b25] ${dividerClass}`
+  const className = `group min-w-0 px-4 py-3.5 transition hover:bg-[#f8f8f4] focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-emerald-600 dark:hover:bg-[#131b25] ${dividerClass}`
 
   return href ? (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} aria-label={`查看${label}`}>
       {body}
     </Link>
   ) : (
@@ -272,8 +281,8 @@ export default function AdminDashboardClient() {
 
         <div className="grid grid-cols-2 border-t border-[#e6e7df] dark:border-[#1b2430] md:grid-cols-5">
           <DashboardMetric index={0} label="注册用户" value={users?.count != null ? users.count : '—'} sub="全部登录账号" icon="users" href="/admin/users" />
-          <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" />
-          <DashboardMetric index={2} label="今日读者" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" />
+          <DashboardMetric index={1} label="今日阅读" value={pv?.today != null ? pv.today : '—'} sub={pv?.total != null ? `累计 ${pv.total.toLocaleString('zh-CN')}` : '有效阅读'} icon="analytics" href="/admin/content-weekly#reading" />
+          <DashboardMetric index={2} label="今日读者" value={uv?.today != null ? uv.today : '—'} sub={uv?.total != null ? `累计 ${uv.total.toLocaleString('zh-CN')}` : '独立读者'} icon="users" href="/admin/content-weekly#reading" />
           <DashboardMetric index={3} label="D1 数据库" value={dbValue(db)} sub={dbSub(db)} icon="database" tone={dbTone(db?.status)} href="/admin/db" />
           <DashboardMetric index={4} label="自动化" value={ops?.label || '—'} sub={ops?.latencyMs != null ? `${ops.latencyMs}ms 响应` : '运行台账'} icon="ops" tone={opsTone(ops?.status)} href="/admin/ops" />
         </div>

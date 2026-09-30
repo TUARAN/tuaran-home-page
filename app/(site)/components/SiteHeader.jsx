@@ -787,10 +787,10 @@ export default function SiteHeader() {
           {pathname === '/' ? (
             <p className="site-brand-slogan" aria-label="“资讯！资源！判断与见解！尽在 2aran.com”">
               <span className="site-brand-slogan-message">
-                “资讯！资源！判断与见解！
+                <span className="site-brand-slogan-highlight">“资讯！资源！判断与见解！</span>
               </span>
               <span className="site-brand-slogan-destination">
-                尽在 <strong>2aran.com</strong>”
+                <span className="site-brand-slogan-highlight">尽在 <strong>2aran.com</strong>”</span>
                 <Link
                   href="/onchain-blog"
                   className="site-onchain-blog-link"

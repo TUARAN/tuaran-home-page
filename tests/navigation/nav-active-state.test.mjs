@@ -130,3 +130,13 @@ test('onchain shortcut follows the homepage slogan instead of the global brand',
   assert.match(homepageSlogan, /尽在 <strong>2aran\.com<\/strong>”[\s\S]*href="\/onchain-blog"/)
   assert.doesNotMatch(brandLockup, /href="\/onchain-blog"|site-onchain-blog-link/)
 })
+
+test('homepage slogan uses a left-to-right highlight sweep with reduced-motion fallback', async () => {
+  const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
+  const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
+
+  assert.equal((header.match(/site-brand-slogan-highlight/g) || []).length, 2)
+  assert.match(css, /@keyframes site-brand-slogan-sweep[\s\S]*background-position: 100% 50%[\s\S]*background-position: 0% 50%/)
+  assert.match(css, /\.site-brand-slogan-highlight[\s\S]*animation: site-brand-slogan-sweep/)
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.site-brand-slogan-highlight[\s\S]*animation: none/)
+})

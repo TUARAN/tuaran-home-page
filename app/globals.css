@@ -3574,6 +3574,34 @@
     color: var(--site-ink);
   }
 
+  .site-brand-slogan-highlight {
+    color: var(--site-ink);
+    background-image: linear-gradient(
+      105deg,
+      var(--site-ink) 0%,
+      var(--site-ink) 42%,
+      color-mix(in srgb, var(--site-accent) 78%, #ffffff) 49%,
+      color-mix(in srgb, var(--site-accent) 54%, #f4c96b) 52%,
+      var(--site-ink) 59%,
+      var(--site-ink) 100%
+    );
+    background-position: 100% 50%;
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: site-brand-slogan-sweep 4.2s ease-in-out infinite;
+  }
+
+  @keyframes site-brand-slogan-sweep {
+    0%, 14% {
+      background-position: 100% 50%;
+    }
+    72%, 100% {
+      background-position: 0% 50%;
+    }
+  }
+
   .site-brand-slogan-destination {
     color: inherit;
     font-family: inherit;
@@ -3584,6 +3612,14 @@
 
   .site-brand-slogan-destination strong {
     font-weight: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-brand-slogan-highlight {
+      background-image: none;
+      -webkit-text-fill-color: currentColor;
+      animation: none;
+    }
   }
 
   @media (min-width: 1180px) {

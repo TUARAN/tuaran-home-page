@@ -29,8 +29,12 @@ const REASON_LABELS = {
   checkin: '签到',
   checkin_bonus: '连续签到',
   comment: '评论',
+  guest_merge: '游客余额归档',
   unlock: '解锁',
   reward_redeem: '礼物兑换',
+  image_hosting_upload: '图床上传',
+  image_hosting_refund: '图床补偿',
+  wc_predict: '活动奖励',
   admin: '手动',
 }
 
@@ -93,6 +97,7 @@ export default function PointsConsole() {
   const [adjUser, setAdjUser] = useState('')
   const [adjDelta, setAdjDelta] = useState('')
   const [adjNote, setAdjNote] = useState('')
+  const [adjSource, setAdjSource] = useState('pool:community')
   const adjUserRef = useRef(null)
   const adjustSectionRef = useRef(null)
 
@@ -243,7 +248,7 @@ export default function PointsConsole() {
       return
     }
     const ok = await post(
-      { action: 'adjust', userId: id, delta: Number(adjDelta), note: adjNote.trim() },
+      { action: 'adjust', userId: id, delta: Number(adjDelta), note: adjNote.trim(), sourceAccount: adjSource },
       '燃币已调整'
     )
     if (ok) {
@@ -353,6 +358,15 @@ export default function PointsConsole() {
             description="这里的数值是实际生效规则，不是写死在代码中的价格。保存后只影响新的发币、扣币和解锁；已发生的账本与已解锁权益不会被改写。"
             className="mb-5"
           >
+            {summary?.supply ? (
+              <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <StatCard label="固定总量" value={Number(summary.supply.totalSupply || 0).toLocaleString('zh-CN')} />
+                <StatCard label="累计释放" value={Number(summary.supply.released || 0).toLocaleString('zh-CN')} />
+                <StatCard label="当前流通" value={Number(summary.supply.circulating || 0).toLocaleString('zh-CN')} />
+                <StatCard label="累计销毁" value={Number(summary.supply.burned || 0).toLocaleString('zh-CN')} tone="danger" />
+                <StatCard label="总账校验" value={summary.supply.consistent ? '一致' : '异常'} tone={summary.supply.consistent ? 'success' : 'danger'} />
+              </div>
+            ) : null}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#eceee6] bg-[#fbfcf7] px-3 py-2 dark:border-[#1b2430] dark:bg-[#10161f]">
               <div className="flex items-baseline gap-2">
                 <span className="text-xs text-[#82847a] dark:text-gray-500">全站账户余额</span>
@@ -526,7 +540,7 @@ export default function PointsConsole() {
           <div ref={adjustSectionRef}>
             <Section
               title="手动增减燃币"
-              description="仅支持登录用户 user_id（github: / google: / email:）。用户管理页的「调整燃币」会直接跳到这里。"
+              description="仅支持登录用户 user_id（github: / google: / email:）。正数必须选择发放来源池；负数统一进入黑洞。"
             >
               <form onSubmit={adjust} className="flex flex-wrap items-end gap-2">
                 <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
@@ -538,6 +552,16 @@ export default function PointsConsole() {
                     onChange={(e) => setAdjUser(e.target.value)}
                     placeholder="github:123 / google:abc / email:x"
                   />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
+                  正数发放来源
+                  <select className={`${inputCls} w-52`} value={adjSource} onChange={(e) => setAdjSource(e.target.value)}>
+                    <option value="pool:community">社区参与池</option>
+                    <option value="pool:owner">站长与长期维护池</option>
+                    <option value="pool:contributors">内容与资源贡献池</option>
+                    <option value="pool:ecosystem">生态活动池</option>
+                    <option value="pool:reserve">长期储备池</option>
+                  </select>
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-[#67695d] dark:text-gray-400">
                   增减（可负）

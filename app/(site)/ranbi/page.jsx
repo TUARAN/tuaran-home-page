@@ -2,7 +2,7 @@ import Link from 'next/link'
 import PageContainer from '../components/PageContainer'
 import RanbiBalance from '../components/RanbiBalance'
 import { getD1 } from '../../../lib/d1'
-import { getPointPolicy, getPointRules } from '../../../lib/points'
+import { getPointPolicy, getPointRules, getRanbiSupplySummary, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,10 @@ function Td({ children, className = '' }) {
   return <td className={`p-3 align-top text-[var(--site-muted)] ${className}`}>{children}</td>
 }
 
+function formatAmount(value) {
+  return new Intl.NumberFormat('zh-CN').format(Number(value || 0))
+}
+
 export default async function RanbiPage() {
   let db = null
   try {
@@ -30,6 +34,7 @@ export default async function RanbiPage() {
   } catch {}
   const R = await getPointRules(db)
   const POLICY = getPointPolicy(R)
+  const SUPPLY = await getRanbiSupplySummary(db)
   const commentMaxPerDay = R.comment > 0 ? Math.floor(R.commentDailyCap / R.comment) : 0
   const EARN_ROWS = POLICY.earnMethods.filter((row) => row.status === 'live').map((row) => [
     row.label,
@@ -53,7 +58,7 @@ export default async function RanbiPage() {
         </h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
           燃币用于解锁站内内容、领取工具包并保存资源权益。
-          <strong className="text-[var(--site-ink)]">燃币不支持充值。</strong>
+          <strong className="text-[var(--site-ink)]">固定总量 21,000,000 枚，永不增发。</strong>
           可通过点击领取、参与活动、玩游戏等免费方式获得，也可以联系站长补充。
         </p>
         <p className="mt-2 text-[12px] leading-6 text-[var(--site-muted)]">
@@ -83,11 +88,61 @@ export default async function RanbiPage() {
         </p>
       </section>
 
+      <section className="mb-10">
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">二、总量与分配</h2>
+        <p className="mb-4 text-[14px] leading-7 text-[var(--site-muted)]">
+          全部燃币在固定总量规则启用时一次性分配到五个储备池。用户领取奖励时，燃币从对应储备池转入个人账户；使用后进入
+          <code className="mx-1 rounded bg-[var(--site-panel)] px-1.5 py-0.5 text-[12px]">system:burn</code>
+          黑洞账户，永久退出流通。燃币不支持充值、提现、交易或现金兑换。
+        </p>
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ['固定总量', formatAmount(SUPPLY?.totalSupply || RANBI_TOTAL_SUPPLY)],
+            ['累计释放', SUPPLY ? formatAmount(SUPPLY.released) : '迁移后实时显示'],
+            ['当前流通', SUPPLY ? formatAmount(SUPPLY.circulating) : '迁移后实时显示'],
+            ['累计销毁', SUPPLY ? formatAmount(SUPPLY.burned) : '迁移后实时显示'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--site-muted)]">{label}</p>
+              <p className="mt-1 font-mono text-lg font-semibold text-[var(--site-ink)]">{value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
+          <table className="w-full border-collapse text-[13px]">
+            <thead><tr className="bg-[var(--site-panel)]"><Th>分配池</Th><Th>比例</Th><Th>初始分配</Th><Th>当前剩余</Th></tr></thead>
+            <tbody>
+              {[
+                ['pool:community', '社区参与池', '30%', 6300000],
+                ['pool:owner', '站长与长期维护池', '30%', 6300000],
+                ['pool:contributors', '内容与资源贡献池', '20%', 4200000],
+                ['pool:ecosystem', '生态活动池', '10%', 2100000],
+                ['pool:reserve', '长期储备池', '10%', 2100000],
+              ].map(([accountId, label, ratio, allocation]) => {
+                const account = SUPPLY?.accounts?.find((row) => row.accountId === accountId)
+                return (
+                  <tr key={accountId} className="border-t border-[var(--site-line)]">
+                    <Td className="font-medium text-[var(--site-ink)]">{label}</Td>
+                    <Td>{ratio}</Td>
+                    <Td className="font-mono">{formatAmount(allocation)}</Td>
+                    <Td className="font-mono">{account ? formatAmount(account.balance) : '—'}</Td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        {SUPPLY && !SUPPLY.consistent ? (
+          <p className="mt-3 text-[12px] text-rose-600">供应量校验异常，实时发放已停止，请等待站长复核。</p>
+        ) : null}
+      </section>
+
       {/* 怎么赚 */}
       <section id="earn" className="mb-10 scroll-mt-24">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">二、怎么获得</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">三、怎么获得</h2>
         <p className="mb-4 text-[14px] leading-7 text-[var(--site-muted)]">
-          游客首次访问获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
+          游客首次尝试受保护资源时获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
+          所有奖励都从公开储备池转出，储备池耗尽后停止发放。
           活动与游戏奖励按各项目规则发放。余额不够用时，可以{' '}
           <Link href="/help#contact" className="underline underline-offset-2">联系站长</Link>
           ，说明账号和用途，申请免费补充。
@@ -118,7 +173,7 @@ export default async function RanbiPage() {
 
       {/* 怎么用 */}
       <section className="mb-10">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">三、怎么使用</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">四、怎么使用</h2>
         <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -142,16 +197,17 @@ export default async function RanbiPage() {
         <p className="mt-3 text-[13px] leading-6 text-[var(--site-muted)]">
           进入有燃币门槛的内容时，余额足够会<strong className="text-[var(--site-ink)]">自动解锁并使用燃币</strong>；
           <strong className="text-[var(--site-ink)]">解锁后永久可读</strong>，反复打开、刷新都不再重复使用。工具包和安装包则在点击“领取”时才结算；壁纸、音乐等免费资源只记录领取/打开，不使用燃币。
+          已使用的燃币统一进入黑洞账户，不能再次发放。
         </p>
       </section>
 
       {/* 权益记录 */}
       <section className="mb-10">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">四、权益如何保存</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">五、权益如何保存</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            ['游客试用', `当前浏览器按匿名身份获得 ${R.guestSeed} 燃币，可以先体验内容解锁或工具领取。`],
-            ['登录归档', '登录时会把当前浏览器中的游客余额、评论和已解锁权益归入账号。'],
+            ['游客试用', `首次尝试受保护资源时，当前浏览器按匿名身份获得 ${R.guestSeed} 燃币，可以体验一项文字内容。`],
+            ['登录归档', '登录时会把当前浏览器中的游客余额、评论和已解锁权益归入账号。游客历史消费仍保留在原流水中。'],
             ['永久解锁', '同一内容或工具只结算一次，刷新、再次打开和从领取记录返回都不会重复使用燃币。'],
             ['记录可查', '个人资料会显示余额、已解锁资源和领取记录；异常流水可以联系站长复核。'],
           ].map(([label, text], i) => (
@@ -167,7 +223,7 @@ export default async function RanbiPage() {
 
       {/* 自愿支持，与燃币获取分开 */}
       <section id="support" className="mb-10 scroll-mt-24">
-        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">五、如何支持站长</h2>
+        <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">六、如何支持站长</h2>
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">
           如果内容或资源对你有帮助，欢迎通过{' '}
           <Link href="/donate" className="underline underline-offset-2">捐助或赞助</Link>
@@ -180,11 +236,13 @@ export default async function RanbiPage() {
       <section className="rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
         <h2 className="mb-2 text-[15px] font-semibold text-[#7a5b1e] dark:text-amber-200">一眼速查</h2>
         <ul className="space-y-1.5 text-[13px] leading-6 text-[#8a7a55] dark:text-amber-300/80">
-          <li>· 游客自动 <strong>{R.guestSeed}</strong> 燃币 → 够读约 {Math.floor(R.guestSeed / R.resourceDefaultCost)} 篇内容，或领取 {Math.floor(R.guestSeed / R.toolDefaultCost)} 个工具包。</li>
+          <li>· 固定总量 <strong>{formatAmount(RANBI_TOTAL_SUPPLY)}</strong> 枚，所有奖励从储备池转出，任何入口都不能增发。</li>
+          <li>· 游客首次尝试资源领取 <strong>{R.guestSeed}</strong> 燃币 → 够体验约 {Math.floor(R.guestSeed / R.resourceDefaultCost)} 篇文字内容。</li>
           <li>· 注册 / 绑定一次性 <strong>{R.register}</strong> 燃币，之后每天签到 +{R.checkin}、评论 +{R.comment}。</li>
           <li>· 调研、资料、资源内容统一 {R.resourceDefaultCost} / 篇；工具包 / 安装包 {R.toolDefaultCost} / 项，进入内容或领取时自动扣减，解锁后永久有效。</li>
           <li>· 壁纸、音乐等免费资源不消耗燃币，但领取/打开会进入“我的领取记录”。</li>
           <li>· 评论奖励每日最多 +{R.commentDailyCap}，流水可查、重复操作不重复记账。</li>
+          <li>· 使用的燃币进入 <strong>system:burn</strong>，永久退出流通。</li>
           <li>· 余额或领取记录异常时，可附资源名称和页面链接联系站长复核。</li>
         </ul>
       </section>

@@ -7,6 +7,7 @@ import {
   getBalance,
   getPointPolicy,
   getPointRules,
+  getRanbiSupplySummary,
   listResources,
   reconcileUnlockLedgerForAccounts,
   reconcileUnlockLedgerForUser,
@@ -67,6 +68,7 @@ export async function GET(req) {
     }
 
     const resources = await listResources(db)
+    const supply = await getRanbiSupplySummary(db)
     const accountsResult = await db
       .prepare(
         `SELECT up.user_id, up.balance, up.updated_at, MAX(pl.created_at) AS last_ledger_at, COUNT(pl.id) AS ledger_count
@@ -172,6 +174,7 @@ export async function GET(req) {
         ledgerCount: toNumber(ledgerSummary?.ledger_count),
         issuedPoints: toNumber(ledgerSummary?.issued_points),
         spentPoints: toNumber(ledgerSummary?.spent_points),
+        supply,
       },
       accounts: (accountsResult?.results || []).map((row) => ({
         user_id: row.user_id,
@@ -245,7 +248,13 @@ export async function POST(req) {
     }
 
     if (action === 'adjust') {
-      const result = await adminAdjust(db, body?.userId, body?.delta, String(body?.note || ''))
+      const result = await adminAdjust(
+        db,
+        body?.userId,
+        body?.delta,
+        String(body?.note || ''),
+        body?.sourceAccount
+      )
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
       const balance = await getBalance(db, String(body?.userId || ''))
       return Response.json({ ok: true, balance })

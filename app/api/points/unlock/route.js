@@ -23,7 +23,7 @@ function normalizeKey(value) {
 
 /**
  * 查询某资源的解锁状态（前端燃币墙据此展示）。
- * 游客也参与：按 guest:<gid> 播种 50 燃币后返回其余额（authed:false, isGuest:true）。
+ * 游客也参与：首次进入受保护资源时领取试用额度（authed:false, isGuest:true）。
  */
 export async function GET(req) {
   try {
@@ -39,7 +39,7 @@ export async function GET(req) {
       return Response.json({ authed: true, isGuest: false, ...status })
     }
 
-    // 游客：播种 50 燃币，按 guest:<gid> 计余额
+    // 游客：只有进入受保护资源才创建身份并领取试用额度。
     const guest = await getOrIssueGuest(req)
     if (!guest) {
       const status = await getResourceStatus(db, '', resourceKey)
@@ -87,7 +87,7 @@ export async function POST(req) {
       }
       spendId = `${GUEST_USER_PREFIX}${guest.gid}`
       guestSetCookie = guest.setCookie
-      await awardGuestSeed(db, spendId) // 确保游客先有 50 燃币底子
+      await awardGuestSeed(db, spendId)
     }
 
     const limit = await enforceRateLimits(db, [

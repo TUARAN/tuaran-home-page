@@ -36,7 +36,7 @@ export default function RanbiBalance({ className = '' }) {
   }, [])
 
   useEffect(() => {
-    // 登录用户与游客都拉余额（游客由 /api/points/me 自动播种 50 燃币）
+    // 登录用户与游客都只读余额；游客试用在首次进入受保护资源时发放。
     if (!userLoading) refresh()
   }, [user, userLoading, refresh])
 

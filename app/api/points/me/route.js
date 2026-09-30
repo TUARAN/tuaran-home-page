@@ -1,7 +1,7 @@
 import { getD1 } from '../../../../lib/d1'
 import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/guestSession'
-import { awardGuestSeed, countCheckins, getBalance, getCheckinStatus, getPointRules, hasCheckedInToday } from '../../../../lib/points'
+import { GUEST_USER_PREFIX, getGuestId } from '../../../../lib/guestSession'
+import { countCheckins, getBalance, getCheckinStatus, getPointRules, hasCheckedInToday } from '../../../../lib/points'
 import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
 import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
 
@@ -19,7 +19,7 @@ function dbOrNull() {
 /**
  * 当前身份的燃币余额与签到状态。
  *  - 登录用户：真实余额 + 今日签到状态。
- *  - 游客：按 guest:<gid> 自动播种 50 燃币并返回余额（isGuest:true）。
+ *  - 游客：只读取已有试用余额；普通访问不再创建身份或发放燃币。
  *  - 无 D1：余额 0、dbUnavailable:true（不阻断页面）。
  */
 export async function GET(req) {
@@ -32,15 +32,13 @@ export async function GET(req) {
       if (!db) {
         return Response.json({ authed: false, isGuest: true, balance: 0, checkedInToday: false, rules, dbUnavailable: true })
       }
-      const guest = await getOrIssueGuest(req)
-      if (!guest) {
+      const gid = await getGuestId(req)
+      if (!gid) {
         return Response.json({ authed: false, isGuest: true, balance: 0, checkedInToday: false, rules })
       }
-      const guestId = `${GUEST_USER_PREFIX}${guest.gid}`
-      await awardGuestSeed(db, guestId)
+      const guestId = `${GUEST_USER_PREFIX}${gid}`
       const balance = await getBalance(db, guestId)
-      const headers = guest.setCookie ? { 'Set-Cookie': guest.setCookie } : undefined
-      return Response.json({ authed: false, isGuest: true, balance, checkedInToday: false, rules }, { headers })
+      return Response.json({ authed: false, isGuest: true, balance, checkedInToday: false, rules })
     }
 
     if (!db) {

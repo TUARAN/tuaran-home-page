@@ -52,6 +52,13 @@ export async function POST(req) {
     const result = await awardCheckin(db, userId)
     await cleanupRateLimits(db).catch(() => {})
 
+    if (result.error) {
+      return Response.json(
+        { ok: false, error: result.error, balance: result.balance },
+        { status: result.status || 409 }
+      )
+    }
+
     return Response.json({
       ok: true,
       awarded: result.awarded,

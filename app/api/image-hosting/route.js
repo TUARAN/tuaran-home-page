@@ -6,7 +6,7 @@ import {
   hostedMediaMaxBytes,
   rowToHostedImage,
 } from '../../../lib/hostedImages'
-import { award, getPointRules, spendPoints } from '../../../lib/points'
+import { award, getPointRules, RANBI_ACCOUNTS, spendPoints } from '../../../lib/points'
 import { getR2 } from '../../../lib/r2'
 import { getUserRole } from '../../../lib/userDirectory'
 import {
@@ -200,6 +200,7 @@ export async function POST(req) {
         delta: cost,
         reason: 'image_hosting_refund',
         ref: `refund:${id}`,
+        sourceAccount: RANBI_ACCOUNTS.reserve,
       }).catch(() => {})
       return Response.json(
         { error: 'IMAGE_RECORD_FAILED', detail: String(error?.message || error) },

@@ -239,6 +239,11 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
         <span className="relative">
           {navLabel(channel, locale)}
           {channel.key === 'community' ? <span className="site-nav-vip-badge">VIP</span> : null}
+          {channel.key === 'checkin' ? (
+            <span className="site-nav-checkin-gift" aria-hidden="true">
+              <IconGift size={15} stroke={2.1} />
+            </span>
+          ) : null}
         </span>
         <ChevronDown />
       </Link>

@@ -123,7 +123,7 @@ export default function CheckinRewardsClient() {
         <div className="checkin-hero-glow" aria-hidden="true" />
         <div className="checkin-hero-copy">
           <p className="checkin-eyebrow"><IconSparkles size={14} /> DAILY REWARDS</p>
-          <h1>签到有礼</h1>
+          <h1>签到中心</h1>
           <p>每天来看看，领取燃币，兑换站长准备的礼物。</p>
           <div className="checkin-balance">
             <span><IconFlame size={18} fill="currentColor" /> 我的燃币</span>

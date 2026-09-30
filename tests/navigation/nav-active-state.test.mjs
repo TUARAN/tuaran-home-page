@@ -47,12 +47,15 @@ test('Web3 is a secondary entry owned by the content channel', () => {
   assert.equal(getActiveNavHref(sections, '/web3', new URLSearchParams()), '/web3')
 })
 
-test('check-in is a direct channel immediately after community', () => {
+test('check-in is a dropdown channel with center and publishing habit entries', () => {
   const keys = Array.from(SITE_CHANNELS, (channel) => channel.key)
   const communityIndex = keys.indexOf('community')
-  assert.equal(keys[communityIndex + 1], 'checkin')
-  assert.equal(SITE_CHANNELS[communityIndex + 1].direct, true)
-  assert.equal(SITE_CHANNELS[communityIndex + 1].match('/checkin'), true)
+  const checkin = SITE_CHANNELS[communityIndex + 1]
+  assert.equal(checkin.key, 'checkin')
+  assert.equal(checkin.direct, undefined)
+  assert.equal(checkin.match('/checkin/publishing'), true)
+  assert.deepEqual(Array.from(sectionsFor('checkin')[0].items, (item) => item.label), ['签到中心', '发文打卡'])
+  assert.equal(getActiveNavHref(sectionsFor('checkin'), '/checkin/publishing'), '/checkin/publishing')
 })
 
 test('Ranbi guide is a secondary entry owned by About', () => {

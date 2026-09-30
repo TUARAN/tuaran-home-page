@@ -20,7 +20,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
-import { buildPublicOpinionSnapshot, getSentimentBucket, getSentimentLabel, materializePublicOpinionPostTimes } from '../../../lib/publicOpinionData'
+import { buildPublicOpinionSnapshot, buildPublicOpinionTimelineDays, getSentimentBucket, getSentimentLabel, materializePublicOpinionPostTimes } from '../../../lib/publicOpinionData'
 
 const STANCE_LABELS = { support: '支持', neutral: '中立', question: '质疑', oppose: '反对' }
 const SENTIMENT_STYLES = {
@@ -49,15 +49,6 @@ function formatClock(value, fallback = '') {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return fallback
   return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false }).format(date)
-}
-
-function formatDate(value) {
-  const date = value ? new Date(value) : new Date()
-  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
-  return {
-    date: new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric' }).format(safeDate),
-    weekday: new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'short' }).format(safeDate),
-  }
 }
 
 function scrollToSection(target) {
@@ -197,25 +188,38 @@ function FeedCard({ post, event, connectorLabel }) {
   )
 }
 
-function TimelineFeed({ posts, events, connectors }) {
+function TimelineFeed({ posts, events, connectors, referenceAt }) {
   const eventByPost = useMemo(() => {
     const map = {}
     for (const event of events) for (const postId of event.postIds || []) map[postId] = event
     return map
   }, [events])
   const connectorMap = Object.fromEntries(connectors.map((connector) => [connector.id, connector.label]))
-  const ordered = [...posts].sort((a, b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0))
-  const header = formatDate(ordered[0]?.publishedAt)
+  const days = buildPublicOpinionTimelineDays(posts, referenceAt)
   return (
     <section id="feed" className="scroll-mt-24">
-      <div className="mb-4 flex flex-wrap items-end gap-x-3 gap-y-1"><h2 className="mb-0 border-0 p-0 text-[24px] font-bold tracking-[-0.03em] text-[#243236] dark:text-gray-100">{header.date}</h2><span className="pb-0.5 text-[12px] text-[#7c8987] dark:text-[#8b9aa3]">{header.weekday} · {posts.length} 条</span></div>
-      {ordered.length ? (
-        <div className="space-y-3">
-          {ordered.map((post, index) => (
-            <div key={post.id} className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
-              <div className="relative pt-5 text-right"><span className="font-mono text-[11px] font-semibold text-[#6e7e80] dark:text-[#8fa0a9] sm:text-[12px]">{formatClock(post.publishedAt, post.time)}</span><span className="absolute right-[-8px] top-[26px] h-2.5 w-2.5 rounded-full border-2 border-[#f7f7f3] bg-[#2b858b] dark:border-[#0d151b]" />{index < ordered.length - 1 ? <span className="absolute right-[-4px] top-9 h-[calc(100%+12px)] w-px bg-[#d8e0dc] dark:bg-[#2d3b45]" /> : null}</div>
-              <FeedCard post={post} event={eventByPost[post.id]} connectorLabel={connectorMap[post.sourceId] || post.sourceId} />
-            </div>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <h2 className="mb-0 border-0 p-0 text-[24px] font-bold tracking-[-0.03em] text-[#243236] dark:text-gray-100">动态时间线</h2>
+        <span className="pb-0.5 text-[12px] text-[#7c8987] dark:text-[#8b9aa3]">北京时间 · 最新在前 · 共 {posts.length} 条</span>
+      </div>
+      {days.length ? (
+        <div className="space-y-7">
+          {days.map((day) => (
+            <section key={day.dayKey} aria-labelledby={`timeline-day-${day.dayKey}`}>
+              <div className="mb-3 flex items-center gap-2 border-b border-[#dfe5e1] pb-2 dark:border-[#2c3943]">
+                {day.relativeLabel ? <span className="rounded-md bg-[#173f45] px-2 py-1 text-[11px] font-bold text-white dark:bg-[#cfe4dc] dark:text-[#17312d]">{day.relativeLabel}</span> : null}
+                <h3 id={`timeline-day-${day.dayKey}`} className="mb-0 text-[16px] font-bold text-[#314346] dark:text-gray-100">{day.dateLabel}</h3>
+                <span className="text-[11px] text-[#7c8987] dark:text-[#8b9aa3]">{day.weekday} · {day.posts.length} 条</span>
+              </div>
+              <div className="space-y-3">
+                {day.posts.map((post, index) => (
+                  <div key={post.id} className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
+                    <div className="relative pt-5 text-right"><span className="font-mono text-[11px] font-semibold text-[#6e7e80] dark:text-[#8fa0a9] sm:text-[12px]">{formatClock(post.publishedAt, post.time)}</span><span className="absolute right-[-8px] top-[26px] h-2.5 w-2.5 rounded-full border-2 border-[#f7f7f3] bg-[#2b858b] dark:border-[#0d151b]" />{index < day.posts.length - 1 ? <span className="absolute right-[-4px] top-9 h-[calc(100%+12px)] w-px bg-[#d8e0dc] dark:bg-[#2d3b45]" /> : null}</div>
+                    <FeedCard post={post} event={eventByPost[post.id]} connectorLabel={connectorMap[post.sourceId] || post.sourceId} />
+                  </div>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       ) : (
@@ -327,7 +331,7 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
           </header>
           <div className="mt-6 space-y-8">
             <HotRanking events={snapshot.events} topics={data.topics} onSelectTopic={setActiveTopicId} windowLabel={timeWindow === '6h' ? '6 小时' : timeWindow === '24h' ? '24 小时' : '48 小时'} />
-            <TimelineFeed posts={filteredPosts} events={snapshot.events} connectors={data.connectors} />
+            <TimelineFeed posts={filteredPosts} events={snapshot.events} connectors={data.connectors} referenceAt={data.generatedAt} />
             <TrendSection trendPoints={data.trendPoints} snapshot={snapshot} />
             <SourceSection connectors={data.connectors} sourceCounts={snapshot.sourceCounts} />
             <section className="rounded-2xl border border-[#dce3df] bg-[#eef4f1] px-5 py-4 dark:border-[#2b3943] dark:bg-[#132229]">

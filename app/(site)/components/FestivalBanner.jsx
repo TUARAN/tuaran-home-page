@@ -25,12 +25,20 @@ export default function FestivalBanner() {
       aria-label={accessibleTitle}
     >
       {banner.leftImage ? (
-        <img
-          className={`home-national-day-flag${banner.animateLeft ? ' is-animated' : ''}`}
-          src={banner.leftImage}
-          alt=""
-          aria-hidden="true"
-        />
+        <span className={`home-national-day-flag-art${banner.animateLeft ? ' is-animated' : ''}`} aria-hidden="true">
+          <img
+            className="home-national-day-flag home-national-day-flag-pole"
+            src={banner.leftImage}
+            alt=""
+          />
+          {banner.animateLeft ? (
+            <img
+              className="home-national-day-flag home-national-day-flag-cloth"
+              src={banner.leftImage}
+              alt=""
+            />
+          ) : null}
+        </span>
       ) : null}
       <div className="home-national-day-copy">
         <span className="home-national-day-title home-national-day-title-full">{banner.title}</span>

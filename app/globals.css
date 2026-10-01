@@ -1189,19 +1189,32 @@
     white-space: nowrap;
   }
 
-  .home-national-day-flag {
+  .home-national-day-flag-art {
     position: absolute;
     z-index: 1;
     bottom: -0.15rem;
     left: clamp(0.5rem, 2.2vw, 2rem);
     width: clamp(6.75rem, 9vw, 7.5rem);
-    height: auto;
+    aspect-ratio: 259 / 260;
     filter: drop-shadow(0 8px 10px rgba(52, 5, 6, 0.28));
     pointer-events: none;
-    transform-origin: 8% 52%;
   }
 
-  .home-national-day-flag.is-animated {
+  .home-national-day-flag {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .home-national-day-flag-art.is-animated .home-national-day-flag-pole {
+    clip-path: polygon(0 0, 24% 0, 24% 100%, 0 100%);
+  }
+
+  .home-national-day-flag-cloth {
+    clip-path: polygon(20% 0, 100% 0, 100% 100%, 20% 100%);
+    transform-origin: 21% 43%;
     animation: home-national-day-flag-wave 2.4s ease-in-out infinite;
   }
 
@@ -1244,7 +1257,7 @@
     background: var(--site-line-strong);
   }
 
-  :root[data-reading='eink'] .home-national-day-flag {
+  :root[data-reading='eink'] .home-national-day-flag-art {
     filter: grayscale(1);
     opacity: 0.55;
   }
@@ -1255,13 +1268,13 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-national-day-flag.is-animated {
+    .home-national-day-flag-cloth {
       animation: none;
     }
   }
 
   @media (max-width: 1099px) {
-    .home-national-day-flag {
+    .home-national-day-flag-art {
       opacity: 0.32;
     }
 
@@ -1279,7 +1292,7 @@
       border-radius: 17px;
     }
 
-    .home-national-day-flag {
+    .home-national-day-flag-art {
       position: relative;
       bottom: auto;
       left: auto;
@@ -1332,7 +1345,7 @@
   }
 
   @media (max-width: 374px) {
-    .home-national-day-flag {
+    .home-national-day-flag-art {
       position: absolute;
       width: 4.5rem;
       opacity: 0.2;

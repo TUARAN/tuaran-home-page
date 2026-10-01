@@ -1035,6 +1035,12 @@
   }
 
   .home-national-day {
+    --festival-start: #7f211f;
+    --festival-mid: #a4312b;
+    --festival-end: #84221f;
+    --festival-accent: #a7302b;
+    --festival-ink: #fff8e9;
+    --festival-glow: rgba(255, 235, 190, 0.24);
     position: relative;
     z-index: 1;
     display: flex;
@@ -1042,17 +1048,47 @@
     align-items: center;
     justify-content: center;
     gap: clamp(1.25rem, 4vw, 3.75rem);
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: 1rem;
     padding: 1rem clamp(1.25rem, 4vw, 3.5rem);
-    border: 1px solid color-mix(in srgb, #a7302b 35%, var(--site-line));
+    border: 1px solid color-mix(in srgb, var(--festival-accent) 35%, var(--site-line));
     border-radius: 22px;
     background:
-      radial-gradient(circle at 88% 22%, rgba(255, 235, 190, 0.24), transparent 24%),
-      linear-gradient(115deg, #7f211f 0%, #a4312b 54%, #84221f 100%);
-    box-shadow: 0 14px 38px color-mix(in srgb, #5e1715 18%, transparent);
-    color: #fff8e9;
+      radial-gradient(circle at 88% 22%, var(--festival-glow), transparent 24%),
+      linear-gradient(115deg, var(--festival-start) 0%, var(--festival-mid) 54%, var(--festival-end) 100%);
+    box-shadow: 0 14px 38px color-mix(in srgb, var(--festival-start) 18%, transparent);
+    color: var(--festival-ink);
     text-align: center;
+  }
+
+  .home-national-day[data-festival-theme='spring'] {
+    --festival-start: #7b1721;
+    --festival-mid: #c3372f;
+    --festival-end: #93201f;
+    --festival-accent: #d69b43;
+  }
+
+  .home-national-day[data-festival-theme='warm'] {
+    --festival-start: #6d3d17;
+    --festival-mid: #a96324;
+    --festival-end: #75421c;
+    --festival-accent: #dba856;
+  }
+
+  .home-national-day[data-festival-theme='cool'] {
+    --festival-start: #174d58;
+    --festival-mid: #247481;
+    --festival-end: #1b4d68;
+    --festival-accent: #74b9bd;
+    --festival-glow: rgba(208, 249, 242, 0.18);
+  }
+
+  .home-national-day[data-festival-theme='neutral'] {
+    --festival-start: #403f3a;
+    --festival-mid: #67635b;
+    --festival-end: #44413c;
+    --festival-accent: #a7a18f;
+    --festival-glow: rgba(255, 255, 255, 0.12);
   }
 
   .home-national-day::before,
@@ -1163,26 +1199,32 @@
     filter: drop-shadow(0 8px 10px rgba(52, 5, 6, 0.28));
     pointer-events: none;
     transform-origin: 8% 52%;
-    animation: home-national-day-flag-wave 3.2s ease-in-out infinite;
+  }
+
+  .home-national-day-flag.is-animated {
+    animation: home-national-day-flag-wave 2.4s ease-in-out infinite;
   }
 
   .home-national-day-tiananmen {
     position: absolute;
     z-index: 1;
     right: clamp(0.6rem, 2vw, 1.8rem);
-    bottom: -0.2rem;
-    width: clamp(8.5rem, 13vw, 11rem);
-    height: auto;
+    bottom: 0.25rem;
+    width: auto;
+    height: calc(100% - 0.5rem);
     opacity: 0.62;
     pointer-events: none;
   }
 
   @keyframes home-national-day-flag-wave {
     0%, 100% {
-      transform: rotate(-0.8deg) translateY(0) scaleX(1);
+      transform: rotate(-1.2deg) translateY(1px) skewY(0deg) scaleX(1.015);
     }
-    50% {
-      transform: rotate(0.9deg) translateY(-2px) scaleX(0.985);
+    35% {
+      transform: rotate(1.4deg) translateY(-4px) skewY(-1.6deg) scaleX(0.95);
+    }
+    70% {
+      transform: rotate(-0.7deg) translateY(3px) skewY(1.1deg) scaleX(1.025);
     }
   }
 
@@ -1213,7 +1255,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-national-day-flag {
+    .home-national-day-flag.is-animated {
       animation: none;
     }
   }

@@ -47,6 +47,7 @@ import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/secondarySites'
 import HomeCodexResetCard from './components/HomeCodexResetCard'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
+import FestivalBanner from './components/FestivalBanner'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -646,49 +647,11 @@ function FounderCompanyText() {
   )
 }
 
-function NationalDayCommemoration() {
-  return (
-    <section className="home-national-day" aria-label="庆祝中华人民共和国成立 77 周年">
-      <Image
-        className="home-national-day-flag"
-        src="/images/home/national-day-flag.webp"
-        alt=""
-        width={259}
-        height={260}
-        unoptimized
-        aria-hidden="true"
-      />
-      <div className="home-national-day-copy">
-        <span className="home-national-day-title home-national-day-title-full">热烈庆祝中华人民共和国成立</span>
-        <span className="home-national-day-title home-national-day-title-compact">热烈庆祝新中国成立</span>
-        <span className="home-national-day-years" aria-label="一九四九年至二〇二六年">
-          <i aria-hidden="true" />
-          一九四九 · 二〇二六
-          <i aria-hidden="true" />
-        </span>
-      </div>
-      <span className="home-national-day-anniversary" aria-label="七十七周年">
-        <strong>77</strong>
-        <small>周年</small>
-      </span>
-      <Image
-        className="home-national-day-tiananmen"
-        src="/images/home/national-day-tiananmen.webp"
-        alt=""
-        width={261}
-        height={240}
-        unoptimized
-        aria-hidden="true"
-      />
-    </section>
-  )
-}
-
 function ClassicHomePage({ featuredPicks }) {
   return (
     <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10">
       <section className="mb-14 flex-1">
-        <NationalDayCommemoration />
+        <FestivalBanner />
         <header className="classic-home-hero relative mb-12 overflow-hidden rounded-[28px] border px-6 py-7 md:px-12 md:py-10">
           <div className="classic-home-hero-glow pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] lg:block" />
           <div className="classic-home-hero-watermark pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 font-mono text-[3.2rem] font-semibold uppercase leading-none tracking-[0.16em] lg:block xl:right-20 2xl:text-[4.4rem]">
@@ -902,7 +865,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       />
       <div className="home-backdrop" aria-hidden="true" />
       <HomeMobileChannels />
-      <NationalDayCommemoration />
+      <FestivalBanner />
       <div className="home-main-grid">
         <HomePrimaryColumnsClient
           catalog={featuredPicks}

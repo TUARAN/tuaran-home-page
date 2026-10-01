@@ -15,6 +15,12 @@ export const metadata = {
   alternates: {
     canonical: '/circles',
   },
+  openGraph: {
+    title: '圈子',
+    description: '涂阿燃主题圈子介绍与加群入口：了解各圈子的主题、参与方式、费用和加群流程。',
+    url: '/circles',
+    type: 'website',
+  },
   robots: {
     index: true,
     follow: true,
@@ -56,9 +62,22 @@ function TopicCircleCard({ topic, index }) {
   )
 }
 
+const circlesJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: '圈子',
+  description: '涂阿燃主题圈子介绍与加群入口：了解各圈子的主题、参与方式、费用和加群流程。',
+  url: 'https://2aran.com/circles',
+  inLanguage: 'zh-CN',
+}
+
 export default function CirclesPage() {
   return (
     <PageContainer className="py-4 md:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(circlesJsonLd).replace(/</g, '\\u003c') }}
+      />
       <div className="community-page">
         <header className="community-hero">
           <div className="community-hero-copy">

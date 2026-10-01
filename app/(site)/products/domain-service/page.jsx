@@ -22,6 +22,21 @@ export const metadata = {
   description: '查看 TUARAN 当前持有的域名；如有购买意向，可扫码添加微信咨询。',
   keywords: ['域名服务', '域名购买', '域名资产', 'TUARAN'],
   alternates: { canonical: '/products/domain-service' },
+  openGraph: {
+    title: '域名服务',
+    description: '查看 TUARAN 当前持有的域名；如有购买意向，可扫码添加微信咨询。',
+    url: '/products/domain-service',
+    type: 'website',
+  },
+}
+
+const domainServiceJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: '域名服务',
+  description: '查看 TUARAN 当前持有的域名；如有购买意向，可扫码添加微信咨询。',
+  url: 'https://2aran.com/products/domain-service',
+  inLanguage: 'zh-CN',
 }
 
 const HERO_DOMAINS = ['2aran.com', 'blogger-alliance.cn', 'frontendnext.com']
@@ -40,6 +55,10 @@ export default function DomainServicePage() {
 
   return (
     <PageContainer className="overflow-hidden py-4 md:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(domainServiceJsonLd).replace(/</g, '\\u003c') }}
+      />
       <div className="mx-auto max-w-6xl">
         <Link href="/works" className="mb-6 inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--site-muted)] no-underline transition hover:-translate-x-0.5 hover:text-[var(--site-ink)]">
           <IconArrowLeft size={16} aria-hidden="true" />

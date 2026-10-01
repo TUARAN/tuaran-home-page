@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 203,
+    "routes": 212,
     "redirects": 15,
-    "private": 55,
-    "registeredStatic": 96,
-    "indexable": 112,
-    "canonical": 128,
-    "openGraph": 67,
-    "jsonLd": 44,
+    "private": 58,
+    "registeredStatic": 101,
+    "indexable": 117,
+    "canonical": 134,
+    "openGraph": 72,
+    "jsonLd": 49,
     "errors": 3,
     "warnings": 132
   },
@@ -757,6 +757,22 @@
       }
     },
     {
+      "path": "/admin/rewards",
+      "file": "app/(admin)/admin/rewards/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/rss-feeds",
       "file": "app/(admin)/admin/rss-feeds/page.jsx",
       "kind": "private",
@@ -855,6 +871,22 @@
     {
       "path": "/admin/site-dev",
       "file": "app/(admin)/admin/site-dev/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/site-health",
+      "file": "app/(admin)/admin/site-health/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -983,6 +1015,22 @@
     {
       "path": "/admin/wallpapers",
       "file": "app/(admin)/admin/wallpapers/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/x-replies",
+      "file": "app/(admin)/admin/x-replies/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -1395,6 +1443,45 @@
       }
     },
     {
+      "path": "/checkin",
+      "file": "app/(site)/checkin/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/checkin"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/checkin",
+          "https://2aran.com/checkin"
+        ]
+      }
+    },
+    {
+      "path": "/checkin/publishing",
+      "file": "app/(site)/checkin/publishing/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/checkin/publishing"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/china-politics",
       "file": "app/(site)/china-politics/page.jsx",
       "kind": "static",
@@ -1410,6 +1497,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/circles",
+      "file": "app/(site)/circles/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/circles"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/circles"
+        ]
       }
     },
     {
@@ -1776,6 +1883,38 @@
       }
     },
     {
+      "path": "/industry-classification",
+      "file": "app/(site)/industry-classification/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/kids-english-roadmap",
+      "file": "app/(site)/kids-english-roadmap/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/login",
       "file": "app/(site)/login/page.jsx",
       "kind": "static",
@@ -2067,6 +2206,27 @@
         "openGraph": true,
         "jsonLd": true,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/products/domain-service",
+      "file": "app/(site)/products/domain-service/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/products/domain-service"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/products/domain-service",
+          "https://2aran.com/products/domain-service"
+        ]
       }
     },
     {

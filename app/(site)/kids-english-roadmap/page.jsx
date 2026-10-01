@@ -16,6 +16,23 @@ export const metadata = {
   },
 }
 
+const kidsEnglishJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: '2–5 岁幼儿英语分层学习路线',
+  description: '从 1 岁 9 个月起步的幼儿英语家庭方案：年龄分层、每日练习、动画片单、方法论与可信来源。',
+  url: PAGE_URL,
+  inLanguage: 'zh-CN',
+}
+
 export default function KidsEnglishRoadmapPage() {
-  return <KidsEnglishRoadmapClient />
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(kidsEnglishJsonLd).replace(/</g, '\\u003c') }}
+      />
+      <KidsEnglishRoadmapClient />
+    </>
+  )
 }

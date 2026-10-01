@@ -258,31 +258,39 @@ export default function SpaceXTimelineClient({ entries, launchSourceStatus, stat
               </div>
               <p className="text-xs text-slate-600">数据口径截至 2026 年 9 月 20 日</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-[1480px] w-full border-collapse text-left text-xs leading-6">
+            <div className="min-w-0 overflow-x-auto [scrollbar-color:rgba(148,163,184,0.45)_transparent] [scrollbar-width:thin]">
+              <table data-table-style="custom" className="w-full min-w-[760px] table-fixed border-collapse bg-[#080d14] text-left text-xs leading-6 lg:min-w-full">
                 <caption className="sr-only">Falcon、Starlink、Dragon 与 Starship 详细能力对比</caption>
+                <colgroup>
+                  <col className="w-[12%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[22%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.025] text-[10px] uppercase tracking-[0.12em] text-slate-500">
                     {['项目', '本质', '能到哪里', '推力', '可回收情况', '当前发射近况'].map((heading, index) => (
-                      <th key={heading} scope="col" className={`px-5 py-4 font-medium ${index === 0 ? 'sticky left-0 z-10 w-[130px] bg-[#0b111a]' : index === 5 ? 'w-[410px]' : 'w-[235px]'}`}>{heading}</th>
+                      <th key={heading} scope="col" className={`break-words px-4 py-4 align-bottom font-medium md:px-5 ${index === 0 ? 'sticky left-0 z-10 bg-[#0b111a]' : ''}`}>{heading}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {SYSTEM_DETAIL_ROWS.map((row) => (
+                  {SYSTEM_DETAIL_ROWS.map((row, rowIndex) => (
                     <tr key={row.name} className="border-b border-white/[0.07] align-top last:border-b-0">
-                      <th scope="row" className="sticky left-0 z-10 bg-[#080d14] px-5 py-5 text-base font-medium text-white shadow-[12px_0_20px_-20px_rgba(0,0,0,0.9)]">{row.name}</th>
-                      <td className="px-5 py-5 text-slate-300">{row.essence}</td>
-                      <td className="px-5 py-5 text-slate-400">{row.reach}</td>
-                      <td className="px-5 py-5 font-mono text-[11px] text-cyan-100">{row.thrust}</td>
-                      <td className="px-5 py-5 text-slate-400">{row.recovery}</td>
-                      <td className="px-5 py-5 text-slate-300">{row.status}</td>
+                      <th scope="row" className={`sticky left-0 z-10 px-4 py-5 text-sm font-medium text-white shadow-[12px_0_20px_-20px_rgba(0,0,0,0.9)] md:px-5 md:text-base ${rowIndex % 2 ? 'bg-[#0c121b]' : 'bg-[#080d14]'}`}>{row.name}</th>
+                      <td className={`break-words px-4 py-5 text-slate-300 md:px-5 ${rowIndex % 2 ? 'bg-[#0c121b]' : ''}`}>{row.essence}</td>
+                      <td className={`break-words px-4 py-5 text-slate-400 md:px-5 ${rowIndex % 2 ? 'bg-[#0c121b]' : ''}`}>{row.reach}</td>
+                      <td className={`break-words px-4 py-5 font-mono text-[11px] text-cyan-100 md:px-5 ${rowIndex % 2 ? 'bg-[#0c121b]' : ''}`}>{row.thrust}</td>
+                      <td className={`break-words px-4 py-5 text-slate-400 md:px-5 ${rowIndex % 2 ? 'bg-[#0c121b]' : ''}`}>{row.recovery}</td>
+                      <td className={`break-words px-4 py-5 text-slate-300 md:px-5 ${rowIndex % 2 ? 'bg-[#0c121b]' : ''}`}>{row.status}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="border-t border-white/10 px-5 py-3 text-[11px] text-slate-600">表格较宽，可左右滑动查看完整对比</p>
+            <p className="border-t border-white/10 px-5 py-3 text-[11px] text-slate-600 lg:hidden">表格较宽，可左右滑动查看完整对比</p>
           </div>
         </div>
       </section>

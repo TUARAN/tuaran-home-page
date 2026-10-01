@@ -679,7 +679,7 @@ function StandingsTab({ data }) {
               </span>
               第 {gid} 组
             </div>
-            <table className="w-full text-[11px]">
+            <table data-table-style="custom" className="w-full bg-transparent text-[11px]">
               <thead>
                 <tr style={{ color: D.text3 }} className="border-b" >
                   <th className="text-left py-2 px-3 w-6">#</th>
@@ -789,7 +789,7 @@ function ScorersList({ rows }) {
   }
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: D.bg2, border: `1px solid ${D.line}` }}>
-      <table className="w-full text-[12px]">
+      <table data-table-style="custom" className="w-full bg-transparent text-[12px]">
         <thead>
           <tr style={{ color: D.text3, background: hexToRgba(D.gold, 0.05) }}>
             <th className="text-center py-2 px-3 w-12">#</th>
@@ -816,7 +816,7 @@ function AssistsList({ rows }) {
   }
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: D.bg2, border: `1px solid ${D.line}` }}>
-      <table className="w-full text-[12px]">
+      <table data-table-style="custom" className="w-full bg-transparent text-[12px]">
         <thead>
           <tr style={{ color: D.text3, background: hexToRgba(D.gold, 0.05) }}>
             <th className="text-center py-2 px-3 w-12">#</th>
@@ -850,7 +850,7 @@ function CardsList({ rows }) {
   }
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: D.bg2, border: `1px solid ${D.line}` }}>
-      <table className="w-full text-[12px]">
+      <table data-table-style="custom" className="w-full bg-transparent text-[12px]">
         <thead>
           <tr style={{ color: D.text3, background: hexToRgba(D.gold, 0.05) }}>
             <th className="text-center py-2 px-3 w-12">#</th>

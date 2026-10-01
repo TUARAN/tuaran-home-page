@@ -1034,6 +1034,189 @@
     @apply mb-0 border-b-0 pb-0 font-serif text-[1.55rem] font-bold tracking-[0.02em] text-[#15140f] dark:text-gray-100;
   }
 
+  .home-national-day {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-height: 104px;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.25rem, 4vw, 3.75rem);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    padding: 1rem clamp(1.25rem, 4vw, 3.5rem);
+    border: 1px solid color-mix(in srgb, #a7302b 35%, var(--site-line));
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 88% 22%, rgba(255, 235, 190, 0.24), transparent 24%),
+      linear-gradient(115deg, #7f211f 0%, #a4312b 54%, #84221f 100%);
+    box-shadow: 0 14px 38px color-mix(in srgb, #5e1715 18%, transparent);
+    color: #fff8e9;
+    text-align: center;
+  }
+
+  .home-national-day::before,
+  .home-national-day::after {
+    content: "";
+    position: absolute;
+    width: clamp(7rem, 16vw, 15rem);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 226, 164, 0.48), transparent);
+    transform: rotate(-32deg);
+  }
+
+  .home-national-day::before {
+    top: 1.1rem;
+    left: -2.5rem;
+  }
+
+  .home-national-day::after {
+    right: -2.5rem;
+    bottom: 1.1rem;
+  }
+
+  .home-national-day-copy {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .home-national-day-title {
+    font-family: "Songti SC", STSong, SimSun, serif;
+    font-size: clamp(1.05rem, 2vw, 1.55rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.16em;
+    text-shadow: 0 1px 10px rgba(45, 6, 5, 0.18);
+  }
+
+  .home-national-day-title-compact {
+    display: none;
+  }
+
+  .home-national-day-years {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: rgba(255, 242, 211, 0.78);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+    line-height: 1;
+    letter-spacing: 0.18em;
+  }
+
+  .home-national-day-years i {
+    width: clamp(1.4rem, 4vw, 3.6rem);
+    height: 1px;
+    background: currentColor;
+    opacity: 0.56;
+  }
+
+  .home-national-day-anniversary {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-end;
+    gap: 0.35rem;
+    padding-left: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  .home-national-day-anniversary::before {
+    content: "";
+    position: absolute;
+    top: 12%;
+    bottom: 8%;
+    left: 0;
+    width: 1px;
+    background: rgba(255, 226, 164, 0.38);
+  }
+
+  .home-national-day-anniversary strong {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.8rem, 5vw, 4.4rem);
+    font-weight: 500;
+    line-height: 0.78;
+    letter-spacing: -0.06em;
+  }
+
+  .home-national-day-anniversary small {
+    padding-bottom: 0.12rem;
+    color: rgba(255, 242, 211, 0.84);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+
+  :root[data-reading='eink'] .home-national-day {
+    border-color: var(--site-line-strong);
+    background: var(--site-panel-strong);
+    box-shadow: none;
+    color: var(--site-ink);
+  }
+
+  :root[data-reading='eink'] .home-national-day-years,
+  :root[data-reading='eink'] .home-national-day-anniversary small {
+    color: var(--site-muted);
+  }
+
+  :root[data-reading='eink'] .home-national-day-anniversary::before {
+    background: var(--site-line-strong);
+  }
+
+  @media (max-width: 639px) {
+    .home-national-day {
+      min-height: 82px;
+      justify-content: space-between;
+      gap: 0.8rem;
+      padding: 0.85rem 1rem;
+      border-radius: 17px;
+    }
+
+    .home-national-day-copy {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .home-national-day-title-full {
+      display: none;
+    }
+
+    .home-national-day-title-compact {
+      display: inline;
+      font-size: clamp(0.98rem, 4.7vw, 1.18rem);
+      letter-spacing: 0.08em;
+    }
+
+    .home-national-day-years {
+      gap: 0.4rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+    }
+
+    .home-national-day-years i {
+      width: 0.8rem;
+    }
+
+    .home-national-day-anniversary {
+      gap: 0.2rem;
+      padding-left: 0.8rem;
+    }
+
+    .home-national-day-anniversary strong {
+      font-size: 2.55rem;
+    }
+
+    .home-national-day-anniversary small {
+      padding-bottom: 0.05rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+    }
+  }
+
   .home-page {
     @apply relative isolate mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-3 pb-9 sm:px-6 md:pt-5 md:pb-12 lg:px-10;
     color: var(--site-ink);

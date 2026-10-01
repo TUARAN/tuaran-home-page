@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { OriginalPreviewDialog } from './XImageThumbs'
 import { AdminButton, Section } from '../../components/ui'
 
-const TYPES = [['', '全部类型'], ['greeting', '问候'], ['community-image', '朋友交流'], ['culture-story', '文化短故事'], ['crypto-insight', '加密观点'], ['us-english', '美区英文'], ['controversy-text', '话题帖']]
+const TYPES = [['', '全部类型'], ['joke-text', '纯文字段子'], ['greeting', '问候'], ['community-image', '朋友交流'], ['culture-story', '文化短故事'], ['crypto-insight', '加密观点'], ['us-english', '美区英文'], ['controversy-text', '话题帖']]
 const STATES = { pending: '待生成', generating: '生成中', ready: '待发布', failed: '失败待重试', publishing: '发布中 / 待核对', 'publish-unknown': '结果待核对', published: '已发布' }
 const fieldClass = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-3 text-xs text-[#45473f] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-200'
 const EMPTY_FILTERS = { keyword: '', from: '', to: '', type: '', status: '' }

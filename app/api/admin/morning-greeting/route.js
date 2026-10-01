@@ -18,6 +18,7 @@ import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
 import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
 import { xCryptoLastRunKey } from '../../../../lib/xCryptoPosts'
+import { xJokeLastRunKey } from '../../../../lib/xJokePosts'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
@@ -83,6 +84,9 @@ export async function GET(req) {
       cryptoKnowledgeRaw,
       cryptoMarketRaw,
       cryptoPeopleRaw,
+      jokeMorningRaw,
+      jokeAfternoonRaw,
+      jokeEveningRaw,
     ] = await Promise.all([
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
@@ -102,6 +106,9 @@ export async function GET(req) {
       readSetting(db, xCryptoLastRunKey('crypto_knowledge')),
       readSetting(db, xCryptoLastRunKey('crypto_market')),
       readSetting(db, xCryptoLastRunKey('crypto_people')),
+      readSetting(db, xJokeLastRunKey('joke_morning')),
+      readSetting(db, xJokeLastRunKey('joke_afternoon')),
+      readSetting(db, xJokeLastRunKey('joke_evening')),
     ])
     const lastRuns = {}
     for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
@@ -159,6 +166,18 @@ export async function GET(req) {
         cryptoRuns[key] = null
       }
     }
+    const jokeRuns = {}
+    for (const [key, raw] of [
+      ['joke_morning', jokeMorningRaw],
+      ['joke_afternoon', jokeAfternoonRaw],
+      ['joke_evening', jokeEveningRaw],
+    ]) {
+      try {
+        jokeRuns[key] = JSON.parse(raw || 'null')
+      } catch {
+        jokeRuns[key] = null
+      }
+    }
     let xApiCost
     try {
       xApiCost = await getXApiCostSummary(db, { postsPerDay: X_POST_SLOTS.length })
@@ -171,7 +190,7 @@ export async function GET(req) {
         todayMicroUsd: 0,
         monthPosts: 0,
         monthMicroUsd: 0,
-        projected30DayPosts: 300,
+        projected30DayPosts: X_POST_SLOTS.length * 30,
         projected30DayMicroUsd: projectedXPostCost({ postsPerDay: X_POST_SLOTS.length, days: 30 }),
         trackedSince: null,
       }
@@ -187,6 +206,7 @@ export async function GET(req) {
       communityRuns,
       usRuns,
       cryptoRuns,
+      jokeRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

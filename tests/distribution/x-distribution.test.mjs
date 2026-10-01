@@ -11,6 +11,7 @@ import * as community from '../../lib/xCommunityPosts.js'
 import * as usPosts from '../../lib/xUsAudiencePosts.js'
 import * as cryptoPosts from '../../lib/xCryptoPosts.js'
 import * as controversyPosts from '../../lib/xControversyPosts.js'
+import * as jokePosts from '../../lib/xJokePosts.js'
 import * as postingSchedule from '../../lib/xPostingSchedule.js'
 
 import {
@@ -256,7 +257,7 @@ async function cronFixture(t, overrides = {}) {
   const calls = { images: 0, copy: 0, upload: 0, publish: 0 }
   const env = { DB: fixture.db, MEDIA: fixture.bucket, MORNING_GREETING_SECRET: 'test-secret', AI: { run: async () => { calls.images++; return { image: PNG } } } }
   const dependencies = {
-    ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts, ...controversyPosts,
+    ...assetLibrary, ...greetings, ...greetingLlm, ...culture, ...community, ...usPosts, ...cryptoPosts, ...controversyPosts, ...jokePosts,
     ...postingSchedule,
     // Route behavior tests exercise retired formats explicitly; schedule tests cover production activation.
     isXPostSlotActive: () => true,
@@ -381,6 +382,29 @@ test('community tasks can still publish text without AI, R2 or media upload', as
   const rows = sqlite.prepare('SELECT * FROM x_post_assets').all()
   assert.equal(rows.length, textSlots.length)
   assert.ok(rows.every((row) => row.asset_source === 'text' && row.status === 'published'))
+})
+
+test('joke tasks always publish generated text without image storage or media upload', async (t) => {
+  const { invoke, env, calls, sqlite } = await cronFixture(t, {
+    callDeepSeek: async () => ({ content: '成年人的自律：闹钟响了先关掉，免得它继续打扰我反省。🙂', model: 'deepseek-v4-flash' }),
+    publishXPost: async (text, options) => {
+      assert.match(text, /闹钟响了/)
+      assert.deepEqual(options.mediaIds, [])
+      return { ok: true, post: { id: 'joke-1', text, url: 'https://x.com/i/web/status/joke-1' } }
+    },
+  })
+  delete env.MEDIA
+  const response = await invoke('joke=joke_morning')
+  assert.equal(response.status, 201)
+  const payload = await response.json()
+  assert.equal(payload.contentType, 'joke-text')
+  assert.equal(payload.imagePath, '')
+  assert.equal(calls.images, 0)
+  assert.equal(calls.upload, 0)
+  const row = sqlite.prepare('SELECT content_type, asset_source, status FROM x_post_assets').get()
+  assert.equal(row.content_type, 'joke-text')
+  assert.equal(row.asset_source, 'text')
+  assert.equal(row.status, 'published')
 })
 
 test('text retries preserve their format and draft even when the next draw would select an image', async (t) => {

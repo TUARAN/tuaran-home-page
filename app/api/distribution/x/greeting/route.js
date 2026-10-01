@@ -44,6 +44,13 @@ import {
   xControversyWithinTarget,
 } from '../../../../../lib/xControversyPosts'
 import {
+  buildXJokeMessages,
+  normalizeXJokeSlot,
+  normalizeXJokeText,
+  xJokeLastRunKey,
+  xJokeWithinTarget,
+} from '../../../../../lib/xJokePosts'
+import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODEL_SELECTIONS_KEY,
   DAILY_GREETING_MODE_KEY,
@@ -91,6 +98,15 @@ async function readRecentControversyTexts(db) {
     `SELECT text FROM x_post_assets
      WHERE content_type = 'controversy-text' AND status = 'published' AND text != ''
      ORDER BY updated_at DESC LIMIT 36`,
+  ).all()
+  return (results || []).map((row) => String(row.text || '').trim()).filter(Boolean)
+}
+
+async function readRecentJokeTexts(db) {
+  const { results } = await db.prepare(
+    `SELECT text FROM x_post_assets
+     WHERE content_type = 'joke-text' AND status = 'published' AND text != ''
+     ORDER BY updated_at DESC LIMIT 24`,
   ).all()
   return (results || []).map((row) => String(row.text || '').trim()).filter(Boolean)
 }
@@ -173,23 +189,32 @@ export async function POST(req) {
       { status: 400 },
     )
   }
-  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot), Boolean(cryptoSlot), Boolean(controversySlot)].filter(Boolean).length > 1) {
+  const requestedJokeSlot = searchParams.get('joke')
+  const jokeSlot = requestedJokeSlot ? normalizeXJokeSlot(requestedJokeSlot) : ''
+  if (requestedJokeSlot && !jokeSlot) {
+    return Response.json(
+      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 仅支持 joke_morning、joke_afternoon、joke_evening。' },
+      { status: 400 },
+    )
+  }
+  if ([Boolean(isCultureStory), Boolean(communitySlot), Boolean(usSlot), Boolean(cryptoSlot), Boolean(controversySlot), Boolean(jokeSlot)].filter(Boolean).length > 1) {
     return Response.json({ ok: false, error: 'AMBIGUOUS_CONTENT_TYPE' }, { status: 400 })
   }
   const isCommunityPost = Boolean(communitySlot)
   const isUsPost = Boolean(usSlot)
   const isCryptoPost = Boolean(cryptoSlot)
   const isControversyPost = Boolean(controversySlot)
+  const isJokePost = Boolean(jokeSlot)
   const communityVariant = isCommunityPost ? pickXCommunityVariant({ slot: communitySlot, now: requestNow }) : null
   const cryptoTopic = isCryptoPost ? pickXCryptoTopic({ slot: cryptoSlot, now: requestNow }) : ''
   const requestedPeriod = searchParams.get('period')
   const period = requestedPeriod
     ? normalizeGreetingPeriod(requestedPeriod, '')
     : greetingPeriodForDate()
-  if (!isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost && !period) {
+  if (!isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost && !isJokePost && !period) {
     return Response.json({ ok: false, error: 'INVALID_PERIOD', detail: 'period 仅支持 morning、noon、evening。' }, { status: 400 })
   }
-  const runSlot = controversySlot || storySlot || communitySlot || cryptoSlot || usSlot || period
+  const runSlot = jokeSlot || controversySlot || storySlot || communitySlot || cryptoSlot || usSlot || period
   if (!isXPostSlotActive(runSlot)) {
     return Response.json({ ok: true, skipped: true, reason: 'slot_paused' })
   }
@@ -200,10 +225,12 @@ export async function POST(req) {
   if (scheduledDate && (!schedule || scheduledDate !== schedule.date || !isXPostDue(schedule, requestNow))) {
     return Response.json({ ok: true, skipped: true, reason: 'outside_schedule_window' })
   }
-  const contentType = isControversyPost ? 'controversy-text' : isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
+  const contentType = isJokePost ? 'joke-text' : isControversyPost ? 'controversy-text' : isCultureStory ? 'culture-story' : isCommunityPost ? 'community-image' : isCryptoPost ? 'crypto-insight' : isUsPost ? 'us-english' : 'greeting'
   const storyCategory = isCultureStory ? cultureStoryCategory({ slot: storySlot, now: requestNow }) : ''
   const lastRunKey = isCultureStory
     ? cultureStoryLastRunKey(storySlot)
+    : isJokePost
+      ? xJokeLastRunKey(jokeSlot)
     : isCommunityPost
       ? xCommunityLastRunKey(communitySlot)
       : isCryptoPost
@@ -229,7 +256,7 @@ export async function POST(req) {
       return Response.json({ ok: false, error: 'AUTOMATION_STATE_UNAVAILABLE' }, { status: 503 })
     }
     try {
-      // 同一自然日的同一时段只成功发布一次；十五个时段分别记录，互不阻断。
+      // 同一自然日的同一时段只成功发布一次；各时段分别记录，互不阻断。
       const lastRunRaw = await readSetting(db, lastRunKey)
       if (lastRunRaw) {
         const lastRun = JSON.parse(lastRunRaw)
@@ -329,7 +356,7 @@ export async function POST(req) {
       }
     }
     generationMode = parseGreetingModelSelection(activeModelSelection)?.provider || 'deepseek'
-    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost
+    const greetingStyle = !isCultureStory && !isCommunityPost && !isUsPost && !isCryptoPost && !isControversyPost && !isJokePost
       ? pickDailyGreetingStyle()
       : null
 
@@ -345,8 +372,13 @@ export async function POST(req) {
         const recentControversyTexts = isControversyPost
           ? await readRecentControversyTexts(db).catch(() => [])
           : []
+        const recentJokeTexts = isJokePost
+          ? await readRecentJokeTexts(db).catch(() => [])
+          : []
         const generationArgs = {
-          messages: isControversyPost
+          messages: isJokePost
+            ? buildXJokeMessages({ slot: jokeSlot, recentTexts: recentJokeTexts, now: requestNow })
+            : isControversyPost
             ? buildXControversyMessages({
                 slot: controversySlot,
                 signals: controversySignals,
@@ -367,7 +399,9 @@ export async function POST(req) {
           task: {
             source: 'x-daily-greeting',
             taskType: 'direct-post-copy',
-            title: isControversyPost
+            title: isJokePost
+              ? `X 纯文字段子：${jokeSlot}`
+              : isControversyPost
               ? `X 热点争议短帖：${controversySlot}`
               : isCultureStory
               ? `X 文化短故事：${storySlot}`
@@ -380,7 +414,9 @@ export async function POST(req) {
                     : `X 每日问候：${period}`,
             actorId: 'cron:x-daily-greeting',
             actorName: '线上定时自动化',
-            inputSummary: isControversyPost
+            inputSummary: isJokePost
+              ? `时段：${jokeSlot}；形式：纯文字短段子；emoji：偶尔最多一个`
+              : isControversyPost
               ? `时段：${controversySlot}；热点候选：${controversySignals.map((item) => item.title).join('｜').slice(0, 900) || '无，使用常青冲突题'}`
               : isCultureStory
               ? `时段：${storySlot}；类别：${storyCategory}`
@@ -407,16 +443,20 @@ export async function POST(req) {
             metadata: { ...generationArgs.task.metadata, modelSelection: activeModelSelection },
           },
         }, env)
-        text = isControversyPost
+        text = isJokePost
+          ? normalizeXJokeText(generation.content)
+          : isControversyPost
           ? normalizeXControversyText(generation.content)
           : normalizeGeneratedGreeting(generation.content)
         if (!text) throw Object.assign(new Error('模型没有生成可发布文案'), { code: 'EMPTY_GENERATED_GREETING' })
 
-        if (isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
+        if (isJokePost ? !xJokeWithinTarget(text) : isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
           try {
             const repairArgs = {
               ...generationArgs,
-              messages: isControversyPost
+              messages: isJokePost
+                ? buildGreetingLengthRepairMessages({ text, targetWeight: 200 })
+                : isControversyPost
                 ? buildXControversyLengthRepairMessages({ text })
                 : isUsPost
                 ? buildXUsAudienceLengthRepairMessages({ text })
@@ -431,7 +471,9 @@ export async function POST(req) {
               },
             }
             const repaired = await callGreetingModel(activeModelSelection, repairArgs, env)
-            const repairedText = isControversyPost
+            const repairedText = isJokePost
+              ? normalizeXJokeText(repaired.content)
+              : isControversyPost
               ? normalizeXControversyText(repaired.content)
               : normalizeGeneratedGreeting(repaired.content)
             if (repairedText) {
@@ -442,7 +484,9 @@ export async function POST(req) {
             // 压缩调用失败时继续使用原文，由下方确定性限长兜底，避免定时任务整次失败。
           }
         }
-        text = isControversyPost
+        text = isJokePost
+          ? normalizeXJokeText(text)
+          : isControversyPost
           ? normalizeXControversyText(text)
           : fitGeneratedGreetingToXLimit(text).text
       } catch (error) {
@@ -472,7 +516,7 @@ export async function POST(req) {
         )
       }
     }
-    if (isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
+    if (isJokePost ? !xJokeWithinTarget(text) : isControversyPost ? !xControversyWithinTarget(text) : !greetingWithinLimit(text)) {
       if (db) {
         await writeSetting(
           db,
@@ -494,7 +538,7 @@ export async function POST(req) {
     }
     if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot, 280, communityVariant)
 
-    const postFormat = isControversyPost
+    const postFormat = isJokePost || isControversyPost
       ? (await updateXAsset(db, asset, { text, asset_source: 'text' }), 'text')
       : await saveXPostDraft(db, asset, {
           text,

@@ -3,6 +3,13 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
 import { runXAutoPosts } from '../scripts/run-x-auto-posts.mjs'
+import {
+  buildXJokeMessages,
+  normalizeXJokeSlot,
+  normalizeXJokeText,
+  pickXJokeAngle,
+  xJokeWithinTarget,
+} from '../lib/xJokePosts.js'
 
 
 import {
@@ -331,18 +338,18 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   const clientSource = await readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8')
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
-  assert.match(clientSource, /grid-cols-5/)
-  assert.match(clientSource, /grid-cols-5 items-stretch/)
+  assert.match(clientSource, /grid-cols-3/)
+  assert.match(clientSource, /grid-cols-3 items-stretch/)
   assert.match(clientSource, /min-h-40 flex-1 flex-col/)
   assert.doesNotMatch(clientSource, /item\.imageUrl/)
   assert.doesNotMatch(clientSource, /mt-1 h-full rounded-xl/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
-  assert.match(clientSource, /08:00/)
-  assert.match(clientSource, /09:30/)
-  assert.match(clientSource, /朋友交流/)
-  assert.match(clientSource, /加密观点/)
-  assert.match(clientSource, /美区英文/)
+  assert.match(clientSource, /joke_morning/)
+  assert.match(clientSource, /joke_afternoon/)
+  assert.match(clientSource, /joke_evening/)
+  assert.match(clientSource, /纯文字段子/)
+  assert.match(clientSource, /±90分钟/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
@@ -386,23 +393,17 @@ test('配图素材只管理图片，发布记录独立成可检索表格', async
   assert.match(recordsSource, /scope: 'runs'/)
 })
 
-test('mixed posting reserves five friendly slots and uses topic posts for the other 19 hours', async () => {
-  assert.equal(X_POST_SLOTS.length, 24)
+test('joke posting uses three daily windows with stable random offsets', async () => {
+  assert.equal(X_POST_SLOTS.length, 3)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
-  assert.deepEqual(day.map((task) => task.id), [
-    'controversy_00', 'controversy_01', 'controversy_02', 'controversy_03', 'controversy_04', 'controversy_05',
-    'controversy_06', 'controversy_07', 'morning', 'community_friends', 'controversy_10', 'controversy_11',
-    'noon', 'controversy_13', 'controversy_14', 'community_learning', 'controversy_16', 'controversy_17',
-    'controversy_18', 'community_growth', 'controversy_20', 'controversy_21', 'controversy_22', 'controversy_23',
-  ])
-  assert.equal(day.filter((task) => task.query === 'controversy').length, 19)
-  assert.equal(day.filter((task) => task.query !== 'controversy').length, 5)
+  assert.deepEqual(day.map((task) => task.id), ['joke_morning', 'joke_afternoon', 'joke_evening'])
+  assert.ok(day.every((task) => task.query === 'joke'))
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
   assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
   for (const task of [...day, ...nextDay]) {
     assert.ok(Number.isInteger(task.offsetMinutes))
-    assert.ok(Math.abs(task.offsetMinutes) <= 5)
+    assert.ok(Math.abs(task.offsetMinutes) <= 90)
     assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
   }
 })
@@ -415,13 +416,13 @@ test('schedule windows start at the target and reject expired or next-day trigge
     assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
     assert.equal(isXPostDue(task, new Date(task.scheduledAt + 45 * 60_000 + 1)), false)
   }
-  const late = day.find((task) => task.id === 'community_growth')
+  const late = day.find((task) => task.id === 'joke_evening')
   assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)
 })
 
 test('scheduler calls only due tasks, carries their date, and isolates request failures', async () => {
   const schedule = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 2)))
-  const due = schedule.find((task) => task.id === 'morning')
+  const due = schedule.find((task) => task.id === 'joke_morning')
   const requests = []
   const results = await runXAutoPosts({
     now: new Date(due.scheduledAt),
@@ -431,11 +432,32 @@ test('scheduler calls only due tasks, carries their date, and isolates request f
       assert.equal(query.get('scheduledDate'), '2026-08-29')
       assert.equal(init.headers['x-morning-greeting-secret'], 'test-secret')
       requests.push(query)
-      if (query.has('period')) throw new Error('network unavailable')
+      if (query.has('joke')) throw new Error('network unavailable')
       return Response.json({ ok: true }, { status: 201 })
     },
   })
   assert.equal(requests.length, 1)
-  assert.deepEqual(results.map((result) => result.slot).sort(), ['morning'])
+  assert.deepEqual(results.map((result) => result.slot).sort(), ['joke_morning'])
   assert.equal(results.filter((result) => result.ok).length, 0)
+})
+
+test('joke prompts generate short plain-text posts with occasional emoji guidance', () => {
+  assert.equal(normalizeXJokeSlot('JOKE_AFTERNOON'), 'joke_afternoon')
+  assert.equal(normalizeXJokeSlot('unknown'), '')
+  assert.equal(
+    pickXJokeAngle({ slot: 'joke_morning', now: new Date('2026-10-01T02:00:00Z') }),
+    pickXJokeAngle({ slot: 'joke_morning', now: new Date('2026-10-01T08:00:00Z') }),
+  )
+  const messages = buildXJokeMessages({
+    slot: 'joke_evening',
+    now: new Date('2026-10-01T12:00:00Z'),
+    recentTexts: ['旧段子一', '旧段子二'],
+  })
+  assert.match(messages[0].content, /中文纯文字段子/)
+  assert.match(messages[0].content, /大多数文案不用/)
+  assert.match(messages[0].content, /最多一个/)
+  assert.match(messages[1].content, /旧段子一/)
+  const normalized = normalizeXJokeText('文案：\n“开会前说只占五分钟。五分钟后，我学会了在镜头里睁着眼睡觉。🙂 #上班”')
+  assert.doesNotMatch(normalized, /文案|#上班/)
+  assert.equal(xJokeWithinTarget(normalized), true)
 })

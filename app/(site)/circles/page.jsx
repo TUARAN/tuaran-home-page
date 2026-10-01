@@ -96,7 +96,7 @@ export default function CirclesPage() {
           <div className="community-hero-side">
             <div className="community-stats">
               <div className="community-stat"><strong>{DISCUSSION_COMMUNITY_TOPICS.length}</strong><span>主题圈子</span></div>
-              <div className="community-stat"><strong>¥{COMMUNITY_MEMBERSHIP.price}</strong><span>每{COMMUNITY_MEMBERSHIP.period}</span></div>
+              <div className="community-stat"><strong>¥{COMMUNITY_MEMBERSHIP.earlyBird.price} 起</strong><span>限时早鸟</span></div>
               <div className="community-stat"><strong>微信</strong><span>人工拉群</span></div>
             </div>
           </div>

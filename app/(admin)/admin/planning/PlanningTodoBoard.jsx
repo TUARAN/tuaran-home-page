@@ -33,7 +33,6 @@ function D1RecoveryNotice({ milestone, forceVisible = false }) {
             <li>08:10 观察 X 自动发布</li>
             <li>08:17 观察舆情采集</li>
             <li>09:00 检查首小时写入量</li>
-            <li>12:00 完成半日复查</li>
           </ol>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">

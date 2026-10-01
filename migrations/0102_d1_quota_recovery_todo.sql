@@ -20,7 +20,7 @@ SELECT
   'milestone:d1-quota-recovery-2026-10-01', profile.direction_id, profile.project_id,
   'D1 配额恢复检查（2026-10-01）',
   '北京时间 08:00 配额自动重置。Pages、D1 和 GitHub Actions 无需重启；先观察自动调度，只补跑仍然失败的单个任务。',
-  'D1 可写；0103 已应用且 x_reply_tasks 表可用；X 自动发布与舆情采集各出现一次成功运行；09:00 与 12:00 写入曲线无异常；0100 全量迁移没有再次执行。',
+  'D1 可写；0103 已应用且 x_reply_tasks 表可用；X 自动发布与舆情采集各出现一次成功运行；09:00 首小时写入量无异常；0100 全量迁移没有再次执行。',
   'active', 'critical', 1790812800000, 1790827200000, NULL,
   'incident:d1-quota-recovery:2026-10-01', -100, NULL, 1790726400000, 1790726400000
 FROM planning_project_profiles profile
@@ -85,17 +85,5 @@ SELECT
   'planned', 'critical', 'TUARAN', 1790812800000, NULL, 1790816400000, NULL,
   '若首小时超过 10,000 行，先暂停舆情、互动机器人等可补跑采集，保留登录、内容发布和权益链路，再按 rows_written 排查。',
   '', 40, NULL, 1790726400000, 1790726400000
-FROM planning_milestones milestone
-WHERE milestone.id = 'milestone:d1-quota-recovery-2026-10-01';
-
-INSERT OR IGNORE INTO planning_tasks
-  (id, milestone_id, title, description, status, priority, assignee, planned_at, start_at, target_at, completed_at, note, blocked_reason, sort_order, archived_at, created_at, updated_at)
-SELECT
-  'task:d1-recovery-noon-review', milestone.id,
-  '12:00｜完成半日恢复复查',
-  '确认 X、舆情采集、登录与核心站内写入正常；核对累计写入量、Top queries 和失败告警，再决定是否恢复任何被暂停的非关键任务。',
-  'planned', 'high', 'TUARAN', 1790812800000, NULL, 1790827200000, NULL,
-  '半日累计建议低于 25,000 行。满足成功标准后，将五条任务和里程碑标记完成。',
-  '', 50, NULL, 1790726400000, 1790726400000
 FROM planning_milestones milestone
 WHERE milestone.id = 'milestone:d1-quota-recovery-2026-10-01';

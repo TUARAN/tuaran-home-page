@@ -649,6 +649,25 @@ function FounderCompanyText() {
 function NationalDayCommemoration() {
   return (
     <section className="home-national-day" aria-label="庆祝中华人民共和国成立 77 周年">
+      <svg
+        className="home-national-day-flag"
+        viewBox="0 0 190 112"
+        aria-hidden="true"
+      >
+        <path d="M19 10v94" fill="none" stroke="#e5c37c" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="19" cy="8" r="4" fill="#f4d995" />
+        <g className="home-national-day-flag-cloth">
+          <path d="M22 19C65 10 112 32 174 24V88C119 98 72 69 22 81Z" fill="#d72f2b" />
+          <path d="M22 19C68 14 111 35 174 24V42C116 47 72 26 22 34Z" fill="#f05845" opacity=".58" />
+          <path className="home-national-day-flag-fold" d="M24 72C76 58 112 91 172 78" fill="none" stroke="#8d1719" strokeWidth="10" opacity=".28" />
+          <path d="M22 19C60 14 80 28 103 33C70 35 51 28 22 34Z" fill="#ff8170" opacity=".34" />
+          <polygon points="49,30 52.7,41.1 64.4,41.1 55,47.9 58.6,59 49,52.2 39.4,59 43,47.9 33.6,41.1 45.3,41.1" fill="#ffdf57" />
+          <polygon points="74,28 76,33.7 82,33.8 77.2,37.4 78.9,43.2 74,39.8 69,43.2 70.8,37.4 66,33.8 72,33.7" fill="#ffdf57" />
+          <polygon points="86,43 88,48.7 94,48.8 89.2,52.4 90.9,58.2 86,54.8 81,58.2 82.8,52.4 78,48.8 84,48.7" fill="#ffdf57" />
+          <polygon points="82,61 84,66.7 90,66.8 85.2,70.4 86.9,76.2 82,72.8 77,76.2 78.8,70.4 74,66.8 80,66.7" fill="#ffdf57" />
+          <polygon points="68,72 70,77.7 76,77.8 71.2,81.4 72.9,87.2 68,83.8 63,87.2 64.8,81.4 60,77.8 66,77.7" fill="#ffdf57" />
+        </g>
+      </svg>
       <div className="home-national-day-copy">
         <span className="home-national-day-title home-national-day-title-full">热烈庆祝中华人民共和国成立</span>
         <span className="home-national-day-title home-national-day-title-compact">热烈庆祝新中国成立</span>
@@ -662,6 +681,18 @@ function NationalDayCommemoration() {
         <strong>77</strong>
         <small>周年</small>
       </span>
+      <svg
+        className="home-national-day-tiananmen"
+        viewBox="0 0 220 112"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M30 95h160M42 88h136M51 62h118v26H51zM43 61h134L158 48H62L43 61zM62 44h96M74 43h72l-11-12H85L74 43zM83 28h54M91 27h38l-7-9h-24l-7 9z" />
+        <path d="M63 67h94v21H63zM100 65h20v23h-20z" />
+        <path d="M70 88V75a8 8 0 0 1 16 0v13M134 88V75a8 8 0 0 1 16 0v13M92 88V76M128 88V76" />
+        <path d="M14 95h192M22 101h176M80 18h60M49 53h122" opacity=".72" />
+        <circle cx="110" cy="75" r="5" />
+      </svg>
     </section>
   )
 }

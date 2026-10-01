@@ -1158,21 +1158,12 @@
     z-index: 1;
     bottom: -0.15rem;
     left: clamp(0.5rem, 2.2vw, 2rem);
-    width: clamp(8.5rem, 15vw, 12rem);
+    width: clamp(6.75rem, 9vw, 7.5rem);
     height: auto;
-    overflow: visible;
     filter: drop-shadow(0 8px 10px rgba(52, 5, 6, 0.28));
     pointer-events: none;
-  }
-
-  .home-national-day-flag-cloth {
-    transform-box: fill-box;
-    transform-origin: left center;
+    transform-origin: 8% 52%;
     animation: home-national-day-flag-wave 3.2s ease-in-out infinite;
-  }
-
-  .home-national-day-flag-fold {
-    animation: home-national-day-flag-fold 3.2s ease-in-out infinite;
   }
 
   .home-national-day-tiananmen {
@@ -1180,34 +1171,18 @@
     z-index: 1;
     right: clamp(0.6rem, 2vw, 1.8rem);
     bottom: -0.2rem;
-    width: clamp(9.5rem, 16vw, 13rem);
+    width: clamp(8.5rem, 13vw, 11rem);
     height: auto;
-    color: #f0cf84;
-    opacity: 0.4;
+    opacity: 0.62;
     pointer-events: none;
-    stroke: currentColor;
-    stroke-width: 1.65;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   @keyframes home-national-day-flag-wave {
     0%, 100% {
-      transform: perspective(220px) rotateY(-3deg) skewY(0deg) scaleX(1);
+      transform: rotate(-0.8deg) translateY(0) scaleX(1);
     }
     50% {
-      transform: perspective(220px) rotateY(5deg) skewY(-1.8deg) scaleX(0.975);
-    }
-  }
-
-  @keyframes home-national-day-flag-fold {
-    0%, 100% {
-      opacity: 0.2;
-      transform: translateY(0);
-    }
-    50% {
-      opacity: 0.38;
-      transform: translateY(-3px);
+      transform: rotate(0.9deg) translateY(-2px) scaleX(0.985);
     }
   }
 
@@ -1233,12 +1208,12 @@
   }
 
   :root[data-reading='eink'] .home-national-day-tiananmen {
-    color: var(--site-muted);
+    filter: grayscale(1);
+    opacity: 0.4;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-national-day-flag-cloth,
-    .home-national-day-flag-fold {
+    .home-national-day-flag {
       animation: none;
     }
   }

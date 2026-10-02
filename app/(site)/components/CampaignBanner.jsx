@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import WavingFlag from './WavingFlag'
 
 /**
  * Reusable public-site campaign banner.
@@ -30,20 +31,12 @@ export default function CampaignBanner({
       aria-label={accessibleTitle}
     >
       {leftImage ? (
-        <span className={`home-national-day-flag-art${animateLeft ? ' is-animated' : ''}`} aria-hidden="true">
-          <img
-            className="home-national-day-flag home-national-day-flag-pole"
-            src={leftImage}
-            alt=""
-          />
-          {animateLeft ? (
-            <img
-              className="home-national-day-flag home-national-day-flag-cloth"
-              src={leftImage}
-              alt=""
-            />
-          ) : null}
-        </span>
+        <WavingFlag
+          className="home-national-day-flag-art"
+          src={leftImage}
+          animated={animateLeft}
+          aria-hidden="true"
+        />
       ) : null}
       <div className="home-national-day-copy">
         <span className="home-national-day-title home-national-day-title-full">{title}</span>

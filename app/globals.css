@@ -1200,7 +1200,13 @@
     pointer-events: none;
   }
 
-  .home-national-day-flag {
+  .waving-flag {
+    display: block;
+  }
+
+  .waving-flag__source,
+  .waving-flag__cloth,
+  .waving-flag__reduced-motion {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1208,16 +1214,21 @@
     object-fit: contain;
   }
 
-  .home-national-day-flag-art.is-animated .home-national-day-flag-pole {
+  .waving-flag.is-animated .waving-flag__source {
     clip-path: polygon(0 0, 7.5% 0, 7.5% 100%, 0 100%);
   }
 
-  .home-national-day-flag-cloth {
+  .waving-flag__cloth {
+    inset: -6.15%;
+    width: 112.35%;
+    height: 112.3%;
+    overflow: visible;
+    will-change: filter;
+  }
+
+  .waving-flag__reduced-motion {
+    display: none;
     clip-path: polygon(6% 0, 100% 0, 100% 100%, 6% 100%);
-    transform-origin: 7% 42%;
-    transform-style: preserve-3d;
-    will-change: transform;
-    animation: home-national-day-flag-wave 2.4s ease-in-out infinite;
   }
 
   .home-national-day-tiananmen {
@@ -1229,18 +1240,6 @@
     height: calc(100% - 0.5rem);
     opacity: 0.62;
     pointer-events: none;
-  }
-
-  @keyframes home-national-day-flag-wave {
-    0%, 100% {
-      transform: perspective(420px) rotateY(0deg) scaleX(1);
-    }
-    35% {
-      transform: perspective(420px) rotateY(-9deg) scaleX(0.965);
-    }
-    70% {
-      transform: perspective(420px) rotateY(6deg) scaleX(1.018);
-    }
   }
 
   :root[data-reading='eink'] .home-national-day {
@@ -1270,8 +1269,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .home-national-day-flag-cloth {
-      animation: none;
+    .waving-flag__cloth {
+      display: none;
+    }
+
+    .waving-flag__reduced-motion {
+      display: block;
     }
   }
 
@@ -8291,9 +8294,20 @@
     color: var(--site-muted) !important;
   }
 
-  .articles-index-stone :where(.article-row > div > div:last-child) {
+  .articles-index-stone .article-row .h5-feed-thumb {
     border-color: var(--site-line) !important;
     background-color: color-mix(in srgb, var(--site-panel) 88%, transparent) !important;
+  }
+
+  @media (max-width: 767px) {
+    .h5-articles-page .articles-index-stone .article-row,
+    .h5-articles-page .articles-index-stone .article-row:hover {
+      background-color: transparent !important;
+    }
+
+    .h5-articles-page .articles-index-stone .article-row .h5-feed-thumb {
+      background-color: var(--site-panel) !important;
+    }
   }
 
   .dark .back-to-top-button {

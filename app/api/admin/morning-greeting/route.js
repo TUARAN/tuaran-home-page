@@ -59,24 +59,30 @@ export async function GET(req) {
   }
 
   try {
-    const [state, modeRaw, intentRaw, jokeSettings] = await Promise.all([
+    const [state, modeRaw, intentRaw, runSettings] = await Promise.all([
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
       readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
       db.prepare(
         `SELECT key, value FROM site_settings
-         WHERE key LIKE 'automation.x_joke.last_run.joke_%'`,
+         WHERE key LIKE 'automation.x_joke.last_run.joke_%'
+            OR key LIKE 'automation.x_community.last_run.community_%'`,
       ).all(),
     ])
     const jokeRuns = {}
-    const prefix = 'automation.x_joke.last_run.'
-    for (const row of jokeSettings?.results || []) {
-      const slot = String(row.key || '').slice(prefix.length)
-      if (!slot) continue
+    const communityRuns = {}
+    const runGroups = [
+      { prefix: 'automation.x_joke.last_run.', target: jokeRuns },
+      { prefix: 'automation.x_community.last_run.', target: communityRuns },
+    ]
+    for (const row of runSettings?.results || []) {
+      const group = runGroups.find((item) => String(row.key || '').startsWith(item.prefix))
+      const slot = group ? String(row.key || '').slice(group.prefix.length) : ''
+      if (!group || !slot) continue
       try {
-        jokeRuns[slot] = JSON.parse(row.value || 'null')
+        group.target[slot] = JSON.parse(row.value || 'null')
       } catch {
-        jokeRuns[slot] = null
+        group.target[slot] = null
       }
     }
     let xApiCost
@@ -103,6 +109,7 @@ export async function GET(req) {
       generationMode: normalizeGreetingGenerationMode(modeRaw),
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
       jokeRuns,
+      communityRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

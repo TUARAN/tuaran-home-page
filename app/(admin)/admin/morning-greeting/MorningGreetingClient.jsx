@@ -89,10 +89,11 @@ function TimelineNode({ item }) {
 }
 
 function CategoryDesign() {
+  const activeCategories = X_POST_CATEGORIES.filter((category) => category.active)
   return (
     <Section
       title="分类设计"
-      description={`当前启用 ${X_POST_CATEGORIES.length} 类内容，每天共 ${X_POST_SLOTS.length} 个发布节点。分类定义与自动排期共用同一份配置。`}
+      description={`当前启用 ${activeCategories.length} 类内容，每天共 ${X_POST_SLOTS.length} 个发布节点。已停发类型继续保留定义和历史记录。`}
       className="mb-4"
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -103,7 +104,9 @@ function CategoryDesign() {
                 <p className="m-0 text-[10px] font-medium tracking-[0.08em] text-[#96988e] dark:text-gray-500">{category.format}</p>
                 <h3 className="mb-0 mt-1 text-[14px] font-semibold text-[#303229] dark:text-gray-100">{category.label}</h3>
               </div>
-              <span className="shrink-0 rounded-full bg-[#eff1e9] px-2 py-1 text-[10px] font-semibold text-[#55584d] dark:bg-[#202a37] dark:text-gray-300">{category.dailyPosts} 条/天</span>
+              <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${category.active ? 'bg-[#eff1e9] text-[#55584d] dark:bg-[#202a37] dark:text-gray-300' : 'bg-[#f3f3ef] text-[#96988e] dark:bg-[#171e28] dark:text-gray-500'}`}>
+                {category.active ? `${category.dailyPosts} 条/天` : '已停发'}
+              </span>
             </div>
             <p className="mb-0 mt-2 text-[11px] font-medium text-[#67695f] dark:text-gray-300">{category.schedule}</p>
             <p className="mb-0 mt-1 text-[11px] leading-5 text-[#85877c] dark:text-gray-400">{category.description}</p>
@@ -181,7 +184,7 @@ function TaskTimeline({ runGroups }) {
           ) : null}
         </div>
       </div>
-      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间固定节点：早间和下午每 8 分钟一条，深夜每 12 分钟一条；GitHub Actions 每 5 分钟检查到期任务。卡片展示最近一次执行记录。</p>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间固定节点：30 条高频短帖分布在早间、下午和深夜，每段 10 条；交朋友在 09:30、15:00 和 19:00 各 1 条。GitHub Actions 每 5 分钟检查到期任务。</p>
     </div>
   )
 }
@@ -250,6 +253,7 @@ export default function MorningGreetingClient() {
 
   const runGroups = useMemo(() => ({
     joke: data?.jokeRuns || {},
+    community: data?.communityRuns || {},
   }), [data])
 
   async function togglePause() {
@@ -269,7 +273,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="每天约 80 条纯文字短帖，集中在早间、下午和深夜三个流量窗口，使用强钩子与逐行短句排版。"
+      description="每天 33 条：30 条强钩子纯文字短帖，加 3 条交朋友内容。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -281,7 +285,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天 80 个节点按北京时间运行：06:00–09:52 发布 30 条，15:00–18:52 发布 30 条，22:00–次日 01:48 发布 20 条。发布前由当前模型生成，自动去重并直接发到 X。"
+          description="每天 33 个节点按北京时间运行：早间、下午、深夜各 10 条高频短帖，09:30、15:00、19:00 各 1 条交朋友内容。发布前由当前模型生成，自动去重并直接发到 X。"
           className="mb-4"
           actions={
             <>

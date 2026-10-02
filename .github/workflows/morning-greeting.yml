@@ -23,7 +23,7 @@ jobs:
   post:
     name: Publish due X post
     runs-on: ubuntu-latest
-    # 每天 80 条纯文字短帖：早间 30、下午 30、深夜 20。
+    # 每天 33 条：高频纯文字短帖 30 条，交朋友 3 条。
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4

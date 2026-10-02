@@ -193,7 +193,7 @@ export async function POST(req) {
   const jokeSlot = requestedJokeSlot ? normalizeXJokeSlot(requestedJokeSlot) : ''
   if (requestedJokeSlot && !jokeSlot) {
     return Response.json(
-      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 槽位必须来自当前 80 个高频短帖排程。' },
+      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 槽位必须来自当前 30 个高频短帖排程。' },
       { status: 400 },
     )
   }

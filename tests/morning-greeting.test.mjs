@@ -394,23 +394,30 @@ test('配图素材只管理图片，发布记录独立成可检索表格', async
   assert.match(recordsSource, /scope: 'runs'/)
 })
 
-test('high-frequency schedule distributes eighty short posts across three daily windows', async () => {
-  assert.equal(X_POST_CATEGORIES.length, 1)
-  assert.equal(X_POST_CATEGORIES.reduce((sum, category) => sum + category.dailyPosts, 0), 80)
-  assert.equal(X_POST_SLOTS.length, 80)
+test('schedule publishes thirty short posts plus three community posts and retains paused categories', async () => {
+  assert.equal(X_POST_CATEGORIES.length, 7)
+  assert.equal(X_POST_CATEGORIES.filter((category) => category.active).length, 2)
+  assert.equal(X_POST_CATEGORIES.filter((category) => category.active).reduce((sum, category) => sum + category.dailyPosts, 0), 33)
+  assert.ok(X_POST_CATEGORIES.filter((category) => !category.active).every((category) => category.dailyPosts === 0))
+  assert.equal(X_POST_SLOTS.length, 33)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
-  assert.ok(day.every((task) => task.query === 'joke'))
-  assert.equal(day.filter((task) => task.id.startsWith('joke_morning_')).length, 30)
-  assert.equal(day.filter((task) => task.id.startsWith('joke_afternoon_')).length, 30)
-  assert.equal(day.filter((task) => task.id.startsWith('joke_night_')).length, 20)
+  assert.equal(day.filter((task) => task.query === 'joke').length, 30)
+  assert.equal(day.filter((task) => task.query === 'community').length, 3)
+  assert.equal(day.filter((task) => task.id.startsWith('joke_morning_')).length, 10)
+  assert.equal(day.filter((task) => task.id.startsWith('joke_afternoon_')).length, 10)
+  assert.equal(day.filter((task) => task.id.startsWith('joke_night_')).length, 10)
   assert.deepEqual(
     day.filter((task) => task.id.startsWith('joke_morning_')).map((task) => task.time),
-    Array.from({ length: 30 }, (_, index) => `${String(6 + Math.floor(index * 8 / 60)).padStart(2, '0')}:${String(index * 8 % 60).padStart(2, '0')}`),
+    Array.from({ length: 10 }, (_, index) => `${String(6 + Math.floor(index * 24 / 60)).padStart(2, '0')}:${String(index * 24 % 60).padStart(2, '0')}`),
   )
-  assert.equal(day.find((task) => task.id === 'joke_afternoon_01').time, '15:00')
-  assert.equal(day.find((task) => task.id === 'joke_afternoon_30').time, '18:52')
+  assert.equal(day.find((task) => task.id === 'joke_afternoon_01').time, '15:12')
+  assert.equal(day.find((task) => task.id === 'joke_afternoon_10').time, '18:48')
   assert.equal(day.find((task) => task.id === 'joke_night_01').time, '22:00')
-  assert.equal(day.find((task) => task.id === 'joke_night_20').time, '01:48')
+  assert.equal(day.find((task) => task.id === 'joke_night_10').time, '01:36')
+  assert.deepEqual(
+    day.filter((task) => task.query === 'community').map((task) => task.time),
+    ['09:30', '15:00', '19:00'],
+  )
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
   assert.deepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))

@@ -731,7 +731,7 @@ test('fallback ignores missing pool objects and never bypasses an expired lease'
 
 test('paused slots reject manual and old scheduled triggers before any generation', async (t) => {
   const { invoke, calls, sqlite } = await cronFixture(t, { isXPostSlotActive: postingSchedule.isXPostSlotActive })
-  for (const slot of ['crypto=crypto_knowledge', 'crypto=crypto_people', 'story=culture_morning', 'story=culture_evening', 'us=us_midday', 'period=evening', 'community=community_growth']) {
+  for (const slot of ['crypto=crypto_knowledge', 'crypto=crypto_people', 'story=culture_morning', 'story=culture_evening', 'us=us_midday', 'period=evening']) {
     for (const suffix of ['', `&scheduledDate=${greetings.shanghaiDateKey()}`]) {
       const response = await invoke(slot + suffix)
       assert.equal(response.status, 200)

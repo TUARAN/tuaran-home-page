@@ -3,6 +3,10 @@ import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import { callDeepSeek } from '../../../../lib/deepseek'
+import { hasUsableDeepSeekKey } from '../../../../lib/deepseekKeys'
+import { DAILY_GREETING_MODEL_SELECTIONS_KEY } from '../../../../lib/dailyGreetingLlm'
+import { parseModelSelection } from '../../../../lib/modelSelection'
+import { callOllama } from '../../../../lib/ollama'
 import {
   buildGenericXReplyMessages,
   normalizeXPostTarget,
@@ -32,6 +36,107 @@ async function readBody(request) {
 
 function isMissingTable(error) {
   return /no such table|x_reply_tasks/i.test(String(error?.message || error))
+}
+
+async function readSetting(db, key) {
+  if (!db) return ''
+  const { results } = await db.prepare('SELECT value FROM site_settings WHERE key = ?1').bind(key).all()
+  return results?.[0]?.value ?? ''
+}
+
+function selectedModelId(raw) {
+  const value = String(raw || '').trim()
+  if (!value.startsWith('[')) return value || 'deepseek'
+  try {
+    return String(JSON.parse(value)?.[0] || 'deepseek')
+  } catch {
+    return 'deepseek'
+  }
+}
+
+async function activeOllamaFallback(db) {
+  if (!db) return null
+  return db.prepare(
+    `SELECT id, name, default_model
+     FROM llm_providers
+     WHERE provider_type = 'ollama' AND status = 'active'
+     ORDER BY updated_at DESC LIMIT 1`,
+  ).first()
+}
+
+function modelError(code, message, status = 503) {
+  return Object.assign(new Error(message), { code, status })
+}
+
+async function generateReply({ db, env, task }) {
+  const [savedRaw, deepseekUsable, ollamaFallback] = await Promise.all([
+    readSetting(db, DAILY_GREETING_MODEL_SELECTIONS_KEY).catch(() => ''),
+    hasUsableDeepSeekKey({ env, source: task.source, taskType: task.taskType }),
+    activeOllamaFallback(db).catch(() => null),
+  ])
+  const selected = parseModelSelection(selectedModelId(savedRaw)) || parseModelSelection('deepseek')
+  const candidates = []
+  const seen = new Set()
+  const addCandidate = (candidate) => {
+    if (!candidate) return
+    const key = `${candidate.provider}:${candidate.providerId || ''}:${candidate.model || ''}`
+    if (seen.has(key)) return
+    seen.add(key)
+    candidates.push(candidate)
+  }
+
+  if (selected.provider === 'ollama') addCandidate(selected)
+  if (selected.provider === 'deepseek' && deepseekUsable) addCandidate(selected)
+  if (ollamaFallback) addCandidate({
+    provider: 'ollama',
+    providerId: ollamaFallback.id,
+    providerName: ollamaFallback.name,
+    model: ollamaFallback.default_model,
+  })
+  if (deepseekUsable) addCandidate(parseModelSelection('deepseek'))
+  if (!candidates.length) {
+    throw modelError('MODEL_PROVIDER_NOT_CONFIGURED', '后台没有可用的 DeepSeek 密钥或 NAS 模型服务。')
+  }
+
+  const messages = buildGenericXReplyMessages()
+  let lastError = null
+  for (const [index, candidate] of candidates.entries()) {
+    try {
+      const result = candidate.provider === 'ollama'
+        ? await callOllama({
+            providerId: candidate.providerId,
+            model: candidate.model || undefined,
+            messages,
+            temperature: 1,
+            maxTokens: 64,
+            reasoningEffort: 'none',
+            timeoutMs: 90_000,
+            task: { ...task, metadata: { ...task.metadata, fallbackIndex: index } },
+          })
+        : await callDeepSeek({
+            env,
+            messages,
+            temperature: 1,
+            maxTokens: 64,
+            timeoutMs: 45_000,
+            taskDefaultModel: 'deepseek-v4-flash',
+            disableThinking: true,
+            task: { ...task, metadata: { ...task.metadata, fallbackIndex: index } },
+          })
+      const text = sanitizeGeneratedXReply(result.content)
+      if (!text) throw modelError('INVALID_GENERATED_REPLY', '模型返回的回复内容不可用。', 502)
+      return {
+        text,
+        model: result.model,
+        taskId: result.taskId,
+        provider: candidate.provider,
+        providerName: result.providerName || candidate.providerName || 'DeepSeek',
+      }
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError || modelError('X_REPLY_GENERATION_FAILED', '模型生成失败。', 502)
 }
 
 export async function GET(request) {
@@ -64,14 +169,9 @@ export async function POST(request) {
   if (body.action === 'generate-ai') {
     const env = getOptionalRequestContext()?.env || {}
     try {
-      const result = await callDeepSeek({
+      const result = await generateReply({
+        db: dbOrNull(),
         env,
-        messages: buildGenericXReplyMessages(),
-        temperature: 1,
-        maxTokens: 64,
-        timeoutMs: 45_000,
-        taskDefaultModel: 'deepseek-v4-flash',
-        disableThinking: true,
         task: {
           source: 'x-reply-admin',
           taskType: 'generic-reply-generation',
@@ -82,9 +182,7 @@ export async function POST(request) {
           metadata: { directPublish: false },
         },
       })
-      const text = sanitizeGeneratedXReply(result.content)
-      if (!text) return Response.json({ error: 'INVALID_GENERATED_REPLY' }, { status: 502 })
-      return Response.json({ ok: true, text, model: result.model, taskId: result.taskId })
+      return Response.json({ ok: true, ...result })
     } catch (error) {
       return Response.json(
         { error: error?.code || 'X_REPLY_GENERATION_FAILED', detail: error?.message || '模型生成失败。' },

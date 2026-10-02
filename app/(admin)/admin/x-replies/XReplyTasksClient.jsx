@@ -21,6 +21,9 @@ const ERROR_LABELS = {
   X_NOT_CONFIGURED: 'X API 凭据尚未配置。',
   X_PUBLISH_FAILED: 'X 拒绝了这次回复；请确认原帖已明确 @提及或引用你的账号。',
   MIGRATION_REQUIRED: '请先应用数据库迁移 0103_x_reply_tasks.sql。',
+  MODEL_PROVIDER_NOT_CONFIGURED: '后台没有可用的 DeepSeek 密钥或 NAS 模型服务。',
+  MISSING_DEEPSEEK_API_KEY: '当前后台环境缺少 DeepSeek 密钥。',
+  LLM_KEYS_ENC_SECRET_NOT_CONFIGURED: '后台缺少模型服务的加密主密钥。',
 }
 
 async function safeJson(response) {
@@ -77,13 +80,13 @@ export default function XReplyTasksClient() {
 
   useEffect(() => { refresh() }, [refresh])
 
-  async function setAndCopy(text, source) {
+  async function setAndCopy(text, source, successMessage = '已生成并复制到剪贴板。') {
     setReplyText(text)
     setReplySource(source)
     setError('')
     try {
       await copyText(text)
-      setNotice('已生成并复制到剪贴板。')
+      setNotice(successMessage)
     } catch {
       setNotice('已生成；浏览器未允许自动复制，请手动复制。')
     }
@@ -103,7 +106,8 @@ export default function XReplyTasksClient() {
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.detail || payload?.error || `HTTP_${response.status}`)
-      await setAndCopy(payload.text, 'ai')
+      const modelLabel = [payload.providerName, payload.model].filter(Boolean).join(' · ')
+      await setAndCopy(payload.text, 'ai', modelLabel ? `已由 ${modelLabel} 生成并复制。` : '已生成并复制到剪贴板。')
     } catch (generationError) {
       setError(ERROR_LABELS[generationError.message] || generationError.message || '模型生成失败。')
     } finally {
@@ -167,7 +171,7 @@ export default function XReplyTasksClient() {
 
       <Section
         title="通用回复生成器"
-        description="短句库在浏览器本地随机抽取；模型按钮调用 DeepSeek。两个按钮都会把结果写入下方回复框并尝试复制。"
+        description="短句库在浏览器本地随机抽取；模型按钮复用 X 自动发布的模型选择，并在 DeepSeek 不可用时回退到已启用的 NAS Ollama。两个按钮都会把结果写入下方回复框并尝试复制。"
         className="mb-4"
       >
         <div className="flex flex-wrap gap-2">

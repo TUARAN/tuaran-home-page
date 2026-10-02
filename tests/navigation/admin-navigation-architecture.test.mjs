@@ -6,7 +6,9 @@ import {
   ADMIN_CONSOLE_ITEMS,
   ADMIN_LEGACY_REDIRECTS,
   ADMIN_NAV_CHILD_ITEMS,
+  ADMIN_NAV_GROUPS,
   getWorkspaceHubProps,
+  isActiveAdminPath,
   listWorkspaceChildren,
   resolveAdminTrail,
 } from '../../lib/adminRoutes.js'
@@ -117,13 +119,26 @@ test('sidebar expands only the active workspace and restores the current item in
   assert.doesNotMatch(source, /sidebar !== false/)
 })
 
+test('every workspace child path keeps its parent workspace expanded', () => {
+  const workspaces = ADMIN_NAV_GROUPS.find((group) => group.id === 'workspaces')?.items || []
+  for (const workspace of workspaces) {
+    for (const child of listWorkspaceChildren(workspace)) {
+      assert.equal(
+        isActiveAdminPath(child.matchPath || child.href, workspace.href, workspace.activePaths),
+        true,
+        `${child.href} should activate ${workspace.href}`,
+      )
+    }
+  }
+})
+
 test('content workspace hub and sidebar share the same grouped entries', () => {
   const content = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/content')
   const hub = getWorkspaceHubProps('/admin/content')
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '分类管理', '推荐管理', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '数据统计', '壁纸资源', '短句内容', '存档管理']
+    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '数据统计', '壁纸资源', '短句内容', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
@@ -138,7 +153,7 @@ test('automation workspace hub and sidebar expose one task center plus focused p
 
   assert.deepEqual(
     listWorkspaceChildren(automation).map((item) => item.label),
-    ['任务中心', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', '路过互动']
+    ['任务中心', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', 'X 回复任务', '路过互动']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

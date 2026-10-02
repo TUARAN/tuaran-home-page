@@ -15,6 +15,7 @@ import { isMarkdownDocument } from '../../../../lib/articleDocument.mjs'
 import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
 import { getContentProofCredential } from '../../../../lib/contentProofRegistry'
+import { resolveContentVersion } from '../../../../lib/contentEditCount'
 
 function dateLabel(value) {
   if (!value) return ''
@@ -77,6 +78,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         categoryLabel="精选文章"
         dateLabel={dateLabel(article.publishedAt)}
         dateTime={publishedTime}
+        version={resolveContentVersion(article)}
         readingMinutes={readingMinutes(article.contentText)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
         metaExtras={(
@@ -91,7 +93,7 @@ export default function PublishedArticle({ article, siteUrl }) {
             text={article.summary || article.contentText.slice(0, 160)}
             url={url}
             speechMarkdown={article.contentText}
-            ownerMeta={{ author: 'TUARAN', revision: article.revision }}
+            ownerMeta={{ author: 'TUARAN' }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
           >
             <CopyMarkdownButton markdown={markdown} html={xArticleHtml} />

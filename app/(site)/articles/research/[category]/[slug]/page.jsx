@@ -28,6 +28,7 @@ import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 import AShareCompanyList from './AShareCompanyList'
 import { taxonomyForResearch } from '../../../../../../lib/contentTaxonomy'
 import { getContentProofCredential } from '../../../../../../lib/contentProofRegistry'
+import { resolveContentVersion } from '../../../../../../lib/contentEditCount'
 
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
@@ -236,6 +237,7 @@ export default async function ResearchDetailPage({ params }) {
         categoryLabel={isAShareResearch ? 'A股调研' : isCryptoResearch ? '加密调研' : categoryLabel}
         dateLabel={entry.dateLabel || entry.date}
         dateTime={entry.dateTimeIso || entry.date}
+        version={resolveContentVersion(entry)}
         readingMinutes={entry.readingMinutes}
         pvNode={(
           <ContentPvBeacon
@@ -256,14 +258,6 @@ export default async function ResearchDetailPage({ params }) {
               >
                 {COMPANY_TYPE_META[entry.companyType].label}
               </Link>
-            </>
-          ) : null}
-          {entry.version ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="research-pill">
-                {entry.version}
-              </span>
             </>
           ) : null}
           {entry.hasAssessment ? (
@@ -305,9 +299,6 @@ export default async function ResearchDetailPage({ params }) {
               assistance: entry.assistance,
               assistanceLabel: entry.assistanceLabel,
               model: entry.model,
-              version: entry.version,
-              revision: entry.revision,
-              editCount: entry.editCount,
             }}
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
           >

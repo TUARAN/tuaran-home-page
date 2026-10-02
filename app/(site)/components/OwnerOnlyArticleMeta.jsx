@@ -1,9 +1,7 @@
-import { ownerAuthorValue } from '../../../lib/contentEditCount'
-
 /**
- * 站长内部记录：作者、协助工具、模型 ID、版本。
+ * 站长内部记录：作者、协助工具和模型 ID。
  * 由右侧「站长」菜单展开后展示，普通访客不渲染。
- * 有过实质修订时，作者行附带「修改过X次」；从未修改则不写。
+ * 版本作为公开文章元信息，在页头统一展示。
  */
 export function getOwnerMetaParts(ownerMeta) {
   if (!ownerMeta) return []
@@ -13,16 +11,12 @@ export function getOwnerMetaParts(ownerMeta) {
     assistance = '',
     model = '',
     assistanceLabel = '',
-    version = '',
-    revision,
-    editCount,
   } = ownerMeta
   const assistanceText = assistance || assistanceLabel
   const parts = []
-  if (author) parts.push({ label: '作者', value: ownerAuthorValue(author, revision, editCount) })
+  if (author) parts.push({ label: '作者', value: String(author).trim() })
   if (assistanceText) parts.push({ label: '协助', value: assistanceText })
   if (model) parts.push({ label: '模型', value: model })
-  if (version) parts.push({ label: '版本', value: version })
   return parts
 }
 

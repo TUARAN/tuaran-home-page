@@ -3,9 +3,9 @@ import test from 'node:test'
 
 import {
   editCountFromRevision,
-  ownerAuthorValue,
   parseResearchGitEditCounts,
   resolveEditCount,
+  resolveContentVersion,
 } from '../../lib/contentEditCount.js'
 
 test('first published revision is not an edit, later revisions count from the second write', () => {
@@ -31,13 +31,17 @@ research/templates/a-share-company-research.md
   assert.equal(counts['templates/a-share-company-research'], undefined)
 })
 
-test('owner author line records the higher of publication revisions and git edits, and stays quiet when never modified', () => {
+test('edit records use the higher of publication revisions and git edits', () => {
   assert.equal(resolveEditCount({}), 0)
   assert.equal(resolveEditCount({ revision: 1, editCount: 0 }), 0)
   assert.equal(resolveEditCount({ revision: 1, editCount: 4 }), 4)
   assert.equal(resolveEditCount({ revision: 5, editCount: 2 }), 4)
-  assert.equal(ownerAuthorValue('TUARAN'), 'TUARAN')
-  assert.equal(ownerAuthorValue('TUARAN', 1), 'TUARAN')
-  assert.equal(ownerAuthorValue('TUARAN', 1, 4), 'TUARAN · 修改过4次')
-  assert.equal(ownerAuthorValue('TUARAN', 5, 2), 'TUARAN · 修改过4次')
+})
+
+test('content version preserves an explicit value and otherwise follows the latest revision', () => {
+  assert.equal(resolveContentVersion(), 'v1')
+  assert.equal(resolveContentVersion({ revision: 2 }), 'v2')
+  assert.equal(resolveContentVersion({ revision: 1, editCount: 4 }), 'v5')
+  assert.equal(resolveContentVersion({ revision: 3, editCount: 1 }), 'v3')
+  assert.equal(resolveContentVersion({ version: 'v0.1', revision: 8 }), 'v0.1')
 })

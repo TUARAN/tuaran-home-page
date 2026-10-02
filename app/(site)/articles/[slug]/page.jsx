@@ -18,6 +18,7 @@ import { buildArticleOgUrl } from '../../../../lib/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/contentTaxonomy'
 import { getContentProofCredential } from '../../../../lib/contentProofRegistry'
+import { resolveContentVersion } from '../../../../lib/contentEditCount'
 import PublishedArticle from './PublishedArticle'
 
 export const runtime = 'edge'
@@ -307,6 +308,7 @@ export default async function ArticleDetailPage({ params }) {
         categoryLabel="精选文章"
         dateLabel={article.date}
         dateTime={publishedTime || article.date}
+        version={resolveContentVersion(article)}
         readingMinutes={readingMinutes(articleMarkdown)}
         pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
         metaExtras={(

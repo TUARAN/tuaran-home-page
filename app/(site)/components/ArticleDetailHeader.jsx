@@ -8,6 +8,7 @@ export default function ArticleDetailHeader({
   categoryLabel,
   dateLabel,
   dateTime,
+  version,
   readingMinutes,
   pvNode,
   metaExtras,
@@ -57,6 +58,12 @@ export default function ArticleDetailHeader({
           </>
         )}
         {metaExtras}
+        {version ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{version}</span>
+          </>
+        ) : null}
         {dateLabel ? (
           <>
             <span aria-hidden="true">·</span>

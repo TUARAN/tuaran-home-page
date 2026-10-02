@@ -1209,12 +1209,14 @@
   }
 
   .home-national-day-flag-art.is-animated .home-national-day-flag-pole {
-    clip-path: polygon(0 0, 24% 0, 24% 100%, 0 100%);
+    clip-path: polygon(0 0, 7.5% 0, 7.5% 100%, 0 100%);
   }
 
   .home-national-day-flag-cloth {
-    clip-path: polygon(20% 0, 100% 0, 100% 100%, 20% 100%);
-    transform-origin: 21% 43%;
+    clip-path: polygon(6% 0, 100% 0, 100% 100%, 6% 100%);
+    transform-origin: 7% 42%;
+    transform-style: preserve-3d;
+    will-change: transform;
     animation: home-national-day-flag-wave 2.4s ease-in-out infinite;
   }
 
@@ -1231,13 +1233,13 @@
 
   @keyframes home-national-day-flag-wave {
     0%, 100% {
-      transform: rotate(-1.2deg) translateY(1px) skewY(0deg) scaleX(1.015);
+      transform: perspective(420px) rotateY(0deg) scaleX(1);
     }
     35% {
-      transform: rotate(1.4deg) translateY(-4px) skewY(-1.6deg) scaleX(0.95);
+      transform: perspective(420px) rotateY(-9deg) scaleX(0.965);
     }
     70% {
-      transform: rotate(-0.7deg) translateY(3px) skewY(1.1deg) scaleX(1.025);
+      transform: perspective(420px) rotateY(6deg) scaleX(1.018);
     }
   }
 

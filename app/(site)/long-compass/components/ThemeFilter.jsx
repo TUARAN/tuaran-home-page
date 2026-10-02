@@ -24,40 +24,45 @@ export default function ThemeFilter({ selectedTheme, onSelect, onClear, counts }
   const hasSelection = selectedTheme !== null && selectedTheme !== undefined
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#858876] dark:text-[#8e9ab0]">
-        主题
-      </span>
+    <div className="mt-3 border-t border-[#e7e9e3] pt-3 dark:border-[#252d37] sm:flex sm:items-start sm:gap-5">
+      <div className="mb-2 sm:mb-0 sm:w-20 sm:flex-none sm:pt-1.5">
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-[#777a6e] dark:text-[#8e9ab0]">主题筛选</p>
+      </div>
 
-      <button
-        type="button"
-        onClick={onClear}
-        className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] transition ${
-          !hasSelection
-            ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
-            : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-        }`}
-      >
-        全部
-      </button>
+      <div className="flex flex-1 flex-wrap gap-1.5" role="group" aria-label="主题筛选">
+        <button
+          type="button"
+          aria-pressed={!hasSelection}
+          onClick={onClear}
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+            !hasSelection
+              ? 'border-[#34362c] bg-[#34362c] text-white shadow-sm dark:border-[#d7dccc] dark:bg-[#d7dccc] dark:text-[#111]'
+              : 'border-[#dfe1da] bg-transparent text-[#5f6157] hover:bg-white dark:border-[#303846] dark:text-gray-300 dark:hover:bg-[#171e27]'
+          }`}
+        >
+          全部主题
+        </button>
 
-      {activeThemes.map((t) => {
-        const selected = selectedTheme === t
-        return (
-          <button
-            key={t}
-            type="button"
-            onClick={() => onSelect(t)}
-            className={`rounded-full px-2.5 py-1 font-mono text-[10px] tracking-[0.1em] transition ${
-              selected
-                ? 'bg-[#2f3027] text-white shadow-sm dark:bg-gray-200 dark:text-[#111]'
-                : THEME_COLORS[t] + ' hover:scale-105'
-            }`}
-          >
-            {t} · {counts[t]}
-          </button>
-        )
-      })}
+        {activeThemes.map((t) => {
+          const selected = selectedTheme === t
+          return (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onSelect(t)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                selected
+                  ? 'border-[#34362c] bg-[#34362c] text-white shadow-sm dark:border-[#d7dccc] dark:bg-[#d7dccc] dark:text-[#111]'
+                  : THEME_COLORS[t] + ' hover:-translate-y-px hover:shadow-sm'
+              }`}
+            >
+              <span>{t}</span>
+              <span className={`font-mono text-[10px] ${selected ? 'opacity-70' : 'opacity-60'}`}>{counts[t]}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

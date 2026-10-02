@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { IconArchive, IconChartBar } from '@tabler/icons-react'
 
 import { decryptPayload, fetchEncryptedRecords, KIND_LABELS, migrate } from '../../../lib/longCompass'
 
@@ -212,52 +213,68 @@ export default function LongCompassClient({
         />
       ) : (
         <section className={embedded ? '' : 'mt-6'}>
-          <div className="border-b border-[#dee0db] pb-3 dark:border-gray-800">
-            <div className="mb-3 flex flex-wrap gap-2" role="tablist" aria-label="长期罗盘视图">
+          <div className="rounded-2xl border border-[#dfe1da] bg-white/55 p-2.5 shadow-[0_10px_30px_rgba(47,48,39,0.04)] dark:border-[#29303a] dark:bg-[#121821]/70 sm:p-3">
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#eceee8] p-1 dark:bg-[#0b1017]" role="tablist" aria-label="长期罗盘视图">
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeView === 'records'}
                 onClick={() => handleViewChange('records')}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${
                   activeView === 'records'
-                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                    ? 'bg-white text-[#202119] shadow-sm ring-1 ring-black/[0.04] dark:bg-[#202833] dark:text-white dark:ring-white/10'
+                    : 'text-[#6d7064] hover:text-[#25261f] dark:text-[#8e9ab0] dark:hover:text-gray-100'
                 }`}
               >
-                记录档案
+                <IconArchive size={17} stroke={1.8} aria-hidden="true" />
+                <span>记录档案</span>
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeView === 'finance'}
                 onClick={() => handleViewChange('finance')}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${
                   activeView === 'finance'
-                    ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
-                    : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
+                    ? 'bg-white text-[#202119] shadow-sm ring-1 ring-black/[0.04] dark:bg-[#202833] dark:text-white dark:ring-white/10'
+                    : 'text-[#6d7064] hover:text-[#25261f] dark:text-[#8e9ab0] dark:hover:text-gray-100'
                 }`}
               >
-                财务总览
+                <IconChartBar size={17} stroke={1.8} aria-hidden="true" />
+                <span>财务总览</span>
               </button>
             </div>
             {activeView === 'records' ? (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(KIND_LABELS).map(([kind, label]) => (
-                    <button
-                      key={kind}
-                      type="button"
-                      onClick={() => handleKindChange(kind)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                        activeKind === kind
-                          ? 'bg-[#2f3027] text-white dark:bg-gray-200 dark:text-[#111]'
-                          : 'border border-[#dee0db] text-[#58594d] hover:bg-white dark:border-[#2d3440] dark:text-gray-300 dark:hover:bg-[#121821]'
-                      }`}
-                    >
-                      {label} · {counts[kind] || 0}
-                    </button>
-                  ))}
+              <div className="mt-3 border-t border-[#e2e4de] px-1 pt-3 dark:border-[#29303a]">
+                <div className="sm:flex sm:items-start sm:gap-5">
+                  <div className="mb-2 sm:mb-0 sm:w-20 sm:flex-none sm:pt-2">
+                    <p className="text-[11px] font-semibold tracking-[0.08em] text-[#777a6e] dark:text-[#8e9ab0]">记录类型</p>
+                  </div>
+                  <div className="grid flex-1 grid-cols-1 gap-1.5 min-[430px]:grid-cols-3" role="tablist" aria-label="记录类型">
+                    {Object.entries(KIND_LABELS).map(([kind, label]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeKind === kind}
+                        onClick={() => handleKindChange(kind)}
+                        className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition ${
+                          activeKind === kind
+                            ? 'border-[#858879] bg-[#f4f5f0] text-[#202119] shadow-[inset_3px_0_0_#34362c] dark:border-[#657080] dark:bg-[#1b222c] dark:text-white dark:shadow-[inset_3px_0_0_#d7dccc]'
+                            : 'border-transparent text-[#626459] hover:border-[#dfe1da] hover:bg-white/80 dark:text-gray-300 dark:hover:border-[#303846] dark:hover:bg-[#171e27]'
+                        }`}
+                      >
+                        <span>{label}</span>
+                        <span className={`min-w-6 rounded-md px-1.5 py-0.5 text-center font-mono text-[10px] ${
+                          activeKind === kind
+                            ? 'bg-white text-[#4f5147] dark:bg-[#2a3440] dark:text-gray-200'
+                            : 'bg-[#e8eae4] text-[#777a6e] dark:bg-[#242c36] dark:text-[#9aa6b9]'
+                        }`}>
+                          {counts[kind] || 0}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <ThemeFilter
                   selectedTheme={selectedTheme}
@@ -268,7 +285,7 @@ export default function LongCompassClient({
                   }}
                   counts={themeCounts}
                 />
-              </>
+              </div>
             ) : null}
           </div>
 

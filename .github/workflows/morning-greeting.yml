@@ -1,29 +1,29 @@
-name: Daily mixed content to X
+name: High-frequency text posts to X
 
 on:
   schedule:
-    # 每 5 分钟检查当天随机排程；API 按上海日与时段去重。
+    # 每 5 分钟检查当天均匀排程；API 按上海日与时段去重。
     - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       period:
-        description: 手动运行的槽位（如 controversy_12、joke_morning、crypto_market）
+        description: 手动运行的槽位（如 joke_morning_01、joke_afternoon_01、joke_night_01）
         required: true
         type: string
-        default: joke_morning
+        default: joke_morning_01
 
 permissions:
   contents: read
 
 concurrency:
-  group: mixed-x-posts-${{ github.event.schedule || inputs.period }}
+  group: high-frequency-x-posts-${{ github.event.schedule || inputs.period }}
   cancel-in-progress: false
 
 jobs:
   post:
     name: Publish due X post
     runs-on: ubuntu-latest
-    # 七类内容每天约 20 条：话题帖为主干，穿插段子、问候、社区、文化、加密与英文内容。
+    # 每天 80 条纯文字短帖：早间 30、下午 30、深夜 20。
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 每日混合内容发布",
+              "taskName": "X 高频纯文字短帖发布",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

@@ -1,10 +1,9 @@
-import { X_ACTIVE_CONTROVERSY_SLOT_IDS, X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
+import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
   MORNING_GREETING_ID,
   MORNING_GREETING_SETTING_KEY,
-  greetingLastRunKey,
   isAutomationPaused,
 } from '../../../../lib/morningGreeting'
 import {
@@ -14,12 +13,6 @@ import {
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
 } from '../../../../lib/dailyGreetingLlm'
-import { cultureStoryLastRunKey } from '../../../../lib/dailyCultureStory'
-import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
-import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
-import { xCryptoLastRunKey } from '../../../../lib/xCryptoPosts'
-import { xJokeLastRunKey } from '../../../../lib/xJokePosts'
-import { xControversyLastRunKey } from '../../../../lib/xControversyPosts'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
@@ -66,128 +59,24 @@ export async function GET(req) {
   }
 
   try {
-    const [
-      state,
-      modeRaw,
-      intentRaw,
-      morningRaw,
-      noonRaw,
-      eveningRaw,
-      cultureMorningRaw,
-      cultureAfternoonRaw,
-      cultureEveningRaw,
-      communityFriendsRaw,
-      communityLearningRaw,
-      communityGrowthRaw,
-      usMorningRaw,
-      usMiddayRaw,
-      usEveningRaw,
-      cryptoKnowledgeRaw,
-      cryptoMarketRaw,
-      cryptoPeopleRaw,
-      jokeMorningRaw,
-      jokeAfternoonRaw,
-      jokeEveningRaw,
-    ] = await Promise.all([
+    const [state, modeRaw, intentRaw, jokeSettings] = await Promise.all([
       readSetting(db, MORNING_GREETING_SETTING_KEY),
       readSetting(db, DAILY_GREETING_MODE_KEY),
       readSetting(db, DAILY_GREETING_LLM_PROMPT_KEY),
-      readSetting(db, greetingLastRunKey('morning')),
-      readSetting(db, greetingLastRunKey('noon')),
-      readSetting(db, greetingLastRunKey('evening')),
-      readSetting(db, cultureStoryLastRunKey('culture_morning')),
-      readSetting(db, cultureStoryLastRunKey('culture_afternoon')),
-      readSetting(db, cultureStoryLastRunKey('culture_evening')),
-      readSetting(db, xCommunityLastRunKey('community_friends')),
-      readSetting(db, xCommunityLastRunKey('community_learning')),
-      readSetting(db, xCommunityLastRunKey('community_growth')),
-      readSetting(db, xUsAudienceLastRunKey('us_morning')),
-      readSetting(db, xUsAudienceLastRunKey('us_midday')),
-      readSetting(db, xUsAudienceLastRunKey('us_evening')),
-      readSetting(db, xCryptoLastRunKey('crypto_knowledge')),
-      readSetting(db, xCryptoLastRunKey('crypto_market')),
-      readSetting(db, xCryptoLastRunKey('crypto_people')),
-      readSetting(db, xJokeLastRunKey('joke_morning')),
-      readSetting(db, xJokeLastRunKey('joke_afternoon')),
-      readSetting(db, xJokeLastRunKey('joke_evening')),
+      db.prepare(
+        `SELECT key, value FROM site_settings
+         WHERE key LIKE 'automation.x_joke.last_run.joke_%'`,
+      ).all(),
     ])
-    const lastRuns = {}
-    for (const [key, raw] of [['morning', morningRaw], ['noon', noonRaw], ['evening', eveningRaw]]) {
-      try {
-        lastRuns[key] = JSON.parse(raw || 'null')
-      } catch {
-        lastRuns[key] = null
-      }
-    }
-    const cultureRuns = {}
-    for (const [key, raw] of [
-      ['culture_morning', cultureMorningRaw],
-      ['culture_afternoon', cultureAfternoonRaw],
-      ['culture_evening', cultureEveningRaw],
-    ]) {
-      try {
-        cultureRuns[key] = JSON.parse(raw || 'null')
-      } catch {
-        cultureRuns[key] = null
-      }
-    }
-    const communityRuns = {}
-    for (const [key, raw] of [
-      ['community_friends', communityFriendsRaw],
-      ['community_learning', communityLearningRaw],
-      ['community_growth', communityGrowthRaw],
-    ]) {
-      try {
-        communityRuns[key] = JSON.parse(raw || 'null')
-      } catch {
-        communityRuns[key] = null
-      }
-    }
-    const usRuns = {}
-    for (const [key, raw] of [
-      ['us_morning', usMorningRaw],
-      ['us_midday', usMiddayRaw],
-      ['us_evening', usEveningRaw],
-    ]) {
-      try {
-        usRuns[key] = JSON.parse(raw || 'null')
-      } catch {
-        usRuns[key] = null
-      }
-    }
-    const cryptoRuns = {}
-    for (const [key, raw] of [
-      ['crypto_knowledge', cryptoKnowledgeRaw],
-      ['crypto_market', cryptoMarketRaw],
-      ['crypto_people', cryptoPeopleRaw],
-    ]) {
-      try {
-        cryptoRuns[key] = JSON.parse(raw || 'null')
-      } catch {
-        cryptoRuns[key] = null
-      }
-    }
     const jokeRuns = {}
-    for (const [key, raw] of [
-      ['joke_morning', jokeMorningRaw],
-      ['joke_afternoon', jokeAfternoonRaw],
-      ['joke_evening', jokeEveningRaw],
-    ]) {
+    const prefix = 'automation.x_joke.last_run.'
+    for (const row of jokeSettings?.results || []) {
+      const slot = String(row.key || '').slice(prefix.length)
+      if (!slot) continue
       try {
-        jokeRuns[key] = JSON.parse(raw || 'null')
+        jokeRuns[slot] = JSON.parse(row.value || 'null')
       } catch {
-        jokeRuns[key] = null
-      }
-    }
-    const controversyRuns = {}
-    const controversyRaw = await Promise.all(
-      X_ACTIVE_CONTROVERSY_SLOT_IDS.map((slot) => readSetting(db, xControversyLastRunKey(slot))),
-    )
-    for (const [index, slot] of X_ACTIVE_CONTROVERSY_SLOT_IDS.entries()) {
-      try {
-        controversyRuns[slot] = JSON.parse(controversyRaw[index] || 'null')
-      } catch {
-        controversyRuns[slot] = null
+        jokeRuns[slot] = null
       }
     }
     let xApiCost
@@ -213,13 +102,7 @@ export async function GET(req) {
       paused: isAutomationPaused(state),
       generationMode: normalizeGreetingGenerationMode(modeRaw),
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
-      lastRuns,
-      cultureRuns,
-      communityRuns,
-      usRuns,
-      cryptoRuns,
       jokeRuns,
-      controversyRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

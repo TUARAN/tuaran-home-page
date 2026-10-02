@@ -394,7 +394,7 @@ test('joke tasks always publish generated text without image storage or media up
     },
   })
   delete env.MEDIA
-  const response = await invoke('joke=joke_morning')
+  const response = await invoke('joke=joke_morning_01')
   assert.equal(response.status, 201)
   const payload = await response.json()
   assert.equal(payload.contentType, 'joke-text')

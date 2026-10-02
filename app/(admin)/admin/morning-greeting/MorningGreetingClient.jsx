@@ -49,7 +49,7 @@ function TimelineNode({ item }) {
       aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
       <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
-        {item.schedule} ±{item.jitterMinutes}分钟
+        {item.schedule}{item.jitterMinutes ? ` ±${item.jitterMinutes}分钟` : ''}
       </time>
       <span
         className={`absolute left-1/2 top-[25px] z-10 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-[3px] border-white ring-2 dark:border-[#10161f] ${
@@ -181,7 +181,7 @@ function TaskTimeline({ runGroups }) {
           ) : null}
         </div>
       </div>
-      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间基准节点：话题帖前后浮动 5 分钟，生活段子前后浮动 90 分钟，其余类型前后浮动 20 分钟；每 5 分钟检查到期任务。卡片展示最近一次执行记录。</p>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间固定节点：早间和下午每 8 分钟一条，深夜每 12 分钟一条；GitHub Actions 每 5 分钟检查到期任务。卡片展示最近一次执行记录。</p>
     </div>
   )
 }
@@ -249,12 +249,6 @@ export default function MorningGreetingClient() {
   useEffect(() => { refresh() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const runGroups = useMemo(() => ({
-    greeting: data?.lastRuns || {},
-    culture: data?.cultureRuns || {},
-    community: data?.communityRuns || {},
-    crypto: data?.cryptoRuns || {},
-    us: data?.usRuns || {},
-    controversy: data?.controversyRuns || {},
     joke: data?.jokeRuns || {},
   }), [data])
 
@@ -275,7 +269,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="用 7 类内容组成每天约 20 条的混合发布计划，兼顾讨论、轻松感、个人表达、垂直内容与中英文受众。"
+      description="每天约 80 条纯文字短帖，集中在早间、下午和深夜三个流量窗口，使用强钩子与逐行短句排版。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -287,7 +281,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天 20 个节点按北京时间运行；发布前由当前选定模型生成，自动去重并直接发到 X。"
+          description="每天 80 个节点按北京时间运行：06:00–09:52 发布 30 条，15:00–18:52 发布 30 条，22:00–次日 01:48 发布 20 条。发布前由当前模型生成，自动去重并直接发到 X。"
           className="mb-4"
           actions={
             <>

@@ -8,6 +8,8 @@ import {
   normalizeXJokeSlot,
   normalizeXJokeText,
   pickXJokeAngle,
+  pickXJokeHook,
+  X_JOKE_HOOKS,
   xJokeWithinTarget,
 } from '../lib/xJokePosts.js'
 
@@ -392,33 +394,31 @@ test('配图素材只管理图片，发布记录独立成可检索表格', async
   assert.match(recordsSource, /scope: 'runs'/)
 })
 
-test('seven content categories produce twenty mixed daily posts', async () => {
-  assert.equal(X_POST_CATEGORIES.length, 7)
-  assert.equal(X_POST_CATEGORIES.reduce((sum, category) => sum + category.dailyPosts, 0), 20)
-  assert.equal(X_POST_SLOTS.length, 20)
+test('high-frequency schedule distributes eighty short posts across three daily windows', async () => {
+  assert.equal(X_POST_CATEGORIES.length, 1)
+  assert.equal(X_POST_CATEGORIES.reduce((sum, category) => sum + category.dailyPosts, 0), 80)
+  assert.equal(X_POST_SLOTS.length, 80)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
+  assert.ok(day.every((task) => task.query === 'joke'))
+  assert.equal(day.filter((task) => task.id.startsWith('joke_morning_')).length, 30)
+  assert.equal(day.filter((task) => task.id.startsWith('joke_afternoon_')).length, 30)
+  assert.equal(day.filter((task) => task.id.startsWith('joke_night_')).length, 20)
   assert.deepEqual(
-    day.filter((task) => task.query === 'controversy').map((task) => task.id),
-    Array.from({ length: 12 }, (_, index) => `controversy_${String(index * 2).padStart(2, '0')}`),
+    day.filter((task) => task.id.startsWith('joke_morning_')).map((task) => task.time),
+    Array.from({ length: 30 }, (_, index) => `${String(6 + Math.floor(index * 8 / 60)).padStart(2, '0')}:${String(index * 8 % 60).padStart(2, '0')}`),
   )
-  assert.deepEqual(
-    day.filter((task) => task.query === 'joke').map((task) => task.id),
-    ['joke_morning', 'joke_afternoon', 'joke_evening'],
-  )
-  assert.deepEqual(
-    day.filter((task) => !['controversy', 'joke'].includes(task.query)).map((task) => task.id).sort(),
-    ['community_friends', 'crypto_market', 'culture_afternoon', 'morning', 'us_morning'],
-  )
+  assert.equal(day.find((task) => task.id === 'joke_afternoon_01').time, '15:00')
+  assert.equal(day.find((task) => task.id === 'joke_afternoon_30').time, '18:52')
+  assert.equal(day.find((task) => task.id === 'joke_night_01').time, '22:00')
+  assert.equal(day.find((task) => task.id === 'joke_night_20').time, '01:48')
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
-  assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
+  assert.deepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
   for (const task of [...day, ...nextDay]) {
     assert.ok(Number.isInteger(task.offsetMinutes))
-    assert.ok(Math.abs(task.offsetMinutes) <= task.jitterMinutes)
+    assert.equal(task.offsetMinutes, 0)
     assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
   }
-  assert.ok(day.find((task) => task.id === 'controversy_00').offsetMinutes >= 0)
-  assert.ok(nextDay.find((task) => task.id === 'controversy_00').offsetMinutes >= 0)
 })
 
 test('schedule windows start at the target and reject expired or next-day triggers', async () => {
@@ -429,13 +429,13 @@ test('schedule windows start at the target and reject expired or next-day trigge
     assert.equal(isXPostDue(task, new Date(task.scheduledAt)), true)
     assert.equal(isXPostDue(task, new Date(task.scheduledAt + 45 * 60_000 + 1)), false)
   }
-  const late = day.find((task) => task.id === 'joke_evening')
+  const late = day.find((task) => task.id === 'joke_night_10')
   assert.equal(isXPostDue(late, new Date(Date.UTC(2026, 7, 29, 16))), false)
 })
 
 test('scheduler calls only due tasks, carries their date, and isolates request failures', async () => {
   const schedule = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 2)))
-  const due = schedule.find((task) => task.id === 'joke_morning')
+  const due = schedule.find((task) => task.id === 'joke_morning_01')
   const requests = []
   const results = await runXAutoPosts({
     now: new Date(due.scheduledAt),
@@ -449,27 +449,34 @@ test('scheduler calls only due tasks, carries their date, and isolates request f
     },
   })
   assert.ok(requests.length >= 1)
-  assert.ok(results.some((result) => result.slot === 'joke_morning'))
+  assert.ok(results.some((result) => result.slot === 'joke_morning_01'))
   assert.equal(results.filter((result) => result.ok).length, 0)
 })
 
-test('joke prompts generate short plain-text posts with occasional emoji guidance', () => {
-  assert.equal(normalizeXJokeSlot('JOKE_AFTERNOON'), 'joke_afternoon')
+test('joke prompts enforce rotating hooks and compact one-sentence-per-line layout', () => {
+  assert.equal(normalizeXJokeSlot('JOKE_AFTERNOON_01'), 'joke_afternoon_01')
   assert.equal(normalizeXJokeSlot('unknown'), '')
   assert.equal(
-    pickXJokeAngle({ slot: 'joke_morning', now: new Date('2026-10-01T02:00:00Z') }),
-    pickXJokeAngle({ slot: 'joke_morning', now: new Date('2026-10-01T08:00:00Z') }),
+    pickXJokeAngle({ slot: 'joke_morning_01', now: new Date('2026-10-01T02:00:00Z') }),
+    pickXJokeAngle({ slot: 'joke_morning_01', now: new Date('2026-10-01T08:00:00Z') }),
   )
+  assert.ok(X_JOKE_HOOKS.includes(pickXJokeHook({ slot: 'joke_morning_01', now: new Date('2026-10-01T02:00:00Z') })))
   const messages = buildXJokeMessages({
-    slot: 'joke_evening',
+    slot: 'joke_night_01',
     now: new Date('2026-10-01T12:00:00Z'),
     recentTexts: ['旧段子一', '旧段子二'],
   })
   assert.match(messages[0].content, /中文纯文字段子/)
-  assert.match(messages[0].content, /大多数文案不用/)
-  assert.match(messages[0].content, /最多一个/)
+  assert.match(messages[0].content, /第一行只写指定钩子词/)
+  assert.match(messages[0].content, /每行只写一个短句/)
+  assert.match(messages[1].content, /本次第一行必须原样写/)
   assert.match(messages[1].content, /旧段子一/)
-  const normalized = normalizeXJokeText('文案：\n“开会前说只占五分钟。五分钟后，我学会了在镜头里睁着眼睡觉。🙂 #上班”')
+  const normalized = normalizeXJokeText('文案：\n“开会前说只占五分钟。五分钟后，我学会了在镜头里睁着眼睡觉。 #上班”', {
+    slot: 'joke_night_01',
+    now: new Date('2026-10-01T12:00:00Z'),
+  })
   assert.doesNotMatch(normalized, /文案|#上班/)
+  assert.ok(normalized.split('\n').length >= 3)
+  assert.ok(X_JOKE_HOOKS.some((hook) => normalized.startsWith(hook)))
   assert.equal(xJokeWithinTarget(normalized), true)
 })

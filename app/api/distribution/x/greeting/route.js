@@ -106,7 +106,7 @@ async function readRecentJokeTexts(db) {
   const { results } = await db.prepare(
     `SELECT text FROM x_post_assets
      WHERE content_type = 'joke-text' AND status = 'published' AND text != ''
-     ORDER BY updated_at DESC LIMIT 24`,
+     ORDER BY updated_at DESC LIMIT 80`,
   ).all()
   return (results || []).map((row) => String(row.text || '').trim()).filter(Boolean)
 }
@@ -193,7 +193,7 @@ export async function POST(req) {
   const jokeSlot = requestedJokeSlot ? normalizeXJokeSlot(requestedJokeSlot) : ''
   if (requestedJokeSlot && !jokeSlot) {
     return Response.json(
-      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 仅支持 joke_morning、joke_afternoon、joke_evening。' },
+      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 槽位必须来自当前 80 个高频短帖排程。' },
       { status: 400 },
     )
   }
@@ -444,7 +444,7 @@ export async function POST(req) {
           },
         }, env)
         text = isJokePost
-          ? normalizeXJokeText(generation.content)
+          ? normalizeXJokeText(generation.content, { slot: jokeSlot, now: requestNow })
           : isControversyPost
           ? normalizeXControversyText(generation.content)
           : normalizeGeneratedGreeting(generation.content)
@@ -472,7 +472,7 @@ export async function POST(req) {
             }
             const repaired = await callGreetingModel(activeModelSelection, repairArgs, env)
             const repairedText = isJokePost
-              ? normalizeXJokeText(repaired.content)
+              ? normalizeXJokeText(repaired.content, { slot: jokeSlot, now: requestNow })
               : isControversyPost
               ? normalizeXControversyText(repaired.content)
               : normalizeGeneratedGreeting(repaired.content)
@@ -485,7 +485,7 @@ export async function POST(req) {
           }
         }
         text = isJokePost
-          ? normalizeXJokeText(text)
+          ? normalizeXJokeText(text, { slot: jokeSlot, now: requestNow })
           : isControversyPost
           ? normalizeXControversyText(text)
           : fitGeneratedGreetingToXLimit(text).text

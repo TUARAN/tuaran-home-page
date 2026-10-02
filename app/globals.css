@@ -3902,26 +3902,33 @@
     background-image: linear-gradient(
       105deg,
       var(--site-ink) 0%,
-      var(--site-ink) 42%,
-      color-mix(in srgb, var(--site-accent) 78%, #ffffff) 49%,
-      color-mix(in srgb, var(--site-accent) 54%, #f4c96b) 52%,
-      var(--site-ink) 59%,
+      var(--site-ink) 35%,
+      color-mix(in srgb, var(--site-accent) 84%, #ffffff) 43%,
+      #fff2a8 49%,
+      color-mix(in srgb, var(--site-accent) 92%, #f4c96b) 55%,
+      var(--site-ink) 65%,
       var(--site-ink) 100%
     );
     background-position: 100% 50%;
-    background-size: 250% 100%;
+    background-size: 220% 100%;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: site-brand-slogan-sweep 4.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 0 transparent);
+    animation: site-brand-slogan-sweep 2.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
   }
 
   @keyframes site-brand-slogan-sweep {
-    0%, 14% {
+    0%, 8% {
       background-position: 100% 50%;
+      filter: drop-shadow(0 0 0 transparent);
     }
-    72%, 100% {
+    48% {
+      filter: drop-shadow(0 0 0.32rem color-mix(in srgb, var(--site-accent) 48%, transparent));
+    }
+    84%, 100% {
       background-position: 0% 50%;
+      filter: drop-shadow(0 0 0 transparent);
     }
   }
 
@@ -3941,6 +3948,7 @@
     .site-brand-slogan-highlight {
       background-image: none;
       -webkit-text-fill-color: currentColor;
+      filter: none;
       animation: none;
     }
   }

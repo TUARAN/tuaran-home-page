@@ -24,6 +24,9 @@ test('UI design stays in engineering while runtime tools share one operations ce
 })
 
 test('site health report records scope correction, findings, repairs, and verification', () => {
+  assert.match(reportSource, /2026-10-02 Cloudflare Error 1102/)
+  assert.match(reportSource, /a4449a136d6b5ddd-HKG/)
+  assert.match(reportSource, /当前无法复现/)
   assert.match(reportSource, /requestSource = eyeball/)
   assert.match(reportSource, /Early Hints/)
   assert.match(reportSource, /\/api\/site-status/)

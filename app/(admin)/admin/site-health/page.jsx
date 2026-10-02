@@ -47,7 +47,7 @@ export default async function AdminSiteHealthPage({ searchParams }) {
 
           <Section
             className="mt-5"
-            title="2026-09-29 检查与建议修复"
+            title="站点体检记录与建议"
             description="记录来源：ai-context/site-health-audit.md。任务状态只读，修改文档后随部署同步。"
           >
             <div

@@ -2,9 +2,22 @@
 
 记录日期：2026-09-29
 
+最近更新：2026-10-02
+
 检查范围：Cloudflare 最近 30 天流量、主域真实访客请求、热点接口、缓存状态、D1 查询热点，以及当前工作区中可能增加线上负载的待发布代码。
 
-状态：检查与修复建议已记录；尚未执行线上修复。本记录使用当前能取得的聚合数据定位风险，不替代逐请求日志与发布后的回归验证。
+状态：检查与修复建议已记录；尚未执行线上修复。2026-10-02 新增一笔已恢复、当前无法复现的 Cloudflare 1102 运行事件。本记录使用当前能取得的聚合数据定位风险，不替代逐请求日志与发布后的回归验证。
+
+## 0. 近期运行事件
+
+### 2026-10-02 Cloudflare Error 1102
+
+- 发生时间：2026-10-02 23:04:50（Asia/Shanghai），即 15:04:50 UTC。
+- 现场标识：Ray ID `a4449a136d6b5ddd-HKG`，Cloudflare 边缘节点为香港；截图未保留触发错误的完整 URL 路径。
+- 用户现象：页面返回 `Error 1102` 与 `Worker exceeded resource limits`，该次请求未能正常完成。
+- 当前状态：事件发生后主域首页已恢复访问，随后未能再次复现。影响持续时间、受影响请求数和具体路由暂时无法确认。
+- 已知边界：1102 表示 Worker 超出 CPU 时间或内存限制；仅凭错误页无法区分具体是哪一种。本次没有逐请求日志证据，不把最近提交或某条业务路由直接认定为根因。
+- 后续动作：暂不发布故障公告，继续观察。若再次出现，立即保存完整 URL、发生时间和 Ray ID，并在 Cloudflare 调用日志中核对 invocation outcome、CPU time、内存状态及相邻请求，确认是单路由问题还是共享 isolate 的瞬时资源压力。
 
 ## 1. 结论
 
@@ -91,9 +104,11 @@ D1 Insights 显示，读取全部 `content_documents` 覆盖记录的查询最�
 
 - [Cloudflare Pages Early Hints](https://developers.cloudflare.com/pages/configuration/early-hints/)
 - [Cloudflare Logs：504 与 origin status 0](https://developers.cloudflare.com/logs/faq/504-origin-status-0/)
+- [Cloudflare Error 1102：Worker exceeded resource limits](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1102/)
 
 | 日期 | 操作 | 状态 |
 |---|---|---|
 | 2026-09-29 | 核对流量总览、主域真实请求、状态码、缓存、热点路径与 D1 Insights | 已完成只读检查；已排除 Early Hints 内部 504 对真实错误率的干扰 |
 | 2026-09-29 | 定位站点状态轮询、研究发布状态全量读取和待发布 Presence 心跳 | 已定位代码路径；尚未修改线上行为 |
 | 2026-09-29 | 建立站点体检入口并记录修复顺序与验收口径 | 已写入项目文档；待部署与后续逐项实施 |
+| 2026-10-02 | 记录 Cloudflare 1102 资源超限事件（Ray ID `a4449a136d6b5ddd-HKG`） | 已恢复且当前无法复现；保留现场信息，等待复发时结合调用日志定位 CPU 或内存原因 |

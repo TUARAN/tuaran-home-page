@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImageLibrary from './XImageLibrary'
 import XPublicationRecords from './XPublicationRecords'
-import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
+import { X_POST_CATEGORIES, X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
 import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
@@ -14,8 +14,7 @@ const formatUsd = (microUsd, minimumFractionDigits = 3) => `$${(Math.max(0, Numb
 const generationModeLabel = (mode) => ({ deepseek: 'DeepSeek Flash', ollama: 'Ollama Qwen', template: '模板库', llm: 'DeepSeek Flash' })[mode] || mode
 const TIMELINE_FILTERS = [
   { id: 'all', label: '全部任务' },
-  { id: 'joke', label: '纯文字段子' },
-
+  ...X_POST_CATEGORIES.map((category) => ({ id: category.id, label: category.label })),
 ]
 const STATUS_FILTERS = [
   { id: 'all', label: '全部状态' },
@@ -50,7 +49,7 @@ function TimelineNode({ item }) {
       aria-label={`${item.schedule} ${item.label}${item.hasImage ? '，带图片' : ''}，${item.state.label}`}
     >
       <time className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[12px] font-semibold tabular-nums text-[#4f5148] dark:text-gray-300">
-        {item.schedule} ±90分钟
+        {item.schedule} ±{item.jitterMinutes}分钟
       </time>
       <span
         className={`absolute left-1/2 top-[25px] z-10 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-[3px] border-white ring-2 dark:border-[#10161f] ${
@@ -89,25 +88,52 @@ function TimelineNode({ item }) {
   )
 }
 
-function TaskTimeline({ jokeRuns }) {
+function CategoryDesign() {
+  return (
+    <Section
+      title="分类设计"
+      description={`当前启用 ${X_POST_CATEGORIES.length} 类内容，每天共 ${X_POST_SLOTS.length} 个发布节点。分类定义与自动排期共用同一份配置。`}
+      className="mb-4"
+    >
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {X_POST_CATEGORIES.map((category) => (
+          <article key={category.id} className="rounded-xl border border-[#e2e4da] bg-white p-3.5 dark:border-[#243041] dark:bg-[#0f141d]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="m-0 text-[10px] font-medium tracking-[0.08em] text-[#96988e] dark:text-gray-500">{category.format}</p>
+                <h3 className="mb-0 mt-1 text-[14px] font-semibold text-[#303229] dark:text-gray-100">{category.label}</h3>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#eff1e9] px-2 py-1 text-[10px] font-semibold text-[#55584d] dark:bg-[#202a37] dark:text-gray-300">{category.dailyPosts} 条/天</span>
+            </div>
+            <p className="mb-0 mt-2 text-[11px] font-medium text-[#67695f] dark:text-gray-300">{category.schedule}</p>
+            <p className="mb-0 mt-1 text-[11px] leading-5 text-[#85877c] dark:text-gray-400">{category.description}</p>
+          </article>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
+function TaskTimeline({ runGroups }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
   const items = useMemo(() => {
-    const labels = { joke_morning: '上午段子', joke_afternoon: '下午段子', joke_evening: '晚上段子' }
     return X_POST_SLOTS.map((slot) => {
-      const run = jokeRuns[slot.id]
+      const category = X_POST_CATEGORIES.find((item) => item.id === slot.category)
+      const run = runGroups[slot.category]?.[slot.id]
       return {
-        id: slot.id, label: labels[slot.id], schedule: slot.time,
-        type: 'joke',
-        typeLabel: '纯文字段子',
+        id: slot.id, label: slot.label, schedule: slot.time,
+        type: slot.category,
+        typeLabel: category?.label || slot.category,
+        jitterMinutes: slot.jitterMinutes,
         hasImage: Boolean(run?.imagePath),
         state: runState(run), recordedAt: run?.at,
         meta: [run?.theme, run?.styleLabel, run?.model].filter(Boolean).join(' · '),
         link: run?.postUrl, detail: run?.error, costMicroUsd: run?.xApiCostMicroUsd,
       }
     }).sort((a, b) => a.schedule.localeCompare(b.schedule))
-  }, [jokeRuns])
+  }, [runGroups])
 
   const visibleItems = items.filter((item) => (
     (typeFilter === 'all' || item.type === typeFilter)
@@ -145,17 +171,17 @@ function TaskTimeline({ jokeRuns }) {
       </div>
 
       <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid min-w-[660px] grid-cols-3 items-stretch gap-3 px-2 pb-1">
+        <div className="relative grid items-stretch gap-3 px-2 pb-1" style={{ gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(180px, 1fr))` }}>
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
-            <div className="col-span-3 mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400">
+            <div className="mt-12 rounded-xl border border-dashed border-[#d8dad0] px-4 py-8 text-center text-sm text-[#77796e] dark:border-[#2d3744] dark:text-gray-400" style={{ gridColumn: '1 / -1' }}>
               当前筛选下没有任务节点。
             </div>
           ) : null}
         </div>
       </div>
-      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间基准节点，每天在前后 90 分钟内随机安排；每 5 分钟检查到期任务，调度延迟或失败补跑可能更晚。卡片展示最近一次执行记录。</p>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间基准节点：话题帖前后浮动 5 分钟，生活段子前后浮动 90 分钟，其余类型前后浮动 20 分钟；每 5 分钟检查到期任务。卡片展示最近一次执行记录。</p>
     </div>
   )
 }
@@ -222,7 +248,15 @@ export default function MorningGreetingClient() {
 
   useEffect(() => { refresh() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const jokeRuns = data?.jokeRuns || {}
+  const runGroups = useMemo(() => ({
+    greeting: data?.lastRuns || {},
+    culture: data?.cultureRuns || {},
+    community: data?.communityRuns || {},
+    crypto: data?.cryptoRuns || {},
+    us: data?.usRuns || {},
+    controversy: data?.controversyRuns || {},
+    joke: data?.jokeRuns || {},
+  }), [data])
 
   async function togglePause() {
     setSaving(true); setError(''); setNotice('')
@@ -241,17 +275,19 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="每天随机发布 3 条纯文字段子，偶尔使用一个贴合语境的 emoji。"
+      description="用 7 类内容组成每天约 20 条的混合发布计划，兼顾讨论、轻松感、个人表达、垂直内容与中英文受众。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 
+      <CategoryDesign />
+
       <AutomationModelSelector />
 
       <Section
           title="自动任务"
-          description="每天上午、下午、晚上各发布 1 条纯文字生活段子；三个基准时段分别前后随机浮动 90 分钟。发布前由当前选定模型生成，自动去重并直接发到 X；大多数不使用 emoji，偶尔最多一个。"
+          description="每天 20 个节点按北京时间运行；发布前由当前选定模型生成，自动去重并直接发到 X。"
           className="mb-4"
           actions={
             <>
@@ -261,7 +297,7 @@ export default function MorningGreetingClient() {
           }
         >
         <div className="space-y-4">
-          <TaskTimeline jokeRuns={jokeRuns} />
+          <TaskTimeline runGroups={runGroups} />
         </div>
         </Section>
       <XImageLibrary />

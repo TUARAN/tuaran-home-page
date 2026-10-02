@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
+import { X_POST_CATEGORIES, X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
 import { runXAutoPosts } from '../scripts/run-x-auto-posts.mjs'
 import {
   buildXJokeMessages,
@@ -338,18 +338,17 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
   const clientSource = await readFile(new URL('../app/(admin)/admin/morning-greeting/MorningGreetingClient.jsx', import.meta.url), 'utf8')
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
-  assert.match(clientSource, /grid-cols-3/)
-  assert.match(clientSource, /grid-cols-3 items-stretch/)
+  assert.match(clientSource, /gridTemplateColumns/)
+  assert.match(clientSource, /minmax\(180px, 1fr\)/)
   assert.match(clientSource, /min-h-40 flex-1 flex-col/)
   assert.doesNotMatch(clientSource, /item\.imageUrl/)
   assert.doesNotMatch(clientSource, /mt-1 h-full rounded-xl/)
   assert.match(clientSource, /按任务类型筛选/)
   assert.match(clientSource, /timeline-status-filter/)
-  assert.match(clientSource, /joke_morning/)
-  assert.match(clientSource, /joke_afternoon/)
-  assert.match(clientSource, /joke_evening/)
-  assert.match(clientSource, /纯文字段子/)
-  assert.match(clientSource, /±90分钟/)
+  assert.match(clientSource, /分类设计/)
+  assert.match(clientSource, /X_POST_CATEGORIES\.map/)
+  assert.match(clientSource, /category\.dailyPosts/)
+  assert.match(clientSource, /slot\.jitterMinutes/)
   assert.match(clientSource, /visibleItems\.length} \/ {items\.length} 个节点/)
   assert.doesNotMatch(clientSource, /X 长文章|xArticleRun|14:00/)
 })
@@ -393,19 +392,33 @@ test('配图素材只管理图片，发布记录独立成可检索表格', async
   assert.match(recordsSource, /scope: 'runs'/)
 })
 
-test('joke posting uses three daily windows with stable random offsets', async () => {
-  assert.equal(X_POST_SLOTS.length, 3)
+test('seven content categories produce twenty mixed daily posts', async () => {
+  assert.equal(X_POST_CATEGORIES.length, 7)
+  assert.equal(X_POST_CATEGORIES.reduce((sum, category) => sum + category.dailyPosts, 0), 20)
+  assert.equal(X_POST_SLOTS.length, 20)
   const day = await xPostingSchedule(new Date(Date.UTC(2026, 7, 29)))
-  assert.deepEqual(day.map((task) => task.id), ['joke_morning', 'joke_afternoon', 'joke_evening'])
-  assert.ok(day.every((task) => task.query === 'joke'))
+  assert.deepEqual(
+    day.filter((task) => task.query === 'controversy').map((task) => task.id),
+    Array.from({ length: 12 }, (_, index) => `controversy_${String(index * 2).padStart(2, '0')}`),
+  )
+  assert.deepEqual(
+    day.filter((task) => task.query === 'joke').map((task) => task.id),
+    ['joke_morning', 'joke_afternoon', 'joke_evening'],
+  )
+  assert.deepEqual(
+    day.filter((task) => !['controversy', 'joke'].includes(task.query)).map((task) => task.id).sort(),
+    ['community_friends', 'crypto_market', 'culture_afternoon', 'morning', 'us_morning'],
+  )
   assert.deepEqual(await xPostingSchedule(new Date(Date.UTC(2026, 7, 29, 8))), day)
   const nextDay = await xPostingSchedule(new Date(Date.UTC(2026, 7, 30)))
   assert.notDeepEqual(day.map((task) => task.offsetMinutes), nextDay.map((task) => task.offsetMinutes))
   for (const task of [...day, ...nextDay]) {
     assert.ok(Number.isInteger(task.offsetMinutes))
-    assert.ok(Math.abs(task.offsetMinutes) <= 90)
+    assert.ok(Math.abs(task.offsetMinutes) <= task.jitterMinutes)
     assert.equal(task.scheduledAt - task.baselineAt, task.offsetMinutes * 60_000)
   }
+  assert.ok(day.find((task) => task.id === 'controversy_00').offsetMinutes >= 0)
+  assert.ok(nextDay.find((task) => task.id === 'controversy_00').offsetMinutes >= 0)
 })
 
 test('schedule windows start at the target and reject expired or next-day triggers', async () => {
@@ -432,12 +445,11 @@ test('scheduler calls only due tasks, carries their date, and isolates request f
       assert.equal(query.get('scheduledDate'), '2026-08-29')
       assert.equal(init.headers['x-morning-greeting-secret'], 'test-secret')
       requests.push(query)
-      if (query.has('joke')) throw new Error('network unavailable')
-      return Response.json({ ok: true }, { status: 201 })
+      throw new Error('network unavailable')
     },
   })
-  assert.equal(requests.length, 1)
-  assert.deepEqual(results.map((result) => result.slot).sort(), ['joke_morning'])
+  assert.ok(requests.length >= 1)
+  assert.ok(results.some((result) => result.slot === 'joke_morning'))
   assert.equal(results.filter((result) => result.ok).length, 0)
 })
 

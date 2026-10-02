@@ -1,4 +1,4 @@
-name: Random text jokes to X
+name: Daily mixed content to X
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: 手动运行的槽位（joke_morning、joke_afternoon、joke_evening）
+        description: 手动运行的槽位（如 controversy_12、joke_morning、crypto_market）
         required: true
         type: string
         default: joke_morning
@@ -21,9 +21,9 @@ concurrency:
 
 jobs:
   post:
-    name: Publish random text joke
+    name: Publish due X post
     runs-on: ubuntu-latest
-    # 每天三个窗口各发一条纯文字段子，实际时间由站内排程随机偏移。
+    # 七类内容每天约 20 条：话题帖为主干，穿插段子、问候、社区、文化、加密与英文内容。
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
               pass
           print(json.dumps({
               "workflow": "morning-greeting",
-              "taskName": "X 随机纯文字段子",
+              "taskName": "X 每日混合内容发布",
               "runId": os.environ.get("GITHUB_RUN_ID", ""),
               "runUrl": os.environ.get("RUN_URL", ""),
               "status": "failed",

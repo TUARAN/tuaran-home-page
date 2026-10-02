@@ -1,4 +1,4 @@
-import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
+import { X_ACTIVE_CONTROVERSY_SLOT_IDS, X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
 import { getOwnerOrReject } from '../../../../lib/adminAuth'
 import { getD1 } from '../../../../lib/d1'
 import {
@@ -19,6 +19,7 @@ import { xCommunityLastRunKey } from '../../../../lib/xCommunityPosts'
 import { xUsAudienceLastRunKey } from '../../../../lib/xUsAudiencePosts'
 import { xCryptoLastRunKey } from '../../../../lib/xCryptoPosts'
 import { xJokeLastRunKey } from '../../../../lib/xJokePosts'
+import { xControversyLastRunKey } from '../../../../lib/xControversyPosts'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
@@ -178,6 +179,17 @@ export async function GET(req) {
         jokeRuns[key] = null
       }
     }
+    const controversyRuns = {}
+    const controversyRaw = await Promise.all(
+      X_ACTIVE_CONTROVERSY_SLOT_IDS.map((slot) => readSetting(db, xControversyLastRunKey(slot))),
+    )
+    for (const [index, slot] of X_ACTIVE_CONTROVERSY_SLOT_IDS.entries()) {
+      try {
+        controversyRuns[slot] = JSON.parse(controversyRaw[index] || 'null')
+      } catch {
+        controversyRuns[slot] = null
+      }
+    }
     let xApiCost
     try {
       xApiCost = await getXApiCostSummary(db, { postsPerDay: X_POST_SLOTS.length })
@@ -207,6 +219,7 @@ export async function GET(req) {
       usRuns,
       cryptoRuns,
       jokeRuns,
+      controversyRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

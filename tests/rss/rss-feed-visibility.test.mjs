@@ -58,6 +58,20 @@ test('self site feed is never listed among curated sources', () => {
   assert.equal(RSS_FEEDS_SEED.some((feed) => feed.id === 'tuaran-home'), false)
 })
 
+test('AIHOT seed and deployed records use the current domain', async () => {
+  const feed = RSS_FEEDS_SEED.find((item) => item.id === 'ai-hot')
+  const migration = await readFile(
+    new URL('../../migrations/0105_update_ai_hot_rss_feed_url.sql', import.meta.url),
+    'utf8',
+  )
+
+  assert.equal(feed?.siteUrl, 'https://aihot.news/')
+  assert.equal(feed?.rssUrl, 'https://aihot.news/feed.xml')
+  assert.match(migration, /WHERE id = 'ai-hot'/)
+  assert.match(migration, /rss_url = 'https:\/\/aihot\.virxact\.com\/feed\.xml'/)
+  assert.match(migration, /rss_url = 'https:\/\/aihot\.news\/feed\.xml'/)
+})
+
 test('an empty or fully unpublished database stays empty', () => {
   assert.deepEqual(listPublishedRssFeeds([]), [])
   assert.deepEqual(listPublishedRssFeeds(rows.slice(1)), [])

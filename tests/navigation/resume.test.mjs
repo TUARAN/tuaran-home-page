@@ -23,6 +23,8 @@ test('about page exposes a job resume entry that routes to the printable CV', as
   assert.match(resumePage, /求职简历/)
   assert.match(resumePage, /application\/ld\+json/)
   assert.match(resumePage, /canonical: RESUME_PATH/)
+  assert.doesNotMatch(resumePage, /next\/image|resume-portrait|resumeProfile\.avatar/)
+  assert.doesNotMatch(resumePage, /创始人/)
   assert.match(toolbar, /window\.print\(\)/)
   assert.match(nav, /href: '\/about\/resume'/)
   assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === RESUME_PATH && entry.sitemap && entry.indexable))

@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import {
@@ -60,7 +59,7 @@ const resumeStructuredData = {
     '@id': 'https://2aran.com/about#person',
     name: resumeProfile.name,
     alternateName: ['TUARAN', ...resumeProfile.aliases],
-    jobTitle: ['AI 前沿部署工程师', '矩联科技创始人'],
+    jobTitle: ['AI 前沿部署工程师', '矩联科技负责人'],
     url: 'https://2aran.com/about',
     email: 'mailto:tuaran666@gmail.com',
     address: {
@@ -121,18 +120,6 @@ export default function ResumePage() {
               <p className="resume-headline">{resumeProfile.headline}</p>
               <p className="resume-intent">求职方向：{resumeProfile.intent}</p>
               <p className="resume-aliases">{resumeProfile.aliases.join(' · ')}</p>
-            </div>
-            <div className="resume-portrait">
-              <Image
-                src={resumeProfile.avatar}
-                alt="涂阿燃 TUARAN"
-                width={240}
-                height={288}
-                priority
-                unoptimized
-                sizes="112px"
-                className="h-full w-full object-cover"
-              />
             </div>
           </div>
 

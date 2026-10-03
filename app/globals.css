@@ -8794,17 +8794,6 @@ body:has(.x-mutual-page) footer a:hover {
   color: #6b7787;
 }
 
-.resume-portrait {
-  width: 96px;
-  height: 118px;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid #cfc0a0;
-  border-radius: 12px;
-  background: #0b121d;
-  box-shadow: 0 10px 24px rgba(28, 36, 48, 0.16);
-}
-
 .resume-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.34fr) minmax(0, 0.66fr);
@@ -9008,11 +8997,6 @@ body:has(.x-mutual-page) footer a:hover {
   .resume-name-en {
     display: block;
     margin: 0.35rem 0 0;
-  }
-
-  .resume-portrait {
-    width: 84px;
-    height: 102px;
   }
 
   .resume-grid {

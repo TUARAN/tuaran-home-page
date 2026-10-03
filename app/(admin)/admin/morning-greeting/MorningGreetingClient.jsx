@@ -93,7 +93,7 @@ function CategoryDesign() {
   return (
     <Section
       title="分类设计"
-      description={`当前启用 ${activeCategories.length} 类内容，每天共 ${X_POST_SLOTS.length} 个发布节点。已停发类型继续保留定义和历史记录。`}
+      description={`当前启用 ${activeCategories.length} 类内容，每天共 ${X_POST_SLOTS.length} 个发布节点。未启用的旧时段继续保留定义和历史记录。`}
       className="mb-4"
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -184,7 +184,7 @@ function TaskTimeline({ runGroups }) {
           ) : null}
         </div>
       </div>
-      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间固定节点：30 条高频短帖分布在早间、下午和深夜，每段 10 条；交朋友在 09:30、15:00 和 19:00 各 1 条。GitHub Actions 每 5 分钟检查到期任务。</p>
+      <p className="mb-0 mt-2 text-[11px] leading-5 text-[#96988e] dark:text-gray-500">横轴为北京时间固定节点：20 条高频短帖分布在早间、下午和深夜；3 条交朋友；其余 10 条分配给问候、文化、加密、美区英文和理财热点。GitHub Actions 每 5 分钟检查到期任务。</p>
     </div>
   )
 }
@@ -254,6 +254,11 @@ export default function MorningGreetingClient() {
   const runGroups = useMemo(() => ({
     joke: data?.jokeRuns || {},
     community: data?.communityRuns || {},
+    greeting: data?.greetingRuns || {},
+    culture: data?.cultureRuns || {},
+    crypto: data?.cryptoRuns || {},
+    us: data?.usRuns || {},
+    controversy: data?.controversyRuns || {},
   }), [data])
 
   async function togglePause() {
@@ -273,7 +278,7 @@ export default function MorningGreetingClient() {
   return (
     <AdminPage
       title="X 发布任务"
-      description="每天 33 条：30 条强钩子纯文字短帖，加 3 条交朋友内容。"
+      description="每天 33 条：20 条高频短帖、3 条交朋友，另有 10 条分配给恢复的话题。"
       actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
     >
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
@@ -285,7 +290,7 @@ export default function MorningGreetingClient() {
 
       <Section
           title="自动任务"
-          description="每天 33 个节点按北京时间运行：早间、下午、深夜各 10 条高频短帖，09:30、15:00、19:00 各 1 条交朋友内容。发布前由当前模型生成，自动去重并直接发到 X。"
+          description="每天 33 个节点按北京时间运行：20 条高频短帖、3 条交朋友、1 条日常问候、1 条文化故事、3 条加密观察、1 条美区英文和 4 条理财热点。发布前由当前模型生成，自动去重并直接发到 X。"
           className="mb-4"
           actions={
             <>

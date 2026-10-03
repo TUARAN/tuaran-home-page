@@ -407,6 +407,30 @@ test('joke tasks always publish generated text without image storage or media up
   assert.equal(row.status, 'published')
 })
 
+test('near-duplicate joke copy is blocked before a second publish and cleared for regeneration', async (t) => {
+  let publishes = 0
+  const { invoke, sqlite } = await cronFixture(t, {
+    callDeepSeek: async () => ({
+      content: '手机又提示存储满了。删了两小时照片，最大的一块还是系统更新包。更新完多了三个新应用，它们排队提醒我存储满了。',
+      model: 'deepseek-v4-flash',
+    }),
+    publishXPost: async (text, options) => {
+      assert.deepEqual(options.mediaIds, [])
+      publishes++
+      return { ok: true, post: { id: `joke-${publishes}`, text, url: `https://x.com/i/web/status/joke-${publishes}` } }
+    },
+  })
+  assert.equal((await invoke('joke=joke_morning_01')).status, 201)
+  const duplicateResponse = await invoke('joke=joke_morning_02')
+  assert.equal(duplicateResponse.status, 409)
+  assert.equal((await duplicateResponse.json()).error, 'DUPLICATE_GENERATED_JOKE')
+  assert.equal(publishes, 1)
+  const blocked = sqlite.prepare("SELECT text, status, error FROM x_post_assets WHERE slot = 'joke_morning_02'").get()
+  assert.equal(blocked.text, '')
+  assert.equal(blocked.status, 'failed')
+  assert.equal(blocked.error, 'DUPLICATE_GENERATED_JOKE')
+})
+
 test('text retries preserve their format and draft even when the next draw would select an image', async (t) => {
   let draws = 0
   let publishes = 0
@@ -731,7 +755,7 @@ test('fallback ignores missing pool objects and never bypasses an expired lease'
 
 test('paused slots reject manual and old scheduled triggers before any generation', async (t) => {
   const { invoke, calls, sqlite } = await cronFixture(t, { isXPostSlotActive: postingSchedule.isXPostSlotActive })
-  for (const slot of ['crypto=crypto_knowledge', 'crypto=crypto_people', 'story=culture_morning', 'story=culture_evening', 'us=us_midday', 'period=evening']) {
+  for (const slot of ['story=culture_morning', 'story=culture_evening', 'us=us_morning', 'us=us_evening', 'period=noon', 'period=evening', 'controversy=controversy_13']) {
     for (const suffix of ['', `&scheduledDate=${greetings.shanghaiDateKey()}`]) {
       const response = await invoke(slot + suffix)
       assert.equal(response.status, 200)

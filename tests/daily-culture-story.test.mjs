@@ -47,5 +47,5 @@ test('workflow schedules all three culture story slots with retries', async () =
   ])
   assert.match(workflow, /node scripts\/run-x-auto-posts.mjs/)
   assert.match(route, /buildCultureStoryMessages/)
-  assert.match(route, /const contentType = isCultureStory \? 'culture-story'/)
+  assert.match(route, /isCultureStory \? 'culture-story'/)
 })

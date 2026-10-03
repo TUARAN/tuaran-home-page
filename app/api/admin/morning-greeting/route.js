@@ -66,14 +66,29 @@ export async function GET(req) {
       db.prepare(
         `SELECT key, value FROM site_settings
          WHERE key LIKE 'automation.x_joke.last_run.joke_%'
-            OR key LIKE 'automation.x_community.last_run.community_%'`,
+            OR key LIKE 'automation.x_community.last_run.community_%'
+            OR key LIKE 'automation.x_morning_greeting.last_run.%'
+            OR key LIKE 'automation.x_culture_story.last_run.culture_%'
+            OR key LIKE 'automation.x_crypto.last_run.crypto_%'
+            OR key LIKE 'automation.x_us_audience.last_run.us_%'
+            OR key LIKE 'automation.x_controversy.last_run.controversy_%'`,
       ).all(),
     ])
     const jokeRuns = {}
     const communityRuns = {}
+    const greetingRuns = {}
+    const cultureRuns = {}
+    const cryptoRuns = {}
+    const usRuns = {}
+    const controversyRuns = {}
     const runGroups = [
       { prefix: 'automation.x_joke.last_run.', target: jokeRuns },
       { prefix: 'automation.x_community.last_run.', target: communityRuns },
+      { prefix: 'automation.x_morning_greeting.last_run.', target: greetingRuns },
+      { prefix: 'automation.x_culture_story.last_run.', target: cultureRuns },
+      { prefix: 'automation.x_crypto.last_run.', target: cryptoRuns },
+      { prefix: 'automation.x_us_audience.last_run.', target: usRuns },
+      { prefix: 'automation.x_controversy.last_run.', target: controversyRuns },
     ]
     for (const row of runSettings?.results || []) {
       const group = runGroups.find((item) => String(row.key || '').startsWith(item.prefix))
@@ -110,6 +125,11 @@ export async function GET(req) {
       llmIntent: normalizeGreetingLlmIntent(intentRaw, DEFAULT_DAILY_GREETING_LLM_INTENT),
       jokeRuns,
       communityRuns,
+      greetingRuns,
+      cultureRuns,
+      cryptoRuns,
+      usRuns,
+      controversyRuns,
       xApiCost: {
         ...xApiCost,
         postCreateMicroUsd: X_API_POST_CREATE_COST_MICRO_USD,

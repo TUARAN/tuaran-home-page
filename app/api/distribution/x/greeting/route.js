@@ -45,6 +45,7 @@ import {
 } from '../../../../../lib/xControversyPosts'
 import {
   buildXJokeMessages,
+  isXJokeTooSimilar,
   normalizeXJokeSlot,
   normalizeXJokeText,
   xJokeLastRunKey,
@@ -193,7 +194,7 @@ export async function POST(req) {
   const jokeSlot = requestedJokeSlot ? normalizeXJokeSlot(requestedJokeSlot) : ''
   if (requestedJokeSlot && !jokeSlot) {
     return Response.json(
-      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 槽位必须来自当前 30 个高频短帖排程。' },
+      { ok: false, error: 'INVALID_JOKE_SLOT', detail: 'joke 槽位必须来自当前 20 个高频短帖排程。' },
       { status: 400 },
     )
   }
@@ -535,6 +536,18 @@ export async function POST(req) {
         ).catch(() => {})
       }
       return Response.json({ ok: false, error: 'TEXT_TOO_LONG', period: runSlot, mode: generationMode }, { status: 400 })
+    }
+    if (isJokePost) {
+      const latestJokeTexts = await readRecentJokeTexts(db).catch(() => [])
+      if (isXJokeTooSimilar(text, latestJokeTexts)) {
+        await updateXAsset(db, asset, { text: '', status: 'failed', error: 'DUPLICATE_GENERATED_JOKE' })
+        return Response.json({
+          ok: false,
+          error: 'DUPLICATE_GENERATED_JOKE',
+          detail: '生成文案与近期已发布短帖过于相似，已阻止发布；下次调度会重新生成。',
+          period: runSlot,
+        }, { status: 409 })
+      }
     }
     if (isCommunityPost) text = normalizeXCommunityText(text, communitySlot, 280, communityVariant)
 

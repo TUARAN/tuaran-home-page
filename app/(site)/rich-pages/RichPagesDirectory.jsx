@@ -5,26 +5,32 @@ import ShowcaseDirectory from '../components/ShowcaseDirectory'
 const VISUALS = {
   'learning-tool': {
     eyebrow: 'LEARN', icon: 'books',
+    image: '/images/rich-pages/categories/learning-tool.webp',
     cover: 'from-[#d8e8ff] via-[#eef4ff] to-[#f8e9ff] text-[#365275] dark:from-[#182b46] dark:via-[#172235] dark:to-[#2a213c] dark:text-[#bdd4f3]',
   },
   'ai-engineering': {
     eyebrow: 'BUILD', icon: 'brain',
+    image: '/images/rich-pages/categories/ai-engineering.webp',
     cover: 'from-[#17191e] via-[#252a33] to-[#3d4654] text-white dark:from-black dark:via-[#10151d] dark:to-[#252e3a]',
   },
   'data-visualization': {
     eyebrow: 'EXPLORE', icon: 'chart',
+    image: '/images/rich-pages/categories/data-visualization.webp',
     cover: 'from-[#d9eee7] via-[#eef4df] to-[#f5e7bd] text-[#315c55] dark:from-[#12322f] dark:via-[#233328] dark:to-[#3d321d] dark:text-[#b8ddd2]',
   },
   'engineering-research': {
     eyebrow: 'ANALYZE', icon: 'tools',
+    image: '/images/rich-pages/categories/engineering-research.webp',
     cover: 'from-[#eadfd2] via-[#f6eee5] to-[#e5e0d6] text-[#6e4a31] dark:from-[#39251b] dark:via-[#2b2521] dark:to-[#242622] dark:text-[#e3c3a8]',
   },
   'long-term-project': {
     eyebrow: 'CREATE', icon: 'sparkles',
+    image: '/images/rich-pages/categories/long-term-project.webp',
     cover: 'from-[#eee5ca] via-[#f8f2df] to-[#e2d3b4] text-[#6d5828] dark:from-[#352c17] dark:via-[#272418] dark:to-[#3c3020] dark:text-[#e5cf92]',
   },
   'life-system': {
     eyebrow: 'LIFE', icon: 'clock',
+    image: '/images/rich-pages/categories/life-system.webp',
     cover: 'from-[#f3dcd6] via-[#f8ece4] to-[#e8e0cc] text-[#7b4d43] dark:from-[#3b211f] dark:via-[#302522] dark:to-[#363021] dark:text-[#e8bbb0]',
   },
 }
@@ -62,8 +68,11 @@ const SECONDARY_FILTER = {
 }
 
 export default function RichPagesDirectory({ works, categories }) {
-  const items = works.map((work) => ({
+  const items = works.map((work, index) => ({
     ...work,
+    coverImage: work.coverImage || VISUALS[work.category]?.image,
+    coverImageAlt: `${work.categoryLabel}分类视觉：${work.title}`,
+    coverImagePriority: index < 4,
     coverLabel: work.kind,
     meta: [work.date, work.categoryLabel],
     badgeLabel: work.badge,

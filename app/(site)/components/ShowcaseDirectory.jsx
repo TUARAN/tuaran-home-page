@@ -78,9 +78,10 @@ function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
         <>
           <Image
             src={item.coverImage}
-            alt={`${item.title} 网站页面截图`}
+            alt={item.coverImageAlt || `${item.title} 网站页面截图`}
             fill
             unoptimized
+            priority={item.coverImagePriority}
             sizes={compact ? '(min-width: 768px) 280px, 100vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'}
             className="object-cover object-top transition duration-500 group-hover:scale-[1.025]"
           />

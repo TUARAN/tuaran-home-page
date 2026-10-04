@@ -1,13 +1,7 @@
-import Link from 'next/link'
-
-import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
-import DistributeContentButton from '../components/DistributeContentButton'
-import SharePageButton from '../components/SharePageButton'
-import DownloadTabs from './DownloadTabs'
+import ShowcaseDirectory from '../components/ShowcaseDirectory'
 import {
   DOWNLOAD_ITEMS,
   DOWNLOAD_TYPE_META,
-  getDownloadItemsByType,
 } from '../../../lib/downloadItems'
 import { getWorkStatusLabel } from '../../../lib/workItems'
 
@@ -33,43 +27,47 @@ export const metadata = {
   },
 }
 
-const RELATED_DOWNLOADS = [
-  {
-    href: '/resources/wallpapers',
-    title: '壁纸原图',
-    desc: '按主题筛选后领取原图。',
-  },
-  {
-    href: '/workbuddy-publish-center#downloads-title',
-    title: 'WorkBuddy 上架包',
-    desc: 'Skill 与 MCP 的 ZIP，给上架审核用。',
-  },
-]
-
-function isExternalHref(href) {
-  return typeof href === 'string' && href.startsWith('http')
+function statusTone(status) {
+  return status === 'shipped'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'
 }
 
-function CatalogLink({ item, className = '', children }) {
-  if (isExternalHref(item.href)) {
-    return (
-      <a href={item.href} target="_blank" rel="noreferrer" className={`no-external-arrow ${className}`}>
-        {children}
-      </a>
-    )
-  }
-
-  return (
-    <Link href={item.href} className={className}>
-      {children}
-    </Link>
-  )
+const VISUALS = {
+  extension: {
+    eyebrow: 'INSTALL',
+    icon: 'download',
+    image: '/images/downloads/categories/extension.webp',
+    cover: 'from-[#d8e8ff] via-[#f4efff] to-[#d8f6ea] text-[#285d75] dark:from-[#14273e] dark:via-[#2c2143] dark:to-[#15382f] dark:text-[#cae8e0]',
+  },
+  desktop: {
+    eyebrow: 'DESKTOP',
+    icon: 'cpu',
+    image: '/images/downloads/categories/desktop.webp',
+    cover: 'from-[#ffe1d7] via-[#edf3ff] to-[#d5eee8] text-[#625072] dark:from-[#46201b] dark:via-[#1c2940] dark:to-[#16362f] dark:text-[#efd4ca]',
+  },
 }
 
-function itemMeta(item) {
-  if (item.domains?.length) return { label: 'Supported', value: item.domains.join(' / ') }
-  if (item.platforms?.length) return { label: 'Platforms', value: item.platforms.join(' / ') }
-  return null
+const CONFIG = {
+  eyebrow: 'Download Center',
+  title: '下载中心',
+  description: '扩展和客户端集中在这里领取。按类型筛选，点进对应页面查看版本、安装方式和领取说明。',
+  countLabel: '个下载',
+  filterAriaLabel: '筛选下载',
+  searchPlaceholder: '搜索下载、平台或标签',
+  resultTitle: '全部下载',
+  categoryTabs: true,
+  categoryTabsAriaLabel: '下载类别',
+  actionLabel: '打开下载页',
+  layout: 'catalog',
+  analyticsSurface: 'download_directory',
+  analyticsEvent: 'download_entry_click',
+  destinationKind: 'download',
+  share: {
+    title,
+    text: description,
+    url: PAGE_URL,
+  },
 }
 
 const jsonLd = {
@@ -96,146 +94,42 @@ const jsonLd = {
 }
 
 export default function DownloadsPage() {
-  const groups = DOWNLOAD_TYPE_META.map((type) => ({
-    ...type,
-    items: getDownloadItemsByType(type.id),
-  }))
+  const categoryLabels = Object.fromEntries(DOWNLOAD_TYPE_META.map((type) => [type.id, type.title]))
+  const items = [...DOWNLOAD_ITEMS]
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+    .map((item, index) => {
+      const platformLabel = item.platforms?.join(' / ') || item.domains?.join(' / ') || '查看详情'
+      const categoryLabel = categoryLabels[item.type] || '下载'
+
+      return {
+        ...item,
+        category: item.type,
+        categoryLabel,
+        coverImage: VISUALS[item.type]?.image,
+        coverImageAlt: `${categoryLabel}分类视觉：${item.title}`,
+        coverImagePriority: index < 4,
+        showCatalogCoverImage: true,
+        coverLabel: categoryLabel,
+        meta: [item.role],
+        badgeLabel: getWorkStatusLabel(item.status),
+        badgeTone: statusTone(item.status),
+        footerLabel: item.tags.slice(0, 2).join(' · '),
+        metricLabel: platformLabel,
+      }
+    })
 
   return (
-    <main className="min-h-screen bg-[var(--page-bg)] text-[#171611] dark:text-gray-100">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-
-      <section className="mx-auto max-w-[1080px] px-4 pb-5 pt-10 sm:px-6 lg:px-8">
-        <div className="grid gap-6 border-b border-[#d8d1c4] pb-8 dark:border-[#27313d] lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
-          <div>
-            <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#6f6f40] dark:text-[#d7d7a7]">
-              Download Center
-            </p>
-            <h1 className="mb-3 font-serif text-[38px] font-bold leading-tight text-[#15130e] dark:text-white sm:text-[52px]">
-              下载中心
-            </h1>
-            <p className="mb-0 max-w-3xl text-[15px] leading-7 text-[#67645b] dark:text-[#a7b0be]">
-              扩展和客户端集中在这里领取。点进对应页面查看版本、安装方式和领取说明。
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-[#d8d1c4] bg-white/60 p-4 dark:border-[#26313d] dark:bg-[#101720]/70">
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <div>
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a877d] dark:text-[#7e8a9b]">Packages</p>
-                <strong className="text-3xl">{DOWNLOAD_ITEMS.length}</strong>
-              </div>
-              <div>
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a877d] dark:text-[#7e8a9b]">Types</p>
-                <strong className="text-base">扩展 / 桌面</strong>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <SharePageButton title={title} text={description} url={PAGE_URL} size="md" idleLabel="分享页面" />
-              <ArticleActionsDropdown label="更多">
-                <DistributeContentButton
-                  title={title}
-                  summary={description}
-                  url={PAGE_PATH}
-                  category="tools"
-                  slug="downloads"
-                  tags={['下载中心', '浏览器扩展', '桌面应用']}
-                  kindLabel="工具"
-                />
-              </ArticleActionsDropdown>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <DownloadTabs groups={groups}>
-        {groups.map((group) => (
-          <section
-            key={group.id}
-            aria-labelledby={`${group.anchor}-title`}
-            className="py-7"
-          >
-          <div className="mb-5">
-            <h2 id={`${group.anchor}-title`} className="mb-1 font-serif text-2xl font-semibold text-[#15130e] dark:text-white">
-              {group.title}
-            </h2>
-            <p className="mb-0 text-[14px] leading-6 text-[#67645b] dark:text-[#a7b0be]">{group.description}</p>
-          </div>
-
-          <div className="grid gap-4">
-            {group.items.map((item) => {
-              const meta = itemMeta(item)
-              return (
-                <article
-                  key={item.id}
-                  className="grid gap-5 rounded-lg border border-[#ded8ca] bg-white/70 p-5 shadow-sm shadow-black/5 dark:border-[#252e38] dark:bg-[#101720]/[0.72] md:grid-cols-[minmax(0,1fr)_220px]"
-                >
-                  <div className="min-w-0">
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-[#d8d1c4] bg-[var(--site-panel)] px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6f6f40] dark:border-[#3a443a] dark:text-[#d7d7a7]">
-                        {getWorkStatusLabel(item.status)}
-                      </span>
-                      <span className="text-[12px] text-[#7a766b] dark:text-[#8f9aaa]">{item.role}</span>
-                    </div>
-                    <h3 className="mb-2 text-[24px] font-bold text-[#15130e] dark:text-white">{item.title}</h3>
-                    <p className="mb-4 text-[14px] leading-7 text-[#68665e] dark:text-[#a4adba]">{item.summary}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags?.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-[#ded8ca] bg-white/65 px-2.5 py-1 text-[12px] text-[#68645a] dark:border-[#303947] dark:bg-[#101721] dark:text-[#aab4c2]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col justify-between gap-4 border-t border-[#e8e1d5] pt-4 dark:border-[#252e38] md:border-l md:border-t-0 md:pl-5 md:pt-0">
-                    {meta ? (
-                      <div>
-                        <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8a877d] dark:text-[#7e8a9b]">{meta.label}</p>
-                        <p className="mb-0 text-sm text-[#4d493f] dark:text-[#c4ccd8]">{meta.value}</p>
-                      </div>
-                    ) : null}
-                    <CatalogLink
-                      item={item}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#171611] bg-[#171611] px-4 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#343026] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                    >
-                      {item.actionLabel || '打开下载页'} <span className="ml-2">→</span>
-                    </CatalogLink>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-          </section>
-        ))}
-      </DownloadTabs>
-
-      <section className="mx-auto max-w-[1080px] px-4 pb-12 sm:px-6 lg:px-8" aria-labelledby="related-downloads-title">
-        <h2 id="related-downloads-title" className="mb-3 font-serif text-xl font-semibold text-[#15130e] dark:text-white">
-          其他下载入口
-        </h2>
-        <p className="mb-4 max-w-3xl text-[14px] leading-6 text-[#67645b] dark:text-[#a7b0be]">
-          壁纸原图和 WorkBuddy 上架包在各自页面领取。
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {RELATED_DOWNLOADS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg border border-[#ded8ca] bg-white/70 px-4 py-4 no-underline transition hover:border-[#171611] dark:border-[#252e38] dark:bg-[#101720]/70 dark:hover:border-white"
-            >
-              <strong className="block text-[15px] text-[#15130e] dark:text-white">{item.title}</strong>
-              <span className="mt-1 block text-[13px] leading-6 text-[#68665e] dark:text-[#a4adba]">{item.desc}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </main>
+      <ShowcaseDirectory
+        items={items}
+        categories={DOWNLOAD_TYPE_META}
+        visuals={VISUALS}
+        config={CONFIG}
+      />
+    </>
   )
 }

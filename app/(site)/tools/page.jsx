@@ -31,22 +31,27 @@ function statusTone(status) {
 const VISUALS = {
   direct: {
     eyebrow: 'USE', icon: 'world',
+    image: '/images/tools/categories/direct.webp',
     cover: 'from-[#dcece8] via-[#edf4eb] to-[#f2e7cf] text-[#315c56] dark:from-[#14312f] dark:via-[#1e2c29] dark:to-[#332b1d] dark:text-[#b7d9d1]',
   },
   extension: {
     eyebrow: 'INSTALL', icon: 'download',
+    image: '/images/tools/categories/extension.webp',
     cover: 'from-[#e2e6f2] via-[#f1f1f7] to-[#e8dff1] text-[#4f5876] dark:from-[#1a2438] dark:via-[#202535] dark:to-[#30243c] dark:text-[#c5cbea]',
   },
   'x-platform': {
     eyebrow: 'X / TWITTER', icon: 'x',
+    image: '/images/tools/categories/x-platform.webp',
     cover: 'from-[#dfe7ec] via-[#f1f3f4] to-[#dce2e5] text-[#313a40] dark:from-[#11161a] dark:via-[#1a2025] dark:to-[#272d31] dark:text-[#d5dde1]',
   },
   analysis: {
     eyebrow: 'ANALYZE', icon: 'activity',
+    image: '/images/tools/categories/analysis.webp',
     cover: 'from-[#e8ddd2] via-[#f4ebe1] to-[#ead8ce] text-[#704a36] dark:from-[#38241c] dark:via-[#30251f] dark:to-[#3c2924] dark:text-[#e2bfa9]',
   },
   'ai-dev': {
     eyebrow: 'BUILD', icon: 'code',
+    image: '/images/tools/categories/ai-dev.webp',
     cover: 'from-[#17191e] via-[#252a33] to-[#3d4654] text-white dark:from-black dark:via-[#10151d] dark:to-[#252e3a]',
   },
 }
@@ -72,10 +77,14 @@ export default function ToolsPage() {
   const categoryLabels = Object.fromEntries(TOOL_TYPE_META.map((type) => [type.id, type.title]))
   const items = [...TOOL_ITEMS]
     .sort((a, b) => b.priority - a.priority)
-    .map((item) => ({
+    .map((item, index) => ({
       ...item,
       category: item.type,
       categoryLabel: categoryLabels[item.type] || '工具',
+      coverImage: VISUALS[item.type]?.image,
+      coverImageAlt: `${categoryLabels[item.type] || '工具'}分类视觉：${item.title}`,
+      coverImagePriority: index < 4,
+      showCatalogCoverImage: true,
       coverLabel: categoryLabels[item.type] || '工具',
       meta: [categoryLabels[item.type] || '工具'],
       badgeLabel: TOOL_STATUS_META[item.status] || item.status,

@@ -70,11 +70,31 @@ function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
   const visual = visuals[item.category] || visuals.default
   const Icon = ICONS[visual?.icon] || IconTools
   const isCatalog = layout === 'catalog'
+  const showCatalogImage = isCatalog && item.showCatalogCoverImage && item.coverImage
   const iconSize = isCatalog ? (compact ? 16 : 18) : compact ? 22 : 26
 
   return (
-    <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${isCatalog ? 'showcase-cover--catalog' : ''} ${compact ? (isCatalog ? 'h-full min-h-[108px]' : 'h-full min-h-[132px]') : (isCatalog ? 'h-[72px]' : 'aspect-[16/9]')}`}>
-      {item.coverImage && !isCatalog ? (
+    <div className={`showcase-cover relative overflow-hidden bg-gradient-to-br ${visual?.cover || 'from-[#e8e4dc] to-[#f5f3ee] text-[#655e52] dark:from-[#24282c] dark:to-[#15191d] dark:text-[#c4c8cc]'} ${isCatalog ? 'showcase-cover--catalog' : ''} ${compact ? (isCatalog ? 'h-full min-h-[108px]' : 'h-full min-h-[132px]') : (isCatalog ? (showCatalogImage ? 'h-[116px]' : 'h-[72px]') : 'aspect-[16/9]')}`}>
+      {showCatalogImage ? (
+        <>
+          <Image
+            src={item.coverImage}
+            alt={item.coverImageAlt || `${item.title} 分类视觉`}
+            fill
+            unoptimized
+            priority={item.coverImagePriority}
+            sizes={compact ? '(min-width: 768px) 168px, 100vw' : '(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw'}
+            className="object-cover transition duration-500 group-hover:scale-[1.035]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/15" />
+          <div className="showcase-cover-inner relative flex h-full items-start justify-between gap-3 p-3 text-[#25231f]">
+            <span className="rounded-full border border-black/10 bg-white/75 px-2.5 py-1 font-mono text-[9px] font-black tracking-[0.18em] shadow-sm backdrop-blur-md">{visual?.eyebrow || 'OPEN'}</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/75 shadow-sm backdrop-blur-md">
+              <Icon size={iconSize} stroke={1.8} aria-hidden="true" />
+            </span>
+          </div>
+        </>
+      ) : item.coverImage && !isCatalog ? (
         <>
           <Image
             src={item.coverImage}

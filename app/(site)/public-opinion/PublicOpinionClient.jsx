@@ -104,15 +104,22 @@ function WorkspaceSidebar({ activeView, onViewChange, snapshot, connectors, data
   )
 }
 
-function TopicTabs({ topics, activeTopicId, onChange }) {
-  const options = [{ id: 'all', title: '全部' }, ...topics]
+function TopicTabs({ topics, topicCounts, activeTopicId, onChange }) {
+  const options = [{ id: 'all', title: '全部', count: Object.values(topicCounts).reduce((sum, count) => sum + count, 0) }, ...topics.map((topic) => ({ ...topic, count: topicCounts[topic.id] || 0 }))]
   return (
-    <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-[#e0e5e2] bg-[#f1f3f1] p-1 dark:border-[#2d3942] dark:bg-[#151f27]">
-      {options.map((topic) => (
-        <button key={topic.id} type="button" onClick={() => onChange(topic.id)} className={`min-h-10 shrink-0 rounded-xl px-5 text-[13px] font-semibold transition ${activeTopicId === topic.id ? 'bg-white text-[#1c2b2e] shadow-sm dark:bg-[#25323d] dark:text-gray-100' : 'text-[#657275] hover:text-[#26373a] dark:text-[#91a0a9]'}`}>
-          {topic.title}
-        </button>
-      ))}
+    <div>
+      <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-[#e0e5e2] bg-[#f1f3f1] p-1 dark:border-[#2d3942] dark:bg-[#151f27]">
+        {options.map((topic) => {
+          const disabled = topic.id !== 'all' && topic.count === 0
+          return (
+            <button key={topic.id} type="button" disabled={disabled} title={disabled ? '当前时间窗口内暂无内容' : `${topic.count} 条动态`} onClick={() => onChange(topic.id)} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${activeTopicId === topic.id ? 'bg-white text-[#1c2b2e] shadow-sm dark:bg-[#25323d] dark:text-gray-100' : disabled ? 'cursor-not-allowed text-[#a5aeab] opacity-60 dark:text-[#617078]' : 'text-[#657275] hover:text-[#26373a] dark:text-[#91a0a9]'}`}>
+              <span>{topic.title}</span>
+              <span className={`min-w-5 rounded-full px-1.5 py-0.5 text-center font-mono text-[10px] ${activeTopicId === topic.id ? 'bg-[#e8f0ed] text-[#2a7377] dark:bg-[#17272d] dark:text-[#82bcb5]' : 'bg-white/70 text-[#7a8784] dark:bg-[#222e37] dark:text-[#8999a2]'}`}>{topic.count}</span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="mb-0 mt-1.5 px-1 text-[10px] text-[#8a9592] dark:text-[#71818a]">数字是当前时间窗口内的动态数；0 条分类暂不可选。</p>
     </div>
   )
 }
@@ -138,7 +145,7 @@ function HotRanking({ events, topics, onSelectTopic, windowLabel }) {
     <section id="hot" className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#dce3df] bg-white shadow-[0_1px_2px_rgba(30,55,48,0.04)] dark:border-[#2b3943] dark:bg-[#111b24]">
       <div className="flex items-center justify-between border-b border-[#eef1ef] px-5 py-4 dark:border-[#26333d]">
         <div className="flex items-center gap-2.5"><span className="h-2.5 w-2.5 rounded-full bg-[#c84d38] shadow-[0_0_0_4px_rgba(200,77,56,0.1)]" /><h2 className="mb-0 border-0 p-0 text-[15px] font-bold text-[#263438] dark:text-gray-100">当前热点</h2></div>
-        <span className="inline-flex items-center gap-1 text-[12px] text-[#76817f] dark:text-[#91a0a9]">{windowLabel}榜单 <IconArrowUpRight className="h-4 w-4" aria-hidden="true" /></span>
+        <span className="inline-flex items-center gap-1 text-[12px] text-[#76817f] dark:text-[#91a0a9]" title="0–100 综合指数：时间越近、公开互动越多、独立来源越多，分数越高">{windowLabel} · 热度指数 0–100 <IconArrowUpRight className="h-4 w-4" aria-hidden="true" /></span>
       </div>
       <ol className="divide-y divide-[#f0f2f0] px-5 dark:divide-[#25313b]">
         {events.slice(0, 5).map((event, index) => (
@@ -150,7 +157,7 @@ function HotRanking({ events, topics, onSelectTopic, windowLabel }) {
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden sm:block"><SourceFaces names={event.sourceNames} count={event.sourceCount} /></div>
-              <div className="min-w-[62px] text-right"><span className="font-mono text-[15px] font-semibold text-[#39494c] dark:text-gray-100">{event.heat}</span><span className="ml-1 text-[11px] text-[#85918e]">热度</span></div>
+              <div className="min-w-[94px] text-right" title={`时效与互动 ${event.heatFactors?.recencyAndEngagement ?? '—'} 分，独立来源加分 ${event.heatFactors?.independentSources ?? '—'} 分`}><span className="font-mono text-[15px] font-semibold text-[#39494c] dark:text-gray-100">{event.heat}/{event.heatScaleMax || 100}</span><span className="ml-1 text-[11px] text-[#85918e]">{event.heatLabel || '低'}热</span></div>
               <span className={`text-[15px] ${event.trend === 'up' || event.trend === 'new' ? 'text-[#c34c38]' : 'text-[#8c9695]'}`}>{event.trend === 'up' || event.trend === 'new' ? '↗' : '—'}</span>
             </div>
           </li>
@@ -289,19 +296,33 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
     [data.generatedAt, data.posts],
   )
 
-  const filteredPosts = useMemo(() => {
+  const windowedPosts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
     const windowMs = timeWindow === '6h' ? 6 * 60 * 60 * 1000 : timeWindow === '24h' ? 24 * 60 * 60 * 1000 : 48 * 60 * 60 * 1000
     const parsedReference = Date.parse(data.generatedAt)
     const referenceTime = Number.isFinite(parsedReference) ? parsedReference : Date.now()
     const topicSearchText = Object.fromEntries(data.topics.map((topic) => [topic.id, `${topic.title} ${topic.category} ${(topic.keywords || []).join(' ')}`.toLowerCase()]))
     return timedPosts.filter((post) => {
-      if (activeTopicId !== 'all' && post.topicId !== activeTopicId) return false
       if (referenceTime - Date.parse(post.publishedAt) > windowMs) return false
       if (normalizedQuery && !`${post.text} ${post.viewpoint} ${post.platform} ${topicSearchText[post.topicId] || ''}`.toLowerCase().includes(normalizedQuery)) return false
       return true
     })
-  }, [activeTopicId, data.generatedAt, data.topics, query, timedPosts, timeWindow])
+  }, [data.generatedAt, data.topics, query, timedPosts, timeWindow])
+
+  const topicCounts = useMemo(() => {
+    const counts = Object.fromEntries(data.topics.map((topic) => [topic.id, 0]))
+    for (const post of windowedPosts) counts[post.topicId] = (counts[post.topicId] || 0) + 1
+    return counts
+  }, [data.topics, windowedPosts])
+
+  const filteredPosts = useMemo(
+    () => activeTopicId === 'all' ? windowedPosts : windowedPosts.filter((post) => post.topicId === activeTopicId),
+    [activeTopicId, windowedPosts],
+  )
+
+  useEffect(() => {
+    if (activeTopicId !== 'all' && !topicCounts[activeTopicId]) setActiveTopicId('all')
+  }, [activeTopicId, topicCounts])
 
   const snapshot = useMemo(() => buildPublicOpinionSnapshot(filteredPosts, data.topics, data.connectors), [data.connectors, data.topics, filteredPosts])
   const lastUpdated = data.meta?.lastCollectAt ? new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(data.meta.lastCollectAt * 1000)) : '等待首次采集'
@@ -318,7 +339,7 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
               <label className="flex h-12 w-full items-center gap-2 rounded-2xl border border-[#e0e5e2] bg-[#f0f2ef] px-4 xl:max-w-[330px] dark:border-[#2c3943] dark:bg-[#151f27]"><IconSearch className="h-4 w-4 shrink-0 text-[#74817f]" aria-hidden="true" /><span className="sr-only">搜索舆情</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、摘要、来源…" className="min-w-0 flex-1 bg-transparent text-[13px] text-[#29373a] outline-none placeholder:text-[#8d9795] dark:text-gray-100" /><kbd className="rounded-md border border-[#d2d9d5] bg-white px-2 py-0.5 font-mono text-[10px] text-[#87918f] dark:border-[#384651] dark:bg-[#202c35]">/</kbd></label>
             </div>
             <div className="mt-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <TopicTabs topics={data.topics} activeTopicId={activeTopicId} onChange={setActiveTopicId} />
+              <TopicTabs topics={data.topics} topicCounts={topicCounts} activeTopicId={activeTopicId} onChange={setActiveTopicId} />
               <div className="flex items-center gap-1 rounded-xl border border-[#e0e5e2] bg-white p-1 dark:border-[#2c3943] dark:bg-[#111b24]">
                 {['6h', '24h', '48h'].map((value) => <button key={value} type="button" aria-pressed={timeWindow === value} onPointerDown={() => setTimeWindow(value)} onClick={() => setTimeWindow(value)} className={`rounded-lg px-3 py-2 text-[11px] font-semibold transition ${timeWindow === value ? 'bg-[#193d43] text-white dark:bg-[#d4e6df] dark:text-[#18231f]' : 'text-[#74817f] hover:bg-[#f1f3f1] dark:text-[#93a2aa] dark:hover:bg-[#1c2831]'}`}>{value === '6h' ? '6 小时' : value === '24h' ? '24 小时' : '48 小时'}</button>)}
               </div>
@@ -335,7 +356,7 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
             <TrendSection trendPoints={data.trendPoints} snapshot={snapshot} />
             <SourceSection connectors={data.connectors} sourceCounts={snapshot.sourceCounts} />
             <section className="rounded-2xl border border-[#dce3df] bg-[#eef4f1] px-5 py-4 dark:border-[#2b3943] dark:bg-[#132229]">
-              <div className="flex flex-wrap items-center gap-3"><IconBook2 className="h-5 w-5 text-[#2b7b80]" aria-hidden="true" /><p className="mb-0 flex-1 text-[12px] leading-6 text-[#5f7172] dark:text-[#9fb0b6]">研判基于公开标题、摘要、来源数量、互动信号与时间衰减计算；高风险结论需要多来源或足够热度支持，单一低热度负面内容不会直接升级。</p><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconFilter className="h-4 w-4" />事件级去重</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconClock className="h-4 w-4" />48 小时衰减</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconTopologyStar3 className="h-4 w-4" />独立来源计数</span></div>
+              <div className="flex flex-wrap items-center gap-3"><IconBook2 className="h-5 w-5 text-[#2b7b80]" aria-hidden="true" /><p className="mb-0 flex-1 text-[12px] leading-6 text-[#5f7172] dark:text-[#9fb0b6]">热度是 0–100 综合指数，不是百分比。分数由公开互动、发布时间和独立来源数计算，并按 48 小时衰减；单一低热度负面内容不会直接升级为高风险。</p><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconFilter className="h-4 w-4" />事件级去重</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconClock className="h-4 w-4" />48 小时衰减</span><span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2a777c] dark:text-[#82beb8]"><IconTopologyStar3 className="h-4 w-4" />独立来源计数</span></div>
             </section>
           </div>
         </div>

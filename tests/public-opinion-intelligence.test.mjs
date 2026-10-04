@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   buildPublicOpinionBrief,
   clusterPublicOpinionEvents,
+  getPublicOpinionHeatLabel,
   publicOpinionSimilarity,
 } from '../lib/publicOpinion/intelligence.js'
 import { materializePublicOpinionPostTimes } from '../lib/publicOpinionData.js'
@@ -44,7 +45,19 @@ test('同一事件按独立平台聚合，重复来源不重复增加来源数',
   const grouped = events.find((event) => event.reportCount === 3)
   assert.equal(grouped.sourceCount, 2)
   assert.ok(grouped.heat > 0)
+  assert.equal(grouped.heatScaleMax, 100)
+  assert.equal(grouped.heatLabel, getPublicOpinionHeatLabel(grouped.heat))
+  assert.equal(grouped.heat, Math.min(100, grouped.heatFactors.recencyAndEngagement + grouped.heatFactors.independentSources))
   assert.ok(grouped.confidence > 50)
+})
+
+test('热度指数使用固定 0–100 分档，不当作百分比', () => {
+  assert.equal(getPublicOpinionHeatLabel(0), '低')
+  assert.equal(getPublicOpinionHeatLabel(49), '低')
+  assert.equal(getPublicOpinionHeatLabel(50), '中')
+  assert.equal(getPublicOpinionHeatLabel(79), '中')
+  assert.equal(getPublicOpinionHeatLabel(80), '高')
+  assert.equal(getPublicOpinionHeatLabel(150), '高')
 })
 
 test('负向且快速增长的事件进入高风险研判', () => {

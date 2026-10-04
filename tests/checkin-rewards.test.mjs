@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 
 import {
   buildCheckinWeek,
+  canMakeupCheckin,
   calculateCheckinStreak,
   checkinDayKey,
   nextCheckinMilestone,
@@ -31,6 +32,22 @@ test('week view includes today and checked state', () => {
   const week = buildCheckinWeek(['2026-09-28', '2026-09-29'], '2026-09-29')
   assert.equal(week.length, 7)
   assert.deepEqual(week.at(-1), { day: '2026-09-29', checked: true, today: true })
+})
+
+test('make-up is limited to the previous six calendar days', () => {
+  assert.equal(canMakeupCheckin('2026-09-28', '2026-09-29'), true)
+  assert.equal(canMakeupCheckin('2026-09-23', '2026-09-29'), true)
+  assert.equal(canMakeupCheckin('2026-09-22', '2026-09-29'), false)
+  assert.equal(canMakeupCheckin('2026-09-29', '2026-09-29'), false)
+  assert.equal(canMakeupCheckin('2026-09-30', '2026-09-29'), false)
+})
+
+test('make-up card is seeded as a live digital reward with its own ledger', async () => {
+  const migration = await readFile(new URL('../migrations/0106_checkin_makeup_cards.sql', import.meta.url), 'utf8')
+  assert.match(migration, /checkin_makeup_card_ledger/)
+  assert.match(migration, /checkin_makeups/)
+  assert.match(migration, /'checkin-makeup-card'/)
+  assert.match(migration, /'30',?\s*'digital'|30, 'digital'/)
 })
 
 test('check-in entry shares session state and keeps an accessible animated gift control', async () => {

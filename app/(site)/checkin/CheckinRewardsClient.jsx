@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import {
   IconArrowRight,
+  IconCalendarPlus,
   IconCheck,
   IconFlame,
   IconGift,
@@ -29,7 +30,13 @@ const ERROR_LABELS = {
   USER_LIMIT_REACHED: '你已经达到这件礼物的兑换上限',
   INSUFFICIENT_BALANCE: '燃币余额不足',
   EMAIL_ACTIVATION_REQUIRED: '请先激活邮箱，再继续签到',
+  MAKEUP_CARD_LIMIT_REACHED: '补签卡最多同时持有 2 张',
+  MAKEUP_DAY_NOT_ALLOWED: '只能补近七日内的漏签日期',
+  DAY_ALREADY_CHECKED_IN: '这一天已经签过了',
+  NO_MAKEUP_CARD: '还没有补签卡，可在礼物铺兑换',
 }
+
+const MAKEUP_REWARD_ID = 'checkin-makeup-card'
 
 function dayLabel(day) {
   const date = new Date(`${day}T00:00:00+08:00`)
@@ -93,10 +100,33 @@ export default function CheckinRewardsClient() {
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) throw new Error(ERROR_LABELS[payload?.error] || payload?.error || '兑换失败')
-      setMessage(`已兑换「${selected.title}」，站长确认后会更新进度`)
+      setMessage(selected.id === MAKEUP_REWARD_ID
+        ? `补签卡已到账，当前持有 ${payload.makeupCards} 张`
+        : `已兑换「${selected.title}」，站长确认后会更新进度`)
       setSelected(null)
       setForm({ recipientName: '', contact: '', shippingAddress: '', userNote: '' })
       await Promise.all([load(), account.refreshPoints()])
+    } catch (error) {
+      setMessage(String(error?.message || error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function makeup(day) {
+    setBusy(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'makeupCheckin', day }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(ERROR_LABELS[payload?.error] || payload?.error || '补签失败')
+      setMessage(`已补签 ${day}，补签不补发当天燃币`)
+      await load()
     } catch (error) {
       setMessage(String(error?.message || error))
     } finally {
@@ -111,6 +141,7 @@ export default function CheckinRewardsClient() {
   const week = status?.week || []
   const rewards = data?.rewards || []
   const orders = data?.redemptions || []
+  const makeupCards = data?.makeupCards || 0
   const nextText = useMemo(() => {
     const next = status?.nextMilestone
     if (!next) return '连续签到还有额外燃币'
@@ -162,14 +193,18 @@ export default function CheckinRewardsClient() {
       <section className="checkin-week-panel" aria-labelledby="week-title">
         <div className="checkin-section-heading">
           <div><p className="checkin-eyebrow">THIS WEEK</p><h2 id="week-title">近七日签到</h2></div>
-          <p>第 3 天额外 +5，第 7 天额外 +15；每七天开启新一轮。</p>
+          <p>第 3 天额外 +5，第 7 天额外 +15；补签卡 {authed ? `余 ${makeupCards} 张` : '登录后可用'}。</p>
         </div>
         <div className="checkin-week-grid">
           {(week.length ? week : Array.from({ length: 7 }, (_, index) => ({ day: `day-${index}`, checked: false, today: index === 6 }))).map((item, index) => (
             <div key={item.day} className={`checkin-day ${item.checked ? 'is-checked' : ''} ${item.today ? 'is-today' : ''}`}>
               <span>{item.day.startsWith('day-') ? ['一', '二', '三', '四', '五', '六', '日'][index] : dayLabel(item.day)}</span>
               <strong>{item.checked ? <IconCheck size={18} /> : index + 1}</strong>
-              <small>{index === 2 ? '+5' : index === 6 ? '+15' : '+5'}</small>
+              {item.madeUp ? <small className="is-made-up">补签</small> : !item.checked && !item.today && authed ? (
+                <button type="button" className="checkin-makeup-button" disabled={busy || makeupCards < 1} onClick={() => makeup(item.day)}>
+                  <IconCalendarPlus size={13} /> {makeupCards > 0 ? '补签' : '无卡'}
+                </button>
+              ) : <small>{index === 2 ? '+5' : index === 6 ? '+15' : '+5'}</small>}
             </div>
           ))}
         </div>
@@ -187,6 +222,7 @@ export default function CheckinRewardsClient() {
               const soldOut = reward.stock === 0
               const limited = reward.perUserLimit > 0 && reward.redeemedCount >= reward.perUserLimit
               const insufficient = Boolean(authed && balance < reward.costPoints)
+              const cardLimitReached = reward.id === MAKEUP_REWARD_ID && makeupCards >= 2
               return (
                 <article key={reward.id} className="checkin-reward-card">
                   <div className="checkin-reward-art" aria-hidden="true"><span>{reward.emoji}</span></div>
@@ -202,8 +238,8 @@ export default function CheckinRewardsClient() {
                       {!authed ? (
                         <Link href="/login" className="checkin-redeem-button">登录兑换</Link>
                       ) : (
-                        <button type="button" className="checkin-redeem-button" disabled={soldOut || limited || insufficient} onClick={() => setSelected(reward)}>
-                          {soldOut ? '已兑完' : limited ? '已达上限' : insufficient ? '燃币不足' : '立即兑换'}
+                        <button type="button" className="checkin-redeem-button" disabled={soldOut || limited || insufficient || cardLimitReached} onClick={() => setSelected(reward)}>
+                          {soldOut ? '已兑完' : limited ? '已达上限' : cardLimitReached ? '已持有 2 张' : insufficient ? '燃币不足' : '立即兑换'}
                         </button>
                       )}
                     </div>
@@ -235,7 +271,7 @@ export default function CheckinRewardsClient() {
 
       <section className="checkin-rules">
         <div><IconFlame size={20} /><strong>获得燃币</strong><p>每日签到、有效评论以及站内活动都可以获得燃币。</p></div>
-        <div><IconGift size={20} /><strong>兑换礼物</strong><p>燃币用于站内权益和礼物兑换，不支持提现或兑换现金。</p></div>
+        <div><IconGift size={20} /><strong>领取补签卡</strong><p>礼物铺使用 30 燃币兑换，最多持有 2 张；可补近七日内的漏签日期。</p></div>
         <div><IconMapPin size={20} /><strong>实物寄送</strong><p>收货信息只用于本次寄送，处理进度会在兑换记录中更新。</p></div>
       </section>
 

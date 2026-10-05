@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import {
-  IconBook2, IconCoin, IconEdit, IconFileText, IconHistory, IconHome,
-  IconMail, IconMap2, IconMessageCircle, IconRocket,
-  IconShieldLock, IconUserCircle,
+  IconArrowUpRight, IconBook2, IconChevronRight, IconCoin, IconEdit,
+  IconFileText, IconHistory, IconHome, IconMail, IconMap2,
+  IconMessageCircle, IconRocket, IconShieldLock, IconUserCircle,
 } from '@tabler/icons-react'
 
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/siteNav'
@@ -166,15 +166,26 @@ const HELP_SECTIONS = [
   },
 ]
 
+const QUICK_LINKS = [
+  { href: '/articles', title: '浏览内容', description: '文章、分析、实践与资源', icon: IconBook2 },
+  { href: '/account', title: '管理账号', description: '登录、权益与授权记录', icon: IconUserCircle },
+  { href: '/ranbi', title: '了解燃币', description: '获取、使用与实时规则', icon: IconCoin },
+  { href: '#contact', title: '联系与反馈', description: '故障、更正与数据请求', icon: IconMail },
+]
+
 function Sidebar() {
   return <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
-    <nav aria-label="站点帮助目录" className="flex gap-3 overflow-x-auto border-b border-[var(--site-line)] pb-4 lg:block lg:max-h-[calc(100vh-var(--site-header-height)-3rem)] lg:space-y-6 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:pb-4 lg:pr-6">
-      {HELP_SECTIONS.map((section) => <div key={section.id} className="min-w-[190px] lg:min-w-0">
-        <a href={`#${section.id}`} className="mb-2 block px-2 text-[11px] font-semibold tracking-[0.08em] text-[var(--site-faint)] no-underline hover:text-[var(--site-ink)]">{section.title}</a>
+    <nav aria-label="站点帮助目录" className="flex gap-3 overflow-x-auto pb-2 lg:block lg:max-h-[calc(100vh-var(--site-header-height)-3rem)] lg:space-y-6 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-[var(--site-line)] lg:bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] lg:p-4 lg:shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)]">
+      <div className="hidden border-b border-[var(--site-line)] pb-4 lg:block">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">On this page</p>
+        <p className="mt-1.5 text-[13px] leading-5 text-[var(--site-muted)]">按主题快速定位说明</p>
+      </div>
+      {HELP_SECTIONS.map((section) => <div key={section.id} className="min-w-[190px] rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-2 lg:min-w-0 lg:border-0 lg:bg-transparent lg:p-0">
+        <a href={`#${section.id}`} className="mb-1.5 block px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--site-faint)] no-underline transition hover:text-[var(--site-ink)]">{section.title}</a>
         <div className="space-y-0.5">{section.items.map((item) => {
           const Icon = item.icon
-          return <a key={item.id} href={`#${item.id}`} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] text-[var(--site-muted)] no-underline transition hover:bg-[var(--site-panel)] hover:text-[var(--site-ink)]">
-            <Icon size={17} stroke={1.65} aria-hidden="true" /><span>{item.title}</span>
+          return <a key={item.id} href={`#${item.id}`} className="group flex items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] text-[var(--site-muted)] no-underline transition hover:bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] hover:text-[var(--site-ink)]">
+            <Icon size={16} stroke={1.7} aria-hidden="true" /><span className="min-w-0 flex-1">{item.title}</span><IconChevronRight size={13} className="opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-70" aria-hidden="true" />
           </a>
         })}</div>
       </div>)}
@@ -184,49 +195,73 @@ function Sidebar() {
 
 function DocumentationArticle({ item, index }) {
   const Icon = item.icon
-  return <article id={item.id} className="scroll-mt-24 border-t border-[var(--site-line)] py-7 first:border-t-0 first:pt-0 md:py-9">
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--site-green)_10%,var(--site-panel))] text-[var(--site-green)]"><Icon size={19} stroke={1.7} aria-hidden="true" /></span>
+  return <article id={item.id} className="scroll-mt-24 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_88%,transparent)] p-5 shadow-[0_14px_45px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--site-line-strong)] hover:shadow-[0_18px_55px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)] md:p-7">
+    <div className="flex items-start gap-4">
+      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--site-green)_18%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_10%,var(--site-panel))] text-[var(--site-green)] shadow-sm"><Icon size={21} stroke={1.65} aria-hidden="true" /></span>
       <div className="min-w-0">
-        <p className="font-mono text-[10px] tracking-[0.12em] text-[var(--site-faint)]">{String(index + 1).padStart(2, '0')}</p>
-        <h2 className="mt-1 text-[22px] font-semibold leading-8 text-[var(--site-ink)]">{item.title}</h2>
-        <p className="mt-2 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">{item.description}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--site-faint)]">Guide {String(index + 1).padStart(2, '0')}</p>
+        <h3 className="mt-1 text-[21px] font-semibold leading-8 text-[var(--site-ink)] md:text-[23px]">{item.title}</h3>
+        <p className="mt-1.5 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">{item.description}</p>
       </div>
     </div>
 
-    {item.steps.length ? <ol className="mt-5 space-y-3 pl-12">{item.steps.map((step, stepIndex) => <li key={step} className="grid max-w-3xl grid-cols-[24px_minmax(0,1fr)] gap-2 text-[14px] leading-7 text-[var(--site-muted)]">
-      <span className="font-mono text-[11px] text-[var(--site-faint)]">{String(stepIndex + 1).padStart(2, '0')}</span><span>{step}</span>
+    {item.steps.length ? <ol className="mt-6 space-y-3 border-t border-[var(--site-line)] pt-5 md:ml-[60px]">{item.steps.map((step, stepIndex) => <li key={step} className="grid max-w-3xl grid-cols-[26px_minmax(0,1fr)] gap-3 text-[14px] leading-7 text-[var(--site-muted)]">
+      <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--site-line)_48%,transparent)] font-mono text-[10px] font-semibold text-[var(--site-faint)]">{stepIndex + 1}</span><span>{step}</span>
     </li>)}</ol> : null}
 
-    {item.note ? <p className="ml-12 mt-5 max-w-3xl border-l-2 border-[var(--site-line-strong)] bg-[color-mix(in_srgb,var(--site-panel)_70%,transparent)] px-4 py-3 text-[13px] leading-6 text-[var(--site-muted)]"><strong className="mr-2 font-semibold text-[var(--site-ink)]">注意</strong>{item.note}</p> : null}
+    {item.note ? <p className="mt-5 max-w-3xl rounded-xl border border-[color-mix(in_srgb,var(--site-green)_20%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6 text-[var(--site-muted)] md:ml-[60px]"><strong className="mr-2 font-semibold text-[var(--site-green)]">提示</strong>{item.note}</p> : null}
 
-    {item.linkGroups?.length ? <div className="ml-12 mt-6 grid gap-3 sm:grid-cols-2">{item.linkGroups.map((group) => <details key={group.title} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 open:sm:col-span-2">
-      <summary className="cursor-pointer text-[14px] font-semibold text-[var(--site-ink)]">{group.title}<span className="ml-2 text-[11px] font-normal text-[var(--site-faint)]">{group.links.length} 个入口</span></summary>
+    {item.linkGroups?.length ? <div className="mt-6 grid gap-3 sm:grid-cols-2 md:ml-[60px]">{item.linkGroups.map((group) => <details key={group.title} className="group rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 open:sm:col-span-2">
+      <summary className="cursor-pointer text-[14px] font-semibold text-[var(--site-ink)] marker:text-[var(--site-faint)]">{group.title}<span className="ml-2 text-[11px] font-normal text-[var(--site-faint)]">{group.links.length} 个入口</span></summary>
       <div className="mt-3 grid gap-x-5 gap-y-3 border-t border-[var(--site-line)] pt-3 sm:grid-cols-2">{group.links.map((link) => <Link key={`${group.title}-${link.href}`} href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noreferrer' : undefined} className="min-w-0 text-[13px] no-underline hover:text-[var(--site-accent)]">
         <span className="font-medium text-[var(--site-ink)]">{link.label}{link.external ? ' ↗' : ''}</span>{link.description ? <span className="mt-0.5 block text-[11px] leading-5 text-[var(--site-muted)]">{link.description}</span> : null}
       </Link>)}</div>
     </details>)}</div> : null}
 
-    {item.actions?.length ? <div className="ml-12 mt-5 flex flex-wrap gap-x-5 gap-y-2">{item.actions.map((action) => <Link key={action.href} href={action.href} target={action.external ? '_blank' : undefined} rel={action.external ? 'noreferrer' : undefined} className="text-[12px] font-medium text-[var(--site-accent)] no-underline hover:underline">{action.label} {action.external ? '↗' : '→'}</Link>)}</div> : null}
+    {item.actions?.length ? <div className="mt-6 flex flex-wrap gap-2 md:ml-[60px]">{item.actions.map((action) => <Link key={action.href} href={action.href} target={action.external ? '_blank' : undefined} rel={action.external ? 'noreferrer' : undefined} className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)] hover:bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] hover:text-[var(--site-green)]">{action.label} {action.external ? <IconArrowUpRight size={14} aria-hidden="true" /> : <IconChevronRight size={14} className="transition group-hover:translate-x-0.5" aria-hidden="true" />}</Link>)}</div> : null}
   </article>
 }
 
 export default function HelpPage() {
   let articleIndex = 0
   const articleCount = HELP_SECTIONS.reduce((count, section) => count + section.items.length, 0)
-  return <PageContainer className="py-8 md:py-12">
-    <div className="grid gap-8 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-12">
+  return <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
+    <header className="relative isolate overflow-hidden rounded-[28px] border border-[var(--site-line)] bg-[var(--site-panel-strong)] px-5 py-8 shadow-[0_24px_80px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)] md:px-9 md:py-10 lg:px-12">
+      <div className="pointer-events-none absolute -right-24 -top-32 -z-10 h-80 w-80 rounded-full bg-[color-mix(in_srgb,var(--site-green)_16%,transparent)] blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-40 left-[30%] -z-10 h-72 w-72 rounded-full bg-[color-mix(in_srgb,var(--site-accent)_10%,transparent)] blur-3xl" aria-hidden="true" />
+      <div className="relative max-w-3xl">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--site-green)_24%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--site-green)]"><IconRocket size={15} stroke={1.8} aria-hidden="true" />Help center</div>
+        <h1 className="mt-5 font-serif text-[36px] font-semibold leading-[1.15] tracking-[-0.025em] text-[var(--site-ink)] md:text-[52px]">需要帮助？<br className="hidden sm:block" />从这里找到答案。</h1>
+        <p className="mt-4 max-w-2xl text-[14px] leading-7 text-[var(--site-muted)] md:text-[15px]">集中查看站点使用方法、账号与权益、内容规则、隐私说明和联系方式。按任务选择入口，或沿目录浏览全部指南。</p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-[var(--site-faint)]">
+          <span><strong className="mr-1.5 font-mono text-[var(--site-ink)]">{articleCount}</strong>个帮助主题</span>
+          <span className="hidden h-3 w-px bg-[var(--site-line)] sm:block" aria-hidden="true" />
+          <span>最后整理：2026 年 8 月 27 日</span>
+        </div>
+      </div>
+    </header>
+
+    <section aria-labelledby="quick-links-title" className="mt-5">
+      <h2 id="quick-links-title" className="sr-only">常用入口</h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{QUICK_LINKS.map((item) => {
+        const Icon = item.icon
+        return <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_80%,transparent)] p-4 no-underline transition duration-300 hover:-translate-y-0.5 hover:border-[var(--site-line-strong)] hover:shadow-[0_14px_38px_color-mix(in_srgb,var(--site-shadow)_16%,transparent)]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--site-green)_9%,var(--site-panel))] text-[var(--site-green)]"><Icon size={20} stroke={1.7} aria-hidden="true" /></span>
+          <span className="min-w-0 flex-1"><strong className="block text-[13px] font-semibold text-[var(--site-ink)]">{item.title}</strong><span className="mt-0.5 block text-[11px] leading-5 text-[var(--site-muted)]">{item.description}</span></span>
+          <IconChevronRight size={16} className="shrink-0 text-[var(--site-faint)] transition group-hover:translate-x-0.5 group-hover:text-[var(--site-green)]" aria-hidden="true" />
+        </Link>
+      })}</div>
+    </section>
+
+    <div className="mt-10 grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
       <Sidebar />
       <div className="min-w-0">
-        <header className="border-b border-[var(--site-line)] pb-7 md:pb-9">
-          <div className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--site-green)]"><IconRocket size={17} stroke={1.7} aria-hidden="true" />站点指南</div>
-          <h1 className="mt-3 font-serif text-[34px] font-semibold leading-tight text-[var(--site-ink)] md:text-[42px]">站点帮助</h1>
-          <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[var(--site-muted)]">关于本站、使用方法、全站导航、内容规则、隐私政策和联系方式集中在当前页。使用左侧目录直接定位，不需要在多份相似说明之间来回查找。</p>
-          <p className="mt-3 text-[12px] text-[var(--site-faint)]">共 {articleCount} 个主题 · 最后整理：2026 年 8 月 27 日</p>
-        </header>
-        <div className="mt-2">{HELP_SECTIONS.map((section) => <section key={section.id} id={section.id} className="scroll-mt-24 pt-9 md:pt-11">
-          <div className="mb-5 flex items-center gap-3"><h2 className="shrink-0 text-[12px] font-semibold tracking-[0.08em] text-[var(--site-muted)]">{section.title}</h2><span className="h-px flex-1 bg-[var(--site-line)]" aria-hidden="true" /></div>
-          <div>{section.items.map((item) => {
+        <div>{HELP_SECTIONS.map((section, sectionIndex) => <section key={section.id} id={section.id} className="scroll-mt-24 pt-11 first:pt-0 md:pt-14">
+          <div className="mb-5 flex items-end justify-between gap-4 px-1">
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--site-faint)]">Section {String(sectionIndex + 1).padStart(2, '0')}</p><h2 className="mt-1.5 text-[20px] font-semibold tracking-[-0.01em] text-[var(--site-ink)]">{section.title}</h2></div>
+            <span className="mb-1 text-[11px] text-[var(--site-faint)]">{section.items.length} 个主题</span>
+          </div>
+          <div className="space-y-4">{section.items.map((item) => {
             const currentIndex = articleIndex
             articleIndex += 1
             return <DocumentationArticle key={item.id} item={item} index={currentIndex} />

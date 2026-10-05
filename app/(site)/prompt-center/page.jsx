@@ -1,7 +1,6 @@
 import AgentCenterHero from '../components/AgentCenterHero'
 import PageContainer from '../components/PageContainer'
-import PromptCopyButton, { PromptDetailButton } from './PromptCopyButton'
-import { IconMessage2Code } from '@tabler/icons-react'
+import PromptCatalog from './PromptCatalog'
 
 export const dynamic = 'force-static'
 
@@ -69,31 +68,6 @@ const PROMPTS = [
   },
 ]
 
-function Pill({ children }) {
-  return <span className="inline-flex rounded-full bg-[#eeefe9] px-2.5 py-1 text-[11px] leading-4 text-[#626653] dark:bg-[#25303a] dark:text-[#c9d6e5]">{children}</span>
-}
-
-function PromptCard({ item }) {
-  return (
-    <article id={item.id} className="flex min-w-0 scroll-mt-28 flex-col rounded-2xl border border-[#d8d9d5] bg-white/80 p-5 transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] sm:p-6">
-      <header>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#f0e9d9] text-[#8b682c] dark:bg-[#332b1d] dark:text-[#e0cc94]"><IconMessage2Code size={23} stroke={1.7} /></span>
-          <Pill>{item.category}</Pill>
-        </div>
-        <p className="mb-1 truncate font-mono text-[11px] text-[var(--site-faint)]">{item.name}</p>
-        <h2 className="mb-2 border-b-0 pb-0 text-xl font-bold leading-snug text-[var(--site-ink)]">{item.title}</h2>
-        <p className="mb-4 text-sm leading-6 text-[var(--site-muted)]">{item.desc}</p>
-        <Pill>{item.level}</Pill>
-      </header>
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
-        <PromptDetailButton id={item.id} title={item.title} description={item.desc} prompt={item.prompt} />
-        <PromptCopyButton prompt={item.prompt} />
-      </footer>
-    </article>
-  )
-}
-
 export default function PromptCenterPage() {
   return (
     <PageContainer className="py-6 md:py-10">
@@ -106,17 +80,9 @@ export default function PromptCenterPage() {
         count={PROMPTS.length}
         countLabel="个可复制模板"
         actionLabel="挑选模板"
+        steps={['按任务和难度筛选', '预览输入与输出约束', '复制后替换占位内容']}
       />
-
-      <section id="items" className="scroll-mt-28">
-        <div className="mb-5">
-          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a6b2f] dark:text-[#d1aa6c]">Explore prompts</p>
-          <h2 className="mb-0 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">选择一个任务模板</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {PROMPTS.map((item) => <PromptCard key={item.id} item={item} />)}
-        </div>
-      </section>
+      <PromptCatalog prompts={PROMPTS} />
     </PageContainer>
   )
 }

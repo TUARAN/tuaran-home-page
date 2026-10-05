@@ -3,13 +3,26 @@ import { IconArrowDownRight, IconArrowUpRight, IconSparkles } from '@tabler/icon
 
 import SharePageButton from './SharePageButton'
 
-export default function AgentCenterHero({ current, eyebrow, title, description, shareText, count, countLabel = '个条目', actionLabel = '浏览全部' }) {
+const CENTER_LINKS = [
+  ['/skill-center', 'Skill'],
+  ['/mcp-center', 'MCP'],
+  ['/prompt-center', 'Prompt'],
+  ['/workbuddy-publish-center', 'WorkBuddy'],
+]
+
+export default function AgentCenterHero({ current, eyebrow, title, description, shareText, count, countLabel = '个条目', actionLabel = '浏览全部', steps = [] }) {
   return (
-    <header className="surface-inverse relative mb-10 overflow-hidden rounded-[28px] bg-[#171b21] px-6 py-7 text-white shadow-[0_24px_70px_rgba(20,24,30,0.16)] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+    <header className="surface-inverse relative mb-10 overflow-hidden rounded-[28px] bg-[#171b21] text-white shadow-[0_24px_70px_rgba(20,24,30,0.16)]">
       <div className="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full bg-[#d8b476]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 right-20 h-80 w-80 rounded-full bg-[#7e9faa]/20 blur-3xl" />
       <div className="pointer-events-none absolute right-10 top-12 hidden h-48 w-48 rotate-12 rounded-[40px] border border-white/10 lg:block" />
-      <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+      <nav className="relative z-10 flex items-center justify-between gap-4 border-b border-white/10 px-5 py-3 sm:px-8" aria-label="Agent 能力中心">
+        <Link href="/capabilities" className="shrink-0 text-xs font-bold text-white no-underline hover:text-[#e5c99d] hover:!no-underline">AGENT CAPABILITIES</Link>
+        <div className="flex gap-1 overflow-x-auto">
+          {CENTER_LINKS.map(([href, label]) => <Link key={href} href={href} aria-current={current === href ? 'page' : undefined} className={`shrink-0 rounded-full px-3 py-1.5 text-xs no-underline transition hover:!no-underline ${current === href ? 'bg-white text-[#171b21]' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>{label}</Link>)}
+        </div>
+      </nav>
+      <div className="relative z-10 flex flex-col gap-10 px-6 py-8 sm:px-9 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12">
         <div className="max-w-3xl">
           <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/65">
             <Link href="/capabilities" className="text-white/75 no-underline hover:text-white hover:!no-underline">Agent 能力集</Link>
@@ -32,6 +45,11 @@ export default function AgentCenterHero({ current, eyebrow, title, description, 
           <SharePageButton title={eyebrow} text={shareText} url={current} />
         </div>
       </div>
+      {steps.length ? (
+        <div className="relative z-10 grid border-t border-white/10 bg-white/[0.035] sm:grid-cols-3">
+          {steps.map((step, index) => <div key={step} className="flex items-center gap-3 border-b border-white/10 px-6 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 lg:px-10"><span className="font-mono text-[10px] text-[#d9ba83]">0{index + 1}</span><span className="text-xs text-white/70">{step}</span></div>)}
+        </div>
+      ) : null}
     </header>
   )
 }

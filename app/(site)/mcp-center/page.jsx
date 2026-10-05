@@ -1,7 +1,6 @@
 import PageContainer from '../components/PageContainer'
 import AgentCenterHero from '../components/AgentCenterHero'
-import McpConfigActions from './McpConfigActions'
-import { IconPlugConnected } from '@tabler/icons-react'
+import McpCatalog from './McpCatalog'
 
 export const dynamic = 'force-static'
 
@@ -46,6 +45,7 @@ const LOCAL_STDIO_CODEX_CONFIG = `[mcp_servers.tuaran-local-crypto-demo]\ncomman
 const SERVICES = [
   {
     name: 'tuaran-articles',
+    kind: 'remote',
     title: '涂阿燃文章 MCP',
     transport: 'Streamable HTTP',
     endpoint: ENDPOINT,
@@ -58,6 +58,7 @@ const SERVICES = [
   },
   {
     name: 'tuaran-weather-test',
+    kind: 'remote',
     title: '天气查询测试 MCP',
     transport: 'Streamable HTTP',
     endpoint: WEATHER_ENDPOINT,
@@ -70,6 +71,7 @@ const SERVICES = [
   },
   {
     name: 'tuaran-local-crypto-demo',
+    kind: 'local',
     title: '本地加解密 MCP Demo',
     transport: 'stdio · 本地子进程',
     endpoint: `${LOCAL_NODE_PATH} ${LOCAL_SERVER_PATH}`,
@@ -94,52 +96,6 @@ const SECURITY_ITEMS = [
   ['滥用控制', '按 IP 做分钟与每日限流，线上叠加 Cloudflare WAF。'],
 ]
 
-function Pill({ children }) {
-  return (
-    <span className="inline-flex rounded-full bg-[#eeefe9] px-2.5 py-1 text-[11px] leading-4 text-[#626653] dark:bg-[#25303a] dark:text-[#c9d6e5]">
-      {children}
-    </span>
-  )
-}
-
-function McpServiceCard({ service }) {
-  const prompts = service.prompts || [service.prompt]
-
-  return (
-    <article id={service.name} className="flex min-w-0 scroll-mt-28 flex-col rounded-2xl border border-[#d8d9d5] bg-white/80 p-5 transition duration-200 hover:-translate-y-1 hover:border-[#aeb1aa] hover:shadow-[0_14px_34px_rgba(34,31,25,0.10)] dark:border-[#2b333e] dark:bg-[#111821]/80 dark:hover:border-[#4d5967] sm:p-6">
-      <header>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#e6ecf0] text-[#42617a] dark:bg-[#20313e] dark:text-[#b9d0de]"><IconPlugConnected size={23} stroke={1.7} /></span>
-          <Pill>{service.transport}</Pill>
-        </div>
-        <p className="mb-1 truncate font-mono text-[11px] text-[var(--site-faint)]">{service.name}</p>
-        <h2 className="mb-2 border-b-0 pb-0 text-xl font-bold leading-snug text-[var(--site-ink)]">{service.title}</h2>
-        <p className="mb-4 text-sm leading-6 text-[var(--site-muted)]">{service.desc}</p>
-        <div className="flex flex-wrap gap-1.5">{service.tags.map((tag) => <Pill key={tag}>{tag}</Pill>)}</div>
-      </header>
-
-      <div className="mt-5 flex flex-wrap gap-1.5">
-        {service.tools.map((tool) => <code key={tool} className="rounded-md bg-[#f3f4ef] px-2 py-1 font-mono text-[10px] text-[#555640] dark:bg-[#25303a] dark:text-gray-300">{tool}</code>)}
-      </div>
-
-      <div className="mt-5 rounded-xl bg-[#f5f3ee] p-4 dark:bg-[#1a2530]">
-        <p className="mb-1 text-[11px] font-semibold text-[var(--site-muted)]">试着这样问</p>
-        {prompts.length > 1 ? (
-          <ol className="mb-0 grid gap-1 pl-4 text-xs leading-5 text-[#34362e] dark:text-gray-200">
-            {prompts.map((prompt) => <li key={prompt}>{prompt}</li>)}
-          </ol>
-        ) : (
-          <p className="mb-0 text-xs leading-5 text-[#34362e] dark:text-gray-200">{prompts[0]}</p>
-        )}
-      </div>
-      {service.guide ? <p className="mb-0 mt-3 text-xs leading-5 text-[var(--site-muted)]">本地 Demo 需要将配置中的 Node、脚本和密钥路径改为当前设备的真实路径。</p> : null}
-      <div className="mt-auto border-t border-[#e8e6e0] pt-4 dark:border-[#2a333d]">
-        <McpConfigActions title={service.title} config={service.config} codexConfig={service.codexConfig} />
-      </div>
-    </article>
-  )
-}
-
 export default function McpCenterPage() {
   return (
     <PageContainer className="py-6 md:py-10">
@@ -152,24 +108,17 @@ export default function McpCenterPage() {
         count={SERVICES.length}
         countLabel="个可连接服务"
         actionLabel="浏览服务"
+        steps={['选择远程或本地服务', '复制对应客户端配置', '连接后用示例完成验证']}
       />
 
-      <section id="items" className="scroll-mt-28">
-        <div className="mb-5">
-          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a6b2f] dark:text-[#d1aa6c]">Explore services</p>
-          <h2 className="mb-0 border-b-0 pb-0 text-2xl font-black tracking-tight text-[var(--site-ink)] sm:text-3xl">选择要连接的服务</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {SERVICES.map((service) => <McpServiceCard key={service.name} service={service} />)}
-        </div>
-      </section>
+      <McpCatalog services={SERVICES} />
 
       <details className="mt-10 rounded-2xl border border-[#d8d9d5] bg-white/60 p-5 dark:border-[#2b333e] dark:bg-[#111821]/70 sm:p-6">
         <summary className="cursor-pointer text-base font-bold text-[var(--site-ink)]">连接与安全说明</summary>
         <div className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="mb-0 border-b-0 pb-0 text-lg font-semibold text-[#1c1d18] dark:text-gray-100">使用前请确认</h2>
-          <Pill>远程授权 + 本地进程</Pill>
+          <span className="inline-flex rounded-full bg-[#eeefe9] px-2.5 py-1 text-[11px] leading-4 text-[#626653] dark:bg-[#25303a] dark:text-[#c9d6e5]">远程授权 + 本地进程</span>
         </div>
         <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
           {SECURITY_ITEMS.map(([title, desc]) => (

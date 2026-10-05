@@ -77,23 +77,37 @@ test('capabilities reuse the compact directory and keep the four former centers 
     assert.ok(source.includes(`href: '${path}'`))
   }
   assert.match(hero, /href="\/capabilities"/)
-  assert.doesNotMatch(hero, /aria-label="Agent 能力中心"/)
+  assert.match(hero, /aria-label="Agent 能力中心"/)
+  assert.match(hero, /aria-current=\{current === href \? 'page'/)
   assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/capabilities' && entry.sitemap))
 })
 
 test('capability pages use a public-facing product layout with direct actions', async () => {
-  const pages = await Promise.all([
+  const names = [
     'skill-center', 'mcp-center', 'prompt-center', 'workbuddy-publish-center',
-  ].map((name) => readFile(new URL(`app/(site)/${name}/page.jsx`, root), 'utf8')))
+  ]
+  const pages = await Promise.all(names.map((name) => readFile(new URL(`app/(site)/${name}/page.jsx`, root), 'utf8')))
+  const experiences = await Promise.all([
+    'skill-center/SkillCenterExperience.jsx',
+    'mcp-center/McpCatalog.jsx',
+    'prompt-center/PromptCatalog.jsx',
+    'workbuddy-publish-center/WorkBuddyCatalog.jsx',
+  ].map((path) => readFile(new URL(`app/(site)/${path}`, root), 'utf8')))
+
   for (const page of pages) {
-    assert.match(page, /<AgentCenterHero/)
-    assert.match(page, /id="items"/)
-    assert.match(page, /rounded-2xl/)
     assert.doesNotMatch(page, /divide-y divide-\[#d8d7cf\]/)
   }
-  assert.match(pages[0], /查看详情/)
-  assert.match(pages[1], /McpConfigActions/)
-  assert.match(pages[2], /PromptCopyButton/)
-  assert.match(pages[3], /下载 ZIP/)
+  assert.match(experiences[0], /id="skill-catalog"/)
+  for (const page of pages.slice(1)) assert.match(page, /<AgentCenterHero/)
+  for (const experience of experiences.slice(1)) {
+    assert.match(experience, /id="items"/)
+    assert.match(experience, /rounded-2xl/)
+    assert.match(experience, /AgentCenterControls/)
+    assert.match(experience, /AgentCenterEmpty/)
+  }
+  assert.match(experiences[0], /查看详情|打开/)
+  assert.match(experiences[1], /McpConfigActions/)
+  assert.match(experiences[2], /PromptCopyButton/)
+  assert.match(experiences[3], /下载 ZIP/)
   assert.doesNotMatch(pages[3], /readiness:\s*'\d+%'|标准上架流程|需要准备的材料/)
 })

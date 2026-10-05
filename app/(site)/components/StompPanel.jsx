@@ -64,8 +64,8 @@ export default function StompPanel({ onPublished }) {
     <section className="community-composer" aria-labelledby="community-composer-title">
       <div className="community-composer-head">
         <div>
-          <p className="community-kicker">SAY HELLO</p>
-          <h3 id="community-composer-title">留下想法</h3>
+          <p className="community-kicker">START A TOPIC</p>
+          <h3 id="community-composer-title">发起公开话题</h3>
         </div>
         {user ? <UserAvatar user={user} size="sm" /> : null}
       </div>
@@ -78,7 +78,7 @@ export default function StompPanel({ onPublished }) {
             rows={4}
             maxLength={280}
             placeholder="分享近况、问题或合作想法…"
-            aria-label="讨论中心留言"
+            aria-label="交流广场公开话题"
           />
           <div className="community-composer-foot">
             <span>{remaining}</span>
@@ -89,7 +89,7 @@ export default function StompPanel({ onPublished }) {
         </form>
       ) : (
         <div className="community-login-prompt">
-          <p>登录后，可以在讨论中心公开留言。</p>
+          <p>登录后，可以在交流广场发起公开话题。</p>
           <button type="button" onClick={login} disabled={userLoading}>
             <IconBrandGithub size={17} aria-hidden="true" />
             {userLoading ? '正在检查…' : '使用 GitHub 登录'}

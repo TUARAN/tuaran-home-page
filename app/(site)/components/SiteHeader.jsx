@@ -17,6 +17,7 @@ import {
   IconLogout,
   IconMessageCircle,
   IconRobot,
+  IconRss,
   IconUser,
 } from '@tabler/icons-react'
 
@@ -367,7 +368,7 @@ function NotificationList({ notifications, onNavigate, onRead, emptyLabel }) {
         return (
           <Link
             key={item.id}
-            href={item.href || '/notifications'}
+            href={item.href || '/messages'}
             onClick={() => {
               onRead?.(item.id)
               onNavigate?.()
@@ -398,8 +399,9 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner, notifications } = account
+  const { loading, user, isOwner, notifications, rssUpdates } = account
   const unread = Number(notifications?.unread) || 0
+  const hasRssUpdates = Number(rssUpdates?.unread) > 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
   useEffect(() => {
@@ -424,7 +426,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
       <button
         type="button"
         onClick={onToggle}
-        aria-label={pick(locale, '查看通知', 'View notifications')}
+        aria-label={pick(locale, '查看消息', 'View messages')}
         aria-expanded={isOpen}
         className="site-account-notification-button"
       >
@@ -454,10 +456,13 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               {pick(locale, '个人资料', 'Profile')}
             </AccountPopoverLink>
             <AccountPopoverLink href="/community" onClick={onClose} icon={IconMessageCircle}>
-              {pick(locale, '讨论中心', 'Discussion hub')}
+              {pick(locale, '交流广场', 'Community')}
             </AccountPopoverLink>
-            <AccountPopoverLink href="/notifications" onClick={onClose} icon={IconBell}>
-              {pick(locale, '通知中心', 'Notifications')}
+            <AccountPopoverLink href="/messages" onClick={onClose} icon={IconBell}>
+              {pick(locale, '消息', 'Messages')}
+            </AccountPopoverLink>
+            <AccountPopoverLink href="/resources/rss" onClick={onClose} icon={IconRss} indicator={hasRssUpdates}>
+              {pick(locale, 'RSS 阅读', 'RSS reader')}
             </AccountPopoverLink>
             <AccountPopoverLink href="/help" onClick={onClose} icon={IconBook2}>
               {pick(locale, '帮助与文档', 'Help & documentation')}
@@ -466,7 +471,7 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
           <div className="site-account-section px-3 py-3">
             <div className="mb-1 flex items-center justify-between px-2">
               <p className="m-0 text-xs text-[var(--site-faint)]">
-                {pick(locale, '最近通知', 'Recent notifications')}
+                {pick(locale, '最近互动', 'Recent activity')}
               </p>
               <NotificationBadge count={unread} />
             </div>
@@ -474,14 +479,14 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
               notifications={notifications}
               onNavigate={onClose}
               onRead={(id) => { void account.markNotificationsRead({ id }) }}
-              emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
+              emptyLabel={pick(locale, '暂无新互动', 'No new activity.')}
             />
             <Link
-              href="/notifications"
+              href="/messages"
               onClick={onClose}
               className="mt-1 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium text-[var(--site-faint)] transition-colors hover:bg-[color-mix(in_srgb,var(--site-line)_52%,transparent)] hover:text-[var(--site-ink)]"
             >
-              <span>{pick(locale, '查看全部通知', 'View all notifications')}</span>
+              <span>{pick(locale, '查看全部消息', 'View all messages')}</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -572,11 +577,12 @@ function AccountMenu({ account, isOpen, onToggle, onClose, pathname, accountRef 
   )
 }
 
-function AccountPopoverLink({ href, onClick, icon: Icon, children }) {
+function AccountPopoverLink({ href, onClick, icon: Icon, children, indicator = false }) {
   return (
     <Link href={href} onClick={onClick} className="site-account-menu-item">
       <Icon size={20} stroke={1.65} aria-hidden="true" />
       <span>{children}</span>
+      {indicator ? <span className="ml-auto h-2 w-2 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
     </Link>
   )
 }
@@ -586,8 +592,9 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
   const logoutHref = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  const { loading, user, isOwner, notifications } = account
+  const { loading, user, isOwner, notifications, rssUpdates } = account
   const unread = Number(notifications?.unread) || 0
+  const hasRssUpdates = Number(rssUpdates?.unread) > 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
 
   if (!loading && !user) {
@@ -625,7 +632,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
           <div className="border-b border-[var(--site-line)] px-2 py-2">
             <div className="mb-1.5 flex items-center justify-between px-1.5">
               <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
-                {pick(locale, '通知', 'Notifications')}
+                {pick(locale, '最近互动', 'Recent activity')}
               </p>
               <NotificationBadge count={unread} />
             </div>
@@ -633,7 +640,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               notifications={notifications}
               onNavigate={onNavigate}
               onRead={(id) => { void account.markNotificationsRead({ id }) }}
-              emptyLabel={pick(locale, '暂无新通知', 'No notifications yet.')}
+              emptyLabel={pick(locale, '暂无新互动', 'No new activity.')}
             />
           </div>
           <div className="px-1.5 py-1.5">
@@ -660,15 +667,26 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               onClick={onNavigate}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
-              <span>{pick(locale, '讨论中心', 'Discussion hub')}</span>
+              <span>{pick(locale, '交流广场', 'Community')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
             <Link
-              href="/notifications"
+              href="/messages"
               onClick={onNavigate}
               className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
             >
-              <span>{pick(locale, '通知中心', 'Notification center')}</span>
+              <span>{pick(locale, '消息', 'Messages')}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </Link>
+            <Link
+              href="/resources/rss"
+              onClick={onNavigate}
+              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            >
+              <span className="flex items-center gap-2">
+                {pick(locale, 'RSS 阅读', 'RSS reader')}
+                {hasRssUpdates ? <span className="h-2 w-2 rounded-full bg-rose-600" aria-label="有新内容" /> : null}
+              </span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
             </Link>
           <a

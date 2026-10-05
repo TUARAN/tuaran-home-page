@@ -12,8 +12,8 @@ import { notificationOpenHref } from '../../lib/notificationNavigation.js'
 
 test('notification links carry the notification id without losing query or anchor', () => {
   assert.equal(
-    notificationOpenHref('/crypto-research/rss?feed=v2ex#rss-feed-v2ex', 42),
-    '/crypto-research/rss?feed=v2ex&notification=42#rss-feed-v2ex'
+    notificationOpenHref('/resources/rss?feed=v2ex#rss-feed-v2ex', 42),
+    '/resources/rss?feed=v2ex&notification=42#rss-feed-v2ex'
   )
   assert.equal(notificationOpenHref('/articles/hello#comment-9', 8), '/articles/hello?notification=8#comment-9')
 })
@@ -49,7 +49,7 @@ test('broken content keys still land on a real page per type', () => {
   assert.equal(notificationHref({ type: 'content_like' }), '/')
   assert.equal(notificationHref({ type: 'weekly_summary' }), '/admin/content-weekly?days=7#notification-destination')
   assert.equal(notificationHref({ type: 'automation_monitor' }), '/admin/ops')
-  assert.equal(notificationHref({ type: 'rss_update' }), '/crypto-research/rss')
+  assert.equal(notificationHref({ type: 'rss_update' }), '/resources/rss')
 })
 
 test('automation failures open the matching ops task', () => {
@@ -68,7 +68,7 @@ test('RSS updates open the matching feed card', () => {
       type: 'rss_update',
       articleKey: 'rss:v2ex-newsletter:guid-1',
     }),
-    '/crypto-research/rss?feed=v2ex-newsletter#rss-feed-v2ex-newsletter'
+    '/resources/rss?feed=v2ex-newsletter&entry=guid-1#rss-feed-v2ex-newsletter'
   )
 })
 

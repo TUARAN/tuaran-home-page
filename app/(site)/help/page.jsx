@@ -63,15 +63,15 @@ const HELP_SECTIONS = [
         actions: [{ href: '/login?returnTo=/account', label: '登录' }, { href: '/account', label: '打开个人资料' }],
       },
       {
-        id: 'comments', title: '评论与讨论', description: '在具体内容下留言、回复，并在讨论中心跟进站内交流。', icon: IconMessageCircle,
+        id: 'comments', title: '评论与交流', description: '在具体内容下留言、回复，并在交流广场发现近期话题。', icon: IconMessageCircle,
         steps: [
           '文章、调研和部分资源页底部提供讨论区；可以直接留言或回复某一条评论。',
           '游客可以评论；登录后，当前浏览器中的游客历史评论会绑定到登录账号。',
-          '登录用户可从账号菜单、讨论中心或通知中心查看回复，并跳回具体评论位置。',
+          '登录用户可从“消息”查看与自己有关的回复，并跳回具体评论位置。RSS 更新使用独立入口红点。',
           '有效评论会按当前规则获得燃币；重复、垃圾或被删除的评论不计入奖励。',
         ],
         note: '账号、隐私、付款和需要公开材料以外信息的问题，请使用邮件联系。',
-        actions: [{ href: '/community', label: '打开讨论中心' }, { href: '/notifications', label: '打开通知中心' }],
+        actions: [{ href: '/community', label: '打开交流广场' }, { href: '/messages', label: '查看消息' }],
       },
       {
         id: 'ranbi', title: '燃币与资源权益', description: '理解燃币的获取、使用、记录方式，以及它与资源权益的关系。', icon: IconCoin,

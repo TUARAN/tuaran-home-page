@@ -40,7 +40,8 @@ test('private, authentication, API, and raw PDF routes are excluded from indexin
 test('legacy reader routes resolve through real HTTP redirects', () => {
   assert.deepEqual(getLegacyPathRedirect('/weekly'), { pathname: '/diary' })
   assert.deepEqual(getLegacyPathRedirect('/articles/diary-self-reflection'), { pathname: '/diary' })
-  assert.deepEqual(getLegacyPathRedirect('/messages'), { pathname: '/community', hash: '#message' })
+  assert.equal(getLegacyPathRedirect('/messages'), null)
+  assert.deepEqual(getLegacyPathRedirect('/notifications'), { pathname: '/messages' })
   assert.deepEqual(getLegacyPathRedirect('/browser-extensions'), { pathname: '/downloads', hash: '#extensions' })
   assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/downloads', hash: '#desktop' })
   assert.equal(getLegacyPathRedirect('/community'), null)

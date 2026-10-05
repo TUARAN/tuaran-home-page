@@ -8,14 +8,7 @@ import UserAvatar from '../components/UserAvatar'
 import { LoadingDots, LoadingState, Skeleton } from '../../components/loading/LoadingPrimitives'
 
 const PAGE_SIZE = 10
-const LOGIN_HREF = '/login?returnTo=%2Fnotifications'
-
-const FILTER_TABS = [
-  { id: 'all', label: '全部' },
-  { id: 'interaction', label: '互动' },
-  { id: 'rss', label: '订阅' },
-  { id: 'automation', label: '监控' },
-]
+const LOGIN_HREF = '/login?returnTo=%2Fmessages'
 
 function relativeTime(ts) {
   const n = Number(ts)
@@ -46,7 +39,7 @@ function absoluteTime(ts) {
 
 function NotificationCard({ item, onOpen }) {
   const unread = !item.readAt
-  const href = item.href || '/notifications'
+  const href = item.href || '/messages'
   const when = relativeTime(item.createdAt)
   const exact = absoluteTime(item.createdAt)
 
@@ -98,7 +91,6 @@ export default function NotificationsClient() {
   const [status, setStatus] = useState('idle')
   const [loadingMore, setLoadingMore] = useState(false)
   const [markingAll, setMarkingAll] = useState(false)
-  const [filter, setFilter] = useState('all')
   const requestIdRef = useRef(0)
   const loadingMoreRef = useRef(false)
   const loadMoreRef = useRef(null)
@@ -116,16 +108,15 @@ export default function NotificationsClient() {
   }, [items, markNotificationsRead])
 
   const fetchPage = useCallback(async (offset, requestId) => {
-    const typeParam = filter !== 'all' ? `&type=${filter}` : ''
     const res = await fetch(
-      `/api/notifications?limit=${PAGE_SIZE}&offset=${offset}${typeParam}`,
+      `/api/notifications?limit=${PAGE_SIZE}&offset=${offset}&type=interaction`,
       { cache: 'no-store', credentials: 'same-origin' }
     )
     const json = await res.json().catch(() => null)
     if (!res.ok || !json) throw new Error('load failed')
     if (requestId !== requestIdRef.current) return null
     return json
-  }, [filter])
+  }, [])
 
   useEffect(() => {
     if (!user?.id) return
@@ -147,7 +138,7 @@ export default function NotificationsClient() {
       alive = false
       requestIdRef.current += 1
     }
-  }, [user?.id, filter, fetchPage])
+  }, [user?.id, fetchPage])
 
   const refresh = useCallback(() => {
     if (!user?.id) return
@@ -211,7 +202,7 @@ export default function NotificationsClient() {
     if (markingAll) return
     setMarkingAll(true)
     try {
-      await markNotificationsRead({ all: true })
+      await markNotificationsRead({ all: true, category: 'interaction' })
       const requestId = ++requestIdRef.current
       const json = await fetchPage(0, requestId)
       if (json) {
@@ -233,10 +224,10 @@ export default function NotificationsClient() {
       <div className="notification-empty">
         <p className="notification-empty-title">登录后查看站内通知</p>
         <p className="notification-empty-copy">
-          回复、点赞、订阅和监控提醒会集中出现在这里。
+          回复、评论和点赞会集中出现在这里。
         </p>
         <Link href={LOGIN_HREF} className="discussion-primary-link">
-          登录查看通知
+          登录查看消息
         </Link>
       </div>
     )
@@ -246,27 +237,13 @@ export default function NotificationsClient() {
     <div className="notification-center">
       <header className="notification-center-head">
         <div>
-          <h1>通知</h1>
-          <p>回复、点赞、订阅和监控。点一条就去对应评论、内容、订阅源或运维台。</p>
+          <h1>消息</h1>
+          <p>只保留与你直接相关的回复、评论和点赞。点开即可回到原内容继续交流。</p>
         </div>
       </header>
 
       <div className="notification-center-toolbar">
-        <div className="community-feed-filters" role="tablist" aria-label="通知分类">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={filter === tab.id}
-              onClick={() => setFilter(tab.id)}
-              disabled={status === 'loading'}
-              className={filter === tab.id ? 'is-active' : ''}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <p className="notification-center-meta">与你有关</p>
         <div className="notification-center-actions">
           <p className="notification-center-meta">
             {total > 0 ? (
@@ -314,11 +291,7 @@ export default function NotificationsClient() {
         <div className="notification-empty is-dashed">
           <p className="notification-empty-title">还没有新的站内通知</p>
           <p className="notification-empty-copy">
-            {filter === 'automation'
-              ? '定时任务失败时，监控提醒会出现在这里。'
-              : filter === 'rss'
-                ? '收录的 RSS 源有新条目时会出现在这里，点开对应订阅源。'
-                : '有人评论、回复或点赞时会出现在这里。'}
+            有人评论、回复或点赞时会出现在这里。RSS 更新在独立的 RSS 阅读入口提醒。
           </p>
         </div>
       ) : (

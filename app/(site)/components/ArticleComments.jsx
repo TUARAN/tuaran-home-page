@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
-import RanbiBalance from './RanbiBalance'
 import { commentProviderLabel } from '../../../lib/userDisplayName'
 import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
 import { isInteractionNotification } from '../../../lib/siteNotificationsCore'
@@ -37,6 +36,39 @@ function mentionName(name) {
   return String(name || '用户').replace(/\s+/g, '').slice(0, 32) || '用户'
 }
 
+function CommentCard({ item, unread, notificationReady, onReply, nested = false }) {
+  return (
+    <article
+      id={`comment-${item.id}`}
+      data-notification-ready={notificationReady ? 'true' : 'false'}
+      className={`discussion-comment-card ${nested ? 'ml-5 mt-2 border-l-2 sm:ml-10' : ''} ${unread ? 'has-unread-notification' : ''}`}
+    >
+      {unread ? <span className="discussion-notification-dot" aria-label="未读互动" /> : null}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <UserAvatar
+            seed={item.user_name || item.user_id || 'guest'}
+            size="sm"
+            title={item.user_provider === READER_PROVIDER ? `${item.user_name} · ${PUBLIC_READER_HINT}` : item.user_name}
+          />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-medium text-[var(--site-ink)]">{item.user_name}</div>
+            <div className="text-[11px] text-[var(--site-faint)]">{commentProviderLabel(item.user_provider)}</div>
+          </div>
+        </div>
+        <time className="shrink-0 text-[11px] text-[var(--site-faint)]">{formatTime(item.created_at)}</time>
+      </div>
+      {nested && item.reply_to_user_name ? (
+        <p className="mb-0 mt-2 text-xs text-[var(--site-faint)]">回复 @{item.reply_to_user_name}</p>
+      ) : null}
+      <p className="mb-0 mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--site-muted)]">{item.message}</p>
+      <button type="button" onClick={() => onReply(item)} className="discussion-ghost-button mt-2 px-2 py-0.5 text-[11px]">
+        回复
+      </button>
+    </article>
+  )
+}
+
 export default function ArticleComments({ articleKey }) {
   const {
     user,
@@ -58,6 +90,27 @@ export default function ArticleComments({ articleKey }) {
   const unreadNotifications = useMemo(() => articleNotifications.filter((item) => (
     !item.readAt && isInteractionNotification(item.type) && item.articleKey === articleKey
   )), [articleNotifications, articleKey])
+  const commentThreads = useMemo(() => {
+    const nodes = new Map(items.map((item) => [Number(item.id), { ...item, replies: [] }]))
+    const roots = []
+    for (const node of nodes.values()) {
+      let parent = nodes.get(Number(node.reply_to_id))
+      if (!parent) {
+        roots.push(node)
+        continue
+      }
+      const visited = new Set([Number(node.id)])
+      while (parent && parent.reply_to_id && !visited.has(Number(parent.id))) {
+        visited.add(Number(parent.id))
+        const next = nodes.get(Number(parent.reply_to_id))
+        if (!next) break
+        parent = next
+      }
+      parent.replies.push(node)
+    }
+    for (const node of nodes.values()) node.replies.sort((a, b) => Number(a.created_at) - Number(b.created_at))
+    return roots.sort((a, b) => Number(b.created_at) - Number(a.created_at))
+  }, [items])
 
   const refreshArticleNotifications = useCallback(async () => {
     if (!user?.id || !articleKey) return
@@ -151,11 +204,6 @@ export default function ArticleComments({ articleKey }) {
     window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`
   }
 
-  function logout() {
-    const returnTo = `${window.location.pathname}${window.location.search || ''}`
-    window.location.href = `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-  }
-
   async function submit(e) {
     e.preventDefault()
     const trimmed = message.trim()
@@ -206,30 +254,14 @@ export default function ArticleComments({ articleKey }) {
     <section ref={sectionRef} className="discussion-comments mt-12 w-full">
       <div className="discussion-comments-header flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="discussion-eyebrow mb-1">Discussion</p>
-          <h2 className="mb-0 border-0 p-0 text-xl font-semibold">讨论</h2>
+          <p className="discussion-eyebrow mb-1">COMMENTS</p>
+          <h2 className="mb-0 border-0 p-0 text-xl font-semibold">评论</h2>
           <p className="mb-0 mt-1 text-xs text-[var(--site-faint)]">
-            {items.length ? `${items.length} 条讨论` : '还没有讨论'}
+            {items.length ? `${items.length} 条评论` : '还没有评论'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <RanbiBalance />
-          <button
-            type="button"
-            onClick={refresh}
-            className="discussion-ghost-button"
-          >
-            刷新
-          </button>
-          {isAuthed ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="discussion-ghost-button"
-            >
-              退出
-            </button>
-          ) : (
+          {!isAuthed ? (
             <button
               type="button"
               disabled={userLoading}
@@ -238,7 +270,7 @@ export default function ArticleComments({ articleKey }) {
             >
               登录
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -267,9 +299,9 @@ export default function ArticleComments({ articleKey }) {
           ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          rows={4}
+          rows={3}
           maxLength={1000}
-          placeholder="写下你的评论（最多 1000 字）"
+          placeholder="补充观点、提出问题，或分享你的经验…"
           className="discussion-textarea"
         />
         <div className="flex items-center justify-between">
@@ -290,57 +322,30 @@ export default function ArticleComments({ articleKey }) {
 
       <div className="mt-6">
         {items.length ? (
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                id={`comment-${item.id}`}
-                data-notification-ready={notificationsLoaded ? 'true' : 'false'}
-                className={`discussion-comment-card ${unreadNotifications.some((notice) => notice.commentId === Number(item.id) && notice.type !== 'content_like') ? 'has-unread-notification' : ''}`}
-              >
-                {unreadNotifications.some((notice) => notice.commentId === Number(item.id) && notice.type !== 'content_like') ? (
-                  <span className="discussion-notification-dot" aria-label="未读互动" />
-                ) : null}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <UserAvatar
-                      seed={item.user_name || item.user_id || 'guest'}
-                      size="sm"
-                      title={item.user_provider === READER_PROVIDER ? `${item.user_name} · ${PUBLIC_READER_HINT}` : item.user_name}
-                    />
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-[var(--site-ink)]">{item.user_name}</div>
-                      <div className="text-[11px] text-[var(--site-faint)]">
-                        {commentProviderLabel(item.user_provider)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => replyTo(item)}
-                      className="discussion-ghost-button px-2 py-0.5 text-[11px]"
-                    >
-                      回复
-                    </button>
-                    <time className="text-[11px] text-[var(--site-faint)]">
-                      {formatTime(item.created_at)}
-                    </time>
-                  </div>
-                </div>
-                {item.reply_to_user_name ? (
-                  <p className="mb-0 mt-2 text-xs text-[var(--site-faint)]">
-                    回复 @{item.reply_to_user_name}
-                  </p>
-                ) : null}
-                <p className="mb-0 mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--site-muted)]">
-                  {item.message}
-                </p>
+          <ul className="space-y-4">
+            {commentThreads.map((item) => (
+              <li key={item.id}>
+                <CommentCard
+                  item={item}
+                  unread={unreadNotifications.some((notice) => notice.commentId === Number(item.id) && notice.type !== 'content_like')}
+                  notificationReady={notificationsLoaded}
+                  onReply={replyTo}
+                />
+                {item.replies.map((reply) => (
+                  <CommentCard
+                    key={reply.id}
+                    item={reply}
+                    nested
+                    unread={unreadNotifications.some((notice) => notice.commentId === Number(reply.id) && notice.type !== 'content_like')}
+                    notificationReady={notificationsLoaded}
+                    onReply={replyTo}
+                  />
+                ))}
               </li>
             ))}
           </ul>
         ) : (
-          <div className="discussion-empty">来留下第一条讨论。</div>
+          <div className="discussion-empty">还没有评论。可以从一个具体问题或补充开始。</div>
         )}
       </div>
     </section>

@@ -10,10 +10,12 @@ const SessionContext = createContext({
   isOwner: false,
   navOverrides: {},
   notifications: { unread: 0, items: [], status: 'idle' },
+  rssUpdates: { unread: 0, status: 'idle' },
   points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'idle' },
   refresh: async () => {},
   refreshNav: async () => {},
   refreshNotifications: async () => {},
+  refreshRssUpdates: async () => {},
   refreshPoints: async () => {},
   markNotificationsRead: async () => {},
 })
@@ -28,11 +30,13 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
     isOwner: false,
     navOverrides: {},
     notifications: { unread: 0, items: [], status: 'idle' },
+    rssUpdates: { unread: 0, status: 'idle' },
     points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'idle' },
   })
   const inFlightAccountRef = useRef(null)
   const inFlightNavRef = useRef(null)
   const inFlightNotificationsRef = useRef(null)
+  const inFlightRssUpdatesRef = useRef(null)
   const inFlightPointsRef = useRef(null)
 
   const refresh = useCallback(async () => {
@@ -67,7 +71,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
     if (inFlightNotificationsRef.current) return inFlightNotificationsRef.current
     const p = (async () => {
       try {
-        const res = await fetch('/api/notifications?unreadOnly=1&limit=2', { cache: 'no-store', credentials: 'same-origin' })
+        const res = await fetch('/api/notifications?type=interaction&unreadOnly=1&limit=2', { cache: 'no-store', credentials: 'same-origin' })
         const data = await res.json().catch(() => null)
         setState((prev) => ({
           ...prev,
@@ -87,6 +91,29 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
       }
     })()
     inFlightNotificationsRef.current = p
+    return p
+  }, [])
+
+  const refreshRssUpdates = useCallback(async () => {
+    if (inFlightRssUpdatesRef.current) return inFlightRssUpdatesRef.current
+    const p = (async () => {
+      try {
+        const res = await fetch('/api/notifications?type=rss&unreadOnly=1&limit=1', { cache: 'no-store', credentials: 'same-origin' })
+        const data = await res.json().catch(() => null)
+        setState((prev) => ({
+          ...prev,
+          rssUpdates: {
+            unread: Number(data?.unread) || 0,
+            status: data?.status || (res.ok ? 'ok' : 'error'),
+          },
+        }))
+      } catch {
+        setState((prev) => ({ ...prev, rssUpdates: { unread: 0, status: 'error' } }))
+      } finally {
+        inFlightRssUpdatesRef.current = null
+      }
+    })()
+    inFlightRssUpdatesRef.current = p
     return p
   }, [])
 
@@ -120,6 +147,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
   }, [pointsEndpoint])
 
   const markNotificationsRead = useCallback(async (payload = { all: true }) => {
+    const isRssUpdate = payload?.rssFeedId !== undefined || payload?.category === 'rss'
     const targetIds = new Set(
       Array.isArray(payload?.ids)
         ? payload.ids.map(Number).filter((id) => Number.isInteger(id) && id > 0)
@@ -127,7 +155,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
           ? [Number(payload.id)]
           : []
     )
-    if (payload?.all || targetIds.size) {
+    if (!isRssUpdate && (payload?.all || targetIds.size)) {
       setState((prev) => {
         const visibleItems = Array.isArray(prev.notifications?.items) ? prev.notifications.items : []
         const removed = payload?.all
@@ -143,6 +171,9 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
         }
       })
     }
+    if (isRssUpdate) {
+      setState((prev) => ({ ...prev, rssUpdates: { ...prev.rssUpdates, unread: 0 } }))
+    }
 
     try {
       const res = await fetch('/api/notifications', {
@@ -154,15 +185,18 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
       })
       if (res.ok) {
         if (inFlightNotificationsRef.current) await inFlightNotificationsRef.current
-        await refreshNotifications()
+        if (isRssUpdate) await refreshRssUpdates()
+        else await refreshNotifications()
         return true
       }
-      await refreshNotifications()
+      if (isRssUpdate) await refreshRssUpdates()
+      else await refreshNotifications()
     } catch {
-      await refreshNotifications()
+      if (isRssUpdate) await refreshRssUpdates()
+      else await refreshNotifications()
     }
     return false
-  }, [refreshNotifications])
+  }, [refreshNotifications, refreshRssUpdates])
 
   const refreshNav = useCallback(async () => {
     if (inFlightNavRef.current) return inFlightNavRef.current
@@ -191,6 +225,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
       refresh()
       refreshNav()
       refreshNotifications()
+      refreshRssUpdates()
       refreshPoints()
     }
     function onVisibility() {
@@ -198,6 +233,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
         refresh()
         refreshNav()
         refreshNotifications()
+        refreshRssUpdates()
         refreshPoints()
       }
     }
@@ -206,6 +242,7 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
         refresh()
         refreshNav()
         refreshNotifications()
+        refreshRssUpdates()
         refreshPoints()
       }
     }
@@ -223,27 +260,32 @@ export function SessionProvider({ children, pointsEndpoint = null }) {
       window.removeEventListener(REFRESH_EVENT, onSessionRefresh)
       window.removeEventListener(NAV_REFRESH_EVENT, onNavRefresh)
     }
-  }, [refresh, refreshNav, refreshNotifications, refreshPoints])
+  }, [refresh, refreshNav, refreshNotifications, refreshRssUpdates, refreshPoints])
 
   useEffect(() => {
     if (state.loading) return
     if (state.user?.id) {
       refreshNotifications()
+      refreshRssUpdates()
       refreshPoints()
-      const timer = window.setInterval(refreshNotifications, 60_000)
+      const timer = window.setInterval(() => {
+        refreshNotifications()
+        refreshRssUpdates()
+      }, 60_000)
       return () => window.clearInterval(timer)
     } else {
       setState((prev) => ({
         ...prev,
         notifications: { unread: 0, items: [], status: 'anonymous' },
+        rssUpdates: { unread: 0, status: 'anonymous' },
         points: { balance: 0, checkedInToday: false, checkinStatus: null, status: 'anonymous' },
       }))
     }
     return undefined
-  }, [state.loading, state.user?.id, refreshNotifications, refreshPoints])
+  }, [state.loading, state.user?.id, refreshNotifications, refreshRssUpdates, refreshPoints])
 
   return (
-    <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, refreshPoints, markNotificationsRead }}>
+    <SessionContext.Provider value={{ ...state, refresh, refreshNav, refreshNotifications, refreshRssUpdates, refreshPoints, markNotificationsRead }}>
       <Suspense fallback={null}><NotificationArrival /></Suspense>
       {children}
     </SessionContext.Provider>

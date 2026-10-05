@@ -32,6 +32,7 @@ function InfoSection({ eyebrow, title, items }) {
 
 export default function CircleTopicPage({ topic }) {
   const related = COMMUNITY_TOPICS.filter((item) => item.id !== topic.id).slice(0, 4)
+  const isOpen = topic.tag === '已开放'
 
   return (
     <>
@@ -54,7 +55,7 @@ export default function CircleTopicPage({ topic }) {
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link href="#join" className="circle-topic-primary-link">
-                付费加入圈子
+                {isOpen ? '查看加入方案' : '登记加入意向'}
               </Link>
               <SharePageButton
                 title={topic.label}
@@ -75,7 +76,7 @@ export default function CircleTopicPage({ topic }) {
         </div>
 
         <div className="mt-6">
-          <CommunityMembershipCard compact id="join" />
+          <CommunityMembershipCard compact id="join" waitlist={!isOpen} topicName={topic.label} />
         </div>
 
         <section className="mt-10">

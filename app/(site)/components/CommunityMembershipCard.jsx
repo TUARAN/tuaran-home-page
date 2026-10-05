@@ -28,15 +28,11 @@ function getCountdown(now) {
 }
 
 function EarlyBirdCountdown({ countdown }) {
-  if (!countdown) {
-    return <div className="community-membership-countdown is-loading" aria-hidden="true" />
-  }
-
   if (!countdown.active) {
     return (
       <div className="community-membership-countdown is-ended">
         <IconClock size={17} aria-hidden="true" />
-        <span>早鸟活动已结束，主题圈年卡恢复为 ¥{COMMUNITY_MEMBERSHIP.earlyBird.regularPrice}</span>
+        <span>首发活动已结束，主题圈年卡恢复为 ¥{COMMUNITY_MEMBERSHIP.earlyBird.regularPrice}</span>
       </div>
     )
   }
@@ -52,7 +48,7 @@ function EarlyBirdCountdown({ countdown }) {
     <div className="community-membership-countdown" role="timer" aria-label={`早鸟价剩余 ${countdown.days} 天 ${countdown.hours} 小时 ${countdown.minutes} 分钟`}>
       <div className="community-membership-countdown-copy">
         <IconClock size={17} aria-hidden="true" />
-        <span><strong>¥{COMMUNITY_MEMBERSHIP.earlyBird.price} 早鸟价</strong>，截止 10 月 7 日 23:59</span>
+        <span><strong>¥{COMMUNITY_MEMBERSHIP.earlyBird.price} 首发价</strong>，截止 10 月 7 日 23:59</span>
       </div>
       <div className="community-membership-countdown-units" aria-hidden="true">
         {parts.map(([label, value]) => (
@@ -63,9 +59,9 @@ function EarlyBirdCountdown({ countdown }) {
   )
 }
 
-export default function CommunityMembershipCard({ compact = false, id }) {
+export default function CommunityMembershipCard({ compact = false, id, waitlist = false, topicName = '' }) {
   const [selectedPlanId, setSelectedPlanId] = useState(COMMUNITY_MEMBERSHIP.plans[0].id)
-  const [countdown, setCountdown] = useState(null)
+  const [countdown, setCountdown] = useState(() => getCountdown(Date.now()))
 
   useEffect(() => {
     const update = () => setCountdown(getCountdown(Date.now()))
@@ -81,6 +77,54 @@ export default function CommunityMembershipCard({ compact = false, id }) {
   const selectedPrice = countdown?.active && selectedPlan.earlyBirdPrice
     ? selectedPlan.earlyBirdPrice
     : selectedPlan.price
+
+  if (waitlist) {
+    return (
+      <section id={id} className={`community-membership ${compact ? 'is-compact' : ''}`} aria-labelledby={id ? `${id}-title` : undefined}>
+        <div className="community-membership-intro">
+          <p className="community-kicker">WAITLIST</p>
+          <div className="community-membership-title-row">
+            <div>
+              <h2 id={id ? `${id}-title` : undefined}>登记加入意向</h2>
+              <p>{topicName || '这个主题圈'}正在筹备。先登记意向，确认开群时间、成员结构和服务安排后再付款。</p>
+            </div>
+          </div>
+          <div className="community-membership-lists">
+            <div>
+              <h3>登记后会收到</h3>
+              <ul>
+                <li><IconCheck size={15} aria-hidden="true" /><span>开群时间与首批成员说明</span></li>
+                <li><IconCheck size={15} aria-hidden="true" /><span>正式价格、服务周期与退出规则</span></li>
+                <li><IconCheck size={15} aria-hidden="true" /><span>确认加入后再发送付款方式</span></li>
+              </ul>
+            </div>
+            <div>
+              <h3>当前无需付款</h3>
+              <ul>
+                <li><span className="community-membership-dot" aria-hidden="true" /><span>添加微信并注明想加入的主题</span></li>
+                <li><span className="community-membership-dot" aria-hidden="true" /><span>简单介绍你的内容方向和希望解决的问题</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="community-membership-payment">
+          <div className="community-membership-pay-head"><span>微信登记</span><strong>¥0</strong></div>
+          <div className="community-membership-payment-qr">
+            <Image
+              src={COMMUNITY_MEMBERSHIP.ownerQr}
+              alt="作者个人微信二维码"
+              width={1074}
+              height={1455}
+              sizes={compact ? '180px' : '240px'}
+              unoptimized
+              className="h-full w-full object-contain"
+            />
+          </div>
+          <p>微信号：{COMMUNITY_MEMBERSHIP.wechatId}。添加时注明“{topicName || '主题圈'}候补”。</p>
+        </div>
+      </section>
+    )
+  }
 
   const steps = [
     {

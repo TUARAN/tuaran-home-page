@@ -24,6 +24,11 @@ export default function RssBlogroll({ fallback = [] }) {
   // feedId -> { open, loading, error, entries }
   const [reader, setReader] = useState({})
 
+  useEffect(() => {
+    if (!user?.id) return
+    void markNotificationsRead({ all: true, category: 'rss' })
+  }, [user?.id, markNotificationsRead])
+
   const visibleFeeds = useMemo(() => {
     if (!focusFeedId) return feeds
     const focused = feeds.find((feed) => feed.id === focusFeedId)

@@ -4,9 +4,9 @@ import PageContainer from '../components/PageContainer'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '讨论中心',
+  title: '交流广场',
   description:
-    '涂阿燃站内讨论中心：查看公开留言、文章评论与活跃讨论。',
+    '查看站内公开话题、文章评论与近期活跃讨论。',
   keywords: ['涂阿燃', 'tuaran', '讨论', '留言', '文章评论'],
   alternates: {
     canonical: '/community',

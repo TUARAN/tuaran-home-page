@@ -31,7 +31,7 @@ function formatTime(ts) {
 function FeedItem({ item }) {
   const isMessage = item.type === 'message'
   const content = (
-    <article className="community-feed-item">
+    <article id={item.type === 'message' ? `message-${item.rawId}` : undefined} className="community-feed-item scroll-mt-24">
       <UserAvatar
         seed={item.userName || item.userId || 'guest'}
         size="md"
@@ -40,7 +40,7 @@ function FeedItem({ item }) {
       <div className="min-w-0 flex-1">
         <div className="community-feed-meta">
           <strong>{item.userName || '用户'}</strong>
-          <span>{isMessage ? '在讨论中心留言' : commentProviderLabel(item.userProvider)}</span>
+          <span>{isMessage ? '发起了公开话题' : commentProviderLabel(item.userProvider)}</span>
           <span aria-hidden="true">·</span>
           <time>{formatTime(item.createdAt)}</time>
         </div>
@@ -61,7 +61,7 @@ function FeedItem({ item }) {
 }
 
 export default function DiscussionHubClient() {
-  const [data, setData] = useState({ status: 'loading', items: [], messages: [], threads: [] })
+  const [data, setData] = useState({ status: 'loading', items: [], messages: [], threads: [], stats: null })
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
@@ -79,6 +79,7 @@ export default function DiscussionHubClient() {
         status: discussion?.status || 'error',
         items: Array.isArray(discussion?.items) ? discussion.items : [],
         threads: Array.isArray(discussion?.threads) ? discussion.threads : [],
+        stats: discussion?.stats || null,
         messages,
       })
     })
@@ -89,12 +90,13 @@ export default function DiscussionHubClient() {
     const comments = data.items.map((item) => ({ ...item, type: 'comment' }))
     const messages = data.messages.map((item) => ({
       id: `message-${item.id}`,
+      rawId: item.id,
       type: 'message',
       userId: item.user_id,
       userName: item.user_name,
       message: item.message,
       createdAt: item.created_at,
-      href: null,
+      href: `/community#message-${item.id}`,
     }))
     return [...comments, ...messages]
       .filter((item) => filter === 'all' || item.type === filter)
@@ -112,11 +114,28 @@ export default function DiscussionHubClient() {
 
   return (
     <div className="community-page">
+      <header className="community-hero mb-2">
+        <div className="community-hero-copy">
+          <p className="community-kicker"><span /> COMMUNITY</p>
+          <h1>交流广场</h1>
+          <p className="community-hero-lead">看看大家正在讨论什么，也可以围绕一篇内容继续聊下去。</p>
+          <div className="community-hero-actions">
+            <a href="#message" className="community-primary-button">参与交流</a>
+          </div>
+        </div>
+        <div className="community-hero-side">
+          <div className="community-stats">
+            <div className="community-stat"><strong>{data.stats?.weekComments || 0}</strong><span>近 7 日评论</span></div>
+            <div className="community-stat"><strong>{data.stats?.weekParticipants || 0}</strong><span>近 7 日参与者</span></div>
+            <div className="community-stat"><strong>{data.threads.length}</strong><span>近期话题</span></div>
+          </div>
+        </div>
+      </header>
       <section id="message" className="community-section community-feed-section scroll-mt-24" aria-labelledby="community-feed-title">
         <div className="community-section-head community-feed-heading">
           <div>
             <p className="community-kicker">NOW TALKING</p>
-            <h2 id="community-feed-title">大家最近在聊</h2>
+            <h2 id="community-feed-title">最新交流</h2>
           </div>
           <div className="community-feed-filters" role="tablist" aria-label="筛选讨论动态">
             {FEED_FILTERS.map((item) => (
@@ -150,13 +169,13 @@ export default function DiscussionHubClient() {
 
             {data.threads.length ? (
               <section className="community-thread-panel">
-                <p className="community-kicker">ACTIVE THREADS</p>
-                <h3>正在升温</h3>
+                <p className="community-kicker">RECENT THREADS</p>
+                <h3>最近有回复</h3>
                 <div>
                   {data.threads.slice(0, 4).map((thread) => (
                     <Link key={thread.articleKey} href={thread.href || '/community'} className="community-thread-link no-underline hover:no-underline">
                       <span className="line-clamp-2">{thread.title}</span>
-                      <strong>{thread.comments}</strong>
+                      <strong>{thread.comments} 条</strong>
                     </Link>
                   ))}
                 </div>

@@ -147,11 +147,15 @@ export async function PATCH(req) {
   const now = Date.now()
   try {
     if (body?.all) {
+      const rssOnly = body?.category === 'rss'
+      const interactionOnly = body?.category === 'interaction'
       const result = await db
         .prepare(
           `UPDATE comment_notifications
            SET read_at = ?1
-           WHERE recipient_user_id = ?2 AND read_at IS NULL`
+           WHERE recipient_user_id = ?2 AND read_at IS NULL
+             ${interactionOnly ? "AND type != 'automation_monitor' AND type != 'rss_update'" : ''}
+             ${rssOnly ? "AND type = 'rss_update'" : ''}`
         )
         .bind(now, String(user.id))
         .run()

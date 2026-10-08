@@ -10,7 +10,7 @@ import { AVATAR_PATH } from '../../../lib/avatar'
  */
 
 export const AUTHOR_INTRO_MARKDOWN =
-  '> **涂阿燃** · 前端与智能体工程师 · 技术作者 · [个人介绍 →](https://2aran.com/about)'
+  '> **涂阿燃** · 前端与智能体工程师 · 技术作者 · [2aran.com →](https://2aran.com)'
 
 export function AuthorByline() {
   return (

@@ -59,8 +59,14 @@ test('reads a post id from a status permalink', () => {
 test('content script keeps the 35-reply refresh loop wired to the reply popup', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
+  const catalog = await readFile(new URL('../../lib/resourceCatalog.js', import.meta.url), 'utf8')
+  const resourcePage = await readFile(
+    new URL('../../app/(site)/resources/x-reply-clipboard-extension/page.jsx', import.meta.url),
+    'utf8',
+  )
 
   assert.equal(manifest.manifest_version, 3)
+  assert.equal(manifest.version, '0.1.0')
   assert.deepEqual(manifest.permissions, ['clipboardRead'])
   assert.match(content, /data-testid="reply"/)
   assert.match(content, /tweetTextarea_/)
@@ -69,4 +75,17 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /execCommand\("paste"\)/)
   assert.match(content, /clipboard\.readText/)
   assert.match(content, /BATCH_SIZE/)
+  assert.match(catalog, /x-reply-clipboard-extension-v0\.1\.0\.zip/)
+  assert.match(resourcePage, /const VERSION = '0\.1\.0'/)
+  assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
+  assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
+
+  const desktopPage = await readFile(
+    new URL('../../app/(site)/resources/x-clipboard-phrase/page.jsx', import.meta.url),
+    'utf8',
+  )
+  assert.match(catalog, /x-clipboard-phrase-macos-v1\.0\.0\.zip/)
+  assert.match(desktopPage, /const VERSION = '1\.0\.0'/)
+  assert.match(desktopPage, /下载 macOS 应用 v\{VERSION\}/)
+  assert.match(desktopPage, /\/resources\/x-reply-clipboard-extension/)
 })

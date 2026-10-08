@@ -33,14 +33,16 @@ test('download center covers gated tool packages plus the Syncblog extension', (
       '/resources/2aran-desktop',
       '/resources/codex-model-switcher',
       '/resources/x-article-autopublisher-extension',
+      '/resources/x-clipboard-phrase',
       '/resources/x-mutual-cleaner-extension',
+      '/resources/x-reply-clipboard-extension',
       '/resources/x-tweet-to-pdf-extension',
       '/tools/syncblog-publisher',
       '/tools/workbuddy-desktop-pet',
     ],
   )
-  assert.equal(getDownloadItemsByType('extension').length, 4)
-  assert.equal(getDownloadItemsByType('desktop').length, 3)
+  assert.equal(getDownloadItemsByType('extension').length, 5)
+  assert.equal(getDownloadItemsByType('desktop').length, 4)
   assert.ok(BROWSER_EXTENSION_WORK_ITEMS.some((item) => item.id === 'syncblog-publisher'))
   assert.ok(DESKTOP_APP_WORK_ITEMS.some((item) => item.id === 'codex-model-switcher'))
 })

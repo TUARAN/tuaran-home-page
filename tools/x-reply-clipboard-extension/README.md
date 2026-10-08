@@ -1,5 +1,7 @@
 # X Reply Clipboard
 
+站内入口：<https://2aran.com/resources/x-reply-clipboard-extension>。工具集的「推特工具」和下载中心都会链到这一页。
+
 本地 Chrome Manifest V3 扩展。在已登录的 X 时间线上，从上往下打开每条帖子的评论弹窗，把当前剪贴板粘进去，再点 Reply。
 
 满 35 条后刷新页面，再从顶部继续，直到点击停止。刷新后会接着累计，关闭这个标签页会停。

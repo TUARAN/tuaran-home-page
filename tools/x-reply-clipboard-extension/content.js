@@ -471,6 +471,7 @@
           <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-status"></div>
           <div class="xrc-stats"></div>
+          <a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">插件说明与下载</a>
         </div>
       `;
       document.documentElement.appendChild(panel);

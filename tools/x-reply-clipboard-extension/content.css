@@ -98,10 +98,19 @@
   color: #536471;
 }
 
+#x-reply-clipboard-panel .xrc-resource {
+  color: #536471;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @media (prefers-color-scheme: dark) {
   #x-reply-clipboard-panel .xrc-subtitle,
   #x-reply-clipboard-panel .xrc-note,
-  #x-reply-clipboard-panel .xrc-stats {
+  #x-reply-clipboard-panel .xrc-stats,
+  #x-reply-clipboard-panel .xrc-resource {
     color: #8b98a5;
   }
 

@@ -82,6 +82,8 @@
     const sent = []
     let submitClicks = 0
     let selfReplyClicks = 0
+    let closeClicks = 0
+    let savePrompts = 0
 
     function openDialog() {
       const dialog = document.createElement("div")
@@ -129,10 +131,22 @@
           toast.setAttribute("role", "status")
           toast.textContent = "Your post was sent. View"
           document.body.appendChild(toast)
+          dialog.remove()
         }, 4000)
       })
 
-      close.addEventListener("click", function () { dialog.remove() })
+      close.addEventListener("click", function () {
+        closeClicks += 1
+        if (editor.textContent.trim()) {
+          savePrompts += 1
+          const prompt = document.createElement("div")
+          prompt.setAttribute("role", "dialog")
+          prompt.innerHTML = "<p>Save post?</p><button>Save</button><button>Discard</button>"
+          document.body.appendChild(prompt)
+          return
+        }
+        dialog.remove()
+      })
       dialog.appendChild(close)
       dialog.appendChild(editor)
       dialog.appendChild(submit)
@@ -155,10 +169,10 @@
       document.querySelector("[data-xrc-toggle]").click()
       const phrase = sent[0] || ""
       const validPhrase = window.XReplyClipboardPhrases.includes(phrase)
-      const passed = sent.length === 1 && submitClicks === 1 && selfReplyClicks === 0 && validPhrase && !document.querySelector('[role="dialog"]')
+      const passed = sent.length === 1 && submitClicks === 1 && selfReplyClicks === 0 && closeClicks === 0 && savePrompts === 0 && validPhrase && !document.querySelector('[role="dialog"]')
       document.getElementById("result").textContent = passed
-        ? `PASS sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} phrase=${phrase}`
-        : `FAIL sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} phrase=${phrase} stats=${stats}`
+        ? `PASS sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} closeClicks=${closeClicks} savePrompts=${savePrompts} phrase=${phrase}`
+        : `FAIL sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} closeClicks=${closeClicks} savePrompts=${savePrompts} phrase=${phrase} stats=${stats}`
     }, 100)
 
     window.setTimeout(function () {

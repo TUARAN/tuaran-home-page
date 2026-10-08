@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '0.2.8'
+const VERSION = '0.2.9'
 
 const title = 'X 时间线回复助手：按时间线打开评论并发送'
 const description =
@@ -173,7 +173,7 @@ export default function XReplyClipboardResourcePage() {
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
           这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。每次成功回复会换成另一条话术。
-          插件会先核对评论框里的文字没有重复，再等待 Reply 可用。点击 Reply 后会等待最多 5 秒确认发送；期间不会关闭弹窗，也不会点只负责保存草稿的 Save。
+          插件会先核对评论框里的文字没有重复，再等待 Reply 可用。点击 Reply 后会等待最多 5 秒确认发送；插件不会主动关闭评论弹窗，也不会点击 Save 或 Discard。若 X 没有自行关闭已发送的弹窗，插件会暂停以避免重复回复。
           没有确认成功时会保留当前帖子、弹窗和话术继续重试。只有确认发出的回复才计入每轮 35 条并进入下一条。
           X 显示「Your post was sent.」时也会立即确认为成功并清理残留弹窗。自己的帖子、自己刚发出的回复以及无法确认作者的帖子会自动排除。
           评论框出现重复或残留内容时，会自动替换成一条完整话术再点击 Reply，不会卡在内容不一致状态。

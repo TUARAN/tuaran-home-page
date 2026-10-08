@@ -253,24 +253,6 @@
       .filter((node) => SUCCESS_NOTICE_RE.test(textOf(node)));
   }
 
-  async function closeConfirmedComposer(composer) {
-    const dialog = composer?.dialog;
-    if (!dialog?.isConnected) return;
-    const close = dialog.querySelector(
-      '[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"], [aria-label="Back"], [aria-label="返回"]'
-    );
-    if (close) realClick(close);
-    await sleep(200);
-    const actionDialog = Array.from(document.querySelectorAll('[role="dialog"]')).find((candidate) => {
-      const labels = Array.from(candidate.querySelectorAll('button, [role="button"]')).map((button) => textOf(button));
-      return labels.some((label) => /^(Save|保存)$/i.test(label)) && labels.some((label) => /^(Discard|放弃|舍弃)$/i.test(label));
-    });
-    const discard = Array.from(actionDialog?.querySelectorAll('button, [role="button"]') || [])
-      .find((button) => /^(Discard|放弃|舍弃)$/i.test(textOf(button)));
-    if (discard) realClick(discard);
-    await sleep(200);
-  }
-
   function requestDraftFill(text, { forceDraft = false } = {}) {
     const requestId = `fill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
@@ -293,6 +275,7 @@
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
     if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
+    if (result === "composer-already-open") return "页面已有评论弹窗，为避免覆盖内容已暂停";
     if (result === "composer-mismatch") return "评论框内容与当前话术不一致";
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
@@ -365,13 +348,14 @@
         );
     if (state.stopping) return "stopped";
     if (!confirmed) return "send-unconfirmed";
-    if (hasNewSuccessNotice()) await closeConfirmedComposer(composer);
+    if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
+      return "sent-composer-open";
+    }
     return "ok";
   }
 
   async function replyOnce(tweet) {
-    const existingComposer = findDialogComposer();
-    if (existingComposer) return publishReply(existingComposer);
+    if (findDialogComposer()) return "composer-already-open";
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
     tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
     await sleepActive(300);
@@ -454,8 +438,13 @@
       renderPanel();
       const result = await replyOnce(next);
       if (result === "stopped") break;
+      if (result === "composer-already-open") {
+        state.status = failureLabel(result);
+        renderPanel();
+        return "give-up";
+      }
 
-      if (result === "ok") {
+      if (result === "ok" || result === "sent-composer-open") {
         processedIds.add(next.id);
         advancePhrase();
         state.pageCount += 1;
@@ -463,6 +452,11 @@
         writeSaved({ running: true, total: state.total });
         state.status = `已回复：${phrase}。本页 ${state.pageCount}/${BATCH_SIZE}`;
         renderPanel();
+        if (result === "sent-composer-open") {
+          state.status = "回复已发送，但 X 没有自动关闭评论框。为避免重复回复，插件已暂停；请手动关闭空白弹窗后再开始。";
+          renderPanel();
+          return "give-up";
+        }
         await sleepActive(AFTER_REPLY_MS);
       } else {
         state.errors += 1;

@@ -291,7 +291,7 @@ export default function CodexResetClient() {
           {source === 'fallback' ? '；当前展示的是备用快照，待上游恢复后再同步。' : '。'}
         </p>
         <p>
-          <Link href="/tools#analysis">返回分析工具</Link>
+          <Link href="/tools#analysis">返回监测分析</Link>
         </p>
       </section>
       </div>

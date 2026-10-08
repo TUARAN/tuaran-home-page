@@ -11,6 +11,8 @@
   const PHRASE_STORE = 3;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
+  const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
+  const RUN_SIZE = loopApi.RUN_SIZE;
   const AFTER_REPLY_MS = 2000;
   const COMPOSER_TIMEOUT_MS = 6000;
   const SUBMIT_TIMEOUT_MS = 15000;
@@ -19,12 +21,14 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "0.2.14";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "1.0.0";
+  const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
     running: false,
     stopping: false,
     pageCount: 0,
+    completedRounds: 0,
     total: 0,
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
@@ -41,16 +45,21 @@
     try {
       const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
       if (!parsed || typeof parsed !== "object" || parsed.phraseStore !== PHRASE_STORE) {
-        return { running: false, total: 0, phraseIndex: null };
+        return { running: false, total: 0, pageCount: 0, completedRounds: 0, phraseIndex: null, processedIds: [] };
       }
       const phraseIndex = Number(parsed.phraseIndex);
       return {
         running: Boolean(parsed.running),
         total: Number(parsed.total) || 0,
-        phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null
+        pageCount: Number(parsed.pageCount) || 0,
+        completedRounds: Number(parsed.completedRounds) || 0,
+        phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null,
+        processedIds: Array.isArray(parsed.processedIds)
+          ? parsed.processedIds.filter((id) => /^\d+$/.test(String(id))).map(String).slice(-RUN_SIZE)
+          : []
       };
     } catch (error) {
-      return { running: false, total: 0, phraseIndex: null };
+      return { running: false, total: 0, pageCount: 0, completedRounds: 0, phraseIndex: null, processedIds: [] };
     }
   }
 
@@ -60,6 +69,9 @@
       JSON.stringify({
         running: Boolean(value.running),
         total: Number(value.total) || 0,
+        pageCount: Number(value.pageCount ?? state.pageCount) || 0,
+        completedRounds: Number(value.completedRounds ?? state.completedRounds) || 0,
+        processedIds: Array.from(processedIds).slice(-RUN_SIZE),
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
       })
@@ -72,6 +84,9 @@
       JSON.stringify({
         running: false,
         total: 0,
+        pageCount: 0,
+        completedRounds: 0,
+        processedIds: [],
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
       })
@@ -230,7 +245,7 @@
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
       if (dialog.closest(`#${PANEL_ID}`)) continue;
-      const textbox = dialog.querySelector('[data-testid^="tweetTextarea_"]');
+      const textbox = dialog.querySelector(REPLY_EDITOR_SELECTOR);
       if (!textbox) continue;
       const submit = dialog.querySelector('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
       return { dialog, textbox, submit };
@@ -242,7 +257,7 @@
     const dialogComposer = findDialogComposer();
     if (dialogComposer) return dialogComposer;
     if (!article || hadInline) return null;
-    const textbox = article.querySelector('[data-testid^="tweetTextarea_"]');
+    const textbox = article.querySelector(REPLY_EDITOR_SELECTOR);
     if (!textbox) return null;
     const submit = article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
     return { dialog: null, textbox, submit };
@@ -295,7 +310,7 @@
   }
 
   async function openComposer(tweet) {
-    const hadInline = Boolean(tweet.article.querySelector('[data-testid^="tweetTextarea_"]'));
+    const hadInline = Boolean(tweet.article.querySelector(REPLY_EDITOR_SELECTOR));
     for (let attempt = 0; attempt < 2 && !state.stopping; attempt += 1) {
       realClick(tweet.replyButton);
       const opened = await waitUntil(() => findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
@@ -353,6 +368,11 @@
     if (state.stopping) return "stopped";
     if (!confirmed) return "send-unconfirmed";
     if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
+      const closedNaturally = await waitUntil(
+        () => !composer.dialog?.isConnected || !findDialogComposer(),
+        2000
+      );
+      if (closedNaturally) return "ok";
       return "sent-composer-open";
     }
     return "ok";
@@ -362,6 +382,7 @@
     const existingComposer = findDialogComposer();
     if (existingComposer) {
       const existingText = loopApi.composerText(existingComposer.textbox);
+      if (!existingText) return publishReply(existingComposer);
       const existingPhraseIndex = loopApi.phraseIndexFromText(phrases, existingText);
       if (existingPhraseIndex >= 0) {
         state.phraseIndex = existingPhraseIndex;
@@ -431,7 +452,20 @@
       });
 
       if (reloadDecision.reload && reloadDecision.reason === "batch") {
-        await reloadAndResume(`本页已回复 ${BATCH_SIZE} 条，刷新后从顶部继续`);
+        const transition = loopApi.batchTransition({
+          pageCount: state.pageCount,
+          completedRounds: state.completedRounds,
+          batchSize: BATCH_SIZE,
+          roundsPerRun: ROUNDS_PER_RUN
+        });
+        state.completedRounds = transition.completedRounds;
+        state.pageCount = transition.pageCount;
+        if (transition.action === "complete") {
+          state.status = `已完成 ${ROUNDS_PER_RUN} 轮，共发送 ${state.total} 条回复`;
+          renderPanel();
+          return "complete";
+        }
+        await reloadAndResume(`第 ${state.completedRounds} 轮已完成，刷新后开始第 ${state.completedRounds + 1} 轮`);
         return "reload";
       }
       if (reloadDecision.reload && reloadDecision.reason === "stalled") {
@@ -474,12 +508,11 @@
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
-        state.status = `已回复：${phrase}。本页 ${state.pageCount}/${BATCH_SIZE}`;
+        state.status = `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${BATCH_SIZE}`;
         renderPanel();
         if (result === "sent-composer-open") {
-          state.status = "回复已发送，但 X 没有自动关闭评论框。为避免重复回复，插件已暂停；请手动关闭空白弹窗后再开始。";
-          renderPanel();
-          return "give-up";
+          await reloadAndResume("回复已确认；X 未关闭弹窗，刷新后自动继续，避免重复发送");
+          return "reload";
         }
         await sleepActive(AFTER_REPLY_MS);
       } else {
@@ -513,18 +546,34 @@
       panel.id = PANEL_ID;
       panel.innerHTML = `
         <div class="xrc-header">
-          <div>
-            <div class="xrc-title">X 时间线回复助手 v${EXTENSION_VERSION}</div>
-            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 等待发送确认</div>
+          <div class="xrc-brand">
+            <div class="xrc-mark" aria-hidden="true">X</div>
+            <div>
+              <div class="xrc-title">时间线回复助手</div>
+              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 自动发送 · 35 条 × 5 轮</div>
+            </div>
           </div>
-          <button class="xrc-close" type="button" aria-label="关闭">×</button>
+          <div class="xrc-header-actions">
+            <div class="xrc-state"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
+            <button class="xrc-close" type="button" aria-label="关闭">×</button>
+          </div>
         </div>
         <div class="xrc-body">
-          <div class="xrc-note">从上往下回复他人的帖子，自动排除自己的帖子和自己的回复。确认发送成功后才进入下一条；满 ${BATCH_SIZE} 条刷新。</div>
+          <div class="xrc-status" role="status"></div>
+          <div class="xrc-stats">
+            <div class="xrc-metric"><span>本轮</span><strong data-xrc-page>0/${BATCH_SIZE}</strong></div>
+            <div class="xrc-metric"><span>轮次</span><strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></div>
+            <div class="xrc-metric"><span>本次</span><strong data-xrc-total>0/${RUN_SIZE}</strong></div>
+          </div>
+          <div class="xrc-progress-group">
+            <div class="xrc-progress-row"><span>当前轮</span><span data-xrc-page-percent>0%</span></div>
+            <div class="xrc-progress"><span data-xrc-page-bar></span></div>
+            <div class="xrc-progress-row"><span>整体进度</span><span data-xrc-total-percent>0%</span></div>
+            <div class="xrc-progress xrc-progress-total"><span data-xrc-total-bar></span></div>
+          </div>
+          <div class="xrc-phrase-row"><span>当前话术</span><strong data-xrc-phrase></strong></div>
           <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
-          <div class="xrc-status"></div>
-          <div class="xrc-stats"></div>
-          <a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">插件说明与下载</a>
+          <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
       document.documentElement.appendChild(panel);
@@ -540,8 +589,25 @@
     const stats = panel.querySelector(".xrc-stats");
     if (status) status.textContent = state.status;
     if (stats) {
-      stats.textContent = `本页 ${state.pageCount}/${BATCH_SIZE} · 累计 ${state.total} · 重试 ${state.errors} · 当前话术 ${currentPhrase()}`;
+      const shownRound = Math.min(state.completedRounds + 1, ROUNDS_PER_RUN);
+      const pagePercent = Math.min(100, Math.round((state.pageCount / BATCH_SIZE) * 100));
+      const totalPercent = Math.min(100, Math.round((state.total / RUN_SIZE) * 100));
+      panel.querySelector("[data-xrc-page]").textContent = `${state.pageCount}/${BATCH_SIZE}`;
+      panel.querySelector("[data-xrc-round]").textContent = `${shownRound}/${ROUNDS_PER_RUN}`;
+      panel.querySelector("[data-xrc-total]").textContent = `${state.total}/${RUN_SIZE}`;
+      panel.querySelector("[data-xrc-page-percent]").textContent = `${pagePercent}%`;
+      panel.querySelector("[data-xrc-total-percent]").textContent = `${totalPercent}%`;
+      panel.querySelector("[data-xrc-page-bar]").style.width = `${pagePercent}%`;
+      panel.querySelector("[data-xrc-total-bar]").style.width = `${totalPercent}%`;
+      panel.querySelector("[data-xrc-phrase]").textContent = currentPhrase();
+      panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
     }
+    const active = Boolean(state.loopPromise) || state.running;
+    const completed = state.completedRounds >= ROUNDS_PER_RUN;
+    const failed = /(?:尚未|无法|没有发出|不可用)/.test(state.status);
+    panel.dataset.state = state.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    const stateLabel = panel.querySelector("[data-xrc-state-label]");
+    if (stateLabel) stateLabel.textContent = state.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
   }
 
@@ -574,6 +640,8 @@
       return;
     }
     state.pageCount = 0;
+    state.completedRounds = 0;
+    state.total = 0;
     state.errors = 0;
     processedIds.clear();
     begin({ resume: false });
@@ -582,6 +650,10 @@
   function boot() {
     const saved = readSaved();
     state.total = saved.total;
+    state.pageCount = saved.pageCount;
+    state.completedRounds = saved.completedRounds;
+    processedIds.clear();
+    for (const id of saved.processedIds) processedIds.add(id);
     state.phraseIndex = saved.phraseIndex;
     renderPanel();
     if (saved.running) {

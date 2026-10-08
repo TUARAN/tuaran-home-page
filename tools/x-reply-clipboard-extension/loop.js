@@ -2,6 +2,8 @@
   "use strict";
 
   const BATCH_SIZE = 35;
+  const ROUNDS_PER_RUN = 5;
+  const RUN_SIZE = BATCH_SIZE * ROUNDS_PER_RUN;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
@@ -28,6 +30,19 @@
     if (pageCount >= batchSize) return { reload: true, reason: "batch" };
     if (stalled && succeeded > 0) return { reload: true, reason: "stalled" };
     return { reload: false, reason: "" };
+  }
+
+  function batchTransition({ pageCount, completedRounds, batchSize = BATCH_SIZE, roundsPerRun = ROUNDS_PER_RUN }) {
+    const rounds = Math.max(0, Number(completedRounds) || 0);
+    if ((Number(pageCount) || 0) < batchSize) {
+      return { action: "continue", completedRounds: rounds, pageCount: Number(pageCount) || 0 };
+    }
+    const nextRounds = rounds + 1;
+    return {
+      action: nextRounds >= roundsPerRun ? "complete" : "reload",
+      completedRounds: nextRounds,
+      pageCount: 0
+    };
   }
 
   function isSubmitEnabled(button) {
@@ -101,11 +116,14 @@
 
   const api = {
     BATCH_SIZE,
+    ROUNDS_PER_RUN,
+    RUN_SIZE,
     statusIdFromHref,
     normalizeHandle,
     handleFromStatusHref,
     nextTweet,
     shouldReload,
+    batchTransition,
     isSubmitEnabled,
     composerText,
     normalizePhraseText,

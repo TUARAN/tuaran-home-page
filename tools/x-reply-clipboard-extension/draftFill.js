@@ -3,6 +3,8 @@
 
   const CHANNEL = "x-reply-clipboard-draft-v2";
   const HANDLER_KEY = "__xReplyClipboardDraftMessageHandlerV2";
+  const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
+  const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,10 +20,10 @@
   function replyEditor() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
-      const editor = visibleEditor(dialog.querySelector('[data-testid^="tweetTextarea_"]'));
+      const editor = visibleEditor(dialog.querySelector(REPLY_EDITOR_SELECTOR));
       if (editor) return editor;
     }
-    return visibleEditor(document.querySelector('[data-testid^="tweetTextarea_"]'));
+    return visibleEditor(document.querySelector(REPLY_EDITOR_SELECTOR));
   }
 
   function fiberDraft(element) {
@@ -54,9 +56,20 @@
   }
 
   function visibleDraftText(editor) {
-    return String(editor?.innerText || editor?.textContent || "")
+    const text = String(editor?.innerText || editor?.textContent || "")
       .replace(/\u200b/g, "")
       .trim();
+    return PLACEHOLDER_RE.test(text) ? "" : text;
+  }
+
+  function isRecoverableDuplicateOrPlaceholderMix(value, phrase) {
+    if (value === `${phrase}${phrase}`) return true;
+    const normalizedValue = String(value || "").replace(/\s+/g, "").toLowerCase();
+    const normalizedPhrase = String(phrase || "").replace(/\s+/g, "").toLowerCase();
+    if (!normalizedValue.startsWith(normalizedPhrase)) return false;
+    const remainder = normalizedValue.slice(normalizedPhrase.length);
+    return Boolean(remainder) && ["postyourreply", "发布你的回复", "写回复", "tweetyourreply"]
+      .some((placeholder) => placeholder.endsWith(remainder));
   }
 
   function characterSample(node) {
@@ -144,13 +157,24 @@
     const editor = replyEditor();
     if (!editor) return { ok: false, reason: "no-editor" };
 
+    let visible = visibleDraftText(editor);
     if (!forceDraft) {
-      insertWithCommand(editor, phrase);
-      await sleep(80);
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        insertWithCommand(editor, phrase);
+        await sleep(80);
+        visible = visibleDraftText(editor);
+        if (visible === phrase) return { ok: true, via: attempt === 0 ? "command" : "command-retry" };
+        if (isRecoverableDuplicateOrPlaceholderMix(visible, phrase)) {
+          insertWithCommand(editor, phrase);
+          await sleep(80);
+          visible = visibleDraftText(editor);
+          if (visible === phrase) return { ok: true, via: "command-repair" };
+        }
+        if (visible) break;
+      }
     }
-    const visible = visibleDraftText(editor);
     if (visible === phrase) return { ok: true, via: "command" };
-    if (visible === `${phrase}${phrase}`) {
+    if (isRecoverableDuplicateOrPlaceholderMix(visible, phrase)) {
       insertWithCommand(editor, phrase);
       await sleep(80);
       const repaired = visibleDraftText(editor);
@@ -179,6 +203,7 @@
     findDraftNode,
     readDraftText,
     visibleDraftText,
+    isRecoverableDuplicateOrPlaceholderMix,
     characterSample,
     writeReplyDraft,
     fillReplyComposer

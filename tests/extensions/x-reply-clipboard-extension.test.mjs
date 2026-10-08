@@ -36,6 +36,23 @@ test('reloads after 35 successful replies and after the timeline stalls', () => 
     reason: '',
   })
   assert.equal(loop.BATCH_SIZE, 35)
+  assert.equal(loop.ROUNDS_PER_RUN, 5)
+  assert.equal(loop.RUN_SIZE, 175)
+  assert.deepEqual(loop.batchTransition({ pageCount: 34, completedRounds: 0 }), {
+    action: 'continue',
+    completedRounds: 0,
+    pageCount: 34,
+  })
+  assert.deepEqual(loop.batchTransition({ pageCount: 35, completedRounds: 0 }), {
+    action: 'reload',
+    completedRounds: 1,
+    pageCount: 0,
+  })
+  assert.deepEqual(loop.batchTransition({ pageCount: 35, completedRounds: 4 }), {
+    action: 'complete',
+    completedRounds: 5,
+    pageCount: 0,
+  })
 })
 
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
@@ -97,13 +114,14 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   )
 
   assert.equal(manifest.manifest_version, 3)
-  assert.equal(manifest.version, '0.2.14')
+  assert.equal(manifest.version, '1.0.0')
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'content.js'])
   assert.equal(manifest.permissions, undefined)
   assert.match(content, /data-testid="reply"/)
   assert.match(content, /tweetTextarea_/)
+  assert.match(content, /contenteditable=\"true\"/)
   assert.match(content, /tweetButton/)
   assert.match(content, /location\.reload/)
   assert.match(content, /x-reply-clipboard-draft-v2/)
@@ -116,6 +134,10 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /seen === phrase/)
   assert.match(content, /SUBMIT_TIMEOUT_MS = 15000/)
   assert.match(content, /SEND_CONFIRM_TIMEOUT_MS = 5000/)
+  assert.match(content, /ROUNDS_PER_RUN/)
+  assert.match(content, /completedRounds/)
+  assert.match(content, /processedIds: Array\.from\(processedIds\)/)
+  assert.match(content, /回复已确认；X 未关闭弹窗，刷新后自动继续/)
   assert.match(content, /send-unconfirmed/)
   assert.match(content, /稍后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
@@ -131,11 +153,16 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /phraseIndexFromText\(phrases, existingText\)/)
   assert.match(content, /repeatedPhraseIndexFromText\(phrases, existingText\)/)
   assert.match(content, /placeholderMixedPhraseIndexFromText\(phrases, existingText\)/)
+  assert.match(content, /if \(!existingText\) return publishReply\(existingComposer\)/)
   assert.match(content, /getManifest/)
-  assert.match(content, /X 时间线回复助手 v\$\{EXTENSION_VERSION\}/)
+  assert.match(content, /时间线回复助手/)
+  assert.match(content, /v\$\{EXTENSION_VERSION\} · 自动发送/)
   assert.match(content, /result !== "sent-composer-open"/)
-  assert.match(catalog, /x-reply-clipboard-extension-v0\.2\.14\.zip/)
-  assert.match(resourcePage, /const VERSION = '0\.2\.14'/)
+  assert.match(content, /data-xrc-page-bar/)
+  assert.match(content, /data-xrc-total-bar/)
+  assert.doesNotMatch(content, /等待发送确认/)
+  assert.match(catalog, /x-reply-clipboard-extension-v1\.0\.0\.zip/)
+  assert.match(resourcePage, /const VERSION = '1\.0\.0'/)
   assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
 
@@ -152,6 +179,9 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
 test('writes the phrase into Draft state and keeps Reply disabled until that write', () => {
   const draft = require('../../tools/x-reply-clipboard-extension/draftFill.js')
   assert.equal(draft.visibleDraftText({ textContent: '  学习了\u200b  ' }), '学习了')
+  assert.equal(draft.visibleDraftText({ textContent: 'Post your reply' }), '')
+  assert.equal(draft.isRecoverableDuplicateOrPlaceholderMix('稳稳', '稳'), true)
+  assert.equal(draft.isRecoverableDuplicateOrPlaceholderMix('稳st your reply', '稳'), true)
 
   function Style() {}
   Style.prototype.clear = function clear() { return new Style() }

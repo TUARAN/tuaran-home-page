@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>X reply loop fixture</title>
+  <link rel="stylesheet" href="../content.css" />
 </head>
 <body>
   <p id="result">RUNNING</p>
@@ -15,6 +16,10 @@
     <article data-testid="tweet" id="tweet-124">
       <a href="/fixture_owner/status/124"><time>now</time></a>
       <button data-testid="reply" type="button" id="self-reply">Comment</button>
+    </article>
+    <article data-testid="tweet" id="tweet-125">
+      <a href="/another_user/status/125"><time>now</time></a>
+      <button data-testid="reply" type="button">Comment</button>
     </article>
   </main>
 
@@ -84,8 +89,17 @@
     let selfReplyClicks = 0
     let closeClicks = 0
     let savePrompts = 0
+    let insertCommandCalls = 0
 
-    function openDialog(initialText = "Post your reply") {
+    const nativeExecCommand = document.execCommand.bind(document)
+    document.execCommand = function (command, showUi, value) {
+      if (window.location.hash === "#resume" && command === "insertText" && insertCommandCalls++ === 0) {
+        return false
+      }
+      return nativeExecCommand(command, showUi, value)
+    }
+
+    function openDialog(initialText = "") {
       const dialog = document.createElement("div")
       dialog.setAttribute("role", "dialog")
       const close = document.createElement("button")
@@ -97,9 +111,20 @@
       editor.setAttribute("contenteditable", "true")
       editor.setAttribute("role", "textbox")
       editor.textContent = initialText
+      const editorLabel = document.createElement("div")
+      editorLabel.setAttribute("data-testid", "tweetTextarea_0_label")
+      const richTextContainer = document.createElement("div")
+      richTextContainer.setAttribute("data-testid", "tweetTextarea_0RichTextInputContainer")
+      const placeholder = document.createElement("div")
+      placeholder.className = "public-DraftEditorPlaceholder-inner"
+      placeholder.textContent = "Post your reply"
+      richTextContainer.appendChild(placeholder)
+      richTextContainer.appendChild(editor)
+      editorLabel.appendChild(richTextContainer)
       const submit = document.createElement("button")
       submit.setAttribute("data-testid", "tweetButton")
-      submit.setAttribute("aria-disabled", /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i.test(initialText.trim()) ? "true" : "false")
+      submit.setAttribute("aria-disabled", initialText.trim() ? "false" : "true")
+      submit.disabled = !initialText.trim()
       submit.textContent = "Reply"
 
       let editorState = new EditorState(new Content(new BlockMap([
@@ -113,12 +138,15 @@
             const text = window.XReplyClipboardDraft.readDraftText(node)
             editor.textContent = text
             submit.setAttribute("aria-disabled", text ? "false" : "true")
+            submit.disabled = !text
           }
         }
       }
       editor.__reactFiber$fixture = { stateNode: node }
       editor.addEventListener("input", function () {
-        submit.setAttribute("aria-disabled", editor.textContent.trim() ? "false" : "true")
+        const hasText = Boolean(editor.textContent.trim())
+        submit.setAttribute("aria-disabled", hasText ? "false" : "true")
+        submit.disabled = !hasText
       })
 
       submit.addEventListener("click", function () {
@@ -132,7 +160,7 @@
           toast.textContent = "Your post was sent. View"
           document.body.appendChild(toast)
           dialog.remove()
-        }, 4000)
+        }, 800)
       })
 
       close.addEventListener("click", function () {
@@ -148,12 +176,14 @@
         dialog.remove()
       })
       dialog.appendChild(close)
-      dialog.appendChild(editor)
+      dialog.appendChild(editorLabel)
       dialog.appendChild(submit)
       document.body.appendChild(dialog)
     }
 
-    document.querySelector('[data-testid="reply"]').addEventListener("click", function () { openDialog() })
+    document.querySelectorAll('[data-testid="reply"]:not(#self-reply)').forEach(function (button) {
+      button.addEventListener("click", function () { openDialog() })
+    })
     document.querySelector("#self-reply").addEventListener("click", function () { selfReplyClicks += 1 })
 
     if (window.location.hash === "#resume") {
@@ -163,7 +193,7 @@
         phraseIndex: 48,
         phraseStore: 3
       }))
-      openDialog("稳st your reply")
+      openDialog("")
     }
   </script>
   <script src="../content.js"></script>
@@ -174,12 +204,14 @@
 
     const verifier = window.setInterval(function () {
       const stats = document.querySelector(".xrc-stats")?.textContent || ""
-      if (!stats.includes("累计 1")) return
+      if (document.querySelector("[data-xrc-total]")?.textContent !== "2/175") return
       window.clearInterval(verifier)
       document.querySelector("[data-xrc-toggle]").click()
-      const phrase = sent[0] || ""
-      const validPhrase = window.XReplyClipboardLoop.phraseIndexFromText(window.XReplyClipboardPhrases, phrase) >= 0
-      const passed = sent.length === 1 && submitClicks === 1 && selfReplyClicks === 0 && closeClicks === 0 && savePrompts === 0 && validPhrase && !document.querySelector('[role="dialog"]')
+      const phrase = sent.join(" | ")
+      const validPhrases = sent.every(function (item) {
+        return window.XReplyClipboardLoop.phraseIndexFromText(window.XReplyClipboardPhrases, item) >= 0
+      })
+      const passed = sent.length === 2 && submitClicks === 2 && selfReplyClicks === 0 && closeClicks === 0 && savePrompts === 0 && validPhrases && sent[0] !== sent[1] && !document.querySelector('[role="dialog"]')
       document.getElementById("result").textContent = passed
         ? `PASS sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} closeClicks=${closeClicks} savePrompts=${savePrompts} phrase=${phrase}`
         : `FAIL sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} closeClicks=${closeClicks} savePrompts=${savePrompts} phrase=${phrase} stats=${stats}`

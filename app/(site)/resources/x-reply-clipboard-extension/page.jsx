@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '0.2.14'
+const VERSION = '1.0.0'
 
 const title = 'X 时间线回复助手：按时间线打开评论并发送'
 const description =
@@ -154,8 +154,8 @@ export default function XReplyClipboardResourcePage() {
           <FeatureCard title="随机话术">
             从插件内置的 55 条话术里随机抽一条，写进评论框。图标话术已经缩减到少量，发出去之后才换下一条，下一条不会和刚用过的那句相同。
           </FeatureCard>
-          <FeatureCard title="满 35 条刷新">
-            本页成功 35 条后刷新页面，再从顶部继续。关闭这个标签页会停止。
+          <FeatureCard title="35 条 × 5 轮">
+            每轮成功 35 条后刷新页面，共执行 5 轮。轮次、总进度和已回复帖子会跨刷新保留，完成 175 条后自动停止。
           </FeatureCard>
           <FeatureCard title="只在本机运行">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。
@@ -176,6 +176,8 @@ export default function XReplyClipboardResourcePage() {
           插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
           如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
           如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。
+          启动时页面已经打开空评论弹窗也可以直接接管：插件会填入当前话术并发送；只有弹窗里存在无法识别的真实文字时才暂停。
+          X 第一次拒绝写入时，插件会重新聚焦并完整替换一次；仍未显示话术才尝试编辑器内部状态，避免一直重复“话术没有写进评论框”。
           没有确认成功时会保留当前帖子、弹窗和话术继续重试。只有确认发出的回复才计入每轮 35 条并进入下一条。
           X 显示「Your post was sent.」时也会立即确认为成功并清理残留弹窗。自己的帖子、自己刚发出的回复以及无法确认作者的帖子会自动排除。
           评论框出现重复或残留内容时，会自动替换成一条完整话术再点击 Reply，不会卡在内容不一致状态。

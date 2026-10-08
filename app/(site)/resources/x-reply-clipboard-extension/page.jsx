@@ -12,12 +12,12 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 
 const title = 'X 剪贴板回复：按时间线打开评论并发送'
 const description =
-  'X 剪贴板回复是一个本地运行的 Chrome 扩展。在已登录的 X 时间线上，它从上往下打开评论弹窗，粘贴当前剪贴板，再点 Reply。满 35 条后刷新页面，从顶部继续。'
-const shareText = 'X 剪贴板回复：在时间线上打开评论、粘贴剪贴板并发送。满 35 条后刷新，再从顶部继续。'
+  'X 剪贴板回复是一个本地运行的 Chrome 扩展。在已登录的 X 时间线上，它从上往下打开评论弹窗，从固定话术里随机抽一条写进去，再点 Reply。满 35 条后刷新页面，从顶部继续。'
+const shareText = 'X 剪贴板回复：在时间线上打开评论，随机抽一条固定话术并发送。满 35 条后刷新，再从顶部继续。'
 
 export const metadata = {
   title,
@@ -89,16 +89,16 @@ export default function XReplyClipboardResourcePage() {
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          在 X 时间线上打开评论，粘贴剪贴板并发送
+          在 X 时间线上打开评论，随机抽一条话术并发送
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
           登录 X 后打开首页、个人主页或搜索结果。左下角点一次「开始回复」，插件会从上往下打开每条帖子的评论弹窗，
-          把当前剪贴板粘进去，再点 Reply。成功 35 条后刷新页面，从顶部再来一轮。
+          从 55 条固定话术里随机抽一条写进去，再点 Reply。成功 35 条后刷新页面，从顶部再来一轮。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['X 平台', '评论弹窗', '剪贴板', 'Chrome 插件', '本地运行', '满 35 条刷新'].map((tag) => (
+          {['X 平台', '评论弹窗', '固定话术', 'Chrome 插件', '本地运行', '满 35 条刷新'].map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
@@ -151,8 +151,8 @@ export default function XReplyClipboardResourcePage() {
           <FeatureCard title="从上往下">
             从当前时间线最上面的帖子开始，点评论图标，等弹窗出现。
           </FeatureCard>
-          <FeatureCard title="粘贴并发送">
-            把剪贴板里的文字写入评论框，Reply 可点之后再发送。每一轮都会重新读取剪贴板。
+          <FeatureCard title="随机话术">
+            从和桌面应用相同的 55 条话术里随机抽一条，写进评论框。发出去之后才换下一条，下一条不会和刚用过的那句相同。
           </FeatureCard>
           <FeatureCard title="满 35 条刷新">
             本页成功 35 条后刷新页面，再从顶部继续。关闭这个标签页会停止。
@@ -167,14 +167,16 @@ export default function XReplyClipboardResourcePage() {
           <li>下载并解压插件包。</li>
           <li>打开 Chrome 的 <code>chrome://extensions/</code>，开启「开发者模式」。</li>
           <li>点击「加载已解压的扩展程序」，选择解压后的目录。</li>
-          <li>登录 X，打开首页、个人主页或搜索结果，先把要回复的文字复制到剪贴板。</li>
+          <li>登录 X，打开首页、个人主页或搜索结果。</li>
           <li>点击页面左下角「开始回复」。需要停下时，点「停止」。</li>
         </ol>
         <p>
-          这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。剪贴板是空的时，当前这一条会停住等待，不会空着发出去。
+          已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
+          这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。每次成功回复会换成另一条话术。
           评论弹窗打不开、Reply 一直不可用的帖子会被跳过。
-          要让粘贴板里的句子自动换成下一条，可以同时开着 macOS 上的
-          <Link href="/resources/x-clipboard-phrase">X 粘贴板评论助手</Link>。
+          话术和 macOS 上的
+          <Link href="/resources/x-clipboard-phrase">X 粘贴板评论助手</Link>
+          是同一组，插件自己随机抽取。
         </p>
 
         <div className="not-prose mt-8 flex flex-wrap items-center gap-3 border-t border-[#eee] pt-6 dark:border-gray-800">

@@ -2,7 +2,8 @@
   "use strict";
 
   const loopApi = globalThis.XReplyClipboardLoop;
-  if (!loopApi) return;
+  const phrases = globalThis.XReplyClipboardPhrases;
+  if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
@@ -22,26 +23,28 @@
     total: 0,
     skipped: 0,
     errors: 0,
-    status: "待命。先复制回复内容，再从当前时间线开始。",
+    status: "待命。点开始后，会从固定话术里随机抽一条回复。",
+    phraseIndex: null,
     loopPromise: null
   };
 
   const processedIds = new Set();
   let panelDismissed = false;
-  let emptyComposerTweetId = "";
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
   function readSaved() {
     try {
       const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
-      if (!parsed || typeof parsed !== "object") return { running: false, total: 0 };
+      if (!parsed || typeof parsed !== "object") return { running: false, total: 0, phraseIndex: null };
+      const phraseIndex = Number(parsed.phraseIndex);
       return {
         running: Boolean(parsed.running),
-        total: Number(parsed.total) || 0
+        total: Number(parsed.total) || 0,
+        phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null
       };
     } catch (error) {
-      return { running: false, total: 0 };
+      return { running: false, total: 0, phraseIndex: null };
     }
   }
 
@@ -50,13 +53,33 @@
       STORAGE_KEY,
       JSON.stringify({
         running: Boolean(value.running),
-        total: Number(value.total) || 0
+        total: Number(value.total) || 0,
+        phraseIndex: state.phraseIndex
       })
     );
   }
 
   function clearSaved() {
-    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        running: false,
+        total: 0,
+        phraseIndex: state.phraseIndex
+      })
+    );
+  }
+
+  function currentPhrase() {
+    const count = phrases.length;
+    if (!Number.isInteger(state.phraseIndex) || state.phraseIndex < 0 || state.phraseIndex >= count) {
+      state.phraseIndex = Math.floor(Math.random() * count);
+    }
+    return phrases[state.phraseIndex];
+  }
+
+  function advancePhrase() {
+    state.phraseIndex = loopApi.nextPhraseIndex(phrases.length, state.phraseIndex);
   }
 
   async function waitForForeground() {
@@ -227,14 +250,6 @@
     await sleep(250);
   }
 
-  async function readClipboard() {
-    try {
-      return String((await navigator.clipboard.readText()) || "");
-    } catch (error) {
-      return "";
-    }
-  }
-
   function placeCaret(textbox) {
     textbox.focus();
     const selection = window.getSelection?.();
@@ -246,23 +261,13 @@
     selection.addRange(range);
   }
 
-  async function fillComposer(textbox) {
-    placeCaret(textbox);
-    try {
-      document.execCommand("paste");
-    } catch (error) {
-      // Clipboard paste can be blocked; the readText path below still fills the box.
-    }
-    await sleep(250);
-    if (loopApi.composerText(textbox)) return loopApi.composerText(textbox);
-
-    const clipboardText = (await readClipboard()).trim();
-    if (!clipboardText) return "";
-
+  async function fillComposer(textbox, text) {
+    const phrase = String(text || "").trim();
+    if (!phrase) return "";
     placeCaret(textbox);
     try {
       document.execCommand("selectAll", false, null);
-      document.execCommand("insertText", false, clipboardText);
+      document.execCommand("insertText", false, phrase);
     } catch (error) {
       // Fall through to the input event.
     }
@@ -272,7 +277,7 @@
           bubbles: true,
           cancelable: true,
           inputType: "insertText",
-          data: clipboardText
+          data: phrase
         })
       );
       textbox.dispatchEvent(new Event("input", { bubbles: true }));
@@ -293,9 +298,10 @@
 
   async function publishReply(composer) {
     if (state.stopping) return "stopped";
-    const filled = await fillComposer(composer.textbox);
+    const phrase = currentPhrase();
+    const filled = await fillComposer(composer.textbox, phrase);
     if (state.stopping) return "stopped";
-    if (!filled) return "empty-clipboard";
+    if (!filled) return "compose-failed";
 
     const enabled = await waitUntil(() => {
       const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
@@ -323,25 +329,17 @@
   }
 
   async function replyOnce(tweet) {
-    let composer = emptyComposerTweetId === tweet.id ? findDialogComposer() : null;
-    if (!composer && findDialogComposer()) {
+    if (findDialogComposer()) {
       await dismissComposer();
     }
-    if (!composer) {
-      if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
-      tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
-      await sleepActive(300);
-      if (state.stopping) return "stopped";
-      composer = await openComposer(tweet);
-    }
+    if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
+    tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
+    await sleepActive(300);
+    if (state.stopping) return "stopped";
+    const composer = await openComposer(tweet);
     if (!composer) return "no-composer";
 
     const result = await publishReply(composer);
-    if (result === "empty-clipboard") {
-      emptyComposerTweetId = tweet.id;
-      return result;
-    }
-    emptyComposerTweetId = "";
     if (result !== "ok") {
       await dismissComposer();
     }
@@ -400,7 +398,7 @@
         const after = tweetSignature(collectTweets());
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT && state.pageCount === 0) {
-          state.status = "没有发出回复。确认剪贴板有内容，并且页面上能打开评论弹窗。";
+          state.status = "没有发出回复。确认页面上能打开评论弹窗。";
           return "give-up";
         }
         state.status = stalled > 0 ? "正在向下找下一条帖子" : "继续向下";
@@ -409,19 +407,15 @@
       }
 
       stalled = 0;
-      state.status = `正在回复 ${next.id}`;
+      const phrase = currentPhrase();
+      state.status = `正在回复：${phrase}`;
       renderPanel();
       const result = await replyOnce(next);
       if (result === "stopped") break;
-      if (result === "empty-clipboard") {
-        state.status = "剪贴板是空的，有内容后会继续这一条";
-        renderPanel();
-        await sleepActive(1000);
-        continue;
-      }
 
       processedIds.add(next.id);
       if (result === "ok") {
+        advancePhrase();
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
@@ -462,12 +456,12 @@
         <div class="xrc-header">
           <div>
             <div class="xrc-title">X 剪贴板回复</div>
-            <div class="xrc-subtitle">评论弹窗 · 粘贴 · 回复</div>
+            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 回复</div>
           </div>
           <button class="xrc-close" type="button" aria-label="关闭">×</button>
         </div>
         <div class="xrc-body">
-          <div class="xrc-note">从上往下打开评论，把剪贴板粘进弹窗，再点 Reply。满 ${BATCH_SIZE} 条后刷新，从顶部再来一轮。</div>
+          <div class="xrc-note">从上往下打开评论，随机抽一条固定话术写进弹窗，再点 Reply。满 ${BATCH_SIZE} 条后刷新，从顶部再来一轮。</div>
           <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-status"></div>
           <div class="xrc-stats"></div>
@@ -486,7 +480,9 @@
     const status = panel.querySelector(".xrc-status");
     const stats = panel.querySelector(".xrc-stats");
     if (status) status.textContent = state.status;
-    if (stats) stats.textContent = `本页 ${state.pageCount}/${BATCH_SIZE} · 累计 ${state.total} · 跳过 ${state.skipped}`;
+    if (stats) {
+      stats.textContent = `本页 ${state.pageCount}/${BATCH_SIZE} · 累计 ${state.total} · 跳过 ${state.skipped} · 下一条 ${currentPhrase()}`;
+    }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
   }
 
@@ -528,6 +524,7 @@
   function boot() {
     const saved = readSaved();
     state.total = saved.total;
+    state.phraseIndex = saved.phraseIndex;
     renderPanel();
     if (saved.running) {
       begin({ resume: true });

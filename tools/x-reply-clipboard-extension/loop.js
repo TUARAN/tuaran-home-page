@@ -35,13 +35,34 @@
     return text;
   }
 
+  function floorMod(value, count) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 0;
+    return ((Math.floor(number) % count) + count) % count;
+  }
+
+  function nextPhraseIndex(count, index, randomBelow) {
+    const total = Number(count) || 0;
+    if (total <= 0) return -1;
+    if (total === 1) return 0;
+    const current = floorMod(index, total);
+    const random = typeof randomBelow === "function" ? randomBelow : (bound) => Math.floor(Math.random() * bound);
+    let pick = random(total - 1);
+    if (!Number.isFinite(pick)) pick = 0;
+    pick = Math.floor(pick);
+    if (pick < 0 || pick >= total - 1) pick = 0;
+    if (pick >= current) pick += 1;
+    return pick;
+  }
+
   const api = {
     BATCH_SIZE,
     statusIdFromHref,
     nextTweet,
     shouldReload,
     isSubmitEnabled,
-    composerText
+    composerText,
+    nextPhraseIndex
   };
 
   if (typeof module === "object" && module.exports) {

@@ -158,7 +158,7 @@ export default function XClipboardPhraseResourcePage() {
           </FeatureCard>
           <FeatureCard title="配合评论插件">
             <Link href="/resources/x-reply-clipboard-extension">X 剪贴板回复</Link>
-            每一轮读取系统粘贴板。这个应用负责按间隔换成下一句。
+            自带同一组话术，每次回复随机抽一条。这个应用按间隔把话术写入系统粘贴板，方便你在别的地方自己粘贴。
           </FeatureCard>
         </div>
 

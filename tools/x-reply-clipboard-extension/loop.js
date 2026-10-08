@@ -9,6 +9,15 @@
     return match ? match[1] : "";
   }
 
+  function normalizeHandle(handle) {
+    return String(handle || "").replace(/^@/, "").trim().toLowerCase();
+  }
+
+  function handleFromStatusHref(href) {
+    const match = String(href || "").match(/(?:^|https?:\/\/[^/]+)\/([A-Za-z0-9_]{1,15})\/status\/\d+/);
+    return match ? normalizeHandle(match[1]) : "";
+  }
+
   function nextTweet(tweets, processedIds) {
     const sorted = [...tweets].sort((a, b) => a.top - b.top);
     return sorted.find((tweet) => tweet.id && tweet.replyButton && !processedIds.has(tweet.id)) || null;
@@ -58,6 +67,8 @@
   const api = {
     BATCH_SIZE,
     statusIdFromHref,
+    normalizeHandle,
+    handleFromStatusHref,
     nextTweet,
     shouldReload,
     isSubmitEnabled,

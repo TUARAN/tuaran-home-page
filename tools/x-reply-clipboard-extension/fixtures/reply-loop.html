@@ -6,11 +6,15 @@
 </head>
 <body>
   <p id="result">RUNNING</p>
-  <div data-testid="SideNav_AccountSwitcher_Button"></div>
+  <div data-testid="SideNav_AccountSwitcher_Button">Fixture Owner @fixture_owner</div>
   <main data-testid="primaryColumn">
     <article data-testid="tweet" id="tweet-123">
       <a href="/tester/status/123"><time>now</time></a>
       <button data-testid="reply" type="button">Comment</button>
+    </article>
+    <article data-testid="tweet" id="tweet-124">
+      <a href="/fixture_owner/status/124"><time>now</time></a>
+      <button data-testid="reply" type="button" id="self-reply">Comment</button>
     </article>
   </main>
 
@@ -77,14 +81,20 @@
 
     const sent = []
     let submitClicks = 0
+    let selfReplyClicks = 0
 
     function openDialog() {
       const dialog = document.createElement("div")
       dialog.setAttribute("role", "dialog")
+      const close = document.createElement("button")
+      close.setAttribute("data-testid", "app-bar-close")
+      close.setAttribute("aria-label", "Close")
+      close.textContent = "Close"
       const editor = document.createElement("div")
       editor.setAttribute("data-testid", "tweetTextarea_0")
       editor.setAttribute("contenteditable", "true")
       editor.setAttribute("role", "textbox")
+      editor.textContent = "STALE DUPLICATE"
       const submit = document.createElement("button")
       submit.setAttribute("data-testid", "tweetButton")
       submit.setAttribute("aria-disabled", "true")
@@ -105,6 +115,9 @@
         }
       }
       editor.__reactFiber$fixture = { stateNode: node }
+      editor.addEventListener("input", function () {
+        submit.setAttribute("aria-disabled", editor.textContent.trim() ? "false" : "true")
+      })
 
       submit.addEventListener("click", function () {
         if (submit.getAttribute("aria-disabled") === "true") return
@@ -112,16 +125,22 @@
         submit.setAttribute("aria-disabled", "true")
         window.setTimeout(function () {
           sent.push(editor.textContent)
-          dialog.remove()
+          const toast = document.createElement("div")
+          toast.setAttribute("role", "status")
+          toast.textContent = "Your post was sent. View"
+          document.body.appendChild(toast)
         }, 4000)
       })
 
+      close.addEventListener("click", function () { dialog.remove() })
+      dialog.appendChild(close)
       dialog.appendChild(editor)
       dialog.appendChild(submit)
       document.body.appendChild(dialog)
     }
 
     document.querySelector('[data-testid="reply"]').addEventListener("click", openDialog)
+    document.querySelector("#self-reply").addEventListener("click", function () { selfReplyClicks += 1 })
   </script>
   <script src="../content.js"></script>
   <script>
@@ -136,10 +155,10 @@
       document.querySelector("[data-xrc-toggle]").click()
       const phrase = sent[0] || ""
       const validPhrase = window.XReplyClipboardPhrases.includes(phrase)
-      const passed = sent.length === 1 && submitClicks === 1 && validPhrase && !document.querySelector('[role="dialog"]')
+      const passed = sent.length === 1 && submitClicks === 1 && selfReplyClicks === 0 && validPhrase && !document.querySelector('[role="dialog"]')
       document.getElementById("result").textContent = passed
-        ? `PASS sent=${sent.length} clicks=${submitClicks} phrase=${phrase}`
-        : `FAIL sent=${sent.length} clicks=${submitClicks} phrase=${phrase} stats=${stats}`
+        ? `PASS sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} phrase=${phrase}`
+        : `FAIL sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} phrase=${phrase} stats=${stats}`
     }, 100)
 
     window.setTimeout(function () {

@@ -52,6 +52,12 @@
     return parts.join("\n").replace(/\u200b/g, "").trim();
   }
 
+  function visibleDraftText(editor) {
+    return String(editor?.innerText || editor?.textContent || "")
+      .replace(/\u200b/g, "")
+      .trim();
+  }
+
   function characterSample(node) {
     let sample = null;
     node?.props?.editorState?.getCurrentContent?.()?.getBlockMap?.()?.forEach?.((block) => {
@@ -144,16 +150,11 @@
       insertWithCommand(editor, phrase);
       await sleep(80);
     }
+    const visible = visibleDraftText(editor);
+    if (visible === phrase) return { ok: true, via: "command" };
+    if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
+
     let node = findDraftNode(editor);
-    if (!forceDraft && node && readDraftText(node) === phrase) return { ok: true, via: "command" };
-
-    if (node && !characterSample(node)) {
-      insertWithCommand(editor, "x");
-      await sleep(80);
-      node = findDraftNode(editor) || node;
-      if (node && readDraftText(node) === phrase) return { ok: true, via: "command" };
-    }
-
     if (!node || !characterSample(node)) return { ok: false, reason: "compose-failed", seen: node ? readDraftText(node) : "" };
     let nextState = null;
     try {
@@ -162,13 +163,18 @@
       return { ok: false, reason: "compose-failed", seen: readDraftText(node) };
     }
     const seen = readDraftText({ props: { editorState: nextState } });
-    return seen === phrase ? { ok: true, via: "draft" } : { ok: false, reason: "compose-failed", seen };
+    await sleep(80);
+    const rendered = visibleDraftText(editor);
+    return seen === phrase && rendered === phrase
+      ? { ok: true, via: "draft" }
+      : { ok: false, reason: "compose-failed", seen: rendered || seen };
   }
 
   const api = {
     CHANNEL,
     findDraftNode,
     readDraftText,
+    visibleDraftText,
     characterSample,
     writeReplyDraft,
     fillReplyComposer

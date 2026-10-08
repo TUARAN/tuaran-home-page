@@ -56,6 +56,13 @@ test('reads a post id from a status permalink', () => {
   assert.equal(loop.statusIdFromHref('/home'), '')
 })
 
+test('reads and normalizes the post author handle from a status permalink', () => {
+  assert.equal(loop.handleFromStatusHref('/Ocean_Yu1/status/1840000000000000000'), 'ocean_yu1')
+  assert.equal(loop.handleFromStatusHref('https://x.com/TUARAN/status/99/photo/1'), 'tuaran')
+  assert.equal(loop.handleFromStatusHref('/i/web/status/99'), '')
+  assert.equal(loop.normalizeHandle('@TUARAN'), 'tuaran')
+})
+
 test('picks a different phrase index and never repeats the current one', () => {
   assert.equal(loop.nextPhraseIndex(1, 0, () => 0), 0)
   assert.equal(loop.nextPhraseIndex(55, 0, () => 0), 1)
@@ -79,7 +86,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   )
 
   assert.equal(manifest.manifest_version, 3)
-  assert.equal(manifest.version, '0.2.7')
+  assert.equal(manifest.version, '0.2.8')
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'content.js'])
@@ -100,11 +107,14 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /SEND_CONFIRM_TIMEOUT_MS = 5000/)
   assert.match(content, /send-unconfirmed/)
   assert.match(content, /稍后重试同一条/)
+  assert.match(content, /Your \(\?:post\|reply\) was sent/)
+  assert.match(content, /currentAccountHandle/)
+  assert.match(content, /tweet\.authorHandle !== ownHandle/)
   assert.doesNotMatch(content, /processedIds\.add\(next\.id\);\s*advancePhrase\(\);\s*writeSaved/)
   assert.doesNotMatch(content, /clickMatchingButton/)
   assert.doesNotMatch(content, /saveAndDismissComposer/)
-  assert.match(catalog, /x-reply-clipboard-extension-v0\.2\.7\.zip/)
-  assert.match(resourcePage, /const VERSION = '0\.2\.7'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v0\.2\.8\.zip/)
+  assert.match(resourcePage, /const VERSION = '0\.2\.8'/)
   assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
 
@@ -120,6 +130,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
 
 test('writes the phrase into Draft state and keeps Reply disabled until that write', () => {
   const draft = require('../../tools/x-reply-clipboard-extension/draftFill.js')
+  assert.equal(draft.visibleDraftText({ textContent: '  学习了\u200b  ' }), '学习了')
 
   function Style() {}
   Style.prototype.clear = function clear() { return new Style() }

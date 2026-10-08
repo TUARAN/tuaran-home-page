@@ -190,7 +190,18 @@
     return Boolean(article.parentElement?.closest('article[data-testid="tweet"]'));
   }
 
+  function currentAccountHandle() {
+    const account = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
+    const accountMatch = textOf(account).match(/@([A-Za-z0-9_]{1,15})/);
+    if (accountMatch) return loopApi.normalizeHandle(accountMatch[1]);
+    const profileHref = document.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.getAttribute("href") || "";
+    const profileMatch = profileHref.match(/^\/([A-Za-z0-9_]{1,15})(?:\/|$)/);
+    return profileMatch ? loopApi.normalizeHandle(profileMatch[1]) : "";
+  }
+
   function collectTweets() {
+    const ownHandle = currentAccountHandle();
+    if (!ownHandle) return [];
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`))
@@ -199,16 +210,18 @@
         const timeLink = article.querySelector('a[href*="/status/"] time')?.closest("a");
         const href = timeLink?.getAttribute("href") || article.querySelector('a[href*="/status/"]')?.getAttribute("href") || "";
         const id = loopApi.statusIdFromHref(href);
+        const authorHandle = loopApi.handleFromStatusHref(href);
         const replyButton = article.querySelector('[data-testid="reply"]');
         const rect = article.getBoundingClientRect();
         return {
           id,
+          authorHandle,
           article,
           replyButton,
           top: rect.top + window.scrollY
         };
       })
-      .filter((tweet) => tweet.id && tweet.replyButton);
+      .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle);
   }
 
   function findDialogComposer() {
@@ -231,6 +244,31 @@
     if (!textbox) return null;
     const submit = article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
     return { dialog: null, textbox, submit };
+  }
+
+  const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|你的(?:帖子|回复)已发送|(?:帖子|回复)已发送成功)/i;
+
+  function successNoticeNodes() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .filter((node) => SUCCESS_NOTICE_RE.test(textOf(node)));
+  }
+
+  async function closeConfirmedComposer(composer) {
+    const dialog = composer?.dialog;
+    if (!dialog?.isConnected) return;
+    const close = dialog.querySelector(
+      '[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"], [aria-label="Back"], [aria-label="返回"]'
+    );
+    if (close) realClick(close);
+    await sleep(200);
+    const actionDialog = Array.from(document.querySelectorAll('[role="dialog"]')).find((candidate) => {
+      const labels = Array.from(candidate.querySelectorAll('button, [role="button"]')).map((button) => textOf(button));
+      return labels.some((label) => /^(Save|保存)$/i.test(label)) && labels.some((label) => /^(Discard|放弃|舍弃)$/i.test(label));
+    });
+    const discard = Array.from(actionDialog?.querySelectorAll('button, [role="button"]') || [])
+      .find((button) => /^(Discard|放弃|舍弃)$/i.test(textOf(button)));
+    if (discard) realClick(discard);
+    await sleep(200);
   }
 
   function requestDraftFill(text, { forceDraft = false } = {}) {
@@ -285,7 +323,6 @@
     if (state.stopping) return "stopped";
     const phrase = currentPhrase();
     const existing = loopApi.composerText(composer.textbox);
-    if (existing && existing !== phrase) return "composer-mismatch";
     const filled = existing === phrase ? phrase : await fillComposer(composer.textbox, phrase);
     if (state.stopping) return "stopped";
     if (!filled) return "compose-failed";
@@ -302,9 +339,12 @@
     const current = composer.dialog ? findDialogComposer() : composer;
     const submit = current?.submit || composer.submit;
     if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
+    const successNoticesBefore = new Set(successNoticeNodes());
+    const hasNewSuccessNotice = () => successNoticeNodes().some((node) => !successNoticesBefore.has(node));
     realClick(submit);
 
     const sendStarted = await waitUntil(() => {
+      if (hasNewSuccessNotice()) return true;
       if (composer.dialog && !findDialogComposer()) return true;
       if (!composer.textbox.isConnected) return true;
       const active = composer.dialog ? findDialogComposer() : composer;
@@ -317,14 +357,15 @@
     if (state.stopping) return "stopped";
     if (!sendStarted) return "send-unconfirmed";
 
-    const closed = composer.dialog
-      ? await waitUntil(() => !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
+    const confirmed = composer.dialog
+      ? await waitUntil(() => hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
       : await waitUntil(
-          () => !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+          () => hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
           SEND_CONFIRM_TIMEOUT_MS
         );
     if (state.stopping) return "stopped";
-    if (!closed) return "send-unconfirmed";
+    if (!confirmed) return "send-unconfirmed";
+    if (hasNewSuccessNotice()) await closeConfirmedComposer(composer);
     return "ok";
   }
 
@@ -365,7 +406,9 @@
     const ready = await waitUntil(() => collectTweets().length > 0, 15000);
     if (state.stopping) return "stopped";
     if (!ready) {
-      state.status = "没有找到帖子。打开首页、个人主页或搜索结果后再开始。";
+      state.status = currentAccountHandle()
+        ? "没有找到可回复的他人帖子。自己的帖子和自己的回复会自动跳过。"
+        : "无法识别当前登录账号，为避免回复自己，已停止。";
       return "give-up";
     }
 
@@ -459,7 +502,7 @@
           <button class="xrc-close" type="button" aria-label="关闭">×</button>
         </div>
         <div class="xrc-body">
-          <div class="xrc-note">从上往下打开评论，随机抽一条固定话术写进弹窗，再点 Reply。满 ${BATCH_SIZE} 条后刷新，从顶部再来一轮。</div>
+          <div class="xrc-note">从上往下回复他人的帖子，自动排除自己的帖子和自己的回复。确认发送成功后才进入下一条；满 ${BATCH_SIZE} 条刷新。</div>
           <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-status"></div>
           <div class="xrc-stats"></div>

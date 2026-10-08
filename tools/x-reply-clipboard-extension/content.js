@@ -14,6 +14,7 @@
   const COMPOSER_TIMEOUT_MS = 6000;
   const SUBMIT_TIMEOUT_MS = 5000;
   const CLOSE_TIMEOUT_MS = 8000;
+  const SEND_ATTEMPTS = 2;
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
@@ -245,18 +246,27 @@
     return true;
   }
 
-  async function dismissComposer() {
-    const dialog = document.querySelector('[role="dialog"]');
+  function actionDialog() {
+    return Array.from(document.querySelectorAll('[role="dialog"]')).find((dialog) => {
+      const labels = Array.from(dialog.querySelectorAll('button, [role="button"]')).map((button) => textOf(button));
+      return labels.some((label) => /^(Save|保存)$/i.test(label)) && labels.some((label) => /^(Discard|放弃|舍弃)$/i.test(label));
+    }) || null;
+  }
+
+  async function saveAndDismissComposer() {
+    const dialog = findDialogComposer()?.dialog;
     const close = dialog?.querySelector(
       '[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"], [aria-label="Back"], [aria-label="返回"]'
     );
     if (close) realClick(close);
-    await sleep(250);
-    clickMatchingButton(document, /^(Discard|放弃|舍弃)$/i);
-    await sleep(250);
+    const savePromptOpened = await waitUntil(() => actionDialog(), 1500);
+    if (!savePromptOpened) return !findDialogComposer();
+    const prompt = actionDialog();
+    if (!clickMatchingButton(prompt, /^(Save|保存)$/i)) return false;
+    return waitUntil(() => !actionDialog() && !findDialogComposer(), 2500);
   }
 
-  function requestDraftFill(text) {
+  function requestDraftFill(text, { forceDraft = false } = {}) {
     const requestId = `fill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
       const timer = window.setTimeout(() => {
@@ -270,7 +280,7 @@
         resolve(event.data.result || { ok: false, reason: "compose-failed" });
       }
       window.addEventListener("message", onMessage);
-      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text }, "*");
+      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text, forceDraft }, "*");
     });
   }
 
@@ -278,15 +288,16 @@
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
     if (result === "dialog-open") return "弹窗没有关闭";
+    if (result === "saved-draft") return "Reply 没有成功，内容已点 Save 保存到草稿";
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
     return result;
   }
 
-  async function fillComposer(textbox, text) {
+  async function fillComposer(textbox, text, options) {
     const phrase = String(text || "").trim();
     if (!phrase || !textbox) return "";
-    const result = await requestDraftFill(phrase);
+    const result = await requestDraftFill(phrase, options);
     if (!result?.ok) return "";
     await sleep(200);
     return loopApi.composerText(textbox) || phrase;
@@ -309,26 +320,36 @@
     if (state.stopping) return "stopped";
     if (!filled) return "compose-failed";
 
-    const enabled = await waitUntil(() => {
-      const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
-      const submit = current?.submit || composer.submit;
-      return loopApi.isSubmitEnabled(submit);
-    }, SUBMIT_TIMEOUT_MS);
+    let enabled = false;
+    for (let attempt = 0; attempt < SEND_ATTEMPTS && !enabled && !state.stopping; attempt += 1) {
+      enabled = await waitUntil(() => {
+        const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
+        const submit = current?.submit || composer.submit;
+        return loopApi.isSubmitEnabled(submit);
+      }, SUBMIT_TIMEOUT_MS);
+      if (!enabled && attempt + 1 < SEND_ATTEMPTS) {
+        state.status = "Reply 还不能点，正在修复评论框状态";
+        renderPanel();
+        await fillComposer(composer.textbox, phrase, { forceDraft: true });
+      }
+    }
 
     if (state.stopping) return "stopped";
     if (!enabled) return "submit-disabled";
 
-    const current = composer.dialog ? findDialogComposer() : composer;
-    const submit = current?.submit || composer.submit;
-    if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
-    realClick(submit);
-
-    const closed = composer.dialog
-      ? await waitUntil(() => !findDialogComposer(), CLOSE_TIMEOUT_MS)
-      : await waitUntil(
-          () => !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
-          CLOSE_TIMEOUT_MS
-        );
+    let closed = false;
+    for (let attempt = 0; attempt < SEND_ATTEMPTS && !closed && !state.stopping; attempt += 1) {
+      const current = composer.dialog ? findDialogComposer() : composer;
+      const submit = current?.submit || composer.submit;
+      if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
+      realClick(submit);
+      closed = composer.dialog
+        ? await waitUntil(() => !findDialogComposer(), CLOSE_TIMEOUT_MS)
+        : await waitUntil(
+            () => !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+            CLOSE_TIMEOUT_MS
+          );
+    }
     if (state.stopping) return "stopped";
     if (!closed) return "dialog-open";
     return "ok";
@@ -336,7 +357,7 @@
 
   async function replyOnce(tweet) {
     if (findDialogComposer()) {
-      await dismissComposer();
+      await saveAndDismissComposer();
     }
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
     tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
@@ -347,7 +368,10 @@
 
     const result = await publishReply(composer);
     if (result !== "ok") {
-      await dismissComposer();
+      const hadDraft = Boolean(loopApi.composerText(composer.textbox));
+      const saved = await saveAndDismissComposer();
+      if (result === "stopped") return "stopped";
+      if (saved && hadDraft) return "saved-draft";
     }
     return result;
   }
@@ -462,8 +486,8 @@
       panel.innerHTML = `
         <div class="xrc-header">
           <div>
-            <div class="xrc-title">X 剪贴板回复</div>
-            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 回复</div>
+            <div class="xrc-title">X 时间线回复助手</div>
+            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 自动发送</div>
           </div>
           <button class="xrc-close" type="button" aria-label="关闭">×</button>
         </div>

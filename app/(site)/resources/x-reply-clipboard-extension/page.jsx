@@ -12,19 +12,19 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '0.2.1'
+const VERSION = '0.2.4'
 
-const title = 'X 剪贴板回复：按时间线打开评论并发送'
+const title = 'X 时间线回复助手：按时间线打开评论并发送'
 const description =
-  'X 剪贴板回复是一个本地运行的 Chrome 扩展。在已登录的 X 时间线上，它从上往下打开评论弹窗，从固定话术里随机抽一条写进去，再点 Reply。满 35 条后刷新页面，从顶部继续。'
-const shareText = 'X 剪贴板回复：在时间线上打开评论，随机抽一条固定话术并发送。满 35 条后刷新，再从顶部继续。'
+  'X 时间线回复助手是一个本地运行的 Chrome 扩展。在已登录的 X 时间线上，它从上往下打开评论弹窗，从固定话术里随机抽一条写进去，再点 Reply。满 35 条后刷新页面，从顶部继续。'
+const shareText = 'X 时间线回复助手：在时间线上打开评论，随机抽一条固定话术并发送。满 35 条后刷新，再从顶部继续。'
 
 export const metadata = {
   title,
   description,
   keywords: [
     'X 评论回复',
-    'X 剪贴板回复',
+    'X 时间线回复助手',
     'Twitter 回复插件',
     'Chrome 浏览器插件',
     'X 时间线',
@@ -136,7 +136,7 @@ export default function XReplyClipboardResourcePage() {
                 Download
               </p>
               <h2 className="m-0 mt-1 border-0 p-0 text-xl font-semibold text-[var(--site-ink)]">
-                X 剪贴板回复
+                X 时间线回复助手
               </h2>
               <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
                 Manifest V3 本地 Chrome 扩展。下载后在 Chrome 扩展管理页以「加载已解压」方式安装。
@@ -173,7 +173,8 @@ export default function XReplyClipboardResourcePage() {
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
           这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。每次成功回复会换成另一条话术。
-          评论弹窗打不开、Reply 一直不可用的帖子会被跳过。
+          Reply 暂时不可用时，插件会重新同步编辑器状态再试一次；仍未成功则关闭弹窗并点击 Save，把内容留在 X 草稿中。
+          只有确认发出的回复才计入每轮 35 条。
           话术和 macOS 上的
           <Link href="/resources/x-clipboard-phrase">X 粘贴板评论助手</Link>
           是同一组，插件自己随机抽取。

@@ -133,16 +133,19 @@
     }
   }
 
-  async function fillReplyComposer(text) {
+  async function fillReplyComposer(text, options = {}) {
     const phrase = String(text || "").replace(/\u200b/g, "").trim();
+    const forceDraft = Boolean(options.forceDraft);
     if (!phrase) return { ok: false, reason: "compose-failed" };
     const editor = replyEditor();
     if (!editor) return { ok: false, reason: "no-editor" };
 
-    insertWithCommand(editor, phrase);
-    await sleep(80);
+    if (!forceDraft) {
+      insertWithCommand(editor, phrase);
+      await sleep(80);
+    }
     let node = findDraftNode(editor);
-    if (node && readDraftText(node) === phrase) return { ok: true, via: "command" };
+    if (!forceDraft && node && readDraftText(node) === phrase) return { ok: true, via: "command" };
 
     if (node && !characterSample(node)) {
       insertWithCommand(editor, "x");
@@ -180,7 +183,7 @@
     window.addEventListener("message", (event) => {
       if (event.source !== window || event.data?.channel !== CHANNEL || event.data?.direction !== "request") return;
       const requestId = event.data.requestId;
-      fillReplyComposer(event.data.text).then((result) => {
+      fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft }).then((result) => {
         window.postMessage({ channel: CHANNEL, direction: "response", requestId, result }, "*");
       });
     });

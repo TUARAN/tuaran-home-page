@@ -33,7 +33,6 @@ export const metadata = {
     'FDE',
     '前端工程师',
     'AI Agent',
-    '矩联科技',
   ],
   alternates: { canonical: RESUME_PATH },
   openGraph: {
@@ -59,7 +58,7 @@ const resumeStructuredData = {
     '@id': 'https://2aran.com/about#person',
     name: resumeProfile.name,
     alternateName: ['TUARAN', ...resumeProfile.aliases],
-    jobTitle: ['AI 前沿部署工程师', '矩联科技负责人'],
+    jobTitle: ['AI 前沿部署工程师', '前端工程师'],
     url: 'https://2aran.com/about',
     email: 'mailto:tuaran666@gmail.com',
     address: {

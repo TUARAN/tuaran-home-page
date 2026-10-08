@@ -3,7 +3,14 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import { OPENCLAW_ACHIEVEMENT_COUNT } from '../../lib/openClawAchievements.js'
-import { RESUME_PATH, resumeExperience, resumeOpenSource, resumeProfile } from '../../lib/resume.js'
+import {
+  RESUME_DESCRIPTION,
+  RESUME_PATH,
+  resumeExperience,
+  resumeOpenSource,
+  resumeProfile,
+  resumeSummary,
+} from '../../lib/resume.js'
 import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
 import { routeFromPageFile } from '../../scripts/audit-route-seo.mjs'
 
@@ -35,6 +42,10 @@ test('resume content stays within public facts and does not invent employers', (
   assert.equal(resumeProfile.name, '涂阿燃')
   assert.match(resumeProfile.intent, /AI 前沿部署/)
   assert.ok(resumeExperience.some((job) => job.org === '矩联科技'))
+  assert.doesNotMatch(
+    [RESUME_DESCRIPTION, resumeProfile.headline, resumeSummary, ...resumeExperience.map((job) => job.title)].join('\n'),
+    /矩联科技负责人|技术与产品负责人|现负责矩联科技/,
+  )
   assert.ok(resumeExperience.every((job) => !/腾讯|阿里|字节|华为|百度/.test(job.org)))
   assert.equal(resumeOpenSource.items.length, OPENCLAW_ACHIEVEMENT_COUNT)
 })

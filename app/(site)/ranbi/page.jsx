@@ -98,6 +98,7 @@ export default async function RanbiPage() {
           全部燃币在固定总量规则启用时一次性分配到五个储备池。用户领取奖励时，燃币从对应储备池转入个人账户；使用后进入
           <code className="mx-1 rounded bg-[var(--site-panel)] px-1.5 py-0.5 text-[12px]">system:burn</code>
           黑洞账户，永久退出流通。燃币不支持充值、提现、交易或现金兑换。
+          储备池余额和每一笔转账见 <Link href="/ranbi/ledger" className="underline underline-offset-2">公开账本</Link>。
         </p>
         <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[

@@ -78,6 +78,46 @@ test('transfers conserve supply and duplicate refs stay idempotent', () => {
   assert.equal(value.reserves + value.burned + value.circulating, 21_000_000)
 })
 
+function accounted(db) {
+  const value = totals(db)
+  return value.reserves + value.burned + value.circulating
+}
+
+test('direct guest seeds after transfers are charged back to the community pool once', () => {
+  const db = setup()
+  const reconcile = fs.readFileSync(new URL('../migrations/0108_reconcile_direct_guest_seed.sql', import.meta.url), 'utf8')
+  db.prepare(`
+    INSERT INTO ranbi_transfers
+      (from_account, to_account, amount, reason, ref, created_at)
+    VALUES ('pool:community', 'email:seed', 5, 'checkin', 'checkin:2026-10-01', 1790800000000)
+  `).run()
+  db.prepare(`
+    INSERT INTO point_ledger (user_id, delta, reason, ref, created_at)
+    VALUES ('guest:orphan', 5, 'guest_seed', 'guest_seed', 1790900000000)
+  `).run()
+  db.prepare(`
+    INSERT INTO user_points (user_id, balance, updated_at)
+    VALUES ('guest:orphan', 5, 1790900000000)
+    ON CONFLICT(user_id) DO UPDATE SET balance = user_points.balance + excluded.balance
+  `).run()
+  assert.equal(accounted(db), 21_000_005)
+  assert.equal(db.prepare("SELECT balance FROM user_points WHERE user_id = 'guest:orphan'").get().balance, 5)
+
+  db.exec(reconcile)
+  assert.equal(accounted(db), 21_000_000)
+  assert.equal(db.prepare("SELECT balance FROM user_points WHERE user_id = 'guest:orphan'").get().balance, 5)
+  assert.equal(db.prepare(`
+    SELECT COUNT(*) AS n FROM ranbi_transfers
+    WHERE to_account = 'guest:orphan' AND reason = 'guest_seed'
+  `).get().n, 0)
+
+  const poolAfter = db.prepare("SELECT balance FROM ranbi_system_accounts WHERE account_id = 'pool:community'").get().balance
+  db.exec(reconcile)
+  assert.equal(accounted(db), 21_000_000)
+  assert.equal(db.prepare("SELECT balance FROM ranbi_system_accounts WHERE account_id = 'pool:community'").get().balance, poolAfter)
+  assert.equal(db.prepare("SELECT balance FROM user_points WHERE user_id = 'guest:orphan'").get().balance, 5)
+})
+
 test('database rejects burn withdrawals and overdrafts', () => {
   const db = setup()
   assert.throws(() => db.prepare(`

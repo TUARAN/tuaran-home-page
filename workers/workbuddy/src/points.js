@@ -14,19 +14,17 @@ export async function ensureGuestBalance(db, actor) {
   if (!actor?.isGuest) return
   const now = Date.now()
   const amount = await getGuestSeed(db)
-  await db.batch([
-    db.prepare(
-      `INSERT OR IGNORE INTO point_ledger (user_id, delta, reason, ref, created_at)
-       VALUES (?1, ?2, 'guest_seed', 'guest_seed', ?3)`,
-    ).bind(actor.userId, amount, now),
-    db.prepare(
-      `INSERT INTO user_points (user_id, balance, updated_at)
-       SELECT ?1, ?2, ?3 WHERE changes() > 0
-       ON CONFLICT(user_id) DO UPDATE SET
-         balance = user_points.balance + excluded.balance,
-         updated_at = excluded.updated_at`,
-    ).bind(actor.userId, amount, now),
-  ])
+  if (!amount) return
+  // 已有试用流水时不再转账。旧路径直接写过账本，补转账会让触发器把余额再加一次。
+  await db.prepare(
+    `INSERT OR IGNORE INTO ranbi_transfers
+      (from_account, to_account, amount, reason, ref, created_at)
+     SELECT 'pool:community', ?1, ?2, 'guest_seed', 'guest_seed', ?3
+      WHERE NOT EXISTS (
+        SELECT 1 FROM point_ledger
+         WHERE user_id = ?1 AND reason = 'guest_seed' AND ref = 'guest_seed'
+      )`,
+  ).bind(actor.userId, amount, now).run()
 }
 
 export async function getBalance(db, userId) {
@@ -75,22 +73,14 @@ export async function unlockResource(db, actor, resource) {
   }
 
   const results = await db.batch([
-    // The ledger's unique idempotency key is the transaction's claim.
-    // A failed statement rolls back the entire D1 batch.
+    // 转账触发器同时扣减余额、写入流水并进入黑洞。权益插入失败时整批回滚。
     db.prepare(
-      `INSERT OR IGNORE INTO point_ledger (user_id, delta, reason, ref, created_at)
-       SELECT ?1, -?2, 'unlock', ?3, ?4
-       WHERE EXISTS (SELECT 1 FROM user_points WHERE user_id = ?1 AND balance >= ?2)
-         AND NOT EXISTS (SELECT 1 FROM resource_unlocks WHERE user_id = ?1 AND resource_key = ?5)`,
+      `INSERT OR IGNORE INTO ranbi_transfers
+        (from_account, to_account, amount, reason, ref, created_at)
+       SELECT ?1, 'system:burn', ?2, 'unlock', ?3, ?4
+        WHERE EXISTS (SELECT 1 FROM user_points WHERE user_id = ?1 AND balance >= ?2)
+          AND NOT EXISTS (SELECT 1 FROM resource_unlocks WHERE user_id = ?1 AND resource_key = ?5)`,
     ).bind(actor.userId, cost, `unlock:${resource.resourceKey}`, now, resource.resourceKey),
-    db
-      .prepare(
-        `UPDATE user_points
-            SET balance = balance - ?1, updated_at = ?2
-          WHERE user_id = ?3
-            AND changes() > 0`,
-      )
-      .bind(cost, now, actor.userId),
     db
       .prepare(
         `INSERT OR IGNORE INTO resource_unlocks (user_id, resource_key, unlocked_at, cost_points)

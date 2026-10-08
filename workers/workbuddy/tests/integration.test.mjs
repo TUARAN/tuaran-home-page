@@ -10,8 +10,9 @@ import { ensureGuestBalance, getBalance, unlockResource } from '../src/points.js
 function database() {
   const sql = new DatabaseSync(':memory:')
   sql.exec(readFileSync(new URL('../migrations/0001_workbuddy_resources.sql', import.meta.url), 'utf8'))
+  sql.exec(readFileSync(new URL('../../../migrations/0100_fixed_ranbi_supply.sql', import.meta.url), 'utf8'))
+  sql.exec("DELETE FROM site_settings WHERE key = 'ranbi.guestSeed'")
   sql.exec(`
-    CREATE TABLE site_settings (key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE site_users (id TEXT PRIMARY KEY, platform_id TEXT, role TEXT);
     CREATE TABLE account_identities (provider TEXT, provider_account_id TEXT, provider_login TEXT, user_id TEXT);
   `)
@@ -93,11 +94,15 @@ function setup(t) {
 
 test('guest reward is atomic, honors shared rules, and is only awarded once', async () => {
   const { db, sql } = database()
-  sql.exec("INSERT INTO site_settings VALUES ('ranbi.guestSeed', '25')")
+  sql.exec("INSERT INTO site_settings (key, value, updated_at, updated_by) VALUES ('ranbi.guestSeed', '25', 1, 'test')")
   const actor = { userId: 'guest:demo', isGuest: true }
   await Promise.all([ensureGuestBalance(db, actor), ensureGuestBalance(db, actor)])
   assert.equal(await getBalance(db, actor.userId), 25)
   assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM point_ledger').get().n, 1)
+  assert.equal(sql.prepare("SELECT balance FROM ranbi_system_accounts WHERE account_id = 'pool:community'").get().balance, 6_299_975)
+  const supply = Number(sql.prepare('SELECT SUM(balance) AS n FROM ranbi_system_accounts').get().n)
+    + Number(sql.prepare('SELECT COALESCE(SUM(balance), 0) AS n FROM user_points').get().n)
+  assert.equal(supply, 21_000_000)
   sql.close()
 })
 

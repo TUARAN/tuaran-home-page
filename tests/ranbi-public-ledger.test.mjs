@@ -5,6 +5,8 @@ import {
   canonicalTransferLine,
   hashSnapshot,
   hashTransfers,
+  pageFromBefore,
+  paginateNewestFirst,
   publicAccount,
   publicDetail,
 } from '../lib/ranbiPublicLedger.js'
@@ -61,4 +63,22 @@ test('snapshot hash covers balances and transfer lines in id order', async () =>
   assert.equal(hash, await hashSnapshot(snapshot))
   assert.equal(canonicalSnapshot(snapshot).includes('email:'), false)
   assert.equal(hash.length, 64)
+})
+
+test('transfer pages move backward from the newest row without overlap', () => {
+  const newestFirst = Array.from({ length: 95 }, (_, index) => ({ id: 95 - index }))
+  const first = paginateNewestFirst(newestFirst, { page: 1, pageSize: 40 })
+  const second = paginateNewestFirst(newestFirst, { page: 2, pageSize: 40 })
+  const last = paginateNewestFirst(newestFirst, { page: 9, pageSize: 40 })
+
+  assert.equal(first.totalPages, 3)
+  assert.equal(first.transfers[0].id, 95)
+  assert.equal(first.transfers.at(-1).id, 56)
+  assert.equal(second.transfers[0].id, 55)
+  assert.equal(second.transfers.at(-1).id, 16)
+  assert.equal(last.page, 3)
+  assert.equal(last.transfers.length, 15)
+  assert.equal(last.transfers.at(-1).id, 1)
+  assert.equal(pageFromBefore(newestFirst, first.transfers.at(-1).id, 40), 2)
+  assert.equal(paginateNewestFirst([], { page: 4 }).page, 1)
 })

@@ -3,6 +3,7 @@ import PageContainer from '../../components/PageContainer'
 import { getD1 } from '../../../../lib/d1'
 import { loadRanbiPublicLedger } from '../../../../lib/ranbiPublicLedger'
 import { RANBI_TOTAL_SUPPLY } from '../../../../lib/points'
+import RanbiLedgerTransfers from './RanbiLedgerTransfers'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -25,26 +26,14 @@ function formatAmount(value) {
   return new Intl.NumberFormat('zh-CN').format(Number(value || 0))
 }
 
-function formatTime(value) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(new Date(value))
-}
-
 export default async function RanbiLedgerPage({ searchParams }) {
   const params = await searchParams
-  const before = Number(params?.before || 0)
-  const ledger = await loadRanbiPublicLedger(dbOrNull(), { before, limit: 40 })
+  const ledger = await loadRanbiPublicLedger(dbOrNull(), {
+    page: params?.page,
+    before: params?.before,
+    limit: 40,
+  })
   const snapshot = ledger?.snapshot
-  const olderHref = ledger?.nextBefore ? `/ranbi/ledger?before=${ledger.nextBefore}` : null
-  const newerHref = before > 0 ? '/ranbi/ledger' : null
 
   return (
     <PageContainer width="narrow" className="py-12">
@@ -131,53 +120,15 @@ export default async function RanbiLedgerPage({ searchParams }) {
             <p className="mt-2 font-mono text-[12px] text-[var(--site-muted)]">转账摘要 {snapshot.transfersHash}</p>
           </section>
 
-          <section className="mb-6">
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 className="font-serif text-[20px] text-[var(--site-ink)]">转账记录</h2>
-              <p className="text-[12px] text-[var(--site-muted)]">共 {formatAmount(snapshot.transferCount)} 笔</p>
-            </div>
-            <div className="overflow-x-auto rounded-2xl border border-[var(--site-line)]">
-              <table className="w-full min-w-[720px] text-left text-[13px]">
-                <thead>
-                  <tr className="bg-[#b98928]/[0.08] text-[11px] uppercase tracking-[0.08em] text-[var(--site-muted)]">
-                    <th className="px-4 py-3">时间</th>
-                    <th className="px-4 py-3">转出</th>
-                    <th className="px-4 py-3">转入</th>
-                    <th className="px-4 py-3 text-right">数量</th>
-                    <th className="px-4 py-3">事由</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ledger.transfers.length ? ledger.transfers.map((transfer) => (
-                    <tr key={transfer.id} className="border-t border-[var(--site-line)]">
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-[12px] text-[var(--site-muted)]">{formatTime(transfer.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <span className="block text-[var(--site-ink)]">{transfer.from.label}</span>
-                        <span className="font-mono text-[11px] text-[var(--site-muted)]">{transfer.from.ref}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="block text-[var(--site-ink)]">{transfer.to.label}</span>
-                        <span className="font-mono text-[11px] text-[var(--site-muted)]">{transfer.to.ref}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums">{formatAmount(transfer.amount)}</td>
-                      <td className="px-4 py-3 text-[var(--site-muted)]">
-                        <span className="text-[var(--site-ink)]">{transfer.reasonLabel}</span>
-                        {transfer.detail ? <span className="mt-0.5 block font-mono text-[11px]">{transfer.detail}</span> : null}
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-[var(--site-muted)]">还没有可公开的转账。</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex gap-4 text-[13px]">
-              {newerHref ? <Link href={newerHref} className="underline underline-offset-2">较新的记录</Link> : null}
-              {olderHref ? <Link href={olderHref} className="underline underline-offset-2">更早的记录</Link> : null}
-            </div>
-          </section>
+          <RanbiLedgerTransfers
+            initial={{
+              transfers: ledger.transfers,
+              page: ledger.page,
+              pageSize: ledger.pageSize,
+              totalPages: ledger.totalPages,
+              total: snapshot.transferCount,
+            }}
+          />
         </>
       ) : (
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">公开账本暂时读不到。储备池完成初始化后会显示总额和转账。</p>

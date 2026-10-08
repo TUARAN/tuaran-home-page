@@ -17,6 +17,7 @@ export async function GET(request) {
   const url = new URL(request.url)
   const ledger = await loadRanbiPublicLedger(db, {
     before: url.searchParams.get('before'),
+    page: url.searchParams.get('page'),
     limit: url.searchParams.get('limit'),
     scope: url.searchParams.get('scope') === 'all' ? 'all' : 'page',
   })

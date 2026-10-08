@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: '燃币说明 · 获取与使用资源权益',
   description:
-    '燃币不支持充值，可点击领取、参与活动和游戏免费获取，也可联系站长补充。查看余额、领取规则和资源权益；捐助或赞助完全自愿，与燃币获取分开。',
+    '燃币用于留住读者、激励站内行为，不以盈利为目的。不支持充值、提现或现金兑换；可通过签到、评论、活动和游戏获得，并兑换内容、工具和礼物，可兑换的东西会继续增加。',
   keywords: ['燃币', '获取燃币', '涂阿燃', 'tuaran', '积分', '资源权益', '签到', '交流'],
   alternates: { canonical: '/ranbi' },
 }
@@ -72,9 +72,9 @@ export default async function RanbiPage() {
           获取和使用资源权益
         </h1>
         <p className="mt-3 text-[14px] leading-7 text-[var(--site-muted)]">
-          燃币用于解锁站内内容、领取工具包并保存资源权益。
-          <strong className="text-[var(--site-ink)]">固定总量 21,000,000 枚，永不增发。</strong>
-          可通过点击领取、参与活动、玩游戏等免费方式获得，也可以联系站长补充。
+          燃币用来留住读者，并激励签到、评论和站内参与，<strong className="text-[var(--site-ink)]">不以盈利为目的</strong>。
+          <strong className="text-[var(--site-ink)]">固定总量 21,000,000 枚，永不增发。不支持充值、提现、交易或现金兑换。</strong>
+          签到、有效评论、活动和游戏会按站内行为发放；余额可以兑换内容、工具和礼物，可兑换的东西会继续增加。
         </p>
         <div className="mt-5">
           <RanbiBalance />
@@ -85,9 +85,10 @@ export default async function RanbiPage() {
       <section className="mb-10">
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">一、你能获得什么</h2>
         <p className="text-[14px] leading-7 text-[var(--site-muted)]">
-          <span className="font-medium text-[var(--site-ink)]">燃币对应站内资源权益与参与记录。</span>
+          <span className="font-medium text-[var(--site-ink)]">燃币不支持充值。</span>
+          签到、评论、活动和游戏这些站内行为会发放燃币；连续参与和有效互动留在账号里，再用来兑换内容、工具和礼物。可兑换范围会继续增加。
           每个访客都有试用额度；登录后，已解锁内容、已领取工具和余额流水会保留在账号中。
-          内容或工具只结算一次，之后可以长期打开。燃币不可提现，也不支持充值或真实货币兑换。
+          内容或工具只结算一次，之后可以长期打开。燃币不可提现，也不兑换真实货币。
         </p>
       </section>
 
@@ -240,6 +241,8 @@ export default async function RanbiPage() {
       <section className="rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
         <h2 className="mb-2 text-[15px] font-semibold text-[#7a5b1e] dark:text-amber-200">一眼速查</h2>
         <ul className="space-y-1.5 text-[13px] leading-6 text-[#8a7a55] dark:text-amber-300/80">
+          <li>· 燃币用于用户留存和行为激励，不以盈利为目的，<strong>不支持充值</strong>。</li>
+          <li>· 按签到、评论、活动等站内行为获得，可兑换内容、工具和礼物，可兑换范围会继续增加。</li>
           <li>· 固定总量 <strong>{formatAmount(RANBI_TOTAL_SUPPLY)}</strong> 枚，所有奖励从储备池转出，任何入口都不能增发。</li>
           <li>· 游客首次尝试资源领取 <strong>{R.guestSeed}</strong> 燃币 → 够体验约 {Math.floor(R.guestSeed / R.resourceDefaultCost)} 篇文字内容。</li>
           <li>· 注册 / 绑定一次性 <strong>{R.register}</strong> 燃币，之后每天签到 +{R.checkin}、评论 +{R.comment}。</li>

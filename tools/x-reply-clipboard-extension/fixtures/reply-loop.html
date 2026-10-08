@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>X reply loop fixture</title>
+</head>
+<body>
+  <p id="result">RUNNING</p>
+  <div data-testid="SideNav_AccountSwitcher_Button"></div>
+  <main data-testid="primaryColumn">
+    <article data-testid="tweet" id="tweet-123">
+      <a href="/tester/status/123"><time>now</time></a>
+      <button data-testid="reply" type="button">Comment</button>
+    </article>
+  </main>
+
+  <script src="../draftFill.js"></script>
+  <script src="../phrases.js"></script>
+  <script src="../loop.js"></script>
+  <script>
+    function Style() {}
+    Style.prototype.clear = function () { return new Style() }
+
+    function Character(style, entity) {
+      this.style = style || new Style()
+      this.entity = entity == null ? null : entity
+    }
+    Character.prototype.getStyle = function () { return this.style }
+    Character.prototype.set = function (key, value) {
+      const next = new Character(this.style, this.entity)
+      if (key === "style") next.style = value
+      if (key === "entity") next.entity = value
+      return next
+    }
+
+    function CharacterList(items) {
+      if (!(this instanceof CharacterList)) return new CharacterList(items)
+      this.items = items || []
+      this.size = this.items.length
+    }
+    CharacterList.prototype.get = function (index) { return this.items[index] }
+    CharacterList.prototype.first = function () { return this.items[0] }
+    CharacterList.prototype.push = function (item) { return new CharacterList(this.items.concat([item])) }
+
+    function Block(props) { Object.assign(this, props) }
+    Block.prototype.getText = function () { return this.text || "" }
+    Block.prototype.getCharacterList = function () { return this.characterList }
+    Block.prototype.merge = function (props) { return Object.assign(new Block(this), props) }
+
+    function BlockMap(entries) {
+      if (!(this instanceof BlockMap)) return new BlockMap(entries)
+      this.entries = entries || []
+    }
+    BlockMap.prototype.set = function (key, value) {
+      return new BlockMap(this.entries.filter(function (entry) { return entry[0] !== key }).concat([[key, value]]))
+    }
+    BlockMap.prototype.forEach = function (fn) {
+      this.entries.forEach(function (entry) { fn(entry[1], entry[0]) })
+    }
+
+    function Content(blockMap) { this.blockMap = blockMap }
+    Content.prototype.getBlockMap = function () { return this.blockMap }
+    Content.prototype.set = function (key, value) {
+      const next = new Content(key === "blockMap" ? value : this.blockMap)
+      next[key] = value
+      return next
+    }
+
+    function SelectionState() {}
+    SelectionState.createEmpty = function () { return new SelectionState() }
+
+    function EditorState(content) { this.content = content }
+    EditorState.prototype.getCurrentContent = function () { return this.content }
+    EditorState.prototype.getSelection = function () { return { constructor: SelectionState } }
+    EditorState.push = function (_editorState, content) { return new EditorState(content) }
+    EditorState.moveSelectionToEnd = function (state) { return state }
+
+    const sent = []
+    let submitClicks = 0
+
+    function openDialog() {
+      const dialog = document.createElement("div")
+      dialog.setAttribute("role", "dialog")
+      const editor = document.createElement("div")
+      editor.setAttribute("data-testid", "tweetTextarea_0")
+      editor.setAttribute("contenteditable", "true")
+      editor.setAttribute("role", "textbox")
+      const submit = document.createElement("button")
+      submit.setAttribute("data-testid", "tweetButton")
+      submit.setAttribute("aria-disabled", "true")
+      submit.textContent = "Reply"
+
+      let editorState = new EditorState(new Content(new BlockMap([
+        ["empty", new Block({ text: "", characterList: new CharacterList([new Character()]) })]
+      ])))
+      const node = {
+        props: {
+          get editorState() { return editorState },
+          onChange(next) {
+            editorState = next
+            const text = window.XReplyClipboardDraft.readDraftText(node)
+            editor.textContent = text
+            submit.setAttribute("aria-disabled", text ? "false" : "true")
+          }
+        }
+      }
+      editor.__reactFiber$fixture = { stateNode: node }
+
+      submit.addEventListener("click", function () {
+        if (submit.getAttribute("aria-disabled") === "true") return
+        submitClicks += 1
+        submit.setAttribute("aria-disabled", "true")
+        window.setTimeout(function () {
+          sent.push(editor.textContent)
+          dialog.remove()
+        }, 4000)
+      })
+
+      dialog.appendChild(editor)
+      dialog.appendChild(submit)
+      document.body.appendChild(dialog)
+    }
+
+    document.querySelector('[data-testid="reply"]').addEventListener("click", openDialog)
+  </script>
+  <script src="../content.js"></script>
+  <script>
+    window.setTimeout(function () {
+      document.querySelector("[data-xrc-toggle]").click()
+    }, 100)
+
+    const verifier = window.setInterval(function () {
+      const stats = document.querySelector(".xrc-stats")?.textContent || ""
+      if (!stats.includes("累计 1")) return
+      window.clearInterval(verifier)
+      document.querySelector("[data-xrc-toggle]").click()
+      const phrase = sent[0] || ""
+      const validPhrase = window.XReplyClipboardPhrases.includes(phrase)
+      const passed = sent.length === 1 && submitClicks === 1 && validPhrase && !document.querySelector('[role="dialog"]')
+      document.getElementById("result").textContent = passed
+        ? `PASS sent=${sent.length} clicks=${submitClicks} phrase=${phrase}`
+        : `FAIL sent=${sent.length} clicks=${submitClicks} phrase=${phrase} stats=${stats}`
+    }, 100)
+
+    window.setTimeout(function () {
+      if (document.getElementById("result").textContent === "RUNNING") {
+        document.getElementById("result").textContent = `FAIL timeout sent=${sent.length} clicks=${submitClicks}`
+      }
+    }, 11000)
+  </script>
+</body>
+</html>

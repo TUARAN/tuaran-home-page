@@ -12,9 +12,9 @@
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const AFTER_REPLY_MS = 2000;
   const COMPOSER_TIMEOUT_MS = 6000;
-  const SUBMIT_TIMEOUT_MS = 5000;
-  const CLOSE_TIMEOUT_MS = 8000;
-  const SEND_ATTEMPTS = 2;
+  const SUBMIT_TIMEOUT_MS = 15000;
+  const SEND_START_TIMEOUT_MS = 2500;
+  const SEND_CONFIRM_TIMEOUT_MS = 5000;
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
@@ -24,7 +24,6 @@
     stopping: false,
     pageCount: 0,
     total: 0,
-    skipped: 0,
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
     phraseIndex: null,
@@ -234,38 +233,6 @@
     return { dialog: null, textbox, submit };
   }
 
-  function clickMatchingButton(root, pattern) {
-    const scope = root || document;
-    const button = Array.from(scope.querySelectorAll('button, [role="button"]')).find((candidate) => {
-      if (candidate.closest(`#${PANEL_ID}`)) return false;
-      const label = textOf(candidate) || candidate.getAttribute("aria-label") || "";
-      return pattern.test(label.trim());
-    });
-    if (!button) return false;
-    realClick(button);
-    return true;
-  }
-
-  function actionDialog() {
-    return Array.from(document.querySelectorAll('[role="dialog"]')).find((dialog) => {
-      const labels = Array.from(dialog.querySelectorAll('button, [role="button"]')).map((button) => textOf(button));
-      return labels.some((label) => /^(Save|保存)$/i.test(label)) && labels.some((label) => /^(Discard|放弃|舍弃)$/i.test(label));
-    }) || null;
-  }
-
-  async function saveAndDismissComposer() {
-    const dialog = findDialogComposer()?.dialog;
-    const close = dialog?.querySelector(
-      '[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"], [aria-label="Back"], [aria-label="返回"]'
-    );
-    if (close) realClick(close);
-    const savePromptOpened = await waitUntil(() => actionDialog(), 1500);
-    if (!savePromptOpened) return !findDialogComposer();
-    const prompt = actionDialog();
-    if (!clickMatchingButton(prompt, /^(Save|保存)$/i)) return false;
-    return waitUntil(() => !actionDialog() && !findDialogComposer(), 2500);
-  }
-
   function requestDraftFill(text, { forceDraft = false } = {}) {
     const requestId = `fill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
@@ -287,8 +254,8 @@
   function failureLabel(result) {
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
-    if (result === "dialog-open") return "弹窗没有关闭";
-    if (result === "saved-draft") return "Reply 没有成功，内容已点 Save 保存到草稿";
+    if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
+    if (result === "composer-mismatch") return "评论框内容与当前话术不一致";
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
     return result;
@@ -300,7 +267,8 @@
     const result = await requestDraftFill(phrase, options);
     if (!result?.ok) return "";
     await sleep(200);
-    return loopApi.composerText(textbox) || phrase;
+    const seen = loopApi.composerText(textbox);
+    return seen === phrase ? seen : "";
   }
 
   async function openComposer(tweet) {
@@ -316,49 +284,53 @@
   async function publishReply(composer) {
     if (state.stopping) return "stopped";
     const phrase = currentPhrase();
-    const filled = await fillComposer(composer.textbox, phrase);
+    const existing = loopApi.composerText(composer.textbox);
+    if (existing && existing !== phrase) return "composer-mismatch";
+    const filled = existing === phrase ? phrase : await fillComposer(composer.textbox, phrase);
     if (state.stopping) return "stopped";
     if (!filled) return "compose-failed";
 
-    let enabled = false;
-    for (let attempt = 0; attempt < SEND_ATTEMPTS && !enabled && !state.stopping; attempt += 1) {
-      enabled = await waitUntil(() => {
-        const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
-        const submit = current?.submit || composer.submit;
-        return loopApi.isSubmitEnabled(submit);
-      }, SUBMIT_TIMEOUT_MS);
-      if (!enabled && attempt + 1 < SEND_ATTEMPTS) {
-        state.status = "Reply 还不能点，正在修复评论框状态";
-        renderPanel();
-        await fillComposer(composer.textbox, phrase, { forceDraft: true });
-      }
-    }
+    const enabled = await waitUntil(() => {
+      const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
+      const submit = current?.submit || composer.submit;
+      return loopApi.isSubmitEnabled(submit);
+    }, SUBMIT_TIMEOUT_MS);
 
     if (state.stopping) return "stopped";
     if (!enabled) return "submit-disabled";
 
-    let closed = false;
-    for (let attempt = 0; attempt < SEND_ATTEMPTS && !closed && !state.stopping; attempt += 1) {
-      const current = composer.dialog ? findDialogComposer() : composer;
-      const submit = current?.submit || composer.submit;
-      if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
-      realClick(submit);
-      closed = composer.dialog
-        ? await waitUntil(() => !findDialogComposer(), CLOSE_TIMEOUT_MS)
-        : await waitUntil(
-            () => !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
-            CLOSE_TIMEOUT_MS
-          );
-    }
+    const current = composer.dialog ? findDialogComposer() : composer;
+    const submit = current?.submit || composer.submit;
+    if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
+    realClick(submit);
+
+    const sendStarted = await waitUntil(() => {
+      if (composer.dialog && !findDialogComposer()) return true;
+      if (!composer.textbox.isConnected) return true;
+      const active = composer.dialog ? findDialogComposer() : composer;
+      const activeSubmit = active?.submit || submit;
+      return !loopApi.isSubmitEnabled(activeSubmit) || Boolean(
+        active?.dialog?.querySelector('[role="progressbar"], [aria-busy="true"], [data-testid*="progress"]')
+      );
+    }, SEND_START_TIMEOUT_MS);
+
     if (state.stopping) return "stopped";
-    if (!closed) return "dialog-open";
+    if (!sendStarted) return "send-unconfirmed";
+
+    const closed = composer.dialog
+      ? await waitUntil(() => !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
+      : await waitUntil(
+          () => !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+          SEND_CONFIRM_TIMEOUT_MS
+        );
+    if (state.stopping) return "stopped";
+    if (!closed) return "send-unconfirmed";
     return "ok";
   }
 
   async function replyOnce(tweet) {
-    if (findDialogComposer()) {
-      await saveAndDismissComposer();
-    }
+    const existingComposer = findDialogComposer();
+    if (existingComposer) return publishReply(existingComposer);
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
     tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
     await sleepActive(300);
@@ -367,11 +339,8 @@
     if (!composer) return "no-composer";
 
     const result = await publishReply(composer);
-    if (result !== "ok") {
-      const hadDraft = Boolean(loopApi.composerText(composer.textbox));
-      const saved = await saveAndDismissComposer();
-      if (result === "stopped") return "stopped";
-      if (saved && hadDraft) return "saved-draft";
+    if (result !== "ok" && result !== "stopped" && loopApi.composerText(composer.textbox)) {
+      return "send-unconfirmed";
     }
     return result;
   }
@@ -443,10 +412,9 @@
       const result = await replyOnce(next);
       if (result === "stopped") break;
 
-      processedIds.add(next.id);
-      advancePhrase();
-      writeSaved({ running: true, total: state.total });
       if (result === "ok") {
+        processedIds.add(next.id);
+        advancePhrase();
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
@@ -455,10 +423,9 @@
         await sleepActive(AFTER_REPLY_MS);
       } else {
         state.errors += 1;
-        state.skipped += 1;
-        state.status = `跳过：${failureLabel(result)}。下一条已换掉`;
+        state.status = `尚未发送：${failureLabel(result)}。稍后重试同一条`;
         renderPanel();
-        await sleepActive(600);
+        await sleepActive(1500);
       }
     }
 
@@ -487,7 +454,7 @@
         <div class="xrc-header">
           <div>
             <div class="xrc-title">X 时间线回复助手</div>
-            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 自动发送</div>
+            <div class="xrc-subtitle">评论弹窗 · 随机话术 · 等待发送确认</div>
           </div>
           <button class="xrc-close" type="button" aria-label="关闭">×</button>
         </div>
@@ -512,7 +479,7 @@
     const stats = panel.querySelector(".xrc-stats");
     if (status) status.textContent = state.status;
     if (stats) {
-      stats.textContent = `本页 ${state.pageCount}/${BATCH_SIZE} · 累计 ${state.total} · 跳过 ${state.skipped} · 下一条 ${currentPhrase()}`;
+      stats.textContent = `本页 ${state.pageCount}/${BATCH_SIZE} · 累计 ${state.total} · 重试 ${state.errors} · 当前话术 ${currentPhrase()}`;
     }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
   }
@@ -546,7 +513,6 @@
       return;
     }
     state.pageCount = 0;
-    state.skipped = 0;
     state.errors = 0;
     processedIds.clear();
     begin({ resume: false });

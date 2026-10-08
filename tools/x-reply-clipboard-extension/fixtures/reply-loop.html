@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>X reply loop fixture</title>
-  <link rel="stylesheet" href="../content.css" />
+  <link rel="stylesheet" href="../content.css?v=1.4.0" />
 </head>
 <body>
   <p id="result">RUNNING</p>
@@ -23,9 +23,9 @@
     </article>
   </main>
 
-  <script src="../draftFill.js"></script>
-  <script src="../phrases.js"></script>
-  <script src="../loop.js"></script>
+  <script src="../draftFill.js?v=1.4.0"></script>
+  <script src="../phrases.js?v=1.4.0"></script>
+  <script src="../loop.js?v=1.4.0"></script>
   <script>
     function Style() {}
     Style.prototype.clear = function () { return new Style() }
@@ -190,13 +190,15 @@
       sessionStorage.setItem("x-reply-clipboard-loop", JSON.stringify({
         running: false,
         total: 0,
+        replyIntervalSeconds: 2,
+        roundIntervalSeconds: 10,
         phraseIndex: 48,
-        phraseStore: 3
+        phraseStore: 4
       }))
       openDialog("")
     }
   </script>
-  <script src="../content.js"></script>
+  <script src="../content.js?v=1.4.0"></script>
   <script>
     window.setTimeout(function () {
       document.querySelector("[data-xrc-toggle]").click()

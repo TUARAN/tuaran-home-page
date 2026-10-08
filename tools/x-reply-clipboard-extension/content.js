@@ -8,12 +8,17 @@
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
-  const PHRASE_STORE = 3;
+  const PHRASE_STORE = 4;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
   const RUN_SIZE = loopApi.RUN_SIZE;
-  const AFTER_REPLY_MS = 2000;
+  const DEFAULT_REPLY_INTERVAL_SECONDS = 5;
+  const DEFAULT_ROUND_INTERVAL_SECONDS = 60;
+  const MIN_REPLY_INTERVAL_SECONDS = 2;
+  const MAX_REPLY_INTERVAL_SECONDS = 300;
+  const MIN_ROUND_INTERVAL_SECONDS = 10;
+  const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 6000;
   const SUBMIT_TIMEOUT_MS = 15000;
   const SEND_START_TIMEOUT_MS = 2500;
@@ -21,7 +26,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "1.0.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "1.4.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -30,6 +35,10 @@
     pageCount: 0,
     completedRounds: 0,
     total: 0,
+    startedAt: null,
+    elapsedMs: 0,
+    replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
+    roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
     phraseIndex: null,
@@ -38,14 +47,34 @@
 
   const processedIds = new Set();
   let panelDismissed = false;
+  let highlightedPhraseIndex = null;
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  function clampInterval(value, fallback, minimum, maximum) {
+    const parsed = Math.round(Number(value));
+    return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
+  }
+
+  function savedDefaults() {
+    return {
+      running: false,
+      total: 0,
+      pageCount: 0,
+      completedRounds: 0,
+      startedAt: null,
+      phraseIndex: null,
+      processedIds: [],
+      replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
+      roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS
+    };
+  }
 
   function readSaved() {
     try {
       const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
       if (!parsed || typeof parsed !== "object" || parsed.phraseStore !== PHRASE_STORE) {
-        return { running: false, total: 0, pageCount: 0, completedRounds: 0, phraseIndex: null, processedIds: [] };
+        return savedDefaults();
       }
       const phraseIndex = Number(parsed.phraseIndex);
       return {
@@ -53,13 +82,16 @@
         total: Number(parsed.total) || 0,
         pageCount: Number(parsed.pageCount) || 0,
         completedRounds: Number(parsed.completedRounds) || 0,
+        startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
+        replyIntervalSeconds: clampInterval(parsed.replyIntervalSeconds, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS),
+        roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null,
         processedIds: Array.isArray(parsed.processedIds)
           ? parsed.processedIds.filter((id) => /^\d+$/.test(String(id))).map(String).slice(-RUN_SIZE)
           : []
       };
     } catch (error) {
-      return { running: false, total: 0, pageCount: 0, completedRounds: 0, phraseIndex: null, processedIds: [] };
+      return savedDefaults();
     }
   }
 
@@ -71,6 +103,9 @@
         total: Number(value.total) || 0,
         pageCount: Number(value.pageCount ?? state.pageCount) || 0,
         completedRounds: Number(value.completedRounds ?? state.completedRounds) || 0,
+        startedAt: Number(value.startedAt ?? state.startedAt) || null,
+        replyIntervalSeconds: state.replyIntervalSeconds,
+        roundIntervalSeconds: state.roundIntervalSeconds,
         processedIds: Array.from(processedIds).slice(-RUN_SIZE),
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -86,6 +121,9 @@
         total: 0,
         pageCount: 0,
         completedRounds: 0,
+        startedAt: null,
+        replyIntervalSeconds: state.replyIntervalSeconds,
+        roundIntervalSeconds: state.roundIntervalSeconds,
         processedIds: [],
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -99,6 +137,27 @@
       state.phraseIndex = Math.floor(Math.random() * count);
     }
     return phrases[state.phraseIndex];
+  }
+
+  function elapsedRuntimeMs() {
+    return state.startedAt ? Math.max(0, Date.now() - state.startedAt) : Math.max(0, state.elapsedMs);
+  }
+
+  function formatRuntime(milliseconds) {
+    const totalSeconds = Math.floor(Math.max(0, Number(milliseconds) || 0) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pair = (value) => String(value).padStart(2, "0");
+    return hours > 0 ? `${hours}:${pair(minutes)}:${pair(seconds)}` : `${pair(minutes)}:${pair(seconds)}`;
+  }
+
+  async function waitRateLimit(seconds, statusForRemaining) {
+    for (let remaining = seconds; remaining > 0 && state.running && !state.stopping; remaining -= 1) {
+      state.status = statusForRemaining(remaining);
+      renderPanel();
+      await sleepActive(1000);
+    }
   }
 
   function advancePhrase() {
@@ -465,7 +524,12 @@
           renderPanel();
           return "complete";
         }
-        await reloadAndResume(`第 ${state.completedRounds} 轮已完成，刷新后开始第 ${state.completedRounds + 1} 轮`);
+        await waitRateLimit(
+          state.roundIntervalSeconds,
+          (remaining) => `第 ${state.completedRounds} 轮已完成，${remaining} 秒后开始第 ${state.completedRounds + 1} 轮`
+        );
+        if (state.stopping || !state.running) return "stopped";
+        await reloadAndResume(`第 ${state.completedRounds} 轮已完成，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
         return "reload";
       }
       if (reloadDecision.reload && reloadDecision.reason === "stalled") {
@@ -511,10 +575,16 @@
         state.status = `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${BATCH_SIZE}`;
         renderPanel();
         if (result === "sent-composer-open") {
+          if (state.pageCount < BATCH_SIZE) {
+            await waitRateLimit(state.replyIntervalSeconds, (remaining) => `回复成功，${remaining} 秒后刷新并继续`);
+            if (state.stopping || !state.running) return "stopped";
+          }
           await reloadAndResume("回复已确认；X 未关闭弹窗，刷新后自动继续，避免重复发送");
           return "reload";
         }
-        await sleepActive(AFTER_REPLY_MS);
+        if (state.pageCount < BATCH_SIZE) {
+          await waitRateLimit(state.replyIntervalSeconds, (remaining) => `回复成功，${remaining} 秒后处理下一条`);
+        }
       } else {
         state.errors += 1;
         state.status = `尚未发送：${failureLabel(result)}。稍后重试同一条`;
@@ -531,6 +601,17 @@
     const active = Boolean(state.loopPromise) || state.running;
     button.dataset.running = active ? "true" : "false";
     button.textContent = state.stopping ? "正在停止" : active ? "停止" : "开始回复";
+  }
+
+  function centerPhraseItem(panel, item, behavior = "smooth") {
+    const list = panel?.querySelector("[data-xrc-phrase-list]");
+    if (!list || !item) return;
+    list.scrollTo({ top: 0, behavior });
+    if (behavior === "smooth") {
+      window.setTimeout(() => {
+        if (item.classList.contains("is-active")) list.scrollTop = 0;
+      }, 420);
+    }
   }
 
   function renderPanel() {
@@ -561,28 +642,71 @@
         <div class="xrc-body">
           <div class="xrc-status" role="status"></div>
           <div class="xrc-stats">
-            <div class="xrc-metric"><span>本轮</span><strong data-xrc-page>0/${BATCH_SIZE}</strong></div>
-            <div class="xrc-metric"><span>轮次</span><strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></div>
-            <div class="xrc-metric"><span>本次</span><strong data-xrc-total>0/${RUN_SIZE}</strong></div>
-          </div>
-          <div class="xrc-progress-group">
-            <div class="xrc-progress-row"><span>当前轮</span><span data-xrc-page-percent>0%</span></div>
-            <div class="xrc-progress"><span data-xrc-page-bar></span></div>
-            <div class="xrc-progress-row"><span>整体进度</span><span data-xrc-total-percent>0%</span></div>
-            <div class="xrc-progress xrc-progress-total"><span data-xrc-total-bar></span></div>
+            <section class="xrc-level-card xrc-run-section">
+              <div class="xrc-level-head">
+                <div><span class="xrc-level-kicker">本次执行</span><strong>5 轮 · 175 条</strong></div>
+                <strong class="xrc-level-count" data-xrc-total>0/${RUN_SIZE}</strong>
+              </div>
+              <div class="xrc-run-meta">
+                <span>轮次 <strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></span>
+                <span>运行 <strong data-xrc-runtime>00:00</strong></span>
+              </div>
+              <div class="xrc-progress-row"><span>整体进度</span><span data-xrc-total-percent>0%</span></div>
+              <div class="xrc-progress xrc-progress-total"><span data-xrc-total-bar></span></div>
+            </section>
+            <section class="xrc-level-card xrc-round-section">
+              <div class="xrc-level-head">
+                <div><span class="xrc-level-kicker" data-xrc-round-title>当前第 1 轮</span><strong>本轮 35 条</strong></div>
+                <strong class="xrc-level-count" data-xrc-page>0/${BATCH_SIZE}</strong>
+              </div>
+              <div class="xrc-progress-row"><span>本轮进度</span><span data-xrc-page-percent>0%</span></div>
+              <div class="xrc-progress"><span data-xrc-page-bar></span></div>
+              <div class="xrc-rate-controls" aria-label="频率限制">
+                <label class="xrc-rate-control"><span>每条回复间隔</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
+                <label class="xrc-rate-control"><span>每轮之间间隔</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
+              </div>
+            </section>
           </div>
           <div class="xrc-phrase-row"><span>当前话术</span><strong data-xrc-phrase></strong></div>
+          <details class="xrc-phrase-pool" open>
+            <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
+            <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
+          </details>
           <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
       document.documentElement.appendChild(panel);
+      const phraseList = panel.querySelector("[data-xrc-phrase-list]");
+      phrases.forEach((phrase, index) => {
+        const item = document.createElement("div");
+        item.className = "xrc-phrase-item";
+        item.dataset.xrcPhraseIndex = String(index);
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", "false");
+        item.textContent = phrase;
+        phraseList.appendChild(item);
+      });
+      panel.querySelector(".xrc-phrase-pool").addEventListener("toggle", (event) => {
+        if (!event.currentTarget.open) return;
+        centerPhraseItem(panel, panel.querySelector(".xrc-phrase-item.is-active"));
+      });
       panel.querySelector(".xrc-close").addEventListener("click", () => {
         if (state.running) return;
         panelDismissed = true;
         panel.remove();
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelector("[data-xrc-reply-interval]").addEventListener("change", (event) => {
+        state.replyIntervalSeconds = clampInterval(event.currentTarget.value, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS);
+        event.currentTarget.value = String(state.replyIntervalSeconds);
+        writeSaved({ running: state.running, total: state.total });
+      });
+      panel.querySelector("[data-xrc-round-interval]").addEventListener("change", (event) => {
+        state.roundIntervalSeconds = clampInterval(event.currentTarget.value, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS);
+        event.currentTarget.value = String(state.roundIntervalSeconds);
+        writeSaved({ running: state.running, total: state.total });
+      });
     }
 
     const status = panel.querySelector(".xrc-status");
@@ -594,13 +718,37 @@
       const totalPercent = Math.min(100, Math.round((state.total / RUN_SIZE) * 100));
       panel.querySelector("[data-xrc-page]").textContent = `${state.pageCount}/${BATCH_SIZE}`;
       panel.querySelector("[data-xrc-round]").textContent = `${shownRound}/${ROUNDS_PER_RUN}`;
+      panel.querySelector("[data-xrc-round-title]").textContent = `当前第 ${shownRound} 轮`;
       panel.querySelector("[data-xrc-total]").textContent = `${state.total}/${RUN_SIZE}`;
+      panel.querySelector("[data-xrc-runtime]").textContent = formatRuntime(elapsedRuntimeMs());
       panel.querySelector("[data-xrc-page-percent]").textContent = `${pagePercent}%`;
       panel.querySelector("[data-xrc-total-percent]").textContent = `${totalPercent}%`;
       panel.querySelector("[data-xrc-page-bar]").style.width = `${pagePercent}%`;
       panel.querySelector("[data-xrc-total-bar]").style.width = `${totalPercent}%`;
-      panel.querySelector("[data-xrc-phrase]").textContent = currentPhrase();
+      const replyIntervalInput = panel.querySelector("[data-xrc-reply-interval]");
+      const roundIntervalInput = panel.querySelector("[data-xrc-round-interval]");
+      if (document.activeElement !== replyIntervalInput) replyIntervalInput.value = String(state.replyIntervalSeconds);
+      if (document.activeElement !== roundIntervalInput) roundIntervalInput.value = String(state.roundIntervalSeconds);
+      replyIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
+      roundIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
+      const phrase = currentPhrase();
+      panel.querySelector("[data-xrc-phrase]").textContent = phrase;
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
+      const activePhrase = panel.querySelector(`[data-xrc-phrase-index="${state.phraseIndex}"]`);
+      if (activePhrase && (highlightedPhraseIndex !== state.phraseIndex || !activePhrase.classList.contains("is-active"))) {
+        panel.querySelectorAll(".xrc-phrase-item.is-active").forEach((item) => {
+          item.classList.remove("is-active");
+          item.setAttribute("aria-selected", "false");
+          item.style.removeProperty("order");
+        });
+        activePhrase.classList.add("is-active");
+        activePhrase.setAttribute("aria-selected", "true");
+        activePhrase.style.order = "-1";
+        highlightedPhraseIndex = state.phraseIndex;
+        if (panel.querySelector(".xrc-phrase-pool")?.open) {
+          window.requestAnimationFrame(() => centerPhraseItem(panel, activePhrase));
+        }
+      }
     }
     const active = Boolean(state.loopPromise) || state.running;
     const completed = state.completedRounds >= ROUNDS_PER_RUN;
@@ -613,6 +761,10 @@
 
   function begin({ resume = false } = {}) {
     if (state.loopPromise) return;
+    if (!resume || !state.startedAt) {
+      state.startedAt = Date.now();
+      state.elapsedMs = 0;
+    }
     state.running = true;
     state.stopping = false;
     writeSaved({ running: true, total: state.total });
@@ -622,6 +774,8 @@
       state.loopPromise = null;
       if (result === "reload") return;
       const stoppedByUser = state.stopping;
+      state.elapsedMs = elapsedRuntimeMs();
+      state.startedAt = null;
       state.running = false;
       state.stopping = false;
       clearSaved();
@@ -642,6 +796,8 @@
     state.pageCount = 0;
     state.completedRounds = 0;
     state.total = 0;
+    state.startedAt = null;
+    state.elapsedMs = 0;
     state.errors = 0;
     processedIds.clear();
     begin({ resume: false });
@@ -652,6 +808,10 @@
     state.total = saved.total;
     state.pageCount = saved.pageCount;
     state.completedRounds = saved.completedRounds;
+    state.startedAt = saved.startedAt;
+    state.replyIntervalSeconds = saved.replyIntervalSeconds;
+    state.roundIntervalSeconds = saved.roundIntervalSeconds;
+    state.elapsedMs = 0;
     processedIds.clear();
     for (const id of saved.processedIds) processedIds.add(id);
     state.phraseIndex = saved.phraseIndex;

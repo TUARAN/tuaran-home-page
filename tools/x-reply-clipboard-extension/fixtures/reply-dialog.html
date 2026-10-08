@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>X reply draft fixture</title>
+</head>
+<body>
+  <p id="result">RUNNING</p>
+  <div role="dialog" id="dialog">
+    <div data-testid="tweetTextarea_0" contenteditable="true" role="textbox"></div>
+    <button id="reply" data-testid="tweetButton" type="button" aria-disabled="true">Reply</button>
+  </div>
+  <script src="../draftFill.js"></script>
+  <script src="../phrases.js"></script>
+  <script src="../loop.js"></script>
+  <script>
+    function Style() {}
+    Style.prototype.clear = function () { return new Style() }
+
+    function Character(style, entity) {
+      this.style = style || new Style()
+      this.entity = entity == null ? null : entity
+    }
+    Character.prototype.getStyle = function () { return this.style }
+    Character.prototype.set = function (key, value) {
+      const next = new Character(this.style, this.entity)
+      if (key === "style") next.style = value
+      if (key === "entity") next.entity = value
+      return next
+    }
+
+    function CharacterList(items) {
+      if (!(this instanceof CharacterList)) return new CharacterList(items)
+      this.items = items || []
+      this.size = this.items.length
+    }
+    CharacterList.prototype.get = function (index) { return this.items[index] }
+    CharacterList.prototype.first = function () { return this.items[0] }
+    CharacterList.prototype.push = function (item) { return new CharacterList(this.items.concat([item])) }
+
+    function Block(props) { Object.assign(this, props) }
+    Block.prototype.getText = function () { return this.text || "" }
+    Block.prototype.getCharacterList = function () { return this.characterList }
+    Block.prototype.merge = function (props) { return Object.assign(new Block(this), props) }
+
+    function BlockMap(entries) {
+      if (!(this instanceof BlockMap)) return new BlockMap(entries)
+      this.entries = entries || []
+    }
+    BlockMap.prototype.set = function (key, value) {
+      return new BlockMap(this.entries.filter(function (entry) { return entry[0] !== key }).concat([[key, value]]))
+    }
+    BlockMap.prototype.forEach = function (fn) {
+      this.entries.forEach(function (entry) { fn(entry[1], entry[0]) })
+    }
+
+    function Content(blockMap) { this.blockMap = blockMap }
+    Content.prototype.getBlockMap = function () { return this.blockMap }
+    Content.prototype.set = function (key, value) {
+      const next = new Content(key === "blockMap" ? value : this.blockMap)
+      next[key] = value
+      return next
+    }
+
+    function SelectionState() {}
+    SelectionState.createEmpty = function () { return new SelectionState() }
+
+    function EditorState(content) { this.content = content }
+    EditorState.prototype.getCurrentContent = function () { return this.content }
+    EditorState.prototype.getSelection = function () { return { constructor: SelectionState } }
+    EditorState.push = function (_editorState, content) { return new EditorState(content) }
+    EditorState.moveSelectionToEnd = function (state) { return state }
+
+    const editor = document.querySelector('[data-testid="tweetTextarea_0"]')
+    const button = document.querySelector("#reply")
+    const sent = []
+
+    function mount(phrase) {
+      let editorState = new EditorState(new Content(new BlockMap([
+        ["empty", new Block({ text: "", characterList: new CharacterList([new Character()]) })]
+      ])))
+      const node = {
+        props: {
+          get editorState() { return editorState },
+          onChange(next) {
+            editorState = next
+            const text = window.XReplyClipboardDraft.readDraftText(node)
+            button.setAttribute("aria-disabled", text === phrase ? "false" : "true")
+            editor.textContent = text
+          }
+        }
+      }
+      editor.__reactFiber$fixture = { stateNode: node }
+      button.setAttribute("aria-disabled", "true")
+      editor.textContent = ""
+      return node
+    }
+
+    button.addEventListener("click", function () {
+      if (button.getAttribute("aria-disabled") === "true") return
+      sent.push(editor.textContent)
+      document.getElementById("dialog").remove()
+    })
+
+    async function run() {
+      const phrases = ["学习了", "🫐·c·🫐", "原来是这样"]
+      const used = []
+      for (const phrase of phrases) {
+        if (!document.getElementById("dialog")) {
+          const dialog = document.createElement("div")
+          dialog.id = "dialog"
+          dialog.setAttribute("role", "dialog")
+          dialog.appendChild(editor)
+          dialog.appendChild(button)
+          document.body.appendChild(dialog)
+        }
+        mount(phrase)
+        const result = await window.XReplyClipboardDraft.fillReplyComposer(phrase)
+        if (!result.ok || result.via !== "draft") throw new Error("fill failed " + JSON.stringify(result))
+        if (button.getAttribute("aria-disabled") !== "false") throw new Error("Reply stayed disabled for " + phrase)
+        if (editor.textContent !== phrase) throw new Error("editor text " + editor.textContent)
+        button.click()
+        if (document.getElementById("dialog")) throw new Error("dialog stayed open for " + phrase)
+        used.push(phrase)
+      }
+      if (sent.join("|") !== phrases.join("|")) throw new Error("sent " + sent.join("|"))
+
+      const book = window.XReplyClipboardPhrases
+      const loop = window.XReplyClipboardLoop
+      let index = book.indexOf("🫐·c·🫐")
+      const drawn = []
+      for (let step = 0; step < 12; step += 1) {
+        drawn.push(book[index])
+        index = loop.nextPhraseIndex(book.length, index)
+      }
+      if (drawn[0] !== "🫐·c·🫐") throw new Error("start phrase")
+      if (new Set(drawn).size < 4) throw new Error("not random " + drawn.join(" / "))
+      for (let step = 1; step < drawn.length; step += 1) {
+        if (drawn[step] === drawn[step - 1]) throw new Error("repeated " + drawn[step])
+      }
+      document.getElementById("result").textContent = "PASS " + used.join(" / ") + " | " + drawn.slice(0, 4).join(" / ")
+    }
+
+    run().catch(function (error) {
+      document.getElementById("result").textContent = "FAIL " + (error && error.stack || error)
+    })
+  </script>
+</body>
+</html>

@@ -7,6 +7,8 @@
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
+  const PHRASE_STORE = 2;
+  const DRAFT_CHANNEL = "x-reply-clipboard-draft";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const AFTER_REPLY_MS = 2000;
   const COMPOSER_TIMEOUT_MS = 6000;
@@ -36,7 +38,9 @@
   function readSaved() {
     try {
       const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
-      if (!parsed || typeof parsed !== "object") return { running: false, total: 0, phraseIndex: null };
+      if (!parsed || typeof parsed !== "object" || parsed.phraseStore !== PHRASE_STORE) {
+        return { running: false, total: 0, phraseIndex: null };
+      }
       const phraseIndex = Number(parsed.phraseIndex);
       return {
         running: Boolean(parsed.running),
@@ -54,7 +58,8 @@
       JSON.stringify({
         running: Boolean(value.running),
         total: Number(value.total) || 0,
-        phraseIndex: state.phraseIndex
+        phraseIndex: state.phraseIndex,
+        phraseStore: PHRASE_STORE
       })
     );
   }
@@ -65,7 +70,8 @@
       JSON.stringify({
         running: false,
         total: 0,
-        phraseIndex: state.phraseIndex
+        phraseIndex: state.phraseIndex,
+        phraseStore: PHRASE_STORE
       })
     );
   }
@@ -250,40 +256,40 @@
     await sleep(250);
   }
 
-  function placeCaret(textbox) {
-    textbox.focus();
-    const selection = window.getSelection?.();
-    if (!selection || typeof document.createRange !== "function") return;
-    const range = document.createRange();
-    range.selectNodeContents(textbox);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
+  function requestDraftFill(text) {
+    const requestId = `fill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    return new Promise((resolve) => {
+      const timer = window.setTimeout(() => {
+        window.removeEventListener("message", onMessage);
+        resolve({ ok: false, reason: "compose-failed" });
+      }, 2500);
+      function onMessage(event) {
+        if (event.source !== window || event.data?.channel !== DRAFT_CHANNEL || event.data?.direction !== "response" || event.data?.requestId !== requestId) return;
+        window.clearTimeout(timer);
+        window.removeEventListener("message", onMessage);
+        resolve(event.data.result || { ok: false, reason: "compose-failed" });
+      }
+      window.addEventListener("message", onMessage);
+      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text }, "*");
+    });
+  }
+
+  function failureLabel(result) {
+    if (result === "compose-failed") return "话术没有写进评论框";
+    if (result === "submit-disabled") return "Reply 还不能点";
+    if (result === "dialog-open") return "弹窗没有关闭";
+    if (result === "no-composer") return "评论弹窗没有打开";
+    if (result === "reply-disabled") return "评论按钮不可用";
+    return result;
   }
 
   async function fillComposer(textbox, text) {
     const phrase = String(text || "").trim();
-    if (!phrase) return "";
-    placeCaret(textbox);
-    try {
-      document.execCommand("selectAll", false, null);
-      document.execCommand("insertText", false, phrase);
-    } catch (error) {
-      // Fall through to the input event.
-    }
-    if (!loopApi.composerText(textbox)) {
-      textbox.dispatchEvent(
-        new InputEvent("beforeinput", {
-          bubbles: true,
-          cancelable: true,
-          inputType: "insertText",
-          data: phrase
-        })
-      );
-      textbox.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-    await sleep(250);
-    return loopApi.composerText(textbox);
+    if (!phrase || !textbox) return "";
+    const result = await requestDraftFill(phrase);
+    if (!result?.ok) return "";
+    await sleep(200);
+    return loopApi.composerText(textbox) || phrase;
   }
 
   async function openComposer(tweet) {
@@ -414,18 +420,19 @@
       if (result === "stopped") break;
 
       processedIds.add(next.id);
+      advancePhrase();
+      writeSaved({ running: true, total: state.total });
       if (result === "ok") {
-        advancePhrase();
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
-        state.status = `已回复。本页 ${state.pageCount}/${BATCH_SIZE}`;
+        state.status = `已回复：${phrase}。本页 ${state.pageCount}/${BATCH_SIZE}`;
         renderPanel();
         await sleepActive(AFTER_REPLY_MS);
       } else {
         state.errors += 1;
         state.skipped += 1;
-        state.status = `跳过 ${next.id}（${result}）`;
+        state.status = `跳过：${failureLabel(result)}。下一条已换掉`;
         renderPanel();
         await sleepActive(600);
       }

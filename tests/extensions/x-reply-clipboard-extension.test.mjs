@@ -63,6 +63,16 @@ test('reads and normalizes the post author handle from a status permalink', () =
   assert.equal(loop.normalizeHandle('@TUARAN'), 'tuaran')
 })
 
+test('matches a saved phrase after X collapses spaces or inserts invisible characters', () => {
+  const phrases = require('../../tools/x-reply-clipboard-extension/phrases.js')
+  assert.equal(loop.normalizePhraseText(' 🧇.  .🧇\u200b '), '🧇..🧇')
+  assert.equal(loop.phraseIndexFromText(phrases, '手写内容'), -1)
+  assert.equal(loop.repeatedPhraseIndexFromText(phrases, '稳稳'), phrases.indexOf('稳'))
+  assert.equal(loop.repeatedPhraseIndexFromText(phrases, '手写内容'), -1)
+  assert.equal(loop.placeholderMixedPhraseIndexFromText(phrases, '稳st your reply'), phrases.indexOf('稳'))
+  assert.equal(loop.placeholderMixedPhraseIndexFromText(phrases, '手写内容'), -1)
+})
+
 test('picks a different phrase index and never repeats the current one', () => {
   assert.equal(loop.nextPhraseIndex(1, 0, () => 0), 0)
   assert.equal(loop.nextPhraseIndex(55, 0, () => 0), 1)
@@ -74,6 +84,7 @@ test('picks a different phrase index and never repeats the current one', () => {
   assert.equal(phrases[0], '原来是这样')
   assert.equal(new Set(phrases).size, 55)
   assert.ok(phrases.every((phrase) => phrase.trim()))
+  assert.ok(phrases.filter((phrase) => /\p{Extended_Pictographic}/u.test(phrase)).length <= 5)
 })
 
 test('content script keeps the 35-reply refresh loop wired to the reply popup', async () => {
@@ -86,7 +97,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   )
 
   assert.equal(manifest.manifest_version, 3)
-  assert.equal(manifest.version, '0.2.10')
+  assert.equal(manifest.version, '0.2.14')
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'content.js'])
@@ -95,7 +106,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /tweetTextarea_/)
   assert.match(content, /tweetButton/)
   assert.match(content, /location\.reload/)
-  assert.match(content, /x-reply-clipboard-draft/)
+  assert.match(content, /x-reply-clipboard-draft-v2/)
   assert.match(content, /nextPhraseIndex/)
   assert.match(content, /XReplyClipboardPhrases/)
   assert.doesNotMatch(content, /剪贴板是空的/)
@@ -117,10 +128,14 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.doesNotMatch(content, /app-bar-close/)
   assert.doesNotMatch(content, /\bDiscard\b/)
   assert.match(content, /sent-composer-open/)
-  assert.match(content, /existingText !== currentPhrase\(\)/)
+  assert.match(content, /phraseIndexFromText\(phrases, existingText\)/)
+  assert.match(content, /repeatedPhraseIndexFromText\(phrases, existingText\)/)
+  assert.match(content, /placeholderMixedPhraseIndexFromText\(phrases, existingText\)/)
+  assert.match(content, /getManifest/)
+  assert.match(content, /X 时间线回复助手 v\$\{EXTENSION_VERSION\}/)
   assert.match(content, /result !== "sent-composer-open"/)
-  assert.match(catalog, /x-reply-clipboard-extension-v0\.2\.10\.zip/)
-  assert.match(resourcePage, /const VERSION = '0\.2\.10'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v0\.2\.14\.zip/)
+  assert.match(resourcePage, /const VERSION = '0\.2\.14'/)
   assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
 
@@ -201,7 +216,7 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   EditorState.push = function push(_editorState, content) { return new EditorState(content) }
   EditorState.moveSelectionToEnd = function moveSelectionToEnd(state) { return state }
 
-  const phrase = '🫐·c·🫐'
+  const phrase = '学习了'
   let editorState = new EditorState(new Content(new BlockMap([
     ['empty', new Block({ text: '', characterList: new CharacterList([new Character()]) })],
   ])))
@@ -222,12 +237,21 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   assert.equal(replyEnabled, true)
 
   const seen = []
-  let index = 41
+  let index = 0
   for (let step = 0; step < 8; step += 1) {
     seen.push(require('../../tools/x-reply-clipboard-extension/phrases.js')[index])
     index = loop.nextPhraseIndex(55, index, () => 0)
   }
-  assert.equal(seen[0], phrase)
-  assert.notEqual(seen[1], phrase)
+  assert.equal(seen[0], require('../../tools/x-reply-clipboard-extension/phrases.js')[0])
+  assert.notEqual(seen[1], seen[0])
   for (let step = 1; step < seen.length; step += 1) assert.notEqual(seen[step], seen[step - 1])
+})
+
+test('main-world writer replaces the whole editor and supersedes an earlier listener', async () => {
+  const source = await readFile(new URL('draftFill.js', extensionDir), 'utf8')
+  assert.match(source, /x-reply-clipboard-draft-v2/)
+  assert.match(source, /HANDLER_KEY/)
+  assert.match(source, /removeEventListener\("message", previousHandler\)/)
+  assert.match(source, /range\.selectNodeContents\(editor\)/)
+  assert.doesNotMatch(source, /execCommand\("selectAll"/)
 })

@@ -3,6 +3,7 @@
 
   const BATCH_SIZE = 35;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
+  const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
   function statusIdFromHref(href) {
     const match = String(href || "").match(/\/status\/(\d+)/);
@@ -44,6 +45,40 @@
     return text;
   }
 
+  function normalizePhraseText(text) {
+    return String(text || "")
+      .normalize("NFC")
+      .replace(/[\u200b-\u200d\u2060\ufeff\ufe0e\ufe0f]/g, "")
+      .replace(/\s+/gu, "");
+  }
+
+  function phraseIndexFromText(items, text) {
+    const normalized = normalizePhraseText(text);
+    if (!normalized || !Array.isArray(items)) return -1;
+    return items.findIndex((item) => normalizePhraseText(item) === normalized);
+  }
+
+  function repeatedPhraseIndexFromText(items, text) {
+    const normalized = normalizePhraseText(text);
+    if (!normalized || !Array.isArray(items)) return -1;
+    return items.findIndex((item) => {
+      const phrase = normalizePhraseText(item);
+      return phrase && normalized === `${phrase}${phrase}`;
+    });
+  }
+
+  function placeholderMixedPhraseIndexFromText(items, text) {
+    const normalized = normalizePhraseText(text).toLowerCase();
+    if (!normalized || !Array.isArray(items)) return -1;
+    const placeholders = PLACEHOLDERS.map((item) => normalizePhraseText(item).toLowerCase());
+    return items.findIndex((item) => {
+      const phrase = normalizePhraseText(item).toLowerCase();
+      if (!phrase || !normalized.startsWith(phrase)) return false;
+      const remainder = normalized.slice(phrase.length);
+      return remainder && placeholders.some((placeholder) => placeholder.endsWith(remainder));
+    });
+  }
+
   function floorMod(value, count) {
     const number = Number(value);
     if (!Number.isFinite(number)) return 0;
@@ -73,6 +108,10 @@
     shouldReload,
     isSubmitEnabled,
     composerText,
+    normalizePhraseText,
+    phraseIndexFromText,
+    repeatedPhraseIndexFromText,
+    placeholderMixedPhraseIndexFromText,
     nextPhraseIndex
   };
 

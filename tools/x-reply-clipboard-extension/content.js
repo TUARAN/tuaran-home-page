@@ -3,12 +3,13 @@
 
   const loopApi = globalThis.XReplyClipboardLoop;
   const phrases = globalThis.XReplyClipboardPhrases;
+  const legacyPhrases = globalThis.XReplyClipboardLegacyPhrases || [];
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
-  const PHRASE_STORE = 2;
-  const DRAFT_CHANNEL = "x-reply-clipboard-draft";
+  const PHRASE_STORE = 3;
+  const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const AFTER_REPLY_MS = 2000;
   const COMPOSER_TIMEOUT_MS = 6000;
@@ -18,6 +19,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "0.2.14";
 
   const state = {
     running: false,
@@ -306,7 +308,9 @@
     if (state.stopping) return "stopped";
     const phrase = currentPhrase();
     const existing = loopApi.composerText(composer.textbox);
-    const filled = existing === phrase ? phrase : await fillComposer(composer.textbox, phrase);
+    const filled = loopApi.normalizePhraseText(existing) === loopApi.normalizePhraseText(phrase)
+      ? phrase
+      : await fillComposer(composer.textbox, phrase);
     if (state.stopping) return "stopped";
     if (!filled) return "compose-failed";
 
@@ -358,7 +362,22 @@
     const existingComposer = findDialogComposer();
     if (existingComposer) {
       const existingText = loopApi.composerText(existingComposer.textbox);
-      if (existingText !== currentPhrase()) return "composer-already-open";
+      const existingPhraseIndex = loopApi.phraseIndexFromText(phrases, existingText);
+      if (existingPhraseIndex >= 0) {
+        state.phraseIndex = existingPhraseIndex;
+      } else {
+        const repeatedPhraseIndex = loopApi.repeatedPhraseIndexFromText(phrases, existingText);
+        if (repeatedPhraseIndex >= 0) {
+          state.phraseIndex = repeatedPhraseIndex;
+        } else {
+          const mixedPhraseIndex = loopApi.placeholderMixedPhraseIndexFromText(phrases, existingText);
+          if (mixedPhraseIndex >= 0) {
+            state.phraseIndex = mixedPhraseIndex;
+          } else if (loopApi.phraseIndexFromText(legacyPhrases, existingText) < 0) {
+            return "composer-already-open";
+          }
+        }
+      }
       return publishReply(existingComposer);
     }
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
@@ -495,7 +514,7 @@
       panel.innerHTML = `
         <div class="xrc-header">
           <div>
-            <div class="xrc-title">X 时间线回复助手</div>
+            <div class="xrc-title">X 时间线回复助手 v${EXTENSION_VERSION}</div>
             <div class="xrc-subtitle">评论弹窗 · 随机话术 · 等待发送确认</div>
           </div>
           <button class="xrc-close" type="button" aria-label="关闭">×</button>

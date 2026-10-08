@@ -85,7 +85,7 @@
     let closeClicks = 0
     let savePrompts = 0
 
-    function openDialog(initialText = "STALE DUPLICATE") {
+    function openDialog(initialText = "Post your reply") {
       const dialog = document.createElement("div")
       dialog.setAttribute("role", "dialog")
       const close = document.createElement("button")
@@ -99,7 +99,7 @@
       editor.textContent = initialText
       const submit = document.createElement("button")
       submit.setAttribute("data-testid", "tweetButton")
-      submit.setAttribute("aria-disabled", initialText.trim() ? "false" : "true")
+      submit.setAttribute("aria-disabled", /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i.test(initialText.trim()) ? "true" : "false")
       submit.textContent = "Reply"
 
       let editorState = new EditorState(new Content(new BlockMap([
@@ -160,10 +160,10 @@
       sessionStorage.setItem("x-reply-clipboard-loop", JSON.stringify({
         running: false,
         total: 0,
-        phraseIndex: 41,
-        phraseStore: 2
+        phraseIndex: 48,
+        phraseStore: 3
       }))
-      openDialog(window.XReplyClipboardPhrases[41])
+      openDialog("稳st your reply")
     }
   </script>
   <script src="../content.js"></script>
@@ -178,7 +178,7 @@
       window.clearInterval(verifier)
       document.querySelector("[data-xrc-toggle]").click()
       const phrase = sent[0] || ""
-      const validPhrase = window.XReplyClipboardPhrases.includes(phrase)
+      const validPhrase = window.XReplyClipboardLoop.phraseIndexFromText(window.XReplyClipboardPhrases, phrase) >= 0
       const passed = sent.length === 1 && submitClicks === 1 && selfReplyClicks === 0 && closeClicks === 0 && savePrompts === 0 && validPhrase && !document.querySelector('[role="dialog"]')
       document.getElementById("result").textContent = passed
         ? `PASS sent=${sent.length} clicks=${submitClicks} selfClicks=${selfReplyClicks} closeClicks=${closeClicks} savePrompts=${savePrompts} phrase=${phrase}`

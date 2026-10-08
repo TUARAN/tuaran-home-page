@@ -1,7 +1,8 @@
 (function (root) {
   "use strict";
 
-  const CHANNEL = "x-reply-clipboard-draft";
+  const CHANNEL = "x-reply-clipboard-draft-v2";
+  const HANDLER_KEY = "__xReplyClipboardDraftMessageHandlerV2";
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -119,12 +120,10 @@
 
   function focusEditor(editor) {
     editor.focus();
-    const target = editor.querySelector?.("[data-text='true']") || editor;
     const selection = window.getSelection?.();
     if (!selection || typeof document.createRange !== "function") return;
     const range = document.createRange();
-    range.selectNodeContents(target);
-    range.collapse(target === editor);
+    range.selectNodeContents(editor);
     selection.removeAllRanges();
     selection.addRange(range);
   }
@@ -132,7 +131,6 @@
   function insertWithCommand(editor, phrase) {
     focusEditor(editor);
     try {
-      document.execCommand("selectAll", false, null);
       return document.execCommand("insertText", false, phrase);
     } catch (error) {
       return false;
@@ -152,6 +150,12 @@
     }
     const visible = visibleDraftText(editor);
     if (visible === phrase) return { ok: true, via: "command" };
+    if (visible === `${phrase}${phrase}`) {
+      insertWithCommand(editor, phrase);
+      await sleep(80);
+      const repaired = visibleDraftText(editor);
+      if (repaired === phrase) return { ok: true, via: "command-repair" };
+    }
     if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
 
     let node = findDraftNode(editor);
@@ -186,12 +190,18 @@
   root.XReplyClipboardDraft = api;
 
   if (typeof window !== "undefined" && root === window && typeof module === "undefined") {
-    window.addEventListener("message", (event) => {
+    const previousHandler = window[HANDLER_KEY];
+    if (typeof previousHandler === "function") {
+      window.removeEventListener("message", previousHandler);
+    }
+    const onDraftMessage = (event) => {
       if (event.source !== window || event.data?.channel !== CHANNEL || event.data?.direction !== "request") return;
       const requestId = event.data.requestId;
       fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft }).then((result) => {
         window.postMessage({ channel: CHANNEL, direction: "response", requestId, result }, "*");
       });
-    });
+    };
+    window[HANDLER_KEY] = onDraftMessage;
+    window.addEventListener("message", onDraftMessage);
   }
 })(typeof globalThis !== "undefined" ? globalThis : this);

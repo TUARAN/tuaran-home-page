@@ -355,7 +355,12 @@
   }
 
   async function replyOnce(tweet) {
-    if (findDialogComposer()) return "composer-already-open";
+    const existingComposer = findDialogComposer();
+    if (existingComposer) {
+      const existingText = loopApi.composerText(existingComposer.textbox);
+      if (existingText !== currentPhrase()) return "composer-already-open";
+      return publishReply(existingComposer);
+    }
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
     tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
     await sleepActive(300);
@@ -364,7 +369,7 @@
     if (!composer) return "no-composer";
 
     const result = await publishReply(composer);
-    if (result !== "ok" && result !== "stopped" && loopApi.composerText(composer.textbox)) {
+    if (result !== "ok" && result !== "stopped" && result !== "sent-composer-open" && loopApi.composerText(composer.textbox)) {
       return "send-unconfirmed";
     }
     return result;

@@ -85,7 +85,7 @@
     let closeClicks = 0
     let savePrompts = 0
 
-    function openDialog() {
+    function openDialog(initialText = "STALE DUPLICATE") {
       const dialog = document.createElement("div")
       dialog.setAttribute("role", "dialog")
       const close = document.createElement("button")
@@ -96,10 +96,10 @@
       editor.setAttribute("data-testid", "tweetTextarea_0")
       editor.setAttribute("contenteditable", "true")
       editor.setAttribute("role", "textbox")
-      editor.textContent = "STALE DUPLICATE"
+      editor.textContent = initialText
       const submit = document.createElement("button")
       submit.setAttribute("data-testid", "tweetButton")
-      submit.setAttribute("aria-disabled", "true")
+      submit.setAttribute("aria-disabled", initialText.trim() ? "false" : "true")
       submit.textContent = "Reply"
 
       let editorState = new EditorState(new Content(new BlockMap([
@@ -153,8 +153,18 @@
       document.body.appendChild(dialog)
     }
 
-    document.querySelector('[data-testid="reply"]').addEventListener("click", openDialog)
+    document.querySelector('[data-testid="reply"]').addEventListener("click", function () { openDialog() })
     document.querySelector("#self-reply").addEventListener("click", function () { selfReplyClicks += 1 })
+
+    if (window.location.hash === "#resume") {
+      sessionStorage.setItem("x-reply-clipboard-loop", JSON.stringify({
+        running: false,
+        total: 0,
+        phraseIndex: 41,
+        phraseStore: 2
+      }))
+      openDialog(window.XReplyClipboardPhrases[41])
+    }
   </script>
   <script src="../content.js"></script>
   <script>

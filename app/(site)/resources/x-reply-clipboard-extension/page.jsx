@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.6.2'
+const VERSION = '3.6.6'
 
 const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -35,10 +35,30 @@ const shareText = 'X高频互动助手：一个扩展完成时间线回复、通
 
 const VERSION_HISTORY = [
   {
+    version: '3.6.6',
+    title: '功能导航改为图标页签',
+    description: '面板顶部的时间线、通知回复、互关浇友和推文浇给改成图标加文字的一排页签。当前项用蓝色文字和下划线标出，不再使用带底色的胶囊按钮。',
+    current: true,
+  },
+  {
+    version: '3.6.5',
+    title: '推文浇给加入频率滑块',
+    description: '推文浇给页面可以在慢、中、快、超快之间滑动。默认「中」仍是发送成功后随机等待 25～35 分钟。慢是 50～70 分钟，快是 12～18 分钟，超快是 6～10 分钟。已经开始的等待不会改写，新挡位从下一次发送成功后生效。',
+  },
+  {
+    version: '3.6.4',
+    title: '面板嵌进右侧搜索框下方',
+    description: '面板直接排在 X 右侧栏搜索框下面，跟着页面滚动，不再用左下角浮层挡住时间线。右侧栏还没出现时先不显示，出现后自动挂回去。',
+  },
+  {
+    version: '3.6.3',
+    title: '频率调度改为四挡滑块',
+    description: '时间线和通知回复的运行设置增加慢、中、快、超快四挡。拖动滑块后，每条间隔、每轮条数、每次轮数和执行后休息都会切换到对应区间。默认「中」保持原来的 5～15 秒、每轮 25～35 条、每次 3～5 轮、休息 2～3 小时。已经开始的计划和正在进行的等待不会中途改写。',
+  },
+  {
     version: '3.6.2',
     title: '移除插件每日回复总量限制',
     description: '时间线回复与通知回复不再共享插件自设的每日 100 条额度，也不会等到次日才恢复。随机回复间隔、随机轮次、执行后休息、通知去重和 X 风控提示停机机制继续保留。',
-    current: true,
   },
   {
     version: '3.6.1',
@@ -230,12 +250,12 @@ const INSTALL_STEPS = [
   '下载并解压插件包。',
   '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
   '点击「加载已解压的扩展程序」，选择解压后的目录。',
-  '登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。',
+  '登录 X，面板出现在右侧搜索框下方，默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。',
   '互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。',
   '关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度。',
-  '时间线模式可在首页、个人主页或搜索结果运行；每次随机安排 3～5 轮，每轮 25～35 条。',
+  '时间线模式可在首页、个人主页或搜索结果运行。运行设置里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
   '通知模式会进入通知页，处理近 2 小时内尚未成功互动的回复。',
-  '推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 生成并发送纯文字推文。',
+  '推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 生成并发送纯文字推文。发推间隔可滑到慢、中、快或超快，默认「中」是 25～35 分钟。',
   '点击对应任务的开始按钮运行；需要停下时，点击「停止」。',
 ]
 
@@ -338,10 +358,10 @@ export default function XReplyClipboardResourcePage() {
               </div>
               <div className="grid grid-cols-2 gap-2 p-2 pt-4">
                 {[
-                  ['时间线回复', '3–5 轮 · 随机', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
+                  ['时间线回复', '四挡 · 可滑动', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
                   ['通知回复', '近 2 小时', IconBell, 'from-violet-400/20 to-fuchsia-500/10', 'text-violet-300'],
                   ['互关浇友', '3 项任务', IconUsers, 'from-amber-400/20 to-orange-500/10', 'text-amber-300'],
-                  ['推文浇给', 'AI · 25–35m', IconRobot, 'from-emerald-400/20 to-cyan-500/10', 'text-emerald-300'],
+                  ['推文浇给', 'AI · 四挡间隔', IconRobot, 'from-emerald-400/20 to-cyan-500/10', 'text-emerald-300'],
                 ].map(([label, value, Icon, gradient, color]) => (
                   <div key={label} className={`rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-3.5`}>
                     <Icon size={19} className={color} stroke={1.8} aria-hidden="true" />
@@ -398,13 +418,13 @@ export default function XReplyClipboardResourcePage() {
             默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
           <FeatureCard title="时间线：持久化随机计划" index={3}>
-            每次执行先抽取 3～5 轮，每轮分别抽取 25～35 条；每次回复成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
+            运行设置里用滑块选择慢、中、快或超快。默认「中」每次抽取 3～5 轮，每轮 25～35 条，成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
           </FeatureCard>
           <FeatureCard title="通知：最近 2 小时" index={4}>
-            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后随机休息 2～3 小时再扫描。成功记录持久去重，插件不设置每日回复总量。
+            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知。每条间隔和扫描后的休息使用同一套频率挡位，默认「中」休息 2～3 小时。成功记录持久去重，插件不设置每日回复总量。
           </FeatureCard>
-          <FeatureCard title="推文浇给：25～35 分钟一条" index={5}>
-            DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行；确认发送成功后随机等待 25～35 分钟再生成下一条。
+          <FeatureCard title="推文浇给：可调发推间隔" index={5}>
+            DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行。发推页用滑块选择慢、中、快或超快；默认「中」在发送成功后随机等待 25～35 分钟再生成下一条。
           </FeatureCard>
           <FeatureCard title="只在本机运行" index={6} className="md:col-span-2 lg:col-span-3">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。

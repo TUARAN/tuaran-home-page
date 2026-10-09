@@ -6,6 +6,13 @@
   const POST_EDITOR_SELECTOR = '[data-testid="tweetTextarea_0"][contenteditable="true"][role="textbox"]';
   const MIN_INTERVAL_MS = 25 * 60 * 1000;
   const MAX_INTERVAL_MS = 35 * 60 * 1000;
+  const DEFAULT_POST_PACE = "medium";
+  const POST_SCHEDULE_PROFILES = [
+    { id: "slow", label: "慢", minMinutes: 50, maxMinutes: 70 },
+    { id: "medium", label: "中", minMinutes: 25, maxMinutes: 35 },
+    { id: "fast", label: "快", minMinutes: 12, maxMinutes: 18 },
+    { id: "turbo", label: "超快", minMinutes: 6, maxMinutes: 10 }
+  ];
   const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
 
@@ -18,6 +25,7 @@
     startedAt: null,
     elapsedMs: 0,
     nextPostAt: 0,
+    schedulePace: DEFAULT_POST_PACE,
     currentPost: "",
     lastPost: "",
     lastError: "",
@@ -50,6 +58,7 @@
       startedAt: state.startedAt,
       elapsedMs: state.elapsedMs,
       nextPostAt: state.nextPostAt,
+      schedulePace: state.schedulePace,
       currentPost: state.currentPost,
       lastPost: state.lastPost,
       lastError: state.lastError
@@ -83,8 +92,39 @@
     try { sessionStorage.removeItem(STORAGE_KEY); } catch (error) { /* no-op */ }
   }
 
-  function randomIntervalMs(random = Math.random) {
-    return MIN_INTERVAL_MS + Math.floor(random() * (MAX_INTERVAL_MS - MIN_INTERVAL_MS + 1));
+  function postScheduleProfile(pace = DEFAULT_POST_PACE) {
+    if (Number.isInteger(pace)) {
+      return POST_SCHEDULE_PROFILES[Math.min(POST_SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || POST_SCHEDULE_PROFILES[1];
+    }
+    return POST_SCHEDULE_PROFILES.find((item) => item.id === pace) || POST_SCHEDULE_PROFILES[1];
+  }
+
+  function postPaceIndex(pace = DEFAULT_POST_PACE) {
+    const profile = postScheduleProfile(pace);
+    return Math.max(0, POST_SCHEDULE_PROFILES.findIndex((item) => item.id === profile.id));
+  }
+
+  function formatPostSchedule(pace = state.schedulePace) {
+    const profile = postScheduleProfile(pace);
+    return {
+      id: profile.id,
+      label: profile.label,
+      interval: `${profile.minMinutes}～${profile.maxMinutes} 分钟`
+    };
+  }
+
+  function setSchedulePace(pace) {
+    state.schedulePace = postScheduleProfile(pace).id;
+    persist();
+    return state.schedulePace;
+  }
+
+  function randomIntervalMs(random = Math.random, pace = DEFAULT_POST_PACE) {
+    const profile = postScheduleProfile(pace);
+    const minimum = profile.minMinutes * 60 * 1000;
+    const maximum = profile.maxMinutes * 60 * 1000;
+    const value = Math.min(0.999999999999, Math.max(0, Number(random()) || 0));
+    return minimum + Math.floor(value * (maximum - minimum + 1));
   }
 
   function formatPost(value) {
@@ -269,8 +309,8 @@
         state.lastPost = state.currentPost;
         state.currentPost = "";
         state.lastError = "";
-        state.nextPostAt = Date.now() + randomIntervalMs();
-        emit(`第 ${state.count} 条已发送；下一条将在 25～35 分钟后发布`);
+        state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
+        emit(`第 ${state.count} 条已发送；下一条将在 ${formatPostSchedule().interval}后发布`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -287,6 +327,7 @@
     const saved = resume ? readSaved() : null;
     if (saved?.running) {
       Object.assign(state, saved, { onUpdate, loopPromise: null, stopping: false });
+      state.schedulePace = postScheduleProfile(state.schedulePace).id;
     } else {
       state.running = true;
       state.stopping = false;
@@ -329,7 +370,22 @@
     return true;
   }
 
-  const api = { snapshot, start, stop, restore, randomIntervalMs, formatPost, editorText, collectTopicContext };
+  const api = {
+    snapshot,
+    start,
+    stop,
+    restore,
+    randomIntervalMs,
+    formatPost,
+    editorText,
+    collectTopicContext,
+    DEFAULT_POST_PACE,
+    POST_SCHEDULE_PROFILES,
+    postScheduleProfile,
+    postPaceIndex,
+    formatPostSchedule,
+    setSchedulePace
+  };
   if (typeof module === "object" && module.exports) module.exports = api;
   root.XInteractionPoster = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

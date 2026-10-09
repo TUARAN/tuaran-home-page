@@ -4,14 +4,70 @@
   const BATCH_SIZE = 35;
   const ROUNDS_PER_RUN = 5;
   const RUN_SIZE = BATCH_SIZE * ROUNDS_PER_RUN;
-  const MIN_REPLIES_PER_ROUND = 25;
-  const MAX_REPLIES_PER_ROUND = 35;
-  const MIN_ROUNDS_PER_RUN = 3;
-  const MAX_ROUNDS_PER_RUN = 5;
-  const MIN_REPLY_DELAY_SECONDS = 5;
-  const MAX_REPLY_DELAY_SECONDS = 15;
-  const MIN_CYCLE_DELAY_HOURS = 2;
-  const MAX_CYCLE_DELAY_HOURS = 3;
+  const DEFAULT_SCHEDULE_PACE = "medium";
+  const SCHEDULE_PROFILES = [
+    {
+      id: "slow",
+      label: "慢",
+      minReplyDelaySeconds: 15,
+      maxReplyDelaySeconds: 30,
+      minRepliesPerRound: 12,
+      maxRepliesPerRound: 20,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 240,
+      maxCycleDelayMinutes: 360,
+      roundIntervalSeconds: 15
+    },
+    {
+      id: "medium",
+      label: "中",
+      minReplyDelaySeconds: 5,
+      maxReplyDelaySeconds: 15,
+      minRepliesPerRound: 25,
+      maxRepliesPerRound: 35,
+      minRoundsPerRun: 3,
+      maxRoundsPerRun: 5,
+      minCycleDelayMinutes: 120,
+      maxCycleDelayMinutes: 180,
+      roundIntervalSeconds: 5
+    },
+    {
+      id: "fast",
+      label: "快",
+      minReplyDelaySeconds: 3,
+      maxReplyDelaySeconds: 6,
+      minRepliesPerRound: 30,
+      maxRepliesPerRound: 42,
+      minRoundsPerRun: 4,
+      maxRoundsPerRun: 6,
+      minCycleDelayMinutes: 60,
+      maxCycleDelayMinutes: 90,
+      roundIntervalSeconds: 3
+    },
+    {
+      id: "turbo",
+      label: "超快",
+      minReplyDelaySeconds: 1,
+      maxReplyDelaySeconds: 3,
+      minRepliesPerRound: 40,
+      maxRepliesPerRound: 55,
+      minRoundsPerRun: 5,
+      maxRoundsPerRun: 8,
+      minCycleDelayMinutes: 20,
+      maxCycleDelayMinutes: 40,
+      roundIntervalSeconds: 1
+    }
+  ];
+  const MEDIUM_PROFILE = SCHEDULE_PROFILES.find((item) => item.id === DEFAULT_SCHEDULE_PACE);
+  const MIN_REPLIES_PER_ROUND = MEDIUM_PROFILE.minRepliesPerRound;
+  const MAX_REPLIES_PER_ROUND = MEDIUM_PROFILE.maxRepliesPerRound;
+  const MIN_ROUNDS_PER_RUN = MEDIUM_PROFILE.minRoundsPerRun;
+  const MAX_ROUNDS_PER_RUN = MEDIUM_PROFILE.maxRoundsPerRun;
+  const MIN_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.minReplyDelaySeconds;
+  const MAX_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.maxReplyDelaySeconds;
+  const MIN_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.minCycleDelayMinutes / 60;
+  const MAX_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.maxCycleDelayMinutes / 60;
   const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
@@ -155,22 +211,71 @@
     return min + Math.floor(value * (max - min + 1));
   }
 
-  function createRunPlan(random = Math.random) {
-    const rounds = randomIntInclusive(MIN_ROUNDS_PER_RUN, MAX_ROUNDS_PER_RUN, random);
+  function scheduleProfile(pace = DEFAULT_SCHEDULE_PACE) {
+    if (Number.isInteger(pace)) {
+      return SCHEDULE_PROFILES[Math.min(SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || MEDIUM_PROFILE;
+    }
+    return SCHEDULE_PROFILES.find((item) => item.id === pace) || MEDIUM_PROFILE;
+  }
+
+  function schedulePaceIndex(pace = DEFAULT_SCHEDULE_PACE) {
+    const profile = scheduleProfile(pace);
+    return Math.max(0, SCHEDULE_PROFILES.findIndex((item) => item.id === profile.id));
+  }
+
+  function scheduleBounds() {
+    return {
+      minReplies: Math.min(...SCHEDULE_PROFILES.map((item) => item.minRepliesPerRound)),
+      maxReplies: Math.max(...SCHEDULE_PROFILES.map((item) => item.maxRepliesPerRound)),
+      minRounds: Math.min(...SCHEDULE_PROFILES.map((item) => item.minRoundsPerRun)),
+      maxRounds: Math.max(...SCHEDULE_PROFILES.map((item) => item.maxRoundsPerRun))
+    };
+  }
+
+  function formatMinuteSpan(minimum, maximum) {
+    if (minimum >= 60 && maximum >= 60 && minimum % 60 === 0 && maximum % 60 === 0) {
+      return `${minimum / 60}～${maximum / 60} 小时`;
+    }
+    return `${minimum}～${maximum} 分钟`;
+  }
+
+  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE) {
+    const profile = scheduleProfile(pace);
+    return {
+      id: profile.id,
+      label: profile.label,
+      replyDelay: `${profile.minReplyDelaySeconds}～${profile.maxReplyDelaySeconds} 秒`,
+      repliesPerRound: `${profile.minRepliesPerRound}～${profile.maxRepliesPerRound} 条`,
+      roundsPerRun: `${profile.minRoundsPerRun}～${profile.maxRoundsPerRun} 轮`,
+      cycleDelay: formatMinuteSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes),
+      roundInterval: `${profile.roundIntervalSeconds} 秒`
+    };
+  }
+
+  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
+    const profile = scheduleProfile(pace);
+    const rounds = randomIntInclusive(profile.minRoundsPerRun, profile.maxRoundsPerRun, random);
     const roundTargets = Array.from(
       { length: rounds },
-      () => randomIntInclusive(MIN_REPLIES_PER_ROUND, MAX_REPLIES_PER_ROUND, random)
+      () => randomIntInclusive(profile.minRepliesPerRound, profile.maxRepliesPerRound, random)
     );
-    return { rounds, roundTargets, total: roundTargets.reduce((sum, value) => sum + value, 0) };
+    return {
+      pace: profile.id,
+      rounds,
+      roundTargets,
+      total: roundTargets.reduce((sum, value) => sum + value, 0)
+    };
   }
 
-  function randomReplyDelaySeconds(random = Math.random) {
-    return randomIntInclusive(MIN_REPLY_DELAY_SECONDS, MAX_REPLY_DELAY_SECONDS, random);
+  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
+    const profile = scheduleProfile(pace);
+    return randomIntInclusive(profile.minReplyDelaySeconds, profile.maxReplyDelaySeconds, random);
   }
 
-  function randomCycleDelayMs(random = Math.random) {
-    const minimum = MIN_CYCLE_DELAY_HOURS * 60 * 60 * 1000;
-    const maximum = MAX_CYCLE_DELAY_HOURS * 60 * 60 * 1000;
+  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
+    const profile = scheduleProfile(pace);
+    const minimum = profile.minCycleDelayMinutes * 60 * 1000;
+    const maximum = profile.maxCycleDelayMinutes * 60 * 1000;
     return randomIntInclusive(minimum, maximum, random);
   }
 
@@ -186,6 +291,8 @@
     MAX_REPLY_DELAY_SECONDS,
     MIN_CYCLE_DELAY_HOURS,
     MAX_CYCLE_DELAY_HOURS,
+    DEFAULT_SCHEDULE_PACE,
+    SCHEDULE_PROFILES,
     NOTIFICATION_WINDOW_MS,
     statusIdFromHref,
     normalizeHandle,
@@ -205,6 +312,10 @@
     placeholderMixedPhraseIndexFromText,
     nextPhraseIndex,
     randomIntInclusive,
+    scheduleProfile,
+    schedulePaceIndex,
+    scheduleBounds,
+    formatSchedule,
     createRunPlan,
     randomReplyDelaySeconds,
     randomCycleDelayMs

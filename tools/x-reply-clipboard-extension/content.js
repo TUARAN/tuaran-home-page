@@ -20,7 +20,9 @@
   const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
   const RUN_SIZE = loopApi.RUN_SIZE;
   const DEFAULT_ROUND_INTERVAL_SECONDS = 5;
-  const MIN_ROUND_INTERVAL_SECONDS = 5;
+  const MIN_ROUND_INTERVAL_SECONDS = 1;
+  const SCHEDULE_PACE_KEY = "xrcSchedulePace";
+  const POSTER_PACE_KEY = "xrcPosterSchedulePace";
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 5000;
   const SUBMIT_TIMEOUT_MS = 5000;
@@ -30,7 +32,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.2";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.6";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -46,6 +48,8 @@
     nextCycleAt: 0,
     reconnectAt: 0,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
+    schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
+    posterPace: postApi?.DEFAULT_POST_PACE || "medium",
     runPlan: null,
     nextReplyDelaySeconds: 0,
     riskPaused: false,
@@ -160,17 +164,56 @@
     });
   }
 
-  function normalizeRunPlan(value) {
+  function normalizeRunPlan(value, fallbackPace = state.schedulePace) {
+    const bounds = loopApi.scheduleBounds();
     const targets = Array.isArray(value?.roundTargets)
-      ? value.roundTargets.map(Number).filter((item) => Number.isInteger(item) && item >= loopApi.MIN_REPLIES_PER_ROUND && item <= loopApi.MAX_REPLIES_PER_ROUND)
+      ? value.roundTargets.map(Number).filter((item) => Number.isInteger(item) && item >= bounds.minReplies && item <= bounds.maxReplies)
       : [];
-    if (targets.length < loopApi.MIN_ROUNDS_PER_RUN || targets.length > loopApi.MAX_ROUNDS_PER_RUN) return null;
-    return { rounds: targets.length, roundTargets: targets, total: targets.reduce((sum, item) => sum + item, 0) };
+    if (targets.length < bounds.minRounds || targets.length > bounds.maxRounds) return null;
+    const declaredPace = loopApi.SCHEDULE_PROFILES.some((item) => item.id === value?.pace)
+      ? value.pace
+      : loopApi.scheduleProfile(fallbackPace).id;
+    return {
+      pace: declaredPace,
+      rounds: targets.length,
+      roundTargets: targets,
+      total: targets.reduce((sum, item) => sum + item, 0)
+    };
   }
 
   function ensureRunPlan() {
-    state.runPlan = normalizeRunPlan(state.runPlan) || loopApi.createRunPlan();
+    state.runPlan = normalizeRunPlan(state.runPlan) || loopApi.createRunPlan(Math.random, state.schedulePace);
     return state.runPlan;
+  }
+
+  function schedulePlanIsIdle() {
+    return !state.running
+      && !state.loopPromise
+      && state.total === 0
+      && state.pageCount === 0
+      && state.completedRounds === 0
+      && state.nextCycleAt <= Date.now();
+  }
+
+  function applySchedulePace(pace, { replaceIdlePlan = false } = {}) {
+    const profile = loopApi.scheduleProfile(pace);
+    state.schedulePace = profile.id;
+    state.roundIntervalSeconds = profile.roundIntervalSeconds;
+    if (replaceIdlePlan && schedulePlanIsIdle() && state.assistantMode !== "notifications") {
+      state.runPlan = loopApi.createRunPlan(Math.random, profile.id);
+    }
+  }
+
+  async function selectSchedulePace(pace) {
+    applySchedulePace(pace, { replaceIdlePlan: true });
+    writeSaved({ running: state.running, total: state.total });
+    renderPanel();
+    try {
+      await persistSchedulePace();
+    } catch (error) {
+      state.status = "频率挡位已在当前页面生效，但没有写入扩展存储";
+      renderPanel();
+    }
   }
 
   function currentRoundTarget() {
@@ -265,6 +308,63 @@
     }
   }
 
+  async function loadSchedulePace() {
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get(SCHEDULE_PACE_KEY);
+      const raw = stored?.[SCHEDULE_PACE_KEY];
+      if (!raw) {
+        await chrome.storage.local.set({ [SCHEDULE_PACE_KEY]: state.schedulePace });
+        return;
+      }
+      const pace = loopApi.scheduleProfile(raw).id;
+      if (pace === state.schedulePace) return;
+      applySchedulePace(pace, { replaceIdlePlan: true });
+      writeSaved({ running: state.running, total: state.total });
+    } catch (error) {
+      // Keep the pace already restored for this tab.
+    }
+  }
+
+  async function persistSchedulePace() {
+    if (!globalThis.chrome?.storage?.local) return;
+    await chrome.storage.local.set({ [SCHEDULE_PACE_KEY]: state.schedulePace });
+  }
+
+  function applyPosterPace(pace) {
+    const profile = postApi?.postScheduleProfile?.(pace) || { id: pace || "medium" };
+    state.posterPace = profile.id;
+    postApi?.setSchedulePace?.(profile.id);
+  }
+
+  async function loadPosterPace() {
+    if (!postApi?.postScheduleProfile) return;
+    applyPosterPace(state.posterPace);
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get(POSTER_PACE_KEY);
+      const raw = stored?.[POSTER_PACE_KEY];
+      if (!raw) {
+        await chrome.storage.local.set({ [POSTER_PACE_KEY]: state.posterPace });
+        return;
+      }
+      applyPosterPace(raw);
+    } catch (error) {
+      applyPosterPace(state.posterPace);
+    }
+  }
+
+  async function selectPosterPace(pace) {
+    applyPosterPace(pace);
+    renderPanel();
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      await chrome.storage.local.set({ [POSTER_PACE_KEY]: state.posterPace });
+    } catch (error) {
+      // The new pace still applies to the next post in this tab.
+    }
+  }
+
   async function loadNotificationHistory() {
     processedNotificationIds.clear();
     if (!globalThis.chrome?.storage?.local) return;
@@ -349,6 +449,7 @@
       phraseIndex: null,
       processedIds: [],
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
+      schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
       runPlan: null,
       nextReplyDelaySeconds: 0,
       panelView: "normal",
@@ -367,6 +468,7 @@
         return savedDefaults();
       }
       const phraseIndex = Number(parsed.phraseIndex);
+      const schedulePace = loopApi.scheduleProfile(parsed.schedulePace).id;
       return {
         running: Boolean(parsed.running),
         total: Number(parsed.total) || 0,
@@ -377,7 +479,8 @@
         nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
-        runPlan: normalizeRunPlan(parsed.runPlan),
+        schedulePace,
+        runPlan: normalizeRunPlan(parsed.runPlan, schedulePace),
         nextReplyDelaySeconds: Math.max(0, Number(parsed.nextReplyDelaySeconds) || 0),
         panelView: validPanelView(parsed.panelView),
         assistantMode: validAssistantMode(parsed.assistantMode),
@@ -408,6 +511,7 @@
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         roundIntervalSeconds: state.roundIntervalSeconds,
+        schedulePace: state.schedulePace,
         runPlan: state.runPlan,
         nextReplyDelaySeconds: state.nextReplyDelaySeconds,
         panelView: state.panelView,
@@ -436,6 +540,7 @@
         nextCycleAt: 0,
         reconnectAt: 0,
         roundIntervalSeconds: state.roundIntervalSeconds,
+        schedulePace: state.schedulePace,
         runPlan: null,
         nextReplyDelaySeconds: 0,
         panelView: state.panelView,
@@ -490,7 +595,7 @@
     state.total = 0;
     state.nextCycleAt = 0;
     state.reconnectAt = 0;
-    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan();
+    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
     state.nextReplyDelaySeconds = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
@@ -508,7 +613,7 @@
 
   async function finishCycleAndScheduleNext(summary) {
     state.cycleCount += 1;
-    state.nextCycleAt = Date.now() + loopApi.randomCycleDelayMs();
+    state.nextCycleAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
     state.reconnectAt = 0;
     writeSaved({ running: true, total: state.total });
     const ready = await waitForDeadline(
@@ -1175,7 +1280,7 @@
         renderPanel();
         if (result === "sent-composer-open") {
           if (state.assistantMode === "notifications" || state.pageCount < currentRoundTarget()) {
-            state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds();
+            state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace);
             writeSaved({ running: true, total: state.total });
             await waitRateLimit(state.nextReplyDelaySeconds, (remaining) => `回复成功，本次随机等待 ${state.nextReplyDelaySeconds} 秒；还剩 ${remaining} 秒`);
             if (state.stopping || !state.running) return "stopped";
@@ -1184,7 +1289,7 @@
           return "reload";
         }
         if (state.assistantMode === "notifications" || state.pageCount < currentRoundTarget()) {
-          state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds();
+          state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace);
           writeSaved({ running: true, total: state.total });
           await waitRateLimit(
             state.nextReplyDelaySeconds,
@@ -1315,6 +1420,89 @@
     }
   }
 
+  const SIDEBAR_MODULE_SELECTOR = [
+    "[data-testid='trend']",
+    "[data-testid='news_sidebar']",
+    "aside[role='complementary']",
+    "nav[role='navigation']",
+  ].join(",");
+
+  function elementIsSidebarModule(element, panelId) {
+    if (!element || element.nodeType !== 1 || element.id === panelId) return false;
+    if (element.getAttribute("data-testid") === "primaryColumn") return false;
+    if (element.querySelector("[data-testid='primaryColumn']")) return false;
+    if (typeof element.matches === "function" && element.matches(SIDEBAR_MODULE_SELECTOR)) return true;
+    return Boolean(element.querySelector(SIDEBAR_MODULE_SELECTOR));
+  }
+
+  function sidebarMountPoint(root, panelId = "x-reply-clipboard-panel") {
+    const inputs = root.querySelectorAll ? [...root.querySelectorAll("[data-testid='SearchBox_Search_Input']")] : [];
+    for (const input of inputs) {
+      if (input.closest(`[data-testid='primaryColumn']`) || input.closest(`#${panelId}`)) continue;
+      const form = input.closest("form[role='search']") || input.closest("form");
+      if (!form) continue;
+      let node = form;
+      while (node.parentElement) {
+        const parent = node.parentElement;
+        if (parent.getAttribute?.("data-testid") === "primaryColumn") break;
+        const moduleSibling = [...parent.children].find((child) => child !== node && elementIsSidebarModule(child, panelId));
+        if (moduleSibling) {
+          const role = moduleSibling.getAttribute("role");
+          const testId = moduleSibling.getAttribute("data-testid");
+          const directCard = role === "complementary" || role === "navigation" || role === "region" || testId === "trend" || testId === "news_sidebar";
+          if (directCard) return { type: "after", anchor: node };
+          return { type: "prepend", parent: moduleSibling };
+        }
+        if (parent.getAttribute?.("data-testid") === "sidebarColumn") return { type: "after", anchor: node };
+        node = parent;
+      }
+    }
+    return null;
+  }
+
+  function dockPanel(panel) {
+    const mount = sidebarMountPoint(document, PANEL_ID);
+    if (!mount) {
+      panel.dataset.xrcDock = "pending";
+      if (!panel.isConnected) document.documentElement.appendChild(panel);
+      return false;
+    }
+    if (mount.type === "prepend") {
+      const parent = mount.parent;
+      if (panel.parentElement !== parent || parent.firstElementChild !== panel) {
+        parent.insertBefore(panel, parent.firstElementChild);
+      }
+    } else if (panel.previousElementSibling !== mount.anchor) {
+      mount.anchor.insertAdjacentElement("afterend", panel);
+    }
+    panel.dataset.xrcDock = "sidebar";
+    return true;
+  }
+
+  function watchSidebarDock() {
+    let timer = 0;
+    const observer = new MutationObserver((records) => {
+      const panel = document.getElementById(PANEL_ID);
+      const ownMove = records.every((record) => {
+        if (panel && (record.target === panel || panel.contains(record.target))) return true;
+        const nodes = [...record.addedNodes, ...record.removedNodes];
+        return nodes.length > 0 && nodes.every((node) => node === panel || (panel && panel.contains(node)));
+      });
+      if (ownMove || timer) return;
+      timer = window.setTimeout(() => {
+        timer = 0;
+        if ((panelDismissed && !state.running) || !looksLoggedIn()) return;
+        const current = document.getElementById(PANEL_ID);
+        if (!current) {
+          renderPanel();
+          return;
+        }
+        dockPanel(current);
+      }, 250);
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
   function renderPanel() {
     if (panelDismissed && !state.running) return;
     if (!looksLoggedIn()) {
@@ -1369,7 +1557,7 @@
                 <li><b>公开技术上限：</b>未认证账号目前列为每天 50 条原创帖、200 条回复；关注技术上限为每天 400 个。平台还会应用更短时间窗口和账户级限制。</li>
                 <li><b>公开算法：</b>X 开源仓库主要解释“为你推荐”和推荐通知的候选、排序与过滤流程，不包含可用于判断自动化操作安全频率的完整反垃圾规则。</li>
               </ul>
-              <div class="xrc-docs-note"><b>技术上限不等于安全阈值或使用许可。</b> X 没有公开反自动化评分算法，也没有认可“5～15 秒一条”“25～35 条一轮”等插件调度参数。</div>
+              <div class="xrc-docs-note"><b>技术上限不等于安全阈值或使用许可。</b> X 没有公开反自动化评分算法，也没有认可慢、中、快、超快或“5～15 秒一条”“25～35 条一轮”等插件调度参数。</div>
               <div class="xrc-docs-links">
                 <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer">自动化规则 ↗</a>
                 <a href="https://help.x.com/en/rules-and-policies/x-limits" target="_blank" rel="noopener noreferrer">账户限制 ↗</a>
@@ -1389,6 +1577,10 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.6</b><span><strong>功能导航改为图标页签</strong><small>时间线、通知回复、互关浇友和推文浇给改成图标加文字，当前项用下划线标出。</small></span></article>
+                <article><b>v3.6.5</b><span><strong>推文浇给加入频率滑块</strong><small>发推页可以在慢、中、快、超快之间滑动。默认「中」仍是 25～35 分钟；已经开始的等待不会改写。</small></span></article>
+                <article><b>v3.6.4</b><span><strong>面板嵌进右侧栏</strong><small>面板放在搜索框下方，随右侧栏排列，不再用左下角浮层挡住时间线。</small></span></article>
+                <article><b>v3.6.3</b><span><strong>频率调度改为四挡滑块</strong><small>运行设置里可以在慢、中、快、超快之间滑动。默认「中」保持原来的 5～15 秒、25～35 条和 2～3 小时休息；已开始的计划不会被中途改写。</small></span></article>
                 <article><b>v3.6.2</b><span><strong>移除插件每日回复总量限制</strong><small>时间线和通知回复不再被插件的 100 条日额度暂停；继续按随机间隔、随机轮次和周期休息运行。</small></span></article>
                 <article><b>v3.6.1</b><span><strong>重复回复自动换写与界面修复</strong><small>识别 X 的重复内容提示，模板自动换句、AI 自动换写；统一标题栏 SVG 图标，并修复网站把下载错误保存成 deliver.json 的问题。</small></span></article>
                 <article><b>v3.6.0</b><span><strong>随机频率调度与共享每日额度</strong><small>每次生成 3～5 轮随机计划；每轮 25～35 条、每条等待 5～15 秒，执行后休息 2～3 小时。时间线与通知共享每日 100 条插件额度；检测到风控提示会停止全部任务。</small></span></article>
@@ -1404,12 +1596,11 @@
           </div>
         </section>
         <div class="xrc-workspace-nav">
-          <div class="xrc-workspace-nav-head"><strong>功能导航</strong><span>每项使用独立 X 页签，切换不会停止其他任务</span></div>
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="互动助手">
-            <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
-            <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>通知回复</strong><small>点赞回复</small></span></button>
-            <button type="button" role="tab" data-xrc-assistant="mutual"><span class="xrc-tab-index">03</span><span class="xrc-tab-copy"><strong>互关浇友</strong><small>关注关系</small></span></button>
-            <button type="button" role="tab" data-xrc-assistant="poster"><span class="xrc-tab-index">04</span><span class="xrc-tab-copy"><strong>推文浇给</strong><small>AI 定时发帖</small></span></button>
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立 X 页签，切换不会停止其他任务">
+            <button type="button" role="tab" data-xrc-assistant="timeline"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"></path></svg><span>时间线</span></button>
+            <button type="button" role="tab" data-xrc-assistant="notifications"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.4a3.4 3.4 0 0 0-3.4 3.4v2.1L3.2 10.3h9.6L11.4 7.9V5.8A3.4 3.4 0 0 0 8 2.4z"></path><path d="M6.7 11.5a1.3 1.3 0 0 0 2.6 0"></path></svg><span>通知回复</span></button>
+            <button type="button" role="tab" data-xrc-assistant="mutual"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.2" r="1.6"></circle><path d="M3.1 11.4c.4-1.5 1.5-2.3 2.9-2.3s2.5.8 2.9 2.3"></path><circle cx="10.7" cy="5.7" r="1.3"></circle><path d="M10.3 9.1c1 .2 1.8.9 2.2 2"></path></svg><span>互关浇友</span></button>
+            <button type="button" role="tab" data-xrc-assistant="poster"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 3.2h6.1l2.9 2.9v6.7H3.4z"></path><path d="M9.3 3.2v3.1h3.1M5.2 9h5.4M5.2 11.1h3.2"></path></svg><span>推文浇给</span></button>
           </div>
         </div>
         <div class="xrc-body xrc-mutual-body">
@@ -1455,12 +1646,22 @@
           <div class="xrc-status" role="status" data-xrc-post-status>待命。DeepSeek 会根据当前时间线生成纯文字推文。</div>
           <section class="xrc-post-card" aria-label="定时发推进度">
             <div class="xrc-post-card-head"><span><small>推文浇给</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>立即生成</b></div>
-            <div class="xrc-post-meta"><span><small>随机间隔</small><strong>25～35 分钟</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
+            <div class="xrc-post-meta"><span><small>随机间隔</small><strong data-xrc-post-interval>25～35 分钟</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
+          </section>
+          <section class="xrc-level-card xrc-speed-section" aria-label="发推频率">
+            <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-post-pace-title>当前挡位：中</strong></div></div>
+            <label class="xrc-pace">
+              <span class="xrc-pace-labels">
+                ${(postApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<span data-xrc-post-pace-label="${item.id}">${item.label}</span>`).join("")}
+              </span>
+              <input type="range" min="0" max="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" step="1" value="${postApi?.postPaceIndex?.(postApi.DEFAULT_POST_PACE) || 0}" data-xrc-post-pace aria-label="发推频率挡位" aria-valuemin="0" aria-valuemax="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" aria-valuetext="中">
+            </label>
+            <p class="xrc-schedule-note" data-xrc-post-pace-note>第一条立即发送。之后按这个挡位随机等待，已经开始的等待不会改写。</p>
           </section>
           <div class="xrc-post-preview"><span>当前内容</span><p data-xrc-post-preview>启动后显示 DeepSeek 生成的下一条纯文字推文</p></div>
           <details class="xrc-post-notes">
             <summary>发布规则</summary>
-            <ul><li>从当前时间线与趋势区提炼话题，不照抄原帖。</li><li>每条 3～5 个短段，每段之间自动空一行。</li><li>确认发送成功后，随机等待 25～35 分钟再发下一条。</li><li>切换浏览器页签后继续运行；关闭或休眠当前 X 标签页会停止。</li></ul>
+            <ul><li>从当前时间线与趋势区提炼话题，不照抄原帖。</li><li>每条 3～5 个短段，每段之间自动空一行。</li><li>确认发送成功后，按当前挡位随机等待再发下一条。默认「中」是 25～35 分钟。</li><li>切换浏览器页签后继续运行；关闭或休眠当前 X 标签页会停止。</li></ul>
           </details>
           <div class="xrc-footer"><span>纯文字发布 · 不上传图片</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
@@ -1501,12 +1702,12 @@
                 <span><small>本次累计</small><strong data-xrc-run-replies>0 条</strong></span>
               </div>
               <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-round-track>
-                ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `
+                ${Array.from({ length: loopApi.scheduleBounds().maxRounds }, (_, index) => `
                   <div class="xrc-round-segment" data-xrc-round-segment="${index}"><i></i></div>
                 `).join("")}
               </div>
               <div class="xrc-round-legend">
-                ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
+                ${Array.from({ length: loopApi.scheduleBounds().maxRounds }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
               </div>
             </section>
             <details class="xrc-settings" data-xrc-settings>
@@ -1520,13 +1721,20 @@
                   </div>
                 </section>
                 <section class="xrc-level-card xrc-speed-section">
-                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong>每次执行先生成并保存随机计划</strong></div></div>
+                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-pace-title>当前挡位：中</strong></div></div>
+                  <label class="xrc-pace">
+                    <span class="xrc-pace-labels">
+                      ${loopApi.SCHEDULE_PROFILES.map((item) => `<span data-xrc-pace-label="${item.id}">${item.label}</span>`).join("")}
+                    </span>
+                    <input type="range" min="0" max="${loopApi.SCHEDULE_PROFILES.length - 1}" step="1" value="${loopApi.schedulePaceIndex(loopApi.DEFAULT_SCHEDULE_PACE)}" data-xrc-pace aria-label="频率挡位" aria-valuemin="0" aria-valuemax="${loopApi.SCHEDULE_PROFILES.length - 1}" aria-valuetext="中">
+                  </label>
                   <div class="xrc-schedule-grid" aria-label="随机频率调度">
-                    <span><small>每条间隔</small><strong>${loopApi.MIN_REPLY_DELAY_SECONDS}～${loopApi.MAX_REPLY_DELAY_SECONDS} 秒</strong></span>
-                    <span><small>每轮回复</small><strong>${loopApi.MIN_REPLIES_PER_ROUND}～${loopApi.MAX_REPLIES_PER_ROUND} 条</strong></span>
-                    <span><small>每次执行</small><strong>${loopApi.MIN_ROUNDS_PER_RUN}～${loopApi.MAX_ROUNDS_PER_RUN} 轮</strong></span>
-                    <span><small>执行后休息</small><strong>${loopApi.MIN_CYCLE_DELAY_HOURS}～${loopApi.MAX_CYCLE_DELAY_HOURS} 小时</strong></span>
+                    <span><small>每条间隔</small><strong data-xrc-pace-reply>5～15 秒</strong></span>
+                    <span><small>每轮回复</small><strong data-xrc-pace-round>25～35 条</strong></span>
+                    <span><small>每次执行</small><strong data-xrc-pace-run>3～5 轮</strong></span>
+                    <span><small>执行后休息</small><strong data-xrc-pace-rest>2～3 小时</strong></span>
                   </div>
+                  <p class="xrc-schedule-note" data-xrc-pace-note>开始后按这个挡位生成随机计划，并在刷新后保持不变。</p>
                   <p class="xrc-schedule-note">插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</p>
                 </section>
               </div>
@@ -1539,7 +1747,7 @@
           <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
-      document.documentElement.appendChild(panel);
+      dockPanel(panel);
       const phraseList = panel.querySelector("[data-xrc-phrase-list]");
       phrases.forEach((phrase, index) => {
         const item = document.createElement("div");
@@ -1590,6 +1798,24 @@
         state.panelView = state.panelView === "expanded" ? "normal" : "expanded";
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
+      });
+      panel.querySelector("[data-xrc-pace]").addEventListener("input", (event) => {
+        selectSchedulePace(loopApi.scheduleProfile(Number(event.currentTarget.value)).id);
+      });
+      panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
+        label.addEventListener("click", (event) => {
+          event.preventDefault();
+          selectSchedulePace(label.dataset.xrcPaceLabel);
+        });
+      });
+      panel.querySelector("[data-xrc-post-pace]")?.addEventListener("input", (event) => {
+        selectPosterPace(postApi.postScheduleProfile(Number(event.currentTarget.value)).id);
+      });
+      panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
+        label.addEventListener("click", (event) => {
+          event.preventDefault();
+          selectPosterPace(label.dataset.xrcPostPaceLabel);
+        });
       });
       panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
         button.addEventListener("click", async () => {
@@ -1719,6 +1945,25 @@
         button.title = selected ? "当前任务页签" : "打开或切换到该任务的专用 X 页签";
       });
       panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
+      const schedule = loopApi.formatSchedule(state.schedulePace);
+      const paceInput = panel.querySelector("[data-xrc-pace]");
+      if (paceInput) {
+        paceInput.value = String(loopApi.schedulePaceIndex(schedule.id));
+        paceInput.setAttribute("aria-valuenow", paceInput.value);
+        paceInput.setAttribute("aria-valuetext", schedule.label);
+      }
+      panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
+        label.classList.toggle("is-active", label.dataset.xrcPaceLabel === schedule.id);
+      });
+      panel.querySelector("[data-xrc-pace-title]").textContent = `当前挡位：${schedule.label} · 轮间停顿 ${schedule.roundInterval}`;
+      panel.querySelector("[data-xrc-pace-reply]").textContent = schedule.replyDelay;
+      panel.querySelector("[data-xrc-pace-round]").textContent = schedule.repliesPerRound;
+      panel.querySelector("[data-xrc-pace-run]").textContent = schedule.roundsPerRun;
+      panel.querySelector("[data-xrc-pace-rest]").textContent = schedule.cycleDelay;
+      const paceLocked = Boolean(state.running || state.loopPromise || state.total > 0 || state.pageCount > 0 || state.completedRounds > 0 || state.nextCycleAt > Date.now());
+      panel.querySelector("[data-xrc-pace-note]").textContent = paceLocked
+        ? "这次执行的计划和已经开始的等待会保持不变。新挡位从下一次抽取的间隔、休息和执行计划开始生效。"
+        : "开始后按这个挡位生成随机计划，并在刷新后保持不变。";
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
       const activePhrase = panel.querySelector(`[data-xrc-phrase-index="${state.phraseIndex}"]`);
       if (activePhrase && (highlightedPhraseIndex !== state.phraseIndex || !activePhrase.classList.contains("is-active"))) {
@@ -1753,6 +1998,26 @@
         : "立即生成";
       panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
+      const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "25～35 分钟" };
+      const postPaceInput = panel.querySelector("[data-xrc-post-pace]");
+      if (postPaceInput && postApi?.postPaceIndex) {
+        postPaceInput.value = String(postApi.postPaceIndex(postSchedule.id));
+        postPaceInput.setAttribute("aria-valuenow", postPaceInput.value);
+        postPaceInput.setAttribute("aria-valuetext", postSchedule.label);
+      }
+      panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
+        label.classList.toggle("is-active", label.dataset.xrcPostPaceLabel === postSchedule.id);
+      });
+      const postPaceTitle = panel.querySelector("[data-xrc-post-pace-title]");
+      if (postPaceTitle) postPaceTitle.textContent = `当前挡位：${postSchedule.label} · 发推间隔 ${postSchedule.interval}`;
+      const postInterval = panel.querySelector("[data-xrc-post-interval]");
+      if (postInterval) postInterval.textContent = postSchedule.interval;
+      const postPaceNote = panel.querySelector("[data-xrc-post-pace-note]");
+      if (postPaceNote) {
+        postPaceNote.textContent = poster.running && poster.nextPostAt > Date.now()
+          ? "这次已经开始的等待保持不变。新挡位从下一次发送成功后的间隔开始生效。"
+          : "第一条立即发送。之后按这个挡位随机等待，已经开始的等待不会改写。";
+      }
       panel.querySelector("[data-xrc-post-preview]").textContent = poster.currentPost || poster.lastPost || "启动后显示 DeepSeek 生成的下一条纯文字推文";
       panel.querySelector("[data-xrc-post-ai-status]").textContent = state.aiStatus;
       postInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
@@ -1842,6 +2107,7 @@
       stateBadge?.setAttribute("title", stateLabel.textContent);
     }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
+    dockPanel(panel);
   }
 
   function begin({ resume = false } = {}) {
@@ -1905,7 +2171,7 @@
     state.cycleCount = 0;
     state.nextCycleAt = 0;
     state.reconnectAt = 0;
-    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan();
+    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
     state.nextReplyDelaySeconds = 0;
     state.riskPaused = false;
     state.errors = 0;
@@ -1928,6 +2194,7 @@
     state.nextCycleAt = saved.nextCycleAt;
     state.reconnectAt = saved.reconnectAt;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
+    state.schedulePace = saved.schedulePace;
     state.runPlan = saved.runPlan;
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
@@ -1949,6 +2216,8 @@
     }
     await loadPluginRuntime();
     await loadAiSettings();
+    await loadSchedulePace();
+    await loadPosterPace();
     await loadNotificationHistory();
     if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
       for (const id of saved.processedIds) processedNotificationIds.add(id);
@@ -1961,14 +2230,16 @@
       state.status = state.assistantMode === "notifications"
         ? "通知回复处理近 2 小时内容；完成后随机休息 2～3 小时再扫描，处理过的不重复。"
         : state.assistantMode === "poster"
-          ? "DeepSeek 会从当前时间线提炼话题，并每隔 25～35 分钟发布一条纯文字推文。"
+          ? `DeepSeek 会从当前时间线提炼话题，并按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布一条纯文字推文。`
         : "时间线会生成 3～5 轮随机计划，每轮 25～35 条；完成后随机休息 2～3 小时。";
     }
     renderPanel();
+    watchSidebarDock();
     if (postApi?.restore?.(updatePosterState)) {
       registerCurrentTaskTab("poster");
       setRuntimeTaskActive("poster", true);
     }
+    postApi?.setSchedulePace?.(state.posterPace);
     if (saved.running) {
       begin({ resume: true });
     }

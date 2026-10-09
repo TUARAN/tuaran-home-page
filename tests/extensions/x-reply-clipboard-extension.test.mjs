@@ -143,6 +143,16 @@ test('short DOM polling stays local instead of flooding the offscreen timer chan
 test('AI poster formats blank lines and keeps the random interval between 25 and 35 minutes', () => {
   assert.equal(poster.randomIntervalMs(() => 0), 25 * 60 * 1000)
   assert.ok(poster.randomIntervalMs(() => 0.999999) <= 35 * 60 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 0, 'slow'), 50 * 60 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 1, 'turbo'), 10 * 60 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 0, 'fast'), 12 * 60 * 1000)
+  assert.equal(poster.postScheduleProfile('missing').id, 'medium')
+  assert.equal(poster.formatPostSchedule('fast').interval, '12～18 分钟')
+  assert.equal(poster.snapshot().nextPostAt, 0)
+  poster.setSchedulePace('turbo')
+  assert.equal(poster.snapshot().schedulePace, 'turbo')
+  assert.equal(poster.snapshot().nextPostAt, 0)
+  poster.setSchedulePace('medium')
   assert.equal(poster.formatPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(poster.editorText({ innerText: '第一行\n\n\n第二行' }), '第一行\n\n第二行')
   assert.ok(Array.from(poster.formatPost('内容'.repeat(300))).length <= 270)
@@ -198,14 +208,32 @@ test('reloads after 35 successful replies and after the timeline stalls', () => 
 
 test('creates one persisted-size random execution plan within the configured ranges', () => {
   const minimumPlan = loop.createRunPlan(() => 0)
-  assert.deepEqual(minimumPlan, { rounds: 3, roundTargets: [25, 25, 25], total: 75 })
+  assert.deepEqual(minimumPlan, { pace: 'medium', rounds: 3, roundTargets: [25, 25, 25], total: 75 })
 
   const maximumPlan = loop.createRunPlan(() => 1)
-  assert.deepEqual(maximumPlan, { rounds: 5, roundTargets: [35, 35, 35, 35, 35], total: 175 })
+  assert.deepEqual(maximumPlan, { pace: 'medium', rounds: 5, roundTargets: [35, 35, 35, 35, 35], total: 175 })
   assert.equal(loop.randomReplyDelaySeconds(() => 0), 5)
   assert.equal(loop.randomReplyDelaySeconds(() => 1), 15)
   assert.equal(loop.randomCycleDelayMs(() => 0), 2 * 60 * 60 * 1000)
   assert.equal(loop.randomCycleDelayMs(() => 1), 3 * 60 * 60 * 1000)
+
+  assert.deepEqual(loop.SCHEDULE_PROFILES.map((item) => item.label), ['慢', '中', '快', '超快'])
+  assert.equal(loop.DEFAULT_SCHEDULE_PACE, 'medium')
+  assert.equal(loop.schedulePaceIndex('slow'), 0)
+  assert.equal(loop.schedulePaceIndex('turbo'), 3)
+  assert.equal(loop.scheduleProfile('missing').id, 'medium')
+  assert.equal(loop.createRunPlan(() => 0, 'slow').rounds, 2)
+  assert.equal(loop.createRunPlan(() => 0, 'slow').roundTargets[0], 12)
+  assert.equal(loop.createRunPlan(() => 1, 'turbo').rounds, 8)
+  assert.equal(loop.createRunPlan(() => 1, 'turbo').roundTargets[0], 55)
+  assert.equal(loop.randomReplyDelaySeconds(() => 0, 'turbo'), 1)
+  assert.equal(loop.randomReplyDelaySeconds(() => 1, 'fast'), 6)
+  assert.equal(loop.randomCycleDelayMs(() => 0, 'turbo'), 20 * 60 * 1000)
+  assert.equal(loop.randomCycleDelayMs(() => 1, 'slow'), 6 * 60 * 60 * 1000)
+  assert.equal(loop.formatSchedule('medium').cycleDelay, '2～3 小时')
+  assert.equal(loop.formatSchedule('fast').cycleDelay, '60～90 分钟')
+  assert.equal(loop.formatSchedule('turbo').replyDelay, '1～3 秒')
+  assert.deepEqual(loop.scheduleBounds(), { minReplies: 12, maxReplies: 55, minRounds: 2, maxRounds: 8 })
 })
 
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
@@ -342,7 +370,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.6.2')
+  assert.equal(manifest.version, '3.6.6')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -424,7 +452,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /通知回复/)
   assert.match(content, /互关浇友/)
   assert.match(content, /推文浇给/)
-  assert.match(content, /loopApi\.randomCycleDelayMs\(\)/)
+  assert.match(content, /data-xrc-post-pace/)
+  assert.match(content, /selectPosterPace/)
+  assert.match(posterSource, /randomIntervalMs\(Math\.random, state\.schedulePace\)/)
+  assert.match(content, /loopApi\.randomCycleDelayMs\(Math\.random, state\.schedulePace\)/)
   assert.match(content, /RECONNECT_INTERVAL_MS = 60 \* 1000/)
   assert.match(content, /finishCycleAndScheduleNext/)
   assert.match(content, /reconnectAndResume/)
@@ -471,7 +502,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-phrase-index/)
   assert.match(content, /aria-selected/)
   assert.match(content, /data-xrc-runtime/)
-  assert.match(content, /randomReplyDelaySeconds\(\)/)
+  assert.match(content, /randomReplyDelaySeconds\(Math\.random, state\.schedulePace\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /每条间隔/)
   assert.match(content, /每轮回复/)
@@ -514,8 +545,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.2\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.6\.2'/)
+  assert.match(content, /data-xrc-pace/)
+  assert.match(content, /慢、中、快、超快/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.6\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.6\.6'/)
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -524,6 +557,13 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /version: '3\.6\.0'/)
   assert.match(resourcePage, /version: '3\.6\.1'/)
   assert.match(resourcePage, /version: '3\.6\.2'/)
+  assert.match(resourcePage, /version: '3\.6\.3'/)
+  assert.match(resourcePage, /version: '3\.6\.4'/)
+  assert.match(resourcePage, /version: '3\.6\.5'/)
+  assert.match(resourcePage, /version: '3\.6\.6'/)
+  assert.match(content, /xrc-assistant-tabs/)
+  assert.doesNotMatch(content, /xrc-tab-index/)
+  assert.match(resourcePage, /右侧搜索框下方/)
   assert.match(content, /data-xrc-docs-open/)
   assert.match(content, /官方公开规则/)
   assert.match(content, /技术上限不等于安全阈值或使用许可/)
@@ -721,6 +761,156 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   assert.equal(seen[0], require('../../tools/x-reply-clipboard-extension/phrases.js')[0])
   assert.notEqual(seen[1], seen[0])
   for (let step = 1; step < seen.length; step += 1) assert.notEqual(seen[step], seen[step - 1])
+})
+
+function matchSelector(node, selector) {
+  return selector.split(',').some((part) => {
+    const text = part.trim()
+    if (!text) return false
+    if (text.startsWith('#')) return node.id === text.slice(1)
+    const tagMatch = text.match(/^([a-zA-Z][\w-]*)/)
+    let rest = text
+    if (tagMatch && !text.startsWith('[')) {
+      if (node.tag !== tagMatch[1]) return false
+      rest = text.slice(tagMatch[1].length)
+    }
+    const attrs = [...rest.matchAll(/\[([^\]=]+)(?:=(['"])(.*?)\2)?\]/g)]
+    if (rest.trim() && attrs.length === 0) return false
+    return attrs.every((match) => (match[3] == null ? node.getAttribute(match[1]) != null : node.getAttribute(match[1]) === match[3]))
+  })
+}
+
+function mountTree(spec, parent = null) {
+  const node = {
+    tag: spec.tag,
+    attrs: spec.attrs || {},
+    parentElement: parent,
+    nodeType: 1,
+    id: spec.attrs?.id || '',
+    children: [],
+  }
+  node.getAttribute = (name) => node.attrs[name] ?? null
+  node.matches = (selector) => matchSelector(node, selector)
+  node.querySelector = (selector) => {
+    for (const child of node.children) {
+      if (child.matches(selector)) return child
+      const found = child.querySelector(selector)
+      if (found) return found
+    }
+    return null
+  }
+  node.querySelectorAll = (selector) => node.children.flatMap((child) => [
+    ...(child.matches(selector) ? [child] : []),
+    ...child.querySelectorAll(selector),
+  ])
+  node.closest = (selector) => {
+    let current = node
+    while (current) {
+      if (current.matches?.(selector)) return current
+      current = current.parentElement
+    }
+    return null
+  }
+  node.children = (spec.children || []).map((child) => mountTree(child, node))
+  return node
+}
+
+function loadSidebarMountPoint(source) {
+  const start = source.indexOf('const SIDEBAR_MODULE_SELECTOR')
+  const end = source.indexOf('function dockPanel(')
+  return new Function(`${source.slice(start, end)}\nreturn sidebarMountPoint;`)()
+}
+
+test('panel mounts under the search box inside the right sidebar', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const sidebarMountPoint = loadSidebarMountPoint(source)
+  assert.match(source, /function sidebarMountPoint/)
+  assert.match(source, /function dockPanel/)
+  assert.match(source, /SearchBox_Search_Input/)
+  assert.match(source, /xrcDock/)
+  assert.match(css, /#x-reply-clipboard-panel\[data-xrc-dock="pending"\]/)
+  assert.doesNotMatch(css, /position:\s*fixed/)
+  assert.match(css, /position:\s*relative/)
+
+  const sidebar = mountTree({
+    tag: 'div',
+    attrs: { 'data-testid': 'sidebarColumn' },
+    children: [{
+      tag: 'div',
+      attrs: { id: 'column' },
+      children: [
+        {
+          tag: 'div',
+          attrs: { id: 'search-block' },
+          children: [{
+            tag: 'form',
+            attrs: { role: 'search', 'aria-label': 'Search' },
+            children: [{ tag: 'input', attrs: { 'data-testid': 'SearchBox_Search_Input' } }],
+          }],
+        },
+        { tag: 'div', attrs: { id: 'hidden' } },
+        {
+          tag: 'div',
+          attrs: { id: 'modules' },
+          children: [
+            { tag: 'aside', attrs: { role: 'complementary', 'aria-label': 'Upgrade to Premium+' } },
+            { tag: 'div', attrs: { 'data-testid': 'trend' } },
+            { tag: 'nav', attrs: { role: 'navigation', 'aria-label': 'Footer' } },
+          ],
+        },
+      ],
+    }],
+  })
+  const mounted = sidebarMountPoint(sidebar)
+  assert.equal(mounted.type, 'prepend')
+  assert.equal(mounted.parent.id, 'modules')
+
+  const flat = mountTree({
+    tag: 'div',
+    attrs: { 'data-testid': 'sidebarColumn' },
+    children: [
+      {
+        tag: 'div',
+        attrs: { id: 'search-block' },
+        children: [{
+          tag: 'form',
+          attrs: { role: 'search' },
+          children: [{ tag: 'input', attrs: { 'data-testid': 'SearchBox_Search_Input' } }],
+        }],
+      },
+      { tag: 'aside', attrs: { role: 'complementary', 'aria-label': 'Who to follow' } },
+    ],
+  })
+  const flatMount = sidebarMountPoint(flat)
+  assert.equal(flatMount.type, 'after')
+  assert.equal(flatMount.anchor.id, 'search-block')
+
+  const page = mountTree({
+    tag: 'div',
+    children: [
+      { tag: 'nav', attrs: { role: 'navigation', 'aria-label': 'Primary' } },
+      {
+        tag: 'div',
+        attrs: { 'data-testid': 'primaryColumn' },
+        children: [{
+          tag: 'form',
+          attrs: { role: 'search' },
+          children: [{ tag: 'input', attrs: { 'data-testid': 'SearchBox_Search_Input' } }],
+        }],
+      },
+      sidebar,
+    ],
+  })
+  assert.equal(sidebarMountPoint(page).parent.id, 'modules')
+  assert.equal(sidebarMountPoint(mountTree({
+    tag: 'div',
+    children: [{
+      tag: 'form',
+      attrs: { role: 'search' },
+      children: [{ tag: 'input', attrs: { 'data-testid': 'SearchBox_Search_Input' } }],
+    }],
+  })), null)
 })
 
 test('main-world writer replaces the whole editor and supersedes an earlier listener', async () => {

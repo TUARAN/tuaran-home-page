@@ -15,11 +15,13 @@
         <label><span>北京时间</span><input id="hour" type="number" min="0" max="23" value="14" /></label>
         <label><span>重试（分钟）</span><input id="retry" type="number" min="5" max="180" value="15" /></label>
       </div>
+      <label><span>表格处理</span><select id="table-mode"><option value="image">渲染为高清图片（推荐）</option><option value="text">转换为可复制文本</option></select></label>
       <label class="toggle"><input id="enabled" type="checkbox" checked /><span>启用每日自动发布</span></label>
+      <section id="review" class="review" aria-live="polite">尚无自动审阅记录。</section>
       <div class="actions">
         <button id="run" type="button">保存并立即检查</button>
       </div>
-      <p class="note">浏览器需保持运行并已登录 X。插件会保留安全链接和基础排版，并确认正文图片上传完成后再发布。</p>
+      <p class="note">浏览器需保持运行并已登录 X。插件会先自动审阅标题、正文结构、链接、图片、表格与 Mermaid 图，再写入 X；逐块校验通过后才发布。</p>
     </main>
     <script src="popup.js"></script>
   </body>

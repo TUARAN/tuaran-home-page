@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "2aran X Article Auto Publisher",
-  "version": "0.2.6",
-  "description": "Fetch one 2aran article every day and publish it as a formatted X Article with links and images.",
+  "version": "0.3.0",
+  "description": "Prepare, verify, and automatically publish one 2aran article to X Articles every day, including images, tables, and Mermaid diagrams.",
   "permissions": ["alarms", "storage", "tabs"],
   "host_permissions": [
     "https://2aran.com/*",
@@ -20,18 +20,18 @@
   "content_scripts": [
     {
       "matches": ["https://2aran.com/articles/*"],
-      "js": ["site-content.js"],
+      "js": ["format-core.js", "site-content.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["main-world.js"],
+      "js": ["format-core.js", "main-world.js"],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["x-content.js"],
+      "js": ["format-core.js", "x-content.js"],
       "run_at": "document_idle"
     }
   ]

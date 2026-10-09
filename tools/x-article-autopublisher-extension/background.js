@@ -1,5 +1,7 @@
 "use strict";
 
+importScripts("format-core.js");
+
 const CHECK_ALARM = "x-article-daily-check";
 const PUBLISH_ALARM = "x-article-publish-time";
 const TASK_ENDPOINT = "https://2aran.com/api/x-article-extension/task";
@@ -8,7 +10,8 @@ const DEFAULT_SETTINGS = {
   enabled: true,
   secret: "",
   publishHour: 14,
-  retryMinutes: 15
+  retryMinutes: 15,
+  tableMode: "image"
 };
 
 let activeRun = null;
@@ -131,11 +134,15 @@ async function reportTask(secret, report) {
   return payload;
 }
 
-async function extractArticle(task) {
+async function extractArticle(task, settings) {
   const tab = await chrome.tabs.create({ url: task.sourceUrl, active: false });
   try {
     await waitForTab(tab.id);
-    const result = await sendMessageWithRetry(tab.id, { type: "extract-2aran-article", task });
+    const result = await sendMessageWithRetry(tab.id, {
+      type: "extract-2aran-article",
+      task,
+      options: { tableMode: settings.tableMode === "text" ? "text" : "image" }
+    });
     if (!result?.ok || !result.title || !result.body) throw new Error(result?.error || "ARTICLE_EXTRACTION_FAILED");
     return result;
   } finally {
@@ -186,6 +193,7 @@ async function prepareImage(image, index) {
     return {
       marker: image.marker,
       alt: image.alt,
+      kind: image.kind || "image",
       mime,
       fileName: imageFileName({ ...image, src }, index, mime),
       base64: bytesToBase64(new Uint8Array(buffer)),
@@ -265,12 +273,22 @@ async function runAutomation({ force = false } = {}) {
       }
       task = payload.task;
       await setState({ status: "running", detail: `正在读取《${task.title}》…`, task, taskDate: task.date, attempt });
-      const extracted = await extractArticle(task);
+      const extracted = await extractArticle(task, settings);
       await setState({ status: "running", detail: `正在准备文章格式与 ${extracted.images?.length || 0} 张图片…`, task, attempt });
       const article = await prepareImages(extracted);
       const skippedNote = article.skippedImages.length ? `，已跳过 ${article.skippedImages.length} 张失效图片` : "";
-      await setState({ status: "running", detail: `链接、排版和图片已准备${skippedNote}，正在打开 X Articles 编辑器…`, task, attempt });
-      const result = await publishArticle(task, article, state.draftTabId);
+      const review = self.XArticleFormat.reviewArticle(article);
+      await setState({
+        status: review.ok ? "running" : "error",
+        detail: review.ok
+          ? `自动审阅通过：${review.stats.blocks} 个正文块、${review.stats.images} 张图片、${review.stats.links} 个链接${skippedNote}。正在打开 X Articles 编辑器…`
+          : `自动审阅未通过：${review.errors.join("、")}`,
+        task,
+        attempt,
+        review: { ok: review.ok, stats: review.stats, warnings: review.warnings, errors: review.errors, reviewedAt: Date.now() }
+      });
+      if (!review.ok) throw new Error(review.errors[0] || "ARTICLE_REVIEW_FAILED");
+      const result = await publishArticle(task, review.article, state.draftTabId);
       if (!result?.ok) {
         const status = result?.submissionStarted ? "uncertain" : "failed";
         throw Object.assign(new Error(result?.error || "X_ARTICLE_PUBLISH_FAILED"), { publishStatus: status });

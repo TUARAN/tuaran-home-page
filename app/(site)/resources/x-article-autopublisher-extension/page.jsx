@@ -12,12 +12,12 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-article-autopublisher-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-article-autopublisher-extension&file=extension-zip'
-const VERSION = '0.2.6'
+const VERSION = '0.3.0'
 
 const title = 'X Article 自动发布：每天定时发布一篇长文章'
 const description =
-  '一款配合 2aran.com 使用的 Chrome 扩展：每天按北京时间领取一篇文章，保留标题层级、列表、引用、链接和正文图片，并自动发布到 X Articles。'
-const shareText = '让 Chrome 每天自动领取并发布一篇 X Article，保留文章排版、链接与正文图片，失败后按设定间隔重试。'
+  '一款配合 2aran.com 使用的 Chrome 扩展：每天自动整理并审阅一篇文章，保留标题层级、嵌套列表、链接和图片，将表格与 Mermaid 图转换后发布到 X Articles。'
+const shareText = '让 Chrome 每天自动准备、审阅并发布一篇 X Article，完整保留正文结构、链接、图片、表格和 Mermaid 图。'
 
 export const metadata = {
   title,
@@ -53,8 +53,9 @@ function FeatureCard({ label, title, children }) {
 function WorkflowPreview() {
   const steps = [
     ['14:00', '定时检查', '到达设定的北京时间后领取今日任务'],
-    ['读取', '整理正文', '过滤站点目录，只保留文章排版与正文图片'],
-    ['发布', '写入 X Article', '上传图片、核对顺序，然后调用 X 的发布界面'],
+    ['准备', '生成交接包', '保留结构与链接，把表格和 Mermaid 图转换为图片'],
+    ['审阅', '逐项校验', '核对标题、正文块、样式、链接与图片顺序'],
+    ['发布', '写入 X Article', '上传图片并复核 X 编辑器中的最终结构后发布'],
     ['重试', '失败后再检查', '暂时拿不到任务或页面未就绪时按间隔重试'],
   ]
 
@@ -91,7 +92,7 @@ export default function XArticleAutopublisherResourcePage() {
           <span aria-hidden="true">·</span>
           <Link href="/tools#downloads" className="underline underline-offset-4 opacity-80 hover:opacity-100">浏览器扩展</Link>
           <span aria-hidden="true">·</span>
-          <span>2026-08-24</span>
+          <span>2026-10-09</span>
         </div>
 
         <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
@@ -101,7 +102,7 @@ export default function XArticleAutopublisherResourcePage() {
               每天定时发布一篇 X 长文章
             </h1>
             <p className="mb-0 mt-5 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-              插件每天按北京时间从 2aran.com 领取一篇文章，整理正文结构和图片，然后写入并发布为 X Article。
+              插件每天按北京时间从 2aran.com 领取一篇文章，在本地完成格式准备和自动审阅，然后写入并发布为 X Article。
               不需要每天打开后台审核，也不会把站点目录、侧栏和分享组件混进正文。
             </p>
           </div>
@@ -115,7 +116,7 @@ export default function XArticleAutopublisherResourcePage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {['X Articles', 'Chrome MV3', '北京时间定时', '失败重试', '图片与链接', '无需每日审核'].map((tag) => (
+          {['X Articles', 'Chrome MV3', '北京时间定时', '自动审阅', '表格与 Mermaid', '失败恢复'].map((tag) => (
             <span key={tag} className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#6f5b22] dark:border-[#40472d] dark:bg-[#1a2118] dark:text-[#d7d7a7]">{tag}</span>
           ))}
         </div>
@@ -150,8 +151,10 @@ export default function XArticleAutopublisherResourcePage() {
         <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
           <FeatureCard label="Schedule" title="每天自动运行">按北京时间设置每日发布时间；错过时间后仍会补偿检查，当天成功一次后不重复发布。</FeatureCard>
           <FeatureCard label="Article" title="发布长文章，不是普通帖子">目标是 X Articles 编辑器，适合带标题和章节结构的长内容，不走普通推文发布接口。</FeatureCard>
-          <FeatureCard label="Format" title="保留文章结构">保留二至四级标题、有序与无序列表、引用、粗体、斜体、安全链接，以及正文中原本的图片位置。</FeatureCard>
-          <FeatureCard label="Guardrail" title="发布前检查版式">图片上传后会重新定位到原文位置；正文块数量、格式或图片顺序不一致时停止，等待下一次重试。</FeatureCard>
+          <FeatureCard label="Format" title="保留文章结构">保留二至四级标题、嵌套列表、引用、代码换行、粗体、斜体、安全链接，以及正文中原本的图片位置。</FeatureCard>
+          <FeatureCard label="Visual" title="转换表格与图表">表格默认渲染成高清 PNG，Mermaid 图自动转换成 PNG；也可把表格切换成可复制文本。</FeatureCard>
+          <FeatureCard label="Review" title="自动审阅后再上传">上传前核对标题、正文块、链接和图片标记；写入 X 后再次核对列表层级、行内样式、链接与图片位置。</FeatureCard>
+          <FeatureCard label="Recovery" title="失败可恢复">未点击发布的失败会复用同名草稿整体重写；结果不确定时停止自动重发，避免产生重复文章。</FeatureCard>
         </div>
 
         <h2>安装与配置</h2>
@@ -175,6 +178,7 @@ export default function XArticleAutopublisherResourcePage() {
           <li>只读取文章正文容器，不复制网站目录、作者操作区、侧栏、分享按钮和页脚。</li>
           <li>只处理正文里的 JPEG、PNG 和 WebP 图片；单张图片最大 8 MiB。</li>
           <li>文章中的 HTTP/HTTPS 链接会保留，站点导航链接不会作为正文混入。</li>
+          <li>表格和 Mermaid 图在当前浏览器中本地转成 PNG，不会交给第三方转换服务。</li>
           <li>插件使用 X 自身的图片上传控件和 Articles 编辑器，不需要 X API Token。</li>
         </ul>
 

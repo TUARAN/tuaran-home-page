@@ -1,12 +1,14 @@
 "use strict";
 
-const DEFAULTS = { enabled: true, secret: "", publishHour: 14, retryMinutes: 15 };
+const DEFAULTS = { enabled: true, secret: "", publishHour: 14, retryMinutes: 15, tableMode: "image" };
 const elements = {
   status: document.querySelector("#status"),
   secret: document.querySelector("#secret"),
   hour: document.querySelector("#hour"),
   retry: document.querySelector("#retry"),
+  tableMode: document.querySelector("#table-mode"),
   enabled: document.querySelector("#enabled"),
+  review: document.querySelector("#review"),
   run: document.querySelector("#run")
 };
 
@@ -18,6 +20,14 @@ function statusText(state) {
   return `${head}${detail}${attempts}`;
 }
 
+function reviewText(review) {
+  if (!review) return "尚无自动审阅记录。";
+  const stats = review.stats || {};
+  const summary = `${review.ok ? "自动审阅通过" : "自动审阅未通过"}\n${stats.blocks || 0} 个正文块 · ${stats.characters || 0} 字符 · ${stats.images || 0} 张图片 · ${stats.links || 0} 个链接`;
+  const notes = [...(review.errors || []), ...(review.warnings || [])];
+  return notes.length ? `${summary}\n${notes.join("\n")}` : summary;
+}
+
 async function load() {
   const saved = await chrome.storage.local.get(["settings", "state", "extensionSecret"]);
   const settings = { ...DEFAULTS, ...(saved.settings || {}) };
@@ -25,8 +35,10 @@ async function load() {
   elements.secret.value = settings.secret;
   elements.hour.value = settings.publishHour;
   elements.retry.value = settings.retryMinutes;
+  elements.tableMode.value = settings.tableMode;
   elements.enabled.checked = settings.enabled;
   elements.status.textContent = statusText(saved.state || {});
+  elements.review.textContent = reviewText(saved.state?.review);
 }
 
 async function save() {
@@ -36,7 +48,8 @@ async function save() {
     enabled: elements.enabled.checked,
     secret,
     publishHour: Math.max(0, Math.min(23, Number(elements.hour.value) || 14)),
-    retryMinutes: Math.max(5, Math.min(180, Number(elements.retry.value) || 15))
+    retryMinutes: Math.max(5, Math.min(180, Number(elements.retry.value) || 15)),
+    tableMode: elements.tableMode.value === "text" ? "text" : "image"
   };
   await chrome.storage.local.set({ settings, extensionSecret: secret });
   return settings;

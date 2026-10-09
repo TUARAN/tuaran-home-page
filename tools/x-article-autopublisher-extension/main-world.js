@@ -81,7 +81,7 @@
     const createdKeys = [];
 
     blocks.forEach((block, index) => {
-      const text = String(block?.text || "").replace(/\n+/g, " ");
+      const text = String(block?.text || "").replace(/\r\n?/g, "\n");
       const key = `${Math.random().toString(36).slice(2, 7)}${index.toString(36)}`;
       const entityRanges = [];
       for (const link of block.links || []) {
@@ -107,7 +107,7 @@
         type: block.type || "unstyled",
         text,
         characterList,
-        depth: 0,
+        depth: Math.max(0, Math.min(4, Number(block.depth) || 0)),
         data: sample.block.getData?.()?.clear?.() || sample.block.getData?.(),
       });
       nextBlockMap = nextBlockMap.set(key, nextBlock);
@@ -127,9 +127,54 @@
   function currentBlocks(node) {
     const blocks = [];
     node?.props?.editorState?.getCurrentContent?.()?.getBlockMap?.()?.forEach?.((block, key) => {
-      blocks.push({ key, type: block.getType?.() || "", text: block.getText?.() || "" });
+      blocks.push({ key, type: block.getType?.() || "", text: block.getText?.() || "", depth: block.getDepth?.() || 0, block });
     });
     return blocks;
+  }
+
+  function expectedStyleAt(block, index) {
+    return (block.inlineStyleRanges || [])
+      .filter((range) => index >= range.offset && index < range.offset + range.length)
+      .map((range) => draftStyleName(range.style))
+      .sort();
+  }
+
+  function expectedLinkAt(block, index) {
+    return (block.links || []).find((range) => index >= range.offset && index < range.offset + range.length)?.url || "";
+  }
+
+  function actualLinkAt(content, block, index) {
+    const entityKey = block.getCharacterList?.().get?.(index)?.getEntity?.();
+    if (!entityKey) return "";
+    try {
+      const entity = content.getEntity(entityKey);
+      return entity.getType?.() === "LINK" ? String(entity.getData?.()?.url || "") : "";
+    } catch {
+      return "";
+    }
+  }
+
+  function validateInlineFormatting(node, expected, { final = false } = {}) {
+    const content = node.props.editorState.getCurrentContent();
+    const actual = currentBlocks(node).filter((item) => item.type !== "atomic" && (!final || item.type !== "unstyled" || item.text.trim()));
+    const comparable = final
+      ? expected.filter((block) => !/^\[\[2ARAN_IMAGE_\d+\]\]$/.test(String(block?.text || "").trim()))
+      : expected;
+    if (actual.length !== comparable.length) throw new Error("X_INLINE_BLOCK_COUNT_MISMATCH");
+    for (let blockIndex = 0; blockIndex < comparable.length; blockIndex += 1) {
+      const wanted = comparable[blockIndex];
+      const found = actual[blockIndex].block;
+      const text = String(wanted?.text || "").replace(/\r\n?/g, "\n");
+      for (let index = 0; index < text.length; index += 1) {
+        const styles = Array.from(found.getCharacterList?.().get?.(index)?.getStyle?.()?.toArray?.() || []).sort();
+        if (styles.join("|") !== expectedStyleAt(wanted, index).join("|")) {
+          throw new Error(`X_INLINE_STYLE_MISMATCH_${blockIndex + 1}_${index + 1}`);
+        }
+        if (actualLinkAt(content, found, index) !== expectedLinkAt(wanted, index)) {
+          throw new Error(`X_LINK_MISMATCH_${blockIndex + 1}_${index + 1}`);
+        }
+      }
+    }
   }
 
   function validateStructuredWrite(node, expected) {
@@ -137,8 +182,10 @@
     if (actual.length !== expected.length) throw new Error("X_STRUCTURED_BLOCK_COUNT_MISMATCH");
     for (let index = 0; index < expected.length; index += 1) {
       if (actual[index].type !== (expected[index].type || "unstyled")) throw new Error(`X_BLOCK_TYPE_MISMATCH_${index + 1}`);
-      if (actual[index].text !== String(expected[index].text || "").replace(/\n+/g, " ")) throw new Error(`X_BLOCK_TEXT_MISMATCH_${index + 1}`);
+      if (actual[index].text !== String(expected[index].text || "").replace(/\r\n?/g, "\n")) throw new Error(`X_BLOCK_TEXT_MISMATCH_${index + 1}`);
+      if (actual[index].depth !== Math.max(0, Math.min(4, Number(expected[index].depth) || 0))) throw new Error(`X_BLOCK_DEPTH_MISMATCH_${index + 1}`);
     }
+    validateInlineFormatting(node, expected);
   }
 
   function markerLocation(node, marker) {
@@ -261,15 +308,18 @@
     const actual = currentBlocks(node).filter((block) => block.type !== "unstyled" || block.text.trim());
     const normalizedExpected = expected.map((block) => ({
       type: /^\[\[2ARAN_IMAGE_\d+\]\]$/.test(String(block?.text || "")) ? "atomic" : (block?.type || "unstyled"),
-      text: /^\[\[2ARAN_IMAGE_\d+\]\]$/.test(String(block?.text || "")) ? "" : String(block?.text || "").replace(/\n+/g, " "),
+      text: /^\[\[2ARAN_IMAGE_\d+\]\]$/.test(String(block?.text || "")) ? "" : String(block?.text || "").replace(/\r\n?/g, "\n"),
+      depth: Math.max(0, Math.min(4, Number(block?.depth) || 0)),
     })).filter((block) => block.type !== "unstyled" || block.text.trim());
     if (actual.length !== normalizedExpected.length) throw new Error("X_FINAL_BLOCK_COUNT_MISMATCH");
     for (let index = 0; index < normalizedExpected.length; index += 1) {
       if (actual[index].type !== normalizedExpected[index].type) throw new Error(`X_FINAL_BLOCK_TYPE_MISMATCH_${index + 1}`);
+      if (normalizedExpected[index].type !== "atomic" && actual[index].depth !== normalizedExpected[index].depth) throw new Error(`X_FINAL_BLOCK_DEPTH_MISMATCH_${index + 1}`);
       if (normalizedExpected[index].type !== "atomic" && actual[index].text !== normalizedExpected[index].text) {
         throw new Error(`X_FINAL_BLOCK_TEXT_MISMATCH_${index + 1}`);
       }
     }
+    validateInlineFormatting(node, expected, { final: true });
   }
 
   async function waitForEditor(timeoutMs = 30000) {

@@ -85,6 +85,10 @@
     element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
   }
 
+  function editableText(element) {
+    return String(element?.value ?? element?.innerText ?? element?.textContent ?? "").trim();
+  }
+
   function writeRichBody(payload) {
     const requestId = `write_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const timeoutMs = 45000 + (payload.images?.length || 0) * 100000;
@@ -125,8 +129,12 @@
     if (!titleBox || !bodyBox) return { ok: false, error: "X_ARTICLE_FIELDS_NOT_FOUND" };
     if (titleBox.matches("input, textarea")) setNativeValue(titleBox, title);
     else setEditableText(titleBox, title);
+    await sleep(300);
+    if (editableText(titleEditor()) !== title) return { ok: false, error: "X_ARTICLE_TITLE_MISMATCH" };
+    const review = self.XArticleFormat.reviewArticle({ title, body, blocks, images });
+    if (!review.ok) return { ok: false, error: review.errors[0] || "ARTICLE_REVIEW_FAILED" };
     const richResult = await writeRichBody({
-      blocks,
+      blocks: review.article.blocks,
       body,
       images,
     });

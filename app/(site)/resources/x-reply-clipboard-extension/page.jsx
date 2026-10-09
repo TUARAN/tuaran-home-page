@@ -519,9 +519,6 @@ export default function XReplyClipboardResourcePage() {
               </li>
             ))}
           </ul>
-          <div className="border-t border-white/10 px-6 py-4 text-xs leading-6 text-slate-400">
-            插件内置话术与 macOS 上的 <Link href="/resources/x-clipboard-phrase" className="text-cyan-300">X 粘贴板评论助手</Link> 使用同一组内容。
-          </div>
         </div>
 
         <div className="not-prose relative mt-12 overflow-hidden rounded-[26px] border border-blue-200 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-6 text-white shadow-[0_20px_55px_rgba(79,70,229,0.25)] dark:border-white/10 sm:p-8">

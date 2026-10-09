@@ -147,6 +147,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/resources/x-clipboard-phrase',
+        destination: '/tools',
+        permanent: true,
+      },
+      {
         // 《币安人生》入口直接进入第一篇正文，旧章节路径收口到资源页
         source: '/resources/cz-memoirs/00-recommendations',
         destination: '/resources/cz-memoirs',

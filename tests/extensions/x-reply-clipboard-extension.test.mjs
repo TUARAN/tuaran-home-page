@@ -584,21 +584,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(downloadButton, /下载 Chrome 插件 v\$\{version\}/)
   assert.match(downloadButton, /INSUFFICIENT_BALANCE/)
   assert.match(downloadButton, /response\.blob\(\)/)
-  assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
+  assert.doesNotMatch(resourcePage, /\/resources\/x-clipboard-phrase/)
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X高频互动助手'/)
   assert.match(registry, /'通知回复'/)
   assert.match(toolItems, /id: 'x-reply-clipboard',[\s\S]*title: 'X高频互动助手'/)
   assert.doesNotMatch(toolItems, /id: 'x-mutual-cleaner'/)
+  assert.doesNotMatch(toolItems, /id: 'x-clipboard-phrase'/)
+  assert.doesNotMatch(catalog, /x-clipboard-phrase/)
   assert.match(toolItems, /role: 'Chrome 扩展 · 回复、互关与 AI 定时发推'/)
-
-  const desktopPage = await readFile(
-    new URL('../../app/(site)/resources/x-clipboard-phrase/page.jsx', import.meta.url),
-    'utf8',
-  )
-  assert.match(catalog, /x-clipboard-phrase-macos-v1\.0\.0\.zip/)
-  assert.match(desktopPage, /const VERSION = '1\.0\.0'/)
-  assert.match(desktopPage, /下载 macOS 应用 v\{VERSION\}/)
-  assert.match(desktopPage, /\/resources\/x-reply-clipboard-extension/)
 })
 
 test('DeepSeek background worker keeps AI replies short and non-thinking', async () => {

@@ -13,8 +13,6 @@
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
-  const REPLY_DAILY_QUOTA_KEY = "xrcReplyDailyQuota";
-  const REPLY_DAILY_LIMIT = 100;
   const NOTIFICATION_HISTORY_LIMIT = 2000;
   const PHRASE_STORE = 7;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
@@ -32,7 +30,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.1";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.2";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -46,13 +44,10 @@
     elapsedMs: 0,
     cycleCount: 0,
     nextCycleAt: 0,
-    quotaResetAt: 0,
     reconnectAt: 0,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     runPlan: null,
     nextReplyDelaySeconds: 0,
-    dailyReplyCount: 0,
-    dailyReplyLimit: REPLY_DAILY_LIMIT,
     riskPaused: false,
     panelView: "normal",
     assistantMode: "timeline",
@@ -181,34 +176,6 @@
   function currentRoundTarget() {
     const plan = ensureRunPlan();
     return plan.roundTargets[Math.min(state.completedRounds, plan.rounds - 1)] || loopApi.MAX_REPLIES_PER_ROUND;
-  }
-
-  async function refreshReplyQuota() {
-    try {
-      const response = await sendExtensionMessage({ type: "xrc-reply-quota-get" });
-      state.dailyReplyCount = Number(response.quota?.count) || 0;
-      state.dailyReplyLimit = Number(response.quota?.limit) || REPLY_DAILY_LIMIT;
-      return response.quota;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  async function reserveReplyQuota() {
-    const response = await sendExtensionMessage({ type: "xrc-reply-quota-reserve" });
-    state.dailyReplyCount = Number(response.quota?.count) || 0;
-    state.dailyReplyLimit = Number(response.quota?.limit) || REPLY_DAILY_LIMIT;
-    return response;
-  }
-
-  async function settleReplyQuota(token, committed) {
-    if (!token) return;
-    const response = await sendExtensionMessage({
-      type: committed ? "xrc-reply-quota-commit" : "xrc-reply-quota-release",
-      token
-    });
-    state.dailyReplyCount = Number(response.quota?.count) || 0;
-    state.dailyReplyLimit = Number(response.quota?.limit) || REPLY_DAILY_LIMIT;
   }
 
   function readRuntimeMessage(type, payload = {}) {
@@ -378,7 +345,6 @@
       startedAt: null,
       cycleCount: 0,
       nextCycleAt: 0,
-      quotaResetAt: 0,
       reconnectAt: 0,
       phraseIndex: null,
       processedIds: [],
@@ -409,7 +375,6 @@
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
-        quotaResetAt: Math.max(0, Number(parsed.quotaResetAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         runPlan: normalizeRunPlan(parsed.runPlan),
@@ -441,7 +406,6 @@
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
-        quotaResetAt: Math.max(0, Number(value.quotaResetAt ?? state.quotaResetAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         roundIntervalSeconds: state.roundIntervalSeconds,
         runPlan: state.runPlan,
@@ -470,7 +434,6 @@
         startedAt: null,
         cycleCount: 0,
         nextCycleAt: 0,
-        quotaResetAt: 0,
         reconnectAt: 0,
         roundIntervalSeconds: state.roundIntervalSeconds,
         runPlan: null,
@@ -526,7 +489,6 @@
     state.completedRounds = 0;
     state.total = 0;
     state.nextCycleAt = 0;
-    state.quotaResetAt = 0;
     state.reconnectAt = 0;
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan();
     state.nextReplyDelaySeconds = 0;
@@ -557,22 +519,6 @@
     resetCycleProgress();
     writeSaved({ running: true, total: 0 });
     await reloadAndResume(`第 ${state.cycleCount + 1} 次即将开始，正在刷新页面`);
-    return "reload";
-  }
-
-  async function waitForDailyQuotaReset(resetAt) {
-    state.quotaResetAt = Math.max(Date.now() + 60000, Number(resetAt) || 0);
-    state.nextCycleAt = 0;
-    writeSaved({ running: true, total: state.total });
-    const ready = await waitForDeadline(
-      state.quotaResetAt,
-      (remaining) => `今日插件回复额度已用完（${state.dailyReplyCount}/${state.dailyReplyLimit}）；${formatCountdown(remaining)}后进入新一天`
-    );
-    if (!ready) return "stopped";
-    await refreshReplyQuota();
-    resetCycleProgress();
-    writeSaved({ running: true, total: 0 });
-    await reloadAndResume("每日插件回复额度已重置，正在开始新的随机计划");
     return "reload";
   }
 
@@ -1012,13 +958,6 @@
       resetCycleProgress();
       writeSaved({ running: true, total: 0 });
     }
-    if (state.quotaResetAt > 0) {
-      if (state.quotaResetAt > Date.now()) return waitForDailyQuotaReset(state.quotaResetAt);
-      state.quotaResetAt = 0;
-      await refreshReplyQuota();
-      resetCycleProgress();
-      writeSaved({ running: true, total: 0 });
-    }
     if (state.reconnectAt > 0) {
       const readyToReconnect = await waitForDeadline(
         state.reconnectAt,
@@ -1113,20 +1052,11 @@
       }
 
       stalled = 0;
-      let quotaReservation = "";
-      try {
-        const quota = await reserveReplyQuota();
-        if (!quota.allowed) return waitForDailyQuotaReset(quota.quota?.resetAt);
-        quotaReservation = String(quota.token || "");
-      } catch (error) {
-        return reconnectAndResume("暂时无法读取每日回复额度");
-      }
       if (state.assistantMode === "notifications") {
         state.status = "正在给这条回复点赞…";
         renderPanel();
         const likeResult = await likeNotificationReply(next);
         if (likeResult !== "ok") {
-          await settleReplyQuota(quotaReservation, false).catch(() => {});
           state.errors += 1;
           state.status = `尚未互动：${failureLabel(likeResult)}。稍后重试同一条`;
           renderPanel();
@@ -1137,12 +1067,10 @@
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       if (state.replyMode === "ai") {
         if (findDialogComposer() && !(state.pendingTweetId === next.id && state.pendingReply)) {
-          await settleReplyQuota(quotaReservation, false).catch(() => {});
           return reconnectAndResume("检测到其他评论弹窗，为避免回复错帖子已暂停");
         }
         const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (!postText) {
-          await settleReplyQuota(quotaReservation, false).catch(() => {});
           skippedIds.add(next.id);
           state.status = "AI 模式已跳过一条没有文字内容的帖子";
           renderPanel();
@@ -1160,7 +1088,6 @@
             state.lastReply = phrase;
             writeSaved({ running: true, total: state.total });
           } catch (error) {
-            await settleReplyQuota(quotaReservation, false).catch(() => {});
             state.errors += 1;
             state.aiStatus = error?.message || "DeepSeek 生成失败";
             state.status = `AI 生成失败：${state.aiStatus}。3 秒后重试`;
@@ -1176,20 +1103,16 @@
       renderPanel();
       const result = await replyOnce(next, phrase);
       if (result === "stopped") {
-        await settleReplyQuota(quotaReservation, false).catch(() => {});
         break;
       }
       if (result === "risk-blocked") {
-        await settleReplyQuota(quotaReservation, false).catch(() => {});
         await stopAllTasksForRisk();
         return "stopped";
       }
       if (result === "composer-already-open") {
-        await settleReplyQuota(quotaReservation, false).catch(() => {});
         return reconnectAndResume(failureLabel(result));
       }
       if (result === "duplicate-reply") {
-        await settleReplyQuota(quotaReservation, false).catch(() => {});
         state.errors += 1;
         const composer = findDialogComposer();
         let alternate = "";
@@ -1231,7 +1154,6 @@
       }
 
       if (result === "ok" || result === "sent-composer-open") {
-        await settleReplyQuota(quotaReservation, true).catch(() => {});
         if (state.assistantMode === "notifications") {
           try {
             await persistNotificationProcessed(next.id);
@@ -1248,8 +1170,8 @@
         state.total += 1;
         writeSaved({ running: true, total: state.total });
         state.status = state.assistantMode === "notifications"
-          ? `已点赞并回复：${phrase}。最近 2 小时内本次已处理 ${state.total} 条；今日 ${state.dailyReplyCount}/${state.dailyReplyLimit}`
-          : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${currentRoundTarget()}；今日 ${state.dailyReplyCount}/${state.dailyReplyLimit}`;
+          ? `已点赞并回复：${phrase}。最近 2 小时内本次已处理 ${state.total} 条`
+          : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${currentRoundTarget()}`;
         renderPanel();
         if (result === "sent-composer-open") {
           if (state.assistantMode === "notifications" || state.pageCount < currentRoundTarget()) {
@@ -1270,7 +1192,6 @@
           );
         }
       } else {
-        await settleReplyQuota(quotaReservation, false).catch(() => {});
         state.errors += 1;
         state.status = `尚未发送：${failureLabel(result)}。稍后重试同一条`;
         renderPanel();
@@ -1468,6 +1389,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.2</b><span><strong>移除插件每日回复总量限制</strong><small>时间线和通知回复不再被插件的 100 条日额度暂停；继续按随机间隔、随机轮次和周期休息运行。</small></span></article>
                 <article><b>v3.6.1</b><span><strong>重复回复自动换写与界面修复</strong><small>识别 X 的重复内容提示，模板自动换句、AI 自动换写；统一标题栏 SVG 图标，并修复网站把下载错误保存成 deliver.json 的问题。</small></span></article>
                 <article><b>v3.6.0</b><span><strong>随机频率调度与共享每日额度</strong><small>每次生成 3～5 轮随机计划；每轮 25～35 条、每条等待 5～15 秒，执行后休息 2～3 小时。时间线与通知共享每日 100 条插件额度；检测到风控提示会停止全部任务。</small></span></article>
                 <article><b>v3.5.0</b><span><strong>内置文档中心</strong><small>加入官方规则、风控说明、官方链接和最近版本记录。</small></span></article>
@@ -1576,7 +1498,7 @@
                 <span data-xrc-round-meta><small data-xrc-round-meta-label>当前轮次</small><strong data-xrc-round>1/3～5</strong></span>
                 <span data-xrc-page-meta-box><small data-xrc-page-meta-label>本轮次数</small><strong data-xrc-page-meta>0/25～35</strong></span>
                 <span><small>运行时间</small><strong data-xrc-runtime>00:00</strong></span>
-                <span><small>今日插件回复</small><strong data-xrc-daily-replies>0/${REPLY_DAILY_LIMIT}</strong></span>
+                <span><small>本次累计</small><strong data-xrc-run-replies>0 条</strong></span>
               </div>
               <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-round-track>
                 ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `
@@ -1605,7 +1527,7 @@
                     <span><small>每次执行</small><strong>${loopApi.MIN_ROUNDS_PER_RUN}～${loopApi.MAX_ROUNDS_PER_RUN} 轮</strong></span>
                     <span><small>执行后休息</small><strong>${loopApi.MIN_CYCLE_DELAY_HOURS}～${loopApi.MAX_CYCLE_DELAY_HOURS} 小时</strong></span>
                   </div>
-                  <p class="xrc-schedule-note">时间线与通知回复共享每日 ${REPLY_DAILY_LIMIT} 条插件额度；只统计本插件成功发送的回复。</p>
+                  <p class="xrc-schedule-note">插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</p>
                 </section>
               </div>
             </details>
@@ -1733,7 +1655,7 @@
       panel.querySelector("[data-xrc-round]").textContent = notificationMode ? "最近 2 小时" : `${shownRound}/${plannedRounds}`;
       panel.querySelector("[data-xrc-round-title]").textContent = notificationMode ? "最近 2 小时" : `第 ${shownRound} 轮`;
       panel.querySelector("[data-xrc-total]").textContent = notificationMode ? `已处理 ${state.total}` : `${state.total}/${runTarget}`;
-      panel.querySelector("[data-xrc-daily-replies]").textContent = `${state.dailyReplyCount}/${state.dailyReplyLimit}`;
+      panel.querySelector("[data-xrc-run-replies]").textContent = `${state.total} 条`;
       panel.querySelector("[data-xrc-runtime]").textContent = formatRuntime(elapsedRuntimeMs());
       panel.querySelector("[data-xrc-total-percent]").textContent = notificationMode ? "不重复" : `${totalPercent}%`;
       const roundTrack = panel.querySelector("[data-xrc-round-track]");
@@ -1881,7 +1803,6 @@
     const posterSelected = state.assistantMode === "poster";
     const completed = !mutualSelected && !posterSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
     const waitingForNextCycle = !mutualSelected && !posterSelected && state.nextCycleAt > Date.now();
-    const waitingForQuotaReset = !mutualSelected && !posterSelected && state.quotaResetAt > Date.now();
     const reconnecting = !mutualSelected && !posterSelected && state.reconnectAt > Date.now();
     const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : state.status;
     const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
@@ -1907,9 +1828,7 @@
         ? "停止中"
         : state.riskPaused
           ? "风控暂停"
-          : waitingForQuotaReset
-            ? "今日已满"
-            : waitingForNextCycle
+          : waitingForNextCycle
           ? "休息中"
           : reconnecting
             ? "重连中"
@@ -1985,7 +1904,6 @@
     state.elapsedMs = 0;
     state.cycleCount = 0;
     state.nextCycleAt = 0;
-    state.quotaResetAt = 0;
     state.reconnectAt = 0;
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan();
     state.nextReplyDelaySeconds = 0;
@@ -2008,7 +1926,6 @@
     state.startedAt = saved.startedAt;
     state.cycleCount = saved.cycleCount;
     state.nextCycleAt = saved.nextCycleAt;
-    state.quotaResetAt = saved.quotaResetAt;
     state.reconnectAt = saved.reconnectAt;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.runPlan = saved.runPlan;
@@ -2031,7 +1948,6 @@
       removeAssistantModeFromUrl();
     }
     await loadPluginRuntime();
-    await refreshReplyQuota();
     await loadAiSettings();
     await loadNotificationHistory();
     if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
@@ -2074,11 +1990,6 @@
     if (areaName !== "local") return;
     if (changes[PLUGIN_RUNTIME_KEY]) {
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
-    }
-    if (changes[REPLY_DAILY_QUOTA_KEY]) {
-      const quota = changes[REPLY_DAILY_QUOTA_KEY].newValue || {};
-      state.dailyReplyCount = Number(quota.count) || 0;
-      state.dailyReplyLimit = Number(quota.limit) || REPLY_DAILY_LIMIT;
     }
     renderPanel();
   });

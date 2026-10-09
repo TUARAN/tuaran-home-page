@@ -208,31 +208,6 @@ test('creates one persisted-size random execution plan within the configured ran
   assert.equal(loop.randomCycleDelayMs(() => 1), 3 * 60 * 60 * 1000)
 })
 
-test('daily reply quota reserves capacity atomically across task tabs', async () => {
-  const day = background.localDateKey()
-  let savedQuota = { day, count: 99, reservations: {} }
-  globalThis.chrome = {
-    storage: {
-      local: {
-        async get(key) { return { [key]: savedQuota } },
-        async set(value) { savedQuota = value.xrcReplyDailyQuota },
-      },
-    },
-  }
-
-  try {
-    const first = await background.mutateReplyDailyQuota('reserve')
-    assert.equal(first.allowed, true)
-    const blocked = await background.mutateReplyDailyQuota('reserve')
-    assert.equal(blocked.allowed, false)
-    const committed = await background.mutateReplyDailyQuota('commit', first.token)
-    assert.equal(committed.quota.count, 100)
-    assert.equal(Object.keys(committed.quota.reservations).length, 0)
-  } finally {
-    delete globalThis.chrome
-  }
-})
-
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
   assert.equal(loop.isSubmitEnabled(null), false)
   assert.equal(loop.isSubmitEnabled({ disabled: true, getAttribute() { return null } }), false)
@@ -367,7 +342,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.6.1')
+  assert.equal(manifest.version, '3.6.2')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -500,7 +475,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /每条间隔/)
   assert.match(content, /每轮回复/)
-  assert.match(content, /每日 100 条插件额度/)
+  assert.match(content, /插件不设置每日回复总量/)
+  assert.doesNotMatch(content, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota|额度已用完/)
+  assert.doesNotMatch(backgroundSource, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota/)
   assert.match(content, /data-xrc-settings/)
   assert.match(content, /回复方式与随机频率调度/)
   assert.match(content, /data-xrc-collapse/)
@@ -537,8 +514,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.1\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.6\.1'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.2\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.6\.2'/)
   assert.match(resourcePage, /X 互动帮手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -546,6 +523,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /version: '3\.5\.0'/)
   assert.match(resourcePage, /version: '3\.6\.0'/)
   assert.match(resourcePage, /version: '3\.6\.1'/)
+  assert.match(resourcePage, /version: '3\.6\.2'/)
   assert.match(content, /data-xrc-docs-open/)
   assert.match(content, /官方公开规则/)
   assert.match(content, /技术上限不等于安全阈值或使用许可/)
@@ -555,7 +533,6 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /result === "duplicate-reply"/)
   assert.match(content, /forceDraft: true/)
   assert.match(content, /xrc-risk-stop-all/)
-  assert.match(content, /xrc-reply-quota-reserve/)
   assert.match(resourcePage, /version: '3\.1\.2'/)
   assert.match(resourcePage, /version: '3\.1\.1'/)
   assert.match(resourcePage, /version: '3\.1\.0'/)

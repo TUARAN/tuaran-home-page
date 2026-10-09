@@ -27,6 +27,7 @@ const blockedExactNames = new Set([
 const allowedExactNames = new Set([
   '.env.example',
   'output/x-reply-clipboard-extension-v3.6.1.zip',
+  'output/x-reply-clipboard-extension-v3.6.2.zip',
   'public/resources/liang-wenfeng-investor-meeting/liang-wenfeng-investor-meeting-transcript.pdf',
   'public/resources/ethereum-whitepaper/Ethereum_Whitepaper_Buterin_2014.pdf',
   'public/resources/jianguo-fanglye/NLC416-01jh003731-18241-jianguo-fanglye.pdf',

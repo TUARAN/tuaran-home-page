@@ -7,12 +7,8 @@ const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
-const REPLY_DAILY_QUOTA_KEY = "xrcReplyDailyQuota";
-const REPLY_DAILY_LIMIT = 100;
-const REPLY_RESERVATION_TTL_MS = 10 * 60 * 1000;
 const TASK_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 let runtimeMutation = Promise.resolve();
-let replyQuotaMutation = Promise.resolve();
 
 const REPLY_SYSTEM_PROMPT = [
   "你是 X（Twitter）中文互动回复助手。",
@@ -344,59 +340,6 @@ async function removeRuntimeTab(tabId) {
   await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
 }
 
-function localDateKey(timestamp = Date.now()) {
-  const date = new Date(timestamp);
-  const pair = (value) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pair(date.getMonth() + 1)}-${pair(date.getDate())}`;
-}
-
-function nextLocalDayStart(timestamp = Date.now()) {
-  const date = new Date(timestamp);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
-}
-
-async function readReplyDailyQuota(now = Date.now()) {
-  const stored = await chrome.storage.local.get(REPLY_DAILY_QUOTA_KEY);
-  const raw = stored?.[REPLY_DAILY_QUOTA_KEY] || {};
-  const day = localDateKey(now);
-  const reservations = raw.day === day && raw.reservations && typeof raw.reservations === "object"
-    ? Object.fromEntries(Object.entries(raw.reservations).filter(([, createdAt]) => now - Number(createdAt) < REPLY_RESERVATION_TTL_MS))
-    : {};
-  const quota = {
-    day,
-    count: raw.day === day ? Math.max(0, Number(raw.count) || 0) : 0,
-    reservations,
-    limit: REPLY_DAILY_LIMIT,
-    resetAt: nextLocalDayStart(now)
-  };
-  await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
-  return quota;
-}
-
-function mutateReplyDailyQuota(action, token = "") {
-  const mutate = async () => {
-    const quota = await readReplyDailyQuota();
-    const reservationToken = String(token || "");
-    if (action === "reserve") {
-      if (quota.count + Object.keys(quota.reservations).length >= quota.limit) {
-        return { ok: true, allowed: false, quota };
-      }
-      const createdToken = `reply_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      quota.reservations[createdToken] = Date.now();
-      await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
-      return { ok: true, allowed: true, token: createdToken, quota };
-    }
-    if (reservationToken && quota.reservations[reservationToken]) {
-      delete quota.reservations[reservationToken];
-      if (action === "commit") quota.count = Math.min(quota.limit, quota.count + 1);
-      await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
-    }
-    return { ok: true, quota };
-  };
-  replyQuotaMutation = replyQuotaMutation.then(mutate, mutate);
-  return replyQuotaMutation;
-}
-
 async function stopAllTaskTabs(reason) {
   const tabs = await readTaskTabs();
   const tabIds = [...new Set(Object.values(tabs).map(Number).filter(Number.isInteger))];
@@ -445,19 +388,6 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
       return true;
     }
-    if (message?.type === "xrc-reply-quota-get") {
-      readReplyDailyQuota()
-        .then((quota) => sendResponse({ ok: true, quota }))
-        .catch((error) => sendResponse({ ok: false, error: error?.message || "每日回复额度读取失败" }));
-      return true;
-    }
-    if (message?.type === "xrc-reply-quota-reserve" || message?.type === "xrc-reply-quota-commit" || message?.type === "xrc-reply-quota-release") {
-      const action = message.type.replace("xrc-reply-quota-", "");
-      mutateReplyDailyQuota(action, message.token)
-        .then(sendResponse)
-        .catch((error) => sendResponse({ ok: false, error: error?.message || "每日回复额度更新失败" }));
-      return true;
-    }
     if (message?.type === "xrc-risk-stop-all") {
       stopAllTaskTabs(message.reason)
         .then(sendResponse)
@@ -486,17 +416,12 @@ if (typeof module === "object" && module.exports) {
     focusTaskTab,
     readPluginRuntime,
     updatePluginRuntime,
-    readReplyDailyQuota,
-    mutateReplyDailyQuota,
-    localDateKey,
-    nextLocalDayStart,
     stopAllTaskTabs,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,
     REPLY_SYSTEM_PROMPT,
     POST_SYSTEM_PROMPT,
     DEEPSEEK_MODEL,
-    REQUEST_TIMEOUT_MS,
-    REPLY_DAILY_LIMIT
+    REQUEST_TIMEOUT_MS
   };
 }

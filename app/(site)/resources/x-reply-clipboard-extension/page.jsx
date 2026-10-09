@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.6.1'
+const VERSION = '3.6.2'
 
 const title = 'X 互动帮手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X 互动帮手：一个扩展完成时间线回复、通知�
 
 const VERSION_HISTORY = [
   {
+    version: '3.6.2',
+    title: '移除插件每日回复总量限制',
+    description: '时间线回复与通知回复不再共享插件自设的每日 100 条额度，也不会等到次日才恢复。随机回复间隔、随机轮次、执行后休息、通知去重和 X 风控提示停机机制继续保留。',
+    current: true,
+  },
+  {
     version: '3.6.1',
     title: '重复回复自动换写、标题栏与下载修复',
     description: '识别 X 的重复内容提示：模板随机会切换下一句，AI 模式会避开被拒绝的文案重新生成并替换评论框。标题栏按钮统一改为 SVG；下载按钮只保存真正的 ZIP，接口错误改为页面中文提示。',
-    current: true,
   },
   {
     version: '3.6.0',
@@ -396,7 +401,7 @@ export default function XReplyClipboardResourcePage() {
             每次执行先抽取 3～5 轮，每轮分别抽取 25～35 条；每次回复成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
           </FeatureCard>
           <FeatureCard title="通知：最近 2 小时" index={4}>
-            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后随机休息 2～3 小时再扫描。成功记录持久去重，并与时间线共享每日 100 条插件回复额度。
+            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后随机休息 2～3 小时再扫描。成功记录持久去重，插件不设置每日回复总量。
           </FeatureCard>
           <FeatureCard title="推文浇给：25～35 分钟一条" index={5}>
             DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行；确认发送成功后随机等待 25～35 分钟再生成下一条。

@@ -117,6 +117,7 @@ const blockedExactNames = new Set([
 ])
 const allowedExactNames = new Set([
   'output/x-reply-clipboard-extension-v3.6.1.zip',
+  'output/x-reply-clipboard-extension-v3.6.2.zip',
 ])
 const blockedExtensions = new Set(['.db', '.sqlite', '.sqlite3', '.pem', '.key', '.p12'])
 const trackedFiles = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean)

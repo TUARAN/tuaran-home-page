@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "protal待办处理助手",
+  "version": "0.1.0",
+  "description": "在当前办公门户页面逐项执行：打开待办、一键提交、最终提交。",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "打开 protal待办处理助手"
+  }
+}

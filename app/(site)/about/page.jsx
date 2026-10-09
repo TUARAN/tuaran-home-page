@@ -497,7 +497,7 @@ export default function AboutPage() {
             {OPENCLAW_ACHIEVEMENT_COUNT} 次贡献已合并至 OpenClaw 主分支
           </h2>
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
-            截至 2026 年 8 月，共有 {OPENCLAW_ACHIEVEMENT_COUNT} 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main，其中已明确关联并关闭 {OPENCLAW_RESOLVED_ISSUES.length} 个 issue（{OPENCLAW_RESOLVED_ISSUES.map((issue) => `#${issue.number}`).join('、')}）。每项记录均链接到公开的 GitHub PR 与合并截图。
+            截至 2026 年 10 月，共有 {OPENCLAW_ACHIEVEMENT_COUNT} 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main，其中已明确关联并关闭 {OPENCLAW_RESOLVED_ISSUES.length} 个 issue（{OPENCLAW_RESOLVED_ISSUES.map((issue) => `#${issue.number}`).join('、')}）。每项记录均链接到公开的 GitHub PR 与合并截图。
           </p>
 
           <OpenClawAchievementsCarousel achievements={OPENCLAW_ACHIEVEMENTS} />

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>X reply loop fixture</title>
-  <link rel="stylesheet" href="../content.css?v=1.4.0" />
+  <link rel="stylesheet" href="../content.css?v=2.0.0" />
 </head>
 <body>
   <p id="result">RUNNING</p>
@@ -11,6 +11,7 @@
   <main data-testid="primaryColumn">
     <article data-testid="tweet" id="tweet-123">
       <a href="/tester/status/123"><time>now</time></a>
+      <div data-testid="tweetText">每天上 X 都是一个新的开始，感觉就是一次轮回。</div>
       <button data-testid="reply" type="button">Comment</button>
     </article>
     <article data-testid="tweet" id="tweet-124">
@@ -19,13 +20,14 @@
     </article>
     <article data-testid="tweet" id="tweet-125">
       <a href="/another_user/status/125"><time>now</time></a>
+      <div data-testid="tweetText">认真记录一些普通但值得记住的时刻。</div>
       <button data-testid="reply" type="button">Comment</button>
     </article>
   </main>
 
-  <script src="../draftFill.js?v=1.4.0"></script>
-  <script src="../phrases.js?v=1.4.0"></script>
-  <script src="../loop.js?v=1.4.0"></script>
+  <script src="../draftFill.js?v=2.0.0"></script>
+  <script src="../phrases.js?v=2.0.0"></script>
+  <script src="../loop.js?v=2.0.0"></script>
   <script>
     function Style() {}
     Style.prototype.clear = function () { return new Style() }
@@ -191,14 +193,14 @@
         running: false,
         total: 0,
         replyIntervalSeconds: 2,
-        roundIntervalSeconds: 10,
+        roundIntervalSeconds: 5,
         phraseIndex: 48,
         phraseStore: 4
       }))
       openDialog("")
     }
   </script>
-  <script src="../content.js?v=1.4.0"></script>
+  <script src="../content.js?v=2.0.0"></script>
   <script>
     window.setTimeout(function () {
       document.querySelector("[data-xrc-toggle]").click()

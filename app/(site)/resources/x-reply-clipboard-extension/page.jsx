@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '1.4.0'
+const VERSION = '2.0.0'
 
 const title = 'X 时间线回复助手：按时间线打开评论并发送'
 const description =
@@ -152,13 +152,13 @@ export default function XReplyClipboardResourcePage() {
             从当前时间线最上面的帖子开始，点评论图标，等弹窗出现。
           </FeatureCard>
           <FeatureCard title="随机话术">
-            从插件内置的 100 条完整话术里随机抽一条，写进评论框。话术以认可、感谢、支持、观察和学习为主，约四成带自然的 Emoji 点缀，不再使用纯图标与单字回复。面板默认展开话术池，当前话术会高亮并随切换平滑滚动。发出去之后才换下一条，下一条不会和刚用过的那句相同。
+            默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
           <FeatureCard title="35 条 × 5 轮">
-            每轮成功 35 条，共执行 5 轮。面板分别展示当前轮与本次执行，并可设置每条回复、每轮之间的间隔；完成 175 条后自动停止。
+            每条回复后默认等待 2 秒；每轮成功 35 条后默认等待 5 秒，共执行 5 轮。面板用编号分区和步骤说明展示当前轮、本次执行与回复速度；支持折叠成迷你状态条或放大查看，完成 175 条后自动停止。
           </FeatureCard>
           <FeatureCard title="只在本机运行">
-            插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。
+            插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。
           </FeatureCard>
         </div>
 
@@ -172,7 +172,7 @@ export default function XReplyClipboardResourcePage() {
         </ol>
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
-          开始前可在「当前轮」区域设置每条回复间隔和每轮之间间隔，默认分别为 5 秒和 60 秒。这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。每次成功回复会换成另一条话术。
+          开始前可选择“模板随机”或“AI 模式”，并设置每条回复间隔和每轮之间间隔，默认分别为 2 秒和 5 秒。AI 模式需要先保存 DeepSeek API Key 并通过连接测试；Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。
           插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
           如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
           如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。

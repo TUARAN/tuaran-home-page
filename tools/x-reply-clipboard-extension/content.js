@@ -13,11 +13,11 @@
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
   const RUN_SIZE = loopApi.RUN_SIZE;
-  const DEFAULT_REPLY_INTERVAL_SECONDS = 5;
-  const DEFAULT_ROUND_INTERVAL_SECONDS = 60;
+  const DEFAULT_REPLY_INTERVAL_SECONDS = 2;
+  const DEFAULT_ROUND_INTERVAL_SECONDS = 5;
   const MIN_REPLY_INTERVAL_SECONDS = 2;
   const MAX_REPLY_INTERVAL_SECONDS = 300;
-  const MIN_ROUND_INTERVAL_SECONDS = 10;
+  const MIN_ROUND_INTERVAL_SECONDS = 5;
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 6000;
   const SUBMIT_TIMEOUT_MS = 15000;
@@ -26,7 +26,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "1.4.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "2.0.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -39,6 +39,15 @@
     elapsedMs: 0,
     replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
+    panelView: "normal",
+    replyMode: "template",
+    aiKeySaved: false,
+    aiConnectionVerified: false,
+    aiKeyHint: "",
+    aiStatus: "尚未配置 DeepSeek API Key",
+    pendingReply: "",
+    pendingTweetId: "",
+    lastReply: "",
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
     phraseIndex: null,
@@ -56,6 +65,78 @@
     return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
   }
 
+  function validPanelView(value) {
+    return ["normal", "collapsed", "expanded"].includes(value) ? value : "normal";
+  }
+
+  function validReplyMode(value) {
+    return value === "ai" ? "ai" : "template";
+  }
+
+  async function loadAiSettings() {
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get("xrcAiSettings");
+      const settings = stored?.xrcAiSettings || {};
+      const apiKey = String(settings.apiKey || "").trim();
+      state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
+      state.aiKeySaved = Boolean(apiKey);
+      state.aiConnectionVerified = Boolean(apiKey && settings.connectionVerified);
+      state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
+      state.aiStatus = apiKey
+        ? `${state.aiKeyHint}，${state.aiConnectionVerified ? "连接已验证" : "请测试连接"}`
+        : "尚未配置 DeepSeek API Key";
+    } catch (error) {
+      state.aiStatus = "读取 AI 配置失败";
+    }
+  }
+
+  async function saveAiSettings(apiKey) {
+    const key = String(apiKey || "").trim();
+    if (!key) throw new Error("请输入 DeepSeek API Key");
+    if (!globalThis.chrome?.storage?.local) throw new Error("当前环境无法保存扩展配置");
+    await chrome.storage.local.set({ xrcAiSettings: { apiKey: key, replyMode: state.replyMode, connectionVerified: false } });
+    state.aiKeySaved = true;
+    state.aiConnectionVerified = false;
+    state.aiKeyHint = `已保存 ····${key.slice(-4)}`;
+    state.aiStatus = `${state.aiKeyHint}，可以测试连接`;
+  }
+
+  async function persistReplyMode() {
+    if (!globalThis.chrome?.storage?.local) return;
+    const stored = await chrome.storage.local.get("xrcAiSettings");
+    const settings = stored?.xrcAiSettings || {};
+    await chrome.storage.local.set({ xrcAiSettings: { ...settings, replyMode: state.replyMode } });
+  }
+
+  async function setAiConnectionVerified(verified) {
+    const stored = await chrome.storage.local.get("xrcAiSettings");
+    const settings = stored?.xrcAiSettings || {};
+    await chrome.storage.local.set({ xrcAiSettings: { ...settings, connectionVerified: Boolean(verified) } });
+    state.aiConnectionVerified = Boolean(verified);
+  }
+
+  function sendAiMessage(type, postText = "") {
+    return new Promise((resolve, reject) => {
+      if (!globalThis.chrome?.runtime?.sendMessage) {
+        reject(new Error("AI 服务只在已安装的 Chrome 扩展中可用"));
+        return;
+      }
+      chrome.runtime.sendMessage({ type, postText }, (response) => {
+        const runtimeError = chrome.runtime.lastError;
+        if (runtimeError) {
+          reject(new Error(runtimeError.message || "无法连接扩展 AI 服务"));
+          return;
+        }
+        if (!response?.ok) {
+          reject(new Error(response?.error || "DeepSeek 请求失败"));
+          return;
+        }
+        resolve(String(response.reply || "").trim());
+      });
+    });
+  }
+
   function savedDefaults() {
     return {
       running: false,
@@ -66,7 +147,11 @@
       phraseIndex: null,
       processedIds: [],
       replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
-      roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS
+      roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
+      panelView: "normal",
+      replyMode: "template",
+      pendingReply: "",
+      pendingTweetId: ""
     };
   }
 
@@ -85,6 +170,10 @@
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         replyIntervalSeconds: clampInterval(parsed.replyIntervalSeconds, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
+        panelView: validPanelView(parsed.panelView),
+        replyMode: validReplyMode(parsed.replyMode),
+        pendingReply: String(parsed.pendingReply || ""),
+        pendingTweetId: String(parsed.pendingTweetId || ""),
         phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null,
         processedIds: Array.isArray(parsed.processedIds)
           ? parsed.processedIds.filter((id) => /^\d+$/.test(String(id))).map(String).slice(-RUN_SIZE)
@@ -106,6 +195,10 @@
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
+        panelView: state.panelView,
+        replyMode: state.replyMode,
+        pendingReply: state.pendingReply,
+        pendingTweetId: state.pendingTweetId,
         processedIds: Array.from(processedIds).slice(-RUN_SIZE),
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -124,6 +217,10 @@
         startedAt: null,
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
+        panelView: state.panelView,
+        replyMode: state.replyMode,
+        pendingReply: "",
+        pendingTweetId: "",
         processedIds: [],
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -378,9 +475,10 @@
     return null;
   }
 
-  async function publishReply(composer) {
+  async function publishReply(composer, replyText) {
     if (state.stopping) return "stopped";
-    const phrase = currentPhrase();
+    const phrase = String(replyText || "").trim();
+    if (!phrase) return "compose-failed";
     const existing = loopApi.composerText(composer.textbox);
     const filled = loopApi.normalizePhraseText(existing) === loopApi.normalizePhraseText(phrase)
       ? phrase
@@ -437,11 +535,17 @@
     return "ok";
   }
 
-  async function replyOnce(tweet) {
+  async function replyOnce(tweet, replyText) {
     const existingComposer = findDialogComposer();
     if (existingComposer) {
       const existingText = loopApi.composerText(existingComposer.textbox);
-      if (!existingText) return publishReply(existingComposer);
+      if (!existingText) return publishReply(existingComposer, replyText);
+      if (state.replyMode === "ai") {
+        if (loopApi.normalizePhraseText(existingText) !== loopApi.normalizePhraseText(replyText)) {
+          return "composer-already-open";
+        }
+        return publishReply(existingComposer, replyText);
+      }
       const existingPhraseIndex = loopApi.phraseIndexFromText(phrases, existingText);
       if (existingPhraseIndex >= 0) {
         state.phraseIndex = existingPhraseIndex;
@@ -458,7 +562,7 @@
           }
         }
       }
-      return publishReply(existingComposer);
+      return publishReply(existingComposer, currentPhrase());
     }
     if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
     tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
@@ -467,7 +571,7 @@
     const composer = await openComposer(tweet);
     if (!composer) return "no-composer";
 
-    const result = await publishReply(composer);
+    const result = await publishReply(composer, replyText);
     if (result !== "ok" && result !== "stopped" && result !== "sent-composer-open" && loopApi.composerText(composer.textbox)) {
       return "send-unconfirmed";
     }
@@ -555,10 +659,43 @@
       }
 
       stalled = 0;
-      const phrase = currentPhrase();
-      state.status = `正在回复：${phrase}`;
+      let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
+      if (state.replyMode === "ai") {
+        if (findDialogComposer() && !(state.pendingTweetId === next.id && state.pendingReply)) {
+          state.status = "AI 模式检测到手动打开的评论弹窗。请关闭弹窗后再开始，避免回复错帖子。";
+          return "give-up";
+        }
+        const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
+        if (!postText) {
+          processedIds.add(next.id);
+          state.status = "AI 模式已跳过一条没有文字内容的帖子";
+          renderPanel();
+          continue;
+        }
+        if (state.pendingTweetId === next.id && state.pendingReply) {
+          phrase = state.pendingReply;
+        } else {
+          state.status = "AI 正在阅读原帖并生成回复…";
+          renderPanel();
+          try {
+            phrase = await sendAiMessage("xrc-ai-generate", postText);
+            state.pendingReply = phrase;
+            state.pendingTweetId = next.id;
+            state.lastReply = phrase;
+            writeSaved({ running: true, total: state.total });
+          } catch (error) {
+            state.errors += 1;
+            state.aiStatus = error?.message || "DeepSeek 生成失败";
+            state.status = `AI 生成失败：${state.aiStatus}。3 秒后重试`;
+            renderPanel();
+            await sleepActive(3000);
+            continue;
+          }
+        }
+      }
+      state.status = state.replyMode === "ai" ? `AI 已生成：${phrase}` : `正在回复：${phrase}`;
       renderPanel();
-      const result = await replyOnce(next);
+      const result = await replyOnce(next, phrase);
       if (result === "stopped") break;
       if (result === "composer-already-open") {
         state.status = failureLabel(result);
@@ -568,7 +705,9 @@
 
       if (result === "ok" || result === "sent-composer-open") {
         processedIds.add(next.id);
-        advancePhrase();
+        if (state.replyMode === "template") advancePhrase();
+        state.pendingReply = "";
+        state.pendingTweetId = "";
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
@@ -631,20 +770,31 @@
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
               <div class="xrc-title">时间线回复助手</div>
-              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 自动发送 · 35 条 × 5 轮</div>
+              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 模板随机 / DeepSeek AI</div>
             </div>
           </div>
           <div class="xrc-header-actions">
             <div class="xrc-state"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
+            <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
+            <button class="xrc-view-button" type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板">—</button>
+            <button class="xrc-view-button" type="button" data-xrc-expand aria-label="放大面板" title="放大面板">⤢</button>
             <button class="xrc-close" type="button" aria-label="关闭">×</button>
           </div>
         </div>
         <div class="xrc-body">
           <div class="xrc-status" role="status"></div>
+          <section class="xrc-guide" aria-label="执行规则">
+            <div class="xrc-guide-title"><span>一眼看懂</span><strong>插件会按下面顺序自动循环</strong></div>
+            <div class="xrc-guide-steps">
+              <div><span class="xrc-step-number">1</span><span><strong>发送一条回复</strong><small>然后等待 <b data-xrc-guide-reply>2</b> 秒</small></span></div>
+              <div><span class="xrc-step-number">2</span><span><strong>满 35 条算一轮</strong><small>轮间等待 <b data-xrc-guide-round>5</b> 秒</small></span></div>
+              <div><span class="xrc-step-number">3</span><span><strong>完成 5 轮后停止</strong><small>一次共发送 175 条</small></span></div>
+            </div>
+          </section>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-run-section">
               <div class="xrc-level-head">
-                <div><span class="xrc-level-kicker">本次执行</span><strong>5 轮 · 175 条</strong></div>
+                <div><span class="xrc-level-kicker"><b>①</b> 本次执行</span><strong>完整任务：5 轮，共 175 条</strong></div>
                 <strong class="xrc-level-count" data-xrc-total>0/${RUN_SIZE}</strong>
               </div>
               <div class="xrc-run-meta">
@@ -656,18 +806,37 @@
             </section>
             <section class="xrc-level-card xrc-round-section">
               <div class="xrc-level-head">
-                <div><span class="xrc-level-kicker" data-xrc-round-title>当前第 1 轮</span><strong>本轮 35 条</strong></div>
+                <div><span class="xrc-level-kicker"><b>②</b> <span data-xrc-round-title>当前第 1 轮</span></span><strong>这一轮需要成功回复 35 条</strong></div>
                 <strong class="xrc-level-count" data-xrc-page>0/${BATCH_SIZE}</strong>
               </div>
               <div class="xrc-progress-row"><span>本轮进度</span><span data-xrc-page-percent>0%</span></div>
               <div class="xrc-progress"><span data-xrc-page-bar></span></div>
+            </section>
+            <section class="xrc-level-card xrc-mode-section">
+              <div class="xrc-level-head"><div><span class="xrc-level-kicker"><b>③</b> 回复方式</span><strong>模板随机无需配置；AI 会根据原帖生成</strong></div></div>
+              <div class="xrc-mode-tabs" role="group" aria-label="回复方式">
+                <button type="button" data-xrc-mode="template"><strong>模板随机</strong><span>从 100 条话术中随机选择</span></button>
+                <button type="button" data-xrc-mode="ai"><strong>AI 模式</strong><span>DeepSeek 阅读原帖后生成</span></button>
+              </div>
+              <div class="xrc-ai-config">
+                <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-ai-key></label>
+                <div class="xrc-ai-actions">
+                  <button type="button" data-xrc-ai-save>保存 Key</button>
+                  <button type="button" data-xrc-ai-test>测试连接</button>
+                </div>
+                <div class="xrc-ai-status" data-xrc-ai-status>尚未配置 DeepSeek API Key</div>
+                <div class="xrc-ai-privacy">AI 模式会把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。</div>
+              </div>
+            </section>
+            <section class="xrc-level-card xrc-speed-section">
+              <div class="xrc-level-head"><div><span class="xrc-level-kicker"><b>④</b> 回复速度</span><strong>开始前可调整；运行中会锁定</strong></div></div>
               <div class="xrc-rate-controls" aria-label="频率限制">
-                <label class="xrc-rate-control"><span>每条回复间隔</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
-                <label class="xrc-rate-control"><span>每轮之间间隔</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
+                <label class="xrc-rate-control"><span>每条回复后等多久</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
+                <label class="xrc-rate-control"><span>每轮完成后等多久</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
               </div>
             </section>
           </div>
-          <div class="xrc-phrase-row"><span>当前话术</span><strong data-xrc-phrase></strong></div>
+          <div class="xrc-phrase-row"><span><b>⑤</b> <span data-xrc-reply-label>当前话术</span></span><strong data-xrc-phrase></strong></div>
           <details class="xrc-phrase-pool" open>
             <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
             <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
@@ -697,6 +866,56 @@
         panel.remove();
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
+        state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
+        writeSaved({ running: state.running, total: state.total });
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-expand]").addEventListener("click", () => {
+        state.panelView = state.panelView === "expanded" ? "normal" : "expanded";
+        writeSaved({ running: state.running, total: state.total });
+        renderPanel();
+      });
+      panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          if (state.running || state.loopPromise) return;
+          state.replyMode = validReplyMode(button.dataset.xrcMode);
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          writeSaved({ running: false, total: state.total });
+          try {
+            await persistReplyMode();
+          } catch (error) {
+            state.aiStatus = "回复方式保存失败，但当前页面仍可使用";
+          }
+          renderPanel();
+        });
+      });
+      panel.querySelector("[data-xrc-ai-save]").addEventListener("click", async () => {
+        const input = panel.querySelector("[data-xrc-ai-key]");
+        state.aiStatus = "正在保存…";
+        renderPanel();
+        try {
+          await saveAiSettings(input.value);
+          input.value = "";
+        } catch (error) {
+          state.aiStatus = error?.message || "保存失败";
+        }
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-ai-test]").addEventListener("click", async () => {
+        state.aiStatus = "正在测试 DeepSeek 连接…";
+        renderPanel();
+        try {
+          await setAiConnectionVerified(false);
+          await sendAiMessage("xrc-ai-test");
+          await setAiConnectionVerified(true);
+          state.aiStatus = `${state.aiKeyHint || "API Key"}，连接成功`;
+        } catch (error) {
+          state.aiStatus = `连接失败：${error?.message || "未知错误"}`;
+        }
+        renderPanel();
+      });
       panel.querySelector("[data-xrc-reply-interval]").addEventListener("change", (event) => {
         state.replyIntervalSeconds = clampInterval(event.currentTarget.value, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS);
         event.currentTarget.value = String(state.replyIntervalSeconds);
@@ -729,10 +948,26 @@
       const roundIntervalInput = panel.querySelector("[data-xrc-round-interval]");
       if (document.activeElement !== replyIntervalInput) replyIntervalInput.value = String(state.replyIntervalSeconds);
       if (document.activeElement !== roundIntervalInput) roundIntervalInput.value = String(state.roundIntervalSeconds);
+      panel.querySelector("[data-xrc-guide-reply]").textContent = String(state.replyIntervalSeconds);
+      panel.querySelector("[data-xrc-guide-round]").textContent = String(state.roundIntervalSeconds);
+      panel.querySelector("[data-xrc-mini-progress]").textContent = `第 ${shownRound} 轮 · ${state.pageCount}/${BATCH_SIZE}`;
       replyIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
       roundIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
-      const phrase = currentPhrase();
+      const phrase = state.replyMode === "ai"
+        ? (state.pendingReply || state.lastReply || "读取原帖后自动生成")
+        : currentPhrase();
       panel.querySelector("[data-xrc-phrase]").textContent = phrase;
+      panel.querySelector("[data-xrc-reply-label]").textContent = state.replyMode === "ai" ? "当前 AI 回复" : "当前话术";
+      panel.querySelector("[data-xrc-ai-status]").textContent = state.aiStatus;
+      const aiKeyInput = panel.querySelector("[data-xrc-ai-key]");
+      aiKeyInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
+      aiKeyInput.disabled = Boolean(state.loopPromise) || state.running;
+      panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.xrcMode === state.replyMode);
+        button.disabled = Boolean(state.loopPromise) || state.running;
+      });
+      panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
+      panel.querySelector("[data-xrc-ai-test]").disabled = !state.aiKeySaved || Boolean(state.loopPromise) || state.running;
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
       const activePhrase = panel.querySelector(`[data-xrc-phrase-index="${state.phraseIndex}"]`);
       if (activePhrase && (highlightedPhraseIndex !== state.phraseIndex || !activePhrase.classList.contains("is-active"))) {
@@ -752,7 +987,17 @@
     }
     const active = Boolean(state.loopPromise) || state.running;
     const completed = state.completedRounds >= ROUNDS_PER_RUN;
-    const failed = /(?:尚未|无法|没有发出|不可用)/.test(state.status);
+    const failed = /(?:尚未|无法|没有发出|不可用|失败|需要先)/.test(state.status);
+    panel.dataset.view = state.panelView;
+    panel.dataset.replyMode = state.replyMode;
+    const collapseButton = panel.querySelector("[data-xrc-collapse]");
+    const expandButton = panel.querySelector("[data-xrc-expand]");
+    collapseButton.textContent = state.panelView === "collapsed" ? "▣" : "—";
+    collapseButton.setAttribute("aria-label", state.panelView === "collapsed" ? "展开面板" : "折叠面板");
+    collapseButton.title = state.panelView === "collapsed" ? "展开面板" : "折叠面板";
+    expandButton.textContent = state.panelView === "expanded" ? "⤡" : "⤢";
+    expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
+    expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
     panel.dataset.state = state.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) stateLabel.textContent = state.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
@@ -788,8 +1033,18 @@
     if (state.loopPromise) {
       state.stopping = true;
       state.running = false;
+      state.pendingReply = "";
+      state.pendingTweetId = "";
       clearSaved();
       state.status = "正在停止，当前这一条结束后停下";
+      renderPanel();
+      return;
+    }
+    if (state.replyMode === "ai" && (!state.aiKeySaved || !state.aiConnectionVerified)) {
+      state.status = state.aiKeySaved
+        ? "AI 模式需要先通过连接测试，再开始运行"
+        : "AI 模式需要先填写并保存 DeepSeek API Key，再测试连接";
+      state.aiStatus = state.aiKeySaved ? "请先点击“测试连接”" : "请先保存 API Key";
       renderPanel();
       return;
     }
@@ -799,11 +1054,14 @@
     state.startedAt = null;
     state.elapsedMs = 0;
     state.errors = 0;
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    state.lastReply = "";
     processedIds.clear();
     begin({ resume: false });
   }
 
-  function boot() {
+  async function boot() {
     const saved = readSaved();
     state.total = saved.total;
     state.pageCount = saved.pageCount;
@@ -811,10 +1069,15 @@
     state.startedAt = saved.startedAt;
     state.replyIntervalSeconds = saved.replyIntervalSeconds;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
+    state.panelView = saved.panelView;
+    state.replyMode = saved.replyMode;
+    state.pendingReply = saved.pendingReply;
+    state.pendingTweetId = saved.pendingTweetId;
     state.elapsedMs = 0;
     processedIds.clear();
     for (const id of saved.processedIds) processedIds.add(id);
     state.phraseIndex = saved.phraseIndex;
+    await loadAiSettings();
     renderPanel();
     if (saved.running) {
       begin({ resume: true });

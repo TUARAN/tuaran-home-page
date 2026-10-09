@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const sourceDir = path.join(projectRoot, 'tools', 'oa-batch-submit-extension')
 const outputDir = path.join(projectRoot, 'output')
@@ -17,6 +17,7 @@ const PACKAGE_FILES = [
   'manifest.json',
   'background.js',
   'automation-core.js',
+  'canvas-vision.js',
   'content.js',
   'README.md',
 ]

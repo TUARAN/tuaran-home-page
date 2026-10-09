@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'protal-todo-assistant'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Aprotal-todo-assistant&file=extension-zip'
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 
 const title = 'protal待办处理助手：逐项完成办公门户待办提交'
 const description =
@@ -67,11 +67,11 @@ export default function ProtalTodoAssistantResourcePage() {
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
           在办公门户待办列表里逐条完成固定操作：打开标题、点击“一键提交”、在弹窗中点击最终“提交”，确认回到列表后再处理下一条。
-          所有动作都在当前浏览器标签页本地执行。
+          普通网页使用 DOM 定位；远程办公页面绘制在 Canvas 时，通过三步校准、视觉模板匹配和真实鼠标输入完成操作。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['办公门户', '待办处理', 'Chrome / Edge', '单步验收', '超时停止', '本地运行'].map((tag) => (
+          {['办公门户', 'Canvas 视觉识别', 'Chrome / Edge', '单步验收', '超时停止', '本地运行'].map((tag) => (
             <span key={tag} className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
               {tag}
             </span>
@@ -116,6 +116,7 @@ export default function ProtalTodoAssistantResourcePage() {
           <FeatureCard title="两级提交">先等待详情页的一键提交按钮，再等待弹窗内文案严格等于“提交”的按钮。</FeatureCard>
           <FeatureCard title="确认闭环">两个提交按钮消失且待办列表重新可见后，才把当前条目标记为完成。</FeatureCard>
           <FeatureCard title="异常即停">页面结构变化、按钮未出现或返回列表超时，都会停止批次并保留当前页面供人工检查。</FeatureCard>
+          <FeatureCard title="Canvas 自适应">远程页面使用相对坐标和按钮视觉模板；窗口缩放后重新识别，宽高比变化超过安全范围时停止。</FeatureCard>
         </div>
 
         <h2>安装与使用</h2>
@@ -124,7 +125,8 @@ export default function ProtalTodoAssistantResourcePage() {
           <li>Chrome 打开 <code>chrome://extensions/</code>；Edge 打开 <code>edge://extensions/</code>。</li>
           <li>开启开发者模式，点击“加载已解压的扩展程序”，选择解压目录。</li>
           <li>登录办公门户并进入待办列表，点击浏览器工具栏中的插件图标。</li>
-          <li>第一次先点“单步一条”；核对真实流程完成后，再使用“连续开始”。</li>
+          <li>检测到 Canvas 时，先点击“校准 Canvas”，按提示依次点击第一条标题、“一键提交”和最终“提交”。校准会真实处理一条待办。</li>
+          <li>校准完成后先点“单步一条”；核对真实流程完成后，再使用“连续开始”。</li>
         </ol>
 
         <h2>权限与安全边界</h2>
@@ -133,7 +135,8 @@ export default function ProtalTodoAssistantResourcePage() {
           <li>插件不读取或保存正文、附件、联系人信息和登录凭据。</li>
           <li>标签页进入后台时暂停，回到前台后继续。</li>
           <li>默认单次最多处理 20 条，可调整为 1–200 条。</li>
-          <li>当前版本适用于详情和提交弹窗处于同一标签页的页面结构；新窗口、跨域 iframe 或改版后的流程会超时停止。</li>
+          <li>Canvas 模式需要浏览器的调试权限发送真实鼠标输入；执行时不要同时打开该标签页的开发者工具。</li>
+          <li>Canvas 宽高比变化超过 8%、视觉匹配置信度不足或页面流程改版时会停止并要求重新校准。</li>
         </ul>
 
         <div className="not-prose mt-8 flex flex-wrap items-center gap-3 border-t border-[#eee] pt-6 dark:border-gray-800">

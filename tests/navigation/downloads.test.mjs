@@ -11,6 +11,7 @@ import {
 } from '../../lib/downloadItems.js'
 import { getLegacyPathRedirect } from '../../lib/indexingPolicy.js'
 import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { getToolDeliveryGroup, TOOL_ITEMS } from '../../lib/toolItems.js'
 
 const root = new URL('../../', import.meta.url)
 
@@ -33,22 +34,10 @@ test('tools is the single public directory for online and downloadable tools', a
 
 test('download compatibility exports are derived from the unified tools catalog', () => {
   const hrefs = DOWNLOAD_ITEMS.map((item) => item.href)
-  assert.deepEqual(
-    [...hrefs].sort(),
-    [
-      '/resources/2aran-desktop',
-      '/resources/codex-model-switcher',
-      '/resources/x-article-autopublisher-extension',
-      '/resources/x-clipboard-phrase',
-      '/resources/x-mutual-cleaner-extension',
-      '/resources/x-reply-clipboard-extension',
-      '/resources/x-tweet-to-pdf-extension',
-      '/tools/syncblog-publisher',
-      '/tools/workbuddy-desktop-pet',
-    ],
-  )
-  assert.equal(getDownloadItemsByType('extension').length, 5)
-  assert.equal(getDownloadItemsByType('desktop').length, 4)
+  const toolDownloadHrefs = TOOL_ITEMS.filter((item) => item.downloadType).map((item) => item.href)
+  assert.deepEqual([...hrefs].sort(), [...toolDownloadHrefs].sort())
+  assert.equal(getDownloadItemsByType('extension').length, TOOL_ITEMS.filter((item) => item.downloadType === 'extension').length)
+  assert.equal(getDownloadItemsByType('desktop').length, TOOL_ITEMS.filter((item) => item.downloadType === 'desktop').length)
   assert.ok(BROWSER_EXTENSION_WORK_ITEMS.some((item) => item.id === 'syncblog-publisher'))
   assert.ok(DESKTOP_APP_WORK_ITEMS.some((item) => item.id === 'codex-model-switcher'))
   assert.ok(DOWNLOAD_ITEMS.every((item) => item.downloadType && item.downloadStatus))
@@ -60,20 +49,29 @@ test('downloadable tools default to newest-first order', () => {
   assert.deepEqual(dates, [...dates].sort((a, b) => b.localeCompare(a)))
 })
 
+test('usage filters distinguish browser extensions and desktop apps', () => {
+  const browserExtensions = TOOL_ITEMS.filter((item) => getToolDeliveryGroup(item) === 'browser-extension')
+  const desktopApps = TOOL_ITEMS.filter((item) => getToolDeliveryGroup(item) === 'desktop-app')
+  assert.ok(browserExtensions.length > 0)
+  assert.ok(desktopApps.length > 0)
+  assert.ok(browserExtensions.every((item) => item.downloadType === 'extension'))
+  assert.ok(desktopApps.every((item) => item.downloadType === 'desktop'))
+})
+
 test('legacy download routes redirect into the unified tools directory', async () => {
   const [extensionsPage, desktopPage, nextConfig] = await Promise.all([
     readFile(new URL('app/(site)/browser-extensions/page.jsx', root), 'utf8'),
     readFile(new URL('app/(site)/desktop-apps/page.jsx', root), 'utf8'),
     readFile(new URL('next.config.js', root), 'utf8'),
   ])
-  assert.match(extensionsPage, /permanentRedirect\('\/tools#downloads'\)/)
-  assert.match(desktopPage, /permanentRedirect\('\/tools#downloads'\)/)
+  assert.match(extensionsPage, /permanentRedirect\('\/tools#browser-extensions'\)/)
+  assert.match(desktopPage, /permanentRedirect\('\/tools#desktop-apps'\)/)
   assert.match(nextConfig, /source: '\/downloads'[\s\S]*destination: '\/tools#downloads'/)
-  assert.match(nextConfig, /source: '\/browser-extensions'[\s\S]*destination: '\/tools#downloads'/)
-  assert.match(nextConfig, /source: '\/desktop-apps'[\s\S]*destination: '\/tools#downloads'/)
+  assert.match(nextConfig, /source: '\/browser-extensions'[\s\S]*destination: '\/tools#browser-extensions'/)
+  assert.match(nextConfig, /source: '\/desktop-apps'[\s\S]*destination: '\/tools#desktop-apps'/)
   assert.deepEqual(getLegacyPathRedirect('/downloads'), { pathname: '/tools', hash: '#downloads' })
-  assert.deepEqual(getLegacyPathRedirect('/browser-extensions'), { pathname: '/tools', hash: '#downloads' })
-  assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/tools', hash: '#downloads' })
+  assert.deepEqual(getLegacyPathRedirect('/browser-extensions'), { pathname: '/tools', hash: '#browser-extensions' })
+  assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/tools', hash: '#desktop-apps' })
 })
 
 test('tools catalog exposes a download filter and syncs legacy hashes', async () => {
@@ -83,10 +81,15 @@ test('tools catalog exposes a download filter and syncs legacy hashes', async ()
   ])
   assert.match(page, /title: '工具与下载'/)
   assert.match(page, /field: 'deliveryGroup'/)
+  assert.match(page, /expanded: true/)
   assert.match(page, /downloads: 'download'/)
   assert.match(page, /label: '下载安装'/)
+  assert.match(page, /label: '浏览器插件'/)
+  assert.match(page, /label: '桌面应用'/)
   assert.match(directory, /role="tablist"/)
   assert.match(directory, /role="tab"/)
   assert.match(directory, /aria-selected=\{active\}/)
+  assert.match(directory, /aria-pressed=\{active\}/)
+  assert.doesNotMatch(page, /<select/)
   assert.match(directory, /window\.addEventListener\('hashchange', syncHashFilter\)/)
 })

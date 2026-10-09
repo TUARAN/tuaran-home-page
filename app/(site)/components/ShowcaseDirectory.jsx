@@ -293,9 +293,11 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
 
   const filteredItems = useMemo(() => {
     const keyword = query.trim().toLowerCase()
+    const secondaryOption = secondaryFilter?.options.find((option) => option.value === secondary)
+    const secondaryValues = secondaryOption?.values || [secondary]
     return items.filter((item) => {
       if (category !== 'all' && item.category !== category) return false
-      if (secondaryFilter && secondary !== 'all' && item[secondaryFilter.field] !== secondary) return false
+      if (secondaryFilter && secondary !== 'all' && !secondaryValues.includes(item[secondaryFilter.field])) return false
       if (!keyword) return true
       return [item.title, item.summary, item.coverLabel, item.categoryLabel, ...(item.tags || [])].join(' ').toLowerCase().includes(keyword)
     })
@@ -366,7 +368,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                     })}
                   </div>
                 </div>
-                {secondaryFilter ? (
+                {secondaryFilter && !secondaryFilter.expanded ? (
                   <select value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-10 max-w-[120px] shrink-0 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7] sm:max-w-none" aria-label={secondaryFilter.ariaLabel}>
                     <option value="all">{secondaryFilter.label} · 全部</option>
                     {secondaryFilter.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -374,6 +376,26 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                 ) : null}
                 {viewToggle}
               </div>
+              {secondaryFilter?.expanded ? (
+                <div className="mt-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max min-w-full items-center gap-2" role="group" aria-label={secondaryFilter.ariaLabel}>
+                    {[{ value: 'all', label: `${secondaryFilter.label} · 全部` }, ...secondaryFilter.options].map((option) => {
+                      const active = secondary === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setSecondary(option.value)}
+                          className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${active ? 'border-[#17181c] bg-[#17181c] text-white dark:border-[#d9deca] dark:bg-[#d9deca] dark:text-[#151713]' : 'border-[#d5d7d1] bg-white/70 text-[var(--site-muted)] hover:border-[#aeb1aa] hover:text-[var(--site-ink)] dark:border-[#343d48] dark:bg-[#151d26] dark:hover:border-[#596574]'}`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
         ) : (

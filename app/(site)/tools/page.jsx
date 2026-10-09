@@ -78,14 +78,19 @@ const DELIVERY_FILTER = {
   field: 'deliveryGroup',
   label: '使用方式',
   ariaLabel: '按使用方式筛选工具',
+  expanded: true,
   hashValues: {
     downloads: 'download',
-    extensions: 'download',
-    desktop: 'download',
+    extensions: 'browser-extension',
+    'browser-extensions': 'browser-extension',
+    desktop: 'desktop-app',
+    'desktop-apps': 'desktop-app',
   },
   options: [
     { value: 'online', label: '在线使用' },
-    { value: 'download', label: '下载安装' },
+    { value: 'download', label: '下载安装', values: ['browser-extension', 'desktop-app'] },
+    { value: 'browser-extension', label: '浏览器插件' },
+    { value: 'desktop-app', label: '桌面应用' },
     { value: 'external', label: '外部打开' },
   ],
 }

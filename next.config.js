@@ -188,12 +188,12 @@ const nextConfig = {
       },
       {
         source: '/browser-extensions',
-        destination: '/tools#downloads',
+        destination: '/tools#browser-extensions',
         permanent: true,
       },
       {
         source: '/desktop-apps',
-        destination: '/tools#downloads',
+        destination: '/tools#desktop-apps',
         permanent: true,
       },
       {

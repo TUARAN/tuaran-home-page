@@ -11,7 +11,7 @@ import {
 } from '../../lib/downloadItems.js'
 import { getLegacyPathRedirect } from '../../lib/indexingPolicy.js'
 import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
-import { getToolDeliveryGroup, TOOL_ITEMS } from '../../lib/toolItems.js'
+import { getToolDeliveryGroup, TOOL_ITEMS, TOOL_TYPE_META } from '../../lib/toolItems.js'
 
 const root = new URL('../../', import.meta.url)
 
@@ -58,6 +58,14 @@ test('usage filters distinguish browser extensions and desktop apps', () => {
   assert.ok(desktopApps.every((item) => item.downloadType === 'desktop'))
 })
 
+test('tool purpose categories do not reuse delivery types', () => {
+  const purposeIds = new Set(TOOL_TYPE_META.map((item) => item.id))
+  assert.ok(TOOL_ITEMS.every((item) => purposeIds.has(item.type)))
+  assert.ok(!purposeIds.has('online'))
+  assert.ok(!purposeIds.has('extension'))
+  assert.ok(!purposeIds.has('desktop'))
+})
+
 test('legacy download routes redirect into the unified tools directory', async () => {
   const [extensionsPage, desktopPage, nextConfig] = await Promise.all([
     readFile(new URL('app/(site)/browser-extensions/page.jsx', root), 'utf8'),
@@ -74,7 +82,7 @@ test('legacy download routes redirect into the unified tools directory', async (
   assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/tools', hash: '#desktop-apps' })
 })
 
-test('tools catalog exposes mutually exclusive delivery filters and syncs legacy hashes', async () => {
+test('tools catalog separates purpose categories from delivery filters and syncs legacy hashes', async () => {
   const [page, directory] = await Promise.all([
     readFile(new URL('app/(site)/tools/page.jsx', root), 'utf8'),
     readFile(new URL('app/(site)/components/ShowcaseDirectory.jsx', root), 'utf8'),
@@ -82,11 +90,14 @@ test('tools catalog exposes mutually exclusive delivery filters and syncs legacy
   assert.match(page, /title: '工具与下载'/)
   assert.match(page, /field: 'deliveryGroup'/)
   assert.match(page, /expanded: true/)
-  assert.match(page, /label: '获取方式'/)
-  assert.match(page, /label: '网页使用'/)
-  assert.match(page, /label: '浏览器插件'/)
+  assert.match(page, /categoryTabsLabel: '用途'/)
+  assert.match(page, /label: '使用方式'/)
+  assert.match(page, /label: '网页'/)
+  assert.match(page, /label: '浏览器扩展'/)
   assert.match(page, /label: '桌面应用'/)
-  assert.match(page, /label: '站外服务'/)
+  assert.match(page, /label: '外部网站'/)
+  assert.doesNotMatch(page, /title: '在线工具'|title: '插件下载'/)
+  assert.doesNotMatch(directory, /\[\{ value: 'all', label: '全部' \}/)
   assert.doesNotMatch(page, /value: 'download'|label: '下载安装'/)
   assert.match(directory, /role="tablist"/)
   assert.match(directory, /role="tab"/)

@@ -349,6 +349,9 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                 <div className="w-full sm:w-auto">{searchField}</div>
               </div>
               <div className="mt-2 flex min-w-0 items-end gap-3">
+                {config.categoryTabsLabel ? (
+                  <span className="shrink-0 pb-2.5 text-[11px] font-semibold text-[var(--site-faint)]">{config.categoryTabsLabel}</span>
+                ) : null}
                 <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div role="tablist" aria-label={config.categoryTabsAriaLabel || `${config.title}类别`} className="flex w-max min-w-full items-center gap-1 border-b border-[#dedfd9] dark:border-[#27303a]">
                     {[{ id: 'all', title: '全部' }, ...categories].map((item) => {
@@ -381,7 +384,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                   <span className="shrink-0 text-[11px] font-semibold text-[var(--site-faint)]">{secondaryFilter.label}</span>
                   <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <div className="flex w-max items-center gap-1 rounded-xl bg-[#e9eae7] p-1 dark:bg-[#1d2630]" role="group" aria-label={secondaryFilter.ariaLabel}>
-                      {[{ value: 'all', label: '全部' }, ...secondaryFilter.options].map((option) => {
+                      {[{ value: 'all', label: '不限' }, ...secondaryFilter.options].map((option) => {
                         const active = secondary === option.value
                         return (
                           <button

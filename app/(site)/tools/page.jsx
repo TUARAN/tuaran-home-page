@@ -30,15 +30,10 @@ function statusTone(status) {
 }
 
 const VISUALS = {
-  direct: {
+  utility: {
     eyebrow: 'USE', icon: 'world',
     image: '/images/tools/categories/direct.webp',
     cover: 'from-[#dcece8] via-[#edf4eb] to-[#f2e7cf] text-[#315c56] dark:from-[#14312f] dark:via-[#1e2c29] dark:to-[#332b1d] dark:text-[#b7d9d1]',
-  },
-  extension: {
-    eyebrow: 'INSTALL', icon: 'download',
-    image: '/images/tools/categories/extension.webp',
-    cover: 'from-[#e2e6f2] via-[#f1f1f7] to-[#e8dff1] text-[#4f5876] dark:from-[#1a2438] dark:via-[#202535] dark:to-[#30243c] dark:text-[#c5cbea]',
   },
   'x-platform': {
     eyebrow: 'X / TWITTER', icon: 'x',
@@ -60,12 +55,13 @@ const VISUALS = {
 const CONFIG = {
   eyebrow: 'Tools',
   title: '工具与下载',
-  description: '在线工具、浏览器扩展和桌面应用统一放在这里。按用途或获取方式筛选，找到后直接使用或下载。',
+  description: '按用途找到合适的工具，再按使用方式缩小范围。网页、浏览器扩展和桌面应用统一收录。',
   countLabel: '个工具',
   filterAriaLabel: '筛选工具',
   searchPlaceholder: '搜索工具、用途或标签',
   resultTitle: '全部工具',
   categoryTabs: true,
+  categoryTabsLabel: '用途',
   categoryTabsAriaLabel: '工具类别',
   actionLabel: '打开工具',
   layout: 'catalog',
@@ -76,20 +72,22 @@ const CONFIG = {
 
 const DELIVERY_FILTER = {
   field: 'deliveryGroup',
-  label: '获取方式',
-  ariaLabel: '按获取方式筛选工具',
+  label: '使用方式',
+  ariaLabel: '按使用方式筛选工具',
   expanded: true,
   hashValues: {
+    online: 'online',
+    downloads: 'all',
     extensions: 'browser-extension',
     'browser-extensions': 'browser-extension',
     desktop: 'desktop-app',
     'desktop-apps': 'desktop-app',
   },
   options: [
-    { value: 'online', label: '网页使用' },
-    { value: 'browser-extension', label: '浏览器插件' },
+    { value: 'online', label: '网页' },
+    { value: 'browser-extension', label: '浏览器扩展' },
     { value: 'desktop-app', label: '桌面应用' },
-    { value: 'external', label: '站外服务' },
+    { value: 'external', label: '外部网站' },
   ],
 }
 

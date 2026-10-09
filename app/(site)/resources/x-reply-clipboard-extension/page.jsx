@@ -12,7 +12,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '2.0.0'
+const VERSION = '2.1.0'
 
 const title = 'X 时间线回复助手：按时间线打开评论并发送'
 const description =
@@ -155,7 +155,7 @@ export default function XReplyClipboardResourcePage() {
             默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
           <FeatureCard title="35 条 × 5 轮">
-            每条回复后默认等待 2 秒；每轮成功 35 条后默认等待 5 秒，共执行 5 轮。面板用编号分区和步骤说明展示当前轮、本次执行与回复速度；支持折叠成迷你状态条或放大查看，完成 175 条后自动停止。
+            每条回复后默认等待 2 秒；回复 35 次组成 1 轮，轮间默认等待 5 秒，一次共执行 5 轮、175 次。面板用一条五色分段进度条展示全部轮次，并集中显示当前轮、本轮次数、总次数和运行时间；支持折叠成迷你状态条或放大查看。
           </FeatureCard>
           <FeatureCard title="只在本机运行">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Timeline Reply Assistant",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Reply on the X timeline with a random saved phrase or a DeepSeek-generated response. Refresh after every 35 successful replies.",
   "permissions": ["storage"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*"],

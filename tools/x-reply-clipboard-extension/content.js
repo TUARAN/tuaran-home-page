@@ -26,7 +26,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "2.0.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "2.1.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -783,37 +783,41 @@
         </div>
         <div class="xrc-body">
           <div class="xrc-status" role="status"></div>
-          <section class="xrc-guide" aria-label="执行规则">
-            <div class="xrc-guide-title"><span>一眼看懂</span><strong>插件会按下面顺序自动循环</strong></div>
-            <div class="xrc-guide-steps">
-              <div><span class="xrc-step-number">1</span><span><strong>发送一条回复</strong><small>然后等待 <b data-xrc-guide-reply>2</b> 秒</small></span></div>
-              <div><span class="xrc-step-number">2</span><span><strong>满 35 条算一轮</strong><small>轮间等待 <b data-xrc-guide-round>5</b> 秒</small></span></div>
-              <div><span class="xrc-step-number">3</span><span><strong>完成 5 轮后停止</strong><small>一次共发送 175 条</small></span></div>
-            </div>
+          <section class="xrc-task-rule" aria-label="任务结构">
+            <span class="xrc-task-rule-label">任务结构</span>
+            <strong>回复 35 次 = 1 轮</strong>
+            <span class="xrc-task-rule-arrow">→</span>
+            <strong>共 5 轮 = 175 次</strong>
           </section>
           <div class="xrc-stats">
-            <section class="xrc-level-card xrc-run-section">
-              <div class="xrc-level-head">
-                <div><span class="xrc-level-kicker"><b>①</b> 本次执行</span><strong>完整任务：5 轮，共 175 条</strong></div>
-                <strong class="xrc-level-count" data-xrc-total>0/${RUN_SIZE}</strong>
+            <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
+              <div class="xrc-progress-header">
+                <div class="xrc-progress-heading">
+                  <span class="xrc-section-eyebrow">执行进度</span>
+                  <strong data-xrc-round-title>第 1 轮</strong>
+                  <small>本轮已完成 <b data-xrc-page>0</b> / ${BATCH_SIZE} 次回复</small>
+                </div>
+                <div class="xrc-progress-summary">
+                  <strong data-xrc-total>0/${RUN_SIZE}</strong>
+                  <span data-xrc-total-percent>0%</span>
+                </div>
               </div>
-              <div class="xrc-run-meta">
-                <span>轮次 <strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></span>
-                <span>运行 <strong data-xrc-runtime>00:00</strong></span>
+              <div class="xrc-progress-meta">
+                <span><small>当前轮次</small><strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></span>
+                <span><small>本轮次数</small><strong data-xrc-page-meta>0/${BATCH_SIZE}</strong></span>
+                <span><small>运行时间</small><strong data-xrc-runtime>00:00</strong></span>
               </div>
-              <div class="xrc-progress-row"><span>整体进度</span><span data-xrc-total-percent>0%</span></div>
-              <div class="xrc-progress xrc-progress-total"><span data-xrc-total-bar></span></div>
-            </section>
-            <section class="xrc-level-card xrc-round-section">
-              <div class="xrc-level-head">
-                <div><span class="xrc-level-kicker"><b>②</b> <span data-xrc-round-title>当前第 1 轮</span></span><strong>这一轮需要成功回复 35 条</strong></div>
-                <strong class="xrc-level-count" data-xrc-page>0/${BATCH_SIZE}</strong>
+              <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-round-track>
+                ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `
+                  <div class="xrc-round-segment" data-xrc-round-segment="${index}"><i></i></div>
+                `).join("")}
               </div>
-              <div class="xrc-progress-row"><span>本轮进度</span><span data-xrc-page-percent>0%</span></div>
-              <div class="xrc-progress"><span data-xrc-page-bar></span></div>
+              <div class="xrc-round-legend">
+                ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
+              </div>
             </section>
             <section class="xrc-level-card xrc-mode-section">
-              <div class="xrc-level-head"><div><span class="xrc-level-kicker"><b>③</b> 回复方式</span><strong>模板随机无需配置；AI 会根据原帖生成</strong></div></div>
+              <div class="xrc-level-head"><div><span class="xrc-level-kicker">回复方式</span><strong>选择内容从哪里来</strong></div></div>
               <div class="xrc-mode-tabs" role="group" aria-label="回复方式">
                 <button type="button" data-xrc-mode="template"><strong>模板随机</strong><span>从 100 条话术中随机选择</span></button>
                 <button type="button" data-xrc-mode="ai"><strong>AI 模式</strong><span>DeepSeek 阅读原帖后生成</span></button>
@@ -829,14 +833,14 @@
               </div>
             </section>
             <section class="xrc-level-card xrc-speed-section">
-              <div class="xrc-level-head"><div><span class="xrc-level-kicker"><b>④</b> 回复速度</span><strong>开始前可调整；运行中会锁定</strong></div></div>
+              <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率限制</span><strong>运行中自动锁定</strong></div></div>
               <div class="xrc-rate-controls" aria-label="频率限制">
                 <label class="xrc-rate-control"><span>每条回复后等多久</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
                 <label class="xrc-rate-control"><span>每轮完成后等多久</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
               </div>
             </section>
           </div>
-          <div class="xrc-phrase-row"><span><b>⑤</b> <span data-xrc-reply-label>当前话术</span></span><strong data-xrc-phrase></strong></div>
+          <div class="xrc-phrase-row"><span data-xrc-reply-label>当前话术</span><strong data-xrc-phrase></strong></div>
           <details class="xrc-phrase-pool" open>
             <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
             <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
@@ -933,23 +937,30 @@
     if (status) status.textContent = state.status;
     if (stats) {
       const shownRound = Math.min(state.completedRounds + 1, ROUNDS_PER_RUN);
-      const pagePercent = Math.min(100, Math.round((state.pageCount / BATCH_SIZE) * 100));
       const totalPercent = Math.min(100, Math.round((state.total / RUN_SIZE) * 100));
-      panel.querySelector("[data-xrc-page]").textContent = `${state.pageCount}/${BATCH_SIZE}`;
+      panel.querySelector("[data-xrc-page]").textContent = String(state.pageCount);
+      panel.querySelector("[data-xrc-page-meta]").textContent = `${state.pageCount}/${BATCH_SIZE}`;
       panel.querySelector("[data-xrc-round]").textContent = `${shownRound}/${ROUNDS_PER_RUN}`;
-      panel.querySelector("[data-xrc-round-title]").textContent = `当前第 ${shownRound} 轮`;
+      panel.querySelector("[data-xrc-round-title]").textContent = `第 ${shownRound} 轮`;
       panel.querySelector("[data-xrc-total]").textContent = `${state.total}/${RUN_SIZE}`;
       panel.querySelector("[data-xrc-runtime]").textContent = formatRuntime(elapsedRuntimeMs());
-      panel.querySelector("[data-xrc-page-percent]").textContent = `${pagePercent}%`;
       panel.querySelector("[data-xrc-total-percent]").textContent = `${totalPercent}%`;
-      panel.querySelector("[data-xrc-page-bar]").style.width = `${pagePercent}%`;
-      panel.querySelector("[data-xrc-total-bar]").style.width = `${totalPercent}%`;
+      const roundTrack = panel.querySelector("[data-xrc-round-track]");
+      roundTrack.setAttribute("aria-valuenow", String(state.total));
+      panel.querySelectorAll("[data-xrc-round-segment]").forEach((segment, index) => {
+        const repliesInRound = Math.max(0, Math.min(BATCH_SIZE, state.total - (index * BATCH_SIZE)));
+        segment.querySelector("i").style.width = `${Math.round((repliesInRound / BATCH_SIZE) * 100)}%`;
+        segment.classList.toggle("is-current", index === shownRound - 1 && state.completedRounds < ROUNDS_PER_RUN);
+        segment.classList.toggle("is-complete", repliesInRound >= BATCH_SIZE);
+      });
+      panel.querySelectorAll("[data-xrc-round-legend]").forEach((legend, index) => {
+        legend.classList.toggle("is-current", index === shownRound - 1 && state.completedRounds < ROUNDS_PER_RUN);
+        legend.classList.toggle("is-complete", state.total >= (index + 1) * BATCH_SIZE);
+      });
       const replyIntervalInput = panel.querySelector("[data-xrc-reply-interval]");
       const roundIntervalInput = panel.querySelector("[data-xrc-round-interval]");
       if (document.activeElement !== replyIntervalInput) replyIntervalInput.value = String(state.replyIntervalSeconds);
       if (document.activeElement !== roundIntervalInput) roundIntervalInput.value = String(state.roundIntervalSeconds);
-      panel.querySelector("[data-xrc-guide-reply]").textContent = String(state.replyIntervalSeconds);
-      panel.querySelector("[data-xrc-guide-round]").textContent = String(state.roundIntervalSeconds);
       panel.querySelector("[data-xrc-mini-progress]").textContent = `第 ${shownRound} 轮 · ${state.pageCount}/${BATCH_SIZE}`;
       replyIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
       roundIntervalInput.disabled = Boolean(state.loopPromise) || state.running;

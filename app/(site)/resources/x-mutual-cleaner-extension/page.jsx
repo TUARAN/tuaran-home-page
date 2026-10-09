@@ -15,10 +15,10 @@ const UPGRADE_URL = '/resources/x-reply-clipboard-extension'
 
 const title = 'X 互关清理助手已升级为 X 互动帮手'
 const description =
-  '原 X 互关清理助手已并入 X 互动帮手。新版在一个扩展中提供时间线回复、通知回复和互关浇友。'
+  '原 X 互关清理助手已并入 X 互动帮手。新版在一个扩展中提供时间线回复、通知回复、互关浇友和 AI 定时发推。'
 
 const shareText =
-  'X 互关清理助手已升级为 X 互动帮手：时间线回复、通知回复和互关浇友集中在一个扩展。'
+  'X 互关清理助手已升级为 X 互动帮手：时间线回复、通知回复、互关浇友和 AI 定时发推集中在一个扩展。'
 
 export const metadata = {
   title,
@@ -139,7 +139,7 @@ export default function XMutualCleanerResourcePage() {
                   已并入 X 互动帮手
                 </h2>
                 <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                  旧版停止单独更新。请安装 X 互动帮手 v3.1.6，在顶部选择「互关浇友」。
+                  旧版停止单独更新。请安装 X 互动帮手 v3.2.0，在顶部选择「互关浇友」。
                 </p>
               </div>
               <DownloadButton className="shrink-0" />

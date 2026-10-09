@@ -3,6 +3,7 @@
 
   const pending = new Map();
   let sequence = 0;
+  const BACKGROUND_TIMER_MIN_MS = 1000;
 
   function localWait(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, Number(ms) || 0)));
@@ -10,7 +11,11 @@
 
   function wait(ms) {
     const delayMs = Math.max(0, Number(ms) || 0);
-    if (delayMs === 0 || !root.chrome?.runtime?.sendMessage) return localWait(delayMs);
+    // Short DOM polling stays local. Sending every 100–250 ms poll through the
+    // service worker/offscreen document makes foreground work slower and floods
+    // the extension message channel. Long waits still use the offscreen worker
+    // so changing browser tabs does not restart the deadline.
+    if (delayMs < BACKGROUND_TIMER_MIN_MS || !root.chrome?.runtime?.sendMessage) return localWait(delayMs);
 
     const requestId = `xrc_${Date.now()}_${sequence += 1}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
@@ -43,5 +48,5 @@
     });
   }
 
-  root.XInteractionTimer = { wait };
+  root.XInteractionTimer = { wait, BACKGROUND_TIMER_MIN_MS };
 })(globalThis);

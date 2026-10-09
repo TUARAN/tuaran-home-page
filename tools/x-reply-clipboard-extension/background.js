@@ -13,6 +13,13 @@ const REPLY_SYSTEM_PROMPT = [
   "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
 ].join("\n");
 
+const POST_SYSTEM_PROMPT = [
+  "你是一个熟悉中文 X（Twitter）语境的短帖作者。",
+  "根据用户当前时间线和趋势区提供的文字，选择一个最值得讨论的话题，写一条原创纯文字推文。",
+  "要求：80 到 220 个中文字符；开头要有能让人停下来的观点或问题；有具体判断、有讨论空间，但不要捏造新闻、数据或当事人表态；不要照抄素材；不要营销；不要链接、@账号或话题标签；最多 1 个 Emoji。",
+  "排成 3 到 5 个短行，每个短行之间空一行。只输出推文正文，不要解释，也不要添加标题或“推文：”前缀。"
+].join("\n");
+
 function cleanReply(value) {
   return String(value || "")
     .replace(/^(?:回复|评论)[：:]\s*/u, "")
@@ -20,6 +27,17 @@ function cleanReply(value) {
     .replace(/\s*\n+\s*/gu, " ")
     .trim()
     .slice(0, 100);
+}
+
+function cleanPost(value) {
+  const lines = String(value || "")
+    .replace(/^(?:推文|文案|帖子)\s*[：:]\s*/u, "")
+    .replace(/^[“"']+|[”"']+$/gu, "")
+    .split(/\n+/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  return Array.from(lines.join("\n\n")).slice(0, 270).join("").trim();
 }
 
 async function readAiSettings() {
@@ -68,7 +86,53 @@ async function callDeepSeek({ postText }) {
   }
 }
 
+async function generateTopicalPost({ contextText, lastPost }) {
+  const { apiKey } = await readAiSettings();
+  if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
+  const context = String(contextText || "").trim().slice(0, 6000);
+  if (!context) throw new Error("没有读取到可用的话题素材");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(DEEPSEEK_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: "system", content: POST_SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: `当前可见话题素材：\n${context}\n\n上一条已发布内容（避免重复）：\n${String(lastPost || "无").slice(0, 500)}`
+          }
+        ],
+        thinking: { type: "disabled" },
+        max_tokens: 320,
+        stream: false
+      }),
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || `DeepSeek 请求失败（${response.status}）`);
+    const post = cleanPost(data?.choices?.[0]?.message?.content);
+    if (!post) throw new Error("DeepSeek 没有返回可用推文");
+    return post;
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("DeepSeek 请求超过 10 秒，请稍后重试");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function handleMessage(message) {
+  if (message?.type === "xrc-ai-post-generate") {
+    const post = await generateTopicalPost({ contextText: message.contextText, lastPost: message.lastPost });
+    return { ok: true, post };
+  }
   if (message?.type === "xrc-ai-generate") {
     const postText = String(message.postText || "").trim();
     if (!postText) throw new Error("没有读取到原帖文字");
@@ -128,5 +192,5 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 }
 
 if (typeof module === "object" && module.exports) {
-  module.exports = { cleanReply, REPLY_SYSTEM_PROMPT, DEEPSEEK_MODEL, REQUEST_TIMEOUT_MS };
+  module.exports = { cleanReply, cleanPost, REPLY_SYSTEM_PROMPT, POST_SYSTEM_PROMPT, DEEPSEEK_MODEL, REQUEST_TIMEOUT_MS };
 }

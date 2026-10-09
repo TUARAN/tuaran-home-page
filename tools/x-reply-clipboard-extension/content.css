@@ -103,6 +103,11 @@
   --xrc-workspace-soft: rgba(120, 86, 255, 0.1);
 }
 
+#x-reply-clipboard-panel[data-assistant-mode="poster"] {
+  --xrc-workspace: #d97706;
+  --xrc-workspace-soft: rgba(217, 119, 6, 0.1);
+}
+
 #x-reply-clipboard-panel .xrc-workspace-nav {
   display: grid;
   gap: 8px;
@@ -133,7 +138,7 @@
 
 #x-reply-clipboard-panel .xrc-assistant-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
 }
 
@@ -201,6 +206,7 @@
 #x-reply-clipboard-panel .xrc-assistant-tabs button[data-xrc-assistant="mutual"].is-active { background: #0f8a72; }
 #x-reply-clipboard-panel .xrc-assistant-tabs button[data-xrc-assistant="timeline"].is-active { background: #168de2; }
 #x-reply-clipboard-panel .xrc-assistant-tabs button[data-xrc-assistant="notifications"].is-active { background: #7856ff; }
+#x-reply-clipboard-panel .xrc-assistant-tabs button[data-xrc-assistant="poster"].is-active { background: #d97706; }
 #x-reply-clipboard-panel .xrc-assistant-tabs button.is-active .xrc-tab-index { background: rgba(255, 255, 255, 0.2); }
 
 #x-reply-clipboard-panel .xrc-assistant-tabs button:disabled { cursor: not-allowed; opacity: 0.62; }
@@ -291,8 +297,36 @@
 }
 
 #x-reply-clipboard-panel .xrc-mutual-body { display: none; }
+#x-reply-clipboard-panel .xrc-post-body { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] .xrc-mutual-body { display: grid; }
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] .xrc-reply-body { display: none; }
+#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-post-body { display: grid; }
+#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-reply-body { display: none; }
+
+#x-reply-clipboard-panel .xrc-post-card,
+#x-reply-clipboard-panel .xrc-post-preview,
+#x-reply-clipboard-panel .xrc-post-notes {
+  border: 1px solid var(--xrc-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+#x-reply-clipboard-panel .xrc-post-card { display: grid; gap: 12px; padding: 13px; }
+#x-reply-clipboard-panel .xrc-post-card-head { display: flex; align-items: end; justify-content: space-between; gap: 10px; }
+#x-reply-clipboard-panel .xrc-post-card-head > span { display: grid; gap: 2px; }
+#x-reply-clipboard-panel .xrc-post-card-head small,
+#x-reply-clipboard-panel .xrc-post-meta small { color: var(--xrc-muted); font-size: 9px; font-weight: 750; }
+#x-reply-clipboard-panel .xrc-post-card-head strong { font-size: 18px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-post-card-head > b { color: var(--xrc-workspace); font-size: 11px; font-weight: 850; }
+#x-reply-clipboard-panel .xrc-post-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+#x-reply-clipboard-panel .xrc-post-meta span { display: grid; gap: 2px; padding: 8px; border-radius: 10px; background: var(--xrc-soft); }
+#x-reply-clipboard-panel .xrc-post-meta strong { font-size: 11px; font-weight: 850; }
+#x-reply-clipboard-panel .xrc-post-preview { display: grid; gap: 7px; padding: 12px; }
+#x-reply-clipboard-panel .xrc-post-preview > span { color: var(--xrc-muted); font-size: 9px; font-weight: 850; }
+#x-reply-clipboard-panel .xrc-post-preview p { margin: 0; color: var(--xrc-text); font-size: 11px; font-weight: 700; line-height: 1.75; white-space: pre-wrap; }
+#x-reply-clipboard-panel .xrc-post-notes { overflow: hidden; }
+#x-reply-clipboard-panel .xrc-post-notes summary { padding: 10px 12px; cursor: pointer; color: var(--xrc-text); font-size: 11px; font-weight: 850; }
+#x-reply-clipboard-panel .xrc-post-notes ul { display: grid; gap: 5px; margin: 0; padding: 0 14px 12px 28px; color: var(--xrc-muted); font-size: 9px; font-weight: 650; line-height: 1.55; }
 
 #x-reply-clipboard-panel .xrc-mutual-intro {
   display: grid;
@@ -881,6 +915,10 @@
 
 #x-reply-clipboard-panel[data-view="expanded"] {
   width: min(560px, calc(100vw - 36px));
+}
+
+#x-reply-clipboard-panel[data-view="expanded"] .xrc-assistant-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-stats {

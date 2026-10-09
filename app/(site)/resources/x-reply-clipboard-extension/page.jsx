@@ -12,19 +12,24 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.1.6'
+const VERSION = '3.2.0'
 
-const title = 'X 互动帮手：时间线回复、通知回复与互关浇友'
+const title = 'X 互动帮手：回复、互关与 DeepSeek 定时发推'
 const description =
-  'X 互动帮手是一个本地运行的 Chrome 扩展，依次提供时间线回复、通知回复和互关浇友。支持清理未回关、回关粉丝、模板随机回复与 DeepSeek AI。'
-const shareText = 'X 互动帮手：一个扩展完成时间线自动回复、最近两小时通知回复，以及互关管理。'
+  'X 互动帮手是一个本地运行的 Chrome 扩展，提供时间线回复、通知回复、互关浇友和 DeepSeek 纯文字定时发推。'
+const shareText = 'X 互动帮手：一个扩展完成时间线回复、通知回复、互关管理和 AI 定时发推。'
 
 const VERSION_HISTORY = [
+  {
+    version: '3.2.0',
+    title: '新增「推文浇给」AI 定时发推',
+    description: 'DeepSeek 从当前时间线与趋势区提炼话题，生成带空行排版的纯文字推文；发送成功后随机等待 25～35 分钟。后台计时同时改为长等待走离屏 Worker、短 DOM 轮询留在页面内，减少跨进程消息和无效重试。',
+    current: true,
+  },
   {
     version: '3.1.6',
     title: '时间线优先并精简 AI 配置',
     description: '时间线调整为第一项和默认项，其后为通知回复、互关浇友；删除 DeepSeek 测试连接，并用扩展离屏计时 Worker 保持后台任务运行。',
-    current: true,
   },
   {
     version: '3.1.5',
@@ -122,6 +127,8 @@ export const metadata = {
     'Twitter 回复插件',
     'Chrome 浏览器插件',
     'X 时间线',
+    'DeepSeek 定时发推',
+    'X 自动发帖',
     '本地运行',
   ],
   alternates: {
@@ -243,7 +250,7 @@ export default function XReplyClipboardResourcePage() {
         <h2>它会做什么</h2>
         <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
           <FeatureCard title="时间线默认置顶">
-            顶部按时间线、通知回复、互关浇友排列；新安装默认选中时间线。任务运行时会锁定切换，避免误操作。
+            顶部按时间线、通知回复、互关浇友、推文浇给排列；新安装默认选中时间线。任务运行时会锁定切换，避免误操作。
           </FeatureCard>
           <FeatureCard title="互关浇友">
             在 Following 页清理未回关账号；在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已经合并。
@@ -256,6 +263,9 @@ export default function XReplyClipboardResourcePage() {
           </FeatureCard>
           <FeatureCard title="通知：最近 2 小时">
             不设轮次和固定总条数。只识别最近 2 小时内包含“Replying to @当前账号”的回复通知，忽略单纯点赞通知；未点赞时先点 Like，确认后再回复。成功处理的通知 ID 会写入 Chrome 本地历史，刷新、重开浏览器或再次运行都会跳过。
+          </FeatureCard>
+          <FeatureCard title="推文浇给：25～35 分钟一条">
+            DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行；确认发送成功后随机等待 25～35 分钟再生成下一条。
           </FeatureCard>
           <FeatureCard title="只在本机运行">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。
@@ -296,16 +306,19 @@ export default function XReplyClipboardResourcePage() {
           <li>下载并解压插件包。</li>
           <li>打开 Chrome 的 <code>chrome://extensions/</code>，开启「开发者模式」。</li>
           <li>点击「加载已解压的扩展程序」，选择解压后的目录。</li>
-          <li>登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」或「互关浇友」。</li>
+          <li>登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。</li>
           <li>互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。</li>
           <li>关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度：2 秒一个，合计每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
           <li>时间线模式可在首页、个人主页或搜索结果运行，按每轮 35 条、共 5 轮执行。</li>
           <li>通知模式会进入通知页，只处理最近 2 小时内尚未成功互动的回复；处理完即停止，不会进入下一轮。</li>
+          <li>推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 立即生成并发送第一条纯文字推文，之后每条随机间隔 25～35 分钟。</li>
           <li>点击「开始时间线回复」或「开始通知回复」。需要停下时，点「停止」。</li>
         </ol>
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
+          “推文浇给”与 AI 回复共用一个 DeepSeek API Key。它只读取当前 X 页面已经加载的趋势和时间线文字，用来生成原创短帖；不读取本站后台任务，也不会发送 X 登录 Cookie。每条推文强制使用段间空行排版，只发送纯文字。发送结果未确认时不会计数；发帖框存在手写内容时会暂停，避免覆盖。
           开始前可选择“模板随机”或“AI 模式”。两种回复助手都可设置每条回复间隔，默认 2 秒；“每轮之间间隔”只适用于时间线模式，通知模式没有轮次。AI 模式只需保存 DeepSeek API Key，不再提供单独的测试连接按钮。Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。切换到其他浏览器页签后，扩展会通过离屏计时 Worker 继续唤醒当前任务；任务运行期间不要关闭、休眠或手动刷新对应的 X 标签页。
+          这里的“2 秒”是发送成功后的最小间隔，不包含 DeepSeek 生成、打开评论框、写入编辑器和确认发送所需的时间。v3.2.0 只把 1 秒以上的等待交给离屏 Worker，短 DOM 轮询留在页面内；评论框和 Reply 的单步等待上限为 5 秒，避免一次失败拖住十几秒。
           插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
           如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
           如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。

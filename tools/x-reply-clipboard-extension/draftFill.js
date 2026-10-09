@@ -3,7 +3,7 @@
 
   const CHANNEL = "x-reply-clipboard-draft-v2";
   const HANDLER_KEY = "__xReplyClipboardDraftMessageHandlerV2";
-  const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
+  const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply|What’s happening\?|What's happening\?|有什么新鲜事？)$/i;
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   function sleep(ms) {
@@ -17,7 +17,11 @@
     return editor;
   }
 
-  function replyEditor() {
+  function replyEditor(scope = "reply") {
+    if (scope === "post") {
+      return Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
+        .find((editor) => !editor.closest('[role="dialog"]') && !editor.closest("article") && visibleEditor(editor)) || null;
+    }
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
       const editor = visibleEditor(dialog.querySelector(REPLY_EDITOR_SELECTOR));
@@ -60,6 +64,17 @@
       .replace(/\u200b/g, "")
       .trim();
     return PLACEHOLDER_RE.test(text) ? "" : text;
+  }
+
+  function comparableDraftText(editor, scope) {
+    const text = visibleDraftText(editor);
+    if (scope !== "post") return text;
+    return text
+      .replace(/\r/gu, "")
+      .split(/\n+/u)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join("\n\n");
   }
 
   function isRecoverableDuplicateOrPlaceholderMix(value, phrase) {
@@ -154,20 +169,20 @@
     const phrase = String(text || "").replace(/\u200b/g, "").trim();
     const forceDraft = Boolean(options.forceDraft);
     if (!phrase) return { ok: false, reason: "compose-failed" };
-    const editor = replyEditor();
+    const editor = replyEditor(options.scope);
     if (!editor) return { ok: false, reason: "no-editor" };
 
-    let visible = visibleDraftText(editor);
+    let visible = comparableDraftText(editor, options.scope);
     if (!forceDraft) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
         insertWithCommand(editor, phrase);
         await sleep(80);
-        visible = visibleDraftText(editor);
+        visible = comparableDraftText(editor, options.scope);
         if (visible === phrase) return { ok: true, via: attempt === 0 ? "command" : "command-retry" };
         if (isRecoverableDuplicateOrPlaceholderMix(visible, phrase)) {
           insertWithCommand(editor, phrase);
           await sleep(80);
-          visible = visibleDraftText(editor);
+          visible = comparableDraftText(editor, options.scope);
           if (visible === phrase) return { ok: true, via: "command-repair" };
         }
         if (visible) break;
@@ -177,7 +192,7 @@
     if (isRecoverableDuplicateOrPlaceholderMix(visible, phrase)) {
       insertWithCommand(editor, phrase);
       await sleep(80);
-      const repaired = visibleDraftText(editor);
+      const repaired = comparableDraftText(editor, options.scope);
       if (repaired === phrase) return { ok: true, via: "command-repair" };
     }
     if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
@@ -192,7 +207,7 @@
     }
     const seen = readDraftText({ props: { editorState: nextState } });
     await sleep(80);
-    const rendered = visibleDraftText(editor);
+    const rendered = comparableDraftText(editor, options.scope);
     return seen === phrase && rendered === phrase
       ? { ok: true, via: "draft" }
       : { ok: false, reason: "compose-failed", seen: rendered || seen };
@@ -203,6 +218,7 @@
     findDraftNode,
     readDraftText,
     visibleDraftText,
+    comparableDraftText,
     isRecoverableDuplicateOrPlaceholderMix,
     characterSample,
     writeReplyDraft,
@@ -222,7 +238,7 @@
     const onDraftMessage = (event) => {
       if (event.source !== window || event.data?.channel !== CHANNEL || event.data?.direction !== "request") return;
       const requestId = event.data.requestId;
-      fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft }).then((result) => {
+      fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft, scope: event.data.scope }).then((result) => {
         window.postMessage({ channel: CHANNEL, direction: "response", requestId, result }, "*");
       });
     };

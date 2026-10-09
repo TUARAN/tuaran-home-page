@@ -7,6 +7,7 @@ import vm from 'node:vm'
 const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
 const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
+const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
@@ -34,6 +35,32 @@ test('offscreen timer message wakes a wait without relying on the page timer', a
   const startedAt = Date.now()
   await context.XInteractionTimer.wait(1000)
   assert.ok(Date.now() - startedAt < 250)
+})
+
+test('short DOM polling stays local instead of flooding the offscreen timer channel', async () => {
+  const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  let sent = 0
+  const context = vm.createContext({
+    window: { setTimeout, clearTimeout },
+    chrome: {
+      runtime: {
+        onMessage: { addListener() {} },
+        sendMessage() { sent += 1 },
+      },
+    },
+  })
+  vm.runInContext(source, context)
+  await context.XInteractionTimer.wait(5)
+  assert.equal(context.XInteractionTimer.BACKGROUND_TIMER_MIN_MS, 1000)
+  assert.equal(sent, 0)
+})
+
+test('AI poster formats blank lines and keeps the random interval between 25 and 35 minutes', () => {
+  assert.equal(poster.randomIntervalMs(() => 0), 25 * 60 * 1000)
+  assert.ok(poster.randomIntervalMs(() => 0.999999) <= 35 * 60 * 1000)
+  assert.equal(poster.formatPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
+  assert.equal(poster.editorText({ innerText: '第一行\n\n\n第二行' }), '第一行\n\n第二行')
+  assert.ok(Array.from(poster.formatPost('内容'.repeat(300))).length <= 270)
 })
 
 test('picks the topmost unseen post that still has a reply button', () => {
@@ -197,6 +224,8 @@ test('picks a different phrase index and never repeats the current one', () => {
 test('content script keeps the 35-reply refresh loop wired to the reply popup', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const posterSource = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const posterFixture = await readFile(new URL('fixtures/poster.html', extensionDir), 'utf8')
   const timerSource = await readFile(new URL('timer.js', extensionDir), 'utf8')
   const offscreenSource = await readFile(new URL('offscreen.js', extensionDir), 'utf8')
   const timerWorkerSource = await readFile(new URL('timer-worker.js', extensionDir), 'utf8')
@@ -211,19 +240,26 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.1.6')
+  assert.equal(manifest.version, '3.2.0')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
-  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'timer.js', 'mutual.js', 'content.js'])
+  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen'])
   assert.equal(manifest.background.service_worker, 'background.js')
   assert.match(timerSource, /xrc-timer-schedule/)
   assert.match(timerSource, /xrc-timer-fired/)
   assert.match(offscreenSource, /new Worker\(chrome\.runtime\.getURL\("timer-worker\.js"\)\)/)
   assert.match(timerWorkerSource, /setTimeout/)
+  assert.match(posterSource, /tweetButtonInline/)
+  assert.match(posterSource, /tweetTextarea_0/)
+  assert.match(posterSource, /xrc-ai-post-generate/)
+  assert.match(posterSource, /MIN_INTERVAL_MS = 25 \* 60 \* 1000/)
+  assert.match(posterSource, /MAX_INTERVAL_MS = 35 \* 60 \* 1000/)
+  assert.match(posterFixture, /tweetButtonInline/)
+  assert.match(posterFixture, /PASS poster sent=1/)
   assert.match(content, /data-testid="reply"/)
   assert.match(content, /tweetTextarea_/)
   assert.match(content, /contenteditable=\"true\"/)
@@ -237,7 +273,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.doesNotMatch(content, /execCommand\("insertText"/)
   assert.match(content, /BATCH_SIZE/)
   assert.match(content, /seen === phrase/)
-  assert.match(content, /SUBMIT_TIMEOUT_MS = 15000/)
+  assert.match(content, /SUBMIT_TIMEOUT_MS = 5000/)
   assert.match(content, /SEND_CONFIRM_TIMEOUT_MS = 5000/)
   assert.match(content, /ROUNDS_PER_RUN/)
   assert.match(content, /completedRounds/)
@@ -268,6 +304,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.doesNotMatch(content, /当前助手/)
   assert.match(content, /通知回复/)
   assert.match(content, /互关浇友/)
+  assert.match(content, /推文浇给/)
   assert.ok(content.indexOf('data-xrc-assistant="timeline"') < content.indexOf('data-xrc-assistant="notifications"'))
   assert.ok(content.indexOf('data-xrc-assistant="notifications"') < content.indexOf('data-xrc-assistant="mutual"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
@@ -338,8 +375,8 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.1\.6\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.1\.6'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.2\.0\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.2\.0'/)
   assert.match(resourcePage, /X 互动帮手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -356,7 +393,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X 互动帮手'/)
   assert.match(registry, /'通知回复'/)
   assert.match(toolItems, /id: 'x-reply-clipboard',[\s\S]*title: 'X 互动帮手'/)
-  assert.match(toolItems, /role: 'Chrome 扩展 · 时间线、通知回复与互关浇友'/)
+  assert.match(toolItems, /role: 'Chrome 扩展 · 回复、互关与 AI 定时发推'/)
 
   const desktopPage = await readFile(
     new URL('../../app/(site)/resources/x-clipboard-phrase/page.jsx', import.meta.url),
@@ -376,9 +413,12 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.REQUEST_TIMEOUT_MS, 10000)
   assert.match(background.REPLY_SYSTEM_PROMPT, /15 到 50 个中文字符/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
+  assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
+  assert.match(backgroundText, /xrc-ai-post-generate/)
+  assert.match(backgroundText, /max_tokens: 320/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
   assert.match(backgroundText, /chrome\.storage\.local/)
 })
@@ -387,6 +427,7 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   const draft = require('../../tools/x-reply-clipboard-extension/draftFill.js')
   assert.equal(draft.visibleDraftText({ textContent: '  学习了\u200b  ' }), '学习了')
   assert.equal(draft.visibleDraftText({ textContent: 'Post your reply' }), '')
+  assert.equal(draft.comparableDraftText({ innerText: '第一行\n\n\n第二行' }, 'post'), '第一行\n\n第二行')
   assert.equal(draft.isRecoverableDuplicateOrPlaceholderMix('稳稳', '稳'), true)
   assert.equal(draft.isRecoverableDuplicateOrPlaceholderMix('稳st your reply', '稳'), true)
 

@@ -3,6 +3,7 @@
 
   const loopApi = globalThis.XReplyClipboardLoop;
   const mutualApi = globalThis.XInteractionMutual;
+  const postApi = globalThis.XInteractionPoster;
   const timerApi = globalThis.XInteractionTimer;
   const phrases = globalThis.XReplyClipboardPhrases;
   const legacyPhrases = globalThis.XReplyClipboardLegacyPhrases || [];
@@ -23,14 +24,14 @@
   const MAX_REPLY_INTERVAL_SECONDS = 300;
   const MIN_ROUND_INTERVAL_SECONDS = 5;
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
-  const COMPOSER_TIMEOUT_MS = 6000;
-  const SUBMIT_TIMEOUT_MS = 15000;
+  const COMPOSER_TIMEOUT_MS = 5000;
+  const SUBMIT_TIMEOUT_MS = 5000;
   const SEND_START_TIMEOUT_MS = 2500;
   const SEND_CONFIRM_TIMEOUT_MS = 5000;
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.1.6";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.2.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -54,6 +55,7 @@
     pendingTweetId: "",
     lastReply: "",
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
+    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。DeepSeek 会根据当前时间线生成纯文字推文。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "" },
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
     phraseIndex: null,
@@ -82,7 +84,7 @@
   }
 
   function validAssistantMode(value) {
-    return ["mutual", "notifications"].includes(value) ? value : "timeline";
+    return ["mutual", "notifications", "poster"].includes(value) ? value : "timeline";
   }
 
   function validMutualMode(value) {
@@ -90,7 +92,7 @@
   }
 
   function anyTaskRunning() {
-    return Boolean(state.loopPromise) || state.running || Boolean(state.mutual?.running);
+    return Boolean(state.loopPromise) || state.running || Boolean(state.mutual?.running) || Boolean(state.poster?.running);
   }
 
   function isNotificationPath() {
@@ -323,7 +325,7 @@
   async function sleepActive(ms) {
     const deadline = Date.now() + Math.max(0, Number(ms) || 0);
     while (Date.now() < deadline && !state.stopping) {
-      const chunk = Math.min(250, Math.max(0, deadline - Date.now()));
+      const chunk = Math.min(1000, Math.max(0, deadline - Date.now()));
       await sleep(chunk);
     }
   }
@@ -506,18 +508,20 @@
   function requestDraftFill(text, { forceDraft = false } = {}) {
     const requestId = `fill_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
-      const timer = window.setTimeout(() => {
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
         window.removeEventListener("message", onMessage);
-        resolve({ ok: false, reason: "compose-failed" });
-      }, 2500);
+        resolve(result);
+      };
       function onMessage(event) {
         if (event.source !== window || event.data?.channel !== DRAFT_CHANNEL || event.data?.direction !== "response" || event.data?.requestId !== requestId) return;
-        window.clearTimeout(timer);
-        window.removeEventListener("message", onMessage);
-        resolve(event.data.result || { ok: false, reason: "compose-failed" });
+        finish(event.data.result || { ok: false, reason: "compose-failed" });
       }
       window.addEventListener("message", onMessage);
       window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text, forceDraft }, "*");
+      sleep(2500).then(() => finish({ ok: false, reason: "compose-failed" }));
     });
   }
 
@@ -546,12 +550,9 @@
 
   async function openComposer(tweet) {
     const hadInline = Boolean(tweet.article.querySelector(REPLY_EDITOR_SELECTOR));
-    for (let attempt = 0; attempt < 2 && !state.stopping; attempt += 1) {
-      realClick(tweet.replyButton);
-      const opened = await waitUntil(() => findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
-      if (opened) return findComposer(tweet.article, hadInline);
-    }
-    return null;
+    realClick(tweet.replyButton);
+    const opened = await waitUntil(() => findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
+    return opened ? findComposer(tweet.article, hadInline) : null;
   }
 
   async function publishReply(composer, replyText) {
@@ -887,6 +888,35 @@
     renderPanel();
   }
 
+  function updatePosterState(next) {
+    state.poster = next || postApi?.snapshot?.() || state.poster;
+    renderPanel();
+  }
+
+  function onPosterToggle() {
+    if (!postApi) {
+      state.poster = { ...state.poster, status: "推文发布模块没有加载，请刷新扩展后重试", errors: state.poster.errors + 1 };
+      renderPanel();
+      return;
+    }
+    if (state.poster.running) {
+      postApi.stop();
+      return;
+    }
+    if (!state.aiKeySaved) {
+      state.poster = { ...state.poster, status: "请先填写并保存 DeepSeek API Key" };
+      renderPanel();
+      return;
+    }
+    if (window.location.pathname !== "/home") {
+      state.poster = { ...state.poster, status: "正在打开 X 首页发帖框…" };
+      renderPanel();
+      window.location.assign("/home");
+      return;
+    }
+    postApi.start(updatePosterState);
+  }
+
   async function onMutualAction(mode) {
     if (!mutualApi) {
       state.mutual = { ...state.mutual, status: "互关模块没有加载，请刷新扩展后重试", errors: state.mutual.errors + 1 };
@@ -976,6 +1006,7 @@
             <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
             <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>通知回复</strong><small>点赞回复</small></span></button>
             <button type="button" role="tab" data-xrc-assistant="mutual"><span class="xrc-tab-index">03</span><span class="xrc-tab-copy"><strong>互关浇友</strong><small>关注关系</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="poster"><span class="xrc-tab-index">04</span><span class="xrc-tab-copy"><strong>推文浇给</strong><small>AI 定时发帖</small></span></button>
           </div>
         </div>
         <div class="xrc-body xrc-mutual-body">
@@ -1006,6 +1037,29 @@
           </div>
           <div class="xrc-status" role="status" data-xrc-mutual-status>选择一项互关任务开始</div>
           <div class="xrc-footer"><span>互关操作均在当前 X 页面本地执行</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
+        </div>
+        <div class="xrc-body xrc-post-body">
+          <details class="xrc-ai-config" data-xrc-post-ai-config>
+            <summary><strong>配置 DeepSeek AI</strong><span>与 AI 回复共用同一个 Key</span></summary>
+            <div class="xrc-ai-config-body">
+              <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-post-ai-key></label>
+              <div class="xrc-ai-actions"><button type="button" data-xrc-post-ai-save>保存 Key</button></div>
+              <div class="xrc-ai-status" data-xrc-post-ai-status>尚未配置 DeepSeek API Key</div>
+              <div class="xrc-ai-privacy">只发送当前页面可见的趋势和时间线文字，不会发送 X 登录 Cookie。</div>
+            </div>
+          </details>
+          <button class="xrc-button xrc-primary-action" type="button" data-xrc-post-toggle>开始定时发推</button>
+          <div class="xrc-status" role="status" data-xrc-post-status>待命。DeepSeek 会根据当前时间线生成纯文字推文。</div>
+          <section class="xrc-post-card" aria-label="定时发推进度">
+            <div class="xrc-post-card-head"><span><small>推文浇给</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>立即生成</b></div>
+            <div class="xrc-post-meta"><span><small>随机间隔</small><strong>25～35 分钟</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
+          </section>
+          <div class="xrc-post-preview"><span>当前内容</span><p data-xrc-post-preview>启动后显示 DeepSeek 生成的下一条纯文字推文</p></div>
+          <details class="xrc-post-notes">
+            <summary>发布规则</summary>
+            <ul><li>从当前时间线与趋势区提炼话题，不照抄原帖。</li><li>每条 3～5 个短段，每段之间自动空一行。</li><li>确认发送成功后，随机等待 25～35 分钟再发下一条。</li><li>切换浏览器页签后继续运行；关闭或休眠当前 X 标签页会停止。</li></ul>
+          </details>
+          <div class="xrc-footer"><span>纯文字发布 · 不上传图片</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-reply-body">
           <details class="xrc-ai-config" data-xrc-ai-config>
@@ -1097,6 +1151,7 @@
         panel.remove();
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelector("[data-xrc-post-toggle]").addEventListener("click", onPosterToggle);
       panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
         button.addEventListener("click", () => onMutualAction(button.dataset.xrcMutualAction));
       });
@@ -1124,11 +1179,14 @@
             ? "通知回复只处理最近 2 小时内别人回复你的内容：先点赞，再回复；处理过的不重复。"
             : nextMode === "mutual"
               ? "选择清理未回关、回关粉丝或关注候选。"
+              : nextMode === "poster"
+                ? "DeepSeek 会从当前时间线提炼话题，并每隔 25～35 分钟发布一条纯文字推文。"
               : "时间线回复会从上往下处理他人的帖子。";
           writeSaved({ running: false, total: 0 });
           renderPanel();
           if (nextMode === "notifications" && !isNotificationPath()) window.location.assign("/notifications");
           if (nextMode === "timeline" && window.location.pathname !== "/home") window.location.assign("/home");
+          if (nextMode === "poster" && window.location.pathname !== "/home") window.location.assign("/home");
           if (nextMode === "mutual") selectMutualMode(state.mutualMode);
         });
       });
@@ -1159,6 +1217,18 @@
       });
       panel.querySelector("[data-xrc-ai-save]").addEventListener("click", async () => {
         const input = panel.querySelector("[data-xrc-ai-key]");
+        state.aiStatus = "正在保存…";
+        renderPanel();
+        try {
+          await saveAiSettings(input.value);
+          input.value = "";
+        } catch (error) {
+          state.aiStatus = error?.message || "保存失败";
+        }
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-post-ai-save]").addEventListener("click", async () => {
+        const input = panel.querySelector("[data-xrc-post-ai-key]");
         state.aiStatus = "正在保存…";
         renderPanel();
         try {
@@ -1272,6 +1342,34 @@
         }
       }
     }
+    const poster = state.poster || postApi?.snapshot?.();
+    if (poster) {
+      const postStatus = panel.querySelector("[data-xrc-post-status]");
+      const postToggle = panel.querySelector("[data-xrc-post-toggle]");
+      const postConfig = panel.querySelector("[data-xrc-post-ai-config]");
+      const postInput = panel.querySelector("[data-xrc-post-ai-key]");
+      const remainingMs = Math.max(0, Number(poster.nextPostAt || 0) - Date.now());
+      const remainingMinutes = Math.ceil(remainingMs / 60000);
+      postStatus.textContent = poster.status;
+      postToggle.textContent = poster.stopping ? "正在停止" : poster.running ? "停止定时发推" : state.aiKeySaved ? "开始定时发推" : "配置 AI 后开始";
+      postToggle.dataset.running = poster.running ? "true" : "false";
+      panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
+      panel.querySelector("[data-xrc-post-next]").textContent = poster.running
+        ? remainingMs > 0 ? `约 ${remainingMinutes} 分钟后` : "正在生成"
+        : "立即生成";
+      panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : 0);
+      panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
+      panel.querySelector("[data-xrc-post-preview]").textContent = poster.currentPost || poster.lastPost || "启动后显示 DeepSeek 生成的下一条纯文字推文";
+      panel.querySelector("[data-xrc-post-ai-status]").textContent = state.aiStatus;
+      postInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
+      postInput.disabled = Boolean(poster.running);
+      panel.querySelector("[data-xrc-post-ai-save]").disabled = Boolean(poster.running);
+      postConfig.dataset.required = state.aiKeySaved ? "false" : "true";
+      if (!state.aiKeySaved) postConfig.open = true;
+      if (state.assistantMode === "poster") {
+        panel.querySelector("[data-xrc-mini-progress]").textContent = poster.running ? `推文浇给 · ${poster.count || 0} 条` : "推文浇给 · 待命";
+      }
+    }
     const mutual = state.mutual || mutualApi?.snapshot?.();
     const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
     if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
@@ -1306,8 +1404,9 @@
     }
     const active = anyTaskRunning();
     const mutualSelected = state.assistantMode === "mutual";
-    const completed = !mutualSelected && state.completedRounds >= ROUNDS_PER_RUN;
-    const displayedStatus = mutualSelected ? mutual?.status || "" : state.status;
+    const posterSelected = state.assistantMode === "poster";
+    const completed = !mutualSelected && !posterSelected && state.completedRounds >= ROUNDS_PER_RUN;
+    const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : state.status;
     const failed = /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
     panel.dataset.assistantMode = state.assistantMode;
@@ -1320,10 +1419,10 @@
     expandButton.textContent = state.panelView === "expanded" ? "⤡" : "⤢";
     expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
     expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
-    panel.dataset.state = state.stopping || mutual?.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
-      stateLabel.textContent = state.stopping || mutual?.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
+      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
       const stateBadge = stateLabel.closest(".xrc-state");
       stateBadge?.setAttribute("aria-label", stateLabel.textContent);
       stateBadge?.setAttribute("title", stateLabel.textContent);
@@ -1423,9 +1522,12 @@
     if (!saved.running) {
       state.status = state.assistantMode === "notifications"
         ? "通知回复只处理最近 2 小时内的回复：先点赞，再回复；处理过的不重复。"
+        : state.assistantMode === "poster"
+          ? "DeepSeek 会从当前时间线提炼话题，并每隔 25～35 分钟发布一条纯文字推文。"
         : "待命。默认使用 AI 模式，读取原帖后生成回复。";
     }
     renderPanel();
+    postApi?.restore?.(updatePosterState);
     if (saved.running) {
       begin({ resume: true });
     }

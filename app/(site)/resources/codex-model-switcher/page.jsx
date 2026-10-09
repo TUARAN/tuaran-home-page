@@ -43,7 +43,7 @@ export default function CodexModelSwitcherPage() {
         <p className="not-prose mb-3 text-xs text-[#777] dark:text-gray-400">
           <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">工具库</Link>
           <span aria-hidden="true"> · </span>
-          <Link href="/downloads#desktop" className="underline underline-offset-4 opacity-80 hover:opacity-100">桌面应用</Link>
+          <Link href="/tools#downloads" className="underline underline-offset-4 opacity-80 hover:opacity-100">桌面应用</Link>
         </p>
         <p className="font-mono text-xs uppercase tracking-[0.16em] text-[#8b5a1f] dark:text-[#a1ab76]">macOS · Codex · Universal</p>
         <h1>Codex 模型切换器</h1>

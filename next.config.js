@@ -182,13 +182,18 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/downloads',
+        destination: '/tools#downloads',
+        permanent: true,
+      },
+      {
         source: '/browser-extensions',
-        destination: '/downloads#extensions',
+        destination: '/tools#downloads',
         permanent: true,
       },
       {
         source: '/desktop-apps',
-        destination: '/downloads#desktop',
+        destination: '/tools#downloads',
         permanent: true,
       },
       {

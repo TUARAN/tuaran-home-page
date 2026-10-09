@@ -1,4 +1,5 @@
 import {
+  getToolDeliveryGroup,
   getToolItemsByDate,
   TOOL_STATUS_META,
   TOOL_TYPE_META,
@@ -8,9 +9,9 @@ import ShowcaseDirectory from '../components/ShowcaseDirectory'
 export const dynamic = 'force-static'
 
 export const metadata = {
-  title: '工具集',
-  description: '涂阿燃维护的站内工具、浏览器插件、AI 工程实验、开发者工具链与可复用工作流入口。',
-  keywords: ['工具集', '工具库', '站内工具', 'AI 工具', '浏览器插件', '开发工具', '2aran'],
+  title: '工具与下载',
+  description: '涂阿燃维护的在线工具、浏览器扩展、桌面应用、AI 工程实验与开发者工作流入口。',
+  keywords: ['工具集', '下载中心', '工具库', '站内工具', 'AI 工具', '浏览器插件', '桌面应用', '开发工具', '2aran'],
   alternates: {
     canonical: '/tools',
   },
@@ -58,8 +59,8 @@ const VISUALS = {
 
 const CONFIG = {
   eyebrow: 'Tools',
-  title: '工具集',
-  description: '可以直接使用、安装或接入工作流的工具。按用途筛选，找到后立即开始。',
+  title: '工具与下载',
+  description: '在线工具、浏览器扩展和桌面应用统一放在这里。按用途或使用方式筛选，找到后直接使用或下载。',
   countLabel: '个工具',
   filterAriaLabel: '筛选工具',
   searchPlaceholder: '搜索工具、用途或标签',
@@ -73,12 +74,29 @@ const CONFIG = {
   destinationKind: 'tool',
 }
 
+const DELIVERY_FILTER = {
+  field: 'deliveryGroup',
+  label: '使用方式',
+  ariaLabel: '按使用方式筛选工具',
+  hashValues: {
+    downloads: 'download',
+    extensions: 'download',
+    desktop: 'download',
+  },
+  options: [
+    { value: 'online', label: '在线使用' },
+    { value: 'download', label: '下载安装' },
+    { value: 'external', label: '外部打开' },
+  ],
+}
+
 export default function ToolsPage() {
   const categoryLabels = Object.fromEntries(TOOL_TYPE_META.map((type) => [type.id, type.title]))
   const items = getToolItemsByDate()
     .map((item, index) => ({
       ...item,
       category: item.type,
+      deliveryGroup: getToolDeliveryGroup(item),
       categoryLabel: categoryLabels[item.type] || '工具',
       coverImage: VISUALS[item.type]?.image,
       coverImageAlt: `${categoryLabels[item.type] || '工具'}分类视觉：${item.title}`,
@@ -89,7 +107,11 @@ export default function ToolsPage() {
       badgeLabel: TOOL_STATUS_META[item.status] || item.status,
       badgeTone: statusTone(item.status),
       footerLabel: item.tags.slice(0, 2).join(' · '),
-      metricLabel: /^https?:\/\//.test(item.href) ? '外部打开' : '站内使用',
+      metricLabel: item.downloadType === 'extension'
+        ? '浏览器扩展'
+        : item.downloadType === 'desktop'
+          ? '桌面应用'
+          : /^https?:\/\//.test(item.href) ? '外部打开' : '在线使用',
     }))
 
   return (
@@ -98,6 +120,7 @@ export default function ToolsPage() {
       categories={TOOL_TYPE_META}
       visuals={VISUALS}
       config={CONFIG}
+      secondaryFilter={DELIVERY_FILTER}
     />
   )
 }

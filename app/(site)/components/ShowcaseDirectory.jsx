@@ -260,6 +260,26 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
   const [view, setView] = useState('grid')
   const [pvCounts, setPvCounts] = useState({})
 
+  useEffect(() => {
+    function syncHashFilter() {
+      const hash = window.location.hash.slice(1)
+      const matchedCategory = categories.find((item) => item.anchor === hash || item.id === hash)
+      if (matchedCategory) {
+        setCategory(matchedCategory.id)
+        setSecondary('all')
+      }
+      const matchedSecondary = secondaryFilter?.hashValues?.[hash]
+      if (matchedSecondary) {
+        setSecondary(matchedSecondary)
+        setCategory('all')
+      }
+    }
+
+    syncHashFilter()
+    window.addEventListener('hashchange', syncHashFilter)
+    return () => window.removeEventListener('hashchange', syncHashFilter)
+  }, [categories, secondaryFilter])
+
   const pvKeySignature = useMemo(() => items.map((item) => item.pvKey).filter(Boolean).join(','), [items])
   useEffect(() => {
     if (!pvKeySignature) return undefined

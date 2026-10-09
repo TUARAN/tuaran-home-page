@@ -94,7 +94,7 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   assert.match(siteSource, /\/_next\/image/)
 })
 
-test('插件已接入下载中心、工具库和独立下载介绍页', async () => {
+test('插件已接入统一工具目录和独立下载介绍页', async () => {
   const manifest = JSON.parse(await read('manifest.json'))
   const workItems = await readFile(new URL('../lib/downloadItems.js', import.meta.url), 'utf8')
   const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
@@ -105,7 +105,8 @@ test('插件已接入下载中心、工具库和独立下载介绍页', async ()
     'utf8',
   )
 
-  for (const source of [workItems, toolItems, catalog, registry]) {
+  assert.match(workItems, /\.\/toolItems\.js/)
+  for (const source of [toolItems, catalog, registry]) {
     assert.match(source, /x-article-autopublisher-extension/)
   }
   assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/resources/x-article-autopublisher-extension' && entry.sitemap))

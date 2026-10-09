@@ -139,7 +139,7 @@ export default function XMutualCleanerResourcePage() {
                   已并入 X 互动帮手
                 </h2>
                 <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                  旧版停止单独更新。请安装 X 互动帮手 v3.2.0，在顶部选择「互关浇友」。
+                  旧版停止单独更新。请安装 X 互动帮手 v3.4.1，在顶部选择「互关浇友」。
                 </p>
               </div>
               <DownloadButton className="shrink-0" />

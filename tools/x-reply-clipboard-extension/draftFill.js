@@ -118,26 +118,33 @@
     }
     const BlockMap = contentState.getBlockMap().constructor;
     const CharacterList = sample.block.getCharacterList().constructor;
-    let characterList = CharacterList();
     const plainStyle = sample.character.getStyle().clear();
-    for (let index = 0; index < phrase.length; index += 1) {
-      characterList = characterList.push(sample.character.set("style", plainStyle).set("entity", null));
-    }
-    const key = `r${Math.random().toString(36).slice(2, 7)}`;
-    const nextBlock = sample.block.merge({
-      key,
-      type: "unstyled",
-      text: phrase,
-      characterList,
-      depth: 0
-    });
     let nextBlockMap = BlockMap();
-    nextBlockMap = nextBlockMap.set(key, nextBlock);
-    const selection = SelectionState.createEmpty(key);
+    const lines = phrase.replace(/\r/gu, "").split("\n");
+    let firstKey = "";
+    let lastKey = "";
+    lines.forEach((line) => {
+      let characterList = CharacterList();
+      for (let index = 0; index < line.length; index += 1) {
+        characterList = characterList.push(sample.character.set("style", plainStyle).set("entity", null));
+      }
+      const key = `r${Math.random().toString(36).slice(2, 7)}`;
+      if (!firstKey) firstKey = key;
+      lastKey = key;
+      nextBlockMap = nextBlockMap.set(key, sample.block.merge({
+        key,
+        type: "unstyled",
+        text: line,
+        characterList,
+        depth: 0
+      }));
+    });
+    const selectionBefore = SelectionState.createEmpty(firstKey);
+    const selectionAfter = SelectionState.createEmpty(lastKey);
     const nextContent = contentState
       .set("blockMap", nextBlockMap)
-      .set("selectionBefore", selection)
-      .set("selectionAfter", selection);
+      .set("selectionBefore", selectionBefore)
+      .set("selectionAfter", selectionAfter);
     let nextEditorState = EditorState.push(editorState, nextContent, "insert-fragment");
     if (typeof EditorState.moveSelectionToEnd === "function") {
       nextEditorState = EditorState.moveSelectionToEnd(nextEditorState);
@@ -173,6 +180,44 @@
     if (!editor) return { ok: false, reason: "no-editor" };
 
     let visible = comparableDraftText(editor, options.scope);
+    if (options.scope === "post") {
+      if (visible === phrase) return { ok: true, via: "existing" };
+      if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
+
+      // A fresh DraftJS composer has no CharacterMetadata sample. Insert one
+      // temporary character, then replace the complete Draft state with one
+      // block per line. Passing a multi-line string to execCommand directly
+      // makes X duplicate the final paragraph inside the first block.
+      insertWithCommand(editor, " ");
+      await sleep(80);
+      let liveEditor = replyEditor("post") || editor;
+      const node = findDraftNode(liveEditor);
+      if (node && characterSample(node)) {
+        let nextState = null;
+        try {
+          nextState = writeReplyDraft(node, phrase);
+        } catch (error) {
+          return { ok: false, reason: "compose-failed", seen: readDraftText(node) };
+        }
+        const seen = readDraftText({ props: { editorState: nextState } });
+        await sleep(120);
+        liveEditor = replyEditor("post") || liveEditor;
+        const rendered = comparableDraftText(liveEditor, "post");
+        return seen === phrase && rendered === phrase
+          ? { ok: true, via: "draft-blocks" }
+          : { ok: false, reason: "compose-failed", seen: rendered || seen };
+      }
+
+      // Plain contenteditable fixtures and non-Draft fallbacks still use the
+      // browser command, with the temporary character selected and replaced.
+      insertWithCommand(liveEditor, phrase);
+      await sleep(100);
+      liveEditor = replyEditor("post") || liveEditor;
+      visible = comparableDraftText(liveEditor, "post");
+      return visible === phrase
+        ? { ok: true, via: "command-fallback" }
+        : { ok: false, reason: "compose-failed", seen: visible };
+    }
     if (!forceDraft) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
         insertWithCommand(editor, phrase);

@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
 const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
+const background = require('../../tools/x-reply-clipboard-extension/background.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
@@ -35,6 +36,90 @@ test('offscreen timer message wakes a wait without relying on the page timer', a
   const startedAt = Date.now()
   await context.XInteractionTimer.wait(1000)
   assert.ok(Date.now() - startedAt < 250)
+})
+
+test('background timer keeps its originating tab and routes the wake-up back to that content script', async () => {
+  const runtimeMessages = []
+  const tabMessages = []
+  globalThis.chrome = {
+    offscreen: { async createDocument() {} },
+    runtime: {
+      getURL(pathname) { return `chrome-extension://test/${pathname}` },
+      async getContexts() { return [{ contextType: 'OFFSCREEN_DOCUMENT' }] },
+      async sendMessage(message) { runtimeMessages.push(message) },
+    },
+    tabs: {
+      async sendMessage(tabId, message, options) { tabMessages.push({ tabId, message, options }) },
+    },
+  }
+
+  try {
+    await background.scheduleBackgroundTimer(
+      { requestId: 'timer-1', delayMs: 2000 },
+      { tab: { id: 42 }, frameId: 0 },
+    )
+    assert.deepEqual(runtimeMessages, [{
+      type: 'xrc-offscreen-schedule',
+      requestId: 'timer-1',
+      delayMs: 2000,
+      tabId: 42,
+      frameId: 0,
+    }])
+
+    await background.deliverBackgroundTimer({ requestId: 'timer-1', tabId: 42, frameId: 0 })
+    assert.deepEqual(tabMessages, [{
+      tabId: 42,
+      message: { type: 'xrc-timer-fired', requestId: 'timer-1' },
+      options: { frameId: 0 },
+    }])
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('plugin stable runtime spans multiple task tabs and stops only after the final task stops', async () => {
+  let savedRuntime = null
+  const existingTabs = new Set([11, 22])
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(key) { return { [key]: savedRuntime } },
+        async set(value) { savedRuntime = value.xrcPluginRuntime },
+      },
+    },
+    tabs: {
+      async get(tabId) {
+        if (!existingTabs.has(tabId)) throw new Error('tab closed')
+        return { id: tabId }
+      },
+    },
+  }
+
+  try {
+    const first = await background.updatePluginRuntime(
+      { mode: 'timeline', active: true },
+      { tab: { id: 11 } },
+    )
+    const stableStartedAt = first.runtime.startedAt
+    assert.ok(stableStartedAt > 0)
+
+    const second = await background.updatePluginRuntime(
+      { mode: 'notifications', active: true },
+      { tab: { id: 22 } },
+    )
+    assert.equal(second.runtime.startedAt, stableStartedAt)
+    assert.deepEqual(Object.keys(second.runtime.tasks).sort(), ['notifications', 'timeline'])
+
+    await background.updatePluginRuntime({ mode: 'timeline', active: false }, { tab: { id: 11 } })
+    assert.equal(savedRuntime.startedAt, stableStartedAt)
+    assert.deepEqual(Object.keys(savedRuntime.tasks), ['notifications'])
+
+    await background.updatePluginRuntime({ mode: 'notifications', active: false }, { tab: { id: 22 } })
+    assert.equal(savedRuntime.startedAt, null)
+    assert.deepEqual(savedRuntime.tasks, {})
+  } finally {
+    delete globalThis.chrome
+  }
 })
 
 test('short DOM polling stays local instead of flooding the offscreen timer channel', async () => {
@@ -225,6 +310,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const posterSource = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const posterFixture = await readFile(new URL('fixtures/poster.html', extensionDir), 'utf8')
   const timerSource = await readFile(new URL('timer.js', extensionDir), 'utf8')
   const offscreenSource = await readFile(new URL('offscreen.js', extensionDir), 'utf8')
@@ -240,7 +326,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.2.0')
+  assert.equal(manifest.version, '3.4.1')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -249,15 +335,32 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen'])
   assert.equal(manifest.background.service_worker, 'background.js')
+  assert.match(backgroundSource, /xrc-task-open/)
+  assert.match(backgroundSource, /xrc-task-register/)
+  assert.match(backgroundSource, /chrome\.tabs\.create/)
+  assert.match(backgroundSource, /chrome\.tabs\.update/)
+  assert.match(backgroundSource, /chrome\.storage\.session/)
+  assert.match(backgroundSource, /chrome\.tabs\.sendMessage\(tabId, payload/)
+  assert.match(backgroundSource, /scheduleBackgroundTimer\(message, sender\)/)
+  assert.match(backgroundSource, /xrc-runtime-task-state/)
+  assert.match(backgroundSource, /xrcPluginRuntime/)
   assert.match(timerSource, /xrc-timer-schedule/)
   assert.match(timerSource, /xrc-timer-fired/)
   assert.match(offscreenSource, /new Worker\(chrome\.runtime\.getURL\("timer-worker\.js"\)\)/)
+  assert.match(offscreenSource, /tabId/)
   assert.match(timerWorkerSource, /setTimeout/)
+  assert.match(timerWorkerSource, /tabId/)
   assert.match(posterSource, /tweetButtonInline/)
   assert.match(posterSource, /tweetTextarea_0/)
   assert.match(posterSource, /xrc-ai-post-generate/)
   assert.match(posterSource, /MIN_INTERVAL_MS = 25 \* 60 \* 1000/)
   assert.match(posterSource, /MAX_INTERVAL_MS = 35 \* 60 \* 1000/)
+  assert.match(posterSource, /RETRY_INTERVAL_MS = 60 \* 1000/)
+  assert.match(posterSource, /depth < 30/)
+  assert.match(posterSource, /visibleSubmits/)
+  assert.match(posterSource, /上次异常：\$\{state\.lastError\}/)
+  assert.match(posterSource, /正在重试上次尚未发出的内容/)
+  assert.match(posterSource, /state\.elapsedMs = state\.startedAt/)
   assert.match(posterFixture, /tweetButtonInline/)
   assert.match(posterFixture, /PASS poster sent=1/)
   assert.match(content, /data-testid="reply"/)
@@ -305,6 +408,20 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /通知回复/)
   assert.match(content, /互关浇友/)
   assert.match(content, /推文浇给/)
+  assert.match(content, /CYCLE_INTERVAL_MS = 2 \* 60 \* 60 \* 1000/)
+  assert.match(content, /RECONNECT_INTERVAL_MS = 60 \* 1000/)
+  assert.match(content, /finishCycleAndScheduleNext/)
+  assert.match(content, /reconnectAndResume/)
+  assert.match(content, /data-xrc-stable-runtime/)
+  assert.match(content, /xrc-runtime-task-state/)
+  assert.match(content, /cycleCount/)
+  assert.match(content, /nextCycleAt/)
+  assert.match(content, /xrc-task-open/)
+  assert.match(content, /xrc-task-register/)
+  assert.match(content, /requestedAssistantMode/)
+  assert.match(content, /每项使用独立 X 页签，切换不会停止其他任务/)
+  assert.doesNotMatch(content, /class="xrc-phrase-row"/)
+  assert.match(content, /class="xrc-status xrc-reply-status"/)
   assert.ok(content.indexOf('data-xrc-assistant="timeline"') < content.indexOf('data-xrc-assistant="notifications"'))
   assert.ok(content.indexOf('data-xrc-assistant="notifications"') < content.indexOf('data-xrc-assistant="mutual"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
@@ -328,8 +445,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个/)
   assert.match(content, /function selectMutualMode/)
   assert.match(content, /mutualMode/)
-  assert.match(content, /nextMode === "timeline" && window\.location\.pathname !== "\/home"/)
-  assert.match(content, /nextMode === "notifications" && !isNotificationPath\(\)/)
+  assert.match(content, /button\.disabled = false;\s*button\.title = selected/)
   assert.match(content, /mutualApi\.run/)
   assert.match(content, /result !== "sent-composer-open"/)
   assert.match(content, /data-xrc-round-track/)
@@ -356,6 +472,10 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /replyMode: "ai"/)
   assert.match(content, /value === "template" \? "template" : "ai"/)
   assert.match(content, /data-xrc-ai-key/)
+  assert.doesNotMatch(content, /type="password"/)
+  assert.match(content, /data-xrc-secret-input/)
+  assert.match(content, /data-1p-ignore="true"/)
+  assert.match(content, /不要填写 X 登录密码/)
   assert.match(content, /xrc-ai-generate/)
   assert.doesNotMatch(content, /connectionVerified|测试连接|xrc-ai-test|data-xrc-ai-test/)
   assert.match(content, /state\.replyMode === "ai" && !state\.aiKeySaved/)
@@ -375,8 +495,8 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.2\.0\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.2\.0'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.4\.1\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.4\.1'/)
   assert.match(resourcePage, /X 互动帮手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -411,6 +531,10 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
 
   assert.equal(background.DEEPSEEK_MODEL, 'deepseek-flash')
   assert.equal(background.REQUEST_TIMEOUT_MS, 10000)
+  assert.equal(background.validTaskMode('poster'), 'poster')
+  assert.equal(background.validTaskMode('unknown'), 'timeline')
+  assert.equal(background.taskTabUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications?xrcAssistant=notifications')
+  assert.equal(background.taskTabUrl('poster', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=poster')
   assert.match(background.REPLY_SYSTEM_PROMPT, /15 到 50 个中文字符/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
@@ -421,6 +545,38 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /max_tokens: 320/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
   assert.match(backgroundText, /chrome\.storage\.local/)
+})
+
+test('task tabs are created once and reused without stopping the source task', async () => {
+  const background = require('../../tools/x-reply-clipboard-extension/background.js')
+  let savedTabs = {}
+  let created = 0
+  const focused = []
+  global.chrome = {
+    storage: {
+      session: {
+        async get(key) { return { [key]: savedTabs } },
+        async set(value) { savedTabs = value.xrcTaskTabs },
+      },
+    },
+    tabs: {
+      async create({ url }) { created += 1; return { id: 77, windowId: 9, url } },
+      async get(tabId) { return { id: tabId, windowId: 9, url: 'https://x.com/notifications' } },
+      async update(tabId) { focused.push(tabId) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    const first = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
+    const second = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
+    assert.equal(first.reused, false)
+    assert.equal(second.reused, true)
+    assert.equal(created, 1)
+    assert.deepEqual(focused, [77])
+    assert.equal(savedTabs.notifications, 77)
+  } finally {
+    delete global.chrome
+  }
 })
 
 test('writes the phrase into Draft state and keeps Reply disabled until that write', () => {
@@ -513,6 +669,11 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   draft.writeReplyDraft(node, phrase)
   assert.equal(draft.readDraftText(node), phrase)
   assert.equal(replyEnabled, true)
+
+  const multiline = '第一行\n\n第二行'
+  draft.writeReplyDraft(node, multiline)
+  assert.equal(draft.readDraftText(node), multiline)
+  assert.deepEqual(editorState.content.blockMap.entries.map((entry) => entry[1].text), ['第一行', '', '第二行'])
 
   const seen = []
   let index = 0

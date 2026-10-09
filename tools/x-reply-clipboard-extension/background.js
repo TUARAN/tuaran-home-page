@@ -5,6 +5,10 @@ const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = "deepseek-flash";
 const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
+const TASK_TABS_KEY = "xrcTaskTabs";
+const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+const TASK_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
+let runtimeMutation = Promise.resolve();
 
 const REPLY_SYSTEM_PROMPT = [
   "你是 X（Twitter）中文互动回复助手。",
@@ -43,7 +47,8 @@ function cleanPost(value) {
 async function readAiSettings() {
   const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
   const settings = stored?.[AI_SETTINGS_KEY] || {};
-  return { apiKey: String(settings.apiKey || "").trim() };
+  const apiKey = String(settings.apiKey || "").trim();
+  return { apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "" };
 }
 
 async function callDeepSeek({ postText }) {
@@ -166,21 +171,205 @@ async function ensureOffscreenDocument() {
   }
 }
 
-async function scheduleBackgroundTimer(message) {
+async function scheduleBackgroundTimer(message, sender) {
   const requestId = String(message?.requestId || "");
   const delayMs = Math.max(0, Math.min(3600000, Number(message?.delayMs) || 0));
+  const tabId = Number(sender?.tab?.id);
+  const frameId = Number(sender?.frameId);
   if (!requestId) throw new Error("后台计时请求无效");
+  if (!Number.isInteger(tabId)) throw new Error("无法识别需要唤醒的 X 页签");
   await ensureOffscreenDocument();
-  await chrome.runtime.sendMessage({ type: "xrc-offscreen-schedule", requestId, delayMs });
+  await chrome.runtime.sendMessage({
+    type: "xrc-offscreen-schedule",
+    requestId,
+    delayMs,
+    tabId,
+    ...(Number.isInteger(frameId) ? { frameId } : {})
+  });
   return { ok: true };
 }
 
+async function deliverBackgroundTimer(message) {
+  const requestId = String(message?.requestId || "");
+  const tabId = Number(message?.tabId);
+  const frameId = Number(message?.frameId);
+  if (!requestId || !Number.isInteger(tabId)) return { ok: false };
+  const payload = { type: "xrc-timer-fired", requestId };
+  if (Number.isInteger(frameId)) await chrome.tabs.sendMessage(tabId, payload, { frameId });
+  else await chrome.tabs.sendMessage(tabId, payload);
+  return { ok: true };
+}
+
+function validTaskMode(value) {
+  return TASK_MODES.has(value) ? value : "timeline";
+}
+
+function taskTabUrl(mode, sourceUrl = "https://x.com/home") {
+  let origin = "https://x.com";
+  try {
+    const source = new URL(sourceUrl);
+    if (source.hostname === "x.com" || source.hostname === "twitter.com") origin = source.origin;
+  } catch (error) {
+    // Use x.com when the sender is not an X page.
+  }
+  const selected = validTaskMode(mode);
+  const pathname = selected === "notifications" ? "/notifications" : "/home";
+  return `${origin}${pathname}?xrcAssistant=${encodeURIComponent(selected)}`;
+}
+
+async function readTaskTabs() {
+  if (!chrome.storage?.session) return {};
+  const stored = await chrome.storage.session.get(TASK_TABS_KEY);
+  const value = stored?.[TASK_TABS_KEY];
+  return value && typeof value === "object" ? value : {};
+}
+
+async function writeTaskTabs(value) {
+  if (!chrome.storage?.session) return;
+  await chrome.storage.session.set({ [TASK_TABS_KEY]: value });
+}
+
+async function registerTaskTab(mode, tabId) {
+  if (!Number.isInteger(tabId)) throw new Error("无法识别当前 X 页签");
+  const selected = validTaskMode(mode);
+  const tabs = await readTaskTabs();
+  tabs[selected] = tabId;
+  await writeTaskTabs(tabs);
+  return { ok: true, mode: selected, tabId };
+}
+
+async function focusTaskTab(mode, sender) {
+  const selected = validTaskMode(mode);
+  const tabs = await readTaskTabs();
+  const existingId = Number(tabs[selected]);
+  if (Number.isInteger(existingId)) {
+    try {
+      const existing = await chrome.tabs.get(existingId);
+      await chrome.tabs.update(existingId, { active: true });
+      if (Number.isInteger(existing.windowId)) await chrome.windows.update(existing.windowId, { focused: true });
+      return { ok: true, mode: selected, tabId: existingId, reused: true };
+    } catch (error) {
+      delete tabs[selected];
+      await writeTaskTabs(tabs);
+    }
+  }
+  const created = await chrome.tabs.create({
+    url: taskTabUrl(selected, sender?.tab?.url),
+    active: true
+  });
+  if (!Number.isInteger(created?.id)) throw new Error("没有成功创建任务页签");
+  tabs[selected] = created.id;
+  await writeTaskTabs(tabs);
+  return { ok: true, mode: selected, tabId: created.id, reused: false };
+}
+
+async function removeTaskTab(tabId) {
+  const tabs = await readTaskTabs();
+  let changed = false;
+  for (const [mode, savedTabId] of Object.entries(tabs)) {
+    if (Number(savedTabId) !== tabId) continue;
+    delete tabs[mode];
+    changed = true;
+  }
+  if (changed) await writeTaskTabs(tabs);
+}
+
+async function readPluginRuntime({ prune = false } = {}) {
+  const stored = await chrome.storage.local.get(PLUGIN_RUNTIME_KEY);
+  const value = stored?.[PLUGIN_RUNTIME_KEY];
+  const tasks = value?.tasks && typeof value.tasks === "object" ? { ...value.tasks } : {};
+  let changed = false;
+  if (prune && chrome.tabs?.get) {
+    for (const [mode, task] of Object.entries(tasks)) {
+      try {
+        await chrome.tabs.get(Number(task?.tabId));
+      } catch (error) {
+        delete tasks[mode];
+        changed = true;
+      }
+    }
+  }
+  const startedAt = Object.keys(tasks).length > 0 ? Number(value?.startedAt) || Date.now() : null;
+  const runtime = { startedAt, tasks };
+  if (changed) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+  return runtime;
+}
+
+function updatePluginRuntime(message, sender) {
+  const mutate = async () => {
+    const mode = validTaskMode(message?.mode);
+    const active = Boolean(message?.active);
+    const tabId = Number(sender?.tab?.id);
+    const runtime = await readPluginRuntime();
+    if (active) {
+      if (!Number.isInteger(tabId)) throw new Error("无法识别任务页签");
+      const previous = runtime.tasks[mode];
+      runtime.startedAt ||= Date.now();
+      runtime.tasks[mode] = {
+        tabId,
+        startedAt: Number(previous?.startedAt) || Date.now(),
+        updatedAt: Date.now()
+      };
+    } else {
+      delete runtime.tasks[mode];
+      if (Object.keys(runtime.tasks).length === 0) runtime.startedAt = null;
+    }
+    await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+    return { ok: true, runtime };
+  };
+  runtimeMutation = runtimeMutation.then(mutate, mutate);
+  return runtimeMutation;
+}
+
+async function removeRuntimeTab(tabId) {
+  const runtime = await readPluginRuntime();
+  let changed = false;
+  for (const [mode, task] of Object.entries(runtime.tasks)) {
+    if (Number(task?.tabId) !== tabId) continue;
+    delete runtime.tasks[mode];
+    changed = true;
+  }
+  if (!changed) return;
+  if (Object.keys(runtime.tasks).length === 0) runtime.startedAt = null;
+  await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "xrc-timer-schedule") {
-      scheduleBackgroundTimer(message)
+      scheduleBackgroundTimer(message, sender)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "后台计时失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-timer-fired") {
+      deliverBackgroundTimer(message)
+        .then(sendResponse)
+        .catch(() => sendResponse({ ok: false }));
+      return true;
+    }
+    if (message?.type === "xrc-task-register") {
+      registerTaskTab(message.mode, sender?.tab?.id)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "任务页签登记失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-task-open") {
+      focusTaskTab(message.mode, sender)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "任务页签打开失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-runtime-get") {
+      readPluginRuntime({ prune: true })
+        .then((runtime) => sendResponse({ ok: true, runtime }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态读取失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-runtime-task-state") {
+      updatePluginRuntime(message, sender)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
       return true;
     }
     if (!message?.type?.startsWith("xrc-ai-")) return false;
@@ -189,8 +378,27 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       .catch((error) => sendResponse({ ok: false, error: error?.message || "DeepSeek 请求失败" }));
     return true;
   });
+  chrome.tabs?.onRemoved?.addListener((tabId) => {
+    removeTaskTab(tabId).catch(() => {});
+    removeRuntimeTab(tabId).catch(() => {});
+  });
 }
 
 if (typeof module === "object" && module.exports) {
-  module.exports = { cleanReply, cleanPost, REPLY_SYSTEM_PROMPT, POST_SYSTEM_PROMPT, DEEPSEEK_MODEL, REQUEST_TIMEOUT_MS };
+  module.exports = {
+    cleanReply,
+    cleanPost,
+    validTaskMode,
+    taskTabUrl,
+    registerTaskTab,
+    focusTaskTab,
+    readPluginRuntime,
+    updatePluginRuntime,
+    scheduleBackgroundTimer,
+    deliverBackgroundTimer,
+    REPLY_SYSTEM_PROMPT,
+    POST_SYSTEM_PROMPT,
+    DEEPSEEK_MODEL,
+    REQUEST_TIMEOUT_MS
+  };
 }

@@ -10,21 +10,33 @@
     <div data-testid="tweetText">浏览器自动化最难的部分，往往不是点击，而是确认状态。</div>
   </article>
   <section id="composer">
-    <div data-testid="tweetTextarea_0" contenteditable="true" role="textbox"></div>
+    <div><div><div><div><div><div><div><div><div><div><div><div><div><div>
+      <div data-testid="tweetTextarea_0" contenteditable="true" role="textbox"></div>
+    </div></div></div></div></div></div></div></div></div></div></div></div></div></div>
     <button data-testid="tweetButtonInline" type="button" disabled aria-disabled="true">Post</button>
   </section>
 
   <script>
-    const editor = document.querySelector('[data-testid="tweetTextarea_0"]')
+    let editor = document.querySelector('[data-testid="tweetTextarea_0"]')
     const submit = document.querySelector('[data-testid="tweetButtonInline"]')
     const expected = '自动化真正难的，不是把按钮点下去。\n\n而是知道页面是否接受了这次操作。\n\n能确认状态，流程才算可靠。'
     let clicks = 0
+    let replaced = false
 
-    editor.addEventListener('input', () => {
-      const enabled = Boolean(editor.innerText.trim())
-      submit.disabled = !enabled
-      submit.setAttribute('aria-disabled', enabled ? 'false' : 'true')
-    })
+    function watchEditor(node) {
+      node.addEventListener('input', () => {
+        const enabled = Boolean(node.innerText.trim())
+        submit.disabled = !enabled
+        submit.setAttribute('aria-disabled', enabled ? 'false' : 'true')
+        if (replaced) return
+        replaced = true
+        const replacement = node.cloneNode(true)
+        node.replaceWith(replacement)
+        editor = replacement
+        watchEditor(editor)
+      })
+    }
+    watchEditor(editor)
     submit.addEventListener('click', () => {
       if (submit.disabled) return
       clicks += 1
@@ -49,9 +61,9 @@
       },
     }
   </script>
-  <script src="../draftFill.js?v=3.2.0"></script>
-  <script src="../timer.js?v=3.2.0"></script>
-  <script src="../poster.js?v=3.2.0"></script>
+  <script src="../draftFill.js?v=3.4.1"></script>
+  <script src="../timer.js?v=3.4.1"></script>
+  <script src="../poster.js?v=3.4.1"></script>
   <script>
     window.XInteractionPoster.start((state) => {
       if (state.count !== 1) return

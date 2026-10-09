@@ -12,6 +12,7 @@
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
+  const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
   const NOTIFICATION_HISTORY_LIMIT = 2000;
   const PHRASE_STORE = 7;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
@@ -31,8 +32,11 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.2.0";
+  const CYCLE_INTERVAL_MS = 2 * 60 * 60 * 1000;
+  const RECONNECT_INTERVAL_MS = 60 * 1000;
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.4.1";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
+  const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
   const state = {
     running: false,
@@ -42,6 +46,9 @@
     total: 0,
     startedAt: null,
     elapsedMs: 0,
+    cycleCount: 0,
+    nextCycleAt: 0,
+    reconnectAt: 0,
     replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     panelView: "normal",
@@ -61,6 +68,8 @@
     phraseIndex: null,
     loopPromise: null
   };
+
+  let pluginRuntime = { startedAt: null, tasks: {} };
 
   const processedIds = new Set();
   const processedNotificationIds = new Set();
@@ -83,8 +92,107 @@
     return value === "template" ? "template" : "ai";
   }
 
+  function validDeepSeekApiKey(value) {
+    return /^sk-\S{8,}$/u.test(String(value || "").trim());
+  }
+
   function validAssistantMode(value) {
-    return ["mutual", "notifications", "poster"].includes(value) ? value : "timeline";
+    return ASSISTANT_MODES.has(value) ? value : "timeline";
+  }
+
+  function requestedAssistantMode() {
+    try {
+      const requested = new URL(window.location.href).searchParams.get("xrcAssistant");
+      return ASSISTANT_MODES.has(requested) ? requested : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function removeAssistantModeFromUrl() {
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("xrcAssistant")) return;
+      url.searchParams.delete("xrcAssistant");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    } catch (error) {
+      // The task is already assigned in sessionStorage, so URL cleanup is optional.
+    }
+  }
+
+  function sendTaskMessage(type, mode) {
+    return new Promise((resolve, reject) => {
+      if (!globalThis.chrome?.runtime?.sendMessage) {
+        reject(new Error("任务页签调度仅在已安装的 Chrome 扩展中可用"));
+        return;
+      }
+      chrome.runtime.sendMessage({ type, mode: validAssistantMode(mode) }, (response) => {
+        const runtimeError = chrome.runtime.lastError;
+        if (runtimeError) {
+          reject(new Error(runtimeError.message || "无法连接扩展后台"));
+          return;
+        }
+        if (!response?.ok) {
+          reject(new Error(response?.error || "任务页签调度失败"));
+          return;
+        }
+        resolve(response);
+      });
+    });
+  }
+
+  function readRuntimeMessage(type, payload = {}) {
+    return new Promise((resolve, reject) => {
+      if (!globalThis.chrome?.runtime?.sendMessage) {
+        reject(new Error("无法连接扩展后台"));
+        return;
+      }
+      chrome.runtime.sendMessage({ type, ...payload }, (response) => {
+        const runtimeError = chrome.runtime.lastError;
+        if (runtimeError || !response?.ok) {
+          reject(new Error(runtimeError?.message || response?.error || "运行状态同步失败"));
+          return;
+        }
+        resolve(response);
+      });
+    });
+  }
+
+  async function loadPluginRuntime() {
+    try {
+      const response = await readRuntimeMessage("xrc-runtime-get");
+      pluginRuntime = response.runtime || pluginRuntime;
+    } catch (error) {
+      pluginRuntime = { startedAt: null, tasks: {} };
+    }
+  }
+
+  async function setRuntimeTaskActive(mode, active) {
+    try {
+      const response = await readRuntimeMessage("xrc-runtime-task-state", {
+        mode: validAssistantMode(mode),
+        active: Boolean(active)
+      });
+      pluginRuntime = response.runtime || pluginRuntime;
+      renderPanel();
+    } catch (error) {
+      // Task execution must not depend on the optional runtime display.
+    }
+  }
+
+  function registerCurrentTaskTab(mode = state.assistantMode) {
+    return sendTaskMessage("xrc-task-register", mode).catch(() => null);
+  }
+
+  async function openTaskTab(mode) {
+    const selected = validAssistantMode(mode);
+    if (selected === state.assistantMode) return;
+    try {
+      await sendTaskMessage("xrc-task-open", selected);
+    } catch (error) {
+      state.status = error?.message || "没有成功打开任务页签";
+      renderPanel();
+    }
   }
 
   function validMutualMode(value) {
@@ -104,13 +212,17 @@
     try {
       const stored = await chrome.storage.local.get("xrcAiSettings");
       const settings = stored?.xrcAiSettings || {};
-      const apiKey = String(settings.apiKey || "").trim();
+      const savedValue = String(settings.apiKey || "").trim();
+      const apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
+      if (savedValue && !apiKey) {
+        await chrome.storage.local.set({ xrcAiSettings: { ...settings, apiKey: "" } });
+      }
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
-        : "尚未配置 DeepSeek API Key";
+        : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
     } catch (error) {
       state.aiStatus = "读取 AI 配置失败";
     }
@@ -151,7 +263,7 @@
 
   async function saveAiSettings(apiKey) {
     const key = String(apiKey || "").trim();
-    if (!key) throw new Error("请输入 DeepSeek API Key");
+    if (!validDeepSeekApiKey(key)) throw new Error("请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码");
     if (!globalThis.chrome?.storage?.local) throw new Error("当前环境无法保存扩展配置");
     await chrome.storage.local.set({ xrcAiSettings: { apiKey: key, replyMode: state.replyMode } });
     state.aiKeySaved = true;
@@ -194,6 +306,9 @@
       pageCount: 0,
       completedRounds: 0,
       startedAt: null,
+      cycleCount: 0,
+      nextCycleAt: 0,
+      reconnectAt: 0,
       phraseIndex: null,
       processedIds: [],
       replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
@@ -220,6 +335,9 @@
         pageCount: Number(parsed.pageCount) || 0,
         completedRounds: Number(parsed.completedRounds) || 0,
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
+        cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
+        nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
+        reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         replyIntervalSeconds: clampInterval(parsed.replyIntervalSeconds, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         panelView: validPanelView(parsed.panelView),
@@ -247,6 +365,9 @@
         pageCount: Number(value.pageCount ?? state.pageCount) || 0,
         completedRounds: Number(value.completedRounds ?? state.completedRounds) || 0,
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
+        cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
+        nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
+        reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
         panelView: state.panelView,
@@ -271,6 +392,9 @@
         pageCount: 0,
         completedRounds: 0,
         startedAt: null,
+        cycleCount: 0,
+        nextCycleAt: 0,
+        reconnectAt: 0,
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
         panelView: state.panelView,
@@ -305,6 +429,68 @@
     const seconds = totalSeconds % 60;
     const pair = (value) => String(value).padStart(2, "0");
     return hours > 0 ? `${hours}:${pair(minutes)}:${pair(seconds)}` : `${pair(minutes)}:${pair(seconds)}`;
+  }
+
+  function formatCountdown(milliseconds) {
+    const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const parts = [];
+    if (hours > 0) parts.push(`${hours} 小时`);
+    if (minutes > 0 || hours > 0) parts.push(`${minutes} 分`);
+    parts.push(`${seconds} 秒`);
+    return parts.join(" ");
+  }
+
+  function resetCycleProgress() {
+    state.pageCount = 0;
+    state.completedRounds = 0;
+    state.total = 0;
+    state.nextCycleAt = 0;
+    state.reconnectAt = 0;
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    skippedIds.clear();
+  }
+
+  async function waitForDeadline(deadline, statusForRemaining) {
+    while (state.running && !state.stopping && Date.now() < deadline) {
+      state.status = statusForRemaining(deadline - Date.now());
+      renderPanel();
+      await sleep(Math.min(5000, Math.max(1000, deadline - Date.now())));
+    }
+    return state.running && !state.stopping;
+  }
+
+  async function finishCycleAndScheduleNext(summary) {
+    state.cycleCount += 1;
+    state.nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
+    state.reconnectAt = 0;
+    writeSaved({ running: true, total: state.total });
+    const ready = await waitForDeadline(
+      state.nextCycleAt,
+      (remaining) => `${summary}；${formatCountdown(remaining)}后自动开始第 ${state.cycleCount + 1} 次`
+    );
+    if (!ready) return "stopped";
+    resetCycleProgress();
+    writeSaved({ running: true, total: 0 });
+    await reloadAndResume(`第 ${state.cycleCount + 1} 次即将开始，正在刷新页面`);
+    return "reload";
+  }
+
+  async function reconnectAndResume(reason) {
+    state.reconnectAt = state.reconnectAt > Date.now() ? state.reconnectAt : Date.now() + RECONNECT_INTERVAL_MS;
+    writeSaved({ running: true, total: state.total });
+    const ready = await waitForDeadline(
+      state.reconnectAt,
+      (remaining) => `${reason}；${formatCountdown(remaining)}后自动重连`
+    );
+    if (!ready) return "stopped";
+    state.reconnectAt = 0;
+    writeSaved({ running: true, total: state.total });
+    await reloadAndResume("正在重连 X 页面并恢复当前任务");
+    return "reload";
   }
 
   async function waitRateLimit(seconds, statusForRemaining) {
@@ -678,6 +864,24 @@
       window.location.assign("/notifications");
       return "reload";
     }
+    if (state.nextCycleAt > 0) {
+      const readyForNextCycle = await waitForDeadline(
+        state.nextCycleAt,
+        (remaining) => `第 ${state.cycleCount} 次已完成；${formatCountdown(remaining)}后自动开始第 ${state.cycleCount + 1} 次`
+      );
+      if (!readyForNextCycle) return "stopped";
+      resetCycleProgress();
+      writeSaved({ running: true, total: 0 });
+    }
+    if (state.reconnectAt > 0) {
+      const readyToReconnect = await waitForDeadline(
+        state.reconnectAt,
+        (remaining) => `页面连接暂时不可用；${formatCountdown(remaining)}后自动重连`
+      );
+      if (!readyToReconnect) return "stopped";
+      state.reconnectAt = 0;
+      writeSaved({ running: true, total: state.total });
+    }
     scrollTimelineToTop();
     await sleepActive(resume ? RESUME_DELAY_MS : 400);
     if (state.stopping) return "stopped";
@@ -688,12 +892,13 @@
     );
     if (state.stopping) return "stopped";
     if (!ready) {
-      state.status = currentAccountHandle()
-        ? state.assistantMode === "notifications"
-          ? "没有找到别人回复你的通知。单纯点赞、自己的回复和已处理内容会自动跳过。"
-          : "没有找到可回复的他人帖子。自己的帖子和自己的回复会自动跳过。"
-        : "无法识别当前登录账号，为避免回复自己，已停止。";
-      return "give-up";
+      if (!currentAccountHandle()) {
+        return reconnectAndResume("暂时无法识别当前登录账号，为避免回复自己，本轮已暂停");
+      }
+      if (state.assistantMode === "notifications") {
+        return finishCycleAndScheduleNext("近 2 小时没有新的待处理回复通知");
+      }
+      return reconnectAndResume("暂时没有找到可回复的他人帖子");
     }
 
     let stalled = 0;
@@ -716,9 +921,7 @@
           state.completedRounds = transition.completedRounds;
           state.pageCount = transition.pageCount;
           if (transition.action === "complete") {
-            state.status = `已完成 ${ROUNDS_PER_RUN} 轮，共发送 ${state.total} 条回复`;
-            renderPanel();
-            return "complete";
+            return finishCycleAndScheduleNext(`本次已完成 ${ROUNDS_PER_RUN} 轮，共发送 ${state.total} 条回复`);
           }
           await waitRateLimit(
             state.roundIntervalSeconds,
@@ -738,9 +941,7 @@
       const next = loopApi.nextTweet(tweets, processedForCurrentMode());
       if (!next) {
         if (state.assistantMode === "notifications" && hasReachedNotificationCutoff()) {
-          state.status = `最近 2 小时内的回复通知已处理完，本次完成 ${state.total} 条；历史记录会阻止重复互动`;
-          renderPanel();
-          return "complete";
+          return finishCycleAndScheduleNext(`近 2 小时回复通知已处理完，本次完成 ${state.total} 条且不会重复互动`);
         }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
@@ -749,13 +950,10 @@
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
           if (state.assistantMode === "notifications") {
-            state.status = `最近 2 小时内没有更多待处理的回复通知，本次完成 ${state.total} 条`;
-            renderPanel();
-            return "complete";
+            return finishCycleAndScheduleNext(`近 2 小时没有更多待处理通知，本次完成 ${state.total} 条`);
           }
           if (state.pageCount === 0) {
-            state.status = "没有发出回复。确认页面上能打开评论弹窗。";
-            return "give-up";
+            return reconnectAndResume("当前页面没有发出回复，准备重新载入时间线");
           }
         }
         state.status = stalled > 0
@@ -781,8 +979,7 @@
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       if (state.replyMode === "ai") {
         if (findDialogComposer() && !(state.pendingTweetId === next.id && state.pendingReply)) {
-          state.status = "AI 模式检测到手动打开的评论弹窗。请关闭弹窗后再开始，避免回复错帖子。";
-          return "give-up";
+          return reconnectAndResume("检测到其他评论弹窗，为避免回复错帖子已暂停");
         }
         const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (!postText) {
@@ -819,9 +1016,7 @@
       const result = await replyOnce(next, phrase);
       if (result === "stopped") break;
       if (result === "composer-already-open") {
-        state.status = failureLabel(result);
-        renderPanel();
-        return "give-up";
+        return reconnectAndResume(failureLabel(result));
       }
 
       if (result === "ok" || result === "sent-composer-open") {
@@ -884,12 +1079,20 @@
   }
 
   function updateMutualState(next) {
+    const wasRunning = Boolean(state.mutual?.running);
     state.mutual = next || mutualApi?.snapshot?.() || state.mutual;
+    if (wasRunning !== Boolean(state.mutual?.running)) {
+      setRuntimeTaskActive("mutual", Boolean(state.mutual?.running));
+    }
     renderPanel();
   }
 
   function updatePosterState(next) {
+    const wasRunning = Boolean(state.poster?.running);
     state.poster = next || postApi?.snapshot?.() || state.poster;
+    if (wasRunning !== Boolean(state.poster?.running)) {
+      setRuntimeTaskActive("poster", Boolean(state.poster?.running));
+    }
     renderPanel();
   }
 
@@ -914,6 +1117,7 @@
       window.location.assign("/home");
       return;
     }
+    registerCurrentTaskTab("poster");
     postApi.start(updatePosterState);
   }
 
@@ -927,6 +1131,7 @@
       if (state.mutual.mode === mode) mutualApi.stop();
       return;
     }
+    registerCurrentTaskTab("mutual");
     const result = await mutualApi.run(mode, updateMutualState);
     if (result?.navigate) {
       state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
@@ -989,7 +1194,7 @@
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
               <div class="xrc-title">X 互动帮手</div>
-              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 本地运行</div>
+              <div class="xrc-subtitle">v${EXTENSION_VERSION} · <span data-xrc-stable-runtime>尚未运行</span></div>
             </div>
           </div>
           <div class="xrc-header-actions">
@@ -1001,7 +1206,7 @@
           </div>
         </div>
         <div class="xrc-workspace-nav">
-          <div class="xrc-workspace-nav-head"><strong>功能导航</strong><span>选择助手，下方工作区同步切换</span></div>
+          <div class="xrc-workspace-nav-head"><strong>功能导航</strong><span>每项使用独立 X 页签，切换不会停止其他任务</span></div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="互动助手">
             <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
             <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>通知回复</strong><small>点赞回复</small></span></button>
@@ -1036,13 +1241,13 @@
             </section>
           </div>
           <div class="xrc-status" role="status" data-xrc-mutual-status>选择一项互关任务开始</div>
-          <div class="xrc-footer"><span>互关操作均在当前 X 页面本地执行</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
+          <div class="xrc-footer"><span>任务运行 <b data-xrc-mutual-runtime>00:00</b></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-post-body">
           <details class="xrc-ai-config" data-xrc-post-ai-config>
             <summary><strong>配置 DeepSeek AI</strong><span>与 AI 回复共用同一个 Key</span></summary>
             <div class="xrc-ai-config-body">
-              <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-post-ai-key></label>
+              <label><span>DeepSeek API Key</span><input type="text" name="xrc-deepseek-post-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-post-ai-key></label>
               <div class="xrc-ai-actions"><button type="button" data-xrc-post-ai-save>保存 Key</button></div>
               <div class="xrc-ai-status" data-xrc-post-ai-status>尚未配置 DeepSeek API Key</div>
               <div class="xrc-ai-privacy">只发送当前页面可见的趋势和时间线文字，不会发送 X 登录 Cookie。</div>
@@ -1065,7 +1270,7 @@
           <details class="xrc-ai-config" data-xrc-ai-config>
             <summary><strong>配置 DeepSeek AI</strong><span>保存 Key 后自动折叠</span></summary>
             <div class="xrc-ai-config-body">
-              <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-ai-key></label>
+              <label><span>DeepSeek API Key</span><input type="text" name="xrc-deepseek-reply-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-ai-key></label>
               <div class="xrc-ai-actions">
                 <button type="button" data-xrc-ai-save>保存 Key</button>
               </div>
@@ -1074,12 +1279,15 @@
             </div>
           </details>
           <button class="xrc-button xrc-primary-action" type="button" data-xrc-toggle>开始回复</button>
-          <div class="xrc-status" role="status"></div>
+          <div class="xrc-status xrc-reply-status" role="status">
+            <span data-xrc-status-text></span>
+            <span class="xrc-current-reply" data-xrc-current-reply><small data-xrc-reply-label>当前 AI 回复</small><strong data-xrc-phrase></strong></span>
+          </div>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
               <div class="xrc-progress-header">
                 <div class="xrc-progress-heading">
-                  <span class="xrc-section-eyebrow">执行进度</span>
+                  <span class="xrc-section-eyebrow" data-xrc-cycle-title>第 1 次执行</span>
                   <strong data-xrc-round-title>第 1 轮</strong>
                   <small><span data-xrc-progress-prefix>本轮已完成</span> <b data-xrc-page>0</b><span data-xrc-progress-suffix> / ${BATCH_SIZE} 次回复</span></small>
                 </div>
@@ -1122,7 +1330,6 @@
               </div>
             </details>
           </div>
-          <div class="xrc-phrase-row"><span data-xrc-reply-label>当前话术</span><strong data-xrc-phrase></strong></div>
           <details class="xrc-phrase-pool" open>
             <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
             <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
@@ -1159,36 +1366,7 @@
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
       });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
-        button.addEventListener("click", () => {
-          if (anyTaskRunning()) return;
-          const nextMode = validAssistantMode(button.dataset.xrcAssistant);
-          if (nextMode === state.assistantMode) return;
-          state.assistantMode = nextMode;
-          state.pageCount = 0;
-          state.completedRounds = 0;
-          state.total = 0;
-          state.startedAt = null;
-          state.elapsedMs = 0;
-          state.errors = 0;
-          state.pendingReply = "";
-          state.pendingTweetId = "";
-          state.lastReply = "";
-          processedIds.clear();
-          skippedIds.clear();
-          state.status = nextMode === "notifications"
-            ? "通知回复只处理最近 2 小时内别人回复你的内容：先点赞，再回复；处理过的不重复。"
-            : nextMode === "mutual"
-              ? "选择清理未回关、回关粉丝或关注候选。"
-              : nextMode === "poster"
-                ? "DeepSeek 会从当前时间线提炼话题，并每隔 25～35 分钟发布一条纯文字推文。"
-              : "时间线回复会从上往下处理他人的帖子。";
-          writeSaved({ running: false, total: 0 });
-          renderPanel();
-          if (nextMode === "notifications" && !isNotificationPath()) window.location.assign("/notifications");
-          if (nextMode === "timeline" && window.location.pathname !== "/home") window.location.assign("/home");
-          if (nextMode === "poster" && window.location.pathname !== "/home") window.location.assign("/home");
-          if (nextMode === "mutual") selectMutualMode(state.mutualMode);
-        });
+        button.addEventListener("click", () => openTaskTab(button.dataset.xrcAssistant));
       });
       panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
         state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
@@ -1251,7 +1429,7 @@
       });
     }
 
-    const status = panel.querySelector(".xrc-reply-body .xrc-status");
+    const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
     if (status) status.textContent = state.status;
     if (stats) {
@@ -1259,6 +1437,9 @@
       const shownRound = Math.min(state.completedRounds + 1, ROUNDS_PER_RUN);
       const totalPercent = Math.min(100, Math.round((state.total / RUN_SIZE) * 100));
       panel.querySelector("[data-xrc-page]").textContent = String(state.pageCount);
+      panel.querySelector("[data-xrc-cycle-title]").textContent = notificationMode
+        ? `第 ${state.cycleCount + 1} 次扫描`
+        : `第 ${state.cycleCount + 1} 次执行`;
       panel.querySelector("[data-xrc-progress-prefix]").textContent = notificationMode ? "最近 2 小时内本次已处理" : "本轮已完成";
       panel.querySelector("[data-xrc-progress-suffix]").textContent = notificationMode ? " 次互动" : ` / ${BATCH_SIZE} 次回复`;
       panel.querySelector("[data-xrc-page-meta-label]").textContent = notificationMode ? "本次互动" : "本轮次数";
@@ -1298,6 +1479,7 @@
         : currentPhrase();
       panel.querySelector("[data-xrc-phrase]").textContent = phrase;
       panel.querySelector("[data-xrc-reply-label]").textContent = state.replyMode === "ai" ? "当前 AI 回复" : "当前话术";
+      panel.querySelector("[data-xrc-current-reply]").hidden = !phrase;
       panel.querySelector("[data-xrc-ai-status]").textContent = state.aiStatus;
       const aiConfig = panel.querySelector("[data-xrc-ai-config]");
       const primaryAction = panel.querySelector("[data-xrc-toggle]");
@@ -1322,7 +1504,8 @@
         const selected = button.dataset.xrcAssistant === state.assistantMode;
         button.classList.toggle("is-active", selected);
         button.setAttribute("aria-selected", selected ? "true" : "false");
-        button.disabled = anyTaskRunning();
+        button.disabled = false;
+        button.title = selected ? "当前任务页签" : "打开或切换到该任务的专用 X 页签";
       });
       panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
@@ -1357,7 +1540,7 @@
       panel.querySelector("[data-xrc-post-next]").textContent = poster.running
         ? remainingMs > 0 ? `约 ${remainingMinutes} 分钟后` : "正在生成"
         : "立即生成";
-      panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : 0);
+      panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
       panel.querySelector("[data-xrc-post-preview]").textContent = poster.currentPost || poster.lastPost || "启动后显示 DeepSeek 生成的下一条纯文字推文";
       panel.querySelector("[data-xrc-post-ai-status]").textContent = state.aiStatus;
@@ -1373,6 +1556,8 @@
     const mutual = state.mutual || mutualApi?.snapshot?.();
     const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
     if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
+    const mutualStartedAt = Number(pluginRuntime.tasks?.mutual?.startedAt) || 0;
+    panel.querySelector("[data-xrc-mutual-runtime]").textContent = formatRuntime(mutualStartedAt ? Date.now() - mutualStartedAt : 0);
     panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
       const selected = button.dataset.xrcMutualTab === state.mutualMode;
       button.classList.toggle("is-active", selected);
@@ -1402,15 +1587,23 @@
         panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `互关浇友 · 已完成 ${mutualCount}` : "互关浇友 · 待命";
       }
     }
-    const active = anyTaskRunning();
+    const active = anyTaskRunning() || Object.keys(pluginRuntime.tasks || {}).length > 0;
     const mutualSelected = state.assistantMode === "mutual";
     const posterSelected = state.assistantMode === "poster";
-    const completed = !mutualSelected && !posterSelected && state.completedRounds >= ROUNDS_PER_RUN;
+    const completed = !mutualSelected && !posterSelected && !state.running && state.completedRounds >= ROUNDS_PER_RUN;
+    const waitingForNextCycle = !mutualSelected && !posterSelected && state.nextCycleAt > Date.now();
+    const reconnecting = !mutualSelected && !posterSelected && state.reconnectAt > Date.now();
     const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : state.status;
-    const failed = /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
+    const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
     panel.dataset.assistantMode = state.assistantMode;
     panel.dataset.replyMode = state.replyMode;
+    const stableRuntime = panel.querySelector("[data-xrc-stable-runtime]");
+    if (stableRuntime) {
+      stableRuntime.textContent = pluginRuntime.startedAt
+        ? `稳定运行 ${formatRuntime(Date.now() - pluginRuntime.startedAt)}`
+        : "尚未运行";
+    }
     const collapseButton = panel.querySelector("[data-xrc-collapse]");
     const expandButton = panel.querySelector("[data-xrc-expand]");
     collapseButton.textContent = state.panelView === "collapsed" ? "▣" : "—";
@@ -1422,7 +1615,17 @@
     panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
-      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
+      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping
+        ? "停止中"
+        : waitingForNextCycle
+          ? "休息中"
+          : reconnecting
+            ? "重连中"
+            : completed
+              ? "已完成"
+              : failed
+                ? "需要注意"
+                : active ? "运行中" : "待命";
       const stateBadge = stateLabel.closest(".xrc-state");
       stateBadge?.setAttribute("aria-label", stateLabel.textContent);
       stateBadge?.setAttribute("title", stateLabel.textContent);
@@ -1438,6 +1641,8 @@
     }
     state.running = true;
     state.stopping = false;
+    registerCurrentTaskTab();
+    setRuntimeTaskActive(state.assistantMode, true);
     writeSaved({ running: true, total: state.total });
     state.status = resume
       ? "刷新完成，从顶部继续"
@@ -1445,18 +1650,21 @@
         ? "从通知页顶部开始，只处理最近 2 小时内尚未互动的回复"
         : "从顶部开始，向下回复";
     renderPanel();
-    state.loopPromise = runLoop({ resume }).then((result) => {
-      state.loopPromise = null;
-      if (result === "reload") return;
-      const stoppedByUser = state.stopping;
-      state.elapsedMs = elapsedRuntimeMs();
-      state.startedAt = null;
-      state.running = false;
-      state.stopping = false;
-      clearSaved();
-      if (stoppedByUser) state.status = "已停止";
-      renderPanel();
-    });
+    state.loopPromise = runLoop({ resume })
+      .catch((error) => reconnectAndResume(error?.message || "任务运行异常"))
+      .then((result) => {
+        state.loopPromise = null;
+        if (result === "reload") return;
+        const stoppedByUser = state.stopping;
+        state.elapsedMs = elapsedRuntimeMs();
+        state.startedAt = null;
+        state.running = false;
+        state.stopping = false;
+        clearSaved();
+        setRuntimeTaskActive(state.assistantMode, false);
+        if (stoppedByUser) state.status = "已停止";
+        renderPanel();
+      });
   }
 
   function onToggle() {
@@ -1481,6 +1689,9 @@
     state.total = 0;
     state.startedAt = null;
     state.elapsedMs = 0;
+    state.cycleCount = 0;
+    state.nextCycleAt = 0;
+    state.reconnectAt = 0;
     state.errors = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
@@ -1492,14 +1703,18 @@
 
   async function boot() {
     const saved = readSaved();
+    const launchedMode = requestedAssistantMode();
     state.total = saved.total;
     state.pageCount = saved.pageCount;
     state.completedRounds = saved.completedRounds;
     state.startedAt = saved.startedAt;
+    state.cycleCount = saved.cycleCount;
+    state.nextCycleAt = saved.nextCycleAt;
+    state.reconnectAt = saved.reconnectAt;
     state.replyIntervalSeconds = saved.replyIntervalSeconds;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.panelView = saved.panelView;
-    state.assistantMode = saved.assistantMode;
+    state.assistantMode = launchedMode || saved.assistantMode;
     state.mutualMode = saved.mutualMode;
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
@@ -1510,6 +1725,12 @@
       for (const id of saved.processedIds) processedIds.add(id);
     }
     state.phraseIndex = saved.phraseIndex;
+    if (launchedMode) {
+      writeSaved({ running: false, total: state.total });
+      registerCurrentTaskTab(launchedMode);
+      removeAssistantModeFromUrl();
+    }
+    await loadPluginRuntime();
     await loadAiSettings();
     await loadNotificationHistory();
     if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
@@ -1521,13 +1742,16 @@
     }
     if (!saved.running) {
       state.status = state.assistantMode === "notifications"
-        ? "通知回复只处理最近 2 小时内的回复：先点赞，再回复；处理过的不重复。"
+        ? "通知回复处理近 2 小时内容；完成后休息 2 小时再自动扫描，处理过的不重复。"
         : state.assistantMode === "poster"
           ? "DeepSeek 会从当前时间线提炼话题，并每隔 25～35 分钟发布一条纯文字推文。"
-        : "待命。默认使用 AI 模式，读取原帖后生成回复。";
+        : "时间线每次执行 5 轮；完成后休息 2 小时再自动开始下一次。";
     }
     renderPanel();
-    postApi?.restore?.(updatePosterState);
+    if (postApi?.restore?.(updatePosterState)) {
+      registerCurrentTaskTab("poster");
+      setRuntimeTaskActive("poster", true);
+    }
     if (saved.running) {
       begin({ resume: true });
     }
@@ -1539,7 +1763,13 @@
     boot();
   }
 
+  globalThis.chrome?.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes[PLUGIN_RUNTIME_KEY]) return;
+    pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
+    renderPanel();
+  });
+
   window.setInterval(() => {
-    if (!document.getElementById(PANEL_ID)) renderPanel();
+    renderPanel();
   }, 1000);
 })();

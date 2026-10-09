@@ -6,7 +6,7 @@
   const POST_EDITOR_SELECTOR = '[data-testid="tweetTextarea_0"][contenteditable="true"][role="textbox"]';
   const MIN_INTERVAL_MS = 25 * 60 * 1000;
   const MAX_INTERVAL_MS = 35 * 60 * 1000;
-  const RETRY_INTERVAL_MS = 5 * 60 * 1000;
+  const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
 
   const state = {
@@ -16,15 +16,20 @@
     count: 0,
     errors: 0,
     startedAt: null,
+    elapsedMs: 0,
     nextPostAt: 0,
     currentPost: "",
     lastPost: "",
+    lastError: "",
     onUpdate: null,
     loopPromise: null
   };
 
   const wait = (ms) => root.XInteractionTimer?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
-  const textOf = (node) => String(node?.innerText || node?.textContent || "").replace(/\u200b/g, "").trim();
+  const textOf = (node) => String(node?.innerText || node?.textContent || "")
+    .replace(/[\u200b-\u200d\ufeff]/gu, "")
+    .normalize("NFC")
+    .trim();
 
   function editorText(node) {
     return textOf(node)
@@ -43,9 +48,11 @@
       count: state.count,
       errors: state.errors,
       startedAt: state.startedAt,
+      elapsedMs: state.elapsedMs,
       nextPostAt: state.nextPostAt,
       currentPost: state.currentPost,
-      lastPost: state.lastPost
+      lastPost: state.lastPost,
+      lastError: state.lastError
     };
   }
 
@@ -114,13 +121,22 @@
 
   function findInlineComposer() {
     const editors = Array.from(document.querySelectorAll(POST_EDITOR_SELECTOR));
+    const visibleSubmits = Array.from(document.querySelectorAll('[data-testid="tweetButtonInline"]'))
+      .filter((button) => visible(button) && !button.closest('[role="dialog"]') && !button.closest("article"));
     for (const editor of editors) {
       if (!visible(editor) || editor.closest('[role="dialog"]') || editor.closest("article")) continue;
       let container = editor.parentElement;
-      for (let depth = 0; depth < 12 && container; depth += 1, container = container.parentElement) {
+      for (let depth = 0; depth < 30 && container && container !== document.body; depth += 1, container = container.parentElement) {
         const submit = container.querySelector?.('[data-testid="tweetButtonInline"]');
-        if (submit) return { editor, submit, container };
+        if (submit && visible(submit) && !submit.closest('[role="dialog"]') && !submit.closest("article")) {
+          return { editor, submit, container };
+        }
       }
+      const editorRect = editor.getBoundingClientRect?.();
+      const submit = visibleSubmits
+        .map((button) => ({ button, rect: button.getBoundingClientRect?.() }))
+        .sort((left, right) => Math.abs((left.rect?.top || 0) - (editorRect?.bottom || 0)) - Math.abs((right.rect?.top || 0) - (editorRect?.bottom || 0)))[0]?.button;
+      if (submit) return { editor, submit, container: submit.parentElement };
     }
     return null;
   }
@@ -171,20 +187,25 @@
   }
 
   async function publishPost(postText) {
-    const composer = findInlineComposer();
+    let composer = findInlineComposer();
     if (!composer) return "no-composer";
     const existing = editorText(composer.editor);
     if (existing && existing !== postText) return "composer-not-empty";
     if (!existing) {
       const fill = await requestDraftFill(postText);
-      if (!fill?.ok || editorText(composer.editor) !== postText) return "compose-failed";
+      composer = findInlineComposer();
+      if (!fill?.ok || !composer || editorText(composer.editor) !== editorText({ innerText: postText })) return "compose-failed";
     }
     const ready = await waitUntil(() => submitEnabled(findInlineComposer()?.submit), 8000);
     if (!ready) return "submit-disabled";
     const noticesBefore = new Set(successNoticeNodes());
     const hasNewNotice = () => successNoticeNodes().some((node) => !noticesBefore.has(node));
     realClick(findInlineComposer()?.submit || composer.submit);
-    const confirmed = await waitUntil(() => hasNewNotice() || !editorText(composer.editor), 8000);
+    const confirmed = await waitUntil(() => {
+      if (hasNewNotice() || !composer.editor.isConnected) return true;
+      const currentEditor = findInlineComposer()?.editor;
+      return !currentEditor || !editorText(currentEditor);
+    }, 12000);
     return confirmed ? "ok" : "send-unconfirmed";
   }
 
@@ -214,44 +235,48 @@
     while (state.running && !state.stopping) {
       if (state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
-        emit(`下一条约 ${remaining} 分钟后生成并发布`);
+        emit(state.lastError
+          ? `上次异常：${state.lastError}；约 ${remaining} 分钟后重试`
+          : `下一条约 ${remaining} 分钟后生成并发布`);
         await wait(Math.min(5000, state.nextPostAt - Date.now()));
         continue;
       }
-      const contextText = collectTopicContext();
-      if (!contextText) {
-        state.errors += 1;
-        state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
-        emit("没有读取到时间线或趋势文字，5 分钟后重试");
-        continue;
-      }
       try {
-        emit("DeepSeek 正在从当前时间线提炼话题…");
-        state.currentPost = await generatePost(contextText);
+        if (!state.currentPost) {
+          const contextText = collectTopicContext();
+          if (!contextText) throw new Error("没有读取到时间线或趋势文字");
+          emit("DeepSeek 正在从当前时间线提炼话题…");
+          state.currentPost = await generatePost(contextText);
+        } else {
+          emit("正在重试上次尚未发出的内容…");
+        }
         emit("内容已生成，正在写入 X 发帖框");
         const result = await publishPost(state.currentPost);
         if (result !== "ok") {
           state.errors += 1;
+          state.lastError = failureLabel(result);
           if (result === "composer-not-empty") {
             state.running = false;
             state.stopping = false;
-            emit(failureLabel(result));
+            emit(state.lastError);
             return;
           }
           state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
-          emit(`${failureLabel(result)}，5 分钟后重试同一条`);
+          emit(`${state.lastError}，1 分钟后重试同一条`);
           continue;
         }
         state.count += 1;
         state.lastPost = state.currentPost;
         state.currentPost = "";
+        state.lastError = "";
         state.nextPostAt = Date.now() + randomIntervalMs();
         emit(`第 ${state.count} 条已发送；下一条将在 25～35 分钟后发布`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
+        state.lastError = error?.message || "生成失败";
         state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
-        emit(`${error?.message || "生成失败"}，5 分钟后重试`);
+        emit(`${state.lastError}，1 分钟后重试`);
       }
     }
   }
@@ -269,14 +294,18 @@
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
+      state.elapsedMs = 0;
       state.nextPostAt = 0;
       state.currentPost = "";
       state.lastPost = "";
+      state.lastError = "";
     }
     emit();
     state.loopPromise = run().finally(() => {
       state.loopPromise = null;
       if (state.stopping) state.status = "已停止";
+      state.elapsedMs = state.startedAt ? Math.max(0, Date.now() - state.startedAt) : state.elapsedMs;
+      state.startedAt = null;
       state.running = false;
       state.stopping = false;
       clearSaved();

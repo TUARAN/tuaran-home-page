@@ -284,7 +284,7 @@
   top: 62px;
   right: 12px;
   z-index: 4;
-  width: 236px;
+  width: 260px;
   padding: 10px 12px 12px;
   border: 1px solid var(--xrc-line);
   border-radius: 12px;
@@ -332,6 +332,63 @@
   height: 16px;
   flex: 0 0 auto;
   accent-color: var(--xrc-accent);
+}
+
+#x-reply-clipboard-panel .xrc-config-key {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--xrc-line);
+}
+
+#x-reply-clipboard-panel .xrc-config-key input,
+#x-reply-clipboard-panel .xrc-start-key {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--xrc-text);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+
+#x-reply-clipboard-panel .xrc-config-key button {
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--xrc-accent);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+#x-reply-clipboard-panel .xrc-config-note {
+  margin: 8px 0 0;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+#x-reply-clipboard-panel .xrc-start {
+  display: grid;
+}
+
+#x-reply-clipboard-panel .xrc-start[data-needs-key="true"] {
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--xrc-workspace);
+}
+
+#x-reply-clipboard-panel .xrc-start[data-needs-key="true"] .xrc-primary-action {
+  min-height: 36px;
+  background: transparent;
+  box-shadow: none;
 }
 
 #x-reply-clipboard-panel .xrc-header-actions button svg {
@@ -644,36 +701,6 @@
   font-size: 10px;
   font-weight: 700;
   line-height: 1.45;
-}
-
-#x-reply-clipboard-panel .xrc-reply-status {
-  display: grid;
-  gap: 8px;
-}
-
-#x-reply-clipboard-panel .xrc-current-reply {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding-top: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--xrc-workspace) 16%, transparent);
-}
-
-#x-reply-clipboard-panel .xrc-current-reply small {
-  color: var(--xrc-muted);
-  font-size: 9px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-#x-reply-clipboard-panel .xrc-current-reply strong {
-  overflow: hidden;
-  color: var(--xrc-text);
-  font-size: 11px;
-  font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 #x-reply-clipboard-panel[data-state="warning"] .xrc-status {
@@ -1045,6 +1072,14 @@
   padding-top: 2px;
 }
 
+#x-reply-clipboard-panel .xrc-round-pace {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--xrc-line);
+}
+
 #x-reply-clipboard-panel .xrc-schedule-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1145,7 +1180,6 @@
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-settings { grid-column: 1 / -1; }
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-settings-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-phrase-list { max-height: 260px; }
-#x-reply-clipboard-panel[data-view="expanded"] .xrc-current-reply strong { max-width: 390px; }
 
 #x-reply-clipboard-panel[data-xrc-dock="float"][data-view="expanded"] {
   width: min(560px, calc(100vw - 36px));
@@ -1298,6 +1332,7 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 850;
+  text-align: center;
   box-shadow: 0 8px 20px rgba(15, 20, 25, 0.14);
   transition: transform 150ms ease, box-shadow 150ms ease;
 }

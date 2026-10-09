@@ -33,7 +33,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.7";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.11";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -68,7 +68,7 @@
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
     poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。DeepSeek 会根据当前时间线生成纯文字推文。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "" },
     errors: 0,
-    status: "待命。点开始后，会从固定话术里随机抽一条回复。",
+    status: "待命。点开始后，DeepSeek 会阅读原帖并生成回复。",
     phraseIndex: null,
     loopPromise: null
   };
@@ -94,8 +94,8 @@
     return ["normal", "collapsed", "expanded"].includes(value) ? value : "normal";
   }
 
-  function validReplyMode(value) {
-    return value === "template" ? "template" : "ai";
+  function validReplyMode() {
+    return "ai";
   }
 
   function validDeepSeekApiKey(value) {
@@ -865,7 +865,7 @@
   }
 
   const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|你的(?:帖子|回复)已发送|(?:帖子|回复)已发送成功)/i;
-  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|Something went wrong, but don(?:’t|'t) fret|give it another shot|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了)?|已经发布过相同内容/i;
 
   function successNoticeNodes() {
@@ -874,7 +874,7 @@
   }
 
   function automationWarningNodes() {
-    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"], #layers'))
       .filter((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
   }
 
@@ -884,26 +884,25 @@
   }
 
   function applyRiskStop(reason) {
+    if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return;
     state.riskPaused = true;
     state.running = false;
     state.stopping = true;
     state.pendingReply = "";
     state.pendingTweetId = "";
-    state.status = reason || "X 检测到疑似自动化操作，所有任务已停止；请人工检查账号状态";
-    postApi?.stop?.();
-    mutualApi?.stop?.();
+    state.status = reason || "评论过于频繁，时间线和通知回复已停止";
     clearSaved();
     setRuntimeTaskActive(state.assistantMode, false);
     renderPanel();
   }
 
   async function stopAllTasksForRisk() {
-    const reason = "X 检测到疑似自动化操作，所有任务已停止；不会自动重试，请人工检查账号状态";
+    const reason = "评论过于频繁，时间线和通知回复已停止；不会自动重试";
     applyRiskStop(reason);
     try {
       await sendExtensionMessage({ type: "xrc-risk-stop-all", reason });
     } catch (error) {
-      // The current page is already stopped even if another task tab cannot be reached.
+      // The current reply task is already stopped even if the other reply tab cannot be reached.
     }
   }
 
@@ -1342,15 +1341,12 @@
   function setRunningButton(button) {
     if (!button) return;
     const active = Boolean(state.loopPromise) || state.running;
-    const aiNeedsSetup = state.replyMode === "ai" && !state.aiKeySaved;
     button.dataset.running = active ? "true" : "false";
     button.textContent = state.stopping
       ? "正在停止"
       : active
         ? "停止"
-        : aiNeedsSetup
-          ? "配置 AI 后开始"
-          : state.assistantMode === "notifications" ? "开始通知回复" : "开始时间线回复";
+        : state.assistantMode === "notifications" ? "开始通知回复" : "开始时间线回复";
   }
 
   function updateMutualState(next) {
@@ -1382,7 +1378,8 @@
       return;
     }
     if (!state.aiKeySaved) {
-      state.poster = { ...state.poster, status: "请先填写并保存 DeepSeek API Key" };
+      state.poster = { ...state.poster, status: "请先在右上角设置里保存 DeepSeek API Key" };
+      configOpen = true;
       renderPanel();
       return;
     }
@@ -1599,6 +1596,12 @@
             <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
             <input type="checkbox" data-xrc-embed>
           </label>
+          <label class="xrc-config-key">
+            <span><strong>DeepSeek Key</strong><small data-xrc-config-key-hint>尚未配置</small></span>
+            <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
+            <button type="button" data-xrc-config-key-save>保存</button>
+          </label>
+          <p class="xrc-config-note">只把当前原帖文字发给 DeepSeek，不会发送 X 登录 Cookie。</p>
         </div>
         <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
           <div class="xrc-docs-head">
@@ -1635,6 +1638,10 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.11</b><span><strong>收起回复说明卡</strong><small>计划说明和当前回复预览不再占一块。轮次进度保留，只有发送失败或被限制时才出现一行提示。</small></span></article>
+                <article><b>v3.6.10</b><span><strong>开始按钮合并密钥</strong><small>没保存 Key 时，在开始按钮里填写后直接启动。保存后只留开始按钮，改 Key 放到右上角设置。</small></span></article>
+                <article><b>v3.6.9</b><span><strong>评论过密时停止回复</strong><small>页面出现自动化或发送失败提示时，停止时间线回复和通知回复，不再自动重试。</small></span></article>
+                <article><b>v3.6.8</b><span><strong>回复只保留 AI</strong><small>去掉模板随机和话术池。频率滑块放进轮次进度，不再单开运行设置。</small></span></article>
                 <article><b>v3.6.7</b><span><strong>默认右下角浮窗</strong><small>面板默认浮在页面右下角。标题栏齿轮里可以打开「嵌入到页面」，再挂到右侧搜索框下面。</small></span></article>
                 <article><b>v3.6.6</b><span><strong>功能导航改为图标页签</strong><small>时间线、通知回复、互关浇友和推文浇给改成图标加文字，当前项用下划线标出。</small></span></article>
                 <article><b>v3.6.5</b><span><strong>推文浇给加入频率滑块</strong><small>发推页可以在慢、中、快、超快之间滑动。默认「中」仍是 25～35 分钟；已经开始的等待不会改写。</small></span></article>
@@ -1692,15 +1699,6 @@
           <div class="xrc-footer"><span>任务运行 <b data-xrc-mutual-runtime>00:00</b></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-post-body">
-          <details class="xrc-ai-config" data-xrc-post-ai-config>
-            <summary><strong>配置 DeepSeek AI</strong><span>与 AI 回复共用同一个 Key</span></summary>
-            <div class="xrc-ai-config-body">
-              <label><span>DeepSeek API Key</span><input type="text" name="xrc-deepseek-post-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-post-ai-key></label>
-              <div class="xrc-ai-actions"><button type="button" data-xrc-post-ai-save>保存 Key</button></div>
-              <div class="xrc-ai-status" data-xrc-post-ai-status>尚未配置 DeepSeek API Key</div>
-              <div class="xrc-ai-privacy">只发送当前页面可见的趋势和时间线文字，不会发送 X 登录 Cookie。</div>
-            </div>
-          </details>
           <button class="xrc-button xrc-primary-action" type="button" data-xrc-post-toggle>开始定时发推</button>
           <div class="xrc-status" role="status" data-xrc-post-status>待命。DeepSeek 会根据当前时间线生成纯文字推文。</div>
           <section class="xrc-post-card" aria-label="定时发推进度">
@@ -1725,22 +1723,11 @@
           <div class="xrc-footer"><span>纯文字发布 · 不上传图片</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-reply-body">
-          <details class="xrc-ai-config" data-xrc-ai-config>
-            <summary><strong>配置 DeepSeek AI</strong><span>保存 Key 后自动折叠</span></summary>
-            <div class="xrc-ai-config-body">
-              <label><span>DeepSeek API Key</span><input type="text" name="xrc-deepseek-reply-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-ai-key></label>
-              <div class="xrc-ai-actions">
-                <button type="button" data-xrc-ai-save>保存 Key</button>
-              </div>
-              <div class="xrc-ai-status" data-xrc-ai-status>尚未配置 DeepSeek API Key</div>
-              <div class="xrc-ai-privacy">AI 模式会把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。</div>
-            </div>
-          </details>
-          <button class="xrc-button xrc-primary-action" type="button" data-xrc-toggle>开始回复</button>
-          <div class="xrc-status xrc-reply-status" role="status">
-            <span data-xrc-status-text></span>
-            <span class="xrc-current-reply" data-xrc-current-reply><small data-xrc-reply-label>当前 AI 回复</small><strong data-xrc-phrase></strong></span>
+          <div class="xrc-start" data-xrc-start data-needs-key="true">
+            <input class="xrc-start-key" type="text" name="xrc-deepseek-reply-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 DeepSeek API Key" data-xrc-secret-input data-xrc-ai-key>
+            <button class="xrc-button xrc-primary-action" type="button" data-xrc-toggle>开始时间线回复</button>
           </div>
+          <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden></div>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
               <div class="xrc-progress-header">
@@ -1768,59 +1755,29 @@
               <div class="xrc-round-legend">
                 ${Array.from({ length: loopApi.scheduleBounds().maxRounds }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
               </div>
-            </section>
-            <details class="xrc-settings" data-xrc-settings>
-              <summary><span><strong>运行设置</strong><small>回复方式与随机频率调度</small></span><b>设置</b></summary>
-              <div class="xrc-settings-body">
-                <section class="xrc-level-card xrc-mode-section">
-                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">回复方式</span><strong>选择内容从哪里来</strong></div></div>
-                  <div class="xrc-mode-tabs" role="group" aria-label="回复方式">
-                    <button type="button" data-xrc-mode="template"><strong>模板随机</strong><span>从 100 条话术中随机选择</span></button>
-                    <button type="button" data-xrc-mode="ai"><strong>AI 模式</strong><span>DeepSeek 阅读原帖后生成</span></button>
-                  </div>
-                </section>
-                <section class="xrc-level-card xrc-speed-section">
-                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-pace-title>当前挡位：中</strong></div></div>
-                  <label class="xrc-pace">
-                    <span class="xrc-pace-labels">
-                      ${loopApi.SCHEDULE_PROFILES.map((item) => `<span data-xrc-pace-label="${item.id}">${item.label}</span>`).join("")}
-                    </span>
-                    <input type="range" min="0" max="${loopApi.SCHEDULE_PROFILES.length - 1}" step="1" value="${loopApi.schedulePaceIndex(loopApi.DEFAULT_SCHEDULE_PACE)}" data-xrc-pace aria-label="频率挡位" aria-valuemin="0" aria-valuemax="${loopApi.SCHEDULE_PROFILES.length - 1}" aria-valuetext="中">
-                  </label>
-                  <div class="xrc-schedule-grid" aria-label="随机频率调度">
-                    <span><small>每条间隔</small><strong data-xrc-pace-reply>5～15 秒</strong></span>
-                    <span><small>每轮回复</small><strong data-xrc-pace-round>25～35 条</strong></span>
-                    <span><small>每次执行</small><strong data-xrc-pace-run>3～5 轮</strong></span>
-                    <span><small>执行后休息</small><strong data-xrc-pace-rest>2～3 小时</strong></span>
-                  </div>
-                  <p class="xrc-schedule-note" data-xrc-pace-note>开始后按这个挡位生成随机计划，并在刷新后保持不变。</p>
-                  <p class="xrc-schedule-note">插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</p>
-                </section>
+              <div class="xrc-round-pace">
+                <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-pace-title>当前挡位：中</strong></div></div>
+                <label class="xrc-pace">
+                  <span class="xrc-pace-labels">
+                    ${loopApi.SCHEDULE_PROFILES.map((item) => `<span data-xrc-pace-label="${item.id}">${item.label}</span>`).join("")}
+                  </span>
+                  <input type="range" min="0" max="${loopApi.SCHEDULE_PROFILES.length - 1}" step="1" value="${loopApi.schedulePaceIndex(loopApi.DEFAULT_SCHEDULE_PACE)}" data-xrc-pace aria-label="频率挡位" aria-valuemin="0" aria-valuemax="${loopApi.SCHEDULE_PROFILES.length - 1}" aria-valuetext="中">
+                </label>
+                <div class="xrc-schedule-grid" aria-label="随机频率调度">
+                  <span><small>每条间隔</small><strong data-xrc-pace-reply>5～15 秒</strong></span>
+                  <span><small>每轮回复</small><strong data-xrc-pace-round>25～35 条</strong></span>
+                  <span><small>每次执行</small><strong data-xrc-pace-run>3～5 轮</strong></span>
+                  <span><small>执行后休息</small><strong data-xrc-pace-rest>2～3 小时</strong></span>
+                </div>
+                <p class="xrc-schedule-note" data-xrc-pace-note>开始后按这个挡位生成随机计划，并在刷新后保持不变。</p>
+                <p class="xrc-schedule-note">插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</p>
               </div>
-            </details>
+            </section>
           </div>
-          <details class="xrc-phrase-pool" open>
-            <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
-            <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
-          </details>
           <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
       placePanel(panel);
-      const phraseList = panel.querySelector("[data-xrc-phrase-list]");
-      phrases.forEach((phrase, index) => {
-        const item = document.createElement("div");
-        item.className = "xrc-phrase-item";
-        item.dataset.xrcPhraseIndex = String(index);
-        item.setAttribute("role", "option");
-        item.setAttribute("aria-selected", "false");
-        item.textContent = phrase;
-        phraseList.appendChild(item);
-      });
-      panel.querySelector(".xrc-phrase-pool").addEventListener("toggle", (event) => {
-        if (!event.currentTarget.open) return;
-        centerPhraseItem(panel, panel.querySelector(".xrc-phrase-item.is-active"));
-      });
       panel.querySelector(".xrc-close").addEventListener("click", () => {
         if (anyTaskRunning()) return;
         panelDismissed = true;
@@ -1894,35 +1851,8 @@
           selectPosterPace(label.dataset.xrcPostPaceLabel);
         });
       });
-      panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
-        button.addEventListener("click", async () => {
-          if (state.running || state.loopPromise) return;
-          state.replyMode = validReplyMode(button.dataset.xrcMode);
-          state.pendingReply = "";
-          state.pendingTweetId = "";
-          writeSaved({ running: false, total: state.total });
-          try {
-            await persistReplyMode();
-          } catch (error) {
-            state.aiStatus = "回复方式保存失败，但当前页面仍可使用";
-          }
-          renderPanel();
-        });
-      });
-      panel.querySelector("[data-xrc-ai-save]").addEventListener("click", async () => {
-        const input = panel.querySelector("[data-xrc-ai-key]");
-        state.aiStatus = "正在保存…";
-        renderPanel();
-        try {
-          await saveAiSettings(input.value);
-          input.value = "";
-        } catch (error) {
-          state.aiStatus = error?.message || "保存失败";
-        }
-        renderPanel();
-      });
-      panel.querySelector("[data-xrc-post-ai-save]").addEventListener("click", async () => {
-        const input = panel.querySelector("[data-xrc-post-ai-key]");
+      panel.querySelector("[data-xrc-config-key-save]").addEventListener("click", async () => {
+        const input = panel.querySelector("[data-xrc-config-key]");
         state.aiStatus = "正在保存…";
         renderPanel();
         try {
@@ -1937,7 +1867,11 @@
 
     const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
-    if (status) status.textContent = state.status;
+    if (status) {
+      const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|过于频繁|已停止|没有成功)/.test(state.status || "");
+      status.hidden = !attention;
+      status.textContent = attention ? state.status : "";
+    }
     if (stats) {
       const notificationMode = state.assistantMode === "notifications";
       const plan = notificationMode ? null : ensureRunPlan();
@@ -1988,32 +1922,13 @@
       panel.querySelector("[data-xrc-mini-progress]").textContent = notificationMode
         ? `最近 2 小时 · 已处理 ${state.total}`
         : `第 ${shownRound}/${plannedRounds} 轮 · ${state.pageCount}/${roundTarget}`;
-      const phrase = state.replyMode === "ai"
-        ? (state.pendingReply || state.lastReply || "读取原帖后自动生成")
-        : currentPhrase();
-      panel.querySelector("[data-xrc-phrase]").textContent = phrase;
-      panel.querySelector("[data-xrc-reply-label]").textContent = state.replyMode === "ai" ? "当前 AI 回复" : "当前话术";
-      panel.querySelector("[data-xrc-current-reply]").hidden = !phrase;
-      panel.querySelector("[data-xrc-ai-status]").textContent = state.aiStatus;
-      const aiConfig = panel.querySelector("[data-xrc-ai-config]");
-      const primaryAction = panel.querySelector("[data-xrc-toggle]");
-      const aiSetupRequired = state.replyMode === "ai" && !state.aiKeySaved;
-      const wasRequired = aiConfig.dataset.required === "true";
-      aiConfig.dataset.required = aiSetupRequired ? "true" : "false";
-      if (aiSetupRequired) {
-        aiConfig.open = true;
-        primaryAction.before(aiConfig);
-      } else {
-        if (wasRequired) aiConfig.open = false;
-        primaryAction.after(aiConfig);
-      }
+      const start = panel.querySelector("[data-xrc-start]");
       const aiKeyInput = panel.querySelector("[data-xrc-ai-key]");
-      aiKeyInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
-      aiKeyInput.disabled = Boolean(state.loopPromise) || state.running;
-      panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
-        button.classList.toggle("is-active", button.dataset.xrcMode === state.replyMode);
-        button.disabled = Boolean(state.loopPromise) || state.running;
-      });
+      if (start) start.dataset.needsKey = state.aiKeySaved ? "false" : "true";
+      if (aiKeyInput) {
+        aiKeyInput.hidden = state.aiKeySaved;
+        aiKeyInput.disabled = Boolean(state.loopPromise) || state.running;
+      }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode;
         button.classList.toggle("is-active", selected);
@@ -2021,7 +1936,15 @@
         button.disabled = false;
         button.title = selected ? "当前任务页签" : "打开或切换到该任务的专用 X 页签";
       });
-      panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
+      const configKey = panel.querySelector("[data-xrc-config-key]");
+      const configKeyHint = panel.querySelector("[data-xrc-config-key-hint]");
+      const configKeySave = panel.querySelector("[data-xrc-config-key-save]");
+      if (configKey) {
+        configKey.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
+        configKey.disabled = anyTaskRunning();
+      }
+      if (configKeyHint) configKeyHint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
+      if (configKeySave) configKeySave.disabled = anyTaskRunning();
       const schedule = loopApi.formatSchedule(state.schedulePace);
       const paceInput = panel.querySelector("[data-xrc-pace]");
       if (paceInput) {
@@ -2042,32 +1965,15 @@
         ? "这次执行的计划和已经开始的等待会保持不变。新挡位从下一次抽取的间隔、休息和执行计划开始生效。"
         : "开始后按这个挡位生成随机计划，并在刷新后保持不变。";
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
-      const activePhrase = panel.querySelector(`[data-xrc-phrase-index="${state.phraseIndex}"]`);
-      if (activePhrase && (highlightedPhraseIndex !== state.phraseIndex || !activePhrase.classList.contains("is-active"))) {
-        panel.querySelectorAll(".xrc-phrase-item.is-active").forEach((item) => {
-          item.classList.remove("is-active");
-          item.setAttribute("aria-selected", "false");
-          item.style.removeProperty("order");
-        });
-        activePhrase.classList.add("is-active");
-        activePhrase.setAttribute("aria-selected", "true");
-        activePhrase.style.order = "-1";
-        highlightedPhraseIndex = state.phraseIndex;
-        if (panel.querySelector(".xrc-phrase-pool")?.open) {
-          window.requestAnimationFrame(() => centerPhraseItem(panel, activePhrase));
-        }
-      }
     }
     const poster = state.poster || postApi?.snapshot?.();
     if (poster) {
       const postStatus = panel.querySelector("[data-xrc-post-status]");
       const postToggle = panel.querySelector("[data-xrc-post-toggle]");
-      const postConfig = panel.querySelector("[data-xrc-post-ai-config]");
-      const postInput = panel.querySelector("[data-xrc-post-ai-key]");
       const remainingMs = Math.max(0, Number(poster.nextPostAt || 0) - Date.now());
       const remainingMinutes = Math.ceil(remainingMs / 60000);
       postStatus.textContent = poster.status;
-      postToggle.textContent = poster.stopping ? "正在停止" : poster.running ? "停止定时发推" : state.aiKeySaved ? "开始定时发推" : "配置 AI 后开始";
+      postToggle.textContent = poster.stopping ? "正在停止" : poster.running ? "停止定时发推" : "开始定时发推";
       postToggle.dataset.running = poster.running ? "true" : "false";
       panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
       panel.querySelector("[data-xrc-post-next]").textContent = poster.running
@@ -2096,12 +2002,6 @@
           : "第一条立即发送。之后按这个挡位随机等待，已经开始的等待不会改写。";
       }
       panel.querySelector("[data-xrc-post-preview]").textContent = poster.currentPost || poster.lastPost || "启动后显示 DeepSeek 生成的下一条纯文字推文";
-      panel.querySelector("[data-xrc-post-ai-status]").textContent = state.aiStatus;
-      postInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
-      postInput.disabled = Boolean(poster.running);
-      panel.querySelector("[data-xrc-post-ai-save]").disabled = Boolean(poster.running);
-      postConfig.dataset.required = state.aiKeySaved ? "false" : "true";
-      if (!state.aiKeySaved) postConfig.open = true;
       if (state.assistantMode === "poster") {
         panel.querySelector("[data-xrc-mini-progress]").textContent = poster.running ? `推文浇给 · ${poster.count || 0} 条` : "推文浇给 · 待命";
       }
@@ -2224,7 +2124,7 @@
       });
   }
 
-  function onToggle() {
+  async function onToggle() {
     if (state.loopPromise) {
       state.stopping = true;
       state.running = false;
@@ -2235,11 +2135,18 @@
       renderPanel();
       return;
     }
-    if (state.replyMode === "ai" && !state.aiKeySaved) {
-      state.status = "AI 模式需要先填写并保存 DeepSeek API Key";
-      state.aiStatus = "保存 Key 后即可开始";
-      renderPanel();
-      return;
+    if (!state.aiKeySaved) {
+      const input = document.getElementById(PANEL_ID)?.querySelector("[data-xrc-ai-key]");
+      try {
+        await saveAiSettings(input?.value);
+        if (input) input.value = "";
+      } catch (error) {
+        state.status = error?.message || "请先填写 DeepSeek API Key";
+        state.aiStatus = state.status;
+        input?.focus();
+        renderPanel();
+        return;
+      }
     }
     state.pageCount = 0;
     state.completedRounds = 0;
@@ -2306,11 +2213,9 @@
       state.mutual = await mutualApi.refreshSharedFollowRate();
     }
     if (!saved.running) {
-      state.status = state.assistantMode === "notifications"
-        ? "通知回复处理近 2 小时内容；完成后随机休息 2～3 小时再扫描，处理过的不重复。"
-        : state.assistantMode === "poster"
-          ? `DeepSeek 会从当前时间线提炼话题，并按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布一条纯文字推文。`
-        : "时间线会生成 3～5 轮随机计划，每轮 25～35 条；完成后随机休息 2～3 小时。";
+      state.status = state.assistantMode === "poster"
+        ? `DeepSeek 会从当前时间线提炼话题，并按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布一条纯文字推文。`
+        : "";
     }
     renderPanel();
     watchSidebarDock();

@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.6.7'
+const VERSION = '3.6.11'
 
 const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -35,10 +35,30 @@ const shareText = 'X高频互动助手：一个扩展完成时间线回复、通
 
 const VERSION_HISTORY = [
   {
+    version: '3.6.11',
+    title: '收起回复说明卡',
+    description: '时间线和通知回复不再展示计划说明，也不再重复当前 AI 回复。轮次进度还在。只有发送失败、密钥无效或评论过密被停时，才出现一行提示。',
+    current: true,
+  },
+  {
+    version: '3.6.10',
+    title: '开始按钮合并密钥输入',
+    description: '时间线和通知回复只保留一个开始按钮，文字居中。还没保存 DeepSeek Key 时，在这个按钮里粘贴后直接开始。保存之后输入框收起，之后到右上角设置里修改。',
+  },
+  {
+    version: '3.6.9',
+    title: '评论过密时停止时间线和通知回复',
+    description: '评论框或页面底部出现“看起来像自动操作”或“Something went wrong, but don’t fret”时，时间线回复和通知回复都会停止，不再自动重试。互关和定时发推不受这次停止影响。',
+  },
+  {
+    version: '3.6.8',
+    title: '回复只保留 AI，频率收进轮次',
+    description: '时间线和通知回复不再提供模板随机，也不再展示话术池。回复由 DeepSeek 阅读原帖后生成。频率滑块放在轮次进度里，原来的运行设置收起来了。',
+  },
+  {
     version: '3.6.7',
     title: '默认右下角浮窗，嵌入改为设置项',
     description: '面板默认浮在页面右下角。标题栏齿轮里可以打开设置，「嵌入到页面」会把面板挂到右侧搜索框下面。右侧栏还没出现时先保持浮窗，出现后再挂上去。',
-    current: true,
   },
   {
     version: '3.6.6',
@@ -258,7 +278,7 @@ const INSTALL_STEPS = [
   '登录 X，面板默认浮在页面右下角，并选中「时间线」。标题栏齿轮里可以打开「嵌入到页面」。也可切换到「通知回复」「互关浇友」或「推文浇给」。',
   '互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。',
   '关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度。',
-  '时间线模式可在首页、个人主页或搜索结果运行。运行设置里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
+  '时间线模式可在首页、个人主页或搜索结果运行。轮次进度里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
   '通知模式会进入通知页，处理近 2 小时内尚未成功互动的回复。',
   '推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 生成并发送纯文字推文。发推间隔可滑到慢、中、快或超快，默认「中」是 25～35 分钟。',
   '点击对应任务的开始按钮运行；需要停下时，点击「停止」。',
@@ -419,11 +439,11 @@ export default function XReplyClipboardResourcePage() {
           <FeatureCard title="互关浇友" index={1}>
             在 Following 页清理未回关账号；在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已经合并。
           </FeatureCard>
-          <FeatureCard title="随机话术" index={2}>
-            默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
+          <FeatureCard title="AI 回复" index={2}>
+            时间线和通知回复都由 DeepSeek 阅读原帖文字后生成。API Key 在扩展面板里配置，只保存在 Chrome 本地。
           </FeatureCard>
           <FeatureCard title="时间线：持久化随机计划" index={3}>
-            运行设置里用滑块选择慢、中、快或超快。默认「中」每次抽取 3～5 轮，每轮 25～35 条，成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
+            轮次进度里用滑块选择慢、中、快或超快。默认「中」每次抽取 3～5 轮，每轮 25～35 条，成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
           </FeatureCard>
           <FeatureCard title="通知：最近 2 小时" index={4}>
             不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知。每条间隔和扫描后的休息使用同一套频率挡位，默认「中」休息 2～3 小时。成功记录持久去重，插件不设置每日回复总量。

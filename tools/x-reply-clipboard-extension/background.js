@@ -342,10 +342,12 @@ async function removeRuntimeTab(tabId) {
 
 async function stopAllTaskTabs(reason) {
   const tabs = await readTaskTabs();
-  const tabIds = [...new Set(Object.values(tabs).map(Number).filter(Number.isInteger))];
+  const tabIds = [...new Set(["timeline", "notifications"]
+    .map((mode) => Number(tabs[mode]))
+    .filter(Number.isInteger))];
   await Promise.allSettled(tabIds.map((tabId) => chrome.tabs.sendMessage(tabId, {
     type: "xrc-risk-stop",
-    reason: String(reason || "X 检测到疑似自动化操作，所有任务已停止")
+    reason: String(reason || "评论过于频繁，时间线和通知回复已停止")
   })));
   return { ok: true, stoppedTabs: tabIds.length };
 }

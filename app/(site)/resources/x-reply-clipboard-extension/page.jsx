@@ -1,4 +1,18 @@
 import Link from 'next/link'
+import {
+  IconArrowRight,
+  IconBell,
+  IconBolt,
+  IconBrandChrome,
+  IconBrandX,
+  IconClock,
+  IconDownload,
+  IconMessageCircle,
+  IconRobot,
+  IconShieldLock,
+  IconSparkles,
+  IconUsers,
+} from '@tabler/icons-react'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
@@ -12,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.4.1'
+const VERSION = '3.5.0'
 
 const title = 'X 互动帮手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -21,10 +35,15 @@ const shareText = 'X 互动帮手：一个扩展完成时间线回复、通知�
 
 const VERSION_HISTORY = [
   {
+    version: '3.5.0',
+    title: '在插件内加入官方规则与版本文档中心',
+    description: '标题栏新增文档中心入口，集中解释 X 的自动化规则、公开技术上限、反自动化提示和应对方式，并在插件内保留最近版本记录。文档明确区分技术上限、平台许可与风控安全值：X 没有公开反自动化评分算法，也没有认可插件当前的操作间隔或轮次参数。',
+    current: true,
+  },
+  {
     version: '3.4.1',
     title: '阻止密码管理器把 X 密码填进 AI Key',
     description: 'DeepSeek Key 输入框改为普通文本字段配合视觉掩码，并加入主流密码管理器忽略标记，不再被识别成 X 登录密码框。保存时必须是以 sk- 开头的 DeepSeek Key；升级后若检测到旧版误存的其他内容会自动清除。',
-    current: true,
   },
   {
     version: '3.4.0',
@@ -182,140 +201,255 @@ function DownloadButton({ className = '' }) {
     <a
       href={DOWNLOAD_URL}
       download
-      className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
+      className={`group inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-cyan-300/40 bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white no-underline shadow-[0_12px_35px_rgba(37,99,235,0.32)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_42px_rgba(37,99,235,0.45)] ${className}`}
     >
+      <IconDownload size={18} stroke={2} aria-hidden="true" />
       下载 Chrome 插件 v{VERSION}
+      <IconArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </a>
   )
 }
 
-function FeatureCard({ title, children }) {
+const FEATURE_ICONS = [IconMessageCircle, IconUsers, IconSparkles, IconClock, IconBell, IconRobot, IconShieldLock]
+const FEATURE_TONES = [
+  'from-cyan-400/20 to-blue-500/5 text-cyan-300 border-cyan-300/20',
+  'from-violet-400/20 to-fuchsia-500/5 text-violet-300 border-violet-300/20',
+  'from-fuchsia-400/20 to-pink-500/5 text-fuchsia-300 border-fuchsia-300/20',
+  'from-blue-400/20 to-indigo-500/5 text-blue-300 border-blue-300/20',
+  'from-amber-400/20 to-orange-500/5 text-amber-300 border-amber-300/20',
+  'from-emerald-400/20 to-cyan-500/5 text-emerald-300 border-emerald-300/20',
+  'from-slate-300/15 to-cyan-500/5 text-slate-200 border-slate-300/20',
+]
+
+const INSTALL_STEPS = [
+  '下载并解压插件包。',
+  '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
+  '点击「加载已解压的扩展程序」，选择解压后的目录。',
+  '登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。',
+  '互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。',
+  '关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度。',
+  '时间线模式可在首页、个人主页或搜索结果运行；每次按 35 条一轮、共 5 轮执行。',
+  '通知模式会进入通知页，处理近 2 小时内尚未成功互动的回复。',
+  '推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 生成并发送纯文字推文。',
+  '点击对应任务的开始按钮运行；需要停下时，点击「停止」。',
+]
+
+const TECH_NOTES = [
+  '“推文浇给”与 AI 回复共用一个 DeepSeek API Key。Key 只保存在 Chrome 扩展本地存储中，不会发送 X 登录 Cookie。',
+  '四类任务各自绑定一个专用 X 页签，可以同时运行；离屏计时 Worker 管理后台等待，刷新页面后会按保存的真实截止时间恢复。',
+  '插件会先核对评论框里的文字没有重复，再等待 Reply 可用；存在无法识别的手写内容时会暂停，避免覆盖。',
+  '发送结果未确认时不会计数。时间线模式只有确认发出的回复才计入轮次，通知模式只有确认点赞并回复成功后才写入去重历史。',
+  '已经加载过旧版目录时，到扩展管理页点击刷新，再回到 X 刷新已打开的标签页。',
+]
+
+function FeatureCard({ title, children, index, className = '' }) {
+  const Icon = FEATURE_ICONS[index] || IconBolt
+  const tone = FEATURE_TONES[index] || FEATURE_TONES[0]
   return (
-    <div className="rounded-lg border border-[#e6e0d3] bg-white/70 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-      <h3 className="mb-2 text-base font-semibold text-[var(--site-ink)]">{title}</h3>
-      <p className="m-0 text-sm leading-7 text-[#666] dark:text-gray-300">{children}</p>
+    <div className={`group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_18px_45px_rgba(37,99,235,0.12)] dark:border-white/10 dark:bg-[#0b1120] dark:hover:border-cyan-300/30 ${className}`}>
+      <div className={`absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${tone} opacity-60 blur-2xl transition group-hover:opacity-90`} aria-hidden="true" />
+      <div className="relative">
+        <div className="mb-5 flex items-center justify-between">
+          <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border bg-gradient-to-br ${tone}`}>
+            <Icon size={22} stroke={1.8} aria-hidden="true" />
+          </span>
+          <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-slate-400 dark:text-slate-500">0{index + 1}</span>
+        </div>
+        <h3 className="mb-2 text-base font-bold text-slate-950 dark:text-white">{title}</h3>
+        <p className="m-0 text-sm leading-7 text-slate-600 dark:text-slate-300">{children}</p>
+      </div>
     </div>
   )
 }
 
 export default function XReplyClipboardResourcePage() {
   return (
-    <PageContainer className="py-10">
+    <PageContainer className="py-6 md:py-10">
       <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
-      <header className="border-b border-[#eee] pb-7 dark:border-gray-800">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[#777] dark:text-gray-400">
-          <Link href="/tools" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            工具库
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link href="/tools#x-platform" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            推特工具
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link href="/tools#downloads" className="underline underline-offset-4 opacity-80 hover:opacity-100">
-            浏览器扩展
-          </Link>
-          <span aria-hidden="true">·</span>
-          <span>更新于 2026-10-09</span>
-        </div>
+      <header className="relative isolate overflow-hidden rounded-[28px] border border-slate-800 bg-[#050814] px-5 py-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.28)] sm:px-8 sm:py-8 md:rounded-[36px] md:px-10 md:py-10">
+        <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(56,189,248,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.16)_1px,transparent_1px)] [background-size:42px_42px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" aria-hidden="true" />
+        <div className="absolute -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-cyan-500/25 blur-[90px]" aria-hidden="true" />
+        <div className="absolute -right-24 -top-16 -z-10 h-80 w-80 rounded-full bg-violet-600/30 blur-[100px]" aria-hidden="true" />
 
-        <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          时间线回复、通知回复与互关浇友，集中在一个面板
-        </h1>
-
-        <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          顶部默认打开「时间线」，其后依次是「通知回复」与「互关浇友」。互关浇友整合清理未回关、回关粉丝和关注候选；
-          时间线与通知模式支持模板随机或 AI 回复。时间线每次运行 5 轮，通知回复扫描近 2 小时内尚未成功互动的内容；两者完成后都会休息 2 小时再自动开始下一次。
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {['X 平台', '时间线回复', '通知回复', '互关浇友', '模板 / AI', 'Chrome 插件'].map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <DownloadButton />
-          <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享这个插件" />
-          <ArticleActionsDropdown label="更多">
-            <DistributeContentButton
-              title={title}
-              summary={shareText}
-              url={`/resources/${RESOURCE_SLUG}`}
-              category="tools"
-              slug={RESOURCE_SLUG}
-              tags={['X 平台', 'Chrome 插件', '工具']}
-              kindLabel="工具"
-            />
-          </ArticleActionsDropdown>
-          <span className="text-xs text-[#888] dark:text-gray-500">
-            工具说明免费阅读；领取工具包按当前工具包价格结算，之后可永久重复下载。
+        <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-xs">
+          <Link href="/tools" className="text-cyan-300 no-underline transition hover:text-cyan-200">工具库</Link>
+          <span aria-hidden="true">/</span>
+          <Link href="/tools#x-platform" className="text-slate-400 no-underline transition hover:text-white">X 工具</Link>
+          <span aria-hidden="true">/</span>
+          <Link href="/tools#browser-extensions" className="text-slate-400 no-underline transition hover:text-white">浏览器扩展</Link>
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" /> v{VERSION} LIVE
           </span>
+        </div>
+
+        <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)]">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
+              <IconBrandX size={15} aria-hidden="true" />
+              X Interaction Copilot
+            </div>
+            <h1 className="max-w-3xl text-[38px] font-black leading-[1.05] tracking-[-0.045em] text-white sm:text-[52px] lg:text-[64px]">
+              让每一次互动，
+              <span className="block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">都有自己的运行轨道</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
+              时间线回复、通知回复、互关管理与 DeepSeek 定时发推集中在一个本地面板。四类任务使用独立页签运行，状态、计时和处理历史各自保存。
+            </p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <DownloadButton />
+              <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享插件" />
+              <ArticleActionsDropdown label="更多">
+                <DistributeContentButton
+                  title={title}
+                  summary={shareText}
+                  url={`/resources/${RESOURCE_SLUG}`}
+                  category="tools"
+                  slug={RESOURCE_SLUG}
+                  tags={['X 平台', 'Chrome 插件', '工具']}
+                  kindLabel="工具"
+                />
+              </ArticleActionsDropdown>
+            </div>
+            <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
+              <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
+              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> DeepSeek 可选</span>
+              <span>更新于 2026-10-09</span>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-[470px]">
+            <div className="absolute inset-8 rounded-full bg-blue-500/30 blur-3xl" aria-hidden="true" />
+            <div className="relative overflow-hidden rounded-[26px] border border-white/15 bg-white/[0.07] p-3 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center justify-between border-b border-white/10 px-3 pb-3 pt-1">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black"><IconBrandX size={17} /></span>
+                  <div>
+                    <p className="m-0 text-xs font-bold text-white">X 互动帮手</p>
+                    <p className="m-0 font-mono text-[9px] text-slate-400">CONTROL DECK · ONLINE</p>
+                  </div>
+                </div>
+                <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2 py-1 font-mono text-[9px] text-emerald-300">运行中 02:18:43</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 p-2 pt-4">
+                {[
+                  ['时间线回复', '35 × 5 轮', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
+                  ['通知回复', '近 2 小时', IconBell, 'from-violet-400/20 to-fuchsia-500/10', 'text-violet-300'],
+                  ['互关浇友', '3 项任务', IconUsers, 'from-amber-400/20 to-orange-500/10', 'text-amber-300'],
+                  ['推文浇给', 'AI · 25–35m', IconRobot, 'from-emerald-400/20 to-cyan-500/10', 'text-emerald-300'],
+                ].map(([label, value, Icon, gradient, color]) => (
+                  <div key={label} className={`rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-3.5`}>
+                    <Icon size={19} className={color} stroke={1.8} aria-hidden="true" />
+                    <p className="mb-0 mt-5 text-xs font-bold text-white">{label}</p>
+                    <p className="mb-0 mt-1 font-mono text-[10px] text-slate-400">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mx-2 mb-2 mt-1 rounded-2xl border border-white/10 bg-black/25 p-3.5">
+                <div className="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>当前任务 · 时间线回复</span><span className="font-mono text-cyan-300">68%</span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[68%] rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400" /></div>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <article className="prose-tuaran mt-8">
-        <div className="not-prose mb-8 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <article className="prose-tuaran mt-12">
+        <div className="not-prose relative mb-14 overflow-hidden rounded-[26px] border border-blue-200/70 bg-gradient-to-r from-blue-50 via-white to-violet-50 p-5 shadow-[0_16px_50px_rgba(37,99,235,0.09)] dark:border-blue-400/15 dark:from-[#0a1830] dark:via-[#0b1120] dark:to-[#1b1030] sm:p-7">
+          <div className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-violet-400/20 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.18em] text-[#8a7a55] dark:text-amber-300/80">
-                Download
+              <p className="m-0 inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-cyan-300">
+                <IconBolt size={14} /> Ready to launch
               </p>
-              <h2 className="m-0 mt-1 border-0 p-0 text-xl font-semibold text-[var(--site-ink)]">
-                X 互动帮手
+              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black tracking-[-0.02em] text-slate-950 dark:text-white">
+                把互动工作流装进 Chrome
               </h2>
-              <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                Manifest V3 本地 Chrome 扩展。下载后在 Chrome 扩展管理页以「加载已解压」方式安装。
+              <p className="m-0 mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+                Manifest V3 本地扩展。下载并解压后，在 Chrome 扩展管理页通过「加载已解压的扩展程序」安装。
               </p>
             </div>
             <DownloadButton className="shrink-0" />
           </div>
         </div>
 
-        <h2>它会做什么</h2>
-        <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
-          <FeatureCard title="时间线默认置顶">
+        <div className="not-prose flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-cyan-300">Core modules</p>
+            <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">一块面板，七种能力</h2>
+          </div>
+          <p className="m-0 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">从内容互动到账号关系，每项任务都有独立状态与运行节奏。</p>
+        </div>
+        <div className="not-prose my-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <FeatureCard title="时间线默认置顶" index={0}>
             顶部按时间线、通知回复、互关浇友、推文浇给排列；新安装默认选中时间线。点击其他功能会切换到已有专用 X 页签，或新建一个页签，当前任务不会被清空。
           </FeatureCard>
-          <FeatureCard title="互关浇友">
+          <FeatureCard title="互关浇友" index={1}>
             在 Following 页清理未回关账号；在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已经合并。
           </FeatureCard>
-          <FeatureCard title="随机话术">
+          <FeatureCard title="随机话术" index={2}>
             默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
-          <FeatureCard title="时间线：35 条 × 5 轮">
+          <FeatureCard title="时间线：35 条 × 5 轮" index={3}>
             时间线回复每条默认等待 2 秒；回复 35 次组成 1 轮，轮间默认等待 5 秒，一次共执行 5 轮、175 次。完成后休息 2 小时，再从新一轮 175 次开始。面板显示当前执行次数、轮次、任务运行时间和下次启动倒计时。
           </FeatureCard>
-          <FeatureCard title="通知：最近 2 小时">
+          <FeatureCard title="通知：最近 2 小时" index={4}>
             不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后休息 2 小时再扫描。成功处理的通知 ID 会写入 Chrome 本地历史，刷新、重开浏览器或后续周期都会跳过。
           </FeatureCard>
-          <FeatureCard title="推文浇给：25～35 分钟一条">
+          <FeatureCard title="推文浇给：25～35 分钟一条" index={5}>
             DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行；确认发送成功后随机等待 25～35 分钟再生成下一条。
           </FeatureCard>
-          <FeatureCard title="只在本机运行">
+          <FeatureCard title="只在本机运行" index={6} className="md:col-span-2 lg:col-span-3">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。
           </FeatureCard>
         </div>
 
-        <h2>版本记录</h2>
-        <div className="not-prose my-8 overflow-hidden rounded-2xl border border-[#e4e8eb] bg-white/70 dark:border-gray-800 dark:bg-gray-950/40">
-          <div className="flex flex-col gap-2 border-b border-[#e4e8eb] bg-gradient-to-r from-sky-50 to-violet-50 px-5 py-4 dark:border-gray-800 dark:from-sky-950/30 dark:to-violet-950/20 md:flex-row md:items-center md:justify-between">
+        <div className="not-prose mt-16">
+          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-rose-600 dark:text-rose-300">Safety boundary</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">使用前，先看清平台边界</h2>
+        </div>
+        <div className="not-prose relative my-8 overflow-hidden rounded-[26px] border border-rose-200/80 bg-gradient-to-br from-rose-50 via-white to-orange-50 p-6 text-sm leading-7 text-slate-700 shadow-[0_16px_45px_rgba(225,29,72,0.08)] dark:border-rose-400/20 dark:from-[#250d19] dark:via-[#120d18] dark:to-[#211109] dark:text-rose-100 sm:p-7">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-rose-400/15 blur-3xl" aria-hidden="true" />
+          <div className="relative flex gap-4">
+            <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-600 shadow-sm dark:border-rose-400/20 dark:bg-white/5 dark:text-rose-300 sm:inline-flex"><IconShieldLock size={22} /></span>
+            <div>
+              <p className="m-0 text-base font-bold text-rose-950 dark:text-rose-100">X 没有公开反自动化判定算法，也没有公布一个“低于此频率就安全”的操作间隔。</p>
+              <ul className="mb-0 mt-4 grid gap-2.5 pl-5 marker:text-rose-500">
+            <li>X 的自动化规则明确禁止使用脚本直接自动操作网站，并提示可能导致账号永久停用。</li>
+            <li>自动回复仅适用于事先明确选择接收联系的用户，每次用户互动最多一条；AI 回复机器人需要事先获得 X 的书面批准。</li>
+            <li>自动点赞不被允许；批量、激进或无差别自动关注和取关也被禁止。</li>
+            <li>未认证账号每天 50 条原创帖、200 条回复以及每天关注 400 个，属于公开技术上限，不代表平台许可、合规保证或风控安全值。</li>
+            <li>X 的开源算法仓库主要涉及时间线与通知的推荐流程，不提供自动化操作的安全频率或完整反垃圾判定逻辑。</li>
+              </ul>
+              <p className="mb-0 mt-4 border-t border-rose-200/70 pt-4 dark:border-rose-400/15">
+            出现“This request looks like it might be automated”时，应立即停止相关任务并避免连续重试。可查看{' '}
+            <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer">X 自动化规则</a>、{' '}
+            <a href="https://help.x.com/en/rules-and-policies/x-limits" target="_blank" rel="noopener noreferrer">账户限制</a>和{' '}
+            <a href="https://help.x.com/en/rules-and-policies/authenticity" target="_blank" rel="noopener noreferrer">真实性政策</a>。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="not-prose mt-16" id="version-history">
+          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">Release stream</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">版本记录</h2>
+        </div>
+        <div className="not-prose my-8 overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#080d19]">
+          <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 via-blue-50 to-violet-50 px-6 py-5 dark:border-white/10 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-violet-950/30 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300">Changelog</p>
               <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到完整互动工具</h3>
             </div>
-            <span className="w-fit rounded-full bg-[#0f1419] px-3 py-1 text-xs font-semibold text-white dark:bg-white dark:text-black">
+            <span className="w-fit rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
               当前版本 v{VERSION}
             </span>
           </div>
-          <ol className="m-0 list-none divide-y divide-[#e8ecef] p-0 dark:divide-gray-800">
+          <ol className="m-0 list-none divide-y divide-slate-100 p-0 dark:divide-white/5">
             {VERSION_HISTORY.map((release) => (
-              <li key={release.version} className="grid gap-3 px-5 py-4 md:grid-cols-[110px_minmax(0,1fr)]">
+              <li key={release.version} className={`grid gap-3 px-6 py-4 transition hover:bg-blue-50/50 dark:hover:bg-white/[0.025] md:grid-cols-[110px_minmax(0,1fr)] ${release.current ? 'bg-blue-50/60 dark:bg-blue-500/[0.06]' : ''}`}>
                 <div className="flex items-center gap-2 md:items-start">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${release.current ? 'bg-sky-500 text-white' : 'bg-[#eff3f4] text-[#536471] dark:bg-gray-800 dark:text-gray-300'}`}>
                     v{release.version}
@@ -331,40 +465,53 @@ export default function XReplyClipboardResourcePage() {
           </ol>
         </div>
 
-        <h2>使用方法</h2>
-        <ol>
-          <li>下载并解压插件包。</li>
-          <li>打开 Chrome 的 <code>chrome://extensions/</code>，开启「开发者模式」。</li>
-          <li>点击「加载已解压的扩展程序」，选择解压后的目录。</li>
-          <li>登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。</li>
-          <li>互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。</li>
-          <li>关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度：2 秒一个，合计每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
-          <li>时间线模式可在首页、个人主页或搜索结果运行；每次按 35 条一轮、共 5 轮执行，完成后等待 2 小时再开始下一次。</li>
-          <li>通知模式会进入通知页，处理近 2 小时内尚未成功互动的回复；处理完等待 2 小时，再扫描新的近 2 小时通知。</li>
-          <li>推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 立即生成并发送第一条纯文字推文，之后每条随机间隔 25～35 分钟。</li>
-          <li>点击「开始时间线回复」或「开始通知回复」。需要停下时，点「停止」。</li>
+        <div className="not-prose mt-16">
+          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-cyan-300">Setup protocol</p>
+          <h2 className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">安装与启动</h2>
+        </div>
+        <ol className="not-prose my-8 grid list-none gap-3 p-0 md:grid-cols-2">
+          {INSTALL_STEPS.map((step, index) => (
+            <li key={step} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-[#0b1120]">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 font-mono text-xs font-black text-white shadow-md shadow-blue-500/20">{String(index + 1).padStart(2, '0')}</span>
+              <p className="m-0 text-sm leading-7 text-slate-700 dark:text-slate-300">{step}</p>
+            </li>
+          ))}
         </ol>
-        <p>
-          已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
-          “推文浇给”与 AI 回复共用一个 DeepSeek API Key。它只读取当前 X 页面已经加载的趋势和时间线文字，用来生成原创短帖；不读取本站后台任务，也不会发送 X 登录 Cookie。每条推文强制使用段间空行排版，只发送纯文字。发送结果未确认时不会计数；发帖框存在手写内容时会暂停，避免覆盖。
-          开始前可选择“模板随机”或“AI 模式”。两种回复助手都可设置每条回复间隔，默认 2 秒；“每轮之间间隔”只适用于时间线模式，通知模式没有轮次。AI 模式只需保存 DeepSeek API Key。Key 只保存在 Chrome 扩展本地存储中。四类任务各自绑定一个专用 X 页签，可以同时运行；离屏计时 Worker 管理后台等待，刷新页面后按保存的真实截止时间恢复。标题栏显示整个插件的稳定运行时长，任务卡显示单项运行时长。关闭专用 X 页签会停止对应任务。
-          这里的“2 秒”是发送成功后的最小间隔，不包含 DeepSeek 生成、打开评论框、写入编辑器和确认发送所需的时间。v3.2.0 只把 1 秒以上的等待交给离屏 Worker，短 DOM 轮询留在页面内；评论框和 Reply 的单步等待上限为 5 秒，避免一次失败拖住十几秒。
-          插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
-          如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
-          如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。
-          启动时页面已经打开空评论弹窗也可以直接接管：插件会填入当前话术并发送；只有弹窗里存在无法识别的真实文字时才暂停。
-          X 第一次拒绝写入时，插件会重新聚焦并完整替换一次；仍未显示话术才尝试编辑器内部状态，避免一直重复“话术没有写进评论框”。
-          没有确认成功时会保留当前帖子、弹窗和话术继续重试。时间线模式只有确认发出的回复才计入每轮 35 条；通知模式只有确认点赞并回复成功后才写入去重历史。
-          X 显示「Your post was sent.」时也会立即确认为成功并清理残留弹窗。自己的帖子、自己刚发出的回复以及无法确认作者的帖子会自动排除。
-          评论框出现重复或残留内容时，会自动替换成一条完整话术再点击 Reply，不会卡在内容不一致状态。
-          话术和 macOS 上的
-          <Link href="/resources/x-clipboard-phrase">X 粘贴板评论助手</Link>
-          是同一组，插件自己随机抽取。
-        </p>
 
-        <div className="not-prose mt-8 flex flex-wrap items-center gap-3 border-t border-[#eee] pt-6 dark:border-gray-800">
-          <DownloadButton />
-          <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享给朋友" />
+        <div className="not-prose my-10 overflow-hidden rounded-[26px] border border-cyan-300/15 bg-[#050814] text-white shadow-[0_22px_60px_rgba(15,23,42,0.24)]">
+          <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <IconBolt size={17} className="text-cyan-300" />
+              <h3 className="m-0 text-base font-bold text-white">运行细节</h3>
+            </div>
+            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-slate-500">Runtime notes</span>
+          </div>
+          <ul className="m-0 grid list-none gap-0 p-0 md:grid-cols-2">
+            {TECH_NOTES.map((note, index) => (
+              <li key={note} className="flex gap-3 border-b border-white/5 px-6 py-4 text-sm leading-7 text-slate-300 md:odd:border-r">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-white/10 px-6 py-4 text-xs leading-6 text-slate-400">
+            插件内置话术与 macOS 上的 <Link href="/resources/x-clipboard-phrase" className="text-cyan-300">X 粘贴板评论助手</Link> 使用同一组内容。
+          </div>
+        </div>
+
+        <div className="not-prose relative mt-12 overflow-hidden rounded-[26px] border border-blue-200 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-6 text-white shadow-[0_20px_55px_rgba(79,70,229,0.25)] dark:border-white/10 sm:p-8">
+          <div className="absolute -right-12 -top-20 h-52 w-52 rounded-full border border-white/15" aria-hidden="true" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Launch your workflow</p>
+              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black text-white">准备好后，从最新版开始</h2>
+              <p className="m-0 mt-2 text-sm text-blue-100">下载后可永久重复领取；更新扩展时保留原目录并重新加载即可。</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <DownloadButton />
+              <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享给朋友" />
+            </div>
+          </div>
         </div>
       </article>
       <ArticleFooterCta />

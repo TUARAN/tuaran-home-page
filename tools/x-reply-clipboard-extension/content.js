@@ -2,13 +2,16 @@
   "use strict";
 
   const loopApi = globalThis.XReplyClipboardLoop;
+  const mutualApi = globalThis.XInteractionMutual;
   const phrases = globalThis.XReplyClipboardPhrases;
   const legacyPhrases = globalThis.XReplyClipboardLegacyPhrases || [];
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const STORAGE_KEY = "x-reply-clipboard-loop";
-  const PHRASE_STORE = 4;
+  const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
+  const NOTIFICATION_HISTORY_LIMIT = 2000;
+  const PHRASE_STORE = 6;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
@@ -26,7 +29,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "2.1.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.1.4";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -40,7 +43,9 @@
     replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     panelView: "normal",
-    replyMode: "template",
+    assistantMode: "timeline",
+    mutualMode: "unfollow",
+    replyMode: "ai",
     aiKeySaved: false,
     aiConnectionVerified: false,
     aiKeyHint: "",
@@ -48,6 +53,7 @@
     pendingReply: "",
     pendingTweetId: "",
     lastReply: "",
+    mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
     errors: 0,
     status: "待命。点开始后，会从固定话术里随机抽一条回复。",
     phraseIndex: null,
@@ -55,6 +61,8 @@
   };
 
   const processedIds = new Set();
+  const processedNotificationIds = new Set();
+  const skippedIds = new Set();
   let panelDismissed = false;
   let highlightedPhraseIndex = null;
 
@@ -70,7 +78,23 @@
   }
 
   function validReplyMode(value) {
-    return value === "ai" ? "ai" : "template";
+    return value === "template" ? "template" : "ai";
+  }
+
+  function validAssistantMode(value) {
+    return ["mutual", "notifications"].includes(value) ? value : "timeline";
+  }
+
+  function validMutualMode(value) {
+    return ["followBack", "targetFollow"].includes(value) ? value : "unfollow";
+  }
+
+  function anyTaskRunning() {
+    return Boolean(state.loopPromise) || state.running || Boolean(state.mutual?.running);
+  }
+
+  function isNotificationPath() {
+    return /^\/notifications(?:\/|$)/.test(window.location.pathname);
   }
 
   async function loadAiSettings() {
@@ -84,11 +108,44 @@
       state.aiConnectionVerified = Boolean(apiKey && settings.connectionVerified);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.aiStatus = apiKey
-        ? `${state.aiKeyHint}，${state.aiConnectionVerified ? "连接已验证" : "请测试连接"}`
+        ? `${state.aiKeyHint}，${state.aiConnectionVerified ? "连接已验证" : "可直接开始；连接测试为可选"}`
         : "尚未配置 DeepSeek API Key";
     } catch (error) {
       state.aiStatus = "读取 AI 配置失败";
     }
+  }
+
+  async function loadNotificationHistory() {
+    processedNotificationIds.clear();
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get(NOTIFICATION_HISTORY_KEY);
+      const ids = stored?.[NOTIFICATION_HISTORY_KEY]?.ids;
+      if (!Array.isArray(ids)) return;
+      for (const id of ids) {
+        if (/^\d+$/.test(String(id))) processedNotificationIds.add(String(id));
+      }
+    } catch (error) {
+      // The current run can continue even if history cannot be read.
+    }
+  }
+
+  async function persistNotificationProcessed(id) {
+    const value = String(id || "");
+    if (!/^\d+$/.test(value)) return;
+    processedNotificationIds.add(value);
+    if (!globalThis.chrome?.storage?.local) return;
+    const ids = Array.from(processedNotificationIds).slice(-NOTIFICATION_HISTORY_LIMIT);
+    processedNotificationIds.clear();
+    for (const item of ids) processedNotificationIds.add(item);
+    await chrome.storage.local.set({
+      [NOTIFICATION_HISTORY_KEY]: { ids, updatedAt: Date.now() }
+    });
+  }
+
+  function processedForCurrentMode() {
+    const completed = state.assistantMode === "notifications" ? processedNotificationIds : processedIds;
+    return { has: (id) => completed.has(id) || skippedIds.has(id) };
   }
 
   async function saveAiSettings(apiKey) {
@@ -99,7 +156,7 @@
     state.aiKeySaved = true;
     state.aiConnectionVerified = false;
     state.aiKeyHint = `已保存 ····${key.slice(-4)}`;
-    state.aiStatus = `${state.aiKeyHint}，可以测试连接`;
+    state.aiStatus = `${state.aiKeyHint}，可以直接开始；连接测试为可选`;
   }
 
   async function persistReplyMode() {
@@ -149,7 +206,9 @@
       replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
       panelView: "normal",
-      replyMode: "template",
+      assistantMode: isNotificationPath() ? "notifications" : "timeline",
+      mutualMode: "unfollow",
+      replyMode: "ai",
       pendingReply: "",
       pendingTweetId: ""
     };
@@ -171,6 +230,8 @@
         replyIntervalSeconds: clampInterval(parsed.replyIntervalSeconds, DEFAULT_REPLY_INTERVAL_SECONDS, MIN_REPLY_INTERVAL_SECONDS, MAX_REPLY_INTERVAL_SECONDS),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         panelView: validPanelView(parsed.panelView),
+        assistantMode: validAssistantMode(parsed.assistantMode),
+        mutualMode: validMutualMode(parsed.mutualMode),
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
@@ -196,6 +257,8 @@
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
         panelView: state.panelView,
+        assistantMode: state.assistantMode,
+        mutualMode: state.mutualMode,
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
@@ -218,6 +281,8 @@
         replyIntervalSeconds: state.replyIntervalSeconds,
         roundIntervalSeconds: state.roundIntervalSeconds,
         panelView: state.panelView,
+        assistantMode: state.assistantMode,
+        mutualMode: state.mutualMode,
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
@@ -375,26 +440,61 @@
   function collectTweets() {
     const ownHandle = currentAccountHandle();
     if (!ownHandle) return [];
+    const notificationMode = state.assistantMode === "notifications";
+    if (notificationMode && !isNotificationPath()) return [];
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`))
       .filter((article) => !isNestedTweet(article) && !isPromoted(article))
       .map((article) => {
-        const timeLink = article.querySelector('a[href*="/status/"] time')?.closest("a");
+        const timeNode = article.querySelector('a[href*="/status/"] time');
+        const timeLink = timeNode?.closest("a");
         const href = timeLink?.getAttribute("href") || article.querySelector('a[href*="/status/"]')?.getAttribute("href") || "";
         const id = loopApi.statusIdFromHref(href);
         const authorHandle = loopApi.handleFromStatusHref(href);
+        const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute("datetime"));
         const replyButton = article.querySelector('[data-testid="reply"]');
+        const likeButton = article.querySelector('[data-testid="like"]');
+        const unlikeButton = article.querySelector('[data-testid="unlike"]');
         const rect = article.getBoundingClientRect();
         return {
           id,
           authorHandle,
           article,
           replyButton,
+          likeButton,
+          unlikeButton,
+          timestamp,
+          repliesToOwnAccount: loopApi.isNotificationReplyText(textOf(article), ownHandle),
           top: rect.top + window.scrollY
         };
       })
-      .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle);
+      .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
+      .filter((tweet) => !notificationMode || (
+        tweet.repliesToOwnAccount &&
+        loopApi.isWithinNotificationWindow(tweet.timestamp) &&
+        (tweet.likeButton || tweet.unlikeButton)
+      ));
+  }
+
+  function hasReachedNotificationCutoff() {
+    if (state.assistantMode !== "notifications") return false;
+    const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+    return Array.from(main.querySelectorAll('article[data-testid="tweet"] time[datetime]'))
+      .some((time) => loopApi.isOlderThanNotificationWindow(loopApi.timestampFromDatetime(time.getAttribute("datetime"))));
+  }
+
+  async function likeNotificationReply(tweet) {
+    if (state.assistantMode !== "notifications") return "ok";
+    if (tweet.article.querySelector('[data-testid="unlike"]')) return "ok";
+    const likeButton = tweet.article.querySelector('[data-testid="like"]') || tweet.likeButton;
+    if (!loopApi.isSubmitEnabled(likeButton)) return "like-disabled";
+    realClick(likeButton);
+    const confirmed = await waitUntil(
+      () => Boolean(tweet.article.querySelector('[data-testid="unlike"]')),
+      5000
+    );
+    return confirmed ? "ok" : "like-unconfirmed";
   }
 
   function findDialogComposer() {
@@ -452,6 +552,8 @@
     if (result === "composer-mismatch") return "评论框内容与当前话术不一致";
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
+    if (result === "like-disabled") return "点赞按钮不可用";
+    if (result === "like-unconfirmed") return "点赞结果未确认";
     return result;
   }
 
@@ -591,15 +693,27 @@
   }
 
   async function runLoop({ resume = false } = {}) {
+    if (state.assistantMode === "notifications" && !isNotificationPath()) {
+      state.status = "通知互动需要在 X 通知页运行，正在打开通知页…";
+      writeSaved({ running: true, total: state.total });
+      renderPanel();
+      window.location.assign("/notifications");
+      return "reload";
+    }
     scrollTimelineToTop();
     await sleepActive(resume ? RESUME_DELAY_MS : 400);
     if (state.stopping) return "stopped";
 
-    const ready = await waitUntil(() => collectTweets().length > 0, 15000);
+    const ready = await waitUntil(
+      () => collectTweets().length > 0 || (state.assistantMode === "notifications" && hasReachedNotificationCutoff()),
+      15000
+    );
     if (state.stopping) return "stopped";
     if (!ready) {
       state.status = currentAccountHandle()
-        ? "没有找到可回复的他人帖子。自己的帖子和自己的回复会自动跳过。"
+        ? state.assistantMode === "notifications"
+          ? "没有找到别人回复你的通知。单纯点赞、自己的回复和已处理内容会自动跳过。"
+          : "没有找到可回复的他人帖子。自己的帖子和自己的回复会自动跳过。"
         : "无法识别当前登录账号，为避免回复自己，已停止。";
       return "give-up";
     }
@@ -607,58 +721,86 @@
     let stalled = 0;
     while (state.running && !state.stopping) {
       await waitForForeground();
-      const reloadDecision = loopApi.shouldReload({
-        pageCount: state.pageCount,
-        batchSize: BATCH_SIZE,
-        stalled: stalled >= STALL_LIMIT,
-        succeeded: state.pageCount
-      });
-
-      if (reloadDecision.reload && reloadDecision.reason === "batch") {
-        const transition = loopApi.batchTransition({
+      if (state.assistantMode !== "notifications") {
+        const reloadDecision = loopApi.shouldReload({
           pageCount: state.pageCount,
-          completedRounds: state.completedRounds,
           batchSize: BATCH_SIZE,
-          roundsPerRun: ROUNDS_PER_RUN
+          stalled: stalled >= STALL_LIMIT,
+          succeeded: state.pageCount
         });
-        state.completedRounds = transition.completedRounds;
-        state.pageCount = transition.pageCount;
-        if (transition.action === "complete") {
-          state.status = `已完成 ${ROUNDS_PER_RUN} 轮，共发送 ${state.total} 条回复`;
-          renderPanel();
-          return "complete";
+
+        if (reloadDecision.reload && reloadDecision.reason === "batch") {
+          const transition = loopApi.batchTransition({
+            pageCount: state.pageCount,
+            completedRounds: state.completedRounds,
+            batchSize: BATCH_SIZE,
+            roundsPerRun: ROUNDS_PER_RUN
+          });
+          state.completedRounds = transition.completedRounds;
+          state.pageCount = transition.pageCount;
+          if (transition.action === "complete") {
+            state.status = `已完成 ${ROUNDS_PER_RUN} 轮，共发送 ${state.total} 条回复`;
+            renderPanel();
+            return "complete";
+          }
+          await waitRateLimit(
+            state.roundIntervalSeconds,
+            (remaining) => `第 ${state.completedRounds} 轮已完成，${remaining} 秒后开始第 ${state.completedRounds + 1} 轮`
+          );
+          if (state.stopping || !state.running) return "stopped";
+          await reloadAndResume(`第 ${state.completedRounds} 轮已完成，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
+          return "reload";
         }
-        await waitRateLimit(
-          state.roundIntervalSeconds,
-          (remaining) => `第 ${state.completedRounds} 轮已完成，${remaining} 秒后开始第 ${state.completedRounds + 1} 轮`
-        );
-        if (state.stopping || !state.running) return "stopped";
-        await reloadAndResume(`第 ${state.completedRounds} 轮已完成，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
-        return "reload";
-      }
-      if (reloadDecision.reload && reloadDecision.reason === "stalled") {
-        await reloadAndResume("这一页已经到底，刷新后从顶部继续");
-        return "reload";
+        if (reloadDecision.reload && reloadDecision.reason === "stalled") {
+          await reloadAndResume("这一页已经到底，刷新后从顶部继续");
+          return "reload";
+        }
       }
 
       const tweets = collectTweets();
-      const next = loopApi.nextTweet(tweets, processedIds);
+      const next = loopApi.nextTweet(tweets, processedForCurrentMode());
       if (!next) {
+        if (state.assistantMode === "notifications" && hasReachedNotificationCutoff()) {
+          state.status = `最近 2 小时内的回复通知已处理完，本次完成 ${state.total} 条；历史记录会阻止重复互动`;
+          renderPanel();
+          return "complete";
+        }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
         await sleepActive(SCROLL_WAIT_MS);
         const after = tweetSignature(collectTweets());
         stalled = after === before ? stalled + 1 : 0;
-        if (stalled >= STALL_LIMIT && state.pageCount === 0) {
-          state.status = "没有发出回复。确认页面上能打开评论弹窗。";
-          return "give-up";
+        if (stalled >= STALL_LIMIT) {
+          if (state.assistantMode === "notifications") {
+            state.status = `最近 2 小时内没有更多待处理的回复通知，本次完成 ${state.total} 条`;
+            renderPanel();
+            return "complete";
+          }
+          if (state.pageCount === 0) {
+            state.status = "没有发出回复。确认页面上能打开评论弹窗。";
+            return "give-up";
+          }
         }
-        state.status = stalled > 0 ? "正在向下找下一条帖子" : "继续向下";
+        state.status = stalled > 0
+          ? state.assistantMode === "notifications" ? "正在向下找下一条回复通知" : "正在向下找下一条帖子"
+          : "继续向下";
         renderPanel();
         continue;
       }
 
       stalled = 0;
+      if (state.assistantMode === "notifications") {
+        state.status = "正在给这条回复点赞…";
+        renderPanel();
+        const likeResult = await likeNotificationReply(next);
+        if (likeResult !== "ok") {
+          state.errors += 1;
+          state.status = `尚未互动：${failureLabel(likeResult)}。稍后重试同一条`;
+          renderPanel();
+          await sleepActive(1500);
+          continue;
+        }
+      }
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       if (state.replyMode === "ai") {
         if (findDialogComposer() && !(state.pendingTweetId === next.id && state.pendingReply)) {
@@ -667,7 +809,7 @@
         }
         const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (!postText) {
-          processedIds.add(next.id);
+          skippedIds.add(next.id);
           state.status = "AI 模式已跳过一条没有文字内容的帖子";
           renderPanel();
           continue;
@@ -693,7 +835,9 @@
           }
         }
       }
-      state.status = state.replyMode === "ai" ? `AI 已生成：${phrase}` : `正在回复：${phrase}`;
+      state.status = state.replyMode === "ai"
+        ? `${state.assistantMode === "notifications" ? "已点赞，" : ""}AI 已生成：${phrase}`
+        : `${state.assistantMode === "notifications" ? "已点赞，" : ""}正在回复：${phrase}`;
       renderPanel();
       const result = await replyOnce(next, phrase);
       if (result === "stopped") break;
@@ -704,25 +848,38 @@
       }
 
       if (result === "ok" || result === "sent-composer-open") {
-        processedIds.add(next.id);
+        if (state.assistantMode === "notifications") {
+          try {
+            await persistNotificationProcessed(next.id);
+          } catch (error) {
+            state.errors += 1;
+          }
+        } else {
+          processedIds.add(next.id);
+        }
         if (state.replyMode === "template") advancePhrase();
         state.pendingReply = "";
         state.pendingTweetId = "";
         state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
-        state.status = `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${BATCH_SIZE}`;
+        state.status = state.assistantMode === "notifications"
+          ? `已点赞并回复：${phrase}。最近 2 小时内本次已处理 ${state.total} 条`
+          : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${BATCH_SIZE}`;
         renderPanel();
         if (result === "sent-composer-open") {
-          if (state.pageCount < BATCH_SIZE) {
+          if (state.assistantMode === "notifications" || state.pageCount < BATCH_SIZE) {
             await waitRateLimit(state.replyIntervalSeconds, (remaining) => `回复成功，${remaining} 秒后刷新并继续`);
             if (state.stopping || !state.running) return "stopped";
           }
           await reloadAndResume("回复已确认；X 未关闭弹窗，刷新后自动继续，避免重复发送");
           return "reload";
         }
-        if (state.pageCount < BATCH_SIZE) {
-          await waitRateLimit(state.replyIntervalSeconds, (remaining) => `回复成功，${remaining} 秒后处理下一条`);
+        if (state.assistantMode === "notifications" || state.pageCount < BATCH_SIZE) {
+          await waitRateLimit(
+            state.replyIntervalSeconds,
+            (remaining) => `${state.assistantMode === "notifications" ? "互动" : "回复"}成功，${remaining} 秒后处理下一条`
+          );
         }
       } else {
         state.errors += 1;
@@ -738,8 +895,64 @@
   function setRunningButton(button) {
     if (!button) return;
     const active = Boolean(state.loopPromise) || state.running;
+    const aiNeedsSetup = state.replyMode === "ai" && !state.aiKeySaved;
     button.dataset.running = active ? "true" : "false";
-    button.textContent = state.stopping ? "正在停止" : active ? "停止" : "开始回复";
+    button.textContent = state.stopping
+      ? "正在停止"
+      : active
+        ? "停止"
+        : aiNeedsSetup
+          ? "配置 AI 后开始"
+          : state.assistantMode === "notifications" ? "开始通知互动" : "开始时间线回复";
+  }
+
+  function updateMutualState(next) {
+    state.mutual = next || mutualApi?.snapshot?.() || state.mutual;
+    renderPanel();
+  }
+
+  async function onMutualAction(mode) {
+    if (!mutualApi) {
+      state.mutual = { ...state.mutual, status: "互关模块没有加载，请刷新扩展后重试", errors: state.mutual.errors + 1 };
+      renderPanel();
+      return;
+    }
+    if (state.mutual.running) {
+      if (state.mutual.mode === mode) mutualApi.stop();
+      return;
+    }
+    const result = await mutualApi.run(mode, updateMutualState);
+    if (result?.navigate) {
+      state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
+      renderPanel();
+      window.location.assign(result.navigate);
+      return;
+    }
+    if (result?.error) {
+      state.mutual = { ...state.mutual, status: result.error };
+      renderPanel();
+    }
+  }
+
+  function selectMutualMode(mode, { navigate = true } = {}) {
+    if (anyTaskRunning()) return;
+    state.mutualMode = validMutualMode(mode);
+    state.mutual = {
+      ...state.mutual,
+      status: state.mutualMode === "unfollow"
+        ? "清理未回关：将在自己的 Following 页运行"
+        : state.mutualMode === "followBack"
+          ? "回关粉丝：将在自己的 Followers 页运行"
+          : "关注候选：请先打开其他作者的 Followers 页面；这里不会自动跳转"
+    };
+    writeSaved({ running: false, total: state.total });
+    renderPanel();
+    if (!navigate || !mutualApi) return;
+    const path = mutualApi.targetPath(state.mutualMode);
+    const alreadyOnTarget = state.mutualMode === "targetFollow"
+      ? mutualApi.isFollowersPage()
+      : window.location.pathname === path;
+    if (path && !alreadyOnTarget) window.location.assign(path);
   }
 
   function centerPhraseItem(panel, item, behavior = "smooth") {
@@ -769,33 +982,77 @@
           <div class="xrc-brand">
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
-              <div class="xrc-title">时间线回复助手</div>
-              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 模板随机 / DeepSeek AI</div>
+              <div class="xrc-title">X 互动帮手</div>
+              <div class="xrc-subtitle">v${EXTENSION_VERSION} · 本地运行</div>
             </div>
           </div>
           <div class="xrc-header-actions">
-            <div class="xrc-state"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
+            <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
             <button class="xrc-view-button" type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板">—</button>
             <button class="xrc-view-button" type="button" data-xrc-expand aria-label="放大面板" title="放大面板">⤢</button>
             <button class="xrc-close" type="button" aria-label="关闭">×</button>
           </div>
         </div>
-        <div class="xrc-body">
+        <div class="xrc-workspace-nav">
+          <div class="xrc-workspace-nav-head"><strong>功能导航</strong><span>选择助手，下方工作区同步切换</span></div>
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="互动助手">
+            <button type="button" role="tab" data-xrc-assistant="mutual"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>互关帮手</strong><small>关注关系</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">03</span><span class="xrc-tab-copy"><strong>通知互动</strong><small>点赞回复</small></span></button>
+          </div>
+        </div>
+        <div class="xrc-body xrc-mutual-body">
+          <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
+            <button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button>
+            <button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button>
+            <button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>03</b><span>关注候选</span></button>
+          </div>
+          <div class="xrc-mutual-actions">
+            <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
+              <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
+              <button type="button" data-xrc-mutual-action="unfollow">开始清理</button>
+              <p>保留带有 Follows you 的账号，只取消没有互关标记的 Following。</p>
+              <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 跳过互关 0 · 异常 0</div>
+            </section>
+            <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
+              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页</small></span></div>
+              <button type="button" data-xrc-mutual-action="followBack">开始回关</button>
+              <p>只点 Follow back。与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</p>
+              <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
+            </section>
+            <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
+              <div><b>03</b><span><strong>关注候选</strong><small>其他作者的 Followers 页 · 不自动跳转</small></span></div>
+              <button type="button" data-xrc-mutual-action="targetFollow">开始关注</button>
+              <p>只点普通 Follow。与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</p>
+              <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
+            </section>
+          </div>
+          <div class="xrc-status" role="status" data-xrc-mutual-status>选择一项互关任务开始</div>
+          <div class="xrc-footer"><span>互关操作均在当前 X 页面本地执行</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
+        </div>
+        <div class="xrc-body xrc-reply-body">
+          <details class="xrc-ai-config" data-xrc-ai-config>
+            <summary><strong>配置 DeepSeek AI</strong><span>保存 Key 后自动折叠 · 测试连接可选</span></summary>
+            <div class="xrc-ai-config-body">
+              <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-ai-key></label>
+              <div class="xrc-ai-actions">
+                <button type="button" data-xrc-ai-save>保存 Key</button>
+                <button type="button" data-xrc-ai-test>测试连接（可选）</button>
+              </div>
+              <div class="xrc-ai-status" data-xrc-ai-status>尚未配置 DeepSeek API Key</div>
+              <div class="xrc-ai-privacy">AI 模式会把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。</div>
+            </div>
+          </details>
+          <button class="xrc-button xrc-primary-action" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-status" role="status"></div>
-          <section class="xrc-task-rule" aria-label="任务结构">
-            <span class="xrc-task-rule-label">任务结构</span>
-            <strong>回复 35 次 = 1 轮</strong>
-            <span class="xrc-task-rule-arrow">→</span>
-            <strong>共 5 轮 = 175 次</strong>
-          </section>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
               <div class="xrc-progress-header">
                 <div class="xrc-progress-heading">
                   <span class="xrc-section-eyebrow">执行进度</span>
                   <strong data-xrc-round-title>第 1 轮</strong>
-                  <small>本轮已完成 <b data-xrc-page>0</b> / ${BATCH_SIZE} 次回复</small>
+                  <small><span data-xrc-progress-prefix>本轮已完成</span> <b data-xrc-page>0</b><span data-xrc-progress-suffix> / ${BATCH_SIZE} 次回复</span></small>
                 </div>
                 <div class="xrc-progress-summary">
                   <strong data-xrc-total>0/${RUN_SIZE}</strong>
@@ -803,8 +1060,8 @@
                 </div>
               </div>
               <div class="xrc-progress-meta">
-                <span><small>当前轮次</small><strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></span>
-                <span><small>本轮次数</small><strong data-xrc-page-meta>0/${BATCH_SIZE}</strong></span>
+                <span data-xrc-round-meta><small data-xrc-round-meta-label>当前轮次</small><strong data-xrc-round>1/${ROUNDS_PER_RUN}</strong></span>
+                <span data-xrc-page-meta-box><small data-xrc-page-meta-label>本轮次数</small><strong data-xrc-page-meta>0/${BATCH_SIZE}</strong></span>
                 <span><small>运行时间</small><strong data-xrc-runtime>00:00</strong></span>
               </div>
               <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-round-track>
@@ -816,36 +1073,31 @@
                 ${Array.from({ length: ROUNDS_PER_RUN }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
               </div>
             </section>
-            <section class="xrc-level-card xrc-mode-section">
-              <div class="xrc-level-head"><div><span class="xrc-level-kicker">回复方式</span><strong>选择内容从哪里来</strong></div></div>
-              <div class="xrc-mode-tabs" role="group" aria-label="回复方式">
-                <button type="button" data-xrc-mode="template"><strong>模板随机</strong><span>从 100 条话术中随机选择</span></button>
-                <button type="button" data-xrc-mode="ai"><strong>AI 模式</strong><span>DeepSeek 阅读原帖后生成</span></button>
+            <details class="xrc-settings" data-xrc-settings>
+              <summary><span><strong>运行设置</strong><small>回复方式与频率限制</small></span><b>设置</b></summary>
+              <div class="xrc-settings-body">
+                <section class="xrc-level-card xrc-mode-section">
+                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">回复方式</span><strong>选择内容从哪里来</strong></div></div>
+                  <div class="xrc-mode-tabs" role="group" aria-label="回复方式">
+                    <button type="button" data-xrc-mode="template"><strong>模板随机</strong><span>从 100 条话术中随机选择</span></button>
+                    <button type="button" data-xrc-mode="ai"><strong>AI 模式</strong><span>DeepSeek 阅读原帖后生成</span></button>
+                  </div>
+                </section>
+                <section class="xrc-level-card xrc-speed-section">
+                  <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率限制</span><strong>运行中自动锁定</strong></div></div>
+                  <div class="xrc-rate-controls" aria-label="频率限制">
+                    <label class="xrc-rate-control"><span>每条回复后等多久</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
+                    <label class="xrc-rate-control" data-xrc-round-rate><span>每轮完成后等多久</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
+                  </div>
+                </section>
               </div>
-              <div class="xrc-ai-config">
-                <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-ai-key></label>
-                <div class="xrc-ai-actions">
-                  <button type="button" data-xrc-ai-save>保存 Key</button>
-                  <button type="button" data-xrc-ai-test>测试连接</button>
-                </div>
-                <div class="xrc-ai-status" data-xrc-ai-status>尚未配置 DeepSeek API Key</div>
-                <div class="xrc-ai-privacy">AI 模式会把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。</div>
-              </div>
-            </section>
-            <section class="xrc-level-card xrc-speed-section">
-              <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率限制</span><strong>运行中自动锁定</strong></div></div>
-              <div class="xrc-rate-controls" aria-label="频率限制">
-                <label class="xrc-rate-control"><span>每条回复后等多久</span><span><input type="number" min="${MIN_REPLY_INTERVAL_SECONDS}" max="${MAX_REPLY_INTERVAL_SECONDS}" step="1" data-xrc-reply-interval> 秒</span></label>
-                <label class="xrc-rate-control"><span>每轮完成后等多久</span><span><input type="number" min="${MIN_ROUND_INTERVAL_SECONDS}" max="${MAX_ROUND_INTERVAL_SECONDS}" step="1" data-xrc-round-interval> 秒</span></label>
-              </div>
-            </section>
+            </details>
           </div>
           <div class="xrc-phrase-row"><span data-xrc-reply-label>当前话术</span><strong data-xrc-phrase></strong></div>
           <details class="xrc-phrase-pool" open>
             <summary><span>话术池</span><span>${phrases.length} 条 · 当前话术自动高亮</span></summary>
             <div class="xrc-phrase-list" data-xrc-phrase-list role="listbox" aria-label="固定话术池"></div>
           </details>
-          <button class="xrc-button" type="button" data-xrc-toggle>开始回复</button>
           <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
@@ -865,11 +1117,46 @@
         centerPhraseItem(panel, panel.querySelector(".xrc-phrase-item.is-active"));
       });
       panel.querySelector(".xrc-close").addEventListener("click", () => {
-        if (state.running) return;
+        if (anyTaskRunning()) return;
         panelDismissed = true;
         panel.remove();
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
+        button.addEventListener("click", () => onMutualAction(button.dataset.xrcMutualAction));
+      });
+      panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
+        button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
+      });
+      panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (anyTaskRunning()) return;
+          const nextMode = validAssistantMode(button.dataset.xrcAssistant);
+          if (nextMode === state.assistantMode) return;
+          state.assistantMode = nextMode;
+          state.pageCount = 0;
+          state.completedRounds = 0;
+          state.total = 0;
+          state.startedAt = null;
+          state.elapsedMs = 0;
+          state.errors = 0;
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          state.lastReply = "";
+          processedIds.clear();
+          skippedIds.clear();
+          state.status = nextMode === "notifications"
+            ? "通知互动只处理最近 2 小时内别人回复你的内容：先点赞，再回复；处理过的不重复。"
+            : nextMode === "mutual"
+              ? "选择清理未回关、回关粉丝或关注候选。"
+              : "时间线回复会从上往下处理他人的帖子。";
+          writeSaved({ running: false, total: 0 });
+          renderPanel();
+          if (nextMode === "notifications" && !isNotificationPath()) window.location.assign("/notifications");
+          if (nextMode === "timeline" && window.location.pathname !== "/home") window.location.assign("/home");
+          if (nextMode === "mutual") selectMutualMode(state.mutualMode);
+        });
+      });
       panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
         state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
         writeSaved({ running: state.running, total: state.total });
@@ -932,20 +1219,27 @@
       });
     }
 
-    const status = panel.querySelector(".xrc-status");
-    const stats = panel.querySelector(".xrc-stats");
+    const status = panel.querySelector(".xrc-reply-body .xrc-status");
+    const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
     if (status) status.textContent = state.status;
     if (stats) {
+      const notificationMode = state.assistantMode === "notifications";
       const shownRound = Math.min(state.completedRounds + 1, ROUNDS_PER_RUN);
       const totalPercent = Math.min(100, Math.round((state.total / RUN_SIZE) * 100));
       panel.querySelector("[data-xrc-page]").textContent = String(state.pageCount);
-      panel.querySelector("[data-xrc-page-meta]").textContent = `${state.pageCount}/${BATCH_SIZE}`;
-      panel.querySelector("[data-xrc-round]").textContent = `${shownRound}/${ROUNDS_PER_RUN}`;
-      panel.querySelector("[data-xrc-round-title]").textContent = `第 ${shownRound} 轮`;
-      panel.querySelector("[data-xrc-total]").textContent = `${state.total}/${RUN_SIZE}`;
+      panel.querySelector("[data-xrc-progress-prefix]").textContent = notificationMode ? "最近 2 小时内本次已处理" : "本轮已完成";
+      panel.querySelector("[data-xrc-progress-suffix]").textContent = notificationMode ? " 次互动" : ` / ${BATCH_SIZE} 次回复`;
+      panel.querySelector("[data-xrc-page-meta-label]").textContent = notificationMode ? "本次互动" : "本轮次数";
+      panel.querySelector("[data-xrc-page-meta]").textContent = notificationMode ? `${state.total} 条` : `${state.pageCount}/${BATCH_SIZE}`;
+      panel.querySelector("[data-xrc-round-meta-label]").textContent = notificationMode ? "处理范围" : "当前轮次";
+      panel.querySelector("[data-xrc-round]").textContent = notificationMode ? "最近 2 小时" : `${shownRound}/${ROUNDS_PER_RUN}`;
+      panel.querySelector("[data-xrc-round-title]").textContent = notificationMode ? "最近 2 小时" : `第 ${shownRound} 轮`;
+      panel.querySelector("[data-xrc-total]").textContent = notificationMode ? `已处理 ${state.total}` : `${state.total}/${RUN_SIZE}`;
       panel.querySelector("[data-xrc-runtime]").textContent = formatRuntime(elapsedRuntimeMs());
-      panel.querySelector("[data-xrc-total-percent]").textContent = `${totalPercent}%`;
+      panel.querySelector("[data-xrc-total-percent]").textContent = notificationMode ? "不重复" : `${totalPercent}%`;
       const roundTrack = panel.querySelector("[data-xrc-round-track]");
+      roundTrack.hidden = notificationMode;
+      panel.querySelector(".xrc-round-legend").hidden = notificationMode;
       roundTrack.setAttribute("aria-valuenow", String(state.total));
       panel.querySelectorAll("[data-xrc-round-segment]").forEach((segment, index) => {
         const repliesInRound = Math.max(0, Math.min(BATCH_SIZE, state.total - (index * BATCH_SIZE)));
@@ -961,7 +1255,10 @@
       const roundIntervalInput = panel.querySelector("[data-xrc-round-interval]");
       if (document.activeElement !== replyIntervalInput) replyIntervalInput.value = String(state.replyIntervalSeconds);
       if (document.activeElement !== roundIntervalInput) roundIntervalInput.value = String(state.roundIntervalSeconds);
-      panel.querySelector("[data-xrc-mini-progress]").textContent = `第 ${shownRound} 轮 · ${state.pageCount}/${BATCH_SIZE}`;
+      panel.querySelector("[data-xrc-mini-progress]").textContent = notificationMode
+        ? `最近 2 小时 · 已处理 ${state.total}`
+        : `第 ${shownRound} 轮 · ${state.pageCount}/${BATCH_SIZE}`;
+      panel.querySelector("[data-xrc-round-rate]").hidden = notificationMode;
       replyIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
       roundIntervalInput.disabled = Boolean(state.loopPromise) || state.running;
       const phrase = state.replyMode === "ai"
@@ -970,12 +1267,30 @@
       panel.querySelector("[data-xrc-phrase]").textContent = phrase;
       panel.querySelector("[data-xrc-reply-label]").textContent = state.replyMode === "ai" ? "当前 AI 回复" : "当前话术";
       panel.querySelector("[data-xrc-ai-status]").textContent = state.aiStatus;
+      const aiConfig = panel.querySelector("[data-xrc-ai-config]");
+      const primaryAction = panel.querySelector("[data-xrc-toggle]");
+      const aiSetupRequired = state.replyMode === "ai" && !state.aiKeySaved;
+      const wasRequired = aiConfig.dataset.required === "true";
+      aiConfig.dataset.required = aiSetupRequired ? "true" : "false";
+      if (aiSetupRequired) {
+        aiConfig.open = true;
+        primaryAction.before(aiConfig);
+      } else {
+        if (wasRequired) aiConfig.open = false;
+        primaryAction.after(aiConfig);
+      }
       const aiKeyInput = panel.querySelector("[data-xrc-ai-key]");
       aiKeyInput.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
       aiKeyInput.disabled = Boolean(state.loopPromise) || state.running;
       panel.querySelectorAll("[data-xrc-mode]").forEach((button) => {
         button.classList.toggle("is-active", button.dataset.xrcMode === state.replyMode);
         button.disabled = Boolean(state.loopPromise) || state.running;
+      });
+      panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
+        const selected = button.dataset.xrcAssistant === state.assistantMode;
+        button.classList.toggle("is-active", selected);
+        button.setAttribute("aria-selected", selected ? "true" : "false");
+        button.disabled = anyTaskRunning();
       });
       panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
       panel.querySelector("[data-xrc-ai-test]").disabled = !state.aiKeySaved || Boolean(state.loopPromise) || state.running;
@@ -996,10 +1311,45 @@
         }
       }
     }
-    const active = Boolean(state.loopPromise) || state.running;
-    const completed = state.completedRounds >= ROUNDS_PER_RUN;
-    const failed = /(?:尚未|无法|没有发出|不可用|失败|需要先)/.test(state.status);
+    const mutual = state.mutual || mutualApi?.snapshot?.();
+    const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
+    if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
+    panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
+      const selected = button.dataset.xrcMutualTab === state.mutualMode;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.disabled = anyTaskRunning();
+    });
+    panel.querySelectorAll("[data-xrc-mutual-card]").forEach((card) => {
+      card.classList.toggle("is-selected", card.dataset.xrcMutualCard === state.mutualMode);
+    });
+    if (mutual) {
+      panel.querySelector('[data-xrc-mutual-stats="unfollow"]').textContent = `已取消 ${mutual.unfollowed} · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`;
+      const sharedFollowStatus = `今日合计 ${mutual.sharedDailyFollowed || 0}/400 · 本批 ${mutual.sharedBatchProgress || 0}/15`;
+      panel.querySelector('[data-xrc-mutual-stats="followBack"]').textContent = `本次回关 ${mutual.followedBack} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`;
+      panel.querySelector('[data-xrc-mutual-stats="targetFollow"]').textContent = `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`;
+      panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
+        const mode = button.dataset.xrcMutualAction;
+        const activeMode = mutual.running && mutual.mode === mode;
+        const idleLabel = mode === "unfollow" ? "开始清理" : mode === "followBack" ? "开始回关" : "开始关注";
+        const cooldown = activeMode && mutual.cooldownUntil ? Math.max(0, Math.ceil((mutual.cooldownUntil - Date.now()) / 1000)) : 0;
+        button.textContent = activeMode ? cooldown > 0 ? `暂停 ${cooldown} 秒 · 点此停止` : "运行中 · 点此停止" : idleLabel;
+        button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
+        button.classList.toggle("is-running", activeMode);
+        button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
+      });
+      if (state.assistantMode === "mutual") {
+        const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
+        panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `互关帮手 · 已完成 ${mutualCount}` : "互关帮手 · 待命";
+      }
+    }
+    const active = anyTaskRunning();
+    const mutualSelected = state.assistantMode === "mutual";
+    const completed = !mutualSelected && state.completedRounds >= ROUNDS_PER_RUN;
+    const displayedStatus = mutualSelected ? mutual?.status || "" : state.status;
+    const failed = /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
+    panel.dataset.assistantMode = state.assistantMode;
     panel.dataset.replyMode = state.replyMode;
     const collapseButton = panel.querySelector("[data-xrc-collapse]");
     const expandButton = panel.querySelector("[data-xrc-expand]");
@@ -1009,9 +1359,14 @@
     expandButton.textContent = state.panelView === "expanded" ? "⤡" : "⤢";
     expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
     expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
-    panel.dataset.state = state.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    panel.dataset.state = state.stopping || mutual?.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
-    if (stateLabel) stateLabel.textContent = state.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
+    if (stateLabel) {
+      stateLabel.textContent = state.stopping || mutual?.stopping ? "停止中" : completed ? "已完成" : failed ? "需要注意" : active ? "运行中" : "待命";
+      const stateBadge = stateLabel.closest(".xrc-state");
+      stateBadge?.setAttribute("aria-label", stateLabel.textContent);
+      stateBadge?.setAttribute("title", stateLabel.textContent);
+    }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
   }
 
@@ -1024,7 +1379,11 @@
     state.running = true;
     state.stopping = false;
     writeSaved({ running: true, total: state.total });
-    state.status = resume ? "刷新完成，从顶部继续" : "从顶部开始，向下回复";
+    state.status = resume
+      ? "刷新完成，从顶部继续"
+      : state.assistantMode === "notifications"
+        ? "从通知页顶部开始，只处理最近 2 小时内尚未互动的回复"
+        : "从顶部开始，向下回复";
     renderPanel();
     state.loopPromise = runLoop({ resume }).then((result) => {
       state.loopPromise = null;
@@ -1051,11 +1410,9 @@
       renderPanel();
       return;
     }
-    if (state.replyMode === "ai" && (!state.aiKeySaved || !state.aiConnectionVerified)) {
-      state.status = state.aiKeySaved
-        ? "AI 模式需要先通过连接测试，再开始运行"
-        : "AI 模式需要先填写并保存 DeepSeek API Key，再测试连接";
-      state.aiStatus = state.aiKeySaved ? "请先点击“测试连接”" : "请先保存 API Key";
+    if (state.replyMode === "ai" && !state.aiKeySaved) {
+      state.status = "AI 模式需要先填写并保存 DeepSeek API Key";
+      state.aiStatus = "保存 Key 后即可开始；测试连接为可选";
       renderPanel();
       return;
     }
@@ -1068,7 +1425,8 @@
     state.pendingReply = "";
     state.pendingTweetId = "";
     state.lastReply = "";
-    processedIds.clear();
+    if (state.assistantMode !== "notifications") processedIds.clear();
+    skippedIds.clear();
     begin({ resume: false });
   }
 
@@ -1081,14 +1439,33 @@
     state.replyIntervalSeconds = saved.replyIntervalSeconds;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.panelView = saved.panelView;
+    state.assistantMode = saved.running
+      ? saved.assistantMode
+      : isNotificationPath() ? "notifications" : saved.assistantMode;
+    state.mutualMode = saved.mutualMode;
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
     state.pendingTweetId = saved.pendingTweetId;
     state.elapsedMs = 0;
     processedIds.clear();
-    for (const id of saved.processedIds) processedIds.add(id);
+    if (saved.assistantMode !== "notifications") {
+      for (const id of saved.processedIds) processedIds.add(id);
+    }
     state.phraseIndex = saved.phraseIndex;
     await loadAiSettings();
+    await loadNotificationHistory();
+    if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
+      for (const id of saved.processedIds) processedNotificationIds.add(id);
+      await persistNotificationProcessed(saved.processedIds.at(-1));
+    }
+    if (mutualApi?.refreshSharedFollowRate) {
+      state.mutual = await mutualApi.refreshSharedFollowRate();
+    }
+    if (!saved.running) {
+      state.status = state.assistantMode === "notifications"
+        ? "通知互动只处理最近 2 小时内的回复：先点赞，再回复；处理过的不重复。"
+        : "待命。默认使用 AI 模式，读取原帖后生成回复。";
+    }
     renderPanel();
     if (saved.running) {
       begin({ resume: true });

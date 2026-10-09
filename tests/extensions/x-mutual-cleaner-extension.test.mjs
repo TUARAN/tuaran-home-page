@@ -119,15 +119,16 @@ test('panel follows supported X list routes during SPA navigation', async () => 
   assert.equal(browser.elements.has('x-mutual-cleaner-panel'), false)
 })
 
-test('release version is consistent across extension and download metadata', async () => {
+test('legacy resource page guides users to the integrated interaction assistant', async () => {
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
-  const catalog = await readFile(new URL('../../lib/resourceCatalog.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../../app/(site)/resources/x-mutual-cleaner-extension/page.jsx', import.meta.url),
     'utf8',
   )
 
   assert.equal(manifest.version, '0.1.12')
-  assert.match(catalog, /x-mutual-cleaner-extension-v0\.1\.12\.zip/)
-  assert.match(resourcePage, /Chrome 插件 v0\.1\.12/)
+  assert.match(resourcePage, /UPGRADE_URL = '\/resources\/x-reply-clipboard-extension'/)
+  assert.match(resourcePage, /已升级为「X 互动帮手」/)
+  assert.match(resourcePage, /前往 X 互动帮手/)
+  assert.doesNotMatch(resourcePage, /api\/resources\/deliver\?resourceKey=resource%3Ax-mutual-cleaner-extension/)
 })

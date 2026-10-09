@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "X Timeline Reply Assistant",
-  "version": "2.1.0",
-  "description": "Reply on the X timeline with a random saved phrase or a DeepSeek-generated response. Refresh after every 35 successful replies.",
+  "name": "X Interaction Assistant",
+  "version": "3.1.4",
+  "description": "Manage mutual follows, reply on X timelines, or like and reply from Notifications. Supports templates and DeepSeek AI.",
   "permissions": ["storage"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*"],
   "background": {
@@ -17,7 +17,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["phrases.js", "loop.js", "content.js"],
+      "js": ["phrases.js", "loop.js", "mutual.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

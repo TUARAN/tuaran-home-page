@@ -5,6 +5,7 @@ import test from 'node:test'
 
 const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
+const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
 test('picks the topmost unseen post that still has a reply button', () => {
@@ -80,6 +81,62 @@ test('reads and normalizes the post author handle from a status permalink', () =
   assert.equal(loop.normalizeHandle('@TUARAN'), 'tuaran')
 })
 
+test('recognizes only notification tweets that reply to the signed-in account', () => {
+  assert.equal(loop.isNotificationReplyText('Replying to @TUARAN', '@tuaran'), true)
+  assert.equal(loop.isNotificationReplyText('正在回复 @tuaran', 'TUARAN'), true)
+  assert.equal(loop.isNotificationReplyText('liked your reply', 'tuaran'), false)
+  assert.equal(loop.isNotificationReplyText('Replying to @someone_else', 'tuaran'), false)
+})
+
+test('limits notification interaction to the most recent two hours', () => {
+  const now = Date.parse('2026-10-09T12:00:00.000Z')
+  assert.equal(loop.NOTIFICATION_WINDOW_MS, 2 * 60 * 60 * 1000)
+  assert.equal(loop.timestampFromDatetime('2026-10-09T10:30:00.000Z'), Date.parse('2026-10-09T10:30:00.000Z'))
+  assert.equal(loop.isWithinNotificationWindow(Date.parse('2026-10-09T10:00:00.000Z'), now), true)
+  assert.equal(loop.isWithinNotificationWindow(Date.parse('2026-10-09T09:59:59.000Z'), now), false)
+  assert.equal(loop.isOlderThanNotificationWindow(Date.parse('2026-10-09T09:59:59.000Z'), now), true)
+  assert.equal(loop.timestampFromDatetime('not-a-date'), 0)
+})
+
+test('recognizes the list routes used by the integrated mutual helper', () => {
+  assert.equal(mutual.isFollowingPath('/tuaran/following'), true)
+  assert.equal(mutual.isFollowingPath('/tuaran/followers'), false)
+  assert.equal(mutual.isFollowersPath('/tuaran/followers'), true)
+  assert.equal(mutual.isFollowersPath('/tuaran/verified_followers'), true)
+  assert.equal(mutual.isFollowersPath('/home'), false)
+  assert.equal(mutual.constants.FOLLOW_ACTION_DELAY_MS, 2000)
+  assert.equal(mutual.constants.FOLLOW_BATCH_SIZE, 15)
+  assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 1800000)
+  assert.equal(mutual.constants.FOLLOW_MAX_PER_RUN, 400)
+  assert.equal(mutual.constants.FOLLOW_DAILY_LIMIT, 400)
+})
+
+test('loads one shared follow quota for follow-back and target-follow modes', async () => {
+  const now = new Date()
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-')
+  globalThis.chrome = {
+    storage: {
+      local: {
+        get: async () => ({
+          xrcTargetFollowDaily: { date: today, count: 23, batchProgress: 8, cooldownUntil: 0 },
+        }),
+        set: async () => {},
+      },
+    },
+  }
+  try {
+    const snapshot = await mutual.refreshSharedFollowRate()
+    assert.equal(snapshot.sharedDailyFollowed, 23)
+    assert.equal(snapshot.sharedBatchProgress, 8)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
 test('matches a saved phrase after X collapses spaces or inserts invisible characters', () => {
   const phrases = require('../../tools/x-reply-clipboard-extension/phrases.js')
   assert.equal(loop.normalizePhraseText(' 🧇.  .🧇\u200b '), '🧇..🧇')
@@ -113,19 +170,22 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const catalog = await readFile(new URL('../../lib/resourceCatalog.js', import.meta.url), 'utf8')
+  const registry = await readFile(new URL('../../lib/contentRegistry.js', import.meta.url), 'utf8')
+  const toolItems = await readFile(new URL('../../lib/toolItems.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../../app/(site)/resources/x-reply-clipboard-extension/page.jsx', import.meta.url),
     'utf8',
   )
 
   assert.equal(manifest.manifest_version, 3)
-  assert.equal(manifest.version, '2.1.0')
+  assert.equal(manifest.name, 'X Interaction Assistant')
+  assert.equal(manifest.version, '3.1.4')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
-  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'content.js'])
+  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'mutual.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage'])
   assert.equal(manifest.background.service_worker, 'background.js')
   assert.match(content, /data-testid="reply"/)
@@ -164,8 +224,35 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /placeholderMixedPhraseIndexFromText\(phrases, existingText\)/)
   assert.match(content, /if \(!existingText\) return publishReply\(existingComposer, replyText\)/)
   assert.match(content, /getManifest/)
-  assert.match(content, /时间线回复助手/)
-  assert.match(content, /v\$\{EXTENSION_VERSION\} · 模板随机 \/ DeepSeek AI/)
+  assert.match(content, /X 互动帮手/)
+  assert.match(content, /data-xrc-assistant="mutual"/)
+  assert.match(content, /data-xrc-assistant="timeline"/)
+  assert.match(content, /data-xrc-assistant="notifications"/)
+  assert.match(content, /功能导航/)
+  assert.doesNotMatch(content, /当前助手/)
+  assert.match(content, /通知互动/)
+  assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
+  assert.match(content, /最近 2 小时/)
+  assert.match(content, /state\.assistantMode !== "notifications"/)
+  assert.match(content, /persistNotificationProcessed\(next\.id\)/)
+  assert.match(content, /isNotificationReplyText/)
+  assert.match(content, /data-testid="like"/)
+  assert.match(content, /data-testid="unlike"/)
+  assert.match(content, /likeNotificationReply/)
+  assert.match(content, /data-xrc-mutual-action="unfollow"/)
+  assert.match(content, /data-xrc-mutual-action="followBack"/)
+  assert.match(content, /data-xrc-mutual-action="targetFollow"/)
+  assert.match(content, /data-xrc-mutual-tab="unfollow"/)
+  assert.match(content, /data-xrc-mutual-tab="followBack"/)
+  assert.match(content, /data-xrc-mutual-tab="targetFollow"/)
+  assert.match(content, /其他作者的 Followers 页面/)
+  assert.match(content, /与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个/)
+  assert.match(content, /与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个/)
+  assert.match(content, /function selectMutualMode/)
+  assert.match(content, /mutualMode/)
+  assert.match(content, /nextMode === "timeline" && window\.location\.pathname !== "\/home"/)
+  assert.match(content, /nextMode === "notifications" && !isNotificationPath\(\)/)
+  assert.match(content, /mutualApi\.run/)
   assert.match(content, /result !== "sent-composer-open"/)
   assert.match(content, /data-xrc-round-track/)
   assert.match(content, /data-xrc-round-segment/)
@@ -178,19 +265,24 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /data-xrc-reply-interval/)
   assert.match(content, /data-xrc-round-interval/)
+  assert.match(content, /data-xrc-settings/)
+  assert.match(content, /回复方式与频率限制/)
   assert.match(content, /data-xrc-collapse/)
   assert.match(content, /data-xrc-expand/)
   assert.match(content, /data-xrc-mini-progress/)
+  assert.match(content, /配置 AI 后开始/)
   assert.match(content, /panelView/)
-  assert.match(content, /回复 35 次 = 1 轮/)
-  assert.match(content, /共 5 轮 = 175 次/)
   assert.match(content, /本轮已完成/)
   assert.match(content, /data-xrc-mode="template"/)
   assert.match(content, /data-xrc-mode="ai"/)
+  assert.match(content, /replyMode: "ai"/)
+  assert.match(content, /value === "template" \? "template" : "ai"/)
   assert.match(content, /data-xrc-ai-key/)
   assert.match(content, /xrc-ai-generate/)
   assert.match(content, /connectionVerified/)
-  assert.match(content, /AI 模式需要先通过连接测试/)
+  assert.match(content, /测试连接为可选/)
+  assert.match(content, /state\.replyMode === "ai" && !state\.aiKeySaved/)
+  assert.doesNotMatch(content, /AI 模式需要先通过连接测试/)
   assert.match(content, /不会发送 X 登录 Cookie/)
   assert.match(content, /tweetText/)
   assert.match(content, /pendingReply/)
@@ -205,11 +297,26 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /activePhrase\.style\.order = "-1"/)
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
-  assert.match(content, /PHRASE_STORE = 4/)
-  assert.match(catalog, /x-reply-clipboard-extension-v2\.1\.0\.zip/)
-  assert.match(resourcePage, /const VERSION = '2\.1\.0'/)
+  assert.match(content, /PHRASE_STORE = 6/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.1\.4\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.1\.4'/)
+  assert.match(resourcePage, /X 互动帮手/)
+  assert.match(resourcePage, /互关帮手/)
+  assert.match(resourcePage, /通知互动/)
+  assert.match(resourcePage, /const VERSION_HISTORY = \[/)
+  assert.match(resourcePage, /version: '3\.1\.2'/)
+  assert.match(resourcePage, /version: '3\.1\.1'/)
+  assert.match(resourcePage, /version: '3\.1\.0'/)
+  assert.match(resourcePage, /version: '3\.0\.0'/)
+  assert.match(resourcePage, /version: '2\.0\.0'/)
+  assert.match(resourcePage, /version: '0\.2\.1'/)
+  assert.match(resourcePage, /当前版本 v\{VERSION\}/)
   assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
+  assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X 互动帮手'/)
+  assert.match(registry, /'通知互动'/)
+  assert.match(toolItems, /id: 'x-reply-clipboard',[\s\S]*title: 'X 互动帮手'/)
+  assert.match(toolItems, /role: 'Chrome 扩展 · 互关、时间线与通知互动'/)
 
   const desktopPage = await readFile(
     new URL('../../app/(site)/resources/x-clipboard-phrase/page.jsx', import.meta.url),

@@ -11,14 +11,14 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-cleaner-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-mutual-cleaner-extension&file=extension-zip'
+const UPGRADE_URL = '/resources/x-reply-clipboard-extension'
 
-const title = 'X 平台一键取消没有回关你的人：浏览器插件下载'
+const title = 'X 互关清理助手已升级为 X 互动帮手'
 const description =
-  'X 互关清理助手是一款本地运行的 Chrome 浏览器插件：登录 X 后，在 Following 列表一键取消没有回关你的人，也支持在粉丝列表测试慢速批量点击 Follow back。'
+  '原 X 互关清理助手已并入 X 互动帮手。新版在一个扩展中提供互关管理、时间线回复和通知互动。'
 
 const shareText =
-  'X 平台一键取消没有回关你的人：本地运行的 Chrome 浏览器插件，支持清理未回关，也支持测试慢速批量 Follow back。'
+  'X 互关清理助手已升级为 X 互动帮手：互关管理、时间线回复和通知互动集中在一个扩展。'
 
 export const metadata = {
   title,
@@ -54,13 +54,12 @@ export const metadata = {
 
 function DownloadButton({ className = '' }) {
   return (
-    <a
-      href={DOWNLOAD_URL}
-      download
+    <Link
+      href={UPGRADE_URL}
       className={`inline-flex min-h-11 items-center justify-center rounded-full border border-[#0f1419] bg-[#0f1419] px-5 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#2f3336] dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200 ${className}`}
     >
-      下载 Chrome 插件 v0.1.12
-    </a>
+      前往 X 互动帮手
+    </Link>
   )
 }
 
@@ -91,13 +90,12 @@ export default function XMutualCleanerResourcePage() {
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          X 平台一键取消没有回关你的人
+          X 互关清理助手已升级为「X 互动帮手」
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          一个面向 X/Twitter Following 列表的 Chrome 浏览器插件。登录 X 后打开自己的关注列表，点击一次按钮，
-          插件会自动往下刷，只取消没有显示 <span className="font-semibold text-[var(--site-ink)]">Follows you</span> 的账号。
-          新增测试功能也可以在粉丝列表慢速批量点击 <span className="font-semibold text-[var(--site-ink)]">Follow back</span>。
+          原来的清理未回关、回关粉丝和关注候选三项功能已经完整合并到新版第一个 Tab「互关帮手」。
+          同一个扩展现在还可以在时间线上自动回复，并在通知页给别人发来的回复点赞和继续回复。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -138,10 +136,10 @@ export default function XMutualCleanerResourcePage() {
                   Download
                 </p>
                 <h2 className="m-0 mt-1 border-0 p-0 text-xl font-semibold text-[var(--site-ink)]">
-                  X 互关清理助手
+                  已并入 X 互动帮手
                 </h2>
                 <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                  Manifest V3 本地 Chrome 扩展。下载后在 Chrome 扩展管理页以“加载已解压”方式安装。
+                  旧版停止单独更新。请安装 X 互动帮手 v3.1.4，在顶部选择「互关帮手」。
                 </p>
               </div>
               <DownloadButton className="shrink-0" />
@@ -166,10 +164,10 @@ export default function XMutualCleanerResourcePage() {
               看到 Follows you / 关注了你 的账号会跳过；没有互关标记且按钮是 Following 才会处理。
             </FeatureCard>
             <FeatureCard title="测试回关">
-              在 Followers / Verified Followers 页面可慢速批量点击 Follow back，只处理已经关注你的账号。
+              在 Followers / Verified Followers 页面批量点击 Follow back，只处理已经关注你的账号；与候选关注共享频率和额度。
             </FeatureCard>
             <FeatureCard title="候选关注">
-              在任意账号 Followers 页面低频点击普通 Follow：每批最多 10 个，30 秒一个，自动暂停 15 分钟后继续。
+              先手动打开其他作者的 Followers 页面，再点击普通 Follow：每 2 秒一个，每 15 个暂停 30 分钟，每日最多 400 个。插件不会跳到自己的粉丝页。
             </FeatureCard>
             <FeatureCard title="本地运行">
               插件运行在你自己的浏览器页面里，不需要你提供账号密码，也不把关注列表上传到第三方服务器。
@@ -187,22 +185,22 @@ export default function XMutualCleanerResourcePage() {
           </p>
           <p>
             批量回关属于测试功能。它只会点击显示 <strong>Follow back</strong> / <strong>回关</strong> 的按钮，
-            入口标为“功能 2 回关粉丝”。默认每次回关后等待 5 秒，每回关 10 个暂停 1 分钟，
-            单次运行最多回关 50 个；如果 X 列表出现 Something went wrong，会先暂停 30 秒再点击 Retry 尝试恢复。
+            入口标为“功能 2 回关粉丝”。回关与候选关注共用同一个频率状态：每次操作后等待 2 秒，
+            两项任务合计每完成 15 个暂停 30 分钟，每日合计最多 400 个。
           </p>
           <p>
             关注候选也属于测试功能。它只会在 Followers / Verified Followers 列表里点击普通
             <strong> Follow</strong> / <strong>关注</strong>，不会处理 Follow back 或已经 Following 的账号。
-            当前口径是：每批最多 10 个，每个动作间隔 30 秒；完成 10 个后自动暂停 15 分钟，按钮显示倒计时；
-            倒计时结束后自动进入下一批，单次运行最多 200 个。这个功能不建议用于复制他人粉丝列表或无限量增长。
+            当前口径是：每个动作间隔 2 秒；与回关合计完成 15 个后自动暂停 30 分钟，按钮显示倒计时；
+            倒计时结束后自动进入下一批，两项任务每日合计最多 400 个。这个功能不会自动跳转，请先打开其他作者的 Followers 页面。
           </p>
           <p>
             <a href="https://www.axios.com/2019/04/08/twitter-spam-follow-limit" target="_blank" rel="noreferrer">
               公开报道
             </a>
             里，Twitter/X 曾为了抑制刷粉把每日关注上限从 1000 降到 400；
-            自动关注规则也更强调“别人先关注你之后再回关”的边界。因此这个测试功能不会跑满公开上限，
-            也不会点击普通 Follow，只做低频 Follow back。
+            自动关注规则也更强调“别人先关注你之后再回关”的边界。因此插件把回关与候选关注放进同一份每日额度，
+            防止切换功能后重新计数。
           </p>
 
           <h2>使用方法</h2>
@@ -226,9 +224,9 @@ export default function XMutualCleanerResourcePage() {
           <h2>如何测试关注候选？</h2>
           <ol>
             <li>登录 X，打开任意账号的 <code>https://x.com/目标用户名/followers</code> 或 Verified Followers 页面。</li>
-            <li>在右下角插件面板里找到“功能 3 关注候选”，点击“开始”。</li>
+            <li>先打开其他作者的 Followers 页面，再在插件面板选择“关注候选”并点击“开始关注”。</li>
             <li>插件只处理右侧按钮是普通 Follow / 关注的账号；已经 Following、Follow back 或无法识别的行会跳过。</li>
-            <li>每批最多 10 个，两个关注动作之间间隔 30 秒；完成 10 个后自动暂停 15 分钟并显示倒计时，倒计时结束后继续下一批，单次最多 200 个。</li>
+            <li>回关与候选关注共享限制：两个关注动作之间间隔 2 秒；合计完成 15 个后暂停 30 分钟，倒计时结束后继续，每日合计最多 400 个。</li>
             <li>需要停止时，再点同一个按钮。</li>
           </ol>
 

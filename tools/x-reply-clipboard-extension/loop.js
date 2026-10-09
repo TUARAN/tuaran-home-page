@@ -4,6 +4,7 @@
   const BATCH_SIZE = 35;
   const ROUNDS_PER_RUN = 5;
   const RUN_SIZE = BATCH_SIZE * ROUNDS_PER_RUN;
+  const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
@@ -19,6 +20,30 @@
   function handleFromStatusHref(href) {
     const match = String(href || "").match(/(?:^|https?:\/\/[^/]+)\/([A-Za-z0-9_]{1,15})\/status\/\d+/);
     return match ? normalizeHandle(match[1]) : "";
+  }
+
+  function isNotificationReplyText(text, ownHandle) {
+    const handle = normalizeHandle(ownHandle);
+    if (!handle) return false;
+    const escaped = handle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:Replying\\s+to|正在回复|回复)\\s*@${escaped}(?:\\b|$)`, "i").test(String(text || ""));
+  }
+
+  function timestampFromDatetime(value) {
+    const timestamp = Date.parse(String(value || ""));
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  function isWithinNotificationWindow(timestamp, now = Date.now(), windowMs = NOTIFICATION_WINDOW_MS) {
+    const time = Number(timestamp);
+    const current = Number(now);
+    if (!Number.isFinite(time) || time <= 0 || !Number.isFinite(current)) return false;
+    return time >= current - windowMs && time <= current + (5 * 60 * 1000);
+  }
+
+  function isOlderThanNotificationWindow(timestamp, now = Date.now(), windowMs = NOTIFICATION_WINDOW_MS) {
+    const time = Number(timestamp);
+    return Number.isFinite(time) && time > 0 && time < Number(now) - windowMs;
   }
 
   function nextTweet(tweets, processedIds) {
@@ -118,9 +143,14 @@
     BATCH_SIZE,
     ROUNDS_PER_RUN,
     RUN_SIZE,
+    NOTIFICATION_WINDOW_MS,
     statusIdFromHref,
     normalizeHandle,
     handleFromStatusHref,
+    isNotificationReplyText,
+    timestampFromDatetime,
+    isWithinNotificationWindow,
+    isOlderThanNotificationWindow,
     nextTweet,
     shouldReload,
     batchTransition,

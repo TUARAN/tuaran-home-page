@@ -12,19 +12,103 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '2.1.0'
+const VERSION = '3.1.4'
 
-const title = 'X 时间线回复助手：按时间线打开评论并发送'
+const title = 'X 互动帮手：互关管理、时间线回复与通知互动'
 const description =
-  'X 时间线回复助手是一个本地运行的 Chrome 扩展。在已登录的 X 时间线上，它从上往下打开评论弹窗，从固定话术里随机抽一条写进去，再点 Reply。满 35 条后刷新页面，从顶部继续。'
-const shareText = 'X 时间线回复助手：在时间线上打开评论，随机抽一条固定话术并发送。满 35 条后刷新，再从顶部继续。'
+  'X 互动帮手是一个本地运行的 Chrome 扩展，集成互关管理、时间线回复和通知互动。支持清理未回关、回关粉丝、模板随机回复与 DeepSeek AI。'
+const shareText = 'X 互动帮手：一个扩展完成互关管理、时间线自动回复，以及通知页点赞和继续回复。'
+
+const VERSION_HISTORY = [
+  {
+    version: '3.1.4',
+    title: '通知互动改为两小时时间窗',
+    description: '通知模式只处理最近 2 小时内尚未互动的回复，完成后停止；成功记录持久保存，后续运行不会重复处理。',
+    current: true,
+  },
+  {
+    version: '3.1.3',
+    title: '合并关注频率与每日额度',
+    description: '回关粉丝与关注候选统一为 2 秒一个，共享每批 15 个、暂停 30 分钟和每日合计 400 个的状态。',
+  },
+  {
+    version: '3.1.2',
+    title: '重建助手导航层级',
+    description: '顶部改为明确的功能导航，开始按钮移动到工作区首位；回复方式与频率限制合并为可折叠的运行设置。',
+  },
+  {
+    version: '3.1.1',
+    title: '互关子 Tab 与标题栏修复',
+    description: '互关三项任务改为独立子 Tab，选择后跳转到对应列表；同时压缩标题栏状态区，避免窄面板下控件拥挤。',
+  },
+  {
+    version: '3.1.0',
+    title: '互关能力完成合并',
+    description: '新增第一个「互关帮手」Tab，完整整合清理未回关、回关粉丝与关注候选；任务运行时锁定其他 Tab。',
+  },
+  {
+    version: '3.0.0',
+    title: '升级为 X 互动帮手',
+    description: '增加时间线回复与通知互动双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
+  },
+  {
+    version: '2.1.0',
+    title: '重新设计任务进度',
+    description: '用一条五色分段进度条表示 5 轮、175 次任务，并集中展示当前轮、本轮次数、总次数和运行时间。',
+  },
+  {
+    version: '2.0.0',
+    title: '新增 DeepSeek AI 模式',
+    description: '可读取当前推文文字生成自然回复；API Key 保存在 Chrome 本地，并提供连接测试与 10 秒请求超时。',
+  },
+  {
+    version: '1.5.0',
+    title: '面板支持折叠与放大',
+    description: '重构信息层级，加入迷你状态与放大视图，显示模式随当前标签页保存。',
+  },
+  {
+    version: '1.4.0',
+    title: '话术池扩充到 100 条',
+    description: '短词、单字和纯 Emoji 改写为更自然的完整句子，同时保留旧话术识别能力。',
+  },
+  {
+    version: '1.3.0',
+    title: '加入轮次与频率限制',
+    description: '35 次回复组成一轮，一次执行 5 轮；每条回复与每轮之间的等待时间可单独设置。',
+  },
+  {
+    version: '1.2.0',
+    title: '新增运行时间统计',
+    description: '跨页面刷新累计运行时间，停止或完成任务后保留最终用时。',
+  },
+  {
+    version: '1.1.0',
+    title: '加入可浏览话术池',
+    description: '当前话术自动升到首位、高亮并播放扫光动画，切换时形成走马灯效果。',
+  },
+  {
+    version: '1.0.0',
+    title: '完成第一版正式界面',
+    description: '加入轮次、整体进度、运行状态、当前话术与重试次数，统一使用真实的自动发送状态描述。',
+  },
+  {
+    version: '0.2.13–0.2.18',
+    title: '集中修复 X 编辑器兼容问题',
+    description: '解决重复写入、占位文字混入、编辑器定位错误、空弹窗接管和发送成功后弹窗残留等问题。',
+  },
+  {
+    version: '0.2.1',
+    title: '建立自动回复闭环',
+    description: '从时间线打开评论弹窗，随机选择固定话术、写入 X 编辑器并点击 Reply，成功 35 条后刷新继续。',
+  },
+]
 
 export const metadata = {
   title,
   description,
   keywords: [
     'X 评论回复',
-    'X 时间线回复助手',
+    'X 互动帮手',
     'Twitter 回复插件',
     'Chrome 浏览器插件',
     'X 时间线',
@@ -85,20 +169,20 @@ export default function XReplyClipboardResourcePage() {
             浏览器扩展
           </Link>
           <span aria-hidden="true">·</span>
-          <span>2026-10-08</span>
+          <span>更新于 2026-10-09</span>
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          在 X 时间线上打开评论，随机抽一条话术并发送
+          互关管理、时间线回复与通知互动，集中在一个面板
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          登录 X 后打开首页、个人主页或搜索结果。左下角点一次「开始回复」，插件会从上往下打开每条帖子的评论弹窗，
-          从 100 条完整话术里随机抽一条写进去，再点 Reply。成功 35 条后刷新页面，从顶部再来一轮。
+          顶部三个 Tab 可切换「互关帮手」「时间线回复」与「通知互动」。互关帮手整合清理未回关、回关粉丝和关注候选；
+          时间线与通知模式支持模板随机或 AI 回复。时间线按 35 条一轮连续运行，通知互动只处理最近 2 小时内尚未成功互动的回复。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['X 平台', '评论弹窗', '固定话术', 'Chrome 插件', '本地运行', '满 35 条刷新'].map((tag) => (
+          {['X 平台', '互关管理', '时间线回复', '通知互动', '模板 / AI', 'Chrome 插件'].map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
@@ -136,7 +220,7 @@ export default function XReplyClipboardResourcePage() {
                 Download
               </p>
               <h2 className="m-0 mt-1 border-0 p-0 text-xl font-semibold text-[var(--site-ink)]">
-                X 时间线回复助手
+                X 互动帮手
               </h2>
               <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
                 Manifest V3 本地 Chrome 扩展。下载后在 Chrome 扩展管理页以「加载已解压」方式安装。
@@ -148,18 +232,53 @@ export default function XReplyClipboardResourcePage() {
 
         <h2>它会做什么</h2>
         <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
-          <FeatureCard title="从上往下">
-            从当前时间线最上面的帖子开始，点评论图标，等弹窗出现。
+          <FeatureCard title="三个助手随时切换">
+            顶部 Tab 切换互关帮手、时间线回复与通知互动；任务运行时会锁定切换，避免误操作。
+          </FeatureCard>
+          <FeatureCard title="互关帮手">
+            在 Following 页清理未回关账号；在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已经合并。
           </FeatureCard>
           <FeatureCard title="随机话术">
             默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
-          <FeatureCard title="35 条 × 5 轮">
-            每条回复后默认等待 2 秒；回复 35 次组成 1 轮，轮间默认等待 5 秒，一次共执行 5 轮、175 次。面板用一条五色分段进度条展示全部轮次，并集中显示当前轮、本轮次数、总次数和运行时间；支持折叠成迷你状态条或放大查看。
+          <FeatureCard title="时间线：35 条 × 5 轮">
+            时间线回复每条默认等待 2 秒；回复 35 次组成 1 轮，轮间默认等待 5 秒，一次共执行 5 轮、175 次。面板用一条五色分段进度条展示全部轮次，并集中显示当前轮、本轮次数、总次数和运行时间；支持折叠成迷你状态条或放大查看。
+          </FeatureCard>
+          <FeatureCard title="通知：最近 2 小时">
+            不设轮次和固定总条数。只识别最近 2 小时内包含“Replying to @当前账号”的回复通知，忽略单纯点赞通知；未点赞时先点 Like，确认后再回复。成功处理的通知 ID 会写入 Chrome 本地历史，刷新、重开浏览器或再次运行都会跳过。
           </FeatureCard>
           <FeatureCard title="只在本机运行">
             插件匹配 x.com 和 twitter.com，使用你已经登录的页面。不读取密码，也不把评论内容上传到本站。AI 模式只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。
           </FeatureCard>
+        </div>
+
+        <h2>版本记录</h2>
+        <div className="not-prose my-8 overflow-hidden rounded-2xl border border-[#e4e8eb] bg-white/70 dark:border-gray-800 dark:bg-gray-950/40">
+          <div className="flex flex-col gap-2 border-b border-[#e4e8eb] bg-gradient-to-r from-sky-50 to-violet-50 px-5 py-4 dark:border-gray-800 dark:from-sky-950/30 dark:to-violet-950/20 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300">Changelog</p>
+              <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到完整互动工具</h3>
+            </div>
+            <span className="w-fit rounded-full bg-[#0f1419] px-3 py-1 text-xs font-semibold text-white dark:bg-white dark:text-black">
+              当前版本 v{VERSION}
+            </span>
+          </div>
+          <ol className="m-0 list-none divide-y divide-[#e8ecef] p-0 dark:divide-gray-800">
+            {VERSION_HISTORY.map((release) => (
+              <li key={release.version} className="grid gap-3 px-5 py-4 md:grid-cols-[110px_minmax(0,1fr)]">
+                <div className="flex items-center gap-2 md:items-start">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${release.current ? 'bg-sky-500 text-white' : 'bg-[#eff3f4] text-[#536471] dark:bg-gray-800 dark:text-gray-300'}`}>
+                    v{release.version}
+                  </span>
+                  {release.current ? <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-300">最新版</span> : null}
+                </div>
+                <div>
+                  <h4 className="m-0 text-sm font-semibold text-[var(--site-ink)]">{release.title}</h4>
+                  <p className="m-0 mt-1 text-sm leading-6 text-[#66717a] dark:text-gray-400">{release.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
 
         <h2>使用方法</h2>
@@ -167,18 +286,22 @@ export default function XReplyClipboardResourcePage() {
           <li>下载并解压插件包。</li>
           <li>打开 Chrome 的 <code>chrome://extensions/</code>，开启「开发者模式」。</li>
           <li>点击「加载已解压的扩展程序」，选择解压后的目录。</li>
-          <li>登录 X，打开首页、个人主页或搜索结果。</li>
-          <li>点击页面左下角「开始回复」。需要停下时，点「停止」。</li>
+          <li>登录 X，在左下角面板选择「互关帮手」「时间线回复」或「通知互动」。</li>
+          <li>互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。</li>
+          <li>关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度：2 秒一个，合计每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
+          <li>时间线模式可在首页、个人主页或搜索结果运行，按每轮 35 条、共 5 轮执行。</li>
+          <li>通知模式会进入通知页，只处理最近 2 小时内尚未成功互动的回复；处理完即停止，不会进入下一轮。</li>
+          <li>点击「开始时间线回复」或「开始通知互动」。需要停下时，点「停止」。</li>
         </ol>
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
-          开始前可选择“模板随机”或“AI 模式”，并设置每条回复间隔和每轮之间间隔，默认分别为 2 秒和 5 秒。AI 模式需要先保存 DeepSeek API Key 并通过连接测试；Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。
+          开始前可选择“模板随机”或“AI 模式”。两种回复助手都可设置每条回复间隔，默认 2 秒；“每轮之间间隔”只适用于时间线模式，通知模式没有轮次。AI 模式只需先保存 DeepSeek API Key；连接测试是可选的诊断工具。Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。
           插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
           如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
           如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。
           启动时页面已经打开空评论弹窗也可以直接接管：插件会填入当前话术并发送；只有弹窗里存在无法识别的真实文字时才暂停。
           X 第一次拒绝写入时，插件会重新聚焦并完整替换一次；仍未显示话术才尝试编辑器内部状态，避免一直重复“话术没有写进评论框”。
-          没有确认成功时会保留当前帖子、弹窗和话术继续重试。只有确认发出的回复才计入每轮 35 条并进入下一条。
+          没有确认成功时会保留当前帖子、弹窗和话术继续重试。时间线模式只有确认发出的回复才计入每轮 35 条；通知模式只有确认点赞并回复成功后才写入去重历史。
           X 显示「Your post was sent.」时也会立即确认为成功并清理残留弹窗。自己的帖子、自己刚发出的回复以及无法确认作者的帖子会自动排除。
           评论框出现重复或残留内容时，会自动替换成一条完整话术再点击 Reply，不会卡在内容不一致状态。
           话术和 macOS 上的

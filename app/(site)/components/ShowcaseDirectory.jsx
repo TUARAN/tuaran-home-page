@@ -377,22 +377,25 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
                 {viewToggle}
               </div>
               {secondaryFilter?.expanded ? (
-                <div className="mt-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex w-max min-w-full items-center gap-2" role="group" aria-label={secondaryFilter.ariaLabel}>
-                    {[{ value: 'all', label: `${secondaryFilter.label} · 全部` }, ...secondaryFilter.options].map((option) => {
-                      const active = secondary === option.value
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => setSecondary(option.value)}
-                          className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${active ? 'border-[#17181c] bg-[#17181c] text-white dark:border-[#d9deca] dark:bg-[#d9deca] dark:text-[#151713]' : 'border-[#d5d7d1] bg-white/70 text-[var(--site-muted)] hover:border-[#aeb1aa] hover:text-[var(--site-ink)] dark:border-[#343d48] dark:bg-[#151d26] dark:hover:border-[#596574]'}`}
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    })}
+                <div className="mt-3 flex min-w-0 items-center gap-3">
+                  <span className="shrink-0 text-[11px] font-semibold text-[var(--site-faint)]">{secondaryFilter.label}</span>
+                  <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex w-max items-center gap-1 rounded-xl bg-[#e9eae7] p-1 dark:bg-[#1d2630]" role="group" aria-label={secondaryFilter.ariaLabel}>
+                      {[{ value: 'all', label: '全部' }, ...secondaryFilter.options].map((option) => {
+                        const active = secondary === option.value
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setSecondary(option.value)}
+                            className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--site-accent)] ${active ? 'bg-white text-[var(--site-ink)] shadow-[0_1px_3px_rgba(20,20,20,0.12)] dark:bg-[#34404c] dark:text-white' : 'text-[var(--site-muted)] hover:bg-white/55 hover:text-[var(--site-ink)] dark:hover:bg-white/5'}`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : null}

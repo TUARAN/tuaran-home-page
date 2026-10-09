@@ -74,7 +74,7 @@ test('legacy download routes redirect into the unified tools directory', async (
   assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/tools', hash: '#desktop-apps' })
 })
 
-test('tools catalog exposes a download filter and syncs legacy hashes', async () => {
+test('tools catalog exposes mutually exclusive delivery filters and syncs legacy hashes', async () => {
   const [page, directory] = await Promise.all([
     readFile(new URL('app/(site)/tools/page.jsx', root), 'utf8'),
     readFile(new URL('app/(site)/components/ShowcaseDirectory.jsx', root), 'utf8'),
@@ -82,10 +82,12 @@ test('tools catalog exposes a download filter and syncs legacy hashes', async ()
   assert.match(page, /title: '工具与下载'/)
   assert.match(page, /field: 'deliveryGroup'/)
   assert.match(page, /expanded: true/)
-  assert.match(page, /downloads: 'download'/)
-  assert.match(page, /label: '下载安装'/)
+  assert.match(page, /label: '获取方式'/)
+  assert.match(page, /label: '网页使用'/)
   assert.match(page, /label: '浏览器插件'/)
   assert.match(page, /label: '桌面应用'/)
+  assert.match(page, /label: '站外服务'/)
+  assert.doesNotMatch(page, /value: 'download'|label: '下载安装'/)
   assert.match(directory, /role="tablist"/)
   assert.match(directory, /role="tab"/)
   assert.match(directory, /aria-selected=\{active\}/)

@@ -60,7 +60,7 @@ const VISUALS = {
 const CONFIG = {
   eyebrow: 'Tools',
   title: '工具与下载',
-  description: '在线工具、浏览器扩展和桌面应用统一放在这里。按用途或使用方式筛选，找到后直接使用或下载。',
+  description: '在线工具、浏览器扩展和桌面应用统一放在这里。按用途或获取方式筛选，找到后直接使用或下载。',
   countLabel: '个工具',
   filterAriaLabel: '筛选工具',
   searchPlaceholder: '搜索工具、用途或标签',
@@ -76,22 +76,20 @@ const CONFIG = {
 
 const DELIVERY_FILTER = {
   field: 'deliveryGroup',
-  label: '使用方式',
-  ariaLabel: '按使用方式筛选工具',
+  label: '获取方式',
+  ariaLabel: '按获取方式筛选工具',
   expanded: true,
   hashValues: {
-    downloads: 'download',
     extensions: 'browser-extension',
     'browser-extensions': 'browser-extension',
     desktop: 'desktop-app',
     'desktop-apps': 'desktop-app',
   },
   options: [
-    { value: 'online', label: '在线使用' },
-    { value: 'download', label: '下载安装', values: ['browser-extension', 'desktop-app'] },
+    { value: 'online', label: '网页使用' },
     { value: 'browser-extension', label: '浏览器插件' },
     { value: 'desktop-app', label: '桌面应用' },
-    { value: 'external', label: '外部打开' },
+    { value: 'external', label: '站外服务' },
   ],
 }
 
@@ -116,7 +114,7 @@ export default function ToolsPage() {
         ? '浏览器扩展'
         : item.downloadType === 'desktop'
           ? '桌面应用'
-          : /^https?:\/\//.test(item.href) ? '外部打开' : '在线使用',
+          : /^https?:\/\//.test(item.href) ? '站外服务' : '网页使用',
     }))
 
   return (

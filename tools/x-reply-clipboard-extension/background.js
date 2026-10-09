@@ -7,8 +7,12 @@ const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+const REPLY_DAILY_QUOTA_KEY = "xrcReplyDailyQuota";
+const REPLY_DAILY_LIMIT = 100;
+const REPLY_RESERVATION_TTL_MS = 10 * 60 * 1000;
 const TASK_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 let runtimeMutation = Promise.resolve();
+let replyQuotaMutation = Promise.resolve();
 
 const REPLY_SYSTEM_PROMPT = [
   "你是 X（Twitter）中文互动回复助手。",
@@ -51,7 +55,7 @@ async function readAiSettings() {
   return { apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "" };
 }
 
-async function callDeepSeek({ postText }) {
+async function callDeepSeek({ postText, avoidReply = "" }) {
   const { apiKey } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
 
@@ -68,7 +72,13 @@ async function callDeepSeek({ postText }) {
         model: DEEPSEEK_MODEL,
         messages: [
           { role: "system", content: REPLY_SYSTEM_PROMPT },
-          { role: "user", content: `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}` }
+          {
+            role: "user",
+            content: [
+              `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`,
+              avoidReply ? `\n下面这句已被 X 判定为重复，请换一个明显不同的角度和说法，不能只替换个别词：\n${String(avoidReply).trim().slice(0, 180)}` : ""
+            ].join("")
+          }
         ],
         thinking: { type: "disabled" },
         max_tokens: 96,
@@ -141,7 +151,7 @@ async function handleMessage(message) {
   if (message?.type === "xrc-ai-generate") {
     const postText = String(message.postText || "").trim();
     if (!postText) throw new Error("没有读取到原帖文字");
-    const reply = await callDeepSeek({ postText });
+    const reply = await callDeepSeek({ postText, avoidReply: message.avoidReply });
     return { ok: true, reply };
   }
   return { ok: false, error: "未知请求" };
@@ -334,6 +344,69 @@ async function removeRuntimeTab(tabId) {
   await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
 }
 
+function localDateKey(timestamp = Date.now()) {
+  const date = new Date(timestamp);
+  const pair = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pair(date.getMonth() + 1)}-${pair(date.getDate())}`;
+}
+
+function nextLocalDayStart(timestamp = Date.now()) {
+  const date = new Date(timestamp);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
+}
+
+async function readReplyDailyQuota(now = Date.now()) {
+  const stored = await chrome.storage.local.get(REPLY_DAILY_QUOTA_KEY);
+  const raw = stored?.[REPLY_DAILY_QUOTA_KEY] || {};
+  const day = localDateKey(now);
+  const reservations = raw.day === day && raw.reservations && typeof raw.reservations === "object"
+    ? Object.fromEntries(Object.entries(raw.reservations).filter(([, createdAt]) => now - Number(createdAt) < REPLY_RESERVATION_TTL_MS))
+    : {};
+  const quota = {
+    day,
+    count: raw.day === day ? Math.max(0, Number(raw.count) || 0) : 0,
+    reservations,
+    limit: REPLY_DAILY_LIMIT,
+    resetAt: nextLocalDayStart(now)
+  };
+  await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
+  return quota;
+}
+
+function mutateReplyDailyQuota(action, token = "") {
+  const mutate = async () => {
+    const quota = await readReplyDailyQuota();
+    const reservationToken = String(token || "");
+    if (action === "reserve") {
+      if (quota.count + Object.keys(quota.reservations).length >= quota.limit) {
+        return { ok: true, allowed: false, quota };
+      }
+      const createdToken = `reply_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      quota.reservations[createdToken] = Date.now();
+      await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
+      return { ok: true, allowed: true, token: createdToken, quota };
+    }
+    if (reservationToken && quota.reservations[reservationToken]) {
+      delete quota.reservations[reservationToken];
+      if (action === "commit") quota.count = Math.min(quota.limit, quota.count + 1);
+      await chrome.storage.local.set({ [REPLY_DAILY_QUOTA_KEY]: quota });
+    }
+    return { ok: true, quota };
+  };
+  replyQuotaMutation = replyQuotaMutation.then(mutate, mutate);
+  return replyQuotaMutation;
+}
+
+async function stopAllTaskTabs(reason) {
+  const tabs = await readTaskTabs();
+  const tabIds = [...new Set(Object.values(tabs).map(Number).filter(Number.isInteger))];
+  await Promise.allSettled(tabIds.map((tabId) => chrome.tabs.sendMessage(tabId, {
+    type: "xrc-risk-stop",
+    reason: String(reason || "X 检测到疑似自动化操作，所有任务已停止")
+  })));
+  return { ok: true, stoppedTabs: tabIds.length };
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "xrc-timer-schedule") {
@@ -372,6 +445,25 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
       return true;
     }
+    if (message?.type === "xrc-reply-quota-get") {
+      readReplyDailyQuota()
+        .then((quota) => sendResponse({ ok: true, quota }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "每日回复额度读取失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-reply-quota-reserve" || message?.type === "xrc-reply-quota-commit" || message?.type === "xrc-reply-quota-release") {
+      const action = message.type.replace("xrc-reply-quota-", "");
+      mutateReplyDailyQuota(action, message.token)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "每日回复额度更新失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-risk-stop-all") {
+      stopAllTaskTabs(message.reason)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "停止任务失败" }));
+      return true;
+    }
     if (!message?.type?.startsWith("xrc-ai-")) return false;
     handleMessage(message)
       .then(sendResponse)
@@ -394,11 +486,17 @@ if (typeof module === "object" && module.exports) {
     focusTaskTab,
     readPluginRuntime,
     updatePluginRuntime,
+    readReplyDailyQuota,
+    mutateReplyDailyQuota,
+    localDateKey,
+    nextLocalDayStart,
+    stopAllTaskTabs,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,
     REPLY_SYSTEM_PROMPT,
     POST_SYSTEM_PROMPT,
     DEEPSEEK_MODEL,
-    REQUEST_TIMEOUT_MS
+    REQUEST_TIMEOUT_MS,
+    REPLY_DAILY_LIMIT
   };
 }

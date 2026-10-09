@@ -196,6 +196,43 @@ test('reloads after 35 successful replies and after the timeline stalls', () => 
   })
 })
 
+test('creates one persisted-size random execution plan within the configured ranges', () => {
+  const minimumPlan = loop.createRunPlan(() => 0)
+  assert.deepEqual(minimumPlan, { rounds: 3, roundTargets: [25, 25, 25], total: 75 })
+
+  const maximumPlan = loop.createRunPlan(() => 1)
+  assert.deepEqual(maximumPlan, { rounds: 5, roundTargets: [35, 35, 35, 35, 35], total: 175 })
+  assert.equal(loop.randomReplyDelaySeconds(() => 0), 5)
+  assert.equal(loop.randomReplyDelaySeconds(() => 1), 15)
+  assert.equal(loop.randomCycleDelayMs(() => 0), 2 * 60 * 60 * 1000)
+  assert.equal(loop.randomCycleDelayMs(() => 1), 3 * 60 * 60 * 1000)
+})
+
+test('daily reply quota reserves capacity atomically across task tabs', async () => {
+  const day = background.localDateKey()
+  let savedQuota = { day, count: 99, reservations: {} }
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(key) { return { [key]: savedQuota } },
+        async set(value) { savedQuota = value.xrcReplyDailyQuota },
+      },
+    },
+  }
+
+  try {
+    const first = await background.mutateReplyDailyQuota('reserve')
+    assert.equal(first.allowed, true)
+    const blocked = await background.mutateReplyDailyQuota('reserve')
+    assert.equal(blocked.allowed, false)
+    const committed = await background.mutateReplyDailyQuota('commit', first.token)
+    assert.equal(committed.quota.count, 100)
+    assert.equal(Object.keys(committed.quota.reservations).length, 0)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
   assert.equal(loop.isSubmitEnabled(null), false)
   assert.equal(loop.isSubmitEnabled({ disabled: true, getAttribute() { return null } }), false)
@@ -306,7 +343,7 @@ test('picks a different phrase index and never repeats the current one', () => {
   assert.ok(emojiPhrases.every((phrase) => /[\p{Script=Han}A-Za-z]/u.test(phrase)))
 })
 
-test('content script keeps the 35-reply refresh loop wired to the reply popup', async () => {
+test('content script keeps the randomized reply loop wired to the reply popup', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const posterSource = await readFile(new URL('poster.js', extensionDir), 'utf8')
@@ -323,10 +360,14 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
     new URL('../../app/(site)/resources/x-reply-clipboard-extension/page.jsx', import.meta.url),
     'utf8',
   )
+  const downloadButton = await readFile(
+    new URL('../../app/(site)/resources/x-reply-clipboard-extension/ExtensionDownloadButton.jsx', import.meta.url),
+    'utf8',
+  )
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.4.1')
+  assert.equal(manifest.version, '3.6.1')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -408,7 +449,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /通知回复/)
   assert.match(content, /互关浇友/)
   assert.match(content, /推文浇给/)
-  assert.match(content, /CYCLE_INTERVAL_MS = 2 \* 60 \* 60 \* 1000/)
+  assert.match(content, /loopApi\.randomCycleDelayMs\(\)/)
   assert.match(content, /RECONNECT_INTERVAL_MS = 60 \* 1000/)
   assert.match(content, /finishCycleAndScheduleNext/)
   assert.match(content, /reconnectAndResume/)
@@ -455,12 +496,13 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /data-xrc-phrase-index/)
   assert.match(content, /aria-selected/)
   assert.match(content, /data-xrc-runtime/)
-  assert.match(content, /DEFAULT_REPLY_INTERVAL_SECONDS = 2/)
+  assert.match(content, /randomReplyDelaySeconds\(\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
-  assert.match(content, /data-xrc-reply-interval/)
-  assert.match(content, /data-xrc-round-interval/)
+  assert.match(content, /每条间隔/)
+  assert.match(content, /每轮回复/)
+  assert.match(content, /每日 100 条插件额度/)
   assert.match(content, /data-xrc-settings/)
-  assert.match(content, /回复方式与频率限制/)
+  assert.match(content, /回复方式与随机频率调度/)
   assert.match(content, /data-xrc-collapse/)
   assert.match(content, /data-xrc-expand/)
   assert.match(content, /data-xrc-mini-progress/)
@@ -484,7 +526,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /tweetText/)
   assert.match(content, /pendingReply/)
   assert.match(content, /function waitRateLimit/)
-  assert.match(content, /replyIntervalSeconds/)
+  assert.match(content, /nextReplyDelaySeconds/)
   assert.match(content, /roundIntervalSeconds/)
   assert.match(content, /第 \$\{shownRound\} 轮/)
   assert.doesNotMatch(content, /本次执行/)
@@ -495,12 +537,25 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.4\.1\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.4\.1'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.1\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.6\.1'/)
   assert.match(resourcePage, /X 互动帮手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
   assert.match(resourcePage, /const VERSION_HISTORY = \[/)
+  assert.match(resourcePage, /version: '3\.5\.0'/)
+  assert.match(resourcePage, /version: '3\.6\.0'/)
+  assert.match(resourcePage, /version: '3\.6\.1'/)
+  assert.match(content, /data-xrc-docs-open/)
+  assert.match(content, /官方公开规则/)
+  assert.match(content, /技术上限不等于安全阈值或使用许可/)
+  assert.match(content, /X 没有公开反自动化评分算法/)
+  assert.match(content, /AUTOMATION_WARNING_RE/)
+  assert.match(content, /DUPLICATE_REPLY_RE/)
+  assert.match(content, /result === "duplicate-reply"/)
+  assert.match(content, /forceDraft: true/)
+  assert.match(content, /xrc-risk-stop-all/)
+  assert.match(content, /xrc-reply-quota-reserve/)
   assert.match(resourcePage, /version: '3\.1\.2'/)
   assert.match(resourcePage, /version: '3\.1\.1'/)
   assert.match(resourcePage, /version: '3\.1\.0'/)
@@ -508,7 +563,10 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(resourcePage, /version: '2\.0\.0'/)
   assert.match(resourcePage, /version: '0\.2\.1'/)
   assert.match(resourcePage, /当前版本 v\{VERSION\}/)
-  assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
+  assert.match(resourcePage, /<ExtensionDownloadButton href=\{DOWNLOAD_URL\} version=\{VERSION\}/)
+  assert.match(downloadButton, /下载 Chrome 插件 v\$\{version\}/)
+  assert.match(downloadButton, /INSUFFICIENT_BALANCE/)
+  assert.match(downloadButton, /response\.blob\(\)/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X 互动帮手'/)
   assert.match(registry, /'通知回复'/)
@@ -541,6 +599,7 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
+  assert.match(backgroundText, /已被 X 判定为重复/)
   assert.match(backgroundText, /xrc-ai-post-generate/)
   assert.match(backgroundText, /max_tokens: 320/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
@@ -692,5 +751,6 @@ test('main-world writer replaces the whole editor and supersedes an earlier list
   assert.match(source, /HANDLER_KEY/)
   assert.match(source, /removeEventListener\("message", previousHandler\)/)
   assert.match(source, /range\.selectNodeContents\(editor\)/)
+  assert.match(source, /command-replace/)
   assert.doesNotMatch(source, /execCommand\("selectAll"/)
 })

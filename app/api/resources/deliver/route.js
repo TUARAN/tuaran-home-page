@@ -6,12 +6,13 @@ import { getR2 } from '../../../../lib/r2'
 import { getResourceDelivery } from '../../../../lib/resourceCatalog'
 import { recordResourceEvent } from '../../../../lib/resourceEvents'
 import { getUserRole } from '../../../../lib/userDirectory'
+import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensionPackage'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function jsonError(error, status, setCookie = null) {
-  return Response.json({ error }, { status, headers: setCookie ? { 'Set-Cookie': setCookie } : undefined })
+function jsonError(error, status, setCookie = null, details = {}) {
+  return Response.json({ error, ...details }, { status, headers: setCookie ? { 'Set-Cookie': setCookie } : undefined })
 }
 
 function attachmentHeader(fileName) {
@@ -51,7 +52,13 @@ export async function GET(req) {
     // 付费工具包按真正点击领取时结算；文字页的解锁仍由 RanbiPaywall 处理。
     if (delivery.kind === 'tool' && delivery.access !== 'free') {
       const result = await unlockResource(db, actor.userId, resourceKey)
-      if (!result.ok) return jsonError(result.error || 'UNLOCK_FAILED', result.status || 400, actor.setCookie)
+      if (!result.ok) {
+        return jsonError(result.error || 'UNLOCK_FAILED', result.status || 400, actor.setCookie, {
+          cost: Number(result.cost || 0),
+          balance: Number(result.balance || 0),
+          need: Number(result.need || 0),
+        })
+      }
     }
 
     if (delivery.delivery === 'external') {
@@ -81,8 +88,16 @@ export async function GET(req) {
       await db.prepare('UPDATE wallpapers SET downloads = downloads + 1 WHERE id = ?1').bind(wallpaper.id).run()
     }
 
-    const object = await getR2().get(objectKey)
-    if (!object) return jsonError('FILE_NOT_FOUND', 404, actor.setCookie)
+    const bucket = getR2()
+    const object = await bucket.get(objectKey)
+    const embedded = object ? null : embeddedResourcePackage(objectKey)
+    if (!object && !embedded) return jsonError('FILE_NOT_FOUND', 404, actor.setCookie)
+    if (embedded) {
+      await bucket.put(objectKey, embedded.bytes, {
+        httpMetadata: { contentType: embedded.contentType },
+        customMetadata: { sha256: embedded.sha256, source: 'embedded-release-fallback' },
+      }).catch(() => {})
+    }
     await recordResourceEvent(db, {
       userId: actor.userId,
       resourceKey,
@@ -91,13 +106,14 @@ export async function GET(req) {
     })
 
     const headers = new Headers({
-      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Type': embedded?.contentType || object?.httpMetadata?.contentType || 'application/octet-stream',
       'Content-Disposition': attachmentHeader(fileName),
       'Cache-Control': 'private, no-store',
     })
-    if (object.size != null) headers.set('Content-Length', String(object.size))
+    const size = embedded?.size ?? object?.size
+    if (size != null) headers.set('Content-Length', String(size))
     if (actor.setCookie) headers.set('Set-Cookie', actor.setCookie)
-    return new Response(object.body, { headers })
+    return new Response(embedded?.bytes || object.body, { headers })
   } catch (error) {
     return Response.json({ error: 'DELIVERY_FAILED', detail: String(error?.message || error) }, { status: 500 })
   }

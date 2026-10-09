@@ -6,7 +6,6 @@ import {
   IconBrandChrome,
   IconBrandX,
   IconClock,
-  IconDownload,
   IconMessageCircle,
   IconRobot,
   IconShieldLock,
@@ -20,13 +19,14 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
+import ExtensionDownloadButton from './ExtensionDownloadButton'
 
 export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.5.0'
+const VERSION = '3.6.1'
 
 const title = 'X 互动帮手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -35,10 +35,20 @@ const shareText = 'X 互动帮手：一个扩展完成时间线回复、通知�
 
 const VERSION_HISTORY = [
   {
+    version: '3.6.1',
+    title: '重复回复自动换写、标题栏与下载修复',
+    description: '识别 X 的重复内容提示：模板随机会切换下一句，AI 模式会避开被拒绝的文案重新生成并替换评论框。标题栏按钮统一改为 SVG；下载按钮只保存真正的 ZIP，接口错误改为页面中文提示。',
+    current: true,
+  },
+  {
+    version: '3.6.0',
+    title: '随机频率调度、共享每日额度与风控停止',
+    description: '时间线每次执行固定抽取 3～5 轮，每轮固定抽取 25～35 条；每条成功后随机等待 5～15 秒，执行完成后随机休息 2～3 小时。抽取结果和真实截止时间跨刷新保留。时间线与通知回复共享每日 100 条插件额度；检测到 X 疑似自动化提示时停止所有任务，不再自动重试。',
+  },
+  {
     version: '3.5.0',
     title: '在插件内加入官方规则与版本文档中心',
     description: '标题栏新增文档中心入口，集中解释 X 的自动化规则、公开技术上限、反自动化提示和应对方式，并在插件内保留最近版本记录。文档明确区分技术上限、平台许可与风控安全值：X 没有公开反自动化评分算法，也没有认可插件当前的操作间隔或轮次参数。',
-    current: true,
   },
   {
     version: '3.4.1',
@@ -197,17 +207,7 @@ export const metadata = {
 }
 
 function DownloadButton({ className = '' }) {
-  return (
-    <a
-      href={DOWNLOAD_URL}
-      download
-      className={`group inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-cyan-300/40 bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white no-underline shadow-[0_12px_35px_rgba(37,99,235,0.32)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_42px_rgba(37,99,235,0.45)] ${className}`}
-    >
-      <IconDownload size={18} stroke={2} aria-hidden="true" />
-      下载 Chrome 插件 v{VERSION}
-      <IconArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-    </a>
-  )
+  return <ExtensionDownloadButton href={DOWNLOAD_URL} version={VERSION} className={className} />
 }
 
 const FEATURE_ICONS = [IconMessageCircle, IconUsers, IconSparkles, IconClock, IconBell, IconRobot, IconShieldLock]
@@ -228,7 +228,7 @@ const INSTALL_STEPS = [
   '登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。',
   '互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。',
   '关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度。',
-  '时间线模式可在首页、个人主页或搜索结果运行；每次按 35 条一轮、共 5 轮执行。',
+  '时间线模式可在首页、个人主页或搜索结果运行；每次随机安排 3～5 轮，每轮 25～35 条。',
   '通知模式会进入通知页，处理近 2 小时内尚未成功互动的回复。',
   '推文浇给会进入 X 首页，使用已保存的 DeepSeek Key 生成并发送纯文字推文。',
   '点击对应任务的开始按钮运行；需要停下时，点击「停止」。',
@@ -333,7 +333,7 @@ export default function XReplyClipboardResourcePage() {
               </div>
               <div className="grid grid-cols-2 gap-2 p-2 pt-4">
                 {[
-                  ['时间线回复', '35 × 5 轮', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
+                  ['时间线回复', '3–5 轮 · 随机', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
                   ['通知回复', '近 2 小时', IconBell, 'from-violet-400/20 to-fuchsia-500/10', 'text-violet-300'],
                   ['互关浇友', '3 项任务', IconUsers, 'from-amber-400/20 to-orange-500/10', 'text-amber-300'],
                   ['推文浇给', 'AI · 25–35m', IconRobot, 'from-emerald-400/20 to-cyan-500/10', 'text-emerald-300'],
@@ -392,11 +392,11 @@ export default function XReplyClipboardResourcePage() {
           <FeatureCard title="随机话术" index={2}>
             默认使用“模板随机”，从插件内置的 100 条完整话术里随机抽取。也可切换到“AI 模式”，由 DeepSeek 阅读原帖文字后生成更适配的回复；API Key 由用户在扩展面板中自行配置并保存在 Chrome 本地。
           </FeatureCard>
-          <FeatureCard title="时间线：35 条 × 5 轮" index={3}>
-            时间线回复每条默认等待 2 秒；回复 35 次组成 1 轮，轮间默认等待 5 秒，一次共执行 5 轮、175 次。完成后休息 2 小时，再从新一轮 175 次开始。面板显示当前执行次数、轮次、任务运行时间和下次启动倒计时。
+          <FeatureCard title="时间线：持久化随机计划" index={3}>
+            每次执行先抽取 3～5 轮，每轮分别抽取 25～35 条；每次回复成功后随机等待 5～15 秒，完成后随机休息 2～3 小时。计划、进度与真实截止时间跨刷新保留，不会因刷新重新抽取。
           </FeatureCard>
           <FeatureCard title="通知：最近 2 小时" index={4}>
-            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后休息 2 小时再扫描。成功处理的通知 ID 会写入 Chrome 本地历史，刷新、重开浏览器或后续周期都会跳过。
+            不设轮次和固定总条数。每次只识别近 2 小时内包含“Replying to @当前账号”的回复通知，处理完后随机休息 2～3 小时再扫描。成功记录持久去重，并与时间线共享每日 100 条插件回复额度。
           </FeatureCard>
           <FeatureCard title="推文浇给：25～35 分钟一条" index={5}>
             DeepSeek 读取当前页面可见的趋势与时间线文字，选择一个有讨论空间的话题，生成 3～5 段纯文字推文。每段之间自动空一行；确认发送成功后随机等待 25～35 分钟再生成下一条。
@@ -424,7 +424,7 @@ export default function XReplyClipboardResourcePage() {
             <li>X 的开源算法仓库主要涉及时间线与通知的推荐流程，不提供自动化操作的安全频率或完整反垃圾判定逻辑。</li>
               </ul>
               <p className="mb-0 mt-4 border-t border-rose-200/70 pt-4 dark:border-rose-400/15">
-            出现“This request looks like it might be automated”时，应立即停止相关任务并避免连续重试。可查看{' '}
+            规则来源：{' '}
             <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer">X 自动化规则</a>、{' '}
             <a href="https://help.x.com/en/rules-and-policies/x-limits" target="_blank" rel="noopener noreferrer">账户限制</a>和{' '}
             <a href="https://help.x.com/en/rules-and-policies/authenticity" target="_blank" rel="noopener noreferrer">真实性政策</a>。

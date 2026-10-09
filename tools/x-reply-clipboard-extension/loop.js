@@ -4,6 +4,14 @@
   const BATCH_SIZE = 35;
   const ROUNDS_PER_RUN = 5;
   const RUN_SIZE = BATCH_SIZE * ROUNDS_PER_RUN;
+  const MIN_REPLIES_PER_ROUND = 25;
+  const MAX_REPLIES_PER_ROUND = 35;
+  const MIN_ROUNDS_PER_RUN = 3;
+  const MAX_ROUNDS_PER_RUN = 5;
+  const MIN_REPLY_DELAY_SECONDS = 5;
+  const MAX_REPLY_DELAY_SECONDS = 15;
+  const MIN_CYCLE_DELAY_HOURS = 2;
+  const MAX_CYCLE_DELAY_HOURS = 3;
   const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
@@ -139,10 +147,45 @@
     return pick;
   }
 
+  function randomIntInclusive(minimum, maximum, random = Math.random) {
+    const min = Math.ceil(Number(minimum) || 0);
+    const max = Math.floor(Number(maximum) || 0);
+    if (max <= min) return min;
+    const value = Math.min(0.999999999999, Math.max(0, Number(random()) || 0));
+    return min + Math.floor(value * (max - min + 1));
+  }
+
+  function createRunPlan(random = Math.random) {
+    const rounds = randomIntInclusive(MIN_ROUNDS_PER_RUN, MAX_ROUNDS_PER_RUN, random);
+    const roundTargets = Array.from(
+      { length: rounds },
+      () => randomIntInclusive(MIN_REPLIES_PER_ROUND, MAX_REPLIES_PER_ROUND, random)
+    );
+    return { rounds, roundTargets, total: roundTargets.reduce((sum, value) => sum + value, 0) };
+  }
+
+  function randomReplyDelaySeconds(random = Math.random) {
+    return randomIntInclusive(MIN_REPLY_DELAY_SECONDS, MAX_REPLY_DELAY_SECONDS, random);
+  }
+
+  function randomCycleDelayMs(random = Math.random) {
+    const minimum = MIN_CYCLE_DELAY_HOURS * 60 * 60 * 1000;
+    const maximum = MAX_CYCLE_DELAY_HOURS * 60 * 60 * 1000;
+    return randomIntInclusive(minimum, maximum, random);
+  }
+
   const api = {
     BATCH_SIZE,
     ROUNDS_PER_RUN,
     RUN_SIZE,
+    MIN_REPLIES_PER_ROUND,
+    MAX_REPLIES_PER_ROUND,
+    MIN_ROUNDS_PER_RUN,
+    MAX_ROUNDS_PER_RUN,
+    MIN_REPLY_DELAY_SECONDS,
+    MAX_REPLY_DELAY_SECONDS,
+    MIN_CYCLE_DELAY_HOURS,
+    MAX_CYCLE_DELAY_HOURS,
     NOTIFICATION_WINDOW_MS,
     statusIdFromHref,
     normalizeHandle,
@@ -160,7 +203,11 @@
     phraseIndexFromText,
     repeatedPhraseIndexFromText,
     placeholderMixedPhraseIndexFromText,
-    nextPhraseIndex
+    nextPhraseIndex,
+    randomIntInclusive,
+    createRunPlan,
+    randomReplyDelaySeconds,
+    randomCycleDelayMs
   };
 
   if (typeof module === "object" && module.exports) {

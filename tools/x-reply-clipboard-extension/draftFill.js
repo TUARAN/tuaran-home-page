@@ -240,10 +240,20 @@
       const repaired = comparableDraftText(editor, options.scope);
       if (repaired === phrase) return { ok: true, via: "command-repair" };
     }
-    if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
+    if (visible && !forceDraft) return { ok: false, reason: "compose-mismatch", seen: visible };
 
     let node = findDraftNode(editor);
-    if (!node || !characterSample(node)) return { ok: false, reason: "compose-failed", seen: node ? readDraftText(node) : "" };
+    if (!node || !characterSample(node)) {
+      if (forceDraft) {
+        insertWithCommand(editor, phrase);
+        await sleep(100);
+        const replaced = comparableDraftText(editor, options.scope);
+        return replaced === phrase
+          ? { ok: true, via: "command-replace" }
+          : { ok: false, reason: "compose-failed", seen: replaced };
+      }
+      return { ok: false, reason: "compose-failed", seen: node ? readDraftText(node) : "" };
+    }
     let nextState = null;
     try {
       nextState = writeReplyDraft(node, phrase);

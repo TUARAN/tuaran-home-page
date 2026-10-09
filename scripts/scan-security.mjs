@@ -115,9 +115,13 @@ const blockedExactNames = new Set([
   '.env.production.local',
   '.dev.vars',
 ])
+const allowedExactNames = new Set([
+  'output/x-reply-clipboard-extension-v3.6.1.zip',
+])
 const blockedExtensions = new Set(['.db', '.sqlite', '.sqlite3', '.pem', '.key', '.p12'])
 const trackedFiles = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean)
 for (const file of trackedFiles) {
+  if (allowedExactNames.has(file)) continue
   const base = file.split('/').pop() ?? ''
   const ext = base.toLowerCase().split('.').pop()
   const hit =

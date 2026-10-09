@@ -90,7 +90,15 @@
   white-space: nowrap;
 }
 
-#x-reply-clipboard-panel .xrc-header-actions { flex: 0 0 auto; gap: 4px; }
+#x-reply-clipboard-panel .xrc-header-actions {
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 1px 2px rgba(15, 20, 25, 0.04);
+}
 
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] {
   --xrc-workspace: #0f8a72;
@@ -223,11 +231,11 @@
   justify-content: center;
   gap: 5px;
   width: 26px;
-  min-height: 26px;
+  height: 26px;
   padding: 0;
-  border: 1px solid var(--xrc-line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--xrc-muted);
   font-size: 10px;
   font-weight: 750;
@@ -243,15 +251,15 @@
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-state [data-xrc-state-label] { display: inline; }
 
 #x-reply-clipboard-panel .xrc-state-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #8b98a5;
 }
 
 #x-reply-clipboard-panel[data-state="running"] .xrc-state-dot {
   background: #00ba7c;
-  box-shadow: 0 0 0 4px rgba(0, 186, 124, 0.13);
+  box-shadow: 0 0 0 3px rgba(0, 186, 124, 0.12);
   animation: xrc-pulse 1.8s ease-in-out infinite;
 }
 
@@ -267,22 +275,135 @@
   height: 26px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: transparent;
-  color: inherit;
+  color: var(--xrc-muted);
   cursor: pointer;
-  font-size: 18px;
-  line-height: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
 #x-reply-clipboard-panel .xrc-view-button {
-  border: 1px solid var(--xrc-line);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
+#x-reply-clipboard-panel .xrc-header-actions button {
+  display: grid;
+  place-items: center;
+}
+
+#x-reply-clipboard-panel .xrc-header-actions button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#x-reply-clipboard-panel .xrc-docs-button svg { stroke-width: 1.55; }
+#x-reply-clipboard-panel .xrc-icon-open,
+#x-reply-clipboard-panel .xrc-icon-restore { display: none; }
+#x-reply-clipboard-panel[data-view="collapsed"] .xrc-icon-collapse { display: none; }
+#x-reply-clipboard-panel[data-view="collapsed"] .xrc-icon-open { display: block; }
+#x-reply-clipboard-panel[data-view="expanded"] .xrc-icon-maximize { display: none; }
+#x-reply-clipboard-panel[data-view="expanded"] .xrc-icon-restore { display: block; }
+
 #x-reply-clipboard-panel .xrc-close:hover,
-#x-reply-clipboard-panel .xrc-view-button:hover { background: var(--xrc-soft); }
+#x-reply-clipboard-panel .xrc-view-button:hover {
+  background: var(--xrc-soft);
+  color: var(--xrc-text);
+}
+
+#x-reply-clipboard-panel .xrc-close:hover {
+  background: rgba(244, 33, 46, 0.1);
+  color: var(--xrc-danger);
+}
+
+#x-reply-clipboard-panel .xrc-view-button:active,
+#x-reply-clipboard-panel .xrc-close:active { transform: scale(0.92); }
+
+#x-reply-clipboard-panel .xrc-docs-button {
+  color: var(--xrc-muted);
+}
+
+#x-reply-clipboard-panel .xrc-docs {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.99);
+}
+
+#x-reply-clipboard-panel .xrc-docs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--xrc-line);
+  background: linear-gradient(135deg, rgba(29, 155, 240, 0.12), rgba(120, 86, 255, 0.08));
+}
+
+#x-reply-clipboard-panel .xrc-docs-head > div { display: grid; gap: 1px; }
+#x-reply-clipboard-panel .xrc-docs-head small { color: var(--xrc-accent); font-size: 8px; font-weight: 900; letter-spacing: 0.14em; }
+#x-reply-clipboard-panel .xrc-docs-head strong { font-size: 18px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-docs-head span { color: var(--xrc-muted); font-size: 10px; font-weight: 650; }
+#x-reply-clipboard-panel .xrc-docs-head button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--xrc-text);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+#x-reply-clipboard-panel .xrc-docs-content {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+#x-reply-clipboard-panel .xrc-docs-section {
+  border: 1px solid var(--xrc-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  padding: 13px;
+}
+
+#x-reply-clipboard-panel .xrc-docs-section { display: grid; gap: 10px; }
+#x-reply-clipboard-panel .xrc-docs-title { display: flex; align-items: center; gap: 8px; }
+#x-reply-clipboard-panel .xrc-docs-title > b { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; background: var(--xrc-soft); color: var(--xrc-accent); font-size: 9px; }
+#x-reply-clipboard-panel .xrc-docs-title > span { display: grid; gap: 1px; }
+#x-reply-clipboard-panel .xrc-docs-title strong { font-size: 12px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-docs-title small { color: var(--xrc-muted); font-size: 9px; }
+#x-reply-clipboard-panel .xrc-docs-section ul,
+#x-reply-clipboard-panel .xrc-docs-section ol { display: grid; gap: 7px; margin: 0; padding-left: 18px; color: var(--xrc-muted); font-size: 10px; line-height: 1.55; }
+#x-reply-clipboard-panel .xrc-docs-section li b { color: var(--xrc-text); }
+#x-reply-clipboard-panel .xrc-docs-note { padding: 9px; border-radius: 9px; background: rgba(255, 173, 31, 0.14); color: var(--xrc-muted); font-size: 9px; line-height: 1.5; }
+#x-reply-clipboard-panel .xrc-docs-note b { color: #9a5c00; }
+#x-reply-clipboard-panel .xrc-docs-links { display: flex; flex-wrap: wrap; gap: 6px; }
+#x-reply-clipboard-panel .xrc-docs-links a,
+#x-reply-clipboard-panel .xrc-docs-full-link { color: var(--xrc-accent); font-size: 9px; font-weight: 800; text-decoration: none; }
+#x-reply-clipboard-panel .xrc-docs-links a { padding: 5px 7px; border-radius: 7px; background: rgba(29, 155, 240, 0.08); }
+#x-reply-clipboard-panel .xrc-release-list { display: grid; gap: 7px; }
+#x-reply-clipboard-panel .xrc-release-list article { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 7px; padding-bottom: 7px; border-bottom: 1px solid var(--xrc-line); }
+#x-reply-clipboard-panel .xrc-release-list article:last-child { padding-bottom: 0; border-bottom: 0; }
+#x-reply-clipboard-panel .xrc-release-list article > b { color: var(--xrc-accent); font-size: 10px; }
+#x-reply-clipboard-panel .xrc-release-list article > span { display: grid; gap: 1px; }
+#x-reply-clipboard-panel .xrc-release-list strong { font-size: 10px; }
+#x-reply-clipboard-panel .xrc-release-list small { color: var(--xrc-muted); font-size: 9px; line-height: 1.45; }
 
 #x-reply-clipboard-panel .xrc-body {
   display: grid;
@@ -655,7 +776,7 @@
 
 #x-reply-clipboard-panel .xrc-progress-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -885,6 +1006,25 @@
   gap: 7px;
   padding-top: 2px;
 }
+
+#x-reply-clipboard-panel .xrc-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+#x-reply-clipboard-panel .xrc-schedule-grid > span {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+#x-reply-clipboard-panel .xrc-schedule-grid small { color: var(--xrc-muted); font-size: 8px; font-weight: 700; }
+#x-reply-clipboard-panel .xrc-schedule-grid strong { color: var(--xrc-text); font-size: 10px; font-weight: 850; }
+#x-reply-clipboard-panel .xrc-schedule-note { margin: 0; color: var(--xrc-muted); font-size: 9px; line-height: 1.5; }
 
 #x-reply-clipboard-panel .xrc-rate-control {
   justify-content: space-between;
@@ -1126,6 +1266,10 @@
   }
   #x-reply-clipboard-panel .xrc-state,
   #x-reply-clipboard-panel .xrc-phrase-pool { background: rgba(15, 20, 25, 0.72); }
+  #x-reply-clipboard-panel .xrc-docs { background: rgba(0, 0, 0, 0.98); }
+  #x-reply-clipboard-panel .xrc-docs-head button,
+  #x-reply-clipboard-panel .xrc-docs-section { background: rgba(15, 20, 25, 0.9); }
+  #x-reply-clipboard-panel .xrc-header-actions { background: rgba(15, 20, 25, 0.72); }
   #x-reply-clipboard-panel .xrc-workspace-nav { background: rgba(15, 20, 25, 0.86); }
   #x-reply-clipboard-panel .xrc-assistant-tabs button { background: rgba(15, 20, 25, 0.78); }
   #x-reply-clipboard-panel .xrc-ai-config { background: rgba(15, 20, 25, 0.78); }
@@ -1134,6 +1278,7 @@
   #x-reply-clipboard-panel .xrc-speed-section,
   #x-reply-clipboard-panel .xrc-mode-section { background: rgba(15, 20, 25, 0.72); }
   #x-reply-clipboard-panel .xrc-progress-meta > span,
+  #x-reply-clipboard-panel .xrc-schedule-grid > span,
   #x-reply-clipboard-panel .xrc-rate-control,
   #x-reply-clipboard-panel .xrc-mode-tabs button,
   #x-reply-clipboard-panel .xrc-mutual-card { background: rgba(15, 20, 25, 0.66); }

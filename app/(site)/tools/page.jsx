@@ -1,5 +1,5 @@
 import {
-  TOOL_ITEMS,
+  getToolItemsByDate,
   TOOL_STATUS_META,
   TOOL_TYPE_META,
 } from '../../../lib/toolItems'
@@ -75,8 +75,7 @@ const CONFIG = {
 
 export default function ToolsPage() {
   const categoryLabels = Object.fromEntries(TOOL_TYPE_META.map((type) => [type.id, type.title]))
-  const items = [...TOOL_ITEMS]
-    .sort((a, b) => b.priority - a.priority)
+  const items = getToolItemsByDate()
     .map((item, index) => ({
       ...item,
       category: item.type,

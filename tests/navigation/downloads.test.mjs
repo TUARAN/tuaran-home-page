@@ -6,6 +6,7 @@ import {
   BROWSER_EXTENSION_WORK_ITEMS,
   DESKTOP_APP_WORK_ITEMS,
   DOWNLOAD_ITEMS,
+  getDownloadItemsByDate,
   getDownloadItemsByType,
 } from '../../lib/downloadItems.js'
 import { getLegacyPathRedirect } from '../../lib/indexingPolicy.js'
@@ -47,6 +48,12 @@ test('download center covers gated tool packages plus the Syncblog extension', (
   assert.ok(DESKTOP_APP_WORK_ITEMS.some((item) => item.id === 'codex-model-switcher'))
 })
 
+test('downloads default to newest-first order', () => {
+  assert.ok(DOWNLOAD_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date)))
+  const dates = getDownloadItemsByDate().map((item) => item.date)
+  assert.deepEqual(dates, [...dates].sort((a, b) => b.localeCompare(a)))
+})
+
 test('legacy extension and desktop catalogs redirect into the download center', async () => {
   const [extensionsPage, desktopPage, nextConfig] = await Promise.all([
     readFile(new URL('app/(site)/browser-extensions/page.jsx', root), 'utf8'),
@@ -61,17 +68,15 @@ test('legacy extension and desktop catalogs redirect into the download center', 
   assert.deepEqual(getLegacyPathRedirect('/desktop-apps'), { pathname: '/downloads', hash: '#desktop' })
 })
 
-test('download categories switch as two accessible tabs while preserving legacy anchors', async () => {
-  const [page, tabs] = await Promise.all([
+test('download categories use the shared accessible catalog', async () => {
+  const [page, directory] = await Promise.all([
     readFile(new URL('app/(site)/downloads/page.jsx', root), 'utf8'),
-    readFile(new URL('app/(site)/downloads/DownloadTabs.jsx', root), 'utf8'),
+    readFile(new URL('app/(site)/components/ShowcaseDirectory.jsx', root), 'utf8'),
   ])
-  assert.match(page, /<DownloadTabs groups=\{groups\}>/)
-  assert.match(tabs, /role="tablist"[^>]*inline-flex/)
-  assert.doesNotMatch(tabs, /role="tablist"[^>]*grid-cols-2/)
-  assert.match(tabs, /role="tab"/)
-  assert.match(tabs, /role="tabpanel"/)
-  assert.match(tabs, /hidden=\{active !== group\.anchor\}/)
-  assert.match(tabs, /window\.addEventListener\('hashchange', syncHash\)/)
-  assert.match(tabs, /window\.history\.replaceState\(null, '', `#\$\{anchor\}`\)/)
+  assert.match(page, /getDownloadItemsByDate\(\)/)
+  assert.match(page, /<ShowcaseDirectory/)
+  assert.match(page, /categoryTabs: true/)
+  assert.match(directory, /role="tablist"/)
+  assert.match(directory, /role="tab"/)
+  assert.match(directory, /aria-selected=\{active\}/)
 })

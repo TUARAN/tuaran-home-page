@@ -2,6 +2,7 @@ import ShowcaseDirectory from '../components/ShowcaseDirectory'
 import {
   DOWNLOAD_ITEMS,
   DOWNLOAD_TYPE_META,
+  getDownloadItemsByDate,
 } from '../../../lib/downloadItems'
 import { getWorkStatusLabel } from '../../../lib/workItems'
 
@@ -80,9 +81,7 @@ const jsonLd = {
   mainEntity: {
     '@type': 'ItemList',
     numberOfItems: DOWNLOAD_ITEMS.length,
-    itemListElement: DOWNLOAD_ITEMS
-      .slice()
-      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+    itemListElement: getDownloadItemsByDate()
       .map((item, index) => ({
         '@type': 'ListItem',
         position: index + 1,
@@ -95,8 +94,7 @@ const jsonLd = {
 
 export default function DownloadsPage() {
   const categoryLabels = Object.fromEntries(DOWNLOAD_TYPE_META.map((type) => [type.id, type.title]))
-  const items = [...DOWNLOAD_ITEMS]
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+  const items = getDownloadItemsByDate()
     .map((item, index) => {
       const platformLabel = item.platforms?.join(' / ') || item.domains?.join(' / ') || '查看详情'
       const categoryLabel = categoryLabels[item.type] || '下载'

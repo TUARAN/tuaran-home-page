@@ -5,7 +5,7 @@ import test from 'node:test'
 import { SECONDARY_SITES } from '../lib/secondarySites.js'
 import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
 import { INTERACTIVE_DIRECTORY_WORKS } from '../lib/engineeringWorks.js'
-import { TOOL_ITEMS } from '../lib/toolItems.js'
+import { getToolItemsByDate, TOOL_ITEMS } from '../lib/toolItems.js'
 
 const root = new URL('../', import.meta.url)
 const [worksSource, sitesSource, workItemsSource] = await Promise.all([
@@ -42,6 +42,12 @@ test('interactive and tool directories have exclusive primary entries', () => {
   for (const href of ['/resources/wallpapers', '/bookmarks/ai-tools', '/bookmarks/dev-resources']) {
     assert.ok(!TOOL_ITEMS.some((tool) => tool.href === href), `${href} belongs to content`)
   }
+})
+
+test('tools default to newest-first order', () => {
+  assert.ok(TOOL_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date)))
+  const dates = getToolItemsByDate().map((item) => item.date)
+  assert.deepEqual(dates, [...dates].sort((a, b) => b.localeCompare(a)))
 })
 
 test('legacy sites directory redirects to works and is absent from the sitemap', () => {

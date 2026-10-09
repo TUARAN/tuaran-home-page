@@ -49,8 +49,8 @@ test('download center covers gated tool packages plus the Syncblog extension', (
 })
 
 test('downloads default to newest-first order', () => {
-  assert.ok(DOWNLOAD_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date)))
-  const dates = getDownloadItemsByDate().map((item) => item.date)
+  assert.ok(DOWNLOAD_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.updatedAt)))
+  const dates = getDownloadItemsByDate().map((item) => item.updatedAt)
   assert.deepEqual(dates, [...dates].sort((a, b) => b.localeCompare(a)))
 })
 

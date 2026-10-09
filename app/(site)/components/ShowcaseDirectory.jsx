@@ -186,6 +186,9 @@ function ItemMeta({ item, hideDuplicateCategory = false }) {
           <span>{value}</span>
         </span>
       ))}
+      {item.updatedAt ? (
+        <time dateTime={item.updatedAt}>更新于 {item.updatedAt}</time>
+      ) : null}
       {item.badgeLabel ? (
         <span className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider ${item.badgeTone || 'bg-[#17181c] text-white dark:bg-[#d9deca] dark:text-[#151713]'}`}>
           {item.badgeLabel}

@@ -45,8 +45,8 @@ test('interactive and tool directories have exclusive primary entries', () => {
 })
 
 test('tools default to newest-first order', () => {
-  assert.ok(TOOL_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date)))
-  const dates = getToolItemsByDate().map((item) => item.date)
+  assert.ok(TOOL_ITEMS.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.updatedAt)))
+  const dates = getToolItemsByDate().map((item) => item.updatedAt)
   assert.deepEqual(dates, [...dates].sort((a, b) => b.localeCompare(a)))
 })
 
@@ -69,6 +69,7 @@ test('tools directory uses compact catalog cards while the portfolio keeps galle
   assert.match(directorySource, /xl:grid-cols-4/)
   assert.match(directorySource, /sm:grid-cols-2 lg:grid-cols-3/)
   assert.match(directorySource, /role="tablist"/)
+  assert.match(directorySource, /<time dateTime=\{item\.updatedAt\}>更新于 \{item\.updatedAt\}<\/time>/)
   assert.match(directorySource, /aria-selected=\{active\}/)
 })
 

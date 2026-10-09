@@ -1331,7 +1331,7 @@
           <div class="xrc-brand">
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
-              <div class="xrc-title">X 互动帮手</div>
+              <div class="xrc-title">X高频互动助手</div>
               <div class="xrc-subtitle">v${EXTENSION_VERSION} · <span data-xrc-stable-runtime>尚未运行</span></div>
             </div>
           </div>
@@ -1354,7 +1354,7 @@
             </button>
           </div>
         </div>
-        <section class="xrc-docs" data-xrc-docs hidden aria-label="X 互动帮手文档中心">
+        <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
           <div class="xrc-docs-head">
             <div><small>DOCUMENTATION</small><strong>文档中心</strong><span>使用边界、官方来源与版本记录</span></div>
             <button type="button" data-xrc-docs-close aria-label="关闭文档中心">×</button>

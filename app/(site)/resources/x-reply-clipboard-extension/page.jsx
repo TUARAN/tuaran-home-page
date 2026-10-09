@@ -28,10 +28,10 @@ const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
 const VERSION = '3.6.2'
 
-const title = 'X 互动帮手：回复、互关与 DeepSeek 定时发推'
+const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
-  'X 互动帮手是一个本地运行的 Chrome 扩展，提供时间线回复、通知回复、互关浇友和 DeepSeek 纯文字定时发推。'
-const shareText = 'X 互动帮手：一个扩展完成时间线回复、通知回复、互关管理和 AI 定时发推。'
+  'X高频互动助手是一个本地运行的 Chrome 扩展，提供时间线回复、通知回复、互关浇友和 DeepSeek 纯文字定时发推。'
+const shareText = 'X高频互动助手：一个扩展完成时间线回复、通知回复、互关管理和 AI 定时发推。'
 
 const VERSION_HISTORY = [
   {
@@ -127,7 +127,7 @@ const VERSION_HISTORY = [
   },
   {
     version: '3.0.0',
-    title: '升级为 X 互动帮手',
+    title: '升级为 X高频互动助手',
     description: '增加时间线回复与通知回复双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
   },
   {
@@ -187,7 +187,7 @@ export const metadata = {
   description,
   keywords: [
     'X 评论回复',
-    'X 互动帮手',
+    'X高频互动助手',
     'Twitter 回复插件',
     'Chrome 浏览器插件',
     'X 时间线',
@@ -330,7 +330,7 @@ export default function XReplyClipboardResourcePage() {
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black"><IconBrandX size={17} /></span>
                   <div>
-                    <p className="m-0 text-xs font-bold text-white">X 互动帮手</p>
+                    <p className="m-0 text-xs font-bold text-white">X高频互动助手</p>
                     <p className="m-0 font-mono text-[9px] text-slate-400">CONTROL DECK · ONLINE</p>
                   </div>
                 </div>

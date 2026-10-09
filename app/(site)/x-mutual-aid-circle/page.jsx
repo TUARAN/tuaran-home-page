@@ -19,7 +19,6 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-mutual-aid-circle'
 const RESOURCE_URL = `https://2aran.com/${RESOURCE_SLUG}`
-const EXTENSION_SHORT_URL = 'https://2aran.com/s/Os0WrDh'
 const PROFILE_SCREENSHOT_SRC = '/images/diary/x-blue-v-mutual-profile-2026-07-09.png'
 
 const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
@@ -32,11 +31,11 @@ export const metadata = createRichPageMetadata('x-mutual-aid-circle')
 const TOOLKIT = [
   {
     step: '01 · 清理关系',
-    name: 'X 互关清理助手',
-    desc: '本地运行的 Chrome 插件：在 Following 列表一键取消没有回关你的人，也支持在粉丝列表慢速批量 Follow back（测试功能）。不要账号密码，不上传数据。',
-    href: EXTENSION_SHORT_URL,
-    action: '下载插件（自取）',
-    sub: { href: '/resources/x-mutual-cleaner-extension', label: '功能与安全性说明 →' },
+    name: 'X高频互动助手',
+    desc: '本地运行的 Chrome 插件。互关浇友可在 Following 列表取消没有回关的人，也可在粉丝列表按节奏回关；时间线回复、通知回复和定时发推在同一个扩展里。不要账号密码，不上传数据。',
+    href: '/resources/x-reply-clipboard-extension',
+    action: '打开说明与下载',
+    sub: { href: '/resources/x-reply-clipboard-extension', label: '功能与安全性说明 →' },
   },
   {
     step: '02 · 判断时机',
@@ -377,7 +376,7 @@ export default function XMutualAidCirclePage() {
             <p>
               需要提醒：批量取消关注和批量回关都可能触发平台风控，插件内置了固定节奏和停止按钮，
               建议按自己账号的体量分批做，细节看
-              <Link href="/resources/x-mutual-cleaner-extension">插件的安全性说明</Link>。
+              <Link href="/resources/x-reply-clipboard-extension">插件的安全性说明</Link>。
             </p>
           </article>
         </RanbiPaywall>

@@ -141,6 +141,12 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // 原「X 互关清理助手」已并入 X高频互动助手
+        source: '/resources/x-mutual-cleaner-extension',
+        destination: '/resources/x-reply-clipboard-extension',
+        permanent: true,
+      },
+      {
         // 《币安人生》入口直接进入第一篇正文，旧章节路径收口到资源页
         source: '/resources/cz-memoirs/00-recommendations',
         destination: '/resources/cz-memoirs',

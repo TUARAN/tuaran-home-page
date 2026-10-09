@@ -23,6 +23,7 @@
   const MIN_ROUND_INTERVAL_SECONDS = 1;
   const SCHEDULE_PACE_KEY = "xrcSchedulePace";
   const POSTER_PACE_KEY = "xrcPosterSchedulePace";
+  const PANEL_PLACEMENT_KEY = "xrcPanelPlacement";
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 5000;
   const SUBMIT_TIMEOUT_MS = 5000;
@@ -32,7 +33,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.6";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.7";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -54,6 +55,7 @@
     nextReplyDelaySeconds: 0,
     riskPaused: false,
     panelView: "normal",
+    panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
     replyMode: "ai",
@@ -77,6 +79,8 @@
   const processedNotificationIds = new Set();
   const skippedIds = new Set();
   let panelDismissed = false;
+  let configOpen = false;
+  let configListenerBound = false;
   let highlightedPhraseIndex = null;
 
   const sleep = (ms) => timerApi?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -352,6 +356,34 @@
     } catch (error) {
       applyPosterPace(state.posterPace);
     }
+  }
+
+  function normalizePanelPlacement(value) {
+    return value === "embed" ? "embed" : "float";
+  }
+
+  async function loadPanelPlacement() {
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get(PANEL_PLACEMENT_KEY);
+      const raw = stored?.[PANEL_PLACEMENT_KEY];
+      state.panelPlacement = normalizePanelPlacement(raw);
+      if (!raw) await chrome.storage.local.set({ [PANEL_PLACEMENT_KEY]: state.panelPlacement });
+    } catch (error) {
+      state.panelPlacement = "float";
+    }
+  }
+
+  async function selectPanelPlacement(placement) {
+    state.panelPlacement = normalizePanelPlacement(placement);
+    if (globalThis.chrome?.storage?.local) {
+      try {
+        await chrome.storage.local.set({ [PANEL_PLACEMENT_KEY]: state.panelPlacement });
+      } catch (error) {
+        // The choice still applies to this page.
+      }
+    }
+    renderPanel();
   }
 
   async function selectPosterPace(pace) {
@@ -1462,11 +1494,7 @@
 
   function dockPanel(panel) {
     const mount = sidebarMountPoint(document, PANEL_ID);
-    if (!mount) {
-      panel.dataset.xrcDock = "pending";
-      if (!panel.isConnected) document.documentElement.appendChild(panel);
-      return false;
-    }
+    if (!mount) return false;
     if (mount.type === "prepend") {
       const parent = mount.parent;
       if (panel.parentElement !== parent || parent.firstElementChild !== panel) {
@@ -1477,6 +1505,26 @@
     }
     panel.dataset.xrcDock = "sidebar";
     return true;
+  }
+
+  function syncConfigMenu(panel) {
+    const menu = panel.querySelector("[data-xrc-config]");
+    const gear = panel.querySelector("[data-xrc-config-open]");
+    const embed = panel.querySelector("[data-xrc-embed]");
+    if (menu) menu.hidden = !configOpen;
+    if (embed) embed.checked = state.panelPlacement === "embed";
+    gear?.setAttribute("aria-expanded", configOpen ? "true" : "false");
+    panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function floatPanel(panel) {
+    panel.dataset.xrcDock = "float";
+    if (panel.parentElement !== document.documentElement) document.documentElement.appendChild(panel);
+  }
+
+  function placePanel(panel) {
+    if (state.panelPlacement === "embed" && dockPanel(panel)) return;
+    floatPanel(panel);
   }
 
   function watchSidebarDock() {
@@ -1497,7 +1545,7 @@
           renderPanel();
           return;
         }
-        dockPanel(current);
+        placePanel(current);
       }, 250);
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -1526,6 +1574,9 @@
           <div class="xrc-header-actions">
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
+            <button class="xrc-view-button xrc-gear-button" type="button" data-xrc-config-open aria-label="打开设置" title="设置" aria-expanded="false">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 1.7h3l.4 1.6c.3.1.7.3 1 .5l1.5-.6 1.5 1.5-.6 1.5c.2.3.4.7.5 1l1.6.4v3l-1.6.4c-.1.3-.3.7-.5 1l.6 1.5-1.5 1.5-1.5-.6c-.3.2-.7.4-1 .5l-.4 1.6h-3l-.4-1.6a4 4 0 0 1-1-.5l-1.5.6-1.5-1.5.6-1.5a4 4 0 0 1-.5-1l-1.6-.4v-3l1.6-.4c.1-.3.3-.7.5-1l-.6-1.5 1.5-1.5 1.5.6c.3-.2.7-.4 1-.5l.4-1.6z"></path><circle cx="8" cy="8" r="1.7"></circle></svg>
+            </button>
             <button class="xrc-view-button xrc-docs-button" type="button" data-xrc-docs-open aria-label="打开文档中心" title="文档中心">
               <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg>
             </button>
@@ -1541,6 +1592,13 @@
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg>
             </button>
           </div>
+        </div>
+        <div class="xrc-config" data-xrc-config hidden>
+          <div class="xrc-config-title">设置</div>
+          <label class="xrc-config-row">
+            <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
+            <input type="checkbox" data-xrc-embed>
+          </label>
         </div>
         <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
           <div class="xrc-docs-head">
@@ -1577,6 +1635,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.7</b><span><strong>默认右下角浮窗</strong><small>面板默认浮在页面右下角。标题栏齿轮里可以打开「嵌入到页面」，再挂到右侧搜索框下面。</small></span></article>
                 <article><b>v3.6.6</b><span><strong>功能导航改为图标页签</strong><small>时间线、通知回复、互关浇友和推文浇给改成图标加文字，当前项用下划线标出。</small></span></article>
                 <article><b>v3.6.5</b><span><strong>推文浇给加入频率滑块</strong><small>发推页可以在慢、中、快、超快之间滑动。默认「中」仍是 25～35 分钟；已经开始的等待不会改写。</small></span></article>
                 <article><b>v3.6.4</b><span><strong>面板嵌进右侧栏</strong><small>面板放在搜索框下方，随右侧栏排列，不再用左下角浮层挡住时间线。</small></span></article>
@@ -1747,7 +1806,7 @@
           <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
-      dockPanel(panel);
+      placePanel(panel);
       const phraseList = panel.querySelector("[data-xrc-phrase-list]");
       phrases.forEach((phrase, index) => {
         const item = document.createElement("div");
@@ -1767,6 +1826,24 @@
         panelDismissed = true;
         panel.remove();
       });
+      panel.querySelector("[data-xrc-config-open]").addEventListener("click", (event) => {
+        event.stopPropagation();
+        configOpen = !configOpen;
+        syncConfigMenu(panel);
+      });
+      panel.querySelector("[data-xrc-embed]").addEventListener("change", (event) => {
+        selectPanelPlacement(event.currentTarget.checked ? "embed" : "float");
+      });
+      if (!configListenerBound) {
+        configListenerBound = true;
+        document.addEventListener("click", (event) => {
+          if (!configOpen) return;
+          if (event.target.closest?.("[data-xrc-config], [data-xrc-config-open]")) return;
+          configOpen = false;
+          const current = document.getElementById(PANEL_ID);
+          if (current) syncConfigMenu(current);
+        });
+      }
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
@@ -2107,7 +2184,8 @@
       stateBadge?.setAttribute("title", stateLabel.textContent);
     }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
-    dockPanel(panel);
+    syncConfigMenu(panel);
+    placePanel(panel);
   }
 
   function begin({ resume = false } = {}) {
@@ -2218,6 +2296,7 @@
     await loadAiSettings();
     await loadSchedulePace();
     await loadPosterPace();
+    await loadPanelPlacement();
     await loadNotificationHistory();
     if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
       for (const id of saved.processedIds) processedNotificationIds.add(id);

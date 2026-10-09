@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.6.6'
+const VERSION = '3.6.7'
 
 const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X高频互动助手：一个扩展完成时间线回复、通
 
 const VERSION_HISTORY = [
   {
+    version: '3.6.7',
+    title: '默认右下角浮窗，嵌入改为设置项',
+    description: '面板默认浮在页面右下角。标题栏齿轮里可以打开设置，「嵌入到页面」会把面板挂到右侧搜索框下面。右侧栏还没出现时先保持浮窗，出现后再挂上去。',
+    current: true,
+  },
+  {
     version: '3.6.6',
     title: '功能导航改为图标页签',
     description: '面板顶部的时间线、通知回复、互关浇友和推文浇给改成图标加文字的一排页签。当前项用蓝色文字和下划线标出，不再使用带底色的胶囊按钮。',
-    current: true,
   },
   {
     version: '3.6.5',
@@ -250,7 +255,7 @@ const INSTALL_STEPS = [
   '下载并解压插件包。',
   '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
   '点击「加载已解压的扩展程序」，选择解压后的目录。',
-  '登录 X，面板出现在右侧搜索框下方，默认选择「时间线」；也可切换到「通知回复」「互关浇友」或「推文浇给」。',
+  '登录 X，面板默认浮在页面右下角，并选中「时间线」。标题栏齿轮里可以打开「嵌入到页面」。也可切换到「通知回复」「互关浇友」或「推文浇给」。',
   '互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。',
   '关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度。',
   '时间线模式可在首页、个人主页或搜索结果运行。运行设置里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',

@@ -10,20 +10,39 @@
   --xrc-workspace-soft: rgba(29, 155, 240, 0.1);
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 100%;
+  width: 360px;
+  max-width: calc(100vw - 36px);
   min-width: 0;
-  margin: 0 0 12px;
+  margin: 0;
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid rgba(207, 217, 222, 0.88);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.98);
   color: var(--xrc-text);
-  box-shadow: none;
+  box-shadow: 0 18px 50px rgba(15, 20, 25, 0.22);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.45;
+}
+
+#x-reply-clipboard-panel,
+#x-reply-clipboard-panel[data-xrc-dock="float"] {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483646;
+}
+
+#x-reply-clipboard-panel[data-xrc-dock="sidebar"] {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 1;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 12px;
+  box-shadow: none;
 }
 
 #x-reply-clipboard-panel[data-xrc-dock="pending"] {
@@ -256,6 +275,63 @@
 #x-reply-clipboard-panel .xrc-header-actions button {
   display: grid;
   place-items: center;
+}
+
+#x-reply-clipboard-panel[data-xrc-config="open"] { overflow: visible; }
+
+#x-reply-clipboard-panel .xrc-config {
+  position: absolute;
+  top: 62px;
+  right: 12px;
+  z-index: 4;
+  width: 236px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 12px 32px rgba(15, 20, 25, 0.16);
+}
+
+#x-reply-clipboard-panel .xrc-config-title {
+  margin-bottom: 8px;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+#x-reply-clipboard-panel .xrc-config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+#x-reply-clipboard-panel .xrc-config-row span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+#x-reply-clipboard-panel .xrc-config-row strong {
+  color: var(--xrc-text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#x-reply-clipboard-panel .xrc-config-row small {
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+#x-reply-clipboard-panel .xrc-config-row input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--xrc-accent);
 }
 
 #x-reply-clipboard-panel .xrc-header-actions button svg {
@@ -1057,7 +1133,7 @@
 #x-reply-clipboard-panel .xrc-rate-control input:focus { border-color: var(--xrc-accent); }
 #x-reply-clipboard-panel .xrc-rate-control input:disabled { cursor: not-allowed; opacity: 0.55; }
 
-#x-reply-clipboard-panel[data-view="expanded"] {
+#x-reply-clipboard-panel[data-xrc-dock="sidebar"][data-view="expanded"] {
   width: 100%;
 }
 
@@ -1071,7 +1147,11 @@
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-phrase-list { max-height: 260px; }
 #x-reply-clipboard-panel[data-view="expanded"] .xrc-current-reply strong { max-width: 390px; }
 
-#x-reply-clipboard-panel[data-view="collapsed"] {
+#x-reply-clipboard-panel[data-xrc-dock="float"][data-view="expanded"] {
+  width: min(560px, calc(100vw - 36px));
+}
+
+#x-reply-clipboard-panel[data-xrc-dock="sidebar"][data-view="collapsed"] {
   width: 100%;
   border-radius: 16px;
 }
@@ -1272,11 +1352,18 @@
   #x-reply-clipboard-panel .xrc-mutual-card { background: rgba(15, 20, 25, 0.66); }
   #x-reply-clipboard-panel .xrc-assistant-tabs button.is-active { background: transparent; color: var(--xrc-accent); }
   #x-reply-clipboard-panel .xrc-ai-actions button:first-child { background: #eff3f4; color: #0f1419; }
+  #x-reply-clipboard-panel .xrc-config { background: rgba(22, 24, 28, 0.98); }
   #x-reply-clipboard-panel .xrc-mark { background: #eff3f4; color: #0f1419; }
 }
 
 @media (max-width: 430px) {
-  #x-reply-clipboard-panel { width: 100%; margin: 0 0 12px; }
+  #x-reply-clipboard-panel[data-xrc-dock="float"],
+  #x-reply-clipboard-panel:not([data-xrc-dock="sidebar"]) {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+  #x-reply-clipboard-panel[data-xrc-dock="sidebar"] { width: 100%; margin: 0 0 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

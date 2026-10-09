@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "3.1.4",
+  "version": "3.1.6",
   "description": "Manage mutual follows, reply on X timelines, or like and reply from Notifications. Supports templates and DeepSeek AI.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "offscreen"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*"],
   "background": {
     "service_worker": "background.js"
@@ -17,7 +17,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["phrases.js", "loop.js", "mutual.js", "content.js"],
+      "js": ["phrases.js", "loop.js", "timer.js", "mutual.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

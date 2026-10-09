@@ -12,19 +12,29 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.1.4'
+const VERSION = '3.1.6'
 
-const title = 'X 互动帮手：互关管理、时间线回复与通知互动'
+const title = 'X 互动帮手：时间线回复、通知回复与互关浇友'
 const description =
-  'X 互动帮手是一个本地运行的 Chrome 扩展，集成互关管理、时间线回复和通知互动。支持清理未回关、回关粉丝、模板随机回复与 DeepSeek AI。'
-const shareText = 'X 互动帮手：一个扩展完成互关管理、时间线自动回复，以及通知页点赞和继续回复。'
+  'X 互动帮手是一个本地运行的 Chrome 扩展，依次提供时间线回复、通知回复和互关浇友。支持清理未回关、回关粉丝、模板随机回复与 DeepSeek AI。'
+const shareText = 'X 互动帮手：一个扩展完成时间线自动回复、最近两小时通知回复，以及互关管理。'
 
 const VERSION_HISTORY = [
   {
-    version: '3.1.4',
-    title: '通知互动改为两小时时间窗',
-    description: '通知模式只处理最近 2 小时内尚未互动的回复，完成后停止；成功记录持久保存，后续运行不会重复处理。',
+    version: '3.1.6',
+    title: '时间线优先并精简 AI 配置',
+    description: '时间线调整为第一项和默认项，其后为通知回复、互关浇友；删除 DeepSeek 测试连接，并用扩展离屏计时 Worker 保持后台任务运行。',
     current: true,
+  },
+  {
+    version: '3.1.5',
+    title: '支持后台页签继续执行',
+    description: '移除切换浏览器页签后的主动暂停；等待和频率限制改按真实时间计算，切回 X 时不会重新等待。',
+  },
+  {
+    version: '3.1.4',
+    title: '通知回复改为两小时时间窗',
+    description: '通知模式只处理最近 2 小时内尚未互动的回复，完成后停止；成功记录持久保存，后续运行不会重复处理。',
   },
   {
     version: '3.1.3',
@@ -44,12 +54,12 @@ const VERSION_HISTORY = [
   {
     version: '3.1.0',
     title: '互关能力完成合并',
-    description: '新增第一个「互关帮手」Tab，完整整合清理未回关、回关粉丝与关注候选；任务运行时锁定其他 Tab。',
+    description: '新增「互关浇友」Tab，完整整合清理未回关、回关粉丝与关注候选；任务运行时锁定其他 Tab。',
   },
   {
     version: '3.0.0',
     title: '升级为 X 互动帮手',
-    description: '增加时间线回复与通知互动双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
+    description: '增加时间线回复与通知回复双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
   },
   {
     version: '2.1.0',
@@ -59,7 +69,7 @@ const VERSION_HISTORY = [
   {
     version: '2.0.0',
     title: '新增 DeepSeek AI 模式',
-    description: '可读取当前推文文字生成自然回复；API Key 保存在 Chrome 本地，并提供连接测试与 10 秒请求超时。',
+    description: '可读取当前推文文字生成自然回复；API Key 保存在 Chrome 本地，请求设置 10 秒超时。',
   },
   {
     version: '1.5.0',
@@ -173,16 +183,16 @@ export default function XReplyClipboardResourcePage() {
         </div>
 
         <h1 className="mt-4 max-w-4xl font-serif text-3xl font-semibold leading-tight tracking-wide text-[#222] dark:text-gray-100 md:text-5xl">
-          互关管理、时间线回复与通知互动，集中在一个面板
+          时间线回复、通知回复与互关浇友，集中在一个面板
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          顶部三个 Tab 可切换「互关帮手」「时间线回复」与「通知互动」。互关帮手整合清理未回关、回关粉丝和关注候选；
-          时间线与通知模式支持模板随机或 AI 回复。时间线按 35 条一轮连续运行，通知互动只处理最近 2 小时内尚未成功互动的回复。
+          顶部默认打开「时间线」，其后依次是「通知回复」与「互关浇友」。互关浇友整合清理未回关、回关粉丝和关注候选；
+          时间线与通知模式支持模板随机或 AI 回复。时间线按 35 条一轮连续运行，通知回复只处理最近 2 小时内尚未成功互动的内容。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['X 平台', '互关管理', '时间线回复', '通知互动', '模板 / AI', 'Chrome 插件'].map((tag) => (
+          {['X 平台', '时间线回复', '通知回复', '互关浇友', '模板 / AI', 'Chrome 插件'].map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
@@ -232,10 +242,10 @@ export default function XReplyClipboardResourcePage() {
 
         <h2>它会做什么</h2>
         <div className="not-prose my-8 grid gap-3 md:grid-cols-2">
-          <FeatureCard title="三个助手随时切换">
-            顶部 Tab 切换互关帮手、时间线回复与通知互动；任务运行时会锁定切换，避免误操作。
+          <FeatureCard title="时间线默认置顶">
+            顶部按时间线、通知回复、互关浇友排列；新安装默认选中时间线。任务运行时会锁定切换，避免误操作。
           </FeatureCard>
-          <FeatureCard title="互关帮手">
+          <FeatureCard title="互关浇友">
             在 Following 页清理未回关账号；在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已经合并。
           </FeatureCard>
           <FeatureCard title="随机话术">
@@ -286,16 +296,16 @@ export default function XReplyClipboardResourcePage() {
           <li>下载并解压插件包。</li>
           <li>打开 Chrome 的 <code>chrome://extensions/</code>，开启「开发者模式」。</li>
           <li>点击「加载已解压的扩展程序」，选择解压后的目录。</li>
-          <li>登录 X，在左下角面板选择「互关帮手」「时间线回复」或「通知互动」。</li>
+          <li>登录 X，左下角面板默认选择「时间线」；也可切换到「通知回复」或「互关浇友」。</li>
           <li>互关模式按页面选择清理未回关、回关粉丝或关注候选；前两项会引导打开自己的对应列表。</li>
           <li>关注候选不会自动跳转。请先打开其他作者的 Followers 页面；它与回关粉丝共享频率状态和每日额度：2 秒一个，合计每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
           <li>时间线模式可在首页、个人主页或搜索结果运行，按每轮 35 条、共 5 轮执行。</li>
           <li>通知模式会进入通知页，只处理最近 2 小时内尚未成功互动的回复；处理完即停止，不会进入下一轮。</li>
-          <li>点击「开始时间线回复」或「开始通知互动」。需要停下时，点「停止」。</li>
+          <li>点击「开始时间线回复」或「开始通知回复」。需要停下时，点「停止」。</li>
         </ol>
         <p>
           已经加载过这个目录时，到扩展管理页点一次刷新，再回到 X 重新开始。
-          开始前可选择“模板随机”或“AI 模式”。两种回复助手都可设置每条回复间隔，默认 2 秒；“每轮之间间隔”只适用于时间线模式，通知模式没有轮次。AI 模式只需先保存 DeepSeek API Key；连接测试是可选的诊断工具。Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。这个标签页要留在前台。切到别的标签页会暂停，回到该页后继续。
+          开始前可选择“模板随机”或“AI 模式”。两种回复助手都可设置每条回复间隔，默认 2 秒；“每轮之间间隔”只适用于时间线模式，通知模式没有轮次。AI 模式只需保存 DeepSeek API Key，不再提供单独的测试连接按钮。Key 只保存在 Chrome 扩展本地存储中。生成回复时只把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。切换到其他浏览器页签后，扩展会通过离屏计时 Worker 继续唤醒当前任务；任务运行期间不要关闭、休眠或手动刷新对应的 X 标签页。
           插件会先核对评论框里的文字没有重复，再等待 Reply 可用。已有弹窗中的内容能匹配任意一条固定话术时会接着发送；比较时会忽略 X 插入的空格、换行、零宽字符和 Emoji 变体。内容不属于固定话术才暂停，避免覆盖手写内容。
           如果旧版和新版监听器曾把一句写成两遍，新版会识别这种连续重复，自动恢复成一句再发送。更新扩展后仍需刷新已经打开的 X 标签页。
           如果 X 把占位文字当作编辑器内容，插件会精确选中整个编辑器后替换；已经形成的“稳st your reply”也会被识别并修复。

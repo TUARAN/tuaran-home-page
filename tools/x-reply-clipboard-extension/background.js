@@ -4,6 +4,7 @@ const AI_SETTINGS_KEY = "xrcAiSettings";
 const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = "deepseek-flash";
 const REQUEST_TIMEOUT_MS = 10000;
+const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 
 const REPLY_SYSTEM_PROMPT = [
   "你是 X（Twitter）中文互动回复助手。",
@@ -27,7 +28,7 @@ async function readAiSettings() {
   return { apiKey: String(settings.apiKey || "").trim() };
 }
 
-async function callDeepSeek({ postText, test = false }) {
+async function callDeepSeek({ postText }) {
   const { apiKey } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
 
@@ -42,17 +43,12 @@ async function callDeepSeek({ postText, test = false }) {
       },
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
-        messages: test
-          ? [
-              { role: "system", content: "这是 API 连通测试。只回复：连接成功" },
-              { role: "user", content: "测试" }
-            ]
-          : [
-              { role: "system", content: REPLY_SYSTEM_PROMPT },
-              { role: "user", content: `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}` }
-            ],
+        messages: [
+          { role: "system", content: REPLY_SYSTEM_PROMPT },
+          { role: "user", content: `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}` }
+        ],
         thinking: { type: "disabled" },
-        max_tokens: test ? 16 : 96,
+        max_tokens: 96,
         stream: false
       }),
       signal: controller.signal
@@ -73,10 +69,6 @@ async function callDeepSeek({ postText, test = false }) {
 }
 
 async function handleMessage(message) {
-  if (message?.type === "xrc-ai-test") {
-    const reply = await callDeepSeek({ postText: "", test: true });
-    return { ok: true, reply };
-  }
   if (message?.type === "xrc-ai-generate") {
     const postText = String(message.postText || "").trim();
     if (!postText) throw new Error("没有读取到原帖文字");
@@ -86,8 +78,47 @@ async function handleMessage(message) {
   return { ok: false, error: "未知请求" };
 }
 
+async function ensureOffscreenDocument() {
+  if (!chrome.offscreen?.createDocument) throw new Error("当前 Chrome 版本不支持后台计时");
+  const documentUrl = chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH);
+  if (chrome.runtime.getContexts) {
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ["OFFSCREEN_DOCUMENT"],
+      documentUrls: [documentUrl]
+    });
+    if (contexts.length > 0) return;
+  } else if (globalThis.clients?.matchAll) {
+    const clients = await globalThis.clients.matchAll();
+    if (clients.some((client) => client.url === documentUrl)) return;
+  }
+  try {
+    await chrome.offscreen.createDocument({
+      url: OFFSCREEN_DOCUMENT_PATH,
+      reasons: ["WORKERS"],
+      justification: "Keep user-started X interaction task timers running when the X tab is in the background."
+    });
+  } catch (error) {
+    if (!/single offscreen document|already exists/i.test(String(error?.message || error))) throw error;
+  }
+}
+
+async function scheduleBackgroundTimer(message) {
+  const requestId = String(message?.requestId || "");
+  const delayMs = Math.max(0, Math.min(3600000, Number(message?.delayMs) || 0));
+  if (!requestId) throw new Error("后台计时请求无效");
+  await ensureOffscreenDocument();
+  await chrome.runtime.sendMessage({ type: "xrc-offscreen-schedule", requestId, delayMs });
+  return { ok: true };
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "xrc-timer-schedule") {
+      scheduleBackgroundTimer(message)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "后台计时失败" }));
+      return true;
+    }
     if (!message?.type?.startsWith("xrc-ai-")) return false;
     handleMessage(message)
       .then(sendResponse)

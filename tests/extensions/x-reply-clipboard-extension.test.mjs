@@ -2,11 +2,39 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import test from 'node:test'
+import vm from 'node:vm'
 
 const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
 const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
+
+test('offscreen timer message wakes a wait without relying on the page timer', async () => {
+  const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  const listeners = []
+  const context = vm.createContext({
+    window: { setTimeout, clearTimeout },
+    chrome: {
+      runtime: {
+        lastError: null,
+        onMessage: { addListener(listener) { listeners.push(listener) } },
+        sendMessage(message, callback) {
+          callback({ ok: true })
+          setTimeout(() => {
+            for (const listener of listeners) {
+              listener({ type: 'xrc-timer-fired', requestId: message.requestId })
+            }
+          }, 5)
+        },
+      },
+    },
+  })
+  vm.runInContext(source, context)
+
+  const startedAt = Date.now()
+  await context.XInteractionTimer.wait(1000)
+  assert.ok(Date.now() - startedAt < 250)
+})
 
 test('picks the topmost unseen post that still has a reply button', () => {
   const processed = new Set(['2'])
@@ -168,6 +196,10 @@ test('picks a different phrase index and never repeats the current one', () => {
 
 test('content script keeps the 35-reply refresh loop wired to the reply popup', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const timerSource = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  const offscreenSource = await readFile(new URL('offscreen.js', extensionDir), 'utf8')
+  const timerWorkerSource = await readFile(new URL('timer-worker.js', extensionDir), 'utf8')
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const catalog = await readFile(new URL('../../lib/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../../lib/contentRegistry.js', import.meta.url), 'utf8')
@@ -179,15 +211,19 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.1.4')
+  assert.equal(manifest.version, '3.1.6')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
-  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'mutual.js', 'content.js'])
-  assert.deepEqual(manifest.permissions, ['storage'])
+  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'timer.js', 'mutual.js', 'content.js'])
+  assert.deepEqual(manifest.permissions, ['storage', 'offscreen'])
   assert.equal(manifest.background.service_worker, 'background.js')
+  assert.match(timerSource, /xrc-timer-schedule/)
+  assert.match(timerSource, /xrc-timer-fired/)
+  assert.match(offscreenSource, /new Worker\(chrome\.runtime\.getURL\("timer-worker\.js"\)\)/)
+  assert.match(timerWorkerSource, /setTimeout/)
   assert.match(content, /data-testid="reply"/)
   assert.match(content, /tweetTextarea_/)
   assert.match(content, /contenteditable=\"true\"/)
@@ -230,11 +266,16 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /data-xrc-assistant="notifications"/)
   assert.match(content, /功能导航/)
   assert.doesNotMatch(content, /当前助手/)
-  assert.match(content, /通知互动/)
+  assert.match(content, /通知回复/)
+  assert.match(content, /互关浇友/)
+  assert.ok(content.indexOf('data-xrc-assistant="timeline"') < content.indexOf('data-xrc-assistant="notifications"'))
+  assert.ok(content.indexOf('data-xrc-assistant="notifications"') < content.indexOf('data-xrc-assistant="mutual"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
   assert.match(content, /最近 2 小时/)
   assert.match(content, /state\.assistantMode !== "notifications"/)
   assert.match(content, /persistNotificationProcessed\(next\.id\)/)
+  assert.doesNotMatch(content, /document\.hidden|visibilitychange|waitForForeground/)
+  assert.doesNotMatch(mutualSource, /document\.hidden|visibilitychange|waitForForeground/)
   assert.match(content, /isNotificationReplyText/)
   assert.match(content, /data-testid="like"/)
   assert.match(content, /data-testid="unlike"/)
@@ -279,8 +320,7 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /value === "template" \? "template" : "ai"/)
   assert.match(content, /data-xrc-ai-key/)
   assert.match(content, /xrc-ai-generate/)
-  assert.match(content, /connectionVerified/)
-  assert.match(content, /测试连接为可选/)
+  assert.doesNotMatch(content, /connectionVerified|测试连接|xrc-ai-test|data-xrc-ai-test/)
   assert.match(content, /state\.replyMode === "ai" && !state\.aiKeySaved/)
   assert.doesNotMatch(content, /AI 模式需要先通过连接测试/)
   assert.match(content, /不会发送 X 登录 Cookie/)
@@ -297,12 +337,12 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(content, /activePhrase\.style\.order = "-1"/)
   assert.match(content, /list\.scrollTo\(\{ top: 0, behavior \}\)/)
   assert.doesNotMatch(content, /等待发送确认/)
-  assert.match(content, /PHRASE_STORE = 6/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.1\.4\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.1\.4'/)
+  assert.match(content, /PHRASE_STORE = 7/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.1\.6\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.1\.6'/)
   assert.match(resourcePage, /X 互动帮手/)
-  assert.match(resourcePage, /互关帮手/)
-  assert.match(resourcePage, /通知互动/)
+  assert.match(resourcePage, /互关浇友/)
+  assert.match(resourcePage, /通知回复/)
   assert.match(resourcePage, /const VERSION_HISTORY = \[/)
   assert.match(resourcePage, /version: '3\.1\.2'/)
   assert.match(resourcePage, /version: '3\.1\.1'/)
@@ -314,9 +354,9 @@ test('content script keeps the 35-reply refresh loop wired to the reply popup', 
   assert.match(resourcePage, /下载 Chrome 插件 v\{VERSION\}/)
   assert.match(resourcePage, /\/resources\/x-clipboard-phrase/)
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X 互动帮手'/)
-  assert.match(registry, /'通知互动'/)
+  assert.match(registry, /'通知回复'/)
   assert.match(toolItems, /id: 'x-reply-clipboard',[\s\S]*title: 'X 互动帮手'/)
-  assert.match(toolItems, /role: 'Chrome 扩展 · 互关、时间线与通知互动'/)
+  assert.match(toolItems, /role: 'Chrome 扩展 · 时间线、通知回复与互关浇友'/)
 
   const desktopPage = await readFile(
     new URL('../../app/(site)/resources/x-clipboard-phrase/page.jsx', import.meta.url),
@@ -338,7 +378,8 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
-  assert.match(backgroundText, /max_tokens: test \? 16 : 96/)
+  assert.match(backgroundText, /max_tokens: 96/)
+  assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
   assert.match(backgroundText, /chrome\.storage\.local/)
 })
 

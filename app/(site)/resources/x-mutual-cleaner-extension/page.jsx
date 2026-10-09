@@ -15,10 +15,10 @@ const UPGRADE_URL = '/resources/x-reply-clipboard-extension'
 
 const title = 'X 互关清理助手已升级为 X 互动帮手'
 const description =
-  '原 X 互关清理助手已并入 X 互动帮手。新版在一个扩展中提供互关管理、时间线回复和通知互动。'
+  '原 X 互关清理助手已并入 X 互动帮手。新版在一个扩展中提供时间线回复、通知回复和互关浇友。'
 
 const shareText =
-  'X 互关清理助手已升级为 X 互动帮手：互关管理、时间线回复和通知互动集中在一个扩展。'
+  'X 互关清理助手已升级为 X 互动帮手：时间线回复、通知回复和互关浇友集中在一个扩展。'
 
 export const metadata = {
   title,
@@ -94,7 +94,7 @@ export default function XMutualCleanerResourcePage() {
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          原来的清理未回关、回关粉丝和关注候选三项功能已经完整合并到新版第一个 Tab「互关帮手」。
+          原来的清理未回关、回关粉丝和关注候选三项功能已经完整合并到新版第三个 Tab「互关浇友」。
           同一个扩展现在还可以在时间线上自动回复，并在通知页给别人发来的回复点赞和继续回复。
         </p>
 
@@ -139,7 +139,7 @@ export default function XMutualCleanerResourcePage() {
                   已并入 X 互动帮手
                 </h2>
                 <p className="m-0 mt-2 text-sm leading-7 text-[#666] dark:text-gray-300">
-                  旧版停止单独更新。请安装 X 互动帮手 v3.1.4，在顶部选择「互关帮手」。
+                  旧版停止单独更新。请安装 X 互动帮手 v3.1.6，在顶部选择「互关浇友」。
                 </p>
               </div>
               <DownloadButton className="shrink-0" />

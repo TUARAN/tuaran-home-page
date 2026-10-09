@@ -3,6 +3,7 @@
 
   const loopApi = globalThis.XReplyClipboardLoop;
   const mutualApi = globalThis.XInteractionMutual;
+  const timerApi = globalThis.XInteractionTimer;
   const phrases = globalThis.XReplyClipboardPhrases;
   const legacyPhrases = globalThis.XReplyClipboardLegacyPhrases || [];
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
@@ -11,7 +12,7 @@
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const NOTIFICATION_HISTORY_LIMIT = 2000;
-  const PHRASE_STORE = 6;
+  const PHRASE_STORE = 7;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const BATCH_SIZE = loopApi.BATCH_SIZE;
   const ROUNDS_PER_RUN = loopApi.ROUNDS_PER_RUN;
@@ -29,7 +30,7 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.1.4";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.1.6";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
 
   const state = {
@@ -47,7 +48,6 @@
     mutualMode: "unfollow",
     replyMode: "ai",
     aiKeySaved: false,
-    aiConnectionVerified: false,
     aiKeyHint: "",
     aiStatus: "尚未配置 DeepSeek API Key",
     pendingReply: "",
@@ -66,7 +66,7 @@
   let panelDismissed = false;
   let highlightedPhraseIndex = null;
 
-  const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  const sleep = (ms) => timerApi?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
 
   function clampInterval(value, fallback, minimum, maximum) {
     const parsed = Math.round(Number(value));
@@ -105,10 +105,9 @@
       const apiKey = String(settings.apiKey || "").trim();
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.aiKeySaved = Boolean(apiKey);
-      state.aiConnectionVerified = Boolean(apiKey && settings.connectionVerified);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.aiStatus = apiKey
-        ? `${state.aiKeyHint}，${state.aiConnectionVerified ? "连接已验证" : "可直接开始；连接测试为可选"}`
+        ? `${state.aiKeyHint}，可以直接开始`
         : "尚未配置 DeepSeek API Key";
     } catch (error) {
       state.aiStatus = "读取 AI 配置失败";
@@ -152,11 +151,10 @@
     const key = String(apiKey || "").trim();
     if (!key) throw new Error("请输入 DeepSeek API Key");
     if (!globalThis.chrome?.storage?.local) throw new Error("当前环境无法保存扩展配置");
-    await chrome.storage.local.set({ xrcAiSettings: { apiKey: key, replyMode: state.replyMode, connectionVerified: false } });
+    await chrome.storage.local.set({ xrcAiSettings: { apiKey: key, replyMode: state.replyMode } });
     state.aiKeySaved = true;
-    state.aiConnectionVerified = false;
     state.aiKeyHint = `已保存 ····${key.slice(-4)}`;
-    state.aiStatus = `${state.aiKeyHint}，可以直接开始；连接测试为可选`;
+    state.aiStatus = `${state.aiKeyHint}，可以直接开始`;
   }
 
   async function persistReplyMode() {
@@ -164,13 +162,6 @@
     const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
     await chrome.storage.local.set({ xrcAiSettings: { ...settings, replyMode: state.replyMode } });
-  }
-
-  async function setAiConnectionVerified(verified) {
-    const stored = await chrome.storage.local.get("xrcAiSettings");
-    const settings = stored?.xrcAiSettings || {};
-    await chrome.storage.local.set({ xrcAiSettings: { ...settings, connectionVerified: Boolean(verified) } });
-    state.aiConnectionVerified = Boolean(verified);
   }
 
   function sendAiMessage(type, postText = "") {
@@ -206,7 +197,7 @@
       replyIntervalSeconds: DEFAULT_REPLY_INTERVAL_SECONDS,
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
       panelView: "normal",
-      assistantMode: isNotificationPath() ? "notifications" : "timeline",
+      assistantMode: "timeline",
       mutualMode: "unfollow",
       replyMode: "ai",
       pendingReply: "",
@@ -315,10 +306,13 @@
   }
 
   async function waitRateLimit(seconds, statusForRemaining) {
-    for (let remaining = seconds; remaining > 0 && state.running && !state.stopping; remaining -= 1) {
+    const deadline = Date.now() + (Math.max(0, Number(seconds) || 0) * 1000);
+    while (state.running && !state.stopping) {
+      const remaining = Math.ceil((deadline - Date.now()) / 1000);
+      if (remaining <= 0) break;
       state.status = statusForRemaining(remaining);
       renderPanel();
-      await sleepActive(1000);
+      await sleepActive(Math.min(1000, Math.max(0, deadline - Date.now())));
     }
   }
 
@@ -326,27 +320,11 @@
     state.phraseIndex = loopApi.nextPhraseIndex(phrases.length, state.phraseIndex);
   }
 
-  async function waitForForeground() {
-    if (!document.hidden) return;
-    state.status = "页面在后台，回到这个标签页后继续";
-    renderPanel();
-    await new Promise((resolve) => {
-      const onVisibilityChange = () => {
-        if (document.hidden) return;
-        document.removeEventListener("visibilitychange", onVisibilityChange);
-        resolve();
-      };
-      document.addEventListener("visibilitychange", onVisibilityChange);
-    });
-  }
-
   async function sleepActive(ms) {
-    let remaining = ms;
-    while (remaining > 0 && !state.stopping) {
-      await waitForForeground();
-      const chunk = Math.min(remaining, 100);
+    const deadline = Date.now() + Math.max(0, Number(ms) || 0);
+    while (Date.now() < deadline && !state.stopping) {
+      const chunk = Math.min(250, Math.max(0, deadline - Date.now()));
       await sleep(chunk);
-      remaining -= chunk;
     }
   }
 
@@ -354,7 +332,6 @@
     const start = Date.now();
     while (Date.now() - start < timeout) {
       if (state.stopping) return false;
-      await waitForForeground();
       if (predicate()) return true;
       await sleep(150);
     }
@@ -694,7 +671,7 @@
 
   async function runLoop({ resume = false } = {}) {
     if (state.assistantMode === "notifications" && !isNotificationPath()) {
-      state.status = "通知互动需要在 X 通知页运行，正在打开通知页…";
+      state.status = "通知回复需要在 X 通知页运行，正在打开通知页…";
       writeSaved({ running: true, total: state.total });
       renderPanel();
       window.location.assign("/notifications");
@@ -720,7 +697,6 @@
 
     let stalled = 0;
     while (state.running && !state.stopping) {
-      await waitForForeground();
       if (state.assistantMode !== "notifications") {
         const reloadDecision = loopApi.shouldReload({
           pageCount: state.pageCount,
@@ -903,7 +879,7 @@
         ? "停止"
         : aiNeedsSetup
           ? "配置 AI 后开始"
-          : state.assistantMode === "notifications" ? "开始通知互动" : "开始时间线回复";
+          : state.assistantMode === "notifications" ? "开始通知回复" : "开始时间线回复";
   }
 
   function updateMutualState(next) {
@@ -997,9 +973,9 @@
         <div class="xrc-workspace-nav">
           <div class="xrc-workspace-nav-head"><strong>功能导航</strong><span>选择助手，下方工作区同步切换</span></div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="互动助手">
-            <button type="button" role="tab" data-xrc-assistant="mutual"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>互关帮手</strong><small>关注关系</small></span></button>
-            <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
-            <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">03</span><span class="xrc-tab-copy"><strong>通知互动</strong><small>点赞回复</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="timeline"><span class="xrc-tab-index">01</span><span class="xrc-tab-copy"><strong>时间线</strong><small>自动回复</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="notifications"><span class="xrc-tab-index">02</span><span class="xrc-tab-copy"><strong>通知回复</strong><small>点赞回复</small></span></button>
+            <button type="button" role="tab" data-xrc-assistant="mutual"><span class="xrc-tab-index">03</span><span class="xrc-tab-copy"><strong>互关浇友</strong><small>关注关系</small></span></button>
           </div>
         </div>
         <div class="xrc-body xrc-mutual-body">
@@ -1033,12 +1009,11 @@
         </div>
         <div class="xrc-body xrc-reply-body">
           <details class="xrc-ai-config" data-xrc-ai-config>
-            <summary><strong>配置 DeepSeek AI</strong><span>保存 Key 后自动折叠 · 测试连接可选</span></summary>
+            <summary><strong>配置 DeepSeek AI</strong><span>保存 Key 后自动折叠</span></summary>
             <div class="xrc-ai-config-body">
               <label><span>DeepSeek API Key</span><input type="password" autocomplete="off" placeholder="粘贴 sk-..." data-xrc-ai-key></label>
               <div class="xrc-ai-actions">
                 <button type="button" data-xrc-ai-save>保存 Key</button>
-                <button type="button" data-xrc-ai-test>测试连接（可选）</button>
               </div>
               <div class="xrc-ai-status" data-xrc-ai-status>尚未配置 DeepSeek API Key</div>
               <div class="xrc-ai-privacy">AI 模式会把当前原帖文字发送给 DeepSeek，不会发送 X 登录 Cookie。</div>
@@ -1146,7 +1121,7 @@
           processedIds.clear();
           skippedIds.clear();
           state.status = nextMode === "notifications"
-            ? "通知互动只处理最近 2 小时内别人回复你的内容：先点赞，再回复；处理过的不重复。"
+            ? "通知回复只处理最近 2 小时内别人回复你的内容：先点赞，再回复；处理过的不重复。"
             : nextMode === "mutual"
               ? "选择清理未回关、回关粉丝或关注候选。"
               : "时间线回复会从上往下处理他人的帖子。";
@@ -1191,19 +1166,6 @@
           input.value = "";
         } catch (error) {
           state.aiStatus = error?.message || "保存失败";
-        }
-        renderPanel();
-      });
-      panel.querySelector("[data-xrc-ai-test]").addEventListener("click", async () => {
-        state.aiStatus = "正在测试 DeepSeek 连接…";
-        renderPanel();
-        try {
-          await setAiConnectionVerified(false);
-          await sendAiMessage("xrc-ai-test");
-          await setAiConnectionVerified(true);
-          state.aiStatus = `${state.aiKeyHint || "API Key"}，连接成功`;
-        } catch (error) {
-          state.aiStatus = `连接失败：${error?.message || "未知错误"}`;
         }
         renderPanel();
       });
@@ -1293,7 +1255,6 @@
         button.disabled = anyTaskRunning();
       });
       panel.querySelector("[data-xrc-ai-save]").disabled = Boolean(state.loopPromise) || state.running;
-      panel.querySelector("[data-xrc-ai-test]").disabled = !state.aiKeySaved || Boolean(state.loopPromise) || state.running;
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
       const activePhrase = panel.querySelector(`[data-xrc-phrase-index="${state.phraseIndex}"]`);
       if (activePhrase && (highlightedPhraseIndex !== state.phraseIndex || !activePhrase.classList.contains("is-active"))) {
@@ -1340,7 +1301,7 @@
       });
       if (state.assistantMode === "mutual") {
         const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
-        panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `互关帮手 · 已完成 ${mutualCount}` : "互关帮手 · 待命";
+        panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `互关浇友 · 已完成 ${mutualCount}` : "互关浇友 · 待命";
       }
     }
     const active = anyTaskRunning();
@@ -1412,7 +1373,7 @@
     }
     if (state.replyMode === "ai" && !state.aiKeySaved) {
       state.status = "AI 模式需要先填写并保存 DeepSeek API Key";
-      state.aiStatus = "保存 Key 后即可开始；测试连接为可选";
+      state.aiStatus = "保存 Key 后即可开始";
       renderPanel();
       return;
     }
@@ -1439,9 +1400,7 @@
     state.replyIntervalSeconds = saved.replyIntervalSeconds;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.panelView = saved.panelView;
-    state.assistantMode = saved.running
-      ? saved.assistantMode
-      : isNotificationPath() ? "notifications" : saved.assistantMode;
+    state.assistantMode = saved.assistantMode;
     state.mutualMode = saved.mutualMode;
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
@@ -1463,7 +1422,7 @@
     }
     if (!saved.running) {
       state.status = state.assistantMode === "notifications"
-        ? "通知互动只处理最近 2 小时内的回复：先点赞，再回复；处理过的不重复。"
+        ? "通知回复只处理最近 2 小时内的回复：先点赞，再回复；处理过的不重复。"
         : "待命。默认使用 AI 模式，读取原帖后生成回复。";
     }
     renderPanel();

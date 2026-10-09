@@ -37,7 +37,7 @@
     onUpdate: null
   };
 
-  const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  const sleep = (ms) => root.XInteractionTimer?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
   const textOf = (node) => (node?.innerText || node?.textContent || node?.getAttribute?.("aria-label") || "").trim();
   const buttonLabel = (button) => (button?.getAttribute?.("aria-label") || button?.innerText || button?.textContent || "").trim();
 
@@ -63,27 +63,11 @@
     state.onUpdate?.(snapshot());
   }
 
-  async function waitForForeground() {
-    if (!document.hidden) return;
-    emit("页面切到后台，已暂停；返回这个标签页后继续");
-    await new Promise((resolve) => {
-      const resume = () => {
-        if (document.hidden) return;
-        document.removeEventListener("visibilitychange", resume);
-        resolve();
-      };
-      document.addEventListener("visibilitychange", resume);
-    });
-    emit("页面已回到前台，继续执行");
-  }
-
   async function sleepActive(ms) {
-    let remaining = ms;
-    while (remaining > 0 && !state.stopping) {
-      await waitForForeground();
-      const chunk = Math.min(remaining, 250);
+    const deadline = Date.now() + Math.max(0, Number(ms) || 0);
+    while (Date.now() < deadline && !state.stopping) {
+      const chunk = Math.min(1000, Math.max(0, deadline - Date.now()));
       await sleep(chunk);
-      remaining -= chunk;
       if (state.cooldownUntil) emit();
     }
   }
@@ -282,7 +266,6 @@
   async function waitUntil(check, timeoutMs) {
     const started = Date.now();
     while (!state.stopping && Date.now() - started < timeoutMs) {
-      await waitForForeground();
       const result = check();
       if (result) return result;
       await sleep(100);
@@ -398,7 +381,6 @@
     let stalled = 0;
 
     while (!state.stopping) {
-      await waitForForeground();
       const items = visibleRows(mode);
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;

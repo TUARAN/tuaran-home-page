@@ -11,6 +11,7 @@ export default function ArticleHeaderActions({
   text,
   url,
   children,
+  readerActions = null,
   actionsEnabled = true,
   className = '',
   ownerMeta,
@@ -28,6 +29,7 @@ export default function ArticleHeaderActions({
         {actionsEnabled ? <SharePageButton title={title} text={text} url={url} /> : null}
         {actionsEnabled && speechMarkdown ? <ReadAloudButton markdown={speechMarkdown} /> : null}
         <span data-article-read-aloud-slot="" className="inline-flex items-center empty:hidden" />
+        {actionsEnabled ? readerActions : null}
         <RssButton label="RSS" />
       </div>
       {showOwnerMenu ? (

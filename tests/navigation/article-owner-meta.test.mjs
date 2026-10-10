@@ -36,6 +36,14 @@ test('owner article records live inside the 站长 menu, not a separate header p
   assert.doesNotMatch(globalsSource, /\.owner-only-pill\s*\{/)
 })
 
+test('copy markdown stays in the public reader row', () => {
+  assert.match(headerActionsSource, /article-reader-actions[\s\S]*readerActions/)
+  assert.doesNotMatch(headerActionsSource, /article-owner-actions-tools">\{readerActions\}/)
+  for (const source of [articlePageSource, publishedArticleSource, researchPageSource]) {
+    assert.match(source, /readerActions=\{[\s\S]*<CopyMarkdownButton/)
+  }
+})
+
 test('every article page passes owner records into ArticleHeaderActions', () => {
   for (const source of [articlePageSource, publishedArticleSource, researchPageSource]) {
     assert.match(source, /<ArticleHeaderActions[\s\S]*ownerMeta=\{/)

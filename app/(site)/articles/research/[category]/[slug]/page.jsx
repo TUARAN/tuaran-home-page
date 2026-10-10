@@ -301,9 +301,9 @@ export default async function ResearchDetailPage({ params }) {
               model: entry.model,
             }}
             className="mt-2 sm:mt-0 sm:ml-auto lg:flex-nowrap"
+            readerActions={!isAShareCompanyList ? <CopyMarkdownButton markdown={markdownDoc} html={xArticleHtml} /> : null}
           >
             {!isAShareCompanyList ? <>
-              <CopyMarkdownButton markdown={markdownDoc} html={xArticleHtml} />
               <DistributeMarkdownButton
                   title={entry.title}
                   summary={entry.tldr || entry.summary || ''}

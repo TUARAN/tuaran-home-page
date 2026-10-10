@@ -14,7 +14,7 @@ import ArticleDetailHeader from '../../../../components/ArticleDetailHeader'
 import ArticleComments from '../../../../components/ArticleComments'
 import ContentPvBeacon from '../../../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../../../components/ArticleFooterCta'
-import ArticleEngagementPanel from '../../../../components/ArticleEngagementPanel'
+import ArticleEngagementPanel, { ArticleSupportCard } from '../../../../components/ArticleEngagementPanel'
 import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
 import ContentProofCard from '../../../../components/ContentProofCard'
 import CopyMarkdownButton from './CopyMarkdownButton'
@@ -341,28 +341,31 @@ export default async function ResearchDetailPage({ params }) {
 
       {showLifeTrafficTest && !isEncrypted ? <LifeTrafficTest /> : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <main className="min-w-0">
-          {isEncrypted ? (
-            <EncryptedArticle
-              payload={entry.encryptedPayload}
-              storageKey={`research-dec:${entry.category}:${entry.slug}`}
-            />
-          ) : isAShareCompanyList ? (
-            <AShareCompanyList
-              introHtml={renderMarkdown(companyListIntro)}
-              footerHtml={renderMarkdown(companyListFooter)}
-              initialPage={initialCompanyPage}
-            />
-          ) : (
-            <RanbiPaywall resourceKey={articleKey} unitLabel="文章">
-              <ResearchBody variants={renderedVariants} />
-            </RanbiPaywall>
-          )}
-
-        </main>
-        <ArticleEngagementPanel articleKey={articleKey} related={related} />
-      </div>
+      {isEncrypted ? (
+        <EncryptedArticle
+          payload={entry.encryptedPayload}
+          storageKey={`research-dec:${entry.category}:${entry.slug}`}
+        />
+      ) : isAShareCompanyList ? (
+        <AShareCompanyList
+          introHtml={renderMarkdown(companyListIntro)}
+          footerHtml={renderMarkdown(companyListFooter)}
+          initialPage={initialCompanyPage}
+        />
+      ) : (
+        <RanbiPaywall resourceKey={articleKey} unitLabel="文章">
+          <ResearchBody
+            variants={renderedVariants}
+            rail={<ArticleSupportCard articleKey={articleKey} />}
+          />
+        </RanbiPaywall>
+      )}
+      {isEncrypted || isAShareCompanyList ? (
+        <div className="mt-8 max-w-sm">
+          <ArticleSupportCard articleKey={articleKey} variant="band" />
+        </div>
+      ) : null}
+      <ArticleEngagementPanel articleKey={articleKey} related={related} />
 
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={articleKey} />

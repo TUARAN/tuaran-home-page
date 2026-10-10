@@ -9,8 +9,8 @@ import ContentProofCard from '../../components/ContentProofCard'
 import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
-import ArticleEngagementPanel from '../../components/ArticleEngagementPanel'
-import ArticleToc from '../../components/ArticleToc'
+import ArticleEngagementPanel, { ArticleSupportCard } from '../../components/ArticleEngagementPanel'
+import ArticleToc, { ArticleReadingLayout } from '../../components/ArticleToc'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { getPublishedArticlePostBySlug } from '../../../../lib/articlePosts'
@@ -361,16 +361,15 @@ export default async function ArticleDetailPage({ params }) {
         tags={article.tags || []}
       />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-        <main className="min-w-0">
+      <ArticleReadingLayout
+        toc={<ArticleToc items={tocItems} title={enableDiaryToc ? '目录' : '文章目录'} />}
+        support={<ArticleSupportCard articleKey={`article:${article.slug}`} />}
+      >
       {enableDiaryToc ? (
         <>
-          <div className="min-w-0 flex flex-col gap-6 md:flex-row">
-            <ArticleToc items={tocItems} title="目录" />
-
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               {article.cover ? (
-                <div className="mb-8 max-w-3xl mx-auto">
+                <div className="mb-8">
                   <Image
                     src={article.cover}
                     alt={`${article.title} 封面`}
@@ -437,15 +436,12 @@ export default async function ArticleDetailPage({ params }) {
                 })}
               </article>
             </div>
-          </div>
         </>
       ) : (
         <>
-          <div className="min-w-0 flex flex-col gap-6 md:flex-row">
-            <ArticleToc items={tocItems} />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
           {article.cover ? (
-            <div className="mb-8 max-w-3xl mx-auto">
+            <div className="mb-8">
               <Image
                 src={article.cover}
                 alt={`${article.title} 封面`}
@@ -513,12 +509,10 @@ export default async function ArticleDetailPage({ params }) {
             })}
           </article>
             </div>
-          </div>
         </>
       )}
-        </main>
-        <ArticleEngagementPanel articleKey={`article:${article.slug}`} />
-      </div>
+      </ArticleReadingLayout>
+      <ArticleEngagementPanel articleKey={`article:${article.slug}`} />
 
       <div id="comments" className="scroll-mt-24">
         <ArticleComments articleKey={`article:${article.slug}`} />

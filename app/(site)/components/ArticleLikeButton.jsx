@@ -165,7 +165,7 @@ export default function ArticleLikeButton({ articleKey, size = 'md' }) {
   const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
 
   return (
-    <div id="article-like" data-notification-ready={notificationsLoaded ? 'true' : 'false'} className="relative inline-flex scroll-mt-24 flex-col items-stretch gap-1">
+    <div id="article-like" data-notification-ready={notificationsLoaded ? 'true' : 'false'} className="relative flex w-full scroll-mt-24 flex-col items-stretch gap-1">
       {unreadLikes.length ? <span className="discussion-notification-dot" aria-label={`${unreadLikes.length} 条未读点赞`} /> : null}
       <button
         type="button"

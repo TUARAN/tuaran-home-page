@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import ZoomableResearchMedia from '../../../../components/ZoomableResearchMedia'
-import ArticleToc from '../../../../components/ArticleToc'
+import ArticleToc, { ArticleReadingLayout } from '../../../../components/ArticleToc'
 import ReadAloudButton from '../../../../components/ReadAloudButton'
 
 const QUERY_KEY = 'v'
@@ -14,7 +14,7 @@ function dispatchVariant(id) {
   window.dispatchEvent(new CustomEvent(VARIANT_EVENT, { detail: { id } }))
 }
 
-export default function ResearchBody({ variants }) {
+export default function ResearchBody({ variants, rail = null }) {
   const list = Array.isArray(variants) && variants.length > 0 ? variants : []
   const [activeId, setActiveId] = useState(list[0]?.id)
   const active = list.find((v) => v.id === activeId) || list[0]
@@ -50,10 +50,8 @@ export default function ResearchBody({ variants }) {
   if (!active) return null
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start">
-      <ArticleToc items={active.toc} />
-
-      <div className="flex-1 min-w-0">
+    <ArticleReadingLayout toc={<ArticleToc items={active.toc} />} support={rail}>
+      <div className="min-w-0">
         {list.length > 1 ? (
           <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#666] dark:text-gray-400">
             <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[#999] dark:text-gray-500">
@@ -85,6 +83,6 @@ export default function ResearchBody({ variants }) {
         <ReadAloudButton markdown={active.content} portal />
         <ZoomableResearchMedia contentKey={active.id} html={active.html} />
       </div>
-    </div>
+    </ArticleReadingLayout>
   )
 }

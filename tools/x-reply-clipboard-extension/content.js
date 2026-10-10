@@ -23,6 +23,37 @@
   const MIN_ROUND_INTERVAL_SECONDS = 1;
   const SCHEDULE_PACE_KEY = "xrcSchedulePace";
   const POSTER_PACE_KEY = "xrcPosterSchedulePace";
+  const PACE_SETTINGS_KEY = "xrcPaceSettings";
+  const DEFAULT_REPLY_PROMPT = [
+    "你是 X（Twitter）中文互动回复助手。",
+    "请根据原帖写一条自然、有趣、友善、像真人写的回复。",
+    "要求：15 到 50 个中文字符；针对原帖中的具体内容；不要复述原文；不要使用引号；最多使用 1 个 Emoji；不要营销；不要编造事实；不要作出无法确认的承诺。",
+    "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
+  ].join("\n");
+  const DEFAULT_POST_PROMPT = [
+    "你是一个熟悉中文 X（Twitter）语境的短帖作者。",
+    "根据用户当前时间线和趋势区提供的文字，选择一个最值得讨论的话题，写一条原创纯文字推文。",
+    "要求：80 到 220 个中文字符；开头要有能让人停下来的观点或问题；有具体判断、有讨论空间，但不要捏造新闻、数据或当事人表态；不要照抄素材；不要营销；不要链接、@账号或话题标签；最多 1 个 Emoji。",
+    "排成 3 到 5 个短行，每个短行之间空一行。只输出推文正文，不要解释，也不要添加标题或“推文：”前缀。"
+  ].join("\n");
+  const REPLY_PACE_LIMITS = {
+    minReplyDelaySeconds: [1, 180],
+    maxReplyDelaySeconds: [1, 180],
+    minRepliesPerRound: [1, 80],
+    maxRepliesPerRound: [1, 80],
+    minRoundsPerRun: [1, 12],
+    maxRoundsPerRun: [1, 12],
+    minCycleDelayMinutes: [1, 1440],
+    maxCycleDelayMinutes: [1, 1440],
+    roundIntervalSeconds: [1, 180]
+  };
+  const REPLY_PACE_PAIRS = [
+    ["minReplyDelaySeconds", "maxReplyDelaySeconds", "每条间隔（秒）"],
+    ["minRepliesPerRound", "maxRepliesPerRound", "每轮条数"],
+    ["minRoundsPerRun", "maxRoundsPerRun", "每次轮数"],
+    ["minCycleDelayMinutes", "maxCycleDelayMinutes", "执行后休息（分钟）"]
+  ];
+  const POST_PACE_LIMITS = { minMinutes: [1, 240], maxMinutes: [1, 240] };
   const PANEL_PLACEMENT_KEY = "xrcPanelPlacement";
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 5000;
@@ -33,7 +64,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.11";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.16";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -47,20 +78,27 @@
     elapsedMs: 0,
     cycleCount: 0,
     nextCycleAt: 0,
+    nextRoundAt: 0,
     reconnectAt: 0,
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
+    replyPaceBaseline: "",
     posterPace: postApi?.DEFAULT_POST_PACE || "medium",
+    posterPaceBaseline: "",
     runPlan: null,
     nextReplyDelaySeconds: 0,
+    waitUntil: 0,
     riskPaused: false,
     panelView: "normal",
     panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
     replyMode: "ai",
+    aiKey: "",
     aiKeySaved: false,
     aiKeyHint: "",
+    replyPrompt: "",
+    postPrompt: "",
     aiStatus: "尚未配置 DeepSeek API Key",
     pendingReply: "",
     pendingTweetId: "",
@@ -80,7 +118,8 @@
   const skippedIds = new Set();
   let panelDismissed = false;
   let configOpen = false;
-  let configListenerBound = false;
+  let riskRoundRequested = false;
+  let riskRoundAdvancing = false;
   let highlightedPhraseIndex = null;
 
   const sleep = (ms) => timerApi?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -209,6 +248,7 @@
   }
 
   async function selectSchedulePace(pace) {
+    if (state.running || state.loopPromise) return;
     applySchedulePace(pace, { replaceIdlePlan: true });
     writeSaved({ running: state.running, total: state.total });
     renderPanel();
@@ -302,8 +342,11 @@
         await chrome.storage.local.set({ xrcAiSettings: { ...settings, apiKey: "" } });
       }
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
+      state.aiKey = apiKey;
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
+      state.replyPrompt = String(settings.replyPrompt || "").trim();
+      state.postPrompt = String(settings.postPrompt || "").trim();
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -339,6 +382,192 @@
     const profile = postApi?.postScheduleProfile?.(pace) || { id: pace || "medium" };
     state.posterPace = profile.id;
     postApi?.setSchedulePace?.(profile.id);
+  }
+
+  function applyStoredReplyPaces(replyPaces) {
+    if (!replyPaces || typeof replyPaces !== "object") return;
+    for (const profile of loopApi.SCHEDULE_PROFILES) {
+      const custom = replyPaces[profile.id];
+      if (!custom || typeof custom !== "object") continue;
+      for (const [field, limits] of Object.entries(REPLY_PACE_LIMITS)) {
+        const number = Math.round(Number(custom[field]));
+        if (Number.isInteger(number) && number >= limits[0] && number <= limits[1]) profile[field] = number;
+      }
+    }
+  }
+
+  function applyStoredPostPaces(postPaces) {
+    if (!postPaces || typeof postPaces !== "object" || !postApi?.POST_SCHEDULE_PROFILES) return;
+    for (const profile of postApi.POST_SCHEDULE_PROFILES) {
+      const custom = postPaces[profile.id];
+      if (!custom || typeof custom !== "object") continue;
+      for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
+        const number = Math.round(Number(custom[field]));
+        if (Number.isInteger(number) && number >= limits[0] && number <= limits[1]) profile[field] = number;
+      }
+    }
+  }
+
+  async function loadPaceSettings() {
+    if (!globalThis.chrome?.storage?.local) return;
+    try {
+      const stored = await chrome.storage.local.get(PACE_SETTINGS_KEY);
+      const value = stored?.[PACE_SETTINGS_KEY] || {};
+      applyStoredReplyPaces(value.reply);
+      applyStoredPostPaces(value.post);
+      applySchedulePace(state.schedulePace);
+      applyPosterPace(state.posterPace);
+    } catch (error) {
+      // Keep the built-in pace definitions.
+    }
+  }
+
+  function readPaceNumber(input, limits) {
+    const number = Math.round(Number(input?.value));
+    if (!Number.isInteger(number) || number < limits[0] || number > limits[1]) return null;
+    return number;
+  }
+
+  function readReplyPaceForm(panel) {
+    const value = {};
+    for (const profile of loopApi.SCHEDULE_PROFILES) {
+      const next = {};
+      for (const [field, limits] of Object.entries(REPLY_PACE_LIMITS)) {
+        const input = panel.querySelector(`[data-xrc-reply-pace-input][data-pace="${profile.id}"][data-field="${field}"]`);
+        const number = readPaceNumber(input, limits);
+        if (number === null) return { error: `${profile.label}的数字需要在 ${limits[0]} 到 ${limits[1]} 之间` };
+        next[field] = number;
+      }
+      for (const [minField, maxField, label] of REPLY_PACE_PAIRS) {
+        if (next[minField] > next[maxField]) return { error: `${profile.label}的${label}，左边不能大于右边` };
+      }
+      value[profile.id] = next;
+    }
+    return { value };
+  }
+
+  function readPostPaceForm(panel) {
+    const profiles = postApi?.POST_SCHEDULE_PROFILES || [];
+    const value = {};
+    for (const profile of profiles) {
+      const next = {};
+      for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
+        const input = panel.querySelector(`[data-xrc-post-pace-input][data-pace="${profile.id}"][data-field="${field}"]`);
+        const number = readPaceNumber(input, limits);
+        if (number === null) return { error: `发推「${profile.label}」的分钟数需要在 ${limits[0]} 到 ${limits[1]} 之间` };
+        next[field] = number;
+      }
+      if (next.minMinutes > next.maxMinutes) return { error: `发推「${profile.label}」的最短间隔不能大于最长间隔` };
+      value[profile.id] = next;
+    }
+    return { value };
+  }
+
+  function replyPaceEditorHtml() {
+    return loopApi.SCHEDULE_PROFILES.map((profile) => `
+      <fieldset class="xrc-pace-set">
+        <legend>${profile.label}</legend>
+        ${REPLY_PACE_PAIRS.map(([minField, maxField, label]) => `
+          <label class="xrc-field">
+            <span>${label}</span>
+            <span class="xrc-pair">
+              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${minField}" value="${profile[minField]}" min="${REPLY_PACE_LIMITS[minField][0]}" max="${REPLY_PACE_LIMITS[minField][1]}">
+              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${maxField}" value="${profile[maxField]}" min="${REPLY_PACE_LIMITS[maxField][0]}" max="${REPLY_PACE_LIMITS[maxField][1]}">
+            </span>
+          </label>
+        `).join("")}
+        <label class="xrc-field">
+          <span>轮间停顿（秒）</span>
+          <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="roundIntervalSeconds" value="${profile.roundIntervalSeconds}" min="1" max="180">
+        </label>
+      </fieldset>
+    `).join("");
+  }
+
+  function postPaceEditorHtml() {
+    return (postApi?.POST_SCHEDULE_PROFILES || []).map((profile) => `
+      <label class="xrc-field">
+        <span>${profile.label}（分钟）</span>
+        <span class="xrc-pair">
+          <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="minMinutes" value="${profile.minMinutes}" min="1" max="240">
+          <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="maxMinutes" value="${profile.maxMinutes}" min="1" max="240">
+        </span>
+      </label>
+    `).join("");
+  }
+
+  async function saveConfigForm(panel) {
+    const status = panel.querySelector("[data-xrc-config-status]");
+    const key = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
+    const replyPrompt = String(panel.querySelector("[data-xrc-reply-prompt]")?.value || "").trim();
+    const postPrompt = String(panel.querySelector("[data-xrc-post-prompt]")?.value || "").trim();
+    if (key && !validDeepSeekApiKey(key)) {
+      status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
+      return;
+    }
+    if (!replyPrompt || !postPrompt) {
+      status.textContent = "提示词不能为空";
+      return;
+    }
+    if (replyPrompt.length > 2000 || postPrompt.length > 2000) {
+      status.textContent = "提示词请控制在 2000 字以内";
+      return;
+    }
+    const replyLocked = Boolean(state.running || state.loopPromise);
+    const postLocked = Boolean(state.poster?.running);
+    const replyPaces = replyLocked ? null : readReplyPaceForm(panel);
+    const postPaces = postLocked ? null : readPostPaceForm(panel);
+    if (replyPaces?.error) {
+      status.textContent = replyPaces.error;
+      return;
+    }
+    if (postPaces?.error) {
+      status.textContent = postPaces.error;
+      return;
+    }
+    if (!globalThis.chrome?.storage?.local) {
+      status.textContent = "当前环境无法保存扩展配置";
+      return;
+    }
+    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
+    const settings = stored?.xrcAiSettings || {};
+    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
+    const storedReplyPrompt = replyPrompt === DEFAULT_REPLY_PROMPT ? "" : replyPrompt;
+    const storedPostPrompt = postPrompt === DEFAULT_POST_PROMPT ? "" : postPrompt;
+    await chrome.storage.local.set({
+      xrcAiSettings: {
+        ...settings,
+        apiKey: key,
+        replyMode: state.replyMode,
+        replyPrompt: storedReplyPrompt,
+        postPrompt: storedPostPrompt
+      },
+      [PACE_SETTINGS_KEY]: {
+        ...paceSettings,
+        ...(replyPaces ? { reply: replyPaces.value } : {}),
+        ...(postPaces ? { post: postPaces.value } : {})
+      }
+    });
+    state.aiKey = key;
+    state.aiKeySaved = Boolean(key);
+    state.aiKeyHint = key ? `已保存 ····${key.slice(-4)}` : "";
+    state.aiStatus = key ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
+    state.replyPrompt = storedReplyPrompt;
+    state.postPrompt = storedPostPrompt;
+    if (replyPaces) {
+      applyStoredReplyPaces(replyPaces.value);
+      applySchedulePace(state.schedulePace, { replaceIdlePlan: true });
+    }
+    if (postPaces) {
+      applyStoredPostPaces(postPaces.value);
+      applyPosterPace(state.posterPace);
+    }
+    const locked = [
+      replyLocked ? "回复频率要等任务停下再改" : "",
+      postLocked ? "发推频率要等任务停下再改" : ""
+    ].filter(Boolean);
+    status.textContent = locked.length ? `已保存。${locked.join("；")}。` : "已保存";
+    renderPanel();
   }
 
   async function loadPosterPace() {
@@ -387,6 +616,7 @@
   }
 
   async function selectPosterPace(pace) {
+    if (state.poster?.running) return;
     applyPosterPace(pace);
     renderPanel();
     if (!globalThis.chrome?.storage?.local) return;
@@ -434,7 +664,18 @@
     const key = String(apiKey || "").trim();
     if (!validDeepSeekApiKey(key)) throw new Error("请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码");
     if (!globalThis.chrome?.storage?.local) throw new Error("当前环境无法保存扩展配置");
-    await chrome.storage.local.set({ xrcAiSettings: { apiKey: key, replyMode: state.replyMode } });
+    const stored = await chrome.storage.local.get("xrcAiSettings");
+    const settings = stored?.xrcAiSettings || {};
+    await chrome.storage.local.set({
+      xrcAiSettings: {
+        ...settings,
+        apiKey: key,
+        replyMode: state.replyMode,
+        replyPrompt: state.replyPrompt,
+        postPrompt: state.postPrompt
+      }
+    });
+    state.aiKey = key;
     state.aiKeySaved = true;
     state.aiKeyHint = `已保存 ····${key.slice(-4)}`;
     state.aiStatus = `${state.aiKeyHint}，可以直接开始`;
@@ -477,6 +718,7 @@
       startedAt: null,
       cycleCount: 0,
       nextCycleAt: 0,
+      nextRoundAt: 0,
       reconnectAt: 0,
       phraseIndex: null,
       processedIds: [],
@@ -509,6 +751,7 @@
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
+        nextRoundAt: Math.max(0, Number(parsed.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         schedulePace,
@@ -541,6 +784,7 @@
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
+        nextRoundAt: Math.max(0, Number(value.nextRoundAt ?? state.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
@@ -570,6 +814,7 @@
         startedAt: null,
         cycleCount: 0,
         nextCycleAt: 0,
+        nextRoundAt: 0,
         reconnectAt: 0,
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
@@ -609,6 +854,36 @@
     return hours > 0 ? `${hours}:${pair(minutes)}:${pair(seconds)}` : `${pair(minutes)}:${pair(seconds)}`;
   }
 
+  function formatClock(milliseconds) {
+    const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pair = (value) => String(value).padStart(2, "0");
+    return hours > 0 ? `${hours}:${pair(minutes)}:${pair(seconds)}` : `${pair(minutes)}:${pair(seconds)}`;
+  }
+
+  function replyWaitCopy() {
+    const now = Date.now();
+    if (state.reconnectAt > now) return `${formatClock(state.reconnectAt - now)} 后重连`;
+    if (state.nextRoundAt > now) return `本轮已结束，下一轮 ${formatClock(state.nextRoundAt - now)} 后开始`;
+    if (state.nextCycleAt > now) {
+      const clock = formatClock(state.nextCycleAt - now);
+      return /本轮提前结束/.test(state.status || "") ? `本轮已结束，下一轮 ${clock} 后开始` : `下一次 ${clock} 后开始`;
+    }
+    if (state.waitUntil > now) {
+      const clock = formatClock(state.waitUntil - now);
+      return /轮已完成/.test(state.status || "") ? `下一轮 ${clock} 后开始` : `下一条 ${clock} 后继续`;
+    }
+    return "";
+  }
+
+  function posterWaitCopy(poster) {
+    const remaining = Number(poster?.nextPostAt || 0) - Date.now();
+    if (poster?.running && remaining > 0) return `下一条 ${formatClock(remaining)} 后发布`;
+    return "";
+  }
+
   function formatCountdown(milliseconds) {
     const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
     const hours = Math.floor(totalSeconds / 3600);
@@ -626,6 +901,7 @@
     state.completedRounds = 0;
     state.total = 0;
     state.nextCycleAt = 0;
+    state.nextRoundAt = 0;
     state.reconnectAt = 0;
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
     state.nextReplyDelaySeconds = 0;
@@ -634,12 +910,17 @@
     skippedIds.clear();
   }
 
+  function riskRoundPending() {
+    return riskRoundRequested && !riskRoundAdvancing;
+  }
+
   async function waitForDeadline(deadline, statusForRemaining) {
-    while (state.running && !state.stopping && Date.now() < deadline) {
+    while (state.running && !state.stopping && !riskRoundPending() && Date.now() < deadline) {
       state.status = statusForRemaining(deadline - Date.now());
       renderPanel();
       await sleep(Math.min(5000, Math.max(1000, deadline - Date.now())));
     }
+    if (riskRoundPending()) return false;
     return state.running && !state.stopping;
   }
 
@@ -675,12 +956,17 @@
 
   async function waitRateLimit(seconds, statusForRemaining) {
     const deadline = Date.now() + (Math.max(0, Number(seconds) || 0) * 1000);
-    while (state.running && !state.stopping) {
-      const remaining = Math.ceil((deadline - Date.now()) / 1000);
-      if (remaining <= 0) break;
-      state.status = statusForRemaining(remaining);
-      renderPanel();
-      await sleepActive(Math.min(1000, Math.max(0, deadline - Date.now())));
+    state.waitUntil = deadline;
+    try {
+      while (state.running && !state.stopping && !riskRoundPending()) {
+        const remaining = Math.ceil((deadline - Date.now()) / 1000);
+        if (remaining <= 0) break;
+        state.status = statusForRemaining(remaining);
+        renderPanel();
+        await sleepActive(Math.min(1000, Math.max(0, deadline - Date.now())));
+      }
+    } finally {
+      state.waitUntil = 0;
     }
   }
 
@@ -690,7 +976,7 @@
 
   async function sleepActive(ms) {
     const deadline = Date.now() + Math.max(0, Number(ms) || 0);
-    while (Date.now() < deadline && !state.stopping) {
+    while (Date.now() < deadline && !state.stopping && !riskRoundPending()) {
       const chunk = Math.min(1000, Math.max(0, deadline - Date.now()));
       await sleep(chunk);
     }
@@ -699,7 +985,7 @@
   async function waitUntil(predicate, timeout) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-      if (state.stopping) return false;
+      if (state.stopping || riskRoundPending()) return false;
       if (predicate()) return true;
       await sleep(150);
     }
@@ -883,27 +1169,47 @@
       .some((node) => DUPLICATE_REPLY_RE.test(textOf(node)));
   }
 
-  function applyRiskStop(reason) {
+  function applyRiskStop() {
     if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return;
-    state.riskPaused = true;
-    state.running = false;
-    state.stopping = true;
-    state.pendingReply = "";
-    state.pendingTweetId = "";
-    state.status = reason || "评论过于频繁，时间线和通知回复已停止";
-    clearSaved();
-    setRuntimeTaskActive(state.assistantMode, false);
+    if (!state.running && !state.loopPromise) return;
+    if (riskRoundAdvancing || state.nextRoundAt > Date.now() || state.nextCycleAt > Date.now()) return;
+    riskRoundRequested = true;
+    state.riskPaused = false;
+    state.stopping = false;
+    state.status = "X 提示操作过密，本轮提前结束";
     renderPanel();
   }
 
-  async function stopAllTasksForRisk() {
-    const reason = "评论过于频繁，时间线和通知回复已停止；不会自动重试";
-    applyRiskStop(reason);
-    try {
-      await sendExtensionMessage({ type: "xrc-risk-stop-all", reason });
-    } catch (error) {
-      // The current reply task is already stopped even if the other reply tab cannot be reached.
+  async function advanceRoundAfterRisk() {
+    if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return "ignored";
+    if (riskRoundAdvancing) return "cooldown";
+    riskRoundRequested = true;
+    riskRoundAdvancing = true;
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    const summary = "X 提示操作过密，本轮提前结束";
+    if (state.assistantMode === "notifications") {
+      return finishCycleAndScheduleNext(summary);
     }
+    const plan = ensureRunPlan();
+    state.completedRounds = Math.min(plan.rounds, state.completedRounds + 1);
+    state.pageCount = 0;
+    if (state.completedRounds >= plan.rounds) {
+      return finishCycleAndScheduleNext(`${summary}；本次计划已结束`);
+    }
+    state.nextRoundAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
+    writeSaved({ running: true, total: state.total });
+    const ready = await waitForDeadline(
+      state.nextRoundAt,
+      (remaining) => `${summary}；${formatCountdown(remaining)}后开始第 ${state.completedRounds + 1} 轮`
+    );
+    if (!ready) return "stopped";
+    state.nextRoundAt = 0;
+    riskRoundRequested = false;
+    riskRoundAdvancing = false;
+    writeSaved({ running: true, total: state.total });
+    await reloadAndResume(`第 ${state.completedRounds} 轮已结束，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
+    return "reload";
   }
 
   function requestDraftFill(text, { forceDraft = false } = {}) {
@@ -1090,22 +1396,34 @@
         state.nextCycleAt,
         (remaining) => `第 ${state.cycleCount} 次已完成；${formatCountdown(remaining)}后自动开始第 ${state.cycleCount + 1} 次`
       );
-      if (!readyForNextCycle) return "stopped";
+      if (!readyForNextCycle) return riskRoundPending() ? advanceRoundAfterRisk() : "stopped";
       resetCycleProgress();
       writeSaved({ running: true, total: 0 });
+    }
+    if (state.nextRoundAt > Date.now()) {
+      const readyForNextRound = await waitForDeadline(
+        state.nextRoundAt,
+        (remaining) => `本轮已结束；${formatCountdown(remaining)}后开始第 ${state.completedRounds + 1} 轮`
+      );
+      if (!readyForNextRound) return riskRoundPending() ? advanceRoundAfterRisk() : "stopped";
+      state.nextRoundAt = 0;
+      riskRoundRequested = false;
+      riskRoundAdvancing = false;
+      writeSaved({ running: true, total: state.total });
     }
     if (state.reconnectAt > 0) {
       const readyToReconnect = await waitForDeadline(
         state.reconnectAt,
         (remaining) => `页面连接暂时不可用；${formatCountdown(remaining)}后自动重连`
       );
-      if (!readyToReconnect) return "stopped";
+      if (!readyToReconnect) return riskRoundPending() ? advanceRoundAfterRisk() : "stopped";
       state.reconnectAt = 0;
       writeSaved({ running: true, total: state.total });
     }
     scrollTimelineToTop();
     if (state.assistantMode !== "notifications") ensureRunPlan();
     await sleepActive(resume ? RESUME_DELAY_MS : 400);
+    if (riskRoundRequested) return advanceRoundAfterRisk();
     if (state.stopping) return "stopped";
 
     const ready = await waitUntil(
@@ -1125,6 +1443,7 @@
 
     let stalled = 0;
     while (state.running && !state.stopping) {
+      if (riskRoundRequested) return advanceRoundAfterRisk();
       if (state.assistantMode !== "notifications") {
         const plan = ensureRunPlan();
         const batchSize = currentRoundTarget();
@@ -1151,6 +1470,7 @@
             state.roundIntervalSeconds,
             (remaining) => `第 ${state.completedRounds} 轮已完成，${remaining} 秒后开始第 ${state.completedRounds + 1} 轮`
           );
+          if (riskRoundRequested) return advanceRoundAfterRisk();
           if (state.stopping || !state.running) return "stopped";
           await reloadAndResume(`第 ${state.completedRounds} 轮已完成，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
           return "reload";
@@ -1242,8 +1562,7 @@
         break;
       }
       if (result === "risk-blocked") {
-        await stopAllTasksForRisk();
-        return "stopped";
+        return advanceRoundAfterRisk();
       }
       if (result === "composer-already-open") {
         return reconnectAndResume(failureLabel(result));
@@ -1314,6 +1633,7 @@
             state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace);
             writeSaved({ running: true, total: state.total });
             await waitRateLimit(state.nextReplyDelaySeconds, (remaining) => `回复成功，本次随机等待 ${state.nextReplyDelaySeconds} 秒；还剩 ${remaining} 秒`);
+            if (riskRoundRequested) return advanceRoundAfterRisk();
             if (state.stopping || !state.running) return "stopped";
           }
           await reloadAndResume("回复已确认；X 未关闭弹窗，刷新后自动继续，避免重复发送");
@@ -1341,12 +1661,15 @@
   function setRunningButton(button) {
     if (!button) return;
     const active = Boolean(state.loopPromise) || state.running;
+    const paceChanged = !active && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
     button.dataset.running = active ? "true" : "false";
     button.textContent = state.stopping
       ? "正在停止"
       : active
         ? "停止"
-        : state.assistantMode === "notifications" ? "开始通知回复" : "开始时间线回复";
+        : paceChanged
+          ? "重启任务"
+          : state.assistantMode === "notifications" ? "开始通知回复" : "开始时间线回复";
   }
 
   function updateMutualState(next) {
@@ -1390,6 +1713,7 @@
       return;
     }
     registerCurrentTaskTab("poster");
+    state.posterPaceBaseline = state.posterPace;
     postApi.start(updatePosterState);
   }
 
@@ -1591,17 +1915,45 @@
           </div>
         </div>
         <div class="xrc-config" data-xrc-config hidden>
-          <div class="xrc-config-title">设置</div>
-          <label class="xrc-config-row">
-            <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
-            <input type="checkbox" data-xrc-embed>
-          </label>
-          <label class="xrc-config-key">
-            <span><strong>DeepSeek Key</strong><small data-xrc-config-key-hint>尚未配置</small></span>
-            <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
-            <button type="button" data-xrc-config-key-save>保存</button>
-          </label>
-          <p class="xrc-config-note">只把当前原帖文字发给 DeepSeek，不会发送 X 登录 Cookie。</p>
+          <div class="xrc-docs-head">
+            <div><small>SETTINGS</small><strong>设置</strong><span>密钥、提示词和频率都在这里改</span></div>
+            <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
+          </div>
+          <div class="xrc-docs-content">
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
+              <label class="xrc-config-row">
+                <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
+                <input type="checkbox" data-xrc-embed>
+              </label>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>02</b><span><strong>DeepSeek</strong><small data-xrc-config-key-hint>尚未配置</small></span></div>
+              <label class="xrc-field">
+                <span>API Key</span>
+                <span class="xrc-key-line">
+                  <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
+                  <button type="button" data-xrc-config-key-reveal>显示</button>
+                </span>
+              </label>
+              <p class="xrc-config-note">保存后仍可修改。只把当前原帖或时间线文字发给 DeepSeek，不会发送 X 登录 Cookie。</p>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>决定回复和发推写什么</small></span></div>
+              <label class="xrc-field"><span>回复提示词</span><textarea data-xrc-reply-prompt></textarea></label>
+              <label class="xrc-field"><span>发推提示词</span><textarea data-xrc-post-prompt></textarea></label>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>04</b><span><strong>回复频率</strong><small>慢、中、快、超快各自的数字</small></span></div>
+              <div class="xrc-pace-editor">${replyPaceEditorHtml()}</div>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>05</b><span><strong>发推频率</strong><small>每一挡的随机间隔，单位是分钟</small></span></div>
+              <div class="xrc-pace-editor">${postPaceEditorHtml()}</div>
+            </section>
+            <button class="xrc-config-save" type="button" data-xrc-config-save>保存</button>
+            <p class="xrc-config-note" data-xrc-config-status></p>
+          </div>
         </div>
         <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
           <div class="xrc-docs-head">
@@ -1636,8 +1988,26 @@
               </ol>
             </section>
             <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>03</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
+              <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
+              <ul>
+                <li><b>发布规则：</b>推文浇给从当前时间线与趋势区提炼话题，不照抄原帖。每条 3～5 个短段，每段之间自动空一行。确认发送成功后，按当前挡位随机等待再发下一条。文字写进 X 的发帖框，面板不重复显示正文。</li>
+                <li><b>发什么：</b>设置里的回复提示词和发推提示词决定生成内容。保存后，下一条按新提示词生成。</li>
+                <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。时间线或通知回复遇到操作过密提示时，当前轮按结束处理，并进入下一轮倒计时。</li>
+                <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
+                <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
+                <li><b>改挡位：</b>工作区滑块只选择慢、中、快、超快。每一挡代表什么，在设置里改数字。正在执行时不能改，停下后再保存。</li>
+                <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
+                <li>与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
+              </ul>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.16</b><span><strong>倒计时写在按钮下面</strong><small>操作过密时不再显示正在停止。按钮下方直接显示下一轮还要多久。</small></span></article>
+                <article><b>v3.6.15</b><span><strong>过密提示结束当前轮</strong><small>时间线和通知回复遇到操作过密提示时，不再停掉任务。当前轮结束，按休息时间倒计时后开始下一轮。</small></span></article>
+                <article><b>v3.6.14</b><span><strong>倒计时和设置收口</strong><small>轮次或发推等待会显示剩余时间。正文和规则说明移出工作区；提示词、密钥和慢中快超快的数字改在设置里。</small></span></article>
+                <article><b>v3.6.13</b><span><strong>四个功能各开一个窗口</strong><small>在同一个窗口里切换功能，会把正在跑的页签变成后台页，Chrome 会冻住它。现在每个功能单独开窗口，原来的任务继续跑。</small></span></article>
+                <article><b>v3.6.12</b><span><strong>运行中锁住频率</strong><small>时间线、通知回复和推文浇给在执行时不能滑动频率。暂停后可以改，改完按钮变成重启任务。</small></span></article>
                 <article><b>v3.6.11</b><span><strong>收起回复说明卡</strong><small>计划说明和当前回复预览不再占一块。轮次进度保留，只有发送失败或被限制时才出现一行提示。</small></span></article>
                 <article><b>v3.6.10</b><span><strong>开始按钮合并密钥</strong><small>没保存 Key 时，在开始按钮里填写后直接启动。保存后只留开始按钮，改 Key 放到右上角设置。</small></span></article>
                 <article><b>v3.6.9</b><span><strong>评论过密时停止回复</strong><small>页面出现自动化或发送失败提示时，停止时间线回复和通知回复，不再自动重试。</small></span></article>
@@ -1662,7 +2032,7 @@
           </div>
         </section>
         <div class="xrc-workspace-nav">
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立 X 页签，切换不会停止其他任务">
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
             <button type="button" role="tab" data-xrc-assistant="timeline"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"></path></svg><span>时间线</span></button>
             <button type="button" role="tab" data-xrc-assistant="notifications"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.4a3.4 3.4 0 0 0-3.4 3.4v2.1L3.2 10.3h9.6L11.4 7.9V5.8A3.4 3.4 0 0 0 8 2.4z"></path><path d="M6.7 11.5a1.3 1.3 0 0 0 2.6 0"></path></svg><span>通知回复</span></button>
             <button type="button" role="tab" data-xrc-assistant="mutual"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.2" r="1.6"></circle><path d="M3.1 11.4c.4-1.5 1.5-2.3 2.9-2.3s2.5.8 2.9 2.3"></path><circle cx="10.7" cy="5.7" r="1.3"></circle><path d="M10.3 9.1c1 .2 1.8.9 2.2 2"></path></svg><span>互关浇友</span></button>
@@ -1685,13 +2055,13 @@
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
               <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页</small></span></div>
               <button type="button" data-xrc-mutual-action="followBack">开始回关</button>
-              <p>只点 Follow back。与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</p>
+              <p>只点 Follow back。</p>
               <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
               <div><b>03</b><span><strong>关注候选</strong><small>其他作者的 Followers 页 · 不自动跳转</small></span></div>
               <button type="button" data-xrc-mutual-action="targetFollow">开始关注</button>
-              <p>只点普通 Follow。与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</p>
+              <p>只点普通 Follow。</p>
               <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
             </section>
           </div>
@@ -1700,33 +2070,30 @@
         </div>
         <div class="xrc-body xrc-post-body">
           <button class="xrc-button xrc-primary-action" type="button" data-xrc-post-toggle>开始定时发推</button>
-          <div class="xrc-status" role="status" data-xrc-post-status>待命。DeepSeek 会根据当前时间线生成纯文字推文。</div>
+          <p class="xrc-wait" data-xrc-post-wait hidden></p>
+          <div class="xrc-status" role="status" data-xrc-post-status hidden></div>
           <section class="xrc-post-card" aria-label="定时发推进度">
-            <div class="xrc-post-card-head"><span><small>推文浇给</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>立即生成</b></div>
-            <div class="xrc-post-meta"><span><small>随机间隔</small><strong data-xrc-post-interval>25～35 分钟</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
+            <div class="xrc-post-card-head"><span><small>推文浇给</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
+            <div class="xrc-post-meta"><span><small>下一次</small><strong data-xrc-post-interval>马上</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
           </section>
           <section class="xrc-level-card xrc-speed-section" aria-label="发推频率">
-            <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-post-pace-title>当前挡位：中</strong></div></div>
+            <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率</span><strong data-xrc-post-pace-title>中</strong></div></div>
             <label class="xrc-pace">
               <span class="xrc-pace-labels">
                 ${(postApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<span data-xrc-post-pace-label="${item.id}">${item.label}</span>`).join("")}
               </span>
               <input type="range" min="0" max="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" step="1" value="${postApi?.postPaceIndex?.(postApi.DEFAULT_POST_PACE) || 0}" data-xrc-post-pace aria-label="发推频率挡位" aria-valuemin="0" aria-valuemax="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" aria-valuetext="中">
             </label>
-            <p class="xrc-schedule-note" data-xrc-post-pace-note>第一条立即发送。之后按这个挡位随机等待，已经开始的等待不会改写。</p>
+            <p class="xrc-schedule-note" data-xrc-post-pace-note hidden></p>
           </section>
-          <div class="xrc-post-preview"><span>当前内容</span><p data-xrc-post-preview>启动后显示 DeepSeek 生成的下一条纯文字推文</p></div>
-          <details class="xrc-post-notes">
-            <summary>发布规则</summary>
-            <ul><li>从当前时间线与趋势区提炼话题，不照抄原帖。</li><li>每条 3～5 个短段，每段之间自动空一行。</li><li>确认发送成功后，按当前挡位随机等待再发下一条。默认「中」是 25～35 分钟。</li><li>切换浏览器页签后继续运行；关闭或休眠当前 X 标签页会停止。</li></ul>
-          </details>
-          <div class="xrc-footer"><span>纯文字发布 · 不上传图片</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
+          <div class="xrc-footer"><span></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-reply-body">
           <div class="xrc-start" data-xrc-start data-needs-key="true">
             <input class="xrc-start-key" type="text" name="xrc-deepseek-reply-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 DeepSeek API Key" data-xrc-secret-input data-xrc-ai-key>
             <button class="xrc-button xrc-primary-action" type="button" data-xrc-toggle>开始时间线回复</button>
           </div>
+          <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden></div>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
@@ -1748,29 +2115,22 @@
                 <span><small>本次累计</small><strong data-xrc-run-replies>0 条</strong></span>
               </div>
               <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-round-track>
-                ${Array.from({ length: loopApi.scheduleBounds().maxRounds }, (_, index) => `
+                ${Array.from({ length: REPLY_PACE_LIMITS.maxRoundsPerRun[1] }, (_, index) => `
                   <div class="xrc-round-segment" data-xrc-round-segment="${index}"><i></i></div>
                 `).join("")}
               </div>
               <div class="xrc-round-legend">
-                ${Array.from({ length: loopApi.scheduleBounds().maxRounds }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
+                ${Array.from({ length: REPLY_PACE_LIMITS.maxRoundsPerRun[1] }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
               </div>
               <div class="xrc-round-pace">
-                <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率调度</span><strong data-xrc-pace-title>当前挡位：中</strong></div></div>
+                <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率</span><strong data-xrc-pace-title>中</strong></div></div>
                 <label class="xrc-pace">
                   <span class="xrc-pace-labels">
                     ${loopApi.SCHEDULE_PROFILES.map((item) => `<span data-xrc-pace-label="${item.id}">${item.label}</span>`).join("")}
                   </span>
                   <input type="range" min="0" max="${loopApi.SCHEDULE_PROFILES.length - 1}" step="1" value="${loopApi.schedulePaceIndex(loopApi.DEFAULT_SCHEDULE_PACE)}" data-xrc-pace aria-label="频率挡位" aria-valuemin="0" aria-valuemax="${loopApi.SCHEDULE_PROFILES.length - 1}" aria-valuetext="中">
                 </label>
-                <div class="xrc-schedule-grid" aria-label="随机频率调度">
-                  <span><small>每条间隔</small><strong data-xrc-pace-reply>5～15 秒</strong></span>
-                  <span><small>每轮回复</small><strong data-xrc-pace-round>25～35 条</strong></span>
-                  <span><small>每次执行</small><strong data-xrc-pace-run>3～5 轮</strong></span>
-                  <span><small>执行后休息</small><strong data-xrc-pace-rest>2～3 小时</strong></span>
-                </div>
-                <p class="xrc-schedule-note" data-xrc-pace-note>开始后按这个挡位生成随机计划，并在刷新后保持不变。</p>
-                <p class="xrc-schedule-note">插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</p>
+                <p class="xrc-schedule-note" data-xrc-pace-note hidden></p>
               </div>
             </section>
           </div>
@@ -1786,27 +2146,32 @@
       panel.querySelector("[data-xrc-config-open]").addEventListener("click", (event) => {
         event.stopPropagation();
         configOpen = !configOpen;
+        if (configOpen) panel.querySelector("[data-xrc-docs]").hidden = true;
+        syncConfigMenu(panel);
+      });
+      panel.querySelector("[data-xrc-config-close]").addEventListener("click", () => {
+        configOpen = false;
         syncConfigMenu(panel);
       });
       panel.querySelector("[data-xrc-embed]").addEventListener("change", (event) => {
         selectPanelPlacement(event.currentTarget.checked ? "embed" : "float");
       });
-      if (!configListenerBound) {
-        configListenerBound = true;
-        document.addEventListener("click", (event) => {
-          if (!configOpen) return;
-          if (event.target.closest?.("[data-xrc-config], [data-xrc-config-open]")) return;
-          configOpen = false;
-          const current = document.getElementById(PANEL_ID);
-          if (current) syncConfigMenu(current);
-        });
-      }
+      panel.querySelector("[data-xrc-config-key]").value = state.aiKey || "";
+      panel.querySelector("[data-xrc-reply-prompt]").value = state.replyPrompt || DEFAULT_REPLY_PROMPT;
+      panel.querySelector("[data-xrc-post-prompt]").value = state.postPrompt || DEFAULT_POST_PROMPT;
+      panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
+        const input = panel.querySelector("[data-xrc-config-key]");
+        const revealed = input.classList.toggle("is-revealed");
+        event.currentTarget.textContent = revealed ? "隐藏" : "显示";
+      });
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
           writeSaved({ running: state.running, total: state.total });
           renderPanel();
         }
+        configOpen = false;
+        syncConfigMenu(panel);
         panel.querySelector("[data-xrc-docs]").hidden = false;
       });
       panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
@@ -1851,26 +2216,16 @@
           selectPosterPace(label.dataset.xrcPostPaceLabel);
         });
       });
-      panel.querySelector("[data-xrc-config-key-save]").addEventListener("click", async () => {
-        const input = panel.querySelector("[data-xrc-config-key]");
-        state.aiStatus = "正在保存…";
-        renderPanel();
-        try {
-          await saveAiSettings(input.value);
-          input.value = "";
-        } catch (error) {
-          state.aiStatus = error?.message || "保存失败";
-        }
-        renderPanel();
-      });
+      panel.querySelector("[data-xrc-config-save]").addEventListener("click", () => saveConfigForm(panel));
     }
 
     const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
+    const replyWait = replyWaitCopy();
     if (status) {
       const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|过于频繁|已停止|没有成功)/.test(state.status || "");
-      status.hidden = !attention;
-      status.textContent = attention ? state.status : "";
+      status.hidden = !(replyWait || attention);
+      status.textContent = replyWait || (attention ? state.status : "");
     }
     if (stats) {
       const notificationMode = state.assistantMode === "notifications";
@@ -1919,9 +2274,13 @@
         legend.classList.toggle("is-current", index === shownRound - 1 && state.completedRounds < plannedRounds);
         legend.classList.toggle("is-complete", index < state.completedRounds);
       });
-      panel.querySelector("[data-xrc-mini-progress]").textContent = notificationMode
-        ? `最近 2 小时 · 已处理 ${state.total}`
-        : `第 ${shownRound}/${plannedRounds} 轮 · ${state.pageCount}/${roundTarget}`;
+      const replyWaitLine = panel.querySelector("[data-xrc-wait]");
+      if (replyWaitLine) replyWaitLine.hidden = true;
+      panel.querySelector("[data-xrc-mini-progress]").textContent = replyWait
+        ? replyWait
+        : notificationMode
+          ? `最近 2 小时 · 已处理 ${state.total}`
+          : `第 ${shownRound}/${plannedRounds} 轮 · ${state.pageCount}/${roundTarget}`;
       const start = panel.querySelector("[data-xrc-start]");
       const aiKeyInput = panel.querySelector("[data-xrc-ai-key]");
       if (start) start.dataset.needsKey = state.aiKeySaved ? "false" : "true";
@@ -1936,18 +2295,16 @@
         button.disabled = false;
         button.title = selected ? "当前任务页签" : "打开或切换到该任务的专用 X 页签";
       });
-      const configKey = panel.querySelector("[data-xrc-config-key]");
       const configKeyHint = panel.querySelector("[data-xrc-config-key-hint]");
-      const configKeySave = panel.querySelector("[data-xrc-config-key-save]");
-      if (configKey) {
-        configKey.placeholder = state.aiKeySaved ? state.aiKeyHint : "粘贴 sk-...";
-        configKey.disabled = anyTaskRunning();
-      }
       if (configKeyHint) configKeyHint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
-      if (configKeySave) configKeySave.disabled = anyTaskRunning();
+      const replyPaceLocked = Boolean(state.running || state.loopPromise);
+      panel.querySelectorAll("[data-xrc-reply-pace-input]").forEach((input) => {
+        input.disabled = replyPaceLocked;
+      });
       const schedule = loopApi.formatSchedule(state.schedulePace);
       const paceInput = panel.querySelector("[data-xrc-pace]");
       if (paceInput) {
+        paceInput.disabled = replyPaceLocked;
         paceInput.value = String(loopApi.schedulePaceIndex(schedule.id));
         paceInput.setAttribute("aria-valuenow", paceInput.value);
         paceInput.setAttribute("aria-valuetext", schedule.label);
@@ -1955,55 +2312,78 @@
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
         label.classList.toggle("is-active", label.dataset.xrcPaceLabel === schedule.id);
       });
-      panel.querySelector("[data-xrc-pace-title]").textContent = `当前挡位：${schedule.label} · 轮间停顿 ${schedule.roundInterval}`;
-      panel.querySelector("[data-xrc-pace-reply]").textContent = schedule.replyDelay;
-      panel.querySelector("[data-xrc-pace-round]").textContent = schedule.repliesPerRound;
-      panel.querySelector("[data-xrc-pace-run]").textContent = schedule.roundsPerRun;
-      panel.querySelector("[data-xrc-pace-rest]").textContent = schedule.cycleDelay;
-      const paceLocked = Boolean(state.running || state.loopPromise || state.total > 0 || state.pageCount > 0 || state.completedRounds > 0 || state.nextCycleAt > Date.now());
-      panel.querySelector("[data-xrc-pace-note]").textContent = paceLocked
-        ? "这次执行的计划和已经开始的等待会保持不变。新挡位从下一次抽取的间隔、休息和执行计划开始生效。"
-        : "开始后按这个挡位生成随机计划，并在刷新后保持不变。";
+      const paceTitle = panel.querySelector("[data-xrc-pace-title]");
+      if (paceTitle) paceTitle.textContent = schedule.label;
+      const replyRunning = replyPaceLocked;
+      const replyPaceChanged = !replyRunning && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
+      const replyPaceNote = panel.querySelector("[data-xrc-pace-note]");
+      if (replyPaceNote) {
+        replyPaceNote.hidden = !(replyRunning || replyPaceChanged);
+        replyPaceNote.textContent = replyRunning
+          ? "运行中不能改频率。暂停后可以滑动，滑动后按钮会变成重启任务。"
+          : `频率已改成「${schedule.label}」。点重启任务后按新挡位重新开始。`;
+      }
       panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
     }
     const poster = state.poster || postApi?.snapshot?.();
     if (poster) {
       const postStatus = panel.querySelector("[data-xrc-post-status]");
       const postToggle = panel.querySelector("[data-xrc-post-toggle]");
-      const remainingMs = Math.max(0, Number(poster.nextPostAt || 0) - Date.now());
-      const remainingMinutes = Math.ceil(remainingMs / 60000);
-      postStatus.textContent = poster.status;
-      postToggle.textContent = poster.stopping ? "正在停止" : poster.running ? "停止定时发推" : "开始定时发推";
+      const postWait = posterWaitCopy(poster);
+      const postProblem = /失败|没有|无法|暂停|请先|异常/.test(poster.status || "");
+      const postWaitLine = panel.querySelector("[data-xrc-post-wait]");
+      if (postWaitLine) {
+        postWaitLine.hidden = !postWait;
+        postWaitLine.textContent = postWait;
+      }
+      if (postStatus) {
+        postStatus.hidden = !(postProblem || poster.stopping || (poster.running && !postWait));
+        postStatus.textContent = poster.status || "";
+      }
+      postToggle.textContent = poster.stopping
+        ? "正在停止"
+        : poster.running
+          ? "停止定时发推"
+          : state.posterPaceBaseline && state.posterPace !== state.posterPaceBaseline
+            ? "重启任务"
+            : "开始定时发推";
       postToggle.dataset.running = poster.running ? "true" : "false";
       panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
-      panel.querySelector("[data-xrc-post-next]").textContent = poster.running
-        ? remainingMs > 0 ? `约 ${remainingMinutes} 分钟后` : "正在生成"
-        : "立即生成";
+      panel.querySelector("[data-xrc-post-next]").textContent = postWait
+        ? formatClock(Number(poster.nextPostAt) - Date.now())
+        : poster.running ? "正在生成" : "待命";
       panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
       const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "25～35 分钟" };
       const postPaceInput = panel.querySelector("[data-xrc-post-pace]");
       if (postPaceInput && postApi?.postPaceIndex) {
+        postPaceInput.disabled = Boolean(poster.running);
         postPaceInput.value = String(postApi.postPaceIndex(postSchedule.id));
         postPaceInput.setAttribute("aria-valuenow", postPaceInput.value);
         postPaceInput.setAttribute("aria-valuetext", postSchedule.label);
       }
+      panel.querySelectorAll("[data-xrc-post-pace-input]").forEach((input) => {
+        input.disabled = Boolean(poster.running);
+      });
       panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
         label.classList.toggle("is-active", label.dataset.xrcPostPaceLabel === postSchedule.id);
       });
       const postPaceTitle = panel.querySelector("[data-xrc-post-pace-title]");
-      if (postPaceTitle) postPaceTitle.textContent = `当前挡位：${postSchedule.label} · 发推间隔 ${postSchedule.interval}`;
+      if (postPaceTitle) postPaceTitle.textContent = postSchedule.label;
       const postInterval = panel.querySelector("[data-xrc-post-interval]");
-      if (postInterval) postInterval.textContent = postSchedule.interval;
+      if (postInterval) postInterval.textContent = postWait ? formatClock(Number(poster.nextPostAt) - Date.now()) : poster.running ? "正在生成" : "马上";
       const postPaceNote = panel.querySelector("[data-xrc-post-pace-note]");
+      const postPaceChanged = !poster.running && state.posterPaceBaseline && state.posterPace !== state.posterPaceBaseline;
       if (postPaceNote) {
-        postPaceNote.textContent = poster.running && poster.nextPostAt > Date.now()
-          ? "这次已经开始的等待保持不变。新挡位从下一次发送成功后的间隔开始生效。"
-          : "第一条立即发送。之后按这个挡位随机等待，已经开始的等待不会改写。";
+        postPaceNote.hidden = !(poster.running || postPaceChanged);
+        postPaceNote.textContent = poster.running
+          ? "运行中不能改频率。暂停后可以滑动，滑动后按钮会变成重启任务。"
+          : `频率已改成「${postSchedule.label}」。点重启任务后按新间隔重新发推。`;
       }
-      panel.querySelector("[data-xrc-post-preview]").textContent = poster.currentPost || poster.lastPost || "启动后显示 DeepSeek 生成的下一条纯文字推文";
       if (state.assistantMode === "poster") {
-        panel.querySelector("[data-xrc-mini-progress]").textContent = poster.running ? `推文浇给 · ${poster.count || 0} 条` : "推文浇给 · 待命";
+        panel.querySelector("[data-xrc-mini-progress]").textContent = postWait
+          ? postWait
+          : poster.running ? `推文浇给 · ${poster.count || 0} 条` : "推文浇给 · 待命";
       }
     }
     const mutual = state.mutual || mutualApi?.snapshot?.();
@@ -2044,7 +2424,7 @@
     const mutualSelected = state.assistantMode === "mutual";
     const posterSelected = state.assistantMode === "poster";
     const completed = !mutualSelected && !posterSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
-    const waitingForNextCycle = !mutualSelected && !posterSelected && state.nextCycleAt > Date.now();
+    const waitingForNextCycle = !mutualSelected && !posterSelected && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
     const reconnecting = !mutualSelected && !posterSelected && state.reconnectAt > Date.now();
     const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : state.status;
     const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
@@ -2096,6 +2476,7 @@
     }
     state.running = true;
     state.stopping = false;
+    state.replyPaceBaseline = state.schedulePace;
     registerCurrentTaskTab();
     setRuntimeTaskActive(state.assistantMode, true);
     writeSaved({ running: true, total: state.total });
@@ -2155,7 +2536,10 @@
     state.elapsedMs = 0;
     state.cycleCount = 0;
     state.nextCycleAt = 0;
+    state.nextRoundAt = 0;
     state.reconnectAt = 0;
+    riskRoundRequested = false;
+    riskRoundAdvancing = false;
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
     state.nextReplyDelaySeconds = 0;
     state.riskPaused = false;
@@ -2177,6 +2561,7 @@
     state.startedAt = saved.startedAt;
     state.cycleCount = saved.cycleCount;
     state.nextCycleAt = saved.nextCycleAt;
+    state.nextRoundAt = saved.nextRoundAt;
     state.reconnectAt = saved.reconnectAt;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.schedulePace = saved.schedulePace;
@@ -2203,6 +2588,7 @@
     await loadAiSettings();
     await loadSchedulePace();
     await loadPosterPace();
+    await loadPaceSettings();
     await loadPanelPlacement();
     await loadNotificationHistory();
     if (saved.assistantMode === "notifications" && saved.processedIds.length > 0) {
@@ -2250,9 +2636,10 @@
   });
 
   window.setInterval(() => {
-    if (!state.riskPaused && anyTaskRunning() && automationWarningNodes().length > 0) {
-      stopAllTasksForRisk();
-      return;
+    const replyTask = state.assistantMode === "timeline" || state.assistantMode === "notifications";
+    const alreadyWaiting = state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now() || riskRoundAdvancing;
+    if (replyTask && state.running && !state.stopping && !alreadyWaiting && !riskRoundRequested && automationWarningNodes().length > 0) {
+      riskRoundRequested = true;
     }
     renderPanel();
   }, 1000);

@@ -277,28 +277,17 @@
   place-items: center;
 }
 
-#x-reply-clipboard-panel[data-xrc-config="open"] { overflow: visible; }
-
 #x-reply-clipboard-panel .xrc-config {
   position: absolute;
-  top: 62px;
-  right: 12px;
-  z-index: 4;
-  width: 260px;
-  padding: 10px 12px 12px;
-  border: 1px solid var(--xrc-line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 12px 32px rgba(15, 20, 25, 0.16);
+  inset: 0;
+  z-index: 21;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.99);
 }
 
-#x-reply-clipboard-panel .xrc-config-title {
-  margin-bottom: 8px;
-  color: var(--xrc-muted);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-}
+#x-reply-clipboard-panel .xrc-config[hidden] { display: none; }
 
 #x-reply-clipboard-panel .xrc-config-row {
   display: flex;
@@ -334,15 +323,6 @@
   accent-color: var(--xrc-accent);
 }
 
-#x-reply-clipboard-panel .xrc-config-key {
-  display: grid;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--xrc-line);
-}
-
-#x-reply-clipboard-panel .xrc-config-key input,
 #x-reply-clipboard-panel .xrc-start-key {
   width: 100%;
   height: 34px;
@@ -355,16 +335,115 @@
   text-align: center;
 }
 
-#x-reply-clipboard-panel .xrc-config-key button {
-  height: 30px;
+#x-reply-clipboard-panel .xrc-field {
+  display: grid;
+  gap: 6px;
+}
+
+#x-reply-clipboard-panel .xrc-field > span,
+#x-reply-clipboard-panel .xrc-pace-set legend {
+  color: var(--xrc-text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#x-reply-clipboard-panel .xrc-field input,
+#x-reply-clipboard-panel .xrc-field textarea,
+#x-reply-clipboard-panel .xrc-key-line input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--xrc-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+#x-reply-clipboard-panel .xrc-field input,
+#x-reply-clipboard-panel .xrc-key-line input {
+  height: 34px;
+  padding: 0 10px;
+}
+
+#x-reply-clipboard-panel .xrc-field textarea {
+  min-height: 96px;
+  padding: 8px 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+#x-reply-clipboard-panel .xrc-field input:focus,
+#x-reply-clipboard-panel .xrc-field textarea:focus,
+#x-reply-clipboard-panel .xrc-key-line input:focus {
+  border-color: var(--xrc-accent);
+  outline: none;
+}
+
+#x-reply-clipboard-panel .xrc-key-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+#x-reply-clipboard-panel .xrc-key-line button,
+#x-reply-clipboard-panel .xrc-config-save {
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--xrc-accent);
   color: #fff;
   cursor: pointer;
   font: inherit;
   font-size: 12px;
   font-weight: 750;
+}
+
+#x-reply-clipboard-panel .xrc-key-line button {
+  height: 34px;
+  padding: 0 12px;
+  background: var(--xrc-soft);
+  color: var(--xrc-text);
+}
+
+#x-reply-clipboard-panel .xrc-config-save {
+  height: 36px;
+}
+
+#x-reply-clipboard-panel .xrc-config input[data-xrc-secret-input] {
+  -webkit-text-security: disc;
+}
+
+#x-reply-clipboard-panel .xrc-config input[data-xrc-secret-input].is-revealed {
+  -webkit-text-security: none;
+}
+
+#x-reply-clipboard-panel .xrc-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#x-reply-clipboard-panel .xrc-pace-editor {
+  display: grid;
+  gap: 12px;
+}
+
+#x-reply-clipboard-panel .xrc-pace-set {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#x-reply-clipboard-panel .xrc-pace-set legend { padding: 0; }
+
+#x-reply-clipboard-panel .xrc-wait {
+  margin: 0;
+  color: var(--xrc-accent);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
 }
 
 #x-reply-clipboard-panel .xrc-config-note {
@@ -1122,11 +1201,35 @@
 }
 
 #x-reply-clipboard-panel .xrc-pace input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 22px;
   margin: 0;
-  accent-color: var(--xrc-accent);
+  background: transparent;
   cursor: pointer;
+}
+
+#x-reply-clipboard-panel .xrc-pace input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #d7dee4;
+}
+
+#x-reply-clipboard-panel .xrc-pace input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--xrc-accent);
+  box-shadow: 0 0 0 1px rgba(29, 155, 240, 0.45);
+}
+
+#x-reply-clipboard-panel .xrc-pace input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 #x-reply-clipboard-panel .xrc-rate-control {
@@ -1387,7 +1490,11 @@
   #x-reply-clipboard-panel .xrc-mutual-card { background: rgba(15, 20, 25, 0.66); }
   #x-reply-clipboard-panel .xrc-assistant-tabs button.is-active { background: transparent; color: var(--xrc-accent); }
   #x-reply-clipboard-panel .xrc-ai-actions button:first-child { background: #eff3f4; color: #0f1419; }
-  #x-reply-clipboard-panel .xrc-config { background: rgba(22, 24, 28, 0.98); }
+  #x-reply-clipboard-panel .xrc-config { background: rgba(0, 0, 0, 0.98); }
+  #x-reply-clipboard-panel .xrc-field input,
+  #x-reply-clipboard-panel .xrc-field textarea,
+  #x-reply-clipboard-panel .xrc-key-line input,
+  #x-reply-clipboard-panel .xrc-start-key { background: rgba(15, 20, 25, 0.72); color: var(--xrc-text); }
   #x-reply-clipboard-panel .xrc-mark { background: #eff3f4; color: #0f1419; }
 }
 

@@ -370,7 +370,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.6.11')
+  assert.equal(manifest.version, '3.6.16')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -381,7 +381,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.equal(manifest.background.service_worker, 'background.js')
   assert.match(backgroundSource, /xrc-task-open/)
   assert.match(backgroundSource, /xrc-task-register/)
-  assert.match(backgroundSource, /chrome\.tabs\.create/)
+  assert.match(backgroundSource, /chrome\.windows\.create/)
   assert.match(backgroundSource, /chrome\.tabs\.update/)
   assert.match(backgroundSource, /chrome\.storage\.session/)
   assert.match(backgroundSource, /chrome\.tabs\.sendMessage\(tabId, payload/)
@@ -466,7 +466,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /xrc-task-open/)
   assert.match(content, /xrc-task-register/)
   assert.match(content, /requestedAssistantMode/)
-  assert.match(content, /每项使用独立 X 页签，切换不会停止其他任务/)
+  assert.match(content, /每项使用独立窗口/)
   assert.doesNotMatch(content, /class="xrc-phrase-row"/)
   assert.match(content, /class="xrc-status xrc-reply-status"/)
   assert.doesNotMatch(content, /当前 AI 回复/)
@@ -508,6 +508,13 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /randomReplyDelaySeconds\(Math\.random, state\.schedulePace\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /每条间隔/)
+  assert.match(content, /data-xrc-wait/)
+  assert.match(content, /data-xrc-post-wait/)
+  assert.match(content, /data-xrc-reply-prompt/)
+  assert.match(content, /data-xrc-post-prompt/)
+  assert.match(content, /data-xrc-config-save/)
+  assert.doesNotMatch(content, /当前内容/)
+  assert.doesNotMatch(content, /data-xrc-post-preview/)
   assert.match(content, /每轮回复/)
   assert.match(content, /插件不设置每日回复总量/)
   assert.doesNotMatch(content, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota|额度已用完/)
@@ -549,6 +556,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /等待发送确认/)
   assert.match(content, /PHRASE_STORE = 7/)
   assert.match(content, /data-xrc-pace/)
+  assert.match(content, /重启任务/)
+  assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
   assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.11\.zip/)
   assert.match(resourcePage, /const VERSION = '3\.6\.11'/)
@@ -570,7 +579,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /version: '3\.6\.10'/)
   assert.match(resourcePage, /version: '3\.6\.11'/)
   assert.match(content, /Something went wrong, but don/)
-  assert.match(content, /评论过于频繁，时间线和通知回复已停止/)
+  assert.match(content, /本轮已结束，下一轮/)
+  assert.doesNotMatch(content, /评论过于频繁，时间线和通知回复已停止/)
   assert.match(backgroundSource, /\["timeline", "notifications"\]/)
   assert.match(content, /data-xrc-config-open/)
   assert.match(content, /data-xrc-embed/)
@@ -587,7 +597,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /DUPLICATE_REPLY_RE/)
   assert.match(content, /result === "duplicate-reply"/)
   assert.match(content, /forceDraft: true/)
-  assert.match(content, /xrc-risk-stop-all/)
+  assert.match(content, /本轮提前结束/)
+  assert.match(content, /nextRoundAt/)
+  assert.match(backgroundSource, /xrc-risk-stop-all/)
   assert.match(resourcePage, /version: '3\.1\.2'/)
   assert.match(resourcePage, /version: '3\.1\.1'/)
   assert.match(resourcePage, /version: '3\.1\.0'/)
@@ -630,13 +642,17 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /max_tokens: 320/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
   assert.match(backgroundText, /chrome\.storage\.local/)
+  assert.match(backgroundText, /settings\.replyPrompt/)
+  assert.match(backgroundText, /settings\.postPrompt/)
 })
 
-test('task tabs are created once and reused without stopping the source task', async () => {
+test('task windows are created once and reused without backgrounding another task', async () => {
   const background = require('../../tools/x-reply-clipboard-extension/background.js')
   let savedTabs = {}
   let created = 0
-  const focused = []
+  const focusedTabs = []
+  const focusedWindows = []
+  const movedTabs = []
   global.chrome = {
     storage: {
       session: {
@@ -645,20 +661,42 @@ test('task tabs are created once and reused without stopping the source task', a
       },
     },
     tabs: {
-      async create({ url }) { created += 1; return { id: 77, windowId: 9, url } },
-      async get(tabId) { return { id: tabId, windowId: 9, url: 'https://x.com/notifications' } },
-      async update(tabId) { focused.push(tabId) },
+      async get(tabId) {
+        if (tabId === 77) return { id: 77, windowId: 9 }
+        if (tabId === 11) return { id: 11, windowId: 5 }
+        if (tabId === 22) return { id: 22, windowId: 5 }
+        throw new Error('missing tab')
+      },
+      async update(tabId) { focusedTabs.push(tabId) },
     },
-    windows: { async update() {} },
+    windows: {
+      async create(options) {
+        created += 1
+        if (options.tabId) {
+          movedTabs.push(options.tabId)
+          return { id: 30, tabs: [{ id: options.tabId }] }
+        }
+        return { id: 10, tabs: [{ id: 77, windowId: 10, url: options.url }] }
+      },
+      async update(windowId) { focusedWindows.push(windowId) },
+    },
   }
   try {
     const first = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
     const second = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
     assert.equal(first.reused, false)
+    assert.equal(first.tabId, 77)
     assert.equal(second.reused, true)
     assert.equal(created, 1)
-    assert.deepEqual(focused, [77])
+    assert.deepEqual(focusedTabs, [77])
+    assert.deepEqual(focusedWindows, [9])
     assert.equal(savedTabs.notifications, 77)
+
+    savedTabs = { timeline: 11, notifications: 22 }
+    const moved = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
+    assert.equal(moved.reused, true)
+    assert.deepEqual(movedTabs, [22])
+    assert.equal(focusedWindows.at(-1), 30)
   } finally {
     delete global.chrome
   }

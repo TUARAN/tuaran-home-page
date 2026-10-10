@@ -48,11 +48,15 @@ async function readAiSettings() {
   const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
   const settings = stored?.[AI_SETTINGS_KEY] || {};
   const apiKey = String(settings.apiKey || "").trim();
-  return { apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "" };
+  return {
+    apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "",
+    replyPrompt: String(settings.replyPrompt || "").trim() || REPLY_SYSTEM_PROMPT,
+    postPrompt: String(settings.postPrompt || "").trim() || POST_SYSTEM_PROMPT
+  };
 }
 
 async function callDeepSeek({ postText, avoidReply = "" }) {
-  const { apiKey } = await readAiSettings();
+  const { apiKey, replyPrompt } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
 
   const controller = new AbortController();
@@ -67,7 +71,7 @@ async function callDeepSeek({ postText, avoidReply = "" }) {
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: REPLY_SYSTEM_PROMPT },
+          { role: "system", content: replyPrompt },
           {
             role: "user",
             content: [
@@ -98,7 +102,7 @@ async function callDeepSeek({ postText, avoidReply = "" }) {
 }
 
 async function generateTopicalPost({ contextText, lastPost }) {
-  const { apiKey } = await readAiSettings();
+  const { apiKey, postPrompt } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
   const context = String(contextText || "").trim().slice(0, 6000);
   if (!context) throw new Error("没有读取到可用的话题素材");
@@ -114,7 +118,7 @@ async function generateTopicalPost({ contextText, lastPost }) {
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: POST_SYSTEM_PROMPT },
+          { role: "system", content: postPrompt },
           {
             role: "user",
             content: `当前可见话题素材：\n${context}\n\n上一条已发布内容（避免重复）：\n${String(lastPost || "无").slice(0, 500)}`
@@ -244,6 +248,29 @@ async function registerTaskTab(mode, tabId) {
   return { ok: true, mode: selected, tabId };
 }
 
+async function sharedTaskWindow(windowId, tabs, exceptMode) {
+  for (const [mode, savedTabId] of Object.entries(tabs)) {
+    if (mode === exceptMode) continue;
+    const tabId = Number(savedTabId);
+    if (!Number.isInteger(tabId)) continue;
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (Number(tab?.windowId) === Number(windowId)) return true;
+    } catch (error) {
+      // A closed tab is removed by the tab listener.
+    }
+  }
+  return false;
+}
+
+async function ensureOwnWindow(tab, tabs, mode) {
+  const windowId = Number(tab?.windowId);
+  if (!Number.isInteger(tab?.id) || !Number.isInteger(windowId)) return windowId;
+  if (!await sharedTaskWindow(windowId, tabs, mode)) return windowId;
+  const moved = await chrome.windows.create({ tabId: tab.id, focused: true, type: "normal" });
+  return Number(moved?.id) || windowId;
+}
+
 async function focusTaskTab(mode, sender) {
   const selected = validTaskMode(mode);
   const tabs = await readTaskTabs();
@@ -251,22 +278,29 @@ async function focusTaskTab(mode, sender) {
   if (Number.isInteger(existingId)) {
     try {
       const existing = await chrome.tabs.get(existingId);
+      const windowId = await ensureOwnWindow(existing, tabs, selected);
       await chrome.tabs.update(existingId, { active: true });
-      if (Number.isInteger(existing.windowId)) await chrome.windows.update(existing.windowId, { focused: true });
+      if (Number.isInteger(windowId)) await chrome.windows.update(windowId, { focused: true });
       return { ok: true, mode: selected, tabId: existingId, reused: true };
     } catch (error) {
       delete tabs[selected];
       await writeTaskTabs(tabs);
     }
   }
-  const created = await chrome.tabs.create({
+  const createdWindow = await chrome.windows.create({
     url: taskTabUrl(selected, sender?.tab?.url),
-    active: true
+    focused: true,
+    type: "normal"
   });
-  if (!Number.isInteger(created?.id)) throw new Error("没有成功创建任务页签");
-  tabs[selected] = created.id;
+  let createdId = Number(createdWindow?.tabs?.[0]?.id);
+  if (!Number.isInteger(createdId) && Number.isInteger(createdWindow?.id)) {
+    const found = await chrome.tabs.query({ windowId: createdWindow.id, active: true });
+    createdId = Number(found?.[0]?.id);
+  }
+  if (!Number.isInteger(createdId)) throw new Error("没有成功创建任务窗口");
+  tabs[selected] = createdId;
   await writeTaskTabs(tabs);
-  return { ok: true, mode: selected, tabId: created.id, reused: false };
+  return { ok: true, mode: selected, tabId: createdId, reused: false };
 }
 
 async function removeTaskTab(tabId) {

@@ -8017,9 +8017,9 @@
   }
 
   .prose-tuaran .table-scroll > table {
-    width: max-content;
-    min-width: 100%;
-    max-width: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     margin: 0;
     border-collapse: separate;
     border-spacing: 0;
@@ -8027,6 +8027,7 @@
     color: var(--site-ink);
     font-size: 0.82rem;
     line-height: 1.5;
+    table-layout: auto;
   }
 
   .prose-tuaran .table-scroll > table thead {
@@ -8042,7 +8043,9 @@
     letter-spacing: 0.045em;
     line-height: 1.4;
     text-align: left;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: break-word;
+    min-width: 7em;
   }
 
   .prose-tuaran .table-scroll > table td {
@@ -8050,6 +8053,9 @@
     border-bottom: 1px solid color-mix(in srgb, var(--site-line) 82%, transparent);
     color: var(--site-muted);
     vertical-align: top;
+    white-space: normal;
+    overflow-wrap: break-word;
+    min-width: 7em;
   }
 
   .prose-tuaran .table-scroll > table tbody tr:nth-child(even) > td {

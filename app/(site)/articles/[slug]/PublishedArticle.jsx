@@ -10,6 +10,7 @@ import ArticleComments from '../../components/ArticleComments'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
 import DistributeContentButton from '../../components/DistributeContentButton'
+import RevertToDraftButton from '../../components/RevertToDraftButton'
 import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton'
 import { isMarkdownDocument } from '../../../../lib/articleDocument.mjs'
 import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
@@ -110,6 +111,7 @@ export default function PublishedArticle({ article, siteUrl }) {
               kindLabel="文章"
               allowArticle
             />
+            <RevertToDraftButton articleId={article.id} />
           </ArticleHeaderActions>
         )}
         title={article.title}

@@ -19,6 +19,8 @@ import ArticleHeaderActions from '../../../../components/ArticleHeaderActions'
 import ContentProofCard from '../../../../components/ContentProofCard'
 import CopyMarkdownButton from './CopyMarkdownButton'
 import DistributeMarkdownButton from './DistributeMarkdownButton'
+import RevertToDraftButton from '../../../../components/RevertToDraftButton'
+import { parseResearchSourcePath } from '../../../../../../lib/researchGitHubQueue'
 import DownloadPptButton from './DownloadPptButton'
 import EncryptedArticle from './EncryptedArticle'
 import ResearchBody from './ResearchBody'
@@ -145,6 +147,7 @@ export default async function ResearchDetailPage({ params }) {
     ? shareTitle
     : entry.summary || entry.tldr || entry.title
   const articleKey = `research:${entry.category}:${entry.slug}`
+  const sourcePath = parseResearchSourcePath(`research/${entry.category}/${entry.filename || ''}`)?.sourcePath || ''
   const proofCredential = getContentProofCredential(articleKey)
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
   const showRebuttalPersonalityTest = entry.category === 'topics' && entry.slug === 'rebuttal-personality-communication-pattern'
@@ -324,6 +327,7 @@ export default async function ResearchDetailPage({ params }) {
                   images={entry.images || []}
                   variants={renderedVariants.map((v) => ({ id: v.id, content: v.content }))}
               />
+              {sourcePath ? <RevertToDraftButton sourcePath={sourcePath} /> : null}
             </> : null}
           </ArticleHeaderActions>
         )}

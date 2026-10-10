@@ -1,7 +1,7 @@
 import { gateArticleRequest } from './lib/articleRequestGate'
 import { NextResponse } from 'next/server'
 
-import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed } from './lib/adminRoutes'
+import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed, isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from './lib/adminRoutes'
 import { getUserFromRequest } from './lib/edgeSession'
 import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/i18n'
 import { getLegacyPathRedirect, shouldNoindexPath } from './lib/indexingPolicy'
@@ -56,6 +56,11 @@ async function requireAdminPageOwner(request) {
 export async function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+
+  if (host === ADMIN_HOST && request.method === 'OPTIONS' && isRevertDraftApi(pathname, 'OPTIONS')) {
+    const origin = revertDraftCorsOrigin(request.headers.get('origin') || '')
+    if (origin) return new NextResponse(null, { status: 204, headers: revertDraftCorsHeaders(origin) })
+  }
 
   if (host === RANK_HOST && pathname === '/') {
     const url = request.nextUrl.clone()
@@ -165,6 +170,14 @@ export async function middleware(request) {
   const response = NextResponse.next()
   if (shouldNoindexPath(pathname)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
+  if (host === ADMIN_HOST && isRevertDraftApi(pathname, request.method)) {
+    const origin = revertDraftCorsOrigin(request.headers.get('origin') || '')
+    if (origin) {
+      for (const [key, value] of Object.entries(revertDraftCorsHeaders(origin))) {
+        response.headers.set(key, value)
+      }
+    }
   }
   applyDefaultLocaleCookie(request, response)
   return response

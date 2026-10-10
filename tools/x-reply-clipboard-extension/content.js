@@ -64,7 +64,7 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.16";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.17";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -80,6 +80,7 @@
     nextCycleAt: 0,
     nextRoundAt: 0,
     reconnectAt: 0,
+    reconnectReason: "",
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
     replyPaceBaseline: "",
@@ -720,6 +721,7 @@
       nextCycleAt: 0,
       nextRoundAt: 0,
       reconnectAt: 0,
+      reconnectReason: "",
       phraseIndex: null,
       processedIds: [],
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
@@ -753,6 +755,7 @@
         nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
         nextRoundAt: Math.max(0, Number(parsed.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
+        reconnectReason: String(parsed.reconnectReason || "").trim(),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         schedulePace,
         runPlan: normalizeRunPlan(parsed.runPlan, schedulePace),
@@ -786,6 +789,7 @@
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
         nextRoundAt: Math.max(0, Number(value.nextRoundAt ?? state.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
+        reconnectReason: String(value.reconnectReason ?? state.reconnectReason ?? "").trim(),
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
         runPlan: state.runPlan,
@@ -816,6 +820,7 @@
         nextCycleAt: 0,
         nextRoundAt: 0,
         reconnectAt: 0,
+        reconnectReason: "",
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
         runPlan: null,
@@ -865,7 +870,10 @@
 
   function replyWaitCopy() {
     const now = Date.now();
-    if (state.reconnectAt > now) return `${formatClock(state.reconnectAt - now)} 后重连`;
+    if (state.reconnectAt > now) {
+      const clock = formatClock(state.reconnectAt - now);
+      return state.reconnectReason ? `${state.reconnectReason}，${clock} 后重连` : `${clock} 后重连`;
+    }
     if (state.nextRoundAt > now) return `本轮已结束，下一轮 ${formatClock(state.nextRoundAt - now)} 后开始`;
     if (state.nextCycleAt > now) {
       const clock = formatClock(state.nextCycleAt - now);
@@ -903,6 +911,7 @@
     state.nextCycleAt = 0;
     state.nextRoundAt = 0;
     state.reconnectAt = 0;
+    state.reconnectReason = "";
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
     state.nextReplyDelaySeconds = 0;
     state.pendingReply = "";
@@ -928,6 +937,7 @@
     state.cycleCount += 1;
     state.nextCycleAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
     state.reconnectAt = 0;
+    state.reconnectReason = "";
     writeSaved({ running: true, total: state.total });
     const ready = await waitForDeadline(
       state.nextCycleAt,
@@ -940,15 +950,28 @@
     return "reload";
   }
 
+  async function closeReplyComposer() {
+    if (!findDialogComposer()) return true;
+    const eventInit = { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true };
+    const composer = findDialogComposer();
+    composer?.textbox?.dispatchEvent(new KeyboardEvent("keydown", eventInit));
+    composer?.dialog?.dispatchEvent(new KeyboardEvent("keydown", eventInit));
+    document.dispatchEvent(new KeyboardEvent("keydown", eventInit));
+    await waitUntil(() => !findDialogComposer(), 1200);
+    return !findDialogComposer();
+  }
+
   async function reconnectAndResume(reason) {
+    state.reconnectReason = String(reason || "").trim();
     state.reconnectAt = state.reconnectAt > Date.now() ? state.reconnectAt : Date.now() + RECONNECT_INTERVAL_MS;
     writeSaved({ running: true, total: state.total });
     const ready = await waitForDeadline(
       state.reconnectAt,
-      (remaining) => `${reason}；${formatCountdown(remaining)}后自动重连`
+      (remaining) => `${state.reconnectReason || "页面暂时不可用"}；${formatCountdown(remaining)}后自动重连`
     );
     if (!ready) return "stopped";
     state.reconnectAt = 0;
+    state.reconnectReason = "";
     writeSaved({ running: true, total: state.total });
     await reloadAndResume("正在重连 X 页面并恢复当前任务");
     return "reload";
@@ -1128,6 +1151,12 @@
     return confirmed ? "ok" : "like-unconfirmed";
   }
 
+  function dialogTargetsTweet(dialog, tweet) {
+    const id = String(tweet?.id || "");
+    if (!dialog || !id) return false;
+    return Boolean(dialog.querySelector(`a[href*="/status/${id}"]`));
+  }
+
   function findDialogComposer() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
@@ -1143,9 +1172,10 @@
   function findComposer(article, hadInline) {
     const dialogComposer = findDialogComposer();
     if (dialogComposer) return dialogComposer;
-    if (!article || hadInline) return null;
+    if (!article) return null;
     const textbox = article.querySelector(REPLY_EDITOR_SELECTOR);
     if (!textbox) return null;
+    if (hadInline && loopApi.composerText(textbox)) return null;
     const submit = article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
     return { dialog: null, textbox, submit };
   }
@@ -1256,7 +1286,14 @@
   }
 
   async function openComposer(tweet) {
-    const hadInline = Boolean(tweet.article.querySelector(REPLY_EDITOR_SELECTOR));
+    const existingDialog = findDialogComposer();
+    if (existingDialog && !loopApi.composerText(existingDialog.textbox)) return existingDialog;
+    const inline = tweet.article?.querySelector(REPLY_EDITOR_SELECTOR);
+    if (inline && !loopApi.composerText(inline)) {
+      const submit = tweet.article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
+      return { dialog: null, textbox: inline, submit };
+    }
+    const hadInline = Boolean(inline);
     realClick(tweet.replyButton);
     const opened = await waitUntil(() => findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
     return opened ? findComposer(tweet.article, hadInline) : null;
@@ -1414,10 +1451,11 @@
     if (state.reconnectAt > 0) {
       const readyToReconnect = await waitForDeadline(
         state.reconnectAt,
-        (remaining) => `页面连接暂时不可用；${formatCountdown(remaining)}后自动重连`
+        (remaining) => `${state.reconnectReason || "页面连接暂时不可用"}；${formatCountdown(remaining)}后自动重连`
       );
       if (!readyToReconnect) return riskRoundPending() ? advanceRoundAfterRisk() : "stopped";
       state.reconnectAt = 0;
+      state.reconnectReason = "";
       writeSaved({ running: true, total: state.total });
     }
     scrollTimelineToTop();
@@ -1426,10 +1464,20 @@
     if (riskRoundRequested) return advanceRoundAfterRisk();
     if (state.stopping) return "stopped";
 
-    const ready = await waitUntil(
+    let ready = await waitUntil(
       () => collectTweets().length > 0 || (state.assistantMode === "notifications" && hasReachedNotificationCutoff()),
       15000
     );
+    if (state.stopping) return "stopped";
+    if (!ready && findDialogComposer()) {
+      const closed = await closeReplyComposer();
+      if (closed) {
+        ready = await waitUntil(
+          () => collectTweets().length > 0 || (state.assistantMode === "notifications" && hasReachedNotificationCutoff()),
+          8000
+        );
+      }
+    }
     if (state.stopping) return "stopped";
     if (!ready) {
       if (!currentAccountHandle()) {
@@ -1497,6 +1545,13 @@
             return finishCycleAndScheduleNext(`近 2 小时没有更多待处理通知，本次完成 ${state.total} 条`);
           }
           if (state.pageCount === 0) {
+            if (findDialogComposer()) {
+              const closed = await closeReplyComposer();
+              if (closed) {
+                stalled = 0;
+                continue;
+              }
+            }
             return reconnectAndResume("当前页面没有发出回复，准备重新载入时间线");
           }
         }
@@ -1522,8 +1577,15 @@
       }
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       if (state.replyMode === "ai") {
-        if (findDialogComposer() && !(state.pendingTweetId === next.id && state.pendingReply)) {
-          return reconnectAndResume("检测到其他评论弹窗，为避免回复错帖子已暂停");
+        const openDialog = findDialogComposer();
+        const openText = openDialog ? loopApi.composerText(openDialog.textbox) : "";
+        const sameTweet = state.pendingTweetId === next.id || dialogTargetsTweet(openDialog?.dialog, next);
+        const foreignText = Boolean(openText) && loopApi.normalizePhraseText(openText) !== loopApi.normalizePhraseText(state.pendingReply);
+        if (openDialog && (!sameTweet || foreignText)) {
+          const closed = await closeReplyComposer();
+          if (!closed) {
+            return reconnectAndResume(openText ? "评论框里已有其他内容，关闭失败" : "空评论框对不上当前帖子，关闭失败");
+          }
         }
         const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (!postText) {
@@ -1565,6 +1627,12 @@
         return advanceRoundAfterRisk();
       }
       if (result === "composer-already-open") {
+        const closed = await closeReplyComposer();
+        if (closed) {
+          state.status = "已关闭原来的评论框，继续当前这条";
+          renderPanel();
+          continue;
+        }
         return reconnectAndResume(failureLabel(result));
       }
       if (result === "duplicate-reply") {
@@ -2003,6 +2071,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.17</b><span><strong>空评论框不再反复重连</strong><small>回复框是空的就直接写入。只有关不掉的他人内容才重连，并写明原因。</small></span></article>
                 <article><b>v3.6.16</b><span><strong>倒计时写在按钮下面</strong><small>操作过密时不再显示正在停止。按钮下方直接显示下一轮还要多久。</small></span></article>
                 <article><b>v3.6.15</b><span><strong>过密提示结束当前轮</strong><small>时间线和通知回复遇到操作过密提示时，不再停掉任务。当前轮结束，按休息时间倒计时后开始下一轮。</small></span></article>
                 <article><b>v3.6.14</b><span><strong>倒计时和设置收口</strong><small>轮次或发推等待会显示剩余时间。正文和规则说明移出工作区；提示词、密钥和慢中快超快的数字改在设置里。</small></span></article>
@@ -2538,6 +2607,7 @@
     state.nextCycleAt = 0;
     state.nextRoundAt = 0;
     state.reconnectAt = 0;
+    state.reconnectReason = "";
     riskRoundRequested = false;
     riskRoundAdvancing = false;
     state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
@@ -2563,6 +2633,7 @@
     state.nextCycleAt = saved.nextCycleAt;
     state.nextRoundAt = saved.nextRoundAt;
     state.reconnectAt = saved.reconnectAt;
+    state.reconnectReason = saved.reconnectReason;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.schedulePace = saved.schedulePace;
     state.runPlan = saved.runPlan;

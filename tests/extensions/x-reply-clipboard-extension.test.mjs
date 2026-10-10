@@ -370,7 +370,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.6.16')
+  assert.equal(manifest.version, '3.6.17')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -598,6 +598,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /result === "duplicate-reply"/)
   assert.match(content, /forceDraft: true/)
   assert.match(content, /本轮提前结束/)
+  assert.match(content, /reconnectReason/)
+  assert.match(content, /空评论框对不上当前帖子/)
+  assert.doesNotMatch(content, /检测到其他评论弹窗/)
   assert.match(content, /nextRoundAt/)
   assert.match(backgroundSource, /xrc-risk-stop-all/)
   assert.match(resourcePage, /version: '3\.1\.2'/)

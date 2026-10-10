@@ -22,6 +22,7 @@ export default function LongCompassClient({
   embedded = false,
   initialEncryptedItems = null,
   initialRecords = null,
+  view = null,
 }) {
   const preUnlocked = Array.isArray(initialRecords)
   const [loading, setLoading] = useState(!preUnlocked)
@@ -33,7 +34,8 @@ export default function LongCompassClient({
   const [password, setPassword] = useState('')
   const [unlocked, setUnlocked] = useState(preUnlocked)
   const [records, setRecords] = useState(preUnlocked ? initialRecords : [])
-  const [activeView, setActiveView] = useState('records')
+  const lockedView = view === 'records' || view === 'finance'
+  const [activeView, setActiveView] = useState(view === 'finance' ? 'finance' : 'records')
   const [activeKind, setActiveKind] = useState('snapshot')
   const [expandedRecordId, setExpandedRecordId] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -213,8 +215,10 @@ export default function LongCompassClient({
         />
       ) : (
         <section className={embedded ? '' : 'mt-6'}>
+          {lockedView && activeView === 'finance' ? null : (
           <div className="rounded-2xl border border-[#dfe1da] bg-white/55 p-2.5 shadow-[0_10px_30px_rgba(47,48,39,0.04)] dark:border-[#29303a] dark:bg-[#121821]/70 sm:p-3">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#eceee8] p-1 dark:bg-[#0b1017]" role="tablist" aria-label="长期罗盘视图">
+            {lockedView ? null : (
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#eceee8] p-1 dark:bg-[#0b1017]" role="tablist" aria-label="档案视图">
               <button
                 type="button"
                 role="tab"
@@ -227,7 +231,7 @@ export default function LongCompassClient({
                 }`}
               >
                 <IconArchive size={17} stroke={1.8} aria-hidden="true" />
-                <span>记录档案</span>
+                <span>Notion档案</span>
               </button>
               <button
                 type="button"
@@ -244,8 +248,9 @@ export default function LongCompassClient({
                 <span>财务总览</span>
               </button>
             </div>
+            )}
             {activeView === 'records' ? (
-              <div className="mt-3 border-t border-[#e2e4de] px-1 pt-3 dark:border-[#29303a]">
+              <div className={`${lockedView ? '' : 'mt-3 border-t border-[#e2e4de] pt-3 dark:border-[#29303a]'} px-1`}>
                 <div className="sm:flex sm:items-start sm:gap-5">
                   <div className="mb-2 sm:mb-0 sm:w-20 sm:flex-none sm:pt-2">
                     <p className="text-[11px] font-semibold tracking-[0.08em] text-[#777a6e] dark:text-[#8e9ab0]">记录类型</p>
@@ -288,6 +293,7 @@ export default function LongCompassClient({
               </div>
             ) : null}
           </div>
+          )}
 
           <div className="mt-4">
             {activeView === 'finance' ? (

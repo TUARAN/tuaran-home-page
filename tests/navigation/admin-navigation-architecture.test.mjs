@@ -85,7 +85,7 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
       '/admin/model-dispatch': '/admin/planning?tab=dispatch',
       '/admin/person-strawberry': '/admin/soft-sticker?tab=strawberry',
       '/admin/self-regulation': '/admin/soft-sticker?tab=self-regulation',
-      '/admin/long-compass': '/admin/soft-sticker?tab=long-compass',
+      '/admin/long-compass': '/admin/soft-sticker?tab=notion',
       '/admin/system': '/admin/projects',
       '/admin/portfolio': '/admin/planning?tab=portfolio',
       '/admin/integrations': '/admin/settings?tab=integrations',

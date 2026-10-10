@@ -14,5 +14,5 @@ export const metadata = {
 }
 
 export default function LongCompassPage() {
-  redirect('https://admin.2aran.com/admin/soft-sticker?tab=long-compass')
+  redirect('https://admin.2aran.com/admin/soft-sticker?tab=notion')
 }

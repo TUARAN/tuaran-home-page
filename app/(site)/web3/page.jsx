@@ -10,8 +10,6 @@ import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
 import { isAShareCompanyObservation, isCryptoAssetObservation } from '../../../lib/research/shareTitle'
 import { researchPublicSummary } from '../../../lib/researchPublicSummary'
 import { WEB3_CATEGORY_META, WEB3_RESOURCE_GROUPS } from '../../../lib/web3Directory'
-import UsStockBook from './us-stocks/UsStockBook'
-import UsStockReview from './us-stocks/UsStockReview'
 import Web3Sidebar from './Web3Sidebar'
 
 export const runtime = 'edge'
@@ -271,6 +269,12 @@ export default async function Web3Page({ searchParams }) {
             <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--site-muted)]">
               汇集 A 股调研、加密资产观察和 Web3 内容，并整理协议分类、交易平台与常用链上查询工具。
             </p>
+            <Link
+              href="/web3/us-stocks"
+              className="mt-5 inline-flex items-center gap-1 rounded-full border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel)_88%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-accent)] hover:text-[var(--site-accent)]"
+            >
+              当下标的 <IconArrowUpRight size={13} />
+            </Link>
           </div>
           <div className="grid grid-cols-3 divide-x divide-[var(--site-line)] border-y border-[var(--site-line)] py-3">
             {[
@@ -287,7 +291,6 @@ export default async function Web3Page({ searchParams }) {
         </div>
         <nav className="mt-5 flex flex-wrap gap-x-5 gap-y-2" aria-label="市场与 Web3 页面目录">
           {[
-            ['#us-stocks', '美股走势'],
             ['#content', '内容索引'],
             ['#categories', '领域分类'],
             ['#exchanges', '交易入口'],
@@ -305,21 +308,6 @@ export default async function Web3Page({ searchParams }) {
       <div className="mt-4 grid min-w-0 gap-8 lg:grid-cols-[228px_minmax(0,1fr)] xl:gap-12">
         <Web3Sidebar />
         <div className="min-w-0">
-      <section id="us-stocks" className="scroll-mt-28 border-b border-[var(--site-line)] py-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--site-faint)]">US stocks</p>
-            <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--site-ink)]">美股走势</h2>
-          </div>
-          <Link href="/web3/us-stocks" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--site-ink)] no-underline hover:underline">
-            打开走势图 <IconArrowUpRight size={15} />
-          </Link>
-        </div>
-        <div className="mt-5">
-          <UsStockBook linked />
-          <UsStockReview compact />
-        </div>
-      </section>
       <section id="content" className="scroll-mt-28 py-10 lg:pt-6">
         <div id="featured" className="scroll-mt-28 border-b border-[var(--site-line)] pb-10">
           <div className="mb-5 flex items-end justify-between gap-4">

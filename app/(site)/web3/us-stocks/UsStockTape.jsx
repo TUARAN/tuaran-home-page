@@ -192,7 +192,7 @@ export default function UsStockTape() {
               日 K 与成交量按最近一个已收盘交易日绘制，涨为红色，跌为绿色。组合指数按 2026-09-26 仓位的毛名义加权，Twilio 空头权重为负。
             </p>
           </div>
-          <Link href="/web3#us-stocks" className="text-xs font-semibold text-[var(--site-ink)] no-underline hover:underline">返回市场与 Web3</Link>
+          <Link href="/web3" className="text-xs font-semibold text-[var(--site-ink)] no-underline hover:underline">返回市场与 Web3</Link>
         </div>
         <div className="mt-5">
           <UsStockBook detail />

@@ -96,7 +96,7 @@ export default function PublishedArticle({ article, siteUrl }) {
             speechMarkdown={article.contentText}
             ownerMeta={{ author: 'TUARAN' }}
             className="mt-2 sm:ml-auto sm:mt-0 lg:flex-nowrap"
-            readerActions={<CopyMarkdownButton markdown={markdown} html={xArticleHtml} />}
+            readerActions={<CopyMarkdownButton markdown={markdown} />}
           >
             <DistributeContentButton
               title={article.title}

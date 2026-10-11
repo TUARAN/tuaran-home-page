@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-03T01:22:07.212Z",
+  "generatedAt": "2026-10-11T05:25:29.772Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -290,7 +290,7 @@
       }
     },
     "ai-context": {
-      "label": "仓库 ai-context/",
+      "label": "仓库 docs/context/",
       "description": "仓库内长期保存的架构 / 规划 / 审查文档",
       "files": {
         "README": {
@@ -326,6 +326,18 @@
               "hash": "197924ac252f91e9321cdfcf1c37cd353511fe73d4ba102b5032678a6e9641bd",
               "path": "ai-context/README/2026-09-18T02-11-19-878Z.enc.json",
               "bytes": 1975
+            },
+            {
+              "ts": "2026-10-11T05:09:08.045Z",
+              "hash": "a103188b58d8aa9d235c108711af969a3d26b4e885c9274b003d998a774642fa",
+              "path": "ai-context/README/2026-10-11T05-09-08-063Z.enc.json",
+              "bytes": 1984
+            },
+            {
+              "ts": "2026-10-11T05:25:29.634Z",
+              "hash": "c7f0f2348dbe35467cad3db60d07f8b4965da40dba3261a8e18816fe5a8b2b99",
+              "path": "ai-context/README/2026-10-11T05-25-29-652Z.enc.json",
+              "bytes": 2629
             }
           ]
         },
@@ -338,6 +350,12 @@
               "hash": "10ca9fb2718ab577513412c3eea9f468c0b9234614f3ee837ad365e346e0f99d",
               "path": "ai-context/a-share-company-research-automation/2026-08-27T01-52-41-049Z.enc.json",
               "bytes": 3658
+            },
+            {
+              "ts": "2026-10-11T05:09:08.064Z",
+              "hash": "9ea53527a103e6621b6912ae08bf9dd292d2135e36077f092dd61b84ba55d3b1",
+              "path": "ai-context/a-share-company-research-automation/2026-10-11T05-09-08-083Z.enc.json",
+              "bytes": 3694
             }
           ]
         },
@@ -350,6 +368,18 @@
               "hash": "ccdf20708973081cd6c67c725056977d6d97aea0ab4ba8f64ebeb57924145cfd",
               "path": "ai-context/architecture/2026-08-27T01-52-41-090Z.enc.json",
               "bytes": 5873
+            },
+            {
+              "ts": "2026-10-11T05:09:08.083Z",
+              "hash": "0bf099025b3a2429b00ad8d4a891d1bea531556712539de57420474e0b0fab24",
+              "path": "ai-context/architecture/2026-10-11T05-09-08-099Z.enc.json",
+              "bytes": 5884
+            },
+            {
+              "ts": "2026-10-11T05:25:29.654Z",
+              "hash": "d2775eac6796d050eba8758e7001ca55fcbb0dd943399cba8a2c7486878e224e",
+              "path": "ai-context/architecture/2026-10-11T05-25-29-683Z.enc.json",
+              "bytes": 5886
             }
           ]
         },
@@ -362,6 +392,12 @@
               "hash": "030ec61d3e4d5c70c9fd277250e0dd20149abc0aa2777b337d3f78d8189bd03a",
               "path": "ai-context/content-information-architecture/2026-08-27T01-52-41-130Z.enc.json",
               "bytes": 2452
+            },
+            {
+              "ts": "2026-10-11T05:09:08.100Z",
+              "hash": "df96d6bf4fb6c0101a9016f4b0474478446d13a925dbff9fc3e286b92bb74ce0",
+              "path": "ai-context/content-information-architecture/2026-10-11T05-09-08-117Z.enc.json",
+              "bytes": 2460
             }
           ]
         },
@@ -374,6 +410,12 @@
               "hash": "25835b0693482c4fb43d9cddbfe317876abf6b40d7e41dc8541da8f406356e3d",
               "path": "ai-context/content-layer-refactor-plan/2026-08-27T01-52-41-184Z.enc.json",
               "bytes": 4419
+            },
+            {
+              "ts": "2026-10-11T05:09:08.118Z",
+              "hash": "ceee6c81e7f6651261c949bbb4887ff63c8eb33538f5d268d60bec1f9bfe4db6",
+              "path": "ai-context/content-layer-refactor-plan/2026-10-11T05-09-08-134Z.enc.json",
+              "bytes": 4435
             }
           ]
         },
@@ -422,6 +464,12 @@
               "hash": "1d94d1b16e4db88715901f46edd32e96ea98ccdde6627d6ac27b3b6754cd82ab",
               "path": "ai-context/site-tools-shortener/2026-08-27T01-52-41-405Z.enc.json",
               "bytes": 5261
+            },
+            {
+              "ts": "2026-10-11T05:09:08.186Z",
+              "hash": "1b18bfe20eabbbe968c8f92d0a0810fd58459b6fb366aa4523cb175919d1a3ad",
+              "path": "ai-context/site-tools-shortener/2026-10-11T05-09-08-202Z.enc.json",
+              "bytes": 5264
             }
           ]
         },
@@ -445,6 +493,12 @@
               "ts": "2026-08-27T01:52:41.593Z",
               "hash": "b84b59dfb6e43c6f500d4802c67570ea7ac69e8f9f32f9edc6bf3debcdf15948",
               "path": "ai-context/web-llm-port-handoff/2026-08-27T01-52-41-728Z.enc.json",
+              "bytes": 7913
+            },
+            {
+              "ts": "2026-10-11T05:25:29.747Z",
+              "hash": "df73cbcf0624f2ae763fc965009fcd1ad930e58359950da249048182b05c7362",
+              "path": "ai-context/web-llm-port-handoff/2026-10-11T05-25-29-771Z.enc.json",
               "bytes": 7913
             }
           ]
@@ -506,6 +560,12 @@
               "hash": "0ff4bfe9d37e95c7e9f3b5f988e4713f9fb39cabb7777c9c7e81ecef99215789",
               "path": "ai-context/x-post-images/2026-10-03T01-22-07-211Z.enc.json",
               "bytes": 1639
+            },
+            {
+              "ts": "2026-10-11T05:09:08.220Z",
+              "hash": "e2d0a160146bbae31f4a937a97ceb9329c011cc086b4f73efed989699c290f8d",
+              "path": "ai-context/x-post-images/2026-10-11T05-09-08-236Z.enc.json",
+              "bytes": 1643
             }
           ]
         },
@@ -536,6 +596,18 @@
               "hash": "5745d6085628fa6a9ab047293c112db3d4d04b9ba33f2f757c6065ee3d360945",
               "path": "ai-context/seo-geo-growth-roadmap/2026-09-12T03-25-01-283Z.enc.json",
               "bytes": 9199
+            },
+            {
+              "ts": "2026-10-11T05:09:08.152Z",
+              "hash": "91f835a0b7a58434906d2428b75427a4b17d16e1b846768fde0da46c5cd80265",
+              "path": "ai-context/seo-geo-growth-roadmap/2026-10-11T05-09-08-168Z.enc.json",
+              "bytes": 9233
+            },
+            {
+              "ts": "2026-10-11T05:25:29.684Z",
+              "hash": "ab0ed836c8519b43b1338cc75638533f5b2ebb5996d111688515cf802dd139dc",
+              "path": "ai-context/seo-geo-growth-roadmap/2026-10-11T05-25-29-720Z.enc.json",
+              "bytes": 9238
             }
           ]
         },
@@ -554,6 +626,18 @@
               "hash": "fd90a47b0efb1348298e2839ee5f653e1e8d6aed5c2422384d97d6c78eaa9a7e",
               "path": "ai-context/ui-ux-audit-roadmap/2026-09-29T08-29-18-632Z.enc.json",
               "bytes": 5837
+            },
+            {
+              "ts": "2026-10-11T05:09:08.202Z",
+              "hash": "7d13f23c25c0547016a8f5f2dd08288b7932f9b8fac3dbdfe4b1c181878ec86c",
+              "path": "ai-context/ui-ux-audit-roadmap/2026-10-11T05-09-08-219Z.enc.json",
+              "bytes": 5842
+            },
+            {
+              "ts": "2026-10-11T05:25:29.722Z",
+              "hash": "5e4f707e6277a013d9e50ee3b3c00d9afacd49f933c77ba05e7dffe68b6bac0e",
+              "path": "ai-context/ui-ux-audit-roadmap/2026-10-11T05-25-29-746Z.enc.json",
+              "bytes": 5844
             }
           ]
         },
@@ -596,6 +680,12 @@
               "hash": "d4a279e2e9f28968d94a6fcc79196eb56eaf3a23644eec91303541677e98074b",
               "path": "ai-context/content-proof-prototype/2026-09-17T00-29-12-209Z.enc.json",
               "bytes": 3928
+            },
+            {
+              "ts": "2026-10-11T05:09:08.134Z",
+              "hash": "e9452e2ad2413e48b924bd51fe585ed11949fde87636c32e7c5d001cfa18975c",
+              "path": "ai-context/content-proof-prototype/2026-10-11T05-09-08-151Z.enc.json",
+              "bytes": 3944
             }
           ]
         },
@@ -614,6 +704,12 @@
               "hash": "1fe58181d479211293c9a520f00f77096def973d1cd2dfbaaa13a7d8283adae3",
               "path": "ai-context/site-health-audit/2026-10-02T15-15-27-048Z.enc.json",
               "bytes": 5818
+            },
+            {
+              "ts": "2026-10-11T05:09:08.169Z",
+              "hash": "ecc311fa61948a5705feffa8d92dec7d6084920dea0f279f9644dc7183d9e022",
+              "path": "ai-context/site-health-audit/2026-10-11T05-09-08-185Z.enc.json",
+              "bytes": 5827
             }
           ]
         }

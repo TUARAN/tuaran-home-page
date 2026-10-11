@@ -50,9 +50,9 @@
 ### Modified files
 
 - `app/(site)/changelog/page.jsx` — import shared Changelog data instead of owning the array.
-- `lib/changelogData.js` — new shared home for the unchanged Changelog array.
-- `lib/adminRoutes.js` — add Planning Center navigation and project workspace active path.
-- `lib/adminIcons.jsx` — map the planning icon key.
+- `lib/automation/changelogData.js` — new shared home for the unchanged Changelog array.
+- `lib/admin/adminRoutes.js` — add Planning Center navigation and project workspace active path.
+- `lib/admin/adminIcons.jsx` — map the planning icon key.
 - `app/(admin)/admin/projects/ProjectWorkspace.jsx` — add Planning Center card.
 - `scripts/verify-admin-pages-build.cjs` — require `/admin/planning` and `/api/admin/planning` routes.
 - `package.json` — add the `test:planning` script.
@@ -251,7 +251,7 @@ git commit -m "feat: add planning domain schema and rules"
 ### Task 2: Shared Changelog data and idempotent import preview
 
 **Files:**
-- Create: `lib/changelogData.js`
+- Create: `lib/automation/changelogData.js`
 - Create: `lib/planning/seed.mjs`
 - Create: `tests/planning/seed.test.mjs`
 - Modify: `app/(site)/changelog/page.jsx`
@@ -297,7 +297,7 @@ Expected: existing rule tests pass and seed tests fail with `ERR_MODULE_NOT_FOUN
 
 - [ ] **Step 3: Extract Changelog data without changing content**
 
-Move the existing `const changelog = [...]` array byte-for-byte from `app/(site)/changelog/page.jsx` to `lib/changelogData.js` and export it as:
+Move the existing `const changelog = [...]` array byte-for-byte from `app/(site)/changelog/page.jsx` to `lib/automation/changelogData.js` and export it as:
 
 ```js
 export const CHANGELOG = [
@@ -308,12 +308,12 @@ export const CHANGELOG = [
 At the top of `app/(site)/changelog/page.jsx`, add:
 
 ```js
-import { CHANGELOG as changelog } from '../../../lib/changelogData'
+import { CHANGELOG as changelog } from '../../../lib/automation/changelogData'
 ```
 
 Remove only the original array declaration from the page. Keep all presentation constants and JSX in place.
 
-Do not add the public `/changelog` route to `KEPT_SITE_ENTRIES`; importing `lib/changelogData.js` from the Admin API keeps the data available without shipping the public page.
+Do not add the public `/changelog` route to `KEPT_SITE_ENTRIES`; importing `lib/automation/changelogData.js` from the Admin API keeps the data available without shipping the public page.
 
 - [ ] **Step 4: Implement deterministic preview generation**
 
@@ -336,14 +336,14 @@ Run: `pnpm test:planning`
 
 Expected: all rule and seed tests pass.
 
-Run: `rg -n "const changelog =|CHANGELOG as changelog|export const CHANGELOG" app/'(site)'/changelog/page.jsx lib/changelogData.js`
+Run: `rg -n "const changelog =|CHANGELOG as changelog|export const CHANGELOG" app/'(site)'/changelog/page.jsx lib/automation/changelogData.js`
 
 Expected: one exported shared array and one page import; no page-owned array remains.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/changelogData.js lib/planning/seed.mjs tests/planning/seed.test.mjs app/'(site)'/changelog/page.jsx
+git add lib/automation/changelogData.js lib/planning/seed.mjs tests/planning/seed.test.mjs app/'(site)'/changelog/page.jsx
 git commit -m "refactor: share planning import source data"
 ```
 
@@ -523,8 +523,8 @@ git commit -m "feat: expose admin planning APIs"
 - Create: `app/(admin)/admin/planning/page.jsx`
 - Create: `app/(admin)/admin/planning/PlanningCenter.jsx`
 - Create: `app/(admin)/admin/planning/planningUi.js`
-- Modify: `lib/adminRoutes.js`
-- Modify: `lib/adminIcons.jsx`
+- Modify: `lib/admin/adminRoutes.js`
+- Modify: `lib/admin/adminIcons.jsx`
 - Modify: `app/(admin)/admin/projects/ProjectWorkspace.jsx`
 
 **Interfaces:**
@@ -534,7 +534,7 @@ git commit -m "feat: expose admin planning APIs"
 
 - [ ] **Step 1: Add navigation registration**
 
-Add `/admin/planning` to the “项目与工程” workspace `activePaths`, add a Planning Center card before “项目总览,” and add `planning: IconTimelineEvent` to `lib/adminIcons.jsx`. The card copy is:
+Add `/admin/planning` to the “项目与工程” workspace `activePaths`, add a Planning Center card before “项目总览,” and add `planning: IconTimelineEvent` to `lib/admin/adminIcons.jsx`. The card copy is:
 
 ```js
 {
@@ -565,14 +565,14 @@ Run: `pnpm lint`
 
 Expected: exit 0 or only documented unrelated pre-existing failures.
 
-Run: `rg -n "/admin/planning|规划中心|planning:" lib/adminRoutes.js lib/adminIcons.jsx app/'(admin)'/admin/projects/ProjectWorkspace.jsx app/'(admin)'/admin/planning`
+Run: `rg -n "/admin/planning|规划中心|planning:" lib/admin/adminRoutes.js lib/admin/adminIcons.jsx app/'(admin)'/admin/projects/ProjectWorkspace.jsx app/'(admin)'/admin/planning`
 
 Expected: route, card, icon, metadata, and page copy are all registered.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/adminRoutes.js lib/adminIcons.jsx app/'(admin)'/admin/projects/ProjectWorkspace.jsx app/'(admin)'/admin/planning/page.jsx app/'(admin)'/admin/planning/PlanningCenter.jsx app/'(admin)'/admin/planning/planningUi.js
+git add lib/admin/adminRoutes.js lib/admin/adminIcons.jsx app/'(admin)'/admin/projects/ProjectWorkspace.jsx app/'(admin)'/admin/planning/page.jsx app/'(admin)'/admin/planning/PlanningCenter.jsx app/'(admin)'/admin/planning/planningUi.js
 git commit -m "feat: add planning center admin shell"
 ```
 

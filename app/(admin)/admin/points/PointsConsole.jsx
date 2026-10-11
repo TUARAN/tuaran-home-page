@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconCoin, IconRefresh, IconTrash } from '@tabler/icons-react'
 
-import { displayNameForUserId } from '../../../../lib/userDisplayName'
+import { displayNameForUserId } from '../../../../lib/auth/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
 
 function UserIdCell({ userId }) {

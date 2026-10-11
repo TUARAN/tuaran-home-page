@@ -1,7 +1,7 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { encryptApiKey, getKeyStoreEnv, maskApiKey } from '../../../../lib/deepseekKeys'
-import { normalizeOllamaBaseUrl } from '../../../../lib/ollamaCore'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { encryptApiKey, getKeyStoreEnv, maskApiKey } from '../../../../lib/ai/deepseekKeys'
+import { normalizeOllamaBaseUrl } from '../../../../lib/ai/ollamaCore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

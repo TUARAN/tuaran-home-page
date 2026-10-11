@@ -2,16 +2,16 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { SECONDARY_SITES } from '../lib/secondarySites.js'
-import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
-import { INTERACTIVE_DIRECTORY_WORKS } from '../lib/engineeringWorks.js'
-import { getToolItemsByDate, TOOL_ITEMS } from '../lib/toolItems.js'
+import { SECONDARY_SITES } from '../lib/site/secondarySites.js'
+import { STATIC_PAGE_REGISTRY } from '../lib/site/staticPageRegistry.mjs'
+import { INTERACTIVE_DIRECTORY_WORKS } from '../lib/site/engineeringWorks.js'
+import { getToolItemsByDate, TOOL_ITEMS } from '../lib/site/toolItems.js'
 
 const root = new URL('../', import.meta.url)
 const [worksSource, sitesSource, workItemsSource] = await Promise.all([
   readFile(new URL('app/(site)/works/page.jsx', root), 'utf8'),
   readFile(new URL('app/(site)/sites/page.jsx', root), 'utf8'),
-  readFile(new URL('lib/workItems.js', root), 'utf8'),
+  readFile(new URL('lib/site/workItems.js', root), 'utf8'),
 ])
 
 test('portfolio contains products and works without duplicating the tools directory', () => {

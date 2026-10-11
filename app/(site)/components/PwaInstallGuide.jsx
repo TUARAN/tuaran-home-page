@@ -10,15 +10,15 @@ import {
 } from 'react'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
-import { trackSiteEvent } from '../../../lib/siteAnalytics'
+import { pick } from '../../../lib/site/i18n'
+import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 import {
   A2HS_STORAGE_KEY,
   getInstallCopy,
   getInstallSurface,
   nextDismissUntil,
   shouldOfferInstall,
-} from '../../../lib/pwaInstall'
+} from '../../../lib/site/pwaInstall'
 
 const PwaInstallContext = createContext({
   installed: false,

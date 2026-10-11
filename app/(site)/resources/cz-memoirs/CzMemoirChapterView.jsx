@@ -4,8 +4,8 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import {
   CZ_MEMOIR_CHAPTER_GROUPS,
   CZ_MEMOIR_CHAPTERS,
-} from '../../../../lib/czMemoirs'
-import { readCzMemoirChapter } from '../../../../lib/czMemoirsContent'
+} from '../../../../lib/page-data/czMemoirs'
+import { readCzMemoirChapter } from '../../../../lib/page-data/czMemoirsContent'
 import CzMemoirReader from './[chapter]/CzMemoirReader'
 
 export default function CzMemoirChapterView({ slug, jsonLd }) {

@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { getPrivateNsfwR2 } from '../../../../lib/r2'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { getPrivateNsfwR2 } from '../../../../lib/db/r2'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -8,7 +8,7 @@ import {
   normalizeContentListParams,
   paginateAdminContentItems,
   sortAdminContentItems,
-} from '../lib/adminContentList.js'
+} from '../lib/admin/adminContentList.js'
 
 test('merge combines build entries, posts and manual entries with key dedupe', () => {
   const items = mergeAdminContentItems({

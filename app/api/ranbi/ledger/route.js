@@ -1,5 +1,5 @@
-import { getD1 } from '../../../../lib/d1'
-import { loadRanbiPublicLedger } from '../../../../lib/ranbiPublicLedger'
+import { getD1 } from '../../../../lib/db/d1'
+import { loadRanbiPublicLedger } from '../../../../lib/ledger/ranbiPublicLedger'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconMenu2, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand, IconChevronRight, IconShieldLock } from '@tabler/icons-react'
 
-import { AdminIcon } from '../../../lib/adminIcons'
+import { AdminIcon } from '../../../lib/admin/adminIcons'
 
 function useEnvLabel() {
   const [env, setEnv] = useState(null)

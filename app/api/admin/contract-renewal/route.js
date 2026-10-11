@@ -1,9 +1,9 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   getContractRenewalBriefingState,
   resetContractRenewalBriefing,
   setContractRenewalBriefing,
-} from '../../../../lib/contractRenewalStore'
+} from '../../../../lib/automation/contractRenewalStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

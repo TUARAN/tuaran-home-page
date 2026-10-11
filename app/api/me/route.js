@@ -4,9 +4,9 @@ import {
   getSecrets,
   parseCookies,
   verifySession,
-} from '../../../lib/edgeSession'
-import { isOwnerUser } from '../../../lib/ownerAuth'
-import { canonicalizeSessionUser } from '../../../lib/accountIdentities'
+} from '../../../lib/auth/edgeSession'
+import { isOwnerUser } from '../../../lib/auth/ownerAuth'
+import { canonicalizeSessionUser } from '../../../lib/auth/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

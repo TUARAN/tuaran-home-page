@@ -9,7 +9,7 @@ import {
   checkinDayKey,
   nextCheckinMilestone,
   rewardForStreak,
-} from '../lib/checkinRewards.js'
+} from '../lib/automation/checkinRewards.js'
 
 test('check-in day switches at China Standard Time midnight', () => {
   assert.equal(checkinDayKey(Date.parse('2026-09-29T15:59:59Z')), '2026-09-29')

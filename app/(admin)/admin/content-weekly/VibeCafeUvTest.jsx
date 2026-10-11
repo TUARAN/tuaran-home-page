@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AdminButton, Section } from '../../components/ui'
-import { createVibeUvExperiment, VIBE_UV_TEST_MODES } from '../../../../lib/vibeCafeUvTest.mjs'
+import { createVibeUvExperiment, VIBE_UV_TEST_MODES } from '../../../../lib/page-data/vibeCafeUvTest.mjs'
 
 export default function VibeCafeUvTest() {
   const [mode, setMode] = useState('retain-reload')

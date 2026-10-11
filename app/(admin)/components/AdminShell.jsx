@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 
 import AdminSidebar from './AdminSidebar'
 import AdminTopbar from './AdminTopbar'
-import { resolveAdminTrail } from '../../../lib/adminRoutes'
+import { resolveAdminTrail } from '../../../lib/admin/adminRoutes'
 
 const COLLAPSE_KEY = 'admin:nav:collapsed'
 

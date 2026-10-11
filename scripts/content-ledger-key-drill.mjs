@@ -5,8 +5,8 @@ import { dirname, resolve } from 'node:path'
 
 import { Wallet } from 'ethers'
 
-import { getContentLedgerNetwork } from '../lib/contentLedgerNetworks.js'
-import { assertPublisherAddress, buildKeyDrillReceipt, resolvePublisherWallet } from '../lib/contentLedgerWallet.js'
+import { getContentLedgerNetwork } from '../lib/content/contentLedgerNetworks.js'
+import { assertPublisherAddress, buildKeyDrillReceipt, resolvePublisherWallet } from '../lib/content/contentLedgerWallet.js'
 
 function valueAfter(args, flag) {
   const index = args.indexOf(flag)

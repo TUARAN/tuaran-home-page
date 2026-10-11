@@ -6,7 +6,7 @@ import {
   parseResearchGitEditCounts,
   resolveEditCount,
   resolveContentVersion,
-} from '../../lib/contentEditCount.js'
+} from '../../lib/content/contentEditCount.js'
 
 test('first published revision is not an edit, later revisions count from the second write', () => {
   assert.equal(editCountFromRevision(undefined), 0)

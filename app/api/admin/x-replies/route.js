@@ -1,19 +1,19 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { callDeepSeek } from '../../../../lib/deepseek'
-import { hasUsableDeepSeekKey } from '../../../../lib/deepseekKeys'
-import { DAILY_GREETING_MODEL_SELECTIONS_KEY } from '../../../../lib/dailyGreetingLlm'
-import { parseModelSelection } from '../../../../lib/modelSelection'
-import { callOllama } from '../../../../lib/ollama'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { callDeepSeek } from '../../../../lib/ai/deepseek'
+import { hasUsableDeepSeekKey } from '../../../../lib/ai/deepseekKeys'
+import { DAILY_GREETING_MODEL_SELECTIONS_KEY } from '../../../../lib/automation/dailyGreetingLlm'
+import { parseModelSelection } from '../../../../lib/ai/modelSelection'
+import { callOllama } from '../../../../lib/ai/ollama'
 import {
   buildGenericXReplyMessages,
   normalizeXPostTarget,
   sanitizeGeneratedXReply,
   validateXReplyText,
   xReplyTaskFromRow,
-} from '../../../../lib/xReplyTasks'
+} from '../../../../lib/x/xReplyTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

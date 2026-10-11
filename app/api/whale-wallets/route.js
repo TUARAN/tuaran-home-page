@@ -6,7 +6,7 @@ import {
   parseMempoolAddress,
   weiHexToEth,
   whaleAsset,
-} from '../../../lib/whaleWalletLive'
+} from '../../../lib/markets/whaleWalletLive'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

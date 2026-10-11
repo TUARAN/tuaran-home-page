@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getSiteSettings, setAdsSettings } from '../../../../lib/siteSettings'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getSiteSettings, setAdsSettings } from '../../../../lib/site/siteSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
+import { COMMUNITY_TOPICS } from '../../../lib/content/communityTopics'
 import ContentEngagement from '../components/ContentEngagement'
 import PageContainer from '../components/PageContainer'
 import SharePageButton from '../components/SharePageButton'

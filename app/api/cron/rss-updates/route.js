@@ -1,8 +1,8 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { safeEqual } from '../../../../lib/ownerAuth'
-import { pollRssUpdates } from '../../../../lib/rssUpdateNotifications'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { safeEqual } from '../../../../lib/auth/ownerAuth'
+import { pollRssUpdates } from '../../../../lib/rss/rssUpdateNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

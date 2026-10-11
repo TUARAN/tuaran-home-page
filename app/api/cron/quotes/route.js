@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { runQuoteAutomation } from '../../../../lib/quoteAutomation'
-import { QUOTE_GENERATION_PAUSED } from '../../../../lib/quoteGeneration'
+import { runQuoteAutomation } from '../../../../lib/automation/quoteAutomation'
+import { QUOTE_GENERATION_PAUSED } from '../../../../lib/automation/quoteGeneration'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

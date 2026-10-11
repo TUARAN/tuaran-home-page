@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 
-import { getContentProofCredential } from '../lib/contentProofRegistry.js'
+import { getContentProofCredential } from '../lib/content/contentProofRegistry.js'
 import {
   DEFAULT_IPFS_GATEWAYS,
   assertIndependentGateways,
@@ -10,7 +10,7 @@ import {
   createPinataPin,
   pinContentReplica,
   readReplicaFromGateways,
-} from '../lib/contentReplica.js'
+} from '../lib/content/contentReplica.js'
 
 function valueAfter(args, flag) {
   const index = args.indexOf(flag)

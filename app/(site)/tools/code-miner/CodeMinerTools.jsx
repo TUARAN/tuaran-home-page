@@ -25,7 +25,7 @@ import {
   formatJson,
   getJsonDepth,
   normalizeCodeMinerTool,
-} from '../../../../lib/codeMinerTools.mjs'
+} from '../../../../lib/mcp/codeMinerTools.mjs'
 
 const panelClass = 'rounded-xl border border-[#d9d3c7] bg-white/75 p-4 shadow-sm dark:border-[#29323d] dark:bg-[#111820]/90 sm:p-5'
 const inputClass = 'w-full rounded-lg border border-[#d6d0c4] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#8a6422] focus:ring-2 focus:ring-amber-100 dark:border-[#34404d] dark:bg-[#0d141c] dark:focus:ring-amber-950'

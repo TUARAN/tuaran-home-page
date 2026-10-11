@@ -1,5 +1,5 @@
-import { getD1 } from '../../../lib/d1'
-import { getUserFromRequest } from '../../../lib/edgeSession'
+import { getD1 } from '../../../lib/db/d1'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
 import {
   PUBLISHING_PLATFORMS,
   calculatePublishingStreak,
@@ -7,7 +7,7 @@ import {
   isPublishingMonthKey,
   publishingMonthRange,
   publishingToday,
-} from '../../../lib/publishingCheckins'
+} from '../../../lib/automation/publishingCheckins'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { LLM_HALLUCINATION_RATE_REFERENCE } from '../../../lib/llmHallucinationRate'
+import { LLM_HALLUCINATION_RATE_REFERENCE } from '../../../lib/ai/llmHallucinationRate'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

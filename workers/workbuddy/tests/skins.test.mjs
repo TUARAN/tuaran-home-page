@@ -29,7 +29,7 @@ test('payment is inline, correctly priced and never presented as an automatic ch
 
 test('payment and contact QR images are byte-for-byte copies of existing owner assets', () => {
   assert.deepEqual(readFileSync(join(root, 'public/skins/wechat-pay.jpg')), readFileSync(resolve(root, '../../public/donate-wechat.jpg')))
-  assert.deepEqual(readFileSync(join(root, 'public/skins/wechat-contact.png')), readFileSync(resolve(root, '../../gptplus-site/qrcodewechat3.png')))
+  assert.deepEqual(readFileSync(join(root, 'public/skins/wechat-contact.png')), readFileSync(resolve(root, '../../sites/gptplus/qrcodewechat3.png')))
 })
 
 test('delivery message records the platform and theme without claiming a payment happened', () => {

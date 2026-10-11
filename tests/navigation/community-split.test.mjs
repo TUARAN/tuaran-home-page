@@ -6,7 +6,7 @@ const [discussionPage, discussionClient, circlesPage, navSource] = await Promise
   readFile(new URL('../../app/(site)/community/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/community/DiscussionHubClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/circles/page.jsx', import.meta.url), 'utf8'),
-  readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
 ])
 const topicPage = await readFile(new URL('../../app/(site)/circles/CircleTopicPage.jsx', import.meta.url), 'utf8')
 const membershipCard = await readFile(new URL('../../app/(site)/components/CommunityMembershipCard.jsx', import.meta.url), 'utf8')

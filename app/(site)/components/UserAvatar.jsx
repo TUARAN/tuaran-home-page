@@ -4,8 +4,8 @@ import { useMemo } from 'react'
 import { useTheme } from 'next-themes'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
-import { getUserAvatarDataUri, getUserAvatarInitials, getUserAvatarSeed } from '../../../lib/userAvatar'
+import { pick } from '../../../lib/site/i18n'
+import { getUserAvatarDataUri, getUserAvatarInitials, getUserAvatarSeed } from '../../../lib/auth/userAvatar'
 
 const SIZE_CLASS = {
   xs: 'h-5 w-5',

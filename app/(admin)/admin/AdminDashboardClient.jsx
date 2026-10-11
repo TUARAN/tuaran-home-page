@@ -15,8 +15,8 @@ import {
   ADMIN_HOST,
   ADMIN_PRIVATE_TOOL_LINKS,
   CANONICAL_HOST,
-} from '../../../lib/adminRoutes'
-import { AdminIcon } from '../../../lib/adminIcons'
+} from '../../../lib/admin/adminRoutes'
+import { AdminIcon } from '../../../lib/admin/adminIcons'
 import { AdminButton, AdminPage, EmptyState } from '../components/ui'
 
 async function safeJson(res) {

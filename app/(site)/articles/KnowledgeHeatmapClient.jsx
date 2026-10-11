@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LoadingState } from '../../components/loading/LoadingPrimitives'
 import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../lib/juejin/activitySnapshot'
-import { articleSourceCountLabel } from '../../../lib/articleSourceCountLabel.mjs'
+import { articleSourceCountLabel } from '../../../lib/article/articleSourceCountLabel.mjs'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']

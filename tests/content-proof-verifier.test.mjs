@@ -12,10 +12,10 @@ import {
   getContentProofDiscoveryDocument,
   renderContentProofAgentGuide,
   renderContentProofLlmsSection,
-} from '../lib/contentProofDiscovery.js'
-import { getContentProofSchema, listContentProofSchemaPaths } from '../lib/contentProofSchemas.js'
-import { getContentProofCredential } from '../lib/contentProofRegistry.js'
-import { verifyContentProofBundle } from '../lib/contentProofVerify.js'
+} from '../lib/content/contentProofDiscovery.js'
+import { getContentProofSchema, listContentProofSchemaPaths } from '../lib/content/contentProofSchemas.js'
+import { getContentProofCredential } from '../lib/content/contentProofRegistry.js'
+import { verifyContentProofBundle } from '../lib/content/contentProofVerify.js'
 
 const execFileAsync = promisify(execFile)
 const root = fileURLToPath(new URL('..', import.meta.url))

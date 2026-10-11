@@ -4,12 +4,12 @@ import {
   IconExternalLink,
 } from '@tabler/icons-react'
 
-import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
-import { readContentCatalog } from '../../../lib/contentCatalogRuntime'
-import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+import { readRuntimeKnowledgeItems } from '../../../lib/content/knowledgeRuntime'
+import { readContentCatalog } from '../../../lib/content/contentCatalogRuntime'
+import { listRuntimeResearchByCategory } from '../../../lib/research/researchRuntime'
 import { isAShareCompanyObservation, isCryptoAssetObservation } from '../../../lib/research/shareTitle'
-import { researchPublicSummary } from '../../../lib/researchPublicSummary'
-import { WEB3_CATEGORY_META, WEB3_RESOURCE_GROUPS } from '../../../lib/web3Directory'
+import { researchPublicSummary } from '../../../lib/research/researchPublicSummary'
+import { WEB3_CATEGORY_META, WEB3_RESOURCE_GROUPS } from '../../../lib/markets/web3Directory'
 import Web3Sidebar from './Web3Sidebar'
 
 export const runtime = 'edge'

@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { runCryptoDaily } from '../../../../lib/cryptoResearch'
+import { runCryptoDaily } from '../../../../lib/crypto/cryptoResearch'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

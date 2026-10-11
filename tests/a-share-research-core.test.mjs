@@ -11,7 +11,7 @@ import {
   randomIndex,
   validateDraft,
   validateSnapshot,
-} from '../lib/aShareResearchCore.js'
+} from '../lib/a-share/aShareResearchCore.js'
 
 test('draftGenerationDecision 区分完成、锁定、失败重试和耗尽', () => {
   const now = Date.UTC(2026, 7, 13, 2, 0, 0)

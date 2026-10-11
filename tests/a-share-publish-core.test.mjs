@@ -14,8 +14,8 @@ import {
   repairUnclosedFrontmatter,
   stripPreamble,
   validatePublishContent,
-} from '../lib/aSharePublishCore.js'
-import { autoPublishOldestDueDraft } from '../lib/aSharePublisher.js'
+} from '../lib/a-share/aSharePublishCore.js'
+import { autoPublishOldestDueDraft } from '../lib/a-share/aSharePublisher.js'
 
 const DRAFT = [
   '---',

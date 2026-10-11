@@ -28,7 +28,7 @@
 
 ## 实现边界
 
-- 不改动 `lib/nanoBananaCases.js` 的案例数据。
+- 不改动 `lib/page-data/nanoBananaCases.js` 的案例数据。
 - 不改动案例生成脚本及上游 GitHub 固定版本。
 - 不新增新的视觉样式、筛选项或画廊功能。
 - 不迁移或重写旧的 `resource/nano-banana-gallery` 历史统计数据；新地址的多维页面阅读量从新口径独立累计。

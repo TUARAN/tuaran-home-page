@@ -8,7 +8,7 @@ import {
   normalizeXCryptoSlot,
   pickXCryptoTopic,
   xCryptoLastRunKey,
-} from '../lib/xCryptoPosts.js'
+} from '../lib/x/xCryptoPosts.js'
 
 test('three crypto slots fill separate gaps in the Beijing timeline', () => {
   assert.deepEqual(Object.keys(X_CRYPTO_POST_SLOTS), ['crypto_knowledge', 'crypto_market', 'crypto_people'])

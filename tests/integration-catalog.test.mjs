@@ -5,12 +5,12 @@ import {
   INTEGRATION_SERVICES,
   INTEGRATION_WEBHOOKS,
   probeEnvStatus,
-} from '../lib/integrationCatalog.js'
+} from '../lib/site/integrationCatalog.js'
 import {
   decryptApiKey,
   encryptApiKey,
   maskApiKey,
-} from '../lib/deepseekKeysCore.js'
+} from '../lib/ai/deepseekKeysCore.js'
 
 test('integration services are unique and well-formed', () => {
   const ids = INTEGRATION_SERVICES.map((service) => service.id)

@@ -1,7 +1,7 @@
-import { bumpViewCount, getSharedNote } from '../../../../lib/sharedNotes'
-import { isAdminLocalPreviewEnabled } from '../../../../lib/adminLocalPreview'
-import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { isOwnerUser } from '../../../../lib/ownerAuth'
+import { bumpViewCount, getSharedNote } from '../../../../lib/content/sharedNotes'
+import { isAdminLocalPreviewEnabled } from '../../../../lib/admin/adminLocalPreview'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { isOwnerUser } from '../../../../lib/auth/ownerAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

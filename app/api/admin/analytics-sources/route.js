@@ -1,4 +1,4 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   ANALYTICS_METRIC_DEFINITIONS,
   cumulativeAnalyticsWindow,
@@ -9,8 +9,8 @@ import {
   shanghaiSeriesDate,
   summarizeCloudflareGroups,
   VIBECAFE_ANALYTICS,
-} from '../../../../lib/analyticsSources.mjs'
-import { getIntegrationEnv } from '../../../../lib/integrationKeys'
+} from '../../../../lib/site/analyticsSources.mjs'
+import { getIntegrationEnv } from '../../../../lib/site/integrationKeys'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -11,7 +11,7 @@ import {
   isLegalMove,
   legalMovesForPiece,
   movePiece,
-} from '../lib/tapeoutXiangqi.js'
+} from '../lib/markets/tapeoutXiangqi.js'
 
 test('initial board contains 32 pieces and red moves first', () => {
   const pieces = createInitialPieces()

@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { DOWNLOAD_ITEMS } from '../../lib/downloadItems.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
-import { TOOL_ITEMS } from '../../lib/toolItems.js'
+import { DOWNLOAD_ITEMS } from '../../lib/site/downloadItems.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
+import { TOOL_ITEMS } from '../../lib/site/toolItems.js'
 
 const pagePath = '/tools/workbuddy-desktop-pet'
 

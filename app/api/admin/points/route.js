@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   adminAdjust,
   deleteResource,
@@ -14,9 +14,9 @@ import {
   reverseLedgerEntry,
   updatePointRules,
   upsertResource,
-} from '../../../../lib/points'
-import { listUnlocksForUser } from '../../../../lib/resourceUnlocks'
-import { listResourceEventsForUser } from '../../../../lib/resourceEvents'
+} from '../../../../lib/ledger/points'
+import { listUnlocksForUser } from '../../../../lib/content/resourceUnlocks'
+import { listResourceEventsForUser } from '../../../../lib/content/resourceEvents'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

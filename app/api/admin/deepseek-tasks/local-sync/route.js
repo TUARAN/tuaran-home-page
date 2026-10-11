@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { normalizeLocalLlmSyncPayload, localLlmTaskId } from '../../../../../lib/localLlmSync'
-import { safeEqual } from '../../../../../lib/ownerAuth'
+import { normalizeLocalLlmSyncPayload, localLlmTaskId } from '../../../../../lib/ai/localLlmSync'
+import { safeEqual } from '../../../../../lib/auth/ownerAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

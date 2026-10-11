@@ -5,7 +5,7 @@ import {
   createSoftStickerUnlockError,
   getSoftStickerUnlockErrorMessage,
   SOFT_STICKER_UNLOCK_ERRORS,
-} from '../lib/softStickerAccess.js'
+} from '../lib/admin/softStickerAccess.js'
 
 test('soft sticker unlock errors identify the failing encrypted source', () => {
   assert.equal(

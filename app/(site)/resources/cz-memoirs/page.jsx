@@ -3,7 +3,7 @@ import {
   CZ_MEMOIR_COVER,
   CZ_MEMOIR_FIRST_CHAPTER_SLUG,
   czMemoirChapterPath,
-} from '../../../../lib/czMemoirs'
+} from '../../../../lib/page-data/czMemoirs'
 import CzMemoirChapterView from './CzMemoirChapterView'
 
 export const dynamic = 'force-static'

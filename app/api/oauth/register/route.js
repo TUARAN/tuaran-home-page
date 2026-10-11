@@ -1,6 +1,6 @@
-import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/abuseControls'
-import { getD1 } from '../../../../lib/d1'
-import { registerOAuthClient } from '../../../../lib/oauthServer'
+import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/auth/abuseControls'
+import { getD1 } from '../../../../lib/db/d1'
+import { registerOAuthClient } from '../../../../lib/auth/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -9,7 +9,7 @@ import {
   getAllFeedItems,
   getLatestFeedItems,
 } from '../../app/(site)/feed/data.js'
-import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/homeRecommendationEngine.js'
+import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/home/homeRecommendationEngine.js'
 
 test('homepage inspirations stay in chronological order', () => {
   const items = getLatestFeedItems(10)

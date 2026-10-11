@@ -5,7 +5,7 @@ import {
   IconMessageCircle, IconRocket, IconShieldLock, IconUserCircle,
 } from '@tabler/icons-react'
 
-import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/siteNav'
+import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/site/siteNav'
 import PageContainer from '../components/PageContainer'
 
 export const dynamic = 'force-static'

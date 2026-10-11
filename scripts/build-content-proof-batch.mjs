@@ -2,7 +2,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { buildContentMerkleBatch } from '../lib/contentMerkle.js'
+import { buildContentMerkleBatch } from '../lib/content/contentMerkle.js'
 
 function valueAfter(args, flag) {
   const index = args.indexOf(flag)

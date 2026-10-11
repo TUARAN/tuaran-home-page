@@ -5,7 +5,7 @@ import {
   normalizeXArticleCandidates,
   normalizeXArticleReport,
   pickDailyXArticle,
-} from '../lib/xArticleExtension.js'
+} from '../lib/x/xArticleExtension.js'
 
 const rows = [
   { content_key: 'research:topics:b', content_type: 'research', title: 'B', summary: '摘要 B', href: '/articles/research/topics/b' },

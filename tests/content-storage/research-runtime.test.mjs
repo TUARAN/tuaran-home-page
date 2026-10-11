@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-import { researchPublicSummary } from '../../lib/researchPublicSummary.js'
+import { researchPublicSummary } from '../../lib/research/researchPublicSummary.js'
 
 const read = (name) => fs.readFileSync(new URL(`../../${name}`, import.meta.url), 'utf8')
 function load(name, scope, exports) {
@@ -12,7 +12,7 @@ function load(name, scope, exports) {
 function harness() {
   let state = null, failure = null, assetReads = 0
   const entry = {category:'topics',slug:'existing',title:'Title',content:'Body',variants:[{id:'one',content:'one'},{id:'two',content:'two'}]}
-  const runtime = load('lib/researchRuntime.js', {
+  const runtime = load('lib/research/researchRuntime.js', {
     cache:(fn)=>fn, getD1:()=>({}),
     readContentCatalog:async()=>({researchKeys:['topics/existing'],researchMeta:{'topics/existing':entry},researchRedirects:{existing:'/articles/research/topics/existing'}}),
     readContentAsset:async()=>{assetReads++;return entry},
@@ -50,7 +50,7 @@ test('only missing additive schema allows fallback; outages do not reveal histor
 
 test('research HTTP gate returns real 404/307 before streaming and keeps variant query',async()=>{
   let route={found:true,status:'published',href:'/articles/research/topics/current'}
-  const gate=load('lib/articleRequestGate.js',{resolveResearchPath:async()=>route},['gateArticleRequest']).gateArticleRequest
+  const gate=load('lib/article/articleRequestGate.js',{resolveResearchPath:async()=>route},['gateArticleRequest']).gateArticleRequest
   const redirect=await gate('/articles/research/topics/2026-09-10-current','?v=two','https://preview.example')
   assert.equal(redirect.status,307)
   assert.equal(redirect.headers.get('location'),'https://preview.example/articles/research/topics/current?v=two')
@@ -60,7 +60,7 @@ test('research HTTP gate returns real 404/307 before streaming and keeps variant
 })
 
 test('RSS and sitemap remove withdrawn and encrypted research, add new runtime documents',()=>{
-  const {applyResearchDiscovery}=load('lib/researchDiscovery.js',{escapeDiscoveryXml:(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),researchPublicSummary},['applyResearchDiscovery'])
+  const {applyResearchDiscovery}=load('lib/research/researchDiscovery.js',{escapeDiscoveryXml:(s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),researchPublicSummary},['applyResearchDiscovery'])
   const entries=[{category:'topics',slug:'old',status:'retired'},{category:'topics',slug:'secret',status:'published',encrypted:true},{category:'topics',slug:'new',title:'New & safe',summary:'Summary',date:'2026-09-10',status:'published'}]
   const rss='<rss><channel><item><link>https://2aran.com/articles/research/topics/old?v=one</link><description>WITHDRAWN BODY</description></item><item><link>https://2aran.com/articles/research/topics/secret</link></item><item><link>https://2aran.com/articles/ordinary</link></item></channel></rss>'
   const output=applyResearchDiscovery(rss,entries,'rss')
@@ -73,7 +73,7 @@ test('RSS and sitemap remove withdrawn and encrypted research, add new runtime d
 test('knowledge directory overlays research tombstones, new taxonomy and ordinary posts on the server',async()=>{
   const href=(slug)=>`/articles/research/topics/${slug}`
   const rows=[['old','retired',false],['secret','published',true],['new','published',false]].map(([slug,status,encrypted])=>({status,metadata_json:JSON.stringify({category:'topics',slug,title:slug,encrypted})}))
-  const {readRuntimeKnowledgeItems}=load('lib/knowledgeRuntime.js',{
+  const {readRuntimeKnowledgeItems}=load('lib/content/knowledgeRuntime.js',{
     readContentCatalog:async()=>({knowledgeItems:[{id:'research:topics:old',href:href('old'),title:'Stale'},{id:'resource',href:'/resources/existing',title:'Existing'}]}),
     listResearchOverrides:async()=>rows,
     listDiscoverablePosts:async()=>[{slug:'post',title:'Post'}],
@@ -89,7 +89,7 @@ test('knowledge directory overlays research tombstones, new taxonomy and ordinar
 })
 
 test('knowledge directory keeps the catalog when D1 is not bound', async () => {
-  const { readRuntimeKnowledgeItems } = load('lib/knowledgeRuntime.js', {
+  const { readRuntimeKnowledgeItems } = load('lib/content/knowledgeRuntime.js', {
     readContentCatalog: async () => ({ knowledgeItems: [{ id: 'resource', href: '/resources/existing', title: 'Existing' }] }),
     listResearchOverrides: async () => { throw new Error('D1 binding DB is missing (Cloudflare Pages env.DB)') },
     listDiscoverablePosts: async () => [],
@@ -104,7 +104,7 @@ test('knowledge directory keeps the catalog when D1 is not bound', async () => {
   const items = await readRuntimeKnowledgeItems()
   assert.deepEqual(items.map((item) => item.href), ['/resources/existing'])
   await assert.rejects(
-    load('lib/knowledgeRuntime.js', {
+    load('lib/content/knowledgeRuntime.js', {
       readContentCatalog: async () => ({ knowledgeItems: [] }),
       listResearchOverrides: async () => { throw new Error('D1 connection unavailable') },
       listDiscoverablePosts: async () => [],
@@ -121,7 +121,7 @@ test('knowledge directory keeps the catalog when D1 is not bound', async () => {
 })
 
 test('admin list reports real Git document states, including unpublished and encrypted records',()=>{
-  const {mergeAdminContentItems}=load('lib/adminContentList.js',{},['mergeAdminContentItems'])
+  const {mergeAdminContentItems}=load('lib/admin/adminContentList.js',{},['mergeAdminContentItems'])
   const researchDocuments=['draft','published','retired'].map((status)=>({content_key:`research:topics:${status}`,status,updated_at:100,metadata_json:JSON.stringify({category:'topics',slug:status,title:status,encrypted:status==='published'})}))
   const rows=mergeAdminContentItems({researchDocuments})
   assert.equal(rows.length,3)

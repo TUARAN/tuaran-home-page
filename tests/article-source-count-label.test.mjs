@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { articleSourceCountLabel } from '../lib/articleSourceCountLabel.mjs'
+import { articleSourceCountLabel } from '../lib/article/articleSourceCountLabel.mjs'
 
 test('omits zero-count sources from article count labels', () => {
   assert.equal(articleSourceCountLabel(0, 70), '掘金 70')

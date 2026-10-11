@@ -8,7 +8,7 @@ import {
   buildXUsAudienceMessages,
   normalizeXUsAudienceSlot,
   xUsAudienceLastRunKey,
-} from '../lib/xUsAudiencePosts.js'
+} from '../lib/x/xUsAudiencePosts.js'
 
 test('three US audience slots cover the Beijing overnight gap with independent keys', () => {
   assert.deepEqual(Object.keys(X_US_AUDIENCE_SLOTS), ['us_morning', 'us_midday', 'us_evening'])

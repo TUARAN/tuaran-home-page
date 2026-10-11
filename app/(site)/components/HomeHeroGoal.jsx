@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from './LocaleProvider'
-import { SITE_HERO_GOAL_PARTS } from '../../../lib/siteIntro'
+import { SITE_HERO_GOAL_PARTS } from '../../../lib/site/siteIntro'
 
 const SITE_HERO_GOAL_PARTS_EN = [
   'Turn chaos into ',

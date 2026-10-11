@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { AVATAR_PATH } from '../../../lib/avatar'
+import { AVATAR_PATH } from '../../../lib/auth/avatar'
 
 /**
  * 作者引流条 + 分发用 Markdown

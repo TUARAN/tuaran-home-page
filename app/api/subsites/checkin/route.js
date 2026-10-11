@@ -1,5 +1,5 @@
 import { POST as checkin } from '../../points/checkin/route'
-import { handleSubsiteCheckin, subsitePreflight } from '../../../../lib/subsiteAccount'
+import { handleSubsiteCheckin, subsitePreflight } from '../../../../lib/site/subsiteAccount'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

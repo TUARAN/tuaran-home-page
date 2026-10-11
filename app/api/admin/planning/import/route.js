@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../lib/d1'
-import { CHANGELOG } from '../../../../../lib/changelogData'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../lib/db/d1'
+import { CHANGELOG } from '../../../../../lib/automation/changelogData'
 import {
   applyInitialImport,
   previewInitialImport,

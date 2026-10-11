@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import {
   TEMPLATE_COMMUNITY_TOPICS,
   getCommunityTopicBySlug,
-} from '../../../../lib/communityTopics'
+} from '../../../../lib/content/communityTopics'
 import CircleTopicPage from '../CircleTopicPage'
 
 export const dynamic = 'force-static'

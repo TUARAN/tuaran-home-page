@@ -1,6 +1,6 @@
 import AgentCenterHero from '../components/AgentCenterHero'
 import PageContainer from '../components/PageContainer'
-import { WORKBUDDY_MARKETPLACE_ARTIFACTS } from '../../../lib/workbuddyMarketplaceArtifacts'
+import { WORKBUDDY_MARKETPLACE_ARTIFACTS } from '../../../lib/workbuddy/workbuddyMarketplaceArtifacts'
 import WorkBuddyCatalog from './WorkBuddyCatalog'
 
 export const dynamic = 'force-static'

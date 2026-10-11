@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { OPENCLAW_ACHIEVEMENT_COUNT } from '../../lib/openClawAchievements.js'
+import { OPENCLAW_ACHIEVEMENT_COUNT } from '../../lib/site/openClawAchievements.js'
 import {
   RESUME_DESCRIPTION,
   RESUME_PATH,
@@ -10,8 +10,8 @@ import {
   resumeOpenSource,
   resumeProfile,
   resumeSummary,
-} from '../../lib/resume.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+} from '../../lib/site/resume.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 import { routeFromPageFile } from '../../scripts/audit-route-seo.mjs'
 
 test('about page exposes a job resume entry that routes to the printable CV', async () => {
@@ -19,7 +19,7 @@ test('about page exposes a job resume entry that routes to the printable CV', as
     readFile(new URL('../../app/(site)/about/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/about/resume/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/about/resume/ResumeToolbar.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
   ])
 
   assert.equal(RESUME_PATH, '/about/resume')

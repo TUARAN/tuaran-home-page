@@ -9,7 +9,7 @@ import {
   replaceLatestChangelogEntry,
   upsertPeriodSummary,
   validateGeneratedSummary,
-} from '../../lib/changelogAutomationCore.mjs'
+} from '../../lib/automation/changelogAutomationCore.mjs'
 
 const ENTRY = {
   version: '2026-W36',

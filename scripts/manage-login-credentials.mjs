@@ -9,7 +9,7 @@ import {
   createCredentialToken,
   hashCredentialSecret,
   parseCredentialToken,
-} from '../lib/credentialAuth.js'
+} from '../lib/auth/credentialAuth.js'
 
 const DATABASE_NAME = 'tuaran-me'
 

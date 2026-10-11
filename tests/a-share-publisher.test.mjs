@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
-import { AUTO_PUBLISH_DELAY_MS } from '../lib/aSharePublishCore.js'
-import { autoPublishOldestDueDraft } from '../lib/aSharePublisher.js'
+import { AUTO_PUBLISH_DELAY_MS } from '../lib/a-share/aSharePublishCore.js'
+import { autoPublishOldestDueDraft } from '../lib/a-share/aSharePublisher.js'
 
 function article(code, name) {
   return [

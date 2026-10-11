@@ -5,7 +5,7 @@ import test from 'node:test'
 import {
   getLegacyPathRedirect,
   shouldNoindexPath,
-} from '../../lib/indexingPolicy.js'
+} from '../../lib/site/indexingPolicy.js'
 
 const root = new URL('../../', import.meta.url)
 const adminPagesBuild = process.env.ADMIN_PAGES_BUILD === '1'

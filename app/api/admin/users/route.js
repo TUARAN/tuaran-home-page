@@ -1,8 +1,8 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { isOwnerUser } from '../../../../lib/ownerAuth'
-import { getBalance, getBalancesFor, getUnlockCountsForUsers } from '../../../../lib/points'
-import { listSiteUsers, updateSiteUser } from '../../../../lib/userDirectory'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { isOwnerUser } from '../../../../lib/auth/ownerAuth'
+import { getBalance, getBalancesFor, getUnlockCountsForUsers } from '../../../../lib/ledger/points'
+import { listSiteUsers, updateSiteUser } from '../../../../lib/auth/userDirectory'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

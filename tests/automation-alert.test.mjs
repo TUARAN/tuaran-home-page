@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   automationAlertKey,
   buildAutomationAlertExcerpt,
-} from '../lib/siteNotificationsCore.js'
+} from '../lib/site/siteNotificationsCore.js'
 
 test('automation alert key is stable and namespaced by workflow + run id', () => {
   assert.equal(

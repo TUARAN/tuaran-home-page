@@ -1,4 +1,4 @@
-import { RANBI_POOL_ALLOCATIONS, RANBI_TOTAL_SUPPLY } from '../../../lib/points'
+import { RANBI_POOL_ALLOCATIONS, RANBI_TOTAL_SUPPLY } from '../../../lib/ledger/points'
 
 export const RANBI_POOL_COLORS = ['#2563eb', '#7c3aed', '#059669', '#ea580c', '#db2777']
 const STATE_COLORS = {

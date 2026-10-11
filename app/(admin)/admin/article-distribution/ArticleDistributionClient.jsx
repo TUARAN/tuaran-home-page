@@ -15,7 +15,7 @@ import {
 import {
   ARTICLE_DISTRIBUTION_PLATFORMS,
   resolveArticleDistributionAccounts,
-} from '../../../../lib/articleDistribution'
+} from '../../../../lib/article/articleDistribution'
 import AdminButton from '../../components/ui/AdminButton'
 import AdminPage from '../../components/ui/AdminPage'
 import Section from '../../components/ui/Section'

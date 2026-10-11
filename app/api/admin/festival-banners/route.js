@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { deleteFestivalBanner, listFestivalBanners, saveFestivalBanner } from '../../../../lib/festivalBanners'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { deleteFestivalBanner, listFestivalBanners, saveFestivalBanner } from '../../../../lib/site/festivalBanners'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

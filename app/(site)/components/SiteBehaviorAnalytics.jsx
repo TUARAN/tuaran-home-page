@@ -8,7 +8,7 @@ import {
   getVisitorStage,
   markQualifiedStart,
   trackSiteEvent,
-} from '../../../lib/siteAnalytics'
+} from '../../../lib/site/siteAnalytics'
 
 const ENGAGED_SECONDS = 30
 const ENGAGED_SCROLL_RATIO = 0.5

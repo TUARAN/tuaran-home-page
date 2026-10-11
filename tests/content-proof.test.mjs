@@ -12,10 +12,10 @@ import {
   hashContent,
   sha256,
   verifyContentProof,
-} from '../lib/contentProof.js'
-import { buildContentMerkleBatch, verifyContentMerkleBatch, verifyMerkleMembership } from '../lib/contentMerkle.js'
-import { describeProofStatus, isOlderVersion, shortDigest } from '../lib/contentProofPresentation.js'
-import { contentProofHref } from '../lib/contentProofRegistry.js'
+} from '../lib/content/contentProof.js'
+import { buildContentMerkleBatch, verifyContentMerkleBatch, verifyMerkleMembership } from '../lib/content/contentMerkle.js'
+import { describeProofStatus, isOlderVersion, shortDigest } from '../lib/content/contentProofPresentation.js'
+import { contentProofHref } from '../lib/content/contentProofRegistry.js'
 
 const ENTRY = {
   author: 'TUARAN',
@@ -106,7 +106,7 @@ test('proof cannot be reused for another content identity or contract', async ()
 })
 
 test('the shared implementation remains browser-safe', async () => {
-  const source = await readFile(new URL('../lib/contentProof.js', import.meta.url), 'utf8')
+  const source = await readFile(new URL('../lib/content/contentProof.js', import.meta.url), 'utf8')
   assert.doesNotMatch(source, /from ['"]node:/)
   assert.doesNotMatch(source, /\bBuffer\b/)
   assert.match(source, /globalThis\.crypto\.subtle/)
@@ -214,7 +214,7 @@ test('the ledger page leads with live reader verification, not a 90-day plan', a
     readFile(new URL('../app/(site)/onchain-blog/ReaderTestInvite.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/proofs/[contentKey]/ProofVerificationClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/proofs/[contentKey]/page.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/contentProofDiscovery.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/content/contentProofDiscovery.js', import.meta.url), 'utf8'),
   ])
   assert.match(llms, /verify\.txt/)
   assert.match(llms, /content-proof\.json/)

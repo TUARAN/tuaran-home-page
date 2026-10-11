@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useCallback, useState } from 'react'
 
-import { getOpenClawAchievementFacts } from '../../../lib/openClawAchievements'
+import { getOpenClawAchievementFacts } from '../../../lib/site/openClawAchievements'
 
 export default function OpenClawAchievementsCarousel({ achievements }) {
   const [activeIndex, setActiveIndex] = useState(0)

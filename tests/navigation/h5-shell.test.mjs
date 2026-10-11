@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const [navSource, chromeSource, headerSource, pageSource, layoutSource, swSource, manifestSource] = await Promise.all([
-  readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/site/siteMobileNav.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/components/LayoutChromeControls.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8'),

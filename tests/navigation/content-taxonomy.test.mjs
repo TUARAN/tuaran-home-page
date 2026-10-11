@@ -21,14 +21,14 @@ import {
   taxonomyForResearch,
   taxonomyForResource,
   validateTaxonomyRecord,
-} from '../../lib/contentTaxonomy.js'
+} from '../../lib/content/contentTaxonomy.js'
 import {
   SUBJECT_GOVERNANCE_LIST,
   TAXONOMY_DIMENSIONS,
   TAXONOMY_GOVERNANCE_RULES,
-} from '../../lib/contentTaxonomyGovernance.js'
-import { ENGINEERING_WORKS } from '../../lib/engineeringWorks.js'
-import { HOME_RESOURCE_ITEMS } from '../../lib/homeResourceItems.js'
+} from '../../lib/content/contentTaxonomyGovernance.js'
+import { ENGINEERING_WORKS } from '../../lib/site/engineeringWorks.js'
+import { HOME_RESOURCE_ITEMS } from '../../lib/home/homeResourceItems.js'
 import { RESEARCH_ENTRY_META } from '../../lib/research/catalog.js'
 
 test('public card labels use content group and subject, not research folders', () => {
@@ -359,7 +359,7 @@ test('every reader-facing subject has a governed definition and stable id', () =
 test('taxonomy manager is registered in the content center', async () => {
   const [contentCenter, adminRoutes, adminPage] = await Promise.all([
     readFile(new URL('../../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(admin)/admin/content-taxonomy/ContentTaxonomyClient.jsx', import.meta.url), 'utf8'),
   ])
   assert.match(contentCenter, /getWorkspaceHubProps\('\/admin\/content'\)/)

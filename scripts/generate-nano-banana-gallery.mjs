@@ -8,7 +8,7 @@ const sourceRoot = path.resolve(
 )
 const galleryRoot = path.join(sourceRoot, 'banana-gallery')
 const imagesRoot = path.join(galleryRoot, 'public', 'images')
-const outputPath = path.join(projectRoot, 'lib', 'nanoBananaCases.js')
+const outputPath = path.join(projectRoot, 'lib', 'page-data', 'nanoBananaCases.js')
 
 const readme = await readFile(path.join(sourceRoot, 'README.md'), 'utf8')
 const sourceCommit = execFileSync('git', ['-C', sourceRoot, 'rev-parse', 'HEAD'], {

@@ -7,8 +7,8 @@ const read = (path) => readFile(new URL(path, import.meta.url), 'utf8')
 test('管理员模型列表接口先鉴权，再读取现有服务并调用原生 tags', async () => {
   const [route, ollama, core] = await Promise.all([
     read('../app/api/admin/llm-providers/models/route.js'),
-    read('../lib/ollama.js'),
-    read('../lib/ollamaCore.js'),
+    read('../lib/ai/ollama.js'),
+    read('../lib/ai/ollamaCore.js'),
   ])
 
   assert.match(route, /getOwnerOrReject\(req\)/)
@@ -22,7 +22,7 @@ test('管理员模型列表接口先鉴权，再读取现有服务并调用原�
 test('模型列表响应只返回规范化字段，不返回凭据或上游摘要', async () => {
   const [route, core] = await Promise.all([
     read('../app/api/admin/llm-providers/models/route.js'),
-    read('../lib/ollamaCore.js'),
+    read('../lib/ai/ollamaCore.js'),
   ])
 
   assert.match(route, /models: result\.models/)
@@ -44,8 +44,8 @@ test('服务卡片通过现有 PATCH 切换默认模型，并保留刷新失败�
 
 test('业务调用既支持默认模型，也支持任务显式选择已安装模型', async () => {
   const [ollama, tasks, automationModels, testRoute] = await Promise.all([
-    read('../lib/ollama.js'),
-    read('../lib/deepseekTasks.js'),
+    read('../lib/ai/ollama.js'),
+    read('../lib/ai/deepseekTasks.js'),
     read('../app/api/admin/morning-greeting/model-selection/route.js'),
     read('../app/api/admin/llm-providers/test/route.js'),
   ])

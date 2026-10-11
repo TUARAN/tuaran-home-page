@@ -2,11 +2,11 @@
 
 更新：2026-09-16
 
-第 1—2 周原型由 `lib/contentProof.js`、`scripts/build-content-proof.mjs`、公开 proof JSON 和 `/onchain-blog` 上的浏览器验证器组成。它只完成内容规范化、SHA-256、站点签名与离线验证；不包含 Merkle Tree、测试网或主网交易。
+第 1—2 周原型由 `lib/content/contentProof.js`、`scripts/build-content-proof.mjs`、公开 proof JSON 和 `/onchain-blog` 上的浏览器验证器组成。它只完成内容规范化、SHA-256、站点签名与离线验证；不包含 Merkle Tree、测试网或主网交易。
 
 第 5—6 周的读者界面由 `ContentProofCard`、`/proofs/[contentKey]`、`contentProofRegistry.js` 和 `contentProofPresentation.js` 组成。已登记凭证可在文章页显示紧凑卡片，详情页在浏览器本地核对内容指纹、Proof ID 和站点签名，并展示 Merkle/链上状态、版本时间线和区块浏览器入口。读者全程无需连接钱包。
 
-第 7—10 周接入 IPFS 副本和主网小批量控制。`lib/contentReplica.js` 生成规范化副本并要求两个独立网关回读同一 SHA-256；`scripts/pin-content-replica.mjs` 默认只写本地副本，`--pin` 才使用 `PINATA_JWT`。发布钱包必须是 `content_attestation` 角色，测试网与主网密钥隔离，主网还要 `--confirm-mainnet`。`scripts/anchor-content-proof-batch.mjs` 按 `chainId + merkleRoot + schemaUid` 幂等，瞬时错误重试，并把 gas / 延迟写入本地 ledger。RSS、`llms.txt` 和 `/proofs.xml` 暴露 proof 与副本链接。活 pinning 与主网交易仍需隔离钱包和 Pinata 凭据，不在构建机执行。
+第 7—10 周接入 IPFS 副本和主网小批量控制。`lib/content/contentReplica.js` 生成规范化副本并要求两个独立网关回读同一 SHA-256；`scripts/pin-content-replica.mjs` 默认只写本地副本，`--pin` 才使用 `PINATA_JWT`。发布钱包必须是 `content_attestation` 角色，测试网与主网密钥隔离，主网还要 `--confirm-mainnet`。`scripts/anchor-content-proof-batch.mjs` 按 `chainId + merkleRoot + schemaUid` 幂等，瞬时错误重试，并把 gas / 延迟写入本地 ledger。RSS、`llms.txt` 和 `/proofs.xml` 暴露 proof 与副本链接。活 pinning 与主网交易仍需隔离钱包和 Pinata 凭据，不在构建机执行。
 
 第 11—12 周开放验证器。`tools/content-proof-verifier/cli.mjs` 只读本地 replica / proof / 公钥 / batch，运行时不访问 2aran.com。`/.well-known/content-proof.json`、`/verify.txt` 和 `/schemas/content-proof/v1` 提供 Agent 可读协议；`/onchain-blog#open-verifier` 邀请读者测试，并写清通过时核对了什么、仍未证明什么。50 名读者实测是开放后的运营目标，工程交付是可独立运行的验证器与可被说清的验证边界。
 

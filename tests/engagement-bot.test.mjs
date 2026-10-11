@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { commentProviderLabel } from '../lib/userDisplayName.js'
+import { commentProviderLabel } from '../lib/auth/userDisplayName.js'
 import {
   DEFAULT_ENGAGEMENT_BOT_SETTINGS,
   DEFAULT_ENGAGEMENT_BOTS,
@@ -17,7 +17,7 @@ import {
   readerVoterKey,
   sanitizeGeneratedComment,
   shouldSkipRun,
-} from '../lib/engagementBot.js'
+} from '../lib/automation/engagementBot.js'
 
 test('default settings enable one daily interaction attempt without skipping the run', () => {
   const settings = parseStoredEngagementBotSettings('')

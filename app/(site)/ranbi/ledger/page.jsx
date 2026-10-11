@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import PageContainer from '../../components/PageContainer'
-import { getD1 } from '../../../../lib/d1'
-import { loadRanbiPublicLedger } from '../../../../lib/ranbiPublicLedger'
-import { RANBI_TOTAL_SUPPLY } from '../../../../lib/points'
+import { getD1 } from '../../../../lib/db/d1'
+import { loadRanbiPublicLedger } from '../../../../lib/ledger/ranbiPublicLedger'
+import { RANBI_TOTAL_SUPPLY } from '../../../../lib/ledger/points'
 import RanbiLedgerTransfers from './RanbiLedgerTransfers'
 
 export const runtime = 'edge'

@@ -11,7 +11,7 @@ import {
   parseXControversyFeed,
   xControversyLastRunKey,
   xControversyWithinTarget,
-} from '../lib/xControversyPosts.js'
+} from '../lib/x/xControversyPosts.js'
 
 test('controversy slots cover every Shanghai hour with unique run keys', () => {
   const slots = Object.values(X_CONTROVERSY_SLOTS)

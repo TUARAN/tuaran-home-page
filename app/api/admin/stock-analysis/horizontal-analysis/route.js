@@ -1,7 +1,7 @@
 import { getRecentSnapshotsByCategory } from '../../../../(admin)/admin/stock-analysis/data'
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { callDeepSeekJson } from '../../../../../lib/deepseek'
-import { enrichDeepSeekTask } from '../../../../../lib/deepseekTasks'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { callDeepSeekJson } from '../../../../../lib/ai/deepseek'
+import { enrichDeepSeekTask } from '../../../../../lib/ai/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

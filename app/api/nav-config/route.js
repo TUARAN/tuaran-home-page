@@ -1,4 +1,4 @@
-import { getNavOverrides } from '../../../lib/navOverrides'
+import { getNavOverrides } from '../../../lib/site/navOverrides'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

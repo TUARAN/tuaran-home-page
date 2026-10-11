@@ -8,7 +8,7 @@ import {
   ARTICLE_DISTRIBUTION_PLATFORMS,
   normalizeArticleDistributionPlatformIds,
   resolveArticleDistributionAccounts,
-} from '../lib/articleDistribution.js'
+} from '../lib/article/articleDistribution.js'
 
 const execFileAsync = promisify(execFile)
 
@@ -36,7 +36,7 @@ test('只把插件已声明的平台解析为已勾选账号', () => {
 test('后台内容工作区和导航都登记文章分发', async () => {
   const [workspace, routes, page, articleRoute] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/article-distribution/ArticleDistributionClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/article-distribution/article/route.js', import.meta.url), 'utf8'),
   ])

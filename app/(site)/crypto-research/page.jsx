@@ -1,9 +1,9 @@
 import CryptoResearchClient from './CryptoResearchClient'
-import { CRYPTO_RESEARCH_TEMPLATE_VERSION } from '../../../lib/cryptoResearchCore'
-import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+import { CRYPTO_RESEARCH_TEMPLATE_VERSION } from '../../../lib/crypto/cryptoResearchCore'
+import { listRuntimeResearchByCategory } from '../../../lib/research/researchRuntime'
 import { isCryptoAssetObservation } from '../../../lib/research/shareTitle'
-import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
-import { researchPublicSummary } from '../../../lib/researchPublicSummary'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/research/researchStyleTemplates'
+import { researchPublicSummary } from '../../../lib/research/researchPublicSummary'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

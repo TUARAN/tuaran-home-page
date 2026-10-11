@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildPublicOpinionTimelineDays } from '../lib/publicOpinionData.js'
+import { buildPublicOpinionTimelineDays } from '../lib/publicOpinion/publicOpinionData.js'
 
 test('舆情时间线按北京时间分日，并明确标记今天和昨天', () => {
   const days = buildPublicOpinionTimelineDays([

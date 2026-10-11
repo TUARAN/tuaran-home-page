@@ -1,5 +1,5 @@
-import { getD1 } from '../../../lib/d1'
-import { getVoiceTaskPrincipal } from '../../../lib/voiceTasksAuth'
+import { getD1 } from '../../../lib/db/d1'
+import { getVoiceTaskPrincipal } from '../../../lib/auth/voiceTasksAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

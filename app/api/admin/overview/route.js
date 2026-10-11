@@ -1,8 +1,8 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { listSiteUsers } from '../../../../lib/userDirectory'
-import { getD1QuickStatus } from '../../../../lib/dbAdmin'
-import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/researchStyleTemplates'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { listSiteUsers } from '../../../../lib/auth/userDirectory'
+import { getD1QuickStatus } from '../../../../lib/admin/dbAdmin'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/research/researchStyleTemplates'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

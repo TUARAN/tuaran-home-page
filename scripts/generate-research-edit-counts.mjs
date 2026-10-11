@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseResearchGitEditCounts } from '../lib/contentEditCount.js'
+import { parseResearchGitEditCounts } from '../lib/content/contentEditCount.js'
 
 export function writeResearchEditCounts(root = process.cwd()) {
   let output = ''

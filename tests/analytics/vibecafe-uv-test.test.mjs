@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createVibeUvExperiment } from '../../lib/vibeCafeUvTest.mjs'
+import { createVibeUvExperiment } from '../../lib/page-data/vibeCafeUvTest.mjs'
 
 function storageFixture() {
   const values = new Map([['login', 'keep'], ['vc:telemetry:visitor:production', 'real-visitor']])

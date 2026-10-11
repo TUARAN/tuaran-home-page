@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { pickChineseVoice, splitSpeechText, stripMarkdownForSpeech } from '../../../lib/speechText'
+import { pickChineseVoice, splitSpeechText, stripMarkdownForSpeech } from '../../../lib/site/speechText'
 
 export default function ReadAloudButton({ markdown = '', portal = false }) {
   const [slot, setSlot] = useState(null)

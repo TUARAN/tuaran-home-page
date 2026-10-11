@@ -1,6 +1,6 @@
-import { getD1 } from '../../../lib/d1'
-import { listPublishedRssFeeds } from '../../../lib/rssFeedVisibility'
-import { RSS_FEEDS_SEED } from '../../../lib/rssFeedsSeed'
+import { getD1 } from '../../../lib/db/d1'
+import { listPublishedRssFeeds } from '../../../lib/rss/rssFeedVisibility'
+import { RSS_FEEDS_SEED } from '../../../lib/rss/rssFeedsSeed'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

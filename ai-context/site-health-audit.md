@@ -96,7 +96,7 @@ D1 Insights 显示，读取全部 `content_documents` 覆盖记录的查询最�
 - 全站挂载：`app/(site)/layout.jsx`。
 - 站点状态接口：`app/api/site-status/route.js`。
 - 待发布在线状态：`app/(site)/components/SitePresenceProvider.jsx`、`app/api/presence/route.js`。
-- 调研发布状态读取：`lib/researchRuntime.js`、`app/api/research-pv/route.js`。
+- 调研发布状态读取：`lib/research/researchRuntime.js`、`app/api/research-pv/route.js`。
 - 通知接口：`app/api/notifications/route.js`。
 - 导航与配置：`app/api/nav-config/route.js`、`app/api/site-settings/route.js`。
 

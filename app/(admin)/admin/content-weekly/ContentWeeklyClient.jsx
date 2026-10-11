@@ -17,7 +17,7 @@ import {
 
 import { AdminButton, AdminPage, EmptyState, Section } from '../../components/ui'
 import { LoadingSpinner, Skeleton } from '../../../components/loading/LoadingPrimitives'
-import { ANALYTICS_METRIC_DEFINITIONS, VIBECAFE_ANALYTICS } from '../../../../lib/analyticsSources.mjs'
+import { ANALYTICS_METRIC_DEFINITIONS, VIBECAFE_ANALYTICS } from '../../../../lib/site/analyticsSources.mjs'
 import VibeCafeUvTest from './VibeCafeUvTest'
 
 const PERIODS = [

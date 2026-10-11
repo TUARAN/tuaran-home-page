@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { pickGenericXReply } from '../../../../lib/xReplyTasks'
+import { pickGenericXReply } from '../../../../lib/x/xReplyTasks'
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
 const STATUS_META = {

@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 import ArticlesIndexClient from './ArticlesIndexClient'
-import { filtersFromParams, toUrlSearchParams } from '../../../lib/articlesDirectoryFilters'
-import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
+import { filtersFromParams, toUrlSearchParams } from '../../../lib/article/articlesDirectoryFilters'
+import { readRuntimeKnowledgeItems } from '../../../lib/content/knowledgeRuntime'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

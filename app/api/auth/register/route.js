@@ -1,4 +1,4 @@
-import { registerEmailUser } from '../../../../lib/emailAuth'
+import { registerEmailUser } from '../../../../lib/auth/emailAuth'
 import {
   cookieNames,
   cookiesConfig,
@@ -6,11 +6,11 @@ import {
   serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
-} from '../../../../lib/edgeSession'
-import { recordUserLogin } from '../../../../lib/userDirectory'
-import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
-import { awardRegisterOnLogin } from '../../../../lib/points'
-import { resolveEmailLogin } from '../../../../lib/accountIdentities'
+} from '../../../../lib/auth/edgeSession'
+import { recordUserLogin } from '../../../../lib/auth/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/auth/guestSession'
+import { awardRegisterOnLogin } from '../../../../lib/ledger/points'
+import { resolveEmailLogin } from '../../../../lib/auth/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

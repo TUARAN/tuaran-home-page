@@ -14,7 +14,7 @@
 - `/resources/nano-banana-gallery` permanently redirects to the canonical URL.
 - The page appears only in the rich-pages directory under `ai-engineering` and does not remain in resource-library registries.
 - Preserve all existing gallery data, search, input/output comparison, prompt-copy behavior, and upstream source attribution.
-- Do not modify `lib/nanoBananaCases.js` or `scripts/generate-nano-banana-gallery.mjs`.
+- Do not modify `lib/page-data/nanoBananaCases.js` or `scripts/generate-nano-banana-gallery.mjs`.
 - Do not rewrite historical `resource/nano-banana-gallery` analytics rows; new visits use `rich-page/nano-banana-gallery`.
 - Preserve unrelated working-tree changes in the admin SEO files.
 
@@ -22,15 +22,15 @@
 
 - Create `scripts/test-nano-banana-rich-page-migration.mjs`: focused source-contract regression tests for classification, routing, SEO, and sitemap behavior.
 - Modify `package.json`: expose the focused regression test command.
-- Modify `lib/engineeringWorks.js`: authoritative rich-page directory record.
-- Modify `lib/homeResourceItems.js`: remove the resource-directory record.
-- Modify `lib/contentRegistry.js`: replace the resource analytics record with a `rich-page` record and register its label/group.
-- Modify `lib/contentPipeline.js`: expose the rich-page content label.
-- Modify `lib/articleLinks.js` and `lib/contentKeyLite.js`: resolve rich-page engagement keys to the canonical route.
+- Modify `lib/site/engineeringWorks.js`: authoritative rich-page directory record.
+- Modify `lib/home/homeResourceItems.js`: remove the resource-directory record.
+- Modify `lib/content/contentRegistry.js`: replace the resource analytics record with a `rich-page` record and register its label/group.
+- Modify `lib/content/contentPipeline.js`: expose the rich-page content label.
+- Modify `lib/article/articleLinks.js` and `lib/content/contentKeyLite.js`: resolve rich-page engagement keys to the canonical route.
 - Move `app/(site)/resources/nano-banana-gallery/NanoBananaGallery.jsx` to `app/(site)/nano-banana-gallery/NanoBananaGallery.jsx`: colocate the client UI with its canonical route.
 - Create `app/(site)/nano-banana-gallery/page.jsx`: canonical rich-page wrapper, metadata, JSON-LD, analytics, and engagement.
 - Replace `app/(site)/resources/nano-banana-gallery/page.jsx`: permanent redirect only.
-- Modify `lib/richPageSeo.js`: Nano Banana-specific SEO overrides.
+- Modify `lib/site/richPageSeo.js`: Nano Banana-specific SEO overrides.
 - Modify `app/(site)/sitemap.js`: remove the old resource URL; the canonical URL comes from rich-page SEO registration.
 
 ---
@@ -40,12 +40,12 @@
 **Files:**
 - Create: `scripts/test-nano-banana-rich-page-migration.mjs`
 - Modify: `package.json`
-- Modify: `lib/engineeringWorks.js`
-- Modify: `lib/homeResourceItems.js`
-- Modify: `lib/contentRegistry.js`
-- Modify: `lib/contentPipeline.js`
-- Modify: `lib/articleLinks.js`
-- Modify: `lib/contentKeyLite.js`
+- Modify: `lib/site/engineeringWorks.js`
+- Modify: `lib/home/homeResourceItems.js`
+- Modify: `lib/content/contentRegistry.js`
+- Modify: `lib/content/contentPipeline.js`
+- Modify: `lib/article/articleLinks.js`
+- Modify: `lib/content/contentKeyLite.js`
 
 **Interfaces:**
 - Consumes: existing `ENGINEERING_WORKS`, `CONTENT_PV_ENTRIES`, `CONTENT_PV_CATEGORIES`, and content-key resolution conventions.
@@ -64,9 +64,9 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 
 test('nano banana is registered only as a rich page', async () => {
   const [works, resources, registry] = await Promise.all([
-    read('lib/engineeringWorks.js'),
-    read('lib/homeResourceItems.js'),
-    read('lib/contentRegistry.js'),
+    read('lib/site/engineeringWorks.js'),
+    read('lib/home/homeResourceItems.js'),
+    read('lib/content/contentRegistry.js'),
   ])
 
   assert.match(works, /id: 'nano-banana-gallery'[\s\S]*category: 'ai-engineering'[\s\S]*href: '\/nano-banana-gallery'/)
@@ -79,9 +79,9 @@ test('nano banana is registered only as a rich page', async () => {
 
 test('rich-page engagement keys resolve to the canonical route', async () => {
   const [pipeline, articleLinks, keyLite] = await Promise.all([
-    read('lib/contentPipeline.js'),
-    read('lib/articleLinks.js'),
-    read('lib/contentKeyLite.js'),
+    read('lib/content/contentPipeline.js'),
+    read('lib/article/articleLinks.js'),
+    read('lib/content/contentKeyLite.js'),
   ])
 
   assert.match(pipeline, /'rich-page': '多维页面'/)
@@ -189,7 +189,7 @@ Expected: 2 tests pass, 0 fail.
 - [ ] **Step 5: Commit the registry migration**
 
 ```bash
-git add package.json scripts/test-nano-banana-rich-page-migration.mjs lib/engineeringWorks.js lib/homeResourceItems.js lib/contentRegistry.js lib/contentPipeline.js lib/articleLinks.js lib/contentKeyLite.js
+git add package.json scripts/test-nano-banana-rich-page-migration.mjs lib/site/engineeringWorks.js lib/home/homeResourceItems.js lib/content/contentRegistry.js lib/content/contentPipeline.js lib/article/articleLinks.js lib/content/contentKeyLite.js
 git commit -m "feat: classify nano banana gallery as rich page"
 ```
 
@@ -200,7 +200,7 @@ git commit -m "feat: classify nano banana gallery as rich page"
 - Create: `app/(site)/nano-banana-gallery/page.jsx`
 - Move: `app/(site)/resources/nano-banana-gallery/NanoBananaGallery.jsx` → `app/(site)/nano-banana-gallery/NanoBananaGallery.jsx`
 - Modify: `app/(site)/resources/nano-banana-gallery/page.jsx`
-- Modify: `lib/richPageSeo.js`
+- Modify: `lib/site/richPageSeo.js`
 - Modify: `app/(site)/sitemap.js`
 
 **Interfaces:**
@@ -229,7 +229,7 @@ test('legacy resource URL is redirect-only', async () => {
 
 test('SEO and sitemap expose only the canonical rich-page URL', async () => {
   const [seo, sitemap] = await Promise.all([
-    read('lib/richPageSeo.js'),
+    read('lib/site/richPageSeo.js'),
     read('app/(site)/sitemap.js'),
   ])
   assert.match(seo, /'nano-banana-gallery': \{[\s\S]*schemaType: 'CollectionPage'/)
@@ -248,7 +248,7 @@ Expected: FAIL because the canonical page does not exist and the old page still 
 Move `NanoBananaGallery.jsx` unchanged into `app/(site)/nano-banana-gallery/`. Create the canonical `page.jsx` from the existing page body, with these integration changes:
 
 ```js
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 
 const PAGE_SLUG = 'nano-banana-gallery'
@@ -300,7 +300,7 @@ Expected: 5 tests pass, 0 fail.
 - [ ] **Step 6: Commit the route migration**
 
 ```bash
-git add scripts/test-nano-banana-rich-page-migration.mjs app/'(site)'/nano-banana-gallery app/'(site)'/resources/nano-banana-gallery lib/richPageSeo.js app/'(site)'/sitemap.js
+git add scripts/test-nano-banana-rich-page-migration.mjs app/'(site)'/nano-banana-gallery app/'(site)'/resources/nano-banana-gallery lib/site/richPageSeo.js app/'(site)'/sitemap.js
 git commit -m "feat: move nano banana gallery to rich pages"
 ```
 

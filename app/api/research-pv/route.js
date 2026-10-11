@@ -1,14 +1,14 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 import { RESEARCH_CATEGORIES } from '../../../lib/research/categories'
-import { readPublishedResearchKeys } from '../../../lib/researchRuntime'
+import { readPublishedResearchKeys } from '../../../lib/research/researchRuntime'
 import {
   CONTENT_PV_CATEGORIES,
   CONTENT_PV_KEY_SET,
   STATIC_ARTICLE_PV_KEY_SET,
-} from '../../../lib/contentRegistry'
-import { getUserFromRequest } from '../../../lib/edgeSession'
-import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/guestSession'
-import { assessReadingHit } from '../../../lib/readingAnalyticsQuality.mjs'
+} from '../../../lib/content/contentRegistry'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
+import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/auth/guestSession'
+import { assessReadingHit } from '../../../lib/site/readingAnalyticsQuality.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -14,7 +14,7 @@ import {
 } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 
-import { WISDOM_AWARDS, WISDOM_CATEGORIES, WISDOM_LEARNING_PATHS, WISDOM_TRACKING, WISDOM_FRONTIER_UPDATED_AT } from '../../../../lib/wisdomFrontierData'
+import { WISDOM_AWARDS, WISDOM_CATEGORIES, WISDOM_LEARNING_PATHS, WISDOM_TRACKING, WISDOM_FRONTIER_UPDATED_AT } from '../../../../lib/page-data/wisdomFrontierData'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import styles from './wisdom-frontier.module.css'

@@ -4,8 +4,8 @@ import Link from 'next/link'
 
 import { useLocale } from './LocaleProvider'
 import { useSessionAccount } from './SessionProvider'
-import { pick } from '../../../lib/i18n'
-import { getFooterLinks, navLabel } from '../../../lib/siteNav'
+import { pick } from '../../../lib/site/i18n'
+import { getFooterLinks, navLabel } from '../../../lib/site/siteNav'
 import { useSitePresence } from './SitePresenceProvider'
 
 const FEEDBACK_ISSUES_URL = 'https://github.com/TUARAN/tuaran-home-page/issues'

@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { CONTENT_PROOF_CLAIMS } from '../../../../lib/contentProofClaims'
-import { getContentProofCredential, listContentProofCredentials } from '../../../../lib/contentProofRegistry'
-import { isOlderVersion, shortDigest } from '../../../../lib/contentProofPresentation'
+import { CONTENT_PROOF_CLAIMS } from '../../../../lib/content/contentProofClaims'
+import { getContentProofCredential, listContentProofCredentials } from '../../../../lib/content/contentProofRegistry'
+import { isOlderVersion, shortDigest } from '../../../../lib/content/contentProofPresentation'
 import ProofVerificationClient from './ProofVerificationClient'
 
 export const dynamic = 'force-static'

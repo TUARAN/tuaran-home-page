@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   listResourceRssEntries,
   listRichPageRssEntries,
-} from '../../lib/rssContentEntries.js'
+} from '../../lib/rss/rssContentEntries.js'
 
 test('public rich pages become versioned RSS notifications', () => {
   const entries = listRichPageRssEntries([

@@ -1,6 +1,6 @@
 'use client'
 
-export { buildModelSelectionOptions as buildAdminModelOptions } from '../../../lib/modelSelection'
+export { buildModelSelectionOptions as buildAdminModelOptions } from '../../../lib/ai/modelSelection'
 
 /** 后台共用的单模型选择器。 */
 export default function ModelSelector({

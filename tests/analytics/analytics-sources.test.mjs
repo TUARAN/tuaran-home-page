@@ -9,7 +9,7 @@ import {
   normalizeDailyUniqueIps,
   shanghaiSeriesDate,
   summarizeCloudflareGroups,
-} from '../../lib/analyticsSources.mjs'
+} from '../../lib/site/analyticsSources.mjs'
 
 test('cumulative windows cover all recorded history without a comparison period', () => {
   const now = Date.UTC(2026, 8, 30, 4, 0, 0)

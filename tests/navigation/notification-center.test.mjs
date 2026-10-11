@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { isAdminHostPathAllowed } from '../../lib/adminRoutes.js'
+import { isAdminHostPathAllowed } from '../../lib/admin/adminRoutes.js'
 
 const messagesPageSource = await readFile(
   new URL('../../app/(site)/messages/page.jsx', import.meta.url),
@@ -20,8 +20,8 @@ const headerSource = await readFile(
   new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url),
   'utf8'
 )
-const navSource = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8')
-const mobileNavSource = await readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8')
+const navSource = await readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8')
+const mobileNavSource = await readFile(new URL('../../lib/site/siteMobileNav.js', import.meta.url), 'utf8')
 const commentsSource = await readFile(
   new URL('../../app/(site)/components/ArticleComments.jsx', import.meta.url),
   'utf8'

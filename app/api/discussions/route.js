@@ -1,5 +1,5 @@
-import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/contentKeyLite'
-import { getD1 } from '../../../lib/d1'
+import { loadContentKeyMeta, resolveContentKeyLite } from '../../../lib/content/contentKeyLite'
+import { getD1 } from '../../../lib/db/d1'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

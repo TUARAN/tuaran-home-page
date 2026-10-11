@@ -7,8 +7,8 @@ import {
   notificationHref,
   notificationTitle,
   presentNotification,
-} from '../../lib/siteNotificationsDisplay.js'
-import { notificationOpenHref } from '../../lib/notificationNavigation.js'
+} from '../../lib/site/siteNotificationsDisplay.js'
+import { notificationOpenHref } from '../../lib/site/notificationNavigation.js'
 
 test('notification links carry the notification id without losing query or anchor', () => {
   assert.equal(

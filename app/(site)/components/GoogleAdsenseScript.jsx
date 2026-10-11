@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 import { getPublicSiteSettings } from './siteSettingsClient'
-import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
+import { isAdsenseReviewPath } from '../../../lib/content/adsenseReviewPolicy'
 
 const GOOGLE_ADSENSE_CLIENT =
   process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || 'ca-pub-7037125126940820'

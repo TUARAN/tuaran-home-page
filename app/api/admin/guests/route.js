@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { createGuestDirectoryCache } from '../../../../lib/guestDirectoryCache'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { createGuestDirectoryCache } from '../../../../lib/auth/guestDirectoryCache'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

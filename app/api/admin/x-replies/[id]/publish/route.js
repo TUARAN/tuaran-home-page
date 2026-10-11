@@ -1,10 +1,10 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../../lib/d1'
-import { getXCredentials, publishXPost } from '../../../../../../lib/xDistribution'
-import { recordXApiPostCost } from '../../../../../../lib/xApiCost'
-import { xReplyTaskFromRow } from '../../../../../../lib/xReplyTasks'
+import { getOwnerOrReject } from '../../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../../lib/db/d1'
+import { getXCredentials, publishXPost } from '../../../../../../lib/x/xDistribution'
+import { recordXApiPostCost } from '../../../../../../lib/x/xApiCost'
+import { xReplyTaskFromRow } from '../../../../../../lib/x/xReplyTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/contentPipeline'
+import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/content/contentPipeline'
 import ArticleLikeButton from './ArticleLikeButton'
 
 export function ArticleSupportCard({ articleKey, variant = 'rail' }) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { articlePostToContentEntry } from '../../lib/articleContentIndex.mjs'
+import { articlePostToContentEntry } from '../../lib/article/articleContentIndex.mjs'
 
 const originalEmitWarning = process.emitWarning
 process.emitWarning = function filteredEmitWarning(warning, ...args) {

@@ -23,10 +23,10 @@ import {
   selectHomeRecommendationItems,
   sliceHomeArticleScopeItems,
   writeHomeRecommendationBatchOffset,
-} from '../lib/homeRecommendationEngine.js'
-import { SUBJECT_META } from '../lib/contentTaxonomy.js'
-import { buildHomeRecommendationCatalog } from '../lib/homeRecommendationCatalogCore.js'
-import { researchPublicSummary } from '../lib/researchPublicSummary.js'
+} from '../lib/home/homeRecommendationEngine.js'
+import { SUBJECT_META } from '../lib/content/contentTaxonomy.js'
+import { buildHomeRecommendationCatalog } from '../lib/home/homeRecommendationCatalogCore.js'
+import { researchPublicSummary } from '../lib/research/researchPublicSummary.js'
 import { RESEARCH_ENTRY_META } from '../lib/research/catalog.js'
 
 const catalog = Array.from({ length: 40 }, (_, index) => ({

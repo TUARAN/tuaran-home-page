@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { getPullRefreshDistance, shouldTriggerPullRefresh } from '../lib/h5PullRefresh.js'
+import { getPullRefreshDistance, shouldTriggerPullRefresh } from '../lib/site/h5PullRefresh.js'
 
 test('pull-to-refresh only counts downward overscroll at the top', () => {
   assert.equal(getPullRefreshDistance(40, 120, 0), 80)

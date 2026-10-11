@@ -7,7 +7,7 @@ import {
   SOURCE_CONNECTORS,
   TREND_POINTS,
   buildPublicOpinionSnapshot,
-} from '../../../lib/publicOpinionData'
+} from '../../../lib/publicOpinion/publicOpinionData'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

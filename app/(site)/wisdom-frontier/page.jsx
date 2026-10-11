@@ -1,4 +1,4 @@
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import ContentEngagement from '../components/ContentEngagement'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import WisdomFrontierClient from '../resources/wisdom-frontier/WisdomFrontierClient'

@@ -8,7 +8,7 @@ import {
   hashCredentialSecret,
   parseCredentialToken,
   verifyCredentialSecret,
-} from '../lib/credentialAuth.js'
+} from '../lib/auth/credentialAuth.js'
 
 test('生成的凭证可解析且不暴露散列材料', () => {
   const token = createCredentialToken()

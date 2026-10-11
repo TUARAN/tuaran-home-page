@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { NANO_BANANA_CASES, NANO_BANANA_GALLERY_META } from '../../../../lib/nanoBananaCases'
+import { NANO_BANANA_CASES, NANO_BANANA_GALLERY_META } from '../../../../lib/page-data/nanoBananaCases'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'

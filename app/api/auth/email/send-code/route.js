@@ -1,4 +1,4 @@
-import { requestEmailCode } from '../../../../../lib/emailAuth'
+import { requestEmailCode } from '../../../../../lib/auth/emailAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

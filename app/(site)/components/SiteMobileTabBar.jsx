@@ -12,8 +12,8 @@ import {
 } from '@tabler/icons-react'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
-import { SITE_MOBILE_TABS } from '../../../lib/siteMobileNav'
+import { pick } from '../../../lib/site/i18n'
+import { SITE_MOBILE_TABS } from '../../../lib/site/siteMobileNav'
 
 const TAB_ICONS = {
   home: IconHome2,

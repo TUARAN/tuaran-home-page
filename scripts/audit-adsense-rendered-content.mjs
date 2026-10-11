@@ -21,7 +21,7 @@ function parseReviewResearchPaths() {
 }
 
 function parseReviewRichPagePaths() {
-  const source = fs.readFileSync(path.join(root, 'lib/engineeringWorks.js'), 'utf8')
+  const source = fs.readFileSync(path.join(root, 'lib/site/engineeringWorks.js'), 'utf8')
   const worksSource = source.split('export const ENGINEERING_WORKS = [')[1] || ''
   return [...worksSource.matchAll(/\n  \{\n([\s\S]*?)\n  \},/g)]
     .map((match) => match[1])

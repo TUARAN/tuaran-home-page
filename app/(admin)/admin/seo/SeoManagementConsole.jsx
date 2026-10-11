@@ -3,8 +3,8 @@ import {
   SEO_GOVERNANCE_RULES,
   SEO_STRATEGY_LAYERS,
   getSeoGovernanceSnapshot,
-} from '../../../../lib/seoGovernance'
-import { listPublishedArticlePosts } from '../../../../lib/articlePosts'
+} from '../../../../lib/site/seoGovernance'
+import { listPublishedArticlePosts } from '../../../../lib/article/articlePosts'
 import { AdminButton, AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
 import SeoRegistryTable from './SeoRegistryTable'
 import SeoGrowthRoadmap from './SeoGrowthRoadmap'

@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
-import { HOME_RECOMMENDATIONS } from '../../../lib/homeRecommendations'
+import { pick } from '../../../lib/site/i18n'
+import { HOME_RECOMMENDATIONS } from '../../../lib/home/homeRecommendations'
 
 function ArrowIcon() {
   return (

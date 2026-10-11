@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { COMMUNITY_MEMBERSHIP, getCommunityPlanPrice } from '../lib/communityMembership.js'
+import { COMMUNITY_MEMBERSHIP, getCommunityPlanPrice } from '../lib/auth/communityMembership.js'
 
 test('community membership exposes distinct circle and personal service tiers', () => {
   assert.deepEqual(

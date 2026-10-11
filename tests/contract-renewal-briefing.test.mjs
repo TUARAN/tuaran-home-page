@@ -21,7 +21,7 @@ import {
   escapeBriefingHtml,
   normalizeContractRenewalBriefing,
   sumBriefingSeconds,
-} from '../lib/contractRenewalBriefing.js'
+} from '../lib/automation/contractRenewalBriefing.js'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const weak = /还很不够|请多批评|我可能|我只是配合|能力不足|紧张|对不起/
@@ -124,8 +124,8 @@ test('续签述职只在站长后台，文案可改可存可打印', async () =>
     readFile(new URL('../app/(admin)/admin/contract-renewal/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/contract-renewal/ContractRenewalClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/contract-renewal/route.js', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/contractRenewalStore.js', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/automation/contractRenewalStore.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/private-data/PrivateDataWorkspace.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../middleware.js', import.meta.url), 'utf8'),
   ])

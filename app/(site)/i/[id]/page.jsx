@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { getD1 } from '../../../../lib/d1'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   getHostedImageById,
   hostedImageSharePath,
   hostedImageShareUrl,
   hostedImageTitle,
   rowToHostedImage,
-} from '../../../../lib/hostedImages'
+} from '../../../../lib/site/hostedImages'
 import ImageShareActions from './ImageShareActions'
 
 export const runtime = 'edge'

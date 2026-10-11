@@ -22,7 +22,7 @@
 - [内容信息架构](content-information-architecture.md)：分类契约、新访客、有效起点与事件口径。
 - [UI / 交互审计路线图](ui-ux-audit-roadmap.md)：页面体验问题与复测清单；推荐、订阅等共同任务合并推进，避免重复建设。
 - [内容层重构计划](content-layer-refactor-plan.md)：已有统一内容管线与复用方向。
-- `lib/contentTaxonomy.js`、`lib/contentPipeline.js`：分类与统一内容实现；执行时以当前代码为准。
+- `lib/content/contentTaxonomy.js`、`lib/content/contentPipeline.js`：分类与统一内容实现；执行时以当前代码为准。
 - 公开调研写作继续遵守 `research/README.md` 与当前生效风格；本记录不新增公开写作规范。
 
 ## 2. 审计范围与限制
@@ -56,7 +56,7 @@
 - `lib/research/loader.js`、`app/(site)/articles/research/[category]/[slug]/page.jsx`
 - `app/(site)/articles/page.jsx`、`app/(site)/articles/ArticlesIndexClient.jsx`
 - `app/(site)/components/ArticleFooterCta.jsx`、`NewsletterSignup.jsx`（同目录）
-- `app/api/newsletter/route.js`、`lib/seoGovernance.js`、`lib/analyticsSources.mjs`
+- `app/api/newsletter/route.js`、`lib/site/seoGovernance.js`、`lib/site/analyticsSources.mjs`
 - `tests/seo/indexing-policy.test.mjs`
 
 ### 线上爬虫规则的解释
@@ -125,7 +125,7 @@
 ### A2 验收记录（2026-09-10）
 
 - 静态盘点：公开站构建产物包含 331 条 sitemap URL、304 条 RSS 条目。保留原有静态文章、调研、富页面、资源等范围和过滤规则；静态 RSS 的全文、加密调研摘要边界及版本化 GUID 保持原样。动态发现只取 `article_posts`；不把 `content_index` 的手工登记记录视为公开正文凭据，不读取分享或私域数据。
-- 构建与运行时：`sitemap-static/sitemap.js`、`rss-static.xml/route.js` 在构建期调用原有 loader；Edge 经 Pages `env.ASSETS.fetch()` 读取同一部署的 XML，再合并数据库文章。实现入口是 `app/(site)/discovery/[format]/route.js`，策略在 `lib/articleDiscovery.js`。静态资源读取方式依据 [Cloudflare Pages API](https://developers.cloudflare.com/pages/functions/api-reference/)。
+- 构建与运行时：`sitemap-static/sitemap.js`、`rss-static.xml/route.js` 在构建期调用原有 loader；Edge 经 Pages `env.ASSETS.fetch()` 读取同一部署的 XML，再合并数据库文章。实现入口是 `app/(site)/discovery/[format]/route.js`，策略在 `lib/article/articleDiscovery.js`。静态资源读取方式依据 [Cloudflare Pages API](https://developers.cloudflare.com/pages/functions/api-reference/)。
 - 缓存：静态 XML 使用 Pages 静态资源缓存，动态合并响应及 HTML 目录均 `Cache-Control: no-store`；不使用 Edge ISR 或 stale 缓存。数据库故障沿用现有访问封装的空列表降级，保留静态发现内容；静态产物无效不返回成功的空 feed。
 - 验证：46 项相关测试通过；完整公开站 Pages 构建通过，Worker gzip 2.743 MiB（仓库预算 2.750 MiB）。本地隔离 D1 插入公开文章、静态同名文章和草稿后，HTTP 实测 sitemap 332 条、RSS 305 条且 URL 无重复；HTML 目录直接输出公开文章链接。公开测试文章改回草稿后，三个入口的下一次请求均不再包含该链接。
 - 线上边界：本次未部署。线上 `/api/articles` 读取结果为空；该 API 在 D1 不可用时也会返回空列表，因此不能据此断言线上数据库没有公开文章。部署后仍需以真实公开文章抽样确认。

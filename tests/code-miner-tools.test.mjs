@@ -7,10 +7,10 @@ import {
   formatJson,
   getJsonDepth,
   normalizeCodeMinerTool,
-} from '../lib/codeMinerTools.mjs'
+} from '../lib/mcp/codeMinerTools.mjs'
 
-const toolItemsSource = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
-const siteNavSource = await readFile(new URL('../lib/siteNav.js', import.meta.url), 'utf8')
+const toolItemsSource = await readFile(new URL('../lib/site/toolItems.js', import.meta.url), 'utf8')
+const siteNavSource = await readFile(new URL('../lib/site/siteNav.js', import.meta.url), 'utf8')
 const apiSource = await readFile(new URL('../app/api/tools/gifs/route.js', import.meta.url), 'utf8')
 
 test('all migrated tools have stable unique ids', () => {

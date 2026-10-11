@@ -9,7 +9,7 @@ async function source(path) {
 }
 
 test('media hosting keeps separate image and video size limits', async () => {
-  const model = await source('lib/hostedImages.js')
+  const model = await source('lib/site/hostedImages.js')
   const route = await source('app/api/image-hosting/route.js')
 
   assert.match(model, /MAX_HOSTED_IMAGE_BYTES = 10 \* 1024 \* 1024/)
@@ -19,7 +19,7 @@ test('media hosting keeps separate image and video size limits', async () => {
 })
 
 test('media hosting accepts browser-friendly image and video types', async () => {
-  const model = await source('lib/hostedImages.js')
+  const model = await source('lib/site/hostedImages.js')
 
   for (const contentType of [
     'image/jpeg',

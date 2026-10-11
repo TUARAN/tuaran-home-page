@@ -1,10 +1,10 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 import {
   normalizeOnlineCount,
   normalizePresenceVisitorKey,
   presenceCutoff,
   SITE_PRESENCE_MIN_WRITE_INTERVAL_MS,
-} from '../../../lib/sitePresence'
+} from '../../../lib/site/sitePresence'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { CHANGELOG } from '../../lib/changelogData.js'
-import { buildChangelogPeriods } from '../../lib/changelogPeriods.js'
-import { getChangelogPeriodSummary } from '../../lib/changelogPeriodSummaries.js'
+import { CHANGELOG } from '../../lib/automation/changelogData.js'
+import { buildChangelogPeriods } from '../../lib/automation/changelogPeriods.js'
+import { getChangelogPeriodSummary } from '../../lib/automation/changelogPeriodSummaries.js'
 
 const ENTRIES = [
   { version: 'a', week: '2026-W27', range: '2026-06-29 至 2026-06-30', commits: 4 },

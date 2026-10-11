@@ -1,14 +1,14 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { callDeepSeek } from '../../../../lib/deepseek'
-import { callOllama, listOllamaModels } from '../../../../lib/ollama'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { callDeepSeek } from '../../../../lib/ai/deepseek'
+import { callOllama, listOllamaModels } from '../../../../lib/ai/ollama'
 import {
   QUOTE_GENERATION_MODELS,
   QUOTE_GENERATION_PAUSED,
   buildQuoteGenerationMessages,
   parseGeneratedQuotes,
-} from '../../../../lib/quoteGeneration'
-import { insertGeneratedQuote, QUOTE_SELECT_COLUMNS, quoteRowToJson } from '../../../../lib/quoteStore'
+} from '../../../../lib/automation/quoteGeneration'
+import { insertGeneratedQuote, QUOTE_SELECT_COLUMNS, quoteRowToJson } from '../../../../lib/automation/quoteStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

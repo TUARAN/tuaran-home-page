@@ -6,7 +6,7 @@ import test from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 
-import { diaryContentFromMarkdown, legacyArticleToMarkdown } from '../../lib/legacyArticleMigration.mjs'
+import { diaryContentFromMarkdown, legacyArticleToMarkdown } from '../../lib/article/legacyArticleMigration.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 

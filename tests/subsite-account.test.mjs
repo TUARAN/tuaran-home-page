@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { handleSubsiteSession, handleSubsiteCheckin, subsitePreflight } from '../lib/subsiteAccount.js'
-import { normalizeReturnTo } from '../lib/returnTo.js'
+import { handleSubsiteSession, handleSubsiteCheckin, subsitePreflight } from '../lib/site/subsiteAccount.js'
+import { normalizeReturnTo } from '../lib/site/returnTo.js'
 
 const origin = 'https://weekly.2aran.com'
 function request(method = 'GET', source = origin, extra = {}) {

@@ -1,4 +1,4 @@
-import { FALLBACK_SNAPSHOT, parseCodexResetsPayload, AIHOT_CODEX_RESETS_URL } from '../../../lib/codexResets'
+import { FALLBACK_SNAPSHOT, parseCodexResetsPayload, AIHOT_CODEX_RESETS_URL } from '../../../lib/ai/codexResets'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

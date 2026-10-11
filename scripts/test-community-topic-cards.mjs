@@ -7,11 +7,11 @@ const componentSource = await readFile(
   'utf8',
 )
 const registrySource = await readFile(
-  new URL('../lib/communityTopics.js', import.meta.url),
+  new URL('../lib/content/communityTopics.js', import.meta.url),
   'utf8',
 )
 const siteNavSource = await readFile(
-  new URL('../lib/siteNav.js', import.meta.url),
+  new URL('../lib/site/siteNav.js', import.meta.url),
   'utf8',
 )
 

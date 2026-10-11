@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 
 import RssBlogroll from '../../resources/rss/RssBlogroll'
-import { RSS_FEEDS_SEED } from '../../../../lib/rssFeedsSeed'
+import { RSS_FEEDS_SEED } from '../../../../lib/rss/rssFeedsSeed'
 import SiteRssSubscribeCard from '../SiteRssSubscribeCard'
 
 export const runtime = 'edge'

@@ -5,10 +5,10 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
+import { STATIC_PAGE_REGISTRY } from '../lib/site/staticPageRegistry.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SNAPSHOT_PATH = path.join(ROOT, 'seo', 'route-audit.snapshot.json')
+const SNAPSHOT_PATH = path.join(ROOT, 'docs', 'seo', 'route-audit.snapshot.json')
 const CURRENT_PATH = path.join(ROOT, 'tmp', 'seo-route-audit.current.json')
 const PAGE_FILE_RE = /\/page\.(?:js|jsx|mjs)$/
 const ROUTE_GROUP_RE = /^\(.*\)$/
@@ -179,7 +179,7 @@ export async function buildRouteSeoSnapshot({ root = ROOT } = {}) {
   const liveAdminEntry = path.join(appRoot, '(admin)', 'admin', 'page.jsx')
   const stashedAdminRoot = path.join(root, '.public-pages-build-excluded', 'app-admin-group')
   const registry = new Map(STATIC_PAGE_REGISTRY.map((page) => [page.path, page]))
-  const richPageSeoSource = await readFile(path.join(root, 'lib', 'richPageSeo.js'), 'utf8')
+  const richPageSeoSource = await readFile(path.join(root, 'lib', 'site', 'richPageSeo.js'), 'utf8')
   const richNoindexIds = richPageNoindexIds(richPageSeoSource)
   const sourceRoots = [appRoot]
   if (!existsSync(liveAdminEntry) && existsSync(stashedAdminRoot)) sourceRoots.push(stashedAdminRoot)

@@ -1,8 +1,8 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../lib/d1'
-import { ASharePublishError, publishAShareDraft } from '../../../../../lib/aSharePublisher'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../lib/db/d1'
+import { ASharePublishError, publishAShareDraft } from '../../../../../lib/a-share/aSharePublisher'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

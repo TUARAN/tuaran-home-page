@@ -2,9 +2,9 @@
 import { register } from 'node:module'
 import fs from 'node:fs'
 register('./content-source-loader.mjs', import.meta.url)
-const { listAllContent } = await import('../lib/contentPipeline.js')
+const { listAllContent } = await import('../lib/content/contentPipeline.js')
 const catalog = await import('../lib/research/catalog.js')
-const { articles } = await import('../lib/articleMetadata.js')
+const { articles } = await import('../lib/article/articleMetadata.js')
 const { buildKnowledgeItems } = await import('../app/(site)/articles/buildKnowledgeItems.js')
 const { documents } = await import('./research-snapshots.mjs')
 const archiveKeys = new Set(JSON.parse(fs.readFileSync(new URL('../data/content-archive.json', import.meta.url), 'utf8')).researchKeys)

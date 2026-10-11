@@ -2,17 +2,17 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
-import * as assetLibrary from '../../lib/xPostAssets.js'
-import { pickXMemeAsset, X_MEME_VERSION } from '../../lib/xMemeAssets.js'
-import * as greetings from '../../lib/morningGreeting.js'
-import * as greetingLlm from '../../lib/dailyGreetingLlm.js'
-import * as culture from '../../lib/dailyCultureStory.js'
-import * as community from '../../lib/xCommunityPosts.js'
-import * as usPosts from '../../lib/xUsAudiencePosts.js'
-import * as cryptoPosts from '../../lib/xCryptoPosts.js'
-import * as controversyPosts from '../../lib/xControversyPosts.js'
-import * as jokePosts from '../../lib/xJokePosts.js'
-import * as postingSchedule from '../../lib/xPostingSchedule.js'
+import * as assetLibrary from '../../lib/x/xPostAssets.js'
+import { pickXMemeAsset, X_MEME_VERSION } from '../../lib/x/xMemeAssets.js'
+import * as greetings from '../../lib/automation/morningGreeting.js'
+import * as greetingLlm from '../../lib/automation/dailyGreetingLlm.js'
+import * as culture from '../../lib/page-data/dailyCultureStory.js'
+import * as community from '../../lib/x/xCommunityPosts.js'
+import * as usPosts from '../../lib/x/xUsAudiencePosts.js'
+import * as cryptoPosts from '../../lib/x/xCryptoPosts.js'
+import * as controversyPosts from '../../lib/x/xControversyPosts.js'
+import * as jokePosts from '../../lib/x/xJokePosts.js'
+import * as postingSchedule from '../../lib/x/xPostingSchedule.js'
 
 import {
   buildXArticlePost,
@@ -20,7 +20,7 @@ import {
   publishXPost,
   uploadXMedia,
   weightedTextLength,
-} from '../../lib/xDistribution.js'
+} from '../../lib/x/xDistribution.js'
 
 test('builds a conservative X post from article metadata', () => {
   const text = buildXArticlePost({

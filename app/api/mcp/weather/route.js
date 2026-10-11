@@ -1,11 +1,11 @@
-import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/abuseControls'
-import { getD1 } from '../../../../lib/d1'
+import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/auth/abuseControls'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   WEATHER_MCP_SUPPORTED_PROTOCOL_VERSIONS,
   WEATHER_MCP_TOOLS,
   callWeatherMcpTool,
   weatherMcpInitializeResult,
-} from '../../../../lib/mcpWeather'
+} from '../../../../lib/mcp/mcpWeather'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

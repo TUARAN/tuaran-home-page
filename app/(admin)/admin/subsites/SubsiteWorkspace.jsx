@@ -16,7 +16,7 @@ import {
   SITE_AUDIENCES,
   SITE_STATUSES,
   relationKey,
-} from '../../../../lib/secondarySiteRegistry'
+} from '../../../../lib/site/secondarySiteRegistry'
 
 export const blankSite = {
   id: '', label: '', domain: '', category: '', project: '', platform: '', status: 'pending',

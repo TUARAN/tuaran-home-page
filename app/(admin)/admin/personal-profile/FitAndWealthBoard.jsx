@@ -8,7 +8,7 @@ import {
 } from '@tabler/icons-react'
 
 import { StatusPill } from '../../components/ui'
-import { FIT_AND_WEALTH } from '../../../../lib/personalGrowthProfile'
+import { FIT_AND_WEALTH } from '../../../../lib/site/personalGrowthProfile'
 
 const OFFER_TONES = {
   '主收口': {

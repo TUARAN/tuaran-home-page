@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { X_ACTIVE_MEME_GROUPS, X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/xMemeAssets.js'
+import { X_ACTIVE_MEME_GROUPS, X_MEME_ASSETS, X_MEME_GROUPS, X_MEME_SLOT_THEMES, pickXMemeAsset, xMemeThumbPath } from '../lib/x/xMemeAssets.js'
 
 test('catalog contains 65 unique, uploadable PNG templates including the new 30-image pack', async () => {
   assert.equal(X_MEME_GROUPS.length, 15)

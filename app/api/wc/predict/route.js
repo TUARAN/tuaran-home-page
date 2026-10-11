@@ -7,8 +7,8 @@
  */
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { getBalance } from '../../../../lib/points'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { getBalance } from '../../../../lib/ledger/points'
 import { PREDICT_REWARD, getUserPredictions } from '../../../../lib/wc/predictions'
 
 export const runtime = 'edge'

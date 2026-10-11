@@ -29,7 +29,7 @@ import {
   defaultContractRenewalBriefing,
   minutesToBriefingSeconds,
   serializeContractRenewalBriefing,
-} from '../../../../lib/contractRenewalBriefing'
+} from '../../../../lib/automation/contractRenewalBriefing'
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const TABS = [

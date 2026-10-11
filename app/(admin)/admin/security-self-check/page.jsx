@@ -7,7 +7,7 @@ import {
   PUBLICATION_DECISION,
   SECURITY_SELF_CHECK_SUMMARY,
   SECURITY_SELF_CHECK_UPDATED_AT,
-} from '../../../../lib/securitySelfCheck'
+} from '../../../../lib/admin/securitySelfCheck'
 
 export const metadata = {
   title: '涉密自检',

@@ -5,14 +5,14 @@ import {
   serializeCookie,
   serializeLastLoginMethodCookie,
   signSession,
-} from '../../../../lib/edgeSession'
-import { getD1 } from '../../../../lib/d1'
-import { authenticateLoginCredential } from '../../../../lib/loginCredentials'
-import { ensureIdentityForUser } from '../../../../lib/accountIdentities'
-import { recordUserLogin } from '../../../../lib/userDirectory'
-import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
-import { awardRegisterOnLogin } from '../../../../lib/points'
-import { cleanupRateLimits, enforceRateLimits, getClientIp, rateLimitResponse } from '../../../../lib/abuseControls'
+} from '../../../../lib/auth/edgeSession'
+import { getD1 } from '../../../../lib/db/d1'
+import { authenticateLoginCredential } from '../../../../lib/auth/loginCredentials'
+import { ensureIdentityForUser } from '../../../../lib/auth/accountIdentities'
+import { recordUserLogin } from '../../../../lib/auth/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/auth/guestSession'
+import { awardRegisterOnLogin } from '../../../../lib/ledger/points'
+import { cleanupRateLimits, enforceRateLimits, getClientIp, rateLimitResponse } from '../../../../lib/auth/abuseControls'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

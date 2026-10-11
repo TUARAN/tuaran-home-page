@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path'
 
 import { AbiCoder, Contract, Interface, JsonRpcProvider, Wallet, ZeroAddress, ZeroHash, solidityPackedKeccak256 } from 'ethers'
 
-import { contentLedgerExplorerUrl, CONTENT_LEDGER_SCHEMA, getContentLedgerNetwork } from '../lib/contentLedgerNetworks.js'
+import { contentLedgerExplorerUrl, CONTENT_LEDGER_SCHEMA, getContentLedgerNetwork } from '../lib/content/contentLedgerNetworks.js'
 import {
   contentLedgerIdempotencyKey,
   findLedgerRecord,
@@ -12,13 +12,13 @@ import {
   resolveIdempotentPublish,
   upsertPublishLedger,
   withPublishRetry,
-} from '../lib/contentLedgerPublish.js'
+} from '../lib/content/contentLedgerPublish.js'
 import {
   assertPublisherAddress,
   assertRecordHasNoSecrets,
   parseAddressList,
   resolvePublisherWallet,
-} from '../lib/contentLedgerWallet.js'
+} from '../lib/content/contentLedgerWallet.js'
 
 const SCHEMA_REGISTRY_ABI = ['function register(string schema,address resolver,bool revocable) returns (bytes32)']
 const EAS_ABI = [

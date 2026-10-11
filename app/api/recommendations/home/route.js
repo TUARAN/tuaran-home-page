@@ -1,5 +1,5 @@
-import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/homeRecommendationRuntime'
-import { getHomeRecommendationSettings } from '../../../../lib/recommendationSettings'
+import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/home/homeRecommendationRuntime'
+import { getHomeRecommendationSettings } from '../../../../lib/site/recommendationSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

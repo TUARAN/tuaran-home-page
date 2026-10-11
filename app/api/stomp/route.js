@@ -1,11 +1,11 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../lib/abuseControls'
-import { getUserFromRequest } from '../../../lib/edgeSession'
+} from '../../../lib/auth/abuseControls'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

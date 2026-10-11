@@ -1,4 +1,4 @@
-import { getContentProofSchema } from '../../../../lib/contentProofSchemas.js'
+import { getContentProofSchema } from '../../../../lib/content/contentProofSchemas.js'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { contentProofHref } from '../../../lib/contentProofRegistry'
+import { contentProofHref } from '../../../lib/content/contentProofRegistry'
 
 const STATUS = {
   signed: { label: '站点签名已验证', dot: 'bg-emerald-500' },

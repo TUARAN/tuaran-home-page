@@ -5,7 +5,7 @@ import {
   frontendWeeklyCorsHeaders,
   isValidDailyDate,
   readR2Json,
-} from '../../../../../lib/frontendWeeklyData'
+} from '../../../../../lib/page-data/frontendWeeklyData'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

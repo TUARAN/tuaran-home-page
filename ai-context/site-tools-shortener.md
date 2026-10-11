@@ -124,7 +124,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_short_links_code ON short_links(code);
 
 - 本地开发库（可选）：`npx wrangler d1 migrations apply tuaran-me --local`。
 
-- D1 binding 在 `wrangler.toml` 的 `[[d1_databases]]` 中，绑定名 `DB`，由 `lib/d1.js` 在请求上下文中读出。
+- D1 binding 在 `wrangler.toml` 的 `[[d1_databases]]` 中，绑定名 `DB`，由 `lib/db/d1.js` 在请求上下文中读出。
 
 ## 8. 已知约束
 

@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-import { automationFocusTarget, countAutomationFacet, filterAutomationRegistry } from '../../../../lib/adminOpsRegistry'
+import { automationFocusTarget, countAutomationFacet, filterAutomationRegistry } from '../../../../lib/admin/adminOpsRegistry'
 import { AdminButton, AdminPage, StatusPill } from '../../components/ui'
 
 const PAGE_SIZE = 10

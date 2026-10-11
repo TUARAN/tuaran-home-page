@@ -1,9 +1,9 @@
 import AShareResearchClient from './AShareResearchClient'
-import { A_SHARE_RESEARCH_TEMPLATE_VERSION } from '../../../lib/aShareResearchCore'
-import { listRuntimeResearchByCategory } from '../../../lib/researchRuntime'
+import { A_SHARE_RESEARCH_TEMPLATE_VERSION } from '../../../lib/a-share/aShareResearchCore'
+import { listRuntimeResearchByCategory } from '../../../lib/research/researchRuntime'
 import { isAShareCompanyObservation } from '../../../lib/research/shareTitle'
-import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/researchStyleTemplates'
-import { researchPublicSummary } from '../../../lib/researchPublicSummary'
+import { RESEARCH_STYLE_TEMPLATES } from '../../../lib/research/researchStyleTemplates'
+import { researchPublicSummary } from '../../../lib/research/researchPublicSummary'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

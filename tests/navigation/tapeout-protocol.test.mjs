@@ -3,8 +3,8 @@ import { readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-import { HOME_RESOURCE_ITEMS } from '../../lib/homeResourceItems.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { HOME_RESOURCE_ITEMS } from '../../lib/home/homeResourceItems.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 
 const root = process.cwd()
 const href = '/resources/tapeout-protocol'

@@ -1,4 +1,4 @@
-import { prepareContentIndexUpsert } from '../../lib/contentIndexStatements.mjs'
+import { prepareContentIndexUpsert } from '../../lib/content/contentIndexStatements.mjs'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -6,8 +6,8 @@ import vm from 'node:vm'
 import test from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
-import { isMarkdownDocument, normalizeArticleDocument, markdownFileToDraft, MAX_MARKDOWN_BYTES } from '../../lib/articleDocument.mjs'
-import { articlePostToContentEntry } from '../../lib/articleContentIndex.mjs'
+import { isMarkdownDocument, normalizeArticleDocument, markdownFileToDraft, MAX_MARKDOWN_BYTES } from '../../lib/article/articleDocument.mjs'
+import { articlePostToContentEntry } from '../../lib/article/articleContentIndex.mjs'
 import { renderMarkdown } from '../../lib/research/markdown.js'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -24,7 +24,7 @@ test('historical archive preserves every body and metadata excludes body fields'
     (_, name, relative) => `const ${name} = ${fs.readFileSync(path.resolve(path.dirname(filename), relative), 'utf8')};`)
     .replace('export const articles =', 'const articles =')
   const original = JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(articles)`))
-  const { articles } = load('lib/articleMetadata.js', {}, ['articles'])
+  const { articles } = load('lib/article/articleMetadata.js', {}, ['articles'])
   assert.equal(articles.length, original.length)
   for (const article of original) {
     assert.deepEqual(JSON.parse(read(`public/data/article-archive/${article.slug}.json`)), article)
@@ -77,8 +77,8 @@ function harness({ owner = true } = {}) {
     resolveReservedArticleSlug: async (slug) => ({ reserved: slug === 'reserved' }),
     taxonomyForArticle: () => ({}),
   }
-  Object.assign(scope, load('lib/articlePosts.js', scope, ['rowToArticlePost','normalizeSlug','normalizeTags','EMPTY_ARTICLE_DOC','getPublishedArticlePostBySlug']))
-  Object.assign(scope, load('lib/contentIndex.js', scope, ['prepareDeleteContentEntry','prepareUpsertContentEntry']))
+  Object.assign(scope, load('lib/article/articlePosts.js', scope, ['rowToArticlePost','normalizeSlug','normalizeTags','EMPTY_ARTICLE_DOC','getPublishedArticlePostBySlug']))
+  Object.assign(scope, load('lib/content/contentIndex.js', scope, ['prepareDeleteContentEntry','prepareUpsertContentEntry']))
   return { sqlite, scope, create: load('app/api/admin/articles/route.js',scope,['POST']).POST,
     update: load('app/api/admin/articles/[id]/route.js',scope,['PUT']).PUT,
     race(callback) { beforeBatch = callback },
@@ -145,7 +145,7 @@ test('an imported article can keep and edit its existing reserved slug', async (
 test('archive reader uses deployment binding and fails closed for a missing or mismatched asset', async () => {
   let seen
   let response = new Response(JSON.stringify({slug:'known',title:'Original',markdown:'正文'}))
-  const archive = load('lib/articleArchive.js', {
+  const archive = load('lib/article/articleArchive.js', {
     readContentCatalog: async () => ({ articles:[{slug:'known'}] }),
     getOptionalRequestContext: () => ({ env:{ ASSETS:{ fetch: async (request) => { seen = request; return response } } } }),
   }, ['getArchivedArticle'])
@@ -161,7 +161,7 @@ test('archive reader uses deployment binding and fails closed for a missing or m
 
 test('article gate checks publication before streaming without exposing draft metadata', async () => {
   const h = harness()
-  const gate = load('lib/articleRequestGate.js',{...h.scope,resolveResearchPath:async(path)=>({found:true,status:'published',href:path})},['gateArticleRequest']).gateArticleRequest
+  const gate = load('lib/article/articleRequestGate.js',{...h.scope,resolveResearchPath:async(path)=>({found:true,status:'published',href:path})},['gateArticleRequest']).gateArticleRequest
   assert.equal(await gate('/articles/reserved'),null)
   assert.equal(await gate('/articles/research/topics/existing'),null)
   assert.equal((await gate('/articles/missing')).status,404)
@@ -174,7 +174,7 @@ test('article gate checks publication before streaming without exposing draft me
   assert.equal(await gate('/articles/new-markdown'),null)
   assert.equal(await gate('/articles/new-markdown.rsc'),null)
   h.sqlite.close()
-  const offline = load('lib/articleRequestGate.js',{...h.scope,getD1:()=>{throw new Error('offline')}},['gateArticleRequest']).gateArticleRequest
+  const offline = load('lib/article/articleRequestGate.js',{...h.scope,getD1:()=>{throw new Error('offline')}},['gateArticleRequest']).gateArticleRequest
   assert.equal((await offline('/articles/new-markdown')).status,503)
 })
 
@@ -187,7 +187,7 @@ test('D1 index pagination retains more than 1000 entries with stable ties', asyn
     const slug = `bulk-${String(index).padStart(4,'0')}`
     insert.run(`article:${slug}`,slug,slug,`/articles/${slug}`)
   }
-  const {listContentIndex} = load('lib/contentIndex.js',h.scope,['listContentIndex'])
+  const {listContentIndex} = load('lib/content/contentIndex.js',h.scope,['listContentIndex'])
   const first = await listContentIndex({limit:1000,offset:0})
   const second = await listContentIndex({limit:1000,offset:1000})
   assert.equal(first.length,1000)

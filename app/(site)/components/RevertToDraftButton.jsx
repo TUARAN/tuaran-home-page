@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { adminSiteUrl } from '../../../lib/publicAdminOrigin'
+import { adminSiteUrl } from '../../../lib/admin/publicAdminOrigin'
 
 function failureMessage(data, status) {
   const code = data?.error || ''

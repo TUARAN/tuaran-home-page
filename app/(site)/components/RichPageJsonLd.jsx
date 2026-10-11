@@ -1,4 +1,4 @@
-import { createRichPageJsonLd } from '../../../lib/richPageSeo'
+import { createRichPageJsonLd } from '../../../lib/site/richPageSeo'
 
 export default function RichPageJsonLd({ pageId }) {
   const json = JSON.stringify(createRichPageJsonLd(pageId)).replaceAll('<', '\\u003c')

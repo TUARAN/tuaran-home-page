@@ -4,7 +4,7 @@ import vm from 'node:vm'
 import test from 'node:test'
 
 // Evaluate the real navigation modules without Next's extensionless import resolver.
-const sources = await Promise.all(['engineeringWorks', 'communityTopics', 'siteNav'].map(async (name) =>
+const sources = await Promise.all(['site/engineeringWorks', 'content/communityTopics', 'site/siteNav'].map(async (name) =>
   (await readFile(new URL(`../../lib/${name}.js`, import.meta.url), 'utf8'))
     .replace(/^import .*$/gm, '').replace(/^export /gm, '')
 ))

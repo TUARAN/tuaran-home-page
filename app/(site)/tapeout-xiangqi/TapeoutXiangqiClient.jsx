@@ -8,7 +8,7 @@ import {
   TAPEOUT_XIANGQI_PLAN,
   TAPEOUT_XIANGQI_RELEASE,
   TAPEOUT_XIANGQI_SNAPSHOTS,
-} from '../../../lib/tapeoutXiangqi'
+} from '../../../lib/markets/tapeoutXiangqi'
 
 const TABS = [
   { id: 'release', label: '发布记录' },

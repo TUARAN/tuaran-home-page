@@ -8,7 +8,7 @@ import {
   runsFromDailyBriefs,
   runsFromGitHubPayload,
   summarizeAutomationRuns,
-} from '../../lib/automationRunStats.js'
+} from '../../lib/automation/automationRunStats.js'
 
 test('workflow runs become a timestamp and a counted success rate', () => {
   const summary = summarizeAutomationRuns(runsFromGitHubPayload({

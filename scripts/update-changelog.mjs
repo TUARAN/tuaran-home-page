@@ -3,8 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { CHANGELOG } from '../lib/changelogData.js'
-import { getChangelogPeriodSummary } from '../lib/changelogPeriodSummaries.js'
+import { CHANGELOG } from '../lib/automation/changelogData.js'
+import { getChangelogPeriodSummary } from '../lib/automation/changelogPeriodSummaries.js'
 import {
   buildChangelogPrompt,
   CHANGELOG_MODEL_FALLBACK_CODES,
@@ -15,12 +15,12 @@ import {
   replaceLatestChangelogEntry,
   upsertPeriodSummary,
   validateGeneratedSummary,
-} from '../lib/changelogAutomationCore.mjs'
+} from '../lib/automation/changelogAutomationCore.mjs'
 import { callScanDeepSeekJson, FLASH_MODEL, PRO_MODEL } from './scan-deepseek.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const CHANGELOG_PATH = path.join(ROOT, 'lib/changelogData.js')
-const PERIOD_SUMMARIES_PATH = path.join(ROOT, 'lib/changelogPeriodSummaries.js')
+const CHANGELOG_PATH = path.join(ROOT, 'lib/automation/changelogData.js')
+const PERIOD_SUMMARIES_PATH = path.join(ROOT, 'lib/automation/changelogPeriodSummaries.js')
 const BOT_COMMIT = /^chore\(changelog\):/i
 
 function git(...args) {

@@ -165,7 +165,7 @@
 - 首页：`app/(site)/page.jsx`、`app/(site)/components/HomePrimaryColumnsClient.jsx`。
 - 目录：`app/(site)/articles/ArticlesIndexClient.jsx`、`ArticleListItem.jsx`（同目录）。
 - 长文：`app/(site)/components/ArticleToc.jsx`、`app/(site)/articles/research/[category]/[slug]/ResearchBody.jsx`。
-- 导航：`app/(site)/components/SiteHeader.jsx`、`SiteMobileTabBar.jsx`（同目录）、`lib/siteMobileNav.js`。
+- 导航：`app/(site)/components/SiteHeader.jsx`、`SiteMobileTabBar.jsx`（同目录）、`lib/site/siteMobileNav.js`。
 - 后台：`app/(admin)/admin/seo/SeoGrowthRoadmap.jsx`、`SeoManagementConsole.jsx`（同目录）。
 - 视觉：`app/globals.css`、`app/(admin)/components/ui/`。
 - 现有自动巡检：`scripts/scan-design.mjs` 主要检查 Tailwind / 令牌及 img alt 启发式问题，不等于浏览器级 UI 验证。

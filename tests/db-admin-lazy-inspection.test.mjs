@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { getD1AdminSnapshot, getD1TableDetail } from '../lib/dbAdmin.js'
+import { getD1AdminSnapshot, getD1TableDetail } from '../lib/admin/dbAdmin.js'
 
 function fakeD1() {
   const calls = []

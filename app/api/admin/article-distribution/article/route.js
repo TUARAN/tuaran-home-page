@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { ADMIN_HOST, CANONICAL_HOST } from '../../../../../lib/adminRoutes'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { ADMIN_HOST, CANONICAL_HOST } from '../../../../../lib/admin/adminRoutes'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

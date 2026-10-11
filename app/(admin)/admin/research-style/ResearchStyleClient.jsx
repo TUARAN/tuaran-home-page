@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib/researchStyleTemplates'
+import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib/research/researchStyleTemplates'
 import { RESEARCH_STYLE_AUDIT } from '../../../../lib/research/styleAudit'
 import { AdminPage } from '../../components/ui'
 

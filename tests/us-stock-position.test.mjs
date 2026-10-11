@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { latestSnapshot } from '../lib/usStockLedger.js'
-import { applyPositionWeights, positionBook } from '../lib/usStockPosition.js'
+import { latestSnapshot } from '../lib/us-stock/usStockLedger.js'
+import { applyPositionWeights, positionBook } from '../lib/us-stock/usStockPosition.js'
 
 test('2026-09-26 Binance book matches the position screen', () => {
   const book = positionBook(latestSnapshot())

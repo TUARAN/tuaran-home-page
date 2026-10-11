@@ -7,7 +7,7 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import RssBlogroll from './RssBlogroll'
-import { RSS_FEEDS_SEED } from '../../../../lib/rssFeedsSeed'
+import { RSS_FEEDS_SEED } from '../../../../lib/rss/rssFeedsSeed'
 
 export const dynamic = 'force-static'
 

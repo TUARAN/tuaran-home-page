@@ -14,7 +14,7 @@ import {
   formatUsd,
   rangeReturn,
   sliceBars,
-} from '../../../../lib/usStockBasket.js'
+} from '../../../../lib/us-stock/usStockBasket.js'
 import UsStockBook from './UsStockBook'
 import UsStockReview from './UsStockReview'
 

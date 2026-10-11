@@ -1,16 +1,16 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { hasUsableDeepSeekKey } from '../../../../lib/deepseekKeys'
-import { DEFAULT_ENGAGEMENT_BOTS, DEFAULT_ENGAGEMENT_BOT_SETTINGS, ENGAGEMENT_BOT_SOURCE } from '../../../../lib/engagementBot'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { hasUsableDeepSeekKey } from '../../../../lib/ai/deepseekKeys'
+import { DEFAULT_ENGAGEMENT_BOTS, DEFAULT_ENGAGEMENT_BOT_SETTINGS, ENGAGEMENT_BOT_SOURCE } from '../../../../lib/automation/engagementBot'
 import {
   createEngagementBot,
   deleteEngagementBot,
   getEngagementBotOverview,
   saveEngagementBotSettings,
   updateEngagementBot,
-} from '../../../../lib/engagementBotRun'
+} from '../../../../lib/automation/engagementBotRun'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

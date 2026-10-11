@@ -1,16 +1,16 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../lib/abuseControls'
-import { getUserFromRequest } from '../../../lib/edgeSession'
-import { getUserRole } from '../../../lib/userDirectory'
-import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/guestSession'
-import { awardComment } from '../../../lib/points'
-import { isOwnerUser } from '../../../lib/ownerAuth'
-import { notifyOwner } from '../../../lib/siteNotifications'
+} from '../../../lib/auth/abuseControls'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
+import { getUserRole } from '../../../lib/auth/userDirectory'
+import { GUEST_USER_PREFIX, getOrIssueGuest, guestDisplayName } from '../../../lib/auth/guestSession'
+import { awardComment } from '../../../lib/ledger/points'
+import { isOwnerUser } from '../../../lib/auth/ownerAuth'
+import { notifyOwner } from '../../../lib/site/siteNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

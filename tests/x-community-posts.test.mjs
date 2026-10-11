@@ -10,7 +10,7 @@ import {
   normalizeXCommunityText,
   pickXCommunityVariant,
   xCommunityLastRunKey,
-} from '../lib/xCommunityPosts.js'
+} from '../lib/x/xCommunityPosts.js'
 
 test('three community slots rotate through ten distinct image-and-copy variants', async () => {
   assert.deepEqual(Object.keys(X_COMMUNITY_SLOTS), [

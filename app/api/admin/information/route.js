@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
 import { isValidEnvelope } from '../../../../lib/longCompass/crypto'
 
 export const runtime = 'edge'

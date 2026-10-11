@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { RANK_ITEMS, RANK_TIERS } from '../lib/rankData.js'
-import { SECONDARY_SITES } from '../lib/secondarySites.js'
-import { DOMAIN_REGISTRY, getDomainRecord } from '../lib/domainRegistry.js'
+import { RANK_ITEMS, RANK_TIERS } from '../lib/page-data/rankData.js'
+import { SECONDARY_SITES } from '../lib/site/secondarySites.js'
+import { DOMAIN_REGISTRY, getDomainRecord } from '../lib/site/domainRegistry.js'
 
 test('rank site exposes a complete five-tier AI list', () => {
   assert.deepEqual(RANK_TIERS.map((tier) => tier.label), ['夯', '顶级', '人上人', 'NPC', '拉完了'])

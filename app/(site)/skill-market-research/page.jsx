@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import SharePageButton from '../components/SharePageButton'
 

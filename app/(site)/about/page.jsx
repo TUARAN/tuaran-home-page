@@ -1,13 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { AVATAR_PATH } from '../../../lib/avatar'
+import { AVATAR_PATH } from '../../../lib/auth/avatar'
 import {
   OPENCLAW_ACHIEVEMENT_COUNT,
   OPENCLAW_ACHIEVEMENTS,
   OPENCLAW_RESOLVED_ISSUES,
-} from '../../../lib/openClawAchievements'
-import { SECONDARY_SITES } from '../../../lib/secondarySites'
+} from '../../../lib/site/openClawAchievements'
+import { SECONDARY_SITES } from '../../../lib/site/secondarySites'
 import SharePageButton from '../components/SharePageButton'
 import CopyIntroButton from '../components/CopyIntroButton'
 import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'

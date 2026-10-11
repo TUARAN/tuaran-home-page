@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { runAShareDaily } from '../../../../lib/aShareResearch'
+import { runAShareDaily } from '../../../../lib/a-share/aShareResearch'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

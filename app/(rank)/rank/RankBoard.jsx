@@ -14,7 +14,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 
-import { RANK_CATEGORIES, RANK_ITEMS, RANK_TIERS } from '../../../lib/rankData'
+import { RANK_CATEGORIES, RANK_ITEMS, RANK_TIERS } from '../../../lib/page-data/rankData'
 import styles from './RankSite.module.css'
 
 const STORAGE_KEY = 'rank-2aran-ai-tierlist-v1'

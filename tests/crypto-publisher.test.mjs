@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 
-import { AUTO_PUBLISH_DELAY_MS } from '../lib/aSharePublishCore.js'
-import { CRYPTO_AUTO_PUBLISH_DELAY_MS } from '../lib/cryptoPublishCore.js'
-import { autoPublishOldestDueCryptoDraft, publishCryptoDraft } from '../lib/cryptoPublisher.js'
+import { AUTO_PUBLISH_DELAY_MS } from '../lib/a-share/aSharePublishCore.js'
+import { CRYPTO_AUTO_PUBLISH_DELAY_MS } from '../lib/crypto/cryptoPublishCore.js'
+import { autoPublishOldestDueCryptoDraft, publishCryptoDraft } from '../lib/crypto/cryptoPublisher.js'
 
 const NOW = Date.UTC(2026, 7, 28, 1, 30)
 const DUE = NOW - CRYPTO_AUTO_PUBLISH_DELAY_MS

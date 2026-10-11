@@ -7,7 +7,7 @@ import { AdminButton, AdminPage } from '../../components/ui'
 import {
   HOME_RECOMMENDATION_MAX_BATCH_SIZE,
   HOME_RECOMMENDATION_MIN_BATCH_SIZE,
-} from '../../../../lib/homeRecommendationEngine'
+} from '../../../../lib/home/homeRecommendationEngine'
 
 const SOURCE_META = {
   column: { label: '创作', description: '原创文章与精选长文' },

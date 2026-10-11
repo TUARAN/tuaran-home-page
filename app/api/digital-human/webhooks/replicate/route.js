@@ -1,5 +1,5 @@
-import { getD1 } from '../../../../../lib/d1'
-import { getAvatarR2 } from '../../../../../lib/r2'
+import { getD1 } from '../../../../../lib/db/d1'
+import { getAvatarR2 } from '../../../../../lib/db/r2'
 import { getDigitalHumanSigningSecret } from '../../../../../lib/digitalHuman/config'
 import { getDigitalHumanJob } from '../../../../../lib/digitalHuman/jobs'
 import { DIGITAL_HUMAN_REPLICATE_PROVIDER } from '../../../../../lib/digitalHuman/providerIds'

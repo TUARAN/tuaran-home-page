@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   AGENT_OPS_EXTERNAL_URL,
   AGENT_OPS_LOCAL_URL,
@@ -9,7 +9,7 @@ import {
   OPS_RECENT_RUNS,
   automationScheduleStatus,
   registryEntryText,
-} from '../../../../lib/adminOpsRegistry'
+} from '../../../../lib/admin/adminOpsRegistry'
 import {
   deploymentFailureStats,
   lastRunSettingKey,
@@ -17,8 +17,8 @@ import {
   resolveAutomationIncident,
   resolveRegistryLastRun,
   workflowIdFromEntry,
-} from '../../../../lib/automationLastRun'
-import { githubResearchToken } from '../../../../lib/researchGitHubQueue'
+} from '../../../../lib/automation/automationLastRun'
+import { githubResearchToken } from '../../../../lib/research/researchGitHubQueue'
 import {
   AUTOMATION_GITHUB_WORKFLOWS,
   fetchGitHubWorkflowRuns,
@@ -26,14 +26,14 @@ import {
   runsFromDailyBriefs,
   runsFromRecentLogs,
   runsFromStatusRows,
-} from '../../../../lib/automationRunStats'
-import { FRONTEND_WEEKLY_KEYS, readR2Json } from '../../../../lib/frontendWeeklyData'
+} from '../../../../lib/automation/automationRunStats'
+import { FRONTEND_WEEKLY_KEYS, readR2Json } from '../../../../lib/page-data/frontendWeeklyData'
 import {
   MORNING_GREETING_ID,
   MORNING_GREETING_LAST_RUN_KEY,
   MORNING_GREETING_SETTING_KEY,
   isAutomationPaused,
-} from '../../../../lib/morningGreeting'
+} from '../../../../lib/automation/morningGreeting'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

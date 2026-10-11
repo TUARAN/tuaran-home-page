@@ -1,12 +1,12 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   encryptApiKey,
   getKeyStoreEnv,
   listDeepSeekKeys,
   maskApiKey,
   parseBindings,
-} from '../../../../lib/deepseekKeys'
+} from '../../../../lib/ai/deepseekKeys'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

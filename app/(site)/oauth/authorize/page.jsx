@@ -2,8 +2,8 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { oauthBaseUrl, validateAuthorizationRequest } from '../../../../lib/oauthServer'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { oauthBaseUrl, validateAuthorizationRequest } from '../../../../lib/auth/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

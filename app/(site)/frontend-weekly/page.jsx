@@ -1,5 +1,5 @@
 import FrontendWeeklyClient from './FrontendWeeklyClient'
-import { getFrontendWeeklyData } from '../../../lib/frontendWeekly'
+import { getFrontendWeeklyData } from '../../../lib/page-data/frontendWeekly'
 
 export const metadata = {
   title: '前端周看 · 周刊、每日与每时新闻',

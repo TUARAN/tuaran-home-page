@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { parsePrivateDocumentEnvelope } from '../../../../lib/privateDocuments'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { parsePrivateDocumentEnvelope } from '../../../../lib/content/privateDocuments'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

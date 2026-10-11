@@ -1,20 +1,20 @@
-import { researchKnowledgeItem } from '../../../lib/researchKnowledgeItem'
-import { articles } from '../../../lib/articleMetadata'
+import { researchKnowledgeItem } from '../../../lib/research/researchKnowledgeItem'
+import { articles } from '../../../lib/article/articleMetadata'
 import {
   ENGINEERING_WORK_CATEGORIES,
   INTERACTIVE_DIRECTORY_WORKS,
   getRichPagePvKey,
-} from '../../../lib/engineeringWorks'
-import { HOME_RESOURCE_ITEMS } from '../../../lib/homeResourceItems'
-import { CONTENT_PV_ENTRIES } from '../../../lib/contentRegistry'
+} from '../../../lib/site/engineeringWorks'
+import { HOME_RESOURCE_ITEMS } from '../../../lib/home/homeResourceItems'
+import { CONTENT_PV_ENTRIES } from '../../../lib/content/contentRegistry'
 import {
   assertCompleteContentTaxonomy,
   taxonomyForArticle,
   taxonomyForInteractive,
   taxonomyForResource,
-} from '../../../lib/contentTaxonomy'
+} from '../../../lib/content/contentTaxonomy'
 import { compareSortKeyDesc, researchSortKey } from '../../../lib/research/datetime'
-import { isAdsenseReviewPath } from '../../../lib/adsenseReviewPolicy'
+import { isAdsenseReviewPath } from '../../../lib/content/adsenseReviewPolicy'
 import { isAShareResearchEntry } from '../../../lib/research/shareTitle'
 
 // 资源页 href → 阅读统计 key（仅登记进 contentRegistry 的资源才有阅读量）

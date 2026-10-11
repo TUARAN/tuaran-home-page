@@ -10,7 +10,7 @@ import {
   parseNasdaqQuote,
   rangeReturn,
   sliceBars,
-} from '../lib/usStockBasket.js'
+} from '../lib/us-stock/usStockBasket.js'
 
 test('five US stock weights add up to the full notional book', () => {
   assert.deepEqual(US_STOCK_BASKET.map((item) => item.symbol), ['AAPL', 'SPCX', 'TSLA', 'NET', 'TWLO'])

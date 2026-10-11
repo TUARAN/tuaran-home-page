@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-import { normalizeReturnTo } from '../../../lib/returnTo'
+import { normalizeReturnTo } from '../../../lib/site/returnTo'
 
 const ERROR_MESSAGES = {
   INVALID_EMAIL: '请输入有效的邮箱地址。',

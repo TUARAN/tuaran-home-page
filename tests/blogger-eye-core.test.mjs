@@ -7,8 +7,8 @@ import {
   isValidBloggerEyeTarget,
   normalizeBloggerEyeProxy,
   parse91HttpResponse,
-} from '../lib/bloggerEyeCore.mjs'
-import { ADMIN_NAV_GROUPS, resolveAdminTrail } from '../lib/adminRoutes.js'
+} from '../lib/automation/bloggerEyeCore.mjs'
+import { ADMIN_NAV_GROUPS, resolveAdminTrail } from '../lib/admin/adminRoutes.js'
 
 test('blogger eye normalizes proxies and accepts only web targets', () => {
   assert.equal(normalizeBloggerEyeProxy('user:pass@1.2.3.4:8080'), 'http://user:pass@1.2.3.4:8080')

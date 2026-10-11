@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react'
 import { IconBarbell, IconBrandNotion, IconChartBar, IconFlower, IconHeart, IconLock } from '@tabler/icons-react'
 
 import { decryptPayload, fetchEncryptedRecords, migrate } from '../../../../lib/longCompass'
-import { decryptPrivateDocumentContent, normalizePrivateMarkdown } from '../../../../lib/privateDocuments'
+import { decryptPrivateDocumentContent, normalizePrivateMarkdown } from '../../../../lib/content/privateDocuments'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import {
   createSoftStickerUnlockError,
   getSoftStickerUnlockErrorMessage,
   SOFT_STICKER_UNLOCK_ERRORS,
-} from '../../../../lib/softStickerAccess'
+} from '../../../../lib/admin/softStickerAccess'
 import { AdminPage, Section } from '../../components/ui'
 import StrawberryProfile from '../person-strawberry/StrawberryProfile'
 import SelfRegulationClient from '../self-regulation/SelfRegulationClient'

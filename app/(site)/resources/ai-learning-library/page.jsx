@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { AI_LEARNING_BOOKS, AI_LEARNING_LIBRARY_META } from '../../../../lib/aiLearningLibraryData'
+import { AI_LEARNING_BOOKS, AI_LEARNING_LIBRARY_META } from '../../../../lib/page-data/aiLearningLibraryData'
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'

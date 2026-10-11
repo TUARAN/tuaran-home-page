@@ -1,4 +1,4 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import { CATEGORY_META, listResearch } from '../../../lib/research/archive'
-import { researchPublicSummary } from '../../../lib/researchPublicSummary'
-import { renderContentProofLlmsSection } from '../../../lib/contentProofDiscovery.js'
+import { researchPublicSummary } from '../../../lib/research/researchPublicSummary'
+import { renderContentProofLlmsSection } from '../../../lib/content/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600

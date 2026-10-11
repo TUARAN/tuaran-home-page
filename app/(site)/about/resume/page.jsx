@@ -16,7 +16,7 @@ import {
   resumeSummary,
   resumeWorks,
   resumeWriting,
-} from '../../../../lib/resume'
+} from '../../../../lib/site/resume'
 import ResumeToolbar from './ResumeToolbar'
 
 export const dynamic = 'force-static'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BOOKMARK_CATEGORIES } from '../../../../lib/bookmarkNavigation.mjs'
+import { BOOKMARK_CATEGORIES } from '../../../../lib/site/bookmarkNavigation.mjs'
 import { AdminPage } from '../../components/ui'
 
 const INITIAL_VISIBLE = 120

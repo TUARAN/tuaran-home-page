@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { listOllamaModels } from '../../../../../lib/ollama'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { listOllamaModels } from '../../../../../lib/ai/ollama'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

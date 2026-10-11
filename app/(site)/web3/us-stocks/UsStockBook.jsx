@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-import { formatUsd } from '../../../../lib/usStockBasket'
-import { latestSnapshot } from '../../../../lib/usStockLedger'
-import { positionBook } from '../../../../lib/usStockPosition'
+import { formatUsd } from '../../../../lib/us-stock/usStockBasket'
+import { latestSnapshot } from '../../../../lib/us-stock/usStockLedger'
+import { positionBook } from '../../../../lib/us-stock/usStockPosition'
 
 function shareLabel(weight) {
   return `${(weight * 100).toFixed(2)}%`

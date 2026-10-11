@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-import { STATIC_PAGE_REGISTRY, listStaticPageSitemapEntries } from '../../lib/staticPageRegistry.mjs'
+import { STATIC_PAGE_REGISTRY, listStaticPageSitemapEntries } from '../../lib/site/staticPageRegistry.mjs'
 import { inspectRoute, routeFromPageFile } from '../../scripts/audit-route-seo.mjs'
 
 function walk(directory) {
@@ -43,7 +43,7 @@ test('SEO registry stays on the server side and cannot enter a client route bund
 
   const sitemapImporter = 'app/(site)/sitemap-static/sitemap.js'
   assert.deepEqual(importers, existsSync(path.resolve(sitemapImporter)) ? [sitemapImporter] : [])
-  const registrySource = readFileSync(path.resolve('lib/staticPageRegistry.mjs'), 'utf8')
+  const registrySource = readFileSync(path.resolve('lib/site/staticPageRegistry.mjs'), 'utf8')
   assert.equal(registrySource.includes("'use client'"), false)
 })
 

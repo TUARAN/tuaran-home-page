@@ -1,13 +1,13 @@
-import { getD1 } from '../../../../lib/d1'
-import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { getUserRole } from '../../../../lib/userDirectory'
+import { getD1 } from '../../../../lib/db/d1'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { getUserRole } from '../../../../lib/auth/userDirectory'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../../lib/abuseControls'
-import { awardCheckin, countCheckins, getBalance, getPointRules } from '../../../../lib/points'
+} from '../../../../lib/auth/abuseControls'
+import { awardCheckin, countCheckins, getBalance, getPointRules } from '../../../../lib/ledger/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

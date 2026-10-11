@@ -1,10 +1,10 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   createSharedNote,
   deleteSharedNote,
   listSharedNotes,
   updateSharedNote,
-} from '../../../../lib/sharedNotes'
+} from '../../../../lib/content/sharedNotes'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

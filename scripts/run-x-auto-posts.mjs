@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url'
 import { writeFile } from 'node:fs/promises'
-import { X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
+import { X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/x/xPostingSchedule.js'
 
 export async function runXAutoPosts({ now = new Date(), period = '', secret, fetchImpl = fetch } = {}) {
   if (!secret) throw new Error('MORNING_GREETING_SECRET is required')

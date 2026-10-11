@@ -1,9 +1,9 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/homeRecommendationRuntime'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getRuntimeHomeRecommendationCatalog } from '../../../../lib/home/homeRecommendationRuntime'
 import {
   getHomeRecommendationSettings,
   setHomeRecommendationSettings,
-} from '../../../../lib/recommendationSettings'
+} from '../../../../lib/site/recommendationSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

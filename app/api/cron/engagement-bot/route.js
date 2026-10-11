@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { runEngagementBot } from '../../../../lib/engagementBotRun'
+import { runEngagementBot } from '../../../../lib/automation/engagementBotRun'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

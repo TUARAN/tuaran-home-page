@@ -1,13 +1,13 @@
-import { getOwnerOrReject } from '../../../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../../../lib/admin/adminAuth'
 import {
   DEEPSEEK_DEFAULT_BASE_URL,
   DEEPSEEK_DEFAULT_MODEL,
   extractJson,
   getDeepSeekEnv,
-} from '../../../../../../lib/deepseek'
-import { resolveDeepSeekKey } from '../../../../../../lib/deepseekKeys'
-import { resolveDeepSeekModel } from '../../../../../../lib/deepseekKeysCore'
-import { createDeepSeekTask, finishDeepSeekTask } from '../../../../../../lib/deepseekTasks'
+} from '../../../../../../lib/ai/deepseek'
+import { resolveDeepSeekKey } from '../../../../../../lib/ai/deepseekKeys'
+import { resolveDeepSeekModel } from '../../../../../../lib/ai/deepseekKeysCore'
+import { createDeepSeekTask, finishDeepSeekTask } from '../../../../../../lib/ai/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

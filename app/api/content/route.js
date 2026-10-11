@@ -1,5 +1,5 @@
-import { listContentIndex } from '../../../lib/contentIndex'
-import { readRuntimeKnowledgeItems } from '../../../lib/knowledgeRuntime'
+import { listContentIndex } from '../../../lib/content/contentIndex'
+import { readRuntimeKnowledgeItems } from '../../../lib/content/knowledgeRuntime'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

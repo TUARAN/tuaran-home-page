@@ -9,8 +9,8 @@ import {
   sanitizeDailyPayload,
   sanitizeLivePayload,
   writeR2Json,
-} from '../../lib/frontendWeeklyData.js'
-import { validateGitHubActionsClaims } from '../../lib/githubActionsOidc.js'
+} from '../../lib/page-data/frontendWeeklyData.js'
+import { validateGitHubActionsClaims } from '../../lib/db/githubActionsOidc.js'
 
 class FakeBucket {
   constructor() {

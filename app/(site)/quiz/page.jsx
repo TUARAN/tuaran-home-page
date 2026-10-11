@@ -1,4 +1,4 @@
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import QuizClient from './QuizClient'

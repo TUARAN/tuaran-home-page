@@ -7,7 +7,7 @@ import {
   getGuestDirectoryEntry,
   getGuestDirectoryStats,
   listGuestDirectory,
-} from '../lib/guestDirectory.js'
+} from '../lib/auth/guestDirectory.js'
 
 function fakeD1({ allRows = [], firstRows = [] } = {}) {
   const calls = []
@@ -138,7 +138,7 @@ test('0088 迁移回填目录，并通过触发器增量维护目录和全局统
 })
 
 // Cache tests measure database calls, including concurrent refreshes and retries.
-const { createGuestDirectoryCache } = await import('../lib/guestDirectoryCache.js')
+const { createGuestDirectoryCache } = await import('../lib/auth/guestDirectoryCache.js')
 
 test('同页并发请求和一分钟内重复访问只读一次，过期后重新查询', async () => {
   let time = 1000

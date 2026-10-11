@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import vm from 'node:vm'
 
-import { STATIC_PAGE_REGISTRY } from '../lib/staticPageRegistry.mjs'
+import { STATIC_PAGE_REGISTRY } from '../lib/site/staticPageRegistry.mjs'
 
 const extensionRoot = new URL('../tools/x-article-autopublisher-extension/', import.meta.url)
 
@@ -152,10 +152,10 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
 
 test('插件已接入统一工具目录和独立下载介绍页', async () => {
   const manifest = JSON.parse(await read('manifest.json'))
-  const workItems = await readFile(new URL('../lib/downloadItems.js', import.meta.url), 'utf8')
-  const toolItems = await readFile(new URL('../lib/toolItems.js', import.meta.url), 'utf8')
-  const catalog = await readFile(new URL('../lib/resourceCatalog.js', import.meta.url), 'utf8')
-  const registry = await readFile(new URL('../lib/contentRegistry.js', import.meta.url), 'utf8')
+  const workItems = await readFile(new URL('../lib/site/downloadItems.js', import.meta.url), 'utf8')
+  const toolItems = await readFile(new URL('../lib/site/toolItems.js', import.meta.url), 'utf8')
+  const catalog = await readFile(new URL('../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
+  const registry = await readFile(new URL('../lib/content/contentRegistry.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url),
     'utf8',

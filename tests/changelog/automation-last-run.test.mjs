@@ -10,7 +10,7 @@ import {
   resolveRegistryLastRun,
   workflowIdFromAlertKey,
   workflowIdFromEntry,
-} from '../../lib/automationLastRun.js'
+} from '../../lib/automation/automationLastRun.js'
 
 test('workflow ids are parsed from Actions URLs and alert keys', () => {
   assert.equal(

@@ -1,13 +1,13 @@
-import { getD1 } from '../../../lib/d1'
+import { getD1 } from '../../../lib/db/d1'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
   validatePublicHttpUrl,
-} from '../../../lib/abuseControls'
-import { getUserFromRequest } from '../../../lib/edgeSession'
-import { isOwnerUser } from '../../../lib/ownerAuth'
+} from '../../../lib/auth/abuseControls'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
+import { isOwnerUser } from '../../../lib/auth/ownerAuth'
 import {
   createOrReuseShortLink,
   getShortLinkByOriginal,
@@ -16,7 +16,7 @@ import {
   listShortLinks,
   normalizeUrl,
   sanitizeText,
-} from '../../../lib/shortLinks'
+} from '../../../lib/content/shortLinks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

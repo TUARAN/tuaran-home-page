@@ -1,18 +1,18 @@
-import { X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
+import { X_POST_SLOTS } from '../../../../lib/x/xPostingSchedule'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   MORNING_GREETING_ID,
   MORNING_GREETING_SETTING_KEY,
   isAutomationPaused,
-} from '../../../../lib/morningGreeting'
+} from '../../../../lib/automation/morningGreeting'
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODE_KEY,
   DEFAULT_DAILY_GREETING_LLM_INTENT,
   normalizeGreetingGenerationMode,
   normalizeGreetingLlmIntent,
-} from '../../../../lib/dailyGreetingLlm'
+} from '../../../../lib/automation/dailyGreetingLlm'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
@@ -20,7 +20,7 @@ import {
   X_API_PRICING_SOURCE_URL,
   getXApiCostSummary,
   projectedXPostCost,
-} from '../../../../lib/xApiCost'
+} from '../../../../lib/x/xApiCost'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
-const rules = JSON.parse(fs.readFileSync(path.join(root, 'lib', 'researchStyleRules.json'), 'utf8'))
+const rules = JSON.parse(fs.readFileSync(path.join(root, 'lib', 'research', 'researchStyleRules.json'), 'utf8'))
 const categories = ['companies', 'topics', 'people']
 const SOURCE_HEADING_RE = /^#{1,3}\s+.*(?:信息来源|资料来源|参考来源|来源与说明)/mu
 const OPENING_SOURCE_RE = /(?:信息来源说明|资料口径|来源口径|信息口径|核验口径|抓取口径|本文(?:主要)?(?:基于|依据|据)|主要资料(?:来自|来源)|公开资料(?:整理|梳理)|\*\*来源[：:]\*\*)/u

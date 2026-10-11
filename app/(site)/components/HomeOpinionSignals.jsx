@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { IconMessageCircle2 } from '@tabler/icons-react'
-import { selectHomeOpinionPosts } from '../../../lib/homeOpinionSignals'
-import { getSentimentBucket } from '../../../lib/publicOpinionData'
+import { selectHomeOpinionPosts } from '../../../lib/home/homeOpinionSignals'
+import { getSentimentBucket } from '../../../lib/publicOpinion/publicOpinionData'
 import { T } from './LocaleProvider'
 
 const STANCES = {

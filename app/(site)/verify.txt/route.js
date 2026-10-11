@@ -1,4 +1,4 @@
-import { renderContentProofAgentGuide } from '../../../lib/contentProofDiscovery.js'
+import { renderContentProofAgentGuide } from '../../../lib/content/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 

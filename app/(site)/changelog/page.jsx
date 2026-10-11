@@ -5,7 +5,7 @@ import {
   CHANGELOG_TOTAL_COMMITS as totalCommits,
   EARLIEST_CHANGELOG as earliest,
   LATEST_CHANGELOG as latest,
-} from '../../../lib/changelogData'
+} from '../../../lib/automation/changelogData'
 
 export const dynamic = 'force-static'
 

@@ -1,14 +1,14 @@
-import { getD1 } from '../../../../lib/d1'
-import { getUserFromRequest } from '../../../../lib/edgeSession'
-import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/guestSession'
-import { getUserRole } from '../../../../lib/userDirectory'
+import { getD1 } from '../../../../lib/db/d1'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/auth/guestSession'
+import { getUserRole } from '../../../../lib/auth/userDirectory'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../../lib/abuseControls'
-import { awardGuestSeed, getResourceStatus, unlockResource } from '../../../../lib/points'
+} from '../../../../lib/auth/abuseControls'
+import { awardGuestSeed, getResourceStatus, unlockResource } from '../../../../lib/ledger/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

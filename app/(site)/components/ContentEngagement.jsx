@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import ArticleComments from './ArticleComments'
 import PageContainer from './PageContainer'
-import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/contentPipeline'
+import { CONTENT_PIPELINE_TYPE_LABELS, getRelatedContent } from '../../../lib/content/contentPipeline'
 
 /**
  * 内容页统一互动尾部：相关阅读（跨文章/调研/资源推荐）+ 评论区。

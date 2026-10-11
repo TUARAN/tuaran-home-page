@@ -17,7 +17,7 @@ import {
 import AdminPage from '../../components/ui/AdminPage'
 import AdminButton from '../../components/ui/AdminButton'
 import ArticlePostBody from '../../../(site)/components/ArticlePostBody'
-import { isMarkdownDocument, markdownFileToDraft, MAX_MARKDOWN_BYTES } from '../../../../lib/articleDocument.mjs'
+import { isMarkdownDocument, markdownFileToDraft, MAX_MARKDOWN_BYTES } from '../../../../lib/article/articleDocument.mjs'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const EMPTY_DOC = { type: 'doc', content: [{ type: 'paragraph' }] }

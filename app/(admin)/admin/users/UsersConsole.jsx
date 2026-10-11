@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconRefresh } from '@tabler/icons-react'
 
-import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/userRoles'
-import { displayNameForUserId } from '../../../../lib/userDisplayName'
+import { USER_ROLE_LABELS, VALID_USER_ROLES } from '../../../../lib/auth/userRoles'
+import { displayNameForUserId } from '../../../../lib/auth/userDisplayName'
 import { AdminPage, Section, StatCard, DataTable, EmptyState, AdminButton } from '../../components/ui'
 
 const roleStyles = {

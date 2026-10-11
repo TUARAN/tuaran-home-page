@@ -11,7 +11,7 @@ import {
   homeStripHeadline,
   homeStripSubline,
   todayBeijing,
-} from '../../../lib/codexResets'
+} from '../../../lib/ai/codexResets'
 
 export default function HomeCodexResetCard() {
   const [model, setModel] = useState(() => homeCardModel(FALLBACK_SNAPSHOT, todayBeijing()))

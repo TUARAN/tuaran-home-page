@@ -14,7 +14,7 @@ import {
   defaultHolidayJournal,
   HOLIDAY_JOURNAL_LOCAL_STORAGE_KEY,
   normalizeHolidayJournal,
-} from '../../../../lib/holidayJournal'
+} from '../../../../lib/page-data/holidayJournal'
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 
 function readLocalJournal() {

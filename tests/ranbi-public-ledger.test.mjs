@@ -9,7 +9,7 @@ import {
   paginateNewestFirst,
   publicAccount,
   publicDetail,
-} from '../lib/ranbiPublicLedger.js'
+} from '../lib/ledger/ranbiPublicLedger.js'
 
 test('public ledger hides login identifiers and keeps system accounts readable', async () => {
   const email = await publicAccount('email:reader@example.com')

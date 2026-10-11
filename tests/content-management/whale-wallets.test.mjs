@@ -21,7 +21,7 @@ import {
   parseMempoolAddress,
   weiHexToEth,
   whaleAsset,
-} from '../../lib/whaleWallets.js'
+} from '../../lib/markets/whaleWallets.js'
 
 test('catalog keeps 5–25 labeled wallets with unique addresses, sources and folk attribution', () => {
   assert.ok(WHALE_WALLETS.length >= 5 && WHALE_WALLETS.length <= 25)
@@ -145,7 +145,7 @@ test('daily buckets group mempool flows by UTC day', () => {
 })
 
 test('interactive page is registered as a rich-page work', async () => {
-  const { ENGINEERING_WORKS } = await import('../../lib/engineeringWorks.js')
+  const { ENGINEERING_WORKS } = await import('../../lib/site/engineeringWorks.js')
   const work = ENGINEERING_WORKS.find((item) => item.id === 'whale-wallets')
   assert.equal(work.href, '/whale-wallets')
   assert.deepEqual(work.subjects, ['web3'])

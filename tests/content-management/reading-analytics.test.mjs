@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { readingVisitorName } from '../../lib/readingVisitorIdentity.mjs'
+import { readingVisitorName } from '../../lib/auth/readingVisitorIdentity.mjs'
 import { readFile } from 'node:fs/promises'
 
 const beaconSource = await readFile(

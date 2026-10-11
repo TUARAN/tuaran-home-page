@@ -4,8 +4,8 @@ import {
   INTERACTIVE_DIRECTORY_WORKS,
   getRichPagePresentation,
   getRichPagePvKey,
-} from '../../../lib/engineeringWorks'
-import { getOwnerPageState } from '../../../lib/adminPageAuth'
+} from '../../../lib/site/engineeringWorks'
+import { getOwnerPageState } from '../../../lib/admin/adminPageAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

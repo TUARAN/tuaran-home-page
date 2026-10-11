@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { H5_PULL_THRESHOLD, getPullRefreshDistance, shouldTriggerPullRefresh } from '../../../lib/h5PullRefresh'
+import { H5_PULL_THRESHOLD, getPullRefreshDistance, shouldTriggerPullRefresh } from '../../../lib/site/h5PullRefresh'
 
 function isPhoneViewport() {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches

@@ -2,20 +2,20 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { buildExamQuestions } from '../../lib/quizExam.js'
+import { buildExamQuestions } from '../../lib/page-data/quizExam.js'
 
 const [clientSource, pageSource, worksSource, directorySource, directoryFiltersSource, quizPageSource, quizClientSource, questionBankSource, richPagesSource, builderSource, seoSource] = await Promise.all([
   readFile(new URL('../../app/(site)/adsense-content-check/AdSenseContentCheckClient.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/adsense-content-check/page.jsx', import.meta.url), 'utf8'),
-  readFile(new URL('../../lib/engineeringWorks.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/site/engineeringWorks.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8'),
-  readFile(new URL('../../lib/articlesDirectoryFilters.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/article/articlesDirectoryFilters.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/quiz/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/quiz/QuizClient.jsx', import.meta.url), 'utf8'),
-  readFile(new URL('../../lib/questionBank2026.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/page-data/questionBank2026.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/rich-pages/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/buildKnowledgeItems.js', import.meta.url), 'utf8'),
-  readFile(new URL('../../lib/richPageSeo.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../lib/site/richPageSeo.js', import.meta.url), 'utf8'),
 ])
 
 test('AdSense policy summary is implemented as a registered interactive page', () => {

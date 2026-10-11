@@ -7,8 +7,8 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { commentProviderLabel } from '../../../lib/userDisplayName'
-import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
+import { commentProviderLabel } from '../../../lib/auth/userDisplayName'
+import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/automation/engagementBot'
 import StompPanel from '../components/StompPanel'
 import UserAvatar from '../components/UserAvatar'
 

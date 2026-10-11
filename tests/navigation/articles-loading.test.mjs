@@ -6,7 +6,7 @@ import {
   buildDirectoryUrl,
   filtersFromParams,
   sameDirectoryFilters,
-} from '../../lib/articlesDirectoryFilters.js'
+} from '../../lib/article/articlesDirectoryFilters.js'
 
 const [pageSource, clientSource, skeletonSource] = await Promise.all([
   readFile(new URL('../../app/(site)/articles/page.jsx', import.meta.url), 'utf8'),

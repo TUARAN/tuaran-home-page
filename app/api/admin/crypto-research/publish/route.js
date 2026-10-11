@@ -1,8 +1,8 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../lib/d1'
-import { CryptoPublishError, publishCryptoDraft } from '../../../../../lib/cryptoPublisher'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../lib/db/d1'
+import { CryptoPublishError, publishCryptoDraft } from '../../../../../lib/crypto/cryptoPublisher'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { DEFAULT_LOCALE, LOCALE_COOKIE, normalizeLocale, pick } from '../../../lib/i18n'
+import { DEFAULT_LOCALE, LOCALE_COOKIE, normalizeLocale, pick } from '../../../lib/site/i18n'
 
 const LocaleContext = createContext(null)
 

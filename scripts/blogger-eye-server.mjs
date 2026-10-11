@@ -6,7 +6,7 @@ import {
   isValidBloggerEyeTarget,
   normalizeBloggerEyeProxy,
   parse91HttpResponse,
-} from '../lib/bloggerEyeCore.mjs'
+} from '../lib/automation/bloggerEyeCore.mjs'
 
 const host = '127.0.0.1'
 const port = Number(process.env.BLOGGER_EYE_PORT || 5177)

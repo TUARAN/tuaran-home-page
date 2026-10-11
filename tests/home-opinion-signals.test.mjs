@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { selectHomeOpinionPosts } from '../lib/homeOpinionSignals.js'
+import { selectHomeOpinionPosts } from '../lib/home/homeOpinionSignals.js'
 
 test('homepage prioritizes distinct opinions while preserving order within each group', () => {
   const posts = [

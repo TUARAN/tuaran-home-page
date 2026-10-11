@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { callDeepSeek, extractJson } from '../../../../../lib/deepseek'
-import { enrichDeepSeekTask, finishDeepSeekTask } from '../../../../../lib/deepseekTasks'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { callDeepSeek, extractJson } from '../../../../../lib/ai/deepseek'
+import { enrichDeepSeekTask, finishDeepSeekTask } from '../../../../../lib/ai/deepseekTasks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

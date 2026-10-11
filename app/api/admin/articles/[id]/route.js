@@ -1,17 +1,17 @@
-import { isReservedArticleSlug } from '../../../../../lib/articleReservedSlugs'
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { articlePostToContentEntry } from '../../../../../lib/articleContentIndex.mjs'
+import { isReservedArticleSlug } from '../../../../../lib/article/articleReservedSlugs'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { articlePostToContentEntry } from '../../../../../lib/article/articleContentIndex.mjs'
 import {
   normalizeSlug,
   normalizeTags,
   rowToArticlePost,
-} from '../../../../../lib/articlePosts'
+} from '../../../../../lib/article/articlePosts'
 import {
   prepareDeleteContentEntry,
   prepareUpsertContentEntry,
-} from '../../../../../lib/contentIndex'
-import { normalizeArticleDocument } from '../../../../../lib/articleDocument.mjs'
-import { getD1 } from '../../../../../lib/d1'
+} from '../../../../../lib/content/contentIndex'
+import { normalizeArticleDocument } from '../../../../../lib/article/articleDocument.mjs'
+import { getD1 } from '../../../../../lib/db/d1'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

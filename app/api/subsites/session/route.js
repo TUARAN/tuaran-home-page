@@ -1,8 +1,8 @@
-import { getD1 } from '../../../../lib/d1'
-import { getSecrets, getUserFromRequest } from '../../../../lib/edgeSession'
-import { getOrIssueGuest } from '../../../../lib/guestSession'
-import { awardGuestSeed, getBalance, hasCheckedInToday } from '../../../../lib/points'
-import { handleSubsiteSession, subsitePreflight } from '../../../../lib/subsiteAccount'
+import { getD1 } from '../../../../lib/db/d1'
+import { getSecrets, getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { getOrIssueGuest } from '../../../../lib/auth/guestSession'
+import { awardGuestSeed, getBalance, hasCheckedInToday } from '../../../../lib/ledger/points'
+import { handleSubsiteSession, subsitePreflight } from '../../../../lib/site/subsiteAccount'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

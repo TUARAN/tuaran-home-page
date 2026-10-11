@@ -1,8 +1,8 @@
-import { isReservedArticleSlug } from '../../../../lib/articleReservedSlugs'
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { EMPTY_ARTICLE_DOC, normalizeSlug, normalizeTags, rowToArticlePost } from '../../../../lib/articlePosts'
-import { normalizeArticleDocument } from '../../../../lib/articleDocument.mjs'
-import { getD1 } from '../../../../lib/d1'
+import { isReservedArticleSlug } from '../../../../lib/article/articleReservedSlugs'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { EMPTY_ARTICLE_DOC, normalizeSlug, normalizeTags, rowToArticlePost } from '../../../../lib/article/articlePosts'
+import { normalizeArticleDocument } from '../../../../lib/article/articleDocument.mjs'
+import { getD1 } from '../../../../lib/db/d1'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

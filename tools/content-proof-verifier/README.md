@@ -54,10 +54,10 @@ Exit code `0` means every supplied check passed. The JSON report lists `verified
 These files are enough to verify proofs without the website:
 
 - `tools/content-proof-verifier/cli.mjs`
-- `lib/contentProof.js`
-- `lib/contentMerkle.js`
-- `lib/contentReplica.js`
-- `lib/contentProofClaims.js`
-- `lib/contentProofVerify.js`
+- `lib/content/contentProof.js`
+- `lib/content/contentMerkle.js`
+- `lib/content/contentReplica.js`
+- `lib/content/contentProofClaims.js`
+- `lib/content/contentProofVerify.js`
 
 Keep the relative `../../lib/` imports, or place those modules next to the CLI and adjust the import paths.

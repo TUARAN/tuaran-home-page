@@ -7,13 +7,13 @@ import {
   serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
-} from '../../../../../lib/edgeSession'
-import { readProviderJson, logOAuthProviderFailure, oauthProviderError } from '../../../../../lib/oauthProviderErrors'
-import { normalizeReturnTo } from '../../../../../lib/returnTo'
-import { recordUserLogin } from '../../../../../lib/userDirectory'
-import { clearGuestCookie, mergeGuestFromRequest } from '../../../../../lib/guestSession'
-import { awardRegisterOnLogin } from '../../../../../lib/points'
-import { bindIdentityToUser, ensureIdentityForUser, resolveIdentityForLogin } from '../../../../../lib/accountIdentities'
+} from '../../../../../lib/auth/edgeSession'
+import { readProviderJson, logOAuthProviderFailure, oauthProviderError } from '../../../../../lib/auth/oauthProviderErrors'
+import { normalizeReturnTo } from '../../../../../lib/site/returnTo'
+import { recordUserLogin } from '../../../../../lib/auth/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../../lib/auth/guestSession'
+import { awardRegisterOnLogin } from '../../../../../lib/ledger/points'
+import { bindIdentityToUser, ensureIdentityForUser, resolveIdentityForLogin } from '../../../../../lib/auth/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useLocale } from '../../components/LocaleProvider'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
-import { pick } from '../../../../lib/i18n'
+import { pick } from '../../../../lib/site/i18n'
 
 const CATEGORY_LABELS = {
   misc: { zh: '综合', en: 'Misc' },

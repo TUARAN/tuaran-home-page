@@ -1,14 +1,14 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { checkSiteHealth } from '../../../../lib/siteHealth'
-import { createManualSiteStatus, publicSiteStatus } from '../../../../lib/siteStatusCore'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { checkSiteHealth } from '../../../../lib/site/siteHealth'
+import { createManualSiteStatus, publicSiteStatus } from '../../../../lib/site/siteStatusCore'
 import {
   getSiteStatusBucket,
   readSiteStatus,
   readSiteStatusMonitor,
   writeSiteStatus,
-} from '../../../../lib/siteStatusStore'
+} from '../../../../lib/site/siteStatusStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

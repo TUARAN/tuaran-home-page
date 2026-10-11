@@ -15,7 +15,7 @@ import {
   formatPct,
   formatUsd,
   shortAddress,
-} from '../../../lib/whaleWallets'
+} from '../../../lib/markets/whaleWallets'
 
 const SHARE_URL = 'https://2aran.com/whale-wallets'
 const MAX_COMPARE = 3

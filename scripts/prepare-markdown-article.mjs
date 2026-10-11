@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { markdownFileToDraft } from '../lib/articleDocument.mjs'
+import { markdownFileToDraft } from '../lib/article/articleDocument.mjs'
 
 const file = process.argv[2]
 if (!file || process.argv.length !== 3) {

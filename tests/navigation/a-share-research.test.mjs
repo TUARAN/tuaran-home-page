@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 
 test('A股调研模板与策略默认折叠', async () => {
   const client = await readFile(new URL('../../app/(site)/a-share-research/AShareResearchClient.jsx', import.meta.url), 'utf8')
@@ -14,7 +14,7 @@ test('A股调研模板与策略默认折叠', async () => {
 })
 
 test('A股调研 is a content submenu and a sitemap route', async () => {
-  const nav = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8')
+  const nav = await readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8')
 
   assert.match(nav, /href: '\/a-share-research', label: 'A股调研'/)
   assert.match(nav, /p\?\.startsWith\('\/a-share-research'\)/)

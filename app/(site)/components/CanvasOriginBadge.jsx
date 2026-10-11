@@ -1,4 +1,4 @@
-import { resolveCanvasProvenance } from '../../../lib/canvasProvenance'
+import { resolveCanvasProvenance } from '../../../lib/page-data/canvasProvenance'
 
 const SIZE_CLASS = {
   sm: 'px-1.5 py-px text-[10px] tracking-[0.12em]',

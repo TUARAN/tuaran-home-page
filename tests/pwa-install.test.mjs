@@ -8,7 +8,7 @@ import {
   isStandaloneDisplay,
   nextDismissUntil,
   shouldOfferInstall,
-} from '../lib/pwaInstall.js'
+} from '../lib/site/pwaInstall.js'
 
 test('install surface splits WeChat, iOS Safari, iOS Chrome and Android', () => {
   assert.equal(

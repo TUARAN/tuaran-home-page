@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 import ArticleComments from '../components/ArticleComments'
 import ContentProofCard from '../components/ContentProofCard'
-import { getContentProofCredential } from '../../../lib/contentProofRegistry'
-import { ONCHAIN_COLLECTION_STATS, ONCHAIN_WORKS } from '../../../lib/onchainWorks'
+import { getContentProofCredential } from '../../../lib/content/contentProofRegistry'
+import { ONCHAIN_COLLECTION_STATS, ONCHAIN_WORKS } from '../../../lib/markets/onchainWorks'
 import ContentFingerprintPrototype from './ContentFingerprintPrototype'
 import ReaderTestInvite from './ReaderTestInvite'
 

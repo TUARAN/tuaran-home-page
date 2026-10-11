@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { selectRelatedContent } from '../../lib/contentSelection.mjs'
+import { selectRelatedContent } from '../../lib/content/contentSelection.mjs'
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), 'utf8')
 function evaluate(source, scope, exports) {
@@ -30,7 +30,7 @@ test('runtime catalog merges every D1 page, applies tombstones and updates recom
   const rows = Array.from({length:1005},(_,i)=>({contentKey:`article:other-${i}`,type:'article',category:'posts',title:`Other ${i}`,status:'published',tags:[],date:'2025-01-01'}))
   rows.push({...archived,status:'retired'}, {...current,status:'published'})
   const pages = []
-  const runtime = evaluate(await read('lib/contentPipelineRuntime.js'), {
+  const runtime = evaluate(await read('lib/content/contentPipelineRuntime.js'), {
     readContentCatalog:async()=>({entries:[archived]}),
     listContentIndex:async({offset,limit})=>{pages.push(offset);return rows.slice(offset,offset+limit)},
     selectRelatedContent,
@@ -48,7 +48,7 @@ test('runtime catalog merges every D1 page, applies tombstones and updates recom
 test('catalog reads current deployment ASSETS, does not forward cookies, and validates schema', async () => {
   let request
   let payload = {version:1,entries:[],researchRedirects:{}}
-  const runtime = evaluate(await read('lib/contentCatalogRuntime.js'),{
+  const runtime = evaluate(await read('lib/content/contentCatalogRuntime.js'),{
     getOptionalRequestContext:()=>({env:{ASSETS:{fetch:async(req)=>{request=req;return Response.json(payload)}}}}),
   },['readContentCatalog'])
   assert.deepEqual(await runtime.readContentCatalog(),payload)
@@ -59,7 +59,7 @@ test('catalog reads current deployment ASSETS, does not forward cookies, and val
 })
 
 test('reservation uses runtime aliases and metadata instead of an embedded research directory', async () => {
-  const runtime = evaluate(await read('lib/articleReservedSlugs.js'),{
+  const runtime = evaluate(await read('lib/article/articleReservedSlugs.js'),{
     readContentCatalog:async()=>({articles:[{slug:'old-article'}],researchRedirects:{'2026-09-10-new-research':'/articles/research/topics/new-research'}}),
     resolveResearchPath:async(path)=>({found:path.endsWith('/2026-09-10-new-research')}),
   },['isReservedArticleSlug'])
@@ -70,7 +70,7 @@ test('reservation uses runtime aliases and metadata instead of an embedded resea
 })
 
 test('a failed D1 read cannot silently revive an archived item', async () => {
-  const runtime = evaluate(await read('lib/contentPipelineRuntime.js'),{
+  const runtime = evaluate(await read('lib/content/contentPipelineRuntime.js'),{
     readContentCatalog:async()=>({entries:[{contentKey:'research:topics:retired',title:'Old'}]}),
     listContentIndex:async()=>{throw new Error('database unavailable')},
     selectRelatedContent,
@@ -80,7 +80,7 @@ test('a failed D1 read cannot silently revive an archived item', async () => {
 })
 
 test('research aliases redirect before streaming and preserve variant query parameters',async()=>{
-  const {gateArticleRequest}=evaluate(await read('lib/articleRequestGate.js'),{
+  const {gateArticleRequest}=evaluate(await read('lib/article/articleRequestGate.js'),{
     resolveReservedArticleSlug:async()=>({reserved:true,redirectHref:'/articles/research/topics/example'}),
     getD1:()=>{throw new Error('must not query article_posts for an archive alias')},
   },['gateArticleRequest'])

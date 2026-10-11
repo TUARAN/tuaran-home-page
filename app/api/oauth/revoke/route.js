@@ -1,4 +1,4 @@
-import { oauthBaseUrl, revokeOAuthToken } from '../../../../lib/oauthServer'
+import { oauthBaseUrl, revokeOAuthToken } from '../../../../lib/auth/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

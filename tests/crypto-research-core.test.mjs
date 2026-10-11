@@ -11,8 +11,8 @@ import {
   pickHighestRankedUnresearched,
   validateCryptoDraft,
   validateMarketSnapshot,
-} from '../lib/cryptoResearchCore.js'
-import { cryptoAutoPublishAt, cryptoPublishFileName, cryptoPublishSlug } from '../lib/cryptoPublishCore.js'
+} from '../lib/crypto/cryptoResearchCore.js'
+import { cryptoAutoPublishAt, cryptoPublishFileName, cryptoPublishSlug } from '../lib/crypto/cryptoPublishCore.js'
 
 const bitcoin = {
   id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', market_cap_rank: 1, current_price: 100000,

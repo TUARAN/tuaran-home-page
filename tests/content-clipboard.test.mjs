@@ -6,7 +6,7 @@ import {
   copyRichText,
   markdownToPlainText,
   prepareXArticleHtml,
-} from '../lib/contentClipboard.js'
+} from '../lib/content/contentClipboard.js'
 
 test('markdownToPlainText removes presentation markers but keeps readable structure', () => {
   const markdown = [

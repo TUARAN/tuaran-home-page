@@ -5,7 +5,7 @@ import test from 'node:test'
 const page = await readFile(new URL('../app/(site)/products/new-message-phone/page.jsx', import.meta.url), 'utf8')
 const platform = await readFile(new URL('../app/(site)/products/new-message-phone/HardwarePlatform.jsx', import.meta.url), 'utf8')
 const styles = await readFile(new URL('../app/(site)/products/new-message-phone/new-message-phone.module.css', import.meta.url), 'utf8')
-const localPage = await readFile(new URL('../deliverables/new-message-phone.html', import.meta.url), 'utf8')
+const localPage = await readFile(new URL('../docs/deliverables/new-message-phone.html', import.meta.url), 'utf8')
 
 test('new message phone page exposes review-critical product information', () => {
   for (const phrase of ['新消息手机', '硬件平台原生消息应用', '手机终端原生短信界面', 'Chatbot 智能服务模块', 'NMP X1', '设备控制 API']) {

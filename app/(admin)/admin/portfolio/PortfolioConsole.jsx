@@ -10,7 +10,7 @@ import {
   PORTFOLIO_SNAPSHOT,
   VALID_BIZ_STATUSES,
   seedProjectsWithBizDefaults,
-} from '../../../../lib/portfolioSeed'
+} from '../../../../lib/site/portfolioSeed'
 
 const pillars = {
   blog: {
@@ -39,7 +39,7 @@ const pillars = {
   },
 }
 
-// 项目台账数据：正本在 D1 portfolio_projects（迁移 0020），回退 seed 在 lib/portfolioSeed.js
+// 项目台账数据：正本在 D1 portfolio_projects（迁移 0020），回退 seed 在 lib/site/portfolioSeed.js
 
 const decisions = [
   ['核心产品', 'blogger-alliance、frontend-weekly-digest-cn', '分别承担创作者增长和前端内容两条主线。'],

@@ -1,5 +1,5 @@
-import { getD1 } from '../../../lib/d1'
-import { publicUrlFor } from '../../../lib/r2'
+import { getD1 } from '../../../lib/db/d1'
+import { publicUrlFor } from '../../../lib/db/r2'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

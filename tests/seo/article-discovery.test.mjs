@@ -16,7 +16,7 @@ const fixture = [
   { slug: '../share/private', status: 'published' },
   { slug: 'diary-self-reflection', status: 'published' },
 ]
-const discoverySource = (await read('lib/articleDiscovery.js')).replace(/^import .*\n/gm, '')
+const discoverySource = (await read('lib/article/articleDiscovery.js')).replace(/^import .*\n/gm, '')
 const discoveryUrl = moduleUrl(`const articles = [{slug:'static-post'}, {slug:'external-post', href:'https://example.com'}];
 const RESEARCH_ARTICLE_REDIRECTS = {'research-alias':'/articles/research/topics/example'};
 const readContentCatalog = async () => ({articles, researchRedirects:RESEARCH_ARTICLE_REDIRECTS});
@@ -44,7 +44,7 @@ export const DISCOVERY_HEADERS = {'Cache-Control':'no-store'};`)
 
 const publicRoutesExcluded = process.env.ADMIN_PAGES_BUILD === '1'
 test('actual sitemap handler merges database sample without draft or shadow links', { skip: publicRoutesExcluded }, async () => {
-  const response = await route('lib/discoverySitemap.js', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://2aran.com/articles/static-post</loc></url></urlset>')
+  const response = await route('lib/rss/discoverySitemap.js', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://2aran.com/articles/static-post</loc></url></urlset>')
   const xml = await response.text()
   assert.equal(XMLValidator.validate(xml), true)
   const entries = new XMLParser().parse(xml).urlset.url
@@ -55,7 +55,7 @@ test('actual sitemap handler merges database sample without draft or shadow link
 })
 
 test('actual RSS handler preserves full text and GUID while adding escaped public summary', { skip: publicRoutesExcluded }, async () => {
-  const response = await route('lib/discoveryRss.js', '<rss version="2.0"><channel><lastBuildDate>Tue, 01 Sep 2026 00:00:00 GMT</lastBuildDate><item><title>Static</title><link>https://2aran.com/articles/static-post</link><guid>versioned-guid</guid><description><![CDATA[<p>Full text</p>]]></description></item></channel></rss>')
+  const response = await route('lib/rss/discoveryRss.js', '<rss version="2.0"><channel><lastBuildDate>Tue, 01 Sep 2026 00:00:00 GMT</lastBuildDate><item><title>Static</title><link>https://2aran.com/articles/static-post</link><guid>versioned-guid</guid><description><![CDATA[<p>Full text</p>]]></description></item></channel></rss>')
   const xml = await response.text()
   assert.equal(XMLValidator.validate(xml), true)
   const items = new XMLParser().parse(xml).rss.channel.item
@@ -69,7 +69,7 @@ test('actual RSS handler preserves full text and GUID while adding escaped publi
 
 test('bad static artifact returns non-cacheable error instead of successful empty feed', { skip: publicRoutesExcluded }, async () => {
   for (const name of ['Sitemap', 'Rss']) {
-    const response = await route(`lib/discovery${name}.js`, '<html>Not found</html>')
+    const response = await route(`lib/rss/discovery${name}.js`, '<html>Not found</html>')
     assert.equal(response.status, 503)
     assert.equal(response.headers.get('cache-control'), 'no-store')
   }
@@ -79,8 +79,8 @@ test('directory has an unconditional server link and renders every published pos
   const [directory, archive, published, db] = await Promise.all([
     read('app/(site)/articles/page.jsx'),
     read('app/(site)/articles/published/page.jsx'),
-    read('lib/discoveryHtml.js'),
-    read('lib/articlePosts.js'),
+    read('lib/rss/discoveryHtml.js'),
+    read('lib/article/articlePosts.js'),
   ])
   assert.match(directory, /href="\/articles\/published"/)
   assert.match(archive, /readRuntimeKnowledgeItems/)
@@ -93,7 +93,7 @@ test('directory has an unconditional server link and renders every published pos
 })
 
 test('Pages reads the current deployment static asset through ASSETS without cookies', async () => {
-  const source = (await read('lib/discoveryAssets.js')).replace(/^import .*\n/gm, '')
+  const source = (await read('lib/rss/discoveryAssets.js')).replace(/^import .*\n/gm, '')
   const url = moduleUrl(`let seen;
 const getOptionalRequestContext = () => ({ env: { ASSETS: { fetch: async (request) => {
   seen = request;
@@ -108,7 +108,7 @@ ${source}`)
 })
 
 test('metadata query reuses article accessor, restricts publication, and avoids full documents', async () => {
-  const source = (await read('lib/articlePosts.js')).replace(/^import .*\n/gm, '')
+  const source = (await read('lib/article/articlePosts.js')).replace(/^import .*\n/gm, '')
   const url = moduleUrl(`let query;
 const taxonomyForArticle = () => ({});
 const getD1 = () => ({ prepare: (sql) => {
@@ -132,7 +132,7 @@ test('HTML archive emits links beyond the client page size without JavaScript', 
   const posts = Array.from({ length: 40 }, (_, index) => ({ slug: `public-${index}`, title: `<Public ${index}>`, summary: 'A & B' }))
   const postsModule = moduleUrl(`export * from ${JSON.stringify(discoveryUrl)};
 export const listDiscoverablePosts = async () => ${JSON.stringify(posts)};`)
-  const response = await route('lib/discoveryHtml.js', '', postsModule)
+  const response = await route('lib/rss/discoveryHtml.js', '', postsModule)
   const html = await response.text()
   assert.match(response.headers.get('content-type'), /text\/html/)
   assert.equal((html.match(/<li>/g) || []).length, 40)

@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { handleSiteManagement } from '../../../../lib/secondarySiteManagement'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { handleSiteManagement } from '../../../../lib/site/secondarySiteManagement'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

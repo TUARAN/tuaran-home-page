@@ -1,5 +1,5 @@
-import { cookieNames, cookiesConfig, serializeCookie } from '../../../../lib/edgeSession'
-import { normalizeReturnTo } from '../../../../lib/returnTo'
+import { cookieNames, cookiesConfig, serializeCookie } from '../../../../lib/auth/edgeSession'
+import { normalizeReturnTo } from '../../../../lib/site/returnTo'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

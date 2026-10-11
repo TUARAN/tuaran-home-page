@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { researchPublicSummary } from '../lib/researchPublicSummary.js'
+import { researchPublicSummary } from '../lib/research/researchPublicSummary.js'
 import { writeResearchEditCounts } from './generate-research-edit-counts.mjs'
 
 const root = process.cwd()

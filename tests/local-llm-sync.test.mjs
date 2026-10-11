@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { localLlmTaskId, normalizeLocalLlmSyncPayload } from '../lib/localLlmSync.js'
+import { localLlmTaskId, normalizeLocalLlmSyncPayload } from '../lib/ai/localLlmSync.js'
 
 test('Mac 本地调用同步记录规范化 Token、耗时与摘要', () => {
   const result = normalizeLocalLlmSyncPayload({

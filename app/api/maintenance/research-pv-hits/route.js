@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { safeEqual } from '../../../../lib/ownerAuth'
+import { safeEqual } from '../../../../lib/auth/ownerAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

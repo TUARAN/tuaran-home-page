@@ -2,14 +2,14 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { getSpacexTimeline, normalizeLl2Launch, SPACEX_ARCHIVED_LAUNCHES, SPACEX_EDITORIAL_ENTRIES } from '../../lib/spacexTimeline.js'
-import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../lib/spacexArchivePrompt.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { getSpacexTimeline, normalizeLl2Launch, SPACEX_ARCHIVED_LAUNCHES, SPACEX_EDITORIAL_ENTRIES } from '../../lib/page-data/spacexTimeline.js'
+import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../lib/page-data/spacexArchivePrompt.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 
 test('SpaceX stays off primary nav and is a homepage easter egg', async () => {
   const [nav, mobileNav, header, page, egg, styles] = await Promise.all([
-    readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/siteMobileNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteMobileNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/HomeSpacexEgg.jsx', import.meta.url), 'utf8'),

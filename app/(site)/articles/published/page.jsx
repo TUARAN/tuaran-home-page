@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import ArticleListItem from '../ArticleListItem'
-import { readRuntimeKnowledgeItems } from '../../../../lib/knowledgeRuntime'
+import { readRuntimeKnowledgeItems } from '../../../../lib/content/knowledgeRuntime'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

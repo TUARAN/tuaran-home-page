@@ -1,11 +1,11 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   VALID_AUDIENCES,
   deleteNavOverride,
   getNavOverrides,
   setNavOverride,
-} from '../../../../lib/navOverrides'
-import { flattenChannelRoutesRaw } from '../../../../lib/siteNav'
+} from '../../../../lib/site/navOverrides'
+import { flattenChannelRoutesRaw } from '../../../../lib/site/siteNav'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

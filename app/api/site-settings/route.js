@@ -1,4 +1,4 @@
-import { getSiteSettings } from '../../../lib/siteSettings'
+import { getSiteSettings } from '../../../lib/site/siteSettings'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

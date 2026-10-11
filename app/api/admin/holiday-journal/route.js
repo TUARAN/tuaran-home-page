@@ -1,5 +1,5 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getHolidayJournalState, setHolidayJournal } from '../../../../lib/holidayJournalStore'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getHolidayJournalState, setHolidayJournal } from '../../../../lib/page-data/holidayJournalStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

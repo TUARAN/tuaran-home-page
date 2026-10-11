@@ -1,4 +1,4 @@
-import { isMarkdownDocument } from '../../../lib/articleDocument.mjs'
+import { isMarkdownDocument } from '../../../lib/article/articleDocument.mjs'
 import { renderMarkdown } from '../../../lib/research/markdown'
 
 function safeUrl(value, { image = false } = {}) {

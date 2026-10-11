@@ -7,7 +7,7 @@ import {
   getPublicOpinionHeatLabel,
   publicOpinionSimilarity,
 } from '../lib/publicOpinion/intelligence.js'
-import { materializePublicOpinionPostTimes } from '../lib/publicOpinionData.js'
+import { materializePublicOpinionPostTimes } from '../lib/publicOpinion/publicOpinionData.js'
 
 const NOW = new Date('2026-09-29T12:00:00.000Z')
 

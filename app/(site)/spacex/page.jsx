@@ -1,5 +1,5 @@
 import SpaceXTimelineClient from './SpaceXTimelineClient'
-import { getSpacexTimeline } from '../../../lib/spacexTimeline'
+import { getSpacexTimeline } from '../../../lib/page-data/spacexTimeline'
 
 export const revalidate = 10_800
 

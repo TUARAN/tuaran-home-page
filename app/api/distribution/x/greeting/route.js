@@ -8,32 +8,32 @@ import {
   isAutomationPaused,
   normalizeGreetingPeriod,
   shanghaiDateKey,
-} from '../../../../../lib/morningGreeting'
+} from '../../../../../lib/automation/morningGreeting'
 import {
   buildCultureStoryMessages,
   cultureStoryCategory,
   cultureStoryLastRunKey,
   normalizeCultureStorySlot,
-} from '../../../../../lib/dailyCultureStory'
+} from '../../../../../lib/page-data/dailyCultureStory'
 import {
   buildXCommunityMessages,
   normalizeXCommunitySlot,
   normalizeXCommunityText,
   pickXCommunityVariant,
   xCommunityLastRunKey,
-} from '../../../../../lib/xCommunityPosts'
+} from '../../../../../lib/x/xCommunityPosts'
 import {
   buildXUsAudienceLengthRepairMessages,
   buildXUsAudienceMessages,
   normalizeXUsAudienceSlot,
   xUsAudienceLastRunKey,
-} from '../../../../../lib/xUsAudiencePosts'
+} from '../../../../../lib/x/xUsAudiencePosts'
 import {
   buildXCryptoMessages,
   normalizeXCryptoSlot,
   pickXCryptoTopic,
   xCryptoLastRunKey,
-} from '../../../../../lib/xCryptoPosts'
+} from '../../../../../lib/x/xCryptoPosts'
 import {
   buildXControversyLengthRepairMessages,
   buildXControversyMessages,
@@ -42,7 +42,7 @@ import {
   normalizeXControversyText,
   xControversyLastRunKey,
   xControversyWithinTarget,
-} from '../../../../../lib/xControversyPosts'
+} from '../../../../../lib/x/xControversyPosts'
 import {
   buildXJokeMessages,
   isXJokeTooSimilar,
@@ -50,7 +50,7 @@ import {
   normalizeXJokeText,
   xJokeLastRunKey,
   xJokeWithinTarget,
-} from '../../../../../lib/xJokePosts'
+} from '../../../../../lib/x/xJokePosts'
 import {
   DAILY_GREETING_LLM_PROMPT_KEY,
   DAILY_GREETING_MODEL_SELECTIONS_KEY,
@@ -65,13 +65,13 @@ import {
   normalizeGreetingModelSelections,
   parseGreetingModelSelection,
   pickDailyGreetingStyle,
-} from '../../../../../lib/dailyGreetingLlm'
-import { callDeepSeek } from '../../../../../lib/deepseek'
-import { callOllama } from '../../../../../lib/ollama'
-import { getXCredentials, publishXPost, uploadXMedia } from '../../../../../lib/xDistribution'
-import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, assetError, xAssetView } from '../../../../../lib/xPostAssets'
-import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/xApiCost'
-import { xPostingSchedule, isXPostDue, isXPostSlotActive } from '../../../../../lib/xPostingSchedule'
+} from '../../../../../lib/automation/dailyGreetingLlm'
+import { callDeepSeek } from '../../../../../lib/ai/deepseek'
+import { callOllama } from '../../../../../lib/ai/ollama'
+import { getXCredentials, publishXPost, uploadXMedia } from '../../../../../lib/x/xDistribution'
+import { claimXAsset, releaseXAsset, updateXAsset, saveXPostDraft, prepareXImage, assetError, xAssetView } from '../../../../../lib/x/xPostAssets'
+import { recordXApiPostCost, xPostCreatePricing } from '../../../../../lib/x/xApiCost'
+import { xPostingSchedule, isXPostDue, isXPostSlotActive } from '../../../../../lib/x/xPostingSchedule'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

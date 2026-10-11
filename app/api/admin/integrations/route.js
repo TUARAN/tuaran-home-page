@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { INTEGRATION_SERVICES, INTEGRATION_WEBHOOKS } from '../../../../lib/integrationCatalog'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { INTEGRATION_SERVICES, INTEGRATION_WEBHOOKS } from '../../../../lib/site/integrationCatalog'
 import {
   deleteIntegrationCredential,
   getIntegrationEnv,
@@ -8,7 +8,7 @@ import {
   listIntegrationCredentials,
   probeEnvStatus,
   upsertIntegrationCredential,
-} from '../../../../lib/integrationKeys'
+} from '../../../../lib/site/integrationKeys'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

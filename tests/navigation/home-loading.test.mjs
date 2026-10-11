@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import * as engine from '../../lib/homeRecommendationEngine.js'
+import * as engine from '../../lib/home/homeRecommendationEngine.js'
 import * as feedData from '../../app/(site)/feed/data.js'
 
 const require = createRequire(import.meta.url)
@@ -119,8 +119,8 @@ test('home article list keeps the latest tab and does not render a latest badge'
 test('home featured reading keeps the first painted batch after the recommendation API returns', async () => {
   const [clientSource, catalogSource, knowledgeSource] = await Promise.all([
     readFile(new URL('../../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/homeRecommendationCatalogCore.js', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/researchKnowledgeItem.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/home/homeRecommendationCatalogCore.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/research/researchKnowledgeItem.js', import.meta.url), 'utf8'),
   ])
   assert.match(clientSource, /mergeHomeRecommendationCatalog/)
   assert.match(clientSource, /selectHomeRecommendationItems/)

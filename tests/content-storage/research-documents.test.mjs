@@ -1,9 +1,9 @@
-import { prepareContentIndexUpsert } from '../../lib/contentIndexStatements.mjs'
+import { prepareContentIndexUpsert } from '../../lib/content/contentIndexStatements.mjs'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
-import { normalizeResearchSnapshot, researchSnapshotIndex } from '../../lib/researchDocument.mjs'
+import { normalizeResearchSnapshot, researchSnapshotIndex } from '../../lib/research/researchDocument.mjs'
 
 const read = (name) => fs.readFileSync(new URL(`../../${name}`,import.meta.url),'utf8')
 function load(name, scope, exports) {
@@ -21,8 +21,8 @@ function harness() {
   const db={prepare(query){let args=[];const statement={bind(...values){args=values;return statement},async first(){return sql.prepare(query).get(...args)||null},async run(){return sql.prepare(query).run(...args)},async all(){return {results:sql.prepare(query).all(...args)}}};return statement},
     async batch(statements){if(race){const callback=race;race=null;callback()};sql.exec('BEGIN');try{for(const statement of statements)await statement.run();sql.exec('COMMIT')}catch(error){sql.exec('ROLLBACK');throw error}}}
   const scope={getD1:()=>db,normalizeResearchSnapshot,researchSnapshotIndex}
-  Object.assign(scope,load('lib/contentIndex.js',scope,['prepareUpsertContentEntry']))
-  return {sql,db,setRace(callback){race=callback},...load('lib/researchPublication.js',scope,['publishResearchSnapshot','readResearchDocument','readResearchRoute'])}
+  Object.assign(scope,load('lib/content/contentIndex.js',scope,['prepareUpsertContentEntry']))
+  return {sql,db,setRace(callback){race=callback},...load('lib/research/researchPublication.js',scope,['publishResearchSnapshot','readResearchDocument','readResearchRoute'])}
 }
 function sample(slug='sample',category='topics') {
   return {entry:{category,slug,filename:`2026-09-10-${slug}.md`,title:'调研标题',date:'2026-09-10',content:'## 正文\n\n原始版本',raw:'SOURCE MUST NOT BE STORED',variants:[{id:'codex',label:'Codex',content:'原始版本'},{id:'manual',label:'TUARAN',content:'第二版本'}],tags:['AI'],encrypted:false,images:[]},sourcePath:`research/${category}/2026-09-10-${slug}.md`,sourceHash:'a'.repeat(64),status:'published'}
@@ -83,7 +83,7 @@ test('alias conflicts and concurrent revisions roll back body, aliases and index
 test('legacy archive sync cannot republish a retired Git document',async()=>{
   const h=harness();const input={...sample(),status:'retired'}
   await h.publishResearchSnapshot(h.db,input,{expectedRevision:0})
-  const {prepareUpsertContentEntry}=load('lib/contentIndex.js',{getD1:()=>h.db},['prepareUpsertContentEntry'])
+  const {prepareUpsertContentEntry}=load('lib/content/contentIndex.js',{getD1:()=>h.db},['prepareUpsertContentEntry'])
   const entry=researchSnapshotIndex(normalizeResearchSnapshot(sample()).document)
   await prepareUpsertContentEntry(h.db,{...entry,source:'sync',status:'published',title:'Stale archive'}).run()
   const row=h.sql.prepare('SELECT source,status,title FROM content_index').get()

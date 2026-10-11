@@ -3,7 +3,7 @@ import {
   getToolItemsByDate,
   TOOL_STATUS_META,
   TOOL_TYPE_META,
-} from '../../../lib/toolItems'
+} from '../../../lib/site/toolItems'
 import ShowcaseDirectory from '../components/ShowcaseDirectory'
 
 export const dynamic = 'force-static'

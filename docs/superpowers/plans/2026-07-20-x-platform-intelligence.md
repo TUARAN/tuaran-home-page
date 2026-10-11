@@ -55,8 +55,8 @@
 
 - `.gitignore`：已加入 `.superpowers/`，避免提交 brainstorming 可视化会话。
 - `package.json`：加入单一验证命令 `x-intelligence:check`。
-- `lib/engineeringWorks.js`：登记多维页面目录项。
-- `lib/richPageSeo.js`：加入精确 SEO、关键词和 schema 配置。
+- `lib/site/engineeringWorks.js`：登记多维页面目录项。
+- `lib/site/richPageSeo.js`：加入精确 SEO、关键词和 schema 配置。
 
 ### Explicitly Unchanged
 
@@ -616,8 +616,8 @@ git commit -m "feat: add X intelligence view selectors"
 - Create: `app/(site)/x-platform-intelligence/page.jsx`
 - Create: `app/(site)/x-platform-intelligence/XPlatformIntelligenceClient.jsx`
 - Create: `app/(site)/x-platform-intelligence/components/FilterBar.jsx`
-- Modify: `lib/engineeringWorks.js`
-- Modify: `lib/richPageSeo.js`
+- Modify: `lib/site/engineeringWorks.js`
+- Modify: `lib/site/richPageSeo.js`
 
 **Interfaces:**
 - Consumes: repository, filters, selectors.
@@ -661,7 +661,7 @@ Expected: build succeeds because directory registration does not require the tar
 - [ ] **Step 3: Create the static page entry**
 
 ```jsx
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import XPlatformIntelligenceClient from './XPlatformIntelligenceClient'
 
@@ -703,7 +703,7 @@ Expected: build succeeds; output includes `/x-platform-intelligence`; `createRic
 - [ ] **Step 7: Commit page registration and shell**
 
 ```bash
-git add 'app/(site)/x-platform-intelligence/page.jsx' 'app/(site)/x-platform-intelligence/XPlatformIntelligenceClient.jsx' 'app/(site)/x-platform-intelligence/components/FilterBar.jsx' lib/engineeringWorks.js lib/richPageSeo.js
+git add 'app/(site)/x-platform-intelligence/page.jsx' 'app/(site)/x-platform-intelligence/XPlatformIntelligenceClient.jsx' 'app/(site)/x-platform-intelligence/components/FilterBar.jsx' lib/site/engineeringWorks.js lib/site/richPageSeo.js
 git commit -m "feat: register X platform intelligence page"
 ```
 
@@ -1077,17 +1077,17 @@ Run:
 ```bash
 git status --short
 git diff --check
-git diff --stat -- 'app/(site)/x-platform-intelligence' package.json lib/engineeringWorks.js lib/richPageSeo.js
+git diff --stat -- 'app/(site)/x-platform-intelligence' package.json lib/site/engineeringWorks.js lib/site/richPageSeo.js
 ```
 
-Expected: the scoped diff contains only X intelligence files, `package.json`, `lib/engineeringWorks.js`, and `lib/richPageSeo.js`. `git status --short` may still show the user's unrelated SEO work, but none of it is staged or modified by this plan.
+Expected: the scoped diff contains only X intelligence files, `package.json`, `lib/site/engineeringWorks.js`, and `lib/site/richPageSeo.js`. `git status --short` may still show the user's unrelated SEO work, but none of it is staged or modified by this plan.
 
 - [ ] **Step 9: Commit final verification corrections**
 
 If Step 2–8 required corrections, stage only the files changed for this feature and commit:
 
 ```bash
-git add 'app/(site)/x-platform-intelligence' package.json lib/engineeringWorks.js lib/richPageSeo.js
+git add 'app/(site)/x-platform-intelligence' package.json lib/site/engineeringWorks.js lib/site/richPageSeo.js
 git commit -m "fix: finalize X intelligence accessibility and evidence"
 ```
 

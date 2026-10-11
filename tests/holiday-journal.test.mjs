@@ -6,7 +6,7 @@ import {
   defaultHolidayJournal,
   HOLIDAY_JOURNAL_SETTING_KEY,
   normalizeHolidayJournal,
-} from '../lib/holidayJournal.js'
+} from '../lib/page-data/holidayJournal.js'
 
 test('默认生活记录包含 2026 国庆前两天和私密标记', () => {
   const journal = defaultHolidayJournal()
@@ -41,7 +41,7 @@ test('生活记录页面和接口都使用后台私密边界', async () => {
   const [page, route, nav] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/life/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/holiday-journal/route.js', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
   ])
   assert.match(page, /<AdminPageGate/)
   assert.match(page, /index: false/)

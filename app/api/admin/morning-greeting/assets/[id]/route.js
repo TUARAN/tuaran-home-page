@@ -1,7 +1,7 @@
-import { getOwnerOrReject } from '../../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../../lib/d1'
-import { getR2 } from '../../../../../../lib/r2'
-import { X_IMAGE_PREFIX } from '../../../../../../lib/xPostAssets'
+import { getOwnerOrReject } from '../../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../../lib/db/d1'
+import { getR2 } from '../../../../../../lib/db/r2'
+import { X_IMAGE_PREFIX } from '../../../../../../lib/x/xPostAssets'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

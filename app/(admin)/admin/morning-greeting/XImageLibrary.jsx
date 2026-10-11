@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import XImagePool from './XImagePool'
 import { OriginalPreviewDialog, THUMB_GRID_CLASS, ThumbTile } from './XImageThumbs'
-import { X_MEME_ASSETS } from '../../../../lib/xMemeAssets'
+import { X_MEME_ASSETS } from '../../../../lib/x/xMemeAssets'
 import { Section } from '../../components/ui'
 
 const TABS = [

@@ -11,7 +11,7 @@ import {
   IconShieldCheck,
 } from '@tabler/icons-react'
 
-import { COMMUNITY_MEMBERSHIP } from '../../../lib/communityMembership'
+import { COMMUNITY_MEMBERSHIP } from '../../../lib/auth/communityMembership'
 
 const EARLY_BIRD_END = new Date(COMMUNITY_MEMBERSHIP.earlyBird.endsAt).getTime()
 

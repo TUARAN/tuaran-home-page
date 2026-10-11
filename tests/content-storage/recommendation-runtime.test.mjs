@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
-import { buildHomeRecommendationCatalog } from '../../lib/homeRecommendationCatalogCore.js'
+import { buildHomeRecommendationCatalog } from '../../lib/home/homeRecommendationCatalogCore.js'
 
 function load(file, scope, exports) {
   const source = fs.readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8').replace(/^import .*\n/gm, '').replace(/export /g, '')
@@ -10,7 +10,7 @@ function load(file, scope, exports) {
 
 test('recommendations include new D1 posts and research, exclude withdrawn and encrypted entries', async () => {
   const archive = { articles: [], researchMeta: { 'topics/old': { category:'topics',slug:'old',title:'Old' } } }
-  const {getRuntimeHomeRecommendationCatalog} = load('lib/homeRecommendationRuntime.js', {
+  const {getRuntimeHomeRecommendationCatalog} = load('lib/home/homeRecommendationRuntime.js', {
     readContentCatalog:async()=>archive,
     listResearchOverrides:async()=>['old','new','secret'].map((slug)=>({status:slug==='old'?'retired':'published',metadata_json:JSON.stringify({category:'topics',slug,title:slug,encrypted:slug==='secret'})})),
     listDiscoverablePosts:async()=>[{slug:'online-post',title:'Online',publishedAt:1}],
@@ -32,7 +32,7 @@ test('recommendation API disables stale caching and returns current catalog', as
 })
 
 test('weekly links resolve runtime metadata with stable comments and content keys',()=>{
-  const {resolveArticleKey,resolveContentKey}=load('lib/articleLinks.js',{
+  const {resolveArticleKey,resolveContentKey}=load('lib/article/articleLinks.js',{
     resolveContentEntry:()=>null,CONTENT_TYPE_LABELS:{},
   },['resolveArticleKey','resolveContentKey'])
   const metadata=new Map([['research:topics:new',{title:'New title',href:'/articles/research/topics/new'}],['article:online',{title:'Online title',href:'/articles/online'}]])

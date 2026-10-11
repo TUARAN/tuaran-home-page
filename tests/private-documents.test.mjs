@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { encryptPayload } from '../lib/longCompass/crypto.js'
-import { decryptPrivateDocumentContent, parsePrivateDocumentEnvelope } from '../lib/privateDocuments.js'
+import { decryptPrivateDocumentContent, parsePrivateDocumentEnvelope } from '../lib/content/privateDocuments.js'
 
 test('private document content round-trips through an encrypted envelope', async () => {
   const password = 'test-only-password'

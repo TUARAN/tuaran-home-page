@@ -1,4 +1,4 @@
-import { getActiveFestivalBanner, getDefaultActiveFestivalBanner } from '../../../lib/festivalBanners'
+import { getActiveFestivalBanner, getDefaultActiveFestivalBanner } from '../../../lib/site/festivalBanners'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

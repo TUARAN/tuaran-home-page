@@ -7,7 +7,7 @@ import {
   IconArrowDown, IconArrowUpRight, IconBuildingFactory2, IconCalendarEvent,
   IconChartBar, IconCheck, IconChevronRight, IconCopy, IconQuote, IconRocket,
 } from '@tabler/icons-react'
-import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../../lib/spacexArchivePrompt'
+import { SPACEX_GROK_ARCHIVE_PROMPT } from '../../../lib/page-data/spacexArchivePrompt'
 
 const KIND_META = {
   musk: { label: '创始人观点', icon: IconQuote, dot: 'bg-amber-300', tone: 'border-amber-300/20 bg-amber-300/10 text-amber-100' },

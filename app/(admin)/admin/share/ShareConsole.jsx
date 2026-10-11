@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/crypto'
-import { SHARED_NOTE_MAX_CONTENT_LENGTH } from '../../../../lib/shareContent'
+import { SHARED_NOTE_MAX_CONTENT_LENGTH } from '../../../../lib/content/shareContent'
 import { AdminPage } from '../../components/ui'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 

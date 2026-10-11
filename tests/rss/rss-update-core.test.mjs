@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { parseFeed } from '../../lib/rssFeedParse.js'
+import { parseFeed } from '../../lib/rss/rssFeedParse.js'
 import {
   parseRssArticleKey,
   rssArticleKey,
   rssUpdateHref,
   selectNewRssEntries,
   shouldNotifyRssFeed,
-} from '../../lib/rssUpdateCore.js'
+} from '../../lib/rss/rssUpdateCore.js'
 
 const SAMPLE_RSS = `<?xml version="1.0"?>
 <rss version="2.0">

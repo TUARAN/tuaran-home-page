@@ -10,7 +10,7 @@ import {
   pickBestKeyRow,
   pickResolvedKeyRow,
   resolveDeepSeekModel,
-} from '../lib/deepseekKeysCore.js'
+} from '../lib/ai/deepseekKeysCore.js'
 
 test('maskApiKey 只保留首尾各 4 位', () => {
   assert.equal(maskApiKey('sk-abcdefgh12345678'), 'sk-a****5678')

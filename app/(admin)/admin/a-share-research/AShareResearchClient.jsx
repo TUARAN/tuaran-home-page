@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { autoPublishLabel, isReviewPublishable } from '../../../../lib/aSharePublishCore'
+import { autoPublishLabel, isReviewPublishable } from '../../../../lib/a-share/aSharePublishCore'
 import {
   applyVisibleSelection,
   pruneSelectedPaths,

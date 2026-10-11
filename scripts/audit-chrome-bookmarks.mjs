@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { parseChromeBookmarks, summarizeBookmarks } from '../lib/bookmarkNavigation.mjs'
+import { parseChromeBookmarks, summarizeBookmarks } from '../lib/site/bookmarkNavigation.mjs'
 
 const sourcePath = process.argv[2]
 if (!sourcePath) {

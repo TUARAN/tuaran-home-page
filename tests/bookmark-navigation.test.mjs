@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 
-import { dedupeBookmarks, parseChromeBookmarks, summarizeBookmarks } from '../lib/bookmarkNavigation.mjs'
+import { dedupeBookmarks, parseChromeBookmarks, summarizeBookmarks } from '../lib/site/bookmarkNavigation.mjs'
 
 const fixture = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <DL><p>
@@ -71,8 +71,8 @@ test('D1 schema keeps one active import per owner and preserves versioned items'
 
 test('bookmark navigation lives in admin private data instead of the public menu', async () => {
   const [siteNav, adminRoutes, adminBuild, adminPage, publicPage] = await Promise.all([
-    readFile(new URL('../lib/siteNav.js', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/site/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../scripts/build-admin-pages.cjs', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/bookmark-nav/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/works/page.jsx', import.meta.url), 'utf8'),

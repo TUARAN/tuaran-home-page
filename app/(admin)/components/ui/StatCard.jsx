@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { AdminIcon } from '../../../../lib/adminIcons'
+import { AdminIcon } from '../../../../lib/admin/adminIcons'
 
 const TONE_RING = {
   success: 'text-emerald-600 dark:text-emerald-400',

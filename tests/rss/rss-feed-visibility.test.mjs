@@ -6,8 +6,8 @@ import {
   isPublishedRssRow,
   isSelfRssFeed,
   listPublishedRssFeeds,
-} from '../../lib/rssFeedVisibility.js'
-import { RSS_FEEDS_SEED } from '../../lib/rssFeedsSeed.js'
+} from '../../lib/rss/rssFeedVisibility.js'
+import { RSS_FEEDS_SEED } from '../../lib/rss/rssFeedsSeed.js'
 
 const rows = [
   {

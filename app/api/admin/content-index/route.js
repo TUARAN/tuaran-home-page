@@ -1,12 +1,12 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { syncBuildContentToD1 } from '../../../../lib/contentIndexSync'
-import { getD1 } from '../../../../lib/d1'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { syncBuildContentToD1 } from '../../../../lib/content/contentIndexSync'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   deleteContentEntry,
   listContentIndex,
   normalizeContentEntryInput,
   upsertContentEntry,
-} from '../../../../lib/contentIndex'
+} from '../../../../lib/content/contentIndex'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

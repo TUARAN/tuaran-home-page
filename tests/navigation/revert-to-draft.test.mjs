@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from '../../lib/adminRoutes.js'
-import { adminSiteUrl } from '../../lib/publicAdminOrigin.js'
+import { isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from '../../lib/admin/adminRoutes.js'
+import { adminSiteUrl } from '../../lib/admin/publicAdminOrigin.js'
 
 const [
   buttonSource,

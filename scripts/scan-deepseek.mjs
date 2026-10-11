@@ -1,7 +1,7 @@
 // Autopilot 专用 DeepSeek 客户端。
-// 与 lib/deepseek.js 保持同一契约：OpenAI 兼容 /chat/completions，环境变量
+// 与 lib/ai/deepseek.js 保持同一契约：OpenAI 兼容 /chat/completions，环境变量
 // DEEPSEEK_API_KEY / DEEPSEEK_BASE_URL / DEEPSEEK_MODEL。
-// 不直接 import lib/deepseek.js：它面向 Cloudflare Edge 运行时（无扩展名 ESM import），
+// 不直接 import lib/ai/deepseek.js：它面向 Cloudflare Edge 运行时（无扩展名 ESM import），
 // 普通 Node 脚本无法加载；这里按相同协议做精简实现，避免改动生产代码。
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com'

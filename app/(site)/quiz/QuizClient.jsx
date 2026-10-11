@@ -14,8 +14,8 @@ import {
   IconX,
 } from '@tabler/icons-react'
 
-import { QUESTION_BANK_2026, QUESTION_BANK_META } from '../../../lib/questionBank2026'
-import { buildExamQuestions } from '../../../lib/quizExam'
+import { QUESTION_BANK_2026, QUESTION_BANK_META } from '../../../lib/page-data/questionBank2026'
+import { buildExamQuestions } from '../../../lib/page-data/quizExam'
 import styles from './quiz.module.css'
 
 const LETTERS = ['A', 'B', 'C', 'D']

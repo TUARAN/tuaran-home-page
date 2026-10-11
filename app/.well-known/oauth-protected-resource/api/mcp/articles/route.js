@@ -2,7 +2,7 @@ import {
   MCP_ARTICLES_SCOPE,
   mcpArticlesResource,
   oauthBaseUrl,
-} from '../../../../../../lib/oauthServer'
+} from '../../../../../../lib/auth/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

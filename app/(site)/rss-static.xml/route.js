@@ -1,10 +1,10 @@
-import { articles } from '../../../lib/articleBuildArchive'
+import { articles } from '../../../lib/article/articleBuildArchive'
 import { getAllFeedItems } from '../feed/data'
 import { researchDateTimeIso } from '../../../lib/research/datetime'
 import { CATEGORY_META, getResearchEntry, listResearch } from '../../../lib/research/archive'
 import { renderMarkdown } from '../../../lib/research/markdown'
-import { listResourceRssEntries, listRichPageRssEntries } from '../../../lib/rssContentEntries'
-import { listContentProofRssEntries } from '../../../lib/contentProofDiscovery.js'
+import { listResourceRssEntries, listRichPageRssEntries } from '../../../lib/rss/rssContentEntries'
+import { listContentProofRssEntries } from '../../../lib/content/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600

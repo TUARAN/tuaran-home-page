@@ -26,7 +26,7 @@ import UserAvatar from './UserAvatar'
 import { useLocale } from './LocaleProvider'
 import { usePwaInstall } from './PwaInstallGuide'
 import { useSessionAccount } from './SessionProvider'
-import { pick } from '../../../lib/i18n'
+import { pick } from '../../../lib/site/i18n'
 import {
   SITE_ADMIN_NAV_LINK,
   SITE_CHANNELS,
@@ -36,9 +36,9 @@ import {
   navDesc,
   navLabel,
   navSectionTitle,
-} from '../../../lib/siteNav'
-import { getTagToneClass } from '../../../lib/tagTone'
-import { trackSiteEvent } from '../../../lib/siteAnalytics'
+} from '../../../lib/site/siteNav'
+import { getTagToneClass } from '../../../lib/site/tagTone'
+import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 
 const DESKTOP_CHANNEL_GROUPS = [
   SITE_CHANNELS.slice(0, 3),

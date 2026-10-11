@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { IconArrowRight } from '@tabler/icons-react'
 
-import { AdminIcon } from '../../../lib/adminIcons'
+import { AdminIcon } from '../../../lib/admin/adminIcons'
 import { AdminPage } from './ui'
 
 /**

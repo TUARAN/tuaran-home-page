@@ -7,7 +7,7 @@ const extensionDir = new URL('../../tools/oa-batch-submit-extension/', import.me
 test('extension, resource page and catalog use one release identity', async () => {
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const page = await readFile(new URL('../../app/(site)/resources/protal-todo-assistant/page.jsx', import.meta.url), 'utf8')
-  const catalog = await readFile(new URL('../../lib/resourceCatalog.js', import.meta.url), 'utf8')
+  const catalog = await readFile(new URL('../../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'protal待办处理助手')
@@ -30,10 +30,10 @@ test('package script keeps the installable extension payload explicit', async ()
 
 test('site registries expose the assistant as a downloadable tool resource', async () => {
   const [tools, content, pages, nav] = await Promise.all([
-    readFile(new URL('../../lib/toolItems.js', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/contentRegistry.js', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/staticPageRegistry.mjs', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/toolItems.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/content/contentRegistry.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/staticPageRegistry.mjs', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
   ])
 
   for (const source of [tools, content, pages, nav]) assert.match(source, /\/resources\/protal-todo-assistant/)

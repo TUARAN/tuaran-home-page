@@ -1,6 +1,6 @@
-import { listResearchOverrides } from '../../../../lib/researchRuntime'
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { rowToArticlePost } from '../../../../lib/articlePosts'
+import { listResearchOverrides } from '../../../../lib/research/researchRuntime'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { rowToArticlePost } from '../../../../lib/article/articlePosts'
 import {
   countAdminContentItems,
   filterAdminContentItems,
@@ -8,9 +8,9 @@ import {
   normalizeContentListParams,
   paginateAdminContentItems,
   sortAdminContentItems,
-} from '../../../../lib/adminContentList'
-import { getD1 } from '../../../../lib/d1'
-import { listAllContent } from '../../../../lib/contentPipeline'
+} from '../../../../lib/admin/adminContentList'
+import { getD1 } from '../../../../lib/db/d1'
+import { listAllContent } from '../../../../lib/content/contentPipeline'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

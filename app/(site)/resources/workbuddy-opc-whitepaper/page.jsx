@@ -1,5 +1,5 @@
 import WorkbuddyWhitepaperPage from '../WorkbuddyWhitepaperPage'
-import { loadWorkbuddyWhitepaper } from '../../../../lib/workbuddyWhitepapers'
+import { loadWorkbuddyWhitepaper } from '../../../../lib/workbuddy/workbuddyWhitepapers'
 
 export const dynamic = 'force-static'
 

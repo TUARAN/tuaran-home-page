@@ -11,7 +11,7 @@ import {
   ollamaNativeChatUrl,
   ollamaTagsUrl,
   parseOllamaChatResponse,
-} from '../lib/ollamaCore.js'
+} from '../lib/ai/ollamaCore.js'
 
 test('将 Cloudflare Tunnel 源站错误转换为可操作的 Ollama 错误', () => {
   assert.deepEqual(ollamaUpstreamError(502), {

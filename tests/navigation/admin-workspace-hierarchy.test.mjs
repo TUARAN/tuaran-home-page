@@ -6,7 +6,7 @@ import {
   ADMIN_CONSOLE_ITEMS,
   getWorkspaceHubProps,
   listWorkspaceChildren,
-} from '../../lib/adminRoutes.js'
+} from '../../lib/admin/adminRoutes.js'
 
 const projectWorkspace = await readFile(
   new URL('../../app/(admin)/admin/projects/ProjectWorkspace.jsx', import.meta.url),

@@ -8,7 +8,7 @@ import {
   getOpenClawAchievementFacts,
   OPENCLAW_ACHIEVEMENT_COUNT,
   OPENCLAW_ACHIEVEMENTS,
-} from '../../../lib/openClawAchievements'
+} from '../../../lib/site/openClawAchievements'
 
 export default function HomeOpenClawAchievement() {
   const [open, setOpen] = useState(false)

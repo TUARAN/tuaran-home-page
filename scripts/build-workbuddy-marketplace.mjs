@@ -7,11 +7,11 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import vm from 'node:vm'
 
-import { WORKBUDDY_CONNECTORS, WORKBUDDY_SKILL_METADATA } from '../lib/workbuddyMarketplaceManifest.mjs'
+import { WORKBUDDY_CONNECTORS, WORKBUDDY_SKILL_METADATA } from '../lib/workbuddy/workbuddyMarketplaceManifest.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const OUTPUT_ROOT = join(ROOT, 'public/downloads/workbuddy')
-const CATALOG_FILE = join(ROOT, 'lib/workbuddyMarketplaceArtifacts.js')
+const CATALOG_FILE = join(ROOT, 'lib/workbuddy/workbuddyMarketplaceArtifacts.js')
 const MAX_BYTES = 3 * 1024 * 1024
 const ARCHIVE_TIME = new Date('2026-01-01T00:00:00Z')
 const checkOnly = process.argv.includes('--check')

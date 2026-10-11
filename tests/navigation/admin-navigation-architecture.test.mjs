@@ -11,7 +11,7 @@ import {
   isActiveAdminPath,
   listWorkspaceChildren,
   resolveAdminTrail,
-} from '../../lib/adminRoutes.js'
+} from '../../lib/admin/adminRoutes.js'
 
 test('admin navigation exposes five focused workspaces without duplicate dashboard entries', () => {
   assert.deepEqual(

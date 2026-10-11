@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   bloggerEyeConnectionFailure,
   queryBloggerEyeLoopbackPermission,
-} from '../lib/bloggerEyeBrowser.mjs'
+} from '../lib/automation/bloggerEyeBrowser.mjs'
 
 test('优先读取 Chrome 的回环网络权限', async () => {
   const calls = []

@@ -18,7 +18,7 @@ import {
   resetResearchGitHubCaches,
   storedResearchTitle,
   withStoredResearchTitles,
-} from '../../lib/researchGitHubQueue.js'
+} from '../../lib/research/researchGitHubQueue.js'
 
 test('research source paths only accept dated markdown under the three Git folders', () => {
   assert.deepEqual(parseResearchSourcePath('research/topics/2026-09-11-pi.md'), {

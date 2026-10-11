@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { checkSiteHealth } from '../../../lib/siteHealth'
+import { checkSiteHealth } from '../../../lib/site/siteHealth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

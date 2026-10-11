@@ -18,7 +18,7 @@ import {
   NINETY_DAY_PLAN,
   PERSONAL_GROWTH_PROFILE,
   WEEKLY_REVIEW,
-} from '../../../../lib/personalGrowthProfile'
+} from '../../../../lib/site/personalGrowthProfile'
 import FitAndWealthBoard from './FitAndWealthBoard'
 
 function DirectionCard({ item, index }) {

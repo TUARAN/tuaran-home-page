@@ -5,13 +5,13 @@ import test from 'node:test'
 import {
   ENGINEERING_WORKS,
   getRichPagePvKey,
-} from '../../lib/engineeringWorks.js'
+} from '../../lib/site/engineeringWorks.js'
 
 const RICH_PAGE_FRAME_PATH = new URL(
   '../../app/(site)/components/RichPageFrame.jsx',
   import.meta.url,
 )
-const CONTENT_REGISTRY_PATH = new URL('../../lib/contentRegistry.js', import.meta.url)
+const CONTENT_REGISTRY_PATH = new URL('../../lib/content/contentRegistry.js', import.meta.url)
 const DIRECTORY_PATH = new URL(
   '../../app/(site)/components/ShowcaseDirectory.jsx',
   import.meta.url,

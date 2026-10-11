@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { hashContent, verifyContentProof } from '../../../lib/contentProof'
+import { hashContent, verifyContentProof } from '../../../lib/content/contentProof'
 
 const ORIGINAL_BODY = '第一行\r\n第二行  \r\n'
 const ENTRY = {

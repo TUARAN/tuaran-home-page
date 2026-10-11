@@ -3,10 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-import { HOME_RESOURCE_ITEMS } from '../../lib/homeResourceItems.js'
-import { getResourceDocument, loadResourceMarkdown } from '../../lib/resourceDocuments.js'
-import { buildJianguoFanglyeArticle } from '../../lib/resourceMarkdown.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { HOME_RESOURCE_ITEMS } from '../../lib/home/homeResourceItems.js'
+import { getResourceDocument, loadResourceMarkdown } from '../../lib/content/resourceDocuments.js'
+import { buildJianguoFanglyeArticle } from '../../lib/content/resourceMarkdown.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 
 const ROOT = process.cwd()
 const ASSET_DIR = path.join(ROOT, 'public', 'resources', 'jianguo-fanglye')
@@ -23,7 +23,7 @@ test('jianguo fanglue is registered as an indexable resource', () => {
   assert.match(resource.title, /建国方略/)
   assert.equal(resource.subjects[0], 'humanities_history')
   assert.match(
-    fs.readFileSync(path.join(ROOT, 'lib', 'contentRegistry.js'), 'utf8'),
+    fs.readFileSync(path.join(ROOT, 'lib', 'content', 'contentRegistry.js'), 'utf8'),
     /slug: 'jianguo-fanglye'/,
   )
   assert.ok(

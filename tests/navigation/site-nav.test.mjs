@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const source = await readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8')
+const source = await readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8')
 
 test('public content navigation is organized by entry, topic and type', () => {
   const topicIndex = source.indexOf("title: '内容主题'")

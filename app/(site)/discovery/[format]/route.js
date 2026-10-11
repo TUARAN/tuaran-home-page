@@ -1,6 +1,6 @@
-import { GET as sitemap } from '../../../../lib/discoverySitemap'
-import { GET as rss } from '../../../../lib/discoveryRss'
-import { GET as html } from '../../../../lib/discoveryHtml'
+import { GET as sitemap } from '../../../../lib/rss/discoverySitemap'
+import { GET as rss } from '../../../../lib/rss/discoveryRss'
+import { GET as html } from '../../../../lib/rss/discoveryHtml'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

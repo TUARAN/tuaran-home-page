@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 
-import { publishXPost } from '../lib/xDistribution.js'
-import { recordXApiPostCost } from '../lib/xApiCost.js'
+import { publishXPost } from '../lib/x/xDistribution.js'
+import { recordXApiPostCost } from '../lib/x/xApiCost.js'
 import {
   X_GENERIC_REPLY_LIBRARY,
   buildGenericXReplyMessages,
@@ -11,7 +11,7 @@ import {
   pickGenericXReply,
   sanitizeGeneratedXReply,
   validateXReplyText,
-} from '../lib/xReplyTasks.js'
+} from '../lib/x/xReplyTasks.js'
 
 const credentials = {
   consumerKey: 'consumer-key',
@@ -110,7 +110,7 @@ test('admin X reply surface requires owner auth and keeps model output non-publi
     readFile(new URL('../app/api/admin/x-replies/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/api/admin/x-replies/[id]/publish/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/x-replies/XReplyTasksClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/adminRoutes.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
     readFile(new URL('../migrations/0103_x_reply_tasks.sql', import.meta.url), 'utf8'),
   ])
 

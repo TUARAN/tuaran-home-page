@@ -6,14 +6,14 @@ import DistributeContentButton from '../../components/DistributeContentButton'
 
 import SharePageButton from '../../components/SharePageButton'
 import PageContainer from '../../components/PageContainer'
-import { getResourceDocument, loadResourceMarkdown } from '../../../../lib/resourceDocuments'
+import { getResourceDocument, loadResourceMarkdown } from '../../../../lib/content/resourceDocuments'
 import {
   buildShenZhiDingNeiArticle,
   buildShenZhiDingWaiArticle,
   buildShenZhiDouNeiArticle,
   buildShenZhiMiNeiArticle,
   buildShenZhiTuanNeiArticle,
-} from '../../../../lib/resourceMarkdown'
+} from '../../../../lib/content/resourceMarkdown'
 import ResourceArticleSwitcher from './ResourceArticleSwitcher'
 
 export const dynamic = 'force-static'

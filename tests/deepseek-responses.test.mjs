@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { normalizeResponsesUsage, parseResponsesOutput } from '../lib/deepseekResponsesCore.js'
+import { normalizeResponsesUsage, parseResponsesOutput } from '../lib/ai/deepseekResponsesCore.js'
 
 test('parseResponsesOutput 抽取正文、引用与检索结果', () => {
   const raw = {

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { CONTENT_PROOF_CLAIMS } from '../../../lib/contentProofClaims'
+import { CONTENT_PROOF_CLAIMS } from '../../../lib/content/contentProofClaims'
 
 const GITHUB_VERIFIER = 'https://github.com/TUARAN/tuaran-home-page/tree/main/tools/content-proof-verifier'
 

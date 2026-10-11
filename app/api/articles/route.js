@@ -1,5 +1,5 @@
-import { articlePostToKnowledgeItem } from '../../../lib/articlePosts'
-import { listDiscoverablePosts } from '../../../lib/articleDiscovery'
+import { articlePostToKnowledgeItem } from '../../../lib/article/articlePosts'
+import { listDiscoverablePosts } from '../../../lib/article/articleDiscovery'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

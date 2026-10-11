@@ -23,7 +23,7 @@
 
 **Files:**
 - Create: `scripts/test-community-topic-cards.mjs`
-- Modify: `lib/communityTopics.js`
+- Modify: `lib/content/communityTopics.js`
 - Modify: `app/(site)/community/DiscussionHubClient.jsx:6,149-168,296-309`
 - Modify: `app/globals.css:2578-2593`
 
@@ -45,7 +45,7 @@ const componentSource = await readFile(
   'utf8',
 )
 const registrySource = await readFile(
-  new URL('../lib/communityTopics.js', import.meta.url),
+  new URL('../lib/content/communityTopics.js', import.meta.url),
   'utf8',
 )
 
@@ -75,7 +75,7 @@ Expected: FAIL because `DISCUSSION_COMMUNITY_TOPICS` is not exported.
 
 - [x] **Step 3: Add the page-specific subset and compact copy**
 
-Append to `lib/communityTopics.js` after `COMMUNITY_TOPICS`:
+Append to `lib/content/communityTopics.js` after `COMMUNITY_TOPICS`:
 
 ```js
 const DISCUSSION_TOPIC_COPY = {
@@ -148,6 +148,6 @@ Expected: Next.js build succeeds with no new errors.
 - [x] **Step 7: Commit the focused change**
 
 ```bash
-git add scripts/test-community-topic-cards.mjs lib/communityTopics.js 'app/(site)/community/DiscussionHubClient.jsx' app/globals.css docs/superpowers/plans/2026-07-20-community-topic-cards.md
+git add scripts/test-community-topic-cards.mjs lib/content/communityTopics.js 'app/(site)/community/DiscussionHubClient.jsx' app/globals.css docs/superpowers/plans/2026-07-20-community-topic-cards.md
 git commit -m "feat: simplify community topic cards"
 ```

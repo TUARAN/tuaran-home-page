@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSessionAccount } from './SessionProvider'
 import UserAvatar from './UserAvatar'
-import { commentProviderLabel } from '../../../lib/userDisplayName'
-import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/engagementBot'
-import { isInteractionNotification } from '../../../lib/siteNotificationsCore'
+import { commentProviderLabel } from '../../../lib/auth/userDisplayName'
+import { PUBLIC_READER_HINT, READER_PROVIDER } from '../../../lib/automation/engagementBot'
+import { isInteractionNotification } from '../../../lib/site/siteNotificationsCore'
 
 async function safeJson(res) {
   const text = await res.text()

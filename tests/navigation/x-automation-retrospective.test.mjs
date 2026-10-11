@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { ENGINEERING_WORKS } from '../../lib/engineeringWorks.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
+import { ENGINEERING_WORKS } from '../../lib/site/engineeringWorks.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
 import {
   X_AUTOMATION_DAILY_POSTS,
   X_AUTOMATION_PHASES,
@@ -13,7 +13,7 @@ import {
   buildScheduleSlot,
   maxDailyPosts,
   sumDailyPosts,
-} from '../../lib/xAutomationRetrospective.js'
+} from '../../lib/x/xAutomationRetrospective.js'
 
 test('x automation retrospective page is registered and noindexed', async () => {
   const entry = STATIC_PAGE_REGISTRY.find((item) => item.path === '/x-automation-retrospective')

@@ -20,7 +20,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
-import { buildPublicOpinionSnapshot, buildPublicOpinionTimelineDays, getSentimentBucket, getSentimentLabel, materializePublicOpinionPostTimes } from '../../../lib/publicOpinionData'
+import { buildPublicOpinionSnapshot, buildPublicOpinionTimelineDays, getSentimentBucket, getSentimentLabel, materializePublicOpinionPostTimes } from '../../../lib/publicOpinion/publicOpinionData'
 
 const STANCE_LABELS = { support: '支持', neutral: '中立', question: '质疑', oppose: '反对' }
 const SENTIMENT_STYLES = {

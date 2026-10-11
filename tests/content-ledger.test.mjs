@@ -6,7 +6,7 @@ import { GET as proofsRss } from '../app/(site)/proofs.xml/route.js'
 import {
   CONTENT_LEDGER_NETWORKS,
   getContentLedgerNetwork,
-} from '../lib/contentLedgerNetworks.js'
+} from '../lib/content/contentLedgerNetworks.js'
 import {
   contentLedgerIdempotencyKey,
   findLedgerRecord,
@@ -17,27 +17,27 @@ import {
   summarizeAnchorWindow,
   upsertPublishLedger,
   withPublishRetry,
-} from '../lib/contentLedgerPublish.js'
+} from '../lib/content/contentLedgerPublish.js'
 import {
   assertPublisherAddress,
   assertRecordHasNoSecrets,
   buildKeyDrillReceipt,
   resolvePublisherWallet,
-} from '../lib/contentLedgerWallet.js'
+} from '../lib/content/contentLedgerWallet.js'
 import {
   listContentProofDiscoveryEntries,
   listContentProofRssEntries,
   renderContentProofLlmsSection,
-} from '../lib/contentProofDiscovery.js'
-import { getContentProofCredential } from '../lib/contentProofRegistry.js'
-import { sha256, verifyContentProof } from '../lib/contentProof.js'
+} from '../lib/content/contentProofDiscovery.js'
+import { getContentProofCredential } from '../lib/content/contentProofRegistry.js'
+import { sha256, verifyContentProof } from '../lib/content/contentProof.js'
 import {
   DEFAULT_IPFS_GATEWAYS,
   assertIndependentGateways,
   buildContentReplica,
   pinContentReplica,
   readReplicaFromGateways,
-} from '../lib/contentReplica.js'
+} from '../lib/content/contentReplica.js'
 
 const CID = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi'
 const SCHEMA_UID = `0x${'ab'.repeat(32)}`
@@ -232,7 +232,7 @@ test('ops scripts keep publisher keys out of batch JSON and require mainnet conf
     readFile(new URL('../scripts/anchor-content-proof-batch.mjs', import.meta.url), 'utf8'),
     readFile(new URL('../scripts/pin-content-replica.mjs', import.meta.url), 'utf8'),
     readFile(new URL('../scripts/content-ledger-key-drill.mjs', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/contentReplica.js', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/content/contentReplica.js', import.meta.url), 'utf8'),
   ])
   assert.match(anchor, /--confirm-mainnet/)
   assert.match(anchor, /CONTENT_LEDGER_MAINNET_PRIVATE_KEY/)

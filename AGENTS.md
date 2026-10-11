@@ -21,7 +21,7 @@
 ## 关键目录
 
 - `app/`：页面、布局、API 路由；`app/(admin)/admin/*` 为站长后台，由 `AdminPageGate` 鉴权。
-- `lib/`：运行时封装与数据。`edgeSession.js` 处理自定义 GitHub OAuth 与签名 Cookie；`d1.js` 读取 D1 binding；`researchStyleTemplates.js` 是调研风格库；`contentPipeline.js` 是文章、调研、资源的统一内容注册表，`contentKey` 与评论的 `articleKey`、燃币的 `resourceKey` 使用同一套约定。
+- `lib/`：运行时封装与数据，按域分子目录，不再往根上加文件。`lib/auth/edgeSession.js` 处理自定义 GitHub OAuth 与签名 Cookie；`lib/db/d1.js` 读取 D1 binding；`lib/research/researchStyleTemplates.js` 是调研风格库；`lib/content/contentPipeline.js` 是文章、调研、资源的统一内容注册表，`contentKey` 与评论的 `articleKey`、燃币的 `resourceKey` 使用同一套约定。
 - `research/`：调研知识库（companies / topics / people），Markdown 落盘，构建时由 loader 渲染到 `/articles`。
 - `migrations/`：D1 SQL。
 - `ai-context/`：项目文档与历史快照，索引见 `ai-context/README.md`；以各文档落款日期判断时效。
@@ -30,7 +30,7 @@
 
 - 通用代理规则与项目上下文：以本文件 `AGENTS.md` 为唯一正本。
 - 调研 frontmatter 与目录契约：以 `research/README.md` 为准。
-- 调研风格与措辞：以 `lib/researchStyleTemplates.js` 中 `status === 'active'` 的版本为唯一正本；写调研前必须先选择并读取当前生效风格，不得凭旧模板复述。
+- 调研风格与措辞：以 `lib/research/researchStyleTemplates.js` 中 `status === 'active'` 的版本为唯一正本；写调研前必须先选择并读取当前生效风格，不得凭旧模板复述。
 - 架构细节：参考 `ai-context/architecture.md`，但它是带日期的历史快照；与当前代码冲突时，以当前代码和配置为准。
 - 工具专属入口只负责兼容加载或专属命令，不得复制通用规则；发现重复时应回收到本文件。
 
@@ -64,12 +64,12 @@
 
 - 三层运行时并存：静态/ISR 页面、Cloudflare Edge API（`runtime = 'edge'`）、浏览器端推理（`/web-llm`，WebGPU）。
 - Cloudflare 构建：公开站使用 `npm run pages:build:public`，后台站使用 `npm run pages:build`（`@cloudflare/next-on-pages`）；配置位于 `wrangler.toml` 与 Cloudflare Pages Build settings。
-- Edge 路由不能使用 Node-only API；D1 必须通过 `lib/d1.js` 获取 binding。
+- Edge 路由不能使用 Node-only API；D1 必须通过 `lib/db/d1.js` 获取 binding。
 
 ## 历史遗留
 
 - NextAuth 相关文件已废弃，`[...nextauth]` 路由返回 410。
-- `lib/stompDb.js` 是 better-sqlite3 本地版本，线上不使用。
+- `lib/db/stompDb.js` 是 better-sqlite3 本地版本，线上不使用。
 
 ## Git 发布规则
 

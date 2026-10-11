@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
-import { publishAShareDraft } from '../../lib/aSharePublisher.js'
+import { publishAShareDraft } from '../../lib/a-share/aSharePublisher.js'
 
 const raw = `---
 title: 本地示例公司（999998）

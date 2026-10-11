@@ -7,7 +7,7 @@ import {
   cultureStoryCategory,
   cultureStoryLastRunKey,
   normalizeCultureStorySlot,
-} from '../lib/dailyCultureStory.js'
+} from '../lib/page-data/dailyCultureStory.js'
 
 const SLOTS = ['culture_morning', 'culture_afternoon', 'culture_evening']
 

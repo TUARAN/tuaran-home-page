@@ -1,8 +1,8 @@
-import { getUserFromRequest } from '../../../../lib/edgeSession'
+import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import {
   listAccountIdentities,
   unbindIdentityFromUser,
-} from '../../../../lib/accountIdentities'
+} from '../../../../lib/auth/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

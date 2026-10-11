@@ -3,16 +3,16 @@ import {
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   callArticleMcpTool,
   mcpInitializeResult,
-} from '../../../../lib/mcpArticles'
-import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/abuseControls'
-import { listAllContent } from '../../../../lib/contentPipeline'
-import { getD1 } from '../../../../lib/d1'
+} from '../../../../lib/mcp/mcpArticles'
+import { cleanupRateLimits, enforceRateLimits, getClientIp } from '../../../../lib/auth/abuseControls'
+import { listAllContent } from '../../../../lib/content/contentPipeline'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   MCP_ARTICLES_SCOPE,
   oauthBaseUrl,
   protectedResourceMetadataUrl,
   validateMcpAccessToken,
-} from '../../../../lib/oauthServer'
+} from '../../../../lib/auth/oauthServer'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

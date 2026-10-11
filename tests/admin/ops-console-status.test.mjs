@@ -9,7 +9,7 @@ import {
   countAutomationFacet,
   filterAutomationRegistry,
   registryEntryText,
-} from '../../lib/adminOpsRegistry.js'
+} from '../../lib/admin/adminOpsRegistry.js'
 
 test('自动执行任务显示为已启用，不会因缺少实时回写显示为未运行', () => {
   const scheduled = AUTOMATION_REGISTRY.filter((item) => item.autoRun)

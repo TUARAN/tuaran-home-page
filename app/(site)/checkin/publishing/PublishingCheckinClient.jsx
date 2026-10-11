@@ -20,7 +20,7 @@ import {
   REQUIRED_PUBLISHING_KEYS,
   groupPublishingRecords,
   isPublishingDayComplete,
-} from '../../../../lib/publishingCheckins'
+} from '../../../../lib/automation/publishingCheckins'
 import { useSessionAccount } from '../../components/SessionProvider'
 import styles from './publishing.module.css'
 

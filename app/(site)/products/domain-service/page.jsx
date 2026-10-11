@@ -13,7 +13,7 @@ import {
 } from '@tabler/icons-react'
 
 import PageContainer from '../../components/PageContainer'
-import { DOMAIN_SERVICE_DOMAINS } from '../../../../lib/workItems'
+import { DOMAIN_SERVICE_DOMAINS } from '../../../../lib/site/workItems'
 
 export const dynamic = 'force-static'
 

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { SITE_PRESENCE_HEARTBEAT_MS } from '../../../lib/sitePresence'
+import { SITE_PRESENCE_HEARTBEAT_MS } from '../../../lib/site/sitePresence'
 
 const STORAGE_KEY = 'tuaran_presence_visitor'
 const SitePresenceContext = createContext(null)

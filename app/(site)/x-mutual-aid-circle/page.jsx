@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import ArticleActionsDropdown from '../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../components/ArticleFooterCta'
 import ContentEngagement from '../components/ContentEngagement'

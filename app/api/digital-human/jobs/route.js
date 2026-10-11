@@ -3,10 +3,10 @@ import {
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../../lib/abuseControls'
-import { getD1 } from '../../../../lib/d1'
-import { getAvatarR2 } from '../../../../lib/r2'
-import { getWorkersAi } from '../../../../lib/workersAi'
+} from '../../../../lib/auth/abuseControls'
+import { getD1 } from '../../../../lib/db/d1'
+import { getAvatarR2 } from '../../../../lib/db/r2'
+import { getWorkersAi } from '../../../../lib/ai/workersAi'
 import { requireDigitalHumanUser } from '../../../../lib/digitalHuman/auth'
 import {
   DIGITAL_HUMAN_IMAGE_EXTENSIONS,

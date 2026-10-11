@@ -1,12 +1,12 @@
-import { getOwnerOrReject } from '../../../../../lib/adminAuth'
-import { getD1 } from '../../../../../lib/d1'
-import { listOllamaModels } from '../../../../../lib/ollama'
+import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../../lib/db/d1'
+import { listOllamaModels } from '../../../../../lib/ai/ollama'
 import {
   buildModelSelectionOptions,
   modelSelectionId,
   parseModelSelection,
-} from '../../../../../lib/modelSelection'
-import { DAILY_GREETING_MODEL_SELECTIONS_KEY } from '../../../../../lib/dailyGreetingLlm'
+} from '../../../../../lib/ai/modelSelection'
+import { DAILY_GREETING_MODEL_SELECTIONS_KEY } from '../../../../../lib/automation/dailyGreetingLlm'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

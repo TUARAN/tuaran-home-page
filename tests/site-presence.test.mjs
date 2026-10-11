@@ -8,7 +8,7 @@ test('site presence throttles D1 writes and keeps a bounded active window', asyn
   const [route, migration, presence] = await Promise.all([
     read('../app/api/presence/route.js'),
     read('../migrations/0099_site_presence.sql'),
-    read('../lib/sitePresence.js'),
+    read('../lib/site/sitePresence.js'),
   ])
 
   assert.match(route, /ON CONFLICT\(visitor_key\) DO UPDATE/)

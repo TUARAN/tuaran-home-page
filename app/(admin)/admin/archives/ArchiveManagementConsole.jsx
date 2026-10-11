@@ -2,8 +2,8 @@ import {
   IconArrowUpRight,
 } from '@tabler/icons-react'
 
-import { ACTIVITY_ARCHIVES, getActivityArchiveStats } from '../../../../lib/activityArchives'
-import { CANONICAL_HOST } from '../../../../lib/adminRoutes'
+import { ACTIVITY_ARCHIVES, getActivityArchiveStats } from '../../../../lib/page-data/activityArchives'
+import { CANONICAL_HOST } from '../../../../lib/admin/adminRoutes'
 import { AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
 
 function formatDate(value) {

@@ -11,12 +11,12 @@
 1. `npm run a-share:sync` 从结构化行情列表取得沪市、深市和北交所公司，执行数量、代码和市场完整性校验。
 2. 同步结果写入 `data/a-shares/companies.json`，同时重建 `research/companies/2026-07-31-a-share-company-list.md`。
 3. `npm run a-share:pick` 优先返回尚未完成的选择；没有待完成项时，从未研究公司中随机选择一家。
-4. 自动化读取 `research/templates/a-share-company-research.md` 和当前生效的 `lib/researchStyleTemplates.js`，检索一手资料并写文章。
+4. 自动化读取 `research/templates/a-share-company-research.md` 和当前生效的 `lib/research/researchStyleTemplates.js`，检索一手资料并写文章。
 5. 文章通过最小校验后，运行 `npm run a-share:complete -- --code <代码> --file <文章路径>` 标记完成。
 
 ## 线上自动化（2026-08-06 起）
 
-本地流程的云端替代：`lib/aShareResearch.js` + `lib/aShareResearchCore.js`，由 GitHub Actions 定时
+本地流程的云端替代：`lib/a-share/aShareResearch.js` + `lib/a-share/aShareResearchCore.js`，由 GitHub Actions 定时
 POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴权）触发，状态全部落 D1。
 
 - 公司池完整 JSON 存 `a_share_pool_snapshot.content`（D1 单行；免费计划 D1 每次调用限 50 个查询，
@@ -38,7 +38,7 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 - 自动生成稿保持 `review_ready: false` / `ad_eligible: false`。草稿进入 `pending` 后提供 72 小时复核窗口；
   站长可提前发布或将其退回为 `rejected`。每日调度先检查过期稿，每次最多自动发布最早到期的一篇，
   已复核、已退回和已发布稿不会进入自动发布。自动发布失败时恢复 `pending` 并保留原到期时间，后续调度重试。
-- 人工发布与自动发布共用 `lib/aSharePublisher.js`，通过 GitHub Contents API 提交 `main`，随后由 Cloudflare Pages 构建上线。
+- 人工发布与自动发布共用 `lib/a-share/aSharePublisher.js`，通过 GitHub Contents API 提交 `main`，随后由 Cloudflare Pages 构建上线。
 - 定时触发见 `.github/workflows/a-share-research.yml`（每天北京时间 01:00）。
 - 定时任务失败时（含 GitHub Actions runner 未接单、端点返回非 200），工作流会调用
   `POST /api/automation/alert` 向站长消息中心写入「自动化监控」通知（幂等按 workflow+runId 去重，
@@ -51,7 +51,7 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
 
 ## DeepSeek 密钥管理
 
-自 2026-08-06 起，`lib/deepseek.js` 不再只认环境变量：
+自 2026-08-06 起，`lib/ai/deepseek.js` 不再只认环境变量：
 
 - `deepseek_keys` 表（迁移 0059）保存可管理密钥，明文用 `DEEPSEEK_KEYS_ENC_SECRET`
   （AES-GCM，任意长度主密钥经 SHA-256 派生）加密落库，界面只显示掩码。

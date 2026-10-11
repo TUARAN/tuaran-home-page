@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import XImageLibrary from './XImageLibrary'
 import XPublicationRecords from './XPublicationRecords'
-import { X_POST_CATEGORIES, X_POST_SLOTS } from '../../../../lib/xPostingSchedule'
+import { X_POST_CATEGORIES, X_POST_SLOTS } from '../../../../lib/x/xPostingSchedule'
 import AutomationModelSelector from './AutomationModelSelector'
 
 import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'

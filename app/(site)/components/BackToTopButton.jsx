@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
+import { pick } from '../../../lib/site/i18n'
 
 export default function BackToTopButton() {
   const { locale } = useLocale()

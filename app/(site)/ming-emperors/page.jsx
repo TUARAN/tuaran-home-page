@@ -1,5 +1,5 @@
 import RichPageJsonLd from '../components/RichPageJsonLd'
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import MingEmperorsClient from './MingEmperorsClient'
 
 export const dynamic = 'force-static'

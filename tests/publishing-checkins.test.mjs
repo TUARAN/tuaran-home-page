@@ -9,7 +9,7 @@ import {
   isPublishingDayKey,
   isPublishingMonthKey,
   publishingMonthRange,
-} from '../lib/publishingCheckins.js'
+} from '../lib/automation/publishingCheckins.js'
 
 function completeDay(day) {
   return REQUIRED_PUBLISHING_KEYS.map((platform) => ({ checkinDate: day, platform, postUrl: '' }))

@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { getD1 } from '../../../../lib/d1'
-import { listAdminRewards, updateRedemption, upsertReward } from '../../../../lib/rewards'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { getD1 } from '../../../../lib/db/d1'
+import { listAdminRewards, updateRedemption, upsertReward } from '../../../../lib/ledger/rewards'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

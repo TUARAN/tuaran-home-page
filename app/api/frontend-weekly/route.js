@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { FRONTEND_WEEKLY_KEYS, frontendWeeklyCorsHeaders, readR2Json } from '../../../lib/frontendWeeklyData'
+import { FRONTEND_WEEKLY_KEYS, frontendWeeklyCorsHeaders, readR2Json } from '../../../lib/page-data/frontendWeeklyData'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

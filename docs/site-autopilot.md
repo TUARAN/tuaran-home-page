@@ -51,7 +51,7 @@ flowchart LR
 
 分诊结果写回报告文件的 `aiAnalysis` 字段，随 step summary 与待修 Issue 一起呈现。
 
-脚本侧客户端见 `scripts/scan-deepseek.mjs`，与 `lib/deepseek.js` 保持同一协议契约（Edge 模块无法被普通 Node 加载，故按契约精简实现，不改生产代码）。JSON 输出模式失败（空内容/解析失败）时会自动改用普通文本模式重试一次；缺少 API Key 或最终失败时分析层自动降级（status=`skipped`/`failed`），扫描与 Issue 流程不受影响。
+脚本侧客户端见 `scripts/scan-deepseek.mjs`，与 `lib/ai/deepseek.js` 保持同一协议契约（Edge 模块无法被普通 Node 加载，故按契约精简实现，不改生产代码）。JSON 输出模式失败（空内容/解析失败）时会自动改用普通文本模式重试一次；缺少 API Key 或最终失败时分析层自动降级（status=`skipped`/`failed`），扫描与 Issue 流程不受影响。
 
 ## 报告格式
 
@@ -129,7 +129,7 @@ node scripts/scan-handoff.mjs security   # 本地只看摘要（不建 Issue）
 
 ## 复用与新增资产
 
-复用：`scripts/check-sensitive-files.mjs`（口径）、`scripts/check-public-asset-size.mjs`（口径）、`scripts/check-tailwind-opacity-classes.mjs`、`npm audit`、`build:check`、`git ls-files`、DeepSeek 统一协议（`lib/deepseek.js` 的契约）。
+复用：`scripts/check-sensitive-files.mjs`（口径）、`scripts/check-public-asset-size.mjs`（口径）、`scripts/check-tailwind-opacity-classes.mjs`、`npm audit`、`build:check`、`git ls-files`、DeepSeek 统一协议（`lib/ai/deepseek.js` 的契约）。
 
 新增：`scripts/scan-utils.mjs`（共享）、`scripts/scan-security.mjs`、`scripts/scan-performance.mjs`、`scripts/scan-design.mjs`、`scripts/scan-deepseek.mjs`、`scripts/scan-analyze.mjs`、`scripts/scan-handoff.mjs`，以及三个 workflow。
 

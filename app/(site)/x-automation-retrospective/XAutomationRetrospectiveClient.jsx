@@ -15,7 +15,7 @@ import {
   maxDailyPosts,
   phaseToneColor,
   sumDailyPosts,
-} from '../../../lib/xAutomationRetrospective'
+} from '../../../lib/x/xAutomationRetrospective'
 
 const STATS_BAR_DEFAULT = '#8a8f7a'
 const STATS_BAR_ACTIVE = '#3f6a8a'
@@ -265,7 +265,7 @@ function SchedulePanel() {
       ) : null}
 
       <p className="mt-3 text-[12.5px] leading-6 text-[var(--site-faint)]">
-        基准时间来自 lib/xPostingSchedule.js 与各时段定义；当前每小时槽位 ±5 分钟随机浮动，到期后最多补跑 45 分钟。
+        基准时间来自 lib/x/xPostingSchedule.js 与各时段定义；当前每小时槽位 ±5 分钟随机浮动，到期后最多补跑 45 分钟。
       </p>
     </div>
   )

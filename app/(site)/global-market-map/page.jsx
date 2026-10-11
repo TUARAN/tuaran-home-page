@@ -1,4 +1,4 @@
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import GlobalMarketMapClient from './GlobalMarketMapClient'
 

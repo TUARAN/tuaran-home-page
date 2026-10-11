@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { DOMAIN_REGISTRY, DOMAIN_REGISTRY_UPDATED_AT } from '../../../../lib/domainRegistry'
+import { DOMAIN_REGISTRY, DOMAIN_REGISTRY_UPDATED_AT } from '../../../../lib/site/domainRegistry'
 import AdminPageGate from '../../components/AdminPageGate'
 import { AdminPage } from '../../components/ui'
 import {

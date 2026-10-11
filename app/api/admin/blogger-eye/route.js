@@ -1,14 +1,14 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import {
   detectBloggerEyeCloudIp,
   parseBloggerEyeAllowedHosts,
   parseBloggerEyeRunnerConfig,
   runBloggerEyeRegionalChecks,
   visitBloggerEyeTarget,
-} from '../../../../lib/bloggerEyeCloud.mjs'
-import { getBloggerEyeSchedulerSnapshot } from '../../../../lib/bloggerEyeHistory.mjs'
+} from '../../../../lib/automation/bloggerEyeCloud.mjs'
+import { getBloggerEyeSchedulerSnapshot } from '../../../../lib/automation/bloggerEyeHistory.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

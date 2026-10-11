@@ -2,7 +2,7 @@
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { generateSiteKeyPair, getSiteKeyId } from '../lib/contentProof.js'
+import { generateSiteKeyPair, getSiteKeyId } from '../lib/content/contentProof.js'
 
 function valueAfter(args, flag) {
   const index = args.indexOf(flag)

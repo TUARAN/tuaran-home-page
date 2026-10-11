@@ -1,7 +1,7 @@
-import { getD1 } from '../../../lib/d1'
-import { getUserFromRequest } from '../../../lib/edgeSession'
-import { getBalance, getCheckinStatus, getPointRules, hasCheckedInToday } from '../../../lib/points'
-import { applyMakeupCard, getMakeupCardBalance, listPublicRewards, listUserRedemptions, redeemReward } from '../../../lib/rewards'
+import { getD1 } from '../../../lib/db/d1'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
+import { getBalance, getCheckinStatus, getPointRules, hasCheckedInToday } from '../../../lib/ledger/points'
+import { applyMakeupCard, getMakeupCardBalance, listPublicRewards, listUserRedemptions, redeemReward } from '../../../lib/ledger/rewards'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

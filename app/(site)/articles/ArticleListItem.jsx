@@ -8,7 +8,7 @@ import {
   SUBJECT_META,
   getContentGroup,
   getDisplaySubject,
-} from '../../../lib/contentTaxonomy'
+} from '../../../lib/content/contentTaxonomy'
 
 const KIND_TAG_CLASS = {
   article: 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]',

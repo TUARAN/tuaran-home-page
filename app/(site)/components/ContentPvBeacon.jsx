@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
-import { MIN_QUALIFIED_READING_MS } from '../../../lib/readingAnalyticsQuality.mjs'
+import { MIN_QUALIFIED_READING_MS } from '../../../lib/site/readingAnalyticsQuality.mjs'
 
 const DISPLAY_TIMEOUT_MS = 3_000
 const PV_CACHE_TTL_MS = 30_000

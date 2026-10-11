@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react'
 
-import { buildChangelogPeriods, CHANGELOG_PERIOD_VIEWS } from '../../../lib/changelogPeriods'
-import { getChangelogPeriodSummary } from '../../../lib/changelogPeriodSummaries'
+import { buildChangelogPeriods, CHANGELOG_PERIOD_VIEWS } from '../../../lib/automation/changelogPeriods'
+import { getChangelogPeriodSummary } from '../../../lib/automation/changelogPeriodSummaries'
 
 function ChangelogItemList({ items, markerClass }) {
   if (!items?.length) return null

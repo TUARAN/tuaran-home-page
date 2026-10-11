@@ -1,5 +1,5 @@
-import { getD1 } from '../../../lib/d1'
-import { getPrivateVaultUser } from '../../../lib/privateVaultAuth'
+import { getD1 } from '../../../lib/db/d1'
+import { getPrivateVaultUser } from '../../../lib/auth/privateVaultAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

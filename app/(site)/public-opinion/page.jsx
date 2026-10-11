@@ -6,7 +6,7 @@ import {
   SOURCE_CONNECTORS,
   TREND_POINTS,
   buildPublicOpinionSnapshot,
-} from '../../../lib/publicOpinionData'
+} from '../../../lib/publicOpinion/publicOpinionData'
 
 export const dynamic = 'force-static'
 

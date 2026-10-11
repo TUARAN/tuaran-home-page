@@ -6,13 +6,13 @@ const analyticsSource = await readFile(
   new URL('../../app/(site)/components/SiteBehaviorAnalytics.jsx', import.meta.url),
   'utf8',
 )
-const helperSource = await readFile(new URL('../../lib/siteAnalytics.js', import.meta.url), 'utf8')
+const helperSource = await readFile(new URL('../../lib/site/siteAnalytics.js', import.meta.url), 'utf8')
 const directorySource = await readFile(
   new URL('../../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url),
   'utf8',
 )
 const directoryFiltersSource = await readFile(
-  new URL('../../lib/articlesDirectoryFilters.js', import.meta.url),
+  new URL('../../lib/article/articlesDirectoryFilters.js', import.meta.url),
   'utf8',
 )
 const directoryItemSource = await readFile(

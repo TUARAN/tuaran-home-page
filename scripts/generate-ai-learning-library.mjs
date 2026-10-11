@@ -8,7 +8,7 @@ const sourceRoot = path.resolve(
   process.env.AI_LEARNING_LIBRARY_DIR || path.join(projectRoot, '..', 'AI-Learning-Library'),
 )
 const sourcePath = path.join(sourceRoot, 'src', 'App.jsx')
-const outputPath = path.join(projectRoot, 'lib', 'aiLearningLibraryData.js')
+const outputPath = path.join(projectRoot, 'lib', 'page-data', 'aiLearningLibraryData.js')
 
 const source = await readFile(sourcePath, 'utf8')
 const marker = 'const books = '

@@ -28,7 +28,7 @@ import {
   shiftYearMonth,
   todayBeijing,
   yearMonthOf,
-} from '../../../lib/codexResets'
+} from '../../../lib/ai/codexResets'
 
 function cellKindClass(kind, selected) {
   if (kind === 'preview') {

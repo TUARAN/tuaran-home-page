@@ -8,7 +8,7 @@ import {
   runBloggerEyeRegionalChecks,
   validateBloggerEyeCloudTarget,
   visitBloggerEyeTarget,
-} from '../lib/bloggerEyeCloud.mjs'
+} from '../lib/automation/bloggerEyeCloud.mjs'
 
 test('云端小眼睛默认只允许本站及其子域', () => {
   assert.deepEqual(DEFAULT_BLOGGER_EYE_ALLOWED_HOSTS, ['2aran.com', '*.2aran.com'])

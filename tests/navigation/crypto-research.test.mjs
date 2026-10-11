@@ -23,7 +23,7 @@ test('加密调研页面展示当前模板、风格与调研策略', async () =>
 
 test('加密调研二级菜单提供 RSS 订阅页', async () => {
   const [nav, rssPage, subnav] = await Promise.all([
-    readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/crypto-research/rss/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/crypto-research/CryptoResearchSubnav.jsx', import.meta.url), 'utf8'),
   ])

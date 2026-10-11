@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { getBloggerEyeSchedulerSnapshot } from '../lib/bloggerEyeHistory.mjs'
+import { getBloggerEyeSchedulerSnapshot } from '../lib/automation/bloggerEyeHistory.mjs'
 
 function fakeDb({ state = null, runs = [], error = null } = {}) {
   return {

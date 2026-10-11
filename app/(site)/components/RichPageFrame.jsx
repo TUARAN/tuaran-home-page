@@ -6,7 +6,7 @@ import {
   getRichPageByPath,
   getRichPagePresentation,
   getRichPagePvKey,
-} from '../../../lib/engineeringWorks'
+} from '../../../lib/site/engineeringWorks'
 import ContentPvBeacon from './ContentPvBeacon'
 
 export default function RichPageFrame({ children }) {

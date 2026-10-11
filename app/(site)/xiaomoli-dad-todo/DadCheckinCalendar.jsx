@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 
-import { DAD_TODO_TOTAL } from '../../../lib/dadTodoData'
+import { DAD_TODO_TOTAL } from '../../../lib/page-data/dadTodoData'
 
 function pad2(n) {
   return String(n).padStart(2, '0')

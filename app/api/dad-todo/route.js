@@ -1,6 +1,6 @@
-import { getD1 } from '../../../lib/d1'
-import { getOwnerUserFromRequest } from '../../../lib/ownerAuth'
-import { DAD_TODO_TOTAL, getValidDadTodoItemIds, isValidDadTodoItemId } from '../../../lib/dadTodoData'
+import { getD1 } from '../../../lib/db/d1'
+import { getOwnerUserFromRequest } from '../../../lib/auth/ownerAuth'
+import { DAD_TODO_TOTAL, getValidDadTodoItemIds, isValidDadTodoItemId } from '../../../lib/page-data/dadTodoData'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

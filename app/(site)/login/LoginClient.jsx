@@ -13,7 +13,7 @@ import {
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-import { normalizeReturnTo } from '../../../lib/returnTo'
+import { normalizeReturnTo } from '../../../lib/site/returnTo'
 
 const ERROR_MESSAGES = {
   INVALID_CREDENTIAL: '凭证无效、已过期或已停用。',

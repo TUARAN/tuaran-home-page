@@ -1,10 +1,10 @@
-import { articles } from '../../../lib/articleMetadata'
-import { COMMUNITY_TOPICS } from '../../../lib/communityTopics'
-import { CZ_MEMOIR_CHAPTERS, czMemoirChapterPath } from '../../../lib/czMemoirs'
+import { articles } from '../../../lib/article/articleMetadata'
+import { COMMUNITY_TOPICS } from '../../../lib/content/communityTopics'
+import { CZ_MEMOIR_CHAPTERS, czMemoirChapterPath } from '../../../lib/page-data/czMemoirs'
 import { listResearch } from '../../../lib/research/archive'
-import { listRichPageSitemapEntries } from '../../../lib/richPageSeo'
-import { listStaticPageSitemapEntries } from '../../../lib/staticPageRegistry.mjs'
-import { contentProofHref, listContentProofCredentials } from '../../../lib/contentProofRegistry.js'
+import { listRichPageSitemapEntries } from '../../../lib/site/richPageSeo'
+import { listStaticPageSitemapEntries } from '../../../lib/site/staticPageRegistry.mjs'
+import { contentProofHref, listContentProofCredentials } from '../../../lib/content/contentProofRegistry.js'
 
 const SITE_URL = 'https://2aran.com'
 

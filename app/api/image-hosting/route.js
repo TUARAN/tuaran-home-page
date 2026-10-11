@@ -1,20 +1,20 @@
-import { getD1 } from '../../../lib/d1'
-import { getUserFromRequest } from '../../../lib/edgeSession'
+import { getD1 } from '../../../lib/db/d1'
+import { getUserFromRequest } from '../../../lib/auth/edgeSession'
 import {
   HOSTED_MEDIA_EXTENSIONS,
   hostedMediaKind,
   hostedMediaMaxBytes,
   rowToHostedImage,
-} from '../../../lib/hostedImages'
-import { award, getPointRules, RANBI_ACCOUNTS, spendPoints } from '../../../lib/points'
-import { getR2 } from '../../../lib/r2'
-import { getUserRole } from '../../../lib/userDirectory'
+} from '../../../lib/site/hostedImages'
+import { award, getPointRules, RANBI_ACCOUNTS, spendPoints } from '../../../lib/ledger/points'
+import { getR2 } from '../../../lib/db/r2'
+import { getUserRole } from '../../../lib/auth/userDirectory'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../lib/abuseControls'
+} from '../../../lib/auth/abuseControls'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

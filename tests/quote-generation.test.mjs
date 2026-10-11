@@ -6,7 +6,7 @@ import {
   buildAutomatedQuotePrompt,
   buildQuoteGenerationMessages,
   parseGeneratedQuotes,
-} from '../lib/quoteGeneration.js'
+} from '../lib/automation/quoteGeneration.js'
 
 test('quote prompt passes the requested direction to the model without a stock template pool', () => {
   const messages = buildQuoteGenerationMessages({

@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { publicSiteStatus } from '../../../lib/siteStatusCore'
-import { getSiteStatusBucket, readSiteStatus } from '../../../lib/siteStatusStore'
+import { publicSiteStatus } from '../../../lib/site/siteStatusCore'
+import { getSiteStatusBucket, readSiteStatus } from '../../../lib/site/siteStatusStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

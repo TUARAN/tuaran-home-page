@@ -29,8 +29,8 @@ import {
   sameHomeRecommendationSettings,
   sliceHomeArticleScopeItems,
   writeHomeRecommendationBatchOffset,
-} from '../../../lib/homeRecommendationEngine'
-import { trackSiteEvent } from '../../../lib/siteAnalytics'
+} from '../../../lib/home/homeRecommendationEngine'
+import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
 

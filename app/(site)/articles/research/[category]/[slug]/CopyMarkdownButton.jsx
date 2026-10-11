@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { copyPlainText } from '../../../../../../lib/contentClipboard'
+import { copyPlainText } from '../../../../../../lib/content/contentClipboard'
 
 export default function CopyMarkdownButton({ markdown }) {
   const [copied, setCopied] = useState(false)

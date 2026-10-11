@@ -15,7 +15,7 @@
 
 ## 数据与权限
 
-- 初次读取从 `lib/secondarySites.js`、`lib/domainRegistry.js` 和账号来源配置生成初始资料，也纳入域名台账中尚未公开的站点；账号白名单中的子站保守地以“待接入”登记，由站长核验后更新，避免把配置存在当成验收完成。
+- 初次读取从 `lib/site/secondarySites.js`、`lib/site/domainRegistry.js` 和账号来源配置生成初始资料，也纳入域名台账中尚未公开的站点；账号白名单中的子站保守地以“待接入”登记，由站长核验后更新，避免把配置存在当成验收完成。
 - 首次保存后，管理台账持久化到现有 D1 `site_settings` 表的 `subsites.registry.v1` 键。读取旧台账时自动补齐完整域名目录中缺失的站点与其初始关系，下次明确保存时写入数据库。不会覆盖已有资料或恢复已移除的关系；标识或域名冲突时保留现有记录。旧资料的访问范围按相同标识及域名补齐，无法确认的自定义站点默认内部 / 受控。
 - 不新增数据库或迁移；环境需已应用 `migrations/0040_site_settings.sql`。
 - `GET /api/admin/subsites` 读取台账；`POST` 接收 `{ revision, action }`，动作有 `save-site`、`save-relation`、`delete-relation`。

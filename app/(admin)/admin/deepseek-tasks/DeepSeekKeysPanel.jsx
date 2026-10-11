@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DEEPSEEK_SHARED_SOURCES, DEEPSEEK_SITE_MODEL } from '../../../../lib/deepseekKeysCore'
+import { DEEPSEEK_SHARED_SOURCES, DEEPSEEK_SITE_MODEL } from '../../../../lib/ai/deepseekKeysCore'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'

@@ -5,7 +5,7 @@ import test from 'node:test'
 const FEED_CLIENT_PATH = new URL('../../app/(site)/feed/FeedClient.jsx', import.meta.url)
 const FEED_PAGE_PATH = new URL('../../app/(site)/feed/page.jsx', import.meta.url)
 const FEED_DETAIL_PAGE_PATH = new URL('../../app/(site)/feed/[id]/page.jsx', import.meta.url)
-const CONTENT_REGISTRY_PATH = new URL('../../lib/contentRegistry.js', import.meta.url)
+const CONTENT_REGISTRY_PATH = new URL('../../lib/content/contentRegistry.js', import.meta.url)
 
 test('feed detail uses a dedicated full-content mode', async () => {
   const [client, detailPage] = await Promise.all([

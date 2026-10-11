@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { IconX } from '@tabler/icons-react'
 
-import { ADMIN_NAV_GROUPS, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath, resolveActiveAdminChild } from '../../../lib/adminRoutes'
-import { AdminIcon } from '../../../lib/adminIcons'
+import { ADMIN_NAV_GROUPS, ADMIN_HOST, CANONICAL_HOST, isActiveAdminPath, resolveActiveAdminChild } from '../../../lib/admin/adminRoutes'
+import { AdminIcon } from '../../../lib/admin/adminIcons'
 
 function navItemClass(active) {
   return active

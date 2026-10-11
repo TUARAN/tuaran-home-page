@@ -1,6 +1,6 @@
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { validatePublicHttpUrl } from '../../../../lib/abuseControls'
-import { getD1 } from '../../../../lib/d1'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { validatePublicHttpUrl } from '../../../../lib/auth/abuseControls'
+import { getD1 } from '../../../../lib/db/d1'
 import {
   createOrReuseShortLink,
   countShortLinks,
@@ -9,7 +9,7 @@ import {
   listShortLinks,
   normalizeUrl,
   sanitizeText,
-} from '../../../../lib/shortLinks'
+} from '../../../../lib/content/shortLinks'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

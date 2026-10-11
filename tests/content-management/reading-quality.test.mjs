@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   MIN_QUALIFIED_READING_MS,
   assessReadingHit,
-} from '../../lib/readingAnalyticsQuality.mjs'
+} from '../../lib/site/readingAnalyticsQuality.mjs'
 
 const valid = {
   host: '2aran.com',

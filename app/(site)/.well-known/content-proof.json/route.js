@@ -1,4 +1,4 @@
-import { getContentProofDiscoveryDocument } from '../../../../lib/contentProofDiscovery.js'
+import { getContentProofDiscoveryDocument } from '../../../../lib/content/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 

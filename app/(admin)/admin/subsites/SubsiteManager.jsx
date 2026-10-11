@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { AdminButton, AdminPage, EmptyState, Section, StatCard } from '../../components/ui'
-import { relationKey } from '../../../../lib/secondarySiteRegistry'
+import { relationKey } from '../../../../lib/site/secondarySiteRegistry'
 import {
   blankRelation,
   blankSite,

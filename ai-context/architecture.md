@@ -146,7 +146,7 @@ SEO 相关能力比较完整：
    生成 state，写入 Cookie，然后 302 到 GitHub OAuth 授权页。
 2. `GET /api/auth/callback/github`
    校验 state，向 GitHub 换 token，再拉取用户信息。
-3. 服务端使用 `lib/edgeSession.js` 对用户信息签名，写入 `tuaran_session` Cookie。
+3. 服务端使用 `lib/auth/edgeSession.js` 对用户信息签名，写入 `tuaran_session` Cookie。
 4. `GET /api/me`
    解析并验证 Cookie，返回当前用户。
 
@@ -172,7 +172,7 @@ SEO 相关能力比较完整：
 
 当前线上目标实现依赖：
 
-- `lib/d1.js` 从 Cloudflare 上下文取 `env.DB`
+- `lib/db/d1.js` 从 Cloudflare 上下文取 `env.DB`
 - D1 表 `stomps`
 
 数据库表结构很简单：
@@ -184,7 +184,7 @@ SEO 相关能力比较完整：
 - `message`
 - `created_at`
 
-此外，`lib/stompDb.js` 还保留了本地 `better-sqlite3` 实现，但当前 API 路由没有调用它，说明它更像旧版本或本地替代方案。
+此外，`lib/db/stompDb.js` 还保留了本地 `better-sqlite3` 实现，但当前 API 路由没有调用它，说明它更像旧版本或本地替代方案。
 
 ## 6. Web LLM 架构
 

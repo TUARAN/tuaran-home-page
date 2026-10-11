@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { getOwnerOrReject } from '../../../../lib/adminAuth'
-import { buildXArticlePost, getXCredentials, publishXPost } from '../../../../lib/xDistribution'
+import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { buildXArticlePost, getXCredentials, publishXPost } from '../../../../lib/x/xDistribution'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

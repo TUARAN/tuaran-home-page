@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react'
 
-import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup, taxonomyForResearch } from '../../../../lib/contentTaxonomy'
+import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup, taxonomyForResearch } from '../../../../lib/content/contentTaxonomy'
 import {
   SUBJECT_GOVERNANCE_LIST,
   TAXONOMY_DIMENSIONS,
   TAXONOMY_GOVERNANCE_RULES,
-} from '../../../../lib/contentTaxonomyGovernance'
+} from '../../../../lib/content/contentTaxonomyGovernance'
 import { RESEARCH_ENTRY_META } from '../../../../lib/research/catalog'
 import { AdminPage } from '../../components/ui'
 

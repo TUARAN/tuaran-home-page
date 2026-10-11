@@ -22,7 +22,7 @@ const centerSource = await readFile(
   'utf8',
 )
 const migrationSource = await readFile(new URL('../../migrations/0074_engagement_bots.sql', import.meta.url), 'utf8')
-const runLibSource = await readFile(new URL('../../lib/engagementBotRun.js', import.meta.url), 'utf8')
+const runLibSource = await readFile(new URL('../../lib/automation/engagementBotRun.js', import.meta.url), 'utf8')
 const workflowSource = await readFile(
   new URL('../../.github/workflows/engagement-bot.yml', import.meta.url),
   'utf8',

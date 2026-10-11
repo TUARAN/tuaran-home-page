@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { pickChineseVoice, splitSpeechText, stripMarkdownForSpeech } from '../lib/speechText.js'
+import { pickChineseVoice, splitSpeechText, stripMarkdownForSpeech } from '../lib/site/speechText.js'
 
 test('stripMarkdownForSpeech keeps readable prose and drops markup', () => {
   const markdown = [

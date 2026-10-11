@@ -3,8 +3,8 @@ import {
   AI_EXPERIMENT_WORK_ITEMS,
   PRODUCT_WORK_ITEMS,
   WORK_STATUS_META,
-} from '../../../lib/workItems'
-import { SECONDARY_SITES } from '../../../lib/secondarySites'
+} from '../../../lib/site/workItems'
+import { SECONDARY_SITES } from '../../../lib/site/secondarySites'
 
 export const dynamic = 'force-static'
 

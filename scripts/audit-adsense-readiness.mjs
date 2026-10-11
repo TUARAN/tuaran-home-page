@@ -63,7 +63,7 @@ const errors = []
 const reviewReady = []
 
 function parseReviewReadyRichPages() {
-  const source = fs.readFileSync(path.join(root, 'lib/engineeringWorks.js'), 'utf8')
+  const source = fs.readFileSync(path.join(root, 'lib/site/engineeringWorks.js'), 'utf8')
   const worksSource = source.split('export const ENGINEERING_WORKS = [')[1]
   if (!worksSource) return []
 
@@ -152,7 +152,7 @@ const prohibitedRichPageIds = new Set([
 ])
 for (const work of reviewReadyRichPages) {
   if (prohibitedRichPageIds.has(work.id)) {
-    errors.push(`lib/engineeringWorks.js: 页面 ${work.id} 不得进入 AdSense 复审白名单`)
+    errors.push(`lib/site/engineeringWorks.js: 页面 ${work.id} 不得进入 AdSense 复审白名单`)
   }
 }
 
@@ -197,22 +197,22 @@ requireSource(
   'middleware 的 noindex 响应头必须由独立索引策略控制',
 )
 forbidSource(
-  'lib/indexingPolicy.js',
+  'lib/site/indexingPolicy.js',
   /adsense|reviewReady|isAdsenseReviewPath/i,
   '索引策略不得耦合 AdSense 复审范围',
 )
 requireSource(
-  'lib/adsenseReviewPolicy.js',
+  'lib/content/adsenseReviewPolicy.js',
   /ADSENSE_REVIEW_PATH_SET/,
   '必须维护独立的 AdSense 复审范围',
 )
 requireSource(
-  'lib/adsenseReviewPolicy.js',
+  'lib/content/adsenseReviewPolicy.js',
   /CURATED_ARTICLE_PATHS = \[\s*'\/articles\/ai-project-complexity-governance',\s*'\/articles\/mcp-https-vs-stdio-architecture-design',\s*'\/articles\/openclaw-pr-anthropic-image-normalization',\s*\]/,
   '旧文章广告复审范围必须保持为三篇具有亲历证据的内容',
 )
 forbidSource(
-  'lib/siteNav.js',
+  'lib/site/siteNav.js',
   /isReviewNavigationItem/,
   '普通访客导航不得按 AdSense 复审状态隐藏公开页面',
 )

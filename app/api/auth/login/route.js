@@ -8,20 +8,20 @@ import {
   serializeLastLoginMethodCookie,
   serializeCookie,
   signSession,
-} from '../../../../lib/edgeSession'
-import { getD1 } from '../../../../lib/d1'
-import { authenticateOrCreateEmailUser } from '../../../../lib/emailAuth'
+} from '../../../../lib/auth/edgeSession'
+import { getD1 } from '../../../../lib/db/d1'
+import { authenticateOrCreateEmailUser } from '../../../../lib/auth/emailAuth'
 import {
   cleanupRateLimits,
   enforceRateLimits,
   getClientIp,
   rateLimitResponse,
-} from '../../../../lib/abuseControls'
-import { normalizeReturnTo } from '../../../../lib/returnTo'
-import { recordUserLogin } from '../../../../lib/userDirectory'
-import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/guestSession'
-import { awardRegisterOnLogin } from '../../../../lib/points'
-import { resolveEmailLogin } from '../../../../lib/accountIdentities'
+} from '../../../../lib/auth/abuseControls'
+import { normalizeReturnTo } from '../../../../lib/site/returnTo'
+import { recordUserLogin } from '../../../../lib/auth/userDirectory'
+import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/auth/guestSession'
+import { awardRegisterOnLogin } from '../../../../lib/ledger/points'
+import { resolveEmailLogin } from '../../../../lib/auth/accountIdentities'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

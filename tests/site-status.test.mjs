@@ -6,8 +6,8 @@ import {
   createManualSiteStatus,
   operationalSiteStatus,
   publicSiteStatus,
-} from '../lib/siteStatusCore.js'
-import { checkSiteHealth } from '../lib/siteHealth.js'
+} from '../lib/site/siteStatusCore.js'
+import { checkSiteHealth } from '../lib/site/siteHealth.js'
 
 test('public status only becomes active for a real incident', () => {
   assert.equal(publicSiteStatus(operationalSiteStatus(100), 100).active, false)

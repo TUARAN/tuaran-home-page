@@ -36,7 +36,7 @@ test('status banner can dismiss one incident without hiding future updates', asy
 test('monitor route is secret protected and status storage is independent from D1', async () => {
   const [monitor, store, workflow] = await Promise.all([
     read('../app/api/site-status/monitor/route.js'),
-    read('../lib/siteStatusStore.js'),
+    read('../lib/site/siteStatusStore.js'),
     read('../.github/workflows/site-status-monitor.yml'),
   ])
   assert.match(monitor, /x-site-status-secret/)
@@ -47,7 +47,7 @@ test('monitor route is secret protected and status storage is independent from D
 })
 
 test('admin navigation exposes incidents through the unified operations center', async () => {
-  const routes = await read('../lib/adminRoutes.js')
+  const routes = await read('../lib/admin/adminRoutes.js')
   assert.match(routes, /href: '\/admin\/site-health', label: '运行中心'/)
   assert.match(routes, /'\/admin\/site-status': '\/admin\/site-health\?tab=incidents'/)
 })

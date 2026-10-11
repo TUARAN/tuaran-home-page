@@ -1,12 +1,12 @@
-import { gateArticleRequest } from './lib/articleRequestGate'
+import { gateArticleRequest } from './lib/article/articleRequestGate'
 import { NextResponse } from 'next/server'
 
-import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed, isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from './lib/adminRoutes'
-import { getUserFromRequest } from './lib/edgeSession'
-import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/i18n'
-import { getLegacyPathRedirect, shouldNoindexPath } from './lib/indexingPolicy'
-import { isAdminLocalPreviewEnabled } from './lib/adminLocalPreview'
-import { isOwnerUser } from './lib/ownerAuth'
+import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed, isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from './lib/admin/adminRoutes'
+import { getUserFromRequest } from './lib/auth/edgeSession'
+import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/site/i18n'
+import { getLegacyPathRedirect, shouldNoindexPath } from './lib/site/indexingPolicy'
+import { isAdminLocalPreviewEnabled } from './lib/admin/adminLocalPreview'
+import { isOwnerUser } from './lib/auth/ownerAuth'
 
 /**
  * 首次访问按 IP 国家码（Cloudflare 的 cf-ipcountry）决定默认语言：

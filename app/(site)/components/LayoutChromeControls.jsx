@@ -10,7 +10,7 @@ import PwaInstallGuide from './PwaInstallGuide'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
 import SiteMobileTabBar from './SiteMobileTabBar'
-import { getRichPageByPath, getRichPagePresentation } from '../../../lib/engineeringWorks'
+import { getRichPageByPath, getRichPagePresentation } from '../../../lib/site/engineeringWorks'
 
 const HIDE_CHROME_PATHS = new Set(['/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
 const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge'])

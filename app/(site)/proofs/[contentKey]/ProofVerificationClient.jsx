@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-import { hashContent, verifyContentProof } from '../../../../lib/contentProof'
-import { verifyMerkleMembership } from '../../../../lib/contentMerkle'
-import { describeProofStatus, shortDigest } from '../../../../lib/contentProofPresentation'
+import { hashContent, verifyContentProof } from '../../../../lib/content/contentProof'
+import { verifyMerkleMembership } from '../../../../lib/content/contentMerkle'
+import { describeProofStatus, shortDigest } from '../../../../lib/content/contentProofPresentation'
 
 const STATUS_STYLE = {
   error: 'border-red-300 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200',

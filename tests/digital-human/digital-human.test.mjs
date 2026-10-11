@@ -50,7 +50,7 @@ const selfHostedService = await readFile(
   'utf8'
 )
 const toolItems = await readFile(
-  new URL('../../lib/toolItems.js', import.meta.url),
+  new URL('../../lib/site/toolItems.js', import.meta.url),
   'utf8'
 )
 const wrangler = await readFile(

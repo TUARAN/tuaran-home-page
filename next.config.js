@@ -14,6 +14,7 @@ const webLlmHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // 隔离构建用 NEXT_DIST_DIR=.next-<name>。验证结束后跑 npm run clean:next-dist，只删 .next-*，保留默认 .next。
   distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@huggingface/transformers'],
   webpack: (config, { isServer, nextRuntime }) => {
@@ -23,7 +24,7 @@ const nextConfig = {
       config.resolve.alias = { ...config.resolve.alias, 'pptxgenjs$': false }
       const webpack = require('webpack')
       config.plugins.push(new webpack.NormalModuleReplacementPlugin(/(?:^|\/)contentPipeline(?:\.js)?$/, (resource) => {
-        resource.request = path.resolve(__dirname, 'lib/contentPipelineRuntime.js')
+        resource.request = path.resolve(__dirname, 'lib/content/contentPipelineRuntime.js')
       }))
     }
     // 后台路线图与体检记录直接读取文档正本，构建时内联，不依赖 Edge 文件系统。
@@ -70,7 +71,7 @@ const nextConfig = {
       config.plugins = config.plugins || []
       config.plugins.push(
         new webpack.NormalModuleReplacementPlugin(/^node:(fs|https|os|path)$/, (resource) => {
-          resource.request = path.resolve(__dirname, 'lib/empty-module.js')
+          resource.request = path.resolve(__dirname, 'lib/db/empty-module.js')
         }),
       )
     }

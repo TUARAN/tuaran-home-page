@@ -2,8 +2,8 @@ import PageContainer from '../components/PageContainer'
 import ContentPvBeacon from '../components/ContentPvBeacon'
 import RichPageJsonLd from '../components/RichPageJsonLd'
 import XAutomationRetrospectiveClient from './XAutomationRetrospectiveClient'
-import { createRichPageMetadata } from '../../../lib/richPageSeo'
-import { X_AUTOMATION_SUMMARY } from '../../../lib/xAutomationRetrospective'
+import { createRichPageMetadata } from '../../../lib/site/richPageSeo'
+import { X_AUTOMATION_SUMMARY } from '../../../lib/x/xAutomationRetrospective'
 
 export const dynamic = 'force-static'
 

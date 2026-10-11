@@ -1,4 +1,4 @@
-import { listContentProofRssEntries } from '../../../lib/contentProofDiscovery.js'
+import { listContentProofRssEntries } from '../../../lib/content/contentProofDiscovery.js'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600

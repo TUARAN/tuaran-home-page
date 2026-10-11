@@ -4,7 +4,7 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 
-import { legacyArticleToMarkdown } from '../lib/legacyArticleMigration.mjs'
+import { legacyArticleToMarkdown } from '../lib/article/legacyArticleMigration.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const sourcePath = path.join(root, 'app/(site)/articles/articlesData.js')

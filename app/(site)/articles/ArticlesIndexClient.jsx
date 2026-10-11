@@ -9,7 +9,7 @@ import {
   EMPTY_DIRECTORY_FILTERS,
   filtersFromParams,
   sameDirectoryFilters,
-} from '../../../lib/articlesDirectoryFilters'
+} from '../../../lib/article/articlesDirectoryFilters'
 import {
   CONTENT_GROUP_KEYS,
   CONTENT_GROUP_META,
@@ -20,8 +20,8 @@ import {
   SERIES_META,
   SUBJECT_META,
   getContentGroup,
-} from '../../../lib/contentTaxonomy'
-import { trackSiteEvent } from '../../../lib/siteAnalytics'
+} from '../../../lib/content/contentTaxonomy'
+import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 
 const PAGE_SIZE = 24
 

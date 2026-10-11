@@ -8,16 +8,16 @@ import {
   DOWNLOAD_ITEMS,
   getDownloadItemsByDate,
   getDownloadItemsByType,
-} from '../../lib/downloadItems.js'
-import { getLegacyPathRedirect } from '../../lib/indexingPolicy.js'
-import { STATIC_PAGE_REGISTRY } from '../../lib/staticPageRegistry.mjs'
-import { getToolDeliveryGroup, TOOL_ITEMS, TOOL_TYPE_META } from '../../lib/toolItems.js'
+} from '../../lib/site/downloadItems.js'
+import { getLegacyPathRedirect } from '../../lib/site/indexingPolicy.js'
+import { STATIC_PAGE_REGISTRY } from '../../lib/site/staticPageRegistry.mjs'
+import { getToolDeliveryGroup, TOOL_ITEMS, TOOL_TYPE_META } from '../../lib/site/toolItems.js'
 
 const root = new URL('../../', import.meta.url)
 
 test('tools is the single public directory for online and downloadable tools', async () => {
   const [nav, downloadsPage] = await Promise.all([
-    readFile(new URL('lib/siteNav.js', root), 'utf8'),
+    readFile(new URL('lib/site/siteNav.js', root), 'utf8'),
     readFile(new URL('app/(site)/downloads/page.jsx', root), 'utf8'),
   ])
   assert.match(nav, /href: '\/tools'[^}\n]*label: '工具与下载'/)

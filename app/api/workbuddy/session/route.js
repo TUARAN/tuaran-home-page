@@ -1,6 +1,6 @@
-import { getD1 } from '../../../../lib/d1'
-import { getSecrets, getUserFromRequest } from '../../../../lib/edgeSession'
-import { getOrIssueGuest } from '../../../../lib/guestSession'
+import { getD1 } from '../../../../lib/db/d1'
+import { getSecrets, getUserFromRequest } from '../../../../lib/auth/edgeSession'
+import { getOrIssueGuest } from '../../../../lib/auth/guestSession'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

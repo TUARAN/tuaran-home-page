@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { X_POST_CATEGORIES, X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/xPostingSchedule.js'
+import { X_POST_CATEGORIES, X_POST_SLOTS, xPostingSchedule, isXPostDue } from '../lib/x/xPostingSchedule.js'
 import { runXAutoPosts } from '../scripts/run-x-auto-posts.mjs'
 import {
   buildXJokeMessages,
@@ -10,7 +10,7 @@ import {
   normalizeXJokeText,
   pickXJokeAngle,
   xJokeWithinTarget,
-} from '../lib/xJokePosts.js'
+} from '../lib/x/xJokePosts.js'
 
 
 import {
@@ -29,9 +29,9 @@ import {
   pickDailyGreetingTemplate,
   pickMorningGreetingTemplate,
   shanghaiDateKey,
-} from '../lib/morningGreeting.js'
-import { rowToTemplate } from '../lib/morningGreetingTemplates.js'
-import { buildModelSelectionOptions } from '../lib/modelSelection.js'
+} from '../lib/automation/morningGreeting.js'
+import { rowToTemplate } from '../lib/automation/morningGreetingTemplates.js'
+import { buildModelSelectionOptions } from '../lib/ai/modelSelection.js'
 import {
   DAILY_GREETING_FORMATS,
   DAILY_GREETING_STYLES,
@@ -49,13 +49,13 @@ import {
   pickDailyGreetingFormat,
   pickDailyGreetingStyle,
   pickDailyGreetingVoice,
-} from '../lib/dailyGreetingLlm.js'
+} from '../lib/automation/dailyGreetingLlm.js'
 import {
   X_API_POST_CREATE_COST_MICRO_USD,
   X_API_POST_CREATE_WITH_URL_COST_MICRO_USD,
   projectedXPostCost,
   xPostCreatePricing,
-} from '../lib/xApiCost.js'
+} from '../lib/x/xApiCost.js'
 
 test('greeting date label uses Asia/Shanghai day of month', () => {
   const label = greetingDateLabel({ now: new Date('2026-08-05T00:30:00.000Z') })

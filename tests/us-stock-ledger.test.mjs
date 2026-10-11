@@ -6,7 +6,7 @@ import {
   progressToward,
   reviewLedger,
   tierBounds,
-} from '../lib/usStockLedger.js'
+} from '../lib/us-stock/usStockLedger.js'
 
 test('asset tiers follow decimal digits from A4 to A6', () => {
   assert.equal(assetTier(999.99), 'A3')

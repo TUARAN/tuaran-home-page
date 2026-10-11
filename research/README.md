@@ -23,12 +23,15 @@ research/                     # 保留旧目录名，避免破坏链接和构建
 │   └── 2026-06-05-dangnian-mingyue.md
 ├── templates/                # 自动化写作模板，不参与文章加载
 │   └── a-share-company-research.md
+├── drafts/                   # 未发布草稿，loader 不读取
+│   └── report-source.md
 └── README.md                 # 本文件
 ```
 
 - `companies/` 用于公司观察（创业公司、大厂、被投企业等）
 - `topics/` 用于专题文章（一项技术、一个标准、一个赛道、一个观点……）
 - `people/` 用于人物观察（创作者、企业家、学者、公共人物等）
+- `drafts/` 只放还不能发布的原稿。加载器、目录生成和措辞审计都只扫描 `companies/`、`topics/`、`people/`。草稿不要改名丢进这三个目录，否则会被当成正式调研。
 
 ## 文件命名
 
@@ -53,7 +56,7 @@ tags: [AI, 大模型, 公司]
 summary: 一句话概述本篇调研要回答的问题与结论。
 tldr: 不写则回退用 summary；想突出与 summary 不同的一句话总结时填这里。
 topic_type: market           # 仅 topics 用：industry | tech | product | market | thesis
-subjects: [business_market]  # 可选，显式主题；首项是卡片主分类，值见 lib/contentTaxonomy.js
+subjects: [business_market]  # 可选，显式主题；首项是卡片主分类，值见 lib/content/contentTaxonomy.js
 content_type: analysis       # opinion | analysis | engineering_case | build_log | practice | guide | fact_check | profile | archive | research
 assistance: claude-code      # 协助工具：claude-code | cursor | codex | workbuddy | doubao | gemini | gpt | manual
 model: claude-opus-4-7       # 底层模型 ID（可选，仅作内部记录）
@@ -75,7 +78,7 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 | `summary` | ⭕ | 一句话摘要，列表页展示 |
 | `tldr` | ⭕ | 详情页顶部 TL;DR 框使用；不写则回退 `summary` 或正文首段 |
 | `topic_type` | ⭕ | 仅 `topics` 用，二级类型：`industry` 行业 / `tech` 技术 / `product` 产品 / `market` 市场 / `thesis` 观点 |
-| `subjects` | ⭕ | 面向读者的显式主题，填写 1–3 个稳定 ID，首项作为卡片主分类；省略时才按旧字段兼容推断，受控值以 `lib/contentTaxonomy.js` 为准 |
+| `subjects` | ⭕ | 面向读者的显式主题，填写 1–3 个稳定 ID，首项作为卡片主分类；省略时才按旧字段兼容推断，受控值以 `lib/content/contentTaxonomy.js` 为准 |
 | `content_type` | ⭕ | 面向读者的内容形态；不写时会根据分类推断。真实项目落地用 `engineering_case`，本站建设与运营复盘用 `build_log`，避免与公司、人物和公共议题共用同一种研究包装 |
 | `assistance` | ⭕ | 协助工具的内部记录。旧文章的 `source` 字段仍兼容读取；工具不是作者，也不决定公开内容类型 |
 | `model` | ⭕ | 底层模型 ID，仅作内部追溯，不作为作者或文章来源 |
@@ -107,7 +110,7 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 
 ## 写作风格与审计（必读）
 
-正文的唯一写作正本是 [`lib/researchStyleTemplates.js`](../lib/researchStyleTemplates.js)，在后台内容管理的「调研风格」页签（`/admin/articles?panel=research-style`）可查看。不要从本 README 或旧文章复述风格规则。
+正文的唯一写作正本是 [`lib/research/researchStyleTemplates.js`](../lib/research/researchStyleTemplates.js)，在后台内容管理的「调研风格」页签（`/admin/articles?panel=research-style`）可查看。不要从本 README 或旧文章复述风格规则。
 
 写作顺序固定为：**选风格 → 先列事实与来源 → 写结构分析 / 外部研判 → 跑措辞审计 → 人工复核。**
 

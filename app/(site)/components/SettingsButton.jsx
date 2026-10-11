@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 
 import { useLocale } from './LocaleProvider'
-import { pick } from '../../../lib/i18n'
+import { pick } from '../../../lib/site/i18n'
 
 const UI_STORAGE_KEY = 'site-ui-mode'
 const READING_PALETTE_KEY = 'reading-palette'

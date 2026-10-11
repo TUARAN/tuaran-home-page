@@ -1,7 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { safeEqual } from '../../../../lib/ownerAuth'
-import { createWeeklySummaryNotification } from '../../../../lib/siteNotifications'
+import { safeEqual } from '../../../../lib/auth/ownerAuth'
+import { createWeeklySummaryNotification } from '../../../../lib/site/siteNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

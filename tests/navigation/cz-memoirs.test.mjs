@@ -7,8 +7,8 @@ import {
   CZ_MEMOIR_CHAPTERS,
   CZ_MEMOIR_CHAPTER_GROUPS,
   czMemoirChapterPath,
-} from '../../lib/czMemoirs.js'
-import { readCzMemoirChapter } from '../../lib/czMemoirsContent.js'
+} from '../../lib/page-data/czMemoirs.js'
+import { readCzMemoirChapter } from '../../lib/page-data/czMemoirsContent.js'
 
 const ROOT = process.cwd()
 

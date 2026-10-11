@@ -9,8 +9,8 @@ import {
   sanitizeLivePayload,
   sanitizeWeeklyPayload,
   writeR2Json,
-} from '../../../../lib/frontendWeeklyData'
-import { verifyGitHubActionsToken } from '../../../../lib/githubActionsOidc'
+} from '../../../../lib/page-data/frontendWeeklyData'
+import { verifyGitHubActionsToken } from '../../../../lib/db/githubActionsOidc'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

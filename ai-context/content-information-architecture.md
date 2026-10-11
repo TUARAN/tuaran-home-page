@@ -16,7 +16,7 @@
 - `delivery`：使用方式，必须且只能有一个。
 - `series`：固定系列，可选。
 
-分类定义与兼容映射的代码正本是 `lib/contentTaxonomy.js`。旧字段仍可用于内容加载和旧 URL
+分类定义与兼容映射的代码正本是 `lib/content/contentTaxonomy.js`。旧字段仍可用于内容加载和旧 URL
 兼容，不能继续直接生成同级前台菜单。
 
 ## 分类治理

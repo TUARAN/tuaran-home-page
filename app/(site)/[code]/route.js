@@ -1,4 +1,4 @@
-import { handleShortLinkRedirect } from '../../../lib/shortLinkRedirect'
+import { handleShortLinkRedirect } from '../../../lib/content/shortLinkRedirect'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

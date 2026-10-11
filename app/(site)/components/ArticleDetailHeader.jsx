@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { AuthorByline } from './ArticleAuthorIntro'
-import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup } from '../../../lib/contentTaxonomy'
+import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup } from '../../../lib/content/contentTaxonomy'
 
 export default function ArticleDetailHeader({
   categoryHref,

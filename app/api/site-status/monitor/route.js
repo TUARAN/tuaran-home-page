@@ -1,15 +1,15 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
-import { safeEqual } from '../../../../lib/ownerAuth'
-import { checkSiteHealth } from '../../../../lib/siteHealth'
-import { applySiteHealthProbe, publicSiteStatus } from '../../../../lib/siteStatusCore'
+import { safeEqual } from '../../../../lib/auth/ownerAuth'
+import { checkSiteHealth } from '../../../../lib/site/siteHealth'
+import { applySiteHealthProbe, publicSiteStatus } from '../../../../lib/site/siteStatusCore'
 import {
   getSiteStatusBucket,
   readSiteStatus,
   readSiteStatusMonitor,
   writeSiteStatus,
   writeSiteStatusMonitor,
-} from '../../../../lib/siteStatusStore'
+} from '../../../../lib/site/siteStatusStore'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

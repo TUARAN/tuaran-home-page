@@ -16,9 +16,9 @@ import {
   pickHomeFeaturedEvent,
   pickFeaturedEvent,
   shiftYearMonth,
-} from '../../lib/codexResets.js'
-import { ENGINEERING_WORKS } from '../../lib/engineeringWorks.js'
-import { TOOL_ITEMS } from '../../lib/toolItems.js'
+} from '../../lib/ai/codexResets.js'
+import { ENGINEERING_WORKS } from '../../lib/site/engineeringWorks.js'
+import { TOOL_ITEMS } from '../../lib/site/toolItems.js'
 
 const FIXTURE = {
   schemaVersion: 1,
@@ -225,7 +225,7 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
     readFile(new URL('../../app/(site)/codex-reset/CodexResetClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/HomePrimaryColumnsClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../lib/siteNav.js', import.meta.url), 'utf8'),
+    readFile(new URL('../../lib/site/siteNav.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/api/codex-resets/route.js', import.meta.url), 'utf8'),
   ])
   assert.match(page, /createRichPageMetadata\('codex-reset'\)/)

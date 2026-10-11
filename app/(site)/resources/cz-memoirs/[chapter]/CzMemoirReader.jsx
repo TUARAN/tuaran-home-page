@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
-import { CZ_MEMOIR_BASE_PATH, czMemoirChapterPath } from '../../../../../lib/czMemoirs'
+import { CZ_MEMOIR_BASE_PATH, czMemoirChapterPath } from '../../../../../lib/page-data/czMemoirs'
 import styles from './cz-memoir-reader.module.css'
 
 const FONT_MIN = 16

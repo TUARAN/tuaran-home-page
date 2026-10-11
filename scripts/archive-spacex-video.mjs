@@ -12,7 +12,7 @@ import {
 } from './spacex-video-archive-core.mjs'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const archiveModule = path.join(projectRoot, 'lib/spacexArchivedLaunches.js')
+const archiveModule = path.join(projectRoot, 'lib/page-data/spacexArchivedLaunches.js')
 const draftDir = path.join(projectRoot, 'tmp/spacex-archive')
 const maxPublicBytes = 24 * 1024 * 1024
 

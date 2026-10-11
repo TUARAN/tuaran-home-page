@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { register, createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
-import { normalizeResearchSnapshot } from '../lib/researchDocument.mjs'
+import { normalizeResearchSnapshot } from '../lib/research/researchDocument.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const require = createRequire(import.meta.url)

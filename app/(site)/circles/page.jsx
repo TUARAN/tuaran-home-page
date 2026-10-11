@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { IconArrowRight } from '@tabler/icons-react'
 
-import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/communityTopics'
-import { COMMUNITY_MEMBERSHIP } from '../../../lib/communityMembership'
+import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/content/communityTopics'
+import { COMMUNITY_MEMBERSHIP } from '../../../lib/auth/communityMembership'
 import CommunityMembershipCard from '../components/CommunityMembershipCard'
 import PageContainer from '../components/PageContainer'
 

@@ -7,8 +7,8 @@ import {
   normalizeXArticleReport,
   pickDailyXArticle,
   shanghaiDateKey,
-} from '../../../../lib/xArticleExtension'
-import { MORNING_GREETING_SETTING_KEY, isAutomationPaused } from '../../../../lib/morningGreeting'
+} from '../../../../lib/x/xArticleExtension'
+import { MORNING_GREETING_SETTING_KEY, isAutomationPaused } from '../../../../lib/automation/morningGreeting'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'

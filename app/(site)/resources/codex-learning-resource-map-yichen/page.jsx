@@ -14,7 +14,7 @@ export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'codex-learning-resource-map-yichen'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
-const RESOURCE_PATH = path.join(process.cwd(), 'content', 'resources', '2026-06-29-codex-learning-resource-map-yichen.md')
+const RESOURCE_PATH = path.join(process.cwd(), 'content', 'resources', 'codex-learning', '2026-06-29-codex-learning-resource-map-yichen.md')
 
 function parseFrontmatter(raw) {
   if (!raw.startsWith('---')) return { data: {}, content: raw }

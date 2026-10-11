@@ -3,9 +3,10 @@ title: 个人项目目录为何越做越乱：一次 3136 个文件的仓库审�
 category: topics
 date: 2026-10-10
 time: 17:40
+updated: 2026-10-11
 tags: [代码库治理, 目录结构, 技术债, 个人项目, 仓库审计, Next.js]
-summary: 对 2aran.com 代码库做了一次结构审计：3136 个已入库文件分布在 33 个顶层目录里，根目录堆了 88 个条目，lib/ 一层平铺 266 个文件，同一份内容有六个落点。失控来自四条各自独立的漂移机制，治理成本和风险分成四档。
-tldr: 审计发现四类失控：根目录变成杂物间、lib/ 平铺命名空间、同一份内容六个落点、单一功能横跨六个顶层目录。四条漂移机制里，最贵的一条是「没有判据时两个都留着」。四档治理中前两档零风险可立即执行，后两档需要先定判据。审计同时发现 188 个测试文件只有 15 个进了 npm 脚本，20 个 lib 模块零引用。
+summary: 对 2aran.com 代码库做了一次结构审计：3136 个已入库文件分布在 33 个顶层目录里，根目录堆了 88 个条目，lib/ 一层平铺 266 个文件，同一份内容有六个落点。失控来自四条各自独立的漂移机制，治理成本和风险分成四档。2026-10-11 已按这个分档收了一部分目录。
+tldr: 审计发现四类失控：根目录变成杂物间、lib/ 平铺命名空间、同一份内容六个落点、单一功能横跨六个顶层目录。四条漂移机制里，最贵的一条是「没有判据时两个都留着」。2026-10-11 清掉了隔离构建目录，把放错层的根文件归位，并把 lib/ 平铺文件收进域目录。路由、内容落点和 scripts/tools/workers 的划分还没动。
 topic_type: tech
 tech_type: architecture
 subjects: [site_engineering]
@@ -35,6 +36,8 @@ pv: 0
 - **20 个 `lib/` 模块全仓库零静态引用**，其中 3 个连字符串命中都没有。
 
 这四类问题的治理成本差别很大。清理本地构建目录零风险；根目录归位只是移动文件；`lib/` 重构和 `app/` 路由收敛会牵动大量 import 路径；`scripts/`、`tools/`、`workers/`、`services/` 的职责划分已经属于架构决策，顺手改的风险高于收益。
+
+2026-10-11 按这条成本线收了第一档、第二档里不会拆仓库的部分，以及第三档里的 `lib/` 归位。第四档和还没判据的项没有动。落到哪、留了什么，写在第七节。
 
 ## 二、审计口径
 
@@ -79,14 +82,14 @@ pv: 0
 
 ### 3.3 同一份内容，六个落点
 
-| 落点 | 已入库文件 | 装什么 |
-|---|---|---|
-| `public/data/` | 318 | `article-archive/`、`research-archive/`、`content-catalog.json`、`memory/` |
-| `research/` | 377 | `companies/` 100、`topics/` 261、`people/` 13、`templates/` |
-| `content/` | 44 | 掘金文章 JSON、`resources/`、`cz-memoirs/` 章节 |
-| `data/` | 3 | `content-archive.json`、`media-redirects.json`、`a-shares/companies.json` |
-| `private/`（未入库） | 56 | 种子数据、`long-compass/` |
-| 根目录与散落目录 | 3 | `report-source.md`、`resources/`、`deliverables/` |
+| 落点              | 已入库文件 | 装什么                                                                     |
+| --------------- | ----- | ----------------------------------------------------------------------- |
+| `public/data/`  | 318   | `article-archive/`、`research-archive/`、`content-catalog.json`、`memory/` |
+| `research/`     | 377   | `companies/` 100、`topics/` 261、`people/` 13、`templates/`                |
+| `content/`      | 44    | 掘金文章 JSON、`resources/`、`cz-memoirs/` 章节                                 |
+| `data/`         | 3     | `content-archive.json`、`media-redirects.json`、`a-shares/companies.json` |
+| `private/`（未入库） | 56    | 种子数据、`long-compass/`                                                    |
+| 根目录与散落目录        | 3     | `report-source.md`、`resources/`、`deliverables/`                         |
 
 「一篇文章」这个概念同时出现在六个地方：`content/articles/`、`data/content-archive.json`、`public/data/article-archive/`、`app/(site)/articles/articlesData.js`，以及 D1 的 `article_posts` 与 `content_index` 两张表。
 
@@ -160,5 +163,28 @@ app/components           1 个（只有 loading/）
 
 持续验证项：
 
-- 20 个零引用模块中，除已确认的 3 个死文件外，其余是否通过动态加载被间接使用，需要逐个核对运行时调用路径。
-- 上述文件数与占用会随提交变化；分档结论的稳定性取决于结构是否被改动，而非数字是否一致。
+- 20 个零引用模块中，除已确认的 3 个死文件外，其余是否通过动态加载被间接使用，需要逐个核对运行时调用路径。2026-10-11 的归位没有删除这些文件。
+- 上述文件数与占用会随提交变化。第七节记录的是 2026-10-11 已经落地的目录，审计当日的数字仍以第二节的口径为准。
+
+## 七、2026-10-11 已落地的归位
+
+判据只有一条：目录和 import 可以动，页面、接口、脚本的行为保持原样。`lib/` 根目录不再接收新文件，新模块放进已经存在的域目录。
+
+当天做完的部分：
+
+- 删掉 14 个 `.next-*` 隔离构建目录。之后用 `npm run clean:next-dist` 回收。这条命令只删除 `.next-*`，默认的 `.next` 留着。`.worktrees/` 和 `.claude/worktrees/` 里是已经登记的 git worktree，没有删。
+- 删掉根目录废弃的 `auth.js`。登录仍走 `/api/auth/login`，旧 NextAuth 路由继续返回 410。
+- `extensions.json` 移到 `.vscode/extensions.json`。
+- 备案表和座谈会材料移到 `docs/personal/`。`report-source.md` 移到 `research/drafts/`。加载器、目录生成和措辞审计只扫描 `companies/`、`topics/`、`people/`，这份草稿不会被当成已发布调研。
+- `gptplus-site/` 移到 `sites/gptplus/`，WorkBuddy 皮肤测试改为读取新路径。站点仍在这个仓库里。
+- `seo/` 移到 `docs/seo/`，`deliverables/` 移到 `docs/deliverables/`。根目录那篇资源稿移到 `content/resources/codex-learning/`。措辞审计只读 `content/resources/` 这一层的 Markdown，子目录里的原稿不会被当成调研正文。
+- `lib/` 里 266 个平铺文件按域收进子目录：`admin`、`ai`、`a-share`、`article`、`auth`、`automation`、`content`、`crypto`、`db`、`home`、`ledger`、`markets`、`mcp`、`page-data`、`publicOpinion`、`research`、`rss`、`site`、`us-stock`、`workbuddy`、`x`。原先就有的 `longCompass`、`planning`、`juejin`、`digitalHuman`、`wc`、`generated` 仍留在原地。调用这些模块的 import 同步改到新路径。
+
+还留在原地的，是第四档和还没做判据的项：
+
+- `scripts/`、`tools/`、`workers/`、`services/` 继续分开放。
+- `(site)` 下的单文件路由没有迁走。
+- `content/` 和 `data/` 没有合并。
+- `package-lock.json` 和 `pnpm-lock.yaml` 都还在。CI 执行 `npm ci`，部分发布脚本会调用 `pnpm`。
+- `desktop-dist/` 仍是 Electron 安装包的输出目录。
+- 零引用模块没有删除，统一的 `test` 脚本没有加，`.js` 与 `.mjs` 的扩展名约定没有改。

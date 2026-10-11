@@ -73,7 +73,7 @@
       .replace(/\r/gu, "")
       .split(/\n+/u)
       .map((line) => line.trim())
-      .filter(Boolean)
+      .filter((line) => line && !/^(?:What’s happening\?|What's happening\?|有什么新鲜事？)$/iu.test(line))
       .join("\n\n");
   }
 

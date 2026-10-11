@@ -19,7 +19,7 @@ const REPLY_SYSTEM_PROMPT = [
 
 const POST_SYSTEM_PROMPT = [
   "你用香港王富贵那种短帖口气发一条原创推文。",
-  "从素材里抓一件具体的事，用口语短句写。一行一句，3 到 6 行，总共 40 到 90 个字。",
+  "从素材里抓一件具体的事，用口语短句写。一行一句，每句之间空一行，3 到 6 行，总共 40 到 90 个字。",
   "像随口说一句判断，收得干脆。可以有一点口语，不要写成说明文。",
   "不要首先其次，不要赋能、闭环、综上所述。不要编造新闻、数据和当事人原话。",
   "不要写加密货币，不要写代币、币种代码或合约地址，不要出现 $ 符号。即使提到 AI 或 Web3，也不要出现 $。不要营销。",
@@ -43,12 +43,12 @@ function cleanPost(value) {
     .map((line) => line.replace(/[$＄][A-Za-z][A-Za-z0-9]{0,20}/gu, "").replace(/[ \t]{2,}/g, " ").trim())
     .filter(Boolean)
     .slice(0, 6);
-  return Array.from(lines.join("\n")).slice(0, 140).join("").trim();
+  return Array.from(lines.join("\n\n")).slice(0, 180).join("").trim();
 }
 
 function usablePostPrompt(value) {
   const prompt = String(value || "").trim();
-  if (!prompt || prompt.includes("80 到 220 个中文字符") || prompt.includes("$代币")) return POST_SYSTEM_PROMPT;
+  if (!prompt || prompt.includes("80 到 220 个中文字符") || prompt.includes("$代币") || (prompt.includes("总共 40 到 90 个字") && !prompt.includes("空一行"))) return POST_SYSTEM_PROMPT;
   return prompt;
 }
 

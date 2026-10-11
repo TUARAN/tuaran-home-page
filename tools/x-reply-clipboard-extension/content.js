@@ -32,7 +32,7 @@
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
     "你用香港王富贵那种短帖口气发一条原创推文。",
-    "从素材里抓一件具体的事，用口语短句写。一行一句，3 到 6 行，总共 40 到 90 个字。",
+    "从素材里抓一件具体的事，用口语短句写。一行一句，每句之间空一行，3 到 6 行，总共 40 到 90 个字。",
     "像随口说一句判断，收得干脆。可以有一点口语，不要写成说明文。",
     "不要首先其次，不要赋能、闭环、综上所述。不要编造新闻、数据和当事人原话。",
     "不要写加密货币，不要写代币、币种代码或合约地址，不要出现 $ 符号。即使提到 AI 或 Web3，也不要出现 $。不要营销。",
@@ -67,7 +67,7 @@
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.24";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.27";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -382,7 +382,7 @@
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") ? "" : storedPostPrompt;
+      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || (storedPostPrompt.includes("总共 40 到 90 个字") && !storedPostPrompt.includes("空一行")) ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -2223,7 +2223,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
-                <li><b>发布规则：</b>推文浇给从当前时间线与趋势区提炼话题，不照抄原帖。一行一句，3 到 6 行，大约 40 到 90 个字。大约每四条里有一条会带到 AI 或 Web3，但不写币种，也不出现 $。确认发送成功后，按当前挡位随机等待再发下一条。文字写进 X 的发帖框，面板不重复显示正文。</li>
+                <li><b>发布规则：</b>推文浇给从当前时间线与趋势区提炼话题，不照抄原帖。一行一句，每句之间空一行，3 到 6 行，大约 40 到 90 个字。大约每四条里有一条会带到 AI 或 Web3，但不写币种，也不出现 $。确认发送成功后，按当前挡位随机等待再发下一条。文字写进 X 的发帖框，面板不重复显示正文。</li>
                 <li><b>发什么：</b>设置里的回复提示词和发推提示词决定生成内容。保存后，下一条按新提示词生成。</li>
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。时间线遇到操作过密提示时，当前轮按结束处理，并进入下一轮倒计时。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
@@ -2237,6 +2237,9 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.27</b><span><strong>短帖每句空一行</strong><small>发出来的短帖在每句之间留一个空行。</small></span></article>
+                <article><b>v3.6.26</b><span><strong>先发框里已有的字</strong><small>发帖框里已经有内容时立刻发送。只有空框才生成新帖，不再把已写上的文字报成没写进去。</small></span></article>
+                <article><b>v3.6.25</b><span><strong>发帖框有字就直接发</strong><small>首页发帖框里已经有内容时，直接点发送，不再停下来避免覆盖。</small></span></article>
                 <article><b>v3.6.24</b><span><strong>通知回复 10 分钟一轮</strong><small>扫完最近 2 小时后等待 10 分钟再开始下一次，不再按 2 小时休息。</small></span></article>
                 <article><b>v3.6.23</b><span><strong>发推不再带币种代码</strong><small>不写加密货币，也不出现 $。提到 AI 或 Web3 时同样不加币种代码。</small></span></article>
                 <article><b>v3.6.22</b><span><strong>推文改成短句</strong><small>发推改成一行一句的短帖。大约每四条里有一条会带到 AI 或 Web3。</small></span></article>

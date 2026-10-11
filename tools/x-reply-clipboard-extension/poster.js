@@ -28,6 +28,7 @@
     schedulePace: DEFAULT_POST_PACE,
     currentPost: "",
     lastPost: "",
+    lastSentText: "",
     lastError: "",
     onUpdate: null,
     loopPromise: null
@@ -44,7 +45,7 @@
       .replace(/\r/gu, "")
       .split(/\n+/u)
       .map((line) => line.trim())
-      .filter(Boolean)
+      .filter((line) => line && !/^(?:What’s happening\?|What's happening\?|有什么新鲜事？)$/iu.test(line))
       .join("\n\n");
   }
 
@@ -61,6 +62,7 @@
       schedulePace: state.schedulePace,
       currentPost: state.currentPost,
       lastPost: state.lastPost,
+      lastSentText: state.lastSentText,
       lastError: state.lastError
     };
   }
@@ -135,8 +137,8 @@
       .map((line) => line.trim())
       .filter(Boolean);
     const selected = lines.slice(0, 6);
-    let formatted = selected.join("\n").trim();
-    if (Array.from(formatted).length > 140) formatted = Array.from(formatted).slice(0, 140).join("").trim();
+    let formatted = selected.join("\n\n").trim();
+    if (Array.from(formatted).length > 180) formatted = Array.from(formatted).slice(0, 180).join("").trim();
     return formatted;
   }
 
@@ -229,13 +231,14 @@
   async function publishPost(postText) {
     let composer = findInlineComposer();
     if (!composer) return "no-composer";
-    const existing = editorText(composer.editor);
-    if (existing && existing !== postText) return "composer-not-empty";
+    let existing = editorText(composer.editor);
     if (!existing) {
-      const fill = await requestDraftFill(postText);
+      await requestDraftFill(postText);
       composer = findInlineComposer();
-      if (!fill?.ok || !composer || editorText(composer.editor) !== editorText({ innerText: postText })) return "compose-failed";
+      existing = composer ? editorText(composer.editor) : "";
+      if (!existing) return "compose-failed";
     }
+    state.currentPost = existing;
     const ready = await waitUntil(() => submitEnabled(findInlineComposer()?.submit), 8000);
     if (!ready) return "submit-disabled";
     const noticesBefore = new Set(successNoticeNodes());
@@ -264,7 +267,6 @@
 
   function failureLabel(result) {
     if (result === "no-composer") return "没有找到 X 首页发帖框";
-    if (result === "composer-not-empty") return "发帖框已有内容，为避免覆盖已暂停";
     if (result === "compose-failed") return "生成内容没有写进发帖框";
     if (result === "submit-disabled") return "Post 按钮仍不可用";
     if (result === "send-unconfirmed") return "没有确认推文发送成功";
@@ -273,7 +275,9 @@
 
   async function run() {
     while (state.running && !state.stopping) {
-      if (state.nextPostAt > Date.now()) {
+      const queued = editorText(findInlineComposer()?.editor);
+      const queuedIsNew = Boolean(queued) && queued !== state.lastSentText;
+      if (!queuedIsNew && state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
         emit(state.lastError
           ? `上次异常：${state.lastError}；约 ${remaining} 分钟后重试`
@@ -282,31 +286,31 @@
         continue;
       }
       try {
-        if (!state.currentPost) {
+        if (queuedIsNew) {
+          state.currentPost = queued;
+          state.nextPostAt = 0;
+          state.lastError = "";
+          emit("发帖框已有内容，正在直接发送");
+        } else if (!state.currentPost) {
           const contextText = collectTopicContext();
           if (!contextText) throw new Error("没有读取到时间线或趋势文字");
           emit("DeepSeek 正在从当前时间线提炼话题…");
           state.currentPost = await generatePost(contextText);
+          emit("内容已生成，正在写入 X 发帖框");
         } else {
           emit("正在重试上次尚未发出的内容…");
         }
-        emit("内容已生成，正在写入 X 发帖框");
         const result = await publishPost(state.currentPost);
         if (result !== "ok") {
           state.errors += 1;
           state.lastError = failureLabel(result);
-          if (result === "composer-not-empty") {
-            state.running = false;
-            state.stopping = false;
-            emit(state.lastError);
-            return;
-          }
           state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
           emit(`${state.lastError}，1 分钟后重试同一条`);
           continue;
         }
         state.count += 1;
         state.lastPost = state.currentPost;
+        state.lastSentText = state.currentPost;
         state.currentPost = "";
         state.lastError = "";
         state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
@@ -339,6 +343,7 @@
       state.nextPostAt = 0;
       state.currentPost = "";
       state.lastPost = "";
+      state.lastSentText = "";
       state.lastError = "";
     }
     emit();

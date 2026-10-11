@@ -2,7 +2,7 @@ import AdminPageGate from '../../components/AdminPageGate'
 import AdminSubnav from '../../components/AdminSubnav'
 import { AdminPage, Section, StatCard } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
-import report from '../../../../ai-context/site-health-audit.md?raw'
+import report from '../../../../docs/context/site-health-audit.md?raw'
 import DbAdminClient from '../db/DbConsole'
 import SiteStatusConsole from '../site-status/SiteStatusConsole'
 import BloggerEyeConsole from '../blogger-eye/BloggerEyeConsole'
@@ -48,7 +48,7 @@ export default async function AdminSiteHealthPage({ searchParams }) {
           <Section
             className="mt-5"
             title="站点体检记录与建议"
-            description="记录来源：ai-context/site-health-audit.md。任务状态只读，修改文档后随部署同步。"
+            description="记录来源：docs/context/site-health-audit.md。任务状态只读，修改文档后随部署同步。"
           >
             <div
               className="prose prose-sm max-w-none overflow-x-auto dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0 [&_table]:min-w-[640px]"

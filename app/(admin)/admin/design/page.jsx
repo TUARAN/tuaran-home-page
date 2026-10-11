@@ -1,9 +1,9 @@
 import AdminPageGate from '../../components/AdminPageGate'
 import { AdminButton, AdminPage, CollapsibleSection, Section, StatCard, StatusPill } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
-import audit from '../../../../ai-context/ui-ux-audit-roadmap.md?raw'
-import language from '../../../../docs/site-design-language.md?raw'
-import motion from '../../../../docs/loading-motion-system.md?raw'
+import audit from '../../../../docs/context/ui-ux-audit-roadmap.md?raw'
+import language from '../../../../docs/specs/site-design-language.md?raw'
+import motion from '../../../../docs/specs/loading-motion-system.md?raw'
 import { countAuditTasks } from './designDocuments'
 
 export const metadata = {
@@ -13,9 +13,9 @@ export const metadata = {
 }
 
 const documents = [
-  { id: 'audit', title: 'UI / 交互审计与改造清单', source: 'ai-context/ui-ux-audit-roadmap.md', markdown: audit, showProgress: true },
-  { id: 'language', title: '站点设计语言', source: 'docs/site-design-language.md', markdown: language },
-  { id: 'motion', title: '加载与等待反馈规范', source: 'docs/loading-motion-system.md', markdown: motion },
+  { id: 'audit', title: 'UI / 交互审计与改造清单', source: 'docs/context/ui-ux-audit-roadmap.md', markdown: audit, showProgress: true },
+  { id: 'language', title: '站点设计语言', source: 'docs/specs/site-design-language.md', markdown: language },
+  { id: 'motion', title: '加载与等待反馈规范', source: 'docs/specs/loading-motion-system.md', markdown: motion },
 ]
 
 const documentLinks = {

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const pageSource = await readFile(new URL('../../app/(admin)/admin/site-health/page.jsx', import.meta.url), 'utf8')
-const reportSource = await readFile(new URL('../../ai-context/site-health-audit.md', import.meta.url), 'utf8')
+const reportSource = await readFile(new URL('../../docs/context/site-health-audit.md', import.meta.url), 'utf8')
 const designSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
 const nextConfigSource = await readFile(new URL('../../next.config.js', import.meta.url), 'utf8')
 

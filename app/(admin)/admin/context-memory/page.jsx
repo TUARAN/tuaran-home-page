@@ -4,7 +4,7 @@ import { AdminPage } from '../../components/ui'
 
 export const metadata = {
   title: '上下文库',
-  description: 'Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线。',
+  description: 'Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线。',
   robots: {
     index: false,
     follow: false,
@@ -17,11 +17,11 @@ export default async function AdminContextMemoryPage() {
     <AdminPageGate
       label="上下文库"
       returnTo="/admin/context-memory"
-      description="Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线，仅站长本人可解密。"
+      description="Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线，仅站长本人可解密。"
     >
       <AdminPage
         title="上下文库"
-        description="Claude Code / 仓库 ai-context 的加密记忆快照与版本时间线。"
+        description="Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线。"
       >
         <section className="rounded-2xl border border-[#dfe2da] bg-white/80 p-4 shadow-sm dark:border-[#1b2836] dark:bg-[#101820]/90 md:p-5">
           <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
@@ -33,7 +33,7 @@ export default async function AdminContextMemoryPage() {
                 实际运行中的记忆样本
               </h2>
               <p className="mt-4 text-sm leading-8 text-[#5a5a53] dark:text-gray-300">
-                这一层是 Claude Code / 仓库 ai-context/ 里真实写下的内容快照。AES-GCM 加密上传，带版本时间线，密码只在本人浏览器里解密。
+                这一层是 Claude Code 项目记忆和仓库 docs/context/ 里写下的内容快照。AES-GCM 加密上传，带版本时间线，密码只在本人浏览器里解密。
               </p>
             </aside>
             <div className="space-y-4">

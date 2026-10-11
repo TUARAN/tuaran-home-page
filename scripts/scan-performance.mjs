@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Autopilot · 性能巡检（每两周一次，也可手动/本地运行）
 // 检查项：public/ 静态资源体积、超大源文件（含内联数据）、构建产物 chunk 体积。
-// 浏览器级指标（Lighthouse LCP/CLS/INP）属第二阶段，需真实站点 + 浏览器，见 docs/site-autopilot.md。
+// 浏览器级指标（Lighthouse LCP/CLS/INP）属第二阶段，需真实站点 + 浏览器，见 docs/runbooks/site-autopilot.md。
 
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'

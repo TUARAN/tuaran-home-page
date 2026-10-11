@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Autopilot · 设计体验巡检（每月初自动触发，也可手动/本地运行）
 // 检查项：Tailwind 透明度类与主题 token 审计（复用现有脚本）、img alt 可访问性启发式检查。
-// 浏览器级 a11y/视觉回归检查属第二阶段，见 docs/site-autopilot.md。
+// 浏览器级 a11y/视觉回归检查属第二阶段，见 docs/runbooks/site-autopilot.md。
 
 import { execFileSync } from 'node:child_process'
 import { readdir, readFile, stat } from 'node:fs/promises'

@@ -17,7 +17,7 @@
 - 站点导航与公开信息架构：`lib/site/siteNav.js`。
 - 后台可复用组件：`app/(admin)/components/ui/`。
 - 加载与等待反馈：[加载动效设计规范](./loading-motion-system.md)。
-- 页面问题与改造进度：[UI / 交互审计路线图](../ai-context/ui-ux-audit-roadmap.md)（2026-09-08，GPT6-Astra 记录；视觉复测范围与待验证项见文内）。
+- 页面问题与改造进度：[UI / 交互审计路线图](../context/ui-ux-audit-roadmap.md)（2026-09-08，GPT6-Astra 记录；视觉复测范围与待验证项见文内）。
 - 调研内容风格不属于界面设计语言，继续以 `lib/research/researchStyleTemplates.js` 的 active 版本为准。
 
 代码与文档冲突时，以当前组件和设计令牌为准，并在同一次修改中更新对应文档。

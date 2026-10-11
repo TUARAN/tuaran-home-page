@@ -1,7 +1,7 @@
 /**
  * Unified loading primitives adapted to this site's design system.
  * Motion language reference: Amicro (MIT), commit 07adc164.
- * See docs/loading-motion-system.md for usage rules.
+ * See docs/specs/loading-motion-system.md for usage rules.
  */
 
 function joinClassNames(...values) {

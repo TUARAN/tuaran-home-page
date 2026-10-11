@@ -10,7 +10,7 @@ async function loadDesignDocuments() {
 const pageSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
 const seoRoadmapSource = await readFile(new URL('../../app/(admin)/admin/seo/SeoGrowthRoadmap.jsx', import.meta.url), 'utf8')
 const collapsibleSource = await readFile(new URL('../../app/(admin)/components/ui/CollapsibleSection.jsx', import.meta.url), 'utf8')
-const auditSource = await readFile(new URL('../../ai-context/ui-ux-audit-roadmap.md', import.meta.url), 'utf8')
+const auditSource = await readFile(new URL('../../docs/context/ui-ux-audit-roadmap.md', import.meta.url), 'utf8')
 
 test('all design documents render directly without an outer collapsible layer', () => {
   assert.doesNotMatch(pageSource, /isCollapsedDesignDocument/)

@@ -6,7 +6,7 @@
 
 每天新增 10 篇文章时，正文和新增目录记录进入 D1，不随文章数量扩大 Worker 代码包，也不要求重建全站。复用现有 article_posts、content_index、Owner 鉴权和 MEDIA 图片上传。保留历史 URL、research:{category}:{slug} / article:{slug}、评论与燃币权益。
 
-上线和恢复的完整步骤见 [内容存储上线手册](../content-storage-rollout.md)。该手册明确区分本次已完成的本地实现与尚未执行的远程操作。
+上线和恢复的完整步骤见 [内容存储上线手册](../runbooks/content-storage-rollout.md)。该手册明确区分本次已完成的本地实现与尚未执行的远程操作。
 
 ## A：普通文章解耦（已实现）
 

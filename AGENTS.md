@@ -24,14 +24,14 @@
 - `lib/`：运行时封装与数据，按域分子目录，不再往根上加文件。`lib/auth/edgeSession.js` 处理自定义 GitHub OAuth 与签名 Cookie；`lib/db/d1.js` 读取 D1 binding；`lib/research/researchStyleTemplates.js` 是调研风格库；`lib/content/contentPipeline.js` 是文章、调研、资源的统一内容注册表，`contentKey` 与评论的 `articleKey`、燃币的 `resourceKey` 使用同一套约定。
 - `research/`：调研知识库（companies / topics / people），Markdown 落盘，构建时由 loader 渲染到 `/articles`。
 - `migrations/`：D1 SQL。
-- `ai-context/`：项目文档与历史快照，索引见 `ai-context/README.md`；以各文档落款日期判断时效。
+- `docs/`：项目文档。总索引见 `docs/README.md`。`docs/context/` 是带日期的历史快照，索引见 `docs/context/README.md`，以各文档落款日期判断时效。`docs/specs/` 是现行规范。
 
 ## 规则与资料的优先级
 
 - 通用代理规则与项目上下文：以本文件 `AGENTS.md` 为唯一正本。
 - 调研 frontmatter 与目录契约：以 `research/README.md` 为准。
 - 调研风格与措辞：以 `lib/research/researchStyleTemplates.js` 中 `status === 'active'` 的版本为唯一正本；写调研前必须先选择并读取当前生效风格，不得凭旧模板复述。
-- 架构细节：参考 `ai-context/architecture.md`，但它是带日期的历史快照；与当前代码冲突时，以当前代码和配置为准。
+- 架构细节：参考 `docs/context/architecture.md`，但它是带日期的历史快照；与当前代码冲突时，以当前代码和配置为准。
 - 工具专属入口只负责兼容加载或专属命令，不得复制通用规则；发现重复时应回收到本文件。
 
 ## 调研知识库协作

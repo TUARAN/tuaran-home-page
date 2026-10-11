@@ -72,7 +72,7 @@ app/web-llm/
 next.config.js
   → headers(): /web-llm/:path*  和  /web-llm/embed/:path*  设置 COOP/COEP
 
-ai-context/web-llm-1to1-port.md   ← 在新仓库里复制一份本仓库的同名文件作为内部记录
+docs/context/web-llm-1to1-port.md   ← 在目标仓库写一份同名文件，记录实际落地情况
 ```
 
 如果站点已有「全局浮动按钮 + iframe 模态」的入口需求，再加：
@@ -250,6 +250,6 @@ export default function WebLlmPageClient() {
 > - JSX 直接镜像 `index.html`，所有逻辑放在一个 `useEffect` 里、几乎逐行搬运 `src/main.js`，不要拆成 React 状态/hooks/lib/。
 > - CSS 复制 `src/styles.css`，所有规则统一加 `#web-llm-app-shell` 前缀，避免污染整站。
 > - 不要扩展模型菜单、不要注入站点 system prompt、不要改 IndexedDB schema、不要给消息加 stage/timings 元信息。
-> - 详细规范见这份文档：`ai-context/web-llm-port-handoff.md`，请先完整读一遍再动手。
+> - 详细规范见这份文档：`docs/context/web-llm-port-handoff.md`，请先完整读一遍再动手。
 >
-> 完成后写一份 `ai-context/web-llm-1to1-port.md` 记录本仓库的实际落地情况。
+> 完成后写一份 `docs/context/web-llm-1to1-port.md` 记录实际落地情况。

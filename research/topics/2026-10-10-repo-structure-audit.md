@@ -178,6 +178,7 @@ app/components           1 个（只有 loading/）
 - 备案表和座谈会材料移到 `docs/personal/`。`report-source.md` 移到 `research/drafts/`。加载器、目录生成和措辞审计只扫描 `companies/`、`topics/`、`people/`，这份草稿不会被当成已发布调研。
 - `gptplus-site/` 移到 `sites/gptplus/`，WorkBuddy 皮肤测试改为读取新路径。站点仍在这个仓库里。
 - `seo/` 移到 `docs/seo/`，`deliverables/` 移到 `docs/deliverables/`。根目录那篇资源稿移到 `content/resources/codex-learning/`。措辞审计只读 `content/resources/` 这一层的 Markdown，子目录里的原稿不会被当成调研正文。
+- `ai-context/` 收进 `docs/context/`。现行规范放在 `docs/specs/`，操作说明放在 `docs/runbooks/`，一次性计划放在 `docs/plans/`，发布验收记录放在 `docs/releases/`。记忆加密继续覆盖 `docs/context/` 顶层 Markdown。来源编号仍是 `ai-context`，已有密文留在 `public/data/memory/ai-context/`。
 - `lib/` 里 266 个平铺文件按域收进子目录：`admin`、`ai`、`a-share`、`article`、`auth`、`automation`、`content`、`crypto`、`db`、`home`、`ledger`、`markets`、`mcp`、`page-data`、`publicOpinion`、`research`、`rss`、`site`、`us-stock`、`workbuddy`、`x`。原先就有的 `longCompass`、`planning`、`juejin`、`digitalHuman`、`wc`、`generated` 仍留在原地。调用这些模块的 import 同步改到新路径。
 
 还留在原地的，是第四档和还没做判据的项：

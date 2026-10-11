@@ -1,5 +1,5 @@
 import CollapsibleSection from '../../components/ui/CollapsibleSection'
-import roadmap from '../../../../ai-context/seo-geo-growth-roadmap.md?raw'
+import roadmap from '../../../../docs/context/seo-geo-growth-roadmap.md?raw'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import { Section, StatusPill } from '../../components/ui'
 
@@ -12,7 +12,7 @@ const completed = tasks.filter((task) => task[1].toLowerCase() === 'x').length
 
 function documentHtml(markdown) {
   const withRepositoryReferences = markdown.replace(
-    /\[([^\]]+)\]\(((?:\.\.\/)?[\w-]+\.md)\)/g,
+    /\[([^\]]+)\]\(((?:\.\.\/)*[\w.-]+\.md)\)/g,
     '$1（仓库文档：`$2`）',
   )
   return renderMarkdown(withRepositoryReferences)
@@ -47,7 +47,7 @@ export default function SeoGrowthRoadmap() {
           ))}
         </div>
         <p className="mb-0 mt-3 break-all text-xs leading-6 text-[#67695d] dark:text-gray-400">
-          记录来源：ai-context/seo-geo-growth-roadmap.md。更新文档后随部署同步；勾选框仅展示记录状态。
+          记录来源：docs/context/seo-geo-growth-roadmap.md。更新文档后随部署同步；勾选框仅展示记录状态。
         </p>
       </Section>
     </div>

@@ -12,8 +12,8 @@
 
 目标：让新读者更快找到有用内容、长文读者顺利定位章节并继续阅读，让站长快速识别当前状态和下一项任务。
 
-- [站点设计语言](../docs/site-design-language.md)：统一视觉、组件、状态和交互原则的总纲，不在本记录另建规范。
-- [加载动效规范](../docs/loading-motion-system.md)：加载、等待和减少动态的专项规范。
+- [站点设计语言](../specs/site-design-language.md)：统一视觉、组件、状态和交互原则的总纲，不在本记录另建规范。
+- [加载动效规范](../specs/loading-motion-system.md)：加载、等待和减少动态的专项规范。
 - 本记录：具体页面问题、观察证据、优先级、待验证项与验收清单。
 - [内容信息架构](content-information-architecture.md)：分类、导航、有效起点及指标口径。
 - [SEO / GEO 路线图](seo-geo-growth-roadmap.md)：发现、引用与内容增长；涉及同一改造时相互引用，不重复执行。

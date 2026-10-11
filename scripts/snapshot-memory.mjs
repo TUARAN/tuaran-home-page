@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 加密快照本地的 Claude / 仓库 ai-context 记忆，输出到 public/data/memory/。
+// 加密快照本地的 Claude / 仓库 docs/context 记忆，输出到 public/data/memory/。
 // 每次内容变化才写一份新版本（按 SHA-256 比对），密文用 AES-GCM-256 + PBKDF2-SHA256 派生密钥。
 // 密码来源：环境变量 TUARAN_MEMORY_KEY，或 ~/.tuaran-memory-key 文件。
 // 浏览器端解密用 Web Crypto API，与 Node 端的密文格式严格对齐（ct||tag 拼接）。
@@ -35,10 +35,11 @@ const SOURCES = [
     ),
   },
   {
+    // id 继续用 ai-context：密文路径是 ai-context/<slug>/<时间>.enc.json，改 id 会另起一套版本线。
     id: 'ai-context',
-    label: '仓库 ai-context/',
+    label: '仓库 docs/context/',
     description: '仓库内长期保存的架构 / 规划 / 审查文档',
-    dir: path.join(REPO_ROOT, 'ai-context'),
+    dir: path.join(REPO_ROOT, 'docs/context'),
   },
 ]
 

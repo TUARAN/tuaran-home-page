@@ -148,6 +148,6 @@ Expected: Next.js build succeeds with no new errors.
 - [x] **Step 7: Commit the focused change**
 
 ```bash
-git add scripts/test-community-topic-cards.mjs lib/content/communityTopics.js 'app/(site)/community/DiscussionHubClient.jsx' app/globals.css docs/superpowers/plans/2026-07-20-community-topic-cards.md
+git add scripts/test-community-topic-cards.mjs lib/content/communityTopics.js 'app/(site)/community/DiscussionHubClient.jsx' app/globals.css docs/plans/2026-07-20/community-topic-cards.md
 git commit -m "feat: simplify community topic cards"
 ```

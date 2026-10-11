@@ -238,7 +238,7 @@ SEO 相关能力比较完整：
 
 补充说明：
 
-- 更细的迁移对照和维护原则见 `ai-context/web-llm-integration-notes.md`
+- 更细的迁移对照和维护原则见 `docs/context/web-llm-integration-notes.md`
 - 当前项目的 `/web-llm` 是对本地参考项目 `/Users/tuaran/Documents/GitHub/webllm` 的站内集成版，不应简单按独立 demo 心智维护
 
 ## 7. 运行时模型

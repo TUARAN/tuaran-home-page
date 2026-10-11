@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
-const TASK_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
+const TASK_MODES = new Set(["timeline", "notifications", "poster", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 
 const REPLY_SYSTEM_PROMPT = [
@@ -18,10 +18,12 @@ const REPLY_SYSTEM_PROMPT = [
 ].join("\n");
 
 const POST_SYSTEM_PROMPT = [
-  "你是一个熟悉中文 X（Twitter）语境的短帖作者。",
-  "根据用户当前时间线和趋势区提供的文字，选择一个最值得讨论的话题，写一条原创纯文字推文。",
-  "要求：80 到 220 个中文字符；开头要有能让人停下来的观点或问题；有具体判断、有讨论空间，但不要捏造新闻、数据或当事人表态；不要照抄素材；不要营销；不要链接、@账号或话题标签；最多 1 个 Emoji。",
-  "排成 3 到 5 个短行，每个短行之间空一行。只输出推文正文，不要解释，也不要添加标题或“推文：”前缀。"
+  "你用香港王富贵那种短帖口气发一条原创推文。",
+  "从素材里抓一件具体的事，用口语短句写。一行一句，3 到 6 行，总共 40 到 90 个字。",
+  "像随口说一句判断，收得干脆。可以有一点口语，不要写成说明文。",
+  "不要首先其次，不要赋能、闭环、综上所述。不要编造新闻、数据和当事人原话。",
+  "不要写加密货币，不要写代币、币种代码或合约地址，不要出现 $ 符号。即使提到 AI 或 Web3，也不要出现 $。不要营销。",
+  "只输出帖子正文，不要标题，不要解释。"
 ].join("\n");
 
 function cleanReply(value) {
@@ -38,10 +40,16 @@ function cleanPost(value) {
     .replace(/^(?:推文|文案|帖子)\s*[：:]\s*/u, "")
     .replace(/^[“"']+|[”"']+$/gu, "")
     .split(/\n+/u)
-    .map((line) => line.trim())
+    .map((line) => line.replace(/[$＄][A-Za-z][A-Za-z0-9]{0,20}/gu, "").replace(/[ \t]{2,}/g, " ").trim())
     .filter(Boolean)
-    .slice(0, 5);
-  return Array.from(lines.join("\n\n")).slice(0, 270).join("").trim();
+    .slice(0, 6);
+  return Array.from(lines.join("\n")).slice(0, 140).join("").trim();
+}
+
+function usablePostPrompt(value) {
+  const prompt = String(value || "").trim();
+  if (!prompt || prompt.includes("80 到 220 个中文字符") || prompt.includes("$代币")) return POST_SYSTEM_PROMPT;
+  return prompt;
 }
 
 async function readAiSettings() {
@@ -51,7 +59,7 @@ async function readAiSettings() {
   return {
     apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "",
     replyPrompt: String(settings.replyPrompt || "").trim() || REPLY_SYSTEM_PROMPT,
-    postPrompt: String(settings.postPrompt || "").trim() || POST_SYSTEM_PROMPT
+    postPrompt: usablePostPrompt(settings.postPrompt)
   };
 }
 
@@ -106,6 +114,9 @@ async function generateTopicalPost({ contextText, lastPost }) {
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
   const context = String(contextText || "").trim().slice(0, 6000);
   if (!context) throw new Error("没有读取到可用的话题素材");
+  const steer = Math.random() < 0.25
+    ? "这次用一两句白话带到 AI 或 Web3，仍然短。不要写币，不要出现 $。"
+    : "这次不要写 AI、Web3 或加密货币。不要出现 $。就顺着素材里的一件具体事。";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -121,11 +132,11 @@ async function generateTopicalPost({ contextText, lastPost }) {
           { role: "system", content: postPrompt },
           {
             role: "user",
-            content: `当前可见话题素材：\n${context}\n\n上一条已发布内容（避免重复）：\n${String(lastPost || "无").slice(0, 500)}`
+            content: `当前可见话题素材：\n${context}\n\n上一条已发布内容（避免重复）：\n${String(lastPost || "无").slice(0, 500)}\n\n${steer}`
           }
         ],
         thinking: { type: "disabled" },
-        max_tokens: 320,
+        max_tokens: 160,
         stream: false
       }),
       signal: controller.signal
@@ -211,6 +222,7 @@ async function deliverBackgroundTimer(message) {
 }
 
 function validTaskMode(value) {
+  if (value === "mutual") return "mutual-unfollow";
   return TASK_MODES.has(value) ? value : "timeline";
 }
 

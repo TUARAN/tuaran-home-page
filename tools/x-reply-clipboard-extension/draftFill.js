@@ -172,6 +172,32 @@
     }
   }
 
+  async function clearReplyComposer() {
+    const editor = replyEditor("reply");
+    if (!editor) return { ok: true, via: "absent" };
+    const node = findDraftNode(editor);
+    if (node && characterSample(node)) {
+      try {
+        writeReplyDraft(node, "");
+      } catch (error) {
+        return { ok: false, reason: "compose-failed" };
+      }
+      await sleep(80);
+      return { ok: comparableDraftText(editor, "reply") === "", via: "draft" };
+    }
+    focusEditor(editor);
+    let deleted = false;
+    try {
+      deleted = document.execCommand("delete", false, null);
+    } catch (error) {
+      deleted = false;
+    }
+    await sleep(80);
+    return comparableDraftText(editor, "reply") === ""
+      ? { ok: true, via: deleted ? "delete" : "empty" }
+      : { ok: false, reason: "compose-failed", seen: comparableDraftText(editor, "reply") };
+  }
+
   async function fillReplyComposer(text, options = {}) {
     const phrase = String(text || "").replace(/\u200b/g, "").trim();
     const forceDraft = Boolean(options.forceDraft);
@@ -277,7 +303,8 @@
     isRecoverableDuplicateOrPlaceholderMix,
     characterSample,
     writeReplyDraft,
-    fillReplyComposer
+    fillReplyComposer,
+    clearReplyComposer
   };
 
   if (typeof module === "object" && module.exports) {
@@ -293,7 +320,10 @@
     const onDraftMessage = (event) => {
       if (event.source !== window || event.data?.channel !== CHANNEL || event.data?.direction !== "request") return;
       const requestId = event.data.requestId;
-      fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft, scope: event.data.scope }).then((result) => {
+      const write = event.data.clear
+        ? clearReplyComposer()
+        : fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft, scope: event.data.scope });
+      write.then((result) => {
         window.postMessage({ channel: CHANNEL, direction: "response", requestId, result }, "*");
       });
     };

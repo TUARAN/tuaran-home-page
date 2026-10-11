@@ -134,9 +134,9 @@
       .split(/\n+/u)
       .map((line) => line.trim())
       .filter(Boolean);
-    const selected = lines.slice(0, 5);
-    let formatted = selected.join("\n\n").trim();
-    if (Array.from(formatted).length > 270) formatted = Array.from(formatted).slice(0, 270).join("").trim();
+    const selected = lines.slice(0, 6);
+    let formatted = selected.join("\n").trim();
+    if (Array.from(formatted).length > 140) formatted = Array.from(formatted).slice(0, 140).join("").trim();
     return formatted;
   }
 

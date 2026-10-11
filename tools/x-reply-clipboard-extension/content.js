@@ -31,10 +31,12 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "你是一个熟悉中文 X（Twitter）语境的短帖作者。",
-    "根据用户当前时间线和趋势区提供的文字，选择一个最值得讨论的话题，写一条原创纯文字推文。",
-    "要求：80 到 220 个中文字符；开头要有能让人停下来的观点或问题；有具体判断、有讨论空间，但不要捏造新闻、数据或当事人表态；不要照抄素材；不要营销；不要链接、@账号或话题标签；最多 1 个 Emoji。",
-    "排成 3 到 5 个短行，每个短行之间空一行。只输出推文正文，不要解释，也不要添加标题或“推文：”前缀。"
+    "你用香港王富贵那种短帖口气发一条原创推文。",
+    "从素材里抓一件具体的事，用口语短句写。一行一句，3 到 6 行，总共 40 到 90 个字。",
+    "像随口说一句判断，收得干脆。可以有一点口语，不要写成说明文。",
+    "不要首先其次，不要赋能、闭环、综上所述。不要编造新闻、数据和当事人原话。",
+    "不要写加密货币，不要写代币、币种代码或合约地址，不要出现 $ 符号。即使提到 AI 或 Web3，也不要出现 $。不要营销。",
+    "只输出帖子正文，不要标题，不要解释。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
@@ -64,7 +66,8 @@
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
   const RECONNECT_INTERVAL_MS = 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.17";
+  const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.6.24";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -121,6 +124,8 @@
   let configOpen = false;
   let riskRoundRequested = false;
   let riskRoundAdvancing = false;
+  let notificationLikeOnly = false;
+  const likedOnlyIds = new Set();
   let highlightedPhraseIndex = null;
 
   const sleep = (ms) => timerApi?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -146,13 +151,31 @@
     return ASSISTANT_MODES.has(value) ? value : "timeline";
   }
 
-  function requestedAssistantMode() {
+  function validTaskKey(value) {
+    if (value === "mutual") return "mutual-unfollow";
+    if (value === "mutual-unfollow" || value === "mutual-followBack" || value === "mutual-targetFollow") return value;
+    return validAssistantMode(value);
+  }
+
+  function mutualTaskKey(mode = state.mutualMode) {
+    return `mutual-${validMutualMode(mode)}`;
+  }
+
+  function currentTaskKey() {
+    return state.assistantMode === "mutual" ? mutualTaskKey() : validAssistantMode(state.assistantMode);
+  }
+
+  function requestedLaunch() {
     try {
-      const requested = new URL(window.location.href).searchParams.get("xrcAssistant");
-      return ASSISTANT_MODES.has(requested) ? requested : "";
+      const requested = new URL(window.location.href).searchParams.get("xrcAssistant") || "";
+      if (requested === "mutual-unfollow" || requested === "mutual-followBack" || requested === "mutual-targetFollow") {
+        return { assistantMode: "mutual", mutualMode: requested.slice("mutual-".length), taskKey: requested };
+      }
+      if (ASSISTANT_MODES.has(requested)) return { assistantMode: requested, mutualMode: "", taskKey: requested };
     } catch (error) {
-      return "";
+      // Ignore malformed task URLs and keep the saved panel mode.
     }
+    return null;
   }
 
   function removeAssistantModeFromUrl() {
@@ -172,7 +195,7 @@
         reject(new Error("任务页签调度仅在已安装的 Chrome 扩展中可用"));
         return;
       }
-      chrome.runtime.sendMessage({ type, mode: validAssistantMode(mode) }, (response) => {
+      chrome.runtime.sendMessage({ type, mode: validTaskKey(mode) }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接扩展后台"));
@@ -295,7 +318,7 @@
   async function setRuntimeTaskActive(mode, active) {
     try {
       const response = await readRuntimeMessage("xrc-runtime-task-state", {
-        mode: validAssistantMode(mode),
+        mode: validTaskKey(mode),
         active: Boolean(active)
       });
       pluginRuntime = response.runtime || pluginRuntime;
@@ -310,13 +333,24 @@
   }
 
   async function openTaskTab(mode) {
-    const selected = validAssistantMode(mode);
-    if (selected === state.assistantMode) return;
+    const selected = validTaskKey(mode);
+    if (selected === currentTaskKey()) return;
     try {
       await sendTaskMessage("xrc-task-open", selected);
     } catch (error) {
-      state.status = error?.message || "没有成功打开任务页签";
+      state.status = error?.message || "没有成功打开任务窗口";
       renderPanel();
+    }
+  }
+
+  async function openMutualWindows() {
+    for (const mode of ["targetFollow", "followBack", "unfollow"]) {
+      try {
+        await sendTaskMessage("xrc-task-open", mutualTaskKey(mode));
+      } catch (error) {
+        state.status = error?.message || "没有成功打开互关窗口";
+        renderPanel();
+      }
     }
   }
 
@@ -347,7 +381,8 @@
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
-      state.postPrompt = String(settings.postPrompt || "").trim();
+      const storedPostPrompt = String(settings.postPrompt || "").trim();
+      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -877,6 +912,7 @@
     if (state.nextRoundAt > now) return `本轮已结束，下一轮 ${formatClock(state.nextRoundAt - now)} 后开始`;
     if (state.nextCycleAt > now) {
       const clock = formatClock(state.nextCycleAt - now);
+      if (/下一轮再回复/.test(state.status || "")) return `赞已点完，下一轮 ${clock} 后回复`;
       return /本轮提前结束/.test(state.status || "") ? `本轮已结束，下一轮 ${clock} 后开始` : `下一次 ${clock} 后开始`;
     }
     if (state.waitUntil > now) {
@@ -935,7 +971,10 @@
 
   async function finishCycleAndScheduleNext(summary) {
     state.cycleCount += 1;
-    state.nextCycleAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
+    const cycleDelayMs = state.assistantMode === "notifications"
+      ? NOTIFICATION_CYCLE_DELAY_MS
+      : loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
+    state.nextCycleAt = Date.now() + cycleDelayMs;
     state.reconnectAt = 0;
     state.reconnectReason = "";
     writeSaved({ running: true, total: state.total });
@@ -952,12 +991,19 @@
 
   async function closeReplyComposer() {
     if (!findDialogComposer()) return true;
+    await requestDraftClear();
     const eventInit = { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true };
     const composer = findDialogComposer();
     composer?.textbox?.dispatchEvent(new KeyboardEvent("keydown", eventInit));
     composer?.dialog?.dispatchEvent(new KeyboardEvent("keydown", eventInit));
     document.dispatchEvent(new KeyboardEvent("keydown", eventInit));
-    await waitUntil(() => !findDialogComposer(), 1200);
+    await waitUntil(
+      () => !findDialogComposer() || document.querySelector('[data-testid="confirmationSheetConfirm"]'),
+      800
+    );
+    const confirm = document.querySelector('[data-testid="confirmationSheetConfirm"]');
+    if (confirm) realClick(confirm);
+    await waitUntil(() => !findDialogComposer() && !document.querySelector('[data-testid="confirmationSheetConfirm"]'), 1200);
     return !findDialogComposer();
   }
 
@@ -1183,6 +1229,7 @@
   const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|你的(?:帖子|回复)已发送|(?:帖子|回复)已发送成功)/i;
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|Something went wrong, but don(?:’t|'t) fret|give it another shot|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了)?|已经发布过相同内容/i;
+  const UNAVAILABLE_POST_RE = /(?:trying to reply to has been deleted or is not visible|要回复的帖子已被删除|尝试回复的帖子已被删除|帖子已被删除或你无法查看)/i;
 
   function successNoticeNodes() {
     return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
@@ -1199,10 +1246,37 @@
       .some((node) => DUPLICATE_REPLY_RE.test(textOf(node)));
   }
 
+  function unavailablePostInDialog() {
+    const composer = findDialogComposer();
+    return Boolean(composer && UNAVAILABLE_POST_RE.test(textOf(composer.dialog)));
+  }
+
+  function unavailablePostToasts() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .filter((node) => !node.closest('[role="dialog"]') && !node.closest(`#${PANEL_ID}`) && UNAVAILABLE_POST_RE.test(textOf(node)));
+  }
+
+  function unavailablePostVisible(toastsBefore = null) {
+    if (unavailablePostInDialog()) return true;
+    return unavailablePostToasts().some((node) => !toastsBefore?.has(node));
+  }
+
   function applyRiskStop() {
     if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return;
     if (!state.running && !state.loopPromise) return;
     if (riskRoundAdvancing || state.nextRoundAt > Date.now() || state.nextCycleAt > Date.now()) return;
+    if (state.assistantMode === "notifications") {
+      if (notificationLikeOnly) return;
+      notificationLikeOnly = true;
+      riskRoundRequested = false;
+      state.riskPaused = false;
+      state.stopping = false;
+      state.pendingReply = "";
+      state.pendingTweetId = "";
+      state.status = "回复遇到限制，先把剩下的赞点完";
+      renderPanel();
+      return;
+    }
     riskRoundRequested = true;
     state.riskPaused = false;
     state.stopping = false;
@@ -1210,15 +1284,15 @@
     renderPanel();
   }
 
-  async function advanceRoundAfterRisk() {
+  async function advanceRoundAfterRisk(summary = "X 提示操作过密，本轮提前结束") {
     if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return "ignored";
     if (riskRoundAdvancing) return "cooldown";
     riskRoundRequested = true;
     riskRoundAdvancing = true;
     state.pendingReply = "";
     state.pendingTweetId = "";
-    const summary = "X 提示操作过密，本轮提前结束";
     if (state.assistantMode === "notifications") {
+      notificationLikeOnly = false;
       return finishCycleAndScheduleNext(summary);
     }
     const plan = ensureRunPlan();
@@ -1262,6 +1336,26 @@
     });
   }
 
+  function requestDraftClear() {
+    const requestId = `clear_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener("message", onMessage);
+        resolve(result);
+      };
+      function onMessage(event) {
+        if (event.source !== window || event.data?.channel !== DRAFT_CHANNEL || event.data?.direction !== "response" || event.data?.requestId !== requestId) return;
+        finish(event.data.result || { ok: false, reason: "compose-failed" });
+      }
+      window.addEventListener("message", onMessage);
+      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, clear: true }, "*");
+      sleep(2500).then(() => finish({ ok: false, reason: "compose-failed" }));
+    });
+  }
+
   function failureLabel(result) {
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
@@ -1270,6 +1364,7 @@
     if (result === "composer-mismatch") return "评论框内容与当前话术不一致";
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
+    if (result === "post-unavailable") return "原帖已删除或当前账号看不到";
     if (result === "like-disabled") return "点赞按钮不可用";
     if (result === "like-unconfirmed") return "点赞结果未确认";
     return result;
@@ -1301,6 +1396,7 @@
 
   async function publishReply(composer, replyText) {
     if (state.stopping) return "stopped";
+    if (unavailablePostInDialog()) return "post-unavailable";
     const phrase = String(replyText || "").trim();
     if (!phrase) return "compose-failed";
     const existing = loopApi.composerText(composer.textbox);
@@ -1308,25 +1404,31 @@
       ? phrase
       : await fillComposer(composer.textbox, phrase);
     if (state.stopping) return "stopped";
+    if (unavailablePostInDialog()) return "post-unavailable";
     if (!filled) return "compose-failed";
 
     const enabled = await waitUntil(() => {
+      if (unavailablePostInDialog()) return true;
       const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
       const submit = current?.submit || composer.submit;
       return loopApi.isSubmitEnabled(submit);
     }, SUBMIT_TIMEOUT_MS);
 
     if (state.stopping) return "stopped";
+    if (unavailablePostInDialog()) return "post-unavailable";
     if (!enabled) return "submit-disabled";
 
     const current = composer.dialog ? findDialogComposer() : composer;
     const submit = current?.submit || composer.submit;
     if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
     const successNoticesBefore = new Set(successNoticeNodes());
+    const toastsBefore = new Set(unavailablePostToasts());
     const hasNewSuccessNotice = () => successNoticeNodes().some((node) => !successNoticesBefore.has(node));
+    const unavailableAfterClick = () => unavailablePostVisible(toastsBefore);
     realClick(submit);
 
     const sendStarted = await waitUntil(() => {
+      if (unavailableAfterClick()) return true;
       if (automationWarningNodes().length > 0) return true;
       if (duplicateReplyWarningVisible()) return true;
       if (hasNewSuccessNotice()) return true;
@@ -1340,17 +1442,19 @@
     }, SEND_START_TIMEOUT_MS);
 
     if (state.stopping) return "stopped";
+    if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!sendStarted) return "send-unconfirmed";
 
     const confirmed = composer.dialog
-      ? await waitUntil(() => duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
+      ? await waitUntil(() => unavailableAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
       : await waitUntil(
-          () => duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+          () => unavailableAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
           SEND_CONFIRM_TIMEOUT_MS
         );
     if (state.stopping) return "stopped";
+    if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!confirmed) return "send-unconfirmed";
@@ -1402,7 +1506,15 @@
     if (!composer) return "no-composer";
 
     const result = await publishReply(composer, replyText);
-    if (result !== "ok" && result !== "stopped" && result !== "sent-composer-open" && loopApi.composerText(composer.textbox)) {
+    if (
+      result !== "ok"
+      && result !== "stopped"
+      && result !== "sent-composer-open"
+      && result !== "post-unavailable"
+      && result !== "risk-blocked"
+      && result !== "duplicate-reply"
+      && loopApi.composerText(composer.textbox)
+    ) {
       return "send-unconfirmed";
     }
     return result;
@@ -1427,6 +1539,10 @@
       renderPanel();
       window.location.assign("/notifications");
       return "reload";
+    }
+    if (state.assistantMode === "notifications" && state.nextCycleAt > Date.now() + NOTIFICATION_CYCLE_DELAY_MS) {
+      state.nextCycleAt = Date.now() + NOTIFICATION_CYCLE_DELAY_MS;
+      writeSaved({ running: true, total: state.total });
     }
     if (state.nextCycleAt > 0) {
       const readyForNextCycle = await waitForDeadline(
@@ -1491,7 +1607,17 @@
 
     let stalled = 0;
     while (state.running && !state.stopping) {
-      if (riskRoundRequested) return advanceRoundAfterRisk();
+      if (riskRoundRequested && state.assistantMode === "notifications") {
+        notificationLikeOnly = true;
+        riskRoundRequested = false;
+        state.pendingReply = "";
+        state.pendingTweetId = "";
+        state.status = "回复遇到限制，先把剩下的赞点完";
+        renderPanel();
+        await closeReplyComposer();
+      } else if (riskRoundRequested) {
+        return advanceRoundAfterRisk();
+      }
       if (state.assistantMode !== "notifications") {
         const plan = ensureRunPlan();
         const batchSize = currentRoundTarget();
@@ -1530,9 +1656,13 @@
       }
 
       const tweets = collectTweets();
-      const next = loopApi.nextTweet(tweets, processedForCurrentMode());
+      const seen = processedForCurrentMode();
+      const next = loopApi.nextTweet(tweets, notificationLikeOnly
+        ? { has: (id) => seen.has(id) || likedOnlyIds.has(id) }
+        : seen);
       if (!next) {
         if (state.assistantMode === "notifications" && hasReachedNotificationCutoff()) {
+          if (notificationLikeOnly) return advanceRoundAfterRisk("能点的赞已经点完，下一轮再回复");
           return finishCycleAndScheduleNext(`近 2 小时回复通知已处理完，本次完成 ${state.total} 条且不会重复互动`);
         }
         const before = tweetSignature(tweets);
@@ -1542,6 +1672,7 @@
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
           if (state.assistantMode === "notifications") {
+            if (notificationLikeOnly) return advanceRoundAfterRisk("能点的赞已经点完，下一轮再回复");
             return finishCycleAndScheduleNext(`近 2 小时没有更多待处理通知，本次完成 ${state.total} 条`);
           }
           if (state.pageCount === 0) {
@@ -1567,6 +1698,15 @@
         state.status = "正在给这条回复点赞…";
         renderPanel();
         const likeResult = await likeNotificationReply(next);
+        if (notificationLikeOnly) {
+          likedOnlyIds.add(next.id);
+          state.status = likeResult === "ok"
+            ? "已点赞，回复留到下一轮"
+            : "这条赞没有确认，先跳过。回复留到下一轮";
+          renderPanel();
+          await sleepActive(1200);
+          continue;
+        }
         if (likeResult !== "ok") {
           state.errors += 1;
           state.status = `尚未互动：${failureLabel(likeResult)}。稍后重试同一条`;
@@ -1624,6 +1764,17 @@
         break;
       }
       if (result === "risk-blocked") {
+        if (state.assistantMode === "notifications") {
+          notificationLikeOnly = true;
+          riskRoundRequested = false;
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          likedOnlyIds.add(next.id);
+          await closeReplyComposer();
+          state.status = "回复遇到限制，先把剩下的赞点完";
+          renderPanel();
+          continue;
+        }
         return advanceRoundAfterRisk();
       }
       if (result === "composer-already-open") {
@@ -1634,6 +1785,25 @@
           continue;
         }
         return reconnectAndResume(failureLabel(result));
+      }
+      if (result === "post-unavailable") {
+        skippedIds.add(next.id);
+        if (state.assistantMode === "notifications") {
+          try {
+            await persistNotificationProcessed(next.id);
+          } catch (error) {
+            state.errors += 1;
+          }
+        } else {
+          processedIds.add(next.id);
+        }
+        state.pendingReply = "";
+        state.pendingTweetId = "";
+        writeSaved({ running: true, total: state.total });
+        await closeReplyComposer();
+        state.status = "原帖已删除或当前账号看不到，已跳过";
+        renderPanel();
+        continue;
       }
       if (result === "duplicate-reply") {
         state.errors += 1;
@@ -1744,7 +1914,7 @@
     const wasRunning = Boolean(state.mutual?.running);
     state.mutual = next || mutualApi?.snapshot?.() || state.mutual;
     if (wasRunning !== Boolean(state.mutual?.running)) {
-      setRuntimeTaskActive("mutual", Boolean(state.mutual?.running));
+      setRuntimeTaskActive(mutualTaskKey(), Boolean(state.mutual?.running));
     }
     renderPanel();
   }
@@ -1795,7 +1965,7 @@
       if (state.mutual.mode === mode) mutualApi.stop();
       return;
     }
-    registerCurrentTaskTab("mutual");
+    registerCurrentTaskTab(mutualTaskKey());
     const result = await mutualApi.run(mode, updateMutualState);
     if (result?.navigate) {
       state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
@@ -1809,25 +1979,20 @@
     }
   }
 
-  function selectMutualMode(mode, { navigate = true } = {}) {
-    if (anyTaskRunning()) return;
-    state.mutualMode = validMutualMode(mode);
-    state.mutual = {
-      ...state.mutual,
-      status: state.mutualMode === "unfollow"
-        ? "清理未回关：将在自己的 Following 页运行"
-        : state.mutualMode === "followBack"
-          ? "回关粉丝：将在自己的 Followers 页运行"
-          : "关注候选：请先打开其他作者的 Followers 页面；这里不会自动跳转"
-    };
-    writeSaved({ running: false, total: state.total });
-    renderPanel();
-    if (!navigate || !mutualApi) return;
-    const path = mutualApi.targetPath(state.mutualMode);
-    const alreadyOnTarget = state.mutualMode === "targetFollow"
-      ? mutualApi.isFollowersPage()
-      : window.location.pathname === path;
-    if (path && !alreadyOnTarget) window.location.assign(path);
+  async function navigateLaunchedMutualList(mode) {
+    const selected = validMutualMode(mode);
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const path = mutualApi?.targetPath(selected) || "";
+      if (path) {
+        if (window.location.pathname !== path) window.location.assign(path);
+        return;
+      }
+      await sleep(400);
+    }
+  }
+
+  function selectMutualMode(mode) {
+    return openTaskTab(mutualTaskKey(mode));
   }
 
   function centerPhraseItem(panel, item, behavior = "smooth") {
@@ -2058,19 +2223,27 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
-                <li><b>发布规则：</b>推文浇给从当前时间线与趋势区提炼话题，不照抄原帖。每条 3～5 个短段，每段之间自动空一行。确认发送成功后，按当前挡位随机等待再发下一条。文字写进 X 的发帖框，面板不重复显示正文。</li>
+                <li><b>发布规则：</b>推文浇给从当前时间线与趋势区提炼话题，不照抄原帖。一行一句，3 到 6 行，大约 40 到 90 个字。大约每四条里有一条会带到 AI 或 Web3，但不写币种，也不出现 $。确认发送成功后，按当前挡位随机等待再发下一条。文字写进 X 的发帖框，面板不重复显示正文。</li>
                 <li><b>发什么：</b>设置里的回复提示词和发推提示词决定生成内容。保存后，下一条按新提示词生成。</li>
-                <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。时间线或通知回复遇到操作过密提示时，当前轮按结束处理，并进入下一轮倒计时。</li>
+                <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。时间线遇到操作过密提示时，当前轮按结束处理，并进入下一轮倒计时。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
                 <li><b>改挡位：</b>工作区滑块只选择慢、中、快、超快。每一挡代表什么，在设置里改数字。正在执行时不能改，停下后再保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
+                <li>清理未回关、回关粉丝和关注候选遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
                 <li>与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
               </ul>
             </section>
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.6.24</b><span><strong>通知回复 10 分钟一轮</strong><small>扫完最近 2 小时后等待 10 分钟再开始下一次，不再按 2 小时休息。</small></span></article>
+                <article><b>v3.6.23</b><span><strong>发推不再带币种代码</strong><small>不写加密货币，也不出现 $。提到 AI 或 Web3 时同样不加币种代码。</small></span></article>
+                <article><b>v3.6.22</b><span><strong>推文改成短句</strong><small>发推改成一行一句的短帖。大约每四条里有一条会带到 AI 或 Web3。</small></span></article>
+                <article><b>v3.6.21</b><span><strong>通知先补赞再等待</strong><small>通知回复遇到限制时，不立刻进入下一轮。先把还能点的赞点完，再倒计时，回复留到下一轮。</small></span></article>
+                <article><b>v3.6.20</b><span><strong>互关三项各开一个窗口</strong><small>清理未回关、回关粉丝和关注候选分别使用自己的窗口。点开互关浇友会打开这三个窗口。</small></span></article>
+                <article><b>v3.6.19</b><span><strong>互关遇到限速就等待</strong><small>清理、回关或关注时出现速率限制提示，立刻停止点击，15 分钟后继续当前列表。</small></span></article>
+                <article><b>v3.6.18</b><span><strong>原帖不可见就跳过</strong><small>X 提示帖子已删除或当前账号看不到时，关掉评论框并换下一条，不再反复重试同一条。</small></span></article>
                 <article><b>v3.6.17</b><span><strong>空评论框不再反复重连</strong><small>回复框是空的就直接写入。只有关不掉的他人内容才重连，并写明原因。</small></span></article>
                 <article><b>v3.6.16</b><span><strong>倒计时写在按钮下面</strong><small>操作过密时不再显示正在停止。按钮下方直接显示下一轮还要多久。</small></span></article>
                 <article><b>v3.6.15</b><span><strong>过密提示结束当前轮</strong><small>时间线和通知回复遇到操作过密提示时，不再停掉任务。当前轮结束，按休息时间倒计时后开始下一轮。</small></span></article>
@@ -2128,7 +2301,7 @@
               <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>其他作者的 Followers 页 · 不自动跳转</small></span></div>
+              <div><b>03</b><span><strong>关注候选</strong><small>其他作者的 Followers 页面 · 不自动跳转</small></span></div>
               <button type="button" data-xrc-mutual-action="targetFollow">开始关注</button>
               <p>只点普通 Follow。</p>
               <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
@@ -2255,7 +2428,13 @@
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
       });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
-        button.addEventListener("click", () => openTaskTab(button.dataset.xrcAssistant));
+        button.addEventListener("click", () => {
+          if (button.dataset.xrcAssistant === "mutual") {
+            openMutualWindows();
+            return;
+          }
+          openTaskTab(button.dataset.xrcAssistant);
+        });
       });
       panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
         state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
@@ -2292,7 +2471,7 @@
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
     const replyWait = replyWaitCopy();
     if (status) {
-      const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|过于频繁|已停止|没有成功)/.test(state.status || "");
+      const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|过于频繁|已停止|没有成功|已跳过)/.test(state.status || "");
       status.hidden = !(replyWait || attention);
       status.textContent = replyWait || (attention ? state.status : "");
     }
@@ -2458,7 +2637,7 @@
     const mutual = state.mutual || mutualApi?.snapshot?.();
     const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
     if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
-    const mutualStartedAt = Number(pluginRuntime.tasks?.mutual?.startedAt) || 0;
+    const mutualStartedAt = Number(pluginRuntime.tasks?.[mutualTaskKey()]?.startedAt) || 0;
     panel.querySelector("[data-xrc-mutual-runtime]").textContent = formatRuntime(mutualStartedAt ? Date.now() - mutualStartedAt : 0);
     panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
       const selected = button.dataset.xrcMutualTab === state.mutualMode;
@@ -2479,7 +2658,11 @@
         const activeMode = mutual.running && mutual.mode === mode;
         const idleLabel = mode === "unfollow" ? "开始清理" : mode === "followBack" ? "开始回关" : "开始关注";
         const cooldown = activeMode && mutual.cooldownUntil ? Math.max(0, Math.ceil((mutual.cooldownUntil - Date.now()) / 1000)) : 0;
-        button.textContent = activeMode ? cooldown > 0 ? `暂停 ${cooldown} 秒 · 点此停止` : "运行中 · 点此停止" : idleLabel;
+        const cooldownMinutes = Math.floor(cooldown / 60);
+        const cooldownLabel = cooldownMinutes > 0
+          ? `${cooldownMinutes}:${String(cooldown % 60).padStart(2, "0")}`
+          : `${cooldown} 秒`;
+        button.textContent = activeMode ? cooldown > 0 ? `暂停 ${cooldownLabel} · 点此停止` : "运行中 · 点此停止" : idleLabel;
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
@@ -2624,7 +2807,7 @@
 
   async function boot() {
     const saved = readSaved();
-    const launchedMode = requestedAssistantMode();
+    const launch = requestedLaunch();
     state.total = saved.total;
     state.pageCount = saved.pageCount;
     state.completedRounds = saved.completedRounds;
@@ -2639,8 +2822,8 @@
     state.runPlan = saved.runPlan;
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
-    state.assistantMode = launchedMode || saved.assistantMode;
-    state.mutualMode = saved.mutualMode;
+    state.assistantMode = launch?.assistantMode || saved.assistantMode;
+    state.mutualMode = launch?.mutualMode || saved.mutualMode;
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
     state.pendingTweetId = saved.pendingTweetId;
@@ -2650,10 +2833,13 @@
       for (const id of saved.processedIds) processedIds.add(id);
     }
     state.phraseIndex = saved.phraseIndex;
-    if (launchedMode) {
+    if (launch) {
       writeSaved({ running: false, total: state.total });
-      registerCurrentTaskTab(launchedMode);
+      registerCurrentTaskTab(launch.taskKey);
       removeAssistantModeFromUrl();
+      if (launch.mutualMode && launch.mutualMode !== "targetFollow") {
+        navigateLaunchedMutualList(launch.mutualMode);
+      }
     }
     await loadPluginRuntime();
     await loadAiSettings();
@@ -2707,9 +2893,10 @@
   });
 
   window.setInterval(() => {
-    const replyTask = state.assistantMode === "timeline" || state.assistantMode === "notifications";
     const alreadyWaiting = state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now() || riskRoundAdvancing;
-    if (replyTask && state.running && !state.stopping && !alreadyWaiting && !riskRoundRequested && automationWarningNodes().length > 0) {
+    if (state.assistantMode === "notifications" && state.running && !state.stopping && !alreadyWaiting && !notificationLikeOnly && automationWarningNodes().length > 0) {
+      notificationLikeOnly = true;
+    } else if (state.assistantMode === "timeline" && state.running && !state.stopping && !alreadyWaiting && !riskRoundRequested && automationWarningNodes().length > 0) {
       riskRoundRequested = true;
     }
     renderPanel();

@@ -70,3 +70,13 @@ test('check-in entry shares session state and keeps an accessible animated gift 
   assert.match(cssSource, /\.site-nav-checkin-gift\s*\{[\s\S]*?color:\s*#237052;/)
   assert.doesNotMatch(headerSource, /site-nav-checkin-gift.*is-checked/)
 })
+
+test('gift shop seeds the signed Programmer Growth Notes reward', async () => {
+  const migration = await readFile(new URL('../migrations/0107_seed_signed_programmer_growth_notes.sql', import.meta.url), 'utf8')
+
+  assert.match(migration, /'programmer-growth-notes-signed'/)
+  assert.match(migration, /'作者亲笔签名《程序员成长手记》'/)
+  assert.match(migration, /\b200\b/)
+  assert.match(migration, /'physical'/)
+  assert.match(migration, /\n\s+-1,\n\s+1,\n\s+1,/)
+})

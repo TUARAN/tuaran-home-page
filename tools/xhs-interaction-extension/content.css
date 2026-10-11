@@ -1,0 +1,252 @@
+#xhs-interaction-panel {
+  --xhsia-red: #ff2442;
+  --xhsia-text: #1f1f1f;
+  --xhsia-muted: #6b6b6b;
+  --xhsia-line: rgba(31, 31, 31, 0.1);
+  position: fixed;
+  top: 72px;
+  right: 18px;
+  z-index: 2147483646;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid rgba(255, 36, 66, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--xhsia-text);
+  box-shadow: 0 18px 48px rgba(31, 31, 31, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#xhs-interaction-panel[hidden] { display: none !important; }
+#xhs-interaction-panel * { box-sizing: border-box; }
+#xhs-interaction-panel [hidden] { display: none !important; }
+
+#xhs-interaction-panel .xhsia-header,
+#xhs-interaction-panel .xhsia-brand,
+#xhs-interaction-panel .xhsia-actions,
+#xhs-interaction-panel .xhsia-tabs,
+#xhs-interaction-panel .xhsia-pace-labels,
+#xhs-interaction-panel .xhsia-meta,
+#xhs-interaction-panel .xhsia-footer {
+  display: flex;
+  align-items: center;
+}
+
+#xhs-interaction-panel .xhsia-header {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--xhsia-line);
+}
+
+#xhs-interaction-panel .xhsia-brand { min-width: 0; gap: 10px; }
+
+#xhs-interaction-panel .xhsia-mark {
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--xhsia-red);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+#xhs-interaction-panel .xhsia-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+#xhs-interaction-panel .xhsia-subtitle {
+  margin-top: 1px;
+  color: var(--xhsia-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+#xhs-interaction-panel .xhsia-actions { gap: 4px; }
+
+#xhs-interaction-panel .xhsia-icon,
+#xhs-interaction-panel .xhsia-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #444;
+  cursor: pointer;
+}
+
+#xhs-interaction-panel .xhsia-icon svg,
+#xhs-interaction-panel .xhsia-close svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#xhs-interaction-panel .xhsia-tabs {
+  gap: 4px;
+  padding: 8px 12px 0;
+}
+
+#xhs-interaction-panel .xhsia-tabs button {
+  flex: 1;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--xhsia-muted);
+  padding: 8px 4px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#xhs-interaction-panel .xhsia-tabs button[aria-selected="true"] {
+  color: var(--xhsia-red);
+  border-bottom-color: var(--xhsia-red);
+}
+
+#xhs-interaction-panel .xhsia-body { padding: 12px 14px 14px; }
+
+#xhs-interaction-panel .xhsia-start {
+  display: grid;
+  gap: 8px;
+}
+
+#xhs-interaction-panel .xhsia-start input,
+#xhs-interaction-panel .xhsia-config input {
+  width: 100%;
+  border: 1px solid var(--xhsia-line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font: inherit;
+  -webkit-text-security: disc;
+}
+
+#xhs-interaction-panel .xhsia-button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--xhsia-red);
+  color: #fff;
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+#xhs-interaction-panel .xhsia-button[data-running="true"] { background: #1f1f1f; }
+
+#xhs-interaction-panel .xhsia-status {
+  margin: 10px 0 0;
+  color: #333;
+  font-size: 12px;
+}
+
+#xhs-interaction-panel .xhsia-status[data-kind="error"] { color: #c41230; }
+
+#xhs-interaction-panel .xhsia-card {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--xhsia-line);
+  border-radius: 12px;
+  background: rgba(255, 36, 66, 0.04);
+}
+
+#xhs-interaction-panel .xhsia-card strong { display: block; font-size: 14px; }
+#xhs-interaction-panel .xhsia-card small { color: var(--xhsia-muted); }
+
+#xhs-interaction-panel .xhsia-meta {
+  gap: 8px;
+  margin-top: 8px;
+}
+
+#xhs-interaction-panel .xhsia-meta span {
+  flex: 1;
+  min-width: 0;
+}
+
+#xhs-interaction-panel .xhsia-meta small,
+#xhs-interaction-panel .xhsia-kicker {
+  display: block;
+  color: var(--xhsia-muted);
+  font-size: 11px;
+}
+
+#xhs-interaction-panel .xhsia-pace { display: grid; gap: 6px; margin-top: 8px; }
+#xhs-interaction-panel .xhsia-pace-labels { justify-content: space-between; font-size: 12px; color: var(--xhsia-muted); }
+#xhs-interaction-panel .xhsia-pace-labels [data-current="true"] { color: var(--xhsia-red); font-weight: 750; }
+#xhs-interaction-panel .xhsia-pace input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+#xhs-interaction-panel .xhsia-pace input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #e6e6e6;
+}
+#xhs-interaction-panel .xhsia-pace input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--xhsia-red);
+  box-shadow: 0 0 0 1px rgba(255, 36, 66, 0.45);
+}
+#xhs-interaction-panel .xhsia-pace input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+#xhs-interaction-panel .xhsia-note { margin: 8px 0 0; color: var(--xhsia-muted); font-size: 12px; }
+
+#xhs-interaction-panel .xhsia-config {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--xhsia-line);
+}
+
+#xhs-interaction-panel .xhsia-config button {
+  justify-self: start;
+  border: 1px solid var(--xhsia-line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+#xhs-interaction-panel .xhsia-footer {
+  justify-content: space-between;
+  margin-top: 12px;
+  color: var(--xhsia-muted);
+  font-size: 11px;
+}
+
+#xhs-interaction-panel .xhsia-poster p { margin: 8px 0 0; color: #333; font-size: 13px; }
+#xhs-interaction-panel .xhsia-poster code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}

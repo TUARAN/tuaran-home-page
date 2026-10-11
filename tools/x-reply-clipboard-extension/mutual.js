@@ -7,6 +7,8 @@
   const FOLLOW_BATCH_COOLDOWN_MS = 1800000;
   const FOLLOW_MAX_PER_RUN = 400;
   const FOLLOW_DAILY_LIMIT = 400;
+  const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
+  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|please wait a few moments then try again|受到速率限制|请稍等片刻后再试)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
@@ -34,6 +36,7 @@
     cooldownUntil: 0,
     seenHandles: new Set(),
     skippedHandles: new Set(),
+    acknowledgedRateLimits: new Set(),
     onUpdate: null
   };
 
@@ -153,6 +156,46 @@
     state.sharedDailyFollowed += 1;
     state.sharedBatchProgress += 1;
     await persistSharedFollowRate();
+  }
+
+  function formatClock(milliseconds) {
+    const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function rateLimitNodes() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .filter((node) => RATE_LIMIT_RE.test(textOf(node)));
+  }
+
+  function rateLimitVisible() {
+    return rateLimitNodes().some((node) => !state.acknowledgedRateLimits.has(node));
+  }
+
+  function dismissTransientDialog() {
+    document.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "Escape",
+      code: "Escape",
+      keyCode: 27,
+      which: 27,
+      bubbles: true,
+      cancelable: true
+    }));
+  }
+
+  async function waitForPlatformRateLimit() {
+    for (const node of rateLimitNodes()) state.acknowledgedRateLimits.add(node);
+    state.cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+    while (!state.stopping && Date.now() < state.cooldownUntil) {
+      emit(`X 提示操作过密，${formatClock(state.cooldownUntil - Date.now())} 后继续`);
+      await sleep(Math.min(1000, Math.max(0, state.cooldownUntil - Date.now())));
+    }
+    if (state.stopping) return false;
+    state.cooldownUntil = 0;
+    emit("限速等待结束，继续当前列表");
+    return true;
   }
 
   async function waitForSharedCooldown() {
@@ -286,24 +329,51 @@
   }
 
   async function actUnfollow(item) {
+    if (rateLimitVisible()) return "rate-limited";
     emit(`正在取消 ${item.handle}`);
     realClick(item.followingButton);
-    const outcome = await waitUntil(() => unfollowConfirm(item.handle) || !findFollowingButton(item.row) || !item.row.isConnected, 4000);
+    const outcome = await waitUntil(() => {
+      if (rateLimitVisible()) return "rate-limited";
+      return unfollowConfirm(item.handle) || !findFollowingButton(item.row) || !item.row.isConnected;
+    }, 4000);
+    if (outcome === "rate-limited" || rateLimitVisible()) {
+      dismissTransientDialog();
+      return "rate-limited";
+    }
     if (!outcome) return false;
     if (outcome.nodeType || outcome.tagName || typeof outcome.click === "function") {
+      if (rateLimitVisible()) {
+        dismissTransientDialog();
+        return "rate-limited";
+      }
       realClick(outcome);
-      const changed = await waitUntil(() => !findFollowingButton(item.row) || !item.row.isConnected, 6000);
-      if (!changed) return false;
+      const changed = await waitUntil(() => {
+        if (!findFollowingButton(item.row) || !item.row.isConnected) return "done";
+        if (rateLimitVisible()) return "rate-limited";
+        return null;
+      }, 6000);
+      if (changed === "done") {
+        state.unfollowed += 1;
+        return true;
+      }
+      if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
+      return false;
     }
     state.unfollowed += 1;
     return true;
   }
 
   async function actFollowBack(item) {
+    if (rateLimitVisible()) return "rate-limited";
     emit(`正在回关 ${item.handle}`);
     realClick(item.followBackButton);
-    const changed = await waitUntil(() => Boolean(findFollowingButton(item.row)) || !findFollowBackButton(item.row) || !item.row.isConnected, 6000);
-    if (!changed) return false;
+    const changed = await waitUntil(() => {
+      if (findFollowingButton(item.row) || !findFollowBackButton(item.row) || !item.row.isConnected) return "done";
+      if (rateLimitVisible()) return "rate-limited";
+      return null;
+    }, 6000);
+    if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
+    if (changed !== "done") return false;
     state.followedBack += 1;
     try {
       await recordSharedFollow();
@@ -314,10 +384,16 @@
   }
 
   async function actTargetFollow(item) {
+    if (rateLimitVisible()) return "rate-limited";
     emit(`正在关注 ${item.handle}`);
     realClick(item.followButton);
-    const changed = await waitUntil(() => Boolean(findFollowingButton(item.row)) || !findPlainFollowButton(item.row) || !item.row.isConnected, 6000);
-    if (!changed) return false;
+    const changed = await waitUntil(() => {
+      if (findFollowingButton(item.row) || !findPlainFollowButton(item.row) || !item.row.isConnected) return "done";
+      if (rateLimitVisible()) return "rate-limited";
+      return null;
+    }, 6000);
+    if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
+    if (changed !== "done") return false;
     state.targetFollowed += 1;
     try {
       await recordSharedFollow();
@@ -356,6 +432,7 @@
     if (mode === "unfollow") state.cooldownUntil = 0;
     state.seenHandles.clear();
     state.skippedHandles.clear();
+    state.acknowledgedRateLimits.clear();
     state.onUpdate = onUpdate;
   }
 
@@ -381,6 +458,10 @@
     let stalled = 0;
 
     while (!state.stopping) {
+      if (rateLimitVisible()) {
+        if (!(await waitForPlatformRateLimit())) break;
+        continue;
+      }
       const items = visibleRows(mode);
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
@@ -398,6 +479,11 @@
           : mode === "followBack"
             ? await actFollowBack(candidate)
             : await actTargetFollow(candidate);
+        if (ok === "rate-limited" || rateLimitVisible()) {
+          state.seenHandles.delete(candidate.handle);
+          if (!(await waitForPlatformRateLimit())) break;
+          continue;
+        }
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
@@ -460,7 +546,8 @@
       FOLLOW_BATCH_SIZE,
       FOLLOW_BATCH_COOLDOWN_MS,
       FOLLOW_MAX_PER_RUN,
-      FOLLOW_DAILY_LIMIT
+      FOLLOW_DAILY_LIMIT,
+      RATE_LIMIT_COOLDOWN_MS
     }
   };
   if (typeof module === "object" && module.exports) module.exports = api;

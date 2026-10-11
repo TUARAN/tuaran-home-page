@@ -89,7 +89,21 @@ test('buildClipboardImageCandidates retries remote images through the configured
   )
   assert.deepEqual(
     buildClipboardImageCandidates('https://wsrv.nl/?url=https%3A%2F%2Fexample.com%2Fa.jpg'),
-    ['https://wsrv.nl/?url=https%3A%2F%2Fexample.com%2Fa.jpg'],
+    [
+      'https://wsrv.nl/?url=https%3A%2F%2Fexample.com%2Fa.jpg',
+      'https://example.com/a.jpg',
+    ],
+  )
+})
+
+test('buildClipboardImageCandidates ignores unsafe embedded wsrv targets', () => {
+  assert.deepEqual(
+    buildClipboardImageCandidates('https://wsrv.nl/?url=http%3A%2F%2Fexample.com%2Fa.jpg'),
+    ['https://wsrv.nl/?url=http%3A%2F%2Fexample.com%2Fa.jpg'],
+  )
+  assert.deepEqual(
+    buildClipboardImageCandidates('https://wsrv.nl/?url=not-a-url'),
+    ['https://wsrv.nl/?url=not-a-url'],
   )
 })
 

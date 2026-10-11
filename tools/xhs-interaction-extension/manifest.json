@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "小红书高频互动助手",
+  "version": "0.1.1",
+  "description": "在小红书推荐页打开笔记，用 DeepSeek 写评论并发送。",
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.xiaohongshu.com/*", "https://api.deepseek.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.xiaohongshu.com/*"],
+      "js": ["note.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

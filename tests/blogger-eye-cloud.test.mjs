@@ -58,7 +58,7 @@ test('地区检查向每个 Runner 发送同一授权目标并隔离单点失败
 
 test('额外授权域名会规范化、去重并忽略无效配置', () => {
   assert.deepEqual(
-    parseBloggerEyeAllowedHosts(' Example.com,*.Example.com,example.com,https://bad.test,*,localhost '),
+    parseBloggerEyeAllowedHosts(' Example.com,*.Example.com,example.com,https://bad.test,*,localhost,foo..bar '),
     ['2aran.com', '*.2aran.com', 'example.com', '*.example.com'],
   )
 })

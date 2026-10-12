@@ -2,6 +2,7 @@ import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../lib/db/d1'
 import {
   encryptApiKey,
+  decryptApiKey,
   getKeyStoreEnv,
   listDeepSeekKeys,
   maskApiKey,
@@ -74,6 +75,46 @@ export async function GET(req) {
     })
   } catch (error) {
     return dbError(error)
+  }
+}
+
+/** 仅在站长主动查看或复制时读取明文；列表始终只返回掩码。 */
+export async function PUT(req) {
+  const guard = await getOwnerOrReject(req)
+  if (!guard.ok) return guard.response
+
+  const origin = req.headers.get('origin')
+  if (origin && origin !== new URL(req.url).origin) {
+    return Response.json({ error: 'INVALID_ORIGIN' }, { status: 403 })
+  }
+  const body = await req.json().catch(() => null)
+  const id = String(body?.id || '').trim()
+  if (!id) return Response.json({ error: 'MISSING_ID' }, { status: 400 })
+
+  const headers = { 'Cache-Control': 'private, no-store, max-age=0' }
+  const env = getKeyStoreEnv()
+  if (id === 'env:DEEPSEEK_API_KEY') {
+    const key = String(env.DEEPSEEK_API_KEY || '').trim()
+    return key
+      ? Response.json({ key }, { headers })
+      : Response.json({ error: 'NOT_FOUND' }, { status: 404, headers })
+  }
+
+  const masterSecret = String(env.DEEPSEEK_KEYS_ENC_SECRET || '').trim()
+  if (!masterSecret) return missingMasterSecret()
+  let db
+  try {
+    db = getD1()
+  } catch {
+    return unavailable()
+  }
+  try {
+    const row = await db.prepare('SELECT key_cipher FROM deepseek_keys WHERE id = ?').bind(id).first()
+    if (!row) return Response.json({ error: 'NOT_FOUND' }, { status: 404, headers })
+    const key = await decryptApiKey(row.key_cipher, masterSecret)
+    return Response.json({ key }, { headers })
+  } catch {
+    return Response.json({ error: 'DEEPSEEK_KEY_REVEAL_FAILED', detail: '密钥解密失败，请检查当前环境的加密主密钥。' }, { status: 500, headers })
   }
 }
 

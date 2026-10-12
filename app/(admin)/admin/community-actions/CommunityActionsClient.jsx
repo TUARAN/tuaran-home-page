@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
 import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
+import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 
 const RESULT_META = {
   success: { label: '成功', tone: 'success' },
@@ -24,6 +25,7 @@ const MODE_TABS = Object.freeze([
   { id: 'overview', label: '总览' },
   { id: 'extension', label: '浏览器插件' },
   { id: 'cloud', label: '纯云端' },
+  { id: 'api', label: 'API 管理' },
 ])
 
 const CLOUD_PANELS = Object.freeze([
@@ -84,6 +86,7 @@ function resolveView(searchParams) {
   if (raw === 'extension' || raw === 'receipts') {
     return { mode: 'extension', panel: 'x-publish' }
   }
+  if (raw === 'api') return { mode: 'api', panel: 'x-publish' }
   if (CLOUD_PANEL_IDS.has(raw)) {
     return { mode: 'cloud', panel: raw }
   }
@@ -290,6 +293,14 @@ function OverviewPanel({ center, loading, onOpenMode }) {
           ))}
         </ul>
       </Section>
+
+      <Section
+        title="DeepSeek API"
+        description="查看和复制供 X、小红书、掘金浏览器插件使用的 API Key，也可管理站点任务的密钥。"
+        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('api')}>打开 API 管理</AdminButton>}
+      >
+        <p className="mb-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">站点数据库密钥与当前 Admin 环境变量可按需查看和复制；各插件保存 Key 后直接请求 DeepSeek。</p>
+      </Section>
     </div>
   )
 }
@@ -313,6 +324,8 @@ export default function CommunityActionsClient() {
       params.delete('tab')
     } else if (mode === 'extension') {
       params.set('tab', 'extension')
+    } else if (mode === 'api') {
+      params.set('tab', 'api')
     } else if (CLOUD_PANEL_IDS.has(panel)) {
       params.set('tab', panel)
     } else {
@@ -413,6 +426,8 @@ export default function CommunityActionsClient() {
           onRegenerateSecret={regenerateSecret}
         />
       ) : null}
+
+      {view.mode === 'api' ? <DeepSeekKeysPanel /> : null}
 
       {view.mode === 'cloud' ? (
         <div className="grid gap-4">

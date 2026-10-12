@@ -45,7 +45,8 @@
 - `/admin/deepseek-tasks`：新增「密钥管理」标签页，支持新增 / 编辑 / 停用 / 查看调用，
   密钥输入框默认隐藏明文；「调用记录」标签页可按密钥过滤，任务行显示所用密钥。
 - `/api/admin/deepseek-keys`：GET 列表（只回掩码与统计）、POST 新增、PATCH 更新（Key 留空不变）、
-  DELETE 软停用。
+  DELETE 软停用；站长主动操作时 PUT 按 ID 读取当前 Admin 环境变量或数据库 Key 明文，用于查看和复制，响应禁止缓存。
+- `/admin/community-actions?tab=api`：复用 DeepSeek 密钥管理界面，供社区插件取用 Key；查看后 30 秒自动隐藏。
 - `/api/admin/deepseek-tasks`：GET 支持 `key` 过滤参数。
 
 ## 上线步骤
@@ -57,7 +58,7 @@
 
 ## 安全边界
 
-- 任何接口都不返回完整 Key 或密文；台账不落完整 Prompt。
+- 列表接口不返回完整 Key 或密文；只有站长鉴权的按需读取接口返回单条明文，响应使用 `private, no-store`；台账不落完整 Prompt。
 - 解密只在 Edge 调用层发生，不写入日志。
 - 停用密钥不删除行，调用历史通过冗余 `key_name` 保持可读。
 

@@ -92,6 +92,26 @@ async function safeJson(response) {
   }
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value)
+      return
+    } catch {
+      // 浏览器失去用户激活时，回退到可选中的临时输入框。
+    }
+  }
+  const input = document.createElement('textarea')
+  input.value = value
+  input.style.position = 'fixed'
+  input.style.opacity = '0'
+  document.body.appendChild(input)
+  input.select()
+  const copied = document.execCommand('copy')
+  input.remove()
+  if (!copied) throw new Error('浏览器未允许复制，请使用“查看 Key”后手动复制。')
+}
+
 function BindingChips({ bindings }) {
   if (!bindings?.length) {
     return <span className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 text-[11px] text-[#82847a] dark:bg-[#1b2532] dark:text-gray-400">全局兜底</span>
@@ -116,6 +136,44 @@ export default function DeepSeekKeysPanel() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [showKey, setShowKey] = useState(false)
   const [formVisible, setFormVisible] = useState(false)
+  const [revealed, setRevealed] = useState(null)
+  const [revealingId, setRevealingId] = useState('')
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    if (!revealed) return undefined
+    const timer = window.setTimeout(() => setRevealed(null), 30000)
+    return () => window.clearTimeout(timer)
+  }, [revealed])
+
+  async function accessKey(id, copy = false) {
+    setRevealingId(id)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/admin/deepseek-keys', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        cache: 'no-store',
+        credentials: 'same-origin',
+        body: JSON.stringify({ id }),
+      })
+      const result = await safeJson(response)
+      if (!response.ok) throw new Error(result?.detail || result?.error || `HTTP_${response.status}`)
+      if (!result?.key) throw new Error('密钥为空。')
+      if (copy) {
+        await copyText(result.key)
+        setRevealed(null)
+        setNotice('DeepSeek API Key 已复制。')
+      } else {
+        setRevealed({ id, key: result.key })
+      }
+    } catch (accessError) {
+      setError(accessError?.message || '密钥读取或复制失败。')
+    } finally {
+      setRevealingId('')
+    }
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -246,6 +304,7 @@ export default function DeepSeekKeysPanel() {
   return (
     <>
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
+      {notice ? <div role="status" className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
       {data?.status === 'unavailable' ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           D1 不可用或迁移 0059 尚未部署，暂时无法管理密钥；现有调用仍会回退到环境变量默认密钥。
@@ -353,6 +412,19 @@ export default function DeepSeekKeysPanel() {
                 </>
               )}
             </div>
+            {data?.envKeyConfigured ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[#67695d] dark:text-gray-300">
+                <span>当前 Admin 环境变量 DEEPSEEK_API_KEY：{data.envKeyHint}</span>
+                <AdminButton type="button" size="sm" variant="ghost" onClick={() => accessKey('env:DEEPSEEK_API_KEY')} disabled={Boolean(revealingId)}>查看</AdminButton>
+                <AdminButton type="button" size="sm" variant="ghost" onClick={() => accessKey('env:DEEPSEEK_API_KEY', true)} disabled={Boolean(revealingId)}>复制</AdminButton>
+              </div>
+            ) : null}
+            {revealed?.id === 'env:DEEPSEEK_API_KEY' ? (
+              <div className="mt-3 flex items-center gap-2">
+                <input readOnly aria-label="DeepSeek 环境变量密钥" value={revealed.key} className={`${INPUT_CLASS} font-mono`} />
+                <AdminButton type="button" size="sm" onClick={() => setRevealed(null)}>隐藏</AdminButton>
+              </div>
+            ) : null}
             <div className="mt-3 grid gap-2 md:grid-cols-2">
               {DEEPSEEK_SHARED_USES.map((item) => (
                 <div key={item.source} className="rounded-md bg-[#f7f7f2] px-2.5 py-2 dark:bg-[#111a25]">
@@ -375,7 +447,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="数据库密钥"
-        description="Key 加密存储在共享 D1，列表只显示掩码。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET；仅凭 Admin 页面无法证明公开站能够解密。"
+        description="Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -421,6 +493,8 @@ export default function DeepSeekKeysPanel() {
                     {key.note ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{key.note}</p> : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <AdminButton type="button" variant="ghost" onClick={() => accessKey(key.id)} disabled={Boolean(revealingId)}>查看 Key</AdminButton>
+                    <AdminButton type="button" variant="ghost" onClick={() => accessKey(key.id, true)} disabled={Boolean(revealingId)}>复制 Key</AdminButton>
                     <AdminButton href={`/admin/ops?tab=calls&key=${encodeURIComponent(key.id)}&scope=cloud`} variant="ghost">查看调用</AdminButton>
                     <AdminButton type="button" variant="ghost" onClick={() => startEdit(key)} disabled={saving}>编辑</AdminButton>
                     <AdminButton type="button" variant="ghost" onClick={() => toggleKey(key)} disabled={saving}>
@@ -428,6 +502,12 @@ export default function DeepSeekKeysPanel() {
                     </AdminButton>
                   </div>
                 </div>
+                {revealed?.id === key.id ? (
+                  <div className="mt-3 flex items-center gap-2">
+                    <input readOnly aria-label={`${key.name} 的 DeepSeek API Key`} value={revealed.key} className={`${INPUT_CLASS} font-mono`} />
+                    <AdminButton type="button" size="sm" onClick={() => setRevealed(null)}>隐藏</AdminButton>
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
@@ -437,7 +517,7 @@ export default function DeepSeekKeysPanel() {
       {formVisible ? (
         <Section
           title={editingId ? '编辑密钥' : '新增密钥'}
-          description={editingId ? 'Key 留空表示保持不变；修改绑定后只影响后续调用。' : '明文只在提交时加密落库，任何接口都不会返回完整 Key。'}
+          description={editingId ? 'Key 留空表示保持不变；修改绑定后只影响后续调用。' : '明文提交时加密落库；站长可按需查看或复制。'}
           className="mt-4"
           actions={<AdminButton type="button" variant="ghost" onClick={resetForm}>取消</AdminButton>}
         >

@@ -20,42 +20,38 @@ const PLATFORM_LABEL = {
   juejin: '掘金',
 }
 
-const TABS = Object.freeze([
-  { id: 'overview', label: '三平台' },
-  { id: 'receipts', label: '回执中心' },
+const MODE_TABS = Object.freeze([
+  { id: 'overview', label: '总览' },
+  { id: 'extension', label: '浏览器插件' },
+  { id: 'cloud', label: '纯云端' },
+])
+
+const CLOUD_PANELS = Object.freeze([
   { id: 'x-publish', label: 'X 发布' },
   { id: 'x-reply', label: 'X 回复' },
 ])
 
-const TAB_IDS = new Set(TABS.map((tab) => tab.id))
+const CLOUD_PANEL_IDS = new Set(CLOUD_PANELS.map((item) => item.id))
 
-const PLATFORM_CARDS = Object.freeze([
+const EXTENSION_TASKS = Object.freeze([
   {
-    id: 'x',
-    label: 'X',
-    summary: '高频互动助手回执、网站自动发推、人工确认回复。',
-    actions: [
-      { tab: 'receipts', label: '查看回执' },
-      { tab: 'x-publish', label: '发布任务' },
-      { tab: 'x-reply', label: '回复任务' },
-    ],
+    id: 'x-assistant',
+    platform: 'x',
+    label: 'X 高频互动助手',
+    summary: '时间线回复、通知回复、互关清理、推文浇给。开始和挡位在插件里，确认结果回传到这里。',
   },
   {
-    id: 'xhs',
-    label: '小红书',
-    summary: '推荐评论和笔记浇给由高频助手执行，回执进同一本账。',
-    actions: [
-      { tab: 'receipts', label: '查看回执' },
-      { href: '/admin/article-distribution', label: '文章草稿' },
-    ],
+    id: 'xhs-assistant',
+    platform: 'xhs',
+    label: '小红书高频互动助手',
+    summary: '推荐评论和笔记浇给。依赖本机已登录的小红书标签页。',
   },
   {
-    id: 'juejin',
-    label: '掘金',
-    summary: '技术长文先走文章分发写入草稿，回执能力后续挂进来。',
-    actions: [
-      { href: '/admin/article-distribution', label: '文章分发' },
-    ],
+    id: 'article-drafts',
+    platform: 'juejin',
+    label: '文章草稿写入',
+    summary: '掘金、小红书等平台草稿靠分发插件写入，不走云端 API。',
+    href: '/admin/article-distribution',
   },
 ])
 
@@ -83,9 +79,19 @@ async function copyText(text) {
   input.remove()
 }
 
-function resolveTab(value) {
-  const id = String(value || '').trim()
-  return TAB_IDS.has(id) ? id : 'overview'
+function resolveView(searchParams) {
+  const raw = String(searchParams.get('tab') || '').trim()
+  if (raw === 'extension' || raw === 'receipts') {
+    return { mode: 'extension', panel: 'x-publish' }
+  }
+  if (CLOUD_PANEL_IDS.has(raw)) {
+    return { mode: 'cloud', panel: raw }
+  }
+  if (raw === 'cloud') {
+    const panel = String(searchParams.get('panel') || '').trim()
+    return { mode: 'cloud', panel: CLOUD_PANEL_IDS.has(panel) ? panel : 'x-publish' }
+  }
+  return { mode: 'overview', panel: 'x-publish' }
 }
 
 function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
@@ -129,6 +135,25 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
           className="w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
           aria-label="社区回执密钥"
         />
+      </Section>
+
+      <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
+        <ul className="m-0 grid gap-2 p-0">
+          {EXTENSION_TASKS.map((item) => (
+            <li key={item.id} className="rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label}</p>
+                <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
+              </div>
+              <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
+              {item.href ? (
+                <div className="mt-3">
+                  <AdminButton size="sm" variant="ghost" href={item.href}>打开文章分发</AdminButton>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title="今日任务项" description="按北京时间当天统计。同一条动作只记一次确认结果。">
@@ -216,57 +241,54 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
   )
 }
 
-function OverviewPanel({ center, loading, onOpenTab }) {
-  const devices = center?.devices || []
-  const tasks = center?.tasks || []
-  const onlineByPlatform = useMemo(() => {
-    const map = { x: 0, xhs: 0, juejin: 0 }
-    for (const device of devices) {
-      if (device.online && map[device.platform] !== undefined) map[device.platform] += 1
-    }
-    return map
-  }, [devices])
-  const successByPlatform = useMemo(() => {
-    const map = { x: 0, xhs: 0, juejin: 0 }
-    for (const task of tasks) {
-      if (map[task.platform] !== undefined) map[task.platform] += Number(task.success || 0)
-    }
-    return map
-  }, [tasks])
+function OverviewPanel({ center, loading, onOpenMode }) {
+  const onlineCount = useMemo(
+    () => (center?.devices || []).filter((device) => device.online).length,
+    [center],
+  )
+  const todaySuccess = center?.todaySuccess ?? 0
 
   return (
-    <div className="grid gap-4">
-      <Section title="主攻平台" description="当前只收口 X、小红书和掘金。发布、互动和回执都从这里进出。">
-        <div className="grid gap-3 lg:grid-cols-3">
-          {PLATFORM_CARDS.map((platform) => (
-            <article key={platform.id} className="rounded-xl border border-[#e4e6dc] px-4 py-4 dark:border-[#263142]">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="m-0 text-[15px] font-semibold text-[#25261f] dark:text-gray-100">{platform.label}</h3>
-                <StatusPill size="sm" tone={onlineByPlatform[platform.id] ? 'success' : 'neutral'} icon={false}>
-                  {platform.id === 'juejin' ? '分发草稿' : (onlineByPlatform[platform.id] ? '助手在线' : (loading ? '读取中' : '助手离线'))}
-                </StatusPill>
-              </div>
-              <p className="mb-3 mt-2 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">{platform.summary}</p>
-              <p className="mb-3 text-[12px] text-[#7a7c70] dark:text-gray-400">
-                今日成功 {successByPlatform[platform.id] || 0}
-                {platform.id === 'juejin' ? ' · 回执未接入' : null}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {platform.actions.map((action) => (
-                  action.tab ? (
-                    <AdminButton key={action.tab} size="sm" variant="ghost" onClick={() => onOpenTab(action.tab)}>
-                      {action.label}
-                    </AdminButton>
-                  ) : (
-                    <AdminButton key={action.href} size="sm" variant="ghost" href={action.href}>
-                      {action.label}
-                    </AdminButton>
-                  )
-                ))}
-              </div>
-            </article>
-          ))}
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Section
+        title="浏览器插件"
+        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；这里只收密钥、心跳和确认回执。"
+        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton>}
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <StatCard label="在线设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
+          <StatCard label="今日插件成功" value={loading ? '—' : todaySuccess} tone="success" />
         </div>
+        <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
+          <li>X 高频互动助手：回复、互关、推文浇给</li>
+          <li>小红书高频互动助手：推荐评论、笔记浇给</li>
+          <li>文章分发插件：掘金等平台草稿写入</li>
+        </ul>
+      </Section>
+
+      <Section
+        title="纯云端"
+        description="不依赖本机插件常开。由 Cloudflare、GitHub Actions 和 X API 执行，后台可直接暂停或人工确认。"
+        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('cloud')}>打开云端台</AdminButton>}
+      >
+        <ul className="m-0 grid gap-3 p-0">
+          {CLOUD_PANELS.map((item) => (
+            <li key={item.id} className="rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label}</p>
+                <StatusPill size="sm" tone="info" icon={false}>云端</StatusPill>
+              </div>
+              <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">
+                {item.id === 'x-publish'
+                  ? '定时生成并发布短帖，走网站侧 X API。'
+                  : '录入目标帖、准备短回复，人工确认后再走 X API。'}
+              </p>
+              <div className="mt-3">
+                <AdminButton size="sm" variant="ghost" onClick={() => onOpenMode('cloud', item.id)}>进入</AdminButton>
+              </div>
+            </li>
+          ))}
+        </ul>
       </Section>
     </div>
   )
@@ -276,7 +298,7 @@ export default function CommunityActionsClient() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const tab = resolveTab(searchParams.get('tab'))
+  const view = resolveView(searchParams)
 
   const [center, setCenter] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -284,11 +306,18 @@ export default function CommunityActionsClient() {
   const [notice, setNotice] = useState('')
   const [rotating, setRotating] = useState(false)
 
-  const openTab = useCallback((nextTab) => {
-    const id = resolveTab(nextTab)
+  const openMode = useCallback((mode, panel = 'x-publish') => {
     const params = new URLSearchParams(searchParams.toString())
-    if (id === 'overview') params.delete('tab')
-    else params.set('tab', id)
+    params.delete('panel')
+    if (mode === 'overview') {
+      params.delete('tab')
+    } else if (mode === 'extension') {
+      params.set('tab', 'extension')
+    } else if (CLOUD_PANEL_IDS.has(panel)) {
+      params.set('tab', panel)
+    } else {
+      params.set('tab', 'cloud')
+    }
     const query = params.toString()
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }, [pathname, router, searchParams])
@@ -348,11 +377,11 @@ export default function CommunityActionsClient() {
   return (
     <AdminPage
       title="社区动作"
-      description="主攻 X、小红书和掘金。插件回执、X 自动发布和人工回复收在同一个入口。"
+      description="先按执行方式分开：浏览器插件依赖本机登录态；纯云端走网站 API 和定时任务。"
     >
-      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="社区动作工作区">
-        {TABS.map((item) => {
-          const active = tab === item.id
+      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="社区动作执行方式">
+        {MODE_TABS.map((item) => {
+          const active = view.mode === item.id
           return (
             <AdminButton
               key={item.id}
@@ -360,7 +389,7 @@ export default function CommunityActionsClient() {
               role="tab"
               variant={active ? 'default' : 'ghost'}
               aria-selected={active}
-              onClick={() => openTab(item.id)}
+              onClick={() => openMode(item.id)}
             >
               {item.label}
             </AdminButton>
@@ -368,10 +397,11 @@ export default function CommunityActionsClient() {
         })}
       </div>
 
-      {tab === 'overview' ? (
-        <OverviewPanel center={center} loading={loading} onOpenTab={openTab} />
+      {view.mode === 'overview' ? (
+        <OverviewPanel center={center} loading={loading} onOpenMode={openMode} />
       ) : null}
-      {tab === 'receipts' ? (
+
+      {view.mode === 'extension' ? (
         <ReceiptsPanel
           center={center}
           loading={loading}
@@ -383,8 +413,34 @@ export default function CommunityActionsClient() {
           onRegenerateSecret={regenerateSecret}
         />
       ) : null}
-      {tab === 'x-publish' ? <MorningGreetingClient embedded /> : null}
-      {tab === 'x-reply' ? <XReplyTasksClient embedded /> : null}
+
+      {view.mode === 'cloud' ? (
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="纯云端任务">
+            {CLOUD_PANELS.map((item) => {
+              const active = view.panel === item.id
+              return (
+                <AdminButton
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  size="sm"
+                  variant={active ? 'default' : 'ghost'}
+                  aria-selected={active}
+                  onClick={() => openMode('cloud', item.id)}
+                >
+                  {item.label}
+                </AdminButton>
+              )
+            })}
+          </div>
+          <p className="mb-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
+            这些任务不依赖本机插件。页面关掉后，定时发布仍会按计划跑；回复仍需人工确认后才发。
+          </p>
+          {view.panel === 'x-publish' ? <MorningGreetingClient embedded /> : null}
+          {view.panel === 'x-reply' ? <XReplyTasksClient embedded /> : null}
+        </div>
+      ) : null}
     </AdminPage>
   )
 }

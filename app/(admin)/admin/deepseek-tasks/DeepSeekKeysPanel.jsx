@@ -8,12 +8,18 @@ import { AdminButton, EmptyState, Section, StatusPill } from '../../components/u
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const SOURCE_LABELS = {
+  'a-share-research': 'A 股研究自动化',
+  'crypto-research': '加密调研自动化',
+  'admin-model-dispatch': 'AI 规划台',
   'engagement-bot': '站内互动机器人',
-  'juejin-interaction-extension': '站外 · 掘金插件',
-  'x-reply-clipboard-extension': '站外 · X 插件',
-  'xhs-interaction-extension': '站外 · 小红书插件',
+  'stock-analysis': '股票横向分析',
+  'x-daily-greeting': 'X 每日问候文案',
+  'juejin-interaction-extension': '掘金互动插件',
+  'x-reply-clipboard-extension': 'X 回复插件',
+  'xhs-interaction-extension': '小红书互动插件',
 }
 const KNOWN_SOURCES = [...DEEPSEEK_SITE_SOURCES, ...DEEPSEEK_EXTERNAL_SOURCES]
+const sourceLabel = (source) => SOURCE_LABELS[source] ? `${SOURCE_LABELS[source]} · ${source}` : source
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', runtime: 'Admin · admin.2aran.com', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
   { name: '股票横向分析', runtime: '后台 · Owner-only', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
@@ -126,7 +132,7 @@ function BindingChips({ bindings }) {
     <div className="flex flex-wrap gap-1">
       {bindings.map((binding, index) => (
         <span key={`${binding.source}-${binding.taskType}-${index}`} className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">
-          {SOURCE_LABELS[binding.source] || binding.source}{binding.taskType ? ` · ${binding.taskType}` : ' · 全部任务'}
+          {sourceLabel(binding.source)}{binding.taskType ? ` · ${binding.taskType}` : ' · 全部任务'}
         </span>
       ))}
     </div>
@@ -337,16 +343,21 @@ export default function DeepSeekKeysPanel() {
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length + DEEPSEEK_GITHUB_TRIGGERED_USES.length} 个使用场景</span>}
       >
+        <div className="mb-3 rounded-lg border border-[#e6e7df] p-3 text-[12px] leading-6 text-[#67695d] dark:border-[#243041] dark:text-gray-300">
+          <div className="font-medium text-[#3f4039] dark:text-gray-200">密钥来源总览</div>
+          <p>{loading ? '正在读取 D1 与当前 Admin 环境…' : `D1：${keys.length} 条记录（${activeKeys.length} 条启用）；当前 Admin 环境变量：${data?.envKeyConfigured ? '1 个已配置' : '未配置'}。`} GitHub Actions 仓库：1 个 DEEPSEEK_API_KEY Secret，供下列 {DEEPSEEK_GITHUB_ACTIONS_USES.length} 个扫描/归纳工作流共用。</p>
+          <p>公开站环境变量未在此检测。各位置可能保存同一串 Key，不能将这些记录相加当作不同 API Key 的数量；下方 D1 列表显示每条记录绑定的任务。</p>
+        </div>
         <div className="space-y-3">
           <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone="success" size="sm">已配置</StatusPill>
               <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">GitHub Actions 仓库密钥</span>
               <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">DEEPSEEK_API_KEY</code>
-              <span className="text-[11px] text-[#82847a] dark:text-gray-400">仓库配置已核验 · 2026-07-31 更新</span>
+              <span className="text-[11px] text-[#82847a] dark:text-gray-400">仓库配置已核验 · 2026-10-12</span>
             </div>
             <div className="mt-3 text-[12px] font-medium text-[#67695d] dark:text-gray-300">直接读取仓库 DEEPSEEK_API_KEY</div>
-            <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">以下扫描工作流在 GitHub Actions 内直接执行 DeepSeek analysis。</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">以下 {DEEPSEEK_GITHUB_ACTIONS_USES.length} 个工作流共用这 1 个仓库 Secret，在 GitHub Actions 内直接调用 DeepSeek。</p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {DEEPSEEK_GITHUB_ACTIONS_USES.map((item) => (
                 <a
@@ -421,7 +432,7 @@ export default function DeepSeekKeysPanel() {
               )}
             </div>
             <p className="mt-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
-              Admin 可见 {activeKeys.length} 条启用的 D1 密钥记录；站内任务和站外插件分别绑定来源。公开站项目的环境变量与解密能力需在公开站单独核验。
+              Admin 可见 {keys.length} 条 D1 密钥记录，其中 {activeKeys.length} 条启用。站内任务按绑定选择 D1 密钥，未匹配时回退到各自运行环境的 DEEPSEEK_API_KEY；站外插件使用手动复制的 Key。公开站的环境变量与解密能力需在公开站单独核验。
             </p>
             {data?.envKeyConfigured ? (
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[#67695d] dark:text-gray-300">
@@ -458,7 +469,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="数据库密钥"
-        description="Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，浏览器插件直连 DeepSeek 不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
+        description="一条 D1 密钥记录可以绑定多个任务，即多个任务共用同一 Key。选择顺序为精确任务绑定、来源绑定、全局兜底，再回退到当前运行环境变量。Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，浏览器插件直连 DeepSeek 不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -581,10 +592,10 @@ export default function DeepSeekKeysPanel() {
                   >
                     <option value="">选择来源…</option>
                     <optgroup label="站内任务">
-                      {DEEPSEEK_SITE_SOURCES.map((source) => <option key={source} value={source}>{SOURCE_LABELS[source] || source} · {source}</option>)}
+                      {DEEPSEEK_SITE_SOURCES.map((source) => <option key={source} value={source}>{sourceLabel(source)}</option>)}
                     </optgroup>
                     <optgroup label="站外互动插件">
-                      {DEEPSEEK_EXTERNAL_SOURCES.map((source) => <option key={source} value={source}>{SOURCE_LABELS[source]} · {source}</option>)}
+                      {DEEPSEEK_EXTERNAL_SOURCES.map((source) => <option key={source} value={source}>{sourceLabel(source)}</option>)}
                     </optgroup>
                     {binding.source && !KNOWN_SOURCES.includes(binding.source) ? <option value={binding.source}>{binding.source}</option> : null}
                   </select>

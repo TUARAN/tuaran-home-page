@@ -139,7 +139,7 @@ function SourceFaces({ names = [], count = 0 }) {
   )
 }
 
-function HotRanking({ events, topics, onSelectTopic, windowLabel }) {
+function HotRanking({ events, topics, onSelectEvent, windowLabel }) {
   const topicMap = Object.fromEntries(topics.map((topic) => [topic.id, topic.title]))
   return (
     <section id="hot" className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#dce3df] bg-white shadow-[0_1px_2px_rgba(30,55,48,0.04)] dark:border-[#2b3943] dark:bg-[#111b24]">
@@ -152,7 +152,7 @@ function HotRanking({ events, topics, onSelectTopic, windowLabel }) {
           <li key={event.id} className="grid min-h-[58px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 py-2.5">
             <span className={`font-mono text-[16px] font-bold ${index === 0 ? 'text-[#c34733]' : index < 3 ? 'text-[#a8702d]' : 'text-[#7d898b]'}`}>{index + 1}</span>
             <div className="min-w-0">
-              <button type="button" onClick={() => onSelectTopic(event.topicId)} className="block max-w-full truncate text-left text-[14px] font-semibold text-[#29363a] hover:text-[#297a80] dark:text-gray-100 dark:hover:text-[#8ac7bf]">{event.title}</button>
+              <button type="button" onClick={() => onSelectEvent(event)} aria-label={`查看${event.title}的证据`} className="block max-w-full truncate text-left text-[14px] font-semibold text-[#29363a] hover:text-[#297a80] hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#297a80] dark:text-gray-100 dark:hover:text-[#8ac7bf]">{event.title}</button>
               <span className="text-[11px] text-[#909997] dark:text-[#7f909a]">{topicMap[event.topicId] || event.topicId} · {event.reportCount} 条证据</span>
             </div>
             <div className="flex items-center gap-4">
@@ -220,7 +220,7 @@ function TimelineFeed({ posts, events, connectors, referenceAt }) {
               </div>
               <div className="space-y-3">
                 {day.posts.map((post, index) => (
-                  <div key={post.id} className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
+                  <div key={post.id} id={`opinion-post-${encodeURIComponent(post.id)}`} className="grid scroll-mt-24 grid-cols-[48px_minmax(0,1fr)] gap-3 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
                     <div className="relative pt-5 text-right"><span className="font-mono text-[11px] font-semibold text-[#6e7e80] dark:text-[#8fa0a9] sm:text-[12px]">{formatClock(post.publishedAt, post.time)}</span><span className="absolute right-[-8px] top-[26px] h-2.5 w-2.5 rounded-full border-2 border-[#f7f7f3] bg-[#2b858b] dark:border-[#0d151b]" />{index < day.posts.length - 1 ? <span className="absolute right-[-4px] top-9 h-[calc(100%+12px)] w-px bg-[#d8e0dc] dark:bg-[#2d3b45]" /> : null}</div>
                     <FeedCard post={post} event={eventByPost[post.id]} connectorLabel={connectorMap[post.sourceId] || post.sourceId} />
                   </div>
@@ -272,6 +272,7 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
   const [activeTopicId, setActiveTopicId] = useState('all')
   const [query, setQuery] = useState('')
   const [timeWindow, setTimeWindow] = useState('48h')
+  const [focusTarget, setFocusTarget] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState('')
 
@@ -321,6 +322,17 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
   )
 
   useEffect(() => {
+    if (!focusTarget || !filteredPosts.some((post) => post.id === focusTarget.postId)) return
+    document.getElementById(`opinion-post-${encodeURIComponent(focusTarget.postId)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setFocusTarget(null)
+  }, [filteredPosts, focusTarget])
+
+  const selectEvent = (event) => {
+    setActiveTopicId(event.topicId)
+    setFocusTarget({ postId: event.postIds[0] })
+  }
+
+  useEffect(() => {
     if (activeTopicId !== 'all' && !topicCounts[activeTopicId]) setActiveTopicId('all')
   }, [activeTopicId, topicCounts])
 
@@ -351,7 +363,7 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
             </div>
           </header>
           <div className="mt-6 space-y-8">
-            <HotRanking events={snapshot.events} topics={data.topics} onSelectTopic={setActiveTopicId} windowLabel={timeWindow === '6h' ? '6 小时' : timeWindow === '24h' ? '24 小时' : '48 小时'} />
+            <HotRanking events={snapshot.events} topics={data.topics} onSelectEvent={selectEvent} windowLabel={timeWindow === '6h' ? '6 小时' : timeWindow === '24h' ? '24 小时' : '48 小时'} />
             <TimelineFeed posts={filteredPosts} events={snapshot.events} connectors={data.connectors} referenceAt={data.generatedAt} />
             <TrendSection trendPoints={data.trendPoints} snapshot={snapshot} />
             <SourceSection connectors={data.connectors} sourceCounts={snapshot.sourceCounts} />

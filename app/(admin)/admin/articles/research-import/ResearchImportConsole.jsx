@@ -13,8 +13,12 @@ import { LoadingSpinner, LoadingState, Skeleton } from '../../../../components/l
 import { renderMarkdown } from '../../../../../lib/research/markdown'
 import { AdminButton, AdminPage, EmptyState, StatusPill } from '../../../components/ui'
 import {
+  applyQueueStatus,
   applyVisibleSelection,
+  initialReviewSourcePath,
   pruneSelectedPaths,
+  researchQueueBucket,
+  splitResearchQueueTabs,
   summarizeBatchPublish,
   toggleSelectedPath,
   visibleSelectionState,
@@ -77,6 +81,12 @@ function noticeClass(tone) {
   if (tone === 'warning') return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
   if (tone === 'info') return 'border-[#d9dbd0] bg-[#f7f8f3] text-[#55574f] dark:border-[#243041] dark:bg-[#151c26] dark:text-gray-300'
   return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200'
+}
+
+function matchesQueueQuery(item, query) {
+  if (!query) return true
+  return [item.title, item.slug, item.filename, item.sourcePath, item.reason]
+    .some((value) => String(value || '').toLowerCase().includes(query))
 }
 
 function reasonClass(reason) {
@@ -222,32 +232,33 @@ export default function ResearchImportConsole({ embedded = false }) {
   const sourceBucketRef = useRef('')
 
   const pending = useMemo(() => queue?.pending || [], [queue?.pending])
+  const { drafts: draftItems, approval: approvalItems } = useMemo(() => splitResearchQueueTabs(pending), [pending])
   const query = filter.trim().toLowerCase()
-  const visiblePending = useMemo(() => {
-    if (!query) return pending
-    return pending.filter((item) => [item.title, item.slug, item.filename, item.sourcePath, item.reason].some((value) => String(value || '').toLowerCase().includes(query)))
-  }, [pending, query])
+  const visibleApproval = useMemo(
+    () => approvalItems.filter((item) => matchesQueueQuery(item, query)),
+    [approvalItems, query],
+  )
+  const visibleDrafts = useMemo(
+    () => draftItems.filter((item) => matchesQueueQuery(item, query)),
+    [draftItems, query],
+  )
   const selectedMeta = pending.find((item) => item.sourcePath === sourcePath) || publishedItems.find((item) => item.sourcePath === sourcePath)
   const liveHref = snapshot ? `/articles/research/${snapshot.entry.category}/${snapshot.entry.slug}` : ''
   const liveStatus = ready ? (current ? current.status : null) : null
   const githubHref = queue?.repo && sourcePath ? `https://github.com/${queue.repo}/blob/main/${sourcePath}` : ''
-  const visiblePendingPaths = useMemo(() => visiblePending.map((item) => item.sourcePath), [visiblePending])
-  const selection = visibleSelectionState(selectedPaths, visiblePendingPaths)
+  const visibleApprovalPaths = useMemo(() => visibleApproval.map((item) => item.sourcePath), [visibleApproval])
+  const selection = visibleSelectionState(selectedPaths, visibleApprovalPaths)
   const selectedItems = useMemo(
-    () => pending.filter((item) => selectedPaths.has(item.sourcePath)),
-    [pending, selectedPaths],
+    () => approvalItems.filter((item) => selectedPaths.has(item.sourcePath)),
+    [approvalItems, selectedPaths],
   )
-  const visibleList = listMode === 'published' ? publishedItems : visiblePending
+  const visibleList = listMode === 'published' ? publishedItems : listMode === 'draft' ? visibleDrafts : visibleApproval
 
   const applyQueue = useCallback((data, nextPath = requestedPath) => {
     const nextQueue = { ...data, fetchedAt: Number(data.fetchedAt) || Date.now() }
     setQueue(nextQueue)
     writeQueueCache(nextQueue)
-    setSourcePath((currentPath) => {
-      if (currentPath) return currentPath
-      if (nextPath) return nextPath
-      return nextQueue.pending[0]?.sourcePath || currentPath || ''
-    })
+    setSourcePath((currentPath) => currentPath || initialReviewSourcePath(nextQueue.pending, nextPath))
   }, [requestedPath])
 
   const openPath = useCallback((path) => {
@@ -368,9 +379,8 @@ export default function ResearchImportConsole({ embedded = false }) {
   }, [reload, sourcePath])
 
   useEffect(() => {
-    const paths = (queue?.pending || []).map((item) => item.sourcePath)
-    setSelectedPaths((current) => pruneSelectedPaths(current, paths))
-  }, [queue?.pending])
+    setSelectedPaths((current) => pruneSelectedPaths(current, approvalItems.map((item) => item.sourcePath)))
+  }, [approvalItems])
 
   useEffect(() => {
     if (selectAllRef.current) selectAllRef.current.indeterminate = selection.some
@@ -382,8 +392,7 @@ export default function ResearchImportConsole({ embedded = false }) {
 
   useEffect(() => {
     if (!queue || !sourcePath) return undefined
-    const inPending = queue.pending.some((item) => item.sourcePath === sourcePath)
-    const bucket = inPending ? 'pending' : 'published'
+    const bucket = researchQueueBucket(queue.pending, sourcePath)
     if (sourceBucketRef.current === bucket) return undefined
     sourceBucketRef.current = bucket
     setListMode(bucket)
@@ -481,12 +490,19 @@ export default function ResearchImportConsole({ embedded = false }) {
       if (status !== 'published' && publishedBefore) publishedCount = Math.max(0, publishedCount - 1)
       if (status === 'published' && target) libraryCount += 1
       if (status !== 'published' && publishedBefore && !target) libraryCount = Math.max(0, libraryCount - 1)
-      const pendingItems = currentQueue.pending
-        .map((item) => {
-          if (item.sourcePath !== targetPath) return item
-          return { ...item, reason: status === 'published' ? 'updated' : status, d1Status: status, revision }
-        })
-        .filter((item) => item.sourcePath !== targetPath || status !== 'published')
+      const entry = snapshot?.sourcePath === targetPath ? snapshot.entry : null
+      const pendingItems = applyQueueStatus(currentQueue.pending, {
+        sourcePath: targetPath,
+        status,
+        revision,
+        fallback: entry ? {
+          sourcePath: targetPath,
+          category: entry.category || '',
+          filename: entry.filename || targetPath.split('/').pop() || '',
+          slug: entry.slug || '',
+          title: entry.title || '',
+        } : null,
+      })
       const nextQueue = { ...currentQueue, pending: pendingItems, publishedCount, libraryCount }
       writeQueueCache(nextQueue)
       return nextQueue
@@ -587,10 +603,11 @@ export default function ResearchImportConsole({ embedded = false }) {
 
   const listPane = (
     <section className={paneClass} data-review-queue aria-label="调研队列">
-      <header className="flex items-center justify-between gap-2 border-b border-[var(--admin-line-soft)] px-3 py-3">
-        <div className="flex min-w-0 rounded-lg bg-[#f1f2ea] p-0.5 dark:bg-[#1a222d]" role="tablist" aria-label="队列">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--admin-line-soft)] px-3 py-3">
+        <div className="flex min-w-0 flex-wrap rounded-lg bg-[#f1f2ea] p-0.5 dark:bg-[#1a222d]" role="tablist" aria-label="队列">
           {[
-            ['pending', '待审批', pending.length],
+            ['pending', '待审批', approvalItems.length],
+            ['draft', '草稿', draftItems.length],
             ['published', '已发布', queue?.libraryCount ?? queue?.publishedCount ?? 0],
           ].map(([id, label, count]) => {
             const selected = listMode === id
@@ -630,16 +647,18 @@ export default function ResearchImportConsole({ embedded = false }) {
             className="w-full rounded-lg border border-[#d9dbd0] bg-white py-2 pl-8 pr-3 text-sm text-[#33352f] outline-none focus:border-[#818472] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-200"
           />
         </div>
-        {listMode === 'pending' ? (
-          <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-500">
-            已发布但 GitHub 正文与线上不一致时会回到待处理。
-            {syncedLabel ? ` ${syncedLabel}。` : ''}
-          </p>
-        ) : (
+        {listMode === 'published' ? (
           <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-500">
             {queue?.repo || 'GitHub main'}
             {query ? ` · 匹配 ${publishedTotal} 篇` : ` · 已加载 ${publishedItems.length}/${publishedTotal || queue?.libraryCount || 0}`}
             {syncedLabel ? ` · ${syncedLabel}` : ''}
+          </p>
+        ) : (
+          <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-500">
+            {listMode === 'draft'
+              ? '保存为草稿后留在这里，公开页不展示。'
+              : '已发布但 GitHub 正文与线上不一致时会回到待处理。'}
+            {syncedLabel ? ` ${syncedLabel}。` : ''}
           </p>
         )}
       </div>
@@ -662,23 +681,29 @@ export default function ResearchImportConsole({ embedded = false }) {
       ) : (
         <div className="min-h-0 flex-1 overflow-auto overscroll-contain" data-review-list>
           {queueLoading ? <LoadingState className="my-3" compact label="正在同步 GitHub main" /> : null}
-          {listMode === 'pending' && queue && !pending.length ? (
+          {listMode === 'pending' && queue && !approvalItems.length ? (
             <EmptyState
               title="没有待审批的调研"
-              description="GitHub main 上的调研都已发布。若要撤回或重新发布某一篇，从已发布里打开。"
-              action={(
-                <AdminButton type="button" size="sm" onClick={() => setListMode('published')}>
-                  查看已发布
-                </AdminButton>
+              description={draftItems.length ? '草稿在旁边的页签里。' : 'GitHub main 上的调研都已发布。若要撤回或重新发布某一篇，从已发布里打开。'}
+              action={draftItems.length ? (
+                <AdminButton type="button" size="sm" onClick={() => setListMode('draft')}>查看草稿</AdminButton>
+              ) : (
+                <AdminButton type="button" size="sm" onClick={() => setListMode('published')}>查看已发布</AdminButton>
               )}
             />
           ) : null}
-          {listMode === 'pending' && query && !visiblePending.length && pending.length ? (
+          {listMode === 'pending' && query && !visibleApproval.length && approvalItems.length ? (
             <EmptyState
               title="待审批里没有匹配"
               description="可以继续到已发布列表中搜索。"
               action={<AdminButton type="button" size="sm" onClick={() => setListMode('published')}>在已发布中查看</AdminButton>}
             />
+          ) : null}
+          {listMode === 'draft' && queue && !draftItems.length ? (
+            <EmptyState title="没有草稿" description="保存为草稿后会出现在这里，公开页不展示。" />
+          ) : null}
+          {listMode === 'draft' && query && !visibleDrafts.length && draftItems.length ? (
+            <EmptyState title="草稿里没有匹配" description="换个标题、slug 或文件名。" />
           ) : null}
           {listMode === 'published' && !publishedLoading && !query && !publishedTotal ? (
             <EmptyState title="还没有已发布的调研" description="审批通过后会出现在这里。" />
@@ -687,7 +712,7 @@ export default function ResearchImportConsole({ embedded = false }) {
             <EmptyState title="没有匹配的调研" description="换个标题、slug 或文件名。" />
           ) : null}
           <ul className="space-y-0.5 px-1.5 py-1.5">
-            {listMode === 'pending' ? visiblePending.map((item) => {
+            {visibleList.map((item) => {
               const active = item.sourcePath === sourcePath
               const checked = selectedPaths.has(item.sourcePath)
               return (
@@ -697,7 +722,7 @@ export default function ResearchImportConsole({ embedded = false }) {
                     active={active}
                     busy={busy}
                     onOpen={openPath}
-                    leading={(
+                    leading={listMode === 'pending' ? (
                       <input
                         type="checkbox"
                         checked={checked}
@@ -706,20 +731,11 @@ export default function ResearchImportConsole({ embedded = false }) {
                         className="h-4 w-4 shrink-0 accent-[#15140f]"
                         aria-label={`勾选 ${item.title || item.slug}`}
                       />
-                    )}
+                    ) : null}
                   />
                 </li>
               )
-            }) : publishedItems.map((item) => (
-              <li key={item.sourcePath}>
-                <QueueRow
-                  item={item}
-                  active={item.sourcePath === sourcePath}
-                  busy={busy}
-                  onOpen={openPath}
-                />
-              </li>
-            ))}
+            })}
           </ul>
           {listMode === 'published' && publishedLoading ? <LoadingState className="my-3" compact label="正在读取已发布调研" /> : null}
           {listMode === 'published' && publishedHasMore && !publishedLoading ? (
@@ -732,7 +748,7 @@ export default function ResearchImportConsole({ embedded = false }) {
         </div>
       )}
 
-      {listMode === 'pending' && visiblePending.length ? (
+      {listMode === 'pending' && visibleApproval.length ? (
         <div className="flex items-center justify-between gap-2 border-t border-[var(--admin-line-soft)] px-3 py-2.5">
           <label className="flex min-w-0 items-center gap-2 text-[13px] text-[#55574f] dark:text-gray-400">
             <input
@@ -740,7 +756,7 @@ export default function ResearchImportConsole({ embedded = false }) {
               type="checkbox"
               checked={selection.all}
               disabled={busy}
-              onChange={(event) => setSelectedPaths((currentSelected) => applyVisibleSelection(currentSelected, visiblePendingPaths, event.target.checked))}
+              onChange={(event) => setSelectedPaths((currentSelected) => applyVisibleSelection(currentSelected, visibleApprovalPaths, event.target.checked))}
               className="h-4 w-4 shrink-0 accent-[#15140f]"
               aria-label="全选当前列表"
             />

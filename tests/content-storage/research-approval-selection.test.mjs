@@ -2,12 +2,65 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  applyQueueStatus,
   applyVisibleSelection,
+  initialReviewSourcePath,
   pruneSelectedPaths,
+  researchQueueBucket,
+  splitResearchQueueTabs,
   summarizeBatchPublish,
   toggleSelectedPath,
   visibleSelectionState,
 } from '../../app/(admin)/admin/articles/research-import/researchApprovalSelection.js'
+
+test('drafts sit in their own queue tab and leave the approval list', () => {
+  const pending = [
+    { sourcePath: 'research/topics/2026-10-09-browser.md', filename: '2026-10-09-browser.md', slug: 'browser', reason: 'draft' },
+    { sourcePath: 'research/topics/2026-10-08-pathogen.md', filename: '2026-10-08-pathogen.md', slug: 'pathogen', reason: 'new' },
+    { sourcePath: 'research/topics/2026-10-07-edited.md', filename: '2026-10-07-edited.md', slug: 'edited', reason: 'updated' },
+  ]
+  const { drafts, approval } = splitResearchQueueTabs(pending)
+  assert.deepEqual(drafts.map((item) => item.slug), ['browser'])
+  assert.deepEqual(approval.map((item) => item.slug), ['pathogen', 'edited'])
+  assert.equal(researchQueueBucket(pending, 'research/topics/2026-10-09-browser.md'), 'draft')
+  assert.equal(researchQueueBucket(pending, 'research/topics/2026-10-08-pathogen.md'), 'pending')
+  assert.equal(researchQueueBucket(pending, 'research/topics/2026-10-01-live.md'), 'published')
+  assert.equal(initialReviewSourcePath(pending), 'research/topics/2026-10-08-pathogen.md')
+  assert.equal(initialReviewSourcePath(pending, 'research/topics/2026-10-09-browser.md'), 'research/topics/2026-10-09-browser.md')
+  assert.equal(initialReviewSourcePath([{ sourcePath: 'a.md', reason: 'draft' }]), 'a.md')
+})
+
+test('saving as draft moves a published article into the draft queue', () => {
+  const pending = [
+    { sourcePath: 'research/topics/2026-10-09-browser.md', filename: '2026-10-09-browser.md', slug: 'browser', reason: 'draft' },
+  ]
+  const updated = applyQueueStatus(pending, {
+    sourcePath: 'research/topics/2026-10-09-browser.md',
+    status: 'draft',
+    revision: 2,
+  })
+  assert.equal(updated[0].reason, 'draft')
+  assert.equal(updated[0].revision, 2)
+  const inserted = applyQueueStatus(pending, {
+    sourcePath: 'research/topics/2026-10-06-older.md',
+    status: 'draft',
+    revision: 4,
+    fallback: {
+      sourcePath: 'research/topics/2026-10-06-older.md',
+      filename: '2026-10-06-older.md',
+      slug: 'older',
+      title: '较早的一篇',
+    },
+  })
+  assert.deepEqual(inserted.map((item) => item.slug), ['browser', 'older'])
+  assert.equal(inserted[1].reason, 'draft')
+  const published = applyQueueStatus(pending, {
+    sourcePath: 'research/topics/2026-10-09-browser.md',
+    status: 'published',
+    revision: 3,
+  })
+  assert.deepEqual(published, [])
+})
 
 test('checkbox selection can toggle one path, select the visible list, and drop published paths', () => {
   const one = toggleSelectedPath(new Set(), 'a.md')

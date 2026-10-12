@@ -1,3 +1,48 @@
+export function splitResearchQueueTabs(pending = []) {
+  const drafts = []
+  const approval = []
+  for (const item of pending) {
+    if (item?.reason === 'draft') drafts.push(item)
+    else approval.push(item)
+  }
+  return { drafts, approval }
+}
+
+export function researchQueueBucket(pending = [], sourcePath) {
+  const item = pending.find((entry) => entry?.sourcePath === sourcePath)
+  if (!item) return 'published'
+  return item.reason === 'draft' ? 'draft' : 'pending'
+}
+
+export function initialReviewSourcePath(pending = [], requestedPath = '') {
+  if (requestedPath) return requestedPath
+  return pending.find((item) => item?.reason !== 'draft')?.sourcePath || pending[0]?.sourcePath || ''
+}
+
+export function applyQueueStatus(pending = [], { sourcePath, status, revision, fallback } = {}) {
+  const reason = status === 'published' ? 'updated' : status
+  const next = []
+  let found = false
+  for (const item of pending) {
+    if (item?.sourcePath !== sourcePath) {
+      next.push(item)
+      continue
+    }
+    found = true
+    if (status !== 'published') next.push({ ...item, reason, d1Status: status, revision })
+  }
+  if (found || status === 'published' || !fallback?.sourcePath) return next
+  const item = { ...fallback, reason: status, d1Status: status, revision }
+  const index = next.findIndex((entry) => {
+    const byName = String(entry.filename || '').localeCompare(String(item.filename || ''))
+    if (byName !== 0) return byName < 0
+    return String(entry.slug || '').localeCompare(String(item.slug || '')) > 0
+  })
+  if (index === -1) next.push(item)
+  else next.splice(index, 0, item)
+  return next
+}
+
 export function toggleSelectedPath(selected, sourcePath) {
   const next = new Set(selected)
   if (next.has(sourcePath)) next.delete(sourcePath)

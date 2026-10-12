@@ -171,6 +171,9 @@ export async function middleware(request) {
   if (shouldNoindexPath(pathname)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
   }
+  // 这个接口要按 Cache-Control 被 CDN 缓存。Set-Cookie 会让 Cloudflare 标成 DYNAMIC，
+  // 每次打开页面都去打 AIHOT，完整历史很快被限流，日历就会退回旧备用快照。
+  if (pathname === '/api/codex-resets') return response
   if (host === ADMIN_HOST && isRevertDraftApi(pathname, request.method)) {
     const origin = revertDraftCorsOrigin(request.headers.get('origin') || '')
     if (origin) {

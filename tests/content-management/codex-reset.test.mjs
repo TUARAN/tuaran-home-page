@@ -10,6 +10,7 @@ import {
   homeCardModel,
   homeStripHeadline,
   homeStripSubline,
+  mergeCodexResetSnapshots,
   monthStats,
   newestPostOnDate,
   parseCodexResetsPayload,
@@ -259,5 +260,50 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.match(nav, /href: '\/codex-reset'[\s\S]*label: 'Codex 重置'/)
   assert.match(nav, /title: '分析'[\s\S]*href: '\/codex-reset'/)
   assert.match(api, /AIHOT_CODEX_RESETS_URL/)
+  assert.match(api, /AIHOT_CODEX_RESETS_RECENT_URL/)
+  assert.match(api, /caches\?\.default/)
   assert.match(api, /source: 'fallback'/)
+})
+
+test('recent increments overlay the cached history without shrinking it', () => {
+  const base = parseCodexResetsPayload(FIXTURE)
+  const recent = parseCodexResetsPayload({
+    schemaVersion: 1,
+    checkedAt: '2026-10-11T06:10:22.166+08:00',
+    historyFrom: '2026-10-05T00:00:00.000+08:00',
+    events: [
+      {
+        id: 'reset-october',
+        type: 'direct_reset',
+        label: '全员重置',
+        status: 'confirmed',
+        title: 'Codex 额度重置已完成',
+        createdAt: '2026-10-11T06:16:20.000+08:00',
+        updatedAt: '2026-10-11T12:01:09.000+08:00',
+        confirmedAt: '2026-10-11T12:01:09.000+08:00',
+        posts: [{
+          id: '9',
+          publishedAt: '2026-10-11T12:01:09.000+08:00',
+          stage: '确认完成',
+          text: '重置已全部推送完成。',
+          url: 'https://x.com/thsottiaux/status/9',
+        }],
+        url: 'https://aihot.news/codex-reset',
+      },
+      {
+        ...FIXTURE.events[0],
+        status: 'confirmed',
+        updatedAt: '2026-10-01T00:00:00.000+08:00',
+      },
+    ],
+  })
+
+  const merged = mergeCodexResetSnapshots(base, recent)
+  assert.equal(merged.events.length, base.events.length + 1)
+  assert.equal(merged.historyFrom, base.historyFrom)
+  assert.equal(merged.checkedAt, recent.checkedAt)
+  assert.equal(merged.events.find((event) => event.id === 'credit-preview').status, 'confirmed')
+  assert.equal(monthStats(merged.events, '2026-10').reset, 1)
+  assert.equal(mergeCodexResetSnapshots(null, recent), recent)
+  assert.equal(mergeCodexResetSnapshots(base, null), base)
 })

@@ -37,7 +37,7 @@ test('changelog workflow injects the shared DeepSeek secret and is listed as an 
 
 test('GitHub-triggered site tasks are grouped with Actions while preserving the site execution boundary', () => {
   assert.match(panelSource, /DEEPSEEK_GITHUB_TRIGGERED_USES/)
-  assert.match(panelSource, /Actions 定时触发，DeepSeek 在站点执行/)
+  assert.match(panelSource, /Actions 定时触发，DeepSeek 在公开站执行/)
   assert.match(panelSource, /DeepSeek 密钥仍由站点运行环境读取/)
 
   for (const [name, workflow] of [

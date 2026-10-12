@@ -149,6 +149,14 @@ function keyScope(bindings) {
   return '其他来源'
 }
 
+function matchingD1Key(keys, source, taskType) {
+  const active = keys.filter((key) => key.status === 'active')
+  return active.find((key) => key.bindings?.some((binding) => binding.source === source && binding.taskType === taskType && taskType))
+    || active.find((key) => key.bindings?.some((binding) => binding.source === source && !binding.taskType))
+    || active.find((key) => !key.bindings?.length)
+    || null
+}
+
 export default function DeepSeekKeysPanel() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -346,7 +354,7 @@ export default function DeepSeekKeysPanel() {
         <div className="mb-3 rounded-lg border border-[#e6e7df] p-3 text-[12px] leading-6 text-[#67695d] dark:border-[#243041] dark:text-gray-300">
           <div className="font-medium text-[#3f4039] dark:text-gray-200">密钥来源总览</div>
           <p>{loading ? '正在读取 D1 与当前 Admin 环境…' : `D1：${keys.length} 条记录（${activeKeys.length} 条启用）；当前 Admin 环境变量：${data?.envKeyConfigured ? '1 个已配置' : '未配置'}。`} GitHub Actions 仓库：1 个 DEEPSEEK_API_KEY Secret，供下列 {DEEPSEEK_GITHUB_ACTIONS_USES.length} 个扫描/归纳工作流共用。</p>
-          <p>公开站环境变量未在此检测。各位置可能保存同一串 Key，不能将这些记录相加当作不同 API Key 的数量；下方 D1 列表显示每条记录绑定的任务。</p>
+          <p>公开站环境变量未在此检测。GitHub 仓库 Secret 与公开站 Cloudflare Secret 分别配置，值是否相同尚未核对；下方 D1 列表显示每条记录绑定的任务。</p>
         </div>
         <div className="space-y-3">
           <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
@@ -356,7 +364,7 @@ export default function DeepSeekKeysPanel() {
               <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">DEEPSEEK_API_KEY</code>
               <span className="text-[11px] text-[#82847a] dark:text-gray-400">仓库配置已核验 · 2026-10-12</span>
             </div>
-            <div className="mt-3 text-[12px] font-medium text-[#67695d] dark:text-gray-300">直接读取仓库 DEEPSEEK_API_KEY</div>
+            <div className="mt-3 text-[12px] font-medium text-[#67695d] dark:text-gray-300">密钥来源：GitHub Actions 仓库 Secret · DEEPSEEK_API_KEY</div>
             <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">以下 {DEEPSEEK_GITHUB_ACTIONS_USES.length} 个工作流共用这 1 个仓库 Secret，在 GitHub Actions 内直接调用 DeepSeek。</p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {DEEPSEEK_GITHUB_ACTIONS_USES.map((item) => (
@@ -375,17 +383,21 @@ export default function DeepSeekKeysPanel() {
                     <code className="font-mono text-[11px] text-[#67695d] dark:text-gray-300">{item.workflow}</code>
                     <code className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">scan-analyze · {item.taskType}</code>
                   </div>
+                  <div className="mt-1 text-[11px] text-[#67695d] dark:text-gray-300">使用 GitHub 仓库 Secret · DEEPSEEK_API_KEY</div>
                 </a>
               ))}
             </div>
 
-            <div className="mt-4 border-t border-[#e6e7df] pt-3 text-[12px] font-medium text-[#67695d] dark:border-[#243041] dark:text-gray-300">Actions 定时触发，DeepSeek 在站点执行</div>
+            <div className="mt-4 border-t border-[#e6e7df] pt-3 text-[12px] font-medium text-[#67695d] dark:border-[#243041] dark:text-gray-300">Actions 定时触发，DeepSeek 在公开站执行</div>
             <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
-              以下工作流使用各自的触发密钥调用 2aran.com；DeepSeek 密钥仍由站点运行环境读取。
+              以下工作流使用各自的触发密钥调用 2aran.com；DeepSeek 密钥仍由站点运行环境读取。站点优先选择匹配的 D1 密钥；没有匹配的任务共用公开站 Cloudflare Secret · DEEPSEEK_API_KEY。它与上方 GitHub 仓库 Secret 的值是否相同尚未核对。
             </p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
-              {DEEPSEEK_GITHUB_TRIGGERED_USES.map((item) => (
-                <a
+              {DEEPSEEK_GITHUB_TRIGGERED_USES.map((item) => {
+                const matchingKey = !loading && data?.status === 'ok'
+                  ? matchingD1Key(keys, item.source, item.taskTypes[0])
+                  : null
+                return <a
                   key={item.workflow}
                   href={`https://github.com/TUARAN/tuaran-home-page/actions/workflows/${item.workflow}`}
                   target="_blank"
@@ -403,8 +415,15 @@ export default function DeepSeekKeysPanel() {
                       <code key={taskType} className="font-mono text-[11px] text-[#82847a] dark:text-gray-400">{taskType}</code>
                     ))}
                   </div>
+                  <div className="mt-1 text-[11px] text-[#67695d] dark:text-gray-300">
+                    {loading || data?.status !== 'ok'
+                      ? 'D1 绑定未确认；无匹配时使用公开站 Cloudflare Secret · DEEPSEEK_API_KEY'
+                      : matchingKey
+                        ? `匹配 D1 密钥 · ${matchingKey.name}`
+                        : '使用公开站 Cloudflare Secret · DEEPSEEK_API_KEY（当前无匹配 D1 密钥）'}
+                  </div>
                 </a>
-              ))}
+              })}
             </div>
           </article>
 

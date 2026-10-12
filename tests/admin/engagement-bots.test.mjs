@@ -42,7 +42,7 @@ test('engagement bot admin is owner-only and can run plus CRUD', () => {
   assert.match(runApiSource, /hasUsableDeepSeekKey/)
   assert.match(runApiSource, /ADMIN_DEEPSEEK_NOT_CONFIGURED/)
   assert.match(apiSource, /adminDeepSeekConfigured/)
-  assert.match(consoleSource, /路过互动/)
+  assert.match(consoleSource, /站内互动/)
   assert.match(consoleSource, /立即运行/)
   assert.match(consoleSource, /!adminDeepSeekConfigured/)
   assert.match(consoleSource, /“立即运行”已停用/)
@@ -59,7 +59,7 @@ test('cron uses shared secret header and DeepSeek comment source', () => {
   assert.equal(runLibSource.includes('awardComment'), false)
   assert.match(workflowSource, /api\/cron\/engagement-bot/)
   assert.match(keysPanelSource, /'engagement-bot'/)
-  assert.match(keysPanelSource, /路过互动评论/)
+  assert.match(keysPanelSource, /站内互动评论/)
 })
 
 test('workflow runs once a day at 10:23 Beijing time and documents split runtimes', () => {

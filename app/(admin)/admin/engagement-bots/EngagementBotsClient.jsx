@@ -172,7 +172,7 @@ export default function EngagementBotsClient() {
       const data = await readJson(response)
       if (!response.ok) throw new Error(data?.error || `HTTP_${response.status}`)
       setSettings(data.settings)
-      setMessage(data.settings.enabled ? '路过互动已保存并启用。' : '设置已保存。定时任务在关闭时会直接跳过。')
+      setMessage(data.settings.enabled ? '站内互动已保存并启用。' : '设置已保存。定时任务在关闭时会直接跳过。')
     } catch (reason) {
       setError(reason?.message || 'SAVE_FAILED')
     } finally {
@@ -266,7 +266,7 @@ export default function EngagementBotsClient() {
 
   return (
     <AdminPage
-      title="路过互动"
+      title="站内互动"
       description="每天 10:23（北京时间）随机点赞并生成短评。定时任务在 2aran.com 运行，立即运行在 admin.2aran.com 运行；两边分别读取各自的 DeepSeek 密钥。前台身份显示为「路过」，不发站长通知、不记燃币。"
       actions={
         <>
@@ -329,7 +329,7 @@ export default function EngagementBotsClient() {
                   onChange={(event) => setSettings((current) => ({ ...current, enabled: event.target.checked }))}
                   className="h-4 w-4 accent-[#15140f]"
                 />
-                启用定时路过互动
+                启用定时站内互动
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="每次点赞">
@@ -454,7 +454,7 @@ export default function EngagementBotsClient() {
         </div>
 
         <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap gap-2 rounded-xl border border-[#e2e3da] bg-[#f5f5ef] p-1.5 dark:border-[#27313d] dark:bg-[#0c1118]" role="tablist" aria-label="路过互动记录分区">
+          <div className="mb-3 flex flex-wrap gap-2 rounded-xl border border-[#e2e3da] bg-[#f5f5ef] p-1.5 dark:border-[#27313d] dark:bg-[#0c1118]" role="tablist" aria-label="站内互动记录分区">
             {RIGHT_PANELS.map((panel) => (
               <button
                 key={panel.id}

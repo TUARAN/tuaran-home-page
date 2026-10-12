@@ -42,7 +42,7 @@ test('GitHub-triggered site tasks are grouped with Actions while preserving the 
 
   for (const [name, workflow] of [
     ['A 股研究自动化', 'a-share-research.yml'],
-    ['路过互动评论', 'engagement-bot.yml'],
+    ['站内互动评论', 'engagement-bot.yml'],
     ['X 每日问候文案', 'morning-greeting.yml'],
   ]) {
     assert.match(panelSource, new RegExp(`name: '${name}'[\\s\\S]*?workflow: '${workflow.replace('.', '\\.')}'`))

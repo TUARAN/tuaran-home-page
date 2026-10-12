@@ -54,7 +54,7 @@ const DEEPSEEK_GITHUB_TRIGGERED_USES = [
     taskTypes: ['daily-draft'],
   },
   {
-    name: '路过互动评论',
+    name: '站内互动评论',
     schedule: '每天 · 北京时间 10:23；支持 Admin 手动运行',
     workflow: 'engagement-bot.yml',
     source: 'engagement-bot',

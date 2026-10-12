@@ -227,7 +227,7 @@ function XApiCostPanel({ cost }) {
   )
 }
 
-export default function MorningGreetingClient() {
+export default function MorningGreetingClient({ embedded = false } = {}) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -275,12 +275,26 @@ export default function MorningGreetingClient() {
     } catch (pauseError) { setError(pauseError?.message || '状态切换失败。') } finally { setSaving(false) }
   }
 
+  const refreshButton = (
+    <AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
+  )
+
   return (
     <AdminPage
+      embedded={embedded}
       title="X 发布任务"
       description="每天 23 条：10 条高频短帖、3 条交朋友，另有 10 条分配给其他话题。"
-      actions={<AdminButton type="button" onClick={() => refresh()} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
+      actions={refreshButton}
     >
+      {embedded ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="m-0 text-[1.05rem] font-semibold text-[#25261f] dark:text-gray-100">X 发布任务</h2>
+            <p className="mb-0 mt-1 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">每天 23 条：10 条高频短帖、3 条交朋友，另有 10 条分配给其他话题。</p>
+          </div>
+          {refreshButton}
+        </div>
+      ) : null}
       {error ? <div role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</div> : null}
       {notice ? <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</div> : null}
 

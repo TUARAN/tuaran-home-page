@@ -1,5 +1,4 @@
-import AdminPageGate from '../../components/AdminPageGate'
-import XReplyTasksClient from './XReplyTasksClient'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
   title: 'X 回复任务',
@@ -8,13 +7,5 @@ export const metadata = {
 }
 
 export default function XReplyTasksPage() {
-  return (
-    <AdminPageGate
-      label="X 回复任务"
-      returnTo="/admin/x-replies"
-      description="回复必须经过人工确认；短句库和模型只生成草稿，不会自动发布。"
-    >
-      <XReplyTasksClient />
-    </AdminPageGate>
-  )
+  redirect('/admin/community-actions?tab=x-reply')
 }

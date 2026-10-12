@@ -50,7 +50,7 @@ function formatTime(value) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false })
 }
 
-export default function XReplyTasksClient() {
+export default function XReplyTasksClient({ embedded = false } = {}) {
   const [tasks, setTasks] = useState([])
   const [targetUrl, setTargetUrl] = useState('')
   const [replyText, setReplyText] = useState('')
@@ -156,12 +156,26 @@ export default function XReplyTasksClient() {
     }
   }
 
+  const refreshButton = (
+    <AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>
+  )
+
   return (
     <AdminPage
+      embedded={embedded}
       title="X 回复任务"
       description="录入符合条件的目标帖子，准备短回复，人工确认后通过 X API 发布。"
-      actions={<AdminButton type="button" onClick={refresh} disabled={loading}>{loading ? '刷新中…' : '刷新'}</AdminButton>}
+      actions={refreshButton}
     >
+      {embedded ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="m-0 text-[1.05rem] font-semibold text-[#25261f] dark:text-gray-100">X 回复任务</h2>
+            <p className="mb-0 mt-1 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">录入符合条件的目标帖子，准备短回复，人工确认后通过 X API 发布。</p>
+          </div>
+          {refreshButton}
+        </div>
+      ) : null}
       <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
         自助付费 X API 只允许回复已经明确 @提及或引用你的账号的帖子。每个目标只建一个任务；模型生成的内容不会自动发布。
       </div>

@@ -126,6 +126,7 @@ test('admin X reply surface requires owner auth and keeps model output non-publi
   assert.match(client, /模型生成并复制/)
   assert.match(client, /回退到已启用的 NAS Ollama/)
   assert.match(client, /window\.confirm/)
-  assert.match(navigation, /\/admin\/x-replies/)
+  assert.match(navigation, /\/admin\/community-actions/)
+  assert.match(client, /embedded/)
   assert.match(migration, /target_post_id TEXT NOT NULL UNIQUE/)
 })

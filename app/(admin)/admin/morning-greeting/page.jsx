@@ -1,5 +1,4 @@
-import AdminPageGate from '../../components/AdminPageGate'
-import MorningGreetingClient from './MorningGreetingClient'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
   title: 'X 发布任务',
@@ -8,13 +7,5 @@ export const metadata = {
 }
 
 export default function AdminMorningGreetingPage() {
-  return (
-    <AdminPageGate
-      label="X 发布任务"
-      returnTo="/admin/morning-greeting"
-      description="管理 X 高频纯文字短帖的自动发布，仅站长本人可见。"
-    >
-      <MorningGreetingClient />
-    </AdminPageGate>
-  )
+  redirect('/admin/community-actions?tab=x-publish')
 }

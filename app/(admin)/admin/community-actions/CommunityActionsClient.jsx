@@ -1,8 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
+import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 
 const RESULT_META = {
   success: { label: '成功', tone: 'success' },
@@ -14,7 +17,47 @@ const RESULT_META = {
 const PLATFORM_LABEL = {
   x: 'X',
   xhs: '小红书',
+  juejin: '掘金',
 }
+
+const TABS = Object.freeze([
+  { id: 'overview', label: '三平台' },
+  { id: 'receipts', label: '回执中心' },
+  { id: 'x-publish', label: 'X 发布' },
+  { id: 'x-reply', label: 'X 回复' },
+])
+
+const TAB_IDS = new Set(TABS.map((tab) => tab.id))
+
+const PLATFORM_CARDS = Object.freeze([
+  {
+    id: 'x',
+    label: 'X',
+    summary: '高频互动助手回执、网站自动发推、人工确认回复。',
+    actions: [
+      { tab: 'receipts', label: '查看回执' },
+      { tab: 'x-publish', label: '发布任务' },
+      { tab: 'x-reply', label: '回复任务' },
+    ],
+  },
+  {
+    id: 'xhs',
+    label: '小红书',
+    summary: '推荐评论和笔记浇给由高频助手执行，回执进同一本账。',
+    actions: [
+      { tab: 'receipts', label: '查看回执' },
+      { href: '/admin/article-distribution', label: '文章草稿' },
+    ],
+  },
+  {
+    id: 'juejin',
+    label: '掘金',
+    summary: '技术长文先走文章分发写入草稿，回执能力后续挂进来。',
+    actions: [
+      { href: '/admin/article-distribution', label: '文章分发' },
+    ],
+  },
+])
 
 function formatTime(value) {
   if (!value) return '—'
@@ -40,12 +83,215 @@ async function copyText(text) {
   input.remove()
 }
 
+function resolveTab(value) {
+  const id = String(value || '').trim()
+  return TAB_IDS.has(id) ? id : 'overview'
+}
+
+function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
+  const tasks = center?.tasks || []
+  const devices = center?.devices || []
+  const recent = center?.recent || []
+  const onlineCount = devices.filter((device) => device.online).length
+
+  return (
+    <div className="grid gap-4">
+      {error ? <p className="mb-0 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
+      {notice ? <p className="mb-0 text-[13px] text-[#3f4039] dark:text-gray-200">{notice}</p> : null}
+      {center?.migrationRequired ? (
+        <p className="mb-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          {center.migrationRequired}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="grid flex-1 gap-3 sm:grid-cols-3">
+          <StatCard label="今日成功" value={center?.todaySuccess ?? '—'} tone="success" />
+          <StatCard label="在线设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
+          <StatCard label="最近回执" value={recent.length} sub="最多 40 条" />
+        </div>
+        <AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton>
+      </div>
+
+      <Section
+        title="回执密钥"
+        description="复制后贴到 X 高频互动助手和小红书高频互动助手的设置里。两个插件用同一把密钥。插件直接请求 2aran.com，不经过这个页面。"
+        actions={(
+          <>
+            <AdminButton size="sm" variant="primary" onClick={onCopySecret} disabled={!center?.secret}>复制</AdminButton>
+            <AdminButton size="sm" variant="danger" onClick={onRegenerateSecret} disabled={rotating || !center?.secret}>重新生成</AdminButton>
+          </>
+        )}
+      >
+        <input
+          readOnly
+          value={center?.secret || ''}
+          className="w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
+          aria-label="社区回执密钥"
+        />
+      </Section>
+
+      <Section title="今日任务项" description="按北京时间当天统计。同一条动作只记一次确认结果。">
+        {tasks.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {tasks.map((task) => (
+              <article key={`${task.platform}:${task.task}`} className="rounded-xl border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{task.label}</p>
+                  <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[task.platform] || task.platform}</StatusPill>
+                </div>
+                <p className="mb-0 mt-2 text-[1.4rem] font-semibold leading-none text-emerald-700 dark:text-emerald-300">{task.success}</p>
+                <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">
+                  失败 {task.failed} · 跳过 {task.skipped} · 受限 {task.limited}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="还没有任务项" description={loading ? '正在读取。' : '迁移完成后，这里会列出当前任务项。'} />
+        )}
+      </Section>
+
+      <Section title="设备" description="每个已安装的插件有自己的设备号。账号要等页面读到登录身份后才会出现。">
+        {devices.length ? (
+          <ul className="m-0 grid gap-2 p-0">
+            {devices.map((device) => (
+              <li key={device.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#e4e6dc] px-3 py-2 text-[13px] dark:border-[#263142]">
+                <span className="font-medium text-[#25261f] dark:text-gray-100">
+                  {PLATFORM_LABEL[device.platform] || device.platform}
+                  {device.accountHandle ? ` · @${device.accountHandle}` : ' · 账号未上报'}
+                </span>
+                <span className="flex flex-wrap items-center gap-2 text-[#7a7c70] dark:text-gray-400">
+                  <StatusPill size="sm" tone={device.online ? 'success' : 'neutral'}>{device.online ? '在线' : '离线'}</StatusPill>
+                  <span>v{device.extensionVersion || '—'}</span>
+                  <span>{formatTime(device.lastSeenAt)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState title="还没有设备" description="插件保存密钥并打开对应网站后，这里会出现心跳。" />
+        )}
+      </Section>
+
+      <Section title="最近回执" description="只保留动作编号、结果和错误码，不保存正文、Cookie 或模型密钥。">
+        {recent.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="text-[#7a7c70] dark:text-gray-400">
+                  <th className="py-2 pr-3 font-medium">时间</th>
+                  <th className="py-2 pr-3 font-medium">平台</th>
+                  <th className="py-2 pr-3 font-medium">任务</th>
+                  <th className="py-2 pr-3 font-medium">结果</th>
+                  <th className="py-2 pr-3 font-medium">账号</th>
+                  <th className="py-2 font-medium">目标</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((event) => {
+                  const meta = RESULT_META[event.result] || { label: event.result, tone: 'neutral' }
+                  return (
+                    <tr key={event.id} className="border-t border-[#e4e6dc] dark:border-[#263142]">
+                      <td className="py-2 pr-3 whitespace-nowrap">{formatTime(event.occurredAt)}</td>
+                      <td className="py-2 pr-3">{PLATFORM_LABEL[event.platform] || event.platform}</td>
+                      <td className="py-2 pr-3">{event.taskLabel}</td>
+                      <td className="py-2 pr-3">
+                        <StatusPill size="sm" tone={meta.tone}>{meta.label}</StatusPill>
+                        {event.errorCode ? <span className="ml-2 text-[#7a7c70] dark:text-gray-400">{event.errorCode}</span> : null}
+                      </td>
+                      <td className="py-2 pr-3">{event.accountHandle ? `@${event.accountHandle}` : '—'}</td>
+                      <td className="py-2 max-w-[16rem] truncate">{event.targetId || '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="还没有回执" description="插件确认一条回复、评论、关注或发帖后，会出现在这里。" />
+        )}
+      </Section>
+    </div>
+  )
+}
+
+function OverviewPanel({ center, loading, onOpenTab }) {
+  const devices = center?.devices || []
+  const tasks = center?.tasks || []
+  const onlineByPlatform = useMemo(() => {
+    const map = { x: 0, xhs: 0, juejin: 0 }
+    for (const device of devices) {
+      if (device.online && map[device.platform] !== undefined) map[device.platform] += 1
+    }
+    return map
+  }, [devices])
+  const successByPlatform = useMemo(() => {
+    const map = { x: 0, xhs: 0, juejin: 0 }
+    for (const task of tasks) {
+      if (map[task.platform] !== undefined) map[task.platform] += Number(task.success || 0)
+    }
+    return map
+  }, [tasks])
+
+  return (
+    <div className="grid gap-4">
+      <Section title="主攻平台" description="当前只收口 X、小红书和掘金。发布、互动和回执都从这里进出。">
+        <div className="grid gap-3 lg:grid-cols-3">
+          {PLATFORM_CARDS.map((platform) => (
+            <article key={platform.id} className="rounded-xl border border-[#e4e6dc] px-4 py-4 dark:border-[#263142]">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="m-0 text-[15px] font-semibold text-[#25261f] dark:text-gray-100">{platform.label}</h3>
+                <StatusPill size="sm" tone={onlineByPlatform[platform.id] ? 'success' : 'neutral'} icon={false}>
+                  {platform.id === 'juejin' ? '分发草稿' : (onlineByPlatform[platform.id] ? '助手在线' : (loading ? '读取中' : '助手离线'))}
+                </StatusPill>
+              </div>
+              <p className="mb-3 mt-2 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">{platform.summary}</p>
+              <p className="mb-3 text-[12px] text-[#7a7c70] dark:text-gray-400">
+                今日成功 {successByPlatform[platform.id] || 0}
+                {platform.id === 'juejin' ? ' · 回执未接入' : null}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {platform.actions.map((action) => (
+                  action.tab ? (
+                    <AdminButton key={action.tab} size="sm" variant="ghost" onClick={() => onOpenTab(action.tab)}>
+                      {action.label}
+                    </AdminButton>
+                  ) : (
+                    <AdminButton key={action.href} size="sm" variant="ghost" href={action.href}>
+                      {action.label}
+                    </AdminButton>
+                  )
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </Section>
+    </div>
+  )
+}
+
 export default function CommunityActionsClient() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tab = resolveTab(searchParams.get('tab'))
+
   const [center, setCenter] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [rotating, setRotating] = useState(false)
+
+  const openTab = useCallback((nextTab) => {
+    const id = resolveTab(nextTab)
+    const params = new URLSearchParams(searchParams.toString())
+    if (id === 'overview') params.delete('tab')
+    else params.set('tab', id)
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
 
   const refresh = useCallback(async () => {
     try {
@@ -99,146 +345,46 @@ export default function CommunityActionsClient() {
     }
   }
 
-  const tasks = center?.tasks || []
-  const devices = center?.devices || []
-  const recent = center?.recent || []
-  const links = center?.links || []
-  const onlineCount = devices.filter((device) => device.online).length
-
   return (
     <AdminPage
       title="社区动作"
-      description="两套高频助手在动作确认后，把回执发到公开站。这个页面用来查看，不用一直开着。开始、停止和挡位仍在插件里。"
-      actions={<AdminButton onClick={refresh} disabled={loading}>刷新</AdminButton>}
+      description="主攻 X、小红书和掘金。插件回执、X 自动发布和人工回复收在同一个入口。"
     >
-      {error ? <p className="mb-4 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
-      {notice ? <p className="mb-4 text-[13px] text-[#3f4039] dark:text-gray-200">{notice}</p> : null}
-      {center?.migrationRequired ? (
-        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          {center.migrationRequired}
-        </p>
+      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="社区动作工作区">
+        {TABS.map((item) => {
+          const active = tab === item.id
+          return (
+            <AdminButton
+              key={item.id}
+              type="button"
+              role="tab"
+              variant={active ? 'default' : 'ghost'}
+              aria-selected={active}
+              onClick={() => openTab(item.id)}
+            >
+              {item.label}
+            </AdminButton>
+          )
+        })}
+      </div>
+
+      {tab === 'overview' ? (
+        <OverviewPanel center={center} loading={loading} onOpenTab={openTab} />
       ) : null}
-
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <StatCard label="今日成功" value={center?.todaySuccess ?? '—'} tone="success" />
-        <StatCard label="在线设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
-        <StatCard label="最近回执" value={recent.length} sub="最多 40 条" />
-      </div>
-
-      <div className="grid gap-4">
-        <Section
-          title="回执密钥"
-          description="复制后贴到 X 高频互动助手和小红书高频互动助手的设置里。两个插件用同一把密钥。插件直接请求 2aran.com，不经过这个页面。"
-          actions={(
-            <>
-              <AdminButton size="sm" variant="primary" onClick={copySecret} disabled={!center?.secret}>复制</AdminButton>
-              <AdminButton size="sm" variant="danger" onClick={regenerateSecret} disabled={rotating || !center?.secret}>重新生成</AdminButton>
-            </>
-          )}
-        >
-          <input
-            readOnly
-            value={center?.secret || ''}
-            className="w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
-            aria-label="社区回执密钥"
-          />
-        </Section>
-
-        <Section title="今日任务项" description="按北京时间当天统计。同一条动作只记一次确认结果。">
-          {tasks.length ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {tasks.map((task) => (
-                <article key={`${task.platform}:${task.task}`} className="rounded-xl border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{task.label}</p>
-                    <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[task.platform] || task.platform}</StatusPill>
-                  </div>
-                  <p className="mb-0 mt-2 text-[1.4rem] font-semibold leading-none text-emerald-700 dark:text-emerald-300">{task.success}</p>
-                  <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">
-                    失败 {task.failed} · 跳过 {task.skipped} · 受限 {task.limited}
-                  </p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="还没有任务项" description={loading ? '正在读取。' : '迁移完成后，这里会列出八个任务项。'} />
-          )}
-        </Section>
-
-        <Section title="设备" description="每个已安装的插件有自己的设备号。账号要等页面读到登录身份后才会出现。">
-          {devices.length ? (
-            <ul className="m-0 grid gap-2 p-0">
-              {devices.map((device) => (
-                <li key={device.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#e4e6dc] px-3 py-2 text-[13px] dark:border-[#263142]">
-                  <span className="font-medium text-[#25261f] dark:text-gray-100">
-                    {PLATFORM_LABEL[device.platform] || device.platform}
-                    {device.accountHandle ? ` · @${device.accountHandle}` : ' · 账号未上报'}
-                  </span>
-                  <span className="flex flex-wrap items-center gap-2 text-[#7a7c70] dark:text-gray-400">
-                    <StatusPill size="sm" tone={device.online ? 'success' : 'neutral'}>{device.online ? '在线' : '离线'}</StatusPill>
-                    <span>v{device.extensionVersion || '—'}</span>
-                    <span>{formatTime(device.lastSeenAt)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="还没有设备" description="插件保存密钥并打开对应网站后，这里会出现心跳。" />
-          )}
-        </Section>
-
-        <Section title="最近回执" description="只保留动作编号、结果和错误码，不保存正文、Cookie 或模型密钥。">
-          {recent.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
-                <thead>
-                  <tr className="text-[#7a7c70] dark:text-gray-400">
-                    <th className="py-2 pr-3 font-medium">时间</th>
-                    <th className="py-2 pr-3 font-medium">平台</th>
-                    <th className="py-2 pr-3 font-medium">任务</th>
-                    <th className="py-2 pr-3 font-medium">结果</th>
-                    <th className="py-2 pr-3 font-medium">账号</th>
-                    <th className="py-2 font-medium">目标</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recent.map((event) => {
-                    const meta = RESULT_META[event.result] || { label: event.result, tone: 'neutral' }
-                    return (
-                      <tr key={event.id} className="border-t border-[#e4e6dc] dark:border-[#263142]">
-                        <td className="py-2 pr-3 whitespace-nowrap">{formatTime(event.occurredAt)}</td>
-                        <td className="py-2 pr-3">{PLATFORM_LABEL[event.platform] || event.platform}</td>
-                        <td className="py-2 pr-3">{event.taskLabel}</td>
-                        <td className="py-2 pr-3">
-                          <StatusPill size="sm" tone={meta.tone}>{meta.label}</StatusPill>
-                          {event.errorCode ? <span className="ml-2 text-[#7a7c70] dark:text-gray-400">{event.errorCode}</span> : null}
-                        </td>
-                        <td className="py-2 pr-3">{event.accountHandle ? `@${event.accountHandle}` : '—'}</td>
-                        <td className="py-2 max-w-[16rem] truncate">{event.targetId || '—'}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState title="还没有回执" description="插件确认一条回复、评论、关注或发帖后，会出现在这里。" />
-          )}
-        </Section>
-
-        <Section title="相关入口" description="这些动作先挂在同一个中心旁边。执行方式保持原样，回执以后再并进这本账。">
-          <ul className="m-0 grid gap-2 p-0">
-            {links.map((link) => (
-              <li key={link.href}>
-                <a href={link.href} className="block rounded-lg border border-[#e4e6dc] px-3 py-2 no-underline hover:border-[#b9bbad] dark:border-[#263142] dark:hover:border-[#34414f]">
-                  <span className="block text-[13px] font-medium text-[#25261f] dark:text-gray-100">{link.label}</span>
-                  <span className="block text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{link.note}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      </div>
+      {tab === 'receipts' ? (
+        <ReceiptsPanel
+          center={center}
+          loading={loading}
+          error={error}
+          notice={notice}
+          rotating={rotating}
+          onRefresh={refresh}
+          onCopySecret={copySecret}
+          onRegenerateSecret={regenerateSecret}
+        />
+      ) : null}
+      {tab === 'x-publish' ? <MorningGreetingClient embedded /> : null}
+      {tab === 'x-reply' ? <XReplyTasksClient embedded /> : null}
     </AdminPage>
   )
 }

@@ -48,3 +48,12 @@ test('GitHub-triggered site tasks are grouped with Actions while preserving the 
     assert.match(panelSource, new RegExp(`name: '${name}'[\\s\\S]*?workflow: '${workflow.replace('.', '\\.')}'`))
   }
 })
+
+test('Admin key summary does not identify the first database row as the public site key', () => {
+  assert.match(panelSource, /当前 Admin 运行环境/)
+  assert.match(panelSource, /不能确认公开站实际使用的 Key/)
+  assert.doesNotMatch(panelSource, /const siteKey = activeKeys\[0\]/)
+  assert.doesNotMatch(panelSource, /实际调用 \{DEEPSEEK_SITE_MODEL\}/)
+  assert.match(panelSource, /站内任务/)
+  assert.match(panelSource, /站外互动插件/)
+})

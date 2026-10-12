@@ -2,12 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DEEPSEEK_SHARED_SOURCES, DEEPSEEK_SITE_MODEL } from '../../../../lib/ai/deepseekKeysCore'
+import { DEEPSEEK_EXTERNAL_SOURCES, DEEPSEEK_SITE_SOURCES, DEEPSEEK_SITE_MODEL } from '../../../../lib/ai/deepseekKeysCore'
 import { AdminButton, EmptyState, Section, StatusPill } from '../../components/ui'
 
 const CONTROL_CLASS = 'h-9 rounded-lg border border-[#d8dad0] bg-white px-2.5 text-[13px] text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
 const INPUT_CLASS = 'w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-2 text-[13px] leading-6 text-[#3f4039] dark:border-[#2b3644] dark:bg-[#0e141d] dark:text-gray-200'
-const KNOWN_SOURCES = DEEPSEEK_SHARED_SOURCES
+const SOURCE_LABELS = {
+  'engagement-bot': '站内互动机器人',
+  'juejin-interaction-extension': '站外 · 掘金插件',
+  'x-reply-clipboard-extension': '站外 · X 插件',
+  'xhs-interaction-extension': '站外 · 小红书插件',
+}
+const KNOWN_SOURCES = [...DEEPSEEK_SITE_SOURCES, ...DEEPSEEK_EXTERNAL_SOURCES]
 const DEEPSEEK_SHARED_USES = [
   { name: 'AI 规划台', runtime: 'Admin · admin.2aran.com', source: 'admin-model-dispatch', taskTypes: ['planning', 'planning-stream'] },
   { name: '股票横向分析', runtime: '后台 · Owner-only', source: 'stock-analysis', taskTypes: ['horizontal-analysis'] },
@@ -120,11 +126,21 @@ function BindingChips({ bindings }) {
     <div className="flex flex-wrap gap-1">
       {bindings.map((binding, index) => (
         <span key={`${binding.source}-${binding.taskType}-${index}`} className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">
-          {binding.source}{binding.taskType ? ` · ${binding.taskType}` : ' · 全部任务'}
+          {SOURCE_LABELS[binding.source] || binding.source}{binding.taskType ? ` · ${binding.taskType}` : ' · 全部任务'}
         </span>
       ))}
     </div>
   )
+}
+
+function keyScope(bindings) {
+  if (!bindings?.length) return '全局兜底'
+  const hasSite = bindings.some((binding) => DEEPSEEK_SITE_SOURCES.includes(binding.source))
+  const hasExternal = bindings.some((binding) => DEEPSEEK_EXTERNAL_SOURCES.includes(binding.source))
+  if (hasSite && hasExternal) return '站内及站外共用'
+  if (hasSite) return '站内任务'
+  if (hasExternal) return '站外插件'
+  return '其他来源'
 }
 
 export default function DeepSeekKeysPanel() {
@@ -299,7 +315,6 @@ export default function DeepSeekKeysPanel() {
 
   const keys = data?.keys || []
   const activeKeys = keys.filter((key) => key.status === 'active')
-  const siteKey = activeKeys[0] || null
 
   return (
     <>
@@ -318,7 +333,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="DeepSeek 运行位置"
-        description="站点任务和 GitHub Actions 使用相同的变量名，但运行环境彼此隔离。下方分别记录密钥所在环境及对应任务。"
+        description="Admin、公开站和 GitHub Actions 的运行环境彼此隔离；共享 D1 中的密钥按任务绑定选择。这里仅能检测当前 Admin 环境，不能确认公开站实际使用的 Key。"
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length + DEEPSEEK_GITHUB_TRIGGERED_USES.length} 个使用场景</span>}
       >
@@ -383,19 +398,12 @@ export default function DeepSeekKeysPanel() {
           </article>
 
           <article className="rounded-lg border border-[#e6e7df] p-3 dark:border-[#243041]">
-            <div className="mb-2 text-[12px] font-medium text-[#67695d] dark:text-gray-300">站点运行环境</div>
+            <div className="mb-2 text-[12px] font-medium text-[#67695d] dark:text-gray-300">当前 Admin 运行环境</div>
             <div className="flex flex-wrap items-center gap-2">
               {loading ? (
                 <>
                   <StatusPill tone="neutral" size="sm">读取中</StatusPill>
                   <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">正在确认当前 Admin 环境</span>
-                </>
-              ) : siteKey ? (
-                <>
-                  <StatusPill tone="success" size="sm">Admin 检测到数据库记录</StatusPill>
-                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{siteKey.name || '未命名密钥'}</span>
-                  <code className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 font-mono text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">{DEEPSEEK_SITE_MODEL}</code>
-                  <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{siteKey.keyHint}</code>
                 </>
               ) : data?.envKeyConfigured ? (
                 <>
@@ -407,11 +415,14 @@ export default function DeepSeekKeysPanel() {
                 </>
               ) : (
                 <>
-                  <StatusPill tone="danger" size="sm">未配置</StatusPill>
-                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">当前 Admin 环境没有可用的 DeepSeek 密钥</span>
+                  <StatusPill tone="neutral" size="sm">未检测到环境变量</StatusPill>
+                  <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">当前 Admin 环境未配置 DEEPSEEK_API_KEY</span>
                 </>
               )}
             </div>
+            <p className="mt-2 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
+              Admin 可见 {activeKeys.length} 条启用的 D1 密钥记录；站内任务和站外插件分别绑定来源。公开站项目的环境变量与解密能力需在公开站单独核验。
+            </p>
             {data?.envKeyConfigured ? (
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[#67695d] dark:text-gray-300">
                 <span>当前 Admin 环境变量 DEEPSEEK_API_KEY：{data.envKeyHint}</span>
@@ -447,7 +458,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="数据库密钥"
-        description="Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
+        description="Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，浏览器插件直连 DeepSeek 不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -471,6 +482,7 @@ export default function DeepSeekKeysPanel() {
                       <StatusPill tone={key.status === 'active' ? 'success' : 'neutral'} size="sm">
                         {key.status === 'active' ? '启用' : '已停用'}
                       </StatusPill>
+                      <StatusPill tone="neutral" size="sm">{keyScope(key.bindings)}</StatusPill>
                       <span className="text-[14px] font-semibold text-[#15140f] dark:text-gray-100">{key.name || '未命名密钥'}</span>
                       <code className="rounded-md bg-[#f0f1e9] px-1.5 py-0.5 font-mono text-[11px] text-[#67695d] dark:bg-[#1b2532] dark:text-gray-300">{key.keyHint}</code>
                     </div>
@@ -479,15 +491,12 @@ export default function DeepSeekKeysPanel() {
                       <span>{key.usage.totalTokens.toLocaleString()} tokens</span>
                       <span>最近使用 {formatDate(key.lastUsedAt)}</span>
                       {key.baseUrl ? <span className="font-mono">{key.baseUrl}</span> : null}
-                      <span className="font-mono">实际调用 {DEEPSEEK_SITE_MODEL}</span>
+                      {keyScope(key.bindings) !== '站外插件' ? <span className="font-mono">站点任务默认模型 {DEEPSEEK_SITE_MODEL}</span> : null}
                       {key.defaultModel && key.defaultModel !== DEEPSEEK_SITE_MODEL ? (
                         <span>密钥备注模型 {key.defaultModel}（不再生效）</span>
                       ) : null}
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1">
-                      {activeKeys.length <= 1 && key.status === 'active' ? (
-                        <span className="rounded-md bg-[#eef6e8] px-1.5 py-0.5 text-[11px] text-[#3f6b2a] dark:bg-[#1b2a1a] dark:text-lime-200">默认候选</span>
-                      ) : null}
                       <BindingChips bindings={key.bindings} />
                     </div>
                     {key.note ? <p className="mt-1.5 text-[12px] text-[#67695d] dark:text-gray-400">{key.note}</p> : null}
@@ -560,7 +569,7 @@ export default function DeepSeekKeysPanel() {
           </div>
 
           <div className="mt-4">
-            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。跨运行环境仍需分别配置解密主密钥）</p>
+            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。站外插件直接使用复制的 Key，选择对应插件来源；站内互动机器人使用 engagement-bot。跨运行环境仍需分别配置解密主密钥）</p>
             <div className="mt-2 space-y-2">
               {form.bindings.map((binding, index) => (
                 <div key={index} className="flex flex-wrap items-center gap-2">
@@ -571,7 +580,12 @@ export default function DeepSeekKeysPanel() {
                     aria-label={`绑定 ${index + 1} 来源`}
                   >
                     <option value="">选择来源…</option>
-                    {KNOWN_SOURCES.map((source) => <option key={source} value={source}>{source}</option>)}
+                    <optgroup label="站内任务">
+                      {DEEPSEEK_SITE_SOURCES.map((source) => <option key={source} value={source}>{SOURCE_LABELS[source] || source} · {source}</option>)}
+                    </optgroup>
+                    <optgroup label="站外互动插件">
+                      {DEEPSEEK_EXTERNAL_SOURCES.map((source) => <option key={source} value={source}>{SOURCE_LABELS[source]} · {source}</option>)}
+                    </optgroup>
                     {binding.source && !KNOWN_SOURCES.includes(binding.source) ? <option value={binding.source}>{binding.source}</option> : null}
                   </select>
                   <input

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import {
   decryptApiKey,
   encryptApiKey,
-  isDeepSeekSharedSource,
+  isDeepSeekSiteSource,
   maskApiKey,
   parseBindings,
   pickBestKeyRow,
@@ -57,12 +57,20 @@ test('pickBestKeyRow 精确绑定 > source 绑定 > 全局兜底', () => {
   assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis').id, 'global')
 })
 
-test('共享 D1 中的公用任务可复用已绑定到任一公用 source 的数据库密钥', () => {
-  const rows = [row('site-key', [{ source: 'a-share-research' }, { source: 'x-daily-greeting' }])]
-  assert.equal(isDeepSeekSharedSource('engagement-bot'), true)
-  assert.equal(pickBestKeyRow(rows, 'engagement-bot', 'comment').id, 'site-key')
-  assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis').id, 'site-key')
-  assert.equal(pickBestKeyRow(rows, 'admin-model-dispatch', 'planning').id, 'site-key')
+test('站内互动绑定只供站内机器人使用', () => {
+  const rows = [row('site-bot-key', [{ source: 'engagement-bot' }])]
+  assert.equal(isDeepSeekSiteSource('engagement-bot'), true)
+  assert.equal(isDeepSeekSiteSource('juejin-interaction-extension'), false)
+  assert.equal(pickBestKeyRow(rows, 'engagement-bot', 'comment').id, 'site-bot-key')
+  assert.equal(pickBestKeyRow(rows, 'stock-analysis', 'horizontal-analysis'), null)
+  assert.equal(pickBestKeyRow(rows, 'admin-model-dispatch', 'planning'), null)
+})
+
+test('站外互动插件密钥不会被站内机器人或其他插件选中', () => {
+  const rows = [row('juejin-key', [{ source: 'juejin-interaction-extension' }])]
+  assert.equal(pickResolvedKeyRow(rows, 'juejin-interaction-extension', ''), rows[0])
+  assert.equal(pickResolvedKeyRow(rows, 'engagement-bot', 'comment'), null)
+  assert.equal(pickResolvedKeyRow(rows, 'x-reply-clipboard-extension', ''), null)
 })
 
 test('pickBestKeyRow 非公用 source 无匹配时返回 null', () => {
@@ -71,11 +79,11 @@ test('pickBestKeyRow 非公用 source 无匹配时返回 null', () => {
   assert.equal(pickBestKeyRow([], 'a-share-research', 'daily-draft'), null)
 })
 
-test('无绑定匹配时可用最近更新的启用记录作数据库兜底', () => {
-  const rows = [row('site-key', [{ source: 'a-share-research' }])]
+test('无绑定匹配时不使用最近更新的专用密钥', () => {
+  const rows = [row('juejin-key', [{ source: 'engagement-bot' }])]
   assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run'), null)
-  assert.equal(pickResolvedKeyRow(rows, 'custom-private-job', 'run', { allowLastResort: true }).id, 'site-key')
-  assert.equal(pickResolvedKeyRow([], 'engagement-bot', 'comment', { allowLastResort: true }), null)
+  assert.equal(pickResolvedKeyRow(rows, 'a-share-research', 'daily-draft'), null)
+  assert.equal(pickResolvedKeyRow([], 'engagement-bot', 'comment'), null)
 })
 
 test('全站默认 flash，密钥 default_model 不会改成 pro', () => {

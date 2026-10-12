@@ -1,6 +1,6 @@
 # DeepSeek 密钥管理
 
-更新日期：2026-08-20
+更新日期：2026-10-12
 
 ## 目标
 
@@ -31,6 +31,14 @@
 2. source 绑定：`taskType` 留空；
 3. 全局兜底：`bound_tasks` 为空数组；
 4. 环境变量默认密钥 `DEEPSEEK_API_KEY`（兼容旧部署）。
+
+绑定到某个 source 的专用密钥不会被其他 source 使用；未匹配时也不会取最近更新的专用密钥。
+
+## 站内与站外来源
+
+- `engagement-bot` 仅表示站内评论机器人，站点 API 会用这个 source 解析密钥。
+- 掘金、X、小红书浏览器插件分别登记为 `juejin-interaction-extension`、`x-reply-clipboard-extension`、`xhs-interaction-extension`。插件直接请求 DeepSeek，后台的绑定用于标明用途；插件调用不会进入站点的 `deepseek_tasks` 台账。
+- 2026-10-12 核对线上 D1 后，`DSF-juejin`、`DSF-X`、`DSF-xhs` 原先都误绑 `engagement-bot`。迁移 `0111_external_deepseek_key_bindings.sql` 按记录 ID、名称和原绑定逐条改为对应插件来源。
 
 ## 运行环境边界
 

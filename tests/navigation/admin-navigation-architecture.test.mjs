@@ -30,6 +30,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['内容', '短句内容'])
   assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['内容', '文章分发'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '路过互动'])
+  assert.deepEqual(resolveAdminTrail('/admin/community-actions').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
   assert.deepEqual(resolveAdminTrail('/admin/security-self-check').map((item) => item.label), ['工程与运维', '涉密自检'])
@@ -153,7 +154,7 @@ test('automation workspace hub and sidebar expose one task center plus focused p
 
   assert.deepEqual(
     listWorkspaceChildren(automation).map((item) => item.label),
-    ['任务中心', 'A 股研究自动化', '加密调研自动化', 'X 发布任务', 'X 回复任务', '路过互动']
+    ['任务中心', 'A 股研究自动化', '加密调研自动化', '社区动作', 'X 发布任务', 'X 回复任务', '路过互动']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

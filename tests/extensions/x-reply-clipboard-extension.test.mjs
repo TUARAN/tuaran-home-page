@@ -8,8 +8,133 @@ const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
 const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
+const context = require('../../tools/x-reply-clipboard-extension/context.js')
 const background = require('../../tools/x-reply-clipboard-extension/background.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
+
+test('settings auto-save batches edits and flushes before a task starts', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helpers = source.match(/  function scheduleConfigSave\([\s\S]*?(?=\n  async function loadPosterPace\()/)?.[0]
+  assert.ok(helpers)
+  const timers = new Map()
+  let nextTimer = 0
+  let saves = 0
+  const panel = { querySelector: () => ({ textContent: '' }) }
+  const context = vm.createContext({
+    Promise,
+    panel,
+    document: { getElementById: () => panel },
+    PANEL_ID: 'x-reply-clipboard-panel',
+    saveConfigForm: async () => { saves += 1; return true },
+    window: {
+      setTimeout(callback) { const id = ++nextTimer; timers.set(id, callback); return id },
+      clearTimeout(id) { timers.delete(id) },
+    },
+  })
+  vm.runInContext(`let configSaveTimer = 0; let configSavePromise = Promise.resolve(); ${helpers}`, context)
+  vm.runInContext('scheduleConfigSave(panel); scheduleConfigSave(panel)', context)
+  assert.equal(timers.size, 1)
+  assert.equal(saves, 0)
+  const [timerId, callback] = [...timers.entries()][0]
+  timers.delete(timerId)
+  callback()
+  await vm.runInContext('configSavePromise', context)
+  assert.equal(saves, 1)
+  vm.runInContext('scheduleConfigSave(panel)', context)
+  await vm.runInContext('flushConfigSave()', context)
+  assert.equal(saves, 2)
+  assert.equal(timers.size, 0)
+})
+
+test('PDF toolbox exports only the tweet matching the current status URL', async () => {
+  const source = await readFile(new URL('tweetPdf.js', extensionDir), 'utf8')
+  const makeArticle = (id, body) => ({
+    querySelectorAll(selector) {
+      if (selector === 'a[href*="/status/"]') return [{ href: `https://x.com/author/status/${id}`, getAttribute: () => `/author/status/${id}` }]
+      return []
+    },
+    querySelector(selector) {
+      if (selector === '[data-testid="tweetText"]') return { innerText: body }
+      return null
+    },
+  })
+  const stored = {}
+  const messages = []
+  const context = vm.createContext({
+    URL,
+    URLSearchParams,
+    window: { location: { pathname: '/author/status/123', origin: 'https://x.com', href: 'https://x.com/author/status/123' } },
+    document: { querySelectorAll: () => [makeArticle('456', 'other tweet'), makeArticle('123', 'correct tweet')] },
+    chrome: {
+      storage: { local: {
+        async get(key) { return { [key]: stored[key] } },
+        async set(values) { Object.assign(stored, values) },
+        async remove(keys) { keys.forEach((key) => delete stored[key]) },
+      } },
+      runtime: { async sendMessage(message) { messages.push(message); return { ok: true } } },
+    },
+  })
+  vm.runInContext(source, context)
+  const tweet = await context.XrcTweetPdf.exportCurrent()
+  assert.equal(tweet.text, 'correct tweet')
+  assert.equal(tweet.sourceUrl, 'https://x.com/author/status/123')
+  assert.equal(stored[messages[0].exportId].tweet.text, 'correct tweet')
+
+  context.document.querySelectorAll = () => [makeArticle('456', 'other tweet')]
+  assert.throws(() => context.XrcTweetPdf.extractTweet(), /还没找到当前这条推文/)
+})
+
+test('manual reply start is available for waits and stopped tasks, but not while stopping', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function canStartReplyNow\([\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const state = { running: true, stopping: false, riskPaused: false, reconnectAt: 0, nextCycleAt: 0, nextRoundAt: 2000, waitUntil: 0, loopPromise: null, status: '' }
+  const eligible = () => vm.runInNewContext(`${helper}\ncanStartReplyNow(1000)`, { state, riskRoundAdvancing: true })
+  assert.equal(eligible(), true)
+  state.nextRoundAt = 0
+  state.reconnectAt = 1500
+  assert.equal(eligible(), true)
+  state.reconnectAt = 0
+  state.waitUntil = 1500
+  assert.equal(eligible(), true)
+  state.waitUntil = 0
+  state.running = false
+  state.status = '已停止'
+  assert.equal(eligible(), true)
+  state.status = ''
+  state.riskPaused = true
+  assert.equal(eligible(), true)
+  state.loopPromise = {}
+  assert.equal(eligible(), false)
+})
+
+test('manual reply start clears a reconnect countdown and wakes its waiting loop', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function canStartReplyNow\([\s\S]*?\n  \}/)?.[0]
+  const action = source.match(/  function startReplyNow\([\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper && action)
+  const state = { running: true, stopping: false, riskPaused: false, reconnectAt: Date.now() + 60000, reconnectReason: '页面异常', nextCycleAt: 0, nextRoundAt: 0, waitUntil: 0, total: 3, status: '' }
+  const calls = { wake: 0, saved: 0, restarted: 0 }
+  const context = vm.createContext({
+    state,
+    Date,
+    skipScheduledWait: false,
+    writeSaved() { calls.saved += 1 },
+    renderPanel() {},
+    wakeScheduledWait() { calls.wake += 1 },
+    onToggle() { calls.restarted += 1 },
+  })
+  vm.runInContext(`${helper}\n${action}\nstartReplyNow()`, context)
+  assert.equal(state.reconnectAt, 0)
+  assert.equal(state.reconnectReason, '')
+  assert.equal(context.skipScheduledWait, true)
+  assert.equal(calls.wake, 1)
+  assert.equal(calls.saved, 1)
+  state.running = false
+  state.status = '已停止'
+  vm.runInContext('startReplyNow()', context)
+  assert.equal(calls.restarted, 1)
+})
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
@@ -18,6 +143,7 @@ test('offscreen timer message wakes a wait without relying on the page timer', a
     window: { setTimeout, clearTimeout },
     chrome: {
       runtime: {
+        id: "test-extension",
         lastError: null,
         onMessage: { addListener(listener) { listeners.push(listener) } },
         sendMessage(message, callback) {
@@ -122,6 +248,32 @@ test('plugin stable runtime spans multiple task tabs and stops only after the fi
   }
 })
 
+test('an invalidated extension timer falls back to the page timer', async () => {
+  const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  const context = vm.createContext({
+    window: { setTimeout, clearTimeout },
+    chrome: {
+      runtime: {
+        id: "test-extension",
+        lastError: null,
+        onMessage: { addListener() {} },
+        sendMessage(_message, callback) {
+          const error = new Error("Extension context invalidated.")
+          this.lastError = error
+          callback()
+          this.lastError = null
+          return Promise.reject(error)
+        },
+      },
+    },
+  })
+  vm.runInContext(source, context)
+  const startedAt = Date.now()
+  await context.XInteractionTimer.wait(1000)
+  assert.ok(Date.now() - startedAt >= 900)
+  assert.ok(Date.now() - startedAt < 1800)
+})
+
 test('short DOM polling stays local instead of flooding the offscreen timer channel', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
   let sent = 0
@@ -157,6 +309,248 @@ test('AI poster formats blank lines and keeps the random interval between 25 and
   assert.equal(poster.editorText({ innerText: '第一行\n\n\n第二行' }), '第一行\n\n第二行')
   assert.equal(poster.editorText({ innerText: '有什么新鲜事？' }), '')
   assert.ok(Array.from(poster.formatPost('内容'.repeat(300))).length <= 180)
+})
+
+test('scheduled post keeps the hook but rejects loud, shallow, and repeated drafts', () => {
+  const source = '一个人的表达方式会影响讨论\n同样的观点，语气不同，收到的回应也不同'
+  const good = '一个人的表达方式会影响讨论\n\n同样的意见，讲清楚缘由更好接话，\n\n也能给不同看法留点空间。'
+  assert.equal(poster.qualityReason(source, good, '表达方式影响讨论'), '')
+  assert.equal(poster.formatShortPost('说句难听点的\n会不会搜东西，本质是能否把模糊需求拆成关键词。'), '说句难听点的\n\n会不会搜东西，\n\n本质是能否把模糊需求拆成关键词。')
+  assert.equal(poster.qualityReason(source, `${good}这是一段多余的长解释。`.repeat(2), '表达方式影响讨论'), '正文过短或过长')
+  assert.equal(poster.qualityReason(source, good.replace('一个人的表达方式会影响讨论', '另一个开头'), '表达方式影响讨论'), '首句没有保留')
+  assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论\n确实，不同语气不同回应', '表达方式影响讨论'), '正文过短或过长')
+  assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论？？？\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。', '表达方式影响讨论'), '首句没有保留')
+  assert.equal(poster.qualityReason('你们都该闭嘴？？？\n原文', '你们都该闭嘴？？？\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。', '表达方式影响讨论'), '语气过火')
+  assert.equal(poster.duplicateReason(good, '表达方式影响讨论', [{ topic: '表达方式影响讨论', text: '另一篇内容' }]), '主题重复')
+  assert.equal(poster.duplicateReason(good, '讨论时留下交流空间', [{ topic: '不同主题', text: good }]), '正文重复')
+})
+
+test('used source IDs survive a fresh scheduled-post tab', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const makeTab = () => {
+    const context = vm.createContext({
+      chrome: { storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } } },
+      sessionStorage: { getItem: () => null },
+    })
+    vm.runInContext(source, context)
+    return context.XInteractionPoster
+  }
+  const first = makeTab()
+  await first.loadHistory()
+  await first.rememberUsedSourceId('source-123')
+  await first.rememberPublishedPost('source-123', '保留钩子\n这条内容已经发出', '表达方式影响讨论')
+  const second = makeTab()
+  await second.loadHistory()
+  assert.equal(second.readUsedSourceIds().has('source-123'), true)
+  assert.equal(storage.xrcPosterHistoryV2.published[0].topic, '表达方式影响讨论')
+  assert.equal(second.duplicateReason('另一个钩子\n另一条内容', '表达方式会影响讨论', storage.xrcPosterHistoryV2.published), '主题重复')
+})
+
+test('failed rewrites never fall back to the source post in the publish queue', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const sourceText = '一个人的表达方式会影响讨论\n同样的观点，语气不同，收到的回应也不同'
+  const context = vm.createContext({
+    chrome: {
+      runtime: {
+        sendMessage(message, respond) {
+          if (message.sourceText === sourceText) respond({ ok: true, topic: '表达方式影响讨论', post: '一个人的表达方式会影响讨论\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。' })
+          else respond({ ok: false, error: '改写失败' })
+        },
+      },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  api.snapshot().sourceQueue.push(
+    { id: 'good', text: sourceText },
+    { id: 'failed', text: '另一个钩子\n这是一段原始内容，不能直接放入待发列表' },
+  )
+  await api.buildPublishList()
+  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.id), ['good'])
+  assert.equal(api.readUsedSourceIds().has('failed'), false)
+  assert.equal(api.snapshot().publishQueue[0].text.split('\n')[0], sourceText.split('\n')[0])
+})
+
+test('DeepSeek post rewrite requires a structured topic and draft', () => {
+  assert.deepEqual(background.parseSourceRewrite('{"skip":false,"topic":"表达方式影响讨论","post":"首句\\n正文"}'), {
+    skip: false, topic: '表达方式影响讨论', post: '首句\n正文',
+  })
+  assert.deepEqual(background.parseSourceRewrite('{"skip":true,"topic":"","post":""}'), {
+    skip: true, topic: '', post: '',
+  })
+  assert.throws(() => background.parseSourceRewrite('直接照抄原文'), /可解析的草稿/)
+})
+
+test('scheduled poster recognizes X duplicate warning without treating unrelated alerts as duplicates', () => {
+  const previousDocument = global.document
+  const duplicate = { innerText: 'Whoops! You already said that.' }
+  const unrelated = { innerText: 'Something went wrong.' }
+  global.document = { querySelectorAll: () => [duplicate, unrelated] }
+  try {
+    assert.deepEqual(poster.duplicatePostNoticeNodes(), [duplicate])
+    global.document = { querySelectorAll: () => [{ innerText: '你已经说过了' }] }
+    assert.equal(poster.duplicatePostNoticeNodes().length, 1)
+  } finally {
+    global.document = previousDocument
+  }
+})
+
+test('post draft clear removes a rejected duplicate from the inline composer', async () => {
+  const draft = require('../../tools/x-reply-clipboard-extension/draftFill.js')
+  const previousDocument = global.document
+  const previousWindow = global.window
+  const editor = {
+    innerText: '已经发过的内容',
+    parentElement: null,
+    closest: () => null,
+    getBoundingClientRect: () => ({ width: 200, height: 60 }),
+    focus() {},
+  }
+  global.document = {
+    querySelectorAll: () => [editor],
+    execCommand(command) {
+      if (command === 'delete') editor.innerText = ''
+      return true
+    },
+  }
+  global.window = {}
+  try {
+    assert.equal((await draft.clearReplyComposer('post')).ok, true)
+    assert.equal(editor.innerText, '')
+  } finally {
+    global.document = previousDocument
+    global.window = previousWindow
+  }
+})
+
+test('a saved duplicate post is removed from the queue before the next send', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const listeners = new Set()
+  const editor = {
+    innerText: '重复的第一条',
+    isConnected: true,
+    closest: () => null,
+    getBoundingClientRect: () => ({ width: 200, height: 60 }),
+  }
+  const submit = {
+    disabled: false,
+    getAttribute: () => null,
+    closest: () => null,
+    getBoundingClientRect: () => ({ width: 40, height: 20 }),
+  }
+  const body = {}
+  editor.parentElement = { parentElement: body, querySelector: () => submit }
+  const alert = { innerText: 'Whoops! You already said that.' }
+  const window = {
+    location: { pathname: '/home' },
+    setTimeout,
+    addEventListener: (_name, fn) => listeners.add(fn),
+    removeEventListener: (_name, fn) => listeners.delete(fn),
+    postMessage(message) {
+      if (message.direction !== 'request') return
+      if (message.clear) editor.innerText = ''
+      for (const listener of listeners) listener({ source: window, data: {
+        channel: message.channel, direction: 'response', requestId: message.requestId, result: { ok: true },
+      } })
+    },
+  }
+  const saved = {
+    running: true,
+    count: 0,
+    currentPost: '重复的第一条',
+    currentSourceId: 'first',
+    lastError: '没有确认推文发送成功',
+    nextPostAt: Date.now() + 60000,
+    publishQueue: [{ id: 'first', text: '重复的第一条' }, { id: 'second', text: '另一条' }],
+  }
+  const sessionStorage = {
+    getItem: () => JSON.stringify(saved),
+    setItem() {},
+    removeItem() {},
+  }
+  const document = {
+    body,
+    querySelectorAll(selector) {
+      if (selector.includes('tweetTextarea_0')) return [editor]
+      if (selector.includes('tweetButtonInline')) return [submit]
+      if (selector.includes('[role="alert"]')) return [alert]
+      return []
+    },
+  }
+  const chrome = { storage: { local: { async get() { return {} }, async set() {} } } }
+  const context = vm.createContext({ window, document, sessionStorage, chrome, setTimeout, clearTimeout, URL, console })
+  vm.runInContext(source, context)
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('duplicate post was not skipped')), 3000)
+    context.XInteractionPoster.restore((snapshot) => {
+      if (!snapshot.status.startsWith('X 提示这条内容已说过')) return
+      clearTimeout(timeout)
+      assert.deepEqual(Array.from(snapshot.publishQueue, (item) => item.id), ['second'])
+      assert.equal(editor.innerText, '')
+      assert.equal(snapshot.count, 0)
+      context.XInteractionPoster.stop()
+      resolve()
+    })
+  })
+})
+
+test('legacy queued drafts are cleared instead of being sent after the quality update', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const listeners = new Set()
+  const editor = {
+    innerText: '旧钩子\n\n旧正文，这一版没有经过新规则筛选',
+    closest: () => null,
+    getBoundingClientRect: () => ({ width: 200, height: 60 }),
+  }
+  const submit = { disabled: false, closest: () => null, getAttribute: () => null, getBoundingClientRect: () => ({ width: 40, height: 20 }) }
+  const body = {}
+  editor.parentElement = { parentElement: body, querySelector: () => submit }
+  const window = {
+    location: { pathname: '/home' }, setTimeout,
+    addEventListener: (_name, fn) => listeners.add(fn),
+    removeEventListener: (_name, fn) => listeners.delete(fn),
+    postMessage(message) {
+      if (message.direction !== 'request') return
+      if (message.clear) editor.innerText = ''
+      for (const listener of listeners) listener({ source: window, data: {
+        channel: message.channel, direction: 'response', requestId: message.requestId, result: { ok: true },
+      } })
+    },
+  }
+  const text = '旧钩子\n旧正文，这一版没有经过新规则筛选'
+  const saved = { running: true, currentPost: text, currentSourceId: 'legacy', publishQueue: [{ id: 'legacy', text }] }
+  const sessionStorage = { getItem: () => JSON.stringify(saved), setItem() {}, removeItem() {} }
+  const document = { body, querySelectorAll(selector) {
+    if (selector.includes('tweetTextarea_0')) return [editor]
+    if (selector.includes('tweetButtonInline')) return [submit]
+    return []
+  } }
+  const chrome = { storage: { local: { async get() { return {} }, async set() {} } } }
+  const context = vm.createContext({ window, document, sessionStorage, chrome, setTimeout, clearTimeout, URL, console })
+  vm.runInContext(source, context)
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('legacy draft was not skipped')), 3000)
+    context.XInteractionPoster.restore((snapshot) => {
+      if (!snapshot.status.startsWith('跳过待发内容')) return
+      clearTimeout(timeout)
+      assert.equal(editor.innerText, '')
+      assert.equal(snapshot.publishQueue.length, 0)
+      assert.equal(snapshot.count, 0)
+      context.XInteractionPoster.stop()
+      resolve()
+    })
+  })
 })
 
 test('picks the topmost unseen post that still has a reply button', () => {
@@ -269,6 +663,93 @@ test('recognizes only notification tweets that reply to the signed-in account', 
   assert.equal(loop.isNotificationReplyText('Replying to @someone_else', 'tuaran'), false)
 })
 
+test('notification conversation uses the nearest earlier post by the signed-in account', () => {
+  const article = (href, text) => ({
+    parentElement: { closest() { return null } },
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+      if (selector === '[data-testid="tweetText"]') return { innerText: text }
+      return null
+    },
+  })
+  const articles = [
+    article('/me/status/100', '我的原帖'),
+    article('/other/status/101', '别人的中间回复'),
+    article('/me/status/102', '我补充的上下文'),
+    article('/friend/status/103', '对方最新回复'),
+  ]
+  const result = context.findConversation(articles, '103', 'me', 'friend')
+  assert.equal(result.ownPost.text, '我补充的上下文')
+  assert.equal(result.reply.text, '对方最新回复')
+  assert.equal(context.findConversation(articles, '103', 'me', 'stranger'), null)
+  assert.equal(context.findConversation([articles.at(-1)], '103', 'me', 'friend'), null)
+})
+
+test('notification context opens a background conversation tab and closes it after reading', async () => {
+  let created = null
+  let removed = null
+  globalThis.chrome = {
+    tabs: {
+      async create(options) { created = options; return { id: 91 } },
+      async sendMessage(id, message) {
+        assert.equal(id, 91)
+        assert.equal(message.replyId, '103')
+        return { context: { ownPost: { text: '我的帖子' }, reply: { text: '对方回复' } } }
+      },
+      async remove(id) { removed = id },
+    },
+  }
+  try {
+    const result = await background.readNotificationContext({
+      replyUrl: 'https://x.com/friend/status/103', replyId: '103', ownHandle: 'me', replyAuthor: 'friend',
+    }, { tab: { windowId: 7 } })
+    assert.equal(result.context.ownPost.text, '我的帖子')
+    assert.equal(new URL(created.url).searchParams.get('xrcContext'), '1')
+    assert.equal(created.active, false)
+    assert.equal(removed, 91)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('DeepSeek receives both sides of a notification conversation', async () => {
+  let request = null
+  const originalFetch = globalThis.fetch
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.fetch = async (_url, options) => {
+    request = JSON.parse(options.body)
+    return { ok: true, async json() { return { choices: [{ message: { content: '谢谢补充，我的意思是这个范围。' } }] } } }
+  }
+  try {
+    await background.callDeepSeek({
+      postText: '对方回复',
+      conversation: { ownPost: { text: '我的帖子' }, reply: { text: '对方回复' } },
+    })
+    const userPrompt = request.messages[1].content
+    assert.match(userPrompt, /我的帖子：\n我的帖子/)
+    assert.match(userPrompt, /对方针对这条帖子写的回复：\n对方回复/)
+    assert.match(userPrompt, /直接回应对方这条回复/)
+    await background.callDeepSeek({
+      postText: '生日快乐',
+      conversation: { ownPost: null, reply: { text: '生日快乐' } },
+    })
+    const fallbackPrompt = request.messages[1].content
+    assert.match(fallbackPrompt, /对方回复给我的内容：\n生日快乐/)
+    assert.match(fallbackPrompt, /以收到回复的人的身份随手接一句/)
+    assert.match(request.messages[0].content, /应表示感谢，而不是再次祝对方生日快乐/)
+    await background.callDeepSeek({
+      postText: '说了半天一句重点没有',
+      conversation: { ownPost: null, reply: { text: '说了半天一句重点没有' } },
+    })
+    assert.match(request.messages[1].content, /批评表达散乱时可自然承认写散了/)
+    assert.match(request.messages[1].content, /不要装作知道原帖结论，不要反问对方/)
+    assert.match(request.messages[0].content, /避免客服式套话、空泛道歉/)
+  } finally {
+    delete globalThis.chrome
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('limits notification interaction to the most recent two hours', () => {
   const now = Date.parse('2026-10-09T12:00:00.000Z')
   assert.equal(loop.NOTIFICATION_WINDOW_MS, 2 * 60 * 60 * 1000)
@@ -280,6 +761,8 @@ test('limits notification interaction to the most recent two hours', () => {
 })
 
 test('recognizes the list routes used by the integrated mutual helper', () => {
+  assert.ok(['/crazypig9y/followers', '/jianlvup/followers', '/jianlvya/followers', '/kyotom08/followers', '/Chill_Alpha/followers'].includes(mutual.targetPath('targetFollow')))
+  assert.deepEqual(mutual.constants.TARGET_FOLLOW_HANDLES, ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha'])
   assert.equal(mutual.isFollowingPath('/tuaran/following'), true)
   assert.equal(mutual.isFollowingPath('/tuaran/followers'), false)
   assert.equal(mutual.isFollowersPath('/tuaran/followers'), true)
@@ -293,7 +776,7 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.constants.RATE_LIMIT_COOLDOWN_MS, 15 * 60 * 1000)
 })
 
-test('loads one shared follow quota for follow-back and target-follow modes', async () => {
+test('loads one shared follow quota for unfollow, follow-back, and target-follow modes', async () => {
   const now = new Date()
   const today = [
     now.getFullYear(),
@@ -316,6 +799,56 @@ test('loads one shared follow quota for follow-back and target-follow modes', as
     assert.equal(snapshot.sharedBatchProgress, 8)
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('invalidated follow storage keeps the last quota and stops the task without an unhandled rejection', async () => {
+  const now = new Date()
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+  globalThis.window = { location: { pathname: '/tuaran/following' } }
+  globalThis.chrome = {
+    runtime: { id: 'test-extension' },
+    storage: { local: {
+      async get() { return { xrcTargetFollowDaily: { date: today, count: 23, batchProgress: 8, cooldownUntil: 0 } } },
+      async set() {},
+    } },
+  }
+  try {
+    assert.equal((await mutual.refreshSharedFollowRate()).sharedDailyFollowed, 23)
+    globalThis.chrome.runtime.id = undefined
+    const stale = await mutual.refreshSharedFollowRate()
+    assert.equal(stale.sharedDailyFollowed, 23)
+    assert.match(stale.status, /刷新此 X 页面/)
+    const result = await mutual.run('unfollow', () => {})
+    assert.match(result.error, /刷新此 X 页面/)
+    assert.equal(mutual.snapshot().running, false)
+  } finally {
+    delete globalThis.chrome
+    delete globalThis.window
+  }
+})
+
+test('follow task stops if its shared quota cannot be saved', async () => {
+  const now = new Date()
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+  let writes = 0
+  globalThis.window = { location: { pathname: '/tuaran/following' } }
+  globalThis.chrome = {
+    runtime: { id: 'test-extension' },
+    storage: { local: {
+      async get() { return { xrcTargetFollowDaily: { date: today, count: 23, batchProgress: 15, cooldownUntil: 0 } } },
+      async set() { writes += 1; throw new Error('storage failed') },
+    } },
+  }
+  try {
+    const result = await mutual.run('unfollow', () => {})
+    assert.equal(writes, 1)
+    assert.match(result.error, /关注记录无法保存/)
+    assert.equal(mutual.snapshot().running, false)
+    assert.equal(mutual.snapshot().sharedDailyFollowed, 23)
+  } finally {
+    delete globalThis.chrome
+    delete globalThis.window
   }
 })
 
@@ -361,6 +894,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   const catalog = await readFile(new URL('../../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../../lib/content/contentRegistry.js', import.meta.url), 'utf8')
   const toolItems = await readFile(new URL('../../lib/site/toolItems.js', import.meta.url), 'utf8')
+  const nextConfig = await readFile(new URL('../../next.config.js', import.meta.url), 'utf8')
   const resourcePage = await readFile(
     new URL('../../app/(site)/resources/x-reply-clipboard-extension/page.jsx', import.meta.url),
     'utf8',
@@ -372,15 +906,25 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.6.27')
+  assert.equal(manifest.version, '3.9.0')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
-  assert.deepEqual(manifest.content_scripts[1].js, ['phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'content.js'])
-  assert.deepEqual(manifest.permissions, ['storage', 'offscreen'])
+  assert.deepEqual(manifest.content_scripts[1].js, ['context.js'])
+  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'content.js'])
+  assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
+  assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.equal(manifest.background.service_worker, 'background.js')
+  assert.match(nextConfig, /source: '\/resources\/x-mutual-cleaner-extension',[\s\S]*?destination: '\/resources\/x-reply-clipboard-extension'/)
+  assert.doesNotMatch(toolItems, /sourcePath: 'tools\/x-(?:mutual-cleaner|tweet-to-pdf)-extension'/)
+  assert.match(catalog, /resourceKey: 'resource:x-tweet-to-pdf-extension',[\s\S]*?legacy: true/)
+  assert.match(catalog, /resourceKey: 'resource:x-mutual-cleaner-extension',[\s\S]*?legacy: true/)
+  assert.match(backgroundSource, /xrc-tweet-pdf-open/)
+  const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
+  await Promise.all(['pdf/print.js', 'pdf/print.css'].map((path) => readFile(new URL(path, extensionDir), 'utf8')))
+  assert.match(printHtml, /print\.js/)
   assert.match(backgroundSource, /xrc-task-open/)
   assert.match(backgroundSource, /xrc-task-register/)
   assert.match(backgroundSource, /chrome\.windows\.create/)
@@ -398,16 +942,37 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(timerWorkerSource, /tabId/)
   assert.match(posterSource, /tweetButtonInline/)
   assert.match(posterSource, /tweetTextarea_0/)
-  assert.match(posterSource, /xrc-ai-post-generate/)
+  assert.doesNotMatch(posterSource, /xrc-ai-post-generate/)
+  assert.match(posterSource, /xrc-ai-source-rewrite/)
+  assert.match(posterSource, /正在总结改写/)
+  assert.match(posterSource, /DEFAULT_SOURCE_HANDLE = "wangchangfu88"/)
+  assert.match(posterSource, /xrcPosterPublishList/)
+  assert.match(posterSource, /列表发完前不会重新抓取/)
+  assert.doesNotMatch(posterSource, /if \(!arrived\) state\.stopping = true/)
+  assert.match(posterSource, /if \(!saved\?\.running\) return false/)
+  assert.equal(poster.shouldCollect(0), true)
+  assert.equal(poster.shouldCollect(3), false)
+  assert.equal(poster.DEFAULT_SOURCE_HANDLE, 'wangchangfu88')
+  assert.equal(poster.acceptRewrite('钩子留在这里\n但是后面可以换', '钩子被改了\n后面换成新说法'), '钩子留在这里\n\n后面换成新说法')
+  assert.equal(poster.acceptRewrite('钩子留在这里\n但是后面可以换', '钩子留在这里\n但是后面可以换'), '')
+  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '1', text: '短句', hasMedia: true }), null)
+  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '2', text: '第一眼就心动的人\n真的不甘心' }), { id: '2', text: '第一眼就心动的人\n真的不甘心' })
+  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '3', text: '欢迎订阅我的帖子' }), null)
+  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '4', text: 'Subscribe to my posts' }), null)
+  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '5', text: '订阅我的更新', isPinned: true }), null)
+  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '7', text: '置顶的普通帖子', isPinned: true }), { id: '7', text: '置顶的普通帖子' })
+  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '6', text: '聊聊订阅制产品的定价' }), { id: '6', text: '聊聊订阅制产品的定价' })
   assert.match(posterSource, /MIN_INTERVAL_MS = 25 \* 60 \* 1000/)
   assert.match(posterSource, /MAX_INTERVAL_MS = 35 \* 60 \* 1000/)
   assert.match(posterSource, /RETRY_INTERVAL_MS = 60 \* 1000/)
   assert.match(posterSource, /depth < 30/)
   assert.match(posterSource, /visibleSubmits/)
   assert.match(posterSource, /上次异常：\$\{state\.lastError\}/)
-  assert.match(posterSource, /正在重试上次尚未发出的内容/)
+  assert.match(posterSource, /正在重试待发列表中的这一条/)
   assert.match(posterSource, /发帖框已有内容，正在直接发送/)
   assert.ok(posterSource.indexOf('const queued = editorText') < posterSource.indexOf('state.nextPostAt > Date.now()'))
+  assert.ok(posterSource.indexOf('首页已打开，等待发帖框和 Post 按钮加载') < posterSource.indexOf('const queued = editorText'))
+  assert.match(posterSource, /await waitForHomeComposer\(30000\)/)
   assert.doesNotMatch(posterSource, /为避免覆盖已暂停/)
   assert.match(posterSource, /state\.elapsedMs = state\.startedAt/)
   assert.match(posterFixture, /tweetButtonInline/)
@@ -430,7 +995,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /ROUNDS_PER_RUN/)
   assert.match(content, /completedRounds/)
   assert.match(content, /processedIds: Array\.from\(processedIds\)/)
-  assert.match(content, /回复已确认；X 未关闭弹窗，刷新后自动继续/)
+  assert.match(content, /result === "sent-composer-open" && !await closeReplyComposer\(\{ confirmedSent: true \}\)/)
   assert.match(content, /send-unconfirmed/)
   assert.match(content, /稍后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
@@ -440,7 +1005,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /clickMatchingButton/)
   assert.doesNotMatch(content, /saveAndDismissComposer/)
   assert.doesNotMatch(content, /closeConfirmedComposer/)
-  assert.doesNotMatch(content, /app-bar-close/)
+  assert.match(content, /confirmedSent[\s\S]*?app-bar-close/)
   assert.doesNotMatch(content, /\bDiscard\b/)
   assert.match(content, /sent-composer-open/)
   assert.match(content, /phraseIndexFromText\(phrases, existingText\)/)
@@ -449,6 +1014,18 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /if \(!existingText\) return publishReply\(existingComposer, replyText\)/)
   assert.match(content, /getManifest/)
   assert.match(content, /X高频互动助手/)
+  assert.match(content, /全流程启动/)
+  assert.match(content, /xrc-flow-start/)
+  assert.match(content, /taskWindowLabel/)
+  assert.match(content, /document\.title/)
+  assert.match(content, /data-xrc-global-bar/)
+  assert.match(content, /data-xrc-global-key/)
+  assert.ok(content.indexOf('class="xrc-global-bar"') < content.indexOf('class="xrc-flow-launch"'))
+  assert.doesNotMatch(content, /xrc-global-paces/)
+  assert.match(content, /xrc-round-pace/)
+  assert.match(content, /xrc-speed-section/)
+  assert.match(content, /data-xrc-flow-help/)
+  assert.match(content, /启动单项任务/)
   assert.match(content, /data-xrc-assistant="mutual"/)
   assert.match(content, /data-xrc-assistant="timeline"/)
   assert.match(content, /data-xrc-assistant="notifications"/)
@@ -471,10 +1048,18 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /nextCycleAt/)
   assert.match(content, /xrc-task-open/)
   assert.match(content, /xrc-task-register/)
+  assert.match(content, /conversation = await conversationOrFallback\(next, postText\)/)
+  assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
   assert.match(content, /每项使用独立窗口/)
   assert.doesNotMatch(content, /class="xrc-phrase-row"/)
-  assert.match(content, /class="xrc-status xrc-reply-status"/)
+  assert.match(content, /class="xrc-status xrc-reply-status xrc-wait-action"/)
+  assert.match(content, /data-xrc-reply-start-now hidden>立即开始/)
+  assert.match(content, /data-xrc-post-start-now>立即开始/)
+  assert.match(content, /function canStartReplyNow\(now = Date\.now\(\)\)/)
+  assert.match(content, /status\.querySelector\("\[data-xrc-reply-start-now\]"\)\.hidden = !canStartReplyNow\(\)/)
+  assert.doesNotMatch(content.match(/function canStartReplyNow\([\s\S]*?\n  \}/)?.[0] || '', /riskRoundAdvancing/)
+  assert.match(content, /wakeScheduledWait\?\.\(\)/)
   assert.doesNotMatch(content, /当前 AI 回复/)
   assert.doesNotMatch(content, /读取原帖后自动生成/)
   assert.ok(content.indexOf('data-xrc-assistant="timeline"') < content.indexOf('data-xrc-assistant="notifications"'))
@@ -495,10 +1080,15 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-mutual-tab="unfollow"/)
   assert.match(content, /data-xrc-mutual-tab="followBack"/)
   assert.match(content, /data-xrc-mutual-tab="targetFollow"/)
-  assert.match(content, /其他作者的 Followers 页面/)
-  assert.match(content, /与关注候选共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个/)
-  assert.match(content, /与回关粉丝共享：2 秒一个，每 15 个暂停 30 分钟，每日合计最多 400 个/)
+  assert.match(content, /每次从 5 个互关名单里随机打开一个/)
+  assert.match(content, /xrc-task-pending-remember/)
+  assert.match(content, /state\.assistantMode === "poster" && await postApi\?\.resumeIfPending/)
+  assert.match(content, /清理未回关、回关粉丝和关注候选共用同一组额度/)
+  assert.match(content, /三项合计每 15 个暂停 30 分钟，每日合计最多 400 个/)
   assert.match(content, /function selectMutualMode/)
+  assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return openTaskTab\(mutualTaskKey\(mode\)\)/)
+  assert.match(content, /button\.title = selected \? "当前任务窗口" : "打开或切换到对应的关注任务窗口"/)
+  assert.doesNotMatch(content, /button\.disabled = anyTaskRunning\(\)/)
   assert.match(content, /mutualMode/)
   assert.match(content, /button\.disabled = false;\s*button\.title = selected/)
   assert.match(content, /mutualApi\.run/)
@@ -518,7 +1108,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-post-wait/)
   assert.match(content, /data-xrc-reply-prompt/)
   assert.match(content, /data-xrc-post-prompt/)
-  assert.match(content, /data-xrc-config-save/)
+  assert.doesNotMatch(content, /data-xrc-config-save/)
+  assert.match(content, /scheduleConfigSave\(panel/)
   assert.doesNotMatch(content, /当前内容/)
   assert.doesNotMatch(content, /data-xrc-post-preview/)
   assert.match(content, /每轮回复/)
@@ -565,8 +1156,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.6\.11\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.6\.11'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.9\.0\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.9\.0'/)
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -654,21 +1245,36 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.validTaskMode('unknown'), 'timeline')
   assert.equal(background.taskTabUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications?xrcAssistant=notifications')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home'), 'https://x.com/home?xrcAssistant=mutual-unfollow')
-  assert.equal(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=mutual-targetFollow')
   assert.equal(background.taskTabUrl('poster', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=poster')
-  assert.match(background.REPLY_SYSTEM_PROMPT, /15 到 50 个中文字符/)
+  assert.equal(background.taskTabUrl('poster', 'https://x.com/home', { start: true }), 'https://x.com/wangchangfu88?xrcAssistant=poster&xrcStart=1')
+  assert.equal(background.taskPageUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications')
+  assert.equal(background.taskPageUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following')
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), /^https:\/\/twitter.com\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers\?xrcAssistant=mutual-targetFollow$/)
+  assert.equal(background.taskTabUrl('timeline', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=timeline&xrcStart=1')
+  assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: '@Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow&xrcStart=1')
+  assert.equal(background.taskTabUrl('mutual-followBack', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/followers?xrcAssistant=mutual-followBack&xrcStart=1')
+  assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow')
+  assert.doesNotMatch(background.taskTabUrl('poster', 'https://x.com/home'), /xrcStart=1/)
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), /^https:\/\/x\.com\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers\?xrcAssistant=mutual-targetFollow&xrcStart=1$/)
+  assert.match(backgroundText, /xrc-flow-start/)
+  assert.match(backgroundText, /xrc-flow-pause/)
+  assert.match(backgroundText, /phase: "starting"/)
+  assert.match(backgroundText, /phase: "stopped"/)
+  assert.match(background.REPLY_SYSTEM_PROMPT, /长短按语境决定，短到几个字也可以/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
-  assert.match(background.POST_SYSTEM_PROMPT, /40 到 90 个字/)
+  assert.match(background.POST_SYSTEM_PROMPT, /35 到 75 个字/)
   assert.match(background.POST_SYSTEM_PROMPT, /不要出现 \$/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /\$代币/)
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(background.cleanPost('听说东北以前一家子睡一个炕。\n$KAITO'), '听说东北以前一家子睡一个炕。')
-  assert.match(background.POST_SYSTEM_PROMPT, /每句之间空一行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /每行之间空一行/)
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
   assert.match(backgroundText, /已被 X 判定为重复/)
   assert.match(backgroundText, /xrc-ai-post-generate/)
+  assert.match(backgroundText, /xrc-ai-source-rewrite/)
+  assert.match(backgroundText, /保留原帖第一行钩子的原句/)
   assert.match(backgroundText, /max_tokens: 160/)
   assert.match(backgroundText, /这次用一两句白话带到 AI 或 Web3/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)
@@ -680,25 +1286,41 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
 test('task windows are created once and reused without backgrounding another task', async () => {
   const background = require('../../tools/x-reply-clipboard-extension/background.js')
   let savedTabs = {}
+  const sessionData = {}
   let created = 0
+  const createdUrls = []
   const focusedTabs = []
+  const tabUpdates = []
   const focusedWindows = []
   const movedTabs = []
+  let notificationsUrl = 'https://x.com/notifications'
+  let runtimeTasks = {}
   global.chrome = {
     storage: {
       session: {
-        async get(key) { return { [key]: savedTabs } },
-        async set(value) { savedTabs = value.xrcTaskTabs },
+        async get(key) {
+          if (key === 'xrcTaskTabs') return { [key]: savedTabs }
+          return { [key]: sessionData[key] }
+        },
+        async set(value) {
+          if (Object.prototype.hasOwnProperty.call(value, 'xrcTaskTabs')) savedTabs = value.xrcTaskTabs
+          Object.assign(sessionData, value)
+        },
+      },
+      local: {
+        async get(key) { return key === 'xrcPluginRuntime' ? { [key]: { tasks: runtimeTasks } } : {} },
+        async set() {},
       },
     },
     tabs: {
       async get(tabId) {
-        if (tabId === 77) return { id: 77, windowId: 9 }
-        if (tabId === 11) return { id: 11, windowId: 5 }
-        if (tabId === 22) return { id: 22, windowId: 5 }
+        if (tabId === 77) return { id: 77, windowId: 9, url: notificationsUrl }
+        if (tabId === 11) return { id: 11, windowId: 5, url: 'https://x.com/home' }
+        if (tabId === 22) return { id: 22, windowId: 5, url: 'https://x.com/notifications' }
         throw new Error('missing tab')
       },
-      async update(tabId) { focusedTabs.push(tabId) },
+      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '时间线回复 · Home / X' }] },
+      async update(tabId, options) { focusedTabs.push(tabId); tabUpdates.push(options) },
     },
     windows: {
       async create(options) {
@@ -707,6 +1329,7 @@ test('task windows are created once and reused without backgrounding another tas
           movedTabs.push(options.tabId)
           return { id: 30, tabs: [{ id: options.tabId }] }
         }
+        createdUrls.push(options.url)
         return { id: 10, tabs: [{ id: 77, windowId: 10, url: options.url }] }
       },
       async update(windowId) { focusedWindows.push(windowId) },
@@ -719,17 +1342,67 @@ test('task windows are created once and reused without backgrounding another tas
     assert.equal(first.tabId, 77)
     assert.equal(second.reused, true)
     assert.equal(created, 1)
+    assert.deepEqual(createdUrls, ['https://x.com/notifications?xrcAssistant=notifications'])
     assert.deepEqual(focusedTabs, [77])
     assert.deepEqual(focusedWindows, [9])
     assert.equal(savedTabs.notifications, 77)
+    assert.deepEqual(tabUpdates[0], { active: true })
+
+    const restarted = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } }, { start: true })
+    assert.equal(restarted.reused, true)
+    assert.equal(tabUpdates.at(-1).url, 'https://x.com/notifications?xrcAssistant=notifications&xrcStart=1')
+    assert.equal(sessionData['xrcPendingTab:77'].start, true)
+
+    runtimeTasks = { notifications: { tabId: 77, startedAt: Date.now() } }
+    notificationsUrl = 'https://x.com/someone/status/123'
+    await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
+    assert.deepEqual(tabUpdates.at(-1), { active: true })
+    runtimeTasks = {}
+
+    savedTabs = {}
+    const recovered = await background.focusTaskTab('timeline', { tab: { url: 'https://x.com/home' } }, { start: true })
+    assert.equal(recovered.reused, true)
+    assert.equal(recovered.tabId, 11)
+    assert.equal(savedTabs.timeline, 11)
+    assert.equal(created, 1)
 
     savedTabs = { timeline: 11, notifications: 22 }
     const moved = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
     assert.equal(moved.reused, true)
     assert.deepEqual(movedTabs, [22])
     assert.equal(focusedWindows.at(-1), 30)
+
+    await background.registerTaskTab('timeline', 22)
+    assert.equal(savedTabs.timeline, 22)
+    assert.equal(savedTabs.notifications, undefined)
   } finally {
     delete global.chrome
+  }
+})
+
+test('pending task launch is consumed only by its assigned tab and destination', async () => {
+  const sessionData = {}
+  globalThis.chrome = {
+    storage: {
+      session: {
+        async get(key) { return { [key]: sessionData[key] } },
+        async set(value) { Object.assign(sessionData, value) },
+        async remove(key) { delete sessionData[key] },
+      },
+    },
+  }
+  try {
+    await background.rememberPendingLaunch('notifications', 'https://x.com/notifications', true, 22)
+    await background.rememberPendingLaunch('timeline', 'https://x.com/home', true, 11)
+    await background.rememberPendingLaunch('mutual-followBack', '/account/followers', true, 33)
+    assert.equal(sessionData['xrcPendingTab:33'].path, '/account/followers')
+    assert.equal((await background.consumePendingLaunch({ tab: { id: 11, url: 'https://x.com/notifications' } })).launch, null)
+    assert.equal(sessionData['xrcPendingTab:11'].mode, 'timeline')
+    assert.equal((await background.consumePendingLaunch({ tab: { id: 22, url: 'https://x.com/notifications' } })).launch.mode, 'notifications')
+    assert.equal(sessionData['xrcPendingTab:22'], undefined)
+    assert.equal((await background.consumePendingLaunch({ tab: { id: 11, url: 'https://x.com/home' } })).launch.mode, 'timeline')
+  } finally {
+    delete globalThis.chrome
   }
 })
 

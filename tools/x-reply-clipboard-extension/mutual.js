@@ -1,13 +1,13 @@
 (function (root) {
   "use strict";
 
-  const UNFOLLOW_DELAY_MS = 650;
   const FOLLOW_ACTION_DELAY_MS = 2000;
   const FOLLOW_BATCH_SIZE = 15;
   const FOLLOW_BATCH_COOLDOWN_MS = 1800000;
   const FOLLOW_MAX_PER_RUN = 400;
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
+  const TARGET_FOLLOW_HANDLES = ["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|please wait a few moments then try again|受到速率限制|请稍等片刻后再试)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
@@ -95,11 +95,57 @@
     const account = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
     const match = textOf(account).match(USER_HANDLE_RE);
     if (match) return match[0].slice(1);
-    const href = document.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.getAttribute("href") || "";
+    const href = document.querySelector('[data-testid="AppTabBar_Profile_Link"], a[aria-label="Profile"], a[aria-label="个人资料"]')?.getAttribute("href") || "";
     return href.match(PROFILE_PATH_RE)?.[1] || "";
   }
 
+  function reportMutualAction(mode, handle, result, errorCode) {
+    const task = mode === "unfollow"
+      ? "mutual-unfollow"
+      : mode === "followBack"
+        ? "mutual-follow-back"
+        : mode === "targetFollow"
+          ? "mutual-target-follow"
+          : "";
+    if (!task) return;
+    try {
+      globalThis.XrcCommunityReceipt?.report({
+        task,
+        result,
+        targetId: String(handle || "").replace(/^@/u, ""),
+        accountHandle: currentAccountHandle(),
+        errorCode
+      });
+    } catch (error) {}
+  }
+
+  function pagePath() {
+    try {
+      return String(globalThis.location?.pathname || "").replace(/\/+$/, "");
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function targetFollowHandleFromPath(pathname = pagePath()) {
+    const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
+    if (!match) return "";
+    return TARGET_FOLLOW_HANDLES.find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
+  }
+
+  function pickTargetFollowHandle() {
+    return TARGET_FOLLOW_HANDLES[Math.floor(Math.random() * TARGET_FOLLOW_HANDLES.length)];
+  }
+
+  function listReady(mode) {
+    if (mode === "unfollow") return isFollowingPage();
+    if (mode === "followBack") return isFollowersPage() && !targetFollowHandleFromPath();
+    if (mode === "targetFollow") return Boolean(targetFollowHandleFromPath());
+    return false;
+  }
+
   function targetPath(mode) {
+    if (mode === "targetFollow") return `/${targetFollowHandleFromPath() || pickTargetFollowHandle()}/followers`;
     const handle = currentAccountHandle();
     if (!handle) return "";
     if (mode === "unfollow") return `/${handle}/following`;
@@ -114,17 +160,38 @@
     return `${year}-${month}-${day}`;
   }
 
+  function followStorage() {
+    if (globalThis.chrome?.runtime && !globalThis.chrome.runtime.id) {
+      throw followStorageError(new Error("Extension context invalidated."));
+    }
+    const storage = globalThis.chrome?.storage?.local;
+    if (!storage) throw followStorageError(new Error("扩展存储不可用"));
+    return storage;
+  }
+
+  function followStorageError(error) {
+    const result = error instanceof Error ? error : new Error(String(error || "扩展存储不可用"));
+    result.xrcFollowStorage = true;
+    return result;
+  }
+
+  function storageErrorMessage(error) {
+    return /extension context invalidated/i.test(String(error?.message || error))
+      ? "扩展已重新加载，请刷新此 X 页面后再启动关注任务"
+      : error?.xrcFollowStorage
+        ? "关注记录无法保存，任务已停止，请刷新页面后重试"
+        : "关注任务遇到错误，已停止，请刷新页面后重试";
+  }
+
   async function loadSharedFollowRate() {
     const today = localDayKey();
-    let saved = null;
+    let result;
     try {
-      if (globalThis.chrome?.storage?.local) {
-        const result = await chrome.storage.local.get(FOLLOW_RATE_STORAGE_KEY);
-        saved = result?.[FOLLOW_RATE_STORAGE_KEY] || null;
-      }
+      result = await followStorage().get(FOLLOW_RATE_STORAGE_KEY);
     } catch (error) {
-      saved = null;
+      throw followStorageError(error);
     }
+    const saved = result?.[FOLLOW_RATE_STORAGE_KEY] || null;
     const isToday = saved?.date === today;
     state.sharedDailyDate = today;
     state.sharedDailyFollowed = isToday ? Math.max(0, Number(saved.count) || 0) : 0;
@@ -141,18 +208,22 @@
   }
 
   async function persistSharedFollowRate() {
-    if (!globalThis.chrome?.storage?.local) return;
-    await chrome.storage.local.set({
-      [FOLLOW_RATE_STORAGE_KEY]: {
-        date: state.sharedDailyDate || localDayKey(),
-        count: state.sharedDailyFollowed,
-        batchProgress: state.sharedBatchProgress,
-        cooldownUntil: state.cooldownUntil
-      }
-    });
+    try {
+      await followStorage().set({
+        [FOLLOW_RATE_STORAGE_KEY]: {
+          date: state.sharedDailyDate || localDayKey(),
+          count: state.sharedDailyFollowed,
+          batchProgress: state.sharedBatchProgress,
+          cooldownUntil: state.cooldownUntil
+        }
+      });
+    } catch (error) {
+      throw followStorageError(error);
+    }
   }
 
   async function recordSharedFollow() {
+    await loadSharedFollowRate();
     state.sharedDailyFollowed += 1;
     state.sharedBatchProgress += 1;
     await persistSharedFollowRate();
@@ -354,12 +425,16 @@
       }, 6000);
       if (changed === "done") {
         state.unfollowed += 1;
+        await recordSharedFollow();
+        reportMutualAction("unfollow", item.handle, "success");
         return true;
       }
       if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
       return false;
     }
     state.unfollowed += 1;
+    await recordSharedFollow();
+    reportMutualAction("unfollow", item.handle, "success");
     return true;
   }
 
@@ -375,11 +450,8 @@
     if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
     if (changed !== "done") return false;
     state.followedBack += 1;
-    try {
-      await recordSharedFollow();
-    } catch (error) {
-      state.errors += 1;
-    }
+    await recordSharedFollow();
+    reportMutualAction("followBack", item.handle, "success");
     return true;
   }
 
@@ -395,11 +467,8 @@
     if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
     if (changed !== "done") return false;
     state.targetFollowed += 1;
-    try {
-      await recordSharedFollow();
-    } catch (error) {
-      state.errors += 1;
-    }
+    await recordSharedFollow();
+    reportMutualAction("targetFollow", item.handle, "success");
     return true;
   }
 
@@ -429,7 +498,6 @@
     state.targetFollowed = 0;
     state.skipped = 0;
     state.errors = 0;
-    if (mode === "unfollow") state.cooldownUntil = 0;
     state.seenHandles.clear();
     state.skippedHandles.clear();
     state.acknowledgedRateLimits.clear();
@@ -437,19 +505,33 @@
   }
 
   async function run(mode, onUpdate) {
+    try {
+      return await runWithStorage(mode, onUpdate);
+    } catch (error) {
+      state.running = false;
+      state.stopping = false;
+      state.mode = "";
+      state.errors += 1;
+      const message = storageErrorMessage(error);
+      emit(message);
+      return { error: message };
+    }
+  }
+
+  async function runWithStorage(mode, onUpdate) {
     if (state.running) return false;
     if (mode === "unfollow" && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
     if (mode === "followBack" && !isFollowersPage()) return { navigate: targetPath(mode), error: "请打开自己的 Followers 页面" };
-    if (mode === "targetFollow" && !isFollowersPage()) return { error: "请先打开任意账号的 Followers 页面" };
-    if (mode === "followBack" || mode === "targetFollow") {
-      await loadSharedFollowRate();
-      if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
-        return { error: `今天已关注 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限` };
-      }
+    if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
+      return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
+    }
+    await loadSharedFollowRate();
+    if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
+      return { error: `今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限` };
     }
     reset(mode, onUpdate);
     emit(mode === "unfollow" ? "开始清理未回关账号" : mode === "followBack" ? "开始回关粉丝" : "开始关注候选");
-    if (mode !== "unfollow" && !(await waitForSharedCooldown())) {
+    if (!(await waitForSharedCooldown())) {
       state.running = false;
       state.stopping = false;
       emit("已停止；共享暂停时间仍会保留");
@@ -458,6 +540,12 @@
     let stalled = 0;
 
     while (!state.stopping) {
+      await loadSharedFollowRate();
+      if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
+        emit(`今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限`);
+        break;
+      }
+      if (!(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
         if (!(await waitForPlatformRateLimit())) break;
         continue;
@@ -480,6 +568,7 @@
             ? await actFollowBack(candidate)
             : await actTargetFollow(candidate);
         if (ok === "rate-limited" || rateLimitVisible()) {
+          reportMutualAction(mode, candidate.handle, "limited", "rate-limited");
           state.seenHandles.delete(candidate.handle);
           if (!(await waitForPlatformRateLimit())) break;
           continue;
@@ -487,16 +576,16 @@
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
-        const count = mode === "followBack" ? state.followedBack : state.targetFollowed;
-        if (mode !== "unfollow" && count >= FOLLOW_MAX_PER_RUN) break;
-        if (mode !== "unfollow" && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) break;
-        if (mode !== "unfollow" && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        const count = mode === "unfollow" ? state.unfollowed : mode === "followBack" ? state.followedBack : state.targetFollowed;
+        if (count >= FOLLOW_MAX_PER_RUN) break;
+        if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) break;
+        if (state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + FOLLOW_BATCH_COOLDOWN_MS;
           await persistSharedFollowRate();
           if (!(await waitForSharedCooldown())) break;
         } else {
-          await sleepActive(mode === "unfollow" ? UNFOLLOW_DELAY_MS : FOLLOW_ACTION_DELAY_MS);
+          await sleepActive(FOLLOW_ACTION_DELAY_MS);
         }
         continue;
       }
@@ -512,7 +601,7 @@
     state.stopping = false;
     state.cooldownUntil = 0;
     emit(state.mode === "unfollow"
-      ? `完成：取消 ${state.unfollowed} 个，跳过互关 ${state.skipped} 个`
+      ? `完成：取消 ${state.unfollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
       : state.mode === "followBack"
         ? `完成：本次回关 ${state.followedBack} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
         : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`);
@@ -533,10 +622,15 @@
     stop,
     snapshot,
     refreshSharedFollowRate: async () => {
-      await loadSharedFollowRate();
+      try {
+        await loadSharedFollowRate();
+      } catch (error) {
+        state.status = storageErrorMessage(error);
+      }
       return snapshot();
     },
     targetPath,
+    listReady,
     isFollowingPath,
     isFollowersPath,
     isFollowingPage,
@@ -547,7 +641,8 @@
       FOLLOW_BATCH_COOLDOWN_MS,
       FOLLOW_MAX_PER_RUN,
       FOLLOW_DAILY_LIMIT,
-      RATE_LIMIT_COOLDOWN_MS
+      RATE_LIMIT_COOLDOWN_MS,
+      TARGET_FOLLOW_HANDLES
     }
   };
   if (typeof module === "object" && module.exports) module.exports = api;

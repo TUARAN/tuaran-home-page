@@ -24,21 +24,16 @@
     const articles = Array.from(document.querySelectorAll('article[data-testid="tweet"]'));
     if (!articles.length) return null;
 
-    if (status) {
-      const targetPath = `/${status.handle}/status/${status.id}`.toLowerCase();
-      const exact = articles.find((article) =>
-        Array.from(article.querySelectorAll('a[href*="/status/"]')).some((link) => {
-          try {
-            return new URL(link.href, window.location.origin).pathname.toLowerCase() === targetPath;
-          } catch {
-            return false;
-          }
-        })
-      );
-      if (exact) return exact;
-    }
-
-    return articles[0];
+    const targetPath = `/${status.handle}/status/${status.id}`.toLowerCase();
+    return articles.find((article) =>
+      Array.from(article.querySelectorAll('a[href*="/status/"]')).some((link) => {
+        try {
+          return new URL(link.href, window.location.origin).pathname.toLowerCase() === targetPath;
+        } catch {
+          return false;
+        }
+      })
+    ) || null;
   }
 
   function findStatusLink(article, status) {
@@ -93,7 +88,7 @@
 
     const article = findTargetArticle(status);
     if (!article) {
-      throw new Error("页面中没有找到推文，请等待内容加载完成后重试");
+      throw new Error("还没找到当前这条推文，请等待内容加载完成后重试");
     }
 
     const textNode = article.querySelector('[data-testid="tweetText"]');
@@ -121,14 +116,26 @@
     };
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== "X_TWEET_TO_PDF_EXTRACT") return false;
+  async function exportCurrent() {
+    const tweet = extractTweet();
+    const indexKey = "xrcPdfExportIndex";
+    const exportId = `xrcPdfTweet-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const stored = await chrome.storage.local.get(indexKey);
+    const entries = Array.isArray(stored[indexKey]) ? stored[indexKey] : [];
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const active = entries.filter((entry) => entry?.id && Number(entry.createdAt) >= cutoff).slice(-49);
+    const expired = entries.filter((entry) => entry?.id && !active.some((item) => item.id === entry.id)).map((entry) => entry.id);
+    if (expired.length) await chrome.storage.local.remove(expired);
+    await chrome.storage.local.set({
+      [exportId]: { tweet, createdAt: Date.now() },
+      [indexKey]: [...active, { id: exportId, createdAt: Date.now() }]
+    });
+    const opened = await chrome.runtime.sendMessage({ type: "xrc-tweet-pdf-open", exportId });
+    if (!opened?.ok) throw new Error(opened?.error || "PDF 排版页未能打开");
+    return tweet;
+  }
 
-    try {
-      sendResponse({ ok: true, tweet: extractTweet() });
-    } catch (error) {
-      sendResponse({ ok: false, error: error?.message || "无法提取推文" });
-    }
-    return false;
-  });
+  const api = { currentStatus, extractTweet, exportCurrent };
+  if (typeof module === "object" && module.exports) module.exports = api;
+  globalThis.XrcTweetPdf = api;
 })();

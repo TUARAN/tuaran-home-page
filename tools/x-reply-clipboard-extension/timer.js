@@ -9,13 +9,21 @@
     return new Promise((resolve) => window.setTimeout(resolve, Math.max(0, Number(ms) || 0)));
   }
 
+  function extensionAlive() {
+    try {
+      return Boolean(root.chrome?.runtime?.id && root.chrome.runtime.sendMessage);
+    } catch (error) {
+      return false;
+    }
+  }
+
   function wait(ms) {
     const delayMs = Math.max(0, Number(ms) || 0);
     // Short DOM polling stays local. Sending every 100–250 ms poll through the
     // service worker/offscreen document makes foreground work slower and floods
     // the extension message channel. Long waits still use the offscreen worker
     // so changing browser tabs does not restart the deadline.
-    if (delayMs < BACKGROUND_TIMER_MIN_MS || !root.chrome?.runtime?.sendMessage) return localWait(delayMs);
+    if (delayMs < BACKGROUND_TIMER_MIN_MS || !extensionAlive()) return localWait(delayMs);
 
     const requestId = `xrc_${Date.now()}_${sequence += 1}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
@@ -25,18 +33,27 @@
         if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
         resolve();
       };
+      const settleLocal = () => {
+        if (!pending.delete(requestId)) return;
+        if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+        localWait(delayMs).then(resolve);
+      };
 
       pending.set(requestId, finish);
-      chrome.runtime.sendMessage({ type: "xrc-timer-schedule", requestId, delayMs }, (response) => {
-        const runtimeError = chrome.runtime.lastError;
-        if (!runtimeError && response?.ok) {
-          // The local timer is only a safety net. The offscreen worker normally wakes this tab.
-          fallbackTimer = window.setTimeout(finish, delayMs + 5000);
-          return;
-        }
-        pending.delete(requestId);
-        localWait(delayMs).then(resolve);
-      });
+      try {
+        const sent = chrome.runtime.sendMessage({ type: "xrc-timer-schedule", requestId, delayMs }, (response) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (!runtimeError && response?.ok) {
+            // The local timer is only a safety net. The offscreen worker normally wakes this tab.
+            fallbackTimer = window.setTimeout(finish, delayMs + 5000);
+            return;
+          }
+          settleLocal();
+        });
+        if (sent && typeof sent.catch === "function") sent.catch(() => settleLocal());
+      } catch (error) {
+        settleLocal();
+      }
     });
   }
 

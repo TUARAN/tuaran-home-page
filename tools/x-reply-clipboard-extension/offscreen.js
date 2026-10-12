@@ -7,12 +7,13 @@ worker.addEventListener("message", (event) => {
   const tabId = Number(event.data?.tabId);
   const frameId = Number(event.data?.frameId);
   if (!requestId) return;
-  chrome.runtime.sendMessage({
+  const sent = chrome.runtime.sendMessage({
     type: "xrc-timer-fired",
     requestId,
     tabId,
     ...(Number.isInteger(frameId) ? { frameId } : {})
   });
+  if (sent && typeof sent.catch === "function") sent.catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

@@ -172,8 +172,8 @@
     }
   }
 
-  async function clearReplyComposer() {
-    const editor = replyEditor("reply");
+  async function clearReplyComposer(scope = "reply") {
+    const editor = replyEditor(scope);
     if (!editor) return { ok: true, via: "absent" };
     const node = findDraftNode(editor);
     if (node && characterSample(node)) {
@@ -183,7 +183,7 @@
         return { ok: false, reason: "compose-failed" };
       }
       await sleep(80);
-      return { ok: comparableDraftText(editor, "reply") === "", via: "draft" };
+      return { ok: comparableDraftText(editor, scope) === "", via: "draft" };
     }
     focusEditor(editor);
     let deleted = false;
@@ -193,9 +193,9 @@
       deleted = false;
     }
     await sleep(80);
-    return comparableDraftText(editor, "reply") === ""
+    return comparableDraftText(editor, scope) === ""
       ? { ok: true, via: deleted ? "delete" : "empty" }
-      : { ok: false, reason: "compose-failed", seen: comparableDraftText(editor, "reply") };
+      : { ok: false, reason: "compose-failed", seen: comparableDraftText(editor, scope) };
   }
 
   async function fillReplyComposer(text, options = {}) {
@@ -321,7 +321,7 @@
       if (event.source !== window || event.data?.channel !== CHANNEL || event.data?.direction !== "request") return;
       const requestId = event.data.requestId;
       const write = event.data.clear
-        ? clearReplyComposer()
+        ? clearReplyComposer(event.data.scope)
         : fillReplyComposer(event.data.text, { forceDraft: event.data.forceDraft, scope: event.data.scope });
       write.then((result) => {
         window.postMessage({ channel: CHANNEL, direction: "response", requestId, result }, "*");

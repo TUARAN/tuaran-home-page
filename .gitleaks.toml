@@ -11,3 +11,11 @@ regexes = [
   '''PASSWORD_SALT\s*=\s*['"]5e41ccb77b481a35a528d3de64c9d81d['"]''',
   '''PASSWORD_HASH\s*=\s*['"]b101ab8a1d712d7b036826d4292634fd90896068e9ac282cf96082eda265bb00['"]''',
 ]
+
+[[allowlists]]
+description = "Published download password salt and verifier are public values, not credentials"
+regexTarget = "secret"
+regexes = [
+  '''^5e41ccb77b481a35a528d3de64c9d81d$''',
+  '''^b101ab8a1d712d7b036826d4292634fd90896068e9ac282cf96082eda265bb00$''',
+]

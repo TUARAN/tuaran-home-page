@@ -142,7 +142,7 @@ export default function HomeOpinionSignals() {
               )
             })}
           </div>
-          <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="进入舆情工作台，查看完整研判" en="Open the dashboard for the full analysis" /> <span aria-hidden="true">→</span></Link>
+          <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="查看完整舆情分析" en="View the full public opinion analysis" /> <span aria-hidden="true">→</span></Link>
         </>
       ) : (
         <div className="home-opinion-empty">
@@ -154,7 +154,7 @@ export default function HomeOpinionSignals() {
             <Link href="/public-opinion#trend"><T zh="看趋势" en="Trends" /></Link>
             <Link href="/public-opinion#sources"><T zh="查来源" en="Sources" /></Link>
           </div>
-          <Link href="/public-opinion" className="home-section-more no-underline"><T zh="进入舆情工作台 →" en="Open the opinion dashboard →" /></Link>
+          <Link href="/public-opinion" className="home-section-more no-underline"><T zh="查看舆情分析 →" en="View public opinion analysis →" /></Link>
         </div>
       )}
     </div>

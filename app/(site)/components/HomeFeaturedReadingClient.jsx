@@ -320,8 +320,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery) || scope !== 'recommended'}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-primary-heading hidden md:grid">
-        <p className="home-kicker">01 · Writing</p>
-        <h2 className="home-section-title"><T zh="文章" en="Articles" /></h2>
+        <p className="home-kicker">01 · Articles</p>
+        <h2 className="home-section-title"><T zh="文章精选" en="Selected articles" /></h2>
         <div className={`home-primary-heading-actions ${searchOpen ? 'is-search-open' : ''}`}>
           {searchOpen ? (
             <div className="relative w-full min-w-0 sm:flex-1">
@@ -359,10 +359,10 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
             </button>
           ) : null}
         </div>
-        <p className="home-section-description"><T zh="完整的研究、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
+        <p className="home-section-description"><T zh="研究文章、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
       </div>
       <div className="home-article-scopes">
-        <p className="h5-feed-label md:hidden">文章</p>
+        <p className="h5-feed-label md:hidden">文章精选</p>
         <nav className="home-section-tabs" role="tablist" aria-label="首页文章范围">
           {HOME_ARTICLE_SCOPE_KEYS.map((key) => {
             const active = scope === key

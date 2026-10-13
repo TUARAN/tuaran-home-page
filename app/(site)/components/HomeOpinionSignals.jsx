@@ -88,7 +88,15 @@ export default function HomeOpinionSignals() {
               <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>
               <span><strong>{events.filter((event) => activeTopic === 'all' || event.topicId === activeTopic).length}</strong><T zh="个聚合事件" en="grouped events" /></span>
             </div>
-            {updated ? <small><T zh={`采集于 ${updated} · 北京时间`} en={`Collected ${updated} · UTC+8`} /></small> : null}
+            {updated ? (
+              <small className="home-opinion-collection-status">
+                <span className="home-opinion-collection-live">
+                  <span className="home-opinion-collection-dot" aria-hidden="true" />
+                  <T zh="持续采集中" en="Collecting" />
+                </span>
+                <T zh={`采集于 ${updated} · 北京时间`} en={`Collected ${updated} · UTC+8`} />
+              </small>
+            ) : null}
           </div>
 
           <div className="home-opinion-list">
@@ -117,7 +125,10 @@ export default function HomeOpinionSignals() {
                       <T {...STANCES[stance]} />
                     </span>
                   </span>
-                  <strong>{post.text}</strong>
+                  <span className="home-opinion-sample-title">
+                    <strong>{post.text}</strong>
+                    <span className="home-opinion-external-arrow" aria-hidden="true">↗</span>
+                  </span>
                   <small>{post.viewpoint}</small>
                 </a>
               )

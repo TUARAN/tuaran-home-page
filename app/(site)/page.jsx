@@ -514,8 +514,10 @@ function HomeOpinionPanel() {
             <T zh="工作台" en="Dashboard" /> <span aria-hidden="true">→</span>
           </Link>
         </div>
+        <p className="home-section-description"><T zh="AI 势必改变你我命运，看看今天发生了什么。" en="AI is bound to change our destinies. See what happened today." /></p>
       </div>
       <p className="h5-feed-label md:hidden"><T zh="舆情分析" en="Opinion signals" /></p>
+      <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="AI 势必改变你我命运，看看今天发生了什么。" en="AI is bound to change our destinies. See what happened today." /></p>
       <HomeOpinionSignals />
     </section>
   )

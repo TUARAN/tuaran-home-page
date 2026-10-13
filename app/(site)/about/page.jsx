@@ -7,7 +7,6 @@ import {
   OPENCLAW_ACHIEVEMENTS,
   OPENCLAW_RESOLVED_ISSUES,
 } from '../../../lib/site/openClawAchievements'
-import { SECONDARY_SITES } from '../../../lib/site/secondarySites'
 import SharePageButton from '../components/SharePageButton'
 import CopyIntroButton from '../components/CopyIntroButton'
 import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
@@ -196,9 +195,34 @@ const contactItems = [
   { label: 'alias', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
 ]
 
-const siteLinks = [
-  ...SECONDARY_SITES.filter((site) => site.audience !== 'owner'),
-  { label: 'TUARAN 网络日志', href: 'https://2aran.com/', desc: '个人主页、技术笔记与长期内容索引' },
+const buildingAreas = [
+  {
+    title: '内容',
+    description: '持续写技术文章、专题调研和前端与 AI 工程周刊。',
+    links: [
+      { label: '文章与调研', href: '/articles' },
+      { label: '前端周看', href: 'https://weekly.2aran.com/' },
+    ],
+  },
+  {
+    title: '工具',
+    description: '开发可直接使用的工具，也把智能体工作流做成可安装的 Skill 和可连接的 MCP 服务。',
+    links: [
+      { label: '工具箱', href: '/tools' },
+      { label: 'Skill 中心', href: '/skill-center' },
+      { label: 'MCP 中心', href: '/mcp-center' },
+    ],
+  },
+  {
+    title: '产品',
+    description: '围绕创作者协作、内容分发和 AI 产品体验，持续建设可用的产品。',
+    links: [
+      { label: '博主联盟', href: 'https://blogger-alliance.cn/' },
+      { label: 'AI 分发大师', href: 'https://syncblog.2aran.com/' },
+      { label: '从夯到拉', href: 'https://rank.2aran.com/' },
+      { label: '更多项目', href: '/works' },
+    ],
+  },
 ]
 
 const friendLinks = [
@@ -564,7 +588,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 联系方式 + 正在维护的站点 */}
+      {/* 联系方式 + 当前工作 */}
       <section className="border-t border-[#1c2a3c]">
         <div className={`grid grid-cols-1 items-start gap-6 py-8 lg:grid-cols-[300px_minmax(0,1fr)] ${sectionInner}`}>
           <div className="rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/70 p-4" aria-label="联系方式">
@@ -608,30 +632,33 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div aria-label="正在维护的站点">
+          <div aria-label="当前工作">
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <h2 className="font-mono text-[14px] font-bold text-[#e2ecf6]">
                 <span className="text-[#5cd6c8]">$</span> building
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {siteLinks.map((c) => (
-                <a
-                  key={c.href}
-                  href={c.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="no-external-arrow group block rounded-xl border border-[#1d2c3e] bg-[#0a1018]/70 p-3.5 no-underline transition hover:border-[#2c4a5e] hover:bg-[#0d1826]"
+            <div className="grid grid-cols-1 gap-2.5">
+              {buildingAreas.map((area) => (
+                <div
+                  key={area.title}
+                  className="rounded-xl border border-[#1d2c3e] bg-[#0a1018]/70 p-3.5"
                 >
-                  <div className="flex items-center gap-1.5 text-[13.5px] font-semibold text-[#dbe6f0] transition-colors group-hover:text-[#5cf0e0]">
-                    {c.label}
-                    <span className="font-mono text-[11px] text-[#4d5e73] transition-transform group-hover:translate-x-0.5 group-hover:text-[#5cf0e0]">
-                      ↗
-                    </span>
+                  <h3 className="text-[14px] font-semibold text-[#dbe6f0]">{area.title}</h3>
+                  <p className="mt-1 text-[12px] leading-5 text-[#8ea3bb]">{area.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {area.links.map((link) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        {...(link.href.startsWith('https://') ? { target: '_blank', rel: 'noreferrer' } : {})}
+                        className="no-external-arrow rounded-md border border-[#284255] bg-[#102032] px-2.5 py-1 font-mono text-[11px] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
+                      >
+                        {link.label} <span aria-hidden="true">→</span>
+                      </a>
+                    ))}
                   </div>
-                  <p className="mt-1 text-[12px] leading-5 text-[#7186a0]">{c.desc}</p>
-                  {c.accessNote && <p className="mt-2 text-[11px] leading-5 text-[#8ea3bb]">{c.accessNote}</p>}
-                </a>
+                </div>
               ))}
             </div>
           </div>

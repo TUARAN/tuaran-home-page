@@ -7,22 +7,11 @@ import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import { recordResourceEvent } from '../../../../lib/content/resourceEvents'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
 import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensionPackage'
+import { readXReplyDownloadPassword, verifyXReplyDownloadPassword } from '../../../../lib/content/xReplyDownloadPassword.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 const LOCKED_RESOURCE = 'resource:x-reply-clipboard-extension'
-const PASSWORD_SALT = '5e41ccb77b481a35a528d3de64c9d81d'
-const PASSWORD_HASH = 'b101ab8a1d712d7b036826d4292634fd90896068e9ac282cf96082eda265bb00'
-
-async function validDownloadPassword(password) {
-  if (typeof password !== 'string' || password.length < 8 || password.length > 128) return false
-  const bytes = new TextEncoder().encode(`${PASSWORD_SALT}:${password}`)
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
-  const expected = PASSWORD_HASH.match(/../g).map((part) => parseInt(part, 16))
-  let different = 0
-  for (let index = 0; index < digest.length; index += 1) different |= digest[index] ^ expected[index]
-  return different === 0
-}
 
 function jsonError(error, status, setCookie = null, details = {}) {
   return Response.json({ error, ...details }, { status, headers: setCookie ? { 'Set-Cookie': setCookie } : undefined })
@@ -151,6 +140,12 @@ export async function POST(req) {
   } catch {
     return jsonError('INVALID_PASSWORD', 400)
   }
-  if (!(await validDownloadPassword(payload?.password))) return jsonError('INVALID_PASSWORD', 403)
+  let passwordRecord
+  try {
+    passwordRecord = await readXReplyDownloadPassword(getD1())
+  } catch {
+    return jsonError('PASSWORD_STORE_UNAVAILABLE', 503)
+  }
+  if (!(await verifyXReplyDownloadPassword(payload?.password, passwordRecord))) return jsonError('INVALID_PASSWORD', 403)
   return deliver(req, true)
 }

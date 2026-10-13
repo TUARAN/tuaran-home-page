@@ -42,7 +42,8 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'x-assistant',
     platform: 'x',
     label: 'X 高频互动助手',
-    summary: '时间线回复、通知回复、互关清理、推文浇给。开始和挡位在插件里，确认结果回传到这里。',
+    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置，确认结果回传到这里。',
+    href: '/resources/x-reply-clipboard-extension',
   },
   {
     id: 'xhs-assistant',
@@ -81,6 +82,79 @@ async function copyText(text) {
   input.select()
   document.execCommand('copy')
   input.remove()
+}
+
+function XReplyDownloadPasswordPanel() {
+  const [status, setStatus] = useState(null)
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    let mounted = true
+    fetch('/api/admin/community-actions/x-reply-download-password', { cache: 'no-store', credentials: 'same-origin' })
+      .then(async (response) => {
+        const data = await safeJson(response)
+        if (!response.ok) throw new Error(data?.error || '状态读取失败')
+        if (mounted) setStatus(data)
+      })
+      .catch(() => { if (mounted) setNotice('下载密码状态暂时无法读取。') })
+    return () => { mounted = false }
+  }, [])
+
+  async function generate() {
+    if (busy || !window.confirm('生成新密码后，旧密码会立即失效。确定继续吗？')) return
+    setBusy(true)
+    setNotice('')
+    try {
+      const response = await fetch('/api/admin/community-actions/x-reply-download-password', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+      })
+      const data = await safeJson(response)
+      if (!response.ok || !data?.password) throw new Error(data?.error || '生成失败')
+      setPassword(data.password)
+      setStatus(data)
+      setNotice('新密码已生效。请立即复制，刷新页面后无法再次查看。')
+    } catch {
+      setNotice('生成失败，旧密码仍可使用；请稍后重试。')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function copyPassword() {
+    try {
+      await copyText(password)
+      setNotice('下载密码已复制。')
+    } catch {
+      setNotice('复制失败，请手动选中密码。')
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] p-3 dark:border-[#263142] dark:bg-[#10161f]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">插件下载密码</p>
+          <p className="mb-0 mt-1 text-[12px] text-[#6d7066] dark:text-gray-400">
+            {status?.initial ? '当前使用发布时的初始密码。' : status?.createdAt ? `上次生成：${formatTime(status.createdAt)}` : '正在读取状态…'}
+          </p>
+        </div>
+        <AdminButton size="sm" variant="primary" onClick={generate} disabled={busy}>{busy ? '生成中…' : '生成新密码'}</AdminButton>
+      </div>
+      <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">新密码立即生效，旧密码失效。数据库只存校验值；密码仅在生成时显示一次。</p>
+      {password ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <input readOnly value={password} aria-label="新生成的插件下载密码" className="min-w-0 flex-1 rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100" />
+          <AdminButton size="sm" onClick={copyPassword}>复制密码</AdminButton>
+          <AdminButton size="sm" variant="ghost" onClick={() => setPassword('')}>隐藏</AdminButton>
+        </div>
+      ) : null}
+      {notice ? <p role="status" className="mb-0 mt-2 text-[12px] text-[#5f6156] dark:text-gray-300">{notice}</p> : null}
+    </div>
+  )
 }
 
 function resolveView(searchParams) {
@@ -154,9 +228,10 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
               <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {item.href ? (
                 <div className="mt-3">
-                  <AdminButton size="sm" variant="ghost" href={item.href}>下载插件</AdminButton>
+                  <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton>
                 </div>
               ) : null}
+              {item.id === 'x-assistant' ? <XReplyDownloadPasswordPanel /> : null}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}

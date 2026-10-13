@@ -25,7 +25,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.9.0'
+const VERSION = '3.12.1'
 
 const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -34,10 +34,15 @@ const shareText = 'X高频互动助手：一个扩展完成时间线回复、通
 
 const VERSION_HISTORY = [
   {
+    version: '3.12.1',
+    title: '热点发帖提示词与取材修正',
+    description: '发帖实际使用设置中的提示词；旧草稿不再发送。知乎、头条优先，素材不足时读取站内舆情分析，并保留来源。写法避免固定三行和空悬念。下载需联系站长获取密码。',
+    current: true,
+  },
+  {
     version: '3.9.0',
     title: '短行发帖与设置自动保存',
     description: '定时发帖保留素材首句，改写为 35～75 字、3～5 行，每行之间留空行；过长的旧草稿会跳过。配置 DeepSeek Key 后主面板收起密钥栏，设置中的修改自动保存。任务等待可手动点击「立即开始」。PDF 导出已并入右上角工具箱。',
-    current: true,
   },
   {
     version: '3.6.11',
@@ -282,13 +287,13 @@ const WORKFLOWS = [
   },
   {
     title: '定时发帖',
-    detail: '默认读取王长富的纯文字帖，保留首句钩子，筛选重复主题后改写为 35～75 字短帖；每行之间空一行。待发列表发完前不会重新抓取，默认发送间隔为 25～35 分钟。',
+    detail: '优先从知乎、今日头条热榜取材，素材不足时读取站内舆情分析；记录原始来源和链接。用 DeepSeek 写成短帖，避免固定句式；行间留空。默认发送间隔为 25～35 分钟。',
     icon: IconRobot,
   },
 ]
 
 const INSTALL_STEPS = [
-  '下载并解压插件包。',
+  '扫码联系站长获取解密密码，输入密码下载并解压插件包。',
   '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
   '点击「加载已解压的扩展程序」，选择解压后的目录。',
   '登录 X，面板默认浮在页面右下角。先配置 DeepSeek API Key；之后可从右上角设置修改。',
@@ -296,7 +301,7 @@ const INSTALL_STEPS = [
   '关注管理提供清理未回关、回关粉丝、关注候选三个子页签，分别打开对应列表。',
   '时间线模式可在首页、个人主页或搜索结果运行。轮次进度里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
   '通知回复会进入通知页，处理近 2 小时内尚未成功互动的回复。',
-  '定时发帖会读取王长富主页的纯文字素材，形成待发列表后回到首页发送。默认间隔为 25～35 分钟。',
+  '定时发帖优先读取知乎与今日头条热榜，素材不足时读取站内舆情分析。默认间隔为 25～35 分钟。',
   '单独运行时点击对应的「启动单项任务」；倒计时可点「立即开始」，需要停下时点击停止。',
 ]
 
@@ -360,7 +365,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
               <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
               <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> DeepSeek 配置</span>
-              <span>更新于 2026-10-12</span>
+              <span>更新于 2026-10-13</span>
             </div>
           </div>
 
@@ -414,7 +419,7 @@ export default function XReplyClipboardResourcePage() {
                 把互动工作流装进 Chrome
               </h2>
               <p className="m-0 mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Manifest V3 本地扩展。下载并解压后，在 Chrome 扩展管理页通过「加载已解压的扩展程序」安装。
+                扫码添加站长微信 atar24，获取解密密码。输入密码后下载 ZIP，解压并在 Chrome 扩展管理页安装。
               </p>
             </div>
             <DownloadButton className="shrink-0" />
@@ -546,7 +551,7 @@ export default function XReplyClipboardResourcePage() {
             <div>
               <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Launch your workflow</p>
               <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black text-white">准备好后，从最新版开始</h2>
-              <p className="m-0 mt-2 text-sm text-blue-100">下载后可永久重复领取；更新扩展时保留原目录并重新加载即可。</p>
+              <p className="m-0 mt-2 text-sm text-blue-100">联系站长获取密码后即可下载；更新扩展时保留原目录并重新加载即可。</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <DownloadButton />

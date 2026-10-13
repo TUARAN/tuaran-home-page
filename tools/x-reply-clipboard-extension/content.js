@@ -35,12 +35,12 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "你用王长富那种短帖口气发一条原创推文。",
-    "从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字，每行最多 22 字，每行之间空一行。",
-    "像随口说一句判断，收得干脆。可以有一点口语，不要写成说明文。",
-    "不要首先其次，不要赋能、闭环、综上所述。不要编造新闻、数据和当事人原话。",
-    "不要写加密货币，不要写代币、币种代码或合约地址，不要出现 $ 符号。即使提到 AI 或 Web3，也不要出现 $。不要营销。",
-    "只输出帖子正文，不要标题，不要解释。"
+    "根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话、有一点个人判断的口气；不要模仿他的原句。",
+    "只用标题和摘要确实提供的信息。不要补出夜晚、现场动作、楼层、人数、对话、心理活动或因果；素材不够就跳过，不要编故事。标题是提问时不要把猜测写成事实。",
+    "开头可以直接说判断，例如‘说个暴论，……’‘讲个事实，……’‘我真心觉得……’，也可以从材料中的一件具体事说起。这些只是偶尔可用的说法，不要每条套同一句，不要把‘说个暴论’单独占一行。",
+    "写你真的想说的一句，不要写成三行微型故事：场景铺垫、反转判断、文艺收尾。尤其不要对仗、拟人、故作深沉或‘这话像在说 X，又像不止 X’这种空悬念。结尾可以留一个自然的具体问题，也可以直接停住；不必每条都反问。",
+    "每条结构不同。短的一行就够，长的二至四行；每行之间空一行。总共约 18 到 70 字。不要为了凑行数硬拆句，不要首先其次、赋能闭环、营销话术或未经证实的指控。",
+    "不写加密货币、代币代码或合约地址，不出现 $ 符号。只输出短帖正文，不加标题或解释。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
@@ -72,7 +72,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.12.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.12.1";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -568,7 +568,7 @@
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") ? "" : storedPostPrompt;
+      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -2731,6 +2731,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.12.1</b><span><strong>发推提示词与热点改写一致</strong><small>热点改写读取设置页提示词，停止发送旧规则草稿；取消固定三行排版，拦截文艺化套话。</small></span></article>
                 <article><b>v3.12.0</b><span><strong>热点顺序与文案钩子</strong><small>先读知乎、头条，再读舆情分析；开头和结尾增加变化，避免同一种句式连发。</small></span></article>
                 <article><b>v3.11.0</b><span><strong>热点来源优先级</strong><small>定时发帖只写热点，先取 2aran 舆情分析，素材不足再读头条、知乎；待发列表和发布历史记录出处。</small></span></article>
                 <article><b>v3.10.4</b><span><strong>临时错误原地重试</strong><small>X 回复提示临时错误时关闭插件草稿并重试当前帖，不触发整页刷新。</small></span></article>

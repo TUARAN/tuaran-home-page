@@ -348,7 +348,7 @@ test('scheduled post keeps the hook but rejects loud, shallow, and repeated draf
   const source = '一个人的表达方式会影响讨论\n同样的观点，语气不同，收到的回应也不同'
   const good = '一个人的表达方式会影响讨论\n\n同样的意见，讲清楚缘由更好接话，\n\n也能给不同看法留点空间。'
   assert.equal(poster.qualityReason(source, good, '表达方式影响讨论'), '')
-  assert.equal(poster.formatShortPost('说句难听点的\n会不会搜东西，本质是能否把模糊需求拆成关键词。'), '说句难听点的\n\n会不会搜东西，\n\n本质是能否把模糊需求拆成关键词。')
+  assert.equal(poster.formatShortPost('说句难听点的\n会不会搜东西，本质是能否把模糊需求拆成关键词。'), '说句难听点的\n\n会不会搜东西，本质是能否把模糊需求拆成关键词。')
   assert.equal(poster.qualityReason(source, `${good}这是一段多余的长解释。`.repeat(2), '表达方式影响讨论'), '正文过短或过长')
   assert.equal(poster.qualityReason(source, good.replace('一个人的表达方式会影响讨论', '另一个开头'), '表达方式影响讨论'), '首句没有保留')
   assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论\n确实，不同语气不同回应', '表达方式影响讨论'), '正文过短或过长')
@@ -542,10 +542,45 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
   assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。', '新工具上线跟风', 'news'), '')
   assert.equal(poster.qualityReason('体检抽血为什么要抽多管', '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。', '抽血检测流程', 'news'), '说理口吻太重')
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /王长富公开短帖的节奏/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /说个暴论/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /结尾留一点没说满的东西/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /开头和结尾每条换一种自然写法/)
+  assert.match(background.POST_SYSTEM_PROMPT, /直接说人话/)
+  assert.match(background.POST_SYSTEM_PROMPT, /说个暴论/)
+  assert.match(background.POST_SYSTEM_PROMPT, /不要写成三行微型故事/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
+  assert.equal(poster.qualityReason('奶茶店爆单与员工排班引发讨论', '爆单那晚，出杯口没停过。\n\n排班表上还是同一个名字。\n\n折扣是牌子上的，手速是店员自己的。', '奶茶店员工排班', 'news'), '文艺化套话')
+  assert.equal(poster.qualityReason('住院部天花板霉斑引发讨论', '住院部天花板有霉斑。\n\n院方承认疏忽，这话像在说墙面，又像不止墙面。', '住院部霉斑问题', 'news'), '文艺化套话')
+  assert.equal(poster.qualityReason('一梯一户电梯刷卡是否安全引发讨论', '一梯一户刷卡，5楼和10楼一起进电梯。\n\n先到5楼，10楼的人跟着下来。', '电梯刷卡安全', 'news'), '具体数字没有素材依据')
+  assert.equal(poster.qualityReason('体检抽血分管且未说明用途', '说个暴论，抽血要分好几管，至少先讲清楚每管查什么。', '抽血用途说明', 'news'), '')
+})
+
+test('scheduled hot-topic rewrite uses the visible post prompt and migrates the old default', async () => {
+  const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const declaration = contentSource.match(/  const DEFAULT_POST_PROMPT = \[[\s\S]*?\n  \]\.join\("\\n"\);/)?.[0]
+  assert.ok(declaration)
+  const promptContext = vm.createContext({})
+  vm.runInContext(`${declaration.replace('const DEFAULT_POST_PROMPT', 'var DEFAULT_POST_PROMPT')}\nglobalThis.value = DEFAULT_POST_PROMPT`, promptContext)
+  assert.equal(promptContext.value, background.POST_SYSTEM_PROMPT)
+
+  const originalChrome = globalThis.chrome
+  const originalFetch = globalThis.fetch
+  let storedPostPrompt = '自定义发推提示词：说清楚事实，像平时聊天。'
+  let requestBody
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', postPrompt: storedPostPrompt } } } } } }
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body)
+    return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"新工具上线","post":"新工具刚上线，大家都在讨论名字。"}' } }] } } }
+  }
+  try {
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /自定义发推提示词：说清楚事实/)
+    assert.match(requestBody.messages[0].content, /仅输出 JSON/)
+    storedPostPrompt = '从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /不要写成三行微型故事/)
+    assert.doesNotMatch(requestBody.messages[0].content, /3 到 5 行，总共 35 到 75 个字/)
+  } finally {
+    globalThis.chrome = originalChrome
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('hot-topic drafting rewrites a didactic first attempt before queueing', async () => {
@@ -668,7 +703,7 @@ test('a saved duplicate post is removed from the queue before the next send', as
     currentSourceId: 'opinion:first',
     lastError: '没有确认推文发送成功',
     nextPostAt: Date.now() + 60000,
-    publishQueue: [{ id: 'opinion:first', sourceType: 'news', text: '重复的第一条' }, { id: 'opinion:second', sourceType: 'news', text: '另一条' }],
+    publishQueue: [{ id: 'opinion:first', sourceType: 'news', draftPolicyVersion: poster.DRAFT_POLICY_VERSION, text: '重复的第一条' }, { id: 'opinion:second', sourceType: 'news', draftPolicyVersion: poster.DRAFT_POLICY_VERSION, text: '另一条' }],
   }
   const sessionStorage = {
     getItem: () => JSON.stringify(saved),
@@ -1102,7 +1137,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.12.0')
+  assert.equal(manifest.version, '3.12.1')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -1349,8 +1384,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.9\.0\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.9\.0'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.12\.1\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.12\.1'/)
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -1416,8 +1451,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /version: '0\.2\.1'/)
   assert.match(resourcePage, /当前版本 v\{VERSION\}/)
   assert.match(resourcePage, /<ExtensionDownloadButton href=\{DOWNLOAD_URL\} version=\{VERSION\}/)
-  assert.match(downloadButton, /下载 Chrome 插件 v\$\{version\}/)
-  assert.match(downloadButton, /INSUFFICIENT_BALANCE/)
+  assert.match(downloadButton, /获取密码并下载 v\$\{version\}/)
+  assert.match(downloadButton, /INVALID_PASSWORD/)
+  assert.match(downloadButton, /method: 'POST'/)
+  assert.match(downloadButton, /qrcode-wechat\.jpg/)
   assert.match(downloadButton, /response\.blob\(\)/)
   assert.doesNotMatch(resourcePage, /\/resources\/x-clipboard-phrase/)
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X高频互动助手'/)
@@ -1459,8 +1496,8 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /phase: "stopped"/)
   assert.match(background.REPLY_SYSTEM_PROMPT, /长短按语境决定，短到几个字也可以/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
-  assert.match(background.POST_SYSTEM_PROMPT, /35 到 75 个字/)
-  assert.match(background.POST_SYSTEM_PROMPT, /不要出现 \$/)
+  assert.match(background.POST_SYSTEM_PROMPT, /18 到 70 字/)
+  assert.match(background.POST_SYSTEM_PROMPT, /不出现 \$/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /\$代币/)
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(background.cleanPost('听说东北以前一家子睡一个炕。\n$KAITO'), '听说东北以前一家子睡一个炕。')

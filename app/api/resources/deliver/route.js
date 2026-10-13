@@ -10,6 +10,19 @@ import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensi
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+const LOCKED_RESOURCE = 'resource:x-reply-clipboard-extension'
+const PASSWORD_SALT = '5e41ccb77b481a35a528d3de64c9d81d'
+const PASSWORD_HASH = 'b101ab8a1d712d7b036826d4292634fd90896068e9ac282cf96082eda265bb00'
+
+async function validDownloadPassword(password) {
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128) return false
+  const bytes = new TextEncoder().encode(`${PASSWORD_SALT}:${password}`)
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
+  const expected = PASSWORD_HASH.match(/../g).map((part) => parseInt(part, 16))
+  let different = 0
+  for (let index = 0; index < digest.length; index += 1) different |= digest[index] ^ expected[index]
+  return different === 0
+}
 
 function jsonError(error, status, setCookie = null, details = {}) {
   return Response.json({ error, ...details }, { status, headers: setCookie ? { 'Set-Cookie': setCookie } : undefined })
@@ -32,7 +45,7 @@ async function actorFor(req) {
   return { userId: `${GUEST_USER_PREFIX}${guest.gid}`, setCookie: guest.setCookie }
 }
 
-export async function GET(req) {
+async function deliver(req, passwordVerified = false) {
   try {
     const url = new URL(req.url)
     const resourceKey = String(url.searchParams.get('resourceKey') || '').trim()
@@ -40,6 +53,8 @@ export async function GET(req) {
     const wallpaperId = String(url.searchParams.get('wallpaperId') || '').trim()
     const delivery = getResourceDelivery(resourceKey, fileKey || wallpaperId)
     if (!delivery) return jsonError('DELIVERY_NOT_FOUND', 404)
+    const locked = resourceKey === LOCKED_RESOURCE
+    if (locked && !passwordVerified) return jsonError('PASSWORD_REQUIRED', 403)
 
     const db = getD1()
     const actor = await actorFor(req)
@@ -88,11 +103,12 @@ export async function GET(req) {
       await db.prepare('UPDATE wallpapers SET downloads = downloads + 1 WHERE id = ?1').bind(wallpaper.id).run()
     }
 
-    const bucket = getR2()
-    const object = await bucket.get(objectKey)
-    const embedded = object ? null : embeddedResourcePackage(objectKey)
+    // This release must never be placed in the public R2 bucket.
+    const bucket = locked ? null : getR2()
+    const object = locked ? null : await bucket.get(objectKey)
+    const embedded = locked ? embeddedResourcePackage(objectKey) : object ? null : embeddedResourcePackage(objectKey)
     if (!object && !embedded) return jsonError('FILE_NOT_FOUND', 404, actor.setCookie)
-    if (embedded) {
+    if (embedded && !locked) {
       await bucket.put(objectKey, embedded.bytes, {
         httpMetadata: { contentType: embedded.contentType },
         customMetadata: { sha256: embedded.sha256, source: 'embedded-release-fallback' },
@@ -117,4 +133,24 @@ export async function GET(req) {
   } catch (error) {
     return Response.json({ error: 'DELIVERY_FAILED', detail: String(error?.message || error) }, { status: 500 })
   }
+}
+
+export async function GET(req) {
+  return deliver(req)
+}
+
+export async function POST(req) {
+  const url = new URL(req.url)
+  if (url.searchParams.get('resourceKey') !== LOCKED_RESOURCE || url.searchParams.get('file') !== 'extension-zip') {
+    return jsonError('DELIVERY_NOT_FOUND', 404)
+  }
+  if (Number(req.headers.get('content-length') || 0) > 512) return jsonError('INVALID_PASSWORD', 400)
+  let payload
+  try {
+    payload = await req.json()
+  } catch {
+    return jsonError('INVALID_PASSWORD', 400)
+  }
+  if (!(await validDownloadPassword(payload?.password))) return jsonError('INVALID_PASSWORD', 403)
+  return deliver(req, true)
 }

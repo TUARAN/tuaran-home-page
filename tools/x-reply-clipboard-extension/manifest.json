@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "3.12.0",
+  "version": "3.12.1",
   "description": "Run timeline, notification, mutual-follow, and scheduled-post tasks concurrently in dedicated X tabs.",
   "permissions": ["storage", "offscreen", "alarms"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*", "https://2aran.com/*", "https://www.toutiao.com/*", "https://www.zhihu.com/*"],

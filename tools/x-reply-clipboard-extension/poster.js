@@ -17,6 +17,7 @@
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
+  const DRAFT_POLICY_VERSION = 3;
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
   const history = { sourceIds: [], published: [] };
@@ -229,23 +230,7 @@
   }
 
   function formatShortPost(value) {
-    const lines = preserveLines(value).split("\n").filter(Boolean);
-    const hook = lines.shift() || "";
-    const body = [];
-    for (const line of lines) {
-      const clauses = line.match(/[^，。！？；,.!?;]+[，。！？；,.!?;]?/gu) || [line];
-      let current = "";
-      for (const clause of clauses) {
-        const piece = clause.trim();
-        if (!piece) continue;
-        if (current && Array.from(current + piece).length > 22) {
-          body.push(current);
-          current = piece;
-        } else current += piece;
-      }
-      if (current) body.push(current);
-    }
-    return [hook, ...body].filter(Boolean).join("\n\n");
+    return preserveLines(value).split("\n").map((line) => line.trim()).filter(Boolean).join("\n\n");
   }
 
   function normalized(value) {
@@ -280,17 +265,20 @@
     if (normalized(topic).length < 4 || normalized(topic).length > 60) return "主题不明确";
     const length = Array.from(lines.join("")).length;
     if (sourceType === "news") {
-      if (normalized(body).length < 8 || length < 20 || length > 60) return "热点短帖过短或过长";
-      if (lines.length < 2 || lines.length > 4 || lines.some((line) => Array.from(line).length > 24)) return "热点短帖行数不合适";
+      if (length < 18 || length > 70) return "热点短帖过短或过长";
+      if (lines.length < 1 || lines.length > 4 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 70 : 34))) return "热点短帖行数不合适";
+      const concreteNumbers = candidate.match(/\d+(?:\.\d+)?(?:%|％|楼|层|人|杯|天|次|家|个|万|亿|元)?/gu) || [];
+      if (concreteNumbers.some((number) => !original.includes(number))) return "具体数字没有素材依据";
       if (/^(?:说个暴论|讲个事实|我真心觉得|说句实话|讲真)[：:，,\s]*$/u.test(lines[0])) return "开头没有具体内容";
       if (/^(?:你怎么看|大家怎么看|欢迎讨论|评论区见)[？?!！。\s]*$/u.test(lines.at(-1))) return "收尾太模板化";
+      if (/可能只是个错觉|谁也拦不住|又像不止|说的是.{1,12}，?又像|像在说.{1,12}，?又像|爆单那晚/u.test(candidate)) return "文艺化套话";
       if (/多半是|关键在于|本质上|归根结底|更实际|值得注意|值得思考|有必要|应该|应当|建议|问清楚|先弄清|流程不透明|这条新闻|这个话题|这个问题|这种现象|我想说|我们来聊|今天聊|来说说|说明了|反映出|从而|因此|首先|其次|最后/iu.test(candidate)) return "说理口吻太重";
       if (/^(?:很多人|有些人|大家|其实|说到底|关于)/u.test(lines[0])) return "开头不够具体";
     } else if (normalized(body).length < 18 || length < 35 || length > 75) return "正文过短或过长";
     if (/(?:[!！?？]{2,}|震惊|炸裂|封神|全网|史上最|绝对|百分之百|100%|只有傻子|都该闭嘴)/iu.test(candidate)) return "语气过火";
     if (sourceType !== "news" && (lines.length < 3 || lines.length > 5 || lines.some((line) => Array.from(line).length > 24))) return "行数或单行长度不合适";
     if (sourceType === "x" && originalBody && similarity(originalBody, body) >= 0.72) return "正文改动太少";
-    if (sourceType === "news" && similarity(original, candidate) >= 0.72) return "标题改动太少";
+    if (sourceType === "news" && similarity(hook, candidate) >= 0.72) return "标题改动太少";
     return "";
   }
 
@@ -348,6 +336,10 @@
     return Boolean(item?.sourceType === "news" && /^(?:opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
 
+  function keepPublishItem(item) {
+    return keepSourceItem(item) && item.draftPolicyVersion === DRAFT_POLICY_VERSION;
+  }
+
   function filterPromotionalSources() {
     const previousDraft = state.currentPost;
     const retained = (items) => Array.isArray(items) ? items.filter(keepSourceItem).map((item) => {
@@ -355,8 +347,8 @@
       return { ...item, source, sourceLabel: item.sourceLabel || sourceLabel(source), sourcePageUrl: item.sourcePageUrl || item.sourceUrl || item.url || "" };
     }) : [];
     state.sourceQueue = retained(state.sourceQueue);
-    state.publishQueue = retained(state.publishQueue);
-    if (state.currentSourceId && !state.publishQueue.some((item) => item.id === state.currentSourceId)) {
+    state.publishQueue = retained(state.publishQueue).filter(keepPublishItem);
+    if ((state.currentPost && !state.currentSourceId) || (state.currentSourceId && !state.publishQueue.some((item) => item.id === state.currentSourceId))) {
       state.retiredDraftText = previousDraft;
       state.currentPost = "";
       state.currentSourceId = "";
@@ -458,7 +450,7 @@
           }
           text = formatShortPost(result.post);
           topic = result.topic;
-          reason = qualityReason(item.text, text, topic, item.sourceType) || duplicateReason(text, topic, recentEntries());
+          reason = qualityReason([item.text, item.summary].filter(Boolean).join("\n"), text, topic, item.sourceType) || duplicateReason(text, topic, recentEntries());
           if (!reason || item.sourceType !== "news" || reason === "主题重复" || attempt > 0) break;
           avoidPost = result.post;
           avoidReason = reason;
@@ -471,7 +463,7 @@
         emit(`跳过素材：${reason}；待发 ${state.publishQueue.length} 条`);
         continue;
       }
-      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceType: "news", source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
+      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceSummary: item.summary || "", sourceType: "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
       await savePublishList();
       await rememberUsedSourceId(item.id);
       emit(`待发列表 ${state.publishQueue.length}/${total} 条。列表发完前不会重新抓取`);
@@ -796,7 +788,7 @@
         }
         const reason = !nextItem.topic || !nextItem.sourceText
           ? "旧版草稿需要重新生成"
-          : qualityReason(nextItem.sourceText, nextItem.text, nextItem.topic, nextItem.sourceType) || duplicateReason(nextItem.text, nextItem.topic, history.published);
+          : qualityReason([nextItem.sourceText, nextItem.sourceSummary].filter(Boolean).join("\n"), nextItem.text, nextItem.topic, nextItem.sourceType) || duplicateReason(nextItem.text, nextItem.topic, history.published);
         if (reason) {
           await skipUnsafeQueuedPost(nextItem, reason);
           continue;
@@ -990,6 +982,7 @@
     rememberPublishedPost,
     buildPublishList,
     collectNewsFallback,
+    DRAFT_POLICY_VERSION,
     shuffleNewsItems,
     collectTopicContext,
     DEFAULT_POST_PACE,

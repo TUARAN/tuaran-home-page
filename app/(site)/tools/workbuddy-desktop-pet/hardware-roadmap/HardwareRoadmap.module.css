@@ -127,7 +127,7 @@
 .stageIntro h3 { margin: 12px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 32px; font-weight: 500; line-height: 1.25; }
 .stageIntro > p:last-child { margin: 26px 0 0; color: #626c67; font-size: 13px; line-height: 1.9; }
 .taskList { padding-left: 45px; }
-.taskList label { display: grid; grid-template-columns: 26px 30px 1fr 20px; align-items: center; min-height: 90px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.taskList label { display: grid; grid-template-columns: 30px minmax(0, 1fr) 20px; align-items: center; min-height: 90px; border-bottom: 1px solid var(--line); cursor: pointer; }
 .taskList label:last-child { border-bottom: 0; }
 .taskList input { position: absolute; opacity: 0; }
 .taskList label > span { color: #929894; font-size: 9px; }
@@ -199,7 +199,7 @@
   .stagePanel { min-height: 0; }
   .stageIntro { padding: 35px 0; }
   .stageIntro h3 { font-size: 28px; }
-  .taskList label { grid-template-columns: 25px 1fr 20px; }
+  .taskList label { grid-template-columns: minmax(0, 1fr) 20px; }
   .taskList label > span { display: none; }
   .darkSection { padding: 80px 22px; }
   .arrival { grid-template-columns: 1fr; padding: 80px 22px; border: 0; }

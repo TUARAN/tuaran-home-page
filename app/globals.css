@@ -2349,7 +2349,8 @@
   }
 
   .home-featured-reading,
-  .home-inspirations {
+  .home-inspirations,
+  .home-opinion-panel {
     @apply h-auto min-w-0 self-start pt-4 md:px-5 md:pt-4;
   }
 
@@ -2358,8 +2359,14 @@
   }
 
   .home-featured-reading .home-section-title,
-  .home-inspirations .home-section-title {
+  .home-inspirations .home-section-title,
+  .home-opinion-panel .home-section-title {
     @apply text-[1.45rem] md:text-[1.45rem];
+  }
+
+  .home-opinion-panel .home-builder-group {
+    border-top: 0;
+    padding-top: 0;
   }
 
   .home-section-heading {
@@ -4222,6 +4229,7 @@
 
     .home-featured-reading,
     .home-inspirations,
+    .home-opinion-panel,
     .h5-articles-page,
     .h5-directory-page,
     .h5-community-page {
@@ -4229,7 +4237,8 @@
     }
 
     .home-featured-reading,
-    .home-inspirations {
+    .home-inspirations,
+    .home-opinion-panel {
       border: 0;
       border-radius: 0;
       box-shadow: none;

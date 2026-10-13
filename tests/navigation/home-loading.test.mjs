@@ -16,8 +16,8 @@ const dependencies = {
   'next/link': Link,
   'next/navigation': { useRouter: () => ({ push() {} }) },
   '@tabler/icons-react': new Proxy({}, { get: () => () => null }),
-  '../../../lib/homeRecommendationEngine': engine,
-  '../../../lib/siteAnalytics': { trackSiteEvent() {} },
+  '../../../lib/home/homeRecommendationEngine': engine,
+  '../../../lib/site/siteAnalytics': { trackSiteEvent() {} },
   './H5PullToRefresh': ({ children }) => children,
   './LocaleProvider': { T: ({ zh }) => zh },
   '../feed/data': feedData,
@@ -29,17 +29,17 @@ async function loadComponent(name) {
     jsc: { parser: { syntax: 'ecmascript', jsx: true }, transform: { react: { runtime: 'automatic' } } },
     module: { type: 'commonjs' },
   })
-  const module = { exports: {} }
+  const loadedModule = { exports: {} }
   new Function('require', 'module', 'exports', code)((id) => {
     assert.ok(Object.hasOwn(dependencies, id), `Unexpected dependency: ${id}`)
     return dependencies[id]
-  }, module, module.exports)
-  return module.exports.default
+  }, loadedModule, loadedModule.exports)
+  return loadedModule.exports
 }
 
-const Reading = await loadComponent('HomeFeaturedReadingClient')
+const Reading = (await loadComponent('HomeFeaturedReadingClient')).default
 dependencies['./HomeFeaturedReadingClient'] = Reading
-const Columns = await loadComponent('HomePrimaryColumnsClient')
+const { default: Columns, HomeInspirations } = await loadComponent('HomePrimaryColumnsClient')
 const catalog = Array.from({ length: 24 }, (_, index) => ({
   id: `column:entry-${index}`, section: 'column', sectionLabel: '创作',
   title: `首屏文章 ${index}`, summary: `文章摘要 ${index}`, href: `/articles/entry-${index}`,
@@ -50,8 +50,15 @@ const props = {
   inspirations: [{ id: 'first-spark', date: '2026-09-10', title: '首屏灵感', summary: '无需等待推荐接口', category: 'ai' }],
 }
 
+function renderHomeColumns({ catalog: entries = catalog, inspirations: sparks = props.inspirations } = {}) {
+  return renderToStaticMarkup(React.createElement(React.Fragment, null,
+    React.createElement(Columns, { catalog: entries }),
+    React.createElement(HomeInspirations, { items: sparks }),
+  ))
+}
+
 test('server HTML contains readable recommendations and inspirations before any network effects', () => {
-  const html = renderToStaticMarkup(React.createElement(Columns, props))
+  const html = renderHomeColumns(props)
   assert.match(html, /首屏文章/)
   assert.match(html, /首屏灵感/)
   assert.match(html, /href="\/feed\/first-spark"/)
@@ -59,13 +66,13 @@ test('server HTML contains readable recommendations and inspirations before any 
 })
 
 test('inspirations remain readable even when the recommendation catalog is empty', () => {
-  const html = renderToStaticMarkup(React.createElement(Columns, { ...props, catalog: [] }))
+  const html = renderHomeColumns({ ...props, catalog: [] })
   assert.match(html, /首屏灵感/)
   assert.doesNotMatch(html, /skeleton|invisible|aria-busy="true"/)
 })
 
 test('home inspirations default to the AI tab and keep Web3 as the other scope', () => {
-  const html = renderToStaticMarkup(React.createElement(Columns, props))
+  const html = renderHomeColumns(props)
   assert.match(html, /首页灵感范围/)
   assert.match(html, /home-inspiration-scope-ai/)
   assert.match(html, /home-inspiration-scope-web3/)

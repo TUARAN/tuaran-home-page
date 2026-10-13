@@ -37,7 +37,7 @@ import { T } from './components/LocaleProvider'
 import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
 import { SitePresenceProvider } from './components/SitePresenceProvider'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
-import HomePrimaryColumnsClient from './components/HomePrimaryColumnsClient'
+import HomePrimaryColumnsClient, { HomeInspirations } from './components/HomePrimaryColumnsClient'
 import { HOME_MOBILE_CHANNELS } from '../../lib/site/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/auth/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/site/siteIntro'
@@ -503,21 +503,27 @@ function AchievementMiniCard({ item }) {
   )
 }
 
-function BuilderAndSignalsPanel() {
+function HomeOpinionPanel() {
+  return (
+    <section className="home-section home-opinion-panel min-w-0 self-start">
+      <div className="home-primary-heading hidden md:grid">
+        <p className="home-kicker">02 · Public Opinion</p>
+        <h2 className="home-section-title"><T zh="舆情分析" en="Opinion signals" /></h2>
+        <div className="home-primary-heading-actions">
+          <Link href="/public-opinion" className="home-section-more no-underline">
+            <T zh="工作台" en="Dashboard" /> <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </div>
+      <p className="h5-feed-label md:hidden"><T zh="舆情分析" en="Opinion signals" /></p>
+      <HomeOpinionSignals />
+    </section>
+  )
+}
+
+function BuilderPanel() {
   return (
     <section className="home-section home-builder-panel">
-      <div className="home-section-heading compact">
-        <div>
-          <p className="home-kicker">Public Opinion</p>
-          <h2 className="home-section-title"><T zh="舆情分析" en="Opinion signals" /></h2>
-        </div>
-        <Link href="/public-opinion" className="home-section-more no-underline">
-          <T zh="工作台" en="Dashboard" /> <span aria-hidden="true">→</span>
-        </Link>
-      </div>
-
-      <HomeOpinionSignals />
-
       <div className="home-builder-group">
         <p className="home-builder-subtitle"><T zh="站长成就" en="Owner highlights" /></p>
         <div className="home-achievement-list">
@@ -869,15 +875,20 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <div className="home-main-grid">
         <HomePrimaryColumnsClient
           catalog={featuredPicks}
-          inspirations={inspirations}
         />
+        <HomeOpinionPanel />
+        <div className="lg:hidden">
+          <HomeInspirations items={inspirations} instance="mobile" />
+        </div>
 
         <aside className="home-side-stack hidden lg:block">
           <ProfileCard />
 
           <HomeCodexResetCard />
 
-          <BuilderAndSignalsPanel />
+          <HomeInspirations items={inspirations} />
+
+          <BuilderPanel />
 
           <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
 

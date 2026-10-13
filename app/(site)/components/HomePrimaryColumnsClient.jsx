@@ -50,18 +50,23 @@ function InspirationCard({ inspiration }) {
   )
 }
 
-function HomeInspirations({ items }) {
+export function HomeInspirations({ items, instance = 'desktop' }) {
   const [scope, setScope] = useState(DEFAULT_FEED_CATEGORY)
   const visibleItems = useMemo(
     () => filterFeedItemsByCategory(items, scope),
     [items, scope],
   )
   const moreHref = feedCategoryHref(scope)
+  const sectionId = instance === 'mobile' ? 'inspirations-mobile' : 'inspirations'
+  const tabId = (key) => instance === 'mobile'
+    ? `home-inspiration-mobile-scope-${key}`
+    : `home-inspiration-scope-${key}`
+  const listId = instance === 'mobile' ? 'home-inspiration-mobile-list' : 'home-inspiration-list'
 
   return (
-    <section id="inspirations" className="home-section home-inspirations scroll-mt-24">
+    <section id={sectionId} className="home-section home-inspirations scroll-mt-24">
       <div className="home-primary-heading hidden md:grid">
-        <p className="home-kicker">02 · Sparks</p>
+        <p className="home-kicker">03 · Sparks</p>
         <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
         <div className="home-primary-heading-actions">
           <Link href={moreHref} className="home-section-more no-underline">
@@ -81,9 +86,9 @@ function HomeInspirations({ items }) {
                 key={key}
                 type="button"
                 role="tab"
-                id={`home-inspiration-scope-${key}`}
+                id={tabId(key)}
                 aria-selected={active}
-                aria-controls="home-inspiration-list"
+                aria-controls={listId}
                 className={`home-tab-link ${active ? 'is-active' : ''}`}
                 onClick={() => setScope(key)}
               >
@@ -95,9 +100,9 @@ function HomeInspirations({ items }) {
       </div>
       <div className="relative min-h-0">
         <div
-          id="home-inspiration-list"
+          id={listId}
           role="tabpanel"
-          aria-labelledby={`home-inspiration-scope-${scope}`}
+          aria-labelledby={tabId(scope)}
           className="home-inspiration-list"
         >
           {visibleItems.map((inspiration) => (
@@ -117,13 +122,10 @@ function HomeInspirations({ items }) {
   )
 }
 
-export default function HomePrimaryColumnsClient({ catalog, inspirations }) {
+export default function HomePrimaryColumnsClient({ catalog }) {
   return (
-    <>
-      <div className="min-w-0 self-start">
-        <HomeFeaturedReadingClient catalog={catalog} />
-      </div>
-      <HomeInspirations items={inspirations} />
-    </>
+    <div className="min-w-0 self-start">
+      <HomeFeaturedReadingClient catalog={catalog} />
+    </div>
   )
 }

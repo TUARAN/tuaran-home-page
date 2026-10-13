@@ -7,6 +7,7 @@ import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } fro
 import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
+import CommunityOperationsPlan from './CommunityOperationsPlan'
 
 const RESULT_META = {
   success: { label: '成功', tone: 'success' },
@@ -23,6 +24,7 @@ const PLATFORM_LABEL = {
 
 const MODE_TABS = Object.freeze([
   { id: 'overview', label: '总览' },
+  { id: 'plan', label: '实践计划' },
   { id: 'extension', label: '浏览器插件' },
   { id: 'cloud', label: '纯云端' },
   { id: 'api', label: 'API 管理' },
@@ -87,6 +89,7 @@ function resolveView(searchParams) {
     return { mode: 'extension', panel: 'x-publish' }
   }
   if (raw === 'api') return { mode: 'api', panel: 'x-publish' }
+  if (raw === 'plan') return { mode: 'plan', panel: 'x-publish' }
   if (CLOUD_PANEL_IDS.has(raw)) {
     return { mode: 'cloud', panel: raw }
   }
@@ -254,6 +257,14 @@ function OverviewPanel({ center, loading, onOpenMode }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Section
+        title="M1 常驻实践计划"
+        description="按试运行、监控、恢复、修正发布和采购复盘推进；每阶段以证据和验收结果收口。"
+        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('plan')}>查看计划</AdminButton>}
+        className="lg:col-span-2"
+      >
+        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">先使用闲置 M1 和 NAS 验证 7 天，确认网络、浏览器与平台任务的实际故障，再决定是否购买 Mac mini。</p>
+      </Section>
+      <Section
         title="浏览器插件"
         description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；这里只收密钥、心跳和确认回执。"
         actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton>}
@@ -322,6 +333,8 @@ export default function CommunityActionsClient() {
     params.delete('panel')
     if (mode === 'overview') {
       params.delete('tab')
+    } else if (mode === 'plan') {
+      params.set('tab', 'plan')
     } else if (mode === 'extension') {
       params.set('tab', 'extension')
     } else if (mode === 'api') {
@@ -413,6 +426,8 @@ export default function CommunityActionsClient() {
       {view.mode === 'overview' ? (
         <OverviewPanel center={center} loading={loading} onOpenMode={openMode} />
       ) : null}
+
+      {view.mode === 'plan' ? <CommunityOperationsPlan /> : null}
 
       {view.mode === 'extension' ? (
         <ReceiptsPanel

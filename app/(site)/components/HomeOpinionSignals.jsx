@@ -30,7 +30,7 @@ function formatOpinionTime(value) {
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
-  const [activeTopic, setActiveTopic] = useState('all')
+  const [activeTopic, setActiveTopic] = useState('ai-agents')
 
   useEffect(() => {
     let active = true
@@ -65,15 +65,13 @@ export default function HomeOpinionSignals() {
 
   const liveData = data?.source === 'd1' ? data : null
   const allPosts = liveData?.posts?.filter((post) => /^https?:\/\//i.test(post.url || '')) || []
-  const filteredPosts = activeTopic === 'all'
-    ? allPosts
-    : allPosts.filter((post) => post.topicId === activeTopic)
+  const filteredPosts = allPosts.filter((post) => post.topicId === activeTopic)
   const events = liveData?.snapshot?.events || []
-  const groupedEvents = events.filter((event) => event.reportCount > 1 && (activeTopic === 'all' || event.topicId === activeTopic))
+  const groupedEvents = events.filter((event) => event.reportCount > 1 && event.topicId === activeTopic)
   const featured = groupedEvents[0]
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
   const posts = selectHomeOpinionPosts(otherPosts, 14)
-  const topics = (liveData?.topics || []).filter((topic) => allPosts.some((post) => post.topicId === topic.id))
+  const topics = (liveData?.topics || []).filter((topic) => topic.id === 'ai-agents' || allPosts.some((post) => post.topicId === topic.id))
   const featuredTopic = topics.find((topic) => topic.id === featured?.topicId)?.title
   const collectedAt = Number(liveData?.meta?.lastCollectAt)
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)
@@ -86,7 +84,6 @@ export default function HomeOpinionSignals() {
       {liveData && allPosts.length ? (
         <>
           <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
-            <button type="button" className={`home-tab-link ${activeTopic === 'all' ? 'is-active' : ''}`} aria-pressed={activeTopic === 'all'} onClick={() => setActiveTopic('all')}><T zh="全部" en="All" /></button>
             {topics.map((topic) => (
               <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
             ))}

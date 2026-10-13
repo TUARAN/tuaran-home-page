@@ -86,7 +86,7 @@ export default function HomeOpinionSignals() {
           <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
             <button type="button" className={`home-tab-link ${activeTopic === 'all' ? 'is-active' : ''}`} aria-pressed={activeTopic === 'all'} onClick={() => setActiveTopic('all')}><T zh="全部" en="All" /></button>
             {topics.map((topic) => (
-              <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.title}</button>
+              <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
             ))}
           </div>
 

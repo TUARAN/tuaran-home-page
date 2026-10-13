@@ -8,6 +8,7 @@ import {
   TREND_POINTS,
   buildPublicOpinionSnapshot,
 } from '../../../lib/publicOpinion/publicOpinionData'
+import { classifyOpinionPosts } from '../../../lib/publicOpinion/topicClassification'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -126,7 +127,8 @@ export async function GET() {
 
     const lastCollectAt = Number(meta.last_collect_at || 0)
     const isStale = !lastCollectAt || Date.now() / 1000 - lastCollectAt > 2 * 60 * 60
-    const snapshot = buildPublicOpinionSnapshot(posts, OPINION_TOPICS, SOURCE_CONNECTORS)
+    const classifiedPosts = classifyOpinionPosts(posts)
+    const snapshot = buildPublicOpinionSnapshot(classifiedPosts, OPINION_TOPICS, SOURCE_CONNECTORS)
     return Response.json(
       {
         source: 'd1',
@@ -143,7 +145,7 @@ export async function GET() {
         events: snapshot.events,
         brief: snapshot.brief,
         topics: OPINION_TOPICS,
-        posts,
+        posts: classifiedPosts,
         connectors: SOURCE_CONNECTORS,
         stack: PUBLIC_OPINION_STACK,
         trendPoints: trendPoints.length ? trendPoints : TREND_POINTS,

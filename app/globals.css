@@ -2892,11 +2892,14 @@
 
   .home-opinion-topic-tabs {
     margin-bottom: 0.75rem;
+    overflow: visible;
   }
 
   .home-opinion-topic-tabs .home-tab-link {
-    padding: 0 0.5rem;
-    font-size: 14px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+    font-size: clamp(12px, 3.5vw, 14px);
   }
 
   .home-opinion-counts {

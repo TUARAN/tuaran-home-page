@@ -94,7 +94,7 @@ export default function HomeOpinionSignals() {
                   <span className="home-opinion-collection-dot" aria-hidden="true" />
                   <T zh="持续采集中" en="Collecting" />
                 </span>
-                <T zh={`采集于 ${updated} · 北京时间`} en={`Collected ${updated} · UTC+8`} />
+                <T zh={`采集于 ${updated}`} en={`Collected ${updated}`} />
               </small>
             ) : null}
           </div>

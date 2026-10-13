@@ -2900,12 +2900,17 @@
   }
 
   .home-opinion-counts {
-    @apply mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 font-mono text-[11px];
+    @apply mb-3 flex flex-nowrap items-baseline justify-between gap-x-4 font-mono text-[11px];
     color: var(--site-muted);
+    overflow-x: auto;
   }
 
   .home-opinion-count-metrics {
-    @apply flex flex-wrap gap-x-4 gap-y-1;
+    @apply flex flex-none flex-nowrap gap-x-4;
+  }
+
+  .home-opinion-count-metrics > span {
+    @apply flex-none whitespace-nowrap;
   }
 
   .home-opinion-counts span {
@@ -2918,7 +2923,7 @@
   }
 
   .home-opinion-collection-status {
-    @apply inline-flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5;
+    @apply inline-flex flex-none flex-nowrap items-center justify-end gap-x-2 whitespace-nowrap;
   }
 
   .home-opinion-counts .home-opinion-collection-live {
@@ -2931,6 +2936,7 @@
     height: 5px;
     flex: none;
     border-radius: 50%;
+    color: #16803d;
     background: currentColor;
     box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 16%, transparent);
     animation: home-opinion-collection-pulse 2s ease-in-out infinite;

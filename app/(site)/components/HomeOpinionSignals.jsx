@@ -18,6 +18,15 @@ const SENTIMENTS = {
   negative: { zh: '负向', en: 'Negative' },
 }
 
+function formatOpinionTime(value) {
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return ''
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date)
+}
+
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -67,11 +76,9 @@ export default function HomeOpinionSignals() {
   const featuredTopic = topics.find((topic) => topic.id === featured?.topicId)?.title
   const collectedAt = Number(liveData?.meta?.lastCollectAt)
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)
-    ? new Intl.DateTimeFormat('zh-CN', {
-        timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', hour12: false,
-      }).format(new Date(collectedAt * 1000))
+    ? formatOpinionTime(collectedAt * 1000)
     : ''
+  const featuredTime = formatOpinionTime(featured?.latestAt)
   return (
     <div className="home-opinion-overview">
       {liveData && allPosts.length ? (
@@ -94,7 +101,7 @@ export default function HomeOpinionSignals() {
                   <span className="home-opinion-collection-dot" aria-hidden="true" />
                   <T zh="持续采集中" en="Collecting" />
                 </span>
-                <T zh={`采集于 ${updated}`} en={`Collected ${updated}`} />
+                <T zh={`更新于 ${updated}`} en={`Updated ${updated}`} />
               </small>
             ) : null}
           </div>
@@ -104,8 +111,11 @@ export default function HomeOpinionSignals() {
               <Link href="/public-opinion" className="home-opinion-sample no-underline">
                 <span className="home-opinion-sample-meta">
                   <span className="home-opinion-sample-source"><T zh="聚合事件" en="Grouped event" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
-                  <span>{featured.reportCount} <T zh="条讨论" en="posts" /></span>
-                  <span>{featured.sourceCount} <T zh="个来源" en="sources" /></span>
+                  <time className="home-opinion-sample-time" dateTime={featured.latestAt}>{featuredTime}</time>
+                  <span className="home-opinion-sample-event-counts">
+                    <span>{featured.reportCount} <T zh="条讨论" en="posts" /></span>
+                    <span>{featured.sourceCount} <T zh="个来源" en="sources" /></span>
+                  </span>
                 </span>
                 <strong>{featured.title}</strong>
                 <small>{featured.summary}</small>

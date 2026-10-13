@@ -2900,21 +2900,17 @@
   }
 
   .home-opinion-counts {
-    @apply mb-3 flex flex-nowrap items-baseline justify-between gap-x-4 font-mono text-[11px];
+    @apply mb-3 flex flex-nowrap items-center justify-between gap-x-4 font-mono text-[11px];
     color: var(--site-muted);
     overflow-x: auto;
   }
 
   .home-opinion-count-metrics {
-    @apply flex flex-none flex-nowrap gap-x-4;
+    @apply flex flex-none flex-nowrap items-center gap-x-4;
   }
 
   .home-opinion-count-metrics > span {
-    @apply flex-none whitespace-nowrap;
-  }
-
-  .home-opinion-counts span {
-    @apply inline-flex items-baseline gap-1;
+    @apply inline-flex flex-none items-baseline gap-1 whitespace-nowrap;
   }
 
   .home-opinion-counts small {
@@ -2986,6 +2982,10 @@
   .home-opinion-sample-time {
     @apply whitespace-nowrap;
     font-variant-numeric: tabular-nums;
+  }
+
+  .home-opinion-sample-event-counts {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap;
   }
 
   .home-opinion-sample-signal {

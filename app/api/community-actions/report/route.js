@@ -3,8 +3,10 @@ import {
   COMMUNITY_ACTION_SECRET_HEADER,
   COMMUNITY_ACTION_SECRET_KEY,
   communityActionAuthorized,
+  normalizeCommunityActionReport,
   recordCommunityActionReport,
 } from '../../../../lib/community/communityActions'
+import { createExtensionAlertNotification } from '../../../../lib/site/siteNotifications'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -61,6 +63,20 @@ export async function POST(req) {
   try {
     const recorded = await recordCommunityActionReport(db, body)
     if (!recorded.ok) return Response.json(recorded, { status: 400 })
+    const normalized = normalizeCommunityActionReport(body)
+    if (normalized.ok && normalized.platform === 'x') {
+      for (const event of normalized.events) {
+        if (event.result !== 'failed' || !event.errorCode.startsWith('x-')) continue
+        await createExtensionAlertNotification(db, {
+          deviceId: normalized.deviceId,
+          task: event.task,
+          errorCode: event.errorCode,
+          accountHandle: event.accountHandle || normalized.accountHandle,
+          extensionVersion: normalized.extensionVersion,
+          targetId: event.targetId,
+        })
+      }
+    }
     return Response.json({ ok: true, accepted: recorded.accepted })
   } catch (error) {
     if (isMissingTable(error)) {

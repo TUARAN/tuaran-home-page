@@ -62,6 +62,19 @@ test('automation failures open the matching ops task', () => {
   )
 })
 
+test('X extension alerts open plugin monitoring', () => {
+  const item = presentNotification({
+    type: 'automation_monitor',
+    actor_user_name: 'X 插件 · 时间线回复',
+    article_key: 'extension:x:device-x-001:timeline-reply:x-transient-error',
+    message_excerpt: 'X 页面提示临时错误',
+  })
+  assert.equal(item.title, 'X 插件 · 时间线回复 出现异常')
+  assert.equal(item.href, '/admin/community-actions?tab=extension')
+  assert.equal(item.category, 'automation')
+  assert.equal(item.destinationLabel, '查看插件监控')
+})
+
 test('RSS updates open the matching feed card', () => {
   assert.equal(
     notificationHref({

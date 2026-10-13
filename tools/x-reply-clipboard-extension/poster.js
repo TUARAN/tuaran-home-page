@@ -27,7 +27,7 @@
     running: false,
     stopping: false,
     navigating: false,
-    status: "待命。默认读取王长富的纯文字帖，形成待发列表后一条条发布。",
+    status: "待命。优先读取王长富的纯文字帖；没有可用素材时读取热点，形成待发列表后发布。",
     count: 0,
     errors: 0,
     startedAt: null,
@@ -276,19 +276,26 @@
     return (2 * shared) / (first.size + second.size || 1);
   }
 
-  function qualityReason(source, post, topic) {
+  function qualityReason(source, post, topic, sourceType = "x") {
     const original = preserveLines(source);
     const candidate = preserveLines(post);
     const hook = original.split("\n").find(Boolean) || "";
     const lines = candidate.split("\n").filter(Boolean);
     const body = lines.slice(1).join(" ").trim();
     const originalBody = original.split("\n").slice(1).join(" ").trim();
-    if (!hook || candidate.split("\n")[0] !== hook) return "首句没有保留";
+    if (sourceType === "x" && (!hook || candidate.split("\n")[0] !== hook)) return "首句没有保留";
     if (normalized(topic).length < 4 || normalized(topic).length > 60) return "主题不明确";
-    if (normalized(body).length < 18 || Array.from(lines.join("")).length > 75) return "正文过短或过长";
+    const length = Array.from(lines.join("")).length;
+    if (sourceType === "news") {
+      if (normalized(body).length < 8 || length < 20 || length > 60) return "热点短帖过短或过长";
+      if (lines.length < 2 || lines.length > 4 || lines.some((line) => Array.from(line).length > 24)) return "热点短帖行数不合适";
+      if (/多半是|关键在于|本质上|归根结底|更实际|值得注意|值得思考|有必要|应该|应当|建议|问清楚|先弄清|流程不透明|这条新闻|这个话题|这个问题|这种现象|我想说|我们来聊|今天聊|来说说|说明了|反映出|从而|因此|首先|其次|最后/iu.test(candidate)) return "说理口吻太重";
+      if (/^(?:很多人|有些人|大家|其实|说到底|关于)/u.test(lines[0])) return "开头不够具体";
+    } else if (normalized(body).length < 18 || length < 35 || length > 75) return "正文过短或过长";
     if (/(?:[!！?？]{2,}|震惊|炸裂|封神|全网|史上最|绝对|百分之百|100%|只有傻子|都该闭嘴)/iu.test(candidate)) return "语气过火";
-    if (lines.length < 3 || lines.length > 5 || lines.some((line) => Array.from(line).length > 24)) return "行数或单行长度不合适";
-    if (originalBody && similarity(originalBody, body) >= 0.72) return "正文改动太少";
+    if (sourceType !== "news" && (lines.length < 3 || lines.length > 5 || lines.some((line) => Array.from(line).length > 24))) return "行数或单行长度不合适";
+    if (sourceType === "x" && originalBody && similarity(originalBody, body) >= 0.72) return "正文改动太少";
+    if (sourceType === "news" && similarity(original, candidate) >= 0.72) return "标题改动太少";
     return "";
   }
 
@@ -363,13 +370,15 @@
     return text;
   }
 
-  function requestSourceRewrite(sourceText, recentTopics) {
+  function requestSourceRewrite(sourceText, recentTopics, item = null, avoidPost = "", avoidReason = "") {
     return new Promise((resolve, reject) => {
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("改写只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-source-rewrite", sourceText, recentTopics }, (response) => {
+      const sent = chrome.runtime.sendMessage(item?.sourceType === "news"
+        ? { type: "xrc-ai-news-rewrite", title: sourceText, summary: item.summary, source: item.source, recentTopics, avoidPost, avoidReason }
+        : { type: "xrc-ai-source-rewrite", sourceText, recentTopics }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接改写服务"));
@@ -385,13 +394,47 @@
     });
   }
 
-  async function buildPublishList() {
+  function requestNewsSources() {
+    return new Promise((resolve, reject) => {
+      if (!globalThis.chrome?.runtime?.sendMessage) return reject(new Error("热点取材只在 Chrome 扩展中可用"));
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-sources" }, (response) => {
+        const error = chrome.runtime.lastError;
+        if (error || !response?.ok) return reject(new Error(error?.message || response?.error || "热点来源读取失败"));
+        resolve({ items: Array.isArray(response.items) ? response.items : [], errors: Array.isArray(response.errors) ? response.errors : [] });
+      });
+      if (sent && typeof sent.catch === "function") sent.catch(() => {});
+    });
+  }
+
+  function shuffleNewsItems(items, random = Math.random) {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  async function collectNewsFallback() {
+    emit("王长富没有可用新帖，正在读取头条、知乎和站内舆情热点…");
+    const used = readUsedSourceIds();
+    const result = await requestNewsSources();
+    const items = shuffleNewsItems(result.items)
+      .filter((item) => item?.sourceType === "news" && item.id && item.text && !used.has(item.id));
+    state.sourceQueue = items.slice(0, 12);
+    if (!state.sourceQueue.length) throw new Error(`王长富和备用热点都没有可用的新素材${result.errors.length ? `（${result.errors.join("、")}读取失败）` : ""}`);
+    await buildPublishList(5);
+    return state.publishQueue.length;
+  }
+
+  async function buildPublishList(limit = 20) {
     filterPromotionalSources();
     const used = readUsedSourceIds();
     const pending = state.sourceQueue.filter((item) => !used.has(item.id) && !state.publishQueue.some((done) => done.id === item.id));
     const total = state.sourceQueue.length;
     for (const item of pending) {
       if (state.stopping) return state.publishQueue.length;
+      if (state.publishQueue.length >= limit) break;
       emit(`正在总结改写 ${state.publishQueue.length + 1}/${total}，写入待发列表`);
       let text = "";
       let topic = "";
@@ -399,13 +442,21 @@
       let inspected = false;
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
-        const result = await requestSourceRewrite(item.text, recentTopics);
-        inspected = true;
-        if (result.skip) reason = "主题与近期内容重复";
-        else {
-          text = acceptRewrite(item.text, result.post);
+        let avoidPost = "";
+        let avoidReason = "";
+        for (let attempt = 0; attempt < (item.sourceType === "news" ? 2 : 1); attempt += 1) {
+          const result = await requestSourceRewrite(item.text, recentTopics, item, avoidPost, avoidReason);
+          inspected = true;
+          if (result.skip) {
+            reason = "主题与近期内容重复或素材不足";
+            break;
+          }
+          text = item.sourceType === "news" ? formatShortPost(result.post) : acceptRewrite(item.text, result.post);
           topic = result.topic;
-          reason = qualityReason(item.text, text, topic) || duplicateReason(text, topic, recentEntries());
+          reason = qualityReason(item.text, text, topic, item.sourceType) || duplicateReason(text, topic, recentEntries());
+          if (!reason || item.sourceType !== "news" || reason === "主题重复" || attempt > 0) break;
+          avoidPost = result.post;
+          avoidReason = reason;
         }
       } catch (error) {
         reason = error?.message || "改写失败";
@@ -415,7 +466,7 @@
         emit(`跳过素材：${reason}；待发 ${state.publishQueue.length} 条`);
         continue;
       }
-      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text });
+      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceType: item.sourceType || "x", sourceUrl: item.url || "" });
       await savePublishList();
       await rememberUsedSourceId(item.id);
       emit(`待发列表 ${state.publishQueue.length}/${total} 条。列表发完前不会重新抓取`);
@@ -527,10 +578,13 @@
     emit(`第 1 步：正在读取 @${handle} 的纯文字帖…`);
     await waitUntil(() => document.querySelector('article[data-testid="tweet"]'), 12000);
     const added = await collectSourcePosts();
-    if (!added) throw new Error(`@${handle} 主页上没有读到新的纯文字帖`);
-    await buildPublishList();
+    if (added) await buildPublishList();
+    if (!state.publishQueue.length && !state.stopping) await collectNewsFallback();
     if (state.stopping) return state.publishQueue.length;
-    if (!state.publishQueue.length) throw new Error("没有形成待发列表");
+    if (!state.publishQueue.length) throw new Error("王长富和备用热点都没有形成可发草稿");
+    state.lastError = "";
+    state.nextPostAt = 0;
+    await savePublishList();
     await leaveFor("/home", `第 3 步：待发 ${state.publishQueue.length} 条，回到首页一条条发送`);
     return state.publishQueue.length;
   }
@@ -783,7 +837,7 @@
         }
         const reason = !nextItem.topic || !nextItem.sourceText
           ? "旧版草稿需要重新生成"
-          : qualityReason(nextItem.sourceText, nextItem.text, nextItem.topic) || duplicateReason(nextItem.text, nextItem.topic, history.published);
+          : qualityReason(nextItem.sourceText, nextItem.text, nextItem.topic, nextItem.sourceType) || duplicateReason(nextItem.text, nextItem.topic, history.published);
         if (reason) {
           await skipUnsafeQueuedPost(nextItem, reason);
           continue;
@@ -853,7 +907,7 @@
         await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic);
         emit(state.publishQueue.length
           ? `第 ${state.count} 条已发送；待发还剩 ${state.publishQueue.length} 条`
-          : `第 ${state.count} 条已发送；待发列表已空，下一次再读取 @${activeSourceHandle()}`);
+          : `第 ${state.count} 条已发送；待发列表已空，下一次重新选取素材`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -980,6 +1034,8 @@
     rememberUsedSourceId,
     rememberPublishedPost,
     buildPublishList,
+    collectNewsFallback,
+    shuffleNewsItems,
     acceptRewrite,
     usableSourceTweet,
     collectTopicContext,

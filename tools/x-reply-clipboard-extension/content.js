@@ -69,9 +69,10 @@
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
-  const RECONNECT_INTERVAL_MS = 60 * 1000;
+  const RECONNECT_INITIAL_MS = 2000;
+  const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.9.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.10.3";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -112,7 +113,7 @@
     pendingTweetId: "",
     lastReply: "",
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
-    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。默认读取王长富的纯文字帖，形成待发列表后一条条发布。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", sourceHandle: "wangchangfu88", publishQueue: [] },
+    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读王长富纯文字帖；没有可用新帖时从备用热点选题。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", sourceHandle: "wangchangfu88", publishQueue: [] },
     errors: 0,
     status: "待命。点开始后，DeepSeek 会阅读原帖并生成回复。",
     phraseIndex: null,
@@ -136,6 +137,7 @@
   let riskRoundAdvancing = false;
   let skipScheduledWait = false;
   let wakeScheduledWait = null;
+  let reconnectOnline = false;
   let notificationLikeOnly = false;
   const likedOnlyIds = new Set();
   let highlightedPhraseIndex = null;
@@ -1226,8 +1228,15 @@
   }
 
   async function closeReplyComposer({ confirmedSent = false } = {}) {
-    if (!findDialogComposer()) return true;
-    await requestDraftClear();
+    const open = findDialogComposer();
+    if (!open) return true;
+    if (open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
+    const draft = loopApi.composerText(open.textbox);
+    if (draft && !isManagedDraft(draft)) return false;
+    if (draft) {
+      await requestDraftClear();
+      if (findDialogComposer() && loopApi.composerText(findDialogComposer().textbox)) return false;
+    }
     const eventInit = { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true };
     const composer = findDialogComposer();
     if (confirmedSent) {
@@ -1248,20 +1257,62 @@
     return !findDialogComposer();
   }
 
+  function isManagedDraft(text) {
+    const normalized = loopApi.normalizePhraseText(text);
+    if (!normalized) return true;
+    return [state.pendingReply, state.lastReply].some((phrase) => phrase && loopApi.normalizePhraseText(phrase) === normalized)
+      || loopApi.phraseIndexFromText(phrases, text) >= 0;
+  }
+
+  function reconnectDelay(attempt) {
+    return Math.min(RECONNECT_MAX_MS, RECONNECT_INITIAL_MS * (2 ** Math.min(4, attempt)));
+  }
+
+  async function xIsReachable() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 4000);
+    try {
+      // navigator.onLine is only a hint; this request checks X itself.
+      const response = await fetch(`${window.location.origin}/robots.txt?xrc_connect=${Date.now()}`, {
+        method: "GET", cache: "no-store", credentials: "same-origin", signal: controller.signal
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
   async function reconnectAndResume(reason) {
     state.reconnectReason = String(reason || "").trim();
-    state.reconnectAt = state.reconnectAt > Date.now() ? state.reconnectAt : Date.now() + RECONNECT_INTERVAL_MS;
-    writeSaved({ running: true, total: state.total });
-    const ready = await waitForDeadline(
-      state.reconnectAt,
-      (remaining) => `${state.reconnectReason || "页面暂时不可用"}；${formatCountdown(remaining)}后自动重连`
-    );
-    if (!ready) return "stopped";
-    state.reconnectAt = 0;
-    state.reconnectReason = "";
-    writeSaved({ running: true, total: state.total });
-    await reloadAndResume("正在重连 X 页面并恢复当前任务");
-    return "reload";
+    let networkReported = false;
+    for (let attempt = 0; state.running && !state.stopping; attempt += 1) {
+      state.reconnectAt = Date.now() + reconnectDelay(attempt);
+      writeSaved({ running: true, total: state.total });
+      while (state.running && !state.stopping && Date.now() < state.reconnectAt && !reconnectOnline && !skipScheduledWait) {
+        state.status = `${state.reconnectReason || "页面暂时不可用"}；${formatCountdown(state.reconnectAt - Date.now())}后检测连接`;
+        renderPanel();
+        await sleep(500);
+      }
+      reconnectOnline = false;
+      skipScheduledWait = false;
+      if (!state.running || state.stopping) break;
+      if (!await xIsReachable()) {
+        if (!networkReported) {
+          networkReported = true;
+          reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: state.pendingTweetId, errorCode: "x-network-unreachable" });
+        }
+        state.status = "无法连接 X，正在自动重试";
+        renderPanel();
+        continue;
+      }
+      state.reconnectAt = 0;
+      writeSaved({ running: true, total: state.total });
+      if (await reloadAndResume("连接已恢复，正在重新载入当前任务")) return "reload";
+      state.reconnectReason = "评论框有未发送内容，等待安全重连";
+    }
+    return "stopped";
   }
 
   async function waitRateLimit(seconds, statusForRemaining) {
@@ -1520,7 +1571,8 @@
   }
 
   const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|你的(?:帖子|回复)已发送|(?:帖子|回复)已发送成功)/i;
-  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|Something went wrong, but don(?:’t|'t) fret|give it another shot|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  const TRANSIENT_ERROR_RE = /(?:Something went wrong(?:, but don(?:’t|'t) fret)?|give it another shot|出了点问题|请重试)/i;
   const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了)?|已经发布过相同内容/i;
   const UNAVAILABLE_POST_RE = /(?:trying to reply to has been deleted or is not visible|要回复的帖子已被删除|尝试回复的帖子已被删除|帖子已被删除或你无法查看)/i;
 
@@ -1532,6 +1584,11 @@
   function automationWarningNodes() {
     return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"], #layers'))
       .filter((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
+  }
+
+  function transientErrorVisible() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .some((node) => !node.closest(`#${PANEL_ID}`) && TRANSIENT_ERROR_RE.test(textOf(node)));
   }
 
   function duplicateReplyWarningVisible() {
@@ -1650,6 +1707,7 @@
   }
 
   function failureLabel(result) {
+    if (result === "transient-error") return "X 暂时出错，正在检查连接";
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
     if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
@@ -1723,6 +1781,7 @@
     const sendStarted = await waitUntil(() => {
       if (unavailableAfterClick()) return true;
       if (automationWarningNodes().length > 0) return true;
+      if (transientErrorVisible()) return true;
       if (duplicateReplyWarningVisible()) return true;
       if (hasNewSuccessNotice()) return true;
       if (composer.dialog && !findDialogComposer()) return true;
@@ -1737,18 +1796,20 @@
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
+    if (transientErrorVisible()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!sendStarted) return "send-unconfirmed";
 
     const confirmed = composer.dialog
-      ? await waitUntil(() => unavailableAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
+      ? await waitUntil(() => unavailableAfterClick() || transientErrorVisible() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
       : await waitUntil(
-          () => unavailableAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+          () => unavailableAfterClick() || transientErrorVisible() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
           SEND_CONFIRM_TIMEOUT_MS
         );
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
+    if (transientErrorVisible()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!confirmed) return "send-unconfirmed";
     if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
@@ -1805,6 +1866,7 @@
       && result !== "sent-composer-open"
       && result !== "post-unavailable"
       && result !== "risk-blocked"
+      && result !== "transient-error"
       && result !== "duplicate-reply"
       && loopApi.composerText(composer.textbox)
     ) {
@@ -1818,11 +1880,31 @@
   }
 
   async function reloadAndResume(message) {
-    writeSaved({ running: true, total: state.total });
-    state.status = message;
-    renderPanel();
-    await sleep(400);
-    window.location.reload();
+    let draftReported = false;
+    while (state.running && !state.stopping) {
+      const dialog = findDialogComposer();
+      const closed = !dialog || await closeReplyComposer();
+      const draft = Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
+        .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
+      if (closed && !draft) {
+        state.reconnectAt = 0;
+        state.reconnectReason = "";
+        writeSaved({ running: true, total: state.total });
+        state.status = message;
+        renderPanel();
+        await sleep(400);
+        window.location.reload();
+        return true;
+      }
+      if (!draftReported) {
+        draftReported = true;
+        reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: state.pendingTweetId, errorCode: "x-draft-blocked" });
+      }
+      state.status = "回复框有未发送内容，等待清空后安全重连";
+      renderPanel();
+      await sleep(2000);
+    }
+    return false;
   }
 
   async function runLoop({ resume = false } = {}) {
@@ -1857,16 +1939,7 @@
       riskRoundAdvancing = false;
       writeSaved({ running: true, total: state.total });
     }
-    if (state.reconnectAt > 0) {
-      const readyToReconnect = await waitForDeadline(
-        state.reconnectAt,
-        (remaining) => `${state.reconnectReason || "页面连接暂时不可用"}；${formatCountdown(remaining)}后自动重连`
-      );
-      if (!readyToReconnect) return riskRoundPending() ? advanceRoundAfterRisk() : "stopped";
-      state.reconnectAt = 0;
-      state.reconnectReason = "";
-      writeSaved({ running: true, total: state.total });
-    }
+    if (state.reconnectAt > 0) return reconnectAndResume(state.reconnectReason || "页面连接暂时不可用");
     scrollTimelineToTop();
     if (state.assistantMode !== "notifications") ensureRunPlan();
     await sleepActive(resume ? RESUME_DELAY_MS : 400);
@@ -2064,6 +2137,10 @@
       if (result === "stopped") {
         break;
       }
+      if (result === "transient-error") {
+        reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: next.id, errorCode: "x-transient-error" });
+        return reconnectAndResume("X 暂时出错，正在检查网络并重试当前回复");
+      }
       if (result === "risk-blocked") {
         reportCommunityAction({
           task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply",
@@ -2252,7 +2329,7 @@
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     if (!state.aiKey) {
-      state.poster = { ...state.poster, status: "请先填写 DeepSeek API Key，才能改写纯文字帖", errors: state.poster.errors + 1 };
+      state.poster = { ...state.poster, status: "请先填写 DeepSeek API Key，才能生成定时发帖草稿", errors: state.poster.errors + 1 };
       renderPanel();
       return;
     }
@@ -2615,8 +2692,8 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
-                <li><b>发布规则：</b>定时发帖默认读取王长富 @wangchangfu88 的纯文字帖，逐条改写后放进待发列表，再回首页一条条发。列表没发完不会重新抓取。开头钩子和原来的换行保留。之后可以把素材账号改成其他号。</li>
-                <li><b>发什么：</b>回复提示词决定回复内容。定时发帖优先发布素材账号纯文字帖的改写。改写使用已保存的 DeepSeek API Key；改写失败或不合格时跳过当前素材。</li>
+                <li><b>发布规则：</b>定时发帖优先读取王长富 @wangchangfu88 的纯文字帖；没有可用新草稿时从可读取的头条、知乎和站内舆情热点随机选题。生成后放进待发列表，再回首页一条条发。列表没发完不会重新抓取。原帖改写保留首句钩子；热点稿写独立开头。</li>
+                <li><b>发什么：</b>回复提示词决定回复内容。定时发帖用已保存的 DeepSeek API Key 写短帖；素材不合格或与近期主题重复时跳过。</li>
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
@@ -2629,6 +2706,10 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.10.3</b><span><strong>异常进入站长通知</strong><small>页面报错、断网和草稿阻止重连会回传监控通知；离线时暂存，恢复后补报。</small></span></article>
+                <article><b>v3.10.2</b><span><strong>异常后快速重连</strong><small>检测 X 连通性后逐步重试；刷新前处理回复草稿，避免系统确认框卡住。</small></span></article>
+                <article><b>v3.10.1</b><span><strong>热点短帖口吻收紧</strong><small>用具体场景和口语反应写热点；说理、劝告式草稿会重写一次或跳过。</small></span></article>
+                <article><b>v3.10.0</b><span><strong>定时发帖增加备用热点</strong><small>王长富没有可用新帖时，随机读取头条、知乎和站内舆情的可用热点写短帖；沿用历史去重。</small></span></article>
                 <article><b>v3.9.0</b><span><strong>定时发帖改成短行</strong><small>正文缩短，每行之间空一行；过长草稿不再发送。</small></span></article>
                 <article><b>v3.8.0</b><span><strong>设置自动保存</strong><small>配置 Key 后收起主面板输入区；设置中的字段改动后自动保存。</small></span></article>
                 <article><b>v3.7.0</b><span><strong>等待可手动跳过</strong><small>回复间隔、下一轮、重连和暂停提示旁可点击「立即开始」。</small></span></article>
@@ -2721,7 +2802,7 @@
               <li><b>时间线回复</b>在首页按当前频率回复。</li>
               <li><b>通知回复</b>处理通知里的互动。</li>
               <li><b>关注管理</b>分别清理未回关、回关粉丝、关注候选。</li>
-              <li><b>定时发帖</b>抓取素材账号的纯文字帖，改写后按待发列表发送。</li>
+              <li><b>定时发帖</b>优先改写素材账号的纯文字帖；没有可用新帖时从备用热点选题，按待发列表发送。</li>
             </ol>
             <p>只想改其中一项时，打开对应页签，在该页设好频率后再点「启动单项任务」。API Key 在上方全局区填写。</p>
           </div>
@@ -2771,8 +2852,8 @@
           <section class="xrc-post-flow" aria-label="定时发帖流程">
             <p data-xrc-post-source>默认素材账号是 @wangchangfu88（王长富）。之后可以改成其他账号。</p>
             <ol>
-              <li>打开素材账号主页，只抓纯文字帖。</li>
-              <li>逐条改写，写进待发列表。</li>
+              <li>先读素材账号的纯文字帖；没有可用新稿时读取备用热点。</li>
+              <li>随机挑选可用热点或改写原帖，写进待发列表。</li>
               <li>回到首页，按列表一条条发。列表没发完，不会重新抓取。</li>
             </ol>
             <div class="xrc-flow-end">
@@ -3459,7 +3540,7 @@
     }
     if (!saved.running) {
       state.status = state.assistantMode === "poster"
-        ? `默认读取王长富的纯文字帖，形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
+        ? `优先读取王长富的纯文字帖；没有可用新稿时从备用热点选题。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
         : "";
     }
     renderPanel();
@@ -3516,4 +3597,6 @@
     }
     renderPanel();
   }, 1000);
+
+  window.addEventListener("online", () => { reconnectOnline = true; });
 })();

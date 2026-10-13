@@ -136,6 +136,15 @@ test('manual reply start clears a reconnect countdown and wakes its waiting loop
   assert.equal(calls.restarted, 1)
 })
 
+test('reply reconnect backs off quickly and caps its retry interval', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function reconnectDelay\(attempt\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const context = vm.createContext({ RECONNECT_INITIAL_MS: 2000, RECONNECT_MAX_MS: 30000 })
+  vm.runInContext(helper, context)
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map((attempt) => vm.runInContext(`reconnectDelay(${attempt})`, context)), [2000, 4000, 8000, 16000, 30000, 30000])
+})
+
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
   const listeners = []
@@ -380,6 +389,84 @@ test('failed rewrites never fall back to the source post in the publish queue', 
   assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.id), ['good'])
   assert.equal(api.readUsedSourceIds().has('failed'), false)
   assert.equal(api.snapshot().publishQueue[0].text.split('\n')[0], sourceText.split('\n')[0])
+})
+
+test('scheduled poster fills an empty queue from fresh hot topics and remembers their source IDs', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const seen = []
+  const context = vm.createContext({
+    chrome: {
+      runtime: {
+        lastError: null,
+        sendMessage(message, respond) {
+          seen.push(message.type)
+          if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: [
+            { id: 'toutiao:123', sourceType: 'news', source: 'toutiao', text: '一个关于新工具使用方式的公开讨论', summary: '', url: 'https://www.toutiao.com/a123' },
+          ] })
+          else respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
+        },
+      },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  await api.collectNewsFallback()
+  assert.deepEqual(seen, ['xrc-ai-news-sources', 'xrc-ai-news-rewrite'])
+  assert.equal(api.snapshot().publishQueue.length, 1)
+  assert.equal(api.snapshot().publishQueue[0].sourceType, 'news')
+  assert.equal(api.readUsedSourceIds().has('toutiao:123'), true)
+  await assert.rejects(api.collectNewsFallback(), /没有可用的新素材/)
+})
+
+test('hot-topic parsers require current site data and keep stable source IDs', () => {
+  assert.equal(background.parseToutiaoHot({ data: [{ ClusterId: '123', Title: '一个关于新工具使用方式的公开讨论', Url: 'https://www.toutiao.com/a123' }] })[0].id, 'toutiao:123')
+  assert.equal(background.parseZhihuHot({ data: [{ target: { id: 42, title: '为什么很多人会误解新工具的使用方式？', url: 'https://www.zhihu.com/question/42' } }] })[0].id, 'zhihu:42')
+  const event = { id: 'po_123', title: '新工具使用方式引发讨论', latestAt: new Date().toISOString() }
+  assert.equal(background.parseOpinionHot({ source: 'fallback', meta: { hasData: false }, events: [event] }).length, 0)
+  assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: true }, events: [event] }).length, 0)
+  assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].id, 'opinion:po_123')
+  assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
+  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。', '新工具上线跟风', 'news'), '')
+  assert.equal(poster.qualityReason('体检抽血为什么要抽多管', '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。', '抽血检测流程', 'news'), '说理口吻太重')
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /王长富公开短帖的节奏/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /具体的人、事、物或场景/)
+})
+
+test('hot-topic drafting rewrites a didactic first attempt before queueing', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const requests = []
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        requests.push(message)
+        respond(requests.length === 1
+          ? { ok: true, topic: '抽血检测流程', post: '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。' }
+          : { ok: true, topic: '抽血管子排一排', post: '体检抽血，一排管子摆出来。\n\n结果还没等到，\n\n人先被这阵仗吓一跳。' })
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  api.snapshot().sourceQueue.push({ id: 'toutiao:blood', sourceType: 'news', source: 'toutiao', text: '体检抽血为什么要抽多管' })
+  await api.buildPublishList()
+  assert.equal(requests.length, 2)
+  assert.equal(requests[1].avoidReason, '说理口吻太重')
+  assert.equal(api.snapshot().publishQueue.length, 1)
+  assert.match(api.snapshot().publishQueue[0].text, /一排管子摆出来/)
 })
 
 test('DeepSeek post rewrite requires a structured topic and draft', () => {
@@ -906,7 +993,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.9.0')
+  assert.equal(manifest.version, '3.10.3')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -916,6 +1003,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
+  assert.ok(manifest.host_permissions.includes('https://www.toutiao.com/*'))
+  assert.ok(manifest.host_permissions.includes('https://www.zhihu.com/*'))
   assert.equal(manifest.background.service_worker, 'background.js')
   assert.match(nextConfig, /source: '\/resources\/x-mutual-cleaner-extension',[\s\S]*?destination: '\/resources\/x-reply-clipboard-extension'/)
   assert.doesNotMatch(toolItems, /sourcePath: 'tools\/x-(?:mutual-cleaner|tweet-to-pdf)-extension'/)
@@ -1039,7 +1128,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(posterSource, /randomIntervalMs\(Math\.random, state\.schedulePace\)/)
   assert.match(content, /loopApi\.randomCycleDelayMs\(Math\.random, state\.schedulePace\)/)
   assert.match(content, /NOTIFICATION_CYCLE_DELAY_MS = 10 \* 60 \* 1000/)
-  assert.match(content, /RECONNECT_INTERVAL_MS = 60 \* 1000/)
+  assert.match(content, /RECONNECT_INITIAL_MS = 2000/)
+  assert.match(content, /RECONNECT_MAX_MS = 30000/)
+  assert.match(content, /window\.addEventListener\("online"/)
+  assert.match(content, /fetch\(`\$\{window\.location\.origin\}\/robots\.txt/)
+  assert.match(content, /if \(result === "transient-error"\) \{[\s\S]*?errorCode: "x-transient-error"[\s\S]*?return reconnectAndResume/)
+  assert.match(content, /if \(draft && !isManagedDraft\(draft\)\) return false/)
   assert.match(content, /finishCycleAndScheduleNext/)
   assert.match(content, /reconnectAndResume/)
   assert.match(content, /data-xrc-stable-runtime/)
@@ -1175,7 +1269,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /version: '3\.6\.9'/)
   assert.match(resourcePage, /version: '3\.6\.10'/)
   assert.match(resourcePage, /version: '3\.6\.11'/)
-  assert.match(content, /Something went wrong, but don/)
+  const riskMatcher = content.match(/const AUTOMATION_WARNING_RE = ([^\n]+)/)?.[1] || ''
+  const transientMatcher = content.match(/const TRANSIENT_ERROR_RE = ([^\n]+)/)?.[1] || ''
+  assert.doesNotMatch(riskMatcher, /Something went wrong/)
+  assert.match(transientMatcher, /Something went wrong/)
   assert.match(content, /本轮已结束，下一轮/)
   assert.doesNotMatch(content, /评论过于频繁，时间线和通知回复已停止/)
   assert.match(backgroundSource, /\["timeline", "notifications"\]/)

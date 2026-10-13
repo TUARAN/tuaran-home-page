@@ -61,7 +61,7 @@ function TimelineNode({ item }) {
         }`}
         aria-hidden="true"
       />
-      <div className={`mt-1 flex min-h-40 flex-1 flex-col rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
+      <div className={`mt-1 flex min-h-36 flex-1 flex-col rounded-xl border bg-white p-3 shadow-[0_8px_24px_rgba(40,42,33,0.04)] dark:bg-[#0f141d] ${isAttention ? 'border-rose-200 dark:border-rose-900' : 'border-[#e2e4da] dark:border-[#243041]'}`}>
         <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="mb-0 flex flex-wrap items-center gap-1.5">
@@ -144,7 +144,7 @@ function TaskTimeline({ runGroups }) {
   ))
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       <div className="mb-4 flex flex-col gap-3 border-b border-[#eceee5] pb-4 dark:border-[#202b39] xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-wrap gap-1.5" aria-label="按任务类型筛选">
           {TIMELINE_FILTERS.map((filter) => (
@@ -173,8 +173,8 @@ function TaskTimeline({ runGroups }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
-        <div className="relative grid items-stretch gap-3 px-2 pb-1" style={{ gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(180px, 1fr))` }}>
+      <div className="w-full min-w-0 max-w-full overflow-x-auto pb-2" aria-label="每日自动发布横向时间轴">
+        <div className="relative grid w-max items-stretch gap-3 px-2 pb-1" style={{ gridTemplateColumns: `repeat(${Math.max(visibleItems.length, 1)}, 190px)` }}>
           <div className="absolute left-2 right-2 top-[31px] h-px bg-[#d8dad0] dark:bg-[#354052]" aria-hidden="true" />
           {visibleItems.map((item) => <TimelineNode key={item.id} item={item} />)}
           {!visibleItems.length ? (
@@ -305,7 +305,7 @@ export default function MorningGreetingClient({ embedded = false } = {}) {
       <Section
           title="自动任务"
           description="每天 23 个节点按北京时间运行：10 条高频短帖、3 条交朋友、1 条日常问候、1 条文化故事、3 条加密观察、1 条美区英文和 4 条理财热点。文案在发布前由当前模型实时生成，自动去重并直接发到 X。"
-          className="mb-4"
+          className="mb-4 min-w-0 max-w-full"
           actions={
             <>
               <StatusPill tone={!data ? 'neutral' : data.paused ? 'warning' : 'success'} size="sm">{!data ? '状态未读取' : data.paused ? '已暂停' : '运行中'}</StatusPill>

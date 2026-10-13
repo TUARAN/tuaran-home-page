@@ -340,8 +340,10 @@ test('自动任务总览使用横向时间轴并支持类型与状态筛选', as
 
   assert.match(clientSource, /aria-label="每日自动发布横向时间轴"/)
   assert.match(clientSource, /gridTemplateColumns/)
-  assert.match(clientSource, /minmax\(180px, 1fr\)/)
-  assert.match(clientSource, /min-h-40 flex-1 flex-col/)
+  assert.match(clientSource, /Math\.max\(visibleItems\.length, 1\)}, 190px/)
+  assert.match(clientSource, /w-full min-w-0 max-w-full overflow-x-auto/)
+  assert.match(clientSource, /relative grid w-max items-stretch/)
+  assert.match(clientSource, /min-h-36 flex-1 flex-col/)
   assert.doesNotMatch(clientSource, /item\.imageUrl/)
   assert.doesNotMatch(clientSource, /mt-1 h-full rounded-xl/)
   assert.match(clientSource, /按任务类型筛选/)

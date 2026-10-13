@@ -521,7 +521,7 @@ export default function CommunityActionsClient() {
       {view.mode === 'api' ? <DeepSeekKeysPanel /> : null}
 
       {view.mode === 'cloud' ? (
-        <div className="grid gap-4">
+        <div className="grid min-w-0 gap-4">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="纯云端任务">
             {CLOUD_PANELS.map((item) => {
               const active = view.panel === item.id

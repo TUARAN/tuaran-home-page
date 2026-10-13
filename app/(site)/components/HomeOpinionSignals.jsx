@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { IconArrowUpRight, IconMessageCircle2 } from '@tabler/icons-react'
 import { selectHomeOpinionPosts } from '../../../lib/home/homeOpinionSignals'
 import { getSentimentBucket } from '../../../lib/publicOpinion/publicOpinionData'
 import { T } from './LocaleProvider'
@@ -63,7 +62,7 @@ export default function HomeOpinionSignals() {
   const events = liveData?.snapshot?.events || []
   const featured = events.find((event) => activeTopic === 'all' || event.topicId === activeTopic)
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
-  const posts = selectHomeOpinionPosts(otherPosts.length ? otherPosts : filteredPosts, 5)
+  const posts = selectHomeOpinionPosts(otherPosts.length ? otherPosts : filteredPosts, 14)
   const topics = (liveData?.topics || []).filter((topic) => allPosts.some((post) => post.topicId === topic.id))
   const featuredTopic = topics.find((topic) => topic.id === featured?.topicId)?.title
   const collectedAt = Number(liveData?.meta?.lastCollectAt)
@@ -73,60 +72,37 @@ export default function HomeOpinionSignals() {
         hour: '2-digit', minute: '2-digit', hour12: false,
       }).format(new Date(collectedAt * 1000))
     : ''
-  const status = failed
-    ? { zh: '刷新失败', en: 'Refresh failed' }
-    : !data
-      ? { zh: '加载中', en: 'Loading' }
-      : !liveData
-        ? { zh: '暂无实时数据', en: 'No live data' }
-        : liveData.meta?.isStale
-          ? { zh: '待更新', en: 'Outdated' }
-          : { zh: '已采集', en: 'Collected' }
-
   return (
     <div className="home-opinion-overview">
-      <div className="home-opinion-heading">
-        <span className="home-opinion-heading-icon" aria-hidden="true">
-          <IconMessageCircle2 size={16} stroke={1.8} />
-        </span>
-        <div>
-          <p><T zh="公开讨论与观点" en="Public discussions and viewpoints" /></p>
-          <small>{updated
-            ? <T zh={`采集于 ${updated} · 北京时间`} en={`Collected ${updated} · UTC+8`} />
-            : <T zh="追踪公开来源中的科技话题" en="Following technology topics in public sources" />}</small>
-        </div>
-        <span className="home-opinion-status" role="status"><T {...status} /></span>
-      </div>
-
       {liveData && allPosts.length ? (
         <>
-          <div className="home-opinion-topic-tabs" role="group" aria-label="舆情话题">
-            <button type="button" className={activeTopic === 'all' ? 'is-active' : ''} aria-pressed={activeTopic === 'all'} onClick={() => setActiveTopic('all')}><T zh="全部" en="All" /></button>
+          <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
+            <button type="button" className={`home-tab-link ${activeTopic === 'all' ? 'is-active' : ''}`} aria-pressed={activeTopic === 'all'} onClick={() => setActiveTopic('all')}><T zh="全部" en="All" /></button>
             {topics.map((topic) => (
-              <button key={topic.id} type="button" className={activeTopic === topic.id ? 'is-active' : ''} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.title}</button>
+              <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.title}</button>
             ))}
           </div>
 
           <div className="home-opinion-counts">
-            <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>
-            <span><strong>{events.filter((event) => activeTopic === 'all' || event.topicId === activeTopic).length}</strong><T zh="个聚合事件" en="grouped events" /></span>
+            <div className="home-opinion-count-metrics">
+              <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>
+              <span><strong>{events.filter((event) => activeTopic === 'all' || event.topicId === activeTopic).length}</strong><T zh="个聚合事件" en="grouped events" /></span>
+            </div>
+            {updated ? <small><T zh={`采集于 ${updated} · 北京时间`} en={`Collected ${updated} · UTC+8`} /></small> : null}
           </div>
 
-          {featured ? (
-            <Link href="/public-opinion" className="home-opinion-feature no-underline">
-              <span className="home-opinion-feature-kicker"><T zh="焦点事件" en="Featured event" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
-              <strong>{featured.title}</strong>
-              <span className="home-opinion-feature-summary">{featured.summary}</span>
-              <span className="home-opinion-feature-meta">
-                <span><T zh="热度" en="Heat" /> {featured.heat}/{featured.heatScaleMax || 100}</span>
-                <span>{featured.reportCount} <T zh="条讨论" en="posts" /></span>
-                <span>{featured.sourceCount} <T zh="个来源" en="sources" /></span>
-                <IconArrowUpRight size={16} stroke={1.8} aria-hidden="true" />
-              </span>
-            </Link>
-          ) : null}
-
           <div className="home-opinion-list">
+            {featured ? (
+              <Link href="/public-opinion" className="home-opinion-sample no-underline">
+                <span className="home-opinion-sample-meta">
+                  <span className="home-opinion-sample-source"><T zh="聚合事件" en="Grouped event" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
+                  <span>{featured.reportCount} <T zh="条讨论" en="posts" /></span>
+                  <span>{featured.sourceCount} <T zh="个来源" en="sources" /></span>
+                </span>
+                <strong>{featured.title}</strong>
+                <small>{featured.summary}</small>
+              </Link>
+            ) : null}
             {posts.map((post) => {
               const sentiment = getSentimentBucket(post.sentiment)
               const stance = STANCES[post.stance] ? post.stance : 'neutral'

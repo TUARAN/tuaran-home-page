@@ -6458,17 +6458,6 @@
     font-size: 11px;
   }
 
-  .community-membership-countdown.is-loading {
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel) 88%, transparent);
-  }
-
-  .community-membership-countdown.is-ended {
-    justify-content: flex-start;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel) 88%, transparent);
-  }
-
   .community-membership-countdown-copy {
     display: flex;
     align-items: center;

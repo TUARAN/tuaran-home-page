@@ -11,32 +11,9 @@ import {
   IconShieldCheck,
 } from '@tabler/icons-react'
 
-import { COMMUNITY_MEMBERSHIP } from '../../../lib/auth/communityMembership'
+import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPlanPrice } from '../../../lib/auth/communityMembership'
 
-const EARLY_BIRD_END = new Date(COMMUNITY_MEMBERSHIP.earlyBird.endsAt).getTime()
-
-function getCountdown(now) {
-  const remaining = Math.max(0, EARLY_BIRD_END - now)
-
-  return {
-    active: remaining > 0,
-    days: Math.floor(remaining / 86400000),
-    hours: Math.floor((remaining / 3600000) % 24),
-    minutes: Math.floor((remaining / 60000) % 60),
-    seconds: Math.floor((remaining / 1000) % 60),
-  }
-}
-
-function EarlyBirdCountdown({ countdown }) {
-  if (!countdown.active) {
-    return (
-      <div className="community-membership-countdown is-ended">
-        <IconClock size={17} aria-hidden="true" />
-        <span>首发活动已结束，主题圈年卡恢复为 ¥{COMMUNITY_MEMBERSHIP.earlyBird.regularPrice}</span>
-      </div>
-    )
-  }
-
+function ActivityCountdown({ countdown }) {
   const parts = [
     ['天', countdown.days],
     ['时', countdown.hours],
@@ -45,10 +22,10 @@ function EarlyBirdCountdown({ countdown }) {
   ]
 
   return (
-    <div className="community-membership-countdown" role="timer" aria-label={`早鸟价剩余 ${countdown.days} 天 ${countdown.hours} 小时 ${countdown.minutes} 分钟`}>
+    <div className="community-membership-countdown" role="timer" aria-label={`本轮活动剩余 ${countdown.days} 天 ${countdown.hours} 小时 ${countdown.minutes} 分钟`}>
       <div className="community-membership-countdown-copy">
         <IconClock size={17} aria-hidden="true" />
-        <span><strong>¥{COMMUNITY_MEMBERSHIP.earlyBird.price} 首发价</strong>，截止 10 月 7 日 23:59</span>
+        <span><strong>主题圈年卡 ¥{COMMUNITY_MEMBERSHIP.plans[0].price}</strong>，本轮活动剩余</span>
       </div>
       <div className="community-membership-countdown-units" aria-hidden="true">
         {parts.map(([label, value]) => (
@@ -61,10 +38,10 @@ function EarlyBirdCountdown({ countdown }) {
 
 export default function CommunityMembershipCard({ compact = false, id, waitlist = false, topicName = '' }) {
   const [selectedPlanId, setSelectedPlanId] = useState(COMMUNITY_MEMBERSHIP.plans[0].id)
-  const [countdown, setCountdown] = useState(() => getCountdown(Date.now()))
+  const [countdown, setCountdown] = useState(() => getCommunityCountdown())
 
   useEffect(() => {
-    const update = () => setCountdown(getCountdown(Date.now()))
+    const update = () => setCountdown(getCommunityCountdown())
     update()
     const timer = window.setInterval(update, 1000)
     return () => window.clearInterval(timer)
@@ -74,9 +51,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
     () => COMMUNITY_MEMBERSHIP.plans.find((plan) => plan.id === selectedPlanId) || COMMUNITY_MEMBERSHIP.plans[0],
     [selectedPlanId],
   )
-  const selectedPrice = countdown?.active && selectedPlan.earlyBirdPrice
-    ? selectedPlan.earlyBirdPrice
-    : selectedPlan.price
+  const selectedPrice = getCommunityPlanPrice(selectedPlan)
 
   if (waitlist) {
     return (
@@ -159,12 +134,12 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
           </div>
         </div>
 
-        <EarlyBirdCountdown countdown={countdown} />
+        <ActivityCountdown countdown={countdown} />
 
         <div className="community-membership-plans" role="radiogroup" aria-label="选择圈子或个人服务方案">
           {COMMUNITY_MEMBERSHIP.plans.map((plan) => {
             const isSelected = plan.id === selectedPlan.id
-            const price = countdown?.active && plan.earlyBirdPrice ? plan.earlyBirdPrice : plan.price
+            const price = getCommunityPlanPrice(plan)
             return (
               <button
                 key={plan.id}
@@ -178,7 +153,6 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
                 <span className="community-membership-plan-head">
                   <strong>{plan.name}</strong>
                   <span>
-                    {plan.earlyBirdPrice && countdown?.active ? <del>¥{plan.price}</del> : null}
                     <b>¥{price}</b>/{plan.period}
                   </span>
                 </span>

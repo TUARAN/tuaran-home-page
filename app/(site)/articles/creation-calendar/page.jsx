@@ -1,5 +1,7 @@
 import CreationCalendarClient from './CreationCalendarClient'
 import { buildKnowledgeItems } from '../buildKnowledgeItems'
+import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../../lib/juejin/activitySnapshot'
+import { calendarPage, calendarRecord, isCalendarDate, selectCreationCalendarItems } from '../../../../lib/article/creationCalendar'
 
 export const dynamic = 'force-static'
 
@@ -13,6 +15,10 @@ export const metadata = {
 }
 
 export default function CreationCalendarPage() {
-  const items = buildKnowledgeItems()
-  return <CreationCalendarClient items={items} />
+  const allItems = buildKnowledgeItems()
+  const dates = allItems.filter((item) => isCalendarDate(item.date)).map(({ date }) => ({ date }))
+  const years = new Set([...dates.map(({ date }) => date.slice(0, 4)), ...Object.keys(JUEJIN_ACTIVITY_SNAPSHOT.countsByDate).map((date) => date.slice(0, 4))])
+  const initialYear = [...years].sort((a, b) => Number(b) - Number(a))[0] || ''
+  const initialItems = calendarPage(selectCreationCalendarItems(allItems, { year: initialYear }), 1).map(calendarRecord)
+  return <CreationCalendarClient items={dates} initialYear={initialYear} initialItems={initialItems} />
 }

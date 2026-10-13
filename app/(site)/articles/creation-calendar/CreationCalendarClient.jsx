@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { JUEJIN_ACTIVITY_SNAPSHOT } from '../../../../lib/juejin/activitySnapshot'
 import { articleSourceCountLabel } from '../../../../lib/article/articleSourceCountLabel.mjs'
+import { CREATION_CALENDAR_PAGE_SIZE, CREATION_START, isCalendarDate } from '../../../../lib/article/creationCalendar'
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -15,18 +16,6 @@ const KIND_LABELS = {
   special: '专题',
   resources: '资源',
   juejin: '掘金文章',
-}
-
-const CREATION_START = {
-  date: '2019-03-11',
-  kind: 'juejin',
-  title: '创作起点 · NVIDIA GPU 矩阵运算',
-  summary: '掘金快照记录当日发布 1 篇文章。原文链接留在这里，作为 30 年内容创作计划的起点。',
-  href: 'https://juejin.cn/post/6844903794283642887',
-}
-
-function isValidDate(value) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
 }
 
 function formatDate(isoDate) {
@@ -104,13 +93,13 @@ function heatColorClass(value) {
   return 'bg-[var(--kb-heat-1)]'
 }
 
-export default function CreationCalendarClient({ items }) {
+export default function CreationCalendarClient({ items, initialYear, initialItems }) {
   const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
 
   const localItems = useMemo(
     () =>
       items
-        .filter((item) => isValidDate(item.date))
+        .filter((item) => isCalendarDate(item.date))
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
     [items],
   )
@@ -134,9 +123,13 @@ export default function CreationCalendarClient({ items }) {
     return Array.from(set).sort((a, b) => Number(b) - Number(a))
   }, [juejinCountsByDate, localCountsByDate])
 
-  const [selectedYear, setSelectedYear] = useState(years[0] || '')
+  const [selectedYear, setSelectedYear] = useState(initialYear)
   const [selectedMonth, setSelectedMonth] = useState('all')
   const [selectedDate, setSelectedDate] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [requestTick, setRequestTick] = useState(0)
+  const [pageData, setPageData] = useState(() => ({ key: `${initialYear}|all||1`, items: initialItems, error: false }))
+  const firstLoad = useRef(true)
 
   useEffect(() => {
     if (!years.length) return
@@ -151,6 +144,7 @@ export default function CreationCalendarClient({ items }) {
       setSelectedYear(hashDate.slice(0, 4))
       setSelectedMonth('all')
       setSelectedDate(hashDate)
+      setCurrentPage(1)
     }
   }, [])
 
@@ -207,10 +201,42 @@ export default function CreationCalendarClient({ items }) {
   const juejinTotalAll = JUEJIN_ACTIVITY_SNAPSHOT.totalPosts
   const totalContentCount = localItems.length + juejinTotalAll
 
-  const visibleItems = useMemo(() => {
+  const filteredItems = useMemo(() => {
     if (selectedDate) return monthItems.filter((item) => item.date === selectedDate)
     return monthItems
   }, [monthItems, selectedDate])
+  const pageCount = Math.ceil(filteredItems.length / CREATION_CALENDAR_PAGE_SIZE)
+  const pageKey = `${selectedYear}|${selectedMonth}|${selectedDate}|${currentPage}`
+  const isLoading = pageData.key !== pageKey
+  const visibleItems = isLoading ? [] : pageData.items
+
+  useEffect(() => {
+    if (firstLoad.current) {
+      firstLoad.current = false
+      return
+    }
+    const controller = new AbortController()
+    const params = new URLSearchParams({ year: selectedYear, month: selectedMonth, page: String(currentPage) })
+    if (selectedDate) params.set('date', selectedDate)
+    fetch(`/api/articles/creation-calendar?${params}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return response.json()
+      })
+      .then((data) => {
+        if (!Array.isArray(data.items)) throw new Error('Invalid calendar page')
+        setPageData({ key: pageKey, items: data.items, error: false })
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') setPageData({ key: pageKey, items: [], error: true })
+      })
+    return () => controller.abort()
+  }, [selectedYear, selectedMonth, selectedDate, currentPage, pageKey, requestTick])
+
+  function goToPage(page) {
+    setCurrentPage(page)
+    document.getElementById('calendar-records')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   return (
     <main className="w-full max-w-[1120px] mx-auto px-4 py-10 space-y-6">
@@ -254,6 +280,7 @@ export default function CreationCalendarClient({ items }) {
               setSelectedYear(year)
               setSelectedMonth('all')
               setSelectedDate('')
+              setCurrentPage(1)
             }}
             className={[
               'rounded px-2 py-1 text-xs transition-colors',
@@ -274,6 +301,7 @@ export default function CreationCalendarClient({ items }) {
           onClick={() => {
             setSelectedMonth('all')
             setSelectedDate('')
+            setCurrentPage(1)
           }}
           className={[
             'rounded px-2 py-1 text-xs transition-colors',
@@ -293,6 +321,7 @@ export default function CreationCalendarClient({ items }) {
               onClick={() => {
                 setSelectedMonth(monthKey)
                 setSelectedDate('')
+                setCurrentPage(1)
               }}
               className={[
                 'rounded px-2 py-1 text-xs transition-colors',
@@ -359,7 +388,11 @@ export default function CreationCalendarClient({ items }) {
                               key={cell.key}
                               type="button"
                               title={`${cell.date} · ${cell.count} 篇`}
-                              onClick={() => setSelectedDate((prev) => (prev === cell.date ? '' : cell.date))}
+                              onClick={() => {
+                                setSelectedDate((prev) => (prev === cell.date ? '' : cell.date))
+                                setSelectedMonth('all')
+                                setCurrentPage(1)
+                              }}
                               className={[
                                 'h-3 w-3 rounded-[2px] text-[0px] transition-opacity',
                                 heatColorClass(cell.count),
@@ -390,37 +423,68 @@ export default function CreationCalendarClient({ items }) {
           {selectedDate ? (
             <button
               type="button"
-              onClick={() => setSelectedDate('')}
+              onClick={() => {
+                setSelectedDate('')
+                setCurrentPage(1)
+              }}
               className="text-xs text-[#787a6c] transition-colors hover:text-[#303029] dark:text-gray-400 dark:hover:text-gray-200"
             >
               清除日期筛选
             </button>
           ) : null}
         </div>
-        {visibleItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <p className="text-sm text-[#666] dark:text-gray-400">该时间范围暂无内容。</p>
         ) : (
-          <div className="space-y-2">
-            {visibleItems.map((item) => (
-              <Link
-                key={`${item.href}-${item.title}`}
-                href={item.href}
-                {...(item.kind === 'juejin' ? { target: '_blank', rel: 'noreferrer' } : {})}
-                className="block rounded-md border border-[#eee] bg-white p-3 no-underline transition-colors hover:border-[#c0c2b4] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
-              >
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#787a6c] dark:text-gray-400">
-                  <time dateTime={item.date}>{item.date}</time>
-                  <span>·</span>
-                  <span>{KIND_LABELS[item.kind] || item.kind}</span>
-                  {item.tagLabel ? <span>· {item.tagLabel}</span> : null}
-                </div>
-                <h3 className="mt-1 text-sm font-medium text-[#262721] dark:text-gray-100">{item.title}</h3>
-                {item.summary ? (
-                  <p className="mt-1 line-clamp-2 text-sm text-[#666] dark:text-gray-300">{item.summary}</p>
-                ) : null}
-              </Link>
-            ))}
-          </div>
+          <>
+            <p className="text-xs text-[#787a6c] dark:text-gray-400">
+              共 {filteredItems.length} 篇，显示第 {(currentPage - 1) * CREATION_CALENDAR_PAGE_SIZE + 1}–{Math.min(currentPage * CREATION_CALENDAR_PAGE_SIZE, filteredItems.length)} 篇
+            </p>
+            {isLoading ? (
+              <p className="text-sm text-[#666] dark:text-gray-400" role="status">正在加载这一页…</p>
+            ) : pageData.error ? (
+              <p className="text-sm text-[#666] dark:text-gray-400" role="alert">
+                加载失败，请稍后重试。
+                <button type="button" onClick={() => {
+                  setPageData({ key: '', items: [], error: false })
+                  setRequestTick((tick) => tick + 1)
+                }} className="ml-2 text-[#285a8d] underline dark:text-[#9bb6df]">重试</button>
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {visibleItems.map((item) => (
+                  <Link
+                    key={`${item.href}-${item.title}`}
+                    href={item.href}
+                    {...(item.kind === 'juejin' ? { target: '_blank', rel: 'noreferrer' } : {})}
+                    className="block rounded-md border border-[#eee] bg-white p-3 no-underline transition-colors hover:border-[#c0c2b4] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#787a6c] dark:text-gray-400">
+                      <time dateTime={item.date}>{item.date}</time>
+                      <span>·</span>
+                      <span>{KIND_LABELS[item.kind] || item.kind}</span>
+                      {item.tagLabel ? <span>· {item.tagLabel}</span> : null}
+                    </div>
+                    <h3 className="mt-1 text-sm font-medium text-[#262721] dark:text-gray-100">{item.title}</h3>
+                    {item.summary ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-[#666] dark:text-gray-300">{item.summary}</p>
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
+            )}
+            {pageCount > 1 ? (
+              <nav className="flex items-center justify-center gap-4 pt-3" aria-label="创作日历文章分页">
+                <button type="button" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="rounded-md border border-[#c8c9bf] px-3 py-1.5 text-sm text-[#4a4b41] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200">
+                  上一页
+                </button>
+                <span className="text-sm text-[#666] dark:text-gray-300" aria-live="polite">第 {currentPage} / {pageCount} 页</span>
+                <button type="button" disabled={currentPage === pageCount} onClick={() => goToPage(currentPage + 1)} className="rounded-md border border-[#c8c9bf] px-3 py-1.5 text-sm text-[#4a4b41] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200">
+                  下一页
+                </button>
+              </nav>
+            ) : null}
+          </>
         )}
       </section>
     </main>

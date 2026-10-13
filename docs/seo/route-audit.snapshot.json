@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 212,
-    "redirects": 15,
-    "private": 58,
+    "routes": 219,
+    "redirects": 19,
+    "private": 59,
     "registeredStatic": 101,
-    "indexable": 117,
-    "canonical": 134,
-    "openGraph": 72,
+    "indexable": 119,
+    "canonical": 137,
+    "openGraph": 73,
     "jsonLd": 49,
-    "errors": 3,
-    "warnings": 132
+    "errors": 5,
+    "warnings": 135
   },
   "routes": [
     {
@@ -324,6 +324,22 @@
       }
     },
     {
+      "path": "/admin/community-actions",
+      "file": "app/(admin)/admin/community-actions/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/content",
       "file": "app/(admin)/admin/content/page.jsx",
       "kind": "private",
@@ -484,6 +500,22 @@
       }
     },
     {
+      "path": "/admin/festival-banners",
+      "file": "app/(admin)/admin/festival-banners/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/information",
       "file": "app/(admin)/admin/information/page.jsx",
       "kind": "private",
@@ -516,6 +548,22 @@
       }
     },
     {
+      "path": "/admin/life",
+      "file": "app/(admin)/admin/life/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/logs",
       "file": "app/(admin)/admin/logs/page.jsx",
       "kind": "private",
@@ -534,7 +582,8 @@
     {
       "path": "/admin/morning-greeting",
       "file": "app/(admin)/admin/morning-greeting/page.jsx",
-      "kind": "private",
+      "kind": "redirect",
+      "redirect": "/admin/community-actions?tab=x-publish",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1031,7 +1080,8 @@
     {
       "path": "/admin/x-replies",
       "file": "app/(admin)/admin/x-replies/page.jsx",
-      "kind": "private",
+      "kind": "redirect",
+      "redirect": "/admin/community-actions?tab=x-reply",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1377,7 +1427,7 @@
       "path": "/browser-extensions",
       "file": "app/(site)/browser-extensions/page.jsx",
       "kind": "redirect",
-      "redirect": "/downloads#extensions",
+      "redirect": "/tools#browser-extensions",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1663,7 +1713,7 @@
       "path": "/desktop-apps",
       "file": "app/(site)/desktop-apps/page.jsx",
       "kind": "redirect",
-      "redirect": "/downloads#desktop",
+      "redirect": "/tools#desktop-apps",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1715,16 +1765,17 @@
     {
       "path": "/downloads",
       "file": "app/(site)/downloads/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
+      "kind": "redirect",
+      "redirect": "/tools#downloads",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
       "signals": {
-        "canonical": true,
+        "canonical": false,
         "canonicalValues": [],
         "noindex": "inherited",
-        "openGraph": true,
-        "jsonLd": true,
+        "openGraph": false,
+        "jsonLd": false,
         "ogUrls": []
       }
     },
@@ -1801,6 +1852,22 @@
     {
       "path": "/global-ai-governance",
       "file": "app/(site)/global-ai-governance/page.jsx",
+      "kind": "rich-page",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/global-market-map",
+      "file": "app/(site)/global-market-map/page.jsx",
       "kind": "rich-page",
       "registered": false,
       "indexable": true,
@@ -1936,7 +2003,7 @@
       "path": "/long-compass",
       "file": "app/(site)/long-compass/page.jsx",
       "kind": "redirect",
-      "redirect": "https://admin.2aran.com/admin/soft-sticker?tab=long-compass",
+      "redirect": "https://admin.2aran.com/admin/soft-sticker?tab=notion",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1986,15 +2053,16 @@
     {
       "path": "/messages",
       "file": "app/(site)/messages/page.jsx",
-      "kind": "redirect",
-      "redirect": "/community#message",
-      "registered": false,
+      "kind": "static",
+      "registered": true,
       "indexable": false,
       "sitemap": false,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
-        "noindex": "inherited",
+        "canonical": true,
+        "canonicalValues": [
+          "/messages"
+        ],
+        "noindex": "explicit",
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
@@ -2035,14 +2103,15 @@
     {
       "path": "/notifications",
       "file": "app/(site)/notifications/page.jsx",
-      "kind": "static",
+      "kind": "redirect",
+      "redirect": "/messages",
       "registered": true,
       "indexable": false,
       "sitemap": false,
       "signals": {
         "canonical": true,
         "canonicalValues": [
-          "/notifications"
+          "/messages"
         ],
         "noindex": "explicit",
         "openGraph": false,
@@ -2370,6 +2439,24 @@
       }
     },
     {
+      "path": "/ranbi/ledger",
+      "file": "app/(site)/ranbi/ledger/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/ranbi/ledger"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/rank",
       "file": "app/(rank)/rank/page.jsx",
       "kind": "static",
@@ -2652,6 +2739,24 @@
       }
     },
     {
+      "path": "/resources/protal-todo-assistant",
+      "file": "app/(site)/resources/protal-todo-assistant/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/${RESOURCE_SLUG}"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/resources/rss",
       "file": "app/(site)/resources/rss/page.jsx",
       "kind": "static",
@@ -2819,6 +2924,23 @@
       }
     },
     {
+      "path": "/resources/x-clipboard-phrase",
+      "file": "app/(site)/resources/x-clipboard-phrase/page.jsx",
+      "kind": "redirect",
+      "redirect": "/tools",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/resources/x-mutual-aid-circle",
       "file": "app/(site)/resources/x-mutual-aid-circle/page.jsx",
       "kind": "redirect",
@@ -2836,8 +2958,8 @@
       }
     },
     {
-      "path": "/resources/x-mutual-cleaner-extension",
-      "file": "app/(site)/resources/x-mutual-cleaner-extension/page.jsx",
+      "path": "/resources/x-reply-clipboard-extension",
+      "file": "app/(site)/resources/x-reply-clipboard-extension/page.jsx",
       "kind": "static",
       "registered": true,
       "indexable": true,
@@ -2857,9 +2979,9 @@
       "path": "/resources/x-tweet-to-pdf-extension",
       "file": "app/(site)/resources/x-tweet-to-pdf-extension/page.jsx",
       "kind": "static",
-      "registered": true,
+      "registered": false,
       "indexable": true,
-      "sitemap": true,
+      "sitemap": false,
       "signals": {
         "canonical": true,
         "canonicalValues": [
@@ -3646,6 +3768,13 @@
   ],
   "issues": [
     {
+      "id": "canonical.conflict:/notifications",
+      "rule": "canonical.conflict",
+      "route": "/notifications",
+      "severity": "error",
+      "message": "canonical 与注册表不一致：/messages"
+    },
+    {
       "id": "canonical.missing:/",
       "rule": "canonical.missing",
       "route": "/",
@@ -3905,6 +4034,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/ranbi/ledger",
+      "rule": "jsonld.missing",
+      "route": "/ranbi/ledger",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/rank",
       "rule": "jsonld.missing",
       "route": "/rank",
@@ -3989,6 +4125,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/resources/protal-todo-assistant",
+      "rule": "jsonld.missing",
+      "route": "/resources/protal-todo-assistant",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/resources/rss",
       "rule": "jsonld.missing",
       "route": "/resources/rss",
@@ -4045,9 +4188,9 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
-      "id": "jsonld.missing:/resources/x-mutual-cleaner-extension",
+      "id": "jsonld.missing:/resources/x-reply-clipboard-extension",
       "rule": "jsonld.missing",
-      "route": "/resources/x-mutual-cleaner-extension",
+      "route": "/resources/x-reply-clipboard-extension",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -4416,6 +4559,13 @@
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },
     {
+      "id": "og.missing:/ranbi/ledger",
+      "rule": "og.missing",
+      "route": "/ranbi/ledger",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
       "id": "og.missing:/reading",
       "rule": "og.missing",
       "route": "/reading",
@@ -4587,6 +4737,13 @@
       "id": "registry.missing:/products/new-message-phone",
       "rule": "registry.missing",
       "route": "/products/new-message-phone",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/resources/x-tweet-to-pdf-extension",
+      "rule": "registry.missing",
+      "route": "/resources/x-tweet-to-pdf-extension",
       "severity": "error",
       "message": "普通静态页面未登记到统一注册表。"
     }

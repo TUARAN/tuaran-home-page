@@ -51,11 +51,11 @@ const EXTENSION_TASKS = Object.freeze([
     summary: '推荐评论和笔记浇给。依赖本机已登录的小红书标签页。',
   },
   {
-    id: 'article-drafts',
+    id: 'juejin-assistant',
     platform: 'juejin',
-    label: '文章草稿写入',
-    summary: '掘金、小红书等平台草稿靠分发插件写入，不走云端 API。',
-    href: '/admin/article-distribution',
+    label: '掘金高频互动助手',
+    summary: '默认每天最多发布 3 条沸点、保存 3 篇文章草稿；可切换高频自动发布模式。开发测试中，在本机加载插件源码目录。',
+    sourcePath: 'tools/juejin-interaction-extension',
   },
 ])
 
@@ -127,7 +127,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
 
       <Section
         title="回执密钥"
-        description="复制后贴到 X 高频互动助手和小红书高频互动助手的设置里。两个插件用同一把密钥。插件直接请求 2aran.com，不经过这个页面。"
+        description="复制后贴到 X、小红书和掘金高频互动助手的设置里。三个插件用同一把密钥。插件直接请求 2aran.com，不经过这个页面。"
         actions={(
           <>
             <AdminButton size="sm" variant="primary" onClick={onCopySecret} disabled={!center?.secret}>复制</AdminButton>
@@ -146,7 +146,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
         <ul className="m-0 grid gap-2 p-0">
           {EXTENSION_TASKS.map((item) => (
-            <li key={item.id} className="rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
+            <li key={item.id} id={item.id} className="rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label}</p>
                 <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
@@ -154,9 +154,10 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
               <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {item.href ? (
                 <div className="mt-3">
-                  <AdminButton size="sm" variant="ghost" href={item.href}>打开文章分发</AdminButton>
+                  <AdminButton size="sm" variant="ghost" href={item.href}>下载插件</AdminButton>
                 </div>
               ) : null}
+              {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}
         </ul>
@@ -276,7 +277,7 @@ function OverviewPanel({ center, loading, onOpenMode }) {
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>X 高频互动助手：回复、互关、推文浇给</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>
-          <li>文章分发插件：掘金等平台草稿写入</li>
+          <li>掘金高频互动助手：每日签到、沸点和文章；支持每日上限与高频两种模式</li>
         </ul>
       </Section>
 
@@ -379,7 +380,7 @@ export default function CommunityActionsClient() {
   }
 
   async function regenerateSecret() {
-    if (!window.confirm('重新生成后，两个插件里原来的密钥会失效，需要重新粘贴。')) return
+    if (!window.confirm('重新生成后，三个插件里原来的密钥会失效，需要重新粘贴。')) return
     setRotating(true)
     setNotice('')
     try {
@@ -392,7 +393,7 @@ export default function CommunityActionsClient() {
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
       setCenter((current) => ({ ...(current || {}), secret: payload.secret }))
-      setNotice('已生成新密钥。请重新贴到两个插件的设置里。')
+      setNotice('已生成新密钥。请重新贴到三个插件的设置里。')
     } catch (rotateError) {
       setError(rotateError.message || '密钥没有换成功。')
     } finally {

@@ -42,7 +42,6 @@ import { HOME_MOBILE_CHANNELS } from '../../lib/site/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/auth/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/site/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/home/homeHighlights'
-import { HOME_RECOMMENDATION_MAX_BATCH_SIZE } from '../../lib/home/homeRecommendationEngine'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
 import HomeCodexResetCard from './components/HomeCodexResetCard'
@@ -919,7 +918,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getLatestFeedItems(HOME_RECOMMENDATION_MAX_BATCH_SIZE)
+  const inspirations = getLatestFeedItems(2)
 
   return (
     <SitePresenceProvider>

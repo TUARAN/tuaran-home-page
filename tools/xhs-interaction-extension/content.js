@@ -2,10 +2,17 @@
   "use strict";
 
   const noteApi = globalThis.XhsInteractionNote;
+  const posterApi = globalThis.XhsInteractionPoster;
   if (!noteApi) return;
 
   const PANEL_ID = "xhs-interaction-panel";
-  const VERSION = "0.1.1";
+  const VERSION = "0.2.6";
+
+  function reportCommunityAction(event) {
+    try {
+      globalThis.XhsCommunityReceipt?.report(event);
+    } catch (error) {}
+  }
   const SESSION_KEY = "xhsiaSession";
   const PROCESSED_KEY = "xhsiaProcessedNoteIds";
   const PACE_KEY = "xhsiaPace";
@@ -39,7 +46,17 @@
     startedAt: 0,
     reloadCount: 0,
     appliedPace: "",
-    loopPromise: null
+    loopPromise: null,
+    posterPace: posterApi?.DEFAULT_POST_PACE || "medium",
+    poster: {
+      running: false,
+      stopping: false,
+      status: "待命。到创作服务平台后，用今天的 AI 资讯发图文笔记。",
+      count: 0,
+      errors: 0,
+      nextPostAt: 0,
+      title: ""
+    }
   };
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -164,12 +181,29 @@
   }
 
   async function loadSettings() {
-    const stored = await storageGet([AI_SETTINGS_KEY, PACE_KEY, PROCESSED_KEY]);
+    const keys = [AI_SETTINGS_KEY, PACE_KEY, PROCESSED_KEY];
+    if (posterApi) keys.push(posterApi.POSTER_PACE_KEY, posterApi.POSTER_SESSION_KEY);
+    const stored = await storageGet(keys);
     const apiKey = String(stored?.[AI_SETTINGS_KEY]?.apiKey || "");
     state.apiKeySaved = /^sk-\S{8,}$/u.test(apiKey);
     const pace = noteApi.scheduleProfile(stored?.[PACE_KEY]).id;
     state.pace = pace;
     for (const id of stored?.[PROCESSED_KEY] || []) processed.add(id);
+    if (posterApi) {
+      state.posterPace = posterApi.postScheduleProfile(stored?.[posterApi.POSTER_PACE_KEY]).id;
+      const session = stored?.[posterApi.POSTER_SESSION_KEY];
+      if (session && typeof session === "object") {
+        state.poster = {
+          running: Boolean(session.running),
+          stopping: Boolean(session.stopping),
+          status: session.status || state.poster.status,
+          count: Number(session.count) || 0,
+          errors: Number(session.errors) || 0,
+          nextPostAt: Number(session.nextPostAt) || 0,
+          title: session.currentNote?.title || ""
+        };
+      }
+    }
   }
 
   async function saveApiKey(apiKey) {
@@ -477,14 +511,22 @@
         state.statusKind = "error";
       }
       if (result === "ok") {
+        reportCommunityAction({ task: "recommend-comment", result: "success", targetId: pathId });
         state.total += 1;
         state.pageCount += 1;
         state.pendingComment = "";
         state.avoidComment = "";
         await rememberNote(pathId);
       } else if (result === "own-note" || result === "empty-note") {
+        reportCommunityAction({ task: "recommend-comment", result: "skipped", targetId: pathId, errorCode: result });
         await rememberNote(pathId);
       } else if (result !== "stopped" && result !== "ai-failed") {
+        reportCommunityAction({
+          task: "recommend-comment",
+          result: result === "risk" || result === "login" ? "limited" : "failed",
+          targetId: pathId,
+          errorCode: result
+        });
         state.errors += 1;
         state.status = failureLabel(result);
         state.statusKind = "error";
@@ -625,16 +667,19 @@
 
       if (result === "stopped") return stopLoop(false);
       if (result === "risk" || result === "login") {
+        reportCommunityAction({ task: "recommend-comment", result: "limited", targetId: next.id, errorCode: result });
         state.status = failureLabel(result);
         state.statusKind = "error";
         return stopLoop(false);
       }
       if (result === "composer-busy") {
+        reportCommunityAction({ task: "recommend-comment", result: "failed", targetId: next.id, errorCode: "composer-busy" });
         state.status = "评论框里已经有字，先处理完再开始";
         state.statusKind = "error";
         return stopLoop(false);
       }
       if (result === "own-note" || result === "empty-note") {
+        reportCommunityAction({ task: "recommend-comment", result: "skipped", targetId: next.id, errorCode: result });
         await rememberNote(next.id);
         state.pendingNoteId = "";
         state.pendingComment = "";
@@ -642,6 +687,7 @@
         continue;
       }
       if (result !== "ok") {
+        reportCommunityAction({ task: "recommend-comment", result: "failed", targetId: next.id, errorCode: result });
         skipped.add(next.id);
         state.errors += 1;
         state.avoidComment = state.pendingComment;
@@ -653,6 +699,7 @@
         continue;
       }
 
+      reportCommunityAction({ task: "recommend-comment", result: "success", targetId: next.id });
       state.total += 1;
       state.pageCount += 1;
       state.pendingNoteId = "";
@@ -707,7 +754,7 @@
             <div class="xhsia-mark" aria-hidden="true">红</div>
             <div>
               <div class="xhsia-title">小红书高频互动助手</div>
-              <div class="xhsia-subtitle">v${VERSION} · 推荐评论</div>
+              <div class="xhsia-subtitle" data-xhsia-subtitle>v${VERSION} · 推荐评论</div>
             </div>
           </div>
           <div class="xhsia-actions">
@@ -748,14 +795,28 @@
           <div class="xhsia-config" data-xhsia-config hidden>
             <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" placeholder="更换 DeepSeek API Key" data-xhsia-config-key>
             <button type="button" data-xhsia-config-save>保存密钥</button>
+            <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" placeholder="社区回执密钥" data-xhsia-community-secret>
+            <button type="button" data-xhsia-community-save>保存回执密钥</button>
           </div>
           <div class="xhsia-footer"><span>只把笔记文字发给 DeepSeek</span><span data-xhsia-errors>异常 0</span></div>
         </div>
         <div class="xhsia-body xhsia-poster" data-xhsia-poster hidden>
-          <section class="xhsia-card">
+          <div class="xhsia-start">
+            <input type="text" name="xhsia-poster-key" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 DeepSeek API Key" data-xhsia-post-key>
+            <button class="xhsia-button" type="button" data-xhsia-post-toggle>开始发笔记</button>
+          </div>
+          <p class="xhsia-status" data-xhsia-post-status></p>
+          <section class="xhsia-card" aria-label="发文进度">
             <span class="xhsia-kicker">笔记浇给</span>
-            <strong>发文还没接上</strong>
-            <p>创作中心地址是 <code>creator.xiaohongshu.com/publish/publish</code>。优先写文字，再用小红书配图模板把文字转成图。和推文浇给的操作差别还没对齐，这里先不发送。</p>
+            <strong data-xhsia-post-title>等待今天的 AI 资讯</strong>
+            <p>创作服务平台会先打开上传图文，再用文字配图发布。DeepSeek 优先写今天的 AI 资讯。</p>
+            <label class="xhsia-pace">
+              <span class="xhsia-pace-labels">
+                ${(posterApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<span data-xhsia-post-pace-label="${item.id}">${item.label}</span>`).join("")}
+              </span>
+              <input type="range" min="0" max="3" step="1" value="${posterApi ? posterApi.postPaceIndex(state.posterPace) : 1}" data-xhsia-post-pace aria-label="发笔记频率">
+            </label>
+            <p class="xhsia-note" data-xhsia-post-pace-note></p>
           </section>
         </div>
       `;
@@ -795,6 +856,29 @@
     panel.querySelector("[data-xhsia-config]").hidden = !state.settingsOpen;
     panel.querySelector("[data-xhsia-comments]").hidden = state.mode !== "comments";
     panel.querySelector("[data-xhsia-poster]").hidden = state.mode !== "poster";
+    panel.querySelector("[data-xhsia-subtitle]").textContent = `v${VERSION} · ${state.mode === "poster" ? "笔记浇给" : "推荐评论"}`;
+    const postStatus = panel.querySelector("[data-xhsia-post-status]");
+    if (postStatus && posterApi) {
+      const schedule = posterApi.formatPostSchedule(state.posterPace);
+      postStatus.textContent = state.poster.status;
+      panel.querySelector("[data-xhsia-post-title]").textContent = state.poster.title || "等待今天的 AI 资讯";
+      const remaining = state.poster.nextPostAt > Date.now()
+        ? `约 ${Math.max(1, Math.ceil((state.poster.nextPostAt - Date.now()) / 60000))} 分钟后发下一条。`
+        : "";
+      panel.querySelector("[data-xhsia-post-pace-note]").textContent = state.poster.running
+        ? `发布成功后等待 ${schedule.interval}。${remaining}`
+        : `发布成功后等待 ${schedule.interval}。`;
+      const postPace = panel.querySelector("[data-xhsia-post-pace]");
+      postPace.disabled = state.poster.running;
+      postPace.value = String(posterApi.postPaceIndex(state.posterPace));
+      panel.querySelectorAll("[data-xhsia-post-pace-label]").forEach((node) => {
+        node.dataset.current = node.dataset.xhsiaPostPaceLabel === state.posterPace ? "true" : "false";
+      });
+      const postToggle = panel.querySelector("[data-xhsia-post-toggle]");
+      postToggle.textContent = state.poster.running ? "停止发笔记" : "开始发笔记";
+      postToggle.dataset.running = state.poster.running ? "true" : "false";
+      panel.querySelector("[data-xhsia-post-key]").hidden = state.apiKeySaved || state.poster.running;
+    }
     panel.querySelectorAll("[data-xhsia-mode]").forEach((button) => {
       button.setAttribute("aria-selected", button.dataset.xhsiaMode === state.mode ? "true" : "false");
     });
@@ -821,6 +905,21 @@
       }
       renderPanel();
     });
+    panel.querySelector("[data-xhsia-community-save]")?.addEventListener("click", async () => {
+      try {
+        const secret = await globalThis.XhsCommunityReceipt?.saveSecret(panel.querySelector("[data-xhsia-community-secret]")?.value);
+        state.status = secret ? "回执密钥已保存" : "已清空回执密钥，之后不再上传";
+        state.statusKind = "";
+      } catch (error) {
+        state.status = "当前环境无法保存回执密钥";
+        state.statusKind = "error";
+      }
+      renderPanel();
+    });
+    globalThis.XhsCommunityReceipt?.readSecret?.().then((secret) => {
+      const input = panel.querySelector("[data-xhsia-community-secret]");
+      if (input && document.activeElement !== input) input.value = secret || "";
+    }).catch(() => {});
     panel.querySelector("[data-xhsia-pace]").addEventListener("input", (event) => {
       if (state.running) return;
       const profile = noteApi.SCHEDULE_PROFILES[Number(event.target.value)] || noteApi.scheduleProfile(state.pace);
@@ -833,6 +932,13 @@
         renderPanel();
       });
     });
+    panel.querySelector("[data-xhsia-post-pace]")?.addEventListener("input", (event) => {
+      if (!posterApi || state.poster.running) return;
+      const profile = posterApi.POST_SCHEDULE_PROFILES[Number(event.target.value)] || posterApi.postScheduleProfile(state.posterPace);
+      state.posterPace = profile.id;
+      storageSet({ [posterApi.POSTER_PACE_KEY]: state.posterPace }).then(() => renderPanel());
+    });
+    panel.querySelector("[data-xhsia-post-toggle]")?.addEventListener("click", () => { startPoster(); });
     panel.querySelector("[data-xhsia-toggle]").addEventListener("click", async () => {
       if (state.running) {
         stopLoop(true);
@@ -863,6 +969,79 @@
     });
   }
 
+  async function startPoster() {
+    if (!posterApi) return;
+    if (state.running) {
+      state.status = "评论还在跑，先停掉再发笔记";
+      state.statusKind = "error";
+      renderPanel();
+      return;
+    }
+    if (state.poster.running) {
+      const stored = await storageGet(posterApi.POSTER_SESSION_KEY);
+      const session = stored?.[posterApi.POSTER_SESSION_KEY] || {};
+      session.running = false;
+      session.stopping = true;
+      session.status = "笔记浇给已停止";
+      await storageSet({ [posterApi.POSTER_SESSION_KEY]: session });
+      state.poster.running = false;
+      state.poster.stopping = true;
+      state.poster.status = session.status;
+      renderPanel();
+      return;
+    }
+    const keyInput = document.querySelector("#xhs-interaction-panel [data-xhsia-post-key]");
+    if (!state.apiKeySaved) {
+      try {
+        await saveApiKey(keyInput?.value || "");
+      } catch (error) {
+        state.poster.status = error.message;
+        renderPanel();
+        return;
+      }
+    }
+    const previous = await storageGet(posterApi.POSTER_SESSION_KEY);
+    const usedKeys = previous?.[posterApi.POSTER_SESSION_KEY]?.usedKeys;
+    const session = {
+      running: true,
+      stopping: false,
+      pace: state.posterPace,
+      count: 0,
+      errors: 0,
+      startedAt: Date.now(),
+      nextPostAt: 0,
+      currentNote: null,
+      usedKeys: Array.isArray(usedKeys) ? usedKeys : [],
+      phase: "",
+      lastError: "",
+      status: "正在打开创作服务平台"
+    };
+    await storageSet({
+      [posterApi.POSTER_PACE_KEY]: state.posterPace,
+      [posterApi.POSTER_SESSION_KEY]: session
+    });
+    state.poster = { ...state.poster, ...session, title: "" };
+    const opened = window.open(posterApi.PUBLISH_URL, "xhsia-poster");
+    if (!opened) state.poster.status = "浏览器拦截了创作服务平台窗口";
+    renderPanel();
+  }
+
+  async function refreshPoster() {
+    if (!posterApi) return;
+    const stored = await storageGet(posterApi.POSTER_SESSION_KEY);
+    const session = stored?.[posterApi.POSTER_SESSION_KEY];
+    if (!session || typeof session !== "object") return;
+    state.poster = {
+      running: Boolean(session.running),
+      stopping: Boolean(session.stopping),
+      status: session.status || state.poster.status,
+      count: Number(session.count) || 0,
+      errors: Number(session.errors) || 0,
+      nextPostAt: Number(session.nextPostAt) || 0,
+      title: session.currentNote?.title || ""
+    };
+  }
+
   function restoreSession(saved) {
     if (!saved?.running) return false;
     state.running = true;
@@ -887,8 +1066,10 @@
     await loadSettings();
     const saved = readSession();
     renderPanel();
+    globalThis.XhsCommunityReceipt?.heartbeat();
     if (restoreSession(saved)) runLoop();
     window.setInterval(() => {
+      if (state.mode === "poster") refreshPoster().then(() => renderPanel());
       if (!document.getElementById(PANEL_ID) && state.running) renderPanel();
       else if (state.running) renderPanel();
     }, 1000);

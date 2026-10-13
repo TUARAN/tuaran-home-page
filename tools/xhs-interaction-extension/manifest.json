@@ -1,17 +1,36 @@
 {
   "manifest_version": 3,
   "name": "小红书高频互动助手",
-  "version": "0.1.1",
-  "description": "在小红书推荐页打开笔记，用 DeepSeek 写评论并发送。",
-  "permissions": ["storage"],
-  "host_permissions": ["https://www.xiaohongshu.com/*", "https://api.deepseek.com/*"],
+  "version": "0.2.6",
+  "description": "在小红书推荐页写评论，并在创作服务平台用今天的 AI 资讯发图文笔记。",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://www.xiaohongshu.com/*",
+    "https://creator.xiaohongshu.com/*",
+    "https://api.deepseek.com/*",
+    "https://www.qbitai.com/*",
+    "https://hn.algolia.com/*",
+    "https://2aran.com/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["https://www.xiaohongshu.com/*"],
-      "js": ["note.js", "content.js"],
+      "js": ["receipt.js", "note.js", "poster.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://creator.xiaohongshu.com/*"],
+      "js": ["creator-main.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://creator.xiaohongshu.com/*"],
+      "js": ["receipt.js", "poster.js", "creator.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

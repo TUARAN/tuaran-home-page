@@ -2358,6 +2358,19 @@
     @apply flex flex-col;
   }
 
+  .home-inspiration-heading {
+    @apply mb-2 flex items-end justify-between gap-2 border-b pb-2.5;
+    border-color: var(--site-line);
+  }
+
+  .home-inspiration-heading .home-kicker {
+    @apply mb-1.5 text-[10px] tracking-[0.2em];
+  }
+
+  .home-inspiration-heading .home-section-more {
+    @apply shrink-0 whitespace-nowrap pb-0 text-[11px];
+  }
+
   .home-featured-reading .home-section-title,
   .home-inspirations .home-section-title,
   .home-opinion-panel .home-section-title {
@@ -2474,15 +2487,15 @@
   }
 
   .home-inspiration-item {
-    @apply py-3.5 first:pt-0 last:pb-0;
+    @apply py-2.5 first:pt-0 last:pb-0;
   }
 
   .home-inspiration-body {
-    @apply mt-1.5;
+    @apply mt-0;
   }
 
   .home-inspiration-body.has-thumbnail {
-    @apply grid grid-cols-[88px_minmax(0,1fr)] items-start gap-3 xl:grid-cols-[108px_minmax(0,1fr)];
+    @apply grid grid-cols-[56px_minmax(0,1fr)] items-start gap-2;
   }
 
   .home-inspiration-thumbnail {
@@ -2504,13 +2517,8 @@
     transform: scale(1.04);
   }
 
-  .home-inspiration-meta {
-    @apply flex min-w-0 items-center gap-1.5 text-[12px] leading-5;
-    color: var(--site-faint);
-  }
-
   .home-inspiration-title {
-    @apply mt-0 block text-[16px] font-semibold leading-snug transition md:text-[15px] md:leading-6;
+    @apply mt-0 block line-clamp-2 text-[12px] font-semibold leading-[1.5] transition;
     color: var(--site-ink);
   }
 
@@ -2518,9 +2526,9 @@
     color: var(--site-accent-strong);
   }
 
-  .home-inspiration-copy {
-    @apply mb-0 mt-1 line-clamp-2 text-[13px] leading-6;
-    color: var(--site-muted);
+  .home-inspiration-date {
+    @apply mt-1 block font-mono text-[10px];
+    color: var(--site-faint);
   }
 
   .home-section-tabs {
@@ -2572,8 +2580,7 @@
     background: var(--site-accent);
   }
 
-  .home-article-scopes,
-  .home-inspiration-scopes {
+  .home-article-scopes {
     @apply mb-1 flex flex-col gap-1;
   }
 
@@ -2908,48 +2915,88 @@
     color: var(--site-faint);
   }
 
-  .home-opinion-live {
-    @apply inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.1em];
+  .home-opinion-status {
+    @apply whitespace-nowrap text-[10px];
+    color: var(--site-faint);
+  }
+
+  .home-opinion-topic-tabs {
+    @apply mb-3 flex gap-2 overflow-x-auto pb-1;
+    scrollbar-width: none;
+  }
+
+  .home-opinion-topic-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-opinion-topic-tabs button {
+    @apply shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition;
+    border-color: var(--site-line);
+    color: var(--site-muted);
+  }
+
+  .home-opinion-topic-tabs button.is-active {
+    border-color: color-mix(in srgb, #4d8060 45%, var(--site-line));
+    background: color-mix(in srgb, #4d8060 12%, var(--site-panel-strong));
+    color: var(--site-ink);
+  }
+
+  .home-opinion-counts {
+    @apply mb-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px];
+    color: var(--site-muted);
+  }
+
+  .home-opinion-counts span {
+    @apply inline-flex items-baseline gap-1;
+  }
+
+  .home-opinion-counts strong {
+    @apply text-[15px];
+    color: var(--site-ink);
+  }
+
+  .home-opinion-feature {
+    @apply mb-3 flex flex-col rounded-2xl border p-4 transition;
+    border-color: color-mix(in srgb, #4d8060 35%, var(--site-line));
+    background: color-mix(in srgb, #4d8060 9%, var(--site-panel-strong));
+    color: var(--site-ink);
+  }
+
+  .home-opinion-feature:hover {
+    border-color: #4d8060;
+    background: color-mix(in srgb, #4d8060 14%, var(--site-panel-strong));
+  }
+
+  .home-opinion-feature-kicker {
+    @apply mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em];
     color: #4d8060;
   }
 
-  .home-opinion-live::before {
-    @apply h-1.5 w-1.5 rounded-full;
-    content: '';
-    background: #5e9a70;
-    box-shadow: 0 0 0 3px color-mix(in srgb, #5e9a70 16%, transparent);
+  .home-opinion-feature strong {
+    @apply line-clamp-2 text-[17px] font-semibold leading-6;
   }
 
-  .home-opinion-viewport {
-    @apply relative h-[238px] overflow-hidden;
-    mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  .home-opinion-feature-summary {
+    @apply mt-1.5 line-clamp-2 text-[12px] leading-5;
+    color: var(--site-muted);
   }
 
-  .home-opinion-viewport:hover .home-opinion-track,
-  .home-opinion-viewport:focus-within .home-opinion-track {
-    animation-play-state: paused;
+  .home-opinion-feature-meta {
+    @apply mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 font-mono text-[10px];
+    border-color: var(--site-line);
+    color: var(--site-muted);
   }
 
-  .home-opinion-track {
-    animation: home-opinion-scroll 34s linear infinite;
-    will-change: transform;
+  .home-opinion-feature-meta svg {
+    @apply ml-auto;
   }
 
-  @keyframes home-opinion-scroll {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(-50%);
-    }
-  }
-
-  .home-opinion-loop {
-    @apply grid gap-2 pb-2;
+  .home-opinion-list {
+    @apply grid gap-2;
   }
 
   .home-opinion-sample {
-    @apply block h-[112px] overflow-hidden rounded-xl border p-3 no-underline transition;
+    @apply block min-w-0 rounded-xl border p-3 no-underline transition;
     border-color: var(--site-line);
     background: color-mix(in srgb, var(--site-panel-strong) 55%, transparent);
     color: var(--site-ink);
@@ -2996,31 +3043,43 @@
   }
 
   .home-opinion-sample strong {
-    @apply block overflow-hidden text-[12px] font-medium leading-[1.45];
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    @apply block line-clamp-2 text-[13px] font-semibold leading-5;
   }
 
   .home-opinion-sample small {
-    @apply mt-1.5 flex items-center gap-2 text-[10px] leading-4;
+    @apply mt-1 line-clamp-2 text-[11px] leading-[1.5];
     color: var(--site-muted);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .home-opinion-viewport {
-      @apply overflow-y-auto;
-      mask-image: none;
-    }
+  .home-opinion-cta {
+    @apply mt-3 flex items-center justify-between rounded-xl border px-4 py-3 text-[12px] font-semibold transition;
+    border-color: var(--site-line);
+    color: var(--site-ink);
+  }
 
-    .home-opinion-track {
-      animation: none;
-      transform: none;
-    }
+  .home-opinion-cta:hover {
+    border-color: var(--site-line-strong);
+    background: color-mix(in srgb, var(--site-panel-strong) 85%, transparent);
+  }
 
-    .home-opinion-loop[aria-hidden='true'] {
-      display: none;
-    }
+  .home-opinion-empty {
+    @apply flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-6 text-center text-sm;
+    border-color: var(--site-line);
+    color: var(--site-muted);
+  }
+
+  .home-opinion-empty p {
+    @apply mb-0;
+  }
+
+  .home-opinion-empty-links {
+    @apply flex flex-wrap justify-center gap-2;
+  }
+
+  .home-opinion-empty-links a {
+    @apply rounded-full border px-3 py-1.5 text-[11px] no-underline;
+    border-color: var(--site-line);
+    color: var(--site-ink);
   }
 
   .home-achievement-list {
@@ -4298,7 +4357,6 @@
 
     .h5-feed-summary,
     .home-reading-item p:nth-of-type(2),
-    .home-inspiration-copy,
     .h5-articles-page .article-row .h5-feed-summary,
     .h5-directory-page .h5-feed-summary {
       margin-top: 0.2rem !important;
@@ -4318,8 +4376,7 @@
       line-height: 1.3;
     }
 
-    .home-reading-meta,
-    .home-inspiration-meta {
+    .home-reading-meta {
       margin-bottom: 0.3rem;
       gap: 0.35rem;
     }
@@ -4345,6 +4402,22 @@
       order: 2;
     }
 
+    .home-inspirations .home-inspiration-body.has-thumbnail {
+      grid-template-columns: 56px minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+
+    .home-inspirations .home-inspiration-thumbnail {
+      width: 56px;
+      height: 56px;
+      order: 0;
+    }
+
+    .home-inspirations .home-inspiration-title {
+      font-size: 14px !important;
+      line-height: 1.4 !important;
+    }
+
     .h5-feed-label {
       margin: 0.45rem 0 0.15rem;
       color: var(--site-faint);
@@ -4352,18 +4425,15 @@
       font-weight: 600;
     }
 
-    .home-article-scopes,
-    .home-inspiration-scopes {
+    .home-article-scopes {
       margin: 0.05rem 0 0.15rem;
     }
 
-    .home-article-scopes .home-section-tabs,
-    .home-inspiration-scopes .home-section-tabs {
+    .home-article-scopes .home-section-tabs {
       margin: 0 -0.15rem;
     }
 
-    .home-article-scopes .home-tab-link,
-    .home-inspiration-scopes .home-tab-link {
+    .home-article-scopes .home-tab-link {
       min-height: 2.35rem;
       padding: 0 0.85rem;
       font-size: 15px;

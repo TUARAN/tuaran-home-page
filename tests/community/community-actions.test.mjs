@@ -15,6 +15,7 @@ import {
 const require = createRequire(import.meta.url)
 const xReceipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
 const xhsReceipt = require('../../tools/xhs-interaction-extension/receipt.js')
+const juejinReceipt = require('../../tools/juejin-interaction-extension/receipt.js')
 
 const NOW = Date.parse('2026-10-12T02:00:00.000Z')
 
@@ -44,6 +45,24 @@ test('authorization requires the stored report secret', () => {
   assert.deepEqual(communityActionAuthorized('nope', 'secret-value'), { ok: false, status: 401, error: 'UNAUTHORIZED' })
   assert.deepEqual(communityActionAuthorized('secret-value', 'secret-value'), { ok: true })
   assert.equal(COMMUNITY_ACTION_SECRET_HEADER, 'x-community-action-secret')
+})
+
+test('Juejin reports and devices retain their platform in the center', () => {
+  const report = normalizeCommunityActionReport({
+    deviceId: 'device-juejin-001',
+    platform: 'juejin',
+    events: [{ id: 'event-juejin-001', task: 'daily-checkin', result: 'success', occurredAt: NOW }],
+  }, NOW)
+  assert.equal(report.ok, true)
+  assert.equal(report.events[0].task, 'daily-checkin')
+  assert.equal(juejinReceipt.normalizeEvent({ task: 'article-post', result: 'success' }).task, 'article-post')
+  const center = presentCommunityActionCenter({
+    now: NOW,
+    devices: [{ id: 'device-juejin-001', platform: 'juejin', last_seen_at: NOW }],
+    counts: [{ platform: 'juejin', task: 'daily-checkin', result: 'success', count: 1 }],
+  })
+  assert.equal(center.devices[0].platform, 'juejin')
+  assert.equal(center.tasks.find((task) => task.task === 'daily-checkin').success, 1)
 })
 
 test('center summary counts today by task and marks a fresh device online', () => {

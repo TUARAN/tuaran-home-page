@@ -1,0 +1,220 @@
+(function (root) {
+  "use strict";
+
+  const PLATFORM = "juejin";
+  const STORAGE_KEY = "jjiaCommunityReport";
+  const EVENT_MESSAGE = "jjia-community-event";
+  const HEARTBEAT_MESSAGE = "jjia-community-heartbeat";
+  const ALARM_NAME = "jjia-community-heartbeat";
+  const REPORT_URL = "https://2aran.com/api/community-actions/report";
+  const TASKS = new Set(["daily-checkin", "pin-post", "article-post"]);
+  const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
+  const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
+  let chain = Promise.resolve();
+
+  function createId() {
+    if (root.crypto?.randomUUID) return root.crypto.randomUUID();
+    return `evt-${Date.now()}-${Math.random().toString(16).slice(2, 12)}`;
+  }
+
+  function cleanHandle(value) {
+    return String(value || "").replace(/[\u0000-\u001f]/g, "").trim().replace(/^@+/u, "").replace(/\s+/g, "").slice(0, 40);
+  }
+
+  function cleanCode(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
+  }
+
+  function normalizeEvent(raw) {
+    const task = String(raw?.task || "");
+    const result = String(raw?.result || "");
+    if (!TASKS.has(task) || !RESULTS.has(result)) return null;
+    const suppliedId = String(raw?.id || "");
+    return {
+      id: ID_RE.test(suppliedId) ? suppliedId : createId(),
+      task,
+      result,
+      targetId: String(raw?.targetId || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 80),
+      accountHandle: cleanHandle(raw?.accountHandle),
+      errorCode: cleanCode(raw?.errorCode),
+      occurredAt: Date.now()
+    };
+  }
+
+  async function storageGet() {
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local) return {};
+    const stored = await chrome.storage.local.get(STORAGE_KEY);
+    const config = stored?.[STORAGE_KEY];
+    return config && typeof config === "object" ? config : {};
+  }
+
+  async function storageSet(config) {
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local) return;
+    await chrome.storage.local.set({ [STORAGE_KEY]: config });
+  }
+
+  async function ensureConfig() {
+    const stored = await storageGet();
+    const deviceId = ID_RE.test(String(stored.deviceId || "")) ? String(stored.deviceId) : createId();
+    const config = {
+      secret: String(stored.secret || "").trim(),
+      deviceId,
+      accountHandle: cleanHandle(stored.accountHandle),
+      queue: Array.isArray(stored.queue) ? stored.queue.slice(-40) : []
+    };
+    if (deviceId !== stored.deviceId || !Array.isArray(stored.queue)) await storageSet(config);
+    return config;
+  }
+
+  function enqueue(work) {
+    const run = chain.then(work);
+    chain = run.catch(() => {});
+    return run;
+  }
+
+  async function postCurrent() {
+    const config = await ensureConfig();
+    if (!config.secret) return { ok: true, skipped: true };
+    const version = root.chrome?.runtime?.getManifest?.().version || "";
+    let response;
+    try {
+      response = await fetch(REPORT_URL, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-community-action-secret": config.secret
+        },
+        body: JSON.stringify({
+          deviceId: config.deviceId,
+          platform: PLATFORM,
+          extensionVersion: version,
+          accountHandle: config.accountHandle,
+          events: config.queue
+        })
+      });
+    } catch (error) {
+      return { ok: false, error: "network" };
+    }
+    if (!response.ok) return { ok: false, error: `HTTP_${response.status}` };
+    config.queue = [];
+    await storageSet(config);
+    return { ok: true };
+  }
+
+  function report(event) {
+    const payload = normalizeEvent(event);
+    const chrome = root.chrome;
+    if (!payload || !chrome?.runtime?.sendMessage) return;
+    try {
+      chrome.runtime.sendMessage({ type: EVENT_MESSAGE, event: payload }, () => {
+        void chrome.runtime.lastError;
+      });
+    } catch (error) {}
+  }
+
+  function heartbeat(accountHandle) {
+    const chrome = root.chrome;
+    if (!chrome?.runtime?.sendMessage) return;
+    try {
+      chrome.runtime.sendMessage({
+        type: HEARTBEAT_MESSAGE,
+        accountHandle: cleanHandle(accountHandle)
+      }, () => {
+        void chrome.runtime.lastError;
+      });
+    } catch (error) {}
+  }
+
+  function accept(event) {
+    const payload = normalizeEvent(event);
+    if (!payload) return Promise.resolve({ ok: false, error: "invalid" });
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      if (payload.accountHandle) config.accountHandle = payload.accountHandle;
+      config.queue = [...config.queue, payload].slice(-40);
+      await storageSet(config);
+      return postCurrent();
+    });
+  }
+
+  function heartbeatFromBackground(accountHandle) {
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      const handle = cleanHandle(accountHandle);
+      if (handle) config.accountHandle = handle;
+      await storageSet(config);
+      return postCurrent();
+    });
+  }
+
+  async function saveSecret(secret) {
+    const config = await ensureConfig();
+    config.secret = String(secret || "").trim();
+    await storageSet(config);
+    if (config.secret) await enqueue(() => postCurrent());
+    return config.secret;
+  }
+
+  async function readSecret() {
+    const config = await ensureConfig();
+    return config.secret;
+  }
+
+  function loadBundledSecret() {
+    const chrome = root.chrome;
+    if (!chrome?.runtime?.getURL) return Promise.resolve("");
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      if (config.secret) return config.secret;
+      try {
+        const response = await fetch(chrome.runtime.getURL("community-secret.local"));
+        if (!response.ok) return "";
+        const data = await response.json();
+        const secret = String(data?.secret || "").trim();
+        if (!secret) return "";
+        config.secret = secret;
+        await storageSet(config);
+        await postCurrent();
+        return secret;
+      } catch (error) {
+        return "";
+      }
+    });
+  }
+
+  function install() {
+    const chrome = root.chrome;
+    if (install.bound) return;
+    install.bound = true;
+    loadBundledSecret().catch(() => {});
+    if (!chrome?.alarms?.create || !chrome.alarms.onAlarm) return;
+    try {
+      chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
+      chrome.alarms.onAlarm.addListener((alarm) => {
+        if (alarm?.name !== ALARM_NAME) return;
+        heartbeatFromBackground().catch(() => {});
+      });
+    } catch (error) {
+      install.bound = false;
+    }
+  }
+
+  const api = {
+    PLATFORM,
+    REPORT_URL,
+    EVENT_MESSAGE,
+    HEARTBEAT_MESSAGE,
+    normalizeEvent,
+    report,
+    heartbeat,
+    accept,
+    heartbeatFromBackground,
+    saveSecret,
+    readSecret,
+    install
+  };
+  root.JuejinCommunityReceipt = api;
+  if (typeof module === "object" && module.exports) module.exports = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);

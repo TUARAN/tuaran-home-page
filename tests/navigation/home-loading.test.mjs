@@ -5,7 +5,6 @@ import test from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as engine from '../../lib/home/homeRecommendationEngine.js'
-import * as feedData from '../../app/(site)/feed/data.js'
 
 const require = createRequire(import.meta.url)
 const { transform } = require('next/dist/build/swc')
@@ -20,7 +19,6 @@ const dependencies = {
   '../../../lib/site/siteAnalytics': { trackSiteEvent() {} },
   './H5PullToRefresh': ({ children }) => children,
   './LocaleProvider': { T: ({ zh }) => zh },
-  '../feed/data': feedData,
 }
 
 async function loadComponent(name) {
@@ -71,17 +69,25 @@ test('inspirations remain readable even when the recommendation catalog is empty
   assert.doesNotMatch(html, /skeleton|invisible|aria-busy="true"/)
 })
 
-test('home inspirations default to the AI tab and keep Web3 as the other scope', () => {
-  const html = renderHomeColumns(props)
-  assert.match(html, /首页灵感范围/)
-  assert.match(html, /home-inspiration-scope-ai/)
-  assert.match(html, /home-inspiration-scope-web3/)
-  assert.match(html, /aria-selected="true"[^>]*>AI</)
-  assert.match(html, />AI</)
-  assert.match(html, />Web3</)
-  assert.doesNotMatch(html, /home-inspiration-scope-all/)
-  assert.doesNotMatch(html, />全部</)
-  assert.doesNotMatch(html, /置顶|home-badge-pinned/)
+test('homepage inspiration preview keeps only two items', () => {
+  const items = Array.from({ length: 3 }, (_, index) => ({
+    id: `spark-${index}`,
+    date: '2026-09-10',
+    title: `灵感 ${index}`,
+    summary: '首页精选',
+    category: 'ai',
+  }))
+  const html = renderToStaticMarkup(React.createElement(HomeInspirations, { items }))
+  assert.match(html, /灵感 0/)
+  assert.match(html, /灵感 1/)
+  assert.doesNotMatch(html, /灵感 2/)
+})
+
+test('home inspiration card has a direct feed link without tabs or a subtitle', () => {
+  const html = renderToStaticMarkup(React.createElement(HomeInspirations, { items: props.inspirations }))
+  assert.match(html, /href="\/feed"/)
+  assert.match(html, /查看全部/)
+  assert.doesNotMatch(html, /tablist|tabpanel|随手记下的发现|首页灵感范围/)
 })
 
 test('initial recommendations are deterministic for matching server and hydration renders', () => {

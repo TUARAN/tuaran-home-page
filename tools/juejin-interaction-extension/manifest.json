@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "掘金高频互动助手",
+  "version": "0.1.4",
+  "description": "在已登录的掘金页面自动签到、定时发布沸点，并按所选模式保存文章草稿或发布文章。",
+  "permissions": ["storage", "alarms", "tabs"],
+  "host_permissions": ["https://juejin.cn/*", "https://api.deepseek.com/*", "https://hn.algolia.com/*", "https://2aran.com/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://juejin.cn/*"],
+    "js": ["receipt.js", "core.js", "content.js"],
+    "css": ["content.css"],
+    "run_at": "document_idle"
+  }, {
+    "matches": ["https://juejin.cn/editor/drafts/new*"],
+    "js": ["editor-main.js"],
+    "world": "MAIN",
+    "run_at": "document_idle"
+  }]
+}

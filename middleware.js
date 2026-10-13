@@ -57,11 +57,6 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
 
-  if (host === ADMIN_HOST && request.method === 'OPTIONS' && isRevertDraftApi(pathname, 'OPTIONS')) {
-    const origin = revertDraftCorsOrigin(request.headers.get('origin') || '')
-    if (origin) return new NextResponse(null, { status: 204, headers: revertDraftCorsHeaders(origin) })
-  }
-
   if (host === RANK_HOST && pathname === '/') {
     const url = request.nextUrl.clone()
     url.pathname = '/rank'

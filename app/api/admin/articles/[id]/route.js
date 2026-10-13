@@ -1,5 +1,6 @@
 import { isReservedArticleSlug } from '../../../../../lib/article/articleReservedSlugs'
 import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
+import { revertDraftPreflightResponse } from '../../../../../lib/admin/adminRoutes'
 import { articlePostToContentEntry } from '../../../../../lib/article/articleContentIndex.mjs'
 import {
   normalizeSlug,
@@ -17,6 +18,11 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 function dbOrNull() { try { return getD1() } catch { return null } }
+
+// Let the route answer preflight; middleware's 204 becomes 404 for this dynamic route on Pages.
+export function OPTIONS(req) {
+  return revertDraftPreflightResponse(req.headers.get('origin') || '')
+}
 
 export async function GET(req, { params }) {
   const guard = await getOwnerOrReject(req)

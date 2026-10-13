@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from '../../lib/admin/adminRoutes.js'
+import { isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin, revertDraftPreflightResponse } from '../../lib/admin/adminRoutes.js'
 import { adminSiteUrl } from '../../lib/admin/publicAdminOrigin.js'
 
 const [
@@ -11,12 +11,16 @@ const [
   publishedArticleSource,
   archiveArticleSource,
   middlewareSource,
+  articleRouteSource,
+  researchRouteSource,
 ] = await Promise.all([
   readFile(new URL('../../app/(site)/components/RevertToDraftButton.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/research/[category]/[slug]/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/[slug]/PublishedArticle.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/articles/[slug]/page.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../middleware.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/api/admin/articles/[id]/route.js', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/api/admin/research-documents/route.js', import.meta.url), 'utf8'),
 ])
 
 test('research pages send the Git source path to the existing draft API', () => {
@@ -50,4 +54,15 @@ test('public site calls the admin host, and only those draft routes allow that o
   assert.equal(revertDraftCorsHeaders('https://2aran.com')['Access-Control-Allow-Credentials'], 'true')
   assert.match(middlewareSource, /isRevertDraftApi/)
   assert.match(middlewareSource, /revertDraftCorsHeaders/)
+  assert.match(articleRouteSource, /export function OPTIONS\(req\)/)
+  assert.match(researchRouteSource, /export function OPTIONS\(req\)/)
+  assert.doesNotMatch(middlewareSource, /return new NextResponse\(null, \{ status: 204/)
+  const allowed = revertDraftPreflightResponse('https://2aran.com')
+  assert.equal(allowed.status, 204)
+  assert.equal(allowed.headers.get('Access-Control-Allow-Origin'), 'https://2aran.com')
+  assert.equal(allowed.headers.get('Access-Control-Allow-Credentials'), 'true')
+  assert.match(allowed.headers.get('Access-Control-Allow-Methods'), /PUT/)
+  const denied = revertDraftPreflightResponse('https://evil.example')
+  assert.equal(denied.status, 403)
+  assert.equal(denied.headers.get('Access-Control-Allow-Origin'), null)
 })

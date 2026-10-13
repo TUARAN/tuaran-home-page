@@ -1,6 +1,7 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
+import { revertDraftPreflightResponse } from '../../../../lib/admin/adminRoutes'
 import { resolveReservedArticleSlug } from '../../../../lib/article/articleReservedSlugs'
 import { getD1 } from '../../../../lib/db/d1'
 import { normalizeResearchSnapshot } from '../../../../lib/research/researchDocument.mjs'
@@ -11,6 +12,10 @@ import { prepareResearchSourcePublication } from '../../../../lib/research/resea
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 const headers = { 'Cache-Control': 'no-store' }
+
+export function OPTIONS(req) {
+  return revertDraftPreflightResponse(req.headers.get('origin') || '')
+}
 
 function requestEnv() {
   return getOptionalRequestContext()?.env || process.env || {}

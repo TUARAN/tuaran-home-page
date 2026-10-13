@@ -2964,6 +2964,18 @@
     color: var(--site-ink);
   }
 
+  .home-opinion-sample.home-opinion-featured {
+    @apply mb-1 rounded-xl border px-3 py-3.5;
+    border-color: var(--site-line-strong);
+    border-left: 3px solid var(--site-accent);
+    background: color-mix(in srgb, var(--site-panel-strong) 91%, var(--site-accent));
+  }
+
+  .home-opinion-featured .home-opinion-sample-source {
+    color: var(--site-accent-strong);
+    font-weight: 700;
+  }
+
   .home-opinion-sample:hover {
     @apply no-underline;
   }
@@ -2985,10 +2997,6 @@
   .home-opinion-sample-time {
     @apply whitespace-nowrap;
     font-variant-numeric: tabular-nums;
-  }
-
-  .home-opinion-sample-event-counts {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap;
   }
 
   .home-opinion-sample-signal {

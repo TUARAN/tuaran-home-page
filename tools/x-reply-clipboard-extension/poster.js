@@ -16,8 +16,6 @@
   const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
-  const DEFAULT_SOURCE_HANDLE = "wangchangfu88";
-  const DEFAULT_SOURCE_LABEL = "王长富";
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
@@ -27,7 +25,7 @@
     running: false,
     stopping: false,
     navigating: false,
-    status: "待命。优先读取王长富的纯文字帖；没有可用素材时读取热点，形成待发列表后发布。",
+    status: "待命。先读知乎、头条热点，再读 2aran 舆情分析。",
     count: 0,
     errors: 0,
     startedAt: null,
@@ -39,7 +37,7 @@
     lastSentText: "",
     lastError: "",
     currentSourceId: "",
-    sourceHandle: DEFAULT_SOURCE_HANDLE,
+    retiredDraftText: "",
     sourceQueue: [],
     publishQueue: [],
     onUpdate: null,
@@ -82,7 +80,7 @@
       lastSentText: state.lastSentText,
       lastError: state.lastError,
       currentSourceId: state.currentSourceId,
-      sourceHandle: state.sourceHandle,
+      retiredDraftText: state.retiredDraftText,
       sourceQueue: state.sourceQueue,
       publishQueue: state.publishQueue
     };
@@ -102,10 +100,6 @@
     }
   }
 
-  function activeSourceHandle() {
-    return String(state.sourceHandle || DEFAULT_SOURCE_HANDLE).replace(/^@/u, "").trim() || DEFAULT_SOURCE_HANDLE;
-  }
-
   function shouldCollect(queueLength = state.publishQueue.length) {
     return Number(queueLength) <= 0;
   }
@@ -118,8 +112,6 @@
     persist();
     const payload = {
       running: Boolean(state.running),
-      sourceHandle: activeSourceHandle(),
-      sourceLabel: DEFAULT_SOURCE_LABEL,
       items: state.publishQueue,
       count: state.count,
       nextPostAt: state.nextPostAt,
@@ -127,6 +119,7 @@
       lastSentText: state.lastSentText,
       lastError: state.lastError,
       currentSourceId: state.currentSourceId,
+      retiredDraftText: state.retiredDraftText,
       startedAt: state.startedAt,
       schedulePace: state.schedulePace
     };
@@ -149,11 +142,11 @@
       saved = null;
     }
     if (!saved || typeof saved !== "object") return false;
-    if (saved.sourceHandle) state.sourceHandle = String(saved.sourceHandle).replace(/^@/u, "");
     if (Array.isArray(saved.items) && saved.items.length && !state.publishQueue.length) {
       state.publishQueue = saved.items.filter(keepSourceItem);
       if (!state.currentPost && saved.currentPost) state.currentPost = saved.currentPost;
       if (!state.currentSourceId && saved.currentSourceId) state.currentSourceId = saved.currentSourceId;
+      if (!state.retiredDraftText && saved.retiredDraftText) state.retiredDraftText = saved.retiredDraftText;
       if (!state.lastSentText && saved.lastSentText) state.lastSentText = saved.lastSentText;
       if (!state.lastError && saved.lastError) state.lastError = saved.lastError;
       if (Number(saved.count) > state.count) state.count = Number(saved.count);
@@ -289,6 +282,8 @@
     if (sourceType === "news") {
       if (normalized(body).length < 8 || length < 20 || length > 60) return "热点短帖过短或过长";
       if (lines.length < 2 || lines.length > 4 || lines.some((line) => Array.from(line).length > 24)) return "热点短帖行数不合适";
+      if (/^(?:说个暴论|讲个事实|我真心觉得|说句实话|讲真)[：:，,\s]*$/u.test(lines[0])) return "开头没有具体内容";
+      if (/^(?:你怎么看|大家怎么看|欢迎讨论|评论区见)[？?!！。\s]*$/u.test(lines.at(-1))) return "收尾太模板化";
       if (/多半是|关键在于|本质上|归根结底|更实际|值得注意|值得思考|有必要|应该|应当|建议|问清楚|先弄清|流程不透明|这条新闻|这个话题|这个问题|这种现象|我想说|我们来聊|今天聊|来说说|说明了|反映出|从而|因此|首先|其次|最后/iu.test(candidate)) return "说理口吻太重";
       if (/^(?:很多人|有些人|大家|其实|说到底|关于)/u.test(lines[0])) return "开头不够具体";
     } else if (normalized(body).length < 18 || length < 35 || length > 75) return "正文过短或过长";
@@ -301,11 +296,18 @@
 
   function duplicateReason(post, topic, entries) {
     const hook = preserveLines(post).split("\n").find(Boolean) || "";
+    const ending = preserveLines(post).split("\n").filter(Boolean).at(-1) || "";
+    const leadOf = (value) => String(value || "").match(/^(说个暴论|讲个事实|我真心觉得|说句难听的|说句实话|讲真|真心觉得)/u)?.[1] || "";
     for (const entry of entries) {
       if (similarity(topic, entry.topic) >= 0.68) return "主题重复";
       if (similarity(post, entry.text) >= 0.72) return "正文重复";
       const previousHook = preserveLines(entry.text).split("\n").find(Boolean) || "";
       if (normalized(hook).length >= 8 && normalized(hook) === normalized(previousHook)) return "钩子重复";
+    }
+    for (const entry of entries.slice(-8)) {
+      const lines = preserveLines(entry.text).split("\n").filter(Boolean);
+      if (leadOf(hook) && leadOf(hook) === leadOf(lines[0])) return "开头句式重复";
+      if (normalized(ending).length >= 8 && similarity(ending, lines.at(-1)) >= 0.82) return "收尾重复";
     }
     return "";
   }
@@ -343,42 +345,32 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.id && item?.text && !isSubscriptionPromotion(item.text));
+    return Boolean(item?.sourceType === "news" && /^(?:opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
 
   function filterPromotionalSources() {
-    state.sourceQueue = Array.isArray(state.sourceQueue) ? state.sourceQueue.filter(keepSourceItem) : [];
-    state.publishQueue = Array.isArray(state.publishQueue) ? state.publishQueue.filter(keepSourceItem) : [];
-    if (state.currentSourceId && isSubscriptionPromotion(state.currentPost)) {
+    const previousDraft = state.currentPost;
+    const retained = (items) => Array.isArray(items) ? items.filter(keepSourceItem).map((item) => {
+      const source = item.source || String(item.id).split(":")[0];
+      return { ...item, source, sourceLabel: item.sourceLabel || sourceLabel(source), sourcePageUrl: item.sourcePageUrl || item.sourceUrl || item.url || "" };
+    }) : [];
+    state.sourceQueue = retained(state.sourceQueue);
+    state.publishQueue = retained(state.publishQueue);
+    if (state.currentSourceId && !state.publishQueue.some((item) => item.id === state.currentSourceId)) {
+      state.retiredDraftText = previousDraft;
       state.currentPost = "";
       state.currentSourceId = "";
       state.lastError = "";
     }
   }
 
-  function acceptRewrite(source, rewritten) {
-    const original = preserveLines(source);
-    const sourceLines = original.split("\n");
-    const hookIndex = sourceLines.findIndex((line) => line.trim());
-    if (hookIndex < 0) return "";
-    const nextLines = preserveLines(rewritten).split("\n");
-    const nextHook = nextLines.findIndex((line) => line.trim());
-    if (nextHook < 0) return "";
-    nextLines[nextHook] = sourceLines[hookIndex];
-    const text = formatShortPost(nextLines.join("\n"));
-    if (!text || normalized(text) === normalized(original)) return "";
-    return text;
-  }
-
-  function requestSourceRewrite(sourceText, recentTopics, item = null, avoidPost = "", avoidReason = "") {
+  function requestSourceRewrite(sourceText, recentTopics, item = null, avoidPost = "", avoidReason = "", recentOpenings = [], recentEndings = []) {
     return new Promise((resolve, reject) => {
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("改写只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage(item?.sourceType === "news"
-        ? { type: "xrc-ai-news-rewrite", title: sourceText, summary: item.summary, source: item.source, recentTopics, avoidPost, avoidReason }
-        : { type: "xrc-ai-source-rewrite", sourceText, recentTopics }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接改写服务"));
@@ -394,10 +386,10 @@
     });
   }
 
-  function requestNewsSources() {
+  function requestNewsSources(tier = "all") {
     return new Promise((resolve, reject) => {
       if (!globalThis.chrome?.runtime?.sendMessage) return reject(new Error("热点取材只在 Chrome 扩展中可用"));
-      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-sources" }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-sources", tier }, (response) => {
         const error = chrome.runtime.lastError;
         if (error || !response?.ok) return reject(new Error(error?.message || response?.error || "热点来源读取失败"));
         resolve({ items: Array.isArray(response.items) ? response.items : [], errors: Array.isArray(response.errors) ? response.errors : [] });
@@ -416,14 +408,25 @@
   }
 
   async function collectNewsFallback() {
-    emit("王长富没有可用新帖，正在读取头条、知乎和站内舆情热点…");
+    emit("正在读取知乎、头条热点…");
     const used = readUsedSourceIds();
-    const result = await requestNewsSources();
-    const items = shuffleNewsItems(result.items)
-      .filter((item) => item?.sourceType === "news" && item.id && item.text && !used.has(item.id));
-    state.sourceQueue = items.slice(0, 12);
-    if (!state.sourceQueue.length) throw new Error(`王长富和备用热点都没有可用的新素材${result.errors.length ? `（${result.errors.join("、")}读取失败）` : ""}`);
-    await buildPublishList(5);
+    const errors = [];
+    for (const tier of ["external", "opinion"]) {
+      if (state.stopping || state.publishQueue.length >= 5) break;
+      if (tier === "opinion") emit("知乎、头条素材不足，正在读取 2aran 舆情分析热点…");
+      let result;
+      try { result = await requestNewsSources(tier); }
+      catch (error) { errors.push(tier === "opinion" ? "站内舆情" : "头条、知乎"); continue; }
+      errors.push(...result.errors);
+      const sources = tier === "opinion" ? ["opinion"] : ["zhihu", "toutiao"];
+      for (const source of sources) {
+        const items = shuffleNewsItems(result.items.filter((item) => item?.source === source && keepSourceItem(item) && !used.has(item.id)));
+        state.sourceQueue = items.slice(0, 12);
+        if (state.sourceQueue.length) await buildPublishList(5);
+        if (state.publishQueue.length >= 5 || state.stopping) break;
+      }
+    }
+    if (!state.publishQueue.length) throw new Error(`热点来源没有可用的新素材${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
     return state.publishQueue.length;
   }
 
@@ -442,16 +445,18 @@
       let inspected = false;
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
+        const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
+        const recentEndings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").filter(Boolean).at(-1)).filter(Boolean).slice(-8);
         let avoidPost = "";
         let avoidReason = "";
         for (let attempt = 0; attempt < (item.sourceType === "news" ? 2 : 1); attempt += 1) {
-          const result = await requestSourceRewrite(item.text, recentTopics, item, avoidPost, avoidReason);
+          const result = await requestSourceRewrite(item.text, recentTopics, item, avoidPost, avoidReason, recentOpenings, recentEndings);
           inspected = true;
           if (result.skip) {
             reason = "主题与近期内容重复或素材不足";
             break;
           }
-          text = item.sourceType === "news" ? formatShortPost(result.post) : acceptRewrite(item.text, result.post);
+          text = formatShortPost(result.post);
           topic = result.topic;
           reason = qualityReason(item.text, text, topic, item.sourceType) || duplicateReason(text, topic, recentEntries());
           if (!reason || item.sourceType !== "news" || reason === "主题重复" || attempt > 0) break;
@@ -466,7 +471,7 @@
         emit(`跳过素材：${reason}；待发 ${state.publishQueue.length} 条`);
         continue;
       }
-      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceType: item.sourceType || "x", sourceUrl: item.url || "" });
+      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceType: "news", source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
       await savePublishList();
       await rememberUsedSourceId(item.id);
       emit(`待发列表 ${state.publishQueue.length}/${total} 条。列表发完前不会重新抓取`);
@@ -474,15 +479,6 @@
     state.sourceQueue = [];
     await savePublishList();
     return state.publishQueue.length;
-  }
-
-  function usableSourceTweet({ handle, id, text, hasMedia = false, isReply = false, isPinned = false, sourceHandle = DEFAULT_SOURCE_HANDLE } = {}) {
-    if (!id || String(handle || "").toLowerCase() !== String(sourceHandle).toLowerCase()) return null;
-    if (hasMedia || isReply || (isPinned && /订阅|subscribe|subscription/iu.test(text))) return null;
-    const body = preserveLines(text);
-    const contentLines = body.split("\n").filter((line) => line.trim());
-    if (!contentLines.length || contentLines.length > 8 || Array.from(body).length > 220 || isSubscriptionPromotion(body)) return null;
-    return { id: String(id), text: body };
   }
 
   function readUsedSourceIds() {
@@ -501,32 +497,15 @@
     }
   }
 
-  async function rememberPublishedPost(sourceId, text, topic) {
-    history.published.push({ sourceId: String(sourceId || ""), text, topic, at: Date.now() });
+  function sourceLabel(source) {
+    return { opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
+  }
+
+  async function rememberPublishedPost(sourceId, text, topic, item = null) {
+    history.published.push({ sourceId: String(sourceId || ""), text, topic, source: item?.source || "", sourceLabel: item?.sourceLabel || sourceLabel(item?.source), sourceUrl: item?.sourceUrl || "", sourcePageUrl: item?.sourcePageUrl || "", sourceTitle: item?.sourceText || "", at: Date.now() });
     history.published = history.published.slice(-2000);
     if (sourceId) await rememberUsedSourceId(sourceId);
     else if (!await saveHistory()) throw new Error("发帖历史保存失败，已暂停这条素材");
-  }
-
-  function readSourceTweet(article) {
-    const link = article.querySelector?.('a[href*="/status/"]');
-    const href = String(link?.getAttribute?.("href") || "");
-    const match = href.match(/\/([A-Za-z0-9_]{1,15})\/status\/(\d+)/);
-    if (!match) return null;
-    const social = textOf(article.querySelector?.('[data-testid="socialContext"]'));
-    return usableSourceTweet({
-      handle: match[1],
-      id: match[2],
-      text: article.querySelector?.('[data-testid="tweetText"]')?.innerText || "",
-      hasMedia: Boolean(article.querySelector?.('[data-testid="tweetPhoto"], [data-testid="videoPlayer"], [data-testid="card.wrapper"], [data-testid="poll"]')),
-      isReply: /Replying to|正在回复/i.test(social),
-      isPinned: /\bPinned\b|置顶/iu.test(social),
-      sourceHandle: activeSourceHandle()
-    });
-  }
-
-  function sourceProfilePath() {
-    return new RegExp(`^/${activeSourceHandle()}/?$`, "i").test(window.location.pathname);
   }
 
   async function leaveFor(url, status) {
@@ -546,46 +525,15 @@
     if (arrived) state.navigating = false;
   }
 
-  async function collectSourcePosts() {
-    const used = readUsedSourceIds();
-    const seen = new Set((state.sourceQueue || []).map((item) => item.id));
-    let stall = 0;
-    for (let round = 0; round < 8 && state.sourceQueue.length < 20 && !state.stopping; round += 1) {
-      const before = state.sourceQueue.length;
-      document.querySelectorAll('article[data-testid="tweet"]').forEach((article) => {
-        const item = readSourceTweet(article);
-        if (!item || used.has(item.id) || seen.has(item.id)) return;
-        seen.add(item.id);
-        state.sourceQueue.push(item);
-      });
-      if (state.sourceQueue.length === before) stall += 1;
-      else stall = 0;
-      if (stall >= 2 || state.sourceQueue.length >= 20) break;
-      window.scrollBy(0, Math.round(window.innerHeight * 0.9));
-      emit(`第 1 步：正在读取 @${activeSourceHandle()} 的纯文字帖，已收集 ${state.sourceQueue.length} 条`);
-      await wait(900);
-    }
-    return state.sourceQueue.length;
-  }
-
   async function ensureSources() {
     if (!shouldCollect()) return state.publishQueue.length;
-    const handle = activeSourceHandle();
-    if (!sourceProfilePath()) {
-      await leaveFor(`/${handle}`, `第 1 步：打开 @${handle} 的主页`);
-    }
-    if (state.stopping || !sourceProfilePath()) return state.publishQueue.length;
-    emit(`第 1 步：正在读取 @${handle} 的纯文字帖…`);
-    await waitUntil(() => document.querySelector('article[data-testid="tweet"]'), 12000);
-    const added = await collectSourcePosts();
-    if (added) await buildPublishList();
-    if (!state.publishQueue.length && !state.stopping) await collectNewsFallback();
+    if (!state.stopping) await collectNewsFallback();
     if (state.stopping) return state.publishQueue.length;
-    if (!state.publishQueue.length) throw new Error("王长富和备用热点都没有形成可发草稿");
+    if (!state.publishQueue.length) throw new Error("热点没有形成可发草稿");
     state.lastError = "";
     state.nextPostAt = 0;
     await savePublishList();
-    await leaveFor("/home", `第 3 步：待发 ${state.publishQueue.length} 条，回到首页一条条发送`);
+    await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页发送`);
     return state.publishQueue.length;
   }
 
@@ -800,7 +748,7 @@
         }
         state.lastError = "";
       }
-      if ((state.publishQueue.length || state.currentPost) && !homePath()) {
+      if (!homePath()) {
         await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页一条条发送`);
         if (state.stopping) break;
         continue;
@@ -821,6 +769,17 @@
         await savePublishList();
       }
       const queued = editorText(findInlineComposer()?.editor);
+      if (state.retiredDraftText && sameDraftText(queued, state.retiredDraftText)) {
+        const cleared = await requestDraftFill("", { clear: true });
+        if (!cleared.ok || editorText(findInlineComposer()?.editor)) {
+          emit("旧素材草稿仍在发帖框，等待清空后继续");
+          await wait(1500);
+          continue;
+        }
+        state.retiredDraftText = "";
+        emit("已清理旧版素材草稿，继续读取热点");
+        continue;
+      }
       if (state.currentPost && sameDraftText(queued, state.currentPost) &&
           (state.lastError === "重复内容仍留在发帖框，正在清空" ||
             ((state.lastError === "没有确认推文发送成功" || state.nextPostAt > 0) && duplicatePostNoticeNodes().length))) {
@@ -844,6 +803,11 @@
         }
       }
       const queuedIsNew = Boolean(queued) && !sameDraftText(queued, state.lastSentText) && !sameDraftText(queued, state.currentPost);
+      if (queuedIsNew) {
+        emit("发帖框有未发送内容，请手动处理后继续热点发帖");
+        await wait(1500);
+        continue;
+      }
       if (!queuedIsNew && state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
         emit(state.lastError
@@ -854,13 +818,7 @@
         continue;
       }
       try {
-        if (queuedIsNew) {
-          state.currentPost = queued;
-          state.currentSourceId = "";
-          state.nextPostAt = 0;
-          state.lastError = "";
-          emit("发帖框已有内容，正在直接发送");
-        } else if (!state.currentPost) {
+        if (!state.currentPost) {
           if (shouldCollect()) {
             await ensureSources();
             if (state.stopping) break;
@@ -904,7 +862,7 @@
         state.lastError = "";
         state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
         await savePublishList();
-        await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic);
+        await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic, publishedItem);
         emit(state.publishQueue.length
           ? `第 ${state.count} 条已发送；待发还剩 ${state.publishQueue.length} 条`
           : `第 ${state.count} 条已发送；待发列表已空，下一次重新选取素材`);
@@ -929,7 +887,6 @@
       if (!Array.isArray(state.publishQueue) || !state.publishQueue.length) {
         state.publishQueue = Array.isArray(state.rewriteQueue) ? state.rewriteQueue : [];
       }
-      if (!state.sourceHandle) state.sourceHandle = DEFAULT_SOURCE_HANDLE;
       state.schedulePace = postScheduleProfile(state.schedulePace).id;
       filterPromotionalSources();
     } else {
@@ -946,7 +903,7 @@
       state.lastSentText = "";
       state.lastError = "";
       state.currentSourceId = "";
-      state.sourceHandle = state.sourceHandle || DEFAULT_SOURCE_HANDLE;
+      state.retiredDraftText = "";
       state.sourceQueue = [];
       state.publishQueue = [];
       state.navigating = false;
@@ -1019,8 +976,6 @@
     restore,
     resumeIfPending,
     shouldCollect,
-    DEFAULT_SOURCE_HANDLE,
-    DEFAULT_SOURCE_LABEL,
     randomIntervalMs,
     formatPost,
     formatShortPost,
@@ -1036,8 +991,6 @@
     buildPublishList,
     collectNewsFallback,
     shuffleNewsItems,
-    acceptRewrite,
-    usableSourceTweet,
     collectTopicContext,
     DEFAULT_POST_PACE,
     POST_SCHEDULE_PROFILES,

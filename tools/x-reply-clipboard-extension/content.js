@@ -72,7 +72,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.10.3";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.12.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
 
@@ -113,7 +113,7 @@
     pendingTweetId: "",
     lastReply: "",
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
-    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读王长富纯文字帖；没有可用新帖时从备用热点选题。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", sourceHandle: "wangchangfu88", publishQueue: [] },
+    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读知乎、头条热点，再读 2aran 舆情分析。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", publishQueue: [] },
     errors: 0,
     status: "待命。点开始后，DeepSeek 会阅读原帖并生成回复。",
     phraseIndex: null,
@@ -1284,9 +1284,10 @@
     }
   }
 
-  async function reconnectAndResume(reason) {
+  async function reconnectAndResume(reason, { inPlace = false } = {}) {
     state.reconnectReason = String(reason || "").trim();
     let networkReported = false;
+    let draftReported = false;
     for (let attempt = 0; state.running && !state.stopping; attempt += 1) {
       state.reconnectAt = Date.now() + reconnectDelay(attempt);
       writeSaved({ running: true, total: state.total });
@@ -1309,6 +1310,28 @@
       }
       state.reconnectAt = 0;
       writeSaved({ running: true, total: state.total });
+      if (inPlace) {
+        if (!await closeReplyComposer()) {
+          if (!draftReported) {
+            draftReported = true;
+            reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: state.pendingTweetId, errorCode: "x-draft-blocked" });
+          }
+          state.status = "回复框暂时无法关闭，保留内容并继续等待";
+          renderPanel();
+          continue;
+        }
+        const noticeCleared = await waitUntil(() => !transientErrorVisible(), 5000);
+        if (!noticeCleared) {
+          state.status = "X 临时错误提示仍在，继续等待后重试";
+          renderPanel();
+          continue;
+        }
+        state.reconnectReason = "";
+        writeSaved({ running: true, total: state.total });
+        state.status = "连接已恢复，正在原页面重试当前回复";
+        renderPanel();
+        return "resume";
+      }
       if (await reloadAndResume("连接已恢复，正在重新载入当前任务")) return "reload";
       state.reconnectReason = "评论框有未发送内容，等待安全重连";
     }
@@ -1796,7 +1819,7 @@
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientErrorVisible()) return "transient-error";
+    if (transientErrorVisible() && !hasNewSuccessNotice()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!sendStarted) return "send-unconfirmed";
 
@@ -1809,7 +1832,7 @@
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientErrorVisible()) return "transient-error";
+    if (transientErrorVisible() && !hasNewSuccessNotice()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!confirmed) return "send-unconfirmed";
     if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
@@ -2139,7 +2162,9 @@
       }
       if (result === "transient-error") {
         reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: next.id, errorCode: "x-transient-error" });
-        return reconnectAndResume("X 暂时出错，正在检查网络并重试当前回复");
+        const recovery = await reconnectAndResume("X 暂时出错，正在检查网络并重试当前回复", { inPlace: true });
+        if (recovery === "resume") continue;
+        return recovery;
       }
       if (result === "risk-blocked") {
         reportCommunityAction({
@@ -2692,7 +2717,7 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
-                <li><b>发布规则：</b>定时发帖优先读取王长富 @wangchangfu88 的纯文字帖；没有可用新草稿时从可读取的头条、知乎和站内舆情热点随机选题。生成后放进待发列表，再回首页一条条发。列表没发完不会重新抓取。原帖改写保留首句钩子；热点稿写独立开头。</li>
+                <li><b>发布规则：</b>定时发帖先从知乎热榜选题，再读今日头条；素材不足时才读 2aran 舆情分析。开头抓住人、结尾留一点余味，避免重复句式；保存每条出处。</li>
                 <li><b>发什么：</b>回复提示词决定回复内容。定时发帖用已保存的 DeepSeek API Key 写短帖；素材不合格或与近期主题重复时跳过。</li>
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
@@ -2706,6 +2731,9 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.12.0</b><span><strong>热点顺序与文案钩子</strong><small>先读知乎、头条，再读舆情分析；开头和结尾增加变化，避免同一种句式连发。</small></span></article>
+                <article><b>v3.11.0</b><span><strong>热点来源优先级</strong><small>定时发帖只写热点，先取 2aran 舆情分析，素材不足再读头条、知乎；待发列表和发布历史记录出处。</small></span></article>
+                <article><b>v3.10.4</b><span><strong>临时错误原地重试</strong><small>X 回复提示临时错误时关闭插件草稿并重试当前帖，不触发整页刷新。</small></span></article>
                 <article><b>v3.10.3</b><span><strong>异常进入站长通知</strong><small>页面报错、断网和草稿阻止重连会回传监控通知；离线时暂存，恢复后补报。</small></span></article>
                 <article><b>v3.10.2</b><span><strong>异常后快速重连</strong><small>检测 X 连通性后逐步重试；刷新前处理回复草稿，避免系统确认框卡住。</small></span></article>
                 <article><b>v3.10.1</b><span><strong>热点短帖口吻收紧</strong><small>用具体场景和口语反应写热点；说理、劝告式草稿会重写一次或跳过。</small></span></article>
@@ -2802,7 +2830,7 @@
               <li><b>时间线回复</b>在首页按当前频率回复。</li>
               <li><b>通知回复</b>处理通知里的互动。</li>
               <li><b>关注管理</b>分别清理未回关、回关粉丝、关注候选。</li>
-              <li><b>定时发帖</b>优先改写素材账号的纯文字帖；没有可用新帖时从备用热点选题，按待发列表发送。</li>
+              <li><b>定时发帖</b>先读知乎、头条热榜，素材不足再读 2aran 舆情分析，按待发列表发送。</li>
             </ol>
             <p>只想改其中一项时，打开对应页签，在该页设好频率后再点「启动单项任务」。API Key 在上方全局区填写。</p>
           </div>
@@ -2850,14 +2878,14 @@
         </div>
         <div class="xrc-body xrc-post-body">
           <section class="xrc-post-flow" aria-label="定时发帖流程">
-            <p data-xrc-post-source>默认素材账号是 @wangchangfu88（王长富）。之后可以改成其他账号。</p>
+            <p data-xrc-post-source>取材顺序：知乎 → 今日头条 → 2aran 舆情分析。</p>
             <ol>
-              <li>先读素材账号的纯文字帖；没有可用新稿时读取备用热点。</li>
-              <li>随机挑选可用热点或改写原帖，写进待发列表。</li>
+              <li>先读知乎热榜，再读今日头条。</li>
+              <li>知乎和头条素材不足时再读舆情分析；写进待发列表并记录出处。</li>
               <li>回到首页，按列表一条条发。列表没发完，不会重新抓取。</li>
             </ol>
             <div class="xrc-flow-end">
-              <p data-xrc-post-queue>待发 0 条</p>
+              <p><span data-xrc-post-queue>待发 0 条</span> <a data-xrc-post-source-link target="_blank" rel="noopener noreferrer" hidden>查看出处 ↗</a></p>
               <button class="xrc-inline-start" type="button" data-xrc-post-toggle>启动单项任务</button>
             </div>
           </section>
@@ -3234,15 +3262,22 @@
             : "启动单项任务";
       postToggle.dataset.running = poster.running ? "true" : "false";
       panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
-      const sourceHandle = String(poster.sourceHandle || postApi?.DEFAULT_SOURCE_HANDLE || "wangchangfu88").replace(/^@/u, "");
       const sourceLine = panel.querySelector("[data-xrc-post-source]");
-      if (sourceLine) {
-        sourceLine.textContent = sourceHandle.toLowerCase() === "wangchangfu88"
-          ? "默认素材账号是 @wangchangfu88（王长富）。之后可以改成其他账号。"
-          : `当前素材账号是 @${sourceHandle}。之后可以改成其他账号。`;
-      }
+      if (sourceLine) sourceLine.textContent = "取材顺序：知乎 → 今日头条 → 2aran 舆情分析。";
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
-      if (queueLine) queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条`;
+      if (queueLine) {
+        const nextSource = poster.publishQueue?.[0];
+        queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条${nextSource ? ` · 下一条：${nextSource.sourceLabel || ({ opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" })[nextSource.source] || "热点"}` : ""}`;
+        queueLine.title = nextSource?.sourceUrl ? `原始来源：${nextSource.sourceUrl}${nextSource.sourcePageUrl ? `；选题页面：${nextSource.sourcePageUrl}` : ""}` : "";
+      }
+      const sourceLink = panel.querySelector("[data-xrc-post-source-link]");
+      if (sourceLink) {
+        const rawUrl = poster.publishQueue?.[0]?.sourceUrl || "";
+        const safeUrl = /^https?:\/\//u.test(rawUrl) ? rawUrl : "";
+        sourceLink.hidden = !safeUrl;
+        if (safeUrl) sourceLink.href = safeUrl;
+        else sourceLink.removeAttribute("href");
+      }
       panel.querySelector("[data-xrc-post-next]").textContent = postWait
         ? formatClock(Number(poster.nextPostAt) - Date.now())
         : poster.running ? "正在取材" : "待命";
@@ -3540,7 +3575,7 @@
     }
     if (!saved.running) {
       state.status = state.assistantMode === "poster"
-        ? `优先读取王长富的纯文字帖；没有可用新稿时从备用热点选题。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
+        ? `优先读取知乎、头条热点，素材不足时再读取 2aran 舆情分析。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
         : "";
     }
     renderPanel();

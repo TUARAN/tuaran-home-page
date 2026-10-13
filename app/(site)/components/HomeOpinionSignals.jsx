@@ -69,9 +69,10 @@ export default function HomeOpinionSignals() {
     ? allPosts
     : allPosts.filter((post) => post.topicId === activeTopic)
   const events = liveData?.snapshot?.events || []
-  const featured = events.find((event) => activeTopic === 'all' || event.topicId === activeTopic)
+  const groupedEvents = events.filter((event) => event.reportCount > 1 && (activeTopic === 'all' || event.topicId === activeTopic))
+  const featured = groupedEvents[0]
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
-  const posts = selectHomeOpinionPosts(otherPosts.length ? otherPosts : filteredPosts, 14)
+  const posts = selectHomeOpinionPosts(otherPosts, 14)
   const topics = (liveData?.topics || []).filter((topic) => allPosts.some((post) => post.topicId === topic.id))
   const featuredTopic = topics.find((topic) => topic.id === featured?.topicId)?.title
   const collectedAt = Number(liveData?.meta?.lastCollectAt)
@@ -79,6 +80,7 @@ export default function HomeOpinionSignals() {
     ? formatOpinionTime(collectedAt * 1000)
     : ''
   const featuredTime = formatOpinionTime(featured?.latestAt)
+  const featuredSentiment = featured ? getSentimentBucket(featured.sentiment) : null
   return (
     <div className="home-opinion-overview">
       {liveData && allPosts.length ? (
@@ -93,7 +95,7 @@ export default function HomeOpinionSignals() {
           <div className="home-opinion-counts">
             <div className="home-opinion-count-metrics">
               <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>
-              <span><strong>{events.filter((event) => activeTopic === 'all' || event.topicId === activeTopic).length}</strong><T zh="个聚合事件" en="grouped events" /></span>
+              <span><strong>{groupedEvents.length}</strong><T zh="个热点" en="hot topics" /></span>
             </div>
             {updated ? (
               <small className="home-opinion-collection-status">
@@ -108,13 +110,12 @@ export default function HomeOpinionSignals() {
 
           <div className="home-opinion-list">
             {featured ? (
-              <Link href="/public-opinion" className="home-opinion-sample no-underline">
+              <Link href="/public-opinion" className="home-opinion-sample home-opinion-featured no-underline">
                 <span className="home-opinion-sample-meta">
-                  <span className="home-opinion-sample-source"><T zh="聚合事件" en="Grouped event" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
+                  <span className="home-opinion-sample-source"><T zh="热点聚焦" en="In focus" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
                   <time className="home-opinion-sample-time" dateTime={featured.latestAt}>{featuredTime}</time>
-                  <span className="home-opinion-sample-event-counts">
-                    <span>{featured.reportCount} <T zh="条讨论" en="posts" /></span>
-                    <span>{featured.sourceCount} <T zh="个来源" en="sources" /></span>
+                  <span className={`home-opinion-sample-signal is-${featuredSentiment}`} title="热点聚焦的平均情绪">
+                    <T {...SENTIMENTS[featuredSentiment]} />
                   </span>
                 </span>
                 <strong>{featured.title}</strong>

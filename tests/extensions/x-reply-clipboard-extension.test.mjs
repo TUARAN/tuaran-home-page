@@ -145,6 +145,30 @@ test('reply reconnect backs off quickly and caps its retry interval', async () =
   assert.deepEqual([0, 1, 2, 3, 4, 5].map((attempt) => vm.runInContext(`reconnectDelay(${attempt})`, context)), [2000, 4000, 8000, 16000, 30000, 30000])
 })
 
+test('transient reply errors recover in place without navigating away from an open X page', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function reconnectAndResume\([\s\S]*?(?=\n  async function waitRateLimit\()/)?.[0]
+  assert.ok(helper)
+  const state = { running: true, stopping: false, total: 0, pendingReply: '待重试的回复', pendingTweetId: '123', reconnectAt: 0, reconnectReason: '', status: '' }
+  let reloads = 0
+  let closes = 0
+  const context = vm.createContext({
+    state, Date, reconnectOnline: true, skipScheduledWait: false,
+    reconnectDelay: () => 0, sleep: async () => {}, xIsReachable: async () => true,
+    closeReplyComposer: async () => { closes += 1; return true },
+    waitUntil: async () => true, transientErrorVisible: () => false,
+    reloadAndResume: async () => { reloads += 1; return true },
+    writeSaved() {}, renderPanel() {}, formatCountdown: () => '', reportCommunityAction() {},
+  })
+  vm.runInContext(helper, context)
+  const result = await vm.runInContext('reconnectAndResume("X 暂时出错", { inPlace: true })', context)
+  assert.equal(result, 'resume')
+  assert.equal(closes, 1)
+  assert.equal(reloads, 0)
+  assert.equal(state.pendingReply, '待重试的回复')
+  assert.equal(state.pendingTweetId, '123')
+})
+
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
   const listeners = []
@@ -332,6 +356,9 @@ test('scheduled post keeps the hook but rejects loud, shallow, and repeated draf
   assert.equal(poster.qualityReason('你们都该闭嘴？？？\n原文', '你们都该闭嘴？？？\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。', '表达方式影响讨论'), '语气过火')
   assert.equal(poster.duplicateReason(good, '表达方式影响讨论', [{ topic: '表达方式影响讨论', text: '另一篇内容' }]), '主题重复')
   assert.equal(poster.duplicateReason(good, '讨论时留下交流空间', [{ topic: '不同主题', text: good }]), '正文重复')
+  assert.equal(poster.duplicateReason('说个暴论，外卖打包还在加层。\n\n盒子越结实，拆开越费劲。', '外卖包装', [{ topic: '医院挂号', text: '说个暴论，医院挂号排队这事。\n\n窗口减少了，手机步骤却多了。' }]), '开头句式重复')
+  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '说个暴论\n\n新工具刚上线。\n\n不少人还没打开，名字已被吹上天。', '新工具上线跟风', 'news'), '开头没有具体内容')
+  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开，名字已被吹上天。\n\n你怎么看？', '新工具上线跟风', 'news'), '收尾太模板化')
 })
 
 test('used source IDs survive a fresh scheduled-post tab', async () => {
@@ -351,23 +378,29 @@ test('used source IDs survive a fresh scheduled-post tab', async () => {
   const first = makeTab()
   await first.loadHistory()
   await first.rememberUsedSourceId('source-123')
-  await first.rememberPublishedPost('source-123', '保留钩子\n这条内容已经发出', '表达方式影响讨论')
+  await first.rememberPublishedPost('source-123', '保留钩子\n这条内容已经发出', '表达方式影响讨论', {
+    source: 'opinion', sourceLabel: '2aran 舆情分析', sourceText: '某个公开事件引发讨论',
+    sourceUrl: 'https://example.com/source', sourcePageUrl: 'https://2aran.com/public-opinion',
+  })
   const second = makeTab()
   await second.loadHistory()
   assert.equal(second.readUsedSourceIds().has('source-123'), true)
   assert.equal(storage.xrcPosterHistoryV2.published[0].topic, '表达方式影响讨论')
+  assert.equal(storage.xrcPosterHistoryV2.published[0].sourceLabel, '2aran 舆情分析')
+  assert.equal(storage.xrcPosterHistoryV2.published[0].sourceUrl, 'https://example.com/source')
+  assert.equal(storage.xrcPosterHistoryV2.published[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(second.duplicateReason('另一个钩子\n另一条内容', '表达方式会影响讨论', storage.xrcPosterHistoryV2.published), '主题重复')
 })
 
 test('failed rewrites never fall back to the source post in the publish queue', async () => {
   const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
   const storage = {}
-  const sourceText = '一个人的表达方式会影响讨论\n同样的观点，语气不同，收到的回应也不同'
+  const sourceText = '一个关于新工具使用方式的公开讨论'
   const context = vm.createContext({
     chrome: {
       runtime: {
         sendMessage(message, respond) {
-          if (message.sourceText === sourceText) respond({ ok: true, topic: '表达方式影响讨论', post: '一个人的表达方式会影响讨论\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。' })
+          if (message.title === sourceText) respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
           else respond({ ok: false, error: '改写失败' })
         },
       },
@@ -382,13 +415,13 @@ test('failed rewrites never fall back to the source post in the publish queue', 
   const api = context.XInteractionPoster
   await api.loadHistory()
   api.snapshot().sourceQueue.push(
-    { id: 'good', text: sourceText },
-    { id: 'failed', text: '另一个钩子\n这是一段原始内容，不能直接放入待发列表' },
+    { id: 'toutiao:good', sourceType: 'news', source: 'toutiao', text: sourceText },
+    { id: 'toutiao:failed', sourceType: 'news', source: 'toutiao', text: '另一个钩子\n这是一段原始内容，不能直接放入待发列表' },
   )
   await api.buildPublishList()
-  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.id), ['good'])
-  assert.equal(api.readUsedSourceIds().has('failed'), false)
-  assert.equal(api.snapshot().publishQueue[0].text.split('\n')[0], sourceText.split('\n')[0])
+  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.id), ['toutiao:good'])
+  assert.equal(api.readUsedSourceIds().has('toutiao:failed'), false)
+  assert.equal(api.snapshot().publishQueue[0].source, 'toutiao')
 })
 
 test('scheduled poster fills an empty queue from fresh hot topics and remembers their source IDs', async () => {
@@ -400,7 +433,7 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
       runtime: {
         lastError: null,
         sendMessage(message, respond) {
-          seen.push(message.type)
+          seen.push(`${message.type}:${message.tier || ''}`)
           if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: [
             { id: 'toutiao:123', sourceType: 'news', source: 'toutiao', text: '一个关于新工具使用方式的公开讨论', summary: '', url: 'https://www.toutiao.com/a123' },
           ] })
@@ -418,11 +451,84 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   const api = context.XInteractionPoster
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(seen, ['xrc-ai-news-sources', 'xrc-ai-news-rewrite'])
+  assert.deepEqual(seen, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:', 'xrc-ai-news-sources:opinion'])
   assert.equal(api.snapshot().publishQueue.length, 1)
   assert.equal(api.snapshot().publishQueue[0].sourceType, 'news')
+  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '今日头条')
+  assert.equal(api.snapshot().publishQueue[0].sourceUrl, 'https://www.toutiao.com/a123')
   assert.equal(api.readUsedSourceIds().has('toutiao:123'), true)
+  api.snapshot().publishQueue.length = 0
   await assert.rejects(api.collectNewsFallback(), /没有可用的新素材/)
+})
+
+test('scheduled poster uses site opinion after external feeds lack usable items', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const calls = []
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        calls.push(`${message.type}:${message.tier || ''}`)
+        if (message.type === 'xrc-ai-news-sources') {
+          respond({ ok: true, items: message.tier === 'opinion' ? [{
+            id: 'opinion:site-1', sourceType: 'news', source: 'opinion', sourceLabel: '2aran 舆情分析',
+            text: '一个关于新工具使用方式的公开讨论', url: 'https://example.com/original',
+            sourcePageUrl: 'https://2aran.com/public-opinion',
+          }] : [] })
+        } else respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  await api.collectNewsFallback()
+  assert.deepEqual(calls, ['xrc-ai-news-sources:external', 'xrc-ai-news-sources:opinion', 'xrc-ai-news-rewrite:'])
+  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '2aran 舆情分析')
+  assert.equal(api.snapshot().publishQueue[0].sourcePageUrl, 'https://2aran.com/public-opinion')
+})
+
+test('scheduled poster drafts Zhihu topics before Toutiao topics', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const rewritten = []
+  const rewriteRequests = []
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        if (message.type === 'xrc-ai-news-sources') {
+          respond({ ok: true, items: message.tier === 'external' ? [
+            { id: 'toutiao:blood', sourceType: 'news', source: 'toutiao', text: '体检抽血为什么要抽多管' },
+            { id: 'zhihu:tool', sourceType: 'news', source: 'zhihu', text: '一个关于新工具使用方式的公开讨论' },
+          ] : [] })
+        } else {
+          rewritten.push(message.source)
+          rewriteRequests.push(message)
+          respond(message.source === 'zhihu'
+            ? { ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' }
+            : { ok: true, topic: '抽血管子排一排', post: '体检抽血，一排管子摆出来。\n\n结果还没等到，\n\n人先被这阵仗吓一跳。' })
+        }
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  await api.collectNewsFallback()
+  assert.deepEqual(rewritten, ['zhihu', 'toutiao'])
+  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.source), ['zhihu', 'toutiao'])
+  assert.ok(Array.from(rewriteRequests[1].recentOpenings).includes('新工具刚上线'))
+  assert.ok(Array.from(rewriteRequests[1].recentEndings).includes('名字已经先被吹上天了。'))
 })
 
 test('hot-topic parsers require current site data and keep stable source IDs', () => {
@@ -432,11 +538,14 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'fallback', meta: { hasData: false }, events: [event] }).length, 0)
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: true }, events: [event] }).length, 0)
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].id, 'opinion:po_123')
+  assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
   assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。', '新工具上线跟风', 'news'), '')
   assert.equal(poster.qualityReason('体检抽血为什么要抽多管', '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。', '抽血检测流程', 'news'), '说理口吻太重')
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /王长富公开短帖的节奏/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /具体的人、事、物或场景/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /说个暴论/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /结尾留一点没说满的东西/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /开头和结尾每条换一种自然写法/)
 })
 
 test('hot-topic drafting rewrites a didactic first attempt before queueing', async () => {
@@ -556,10 +665,10 @@ test('a saved duplicate post is removed from the queue before the next send', as
     running: true,
     count: 0,
     currentPost: '重复的第一条',
-    currentSourceId: 'first',
+    currentSourceId: 'opinion:first',
     lastError: '没有确认推文发送成功',
     nextPostAt: Date.now() + 60000,
-    publishQueue: [{ id: 'first', text: '重复的第一条' }, { id: 'second', text: '另一条' }],
+    publishQueue: [{ id: 'opinion:first', sourceType: 'news', text: '重复的第一条' }, { id: 'opinion:second', sourceType: 'news', text: '另一条' }],
   }
   const sessionStorage = {
     getItem: () => JSON.stringify(saved),
@@ -583,7 +692,7 @@ test('a saved duplicate post is removed from the queue before the next send', as
     context.XInteractionPoster.restore((snapshot) => {
       if (!snapshot.status.startsWith('X 提示这条内容已说过')) return
       clearTimeout(timeout)
-      assert.deepEqual(Array.from(snapshot.publishQueue, (item) => item.id), ['second'])
+      assert.deepEqual(Array.from(snapshot.publishQueue, (item) => item.id), ['opinion:second'])
       assert.equal(editor.innerText, '')
       assert.equal(snapshot.count, 0)
       context.XInteractionPoster.stop()
@@ -629,7 +738,7 @@ test('legacy queued drafts are cleared instead of being sent after the quality u
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('legacy draft was not skipped')), 3000)
     context.XInteractionPoster.restore((snapshot) => {
-      if (!snapshot.status.startsWith('跳过待发内容')) return
+      if (!snapshot.status.startsWith('已清理旧版素材草稿')) return
       clearTimeout(timeout)
       assert.equal(editor.innerText, '')
       assert.equal(snapshot.publishQueue.length, 0)
@@ -993,7 +1102,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.10.3')
+  assert.equal(manifest.version, '3.12.0')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -1032,25 +1141,15 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(posterSource, /tweetButtonInline/)
   assert.match(posterSource, /tweetTextarea_0/)
   assert.doesNotMatch(posterSource, /xrc-ai-post-generate/)
-  assert.match(posterSource, /xrc-ai-source-rewrite/)
+  assert.match(posterSource, /xrc-ai-news-rewrite/)
+  assert.doesNotMatch(posterSource, /collectSourcePosts|sourceProfilePath/)
   assert.match(posterSource, /正在总结改写/)
-  assert.match(posterSource, /DEFAULT_SOURCE_HANDLE = "wangchangfu88"/)
   assert.match(posterSource, /xrcPosterPublishList/)
   assert.match(posterSource, /列表发完前不会重新抓取/)
   assert.doesNotMatch(posterSource, /if \(!arrived\) state\.stopping = true/)
   assert.match(posterSource, /if \(!saved\?\.running\) return false/)
   assert.equal(poster.shouldCollect(0), true)
   assert.equal(poster.shouldCollect(3), false)
-  assert.equal(poster.DEFAULT_SOURCE_HANDLE, 'wangchangfu88')
-  assert.equal(poster.acceptRewrite('钩子留在这里\n但是后面可以换', '钩子被改了\n后面换成新说法'), '钩子留在这里\n\n后面换成新说法')
-  assert.equal(poster.acceptRewrite('钩子留在这里\n但是后面可以换', '钩子留在这里\n但是后面可以换'), '')
-  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '1', text: '短句', hasMedia: true }), null)
-  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '2', text: '第一眼就心动的人\n真的不甘心' }), { id: '2', text: '第一眼就心动的人\n真的不甘心' })
-  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '3', text: '欢迎订阅我的帖子' }), null)
-  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '4', text: 'Subscribe to my posts' }), null)
-  assert.equal(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '5', text: '订阅我的更新', isPinned: true }), null)
-  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '7', text: '置顶的普通帖子', isPinned: true }), { id: '7', text: '置顶的普通帖子' })
-  assert.deepEqual(poster.usableSourceTweet({ handle: 'wangchangfu88', id: '6', text: '聊聊订阅制产品的定价' }), { id: '6', text: '聊聊订阅制产品的定价' })
   assert.match(posterSource, /MIN_INTERVAL_MS = 25 \* 60 \* 1000/)
   assert.match(posterSource, /MAX_INTERVAL_MS = 35 \* 60 \* 1000/)
   assert.match(posterSource, /RETRY_INTERVAL_MS = 60 \* 1000/)
@@ -1058,7 +1157,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(posterSource, /visibleSubmits/)
   assert.match(posterSource, /上次异常：\$\{state\.lastError\}/)
   assert.match(posterSource, /正在重试待发列表中的这一条/)
-  assert.match(posterSource, /发帖框已有内容，正在直接发送/)
+  assert.match(posterSource, /发帖框有未发送内容，请手动处理/)
   assert.ok(posterSource.indexOf('const queued = editorText') < posterSource.indexOf('state.nextPostAt > Date.now()'))
   assert.ok(posterSource.indexOf('首页已打开，等待发帖框和 Post 按钮加载') < posterSource.indexOf('const queued = editorText'))
   assert.match(posterSource, /await waitForHomeComposer\(30000\)/)
@@ -1343,7 +1442,8 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.taskTabUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications?xrcAssistant=notifications')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home'), 'https://x.com/home?xrcAssistant=mutual-unfollow')
   assert.equal(background.taskTabUrl('poster', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=poster')
-  assert.equal(background.taskTabUrl('poster', 'https://x.com/home', { start: true }), 'https://x.com/wangchangfu88?xrcAssistant=poster&xrcStart=1')
+  assert.equal(background.taskTabUrl('poster', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=poster&xrcStart=1')
+  assert.equal(background.taskPageUrl('poster', 'https://x.com/wangchangfu88', { start: true }), 'https://x.com/home')
   assert.equal(background.taskPageUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications')
   assert.equal(background.taskPageUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following')
   assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), /^https:\/\/twitter.com\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers\?xrcAssistant=mutual-targetFollow$/)
@@ -1370,8 +1470,8 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /max_tokens: 96/)
   assert.match(backgroundText, /已被 X 判定为重复/)
   assert.match(backgroundText, /xrc-ai-post-generate/)
-  assert.match(backgroundText, /xrc-ai-source-rewrite/)
-  assert.match(backgroundText, /保留原帖第一行钩子的原句/)
+  assert.match(backgroundText, /xrc-ai-news-rewrite/)
+  assert.doesNotMatch(backgroundText, /xrc-ai-source-rewrite/)
   assert.match(backgroundText, /max_tokens: 160/)
   assert.match(backgroundText, /这次用一两句白话带到 AI 或 Web3/)
   assert.doesNotMatch(backgroundText, /xrc-ai-test|连通测试|test = false/)

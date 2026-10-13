@@ -14,6 +14,15 @@ const KIND_LABELS = {
   topics: '专题分析',
   special: '专题',
   resources: '资源',
+  juejin: '掘金文章',
+}
+
+const CREATION_START = {
+  date: '2019-03-11',
+  kind: 'juejin',
+  title: '创作起点 · NVIDIA GPU 矩阵运算',
+  summary: '掘金快照记录当日发布 1 篇文章。原文链接留在这里，作为 30 年内容创作计划的起点。',
+  href: 'https://juejin.cn/post/6844903794283642887',
 }
 
 function isValidDate(value) {
@@ -98,7 +107,7 @@ function heatColorClass(value) {
 export default function CreationCalendarClient({ items }) {
   const juejinCountsByDate = JUEJIN_ACTIVITY_SNAPSHOT.countsByDate
 
-  const datedItems = useMemo(
+  const localItems = useMemo(
     () =>
       items
         .filter((item) => isValidDate(item.date))
@@ -106,13 +115,18 @@ export default function CreationCalendarClient({ items }) {
     [items],
   )
 
+  const datedItems = useMemo(
+    () => [...localItems, CREATION_START].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+    [localItems],
+  )
+
   const localCountsByDate = useMemo(() => {
     const map = {}
-    for (const item of datedItems) {
+    for (const item of localItems) {
       map[item.date] = (map[item.date] || 0) + 1
     }
     return map
-  }, [datedItems])
+  }, [localItems])
 
   const years = useMemo(() => {
     const merged = { ...juejinCountsByDate, ...localCountsByDate }
@@ -130,6 +144,21 @@ export default function CreationCalendarClient({ items }) {
       setSelectedYear(years[0])
     }
   }, [years, selectedYear])
+
+  useEffect(() => {
+    const hashDate = decodeURIComponent(window.location.hash.slice(1))
+    if (hashDate === CREATION_START.date) {
+      setSelectedYear(hashDate.slice(0, 4))
+      setSelectedMonth('all')
+      setSelectedDate(hashDate)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedDate === CREATION_START.date && window.location.hash === `#${CREATION_START.date}`) {
+      document.getElementById('calendar-records')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [selectedDate])
 
   const yearItems = useMemo(
     () => datedItems.filter((item) => (selectedYear ? item.date.startsWith(selectedYear) : true)),
@@ -176,7 +205,7 @@ export default function CreationCalendarClient({ items }) {
   const weekMonthLabels = useMemo(() => buildWeekMonthLabels(yearWeeks), [yearWeeks])
 
   const juejinTotalAll = JUEJIN_ACTIVITY_SNAPSHOT.totalPosts
-  const totalContentCount = datedItems.length + juejinTotalAll
+  const totalContentCount = localItems.length + juejinTotalAll
 
   const visibleItems = useMemo(() => {
     if (selectedDate) return monthItems.filter((item) => item.date === selectedDate)
@@ -205,7 +234,7 @@ export default function CreationCalendarClient({ items }) {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="总内容数" value={String(totalContentCount)} note={articleSourceCountLabel(datedItems.length, juejinTotalAll)} />
+        <StatCard label="总内容数" value={String(totalContentCount)} note={articleSourceCountLabel(localItems.length, juejinTotalAll)} />
         <StatCard label="当前年份" value={selectedYear || '-'} note={`${yearTotal} 篇（${articleSourceCountLabel(localTotal, juejinTotal)}）`} />
         <StatCard label="活跃天数" value={String(activeDays)} note="该年有内容的日期" />
         <StatCard
@@ -353,7 +382,7 @@ export default function CreationCalendarClient({ items }) {
         </section>
       ) : null}
 
-      <section className="space-y-3">
+      <section id="calendar-records" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-[#262721] dark:text-gray-100">
             {selectedDate ? `${formatDate(selectedDate)} 发布内容` : '时间列表'}
@@ -376,6 +405,7 @@ export default function CreationCalendarClient({ items }) {
               <Link
                 key={`${item.href}-${item.title}`}
                 href={item.href}
+                {...(item.kind === 'juejin' ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className="block rounded-md border border-[#eee] bg-white p-3 no-underline transition-colors hover:border-[#c0c2b4] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
               >
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#787a6c] dark:text-gray-400">

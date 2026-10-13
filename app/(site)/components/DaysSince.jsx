@@ -33,7 +33,6 @@ function computeProgress(sinceISO, years) {
 export default function DaysSince({
   sinceISO = '2019-03-11',
   years = 30,
-  href = 'https://juejin.cn/post/6844903794283642887',
   label = '持续内容创作',
   compact = false,
 }) {
@@ -47,15 +46,14 @@ export default function DaysSince({
   const daysFmt = days.toLocaleString('en-US')
   const totalFmt = total.toLocaleString('en-US')
   const title = `${label} · 起点 ${sinceISO} · ${years} 年目标 · ${pct.toFixed(1)}%`
+  const calendarHref = `/articles/creation-calendar#${sinceISO}`
 
   if (compact) {
     return (
       <div className="group block w-full rounded-md px-1.5 py-1">
         <div className="days-since-row is-compact flex items-center justify-center whitespace-nowrap font-mono text-[#797b70] dark:text-[#8e9ab0]">
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href={calendarHref}
             title={title}
             className="no-external-arrow inline-flex items-baseline gap-1 !no-underline hover:!no-underline"
           >
@@ -67,7 +65,7 @@ export default function DaysSince({
             >
               ↗
             </span>
-          </a>
+          </Link>
           <Link
             href="/articles/creation-calendar"
             aria-label="查看创作日历"
@@ -88,10 +86,8 @@ export default function DaysSince({
   }
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
+    <Link
+      href={calendarHref}
       title={title}
       className="no-external-arrow group block w-full rounded-md px-1.5 py-1 !no-underline hover:!no-underline"
     >
@@ -116,6 +112,6 @@ export default function DaysSince({
           style={{ width: `${pct}%` }}
         />
       </div>
-    </a>
+    </Link>
   )
 }

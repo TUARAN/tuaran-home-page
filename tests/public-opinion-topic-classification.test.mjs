@@ -7,7 +7,13 @@ test('topic labels require evidence in the displayed title', () => {
   assert.equal(classifyOpinionTopic('OpenAI raises API prices'), null)
   assert.equal(classifyOpinionTopic('AI hardware market grows'), null)
   assert.equal(classifyOpinionTopic('Creator of a JavaScript library discusses AI'), null)
-  assert.equal(classifyOpinionTopic('DeepSeek releases a new model'), 'china-llm')
+  assert.equal(classifyOpinionTopic('DeepSeek releases a new model'), 'llm')
+  assert.equal(classifyOpinionTopic('OpenAI releases a new model'), 'llm')
+  assert.equal(classifyOpinionTopic('OpenAI 发布新模型'), 'llm')
+  assert.equal(classifyOpinionTopic('Claude Sonnet and Gemini compete on coding benchmarks'), 'llm')
+  assert.equal(classifyOpinionTopic('Llama open weights draw developer interest'), 'llm')
+  assert.equal(classifyOpinionTopic('OpenAI adjusts API pricing'), null)
+  assert.equal(classifyOpinionTopic('Claude Code updates its editor integration'), null)
   assert.equal(classifyOpinionTopic('Claude Code adds agent teams'), 'ai-agents')
   assert.equal(classifyOpinionTopic('Qwen launches an Agent framework'), 'ai-agents')
   assert.equal(classifyOpinionTopic('Cloudflare updates Workers deployment'), 'cloud-dev')
@@ -17,11 +23,14 @@ test('topic labels require evidence in the displayed title', () => {
 test('stored posts are relabeled or omitted according to their current titles', () => {
   assert.deepEqual(classifyOpinionPosts([
     { id: 'a', topicId: 'ai-agents', text: 'Qwen launches a model' },
-    { id: 'b', topicId: 'china-llm', text: 'OpenAI adjusts API pricing' },
-  ]), [{ id: 'a', topicId: 'china-llm', text: 'Qwen launches a model' }])
+    { id: 'b', topicId: 'china-llm', text: 'OpenAI releases a new model' },
+  ]), [
+    { id: 'a', topicId: 'llm', text: 'Qwen launches a model' },
+    { id: 'b', topicId: 'llm', text: 'OpenAI releases a new model' },
+  ])
 })
 
-test('screenshot examples do not appear under Chinese models', () => {
+test('unrelated screenshot examples do not appear under large models', () => {
   const titles = [
     'Ask HN：如何减缓 AI 发展速度（也请评估我的想法）',
     'Show HN：Opus 5.5在3小时/8个提示内制作出功能齐全的Figma克隆',
@@ -32,7 +41,7 @@ test('screenshot examples do not appear under Chinese models', () => {
   const classified = classifyOpinionPosts(titles.map((text, index) => ({
     id: String(index), topicId: 'china-llm', text,
   })))
-  assert.ok(classified.every((post) => post.topicId !== 'china-llm'))
+  assert.ok(classified.every((post) => post.topicId !== 'llm'))
   assert.deepEqual(classified.map((post) => post.id), ['2'])
   assert.equal(classified[0].topicId, 'ai-agents')
 })

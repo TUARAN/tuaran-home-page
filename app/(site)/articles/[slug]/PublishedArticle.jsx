@@ -81,7 +81,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         dateTime={publishedTime}
         version={resolveContentVersion(article)}
         readingMinutes={readingMinutes(article.contentText)}
-        pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        pvNode={<ContentPvBeacon category="article" slug={article.slug} display prefix="·" />}
         metaExtras={(
           <>
             <span aria-hidden="true">·</span>

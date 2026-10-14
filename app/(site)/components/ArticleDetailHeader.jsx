@@ -77,10 +77,7 @@ export default function ArticleDetailHeader({
           </>
         ) : null}
         {pvNode ? (
-          <>
-            <span aria-hidden="true">·</span>
-            {pvNode}
-          </>
+          pvNode
         ) : null}
         {actions}
       </div>

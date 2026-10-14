@@ -248,6 +248,7 @@ export default async function ResearchDetailPage({ params }) {
             slug={entry.slug}
             display
             initialPv={entry.pv}
+            prefix="·"
           />
         )}
         metaExtras={(

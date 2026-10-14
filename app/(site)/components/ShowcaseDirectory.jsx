@@ -204,7 +204,7 @@ function ItemMeta({ item, hideDuplicateCategory = false }) {
 }
 
 function Metric({ item, pv }) {
-  if (item.pvKey) return <span>阅读量 {formatPv(pv)}</span>
+  if (item.pvKey) return Number(pv) > 0 ? <span>阅读量 {formatPv(pv)}</span> : null
   return item.metricLabel ? <span>{item.metricLabel}</span> : null
 }
 

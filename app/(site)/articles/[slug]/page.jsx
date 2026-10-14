@@ -310,7 +310,7 @@ export default async function ArticleDetailPage({ params }) {
         dateTime={publishedTime || article.date}
         version={resolveContentVersion(article)}
         readingMinutes={readingMinutes(articleMarkdown)}
-        pvNode={<ContentPvBeacon category="article" slug={article.slug} display />}
+        pvNode={<ContentPvBeacon category="article" slug={article.slug} display prefix="·" />}
         metaExtras={(
           <>
             {article.sourceUrl || isExternalHref(article.href) ? (

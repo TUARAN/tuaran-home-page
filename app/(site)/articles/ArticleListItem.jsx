@@ -98,8 +98,8 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
               <span className="md:hidden">{item.dateLabel || item.date}</span>
             ) : null}
             {item.readingMinutes ? <span className="hidden font-mono text-[11px] md:inline">· {item.readingMinutes} min</span> : null}
-            {'pv' in item ? (
-              <span className="font-mono text-[11px]">{item.dateLabel || item.date ? ' · ' : ''}阅读量 {item.pvLoading ? '-' : formatPv(item.pv)}</span>
+            {!item.pvLoading && Number(item.pv) > 0 ? (
+              <span className="font-mono text-[11px]">{item.dateLabel || item.date ? ' · ' : ''}阅读量 {formatPv(item.pv)}</span>
             ) : null}
           </div>
         </div>

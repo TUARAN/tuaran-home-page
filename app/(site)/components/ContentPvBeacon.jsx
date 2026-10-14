@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { LoadingSpinner } from '../../components/loading/LoadingPrimitives'
 import { MIN_QUALIFIED_READING_MS } from '../../../lib/site/readingAnalyticsQuality.mjs'
 
 const DISPLAY_TIMEOUT_MS = 3_000
@@ -60,7 +59,7 @@ function writeCachedPv(key, value) {
  * 展示与写入解耦：只读 GET 立即读取当前数字，合格 POST 独立后台上报，不阻塞界面。
  * 去重：服务端按「身份 + 内容 + 1 小时桶」幂等；客户端再用 sessionStorage 节流。
  */
-export default function ContentPvBeacon({ category, slug, display = false, initialPv }) {
+export default function ContentPvBeacon({ category, slug, display = false, initialPv, prefix = '' }) {
   const hasInitialPv = Number.isFinite(initialPv)
   const [pv, setPv] = useState(hasInitialPv ? Math.max(0, initialPv) : null)
   const [loading, setLoading] = useState(!hasInitialPv)
@@ -163,16 +162,6 @@ export default function ContentPvBeacon({ category, slug, display = false, initi
 
   if (!display) return null
 
-  if (loading && pv === null) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        <span>阅读量</span>
-        <LoadingSpinner size="sm" />
-        <span className="sr-only">阅读量加载中</span>
-      </span>
-    )
-  }
-
-  if (pv === null) return <span>阅读量 --</span>
-  return <span>阅读量 {formatPv(pv)}</span>
+  if (loading || pv === null || pv <= 0) return null
+  return <span>{prefix ? `${prefix} ` : ''}阅读量 {formatPv(pv)}</span>
 }

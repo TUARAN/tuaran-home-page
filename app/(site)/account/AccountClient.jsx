@@ -18,7 +18,7 @@ const PROVIDER_LABELS = {
   github: 'GitHub',
   google: 'Google',
   email: '邮箱密码',
-  supabase: '新邮箱登录',
+  supabase: '邮箱密码',
   credential: '登录凭证',
 }
 const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
@@ -294,7 +294,7 @@ export default function AccountClient({ supabaseEmailEnabled = false }) {
             {loadError ? <p className="py-4 text-sm text-[#a34f47]">{loadError}</p> : null}
             {!loadError && !identitiesLoaded ? <p className="py-4 text-sm text-[var(--site-muted)]">正在读取登录方式…</p> : null}
             {identities.map((identity) => {
-              const canUnbind = !['email', 'credential'].includes(identity.provider) && identities.length > 1
+              const canUnbind = !['email', 'credential', 'supabase'].includes(identity.provider) && identities.length > 1
               return <div key={`${identity.provider}:${identity.provider_account_id}`} className="flex items-center gap-3 border-b border-[var(--site-line)] py-4">
                 <span className="min-w-16 text-[14px] font-medium text-[var(--site-ink)]">{identityName(identity)}</span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--site-muted)]">{identity.provider_name || identity.provider_login || '已绑定'}</span>
@@ -311,14 +311,14 @@ export default function AccountClient({ supabaseEmailEnabled = false }) {
             {!identitiesLoaded ? <p className="py-4 text-sm text-[var(--site-muted)]">正在读取可添加方式…</p> : <>
               {!githubBound ? <Link href="/api/auth/login?provider=github&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>GitHub</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {!googleBound ? <Link href="/api/auth/login?provider=google&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>Google</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
-              {!wechatBound && (WECHAT_LOGIN_ENABLED ? <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>微信</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : <div className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px]"><span className="text-[var(--site-muted)]">微信</span><span className="text-[11px] text-[var(--site-green)]">登录审核中</span></div>)}
+              {!wechatBound && WECHAT_LOGIN_ENABLED ? <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>微信</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {supabaseEmailEnabled && !supabaseBound ? <form onSubmit={bindSupabaseEmail} className="space-y-3 border-b border-[var(--site-line)] py-4">
-                <p className="text-sm font-medium text-[var(--site-ink)]">绑定新邮箱登录方式</p>
-                <p className="text-xs text-[var(--site-muted)]">先注册并确认邮箱，再在此输入邮箱密码。绑定后使用新邮箱登录仍会进入当前账号。</p>
+                <p className="text-sm font-medium text-[var(--site-ink)]">绑定邮箱登录</p>
+                <p className="text-xs text-[var(--site-muted)]">先注册并确认邮箱，再在此输入邮箱密码。绑定后使用邮箱登录会进入当前账号。</p>
                 <input type="email" required autoComplete="email" value={supabaseEmail} onChange={(event) => setSupabaseEmail(event.target.value)} placeholder="邮箱" className="w-full rounded-lg border border-[var(--site-line)] bg-transparent px-3 py-2 text-sm" />
-                <input type="password" required autoComplete="current-password" value={supabasePassword} onChange={(event) => setSupabasePassword(event.target.value)} placeholder="新邮箱登录密码" className="w-full rounded-lg border border-[var(--site-line)] bg-transparent px-3 py-2 text-sm" />
+                <input type="password" required autoComplete="current-password" value={supabasePassword} onChange={(event) => setSupabasePassword(event.target.value)} placeholder="邮箱登录密码" className="w-full rounded-lg border border-[var(--site-line)] bg-transparent px-3 py-2 text-sm" />
                 <button type="submit" disabled={bindingSupabase} className="rounded-lg bg-[var(--site-ink)] px-4 py-2 text-sm text-[var(--page-bg)] disabled:opacity-50">{bindingSupabase ? '绑定中…' : '验证并绑定'}</button>
-                <Link href="/register" className="ml-3 text-xs underline">还没有新邮箱账号？先注册</Link>
+                <Link href="/register" className="ml-3 text-xs underline">还没有邮箱账号？先注册</Link>
               </form> : null}
               {githubBound && googleBound && (wechatBound || !WECHAT_LOGIN_ENABLED) ? <p className="py-4 text-[13px] text-[var(--site-muted)]">当前可用的登录方式均已添加。</p> : null}
             </>}

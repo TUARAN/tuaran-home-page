@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 
 import BackToTopButton from './BackToTopButton'
 import CommunityLoginPrompt from './CommunityLoginPrompt'
-import EmailActivationPrompt from './EmailActivationPrompt'
 import PwaInstallGuide from './PwaInstallGuide'
 import SiteFooter from './SiteFooter'
 import SiteHeader from './SiteHeader'
@@ -51,7 +50,6 @@ export default function LayoutChromeControls() {
   return (
     <PwaInstallGuide>
       {hideHeader ? (showHomeButton ? <RichPageHomeButton /> : null) : <SiteHeader />}
-      <EmailActivationPrompt />
       <CommunityLoginPrompt />
       <BackToTopButton />
       <SiteMobileTabBar />

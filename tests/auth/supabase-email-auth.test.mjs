@@ -19,7 +19,7 @@ test('Supabase email registration requests confirmation on the 2aran login URL',
     assert.deepEqual(JSON.parse(options.body), {
       email: 'reader@example.com', password: 'a-valid-password', data: { display_name: '读者' },
     })
-    return { ok: true, json: async () => ({ user: { id: 'new-user' } }) }
+    return { ok: true, json: async () => ({ id: 'new-user', email: 'reader@example.com' }) }
   })
   assert.deepEqual(result, { ok: true, pendingConfirmation: true })
 })

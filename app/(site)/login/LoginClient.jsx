@@ -23,7 +23,6 @@ const ERROR_MESSAGES = {
   EMAIL_NOT_CONFIRMED: '请先打开确认邮件，完成邮箱确认后再登录。',
   SUPABASE_AUTH_UNAVAILABLE: '邮箱登录服务暂时不可用，请稍后再试。',
   RATE_LIMITED: '请求过于频繁，请稍后再试。',
-  LEGACY_ACCOUNT_LINK_REQUIRED: '这个邮箱已有旧站账号。请先使用原密码登录，再到账号中心绑定新邮箱登录方式。',
   EMAIL_CONFIRMATION_FAILED: '邮箱确认链接无效或已过期，请重新发送确认邮件。',
 }
 const LAST_LOGIN_METHOD_COOKIE = 'tuaran_last_login_method'
@@ -86,7 +85,7 @@ function SocialLogin({ href, icon, label, lastUsed }) {
 const inputClassName =
   'min-h-11 w-full rounded-lg border border-[#ccc9c1] bg-transparent px-3 py-2.5 text-base text-[#171714] outline-none transition placeholder:text-[#85837d] hover:border-[#aaa69d] focus:border-[#1b1b19] focus:ring-1 focus:ring-[#1b1b19] dark:border-[#3a4249] dark:text-gray-100 dark:placeholder:text-[#778087] dark:hover:border-[#616b73] dark:focus:border-[#d8d4ca] dark:focus:ring-[#d8d4ca] sm:text-sm'
 
-export default function LoginClient({ supabaseEmailEnabled = false }) {
+export default function LoginClient() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [credential, setCredential] = useState('')
@@ -97,7 +96,6 @@ export default function LoginClient({ supabaseEmailEnabled = false }) {
   const [lastLoginMethod, setLastLoginMethod] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showCredential, setShowCredential] = useState(false)
-  const [legacyEmail, setLegacyEmail] = useState(false)
   const [emailConfirmed, setEmailConfirmed] = useState(false)
 
   useEffect(() => {
@@ -120,7 +118,7 @@ export default function LoginClient({ supabaseEmailEnabled = false }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, authProvider: legacyEmail ? 'legacy' : 'supabase' }),
+        body: JSON.stringify({ email, password }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || 'LOGIN_FAILED')
@@ -207,8 +205,7 @@ export default function LoginClient({ supabaseEmailEnabled = false }) {
         </div>
 
         <form onSubmit={login} className="mt-5 space-y-4">
-          {supabaseEmailEnabled ? <p className="text-xs leading-5 text-[#676660] dark:text-[#9ba2a5]">已有旧站账号请先用原密码登录，再注册并确认邮箱，最后在账号中心绑定，以保留原有数据。</p> : null}
-          {supabaseEmailEnabled && emailConfirmed ? <p className="text-sm text-emerald-700 dark:text-emerald-300">邮箱确认完成，请登录。</p> : null}
+          {emailConfirmed ? <p className="text-sm text-emerald-700 dark:text-emerald-300">邮箱确认完成，请登录。</p> : null}
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-[#1b1b18] dark:text-gray-100">电子邮箱</span>
             <input
@@ -262,7 +259,6 @@ export default function LoginClient({ supabaseEmailEnabled = false }) {
           </button>
         </form>
 
-        {supabaseEmailEnabled ? <button type="button" onClick={() => setLegacyEmail((value) => !value)} className="mt-3 text-xs text-[#676660] underline dark:text-[#9ba2a5]">{legacyEmail ? '使用新邮箱登录方式' : '已有旧站账号？使用原密码登录'}</button> : null}
 
         <div className="mt-5 border-t border-[#d6d3cc] pt-3 dark:border-[#343c43]">
           <button

@@ -1,6 +1,4 @@
 import RegisterClient from './RegisterClient'
-import { getIntegrationEnv } from '../../../lib/site/integrationKeys'
-import { isSupabaseEmailAuthEnabled } from '../../../lib/supabase/emailAuth'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -17,5 +15,5 @@ export const metadata = {
 }
 
 export default function RegisterPage() {
-  return <RegisterClient supabaseEmailEnabled={isSupabaseEmailAuthEnabled(getIntegrationEnv())} />
+  return <RegisterClient />
 }

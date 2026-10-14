@@ -1,69 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-
-import { normalizeReturnTo } from '../../../lib/site/returnTo'
+import { useState } from 'react'
 
 const ERROR_MESSAGES = {
   INVALID_EMAIL: '请输入有效的邮箱地址。',
-  EMAIL_ALREADY_REGISTERED: '这个邮箱已经注册。',
-  CODE_SENT_TOO_RECENTLY: '验证码发送过于频繁，请稍后再试。',
-  EMAIL_DAILY_LIMIT_REACHED: '这个邮箱今天发送验证码的次数已达上限。',
-  IP_RATE_LIMIT_REACHED: '当前网络请求过于频繁，请稍后再试。',
-  SEND_CODE_FAILED: '验证码发送失败，请稍后再试。',
-  INVALID_CODE_FORMAT: '请输入 6 位数字验证码。',
   INVALID_PASSWORD: '密码长度需要在 8 到 128 位之间。',
   INVALID_NAME: '请输入不超过 50 个字符的昵称。',
-  CODE_NOT_FOUND: '请先发送验证码。',
-  CODE_EXPIRED: '验证码已过期，请重新发送。',
-  CODE_ATTEMPTS_EXCEEDED: '验证码尝试次数过多，请重新发送。',
-  INVALID_CODE: '验证码不正确。',
   REGISTER_FAILED: '注册失败，请稍后再试。',
+  RATE_LIMITED: '请求过于频繁，请稍后再试。',
+  SUPABASE_AUTH_UNAVAILABLE: '邮箱服务暂时不可用，请稍后再试。',
 }
-const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
 
 function messageFor(error) {
   return ERROR_MESSAGES[error] || '请求失败，请稍后再试。'
 }
 
-export default function RegisterClient({ supabaseEmailEnabled = false }) {
+export default function RegisterClient() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
-  const [code, setCode] = useState('')
-  const [sending, setSending] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
-  const [countdown, setCountdown] = useState(0)
-
-  useEffect(() => {
-    if (countdown <= 0) return undefined
-    const timer = setTimeout(() => setCountdown((value) => value - 1), 1000)
-    return () => clearTimeout(timer)
-  }, [countdown])
-
-  async function sendCode() {
-    setSending(true)
-    setError('')
-    setNotice('')
-    try {
-      const response = await fetch('/api/auth/email/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'register' }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || 'SEND_CODE_FAILED')
-      setNotice('验证码已发送，请检查收件箱和垃圾邮件目录。')
-      setCountdown(60)
-    } catch (err) {
-      setError(messageFor(err.message))
-    } finally {
-      setSending(false)
-    }
-  }
 
   async function register(event) {
     event.preventDefault()
@@ -74,19 +33,13 @@ export default function RegisterClient({ supabaseEmailEnabled = false }) {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, password, code }),
+        body: JSON.stringify({ email, name, password }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || 'REGISTER_FAILED')
 
-      if (data?.pendingConfirmation) {
-        setNotice('确认邮件已发送，请打开邮件确认邮箱后返回登录。')
-        setPassword('')
-        return
-      }
-
-      const returnTo = new URLSearchParams(window.location.search).get('returnTo')
-      window.location.href = normalizeReturnTo(returnTo)
+      setNotice('确认邮件已发送，请打开邮件确认邮箱后返回登录。')
+      setPassword('')
     } catch (err) {
       setError(messageFor(err.message))
     } finally {
@@ -100,26 +53,10 @@ export default function RegisterClient({ supabaseEmailEnabled = false }) {
         <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-[#9a7b45] dark:text-[#929870]">
           Account
         </p>
-        <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">{supabaseEmailEnabled ? '邮箱注册' : '邮箱验证码注册'}</h1>
+        <h1 className="mb-2 text-2xl font-semibold text-[#1a1b17] dark:text-gray-100">邮箱注册</h1>
         <p className="mb-8 text-sm leading-6 text-[#65665d] dark:text-[#9aa6b6]">
-          {supabaseEmailEnabled ? '注册后请查看邮箱确认邮件，再返回登录。已有旧站账号请先登录并在账号中心绑定，原有数据会保留。' : '验证码 10 分钟内有效。注册成功后会自动登录；微信注册/登录正在审核中。'}
+          注册后请查看邮箱确认邮件，再返回登录。已有 GitHub 或 Google 账号可登录后在账号中心绑定邮箱。
         </p>
-
-        {WECHAT_LOGIN_ENABLED ? (
-          <Link href="/api/auth/login?provider=wechat&returnTo=%2F" className="mb-6 flex min-h-12 items-center justify-center rounded-xl bg-[#07a443] px-4 py-2.5 text-center text-sm font-medium text-white no-underline transition hover:bg-[#078c3a]">
-            微信注册 / 登录
-          </Link>
-        ) : (
-          <span className="mb-6 flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl border border-dashed border-[#b7c7b2] bg-[#eff5ed] px-4 py-2.5 text-center text-sm font-medium text-[#597154] dark:border-[#3b5b40] dark:bg-[#16261a] dark:text-[#9ac596]">
-            微信注册 / 登录 · 待开放
-          </span>
-        )}
-
-        <div className="my-6 flex items-center gap-3 text-xs text-[#898a7f] dark:text-[#738095]">
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-          <span>或使用邮箱</span>
-          <span className="h-px flex-1 bg-[#d3d5cb] dark:bg-[#2d3746]" />
-        </div>
 
         <form onSubmit={register} className="space-y-5">
           <label className="block">
@@ -134,31 +71,8 @@ export default function RegisterClient({ supabaseEmailEnabled = false }) {
                 placeholder="you@example.com"
                 className="min-w-0 flex-1 rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 text-sm text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
               />
-              {!supabaseEmailEnabled ? <button
-                type="button"
-                onClick={sendCode}
-                disabled={sending || countdown > 0}
-                className="shrink-0 rounded-xl bg-[#24251d] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#353529] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#a7ac8d] dark:text-[#17130d] dark:hover:bg-[#b6bc9d]"
-              >
-                {sending ? '发送中…' : countdown > 0 ? `${countdown}s` : '发送验证码'}
-              </button> : null}
             </div>
           </label>
-
-          {!supabaseEmailEnabled ? <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">验证码</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              required
-              maxLength={6}
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="6 位数字验证码"
-              className="w-full rounded-xl border border-[#caccc0] bg-white px-3.5 py-2.5 text-sm tracking-[0.18em] text-[#1a1b17] outline-none transition focus:border-[#a37b3c] focus:ring-2 focus:ring-[#a7ac8d]/30 dark:border-[#344052] dark:bg-[#0d131b] dark:text-gray-100"
-            />
-          </label> : null}
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-[#35362f] dark:text-gray-200">昵称</span>
@@ -197,7 +111,7 @@ export default function RegisterClient({ supabaseEmailEnabled = false }) {
             disabled={submitting}
             className="w-full rounded-xl bg-[#8b5a1f] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#734817] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#d7a85c] dark:text-[#1d160d] dark:hover:bg-[#9aa170]"
           >
-            {submitting ? '注册中…' : supabaseEmailEnabled ? '注册并发送确认邮件' : '注册并登录'}
+            {submitting ? '注册中…' : '注册并发送确认邮件'}
           </button>
         </form>
 

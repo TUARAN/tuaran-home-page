@@ -10,7 +10,6 @@ import {
   signSession,
 } from '../../../../lib/auth/edgeSession'
 import { getD1 } from '../../../../lib/db/d1'
-import { authenticateEmailUser, authenticateOrCreateEmailUser } from '../../../../lib/auth/emailAuth'
 import {
   cleanupRateLimits,
   enforceRateLimits,
@@ -21,7 +20,7 @@ import { normalizeReturnTo } from '../../../../lib/site/returnTo'
 import { recordUserLogin } from '../../../../lib/auth/userDirectory'
 import { clearGuestCookie, mergeGuestFromRequest } from '../../../../lib/auth/guestSession'
 import { awardRegisterOnLogin } from '../../../../lib/ledger/points'
-import { ensureIdentityForUser, hasLegacyEmailAccount, resolveEmailLogin, resolveIdentityForLogin } from '../../../../lib/auth/accountIdentities'
+import { ensureIdentityForUser, resolveIdentityForLogin } from '../../../../lib/auth/accountIdentities'
 import { getIntegrationEnv } from '../../../../lib/site/integrationKeys'
 import { isSupabaseEmailAuthEnabled, signInSupabaseEmail } from '../../../../lib/supabase/emailAuth'
 
@@ -62,7 +61,7 @@ export async function GET(req) {
   }
   if (isWechat && (!wechatLoginEnabled || !wechatAppId || !wechatAppSecret)) {
     return Response.json(
-      { error: 'WECHAT_LOGIN_PENDING_REVIEW', message: '微信登录正在审核，暂未开放。' },
+      { error: 'UNSUPPORTED_AUTH_PROVIDER' },
       { status: 503 }
     )
   }
@@ -137,42 +136,27 @@ export async function POST(req) {
     ])
     if (!limit.ok) return rateLimitResponse(limit)
 
-    const supabaseEnabled = isSupabaseEmailAuthEnabled(getIntegrationEnv())
+    const env = getIntegrationEnv()
+    if (!isSupabaseEmailAuthEnabled(env)) {
+      return Response.json({ error: 'SUPABASE_AUTH_UNAVAILABLE' }, { status: 503 })
+    }
     let user
-    let createdPending = false
-    if (supabaseEnabled && body?.authProvider !== 'legacy') {
-      const result = await signInSupabaseEmail(getIntegrationEnv(), body?.email, body?.password)
-      if (!result.ok) return Response.json({ error: result.error }, { status: result.status || 401 })
-      const { providerAccountId, profile } = result
-      const fallbackUser = { id: `supabase:${providerAccountId}`, ...profile }
-      let resolved = await resolveIdentityForLogin({ provider: 'supabase', providerAccountId, profile, fallbackUser })
-      if (!resolved.ok) return Response.json({ error: resolved.error }, { status: resolved.status || 500 })
-      user = resolved.user
-      if (resolved.isNewAccount) {
-        const legacyAccount = await hasLegacyEmailAccount(profile.email)
-        if (!legacyAccount.ok) return Response.json({ error: legacyAccount.error }, { status: legacyAccount.status || 500 })
-        if (legacyAccount.exists) return Response.json({ error: 'LEGACY_ACCOUNT_LINK_REQUIRED' }, { status: 409 })
-        const ensured = await ensureIdentityForUser({ provider: 'supabase', providerAccountId, userId: user.id, profile })
-        if (!ensured.ok && ensured.error === 'IDENTITY_ALREADY_BOUND') {
-          resolved = await resolveIdentityForLogin({ provider: 'supabase', providerAccountId, profile, fallbackUser })
-          if (!resolved.ok || resolved.isNewAccount) return Response.json({ error: 'IDENTITY_RESOLUTION_FAILED' }, { status: 409 })
-          user = resolved.user
-        } else if (!ensured.ok) {
-          return Response.json({ error: ensured.error }, { status: ensured.status || 500 })
-        }
+    const result = await signInSupabaseEmail(env, body?.email, body?.password)
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status || 401 })
+    const { providerAccountId, profile } = result
+    const fallbackUser = { id: `supabase:${providerAccountId}`, ...profile }
+    let resolved = await resolveIdentityForLogin({ provider: 'supabase', providerAccountId, profile, fallbackUser })
+    if (!resolved.ok) return Response.json({ error: resolved.error }, { status: resolved.status || 500 })
+    user = resolved.user
+    if (resolved.isNewAccount) {
+      const ensured = await ensureIdentityForUser({ provider: 'supabase', providerAccountId, userId: user.id, profile })
+      if (!ensured.ok && ensured.error === 'IDENTITY_ALREADY_BOUND') {
+        resolved = await resolveIdentityForLogin({ provider: 'supabase', providerAccountId, profile, fallbackUser })
+        if (!resolved.ok || resolved.isNewAccount) return Response.json({ error: 'IDENTITY_RESOLUTION_FAILED' }, { status: 409 })
+        user = resolved.user
+      } else if (!ensured.ok) {
+        return Response.json({ error: ensured.error }, { status: ensured.status || 500 })
       }
-    } else {
-      const result = supabaseEnabled
-        ? await authenticateEmailUser(body?.email, body?.password)
-        : await authenticateOrCreateEmailUser(body?.email, body?.password)
-      if (!result.ok) return Response.json(result, { status: result.status || 401 })
-      if (supabaseEnabled && result.user?.status !== 'active') {
-        return Response.json({ error: 'EMAIL_NOT_CONFIRMED' }, { status: 403 })
-      }
-      const account = await resolveEmailLogin(result.user)
-      if (!account.ok) return Response.json({ error: account.error }, { status: account.status || 500 })
-      user = account.user
-      createdPending = Boolean(result.createdPending)
     }
     await recordUserLogin(user)
     await awardRegisterOnLogin(user)
@@ -192,7 +176,7 @@ export async function POST(req) {
     )
     headers.append('Set-Cookie', serializeLastLoginMethodCookie('email', { secure }))
     if (mergedGid) headers.append('Set-Cookie', clearGuestCookie())
-    return Response.json({ ok: true, user, createdPending }, { headers })
+    return Response.json({ ok: true, user }, { headers })
   } catch (error) {
     console.error('email login failed', error)
     return Response.json({ error: 'LOGIN_FAILED' }, { status: 500 })

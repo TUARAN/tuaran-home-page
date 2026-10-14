@@ -15,6 +15,7 @@ pages_build_output_dir = ".vercel/output/static"
 [vars]
 SUPABASE_URL = "https://xyslkdmevmddwzacrzvn.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable__SaOrFB2d-PqsAL1WSwrnA_VaXddbWc"
+SUPABASE_EMAIL_AUTH_ENABLED = "true"
 GITHUB_ID = "Ov23li1wLMVXeIzcprTU"
 NEXTAUTH_URL = "https://2aran.com"
 VOICE_TASK_OWNER_IDS = "TUARAN"

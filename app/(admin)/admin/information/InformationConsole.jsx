@@ -6,6 +6,7 @@ import { decryptPayload, encryptPayload } from '../../../../lib/longCompass/cryp
 import { AdminPage, Section } from '../../components/ui'
 
 const EMPTY_FORM = {
+  type: 'account',
   label: '',
   account: '',
   password: '',
@@ -18,7 +19,7 @@ const EMPTY_FORM = {
 
 function normalizePlain(value) {
   return {
-    type: 'apple-id',
+    type: value?.type === 'apple-id' ? 'apple-id' : 'account',
     label: String(value?.label || ''),
     account: String(value?.account || ''),
     password: String(value?.password || ''),
@@ -35,6 +36,7 @@ function normalizePlain(value) {
 
 function formToPlain(form) {
   return normalizePlain({
+    type: form.type,
     label: form.label,
     account: form.account,
     password: form.password,
@@ -50,6 +52,7 @@ function formToPlain(form) {
 
 function plainToForm(plain) {
   return {
+    type: plain.type,
     label: plain.label,
     account: plain.account,
     password: plain.password,
@@ -180,7 +183,7 @@ export default function InformationConsole() {
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
-          editingId ? { id: editingId, payload } : { category: 'apple-id', payload }
+          editingId ? { id: editingId, payload } : { category: 'account', payload }
         ),
       })
       const data = await res.json()
@@ -306,8 +309,8 @@ export default function InformationConsole() {
                 <Field label="名称">
                   <input className={INPUT_CLASS} value={form.label} onChange={(event) => updateForm('label', event.target.value)} placeholder="例如：账户 3" />
                 </Field>
-                <Field label="Apple ID / 邮箱 *">
-                  <input className={INPUT_CLASS} type="email" required value={form.account} onChange={(event) => updateForm('account', event.target.value)} autoComplete="off" />
+                <Field label="账号 / 登录标识 *">
+                  <input className={INPUT_CLASS} type="text" required value={form.account} onChange={(event) => updateForm('account', event.target.value)} autoComplete="off" placeholder="邮箱、用户名、手机号等" />
                 </Field>
                 <Field label="密码 *">
                   <input className={INPUT_CLASS} type="password" required value={form.password} onChange={(event) => updateForm('password', event.target.value)} autoComplete="new-password" />
@@ -388,7 +391,7 @@ export default function InformationConsole() {
                     <article key={record.id} className="rounded-xl border border-[#d5d7cd] bg-white/70 p-4 dark:border-[#252e39] dark:bg-[#10161f]">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-[#15140f] dark:text-gray-100">{plain.label || 'Apple ID'}</h3>
+                          <h3 className="font-semibold text-[#15140f] dark:text-gray-100">{plain.label || '账号'}</h3>
                           {archived ? <p className="mt-1 text-xs text-[#77796e] dark:text-gray-400">已归档 · {new Date(record.archivedAt).toLocaleString('zh-CN')}</p> : null}
                           <p className="mt-1 break-all font-mono text-sm text-[#53554d] dark:text-gray-300">{plain.account}</p>
                         </div>

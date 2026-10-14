@@ -132,7 +132,7 @@
 
 .sectionNav {
   position: sticky;
-  top: 0;
+  top: var(--site-header-height);
   z-index: 20;
   display: flex;
   gap: 6px;
@@ -162,7 +162,7 @@
   max-width: 1240px;
   margin: 0 auto;
   padding: 72px clamp(20px, 4vw, 56px);
-  scroll-margin-top: 64px;
+  scroll-margin-top: calc(var(--site-header-height) + 64px);
 }
 
 .sectionHeading {
@@ -280,8 +280,8 @@
 
 .toc {
   position: sticky;
-  top: 62px;
-  max-height: calc(100vh - 78px);
+  top: calc(var(--site-header-height) + 62px);
+  max-height: calc(100vh - var(--site-header-height) - 78px);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -421,7 +421,7 @@
 
 .resultNote { margin: 14px 0; color: rgba(26, 22, 18, 0.62); }
 
-.personCard { overflow: hidden; scroll-margin-top: 76px; }
+.personCard { overflow: hidden; scroll-margin-top: calc(var(--site-header-height) + 76px); }
 .cardMain {
   display: block;
   width: 100%;

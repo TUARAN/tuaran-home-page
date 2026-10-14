@@ -345,7 +345,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
         </header>
 
         {config.categoryTabs ? (
-          <section aria-label={config.filterAriaLabel} className={`sticky ${config.fullWidth ? 'top-0' : 'top-[var(--site-header-height)]'} z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8`}>
+          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div className={`mx-auto ${config.fullWidth ? 'w-full' : 'max-w-[1176px]'}`}>
               <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
                 <h2 className="mb-0 shrink-0 text-[17px] font-bold">{config.resultTitle}</h2>
@@ -410,7 +410,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
             </div>
           </section>
         ) : (
-          <section aria-label={config.filterAriaLabel} className={`sticky ${config.fullWidth ? 'top-0' : 'top-[var(--site-header-height)]'} z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8`}>
+          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div className={`mx-auto flex ${config.fullWidth ? 'w-full' : 'max-w-[1176px]'} flex-col gap-3 lg:flex-row lg:items-center lg:justify-between`}>
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {viewToggle}

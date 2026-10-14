@@ -22,12 +22,13 @@ function isOnchainBlogPath(pathname) {
 function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
+  const isInteractivePage = pathname === '/rich-pages' || (richPage && (richPage.primaryDirectory || 'interactive') === 'interactive')
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
-  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || pathname === '/rich-pages' || isFeaturePage
+  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || (isFeaturePage && !isInteractivePage)
   const hideHeader = HIDE_HEADER_PATHS.has(pathname) || isOnchainBlogPath(pathname)
-  const showHomeButton = pathname === '/rich-pages' || isFeaturePage || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
+  const showHomeButton = (isFeaturePage && !isInteractivePage) || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
 
-  return { hideChrome, hideHeader, showHomeButton, pathname }
+  return { hideChrome, hideHeader, isInteractivePage, showHomeButton, pathname }
 }
 
 function RichPageHomeButton() {
@@ -59,9 +60,9 @@ export default function LayoutChromeControls() {
 }
 
 export function LayoutChromeFooter() {
-  const { hideChrome, pathname } = useChromeVisibility()
+  const { hideChrome, isInteractivePage, pathname } = useChromeVisibility()
 
-  if (hideChrome || pathname === '/') return null
+  if (hideChrome || isInteractivePage || pathname === '/') return null
 
   return <SiteFooter className="mx-auto mb-8 mt-12 w-full max-w-[1120px] px-4" />
 }

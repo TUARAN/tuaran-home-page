@@ -472,7 +472,7 @@ export default function GlobalMarketMapClient() {
         <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-[#837f76] dark:text-gray-500"><span>基准：美元日均</span><span>资料期：2025–2026</span><span>汇率展示：1 USD ≈ 7.1 CNY</span><span>仅作市场结构教育，不构成投资建议</span></div>
       </header>
 
-      <nav className="sticky top-0 z-20 -mx-4 border-b border-[#d9d4c9] bg-[#faf8f2]/95 px-4 py-3 backdrop-blur dark:border-[#30353d] dark:bg-[#0d1116]/95" aria-label="市场地图视图">
+      <nav className="sticky top-[var(--site-header-height)] z-20 -mx-4 border-b border-[#d9d4c9] bg-[#faf8f2]/95 px-4 py-3 backdrop-blur dark:border-[#30353d] dark:bg-[#0d1116]/95" aria-label="市场地图视图">
         <div className="flex gap-1 overflow-x-auto">
           {views.map((item) => {
             const Icon = item.icon

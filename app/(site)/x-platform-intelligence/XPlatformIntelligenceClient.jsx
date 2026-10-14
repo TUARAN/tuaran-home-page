@@ -164,7 +164,7 @@ export default function XPlatformIntelligenceClient() {
           <div className="absolute bottom-0 right-0 hidden select-none font-sans text-[220px] font-black leading-[0.72] tracking-[-0.12em] text-black/[0.035] dark:text-white/[0.035] lg:block" aria-hidden="true">X</div>
         </header>
 
-        <nav className="sticky top-0 z-20 -mx-5 flex gap-6 overflow-x-auto border-b border-black/10 bg-[var(--page-bg)] px-5 py-4 dark:border-white/10 sm:-mx-8 sm:px-8" aria-label="页面目录">
+        <nav className="sticky top-[var(--site-header-height)] z-20 -mx-5 flex gap-6 overflow-x-auto border-b border-black/10 bg-[var(--page-bg)] px-5 py-4 dark:border-white/10 sm:-mx-8 sm:px-8" aria-label="页面目录">
           {[
             ['#decision', '经营判断'], ['#system', '经营系统'], ['#facts', '数据事实'], ['#portfolio', '渠道组合'], ['#risks', '风险与证据'],
           ].map(([href, label], index) => (

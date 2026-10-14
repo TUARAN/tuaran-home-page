@@ -94,7 +94,7 @@
 .toc {
   position: sticky;
   z-index: 10;
-  top: 0;
+  top: var(--site-header-height);
   display: flex;
   gap: 6px;
   overflow-x: auto;
@@ -107,7 +107,7 @@
 .toc a { flex: 0 0 auto; padding: 8px 12px; border-radius: 999px; color: #4b5b66; font-size: 12px; text-decoration: none; }
 .toc a:hover { background: #e6eef3; color: var(--blue); }
 
-.section { padding-block: 78px; scroll-margin-top: 72px; }
+.section { padding-block: 78px; scroll-margin-top: calc(var(--site-header-height) + 72px); }
 .softSection { width: 100%; padding-inline: max(16px, calc((100% - 1180px) / 2)); background: #edf3f6; }
 .sectionHeading { max-width: 760px; }
 .sectionHeading h2 { margin: 12px 0 0; font-family: Georgia, "Noto Serif SC", serif; font-size: clamp(30px, 4.2vw, 50px); font-weight: 600; line-height: 1.2; letter-spacing: -.035em; }

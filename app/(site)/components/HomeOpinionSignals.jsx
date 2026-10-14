@@ -17,6 +17,7 @@ const SENTIMENTS = {
   neutral: { zh: '中性', en: 'Neutral' },
   negative: { zh: '负向', en: 'Negative' },
 }
+const HOME_TOPIC_PRIORITY = { llm: 0, 'ai-agents': 1 }
 
 function formatOpinionTime(value) {
   const date = new Date(value)
@@ -30,7 +31,7 @@ function formatOpinionTime(value) {
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
-  const [activeTopic, setActiveTopic] = useState('ai-agents')
+  const [activeTopic, setActiveTopic] = useState('llm')
 
   useEffect(() => {
     let active = true
@@ -71,7 +72,9 @@ export default function HomeOpinionSignals() {
   const featured = groupedEvents[0]
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
   const posts = selectHomeOpinionPosts(otherPosts, 14)
-  const topics = (liveData?.topics || []).filter((topic) => topic.id === 'ai-agents' || allPosts.some((post) => post.topicId === topic.id))
+  const topics = (liveData?.topics || [])
+    .filter((topic) => topic.id === 'llm' || topic.id === 'ai-agents' || allPosts.some((post) => post.topicId === topic.id))
+    .sort((left, right) => (HOME_TOPIC_PRIORITY[left.id] ?? 2) - (HOME_TOPIC_PRIORITY[right.id] ?? 2))
   const featuredTopic = topics.find((topic) => topic.id === featured?.topicId)?.title
   const collectedAt = Number(liveData?.meta?.lastCollectAt)
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)

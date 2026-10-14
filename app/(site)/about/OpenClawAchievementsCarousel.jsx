@@ -1,19 +1,30 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
-import { getOpenClawAchievementFacts } from '../../../lib/site/openClawAchievements'
+import {
+  getOpenClawAchievementCategory,
+  getOpenClawAchievementFacts,
+  getOpenClawAchievements,
+  OPENCLAW_ACHIEVEMENT_CATEGORIES,
+} from '../../../lib/site/openClawAchievements'
 
 export default function OpenClawAchievementsCarousel({ achievements }) {
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState('newest')
   const [activeIndex, setActiveIndex] = useState(0)
-  const activeItem = achievements[activeIndex]
+  const visibleAchievements = useMemo(
+    () => getOpenClawAchievements(achievements, category, sort),
+    [achievements, category, sort],
+  )
+  const activeItem = visibleAchievements[activeIndex]
 
   const move = useCallback(
     (direction) => {
-      setActiveIndex((current) => (current + direction + achievements.length) % achievements.length)
+      setActiveIndex((current) => (current + direction + visibleAchievements.length) % visibleAchievements.length)
     },
-    [achievements.length],
+    [visibleAchievements.length],
   )
 
   if (!activeItem) return null
@@ -25,15 +36,61 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
       aria-roledescription="carousel"
       aria-label="OpenClaw 已合并贡献"
       onKeyDown={(event) => {
+        if (event.target.tagName === 'SELECT') return
         if (event.key === 'ArrowLeft') move(-1)
         if (event.key === 'ArrowRight') move(1)
       }}
     >
+      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-[#1d2c3e] bg-[#0a1018]/65 p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-mono text-[11px] text-[#9aabc0]">按问题领域查看</p>
+          <label className="flex items-center gap-2 font-mono text-[11px] text-[#9aabc0]">
+            排序
+            <select
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value)
+                setActiveIndex(0)
+              }}
+              className="rounded-md border border-[#2d4d61] bg-[#0d1825] px-2 py-1.5 text-[#e2ecf6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#34e0d0]"
+            >
+              <option value="newest">最新合并优先</option>
+              <option value="oldest">最早合并优先</option>
+            </select>
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-2" aria-label="筛选 OpenClaw 贡献领域">
+          {[{ id: 'all', label: '全部' }, ...OPENCLAW_ACHIEVEMENT_CATEGORIES].map((option) => {
+            const count = option.id === 'all'
+              ? achievements.length
+              : achievements.filter((achievement) => achievement.category === option.id).length
+            if (!count) return null
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={category === option.id}
+                onClick={() => {
+                  setCategory(option.id)
+                  setActiveIndex(0)
+                }}
+                className={`rounded-md border px-2.5 py-1.5 font-mono text-[11px] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#34e0d0] ${
+                  category === option.id
+                    ? 'border-[#34e0d0] bg-[#123b3d] text-[#a6fff5]'
+                    : 'border-[#2d4d61] bg-[#0d1825] text-[#9bb0c6] hover:border-[#34e0d0] hover:text-[#e2ecf6]'
+                }`}
+              >
+                {option.label} <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="font-mono text-[11px] tabular-nums text-[#6f839b]" aria-live="polite">
           <span className="text-[#7fe6da]">{String(activeIndex + 1).padStart(2, '0')}</span>
           <span aria-hidden="true"> / </span>
-          {String(achievements.length).padStart(2, '0')}
+          {String(visibleAchievements.length).padStart(2, '0')}
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -60,7 +117,7 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
       <article
         key={activeItem.number}
         className="grid grid-cols-1 gap-5 rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/65 p-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] lg:p-5"
-        aria-label={`第 ${activeIndex + 1} 项，共 ${achievements.length} 项：${activeItem.title}`}
+        aria-label={`第 ${activeIndex + 1} 项，共 ${visibleAchievements.length} 项：${activeItem.title}`}
       >
         <div className="min-w-0 self-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">
@@ -109,18 +166,24 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
         </a>
       </article>
 
-      <div className="mt-3 flex justify-center gap-2" aria-label="选择 OpenClaw PR">
-        {achievements.map((item, index) => (
+      <div className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="选择 OpenClaw PR">
+        {visibleAchievements.map((item, index) => (
           <button
             key={item.number}
             type="button"
             onClick={() => setActiveIndex(index)}
-            className={`h-1.5 rounded-full transition-all ${
-              index === activeIndex ? 'w-8 bg-[#34e0d0]' : 'w-3 bg-[#2b3d52] hover:bg-[#54708c]'
+            className={`flex min-w-0 items-start gap-2 rounded-lg border px-3 py-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#34e0d0] ${
+              index === activeIndex
+                ? 'border-[#34e0d0] bg-[#123b3d] text-[#e2ecf6]'
+                : 'border-[#243549] bg-[#0a1018]/65 text-[#9aabc0] hover:border-[#34e0d0] hover:text-[#e2ecf6]'
             }`}
-            aria-label={`查看第 ${index + 1} 项：PR #${item.number}`}
+            aria-label={`查看 PR #${item.number}：${item.title}`}
             aria-current={index === activeIndex ? 'true' : undefined}
-          />
+          >
+            <span className="shrink-0 font-mono text-[11px] text-[#7fe6da]">#{item.number}</span>
+            <span className="min-w-0 flex-1 text-[12px] leading-5">{item.title.split(' · ')[1]}</span>
+            <span className="hidden shrink-0 font-mono text-[10px] text-[#6f839b] lg:inline">{getOpenClawAchievementCategory(item)}</span>
+          </button>
         ))}
       </div>
     </div>

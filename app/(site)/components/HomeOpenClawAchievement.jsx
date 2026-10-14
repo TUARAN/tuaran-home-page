@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import Link from 'next/link'
 
 import {
   getOpenClawAchievementFacts,
@@ -77,7 +78,7 @@ export default function HomeOpenClawAchievement() {
               </button>
             </div>
             <div className="home-achievement-modal-switcher">
-              <p>切换查看 {OPENCLAW_ACHIEVEMENT_COUNT} 次合并证明</p>
+              <p>切换查看 {OPENCLAW_ACHIEVEMENT_COUNT} 次合并证明 · <Link href="/about#openclaw-contributions" className="text-[#7fe6da] underline underline-offset-2">按领域筛选与排序</Link></p>
               <div className="home-achievement-modal-switcher-options">
                 {OPENCLAW_ACHIEVEMENTS.map((achievement, index) => (
                   <button

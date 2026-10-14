@@ -514,7 +514,7 @@ export default function AboutPage() {
       </section>
 
       {/* 开源贡献 */}
-      <section className="border-t border-[#1c2a3c]" aria-label="开源贡献">
+      <section id="openclaw-contributions" className="border-t border-[#1c2a3c]" aria-label="开源贡献">
         <div className={`py-8 ${sectionInner}`}>
           <p className={kicker}>Open Source · 开源贡献</p>
           <h2 className="mt-2 border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">

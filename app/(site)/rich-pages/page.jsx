@@ -2,7 +2,6 @@ import RichPagesDirectory from './RichPagesDirectory'
 import {
   ENGINEERING_WORK_CATEGORIES,
   INTERACTIVE_DIRECTORY_WORKS,
-  getRichPagePresentation,
   getRichPagePvKey,
 } from '../../../lib/site/engineeringWorks'
 import { getOwnerPageState } from '../../../lib/admin/adminPageAuth'
@@ -43,12 +42,9 @@ export default async function RichPagesPage() {
   const works = INTERACTIVE_DIRECTORY_WORKS
     .filter((work) => work.audience !== 'owner' || canViewOwnerContent)
     .map((work) => {
-      const presentation = getRichPagePresentation(work)
       return {
         ...work,
         categoryLabel: categoryLabels[work.category] || '互动专题',
-        presentation: presentation.id,
-        presentationLabel: presentation.label,
         pvKey: getRichPagePvKey(work),
       }
     })

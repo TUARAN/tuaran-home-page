@@ -463,7 +463,7 @@
 /*
  * 多维页面只有两套页面壳：
  * 1. site：复用主站导航、页脚、背景和 1120px 内容宽度；
- * 2. feature：全宽沉浸式画布，统一使用深色基底，页面内部只负责内容编排。
+ * 2. feature：独立的全宽画布，页面内部负责配色和内容编排。
  * 页面模式来自 lib/engineeringWorks.js，不允许在路由组件里另起第三套 shell。
  */
 .rich-page-frame {
@@ -492,6 +492,16 @@
   background: var(--rich-page-canvas);
   color: var(--rich-page-ink);
   min-height: 100vh;
+}
+
+.rich-page-frame--feature[data-rich-page-native-theme='true'] {
+  background: var(--page-bg);
+  color: var(--site-ink);
+}
+
+.rich-page-frame--feature > :where(main, div):first-of-type {
+  max-width: none !important;
+  width: 100%;
 }
 
 @media (max-width: 640px) {

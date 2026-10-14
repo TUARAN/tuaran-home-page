@@ -23,9 +23,9 @@ function useChromeVisibility() {
   const pathname = usePathname()
   const richPage = getRichPageByPath(pathname)
   const isFeaturePage = getRichPagePresentation(richPage).id === 'feature'
-  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || isFeaturePage
+  const hideChrome = HIDE_CHROME_PATHS.has(pathname) || pathname === '/rich-pages' || isFeaturePage
   const hideHeader = HIDE_HEADER_PATHS.has(pathname) || isOnchainBlogPath(pathname)
-  const showHomeButton = isFeaturePage || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
+  const showHomeButton = pathname === '/rich-pages' || isFeaturePage || pathname === '/archives/agent-world-cup' || pathname === '/spacex'
 
   return { hideChrome, hideHeader, showHomeButton, pathname }
 }

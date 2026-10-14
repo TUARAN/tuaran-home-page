@@ -50,21 +50,12 @@ const CONFIG = {
   analyticsEvent: 'entry_click',
   destinationKind: 'interactive',
   gridColumns: 4,
+  fullWidth: true,
   share: {
     title: '互动专题',
     text: '可阅读、可筛选、可操作的内容作品。',
     url: 'https://2aran.com/rich-pages',
   },
-}
-
-const SECONDARY_FILTER = {
-  field: 'presentation',
-  label: '呈现',
-  ariaLabel: '按呈现方式筛选',
-  options: [
-    { value: 'site', label: '站点型' },
-    { value: 'feature', label: '沉浸型' },
-  ],
 }
 
 export default function RichPagesDirectory({ works, categories }) {
@@ -76,7 +67,6 @@ export default function RichPagesDirectory({ works, categories }) {
     coverLabel: work.kind,
     meta: [work.date, work.categoryLabel],
     badgeLabel: work.badge,
-    footerLabel: work.presentationLabel,
   }))
 
   return (
@@ -85,7 +75,6 @@ export default function RichPagesDirectory({ works, categories }) {
       categories={categories}
       visuals={VISUALS}
       config={CONFIG}
-      secondaryFilter={SECONDARY_FILTER}
     />
   )
 }

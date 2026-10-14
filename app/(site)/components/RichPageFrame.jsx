@@ -22,6 +22,7 @@ export default function RichPageFrame({ children }) {
     <div
       className={`rich-page-frame rich-page-frame--${presentation.id}`}
       data-rich-page-presentation={presentation.id}
+      data-rich-page-native-theme={work.presentation ? undefined : 'true'}
     >
       <ContentPvBeacon category={pvCategory} slug={pvSlug} />
       {children}

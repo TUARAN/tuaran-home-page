@@ -331,7 +331,7 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
 
   return (
     <main className={`min-h-screen bg-[var(--page-bg)] text-[var(--site-ink)] ${isCatalog ? 'showcase-directory--catalog' : 'showcase-directory--gallery'}`}>
-      <div className={`mx-auto max-w-[1240px] px-3 pb-16 sm:px-6 lg:px-8 ${isCatalog ? 'pt-5 md:pt-9' : 'pt-5 md:pt-12'}`}>
+      <div className={`mx-auto ${config.fullWidth ? 'w-full' : 'max-w-[1240px]'} px-3 pb-16 sm:px-6 lg:px-8 ${isCatalog ? 'pt-5 md:pt-9' : 'pt-5 md:pt-12'}`}>
         <header className={`flex flex-col border-b border-[#d9d9d4] dark:border-[#2b333e] md:flex-row md:items-end md:justify-between ${isCatalog ? 'gap-5 pb-6' : 'gap-7 pb-8'}`}>
           <div>
             <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.24em] text-[#8a6422] dark:text-[#d4ae66]">{config.eyebrow}</p>
@@ -345,8 +345,8 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
         </header>
 
         {config.categoryTabs ? (
-          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-            <div className="mx-auto max-w-[1176px]">
+          <section aria-label={config.filterAriaLabel} className={`sticky ${config.fullWidth ? 'top-0' : 'top-[var(--site-header-height)]'} z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8`}>
+            <div className={`mx-auto ${config.fullWidth ? 'w-full' : 'max-w-[1176px]'}`}>
               <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
                 <h2 className="mb-0 shrink-0 text-[17px] font-bold">{config.resultTitle}</h2>
                 <span className="shrink-0 text-[12px] text-[var(--site-faint)]">{filteredItems.length} 个</span>
@@ -410,8 +410,8 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
             </div>
           </section>
         ) : (
-          <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-            <div className="mx-auto flex max-w-[1176px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <section aria-label={config.filterAriaLabel} className={`sticky ${config.fullWidth ? 'top-0' : 'top-[var(--site-header-height)]'} z-20 -mx-4 mb-8 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-4 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8`}>
+            <div className={`mx-auto flex ${config.fullWidth ? 'w-full' : 'max-w-[1176px]'} flex-col gap-3 lg:flex-row lg:items-center lg:justify-between`}>
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {viewToggle}
                 <select value={category} onChange={(event) => setCategory(event.target.value)} className="h-10 rounded-xl border-0 bg-[#e7e8e5] px-3 text-[13px] font-medium text-[#56595f] outline-none ring-[var(--site-accent)] focus:ring-2 dark:bg-[#1d2630] dark:text-[#c7ced7]" aria-label="按类别筛选">

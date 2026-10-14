@@ -1,8 +1,13 @@
 import RegisterClient from './RegisterClient'
+import { getIntegrationEnv } from '../../../lib/site/integrationKeys'
+import { isSupabaseEmailAuthEnabled } from '../../../lib/supabase/emailAuth'
+
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '邮箱注册',
-  description: '使用邮箱验证码注册 2aran.com 账号。',
+  description: '使用邮箱注册 2aran.com 账号。',
   alternates: { canonical: '/register' },
   robots: {
     index: false,
@@ -12,5 +17,5 @@ export const metadata = {
 }
 
 export default function RegisterPage() {
-  return <RegisterClient />
+  return <RegisterClient supabaseEmailEnabled={isSupabaseEmailAuthEnabled(getIntegrationEnv())} />
 }

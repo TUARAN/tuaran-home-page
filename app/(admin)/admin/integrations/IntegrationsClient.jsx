@@ -56,10 +56,16 @@ export default function IntegrationsClient({ embedded = false }) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
+  const [supabaseHealth, setSupabaseHealth] = useState(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError('')
+    setSupabaseHealth(null)
+    fetch('/api/admin/integrations/supabase', { cache: 'no-store' })
+      .then(safeJson)
+      .then((payload) => setSupabaseHealth(payload || { status: 'unreachable' }))
+      .catch(() => setSupabaseHealth({ status: 'unreachable' }))
     try {
       const response = await fetch('/api/admin/integrations', { cache: 'no-store' })
       const payload = await safeJson(response)
@@ -231,6 +237,29 @@ export default function IntegrationsClient({ embedded = false }) {
             ))}
           </div>
         )}
+      </Section>
+
+      <Section
+        title="Supabase 连接"
+        description="仅站长可见的实时 Auth API 连通检测；主站业务数据仍由 D1 提供。"
+        className="mt-4"
+      >
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <StatusPill tone={supabaseHealth?.status === 'healthy' ? 'success' : supabaseHealth?.status === 'unconfigured' ? 'neutral' : 'warning'} size="sm">
+            {supabaseHealth?.status === 'healthy' ? '已连接' : supabaseHealth?.status === 'unconfigured' ? '待配置' : supabaseHealth ? '连接异常' : '检测中'}
+          </StatusPill>
+          <span className="text-[#67695d] dark:text-gray-400">
+            {supabaseHealth?.status === 'healthy'
+              ? 'Supabase Auth API 响应正常。'
+              : supabaseHealth?.status === 'unconfigured'
+                ? '请配置 SUPABASE_URL 与 SUPABASE_PUBLISHABLE_KEY。'
+                : supabaseHealth?.status === 'invalid_config'
+                  ? 'SUPABASE_URL 必须是 HTTPS 项目地址。'
+                  : supabaseHealth
+                    ? `请求失败${supabaseHealth.httpStatus ? `（HTTP ${supabaseHealth.httpStatus}）` : ''}。`
+                    : '正在检测项目连接…'}
+          </span>
+        </div>
       </Section>
 
       <Section

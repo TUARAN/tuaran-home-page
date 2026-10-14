@@ -1,4 +1,9 @@
 import AccountClient from './AccountClient'
+import { getIntegrationEnv } from '../../../lib/site/integrationKeys'
+import { isSupabaseEmailAuthEnabled } from '../../../lib/supabase/emailAuth'
+
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: '个人资料',
@@ -8,5 +13,5 @@ export const metadata = {
 }
 
 export default function AccountPage() {
-  return <AccountClient />
+  return <AccountClient supabaseEmailEnabled={isSupabaseEmailAuthEnabled(getIntegrationEnv())} />
 }

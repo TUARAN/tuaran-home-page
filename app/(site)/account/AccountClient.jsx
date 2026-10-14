@@ -18,6 +18,7 @@ const PROVIDER_LABELS = {
   github: 'GitHub',
   google: 'Google',
   email: '邮箱密码',
+  supabase: '新邮箱登录',
   credential: '登录凭证',
 }
 const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 'true'
@@ -43,7 +44,7 @@ function formatTime(ts) {
   }
 }
 
-export default function AccountClient() {
+export default function AccountClient({ supabaseEmailEnabled = false }) {
   const { loading, user } = useSessionAccount()
   const [activeTab, setActiveTab] = useState('overview')
   const [identities, setIdentities] = useState([])
@@ -56,6 +57,9 @@ export default function AccountClient() {
   const [unlinking, setUnlinking] = useState('')
   const [actionError, setActionError] = useState('')
   const [revokingClient, setRevokingClient] = useState('')
+  const [supabaseEmail, setSupabaseEmail] = useState('')
+  const [supabasePassword, setSupabasePassword] = useState('')
+  const [bindingSupabase, setBindingSupabase] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
@@ -95,6 +99,31 @@ export default function AccountClient() {
   const githubBound = boundProviders.has('github')
   const googleBound = boundProviders.has('google')
   const wechatBound = boundProviders.has('wechat')
+  const supabaseBound = boundProviders.has('supabase')
+
+  async function bindSupabaseEmail(event) {
+    event.preventDefault()
+    if (bindingSupabase) return
+    setActionError('')
+    setBindingSupabase(true)
+    try {
+      const response = await fetch('/api/account/identities/supabase-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: supabaseEmail, password: supabasePassword }),
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error === 'EMAIL_NOT_CONFIRMED' ? '请先确认邮箱。' : data?.error === 'IDENTITY_ALREADY_BOUND' ? '该邮箱已绑定其他站内账号。' : '邮箱或密码无效，绑定失败。')
+      setSupabasePassword('')
+      const refreshed = await fetch('/api/account/identities', { cache: 'no-store' })
+      const payload = await refreshed.json()
+      if (refreshed.ok) setIdentities(Array.isArray(payload.identities) ? payload.identities : [])
+    } catch (error) {
+      setActionError(String(error?.message || error))
+    } finally {
+      setBindingSupabase(false)
+    }
+  }
 
   async function unbind(provider) {
     if (unlinking) return
@@ -283,6 +312,14 @@ export default function AccountClient() {
               {!githubBound ? <Link href="/api/auth/login?provider=github&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>GitHub</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {!googleBound ? <Link href="/api/auth/login?provider=google&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>Google</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {!wechatBound && (WECHAT_LOGIN_ENABLED ? <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>微信</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : <div className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px]"><span className="text-[var(--site-muted)]">微信</span><span className="text-[11px] text-[var(--site-green)]">登录审核中</span></div>)}
+              {supabaseEmailEnabled && !supabaseBound ? <form onSubmit={bindSupabaseEmail} className="space-y-3 border-b border-[var(--site-line)] py-4">
+                <p className="text-sm font-medium text-[var(--site-ink)]">绑定新邮箱登录方式</p>
+                <p className="text-xs text-[var(--site-muted)]">先注册并确认邮箱，再在此输入邮箱密码。绑定后使用新邮箱登录仍会进入当前账号。</p>
+                <input type="email" required autoComplete="email" value={supabaseEmail} onChange={(event) => setSupabaseEmail(event.target.value)} placeholder="邮箱" className="w-full rounded-lg border border-[var(--site-line)] bg-transparent px-3 py-2 text-sm" />
+                <input type="password" required autoComplete="current-password" value={supabasePassword} onChange={(event) => setSupabasePassword(event.target.value)} placeholder="新邮箱登录密码" className="w-full rounded-lg border border-[var(--site-line)] bg-transparent px-3 py-2 text-sm" />
+                <button type="submit" disabled={bindingSupabase} className="rounded-lg bg-[var(--site-ink)] px-4 py-2 text-sm text-[var(--page-bg)] disabled:opacity-50">{bindingSupabase ? '绑定中…' : '验证并绑定'}</button>
+                <Link href="/register" className="ml-3 text-xs underline">还没有新邮箱账号？先注册</Link>
+              </form> : null}
               {githubBound && googleBound && (wechatBound || !WECHAT_LOGIN_ENABLED) ? <p className="py-4 text-[13px] text-[var(--site-muted)]">当前可用的登录方式均已添加。</p> : null}
             </>}
           </div>

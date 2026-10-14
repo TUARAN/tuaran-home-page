@@ -10,7 +10,147 @@ const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
 const context = require('../../tools/x-reply-clipboard-extension/context.js')
 const background = require('../../tools/x-reply-clipboard-extension/background.js')
+const autoLike = require('../../tools/x-reply-clipboard-extension/autoLike.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
+
+test('one-click reset clears extension state across X tabs but retains configured credentials', async () => {
+  const saved = {
+    xrcAiSettings: { apiKey: 'sk-12345678', replyPrompt: 'old custom prompt' },
+    xrcCommunityReport: { secret: 'receipt-secret', queue: [{ id: 'old-event' }] },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 11 } } },
+    xrcPosterPublishList: [{ text: 'old draft' }],
+    'xrcAutoLikeSeen:test:posts': ['123'],
+  }
+  const prepared = []
+  const reloaded = []
+  globalThis.chrome = {
+    storage: { local: {
+      async get(keys) { return Object.fromEntries(keys.map((key) => [key, saved[key]])) },
+      async clear() { for (const key of Object.keys(saved)) delete saved[key] },
+      async set(value) { Object.assign(saved, value) },
+    } },
+    tabs: {
+      async query() { return [{ id: 11 }, { id: 22 }] },
+      async sendMessage(tabId, message) { prepared.push([tabId, message.type]); return { ok: true } },
+      async reload(tabId) { reloaded.push(tabId) },
+    },
+  }
+  try {
+    const result = await background.resetExtensionState({ tab: { id: 11 } })
+    assert.equal(result.ok, true)
+    assert.deepEqual(prepared, [[11, 'xrc-reset-prepare'], [22, 'xrc-reset-prepare']])
+    assert.deepEqual(reloaded, [22])
+    assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678' })
+    assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret' })
+    assert.match(saved.xrcResetEpoch, /^\d+-/)
+    assert.equal(saved.xrcPluginRuntime, undefined)
+    assert.equal(saved.xrcPosterPublishList, undefined)
+    assert.equal(saved['xrcAutoLikeSeen:test:posts'], undefined)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('reply-like task visits threads without liking their root posts', async () => {
+  const location = { pathname: '/home' }
+  const clicks = { root: 0, reply: 0 }
+  const makeTweet = (id, kind) => {
+    let liked = false
+    const link = {
+      href: `https://x.com/a/status/${id}`,
+      getAttribute: () => `/a/status/${id}`,
+      click: () => { location.pathname = `/a/status/${id}` },
+    }
+    return {
+      querySelector(selector) {
+        if (selector === 'time') return { closest: () => link }
+        if (selector === '[data-testid="unlike"]') return liked ? {} : null
+        if (selector === '[data-testid="like"]') return liked ? null : { click: () => { liked = true; clicks[kind] += 1 } }
+        return null
+      },
+    }
+  }
+  const root = makeTweet('123', 'root')
+  const reply = makeTweet('456', 'reply')
+  const homeLink = { click: () => { location.pathname = '/home' } }
+  const doc = {
+    querySelector(selector) {
+      if (selector === '[data-testid="primaryColumn"]') return { querySelectorAll: () => location.pathname === '/home' ? [root] : [root, reply] }
+      if (selector.includes('AppTabBar_Home_Link')) return homeLink
+      return null
+    },
+    querySelectorAll: () => [],
+  }
+  const saved = {}
+  let controller
+  controller = autoLike.createController({
+    document: doc,
+    window: { location, setTimeout: (callback) => { queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    accountKey: 'test',
+    target: 'replies',
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.deepEqual(clicks, { root: 0, reply: 1 })
+  assert.deepEqual(saved['xrcAutoLikeSeen:test:replies'], ['123'])
+  assert.equal(controller.snapshot().running, false)
+})
+
+test('post-like task stays on Home and has its own processed history', async () => {
+  const location = { pathname: '/home' }
+  let clicks = 0
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click: () => { throw new Error('must not enter thread') } }
+  let liked = false
+  const article = {
+    querySelector(selector) {
+      if (selector === 'time') return { closest: () => link }
+      if (selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (selector === '[data-testid="like"]') return liked ? null : { click: () => { liked = true; clicks += 1 } }
+      return null
+    },
+  }
+  const saved = {}
+  let controller
+  controller = autoLike.createController({
+    document: {
+      querySelector: () => ({ querySelectorAll: () => [article] }),
+      querySelectorAll: () => [],
+    },
+    window: { location, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    accountKey: 'test',
+    target: 'posts',
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(clicks, 1)
+  assert.deepEqual(saved['xrcAutoLikeSeen:test:posts'], ['123'])
+  assert.equal(location.pathname, '/home')
+})
+
+test('auto-like refuses to click when X shows an automation restriction', async () => {
+  let clicks = 0
+  const article = {
+    querySelector(selector) {
+      if (selector === 'time') return { closest: () => ({ href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click: () => {} }) }
+      if (selector === '[data-testid="like"]') return { click: () => { clicks += 1 } }
+      return null
+    },
+  }
+  const doc = {
+    querySelector: () => ({ querySelectorAll: () => [article] }),
+    querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
+  }
+  const controller = autoLike.createController({
+    document: doc,
+    window: { location: { pathname: '/home' }, setTimeout, scrollBy: () => {} },
+    storage: { get: async () => ({}), set: async () => {} },
+  })
+  await controller.start()
+  assert.equal(clicks, 0)
+  assert.match(controller.snapshot().status, /操作受限/)
+})
 
 test('settings auto-save batches edits and flushes before a task starts', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
@@ -542,9 +682,11 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
   assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。', '新工具上线跟风', 'news'), '')
   assert.equal(poster.qualityReason('体检抽血为什么要抽多管', '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。', '抽血检测流程', 'news'), '说理口吻太重')
-  assert.match(background.POST_SYSTEM_PROMPT, /直接说人话/)
+  assert.match(background.POST_SYSTEM_PROMPT, /口语直白/)
   assert.match(background.POST_SYSTEM_PROMPT, /说个暴论/)
-  assert.match(background.POST_SYSTEM_PROMPT, /不要写成三行微型故事/)
+  assert.match(background.POST_SYSTEM_PROMPT, /三段式微型故事/)
+  assert.match(background.POST_SYSTEM_PROMPT, /标题和摘要是唯一事实依据/)
+  assert.match(background.POST_SYSTEM_PROMPT, /不固定套句/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
   assert.equal(poster.qualityReason('奶茶店爆单与员工排班引发讨论', '爆单那晚，出杯口没停过。\n\n排班表上还是同一个名字。\n\n折扣是牌子上的，手速是店员自己的。', '奶茶店员工排班', 'news'), '文艺化套话')
   assert.equal(poster.qualityReason('住院部天花板霉斑引发讨论', '住院部天花板有霉斑。\n\n院方承认疏忽，这话像在说墙面，又像不止墙面。', '住院部霉斑问题', 'news'), '文艺化套话')
@@ -572,11 +714,15 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
   try {
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
     assert.match(requestBody.messages[0].content, /自定义发推提示词：说清楚事实/)
-    assert.match(requestBody.messages[0].content, /仅输出 JSON/)
+    assert.match(requestBody.messages[0].content, /本接口仅用 JSON 包装结果/)
     storedPostPrompt = '从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /不要写成三行微型故事/)
+    assert.match(requestBody.messages[0].content, /三段式微型故事/)
     assert.doesNotMatch(requestBody.messages[0].content, /3 到 5 行，总共 35 到 75 个字/)
+    storedPostPrompt = '根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话、有一点个人判断的口气；不要模仿他的原句。不要写成三行微型故事。这话像在说 X，又像不止 X。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /标题和摘要是唯一事实依据/)
+    assert.doesNotMatch(requestBody.messages[0].content, /参考王长富那种直接说人话/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
@@ -1137,14 +1283,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.12.1')
+  assert.equal(manifest.version, '3.16.0')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'content.js'])
+  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://www.toutiao.com/*'))
@@ -1250,8 +1396,16 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-flow-help/)
   assert.match(content, /启动单项任务/)
   assert.match(content, /data-xrc-assistant="mutual"/)
-  assert.match(content, /data-xrc-assistant="timeline"/)
-  assert.match(content, /data-xrc-assistant="notifications"/)
+  assert.match(content, /data-xrc-assistant="reply"/)
+  assert.match(content, /data-xrc-assistant="likes"/)
+  assert.match(content, /data-xrc-reply-tab="timeline"/)
+  assert.match(content, /data-xrc-reply-tab="notifications"/)
+  assert.match(content, /data-xrc-like-tab="posts"/)
+  assert.match(content, /data-xrc-like-tab="replies"/)
+  assert.match(content, /data-xrc-monitor-open aria-label="打开异常监控中心"/)
+  assert.match(content, /data-xrc-monitor-current/)
+  assert.match(content, /function syncMonitorMenu\(panel\)/)
+  assert.match(content, /点赞、关注和定时发帖的全部本地异常尚未统一进入消息中心|普通发帖异常目前不会全部转成站长监控通知/)
   assert.match(content, /功能导航/)
   assert.doesNotMatch(content, /当前助手/)
   assert.match(content, /通知回复/)
@@ -1290,8 +1444,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /wakeScheduledWait\?\.\(\)/)
   assert.doesNotMatch(content, /当前 AI 回复/)
   assert.doesNotMatch(content, /读取原帖后自动生成/)
-  assert.ok(content.indexOf('data-xrc-assistant="timeline"') < content.indexOf('data-xrc-assistant="notifications"'))
-  assert.ok(content.indexOf('data-xrc-assistant="notifications"') < content.indexOf('data-xrc-assistant="mutual"'))
+  assert.ok(content.indexOf('data-xrc-assistant="reply"') < content.indexOf('data-xrc-assistant="likes"'))
+  assert.ok(content.indexOf('data-xrc-assistant="likes"') < content.indexOf('data-xrc-assistant="mutual"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
   assert.match(content, /最近 2 小时/)
   assert.match(content, /state\.assistantMode !== "notifications"/)
@@ -1473,10 +1627,16 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.DEEPSEEK_MODEL, 'deepseek-flash')
   assert.equal(background.REQUEST_TIMEOUT_MS, 10000)
   assert.equal(background.validTaskMode('poster'), 'poster')
+  assert.equal(background.validTaskMode('likes'), 'likes-posts')
+  assert.equal(background.validTaskMode('likes-replies'), 'likes-replies')
   assert.equal(background.validTaskMode('mutual'), 'mutual-unfollow')
   assert.equal(background.validTaskMode('mutual-followBack'), 'mutual-followBack')
   assert.equal(background.validTaskMode('unknown'), 'timeline')
   assert.equal(background.taskTabUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications?xrcAssistant=notifications')
+  assert.equal(background.taskTabUrl('likes-posts', 'https://x.com/notifications'), 'https://x.com/home?xrcAssistant=likes-posts')
+  assert.equal(background.taskTabUrl('likes-replies', 'https://x.com/notifications'), 'https://x.com/home?xrcAssistant=likes-replies')
+  assert.match(backgroundText, /const FLOW_TASKS = \[[^\]]+\];/)
+  assert.doesNotMatch(backgroundText.match(/const FLOW_TASKS = \[[^\]]+\];/)?.[0] || '', /likes/)
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home'), 'https://x.com/home?xrcAssistant=mutual-unfollow')
   assert.equal(background.taskTabUrl('poster', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=poster')
   assert.equal(background.taskTabUrl('poster', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=poster&xrcStart=1')
@@ -1496,12 +1656,12 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /phase: "stopped"/)
   assert.match(background.REPLY_SYSTEM_PROMPT, /长短按语境决定，短到几个字也可以/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
-  assert.match(background.POST_SYSTEM_PROMPT, /18 到 70 字/)
+  assert.match(background.POST_SYSTEM_PROMPT, /18～70 字/)
   assert.match(background.POST_SYSTEM_PROMPT, /不出现 \$/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /\$代币/)
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(background.cleanPost('听说东北以前一家子睡一个炕。\n$KAITO'), '听说东北以前一家子睡一个炕。')
-  assert.match(background.POST_SYSTEM_PROMPT, /每行之间空一行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /行间留一个空行/)
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
@@ -1553,7 +1713,7 @@ test('task windows are created once and reused without backgrounding another tas
         if (tabId === 22) return { id: 22, windowId: 5, url: 'https://x.com/notifications' }
         throw new Error('missing tab')
       },
-      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '时间线回复 · Home / X' }] },
+      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '首页互动 · Home / X' }] },
       async update(tabId, options) { focusedTabs.push(tabId); tabUpdates.push(options) },
     },
     windows: {

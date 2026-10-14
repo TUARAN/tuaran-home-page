@@ -7,6 +7,7 @@ import {
   COMMUNITY_ACTION_TASKS,
   communityActionAuthorized,
   normalizeCommunityActionReport,
+  normalizeXDailyReport,
   presentCommunityActionCenter,
   recordCommunityActionReport,
   shanghaiDayStart,
@@ -18,6 +19,47 @@ const xhsReceipt = require('../../tools/xhs-interaction-extension/receipt.js')
 const juejinReceipt = require('../../tools/juejin-interaction-extension/receipt.js')
 
 const NOW = Date.parse('2026-10-12T02:00:00.000Z')
+
+test('X daily report validates five confirmed counters and upserts one device/day/account snapshot', async () => {
+  const dailyReport = { date: '2026-10-12', accountHandle: '@Tuaran', counts: { comments: 3, likes: 5, follows: 2, unfollows: 1, followBacks: 4 } }
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).accountHandle, 'Tuaran')
+  assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, likes: -1 } }, NOW), null)
+  assert.equal(normalizeXDailyReport({ ...dailyReport, date: '2026-02-30' }, NOW), null)
+  const writes = []
+  const db = { prepare(sql) { return { bind(...values) { return { async run() { writes.push({ sql, values }); return { meta: { changes: 1 } } } } } } } }
+  const result = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', extensionVersion: '3.16.0', dailyReport }, NOW)
+  assert.equal(result.dailyReportSaved, true)
+  assert.equal(writes.length, 2)
+  assert.match(writes[1].sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
+  assert.deepEqual(writes[1].values.slice(0, 8), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4])
+})
+
+test('local daily report counts successful actions once and refuses a false upload acknowledgement', async () => {
+  const saved = { xrcCommunityReport: { secret: 'secret-value', deviceId: 'device-x-daily', queue: [] } }
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: saved[key] } },
+    async set(value) { Object.assign(saved, value) },
+  } }, runtime: { getManifest: () => ({ version: '3.16.0' }) } }
+  globalThis.fetch = async () => ({ ok: true, async json() { return { ok: true } } })
+  try {
+    const event = { id: 'event-like-001', task: 'post-like', result: 'success', occurredAt: NOW }
+    await xReceipt.recordDailySuccess(event, 'Tuaran')
+    await xReceipt.recordDailySuccess(event, 'Tuaran')
+    await xReceipt.recordDailySuccess({ id: 'event-follow-001', task: 'mutual-target-follow', result: 'success', occurredAt: NOW }, 'Tuaran')
+    assert.deepEqual(saved.xrcDailyReports[0].counts, { comments: 0, likes: 1, follows: 1, unfollows: 0, followBacks: 0 })
+    const uploaded = await xReceipt.uploadDaily('2026-10-12', 'tuaran')
+    assert.equal(uploaded.ok, false)
+    assert.equal(saved.xrcDailyReports[0].uploadedAt, 0)
+    globalThis.fetch = async () => ({ ok: true, async json() { return { dailyReportSaved: true } } })
+    assert.equal((await xReceipt.uploadDaily('2026-10-12', 'tuaran')).ok, true)
+    assert.ok(saved.xrcDailyReports[0].uploadedAt > 0)
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
+})
 
 test('report validation keeps confirmed task results and drops unknown items', () => {
   const report = normalizeCommunityActionReport({

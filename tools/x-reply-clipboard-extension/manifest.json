@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "3.12.1",
-  "description": "Run timeline, notification, mutual-follow, and scheduled-post tasks concurrently in dedicated X tabs.",
+  "version": "3.16.0",
+  "description": "Run home and notification interactions, optional likes, follow management, and scheduled posts in dedicated X tabs.",
   "permissions": ["storage", "offscreen", "alarms"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*", "https://2aran.com/*", "https://www.toutiao.com/*", "https://www.zhihu.com/*"],
   "background": {
@@ -22,7 +22,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["receipt.js", "phrases.js", "loop.js", "timer.js", "poster.js", "mutual.js", "tweetPdf.js", "content.js"],
+      "js": ["receipt.js", "phrases.js", "loop.js", "timer.js", "poster.js", "mutual.js", "tweetPdf.js", "autoLike.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

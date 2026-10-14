@@ -6,6 +6,7 @@
   const loopApi = globalThis.XReplyClipboardLoop;
   const mutualApi = globalThis.XInteractionMutual;
   const postApi = globalThis.XInteractionPoster;
+  const likeApi = globalThis.XInteractionAutoLike;
   const pdfApi = globalThis.XrcTweetPdf;
   const timerApi = globalThis.XInteractionTimer;
   const phrases = globalThis.XReplyClipboardPhrases;
@@ -16,6 +17,8 @@
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+  const RESET_EPOCH_KEY = "xrcResetEpoch";
+  const SESSION_RESET_EPOCH_KEY = "xrcResetEpochSeen";
   const NOTIFICATION_HISTORY_LIMIT = 2000;
   const PHRASE_STORE = 7;
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
@@ -35,12 +38,14 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话、有一点个人判断的口气；不要模仿他的原句。",
-    "只用标题和摘要确实提供的信息。不要补出夜晚、现场动作、楼层、人数、对话、心理活动或因果；素材不够就跳过，不要编故事。标题是提问时不要把猜测写成事实。",
-    "开头可以直接说判断，例如‘说个暴论，……’‘讲个事实，……’‘我真心觉得……’，也可以从材料中的一件具体事说起。这些只是偶尔可用的说法，不要每条套同一句，不要把‘说个暴论’单独占一行。",
-    "写你真的想说的一句，不要写成三行微型故事：场景铺垫、反转判断、文艺收尾。尤其不要对仗、拟人、故作深沉或‘这话像在说 X，又像不止 X’这种空悬念。结尾可以留一个自然的具体问题，也可以直接停住；不必每条都反问。",
-    "每条结构不同。短的一行就够，长的二至四行；每行之间空一行。总共约 18 到 70 字。不要为了凑行数硬拆句，不要首先其次、赋能闭环、营销话术或未经证实的指控。",
-    "不写加密货币、代币代码或合约地址，不出现 $ 符号。只输出短帖正文，不加标题或解释。"
+    "任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏，不复制他的原句，不替他说话。",
+    "事实边界：标题和摘要是唯一事实依据。近期已用主题、开头和结尾只用于避开重复，不是事实素材。不要补写场景、动作、人数、对话、心理或因果；信息有限就只写能确认的部分，支撑不了具体判断就放弃选题。提问式标题不能把猜测写成事实。",
+    "开篇：可以从素材里的具体事件切入，也可以直接抛判断。‘说个暴论，……’‘讲个事实，……’‘我真心觉得……’只是偶尔可用的口吻；每条换切口，不固定套句，不让引子单独占一行。",
+    "行文：围绕一个核心观点，像随手发帖。不要写成场景铺垫、反转、文艺收尾的三段式微型故事；不要对仗、拟人、说教、自我解释或制造空洞悬念，例如‘这话像在说 X，又像不止 X’。不要只给标题换几个词就当成观点。",
+    "结尾：有合适的具体小问题可以问；没有就自然停住。不为互动强行反问。",
+    "结构：总共 18～70 字。短的一行即可，长的 2～4 行；换行时行间留一个空行。不要强拆句子，也不要为了凑行数或字数加废话。",
+    "禁区：不用‘首先、其次’或营销黑话，不写未经证实的指控；不写加密货币、代币或合约地址，不出现 $ 符号。",
+    "输出：只写短帖正文，不附标题、解释或说明。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
@@ -72,9 +77,9 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.12.1";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.16.0";
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
-  const ASSISTANT_MODES = new Set(["timeline", "notifications", "mutual", "poster"]);
+  const ASSISTANT_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "mutual", "poster"]);
 
   const state = {
     running: false,
@@ -121,6 +126,40 @@
   };
 
   let pluginRuntime = { startedAt: null, tasks: {} };
+  let likeController = null;
+  let likeState = { running: false, stopping: false, count: 0, posts: 0, status: "选择点赞任务后手动开始。" };
+  let likeRuntimeActive = false;
+
+  function getLikeController() {
+    if (!likeController && likeApi) {
+      likeController = likeApi.createController({
+        document, window,
+        storage: chrome.storage.local,
+        accountKey: currentAccountHandle() || "default",
+        target: state.assistantMode === "likes-replies" ? "replies" : "posts",
+        onLike(targetId, accountHandle, target) {
+          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "success", targetId, accountHandle });
+        },
+        onUpdate(snapshot) {
+          likeState = snapshot;
+          if (!state.assistantMode.startsWith("likes-")) return;
+          if (likeRuntimeActive !== snapshot.running) {
+            likeRuntimeActive = snapshot.running;
+            setRuntimeTaskActive(state.assistantMode, snapshot.running, snapshot.stopping ? "stopping" : "running");
+          }
+          renderPanel();
+        }
+      });
+    }
+    return likeController;
+  }
+
+  function toggleLikes() {
+    const controller = getLikeController();
+    if (!controller) return;
+    if (likeState.running) controller.stop();
+    else controller.start();
+  }
 
   const processedIds = new Set();
   const processedNotificationIds = new Set();
@@ -128,6 +167,38 @@
   const skippedIds = new Set();
   let panelDismissed = false;
   let configOpen = false;
+  let monitorOpen = false;
+  let resettingState = false;
+  let dailyReports = [];
+
+  function showDailyReport(panel) {
+    const select = panel.querySelector("[data-xrc-daily-date]");
+    if (!select) return;
+    const previous = select.value;
+    select.replaceChildren();
+    for (const report of dailyReports) {
+      const option = document.createElement("option");
+      option.value = `${report.date}|${report.accountHandle}`;
+      option.textContent = `${report.date}${report.accountHandle ? ` · @${report.accountHandle}` : ""}`;
+      select.appendChild(option);
+    }
+    if (dailyReports.length && dailyReports.some((report) => `${report.date}|${report.accountHandle}` === previous)) select.value = previous;
+    const selected = dailyReports.find((report) => `${report.date}|${report.accountHandle}` === select.value);
+    for (const metric of ["comments", "likes", "follows", "unfollows", "followBacks"]) {
+      const node = panel.querySelector(`[data-xrc-daily-${metric}]`);
+      if (node) node.textContent = String(selected?.counts?.[metric] || 0);
+    }
+    const upload = panel.querySelector("[data-xrc-daily-upload]");
+    if (upload) upload.disabled = !selected;
+    const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
+    if (uploaded) uploaded.textContent = selected?.uploadedAt ? `上次上传：${new Date(selected.uploadedAt).toLocaleString("zh-CN")}` : "尚未上传";
+  }
+
+  async function refreshDailyReport(panel) {
+    const result = await sendExtensionMessage({ type: "xrc-daily-get" });
+    dailyReports = Array.isArray(result.reports) ? result.reports : [];
+    showDailyReport(panel);
+  }
   let configSaveTimer = 0;
   let configSavePromise = Promise.resolve();
   let toolboxOpen = false;
@@ -162,6 +233,7 @@
   }
 
   function validAssistantMode(value) {
+    if (value === "likes") return "likes-posts";
     return ASSISTANT_MODES.has(value) ? value : "timeline";
   }
 
@@ -180,6 +252,7 @@
   }
 
   function launchFromMode(mode, start) {
+    if (mode === "likes") mode = "likes-posts";
     if (mode === "mutual-unfollow" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
       return { assistantMode: "mutual", mutualMode: mode.slice("mutual-".length), taskKey: mode, start: Boolean(start) };
     }
@@ -393,6 +466,10 @@
   let runtimePhaseSent = "";
 
   function currentTaskPhase() {
+    if (state.assistantMode.startsWith("likes-")) {
+      if (!likeState.running) return "";
+      return likeState.stopping ? "stopping" : "running";
+    }
     if (state.assistantMode === "mutual") {
       const mutual = state.mutual;
       if (!mutual?.running) return "";
@@ -416,7 +493,9 @@
   function flowButtonModel() {
     if (flowStarting) return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     if (flowStopping) return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
-    const tasks = Object.values(pluginRuntime.tasks || {});
+    const tasks = Object.entries(pluginRuntime.tasks || {})
+      .filter(([key]) => !key.startsWith("likes-"))
+      .map(([, task]) => task);
     const flow = pluginRuntime.flow || {};
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
@@ -434,7 +513,7 @@
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
     }
-    return { label: "全流程启动", status: "idle", action: "start", title: "一次打开并运行四类任务" };
+    return { label: "全流程启动", status: "idle", action: "start", title: "一次打开并运行回复、关注与发帖任务" };
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
@@ -474,6 +553,33 @@
       state.status = reason;
       renderPanel();
     }
+  }
+
+  function clearTaskSession() {
+    for (const key of [STORAGE_KEY, "xrc-ai-poster", "xrc-poster-used-sources"]) {
+      try { sessionStorage.removeItem(key); } catch (error) { /* Session storage may be unavailable. */ }
+    }
+  }
+
+  async function clearStaleSessionAfterReset() {
+    const stored = await chrome.storage.local.get(RESET_EPOCH_KEY);
+    const epoch = String(stored?.[RESET_EPOCH_KEY] || "");
+    if (!epoch) return;
+    try {
+      if (sessionStorage.getItem(SESSION_RESET_EPOCH_KEY) === epoch) return;
+      clearTaskSession();
+      sessionStorage.setItem(SESSION_RESET_EPOCH_KEY, epoch);
+    } catch (error) { /* The task will still start without saved session state. */ }
+  }
+
+  function prepareStateReset() {
+    resettingState = true;
+    window.clearTimeout(configSaveTimer);
+    configSaveTimer = 0;
+    likeController?.stop?.();
+    stopLocalTasks("本地状态正在清空");
+    clearTaskSession();
+    return { ok: true };
   }
 
   async function pauseAllTasks() {
@@ -540,12 +646,26 @@
     await openTaskTab(active || mutualTaskKey());
   }
 
+  async function openReplyWindows() {
+    await loadPluginRuntime();
+    const active = ["timeline", "notifications"].find((mode) => pluginRuntime.tasks?.[mode]);
+    const current = ["timeline", "notifications"].includes(state.assistantMode) ? state.assistantMode : "";
+    await openTaskTab(current || active || "timeline");
+  }
+
+  async function openLikeWindows() {
+    await loadPluginRuntime();
+    const active = ["likes-posts", "likes-replies"].find((mode) => pluginRuntime.tasks?.[mode]);
+    const current = state.assistantMode.startsWith("likes-") ? state.assistantMode : "";
+    await openTaskTab(current || active || "likes-posts");
+  }
+
   function validMutualMode(value) {
     return ["followBack", "targetFollow"].includes(value) ? value : "unfollow";
   }
 
   function anyTaskRunning() {
-    return Boolean(state.loopPromise) || state.running || Boolean(state.mutual?.running) || Boolean(state.poster?.running);
+    return Boolean(state.loopPromise) || state.running || Boolean(state.mutual?.running) || Boolean(state.poster?.running) || likeState.running;
   }
 
   function isNotificationPath() {
@@ -568,7 +688,7 @@
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") ? "" : storedPostPrompt;
+      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X")) ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -1561,6 +1681,7 @@
       () => Boolean(tweet.article.querySelector('[data-testid="unlike"]')),
       5000
     );
+    if (confirmed) reportCommunityAction({ task: "reply-like", result: "success", targetId: tweet.id });
     return confirmed ? "ok" : "like-unconfirmed";
   }
 
@@ -2424,6 +2545,10 @@
 
   async function startLaunchedTask(launch) {
     if (!launch?.start) return;
+    if (launch.assistantMode.startsWith("likes-")) {
+      if (!likeState.running) toggleLikes();
+      return;
+    }
     if (launch.assistantMode === "mutual") {
       if (state.mutual?.running) return;
       pendingMutualAutostart = true;
@@ -2517,6 +2642,32 @@
     if (embed) embed.checked = state.panelPlacement === "embed";
     gear?.setAttribute("aria-expanded", configOpen ? "true" : "false");
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function syncMonitorMenu(panel) {
+    const monitor = panel.querySelector("[data-xrc-monitor]");
+    if (monitor) monitor.hidden = !monitorOpen;
+    panel.querySelector("[data-xrc-monitor-open]")?.setAttribute("aria-expanded", monitorOpen ? "true" : "false");
+    if (!monitorOpen) return;
+    const active = state.assistantMode;
+    const status = active === "poster" ? state.poster?.status
+      : active === "mutual" ? state.mutual?.status
+      : active.startsWith("likes-") ? likeState.status : state.status;
+    const errors = active === "poster" ? state.poster?.errors
+      : active === "mutual" ? state.mutual?.errors
+      : active.startsWith("likes-") ? null : state.errors;
+    const label = {
+      timeline: "回复管理 · 首页互动",
+      notifications: "回复管理 · 通知互动",
+      "likes-posts": "点赞管理 · 首页帖子",
+      "likes-replies": "点赞管理 · 帖子评论",
+      mutual: `关注管理 · ${{ unfollow: "清理未回关", followBack: "回关粉丝", targetFollow: "关注候选" }[state.mutualMode] || "当前任务"}`,
+      poster: "定时发帖"
+    }[active] || "当前任务";
+    const current = monitor.querySelector("[data-xrc-monitor-current]");
+    const detail = monitor.querySelector("[data-xrc-monitor-detail]");
+    if (current) current.textContent = `${label} · ${errors == null ? "未单独统计次数" : `${Number(errors) || 0} 次异常/重试`}`;
+    if (detail) detail.textContent = status || "待命";
   }
 
   function syncToolboxMenu(panel) {
@@ -2617,12 +2768,44 @@
             </button>
           </div>
         </div>
+        <section class="xrc-monitor" data-xrc-monitor hidden aria-label="异常监控中心">
+          <div class="xrc-docs-head">
+            <div><small>EXCEPTION MONITOR</small><strong>异常监控中心</strong><span>当前窗口状态与各任务异常处理</span></div>
+            <button type="button" data-xrc-monitor-close aria-label="关闭异常监控中心">×</button>
+          </div>
+          <div class="xrc-docs-content">
+            <section class="xrc-docs-section xrc-monitor-current">
+              <div class="xrc-docs-title"><b>NOW</b><span><strong data-xrc-monitor-current>当前任务 · 0 次异常/重试</strong><small>仅统计当前 X 窗口；其他任务各自在专用窗口运行</small></span></div>
+              <p data-xrc-monitor-detail>待命</p>
+            </section>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>01</b><span><strong>回复管理</strong><small>首页互动 · 通知互动</small></span></div><ul>
+              <li><b>页面或断网：</b>先检测 X 连接；临时错误尽量在原页继续，重连从 2 秒逐步延长到 30 秒。未发送草稿挡住重连时不强行离开页面。</li>
+              <li><b>DeepSeek 失败：</b>当前回复 3 秒后重试；发送结果未确认时保留当前帖子，不当作成功。</li>
+              <li><b>风控：</b>遇到疑似自动化限制会停止任务，等待人工检查。断网、临时错误和草稿阻挡会写本地回执并尝试上报站长后台。</li>
+            </ul></section>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>02</b><span><strong>点赞管理</strong><small>首页帖子 · 帖子评论</small></span></div><ul>
+              <li><b>已赞或已处理：</b>跳过；两个子任务分别保存处理历史。评论任务不会重复点赞原帖。</li>
+              <li><b>限制提示：</b>停止点击并在当前任务状态显示原因。一般异常会停止该任务；目前不单独上报站长监控通知。</li>
+            </ul></section>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>03</b><span><strong>关注管理</strong><small>清理未回关 · 回关粉丝 · 关注候选</small></span></div><ul>
+              <li><b>额度与操作限制：</b>三项共用每日和批次额度；限制时暂停本批操作并记录限制回执。</li>
+              <li><b>存储失败：</b>保留上次读到的额度并停止任务，要求刷新页面后重试，避免按零额度继续。异常计数显示在任务页。</li>
+            </ul></section>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>04</b><span><strong>定时发帖</strong><small>取材 · 改写 · 发布</small></span></div><ul>
+              <li><b>素材或改写不合格：</b>跳过并换选题，不用原文兜底；旧规则草稿不会发送。</li>
+              <li><b>发布失败：</b>保留待发列表，约 1 分钟后重试；X 提示内容重复时清空草稿并换下一条。发帖历史无法保存时暂停当前素材。</li>
+              <li><b>监控范围：</b>本页显示错误数和上次异常；普通发帖异常目前不会全部转成站长监控通知。</li>
+            </ul></section>
+            <p class="xrc-docs-note">站长后台的「运行中心 → 异常监控」可看已送达的告警。没有告警不代表所有任务正常；插件的本地状态和待发列表仍需在对应窗口查看。</p>
+          </div>
+        </section>
         <div class="xrc-config" data-xrc-config hidden>
           <div class="xrc-docs-head">
             <div><small>SETTINGS</small><strong>设置</strong><span>密钥、提示词和频率都在这里改</span></div>
             <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
           </div>
           <div class="xrc-docs-content">
+            <button class="xrc-monitor-link" type="button" data-xrc-monitor-open aria-label="打开异常监控中心" aria-expanded="false"><span><b>异常监控中心</b><small>查看当前状态和各任务的异常处理</small></span><strong aria-hidden="true">→</strong></button>
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
               <label class="xrc-config-row">
@@ -2731,6 +2914,12 @@
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.16.0</b><span><strong>每日报告</strong><small>按北京时间保存确认成功的五类动作，历史日期可手动上传到站长后台。</small></span></article>
+                <article><b>v3.15.0</b><span><strong>一键清空本地状态</strong><small>主面板直接清空任务进度、待发与历史，重载 X 页签；保留已配置的密钥。</small></span></article>
+                <article><b>v3.14.2</b><span><strong>异常监控中心</strong><small>设置内可查看当前窗口状态，以及回复、点赞、关注、发帖各自的异常处理方式。</small></span></article>
+                <article><b>v3.14.1</b><span><strong>热点短帖提示词</strong><small>只按标题和摘要写一个观点，开头与收尾自然变化；旧规则待发草稿不再发送。</small></span></article>
+                <article><b>v3.14.0</b><span><strong>回复与点赞分组</strong><small>回复管理和点赞管理各有两个子页签；每项任务打开自己的窗口。</small></span></article>
+                <article><b>v3.13.0</b><span><strong>互动页签与自动点赞</strong><small>首页互动、通知互动更名；自动点赞单独手动运行，查看首页帖子和评论，出现限制提示即停。</small></span></article>
                 <article><b>v3.12.1</b><span><strong>发推提示词与热点改写一致</strong><small>热点改写读取设置页提示词，停止发送旧规则草稿；取消固定三行排版，拦截文艺化套话。</small></span></article>
                 <article><b>v3.12.0</b><span><strong>热点顺序与文案钩子</strong><small>先读知乎、头条，再读舆情分析；开头和结尾增加变化，避免同一种句式连发。</small></span></article>
                 <article><b>v3.11.0</b><span><strong>热点来源优先级</strong><small>定时发帖只写热点，先取 2aran 舆情分析，素材不足再读头条、知乎；待发列表和发布历史记录出处。</small></span></article>
@@ -2820,24 +3009,41 @@
             </label>
           </div>
           <div class="xrc-flow-launch">
-            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start title="一次打开并运行四类任务">全流程启动</button>
+            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start title="一次打开并运行回复、关注与发帖任务">全流程启动</button>
             <button class="xrc-flow-help" type="button" data-xrc-flow-help aria-expanded="false" aria-controls="xrc-flow-guide" aria-label="说明" title="说明">
               <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M6.4 6.2a1.6 1.6 0 1 1 2.5 1.3c-.5.3-.9.7-.9 1.3V9.4"></path><path d="M8 11.4h.01"></path></svg>
             </button>
           </div>
+          <div class="xrc-reset-row">
+            <span data-xrc-reset-status role="status">清空本地任务、待发与历史；保留 DeepSeek Key 和回执密钥</span>
+            <button type="button" data-xrc-reset-state>一键清空状态</button>
+          </div>
+          <details class="xrc-daily-report" data-xrc-daily-report>
+            <summary>每日报告 <span>查看今天与历史统计、手动上传到 2aran.com</span></summary>
+            <div class="xrc-daily-content">
+              <label>日期与账号 <select data-xrc-daily-date aria-label="选择每日报告日期与账号"></select></label>
+              <div class="xrc-daily-counts">
+                <span>评论 <b data-xrc-daily-comments>0</b></span><span>点赞 <b data-xrc-daily-likes>0</b></span>
+                <span>关注 <b data-xrc-daily-follows>0</b></span><span>取关 <b data-xrc-daily-unfollows>0</b></span>
+                <span>回关 <b data-xrc-daily-followBacks>0</b></span>
+              </div>
+              <div class="xrc-daily-actions"><small data-xrc-daily-uploaded>尚未上传</small><button type="button" data-xrc-daily-upload disabled>上传报告</button></div>
+              <p data-xrc-daily-status role="status">只统计插件确认成功的动作，按北京时间存储在本机。</p>
+            </div>
+          </details>
           <div class="xrc-flow-guide" id="xrc-flow-guide" data-xrc-flow-guide hidden>
-            <p><b>推荐先点「全流程启动」。</b>一次打开并运行下面 4 类任务。</p>
+            <p><b>推荐先点「全流程启动」。</b>一次打开并运行下面 3 组任务。</p>
             <ol>
-              <li><b>时间线回复</b>在首页按当前频率回复。</li>
-              <li><b>通知回复</b>处理通知里的互动。</li>
+              <li><b>回复管理</b>分为首页互动、通知互动，分别在自己的窗口运行。</li>
               <li><b>关注管理</b>分别清理未回关、回关粉丝、关注候选。</li>
               <li><b>定时发帖</b>先读知乎、头条热榜，素材不足再读 2aran 舆情分析，按待发列表发送。</li>
             </ol>
+            <p>点赞管理分为首页帖子和帖子评论，需要单独手动启动，不包含在全流程中。</p>
             <p>只想改其中一项时，打开对应页签，在该页设好频率后再点「启动单项任务」。API Key 在上方全局区填写。</p>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
-            <button type="button" role="tab" data-xrc-assistant="timeline"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"></path></svg><span>时间线回复</span></button>
-            <button type="button" role="tab" data-xrc-assistant="notifications"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.4a3.4 3.4 0 0 0-3.4 3.4v2.1L3.2 10.3h9.6L11.4 7.9V5.8A3.4 3.4 0 0 0 8 2.4z"></path><path d="M6.7 11.5a1.3 1.3 0 0 0 2.6 0"></path></svg><span>通知回复</span></button>
+            <button type="button" role="tab" data-xrc-assistant="reply"><span>回复管理</span></button>
+            <button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button>
             <button type="button" role="tab" data-xrc-assistant="mutual"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.2" r="1.6"></circle><path d="M3.1 11.4c.4-1.5 1.5-2.3 2.9-2.3s2.5.8 2.9 2.3"></path><circle cx="10.7" cy="5.7" r="1.3"></circle><path d="M10.3 9.1c1 .2 1.8.9 2.2 2"></path></svg><span>关注管理</span></button>
             <button type="button" role="tab" data-xrc-assistant="poster"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 3.2h6.1l2.9 2.9v6.7H3.4z"></path><path d="M9.3 3.2v3.1h3.1M5.2 9h5.4M5.2 11.1h3.2"></path></svg><span>定时发帖</span></button>
           </div>
@@ -2877,6 +3083,19 @@
           <div class="xrc-status" role="status" data-xrc-mutual-status>选择一项互关任务开始</div>
           <div class="xrc-footer"><span>任务运行 <b data-xrc-mutual-runtime>00:00</b></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
+        <div class="xrc-body xrc-like-body">
+          <div class="xrc-like-tabs" role="tablist" aria-label="点赞功能">
+            <button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>首页帖子</span></button>
+            <button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>帖子评论</span></button>
+          </div>
+          <section class="xrc-post-flow" aria-label="点赞管理">
+            <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
+            <p>单独手动运行，不随全流程启动。X 不允许自动点赞，账号出现操作限制时会停止。</p>
+            <div class="xrc-flow-end"><p data-xrc-like-count>已点赞 0 条 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>启动单项任务</button></div>
+          </section>
+          <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
+          <div class="xrc-footer"><span>仅在本窗口运行</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
+        </div>
         <div class="xrc-body xrc-post-body">
           <section class="xrc-post-flow" aria-label="定时发帖流程">
             <p data-xrc-post-source>取材顺序：知乎 → 今日头条 → 2aran 舆情分析。</p>
@@ -2909,6 +3128,10 @@
           <div class="xrc-footer"><span></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-reply-body">
+          <div class="xrc-reply-tabs" role="tablist" aria-label="回复功能">
+            <button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>首页互动</span></button>
+            <button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>通知互动</span></button>
+          </div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status xrc-wait-action" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span><button type="button" data-xrc-reply-start-now hidden>立即开始</button></div>
           <div class="xrc-stats">
@@ -2967,10 +3190,32 @@
         configOpen = !configOpen;
         if (configOpen) {
           panel.querySelector("[data-xrc-docs]").hidden = true;
+          monitorOpen = false;
+          syncMonitorMenu(panel);
           toolboxOpen = false;
           syncToolboxMenu(panel);
         }
         syncConfigMenu(panel);
+      });
+      panel.querySelector("[data-xrc-monitor-open]").addEventListener("click", () => {
+        if (state.panelView === "collapsed") {
+          state.panelView = "normal";
+          writeSaved({ running: state.running, total: state.total });
+        }
+        monitorOpen = !monitorOpen;
+        if (monitorOpen) {
+          configOpen = false;
+          toolboxOpen = false;
+          panel.querySelector("[data-xrc-docs]").hidden = true;
+          syncConfigMenu(panel);
+          syncToolboxMenu(panel);
+        }
+        syncMonitorMenu(panel);
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-monitor-close]").addEventListener("click", () => {
+        monitorOpen = false;
+        syncMonitorMenu(panel);
       });
       panel.querySelector("[data-xrc-toolbox-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
@@ -2980,8 +3225,10 @@
         toolboxOpen = !toolboxOpen;
         if (toolboxOpen) {
           configOpen = false;
+          monitorOpen = false;
           panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
+          syncMonitorMenu(panel);
         }
         syncToolboxMenu(panel);
         renderPanel();
@@ -3042,14 +3289,57 @@
         }
         configOpen = false;
         toolboxOpen = false;
+        monitorOpen = false;
         syncConfigMenu(panel);
         syncToolboxMenu(panel);
+        syncMonitorMenu(panel);
         panel.querySelector("[data-xrc-docs]").hidden = false;
       });
       panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
         panel.querySelector("[data-xrc-docs]").hidden = true;
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
+      panel.querySelector("[data-xrc-reset-state]")?.addEventListener("click", async () => {
+        if (resettingState) return;
+        const button = panel.querySelector("[data-xrc-reset-state]");
+        const status = panel.querySelector("[data-xrc-reset-status]");
+        button.disabled = true;
+        status.textContent = "正在停止任务并清空本地状态…";
+        try {
+          if (await flushConfigSave() === false) throw new Error("设置尚未保存，请先检查 API Key");
+          const result = await sendExtensionMessage({ type: "xrc-reset-state" });
+          if (!result?.ok) throw new Error(result?.error || "清空状态失败");
+          status.textContent = "已清空，正在重新加载 X 页面…";
+          window.setTimeout(() => window.location.reload(), 100);
+        } catch (error) {
+          resettingState = false;
+          button.disabled = false;
+          status.textContent = error?.message || "清空状态失败，请重试";
+        }
+      });
+      panel.querySelector("[data-xrc-daily-report]")?.addEventListener("toggle", () => {
+        if (!panel.querySelector("[data-xrc-daily-report]")?.open) return;
+        refreshDailyReport(panel).catch((error) => {
+          panel.querySelector("[data-xrc-daily-status]").textContent = error?.message || "读取报告失败";
+        });
+      });
+      panel.querySelector("[data-xrc-daily-date]")?.addEventListener("change", () => showDailyReport(panel));
+      panel.querySelector("[data-xrc-daily-upload]")?.addEventListener("click", async () => {
+        const selected = dailyReports.find((report) => `${report.date}|${report.accountHandle}` === panel.querySelector("[data-xrc-daily-date]")?.value);
+        if (!selected) return;
+        const button = panel.querySelector("[data-xrc-daily-upload]");
+        const status = panel.querySelector("[data-xrc-daily-status]");
+        button.disabled = true;
+        status.textContent = "正在上传…";
+        try {
+          await sendExtensionMessage({ type: "xrc-daily-upload", date: selected.date, accountHandle: selected.accountHandle });
+          await refreshDailyReport(panel);
+          status.textContent = "已上传到 2aran.com 后台的「社区动作 → 浏览器插件」。";
+        } catch (error) {
+          status.textContent = error?.message || "上传失败，报告仍保存在本机";
+          button.disabled = false;
+        }
+      });
       panel.querySelector("[data-xrc-flow-help]")?.addEventListener("click", () => {
         const guide = panel.querySelector("[data-xrc-flow-guide]");
         const help = panel.querySelector("[data-xrc-flow-help]");
@@ -3060,6 +3350,7 @@
         help.classList.toggle("is-open", open);
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelector("[data-xrc-like-toggle]").addEventListener("click", toggleLikes);
       panel.querySelector("[data-xrc-post-toggle]").addEventListener("click", onPosterToggle);
       panel.querySelector("[data-xrc-post-start-now]").addEventListener("click", () => {
         postApi?.startNow?.();
@@ -3071,10 +3362,24 @@
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
       });
+      panel.querySelectorAll("[data-xrc-reply-tab]").forEach((button) => {
+        button.addEventListener("click", () => openTaskTab(button.dataset.xrcReplyTab));
+      });
+      panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
+        button.addEventListener("click", () => openTaskTab(`likes-${button.dataset.xrcLikeTab}`));
+      });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         button.addEventListener("click", () => {
           if (button.dataset.xrcAssistant === "mutual") {
             openMutualWindows();
+            return;
+          }
+          if (button.dataset.xrcAssistant === "reply") {
+            openReplyWindows();
+            return;
+          }
+          if (button.dataset.xrcAssistant === "likes") {
+            openLikeWindows();
             return;
           }
           openTaskTab(button.dataset.xrcAssistant);
@@ -3202,7 +3507,9 @@
         aiKeyInput.disabled = Boolean(state.loopPromise) || state.running || Boolean(state.poster?.running);
       }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
-        const selected = button.dataset.xrcAssistant === state.assistantMode;
+        const selected = button.dataset.xrcAssistant === state.assistantMode
+          || (button.dataset.xrcAssistant === "reply" && ["timeline", "notifications"].includes(state.assistantMode))
+          || (button.dataset.xrcAssistant === "likes" && state.assistantMode.startsWith("likes-"));
         button.classList.toggle("is-active", selected);
         button.setAttribute("aria-selected", selected ? "true" : "false");
         button.disabled = false;
@@ -3317,6 +3624,32 @@
       }
     }
     const mutual = state.mutual || mutualApi?.snapshot?.();
+    const likeStatus = panel.querySelector("[data-xrc-like-status]");
+    if (likeStatus) likeStatus.textContent = likeState.status;
+    const likeDescription = panel.querySelector("[data-xrc-like-description]");
+    if (likeDescription) likeDescription.textContent = state.assistantMode === "likes-replies"
+      ? "逐个打开首页帖子，只点赞评论。已查看的评论串不会重复处理。"
+      : "从首页逐条点赞帖子。已点过赞的内容不会重复点击。";
+    const likeCount = panel.querySelector("[data-xrc-like-count]");
+    if (likeCount) likeCount.textContent = `已点赞 ${likeState.count} 条 · 已查看 ${likeState.posts} 个帖子`;
+    const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
+    if (likeToggle) {
+      likeToggle.textContent = likeState.stopping ? "停止中" : likeState.running ? "停止自动点赞" : "启动单项任务";
+      likeToggle.disabled = likeState.stopping;
+    }
+    if (state.assistantMode.startsWith("likes-")) panel.querySelector("[data-xrc-mini-progress]").textContent = `点赞管理 · ${likeState.count} 条`;
+    panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
+      const selected = `likes-${button.dataset.xrcLikeTab}` === state.assistantMode;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.title = selected ? "当前任务窗口" : "打开或切换到对应的点赞任务窗口";
+    });
+    panel.querySelectorAll("[data-xrc-reply-tab]").forEach((button) => {
+      const selected = button.dataset.xrcReplyTab === state.assistantMode;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.title = selected ? "当前任务窗口" : "打开或切换到对应的回复任务窗口";
+    });
     const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
     if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
     const mutualStartedAt = Number(pluginRuntime.tasks?.[mutualTaskKey()]?.startedAt) || 0;
@@ -3358,10 +3691,11 @@
     const active = anyTaskRunning() || Object.keys(pluginRuntime.tasks || {}).length > 0;
     const mutualSelected = state.assistantMode === "mutual";
     const posterSelected = state.assistantMode === "poster";
-    const completed = !mutualSelected && !posterSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
-    const waitingForNextCycle = !mutualSelected && !posterSelected && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
-    const reconnecting = !mutualSelected && !posterSelected && state.reconnectAt > Date.now();
-    const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : state.status;
+    const likeSelected = state.assistantMode.startsWith("likes-");
+    const completed = !mutualSelected && !posterSelected && !likeSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
+    const waitingForNextCycle = !mutualSelected && !posterSelected && !likeSelected && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
+    const reconnecting = !mutualSelected && !posterSelected && !likeSelected && state.reconnectAt > Date.now();
+    const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : likeSelected ? likeState.status : state.status;
     const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
     panel.dataset.assistantMode = state.assistantMode;
@@ -3378,10 +3712,10 @@
     collapseButton.title = state.panelView === "collapsed" ? "展开面板" : "折叠面板";
     expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
     expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
-    panel.dataset.state = state.riskPaused ? "warning" : state.stopping || mutual?.stopping || poster?.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    panel.dataset.state = state.riskPaused ? "warning" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
-      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping
+      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
         ? "停止中"
         : state.riskPaused
           ? "风控暂停"
@@ -3403,6 +3737,7 @@
     paintFlowButton(panel);
     applyTaskTitle();
     syncConfigMenu(panel);
+    syncMonitorMenu(panel);
     placePanel(panel);
   }
 
@@ -3499,7 +3834,7 @@
     begin({ resume: false });
   }
 
-  const TASK_TITLE_RE = /^(?:时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:首页互动|通知互动|点赞帖子|点赞评论|自动点赞|时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -3507,9 +3842,11 @@
       if (state.mutualMode === "targetFollow") return "关注候选";
       return "清理未回关";
     }
-    if (state.assistantMode === "notifications") return "通知回复";
+    if (state.assistantMode === "notifications") return "通知互动";
+    if (state.assistantMode === "likes-posts") return "点赞帖子";
+    if (state.assistantMode === "likes-replies") return "点赞评论";
     if (state.assistantMode === "poster") return "定时发帖";
-    return "时间线回复";
+    return "首页互动";
   }
 
   function applyTaskTitle() {
@@ -3521,6 +3858,7 @@
   }
 
   async function boot() {
+    await clearStaleSessionAfterReset();
     const saved = readSaved();
     rememberAccountHandle();
     const requested = requestedLaunch();
@@ -3541,6 +3879,8 @@
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
     state.assistantMode = launch?.assistantMode || saved.assistantMode;
+    if (state.assistantMode === "likes-posts") likeState.status = "待命。手动开始后，点赞首页帖子。";
+    if (state.assistantMode === "likes-replies") likeState.status = "待命。手动开始后，点赞帖子评论。";
     state.mutualMode = launch?.mutualMode || saved.mutualMode;
     applyTaskTitle();
     state.replyMode = saved.replyMode;
@@ -3560,6 +3900,9 @@
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
     await loadPluginRuntime();
+    if (state.assistantMode.startsWith("likes-") && pluginRuntime.tasks?.[state.assistantMode] && !launchedStart) {
+      await setRuntimeTaskActive(state.assistantMode, false);
+    }
     await loadAiSettings();
     await loadSchedulePace();
     await loadPosterPace();
@@ -3599,7 +3942,11 @@
     boot();
   }
 
-  globalThis.chrome?.runtime?.onMessage?.addListener((message) => {
+  globalThis.chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
+    if (message?.type === "xrc-reset-prepare") {
+      sendResponse(prepareStateReset());
+      return false;
+    }
     if (message?.type === "xrc-flow-stop") {
       stopLocalTasks(message.reason || "全流程已暂停");
       return false;
@@ -3620,6 +3967,12 @@
         state.mutual = { ...state.mutual, ...snapshot, status: state.mutual?.status || snapshot.status };
         renderPanel();
       }).catch(() => {});
+    }
+    if (changes.xrcDailyReports) {
+      const panel = document.getElementById(PANEL_ID);
+      if (panel?.querySelector("[data-xrc-daily-report]")?.open) {
+        refreshDailyReport(panel).catch(() => {});
+      }
     }
     renderPanel();
   });

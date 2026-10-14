@@ -17,7 +17,7 @@
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
-  const DRAFT_POLICY_VERSION = 3;
+  const DRAFT_POLICY_VERSION = 4;
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
   const history = { sourceIds: [], published: [] };

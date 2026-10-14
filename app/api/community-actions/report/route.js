@@ -77,7 +77,7 @@ export async function POST(req) {
         })
       }
     }
-    return Response.json({ ok: true, accepted: recorded.accepted })
+    return Response.json({ ok: true, accepted: recorded.accepted, dailyReportSaved: recorded.dailyReportSaved })
   } catch (error) {
     if (isMissingTable(error)) {
       return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })

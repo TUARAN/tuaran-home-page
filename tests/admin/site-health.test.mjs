@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const pageSource = await readFile(new URL('../../app/(admin)/admin/site-health/page.jsx', import.meta.url), 'utf8')
+const monitorSource = await readFile(new URL('../../app/(admin)/admin/site-health/ExceptionMonitorClient.jsx', import.meta.url), 'utf8')
 const reportSource = await readFile(new URL('../../docs/context/site-health-audit.md', import.meta.url), 'utf8')
 const designSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
 const nextConfigSource = await readFile(new URL('../../next.config.js', import.meta.url), 'utf8')
@@ -21,6 +22,15 @@ test('UI design stays in engineering while runtime tools share one operations ce
   assert.match(pageSource, /<SiteStatusConsole embedded \/>/)
   assert.match(pageSource, /site-health-audit\.md\?raw/)
   assert.match(nextConfigSource, /site-health-audit/)
+})
+
+test('exception monitor uses owner notifications and explains the limits of each signal', () => {
+  assert.match(pageSource, /label: '异常监控'/)
+  assert.match(pageSource, /<ExceptionMonitorClient \/>/)
+  assert.match(monitorSource, /\/api\/notifications\?type=automation&limit=30/)
+  assert.match(monitorSource, /没有告警也可能是任务未运行、尚未接入上报或上报失败/)
+  assert.match(monitorSource, /点赞、关注和定时发帖的全部本地异常尚未统一进入消息中心/)
+  assert.doesNotMatch(monitorSource, /\/messages\?tab=automation/)
 })
 
 test('site health report records scope correction, findings, repairs, and verification', () => {

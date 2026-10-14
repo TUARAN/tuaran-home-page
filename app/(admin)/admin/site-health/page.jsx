@@ -6,17 +6,19 @@ import report from '../../../../docs/context/site-health-audit.md?raw'
 import DbAdminClient from '../db/DbConsole'
 import SiteStatusConsole from '../site-status/SiteStatusConsole'
 import BloggerEyeConsole from '../blogger-eye/BloggerEyeConsole'
+import ExceptionMonitorClient from './ExceptionMonitorClient'
 
 export const runtime = 'edge'
 
 export const metadata = {
   title: '运行中心',
-  description: '站点体检、数据健康、可用性探测与故障公告。',
+  description: '异常监控、站点体检、数据健康、可用性探测与故障公告。',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
 
 const TABS = [
-  { id: 'audit', label: '站点体检', href: '/admin/site-health' },
+  { id: 'exceptions', label: '异常监控', href: '/admin/site-health?tab=exceptions' },
+  { id: 'audit', label: '站点体检', href: '/admin/site-health?tab=audit' },
   { id: 'data', label: '数据健康', href: '/admin/site-health?tab=data' },
   { id: 'probe', label: '可用性探测', href: '/admin/site-health?tab=probe' },
   { id: 'incidents', label: '故障公告', href: '/admin/site-health?tab=incidents' },
@@ -24,19 +26,20 @@ const TABS = [
 
 export default async function AdminSiteHealthPage({ searchParams }) {
   const params = await searchParams
-  const activeTab = TABS.some((tab) => tab.id === params?.tab) ? params.tab : 'audit'
+  const activeTab = TABS.some((tab) => tab.id === params?.tab) ? params.tab : 'exceptions'
   return (
     <AdminPageGate
       label="运行中心"
       returnTo="/admin/site-health"
-      description="站点运行质量、数据状态、主动探测和故障处置的统一入口，仅站长本人可见。"
+      description="站点异常告警、运行质量、数据状态、主动探测和故障处置的统一入口，仅站长本人可见。"
     >
       <AdminPage
         title="运行中心"
-        description="从运行审计、数据状态和主动探测发现问题，并在同一处完成故障公告。"
+        description="集中查看异常告警、各板块处理方式、数据状态和主动探测，并在同一处完成故障公告。"
       >
         <AdminSubnav label="运行中心视图" items={TABS} activeId={activeTab} />
 
+        {activeTab === 'exceptions' ? <ExceptionMonitorClient /> : null}
         {activeTab === 'audit' ? <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="主域真实请求" value="1.55M" sub="最近 30 天 · 已排除内部请求" icon="analytics" tone="info" />

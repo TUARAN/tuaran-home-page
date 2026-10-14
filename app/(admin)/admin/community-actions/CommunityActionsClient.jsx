@@ -178,6 +178,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
   const tasks = center?.tasks || []
   const devices = center?.devices || []
   const recent = center?.recent || []
+  const dailyReports = center?.dailyReports || []
   const onlineCount = devices.filter((device) => device.online).length
 
   return (
@@ -257,6 +258,25 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         ) : (
           <EmptyState title="还没有任务项" description={loading ? '正在读取。' : '迁移完成后，这里会列出当前任务项。'} />
         )}
+      </Section>
+
+      <Section title="X 插件每日报告" description="插件本地按北京时间统计成功动作，点击插件里的「上传报告」后显示在这里。同一设备、日期和账号再次上传会更新该日数据。">
+        {center?.dailyMigrationRequired ? <p className="mt-0 text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
+        {dailyReports.length ? (
+          <div className="grid gap-2">
+            {dailyReports.map((report) => (
+              <article key={`${report.deviceId}:${report.date}:${report.accountHandle}`} className="rounded-lg border border-[#e4e6dc] px-3 py-3 text-[13px] dark:border-[#263142]">
+                <div className="flex flex-wrap items-center justify-between gap-2 font-medium text-[#25261f] dark:text-gray-100">
+                  <span>{report.date} · {report.accountHandle ? `@${report.accountHandle}` : '账号未识别'}</span>
+                  <span className="text-[12px] font-normal text-[#7a7c70] dark:text-gray-400">上传于 {formatTime(report.uploadedAt)}</span>
+                </div>
+                <p className="mb-0 mt-2 text-[#5f6156] dark:text-gray-300">
+                  评论 {report.comments} · 点赞 {report.likes} · 关注 {report.follows} · 取关 {report.unfollows} · 回关 {report.followBacks}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : <EmptyState title="还没有上传的每日报告" description="在 X 插件主面板展开每日报告，选择日期后点击上传。" />}
       </Section>
 
       <Section title="设备" description="每个已安装的插件有自己的设备号。账号要等页面读到登录身份后才会出现。">

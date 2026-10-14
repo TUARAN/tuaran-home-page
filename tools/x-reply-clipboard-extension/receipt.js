@@ -3,6 +3,7 @@
 
   const PLATFORM = "x";
   const STORAGE_KEY = "xrcCommunityReport";
+  const DAILY_KEY = "xrcDailyReports";
   const EVENT_MESSAGE = "xrc-community-event";
   const HEARTBEAT_MESSAGE = "xrc-community-heartbeat";
   const ALARM_NAME = "xrc-community-heartbeat";
@@ -13,11 +14,51 @@
     "mutual-unfollow",
     "mutual-follow-back",
     "mutual-target-follow",
+    "post-like",
+    "reply-like",
     "tweet-post"
   ]);
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
   const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
   let chain = Promise.resolve();
+  const DAILY_TASKS = Object.freeze({
+    "timeline-reply": "comments", "notification-reply": "comments",
+    "post-like": "likes", "reply-like": "likes",
+    "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
+    "mutual-follow-back": "followBacks"
+  });
+
+  function shanghaiDate(at = Date.now()) {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(at);
+  }
+
+  function emptyCounts() {
+    return { comments: 0, likes: 0, follows: 0, unfollows: 0, followBacks: 0 };
+  }
+
+  async function dailyReports() {
+    const stored = await root.chrome.storage.local.get(DAILY_KEY);
+    return Array.isArray(stored?.[DAILY_KEY]) ? stored[DAILY_KEY] : [];
+  }
+
+  async function recordDailySuccess(event, accountHandle) {
+    const metric = DAILY_TASKS[event.task];
+    if (event.result !== "success" || !metric) return;
+    const date = shanghaiDate(event.occurredAt);
+    const handle = cleanHandle(accountHandle).toLowerCase();
+    const rows = await dailyReports();
+    let row = rows.find((item) => item.date === date && item.accountHandle === handle);
+    if (!row) {
+      row = { date, accountHandle: handle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
+      rows.push(row);
+    }
+    if (row.eventIds.includes(event.id)) return;
+    row.counts[metric] = Math.max(0, Number(row.counts[metric]) || 0) + 1;
+    row.eventIds = [...row.eventIds, event.id].slice(-300);
+    row.updatedAt = Date.now();
+    const oldest = shanghaiDate(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    await root.chrome.storage.local.set({ [DAILY_KEY]: rows.filter((item) => item.date >= oldest).sort((a, b) => b.date.localeCompare(a.date)) });
+  }
 
   function createId() {
     if (root.crypto?.randomUUID) return root.crypto.randomUUID();
@@ -140,9 +181,39 @@
     return enqueue(async () => {
       const config = await ensureConfig();
       if (payload.accountHandle) config.accountHandle = payload.accountHandle;
+      await recordDailySuccess(payload, payload.accountHandle || config.accountHandle);
       config.queue = [...config.queue, payload].slice(-40);
       await storageSet(config);
       return postCurrent();
+    });
+  }
+
+  function uploadDaily(date, accountHandle) {
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      if (!config.secret) return { ok: false, error: "请先在设置里填写社区回执密钥" };
+      const rows = await dailyReports();
+      const row = rows.find((item) => item.date === date && item.accountHandle === accountHandle);
+      if (!row) return { ok: false, error: "这一天没有本地报告" };
+      let response;
+      try {
+        response = await fetch(REPORT_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-community-action-secret": config.secret },
+          body: JSON.stringify({
+            deviceId: config.deviceId, platform: PLATFORM,
+            extensionVersion: root.chrome?.runtime?.getManifest?.().version || "",
+            accountHandle: row.accountHandle,
+            dailyReport: { date: row.date, accountHandle: row.accountHandle, counts: row.counts }
+          })
+        });
+      } catch (error) { return { ok: false, error: "网络不可用，报告仍保存在本地" }; }
+      if (!response.ok) return { ok: false, error: `上传失败（HTTP ${response.status}）` };
+      const result = await response.json().catch(() => null);
+      if (result?.dailyReportSaved !== true) return { ok: false, error: "后台尚未支持每日报告，请先更新站点" };
+      row.uploadedAt = Date.now();
+      await root.chrome.storage.local.set({ [DAILY_KEY]: rows });
+      return { ok: true, uploadedAt: row.uploadedAt };
     });
   }
 
@@ -218,6 +289,10 @@
     heartbeat,
     accept,
     heartbeatFromBackground,
+    dailyReports,
+    uploadDaily,
+    recordDailySuccess,
+    shanghaiDate,
     saveSecret,
     readSecret,
     install

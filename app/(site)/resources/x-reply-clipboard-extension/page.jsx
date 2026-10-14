@@ -335,9 +335,12 @@ export default function XReplyClipboardResourcePage() {
 
         <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)]">
           <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
-              <IconBrandX size={15} aria-hidden="true" />
-              X Interaction Copilot
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
+                <IconBrandX size={15} aria-hidden="true" />
+                X Interaction Copilot
+              </span>
+              <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-300/15 px-3 py-1.5 text-xs font-bold text-amber-200">VIP 工具 · 密码领取</span>
             </div>
             <h1 className="max-w-3xl text-[38px] font-black leading-[1.05] tracking-[-0.045em] text-white sm:text-[52px] lg:text-[64px]">
               让每一次互动，

@@ -1,5 +1,5 @@
 ---
-title: 邵艾伦对话孙宇晨：四小时对谈里能留下的，和发布当天的舆情
+title: 邵艾伦对话孙宇晨：四小时对谈里的方法与待核查说法
 category: topics
 topic_type: thesis
 subjects: [people_profiles]

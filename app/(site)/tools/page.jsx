@@ -107,6 +107,7 @@ export default function ToolsPage() {
       meta: [categoryLabels[item.type] || '工具'],
       badgeLabel: TOOL_STATUS_META[item.status] || item.status,
       badgeTone: statusTone(item.status),
+      vipLabel: item.vip ? 'VIP 工具' : null,
       footerLabel: item.tags.slice(0, 2).join(' · '),
       metricLabel: item.downloadType === 'extension'
         ? '浏览器扩展'

@@ -194,6 +194,11 @@ function ItemMeta({ item, hideDuplicateCategory = false }) {
           {item.badgeLabel}
         </span>
       ) : null}
+      {item.vipLabel ? (
+        <span className="inline-flex items-center rounded-full border border-amber-400/70 bg-amber-100 px-2.5 py-0.5 font-mono text-[10px] font-black tracking-wide text-amber-900 shadow-sm dark:border-amber-500/60 dark:bg-amber-400/15 dark:text-amber-200">
+          {item.vipLabel}
+        </span>
+      ) : null}
     </div>
   )
 }

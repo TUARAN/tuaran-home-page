@@ -15,6 +15,7 @@ export const PLANNING_STATUS_META = {
 
 export const PLANNING_TABS = [
   { id: 'portfolio', label: '项目组合' },
+  { id: 'work', label: '工作清单' },
   { id: 'todo', label: '待办清单' },
   { id: 'overview', label: '执行总览' },
   { id: 'roadmap', label: '组合路线图' },

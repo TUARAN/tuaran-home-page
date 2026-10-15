@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function AdminPlanningPage({ searchParams }) {
   const params = await searchParams
-  const allowedTabs = new Set(['portfolio', 'todo', 'overview', 'roadmap', 'tree', 'history', 'dispatch'])
+  const allowedTabs = new Set(['portfolio', 'work', 'todo', 'overview', 'roadmap', 'tree', 'history', 'dispatch'])
   const initialTab = allowedTabs.has(params?.tab) ? params.tab : 'todo'
   return (
     <AdminPageGate

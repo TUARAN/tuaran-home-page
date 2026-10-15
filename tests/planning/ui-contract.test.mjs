@@ -12,7 +12,7 @@ const planningCenterSource = await readFile(new URL('../../app/(admin)/admin/pla
 test('planning UI publishes the integrated todo and planning views and labels every planning status', async () => {
   const { PLANNING_STATUS_META, PLANNING_TABS } = await loadPlanningUi()
 
-  assert.deepEqual(PLANNING_TABS.map((tab) => tab.id), ['portfolio', 'todo', 'overview', 'roadmap', 'tree', 'history', 'dispatch'])
+  assert.deepEqual(PLANNING_TABS.map((tab) => tab.id), ['portfolio', 'work', 'todo', 'overview', 'roadmap', 'tree', 'history', 'dispatch'])
   for (const status of ['planned', 'active', 'paused', 'completed', 'archived', 'blocked', 'cancelled', 'doing', 'done', 'open', 'decided', 'superseded']) {
     assert.equal(typeof PLANNING_STATUS_META[status]?.label, 'string')
     assert.equal(typeof PLANNING_STATUS_META[status]?.tone, 'string')

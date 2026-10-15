@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AdminButton, AdminPage } from '../../components/ui'
 import PlanningEditor from './PlanningEditor'
 import PlanningHistory from './PlanningHistory'
+import PrivateWorkList from './PrivateWorkList'
 import PlanningImportPanel from './PlanningImportPanel'
 import PlanningRoadmap from './PlanningRoadmap'
 import PlanningTodoBoard from './PlanningTodoBoard'
@@ -224,7 +225,7 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
         <AdminPage
       title="项目管理"
       description="项目组合、待办、里程碑和长期方向在同一处管理。"
-      actions={activeTab === 'portfolio' ? null : (
+      actions={activeTab === 'portfolio' || activeTab === 'work' ? null : (
         <>
           <AdminButton type="button" onClick={() => setImportPanel(true)}>
             初始化数据
@@ -253,16 +254,16 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
           ))}
         </div>
 
-        {activeTab !== 'portfolio' && error ? (
+        {activeTab !== 'portfolio' && activeTab !== 'work' && error ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-100">
             <span>{errorMessage(error)}</span>
             <button type="button" className="rounded-lg border px-3 py-1.5 text-sm font-medium transition hover:bg-rose-100 dark:hover:bg-rose-950/60" onClick={reload}>重试</button>
           </div>
         ) : null}
 
-        {activeTab !== 'portfolio' && loading && !snapshot ? <div className="rounded-xl border"><LoadingState label="正在加载规划快照" /></div> : null}
-        {activeTab !== 'portfolio' && loading && snapshot ? <p className="mb-0 text-xs text-[var(--admin-muted)]">正在更新，保留上次成功加载的数据。</p> : null}
-        {activeTab !== 'portfolio' && !loading && !snapshot && !error ? <div className="rounded-xl border px-4 py-8 text-sm text-[var(--admin-muted)]">暂无规划数据，可先初始化或快速添加。</div> : null}
+        {activeTab !== 'portfolio' && activeTab !== 'work' && loading && !snapshot ? <div className="rounded-xl border"><LoadingState label="正在加载规划快照" /></div> : null}
+        {activeTab !== 'portfolio' && activeTab !== 'work' && loading && snapshot ? <p className="mb-0 text-xs text-[var(--admin-muted)]">正在更新，保留上次成功加载的数据。</p> : null}
+        {activeTab !== 'portfolio' && activeTab !== 'work' && !loading && !snapshot && !error ? <div className="rounded-xl border px-4 py-8 text-sm text-[var(--admin-muted)]">暂无规划数据，可先初始化或快速添加。</div> : null}
 
         {PLANNING_TABS.map((tab) => (
           <div
@@ -273,6 +274,7 @@ export default function PlanningCenter({ initialTab = 'overview' }) {
             key={tab.id}
           >
             {tab.id === 'portfolio' ? <ProjectPortfolioConsole embedded /> : null}
+            {tab.id === 'work' && activeTab === 'work' ? <PrivateWorkList /> : null}
             {tab.id === 'todo' && snapshot ? (
               <PlanningTodoBoard
                 snapshot={visibleSnapshot}

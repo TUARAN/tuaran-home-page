@@ -27,7 +27,7 @@ const MODE_TABS = Object.freeze([
   { id: 'plan', label: '实践计划' },
   { id: 'extension', label: '浏览器插件' },
   { id: 'cloud', label: '纯云端' },
-  { id: 'api', label: 'API 管理' },
+  { id: 'api', label: '模型 API 密钥' },
 ])
 
 const CLOUD_PANELS = Object.freeze([
@@ -402,11 +402,11 @@ function OverviewPanel({ center, loading, onOpenMode }) {
       </Section>
 
       <Section
-        title="DeepSeek API"
-        description="查看和复制供 X、小红书、掘金浏览器插件使用的 API Key，也可管理站点任务的密钥。"
-        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('api')}>打开 API 管理</AdminButton>}
+        title="模型 API 密钥"
+        description="查看、复制和管理模型服务密钥，包括插件使用的 DeepSeek、B.AI 密钥及站点任务密钥。"
+        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('api')}>打开密钥管理</AdminButton>}
       >
-        <p className="mb-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">站点数据库密钥与当前 Admin 环境变量可按需查看和复制；各插件保存 Key 后直接请求 DeepSeek。</p>
+        <p className="mb-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">数据库密钥与当前 Admin 环境变量可按需查看和复制。X 插件的 B.AI 密钥用于回复回退，需单独粘贴到插件设置；小红书和掘金插件使用 DeepSeek。</p>
       </Section>
     </div>
   )

@@ -194,7 +194,7 @@ export default function DeepSeekKeysPanel() {
       if (copy) {
         await copyText(result.key)
         setRevealed(null)
-        setNotice('DeepSeek API Key 已复制。')
+        setNotice('API Key 已复制。')
       } else {
         setRevealed({ id, key: result.key })
       }
@@ -488,7 +488,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="数据库密钥"
-        description="一条 D1 密钥记录可以绑定多个任务，即多个任务共用同一 Key。选择顺序为精确任务绑定、来源绑定、全局兜底，再回退到当前运行环境变量。Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，浏览器插件直连 DeepSeek 不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
+        description="可保存 DeepSeek 或 B.AI 等模型服务的 Key。一条 D1 密钥记录可以绑定多个任务；站点 DeepSeek 任务按精确任务绑定、来源绑定、全局兜底选择，最后回退到当前运行环境变量。Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，插件直连模型服务不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -543,7 +543,7 @@ export default function DeepSeekKeysPanel() {
                 </div>
                 {revealed?.id === key.id ? (
                   <div className="mt-3 flex items-center gap-2">
-                    <input readOnly aria-label={`${key.name} 的 DeepSeek API Key`} value={revealed.key} className={`${INPUT_CLASS} font-mono`} />
+                    <input readOnly aria-label={`${key.name} 的 API Key`} value={revealed.key} className={`${INPUT_CLASS} font-mono`} />
                     <AdminButton type="button" size="sm" onClick={() => setRevealed(null)}>隐藏</AdminButton>
                   </div>
                 ) : null}
@@ -563,7 +563,7 @@ export default function DeepSeekKeysPanel() {
           <div className="grid gap-4 lg:grid-cols-2">
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               名称 *
-              <input className={`${INPUT_CLASS} mt-1`} value={form.name} maxLength={80} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：主站 DeepSeek Flash" />
+              <input className={`${INPUT_CLASS} mt-1`} value={form.name} maxLength={80} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="例如：主站 DeepSeek / X 插件 B.AI" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               API Key {editingId ? '' : '*'}{editingId ? '（留空保持不变）' : ''}
@@ -583,7 +583,7 @@ export default function DeepSeekKeysPanel() {
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               Base URL（可选）
-              <input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="https://api.deepseek.com" />
+              <input className={`${INPUT_CLASS} mt-1`} value={form.baseUrl} onChange={(event) => setForm((prev) => ({ ...prev, baseUrl: event.target.value }))} placeholder="例如：https://api.deepseek.com" />
             </label>
             <label className="block text-[12px] text-[#67695d] dark:text-gray-400">
               状态
@@ -599,7 +599,7 @@ export default function DeepSeekKeysPanel() {
           </div>
 
           <div className="mt-4">
-            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。站外插件直接使用复制的 Key，选择对应插件来源；站内互动机器人使用 engagement-bot。跨运行环境仍需分别配置解密主密钥）</p>
+            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。B.AI 等非 DeepSeek 密钥请绑定对应站外插件来源，避免被站点 DeepSeek 任务选为全局兜底。插件仍需手动粘贴 Key；站内互动机器人使用 engagement-bot。跨运行环境仍需分别配置解密主密钥）</p>
             <div className="mt-2 space-y-2">
               {form.bindings.map((binding, index) => (
                 <div key={index} className="flex flex-wrap items-center gap-2">

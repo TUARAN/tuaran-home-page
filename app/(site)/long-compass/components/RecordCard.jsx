@@ -4,9 +4,10 @@ import { THEME_COLORS } from '../../../../lib/longCompass/schema'
 
 import { PROSE_CLASS, renderMarkdown } from './markdown'
 
-export default function RecordCard({ record, dense = false, expanded = false, onToggle }) {
+export default function RecordCard({ record, attachments = [], dense = false, expanded = false, onToggle }) {
   const padding = dense ? 'p-3' : 'p-4'
   const themes = Array.isArray(record.plain?.theme) ? record.plain.theme : []
+  const content = String(record.plain?.content || '').replace(/\[([^\]]+)\]\(\.\.\/\.\.\/attachments\/[^)]+\)/g, '$1（见下方私密附件）')
   return (
     <article
       className={`rounded-lg border border-[#dee0db] bg-white/[0.78] ${padding} dark:border-gray-800 dark:bg-[#121821]/[0.78]`}
@@ -46,12 +47,13 @@ export default function RecordCard({ record, dense = false, expanded = false, on
           </span>
         </span>
       </button>
-      {expanded ? (
-        <div
-          className={PROSE_CLASS}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(record.plain?.content) }}
-        />
-      ) : null}
+      {expanded ? <>
+        <div className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+        {attachments.length ? <div className="mt-4 border-t border-[#dee0db] pt-3 dark:border-gray-800">
+          <p className="mb-2 text-xs font-medium text-[#626459] dark:text-gray-300">私密附件</p>
+          {attachments.map((item) => <a key={item.id} href={item.previewUrl} target="_blank" rel="noreferrer" className="block text-sm underline underline-offset-2">{item.fileName}</a>)}
+        </div> : null}
+      </> : null}
     </article>
   )
 }

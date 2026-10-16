@@ -60,6 +60,11 @@ bucket_name = "tuaran-content-feed"
 binding = "NSFW_MEDIA"
 bucket_name = "tuaran-nsfw-private"
 
+# 站长私密文档；不启用 r2.dev 或公开自定义域，只能由后台鉴权接口读取。
+[[r2_buckets]]
+binding = "PRIVATE_DOCUMENTS"
+bucket_name = "tuaran-private-documents"
+
 # 数字人口播私有媒体桶：照片、临时语音和生成视频均不得公开直连。
 [[r2_buckets]]
 binding = "AVATAR_MEDIA"

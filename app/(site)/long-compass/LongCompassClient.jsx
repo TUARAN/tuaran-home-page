@@ -34,6 +34,7 @@ export default function LongCompassClient({
   const [password, setPassword] = useState('')
   const [unlocked, setUnlocked] = useState(preUnlocked)
   const [records, setRecords] = useState(preUnlocked ? initialRecords : [])
+  const [attachmentsByRecord, setAttachmentsByRecord] = useState({})
   const lockedView = view === 'records' || view === 'finance'
   const [activeView, setActiveView] = useState(view === 'finance' ? 'finance' : 'records')
   const [activeKind, setActiveKind] = useState('snapshot')
@@ -83,6 +84,23 @@ export default function LongCompassClient({
       }
     })()
   }, [preUnlocked])
+
+  useEffect(() => {
+    if (!embedded || !unlocked) return undefined
+    let alive = true
+    fetch('/api/admin/private-documents', { cache: 'no-store', credentials: 'same-origin' })
+      .then(async (response) => response.ok ? response.json() : { items: [] })
+      .then((data) => {
+        if (!alive) return
+        const grouped = {}
+        for (const item of data.items || []) {
+          if (item.recordId) (grouped[item.recordId] ||= []).push(item)
+        }
+        setAttachmentsByRecord(grouped)
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [embedded, unlocked])
 
   // ---- 解锁 ----
   async function handleUnlock(e) {
@@ -305,6 +323,7 @@ export default function LongCompassClient({
             ) : activeKind === 'review' ? (
               <Timeline
                 records={currentRecords}
+                attachmentsByRecord={attachmentsByRecord}
                 expandedRecordId={expandedRecordId}
                 onToggleRecord={toggleRecord}
               />
@@ -314,6 +333,7 @@ export default function LongCompassClient({
                   <RecordCard
                     key={record.id}
                     record={record}
+                    attachments={attachmentsByRecord[record.id] || []}
                     expanded={expandedRecordId === record.id}
                     onToggle={toggleRecord}
                   />

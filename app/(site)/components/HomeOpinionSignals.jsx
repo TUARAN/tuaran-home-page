@@ -31,7 +31,38 @@ function formatOpinionTime(value) {
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
-  const [activeTopic, setActiveTopic] = useState('llm')
+  const [activeTopic, setActiveTopic] = useState('recommended')
+  const [recommended, setRecommended] = useState(null)
+  const [recommendedFailed, setRecommendedFailed] = useState(false)
+  const [recommendationRetry, setRecommendationRetry] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    let controller
+    async function refresh() {
+      controller?.abort()
+      controller = new AbortController()
+      try {
+        const response = await fetch('/api/rss-fetch?id=ai-hot', { signal: controller.signal })
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const next = await response.json()
+        if (next.status !== 'ok' || !Array.isArray(next.entries)) throw new Error('Invalid RSS feed')
+        if (active) {
+          setRecommended(next.entries.filter((entry) => /^https?:\/\//i.test(entry.link || '')))
+          setRecommendedFailed(false)
+        }
+      } catch (error) {
+        if (active && error.name !== 'AbortError') setRecommendedFailed(true)
+      }
+    }
+    refresh()
+    const timer = setInterval(refresh, 5 * 60 * 1000)
+    return () => {
+      active = false
+      controller?.abort()
+      clearInterval(timer)
+    }
+  }, [recommendationRetry])
 
   useEffect(() => {
     let active = true
@@ -84,14 +115,48 @@ export default function HomeOpinionSignals() {
   const featuredSentiment = featured ? getSentimentBucket(featured.sentiment) : null
   return (
     <div className="home-opinion-overview">
-      {liveData && allPosts.length ? (
-        <>
-          <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
-            {topics.map((topic) => (
-              <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
-            ))}
+      <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
+        <button type="button" className={`home-tab-link ${activeTopic === 'recommended' ? 'is-active' : ''}`} aria-label="推荐" title="推荐" aria-pressed={activeTopic === 'recommended'} onClick={() => setActiveTopic('recommended')}>
+          <T zh="推荐" en="For you" />
+        </button>
+        {topics.map((topic) => (
+          <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
+        ))}
+      </div>
+      {activeTopic === 'recommended' ? (
+        recommended?.length ? (
+          <>
+            <div className="home-opinion-counts">
+              <div className="home-opinion-count-metrics"><span><strong>{recommended.length}</strong><T zh="条 AI HOT 更新" en="AI HOT updates" /></span></div>
+            </div>
+            <div className="home-opinion-list">
+              {recommended.map((entry) => (
+                <a key={entry.guid || entry.link} href={entry.link} target="_blank" rel="noreferrer" className="home-opinion-sample no-external-arrow">
+                  <span className="home-opinion-sample-meta">
+                    <span className="home-opinion-sample-source">AI HOT</span>
+                    {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
+                  </span>
+                  <span className="home-opinion-sample-title"><strong>{entry.title}</strong><span className="home-opinion-external-arrow" aria-hidden="true">↗</span></span>
+                  {entry.summary ? <small>{entry.summary}</small> : null}
+                </a>
+              ))}
+            </div>
+            <Link href="/resources/rss#rss-feed-ai-hot" className="home-opinion-cta no-underline"><T zh="查看 AI HOT 订阅" en="View AI HOT feed" /> <span aria-hidden="true">→</span></Link>
+          </>
+        ) : (
+          <div className="home-opinion-empty">
+            <p>{recommendedFailed || recommended ? <T zh="AI HOT 订阅暂时不可用。" en="AI HOT feed is unavailable." /> : <T zh="正在获取 AI HOT 订阅…" en="Loading AI HOT feed…" />}</p>
+            {recommendedFailed || recommended ? (
+              <button type="button" className="home-section-more" onClick={() => {
+                setRecommended(null)
+                setRecommendedFailed(false)
+                setRecommendationRetry((value) => value + 1)
+              }}><T zh="重试" en="Retry" /></button>
+            ) : null}
           </div>
-
+        )
+      ) : liveData && allPosts.length ? (
+        <>
           <div className="home-opinion-counts">
             <div className="home-opinion-count-metrics">
               <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>

@@ -38,6 +38,16 @@ test('parseFeed keeps title, guid, date and a short summary', () => {
   assert.match(entries[0].summary, /Hello world/)
 })
 
+test('parseFeed can return a longer plain-text preview for the on-site reader', () => {
+  const xml = SAMPLE_RSS.replace('Hello world', `<p>${'AI update '.repeat(60)}</p>`)
+  const compact = parseFeed(xml)[0].summary
+  const expanded = parseFeed(xml, { summaryMax: 1200 })[0].summary
+
+  assert.ok(compact.length < expanded.length)
+  assert.ok(expanded.length > 180)
+  assert.doesNotMatch(expanded, /<p>/)
+})
+
 test('first poll only notifies recent unseen items', () => {
   const entries = parseFeed(SAMPLE_RSS)
   const now = Date.parse('2026-09-20T10:00:00Z')

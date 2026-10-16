@@ -62,7 +62,7 @@ export async function GET(req) {
       return Response.json({ status: 'error', error: `UPSTREAM_${res.status}`, entries: [] }, { status: 200 })
     }
     const xml = await res.text()
-    const entries = parseFeed(xml)
+    const entries = parseFeed(xml, feed.id === 'ai-hot' ? { summaryMax: 1200 } : undefined)
     return Response.json(
       { status: 'ok', feed: { id: feed.id, siteName: feed.siteName, siteUrl: feed.siteUrl }, entries },
       {

@@ -35,6 +35,7 @@ export default function HomeOpinionSignals() {
   const [recommended, setRecommended] = useState(null)
   const [recommendedFailed, setRecommendedFailed] = useState(false)
   const [recommendationRetry, setRecommendationRetry] = useState(0)
+  const [expandedRecommendation, setExpandedRecommendation] = useState('')
 
   useEffect(() => {
     let active = true
@@ -130,16 +131,28 @@ export default function HomeOpinionSignals() {
               <div className="home-opinion-count-metrics"><span><strong>{recommended.length}</strong><T zh="条 AI HOT 更新" en="AI HOT updates" /></span></div>
             </div>
             <div className="home-opinion-list">
-              {recommended.map((entry) => (
-                <a key={entry.guid || entry.link} href={entry.link} target="_blank" rel="noreferrer" className="home-opinion-sample no-external-arrow">
-                  <span className="home-opinion-sample-meta">
-                    <span className="home-opinion-sample-source">AI HOT</span>
-                    {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
-                  </span>
-                  <span className="home-opinion-sample-title"><strong>{entry.title}</strong><span className="home-opinion-external-arrow" aria-hidden="true">↗</span></span>
-                  {entry.summary ? <small>{entry.summary}</small> : null}
-                </a>
-              ))}
+              {recommended.map((entry) => {
+                const key = entry.guid || entry.link
+                const expanded = expandedRecommendation === key
+                return (
+                  <article key={key} className="home-opinion-sample">
+                    <button type="button" className="w-full text-left" aria-expanded={expanded} onClick={() => setExpandedRecommendation(expanded ? '' : key)}>
+                      <span className="home-opinion-sample-meta">
+                        <span className="home-opinion-sample-source">AI HOT</span>
+                        {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
+                      </span>
+                      <span className="home-opinion-sample-title"><strong>{entry.title}</strong><span className="home-opinion-external-arrow" aria-hidden="true">{expanded ? '−' : '+'}</span></span>
+                      {!expanded && entry.summary ? <small>{entry.summary}</small> : null}
+                    </button>
+                    {expanded ? (
+                      <div className="home-opinion-reader">
+                        <p>{entry.summary || <T zh="此条订阅没有提供摘要。" en="This feed item has no summary." />}</p>
+                        <a href={entry.link} target="_blank" rel="noopener noreferrer" className="no-external-arrow"><T zh="阅读原文（站外）" en="Read original (external)" /> ↗</a>
+                      </div>
+                    ) : null}
+                  </article>
+                )
+              })}
             </div>
             <Link href="/resources/rss#rss-feed-ai-hot" className="home-opinion-cta no-underline"><T zh="查看 AI HOT 订阅" en="View AI HOT feed" /> <span aria-hidden="true">→</span></Link>
           </>

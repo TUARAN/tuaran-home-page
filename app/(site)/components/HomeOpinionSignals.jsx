@@ -127,9 +127,6 @@ export default function HomeOpinionSignals() {
       {activeTopic === 'recommended' ? (
         recommended?.length ? (
           <>
-            <div className="home-opinion-counts">
-              <div className="home-opinion-count-metrics"><span><strong>{recommended.length}</strong><T zh="条 AI HOT 更新" en="AI HOT updates" /></span></div>
-            </div>
             <div className="home-opinion-list">
               {recommended.map((entry) => {
                 const key = entry.guid || entry.link
@@ -170,12 +167,8 @@ export default function HomeOpinionSignals() {
         )
       ) : liveData && allPosts.length ? (
         <>
-          <div className="home-opinion-counts">
-            <div className="home-opinion-count-metrics">
-              <span><strong>{filteredPosts.length}</strong><T zh="条公开动态" en="public posts" /></span>
-              <span><strong>{groupedEvents.length}</strong><T zh="个热点" en="hot topics" /></span>
-            </div>
-            {updated ? (
+          {updated ? (
+            <div className="home-opinion-collection-meta">
               <small className="home-opinion-collection-status">
                 <span className="home-opinion-collection-live">
                   <span className="home-opinion-collection-dot" aria-hidden="true" />
@@ -183,8 +176,8 @@ export default function HomeOpinionSignals() {
                 </span>
                 <T zh={`更新于 ${updated}`} en={`Updated ${updated}`} />
               </small>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           <div className="home-opinion-list">
             {featured ? (

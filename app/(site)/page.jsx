@@ -302,6 +302,31 @@ function HomeMobileChannels() {
   )
 }
 
+function HomeAllianceBanner() {
+  return (
+    <section className="home-alliance-banner" aria-label="博主联盟合作">
+      <div className="home-alliance-message">
+        <span className="home-alliance-label"><T zh="合作计划" en="Partnership" /></span>
+        <strong><T zh="博主联盟" en="Blogger Alliance" /></strong>
+        <span className="home-alliance-description">
+          <T zh="连接 AI 产品方与技术博主，提供选题策划、内容合作与推广匹配。" en="Connecting AI products with tech creators through planning, content and partnerships." />
+        </span>
+      </div>
+      <div className="home-alliance-actions">
+        <Link href="/services#contact" className="home-alliance-offer no-underline">
+          <T zh="限时开放 · 私人定制方案" en="Limited-time · tailored plans" /> <span aria-hidden="true">↗</span>
+        </Link>
+        <a href="https://blogger-alliance.cn/" target="_blank" rel="noreferrer" className="home-alliance-link no-external-arrow">
+          <T zh="了解联盟" en="Explore the alliance" /> <span aria-hidden="true">↗</span>
+        </a>
+        <Link href="/services#contact" className="home-alliance-contact no-underline">
+          <T zh="加我微信 atar24" en="WeChat atar24" /> <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
 }
@@ -871,6 +896,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         }}
       />
       <div className="home-backdrop" aria-hidden="true" />
+      <HomeAllianceBanner />
       <HomeMobileChannels />
       <FestivalBanner />
       <div className="home-main-grid">

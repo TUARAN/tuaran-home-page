@@ -5,6 +5,7 @@ import {
   communityActionAuthorized,
   normalizeCommunityActionReport,
   recordCommunityActionReport,
+  readCommunityActionHistory,
 } from '../../../../lib/community/communityActions'
 import { createExtensionAlertNotification } from '../../../../lib/site/siteNotifications'
 
@@ -60,6 +61,19 @@ export async function POST(req) {
     return Response.json({ ok: false, error: 'INVALID_REPORT' }, { status: 400 })
   }
 
+  // Some deployed proxies only forward POST for this endpoint. Keep cloud
+  // history sync compatible with those deployments while GET is rolled out.
+  if (body.action === 'pull') {
+    try {
+      const history = await readCommunityActionHistory(db, { accountHandle: body.accountHandle || '' })
+      if (!history.ok) return Response.json(history, { status: 400 })
+      return Response.json(history)
+    } catch (error) {
+      if (isMissingTable(error)) return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
+      throw error
+    }
+  }
+
   try {
     const recorded = await recordCommunityActionReport(db, body)
     if (!recorded.ok) return Response.json(recorded, { status: 400 })
@@ -82,6 +96,29 @@ export async function POST(req) {
     if (isMissingTable(error)) {
       return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
     }
+    throw error
+  }
+}
+
+export async function GET(req) {
+  const db = dbOrNull()
+  if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
+  let secret = ''
+  try {
+    secret = await readSecret(db)
+  } catch (error) {
+    if (isMissingTable(error)) return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
+    throw error
+  }
+  const authorized = communityActionAuthorized(req.headers.get(COMMUNITY_ACTION_SECRET_HEADER), secret)
+  if (!authorized.ok) return Response.json({ ok: false, error: authorized.error }, { status: authorized.status })
+  const accountHandle = new URL(req.url).searchParams.get('accountHandle') || ''
+  try {
+    const history = await readCommunityActionHistory(db, { accountHandle })
+    if (!history.ok) return Response.json(history, { status: 400 })
+    return Response.json(history)
+  } catch (error) {
+    if (isMissingTable(error)) return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
     throw error
   }
 }

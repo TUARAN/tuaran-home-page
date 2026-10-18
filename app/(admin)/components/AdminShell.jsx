@@ -67,7 +67,7 @@ export default function AdminShell({ children }) {
   }, [])
 
   return (
-    <div className="admin-shell min-h-screen">
+    <div className="admin-shell min-h-screen min-w-0 w-full">
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden border-r border-[#e6e7df] transition-[width] dark:border-[#1b2430] md:block ${
           collapsed ? 'md:w-[64px]' : 'md:w-[236px]'
@@ -101,7 +101,7 @@ export default function AdminShell({ children }) {
       ) : null}
 
       <div
-        className={`flex min-h-screen flex-col transition-[padding] ${
+        className={`flex min-h-screen min-w-0 w-full flex-col transition-[padding] ${
           collapsed ? 'md:pl-[64px]' : 'md:pl-[236px]'
         }`}
       >

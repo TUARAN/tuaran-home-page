@@ -93,6 +93,12 @@
     return new RegExp(`(?:Replying\\s+to|正在回复|回复)\\s*@${escaped}(?:\\b|$)`, "i").test(String(text || ""));
   }
 
+  function isReplyRestrictedText(text) {
+    const value = String(text || "").replace(/\s+/gu, " ").trim();
+    return /Who can reply\? Only some accounts can reply\.?/iu.test(value)
+      || /谁可以回复[？?]?\s*只有部分(?:账号|账户|帐户)可以回复/iu.test(value);
+  }
+
   function timestampFromDatetime(value) {
     const timestamp = Date.parse(String(value || ""));
     return Number.isFinite(timestamp) ? timestamp : 0;
@@ -298,6 +304,7 @@
     normalizeHandle,
     handleFromStatusHref,
     isNotificationReplyText,
+    isReplyRestrictedText,
     timestampFromDatetime,
     isWithinNotificationWindow,
     isOlderThanNotificationWindow,

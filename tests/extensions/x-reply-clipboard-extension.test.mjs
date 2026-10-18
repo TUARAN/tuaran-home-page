@@ -11,22 +11,299 @@ const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
 const context = require('../../tools/x-reply-clipboard-extension/context.js')
 const background = require('../../tools/x-reply-clipboard-extension/background.js')
 const autoLike = require('../../tools/x-reply-clipboard-extension/autoLike.js')
+const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
-test('one-click reset clears extension state across X tabs but retains configured credentials', async () => {
+test('reply and post pace controls use one compact row with accessible choices', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  assert.match(source, /xrc-speed-section xrc-pace-row/)
+  assert.match(source, /xrc-round-pace xrc-pace-row/)
+  assert.match(source, /<button type="button" data-xrc-post-pace-label="\$\{item\.id\}" aria-pressed="false">/)
+  assert.match(source, /<button type="button" data-xrc-pace-label="\$\{item\.id\}" aria-pressed="false">/)
+  assert.match(source, /label\.setAttribute\("aria-pressed", String\(active\)\)/)
+  assert.match(source, /label\.disabled = replyPaceLocked/)
+  assert.match(source, /label\.disabled = Boolean\(poster\.running\)/)
+  assert.doesNotMatch(source, /data-xrc-pace aria-label="频率挡位"/)
+  assert.match(css, /\.xrc-pace-row \{\s*display: flex;/)
+  assert.match(css, /\.xrc-pace-options \{\s*display: grid;/)
+  assert.match(css, /\.xrc-pace-options::before \{[\s\S]*?right: 12\.5%;[\s\S]*?left: 12\.5%;[\s\S]*?height: 2px;/)
+  assert.match(css, /\.xrc-pace-options button \{[\s\S]*?position: relative;[\s\S]*?background: #fff;/)
+})
+
+test('task window hints distinguish opening, jumping, and current window', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const groupDefinition = source.match(/  function taskGroupTarget\(group,[\s\S]*?\n  \}/)?.[0]
+  const titleDefinition = source.match(/  function taskWindowTitle\(mode,[\s\S]*?\n  \}/)?.[0]
+  assert.ok(groupDefinition)
+  assert.ok(titleDefinition)
+  const context = vm.createContext({
+    TASK_GROUP_MODES: { reply: ['timeline', 'notifications'], likes: ['likes-posts', 'likes-replies'] },
+    TASK_MODE_LABELS: { timeline: '首页互动', notifications: '通知互动', 'likes-posts': '首页帖子' },
+    openTaskTabs: {},
+    pluginRuntime: { tasks: {} },
+    currentTaskKey: () => 'timeline',
+  })
+  vm.runInContext(`${groupDefinition}\n${titleDefinition}\nglobalThis.target = taskGroupTarget; globalThis.title = taskWindowTitle`, context)
+  assert.equal(context.title('notifications', {}, 'timeline'), '打开通知互动窗口')
+  assert.equal(context.title('notifications', { notifications: 42 }, 'timeline'), '跳转到已打开的通知互动窗口')
+  assert.equal(context.title('timeline', { timeline: 12 }, 'timeline'), '当前首页互动窗口')
+  const target = context.target('reply', { timeline: 12, notifications: 42 }, 'timeline', { notifications: { phase: 'running' } })
+  assert.equal(target.mode, 'notifications')
+  assert.equal(target.openedElsewhere, true)
+  assert.equal(context.target('reply', { timeline: 12 }, 'timeline', {}).openedElsewhere, false)
+  assert.match(source, /button\.title = taskTabHint\(button\.dataset\.xrcReplyTab\)/)
+  assert.match(source, /button\.title = taskTabHint\(`likes-\$\{button\.dataset\.xrcLikeTab\}`\)/)
+})
+
+test('task window state drops closed tabs before showing jump hints', async () => {
+  const previousChrome = globalThis.chrome
+  let saved = { timeline: 12, notifications: 42 }
+  globalThis.chrome = {
+    storage: { session: {
+      async get() { return { xrcTaskTabs: saved } },
+      async set(value) { saved = value.xrcTaskTabs },
+    } },
+    tabs: { async get(tabId) {
+      if (tabId === 42) throw new Error('No tab')
+      return { id: tabId }
+    } },
+  }
+  try {
+    const result = await background.getOpenTaskTabs()
+    assert.deepEqual(result.tabs, { timeline: 12 })
+    assert.deepEqual(saved, { timeline: 12 })
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('task close only removes the registered window shown by the arrow', async () => {
+  const previousChrome = globalThis.chrome
+  let tabs = { timeline: 11, notifications: 22, 'likes-posts': 33 }
+  let runtime = { startedAt: 1, tasks: { timeline: { tabId: 11 }, notifications: { tabId: 22 } }, flow: { phase: 'running' } }
+  const removed = []
+  globalThis.chrome = {
+    storage: {
+      session: {
+        async get() { return { xrcTaskTabs: tabs } },
+        async set(value) { tabs = value.xrcTaskTabs },
+      },
+      local: {
+        async get() { return { xrcPluginRuntime: runtime } },
+        async set(value) { runtime = value.xrcPluginRuntime },
+      },
+    },
+    tabs: {
+      async remove(tabId) { removed.push(tabId) },
+    },
+  }
+  try {
+    await assert.rejects(background.closeTaskTab('notifications', 99, { tab: { id: 11 } }), /任务窗口已变化/)
+    await assert.rejects(background.closeTaskTab('timeline', 11, { tab: { id: 11 } }), /不能从当前任务窗口关闭自己/)
+    assert.deepEqual(removed, [])
+    const result = await background.closeTaskTab('notifications', 22, { tab: { id: 11 } })
+    assert.equal(result.closed, true)
+    assert.deepEqual(removed, [22])
+    assert.deepEqual(tabs, { timeline: 11, 'likes-posts': 33 })
+    assert.equal(runtime.tasks.notifications, undefined)
+    assert.deepEqual(runtime.tasks.timeline, { tabId: 11 })
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('each concrete task tab owns its own jump and close control', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  for (const [attribute, mode] of [
+    ['reply', 'timeline'], ['reply', 'notifications'],
+    ['like', 'posts'], ['like', 'replies'],
+    ['mutual', 'unfollow'], ['mutual', 'followBack'],
+  ]) {
+    assert.match(source, new RegExp(`<div class="xrc-subtask-slot"><button[^>]*data-xrc-${attribute}-tab="${mode}"[^>]*>[\\s\\S]*?<\\/button><button class="xrc-task-tab-close"[^>]*data-xrc-task-close`))
+  }
+  assert.doesNotMatch(source, /data-xrc-task-close="(reply|likes|mutual|poster)"/)
+  assert.match(source, /close\.dataset\.xrcTargetMode = openedElsewhere \? mode : ""/)
+  assert.match(source, /close\.dataset\.xrcTargetTabId = openedElsewhere \? String\(tabId\) : ""/)
+  assert.match(css, /\.xrc-subtask-slot\.is-open button\[role="tab"\]::after \{[\s\S]*?content: "↗"/)
+  assert.match(css, /\.xrc-subtask-slot\.is-open:hover \.xrc-task-tab-close/)
+  assert.doesNotMatch(source, /xrc-open-mark|xrc-close-mark/)
+})
+
+test('header menu updates keep the collapse and expand SVG icons', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const definition = source.match(/  function syncHeaderMenu\(panel\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const iconButton = () => ({ children: ['svg'], set textContent(value) { this.children = [value] } })
+  const collapse = iconButton()
+  const expand = iconButton()
+  const menu = { hidden: true }
+  const toggle = { attributes: {}, setAttribute(name, value) { this.attributes[name] = value } }
+  const panel = { querySelector(selector) { return {
+    '[data-xrc-header-menu]': menu,
+    '[data-xrc-actions-toggle]': toggle,
+    '[data-xrc-collapse]': collapse,
+    '[data-xrc-expand]': expand,
+  }[selector] } }
+  const context = vm.createContext({ headerMenuOpen: true, state: { panelView: 'collapsed' } })
+  vm.runInContext(`${definition}\nglobalThis.sync = syncHeaderMenu`, context)
+  context.sync(panel)
+  assert.equal(menu.hidden, false)
+  assert.equal(toggle.attributes['aria-expanded'], 'true')
+  assert.equal(toggle.title, '收起操作菜单')
+  context.headerMenuOpen = false
+  context.sync(panel)
+  assert.equal(menu.hidden, true)
+  assert.equal(toggle.attributes['aria-expanded'], 'false')
+  assert.equal(toggle.title, '展开操作菜单')
+  assert.match(source, /data-xrc-actions-toggle[^>]*><svg viewBox="0 0 16 16"/)
+  assert.match(css, /\.xrc-actions-toggle\[aria-expanded="true"\] svg \{ transform: rotate\(180deg\); \}/)
+  assert.deepEqual(collapse.children, ['svg'])
+  assert.deepEqual(expand.children, ['svg'])
+})
+
+test('flow overview distinguishes executing, waiting, missing, and stale tasks', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '首页互动'], ['notifications', '通知互动'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '首页帖子点赞'], ['likes-replies', '帖子评论点赞']],
+    FLOW_STALE_MS: 90000,
+  })
+  vm.runInContext(`${definition}\nglobalThis.overview = flowTaskOverview`, context)
+  const now = Date.now()
+  const result = context.overview({ tasks: {
+    timeline: { phase: 'running', updatedAt: now - 1000 },
+    notifications: { phase: 'paused', updatedAt: now - 1000 },
+    'mutual-unfollow': { phase: 'running', updatedAt: now - 91000 },
+    poster: { phase: 'running', updatedAt: now - 1000 },
+  } }, now)
+  assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 3, stopping: 0, unknown: 1 })
+  assert.equal(result.text, '2 项执行 · 1 项等待 · 3 项未启动 · 1 项待确认')
+  assert.match(source, /data-xrc-flow-overview hidden/)
+  assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
+})
+
+test('paused flow wins over stale stopping task records', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    flowStarting: false,
+    flowStopping: false,
+    pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'stopping' } } },
+  })
+  vm.runInContext(`${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '已暂停')
+  context.pluginRuntime.flow = { phase: 'stopping', updatedAt: Date.now() - 20000 }
+  context.pluginRuntime.tasks.timeline.updatedAt = Date.now() - 20000
+  assert.equal(context.model().label, '重试停止')
+  assert.equal(context.model().action, 'pause')
+})
+
+test('limit observations retain per-account windows and deduplicate receipts', async () => {
+  const stored = {}
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const base = Date.now() - 20000
+    const samples = [
+      { id: 'success-001', task: 'timeline-reply', result: 'success', occurredAt: base - 1800000 },
+      { id: 'success-002', task: 'notification-reply', result: 'success', occurredAt: base - 240000 },
+      { id: 'success-003', task: 'post-like', result: 'success', occurredAt: base - 120000 },
+      { id: 'limited-001', task: 'timeline-reply', result: 'limited', occurredAt: base, errorCode: 'risk-blocked' },
+    ]
+    for (const event of samples) await receipt.recordLimitObservation(event, 'alpha')
+    await receipt.recordLimitObservation(samples[0], 'alpha')
+    await receipt.recordLimitObservation({ id: 'success-004', task: 'timeline-reply', result: 'success', occurredAt: base - 60000 }, 'beta')
+    const analysis = receipt.analyzeLimitObservations(await receipt.limitObservations(), 'alpha')
+    assert.equal(analysis.events, 4)
+    assert.equal(analysis.replySamples.length, 1)
+    assert.deepEqual([analysis.replySamples[0].in10m, analysis.replySamples[0].in30m, analysis.replySamples[0].in1h, analysis.replySamples[0].in24h], [1, 2, 2, 2])
+    assert.equal(analysis.replySamples[0].lastGapMs, 240000)
+    assert.equal(analysis.replySamples[0].recentMedianGapMs, 1560000)
+  } finally { delete globalThis.chrome }
+})
+
+test('merge account data consolidates legacy default logs into the active handle', async () => {
+  const stored = {
+    xrcDailyReports: [
+      { date: '2026-10-16', accountHandle: 'default', counts: { comments: 2, likes: 1 }, eventIds: ['old-1'], updatedAt: 10 },
+      { date: '2026-10-16', accountHandle: 'tarsixseveneig1', counts: { comments: 3, likes: 4 }, eventIds: ['new-1'], updatedAt: 20 },
+    ],
+    xrcLimitObservations: [{ id: 'old-limit', accountHandle: 'default', task: 'timeline-reply', result: 'limited', at: 10 }],
+    xrcCommunityReport: { accountHandle: 'default', queue: [{ id: 'old-event', accountHandle: 'default' }] },
+  }
+  const previousChrome = globalThis.chrome
+  globalThis.chrome = { storage: { local: {
+    async get(keys) {
+      const list = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(list.map((key) => [key, stored[key]]))
+    },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const result = await receipt.mergeAccountData('default', 'tarsixseveneig1')
+    assert.equal(result.changed, true)
+    assert.deepEqual(stored.xrcDailyReports[0].counts, { comments: 5, likes: 5, follows: 0, unfollows: 0, followBacks: 0, posts: 0 })
+    assert.equal(stored.xrcDailyReports[0].accountHandle, 'tarsixseveneig1')
+    assert.equal(stored.xrcLimitObservations[0].accountHandle, 'tarsixseveneig1')
+    assert.equal(stored.xrcCommunityReport.accountHandle, 'tarsixseveneig1')
+    assert.equal(stored.xrcCommunityReport.queue[0].accountHandle, 'tarsixseveneig1')
+  } finally { globalThis.chrome = previousChrome }
+})
+
+test('daily report totals combine local days and accounts without changing the selected day', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function sumDailyCounts\(reports\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({ REPORT_METRICS: ['comments', 'likes', 'follows', 'unfollows', 'followBacks'] })
+  vm.runInContext(`${definition}\nglobalThis.sum = sumDailyCounts`, context)
+  const reports = [
+    { date: '2026-10-13', accountHandle: 'a', counts: { comments: 2, likes: 3, follows: 1 } },
+    { date: '2026-10-14', accountHandle: 'a', counts: { comments: 4, likes: 5, unfollows: 2 } },
+    { date: '2026-10-14', accountHandle: 'b', counts: { comments: 7, followBacks: 3 } },
+  ]
+  const plain = (value) => JSON.parse(JSON.stringify(value))
+  assert.deepEqual(plain(context.sum(reports)), { comments: 13, likes: 8, follows: 1, unfollows: 2, followBacks: 3 })
+  assert.deepEqual(plain(context.sum(reports.filter((row) => row.date === '2026-10-14'))), { comments: 11, likes: 5, follows: 0, unfollows: 2, followBacks: 3 })
+  assert.deepEqual(plain(context.sum(reports.filter((row) => row.date === '2026-10-14' && row.accountHandle === 'a'))), { comments: 4, likes: 5, follows: 0, unfollows: 2, followBacks: 0 })
+})
+
+test('cumulative report counts use one decimal only when needed and keep exact daily counts', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function formatCompactCount\(value\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({})
+  vm.runInContext(`${definition}\nglobalThis.compact = formatCompactCount`, context)
+  for (const [value, expected] of [[0, '0'], [999, '999'], [1000, '1k'], [1099, '1k'], [1100, '1.1k'], [1204, '1.2k'], [9999, '9.9k'], [10000, '10k'], [10100, '10.1k'], [999999, '999.9k'], [1000000, '1m'], [1200000, '1.2m']]) {
+    assert.equal(context.compact(value), expected)
+  }
+  assert.match(source, /data-xrc-report-total-\$\{metric\}\]\`\);[\s\S]*?formatCompactCount\(total\[metric\]\)/)
+  assert.match(source, /data-xrc-daily-\$\{metric\}\]\`\);[\s\S]*?String\(dayCounts\[metric\]\)/)
+})
+
+test('one-click reset clears task state while retaining API credentials and logs', async () => {
   const saved = {
-    xrcAiSettings: { apiKey: 'sk-12345678', replyPrompt: 'old custom prompt' },
-    xrcCommunityReport: { secret: 'receipt-secret', queue: [{ id: 'old-event' }] },
+    xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyPrompt: 'old custom prompt' },
+    xrcCommunityReport: { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] },
+    xrcDailyReports: [{ date: '2026-10-15', counts: { comments: 3 } }],
+    xrcLimitObservations: [{ id: 'limit-event', result: 'limited' }],
     xrcPluginRuntime: { tasks: { timeline: { tabId: 11 } } },
     xrcPosterPublishList: [{ text: 'old draft' }],
+    xrcPosterHistoryV2: { published: ['old-post'] },
     'xrcAutoLikeSeen:test:posts': ['123'],
   }
   const prepared = []
   const reloaded = []
   globalThis.chrome = {
     storage: { local: {
-      async get(keys) { return Object.fromEntries(keys.map((key) => [key, saved[key]])) },
-      async clear() { for (const key of Object.keys(saved)) delete saved[key] },
+      async get(keys) { return keys === null ? { ...saved } : Object.fromEntries(keys.map((key) => [key, saved[key]])) },
+      async remove(keys) { for (const key of keys) delete saved[key] },
       async set(value) { Object.assign(saved, value) },
     } },
     tabs: {
@@ -40,15 +317,29 @@ test('one-click reset clears extension state across X tabs but retains configure
     assert.equal(result.ok, true)
     assert.deepEqual(prepared, [[11, 'xrc-reset-prepare'], [22, 'xrc-reset-prepare']])
     assert.deepEqual(reloaded, [22])
-    assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678' })
-    assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret' })
+    assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' })
+    assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] })
+    assert.deepEqual(saved.xrcDailyReports, [{ date: '2026-10-15', counts: { comments: 3 } }])
+    assert.deepEqual(saved.xrcLimitObservations, [{ id: 'limit-event', result: 'limited' }])
     assert.match(saved.xrcResetEpoch, /^\d+-/)
     assert.equal(saved.xrcPluginRuntime, undefined)
     assert.equal(saved.xrcPosterPublishList, undefined)
+    assert.equal(saved.xrcPosterHistoryV2, undefined)
     assert.equal(saved['xrcAutoLikeSeen:test:posts'], undefined)
   } finally {
     delete globalThis.chrome
   }
+})
+
+test('reset requires an explicit confirmation that names cleared and retained data', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(source, /data-xrc-reset-state aria-haspopup="dialog"/)
+  assert.match(source, /data-xrc-reset-confirm role="dialog" aria-modal="true"/)
+  assert.match(source, /任务进度与倒计时、待发草稿与素材去重/)
+  assert.match(source, /本地每日报告、限制观察记录及尚未上传的回执日志/)
+  assert.match(source, /data-xrc-reset-confirm-action>确认清空/)
+  assert.match(source, /resetTrigger\?\.addEventListener\("click", \(\) => \{[\s\S]*?resetDialog\.hidden = false/)
+  assert.match(source, /data-xrc-reset-confirm-action\]"\)\?\.addEventListener\("click", async \(\) => \{[\s\S]*?sendExtensionMessage\(\{ type: "xrc-reset-state" \}\)/)
 })
 
 test('reply-like task visits threads without liking their root posts', async () => {
@@ -129,6 +420,234 @@ test('post-like task stays on Home and has its own processed history', async () 
   assert.equal(location.pathname, '/home')
 })
 
+test('using the panel pauses auto-like clicks while Stop remains responsive', async () => {
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  let clicks = 0
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="like"]') return { click() { clicks += 1 } }
+    return null
+  } }
+  const controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }), querySelectorAll: () => [] },
+    window: { location: { pathname: '/home' }, setTimeout, scrollBy() {}, innerHeight: 700 },
+    storage: { async get() { return {} }, async set() {} },
+    target: 'posts',
+  })
+  controller.pauseForInteraction(500)
+  const work = controller.start()
+  controller.pauseForInteraction(500)
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  assert.equal(clicks, 0)
+  controller.stop()
+  await work
+  assert.equal(clicks, 0)
+})
+
+test('an unconfirmed like continues to the next post and only confirmed likes enter the daily count', async () => {
+  const saved = {}
+  const clicked = []
+  const reported = []
+  const makeTweet = (id, confirms) => {
+    let liked = false
+    const link = { href: `https://x.com/a/status/${id}`, getAttribute: () => `/a/status/${id}` }
+    return { querySelector(selector) {
+      if (selector === 'time') return { closest: () => link }
+      if (selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (selector === '[data-testid="like"]') return { click() { clicked.push(id); liked = confirms } }
+      return null
+    } }
+  }
+  const articles = [makeTweet('123', false), makeTweet('456', true)]
+  let controller
+  controller = autoLike.createController({
+    document: {
+      querySelector: () => ({ querySelectorAll: () => articles }),
+      querySelectorAll: () => [],
+    },
+    window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    target: 'posts',
+    onLike(id) { reported.push(id) },
+    onUpdate(snapshot) { if (snapshot.posts === 2) controller.stop() },
+  })
+  await controller.start()
+  assert.deepEqual(clicked, ['123', '456'])
+  assert.deepEqual(reported, ['456'])
+  assert.equal(controller.snapshot().count, 1)
+  assert.deepEqual(saved['xrcAutoLikeSeen:default:posts'], ['123', '456'])
+})
+
+test('a like confirmed on X replacement node is counted', async () => {
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  let replacement = false
+  let restricted = false
+  const original = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="like"]') return { click() { replacement = true } }
+    return null
+  } }
+  const updated = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="unlike"]') return {}
+    return null
+  } }
+  const doc = {
+    querySelector: () => ({ querySelectorAll: () => [replacement ? updated : original] }),
+    querySelectorAll: () => restricted ? [{ textContent: 'rate limit' }] : [],
+  }
+  const saved = {}
+  const reported = []
+  let controller
+  controller = autoLike.createController({
+    document: doc,
+    window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    target: 'posts', onLike(id) { reported.push(id) },
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.deepEqual(reported, ['123'])
+  assert.equal(controller.snapshot().count, 1)
+})
+
+test('like count limit cools down, preserves history, then resumes without a rapid retry', async () => {
+  let clock = 1000
+  let limitUntil = 0
+  let likes = 0
+  let liked = false
+  const saved = {}
+  const updates = []
+  const limits = []
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="unlike"]') return liked ? {} : null
+    if (selector === '[data-testid="like"]') return liked ? null : { click() {
+      likes += 1
+      if (likes === 1) limitUntil = clock + 600
+      else liked = true
+    } }
+    return null
+  } }
+  const doc = {
+    querySelector: () => ({ querySelectorAll: () => [article] }),
+    querySelectorAll: () => clock < limitUntil ? [{ textContent: 'Rate limit exceeded' }] : [],
+  }
+  let controller
+  controller = autoLike.createController({
+    document: doc,
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [200],
+    onLimit(account, target, kind) { limits.push([account, target, kind]) },
+    onUpdate(snapshot) { updates.push(snapshot.status); if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(likes, 2)
+  assert.equal(controller.snapshot().count, 1)
+  assert.equal(saved['xrcAutoLikeCooldown:a'].retries, 1)
+  assert.deepEqual(saved['xrcAutoLikeSeen:a:posts'], ['123'])
+  assert.ok(updates.some((status) => /分钟后自动重试/.test(status)))
+  assert.deepEqual(limits, [['a', 'posts', 'rate-limited']])
+})
+
+test('repeated like rate limits stop automatic retries and persist the cooldown', async () => {
+  let clock = 1000
+  const saved = {}
+  const controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => [] }), querySelectorAll: () => [{ textContent: 'You have exceeded your limit' }] },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {} },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [10, 20, 30],
+  })
+  await controller.start()
+  assert.match(controller.snapshot().status, /已停止自动重试/)
+  assert.equal(controller.snapshot().rateLimitRetries, 4)
+  assert.ok(saved['xrcAutoLikeCooldown:a'].until > clock)
+})
+
+test('a restarted like task respects the saved account cooldown before clicking', async () => {
+  let clock = 1000
+  let clickedAt = 0
+  let liked = false
+  const saved = { 'xrcAutoLikeCooldown:a': { until: 2000, retries: 1, lastLimitedAt: 900 } }
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="unlike"]') return liked ? {} : null
+    if (selector === '[data-testid="like"]') return liked ? null : { click() { clickedAt = clock; liked = true } }
+    return null
+  } }
+  let controller
+  controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }), querySelectorAll: () => [] },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    accountKey: 'a', target: 'posts', now: () => clock,
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.ok(clickedAt >= 2000)
+  assert.equal(controller.snapshot().count, 1)
+})
+
+test('a paused like task stops promptly without clicking another post', async () => {
+  let clock = 1000
+  let clicks = 0
+  const saved = { 'xrcAutoLikeCooldown:a': { until: 3601000, retries: 1, lastLimitedAt: 900 } }
+  let controller
+  controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => [{ querySelector: () => ({ click() { clicks += 1 } }) }] }), querySelectorAll: () => [] },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; controller.stop(); queueMicrotask(callback) }, scrollBy: () => {} },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async () => {} },
+    accountKey: 'a', target: 'posts', now: () => clock,
+  })
+  await controller.start()
+  assert.equal(clicks, 0)
+  assert.equal(controller.snapshot().running, false)
+  assert.ok(clock < 3601000)
+})
+
+test('reply-like task retries a temporary thread navigation failure without stopping', async () => {
+  const location = { pathname: '/home' }
+  let opens = 0
+  let liked = false
+  const rootLink = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click() {
+    opens += 1
+    if (opens === 1) throw new Error('X page still loading')
+    location.pathname = '/a/status/123'
+  } }
+  const replyLink = { href: 'https://x.com/b/status/456', getAttribute: () => '/b/status/456' }
+  const root = { querySelector(selector) { return selector === 'time' ? { closest: () => rootLink } : null } }
+  const reply = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => replyLink }
+    if (selector === '[data-testid="unlike"]') return liked ? {} : null
+    if (selector === '[data-testid="like"]') return { click() { liked = true } }
+    return null
+  } }
+  const doc = {
+    querySelector(selector) {
+      if (selector === '[data-testid="primaryColumn"]') return { querySelectorAll: () => location.pathname === '/home' ? [root] : [root, reply] }
+      if (selector.includes('AppTabBar_Home_Link')) return { click() { location.pathname = '/home' } }
+      return null
+    },
+    querySelectorAll: () => [],
+  }
+  let controller
+  controller = autoLike.createController({
+    document: doc,
+    window: { location, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async () => ({}), set: async () => {} },
+    target: 'replies',
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(opens, 2)
+  assert.equal(controller.snapshot().count, 1)
+  assert.equal(controller.snapshot().posts, 1)
+})
+
 test('auto-like refuses to click when X shows an automation restriction', async () => {
   let clicks = 0
   const article = {
@@ -149,7 +668,7 @@ test('auto-like refuses to click when X shows an automation restriction', async 
   })
   await controller.start()
   assert.equal(clicks, 0)
-  assert.match(controller.snapshot().status, /操作受限/)
+  assert.match(controller.snapshot().status, /疑似自动化|账号受限/)
 })
 
 test('settings auto-save batches edits and flushes before a task starts', async () => {
@@ -285,7 +804,7 @@ test('reply reconnect backs off quickly and caps its retry interval', async () =
   assert.deepEqual([0, 1, 2, 3, 4, 5].map((attempt) => vm.runInContext(`reconnectDelay(${attempt})`, context)), [2000, 4000, 8000, 16000, 30000, 30000])
 })
 
-test('transient reply errors recover in place without navigating away from an open X page', async () => {
+test('explicit in-place reconnect keeps the draft on the same X page', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  async function reconnectAndResume\([\s\S]*?(?=\n  async function waitRateLimit\()/)?.[0]
   assert.ok(helper)
@@ -307,6 +826,36 @@ test('transient reply errors recover in place without navigating away from an op
   assert.equal(reloads, 0)
   assert.equal(state.pendingReply, '待重试的回复')
   assert.equal(state.pendingTweetId, '123')
+})
+
+test('a failed X reply is recorded as skipped without increasing the success count', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function skipTransientReply\(tweet\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const state = { assistantMode: 'timeline', total: 34, errors: 0, pendingReply: '未发出的草稿', pendingTweetId: '456', status: '' }
+  const skippedIds = new Set()
+  const processedIds = new Set()
+  const reports = []
+  let saved
+  let closes = 0
+  const sandbox = vm.createContext({
+    state, skippedIds, processedIds,
+    reportCommunityAction: (event) => reports.push(event),
+    writeSaved: (value) => { saved = value },
+    closeReplyComposer: async () => { closes += 1; return true },
+    renderPanel() {},
+  })
+  vm.runInContext(helper, sandbox)
+  assert.equal(await vm.runInContext('skipTransientReply({ id: "456" })', sandbox), true)
+  assert.equal(skippedIds.has('456'), true)
+  assert.equal(processedIds.has('456'), true)
+  assert.equal(state.total, 34)
+  assert.equal(state.pendingReply, '')
+  assert.equal(state.pendingTweetId, '')
+  assert.equal(state.errors, 1)
+  assert.equal(closes, 1)
+  assert.equal(saved.total, 34)
+  assert.equal(reports[0].errorCode, 'x-transient-error')
 })
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
@@ -489,6 +1038,10 @@ test('scheduled post keeps the hook but rejects loud, shallow, and repeated draf
   const good = '一个人的表达方式会影响讨论\n\n同样的意见，讲清楚缘由更好接话，\n\n也能给不同看法留点空间。'
   assert.equal(poster.qualityReason(source, good, '表达方式影响讨论'), '')
   assert.equal(poster.formatShortPost('说句难听点的\n会不会搜东西，本质是能否把模糊需求拆成关键词。'), '说句难听点的\n\n会不会搜东西，本质是能否把模糊需求拆成关键词。')
+  const singleParagraph = '贵州小伙零彩礼娶了俄罗斯姑娘。零彩礼这条，比身高差更值得琢磨。是真不在乎，还是本来就没这套规矩？'
+  assert.equal(poster.formatShortPost(singleParagraph), '贵州小伙零彩礼娶了俄罗斯姑娘。\n\n零彩礼这条，比身高差更值得琢磨。\n\n是真不在乎，还是本来就没这套规矩？')
+  assert.equal(poster.qualityReason('贵州小伙零彩礼结婚引发讨论', singleParagraph, '零彩礼结婚讨论', 'news'), '热点短帖行数不合适')
+  assert.equal(poster.formatShortPost('我真的很好奇\n\n为什么要限制炒美股？'), '我真的很好奇\n\n为什么要限制炒美股？')
   assert.equal(poster.qualityReason(source, `${good}这是一段多余的长解释。`.repeat(2), '表达方式影响讨论'), '正文过短或过长')
   assert.equal(poster.qualityReason(source, good.replace('一个人的表达方式会影响讨论', '另一个开头'), '表达方式影响讨论'), '首句没有保留')
   assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论\n确实，不同语气不同回应', '表达方式影响讨论'), '正文过短或过长')
@@ -723,6 +1276,10 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
     assert.match(requestBody.messages[0].content, /标题和摘要是唯一事实依据/)
     assert.doesNotMatch(requestBody.messages[0].content, /参考王长富那种直接说人话/)
+    storedPostPrompt = '结构：总共 18～70 字。短的一行即可，长的 2～4 行；换行时行间留一个空行。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /每段一行、段间留一个空行/)
+    assert.doesNotMatch(requestBody.messages[0].content, /短的一行即可/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
@@ -945,6 +1502,13 @@ test('picks the topmost unseen post that still has a reply button', () => {
   assert.equal(next.id, '4')
 })
 
+test('recognizes the X reply-permission modal without mistaking other dialogs for it', () => {
+  assert.equal(loop.isReplyRestrictedText('Who can reply?\nOnly some accounts can reply.\nSee conversation\nGot It'), true)
+  assert.equal(loop.isReplyRestrictedText('谁可以回复？\n只有部分账号可以回复\n知道了'), true)
+  assert.equal(loop.isReplyRestrictedText('Who can reply?\nEveryone can reply.'), false)
+  assert.equal(loop.isReplyRestrictedText('Something went wrong. Please try again.'), false)
+})
+
 test('reloads after 35 successful replies and after the timeline stalls', () => {
   assert.deepEqual(loop.shouldReload({ pageCount: 35, succeeded: 35, stalled: false }), {
     reload: true,
@@ -1127,6 +1691,170 @@ test('DeepSeek receives both sides of a notification conversation', async () => 
   }
 })
 
+test('temporary DeepSeek overload falls back to NAS with the same reply context', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  const requests = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' }, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options })
+    if (url.includes('api.deepseek.com')) return {
+      ok: false, status: 503,
+      async json() { return { error: { message: 'Service is too busy' } } },
+    }
+    return { ok: true, async json() { return { content: '谢谢提醒，我再说清楚点。' } } }
+  }
+  try {
+    const reply = await background.callDeepSeek({
+      postText: '对方回复',
+      conversation: { ownPost: { text: '我的帖子' }, reply: { text: '对方回复' } },
+    })
+    assert.equal(reply, '谢谢提醒，我再说清楚点。')
+    assert.equal(requests.length, 2)
+    assert.equal(requests[1].url, 'https://2aran.com/api/community-actions/model-fallback')
+    assert.equal(requests[1].options.headers['x-community-action-secret'], 'test-secret')
+    assert.match(JSON.parse(requests[1].options.body).messages[1].content, /我的帖子：\n我的帖子/)
+
+    requests.length = 0
+    globalThis.fetch = async (url) => {
+      requests.push({ url })
+      return { ok: false, status: 401, async json() { return { error: { message: 'Invalid API key' } } } }
+    }
+    await assert.rejects(background.callDeepSeek({ postText: '你好' }), /Invalid API key/)
+    assert.equal(requests.length, 1)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
+test('NAS failure falls back to configured B.AI without losing reply context', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  const requests = []
+  const progress = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' }, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options })
+    if (url.includes('api.deepseek.com')) return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
+    if (url.includes('2aran.com')) return { ok: false, status: 502, async json() { return { error: 'OLLAMA_API_TIMEOUT' } } }
+    return { ok: true, async json() { return { output: [{ type: 'message', content: [{ type: 'output_text', text: '谢谢提醒，我再核对一下。' }] }] } } }
+  }
+  try {
+    const reply = await background.callDeepSeek({
+      postText: '生日快乐',
+      conversation: { ownPost: { text: '我今天过生日' }, reply: { text: '生日快乐' } },
+      onProgress: (status) => progress.push(status),
+    })
+    assert.equal(reply, '谢谢提醒，我再核对一下。')
+    assert.deepEqual(progress, [
+      '正在读取模型设置…',
+      '正在请求 DeepSeek 生成回复…',
+      'DeepSeek 暂不可用，正在尝试 NAS 模型…',
+      'NAS 暂不可用，正在尝试 B.AI 模型…',
+    ])
+    assert.equal(requests.length, 3)
+    assert.equal(requests[2].url, 'https://api.b.ai/v1/responses')
+    assert.equal(requests[2].options.headers.authorization, 'Bearer sk-bai-test-key')
+    const baiBody = JSON.parse(requests[2].options.body)
+    assert.equal(baiBody.model, 'gpt-6-luna')
+    assert.equal(baiBody.reasoning.effort, 'none')
+    assert.match(baiBody.input[0].content, /我的帖子：\n我今天过生日/)
+    assert.match(baiBody.input[0].content, /生日快乐/)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
+test('selected reply providers skip disabled models and do not require a DeepSeek key', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  const requests = []
+  const settings = { replyProviders: ['nas'], baiApiKey: 'sk-bai-test-key' }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = async (url) => {
+    requests.push(url)
+    if (url.includes('2aran.com')) return { ok: true, async json() { return { content: 'NAS 回复' } } }
+    return { ok: true, async json() { return { output: [{ type: 'message', content: [{ type: 'output_text', text: 'B.AI 回复' }] }] } } }
+  }
+  try {
+    assert.equal(await background.callDeepSeek({ postText: '你好' }), 'NAS 回复')
+    assert.deepEqual(requests, ['https://2aran.com/api/community-actions/model-fallback'])
+    requests.length = 0
+    settings.replyProviders = ['bai']
+    assert.equal(await background.callDeepSeek({ postText: '你好' }), 'B.AI 回复')
+    assert.deepEqual(requests, ['https://api.b.ai/v1/responses'])
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
+test('cancelling a NAS reply aborts its request without trying the next model', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  let markStarted
+  const started = new Promise((resolve) => { markStarted = resolve })
+  const requests = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { replyProviders: ['nas', 'bai'], baiApiKey: 'sk-bai-test-key' }, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = (url, { signal }) => {
+    requests.push(url)
+    markStarted()
+    return new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })), { once: true })
+    })
+  }
+  try {
+    const controller = new AbortController()
+    const pending = background.callDeepSeek({ postText: '你好', signal: controller.signal })
+    await started
+    controller.abort()
+    await assert.rejects(pending, /回复任务已取消/)
+    assert.deepEqual(requests, ['https://2aran.com/api/community-actions/model-fallback'])
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
+test('B.AI billing restriction pauses repeated third-provider requests', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  const storage = { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' } }
+  const requests = []
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return typeof key === 'string' ? { [key]: storage[key] } : storage },
+    async set(value) { Object.assign(storage, value) },
+  } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = async (url) => {
+    requests.push(url)
+    if (url.includes('api.deepseek.com')) return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
+    if (url.includes('2aran.com')) return { ok: false, status: 404, async json() { return {} } }
+    return { ok: false, status: 403, async json() { return { error: { message: 'Deposit required' } } } }
+  }
+  try {
+    await assert.rejects(background.callDeepSeek({ postText: '你好' }), /B.AI 余额或模型权限不足（403）/)
+    await assert.rejects(background.callDeepSeek({ postText: '你好' }), /暂缓重复请求/)
+    assert.equal(requests.filter((url) => url.includes('api.b.ai')).length, 1)
+    assert.equal(requests.filter((url) => url.includes('2aran.com')).length, 2)
+    assert.ok(storage.xrcBaiAccessCooldown.until > Date.now())
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
 test('limits notification interaction to the most recent two hours', () => {
   const now = Date.parse('2026-10-09T12:00:00.000Z')
   assert.equal(loop.NOTIFICATION_WINDOW_MS, 2 * 60 * 60 * 1000)
@@ -1283,10 +2011,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.16.0')
+  assert.equal(manifest.version, '3.27.20')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
+  assert.ok(manifest.host_permissions.includes('https://api.b.ai/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['context.js'])
@@ -1402,7 +2131,22 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-reply-tab="notifications"/)
   assert.match(content, /data-xrc-like-tab="posts"/)
   assert.match(content, /data-xrc-like-tab="replies"/)
-  assert.match(content, /data-xrc-monitor-open aria-label="打开异常监控中心"/)
+  assert.match(content, /data-xrc-actions-toggle aria-label="展开操作菜单"/)
+  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
+  for (const metric of ['comments', 'likes', 'follows', 'unfollows', 'posts']) {
+    assert.ok(todaySummary.includes(`data-xrc-today-${metric}`), `today summary should show ${metric}`)
+  }
+  assert.ok(content.indexOf('class="xrc-today-strip"') < content.indexOf('class="xrc-header-menu"'))
+  assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
+  const quickActions = content.match(/<div class="xrc-quick-actions"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
+  const header = content.match(/<div class="xrc-header">([\s\S]*?)<div class="xrc-today-strip"/)?.[1] || ''
+  assert.ok(header.includes('class="xrc-quick-actions"'))
+  assert.ok(header.indexOf('class="xrc-quick-actions"') < header.indexOf('data-xrc-actions-toggle'))
+  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-expand', 'class="xrc-close"']) {
+    assert.ok(quickActions.includes(action), `${action} should remain visible outside the menu`)
+  }
+  assert.match(content, /data-xrc-monitor-open aria-expanded="false">异常监控/)
+  assert.match(content, /data-xrc-report-page hidden aria-label="每日报告"/)
   assert.match(content, /data-xrc-monitor-current/)
   assert.match(content, /function syncMonitorMenu\(panel\)/)
   assert.match(content, /点赞、关注和定时发帖的全部本地异常尚未统一进入消息中心|普通发帖异常目前不会全部转成站长监控通知/)
@@ -1420,7 +2164,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /RECONNECT_MAX_MS = 30000/)
   assert.match(content, /window\.addEventListener\("online"/)
   assert.match(content, /fetch\(`\$\{window\.location\.origin\}\/robots\.txt/)
-  assert.match(content, /if \(result === "transient-error"\) \{[\s\S]*?errorCode: "x-transient-error"[\s\S]*?return reconnectAndResume/)
+  assert.match(content, /if \(result === "transient-error"\) \{[\s\S]*?skipTransientReply\(next\)/)
   assert.match(content, /if \(draft && !isManagedDraft\(draft\)\) return false/)
   assert.match(content, /finishCycleAndScheduleNext/)
   assert.match(content, /reconnectAndResume/)
@@ -1458,27 +2202,27 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /likeNotificationReply/)
   assert.match(content, /data-xrc-mutual-action="unfollow"/)
   assert.match(content, /data-xrc-mutual-action="followBack"/)
-  assert.match(content, /data-xrc-mutual-action="targetFollow"/)
+  assert.doesNotMatch(content, /data-xrc-mutual-action="targetFollow"/)
   assert.match(content, /data-xrc-mutual-tab="unfollow"/)
   assert.match(content, /data-xrc-mutual-tab="followBack"/)
-  assert.match(content, /data-xrc-mutual-tab="targetFollow"/)
-  assert.match(content, /每次从 5 个互关名单里随机打开一个/)
+  assert.doesNotMatch(content, /data-xrc-mutual-tab="targetFollow"/)
+  assert.match(content, /关注候选暂时停用|该功能暂时停用/)
   assert.match(content, /xrc-task-pending-remember/)
   assert.match(content, /state\.assistantMode === "poster" && await postApi\?\.resumeIfPending/)
-  assert.match(content, /清理未回关、回关粉丝和关注候选共用同一组额度/)
-  assert.match(content, /三项合计每 15 个暂停 30 分钟，每日合计最多 400 个/)
+  assert.match(content, /清理未回关和回关粉丝共用同一组额度/)
+  assert.match(content, /两项合计每 15 个暂停 30 分钟，每日合计最多 400 个/)
   assert.match(content, /function selectMutualMode/)
   assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return openTaskTab\(mutualTaskKey\(mode\)\)/)
-  assert.match(content, /button\.title = selected \? "当前任务窗口" : "打开或切换到对应的关注任务窗口"/)
+  assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
   assert.doesNotMatch(content, /button\.disabled = anyTaskRunning\(\)/)
   assert.match(content, /mutualMode/)
-  assert.match(content, /button\.disabled = false;\s*button\.title = selected/)
+  assert.match(content, /button\.disabled = false;\s*button\.title = taskTabHint/)
   assert.match(content, /mutualApi\.run/)
   assert.match(content, /result !== "sent-composer-open"/)
   assert.match(content, /data-xrc-round-track/)
   assert.match(content, /data-xrc-round-segment/)
   assert.match(content, /data-xrc-page-meta/)
-  assert.match(content, /class="xrc-round-pace"/)
+  assert.match(content, /class="xrc-round-pace xrc-pace-row"/)
   assert.doesNotMatch(content, /class="xrc-phrase-pool"/)
   assert.doesNotMatch(content, /data-xrc-mode="template"/)
   assert.match(content, /aria-selected/)
@@ -1498,7 +2242,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /插件不设置每日回复总量/)
   assert.doesNotMatch(content, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota|额度已用完/)
   assert.doesNotMatch(backgroundSource, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota/)
-  assert.match(content, /class="xrc-round-pace"/)
+  assert.match(content, /class="xrc-round-pace xrc-pace-row"/)
   assert.match(content, /频率调度/)
   assert.match(content, /data-xrc-collapse/)
   assert.match(content, /data-xrc-expand/)
@@ -1636,7 +2380,7 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.taskTabUrl('likes-posts', 'https://x.com/notifications'), 'https://x.com/home?xrcAssistant=likes-posts')
   assert.equal(background.taskTabUrl('likes-replies', 'https://x.com/notifications'), 'https://x.com/home?xrcAssistant=likes-replies')
   assert.match(backgroundText, /const FLOW_TASKS = \[[^\]]+\];/)
-  assert.doesNotMatch(backgroundText.match(/const FLOW_TASKS = \[[^\]]+\];/)?.[0] || '', /likes/)
+  assert.match(backgroundText.match(/const FLOW_TASKS = \[[^\]]+\];/)?.[0] || '', /"likes-posts", "likes-replies"/)
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home'), 'https://x.com/home?xrcAssistant=mutual-unfollow')
   assert.equal(background.taskTabUrl('poster', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=poster')
   assert.equal(background.taskTabUrl('poster', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=poster&xrcStart=1')
@@ -1661,7 +2405,7 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /\$代币/)
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(background.cleanPost('听说东北以前一家子睡一个炕。\n$KAITO'), '听说东北以前一家子睡一个炕。')
-  assert.match(background.POST_SYSTEM_PROMPT, /行间留一个空行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /每段一行、段间留一个空行/)
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
@@ -1771,6 +2515,63 @@ test('task windows are created once and reused without backgrounding another tas
     assert.equal(savedTabs.notifications, undefined)
   } finally {
     delete global.chrome
+  }
+})
+
+test('full flow opens both like tasks and pauses them with the other tasks', async () => {
+  const session = {}
+  const local = {}
+  const opened = []
+  const stopped = []
+  const liveTabs = new Map()
+  let nextTabId = 100
+  globalThis.chrome = {
+    storage: {
+      session: {
+        async get(key) { return { [key]: session[key] } },
+        async set(value) { Object.assign(session, value) },
+      },
+      local: {
+        async get(key) { return { [key]: local[key] } },
+        async set(value) { Object.assign(local, value) },
+      },
+    },
+    tabs: {
+      async query() { return [] },
+      async get(id) {
+        if (!liveTabs.has(id)) throw new Error('tab closed')
+        return liveTabs.get(id)
+      },
+      async sendMessage(id, message) { stopped.push({ id, message }) },
+    },
+    windows: {
+      async create({ url }) {
+        const id = ++nextTabId
+        const tab = { id, windowId: id, url }
+        liveTabs.set(id, tab)
+        opened.push(url)
+        return { id, tabs: [tab] }
+      },
+    },
+  }
+  try {
+    await background.openAllTasks({ tab: { url: 'https://x.com/home' } }, 'Tuaran')
+  assert.equal(opened.length, 7)
+    for (const mode of ['likes-posts', 'likes-replies']) {
+      assert.ok(opened.includes(`https://x.com/home?xrcAssistant=${mode}&xrcStart=1`))
+    }
+    const tabs = session.xrcTaskTabs
+    local.xrcPluginRuntime = {
+      tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
+      flow: { phase: 'running' },
+    }
+    await background.pauseAllTasks()
+    assert.equal(stopped.length, 7)
+    for (const mode of ['likes-posts', 'likes-replies']) {
+      assert.ok(stopped.some(({ id, message }) => id === tabs[mode] && message.type === 'xrc-flow-stop'))
+    }
+  } finally {
+    delete globalThis.chrome
   }
 })
 

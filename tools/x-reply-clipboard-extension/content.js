@@ -14,6 +14,12 @@
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
   const PANEL_ID = "x-reply-clipboard-panel";
+  const TASK_MODE_LABELS = {
+    timeline: "首页互动", notifications: "通知互动",
+    "likes-posts": "首页帖子", "likes-replies": "帖子评论",
+    "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
+    "mutual-targetFollow": "关注候选", poster: "定时发帖"
+  };
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
@@ -43,7 +49,7 @@
     "开篇：可以从素材里的具体事件切入，也可以直接抛判断。‘说个暴论，……’‘讲个事实，……’‘我真心觉得……’只是偶尔可用的口吻；每条换切口，不固定套句，不让引子单独占一行。",
     "行文：围绕一个核心观点，像随手发帖。不要写成场景铺垫、反转、文艺收尾的三段式微型故事；不要对仗、拟人、说教、自我解释或制造空洞悬念，例如‘这话像在说 X，又像不止 X’。不要只给标题换几个词就当成观点。",
     "结尾：有合适的具体小问题可以问；没有就自然停住。不为互动强行反问。",
-    "结构：总共 18～70 字。短的一行即可，长的 2～4 行；换行时行间留一个空行。不要强拆句子，也不要为了凑行数或字数加废话。",
+    "结构：总共 18～70 字。通常写成 2～4 个短段，每段一行、段间留一个空行，像随手写下的几句短话；30 字以内的一句话可以单行。优先在句号、问号或自然停顿处分段，不把引子单独成段，也不要为了凑行数加废话。",
     "禁区：不用‘首先、其次’或营销黑话，不写未经证实的指控；不写加密货币、代币或合约地址，不出现 $ 符号。",
     "输出：只写短帖正文，不附标题、解释或说明。"
   ].join("\n");
@@ -77,7 +83,14 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.16.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.20";
+  const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
+  const TASK_GROUP_MODES = {
+    reply: ["timeline", "notifications"],
+    likes: ["likes-posts", "likes-replies"],
+    mutual: ["mutual-unfollow", "mutual-followBack"],
+    poster: ["poster"]
+  };
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "mutual", "poster"]);
 
@@ -109,6 +122,8 @@
     mutualMode: "unfollow",
     replyMode: "ai",
     aiKey: "",
+    baiKey: "",
+    replyProviders: [...REPLY_PROVIDER_ORDER],
     aiKeySaved: false,
     aiKeyHint: "",
     replyPrompt: "",
@@ -126,9 +141,12 @@
   };
 
   let pluginRuntime = { startedAt: null, tasks: {} };
+  let openTaskTabs = {};
   let likeController = null;
-  let likeState = { running: false, stopping: false, count: 0, posts: 0, status: "选择点赞任务后手动开始。" };
+  let likeState = { running: false, stopping: false, count: 0, posts: 0, status: "点赞任务待命。" };
   let likeRuntimeActive = false;
+  let likeRuntimePhase = "";
+  let activeAiRequestId = "";
 
   function getLikeController() {
     if (!likeController && likeApi) {
@@ -140,12 +158,17 @@
         onLike(targetId, accountHandle, target) {
           reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "success", targetId, accountHandle });
         },
+        onLimit(accountHandle, target, errorCode) {
+          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "limited", errorCode, accountHandle });
+        },
         onUpdate(snapshot) {
           likeState = snapshot;
           if (!state.assistantMode.startsWith("likes-")) return;
-          if (likeRuntimeActive !== snapshot.running) {
+          const phase = snapshot.stopping ? "stopping" : Number(snapshot.cooldownUntil) > Date.now() ? "paused" : "running";
+          if (likeRuntimeActive !== snapshot.running || (snapshot.running && likeRuntimePhase !== phase)) {
             likeRuntimeActive = snapshot.running;
-            setRuntimeTaskActive(state.assistantMode, snapshot.running, snapshot.stopping ? "stopping" : "running");
+            likeRuntimePhase = snapshot.running ? phase : "";
+            setRuntimeTaskActive(state.assistantMode, snapshot.running, phase);
           }
           renderPanel();
         }
@@ -167,37 +190,129 @@
   const skippedIds = new Set();
   let panelDismissed = false;
   let configOpen = false;
+  let configPage = "model";
   let monitorOpen = false;
+  let reportOpen = false;
+  let headerMenuOpen = false;
   let resettingState = false;
   let dailyReports = [];
+  const REPORT_METRICS = ["comments", "likes", "follows", "unfollows", "followBacks", "posts"];
+  let dailyReportAccount = "__all__";
+  let dailyReportDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
+  let dailyReportMonth = dailyReportDate.slice(0, 7);
+  let lastKnownAccountHandle = "";
+
+  function sumDailyCounts(reports) {
+    const counts = Object.fromEntries(REPORT_METRICS.map((metric) => [metric, 0]));
+    for (const report of reports) for (const metric of REPORT_METRICS) counts[metric] += Math.max(0, Number(report.counts?.[metric]) || 0);
+    return counts;
+  }
+
+  function formatCompactCount(value) {
+    const number = Number(value);
+    const count = Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+    const unit = count >= 1_000_000_000 ? [1_000_000_000, "b"]
+      : count >= 1_000_000 ? [1_000_000, "m"]
+      : count >= 1_000 ? [1_000, "k"] : null;
+    if (!unit) return String(count);
+    const scaled = Math.floor(count / (unit[0] / 10)) / 10;
+    return `${scaled}${unit[1]}`;
+  }
+
+  function renderTodaySummary(panel) {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
+    const counts = sumDailyCounts(dailyReports.filter((report) => report.date === today));
+    const strip = panel.querySelector("[data-xrc-today-summary]");
+    if (!strip) return;
+    strip.title = `${today} · 本机所有账号的今日合计`;
+    for (const metric of ["comments", "likes", "unfollows", "posts"]) {
+      const node = strip.querySelector(`[data-xrc-today-${metric}]`);
+      if (node) node.textContent = String(counts[metric]);
+    }
+    const follows = strip.querySelector("[data-xrc-today-follows]");
+    if (follows) follows.textContent = String(counts.follows + counts.followBacks);
+  }
 
   function showDailyReport(panel) {
-    const select = panel.querySelector("[data-xrc-daily-date]");
-    if (!select) return;
-    const previous = select.value;
-    select.replaceChildren();
-    for (const report of dailyReports) {
+    const accountSelect = panel.querySelector("[data-xrc-report-account]");
+    if (!accountSelect) return;
+    const accounts = [...new Set(dailyReports.map((report) => String(report.accountHandle || "").trim()))].sort();
+    accountSelect.replaceChildren();
+    const allAccounts = document.createElement("option");
+    allAccounts.value = "__all__";
+    allAccounts.textContent = "全部账号";
+    accountSelect.appendChild(allAccounts);
+    for (const account of accounts) {
       const option = document.createElement("option");
-      option.value = `${report.date}|${report.accountHandle}`;
-      option.textContent = `${report.date}${report.accountHandle ? ` · @${report.accountHandle}` : ""}`;
-      select.appendChild(option);
+      option.value = account;
+      option.textContent = account ? `@${account}` : "未识别账号";
+      accountSelect.appendChild(option);
     }
-    if (dailyReports.length && dailyReports.some((report) => `${report.date}|${report.accountHandle}` === previous)) select.value = previous;
-    const selected = dailyReports.find((report) => `${report.date}|${report.accountHandle}` === select.value);
-    for (const metric of ["comments", "likes", "follows", "unfollows", "followBacks"]) {
+    if (dailyReportAccount !== "__all__" && !accounts.includes(dailyReportAccount)) dailyReportAccount = "__all__";
+    accountSelect.value = dailyReportAccount;
+    const filtered = dailyReports.filter((report) => dailyReportAccount === "__all__" || report.accountHandle === dailyReportAccount);
+    const total = sumDailyCounts(filtered);
+    for (const metric of REPORT_METRICS) {
+      const node = panel.querySelector(`[data-xrc-report-total-${metric}]`);
+      if (node) {
+        node.textContent = formatCompactCount(total[metric]);
+        node.title = `${total[metric].toLocaleString("zh-CN")} 次`;
+        node.setAttribute("aria-label", `${total[metric]} 次`);
+      }
+    }
+    const totalFollows = panel.querySelector("[data-xrc-report-total-follows]");
+    if (totalFollows) {
+      const value = total.follows + total.followBacks;
+      totalFollows.textContent = formatCompactCount(value);
+      totalFollows.title = `${value.toLocaleString("zh-CN")} 次`;
+      totalFollows.setAttribute("aria-label", `${value} 次`);
+    }
+    const coverage = panel.querySelector("[data-xrc-report-coverage]");
+    if (coverage) coverage.textContent = `本机已存记录 · ${new Set(filtered.map((report) => report.date)).size} 天有记录`;
+    panel.querySelector("[data-xrc-report-month]").textContent = dailyReportMonth.replace("-", " 年 ") + " 月";
+    panel.querySelector("[data-xrc-report-date]").value = dailyReportDate;
+    const calendar = panel.querySelector("[data-xrc-report-calendar]");
+    calendar.replaceChildren();
+    const [year, month] = dailyReportMonth.split("-").map(Number);
+    const firstWeekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+    const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const recorded = new Set(filtered.map((report) => report.date));
+    for (let index = 0; index < firstWeekday; index += 1) calendar.appendChild(document.createElement("span"));
+    for (let day = 1; day <= days; day += 1) {
+      const date = `${dailyReportMonth}-${String(day).padStart(2, "0")}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.xrcCalendarDay = date;
+      button.textContent = String(day);
+      button.classList.toggle("has-report", recorded.has(date));
+      button.classList.toggle("is-selected", date === dailyReportDate);
+      button.setAttribute("aria-label", `${date}${recorded.has(date) ? " 有记录" : " 无记录"}`);
+      calendar.appendChild(button);
+    }
+    const selected = filtered.filter((report) => report.date === dailyReportDate);
+    const dayCounts = sumDailyCounts(selected);
+    panel.querySelector("[data-xrc-report-selected-date]").textContent = dailyReportDate;
+    for (const metric of REPORT_METRICS) {
       const node = panel.querySelector(`[data-xrc-daily-${metric}]`);
-      if (node) node.textContent = String(selected?.counts?.[metric] || 0);
+      if (node) node.textContent = String(dayCounts[metric]);
     }
+    const dailyFollows = panel.querySelector("[data-xrc-daily-follows]");
+    if (dailyFollows) dailyFollows.textContent = String(dayCounts.follows + dayCounts.followBacks);
     const upload = panel.querySelector("[data-xrc-daily-upload]");
-    if (upload) upload.disabled = !selected;
+    if (upload) upload.disabled = selected.length !== 1;
     const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
-    if (uploaded) uploaded.textContent = selected?.uploadedAt ? `上次上传：${new Date(selected.uploadedAt).toLocaleString("zh-CN")}` : "尚未上传";
+    if (uploaded) uploaded.textContent = selected.length > 1 ? "请选择一个账号后上传" : !selected.length ? "当日无记录" : selected[0].uploadedAt ? `上次上传：${new Date(selected[0].uploadedAt).toLocaleString("zh-CN")}` : "尚未上传";
   }
 
   async function refreshDailyReport(panel) {
+    const recovery = await mergeLegacyAccountData();
     const result = await sendExtensionMessage({ type: "xrc-daily-get" });
+    if (!result?.ok) throw new Error(result?.error || "读取每日报告失败");
     dailyReports = Array.isArray(result.reports) ? result.reports : [];
+    renderTodaySummary(panel);
     showDailyReport(panel);
+    const status = panel.querySelector("[data-xrc-daily-status]");
+    if (recovery?.changed && status) status.textContent = "已把本机旧账号记录合并到当前账号；确认后可上传当日报告。";
   }
   let configSaveTimer = 0;
   let configSavePromise = Promise.resolve();
@@ -253,6 +368,7 @@
 
   function launchFromMode(mode, start) {
     if (mode === "likes") mode = "likes-posts";
+    if (mode === "mutual-targetFollow") return null;
     if (mode === "mutual-unfollow" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
       return { assistantMode: "mutual", mutualMode: mode.slice("mutual-".length), taskKey: mode, start: Boolean(start) };
     }
@@ -431,6 +547,55 @@
     }
   }
 
+  async function loadOpenTaskTabs() {
+    try {
+      const response = await readRuntimeMessage("xrc-task-tabs-get");
+      openTaskTabs = response?.tabs && typeof response.tabs === "object" ? response.tabs : {};
+    } catch (error) {
+      openTaskTabs = {};
+    }
+    renderPanel();
+  }
+
+  function taskGroupTarget(group, tabs = openTaskTabs, currentMode = currentTaskKey(), tasks = pluginRuntime.tasks) {
+    const modes = TASK_GROUP_MODES[group] || [];
+    const otherOpen = modes.filter((mode) => mode !== currentMode && Number.isInteger(Number(tabs?.[mode])) && Number(tabs[mode]) > 0);
+    return {
+      openedElsewhere: otherOpen.length > 0,
+      mode: otherOpen.find((mode) => tasks?.[mode]) || otherOpen[0] || (modes.includes(currentMode) ? currentMode : modes[0]) || "timeline"
+    };
+  }
+
+  function taskWindowTitle(mode, tabs = openTaskTabs, currentMode = currentTaskKey()) {
+    const label = TASK_MODE_LABELS[mode] || "任务";
+    if (mode === currentMode) return `当前${label}窗口`;
+    return Number.isInteger(Number(tabs?.[mode])) && Number(tabs[mode]) > 0
+      ? `跳转到已打开的${label}窗口`
+      : `打开${label}窗口`;
+  }
+
+  function syncSubtaskWindowControl(button, mode) {
+    const slot = button.closest(".xrc-subtask-slot");
+    const close = slot?.querySelector("[data-xrc-task-close]");
+    if (!slot || !close) return;
+    const tabId = Number(openTaskTabs[mode]);
+    const openedElsewhere = mode !== currentTaskKey() && Number.isInteger(tabId) && tabId > 0;
+    slot.classList.toggle("is-open", openedElsewhere);
+    close.disabled = !openedElsewhere;
+    close.dataset.xrcTargetMode = openedElsewhere ? mode : "";
+    close.dataset.xrcTargetTabId = openedElsewhere ? String(tabId) : "";
+    close.title = `关闭已打开的${TASK_MODE_LABELS[mode] || "任务"}窗口`;
+    close.setAttribute("aria-label", close.title);
+  }
+
+  function taskTabHint(mode) {
+    const tabId = Number(openTaskTabs[mode]);
+    const label = TASK_MODE_LABELS[mode] || "任务";
+    if (mode === currentTaskKey()) return `当前${label}页面`;
+    if (Number.isInteger(tabId) && tabId > 0) return `可以跳转到已打开的${label}页面`;
+    return `尚未启动，点击打开${label}页面`;
+  }
+
   async function setRuntimeTaskActive(mode, active, phase = "running") {
     try {
       const response = await readRuntimeMessage("xrc-runtime-task-state", {
@@ -453,8 +618,14 @@
   async function openTaskTab(mode) {
     const selected = validTaskKey(mode);
     if (selected === currentTaskKey()) return;
+    const label = TASK_MODE_LABELS[selected] || "任务";
+    state.status = `正在打开${label}页面…`;
+    renderPanel();
     try {
-      await sendTaskMessage("xrc-task-open", selected);
+      const result = await sendTaskMessage("xrc-task-open", selected);
+      await loadOpenTaskTabs();
+      state.status = result?.reused ? `已切换到${label}页面` : `已打开${label}页面`;
+      renderPanel();
     } catch (error) {
       state.status = error?.message || "没有成功打开任务窗口";
       renderPanel();
@@ -464,11 +635,44 @@
   let flowStarting = false;
   let flowStopping = false;
   let runtimePhaseSent = "";
+  let runtimePhaseSentAt = 0;
+  const FLOW_TASKS = Object.freeze([
+    ["timeline", "首页互动"], ["notifications", "通知互动"],
+    ["mutual-unfollow", "清理未回关"], ["mutual-followBack", "回关粉丝"],
+    ["poster", "定时发帖"],
+    ["likes-posts", "首页帖子点赞"], ["likes-replies", "帖子评论点赞"]
+  ]);
+  const FLOW_STALE_MS = 90 * 1000;
+
+  function flowTaskOverview(runtime, now = Date.now()) {
+    const counts = { running: 0, waiting: 0, missing: 0, stopping: 0, unknown: 0 };
+    const tasks = FLOW_TASKS.map(([key, label]) => {
+      const task = runtime?.tasks?.[key];
+      let status = "missing";
+      if (task) {
+        const updatedAt = Number(task.updatedAt) || 0;
+        status = !updatedAt || now - updatedAt > FLOW_STALE_MS ? "unknown"
+          : task.phase === "paused" ? "waiting"
+            : task.phase === "stopping" ? "stopping"
+              : task.phase === "running" ? "running" : "unknown";
+      }
+      counts[status] += 1;
+      return { key, label, status };
+    });
+    const parts = [
+      counts.running && `${counts.running} 项执行`,
+      counts.waiting && `${counts.waiting} 项等待`,
+      counts.missing && `${counts.missing} 项未启动`,
+      counts.stopping && `${counts.stopping} 项停止中`,
+      counts.unknown && `${counts.unknown} 项待确认`
+    ].filter(Boolean);
+    return { counts, tasks, text: parts.join(" · ") };
+  }
 
   function currentTaskPhase() {
     if (state.assistantMode.startsWith("likes-")) {
       if (!likeState.running) return "";
-      return likeState.stopping ? "stopping" : "running";
+      return likeState.stopping ? "stopping" : Number(likeState.cooldownUntil) > Date.now() ? "paused" : "running";
     }
     if (state.assistantMode === "mutual") {
       const mutual = state.mutual;
@@ -493,19 +697,25 @@
   function flowButtonModel() {
     if (flowStarting) return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     if (flowStopping) return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
-    const tasks = Object.entries(pluginRuntime.tasks || {})
-      .filter(([key]) => !key.startsWith("likes-"))
-      .map(([, task]) => task);
     const flow = pluginRuntime.flow || {};
+    const tasks = Object.entries(pluginRuntime.tasks || {})
+      .filter(([key]) => flow.phase === "running" || !key.startsWith("likes-"))
+      .map(([, task]) => task);
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     }
-    if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
-      return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
-    }
     if (flow.phase === "paused") {
       return { label: "已暂停", status: "paused", action: "start", title: "全流程已暂停，点此重新启动" };
+    }
+    if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
+      const lastUpdate = Math.max(Number(flow.updatedAt || 0), ...tasks
+        .filter((task) => task.phase === "stopping")
+        .map((task) => Number(task.updatedAt || 0)));
+      if (Date.now() - lastUpdate > 15000) {
+        return { label: "重试停止", status: "stalled", action: "pause", title: "停止超过 15 秒，点此再次暂停全部任务" };
+      }
+      return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     }
     if (tasks.length) {
       return { label: "运行中", status: "running", action: "pause", title: "点此暂停全部任务" };
@@ -513,16 +723,32 @@
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
     }
-    return { label: "全流程启动", status: "idle", action: "start", title: "一次打开并运行回复、关注与发帖任务" };
+    return { label: "全流程启动", status: "idle", action: "start", title: "一次打开并运行回复、点赞、关注与发帖任务" };
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
     const button = panel?.querySelector("[data-xrc-flow-start]");
     if (!button) return;
     const model = flowButtonModel();
-    button.textContent = model.label;
+    const label = button.querySelector("[data-xrc-flow-label]");
+    const overview = button.querySelector("[data-xrc-flow-overview]");
+    const count = button.querySelector("[data-xrc-flow-count]");
+    const dots = button.querySelector("[data-xrc-flow-dots]");
+    if (label) label.textContent = model.label;
+    const showOverview = model.status === "running";
+    if (overview) overview.hidden = !showOverview;
+    const summary = flowTaskOverview(pluginRuntime);
+    if (count) count.textContent = summary.text;
+    if (dots && dots.childElementCount !== FLOW_TASKS.length) {
+      dots.replaceChildren(...FLOW_TASKS.map(() => document.createElement("i")));
+    }
+    dots?.querySelectorAll("i").forEach((dot, index) => {
+      dot.dataset.state = summary.tasks[index].status;
+      dot.title = `${summary.tasks[index].label}：${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认" }[summary.tasks[index].status]}`;
+    });
     button.dataset.flow = model.status;
-    button.title = model.title;
+    button.removeAttribute("title");
+    button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认" }[task.status]}`).join("，")}` : model.title);
     button.disabled = model.status === "starting" || model.status === "stopping";
   }
 
@@ -530,21 +756,25 @@
     const phase = currentTaskPhase();
     const key = currentTaskKey();
     if (!phase) return;
+    if (phase === "stopping" && pluginRuntime.flow?.phase === "paused") return;
     const task = pluginRuntime.tasks?.[key];
-    if (task?.phase === phase) {
+    if (task?.phase === phase && Date.now() - Number(task.updatedAt || 0) < 30000) {
       runtimePhaseSent = `${key}:${phase}`;
       return;
     }
     const token = `${key}:${phase}`;
-    if (runtimePhaseSent === token) return;
+    if (runtimePhaseSent === token && Date.now() - runtimePhaseSentAt < 30000) return;
     runtimePhaseSent = token;
+    runtimePhaseSentAt = Date.now();
     setRuntimeTaskActive(key, true, phase);
   }
 
   function stopLocalTasks(reason = "全流程已暂停") {
+    if (likeState.running) likeController?.stop?.();
     if (state.mutual?.running) mutualApi?.stop?.();
     if (state.poster?.running) postApi?.stop?.();
     if (state.loopPromise || state.running) {
+      cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
       state.pendingReply = "";
@@ -617,7 +847,7 @@
         if (input) input.value = "";
         renderPanel();
       } catch (error) {
-        state.status = error?.message || "请先填写 DeepSeek API Key";
+        state.status = error?.message || "全流程包含定时发帖，请先填写 DeepSeek API Key";
         state.aiStatus = state.status;
         renderPanel();
         input?.focus();
@@ -639,29 +869,35 @@
   }
 
   async function openMutualWindows() {
-    await loadPluginRuntime();
-    const active = ["targetFollow", "followBack", "unfollow"]
-      .map((mode) => mutualTaskKey(mode))
-      .find((mode) => pluginRuntime.tasks?.[mode]);
-    await openTaskTab(active || mutualTaskKey());
+    await loadOpenTaskTabs();
+    await openTaskTab(taskGroupTarget("mutual").mode);
   }
 
   async function openReplyWindows() {
-    await loadPluginRuntime();
-    const active = ["timeline", "notifications"].find((mode) => pluginRuntime.tasks?.[mode]);
-    const current = ["timeline", "notifications"].includes(state.assistantMode) ? state.assistantMode : "";
-    await openTaskTab(current || active || "timeline");
+    await loadOpenTaskTabs();
+    await openTaskTab(taskGroupTarget("reply").mode);
   }
 
   async function openLikeWindows() {
-    await loadPluginRuntime();
-    const active = ["likes-posts", "likes-replies"].find((mode) => pluginRuntime.tasks?.[mode]);
-    const current = state.assistantMode.startsWith("likes-") ? state.assistantMode : "";
-    await openTaskTab(current || active || "likes-posts");
+    await loadOpenTaskTabs();
+    await openTaskTab(taskGroupTarget("likes").mode);
+  }
+
+  async function closeTaskGroupWindow(mode, tabId) {
+    if (!mode || !Number.isInteger(tabId)) return;
+    try {
+      await readRuntimeMessage("xrc-task-close", { mode, tabId });
+      await loadPluginRuntime();
+      await loadOpenTaskTabs();
+    } catch (error) {
+      state.status = error?.message || "任务窗口关闭失败";
+      await loadOpenTaskTabs();
+      renderPanel();
+    }
   }
 
   function validMutualMode(value) {
-    return ["followBack", "targetFollow"].includes(value) ? value : "unfollow";
+    return value === "followBack" ? value : "unfollow";
   }
 
   function anyTaskRunning() {
@@ -684,11 +920,15 @@
       }
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.aiKey = apiKey;
+      state.baiKey = /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "";
+      state.replyProviders = Array.isArray(settings.replyProviders)
+        ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
+        : [...REPLY_PROVIDER_ORDER];
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X")) ? "" : storedPostPrompt;
+      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X")) ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -841,10 +1081,20 @@
   async function saveConfigForm(panel) {
     const status = panel.querySelector("[data-xrc-config-status]");
     const key = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
+    const baiKey = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
+    const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
     const replyPrompt = String(panel.querySelector("[data-xrc-reply-prompt]")?.value || "").trim();
     const postPrompt = String(panel.querySelector("[data-xrc-post-prompt]")?.value || "").trim();
     if (key && !validDeepSeekApiKey(key)) {
       status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
+      return false;
+    }
+    if (baiKey && !/^sk-\S{8,}$/u.test(baiKey)) {
+      status.textContent = "请输入有效的 B.AI API Key";
+      return false;
+    }
+    if (!replyProviders.length) {
+      status.textContent = "请至少启用一个回复模型";
       return false;
     }
     if (!replyPrompt || !postPrompt) {
@@ -880,6 +1130,8 @@
       xrcAiSettings: {
         ...settings,
         apiKey: key,
+        baiApiKey: baiKey,
+        replyProviders,
         replyMode: state.replyMode,
         replyPrompt: storedReplyPrompt,
         postPrompt: storedPostPrompt
@@ -891,6 +1143,8 @@
       }
     });
     state.aiKey = key;
+    state.baiKey = baiKey;
+    state.replyProviders = replyProviders;
     state.aiKeySaved = Boolean(key);
     state.aiKeyHint = key ? `已保存 ····${key.slice(-4)}` : "";
     state.aiStatus = key ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
@@ -1056,7 +1310,10 @@
         reject(new Error("AI 服务只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type, postText, avoidReply, conversation, mode: state.assistantMode }, (response) => {
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      activeAiRequestId = requestId;
+      const sent = chrome.runtime.sendMessage({ type, postText, avoidReply, conversation, mode: state.assistantMode, requestId }, (response) => {
+        if (activeAiRequestId === requestId) activeAiRequestId = "";
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接扩展 AI 服务"));
@@ -1070,6 +1327,13 @@
       });
       if (sent && typeof sent.catch === "function") sent.catch(() => {});
     });
+  }
+
+  function cancelActiveAiRequest() {
+    const requestId = activeAiRequestId;
+    if (!requestId) return;
+    activeAiRequestId = "";
+    sendExtensionMessage({ type: "xrc-ai-cancel", requestId }).catch(() => {});
   }
 
   function savedDefaults() {
@@ -1567,25 +1831,45 @@
   function currentAccountHandle() {
     const account = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
     const accountMatch = textOf(account).match(/@([A-Za-z0-9_]{1,15})/);
-    if (accountMatch) return loopApi.normalizeHandle(accountMatch[1]);
+    if (accountMatch) {
+      lastKnownAccountHandle = loopApi.normalizeHandle(accountMatch[1]);
+      return lastKnownAccountHandle;
+    }
     const profileHref = document.querySelector('[data-testid="AppTabBar_Profile_Link"], a[aria-label="Profile"], a[aria-label="个人资料"]')?.getAttribute("href") || "";
     const profileMatch = profileHref.match(/^\/([A-Za-z0-9_]{1,15})(?:\/|$)/);
-    return profileMatch ? loopApi.normalizeHandle(profileMatch[1]) : "";
+    if (profileMatch) {
+      lastKnownAccountHandle = loopApi.normalizeHandle(profileMatch[1]);
+      return lastKnownAccountHandle;
+    }
+    return lastKnownAccountHandle;
   }
 
   function rememberAccountHandle(handle = currentAccountHandle()) {
     const selected = String(handle || "").replace(/^@/u, "");
+    if (selected) lastKnownAccountHandle = selected;
     if (!/^[A-Za-z0-9_]{1,15}$/u.test(selected) || !globalThis.chrome?.storage?.local?.set) return selected;
     const saved = chrome.storage.local.set({ xrcAccountHandle: selected });
     if (saved && typeof saved.catch === "function") saved.catch(() => {});
     return selected;
   }
 
+  async function mergeLegacyAccountData() {
+    let handle = currentAccountHandle();
+    if (!handle && globalThis.chrome?.storage?.local?.get) {
+      try {
+        const stored = await chrome.storage.local.get("xrcAccountHandle");
+        handle = String(stored?.xrcAccountHandle || "").replace(/^@/u, "");
+      } catch (error) {}
+    }
+    if (!handle || handle.toLowerCase() === "default") return null;
+    return sendExtensionMessage({ type: "xrc-account-merge", from: "default", to: handle }).catch(() => null);
+  }
+
   function reportCommunityAction(event) {
     try {
       globalThis.XrcCommunityReceipt?.report({
         ...event,
-        accountHandle: event?.accountHandle || currentAccountHandle()
+        accountHandle: event?.accountHandle || currentAccountHandle() || lastKnownAccountHandle
       });
     } catch (error) {}
   }
@@ -1703,6 +1987,21 @@
     return null;
   }
 
+  function findReplyRestrictionDialog() {
+    return Array.from(document.querySelectorAll('[role="dialog"]'))
+      .find((dialog) => !dialog.closest(`#${PANEL_ID}`) && loopApi.isReplyRestrictedText(textOf(dialog))) || null;
+  }
+
+  async function dismissReplyRestrictionDialog() {
+    const dialog = findReplyRestrictionDialog();
+    if (!dialog) return true;
+    const acknowledge = Array.from(dialog.querySelectorAll('button, [role="button"]'))
+      .find((button) => /^(?:Got It|知道了|明白了)$/iu.test(textOf(button)));
+    const close = acknowledge || dialog.querySelector('[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"]');
+    if (close) realClick(close);
+    return !findReplyRestrictionDialog() || await waitUntil(() => !findReplyRestrictionDialog(), 1200);
+  }
+
   function findComposer(article, hadInline) {
     const dialogComposer = findDialogComposer();
     if (dialogComposer) return dialogComposer;
@@ -1730,9 +2029,13 @@
       .filter((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
   }
 
+  function transientErrorNodes() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"]'))
+      .filter((node) => !node.closest(`#${PANEL_ID}`) && TRANSIENT_ERROR_RE.test(textOf(node)));
+  }
+
   function transientErrorVisible() {
-    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
-      .some((node) => !node.closest(`#${PANEL_ID}`) && TRANSIENT_ERROR_RE.test(textOf(node)));
+    return transientErrorNodes().length > 0;
   }
 
   function duplicateReplyWarningVisible() {
@@ -1851,7 +2154,7 @@
   }
 
   function failureLabel(result) {
-    if (result === "transient-error") return "X 暂时出错，正在检查连接";
+    if (result === "transient-error") return "X 发送出错，跳过当前帖子";
     if (result === "compose-failed") return "话术没有写进评论框";
     if (result === "submit-disabled") return "Reply 还不能点";
     if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
@@ -1860,6 +2163,7 @@
     if (result === "no-composer") return "评论弹窗没有打开";
     if (result === "reply-disabled") return "评论按钮不可用";
     if (result === "post-unavailable") return "原帖已删除或当前账号看不到";
+    if (result === "reply-restricted") return "当前账号没有这条帖子的回复权限";
     if (result === "like-disabled") return "点赞按钮不可用";
     if (result === "like-unconfirmed") return "点赞结果未确认";
     return result;
@@ -1885,12 +2189,14 @@
     }
     const hadInline = Boolean(inline);
     realClick(tweet.replyButton);
-    const opened = await waitUntil(() => findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
+    const opened = await waitUntil(() => findReplyRestrictionDialog() || findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
+    if (findReplyRestrictionDialog()) return null;
     return opened ? findComposer(tweet.article, hadInline) : null;
   }
 
   async function publishReply(composer, replyText) {
     if (state.stopping) return "stopped";
+    if (findReplyRestrictionDialog()) return "reply-restricted";
     if (unavailablePostInDialog()) return "post-unavailable";
     const phrase = String(replyText || "").trim();
     if (!phrase) return "compose-failed";
@@ -1918,14 +2224,16 @@
     if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
     const successNoticesBefore = new Set(successNoticeNodes());
     const toastsBefore = new Set(unavailablePostToasts());
+    const transientBefore = new Set(transientErrorNodes());
     const hasNewSuccessNotice = () => successNoticeNodes().some((node) => !successNoticesBefore.has(node));
     const unavailableAfterClick = () => unavailablePostVisible(toastsBefore);
+    const transientAfterClick = () => transientErrorNodes().some((node) => !transientBefore.has(node));
     realClick(submit);
 
     const sendStarted = await waitUntil(() => {
       if (unavailableAfterClick()) return true;
       if (automationWarningNodes().length > 0) return true;
-      if (transientErrorVisible()) return true;
+      if (transientAfterClick()) return true;
       if (duplicateReplyWarningVisible()) return true;
       if (hasNewSuccessNotice()) return true;
       if (composer.dialog && !findDialogComposer()) return true;
@@ -1940,20 +2248,20 @@
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientErrorVisible() && !hasNewSuccessNotice()) return "transient-error";
+    if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!sendStarted) return "send-unconfirmed";
 
     const confirmed = composer.dialog
-      ? await waitUntil(() => unavailableAfterClick() || transientErrorVisible() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
+      ? await waitUntil(() => unavailableAfterClick() || transientAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
       : await waitUntil(
-          () => unavailableAfterClick() || transientErrorVisible() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
+          () => unavailableAfterClick() || transientAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
           SEND_CONFIRM_TIMEOUT_MS
         );
     if (state.stopping) return "stopped";
     if (unavailableAfterClick()) return "post-unavailable";
     if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientErrorVisible() && !hasNewSuccessNotice()) return "transient-error";
+    if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!confirmed) return "send-unconfirmed";
     if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
@@ -1968,6 +2276,7 @@
   }
 
   async function replyOnce(tweet, replyText) {
+    if (findReplyRestrictionDialog()) return "reply-restricted";
     const existingComposer = findDialogComposer();
     if (existingComposer) {
       const existingText = loopApi.composerText(existingComposer.textbox);
@@ -2001,7 +2310,7 @@
     await sleepActive(300);
     if (state.stopping) return "stopped";
     const composer = await openComposer(tweet);
-    if (!composer) return "no-composer";
+    if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
 
     const result = await publishReply(composer, replyText);
     if (
@@ -2009,6 +2318,7 @@
       && result !== "stopped"
       && result !== "sent-composer-open"
       && result !== "post-unavailable"
+      && result !== "reply-restricted"
       && result !== "risk-blocked"
       && result !== "transient-error"
       && result !== "duplicate-reply"
@@ -2051,6 +2361,28 @@
     return false;
   }
 
+  async function skipTransientReply(tweet) {
+    reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: tweet.id, errorCode: "x-transient-error" });
+    skippedIds.add(tweet.id);
+    if (state.assistantMode === "notifications") {
+      try {
+        await persistNotificationProcessed(tweet.id);
+      } catch (error) {
+        state.errors += 1;
+      }
+    } else {
+      processedIds.add(tweet.id);
+    }
+    state.errors += 1;
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    writeSaved({ running: true, total: state.total });
+    const closed = await closeReplyComposer();
+    state.status = "X 未能发送这条回复，已跳过当前帖子，继续下一条";
+    renderPanel();
+    return closed;
+  }
+
   async function runLoop({ resume = false } = {}) {
     if (state.assistantMode === "notifications" && !isNotificationPath()) {
       state.status = "通知回复需要在 X 通知页运行，正在打开通知页…";
@@ -2086,6 +2418,8 @@
     if (state.reconnectAt > 0) return reconnectAndResume(state.reconnectReason || "页面连接暂时不可用");
     scrollTimelineToTop();
     if (state.assistantMode !== "notifications") ensureRunPlan();
+    state.status = state.assistantMode === "notifications" ? "正在等待通知列表加载…" : "正在等待首页帖子加载…";
+    renderPanel();
     await sleepActive(resume ? RESUME_DELAY_MS : 400);
     if (riskRoundRequested) return advanceRoundAfterRisk();
     if (state.stopping) return "stopped";
@@ -2116,7 +2450,12 @@
     }
 
     let stalled = 0;
+    let consecutiveTransientFailures = 0;
+    let aiGenerationFailures = 0;
     while (state.running && !state.stopping) {
+      if (findReplyRestrictionDialog() && !await dismissReplyRestrictionDialog()) {
+        return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
+      }
       if (riskRoundRequested && state.assistantMode === "notifications") {
         notificationLikeOnly = true;
         riskRoundRequested = false;
@@ -2259,20 +2598,25 @@
           renderPanel();
           try {
             phrase = await sendAiMessage("xrc-ai-generate", postText, "", conversation);
+            aiGenerationFailures = 0;
             state.pendingReply = phrase;
             state.pendingTweetId = next.id;
             state.lastReply = phrase;
             writeSaved({ running: true, total: state.total });
           } catch (error) {
+            if (state.stopping || !state.running) return "stopped";
             state.errors += 1;
+            aiGenerationFailures += 1;
             state.aiStatus = error?.message || "DeepSeek 生成失败";
-            state.status = `AI 生成失败：${state.aiStatus}。3 秒后重试`;
+            const delayMs = [3000, 8000, 20000, 30000][Math.min(aiGenerationFailures - 1, 3)];
+            state.status = `AI 生成失败：${state.aiStatus}。${Math.round(delayMs / 1000)} 秒后重试`;
             renderPanel();
-            await sleepActive(3000);
+            await sleepActive(delayMs);
             continue;
           }
         }
       }
+      if (state.stopping || !state.running) return "stopped";
       state.status = state.replyMode === "ai"
         ? `${state.assistantMode === "notifications" ? "已点赞，" : ""}AI 已生成：${phrase}`
         : `${state.assistantMode === "notifications" ? "已点赞，" : ""}正在回复：${phrase}`;
@@ -2282,10 +2626,15 @@
         break;
       }
       if (result === "transient-error") {
-        reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: next.id, errorCode: "x-transient-error" });
-        const recovery = await reconnectAndResume("X 暂时出错，正在检查网络并重试当前回复", { inPlace: true });
-        if (recovery === "resume") continue;
-        return recovery;
+        const closed = await skipTransientReply(next);
+        if (!closed) return reconnectAndResume("回复草稿无法关闭，准备重新载入后继续下一条");
+        await waitUntil(() => !transientErrorVisible(), 5000);
+        consecutiveTransientFailures += 1;
+        if (consecutiveTransientFailures >= 3) {
+          consecutiveTransientFailures = 0;
+          await waitRateLimit(60, (remaining) => `连续 3 条发送出错，${remaining} 秒后继续尝试下一条`);
+        }
+        continue;
       }
       if (result === "risk-blocked") {
         reportCommunityAction({
@@ -2316,13 +2665,14 @@
         }
         return reconnectAndResume(failureLabel(result));
       }
-      if (result === "post-unavailable") {
+      if (result === "post-unavailable" || result === "reply-restricted") {
+        const restricted = result === "reply-restricted";
         skippedIds.add(next.id);
         reportCommunityAction({
           task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply",
           result: "skipped",
           targetId: next.id,
-          errorCode: "post-unavailable"
+          errorCode: result
         });
         if (state.assistantMode === "notifications") {
           try {
@@ -2336,9 +2686,10 @@
         state.pendingReply = "";
         state.pendingTweetId = "";
         writeSaved({ running: true, total: state.total });
-        await closeReplyComposer();
-        state.status = "原帖已删除或当前账号看不到，已跳过";
+        const closed = restricted ? await dismissReplyRestrictionDialog() : await closeReplyComposer();
+        state.status = restricted ? "这条帖子仅允许部分账号回复，已跳过" : "原帖已删除或当前账号看不到，已跳过";
         renderPanel();
+        if (!closed) return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
         continue;
       }
       if (result === "duplicate-reply") {
@@ -2383,7 +2734,14 @@
         continue;
       }
 
+      if (result === "transient-error") {
+        const closed = await skipTransientReply(next);
+        if (!closed) return reconnectAndResume("X 错误弹窗未能关闭，准备重新载入页面");
+        continue;
+      }
+
       if (result === "ok" || result === "sent-composer-open") {
+        consecutiveTransientFailures = 0;
         if (state.assistantMode === "notifications") {
           try {
             await persistNotificationProcessed(next.id);
@@ -2636,12 +2994,40 @@
 
   function syncConfigMenu(panel) {
     const menu = panel.querySelector("[data-xrc-config]");
-    const gear = panel.querySelector("[data-xrc-config-open]");
     const embed = panel.querySelector("[data-xrc-embed]");
     if (menu) menu.hidden = !configOpen;
     if (embed) embed.checked = state.panelPlacement === "embed";
-    gear?.setAttribute("aria-expanded", configOpen ? "true" : "false");
+    panel.querySelectorAll("[data-xrc-config-open]").forEach((button) => {
+      button.setAttribute("aria-expanded", configOpen && button.dataset.xrcConfigOpen === configPage ? "true" : "false");
+    });
+    panel.querySelectorAll("[data-xrc-config-section]").forEach((section) => {
+      section.hidden = section.dataset.xrcConfigSection !== configPage;
+    });
+    const title = panel.querySelector("[data-xrc-config-title]");
+    const caption = panel.querySelector("[data-xrc-config-caption]");
+    const pageMeta = {
+      model: ["模型设置", "密钥、回退顺序与提示词"],
+      pace: ["频率设置", "回复与发帖的间隔和轮次"],
+      other: ["其他设置", "显示与社区回执"],
+    }[configPage] || ["其他设置", "显示与社区回执"];
+    if (title) title.textContent = pageMeta[0];
+    if (caption) caption.textContent = pageMeta[1];
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function syncHeaderMenu(panel) {
+    const menu = panel.querySelector("[data-xrc-header-menu]");
+    if (menu) menu.hidden = !headerMenuOpen;
+    const toggle = panel.querySelector("[data-xrc-actions-toggle]");
+    toggle?.setAttribute("aria-expanded", headerMenuOpen ? "true" : "false");
+    toggle?.setAttribute("aria-label", headerMenuOpen ? "收起操作菜单" : "展开操作菜单");
+    if (toggle) toggle.title = headerMenuOpen ? "收起操作菜单" : "展开操作菜单";
+  }
+
+  function syncReportPage(panel) {
+    const page = panel.querySelector("[data-xrc-report-page]");
+    if (page) page.hidden = !reportOpen;
+    panel.querySelector("[data-xrc-report-open]")?.setAttribute("aria-expanded", reportOpen ? "true" : "false");
   }
 
   function syncMonitorMenu(panel) {
@@ -2668,6 +3054,43 @@
     const detail = monitor.querySelector("[data-xrc-monitor-detail]");
     if (current) current.textContent = `${label} · ${errors == null ? "未单独统计次数" : `${Number(errors) || 0} 次异常/重试`}`;
     if (detail) detail.textContent = status || "待命";
+  }
+
+  async function loadLimitMonitor(panel) {
+    const summary = panel.querySelector("[data-xrc-limit-summary]");
+    const entries = panel.querySelector("[data-xrc-limit-entries]");
+    if (!summary || !entries) return;
+    summary.textContent = "正在读取本地记录…";
+    let result;
+    try {
+      result = await sendExtensionMessage({ type: "xrc-limit-get", accountHandle: currentAccountHandle() });
+    } catch (error) {
+      if (panel.isConnected) summary.textContent = error?.message || "读取限制记录失败";
+      return;
+    }
+    if (!panel.isConnected || !monitorOpen) return;
+    if (!result?.ok) {
+      summary.textContent = result?.error || "读取限制记录失败";
+      return;
+    }
+    const analysis = result.analysis;
+    const samples = analysis.replySamples || [];
+    const values = samples.map((sample) => sample.in24h);
+    const observed = samples.length
+      ? `回复受限 ${samples.length} 次；受限前 24 小时内，插件确认成功 ${Math.min(...values)}～${Math.max(...values)} 条。最近一次：10 分钟 ${samples.at(-1).in10m}、30 分钟 ${samples.at(-1).in30m}、1 小时 ${samples.at(-1).in1h}、24 小时 ${samples.at(-1).in24h} 条；之前最多 10 次成功回复的间隔中位数 ${samples.at(-1).recentMedianGapMs == null ? "待积累" : `${Math.round(samples.at(-1).recentMedianGapMs / 1000)} 秒`}。`
+      : "还没有回复受限样本。继续记录成功操作和首次受限时间，出现样本后会显示对应时间窗口。";
+    summary.textContent = analysis.hypothesis?.text ? `${observed} 当前判断：${analysis.hypothesis.text}` : observed;
+    entries.replaceChildren();
+    const labels = { reply: "回复", like: "点赞", follow: "关注/回关", unfollow: "取关" };
+    for (const sample of (analysis.limits || []).slice(0, 12)) {
+      const row = document.createElement("div");
+      row.className = "xrc-limit-row";
+      const time = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(sample.at);
+      const gap = sample.lastGapMs == null ? "无前次成功记录" : `距上次成功 ${Math.max(1, Math.round(sample.lastGapMs / 1000))} 秒`;
+      row.textContent = `${time} · ${labels[sample.group] || sample.group}受限 · 10分 ${sample.in10m} / 30分 ${sample.in30m} / 1时 ${sample.in1h} / 24时 ${sample.in24h} · ${gap}`;
+      entries.append(row);
+    }
+    if (!entries.childElementCount) entries.textContent = "暂无受限事件";
   }
 
   function syncToolboxMenu(panel) {
@@ -2745,28 +3168,32 @@
           </div>
           <div class="xrc-header-actions">
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
-            <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
-            <button class="xrc-view-button xrc-toolbox-button" type="button" data-xrc-toolbox-open aria-label="打开工具箱" title="工具箱" aria-expanded="false">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.1" y="2.1" width="4.6" height="4.6" rx="1"></rect><rect x="9.3" y="2.1" width="4.6" height="4.6" rx="1"></rect><rect x="2.1" y="9.3" width="4.6" height="4.6" rx="1"></rect><rect x="9.3" y="9.3" width="4.6" height="4.6" rx="1"></rect></svg>
-            </button>
-            <button class="xrc-view-button xrc-gear-button" type="button" data-xrc-config-open aria-label="打开设置" title="设置" aria-expanded="false">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 1.7h3l.4 1.6c.3.1.7.3 1 .5l1.5-.6 1.5 1.5-.6 1.5c.2.3.4.7.5 1l1.6.4v3l-1.6.4c-.1.3-.3.7-.5 1l.6 1.5-1.5 1.5-1.5-.6c-.3.2-.7.4-1 .5l-.4 1.6h-3l-.4-1.6a4 4 0 0 1-1-.5l-1.5.6-1.5-1.5.6-1.5a4 4 0 0 1-.5-1l-1.6-.4v-3l1.6-.4c.1-.3.3-.7.5-1l-.6-1.5 1.5-1.5 1.5.6c.3-.2.7-.4 1-.5l.4-1.6z"></path><circle cx="8" cy="8" r="1.7"></circle></svg>
-            </button>
-            <button class="xrc-view-button xrc-docs-button" type="button" data-xrc-docs-open aria-label="打开文档中心" title="文档中心">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg>
-            </button>
-            <button class="xrc-view-button" type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板">
-              <svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"></path></svg>
-              <svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg>
-            </button>
-            <button class="xrc-view-button" type="button" data-xrc-expand aria-label="放大面板" title="放大面板">
-              <svg class="xrc-icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg>
-              <svg class="xrc-icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6h3V3M13 6h-3V3M10 13v-3h3M6 13v-3H3"></path></svg>
-            </button>
-            <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg>
-            </button>
+            <div class="xrc-quick-actions" aria-label="面板操作">
+              <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
+              <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg></button>
+              <button type="button" data-xrc-expand aria-label="放大面板" title="放大面板"><svg class="xrc-icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg><svg class="xrc-icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6h3V3M13 6h-3V3M10 13v-3h3M6 13v-3H3"></path></svg></button>
+              <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
+            </div>
+            <button class="xrc-view-button xrc-actions-toggle" type="button" data-xrc-actions-toggle aria-label="展开操作菜单" aria-expanded="false" aria-controls="xrc-header-menu" title="展开操作菜单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"></path></svg></button>
           </div>
+        </div>
+        <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
+          <strong>今日合计</strong>
+          <span>评论 <b data-xrc-today-comments>0</b></span>
+          <span>点赞 <b data-xrc-today-likes>0</b></span>
+          <span>关注 <b data-xrc-today-follows>0</b></span>
+          <span>取关 <b data-xrc-today-unfollows>0</b></span>
+          <span>发帖 <b data-xrc-today-posts>0</b></span>
+        </div>
+        <div class="xrc-header-menu" id="xrc-header-menu" data-xrc-header-menu hidden>
+          <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
+          <button type="button" data-xrc-report-open>每日报告</button>
+          <button type="button" data-xrc-monitor-open aria-expanded="false">异常监控</button>
+          <button type="button" data-xrc-config-open="model" aria-expanded="false">模型设置</button>
+          <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率设置</button>
+          <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
+          <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
+          <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
         </div>
         <section class="xrc-monitor" data-xrc-monitor hidden aria-label="异常监控中心">
           <div class="xrc-docs-head">
@@ -2778,16 +3205,24 @@
               <div class="xrc-docs-title"><b>NOW</b><span><strong data-xrc-monitor-current>当前任务 · 0 次异常/重试</strong><small>仅统计当前 X 窗口；其他任务各自在专用窗口运行</small></span></div>
               <p data-xrc-monitor-detail>待命</p>
             </section>
+            <section class="xrc-docs-section xrc-limit-monitor">
+              <div class="xrc-docs-title"><b>05</b><span><strong>限制观察</strong><small>本机最多 6000 条、近 30 天 · 按当前账号统计</small></span></div>
+              <p>现有关注管理每批最多 15 个、每天最多 400 个；点赞暂不设每日总量。下方记录 X 实际出现的限制提示。</p>
+              <p data-xrc-limit-summary>正在读取本地记录…</p>
+              <div class="xrc-limit-entries" data-xrc-limit-entries>暂无受限事件</div>
+              <p class="xrc-docs-note">回复测试模型只观察已确认成功和明确受限的时间。窗口数量不是平台阈值：插件外操作、帖子差异和账号状态无法从本地记录确认。遇到限制时不会为测试提高频率。</p>
+              <button type="button" data-xrc-limit-refresh>刷新记录</button>
+            </section>
             <section class="xrc-docs-section"><div class="xrc-docs-title"><b>01</b><span><strong>回复管理</strong><small>首页互动 · 通知互动</small></span></div><ul>
               <li><b>页面或断网：</b>先检测 X 连接；临时错误尽量在原页继续，重连从 2 秒逐步延长到 30 秒。未发送草稿挡住重连时不强行离开页面。</li>
-              <li><b>DeepSeek 失败：</b>当前回复 3 秒后重试；发送结果未确认时保留当前帖子，不当作成功。</li>
+              <li><b>模型失败：</b>DeepSeek 临时繁忙、限流或超时先尝试 NAS；NAS 仍失败且已配置 B.AI Key 时再尝试 B.AI。全部失败后按 3、8、20、30 秒逐步重试。发送结果未确认时保留当前帖子，不当作成功。</li>
               <li><b>风控：</b>遇到疑似自动化限制会停止任务，等待人工检查。断网、临时错误和草稿阻挡会写本地回执并尝试上报站长后台。</li>
             </ul></section>
             <section class="xrc-docs-section"><div class="xrc-docs-title"><b>02</b><span><strong>点赞管理</strong><small>首页帖子 · 帖子评论</small></span></div><ul>
               <li><b>已赞或已处理：</b>跳过；两个子任务分别保存处理历史。评论任务不会重复点赞原帖。</li>
-              <li><b>限制提示：</b>停止点击并在当前任务状态显示原因。一般异常会停止该任务；目前不单独上报站长监控通知。</li>
+              <li><b>次数限制：</b>暂停点赞并保存账号冷却时间，按 1、2、6 小时递增重试；持续受限则停止自动重试。疑似自动化或账号限制会立即停止。目前不单独上报站长监控通知。</li>
             </ul></section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>03</b><span><strong>关注管理</strong><small>清理未回关 · 回关粉丝 · 关注候选</small></span></div><ul>
+        <section class="xrc-docs-section"><div class="xrc-docs-title"><b>03</b><span><strong>关注管理</strong><small>清理未回关 · 回关粉丝 · 关注候选（暂时停用）</small></span></div><ul>
               <li><b>额度与操作限制：</b>三项共用每日和批次额度；限制时暂停本批操作并记录限制回执。</li>
               <li><b>存储失败：</b>保留上次读到的额度并停止任务，要求刷新页面后重试，避免按零额度继续。异常计数显示在任务页。</li>
             </ul></section>
@@ -2799,46 +3234,92 @@
             <p class="xrc-docs-note">站长后台的「运行中心 → 异常监控」可看已送达的告警。没有告警不代表所有任务正常；插件的本地状态和待发列表仍需在对应窗口查看。</p>
           </div>
         </section>
+        <section class="xrc-report-page" data-xrc-report-page hidden aria-label="每日报告">
+          <div class="xrc-docs-head">
+            <div><small>DAILY REPORT</small><strong>每日报告</strong><span>本地累计与每日记录</span></div>
+            <button type="button" data-xrc-report-close aria-label="关闭每日报告">×</button>
+          </div>
+          <div class="xrc-docs-content">
+            <label class="xrc-report-filter">统计账号 <select data-xrc-report-account aria-label="选择统计账号"><option value="__all__">全部账号</option></select></label>
+            <section class="xrc-docs-section">
+              <div class="xrc-report-section-title"><strong>累计统计</strong><small data-xrc-report-coverage>本机已存记录 · 0 天有记录</small></div>
+              <div class="xrc-daily-counts">
+                <span>评论 <b data-xrc-report-total-comments>0</b></span><span>点赞 <b data-xrc-report-total-likes>0</b></span>
+                <span>关注 <b data-xrc-report-total-follows>0</b></span><span>取关 <b data-xrc-report-total-unfollows>0</b></span>
+                <span>发帖 <b data-xrc-report-total-posts>0</b></span>
+              </div>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-report-month"><strong>按日期查看</strong><div><button type="button" data-xrc-report-prev aria-label="上个月">‹</button><span data-xrc-report-month></span><button type="button" data-xrc-report-next aria-label="下个月">›</button></div></div>
+              <div class="xrc-report-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+              <div class="xrc-report-calendar" data-xrc-report-calendar role="group" aria-label="选择报告日期"></div>
+              <label class="xrc-report-filter">跳转日期 <input type="date" data-xrc-report-date aria-label="选择报告日期"></label>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-report-section-title"><strong data-xrc-report-selected-date>今日</strong><small>当日统计</small></div>
+              <div class="xrc-daily-counts">
+                <span>评论 <b data-xrc-daily-comments>0</b></span><span>点赞 <b data-xrc-daily-likes>0</b></span>
+                <span>关注 <b data-xrc-daily-follows>0</b></span><span>取关 <b data-xrc-daily-unfollows>0</b></span>
+                <span>发帖 <b data-xrc-daily-posts>0</b></span>
+              </div>
+              <div class="xrc-daily-actions"><small data-xrc-daily-uploaded>尚未上传</small><span><button type="button" data-xrc-daily-pull>同步云端</button><button type="button" data-xrc-daily-upload disabled>上传当日报告</button></span></div>
+              <p class="xrc-report-status" data-xrc-daily-status role="status">只统计插件确认成功的操作，按北京时间保存在本机。</p>
+            </section>
+          </div>
+        </section>
         <div class="xrc-config" data-xrc-config hidden>
           <div class="xrc-docs-head">
-            <div><small>SETTINGS</small><strong>设置</strong><span>密钥、提示词和频率都在这里改</span></div>
+            <div><small>SETTINGS</small><strong data-xrc-config-title>模型设置</strong><span data-xrc-config-caption>密钥、回退顺序与提示词</span></div>
             <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
           </div>
           <div class="xrc-docs-content">
-            <button class="xrc-monitor-link" type="button" data-xrc-monitor-open aria-label="打开异常监控中心" aria-expanded="false"><span><b>异常监控中心</b><small>查看当前状态和各任务的异常处理</small></span><strong aria-hidden="true">→</strong></button>
-            <section class="xrc-docs-section">
+            <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
               <label class="xrc-config-row">
                 <span><strong>嵌入到页面</strong><small>放在右侧搜索框下面，跟着页面滚动</small></span>
                 <input type="checkbox" data-xrc-embed>
               </label>
             </section>
-            <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>02</b><span><strong>DeepSeek</strong><small data-xrc-config-key-hint>尚未配置</small></span></div>
+            <section class="xrc-docs-section" data-xrc-config-section="model">
+              <div class="xrc-docs-title"><b>01</b><span><strong>回复模型</strong><small>默认全部启用，按顺序尝试</small></span></div>
+              <div class="xrc-provider-list" role="group" aria-label="启用的回复模型">
+                <label class="xrc-config-row"><span><strong>1 · DeepSeek</strong><small>首选模型</small></span><input type="checkbox" data-xrc-reply-provider="deepseek" checked></label>
+                <label class="xrc-config-row"><span><strong>2 · NAS</strong><small>DeepSeek 临时故障时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas" checked></label>
+                <label class="xrc-config-row"><span><strong>3 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai" checked></label>
+              </div>
+              <p class="xrc-config-note">关闭的模型会跳过；只选一个时直接使用它。定时发帖仍使用 DeepSeek。</p>
+              <div class="xrc-docs-title"><b>02</b><span><strong>服务密钥</strong><small data-xrc-config-key-hint>DeepSeek 尚未配置</small></span></div>
               <label class="xrc-field">
-                <span>API Key</span>
+                <span>DeepSeek API Key</span>
                 <span class="xrc-key-line">
                   <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
                   <button type="button" data-xrc-config-key-reveal>显示</button>
                 </span>
               </label>
-              <p class="xrc-config-note">修改后自动保存。只把当前原帖或时间线文字发给 DeepSeek，不会发送 X 登录 Cookie。</p>
+              <label class="xrc-field">
+                <span>B.AI API Key · 最后回退（按用量计费）</span>
+                <span class="xrc-key-line">
+                  <input type="text" name="xrc-bai-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 B.AI 的 sk-..." data-xrc-secret-input data-xrc-config-bai-key>
+                  <button type="button" data-xrc-config-bai-key-reveal>显示</button>
+                </span>
+              </label>
+              <p class="xrc-config-note">修改后自动保存。NAS 使用社区回执密钥；B.AI 按用量计费，余额不足时无法使用。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
             </section>
-            <section class="xrc-docs-section">
+            <section class="xrc-docs-section" data-xrc-config-section="model">
               <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>决定回复和发推写什么</small></span></div>
               <label class="xrc-field"><span>回复提示词</span><textarea data-xrc-reply-prompt></textarea></label>
               <label class="xrc-field"><span>发推提示词</span><textarea data-xrc-post-prompt></textarea></label>
             </section>
-            <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>04</b><span><strong>回复频率</strong><small>慢、中、快、超快各自的数字</small></span></div>
+            <section class="xrc-docs-section" data-xrc-config-section="pace">
+              <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>慢、中、快、超快各自的数字</small></span></div>
               <div class="xrc-pace-editor">${replyPaceEditorHtml()}</div>
             </section>
-            <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>05</b><span><strong>发推频率</strong><small>每一挡的随机间隔，单位是分钟</small></span></div>
+            <section class="xrc-docs-section" data-xrc-config-section="pace">
+              <div class="xrc-docs-title"><b>02</b><span><strong>发推频率</strong><small>每一挡的随机间隔，单位是分钟</small></span></div>
               <div class="xrc-pace-editor">${postPaceEditorHtml()}</div>
             </section>
-            <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>06</b><span><strong>社区回执</strong><small>上报到站长后台，不上传正文</small></span></div>
+            <section class="xrc-docs-section" data-xrc-config-section="other">
+              <div class="xrc-docs-title"><b>02</b><span><strong>社区回执</strong><small>上报到站长后台，不上传正文</small></span></div>
               <label class="xrc-field">
                 <span>回执密钥</span>
                 <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="从社区动作页复制" data-xrc-community-secret>
@@ -2905,15 +3386,54 @@
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
-                <li><b>改挡位：</b>工作区滑块只选择慢、中、快、超快。每一挡代表什么，在设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
+                <li><b>改挡位：</b>工作区单行按钮选择慢、中、快、超快。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
-                <li>清理未回关、回关粉丝和关注候选遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
-                <li>清理未回关、回关粉丝和关注候选共用同一组额度：2 秒一个，三项合计每 15 个暂停 30 分钟，每日合计最多 400 个。</li>
+                <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
+                <li>清理未回关和回关粉丝共用同一组额度：2 秒一个，两项合计每 15 个暂停 30 分钟，每日合计最多 400 个；关注候选暂时停用。</li>
               </ul>
             </section>
             <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.27.18</b><span><strong>云端同步兼容旧账号</strong><small>同步云端时兼容旧版 default 占位账号，并把云端记录归并到当前账号。</small></span></article>
+                <article><b>v3.27.7</b><span><strong>任务页签图标提示</strong><small>恢复简洁的 ↗ 和 × 图标，分别用悬停提示说明跳转与关闭。</small></span></article>
+                <article><b>v3.27.6</b><span><strong>任务页签操作说明</strong><small>已打开任务明确显示“↗ 跳转”，悬停后显示独立的“关闭”按钮。</small></span></article>
+                <article><b>v3.27.5</b><span><strong>清空按钮移到主控区</strong><small>一键清空紧跟全流程按钮，说明按钮保持在最右侧。</small></span></article>
+                <article><b>v3.27.4</b><span><strong>关注与发帖统计</strong><small>关注与回关合并为关注，今日合计新增发帖数量。</small></span></article>
+                <article><b>v3.27.3</b><span><strong>频率挡位语义色</strong><small>慢、中、快、超快使用由冷到热的颜色层级，文字保持居中。</small></span></article>
+                <article><b>v3.27.2</b><span><strong>任务页签操作分开</strong><small>箭头表示点击页签跳转；叉号只在悬停时独立出现，避免误关窗口。</small></span></article>
+                <article><b>v3.27.1</b><span><strong>任务页签窗口控制</strong><small>箭头与叉号对应具体的首页互动、通知互动等子任务，关闭时只影响该窗口。</small></span></article>
+                <article><b>v3.27.0</b><span><strong>直接关闭任务窗口</strong><small>已打开任务的跳转箭头悬停后变成叉号，可关闭对应窗口。</small></span></article>
+                <article><b>v3.26.4</b><span><strong>频率挡位连线</strong><small>单行四挡之间增加贯穿横线，形成连续的频率选择器。</small></span></article>
+                <article><b>v3.26.3</b><span><strong>清空前确认</strong><small>列明清除范围；保留 API 密钥、每日统计、限制观察记录和待上传回执。</small></span></article>
+                <article><b>v3.26.2</b><span><strong>操作菜单箭头</strong><small>右上角按钮用上下箭头标识展开状态，提示语随状态切换。</small></span></article>
+                <article><b>v3.26.1</b><span><strong>频率选择压缩</strong><small>回复与发帖频率改为单行四挡按钮，选中状态直接显示在按钮上。</small></span></article>
+                <article><b>v3.26.0</b><span><strong>任务窗口导航</strong><small>已打开的窗口显示跳转箭头；页签提示明确显示打开、跳转或当前窗口。</small></span></article>
+                <article><b>v3.25.1</b><span><strong>全流程及时停止</strong><small>暂停后不再被旧任务状态卡住；模型请求会取消，超时可重试停止。</small></span></article>
+                <article><b>v3.25.0</b><span><strong>可选回复模型</strong><small>默认启用 DeepSeek、NAS、B.AI 并依次尝试；可单独关闭或只使用一种。</small></span></article>
+                <article><b>v3.24.1</b><span><strong>回复步骤持续可见</strong><small>首页互动和通知互动显示加载帖子、请求模型及回退阶段。</small></span></article>
+                <article><b>v3.24.0</b><span><strong>频率设置独立入口</strong><small>回复频率与发推频率集中到独立页面，修改后继续自动保存。</small></span></article>
+                <article><b>v3.23.0</b><span><strong>模型设置独立入口</strong><small>模型密钥与提示词独立显示，其他设置保留显示、频率和回执；NAS 404 与 B.AI 余额不足分别提示。</small></span></article>
+                <article><b>v3.22.0</b><span><strong>增加 B.AI 回复回退</strong><small>DeepSeek 与 NAS 均暂不可用时，使用设置中的 B.AI 密钥尝试第三层回复。</small></span></article>
+                <article><b>v3.21.0</b><span><strong>回复模型故障回退</strong><small>DeepSeek 临时故障时使用后台 NAS 模型；失败重试逐步延长。</small></span></article>
+                <article><b>v3.20.0</b><span><strong>点赞加入全流程</strong><small>一键启动两项点赞任务，暂停时一起停止；总览显示八项任务。</small></span></article>
+                <article><b>v3.19.3</b><span><strong>修复图标覆盖</strong><small>折叠和放大按钮在状态刷新后仍保持 SVG 图标。</small></span></article>
+                <article><b>v3.19.2</b><span><strong>右上角图标栏</strong><small>常驻四个图标与三个点对齐，不再单独占一行。</small></span></article>
+                <article><b>v3.19.1</b><span><strong>常驻操作恢复图标</strong><small>说明、折叠、放大和关闭重新使用原来的图标。</small></span></article>
+                <article><b>v3.19.0</b><span><strong>全流程任务总览</strong><small>运行中显示六项任务的执行、等待和未启动状态；失去状态更新时提示待确认。</small></span></article>
+                <article><b>v3.18.0</b><span><strong>限制观察</strong><small>按账号记录回复、点赞和关注的成功时间及受限样本，在异常中心对比时间窗口。</small></span></article>
+                <article><b>v3.17.4</b><span><strong>累计数字简写</strong><small>千、百万以上保留一位小数，例如 1204 显示为 1.2k。</small></span></article>
+                <article><b>v3.17.3</b><span><strong>点赞次数限制冷却</strong><small>保存账号冷却时间，延长间隔后重试；疑似自动化限制仍停止。</small></span></article>
+                <article><b>v3.17.2</b><span><strong>今日统计常驻</strong><small>主面板单行显示本机今日评论、点赞和关注操作合计。</small></span></article>
+                <article><b>v3.17.1</b><span><strong>常用面板操作</strong><small>说明、折叠、放大和关闭保持常驻，不占用标题栏。</small></span></article>
+                <article><b>v3.17.0</b><span><strong>操作菜单与报告页面</strong><small>异常监控直达；每日报告提供累计统计、账号筛选和日历查询。</small></span></article>
+                <article><b>v3.16.7</b><span><strong>每日统计默认可见</strong><small>每日报告默认展开，移除任务页底部重复入口并收紧面板高度。</small></span></article>
+                <article><b>v3.16.6</b><span><strong>热点短帖增加留白</strong><small>长段正文按自然停顿拆为短行，段间留空；已有待发内容发送前也会重新排版。</small></span></article>
+                <article><b>v3.16.5</b><span><strong>点赞时面板可操作</strong><small>操作面板时短暂让出点赞、滚动和页面跳转，停止与其他按钮可及时响应。</small></span></article>
+                <article><b>v3.16.4</b><span><strong>发送错误跳过当前帖</strong><small>X 明确提示发送出错时清理草稿并处理下一条；连续三条失败后暂停一分钟。</small></span></article>
+                <article><b>v3.16.3</b><span><strong>受限帖子自动跳过</strong><small>X 提示只有部分账号可以回复时，关闭弹窗并跳过该帖子，继续处理下一条。</small></span></article>
+                <article><b>v3.16.2</b><span><strong>主面板操作区整理</strong><small>清空状态和每日报告改为简洁入口，重新启动按钮不再弹出遮挡内容的提示。</small></span></article>
+                <article><b>v3.16.1</b><span><strong>点赞未确认时继续</strong><small>未确认的单条点赞会跳过，页面加载失败会短暂重试；明确受限时仍停止。</small></span></article>
                 <article><b>v3.16.0</b><span><strong>每日报告</strong><small>按北京时间保存确认成功的五类动作，历史日期可手动上传到站长后台。</small></span></article>
                 <article><b>v3.15.0</b><span><strong>一键清空本地状态</strong><small>主面板直接清空任务进度、待发与历史，重载 X 页签；保留已配置的密钥。</small></span></article>
                 <article><b>v3.14.2</b><span><strong>异常监控中心</strong><small>设置内可查看当前窗口状态，以及回复、点赞、关注、发帖各自的异常处理方式。</small></span></article>
@@ -3009,50 +3529,47 @@
             </label>
           </div>
           <div class="xrc-flow-launch">
-            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start title="一次打开并运行回复、关注与发帖任务">全流程启动</button>
+            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
+            <button class="xrc-reset-trigger" type="button" data-xrc-reset-state aria-haspopup="dialog" aria-controls="xrc-reset-confirm" title="清空任务状态，保留 API 与日志">一键清空</button>
             <button class="xrc-flow-help" type="button" data-xrc-flow-help aria-expanded="false" aria-controls="xrc-flow-guide" aria-label="说明" title="说明">
               <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M6.4 6.2a1.6 1.6 0 1 1 2.5 1.3c-.5.3-.9.7-.9 1.3V9.4"></path><path d="M8 11.4h.01"></path></svg>
             </button>
           </div>
-          <div class="xrc-reset-row">
-            <span data-xrc-reset-status role="status">清空本地任务、待发与历史；保留 DeepSeek Key 和回执密钥</span>
-            <button type="button" data-xrc-reset-state>一键清空状态</button>
-          </div>
-          <details class="xrc-daily-report" data-xrc-daily-report>
-            <summary>每日报告 <span>查看今天与历史统计、手动上传到 2aran.com</span></summary>
-            <div class="xrc-daily-content">
-              <label>日期与账号 <select data-xrc-daily-date aria-label="选择每日报告日期与账号"></select></label>
-              <div class="xrc-daily-counts">
-                <span>评论 <b data-xrc-daily-comments>0</b></span><span>点赞 <b data-xrc-daily-likes>0</b></span>
-                <span>关注 <b data-xrc-daily-follows>0</b></span><span>取关 <b data-xrc-daily-unfollows>0</b></span>
-                <span>回关 <b data-xrc-daily-followBacks>0</b></span>
+          <div class="xrc-reset-confirm" id="xrc-reset-confirm" data-xrc-reset-confirm role="dialog" aria-modal="true" aria-labelledby="xrc-reset-title" aria-describedby="xrc-reset-description" hidden>
+            <div class="xrc-reset-confirm-card">
+              <strong id="xrc-reset-title">确认清空本地状态？</strong>
+              <p id="xrc-reset-description">会停止当前任务，并重新加载已打开的 X 任务窗口。</p>
+              <div><b>将清空</b><p>任务进度与倒计时、待发草稿与素材去重、回复/点赞/关注处理记录、发帖历史，以及提示词、频率和面板等自定义设置。</p></div>
+              <div><b>会保留</b><p>DeepSeek 与 B.AI API Key、社区回执密钥；本地每日报告、限制观察记录及尚未上传的回执日志；阶段性判断也会保留。</p></div>
+              <p class="xrc-reset-confirm-warning">清空的内容无法恢复。</p>
+              <span data-xrc-reset-status role="status" hidden>保留 API 与日志</span>
+              <div class="xrc-reset-confirm-actions">
+                <button type="button" data-xrc-reset-cancel>取消</button>
+                <button type="button" data-xrc-reset-confirm-action>确认清空</button>
               </div>
-              <div class="xrc-daily-actions"><small data-xrc-daily-uploaded>尚未上传</small><button type="button" data-xrc-daily-upload disabled>上传报告</button></div>
-              <p data-xrc-daily-status role="status">只统计插件确认成功的动作，按北京时间存储在本机。</p>
             </div>
-          </details>
+          </div>
           <div class="xrc-flow-guide" id="xrc-flow-guide" data-xrc-flow-guide hidden>
-            <p><b>推荐先点「全流程启动」。</b>一次打开并运行下面 3 组任务。</p>
+            <p><b>全流程启动</b>会打开对应窗口，启动尚未运行的 7 项任务；已运行的任务继续执行。</p>
             <ol>
-              <li><b>回复管理</b>分为首页互动、通知互动，分别在自己的窗口运行。</li>
-              <li><b>关注管理</b>分别清理未回关、回关粉丝、关注候选。</li>
-              <li><b>定时发帖</b>先读知乎、头条热榜，素材不足再读 2aran 舆情分析，按待发列表发送。</li>
+              <li><b>回复管理 · 2 项</b>首页互动、通知互动，各自在独立窗口处理回复。</li>
+              <li><b>点赞管理 · 2 项</b>首页帖子、帖子评论，分别运行；遇到 X 的限制会冷却或停止。</li>
+              <li><b>关注管理 · 2 项</b>清理未回关、回关粉丝，分别处理对应名单；关注候选暂时停用。</li>
+              <li><b>定时发帖 · 1 项</b>依次取知乎、今日头条热榜，素材不足再取 2aran 舆情分析；记录来源，按待发列表发送。</li>
             </ol>
-            <p>点赞管理分为首页帖子和帖子评论，需要单独手动启动，不包含在全流程中。</p>
-            <p>只想改其中一项时，打开对应页签，在该页设好频率后再点「启动单项任务」。API Key 在上方全局区填写。</p>
+            <p>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单独运行时，在对应子页签调整设置并点「启动单项任务」；回复或发帖等待倒计时时可点「立即开始」。DeepSeek API Key 可在上方填写，之后到设置中修改。</p>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
-            <button type="button" role="tab" data-xrc-assistant="reply"><span>回复管理</span></button>
-            <button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button>
-            <button type="button" role="tab" data-xrc-assistant="mutual"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.2" r="1.6"></circle><path d="M3.1 11.4c.4-1.5 1.5-2.3 2.9-2.3s2.5.8 2.9 2.3"></path><circle cx="10.7" cy="5.7" r="1.3"></circle><path d="M10.3 9.1c1 .2 1.8.9 2.2 2"></path></svg><span>关注管理</span></button>
-            <button type="button" role="tab" data-xrc-assistant="poster"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 3.2h6.1l2.9 2.9v6.7H3.4z"></path><path d="M9.3 3.2v3.1h3.1M5.2 9h5.4M5.2 11.1h3.2"></path></svg><span>定时发帖</span></button>
+            <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>回复管理</span></button></div>
+            <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
+            <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
+            <div class="xrc-assistant-slot" data-xrc-assistant-slot="poster"><button type="button" role="tab" data-xrc-assistant="poster"><span>定时发帖</span></button></div>
           </div>
         </div>
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
-            <button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button>
-            <button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button>
-            <button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>03</b><span>关注候选</span></button>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
@@ -3071,30 +3588,20 @@
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="followBack">启动单项任务</button>
               </div>
             </section>
-            <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>每次从 5 个互关名单里随机打开一个</small></span></div>
-              <p>只点普通 Follow。</p>
-              <div class="xrc-flow-end">
-                <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
-                <button class="xrc-inline-start" type="button" data-xrc-mutual-action="targetFollow">启动单项任务</button>
-              </div>
-            </section>
           </div>
           <div class="xrc-status" role="status" data-xrc-mutual-status>选择一项互关任务开始</div>
-          <div class="xrc-footer"><span>任务运行 <b data-xrc-mutual-runtime>00:00</b></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-like-body">
           <div class="xrc-like-tabs" role="tablist" aria-label="点赞功能">
-            <button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>首页帖子</span></button>
-            <button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>帖子评论</span></button>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>首页帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>帖子评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <section class="xrc-post-flow" aria-label="点赞管理">
             <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
-            <p>单独手动运行，不随全流程启动。X 不允许自动点赞，账号出现操作限制时会停止。</p>
-            <div class="xrc-flow-end"><p data-xrc-like-count>已点赞 0 条 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>启动单项任务</button></div>
+            <p>随全流程启动，也可以单独启停。X 不允许自动点赞；次数限制会先冷却，疑似自动化或账号限制会停止。</p>
+            <div class="xrc-flow-end"><p data-xrc-like-count>已确认点赞 0 条 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>启动单项任务</button></div>
           </section>
           <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
-          <div class="xrc-footer"><span>仅在本窗口运行</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-post-body">
           <section class="xrc-post-flow" aria-label="定时发帖流程">
@@ -3115,22 +3622,17 @@
             <div class="xrc-post-card-head"><span><small>定时发帖</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
             <div class="xrc-post-meta"><span><small>下一次</small><strong data-xrc-post-interval>马上</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
           </section>
-          <section class="xrc-level-card xrc-speed-section" aria-label="发推频率">
-            <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率</span><strong data-xrc-post-pace-title>中</strong></div></div>
-            <label class="xrc-pace">
-              <span class="xrc-pace-labels">
-                ${(postApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<span data-xrc-post-pace-label="${item.id}">${item.label}</span>`).join("")}
-              </span>
-              <input type="range" min="0" max="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" step="1" value="${postApi?.postPaceIndex?.(postApi.DEFAULT_POST_PACE) || 0}" data-xrc-post-pace aria-label="发推频率挡位" aria-valuemin="0" aria-valuemax="${Math.max(0, (postApi?.POST_SCHEDULE_PROFILES || []).length - 1)}" aria-valuetext="中">
-            </label>
-            <p class="xrc-schedule-note" data-xrc-post-pace-note hidden></p>
+          <section class="xrc-level-card xrc-speed-section xrc-pace-row" aria-label="发推频率">
+            <span class="xrc-pace-caption">频率</span>
+            <div class="xrc-pace-options" role="group" aria-label="发推频率挡位">
+              ${(postApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<button type="button" data-xrc-post-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
+            </div>
           </section>
-          <div class="xrc-footer"><span></span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
         <div class="xrc-body xrc-reply-body">
           <div class="xrc-reply-tabs" role="tablist" aria-label="回复功能">
-            <button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>首页互动</span></button>
-            <button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>通知互动</span></button>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>首页互动</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>通知互动</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status xrc-wait-action" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span><button type="button" data-xrc-reply-start-now hidden>立即开始</button></div>
@@ -3161,41 +3663,69 @@
               <div class="xrc-round-legend">
                 ${Array.from({ length: REPLY_PACE_LIMITS.maxRoundsPerRun[1] }, (_, index) => `<span data-xrc-round-legend="${index}">第 ${index + 1} 轮</span>`).join("")}
               </div>
-              <div class="xrc-round-pace">
-                <div class="xrc-level-head"><div><span class="xrc-level-kicker">频率</span><strong data-xrc-pace-title>中</strong></div></div>
-                <label class="xrc-pace">
-                  <span class="xrc-pace-labels">
-                    ${loopApi.SCHEDULE_PROFILES.map((item) => `<span data-xrc-pace-label="${item.id}">${item.label}</span>`).join("")}
-                  </span>
-                  <input type="range" min="0" max="${loopApi.SCHEDULE_PROFILES.length - 1}" step="1" value="${loopApi.schedulePaceIndex(loopApi.DEFAULT_SCHEDULE_PACE)}" data-xrc-pace aria-label="频率挡位" aria-valuemin="0" aria-valuemax="${loopApi.SCHEDULE_PROFILES.length - 1}" aria-valuetext="中">
-                </label>
-                <p class="xrc-schedule-note" data-xrc-pace-note hidden></p>
+              <div class="xrc-round-pace xrc-pace-row" aria-label="回复频率">
+                <span class="xrc-pace-caption">频率</span>
+                <div class="xrc-pace-options" role="group" aria-label="回复频率挡位">
+                  ${loopApi.SCHEDULE_PROFILES.map((item) => `<button type="button" data-xrc-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
+                </div>
               </div>
               <div class="xrc-flow-end xrc-start" data-xrc-start>
                 <button class="xrc-inline-start" type="button" data-xrc-toggle>启动单项任务</button>
               </div>
             </section>
           </div>
-          <div class="xrc-footer"><span data-xrc-errors>重试 0</span><a class="xrc-resource" href="https://2aran.com/resources/x-reply-clipboard-extension" target="_blank" rel="noopener noreferrer">说明与下载 ↗</a></div>
         </div>
       `;
       placePanel(panel);
+      refreshDailyReport(panel).catch(() => {
+        panel.querySelector("[data-xrc-today-summary]")?.setAttribute("title", "今日统计读取失败，请稍后刷新页面");
+      });
+      const pauseLikesForPanelInput = () => likeController?.pauseForInteraction(2500);
+      panel.addEventListener("pointerenter", pauseLikesForPanelInput);
+      panel.addEventListener("pointermove", pauseLikesForPanelInput);
+      panel.addEventListener("pointerdown", pauseLikesForPanelInput, true);
+      panel.addEventListener("focusin", pauseLikesForPanelInput);
+      panel.addEventListener("keydown", pauseLikesForPanelInput, true);
+      panel.addEventListener("wheel", pauseLikesForPanelInput);
+      panel.addEventListener("input", pauseLikesForPanelInput);
+      panel.addEventListener("pointerdown", (event) => event.stopPropagation());
+      panel.addEventListener("click", (event) => event.stopPropagation());
       panel.querySelector(".xrc-close").addEventListener("click", () => {
         if (anyTaskRunning()) return;
         panelDismissed = true;
         panel.remove();
       });
-      panel.querySelector("[data-xrc-config-open]").addEventListener("click", (event) => {
+      panel.querySelector("[data-xrc-actions-toggle]").addEventListener("click", () => {
+        headerMenuOpen = !headerMenuOpen;
+        syncHeaderMenu(panel);
+      });
+      panel.querySelectorAll("[data-xrc-config-open]").forEach((button) => button.addEventListener("click", (event) => {
         event.stopPropagation();
-        configOpen = !configOpen;
+        if (state.panelView === "collapsed") {
+          state.panelView = "normal";
+          writeSaved({ running: state.running, total: state.total });
+        }
+        const nextPage = button.dataset.xrcConfigOpen;
+        configOpen = !configOpen || configPage !== nextPage;
+        configPage = nextPage;
         if (configOpen) {
           panel.querySelector("[data-xrc-docs]").hidden = true;
           monitorOpen = false;
+          reportOpen = false;
           syncMonitorMenu(panel);
+          syncReportPage(panel);
           toolboxOpen = false;
           syncToolboxMenu(panel);
+          headerMenuOpen = false;
+          syncHeaderMenu(panel);
         }
         syncConfigMenu(panel);
+        renderPanel();
+      }));
+      panel.querySelector("[data-xrc-paused-candidate]")?.addEventListener("click", () => {
+        state.status = "关注候选暂时停用，不会随全流程启动，也不会自动打开任务窗口";
+        headerMenuOpen = false;
+        renderPanel();
       });
       panel.querySelector("[data-xrc-monitor-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
@@ -3206,16 +3736,49 @@
         if (monitorOpen) {
           configOpen = false;
           toolboxOpen = false;
+          reportOpen = false;
           panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
           syncToolboxMenu(panel);
+          syncReportPage(panel);
+          headerMenuOpen = false;
+          syncHeaderMenu(panel);
         }
         syncMonitorMenu(panel);
+        if (monitorOpen) void loadLimitMonitor(panel);
         renderPanel();
       });
+      panel.querySelector("[data-xrc-limit-refresh]")?.addEventListener("click", () => { void loadLimitMonitor(panel); });
       panel.querySelector("[data-xrc-monitor-close]").addEventListener("click", () => {
         monitorOpen = false;
         syncMonitorMenu(panel);
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-report-open]").addEventListener("click", () => {
+        if (state.panelView === "collapsed") {
+          state.panelView = "normal";
+          writeSaved({ running: state.running, total: state.total });
+        }
+        reportOpen = true;
+        configOpen = false;
+        monitorOpen = false;
+        toolboxOpen = false;
+        headerMenuOpen = false;
+        panel.querySelector("[data-xrc-docs]").hidden = true;
+        syncConfigMenu(panel);
+        syncMonitorMenu(panel);
+        syncToolboxMenu(panel);
+        syncHeaderMenu(panel);
+        syncReportPage(panel);
+        refreshDailyReport(panel).catch((error) => {
+          panel.querySelector("[data-xrc-daily-status]").textContent = error?.message || "读取报告失败";
+        });
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-report-close]").addEventListener("click", () => {
+        reportOpen = false;
+        syncReportPage(panel);
+        renderPanel();
       });
       panel.querySelector("[data-xrc-toolbox-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
@@ -3226,9 +3789,13 @@
         if (toolboxOpen) {
           configOpen = false;
           monitorOpen = false;
+          reportOpen = false;
           panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
           syncMonitorMenu(panel);
+          syncReportPage(panel);
+          headerMenuOpen = false;
+          syncHeaderMenu(panel);
         }
         syncToolboxMenu(panel);
         renderPanel();
@@ -3274,10 +3841,19 @@
         selectPanelPlacement(event.currentTarget.checked ? "embed" : "float");
       });
       panel.querySelector("[data-xrc-config-key]").value = state.aiKey || "";
+      panel.querySelector("[data-xrc-config-bai-key]").value = state.baiKey || "";
+      panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
+        input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
+      });
       panel.querySelector("[data-xrc-reply-prompt]").value = state.replyPrompt || DEFAULT_REPLY_PROMPT;
       panel.querySelector("[data-xrc-post-prompt]").value = state.postPrompt || DEFAULT_POST_PROMPT;
       panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-key]");
+        const revealed = input.classList.toggle("is-revealed");
+        event.currentTarget.textContent = revealed ? "隐藏" : "显示";
+      });
+      panel.querySelector("[data-xrc-config-bai-key-reveal]").addEventListener("click", (event) => {
+        const input = panel.querySelector("[data-xrc-config-bai-key]");
         const revealed = input.classList.toggle("is-revealed");
         event.currentTarget.textContent = revealed ? "隐藏" : "显示";
       });
@@ -3290,21 +3866,55 @@
         configOpen = false;
         toolboxOpen = false;
         monitorOpen = false;
+        reportOpen = false;
+        headerMenuOpen = false;
         syncConfigMenu(panel);
         syncToolboxMenu(panel);
         syncMonitorMenu(panel);
+        syncReportPage(panel);
+        syncHeaderMenu(panel);
         panel.querySelector("[data-xrc-docs]").hidden = false;
       });
       panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
         panel.querySelector("[data-xrc-docs]").hidden = true;
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
-      panel.querySelector("[data-xrc-reset-state]")?.addEventListener("click", async () => {
+      const resetDialog = panel.querySelector("[data-xrc-reset-confirm]");
+      const resetTrigger = panel.querySelector("[data-xrc-reset-state]");
+      const closeResetDialog = () => {
+        resetDialog.hidden = true;
+        resetTrigger.focus();
+      };
+      resetTrigger?.addEventListener("click", () => {
         if (resettingState) return;
+        resetDialog.hidden = false;
+        panel.querySelector("[data-xrc-reset-cancel]").focus();
+      });
+      panel.querySelector("[data-xrc-reset-cancel]")?.addEventListener("click", closeResetDialog);
+      resetDialog?.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeResetDialog();
+        }
+        if (event.key !== "Tab") return;
+        const buttons = [panel.querySelector("[data-xrc-reset-cancel]"), panel.querySelector("[data-xrc-reset-confirm-action]")];
+        if (event.shiftKey && document.activeElement === buttons[0]) {
+          event.preventDefault();
+          buttons[1].focus();
+        } else if (!event.shiftKey && document.activeElement === buttons[1]) {
+          event.preventDefault();
+          buttons[0].focus();
+        }
+      });
+      panel.querySelector("[data-xrc-reset-confirm-action]")?.addEventListener("click", async () => {
+        if (resettingState || resetDialog.hidden) return;
+        resetDialog.hidden = true;
         const button = panel.querySelector("[data-xrc-reset-state]");
         const status = panel.querySelector("[data-xrc-reset-status]");
+        const resetRow = button.closest(".xrc-flow-launch");
         button.disabled = true;
-        status.textContent = "正在停止任务并清空本地状态…";
+        resetRow.dataset.state = "busy";
+        status.textContent = "正在清空任务状态，保留 API 与日志…";
         try {
           if (await flushConfigSave() === false) throw new Error("设置尚未保存，请先检查 API Key");
           const result = await sendExtensionMessage({ type: "xrc-reset-state" });
@@ -3314,30 +3924,67 @@
         } catch (error) {
           resettingState = false;
           button.disabled = false;
+          resetRow.dataset.state = "error";
           status.textContent = error?.message || "清空状态失败，请重试";
         }
       });
-      panel.querySelector("[data-xrc-daily-report]")?.addEventListener("toggle", () => {
-        if (!panel.querySelector("[data-xrc-daily-report]")?.open) return;
-        refreshDailyReport(panel).catch((error) => {
-          panel.querySelector("[data-xrc-daily-status]").textContent = error?.message || "读取报告失败";
-        });
+      panel.querySelector("[data-xrc-report-account]").addEventListener("change", (event) => {
+        dailyReportAccount = event.currentTarget.value;
+        showDailyReport(panel);
       });
-      panel.querySelector("[data-xrc-daily-date]")?.addEventListener("change", () => showDailyReport(panel));
+      panel.querySelector("[data-xrc-report-date]").addEventListener("change", (event) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/u.test(event.currentTarget.value)) return;
+        dailyReportDate = event.currentTarget.value;
+        dailyReportMonth = dailyReportDate.slice(0, 7);
+        showDailyReport(panel);
+      });
+      panel.querySelector("[data-xrc-report-calendar]").addEventListener("click", (event) => {
+        const date = event.target.closest?.("[data-xrc-calendar-day]")?.dataset.xrcCalendarDay;
+        if (!date) return;
+        dailyReportDate = date;
+        showDailyReport(panel);
+      });
+      for (const [selector, offset] of [["[data-xrc-report-prev]", -1], ["[data-xrc-report-next]", 1]]) {
+        panel.querySelector(selector).addEventListener("click", () => {
+          const [year, month] = dailyReportMonth.split("-").map(Number);
+          dailyReportMonth = new Date(Date.UTC(year, month - 1 + offset, 1)).toISOString().slice(0, 7);
+          dailyReportDate = `${dailyReportMonth}-01`;
+          showDailyReport(panel);
+        });
+      }
       panel.querySelector("[data-xrc-daily-upload]")?.addEventListener("click", async () => {
-        const selected = dailyReports.find((report) => `${report.date}|${report.accountHandle}` === panel.querySelector("[data-xrc-daily-date]")?.value);
-        if (!selected) return;
+        const selected = dailyReports.filter((report) => report.date === dailyReportDate && (dailyReportAccount === "__all__" || report.accountHandle === dailyReportAccount));
+        if (selected.length !== 1) return;
         const button = panel.querySelector("[data-xrc-daily-upload]");
         const status = panel.querySelector("[data-xrc-daily-status]");
         button.disabled = true;
         status.textContent = "正在上传…";
         try {
-          await sendExtensionMessage({ type: "xrc-daily-upload", date: selected.date, accountHandle: selected.accountHandle });
+          const result = await sendExtensionMessage({ type: "xrc-daily-upload", date: selected[0].date, accountHandle: selected[0].accountHandle });
+          if (!result?.ok) throw new Error(result?.error || "上传失败");
           await refreshDailyReport(panel);
           status.textContent = "已上传到 2aran.com 后台的「社区动作 → 浏览器插件」。";
         } catch (error) {
           status.textContent = error?.message || "上传失败，报告仍保存在本机";
           button.disabled = false;
+        }
+      });
+      panel.querySelector("[data-xrc-daily-pull]")?.addEventListener("click", async () => {
+        const button = panel.querySelector("[data-xrc-daily-pull]");
+        if (button) { button.disabled = true; button.textContent = "恢复中…"; }
+        try {
+          const result = await sendExtensionMessage({ type: "xrc-daily-pull", accountHandle: currentAccountHandle() });
+          if (!result?.ok) throw new Error(result?.error || "恢复失败");
+          await refreshDailyReport(panel);
+          const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
+          if (uploaded) uploaded.textContent = result.fallbackUsed
+            ? `已从云端旧账号记录同步 ${result.reports || 0} 天`
+            : `已从云端同步 ${result.reports || 0} 天记录`;
+        } catch (error) {
+          const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
+          if (uploaded) uploaded.textContent = error?.message || "恢复失败";
+        } finally {
+          if (button) { button.disabled = false; button.textContent = "同步云端"; }
         }
       });
       panel.querySelector("[data-xrc-flow-help]")?.addEventListener("click", () => {
@@ -3370,52 +4017,61 @@
       });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         button.addEventListener("click", () => {
-          if (button.dataset.xrcAssistant === "mutual") {
+          const group = button.dataset.xrcAssistant;
+          if (group === "mutual") {
             openMutualWindows();
             return;
           }
-          if (button.dataset.xrcAssistant === "reply") {
+          if (group === "reply") {
             openReplyWindows();
             return;
           }
-          if (button.dataset.xrcAssistant === "likes") {
+          if (group === "likes") {
             openLikeWindows();
             return;
           }
-          openTaskTab(button.dataset.xrcAssistant);
+          loadOpenTaskTabs().then(() => openTaskTab(taskGroupTarget(group).mode));
+        });
+      });
+      panel.querySelectorAll("[data-xrc-task-close]").forEach((button) => {
+        button.addEventListener("click", () => {
+          closeTaskGroupWindow(button.dataset.xrcTargetMode, Number(button.dataset.xrcTargetTabId));
         });
       });
       panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
         state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
+        headerMenuOpen = false;
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
       });
       panel.querySelector("[data-xrc-expand]").addEventListener("click", () => {
         state.panelView = state.panelView === "expanded" ? "normal" : "expanded";
+        headerMenuOpen = false;
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
       });
-      panel.querySelector("[data-xrc-pace]").addEventListener("input", (event) => {
-        selectSchedulePace(loopApi.scheduleProfile(Number(event.currentTarget.value)).id);
-      });
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
-        label.addEventListener("click", (event) => {
-          event.preventDefault();
+        label.addEventListener("click", () => {
           selectSchedulePace(label.dataset.xrcPaceLabel);
         });
       });
-      panel.querySelector("[data-xrc-post-pace]")?.addEventListener("input", (event) => {
-        selectPosterPace(postApi.postScheduleProfile(Number(event.currentTarget.value)).id);
-      });
       panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
-        label.addEventListener("click", (event) => {
-          event.preventDefault();
+        label.addEventListener("click", () => {
           selectPosterPace(label.dataset.xrcPostPaceLabel);
         });
       });
-      panel.querySelectorAll("[data-xrc-config-key], [data-xrc-reply-prompt], [data-xrc-post-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
-        input.addEventListener("input", () => scheduleConfigSave(panel));
-        input.addEventListener("change", () => scheduleConfigSave(panel, true));
+      panel.querySelectorAll("[data-xrc-config-key], [data-xrc-config-bai-key], [data-xrc-reply-provider], [data-xrc-reply-prompt], [data-xrc-post-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
+        input.addEventListener("input", () => {
+          if (!input.matches("[data-xrc-reply-provider]")) scheduleConfigSave(panel);
+        });
+        input.addEventListener("change", () => {
+          if (input.matches("[data-xrc-reply-provider]") && !panel.querySelector("[data-xrc-reply-provider]:checked")) {
+            input.checked = true;
+            panel.querySelector("[data-xrc-config-status]").textContent = "至少保留一个回复模型";
+            return;
+          }
+          scheduleConfigSave(panel, true);
+        });
       });
       panel.querySelector("[data-xrc-community-secret]")?.addEventListener("change", async () => {
         const status = panel.querySelector("[data-xrc-community-status]");
@@ -3438,9 +4094,10 @@
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
     const replyWait = replyWaitCopy();
     if (status) {
-      const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|过于频繁|已停止|没有成功|已跳过)/.test(state.status || "");
-      status.hidden = !(replyWait || attention);
-      status.querySelector("[data-xrc-status-copy]").textContent = replyWait || (attention ? state.status : "");
+      const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|缺少|过于频繁|已停止|没有成功|已跳过)/.test(state.status || "");
+      const showStatus = state.running || state.stopping || state.loopPromise || /正在检查模型设置/.test(state.status || "") || attention;
+      status.hidden = !(replyWait || showStatus);
+      status.querySelector("[data-xrc-status-copy]").textContent = replyWait || (showStatus ? state.status : "");
       status.querySelector("[data-xrc-reply-start-now]").hidden = !canStartReplyNow();
     }
     if (stats) {
@@ -3510,10 +4167,13 @@
         const selected = button.dataset.xrcAssistant === state.assistantMode
           || (button.dataset.xrcAssistant === "reply" && ["timeline", "notifications"].includes(state.assistantMode))
           || (button.dataset.xrcAssistant === "likes" && state.assistantMode.startsWith("likes-"));
+        const target = taskGroupTarget(button.dataset.xrcAssistant);
         button.classList.toggle("is-active", selected);
+        const title = taskWindowTitle(target.mode);
+        button.setAttribute("aria-label", `${button.querySelector("span")?.textContent || "任务"}：${title}`);
         button.setAttribute("aria-selected", selected ? "true" : "false");
         button.disabled = false;
-        button.title = selected ? "当前任务页签" : "打开或切换到该任务的专用 X 页签";
+        button.title = title;
       });
       const configKeyHint = panel.querySelector("[data-xrc-config-key-hint]");
       if (configKeyHint) configKeyHint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
@@ -3522,28 +4182,18 @@
         input.disabled = replyPaceLocked;
       });
       const schedule = loopApi.formatSchedule(state.schedulePace);
-      const paceInput = panel.querySelector("[data-xrc-pace]");
-      if (paceInput) {
-        paceInput.disabled = replyPaceLocked;
-        paceInput.value = String(loopApi.schedulePaceIndex(schedule.id));
-        paceInput.setAttribute("aria-valuenow", paceInput.value);
-        paceInput.setAttribute("aria-valuetext", schedule.label);
-      }
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
-        label.classList.toggle("is-active", label.dataset.xrcPaceLabel === schedule.id);
+        const active = label.dataset.xrcPaceLabel === schedule.id;
+        label.classList.toggle("is-active", active);
+        label.setAttribute("aria-pressed", String(active));
+        label.disabled = replyPaceLocked;
       });
-      const paceTitle = panel.querySelector("[data-xrc-pace-title]");
-      if (paceTitle) paceTitle.textContent = schedule.label;
       const replyRunning = replyPaceLocked;
       const replyPaceChanged = !replyRunning && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
-      const replyPaceNote = panel.querySelector("[data-xrc-pace-note]");
-      if (replyPaceNote) {
-        replyPaceNote.hidden = !(replyRunning || replyPaceChanged);
-        replyPaceNote.textContent = replyRunning
-          ? "运行中不能改频率。暂停后可以滑动，滑动后按钮会变成重启任务。"
-          : `频率已改成「${schedule.label}」。点重启任务后按新挡位重新开始。`;
-      }
-      panel.querySelector("[data-xrc-errors]").textContent = `重试 ${state.errors}`;
+      const replyPaceRow = panel.querySelector(".xrc-round-pace");
+      if (replyPaceRow) replyPaceRow.title = replyRunning
+        ? "运行中不能改频率，暂停后可重新选择"
+        : replyPaceChanged ? `已选${schedule.label}档，重启任务后生效` : `当前${schedule.label}档`;
     }
     const poster = state.poster || postApi?.snapshot?.();
     if (poster) {
@@ -3592,31 +4242,22 @@
       panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
       const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "25～35 分钟" };
-      const postPaceInput = panel.querySelector("[data-xrc-post-pace]");
-      if (postPaceInput && postApi?.postPaceIndex) {
-        postPaceInput.disabled = Boolean(poster.running);
-        postPaceInput.value = String(postApi.postPaceIndex(postSchedule.id));
-        postPaceInput.setAttribute("aria-valuenow", postPaceInput.value);
-        postPaceInput.setAttribute("aria-valuetext", postSchedule.label);
-      }
       panel.querySelectorAll("[data-xrc-post-pace-input]").forEach((input) => {
         input.disabled = Boolean(poster.running);
       });
       panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
-        label.classList.toggle("is-active", label.dataset.xrcPostPaceLabel === postSchedule.id);
+        const active = label.dataset.xrcPostPaceLabel === postSchedule.id;
+        label.classList.toggle("is-active", active);
+        label.setAttribute("aria-pressed", String(active));
+        label.disabled = Boolean(poster.running);
       });
-      const postPaceTitle = panel.querySelector("[data-xrc-post-pace-title]");
-      if (postPaceTitle) postPaceTitle.textContent = postSchedule.label;
       const postInterval = panel.querySelector("[data-xrc-post-interval]");
       if (postInterval) postInterval.textContent = postWait ? formatClock(Number(poster.nextPostAt) - Date.now()) : poster.running ? "正在取材" : "马上";
-      const postPaceNote = panel.querySelector("[data-xrc-post-pace-note]");
       const postPaceChanged = !poster.running && state.posterPaceBaseline && state.posterPace !== state.posterPaceBaseline;
-      if (postPaceNote) {
-        postPaceNote.hidden = !(poster.running || postPaceChanged);
-        postPaceNote.textContent = poster.running
-          ? "运行中不能改频率。暂停后可以滑动，滑动后按钮会变成重启任务。"
-          : `频率已改成「${postSchedule.label}」。点重启任务后按新间隔重新发推。`;
-      }
+      const postPaceRow = panel.querySelector(".xrc-speed-section");
+      if (postPaceRow) postPaceRow.title = poster.running
+        ? "运行中不能改频率，暂停后可重新选择"
+        : postPaceChanged ? `已选${postSchedule.label}档，重启任务后生效` : `当前${postSchedule.label}档`;
       if (state.assistantMode === "poster") {
         panel.querySelector("[data-xrc-mini-progress]").textContent = postWait
           ? postWait
@@ -3631,7 +4272,7 @@
       ? "逐个打开首页帖子，只点赞评论。已查看的评论串不会重复处理。"
       : "从首页逐条点赞帖子。已点过赞的内容不会重复点击。";
     const likeCount = panel.querySelector("[data-xrc-like-count]");
-    if (likeCount) likeCount.textContent = `已点赞 ${likeState.count} 条 · 已查看 ${likeState.posts} 个帖子`;
+    if (likeCount) likeCount.textContent = `已确认点赞 ${likeState.count} 条 · 已查看 ${likeState.posts} 个帖子${likeState.unconfirmed ? ` · ${likeState.unconfirmed} 条未确认已跳过` : ''}`;
     const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
     if (likeToggle) {
       likeToggle.textContent = likeState.stopping ? "停止中" : likeState.running ? "停止自动点赞" : "启动单项任务";
@@ -3642,33 +4283,40 @@
       const selected = `likes-${button.dataset.xrcLikeTab}` === state.assistantMode;
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
-      button.title = selected ? "当前任务窗口" : "打开或切换到对应的点赞任务窗口";
+      button.title = taskTabHint(`likes-${button.dataset.xrcLikeTab}`);
+      syncSubtaskWindowControl(button, `likes-${button.dataset.xrcLikeTab}`);
     });
     panel.querySelectorAll("[data-xrc-reply-tab]").forEach((button) => {
       const selected = button.dataset.xrcReplyTab === state.assistantMode;
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
-      button.title = selected ? "当前任务窗口" : "打开或切换到对应的回复任务窗口";
+      button.title = taskTabHint(button.dataset.xrcReplyTab);
+      syncSubtaskWindowControl(button, button.dataset.xrcReplyTab);
     });
     const mutualStatus = panel.querySelector("[data-xrc-mutual-status]");
     if (mutualStatus && mutual) mutualStatus.textContent = mutual.status;
-    const mutualStartedAt = Number(pluginRuntime.tasks?.[mutualTaskKey()]?.startedAt) || 0;
-    panel.querySelector("[data-xrc-mutual-runtime]").textContent = formatRuntime(mutualStartedAt ? Date.now() - mutualStartedAt : 0);
     panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
       const selected = button.dataset.xrcMutualTab === state.mutualMode;
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
       button.disabled = false;
-      button.title = selected ? "当前任务窗口" : "打开或切换到对应的关注任务窗口";
+      button.title = taskTabHint(mutualTaskKey(button.dataset.xrcMutualTab));
+      syncSubtaskWindowControl(button, mutualTaskKey(button.dataset.xrcMutualTab));
     });
     panel.querySelectorAll("[data-xrc-mutual-card]").forEach((card) => {
       card.classList.toggle("is-selected", card.dataset.xrcMutualCard === state.mutualMode);
     });
     if (mutual) {
       const sharedFollowStatus = `今日合计 ${mutual.sharedDailyFollowed || 0}/400 · 本批 ${mutual.sharedBatchProgress || 0}/15`;
-      panel.querySelector('[data-xrc-mutual-stats="unfollow"]').textContent = `已取消 ${mutual.unfollowed} · ${sharedFollowStatus} · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`;
-      panel.querySelector('[data-xrc-mutual-stats="followBack"]').textContent = `本次回关 ${mutual.followedBack} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`;
-      panel.querySelector('[data-xrc-mutual-stats="targetFollow"]').textContent = `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`;
+      const stats = {
+        unfollow: `已取消 ${mutual.unfollowed} · ${sharedFollowStatus} · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
+        followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`,
+        targetFollow: `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
+      };
+      for (const [mode, text] of Object.entries(stats)) {
+        const node = panel.querySelector(`[data-xrc-mutual-stats="${mode}"]`);
+        if (node) node.textContent = text;
+      }
       panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
         const mode = button.dataset.xrcMutualAction;
         const activeMode = mutual.running && mutual.mode === mode;
@@ -3700,6 +4348,8 @@
     panel.dataset.view = state.panelView;
     panel.dataset.assistantMode = state.assistantMode;
     panel.dataset.replyMode = state.replyMode;
+    panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : "main";
+    renderTodaySummary(panel);
     const stableRuntime = panel.querySelector("[data-xrc-stable-runtime]");
     if (stableRuntime) {
       stableRuntime.textContent = pluginRuntime.startedAt
@@ -3738,6 +4388,8 @@
     applyTaskTitle();
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
+    syncReportPage(panel);
+    syncHeaderMenu(panel);
     placePanel(panel);
   }
 
@@ -3780,6 +4432,7 @@
 
   async function onToggle() {
     if (state.loopPromise) {
+      cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
       state.pendingReply = "";
@@ -3789,18 +4442,21 @@
       renderPanel();
       return;
     }
+    state.status = "正在检查模型设置…";
+    renderPanel();
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
-    if (!state.aiKeySaved) {
-      const panel = document.getElementById(PANEL_ID);
-      const input = panel?.querySelector("[data-xrc-ai-key]");
+    const panel = document.getElementById(PANEL_ID);
+    const input = panel?.querySelector("[data-xrc-ai-key]");
+    if (!state.aiKeySaved && input?.value?.trim()) {
       try {
-        await saveAiSettings(input?.value);
+        await saveAiSettings(input.value);
         if (input) input.value = "";
       } catch (error) {
-        state.status = error?.message || "请先填写 DeepSeek API Key";
+        state.status = error?.message || "DeepSeek API Key 无效";
         state.aiStatus = state.status;
         configOpen = true;
+        configPage = "model";
         if (panel) {
           panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
@@ -3809,6 +4465,22 @@
         renderPanel();
         return;
       }
+    }
+    const nasSecret = state.replyProviders.includes("nas")
+      ? await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => "") : "";
+    const hasReplyModel = (state.replyProviders.includes("deepseek") && state.aiKeySaved)
+      || (state.replyProviders.includes("nas") && Boolean(nasSecret))
+      || (state.replyProviders.includes("bai") && Boolean(state.baiKey));
+    if (!hasReplyModel) {
+      state.status = "已启用的回复模型都缺少密钥，请到模型设置配置 DeepSeek、NAS 社区回执或 B.AI 密钥";
+      configOpen = true;
+      configPage = "model";
+      if (panel) {
+        panel.querySelector("[data-xrc-config-status]").textContent = state.status;
+        syncConfigMenu(panel);
+      }
+      renderPanel();
+      return;
     }
     state.pageCount = 0;
     state.completedRounds = 0;
@@ -3861,6 +4533,7 @@
     await clearStaleSessionAfterReset();
     const saved = readSaved();
     rememberAccountHandle();
+    await mergeLegacyAccountData();
     const requested = requestedLaunch();
     const pending = await consumePendingLaunch();
     const launch = requested || pending;
@@ -3879,8 +4552,8 @@
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
     state.assistantMode = launch?.assistantMode || saved.assistantMode;
-    if (state.assistantMode === "likes-posts") likeState.status = "待命。手动开始后，点赞首页帖子。";
-    if (state.assistantMode === "likes-replies") likeState.status = "待命。手动开始后，点赞帖子评论。";
+    if (state.assistantMode === "likes-posts") likeState.status = "待命。全流程或单项启动后，点赞首页帖子。";
+    if (state.assistantMode === "likes-replies") likeState.status = "待命。全流程或单项启动后，点赞帖子评论。";
     state.mutualMode = launch?.mutualMode || saved.mutualMode;
     applyTaskTitle();
     state.replyMode = saved.replyMode;
@@ -3900,6 +4573,7 @@
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
     await loadPluginRuntime();
+    await loadOpenTaskTabs();
     if (state.assistantMode.startsWith("likes-") && pluginRuntime.tasks?.[state.assistantMode] && !launchedStart) {
       await setRuntimeTaskActive(state.assistantMode, false);
     }
@@ -3943,6 +4617,13 @@
   }
 
   globalThis.chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
+    if (message?.type === "xrc-reply-progress") {
+      if (state.running && message.requestId === activeAiRequestId) {
+        state.status = String(message.status || "正在生成回复…");
+        renderPanel();
+      }
+      return false;
+    }
     if (message?.type === "xrc-reset-prepare") {
       sendResponse(prepareStateReset());
       return false;
@@ -3957,6 +4638,11 @@
   });
 
   globalThis.chrome?.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName === "session" && changes.xrcTaskTabs) {
+      openTaskTabs = changes.xrcTaskTabs.newValue || {};
+      renderPanel();
+      return;
+    }
     if (areaName !== "local") return;
     if (changes[PLUGIN_RUNTIME_KEY]) {
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
@@ -3969,9 +4655,11 @@
       }).catch(() => {});
     }
     if (changes.xrcDailyReports) {
+      dailyReports = Array.isArray(changes.xrcDailyReports.newValue) ? changes.xrcDailyReports.newValue : [];
       const panel = document.getElementById(PANEL_ID);
-      if (panel?.querySelector("[data-xrc-daily-report]")?.open) {
-        refreshDailyReport(panel).catch(() => {});
+      if (panel) {
+        renderTodaySummary(panel);
+        if (reportOpen) showDailyReport(panel);
       }
     }
     renderPanel();

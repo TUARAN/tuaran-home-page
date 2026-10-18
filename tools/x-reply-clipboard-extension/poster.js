@@ -230,7 +230,31 @@
   }
 
   function formatShortPost(value) {
-    return preserveLines(value).split("\n").map((line) => line.trim()).filter(Boolean).join("\n\n");
+    const original = preserveLines(value).split("\n").filter(Boolean);
+    const totalLength = Array.from(original.join("")).length;
+    const maxLineLength = totalLength > 48 ? 24 : 30;
+    const lines = [];
+    for (const line of original) {
+      if (Array.from(line).length <= maxLineLength) {
+        lines.push(line);
+        continue;
+      }
+      const clauses = line.match(/[^，,。！？!?；;]+[，,。！？!?；;]*/gu) || [line];
+      let current = "";
+      for (const clause of clauses) {
+        if (current && Array.from(current).length >= 10 && Array.from(current + clause).length > maxLineLength) {
+          lines.push(current);
+          current = "";
+        }
+        current += clause;
+        if (/[。！？!?；;]$/u.test(clause) && Array.from(current).length >= 12) {
+          lines.push(current);
+          current = "";
+        }
+      }
+      if (current) lines.push(current);
+    }
+    return lines.join("\n\n");
   }
 
   function normalized(value) {
@@ -266,7 +290,7 @@
     const length = Array.from(lines.join("")).length;
     if (sourceType === "news") {
       if (length < 18 || length > 70) return "热点短帖过短或过长";
-      if (lines.length < 1 || lines.length > 4 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 70 : 34))) return "热点短帖行数不合适";
+      if (lines.length < (length > 30 ? 2 : 1) || lines.length > 4 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 30 : 34))) return "热点短帖行数不合适";
       const concreteNumbers = candidate.match(/\d+(?:\.\d+)?(?:%|％|楼|层|人|杯|天|次|家|个|万|亿|元)?/gu) || [];
       if (concreteNumbers.some((number) => !original.includes(number))) return "具体数字没有素材依据";
       if (/^(?:说个暴论|讲个事实|我真心觉得|说句实话|讲真)[：:，,\s]*$/u.test(lines[0])) return "开头没有具体内容";

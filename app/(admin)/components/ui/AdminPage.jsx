@@ -18,7 +18,7 @@ export default function AdminPage({ title, description, actions, children, compa
     <main
       id={notificationTargetReady === undefined ? undefined : 'notification-destination'}
       data-notification-ready={notificationTargetReady === undefined ? undefined : notificationTargetReady ? 'true' : 'false'}
-      className={`admin-page mx-auto w-full ${
+      className={`admin-page mx-auto min-w-0 w-full ${
         compact ? 'admin-page--compact py-5' : 'px-4 py-7 sm:px-5 md:px-6 md:py-8'
       }`}
     >

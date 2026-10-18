@@ -4,6 +4,10 @@
   const PLATFORM = "x";
   const STORAGE_KEY = "xrcCommunityReport";
   const DAILY_KEY = "xrcDailyReports";
+  const LIMIT_KEY = "xrcLimitObservations";
+  const HYPOTHESIS_KEY = "xrcLimitHypotheses";
+  const LIMIT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+  const LIMIT_MAX_EVENTS = 6000;
   const EVENT_MESSAGE = "xrc-community-event";
   const HEARTBEAT_MESSAGE = "xrc-community-heartbeat";
   const ALARM_NAME = "xrc-community-heartbeat";
@@ -21,11 +25,12 @@
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
   const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
   let chain = Promise.resolve();
+  let runtimeProvider = null;
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "comments", "notification-reply": "comments",
     "post-like": "likes", "reply-like": "likes",
     "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
-    "mutual-follow-back": "followBacks"
+    "mutual-follow-back": "followBacks", "tweet-post": "posts"
   });
 
   function shanghaiDate(at = Date.now()) {
@@ -33,7 +38,7 @@
   }
 
   function emptyCounts() {
-    return { comments: 0, likes: 0, follows: 0, unfollows: 0, followBacks: 0 };
+    return { comments: 0, likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0 };
   }
 
   async function dailyReports() {
@@ -58,6 +63,109 @@
     row.updatedAt = Date.now();
     const oldest = shanghaiDate(Date.now() - 365 * 24 * 60 * 60 * 1000);
     await root.chrome.storage.local.set({ [DAILY_KEY]: rows.filter((item) => item.date >= oldest).sort((a, b) => b.date.localeCompare(a.date)) });
+  }
+
+  async function limitObservations() {
+    const stored = await root.chrome.storage.local.get(LIMIT_KEY);
+    return Array.isArray(stored?.[LIMIT_KEY]) ? stored[LIMIT_KEY] : [];
+  }
+
+  async function limitHypotheses(accountHandle = "") {
+    const stored = await root.chrome.storage.local.get(HYPOTHESIS_KEY);
+    const handle = cleanHandle(accountHandle).toLowerCase();
+    const rows = Array.isArray(stored?.[HYPOTHESIS_KEY]) ? stored[HYPOTHESIS_KEY] : [];
+    return rows.filter((row) => !handle || row.accountHandle === handle);
+  }
+
+  async function recordLimitHypothesis(accountHandle) {
+    const handle = cleanHandle(accountHandle).toLowerCase();
+    if (!handle) return;
+    const rows = await limitHypotheses();
+    const text = "当前样本不足以证明固定每日上限；外部案例显示更高数量也可能成功。1272 条只是本机观察值，继续记录后再验证。";
+    const existing = rows.find((row) => row.accountHandle === handle && row.kind === "reply-dynamic-limit");
+    if (existing) { existing.text = text; existing.updatedAt = Date.now(); }
+    else rows.push({ accountHandle: handle, kind: "reply-dynamic-limit", text, createdAt: Date.now(), updatedAt: Date.now() });
+    await root.chrome.storage.local.set({ [HYPOTHESIS_KEY]: rows.slice(-100) });
+  }
+
+  async function mergeAccountData(fromHandle, toHandle) {
+    const from = cleanHandle(fromHandle).toLowerCase();
+    const to = cleanHandle(toHandle).toLowerCase();
+    if (!from || !to || from === to) return { ok: true, changed: false, from, to };
+    return enqueue(async () => {
+      const stored = await root.chrome.storage.local.get([DAILY_KEY, LIMIT_KEY, STORAGE_KEY, HYPOTHESIS_KEY]);
+      const daily = Array.isArray(stored?.[DAILY_KEY]) ? stored[DAILY_KEY] : [];
+      const mergedDaily = new Map();
+      for (const raw of daily) {
+        const row = { ...raw, accountHandle: cleanHandle(raw?.accountHandle).toLowerCase() || to };
+        if (row.accountHandle === from) row.accountHandle = to;
+        const key = `${row.date || ""}::${row.accountHandle}`;
+        const current = mergedDaily.get(key) || { date: row.date, accountHandle: row.accountHandle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
+        for (const metric of Object.keys(current.counts)) current.counts[metric] = Math.max(0, Number(current.counts[metric]) || 0) + Math.max(0, Number(row.counts?.[metric]) || 0);
+        current.eventIds = [...new Set([...current.eventIds, ...(Array.isArray(row.eventIds) ? row.eventIds : [])])].slice(-300);
+        current.updatedAt = Math.max(Number(current.updatedAt) || 0, Number(row.updatedAt) || 0);
+        current.uploadedAt = Math.max(Number(current.uploadedAt) || 0, Number(row.uploadedAt) || 0);
+        mergedDaily.set(key, current);
+      }
+      const limits = Array.isArray(stored?.[LIMIT_KEY]) ? stored[LIMIT_KEY] : [];
+      const mergedLimits = limits.map((row) => ({ ...row, accountHandle: cleanHandle(row?.accountHandle).toLowerCase() === from ? to : cleanHandle(row?.accountHandle).toLowerCase() }));
+      const hypotheses = Array.isArray(stored?.[HYPOTHESIS_KEY]) ? stored[HYPOTHESIS_KEY] : [];
+      const mergedHypotheses = hypotheses.map((row) => ({ ...row, accountHandle: cleanHandle(row?.accountHandle).toLowerCase() === from ? to : cleanHandle(row?.accountHandle).toLowerCase() }));
+      const config = stored?.[STORAGE_KEY] && typeof stored[STORAGE_KEY] === "object" ? { ...stored[STORAGE_KEY] } : null;
+      const configWasFrom = Boolean(config && cleanHandle(config.accountHandle).toLowerCase() === from);
+      if (config) {
+        if (cleanHandle(config.accountHandle).toLowerCase() === from) config.accountHandle = to;
+        config.queue = Array.isArray(config.queue) ? config.queue.map((event) => ({ ...event, accountHandle: cleanHandle(event?.accountHandle).toLowerCase() === from ? to : event.accountHandle })) : [];
+      }
+      await root.chrome.storage.local.set({
+        [DAILY_KEY]: [...mergedDaily.values()].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))),
+        [LIMIT_KEY]: mergedLimits,
+        [HYPOTHESIS_KEY]: mergedHypotheses,
+        ...(config ? { [STORAGE_KEY]: config } : {})
+      });
+      const changed = daily.some((row) => cleanHandle(row?.accountHandle).toLowerCase() === from)
+        || limits.some((row) => cleanHandle(row?.accountHandle).toLowerCase() === from)
+        || configWasFrom
+        || (config?.queue || []).some((event, index) => cleanHandle(stored?.[STORAGE_KEY]?.queue?.[index]?.accountHandle).toLowerCase() === from);
+      return { ok: true, changed, from, to };
+    });
+  }
+
+  async function recordLimitObservation(event, accountHandle) {
+    if (!DAILY_TASKS[event.task] || !["success", "limited"].includes(event.result)) return;
+    const rows = await limitObservations();
+    if (rows.some((row) => row.id === event.id)) return;
+    const at = Number(event.occurredAt) || Date.now();
+    rows.push({ id: event.id, at, accountHandle: cleanHandle(accountHandle).toLowerCase(), task: event.task, result: event.result, errorCode: event.result === "limited" ? event.errorCode : "" });
+    const cutoff = Date.now() - LIMIT_RETENTION_MS;
+    await root.chrome.storage.local.set({ [LIMIT_KEY]: rows.filter((row) => row.at >= cutoff).slice(-LIMIT_MAX_EVENTS) });
+    if (event.task === "timeline-reply" || event.task === "notification-reply") await recordLimitHypothesis(accountHandle);
+  }
+
+  function limitGroup(task) {
+    if (["timeline-reply", "notification-reply"].includes(task)) return "reply";
+    if (["post-like", "reply-like"].includes(task)) return "like";
+    if (["mutual-target-follow", "mutual-follow-back"].includes(task)) return "follow";
+    return task === "mutual-unfollow" ? "unfollow" : "";
+  }
+
+  function analyzeLimitObservations(rows, accountHandle = "") {
+    const handle = cleanHandle(accountHandle).toLowerCase();
+    const events = rows.filter((row) => (!handle || row.accountHandle === handle) && limitGroup(row.task))
+      .sort((a, b) => a.at - b.at);
+    const limits = events.filter((row) => row.result === "limited").slice(-30).map((row) => {
+      const group = limitGroup(row.task);
+      const prior = events.filter((item) => item.accountHandle === row.accountHandle && limitGroup(item.task) === group && item.result === "success" && item.at < row.at);
+      const count = (ms) => prior.filter((item) => item.at >= row.at - ms).length;
+      const last = prior.at(-1);
+      const recent = prior.slice(-11);
+      const gaps = recent.slice(1).map((item, index) => item.at - recent[index].at).sort((a, b) => a - b);
+      return { at: row.at, accountHandle: row.accountHandle, task: row.task, group, errorCode: row.errorCode,
+        lastGapMs: last ? row.at - last.at : null,
+        recentMedianGapMs: gaps.length ? gaps[Math.floor(gaps.length / 2)] : null,
+        in10m: count(10 * 60 * 1000), in30m: count(30 * 60 * 1000), in1h: count(60 * 60 * 1000), in24h: count(24 * 60 * 60 * 1000) };
+    });
+    return { events: events.length, limits: limits.slice(-30).reverse(), replySamples: limits.filter((row) => row.group === "reply") };
   }
 
   function createId() {
@@ -126,6 +234,8 @@
     const config = await ensureConfig();
     if (!config.secret) return { ok: true, skipped: true };
     const version = root.chrome?.runtime?.getManifest?.().version || "";
+    let runtime = null;
+    try { runtime = await runtimeProvider?.(); } catch (error) {}
     let response;
     try {
       response = await fetch(REPORT_URL, {
@@ -139,7 +249,8 @@
           platform: PLATFORM,
           extensionVersion: version,
           accountHandle: config.accountHandle,
-          events: config.queue
+          events: config.queue,
+          ...(runtime ? { runtime } : {})
         })
       });
     } catch (error) {
@@ -182,6 +293,7 @@
       const config = await ensureConfig();
       if (payload.accountHandle) config.accountHandle = payload.accountHandle;
       await recordDailySuccess(payload, payload.accountHandle || config.accountHandle);
+      await recordLimitObservation(payload, payload.accountHandle || config.accountHandle);
       config.queue = [...config.queue, payload].slice(-40);
       await storageSet(config);
       return postCurrent();
@@ -214,6 +326,59 @@
       row.uploadedAt = Date.now();
       await root.chrome.storage.local.set({ [DAILY_KEY]: rows });
       return { ok: true, uploadedAt: row.uploadedAt };
+    });
+  }
+
+  function pullRemoteData(accountHandle) {
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      const handle = cleanHandle(accountHandle || config.accountHandle).toLowerCase();
+      if (!config.secret) return { ok: false, error: "请先在设置里填写社区回执密钥" };
+      if (!handle) return { ok: false, error: "未识别当前 X 账号" };
+      const fetchRemote = async (remoteHandle) => {
+        const response = await fetch(`${REPORT_URL}?accountHandle=${encodeURIComponent(remoteHandle)}`, { headers: { "x-community-action-secret": config.secret } });
+        if (!response.ok) return { ok: false, error: `读取失败（HTTP ${response.status}）` };
+        return response.json().catch(() => null);
+      };
+      let remote;
+      try { remote = await fetchRemote(handle); }
+      catch (error) { return { ok: false, error: "网络不可用，无法读取站长后台" }; }
+      if (remote?.error === "读取失败（HTTP 405）") {
+        try {
+          const response = await fetch(REPORT_URL, {
+            method: "POST",
+            headers: { "content-type": "application/json", "x-community-action-secret": config.secret },
+            body: JSON.stringify({ action: "pull", accountHandle: handle })
+          });
+          remote = response.ok ? await response.json().catch(() => null) : { ok: false, error: `读取失败（HTTP ${response.status}）` };
+        } catch (error) {
+          return { ok: false, error: "同步云端接口尚未更新，请先部署站点后台" };
+        }
+      }
+      if (!remote?.ok) return { ok: false, error: remote?.error || "站长后台未返回历史数据" };
+      let fallbackUsed = false;
+      if (!remote.dailyReports?.length && !remote.events?.length && handle !== "default") {
+        try {
+          const legacy = await fetchRemote("default");
+          if (legacy?.ok && (legacy.dailyReports?.length || legacy.events?.length)) {
+            remote = legacy;
+            fallbackUsed = true;
+          }
+        } catch (error) {}
+      }
+      const local = await dailyReports();
+      const merged = new Map(local.map((row) => [`${row.date}::${row.accountHandle}`, { ...row, counts: { ...emptyCounts(), ...(row.counts || {}) } }]));
+      for (const row of Array.isArray(remote.dailyReports) ? remote.dailyReports : []) {
+        const key = `${row.date}::${handle}`;
+        const current = merged.get(key) || { date: row.date, accountHandle: handle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
+        for (const metric of Object.keys(current.counts)) current.counts[metric] = Math.max(Number(current.counts[metric]) || 0, Number(row.counts?.[metric]) || 0);
+        current.updatedAt = Math.max(Number(current.updatedAt) || 0, Number(row.updatedAt) || 0);
+        current.uploadedAt = Math.max(Number(current.uploadedAt) || 0, Number(row.uploadedAt) || 0);
+        merged.set(key, current);
+      }
+      await root.chrome.storage.local.set({ [DAILY_KEY]: [...merged.values()].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))) });
+      for (const event of Array.isArray(remote.events) ? remote.events : []) await recordLimitObservation(event, handle);
+      return { ok: true, reports: Array.isArray(remote.dailyReports) ? remote.dailyReports.length : 0, events: Array.isArray(remote.events) ? remote.events.length : 0, fallbackUsed };
     });
   }
 
@@ -289,8 +454,16 @@
     heartbeat,
     accept,
     heartbeatFromBackground,
+    setRuntimeProvider(provider) { runtimeProvider = typeof provider === "function" ? provider : null; },
     dailyReports,
+    limitObservations,
+    limitHypotheses,
+    recordLimitHypothesis,
+    analyzeLimitObservations,
+    recordLimitObservation,
     uploadDaily,
+    pullRemoteData,
+    mergeAccountData,
     recordDailySuccess,
     shanghaiDate,
     saveSecret,

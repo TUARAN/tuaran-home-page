@@ -134,7 +134,7 @@ function XReplyDownloadPasswordPanel() {
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] p-3 dark:border-[#263142] dark:bg-[#10161f]">
+    <div className="mt-3 min-w-0 max-w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] p-3 dark:border-[#263142] dark:bg-[#10161f]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">插件下载密码</p>
@@ -146,8 +146,8 @@ function XReplyDownloadPasswordPanel() {
       </div>
       <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">新密码立即生效，旧密码失效。数据库只存校验值；密码仅在生成时显示一次。</p>
       {password ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <input readOnly value={password} aria-label="新生成的插件下载密码" className="min-w-0 flex-1 rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100" />
+        <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <input readOnly value={password} aria-label="新生成的插件下载密码" className="col-span-2 min-w-0 w-full rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100 sm:col-span-1" />
           <AdminButton size="sm" onClick={copyPassword}>复制密码</AdminButton>
           <AdminButton size="sm" variant="ghost" onClick={() => setPassword('')}>隐藏</AdminButton>
         </div>
@@ -182,7 +182,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
   const onlineCount = devices.filter((device) => device.online).length
 
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
       {error ? <p className="mb-0 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
       {notice ? <p className="mb-0 text-[13px] text-[#3f4039] dark:text-gray-200">{notice}</p> : null}
       {center?.migrationRequired ? (
@@ -191,13 +191,13 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="grid flex-1 gap-3 sm:grid-cols-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div className="grid min-w-0 w-full flex-1 gap-3 sm:grid-cols-3">
           <StatCard label="今日成功" value={center?.todaySuccess ?? '—'} tone="success" />
-          <StatCard label="在线设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
+          <StatCard label="有心跳设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳，任务状态见监控页" tone={onlineCount ? 'info' : 'neutral'} />
           <StatCard label="最近回执" value={recent.length} sub="最多 40 条" />
         </div>
-        <AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton>
+        <div className="flex min-w-0 flex-wrap gap-2"><AdminButton href="/admin/community-actions/x-monitor" variant="primary">X 插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
       <Section
@@ -213,7 +213,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         <input
           readOnly
           value={center?.secret || ''}
-          className="w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
+          className="block min-w-0 w-full max-w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
           aria-label="社区回执密钥"
         />
       </Section>
@@ -221,12 +221,12 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
         <ul className="m-0 grid gap-2 p-0">
           {EXTENSION_TASKS.map((item) => (
-            <li key={item.id} id={item.id} className="rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
+            <li key={item.id} id={item.id} className="min-w-0 rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label}</p>
                 <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
               </div>
-              <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
+              <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {item.href ? (
                 <div className="mt-3">
                   <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton>
@@ -289,7 +289,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                   {device.accountHandle ? ` · @${device.accountHandle}` : ' · 账号未上报'}
                 </span>
                 <span className="flex flex-wrap items-center gap-2 text-[#7a7c70] dark:text-gray-400">
-                  <StatusPill size="sm" tone={device.online ? 'success' : 'neutral'}>{device.online ? '在线' : '离线'}</StatusPill>
+                  <StatusPill size="sm" tone={device.online ? 'info' : 'neutral'}>{device.online ? '有心跳' : '无心跳'}</StatusPill>
                   <span>v{device.extensionVersion || '—'}</span>
                   <span>{formatTime(device.lastSeenAt)}</span>
                 </span>
@@ -363,10 +363,10 @@ function OverviewPanel({ center, loading, onOpenMode }) {
       <Section
         title="浏览器插件"
         description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；这里只收密钥、心跳和确认回执。"
-        actions={<AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton>}
+        actions={<><AdminButton size="sm" href="/admin/community-actions/x-monitor">X 插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="在线设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
+          <StatCard label="有心跳设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
           <StatCard label="今日插件成功" value={loading ? '—' : todaySuccess} tone="success" />
         </div>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">

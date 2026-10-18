@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -46,6 +46,21 @@ test('monitor date range uses Beijing midnight and rejects invalid or future dat
   assert.equal(xMonitorDateRange('2026-10-19', NOW), null)
 })
 
+test('monitor trend fills 14 Beijing dates and separates task outcomes', () => {
+  const days = buildXMonitorTrend([
+    { date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 4 },
+    { date: '2026-10-17', task: 'timeline-reply', result: 'limited', count: 1 },
+    { date: '2026-10-17', task: 'post-like', result: 'success', count: 3 },
+    { date: '2026-10-18', task: 'post-like', result: 'failed', count: 2 },
+  ], '2026-10-18')
+  assert.equal(days.length, 14)
+  assert.equal(days[0].date, '2026-10-05')
+  assert.equal(days.at(-1).date, '2026-10-18')
+  assert.deepEqual([days.at(-2).success, days.at(-2).limited, days.at(-1).failed], [7, 1, 2])
+  assert.deepEqual([days.at(-2).tasks['timeline-reply'].success, days.at(-2).tasks['post-like'].success], [4, 3])
+  assert.equal(days[0].success, 0)
+})
+
 test('monitor queries selected day for counts, reports, and paged receipts', async () => {
   const calls = []
   const db = { prepare(sql) { return {
@@ -53,12 +68,15 @@ test('monitor queries selected day for counts, reports, and paged receipts', asy
     async all() { return { results: [] } },
     async first() { return { total: 0 } },
   } } }
-  const result = await readXExtensionMonitor(db, { date: '2026-10-17', offset: 50, reportOffset: 20, now: NOW })
+  const result = await readXExtensionMonitor(db, { date: '2026-10-17', offset: 20, reportOffset: 20, now: NOW })
   const start = Date.parse('2026-10-17T00:00:00+08:00')
   assert.equal(result.selectedDate, '2026-10-17')
-  assert.equal(result.offset, 50)
-  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 50, 50])
+  assert.equal(result.offset, 20)
+  assert.equal(result.limit, 20)
+  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 20, 20])
   assert.deepEqual(calls.find((call) => call.sql.includes('GROUP BY task, result')).values, [start, start + 86400000])
+  assert.deepEqual(calls.find((call) => call.sql.includes('GROUP BY date, task, result')).values, [start - 13 * 86400000, start + 86400000])
+  assert.equal(result.trend.length, 14)
   assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 20, 20])
   assert.equal(result.reportOffset, 20)
 })

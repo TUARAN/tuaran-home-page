@@ -37,7 +37,7 @@ export default function PrivateDataWorkspace() {
           title: '私有资产',
           description: '文件只存入私有 R2，书签库只通过 owner-only 接口读取。',
           items: [
-            { href: '/admin/private-data/documents', title: '私密文档', description: '保存 PDF 附件，并在后台登录后预览；文件不提供公开地址。', icon: 'information', note: '私有 R2 · 站长预览' },
+            { href: '/admin/private-data/documents', title: '私密文档', description: '写仅站长可见的文字记录，也可保存并预览不提供公开地址的 PDF。', icon: 'information', note: '文字记录 · 私有 R2' },
             { href: '/admin/nsfw', title: '私密媒体', description: '管理受限图片与视频的上传、预览、归档和删除。', icon: 'nsfw', note: '私有 R2 · 不生成公开 URL' },
             { href: '/admin/bookmark-nav', title: '书签导航', description: '检索 Chrome 私有收藏、原始文件夹、重复记录和风险入口。', icon: 'bookmark', note: 'Owner-only · 不进入公开导航' },
           ],

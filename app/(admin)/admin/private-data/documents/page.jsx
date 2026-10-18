@@ -3,7 +3,7 @@ import PrivateDocumentsConsole from './PrivateDocumentsConsole'
 
 export const metadata = {
   title: '私密文档',
-  description: '仅站长可访问的 PDF 附件目录。',
+  description: '仅站长可访问的文字记录与 PDF 文档。',
   robots: { index: false, follow: false },
 }
 

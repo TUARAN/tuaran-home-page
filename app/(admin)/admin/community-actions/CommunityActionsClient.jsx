@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-import { AdminButton, AdminPage, EmptyState, Section, StatCard, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, EmptyState, Section, StatusPill } from '../../components/ui'
 import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
@@ -42,7 +42,7 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'x-assistant',
     platform: 'x',
     label: 'X 高频互动助手',
-    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置，确认结果回传到这里。',
+    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在 X 插件监控查看。',
     href: '/resources/x-reply-clipboard-extension',
   },
   {
@@ -175,11 +175,8 @@ function resolveView(searchParams) {
 }
 
 function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
-  const tasks = center?.tasks || []
   const devices = center?.devices || []
   const recent = center?.recent || []
-  const dailyReports = center?.dailyReports || []
-  const onlineCount = devices.filter((device) => device.online).length
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
@@ -191,13 +188,9 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         </p>
       ) : null}
 
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <div className="grid min-w-0 w-full flex-1 gap-3 sm:grid-cols-3">
-          <StatCard label="今日成功" value={center?.todaySuccess ?? '—'} tone="success" />
-          <StatCard label="有心跳设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳，任务状态见监控页" tone={onlineCount ? 'info' : 'neutral'} />
-          <StatCard label="最近回执" value={recent.length} sub="最多 40 条" />
-        </div>
-        <div className="flex min-w-0 flex-wrap gap-2"><AdminButton href="/admin/community-actions/x-monitor" variant="primary">X 插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">X 的运行状态、日期统计与每日报告统一在 X 插件监控查看。</p>
+        <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/x-monitor" variant="primary">X 插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
       <Section
@@ -239,47 +232,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         </ul>
       </Section>
 
-      <Section title="今日任务项" description="按北京时间当天统计。同一条动作只记一次确认结果。">
-        {tasks.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {tasks.map((task) => (
-              <article key={`${task.platform}:${task.task}`} className="rounded-xl border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{task.label}</p>
-                  <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[task.platform] || task.platform}</StatusPill>
-                </div>
-                <p className="mb-0 mt-2 text-[1.4rem] font-semibold leading-none text-emerald-700 dark:text-emerald-300">{task.success}</p>
-                <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">
-                  失败 {task.failed} · 跳过 {task.skipped} · 受限 {task.limited}
-                </p>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <EmptyState title="还没有任务项" description={loading ? '正在读取。' : '迁移完成后，这里会列出当前任务项。'} />
-        )}
-      </Section>
-
-      <Section title="X 插件每日报告" description="插件本地按北京时间统计成功动作，点击插件里的「上传报告」后显示在这里。同一设备、日期和账号再次上传会更新该日数据。">
-        {center?.dailyMigrationRequired ? <p className="mt-0 text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
-        {dailyReports.length ? (
-          <div className="grid gap-2">
-            {dailyReports.map((report) => (
-              <article key={`${report.deviceId}:${report.date}:${report.accountHandle}`} className="rounded-lg border border-[#e4e6dc] px-3 py-3 text-[13px] dark:border-[#263142]">
-                <div className="flex flex-wrap items-center justify-between gap-2 font-medium text-[#25261f] dark:text-gray-100">
-                  <span>{report.date} · {report.accountHandle ? `@${report.accountHandle}` : '账号未识别'}</span>
-                  <span className="text-[12px] font-normal text-[#7a7c70] dark:text-gray-400">上传于 {formatTime(report.uploadedAt)}</span>
-                </div>
-                <p className="mb-0 mt-2 text-[#5f6156] dark:text-gray-300">
-                  评论 {report.comments} · 点赞 {report.likes} · 关注 {report.follows} · 取关 {report.unfollows} · 回关 {report.followBacks}
-                </p>
-              </article>
-            ))}
-          </div>
-        ) : <EmptyState title="还没有上传的每日报告" description="在 X 插件主面板展开每日报告，选择日期后点击上传。" />}
-      </Section>
-
-      <Section title="设备" description="每个已安装的插件有自己的设备号。账号要等页面读到登录身份后才会出现。">
+      <Section title="其他插件设备" description="小红书与掘金插件最近的连接情况。X 设备请看 X 插件监控。">
         {devices.length ? (
           <ul className="m-0 grid gap-2 p-0">
             {devices.map((device) => (
@@ -301,7 +254,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         )}
       </Section>
 
-      <Section title="最近回执" description="只保留动作编号、结果和错误码，不保存正文、Cookie 或模型密钥。">
+      <Section title="其他插件回执" description="小红书与掘金的最近回执；X 回执在 X 插件监控按日期查看。">
         {recent.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
@@ -343,13 +296,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
   )
 }
 
-function OverviewPanel({ center, loading, onOpenMode }) {
-  const onlineCount = useMemo(
-    () => (center?.devices || []).filter((device) => device.online).length,
-    [center],
-  )
-  const todaySuccess = center?.todaySuccess ?? 0
-
+function OverviewPanel({ onOpenMode }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Section
@@ -362,13 +309,10 @@ function OverviewPanel({ center, loading, onOpenMode }) {
       </Section>
       <Section
         title="浏览器插件"
-        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；这里只收密钥、心跳和确认回执。"
+        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；X 的运行与统计统一在监控页查看。"
         actions={<><AdminButton size="sm" href="/admin/community-actions/x-monitor">X 插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="有心跳设备" value={loading ? '—' : onlineCount} sub="5 分钟内有心跳" tone={onlineCount ? 'info' : 'neutral'} />
-          <StatCard label="今日插件成功" value={loading ? '—' : todaySuccess} tone="success" />
-        </div>
+        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">X 插件监控集中查看实时运行状态、历史日期的确认动作和每日报告。插件台管理共用密钥，并查看小红书与掘金回执。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>X 高频互动助手：回复、互关、推文浇给</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>
@@ -520,7 +464,7 @@ export default function CommunityActionsClient() {
       </div>
 
       {view.mode === 'overview' ? (
-        <OverviewPanel center={center} loading={loading} onOpenMode={openMode} />
+        <OverviewPanel onOpenMode={openMode} />
       ) : null}
 
       {view.mode === 'plan' ? <CommunityOperationsPlan /> : null}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, recordCommunityActionReport } from '../../lib/community/communityActions.js'
+import { normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -32,9 +32,35 @@ test('monitor separates a fresh heartbeat from actual task state', () => {
     { device_id: 'fresh-stale-snapshot', flow_phase: 'running', tasks_json: '[{"mode":"timeline","phase":"running"}]', reported_at: NOW - 10 * 60 * 1000 },
     { device_id: 'stale', flow_phase: 'running', tasks_json: '[{"mode":"timeline","phase":"running"}]', reported_at: NOW - 10 * 60 * 1000 },
   ]
-  const result = presentXExtensionMonitor({ devices, runtimes, now: NOW, todayCounts: [{ device_id: 'fresh-run', result: 'success', count: 431 }] })
+  const result = presentXExtensionMonitor({ devices, runtimes, now: NOW, dateRange: xMonitorDateRange('2026-10-18', NOW), taskCounts: [{ task: 'timeline-reply', result: 'success', count: 431 }] })
   assert.deepEqual(result.devices.map((device) => device.phase), ['unknown', 'idle', 'running', 'paused', 'unknown', 'offline'])
-  assert.equal(result.devices[2].today.success, 431)
+  assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 431)
+})
+
+test('monitor date range uses Beijing midnight and rejects invalid or future dates', () => {
+  assert.deepEqual(xMonitorDateRange('2026-10-18', NOW), {
+    selectedDate: '2026-10-18', minDate: '2025-10-18', maxDate: '2026-10-18',
+    start: Date.parse('2026-10-18T00:00:00+08:00'), end: Date.parse('2026-10-19T00:00:00+08:00'),
+  })
+  assert.equal(xMonitorDateRange('2026-02-30', NOW), null)
+  assert.equal(xMonitorDateRange('2026-10-19', NOW), null)
+})
+
+test('monitor queries selected day for counts, reports, and paged receipts', async () => {
+  const calls = []
+  const db = { prepare(sql) { return {
+    bind(...values) { calls.push({ sql, values }); return this },
+    async all() { return { results: [] } },
+    async first() { return { total: 0 } },
+  } } }
+  const result = await readXExtensionMonitor(db, { date: '2026-10-17', offset: 50, reportOffset: 20, now: NOW })
+  const start = Date.parse('2026-10-17T00:00:00+08:00')
+  assert.equal(result.selectedDate, '2026-10-17')
+  assert.equal(result.offset, 50)
+  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 50, 50])
+  assert.deepEqual(calls.find((call) => call.sql.includes('GROUP BY task, result')).values, [start, start + 86400000])
+  assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 20, 20])
+  assert.equal(result.reportOffset, 20)
 })
 
 test('runtime heartbeat stores snapshot separately from action counts', async () => {

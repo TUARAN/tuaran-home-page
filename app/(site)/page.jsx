@@ -506,18 +506,6 @@ function AchievementMiniCard({ item }) {
 function HomeOpinionPanel() {
   return (
     <section className="home-section home-opinion-panel min-w-0 self-start">
-      <div className="home-primary-heading hidden md:grid">
-        <p className="home-kicker">02 · Public Opinion</p>
-        <h2 className="home-section-title"><T zh="舆情精选" en="Selected public opinion" /></h2>
-        <div className="home-primary-heading-actions">
-          <Link href="/public-opinion" className="home-section-more no-underline">
-            <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-        <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
-      </div>
-      <p className="h5-feed-label md:hidden"><T zh="舆情精选" en="Selected public opinion" /></p>
-      <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
       <HomeOpinionSignals />
     </section>
   )

@@ -28,6 +28,18 @@ function formatOpinionTime(value) {
   }).format(date)
 }
 
+function CollectionStatus({ updated }) {
+  return (
+    <>
+      <span className="home-opinion-collection-live">
+        <span className="home-opinion-collection-dot" aria-hidden="true" />
+        <T zh="持续采集中" en="Collecting" />
+      </span>
+      <small className="home-opinion-collection-updated"><T zh={`更新于 ${updated}`} en={`Updated ${updated}`} /></small>
+    </>
+  )
+}
+
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -112,10 +124,29 @@ export default function HomeOpinionSignals() {
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)
     ? formatOpinionTime(collectedAt * 1000)
     : ''
+  const showCollectionStatus = activeTopic !== 'recommended' && liveData && allPosts.length && updated
   const featuredTime = formatOpinionTime(featured?.latestAt)
   const featuredSentiment = featured ? getSentimentBucket(featured.sentiment) : null
   return (
     <div className="home-opinion-overview">
+      <div className="home-primary-heading hidden md:grid">
+        <p className="home-kicker">02 · Public Opinion</p>
+        <div className="home-opinion-heading-title">
+          <h2 className="home-section-title"><T zh="舆情精选" en="Selected public opinion" /></h2>
+          {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
+        </div>
+        <div className="home-primary-heading-actions">
+          <Link href="/public-opinion" className="home-section-more no-underline">
+            <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+        <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
+      </div>
+      <div className="home-opinion-mobile-heading md:hidden">
+        <p className="h5-feed-label"><T zh="舆情精选" en="Selected public opinion" /></p>
+        {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
+      </div>
+      <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
       <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
         <button type="button" className={`home-tab-link ${activeTopic === 'recommended' ? 'is-active' : ''}`} aria-label="推荐" title="推荐" aria-pressed={activeTopic === 'recommended'} onClick={() => setActiveTopic('recommended')}>
           <T zh="推荐" en="For you" />
@@ -167,18 +198,6 @@ export default function HomeOpinionSignals() {
         )
       ) : liveData && allPosts.length ? (
         <>
-          {updated ? (
-            <div className="home-opinion-collection-meta">
-              <small className="home-opinion-collection-status">
-                <span className="home-opinion-collection-live">
-                  <span className="home-opinion-collection-dot" aria-hidden="true" />
-                  <T zh="持续采集中" en="Collecting" />
-                </span>
-                <T zh={`更新于 ${updated}`} en={`Updated ${updated}`} />
-              </small>
-            </div>
-          ) : null}
-
           <div className="home-opinion-list">
             {featured ? (
               <Link href="/public-opinion" className="home-opinion-sample home-opinion-featured no-underline">

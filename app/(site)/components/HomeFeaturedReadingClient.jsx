@@ -13,7 +13,6 @@ import {
   getHomeRecommendationRotateDelayMs,
   HOME_ARTICLE_SCOPE_KEYS,
   HOME_ARTICLE_SCOPE_META,
-  HOME_ARTICLE_SCOPE_PAGE_SIZE,
   HOME_RECOMMENDATION_MAX_BATCH_SIZE,
   HOME_RECOMMENDATION_RELOAD_GUARD,
   homeArticleScopeSurface,
@@ -36,6 +35,7 @@ import { T } from './LocaleProvider'
 
 const CHANGE_BATCH_MS = 260
 const HOME_PREVIEW_COUNT = 6
+const HOME_DESKTOP_RECOMMENDED_COUNT = 10
 
 function clearHomeBatchReloadHint() {
   if (typeof document === 'undefined') return
@@ -48,7 +48,7 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
 }
 
-function FeaturedLink({ item, isPinned, fromSearch = false, position = 0, surface = 'home_recommendation' }) {
+function FeaturedLink({ item, isPinned, fromSearch = false, desktopOnly = false, position = 0, surface = 'home_recommendation' }) {
   const content = (
     <>
       <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
@@ -62,7 +62,7 @@ function FeaturedLink({ item, isPinned, fromSearch = false, position = 0, surfac
       {item.date ? <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden">{item.date}</time> : null}
     </>
   )
-  const className = 'h5-feed-row home-reading-item group no-underline'
+  const className = `h5-feed-row home-reading-item group no-underline${desktopOnly ? ' max-lg:hidden' : ''}`
   const analyticsProps = {
     'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
     'data-analytics-surface': fromSearch ? 'home_search' : surface,
@@ -89,7 +89,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState('recommended')
-  const [scopeVisibleCount, setScopeVisibleCount] = useState(HOME_PREVIEW_COUNT)
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
     () => {
@@ -150,12 +149,12 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     [catalog, settings, scope],
   )
   const scopedItems = useMemo(
-    () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, scopeVisibleCount)),
-    [items, scope, scopeCatalog, scopeVisibleCount],
+    () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, HOME_PREVIEW_COUNT)),
+    [items, scope, scopeCatalog],
   )
   const displayedItems = normalizedQuery
     ? searchResults.slice(0, HOME_PREVIEW_COUNT)
-    : scope === 'recommended' ? items.slice(0, scopeVisibleCount) : scopedItems
+    : scope === 'recommended' ? items.slice(0, HOME_DESKTOP_RECOMMENDED_COUNT) : scopedItems
   const analyticsSurface = homeArticleScopeSurface(scope)
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {
@@ -227,7 +226,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const changeBatch = useCallback(() => {
     firstBatchLockedRef.current = false
     setChanging(true)
-    setScopeVisibleCount(HOME_PREVIEW_COUNT)
     setBatchOffset((value) => {
       const next = value + 1
       writeHomeRecommendationBatchOffset(window.sessionStorage, next)
@@ -254,7 +252,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const selectScope = useCallback((next) => {
     if (next === scope) return
     setScope(next)
-    setScopeVisibleCount(HOME_PREVIEW_COUNT)
     trackSiteEvent('filter_apply', {
       facet: 'home_scope',
       value: next,
@@ -263,10 +260,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
         : listHomeArticleScopeCatalog(catalog, settings, next).length,
     })
   }, [catalog, items.length, scope, settings])
-
-  const loadMoreScope = useCallback(() => {
-    setScopeVisibleCount((count) => count + HOME_ARTICLE_SCOPE_PAGE_SIZE)
-  }, [])
 
   const viewAllResults = useCallback(() => {
     if (!normalizedQuery) return
@@ -291,7 +284,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
 
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
   const canRotateRecommended = scope === 'recommended' && !normalizedQuery && eligibleCount > items.length
-  const canLoadMoreScope = !normalizedQuery && scopeVisibleCount < (scope === 'recommended' ? items.length : scopeCatalog.length)
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {
@@ -402,6 +394,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
               item={item}
               isPinned={scope === 'recommended' && pinnedIds.has(item.id)}
               fromSearch={Boolean(normalizedQuery)}
+              desktopOnly={!normalizedQuery && scope === 'recommended' && index >= HOME_PREVIEW_COUNT}
               position={index + 1}
               surface={analyticsSurface}
             />
@@ -433,17 +426,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
           >
             <IconRefresh size={16} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
             <T zh="换一批" en="Show me more" />
-          </button>
-        </div>
-      ) : null}
-      {canLoadMoreScope ? (
-        <div className="mt-6 flex flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540]">
-          <button
-            type="button"
-            onClick={loadMoreScope}
-            className="inline-flex h-10 items-center rounded-full border border-[#cfc7b6] bg-[#fffaf0] px-5 text-[13px] font-semibold text-[#5f563f] shadow-[0_5px_18px_rgba(56,49,38,0.08)] transition hover:-translate-y-0.5 hover:border-[#9e8c68] hover:text-[#2c2a23] dark:border-[#3a4654] dark:bg-[#18212c] dark:text-[#c2ccd8] dark:shadow-[0_5px_18px_rgba(0,0,0,0.2)] dark:hover:border-[#69788a] dark:hover:text-white"
-          >
-            <T zh="加载更多" en="Load more" />
           </button>
         </div>
       ) : null}

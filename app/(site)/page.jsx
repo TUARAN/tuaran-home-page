@@ -866,14 +866,14 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <div className="home-main-grid">
         <div className="home-main-column">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
-          <div className="hidden lg:block">
-            <HomeInspirations items={inspirations} />
-          </div>
         </div>
         <div className="home-main-column">
           <HomeOpinionPanel />
           <div className="hidden lg:block">
             <HomeRuanYifengFeed />
+          </div>
+          <div className="hidden lg:block">
+            <HomeInspirations items={inspirations} />
           </div>
         </div>
         <div className="lg:hidden">
@@ -914,7 +914,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getLatestFeedItems(4)
+  const inspirations = getLatestFeedItems(8)
 
   return (
     <SitePresenceProvider>

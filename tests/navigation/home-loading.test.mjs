@@ -69,7 +69,7 @@ test('inspirations remain readable even when the recommendation catalog is empty
   assert.doesNotMatch(html, /skeleton|invisible|aria-busy="true"/)
 })
 
-test('homepage inspiration preview keeps only two items', () => {
+test('homepage inspiration preview keeps two mobile items and shows more on desktop', () => {
   const items = Array.from({ length: 3 }, (_, index) => ({
     id: `spark-${index}`,
     date: '2026-09-10',
@@ -77,10 +77,12 @@ test('homepage inspiration preview keeps only two items', () => {
     summary: '首页精选',
     category: 'ai',
   }))
-  const html = renderToStaticMarkup(React.createElement(HomeInspirations, { items }))
-  assert.match(html, /灵感 0/)
-  assert.match(html, /灵感 1/)
-  assert.doesNotMatch(html, /灵感 2/)
+  const mobileHtml = renderToStaticMarkup(React.createElement(HomeInspirations, { items, instance: 'mobile' }))
+  const desktopHtml = renderToStaticMarkup(React.createElement(HomeInspirations, { items }))
+  assert.match(mobileHtml, /灵感 0/)
+  assert.match(mobileHtml, /灵感 1/)
+  assert.doesNotMatch(mobileHtml, /灵感 2/)
+  assert.match(desktopHtml, /灵感 2/)
 })
 
 test('home inspiration card has a direct feed link without tabs or a subtitle', () => {

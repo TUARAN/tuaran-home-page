@@ -2571,6 +2571,56 @@
   }
 
   @media (min-width: 1024px) {
+    .home-main-grid {
+      align-items: stretch;
+    }
+
+    .home-main-column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-main-column:first-child > :first-child,
+    .home-main-column:nth-child(2) > :last-child {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-self: stretch;
+      min-height: 0;
+    }
+
+    .home-main-column:first-child .h5-pull-root,
+    .home-main-column:first-child .home-featured-reading,
+    .home-main-column:nth-child(2) .home-inspirations {
+      flex: 1;
+      align-self: stretch;
+      width: 100%;
+    }
+
+    .home-main-column:first-child .home-featured-reading {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-main-column:first-child .h5-batch-more {
+      margin-top: auto;
+    }
+
+    .home-main-column:nth-child(2) .home-inspiration-list {
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .home-side-stack {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .home-side-stack > :last-child {
+      flex: 1;
+    }
+
     .home-side-stack > :not([hidden]) ~ :not([hidden]) {
       margin-top: 1rem;
     }
@@ -2660,8 +2710,8 @@
       gap: 0.75rem;
     }
 
-    .home-side-stack .home-explore-groups > *,
-    .home-side-stack .home-entry-list > * {
+    .home-side-stack .home-explore-groups > :not([hidden]) ~ :not([hidden]),
+    .home-side-stack .home-entry-list > :not([hidden]) ~ :not([hidden]) {
       margin-top: 0;
     }
 
@@ -2678,9 +2728,10 @@
     .home-side-stack .home-entry-link {
       display: flex;
       min-width: 0;
-      min-height: 42px;
-      gap: 0.3rem;
-      padding: 0.35rem;
+      min-height: 48px;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem;
     }
 
     .home-side-stack .home-entry-icon {
@@ -2695,15 +2746,17 @@
     }
 
     .home-side-stack .home-entry-copy {
-      display: block;
+      display: flex;
+      align-items: center;
       min-width: 0;
+      min-height: 100%;
     }
 
     .home-side-stack .home-entry-copy strong {
       display: block;
       overflow-wrap: anywhere;
-      font-size: 11px;
-      line-height: 1.2;
+      font-size: 12px;
+      line-height: 1.25;
       white-space: normal;
     }
 

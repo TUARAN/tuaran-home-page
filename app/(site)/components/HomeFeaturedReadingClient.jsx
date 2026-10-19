@@ -35,6 +35,7 @@ import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
 
 const CHANGE_BATCH_MS = 260
+const HOME_PREVIEW_COUNT = 6
 
 function clearHomeBatchReloadHint() {
   if (typeof document === 'undefined') return
@@ -47,7 +48,7 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
 }
 
-function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false, position = 0, surface = 'home_recommendation' }) {
+function FeaturedLink({ item, isPinned, fromSearch = false, position = 0, surface = 'home_recommendation' }) {
   const content = (
     <>
       <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
@@ -61,7 +62,7 @@ function FeaturedLink({ item, isPinned, desktopOnly = false, fromSearch = false,
       {item.date ? <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden">{item.date}</time> : null}
     </>
   )
-  const className = `h5-feed-row home-reading-item group no-underline ${desktopOnly ? 'hidden md:block' : ''}`
+  const className = 'h5-feed-row home-reading-item group no-underline'
   const analyticsProps = {
     'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
     'data-analytics-surface': fromSearch ? 'home_search' : surface,
@@ -88,7 +89,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState('recommended')
-  const [scopeVisibleCount, setScopeVisibleCount] = useState(HOME_ARTICLE_SCOPE_PAGE_SIZE)
+  const [scopeVisibleCount, setScopeVisibleCount] = useState(HOME_PREVIEW_COUNT)
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
     () => {
@@ -152,7 +153,9 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, scopeVisibleCount)),
     [items, scope, scopeCatalog, scopeVisibleCount],
   )
-  const displayedItems = normalizedQuery ? searchResults : scopedItems
+  const displayedItems = normalizedQuery
+    ? searchResults.slice(0, HOME_PREVIEW_COUNT)
+    : scope === 'recommended' ? items.slice(0, scopeVisibleCount) : scopedItems
   const analyticsSurface = homeArticleScopeSurface(scope)
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {
@@ -224,6 +227,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const changeBatch = useCallback(() => {
     firstBatchLockedRef.current = false
     setChanging(true)
+    setScopeVisibleCount(HOME_PREVIEW_COUNT)
     setBatchOffset((value) => {
       const next = value + 1
       writeHomeRecommendationBatchOffset(window.sessionStorage, next)
@@ -250,7 +254,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const selectScope = useCallback((next) => {
     if (next === scope) return
     setScope(next)
-    setScopeVisibleCount(HOME_ARTICLE_SCOPE_PAGE_SIZE)
+    setScopeVisibleCount(HOME_PREVIEW_COUNT)
     trackSiteEvent('filter_apply', {
       facet: 'home_scope',
       value: next,
@@ -287,7 +291,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
 
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
   const canRotateRecommended = scope === 'recommended' && !normalizedQuery && eligibleCount > items.length
-  const canLoadMoreScope = scope !== 'recommended' && !normalizedQuery && scopeVisibleCount < scopeCatalog.length
+  const canLoadMoreScope = !normalizedQuery && scopeVisibleCount < (scope === 'recommended' ? items.length : scopeCatalog.length)
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {
@@ -397,7 +401,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
               key={item.id}
               item={item}
               isPinned={scope === 'recommended' && pinnedIds.has(item.id)}
-              desktopOnly={scope === 'recommended' && !normalizedQuery && index >= 10}
               fromSearch={Boolean(normalizedQuery)}
               position={index + 1}
               surface={analyticsSurface}

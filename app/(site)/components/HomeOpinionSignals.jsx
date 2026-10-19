@@ -18,6 +18,7 @@ const SENTIMENTS = {
   negative: { zh: '负向', en: 'Negative' },
 }
 const HOME_TOPIC_PRIORITY = { llm: 0, 'ai-agents': 1 }
+const HOME_OPINION_PREVIEW_COUNT = 4
 
 function formatOpinionTime(value) {
   const date = new Date(value)
@@ -115,7 +116,7 @@ export default function HomeOpinionSignals() {
   const groupedEvents = events.filter((event) => event.reportCount > 1 && event.topicId === activeTopic)
   const featured = groupedEvents[0]
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
-  const posts = selectHomeOpinionPosts(otherPosts, 14)
+  const posts = selectHomeOpinionPosts(otherPosts, HOME_OPINION_PREVIEW_COUNT)
   const topics = (liveData?.topics || [])
     .filter((topic) => topic.id === 'llm' || topic.id === 'ai-agents' || allPosts.some((post) => post.topicId === topic.id))
     .sort((left, right) => (HOME_TOPIC_PRIORITY[left.id] ?? 2) - (HOME_TOPIC_PRIORITY[right.id] ?? 2))
@@ -159,7 +160,7 @@ export default function HomeOpinionSignals() {
         recommended?.length ? (
           <>
             <div className="home-opinion-list">
-              {recommended.map((entry) => {
+              {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => {
                 const key = entry.guid || entry.link
                 const expanded = expandedRecommendation === key
                 return (

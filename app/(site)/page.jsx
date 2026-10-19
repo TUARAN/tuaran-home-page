@@ -881,7 +881,10 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
           <BuilderPanel />
 
-          <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
+          <details className="home-side-more">
+            <summary><T zh="更多内容与入口" en="More to explore" /><span aria-hidden="true">＋</span></summary>
+            <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
+          </details>
 
           <section className="home-contact-panel">
             <div>

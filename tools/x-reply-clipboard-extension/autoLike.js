@@ -322,7 +322,14 @@
       update('已停止自动点赞');
     }
 
-    return { start, stop, snapshot, pauseForInteraction };
+    function startNow() {
+      if (!running || stopping || cooldownUntil <= now()) return false;
+      cooldownUntil = 0;
+      update('手动开始，正在继续检查点赞任务');
+      return true;
+    }
+
+    return { start, stop, startNow, snapshot, pauseForInteraction };
   }
 
   const api = { createController, tweetId, likeButton, restrictionVisible, restrictionKind };

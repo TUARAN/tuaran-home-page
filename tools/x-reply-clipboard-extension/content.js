@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.32";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.33";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -193,7 +193,8 @@
   function toggleLikes() {
     const controller = getLikeController();
     if (!controller) return;
-    if (likeState.running) controller.stop();
+    if (likeState.running && Number(likeState.cooldownUntil) > Date.now()) controller.startNow?.();
+    else if (likeState.running) controller.stop();
     else controller.start();
   }
 
@@ -2854,10 +2855,13 @@
   function setRunningButton(button) {
     if (!button) return;
     const active = Boolean(state.loopPromise) || state.running;
+    const waiting = active && Boolean(replyWaitCopy());
     const paceChanged = !active && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
     button.dataset.running = active ? "true" : "false";
     button.textContent = state.stopping
       ? "正在停止"
+      : waiting
+        ? "立即开始"
       : active
         ? "停止"
         : paceChanged
@@ -2887,6 +2891,10 @@
     if (!postApi) {
       state.poster = { ...state.poster, status: "推文发布模块没有加载，请刷新扩展后重试", errors: state.poster.errors + 1 };
       renderPanel();
+      return;
+    }
+    if (state.poster.running && posterWaitCopy(state.poster) && !state.poster.lastError) {
+      await postApi.startNow?.();
       return;
     }
     if (state.poster.running) {
@@ -3646,7 +3654,6 @@
               <p>保留带有 Follows you 的账号，只取消没有互关标记的 Following。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 今日合计 0/400 · 本批 0/15</div>
-                <button class="xrc-inline-start xrc-mutual-start-now" type="button" data-xrc-mutual-start-now="unfollow" hidden>立即开始</button>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollow">启动单项任务</button>
               </div>
             </section>
@@ -3655,7 +3662,6 @@
               <p>只点 Follow back。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
-                <button class="xrc-inline-start xrc-mutual-start-now" type="button" data-xrc-mutual-start-now="followBack" hidden>立即开始</button>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="followBack">启动单项任务</button>
               </div>
             </section>
@@ -3681,7 +3687,6 @@
               <button class="xrc-inline-start" type="button" data-xrc-post-toggle>启动单项任务</button>
             </div>
           </section>
-          <div class="xrc-status xrc-wait-action" data-xrc-post-wait hidden><span data-xrc-post-wait-copy></span><button type="button" data-xrc-post-start-now>立即开始</button></div>
           <div class="xrc-status" role="status" data-xrc-post-status hidden></div>
           <section class="xrc-post-card" aria-label="定时发推进度">
             <div class="xrc-post-card-head"><span><small>定时发帖</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
@@ -3700,7 +3705,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>通知互动</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
-          <div class="xrc-status xrc-reply-status xrc-wait-action" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span><button type="button" data-xrc-reply-start-now hidden>立即开始</button></div>
+          <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span></div>
           <div class="xrc-stats">
             <section class="xrc-level-card xrc-progress-section" aria-label="执行进度">
               <div class="xrc-progress-header">
@@ -4077,20 +4082,18 @@
         help.setAttribute("aria-expanded", open ? "true" : "false");
         help.classList.toggle("is-open", open);
       });
-      panel.querySelector("[data-xrc-toggle]").addEventListener("click", onToggle);
+      panel.querySelector("[data-xrc-toggle]").addEventListener("click", () => {
+        if (state.running && canStartReplyNow()) startReplyNow();
+        else onToggle();
+      });
       panel.querySelector("[data-xrc-like-toggle]").addEventListener("click", toggleLikes);
       panel.querySelector("[data-xrc-post-toggle]").addEventListener("click", onPosterToggle);
-      panel.querySelector("[data-xrc-post-start-now]").addEventListener("click", () => {
-        postApi?.startNow?.();
-      });
-      panel.querySelector("[data-xrc-reply-start-now]").addEventListener("click", startReplyNow);
       panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
-        button.addEventListener("click", () => onMutualAction(button.dataset.xrcMutualAction));
-      });
-      panel.querySelectorAll("[data-xrc-mutual-start-now]").forEach((button) => {
         button.addEventListener("click", () => {
-          if (state.mutual?.mode !== button.dataset.xrcMutualStartNow) return;
-          mutualApi?.startNow?.();
+          const mode = button.dataset.xrcMutualAction;
+          const cooling = state.mutual?.running && state.mutual?.mode === mode && Number(state.mutual?.cooldownUntil) > Date.now();
+          if (cooling) mutualApi?.startNow?.();
+          else onMutualAction(mode);
         });
       });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
@@ -4185,7 +4188,6 @@
       const showStatus = state.running || state.stopping || state.loopPromise || /正在检查模型设置/.test(state.status || "") || attention;
       status.hidden = !(replyWait || showStatus);
       status.querySelector("[data-xrc-status-copy]").textContent = replyWait || (showStatus ? state.status : "");
-      status.querySelector("[data-xrc-reply-start-now]").hidden = !canStartReplyNow();
     }
     if (stats) {
       const notificationMode = state.assistantMode === "notifications";
@@ -4288,18 +4290,14 @@
       const postToggle = panel.querySelector("[data-xrc-post-toggle]");
       const postWait = posterWaitCopy(poster);
       const postProblem = /失败|没有|无法|暂停|请先|异常|跳过|重复/.test(poster.status || "");
-      const postWaitLine = panel.querySelector("[data-xrc-post-wait]");
-      if (postWaitLine) {
-        postWaitLine.hidden = !postWait;
-        postWaitLine.querySelector("[data-xrc-post-wait-copy]").textContent = postWait;
-        postWaitLine.querySelector("[data-xrc-post-start-now]").hidden = Boolean(poster.lastError);
-      }
       if (postStatus) {
         postStatus.hidden = !(postProblem || poster.stopping || (poster.running && !postWait));
         postStatus.textContent = poster.status || "";
       }
       postToggle.textContent = poster.stopping
         ? "正在停止"
+        : postWait && !poster.lastError
+          ? "立即开始"
         : poster.running
           ? "停止定时发推"
           : state.posterPaceBaseline && state.posterPace !== state.posterPaceBaseline
@@ -4366,7 +4364,7 @@
       likeToggle.textContent = likeState.stopping
         ? "停止中"
         : likeCooldown
-          ? `冷却 ${likeCooldown} · 点此停止`
+          ? `冷却 ${likeCooldown} · 立即开始`
           : likeState.running ? "停止自动点赞" : "启动单项任务";
       likeToggle.disabled = likeState.stopping;
     }
@@ -4418,16 +4416,10 @@
         const cooldownLabel = cooldownMinutes > 0
           ? `${cooldownMinutes}:${String(cooldown % 60).padStart(2, "0")}`
           : `${cooldown} 秒`;
-        button.textContent = activeMode ? cooldown > 0 ? `暂停 ${cooldownLabel} · 点此停止` : "运行中 · 点此停止" : idleLabel;
+        button.textContent = activeMode ? cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
-        const startNow = panel.querySelector(`[data-xrc-mutual-start-now="${mode}"]`);
-        if (startNow) {
-          startNow.hidden = !activeMode || cooldown <= 0;
-          startNow.disabled = Boolean(mutual.stopping);
-          startNow.title = startNow.hidden ? "" : "跳过当前暂停时间，立即继续任务";
-        }
       });
       if (state.assistantMode === "mutual") {
         const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;

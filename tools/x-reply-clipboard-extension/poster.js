@@ -471,8 +471,19 @@
     if (!state.publishQueue.length && !state.stopping) {
       emit("实时热点暂时没有新素材，切换常用民生观点池…");
       const used = readUsedSourceIds();
-      state.sourceQueue = shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).filter((item) => !used.has(item.id)).slice(0, 12);
+      const freshEvergreen = shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).filter((item) => !used.has(item.id));
+      const reusableEvergreen = () => shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).map((item, index) => ({
+        ...item,
+        id: `${item.id}:reuse:${Math.floor(Date.now() / 86400000)}:${index}`,
+        summary: `${item.summary} 这是常用主题的再次取材，必须换一个具体角度，避免重复近期发帖。`
+      }));
+      state.sourceQueue = (freshEvergreen.length ? freshEvergreen : reusableEvergreen()).slice(0, 12);
       if (state.sourceQueue.length) await buildPublishList(5);
+      if (!state.publishQueue.length && freshEvergreen.length && !state.stopping) {
+        emit("常用主题已写过，换角度再次生成…");
+        state.sourceQueue = reusableEvergreen().slice(0, 12);
+        await buildPublishList(5);
+      }
     }
     if (!state.publishQueue.length) throw new Error(`热点来源没有可用的新素材${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
     return state.publishQueue.length;

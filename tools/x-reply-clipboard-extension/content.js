@@ -34,6 +34,7 @@
   const DEFAULT_ROUND_INTERVAL_SECONDS = 5;
   const MIN_ROUND_INTERVAL_SECONDS = 1;
   const SCHEDULE_PACE_KEY = "xrcSchedulePace";
+  const SCHEDULE_DEFAULT_VERSION_KEY = "xrcScheduleDefaultVersion";
   const POSTER_PACE_KEY = "xrcPosterSchedulePace";
   const PACE_SETTINGS_KEY = "xrcPaceSettings";
   const TOOLBOX_SETTINGS_KEY = "xrcToolboxSettings";
@@ -92,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.24";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.27";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -118,6 +119,9 @@
     reconnectReason: "",
     roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
     schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
+    boundaryLevel: 1,
+    boundaryErrorsAtStart: 0,
+    boundarySuccessAtStart: 0,
     replyPaceBaseline: "",
     posterPace: postApi?.DEFAULT_POST_PACE || "medium",
     posterPaceBaseline: "",
@@ -489,7 +493,7 @@
   }
 
   function ensureRunPlan() {
-    state.runPlan = normalizeRunPlan(state.runPlan) || loopApi.createRunPlan(Math.random, state.schedulePace);
+    state.runPlan = normalizeRunPlan(state.runPlan) || loopApi.createRunPlan(Math.random, state.schedulePace, state.boundaryLevel);
     return state.runPlan;
   }
 
@@ -507,7 +511,7 @@
     state.schedulePace = profile.id;
     state.roundIntervalSeconds = profile.roundIntervalSeconds;
     if (replaceIdlePlan && schedulePlanIsIdle() && state.assistantMode !== "notifications") {
-      state.runPlan = loopApi.createRunPlan(Math.random, profile.id);
+      state.runPlan = loopApi.createRunPlan(Math.random, profile.id, state.boundaryLevel);
     }
   }
 
@@ -626,8 +630,14 @@
 
   async function openTaskTab(mode) {
     const selected = validTaskKey(mode);
-    if (selected === currentTaskKey()) return;
     const label = TASK_MODE_LABELS[selected] || "任务";
+    if (selected === currentTaskKey()) {
+      state.status = currentTaskPhase()
+        ? `当前已在${label}页面`
+        : `当前已在${label}页面，任务尚未启动；点击下方启动单项任务`;
+      renderPanel();
+      return;
+    }
     state.status = `正在打开${label}页面…`;
     renderPanel();
     try {
@@ -949,13 +959,19 @@
   async function loadSchedulePace() {
     if (!globalThis.chrome?.storage?.local) return;
     try {
-      const stored = await chrome.storage.local.get(SCHEDULE_PACE_KEY);
+      const stored = await chrome.storage.local.get([SCHEDULE_PACE_KEY, SCHEDULE_DEFAULT_VERSION_KEY]);
       const raw = stored?.[SCHEDULE_PACE_KEY];
       if (!raw) {
-        await chrome.storage.local.set({ [SCHEDULE_PACE_KEY]: state.schedulePace });
+        await chrome.storage.local.set({ [SCHEDULE_PACE_KEY]: state.schedulePace, [SCHEDULE_DEFAULT_VERSION_KEY]: 2 });
         return;
       }
-      const pace = loopApi.scheduleProfile(raw).id;
+      const needsBoundaryMigration = Number(stored?.[SCHEDULE_DEFAULT_VERSION_KEY] || 0) < 2;
+      const pace = needsBoundaryMigration
+        ? loopApi.DEFAULT_SCHEDULE_PACE
+        : loopApi.scheduleProfile(raw).id;
+      if (needsBoundaryMigration) {
+        await chrome.storage.local.set({ [SCHEDULE_PACE_KEY]: pace, [SCHEDULE_DEFAULT_VERSION_KEY]: 2 });
+      }
       if (pace === state.schedulePace) return;
       applySchedulePace(pace, { replaceIdlePlan: true });
       writeSaved({ running: state.running, total: state.total });
@@ -1361,6 +1377,9 @@
       processedIds: [],
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
       schedulePace: loopApi.DEFAULT_SCHEDULE_PACE,
+      boundaryLevel: 1,
+      boundaryErrorsAtStart: 0,
+      boundarySuccessAtStart: 0,
       runPlan: null,
       nextReplyDelaySeconds: 0,
       panelView: "normal",
@@ -1380,6 +1399,9 @@
       }
       const phraseIndex = Number(parsed.phraseIndex);
       const schedulePace = loopApi.scheduleProfile(parsed.schedulePace).id;
+      const boundaryLevel = parsed.boundaryLevel == null
+        ? 1
+        : Math.min(3, Math.max(0, Number(parsed.boundaryLevel) || 0));
       return {
         running: Boolean(parsed.running),
         total: Number(parsed.total) || 0,
@@ -1393,6 +1415,9 @@
         reconnectReason: String(parsed.reconnectReason || "").trim(),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         schedulePace,
+        boundaryLevel,
+        boundaryErrorsAtStart: Math.max(0, Number(parsed.boundaryErrorsAtStart) || 0),
+        boundarySuccessAtStart: Math.max(0, Number(parsed.boundarySuccessAtStart) || 0),
         runPlan: normalizeRunPlan(parsed.runPlan, schedulePace),
         nextReplyDelaySeconds: Math.max(0, Number(parsed.nextReplyDelaySeconds) || 0),
         panelView: validPanelView(parsed.panelView),
@@ -1427,6 +1452,9 @@
         reconnectReason: String(value.reconnectReason ?? state.reconnectReason ?? "").trim(),
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
+        boundaryLevel: state.boundaryLevel,
+        boundaryErrorsAtStart: state.boundaryErrorsAtStart,
+        boundarySuccessAtStart: state.boundarySuccessAtStart,
         runPlan: state.runPlan,
         nextReplyDelaySeconds: state.nextReplyDelaySeconds,
         panelView: state.panelView,
@@ -1545,11 +1573,12 @@
     state.pageCount = 0;
     state.completedRounds = 0;
     state.total = 0;
+    state.boundarySuccessAtStart = 0;
     state.nextCycleAt = 0;
     state.nextRoundAt = 0;
     state.reconnectAt = 0;
     state.reconnectReason = "";
-    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
+    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace, state.boundaryLevel);
     state.nextReplyDelaySeconds = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
@@ -1574,6 +1603,15 @@
     skipScheduledWait = false;
     if (riskRoundPending()) return false;
     return state.running && !state.stopping;
+  }
+
+  async function waitForAvailability() {
+    const availableAt = loopApi.nextAvailableAt?.() || Date.now();
+    if (availableAt <= Date.now()) return true;
+    return waitForDeadline(
+      availableAt,
+      (remaining) => `工作日非空闲时段，${formatCountdown(remaining)}后继续`
+    );
   }
 
   function canStartReplyNow(now = Date.now()) {
@@ -1602,9 +1640,20 @@
 
   async function finishCycleAndScheduleNext(summary) {
     state.cycleCount += 1;
+    if (state.schedulePace === "boundary") {
+      const successfulReplies = Math.max(0, state.total - state.boundarySuccessAtStart);
+      const meaningfulSignal = successfulReplies >= 10;
+      const hadErrors = meaningfulSignal && (state.errors > state.boundaryErrorsAtStart || riskRoundRequested);
+      state.boundaryLevel = hadErrors ? Math.max(0, state.boundaryLevel - 1) : Math.min(3, state.boundaryLevel + 1);
+      state.boundaryErrorsAtStart = state.errors;
+      state.boundarySuccessAtStart = state.total;
+      state.status = hadErrors
+        ? `边界测试在 ${successfulReplies} 条后发现限制，降到第 ${state.boundaryLevel + 1} 档并延长间隔`
+        : `边界测试本轮稳定，升到第 ${state.boundaryLevel + 1} 档继续观察`;
+    }
     const cycleDelayMs = state.assistantMode === "notifications"
       ? NOTIFICATION_CYCLE_DELAY_MS
-      : loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
+      : loopApi.randomCycleDelayMs(Math.random, state.schedulePace, state.boundaryLevel);
     state.nextCycleAt = Date.now() + cycleDelayMs;
     state.reconnectAt = 0;
     state.reconnectReason = "";
@@ -2107,7 +2156,7 @@
     if (state.completedRounds >= plan.rounds) {
       return finishCycleAndScheduleNext(`${summary}；本次计划已结束`);
     }
-    state.nextRoundAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace);
+    state.nextRoundAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace, state.boundaryLevel);
     writeSaved({ running: true, total: state.total });
     const ready = await waitForDeadline(
       state.nextRoundAt,
@@ -2404,6 +2453,20 @@
       state.nextCycleAt = Date.now() + NOTIFICATION_CYCLE_DELAY_MS;
       writeSaved({ running: true, total: state.total });
     }
+    if (state.schedulePace === "boundary") {
+      const boundary = loopApi.effectiveScheduleProfile(state.schedulePace, state.boundaryLevel);
+      const maxWait = boundary.maxCycleDelayMinutes * 60 * 1000;
+      let deadlineChanged = false;
+      if (state.nextCycleAt - Date.now() > maxWait) {
+        state.nextCycleAt = Date.now() + maxWait;
+        deadlineChanged = true;
+      }
+      if (state.nextRoundAt - Date.now() > maxWait) {
+        state.nextRoundAt = Date.now() + maxWait;
+        deadlineChanged = true;
+      }
+      if (deadlineChanged) writeSaved({ running: true, total: state.total });
+    }
     if (state.nextCycleAt > 0) {
       const readyForNextCycle = await waitForDeadline(
         state.nextCycleAt,
@@ -2462,6 +2525,7 @@
     let consecutiveTransientFailures = 0;
     let aiGenerationFailures = 0;
     while (state.running && !state.stopping) {
+      if (!await waitForAvailability()) return "stopped";
       if (findReplyRestrictionDialog() && !await dismissReplyRestrictionDialog()) {
         return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
       }
@@ -2779,7 +2843,7 @@
           return reconnectAndResume("回复已确认，但评论弹窗暂时无法关闭");
         }
         if (state.assistantMode === "notifications" || state.pageCount < currentRoundTarget()) {
-          state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace);
+          state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace, state.boundaryLevel);
           writeSaved({ running: true, total: state.total });
           await waitRateLimit(
             state.nextReplyDelaySeconds,
@@ -3321,7 +3385,7 @@
               <div class="xrc-prompt-presets"><span>快速套用风格</span><button type="button" data-xrc-post-preset="clickbait">标题党引子</button></div>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
-              <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>慢、中、快、超快各自的数字</small></span></div>
+              <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>边界测试与慢、中、快、超快各自的数字</small></span></div>
               <div class="xrc-pace-editor">${replyPaceEditorHtml()}</div>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
@@ -3394,9 +3458,9 @@
                 <li><b>发布规则：</b>定时发帖先从知乎热榜选题，再读今日头条；素材不足时才读 2aran 舆情分析。开头抓住人、结尾留一点余味，避免重复句式；保存每条出处。</li>
                 <li><b>发什么：</b>回复提示词决定回复内容。定时发帖用已保存的 DeepSeek API Key 写短帖；素材不合格或与近期主题重复时跳过。</li>
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
-                <li><b>回复频率默认：</b>慢是每条间隔 15～30 秒、每轮回复 12～20 条、每次 2～3 轮、休息 4～6 小时。中是每条间隔 5～15 秒、每轮回复 25～35 条、每次 3～5 轮、休息 2～3 小时。快是每条间隔 3～6 秒、每轮回复 30～42 条、每次 4～6 轮、休息 60～90 分钟。超快是每条间隔 1～3 秒、每轮回复 40～55 条、每次 5～8 轮、休息 20～40 分钟。</li>
+                <li><b>回复频率默认：</b>默认使用「边界测试」：从每条 6～10 秒、每轮回复 20～30 条、每次 2～3 轮、休息 10～15 分钟开始。连续一轮没有错误或限制提示，会自动提高下一轮速度和数量，并把周期逐步缩短到 5～10 分钟、3～6 分钟；前 10 条以内的零星失败只记录，不触发降档，已经成功运行至少 10 条后出现的错误或限制才作为有效边界信号。有效信号会降档并把周期放宽到 15～20 分钟，目标是在继续主动试探的同时减少真正的限制报错。这是当前账号的观察策略，不代表平台固定上限。慢是 15～30 秒、12～20 条、2～3 轮、休息 4～6 小时；中是 5～15 秒、25～35 条、3～5 轮、休息 2～3 小时；快是 3～6 秒、30～42 条、4～6 轮、休息 60～90 分钟；超快是 1～3 秒、40～55 条、5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
-                <li><b>改挡位：</b>工作区单行按钮选择慢、中、快、超快。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
+                <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。边界测试会避开工作日 12:00～14:00 和 17:30～19:00；周末默认不屏蔽时段。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
                 <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
                 <li>清理未回关和回关粉丝共用同一组额度：2 秒一个，两项合计每 15 个暂停 30 分钟，每日合计最多 400 个；关注候选暂时停用。</li>
@@ -3680,8 +3744,10 @@
               <div class="xrc-round-pace xrc-pace-row" aria-label="回复频率">
                 <span class="xrc-pace-caption">频率</span>
                 <div class="xrc-pace-options" role="group" aria-label="回复频率挡位">
-                  ${loopApi.SCHEDULE_PROFILES.map((item) => `<button type="button" data-xrc-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
+                  ${loopApi.SCHEDULE_PROFILES.filter((item) => item.id !== "boundary").map((item) => `<button type="button" data-xrc-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
                 </div>
+                <button class="xrc-boundary-pace" type="button" data-xrc-pace-label="boundary" aria-pressed="false" title="根据上一轮结果自动升档或降档">边界测试</button>
+                <button class="xrc-boundary-info" type="button" data-xrc-boundary-info aria-label="查看边界测试说明和限制监测" title="查看边界测试说明和限制监测">i</button>
               </div>
               <div class="xrc-flow-end xrc-start" data-xrc-start>
                 <button class="xrc-inline-start" type="button" data-xrc-toggle>启动单项任务</button>
@@ -3761,6 +3827,9 @@
         syncMonitorMenu(panel);
         if (monitorOpen) void loadLimitMonitor(panel);
         renderPanel();
+      });
+      panel.querySelector("[data-xrc-boundary-info]")?.addEventListener("click", () => {
+        panel.querySelector("[data-xrc-monitor-open]")?.click();
       });
       panel.querySelector("[data-xrc-limit-refresh]")?.addEventListener("click", () => { void loadLimitMonitor(panel); });
       panel.querySelector("[data-xrc-monitor-close]").addEventListener("click", () => {
@@ -4531,7 +4600,9 @@
     state.reconnectReason = "";
     riskRoundRequested = false;
     riskRoundAdvancing = false;
-    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace);
+    state.runPlan = state.assistantMode === "notifications" ? null : loopApi.createRunPlan(Math.random, state.schedulePace, state.boundaryLevel);
+    state.boundaryErrorsAtStart = state.errors;
+    state.boundarySuccessAtStart = 0;
     state.nextReplyDelaySeconds = 0;
     state.riskPaused = false;
     state.errors = 0;
@@ -4585,6 +4656,8 @@
     state.reconnectReason = saved.reconnectReason;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.schedulePace = saved.schedulePace;
+    state.boundaryLevel = saved.boundaryLevel;
+    state.boundaryErrorsAtStart = saved.boundaryErrorsAtStart;
     state.runPlan = saved.runPlan;
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;

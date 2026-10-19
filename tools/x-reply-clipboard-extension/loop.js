@@ -4,7 +4,7 @@
   const BATCH_SIZE = 35;
   const ROUNDS_PER_RUN = 5;
   const RUN_SIZE = BATCH_SIZE * ROUNDS_PER_RUN;
-  const DEFAULT_SCHEDULE_PACE = "medium";
+  const DEFAULT_SCHEDULE_PACE = "boundary";
   const SCHEDULE_PROFILES = [
     {
       id: "slow",
@@ -33,6 +33,19 @@
       roundIntervalSeconds: 5
     },
     {
+      id: "boundary",
+      label: "边界测试",
+      minReplyDelaySeconds: 8,
+      maxReplyDelaySeconds: 12,
+      minRepliesPerRound: 20,
+      maxRepliesPerRound: 30,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 180,
+      maxCycleDelayMinutes: 240,
+      roundIntervalSeconds: 10
+    },
+    {
       id: "fast",
       label: "快",
       minReplyDelaySeconds: 3,
@@ -59,7 +72,8 @@
       roundIntervalSeconds: 1
     }
   ];
-  const MEDIUM_PROFILE = SCHEDULE_PROFILES.find((item) => item.id === DEFAULT_SCHEDULE_PACE);
+  const MEDIUM_PROFILE = SCHEDULE_PROFILES.find((item) => item.id === "medium");
+  const DEFAULT_PROFILE = SCHEDULE_PROFILES.find((item) => item.id === DEFAULT_SCHEDULE_PACE);
   const MIN_REPLIES_PER_ROUND = MEDIUM_PROFILE.minRepliesPerRound;
   const MAX_REPLIES_PER_ROUND = MEDIUM_PROFILE.maxRepliesPerRound;
   const MIN_ROUNDS_PER_RUN = MEDIUM_PROFILE.minRoundsPerRun;
@@ -68,6 +82,13 @@
   const MAX_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.maxReplyDelaySeconds;
   const MIN_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.minCycleDelayMinutes / 60;
   const MAX_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.maxCycleDelayMinutes / 60;
+  const WEEKDAY_BLOCKS = [[12 * 60, 14 * 60], [17 * 60 + 30, 19 * 60]];
+  const BOUNDARY_LEVELS = [
+    { minReplyDelaySeconds: 8, maxReplyDelaySeconds: 12, minRepliesPerRound: 15, maxRepliesPerRound: 25, minRoundsPerRun: 2, maxRoundsPerRun: 2, minCycleDelayMinutes: 15, maxCycleDelayMinutes: 20, roundIntervalSeconds: 10 },
+    { minReplyDelaySeconds: 6, maxReplyDelaySeconds: 10, minRepliesPerRound: 20, maxRepliesPerRound: 30, minRoundsPerRun: 2, maxRoundsPerRun: 3, minCycleDelayMinutes: 10, maxCycleDelayMinutes: 15, roundIntervalSeconds: 8 },
+    { minReplyDelaySeconds: 4, maxReplyDelaySeconds: 8, minRepliesPerRound: 25, maxRepliesPerRound: 35, minRoundsPerRun: 3, maxRoundsPerRun: 4, minCycleDelayMinutes: 5, maxCycleDelayMinutes: 10, roundIntervalSeconds: 6 },
+    { minReplyDelaySeconds: 3, maxReplyDelaySeconds: 6, minRepliesPerRound: 30, maxRepliesPerRound: 40, minRoundsPerRun: 3, maxRoundsPerRun: 4, minCycleDelayMinutes: 3, maxCycleDelayMinutes: 6, roundIntervalSeconds: 5 }
+  ];
   const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
@@ -219,9 +240,27 @@
 
   function scheduleProfile(pace = DEFAULT_SCHEDULE_PACE) {
     if (Number.isInteger(pace)) {
-      return SCHEDULE_PROFILES[Math.min(SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || MEDIUM_PROFILE;
+      return SCHEDULE_PROFILES[Math.min(SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || DEFAULT_PROFILE;
     }
-    return SCHEDULE_PROFILES.find((item) => item.id === pace) || MEDIUM_PROFILE;
+    return SCHEDULE_PROFILES.find((item) => item.id === pace) || DEFAULT_PROFILE;
+  }
+
+  function effectiveScheduleProfile(pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+    const profile = scheduleProfile(pace);
+    if (profile.id !== "boundary") return profile;
+    return { ...profile, ...BOUNDARY_LEVELS[Math.min(BOUNDARY_LEVELS.length - 1, Math.max(0, Number(boundaryLevel) || 0))] };
+  }
+
+  function nextAvailableAt(now = Date.now()) {
+    const date = new Date(now);
+    const day = date.getDay();
+    if (day === 0 || day === 6) return now;
+    const minutes = date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+    const block = WEEKDAY_BLOCKS.find(([start, end]) => minutes >= start && minutes < end);
+    if (!block) return now;
+    const next = new Date(date);
+    next.setHours(Math.floor(block[1] / 60), block[1] % 60, 0, 0);
+    return next.getTime();
   }
 
   function schedulePaceIndex(pace = DEFAULT_SCHEDULE_PACE) {
@@ -245,8 +284,8 @@
     return `${minimum}～${maximum} 分钟`;
   }
 
-  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE) {
-    const profile = scheduleProfile(pace);
+  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+    const profile = effectiveScheduleProfile(pace, boundaryLevel);
     return {
       id: profile.id,
       label: profile.label,
@@ -258,8 +297,8 @@
     };
   }
 
-  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
-    const profile = scheduleProfile(pace);
+  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+    const profile = effectiveScheduleProfile(pace, boundaryLevel);
     const rounds = randomIntInclusive(profile.minRoundsPerRun, profile.maxRoundsPerRun, random);
     const roundTargets = Array.from(
       { length: rounds },
@@ -273,13 +312,13 @@
     };
   }
 
-  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
-    const profile = scheduleProfile(pace);
+  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+    const profile = effectiveScheduleProfile(pace, boundaryLevel);
     return randomIntInclusive(profile.minReplyDelaySeconds, profile.maxReplyDelaySeconds, random);
   }
 
-  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE) {
-    const profile = scheduleProfile(pace);
+  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+    const profile = effectiveScheduleProfile(pace, boundaryLevel);
     const minimum = profile.minCycleDelayMinutes * 60 * 1000;
     const maximum = profile.maxCycleDelayMinutes * 60 * 1000;
     return randomIntInclusive(minimum, maximum, random);
@@ -298,6 +337,7 @@
     MIN_CYCLE_DELAY_HOURS,
     MAX_CYCLE_DELAY_HOURS,
     DEFAULT_SCHEDULE_PACE,
+    DEFAULT_PROFILE,
     SCHEDULE_PROFILES,
     NOTIFICATION_WINDOW_MS,
     statusIdFromHref,
@@ -320,12 +360,14 @@
     nextPhraseIndex,
     randomIntInclusive,
     scheduleProfile,
+    effectiveScheduleProfile,
     schedulePaceIndex,
     scheduleBounds,
     formatSchedule,
     createRunPlan,
     randomReplyDelaySeconds,
-    randomCycleDelayMs
+    randomCycleDelayMs,
+    nextAvailableAt
   };
 
   if (typeof module === "object" && module.exports) {

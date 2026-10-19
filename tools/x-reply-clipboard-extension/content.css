@@ -1443,6 +1443,10 @@
   min-width: 0;
 }
 
+#x-reply-clipboard-panel .xrc-round-pace .xrc-pace-options {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 #x-reply-clipboard-panel .xrc-pace-options::before {
   content: "";
   position: absolute;
@@ -1482,6 +1486,47 @@
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="medium"] {
   color: #1769aa;
 }
+#x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="boundary"] {
+  color: #8a5b00;
+  background: #fff8e7;
+  border-color: #e7c26f;
+}
+
+#x-reply-clipboard-panel .xrc-boundary-pace {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid #e7c26f;
+  border-radius: 8px;
+  background: #fff8e7;
+  color: #8a5b00;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+#x-reply-clipboard-panel .xrc-boundary-info {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--xrc-line);
+  border-radius: 50%;
+  background: var(--xrc-soft);
+  color: var(--xrc-muted);
+  cursor: pointer;
+  font: 700 12px/1 Georgia, serif;
+}
+
+#x-reply-clipboard-panel .xrc-boundary-info:hover,
+#x-reply-clipboard-panel .xrc-boundary-info:focus-visible {
+  border-color: #9dc9ed;
+  background: #eaf4fd;
+  color: var(--xrc-accent);
+}
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="fast"],
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="fast"] {
   color: #9a6700;
@@ -1506,10 +1551,30 @@
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="slow"].is-active { border-color: #9bcfe5; background: #edf8fc; color: #286783; }
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="medium"].is-active,
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="medium"].is-active { border-color: #9dc9ed; background: #eaf4fd; color: #1769aa; }
+#x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="boundary"].is-active { border-color: #dcae43; background: #fff0c7; color: #7a5000; }
+#x-reply-clipboard-panel .xrc-boundary-pace.is-active { border-color: #dcae43; background: #fff0c7; color: #7a5000; }
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="fast"].is-active,
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="fast"].is-active { border-color: #e7c26f; background: #fff7df; color: #8a5b00; }
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-pace-label="turbo"].is-active,
 #x-reply-clipboard-panel .xrc-pace-options button[data-xrc-post-pace-label="turbo"].is-active { border-color: #f1a5a0; background: #fff0ef; color: #b4322d; }
+
+/* 回复速度用线上的节点表示，避免和独立的边界测试按钮混成一组胶囊按钮。 */
+#x-reply-clipboard-panel .xrc-round-pace .xrc-pace-options button {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-width: 2px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 9px;
+  line-height: 1;
+  z-index: 1;
+}
+
+#x-reply-clipboard-panel .xrc-round-pace .xrc-pace-options button.is-active {
+  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.12);
+}
 
 #x-reply-clipboard-panel .xrc-pace-options button:disabled { cursor: not-allowed; }
 

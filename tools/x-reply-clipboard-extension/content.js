@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.37";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.38";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3426,7 +3426,7 @@
           </div>
           <div class="xrc-docs-content">
             <aside class="xrc-docs-toc" aria-label="文档目录">
-              <strong>文档目录</strong>
+              <strong>目录</strong>
               <button type="button" data-xrc-docs-target="xrc-docs-flow">全流程与任务窗口</button>
               <button type="button" data-xrc-docs-target="xrc-docs-rules">官方公开规则</button>
               <button type="button" data-xrc-docs-target="xrc-docs-risk">遇到风控提示时</button>
@@ -4097,13 +4097,7 @@
         }
       });
       panel.querySelector("[data-xrc-flow-help]")?.addEventListener("click", () => {
-        const guide = panel.querySelector("[data-xrc-flow-guide]");
-        const help = panel.querySelector("[data-xrc-flow-help]");
-        if (!guide || !help) return;
-        const open = guide.hidden;
-        guide.hidden = !open;
-        help.setAttribute("aria-expanded", open ? "true" : "false");
-        help.classList.toggle("is-open", open);
+        openDocs("xrc-docs-flow");
       });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", () => {
         if (state.running && canStartReplyNow()) startReplyNow();

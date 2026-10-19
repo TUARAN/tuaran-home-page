@@ -6,6 +6,7 @@
   const HISTORY_LIMIT = 3000;
   const RATE_LIMIT_COOLDOWNS_MS = [60 * 60 * 1000, 2 * 60 * 60 * 1000, 6 * 60 * 60 * 1000];
   const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const AUTOMATION_COOLDOWN_MS = 10 * 60 * 1000;
 
   function tweetId(article) {
     const link = article?.querySelector('time')?.closest('a[href*="/status/"]')
@@ -33,7 +34,7 @@
 
   function restrictionVisible(doc) { return Boolean(restrictionKind(doc)); }
 
-  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
+  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS, automationCooldownMs = AUTOMATION_COOLDOWN_MS }) {
     const selectedTarget = ['posts', 'replies'].includes(target) ? target : 'both';
     const storageKey = `xrcAutoLikeSeen:${accountKey}${selectedTarget === 'both' ? '' : `:${selectedTarget}`}`;
     const cooldownKey = `xrcAutoLikeCooldown:${accountKey}`;
@@ -133,6 +134,17 @@
         throw new Error('无法保存点赞冷却时间，已停止以免连续触发限制');
       }
       if (exhausted) throw new Error('X 持续提示点赞次数受限，已停止自动重试；账号冷却 24 小时后可手动启动');
+      await waitForCooldown();
+    }
+
+    async function coolDownAfterAutomation() {
+      cooldownUntil = Math.max(cooldownUntil, now() + automationCooldownMs);
+      try {
+        await storage.set({ [cooldownKey]: { until: cooldownUntil, retries: rateLimitRetries, lastLimitedAt } });
+      } catch (error) {
+        update('自动化限制冷却记录保存失败，请手动检查账号状态');
+        return;
+      }
       await waitForCooldown();
     }
 
@@ -281,7 +293,10 @@
           }
           if (restrictionKind(doc) === 'automation') {
             try { onLimit(accountKey, selectedTarget, 'automation-restricted'); } catch (monitorError) { /* Monitoring must not stop the task. */ }
-            throw error;
+            update(`X 检测到疑似自动化，${Math.ceil(automationCooldownMs / 60000)} 分钟后自动重试；可随时停止`);
+            await coolDownAfterAutomation();
+            stalled = 0;
+            continue;
           }
           stalled = 0;
           update('页面暂时没有准备好，2 秒后继续扫描');

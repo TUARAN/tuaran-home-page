@@ -657,6 +657,9 @@ test('reply-like task retries a temporary thread navigation failure without stop
 
 test('auto-like refuses to click when X shows an automation restriction', async () => {
   let clicks = 0
+  let warningVisible = true
+  let automationStatus = ''
+  let controller
   const article = {
     querySelector(selector) {
       if (selector === 'time') return { closest: () => ({ href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click: () => {} }) }
@@ -666,16 +669,24 @@ test('auto-like refuses to click when X shows an automation restriction', async 
   }
   const doc = {
     querySelector: () => ({ querySelectorAll: () => [article] }),
-    querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
+    querySelectorAll: () => warningVisible ? [{ textContent: 'This request looks like it might be automated' }] : [],
   }
-  const controller = autoLike.createController({
+  controller = autoLike.createController({
     document: doc,
     window: { location: { pathname: '/home' }, setTimeout, scrollBy: () => {} },
     storage: { get: async () => ({}), set: async () => {} },
+    automationCooldownMs: 0,
+    onLimit: () => { warningVisible = false },
+    onUpdate: (snapshot) => {
+      if (/疑似自动化/.test(snapshot.status)) {
+        automationStatus = snapshot.status
+        controller?.stop()
+      }
+    },
   })
   await controller.start()
   assert.equal(clicks, 0)
-  assert.match(controller.snapshot().status, /疑似自动化|账号受限/)
+  assert.match(automationStatus, /疑似自动化|账号受限/)
 })
 
 test('settings auto-save batches edits and flushes before a task starts', async () => {
@@ -2041,7 +2052,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.30')
+  assert.equal(manifest.version, '3.27.31')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))

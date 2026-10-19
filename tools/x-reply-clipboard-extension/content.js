@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.30";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.31";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3424,7 +3424,7 @@
               <ul>
                 <li><b>网页脚本自动化：</b>X 明确写明不得使用脚本直接自动操作网站，并提示可能导致账号永久停用。</li>
                 <li><b>自动回复：</b>只允许回复事先明确表示希望收到联系的用户；每次用户互动最多一条。AI 回复机器人还需要 X 事先书面批准。</li>
-                <li><b>点赞与关注：</b>自动点赞不被允许；批量、激进或无差别自动关注和取关也被禁止。</li>
+                <li><b>点赞与关注：</b>自动点赞遇到疑似自动化提示时会进入冷却倒计时，冷却结束后自动重试；批量、激进或无差别自动关注和取关也会受限。</li>
                 <li><b>公开技术上限：</b>未认证账号目前列为每天 50 条原创帖、200 条回复；关注技术上限为每天 400 个。平台还会应用更短时间窗口和账户级限制。</li>
                 <li><b>公开算法：</b>X 开源仓库主要解释“为你推荐”和推荐通知的候选、排序与过滤流程，不包含可用于判断自动化操作安全频率的完整反垃圾规则。</li>
               </ul>
@@ -3669,7 +3669,7 @@
           </div>
           <section class="xrc-post-flow" aria-label="点赞管理">
             <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
-            <p>随全流程启动，也可以单独启停。X 不允许自动点赞；次数限制会先冷却，疑似自动化或账号限制会停止。</p>
+            <p>随全流程启动，也可以单独启停。X 出现次数限制或疑似自动化提示时会显示冷却倒计时，冷却结束后自动重试。</p>
             <div class="xrc-flow-end"><p data-xrc-like-count>已确认点赞 0 条 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>启动单项任务</button></div>
           </section>
           <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
@@ -4360,7 +4360,14 @@
     if (likeCount) likeCount.textContent = `已确认点赞 ${likeState.count} 条 · 已查看 ${likeState.posts} 个帖子${likeState.unconfirmed ? ` · ${likeState.unconfirmed} 条未确认已跳过` : ''}`;
     const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
     if (likeToggle) {
-      likeToggle.textContent = likeState.stopping ? "停止中" : likeState.running ? "停止自动点赞" : "启动单项任务";
+      const likeCooldown = likeState.running && Number(likeState.cooldownUntil) > Date.now()
+        ? formatClock(Number(likeState.cooldownUntil) - Date.now())
+        : "";
+      likeToggle.textContent = likeState.stopping
+        ? "停止中"
+        : likeCooldown
+          ? `冷却 ${likeCooldown} · 点此停止`
+          : likeState.running ? "停止自动点赞" : "启动单项任务";
       likeToggle.disabled = likeState.stopping;
     }
     if (state.assistantMode.startsWith("likes-")) panel.querySelector("[data-xrc-mini-progress]").textContent = `点赞管理 · ${likeState.count} 条`;

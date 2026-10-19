@@ -823,13 +823,6 @@
         await wait(1500);
         continue;
       }
-      const availableAt = root.XReplyClipboardLoop?.nextAvailableAt?.() || Date.now();
-      if (availableAt > Date.now()) {
-        const remaining = Math.ceil((availableAt - Date.now()) / 60000);
-        emit(`工作日非空闲时段，约 ${remaining} 分钟后继续发帖`);
-        await waitForPostSchedule(Math.min(5000, availableAt - Date.now()));
-        continue;
-      }
       if (!queuedIsNew && state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
         emit(state.lastError

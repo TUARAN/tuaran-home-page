@@ -82,7 +82,6 @@
   const MAX_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.maxReplyDelaySeconds;
   const MIN_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.minCycleDelayMinutes / 60;
   const MAX_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.maxCycleDelayMinutes / 60;
-  const WEEKDAY_BLOCKS = [[12 * 60, 14 * 60], [17 * 60 + 30, 19 * 60]];
   const BOUNDARY_LEVELS = [
     { minReplyDelaySeconds: 8, maxReplyDelaySeconds: 12, minRepliesPerRound: 15, maxRepliesPerRound: 25, minRoundsPerRun: 2, maxRoundsPerRun: 2, minCycleDelayMinutes: 15, maxCycleDelayMinutes: 20, roundIntervalSeconds: 10 },
     { minReplyDelaySeconds: 6, maxReplyDelaySeconds: 10, minRepliesPerRound: 20, maxRepliesPerRound: 30, minRoundsPerRun: 2, maxRoundsPerRun: 3, minCycleDelayMinutes: 10, maxCycleDelayMinutes: 15, roundIntervalSeconds: 8 },
@@ -252,15 +251,7 @@
   }
 
   function nextAvailableAt(now = Date.now()) {
-    const date = new Date(now);
-    const day = date.getDay();
-    if (day === 0 || day === 6) return now;
-    const minutes = date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
-    const block = WEEKDAY_BLOCKS.find(([start, end]) => minutes >= start && minutes < end);
-    if (!block) return now;
-    const next = new Date(date);
-    next.setHours(Math.floor(block[1] / 60), block[1] % 60, 0, 0);
-    return next.getTime();
+    return now;
   }
 
   function schedulePaceIndex(pace = DEFAULT_SCHEDULE_PACE) {

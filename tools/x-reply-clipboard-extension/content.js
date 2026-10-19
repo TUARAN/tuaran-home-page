@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.27";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.28";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -1605,15 +1605,6 @@
     return state.running && !state.stopping;
   }
 
-  async function waitForAvailability() {
-    const availableAt = loopApi.nextAvailableAt?.() || Date.now();
-    if (availableAt <= Date.now()) return true;
-    return waitForDeadline(
-      availableAt,
-      (remaining) => `工作日非空闲时段，${formatCountdown(remaining)}后继续`
-    );
-  }
-
   function canStartReplyNow(now = Date.now()) {
     if (state.stopping || (state.loopPromise && !state.running)) return false;
     if (!state.running) return state.riskPaused || /已暂停|已停止/.test(state.status || "");
@@ -2525,7 +2516,6 @@
     let consecutiveTransientFailures = 0;
     let aiGenerationFailures = 0;
     while (state.running && !state.stopping) {
-      if (!await waitForAvailability()) return "stopped";
       if (findReplyRestrictionDialog() && !await dismissReplyRestrictionDialog()) {
         return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
       }
@@ -3460,7 +3450,7 @@
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>默认使用「边界测试」：从每条 6～10 秒、每轮回复 20～30 条、每次 2～3 轮、休息 10～15 分钟开始。连续一轮没有错误或限制提示，会自动提高下一轮速度和数量，并把周期逐步缩短到 5～10 分钟、3～6 分钟；前 10 条以内的零星失败只记录，不触发降档，已经成功运行至少 10 条后出现的错误或限制才作为有效边界信号。有效信号会降档并把周期放宽到 15～20 分钟，目标是在继续主动试探的同时减少真正的限制报错。这是当前账号的观察策略，不代表平台固定上限。慢是 15～30 秒、12～20 条、2～3 轮、休息 4～6 小时；中是 5～15 秒、25～35 条、3～5 轮、休息 2～3 小时；快是 3～6 秒、30～42 条、4～6 轮、休息 60～90 分钟；超快是 1～3 秒、40～55 条、5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
-                <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。边界测试会避开工作日 12:00～14:00 和 17:30～19:00；周末默认不屏蔽时段。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
+                <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。自动任务会持续按选定频率运行，不会因为个人工作时间而暂停或减速。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
                 <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
                 <li>清理未回关和回关粉丝共用同一组额度：2 秒一个，两项合计每 15 个暂停 30 分钟，每日合计最多 400 个；关注候选暂时停用。</li>

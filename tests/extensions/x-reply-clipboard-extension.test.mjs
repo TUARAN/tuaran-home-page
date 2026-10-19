@@ -1582,14 +1582,14 @@ test('creates one persisted-size random execution plan within the configured ran
   assert.deepEqual(loop.scheduleBounds(), { minReplies: 12, maxReplies: 55, minRounds: 2, maxRounds: 8 })
 })
 
-test('boundary testing defaults to observed safe windows and skips weekday unavailable periods', () => {
+test('boundary testing keeps automation running through personal work hours', () => {
   const mondayLunch = new Date(2026, 9, 19, 12, 30).getTime()
   const mondayEvening = new Date(2026, 9, 19, 18, 0).getTime()
   const mondayMorning = new Date(2026, 9, 19, 10, 0).getTime()
   const saturday = new Date(2026, 9, 17, 12, 30).getTime()
   assert.equal(loop.nextAvailableAt(mondayMorning), mondayMorning)
-  assert.equal(new Date(loop.nextAvailableAt(mondayLunch)).getHours(), 14)
-  assert.equal(new Date(loop.nextAvailableAt(mondayEvening)).getHours(), 19)
+  assert.equal(loop.nextAvailableAt(mondayLunch), mondayLunch)
+  assert.equal(loop.nextAvailableAt(mondayEvening), mondayEvening)
   assert.equal(loop.nextAvailableAt(saturday), saturday)
 })
 
@@ -2039,7 +2039,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.27')
+  assert.equal(manifest.version, '3.27.28')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))

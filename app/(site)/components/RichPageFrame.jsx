@@ -16,11 +16,12 @@ export default function RichPageFrame({ children }) {
   if (!work) return children
 
   const presentation = getRichPagePresentation(work)
+  const isInteractive = (work.primaryDirectory || 'interactive') === 'interactive'
   const [pvCategory, pvSlug] = getRichPagePvKey(work).split('/')
 
   return (
     <div
-      className={`rich-page-frame rich-page-frame--${presentation.id}`}
+      className={`rich-page-frame rich-page-frame--${presentation.id}${isInteractive ? ' rich-page-frame--interactive' : ''}`}
       data-rich-page-presentation={presentation.id}
       data-rich-page-native-theme={work.presentation ? undefined : 'true'}
     >

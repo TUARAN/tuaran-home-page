@@ -2057,7 +2057,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.36')
+  assert.equal(manifest.version, '3.27.37')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -2179,7 +2179,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-like-tab="posts"/)
   assert.match(content, /data-xrc-like-tab="replies"/)
   assert.match(content, /data-xrc-actions-toggle aria-label="展开操作菜单"/)
-  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
+  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<div class="xrc-header-menu"/)?.[1] || ''
   for (const metric of ['comments', 'likes', 'follows', 'unfollows', 'posts']) {
     assert.ok(todaySummary.includes(`data-xrc-today-${metric}`), `today summary should show ${metric}`)
   }
@@ -2432,6 +2432,7 @@ test('flow guidance lives in the documentation center with a navigable table of 
 test('today totals expose a compact calendar entry and poster stats identify the current run', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(content, /class="xrc-today-report"[^>]*data-xrc-report-open[^>]*aria-label="打开日历统计"/)
+  assert.match(content, /class="xrc-today-head"[\s\S]*class="xrc-today-metrics"/)
   assert.match(content, /定时发帖 · 本次运行[\s\S]*本次已发送 0 条/)
   assert.match(content, /querySelectorAll\("\[data-xrc-report-open\]"\)/)
 })

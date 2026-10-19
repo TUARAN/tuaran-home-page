@@ -189,21 +189,21 @@
 
 #x-reply-clipboard-panel .xrc-today-strip {
   display: grid;
-  grid-template-columns: auto repeat(5, minmax(0, 1fr)) auto;
-  align-items: center;
-  gap: 5px;
-  min-height: 38px;
-  padding: 5px 9px;
+  gap: 4px;
+  min-height: 65px;
+  padding: 6px 9px 7px;
   border-top: 1px solid var(--xrc-line);
   border-bottom: 2px solid rgba(29, 155, 240, 0.24);
   background: linear-gradient(90deg, rgba(29, 155, 240, 0.08), rgba(255, 255, 255, 0.72));
   color: var(--xrc-muted);
   font-size: 10px;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-#x-reply-clipboard-panel .xrc-today-strip strong { color: var(--xrc-accent); font-size: 11px; font-weight: 900; }
-#x-reply-clipboard-panel .xrc-today-strip span { min-width: 0; padding: 3px 2px; border-left: 1px solid rgba(83, 100, 113, 0.12); text-align: center; }
+#x-reply-clipboard-panel .xrc-today-head { display: flex; align-items: center; justify-content: space-between; min-height: 27px; }
+#x-reply-clipboard-panel .xrc-today-strip strong { color: var(--xrc-accent); font-size: 12px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-today-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; gap: 2px; }
+#x-reply-clipboard-panel .xrc-today-metrics span { min-width: 0; padding: 3px 2px; border-left: 1px solid rgba(83, 100, 113, 0.12); text-align: center; white-space: nowrap; }
+#x-reply-clipboard-panel .xrc-today-metrics span:first-child { border-left: 0; }
 #x-reply-clipboard-panel .xrc-today-strip b { color: var(--xrc-text); font-size: 12px; font-weight: 900; }
 #x-reply-clipboard-panel .xrc-today-report {
   display: grid;

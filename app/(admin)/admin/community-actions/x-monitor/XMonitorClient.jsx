@@ -7,6 +7,8 @@ import XMonitorTrend from './XMonitorTrend'
 const MODE_LABEL = { timeline: '时间线回复', notifications: '通知回复', 'likes-posts': '首页点赞', 'likes-replies': '评论点赞', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
 const PHASE = { running: ['运行中', 'info'], paused: ['已暂停', 'warning'], stopping: ['停止中', 'warning'], idle: ['空闲', 'neutral'], unknown: ['状态未知', 'warning'], offline: ['离线', 'danger'] }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
+const LIVE_POLL_INTERVAL_MS = 30_000
+const FULL_REFRESH_INTERVAL_MS = 30 * 60_000
 const time = (value) => value ? new Date(value).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '—'
 const todayInShanghai = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const adjacentDate = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10)
@@ -48,17 +50,25 @@ export default function XMonitorClient() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const requestId = useRef(0)
+  const lastFullRefreshAt = useRef(0)
 
-  const refresh = useCallback(async (showLoading = false) => {
+  const refresh = useCallback(async (showLoading = false, liveOnly = false) => {
+    if (document.hidden && !showLoading) return
     const id = ++requestId.current
     if (showLoading) setLoading(true)
+    if (!liveOnly) lastFullRefreshAt.current = Date.now()
     try {
       const query = new URLSearchParams({ date: selectedDate, offset: String(offset), reportOffset: String(reportOffset) })
+      if (liveOnly) query.set('view', 'live')
       const response = await fetch(`/api/admin/community-actions/x-monitor?${query}`, { cache: 'no-store', credentials: 'same-origin' })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`)
       if (id !== requestId.current) return
-      setData(payload)
+      if (liveOnly) {
+        setData((current) => current ? { ...current, now: payload.now, devices: payload.devices, migrationRequired: payload.migrationRequired } : current)
+      } else {
+        setData(payload)
+      }
       setError('')
     } catch (issue) {
       if (id === requestId.current) setError(issue.message || '监控读取失败')
@@ -68,9 +78,15 @@ export default function XMonitorClient() {
   }, [selectedDate, offset, reportOffset])
 
   useEffect(() => {
+    lastFullRefreshAt.current = 0
     refresh(true)
-    const timer = window.setInterval(() => refresh(), 15000)
-    return () => { window.clearInterval(timer); requestId.current += 1 }
+    const poll = () => {
+      if (document.hidden) return
+      refresh(false, Date.now() - lastFullRefreshAt.current < FULL_REFRESH_INTERVAL_MS)
+    }
+    const timer = window.setInterval(poll, LIVE_POLL_INTERVAL_MS)
+    document.addEventListener('visibilitychange', poll)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', poll); requestId.current += 1 }
   }, [refresh])
 
   const changeDate = (date) => { if (date) { setSelectedDate(date); setOffset(0); setReportOffset(0); setShowAllTasks(false) } }
@@ -90,9 +106,10 @@ export default function XMonitorClient() {
   const minDate = visibleData?.minDate || adjacentDate(todayInShanghai(), -365)
   const maxDate = visibleData?.maxDate || todayInShanghai()
 
-  return <AdminPage title="X 插件监控" description="运行状态、确认动作和插件每日报告集中查看。实时状态每 15 秒更新；历史数据按北京时间选择日期。" actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
+  return <AdminPage title="X 插件监控" description="运行状态、确认动作和插件每日报告集中查看。实时状态每 30 秒更新，历史统计每 30 分钟更新；页面隐藏时暂停刷新。" actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
     {error ? <p role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">读取失败：{error}。请刷新重试。</p> : null}
     {visibleData?.migrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 0115_x_extension_runtime.sql；动作回执仍可继续接收。</p> : null}
+    {visibleData?.countsMigrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 0117_community_action_daily_counts.sql；历史统计暂不可用，实时状态仍可查看。</p> : null}
 
     <Section title="实时运行" description="按最近心跳显示插件实例；重装后若本地存储被清除，会生成新的实例 ID。在线表示 5 分钟内收到心跳。" actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
       <dl className="-mx-4 -mt-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-3 md:-mx-5"><Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" /><Metric label="运行中" value={loading && !visibleData ? '—' : running} detail="插件声明的任务状态" tone="success" /><Metric label="较早记录" value={loading && !visibleData ? '—' : olderDevices.length} detail="默认收起，可按需展开" /></dl>

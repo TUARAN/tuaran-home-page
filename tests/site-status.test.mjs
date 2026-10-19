@@ -27,6 +27,28 @@ test('three consecutive failures open an automatic incident', () => {
   assert.equal(monitor.consecutiveFailures, 3)
 })
 
+test('automatic incident renews its Beijing estimate and copy in two-hour windows', () => {
+  const startedAt = Date.parse('2026-10-19T01:00:00Z')
+  const incident = {
+    status: 'degraded',
+    source: 'automatic',
+    message: '数据库服务异常，登录、评论等功能可能暂时不可用。',
+    detail: '系统已自动检测到连续异常，恢复后公告会自动解除。',
+    startedAt,
+  }
+  const initial = publicSiteStatus(incident, startedAt + 60_000)
+  const beforeDeadline = publicSiteStatus(incident, startedAt + 2 * 60 * 60_000 - 1)
+  const renewed = publicSiteStatus(incident, startedAt + 2 * 60 * 60_000)
+  const renewedAgain = publicSiteStatus(incident, startedAt + 4 * 60 * 60_000)
+
+  assert.equal(initial.message, '检测到数据库服务异常，正在紧急修复中。')
+  assert.match(initial.detail, /10月19日 11:00（北京时间/)
+  assert.equal(beforeDeadline.detail, initial.detail)
+  assert.equal(renewed.message, '数据库异常仍在处理中，正在加紧修复。')
+  assert.match(renewed.detail, /已调整为：10月19日 13:00（北京时间/)
+  assert.match(renewedAgain.detail, /已调整为：10月19日 15:00（北京时间/)
+})
+
 test('three consecutive successes resolve an automatic incident', () => {
   let current = { status: 'degraded', source: 'automatic', startedAt: 100, updatedAt: 100 }
   let monitor = { consecutiveFailures: 3, consecutiveSuccesses: 0 }

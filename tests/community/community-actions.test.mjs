@@ -142,7 +142,7 @@ test('recording upserts the device and ignores a duplicate event id', async () =
             async run() {
               calls.push({ sql, args })
               const duplicate = sql.includes('INSERT OR IGNORE') && calls.filter((call) => call.args[0] === args[0]).length > 1
-              return { meta: { changes: duplicate ? 0 : 1 } }
+              return { meta: { changes: duplicate ? 0 : sql.includes('INSERT OR IGNORE') ? 2 : 1 } }
             },
           }
         },

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -65,7 +65,11 @@ test('monitor queries selected day for counts, reports, and paged receipts', asy
   const calls = []
   const db = { prepare(sql) { return {
     bind(...values) { calls.push({ sql, values }); return this },
-    async all() { return { results: [] } },
+    async all() {
+      if (sql.includes('community_action_daily_counts') && sql.includes('report_date = ?')) return { results: [{ task: 'timeline-reply', result: 'success', count: 3 }] }
+      if (sql.includes('community_action_daily_counts')) return { results: [{ date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 3 }] }
+      return { results: [] }
+    },
     async first() { return { total: 0 } },
   } } }
   const result = await readXExtensionMonitor(db, { date: '2026-10-17', offset: 20, reportOffset: 20, now: NOW })
@@ -74,11 +78,43 @@ test('monitor queries selected day for counts, reports, and paged receipts', asy
   assert.equal(result.offset, 20)
   assert.equal(result.limit, 20)
   assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 20, 20])
-  assert.deepEqual(calls.find((call) => call.sql.includes('GROUP BY task, result')).values, [start, start + 86400000])
-  assert.deepEqual(calls.find((call) => call.sql.includes('GROUP BY date, task, result')).values, [start - 13 * 86400000, start + 86400000])
+  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date = ?')).values, ['2026-10-17'])
+  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['2026-10-04', '2026-10-17'])
+  assert.equal(calls.some((call) => call.sql.includes('GROUP BY')), false)
+  assert.equal(result.eventTotal, 3)
+  assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 3)
   assert.equal(result.trend.length, 14)
+  assert.equal(result.trend.at(-1).success, 3)
   assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 20, 20])
   assert.equal(result.reportOffset, 20)
+})
+
+test('live monitor refresh avoids trend and daily aggregate queries', async () => {
+  const calls = []
+  const db = { prepare(sql) { calls.push(sql); return {
+    bind() { return this },
+    async all() { return { results: [] } },
+  } } }
+  const result = await readXExtensionLive(db, { now: NOW })
+  assert.deepEqual(result.devices, [])
+  assert.equal(result.now, NOW)
+  assert.equal(calls.length, 3)
+  assert.equal(calls.some((sql) => /GROUP BY|COUNT\(\*\)|x_extension_daily_reports/.test(sql)), false)
+})
+
+test('monitor does not fall back to scanning receipts before count migration', async () => {
+  const calls = []
+  const db = { prepare(sql) { calls.push(sql); return {
+    bind() { return this },
+    async all() {
+      if (sql.includes('community_action_daily_counts')) throw new Error('no such table: community_action_daily_counts')
+      return { results: [] }
+    },
+    async first() { return { total: 0 } },
+  } } }
+  const result = await readXExtensionMonitor(db, { date: '2026-10-17', now: NOW })
+  assert.equal(result.countsMigrationRequired, true)
+  assert.equal(calls.some((sql) => sql.includes('GROUP BY')), false)
 })
 
 test('runtime heartbeat stores snapshot separately from action counts', async () => {

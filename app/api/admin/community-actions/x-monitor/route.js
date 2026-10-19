@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../../lib/db/d1'
-import { readXExtensionMonitor } from '../../../../../lib/community/communityActions'
+import { readXExtensionLive, readXExtensionMonitor } from '../../../../../lib/community/communityActions'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -13,6 +13,9 @@ export async function GET(req) {
   if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
   try {
     const url = new URL(req.url)
+    if (url.searchParams.get('view') === 'live') {
+      return Response.json({ ok: true, ...await readXExtensionLive(db) })
+    }
     const offset = Number(url.searchParams.get('offset') || 0)
     const reportOffset = Number(url.searchParams.get('reportOffset') || 0)
     return Response.json({ ok: true, ...await readXExtensionMonitor(db, { date: url.searchParams.get('date') || undefined, offset, reportOffset }) })

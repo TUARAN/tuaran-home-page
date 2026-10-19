@@ -27,7 +27,7 @@ test('three consecutive failures open an automatic incident', () => {
   assert.equal(monitor.consecutiveFailures, 3)
 })
 
-test('automatic incident renews its Beijing estimate and copy in two-hour windows', () => {
+test('automatic incident uses visitor-facing copy without exposing internal failures', () => {
   const startedAt = Date.parse('2026-10-19T01:00:00Z')
   const incident = {
     status: 'degraded',
@@ -41,12 +41,15 @@ test('automatic incident renews its Beijing estimate and copy in two-hour window
   const renewed = publicSiteStatus(incident, startedAt + 2 * 60 * 60_000)
   const renewedAgain = publicSiteStatus(incident, startedAt + 4 * 60 * 60_000)
 
-  assert.equal(initial.message, '检测到数据库服务异常，正在紧急修复中。')
-  assert.match(initial.detail, /10月19日 11:00（北京时间/)
-  assert.equal(beforeDeadline.detail, initial.detail)
-  assert.equal(renewed.message, '数据库异常仍在处理中，正在加紧修复。')
-  assert.match(renewed.detail, /已调整为：10月19日 13:00（北京时间/)
-  assert.match(renewedAgain.detail, /已调整为：10月19日 15:00（北京时间/)
+  assert.equal(initial.message, '系统正在扩容升级，部分功能可能暂时不可用。')
+  assert.equal(initial.detail, '如遇登录或互动失败，请稍后重试。')
+  assert.deepEqual(initial.affectedServices, ['登录', '评论与互动'])
+  for (const status of [beforeDeadline, renewed, renewedAgain]) {
+    assert.equal(status.message, initial.message)
+    assert.equal(status.detail, initial.detail)
+    assert.deepEqual(status.affectedServices, initial.affectedServices)
+    assert.doesNotMatch(`${status.message}${status.detail}${status.affectedServices.join('')}`, /数据库|预计修复/)
+  }
 })
 
 test('three consecutive successes resolve an automatic incident', () => {

@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.29";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.30";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3290,6 +3290,9 @@
               <li><b>存储失败：</b>保留上次读到的额度并停止任务，要求刷新页面后重试，避免按零额度继续。异常计数显示在任务页。</li>
             </ul></section>
             <section class="xrc-docs-section"><div class="xrc-docs-title"><b>04</b><span><strong>定时发帖</strong><small>取材 · 改写 · 发布</small></span></div><ul>
+              <li><b>取材顺序：</b>先读知乎热榜，再读今日头条；两处素材不足时读取 2aran 舆情分析。每次只把未使用且通过筛选的素材放进待发列表，并记录原始出处。</li>
+              <li><b>没有新热点时：</b>自动切换常用民生观点池，轮换房地产、金融、育儿、赚钱、业务、消费、教育、养老、职场和家庭生活等长期主题，不要求必须是当天新闻。</li>
+              <li><b>发布顺序：</b>回到 X 首页按待发列表逐条发布；列表未发完不会重新抓取，发完后下一轮再按取材顺序补充。</li>
               <li><b>素材或改写不合格：</b>跳过并换选题，不用原文兜底；旧规则草稿不会发送。</li>
               <li><b>发布失败：</b>保留待发列表，约 1 分钟后重试；X 提示内容重复时清空草稿并换下一条。发帖历史无法保存时暂停当前素材。</li>
               <li><b>监控范围：</b>本页显示错误数和上次异常；普通发帖异常目前不会全部转成站长监控通知。</li>
@@ -3673,12 +3676,6 @@
         </div>
         <div class="xrc-body xrc-post-body">
           <section class="xrc-post-flow" aria-label="定时发帖流程">
-            <p data-xrc-post-source>取材顺序：知乎 → 今日头条 → 2aran 舆情分析。</p>
-            <ol>
-              <li>先读知乎热榜，再读今日头条。</li>
-              <li>知乎和头条素材不足时再读舆情分析；写进待发列表并记录出处。</li>
-              <li>回到首页，按列表一条条发。列表没发完，不会重新抓取。</li>
-            </ol>
             <div class="xrc-flow-end">
               <p><span data-xrc-post-queue>待发 0 条</span> <a data-xrc-post-source-link target="_blank" rel="noopener noreferrer" hidden>查看出处 ↗</a></p>
               <button class="xrc-inline-start" type="button" data-xrc-post-toggle>启动单项任务</button>
@@ -4310,12 +4307,10 @@
             : "启动单项任务";
       postToggle.dataset.running = poster.running ? "true" : "false";
       panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
-      const sourceLine = panel.querySelector("[data-xrc-post-source]");
-      if (sourceLine) sourceLine.textContent = "取材顺序：知乎 → 今日头条 → 2aran 舆情分析。";
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
         const nextSource = poster.publishQueue?.[0];
-        queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条${nextSource ? ` · 下一条：${nextSource.sourceLabel || ({ opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" })[nextSource.source] || "热点"}` : ""}`;
+        queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条${nextSource ? ` · 下一条：${nextSource.sourceLabel || ({ evergreen: "常用民生观点", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" })[nextSource.source] || "热点"}` : ""}`;
         queueLine.title = nextSource?.sourceUrl ? `原始来源：${nextSource.sourceUrl}${nextSource.sourcePageUrl ? `；选题页面：${nextSource.sourcePageUrl}` : ""}` : "";
       }
       const sourceLink = panel.querySelector("[data-xrc-post-source-link]");

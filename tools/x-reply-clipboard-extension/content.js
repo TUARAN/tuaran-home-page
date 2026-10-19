@@ -53,6 +53,15 @@
     "禁区：不用‘首先、其次’或营销黑话，不写未经证实的指控；不写加密货币、代币或合约地址，不出现 $ 符号。",
     "输出：只写短帖正文，不附标题、解释或说明。"
   ].join("\n");
+  const CLICKBAIT_POST_PROMPT = [
+    "风格：标题党引子。依据给定热点的标题和摘要，先用一个有点击冲动的口语钩子，再把事实和判断写完整。钩子只负责打开兴趣，正文必须兑现它，不能靠夸张或空悬念骗点击。",
+    "开头机制轮换使用：反常识判断、秘密或内幕暗示、读者身份代入、直接提问、数字或结果先行、损失提醒、‘你可能忽略了……’、‘真正麻烦的是……’、‘别急着……’、‘很多人没想到……’等。第一句至少带出一个明确的新闻对象、人物、地点或具体事件，不能只写‘影响很大、这事不简单、新一股冷空气来了’这类脱离上下文的空钩子。素材适合时，可以写成‘看到新闻说……，我觉得……’‘这条关于……的新闻，真正值得注意的是……’。可以偶尔使用‘说个暴论’‘说个秘密’这类口吻，但不能固定复用，也不能连续两条使用同一种开头。不要用‘震惊、全网、史上最、惊呆了’等空喊。",
+    "事实边界：标题和摘要是唯一事实依据。不得编造人物、数字、因果、内幕或未提供的细节；‘秘密、真相、内幕’只能作为表达钩子，正文没有依据就不要暗示确有隐情。",
+    "行文：比普通短帖多写一点，围绕一个核心矛盾或反差展开，先钩子，再事实，再判断或影响。写 3～5 个短段，段间留一个空行；每段 1～2 句，优先在自然停顿处换行。总共 45～110 个中文字符，不能为了凑字数重复同一个意思。",
+    "结尾：落到一个清楚的判断、提醒或具体后果；有自然的问题才提问，不要用‘你怎么看、欢迎讨论、评论区见’收尾。",
+    "禁区：不写未经证实的指控，不制造阴谋论，不用营销腔、对仗、文艺化悬念或连续感叹号，不出现加密货币、代币、合约地址或 $ 符号。",
+    "输出：只写短帖正文，不附标题、解释或风格说明。"
+  ].join("\n");
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
     maxReplyDelaySeconds: [1, 180],
@@ -83,7 +92,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.20";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.24";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3309,6 +3318,7 @@
               <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>决定回复和发推写什么</small></span></div>
               <label class="xrc-field"><span>回复提示词</span><textarea data-xrc-reply-prompt></textarea></label>
               <label class="xrc-field"><span>发推提示词</span><textarea data-xrc-post-prompt></textarea></label>
+              <div class="xrc-prompt-presets"><span>快速套用风格</span><button type="button" data-xrc-post-preset="clickbait">标题党引子</button></div>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
               <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>慢、中、快、超快各自的数字</small></span></div>
@@ -3530,7 +3540,9 @@
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
-            <button class="xrc-reset-trigger" type="button" data-xrc-reset-state aria-haspopup="dialog" aria-controls="xrc-reset-confirm" title="清空任务状态，保留 API 与日志">一键清空</button>
+            <button class="xrc-reset-trigger" type="button" data-xrc-reset-state aria-haspopup="dialog" aria-label="一键清空任务状态" aria-controls="xrc-reset-confirm" title="一键清空任务状态（保留 API 与日志）">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 4.5h9"></path><path d="M6 4.5V3h4v1.5"></path><path d="m5 6.2.45 6.3h5.1L11 6.2"></path><path d="M7 7.5v3.2M9 7.5v3.2"></path></svg>
+            </button>
             <button class="xrc-flow-help" type="button" data-xrc-flow-help aria-expanded="false" aria-controls="xrc-flow-guide" aria-label="说明" title="说明">
               <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M6.4 6.2a1.6 1.6 0 1 1 2.5 1.3c-.5.3-.9.7-.9 1.3V9.4"></path><path d="M8 11.4h.01"></path></svg>
             </button>
@@ -3577,6 +3589,7 @@
               <p>保留带有 Follows you 的账号，只取消没有互关标记的 Following。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 今日合计 0/400 · 本批 0/15</div>
+                <button class="xrc-inline-start xrc-mutual-start-now" type="button" data-xrc-mutual-start-now="unfollow" hidden>立即开始</button>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollow">启动单项任务</button>
               </div>
             </section>
@@ -3585,6 +3598,7 @@
               <p>只点 Follow back。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
+                <button class="xrc-inline-start xrc-mutual-start-now" type="button" data-xrc-mutual-start-now="followBack" hidden>立即开始</button>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="followBack">启动单项任务</button>
               </div>
             </section>
@@ -3847,6 +3861,17 @@
       });
       panel.querySelector("[data-xrc-reply-prompt]").value = state.replyPrompt || DEFAULT_REPLY_PROMPT;
       panel.querySelector("[data-xrc-post-prompt]").value = state.postPrompt || DEFAULT_POST_PROMPT;
+      panel.querySelectorAll("[data-xrc-post-preset]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.xrcPostPreset !== "clickbait") return;
+          const input = panel.querySelector("[data-xrc-post-prompt]");
+          input.value = CLICKBAIT_POST_PROMPT;
+          state.postPrompt = CLICKBAIT_POST_PROMPT;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          scheduleConfigSave(panel);
+          panel.querySelector("[data-xrc-config-status]").textContent = "已套用“标题党引子”，正在保存";
+        });
+      });
       panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-key]");
         const revealed = input.classList.toggle("is-revealed");
@@ -4005,6 +4030,12 @@
       panel.querySelector("[data-xrc-reply-start-now]").addEventListener("click", startReplyNow);
       panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
         button.addEventListener("click", () => onMutualAction(button.dataset.xrcMutualAction));
+      });
+      panel.querySelectorAll("[data-xrc-mutual-start-now]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (state.mutual?.mode !== button.dataset.xrcMutualStartNow) return;
+          mutualApi?.startNow?.();
+        });
       });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
@@ -4330,6 +4361,12 @@
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
+        const startNow = panel.querySelector(`[data-xrc-mutual-start-now="${mode}"]`);
+        if (startNow) {
+          startNow.hidden = !activeMode || cooldown <= 0;
+          startNow.disabled = Boolean(mutual.stopping);
+          startNow.title = startNow.hidden ? "" : "跳过当前暂停时间，立即继续任务";
+        }
       });
       if (state.assistantMode === "mutual") {
         const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;

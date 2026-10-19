@@ -536,6 +536,30 @@
   resize: vertical;
   line-height: 1.5;
 }
+#x-reply-clipboard-panel .xrc-prompt-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -4px;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+#x-reply-clipboard-panel .xrc-prompt-presets button {
+  min-height: 26px;
+  padding: 3px 9px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 999px;
+  background: var(--xrc-soft);
+  color: var(--xrc-accent);
+  font: inherit;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-prompt-presets button:hover,
+#x-reply-clipboard-panel .xrc-prompt-presets button:focus-visible {
+  border-color: var(--xrc-accent);
+  background: color-mix(in srgb, var(--xrc-accent) 10%, var(--xrc-soft));
+}
 
 #x-reply-clipboard-panel .xrc-field input:focus,
 #x-reply-clipboard-panel .xrc-field textarea:focus,
@@ -1766,6 +1790,19 @@
   box-shadow: 0 8px 16px rgba(29, 155, 240, 0.36);
 }
 
+#x-reply-clipboard-panel .xrc-mutual-start-now {
+  min-height: 28px;
+  padding: 0 10px;
+  background: var(--xrc-soft);
+  color: var(--xrc-accent);
+  box-shadow: none;
+  font-size: 10px;
+}
+#x-reply-clipboard-panel .xrc-mutual-start-now:hover {
+  background: color-mix(in srgb, var(--xrc-accent) 12%, var(--xrc-soft));
+  box-shadow: none;
+}
+
 #x-reply-clipboard-panel .xrc-inline-start[data-running="true"],
 #x-reply-clipboard-panel .xrc-inline-start.is-running {
   background: linear-gradient(135deg, #f4212e, #d71920);
@@ -1775,22 +1812,33 @@
 
 #x-reply-clipboard-panel .xrc-flow-launch {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px 36px;
+  grid-template-columns: minmax(0, 1fr) 36px 36px;
   align-items: center;
   gap: 8px;
 }
 
 #x-reply-clipboard-panel .xrc-reset-trigger {
-  min-height: 36px;
-  padding: 0 8px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
   border: 1px solid rgba(198, 40, 40, 0.22);
-  border-radius: 10px;
+  border-radius: 50%;
   background: rgba(198, 40, 40, 0.06);
   color: #a83a3a;
   font: inherit;
-  font-size: 10px;
   font-weight: 800;
   cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-reset-trigger svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 #x-reply-clipboard-panel .xrc-reset-trigger:hover,
 #x-reply-clipboard-panel .xrc-reset-trigger:focus-visible {

@@ -335,11 +335,18 @@ test('reset requires an explicit confirmation that names cleared and retained da
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /data-xrc-reset-state aria-haspopup="dialog"/)
   assert.match(source, /data-xrc-reset-confirm role="dialog" aria-modal="true"/)
+  assert.match(source, /data-xrc-reset-state[\s\S]*?aria-label="一键清空任务状态"/)
+  assert.match(source, /data-xrc-reset-state[\s\S]*?<svg viewBox="0 0 16 16"/)
   assert.match(source, /任务进度与倒计时、待发草稿与素材去重/)
   assert.match(source, /本地每日报告、限制观察记录及尚未上传的回执日志/)
   assert.match(source, /data-xrc-reset-confirm-action>确认清空/)
   assert.match(source, /resetTrigger\?\.addEventListener\("click", \(\) => \{[\s\S]*?resetDialog\.hidden = false/)
   assert.match(source, /data-xrc-reset-confirm-action\]"\)\?\.addEventListener\("click", async \(\) => \{[\s\S]*?sendExtensionMessage\(\{ type: "xrc-reset-state" \}\)/)
+})
+
+test('clickbait preset switches the active post prompt and schedules an immediate save', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(source, /input\.value = CLICKBAIT_POST_PROMPT;[\s\S]*?state\.postPrompt = CLICKBAIT_POST_PROMPT;[\s\S]*?scheduleConfigSave\(panel\)/)
 })
 
 test('reply-like task visits threads without liking their root posts', async () => {
@@ -1240,6 +1247,9 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.match(background.POST_SYSTEM_PROMPT, /三段式微型故事/)
   assert.match(background.POST_SYSTEM_PROMPT, /标题和摘要是唯一事实依据/)
   assert.match(background.POST_SYSTEM_PROMPT, /不固定套句/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /秘密或内幕暗示/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /45～110/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /第一句至少带出一个明确的新闻对象/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
   assert.equal(poster.qualityReason('奶茶店爆单与员工排班引发讨论', '爆单那晚，出杯口没停过。\n\n排班表上还是同一个名字。\n\n折扣是牌子上的，手速是店员自己的。', '奶茶店员工排班', 'news'), '文艺化套话')
   assert.equal(poster.qualityReason('住院部天花板霉斑引发讨论', '住院部天花板有霉斑。\n\n院方承认疏忽，这话像在说墙面，又像不止墙面。', '住院部霉斑问题', 'news'), '文艺化套话')
@@ -2011,7 +2021,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.20')
+  assert.equal(manifest.version, '3.27.24')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))

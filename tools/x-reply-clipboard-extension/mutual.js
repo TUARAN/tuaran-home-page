@@ -37,6 +37,8 @@
     seenHandles: new Set(),
     skippedHandles: new Set(),
     acknowledgedRateLimits: new Set(),
+    wakeRequested: false,
+    wakeResolver: null,
     onUpdate: null
   };
 
@@ -69,10 +71,28 @@
   async function sleepActive(ms) {
     const deadline = Date.now() + Math.max(0, Number(ms) || 0);
     while (Date.now() < deadline && !state.stopping) {
-      const chunk = Math.min(1000, Math.max(0, deadline - Date.now()));
-      await sleep(chunk);
+      const chunk = Math.min(1000, Math.max(1, deadline - Date.now()));
+      await Promise.race([
+        sleep(chunk),
+        new Promise((resolve) => { state.wakeResolver = resolve; })
+      ]);
+      state.wakeResolver = null;
+      if (state.wakeRequested) {
+        state.wakeRequested = false;
+        break;
+      }
       if (state.cooldownUntil) emit();
     }
+  }
+
+  function startNow() {
+    if (!state.running || state.stopping) return false;
+    state.cooldownUntil = 0;
+    state.wakeRequested = true;
+    state.wakeResolver?.();
+    state.wakeResolver = null;
+    emit("已立即开始，跳过当前暂停时间");
+    return true;
   }
 
   function isFollowingPath(pathname) {
@@ -620,6 +640,7 @@
   const api = {
     run,
     stop,
+    startNow,
     snapshot,
     refreshSharedFollowRate: async () => {
       try {

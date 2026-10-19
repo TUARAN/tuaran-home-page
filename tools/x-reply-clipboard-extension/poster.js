@@ -289,17 +289,16 @@
     if (normalized(topic).length < 4 || normalized(topic).length > 60) return "主题不明确";
     const length = Array.from(lines.join("")).length;
     if (sourceType === "news") {
-      if (length < 18 || length > 70) return "热点短帖过短或过长";
-      if (lines.length < (length > 30 ? 2 : 1) || lines.length > 4 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 30 : 34))) return "热点短帖行数不合适";
+      if (length < 18 || length > 110) return "热点短帖过短或过长";
+      if (lines.length < (length > 30 ? 2 : 1) || lines.length > 5 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 30 : 38))) return "热点短帖行数不合适";
       const concreteNumbers = candidate.match(/\d+(?:\.\d+)?(?:%|％|楼|层|人|杯|天|次|家|个|万|亿|元)?/gu) || [];
       if (concreteNumbers.some((number) => !original.includes(number))) return "具体数字没有素材依据";
       if (/^(?:说个暴论|讲个事实|我真心觉得|说句实话|讲真)[：:，,\s]*$/u.test(lines[0])) return "开头没有具体内容";
       if (/^(?:你怎么看|大家怎么看|欢迎讨论|评论区见)[？?!！。\s]*$/u.test(lines.at(-1))) return "收尾太模板化";
       if (/可能只是个错觉|谁也拦不住|又像不止|说的是.{1,12}，?又像|像在说.{1,12}，?又像|爆单那晚/u.test(candidate)) return "文艺化套话";
       if (/多半是|关键在于|本质上|归根结底|更实际|值得注意|值得思考|有必要|应该|应当|建议|问清楚|先弄清|流程不透明|这条新闻|这个话题|这个问题|这种现象|我想说|我们来聊|今天聊|来说说|说明了|反映出|从而|因此|首先|其次|最后/iu.test(candidate)) return "说理口吻太重";
-      if (/^(?:很多人|有些人|大家|其实|说到底|关于)/u.test(lines[0])) return "开头不够具体";
     } else if (normalized(body).length < 18 || length < 35 || length > 75) return "正文过短或过长";
-    if (/(?:[!！?？]{2,}|震惊|炸裂|封神|全网|史上最|绝对|百分之百|100%|只有傻子|都该闭嘴)/iu.test(candidate)) return "语气过火";
+    if (/(?:[!！?？]{2,}|绝对|百分之百|100%|只有傻子|都该闭嘴)/iu.test(candidate)) return "语气过火";
     if (sourceType !== "news" && (lines.length < 3 || lines.length > 5 || lines.some((line) => Array.from(line).length > 24))) return "行数或单行长度不合适";
     if (sourceType === "x" && originalBody && similarity(originalBody, body) >= 0.72) return "正文改动太少";
     if (sourceType === "news" && similarity(hook, candidate) >= 0.72) return "标题改动太少";

@@ -469,7 +469,7 @@
       }
     }
     if (!state.publishQueue.length && !state.stopping) {
-      emit("实时热点暂时没有新素材，切换常用民生观点池…");
+      emit("实时热点没有新素材，正在调用模型生成常用民生领域内容…");
       const used = readUsedSourceIds();
       const freshEvergreen = shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).filter((item) => !used.has(item.id));
       const reusableEvergreen = () => shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).map((item, index) => ({
@@ -485,7 +485,9 @@
         await buildPublishList(5);
       }
     }
-    if (!state.publishQueue.length) throw new Error(`热点来源没有可用的新素材${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
+    if (!state.publishQueue.length) {
+      throw new Error(`模型暂未生成可发布的常用领域内容${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
+    }
     return state.publishQueue.length;
   }
 

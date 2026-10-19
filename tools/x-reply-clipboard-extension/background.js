@@ -347,7 +347,7 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: `${postPrompt}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}` },
+          { role: "system", content: `${postPrompt}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}${source === "evergreen" ? "\n\n这是常用民生观点池的取材：它不是一条待核实的新闻。请从给出的领域和观点出发，直接写一条可发布的原创短帖；不要因为没有新闻时间、人物或链接而返回 skip。可以结合普通人的生活选择展开，但不要虚构具体数字、事件或当事人。" : ""}` },
           { role: "user", content: `来源：${String(source).slice(0, 30)}\n标题：${String(title).slice(0, 180)}\n摘要：${String(summary).slice(0, 320)}\n近期已用主题：${Array.isArray(recentTopics) ? recentTopics.slice(-30).join("；").slice(0, 1200) : ""}\n近期已用开头：${Array.isArray(recentOpenings) ? recentOpenings.slice(-8).join("；").slice(0, 500) : ""}\n近期已用结尾：${Array.isArray(recentEndings) ? recentEndings.slice(-8).join("；").slice(0, 500) : ""}${avoidPost ? `\n上一稿因“${String(avoidReason).slice(0, 40)}”被退回：${String(avoidPost).slice(0, 180)}。请换个具体切口和开头结尾，从头重写。` : ""}` }
         ],
         thinking: { type: "disabled" },

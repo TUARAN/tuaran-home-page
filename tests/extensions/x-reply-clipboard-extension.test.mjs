@@ -1139,6 +1139,7 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
   const storage = {}
   const seen = []
+  const rewrites = []
   const context = vm.createContext({
     chrome: {
       runtime: {
@@ -1148,7 +1149,10 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
           if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: [
             { id: 'toutiao:123', sourceType: 'news', source: 'toutiao', text: '一个关于新工具使用方式的公开讨论', summary: '', url: 'https://www.toutiao.com/a123' },
           ] })
-          else respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
+          else {
+            rewrites.push(message)
+            respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
+          }
         },
       },
       storage: { local: {
@@ -1172,6 +1176,7 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   await api.collectNewsFallback()
   assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
   assert.equal(api.snapshot().publishQueue[0].sourceLabel, '常用民生观点')
+  assert.equal(rewrites.at(-1).source, 'evergreen')
 })
 
 test('scheduled poster uses site opinion after external feeds lack usable items', async () => {
@@ -2052,7 +2057,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.34')
+  assert.equal(manifest.version, '3.27.35')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))

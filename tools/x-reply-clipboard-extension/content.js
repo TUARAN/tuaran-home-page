@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.40";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.41";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -2893,7 +2893,7 @@
       renderPanel();
       return;
     }
-    if (state.poster.running && posterWaitCopy(state.poster) && !state.poster.lastError) {
+    if (state.poster.running && posterWaitCopy(state.poster)) {
       await postApi.startNow?.();
       return;
     }
@@ -4313,7 +4313,7 @@
       }
       postToggle.textContent = poster.stopping
         ? "正在停止"
-        : postWait && !poster.lastError
+        : postWait
           ? "立即开始"
         : poster.running
           ? "停止定时发推"

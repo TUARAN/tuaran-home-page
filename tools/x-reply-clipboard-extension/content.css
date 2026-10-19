@@ -764,6 +764,32 @@
   transition: width 160ms ease, box-shadow 160ms ease;
 }
 
+#x-reply-clipboard-panel .xrc-docs-toc:not(:hover):not(:focus-within) strong {
+  display: grid;
+  width: 16px;
+  height: 18px;
+  place-items: center;
+  padding: 0;
+  font-size: 0;
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc:not(:hover):not(:focus-within) strong::before {
+  content: "☰";
+  color: var(--xrc-accent);
+  font-size: 16px;
+  line-height: 1;
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc:not(:hover):not(:focus-within) button {
+  width: 0;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
 #x-reply-clipboard-panel .xrc-docs-content:focus-within .xrc-docs-toc,
 #x-reply-clipboard-panel .xrc-docs-toc:hover {
   width: 158px;
@@ -788,6 +814,7 @@
   font-weight: 750;
   line-height: 1.35;
   text-align: left;
+  white-space: nowrap;
 }
 
 #x-reply-clipboard-panel .xrc-docs-toc button:hover,
@@ -825,7 +852,7 @@
 #x-reply-clipboard-panel .xrc-docs-title { display: flex; align-items: center; gap: 8px; }
 #x-reply-clipboard-panel .xrc-docs-title > b { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; background: var(--xrc-soft); color: var(--xrc-accent); font-size: 9px; }
 #x-reply-clipboard-panel .xrc-docs-title > span { display: grid; gap: 1px; }
-#x-reply-clipboard-panel .xrc-docs-title strong { font-size: 12px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-docs-title strong { color: var(--xrc-text); font-size: 13px; font-weight: 900; line-height: 1.3; }
 #x-reply-clipboard-panel .xrc-docs-title small { color: var(--xrc-muted); font-size: 9px; }
 #x-reply-clipboard-panel .xrc-docs-section ul,
 #x-reply-clipboard-panel .xrc-docs-section ol { display: grid; gap: 7px; margin: 0; padding-left: 18px; color: var(--xrc-muted); font-size: 10px; line-height: 1.55; }

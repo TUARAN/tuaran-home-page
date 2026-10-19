@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.35";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.36";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3098,7 +3098,7 @@
   function syncReportPage(panel) {
     const page = panel.querySelector("[data-xrc-report-page]");
     if (page) page.hidden = !reportOpen;
-    panel.querySelector("[data-xrc-report-open]")?.setAttribute("aria-expanded", reportOpen ? "true" : "false");
+    panel.querySelectorAll("[data-xrc-report-open]").forEach((button) => button.setAttribute("aria-expanded", reportOpen ? "true" : "false"));
   }
 
   function syncMonitorMenu(panel) {
@@ -3255,6 +3255,9 @@
           <span>关注 <b data-xrc-today-follows>0</b></span>
           <span>取关 <b data-xrc-today-unfollows>0</b></span>
           <span>发帖 <b data-xrc-today-posts>0</b></span>
+          <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
+          </button>
         </div>
         <div class="xrc-header-menu" id="xrc-header-menu" data-xrc-header-menu hidden>
           <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
@@ -3701,8 +3704,8 @@
             </div>
           </section>
           <div class="xrc-status" role="status" data-xrc-post-status hidden></div>
-          <section class="xrc-post-card" aria-label="定时发推进度">
-            <div class="xrc-post-card-head"><span><small>定时发帖</small><strong data-xrc-post-count>已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
+          <section class="xrc-post-card xrc-level-card" aria-label="定时发推进度">
+            <div class="xrc-post-card-head"><span><small>定时发帖 · 本次运行</small><strong data-xrc-post-count>本次已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
             <div class="xrc-post-meta"><span><small>下一次</small><strong data-xrc-post-interval>马上</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
           </section>
           <section class="xrc-level-card xrc-speed-section xrc-pace-row" aria-label="发推频率">
@@ -3842,7 +3845,7 @@
         syncMonitorMenu(panel);
         renderPanel();
       });
-      panel.querySelector("[data-xrc-report-open]").addEventListener("click", () => {
+      panel.querySelectorAll("[data-xrc-report-open]").forEach((reportButton) => reportButton.addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
           writeSaved({ running: state.running, total: state.total });
@@ -3862,7 +3865,7 @@
           panel.querySelector("[data-xrc-daily-status]").textContent = error?.message || "读取报告失败";
         });
         renderPanel();
-      });
+      }));
       panel.querySelector("[data-xrc-report-close]").addEventListener("click", () => {
         reportOpen = false;
         syncReportPage(panel);
@@ -4329,7 +4332,7 @@
             ? "重启任务"
             : "启动单项任务";
       postToggle.dataset.running = poster.running ? "true" : "false";
-      panel.querySelector("[data-xrc-post-count]").textContent = `已发送 ${poster.count || 0} 条`;
+      panel.querySelector("[data-xrc-post-count]").textContent = `本次已发送 ${poster.count || 0} 条`;
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
         const nextSource = poster.publishQueue?.[0];

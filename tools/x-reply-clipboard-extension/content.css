@@ -189,20 +189,37 @@
 
 #x-reply-clipboard-panel .xrc-today-strip {
   display: grid;
-  grid-template-columns: auto repeat(5, minmax(0, 1fr));
+  grid-template-columns: auto repeat(5, minmax(0, 1fr)) auto;
   align-items: center;
-  gap: 3px;
-  min-height: 31px;
-  padding: 4px 10px;
-  border-bottom: 1px solid var(--xrc-line);
+  gap: 5px;
+  min-height: 38px;
+  padding: 5px 9px;
+  border-top: 1px solid var(--xrc-line);
+  border-bottom: 2px solid rgba(29, 155, 240, 0.24);
+  background: linear-gradient(90deg, rgba(29, 155, 240, 0.08), rgba(255, 255, 255, 0.72));
   color: var(--xrc-muted);
   font-size: 10px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-#x-reply-clipboard-panel .xrc-today-strip strong { color: var(--xrc-text); font-size: 10px; }
-#x-reply-clipboard-panel .xrc-today-strip span { min-width: 0; text-align: center; }
-#x-reply-clipboard-panel .xrc-today-strip b { color: var(--xrc-text); font-size: 11px; }
+#x-reply-clipboard-panel .xrc-today-strip strong { color: var(--xrc-accent); font-size: 11px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-today-strip span { min-width: 0; padding: 3px 2px; border-left: 1px solid rgba(83, 100, 113, 0.12); text-align: center; }
+#x-reply-clipboard-panel .xrc-today-strip b { color: var(--xrc-text); font-size: 12px; font-weight: 900; }
+#x-reply-clipboard-panel .xrc-today-report {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(29, 155, 240, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--xrc-accent);
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-today-report:hover,
+#x-reply-clipboard-panel .xrc-today-report:focus-visible { background: rgba(29, 155, 240, 0.14); outline: 0; }
+#x-reply-clipboard-panel .xrc-today-report svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] {
   --xrc-workspace: #0f8a72;
@@ -2226,6 +2243,8 @@
   }
   #x-reply-clipboard-panel .xrc-state,
   #x-reply-clipboard-panel .xrc-phrase-pool { background: rgba(15, 20, 25, 0.72); }
+  #x-reply-clipboard-panel .xrc-today-strip { background: linear-gradient(90deg, rgba(29, 155, 240, 0.16), rgba(15, 20, 25, 0.8)); }
+  #x-reply-clipboard-panel .xrc-today-report { background: rgba(15, 20, 25, 0.82); }
   #x-reply-clipboard-panel .xrc-docs,
   #x-reply-clipboard-panel .xrc-monitor,
   #x-reply-clipboard-panel .xrc-report-page { background: rgba(0, 0, 0, 0.98); }

@@ -46,6 +46,7 @@ import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
 import HomeCodexResetCard from './components/HomeCodexResetCard'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
+import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
 
@@ -108,7 +109,6 @@ const HOME_EXPLORE_GROUPS = [
     label: '其他站点',
     labelEn: 'More sites',
     tone: 'external',
-    collapsed: true,
     items: [
       { id: 'poetry', href: 'https://poemcn.2aran.com/', title: '阿燃诗词', titleEn: 'Aran Poetry', desc: '古典诗词作品', descEn: 'Classical Chinese poetry', icon: IconFeather, external: true },
       { id: 'codex-credit', href: 'https://gptplus.2aran.com', title: '低价 Codex 直充', titleEn: 'Codex credits', desc: '独立服务入口', descEn: 'Independent service', icon: IconCoin, external: true },
@@ -864,10 +864,18 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <HomeMobileChannels />
       <FestivalBanner />
       <div className="home-main-grid">
-        <HomePrimaryColumnsClient
-          catalog={featuredPicks}
-        />
-        <HomeOpinionPanel />
+        <div className="home-main-column">
+          <HomePrimaryColumnsClient catalog={featuredPicks} />
+          <div className="hidden lg:block">
+            <HomeInspirations items={inspirations} />
+          </div>
+        </div>
+        <div className="home-main-column">
+          <HomeOpinionPanel />
+          <div className="hidden lg:block">
+            <HomeRuanYifengFeed />
+          </div>
+        </div>
         <div className="lg:hidden">
           <HomeInspirations items={inspirations} instance="mobile" />
         </div>
@@ -877,14 +885,9 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
           <HomeCodexResetCard />
 
-          <HomeInspirations items={inspirations} />
-
           <BuilderPanel />
 
-          <details className="home-side-more">
-            <summary><T zh="更多内容与入口" en="More to explore" /><span aria-hidden="true">＋</span></summary>
-            <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
-          </details>
+          <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
 
           <section className="home-contact-panel">
             <div>
@@ -911,7 +914,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
-  const inspirations = getLatestFeedItems(2)
+  const inspirations = getLatestFeedItems(4)
 
   return (
     <SitePresenceProvider>

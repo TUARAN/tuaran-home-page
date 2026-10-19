@@ -51,7 +51,7 @@ export function HomeInspirations({ items, instance = 'desktop' }) {
         </Link>
       </div>
       <div className="home-inspiration-list">
-        {items.slice(0, 2).map((inspiration) => (
+        {items.slice(0, instance === 'mobile' ? 2 : 4).map((inspiration) => (
           <InspirationCard key={inspiration.id} inspiration={inspiration} />
         ))}
         {!items.length ? <p className="mb-0 py-3 text-xs text-[var(--site-faint)]"><T zh="暂无灵感" en="No inspirations yet" /></p> : null}

@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.38";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.39";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3249,10 +3249,10 @@
           </div>
         </div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
-          <div class="xrc-today-head"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
+          <div class="xrc-today-head"><strong>今日合计</strong><div class="xrc-today-labels"><span>评论</span><span>点赞</span><span>关注</span><span>取关</span><span>发帖</span></div><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
             </button></div>
-          <div class="xrc-today-metrics"><span>评论 <b data-xrc-today-comments>0</b></span><span>点赞 <b data-xrc-today-likes>0</b></span><span>关注 <b data-xrc-today-follows>0</b></span><span>取关 <b data-xrc-today-unfollows>0</b></span><span>发帖 <b data-xrc-today-posts>0</b></span></div>
+          <div class="xrc-today-values"><b data-xrc-today-comments>0</b><b data-xrc-today-likes>0</b><b data-xrc-today-follows>0</b><b data-xrc-today-unfollows>0</b><b data-xrc-today-posts>0</b></div>
         </div>
         <div class="xrc-header-menu" id="xrc-header-menu" data-xrc-header-menu hidden>
           <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>

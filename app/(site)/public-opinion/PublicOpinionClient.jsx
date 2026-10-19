@@ -348,8 +348,8 @@ export default function PublicOpinionClient({ topics, posts, connectors, stack, 
           <header>
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <div className="flex items-center gap-2"><IconSparkles className="h-5 w-5 text-[#2a7d82]" aria-hidden="true" /><p className="mb-0 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2c7c81] dark:text-[#82c0b9]">Public Opinion Selection</p></div>
-                <h1 className="mt-2 text-[30px] font-bold tracking-[-0.04em] text-[#223135] dark:text-gray-100 sm:text-[36px]">舆情精选</h1>
+                <div className="flex items-center gap-2"><IconSparkles className="h-5 w-5 text-[#2a7d82]" aria-hidden="true" /><p className="mb-0 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2c7c81] dark:text-[#82c0b9]">Trending Topics</p></div>
+                <h1 className="mt-2 text-[30px] font-bold tracking-[-0.04em] text-[#223135] dark:text-gray-100 sm:text-[36px]">热点观察</h1>
                 <p className="mb-0 mt-2 text-[14px] leading-6 text-[#5f7172] dark:text-[#9fb0b6]">热点事件、公开讨论与观点变化。</p>
               </div>
               <label className="flex h-12 w-full items-center gap-2 rounded-2xl border border-[#e0e5e2] bg-[#f0f2ef] px-4 xl:max-w-[330px] dark:border-[#2c3943] dark:bg-[#151f27]"><IconSearch className="h-4 w-4 shrink-0 text-[#74817f]" aria-hidden="true" /><span className="sr-only">搜索舆情</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、摘要、来源…" className="min-w-0 flex-1 bg-transparent text-[13px] text-[#29373a] outline-none placeholder:text-[#8d9795] dark:text-gray-100" /><kbd className="rounded-md border border-[#d2d9d5] bg-white px-2 py-0.5 font-mono text-[10px] text-[#87918f] dark:border-[#384651] dark:bg-[#202c35]">/</kbd></label>

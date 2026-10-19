@@ -133,7 +133,7 @@ export default function HomeOpinionSignals() {
       <div className="home-primary-heading hidden md:grid">
         <p className="home-kicker">02 · Public Opinion</p>
         <div className="home-opinion-heading-title">
-          <h2 className="home-section-title"><T zh="舆情精选" en="Selected public opinion" /></h2>
+          <h2 className="home-section-title"><T zh="热点观察" en="Trending topics" /></h2>
           {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
         </div>
         <div className="home-primary-heading-actions">
@@ -144,7 +144,7 @@ export default function HomeOpinionSignals() {
         <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
       </div>
       <div className="home-opinion-mobile-heading md:hidden">
-        <p className="h5-feed-label"><T zh="舆情精选" en="Selected public opinion" /></p>
+        <p className="h5-feed-label"><T zh="热点观察" en="Trending topics" /></p>
         {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
       </div>
       <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>

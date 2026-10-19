@@ -1158,7 +1158,9 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   assert.equal(api.snapshot().publishQueue[0].sourceUrl, 'https://www.toutiao.com/a123')
   assert.equal(api.readUsedSourceIds().has('toutiao:123'), true)
   api.snapshot().publishQueue.length = 0
-  await assert.rejects(api.collectNewsFallback(), /没有可用的新素材/)
+  await api.collectNewsFallback()
+  assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
+  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '常用民生观点')
 })
 
 test('scheduled poster uses site opinion after external feeds lack usable items', async () => {
@@ -2039,7 +2041,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.28')
+  assert.equal(manifest.version, '3.27.29')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))

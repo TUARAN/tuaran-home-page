@@ -356,8 +356,35 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.sourceType === "news" && /^(?:opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
+    return Boolean(item?.sourceType === "news" && /^(?:evergreen|opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
+
+  const EVERGREEN_TOPIC_ITEMS = [
+    ["房地产", "房贷、租房和家庭现金流，普通人现在更该先算哪一笔账？"],
+    ["房地产", "买房最容易被忽略的成本，不在首付，而在长期现金流。"],
+    ["金融", "存款、消费和投资怎么排顺序，很多家庭缺的不是收入而是计划。"],
+    ["金融", "利率变化传到普通人的生活里，最先影响的往往是每月固定支出。"],
+    ["育儿", "育儿最难的阶段，常常不是花钱，而是父母时间和精力怎么分配。"],
+    ["育儿", "孩子的兴趣班越报越多之前，先问一句：这真是孩子需要的吗？"],
+    ["赚钱", "想增加收入，先把一项能重复交付的小事做稳定，比追风口更实际。"],
+    ["赚钱", "副业最容易高估的是收入，最容易低估的是获客、交付和售后。"],
+    ["业务", "小生意最怕的不是没订单，而是每一单都没有留下可复用的经验。"],
+    ["业务", "做业务时把客户的抱怨记下来，常常比再做一轮宣传更有用。"],
+    ["消费", "便宜不等于省钱，真正该算的是使用频率和买错之后的成本。"],
+    ["教育", "家长焦虑最容易变成课程清单，但孩子真正缺的可能是稳定的练习时间。"],
+    ["养老", "养老准备不是退休前才开始，家庭现金流和照护安排都要提前想。"],
+    ["职场", "工作越忙越要留下可交接的流程，否则忙碌只会变成下一次加班。"],
+    ["生活", "很多家庭的压力不是某一笔大支出，而是每个月都在漏掉的小钱。"]
+  ].map(([topic, text]) => ({
+    id: `evergreen:${topic}:${text}`,
+    sourceType: "news",
+    source: "evergreen",
+    sourceLabel: "常用民生观点",
+    text,
+    summary: `围绕${topic}的长期民生观察，可结合普通人的实际选择写出具体判断。`,
+    url: "https://2aran.com/",
+    sourcePageUrl: "https://2aran.com/"
+  }));
 
   function keepPublishItem(item) {
     return keepSourceItem(item) && item.draftPolicyVersion === DRAFT_POLICY_VERSION;
@@ -441,6 +468,12 @@
         if (state.publishQueue.length >= 5 || state.stopping) break;
       }
     }
+    if (!state.publishQueue.length && !state.stopping) {
+      emit("实时热点暂时没有新素材，切换常用民生观点池…");
+      const used = readUsedSourceIds();
+      state.sourceQueue = shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).filter((item) => !used.has(item.id)).slice(0, 12);
+      if (state.sourceQueue.length) await buildPublishList(5);
+    }
     if (!state.publishQueue.length) throw new Error(`热点来源没有可用的新素材${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
     return state.publishQueue.length;
   }
@@ -513,7 +546,7 @@
   }
 
   function sourceLabel(source) {
-    return { opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
+    return { evergreen: "常用民生观点", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
   }
 
   async function rememberPublishedPost(sourceId, text, topic, item = null) {

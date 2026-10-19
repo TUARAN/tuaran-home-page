@@ -2052,7 +2052,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.33')
+  assert.equal(manifest.version, '3.27.34')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -2411,6 +2411,17 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(toolItems, /id: 'x-clipboard-phrase'/)
   assert.doesNotMatch(catalog, /x-clipboard-phrase/)
   assert.match(toolItems, /role: 'Chrome 扩展 · 回复、互关与 AI 定时发推'/)
+})
+
+test('flow guidance lives in the documentation center with a navigable table of contents', async () => {
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(content, /data-xrc-flow-docs[^>]*>打开文档中心并查看全流程说明/)
+  assert.match(content, /id="xrc-docs-flow"[\s\S]*全流程启动会打开对应窗口[\s\S]*顶部页签会打开尚未创建的任务窗口/)
+  assert.match(content, /data-xrc-docs-target="xrc-docs-flow"/)
+  assert.match(content, /data-xrc-docs-target="xrc-docs-frequency"/)
+  assert.match(content, /target\?\.scrollIntoView\(\{ behavior: "smooth"/)
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  assert.match(css, /xrc-docs-toc/)
 })
 
 test('DeepSeek background worker keeps AI replies short and non-thinking', async () => {

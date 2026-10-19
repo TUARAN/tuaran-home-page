@@ -728,6 +728,71 @@
   padding: 14px;
 }
 
+#x-reply-clipboard-panel .xrc-docs > .xrc-docs-content {
+  grid-template-columns: 138px minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc {
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 12px;
+  background: rgba(247, 249, 252, 0.92);
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc strong {
+  padding: 3px 5px 5px;
+  color: var(--xrc-text);
+  font-size: 10px;
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc button {
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--xrc-muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: left;
+}
+
+#x-reply-clipboard-panel .xrc-docs-toc button:hover,
+#x-reply-clipboard-panel .xrc-docs-toc button:focus-visible {
+  background: rgba(29, 155, 240, 0.12);
+  color: var(--xrc-accent);
+  outline: 0;
+}
+
+#x-reply-clipboard-panel .xrc-docs > .xrc-docs-content > .xrc-docs-section,
+#x-reply-clipboard-panel .xrc-docs > .xrc-docs-content > .xrc-docs-note {
+  grid-column: 2;
+}
+
+#x-reply-clipboard-panel .xrc-docs-section.xrc-docs-targeted {
+  border-color: var(--xrc-accent);
+  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.14);
+}
+
+#x-reply-clipboard-panel .xrc-flow-docs-link {
+  justify-self: start;
+  padding: 7px 10px;
+  border: 1px solid rgba(29, 155, 240, 0.28);
+  border-radius: 8px;
+  background: rgba(29, 155, 240, 0.08);
+  color: var(--xrc-accent);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 #x-reply-clipboard-panel .xrc-docs-section {
   border: 1px solid var(--xrc-line);
   border-radius: 14px;
@@ -2209,6 +2274,11 @@
 }
 
 @media (max-width: 430px) {
+  #x-reply-clipboard-panel .xrc-docs > .xrc-docs-content { grid-template-columns: 1fr; }
+  #x-reply-clipboard-panel .xrc-docs-toc { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #x-reply-clipboard-panel .xrc-docs-toc strong { grid-column: 1 / -1; }
+  #x-reply-clipboard-panel .xrc-docs > .xrc-docs-content > .xrc-docs-section,
+  #x-reply-clipboard-panel .xrc-docs > .xrc-docs-content > .xrc-docs-note { grid-column: 1; }
   #x-reply-clipboard-panel[data-xrc-dock="float"],
   #x-reply-clipboard-panel:not([data-xrc-dock="sidebar"]) {
     right: 12px;

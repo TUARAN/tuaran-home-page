@@ -93,7 +93,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.33";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.34";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -3427,7 +3427,26 @@
             <button type="button" data-xrc-docs-close aria-label="关闭文档中心">×</button>
           </div>
           <div class="xrc-docs-content">
-            <section class="xrc-docs-section">
+            <aside class="xrc-docs-toc" aria-label="文档目录">
+              <strong>文档目录</strong>
+              <button type="button" data-xrc-docs-target="xrc-docs-flow">全流程与任务窗口</button>
+              <button type="button" data-xrc-docs-target="xrc-docs-rules">官方公开规则</button>
+              <button type="button" data-xrc-docs-target="xrc-docs-risk">遇到风控提示时</button>
+              <button type="button" data-xrc-docs-target="xrc-docs-frequency">发推、回复和频率</button>
+              <button type="button" data-xrc-docs-target="xrc-docs-releases">最近版本</button>
+            </aside>
+            <section class="xrc-docs-section" id="xrc-docs-flow">
+              <div class="xrc-docs-title"><b>00</b><span><strong>全流程与任务窗口</strong><small>启动、跳转和单项运行说明</small></span></div>
+              <p>全流程启动会打开对应窗口，启动尚未运行的 7 项任务；已运行的任务继续执行。</p>
+              <ol>
+                <li><b>回复管理 · 2 项：</b>首页互动、通知互动，各自在独立窗口处理回复。</li>
+                <li><b>点赞管理 · 2 项：</b>首页帖子、帖子评论，分别运行；遇到 X 的限制会冷却或停止。</li>
+                <li><b>关注管理 · 2 项：</b>清理未回关、回关粉丝，分别处理对应名单；关注候选暂时停用。</li>
+                <li><b>定时发帖 · 1 项：</b>依次取知乎、今日头条热榜，素材不足再取 2aran 舆情分析；记录来源，按待发列表发送。</li>
+              </ol>
+              <p>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单独运行时，在对应子页签调整设置并点「启动单项任务」；回复或发帖等待倒计时时可点「立即开始」。DeepSeek API Key 可在上方填写，之后到设置中修改。</p>
+            </section>
+            <section class="xrc-docs-section" id="xrc-docs-rules">
               <div class="xrc-docs-title"><b>01</b><span><strong>官方公开规则</strong><small>更新依据：X Help Center · 2026</small></span></div>
               <ul>
                 <li><b>网页脚本自动化：</b>X 明确写明不得使用脚本直接自动操作网站，并提示可能导致账号永久停用。</li>
@@ -3444,7 +3463,7 @@
                 <a href="https://github.com/twitter/the-algorithm" target="_blank" rel="noopener noreferrer">公开推荐算法 ↗</a>
               </div>
             </section>
-            <section class="xrc-docs-section">
+            <section class="xrc-docs-section" id="xrc-docs-risk">
               <div class="xrc-docs-title"><b>02</b><span><strong>遇到风控提示时</strong><small>不要用更密集的重试对抗限制</small></span></div>
               <ol>
                 <li>立即停止时间线、通知互动、互关和定时发帖任务。</li>
@@ -3453,7 +3472,7 @@
                 <li>恢复后也不能把低于每日技术上限理解为合规或不会再次触发风控。</li>
               </ol>
             </section>
-            <section class="xrc-docs-section">
+            <section class="xrc-docs-section" id="xrc-docs-frequency">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
                 <li><b>发布规则：</b>定时发帖先从知乎热榜选题，再读今日头条；素材不足时才读 2aran 舆情分析。开头抓住人、结尾留一点余味，避免重复句式；保存每条出处。</li>
@@ -3467,7 +3486,7 @@
                 <li>清理未回关和回关粉丝共用同一组额度：2 秒一个，两项合计每 15 个暂停 30 分钟，每日合计最多 400 个；关注候选暂时停用。</li>
               </ul>
             </section>
-            <section class="xrc-docs-section">
+            <section class="xrc-docs-section" id="xrc-docs-releases">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
                 <article><b>v3.27.18</b><span><strong>云端同步兼容旧账号</strong><small>同步云端时兼容旧版 default 占位账号，并把云端记录归并到当前账号。</small></span></article>
@@ -3627,14 +3646,8 @@
             </div>
           </div>
           <div class="xrc-flow-guide" id="xrc-flow-guide" data-xrc-flow-guide hidden>
-            <p><b>全流程启动</b>会打开对应窗口，启动尚未运行的 7 项任务；已运行的任务继续执行。</p>
-            <ol>
-              <li><b>回复管理 · 2 项</b>首页互动、通知互动，各自在独立窗口处理回复。</li>
-              <li><b>点赞管理 · 2 项</b>首页帖子、帖子评论，分别运行；遇到 X 的限制会冷却或停止。</li>
-              <li><b>关注管理 · 2 项</b>清理未回关、回关粉丝，分别处理对应名单；关注候选暂时停用。</li>
-              <li><b>定时发帖 · 1 项</b>依次取知乎、今日头条热榜，素材不足再取 2aran 舆情分析；记录来源，按待发列表发送。</li>
-            </ol>
-            <p>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单独运行时，在对应子页签调整设置并点「启动单项任务」；回复或发帖等待倒计时时可点「立即开始」。DeepSeek API Key 可在上方填写，之后到设置中修改。</p>
+            <p><b>全流程说明已移到文档中心。</b>那里有任务清单、窗口跳转规则和单项运行方式。</p>
+            <button type="button" class="xrc-flow-docs-link" data-xrc-flow-docs>打开文档中心并查看全流程说明 ↗</button>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>回复管理</span></button></div>
@@ -3943,7 +3956,7 @@
         const revealed = input.classList.toggle("is-revealed");
         event.currentTarget.textContent = revealed ? "隐藏" : "显示";
       });
-      panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => {
+      const openDocs = (targetId = "") => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
           writeSaved({ running: state.running, total: state.total });
@@ -3959,7 +3972,19 @@
         syncMonitorMenu(panel);
         syncReportPage(panel);
         syncHeaderMenu(panel);
-        panel.querySelector("[data-xrc-docs]").hidden = false;
+        const docs = panel.querySelector("[data-xrc-docs]");
+        docs.hidden = false;
+        if (targetId) window.setTimeout(() => {
+          const target = docs.querySelector(`#${targetId}`);
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+          target?.classList.add("xrc-docs-targeted");
+          window.setTimeout(() => target?.classList.remove("xrc-docs-targeted"), 1200);
+        }, 0);
+      };
+      panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
+      panel.querySelector("[data-xrc-flow-docs]")?.addEventListener("click", () => openDocs("xrc-docs-flow"));
+      panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
+        button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
       panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
         panel.querySelector("[data-xrc-docs]").hidden = true;

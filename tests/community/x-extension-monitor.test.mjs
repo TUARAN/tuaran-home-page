@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -77,9 +77,9 @@ test('monitor queries selected day for details and the latest 14 days for trends
   assert.equal(result.selectedDate, '2026-10-17')
   assert.equal(result.offset, 20)
   assert.equal(result.limit, 20)
-  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 20, 20])
-  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date = ?')).values, ['2026-10-17'])
-  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['2026-10-05', '2026-10-18'])
+  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, ['x', start, start + 86400000, 20, 20])
+  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date = ?')).values, ['x', '2026-10-17'])
+  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['x', '2026-10-05', '2026-10-18'])
   assert.equal(calls.some((call) => call.sql.includes('GROUP BY')), false)
   assert.equal(result.eventTotal, 3)
   assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 3)
@@ -101,6 +101,51 @@ test('live monitor refresh avoids trend and daily aggregate queries', async () =
   assert.equal(result.now, NOW)
   assert.equal(calls.length, 3)
   assert.equal(calls.some((sql) => /GROUP BY|COUNT\(\*\)|x_extension_daily_reports/.test(sql)), false)
+})
+
+test('monitor scopes Juejin devices, receipts and trend to one platform', async () => {
+  const calls = []
+  const db = { prepare(sql) { return {
+    bind(...values) { calls.push({ sql, values }); return this },
+    async all() {
+      if (sql.includes('community_action_devices')) return { results: [{ id: 'juejin-device', last_seen_at: NOW - 1000 }] }
+      if (sql.includes('community_action_daily_counts') && sql.includes('report_date = ?')) return { results: [{ task: 'article-post', result: 'failed', count: 2 }] }
+      if (sql.includes('community_action_daily_counts')) return { results: [{ date: '2026-10-17', task: 'article-post', result: 'failed', count: 2 }] }
+      if (sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')) return { results: [{ id: 'juejin-event', task: 'article-post', result: 'failed', target_id: 'draft-1', occurred_at: NOW - 86400000 }] }
+      return { results: [] }
+    },
+    async first() { return sql.includes('sqlite_master') ? { sql: "WHEN NEW.platform IN ('x', 'xhs', 'juejin')" } : { total: 0 } },
+  } } }
+  const result = await readExtensionMonitor(db, { platform: 'juejin', date: '2026-10-17', now: NOW })
+  assert.equal(result.platform, 'juejin')
+  assert.equal(result.devices[0].phase, 'online')
+  assert.deepEqual(result.tasks.map((task) => task.task), ['daily-checkin', 'pin-post', 'article-post'])
+  assert.equal(result.tasks.find((task) => task.task === 'article-post').failed, 2)
+  assert.equal(result.trend.at(-2).failed, 2)
+  assert.equal(result.events[0].targetId, 'draft-1')
+  assert.equal(result.reportTotal, 0)
+  assert.equal(calls.some((call) => call.sql.includes('x_extension_daily_reports') || call.sql.includes('x_extension_runtime')), false)
+  assert.ok(calls.filter((call) => call.sql.includes('community_action_events')).every((call) => call.values[0] === 'juejin'))
+  assert.equal((await readExtensionLive(db, { platform: 'juejin', now: NOW })).devices[0].phase, 'online')
+  await assert.rejects(readExtensionMonitor(db, { platform: 'unknown', now: NOW }), /INVALID_PLATFORM/)
+})
+
+test('Xiaohongshu keeps paged receipts visible before all-platform count migration', async () => {
+  const calls = []
+  const db = { prepare(sql) { return {
+    bind(...values) { calls.push({ sql, values }); return this },
+    async all() {
+      if (sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')) return { results: [{ id: 'xhs-event', task: 'recommend-comment', result: 'success', occurred_at: NOW - 86400000 }] }
+      return { results: [] }
+    },
+    async first() { return sql.includes('sqlite_master') ? { sql: "WHEN NEW.platform = 'x'" } : { total: 25 } },
+  } } }
+  const result = await readExtensionMonitor(db, { platform: 'xhs', date: '2026-10-17', now: NOW })
+  assert.equal(result.countsMigrationRequired, true)
+  assert.equal(result.events[0].taskLabel, '推荐评论')
+  assert.equal(result.eventTotal, 25)
+  assert.equal(result.trend.at(-1).success, 0)
+  assert.equal(calls.some((call) => call.sql.includes('community_action_daily_counts')), false)
 })
 
 test('monitor does not fall back to scanning receipts before count migration', async () => {

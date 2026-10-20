@@ -3,18 +3,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-import { AdminButton, AdminPage, EmptyState, Section, StatusPill } from '../../components/ui'
+import { AdminButton, AdminPage, Section, StatusPill } from '../../components/ui'
 import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 import CommunityOperationsPlan from './CommunityOperationsPlan'
-
-const RESULT_META = {
-  success: { label: '成功', tone: 'success' },
-  failed: { label: '失败', tone: 'danger' },
-  skipped: { label: '跳过', tone: 'neutral' },
-  limited: { label: '受限', tone: 'warning' },
-}
 
 const PLATFORM_LABEL = {
   x: 'X',
@@ -42,7 +35,7 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'x-assistant',
     platform: 'x',
     label: 'X 高频互动助手',
-    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在 X 插件监控查看。',
+    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
     href: '/resources/x-reply-clipboard-extension',
   },
   {
@@ -175,9 +168,6 @@ function resolveView(searchParams) {
 }
 
 function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
-  const devices = center?.devices || []
-  const recent = center?.recent || []
-
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
       {error ? <p className="mb-0 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
@@ -189,8 +179,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
-        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">X 的运行状态、日期统计与每日报告统一在 X 插件监控查看。</p>
-        <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/x-monitor" variant="primary">X 插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">X、小红书和掘金的设备状态、日期统计与回执统一在插件监控查看。</p>
+        <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/monitor" variant="primary">插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
       <Section
@@ -220,11 +210,10 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                 <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
               </div>
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
-              {item.href ? (
-                <div className="mt-3">
-                  <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton>
-                </div>
-              ) : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
+                {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
+              </div>
               {item.id === 'x-assistant' ? <XReplyDownloadPasswordPanel /> : null}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
@@ -232,66 +221,6 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         </ul>
       </Section>
 
-      <Section title="其他插件设备" description="小红书与掘金插件最近的连接情况。X 设备请看 X 插件监控。">
-        {devices.length ? (
-          <ul className="m-0 grid gap-2 p-0">
-            {devices.map((device) => (
-              <li key={device.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#e4e6dc] px-3 py-2 text-[13px] dark:border-[#263142]">
-                <span className="font-medium text-[#25261f] dark:text-gray-100">
-                  {PLATFORM_LABEL[device.platform] || device.platform}
-                  {device.accountHandle ? ` · @${device.accountHandle}` : ' · 账号未上报'}
-                </span>
-                <span className="flex flex-wrap items-center gap-2 text-[#7a7c70] dark:text-gray-400">
-                  <StatusPill size="sm" tone={device.online ? 'info' : 'neutral'}>{device.online ? '有心跳' : '无心跳'}</StatusPill>
-                  <span>v{device.extensionVersion || '—'}</span>
-                  <span>{formatTime(device.lastSeenAt)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState title="还没有设备" description="插件保存密钥并打开对应网站后，这里会出现心跳。" />
-        )}
-      </Section>
-
-      <Section title="其他插件回执" description="小红书与掘金的最近回执；X 回执在 X 插件监控按日期查看。">
-        {recent.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
-              <thead>
-                <tr className="text-[#7a7c70] dark:text-gray-400">
-                  <th className="py-2 pr-3 font-medium">时间</th>
-                  <th className="py-2 pr-3 font-medium">平台</th>
-                  <th className="py-2 pr-3 font-medium">任务</th>
-                  <th className="py-2 pr-3 font-medium">结果</th>
-                  <th className="py-2 pr-3 font-medium">账号</th>
-                  <th className="py-2 font-medium">目标</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((event) => {
-                  const meta = RESULT_META[event.result] || { label: event.result, tone: 'neutral' }
-                  return (
-                    <tr key={event.id} className="border-t border-[#e4e6dc] dark:border-[#263142]">
-                      <td className="py-2 pr-3 whitespace-nowrap">{formatTime(event.occurredAt)}</td>
-                      <td className="py-2 pr-3">{PLATFORM_LABEL[event.platform] || event.platform}</td>
-                      <td className="py-2 pr-3">{event.taskLabel}</td>
-                      <td className="py-2 pr-3">
-                        <StatusPill size="sm" tone={meta.tone}>{meta.label}</StatusPill>
-                        {event.errorCode ? <span className="ml-2 text-[#7a7c70] dark:text-gray-400">{event.errorCode}</span> : null}
-                      </td>
-                      <td className="py-2 pr-3">{event.accountHandle ? `@${event.accountHandle}` : '—'}</td>
-                      <td className="py-2 max-w-[16rem] truncate">{event.targetId || '—'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState title="还没有回执" description="插件确认一条回复、评论、关注或发帖后，会出现在这里。" />
-        )}
-      </Section>
     </div>
   )
 }
@@ -309,10 +238,10 @@ function OverviewPanel({ onOpenMode }) {
       </Section>
       <Section
         title="浏览器插件"
-        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；X 的运行与统计统一在监控页查看。"
-        actions={<><AdminButton size="sm" href="/admin/community-actions/x-monitor">X 插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
+        description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；运行状态与确认回执统一在插件监控查看。"
+        actions={<><AdminButton size="sm" href="/admin/community-actions/monitor">插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
       >
-        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">X 插件监控集中查看实时运行状态、历史日期的确认动作和每日报告。插件台管理共用密钥，并查看小红书与掘金回执。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的本地上传报告也在那里查看。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>X 高频互动助手：回复、互关、推文浇给</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>
@@ -404,8 +333,6 @@ export default function CommunityActionsClient() {
 
   useEffect(() => {
     refresh()
-    const timer = window.setInterval(refresh, 20000)
-    return () => window.clearInterval(timer)
   }, [refresh])
 
   async function copySecret() {

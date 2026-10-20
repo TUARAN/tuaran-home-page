@@ -156,7 +156,7 @@ test('automation workspace hub and sidebar expose one task center plus focused p
 
   assert.deepEqual(
     listWorkspaceChildren(automation).map((item) => item.label),
-    ['任务中心', 'A 股研究自动化', '加密调研自动化', '社区动作', '站内互动']
+    ['任务中心', 'A 股研究自动化', '加密调研自动化', '社区动作', '插件监控', '站内互动']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

@@ -1,8 +1,7 @@
-import AdminPageGate from '../../../components/AdminPageGate'
-import XMonitorClient from './XMonitorClient'
+import { redirect } from 'next/navigation'
 
-export const metadata = { title: 'X 插件监控', robots: { index: false, follow: false } }
+export const metadata = { title: '插件监控', robots: { index: false, follow: false } }
 
 export default function XMonitorPage() {
-  return <AdminPageGate label="X 插件监控" returnTo="/admin/community-actions/x-monitor"><XMonitorClient /></AdminPageGate>
+  redirect('/admin/community-actions/monitor?platform=x')
 }

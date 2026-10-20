@@ -10,7 +10,7 @@ const RESULTS = [
   { key: 'skipped', label: '跳过', color: 'bg-slate-400' },
 ]
 
-export default function XMonitorTrend({ days = [], tasks = [], selectedDate, onDateChange }) {
+export default function PluginMonitorTrend({ days = [], tasks = [], selectedDate, onDateChange }) {
   const [selectedTask, setSelectedTask] = useState('all')
   const task = selectedTask === 'all' || tasks.some((item) => item.task === selectedTask) ? selectedTask : 'all'
   const rows = days.map((day) => ({

@@ -10,6 +10,7 @@ export const dynamic = 'force-static'
 
 const path = '/resources/big-interaction-whitepaper'
 const url = `https://2aran.com${path}`
+const shareUrl = 'https://2aran.com/x'
 const title = '大互动理论白皮书'
 const description = '从照顾身体，到通过真实互动认识自己、拓展边界：大互动理论的概念、实践路径、互动质量框架与适用边界。'
 
@@ -74,7 +75,7 @@ export default function BigInteractionWhitepaperPage() {
           <p className={styles.heroDescription}>通过真实交流获得新的视角，通过反馈调整行动。更广阔的生活，始于一次愿意走出去的互动。</p>
           <div className={styles.heroActions}>
             <a className={styles.primaryAction} href="#abstract">阅读白皮书 <span aria-hidden="true">↗</span></a>
-            <SharePageButton title={title} text={description} url={url} size="md" idleLabel="分享白皮书" />
+            <SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享白皮书" />
           </div>
         </div>
         <div className={styles.heroArt}>

@@ -90,7 +90,7 @@ const HOME_EXPLORE_GROUPS = [
       { id: 'codex-reset', href: '/codex-reset', title: 'Codex 重置', titleEn: 'Codex reset', desc: '额度重置与发卡日历', descEn: 'Quota reset and credit calendar', icon: IconCalendarEvent },
       { id: 'interactive', href: '/rich-pages', title: '互动专题', titleEn: 'Interactives', desc: '可筛选、可操作的内容', descEn: 'Filterable, interactive stories', icon: IconPointer },
       { id: 'works', href: '/works', title: '原创项目', titleEn: 'Original projects', desc: '产品、工具与实验作品', descEn: 'Products, tools and experiments', icon: IconBulb },
-      { id: 'resources', href: '/articles?group=resource', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconArchive },
+      { id: 'resources', href: '/resources', title: '资源', titleEn: 'Resources', desc: '档案、下载与收藏', descEn: 'Archives, downloads and bookmarks', icon: IconArchive },
       { id: 'workbuddy', href: 'https://workbuddy.2aran.com/', title: 'WorkBuddy 学习手册', titleEn: 'WorkBuddy guides', desc: '手册、案例与课程', descEn: 'Guides, cases and courses', icon: IconSchool, external: true, analyticsId: 'workbuddy' },
     ],
   },

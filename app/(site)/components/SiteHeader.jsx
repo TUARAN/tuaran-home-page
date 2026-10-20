@@ -41,9 +41,10 @@ import {
 import { getTagToneClass } from '../../../lib/site/tagTone'
 import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 
-const DESKTOP_CHANNEL_GROUPS = [
-  SITE_CHANNELS.slice(0, 3),
-  SITE_CHANNELS.slice(3),
+const NAV_GROUPS = [
+  { key: 'content-product', channels: SITE_CHANNELS.filter((channel) => ['content', 'systems'].includes(channel.key)) },
+  { key: 'browse', shortcuts: SITE_CONTENT_SHORTCUTS, channels: SITE_CHANNELS.filter((channel) => channel.key === 'tools') },
+  { key: 'other', channels: SITE_CHANNELS.filter((channel) => !['content', 'systems', 'tools'].includes(channel.key)) },
 ]
 
 function ContentShortcutLink({ item, isActive, onNavigate }) {
@@ -859,9 +860,17 @@ export default function SiteHeader() {
 
           <div className="hidden items-center gap-3 md:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
-              {DESKTOP_CHANNEL_GROUPS.map((channels, groupIndex) => (
-                <div key={`nav-group-${groupIndex}`} className="site-nav-cluster">
-                  {channels.map((channel) => {
+              {NAV_GROUPS.map((group) => (
+                <div key={group.key} className="site-nav-cluster">
+                  {group.shortcuts?.map((item) => (
+                    <ContentShortcutLink
+                      key={item.key}
+                      item={item}
+                      isActive={activeContentShortcut?.key === item.key}
+                      onNavigate={() => setOpenChannel(null)}
+                    />
+                  ))}
+                  {group.channels.map((channel) => {
                     const isActive = channel.match(pathname, searchParams) && !(channel.key === 'content' && activeContentShortcut)
                     if (channel.direct) {
                       return (
@@ -882,32 +891,23 @@ export default function SiteHeader() {
                         ? 'right'
                         : 'center'
                     return (
-                      <div key={channel.key} className="contents">
-                        <ChannelTrigger
-                          channel={channel}
-                          isOpen={isOpen}
-                          isActive={isActive}
-                          pathname={pathname}
-                          searchParams={searchParams}
-                          onToggle={{
-                            open: () => setOpenChannel(channel.key),
-                            close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
-                            toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
-                          }}
-                          onClose={() => setOpenChannel(null)}
-                          align={align}
-                          account={account}
-                          navOverrides={account?.navOverrides}
-                        />
-                        {channel.key === 'content' ? SITE_CONTENT_SHORTCUTS.map((item) => (
-                          <ContentShortcutLink
-                            key={item.key}
-                            item={item}
-                            isActive={activeContentShortcut?.key === item.key}
-                            onNavigate={() => setOpenChannel(null)}
-                          />
-                        )) : null}
-                      </div>
+                      <ChannelTrigger
+                        key={channel.key}
+                        channel={channel}
+                        isOpen={isOpen}
+                        isActive={isActive}
+                        pathname={pathname}
+                        searchParams={searchParams}
+                        onToggle={{
+                          open: () => setOpenChannel(channel.key),
+                          close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
+                          toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
+                        }}
+                        onClose={() => setOpenChannel(null)}
+                        align={align}
+                        account={account}
+                        navOverrides={account?.navOverrides}
+                      />
                     )
                   })}
                 </div>
@@ -997,76 +997,82 @@ export default function SiteHeader() {
           </button>
         ) : null}
         <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
-          <div className="mb-2 grid grid-cols-2 gap-2">
-            {SITE_CONTENT_SHORTCUTS.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
-                className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-center text-[15px] font-medium ${item.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
-              >
-                {navLabel(item, locale)}
-              </Link>
-            ))}
-          </div>
-          {SITE_CHANNELS.map((channel) => {
-            const expanded = openMobileChannel === channel.key
-            const sections = getChannelNavSections(channel, account, account?.navOverrides)
-            const activeHref = channel.match(pathname, searchParams) ? getActiveNavHref(sections, pathname, searchParams) : null
-            if (channel.direct) {
-              return (
-                <Link
-                  key={channel.key}
-                  href={channel.href}
-                  aria-current={activeHref ? 'page' : undefined}
-                  className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${activeHref ? 'site-menu-item-active' : ''}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {navLabel(channel, locale)}
-                </Link>
-              )
-            }
-            return (
-              <div key={channel.key} className="site-mobile-card rounded-2xl border">
-                <button
-                  type="button"
-                  onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
-                  aria-expanded={expanded}
-                  className="site-menu-title flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium"
-                >
-                  {navLabel(channel, locale)}
-                  <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
-                    <ChevronDown />
-                  </span>
-                </button>
-                {expanded ? (
-                  <div className="site-mobile-section-divider space-y-2 border-t px-2 pb-3 pt-2">
-                    {sections.map((section) => {
-                      const tier = getTierStyle(section.title)
-                      return (
-                        <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>
-                          <p className={`mb-1 px-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
-                            {navSectionTitle(section, locale)}
-                          </p>
-                          <div className="flex flex-col">
-                            {section.items.map((item) => (
-                              <MenuItem
-                                key={item.href + item.label}
-                                item={item}
-                                active={item.href === activeHref}
-                                onNavigate={() => setMobileMenuOpen(false)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
+          {NAV_GROUPS.map((group, index) => (
+            <div key={group.key} className={`flex flex-col gap-1.5 ${index ? 'mt-2 border-t border-[var(--site-line)] pt-3' : ''}`}>
+              {group.shortcuts?.length ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {group.shortcuts.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
+                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-center text-[15px] font-medium ${item.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
+                    >
+                      {navLabel(item, locale)}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+              {group.channels.map((channel) => {
+                const expanded = openMobileChannel === channel.key
+                const sections = getChannelNavSections(channel, account, account?.navOverrides)
+                const activeHref = channel.match(pathname, searchParams) ? getActiveNavHref(sections, pathname, searchParams) : null
+                if (channel.direct) {
+                  return (
+                    <Link
+                      key={channel.key}
+                      href={channel.href}
+                      aria-current={activeHref ? 'page' : undefined}
+                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${activeHref ? 'site-menu-item-active' : ''}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {navLabel(channel, locale)}
+                    </Link>
+                  )
+                }
+                return (
+                  <div key={channel.key} className="site-mobile-card rounded-2xl border">
+                    <button
+                      type="button"
+                      onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
+                      aria-expanded={expanded}
+                      className="site-menu-title flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium"
+                    >
+                      {navLabel(channel, locale)}
+                      <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
+                        <ChevronDown />
+                      </span>
+                    </button>
+                    {expanded ? (
+                      <div className="site-mobile-section-divider space-y-2 border-t px-2 pb-3 pt-2">
+                        {sections.map((section) => {
+                          const tier = getTierStyle(section.title)
+                          return (
+                            <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>
+                              <p className={`mb-1 px-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
+                                {navSectionTitle(section, locale)}
+                              </p>
+                              <div className="flex flex-col">
+                                {section.items.map((item) => (
+                                  <MenuItem
+                                    key={item.href + item.label}
+                                    item={item}
+                                    active={item.href === activeHref}
+                                    onNavigate={() => setMobileMenuOpen(false)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          ))}
         </nav>
       </div>
     </>

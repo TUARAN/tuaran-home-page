@@ -33,25 +33,21 @@ const VISUALS = {
   utility: {
     eyebrow: 'USE', icon: 'world',
     image: '/images/tools/categories/direct.webp',
-    imageTint: '#3c9b96',
     cover: 'from-[#d8f0ec] via-[#eaf7f4] to-[#c9e9e5] text-[#366b68] dark:from-[#173d3e] dark:via-[#193438] dark:to-[#285252] dark:text-[#bce5df]',
   },
   'x-platform': {
     eyebrow: 'X / TWITTER', icon: 'x',
     image: '/images/tools/categories/x-platform.webp',
-    imageTint: '#5279bb',
     cover: 'from-[#dce8f8] via-[#ecf2fb] to-[#cdddf3] text-[#3c5c85] dark:from-[#1b3152] dark:via-[#1a2b44] dark:to-[#29486b] dark:text-[#c2d7f2]',
   },
   analysis: {
     eyebrow: 'ANALYZE', icon: 'activity',
     image: '/images/tools/categories/analysis.webp',
-    imageTint: '#7379b2',
     cover: 'from-[#e1e5f6] via-[#f0f1fa] to-[#d5dcf0] text-[#4e5885] dark:from-[#282e50] dark:via-[#222943] dark:to-[#3b4268] dark:text-[#ccd3f0]',
   },
   'ai-dev': {
     eyebrow: 'BUILD', icon: 'code',
     image: '/images/tools/categories/ai-dev.webp',
-    imageTint: '#8b70bc',
     cover: 'from-[#e9e1f6] via-[#f4eefb] to-[#ddd1f0] text-[#665287] dark:from-[#34264e] dark:via-[#2d2543] dark:to-[#493461] dark:text-[#decaf1]',
   },
 }

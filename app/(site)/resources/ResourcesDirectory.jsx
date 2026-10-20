@@ -11,11 +11,11 @@ const CATEGORIES = [
 ]
 
 const VISUALS = {
-  reading: { eyebrow: 'READ', icon: 'books', cover: 'from-[#e8e0d0] via-[#f4efe3] to-[#dbd0ba] text-[#69543a] dark:from-[#383126] dark:via-[#2b2924] dark:to-[#453a2b] dark:text-[#eddbb6]' },
-  learning: { eyebrow: 'LEARN', icon: 'brain', cover: 'from-[#dbe8ed] via-[#eef4f4] to-[#cbdfe4] text-[#386677] dark:from-[#1b3540] dark:via-[#1a2b35] dark:to-[#294754] dark:text-[#bfdee8]' },
-  media: { eyebrow: 'EXPLORE', icon: 'sparkles', cover: 'from-[#eaddf2] via-[#f4ecf6] to-[#ddcfeb] text-[#705780] dark:from-[#34263e] dark:via-[#2b2537] dark:to-[#493450] dark:text-[#e4ceef]' },
-  collections: { eyebrow: 'SAVE', icon: 'list', cover: 'from-[#dcebdc] via-[#eff4e9] to-[#d2e3d0] text-[#466a48] dark:from-[#213b2d] dark:via-[#203329] dark:to-[#30513b] dark:text-[#c7e2c8]' },
-  downloads: { eyebrow: 'GET', icon: 'download', cover: 'from-[#e3e9f3] via-[#f0f3f8] to-[#d7e0ee] text-[#425a7b] dark:from-[#26344b] dark:via-[#202c3e] dark:to-[#344662] dark:text-[#d1def3]' },
+  reading: { eyebrow: 'READ', icon: 'books', image: '/images/directory-covers/resources/reading.webp', cover: 'from-[#e8e0d0] via-[#f4efe3] to-[#dbd0ba] text-[#69543a] dark:from-[#383126] dark:via-[#2b2924] dark:to-[#453a2b] dark:text-[#eddbb6]' },
+  learning: { eyebrow: 'LEARN', icon: 'brain', image: '/images/directory-covers/resources/learning.webp', cover: 'from-[#dbe8ed] via-[#eef4f4] to-[#cbdfe4] text-[#386677] dark:from-[#1b3540] dark:via-[#1a2b35] dark:to-[#294754] dark:text-[#bfdee8]' },
+  media: { eyebrow: 'EXPLORE', icon: 'sparkles', image: '/images/directory-covers/resources/media.webp', cover: 'from-[#eaddf2] via-[#f4ecf6] to-[#ddcfeb] text-[#705780] dark:from-[#34263e] dark:via-[#2b2537] dark:to-[#493450] dark:text-[#e4ceef]' },
+  collections: { eyebrow: 'SAVE', icon: 'list', image: '/images/directory-covers/resources/collections.webp', cover: 'from-[#dcebdc] via-[#eff4e9] to-[#d2e3d0] text-[#466a48] dark:from-[#213b2d] dark:via-[#203329] dark:to-[#30513b] dark:text-[#c7e2c8]' },
+  downloads: { eyebrow: 'GET', icon: 'download', image: '/images/directory-covers/resources/downloads.webp', cover: 'from-[#e3e9f3] via-[#f0f3f8] to-[#d7e0ee] text-[#425a7b] dark:from-[#26344b] dark:via-[#202c3e] dark:to-[#344662] dark:text-[#d1def3]' },
 }
 
 const CONFIG = {
@@ -51,7 +51,7 @@ function resourceCategory(item) {
 }
 
 export default function ResourcesDirectory({ resources }) {
-  const items = resources.map((resource) => {
+  const items = resources.map((resource, index) => {
     const category = resourceCategory(resource)
     const categoryLabel = CATEGORIES.find((entry) => entry.id === category).title
     return {
@@ -59,6 +59,10 @@ export default function ResourcesDirectory({ resources }) {
       id: resource.id || `resource:${resource.href}`,
       category,
       categoryLabel,
+      coverImage: VISUALS[category].image,
+      coverImageAlt: `${categoryLabel}分类视觉：${resource.title}`,
+      coverImagePriority: index < 4,
+      showStudioCoverImage: true,
       coverLabel: resource.tagLabel?.replace(/^资源库 · /, '') || categoryLabel,
       summary: resource.summary || categoryLabel,
       meta: [resource.date, categoryLabel].filter(Boolean),

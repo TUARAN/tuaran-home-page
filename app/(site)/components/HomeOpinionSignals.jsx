@@ -71,7 +71,6 @@ export default function HomeOpinionSignals() {
   const [recommended, setRecommended] = useState(null)
   const [recommendedFailed, setRecommendedFailed] = useState(false)
   const [recommendationRetry, setRecommendationRetry] = useState(0)
-  const [expandedRecommendation, setExpandedRecommendation] = useState('')
 
   useEffect(() => {
     let active = true
@@ -186,30 +185,18 @@ export default function HomeOpinionSignals() {
         recommended?.length ? (
           <>
             <div className="home-opinion-list">
-              {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => {
-                const key = entry.guid || entry.link
-                const expanded = expandedRecommendation === key
-                return (
-                  <article key={key} className="home-opinion-sample">
-                    <button type="button" className="w-full text-left" aria-expanded={expanded} onClick={() => setExpandedRecommendation(expanded ? '' : key)}>
-                      <span className="home-opinion-sample-meta">
-                        <span className="home-opinion-sample-source">AI HOT</span>
-                        {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
-                      </span>
-                      <span className="home-opinion-sample-title"><strong>{entry.title}</strong><span className="home-opinion-external-arrow" aria-hidden="true">{expanded ? '−' : '+'}</span></span>
-                      {!expanded && entry.summary ? <small>{entry.summary}</small> : null}
-                    </button>
-                    {expanded ? (
-                      <div className="home-opinion-reader">
-                        <p>{entry.summary || <T zh="此条订阅没有提供摘要。" en="This feed item has no summary." />}</p>
-                        <a href={entry.link} target="_blank" rel="noopener noreferrer" className="no-external-arrow"><T zh="阅读原文（站外）" en="Read original (external)" /> ↗</a>
-                      </div>
-                    ) : null}
-                  </article>
-                )
-              })}
+              {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => (
+                <Link key={entry.guid || entry.link} href="/public-opinion" className="home-opinion-sample no-underline">
+                  <span className="home-opinion-sample-meta">
+                    <span className="home-opinion-sample-source">AI HOT</span>
+                    {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
+                  </span>
+                  <span className="home-opinion-sample-title"><strong>{entry.title}</strong></span>
+                  {entry.summary ? <small>{entry.summary}</small> : null}
+                </Link>
+              ))}
             </div>
-            <Link href="/resources/rss#rss-feed-ai-hot" className="home-opinion-cta no-underline"><T zh="查看 AI HOT 订阅" en="View AI HOT feed" /> <span aria-hidden="true">→</span></Link>
+            <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="进入舆情中心" en="Open public opinion center" /> <span aria-hidden="true">→</span></Link>
           </>
         ) : !recommended && !recommendedFailed ? (
           <OpinionListSkeleton label="正在获取 AI HOT 订阅" />
@@ -243,7 +230,7 @@ export default function HomeOpinionSignals() {
               const sentiment = getSentimentBucket(post.sentiment)
               const stance = STANCES[post.stance] ? post.stance : 'neutral'
               return (
-                <a key={post.id} href={post.url} target="_blank" rel="noreferrer" className="home-opinion-sample no-external-arrow">
+                <Link key={post.id} href="/public-opinion" className="home-opinion-sample no-underline">
                   <span className="home-opinion-sample-meta">
                     <span className="home-opinion-sample-source">{post.platform}</span>
                     <span className="home-opinion-sample-time">{post.time}</span>
@@ -255,10 +242,9 @@ export default function HomeOpinionSignals() {
                   </span>
                   <span className="home-opinion-sample-title">
                     <strong>{post.text}</strong>
-                    <span className="home-opinion-external-arrow" aria-hidden="true">↗</span>
                   </span>
                   <small>{post.viewpoint}</small>
-                </a>
+                </Link>
               )
             })}
           </div>

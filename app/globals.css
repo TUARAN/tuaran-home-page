@@ -2580,7 +2580,6 @@
       flex-direction: column;
     }
 
-    .home-main-column:first-child > :first-child,
     .home-main-column:nth-child(2) > :last-child {
       display: flex;
       flex: 1;
@@ -2589,21 +2588,17 @@
       min-height: 0;
     }
 
+    .home-main-column:first-child > :first-child,
     .home-main-column:first-child .h5-pull-root,
-    .home-main-column:first-child .home-featured-reading,
-    .home-main-column:nth-child(2) .home-inspirations {
-      flex: 1;
+    .home-main-column:first-child .home-featured-reading {
       align-self: stretch;
       width: 100%;
     }
 
-    .home-main-column:first-child .home-featured-reading {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .home-main-column:first-child .h5-batch-more {
-      margin-top: auto;
+    .home-main-column:nth-child(2) .home-inspirations {
+      flex: 1;
+      align-self: stretch;
+      width: 100%;
     }
 
     .home-main-column:nth-child(2) .home-inspiration-list {
@@ -2812,6 +2807,11 @@
   .home-inspirations,
   .home-opinion-panel {
     @apply h-auto min-w-0 self-start pt-4 md:px-5 md:pt-4;
+  }
+
+  .home-opinion-panel {
+    align-self: stretch;
+    width: 100%;
   }
 
   .home-inspirations {
@@ -3497,22 +3497,6 @@
   .home-opinion-sample small {
     @apply mt-1 line-clamp-2 text-[11px] leading-[1.5];
     color: var(--site-muted);
-  }
-
-  .home-opinion-reader {
-    @apply mt-3 rounded-xl border px-4 py-3 text-[12px] leading-6;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 55%, transparent);
-    color: var(--site-muted);
-  }
-
-  .home-opinion-reader p {
-    @apply mb-3 whitespace-pre-wrap;
-  }
-
-  .home-opinion-reader a {
-    @apply font-semibold underline underline-offset-4;
-    color: var(--site-accent-strong);
   }
 
   .home-opinion-cta {

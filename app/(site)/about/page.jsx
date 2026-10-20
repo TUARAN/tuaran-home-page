@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { AVATAR_PATH } from '../../../lib/auth/avatar'
+import { PUBLISHED_WORKS } from '../../../lib/site/publishedWorks'
 import {
   OPENCLAW_ACHIEVEMENT_COUNT,
   OPENCLAW_ACHIEVEMENTS,
@@ -16,7 +17,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '关于涂阿燃（TUARAN）｜FDE、KOL、矩联科技',
   description:
-    `涂阿燃（TUARAN，掘金安东尼）是 AI 前沿部署工程师、社区 KOL 与矩联科技创始人，长期研究与交付 AI Agent，著有《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
+    `涂阿燃（TUARAN，掘金安东尼）是 AI 前沿部署工程师、社区 KOL 与矩联科技创始人，长期研究与交付 AI Agent，著有《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -29,6 +30,7 @@ export const metadata = {
     '技术作者',
     '程序员成长手记',
     'AI Bots 通关指南',
+    '大模型的底层逻辑',
     'OpenClaw Contributor',
     ...OPENCLAW_ACHIEVEMENTS.map((item) => `OpenClaw PR ${item.number}`),
     '矩联科技',
@@ -80,7 +82,7 @@ const beliefs = [
 ]
 
 const introLines = [
-  { icon: '📚', text: '《程序员成长手记》《AI Bots 通关指南》作者' },
+  { icon: '📚', text: '《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者' },
   { icon: '💡', text: '专注前端工程化与 AI 智能体，深耕实战与技术社区共建' },
   {
     icon: '🧩',
@@ -96,12 +98,12 @@ const introLines = [
 ]
 
 const publisherAuthorBio =
-  '涂阿燃（TUARAN），AI 前沿部署工程师、技术作者、矩联科技创始人，曾任职于大型互联网企业与央企。长期从事前端工程化、大模型与 AI Agent 研究及产品实践，关注模型工具协议、上下文工程和智能体的工程化落地。自 2019 年开始技术写作，累计发布内容 1500 余篇，全网阅读量超过 600 万。著有《程序员成长手记》《AI Bots 通关指南》，同时也是开源项目 OpenClaw 贡献者，多项代码贡献已合并至主分支。擅长用清晰、易懂的方式讲解复杂技术，帮助读者建立对大模型的系统认知，并将其应用到真实工作与产品开发中。'
+  '涂阿燃（TUARAN），AI 前沿部署工程师、技术作者、矩联科技创始人，曾任职于大型互联网企业与央企。长期从事前端工程化、大模型与 AI Agent 研究及产品实践，关注模型工具协议、上下文工程和智能体的工程化落地。自 2019 年开始技术写作，累计发布内容 1500 余篇，全网阅读量超过 600 万。著有《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，同时也是开源项目 OpenClaw 贡献者，多项代码贡献已合并至主分支。擅长用清晰、易懂的方式讲解复杂技术，帮助读者建立对大模型的系统认知，并将其应用到真实工作与产品开发中。'
 
 const stats = [
   { value: '1500+', label: '公开内容/发帖' },
   { value: '600w+', label: '全网阅读' },
-  { value: '2', label: '出版作品' },
+  { value: String(PUBLISHED_WORKS.length), label: '出版作品' },
   { value: '6', label: '在维护站点' },
   { value: String(OPENCLAW_ACHIEVEMENT_COUNT), label: 'OpenClaw 合并 PR' },
   { value: '2016', label: '起步至今' },
@@ -116,27 +118,10 @@ const timeline = [
   { year: '2023', label: '出版《程序员成长手记》' },
   { year: '2024', label: '发布《AI Bots 通关指南》' },
   { year: '2025', label: '发起「博主联盟」· 共创「前端周刊」' },
-  { year: '2026', label: '矩联科技 · AI 共创' },
+  { year: '2026', label: '出版《大模型的底层逻辑》· 矩联科技 · AI 共创' },
 ]
 
-const publishedWorks = [
-  {
-    title: '《程序员成长手记》',
-    type: '技术图书',
-    year: '2023',
-    status: '已出版',
-    description: '围绕程序员成长、工程实践与职业发展的技术作品。',
-    image: '/images/books/programmer-growth-notes.jpg',
-  },
-  {
-    title: '《AI Bots 通关指南》',
-    type: '电子小册',
-    year: '2024',
-    status: '已发布',
-    description: '围绕 AI Bot 与智能体从入门到实践的电子小册。',
-    image: '/images/books/ai-bots-guide.png',
-  },
-]
+const publishedWorks = PUBLISHED_WORKS
 
 const aboutStructuredData = {
   '@context': 'https://schema.org',
@@ -150,7 +135,7 @@ const aboutStructuredData = {
       image: `https://2aran.com${AVATAR_PATH}`,
       jobTitle: ['AI 前沿部署工程师', '社区 KOL', '矩联科技创始人'],
       description:
-        'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
+        'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
       sameAs: [
         'https://github.com/TUARAN',
@@ -534,12 +519,12 @@ export default function AboutPage() {
           <p className={kicker}>Publications · 出版与发布</p>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
             <h2 className="border-b-0 pb-0 font-mono text-[20px] font-bold leading-8 text-[#e2ecf6] sm:text-[24px]">
-              两项已完成的技术写作作品
+              {publishedWorks.length} 项已完成的技术写作作品
             </h2>
             <CopyIntroButton text={publisherAuthorBio} direct label="复制出版简介" />
           </div>
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
-            这里仅列入已出版或已发布的作品，并区分技术图书与电子小册；已交稿、出版中或撰写中的项目不计入这两项成果。
+            已出版或已发布的作品包括技术图书与电子小册；已交稿、出版中或撰写中的项目不计入成果数量。
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

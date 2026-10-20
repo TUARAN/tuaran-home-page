@@ -41,6 +41,7 @@ import HomePrimaryColumnsClient, { HomeInspirations } from './components/HomePri
 import { HOME_MOBILE_CHANNELS } from '../../lib/site/siteMobileNav'
 import { AVATAR_PATH } from '../../lib/auth/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/site/siteIntro'
+import { PUBLISHED_WORKS } from '../../lib/site/publishedWorks'
 import { getHomeRecommendationCatalog } from '../../lib/home/homeHighlights'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
@@ -271,11 +272,11 @@ const SOCIAL_MEDIA_TOTALS = {
 const HOME_ACHIEVEMENT_LINKS = [
   {
     href: '/publications',
-    title: '技术作品出版 · 2 本',
+    title: `技术作品出版 · ${PUBLISHED_WORKS.length} 本`,
     compact: true,
     emoji: '📖',
-    image: '/images/books/ai-bots-guide.png',
-    imageAlt: '《扣子：AI Bots 通关指南》掘金小册封面',
+    image: PUBLISHED_WORKS[0].image,
+    imageAlt: `${PUBLISHED_WORKS[0].title}封面`,
     icon: IconFileText,
   },
 ]

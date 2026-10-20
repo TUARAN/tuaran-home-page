@@ -218,9 +218,11 @@ export default function ResumePage() {
                 <ul className="resume-works">
                   {resumeWorks.map((work) => (
                     <li key={work.title}>
-                      <a href={work.href} target="_blank" rel="noreferrer" className="resume-link">
-                        {work.title}
-                      </a>
+                      {work.href ? (
+                        <a href={work.href} target="_blank" rel="noreferrer" className="resume-link">{work.title}</a>
+                      ) : (
+                        <span>{work.title}</span>
+                      )}
                       <span className="resume-muted"> {work.meta}</span>
                     </li>
                   ))}

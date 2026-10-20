@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 import PageContainer from '../components/PageContainer'
+import { PUBLISHED_WORKS } from '../../../lib/site/publishedWorks'
 
 export const metadata = {
   title: '书籍出版 | tuaran',
@@ -9,8 +10,7 @@ export const metadata = {
 }
 
 const publicationItems = [
-  { title: '《程序员成长手记》', type: '技术图书', period: '2022-2023', status: '已出版', image: '/images/books/programmer-growth-notes.jpg', href: 'https://www.dedao.cn/ebook/detail?id=Lk89Yv4kyM12eaG795DmKAponOvLVWvoRl83ZzdbYxN84JQR6XgEqBPljrbpzARl' },
-  { title: '《AI Bots 通关指南》', type: '电子小册', period: '2024', status: '已发布', image: '/images/books/ai-bots-guide.png', href: 'https://juejin.cn/book/7351709145294176282' },
+  ...PUBLISHED_WORKS.map((work) => ({ ...work, period: work.year })),
   { title: '《5 小时吃透大模型》', type: '技术图书', period: '2024-2025', status: '已交稿 · 出版中' },
   { title: '《智能体实战（扣子 · n8n · Dify）》', type: '联合创作', period: '2025-2026', status: '撰写中' },
   { title: '《Seedance 2.0 电影级 AI 视频创作指南》', type: '联合创作', period: '2026 上半年', status: '已交稿 · 出版中' },
@@ -18,6 +18,9 @@ const publicationItems = [
 ]
 
 const coverStyles = {
+  大模型的底层逻辑: {
+    accent: 'from-[#f1f6fa] via-[#dcecf5] to-[#b9d9eb]',
+  },
   程序员成长手记: {
     accent: 'from-[#3f2f1a] via-[#6c4a23] to-[#b87a2a]',
   },
@@ -27,7 +30,7 @@ const coverStyles = {
 }
 
 export default function PublicationsPage() {
-  const publishedBooks = publicationItems.filter((item) => item.status.includes('已出版') || item.status.includes('已发布'))
+  const publishedBooks = PUBLISHED_WORKS
   const publishedCovers = publishedBooks.map((item) => ({
     title: item.title.replace(/[《》]/g, ''),
     accent: coverStyles[item.title.replace(/[《》]/g, '')]?.accent || 'from-[#2a2f36] via-[#39424d] to-[#566273]',
@@ -45,7 +48,7 @@ export default function PublicationsPage() {
             </p>
             <h1 className="home-section-title mb-2">书籍 / 电子册出版计划</h1>
             <p className="mb-0 text-[14px] leading-7 text-[#5d5d55] dark:text-gray-300">
-              这里展示当前出版进度，也保留你的设计构思图作为阶段版本参考。
+              已出版和已发布的作品，以及正在进行中的写作项目。
             </p>
           </div>
           <Link
@@ -62,32 +65,24 @@ export default function PublicationsPage() {
               已出版作品封面
             </p>
             <span className="font-mono text-[10px] tracking-[0.12em] text-[#858779] dark:text-[#8e9ab0]">
-              共 {publishedCovers.length} 本 · 点击封面查看 · 可横向滑动
+              共 {publishedCovers.length} 本 · 有外部链接的封面可点击 · 可横向滑动
             </span>
           </div>
           <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
             {publishedCovers.map((book) => (
-              <a
-                key={book.title}
-                href={book.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`查看《${book.title}》（新窗口打开）`}
-                className={`block w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:border-[#334155] dark:focus-visible:outline-[#9fbf9b]`}
-              >
-                {book.image ? (
+              <div key={book.title} className={`w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}>
+                {book.href ? (
+                  <a href={book.href} target="_blank" rel="noopener noreferrer" aria-label={`查看《${book.title}》（新窗口打开）`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:focus-visible:outline-[#9fbf9b]">
+                    <div className="relative aspect-[3/4] bg-[#101722]">
+                      <Image src={book.image} alt={`《${book.title}》封面`} fill sizes="(max-width: 768px) 56vw, 230px" unoptimized className="object-contain" />
+                    </div>
+                  </a>
+                ) : (
                   <div className="relative aspect-[3/4] bg-[#101722]">
-                    <Image
-                      src={book.image}
-                      alt={`《${book.title}》封面`}
-                      fill
-                      sizes="(max-width: 768px) 56vw, 230px"
-                      unoptimized
-                      className="object-contain"
-                    />
+                    <Image src={book.image} alt={`《${book.title}》封面`} fill sizes="(max-width: 768px) 56vw, 230px" unoptimized className="object-contain" />
                   </div>
-                ) : null}
-              </a>
+                )}
+              </div>
             ))}
           </div>
         </div>

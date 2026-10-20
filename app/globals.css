@@ -504,13 +504,6 @@
   width: 100%;
 }
 
-.rich-page-frame--feature.rich-page-frame--interactive > :where(main, div):first-of-type {
-  box-sizing: border-box;
-  margin-inline: auto;
-  padding-inline: clamp(16px, 5vw, 96px);
-  width: min(100%, 1600px);
-}
-
 @media (max-width: 640px) {
   .rich-page-frame--site > :where(main, div):first-of-type {
     max-width: 100% !important;

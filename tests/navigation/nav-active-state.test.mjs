@@ -8,11 +8,22 @@ const sources = await Promise.all(['site/engineeringWorks', 'content/communityTo
   (await readFile(new URL(`../../lib/${name}.js`, import.meta.url), 'utf8'))
     .replace(/^import .*$/gm, '').replace(/^export /gm, '')
 ))
-const { SITE_CHANNELS, getChannelNavSections, getActiveNavHref } = vm.runInNewContext(
-  `${sources.join('\n')}\n;({ SITE_CHANNELS, getChannelNavSections, getActiveNavHref })`,
+const { SITE_CHANNELS, SITE_CONTENT_SHORTCUTS, getChannelNavSections, getActiveNavHref } = vm.runInNewContext(
+  `${sources.join('\n')}\n;({ SITE_CHANNELS, SITE_CONTENT_SHORTCUTS, getChannelNavSections, getActiveNavHref })`,
   { URL, URLSearchParams },
 )
 const sectionsFor = (key) => getChannelNavSections(SITE_CHANNELS.find((channel) => channel.key === key), null)
+
+test('content shortcuts select interactive works and resources without claiming tool downloads', () => {
+  const interactive = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'interactive')
+  const resources = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'resources')
+  assert.equal(interactive.match('/rich-pages'), true)
+  assert.equal(interactive.match('/x-automation-retrospective'), true)
+  assert.equal(resources.match('/articles', new URLSearchParams('group=resource')), true)
+  assert.equal(resources.match('/resources/rss', new URLSearchParams()), true)
+  assert.equal(resources.match('/resources/codex-model-switcher', new URLSearchParams()), false)
+  assert.equal(resources.match('/articles', new URLSearchParams('group=article')), false)
+})
 
 test('content dropdown shows four selected topics and three content types', () => {
   const content = SITE_CHANNELS.find((channel) => channel.key === 'content')

@@ -30,6 +30,7 @@ import { pick } from '../../../lib/site/i18n'
 import {
   SITE_ADMIN_NAV_LINK,
   SITE_CHANNELS,
+  SITE_CONTENT_SHORTCUTS,
   getActiveNavHref,
   getChannelNavSections,
   isAdminNavVisible,
@@ -44,6 +45,24 @@ const DESKTOP_CHANNEL_GROUPS = [
   SITE_CHANNELS.slice(0, 3),
   SITE_CHANNELS.slice(3),
 ]
+
+function ContentShortcutLink({ item, isActive, onNavigate }) {
+  const { locale } = useLocale()
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={isActive ? 'page' : undefined}
+      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
+      data-analytics-event="entry_click"
+      data-analytics-surface="global_nav"
+      data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
+      data-analytics-destination-id={item.href}
+    >
+      {navLabel(item, locale)}
+    </Link>
+  )
+}
 
 function ChevronDown() {
   return (
@@ -784,6 +803,8 @@ export default function SiteHeader() {
 
   if (pathname?.startsWith('/people/elon-musk')) return null
 
+  const activeContentShortcut = SITE_CONTENT_SHORTCUTS.find((item) => item.match(pathname, searchParams))
+
   return (
     <>
       <header className="site-header fixed left-0 right-0 top-0 z-[120] w-full border-b backdrop-blur">
@@ -841,7 +862,7 @@ export default function SiteHeader() {
               {DESKTOP_CHANNEL_GROUPS.map((channels, groupIndex) => (
                 <div key={`nav-group-${groupIndex}`} className="site-nav-cluster">
                   {channels.map((channel) => {
-                    const isActive = channel.match(pathname, searchParams)
+                    const isActive = channel.match(pathname, searchParams) && !(channel.key === 'content' && activeContentShortcut)
                     if (channel.direct) {
                       return (
                         <DirectChannelLink
@@ -861,23 +882,32 @@ export default function SiteHeader() {
                         ? 'right'
                         : 'center'
                     return (
-                      <ChannelTrigger
-                        key={channel.key}
-                        channel={channel}
-                        isOpen={isOpen}
-                        isActive={isActive}
-                        pathname={pathname}
-                        searchParams={searchParams}
-                        onToggle={{
-                          open: () => setOpenChannel(channel.key),
-                          close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
-                          toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
-                        }}
-                        onClose={() => setOpenChannel(null)}
-                        align={align}
-                        account={account}
-                        navOverrides={account?.navOverrides}
-                      />
+                      <div key={channel.key} className="contents">
+                        <ChannelTrigger
+                          channel={channel}
+                          isOpen={isOpen}
+                          isActive={isActive}
+                          pathname={pathname}
+                          searchParams={searchParams}
+                          onToggle={{
+                            open: () => setOpenChannel(channel.key),
+                            close: () => setOpenChannel((cur) => (cur === channel.key ? null : cur)),
+                            toggle: () => setOpenChannel((cur) => (cur === channel.key ? null : channel.key)),
+                          }}
+                          onClose={() => setOpenChannel(null)}
+                          align={align}
+                          account={account}
+                          navOverrides={account?.navOverrides}
+                        />
+                        {channel.key === 'content' ? SITE_CONTENT_SHORTCUTS.map((item) => (
+                          <ContentShortcutLink
+                            key={item.key}
+                            item={item}
+                            isActive={activeContentShortcut?.key === item.key}
+                            onNavigate={() => setOpenChannel(null)}
+                          />
+                        )) : null}
+                      </div>
                     )
                   })}
                 </div>
@@ -967,6 +997,19 @@ export default function SiteHeader() {
           </button>
         ) : null}
         <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            {SITE_CONTENT_SHORTCUTS.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
+                className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-center text-[15px] font-medium ${item.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
+              >
+                {navLabel(item, locale)}
+              </Link>
+            ))}
+          </div>
           {SITE_CHANNELS.map((channel) => {
             const expanded = openMobileChannel === channel.key
             const sections = getChannelNavSections(channel, account, account?.navOverrides)

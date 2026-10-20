@@ -86,6 +86,12 @@ function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
             sizes={compact ? '(min-width: 768px) 168px, 100vw' : '(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw'}
             className="object-cover transition duration-500 group-hover:scale-[1.035]"
           />
+          {visual?.imageTint ? (
+            <>
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 mix-blend-color" style={{ backgroundColor: visual.imageTint, opacity: 0.85 }} />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundColor: visual.imageTint, opacity: 0.16 }} />
+            </>
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/15" />
           <div className="showcase-cover-inner relative flex h-full items-start justify-between gap-3 p-3 text-[#25231f]">
             <span className="rounded-full border border-black/10 bg-white/75 px-2.5 py-1 font-mono text-[9px] font-black tracking-[0.18em] shadow-sm backdrop-blur-md">{visual?.eyebrow || 'OPEN'}</span>

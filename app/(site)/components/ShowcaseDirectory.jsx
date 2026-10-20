@@ -105,6 +105,9 @@ function Cover({ item, visuals, compact = false, layout = 'gallery' }) {
             sizes={compact ? '(min-width: 768px) 280px, 100vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'}
             className="object-cover object-top transition duration-500 group-hover:scale-[1.025]"
           />
+          {visual?.imageTint ? (
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 mix-blend-color" style={{ backgroundColor: visual.imageTint, opacity: 0.85 }} />
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/75" />
           <div className="showcase-cover-inner relative flex h-full flex-col justify-between p-5 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.55)]">
             <div className="flex items-center justify-between gap-3">

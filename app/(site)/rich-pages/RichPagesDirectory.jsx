@@ -6,32 +6,38 @@ const VISUALS = {
   'learning-tool': {
     eyebrow: 'LEARN', icon: 'books',
     image: '/images/rich-pages/categories/learning-tool.webp',
-    cover: 'from-[#d8e8ff] via-[#eef4ff] to-[#f8e9ff] text-[#365275] dark:from-[#182b46] dark:via-[#172235] dark:to-[#2a213c] dark:text-[#bdd4f3]',
+    imageTint: '#7777dc',
+    cover: 'from-[#dce2ff] via-[#edf0ff] to-[#d4dcfa] text-[#434c85] dark:from-[#222a50] dark:via-[#1b2444] dark:to-[#30335e] dark:text-[#c9d0ff]',
   },
   'ai-engineering': {
     eyebrow: 'BUILD', icon: 'brain',
     image: '/images/rich-pages/categories/ai-engineering.webp',
-    cover: 'from-[#17191e] via-[#252a33] to-[#3d4654] text-white dark:from-black dark:via-[#10151d] dark:to-[#252e3a]',
+    imageTint: '#318ac7',
+    cover: 'from-[#d8ecfb] via-[#e9f4fc] to-[#cce5f5] text-[#315e7d] dark:from-[#142e46] dark:via-[#172a3e] dark:to-[#214462] dark:text-[#b8dafa]',
   },
   'data-visualization': {
     eyebrow: 'EXPLORE', icon: 'chart',
     image: '/images/rich-pages/categories/data-visualization.webp',
-    cover: 'from-[#d9eee7] via-[#eef4df] to-[#f5e7bd] text-[#315c55] dark:from-[#12322f] dark:via-[#233328] dark:to-[#3d321d] dark:text-[#b8ddd2]',
+    imageTint: '#299eae',
+    cover: 'from-[#d5f0f1] via-[#e9f7f6] to-[#c7e9ed] text-[#315f68] dark:from-[#153b44] dark:via-[#163039] dark:to-[#22515b] dark:text-[#b8e5e8]',
   },
   'engineering-research': {
     eyebrow: 'ANALYZE', icon: 'tools',
     image: '/images/rich-pages/categories/engineering-research.webp',
-    cover: 'from-[#eadfd2] via-[#f6eee5] to-[#e5e0d6] text-[#6e4a31] dark:from-[#39251b] dark:via-[#2b2521] dark:to-[#242622] dark:text-[#e3c3a8]',
+    imageTint: '#6276ad',
+    cover: 'from-[#dee7f6] via-[#edf1f9] to-[#d2ddf1] text-[#42577b] dark:from-[#202e4a] dark:via-[#1b2940] dark:to-[#304268] dark:text-[#c3d0ed]',
   },
   'long-term-project': {
     eyebrow: 'CREATE', icon: 'sparkles',
     image: '/images/rich-pages/categories/long-term-project.webp',
-    cover: 'from-[#eee5ca] via-[#f8f2df] to-[#e2d3b4] text-[#6d5828] dark:from-[#352c17] dark:via-[#272418] dark:to-[#3c3020] dark:text-[#e5cf92]',
+    imageTint: '#8b70b8',
+    cover: 'from-[#e7def6] via-[#f2edfa] to-[#ded2ef] text-[#604e83] dark:from-[#302546] dark:via-[#29223d] dark:to-[#473258] dark:text-[#d9c6ef]',
   },
   'life-system': {
     eyebrow: 'LIFE', icon: 'clock',
     image: '/images/rich-pages/categories/life-system.webp',
-    cover: 'from-[#f3dcd6] via-[#f8ece4] to-[#e8e0cc] text-[#7b4d43] dark:from-[#3b211f] dark:via-[#302522] dark:to-[#363021] dark:text-[#e8bbb0]',
+    imageTint: '#4c9a9b',
+    cover: 'from-[#d9efef] via-[#ecf7f5] to-[#cce8e7] text-[#3b6667] dark:from-[#173c3e] dark:via-[#183337] dark:to-[#285255] dark:text-[#c0e5e2]',
   },
 }
 

@@ -54,7 +54,7 @@ function ContentShortcutLink({ item, isActive, onNavigate }) {
       href={item.href}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
-      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
+      className={`site-nav-trigger site-nav-browse-tab ${isActive ? 'site-nav-trigger-active' : ''}`}
       data-analytics-event="entry_click"
       data-analytics-surface="global_nav"
       data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
@@ -309,7 +309,7 @@ function DirectChannelLink({ channel, isActive, checkedInToday, onNavigate }) {
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       aria-label={isCheckin ? (checkedInToday ? '签到，今日已完成' : '签到有礼') : undefined}
-      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
+      className={`site-nav-trigger ${channel.key === 'tools' ? 'site-nav-browse-tab' : ''} ${isActive ? 'site-nav-trigger-active' : ''}`}
       data-analytics-event="entry_click"
       data-analytics-surface="global_nav"
       data-analytics-destination-kind="page"
@@ -861,7 +861,7 @@ export default function SiteHeader() {
           <div className="hidden items-center gap-3 md:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
               {NAV_GROUPS.map((group) => (
-                <div key={group.key} className="site-nav-cluster">
+                <div key={group.key} className={`site-nav-cluster ${group.key === 'browse' ? 'site-nav-cluster-browse' : ''}`}>
                   {group.shortcuts?.map((item) => (
                     <ContentShortcutLink
                       key={item.key}
@@ -1023,8 +1023,8 @@ export default function SiteHeader() {
                     <Link
                       key={channel.key}
                       href={channel.href}
-                      aria-current={activeHref ? 'page' : undefined}
-                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${activeHref ? 'site-menu-item-active' : ''}`}
+                      aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
+                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${channel.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {navLabel(channel, locale)}

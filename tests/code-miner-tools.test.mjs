@@ -28,6 +28,7 @@ test('JSON helpers format values and calculate nested depth', () => {
 })
 
 test('tool directory exposes the six migrated tools as internal entries', () => {
+  assert.match(toolItemsSource, /id: 'code-miner'[\s\S]*?href: '\/tools\/code-miner'/)
   for (const id of ['gif-search', 'image-compressor', 'qr-generator', 'json-formatter', 'base64-converter', 'decision-dice']) {
     assert.match(toolItemsSource, new RegExp(`id: '${id}'[\\s\\S]*href: '/tools/code-miner#`))
   }

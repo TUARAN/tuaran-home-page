@@ -5043,6 +5043,14 @@
     @apply inline-flex items-center gap-0.5;
   }
 
+  .site-nav-cluster-browse {
+    gap: 0.125rem;
+    padding: 0.15rem;
+    border: 1px solid color-mix(in srgb, var(--site-line) 76%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--site-panel-strong) 28%, transparent);
+  }
+
   .site-nav-cluster + .site-nav-cluster {
     position: relative;
     margin-left: 0.35rem;
@@ -5069,6 +5077,12 @@
     position: relative;
     @apply inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-sm font-medium no-underline transition-colors;
     color: var(--site-muted);
+  }
+
+  .site-nav-browse-tab {
+    min-width: 3.25rem;
+    justify-content: center;
+    padding-inline: 0.7rem;
   }
 
   .site-nav-vip-badge {
@@ -5130,6 +5144,17 @@
   .dark .site-nav-trigger-active:visited,
   .dark .site-nav-trigger-active:hover {
     color: var(--page-bg);
+  }
+
+  .site-nav-cluster-browse .site-nav-trigger-active,
+  .site-nav-cluster-browse .site-nav-trigger-active:visited,
+  .site-nav-cluster-browse .site-nav-trigger-active:hover,
+  .dark .site-nav-cluster-browse .site-nav-trigger-active,
+  .dark .site-nav-cluster-browse .site-nav-trigger-active:visited,
+  .dark .site-nav-cluster-browse .site-nav-trigger-active:hover {
+    background: var(--site-panel-strong);
+    color: var(--site-ink);
+    box-shadow: inset 0 -2px 0 var(--site-accent);
   }
 
   .site-account-button {

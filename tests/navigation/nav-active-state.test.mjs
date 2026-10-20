@@ -44,6 +44,7 @@ test('content dropdown shows four selected topics and three content types', () =
 })
 
 test('public opinion and Codex reset select their own analysis entries', () => {
+  assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'tools').direct, true)
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/public-opinion'), '/public-opinion')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/codex-reset'), '/codex-reset')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools'), '/tools')

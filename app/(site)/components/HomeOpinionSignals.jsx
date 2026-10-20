@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { selectHomeOpinionPosts } from '../../../lib/home/homeOpinionSignals'
 import { getSentimentBucket } from '../../../lib/publicOpinion/publicOpinionData'
+import { Skeleton } from '../../components/loading/LoadingPrimitives'
 import { T } from './LocaleProvider'
 
 const STANCES = {
@@ -38,6 +39,28 @@ function CollectionStatus({ updated }) {
       </span>
       <small className="home-opinion-collection-updated"><T zh={`更新于 ${updated}`} en={`Updated ${updated}`} /></small>
     </>
+  )
+}
+
+function OpinionListSkeleton({ label }) {
+  return (
+    <div role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">{label}</span>
+      <div className="home-opinion-list">
+        {Array.from({ length: HOME_OPINION_PREVIEW_COUNT }, (_, index) => (
+          <div key={index} className="home-opinion-sample" aria-hidden="true">
+            <div className="home-opinion-sample-meta">
+              <Skeleton className="h-2.5 w-12 rounded" />
+              <Skeleton className="h-2.5 w-20 rounded" />
+            </div>
+            <Skeleton className={`h-5 rounded ${index % 2 ? 'w-4/5' : 'w-[92%]'}`} />
+            <Skeleton className="mt-2 h-3 w-full rounded" />
+            <Skeleton className="mt-1.5 h-3 w-3/4 rounded" />
+          </div>
+        ))}
+      </div>
+      <Skeleton as="div" className="mt-3 h-11 rounded-xl" />
+    </div>
   )
 }
 
@@ -155,6 +178,9 @@ export default function HomeOpinionSignals() {
         {topics.map((topic) => (
           <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
         ))}
+        {!data && !failed ? [0, 1, 2].map((index) => (
+          <Skeleton key={index} className="mx-3 my-auto h-4 w-12 shrink-0 rounded" />
+        )) : null}
       </div>
       {activeTopic === 'recommended' ? (
         recommended?.length ? (
@@ -185,16 +211,16 @@ export default function HomeOpinionSignals() {
             </div>
             <Link href="/resources/rss#rss-feed-ai-hot" className="home-opinion-cta no-underline"><T zh="查看 AI HOT 订阅" en="View AI HOT feed" /> <span aria-hidden="true">→</span></Link>
           </>
+        ) : !recommended && !recommendedFailed ? (
+          <OpinionListSkeleton label="正在获取 AI HOT 订阅" />
         ) : (
           <div className="home-opinion-empty">
-            <p>{recommendedFailed || recommended ? <T zh="AI HOT 订阅暂时不可用。" en="AI HOT feed is unavailable." /> : <T zh="正在获取 AI HOT 订阅…" en="Loading AI HOT feed…" />}</p>
-            {recommendedFailed || recommended ? (
-              <button type="button" className="home-section-more" onClick={() => {
-                setRecommended(null)
-                setRecommendedFailed(false)
-                setRecommendationRetry((value) => value + 1)
-              }}><T zh="重试" en="Retry" /></button>
-            ) : null}
+            <p><T zh="AI HOT 订阅暂时不可用。" en="AI HOT feed is unavailable." /></p>
+            <button type="button" className="home-section-more" onClick={() => {
+              setRecommended(null)
+              setRecommendedFailed(false)
+              setRecommendationRetry((value) => value + 1)
+            }}><T zh="重试" en="Retry" /></button>
           </div>
         )
       ) : liveData && allPosts.length ? (
@@ -238,11 +264,11 @@ export default function HomeOpinionSignals() {
           </div>
           <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="查看完整舆情分析" en="View the full public opinion analysis" /> <span aria-hidden="true">→</span></Link>
         </>
+      ) : !data && !failed ? (
+        <OpinionListSkeleton label="正在获取公开讨论" />
       ) : (
         <div className="home-opinion-empty">
-          <p>{!data && !failed
-            ? <T zh="正在获取公开讨论…" en="Loading public discussions…" />
-            : <T zh="采集内容暂时不可用，稍后可以再来看看。" en="Collected discussions are unavailable. Please try again later." />}</p>
+          <p><T zh="采集内容暂时不可用，稍后可以再来看看。" en="Collected discussions are unavailable. Please try again later." /></p>
           <div className="home-opinion-empty-links">
             <Link href="/public-opinion#hot"><T zh="看热点榜" en="Hot topics" /></Link>
             <Link href="/public-opinion#trend"><T zh="看趋势" en="Trends" /></Link>

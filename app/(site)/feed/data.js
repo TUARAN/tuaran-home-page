@@ -31,6 +31,7 @@
 //   ── type=quote ──
 //   quote     引述正文
 //   author    署名（可选）
+//   image     配图（可选）
 // ============================================================
 
 export const FEED_TYPE_META = {
@@ -176,6 +177,12 @@ research.example.cloudflare.pay
 I just reserved my Cloudflare Wallet tag: http://[tuaran.cloudflare.pay](https://t.co/sIkiS7SYc0).
 
 Reserve yours now at http://[cloudflare.pay](https://t.co/P2zaScWBKE)`,
+    image: 'https://blog.cloudflare.com/_image?f=webp&fit=cover&h=1125&href=https%3A%2F%2Fblog.cloudflare.com%2F_emdash%2Fapi%2Fmedia%2Ffile%2F01KZ517G3BSVKQBTH2KNXENF5D.png&position=center&w=1999',
+    aspect: '16/9',
+    source: {
+      label: 'Cloudflare Wallets 官方公告',
+      href: 'https://blog.cloudflare.com/wallets/',
+    },
     tags: ['Cloudflare', 'AI Agent', '智能体互联网', 'x402', '支付', 'MCP'],
     date: '2026-08-05',
     time: '09:00',

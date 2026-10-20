@@ -299,7 +299,7 @@ function ItemMedia({ item, eager = false }) {
   if (item.type === 'video') {
     return <LazyVideo item={item} eager={eager} />
   }
-  if (item.type === 'image' || (item.type === 'link' && item.image)) {
+  if (item.type === 'image' || item.image) {
     return (
       <MediaFrame aspect={item.aspect || '16/9'}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -371,7 +371,7 @@ function HeadlineSummary({ item, accent }) {
 function HeadlineCard({ item, showPv = false, detailMode = false }) {
   const accent = HEADLINE_ACCENT[item.type] || '#f5a623'
   const media = <ItemMedia item={item} eager />
-  const hasMedia = item.type === 'video' || item.type === 'image' || (item.type === 'link' && item.image)
+  const hasMedia = item.type === 'video' || item.type === 'image' || Boolean(item.image)
 
   const text = (
     <div className={`flex min-w-0 flex-col justify-start ${hasMedia ? 'p-4 md:p-0' : 'lg:py-3'}`}>
@@ -554,6 +554,14 @@ function QuoteCard({ item, onSelect }) {
       className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50 ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={(event) => selectCardFromSurface(event, item, onSelect)}
     >
+      {item.image ? (
+        <FeedSelectionLink item={item} onSelect={onSelect} className="mb-3 block no-underline">
+          <MediaFrame aspect={item.aspect || '16/9'}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
+          </MediaFrame>
+        </FeedSelectionLink>
+      ) : null}
       <div className="mb-3"><TypeBadge type={item.type} /></div>
       <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
         <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">

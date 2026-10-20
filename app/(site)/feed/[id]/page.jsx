@@ -27,10 +27,10 @@ export async function generateMetadata({ params }) {
     ogImage = item.src?.startsWith('http') ? item.src : `${SITE_URL}${item.src}`
   } else if (item.type === 'video' && item.poster) {
     ogImage = item.poster?.startsWith('http') ? item.poster : `${SITE_URL}${item.poster}`
-  } else if (item.type === 'link' && item.image) {
+  } else if (item.image) {
     ogImage = item.image?.startsWith('http') ? item.image : `${SITE_URL}${item.image}`
   }
-  // quote 类型或无图时，走同目录 opengraph-image.jsx 动态生成文字卡片
+  // 无图时，走同目录 opengraph-image.jsx 动态生成文字卡片
   // （不设 images，Next.js 会自动找 opengraph-image 文件）
 
   const description = item.summary || item.quote || item.title

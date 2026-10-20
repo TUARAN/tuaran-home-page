@@ -262,7 +262,7 @@ function ListCard({ item, pv, visuals, config, layout }) {
   )
 }
 
-export default function ShowcaseDirectory({ items, categories, visuals, config, secondaryFilter }) {
+export default function ShowcaseDirectory({ items, categories, visuals, config, secondaryFilter, featured }) {
   const layout = config.layout || 'gallery'
   const isCatalog = layout === 'catalog'
   const gridClassName = isCatalog || config.gridColumns === 4
@@ -352,6 +352,8 @@ export default function ShowcaseDirectory({ items, categories, visuals, config, 
             {config.share ? <SharePageButton {...config.share} size="md" /> : null}
           </div>
         </header>
+
+        {featured ? <section aria-label="精选阅读" className="mt-6 mb-7">{featured}</section> : null}
 
         {config.categoryTabs ? (
           <section aria-label={config.filterAriaLabel} className="sticky top-[var(--site-header-height)] z-20 -mx-4 mb-5 border-b border-[#dedfd9] bg-[color-mix(in_srgb,var(--page-bg)_92%,transparent)] px-4 py-3 backdrop-blur-xl dark:border-[#27303a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">

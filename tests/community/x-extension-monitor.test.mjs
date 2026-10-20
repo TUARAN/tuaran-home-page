@@ -61,7 +61,7 @@ test('monitor trend fills 14 Beijing dates and separates task outcomes', () => {
   assert.equal(days[0].success, 0)
 })
 
-test('monitor queries selected day for counts, reports, and paged receipts', async () => {
+test('monitor queries selected day for details and the latest 14 days for trends', async () => {
   const calls = []
   const db = { prepare(sql) { return {
     bind(...values) { calls.push({ sql, values }); return this },
@@ -79,12 +79,13 @@ test('monitor queries selected day for counts, reports, and paged receipts', asy
   assert.equal(result.limit, 20)
   assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, [start, start + 86400000, 20, 20])
   assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date = ?')).values, ['2026-10-17'])
-  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['2026-10-04', '2026-10-17'])
+  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['2026-10-05', '2026-10-18'])
   assert.equal(calls.some((call) => call.sql.includes('GROUP BY')), false)
   assert.equal(result.eventTotal, 3)
   assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 3)
   assert.equal(result.trend.length, 14)
-  assert.equal(result.trend.at(-1).success, 3)
+  assert.equal(result.trend.at(-1).date, '2026-10-18')
+  assert.equal(result.trend.at(-2).success, 3)
   assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 20, 20])
   assert.equal(result.reportOffset, 20)
 })

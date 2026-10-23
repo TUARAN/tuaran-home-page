@@ -25,7 +25,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.12.1'
+const VERSION = '3.32.0'
 
 const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
 const description =
@@ -34,10 +34,15 @@ const shareText = 'X高频互动助手：一个扩展完成时间线回复、通
 
 const VERSION_HISTORY = [
   {
+    version: '3.32.0',
+    title: '任务状态与本地更新',
+    description: '新增任务详情、暂停后的自动重扫和本地新版提醒；评论通知只回复，清理未回关按资料中的中文判断。',
+    current: true,
+  },
+  {
     version: '3.12.1',
     title: '热点发帖提示词与取材修正',
     description: '发帖实际使用设置中的提示词；旧草稿不再发送。知乎、头条优先，素材不足时读取站内舆情分析，并保留来源。写法避免固定三行和空悬念。下载需联系站长获取密码。',
-    current: true,
   },
   {
     version: '3.9.0',

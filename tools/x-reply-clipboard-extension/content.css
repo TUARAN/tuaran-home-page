@@ -164,6 +164,34 @@
 }
 #x-reply-clipboard-panel .xrc-header-menu button:hover,
 #x-reply-clipboard-panel .xrc-quick-actions button:hover { border-color: var(--xrc-accent); color: var(--xrc-accent); }
+#x-reply-clipboard-panel .xrc-dev-update {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(15, 138, 114, 0.18);
+  background: rgba(15, 138, 114, 0.08);
+  color: #087c62;
+  font-size: 10px;
+  line-height: 1.35;
+}
+#x-reply-clipboard-panel .xrc-dev-update strong { flex: 0 0 auto; white-space: nowrap; }
+#x-reply-clipboard-panel .xrc-dev-update span { flex: 1 1 auto; min-width: 0; }
+#x-reply-clipboard-panel .xrc-dev-update button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.9);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-dev-update button:disabled { opacity: 0.6; cursor: default; }
+#x-reply-clipboard-panel .xrc-dev-update[data-phase="failed"] { color: #b4232d; background: rgba(180, 35, 45, 0.08); }
 #x-reply-clipboard-panel .xrc-quick-actions button {
   display: grid;
   place-items: center;

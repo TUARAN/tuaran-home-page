@@ -23,6 +23,7 @@
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+  const DEV_UPDATE_KEY = "xrcLocalDevUpdate";
   const RESET_EPOCH_KEY = "xrcResetEpoch";
   const SESSION_RESET_EPOCH_KEY = "xrcResetEpochSeen";
   const NOTIFICATION_HISTORY_LIMIT = 2000;
@@ -94,7 +95,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.29.3";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.0";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -134,7 +135,7 @@
     panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
-    unfollowEnglish: false,
+    unfollowEnglish: true,
     replyMode: "ai",
     aiKey: "",
     baiKey: "",
@@ -156,6 +157,9 @@
   };
 
   let pluginRuntime = { startedAt: null, tasks: {} };
+  let localDevUpdate = null;
+  let updateActionPending = false;
+  let updateActionMessage = "";
   let openTaskTabs = {};
   let likeController = null;
   let likeState = { running: false, stopping: false, count: 0, posts: 0, status: "点赞任务待命。" };
@@ -176,6 +180,9 @@
         },
         onLimit(accountHandle, target, errorCode) {
           reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "limited", errorCode, accountHandle });
+          if (errorCode === "automation-restricted") {
+            sendExtensionMessage({ type: "xrc-flow-pause", reason: "X 检测到疑似自动化操作，所有任务已停止；请人工检查账号状态" }).catch(() => {});
+          }
         },
         onUpdate(snapshot) {
           likeState = snapshot;
@@ -215,6 +222,7 @@
   let dailyReports = [];
   let dailyUploadSchedule = null;
   const REPORT_METRICS = ["comments", "likes", "follows", "unfollows", "followBacks", "posts"];
+  const MUTUAL_ACTIVE_KEY = "xrcMutualActiveMode";
   let dailyReportAccount = "__all__";
   let dailyReportDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
   let dailyReportMonth = dailyReportDate.slice(0, 7);
@@ -353,8 +361,6 @@
   let skipScheduledWait = false;
   let wakeScheduledWait = null;
   let reconnectOnline = false;
-  let notificationLikeOnly = false;
-  const likedOnlyIds = new Set();
   let highlightedPhraseIndex = null;
 
   const sleep = (ms) => timerApi?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -843,6 +849,7 @@
   function stopLocalTasks(reason = "全流程已暂停") {
     if (likeState.running) likeController?.stop?.();
     if (state.mutual?.running) mutualApi?.stop?.();
+    sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
     if (state.poster?.running) postApi?.stop?.();
     if (state.loopPromise || state.running) {
       cancelActiveAiRequest();
@@ -1439,7 +1446,7 @@
       panelView: "normal",
       assistantMode: "timeline",
       mutualMode: "unfollow",
-      unfollowEnglish: false,
+      unfollowEnglish: true,
       replyMode: "ai",
       pendingReply: "",
       pendingTweetId: ""
@@ -1478,7 +1485,7 @@
         panelView: validPanelView(parsed.panelView),
         assistantMode: validAssistantMode(parsed.assistantMode),
         mutualMode: validMutualMode(parsed.mutualMode),
-        unfollowEnglish: Boolean(parsed.unfollowEnglish),
+        unfollowEnglish: Number(parsed.unfollowEnglishDefaultVersion || 0) >= 1 ? Boolean(parsed.unfollowEnglish) : true,
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
@@ -1517,6 +1524,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
+        unfollowEnglishDefaultVersion: 1,
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
@@ -1549,6 +1557,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
+        unfollowEnglishDefaultVersion: 1,
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
@@ -1599,7 +1608,6 @@
     if (state.nextRoundAt > now) return `本轮已结束，下一轮 ${formatClock(state.nextRoundAt - now)} 后开始`;
     if (state.nextCycleAt > now) {
       const clock = formatClock(state.nextCycleAt - now);
-      if (/下一轮再回复/.test(state.status || "")) return `赞已点完，下一轮 ${clock} 后回复`;
       return /本轮提前结束/.test(state.status || "") ? `本轮已结束，下一轮 ${clock} 后开始` : `下一次 ${clock} 后开始`;
     }
     if (state.waitUntil > now) {
@@ -2062,20 +2070,6 @@
     }
   }
 
-  async function likeNotificationReply(tweet) {
-    if (state.assistantMode !== "notifications") return "ok";
-    if (tweet.article.querySelector('[data-testid="unlike"]')) return "ok";
-    const likeButton = tweet.article.querySelector('[data-testid="like"]') || tweet.likeButton;
-    if (!loopApi.isSubmitEnabled(likeButton)) return "like-disabled";
-    realClick(likeButton);
-    const confirmed = await waitUntil(
-      () => Boolean(tweet.article.querySelector('[data-testid="unlike"]')),
-      5000
-    );
-    if (confirmed) reportCommunityAction({ task: "reply-like", result: "success", targetId: tweet.id });
-    return confirmed ? "ok" : "like-unconfirmed";
-  }
-
   function dialogTargetsTweet(dialog, tweet) {
     const id = String(tweet?.id || "");
     if (!dialog || !id) return false;
@@ -2165,27 +2159,11 @@
     return unavailablePostToasts().some((node) => !toastsBefore?.has(node));
   }
 
-  function applyRiskStop() {
-    if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return;
-    if (!state.running && !state.loopPromise) return;
-    if (riskRoundAdvancing || state.nextRoundAt > Date.now() || state.nextCycleAt > Date.now()) return;
-    if (state.assistantMode === "notifications") {
-      if (notificationLikeOnly) return;
-      notificationLikeOnly = true;
-      riskRoundRequested = false;
-      state.riskPaused = false;
-      state.stopping = false;
-      state.pendingReply = "";
-      state.pendingTweetId = "";
-      state.status = "回复遇到限制，先把剩下的赞点完";
-      renderPanel();
-      return;
-    }
-    riskRoundRequested = true;
-    state.riskPaused = false;
-    state.stopping = false;
-    state.status = "X 提示操作过密，本轮提前结束";
-    renderPanel();
+  function applyRiskStop(reason = "X 检测到疑似自动化操作，所有任务已停止；请人工检查账号状态") {
+    if (state.stopping) return;
+    state.riskPaused = true;
+    stopLocalTasks(reason);
+    sendExtensionMessage({ type: "xrc-flow-pause", reason }).catch(() => {});
   }
 
   async function advanceRoundAfterRisk(summary = "X 提示操作过密，本轮提前结束") {
@@ -2195,10 +2173,7 @@
     riskRoundAdvancing = true;
     state.pendingReply = "";
     state.pendingTweetId = "";
-    if (state.assistantMode === "notifications") {
-      notificationLikeOnly = false;
-      return finishCycleAndScheduleNext(summary);
-    }
+    if (state.assistantMode === "notifications") return finishCycleAndScheduleNext(summary);
     const plan = ensureRunPlan();
     state.completedRounds = Math.min(plan.rounds, state.completedRounds + 1);
     state.pageCount = 0;
@@ -2577,15 +2552,7 @@
       if (findReplyRestrictionDialog() && !await dismissReplyRestrictionDialog()) {
         return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
       }
-      if (riskRoundRequested && state.assistantMode === "notifications") {
-        notificationLikeOnly = true;
-        riskRoundRequested = false;
-        state.pendingReply = "";
-        state.pendingTweetId = "";
-        state.status = "回复遇到限制，先把剩下的赞点完";
-        renderPanel();
-        await closeReplyComposer();
-      } else if (riskRoundRequested) {
+      if (riskRoundRequested) {
         return advanceRoundAfterRisk();
       }
       if (state.assistantMode !== "notifications") {
@@ -2627,12 +2594,9 @@
 
       const tweets = collectTweets();
       const seen = processedForCurrentMode();
-      const next = loopApi.nextTweet(tweets, notificationLikeOnly
-        ? { has: (id) => seen.has(id) || likedOnlyIds.has(id) }
-        : seen);
+      const next = loopApi.nextTweet(tweets, seen);
       if (!next) {
         if (state.assistantMode === "notifications" && hasReachedNotificationCutoff()) {
-          if (notificationLikeOnly) return advanceRoundAfterRisk("能点的赞已经点完，下一轮再回复");
           return finishCycleAndScheduleNext(`近 2 小时回复通知已处理完，本次完成 ${state.total} 条且不会重复互动`);
         }
         const before = tweetSignature(tweets);
@@ -2642,7 +2606,6 @@
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
           if (state.assistantMode === "notifications") {
-            if (notificationLikeOnly) return advanceRoundAfterRisk("能点的赞已经点完，下一轮再回复");
             return finishCycleAndScheduleNext(`近 2 小时没有更多待处理通知，本次完成 ${state.total} 条`);
           }
           if (state.pageCount === 0) {
@@ -2664,27 +2627,6 @@
       }
 
       stalled = 0;
-      if (state.assistantMode === "notifications") {
-        state.status = "正在给这条回复点赞…";
-        renderPanel();
-        const likeResult = await likeNotificationReply(next);
-        if (notificationLikeOnly) {
-          likedOnlyIds.add(next.id);
-          state.status = likeResult === "ok"
-            ? "已点赞，回复留到下一轮"
-            : "这条赞没有确认，先跳过。回复留到下一轮";
-          renderPanel();
-          await sleepActive(1200);
-          continue;
-        }
-        if (likeResult !== "ok") {
-          state.errors += 1;
-          state.status = `尚未互动：${failureLabel(likeResult)}。稍后重试同一条`;
-          renderPanel();
-          await sleepActive(1500);
-          continue;
-        }
-      }
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       if (state.replyMode === "ai") {
         const openDialog = findDialogComposer();
@@ -2738,9 +2680,7 @@
         }
       }
       if (state.stopping || !state.running) return "stopped";
-      state.status = state.replyMode === "ai"
-        ? `${state.assistantMode === "notifications" ? "已点赞，" : ""}AI 已生成：${phrase}`
-        : `${state.assistantMode === "notifications" ? "已点赞，" : ""}正在回复：${phrase}`;
+      state.status = state.replyMode === "ai" ? `AI 已生成：${phrase}` : `正在回复：${phrase}`;
       renderPanel();
       const result = await replyOnce(next, phrase);
       if (result === "stopped") {
@@ -2764,18 +2704,8 @@
           targetId: next.id,
           errorCode: "risk-blocked"
         });
-        if (state.assistantMode === "notifications") {
-          notificationLikeOnly = true;
-          riskRoundRequested = false;
-          state.pendingReply = "";
-          state.pendingTweetId = "";
-          likedOnlyIds.add(next.id);
-          await closeReplyComposer();
-          state.status = "回复遇到限制，先把剩下的赞点完";
-          renderPanel();
-          continue;
-        }
-        return advanceRoundAfterRisk();
+        applyRiskStop();
+        return "stopped";
       }
       if (result === "composer-already-open") {
         const closed = await closeReplyComposer();
@@ -2884,7 +2814,7 @@
         state.total += 1;
         writeSaved({ running: true, total: state.total });
         state.status = state.assistantMode === "notifications"
-          ? `已点赞并回复：${phrase}。最近 2 小时内本次已处理 ${state.total} 条`
+          ? `已回复：${phrase}。最近 2 小时内本次已处理 ${state.total} 条`
           : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${currentRoundTarget()}`;
         renderPanel();
         if (result === "sent-composer-open" && !await closeReplyComposer({ confirmedSent: true })) {
@@ -2928,8 +2858,9 @@
 
   function updateMutualState(next) {
     const wasRunning = Boolean(state.mutual?.running);
+    const previousPhase = currentTaskPhase();
     state.mutual = next || mutualApi?.snapshot?.() || state.mutual;
-    if (wasRunning !== Boolean(state.mutual?.running)) {
+    if (wasRunning !== Boolean(state.mutual?.running) || previousPhase !== currentTaskPhase()) {
       setRuntimeTaskActive(mutualTaskKey(), Boolean(state.mutual?.running), currentTaskPhase() || "running");
     }
     renderPanel();
@@ -3012,11 +2943,15 @@
       return;
     }
     if (state.mutual.running) {
-      if (state.mutual.mode === mode) mutualApi.stop();
+      if (state.mutual.mode === mode) {
+        sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
+        mutualApi.stop();
+      }
       return;
     }
     registerCurrentTaskTab(mutualTaskKey());
     mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
+    sessionStorage.setItem(MUTUAL_ACTIVE_KEY, mode);
     const result = await mutualApi.run(mode, updateMutualState);
     if (result?.navigate) {
       state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
@@ -3028,6 +2963,7 @@
       return;
     }
     if (result?.error) {
+      sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
       state.mutual = { ...state.mutual, status: result.error };
       renderPanel();
     }
@@ -3046,7 +2982,7 @@
     if (launch.assistantMode === "mutual") {
       if (state.mutual?.running) return;
       pendingMutualAutostart = true;
-      await onMutualAction(launch.mutualMode);
+      void onMutualAction(launch.mutualMode);
       return;
     }
     if (launch.assistantMode === "poster") {
@@ -3282,6 +3218,29 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
+  function renderDevUpdateBanner(panel) {
+    const banner = panel.querySelector("[data-xrc-dev-update]");
+    if (!banner) return;
+    const version = String(localDevUpdate?.version || "");
+    const phase = localDevUpdate?.phase;
+    const updatedRecently = phase === "updated" && Date.now() - Number(localDevUpdate.at) < 60 * 60 * 1000;
+    banner.hidden = !version || !["available", "waiting", "stopping", "applying", "failed"].includes(phase) && !updatedRecently;
+    if (banner.hidden) return;
+    banner.dataset.phase = phase;
+    banner.querySelector("strong").textContent = phase === "updated" ? `已更新到 v${version}` : `发现本地新版本 v${version}`;
+    banner.querySelector("span").textContent = updateActionMessage || (phase === "waiting"
+      ? "当前任务继续运行；点击立即更新会先停止全部任务"
+      : phase === "stopping" ? "正在停止全部任务，确认退出后切换版本"
+        : phase === "applying" ? "正在切换版本并刷新任务页"
+          : phase === "failed" ? localDevUpdate?.error || "自动切换未成功，可点击重试"
+            : phase === "updated" ? "任务页已加载新版本；任务保持停止"
+              : "空闲时自动更新，也可点击立即更新");
+    const button = banner.querySelector("[data-xrc-dev-update-now]");
+    button.hidden = phase === "updated";
+    button.disabled = updateActionPending || phase === "stopping" || phase === "applying";
+    button.textContent = updateActionPending ? "正在检查…" : phase === "failed" ? "重试更新" : "立即更新";
+  }
+
   function renderPanel() {
     if (panelDismissed && !state.running) return;
     if (!looksLoggedIn()) {
@@ -3323,6 +3282,7 @@
           <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
           <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
         </div>
+        <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止全部任务并更新本地开发版">立即更新</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
@@ -3518,8 +3478,8 @@
                 <div class="xrc-docs-title"><b>关注</b><span><strong>清理未回关规则</strong><small>关注管理 · 清理未回关</small></span></div>
                 <ul>
                   <li>默认只取消没有「Follows you」标记的 Following，带有互关标记的账号会保留。</li>
-                  <li>开启「非中文资料也清理」后，只有姓名和简介都完全不含汉字时，才会把互关账号加入取关候选；任一处有汉字就保留。</li>
-                  <li>清理未回关每次操作后间隔 2 秒，不设固定批次或每日数量上限；X 出现限速提示时暂停 15 分钟并显示倒计时。</li>
+                  <li>默认开启「非中文资料也清理」：姓名和简介都完全不含汉字时，互关账号也进入取关候选；任一处有汉字就保留。未回关账号正常清理。</li>
+                  <li>清理未回关每次操作后间隔 2 秒，不设固定批次或每日数量上限；X 出现限速提示时暂停 15 分钟并显示倒计时。扫到列表底部后等待 30 分钟，再从顶部扫描。</li>
                 </ul>
               </section>
             </section>
@@ -3560,12 +3520,15 @@
                 <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。自动任务会持续按选定频率运行，不会因为个人工作时间而暂停或减速。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
                 <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
-                <li>回关粉丝使用共享额度：每 15 个暂停 30 分钟，每日合计最多 400 个；清理未回关每次间隔 2 秒，但不套用共享批次或每日数量上限；关注候选暂时停用。</li>
+                <li>回关粉丝优先处理姓名或简介含汉字的账号，其他账号随后处理；每 15 个暂停 30 分钟，每日合计最多 400 个，次日继续。清理未回关每次间隔 2 秒，不套用共享批次或每日数量上限；两项扫到列表底部后 30 分钟重新扫描。关注候选暂时停用。</li>
               </ul>
             </section>
             <section class="xrc-docs-section" id="xrc-docs-releases">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.32.0</b><span><strong>手动拉取本地更新</strong><small>新版本提示可点击立即更新；先停止任务，确认全部退出后切换版本并刷新任务页。</small></span></article>
+                <article><b>v3.31.0</b><span><strong>评论与点赞分离，关注任务自动重扫</strong><small>评论通知不再点赞；X 拒绝自动化时停止任务；关注任务每 30 分钟重扫，回关优先中文资料。</small></span></article>
+                <article><b>v3.30.0</b><span><strong>本地开发版更新提醒</strong><small>发现本地新版本时提醒；任务运行结束后自动重载并刷新已登记任务页。</small></span></article>
                 <article><b>v3.29.3</b><span><strong>保留含中文资料的互关账号</strong><small>姓名或简介任一片段有汉字就不按非中文规则取关。</small></span></article>
                 <article><b>v3.29.2</b><span><strong>任务详情按钮对齐</strong><small>详情文字在按钮内水平、垂直居中。</small></span></article>
                 <article><b>v3.29.1</b><span><strong>清理未回关间隔与限速倒计时</strong><small>每次取关后等 2 秒；X 限速时显示 15 分钟冷却。</small></span></article>
@@ -3876,6 +3839,21 @@
         if (anyTaskRunning()) return;
         panelDismissed = true;
         panel.remove();
+      });
+      panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
+        if (updateActionPending) return;
+        updateActionPending = true;
+        updateActionMessage = "正在检查本地版本，确认有更新后会先停止全部任务";
+        renderPanel();
+        try {
+          const result = await sendExtensionMessage({ type: "xrc-dev-update-apply" });
+          updateActionMessage = result?.ok ? "任务已停止，正在重载扩展并刷新 X 任务页" : result?.error || "更新未完成，请重试";
+        } catch (error) {
+          updateActionMessage = error?.message || "无法连接本地更新服务，请重试";
+        } finally {
+          updateActionPending = false;
+          renderPanel();
+        }
       });
       panel.querySelector("[data-xrc-actions-toggle]").addEventListener("click", () => {
         headerMenuOpen = !headerMenuOpen;
@@ -4254,7 +4232,9 @@
         button.addEventListener("click", () => {
           const mode = button.dataset.xrcMutualAction;
           const cooling = state.mutual?.running && state.mutual?.mode === mode && Number(state.mutual?.cooldownUntil) > Date.now();
-          if (cooling) mutualApi?.startNow?.();
+          const dailyFull = mode === "followBack" && Number(state.mutual?.sharedDailyFollowed) >= 400;
+          if (cooling && !dailyFull) mutualApi?.startNow?.();
+          else if (cooling && dailyFull) onMutualAction(mode);
           else onMutualAction(mode);
         });
       });
@@ -4582,11 +4562,9 @@
         const activeMode = mutual.running && mutual.mode === mode;
         const idleLabel = "启动单项任务";
         const cooldown = activeMode && mutual.cooldownUntil ? Math.max(0, Math.ceil((mutual.cooldownUntil - Date.now()) / 1000)) : 0;
-        const cooldownMinutes = Math.floor(cooldown / 60);
-        const cooldownLabel = cooldownMinutes > 0
-          ? `${cooldownMinutes}:${String(cooldown % 60).padStart(2, "0")}`
-          : `${cooldown} 秒`;
-        button.textContent = activeMode ? cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
+        const cooldownLabel = cooldown >= 60 ? formatClock(cooldown * 1000) : `${cooldown} 秒`;
+        const dailyFull = mode === "followBack" && Number(mutual.sharedDailyFollowed) >= 400;
+        button.textContent = activeMode ? dailyFull && cooldown > 0 ? `今日已满 · ${cooldownLabel} · 点此停止` : cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
@@ -4645,6 +4623,7 @@
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
     syncCurrentTaskPhase();
     paintFlowButton(panel);
+    renderDevUpdateBanner(panel);
     applyTaskTitle();
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
@@ -4839,6 +4818,7 @@
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
     await loadPluginRuntime();
+    localDevUpdate = (await chrome.storage.local.get(DEV_UPDATE_KEY))?.[DEV_UPDATE_KEY] || null;
     await loadOpenTaskTabs();
     if (state.assistantMode.startsWith("likes-") && pluginRuntime.tasks?.[state.assistantMode] && !launchedStart) {
       await setRuntimeTaskActive(state.assistantMode, false);
@@ -4874,6 +4854,9 @@
       begin({ resume: true });
     }
     if (launchedStart) await startLaunchedTask(launch);
+    else if (state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
+      void onMutualAction(state.mutualMode);
+    }
   }
 
   if (document.readyState === "loading") {
@@ -4913,6 +4896,10 @@
     if (changes[PLUGIN_RUNTIME_KEY]) {
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
     }
+    if (changes[DEV_UPDATE_KEY]) {
+      localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;
+      if (["stopping", "applying", "updated", "failed"].includes(localDevUpdate?.phase)) updateActionMessage = "";
+    }
     if (changes.xrcTargetFollowDaily && mutualApi?.refreshSharedFollowRate && !state.mutual?.running) {
       mutualApi.refreshSharedFollowRate().then((snapshot) => {
         if (state.mutual?.running) return;
@@ -4932,12 +4919,9 @@
   });
 
   window.setInterval(() => {
-    const alreadyWaiting = state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now() || riskRoundAdvancing;
-    if (state.assistantMode === "notifications" && state.running && !state.stopping && !alreadyWaiting && !notificationLikeOnly && automationWarningNodes().length > 0) {
-      notificationLikeOnly = true;
-    } else if (state.assistantMode === "timeline" && state.running && !state.stopping && !alreadyWaiting && !riskRoundRequested && automationWarningNodes().length > 0) {
-      riskRoundRequested = true;
-    }
+    if (!state.stopping
+      && (state.running || state.mutual?.running || state.poster?.running || likeState.running)
+      && automationWarningNodes().length > 0) applyRiskStop();
     renderPanel();
   }, 1000);
 

@@ -7,6 +7,7 @@
   const FOLLOW_MAX_PER_RUN = 400;
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
+  const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
   const TARGET_FOLLOW_HANDLES = ["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
@@ -34,7 +35,7 @@
     skipped: 0,
     errors: 0,
     cooldownUntil: 0,
-    unfollowEnglish: false,
+    unfollowEnglish: true,
     seenHandles: new Set(),
     skippedHandles: new Set(),
     acknowledgedRateLimits: new Set(),
@@ -379,6 +380,11 @@
     return Boolean(name && bio && isNonChineseText(name) && isNonChineseText(bio));
   }
 
+  function profileHasChinese(row) {
+    return Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
+      .some((node) => /\p{Script=Han}/u.test(textOf(node).replace(FOLLOWS_YOU_RE, "")));
+  }
+
   function rows() {
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     const candidates = [
@@ -400,12 +406,13 @@
       const handle = findHandle(row, followingButton || followBackButton || followButton);
       const followsYou = hasFollowsYou(row);
       const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
+      const hasChineseProfile = mode === "followBack" && profileHasChinese(row);
       const candidate = mode === "unfollow"
         ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
         : mode === "followBack"
           ? Boolean(handle && followBackButton && followsYou)
           : Boolean(handle && followButton && !followBackButton && !followingButton);
-      return { row, handle, followsYou, nonChineseProfile, followingButton, followBackButton, followButton, candidate };
+      return { row, handle, followsYou, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 
@@ -569,9 +576,6 @@
     }
     const unlimitedUnfollow = mode === "unfollow";
     await loadSharedFollowRate();
-    if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
-      return { error: `今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限` };
-    }
     reset(mode, onUpdate);
     if (unlimitedUnfollow) state.cooldownUntil = 0;
     emit(mode === "unfollow" ? "开始清理未回关账号" : mode === "followBack" ? "开始回关粉丝" : "开始关注候选");
@@ -582,12 +586,26 @@
       return true;
     }
     let stalled = 0;
+    let preferChinese = mode === "followBack";
+    let stopReason = "";
 
     while (!state.stopping) {
+      if (!listReady(mode)) {
+        stopReason = "已离开当前关注名单，任务已停止；回到对应列表后可重新启动";
+        break;
+      }
       if (!unlimitedUnfollow) await loadSharedFollowRate();
       if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
-        emit(`今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限`);
-        break;
+        const tomorrow = new Date();
+        tomorrow.setHours(24, 1, 0, 0);
+        state.cooldownUntil = tomorrow.getTime();
+        while (!state.stopping && Date.now() < state.cooldownUntil) {
+          emit(`今日回关额度已用完，${formatClock(state.cooldownUntil - Date.now())} 后继续`);
+          await sleepActive(Math.min(60000, Math.max(1, state.cooldownUntil - Date.now())));
+        }
+        if (state.stopping) break;
+        state.cooldownUntil = 0;
+        continue;
       }
       if (!unlimitedUnfollow && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
@@ -602,7 +620,8 @@
           state.skipped += 1;
         }
       }
-      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle));
+      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle)
+        && (!preferChinese || item.hasChineseProfile));
       if (candidate) {
         stalled = 0;
         state.seenHandles.add(candidate.handle);
@@ -620,9 +639,7 @@
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
-        const count = mode === "unfollow" ? state.unfollowed : mode === "followBack" ? state.followedBack : state.targetFollowed;
-        if (!unlimitedUnfollow && count >= FOLLOW_MAX_PER_RUN) break;
-        if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) break;
+        if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) continue;
         if (!unlimitedUnfollow && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + FOLLOW_BATCH_COOLDOWN_MS;
@@ -638,20 +655,41 @@
       const signature = items.map((item) => item.handle).join("|");
       const result = await scrollForward(signature, mode);
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
-      if (stalled >= MAX_STALLED_SCROLLS) break;
+      if (stalled >= MAX_STALLED_SCROLLS) {
+        stalled = 0;
+        if (preferChinese) {
+          preferChinese = false;
+          window.scrollTo({ top: 0, behavior: "auto" });
+          emit("含中文资料的粉丝已优先检查，继续检查其他粉丝");
+          await sleepActive(SCROLL_DELAY_MS);
+          continue;
+        }
+        state.cooldownUntil = Date.now() + RESCAN_INTERVAL_MS;
+        while (!state.stopping && Date.now() < state.cooldownUntil) {
+          emit(`本轮名单已检查，${formatClock(state.cooldownUntil - Date.now())} 后重新扫描`);
+          await sleepActive(Math.min(1000, Math.max(1, state.cooldownUntil - Date.now())));
+        }
+        if (state.stopping) break;
+        state.cooldownUntil = 0;
+        state.seenHandles.clear();
+        preferChinese = mode === "followBack";
+        window.scrollTo({ top: 0, behavior: "auto" });
+        emit("正在从列表顶部开始新一轮扫描");
+        await sleepActive(SCROLL_DELAY_MS);
+      }
     }
 
     state.running = false;
     state.stopping = false;
     state.cooldownUntil = 0;
-    emit(state.mode === "unfollow"
+    emit(stopReason || (state.mode === "unfollow"
       ? `完成：取消 ${state.unfollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
       : state.mode === "followBack"
         ? `完成：本次回关 ${state.followedBack} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
-        : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`);
+        : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`));
     state.mode = "";
     emit();
-    return true;
+    return stopReason ? { error: stopReason } : true;
   }
 
   function stop() {
@@ -694,6 +732,7 @@
       FOLLOW_MAX_PER_RUN,
       FOLLOW_DAILY_LIMIT,
       RATE_LIMIT_COOLDOWN_MS,
+      RESCAN_INTERVAL_MS,
       TARGET_FOLLOW_HANDLES
     }
   };

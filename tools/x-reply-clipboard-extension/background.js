@@ -1,6 +1,6 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("receipt.js");
+if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js");
 
 const AI_SETTINGS_KEY = "xrcAiSettings";
 const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
@@ -20,6 +20,7 @@ const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TASK_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "poster", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
+let manualUpdatePromise = null;
 const contextTabs = new Set();
 const activeReplyRequests = new Map();
 
@@ -1185,6 +1186,20 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "全流程暂停失败" }));
       return true;
     }
+    if (message?.type === "xrc-dev-update-apply") {
+      if (!manualUpdatePromise) {
+        manualUpdatePromise = globalThis.XrcLocalDevUpdate?.applyNow?.({
+          readRuntime: readPluginRuntime,
+          taskTabs: getOpenTaskTabs,
+          stopTasks: pauseAllTasks,
+          reload: () => setTimeout(() => chrome.runtime.reload(), 750)
+        }) || Promise.resolve({ ok: false, error: "本地更新服务没有加载" });
+        manualUpdatePromise.then(() => { manualUpdatePromise = null; }, () => { manualUpdatePromise = null; });
+      }
+      manualUpdatePromise.then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "手动更新失败" }));
+      return true;
+    }
     if (message?.type === "xrc-reset-state") {
       resetExtensionState(sender)
         .then(sendResponse)
@@ -1288,6 +1303,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     return true;
   });
   globalThis.XrcCommunityReceipt?.install?.();
+  globalThis.XrcLocalDevUpdate?.install?.({ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs });
   chrome.tabs?.onRemoved?.addListener((tabId) => {
     removeTaskTab(tabId).catch(() => {});
     removeRuntimeTab(tabId).catch(() => {});

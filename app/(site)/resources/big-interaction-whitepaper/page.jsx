@@ -1,9 +1,9 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
+import PlateExhibition from './PlateExhibition'
 import styles from './whitepaper.module.css'
 
 export const dynamic = 'force-static'
@@ -11,13 +11,13 @@ export const dynamic = 'force-static'
 const path = '/resources/big-interaction-whitepaper'
 const url = `https://2aran.com${path}`
 const shareUrl = 'https://2aran.com/x'
-const title = '大互动理论白皮书'
-const description = '从照顾身体，到通过真实互动认识自己、拓展边界：大互动理论的概念、实践路径、互动质量框架与适用边界。'
+const title = '大互动绿皮书'
+const description = '逼近极限，突破极限，拓展自身边界。浏览四张大互动图版与对应观点，探索真实互动的实践方法。'
 
 export const metadata = {
-  title: `${title}｜从封闭走向真实互动`,
+  title: `${title}｜逼近极限，拓展边界`,
   description,
-  keywords: ['大互动理论', '大互动白皮书', '真实互动', '反馈', '自我成长', '社交关系'],
+  keywords: ['大互动理论', '大互动绿皮书', '真实互动', '反馈', '自我成长', '社交关系'],
   alternates: { canonical: path },
   openGraph: { type: 'article', title, description, url, locale: 'zh_CN', images: ['/resources/big-interaction-whitepaper/03.jpg'] },
   twitter: { card: 'summary_large_image', title, description },
@@ -30,7 +30,7 @@ const chapters = [
   ['quality', '03 · 质量评估'],
   ['practice', '04 · 实践方法'],
   ['boundaries', '05 · 边界与局限'],
-  ['plates', '附录 · 原始图版'],
+  ['plates', '图版展览'],
 ]
 
 const dimensions = [
@@ -42,10 +42,10 @@ const dimensions = [
 ]
 
 const plates = [
-  { src: '/resources/big-interaction-whitepaper/04.jpg', width: 1122, height: 1402, title: '图版一 · 三层递进', caption: '从睡眠与饮水的基础照顾，走向互动中的自我认识。' },
-  { src: '/resources/big-interaction-whitepaper/02.jpg', width: 688, height: 1024, title: '图版二 · 走出封闭', caption: '以探索者的叙事呈现走出封闭、真诚互动与持续修正。' },
-  { src: '/resources/big-interaction-whitepaper/03.jpg', width: 941, height: 1656, title: '图版三 · 行动循环', caption: '呈现理解边界、主动行动、获得反馈和修正行为的循环；下半部包含原图中的图书推广信息。' },
-  { src: '/resources/big-interaction-whitepaper/01.jpg', width: 1024, height: 1516, title: '图版四 · 互动质量', caption: '把关注和互动分解为次数、深度、对象、内容价值与持续性。' },
+  { src: '/resources/big-interaction-whitepaper/04.jpg', width: 1122, height: 1402, title: '三层递进', viewpoint: '先照顾好身体，再走向更大的世界。', caption: '睡眠、饮水与互动，组成从恢复到探索的行动阶梯。' },
+  { src: '/resources/big-interaction-whitepaper/02.jpg', width: 688, height: 1024, title: '走出封闭', viewpoint: '主动走出去，让陌生的观点进入生活。', caption: '表达、倾听与结识新朋友，让熟悉的视角有机会被更新。' },
+  { src: '/resources/big-interaction-whitepaper/03.jpg', width: 941, height: 1656, title: '行动循环', viewpoint: '逼近边界，接收反馈，再修正行动。', caption: '从主动互动到获得反馈，反复校准自己的表达与判断。原图下半部含图书推广信息。' },
+  { src: '/resources/big-interaction-whitepaper/01.jpg', width: 1024, height: 1516, title: '互动质量', viewpoint: '每一次互动，都值得认真对待。', caption: '次数、深度、对象、内容价值与持续性，帮助复盘互动的质量。' },
 ]
 
 const jsonLd = {
@@ -68,27 +68,33 @@ export default function BigInteractionWhitepaperPage() {
 
       <header className={styles.hero}>
         <div className={styles.heroCopy}>
-          <div className={styles.eyebrow}><Link href="/articles?group=resource">资源</Link><span>/</span><span>理念白皮书 · 2026.10</span></div>
+          <div className={styles.eyebrow}><Link href="/articles?group=resource">资源</Link><span>/</span><span>大互动绿皮书 · 2026.10</span></div>
           <p className={styles.kicker}>THE BIG INTERACTION THEORY</p>
-          <h1>大互动<span>理论</span><small>白皮书</small></h1>
-          <p className={styles.heroLead}>从好好照顾自己，<br />到在互动中认识自己。</p>
-          <p className={styles.heroDescription}>通过真实交流获得新的视角，通过反馈调整行动。更广阔的生活，始于一次愿意走出去的互动。</p>
+          <h1>大互动<span>绿皮书</span></h1>
+          <p className={styles.heroLead}>逼近极限，<br />拓展自身边界。</p>
+          <p className={styles.heroDescription}>从一条评论、一种回应、一次表达开始，让观点碰撞，让行动得到反馈。</p>
           <div className={styles.heroActions}>
-            <a className={styles.primaryAction} href="#abstract">阅读白皮书 <span aria-hidden="true">↗</span></a>
-            <SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享白皮书" />
+            <a className={styles.primaryAction} href="#plates">观看图版 <span aria-hidden="true">↗</span></a>
+            <SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享绿皮书" />
           </div>
         </div>
-        <div className={styles.heroArt}>
-          <Image src="/resources/big-interaction-whitepaper/04.jpg" alt="大互动理论原始图版：睡眠、水与互动的三层递进" width={1122} height={1402} priority sizes="(max-width: 760px) 90vw, 340px" />
-          <span className={styles.heroArtLabel}>原始视觉概念 / 04</span>
-        </div>
+        <div className={styles.heroMark} aria-hidden="true"><span>互</span><span>动</span><i>∞</i><small>2ARAN.COM/X</small></div>
       </header>
 
+      <PlateExhibition plates={plates} />
+
+      <section className={styles.manifesto} aria-label="大互动理论口号">
+        <p className={styles.sectionIndex}>THE BIG INTERACTION MANIFESTO</p>
+        <h2>大互动理论，一句话。</h2>
+        <p className={styles.manifestoQuote}>如果你每天不互动 <strong>1000 次</strong>（评论），释放正能量 <strong>2000 次</strong>（点赞），带价值的判断 <strong>200 次</strong>（关注），发表观点 <strong>200 次</strong>，就不要和我说话！</p>
+        <p className={styles.manifestoSignature}>—— 大互动：逼近极限、才能突破极限、才能拓展自身边界</p>
+      </section>
+
       <div className={styles.readingGrid}>
-        <aside className={styles.toc} aria-label="白皮书目录">
+        <aside className={styles.toc} aria-label="绿皮书目录">
           <p>目录 <span>CONTENTS</span></p>
           <nav>{chapters.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</nav>
-          <span className={styles.tocMeta}>v1.0 · TUARAN</span>
+          <span className={styles.tocMeta}>v1.1 · TUARAN</span>
         </aside>
 
         <article className={styles.paper}>
@@ -96,7 +102,7 @@ export default function BigInteractionWhitepaperPage() {
             <p className={styles.sectionIndex}>ABSTRACT</p>
             <h2>摘要</h2>
             <p className={styles.lead}>大互动理论是一套关于个人成长与关系质量的实践框架。它主张：在基本的身体照顾之上，主动进入真实的交流场景，接触差异，收集反馈，并据此修正自己的理解与行动。</p>
-            <p>“大互动”强调互动的范围、深度和持续性。它不要求无限扩大社交圈，也不鼓励以互动数量衡量人的价值。与更多人说话只是起点；能否互相理解、建立信任、形成行动上的改变，才决定互动是否有意义。</p>
+            <p>“大互动”强调互动的范围、深度和持续性。开篇的 1000、2000、200、200 是一种夸张的动员口号，用来鼓励主动表达与回应；具体次数不能衡量人的价值。能否互相理解、建立信任、形成行动上的改变，决定互动是否有意义。</p>
             <div className={styles.abstractNote}><strong>核心命题</strong><span>照顾自己 → 走出封闭 → 真诚互动 → 获得反馈 → 持续修正</span></div>
           </section>
 
@@ -152,12 +158,7 @@ export default function BigInteractionWhitepaperPage() {
         </article>
       </div>
 
-      <section id="plates" className={styles.plates}>
-        <div className={styles.platesHeader}><div><p className={styles.sectionIndex}>APPENDIX / VISUAL ARCHIVE</p><h2>原始图版</h2></div><p>四张提供的图片完整保留。图片文字属于原始视觉表达，以上白皮书正文为整理后的可阅读版本。</p></div>
-        <div className={styles.plateGrid}>{plates.map((plate) => <figure key={plate.src} className={styles.plate}><a href={plate.src} target="_blank" rel="noopener noreferrer" aria-label={`查看${plate.title}原图`}><Image src={plate.src} width={plate.width} height={plate.height} alt={`${plate.title}：${plate.caption}`} sizes="(max-width: 640px) 90vw, (max-width: 900px) 45vw, 25vw" /></a><figcaption><strong>{plate.title}</strong><span>{plate.caption}</span></figcaption></figure>)}</div>
-      </section>
-
-      <footer className={styles.footer}><span>大互动理论白皮书 · v1.0 · 2026 年 10 月</span><a href="#abstract">返回顶部 ↑</a></footer>
+      <footer className={styles.footer}><span>大互动绿皮书 · v1.1 · 2026 年 10 月</span><a href="#plates">返回图版 ↑</a></footer>
     </PageContainer>
   )
 }

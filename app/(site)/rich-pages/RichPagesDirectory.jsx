@@ -88,10 +88,10 @@ export default function RichPagesDirectory({ works, categories }) {
           data-analytics-destination-id="big-interaction-whitepaper"
         >
           <div className="flex flex-col justify-center p-5 sm:p-7">
-            <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-[#b9f3a3]">精选阅读 · 白皮书</span>
-            <h2 className="mb-0 mt-3 text-[23px] font-black leading-tight tracking-tight sm:text-[28px]">大互动理论白皮书</h2>
+            <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-[#b9f3a3]">精选阅读 · 绿皮书</span>
+            <h2 className="mb-0 mt-3 text-[23px] font-black leading-tight tracking-tight sm:text-[28px]">大互动绿皮书</h2>
             <p className="mb-0 mt-3 max-w-xl text-[13px] leading-6 text-[#d2e6d8] sm:text-[14px]">从照顾自己到真实互动：读懂核心框架、互动质量的五个维度，以及可执行的实践方法。</p>
-            <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-bold text-[#c7f7ab]">阅读白皮书 <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
+            <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-bold text-[#c7f7ab]">阅读绿皮书 <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
           </div>
           <div className="relative hidden min-h-[190px] overflow-hidden sm:block">
             <Image src="/resources/big-interaction-whitepaper/04.jpg" alt="大互动理论三层递进原始图版" fill sizes="190px" className="object-cover object-top opacity-85 transition duration-300 group-hover:scale-105" />

@@ -21,7 +21,7 @@ const MODULES = [
     trigger: '站长打开数据健康页，读取 D1 绑定、表清单与表详情。',
     handling: '接口读取失败会在页面显示错误；未绑定数据库会单独显示，方便核对部署配置。',
     boundary: '当前是按需检查，不会主动扫描所有表，也不会自动向消息中心发告警。',
-    href: '/admin/site-health?tab=data',
+    href: '/admin/db',
     link: '查看数据健康',
   },
   {

@@ -13,10 +13,10 @@ import {
   resolveAdminTrail,
 } from '../../lib/admin/adminRoutes.js'
 
-test('admin navigation exposes five focused workspaces without duplicate dashboard entries', () => {
+test('admin navigation exposes six focused workspaces without duplicate dashboard entries', () => {
   assert.deepEqual(
     ADMIN_CONSOLE_ITEMS.map((item) => item.label),
-    ['内容', '自动化', '工程与运维', '用户与权限', '私密数据']
+    ['内容', '数据', '自动化', '工程与运维', '用户与权限', '私密数据']
   )
   assert.equal(new Set(ADMIN_CONSOLE_ITEMS.map((item) => item.href)).size, ADMIN_CONSOLE_ITEMS.length)
 })
@@ -26,6 +26,8 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/articles/new').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/research-import').map((item) => item.label), ['内容', '审批调研'])
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
+  assert.deepEqual(resolveAdminTrail('/admin/content-weekly').map((item) => item.label), ['数据', '数据统计'])
+  assert.deepEqual(resolveAdminTrail('/admin/db').map((item) => item.label), ['数据', '数据库管理'])
   assert.deepEqual(resolveAdminTrail('/admin/ops').map((item) => item.label), ['自动化', '任务中心'])
   assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['内容', '短句内容'])
   assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['内容', '文章分发'])
@@ -55,7 +57,7 @@ test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['个人画像', '续签述职', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '书签导航'])
+  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '私密文档', '书签导航'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
@@ -93,7 +95,6 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
       '/admin/portfolio': '/admin/planning?tab=portfolio',
       '/admin/integrations': '/admin/settings?tab=integrations',
       '/admin/deepseek-tasks': '/admin/settings?tab=models',
-      '/admin/db': '/admin/site-health?tab=data',
       '/admin/site-status': '/admin/site-health?tab=incidents',
       '/admin/blogger-eye': '/admin/site-health?tab=probe',
       '/admin/logs': '/admin/ops?tab=runs',
@@ -141,13 +142,21 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '数据统计', '壁纸资源', '短句内容', '存档管理']
+    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '壁纸资源', '短句内容', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),
     content.sections.map((section) => [section.label, section.items.map((item) => item.label)])
   )
   assert.ok(listWorkspaceChildren(content).every((item) => item.sidebar !== false))
+})
+
+test('data workspace groups statistics and database management', async () => {
+  const data = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/data')
+  assert.deepEqual(listWorkspaceChildren(data).map((item) => item.href), ['/admin/content-weekly', '/admin/db'])
+  assert.deepEqual(getWorkspaceHubProps('/admin/data').sections.map((section) => section.title), ['数据分析', '数据存储'])
+  const oldSiteHealth = await readFile(new URL('../../app/(admin)/admin/site-health/page.jsx', import.meta.url), 'utf8')
+  assert.match(oldSiteHealth, /params\?\.tab === 'data'\) redirect\('\/admin\/db'\)/)
 })
 
 test('automation workspace hub and sidebar expose one task center plus focused pipelines', () => {

@@ -20,6 +20,22 @@ const juejinReceipt = require('../../tools/juejin-interaction-extension/receipt.
 
 const NOW = Date.parse('2026-10-12T02:00:00.000Z')
 
+test('X monitor task labels match the extension task names', () => {
+  assert.deepEqual(
+    Object.fromEntries(COMMUNITY_ACTION_TASKS.filter((item) => item.platform === 'x').map((item) => [item.task, item.label])),
+    {
+      'timeline-reply': '评论帖子',
+      'notification-reply': '评论通知',
+      'mutual-unfollow': '清理未回关',
+      'mutual-follow-back': '回关粉丝',
+      'mutual-target-follow': '关注候选',
+      'tweet-post': '定时发帖',
+      'post-like': '点赞帖子',
+      'reply-like': '点赞评论',
+    },
+  )
+})
+
 test('X daily report validates post counts and accepts older reports without posts', async () => {
   const dailyReport = { date: '2026-10-12', accountHandle: '@Tuaran', counts: { comments: 3, likes: 5, follows: 2, unfollows: 1, followBacks: 4 } }
   assert.equal(normalizeXDailyReport(dailyReport, NOW).accountHandle, 'Tuaran')
@@ -136,7 +152,7 @@ test('center summary counts today by task and marks a fresh device online', () =
   assert.equal(summary.tasks.find((task) => task.task === 'note-post').limited, 1)
   assert.equal(summary.tasks.length, COMMUNITY_ACTION_TASKS.length)
   assert.deepEqual(summary.devices.map((device) => device.online), [true, false])
-  assert.equal(summary.recent[0].taskLabel, '时间线回复')
+  assert.equal(summary.recent[0].taskLabel, '评论帖子')
   assert.equal(shanghaiDayStart(NOW), Date.parse('2026-10-12T00:00:00+08:00'))
 })
 

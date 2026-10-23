@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginMonitorTrend from './PluginMonitorTrend'
 
-const MODE_LABEL = { timeline: '时间线回复', notifications: '通知回复', 'likes-posts': '首页点赞', 'likes-replies': '评论点赞', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
+const MODE_LABEL = { timeline: '评论帖子', notifications: '评论通知', 'likes-posts': '点赞帖子', 'likes-replies': '点赞评论', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
 const PHASE = { running: ['运行中', 'info'], paused: ['已暂停', 'warning'], stopping: ['停止中', 'warning'], idle: ['空闲', 'neutral'], online: ['有心跳', 'info'], unknown: ['状态未知', 'warning'], offline: ['离线', 'danger'] }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
 const PLATFORMS = [{ id: 'x', label: 'X' }, { id: 'xhs', label: '小红书' }, { id: 'juejin', label: '掘金' }]

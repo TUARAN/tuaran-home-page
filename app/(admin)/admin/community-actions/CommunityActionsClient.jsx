@@ -35,7 +35,7 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'x-assistant',
     platform: 'x',
     label: 'X 高频互动助手',
-    summary: '时间线回复、通知回复、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
+    summary: '评论帖子、评论通知、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
     href: '/resources/x-reply-clipboard-extension',
   },
   {
@@ -243,7 +243,7 @@ function OverviewPanel({ onOpenMode }) {
       >
         <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的本地上传报告也在那里查看。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
-          <li>X 高频互动助手：回复、互关、推文浇给</li>
+          <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>
           <li>掘金高频互动助手：每日签到、沸点和文章；支持每日上限与高频两种模式</li>
         </ul>

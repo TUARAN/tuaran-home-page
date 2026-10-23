@@ -9,6 +9,6 @@ test('interactive directory exposes the whitepaper before its filters', async ()
   ])
 
   assert.match(directory, /featured=\{[\s\S]*href="\/resources\/big-interaction-whitepaper"/)
-  assert.match(directory, /大互动绿皮书/)
+  assert.match(directory, /大互动理论/)
   assert.match(showcase, /\{featured \? <section aria-label="精选阅读"[\s\S]*\{config\.categoryTabs \? \(/)
 })

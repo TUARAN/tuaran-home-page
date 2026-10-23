@@ -15,8 +15,8 @@
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const TASK_MODE_LABELS = {
-    timeline: "首页互动", notifications: "通知互动",
-    "likes-posts": "首页帖子", "likes-replies": "帖子评论",
+    timeline: "评论帖子", notifications: "评论通知",
+    "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
     "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "定时发帖"
   };
@@ -45,23 +45,24 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏，不复制他的原句，不替他说话。",
-    "事实边界：标题和摘要是唯一事实依据。近期已用主题、开头和结尾只用于避开重复，不是事实素材。不要补写场景、动作、人数、对话、心理或因果；信息有限就只写能确认的部分，支撑不了具体判断就放弃选题。提问式标题不能把猜测写成事实。",
-    "开篇：可以从素材里的具体事件切入，也可以直接抛判断。‘说个暴论，……’‘讲个事实，……’‘我真心觉得……’只是偶尔可用的口吻；每条换切口，不固定套句，不让引子单独占一行。",
-    "行文：围绕一个核心观点，像随手发帖。不要写成场景铺垫、反转、文艺收尾的三段式微型故事；不要对仗、拟人、说教、自我解释或制造空洞悬念，例如‘这话像在说 X，又像不止 X’。不要只给标题换几个词就当成观点。",
-    "结尾：有合适的具体小问题可以问；没有就自然停住。不为互动强行反问。",
-    "结构：总共 18～70 字。通常写成 2～4 个短段，每段一行、段间留一个空行，像随手写下的几句短话；30 字以内的一句话可以单行。优先在句号、问号或自然停顿处分段，不把引子单独成段，也不要为了凑行数加废话。",
-    "禁区：不用‘首先、其次’或营销黑话，不写未经证实的指控；不写加密货币、代币或合约地址，不出现 $ 符号。",
-    "输出：只写短帖正文，不附标题、解释或说明。"
+    "任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事，让没看过素材的人知道在谈什么，再给出 1 个判断；不要写中立综述、分析报告或给读者的操作清单。",
+    "事实：标题和摘要是唯一事实依据；近期主题只用于换角度。可以有鲜明看法，不编人物、数字、现场、动机或因果；提问式标题不能当作已证实的事实。",
+    "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要用‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’代替事件交代。",
+    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代素材中的具体事件，第二段只写与此事直接相关、能说清对象的判断；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补理由或总结。字数是写作目标，不是发布前的硬筛选。",
+    "口气：像本人随手发，判断可以鲜明，但每句话都要有具体对象和可追溯的素材依据。素材真让人佩服时，可以用 0～1 句短口语直接夸，不必解释为什么值得夸。0 句‘应理性看待’‘等待官方说明’式收尾，0 句空泛提醒；没有依据的后续发展就别推演。",
+    "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
+    "结尾：具体判断或直接的赞叹说完就停，0 句拔高主题、比较两段经历、概括行业或揣测谁先承担代价。不要‘你怎么看’‘值得我们思考’等固定收尾。",
+    "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const CLICKBAIT_POST_PROMPT = [
-    "风格：标题党引子。依据给定热点的标题和摘要，先用一个有点击冲动的口语钩子，再把事实和判断写完整。钩子只负责打开兴趣，正文必须兑现它，不能靠夸张或空悬念骗点击。",
-    "开头机制轮换使用：反常识判断、秘密或内幕暗示、读者身份代入、直接提问、数字或结果先行、损失提醒、‘你可能忽略了……’、‘真正麻烦的是……’、‘别急着……’、‘很多人没想到……’等。第一句至少带出一个明确的新闻对象、人物、地点或具体事件，不能只写‘影响很大、这事不简单、新一股冷空气来了’这类脱离上下文的空钩子。素材适合时，可以写成‘看到新闻说……，我觉得……’‘这条关于……的新闻，真正值得注意的是……’。可以偶尔使用‘说个暴论’‘说个秘密’这类口吻，但不能固定复用，也不能连续两条使用同一种开头。不要用‘震惊、全网、史上最、惊呆了’等空喊。",
-    "事实边界：标题和摘要是唯一事实依据。不得编造人物、数字、因果、内幕或未提供的细节；‘秘密、真相、内幕’只能作为表达钩子，正文没有依据就不要暗示确有隐情。",
-    "行文：比普通短帖多写一点，围绕一个核心矛盾或反差展开，先钩子，再事实，再判断或影响。写 3～5 个短段，段间留一个空行；每段 1～2 句，优先在自然停顿处换行。总共 45～110 个中文字符，不能为了凑字数重复同一个意思。",
-    "结尾：落到一个清楚的判断、提醒或具体后果；有自然的问题才提问，不要用‘你怎么看、欢迎讨论、评论区见’收尾。",
-    "禁区：不写未经证实的指控，不制造阴谋论，不用营销腔、对仗、文艺化悬念或连续感叹号，不出现加密货币、代币、合约地址或 $ 符号。",
-    "输出：只写短帖正文，不附标题、解释或风格说明。"
+    "风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事，再给 1 个由素材支撑的具体判断；让没看过素材的人能读懂，不靠‘震惊’‘内幕’和空悬念骗点击。",
+    "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’。",
+    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机或因果。可以鲜明表态，不把猜测写成已发生的事实。",
+    "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代具体事件，第二段写与此事直接相关的立场；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补后果、理由或总结。字数是写作目标，不是发布前的硬筛选。",
+    "口气：像本人随手发，少解释。素材真让人佩服时，可以用 0～1 句短口语直接夸，不必解释为什么值得夸。0 句‘真正值得关注的是’‘更像是在’‘等官方说明’式分析，0 句泛泛建议，0 次三段式说理。",
+    "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
+    "结尾：具体判断或直接的赞叹说完就停，0 句拔高主题、比较两段经历、概括行业或揣测谁先承担代价。不要‘你怎么看’‘欢迎讨论’‘评论区见’。",
+    "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
@@ -93,7 +94,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.27.41";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.29.3";
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -133,6 +134,7 @@
     panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
+    unfollowEnglish: false,
     replyMode: "ai",
     aiKey: "",
     baiKey: "",
@@ -146,7 +148,7 @@
     pendingTweetId: "",
     lastReply: "",
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
-    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读知乎、头条热点，再读 2aran 舆情分析。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", publishQueue: [] },
+    poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", publishQueue: [] },
     errors: 0,
     status: "待命。点开始后，DeepSeek 会阅读原帖并生成回复。",
     phraseIndex: null,
@@ -160,6 +162,7 @@
   let likeRuntimeActive = false;
   let likeRuntimePhase = "";
   let activeAiRequestId = "";
+  let posterRenderTimer = 0;
 
   function getLikeController() {
     if (!likeController && likeApi) {
@@ -210,6 +213,7 @@
   let headerMenuOpen = false;
   let resettingState = false;
   let dailyReports = [];
+  let dailyUploadSchedule = null;
   const REPORT_METRICS = ["comments", "likes", "follows", "unfollows", "followBacks", "posts"];
   let dailyReportAccount = "__all__";
   let dailyReportDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
@@ -239,7 +243,7 @@
     const strip = panel.querySelector("[data-xrc-today-summary]");
     if (!strip) return;
     strip.title = `${today} · 本机所有账号的今日合计`;
-    for (const metric of ["comments", "likes", "unfollows", "posts"]) {
+    for (const metric of ["comments", "likes", "posts"]) {
       const node = strip.querySelector(`[data-xrc-today-${metric}]`);
       if (node) node.textContent = String(counts[metric]);
     }
@@ -320,11 +324,22 @@
 
   async function refreshDailyReport(panel) {
     const recovery = await mergeLegacyAccountData();
-    const result = await sendExtensionMessage({ type: "xrc-daily-get" });
+    const [result, scheduleResult] = await Promise.all([
+      sendExtensionMessage({ type: "xrc-daily-get" }),
+      sendExtensionMessage({ type: "xrc-daily-schedule-get" })
+    ]);
     if (!result?.ok) throw new Error(result?.error || "读取每日报告失败");
     dailyReports = Array.isArray(result.reports) ? result.reports : [];
+    dailyUploadSchedule = scheduleResult?.schedule || null;
     renderTodaySummary(panel);
     showDailyReport(panel);
+    const scheduleLine = panel.querySelector("[data-xrc-daily-schedule]");
+    if (scheduleLine) {
+      const last = dailyUploadSchedule?.lastResult;
+      scheduleLine.textContent = last?.ok === false
+        ? `自动上传待重试：${last.error}；本地报告已保留`
+        : `每天北京时间 09:00 上传前一天报告；电脑休眠或浏览器关闭后会补传。${last?.uploaded ? `上次同步 ${last.uploaded} 份。` : ""}`;
+    }
     const status = panel.querySelector("[data-xrc-daily-status]");
     if (recovery?.changed && status) status.textContent = "已把本机旧账号记录合并到当前账号；确认后可上传当日报告。";
   }
@@ -657,10 +672,10 @@
   let runtimePhaseSent = "";
   let runtimePhaseSentAt = 0;
   const FLOW_TASKS = Object.freeze([
-    ["timeline", "首页互动"], ["notifications", "通知互动"],
+    ["timeline", "评论帖子"], ["notifications", "评论通知"],
     ["mutual-unfollow", "清理未回关"], ["mutual-followBack", "回关粉丝"],
     ["poster", "定时发帖"],
-    ["likes-posts", "首页帖子点赞"], ["likes-replies", "帖子评论点赞"]
+    ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"]
   ]);
   const FLOW_STALE_MS = 90 * 1000;
 
@@ -687,6 +702,41 @@
       counts.unknown && `${counts.unknown} 项待确认`
     ].filter(Boolean);
     return { counts, tasks, text: parts.join(" · ") };
+  }
+
+  function paintFlowDetails(panel = document.getElementById(PANEL_ID)) {
+    const dialog = panel?.querySelector("[data-xrc-flow-details]");
+    if (!dialog || dialog.hidden) return;
+    const summary = flowTaskOverview(pluginRuntime);
+    const list = dialog.querySelector("[data-xrc-flow-details-list]");
+    const totals = dialog.querySelector("[data-xrc-flow-details-total]");
+    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" ? "全流程已暂停 · " : ""}${summary.text || "7 项任务尚未启动"}`;
+    if (!list) return;
+    const labels = { running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "待确认" };
+    const hints = {
+      running: "任务正在执行",
+      waiting: "任务已启动，正在等待下一轮或冷却结束",
+      missing: "当前没有运行记录",
+      stopping: "正在结束当前任务",
+      unknown: "超过 90 秒没有状态更新，请检查对应窗口"
+    };
+    list.replaceChildren(...summary.tasks.map((task) => {
+      const row = document.createElement("li");
+      row.className = "xrc-flow-detail-row";
+      row.dataset.state = task.status;
+      const name = document.createElement("strong");
+      name.textContent = task.label;
+      const status = document.createElement("span");
+      status.className = "xrc-flow-detail-status";
+      status.textContent = labels[task.status];
+      const note = document.createElement("small");
+      const updatedAt = Number(pluginRuntime.tasks?.[task.key]?.updatedAt) || 0;
+      note.textContent = updatedAt
+        ? `${hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+        : hints[task.status];
+      row.append(name, status, note);
+      return row;
+    }));
   }
 
   function currentTaskPhase() {
@@ -770,6 +820,7 @@
     button.removeAttribute("title");
     button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认" }[task.status]}`).join("，")}` : model.title);
     button.disabled = model.status === "starting" || model.status === "stopping";
+    paintFlowDetails(panel);
   }
 
   function syncCurrentTaskPhase() {
@@ -948,7 +999,9 @@
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      state.postPrompt = storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X")) ? "" : storedPostPrompt;
+      const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
+      const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
+      state.postPrompt = oldClickbaitPreset ? CLICKBAIT_POST_PROMPT : oldDefaultPrompt ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -1386,6 +1439,7 @@
       panelView: "normal",
       assistantMode: "timeline",
       mutualMode: "unfollow",
+      unfollowEnglish: false,
       replyMode: "ai",
       pendingReply: "",
       pendingTweetId: ""
@@ -1424,6 +1478,7 @@
         panelView: validPanelView(parsed.panelView),
         assistantMode: validAssistantMode(parsed.assistantMode),
         mutualMode: validMutualMode(parsed.mutualMode),
+        unfollowEnglish: Boolean(parsed.unfollowEnglish),
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
@@ -1461,6 +1516,7 @@
         panelView: state.panelView,
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
+        unfollowEnglish: state.unfollowEnglish,
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
@@ -1492,6 +1548,7 @@
         panelView: state.panelView,
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
+        unfollowEnglish: state.unfollowEnglish,
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
@@ -2428,7 +2485,7 @@
     state.pendingTweetId = "";
     writeSaved({ running: true, total: state.total });
     const closed = await closeReplyComposer();
-    state.status = "X 未能发送这条回复，已跳过当前帖子，继续下一条";
+    state.status = "遇到 X 临时错误，已关闭当前评论框并跳过这条；本轮继续处理下一条";
     renderPanel();
     return closed;
   }
@@ -2696,7 +2753,7 @@
         consecutiveTransientFailures += 1;
         if (consecutiveTransientFailures >= 3) {
           consecutiveTransientFailures = 0;
-          await waitRateLimit(60, (remaining) => `连续 3 条发送出错，${remaining} 秒后继续尝试下一条`);
+          await waitRateLimit(60, (remaining) => `连续 3 条发送出错，本轮暂缓；${remaining} 秒后再次尝试下一条`);
         }
         continue;
       }
@@ -2884,7 +2941,14 @@
     if (wasRunning !== Boolean(state.poster?.running)) {
       setRuntimeTaskActive("poster", Boolean(state.poster?.running), currentTaskPhase() || "running");
     }
-    renderPanel();
+    // Poster status can change several times while sources are being read or a
+    // draft is being checked. Rebuilding the whole panel for each message makes
+    // the floating panel visibly flash, so coalesce those status-only renders.
+    if (posterRenderTimer) window.clearTimeout(posterRenderTimer);
+    posterRenderTimer = window.setTimeout(() => {
+      posterRenderTimer = 0;
+      renderPanel();
+    }, 80);
   }
 
   async function onPosterToggle() {
@@ -2952,6 +3016,7 @@
       return;
     }
     registerCurrentTaskTab(mutualTaskKey());
+    mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
     const result = await mutualApi.run(mode, updateMutualState);
     if (result?.navigate) {
       state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
@@ -3114,10 +3179,10 @@
       : active === "mutual" ? state.mutual?.errors
       : active.startsWith("likes-") ? null : state.errors;
     const label = {
-      timeline: "回复管理 · 首页互动",
-      notifications: "回复管理 · 通知互动",
-      "likes-posts": "点赞管理 · 首页帖子",
-      "likes-replies": "点赞管理 · 帖子评论",
+      timeline: "评论管理 · 评论帖子",
+      notifications: "评论管理 · 评论通知",
+      "likes-posts": "点赞管理 · 点赞帖子",
+      "likes-replies": "点赞管理 · 点赞评论",
       mutual: `关注管理 · ${{ unfollow: "清理未回关", followBack: "回关粉丝", targetFollow: "关注候选" }[state.mutualMode] || "当前任务"}`,
       poster: "定时发帖"
     }[active] || "当前任务";
@@ -3248,12 +3313,6 @@
             <button class="xrc-view-button xrc-actions-toggle" type="button" data-xrc-actions-toggle aria-label="展开操作菜单" aria-expanded="false" aria-controls="xrc-header-menu" title="展开操作菜单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"></path></svg></button>
           </div>
         </div>
-        <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
-          <div class="xrc-today-head"><strong>今日合计</strong><div class="xrc-today-labels"><span>评论</span><span>点赞</span><span>关注</span><span>取关</span><span>发帖</span></div><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
-            </button></div>
-          <div class="xrc-today-values"><b data-xrc-today-comments>0</b><b data-xrc-today-likes>0</b><b data-xrc-today-follows>0</b><b data-xrc-today-unfollows>0</b><b data-xrc-today-posts>0</b></div>
-        </div>
         <div class="xrc-header-menu" id="xrc-header-menu" data-xrc-header-menu hidden>
           <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
           <button type="button" data-xrc-report-open>每日报告</button>
@@ -3263,6 +3322,12 @@
           <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
           <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
           <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
+        </div>
+        <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
+          <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
+            </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-posts">发帖</span></div></div>
+          <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments>0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
         </div>
         <section class="xrc-monitor" data-xrc-monitor hidden aria-label="异常监控中心">
           <div class="xrc-docs-head">
@@ -3282,12 +3347,12 @@
               <p class="xrc-docs-note">回复测试模型只观察已确认成功和明确受限的时间。窗口数量不是平台阈值：插件外操作、帖子差异和账号状态无法从本地记录确认。遇到限制时不会为测试提高频率。</p>
               <button type="button" data-xrc-limit-refresh>刷新记录</button>
             </section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>01</b><span><strong>回复管理</strong><small>首页互动 · 通知互动</small></span></div><ul>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>01</b><span><strong>评论管理</strong><small>评论帖子 · 评论通知</small></span></div><ul>
               <li><b>页面或断网：</b>先检测 X 连接；临时错误尽量在原页继续，重连从 2 秒逐步延长到 30 秒。未发送草稿挡住重连时不强行离开页面。</li>
               <li><b>模型失败：</b>DeepSeek 临时繁忙、限流或超时先尝试 NAS；NAS 仍失败且已配置 B.AI Key 时再尝试 B.AI。全部失败后按 3、8、20、30 秒逐步重试。发送结果未确认时保留当前帖子，不当作成功。</li>
               <li><b>风控：</b>遇到疑似自动化限制会停止任务，等待人工检查。断网、临时错误和草稿阻挡会写本地回执并尝试上报站长后台。</li>
             </ul></section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>02</b><span><strong>点赞管理</strong><small>首页帖子 · 帖子评论</small></span></div><ul>
+            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>02</b><span><strong>点赞管理</strong><small>点赞帖子 · 点赞评论</small></span></div><ul>
               <li><b>已赞或已处理：</b>跳过；两个子任务分别保存处理历史。评论任务不会重复点赞原帖。</li>
               <li><b>次数限制：</b>暂停点赞并保存账号冷却时间，按 1、2、6 小时递增重试；持续受限则停止自动重试。疑似自动化或账号限制会立即停止。目前不单独上报站长监控通知。</li>
             </ul></section>
@@ -3296,10 +3361,10 @@
               <li><b>存储失败：</b>保留上次读到的额度并停止任务，要求刷新页面后重试，避免按零额度继续。异常计数显示在任务页。</li>
             </ul></section>
             <section class="xrc-docs-section"><div class="xrc-docs-title"><b>04</b><span><strong>定时发帖</strong><small>取材 · 改写 · 发布</small></span></div><ul>
-              <li><b>取材顺序：</b>先读知乎热榜，再读今日头条；两处素材不足时读取 2aran 舆情分析。每次只把未使用且通过筛选的素材放进待发列表，并记录原始出处。</li>
-              <li><b>没有新热点时：</b>自动切换常用民生观点池，轮换房地产、金融、育儿、赚钱、业务、消费、教育、养老、职场和家庭生活等长期主题，不要求必须是当天新闻。</li>
+              <li><b>取材顺序：</b>先读知乎和今日头条，必要时补充 AI HOT；热点没有写出草稿时，再改写常用社会观察。模型返回正文就写入待发列表，并记录原始出处。</li>
+              <li><b>没有新热点时：</b>自动切换常用社会观察池，轮换房地产、金融、育儿、赚钱、业务、消费、教育、养老、职场和家庭生活等长期主题，不要求必须是当天新闻。</li>
               <li><b>发布顺序：</b>回到 X 首页按待发列表逐条发布；列表未发完不会重新抓取，发完后下一轮再按取材顺序补充。</li>
-              <li><b>素材或改写不合格：</b>跳过并换选题，不用原文兜底；旧规则草稿不会发送。</li>
+              <li><b>模型未返回正文：</b>跳过并换选题，不用素材原文冒充改写；字数、分段、措辞和相近主题交由提示词控制。</li>
               <li><b>发布失败：</b>保留待发列表，约 1 分钟后重试；X 提示内容重复时清空草稿并换下一条。发帖历史无法保存时暂停当前素材。</li>
               <li><b>监控范围：</b>本页显示错误数和上次异常；普通发帖异常目前不会全部转成站长监控通知。</li>
             </ul></section>
@@ -3335,6 +3400,7 @@
                 <span>发帖 <b data-xrc-daily-posts>0</b></span>
               </div>
               <div class="xrc-daily-actions"><small data-xrc-daily-uploaded>尚未上传</small><span><button type="button" data-xrc-daily-pull>同步云端</button><button type="button" data-xrc-daily-upload disabled>上传当日报告</button></span></div>
+              <div class="xrc-daily-auto"><small data-xrc-daily-schedule>每天 09:00 自动上传前一天报告</small><button type="button" data-xrc-daily-upload-pending>同步历史</button></div>
               <p class="xrc-report-status" data-xrc-daily-status role="status">只统计插件确认成功的操作，按北京时间保存在本机。</p>
             </section>
           </div>
@@ -3422,27 +3488,40 @@
         <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
           <div class="xrc-docs-head">
             <div><small>DOCUMENTATION</small><strong>文档中心</strong><span>使用边界、官方来源与版本记录</span></div>
-            <button type="button" data-xrc-docs-close aria-label="关闭文档中心">×</button>
+            <div class="xrc-docs-actions">
+              <details class="xrc-docs-toc">
+                <summary aria-label="打开文档目录">☰</summary>
+                <div class="xrc-docs-toc-menu">
+                  <strong>目录</strong>
+                  <button type="button" data-xrc-docs-target="xrc-docs-flow">全流程与任务窗口</button>
+                  <button type="button" data-xrc-docs-target="xrc-docs-rules">官方公开规则</button>
+                  <button type="button" data-xrc-docs-target="xrc-docs-risk">遇到风控提示时</button>
+                  <button type="button" data-xrc-docs-target="xrc-docs-frequency">发推、回复和频率</button>
+                  <button type="button" data-xrc-docs-target="xrc-docs-releases">最近版本</button>
+                </div>
+              </details>
+              <button type="button" data-xrc-docs-close aria-label="关闭文档中心">×</button>
+            </div>
           </div>
           <div class="xrc-docs-content">
-            <aside class="xrc-docs-toc" aria-label="文档目录">
-              <strong>目录</strong>
-              <button type="button" data-xrc-docs-target="xrc-docs-flow">全流程与任务窗口</button>
-              <button type="button" data-xrc-docs-target="xrc-docs-rules">官方公开规则</button>
-              <button type="button" data-xrc-docs-target="xrc-docs-risk">遇到风控提示时</button>
-              <button type="button" data-xrc-docs-target="xrc-docs-frequency">发推、回复和频率</button>
-              <button type="button" data-xrc-docs-target="xrc-docs-releases">最近版本</button>
-            </aside>
             <section class="xrc-docs-section" id="xrc-docs-flow">
               <div class="xrc-docs-title"><b>00</b><span><strong>全流程与任务窗口</strong><small>启动、跳转和单项运行说明</small></span></div>
               <p>全流程启动会打开对应窗口，启动尚未运行的 7 项任务；已运行的任务继续执行。</p>
               <ol>
-                <li><b>回复管理 · 2 项：</b>首页互动、通知互动，各自在独立窗口处理回复。</li>
-                <li><b>点赞管理 · 2 项：</b>首页帖子、帖子评论，分别运行；遇到 X 的限制会冷却或停止。</li>
+                <li><b>评论管理 · 2 项：</b>评论帖子、评论通知，各自在独立窗口处理评论。</li>
+                <li><b>点赞管理 · 2 项：</b>点赞帖子、点赞评论，分别运行；遇到 X 的限制会冷却或停止。</li>
                 <li><b>关注管理 · 2 项：</b>清理未回关、回关粉丝，分别处理对应名单；关注候选暂时停用。</li>
-                <li><b>定时发帖 · 1 项：</b>依次取知乎、今日头条热榜，素材不足再取 2aran 舆情分析；记录来源，按待发列表发送。</li>
+                <li><b>定时发帖 · 1 项：</b>依次取知乎、今日头条，必要时补充 AI HOT；素材不足时改写常用社会观察，记录来源，按待发列表发送。</li>
               </ol>
               <p>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单独运行时，在对应子页签调整设置并点「启动单项任务」；回复或发帖等待倒计时时可点「立即开始」。DeepSeek API Key 可在上方填写，之后到设置中修改。</p>
+              <section class="xrc-docs-section xrc-docs-subsection" id="xrc-docs-mutual-rules">
+                <div class="xrc-docs-title"><b>关注</b><span><strong>清理未回关规则</strong><small>关注管理 · 清理未回关</small></span></div>
+                <ul>
+                  <li>默认只取消没有「Follows you」标记的 Following，带有互关标记的账号会保留。</li>
+                  <li>开启「非中文资料也清理」后，只有姓名和简介都完全不含汉字时，才会把互关账号加入取关候选；任一处有汉字就保留。</li>
+                  <li>清理未回关每次操作后间隔 2 秒，不设固定批次或每日数量上限；X 出现限速提示时暂停 15 分钟并显示倒计时。</li>
+                </ul>
+              </section>
             </section>
             <section class="xrc-docs-section" id="xrc-docs-rules">
               <div class="xrc-docs-title"><b>01</b><span><strong>官方公开规则</strong><small>更新依据：X Help Center · 2026</small></span></div>
@@ -3464,7 +3543,7 @@
             <section class="xrc-docs-section" id="xrc-docs-risk">
               <div class="xrc-docs-title"><b>02</b><span><strong>遇到风控提示时</strong><small>不要用更密集的重试对抗限制</small></span></div>
               <ol>
-                <li>立即停止时间线、通知互动、互关和定时发帖任务。</li>
+                <li>立即停止评论帖子、评论通知、互关和定时发帖任务。</li>
                 <li>不要反复点击 Reply、Post、Like 或 Follow。</li>
                 <li>按 X 页面要求完成验证码、手机号或账号验证；恢复前只进行必要的人工检查。</li>
                 <li>恢复后也不能把低于每日技术上限理解为合规或不会再次触发风控。</li>
@@ -3473,20 +3552,32 @@
             <section class="xrc-docs-section" id="xrc-docs-frequency">
               <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
               <ul>
-                <li><b>发布规则：</b>定时发帖先从知乎热榜选题，再读今日头条；素材不足时才读 2aran 舆情分析。开头抓住人、结尾留一点余味，避免重复句式；保存每条出处。</li>
-                <li><b>发什么：</b>回复提示词决定回复内容。定时发帖用已保存的 DeepSeek API Key 写短帖；素材不合格或与近期主题重复时跳过。</li>
+                <li><b>发布规则：</b>定时发帖先从知乎和今日头条取材，每路最多试写 12 条；模型都未写出正文时再读 AI HOT，最后使用常用社会观察。模型返回正文后直接写入待发列表，成功写入一条即进入发送；状态显示来源和试写条数，并保存出处与原始链接。</li>
+                <li><b>发什么：</b>定时发帖用已保存的 DeepSeek API Key 和发帖提示词。每条抽取 0～1 随机数：小于 0.3 时分别使用「说个暴论，」「讲个事实，」「我真心觉得」开头，其余直接交代事件。目标是用 2～3 个短段、段间空一行，写清事件和有素材依据的判断；不凑行业总结或后续推演。本地不按字数或风格退稿。</li>
                 <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
                 <li><b>回复频率默认：</b>默认使用「边界测试」：从每条 6～10 秒、每轮回复 20～30 条、每次 2～3 轮、休息 10～15 分钟开始。连续一轮没有错误或限制提示，会自动提高下一轮速度和数量，并把周期逐步缩短到 5～10 分钟、3～6 分钟；前 10 条以内的零星失败只记录，不触发降档，已经成功运行至少 10 条后出现的错误或限制才作为有效边界信号。有效信号会降档并把周期放宽到 15～20 分钟，目标是在继续主动试探的同时减少真正的限制报错。这是当前账号的观察策略，不代表平台固定上限。慢是 15～30 秒、12～20 条、2～3 轮、休息 4～6 小时；中是 5～15 秒、25～35 条、3～5 轮、休息 2～3 小时；快是 3～6 秒、30～42 条、4～6 轮、休息 60～90 分钟；超快是 1～3 秒、40～55 条、5～8 轮、休息 20～40 分钟。</li>
                 <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
                 <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。自动任务会持续按选定频率运行，不会因为个人工作时间而暂停或减速。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
                 <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
                 <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
-                <li>清理未回关和回关粉丝共用同一组额度：2 秒一个，两项合计每 15 个暂停 30 分钟，每日合计最多 400 个；关注候选暂时停用。</li>
+                <li>回关粉丝使用共享额度：每 15 个暂停 30 分钟，每日合计最多 400 个；清理未回关每次间隔 2 秒，但不套用共享批次或每日数量上限；关注候选暂时停用。</li>
               </ul>
             </section>
             <section class="xrc-docs-section" id="xrc-docs-releases">
               <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
               <div class="xrc-release-list">
+                <article><b>v3.29.3</b><span><strong>保留含中文资料的互关账号</strong><small>姓名或简介任一片段有汉字就不按非中文规则取关。</small></span></article>
+                <article><b>v3.29.2</b><span><strong>任务详情按钮对齐</strong><small>详情文字在按钮内水平、垂直居中。</small></span></article>
+                <article><b>v3.29.1</b><span><strong>清理未回关间隔与限速倒计时</strong><small>每次取关后等 2 秒；X 限速时显示 15 分钟冷却。</small></span></article>
+                <article><b>v3.29.0</b><span><strong>每日报告定时上传</strong><small>同步既有历史；每天北京时间 09:00 上传前一天报告，离线后补传。</small></span></article>
+                <article><b>v3.28.0</b><span><strong>任务详情</strong><small>全流程状态条旁可查看 7 项任务各自的状态和最近更新时间。</small></span></article>
+                <article><b>v3.27.76</b><span><strong>观点型发帖</strong><small>每条随机抽签，30% 使用三种固定开头；其余直接表态。提示词收短篇幅，减少中立分析和模板建议。</small></span></article>
+                <article><b>v3.27.75</b><span><strong>模型草稿直接入队</strong><small>模型返回正文后直接待发；字数、分段、措辞和相近主题交由提示词处理，不再二次硬筛选。</small></span></article>
+                <article><b>v3.27.74</b><span><strong>热点草稿入队修复</strong><small>放宽与较长发帖提示词冲突的长度和分段限制，保留数字依据与去重检查；合格改写可进入待发列表。</small></span></article>
+                <article><b>v3.27.73</b><span><strong>操作菜单位置</strong><small>展开的操作菜单显示在“今日合计”上方，统计区和下方任务位置保持一致。</small></span></article>
+                <article><b>v3.27.72</b><span><strong>发帖取材进度</strong><small>每路热点恢复试写最多 12 条；显示当前来源、真实序号和退稿原因，避免“1/3”一直不变。</small></span></article>
+                <article><b>v3.27.71</b><span><strong>发帖草稿筛选修复</strong><small>热点写作允许明确对象上的个人观点；常用社会观察兜底逐条检查，失败时显示实际试写数与退稿原因。</small></span></article>
+                <article><b>v3.27.70</b><span><strong>文档目录并排</strong><small>目录按钮与关闭按钮并排，展开后显示悬浮菜单。</small></span></article>
                 <article><b>v3.27.18</b><span><strong>云端同步兼容旧账号</strong><small>同步云端时兼容旧版 default 占位账号，并把云端记录归并到当前账号。</small></span></article>
                 <article><b>v3.27.7</b><span><strong>任务页签图标提示</strong><small>恢复简洁的 ↗ 和 × 图标，分别用悬停提示说明跳转与关闭。</small></span></article>
                 <article><b>v3.27.6</b><span><strong>任务页签操作说明</strong><small>已打开任务明确显示“↗ 跳转”，悬停后显示独立的“关闭”按钮。</small></span></article>
@@ -3530,7 +3621,7 @@
                 <article><b>v3.15.0</b><span><strong>一键清空本地状态</strong><small>主面板直接清空任务进度、待发与历史，重载 X 页签；保留已配置的密钥。</small></span></article>
                 <article><b>v3.14.2</b><span><strong>异常监控中心</strong><small>设置内可查看当前窗口状态，以及回复、点赞、关注、发帖各自的异常处理方式。</small></span></article>
                 <article><b>v3.14.1</b><span><strong>热点短帖提示词</strong><small>只按标题和摘要写一个观点，开头与收尾自然变化；旧规则待发草稿不再发送。</small></span></article>
-                <article><b>v3.14.0</b><span><strong>回复与点赞分组</strong><small>回复管理和点赞管理各有两个子页签；每项任务打开自己的窗口。</small></span></article>
+                <article><b>v3.14.0</b><span><strong>评论与点赞分组</strong><small>评论管理和点赞管理各有两个子页签；每项任务打开自己的窗口。</small></span></article>
                 <article><b>v3.13.0</b><span><strong>互动页签与自动点赞</strong><small>首页互动、通知互动更名；自动点赞单独手动运行，查看首页帖子和评论，出现限制提示即停。</small></span></article>
                 <article><b>v3.12.1</b><span><strong>发推提示词与热点改写一致</strong><small>热点改写读取设置页提示词，停止发送旧规则草稿；取消固定三行排版，拦截文艺化套话。</small></span></article>
                 <article><b>v3.12.0</b><span><strong>热点顺序与文案钩子</strong><small>先读知乎、头条，再读舆情分析；开头和结尾增加变化，避免同一种句式连发。</small></span></article>
@@ -3622,12 +3713,19 @@
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
+            <button class="xrc-flow-details-trigger" type="button" data-xrc-flow-details-open aria-haspopup="dialog" aria-controls="xrc-flow-details" aria-label="查看任务详情">详情</button>
             <button class="xrc-reset-trigger" type="button" data-xrc-reset-state aria-haspopup="dialog" aria-label="一键清空任务状态" aria-controls="xrc-reset-confirm" title="一键清空任务状态（保留 API 与日志）">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 4.5h9"></path><path d="M6 4.5V3h4v1.5"></path><path d="m5 6.2.45 6.3h5.1L11 6.2"></path><path d="M7 7.5v3.2M9 7.5v3.2"></path></svg>
             </button>
             <button class="xrc-flow-help" type="button" data-xrc-flow-help aria-expanded="false" aria-controls="xrc-flow-guide" aria-label="说明" title="说明">
               <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M6.4 6.2a1.6 1.6 0 1 1 2.5 1.3c-.5.3-.9.7-.9 1.3V9.4"></path><path d="M8 11.4h.01"></path></svg>
             </button>
+          </div>
+          <div class="xrc-flow-details" id="xrc-flow-details" data-xrc-flow-details role="dialog" aria-modal="true" aria-labelledby="xrc-flow-details-title" hidden>
+            <div class="xrc-flow-details-card">
+              <div class="xrc-flow-details-head"><div><strong id="xrc-flow-details-title">任务详情</strong><p data-xrc-flow-details-total>正在读取任务状态…</p></div><button type="button" data-xrc-flow-details-close aria-label="关闭任务详情">×</button></div>
+              <ul data-xrc-flow-details-list></ul>
+            </div>
           </div>
           <div class="xrc-reset-confirm" id="xrc-reset-confirm" data-xrc-reset-confirm role="dialog" aria-modal="true" aria-labelledby="xrc-reset-title" aria-describedby="xrc-reset-description" hidden>
             <div class="xrc-reset-confirm-card">
@@ -3648,7 +3746,7 @@
             <button type="button" class="xrc-flow-docs-link" data-xrc-flow-docs>打开文档中心并查看全流程说明 ↗</button>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
-            <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>回复管理</span></button></div>
+            <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="poster"><button type="button" role="tab" data-xrc-assistant="poster"><span>定时发帖</span></button></div>
@@ -3662,7 +3760,8 @@
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
               <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
-              <p>保留带有 Follows you 的账号，只取消没有互关标记的 Following。</p>
+              <div class="xrc-mutual-rule-row"><span>清理规则</span><button type="button" class="xrc-mutual-rule-link" data-xrc-docs-target="xrc-docs-mutual-rules" aria-label="查看清理规则说明" title="查看清理规则说明">i</button></div>
+              <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 今日合计 0/400 · 本批 0/15</div>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollow">启动单项任务</button>
@@ -3681,8 +3780,8 @@
         </div>
         <div class="xrc-body xrc-like-body">
           <div class="xrc-like-tabs" role="tablist" aria-label="点赞功能">
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>首页帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>帖子评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>点赞帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>点赞评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <section class="xrc-post-flow" aria-label="点赞管理">
             <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
@@ -3712,8 +3811,8 @@
         </div>
         <div class="xrc-body xrc-reply-body">
           <div class="xrc-reply-tabs" role="tablist" aria-label="回复功能">
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>首页互动</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>通知互动</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>评论帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>评论通知</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span></div>
@@ -3982,12 +4081,42 @@
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
       panel.querySelector("[data-xrc-flow-docs]")?.addEventListener("click", () => openDocs("xrc-docs-flow"));
       panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
-        button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
+        button.addEventListener("click", () => {
+          button.closest(".xrc-docs-toc").open = false;
+          openDocs(button.dataset.xrcDocsTarget);
+        });
       });
       panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
+        panel.querySelector(".xrc-docs-toc").open = false;
         panel.querySelector("[data-xrc-docs]").hidden = true;
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
+      const flowDetails = panel.querySelector("[data-xrc-flow-details]");
+      const flowDetailsTrigger = panel.querySelector("[data-xrc-flow-details-open]");
+      const closeFlowDetails = () => {
+        flowDetails.hidden = true;
+        flowDetailsTrigger.focus();
+      };
+      flowDetailsTrigger?.addEventListener("click", async () => {
+        flowDetails.hidden = false;
+        paintFlowDetails(panel);
+        panel.querySelector("[data-xrc-flow-details-close]").focus();
+        await loadPluginRuntime();
+        paintFlowDetails(panel);
+      });
+      panel.querySelector("[data-xrc-flow-details-close]")?.addEventListener("click", closeFlowDetails);
+      flowDetails?.addEventListener("click", (event) => {
+        if (event.target === flowDetails) closeFlowDetails();
+      });
+      flowDetails?.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeFlowDetails();
+        } else if (event.key === "Tab") {
+          event.preventDefault();
+          panel.querySelector("[data-xrc-flow-details-close]").focus();
+        }
+      });
       const resetDialog = panel.querySelector("[data-xrc-reset-confirm]");
       const resetTrigger = panel.querySelector("[data-xrc-reset-state]");
       const closeResetDialog = () => {
@@ -4078,6 +4207,22 @@
           button.disabled = false;
         }
       });
+      panel.querySelector("[data-xrc-daily-upload-pending]")?.addEventListener("click", async () => {
+        const button = panel.querySelector("[data-xrc-daily-upload-pending]");
+        const status = panel.querySelector("[data-xrc-daily-status]");
+        button.disabled = true;
+        status.textContent = "正在同步昨天及更早尚未上传的报告…";
+        try {
+          const result = await sendExtensionMessage({ type: "xrc-daily-upload-pending" });
+          if (!result?.ok) throw new Error(`${result?.error || "同步失败"}；已同步 ${result?.uploaded || 0} 份`);
+          await refreshDailyReport(panel);
+          status.textContent = `已同步 ${result.uploaded} 份历史报告；今天的报告明早 09:00 上传。`;
+        } catch (error) {
+          status.textContent = error?.message || "同步失败，报告仍保存在本机";
+        } finally {
+          button.disabled = false;
+        }
+      });
       panel.querySelector("[data-xrc-daily-pull]")?.addEventListener("click", async () => {
         const button = panel.querySelector("[data-xrc-daily-pull]");
         if (button) { button.disabled = true; button.textContent = "恢复中…"; }
@@ -4112,6 +4257,12 @@
           if (cooling) mutualApi?.startNow?.();
           else onMutualAction(mode);
         });
+      });
+      panel.querySelector("[data-xrc-unfollow-english]")?.addEventListener("change", (event) => {
+        state.unfollowEnglish = Boolean(event.currentTarget.checked);
+        mutualApi?.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
+        writeSaved({ running: state.running, total: state.total });
+        renderPanel();
       });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
@@ -4325,7 +4476,7 @@
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
         const nextSource = poster.publishQueue?.[0];
-        queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条${nextSource ? ` · 下一条：${nextSource.sourceLabel || ({ evergreen: "常用民生观点", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" })[nextSource.source] || "热点"}` : ""}`;
+        queueLine.textContent = `待发 ${Array.isArray(poster.publishQueue) ? poster.publishQueue.length : 0} 条${nextSource ? ` · 下一条：${nextSource.sourceLabel || ({ aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" })[nextSource.source] || "热点"}` : ""}`;
         queueLine.title = nextSource?.sourceUrl ? `原始来源：${nextSource.sourceUrl}${nextSource.sourcePageUrl ? `；选题页面：${nextSource.sourcePageUrl}` : ""}` : "";
       }
       const sourceLink = panel.querySelector("[data-xrc-post-source-link]");
@@ -4413,10 +4564,12 @@
     panel.querySelectorAll("[data-xrc-mutual-card]").forEach((card) => {
       card.classList.toggle("is-selected", card.dataset.xrcMutualCard === state.mutualMode);
     });
+    const unfollowEnglish = panel.querySelector("[data-xrc-unfollow-english]");
+    if (unfollowEnglish) unfollowEnglish.checked = Boolean(state.unfollowEnglish);
     if (mutual) {
       const sharedFollowStatus = `今日合计 ${mutual.sharedDailyFollowed || 0}/400 · 本批 ${mutual.sharedBatchProgress || 0}/15`;
       const stats = {
-        unfollow: `已取消 ${mutual.unfollowed} · ${sharedFollowStatus} · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
+        unfollow: `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
         followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`,
         targetFollow: `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
       };
@@ -4615,7 +4768,7 @@
     begin({ resume: false });
   }
 
-  const TASK_TITLE_RE = /^(?:首页互动|通知互动|点赞帖子|点赞评论|自动点赞|时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论帖子|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -4623,11 +4776,11 @@
       if (state.mutualMode === "targetFollow") return "关注候选";
       return "清理未回关";
     }
-    if (state.assistantMode === "notifications") return "通知互动";
+    if (state.assistantMode === "notifications") return "评论通知";
     if (state.assistantMode === "likes-posts") return "点赞帖子";
     if (state.assistantMode === "likes-replies") return "点赞评论";
     if (state.assistantMode === "poster") return "定时发帖";
-    return "首页互动";
+    return "评论帖子";
   }
 
   function applyTaskTitle() {
@@ -4666,6 +4819,8 @@
     if (state.assistantMode === "likes-posts") likeState.status = "待命。全流程或单项启动后，点赞首页帖子。";
     if (state.assistantMode === "likes-replies") likeState.status = "待命。全流程或单项启动后，点赞帖子评论。";
     state.mutualMode = launch?.mutualMode || saved.mutualMode;
+    state.unfollowEnglish = Boolean(saved.unfollowEnglish);
+    mutualApi?.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
     applyTaskTitle();
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
@@ -4703,8 +4858,8 @@
       state.mutual = await mutualApi.refreshSharedFollowRate();
     }
     if (!saved.running) {
-      state.status = state.assistantMode === "poster"
-        ? `优先读取知乎、头条热点，素材不足时再读取 2aran 舆情分析。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
+        state.status = state.assistantMode === "poster"
+        ? `先读取知乎、头条热点，必要时补充 AI HOT；素材不足时改写常用社会观察。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
         : "";
     }
     renderPanel();

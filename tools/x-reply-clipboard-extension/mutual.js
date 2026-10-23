@@ -8,7 +8,7 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
   const TARGET_FOLLOW_HANDLES = ["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"];
-  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|please wait a few moments then try again|受到速率限制|请稍等片刻后再试)/i;
+  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
@@ -34,6 +34,7 @@
     skipped: 0,
     errors: 0,
     cooldownUntil: 0,
+    unfollowEnglish: false,
     seenHandles: new Set(),
     skippedHandles: new Set(),
     acknowledgedRateLimits: new Set(),
@@ -59,7 +60,8 @@
       sharedBatchProgress: state.sharedBatchProgress,
       skipped: state.skipped,
       errors: state.errors,
-      cooldownUntil: state.cooldownUntil
+      cooldownUntil: state.cooldownUntil,
+      unfollowEnglish: state.unfollowEnglish
     };
   }
 
@@ -199,8 +201,8 @@
     return /extension context invalidated/i.test(String(error?.message || error))
       ? "扩展已重新加载，请刷新此 X 页面后再启动关注任务"
       : error?.xrcFollowStorage
-        ? "关注记录无法保存，任务已停止，请刷新页面后重试"
-        : "关注任务遇到错误，已停止，请刷新页面后重试";
+        ? "关注记录无法保存，本轮已结束；请刷新页面后再次尝试"
+        : "关注任务遇到异常，本轮已结束；请刷新页面后再次尝试";
   }
 
   async function loadSharedFollowRate() {
@@ -281,7 +283,7 @@
     state.cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
     while (!state.stopping && Date.now() < state.cooldownUntil) {
       emit(`X 提示操作过密，${formatClock(state.cooldownUntil - Date.now())} 后继续`);
-      await sleep(Math.min(1000, Math.max(0, state.cooldownUntil - Date.now())));
+      await sleepActive(Math.min(1000, Math.max(0, state.cooldownUntil - Date.now())));
     }
     if (state.stopping) return false;
     state.cooldownUntil = 0;
@@ -356,6 +358,27 @@
     return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
   }
 
+  function isNonChineseText(value) {
+    const text = String(value || "").trim();
+    return /\p{L}/u.test(text) && !/\p{Script=Han}/u.test(text);
+  }
+
+  function profileNonChinese(row, handle) {
+    const handleText = String(handle || "").replace(/^@/, "").toLowerCase();
+    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
+      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
+      .filter(Boolean);
+    if (profileTexts.some((text) => /\p{Script=Han}/u.test(text))) return false;
+    const candidates = profileTexts
+      .filter((text) => !/^@?[A-Za-z0-9_]{1,15}$/.test(text.replace(/^@/, "")));
+    const name = candidates.find((text) => !text.toLowerCase().includes(handleText));
+    const bio = candidates
+      .filter((text) => text !== name && !text.toLowerCase().includes(handleText))
+      .sort((left, right) => right.length - left.length)
+      .at(0) || "";
+    return Boolean(name && bio && isNonChineseText(name) && isNonChineseText(bio));
+  }
+
   function rows() {
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     const candidates = [
@@ -376,12 +399,13 @@
       const followButton = findPlainFollowButton(row);
       const handle = findHandle(row, followingButton || followBackButton || followButton);
       const followsYou = hasFollowsYou(row);
+      const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
       const candidate = mode === "unfollow"
-        ? Boolean(handle && followingButton && !followsYou)
+        ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
         : mode === "followBack"
           ? Boolean(handle && followBackButton && followsYou)
           : Boolean(handle && followButton && !followBackButton && !followingButton);
-      return { row, handle, followsYou, followingButton, followBackButton, followButton, candidate };
+      return { row, handle, followsYou, nonChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 
@@ -445,7 +469,6 @@
       }, 6000);
       if (changed === "done") {
         state.unfollowed += 1;
-        await recordSharedFollow();
         reportMutualAction("unfollow", item.handle, "success");
         return true;
       }
@@ -453,7 +476,6 @@
       return false;
     }
     state.unfollowed += 1;
-    await recordSharedFollow();
     reportMutualAction("unfollow", item.handle, "success");
     return true;
   }
@@ -545,13 +567,15 @@
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
       return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
     }
+    const unlimitedUnfollow = mode === "unfollow";
     await loadSharedFollowRate();
-    if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
+    if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
       return { error: `今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限` };
     }
     reset(mode, onUpdate);
+    if (unlimitedUnfollow) state.cooldownUntil = 0;
     emit(mode === "unfollow" ? "开始清理未回关账号" : mode === "followBack" ? "开始回关粉丝" : "开始关注候选");
-    if (!(await waitForSharedCooldown())) {
+    if (!unlimitedUnfollow && !(await waitForSharedCooldown())) {
       state.running = false;
       state.stopping = false;
       emit("已停止；共享暂停时间仍会保留");
@@ -560,12 +584,12 @@
     let stalled = 0;
 
     while (!state.stopping) {
-      await loadSharedFollowRate();
-      if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
+      if (!unlimitedUnfollow) await loadSharedFollowRate();
+      if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
         emit(`今天三项合计已操作 ${state.sharedDailyFollowed} 个，达到共享每日 ${FOLLOW_DAILY_LIMIT} 个上限`);
         break;
       }
-      if (!(await waitForSharedCooldown())) break;
+      if (!unlimitedUnfollow && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
         if (!(await waitForPlatformRateLimit())) break;
         continue;
@@ -597,9 +621,9 @@
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
         const count = mode === "unfollow" ? state.unfollowed : mode === "followBack" ? state.followedBack : state.targetFollowed;
-        if (count >= FOLLOW_MAX_PER_RUN) break;
-        if (state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) break;
-        if (state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        if (!unlimitedUnfollow && count >= FOLLOW_MAX_PER_RUN) break;
+        if (!unlimitedUnfollow && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) break;
+        if (!unlimitedUnfollow && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + FOLLOW_BATCH_COOLDOWN_MS;
           await persistSharedFollowRate();
@@ -637,10 +661,17 @@
     return true;
   }
 
+  function setUnfollowEnglishEnabled(enabled) {
+    state.unfollowEnglish = Boolean(enabled);
+    emit();
+    return state.unfollowEnglish;
+  }
+
   const api = {
     run,
     stop,
     startNow,
+    setUnfollowEnglishEnabled,
     snapshot,
     refreshSharedFollowRate: async () => {
       try {

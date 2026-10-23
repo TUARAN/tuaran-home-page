@@ -1,10 +1,25 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "3.27.41",
+  "version": "3.29.3",
   "description": "Run home and notification interactions, optional likes, follow management, and scheduled posts in dedicated X tabs.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "X Interaction Assistant",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
   "permissions": ["storage", "offscreen", "alarms"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*", "https://api.b.ai/*", "https://2aran.com/*", "https://www.toutiao.com/*", "https://www.zhihu.com/*"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*", "https://api.b.ai/*", "https://2aran.com/*", "https://aihot.news/*", "https://www.toutiao.com/*", "https://www.zhihu.com/*"],
   "background": {
     "service_worker": "background.js"
   },

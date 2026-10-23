@@ -6,7 +6,7 @@
   if (!noteApi) return;
 
   const PANEL_ID = "xhs-interaction-panel";
-  const VERSION = "0.2.6";
+  const VERSION = "0.7.0";
 
   function reportCommunityAction(event) {
     try {
@@ -751,10 +751,10 @@
       panel.innerHTML = `
         <div class="xhsia-header">
           <div class="xhsia-brand">
-            <div class="xhsia-mark" aria-hidden="true">红</div>
+            <div class="xhsia-mark" aria-hidden="true"><svg viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#FFF4F1"/><rect x="88" y="25" width="20" height="87" rx="5" fill="#FFE1DC"/><rect x="94" y="28" width="12" height="78" rx="3" fill="#FFFFFF"/><rect x="23" y="17" width="76" height="93" rx="10" fill="#FF2442"/><path d="M33 17h9v93h-9c-6 0-10-4-10-10V27c0-6 4-10 10-10Z" fill="#CB1737"/><path d="M74 17h13v32l-6.5-5-6.5 5V17Z" fill="#FFF4F1"/><path d="M53 65h27M53 78h20" stroke="#FFF4F1" stroke-width="5" stroke-linecap="round"/></svg></div>
             <div>
               <div class="xhsia-title">小红书高频互动助手</div>
-              <div class="xhsia-subtitle" data-xhsia-subtitle>v${VERSION} · 推荐评论</div>
+              <div class="xhsia-subtitle" data-xhsia-subtitle>v${VERSION}</div>
             </div>
           </div>
           <div class="xhsia-actions">
@@ -766,10 +766,11 @@
             </button>
           </div>
         </div>
-        <div class="xhsia-tabs" role="tablist">
-          <button type="button" role="tab" data-xhsia-mode="comments">推荐评论</button>
-          <button type="button" role="tab" data-xhsia-mode="poster">笔记浇给</button>
-        </div>
+        <nav class="xhsia-page-nav" aria-label="功能页面">
+          <a data-xhsia-mode="comments" href="https://www.xiaohongshu.com/explore">推荐评论<small>推荐页</small></a>
+          <a data-xhsia-mode="poster" href="${posterApi.PUBLISH_URL}">笔记浇给<small>发文页</small></a>
+          <a data-xhsia-mode="private" href="https://creator.xiaohongshu.com/new/note-manager">高质帖管理<small>笔记管理页</small></a>
+        </nav>
         <div class="xhsia-body" data-xhsia-comments>
           <div class="xhsia-start">
             <input type="text" name="xhsia-deepseek-key" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 DeepSeek API Key" data-xhsia-key>
@@ -821,6 +822,7 @@
         </div>
       `;
       document.documentElement.appendChild(panel);
+      globalThis.XhsInteractionDocs?.mount(panel);
       bindPanel(panel);
     }
 
@@ -856,7 +858,7 @@
     panel.querySelector("[data-xhsia-config]").hidden = !state.settingsOpen;
     panel.querySelector("[data-xhsia-comments]").hidden = state.mode !== "comments";
     panel.querySelector("[data-xhsia-poster]").hidden = state.mode !== "poster";
-    panel.querySelector("[data-xhsia-subtitle]").textContent = `v${VERSION} · ${state.mode === "poster" ? "笔记浇给" : "推荐评论"}`;
+    panel.querySelector("[data-xhsia-subtitle]").textContent = `v${VERSION}`;
     const postStatus = panel.querySelector("[data-xhsia-post-status]");
     if (postStatus && posterApi) {
       const schedule = posterApi.formatPostSchedule(state.posterPace);
@@ -879,8 +881,9 @@
       postToggle.dataset.running = state.poster.running ? "true" : "false";
       panel.querySelector("[data-xhsia-post-key]").hidden = state.apiKeySaved || state.poster.running;
     }
-    panel.querySelectorAll("[data-xhsia-mode]").forEach((button) => {
-      button.setAttribute("aria-selected", button.dataset.xhsiaMode === state.mode ? "true" : "false");
+    panel.querySelectorAll("[data-xhsia-mode]").forEach((link) => {
+      if (link.dataset.xhsiaMode === "comments") link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
     });
   }
 
@@ -924,13 +927,6 @@
       if (state.running) return;
       const profile = noteApi.SCHEDULE_PROFILES[Number(event.target.value)] || noteApi.scheduleProfile(state.pace);
       savePace(profile.id).then(() => renderPanel());
-    });
-    panel.querySelectorAll("[data-xhsia-mode]").forEach((button) => {
-      button.addEventListener("click", () => {
-        if (state.running) return;
-        state.mode = button.dataset.xhsiaMode === "poster" ? "poster" : "comments";
-        renderPanel();
-      });
     });
     panel.querySelector("[data-xhsia-post-pace]")?.addEventListener("input", (event) => {
       if (!posterApi || state.poster.running) return;

@@ -67,10 +67,82 @@ test('draft validation rejects incomplete or unverifiable content', () => {
   assert.match(article.body, /来源：https:\/\/example.com/)
 })
 
+test('pin body keeps sentence boundaries and separates long posts into paragraphs', () => {
+  const body = '有开发者分享了新的人工智能教学资源，目标是帮助教师更方便地准备课程。项目尝试让课堂直接使用现成材料，但具体效果仍需要结合教学场景检验。开放获取降低了尝试门槛，也给教师留下了自行调整内容的空间。'
+  const formatted = core.cleanGenerated(JSON.stringify({ title: '教学资源', body, sourceUrl: 'https://example.com' }), 'pin').body
+  assert.match(formatted, /。\n\n/)
+  assert.equal(formatted.replace(/\n/g, ''), body)
+  assert.equal(core.formatPinBody('第一段。\n第二段。'), '第一段。\n\n第二段。')
+})
+
+test('pin editor receives visible paragraph nodes before publishing', async () => {
+  const content = await readFile(new URL('content.js', root), 'utf8')
+  const sent = []
+  const draft = { body: '第一段说清已知事实和项目用途。\n\n第二段说明实际效果还需要验证。', sourceId: 'source-1' }
+  const createElement = (tagName) => ({
+    tagName, children: [], style: {}, dataset: {}, textContent: '', value: '',
+    append(...items) { this.children.push(...items) },
+    setAttribute(name, value) { this[name] = value },
+  })
+  const editor = {
+    children: [], focus() {}, dispatchEvent() {},
+    get textContent() { return this.children.map((child) => child.textContent).join('') },
+    replaceChildren(...children) { this.children = children },
+  }
+  const publish = { clicks: 0, disabled: false, click() { this.snapshot = editor.children; this.clicks += 1; editor.replaceChildren() } }
+  const store = { jjiaSettings: { apiKey: 'sk-test-123456', enabled: { pin: true } }, jjiaState: {} }
+  const context = {
+    JuejinInteractionCore: core,
+    JuejinCommunityReceipt: { heartbeat() {}, report() {} },
+    InputEvent: class {},
+    chrome: {
+      storage: { local: { async get() { return store }, async set(value) { Object.assign(store, value) } } },
+      runtime: {
+        getManifest() { return extensionManifest },
+        async sendMessage(message) {
+          sent.push(message)
+          if (message.type === 'jjia-is-site-active') return { ok: true, active: true }
+          if (message.type === 'jjia-claim-task') return { ok: true, claimId: 'claim-1' }
+          if (message.type === 'jjia-generate') return { ok: true, draft }
+          return { ok: true }
+        },
+      },
+    },
+    document: {
+      readyState: 'complete', body: { append() {} }, createElement,
+      querySelector(selector) {
+        if (selector.includes('.rich-editor')) return editor
+        if (selector === '.pin-toolbar .submit button') return publish
+        return null
+      },
+      querySelectorAll() { return [{ textContent: '发布成功' }] },
+    },
+    location: { pathname: '/pins/new', origin: 'https://juejin.cn' },
+    setTimeout(callback) { return globalThis.setTimeout(callback, 0) },
+    setInterval() {},
+  }
+  vm.runInNewContext(content, context)
+  for (let index = 0; index < 30 && !publish.clicks; index += 1) await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(publish.clicks, 1)
+  assert.deepEqual(publish.snapshot.map((child) => child.tagName), ['div', 'div', 'div'])
+  assert.equal(publish.snapshot[0].textContent, '第一段说清已知事实和项目用途。')
+  assert.equal(publish.snapshot[1].children[0].tagName, 'br')
+  assert.equal(publish.snapshot[2].textContent, '第二段说明实际效果还需要验证。')
+  assert.equal(sent.find((message) => message.type === 'jjia-mark-pending').marker, '第一段说清已知事实和项目用途。')
+})
+
 test('manifest, page selectors and receipt task names cover all three actions', async () => {
   const content = await readFile(new URL('content.js', root), 'utf8')
   assert.equal(extensionManifest.name, '掘金高频互动助手')
   assert.match(extensionManifest.version, /^\d+\.\d+\.\d+$/)
+  assert.equal(extensionManifest.action.default_title, extensionManifest.name)
+  for (const [size, path] of Object.entries(extensionManifest.icons)) {
+    assert.equal(extensionManifest.action.default_icon[size], path)
+    const png = await readFile(new URL(path, root))
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a')
+    assert.equal(png.readUInt32BE(16), Number(size))
+    assert.equal(png.readUInt32BE(20), Number(size))
+  }
   assert.deepEqual(extensionManifest.content_scripts[0].js, ['receipt.js', 'core.js', 'content.js'])
   assert.match(content, /button\.signin\.btn/)
   assert.match(content, /\.rich-editor\[contenteditable='true'\]/)
@@ -208,6 +280,7 @@ async function exerciseArticle(mode) {
       runtime: {
         getManifest() { return extensionManifest },
         async sendMessage(message) {
+          if (message.type === 'jjia-is-site-active') return { ok: true, active: true }
           if (message.type === 'jjia-claim-task') {
             store.jjiaState.articlePending = { phase: 'claim', claimId: 'claim-1', createdAt: Date.now() }
             return { ok: true, claimId: 'claim-1' }
@@ -305,4 +378,38 @@ test('background serializes claims and stops after three completed pins', async 
   store.jjiaSettings.mode = 'classic'
   store.jjiaState.pinNextAt = 0
   assert.equal((await send({ type: 'jjia-claim-task', task: 'pin' })).ok, true)
+})
+
+test('scheduler opens task tabs only while the active tab is on Juejin', async () => {
+  const source = await readFile(new URL('background.js', root), 'utf8')
+  const store = { jjiaSettings: { enabled: { checkin: true } }, jjiaState: {} }
+  let activeUrl = 'https://example.com/'
+  let alarmListener
+  let messageListener
+  const opened = []
+  vm.runInNewContext(source, {
+    URL, importScripts() {}, JuejinInteractionCore: core, JuejinCommunityReceipt: { install() {} },
+    chrome: {
+      storage: { local: { async get() { return store } } },
+      runtime: { onMessage: { addListener(listener) { messageListener = listener } } },
+      alarms: { create() {}, onAlarm: { addListener(listener) { alarmListener = listener } } },
+      tabs: {
+        async query(query) { return query.active ? [{ url: activeUrl }] : activeUrl.startsWith('https://juejin.cn/') ? [{ url: activeUrl }] : [] },
+        async create(options) { opened.push(options) },
+      },
+    },
+  })
+  const siteActive = () => new Promise((resolve) => messageListener({ type: 'jjia-is-site-active' }, {}, resolve))
+  const flush = async () => { for (let index = 0; index < 3; index += 1) await new Promise((resolve) => setImmediate(resolve)) }
+  alarmListener({ name: 'jjia-schedule' })
+  await flush()
+  assert.equal((await siteActive()).active, false)
+  assert.equal(opened.length, 0)
+  activeUrl = 'https://juejin.cn.evil.example/'
+  assert.equal((await siteActive()).active, false)
+  activeUrl = 'https://juejin.cn/'
+  alarmListener({ name: 'jjia-schedule' })
+  await flush()
+  assert.equal((await siteActive()).active, true)
+  assert.deepEqual(opened.map((item) => item.url), [core.PATHS.checkin])
 })

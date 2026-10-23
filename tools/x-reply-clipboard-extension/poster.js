@@ -21,12 +21,14 @@
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
   const history = { sourceIds: [], published: [] };
+  let rewriteServiceError = "";
+  let rewriteRejections = [];
 
   const state = {
     running: false,
     stopping: false,
     navigating: false,
-    status: "待命。先读知乎、头条热点，再读 2aran 舆情分析。",
+    status: "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。",
     count: 0,
     errors: 0,
     startedAt: null,
@@ -38,6 +40,7 @@
     lastSentText: "",
     lastError: "",
     currentSourceId: "",
+    currentPostAttempts: 0,
     retiredDraftText: "",
     sourceQueue: [],
     publishQueue: [],
@@ -81,6 +84,7 @@
       lastSentText: state.lastSentText,
       lastError: state.lastError,
       currentSourceId: state.currentSourceId,
+      currentPostAttempts: state.currentPostAttempts,
       retiredDraftText: state.retiredDraftText,
       sourceQueue: state.sourceQueue,
       publishQueue: state.publishQueue
@@ -257,6 +261,37 @@
     return lines.join("\n\n");
   }
 
+  function simplifyPostRhetoric(value) {
+    const text = preserveLines(value);
+    const prefix = text.match(/^(?:说个暴论[，,]|讲个事实[，,]|我真心觉得)/u)?.[0] || "";
+    const body = text.slice(prefix.length)
+      .replace(/(^|[。！？\n])(?:这|那|它|此事|这件事)?更像([^，,。！？\n]+?)[，,]\s*(?:而非|而不是)[^。！？\n]+/gu, "$1$2")
+      .replace(/(^|[。！？\n])(?:这|那|它|此事|这件事)?不是[^，,。！？\n]+[，,]\s*而是([^。！？\n]+)/gu, "$1$2")
+      .replace(/(^|[。！？\n])与其说[^，,。！？\n]+[，,]?\s*不如说([^。！？\n]+)/gu, "$1$2")
+      .replace(/(^|[。！？\n])看似[^，,。！？\n]+[，,]?\s*其实([^。！？\n]+)/gu, "$1$2")
+      .replace(/(^|[。！？\n，,])最硬的地方是[^。！？\n]+[。！？]/gu, "$1真硬啊。")
+      .replace(/(^|[。！？\n，,])最(?:厉害|了不起|牛)的地方是[^。！？\n]+[。！？]/gu, "$1真厉害。")
+      .replace(/[，,]这比[^。！？\n]+更能说明[^。！？\n]*分量([。！？])/gu, "，太有分量了$1")
+      .replace(/[，,]这比[^。！？\n]+更能说明[^。！？\n]+([。！？])/gu, "$1");
+    const revised = `${prefix}${body}`;
+    const emptyCoda = revised.match(/(^|[。！？\n])[^。！？\n]*(?:最.{1,8}的那一环|先跑的就是|最后买单的还是)[^。！？\n]*[。！？]?$/u);
+    if (!emptyCoda) return revised;
+    const cutoff = emptyCoda.index + (/[。！？]/u.test(emptyCoda[1]) ? 1 : 0);
+    const remaining = preserveLines(revised.slice(0, cutoff));
+    return remaining || revised;
+  }
+
+  function formatModelPost(value) {
+    const text = preserveLines(value);
+    if (!text) return "";
+    if (text.includes("\n")) return text.replace(/\n+/gu, "\n\n");
+    const sentences = text.match(/^(.+?[。！？!?])(.+)$/u);
+    if (sentences && Array.from(sentences[1]).length >= 8 && Array.from(sentences[2]).length >= 8) {
+      return `${sentences[1]}\n\n${sentences[2]}`;
+    }
+    return formatShortPost(text);
+  }
+
   function normalized(value) {
     return String(value || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
   }
@@ -265,77 +300,27 @@
     return Boolean(normalized(left)) && normalized(left) === normalized(right);
   }
 
-  function similarity(left, right) {
-    const a = normalized(left);
-    const b = normalized(right);
-    if (!a || !b) return 0;
-    if (a === b) return 1;
-    if (Math.min(a.length, b.length) >= 6 && (a.includes(b) || b.includes(a))) return 0.9;
-    const grams = (value) => new Set(Array.from({ length: Math.max(0, value.length - 1) }, (_, index) => value.slice(index, index + 2)));
-    const first = grams(a);
-    const second = grams(b);
-    const shared = [...first].filter((gram) => second.has(gram)).length;
-    return (2 * shared) / (first.size + second.size || 1);
-  }
-
-  function qualityReason(source, post, topic, sourceType = "x") {
-    const original = preserveLines(source);
-    const candidate = preserveLines(post);
-    const hook = original.split("\n").find(Boolean) || "";
-    const lines = candidate.split("\n").filter(Boolean);
-    const body = lines.slice(1).join(" ").trim();
-    const originalBody = original.split("\n").slice(1).join(" ").trim();
-    if (sourceType === "x" && (!hook || candidate.split("\n")[0] !== hook)) return "首句没有保留";
-    if (normalized(topic).length < 4 || normalized(topic).length > 60) return "主题不明确";
-    const length = Array.from(lines.join("")).length;
-    if (sourceType === "news") {
-      if (length < 18 || length > 110) return "热点短帖过短或过长";
-      if (lines.length < (length > 30 ? 2 : 1) || lines.length > 5 || lines.some((line) => Array.from(line).length > (lines.length === 1 ? 30 : 38))) return "热点短帖行数不合适";
-      const concreteNumbers = candidate.match(/\d+(?:\.\d+)?(?:%|％|楼|层|人|杯|天|次|家|个|万|亿|元)?/gu) || [];
-      if (concreteNumbers.some((number) => !original.includes(number))) return "具体数字没有素材依据";
-      if (/^(?:说个暴论|讲个事实|我真心觉得|说句实话|讲真)[：:，,\s]*$/u.test(lines[0])) return "开头没有具体内容";
-      if (/^(?:你怎么看|大家怎么看|欢迎讨论|评论区见)[？?!！。\s]*$/u.test(lines.at(-1))) return "收尾太模板化";
-      if (/可能只是个错觉|谁也拦不住|又像不止|说的是.{1,12}，?又像|像在说.{1,12}，?又像|爆单那晚/u.test(candidate)) return "文艺化套话";
-      if (/多半是|关键在于|本质上|归根结底|更实际|值得注意|值得思考|有必要|应该|应当|建议|问清楚|先弄清|流程不透明|这条新闻|这个话题|这个问题|这种现象|我想说|我们来聊|今天聊|来说说|说明了|反映出|从而|因此|首先|其次|最后/iu.test(candidate)) return "说理口吻太重";
-    } else if (normalized(body).length < 18 || length < 35 || length > 75) return "正文过短或过长";
-    if (/(?:[!！?？]{2,}|绝对|百分之百|100%|只有傻子|都该闭嘴)/iu.test(candidate)) return "语气过火";
-    if (sourceType !== "news" && (lines.length < 3 || lines.length > 5 || lines.some((line) => Array.from(line).length > 24))) return "行数或单行长度不合适";
-    if (sourceType === "x" && originalBody && similarity(originalBody, body) >= 0.72) return "正文改动太少";
-    if (sourceType === "news" && similarity(hook, candidate) >= 0.72) return "标题改动太少";
-    return "";
-  }
-
-  function duplicateReason(post, topic, entries) {
-    const hook = preserveLines(post).split("\n").find(Boolean) || "";
-    const ending = preserveLines(post).split("\n").filter(Boolean).at(-1) || "";
-    const leadOf = (value) => String(value || "").match(/^(说个暴论|讲个事实|我真心觉得|说句难听的|说句实话|讲真|真心觉得)/u)?.[1] || "";
-    for (const entry of entries) {
-      if (similarity(topic, entry.topic) >= 0.68) return "主题重复";
-      if (similarity(post, entry.text) >= 0.72) return "正文重复";
-      const previousHook = preserveLines(entry.text).split("\n").find(Boolean) || "";
-      if (normalized(hook).length >= 8 && normalized(hook) === normalized(previousHook)) return "钩子重复";
-    }
-    for (const entry of entries.slice(-8)) {
-      const lines = preserveLines(entry.text).split("\n").filter(Boolean);
-      if (leadOf(hook) && leadOf(hook) === leadOf(lines[0])) return "开头句式重复";
-      if (normalized(ending).length >= 8 && similarity(ending, lines.at(-1)) >= 0.82) return "收尾重复";
-    }
-    return "";
-  }
-
   async function loadHistory() {
     let saved = null;
     try {
-      if (!globalThis.chrome?.storage?.local?.get || !globalThis.chrome?.storage?.local?.set) return false;
+      // History is useful for deduplication, but it must never block posting.
+      // Some X content-script contexts expose storage.get without allowing a
+      // write, and a failed write should not create an endless retry loop.
+      if (!globalThis.chrome?.storage?.local?.get) return true;
       saved = (await globalThis.chrome?.storage?.local?.get?.(HISTORY_KEY))?.[HISTORY_KEY];
-    } catch (error) { return false; }
+    } catch (error) {
+      history.sourceIds = [];
+      history.published = [];
+      return true;
+    }
     history.sourceIds = Array.isArray(saved?.sourceIds) ? saved.sourceIds.map(String).slice(-10000) : [];
     history.published = Array.isArray(saved?.published) ? saved.published.filter((item) => item?.text).slice(-2000) : [];
     try {
       const legacy = JSON.parse(sessionStorage.getItem(USED_SOURCE_KEY) || "[]");
       if (Array.isArray(legacy)) history.sourceIds = [...new Set([...history.sourceIds, ...legacy.map(String)])].slice(-10000);
     } catch (error) {}
-    return saveHistory();
+    await saveHistory();
+    return true;
   }
 
   async function saveHistory() {
@@ -356,35 +341,41 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.sourceType === "news" && /^(?:evergreen|opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
+    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
 
   const EVERGREEN_TOPIC_ITEMS = [
-    ["房地产", "房贷、租房和家庭现金流，普通人现在更该先算哪一笔账？"],
-    ["房地产", "买房最容易被忽略的成本，不在首付，而在长期现金流。"],
-    ["金融", "存款、消费和投资怎么排顺序，很多家庭缺的不是收入而是计划。"],
-    ["金融", "利率变化传到普通人的生活里，最先影响的往往是每月固定支出。"],
-    ["育儿", "育儿最难的阶段，常常不是花钱，而是父母时间和精力怎么分配。"],
-    ["育儿", "孩子的兴趣班越报越多之前，先问一句：这真是孩子需要的吗？"],
-    ["赚钱", "想增加收入，先把一项能重复交付的小事做稳定，比追风口更实际。"],
-    ["赚钱", "副业最容易高估的是收入，最容易低估的是获客、交付和售后。"],
-    ["业务", "小生意最怕的不是没订单，而是每一单都没有留下可复用的经验。"],
-    ["业务", "做业务时把客户的抱怨记下来，常常比再做一轮宣传更有用。"],
-    ["消费", "便宜不等于省钱，真正该算的是使用频率和买错之后的成本。"],
-    ["教育", "家长焦虑最容易变成课程清单，但孩子真正缺的可能是稳定的练习时间。"],
-    ["养老", "养老准备不是退休前才开始，家庭现金流和照护安排都要提前想。"],
-    ["职场", "工作越忙越要留下可交接的流程，否则忙碌只会变成下一次加班。"],
-    ["生活", "很多家庭的压力不是某一笔大支出，而是每个月都在漏掉的小钱。"]
-  ].map(([topic, text]) => ({
+    ["房地产", "房贷、租房和家庭现金流，普通人现在更该先算哪一笔账？", "看房先算每月现金流。\n\n月供之外还有物业、通勤和维修，预算只留一条缝，生活就容易被意外支出挤住。"],
+    ["房地产", "买房最容易被忽略的成本，不在首付，而在长期现金流。", "买房最容易让人乐观的，是只盯着首付。\n\n月供要付很多年，真正难熬的是收入波动时还能不能照常生活。"],
+    ["金融", "存款、消费和投资怎么排顺序，很多家庭缺的不是收入而是计划。", "家里的钱一到账就全分给消费和投资，手上很容易没余地。\n\n留出应急的钱，再安排长期目标，心里会踏实些。"],
+    ["金融", "利率变化传到普通人的生活里，最先影响的往往是每月固定支出。", "利率变化听起来像大词，落到家里就是月供和存款收益。\n\n别只看宣传里的年化数字，把每个月实际进出的钱算清楚。"],
+    ["育儿", "育儿最难的阶段，常常不是花钱，而是父母时间和精力怎么分配。", "带孩子最容易被忽略的成本是时间。\n\n接送、陪伴和生病请假都要有人负责，安排之前最好把这些事摊开讲。"],
+    ["育儿", "孩子的兴趣班越报越多之前，先问一句：这真是孩子需要的吗？", "兴趣班排满周末，孩子可能连自己玩一会儿的时间都没了。\n\n报班前问问孩子想学什么，也看看家里能不能长期陪着练。"],
+    ["赚钱", "想增加收入，先把一项能重复交付的小事做稳定，比追风口更实际。", "想多赚一点，先看手里哪件事能稳定交付。\n\n一次接单靠运气，客户愿意再来，才说明这份本事有价值。"],
+    ["赚钱", "副业最容易高估的是收入，最容易低估的是获客、交付和售后。", "副业晒出来的常是收入，没晒出来的是找客户和处理售后。\n\n算收益时把花掉的时间也记上，数字会更接近真实。"],
+    ["业务", "小生意最怕的不是没订单，而是每一单都没有留下可复用的经验。", "小生意每接一单都重新摸索，忙起来也很难轻松。\n\n把报价、交付和客户常问的问题记下来，下次才有东西可复用。"],
+    ["业务", "做业务时把客户的抱怨记下来，常常比再做一轮宣传更有用。", "客户抱怨哪里麻烦，往往比一句好评更有用。\n\n把重复出现的问题改掉，老客户愿意留下来，宣传才不白做。"],
+    ["消费", "便宜不等于省钱，真正该算的是使用频率和买错之后的成本。", "一件东西打折时很容易觉得自己赚了。\n\n买回去只用几次，省下的那点钱还抵不过占地方和重新购买的成本。"],
+    ["教育", "家长焦虑最容易变成课程清单，但孩子真正缺的可能是稳定的练习时间。", "给孩子加课很容易，留出练习时间反而难。\n\n课程排得再满，回家没有消化和休息，进度表也只是家长看着安心。"],
+    ["养老", "养老准备不是退休前才开始，家庭现金流和照护安排都要提前想。", "养老这件事，光算账户里有多少钱还不够。\n\n谁能陪诊、住在哪儿、日常花销由谁承担，也该早点和家人谈。"],
+    ["职场", "工作越忙越要留下可交接的流程，否则忙碌只会变成下一次加班。", "工作一忙就靠记忆撑着，换个人接手又得从头问。\n\n把常见问题和操作步骤留一份，自己休息时也少被电话叫回去。"],
+    ["生活", "很多家庭的压力不是某一笔大支出，而是每个月都在漏掉的小钱。", "家庭账本里最难发现的，常常是自动续费和随手下单。\n\n每月看一眼固定扣款，砍掉不用的项目，比盲目勒紧日常开销容易。"]
+  ].map(([topic, text, fallbackText]) => ({
     id: `evergreen:${topic}:${text}`,
     sourceType: "news",
     source: "evergreen",
-    sourceLabel: "常用民生观点",
+    sourceLabel: "常用社会观察",
     text,
+    fallbackText,
     summary: `围绕${topic}的长期民生观察，可结合普通人的实际选择写出具体判断。`,
     url: "https://2aran.com/",
     sourcePageUrl: "https://2aran.com/"
   }));
+
+  function buildEvergreenFallback(item) {
+    const topic = String(item?.text || "常用社会观察").replace(/[？?！!。]+$/u, "").trim().slice(0, 36) || "常用社会观察";
+    return { topic, text: formatShortPost(item?.fallbackText || "") };
+  }
 
   function keepPublishItem(item) {
     return keepSourceItem(item) && item.draftPolicyVersion === DRAFT_POLICY_VERSION;
@@ -451,25 +442,30 @@
 
   async function collectNewsFallback() {
     emit("正在读取知乎、头条热点…");
+    rewriteServiceError = "";
+    rewriteRejections = [];
     const used = readUsedSourceIds();
     const errors = [];
-    for (const tier of ["external", "opinion"]) {
-      if (state.stopping || state.publishQueue.length >= 5) break;
-      if (tier === "opinion") emit("知乎、头条素材不足，正在读取 2aran 舆情分析热点…");
+    const sourceCounts = [];
+    for (const tier of ["external", "aihot"]) {
+      if (state.stopping || state.publishQueue.length || rewriteServiceError) break;
+      if (tier === "aihot") emit(`知乎、头条尚未写出可发草稿（${sourceCounts.join("；") || "来源读取失败"}），正在读取 AI HOT…`);
       let result;
       try { result = await requestNewsSources(tier); }
-      catch (error) { errors.push(tier === "opinion" ? "站内舆情" : "头条、知乎"); continue; }
+      catch (error) { errors.push(`${tier === "aihot" ? "AI HOT" : "头条、知乎"}：${error?.message || "读取失败"}`); continue; }
       errors.push(...result.errors);
-      const sources = tier === "opinion" ? ["opinion"] : ["zhihu", "toutiao"];
+      const sources = tier === "aihot" ? ["aihot"] : ["zhihu", "toutiao"];
       for (const source of sources) {
-        const items = shuffleNewsItems(result.items.filter((item) => item?.source === source && keepSourceItem(item) && !used.has(item.id)));
+        const parsed = result.items.filter((item) => item?.source === source && keepSourceItem(item));
+        const items = shuffleNewsItems(parsed.filter((item) => !used.has(item.id)));
+        sourceCounts.push(`${sourceLabel(source)} ${parsed.length} 条，未用 ${items.length} 条`);
         state.sourceQueue = items.slice(0, 12);
-        if (state.sourceQueue.length) await buildPublishList(5);
-        if (state.publishQueue.length >= 5 || state.stopping) break;
+        if (state.sourceQueue.length) await buildPublishList(1);
+        if (state.publishQueue.length || state.stopping || rewriteServiceError) break;
       }
     }
     if (!state.publishQueue.length && !state.stopping) {
-      emit("实时热点没有新素材，正在调用模型生成常用民生领域内容…");
+      emit(rewriteServiceError ? `改写服务异常（${rewriteServiceError}），正在检查本地常用社会观察…` : "热点尚未写出可发内容，正在改写常用社会观察…");
       const used = readUsedSourceIds();
       const freshEvergreen = shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).filter((item) => !used.has(item.id));
       const reusableEvergreen = () => shuffleNewsItems(EVERGREEN_TOPIC_ITEMS).map((item, index) => ({
@@ -477,17 +473,20 @@
         id: `${item.id}:reuse:${Math.floor(Date.now() / 86400000)}:${index}`,
         summary: `${item.summary} 这是常用主题的再次取材，必须换一个具体角度，避免重复近期发帖。`
       }));
-      state.sourceQueue = (freshEvergreen.length ? freshEvergreen : reusableEvergreen()).slice(0, 12);
-      if (state.sourceQueue.length) await buildPublishList(5);
-      if (!state.publishQueue.length && freshEvergreen.length && !state.stopping) {
+      state.sourceQueue = (freshEvergreen.length ? freshEvergreen : reusableEvergreen()).slice(0, 15);
+      if (state.sourceQueue.length) await buildPublishList(1);
+      if (!state.publishQueue.length && freshEvergreen.length && !state.stopping && !rewriteServiceError) {
         emit("常用主题已写过，换角度再次生成…");
-        state.sourceQueue = reusableEvergreen().slice(0, 12);
-        await buildPublishList(5);
+        state.sourceQueue = reusableEvergreen().slice(0, 15);
+        await buildPublishList(1);
       }
     }
-    if (!state.publishQueue.length) {
-      throw new Error(`模型暂未生成可发布的常用领域内容${errors.length ? `（${errors.join("、")}读取失败）` : ""}`);
+    if (!state.publishQueue.length && !state.stopping) {
+      const rejected = [...new Set(rewriteRejections)].slice(-5).join("；");
+      const newsAttempts = rewriteRejections.filter((entry) => !entry.startsWith("常用社会观察：")).length;
+      throw new Error(`本轮未写出可发内容。来源：${sourceCounts.join("；") || "无"}；热点实际尝试 ${newsAttempts} 条${errors.length ? `；读取异常：${errors.join("；")}` : ""}${rejected ? `；未通过：${rejected}` : ""}${state.lastError ? `；改写：${state.lastError}` : ""}`);
     }
+    state.lastError = "";
     return state.publishQueue.length;
   }
 
@@ -495,44 +494,52 @@
     filterPromotionalSources();
     const used = readUsedSourceIds();
     const pending = state.sourceQueue.filter((item) => !used.has(item.id) && !state.publishQueue.some((done) => done.id === item.id));
-    const total = state.sourceQueue.length;
-    for (const item of pending) {
+    const total = pending.length;
+    let evergreenModelCandidates = 0;
+    for (const [index, item] of pending.entries()) {
       if (state.stopping) return state.publishQueue.length;
       if (state.publishQueue.length >= limit) break;
-      emit(`正在总结改写 ${state.publishQueue.length + 1}/${total}，写入待发列表`);
+      emit(`已取得${sourceLabel(item.source)}素材，正在改写第 ${index + 1}/${total} 条`);
       let text = "";
       let topic = "";
       let reason = "";
-      let inspected = false;
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
         const recentEndings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").filter(Boolean).at(-1)).filter(Boolean).slice(-8);
-        let avoidPost = "";
-        let avoidReason = "";
-        for (let attempt = 0; attempt < (item.sourceType === "news" ? 2 : 1); attempt += 1) {
-          const result = await requestSourceRewrite(item.text, recentTopics, item, avoidPost, avoidReason, recentOpenings, recentEndings);
-          inspected = true;
+        const tryModel = item.source !== "evergreen" || (!rewriteServiceError && evergreenModelCandidates++ < 3);
+        if (tryModel) {
+          const result = await requestSourceRewrite(item.text, recentTopics, item, "", "", recentOpenings, recentEndings);
           if (result.skip) {
-            reason = "主题与近期内容重复或素材不足";
-            break;
+            reason = item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
+          } else {
+            text = formatModelPost(simplifyPostRhetoric(result.post));
+            topic = String(result.topic || item.text).trim().slice(0, 60);
+            if (!text) reason = "模型未返回正文";
           }
-          text = formatShortPost(result.post);
-          topic = result.topic;
-          reason = qualityReason([item.text, item.summary].filter(Boolean).join("\n"), text, topic, item.sourceType) || duplicateReason(text, topic, recentEntries());
-          if (!reason || item.sourceType !== "news" || reason === "主题重复" || attempt > 0) break;
-          avoidPost = result.post;
-          avoidReason = reason;
         }
       } catch (error) {
         reason = error?.message || "改写失败";
+        state.lastError = reason;
+        rewriteServiceError = reason;
+      }
+      if (item.source === "evergreen" && (reason || !text)) {
+        const fallback = buildEvergreenFallback(item);
+        const fallbackReason = !fallback.text ? "没有正文" : recentEntries().some((entry) => sameDraftText(entry.text, fallback.text)) ? "正文与已发内容完全相同" : "";
+        if (!fallbackReason) {
+          text = fallback.text;
+          topic = fallback.topic;
+          reason = "";
+          emit(rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地常用社会观察内容` : "模型暂未返回合适草稿，已切换常用社会观察兜底内容");
+        } else reason = `本地兜底${fallbackReason}`;
       }
       if (reason) {
-        if (inspected) await rememberUsedSourceId(item.id);
-        emit(`跳过素材：${reason}；待发 ${state.publishQueue.length} 条`);
+        rewriteRejections.push(`${sourceLabel(item.source)}：${reason}`);
+        emit(`${sourceLabel(item.source)}第 ${index + 1}/${total} 条未通过：${reason}；继续尝试下一条`);
+        if (rewriteServiceError && item.source !== "evergreen") break;
         continue;
       }
-      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceSummary: item.summary || "", sourceType: "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
+      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceSummary: item.summary || "", sourceType: item.source === "evergreen" ? "evergreen" : "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
       await savePublishList();
       await rememberUsedSourceId(item.id);
       emit(`待发列表 ${state.publishQueue.length}/${total} 条。列表发完前不会重新抓取`);
@@ -543,7 +550,9 @@
   }
 
   function readUsedSourceIds() {
-    return new Set(history.sourceIds);
+    const published = new Set(history.published.map((item) => String(item.sourceId || "")).filter(Boolean));
+    const queued = new Set(state.publishQueue.map((item) => String(item.id || "")).filter(Boolean));
+    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
   }
 
   async function rememberUsedSourceId(id) {
@@ -559,7 +568,7 @@
   }
 
   function sourceLabel(source) {
-    return { evergreen: "常用民生观点", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
+    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
   }
 
   async function rememberPublishedPost(sourceId, text, topic, item = null) {
@@ -849,17 +858,8 @@
       }
       const nextItem = state.publishQueue[0];
       if (nextItem) {
-        const formatted = formatShortPost(nextItem.text);
-        if (formatted !== nextItem.text) {
-          nextItem.text = formatted;
-          if (state.currentSourceId === nextItem.id) state.currentPost = formatted;
-          await savePublishList();
-        }
-        const reason = !nextItem.topic || !nextItem.sourceText
-          ? "旧版草稿需要重新生成"
-          : qualityReason([nextItem.sourceText, nextItem.sourceSummary].filter(Boolean).join("\n"), nextItem.text, nextItem.topic, nextItem.sourceType) || duplicateReason(nextItem.text, nextItem.topic, history.published);
-        if (reason) {
-          await skipUnsafeQueuedPost(nextItem, reason);
+        if (!preserveLines(nextItem.text)) {
+          await skipUnsafeQueuedPost(nextItem, "草稿没有正文");
           continue;
         }
       }
@@ -872,7 +872,7 @@
       if (!queuedIsNew && state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
         emit(state.lastError
-          ? `上次异常：${state.lastError}；约 ${remaining} 分钟后重试`
+          ? `上次异常：${state.lastError}；本轮发帖已结束，约 ${remaining} 分钟后再次尝试`
           : `待发 ${state.publishQueue.length} 条，下一条约 ${remaining} 分钟后发布`);
         if (state.nextPostAt <= Date.now()) continue;
         await waitForPostSchedule(Math.min(5000, state.nextPostAt - Date.now()));
@@ -886,11 +886,32 @@
             continue;
           }
           const item = state.publishQueue[0];
+          if (state.currentSourceId !== item.id) state.currentPostAttempts = 0;
           state.currentSourceId = item.id;
-          state.currentPost = item.text;
+          const revisedText = simplifyPostRhetoric(item.text);
+          if (revisedText !== item.text) {
+            item.text = revisedText;
+            await savePublishList();
+          }
+          state.currentPost = revisedText;
           emit(`第 3 步：正在发送待发列表，还剩 ${state.publishQueue.length} 条`);
         } else {
           emit(`正在重试待发列表中的这一条，还剩 ${state.publishQueue.length} 条`);
+        }
+        const revisedCurrentPost = simplifyPostRhetoric(state.currentPost);
+        if (revisedCurrentPost !== state.currentPost) {
+          const existingDraft = editorText(findInlineComposer()?.editor);
+          if (existingDraft && sameDraftText(existingDraft, state.currentPost)) {
+            const cleared = await requestDraftFill("", { clear: true });
+            if (!cleared.ok) {
+              emit("旧草稿仍在发帖框，等待清空后使用修改后的内容");
+              await wait(1500);
+              continue;
+            }
+          }
+          state.currentPost = revisedCurrentPost;
+          if (state.publishQueue[0]) state.publishQueue[0].text = revisedCurrentPost;
+          await savePublishList();
         }
         const result = await publishPost(state.currentPost);
         if (result === "duplicate-post") {
@@ -900,9 +921,22 @@
         if (result !== "ok") {
           state.errors += 1;
           state.lastError = failureLabel(result);
+          state.currentPostAttempts += 1;
+          if (state.currentPostAttempts >= 3) {
+            const failedItem = state.publishQueue[0];
+            const skipped = failedItem ? await skipUnsafeQueuedPost(failedItem, `${state.lastError}连续 3 次，已跳过这条内容`) : false;
+            if (skipped) {
+              state.currentPostAttempts = 0;
+              state.currentPost = "";
+              state.currentSourceId = "";
+              state.nextPostAt = 0;
+              emit(`这条内容连续失败 3 次，已跳过；待发 ${state.publishQueue.length} 条`);
+              continue;
+            }
+          }
           state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
           await savePublishList();
-          emit(`${state.lastError}，1 分钟后重试同一条`);
+          emit(`遇到${state.lastError}；本轮发帖暂停，1 分钟后再次尝试同一条`);
           continue;
         }
         state.count += 1;
@@ -917,6 +951,7 @@
         const publishedSourceId = state.currentSourceId;
         const publishedText = state.currentPost;
         state.currentSourceId = "";
+        state.currentPostAttempts = 0;
         state.lastPost = state.currentPost;
         state.lastSentText = state.currentPost;
         state.currentPost = "";
@@ -930,10 +965,11 @@
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
+        state.currentPostAttempts += 1;
         state.lastError = error?.message || "取材失败";
         state.nextPostAt = Date.now() + RETRY_INTERVAL_MS;
         await savePublishList();
-        emit(`${state.lastError}，1 分钟后重试`);
+          emit(`遇到${state.lastError}；本轮发帖暂停，1 分钟后再次尝试`);
       }
     }
   }
@@ -997,7 +1033,7 @@
   }
 
   async function startNow() {
-    if (!state.running || state.stopping || state.nextPostAt <= Date.now() || state.lastError) return false;
+    if (!state.running || state.stopping || state.nextPostAt <= Date.now()) return false;
     state.nextPostAt = 0;
     await savePublishList();
     emit("手动开始，正在准备下一条");
@@ -1040,11 +1076,10 @@
     randomIntervalMs,
     formatPost,
     formatShortPost,
+    simplifyPostRhetoric,
+    formatModelPost,
     editorText,
     duplicatePostNoticeNodes,
-    qualityReason,
-    duplicateReason,
-    similarity,
     loadHistory,
     readUsedSourceIds,
     rememberUsedSourceId,

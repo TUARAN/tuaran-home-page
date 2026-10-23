@@ -154,8 +154,43 @@ async function handleMessage(message) {
   return { ok: false, error: "未知请求" };
 }
 
+function permissionClickAllowed(message, sender) {
+  if (message?.type !== "xhsia-permission-click" || !Number.isFinite(message.x) || !Number.isFinite(message.y)) return false;
+  if (!Number.isInteger(sender?.tab?.id) || sender.id !== chrome.runtime.id) return false;
+  try {
+    const url = new URL(sender.url || sender.tab.url);
+    return url.origin === "https://creator.xiaohongshu.com"
+      && /^\/new\/note-manager(?:\/|$)/u.test(url.pathname)
+      && message.x >= 0 && message.y >= 0
+      && message.x < (sender.tab.width || 10000)
+      && message.y < (sender.tab.height || 10000);
+  } catch (_) { return false; }
+}
+
+async function dispatchPermissionClick(message, sender) {
+  if (!permissionClickAllowed(message, sender)) throw new Error("权限点击请求不在笔记管理页或坐标无效");
+  const target = { tabId: sender.tab.id };
+  await chrome.debugger.attach(target, "1.3");
+  try {
+    for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) {
+      await chrome.debugger.sendCommand(target, "Input.dispatchMouseEvent", {
+        type, x: message.x, y: message.y, button: "left", clickCount: type === "mouseMoved" ? 0 : 1
+      });
+    }
+    return { ok: true };
+  } finally {
+    await chrome.debugger.detach(target);
+  }
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === "xhsia-permission-click") {
+      dispatchPermissionClick(message, sender)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "浏览器点击失败" }));
+      return true;
+    }
     if (message?.type === "xhsia-community-event" || message?.type === "xhsia-community-heartbeat") {
       const receipt = globalThis.XhsCommunityReceipt;
       if (!receipt) {
@@ -189,6 +224,8 @@ if (typeof module === "object" && module.exports) {
     NOTE_TIMEOUT_MS,
     AI_SETTINGS_KEY,
     loadPoster,
-    createNote
+    createNote,
+    permissionClickAllowed,
+    dispatchPermissionClick
   };
 }

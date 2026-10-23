@@ -39,15 +39,15 @@ test('task window hints distinguish opening, jumping, and current window', async
   assert.ok(titleDefinition)
   const context = vm.createContext({
     TASK_GROUP_MODES: { reply: ['timeline', 'notifications'], likes: ['likes-posts', 'likes-replies'] },
-    TASK_MODE_LABELS: { timeline: '首页互动', notifications: '通知互动', 'likes-posts': '首页帖子' },
+    TASK_MODE_LABELS: { timeline: '评论帖子', notifications: '评论通知', 'likes-posts': '点赞帖子' },
     openTaskTabs: {},
     pluginRuntime: { tasks: {} },
     currentTaskKey: () => 'timeline',
   })
   vm.runInContext(`${groupDefinition}\n${titleDefinition}\nglobalThis.target = taskGroupTarget; globalThis.title = taskWindowTitle`, context)
-  assert.equal(context.title('notifications', {}, 'timeline'), '打开通知互动窗口')
-  assert.equal(context.title('notifications', { notifications: 42 }, 'timeline'), '跳转到已打开的通知互动窗口')
-  assert.equal(context.title('timeline', { timeline: 12 }, 'timeline'), '当前首页互动窗口')
+  assert.equal(context.title('notifications', {}, 'timeline'), '打开评论通知窗口')
+  assert.equal(context.title('notifications', { notifications: 42 }, 'timeline'), '跳转到已打开的评论通知窗口')
+  assert.equal(context.title('timeline', { timeline: 12 }, 'timeline'), '当前评论帖子窗口')
   const target = context.target('reply', { timeline: 12, notifications: 42 }, 'timeline', { notifications: { phase: 'running' } })
   assert.equal(target.mode, 'notifications')
   assert.equal(target.openedElsewhere, true)
@@ -169,7 +169,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '首页互动'], ['notifications', '通知互动'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '首页帖子点赞'], ['likes-replies', '帖子评论点赞']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
   })
   vm.runInContext(`${definition}\nglobalThis.overview = flowTaskOverview`, context)
@@ -184,6 +184,41 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.equal(result.text, '2 项执行 · 1 项等待 · 3 项未启动 · 1 项待确认')
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
+})
+
+test('flow detail dialog lists all seven tasks using the overview statuses', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && details)
+  const list = { replaceChildren(...children) { this.children = children } }
+  const total = { textContent: '' }
+  const dialog = { hidden: false, querySelector(selector) { return selector === '[data-xrc-flow-details-list]' ? list : total } }
+  const panel = { querySelector() { return dialog } }
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_STALE_MS: 90000,
+    pluginRuntime: { flow: { phase: 'running' }, tasks: {
+      timeline: { phase: 'running', updatedAt: now },
+      notifications: { phase: 'paused', updatedAt: now },
+      poster: { phase: 'running', updatedAt: now - 91000 },
+    } },
+    document: { createElement() { return { dataset: {}, append(...children) { this.children = children } } } },
+  })
+  vm.runInContext(`${overview}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
+  context.paint(panel)
+  assert.equal(list.children.length, 7)
+  assert.equal(list.children[0].children[0].textContent, '评论帖子')
+  assert.equal(list.children[0].children[1].textContent, '执行中')
+  assert.equal(list.children[1].children[1].textContent, '等待中')
+  assert.equal(list.children[2].children[1].textContent, '未启动')
+  assert.equal(list.children[4].children[1].textContent, '待确认')
+  assert.match(total.textContent, /1 项执行 · 1 项等待 · 4 项未启动 · 1 项待确认/)
+  assert.match(source, /data-xrc-flow-details-open aria-haspopup="dialog"/)
+  assert.match(source, /data-xrc-flow-details role="dialog" aria-modal="true"/)
+  assert.match(css, /\.xrc-flow-details\[hidden\] \{ display: none; \}/)
 })
 
 test('paused flow wins over stale stopping task records', async () => {
@@ -272,6 +307,69 @@ test('daily report totals combine local days and accounts without changing the s
   assert.deepEqual(plain(context.sum(reports)), { comments: 13, likes: 8, follows: 1, unfollows: 2, followBacks: 3 })
   assert.deepEqual(plain(context.sum(reports.filter((row) => row.date === '2026-10-14'))), { comments: 11, likes: 5, follows: 0, unfollows: 2, followBacks: 3 })
   assert.deepEqual(plain(context.sum(reports.filter((row) => row.date === '2026-10-14' && row.accountHandle === 'a'))), { comments: 4, likes: 5, follows: 0, unfollows: 2, followBacks: 0 })
+})
+
+test('daily backfill uploads only older reports that changed since the last upload', async () => {
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  const nowDate = receipt.shanghaiDate()
+  const stored = {
+    xrcCommunityReport: { secret: 'test-secret', deviceId: 'device-12345678', accountHandle: 'account', queue: [] },
+    xrcDailyReports: [
+      { date: '2026-10-20', accountHandle: 'account', counts: { comments: 3 }, updatedAt: 50, uploadedAt: 100 },
+      { date: '2026-10-21', accountHandle: 'account', counts: { comments: 5 }, updatedAt: 200, uploadedAt: 100 },
+      { date: '2026-10-22', accountHandle: 'account', counts: { comments: 7 }, updatedAt: 300, uploadedAt: 0 },
+      { date: nowDate, accountHandle: 'account', counts: { comments: 9 }, updatedAt: 400, uploadedAt: 0 },
+    ],
+  }
+  const sent = []
+  globalThis.chrome = { runtime: { getManifest: () => ({ version: '3.29.0' }) }, storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  globalThis.fetch = async (_url, options) => {
+    sent.push(JSON.parse(options.body).dailyReport.date)
+    return { ok: true, async json() { return { dailyReportSaved: true } } }
+  }
+  try {
+    const result = await receipt.uploadPendingDailyReports(nowDate)
+    assert.equal(result.ok, true)
+    assert.equal(result.uploaded, 2)
+    assert.deepEqual(sent, ['2026-10-21', '2026-10-22'])
+    assert.ok(stored.xrcDailyReports[1].uploadedAt > 0)
+    assert.equal(stored.xrcDailyReports[3].uploadedAt, 0)
+    assert.equal((await receipt.uploadPendingDailyReports(nowDate)).uploaded, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('daily upload alarm starts at tomorrow 09:00 Shanghai time and retries failed uploads', async () => {
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  const stored = {
+    xrcCommunityReport: { secret: 'test-secret', deviceId: 'device-12345678', accountHandle: 'account', queue: [] },
+    xrcDailyReports: [{ date: '2026-10-21', accountHandle: 'account', counts: { comments: 1 }, updatedAt: 1, uploadedAt: 0 }],
+  }
+  const alarms = []
+  globalThis.chrome = { alarms: { async create(name, options) { alarms.push({ name, when: options.when }) } }, storage: { local: {
+    async get(keys) { return Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map((key) => [key, stored[key]])) },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  globalThis.fetch = async () => ({ ok: false, status: 503 })
+  try {
+    assert.equal(new Date(receipt.tomorrowShanghaiNine(Date.parse('2026-10-23T00:00:00Z'))).toISOString(), '2026-10-24T01:00:00.000Z')
+    const result = await receipt.installDailyUploadSchedule()
+    assert.equal(result.ok, false)
+    assert.equal(result.failedDate, '2026-10-21')
+    assert.ok(alarms.some((alarm) => alarm.name === 'xrc-daily-upload' && alarm.when > Date.now()))
+    assert.equal(stored.xrcDailyReports[0].uploadedAt, 0)
+    assert.equal(stored.xrcDailyUploadSchedule.lastResult.ok, false)
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
 })
 
 test('cumulative report counts use one decimal only when needed and keep exact daily counts', async () => {
@@ -1051,25 +1149,20 @@ test('AI poster formats blank lines and keeps the random interval between 25 and
   assert.ok(Array.from(poster.formatPost('内容'.repeat(300))).length <= 180)
 })
 
-test('scheduled post keeps the hook but rejects loud, shallow, and repeated drafts', () => {
-  const source = '一个人的表达方式会影响讨论\n同样的观点，语气不同，收到的回应也不同'
-  const good = '一个人的表达方式会影响讨论\n\n同样的意见，讲清楚缘由更好接话，\n\n也能给不同看法留点空间。'
-  assert.equal(poster.qualityReason(source, good, '表达方式影响讨论'), '')
+test('scheduled post separates long drafts into paragraphs with blank lines', () => {
   assert.equal(poster.formatShortPost('说句难听点的\n会不会搜东西，本质是能否把模糊需求拆成关键词。'), '说句难听点的\n\n会不会搜东西，本质是能否把模糊需求拆成关键词。')
   const singleParagraph = '贵州小伙零彩礼娶了俄罗斯姑娘。零彩礼这条，比身高差更值得琢磨。是真不在乎，还是本来就没这套规矩？'
   assert.equal(poster.formatShortPost(singleParagraph), '贵州小伙零彩礼娶了俄罗斯姑娘。\n\n零彩礼这条，比身高差更值得琢磨。\n\n是真不在乎，还是本来就没这套规矩？')
-  assert.equal(poster.qualityReason('贵州小伙零彩礼结婚引发讨论', singleParagraph, '零彩礼结婚讨论', 'news'), '热点短帖行数不合适')
   assert.equal(poster.formatShortPost('我真的很好奇\n\n为什么要限制炒美股？'), '我真的很好奇\n\n为什么要限制炒美股？')
-  assert.equal(poster.qualityReason(source, `${good}这是一段多余的长解释。`.repeat(2), '表达方式影响讨论'), '正文过短或过长')
-  assert.equal(poster.qualityReason(source, good.replace('一个人的表达方式会影响讨论', '另一个开头'), '表达方式影响讨论'), '首句没有保留')
-  assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论\n确实，不同语气不同回应', '表达方式影响讨论'), '正文过短或过长')
-  assert.equal(poster.qualityReason(source, '一个人的表达方式会影响讨论？？？\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。', '表达方式影响讨论'), '首句没有保留')
-  assert.equal(poster.qualityReason('你们都该闭嘴？？？\n原文', '你们都该闭嘴？？？\n同样的意见，讲清楚缘由通常更容易让人接着聊，也给不同看法留一点空间。', '表达方式影响讨论'), '语气过火')
-  assert.equal(poster.duplicateReason(good, '表达方式影响讨论', [{ topic: '表达方式影响讨论', text: '另一篇内容' }]), '主题重复')
-  assert.equal(poster.duplicateReason(good, '讨论时留下交流空间', [{ topic: '不同主题', text: good }]), '正文重复')
-  assert.equal(poster.duplicateReason('说个暴论，外卖打包还在加层。\n\n盒子越结实，拆开越费劲。', '外卖包装', [{ topic: '医院挂号', text: '说个暴论，医院挂号排队这事。\n\n窗口减少了，手机步骤却多了。' }]), '开头句式重复')
-  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '说个暴论\n\n新工具刚上线。\n\n不少人还没打开，名字已被吹上天。', '新工具上线跟风', 'news'), '开头没有具体内容')
-  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开，名字已被吹上天。\n\n你怎么看？', '新工具上线跟风', 'news'), '收尾太模板化')
+  assert.equal(poster.formatModelPost('这项新规今天公布了。执行细节还没说清，我觉得先别急着夸。'), '这项新规今天公布了。\n\n执行细节还没说清，我觉得先别急着夸。')
+  assert.equal(poster.formatModelPost('这项新规今天公布了。\n\n执行细节还没说清，我觉得先别急着夸。'), '这项新规今天公布了。\n\n执行细节还没说清，我觉得先别急着夸。')
+  assert.equal(poster.simplifyPostRhetoric('这更像客户在用脚投票，而非简单改版。'), '客户在用脚投票。')
+  assert.equal(poster.simplifyPostRhetoric('说个暴论，这更像客户在用脚投票，而非简单改版。\n\n新界面让老用户多走了两步。'), '说个暴论，客户在用脚投票。\n\n新界面让老用户多走了两步。')
+  assert.equal(poster.simplifyPostRhetoric('这不是简单改版，而是客户在用脚投票。'), '客户在用脚投票。')
+  assert.equal(poster.simplifyPostRhetoric('新界面让老用户多走了两步。\n\n这更像客户在用脚投票，而非简单改版。'), '新界面让老用户多走了两步。\n\n客户在用脚投票。')
+  assert.equal(poster.simplifyPostRhetoric('游戏公司缩减了外部咨询预算。\n\n游戏公司砍掉这类外部咨询预算时，先跑的就是最挨骂的那一环。'), '游戏公司缩减了外部咨询预算。')
+  assert.equal(poster.simplifyPostRhetoric('游戏公司缩减了外部咨询预算。具体项目的处理方式还要看公开公告。'), '游戏公司缩减了外部咨询预算。具体项目的处理方式还要看公开公告。')
+  assert.equal(poster.simplifyPostRhetoric('我真心觉得宋兴宇14岁辍学还能自学机械、飞控，花两个月做出载人飞行滑板飞越长江，最硬的地方是他把电影里的“绿魔”滑板真飞起来了。\n\n负债240万没挡住他继续试，这比飞越本身更能说明自学的分量。'), '我真心觉得宋兴宇14岁辍学还能自学机械、飞控，花两个月做出载人飞行滑板飞越长江，真硬啊。\n\n负债240万没挡住他继续试，太有分量了。')
 })
 
 test('used source IDs survive a fresh scheduled-post tab', async () => {
@@ -1100,7 +1193,26 @@ test('used source IDs survive a fresh scheduled-post tab', async () => {
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourceLabel, '2aran 舆情分析')
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourceUrl, 'https://example.com/source')
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourcePageUrl, 'https://2aran.com/public-opinion')
-  assert.equal(second.duplicateReason('另一个钩子\n另一条内容', '表达方式会影响讨论', storage.xrcPosterHistoryV2.published), '主题重复')
+})
+
+test('news IDs consumed by failed old rewrites become available again while published IDs stay deduplicated', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const stored = { xrcPosterHistoryV2: {
+    sourceIds: ['toutiao:failed', 'toutiao:published'],
+    published: [{ sourceId: 'toutiao:published', text: '这条已经发出', topic: '公开新闻' }],
+  } }
+  const context = vm.createContext({
+    chrome: { storage: { local: {
+      async get(key) { return { [key]: stored[key] } },
+      async set(value) { Object.assign(stored, value) },
+    } } },
+    sessionStorage: { getItem: () => null },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  assert.equal(api.readUsedSourceIds().has('toutiao:failed'), false)
+  assert.equal(api.readUsedSourceIds().has('toutiao:published'), true)
 })
 
 test('failed rewrites never fall back to the source post in the publish queue', async () => {
@@ -1166,7 +1278,7 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   const api = context.XInteractionPoster
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(seen, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:', 'xrc-ai-news-sources:opinion'])
+  assert.deepEqual(seen, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:'])
   assert.equal(api.snapshot().publishQueue.length, 1)
   assert.equal(api.snapshot().publishQueue[0].sourceType, 'news')
   assert.equal(api.snapshot().publishQueue[0].sourceLabel, '今日头条')
@@ -1174,12 +1286,88 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   assert.equal(api.readUsedSourceIds().has('toutiao:123'), true)
   api.snapshot().publishQueue.length = 0
   await api.collectNewsFallback()
-  assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
-  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '常用民生观点')
-  assert.equal(rewrites.at(-1).source, 'evergreen')
+  assert.equal(api.snapshot().publishQueue[0].source, 'toutiao')
+  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '今日头条')
+  assert.equal(rewrites.at(-1).source, 'toutiao')
 })
 
-test('scheduled poster uses site opinion after external feeds lack usable items', async () => {
+test('a rewrite service failure falls back locally without exhausting news sources or marking them used', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const calls = []
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        calls.push(`${message.type}:${message.tier || ''}`)
+        if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: [
+          { id: 'toutiao:123', sourceType: 'news', source: 'toutiao', text: '一个关于新工具使用方式的公开讨论' },
+        ], errors: ['知乎：HTTP 401'] })
+        else respond({ ok: false, error: 'DeepSeek 请求失败（503）' })
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  await api.collectNewsFallback()
+  assert.deepEqual(calls, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:'])
+  assert.equal(api.readUsedSourceIds().has('toutiao:123'), false)
+  assert.equal(api.snapshot().publishQueue.length, 1)
+  assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
+  assert.ok(api.snapshot().publishQueue[0].text)
+})
+
+test('available feeds with rejected rewrites still produce distinct local social observations', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = { xrcPosterHistoryV2: {
+    sourceIds: [],
+    published: [
+      { sourceId: 'evergreen:old-1', topic: '旧的泛化话题一', text: '老话题\n\n很多人讨论到最后，还是要回到自己的时间、现金流和承受范围。' },
+      { sourceId: 'evergreen:old-2', topic: '旧的泛化话题二', text: '老话题\n\n先把现实条件摆出来，再决定怎么做，通常比追着一句口号走更稳。' },
+    ],
+  } }
+  const feed = (sourceName, count) => Array.from({ length: count }, (_, index) => ({
+    id: `${sourceName}:${index}`, source: sourceName, sourceType: 'news',
+    text: `关于普通人生活选择的讨论第${index}条`,
+  }))
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: message.tier === 'external'
+          ? [...feed('zhihu', 25), ...feed('toutiao', 25)] : feed('aihot', 30) })
+        else respond({ ok: true, skip: true })
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  const publishedTexts = new Set()
+  for (let index = 0; index < 15; index += 1) {
+    await api.collectNewsFallback()
+    const [draft] = api.snapshot().publishQueue
+    assert.equal(draft.source, 'evergreen')
+    assert.ok(draft.text)
+    assert.equal(publishedTexts.has(draft.text), false)
+    publishedTexts.add(draft.text)
+    api.snapshot().publishQueue.shift()
+    await api.rememberPublishedPost(draft.id, draft.text, draft.topic, draft)
+  }
+  assert.equal(publishedTexts.size, 15)
+  await assert.rejects(api.collectNewsFallback(), /未通过：.*正文与已发内容完全相同/)
+})
+
+test('scheduled poster falls back to common social observations after hot feeds lack usable items', async () => {
   const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
   const storage = {}
   const calls = []
@@ -1206,9 +1394,11 @@ test('scheduled poster uses site opinion after external feeds lack usable items'
   const api = context.XInteractionPoster
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(calls, ['xrc-ai-news-sources:external', 'xrc-ai-news-sources:opinion', 'xrc-ai-news-rewrite:'])
-  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '2aran 舆情分析')
-  assert.equal(api.snapshot().publishQueue[0].sourcePageUrl, 'https://2aran.com/public-opinion')
+  assert.equal(calls[0], 'xrc-ai-news-sources:external')
+  assert.equal(calls[1], 'xrc-ai-news-sources:aihot')
+  assert.ok(calls.slice(2).every((call) => call === 'xrc-ai-news-rewrite:'))
+  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '常用社会观察')
+  assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
 })
 
 test('scheduled poster drafts Zhihu topics before Toutiao topics', async () => {
@@ -1243,14 +1433,59 @@ test('scheduled poster drafts Zhihu topics before Toutiao topics', async () => {
   const api = context.XInteractionPoster
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(rewritten, ['zhihu', 'toutiao'])
-  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.source), ['zhihu', 'toutiao'])
-  assert.ok(Array.from(rewriteRequests[1].recentOpenings).includes('新工具刚上线'))
-  assert.ok(Array.from(rewriteRequests[1].recentEndings).includes('名字已经先被吹上天了。'))
+  assert.deepEqual(rewritten, ['zhihu'])
+  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.source), ['zhihu'])
+  assert.equal(rewriteRequests.length, 1)
+})
+
+test('scheduled poster keeps trying fetched topics and reports the actual source and position', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = {}
+  const statuses = []
+  let rewrites = 0
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(message, respond) {
+        if (message.type === 'xrc-ai-news-sources') {
+          respond({ ok: true, items: Array.from({ length: 4 }, (_, index) => ({
+            id: `zhihu:${index}`, sourceType: 'news', source: 'zhihu',
+            text: `关于普通人生活选择的讨论第${index}条`,
+          })) })
+        } else {
+          rewrites += 1
+          respond(rewrites <= 3 ? { ok: true, skip: true } : {
+            ok: true, topic: '普通人生活选择',
+            post: '普通人做选择，先看自己能承担什么。\n\n把时间和现金流算清楚，再决定要不要跟上。',
+          })
+        }
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: {
+      getItem: () => null,
+      setItem(_key, value) { statuses.push(JSON.parse(value).status) },
+    },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  await api.collectNewsFallback()
+  assert.equal(rewrites, 4)
+  assert.equal(api.snapshot().publishQueue[0].source, 'zhihu')
+  assert.ok(statuses.some((status) => /已取得知乎素材，正在改写第 4\/4 条/.test(status)))
+  assert.ok(statuses.some((status) => /知乎第 3\/4 条未通过/.test(status)))
 })
 
 test('hot-topic parsers require current site data and keep stable source IDs', () => {
+  const aihot = background.parseAihotFeed('<rss><channel><item><guid>ai-42</guid><title>AI 行业正在发生的新变化</title><link>https://aihot.news/p/42</link><description><![CDATA[一段行业摘要]]></description></item></channel></rss>')
+  assert.equal(aihot[0].id, 'aihot:ai-42')
+  assert.equal(aihot[0].sourceLabel, 'AI HOT')
+  assert.equal(aihot[0].url, 'https://aihot.news/p/42')
   assert.equal(background.parseToutiaoHot({ data: [{ ClusterId: '123', Title: '一个关于新工具使用方式的公开讨论', Url: 'https://www.toutiao.com/a123' }] })[0].id, 'toutiao:123')
+  assert.equal(background.parseToutiaoHot({ data: [{ ClusterId: 7698667807361319433, ClusterIdStr: '7698667807361319433', Title: '工信部：禁止车辆行驶时用零重力座椅', Url: 'https://www.toutiao.com/trending/7698667807361319433/' }] })[0].id, 'toutiao:7698667807361319433')
   assert.equal(background.parseZhihuHot({ data: [{ target: { id: 42, title: '为什么很多人会误解新工具的使用方式？', url: 'https://www.zhihu.com/question/42' } }] })[0].id, 'zhihu:42')
   const event = { id: 'po_123', title: '新工具使用方式引发讨论', latestAt: new Date().toISOString() }
   assert.equal(background.parseOpinionHot({ source: 'fallback', meta: { hasData: false }, events: [event] }).length, 0)
@@ -1258,21 +1493,24 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].id, 'opinion:po_123')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
-  assert.equal(poster.qualityReason('一个关于新工具使用方式的公开讨论', '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。', '新工具上线跟风', 'news'), '')
-  assert.equal(poster.qualityReason('体检抽血为什么要抽多管', '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。', '抽血检测流程', 'news'), '说理口吻太重')
-  assert.match(background.POST_SYSTEM_PROMPT, /口语直白/)
-  assert.match(background.POST_SYSTEM_PROMPT, /说个暴论/)
-  assert.match(background.POST_SYSTEM_PROMPT, /三段式微型故事/)
-  assert.match(background.POST_SYSTEM_PROMPT, /标题和摘要是唯一事实依据/)
-  assert.match(background.POST_SYSTEM_PROMPT, /不固定套句/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /秘密或内幕暗示/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /45～110/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /第一句至少带出一个明确的新闻对象/)
+  assert.match(background.POST_SYSTEM_PROMPT, /先从读者视角用一句话交代具体对象和发生的事/)
+  assert.match(background.POST_SYSTEM_PROMPT, /35～90 个中文字符/)
+  assert.match(background.POST_SYSTEM_PROMPT, /写成 2～3 个短段，段与段之间留 1 个空行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /直接说感受，不把赞叹写成意义分析/)
+  assert.match(background.POST_SYSTEM_PROMPT, /不要为了凑段落补理由或总结/)
+  assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /最多 1 句理由/)
+  assert.match(background.POST_SYSTEM_PROMPT, /0 句‘不是……而是……’/)
+  assert.match(background.POST_SYSTEM_PROMPT, /‘这比……更能说明……’/)
+  assert.match(background.POST_SYSTEM_PROMPT, /‘更像……而非……’/)
+  assert.match(background.POST_SYSTEM_PROMPT, /0 句‘本文认为’/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /观点型标题党/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /0 句‘不是……而是……’/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /45～100 个中文字符/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /不要为了凑段落补后果、理由或总结/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /0 次三段式说理/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
-  assert.equal(poster.qualityReason('奶茶店爆单与员工排班引发讨论', '爆单那晚，出杯口没停过。\n\n排班表上还是同一个名字。\n\n折扣是牌子上的，手速是店员自己的。', '奶茶店员工排班', 'news'), '文艺化套话')
-  assert.equal(poster.qualityReason('住院部天花板霉斑引发讨论', '住院部天花板有霉斑。\n\n院方承认疏忽，这话像在说墙面，又像不止墙面。', '住院部霉斑问题', 'news'), '文艺化套话')
-  assert.equal(poster.qualityReason('一梯一户电梯刷卡是否安全引发讨论', '一梯一户刷卡，5楼和10楼一起进电梯。\n\n先到5楼，10楼的人跟着下来。', '电梯刷卡安全', 'news'), '具体数字没有素材依据')
-  assert.equal(poster.qualityReason('体检抽血分管且未说明用途', '说个暴论，抽血要分好几管，至少先讲清楚每管查什么。', '抽血用途说明', 'news'), '')
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的类似句式也要改成直接陈述/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /不要凭行业印象虚构砍预算后的人员反应/)
 })
 
 test('scheduled hot-topic rewrite uses the visible post prompt and migrates the old default', async () => {
@@ -1282,6 +1520,10 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
   const promptContext = vm.createContext({})
   vm.runInContext(`${declaration.replace('const DEFAULT_POST_PROMPT', 'var DEFAULT_POST_PROMPT')}\nglobalThis.value = DEFAULT_POST_PROMPT`, promptContext)
   assert.equal(promptContext.value, background.POST_SYSTEM_PROMPT)
+  const clickbaitDeclaration = contentSource.match(/  const CLICKBAIT_POST_PROMPT = \[[\s\S]*?\n  \]\.join\("\\n"\);/)?.[0]
+  assert.ok(clickbaitDeclaration)
+  vm.runInContext(`${clickbaitDeclaration.replace('const CLICKBAIT_POST_PROMPT', 'var CLICKBAIT_POST_PROMPT')}\nglobalThis.clickbait = CLICKBAIT_POST_PROMPT`, promptContext)
+  assert.equal(promptContext.clickbait, background.CLICKBAIT_POST_PROMPT)
 
   const originalChrome = globalThis.chrome
   const originalFetch = globalThis.fetch
@@ -1298,7 +1540,7 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     assert.match(requestBody.messages[0].content, /本接口仅用 JSON 包装结果/)
     storedPostPrompt = '从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /三段式微型故事/)
+    assert.match(requestBody.messages[0].content, /先从读者视角用一句话交代具体对象和发生的事/)
     assert.doesNotMatch(requestBody.messages[0].content, /3 到 5 行，总共 35 到 75 个字/)
     storedPostPrompt = '根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话、有一点个人判断的口气；不要模仿他的原句。不要写成三行微型故事。这话像在说 X，又像不止 X。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
@@ -1306,15 +1548,59 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     assert.doesNotMatch(requestBody.messages[0].content, /参考王长富那种直接说人话/)
     storedPostPrompt = '结构：总共 18～70 字。短的一行即可，长的 2～4 行；换行时行间留一个空行。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /每段一行、段间留一个空行/)
+    assert.match(requestBody.messages[0].content, /35～90 个中文字符/)
     assert.doesNotMatch(requestBody.messages[0].content, /短的一行即可/)
+    storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态。篇幅：目标 35～90 个中文字符。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /先从读者视角用一句话交代具体对象和发生的事/)
+    assert.doesNotMatch(requestBody.messages[0].content, /开头就表态/)
+    storedPostPrompt = '风格：标题党引子。第一句至少带出对象。素材适合时可写“真正值得注意的是”。写 3～5 个短段。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /观点型标题党/)
+    assert.doesNotMatch(requestBody.messages[0].content, /真正值得注意的是/)
+    storedPostPrompt = '风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断。篇幅：目标 45～100 个中文字符。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /先用一句话说清具体对象和发生的事/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
   }
 })
 
-test('hot-topic drafting rewrites a didactic first attempt before queueing', async () => {
+test('post opening draw uses each fixed phrase ten percent of the time', async () => {
+  assert.equal(background.choosePostOpening(0), '说个暴论，')
+  assert.equal(background.choosePostOpening(0.099), '说个暴论，')
+  assert.equal(background.choosePostOpening(0.1), '讲个事实，')
+  assert.equal(background.choosePostOpening(0.199), '讲个事实，')
+  assert.equal(background.choosePostOpening(0.2), '我真心觉得')
+  assert.equal(background.choosePostOpening(0.299), '我真心觉得')
+  assert.equal(background.choosePostOpening(0.3), '')
+  assert.equal(background.choosePostOpening(0.999), '')
+  assert.equal(background.applyPostOpening('讲个事实，别把配置表当成安全说明。', '说个暴论，'), '说个暴论，别把配置表当成安全说明。')
+  assert.equal(background.applyPostOpening('我真心觉得别把配置表当成安全说明。', ''), '别把配置表当成安全说明。')
+
+  const originalChrome = globalThis.chrome
+  const originalFetch = globalThis.fetch
+  let requestBody
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body)
+    return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"配置说明","post":"别把配置表当成安全说明。"}' } }] } } }
+  }
+  try {
+    const selected = await background.rewriteNewsPost({ title: '车辆座椅配置说明引发讨论', openingDraw: 0.05 })
+    assert.match(requestBody.messages[0].content, /正文必须以“说个暴论，”开头/)
+    assert.equal(selected.post, '说个暴论，别把配置表当成安全说明。')
+    const ordinary = await background.rewriteNewsPost({ title: '车辆座椅配置说明引发讨论', openingDraw: 0.8 })
+    assert.match(requestBody.messages[0].content, /先用一句话交代具体对象和事件，再说观点/)
+    assert.equal(ordinary.post, '别把配置表当成安全说明。')
+  } finally {
+    globalThis.chrome = originalChrome
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('a completed hot-topic rewrite is queued without a style retry', async () => {
   const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
   const storage = {}
   const requests = []
@@ -1323,7 +1609,7 @@ test('hot-topic drafting rewrites a didactic first attempt before queueing', asy
       runtime: { lastError: null, sendMessage(message, respond) {
         requests.push(message)
         respond(requests.length === 1
-          ? { ok: true, topic: '抽血检测流程', post: '抽几管血常按检测项目分装。\n\n不同仪器和试剂不能混用。\n\n患者觉得多，多半是流程不透明。\n\n问清楚用途比猜利益更实际。' }
+          ? { ok: true, topic: '抽血检测流程', post: '说个暴论\n\n抽几管血常按检测项目分装。\n\n患者等结果时，先被这阵仗吓了一跳。' }
           : { ok: true, topic: '抽血管子排一排', post: '体检抽血，一排管子摆出来。\n\n结果还没等到，\n\n人先被这阵仗吓一跳。' })
       } },
       storage: { local: {
@@ -1338,20 +1624,58 @@ test('hot-topic drafting rewrites a didactic first attempt before queueing', asy
   await api.loadHistory()
   api.snapshot().sourceQueue.push({ id: 'toutiao:blood', sourceType: 'news', source: 'toutiao', text: '体检抽血为什么要抽多管' })
   await api.buildPublishList()
-  assert.equal(requests.length, 2)
-  assert.equal(requests[1].avoidReason, '说理口吻太重')
+  assert.equal(requests.length, 1)
   assert.equal(api.snapshot().publishQueue.length, 1)
-  assert.match(api.snapshot().publishQueue[0].text, /一排管子摆出来/)
+  assert.match(api.snapshot().publishQueue[0].text, /说个暴论/)
 })
 
-test('DeepSeek post rewrite requires a structured topic and draft', () => {
+test('a longer successful hot-topic rewrite stays in the queue for publishing', async () => {
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  const storage = { xrcPosterHistoryV2: {
+    sourceIds: [],
+    published: [{ sourceId: 'toutiao:older-seat', topic: '零重力座椅使用边界', text: '零重力座椅使用条件要讲清楚。', at: Date.now() }],
+  } }
+  const headline = '工信部提醒车辆行驶时不要使用零重力座椅'
+  const draft = '工信部提醒行车时别用零重力座椅，这事值得重视。\n\n座椅舒服是一回事，行驶状态下能不能保持足够安全是另一回事。\n\n车企宣传功能时，最好把使用条件同时讲清楚。\n\n消费者看配置表也别只看名字，真正要紧的是功能在什么场景下可以使用。\n\n比起一个好听的卖点，清楚的使用边界更有用。'
+  const context = vm.createContext({
+    chrome: {
+      runtime: { lastError: null, sendMessage(_message, respond) {
+        respond({ ok: true, topic: '零重力座椅使用边界', post: draft })
+      } },
+      storage: { local: {
+        async get(key) { return { [key]: storage[key] } },
+        async set(value) { Object.assign(storage, value) },
+      } },
+    },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  })
+  vm.runInContext(source, context)
+  const api = context.XInteractionPoster
+  await api.loadHistory()
+  api.snapshot().sourceQueue.push({ id: 'toutiao:seat', sourceType: 'news', source: 'toutiao', text: headline })
+  await api.buildPublishList(1)
+  const [queued] = api.snapshot().publishQueue
+  assert.equal(queued.source, 'toutiao')
+  assert.equal(queued.text, draft)
+  assert.equal(queued.topic, '零重力座椅使用边界')
+  assert.doesNotMatch(source, /qualityReason\(|duplicateReason\(/)
+})
+
+test('DeepSeek post rewrite accepts a nonempty draft without extra formatting gates', () => {
   assert.deepEqual(background.parseSourceRewrite('{"skip":false,"topic":"表达方式影响讨论","post":"首句\\n正文"}'), {
     skip: false, topic: '表达方式影响讨论', post: '首句\n正文',
   })
   assert.deepEqual(background.parseSourceRewrite('{"skip":true,"topic":"","post":""}'), {
     skip: true, topic: '', post: '',
   })
-  assert.throws(() => background.parseSourceRewrite('直接照抄原文'), /可解析的草稿/)
+  assert.deepEqual(background.parseSourceRewrite('模型写好的一段正文。', '某个具体新闻标题'), {
+    skip: false, topic: '某个具体新闻标题', post: '模型写好的一段正文。',
+  })
+  assert.deepEqual(background.parseSourceRewrite('{"skip":false,"post":"另一段正文。"}', '某个具体新闻标题'), {
+    skip: false, topic: '某个具体新闻标题', post: '另一段正文。',
+  })
+  assert.throws(() => background.parseSourceRewrite('直接照抄原文'), /可用草稿/)
+  assert.throws(() => background.parseSourceRewrite('{broken', '某个具体新闻标题'), /可解析的草稿/)
 })
 
 test('scheduled poster recognizes X duplicate warning without treating unrelated alerts as duplicates', () => {
@@ -1927,6 +2251,82 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.constants.RATE_LIMIT_COOLDOWN_MS, 15 * 60 * 1000)
 })
 
+test('a followed-back account is kept when any name or bio fragment contains Chinese', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const isNonChineseText = source.match(/  function isNonChineseText\(value\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileNonChinese = source.match(/  function profileNonChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(isNonChineseText && profileNonChinese)
+  const context = vm.createContext({
+    textOf: (node) => node.textContent.trim(),
+    FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
+  })
+  vm.runInContext(`${isNonChineseText}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
+  const row = (fragments) => ({ querySelectorAll: () => fragments.map((textContent) => ({ textContent })) })
+  assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'gpt官方代充', 'https://example.com/very/long/english/link']), '@wangweiaigg'), false)
+  assert.equal(context.check(row(['中文名', '@account', 'Follows you', 'English biography']), '@account'), false)
+  assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you gpt官方代充', 'English biography']), '@wangweiaigg'), false)
+  assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'English biography']), '@wangweiaigg'), true)
+})
+
+test('unfollow waits two seconds between actions without applying the shared follow quota', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const waits = []
+  let storageReads = 0
+  const candidates = [
+    { handle: '@person1', candidate: true, followsYou: false },
+    { handle: '@person2', candidate: true, followsYou: false },
+  ]
+  const state = {
+    running: false, stopping: false, mode: '', unfollowed: 0,
+    sharedDailyFollowed: 400, sharedBatchProgress: 15,
+    skipped: 0, errors: 0, cooldownUntil: 1,
+    seenHandles: new Set(), skippedHandles: new Set(),
+  }
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, isFollowersPage: () => false,
+    targetFollowHandleFromPath: () => '', targetPath: () => '',
+    loadSharedFollowRate: async () => { storageReads += 1 },
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, visibleRows: () => candidates,
+    actUnfollow: async () => { state.unfollowed += 1; return true },
+    actFollowBack: async () => true, actTargetFollow: async () => true,
+    reportMutualAction: () => {}, waitForPlatformRateLimit: async () => true,
+    persistSharedFollowRate: async () => {},
+    sleepActive: async (ms) => { waits.push(ms) },
+    scrollForward: async () => ({ progressed: false, atBottom: true }),
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
+    FOLLOW_BATCH_SIZE: 15, FOLLOW_BATCH_COOLDOWN_MS: 1800000,
+    FOLLOW_ACTION_DELAY_MS: 2000, MAX_STALLED_SCROLLS: 4,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  assert.equal(await context.runTest('unfollow', () => {}), true)
+  assert.deepEqual(waits, [2000, 2000])
+  assert.equal(storageReads, 1)
+  assert.equal(state.unfollowed, 2)
+  assert.equal(state.cooldownUntil, 0)
+})
+
+test('mutual platform limit shows a countdown and can be stopped during cooldown', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const waitForPlatformRateLimit = source.match(/  async function waitForPlatformRateLimit\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(waitForPlatformRateLimit)
+  const state = { stopping: false, cooldownUntil: 0, acknowledgedRateLimits: new Set() }
+  const statuses = []
+  const context = vm.createContext({
+    state, Date: { now: () => 1000 }, RATE_LIMIT_COOLDOWN_MS: 15 * 60 * 1000,
+    rateLimitNodes: () => [], formatClock: () => '15:00',
+    emit: (status) => { if (status) statuses.push(status) },
+    sleepActive: async (ms) => { assert.equal(ms, 1000); state.stopping = true },
+  })
+  vm.runInContext(`${waitForPlatformRateLimit}\nglobalThis.waitTest = waitForPlatformRateLimit`, context)
+  assert.equal(await context.waitTest(), false)
+  assert.equal(state.cooldownUntil, 1000 + 15 * 60 * 1000)
+  assert.match(statuses[0], /15:00 后继续/)
+})
+
 test('loads one shared follow quota for unfollow, follow-back, and target-follow modes', async () => {
   const now = new Date()
   const today = [
@@ -2057,7 +2457,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.27.41')
+  assert.equal(manifest.version, '3.29.3')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -2068,6 +2468,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'content.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
+  assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
   assert.ok(manifest.host_permissions.includes('https://www.toutiao.com/*'))
   assert.ok(manifest.host_permissions.includes('https://www.zhihu.com/*'))
   assert.equal(manifest.background.service_worker, 'background.js')
@@ -2099,7 +2500,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(posterSource, /xrc-ai-post-generate/)
   assert.match(posterSource, /xrc-ai-news-rewrite/)
   assert.doesNotMatch(posterSource, /collectSourcePosts|sourceProfilePath/)
-  assert.match(posterSource, /正在总结改写/)
+  assert.match(posterSource, /已取得\$\{sourceLabel\(item\.source\)\}素材，正在改写第/)
   assert.match(posterSource, /xrcPosterPublishList/)
   assert.match(posterSource, /列表发完前不会重新抓取/)
   assert.doesNotMatch(posterSource, /if \(!arrived\) state\.stopping = true/)
@@ -2179,14 +2580,15 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-like-tab="posts"/)
   assert.match(content, /data-xrc-like-tab="replies"/)
   assert.match(content, /data-xrc-actions-toggle aria-label="展开操作菜单"/)
-  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<div class="xrc-header-menu"/)?.[1] || ''
-  for (const metric of ['comments', 'likes', 'follows', 'unfollows', 'posts']) {
+  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<section class="xrc-monitor"/)?.[1] || ''
+  for (const metric of ['comments', 'likes', 'follows', 'posts']) {
     assert.ok(todaySummary.includes(`data-xrc-today-${metric}`), `today summary should show ${metric}`)
   }
-  assert.ok(content.indexOf('class="xrc-today-strip"') < content.indexOf('class="xrc-header-menu"'))
+  assert.doesNotMatch(todaySummary, /data-xrc-today-unfollows/)
+  assert.ok(content.indexOf('class="xrc-header-menu"') < content.indexOf('class="xrc-today-strip"'))
   assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
   const quickActions = content.match(/<div class="xrc-quick-actions"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
-  const header = content.match(/<div class="xrc-header">([\s\S]*?)<div class="xrc-today-strip"/)?.[1] || ''
+  const header = content.match(/<div class="xrc-header">([\s\S]*?)<div class="xrc-header-menu"/)?.[1] || ''
   assert.ok(header.includes('class="xrc-quick-actions"'))
   assert.ok(header.indexOf('class="xrc-quick-actions"') < header.indexOf('data-xrc-actions-toggle'))
   for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-expand', 'class="xrc-close"']) {
@@ -2263,8 +2665,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /关注候选暂时停用|该功能暂时停用/)
   assert.match(content, /xrc-task-pending-remember/)
   assert.match(content, /state\.assistantMode === "poster" && await postApi\?\.resumeIfPending/)
-  assert.match(content, /清理未回关和回关粉丝共用同一组额度/)
-  assert.match(content, /两项合计每 15 个暂停 30 分钟，每日合计最多 400 个/)
+  assert.match(content, /回关粉丝使用共享额度/)
+  assert.match(content, /回关粉丝使用共享额度/)
   assert.match(content, /function selectMutualMode/)
   assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return openTaskTab\(mutualTaskKey\(mode\)\)/)
   assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
@@ -2424,9 +2826,10 @@ test('flow guidance lives in the documentation center with a navigable table of 
   assert.match(content, /id="xrc-docs-flow"[\s\S]*全流程启动会打开对应窗口[\s\S]*顶部页签会打开尚未创建的任务窗口/)
   assert.match(content, /data-xrc-docs-target="xrc-docs-flow"/)
   assert.match(content, /data-xrc-docs-target="xrc-docs-frequency"/)
+  assert.match(content, /class="xrc-docs-actions"[\s\S]*class="xrc-docs-toc"[\s\S]*data-xrc-docs-close/)
   assert.match(content, /target\?\.scrollIntoView\(\{ behavior: "smooth"/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(css, /xrc-docs-toc/)
+  assert.match(css, /\.xrc-docs-head > \.xrc-docs-actions \{[\s\S]*display: flex;[\s\S]*align-items: center;/)
 })
 
 test('today totals expose a compact calendar entry and poster stats identify the current run', async () => {
@@ -2473,12 +2876,12 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(backgroundText, /phase: "stopped"/)
   assert.match(background.REPLY_SYSTEM_PROMPT, /长短按语境决定，短到几个字也可以/)
   assert.equal(background.cleanReply('回复：“这个角度很有意思\n值得继续观察👀”'), '这个角度很有意思 值得继续观察👀')
-  assert.match(background.POST_SYSTEM_PROMPT, /18～70 字/)
-  assert.match(background.POST_SYSTEM_PROMPT, /不出现 \$/)
+  assert.match(background.POST_SYSTEM_PROMPT, /35～90 个中文字符/)
+  assert.match(background.POST_SYSTEM_PROMPT, /或 \$ 符号/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /\$代币/)
   assert.equal(background.cleanPost('推文：第一行\n第二行\n\n第三行'), '第一行\n\n第二行\n\n第三行')
   assert.equal(background.cleanPost('听说东北以前一家子睡一个炕。\n$KAITO'), '听说东北以前一家子睡一个炕。')
-  assert.match(background.POST_SYSTEM_PROMPT, /每段一行、段间留一个空行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /2～3 个短段/)
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
   assert.match(backgroundText, /max_tokens: 96/)
@@ -2530,7 +2933,7 @@ test('task windows are created once and reused without backgrounding another tas
         if (tabId === 22) return { id: 22, windowId: 5, url: 'https://x.com/notifications' }
         throw new Error('missing tab')
       },
-      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '首页互动 · Home / X' }] },
+      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '评论帖子 · Home / X' }] },
       async update(tabId, options) { focusedTabs.push(tabId); tabUpdates.push(options) },
     },
     windows: {

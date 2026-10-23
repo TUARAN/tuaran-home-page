@@ -83,7 +83,7 @@ async function generate(task) {
   const item = items.find((candidate) => !used.has(String(candidate.objectID))) || items[0];
   if (used.has(String(item.objectID))) throw new Error("资讯已经用完，请稍后再试");
   const system = task === "pin"
-    ? "根据给出的资讯标题和链接，写一条中文技术沸点。只写可从标题确认的事实和自己的观察，不编造细节。正文 80～180 字，不要包含来源链接、网址或域名。返回 JSON：{\"title\":\"\",\"body\":\"\",\"sourceUrl\":\"\"}。sourceUrl 仅作为校验字段原样返回，不要写入 body。"
+    ? "根据给出的资讯标题和链接，写一条中文技术沸点。只写可从标题确认的事实和自己的观察，不编造细节。正文 80～180 字，分成 2～3 个短段落，段落之间用两个换行符分隔，不要包含来源链接、网址或域名。返回 JSON：{\"title\":\"\",\"body\":\"\",\"sourceUrl\":\"\"}。sourceUrl 仅作为校验字段原样返回，不要写入 body。"
     : "根据给出的资讯标题和链接，写一篇中文技术文章，至少 500 字。仅把标题可确认的内容写成事实；其余写明确的分析、实践方法或待核实问题。不要编造数据、引言或产品功能。返回 JSON：{\"title\":\"\",\"body\":\"Markdown 正文\",\"sourceUrl\":\"\"}。sourceUrl 原样返回。";
   const response = await fetch(MODEL_URL, {
     method: "POST",
@@ -143,11 +143,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     generate(message.task).then((draft) => sendResponse({ ok: true, draft })).catch((error) => sendResponse({ ok: false, error: error.message }));
     return true;
   }
+  if (message?.type === "jjia-is-site-active") {
+    isJuejinActiveTab().then((active) => sendResponse({ ok: true, active })).catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   return undefined;
 });
 JuejinCommunityReceipt.install();
 
+async function isJuejinActiveTab() {
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  return tabs.some((tab) => {
+    try { return new URL(tab.url).origin === "https://juejin.cn"; } catch { return false; }
+  });
+}
+
 async function openDuePages() {
+  if (!await isJuejinActiveTab()) return;
   const stored = await chrome.storage.local.get(["jjiaSettings", "jjiaState"]);
   const settings = stored.jjiaSettings || {};
   const state = stored.jjiaState || {};

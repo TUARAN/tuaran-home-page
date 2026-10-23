@@ -65,6 +65,10 @@
     if (!result?.ok) throw new Error(result?.error || "内容生成失败");
     return result.draft;
   }
+  async function isSiteActive() {
+    const result = await chrome.runtime.sendMessage({ type: "jjia-is-site-active" });
+    return result?.active === true;
+  }
   async function setMarkdown(markdown) {
     const nonce = crypto.randomUUID();
     return new Promise((resolve) => {
@@ -108,12 +112,26 @@
     if (editor.textContent.trim()) throw new Error("沸点编辑器已有内容，已暂停避免覆盖");
     const draft = await generate("pin");
     if (!(await load()).settings.enabled.pin) return;
+    if (!await isSiteActive()) return;
     editor.focus();
-    editor.textContent = draft.body;
+    const paragraphs = draft.body.split(/\n\n+/).map((part) => part.trim()).filter(Boolean);
+    const nodes = [];
+    paragraphs.forEach((part, index) => {
+      if (index) {
+        const spacer = document.createElement("div");
+        spacer.append(document.createElement("br"));
+        nodes.push(spacer);
+      }
+      const paragraph = document.createElement("div");
+      paragraph.textContent = part;
+      nodes.push(paragraph);
+    });
+    editor.replaceChildren(...nodes);
     editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: draft.body }));
     await wait(300);
-    if (!editor.textContent.includes(draft.body.slice(0, 30))) throw new Error("沸点没有填入成功");
-    await updateBackground({ type: "jjia-mark-pending", task: "pin", claimId, sourceId: draft.sourceId, marker: draft.body.slice(0, 30) });
+    const marker = paragraphs[0].slice(0, 30);
+    if (!editor.textContent.includes(marker)) throw new Error("沸点没有填入成功");
+    await updateBackground({ type: "jjia-mark-pending", task: "pin", claimId, sourceId: draft.sourceId, marker });
     const publish = q(".pin-toolbar .submit button");
     if (!publish || publish.disabled) throw new Error("沸点发布按钮不可用，草稿已保留");
     publish.click();
@@ -135,6 +153,7 @@
     const draft = await generate("article");
     const currentSettings = (await load()).settings;
     if (!currentSettings.enabled.article) return;
+    if (!await isSiteActive()) return;
     const mode = core.mode(currentSettings);
     setInput(title, draft.title);
     if (!await setMarkdown(draft.body)) throw new Error("Markdown 编辑器未写入，已暂停");
@@ -207,6 +226,7 @@
     running = true;
     let claimId = "";
     try {
+      if (!await isSiteActive()) return;
       if (task !== "checkin") {
         const claim = await chrome.runtime.sendMessage({ type: "jjia-claim-task", task });
         if (!claim?.ok) return;

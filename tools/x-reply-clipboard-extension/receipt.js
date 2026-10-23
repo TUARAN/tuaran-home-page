@@ -4,6 +4,7 @@
   const PLATFORM = "x";
   const STORAGE_KEY = "xrcCommunityReport";
   const DAILY_KEY = "xrcDailyReports";
+  const DAILY_SCHEDULE_KEY = "xrcDailyUploadSchedule";
   const LIMIT_KEY = "xrcLimitObservations";
   const HYPOTHESIS_KEY = "xrcLimitHypotheses";
   const LIMIT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -11,6 +12,7 @@
   const EVENT_MESSAGE = "xrc-community-event";
   const HEARTBEAT_MESSAGE = "xrc-community-heartbeat";
   const ALARM_NAME = "xrc-community-heartbeat";
+  const DAILY_ALARM_NAME = "xrc-daily-upload";
   const REPORT_URL = "https://2aran.com/api/community-actions/report";
   const TASKS = new Set([
     "timeline-reply",
@@ -25,6 +27,7 @@
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
   const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
   let chain = Promise.resolve();
+  let scheduledUpload = null;
   let runtimeProvider = null;
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "comments", "notification-reply": "comments",
@@ -300,8 +303,7 @@
     });
   }
 
-  function uploadDaily(date, accountHandle) {
-    return enqueue(async () => {
+  async function uploadDailyNow(date, accountHandle) {
       const config = await ensureConfig();
       if (!config.secret) return { ok: false, error: "请先在设置里填写社区回执密钥" };
       const rows = await dailyReports();
@@ -326,7 +328,63 @@
       row.uploadedAt = Date.now();
       await root.chrome.storage.local.set({ [DAILY_KEY]: rows });
       return { ok: true, uploadedAt: row.uploadedAt };
+  }
+
+  function uploadDaily(date, accountHandle) {
+    return enqueue(() => uploadDailyNow(date, accountHandle));
+  }
+
+  function uploadPendingDailyReports(beforeDate = shanghaiDate()) {
+    return enqueue(async () => {
+      const rows = (await dailyReports())
+        .filter((row) => /^\d{4}-\d{2}-\d{2}$/u.test(row?.date || "") && row.date < beforeDate
+          && (!Number(row.uploadedAt) || Number(row.updatedAt) > Number(row.uploadedAt)))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      let uploaded = 0;
+      for (const row of rows) {
+        const result = await uploadDailyNow(row.date, row.accountHandle);
+        if (!result.ok) return { ok: false, uploaded, pending: rows.length - uploaded, error: result.error, failedDate: row.date };
+        uploaded += 1;
+      }
+      return { ok: true, uploaded, pending: 0 };
     });
+  }
+
+  function tomorrowShanghaiNine(now = Date.now()) {
+    return Date.parse(`${shanghaiDate(now + 24 * 60 * 60 * 1000)}T01:00:00Z`);
+  }
+
+  async function dailyUploadSchedule() {
+    const saved = await root.chrome.storage.local.get(DAILY_SCHEDULE_KEY);
+    return saved?.[DAILY_SCHEDULE_KEY] || null;
+  }
+
+  async function runScheduledDailyUpload() {
+    if (scheduledUpload) return scheduledUpload;
+    scheduledUpload = (async () => {
+      const result = await uploadPendingDailyReports();
+      const nextRunAt = result.ok ? tomorrowShanghaiNine() : Date.now() + 15 * 60 * 1000;
+      const schedule = { nextRunAt, lastAttemptAt: Date.now(), lastResult: result };
+      await root.chrome.storage.local.set({ [DAILY_SCHEDULE_KEY]: schedule });
+      await root.chrome.alarms.create(DAILY_ALARM_NAME, { when: nextRunAt });
+      return { ...result, schedule };
+    })().finally(() => { scheduledUpload = null; });
+    return scheduledUpload;
+  }
+
+  async function installDailyUploadSchedule() {
+    const config = await ensureConfig();
+    if (config.accountHandle && config.accountHandle !== "default") await mergeAccountData("default", config.accountHandle);
+    const schedule = await dailyUploadSchedule();
+    if (!Number.isFinite(Number(schedule?.nextRunAt))) {
+      const nextRunAt = tomorrowShanghaiNine();
+      await root.chrome.storage.local.set({ [DAILY_SCHEDULE_KEY]: { nextRunAt } });
+      await root.chrome.alarms.create(DAILY_ALARM_NAME, { when: nextRunAt });
+      return runScheduledDailyUpload();
+    }
+    if (Number(schedule.nextRunAt) <= Date.now()) return runScheduledDailyUpload();
+    await root.chrome.alarms.create(DAILY_ALARM_NAME, { when: Number(schedule.nextRunAt) });
+    return { ok: true, schedule };
   }
 
   function pullRemoteData(accountHandle) {
@@ -436,9 +494,10 @@
     try {
       chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
       chrome.alarms.onAlarm.addListener((alarm) => {
-        if (alarm?.name !== ALARM_NAME) return;
-        heartbeatFromBackground().catch(() => {});
+        if (alarm?.name === ALARM_NAME) heartbeatFromBackground().catch(() => {});
+        if (alarm?.name === DAILY_ALARM_NAME) runScheduledDailyUpload().catch(() => {});
       });
+      installDailyUploadSchedule().catch(() => {});
     } catch (error) {
       install.bound = false;
     }
@@ -462,6 +521,11 @@
     analyzeLimitObservations,
     recordLimitObservation,
     uploadDaily,
+    uploadPendingDailyReports,
+    dailyUploadSchedule,
+    installDailyUploadSchedule,
+    runScheduledDailyUpload,
+    tomorrowShanghaiNine,
     pullRemoteData,
     mergeAccountData,
     recordDailySuccess,

@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url)
 const note = require('../../tools/xhs-interaction-extension/note.js')
 const poster = require('../../tools/xhs-interaction-extension/poster.js')
 const background = require('../../tools/xhs-interaction-extension/background.js')
+const manager = require('../../tools/xhs-interaction-extension/manager-core.js')
 const extensionDir = new URL('../../tools/xhs-interaction-extension/', import.meta.url)
 
 function element({ id, index = 0, title = '', author = '', href = '', authorHref = '', top = 0 }) {
@@ -24,6 +25,168 @@ function element({ id, index = 0, title = '', author = '', href = '', authorHref
     getBoundingClientRect() { return { top } },
   }
 }
+
+test('note manager prioritizes comments and applies exact visibility thresholds', () => {
+  function card(likes, comments = '0') {
+    const buttons = Array.from({ length: 5 }, (_, index) => ({
+      classList: { contains: (name) => name === 'note-card__action-btn--del' && index === 4 },
+    }))
+    return {
+      matches: (selector) => selector === '.note-card',
+      getAttribute: () => JSON.stringify({ noteTarget: { value: { noteId: '6ad6a8880000000028023796' } } }),
+      querySelector: (selector) => ({ textContent: selector === '.note-card__time' ? '2026-10-20 07:32' : '我的笔记' }),
+      querySelectorAll: (selector) => selector.includes('row--stats')
+        ? ['437625', comments, likes, '1592', '1895'].map((textContent) => ({ textContent }))
+        : buttons,
+    }
+  }
+  assert.equal(manager.readCard(card('99')).target, '仅自己可见')
+  assert.equal(manager.readCard(card('99', '10')).target, '仅自己可见')
+  assert.equal(manager.readCard(card('99', '11')).target, '公开可见')
+  assert.equal(manager.readCard(card('100', '11')).target, '公开可见')
+  assert.equal(manager.readCard(card('无法读取', '11')).target, '公开可见')
+  assert.equal(manager.readCard(card('99', '无法读取')).target, null)
+  assert.equal(manager.readCard(card('99', '10+')).target, null)
+  assert.equal(manager.readCard(card('99+', '0')).target, null)
+  assert.equal(manager.readCard(card('100', '10')).target, null)
+  assert.equal(manager.readCard(card('99')).eligible, true)
+  assert.equal(manager.readCard(card('99')).publishedAt, new Date(2026, 9, 20, 7, 32).getTime())
+  assert.equal(manager.readCard(card('100')).eligible, false)
+  assert.equal(manager.readCard(card('4077')).eligible, false)
+  assert.equal(manager.readCard(card('无法读取')).eligible, false)
+  const safeCard = card('1')
+  const safeItem = manager.readCard(safeCard)
+  assert.equal(manager.permissionButton(safeCard), safeCard.querySelectorAll('actions')[0])
+  assert.equal(manager.inspectCandidate(safeItem, safeCard).button, manager.permissionButton(safeCard))
+  assert.equal(manager.inspectCandidate(safeItem, null).skipReason, '笔记已从列表消失')
+  assert.equal(manager.inspectCandidate({ ...safeItem, likes: 2 }, safeCard).skipReason, '点赞数、评论数或发布时间已变化')
+  assert.equal(manager.inspectCandidate({ ...safeItem, comments: 1 }, safeCard).skipReason, '点赞数、评论数或发布时间已变化')
+  assert.equal(manager.inspectCandidate({ ...safeItem, publishedAt: 0 }, safeCard).skipReason, '点赞数、评论数或发布时间已变化')
+  const noPermissionButton = {
+    ...safeCard,
+    querySelectorAll(selector) {
+      return selector.includes('row--stats') ? safeCard.querySelectorAll(selector) : []
+    },
+  }
+  assert.equal(manager.inspectCandidate(safeItem, noPermissionButton).skipReason, '权限按钮结构变化')
+  const privateCard = {
+    ...safeCard,
+    querySelector(selector) {
+      if (selector === '.note-card__cover') return { querySelectorAll: () => [{ children: [], textContent: '仅自己可见' }] }
+      return safeCard.querySelector(selector)
+    },
+  }
+  assert.equal(manager.readCard(privateCard).isPrivate, true)
+  assert.equal(manager.inspectCandidate(safeItem, privateCard).already, true)
+  const highCommentPrivate = card('1', '11')
+  const highCommentPrivateCard = { ...highCommentPrivate, querySelector: privateCard.querySelector }
+  assert.equal(manager.readCard(highCommentPrivateCard).target, '公开可见')
+  assert.equal(manager.inspectCandidate(manager.readCard(highCommentPrivateCard), highCommentPrivateCard).button, manager.permissionButton(highCommentPrivateCard))
+  assert.equal(manager.parseCount('1.2万'), 12000)
+  assert.equal(manager.totalNotes([{ textContent: '正在加载中...' }, { textContent: '- 共10篇笔记 -' }]), 10)
+  assert.equal(manager.listComplete(10, 10), true)
+  assert.equal(manager.listComplete(10, 100), false)
+  assert.equal(manager.listComplete(10, 0), false)
+  assert.equal(manager.loadingSettled({ loaded: 20, total: 20, unchanged: 0, atBottom: true, loading: false }), false)
+  assert.equal(manager.loadingSettled({ loaded: 20, total: 20, unchanged: 15, atBottom: false, loading: false }), false)
+  assert.equal(manager.loadingSettled({ loaded: 20, total: 20, unchanged: 15, atBottom: true, loading: true }), false)
+  assert.equal(manager.loadingSettled({ loaded: 20, total: 20, unchanged: 15, atBottom: true, loading: false }), true)
+  assert.equal(manager.loadingSettled({ loaded: 20, total: 40, unchanged: 15, atBottom: true, loading: false }), false)
+})
+
+test('note manager scope uses publication time and stops only on verified newest-first order', () => {
+  const now = new Date(2026, 9, 20, 12, 0)
+  const month = manager.cutoffForRange('month', now)
+  assert.equal(month, new Date(2026, 8, 20, 12, 0).getTime())
+  assert.equal(manager.cutoffForRange('week', now), new Date(2026, 9, 13, 12, 0).getTime())
+  assert.equal(manager.cutoffForRange('three-months', now), new Date(2026, 6, 20, 12, 0).getTime())
+  assert.equal(manager.cutoffForRange('all', now), null)
+  assert.equal(manager.cutoffForRange('month', new Date(2026, 2, 31, 12)), new Date(2026, 1, 28, 12).getTime())
+  assert.equal(manager.parsePublishedAt('2026-10-20 07:32'), new Date(2026, 9, 20, 7, 32).getTime())
+  assert.equal(manager.parsePublishedAt('2026-02-30 07:32'), null)
+  assert.equal(manager.parsePublishedAt('无法读取'), null)
+  assert.equal(manager.withinRange({ publishedAt: month }, month), true)
+  assert.equal(manager.withinRange({ publishedAt: month - 1 }, month), false)
+  assert.equal(manager.withinRange({ publishedAt: null }, month), false)
+  assert.equal(manager.withinRange({ publishedAt: null }, null), true)
+  const sorted = [{ publishedAt: month + 2 }, { publishedAt: month }, { publishedAt: month - 1 }]
+  assert.equal(manager.pastRangeBoundary(sorted, 3, month), true)
+  assert.equal(manager.pastRangeBoundary([{ publishedAt: month - 1 }], 1, month), false)
+  assert.equal(manager.pastRangeBoundary(sorted.slice(1), 2, month), false)
+  assert.equal(manager.pastRangeBoundary(sorted, 4, month), false)
+  assert.equal(manager.pastRangeBoundary([sorted[0], { publishedAt: null }, sorted[2]], 3, month), false)
+  assert.equal(manager.pastRangeBoundary([sorted[0], { ...sorted[1], isPinned: true }, sorted[2]], 3, month), false)
+  assert.equal(manager.pastRangeBoundary([sorted[2], sorted[0]], 2, month), false)
+  assert.equal(manager.pastRangeBoundary(sorted, 3, null), false)
+})
+
+test('permission dropdown uses browser input once and checks the visible option', async () => {
+  let open = false
+  const clicks = []
+  const option = { label: '仅自己可见' }
+  const arrow = {}
+  const wrapper = { querySelector: () => arrow }
+  const modal = { querySelector: () => wrapper }
+  assert.equal(await manager.openPermissionChoice(modal, {
+    optionsOpen: () => open,
+    choiceFor: (label) => label === '仅自己可见' && open ? option : null,
+    waitFor: async (predicate) => predicate(),
+    trustedClick(target) { clicks.push(target); open = true },
+  }), option)
+  assert.deepEqual(clicks, [arrow])
+  const publicOption = { label: '公开可见' }
+  assert.equal(await manager.openPermissionChoice(modal, {
+    optionsOpen: () => open,
+    choiceFor: (label) => label === '公开可见' ? publicOption : null,
+    waitFor: async (predicate) => predicate(),
+    trustedClick(target) { clicks.push(target) },
+  }, '公开可见'), publicOption)
+  assert.deepEqual(clicks, [arrow])
+  assert.equal(await manager.openPermissionChoice(modal, {
+    optionsOpen: () => open,
+    choiceFor: () => option,
+    waitFor: async (predicate) => predicate(),
+    trustedClick(target) { clicks.push(target) },
+  }), option)
+  assert.deepEqual(clicks, [arrow])
+})
+
+test('permission hit test accepts the same control parent and rejects an overlay', () => {
+  const wrapper = { contains: (node) => node === main || node === arrow }
+  const main = {}
+  const arrow = { closest: () => wrapper }
+  const overlay = {}
+  assert.equal(manager.clickRegionMatches(arrow, main), true)
+  assert.equal(manager.clickRegionMatches(arrow, wrapper), true)
+  assert.equal(manager.clickRegionMatches(arrow, overlay), false)
+  assert.equal(manager.clickRegionMatches(arrow, null), false)
+  assert.equal(manager.permissionHitState(arrow, main), 'ready')
+  assert.equal(manager.permissionHitState(arrow, { closest: (selector) => selector === '.perm-loading-mask' ? {} : null }), 'loading')
+  assert.equal(manager.permissionHitState(arrow, overlay), 'blocked')
+})
+
+test('browser permission clicks are restricted to the manager page and detach after input', async () => {
+  const previous = globalThis.chrome
+  const calls = []
+  globalThis.chrome = {
+    runtime: { id: 'xhs-extension' },
+    debugger: {
+      async attach(target, version) { calls.push(['attach', target.tabId, version]) },
+      async sendCommand(target, method, params) { calls.push([method, params.type, params.x, params.y]) },
+      async detach(target) { calls.push(['detach', target.tabId]) },
+    },
+  }
+  try {
+    const sender = { id: 'xhs-extension', url: 'https://creator.xiaohongshu.com/new/note-manager', tab: { id: 3, width: 1200, height: 800 } }
+    assert.equal(background.permissionClickAllowed({ type: 'xhsia-permission-click', x: 200, y: 300 }, sender), true)
+    assert.equal(background.permissionClickAllowed({ type: 'xhsia-permission-click', x: 200, y: 300 }, { ...sender, url: 'https://creator.xiaohongshu.com/publish/publish' }), false)
+    assert.equal(background.permissionClickAllowed({ type: 'xhsia-permission-click', x: 200, y: 300 }, { ...sender, id: 'other-extension' }), false)
+    assert.equal(background.permissionClickAllowed({ type: 'xhsia-permission-click', x: 1400, y: 300 }, sender), false)
+    assert.deepEqual(await background.dispatchPermissionClick({ type: 'xhsia-permission-click', x: 200, y: 300 }, sender), { ok: true })
+    assert.deepEqual(calls.map((call) => call[0]), ['attach', 'Input.dispatchMouseEvent', 'Input.dispatchMouseEvent', 'Input.dispatchMouseEvent', 'detach'])
+    assert.deepEqual(calls.slice(1, 4).map((call) => call[1]), ['mouseMoved', 'mousePressed', 'mouseReleased'])
+  } finally { globalThis.chrome = previous }
+})
 
 test('explore feed and note paths stay distinct', () => {
   assert.equal(note.isExploreFeedPath('/explore'), true)
@@ -184,19 +347,66 @@ test('extension manifest only runs on Xiaohongshu and DeepSeek', async () => {
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const creator = await readFile(new URL('creator.js', extensionDir), 'utf8')
+  const managerSource = await readFile(new URL('manager.js', extensionDir), 'utf8')
+  const docsSource = await readFile(new URL('docs.js', extensionDir), 'utf8')
   const creatorMain = await readFile(new URL('creator-main.js', extensionDir), 'utf8')
   assert.equal(manifest.name, '小红书高频互动助手')
-  assert.equal(manifest.version, '0.2.6')
+  assert.equal(manifest.version, '0.7.0')
+  assert.match(managerSource, /const VERSION = "0\.7\.0"/)
+  assert.match(managerSource, /data-xhsp-range/)
+  assert.match(managerSource, /core\.pastRangeBoundary\(result\.unique, result\.loadedCount, state\.cutoff\)/)
+  assert.match(managerSource, /button\.textContent = active \? \(state\.stop \? "停止中…" : "执行中…"\) : "开始设置"/)
+  assert.match(managerSource, /state\.running = true; state\.stop = false;\s*state\.range = [^\n]+;\s*state\.cutoff = core\.cutoffForRange\(state\.range\);\s*updateRunButton\(\)/)
+  assert.match(managerSource, /finally \{ state\.running = false; updateRunButton\(\); \}/)
+  assert.match(managerSource, /scrollListToBottom\(cards, markers\)/)
+  assert.match(managerSource, /async function loadNextCards\(\)/)
+  assert.doesNotMatch(managerSource, /loadAllCards\(/)
+  assert.match(managerSource, /core\.loadingSettled\(/)
+  assert.match(docsSource, /文档中心/)
+  assert.match(docsSource, /Chrome debugger/)
+  assert.match(docsSource, /data-xhsia-docs-close/)
+  assert.match(docsSource, /data-xhsia-docs-topic="quality"/)
+  assert.match(docsSource, /openSection\(panel, topic\)/)
+  assert.match(managerSource, /data-action="guide">查看规则/)
+  assert.match(managerSource, /openSection\(panel, "quality"\)/)
+  assert.match(managerSource, /state\.autoScanStarted = true;\s*preview\(\)/)
+  assert.ok(managerSource.indexOf('const result = scan();', managerSource.indexOf('async function run()'))
+    < managerSource.indexOf('const loadResult = await loadNextCards();', managerSource.indexOf('async function run()')))
+  assert.doesNotMatch(managerSource.match(/async function preview\(\) \{[\s\S]*?\n  async function run\(\)/)?.[0] || '', /loadNextCards\(/)
+  assert.match(managerSource, /error instanceof NoteSkipError/)
+  assert.match(managerSource, /state\.skipped\.set\(item\.id/)
+  assert.match(managerSource, /item\.target === "仅自己可见" && item\.isPrivate/)
+  assert.match(managerSource, /core\.openPermissionChoice\(modal, \{ optionsOpen, choiceFor, waitFor, trustedClick \}, item\.target\)/)
+  assert.match(managerSource, /cancel\.click\(\);\s*if \(!await waitFor\(\(\) => !document\.querySelector\("\.permission-modal"\)/)
+  assert.doesNotMatch(managerSource, /data-action="scan"/)
+  assert.match(managerSource, /const PANEL_ID = "xhs-interaction-panel"/)
+  assert.match(managerSource, /poster\.after\(section\)/)
+  assert.doesNotMatch(managerSource, /document\.documentElement\.append\(panel\)/)
+  for (const source of [content, creator]) {
+    assert.match(source, /XhsInteractionDocs\?\.mount\(panel\)/)
+    assert.match(source, /<nav class="xhsia-page-nav" aria-label="功能页面">/)
+    assert.match(source, /data-xhsia-mode="comments" href="https:\/\/www\.xiaohongshu\.com\/explore">推荐评论<small>推荐页/)
+    assert.match(source, /data-xhsia-mode="poster" href="\$\{posterApi\.PUBLISH_URL\}">笔记浇给<small>发文页/)
+    assert.match(source, /data-xhsia-mode="private" href="https:\/\/creator\.xiaohongshu\.com\/new\/note-manager">高质帖管理<small>笔记管理页/)
+    assert.doesNotMatch(source, /xhsia-page-hint/)
+  }
+  assert.doesNotMatch(managerSource, /xhsia-page-hint|xhsp-route-note|xhsia-mode-tabs/)
+  assert.deepEqual(manifest.icons, {
+    16: 'icons/icon16.png',
+    32: 'icons/icon32.png',
+    48: 'icons/icon48.png',
+    128: 'icons/icon128.png',
+  })
   assert.match(content, new RegExp(`const VERSION = "${manifest.version.replaceAll('.', '\\.')}"`))
   assert.match(creator, new RegExp(`const VERSION = "${manifest.version.replaceAll('.', '\\.')}"`))
   assert.match(content, /重启任务/)
   assert.match(content, /评论成功/)
   assert.match(content, /开始发笔记/)
-  assert.deepEqual(manifest.content_scripts[0].js, ['receipt.js', 'note.js', 'poster.js', 'content.js'])
+  assert.deepEqual(manifest.content_scripts[0].js, ['receipt.js', 'note.js', 'poster.js', 'docs.js', 'content.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['creator-main.js'])
   assert.equal(manifest.content_scripts[1].world, 'MAIN')
-  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'poster.js', 'creator.js'])
-  assert.deepEqual(manifest.permissions, ['storage', 'alarms'])
+  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'poster.js', 'docs.js', 'creator.js', 'manager-core.js', 'manager.js'])
+  assert.deepEqual(manifest.permissions, ['storage', 'alarms', 'debugger'])
   assert.deepEqual(manifest.host_permissions, [
     'https://www.xiaohongshu.com/*',
     'https://creator.xiaohongshu.com/*',

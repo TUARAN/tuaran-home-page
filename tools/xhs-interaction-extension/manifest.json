@@ -1,9 +1,15 @@
 {
   "manifest_version": 3,
   "name": "小红书高频互动助手",
-  "version": "0.2.6",
-  "description": "在小红书推荐页写评论，并在创作服务平台用今天的 AI 资讯发图文笔记。",
-  "permissions": ["storage", "alarms"],
+  "version": "0.7.0",
+  "description": "在小红书推荐页写评论、创作服务平台发图文笔记，并按点赞和评论数管理笔记可见范围。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage", "alarms", "debugger"],
   "host_permissions": [
     "https://www.xiaohongshu.com/*",
     "https://creator.xiaohongshu.com/*",
@@ -18,7 +24,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.xiaohongshu.com/*"],
-      "js": ["receipt.js", "note.js", "poster.js", "content.js"],
+      "js": ["receipt.js", "note.js", "poster.js", "docs.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     },
@@ -30,7 +36,7 @@
     },
     {
       "matches": ["https://creator.xiaohongshu.com/*"],
-      "js": ["receipt.js", "poster.js", "creator.js"],
+      "js": ["receipt.js", "poster.js", "docs.js", "creator.js", "manager-core.js", "manager.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

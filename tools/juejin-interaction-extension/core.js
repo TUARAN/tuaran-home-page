@@ -56,6 +56,25 @@
     const text = String(value || "").trim();
     return /已保存|保存成功/.test(text) && !/将自动保存|保存中/.test(text);
   }
+  function formatPinBody(value) {
+    const paragraphs = String(value || "").replace(/\r\n?/g, "\n").split(/\n+/).map((part) => part.trim()).filter(Boolean);
+    return paragraphs.flatMap((paragraph) => {
+      if (paragraph.length <= 90) return [paragraph];
+      let sentences = paragraph.match(/[^。！？!?；;]+[。！？!?；;]*/g) || [paragraph];
+      if (sentences.length === 1) sentences = paragraph.match(/[^，,]+[，,]*/g) || [paragraph];
+      const grouped = [];
+      let current = "";
+      for (const sentence of sentences) {
+        if (current && current.length + sentence.length > 90 && current.length >= 40) {
+          grouped.push(current);
+          current = "";
+        }
+        current += sentence;
+      }
+      if (current) grouped.push(current);
+      return grouped;
+    }).join("\n\n");
+  }
   function cleanGenerated(raw, task) {
     let parsed;
     try { parsed = JSON.parse(String(raw || "").replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { throw new Error("模型没有返回有效 JSON"); }
@@ -66,9 +85,9 @@
     if (task === "pin" && (body.length < 40 || body.length > 900)) throw new Error("沸点长度不合适");
     if (task === "pin" && /(?:https?:\/\/|www\.|(?:[a-z0-9-]+\.)+(?:com|cn|org|net|io|ai|dev|app)(?:\/|\b))/i.test(body)) throw new Error("沸点正文不能包含链接");
     if (task === "article" && (!title || body.length < 400)) throw new Error("文章内容不完整");
-    return { title, body: task === "pin" ? body : `${body}\n\n来源：${sourceUrl}`, sourceUrl };
+    return { title, body: task === "pin" ? formatPinBody(body) : `${body}\n\n来源：${sourceUrl}`, sourceUrl };
   }
-  const api = { PATHS, PROFILES, STORAGE_KEY, STATE_KEY, DAILY_LIMIT, TASK_NAMES, mode, dayKey, intervalMs, taskFromPath, hasApiKey, dailyCount, shouldRun, completedState, draftSavedStatus, cleanGenerated };
+  const api = { PATHS, PROFILES, STORAGE_KEY, STATE_KEY, DAILY_LIMIT, TASK_NAMES, mode, dayKey, intervalMs, taskFromPath, hasApiKey, dailyCount, shouldRun, completedState, draftSavedStatus, formatPinBody, cleanGenerated };
   root.JuejinInteractionCore = api;
   if (typeof module === "object" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

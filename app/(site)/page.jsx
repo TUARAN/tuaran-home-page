@@ -8,6 +8,7 @@ import {
   IconBrandX,
   IconBrandZhihu,
   IconArchive,
+  IconBook2,
   IconBuildingSkyscraper,
   IconBulb,
   IconCalendarEvent,
@@ -861,6 +862,19 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         }}
       />
       <div className="home-backdrop" aria-hidden="true" />
+      <div className="relative z-[3] mb-3 flex justify-end">
+        <Link
+          href="/books/llm-underlying-logic"
+          className="inline-flex items-center gap-2 rounded-full border border-[#a84c12] bg-gradient-to-r from-[#a8430c] to-[#df7225] px-4 py-2.5 text-[13px] font-bold text-white no-underline shadow-[0_8px_22px_rgba(168,67,12,0.26)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(168,67,12,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a8430c] dark:border-[#f5a25d] dark:from-[#a8430c] dark:to-[#c96a22] dark:text-white sm:px-5 sm:text-[14px]"
+          data-analytics-event="entry_click"
+          data-analytics-surface="home_top_right"
+          data-analytics-destination-kind="page"
+        >
+          <IconBook2 size={17} aria-hidden="true" />
+          <T zh="新书出版发售" en="New book" />
+          <span aria-hidden="true">↗</span>
+        </Link>
+      </div>
       <HomeAllianceBanner />
       <HomeMobileChannels />
       <FestivalBanner />

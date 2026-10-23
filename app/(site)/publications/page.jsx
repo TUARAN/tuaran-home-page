@@ -71,7 +71,13 @@ export default function PublicationsPage() {
           <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">
             {publishedCovers.map((book) => (
               <div key={book.title} className={`w-[min(56vw,230px)] shrink-0 snap-start overflow-hidden rounded-xl border border-[#cbcdc0] bg-gradient-to-br ${book.accent} shadow-[0_10px_24px_rgba(54,45,28,0.22)] dark:border-[#334155]`}>
-                {book.href ? (
+                {book.href?.startsWith('/') ? (
+                  <Link href={book.href} aria-label={`了解《${book.title}》`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:focus-visible:outline-[#9fbf9b]">
+                    <div className="relative aspect-[3/4] bg-[#101722]">
+                      <Image src={book.image} alt={`《${book.title}》封面`} fill sizes="(max-width: 768px) 56vw, 230px" unoptimized className="object-contain" />
+                    </div>
+                  </Link>
+                ) : book.href ? (
                   <a href={book.href} target="_blank" rel="noopener noreferrer" aria-label={`查看《${book.title}》（新窗口打开）`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:focus-visible:outline-[#9fbf9b]">
                     <div className="relative aspect-[3/4] bg-[#101722]">
                       <Image src={book.image} alt={`《${book.title}》封面`} fill sizes="(max-width: 768px) 56vw, 230px" unoptimized className="object-contain" />
@@ -101,7 +107,9 @@ export default function PublicationsPage() {
               {publicationItems.map((item) => (
                 <tr key={item.title} className="border-t border-[#dedfd7] dark:border-[#2b3542]">
                   <td className="px-4 py-3 text-[#272722] dark:text-gray-100">
-                    {item.href ? (
+                    {item.href?.startsWith('/') ? (
+                      <Link href={item.href} className="rounded-sm underline decoration-[#cbcdc0] underline-offset-4 hover:text-[#546850] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#546850] dark:hover:text-[#9fbf9b] dark:focus-visible:outline-[#9fbf9b]">{item.title}</Link>
+                    ) : item.href ? (
                       <a
                         href={item.href}
                         target="_blank"

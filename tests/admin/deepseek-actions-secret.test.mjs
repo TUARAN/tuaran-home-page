@@ -38,7 +38,9 @@ test('changelog workflow injects the shared DeepSeek secret and is listed as an 
 test('GitHub-triggered site tasks are grouped with Actions while preserving the site execution boundary', () => {
   assert.match(panelSource, /DEEPSEEK_GITHUB_TRIGGERED_USES/)
   assert.match(panelSource, /Actions 定时触发，DeepSeek 在公开站执行/)
-  assert.match(panelSource, /DeepSeek 密钥仍由站点运行环境读取/)
+  assert.match(panelSource, /模型密钥由公开站读取/)
+  assert.match(panelSource, /D1 全局兜底，最后才是公开站 Cloudflare Secret/)
+  assert.match(panelSource, /全局兜底命中/)
 
   for (const [name, workflow] of [
     ['A 股研究自动化', 'a-share-research.yml'],
@@ -51,7 +53,7 @@ test('GitHub-triggered site tasks are grouped with Actions while preserving the 
 
 test('Admin key summary does not identify the first database row as the public site key', () => {
   assert.match(panelSource, /当前 Admin 运行环境/)
-  assert.match(panelSource, /不能确认公开站实际使用的 Key/)
+  assert.match(panelSource, /实际调用请到模型调用记录核对密钥与错误/)
   assert.doesNotMatch(panelSource, /const siteKey = activeKeys\[0\]/)
   assert.doesNotMatch(panelSource, /实际调用 \{DEEPSEEK_SITE_MODEL\}/)
   assert.match(panelSource, /站内任务/)

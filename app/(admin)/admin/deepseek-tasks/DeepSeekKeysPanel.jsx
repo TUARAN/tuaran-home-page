@@ -151,10 +151,12 @@ function keyScope(bindings) {
 
 function matchingD1Key(keys, source, taskType) {
   const active = keys.filter((key) => key.status === 'active')
-  return active.find((key) => key.bindings?.some((binding) => binding.source === source && binding.taskType === taskType && taskType))
-    || active.find((key) => key.bindings?.some((binding) => binding.source === source && !binding.taskType))
-    || active.find((key) => !key.bindings?.length)
-    || null
+  const exact = active.find((key) => key.bindings?.some((binding) => binding.source === source && binding.taskType === taskType && taskType))
+  if (exact) return { key: exact, reason: '任务精确绑定' }
+  const sourceKey = active.find((key) => key.bindings?.some((binding) => binding.source === source && !binding.taskType))
+  if (sourceKey) return { key: sourceKey, reason: '来源绑定' }
+  const globalKey = active.find((key) => !key.bindings?.length)
+  return globalKey ? { key: globalKey, reason: '全局兜底命中' } : null
 }
 
 export default function DeepSeekKeysPanel() {
@@ -347,7 +349,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="DeepSeek 运行位置"
-        description="Admin、公开站和 GitHub Actions 的运行环境彼此隔离；共享 D1 中的密钥按任务绑定选择。这里仅能检测当前 Admin 环境，不能确认公开站实际使用的 Key。"
+        description="Admin、公开站和 GitHub Actions 的运行环境彼此隔离。下方任务卡片按当前 D1 绑定推算选中的密钥；实际调用请到模型调用记录核对密钥与错误，公开站环境变量无法在此读取。"
         className="mb-4"
         actions={<span className="text-[12px] text-[#82847a]">{DEEPSEEK_SHARED_USES.length + DEEPSEEK_GITHUB_ACTIONS_USES.length + DEEPSEEK_GITHUB_TRIGGERED_USES.length} 个使用场景</span>}
       >
@@ -390,11 +392,11 @@ export default function DeepSeekKeysPanel() {
 
             <div className="mt-4 border-t border-[#e6e7df] pt-3 text-[12px] font-medium text-[#67695d] dark:border-[#243041] dark:text-gray-300">Actions 定时触发，DeepSeek 在公开站执行</div>
             <p className="mt-1 text-[12px] leading-5 text-[#67695d] dark:text-gray-400">
-              以下工作流使用各自的触发密钥调用 2aran.com；DeepSeek 密钥仍由站点运行环境读取。站点优先选择匹配的 D1 密钥；没有匹配的任务共用公开站 Cloudflare Secret · DEEPSEEK_API_KEY。它与上方 GitHub 仓库 Secret 的值是否相同尚未核对。
+              以下工作流使用各自的触发密钥调用 2aran.com，模型密钥由公开站读取。选择顺序为任务精确绑定、来源绑定、D1 全局兜底，最后才是公开站 Cloudflare Secret · DEEPSEEK_API_KEY。插件密钥若设为全局兜底，也会被这些站内任务选中；密钥有余额不代表选中的就是该密钥。
             </p>
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {DEEPSEEK_GITHUB_TRIGGERED_USES.map((item) => {
-                const matchingKey = !loading && data?.status === 'ok'
+                const selection = !loading && data?.status === 'ok'
                   ? matchingD1Key(keys, item.source, item.taskTypes[0])
                   : null
                 return <a
@@ -417,11 +419,14 @@ export default function DeepSeekKeysPanel() {
                   </div>
                   <div className="mt-1 text-[11px] text-[#67695d] dark:text-gray-300">
                     {loading || data?.status !== 'ok'
-                      ? 'D1 绑定未确认；无匹配时使用公开站 Cloudflare Secret · DEEPSEEK_API_KEY'
-                      : matchingKey
-                        ? `匹配 D1 密钥 · ${matchingKey.name}`
-                        : '使用公开站 Cloudflare Secret · DEEPSEEK_API_KEY（当前无匹配 D1 密钥）'}
+                      ? 'D1 绑定未确认；实际使用的密钥请查看模型调用记录'
+                      : selection
+                        ? `按 D1 绑定推算：${selection.reason} · ${selection.key.name} · ${selection.key.keyHint}`
+                        : '按 D1 绑定推算：回退公开站 Cloudflare Secret · DEEPSEEK_API_KEY'}
                   </div>
+                  {selection?.reason === '全局兜底命中' ? (
+                    <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">请核对这是否为站内任务可用的 DeepSeek 密钥；插件专用密钥应绑定对应插件来源。</div>
+                  ) : null}
                 </a>
               })}
             </div>
@@ -488,7 +493,7 @@ export default function DeepSeekKeysPanel() {
 
       <Section
         title="数据库密钥"
-        description="可保存 DeepSeek 或 B.AI 等模型服务的 Key。一条 D1 密钥记录可以绑定多个任务；站点 DeepSeek 任务按精确任务绑定、来源绑定、全局兜底选择，最后回退到当前运行环境变量。Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，插件直连模型服务不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
+        description="可保存 DeepSeek 或 B.AI 等模型服务的 Key。未绑定来源的启用密钥会成为 D1 全局兜底，优先于公开站 DEEPSEEK_API_KEY 被站内任务选中；B.AI 等插件专用密钥须绑定对应插件来源。Key 加密存储在共享 D1，列表只显示掩码；主动查看后 30 秒自动隐藏。调用统计仅包含经过站点 API 的请求，插件直连模型服务不计入。跨项目使用还要求各 Cloudflare 项目配置相同的 DEEPSEEK_KEYS_ENC_SECRET。"
         actions={
           !formVisible ? (
             <div className="flex items-center gap-3">
@@ -599,7 +604,7 @@ export default function DeepSeekKeysPanel() {
           </div>
 
           <div className="mt-4">
-            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空表示数据库全局兜底。B.AI 等非 DeepSeek 密钥请绑定对应站外插件来源，避免被站点 DeepSeek 任务选为全局兜底。插件仍需手动粘贴 Key；站内互动机器人使用 engagement-bot。跨运行环境仍需分别配置解密主密钥）</p>
+            <p className="text-[12px] text-[#67695d] dark:text-gray-400">绑定任务（source 必填，taskType 留空表示该来源全部任务；全部留空会让此 Key 成为数据库全局兜底，A 股、加密等站内任务可能先用它而不再回退公开站 DeepSeek Key。B.AI 等插件专用密钥请选择对应站外插件来源。插件仍需手动粘贴 Key；站内互动机器人使用 engagement-bot。跨运行环境仍需分别配置解密主密钥）</p>
             <div className="mt-2 space-y-2">
               {form.bindings.map((binding, index) => (
                 <div key={index} className="flex flex-wrap items-center gap-2">

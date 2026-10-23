@@ -48,25 +48,25 @@ const NAV_GROUPS = [
 ]
 
 const HEADER_RECOMMENDATIONS = [
-  { href: '/books/llm-underlying-logic', label: '新书', labelEn: 'New book', detail: '新书出版发售', detailEn: 'New book on sale', icon: IconBook2, tone: 'book', kind: 'page' },
-  { href: '/x', label: '大互动绿皮书', labelEn: 'Green Book', detail: '大互动理论 · 绿皮书', detailEn: 'Big Interaction Green Book', icon: IconMessageCircle, tone: 'green', kind: 'resource' },
+  { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', icon: IconBook2, tone: 'book', kind: 'page' },
+  { href: '/x', label: '大互动理论', labelEn: 'Big Interaction Theory', icon: IconMessageCircle, tone: 'green', kind: 'resource' },
 ]
 
-function RecommendationLink({ item, onNavigate, expanded = false }) {
+function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
   const Icon = item.icon
   const toneClass = item.tone === 'book' ? 'site-header-pick-book' : 'site-header-pick-green'
   return <Link
     href={item.href}
     onClick={onNavigate}
-    className={`site-header-pick ${toneClass}${expanded ? ' site-header-pick-expanded' : ''}`}
+    className={`site-header-pick ${toneClass}`}
     data-analytics-event="entry_click"
     data-analytics-surface="global_nav_recommendation"
     data-analytics-destination-kind={item.kind}
     data-analytics-destination-id={item.href}
   >
     <Icon size={15} stroke={1.8} aria-hidden="true" />
-    <span>{pick(locale, expanded ? item.detail : item.label, expanded ? item.detailEn : item.labelEn)}</span>
+    <span>{pick(locale, item.label, item.labelEn)}</span>
     <span aria-hidden="true">↗</span>
   </Link>
 }
@@ -78,7 +78,7 @@ function ContentShortcutLink({ item, isActive, onNavigate }) {
       href={item.href}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
-      className={`site-nav-trigger site-nav-browse-tab ${isActive ? 'site-nav-trigger-active' : ''}`}
+      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
       data-analytics-event="entry_click"
       data-analytics-surface="global_nav"
       data-analytics-destination-kind={item.key === 'resources' ? 'resource' : 'page'}
@@ -333,7 +333,7 @@ function DirectChannelLink({ channel, isActive, checkedInToday, onNavigate }) {
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       aria-label={isCheckin ? (checkedInToday ? '签到，今日已完成' : '签到有礼') : undefined}
-      className={`site-nav-trigger ${channel.key === 'tools' ? 'site-nav-browse-tab' : ''} ${isActive ? 'site-nav-trigger-active' : ''}`}
+      className={`site-nav-trigger ${isActive ? 'site-nav-trigger-active' : ''}`}
       data-analytics-event="entry_click"
       data-analytics-surface="global_nav"
       data-analytics-destination-kind="page"
@@ -848,7 +848,7 @@ export default function SiteHeader() {
             </Link>
           </div>
 
-          <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 lg:hidden">
+          <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 xl:hidden">
             <label className="sr-only" htmlFor="site-mobile-search-q">{pick(locale, '搜索内容', 'Search')}</label>
             <input
               id="site-mobile-search-q"
@@ -860,10 +860,10 @@ export default function SiteHeader() {
             />
           </form>
 
-          <div className="hidden min-w-0 flex-1 items-center gap-2 lg:flex">
+          <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
               {NAV_GROUPS.map((group) => (
-                <div key={group.key} className={`site-nav-cluster ${group.key === 'browse' ? 'site-nav-cluster-browse' : ''}`}>
+                <div key={group.key} className="site-nav-cluster">
                   {group.shortcuts?.map((item) => (
                     <ContentShortcutLink
                       key={item.key}
@@ -915,16 +915,10 @@ export default function SiteHeader() {
                 </div>
               ))}
             </nav>
-            <div className="site-header-recommendations ml-auto hidden items-center gap-1.5 border-l border-[var(--site-line)] pl-3 2xl:flex" aria-label={pick(locale, '推荐', 'Picks')}>
-              <span className="mr-0.5 text-[10px] font-semibold tracking-[0.12em] text-[var(--site-faint)]">{pick(locale, '推荐', 'PICKS')}</span>
+            <div className="site-header-recommendations ml-auto hidden items-center gap-1 border-l border-[var(--site-line)] pl-2 xl:flex 2xl:gap-1.5 2xl:pl-3" aria-label={pick(locale, '推荐', 'Picks')}>
+              <span className="mr-0.5 hidden text-[10px] font-semibold tracking-[0.12em] text-[var(--site-faint)] 2xl:inline">{pick(locale, '推荐', 'PICKS')}</span>
               {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setOpenChannel(null)} />)}
             </div>
-            <details className="site-header-recommendation-menu relative ml-auto hidden 2xl:hidden lg:block">
-              <summary className="site-nav-trigger cursor-pointer list-none whitespace-nowrap border border-[var(--site-line)] [&::-webkit-details-marker]:hidden">{pick(locale, '推荐', 'Picks')} <ChevronDown /></summary>
-              <div className="site-header-recommendation-popover absolute right-0 top-[calc(100%+12px)] z-[130] grid w-max gap-2 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-2 shadow-xl">
-                {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} expanded />)}
-              </div>
-            </details>
             {!account.loading && !account.user ? <SettingsButton /> : null}
             <AccountMenu
               account={account}
@@ -936,7 +930,11 @@ export default function SiteHeader() {
             />
           </div>
 
-          <div className="flex items-center gap-1 lg:hidden">
+          <div className="hidden shrink-0 items-center gap-1 border-l border-[var(--site-line)] pl-2 md:flex xl:hidden" aria-label={pick(locale, '推荐', 'Picks')}>
+            {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} />)}
+          </div>
+
+          <div className="flex items-center gap-1 xl:hidden">
             <SettingsButton />
             <button
               type="button"
@@ -971,7 +969,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed inset-0 z-[115] bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 lg:hidden',
+          'fixed inset-0 z-[115] bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 xl:hidden',
           mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={() => setMobileMenuOpen(false)}
@@ -980,7 +978,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 lg:hidden',
+          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 xl:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
@@ -1011,7 +1009,7 @@ export default function SiteHeader() {
         <div className="mb-4 border-b border-[var(--site-line)] pb-4" aria-label={pick(locale, '推荐', 'Picks')}>
           <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-[var(--site-faint)]">{pick(locale, '推荐', 'PICKS')}</p>
           <div className="flex flex-wrap gap-2">
-            {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} expanded onNavigate={() => setMobileMenuOpen(false)} />)}
+            {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
           </div>
         </div>
         <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">

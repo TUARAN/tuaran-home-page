@@ -3499,17 +3499,6 @@
     color: var(--site-muted);
   }
 
-  .home-opinion-cta {
-    @apply mt-3 flex items-center justify-between rounded-xl border px-4 py-3 text-[12px] font-semibold transition;
-    border-color: var(--site-line);
-    color: var(--site-ink);
-  }
-
-  .home-opinion-cta:hover {
-    border-color: var(--site-line-strong);
-    background: color-mix(in srgb, var(--site-panel-strong) 85%, transparent);
-  }
-
   .home-opinion-empty {
     @apply flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-6 text-center text-sm;
     border-color: var(--site-line);
@@ -4849,14 +4838,6 @@
     @apply inline-flex items-center gap-0.5;
   }
 
-  .site-nav-cluster-browse {
-    gap: 0.125rem;
-    padding: 0.15rem;
-    border: 1px solid color-mix(in srgb, var(--site-line) 76%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--site-panel-strong) 28%, transparent);
-  }
-
   .site-header-pick {
     display: inline-flex;
     align-items: center;
@@ -4879,8 +4860,7 @@
     transform: translateY(-1px);
   }
 
-  .site-header-pick:focus-visible,
-  .site-header-recommendation-menu > summary:focus-visible {
+  .site-header-pick:focus-visible {
     outline: 2px solid var(--site-accent);
     outline-offset: 2px;
   }
@@ -4910,11 +4890,6 @@
   .dark .site-header-pick-book:hover { background: #633b20; }
   .dark .site-header-pick-green:hover { background: #2e6040; }
 
-  .site-header-recommendation-menu[open] > summary {
-    background: color-mix(in srgb, var(--site-accent) 12%, var(--site-panel-strong));
-    color: var(--site-ink);
-  }
-
   .site-nav-cluster + .site-nav-cluster {
     position: relative;
     margin-left: 0.35rem;
@@ -4941,12 +4916,6 @@
     position: relative;
     @apply inline-flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-sm font-medium no-underline transition-colors;
     color: var(--site-muted);
-  }
-
-  .site-nav-browse-tab {
-    min-width: 3.25rem;
-    justify-content: center;
-    padding-inline: 0.7rem;
   }
 
   .site-nav-vip-badge {
@@ -5008,17 +4977,6 @@
   .dark .site-nav-trigger-active:visited,
   .dark .site-nav-trigger-active:hover {
     color: var(--page-bg);
-  }
-
-  .site-nav-cluster-browse .site-nav-trigger-active,
-  .site-nav-cluster-browse .site-nav-trigger-active:visited,
-  .site-nav-cluster-browse .site-nav-trigger-active:hover,
-  .dark .site-nav-cluster-browse .site-nav-trigger-active,
-  .dark .site-nav-cluster-browse .site-nav-trigger-active:visited,
-  .dark .site-nav-cluster-browse .site-nav-trigger-active:hover {
-    background: var(--site-panel-strong);
-    color: var(--site-ink);
-    box-shadow: inset 0 -2px 0 var(--site-accent);
   }
 
   .site-account-button {

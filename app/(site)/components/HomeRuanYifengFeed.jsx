@@ -27,7 +27,7 @@ export default function HomeRuanYifengFeed() {
       <div className="home-inspiration-heading">
         <div>
           <p className="home-kicker">RSS · Reading</p>
-          <h2 id="home-ruanyifeng-title" className="home-section-title"><T zh="阮一峰的网络日志" en="Ruan Yifeng's Weblog" /></h2>
+          <h2 id="home-ruanyifeng-title" className="home-section-title"><T zh="RSS 精选" en="RSS picks" /></h2>
         </div>
         <Link href="/resources/rss#rss-feed-ruanyifeng" className="home-section-more no-underline">
           <T zh="订阅" en="Subscribe" /> <span aria-hidden="true">→</span>

@@ -59,7 +59,6 @@ function OpinionListSkeleton({ label }) {
           </div>
         ))}
       </div>
-      <Skeleton as="div" className="mt-3 h-11 rounded-xl" />
     </div>
   )
 }
@@ -183,21 +182,18 @@ export default function HomeOpinionSignals() {
       </div>
       {activeTopic === 'recommended' ? (
         recommended?.length ? (
-          <>
-            <div className="home-opinion-list">
-              {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => (
-                <Link key={entry.guid || entry.link} href="/public-opinion" className="home-opinion-sample no-underline">
-                  <span className="home-opinion-sample-meta">
-                    <span className="home-opinion-sample-source">AI HOT</span>
-                    {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
-                  </span>
-                  <span className="home-opinion-sample-title"><strong>{entry.title}</strong></span>
-                  {entry.summary ? <small>{entry.summary}</small> : null}
-                </Link>
-              ))}
-            </div>
-            <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="进入舆情中心" en="Open public opinion center" /> <span aria-hidden="true">→</span></Link>
-          </>
+          <div className="home-opinion-list">
+            {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => (
+              <Link key={entry.guid || entry.link} href="/public-opinion" className="home-opinion-sample no-underline">
+                <span className="home-opinion-sample-meta">
+                  <span className="home-opinion-sample-source">AI HOT</span>
+                  {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
+                </span>
+                <span className="home-opinion-sample-title"><strong>{entry.title}</strong></span>
+                {entry.summary ? <small>{entry.summary}</small> : null}
+              </Link>
+            ))}
+          </div>
         ) : !recommended && !recommendedFailed ? (
           <OpinionListSkeleton label="正在获取 AI HOT 订阅" />
         ) : (
@@ -248,7 +244,6 @@ export default function HomeOpinionSignals() {
               )
             })}
           </div>
-          <Link href="/public-opinion" className="home-opinion-cta no-underline"><T zh="查看完整舆情分析" en="View the full public opinion analysis" /> <span aria-hidden="true">→</span></Link>
         </>
       ) : !data && !failed ? (
         <OpinionListSkeleton label="正在获取公开讨论" />

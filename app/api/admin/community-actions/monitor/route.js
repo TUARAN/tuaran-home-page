@@ -23,6 +23,7 @@ export async function GET(req) {
   } catch (error) {
     if (error instanceof RangeError && ['INVALID_DATE', 'INVALID_PLATFORM'].includes(error.message)) return Response.json({ ok: false, error: error.message }, { status: 400 })
     if (/no such table/i.test(String(error?.message || error))) return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
-    throw error
+    console.error('Plugin monitor read failed:', error)
+    return Response.json({ ok: false, error: 'MONITOR_READ_FAILED' }, { status: 500 })
   }
 }

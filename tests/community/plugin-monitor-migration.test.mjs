@@ -55,6 +55,27 @@ test('post migration preserves old rows, repeated uploads replace counts, and hi
   }
 })
 
+test('monitor still reads legacy daily reports before posts column migration', async () => {
+  const sqlite = new DatabaseSync(':memory:')
+  try {
+    sqlite.exec(migration('0109_community_actions.sql'))
+    sqlite.exec(migration('0112_x_extension_daily_reports.sql'))
+    sqlite.exec(migration('0115_x_extension_runtime.sql'))
+    sqlite.exec(migration('0117_community_action_daily_counts.sql'))
+    sqlite.prepare(`INSERT INTO x_extension_daily_reports (device_id, report_date, account_handle, comments, uploaded_at) VALUES (?, ?, ?, ?, ?)`)
+      .run('legacy-device', '2026-10-17', 'Tuaran', 2, 1000)
+    const monitor = await readXExtensionMonitor(d1Adapter(sqlite), {
+      date: '2026-10-17', now: Date.parse('2026-10-18T08:00:00Z'),
+    })
+    assert.equal(monitor.dailyMigrationRequired, true)
+    assert.equal(monitor.reportTotal, 1)
+    assert.equal(monitor.dailyReports[0].comments, 2)
+    assert.equal(monitor.dailyReports[0].posts, 0)
+  } finally {
+    sqlite.close()
+  }
+})
+
 test('daily receipt counts backfill and continue updating for all plugin platforms', () => {
   const db = new DatabaseSync(':memory:')
   try {

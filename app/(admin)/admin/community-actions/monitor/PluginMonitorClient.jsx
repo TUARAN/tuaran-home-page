@@ -67,8 +67,10 @@ export default function PluginMonitorClient() {
       const query = new URLSearchParams({ platform, date: selectedDate, offset: String(offset), reportOffset: String(reportOffset) })
       if (liveOnly) query.set('view', 'live')
       const response = await fetch(`/api/admin/community-actions/monitor?${query}`, { cache: 'no-store', credentials: 'same-origin' })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`)
+      const contentType = response.headers.get('content-type') || ''
+      const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null
+      if (!response.ok) throw new Error(payload?.error === 'MIGRATION_REQUIRED' ? '数据库迁移尚未应用' : payload?.error === 'MONITOR_READ_FAILED' ? '监控接口暂时不可用' : payload?.error || `监控接口返回 HTTP ${response.status}`)
+      if (!payload || typeof payload !== 'object') throw new Error('监控接口返回了非 JSON 数据')
       if (id !== requestId.current) return
       if (liveOnly) {
         setData((current) => current ? { ...current, now: payload.now, devices: payload.devices, migrationRequired: payload.migrationRequired } : current)

@@ -22,6 +22,7 @@ import {
 } from '@tabler/icons-react'
 
 import SettingsButton from './SettingsButton'
+import SiteSearch from './SiteSearch'
 import UserAvatar from './UserAvatar'
 import { useLocale } from './LocaleProvider'
 import { usePwaInstall } from './PwaInstallGuide'
@@ -848,17 +849,7 @@ export default function SiteHeader() {
             </Link>
           </div>
 
-          <form action="/articles" method="get" role="search" className="site-mobile-search min-w-0 flex-1 xl:hidden">
-            <label className="sr-only" htmlFor="site-mobile-search-q">{pick(locale, '搜索内容', 'Search')}</label>
-            <input
-              id="site-mobile-search-q"
-              type="search"
-              name="q"
-              placeholder={pick(locale, '搜索文章、调研、资源', 'Search articles, research, resources')}
-              defaultValue={searchParams.get('q') || ''}
-              autoComplete="off"
-            />
-          </form>
+          <SiteSearch mobile />
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
@@ -915,7 +906,8 @@ export default function SiteHeader() {
                 </div>
               ))}
             </nav>
-            <div className="site-header-recommendations ml-auto hidden items-center gap-1 border-l border-[var(--site-line)] pl-2 xl:flex 2xl:gap-1.5 2xl:pl-3" aria-label={pick(locale, '推荐', 'Picks')}>
+            <SiteSearch />
+            <div className="site-header-recommendations hidden items-center gap-1 border-l border-[var(--site-line)] pl-2 2xl:flex 2xl:gap-1.5 2xl:pl-3" aria-label={pick(locale, '推荐', 'Picks')}>
               <span className="mr-0.5 hidden text-[10px] font-semibold tracking-[0.12em] text-[var(--site-faint)] 2xl:inline">{pick(locale, '推荐', 'PICKS')}</span>
               {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setOpenChannel(null)} />)}
             </div>

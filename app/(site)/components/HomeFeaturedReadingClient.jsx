@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -13,7 +12,6 @@ import {
   getHomeRecommendationRotateDelayMs,
   HOME_ARTICLE_SCOPE_KEYS,
   HOME_ARTICLE_SCOPE_META,
-  HOME_RECOMMENDATION_MAX_BATCH_SIZE,
   HOME_RECOMMENDATION_RELOAD_GUARD,
   homeArticleScopeSurface,
   listHomeArticleScopeCatalog,
@@ -23,7 +21,6 @@ import {
   readHomeRecommendationBatchOffset,
   reconcilePaintedHomeRecommendationLatest,
   reconcilePaintedHomeRecommendationPins,
-  searchHomeRecommendationCatalog,
   selectHomeRecommendationItems,
   sameHomeRecommendationSettings,
   sliceHomeArticleScopeItems,
@@ -48,7 +45,7 @@ const SECTION_BADGE_CLASS = {
   resources: 'home-badge home-badge-resource',
 }
 
-function FeaturedLink({ item, isPinned, fromSearch = false, desktopOnly = false, position = 0, surface = 'home_recommendation' }) {
+function FeaturedLink({ item, isPinned, desktopOnly = false, position = 0, surface = 'home_recommendation' }) {
   const content = (
     <>
       <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
@@ -64,8 +61,8 @@ function FeaturedLink({ item, isPinned, fromSearch = false, desktopOnly = false,
   )
   const className = `h5-feed-row home-reading-item group no-underline${desktopOnly ? ' max-lg:hidden' : ''}`
   const analyticsProps = {
-    'data-analytics-event': fromSearch ? 'search_result_click' : 'entry_click',
-    'data-analytics-surface': fromSearch ? 'home_search' : surface,
+    'data-analytics-event': 'entry_click',
+    'data-analytics-surface': surface,
     'data-analytics-destination-kind': item.section || 'content',
     'data-analytics-destination-id': item.id,
     'data-analytics-position': position,
@@ -77,8 +74,6 @@ function FeaturedLink({ item, isPinned, fromSearch = false, desktopOnly = false,
 
 export default function HomeFeaturedReadingClient({ catalog: initialCatalog = [] }) {
   const [catalog, setCatalog] = useState(initialCatalog)
-  const router = useRouter()
-  const searchInputRef = useRef(null)
   const firstBatchLockedRef = useRef(true)
   const firstBatchItemsRef = useRef(null)
   const [settings, setSettings] = useState(DEFAULT_HOME_RECOMMENDATION_CLIENT_SETTINGS)
@@ -86,8 +81,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   const [automaticBatchNumber, setAutomaticBatchNumber] = useState(0)
   const [batchOffset, setBatchOffset] = useState(0)
   const [changing, setChanging] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [query, setQuery] = useState('')
   const [scope, setScope] = useState('recommended')
   const batchNumber = automaticBatchNumber + batchOffset
   const previousIds = useMemo(
@@ -139,11 +132,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     firstBatchItemsRef.current,
     firstBatchLockedRef.current,
   )
-  const normalizedQuery = query.trim()
-  const searchResults = useMemo(
-    () => searchHomeRecommendationCatalog(catalog, normalizedQuery, HOME_RECOMMENDATION_MAX_BATCH_SIZE),
-    [catalog, normalizedQuery],
-  )
   const scopeCatalog = useMemo(
     () => listHomeArticleScopeCatalog(catalog, settings, scope),
     [catalog, settings, scope],
@@ -152,9 +140,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     () => (scope === 'recommended' ? items : sliceHomeArticleScopeItems(scopeCatalog, HOME_PREVIEW_COUNT)),
     [items, scope, scopeCatalog],
   )
-  const displayedItems = normalizedQuery
-    ? searchResults.slice(0, HOME_PREVIEW_COUNT)
-    : scope === 'recommended' ? items.slice(0, HOME_DESKTOP_RECOMMENDED_COUNT) : scopedItems
+  const displayedItems = scope === 'recommended' ? items.slice(0, HOME_DESKTOP_RECOMMENDED_COUNT) : scopedItems
   const analyticsSurface = homeArticleScopeSurface(scope)
   const pinnedIds = useMemo(() => new Set(settings.pinnedIds), [settings.pinnedIds])
   useEffect(() => {
@@ -239,16 +225,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     })
   }, [])
 
-  const openSearch = useCallback(() => {
-    setSearchOpen(true)
-    window.requestAnimationFrame(() => searchInputRef.current?.focus())
-  }, [])
-
-  const clearSearch = useCallback(() => {
-    setQuery('')
-    setSearchOpen(false)
-  }, [])
-
   const selectScope = useCallback((next) => {
     if (next === scope) return
     setScope(next)
@@ -261,29 +237,8 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     })
   }, [catalog, items.length, scope, settings])
 
-  const viewAllResults = useCallback(() => {
-    if (!normalizedQuery) return
-    trackSiteEvent('search_submit', {
-      query_length: normalizedQuery.length,
-      results_count: searchResults.length,
-      zero_results: searchResults.length === 0,
-      scope_group: 'home',
-    })
-    router.push(`/articles?q=${encodeURIComponent(normalizedQuery)}`)
-  }, [normalizedQuery, router, searchResults.length])
-
-  const handleSearchKeyDown = useCallback((event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      clearSearch()
-    } else if (event.key === 'Enter' && normalizedQuery) {
-      event.preventDefault()
-      viewAllResults()
-    }
-  }, [clearSearch, normalizedQuery, viewAllResults])
-
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
-  const canRotateRecommended = scope === 'recommended' && !normalizedQuery && eligibleCount > items.length
+  const canRotateRecommended = scope === 'recommended' && eligibleCount > items.length
 
   useEffect(() => {
     const handlePageKeyDown = (event) => {
@@ -313,35 +268,12 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
   if (!settings.enabled || (!catalog.length && !items.length)) return null
 
   return (
-    <H5PullToRefresh onRefresh={changeBatch} disabled={changing || Boolean(normalizedQuery) || scope !== 'recommended'}>
+    <H5PullToRefresh onRefresh={changeBatch} disabled={changing || scope !== 'recommended'}>
     <section id="articles" className="home-featured-reading home-section scroll-mt-24">
       <div className="home-primary-heading hidden md:grid">
         <p className="home-kicker">01 · Articles</p>
         <h2 className="home-section-title"><T zh="文章精选" en="Selected articles" /></h2>
-        <div className={`home-primary-heading-actions ${searchOpen ? 'is-search-open' : ''}`}>
-          {searchOpen ? (
-            <div className="relative w-full min-w-0 sm:flex-1">
-              <IconSearch size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#858277] dark:text-[#8793a2]" aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="搜索标题、摘要、标签、栏目或日期"
-                aria-label="搜索首页推荐内容"
-                className="h-9 w-full rounded-full border border-[#d7d2c4] bg-white/80 py-1 pl-9 pr-9 text-[13px] text-[#2c2a23] outline-none transition placeholder:text-[#969287] focus:border-[#8e846f] focus:ring-2 focus:ring-[#8e846f]/15 dark:border-[#313a45] dark:bg-[#121923] dark:text-white dark:placeholder:text-[#748090] dark:focus:border-[#69788a]"
-              />
-              <button type="button" onClick={clearSearch} className="absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#77746a] transition hover:bg-black/5 dark:text-[#9aa5b3] dark:hover:bg-white/10" aria-label="清空并关闭搜索">
-                <IconX size={15} aria-hidden="true" />
-              </button>
-            </div>
-          ) : (
-            <button type="button" onClick={openSearch} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#d7d2c4] bg-white/70 px-3 text-[13px] font-medium text-[#69675e] transition hover:border-[#8e846f] hover:text-[#2c2a23] disabled:cursor-wait disabled:opacity-45 dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white" aria-label="展开推荐搜索">
-              <IconSearch size={15} aria-hidden="true" />
-              <T zh="搜索" en="Search" />
-            </button>
-          )}
+        <div className="home-primary-heading-actions">
           {canRotateRecommended ? (
             <button
               type="button"
@@ -393,18 +325,12 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
               key={item.id}
               item={item}
               isPinned={scope === 'recommended' && pinnedIds.has(item.id)}
-              fromSearch={Boolean(normalizedQuery)}
-              desktopOnly={!normalizedQuery && scope === 'recommended' && index >= HOME_PREVIEW_COUNT}
+              desktopOnly={scope === 'recommended' && index >= HOME_PREVIEW_COUNT}
               position={index + 1}
               surface={analyticsSurface}
             />
           ))}
-          {normalizedQuery && !displayedItems.length ? (
-            <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
-              没有找到与“{normalizedQuery}”匹配的内容
-            </div>
-          ) : null}
-          {!normalizedQuery && !displayedItems.length ? (
+          {!displayedItems.length ? (
             <div className="py-10 text-center text-[14px] text-[#77746a] dark:text-[#98a3b1]">
               {scope === 'resources' ? '暂时没有可展示的资源' : '暂时没有可展示的内容'}
             </div>
@@ -426,13 +352,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
           >
             <IconRefresh size={16} className={`transition-transform duration-300 ${changing ? 'rotate-180' : 'group-hover:rotate-45'}`} aria-hidden="true" />
             <T zh="换一批" en="Show me more" />
-          </button>
-        </div>
-      ) : null}
-      {normalizedQuery && displayedItems.length ? (
-        <div className="mt-5 flex justify-center border-t border-[#ded9cc] pt-5 dark:border-[#2c3540]">
-          <button type="button" onClick={viewAllResults} className="inline-flex h-9 items-center rounded-full border border-[#d7d2c4] bg-white/70 px-4 text-[13px] font-medium text-[#5d594f] transition hover:border-[#8e846f] hover:text-[#211f1a] dark:border-[#313a45] dark:bg-[#121923] dark:text-[#aeb8c5] dark:hover:border-[#69788a] dark:hover:text-white">
-            查看全部结果
           </button>
         </div>
       ) : null}

@@ -29,8 +29,8 @@ function TypeBadge({ type }) {
   )
 }
 
-const INITIAL_RENDER_COUNT = 7
-const RENDER_BATCH_SIZE = 6
+const INITIAL_RENDER_COUNT = 9
+const RENDER_BATCH_SIZE = 9
 const VIDEO_PRELOAD_ROOT_MARGIN = '320px 0px'
 
 function itemShareText(item) {
@@ -189,7 +189,7 @@ function useNearViewport(rootMargin = '0px') {
   return [ref, isNear]
 }
 
-function LazyVideo({ item, eager = false, onSelect }) {
+function LazyVideo({ item, eager = false, frameAspect }) {
   const [frameRef, isNearViewport] = useNearViewport(VIDEO_PRELOAD_ROOT_MARGIN)
   const videoRef = useRef(null)
   const [activated, setActivated] = useState(false)
@@ -206,7 +206,7 @@ function LazyVideo({ item, eager = false, onSelect }) {
   }, [activated, eager])
 
   return (
-    <MediaFrame aspect={item.aspect} frameRef={frameRef}>
+    <MediaFrame aspect={frameAspect || item.aspect} frameRef={frameRef}>
       {shouldLoad ? (
         <video
           ref={videoRef}
@@ -236,14 +236,10 @@ function LazyVideo({ item, eager = false, onSelect }) {
           type="button"
           className="absolute inset-0 block h-full w-full overflow-hidden bg-[#282824] text-left text-white"
           onClick={() => {
-            if (onSelect) {
-              onSelect(item.id)
-              return
-            }
             setLoadFailed(false)
             setActivated(true)
           }}
-          aria-label={onSelect ? `设为主视觉：${item.title}` : `加载视频：${item.title}`}
+          aria-label={`播放视频：${item.title}`}
         >
           {item.poster ? (
             // 静态 poster 已经是视频缩略图，这里用原生 img 避免给 feed 卡片引入 next/image 包装尺寸。
@@ -322,56 +318,12 @@ const HEADLINE_ACCENT = {
   quote: '#f5a623',
 }
 
-function HeadlineSummary({ item, accent }) {
-  const summaryRef = useRef(null)
-  const [isOverflowing, setIsOverflowing] = useState(false)
-
-  useEffect(() => {
-    const node = summaryRef.current
-    if (!node) return undefined
-
-    const updateOverflow = () => {
-      setIsOverflowing(node.scrollHeight > node.clientHeight + 1)
-    }
-
-    updateOverflow()
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateOverflow)
-      return () => window.removeEventListener('resize', updateOverflow)
-    }
-
-    const observer = new ResizeObserver(updateOverflow)
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [item.summary])
-
-  return (
-    <div className="mt-4">
-      <p
-        ref={summaryRef}
-        className="mb-0 text-[15px] leading-7 text-[var(--site-muted)] lg:line-clamp-4"
-      >
-        {item.summary}
-      </p>
-      {isOverflowing ? (
-        <Link
-          href={`/feed/${item.id}`}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full border bg-[var(--site-panel-strong)] px-3 py-1.5 text-[12px] font-semibold no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          style={{ color: accent, borderColor: `${accent}55` }}
-        >
-          阅读全文
-          <span aria-hidden="true">→</span>
-        </Link>
-      ) : null}
-    </div>
-  )
-}
-
 // 头条卡：占满整行，桌面端媒体在左、文案在右
 function HeadlineCard({ item, showPv = false, detailMode = false }) {
   const accent = HEADLINE_ACCENT[item.type] || '#f5a623'
-  const media = <ItemMedia item={item} eager />
+  const media = <ItemMedia item={item} eager={detailMode} />
   const hasMedia = item.type === 'video' || item.type === 'image' || Boolean(item.image)
+  const Heading = detailMode ? 'h1' : 'h2'
 
   const text = (
     <div className={`flex min-w-0 flex-col justify-start ${hasMedia ? 'p-4 md:p-0' : 'lg:py-3'}`}>
@@ -380,10 +332,10 @@ function HeadlineCard({ item, showPv = false, detailMode = false }) {
           className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em]"
           style={{ color: accent, background: `${accent}1a` }}
         >
-          {detailMode ? '灵感' : '头条'} · {FEED_TYPE_META[item.type]?.label || ''}
+          {detailMode ? '灵感' : '最新收录'} · {FEED_TYPE_META[item.type]?.label || ''}
         </span>
       </div>
-      <h2 className="mb-0 mt-3 border-b border-[var(--site-ink)] pb-2 font-serif text-[24px] leading-tight text-[var(--site-ink)] md:text-[28px]">
+      <Heading className="mb-0 mt-4 border-0 p-0 font-serif text-[24px] leading-tight text-[var(--site-ink)] md:text-[30px]">
         {detailMode ? (
           item.title
         ) : (
@@ -391,7 +343,7 @@ function HeadlineCard({ item, showPv = false, detailMode = false }) {
             {item.title}
           </Link>
         )}
-      </h2>
+      </Heading>
       {item.type === 'quote' ? (
         <blockquote className="mt-4 border-l-2 pl-4 font-serif text-[18px] leading-8 text-[var(--site-ink)]" style={{ borderColor: accent }}>
           {item.quote || item.summary}
@@ -401,21 +353,25 @@ function HeadlineCard({ item, showPv = false, detailMode = false }) {
           {item.summary}
         </p>
       ) : item.summary ? (
-        <HeadlineSummary item={item} accent={accent} />
+        <p className="mb-0 mt-4 line-clamp-4 whitespace-pre-line text-[15px] leading-7 text-[var(--site-muted)]">{item.summary}</p>
       ) : null}
-      <PromptBlock prompt={item.prompt} expanded={detailMode} />
+      {detailMode ? <PromptBlock prompt={item.prompt} expanded /> : null}
       {item.author ? <p className="mb-0 mt-3 text-[13px] text-[var(--site-muted)]">—— {item.author}</p> : null}
-      <div className="mt-auto">
-        <MetaRow item={item} showPv={showPv} />
-      </div>
+      {detailMode ? (
+        <div className="mt-auto"><MetaRow item={item} showPv={showPv} /></div>
+      ) : (
+        <div className="mt-auto flex items-center justify-between gap-4 pt-6">
+          <time dateTime={item.date} className="font-mono text-xs text-[var(--site-faint)]">{item.date?.replaceAll('-', '.')}</time>
+          <Link href={`/feed/${item.id}`} className="inline-flex min-h-10 items-center rounded-full bg-[var(--site-ink)] px-5 text-xs font-semibold text-[var(--page-bg)] no-underline transition hover:opacity-80">查看详情 <span className="ml-2" aria-hidden="true">↗</span></Link>
+        </div>
+      )}
     </div>
   )
 
   return (
     <article
       id={item.id}
-      className={`scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors md:p-6 ${hasMedia ? 'p-0' : 'p-4'}`}
-      style={{ borderColor: `${accent}40` }}
+      className={`scroll-mt-24 overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] shadow-sm shadow-[var(--site-shadow)] md:p-6 ${hasMedia ? 'p-0' : 'p-5'}`}
     >
       {hasMedia ? (
         <div className="grid min-w-0 gap-0 md:gap-5 lg:grid-cols-[1.45fr_minmax(320px,0.95fr)] lg:items-stretch lg:gap-7">
@@ -429,201 +385,53 @@ function HeadlineCard({ item, showPv = false, detailMode = false }) {
   )
 }
 
-function selectCardFromSurface(event, item, onSelect) {
-  if (!onSelect || event.target.closest('a, button, video, details, summary')) return
-  onSelect(item.id)
-}
+function FeedCard({ item }) {
+  const href = `/feed/${item.id}`
+  const image = item.type === 'image' ? item.src : item.image
+  const hasMedia = item.type === 'video' || Boolean(image)
+  const summary = item.type === 'quote' ? item.quote || item.summary : item.summary
 
-function FeedSelectionLink({ item, onSelect, className, children }) {
   return (
-    <a
-      href={onSelect ? `#${item.id}` : `/feed/${item.id}`}
-      className={className}
-      onClick={(event) => {
-        if (!onSelect) return
-        event.preventDefault()
-        onSelect(item.id)
-      }}
-    >
-      {children}
-    </a>
-  )
-}
-
-function VideoCard({ item, onSelect }) {
-  return (
-    <article
-      id={item.id}
-      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#ff4d6a]/50 ${onSelect ? 'cursor-pointer' : ''}`}
-      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
-    >
-      <LazyVideo item={item} onSelect={onSelect} />
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="mt-3 flex items-center gap-2">
-          <TypeBadge type={item.type} />
-          <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-            <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">
-              {item.title}
-            </FeedSelectionLink>
-          </h2>
+    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-1 hover:border-[var(--site-line-strong)] hover:shadow-lg hover:shadow-[var(--site-shadow)] focus-within:border-[var(--site-ink)]">
+      {hasMedia ? (
+        <div className="relative aspect-[16/10] overflow-hidden bg-[var(--site-panel-strong)]">
+          {item.type === 'video' ? <LazyVideo item={item} frameAspect="16/10" /> : (
+            <Link href={href} className="block h-full w-full" aria-label={`查看${item.title}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" src={image} alt="" loading="lazy" />
+            </Link>
+          )}
         </div>
-        {item.summary ? (
-          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-        ) : null}
-        <div className="mt-auto">
-          <MetaRow item={item} maxTags={3} />
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function ImageCard({ item, onSelect }) {
-  return (
-    <article
-      id={item.id}
-      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] p-4 transition-colors hover:border-[#6c5ce7]/50 ${onSelect ? 'cursor-pointer' : ''}`}
-      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
-    >
-      <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
-        <MediaFrame aspect={item.aspect}>
-          {/* 静态资源，沿用站内 <img> 约定 */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="absolute inset-0 h-full w-full object-cover" src={item.src} alt={item.title} loading="lazy" />
-        </MediaFrame>
-      </FeedSelectionLink>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="mt-3 flex items-center gap-2">
-          <TypeBadge type={item.type} />
-          <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-            <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">
-              {item.title}
-            </FeedSelectionLink>
-          </h2>
-        </div>
-        {item.summary ? (
-          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-        ) : null}
-        <div className="mt-auto">
-          <MetaRow item={item} maxTags={3} />
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function LinkCard({ item, onSelect }) {
-  return (
-    <article
-      id={item.id}
-      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-bg)] transition-colors hover:border-[#00a978]/50 ${onSelect ? 'cursor-pointer' : ''}`}
-      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
-    >
-      <div className="flex min-h-0 flex-1 flex-col p-4">
-        <div className="block">
-          {item.image ? (
-            <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
-              <MediaFrame aspect={item.aspect || '16/9'}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
-              </MediaFrame>
-            </FeedSelectionLink>
-          ) : null}
-          <div className={`flex items-center gap-2 ${item.image ? 'mt-3' : ''}`}>
-            <TypeBadge type={item.type} />
-            <h2 className="mb-0 min-w-0 flex-1 line-clamp-2 border-b-0 pb-0 font-serif text-[18px] leading-tight text-[var(--site-ink)]">
-              <FeedSelectionLink item={item} onSelect={onSelect} className="no-underline hover:underline">{item.title}</FeedSelectionLink>
-            </h2>
-          </div>
-        </div>
-        {item.summary ? (
-          <p className="mb-0 mt-2 line-clamp-4 text-[13.5px] leading-6 text-[var(--site-muted)]">{item.summary}</p>
-        ) : null}
-        <div className="mt-auto">
-          <MetaRow item={item} maxTags={3} />
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function QuoteCard({ item, onSelect }) {
-  return (
-    <article
-      id={item.id}
-      className={`flex h-full scroll-mt-24 flex-col rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[#f5a623]/50 ${onSelect ? 'cursor-pointer' : ''}`}
-      onClick={(event) => selectCardFromSurface(event, item, onSelect)}
-    >
-      {item.image ? (
-        <FeedSelectionLink item={item} onSelect={onSelect} className="mb-3 block no-underline">
-          <MediaFrame aspect={item.aspect || '16/9'}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="absolute inset-0 h-full w-full object-cover" src={item.image} alt={item.title} loading="lazy" />
-          </MediaFrame>
-        </FeedSelectionLink>
       ) : null}
-      <div className="mb-3"><TypeBadge type={item.type} /></div>
-      <FeedSelectionLink item={item} onSelect={onSelect} className="block no-underline">
-        <blockquote className="line-clamp-6 border-l-2 border-[#f5a623] pl-4 font-serif text-[17px] leading-8 text-[var(--site-ink)]">
-          {item.quote || item.summary}
-        </blockquote>
-      </FeedSelectionLink>
-      {item.author ? (
-        <p className="mb-0 mt-3 text-right text-[12px] text-[var(--site-muted)]">—— {item.author}</p>
-      ) : null}
-      <div className="mt-auto">
-        <MetaRow item={item} maxTags={3} />
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-center justify-between gap-3">
+          <TypeBadge type={item.type} />
+          <time dateTime={item.date} className="shrink-0 font-mono text-[11px] text-[var(--site-faint)]">{item.date?.replaceAll('-', '.')}</time>
+        </div>
+        <h2 className="mb-0 mt-4 border-0 p-0 font-serif text-[19px] leading-[1.4] text-[var(--site-ink)]">
+          <Link href={href} className="no-underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:underline">{item.title}</Link>
+        </h2>
+        {summary ? <p className="mb-0 mt-3 line-clamp-3 whitespace-pre-line text-[13px] leading-6 text-[var(--site-muted)]">{summary}</p> : null}
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-[var(--site-line)] pt-4 text-xs text-[var(--site-muted)]" style={{ marginTop: '1.5rem' }}>
+          <span className="min-w-0 truncate">{item.tags?.[0] ? `# ${item.tags[0]}` : item.author || 'TUARAN'}</span>
+          <Link href={href} className="shrink-0 font-semibold text-[var(--site-ink)] no-underline group-hover:underline" aria-label={`查看详情：${item.title}`}>查看详情 <span aria-hidden="true">↗</span></Link>
+        </div>
       </div>
     </article>
   )
-}
-
-function FeedCard({ item, onSelect }) {
-  if (item.type === 'video') return <VideoCard item={item} onSelect={onSelect} />
-  if (item.type === 'image') return <ImageCard item={item} onSelect={onSelect} />
-  if (item.type === 'link') return <LinkCard item={item} onSelect={onSelect} />
-  if (item.type === 'quote') return <QuoteCard item={item} onSelect={onSelect} />
-  return null
-}
-
-function prioritizeItem(items, itemId) {
-  if (!itemId) return items
-  const selected = items.find((item) => item.id === itemId)
-  if (!selected) return items
-  return [selected, ...items.filter((item) => item.id !== itemId)]
 }
 
 function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
-  const triggerRef = useRef(null)
-
-  useEffect(() => {
-    if (!hasMore) return undefined
-    const node = triggerRef.current
-    if (!node) return undefined
-
-    if (typeof IntersectionObserver === 'undefined') return undefined
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) onLoadMore()
-      },
-      { rootMargin: '700px 0px', threshold: 0.01 }
-    )
-
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [hasMore, onLoadMore])
-
   if (!hasMore) return null
 
   return (
-    <div ref={triggerRef} className="flex justify-center pt-1">
+    <div className="flex justify-center pt-5">
       <button
         type="button"
-        className="article-action-button px-4 py-2 text-xs"
+        className="min-h-11 rounded-full border border-[var(--site-line-strong)] bg-[var(--site-panel)] px-6 text-sm font-semibold text-[var(--site-ink)] transition hover:border-[var(--site-ink)] hover:bg-[var(--site-panel-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         onClick={onLoadMore}
       >
-        继续浏览 {remainingCount}
+        加载更多 <span className="ml-1 font-normal text-[var(--site-muted)]">（剩余 {remainingCount} 条）</span>
       </button>
     </div>
   )
@@ -632,37 +440,22 @@ function LoadMoreTrigger({ hasMore, onLoadMore, remainingCount }) {
 function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode = false }) {
   const [categoryFilter, setCategoryFilter] = useState(DEFAULT_FEED_CATEGORY)
   const [typeFilter, setTypeFilter] = useState('all')
-  const [hashFeaturedItemId, setHashFeaturedItemId] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_RENDER_COUNT)
-  const headlineRef = useRef(null)
-  const shouldScrollToHeadlineRef = useRef(false)
-  const activeFeaturedItemId = featuredItemId || hashFeaturedItemId
 
   useEffect(() => {
     if (detailMode || typeof window === 'undefined') return
-    setCategoryFilter(normalizeFeedCategory(new URLSearchParams(window.location.search).get('category')))
+    const syncCategory = () => setCategoryFilter(normalizeFeedCategory(new URLSearchParams(window.location.search).get('category')))
+    syncCategory()
+    window.addEventListener('popstate', syncCategory)
+    return () => window.removeEventListener('popstate', syncCategory)
   }, [detailMode])
-
-  useEffect(() => {
-    if (featuredItemId || typeof window === 'undefined') return
-
-    function syncHashFeaturedItem() {
-      const nextId = decodeURIComponent(window.location.hash || '').replace(/^#/, '')
-      setHashFeaturedItemId(nextId)
-    }
-
-    syncHashFeaturedItem()
-    window.addEventListener('hashchange', syncHashFeaturedItem)
-    return () => window.removeEventListener('hashchange', syncHashFeaturedItem)
-  }, [featuredItemId])
 
   const filtered = useMemo(
     () => {
       const categoryItems = filterFeedItemsByCategory(items, categoryFilter)
-      const tabItems = typeFilter === 'all' ? categoryItems : categoryItems.filter((i) => i.type === typeFilter)
-      return prioritizeItem(tabItems, activeFeaturedItemId)
+      return typeFilter === 'all' ? categoryItems : categoryItems.filter((i) => i.type === typeFilter)
     },
-    [items, categoryFilter, typeFilter, activeFeaturedItemId]
+    [items, categoryFilter, typeFilter]
   )
   const visibleItems = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
@@ -670,36 +463,14 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
 
   useEffect(() => {
     setVisibleCount(INITIAL_RENDER_COUNT)
-  }, [categoryFilter, typeFilter, activeFeaturedItemId])
-
-  useEffect(() => {
-    if (!shouldScrollToHeadlineRef.current || !activeFeaturedItemId) return
-    shouldScrollToHeadlineRef.current = false
-
-    const frame = window.requestAnimationFrame(() => {
-      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      headlineRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [activeFeaturedItemId])
-
-  function selectFeaturedItem(itemId) {
-    if (!itemId || detailMode) return
-    shouldScrollToHeadlineRef.current = true
-    setHashFeaturedItemId(itemId)
-
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href)
-      url.hash = itemId
-      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
-    }
-  }
+  }, [categoryFilter, typeFilter])
 
   function selectCategory(next) {
     const category = normalizeFeedCategory(next)
     setCategoryFilter(category)
+    setTypeFilter('all')
     if (detailMode || typeof window === 'undefined') return
-    window.history.replaceState(null, '', feedCategoryHref(category))
+    window.history.pushState(null, '', feedCategoryHref(category))
   }
 
   const loadMore = () => {
@@ -723,7 +494,7 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
     return (
       <div>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--site-line)] pb-4">
-          <Link href="/feed" className="text-[13px] font-medium text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">
+          <Link href={feedCategoryHref(selected.category)} className="text-[13px] font-medium text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">
             ← 返回灵感流
           </Link>
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">
@@ -755,7 +526,7 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">Related</p>
                 <h2 className="mt-1 border-0 p-0 font-serif text-xl text-[var(--site-ink)]">继续看看</h2>
               </div>
-              <Link href="/feed" className="text-xs text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">全部灵感 →</Link>
+              <Link href={feedCategoryHref(selected.category)} className="text-xs text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">同主题灵感 →</Link>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => <FeedCard key={item.id} item={item} />)}
@@ -768,94 +539,71 @@ function FeedClientView({ items, typesPresent, featuredItemId = '', detailMode =
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">
-            主题
-          </span>
-          <div
-            className="inline-flex min-w-0 items-center gap-1 overflow-x-auto rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] p-1 shadow-sm shadow-[var(--site-shadow)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            role="tablist"
-            aria-label="按主题筛选灵感"
-          >
-            {FEED_CATEGORY_KEYS.map((key) => {
-              const active = categoryFilter === key
-              const meta = FEED_CATEGORY_META[key]
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => selectCategory(key)}
-                  className={[
-                    'inline-flex min-h-8 shrink-0 items-center justify-center rounded-full border px-4 text-[13px] font-semibold transition-colors',
-                    active
-                      ? 'border-[var(--site-ink)] bg-[var(--site-ink)] text-[var(--page-bg)]'
-                      : 'border-transparent bg-transparent text-[var(--site-muted)] hover:bg-[var(--site-panel-strong)] hover:text-[var(--site-ink)]',
-                  ].join(' ')}
-                >
-                  {meta.label}
-                </button>
-              )
-            })}
+      <section className="mb-7 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 sm:p-5" aria-label="筛选灵感">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="shrink-0 text-xs font-semibold text-[var(--site-muted)]">主题</span>
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="按主题筛选灵感">
+              {FEED_CATEGORY_KEYS.map((key) => {
+                const active = categoryFilter === key
+                const meta = FEED_CATEGORY_META[key]
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => selectCategory(key)}
+                    className={`min-h-10 shrink-0 rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'bg-[var(--site-ink)] text-[var(--page-bg)]' : 'text-[var(--site-muted)] hover:bg-[var(--site-panel-strong)] hover:text-[var(--site-ink)]'}`}
+                  >
+                    {meta.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="flex min-w-0 items-center gap-4 border-t border-[var(--site-line)] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+            <span className="shrink-0 text-xs font-semibold text-[var(--site-muted)]">形式</span>
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="按类型筛选灵感">
+              {typeChips.map((chip) => {
+                const active = typeFilter === chip.key
+                return (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setTypeFilter(chip.key)}
+                    className={`min-h-10 shrink-0 rounded-full px-3.5 text-[13px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${active ? 'bg-[var(--site-panel-strong)] font-semibold text-[var(--site-ink)] shadow-sm' : 'text-[var(--site-muted)] hover:text-[var(--site-ink)]'}`}
+                  >
+                    {chip.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">
-            形式
-          </span>
-          <div
-            className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-[color-mix(in_srgb,var(--site-panel)_72%,transparent)] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            aria-label="按类型筛选灵感"
-          >
-            {typeChips.map((chip) => {
-              const active = typeFilter === chip.key
-              return (
-                <button
-                  key={chip.key}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setTypeFilter(chip.key)}
-                  className={[
-                    'min-h-8 shrink-0 rounded-full border px-3 text-[12px] transition-colors',
-                    active
-                      ? 'border-[var(--site-line)] bg-[var(--site-panel-strong)] font-semibold text-[var(--site-ink)] shadow-sm shadow-[var(--site-shadow)]'
-                      : 'border-transparent bg-transparent font-medium text-[var(--site-muted)] hover:text-[var(--site-ink)]',
-                  ].join(' ')}
-                >
-                  {chip.label}
-                </button>
-              )
-            })}
-          </div>
+      </section>
+
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--site-faint)]">Latest sparks</p>
+          <h2 className="m-0 border-0 p-0 font-serif text-2xl text-[var(--site-ink)]">最新灵感</h2>
         </div>
+        <span className="shrink-0 text-xs text-[var(--site-muted)]">{filtered.length} 条内容</span>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--site-line)] p-12 text-center text-[14px] text-[var(--site-muted)]">
-          这个分类下还没有内容。
+        <div className="rounded-2xl border border-dashed border-[var(--site-line)] p-12 text-center text-sm text-[var(--site-muted)]">
+          当前筛选没有内容，试试其他形式。
         </div>
       ) : (
-        <div className="space-y-5">
-          {/* 首条作为头条，占满整行大版面 */}
-          <div ref={headlineRef} className="scroll-mt-24">
-            <HeadlineCard item={visibleItems[0]} />
-          </div>
-
+        <div className="space-y-6">
+          <HeadlineCard item={visibleItems[0]} />
           {visibleItems.length > 1 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {visibleItems.slice(1).map((item) => (
-                <FeedCard key={item.id} item={item} onSelect={selectFeaturedItem} />
-              ))}
+              {visibleItems.slice(1).map((item) => <FeedCard key={item.id} item={item} />)}
             </div>
           ) : null}
-
-          <LoadMoreTrigger
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-            remainingCount={remainingCount}
-          />
+          <LoadMoreTrigger hasMore={hasMore} onLoadMore={loadMore} remainingCount={remainingCount} />
         </div>
       )}
     </div>

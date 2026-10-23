@@ -8,7 +8,7 @@
 //   3) git push → Cloudflare 重建上线
 //
 // 字段约定（按 type 取用对应字段）：
-//   id        唯一 slug（全小写连字符，供锚点 #id 深链与 React key）
+//   id        唯一 slug（全小写连字符，供详情页 /feed/[id] 与 React key）
 //   type      'video' | 'image' | 'link' | 'quote'
 //   category  'ai' | 'web3'  主题分类（首页与灵感流 tab）
 //   title     标题

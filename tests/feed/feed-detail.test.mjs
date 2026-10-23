@@ -39,16 +39,18 @@ test('feed list filters by AI and Web3 before media type', async () => {
   assert.match(client, /feedCategoryHref/)
 })
 
-test('feed filters use compact, visually distinct topic and format controls', async () => {
+test('feed browsing has clear filters and direct detail links', async () => {
   const [client, page] = await Promise.all([
     readFile(FEED_CLIENT_PATH, 'utf8'),
     readFile(FEED_PAGE_PATH, 'utf8'),
   ])
 
-  assert.match(page, /header className="mb-3/)
+  assert.match(page, /按主题或形式筛选/)
   assert.match(client, />\s*主题\s*</)
   assert.match(client, />\s*形式\s*</)
-  assert.match(client, /bg-\[var\(--site-ink\)\] text-\[var\(--page-bg\)\]/)
-  assert.doesNotMatch(client, /home-section-tabs/)
-  assert.doesNotMatch(client, /home-tab-link/)
+  assert.match(client, /aria-pressed=\{active\}/)
+  assert.match(client, /查看详情：\$\{item.title\}/)
+  assert.match(client, /eager=\{detailMode\}/)
+  assert.match(client, /window\.history\.pushState/)
+  assert.doesNotMatch(client, /selectFeaturedItem|设为主视觉/)
 })

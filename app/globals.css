@@ -4322,7 +4322,8 @@
 
   .site-search { position: relative; min-width: 0; }
   .site-search-mobile { flex: 1 1 auto; }
-  .site-search-desktop { flex: 1 1 280px; max-width: 360px; margin-left: auto; }
+  .site-search-desktop { flex: 1 1 140px; max-width: 210px; min-width: 115px; margin-left: auto; }
+  @media (min-width: 1536px) { .site-search-desktop { flex-basis: 260px; max-width: 360px; } }
   .site-search-form { position: relative; }
   .site-search-icon { position: absolute; left: 0.8rem; top: 50%; z-index: 1; transform: translateY(-50%); color: var(--site-faint); pointer-events: none; }
   .site-search input {
@@ -4854,22 +4855,26 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.3rem;
-    min-height: 1.9rem;
-    padding: 0.25rem 0.7rem;
-    border: 1px solid;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    gap: 0.4rem;
+    min-height: 2.2rem;
+    padding: 0.3rem 0.4rem 0.2rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--site-ink);
+    font-size: 0.78rem;
+    font-weight: 650;
     line-height: 1.2;
     text-decoration: none;
     white-space: nowrap;
-    transition: background-color 150ms ease, transform 150ms ease;
+    transition: color 150ms ease, border-color 150ms ease;
   }
+
+  .site-header-pick small { align-self: baseline; color: var(--site-faint); font-family: ui-monospace, monospace; font-size: 0.55rem; font-weight: 600; letter-spacing: 0.04em; }
 
   .site-header-pick:hover {
     text-decoration: none;
-    transform: translateY(-1px);
   }
 
   .site-header-pick:focus-visible {
@@ -4879,28 +4884,25 @@
 
   .site-header-pick-book,
   .site-header-pick-book:visited {
-    border-color: #e5b486;
-    background: #fff0e3;
-    color: #97440f;
+    color: #704d34;
   }
 
-  .site-header-pick-book:hover { background: #ffe2c6; color: #7b380c; }
+  .site-header-pick-book:hover { border-bottom-color: #a87951; color: #704d34; }
 
   .site-header-pick-green,
   .site-header-pick-green:visited {
-    border-color: #a6d6a2;
-    background: #e7f8df;
-    color: #205d35;
+    color: #2c5c40;
   }
 
-  .site-header-pick-green:hover { background: #d2f2c6; color: #17472a; }
+  .site-header-pick-green:hover { border-bottom-color: #679678; color: #2c5c40; }
 
   .dark .site-header-pick-book,
-  .dark .site-header-pick-book:visited { border-color: #8d5b34; background: #4a2e1b; color: #ffd3a4; }
+  .dark .site-header-pick-book:visited { color: #e9c3a1; }
   .dark .site-header-pick-green,
-  .dark .site-header-pick-green:visited { border-color: #559066; background: #234a32; color: #d8f6ce; }
-  .dark .site-header-pick-book:hover { background: #633b20; }
-  .dark .site-header-pick-green:hover { background: #2e6040; }
+  .dark .site-header-pick-green:visited { color: #b5dfbd; }
+  .dark .site-header-pick-book:hover { border-bottom-color: #d7aa84; color: #e9c3a1; }
+  .dark .site-header-pick-green:hover { border-bottom-color: #8dc09a; color: #b5dfbd; }
+  @media (max-width: 420px) { .site-header-compact-picks .site-header-pick { gap: 0.25rem; padding-inline: 0.15rem; font-size: 0.75rem; } .site-header-compact-picks .site-header-pick small { display: none; } }
 
   .site-nav-cluster + .site-nav-cluster {
     position: relative;

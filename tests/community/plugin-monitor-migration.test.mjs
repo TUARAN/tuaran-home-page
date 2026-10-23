@@ -2,8 +2,58 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
+import { readCommunityActionHistory, readXExtensionMonitor, recordCommunityActionReport } from '../../lib/community/communityActions.js'
 
 const migration = (name) => readFileSync(new URL(`../../migrations/${name}`, import.meta.url), 'utf8')
+
+function d1Adapter(sqlite) {
+  return {
+    prepare(sql) {
+      const statement = sqlite.prepare(sql)
+      const execute = (values) => ({
+        async run() { return { meta: { changes: statement.run(...values).changes } } },
+        async all() { return { results: statement.all(...values) } },
+        async first() { return statement.get(...values) || null },
+      })
+      return {
+        ...execute([]),
+        bind(...values) { return execute(values) },
+      }
+    },
+  }
+}
+
+test('post migration preserves old rows, repeated uploads replace counts, and history and monitor read posts', async () => {
+  const sqlite = new DatabaseSync(':memory:')
+  try {
+    sqlite.exec(migration('0109_community_actions.sql'))
+    sqlite.exec(migration('0112_x_extension_daily_reports.sql'))
+    sqlite.prepare(`INSERT INTO x_extension_daily_reports (device_id, report_date, account_handle, comments, uploaded_at) VALUES (?, ?, ?, ?, ?)`)
+      .run('device-x-daily', '2026-10-17', 'Tuaran', 2, 1000)
+    sqlite.exec(migration('0119_x_extension_daily_report_posts.sql'))
+    assert.equal(sqlite.prepare('SELECT posts FROM x_extension_daily_reports').get().posts, 0)
+    sqlite.exec(migration('0115_x_extension_runtime.sql'))
+    sqlite.exec(migration('0117_community_action_daily_counts.sql'))
+    sqlite.exec(migration('0118_community_action_all_platform_counts.sql'))
+    const db = d1Adapter(sqlite)
+    const now = Date.parse('2026-10-18T08:00:00Z')
+    assert.equal((await readCommunityActionHistory(db, { accountHandle: 'Tuaran', now })).dailyReports[0].counts.posts, 0)
+    const report = (posts) => ({
+      deviceId: 'device-x-daily', platform: 'x', accountHandle: 'Tuaran',
+      dailyReport: { date: '2026-10-17', accountHandle: 'Tuaran', counts: { comments: 2, likes: 1, follows: 0, unfollows: 0, followBacks: 0, posts } },
+    })
+    assert.equal((await recordCommunityActionReport(db, report(3), now)).dailyReportSaved, true)
+    assert.equal((await recordCommunityActionReport(db, report(5), now + 1)).dailyReportSaved, true)
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS total, posts FROM x_extension_daily_reports').get().posts, 5)
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS total FROM x_extension_daily_reports').get().total, 1)
+    const history = await readCommunityActionHistory(db, { accountHandle: 'Tuaran', now })
+    assert.equal(history.dailyReports[0].counts.posts, 5)
+    const monitor = await readXExtensionMonitor(db, { date: '2026-10-17', now })
+    assert.equal(monitor.dailyReports[0].posts, 5)
+  } finally {
+    sqlite.close()
+  }
+})
 
 test('daily receipt counts backfill and continue updating for all plugin platforms', () => {
   const db = new DatabaseSync(':memory:')

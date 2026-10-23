@@ -20,9 +20,14 @@ const juejinReceipt = require('../../tools/juejin-interaction-extension/receipt.
 
 const NOW = Date.parse('2026-10-12T02:00:00.000Z')
 
-test('X daily report validates five confirmed counters and upserts one device/day/account snapshot', async () => {
+test('X daily report validates post counts and accepts older reports without posts', async () => {
   const dailyReport = { date: '2026-10-12', accountHandle: '@Tuaran', counts: { comments: 3, likes: 5, follows: 2, unfollows: 1, followBacks: 4 } }
   assert.equal(normalizeXDailyReport(dailyReport, NOW).accountHandle, 'Tuaran')
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.posts, 0)
+  assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, posts: 7 } }, NOW).counts.posts, 7)
+  for (const posts of [-1, 1.5, 100001, NaN, Infinity, '7', null]) {
+    assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, posts } }, NOW), null)
+  }
   assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, likes: -1 } }, NOW), null)
   assert.equal(normalizeXDailyReport({ ...dailyReport, date: '2026-02-30' }, NOW), null)
   const writes = []
@@ -31,7 +36,10 @@ test('X daily report validates five confirmed counters and upserts one device/da
   assert.equal(result.dailyReportSaved, true)
   assert.equal(writes.length, 2)
   assert.match(writes[1].sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
-  assert.deepEqual(writes[1].values.slice(0, 8), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4])
+  assert.deepEqual(writes[1].values.slice(0, 9), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0])
+  const rejected = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', dailyReport: { ...dailyReport, counts: { ...dailyReport.counts, posts: -1 } } }, NOW)
+  assert.deepEqual(rejected, { ok: false, error: 'INVALID_DAILY_REPORT' })
+  assert.equal(writes.length, 2)
 })
 
 test('local daily report counts successful actions once and refuses a false upload acknowledgement', async () => {

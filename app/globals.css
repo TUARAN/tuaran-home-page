@@ -4335,154 +4335,6 @@
     color: var(--site-faint);
   }
 
-  .site-onchain-blog-link {
-    position: relative;
-    display: inline-flex;
-    height: 1.35rem;
-    width: 1.35rem;
-    margin-left: 0.35rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.25rem;
-    font-size: 1rem;
-    line-height: 1;
-    text-decoration: none;
-    transition: transform 160ms ease;
-  }
-
-  .site-onchain-blog-link:hover,
-  .site-onchain-blog-link:focus-visible {
-    outline: none;
-    transform: translateY(-1px);
-  }
-
-  .site-onchain-blog-link:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--site-accent) 22%, transparent);
-  }
-
-  .site-onchain-blog-tooltip {
-    position: absolute;
-    top: calc(100% + 0.55rem);
-    left: 50%;
-    z-index: 20;
-    width: max-content;
-    max-width: min(18rem, calc(100vw - 2rem));
-    padding: 0.48rem 0.65rem;
-    border: 1px solid var(--site-line);
-    border-radius: 0.55rem;
-    background: var(--site-panel-strong);
-    box-shadow: 0 10px 28px color-mix(in srgb, var(--site-shadow) 72%, transparent);
-    color: var(--site-ink);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 0.72rem;
-    font-weight: 500;
-    line-height: 1.45;
-    letter-spacing: 0;
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, -0.2rem);
-    transition: opacity 140ms ease, transform 140ms ease;
-  }
-
-  .site-onchain-blog-link:hover .site-onchain-blog-tooltip,
-  .site-onchain-blog-link:focus-visible .site-onchain-blog-tooltip {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-
-  .site-brand-slogan {
-    position: relative;
-    isolation: isolate;
-    display: none;
-    min-width: 0;
-    flex: 1 1 auto;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.55rem;
-    margin: 0 clamp(0.45rem, 0.9vw, 1rem);
-    white-space: nowrap;
-    font-family: "Kaiti SC", STKaiti, KaiTi, "Songti SC", STSong, serif;
-    font-size: clamp(0.88rem, 0.94vw, 1.05rem);
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: 0.055em;
-    color: var(--site-ink);
-  }
-
-  .site-brand-slogan-message {
-    display: inline-flex;
-    align-items: baseline;
-    color: var(--site-ink);
-  }
-
-  .site-brand-slogan-highlight {
-    color: var(--site-ink);
-    background-image: linear-gradient(
-      105deg,
-      var(--site-ink) 0%,
-      var(--site-ink) 35%,
-      color-mix(in srgb, var(--site-accent) 84%, #ffffff) 43%,
-      #fff2a8 49%,
-      color-mix(in srgb, var(--site-accent) 92%, #f4c96b) 55%,
-      var(--site-ink) 65%,
-      var(--site-ink) 100%
-    );
-    background-position: 100% 50%;
-    background-size: 220% 100%;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: site-brand-slogan-sweep 2.4s cubic-bezier(0.45, 0, 0.2, 1) infinite;
-  }
-
-  @keyframes site-brand-slogan-sweep {
-    0%, 8% {
-      background-position: 100% 50%;
-    }
-    84%, 100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .site-brand-slogan-destination {
-    color: inherit;
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    letter-spacing: inherit;
-  }
-
-  .site-brand-slogan-destination strong {
-    font-weight: inherit;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .site-brand-slogan-highlight {
-      background-image: none;
-      -webkit-text-fill-color: currentColor;
-      animation: none;
-    }
-  }
-
-  @media (min-width: 1180px) {
-    .site-brand-slogan {
-      display: flex;
-    }
-  }
-
-  @media (min-width: 1180px) and (max-width: 1439px) {
-    .site-brand-slogan {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.08rem;
-      margin-right: 0.65rem;
-      margin-left: 0.65rem;
-      font-size: 0.88rem;
-      letter-spacing: 0.018em;
-    }
-
-  }
-
   .site-mobile-search input {
     width: 100%;
     height: 34px;
@@ -5003,6 +4855,64 @@
     border: 1px solid color-mix(in srgb, var(--site-line) 76%, transparent);
     border-radius: 999px;
     background: color-mix(in srgb, var(--site-panel-strong) 28%, transparent);
+  }
+
+  .site-header-pick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    min-height: 1.9rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 150ms ease, transform 150ms ease;
+  }
+
+  .site-header-pick:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .site-header-pick:focus-visible,
+  .site-header-recommendation-menu > summary:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 2px;
+  }
+
+  .site-header-pick-book,
+  .site-header-pick-book:visited {
+    border-color: #e5b486;
+    background: #fff0e3;
+    color: #97440f;
+  }
+
+  .site-header-pick-book:hover { background: #ffe2c6; color: #7b380c; }
+
+  .site-header-pick-green,
+  .site-header-pick-green:visited {
+    border-color: #a6d6a2;
+    background: #e7f8df;
+    color: #205d35;
+  }
+
+  .site-header-pick-green:hover { background: #d2f2c6; color: #17472a; }
+
+  .dark .site-header-pick-book,
+  .dark .site-header-pick-book:visited { border-color: #8d5b34; background: #4a2e1b; color: #ffd3a4; }
+  .dark .site-header-pick-green,
+  .dark .site-header-pick-green:visited { border-color: #559066; background: #234a32; color: #d8f6ce; }
+  .dark .site-header-pick-book:hover { background: #633b20; }
+  .dark .site-header-pick-green:hover { background: #2e6040; }
+
+  .site-header-recommendation-menu[open] > summary {
+    background: color-mix(in srgb, var(--site-accent) 12%, var(--site-panel-strong));
+    color: var(--site-ink);
   }
 
   .site-nav-cluster + .site-nav-cluster {

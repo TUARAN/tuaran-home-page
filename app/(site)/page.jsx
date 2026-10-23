@@ -8,7 +8,6 @@ import {
   IconBrandX,
   IconBrandZhihu,
   IconArchive,
-  IconBook2,
   IconBuildingSkyscraper,
   IconBulb,
   IconCalendarEvent,
@@ -57,15 +56,6 @@ const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
 const SITE_HERO_TITLE_EN = 'Frontend · AI Engineering · and a Dad'
 const SITE_HERO_TAGLINE_EN = 'Writing code, raising a family, building for the long run'
 const MATRIXLINK_URL = 'https://matrixlink.tech/'
-
-const HOME_QUICK_NAV_LINKS = [
-  { href: '/#articles', label: '推荐阅读', labelEn: 'Reading' },
-  { href: '/frontend-weekly', label: '周看', labelEn: 'Weekly' },
-  { href: '/web3', label: '市场', labelEn: 'Markets' },
-  { href: '/feed', label: '灵感', labelEn: 'Sparks' },
-  { href: '/codex-reset', label: '重置', labelEn: 'Reset' },
-  { href: '/tools', label: '工具', labelEn: 'Tools' },
-]
 
 export const dynamic = 'force-static'
 
@@ -292,54 +282,6 @@ const HOME_ACHIEVEMENT_LINKS = [
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
-
-function HomeQuickNav() {
-  return (
-    <nav className="relative z-[3] mb-3 grid gap-2 rounded-2xl border border-[#d8d9d1] bg-white/85 p-2.5 shadow-[0_8px_26px_rgba(40,60,45,0.06)] backdrop-blur-md dark:border-[#42554a] dark:bg-[#122019]/90 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center" aria-label="首页快捷入口">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0 px-2 font-mono text-[10px] font-bold tracking-[0.14em] text-[#64806b] dark:text-[#a7c1ab]"><T zh="导航" en="NAV" /></span>
-        <div className="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {HOME_QUICK_NAV_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="shrink-0 rounded-lg px-2.5 py-2 text-[12px] font-semibold text-[#3f5948] no-underline transition hover:bg-[#e9f2e7] hover:text-[#17492b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#39885b] dark:text-[#d0e2d1] dark:hover:bg-[#284333] sm:px-3 sm:text-[13px]"
-              data-analytics-event="entry_click"
-              data-analytics-surface="home_quick_nav"
-              data-analytics-destination-kind="page"
-            >
-              <T zh={item.label} en={item.labelEn} />
-            </Link>
-          ))}
-        </div>
-      </div>
-      <div className="flex min-w-0 items-center gap-2 border-t border-[#e3e8de] pt-2 dark:border-[#3b4e40] lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0">
-        <span className="shrink-0 px-2 font-mono text-[10px] font-bold tracking-[0.14em] text-[#9b663f] dark:text-[#d5ae8d]"><T zh="推荐" en="PICKS" /></span>
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <Link
-            href="/books/llm-underlying-logic"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#e5b486] bg-[#fff0e3] px-3 py-1.5 text-[12px] font-bold text-[#97440f] no-underline transition hover:bg-[#ffe2c6] dark:border-[#8d5b34] dark:bg-[#4a2e1b] dark:text-[#ffd3a4] sm:text-[13px]"
-            data-analytics-event="entry_click"
-            data-analytics-surface="home_quick_recommendation"
-            data-analytics-destination-kind="page"
-          >
-            <IconBook2 size={15} aria-hidden="true" /><T zh="新书出版发售" en="New book" /><span aria-hidden="true">↗</span>
-          </Link>
-          <Link
-            href="/x"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#a6d6a2] bg-[#e7f8df] px-3 py-1.5 text-[12px] font-bold text-[#205d35] no-underline transition hover:bg-[#d2f2c6] dark:border-[#559066] dark:bg-[#234a32] dark:text-[#d8f6ce] sm:text-[13px]"
-            data-analytics-event="entry_click"
-            data-analytics-surface="home_quick_recommendation"
-            data-analytics-destination-kind="resource"
-            data-analytics-destination-id="big-interaction-whitepaper"
-          >
-            <IconMessages size={15} aria-hidden="true" /><T zh="大互动理论 · 绿皮书" en="Big Interaction · Green Book" /><span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-      </div>
-    </nav>
-  )
-}
 
 function isExternalHref(href) {
   return typeof href === 'string' && href.startsWith('http')
@@ -898,7 +840,6 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         }}
       />
       <div className="home-backdrop" aria-hidden="true" />
-      <HomeQuickNav />
       <HomeAllianceBanner />
       <FestivalBanner />
       <div className="home-main-grid">

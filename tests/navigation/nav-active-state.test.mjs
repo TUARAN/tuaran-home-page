@@ -139,21 +139,11 @@ test('desktop and mobile render route state instead of featured styling', async 
   assert.doesNotMatch(css, /site-menu-item-featured/)
 })
 
-test('onchain shortcut follows the homepage slogan instead of the global brand', async () => {
+test('homepage uses one header navigation with a recommendation group', async () => {
   const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
-  const homepageSlogan = header.match(/\{pathname === '\/' \? \([\s\S]*?\) : null\}/)?.[0] || ''
-  const brandLockup = header.slice(header.indexOf('<div className="site-brand-lockup'), header.indexOf("{pathname === '/' ? ("))
-
-  assert.match(homepageSlogan, /尽在 <strong>2aran\.com<\/strong>”[\s\S]*href="\/onchain-blog"/)
-  assert.doesNotMatch(brandLockup, /href="\/onchain-blog"|site-onchain-blog-link/)
-})
-
-test('homepage slogan uses a left-to-right highlight sweep with reduced-motion fallback', async () => {
-  const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
-  const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
-
-  assert.equal((header.match(/site-brand-slogan-highlight/g) || []).length, 2)
-  assert.match(css, /@keyframes site-brand-slogan-sweep[\s\S]*background-position: 100% 50%[\s\S]*background-position: 0% 50%/)
-  assert.match(css, /\.site-brand-slogan-highlight[\s\S]*animation: site-brand-slogan-sweep/)
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.site-brand-slogan-highlight[\s\S]*animation: none/)
+  const homepage = await readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8')
+  assert.match(header, /<nav ref=\{navWrapRef\} aria-label=\{pick\(locale, '主导航'/)
+  assert.match(header, /site-header-recommendations/)
+  assert.match(header, /site-header-recommendation-menu/)
+  assert.doesNotMatch(homepage, /HomeQuickNav|首页快捷入口/)
 })

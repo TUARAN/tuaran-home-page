@@ -13,9 +13,10 @@ test('pull-to-refresh only counts downward overscroll at the top', () => {
 })
 
 test('H5 feed hides search and batch buttons in favor of pull-to-refresh', async () => {
-  const [readingSource, pageSource, articlesSource, directorySource, listSource, communitySource, accountSource] = await Promise.all([
+  const [readingSource, pageSource, headerSource, articlesSource, directorySource, listSource, communitySource, accountSource] = await Promise.all([
     readFile(new URL('../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/components/ShowcaseDirectory.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(site)/articles/ArticleListItem.jsx', import.meta.url), 'utf8'),
@@ -26,12 +27,11 @@ test('H5 feed hides search and batch buttons in favor of pull-to-refresh', async
   assert.match(readingSource, /home-primary-heading hidden md:grid/)
   assert.match(readingSource, /h5-batch-more[\s\S]*hidden[\s\S]*md:flex/)
   assert.match(readingSource, /home-reading-meta \$\{isPinned \? '' : 'hidden md:flex'\}/)
-  assert.match(pageSource, /function HomeQuickNav\(/)
-  assert.match(pageSource, /aria-label="首页快捷入口"/)
-  assert.match(pageSource, /<T zh="导航" en="NAV" \/>/)
-  assert.match(pageSource, /<T zh="推荐" en="PICKS" \/>/)
-  assert.match(pageSource, /href="\/books\/llm-underlying-logic"/)
-  assert.match(pageSource, /href="\/x"/)
+  assert.doesNotMatch(pageSource, /HomeQuickNav|首页快捷入口/)
+  assert.match(headerSource, /HEADER_RECOMMENDATIONS/)
+  assert.match(headerSource, /href: '\/books\/llm-underlying-logic'/)
+  assert.match(headerSource, /href: '\/x'/)
+  assert.match(headerSource, /site-mobile-drawer[\s\S]*HEADER_RECOMMENDATIONS\.map/)
   assert.doesNotMatch(readingSource, /加载更多|Load more/)
   assert.match(articlesSource, /h5-article-chips/)
   assert.match(articlesSource, /hidden space-y-2.5[\s\S]*搜索标题、主题或对象/)

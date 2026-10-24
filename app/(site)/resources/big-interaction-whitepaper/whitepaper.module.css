@@ -1,11 +1,14 @@
 .page { padding-top: 28px; padding-bottom: 64px; color: #213a31; }
 .sectionIndex, .chapterNav { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.chapterNav { max-width: 870px; margin: 0 auto 32px; border-top: 2px solid #356e4f; border-bottom: 1px solid #d8e2d5; }
-.chapterNav ol { display: flex; flex-wrap: wrap; gap: 0 22px; margin: 0; padding: 12px 0; list-style: none; }
-.chapterNav a { display: inline-flex; align-items: baseline; gap: 7px; padding: 9px 0; color: #496d56; font-size: 12px; font-weight: 700; line-height: 1.5; text-decoration: none; }
-.chapterNav a:hover, .chapterNav a:focus-visible { color: #145337; text-decoration: underline; text-underline-offset: 4px; }
+.readingLayout { display: grid; grid-template-columns: 204px minmax(0, 1fr); align-items: start; gap: 28px; max-width: 1088px; margin: 0 auto; }
+.chapterNav { position: sticky; top: calc(var(--site-header-height, 64px) + 24px); max-height: calc(100dvh - var(--site-header-height, 64px) - 48px); overflow-y: auto; padding: 18px 12px; border: 1px solid #d8e2d5; border-top: 2px solid #356e4f; border-radius: 12px; background: #f4f8f0; }
+.chapterNavTitle { margin: 0 0 12px 8px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
+.chapterNav ol { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.chapterNav a { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: start; gap: 5px; padding: 9px 8px; border-radius: 8px; color: #496d56; font-size: 12px; font-weight: 700; line-height: 1.5; text-decoration: none; }
+.chapterNav a:hover, .chapterNav a:focus-visible { background: #e5efdf; color: #145337; }
+.chapterNav a:focus-visible { outline: 2px solid #356e4f; outline-offset: 1px; }
 .chapterNav a span { color: #779b7d; font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
-.paper { min-width: 0; max-width: 870px; margin: 0 auto; }
+.paper { min-width: 0; max-width: 870px; }
 .section { scroll-margin-top: 90px; margin: 0 0 72px; padding-bottom: 64px; border-bottom: 1px solid #d8e2d5; }
 .sectionIndex { margin: 0 0 18px; color: #4c8b58; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
 .section h1, .section h2 { margin: 0 0 28px; color: #193b2c; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(31px, 3.4vw, 45px); font-weight: 700; line-height: 1.3; letter-spacing: .02em; }
@@ -61,21 +64,23 @@
 .exhibit figcaption p { margin: 7px 0 0; color: #637669; font-size: 12px; line-height: 1.7; }
 .exhibitionProgress { height: 2px; margin-top: 18px; background: #d8e6d5; }
 .exhibitionProgress span { display: block; height: 100%; background: #337f48; transition: transform .3s; }
-.footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 24px; border-top: 1px solid #d8e2d5; color: #667c6a; font-size: 12px; }
+.footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; max-width: 856px; margin-left: auto; padding-top: 24px; border-top: 1px solid #d8e2d5; color: #667c6a; font-size: 12px; }
 .footerActions { display: flex; align-items: center; gap: 18px; }
 .footer a { color: #286a42; }
 .footer a:hover { text-decoration: underline; }
 
 :global(.dark) .page { color: #e3eee2; }
-:global(.dark) .chapterNav { border-color: #80b783; }
+:global(.dark) .chapterNav { border-color: #3a5843; border-top-color: #80b783; background: #1a3325; }
+:global(.dark) .chapterNavTitle { color: #b8d9b5; }
 :global(.dark) .section, :global(.dark) .exhibition, :global(.dark) .footer, :global(.dark) .practiceList li { border-color: #3a5843; }
 :global(.dark) .section h1, :global(.dark) .section h2, :global(.dark) .section>h3, :global(.dark) .exhibitionHeader h2, :global(.dark) .section .lead { color: #e8f1e2; }
 :global(.dark) .chapterNav a, :global(.dark) .section>p:not(.sectionIndex), :global(.dark) .section li { color: #c0d1c2; }
-:global(.dark) .chapterNav a:hover, :global(.dark) .chapterNav a:focus-visible { color: #e8f1e2; }
+:global(.dark) .chapterNav a:hover, :global(.dark) .chapterNav a:focus-visible { background: #294a34; color: #e8f1e2; }
 :global(.dark) .section blockquote, :global(.dark) .steps>div, :global(.dark) .dimension, :global(.dark) .promptBox, :global(.dark) .exhibit { border-color: #3a5843; background: #1a3325; }
 :global(.dark) .section blockquote, :global(.dark) .steps h3, :global(.dark) .dimension h3, :global(.dark) .dimension strong, :global(.dark) .practiceList strong, :global(.dark) .promptBox p, :global(.dark) .exhibit figcaption strong { color: #e3f0df; }
 :global(.dark) .steps p, :global(.dark) .dimension p, :global(.dark) .exhibit figcaption p { color: #b6c9b8; }
 
+@media (max-width: 960px) { .readingLayout { display: block; } .chapterNav { position: static; max-width: 870px; max-height: none; margin: 0 auto 32px; padding: 14px 16px; } .chapterNav ol { display: flex; flex-wrap: wrap; gap: 0 12px; } .chapterNav a { display: inline-flex; align-items: baseline; gap: 7px; } .paper { margin: 0 auto; } .footer { max-width: 870px; margin-inline: auto; } }
 @media (max-width: 900px) { .steps { grid-template-columns: 1fr; } .steps>div { padding: 15px; } .exhibitImage { height: 390px; } }
 @media (max-width: 700px) { .page { padding-top: 14px; } .chapterNav { margin-bottom: 35px; } .chapterNav ol { gap: 0 16px; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: 88%; } .exhibitImage { height: 360px; } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
 @media (max-width: 440px) { .exhibitImage { height: 295px; } .exhibit figcaption { min-height: 175px; } .flow { padding-inline: 5px; } .flow span { font-size: 10px; } .flow b { width: 31px; height: 31px; } .footer { align-items: flex-start; flex-direction: column; } }

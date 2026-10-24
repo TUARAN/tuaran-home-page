@@ -64,13 +64,15 @@ export default function BigInteractionWhitepaperPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" />
 
-      <nav className={styles.chapterNav} aria-label="章节导航">
-        <ol>{chapters.map((chapter) => <li key={chapter.id}>
-          <a href={`#${chapter.id}`}><span>{chapter.number}</span>{chapter.title}</a>
-        </li>)}</ol>
-      </nav>
+      <div className={styles.readingLayout}>
+        <nav className={styles.chapterNav} aria-label="章节目录">
+          <p className={styles.chapterNavTitle}>目录</p>
+          <ol>{chapters.map((chapter) => <li key={chapter.id}>
+            <a href={`#${chapter.id}`}><span>{chapter.number}</span>{chapter.title}</a>
+          </li>)}</ol>
+        </nav>
 
-      <article className={styles.paper}>
+        <article className={styles.paper}>
           <section id="foreword" className={styles.section}>
             <p className={styles.sectionIndex}>PREFACE / 序</p>
             <h1>从一次交流开始</h1>
@@ -153,7 +155,8 @@ export default function BigInteractionWhitepaperPage() {
             <h3 id="scope">5.2 方法的适用范围</h3>
             <p>互动机会受到工作、照护责任、健康和资源条件影响。交流次数和点赞、关注等平台动作，不能衡量人的价值或关系质量。这套方法适合自我观察与小范围实践，尚无足以证明其普遍因果效果的研究数据。</p>
           </section>
-      </article>
+        </article>
+      </div>
 
       <footer className={styles.footer}><span>大互动理论 · TUARAN · 2026 年 10 月</span><div className={styles.footerActions}><a href="#foreword">返回序言 ↑</a><SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享本书" /></div></footer>
     </PageContainer>

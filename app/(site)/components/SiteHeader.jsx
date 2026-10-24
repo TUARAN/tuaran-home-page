@@ -856,7 +856,7 @@ export default function SiteHeader() {
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
               {NAV_GROUPS.map((group) => (
-                <div key={group.key} className={`site-nav-cluster ${group.key === 'other' ? 'site-nav-cluster-other' : ''}`}>
+                <div key={group.key} className="site-nav-cluster">
                   {group.shortcuts?.map((item) => (
                     <ContentShortcutLink
                       key={item.key}

@@ -129,11 +129,11 @@ test('matching respects path boundaries, trailing slashes, and longest nested en
   assert.equal(getActiveNavHref([{ items: [{ href: 'https://example.com', external: true }] }], '/'), null)
 })
 
-test('desktop and mobile render route state instead of featured styling', async () => {
+test('desktop menu renders route state instead of featured styling', async () => {
   const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
   const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
   assert.doesNotMatch(header, /item\.featured|site-menu-item-featured/)
-  assert.equal((header.match(/active=\{item\.href === activeHref\}/g) || []).length, 2)
+  assert.equal((header.match(/active=\{item\.href === activeHref\}/g) || []).length, 1)
   assert.match(header, /aria-current=\{active \? 'page' : undefined\}/)
   assert.match(css, /\.site-menu-item-active\s*\{/)
   assert.doesNotMatch(css, /site-menu-item-featured/)
@@ -141,6 +141,7 @@ test('desktop and mobile render route state instead of featured styling', async 
 
 test('homepage uses one header navigation with a recommendation group', async () => {
   const header = await readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8')
+  const css = await readFile(new URL('../../app/globals.css', import.meta.url), 'utf8')
   const homepage = await readFile(new URL('../../app/(site)/page.jsx', import.meta.url), 'utf8')
   assert.match(header, /<nav ref=\{navWrapRef\} aria-label=\{pick\(locale, '主导航'/)
   assert.match(header, /site-header-recommendations/)
@@ -148,7 +149,12 @@ test('homepage uses one header navigation with a recommendation group', async ()
   assert.match(header, /新书出版发售/)
   assert.match(header, /大互动理论/)
   assert.match(header, /site-header-recommendations flex shrink-0/)
-  assert.match(header, /group\.key === 'other' \? 'hidden 2xl:inline-flex'/)
+  assert.match(header, /group\.key === 'other' \? 'site-nav-cluster-other'/)
+  assert.match(header, /\['community', 'checkin', 'about'\]/)
+  assert.match(header, /site-mobile-quick-nav/)
+  assert.doesNotMatch(header, /MOBILE_NAV_GROUPS|移动端主导航/)
+  assert.match(css, /\.site-nav-cluster-other > \* \+ \*\s*\{[^}]*border-left: 1px solid/)
+  assert.match(css, /\.site-mobile-quick-link \+ \.site-mobile-quick-link\s*\{[^}]*border-left: 1px solid/)
   assert.match(header, /site-header-compact-picks flex shrink-0/)
   assert.doesNotMatch(homepage, /HomeQuickNav|首页快捷入口/)
 })

@@ -54,10 +54,6 @@ const HEADER_RECOMMENDATIONS = [
 ]
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))
-const MOBILE_NAV_GROUPS = NAV_GROUPS.map((group) => ({
-  ...group,
-  channels: group.channels.filter((channel) => !MOBILE_PRIMARY_CHANNELS.includes(channel)),
-})).filter((group) => group.shortcuts?.length || group.channels.length)
 
 function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
@@ -757,7 +753,6 @@ export default function SiteHeader() {
   const [searchString, setSearchString] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openChannel, setOpenChannel] = useState(null)
-  const [openMobileChannel, setOpenMobileChannel] = useState(null)
   const [accountOpen, setAccountOpen] = useState(false)
   const account = useSessionAccount()
   const { installed, openGuide: openInstallGuide } = usePwaInstall()
@@ -861,7 +856,7 @@ export default function SiteHeader() {
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
               {NAV_GROUPS.map((group) => (
-                <div key={group.key} className={`site-nav-cluster ${group.key === 'other' ? 'hidden 2xl:inline-flex' : ''}`}>
+                <div key={group.key} className={`site-nav-cluster ${group.key === 'other' ? 'site-nav-cluster-other' : ''}`}>
                   {group.shortcuts?.map((item) => (
                     <ContentShortcutLink
                       key={item.key}
@@ -985,14 +980,14 @@ export default function SiteHeader() {
           Menu
         </p>
         {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-4 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
-        <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="mb-4 grid grid-cols-3 gap-2">
+        <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav mb-4">
           {MOBILE_PRIMARY_CHANNELS.map((channel) => (
             <Link
               key={channel.key}
               href={channel.href}
               onClick={() => setMobileMenuOpen(false)}
               aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
-              className={`site-mobile-card site-mobile-primary-link site-menu-title ${channel.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
+              className={`site-mobile-quick-link ${channel.match(pathname, searchParams) ? 'is-active' : ''}`}
               data-analytics-event="entry_click"
               data-analytics-surface="global_nav"
               data-analytics-destination-kind="page"
@@ -1029,84 +1024,6 @@ export default function SiteHeader() {
             {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
           </div>
         </div> : null}
-        <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
-          {MOBILE_NAV_GROUPS.map((group, index) => (
-            <div key={group.key} className={`flex flex-col gap-1.5 ${index ? 'mt-2 border-t border-[var(--site-line)] pt-3' : ''}`}>
-              {group.shortcuts?.length ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {group.shortcuts.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      aria-current={item.match(pathname, searchParams) ? 'page' : undefined}
-                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-center text-[15px] font-medium ${item.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
-                    >
-                      {navLabel(item, locale)}
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
-              {group.channels.map((channel) => {
-                const expanded = openMobileChannel === channel.key
-                const sections = getChannelNavSections(channel, account, account?.navOverrides)
-                const activeHref = channel.match(pathname, searchParams) ? getActiveNavHref(sections, pathname, searchParams) : null
-                if (channel.direct) {
-                  return (
-                    <Link
-                      key={channel.key}
-                      href={channel.href}
-                      aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
-                      className={`site-mobile-card site-menu-title rounded-2xl border px-4 py-3 text-[15px] font-medium ${channel.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {navLabel(channel, locale)}
-                    </Link>
-                  )
-                }
-                return (
-                  <div key={channel.key} className="site-mobile-card rounded-2xl border">
-                    <button
-                      type="button"
-                      onClick={() => setOpenMobileChannel((cur) => (cur === channel.key ? null : channel.key))}
-                      aria-expanded={expanded}
-                      className="site-menu-title flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-medium"
-                    >
-                      {navLabel(channel, locale)}
-                      <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
-                        <ChevronDown />
-                      </span>
-                    </button>
-                    {expanded ? (
-                      <div className="site-mobile-section-divider space-y-2 border-t px-2 pb-3 pt-2">
-                        {sections.map((section) => {
-                          const tier = getTierStyle(section.title)
-                          return (
-                            <div key={section.title} className={`rounded-xl px-2 pb-1 pt-2 ${tier.wrap}`}>
-                              <p className={`mb-1 px-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tier.title}`}>
-                                {navSectionTitle(section, locale)}
-                              </p>
-                              <div className="flex flex-col">
-                                {section.items.map((item) => (
-                                  <MenuItem
-                                    key={item.href + item.label}
-                                    item={item}
-                                    active={item.href === activeHref}
-                                    onNavigate={() => setMobileMenuOpen(false)}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </nav>
       </div>
     </>
   )

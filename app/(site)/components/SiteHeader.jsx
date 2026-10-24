@@ -49,9 +49,15 @@ const NAV_GROUPS = [
 ]
 
 const HEADER_RECOMMENDATIONS = [
-  { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', number: '01', tone: 'book', kind: 'page' },
-  { href: '/x', label: '大互动理论', labelEn: 'Big Interaction Theory', number: '02', tone: 'green', kind: 'resource' },
+  { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', tone: 'book', kind: 'page' },
+  { href: '/x', label: '大互动理论', labelEn: 'Big Interaction Theory', tone: 'green', kind: 'resource' },
 ]
+
+const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))
+const MOBILE_NAV_GROUPS = NAV_GROUPS.map((group) => ({
+  ...group,
+  channels: group.channels.filter((channel) => !MOBILE_PRIMARY_CHANNELS.includes(channel)),
+})).filter((group) => group.shortcuts?.length || group.channels.length)
 
 function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
@@ -65,7 +71,6 @@ function RecommendationLink({ item, onNavigate }) {
     data-analytics-destination-kind={item.kind}
     data-analytics-destination-id={item.href}
   >
-    <small aria-hidden="true">{item.number}</small>
     <span>{pick(locale, item.label, item.labelEn)}</span>
   </Link>
 }
@@ -691,7 +696,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
               <Link
                 href={SITE_ADMIN_NAV_LINK.href}
                 onClick={onNavigate}
-                className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+                className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
               >
                 <span>{navLabel(SITE_ADMIN_NAV_LINK, locale)}</span>
                 <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
@@ -700,7 +705,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <Link
               href="/account"
               onClick={onNavigate}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
             >
               <span>{pick(locale, '账号中心', 'Account center')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
@@ -708,7 +713,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <Link
               href="/community"
               onClick={onNavigate}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
             >
               <span>{pick(locale, '交流广场', 'Community')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
@@ -716,7 +721,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <Link
               href="/messages"
               onClick={onNavigate}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
             >
               <span>{pick(locale, '消息', 'Messages')}</span>
               <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
@@ -724,7 +729,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             <Link
               href="/resources/rss"
               onClick={onNavigate}
-              className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+              className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
             >
               <span className="flex items-center gap-2">
                 {pick(locale, 'RSS 阅读', 'RSS reader')}
@@ -734,7 +739,7 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
             </Link>
           <a
             href={logoutHref}
-            className="site-menu-item flex items-center justify-between text-[12.5px] font-medium"
+            className="site-menu-item site-mobile-account-link flex items-center justify-between font-medium"
           >
             <span>{pick(locale, '退出登录', 'Sign out')}</span>
             <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">↩</span>
@@ -980,6 +985,23 @@ export default function SiteHeader() {
           Menu
         </p>
         {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-4 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
+        <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="mb-4 grid grid-cols-3 gap-2">
+          {MOBILE_PRIMARY_CHANNELS.map((channel) => (
+            <Link
+              key={channel.key}
+              href={channel.href}
+              onClick={() => setMobileMenuOpen(false)}
+              aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
+              className={`site-mobile-card site-mobile-primary-link site-menu-title ${channel.match(pathname, searchParams) ? 'site-menu-item-active' : ''}`}
+              data-analytics-event="entry_click"
+              data-analytics-surface="global_nav"
+              data-analytics-destination-kind="page"
+              data-analytics-destination-id={channel.href}
+            >
+              {navLabel(channel, locale)}
+            </Link>
+          ))}
+        </nav>
         <MobileAccountPanel
           account={account}
           pathname={pathname}
@@ -1003,12 +1025,12 @@ export default function SiteHeader() {
         ) : null}
         {pathname !== '/' ? <div className="mb-4 border-b border-[var(--site-line)] pb-4" aria-label={pick(locale, '推荐', 'Picks')}>
           <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-[var(--site-faint)]">{pick(locale, '推荐', 'PICKS')}</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
           </div>
         </div> : null}
         <nav aria-label={pick(locale, '移动端主导航', 'Mobile navigation')} className="flex flex-col gap-1.5">
-          {NAV_GROUPS.map((group, index) => (
+          {MOBILE_NAV_GROUPS.map((group, index) => (
             <div key={group.key} className={`flex flex-col gap-1.5 ${index ? 'mt-2 border-t border-[var(--site-line)] pt-3' : ''}`}>
               {group.shortcuts?.length ? (
                 <div className="grid grid-cols-2 gap-2">

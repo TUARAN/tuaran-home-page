@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
@@ -26,11 +24,11 @@ export const metadata = {
 const chapters = [
   { id: 'foreword', number: '序', title: '从一次交流开始' },
   { id: 'plates', number: '卷首', title: '四张图版与观点' },
-  { id: 'framework', number: '第一章', title: '走向互动之前', points: [['care', '1.1 照顾日常'], ['opening', '1.2 打开接触']] },
-  { id: 'mechanism', number: '第二章', title: '互动怎样形成反馈', points: [['express', '2.1 发起交流'], ['listen', '2.2 倾听与追问'], ['revise', '2.3 带走一次修正']] },
-  { id: 'quality', number: '第三章', title: '判断互动的质量', points: [['frequency', '3.1 次数与持续性'], ['depth', '3.2 深度与对象'], ['value', '3.3 内容价值']] },
-  { id: 'practice', number: '第四章', title: '七日实践', points: [['weekly-plan', '4.1 一周行动表'], ['review', '4.2 复盘三个问题']] },
-  { id: 'boundaries', number: '第五章', title: '边界与局限', points: [['choice', '5.1 自愿与退出'], ['scope', '5.2 方法的适用范围']] },
+  { id: 'framework', number: '第一章', title: '走向互动之前' },
+  { id: 'mechanism', number: '第二章', title: '互动怎样形成反馈' },
+  { id: 'quality', number: '第三章', title: '判断互动的质量' },
+  { id: 'practice', number: '第四章', title: '七日实践' },
+  { id: 'boundaries', number: '第五章', title: '边界与局限' },
 ]
 
 const dimensions = [
@@ -66,35 +64,16 @@ export default function BigInteractionWhitepaperPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" />
 
-      <header className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <div className={styles.eyebrow}><Link href="/articles?group=resource">资源</Link><span>/</span><span>电子读本 · 2026.10</span></div>
-          <p className={styles.kicker}>A FIELD GUIDE TO BIG INTERACTION</p>
-          <h1>大互动<span>理论</span></h1>
-          <p className={styles.heroLead}>互动、反馈与边界</p>
-          <p className={styles.heroDescription}>让判断走进真实交流，让行动接受反馈，逐步拓展自己能理解和参与的世界。</p>
-          <div className={styles.heroActions}>
-            <a className={styles.primaryAction} href="#foreword">开始阅读 <span aria-hidden="true">→</span></a>
-            <span className={styles.coverByline}>TUARAN 著 · 第一版</span>
-          </div>
-        </div>
-        <div className={styles.heroMark} aria-hidden="true"><span>互</span><span>动</span><i>∞</i><small>2ARAN.COM/X</small></div>
-      </header>
+      <nav className={styles.chapterNav} aria-label="章节导航">
+        <ol>{chapters.map((chapter) => <li key={chapter.id}>
+          <a href={`#${chapter.id}`}><span>{chapter.number}</span>{chapter.title}</a>
+        </li>)}</ol>
+      </nav>
 
-      <div className={styles.readingGrid}>
-        <aside className={styles.toc} aria-label="大互动理论目录">
-          <p>目录 <span>CONTENTS</span></p>
-          <nav aria-label="章节目录"><ol>{chapters.map((chapter) => <li key={chapter.id}>
-            <a className={styles.tocChapter} href={`#${chapter.id}`}><span>{chapter.number}</span>{chapter.title}</a>
-            {chapter.points ? <ol className={styles.tocPoints}>{chapter.points.map(([id, label]) => <li key={id}><a href={`#${id}`}>{label}</a></li>)}</ol> : null}
-          </li>)}</ol></nav>
-          <span className={styles.tocMeta}>第一版 · TUARAN</span>
-        </aside>
-
-        <article className={styles.paper}>
+      <article className={styles.paper}>
           <section id="foreword" className={styles.section}>
             <p className={styles.sectionIndex}>PREFACE / 序</p>
-            <h2>从一次交流开始</h2>
+            <h1>从一次交流开始</h1>
             <p className={styles.lead}>大互动理论关注一个朴素的过程：主动接触他人，表达自己的判断，听见不同的经验，再带着反馈调整行动。</p>
             <p>交流可以从一条认真写下的评论、一次追问、一段共同完成的工作开始。关键在于对方能够回应，你也愿意根据回应重新检查自己的想法。</p>
             <blockquote>互动让判断接受现实检验；反馈让行动有下一次改进的方向。</blockquote>
@@ -174,8 +153,7 @@ export default function BigInteractionWhitepaperPage() {
             <h3 id="scope">5.2 方法的适用范围</h3>
             <p>互动机会受到工作、照护责任、健康和资源条件影响。交流次数和点赞、关注等平台动作，不能衡量人的价值或关系质量。这套方法适合自我观察与小范围实践，尚无足以证明其普遍因果效果的研究数据。</p>
           </section>
-        </article>
-      </div>
+      </article>
 
       <footer className={styles.footer}><span>大互动理论 · TUARAN · 2026 年 10 月</span><div className={styles.footerActions}><a href="#foreword">返回序言 ↑</a><SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享本书" /></div></footer>
     </PageContainer>

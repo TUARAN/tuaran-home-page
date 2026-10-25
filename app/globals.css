@@ -1445,9 +1445,13 @@
     z-index: 1;
   }
 
-  .home-alliance-banner {
+  .home-alliance-root {
     position: relative;
     z-index: 2;
+  }
+
+  .home-alliance-banner {
+    position: relative;
     display: flex;
     align-items: center;
     margin-bottom: 1rem;
@@ -1457,6 +1461,10 @@
     background: linear-gradient(105deg, #eff5ff, #e6eeff 55%, #f1edff);
     box-shadow: 0 10px 26px rgba(66, 79, 181, 0.16);
     color: #1d2d62;
+  }
+
+  .home-alliance-banner-h5 {
+    display: none;
   }
 
   .home-alliance-top {
@@ -1610,32 +1618,200 @@
     .home-alliance-actions { margin-left: auto; }
   }
 
+  /* H5 首页顶部：独立资讯 App 结构，不压缩桌面横条 */
   @media (max-width: 767px) {
     .home-alliance-banner {
-      margin: 0 0.75rem 0.75rem;
-      padding: 0.8rem;
-      border-radius: 14px;
+      display: none;
     }
-    .home-alliance-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.55rem; }
-    .home-alliance-message { grid-column: 1 / -1; gap: 0.25rem 0.4rem; }
-    .home-alliance-label { display: none; }
-    .home-alliance-message strong { font-size: 0.84rem; }
-    .home-alliance-description { font-size: 0.8rem; }
-    .home-alliance-stats { grid-column: 1; gap: 0.5rem; }
-    .home-alliance-stats > span { flex-direction: column; gap: 0.1rem; }
-    .home-alliance-stats > span + span { padding-left: 0; border-left: 0; }
-    .home-alliance-stats strong { font-size: 0.8rem; }
-    .home-alliance-stats small { font-size: 0.55rem; }
-    .home-alliance-actions { grid-column: 2; margin-left: 0; }
-    .home-alliance-actions button { min-height: 2rem; padding: 0.35rem 0.5rem; font-size: 0.7rem; }
-  }
 
-  @media (max-width: 480px) {
-    .home-alliance-top { grid-template-columns: 1fr; }
-    .home-alliance-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; gap: 0.25rem; }
-    .home-alliance-stats > span { min-width: 0; white-space: normal; }
-    .home-alliance-stats small { font-size: 0.5rem; }
-    .home-alliance-actions { grid-column: 1; justify-content: flex-end; }
+    .home-alliance-banner-h5 {
+      display: block;
+      margin: 0 0 0.65rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: #1d2d62;
+    }
+
+    .home-alliance-h5-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      padding: 0.85rem 0.9rem 0.9rem;
+      border-block: 1px solid color-mix(in srgb, #b9c9fb 70%, var(--site-line));
+      background:
+        linear-gradient(180deg, #f4f7ff 0%, #eef2ff 100%);
+    }
+
+    .home-alliance-h5-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .home-alliance-h5-title {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .home-alliance-h5-kicker {
+      flex: none;
+      padding: 0.12rem 0.4rem;
+      border-radius: 3px;
+      background: #465bd8;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+
+    .home-alliance-h5-name,
+    .home-alliance-h5-name:visited {
+      min-width: 0;
+      color: #1a2550;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.25;
+      text-decoration: none;
+    }
+
+    .home-alliance-h5-link,
+    .home-alliance-h5-link:visited {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      gap: 0.1rem;
+      color: #66759d;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .home-alliance-h5-desc {
+      position: relative;
+      display: grid;
+      margin: 0;
+      min-height: 1.35em;
+      overflow: hidden;
+      color: #4e5f8e;
+      font-size: 0.86rem;
+      line-height: 1.35;
+    }
+
+    .home-alliance-h5-desc .home-alliance-copy {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .home-alliance-h5-metrics {
+      display: flex;
+      gap: 0.45rem;
+      margin: 0 -0.9rem;
+      padding: 0 0.9rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .home-alliance-h5-metrics::-webkit-scrollbar {
+      display: none;
+    }
+
+    .home-alliance-h5-chip {
+      display: flex;
+      flex: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.12rem;
+      min-width: 4.6rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid color-mix(in srgb, #b9c9fb 55%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, white 72%, #e8eeff);
+    }
+
+    .home-alliance-h5-chip strong {
+      color: #344fc6;
+      font-size: 0.92rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .home-alliance-h5-chip small {
+      color: #66759d;
+      font-size: 0.62rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .home-alliance-h5-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      width: 100%;
+      min-height: 2.55rem;
+      border: 0;
+      border-radius: 8px;
+      background: #465bd8;
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(70, 91, 216, 0.18);
+    }
+
+    .home-alliance-h5-cta:active {
+      opacity: 0.88;
+    }
+
+    .dark .home-alliance-h5-card {
+      border-block-color: #4f61ba;
+      background: linear-gradient(180deg, #202b56 0%, #293263 100%);
+      color: #f1f3ff;
+    }
+
+    .dark .home-alliance-h5-kicker {
+      background: #a5b5ff;
+      color: #202b56;
+    }
+
+    .dark .home-alliance-h5-name,
+    .dark .home-alliance-h5-name:visited {
+      color: #f1f3ff;
+    }
+
+    .dark .home-alliance-h5-link,
+    .dark .home-alliance-h5-link:visited,
+    .dark .home-alliance-h5-desc {
+      color: #c8d0f4;
+    }
+
+    .dark .home-alliance-h5-chip {
+      border-color: #5b69a5;
+      background: color-mix(in srgb, #2c3558 82%, transparent);
+    }
+
+    .dark .home-alliance-h5-chip strong {
+      color: #dbe2ff;
+    }
+
+    .dark .home-alliance-h5-chip small {
+      color: #c8d0f4;
+    }
+
+    .dark .home-alliance-h5-cta {
+      background: #a5b5ff;
+      color: #202b56;
+      box-shadow: none;
+    }
   }
 
   .home-alliance-modal {

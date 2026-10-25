@@ -16,6 +16,7 @@
   const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
+  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
   const DRAFT_POLICY_VERSION = 4;
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
@@ -34,6 +35,8 @@
     startedAt: null,
     elapsedMs: 0,
     nextPostAt: 0,
+    riskCooldownUntil: 0,
+    riskRetries: 0,
     schedulePace: DEFAULT_POST_PACE,
     currentPost: "",
     lastPost: "",
@@ -59,6 +62,11 @@
     .normalize("NFC")
     .trim();
 
+  function automationWarningVisible() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"]'))
+      .some((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
+  }
+
   function editorText(node) {
     return textOf(node)
       .replace(/\r/gu, "")
@@ -78,6 +86,8 @@
       startedAt: state.startedAt,
       elapsedMs: state.elapsedMs,
       nextPostAt: state.nextPostAt,
+      riskCooldownUntil: state.riskCooldownUntil,
+      riskRetries: state.riskRetries,
       schedulePace: state.schedulePace,
       currentPost: state.currentPost,
       lastPost: state.lastPost,
@@ -120,6 +130,8 @@
       items: state.publishQueue,
       count: state.count,
       nextPostAt: state.nextPostAt,
+      riskCooldownUntil: state.riskCooldownUntil,
+      riskRetries: state.riskRetries,
       currentPost: state.currentPost,
       lastSentText: state.lastSentText,
       lastError: state.lastError,
@@ -147,6 +159,8 @@
       saved = null;
     }
     if (!saved || typeof saved !== "object") return false;
+    state.riskCooldownUntil = Math.max(state.riskCooldownUntil, Number(saved.riskCooldownUntil) || 0);
+    state.riskRetries = Math.max(state.riskRetries, Number(saved.riskRetries) || 0);
     if (Array.isArray(saved.items) && saved.items.length && !state.publishQueue.length) {
       state.publishQueue = saved.items.filter(keepSourceItem);
       if (!state.currentPost && saved.currentPost) state.currentPost = saved.currentPost;
@@ -523,6 +537,7 @@
         state.lastError = reason;
         rewriteServiceError = reason;
       }
+      if (state.stopping) return state.publishQueue.length;
       if (item.source === "evergreen" && (reason || !text)) {
         const fallback = buildEvergreenFallback(item);
         const fallbackReason = !fallback.text ? "没有正文" : recentEntries().some((entry) => sameDraftText(entry.text, fallback.text)) ? "正文与已发内容完全相同" : "";
@@ -810,6 +825,19 @@
     await loadPublishList();
     filterPromotionalSources();
     while (state.running && !state.stopping) {
+      if (state.riskCooldownUntil > Date.now()) {
+        emit(`X 提示疑似自动化，${Math.ceil((state.riskCooldownUntil - Date.now()) / 60000)} 分钟后自动重试定时发帖`);
+        await waitForPostSchedule(Math.min(5000, state.riskCooldownUntil - Date.now()));
+        continue;
+      }
+      if (state.riskCooldownUntil) {
+        state.riskCooldownUntil = 0;
+        if (automationWarningVisible()) {
+          coolDownForRisk();
+          continue;
+        }
+        emit("风控冷却结束，继续定时发帖");
+      }
       if (state.lastError.startsWith("发帖历史保存失败")) {
         if (!await saveHistory()) {
           emit("发帖历史保存失败，稍后继续重试");
@@ -914,6 +942,10 @@
           await savePublishList();
         }
         const result = await publishPost(state.currentPost);
+        if (result !== "ok" && automationWarningVisible()) {
+          coolDownForRisk();
+          continue;
+        }
         if (result === "duplicate-post") {
           await skipDuplicatePost();
           continue;
@@ -1027,17 +1059,29 @@
     state.stopping = true;
     state.running = false;
     state.navigating = false;
+    state.riskCooldownUntil = 0;
+    wakePostSchedule?.();
     savePublishList();
     emit(state.publishQueue.length ? `正在停止，待发列表还剩 ${state.publishQueue.length} 条，下次开始会继续发` : "正在停止，当前步骤结束后停下");
     return true;
   }
 
   async function startNow() {
-    if (!state.running || state.stopping || state.nextPostAt <= Date.now()) return false;
+    if (!state.running || state.stopping || state.riskCooldownUntil > Date.now() || state.nextPostAt <= Date.now()) return false;
     state.nextPostAt = 0;
     await savePublishList();
     emit("手动开始，正在准备下一条");
     wakePostSchedule?.();
+    return true;
+  }
+
+  function coolDownForRisk() {
+    if (!state.running || state.stopping || state.riskCooldownUntil > Date.now()) return false;
+    state.riskRetries += 1;
+    state.riskCooldownUntil = Date.now() + (root.XReplyClipboardLoop?.automationCooldownMs?.(state.riskRetries) || state.riskRetries * 600000);
+    state.nextPostAt = state.riskCooldownUntil;
+    savePublishList();
+    emit(`X 提示疑似自动化，当前发帖任务等待 ${Math.ceil((state.riskCooldownUntil - Date.now()) / 60000)} 分钟后自动重试`);
     return true;
   }
 
@@ -1070,6 +1114,7 @@
     start,
     startNow,
     stop,
+    coolDownForRisk,
     restore,
     resumeIfPending,
     shouldCollect,

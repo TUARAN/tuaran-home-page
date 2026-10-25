@@ -356,6 +356,12 @@ export default function XReplyClipboardResourcePage() {
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
+              <Link
+                href={`/resources/${RESOURCE_SLUG}/docs`}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15"
+              >
+                文档中心
+              </Link>
               <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享插件" />
               <ArticleActionsDropdown label="更多">
                 <DistributeContentButton

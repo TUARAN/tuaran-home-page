@@ -10,6 +10,7 @@
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
   const TARGET_FOLLOW_HANDLES = ["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
+  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
@@ -35,6 +36,8 @@
     skipped: 0,
     errors: 0,
     cooldownUntil: 0,
+    riskCooldownUntil: 0,
+    riskRetries: 0,
     unfollowEnglish: true,
     seenHandles: new Set(),
     skippedHandles: new Set(),
@@ -62,6 +65,8 @@
       skipped: state.skipped,
       errors: state.errors,
       cooldownUntil: state.cooldownUntil,
+      riskCooldownUntil: state.riskCooldownUntil,
+      riskRetries: state.riskRetries,
       unfollowEnglish: state.unfollowEnglish
     };
   }
@@ -90,6 +95,7 @@
 
   function startNow() {
     if (!state.running || state.stopping) return false;
+    if (state.riskCooldownUntil > Date.now()) return false;
     state.cooldownUntil = 0;
     state.wakeRequested = true;
     state.wakeResolver?.();
@@ -266,6 +272,21 @@
 
   function rateLimitVisible() {
     return rateLimitNodes().some((node) => !state.acknowledgedRateLimits.has(node));
+  }
+
+  function automationWarningVisible() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"]'))
+      .some((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
+  }
+
+  function coolDownForRisk() {
+    if (!state.running || state.stopping || state.riskCooldownUntil > Date.now()) return false;
+    state.riskRetries += 1;
+    state.riskCooldownUntil = Date.now() + (root.XReplyClipboardLoop?.automationCooldownMs?.(state.riskRetries) || state.riskRetries * 600000);
+    state.cooldownUntil = state.riskCooldownUntil;
+    try { sessionStorage.setItem(`xrcMutualRisk:${state.mode}`, JSON.stringify({ until: state.riskCooldownUntil, retries: state.riskRetries })); } catch (error) {}
+    emit(`X 提示疑似自动化，当前关注任务等待 ${formatClock(state.riskCooldownUntil - Date.now())} 后自动重试`);
+    return true;
   }
 
   function dismissTransientDialog() {
@@ -547,6 +568,12 @@
     state.targetFollowed = 0;
     state.skipped = 0;
     state.errors = 0;
+    try {
+      const savedRisk = JSON.parse(sessionStorage.getItem(`xrcMutualRisk:${mode}`) || "null");
+      state.riskRetries = Math.max(0, Number(savedRisk?.retries) || 0);
+      state.riskCooldownUntil = Math.max(0, Number(savedRisk?.until) || 0);
+      if (state.riskCooldownUntil > Date.now()) state.cooldownUntil = state.riskCooldownUntil;
+    } catch (error) { state.riskCooldownUntil = 0; }
     state.seenHandles.clear();
     state.skippedHandles.clear();
     state.acknowledgedRateLimits.clear();
@@ -577,7 +604,7 @@
     const unlimitedUnfollow = mode === "unfollow";
     await loadSharedFollowRate();
     reset(mode, onUpdate);
-    if (unlimitedUnfollow) state.cooldownUntil = 0;
+    if (unlimitedUnfollow && state.riskCooldownUntil <= Date.now()) state.cooldownUntil = 0;
     emit(mode === "unfollow" ? "开始清理未回关账号" : mode === "followBack" ? "开始回关粉丝" : "开始关注候选");
     if (!unlimitedUnfollow && !(await waitForSharedCooldown())) {
       state.running = false;
@@ -590,6 +617,20 @@
     let stopReason = "";
 
     while (!state.stopping) {
+      if (state.riskCooldownUntil > Date.now()) {
+        while (!state.stopping && state.riskCooldownUntil > Date.now()) {
+          emit(`X 提示疑似自动化，${formatClock(state.riskCooldownUntil - Date.now())} 后自动重试`);
+          await sleepActive(Math.min(1000, state.riskCooldownUntil - Date.now()));
+        }
+        if (state.stopping) break;
+        state.riskCooldownUntil = 0;
+        state.cooldownUntil = 0;
+        if (automationWarningVisible()) {
+          coolDownForRisk();
+          continue;
+        }
+        emit("风控冷却结束，继续当前关注任务");
+      }
       if (!listReady(mode)) {
         stopReason = "已离开当前关注名单，任务已停止；回到对应列表后可重新启动";
         break;
@@ -630,6 +671,11 @@
           : mode === "followBack"
             ? await actFollowBack(candidate)
             : await actTargetFollow(candidate);
+        if (automationWarningVisible()) coolDownForRisk();
+        if (state.riskCooldownUntil > Date.now()) {
+          state.seenHandles.delete(candidate.handle);
+          continue;
+        }
         if (ok === "rate-limited" || rateLimitVisible()) {
           reportMutualAction(mode, candidate.handle, "limited", "rate-limited");
           state.seenHandles.delete(candidate.handle);
@@ -682,6 +728,7 @@
     state.running = false;
     state.stopping = false;
     state.cooldownUntil = 0;
+    state.riskCooldownUntil = 0;
     emit(stopReason || (state.mode === "unfollow"
       ? `完成：取消 ${state.unfollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
       : state.mode === "followBack"
@@ -695,6 +742,8 @@
   function stop() {
     if (!state.running) return false;
     state.stopping = true;
+    state.riskCooldownUntil = 0;
+    try { sessionStorage.removeItem(`xrcMutualRisk:${state.mode}`); } catch (error) {}
     emit("正在停止，当前动作确认后结束");
     return true;
   }
@@ -708,6 +757,7 @@
   const api = {
     run,
     stop,
+    coolDownForRisk,
     startNow,
     setUnfollowEnglishEnabled,
     snapshot,

@@ -941,14 +941,76 @@ async function readPluginRuntime({ prune = false } = {}) {
   return runtime;
 }
 
+const RUNTIME_REPORT_MODES = Object.freeze([
+  "timeline", "notifications", "likes-posts", "likes-replies",
+  "mutual-unfollow", "mutual-followBack", "poster"
+]);
+const RUNTIME_REPORT_STALE_MS = 90 * 1000;
+
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await readPluginRuntime({ prune: true });
+  const now = Date.now();
+  const tasks = RUNTIME_REPORT_MODES.map((mode) => {
+    const task = runtime.tasks?.[mode];
+    if (!task) return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: "", waitUntil: 0 };
+    const updatedAt = Number(task.updatedAt) || 0;
+    let phase = ["running", "paused", "stopping"].includes(task.phase) ? task.phase : "idle";
+    if (phase !== "idle" && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) phase = "unknown";
+    return {
+      mode,
+      phase,
+      startedAt: Number(task.startedAt) || 0,
+      updatedAt,
+      detail: String(task.detail || "").slice(0, 160),
+      waitUntil: Number(task.waitUntil) || 0
+    };
+  });
   return {
     phase: ["running", "paused", "stopping", "stopped", "idle"].includes(runtime.flow?.phase) ? runtime.flow.phase : "idle",
-    tasks: Object.entries(runtime.tasks || {}).map(([mode, task]) => ({
-      mode, phase: task.phase, startedAt: task.startedAt, updatedAt: task.updatedAt
-    }))
+    tasks
   };
+});
+
+async function executeRemoteCommand(command) {
+  const type = String(command?.command || "");
+  const handle = await savedAccountHandle();
+  if (type === "flow-start") {
+    await openAllTasks(null, handle);
+    return "已启动全流程";
+  }
+  if (type === "flow-pause") {
+    await pauseAllTasks("站长后台已暂停全流程");
+    return "已暂停全流程";
+  }
+  if (type === "task-start" || type === "task-stop") {
+    const mode = TASK_MODES.has(command?.mode) ? command.mode : "";
+    if (!mode) throw new Error("无法识别目标任务");
+    if (type === "task-start") {
+      await focusTaskTab(mode, null, { start: true, accountHandle: handle });
+      return `已启动 ${mode}`;
+    }
+    await stopAllTaskTabs("站长后台已停止该任务", { modes: [mode], phase: "stopped" });
+    return `已停止 ${mode}`;
+  }
+  throw new Error("不支持的远程指令");
+}
+
+globalThis.XrcCommunityReceipt?.setCommandHandler(async (commands) => {
+  const results = [];
+  for (const command of Array.isArray(commands) ? commands.slice(0, 8) : []) {
+    try {
+      const result = await executeRemoteCommand(command);
+      results.push({ id: String(command.id || ""), status: "done", result: String(result || "完成").slice(0, 160) });
+    } catch (error) {
+      results.push({
+        id: String(command.id || ""),
+        status: "failed",
+        result: String(error?.message || "执行失败").slice(0, 160)
+      });
+    }
+  }
+  sendRuntimeTelemetry();
+  return results.filter((item) => item.id);
 });
 
 function sendRuntimeTelemetry() {
@@ -964,17 +1026,25 @@ function updatePluginRuntime(message, sender) {
     const runtime = await readPluginRuntime();
     if (active) {
       if (!Number.isInteger(tabId)) throw new Error("无法识别任务页签");
+      const legacyPauseIsFresh = runtime.flow?.phase === "paused" && !runtime.flow.intent
+        && Date.now() - Number(runtime.flow.updatedAt || 0) < 15000;
+      if (runtime.flow?.phase === "stopping" || runtime.tasks[mode]?.phase === "stopping"
+        || runtime.flow?.phase === "paused" && (runtime.flow.intent === "manual" || legacyPauseIsFresh)) {
+        return { ok: true, runtime };
+      }
       const previous = runtime.tasks[mode];
       const phase = ["running", "paused", "stopping"].includes(message?.phase) ? message.phase : "running";
       runtime.startedAt ||= Date.now();
-      if (!mode.startsWith("likes-") && !(phase === "stopping" && ["stopping", "paused"].includes(runtime.flow?.phase))) {
+      if (phase !== "stopping") {
         runtime.flow = { phase: "running", updatedAt: Date.now() };
       }
       runtime.tasks[mode] = {
         tabId,
         startedAt: Number(previous?.startedAt) || Date.now(),
         updatedAt: Date.now(),
-        phase
+        phase,
+        detail: String(message?.detail || "").slice(0, 160),
+        waitUntil: Number(message?.waitUntil) || 0
       };
     } else {
       delete runtime.tasks[mode];
@@ -1010,13 +1080,15 @@ async function removeRuntimeTab(tabId) {
 }
 
 async function stopAllTaskTabs(reason, { modes = null, phase = "stopped", messageType = "xrc-flow-stop" } = {}) {
+  await runtimeMutation;
   const tabs = await readTaskTabs();
-  const selected = Array.isArray(modes) && modes.length ? modes : FLOW_TASKS;
+  const partial = Array.isArray(modes) && modes.length > 0;
+  const selected = partial ? modes : FLOW_TASKS;
   const tabIds = [...new Set(selected
     .map((mode) => Number(tabs[validTaskMode(mode)]))
     .filter(Number.isInteger))];
   const runtime = await readPluginRuntime();
-  runtime.flow = { phase: phase === "paused" ? "stopping" : phase, updatedAt: Date.now() };
+  if (!partial) runtime.flow = { phase: phase === "paused" ? "stopping" : phase, updatedAt: Date.now() };
   for (const mode of Object.keys(runtime.tasks || {})) {
     if (selected.includes(mode)) {
       runtime.tasks[mode] = { ...runtime.tasks[mode], phase: "stopping", updatedAt: Date.now() };
@@ -1027,8 +1099,16 @@ async function stopAllTaskTabs(reason, { modes = null, phase = "stopped", messag
     type: messageType,
     reason: String(reason || "全流程已暂停")
   })));
+  await runtimeMutation;
   const after = await readPluginRuntime({ prune: true });
-  after.flow = { phase, updatedAt: Date.now() };
+  for (const mode of selected) {
+    if (after.tasks?.[mode]?.phase === "stopping") delete after.tasks[mode];
+  }
+  after.flow = {
+    phase: partial && Object.keys(after.tasks || {}).some((mode) => !selected.includes(mode)) ? "running" : phase,
+    updatedAt: Date.now(),
+    ...(phase === "paused" ? { intent: /更新本地扩展/u.test(String(reason || "")) ? "update" : "manual" } : {})
+  };
   if ((phase === "paused" || phase === "stopped") && !Object.keys(after.tasks || {}).length) {
     after.startedAt = null;
   }
@@ -1065,6 +1145,29 @@ async function resetExtensionState(sender) {
     return { ok: true, tabs: tabs.length };
   })().finally(() => { resetPromise = null; });
   return resetPromise;
+}
+
+async function refreshIdleTaskTabs(sender) {
+  await runtimeMutation;
+  const [{ tabs }, runtime] = await Promise.all([getOpenTaskTabs(), readPluginRuntime({ prune: true })]);
+  const activeTabIds = new Set(Object.values(runtime.tasks || {})
+    .map((task) => Number(task?.tabId)).filter(Number.isInteger));
+  const currentTabId = Number(sender?.tab?.id);
+  let refreshed = 0;
+  let skipped = 0;
+  let reloadCurrent = false;
+  const seen = new Set();
+  for (const tabId of Object.values(tabs).map(Number)) {
+    if (!Number.isInteger(tabId) || seen.has(tabId)) continue;
+    seen.add(tabId);
+    if (activeTabIds.has(tabId)) { skipped += 1; continue; }
+    if (tabId === currentTabId) { reloadCurrent = true; continue; }
+    try {
+      await chrome.tabs.reload(tabId);
+      refreshed += 1;
+    } catch (error) { skipped += 1; }
+  }
+  return { ok: true, refreshed, skipped, reloadCurrent };
 }
 
 async function readNotificationContext(message, sender) {
@@ -1192,6 +1295,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
           readRuntime: readPluginRuntime,
           taskTabs: getOpenTaskTabs,
           stopTasks: pauseAllTasks,
+          force: true,
           reload: () => setTimeout(() => chrome.runtime.reload(), 750)
         }) || Promise.resolve({ ok: false, error: "本地更新服务没有加载" });
         manualUpdatePromise.then(() => { manualUpdatePromise = null; }, () => { manualUpdatePromise = null; });
@@ -1206,6 +1310,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "清空状态失败" }));
       return true;
     }
+    if (message?.type === "xrc-refresh-idle-tabs") {
+      refreshIdleTaskTabs(sender)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "闲置页面优化失败" }));
+      return true;
+    }
     if (message?.type === "xrc-runtime-get") {
       readPluginRuntime({ prune: true })
         .then((runtime) => sendResponse({ ok: true, runtime }))
@@ -1216,16 +1326,6 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       updatePluginRuntime(message, sender)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
-      return true;
-    }
-    if (message?.type === "xrc-risk-stop-all") {
-      stopAllTaskTabs(message.reason || "评论过于频繁，时间线和通知回复已停止", {
-        modes: ["timeline", "notifications"],
-        messageType: "xrc-risk-stop",
-        phase: "stopped"
-      })
-        .then(sendResponse)
-        .catch((error) => sendResponse({ ok: false, error: error?.message || "停止任务失败" }));
       return true;
     }
     if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat") {
@@ -1339,6 +1439,7 @@ if (typeof module === "object" && module.exports) {
     stopAllTaskTabs,
     pauseAllTasks,
     resetExtensionState,
+    refreshIdleTaskTabs,
     readNotificationContext,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,

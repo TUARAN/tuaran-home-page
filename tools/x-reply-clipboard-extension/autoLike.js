@@ -47,6 +47,7 @@
     let work = null;
     let interactionUntil = 0;
     let cooldownUntil = 0;
+    let cooldownReason = 'rate';
     let rateLimitRetries = 0;
     let lastLimitedAt = 0;
 
@@ -60,7 +61,7 @@
     const rateLimitError = () => Object.assign(new Error('X 提示点赞次数受限'), { xrcRateLimit: true });
     const checkRestriction = () => {
       const kind = restrictionKind(doc);
-      if (kind === 'automation') throw Object.assign(new Error('X 提示疑似自动化或账号受限，自动点赞已停止'), { xrcAutomationLimit: true });
+      if (kind === 'automation') throw Object.assign(new Error('X 提示疑似自动化或账号受限'), { xrcAutomationLimit: true });
       if (kind === 'rate') throw rateLimitError();
     };
     const pauseForInteraction = (ms = 2500) => {
@@ -91,8 +92,11 @@
           rateLimitRetries = Math.max(0, Number(saved.retries) || 0);
         }
         const savedUntil = Number(saved?.until) || 0;
-        if (savedUntil > now()) cooldownUntil = Math.max(cooldownUntil, savedUntil);
-        if (lastLimitedAt && now() - lastLimitedAt >= RATE_LIMIT_WINDOW_MS) {
+        if (savedUntil > now() && savedUntil >= cooldownUntil) {
+          cooldownUntil = savedUntil;
+          cooldownReason = saved?.reason === 'automation' ? 'automation' : 'rate';
+        }
+        if (lastLimitedAt && now() - lastLimitedAt >= RATE_LIMIT_WINDOW_MS && saved?.reason !== 'automation') {
           cooldownUntil = 0;
           rateLimitRetries = 0;
           lastLimitedAt = 0;
@@ -108,7 +112,8 @@
         const remainingMinutes = Math.ceil((cooldownUntil - now()) / 60000);
         if (remainingMinutes !== displayedMinutes) {
           displayedMinutes = remainingMinutes;
-          update(`X 点赞次数受限，${remainingMinutes} 分钟后自动重试；可随时停止`);
+          const reason = cooldownReason === 'automation' ? 'X 提示疑似自动化或账号受限' : 'X 点赞次数受限';
+          update(`${reason}，${remainingMinutes} 分钟后自动重试；可随时停止`);
         }
         await wait(Math.min(1000, Math.max(1, cooldownUntil - now())));
       }
@@ -118,21 +123,22 @@
       }
     }
 
-    async function coolDownAfterRateLimit() {
+    async function coolDownAfterRestriction(kind) {
       await readCooldown();
       if (!active()) return;
       if (cooldownUntil > now()) return waitForCooldown();
-      try { onLimit(accountKey, selectedTarget, 'rate-limited'); } catch (error) { /* Monitoring must not stop the task. */ }
+      try { onLimit(accountKey, selectedTarget, kind === 'automation' ? 'automation-restricted' : 'rate-limited'); } catch (error) { /* Monitoring must not stop the task. */ }
       rateLimitRetries += 1;
       lastLimitedAt = now();
-      const exhausted = rateLimitRetries > rateLimitCooldowns.length;
-      cooldownUntil = now() + (exhausted ? RATE_LIMIT_WINDOW_MS : rateLimitCooldowns[rateLimitRetries - 1]);
+      cooldownReason = kind;
+      cooldownUntil = now() + (kind === 'automation'
+        ? (root.XReplyClipboardLoop?.automationCooldownMs?.(rateLimitRetries) || rateLimitRetries * 600000)
+        : (rateLimitCooldowns[rateLimitRetries - 1] || RATE_LIMIT_WINDOW_MS));
       try {
-        await storage.set({ [cooldownKey]: { until: cooldownUntil, retries: rateLimitRetries, lastLimitedAt } });
+        await storage.set({ [cooldownKey]: { until: cooldownUntil, retries: rateLimitRetries, lastLimitedAt, reason: cooldownReason } });
       } catch (error) {
         throw new Error('无法保存点赞冷却时间，已停止以免连续触发限制');
       }
-      if (exhausted) throw new Error('X 持续提示点赞次数受限，已停止自动重试；账号冷却 24 小时后可手动启动');
       await waitForCooldown();
     }
 
@@ -275,15 +281,14 @@
           await wait(1000);
         } catch (error) {
           if (error?.xrcRateLimit || restrictionKind(doc) === 'rate') {
-            await coolDownAfterRateLimit();
+            await coolDownAfterRestriction('rate');
             stalled = 0;
             continue;
           }
           if (error?.xrcAutomationLimit || restrictionKind(doc) === 'automation') {
-            try { onLimit(accountKey, selectedTarget, 'automation-restricted'); } catch (monitorError) { /* Monitoring must not stop the task. */ }
-            running = false;
-            update('X 检测到疑似自动化或账号限制，自动点赞已停止；请人工检查账号状态');
-            break;
+            await coolDownAfterRestriction('automation');
+            stalled = 0;
+            continue;
           }
           stalled = 0;
           update('页面暂时没有准备好，2 秒后继续扫描');

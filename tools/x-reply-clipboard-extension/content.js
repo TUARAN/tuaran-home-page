@@ -95,7 +95,22 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.0";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.13";
+  const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
+  const DOCS_SECTION_HASH = {
+    "xrc-docs-flow": "flow",
+    "xrc-docs-states": "states",
+    "xrc-docs-risk": "risk",
+    "xrc-docs-tasks": "tasks",
+    "xrc-docs-comments": "comments",
+    "xrc-docs-likes": "likes",
+    "xrc-docs-mutual-rules": "mutual-rules",
+    "xrc-docs-poster": "poster",
+    "xrc-docs-frequency": "frequency",
+    "xrc-docs-rules": "rules",
+    "xrc-docs-maintenance": "maintenance",
+    "xrc-docs-releases": "releases"
+  };
   const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
@@ -131,6 +146,8 @@
     nextReplyDelaySeconds: 0,
     waitUntil: 0,
     riskPaused: false,
+    riskCooldownUntil: 0,
+    riskRetries: 0,
     panelView: "normal",
     panelPlacement: "float",
     assistantMode: "timeline",
@@ -160,6 +177,7 @@
   let localDevUpdate = null;
   let updateActionPending = false;
   let updateActionMessage = "";
+  let updateNoticeTimer = 0;
   let openTaskTabs = {};
   let likeController = null;
   let likeState = { running: false, stopping: false, count: 0, posts: 0, status: "点赞任务待命。" };
@@ -167,6 +185,7 @@
   let likeRuntimePhase = "";
   let activeAiRequestId = "";
   let posterRenderTimer = 0;
+  let acknowledgedAutomationNotices = new WeakMap();
 
   function getLikeController() {
     if (!likeController && likeApi) {
@@ -180,9 +199,6 @@
         },
         onLimit(accountHandle, target, errorCode) {
           reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "limited", errorCode, accountHandle });
-          if (errorCode === "automation-restricted") {
-            sendExtensionMessage({ type: "xrc-flow-pause", reason: "X 检测到疑似自动化操作，所有任务已停止；请人工检查账号状态" }).catch(() => {});
-          }
         },
         onUpdate(snapshot) {
           likeState = snapshot;
@@ -203,14 +219,17 @@
   function toggleLikes() {
     const controller = getLikeController();
     if (!controller) return;
-    if (likeState.running && Number(likeState.cooldownUntil) > Date.now()) controller.startNow?.();
-    else if (likeState.running) controller.stop();
-    else controller.start();
+    if (likeState.running) controller.stop();
+    else {
+      state.riskPaused = false;
+      controller.start();
+    }
   }
 
   const processedIds = new Set();
   const processedNotificationIds = new Set();
   const notificationContextCache = new Map();
+  const NOTIFICATION_CONTEXT_CACHE_LIMIT = 100;
   const skippedIds = new Set();
   let panelDismissed = false;
   let configOpen = false;
@@ -631,12 +650,43 @@
     return `尚未启动，点击打开${label}页面`;
   }
 
+  function currentTaskDetail() {
+    if (state.assistantMode.startsWith("likes-")) {
+      return String(likeState.status || "").slice(0, 160);
+    }
+    if (state.assistantMode === "mutual") {
+      return String(state.mutual?.status || "").slice(0, 160);
+    }
+    if (state.assistantMode === "poster") {
+      return String(posterWaitCopy(state.poster) || state.poster?.status || "").slice(0, 160);
+    }
+    return String(replyWaitCopy() || state.status || "").slice(0, 160);
+  }
+
+  function currentTaskWaitUntil() {
+    if (state.assistantMode.startsWith("likes-")) return Number(likeState.cooldownUntil) || 0;
+    if (state.assistantMode === "mutual") return Number(state.mutual?.cooldownUntil) || Number(state.mutual?.riskCooldownUntil) || 0;
+    if (state.assistantMode === "poster") {
+      const poster = state.poster || {};
+      return Math.max(Number(poster.riskCooldownUntil) || 0, Number(poster.nextPostAt) || 0);
+    }
+    return Math.max(
+      Number(state.riskCooldownUntil) || 0,
+      Number(state.reconnectAt) || 0,
+      Number(state.nextRoundAt) || 0,
+      Number(state.nextCycleAt) || 0,
+      Number(state.waitUntil) || 0
+    );
+  }
+
   async function setRuntimeTaskActive(mode, active, phase = "running") {
     try {
       const response = await readRuntimeMessage("xrc-runtime-task-state", {
         mode: validTaskKey(mode),
         active: Boolean(active),
-        phase: active ? phase : "stopped"
+        phase: active ? phase : "stopped",
+        detail: active ? currentTaskDetail() : "",
+        waitUntil: active ? currentTaskWaitUntil() : 0
       });
       pluginRuntime = response.runtime || pluginRuntime;
       if (!active) runtimePhaseSent = "";
@@ -774,14 +824,12 @@
     if (flowStarting) return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     if (flowStopping) return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     const flow = pluginRuntime.flow || {};
-    const tasks = Object.entries(pluginRuntime.tasks || {})
-      .filter(([key]) => flow.phase === "running" || !key.startsWith("likes-"))
-      .map(([, task]) => task);
+    const tasks = Object.values(pluginRuntime.tasks || {});
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     }
-    if (flow.phase === "paused") {
+    if (flow.phase === "paused" && !tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
       return { label: "已暂停", status: "paused", action: "start", title: "全流程已暂停，点此重新启动" };
     }
     if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
@@ -794,7 +842,7 @@
       return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     }
     if (tasks.length) {
-      return { label: "运行中", status: "running", action: "pause", title: "点此暂停全部任务" };
+      return { label: "暂停全部任务", status: "running", action: "pause", title: "点此暂停全部任务" };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
@@ -811,7 +859,9 @@
     const count = button.querySelector("[data-xrc-flow-count]");
     const dots = button.querySelector("[data-xrc-flow-dots]");
     if (label) label.textContent = model.label;
-    const showOverview = model.status === "running";
+    const showOverview = model.status === "running" || model.status === "paused"
+      || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
+      || model.status === "stalled";
     if (overview) overview.hidden = !showOverview;
     const summary = flowTaskOverview(pluginRuntime);
     if (count) count.textContent = summary.text;
@@ -834,13 +884,20 @@
     const key = currentTaskKey();
     if (!phase) return;
     if (phase === "stopping" && pluginRuntime.flow?.phase === "paused") return;
+    const detail = currentTaskDetail();
+    const waitUntil = currentTaskWaitUntil();
     const task = pluginRuntime.tasks?.[key];
-    if (task?.phase === phase && Date.now() - Number(task.updatedAt || 0) < 30000) {
+    if (
+      task?.phase === phase
+      && String(task.detail || "") === detail
+      && Number(task.waitUntil || 0) === waitUntil
+      && Date.now() - Number(task.updatedAt || 0) < 30000
+    ) {
       runtimePhaseSent = `${key}:${phase}`;
       return;
     }
-    const token = `${key}:${phase}`;
-    if (runtimePhaseSent === token && Date.now() - runtimePhaseSentAt < 30000) return;
+    const token = `${key}:${phase}:${detail}:${waitUntil}`;
+    if (runtimePhaseSent === token && Date.now() - runtimePhaseSentAt < 15000) return;
     runtimePhaseSent = token;
     runtimePhaseSentAt = Date.now();
     setRuntimeTaskActive(key, true, phase);
@@ -855,6 +912,8 @@
       cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
+      state.riskPaused = false;
+      state.riskCooldownUntil = 0;
       state.pendingReply = "";
       state.pendingTweetId = "";
       clearSaved();
@@ -1434,6 +1493,8 @@
       nextRoundAt: 0,
       reconnectAt: 0,
       reconnectReason: "",
+      riskCooldownUntil: 0,
+      riskRetries: 0,
       phraseIndex: null,
       processedIds: [],
       roundIntervalSeconds: DEFAULT_ROUND_INTERVAL_SECONDS,
@@ -1475,6 +1536,8 @@
         nextRoundAt: Math.max(0, Number(parsed.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         reconnectReason: String(parsed.reconnectReason || "").trim(),
+        riskCooldownUntil: Math.max(0, Number(parsed.riskCooldownUntil) || 0),
+        riskRetries: Math.max(0, Number(parsed.riskRetries) || 0),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
         schedulePace,
         boundaryLevel,
@@ -1513,6 +1576,8 @@
         nextRoundAt: Math.max(0, Number(value.nextRoundAt ?? state.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         reconnectReason: String(value.reconnectReason ?? state.reconnectReason ?? "").trim(),
+        riskCooldownUntil: Math.max(0, Number(state.riskCooldownUntil) || 0),
+        riskRetries: Math.max(0, Number(state.riskRetries) || 0),
         roundIntervalSeconds: state.roundIntervalSeconds,
         schedulePace: state.schedulePace,
         boundaryLevel: state.boundaryLevel,
@@ -1601,6 +1666,7 @@
   function replyWaitCopy() {
     if (!state.running) return "";
     const now = Date.now();
+    if (state.riskCooldownUntil > now) return `风控等待中，${formatClock(state.riskCooldownUntil - now)} 后自动重试`;
     if (state.reconnectAt > now) {
       const clock = formatClock(state.reconnectAt - now);
       return state.reconnectReason ? `${state.reconnectReason}，${clock} 后重连` : `${clock} 后重连`;
@@ -1618,6 +1684,9 @@
   }
 
   function posterWaitCopy(poster) {
+    if (poster?.running && Number(poster.riskCooldownUntil) > Date.now()) {
+      return `风控等待中，${formatClock(Number(poster.riskCooldownUntil) - Date.now())} 后自动重试`;
+    }
     const remaining = Number(poster?.nextPostAt || 0) - Date.now();
     if (poster?.running && remaining > 0) return `下一条 ${formatClock(remaining)} 后发布`;
     return "";
@@ -1673,6 +1742,7 @@
 
   function canStartReplyNow(now = Date.now()) {
     if (state.stopping || (state.loopPromise && !state.running)) return false;
+    if (state.riskCooldownUntil > now) return false;
     if (!state.running) return state.riskPaused || /已暂停|已停止/.test(state.status || "");
     return state.nextCycleAt > now || state.nextRoundAt > now || state.reconnectAt > now || state.waitUntil > now;
   }
@@ -2037,6 +2107,13 @@
       .some((time) => loopApi.isOlderThanNotificationWindow(loopApi.timestampFromDatetime(time.getAttribute("datetime"))));
   }
 
+  function cacheNotificationContext(id, conversation) {
+    notificationContextCache.set(id, conversation);
+    if (notificationContextCache.size > NOTIFICATION_CONTEXT_CACHE_LIMIT) {
+      notificationContextCache.delete(notificationContextCache.keys().next().value);
+    }
+  }
+
   async function conversationForNotification(tweet) {
     if (notificationContextCache.has(tweet.id)) return notificationContextCache.get(tweet.id);
     const ownHandle = currentAccountHandle();
@@ -2053,7 +2130,7 @@
       || !conversation?.ownPost?.text || !conversation?.reply?.text) {
       throw new Error("没有确认我的帖子与对方回复属于同一段会话");
     }
-    notificationContextCache.set(tweet.id, conversation);
+    cacheNotificationContext(tweet.id, conversation);
     return conversation;
   }
 
@@ -2065,7 +2142,7 @@
         ownPost: null,
         reply: { id: tweet.id, authorHandle: tweet.authorHandle, text: replyText }
       };
-      notificationContextCache.set(tweet.id, fallback);
+      cacheNotificationContext(tweet.id, fallback);
       return fallback;
     }
   }
@@ -2159,40 +2236,51 @@
     return unavailablePostToasts().some((node) => !toastsBefore?.has(node));
   }
 
-  function applyRiskStop(reason = "X 检测到疑似自动化操作，所有任务已停止；请人工检查账号状态") {
+  function applyRiskStop() {
     if (state.stopping) return;
+    for (const node of automationWarningNodes()) acknowledgedAutomationNotices.set(node, textOf(node));
+    if (state.assistantMode.startsWith("likes-")) return;
+    if (state.assistantMode === "mutual") {
+      mutualApi?.coolDownForRisk?.();
+      return;
+    }
+    if (state.assistantMode === "poster") {
+      postApi?.coolDownForRisk?.();
+      return;
+    }
+    if (!state.running || state.riskCooldownUntil > Date.now()) return;
+    state.riskRetries += 1;
+    state.riskCooldownUntil = Date.now() + loopApi.automationCooldownMs(state.riskRetries);
     state.riskPaused = true;
-    stopLocalTasks(reason);
-    sendExtensionMessage({ type: "xrc-flow-pause", reason }).catch(() => {});
+    riskRoundRequested = true;
+    cancelActiveAiRequest();
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    writeSaved({ running: true, total: state.total });
+    state.status = `X 提示疑似自动化，当前评论任务进入冷却；${formatCountdown(state.riskCooldownUntil - Date.now())}后自动重试`;
+    renderPanel();
   }
 
-  async function advanceRoundAfterRisk(summary = "X 提示操作过密，本轮提前结束") {
+  async function advanceRoundAfterRisk(summary = "X 提示疑似自动化") {
     if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return "ignored";
     if (riskRoundAdvancing) return "cooldown";
-    riskRoundRequested = true;
     riskRoundAdvancing = true;
     state.pendingReply = "";
     state.pendingTweetId = "";
-    if (state.assistantMode === "notifications") return finishCycleAndScheduleNext(summary);
-    const plan = ensureRunPlan();
-    state.completedRounds = Math.min(plan.rounds, state.completedRounds + 1);
-    state.pageCount = 0;
-    if (state.completedRounds >= plan.rounds) {
-      return finishCycleAndScheduleNext(`${summary}；本次计划已结束`);
-    }
-    state.nextRoundAt = Date.now() + loopApi.randomCycleDelayMs(Math.random, state.schedulePace, state.boundaryLevel);
+    const deadline = state.riskCooldownUntil || Date.now() + loopApi.automationCooldownMs(++state.riskRetries);
+    state.riskCooldownUntil = deadline;
     writeSaved({ running: true, total: state.total });
     const ready = await waitForDeadline(
-      state.nextRoundAt,
-      (remaining) => `${summary}；${formatCountdown(remaining)}后开始第 ${state.completedRounds + 1} 轮`
+      deadline,
+      (remaining) => `${summary}；${formatCountdown(remaining)}后自动重试当前评论任务`
     );
     if (!ready) return "stopped";
-    state.nextRoundAt = 0;
+    state.riskCooldownUntil = 0;
+    state.riskPaused = false;
     riskRoundRequested = false;
     riskRoundAdvancing = false;
     writeSaved({ running: true, total: state.total });
-    await reloadAndResume(`第 ${state.completedRounds} 轮已结束，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
-    return "reload";
+    return await reloadAndResume("风控冷却结束，正在刷新并继续评论任务") ? "reload" : "stopped";
   }
 
   function requestDraftFill(text, { forceDraft = false } = {}) {
@@ -2280,6 +2368,7 @@
     if (state.stopping) return "stopped";
     if (findReplyRestrictionDialog()) return "reply-restricted";
     if (unavailablePostInDialog()) return "post-unavailable";
+    if (transientErrorVisible()) return "transient-error";
     const phrase = String(replyText || "").trim();
     if (!phrase) return "compose-failed";
     const existing = loopApi.composerText(composer.textbox);
@@ -2306,10 +2395,10 @@
     if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
     const successNoticesBefore = new Set(successNoticeNodes());
     const toastsBefore = new Set(unavailablePostToasts());
-    const transientBefore = new Set(transientErrorNodes());
+    const transientBefore = new Map(transientErrorNodes().map((node) => [node, textOf(node)]));
     const hasNewSuccessNotice = () => successNoticeNodes().some((node) => !successNoticesBefore.has(node));
     const unavailableAfterClick = () => unavailablePostVisible(toastsBefore);
-    const transientAfterClick = () => transientErrorNodes().some((node) => !transientBefore.has(node));
+    const transientAfterClick = () => transientErrorNodes().some((node) => textOf(node) !== transientBefore.get(node));
     realClick(submit);
 
     const sendStarted = await waitUntil(() => {
@@ -2465,7 +2554,19 @@
     return closed;
   }
 
+  function endReplyTaskAfterTransientError(message) {
+    state.running = false;
+    state.stopping = false;
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    clearSaved();
+    state.status = message;
+    renderPanel();
+    return "stopped";
+  }
+
   async function runLoop({ resume = false } = {}) {
+    if (state.riskCooldownUntil > 0) return advanceRoundAfterRisk();
     if (state.assistantMode === "notifications" && !isNotificationPath()) {
       state.status = "通知回复需要在 X 通知页运行，正在打开通知页…";
       writeSaved({ running: true, total: state.total });
@@ -2688,8 +2789,9 @@
       }
       if (result === "transient-error") {
         const closed = await skipTransientReply(next);
-        if (!closed) return reconnectAndResume("回复草稿无法关闭，准备重新载入后继续下一条");
-        await waitUntil(() => !transientErrorVisible(), 5000);
+        if (!closed) return endReplyTaskAfterTransientError("X 发送失败，评论框无法安全关闭；评论任务已结束，请检查草稿后再启动");
+        const noticeCleared = await waitUntil(() => !transientErrorVisible(), 5000);
+        if (!noticeCleared) return endReplyTaskAfterTransientError("X 仍显示发送错误；评论任务已结束，请检查账号状态后再启动");
         consecutiveTransientFailures += 1;
         if (consecutiveTransientFailures >= 3) {
           consecutiveTransientFailures = 0;
@@ -2705,7 +2807,7 @@
           errorCode: "risk-blocked"
         });
         applyRiskStop();
-        return "stopped";
+        return advanceRoundAfterRisk();
       }
       if (result === "composer-already-open") {
         const closed = await closeReplyComposer();
@@ -2785,12 +2887,6 @@
         continue;
       }
 
-      if (result === "transient-error") {
-        const closed = await skipTransientReply(next);
-        if (!closed) return reconnectAndResume("X 错误弹窗未能关闭，准备重新载入页面");
-        continue;
-      }
-
       if (result === "ok" || result === "sent-composer-open") {
         consecutiveTransientFailures = 0;
         if (state.assistantMode === "notifications") {
@@ -2847,6 +2943,8 @@
     button.dataset.running = active ? "true" : "false";
     button.textContent = state.stopping
       ? "正在停止"
+      : state.riskCooldownUntil > Date.now()
+        ? "停止评论任务"
       : waiting
         ? "立即开始"
       : active
@@ -2868,8 +2966,9 @@
 
   function updatePosterState(next) {
     const wasRunning = Boolean(state.poster?.running);
+    const previousPhase = currentTaskPhase();
     state.poster = next || postApi?.snapshot?.() || state.poster;
-    if (wasRunning !== Boolean(state.poster?.running)) {
+    if (wasRunning !== Boolean(state.poster?.running) || previousPhase !== currentTaskPhase()) {
       setRuntimeTaskActive("poster", Boolean(state.poster?.running), currentTaskPhase() || "running");
     }
     // Poster status can change several times while sources are being read or a
@@ -2888,6 +2987,10 @@
       renderPanel();
       return;
     }
+    if (state.poster.running && Number(state.poster.riskCooldownUntil) > Date.now()) {
+      postApi.stop();
+      return;
+    }
     if (state.poster.running && posterWaitCopy(state.poster)) {
       await postApi.startNow?.();
       return;
@@ -2904,6 +3007,7 @@
       return;
     }
     registerCurrentTaskTab("poster");
+    state.riskPaused = false;
     state.posterPaceBaseline = state.posterPace;
     postApi.start(updatePosterState);
   }
@@ -2950,6 +3054,7 @@
       return;
     }
     registerCurrentTaskTab(mutualTaskKey());
+    state.riskPaused = false;
     mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
     sessionStorage.setItem(MUTUAL_ACTIVE_KEY, mode);
     const result = await mutualApi.run(mode, updateMutualState);
@@ -3223,22 +3328,34 @@
     if (!banner) return;
     const version = String(localDevUpdate?.version || "");
     const phase = localDevUpdate?.phase;
-    const updatedRecently = phase === "updated" && Date.now() - Number(localDevUpdate.at) < 60 * 60 * 1000;
+    const badge = panel.querySelector("[data-xrc-version-badge]");
+    if (badge) {
+      const newer = version && version !== EXTENSION_VERSION && !["latest", "updated"].includes(phase);
+      badge.dataset.state = newer ? "new" : phase === "latest" || phase === "updated" ? "latest" : "checking";
+      badge.textContent = newer ? "有新版本" : badge.dataset.state === "latest" ? "最新版" : "检查中";
+      badge.title = newer ? `本地目录已有 v${version}` : badge.dataset.state === "latest" ? "本地目录已是最新版" : "正在检查本地目录版本";
+    }
+    const remainingNoticeMs = phase === "updated" ? Math.max(0, 7000 - (Date.now() - Number(localDevUpdate.at))) : 0;
+    if (updateNoticeTimer) window.clearTimeout(updateNoticeTimer);
+    updateNoticeTimer = remainingNoticeMs > 0
+      ? window.setTimeout(() => { updateNoticeTimer = 0; renderPanel(); }, remainingNoticeMs)
+      : 0;
+    const updatedRecently = phase === "updated" && remainingNoticeMs > 0;
     banner.hidden = !version || !["available", "waiting", "stopping", "applying", "failed"].includes(phase) && !updatedRecently;
     if (banner.hidden) return;
     banner.dataset.phase = phase;
     banner.querySelector("strong").textContent = phase === "updated" ? `已更新到 v${version}` : `发现本地新版本 v${version}`;
     banner.querySelector("span").textContent = updateActionMessage || (phase === "waiting"
-      ? "当前任务继续运行；点击立即更新会先停止全部任务"
-      : phase === "stopping" ? "正在停止全部任务，确认退出后切换版本"
-        : phase === "applying" ? "正在切换版本并刷新任务页"
+      ? "当前任务继续运行；结束后自动加载新版，也可手动停止并恢复"
+      : phase === "stopping" ? "正在停止任务，更新后会恢复刚才运行的任务"
+        : phase === "applying" ? "正在加载新版本并恢复任务页"
           : phase === "failed" ? localDevUpdate?.error || "自动切换未成功，可点击重试"
-            : phase === "updated" ? "任务页已加载新版本；任务保持停止"
-              : "空闲时自动更新，也可点击立即更新");
+            : phase === "updated" ? "任务页已加载新版本"
+              : "空闲时自动更新，也可立即更新并恢复任务");
     const button = banner.querySelector("[data-xrc-dev-update-now]");
-    button.hidden = phase === "updated";
+    button.hidden = phase === "updated" || phase === "latest";
     button.disabled = updateActionPending || phase === "stopping" || phase === "applying";
-    button.textContent = updateActionPending ? "正在检查…" : phase === "failed" ? "重试更新" : "立即更新";
+    button.textContent = updateActionPending ? "正在处理…" : phase === "failed" ? "重试并恢复" : "立即更新并恢复";
   }
 
   function renderPanel() {
@@ -3258,7 +3375,7 @@
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
               <div class="xrc-title">X高频互动助手</div>
-              <div class="xrc-subtitle">v${EXTENSION_VERSION} · <span data-xrc-stable-runtime>尚未运行</span></div>
+              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div><div class="xrc-runtime-line" data-xrc-stable-runtime>尚未运行</div></div>
             </div>
           </div>
           <div class="xrc-header-actions">
@@ -3282,7 +3399,7 @@
           <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
           <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
         </div>
-        <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止全部任务并更新本地开发版">立即更新</button></div>
+        <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止当前任务、加载本地新版后恢复原任务">立即更新并恢复</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
@@ -3301,34 +3418,17 @@
             </section>
             <section class="xrc-docs-section xrc-limit-monitor">
               <div class="xrc-docs-title"><b>05</b><span><strong>限制观察</strong><small>本机最多 6000 条、近 30 天 · 按当前账号统计</small></span></div>
-              <p>现有关注管理每批最多 15 个、每天最多 400 个；点赞暂不设每日总量。下方记录 X 实际出现的限制提示。</p>
+              <p>回关粉丝每批最多 15 个、每天最多 400 个；清理未回关不套用该额度。下方记录 X 实际出现的限制提示。</p>
               <p data-xrc-limit-summary>正在读取本地记录…</p>
               <div class="xrc-limit-entries" data-xrc-limit-entries>暂无受限事件</div>
               <p class="xrc-docs-note">回复测试模型只观察已确认成功和明确受限的时间。窗口数量不是平台阈值：插件外操作、帖子差异和账号状态无法从本地记录确认。遇到限制时不会为测试提高频率。</p>
               <button type="button" data-xrc-limit-refresh>刷新记录</button>
             </section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>01</b><span><strong>评论管理</strong><small>评论帖子 · 评论通知</small></span></div><ul>
-              <li><b>页面或断网：</b>先检测 X 连接；临时错误尽量在原页继续，重连从 2 秒逐步延长到 30 秒。未发送草稿挡住重连时不强行离开页面。</li>
-              <li><b>模型失败：</b>DeepSeek 临时繁忙、限流或超时先尝试 NAS；NAS 仍失败且已配置 B.AI Key 时再尝试 B.AI。全部失败后按 3、8、20、30 秒逐步重试。发送结果未确认时保留当前帖子，不当作成功。</li>
-              <li><b>风控：</b>遇到疑似自动化限制会停止任务，等待人工检查。断网、临时错误和草稿阻挡会写本地回执并尝试上报站长后台。</li>
-            </ul></section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>02</b><span><strong>点赞管理</strong><small>点赞帖子 · 点赞评论</small></span></div><ul>
-              <li><b>已赞或已处理：</b>跳过；两个子任务分别保存处理历史。评论任务不会重复点赞原帖。</li>
-              <li><b>次数限制：</b>暂停点赞并保存账号冷却时间，按 1、2、6 小时递增重试；持续受限则停止自动重试。疑似自动化或账号限制会立即停止。目前不单独上报站长监控通知。</li>
-            </ul></section>
-        <section class="xrc-docs-section"><div class="xrc-docs-title"><b>03</b><span><strong>关注管理</strong><small>清理未回关 · 回关粉丝 · 关注候选（暂时停用）</small></span></div><ul>
-              <li><b>额度与操作限制：</b>三项共用每日和批次额度；限制时暂停本批操作并记录限制回执。</li>
-              <li><b>存储失败：</b>保留上次读到的额度并停止任务，要求刷新页面后重试，避免按零额度继续。异常计数显示在任务页。</li>
-            </ul></section>
-            <section class="xrc-docs-section"><div class="xrc-docs-title"><b>04</b><span><strong>定时发帖</strong><small>取材 · 改写 · 发布</small></span></div><ul>
-              <li><b>取材顺序：</b>先读知乎和今日头条，必要时补充 AI HOT；热点没有写出草稿时，再改写常用社会观察。模型返回正文就写入待发列表，并记录原始出处。</li>
-              <li><b>没有新热点时：</b>自动切换常用社会观察池，轮换房地产、金融、育儿、赚钱、业务、消费、教育、养老、职场和家庭生活等长期主题，不要求必须是当天新闻。</li>
-              <li><b>发布顺序：</b>回到 X 首页按待发列表逐条发布；列表未发完不会重新抓取，发完后下一轮再按取材顺序补充。</li>
-              <li><b>模型未返回正文：</b>跳过并换选题，不用素材原文冒充改写；字数、分段、措辞和相近主题交由提示词控制。</li>
-              <li><b>发布失败：</b>保留待发列表，约 1 分钟后重试；X 提示内容重复时清空草稿并换下一条。发帖历史无法保存时暂停当前素材。</li>
-              <li><b>监控范围：</b>本页显示错误数和上次异常；普通发帖异常目前不会全部转成站长监控通知。</li>
-            </ul></section>
-            <p class="xrc-docs-note">站长后台的「运行中心 → 异常监控」可看已送达的告警。没有告警不代表所有任务正常；插件的本地状态和待发列表仍需在对应窗口查看。</p>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>?</b><span><strong>如何处理异常</strong><small>统一说明在站点文档中心</small></span></div>
+              <p class="xrc-docs-note">当前窗口状态和限制记录在上方。任务状态、风控倒计时及各项恢复规则，以站点文档中心为准。</p>
+              <button type="button" class="xrc-flow-docs-link" data-xrc-docs-target="xrc-docs-risk">打开风控与异常恢复 ↗</button>
+            </section>
           </div>
         </section>
         <section class="xrc-report-page" data-xrc-report-page hidden aria-label="每日报告">
@@ -3445,228 +3545,6 @@
             </section>
           </div>
         </div>
-        <section class="xrc-docs" data-xrc-docs hidden aria-label="X高频互动助手文档中心">
-          <div class="xrc-docs-head">
-            <div><small>DOCUMENTATION</small><strong>文档中心</strong><span>使用边界、官方来源与版本记录</span></div>
-            <div class="xrc-docs-actions">
-              <details class="xrc-docs-toc">
-                <summary aria-label="打开文档目录">☰</summary>
-                <div class="xrc-docs-toc-menu">
-                  <strong>目录</strong>
-                  <button type="button" data-xrc-docs-target="xrc-docs-flow">全流程与任务窗口</button>
-                  <button type="button" data-xrc-docs-target="xrc-docs-rules">官方公开规则</button>
-                  <button type="button" data-xrc-docs-target="xrc-docs-risk">遇到风控提示时</button>
-                  <button type="button" data-xrc-docs-target="xrc-docs-frequency">发推、回复和频率</button>
-                  <button type="button" data-xrc-docs-target="xrc-docs-releases">最近版本</button>
-                </div>
-              </details>
-              <button type="button" data-xrc-docs-close aria-label="关闭文档中心">×</button>
-            </div>
-          </div>
-          <div class="xrc-docs-content">
-            <section class="xrc-docs-section" id="xrc-docs-flow">
-              <div class="xrc-docs-title"><b>00</b><span><strong>全流程与任务窗口</strong><small>启动、跳转和单项运行说明</small></span></div>
-              <p>全流程启动会打开对应窗口，启动尚未运行的 7 项任务；已运行的任务继续执行。</p>
-              <ol>
-                <li><b>评论管理 · 2 项：</b>评论帖子、评论通知，各自在独立窗口处理评论。</li>
-                <li><b>点赞管理 · 2 项：</b>点赞帖子、点赞评论，分别运行；遇到 X 的限制会冷却或停止。</li>
-                <li><b>关注管理 · 2 项：</b>清理未回关、回关粉丝，分别处理对应名单；关注候选暂时停用。</li>
-                <li><b>定时发帖 · 1 项：</b>依次取知乎、今日头条，必要时补充 AI HOT；素材不足时改写常用社会观察，记录来源，按待发列表发送。</li>
-              </ol>
-              <p>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单独运行时，在对应子页签调整设置并点「启动单项任务」；回复或发帖等待倒计时时可点「立即开始」。DeepSeek API Key 可在上方填写，之后到设置中修改。</p>
-              <section class="xrc-docs-section xrc-docs-subsection" id="xrc-docs-mutual-rules">
-                <div class="xrc-docs-title"><b>关注</b><span><strong>清理未回关规则</strong><small>关注管理 · 清理未回关</small></span></div>
-                <ul>
-                  <li>默认只取消没有「Follows you」标记的 Following，带有互关标记的账号会保留。</li>
-                  <li>默认开启「非中文资料也清理」：姓名和简介都完全不含汉字时，互关账号也进入取关候选；任一处有汉字就保留。未回关账号正常清理。</li>
-                  <li>清理未回关每次操作后间隔 2 秒，不设固定批次或每日数量上限；X 出现限速提示时暂停 15 分钟并显示倒计时。扫到列表底部后等待 30 分钟，再从顶部扫描。</li>
-                </ul>
-              </section>
-            </section>
-            <section class="xrc-docs-section" id="xrc-docs-rules">
-              <div class="xrc-docs-title"><b>01</b><span><strong>官方公开规则</strong><small>更新依据：X Help Center · 2026</small></span></div>
-              <ul>
-                <li><b>网页脚本自动化：</b>X 明确写明不得使用脚本直接自动操作网站，并提示可能导致账号永久停用。</li>
-                <li><b>自动回复：</b>只允许回复事先明确表示希望收到联系的用户；每次用户互动最多一条。AI 回复机器人还需要 X 事先书面批准。</li>
-                <li><b>点赞与关注：</b>自动点赞遇到疑似自动化提示时会进入冷却倒计时，冷却结束后自动重试；批量、激进或无差别自动关注和取关也会受限。</li>
-                <li><b>公开技术上限：</b>未认证账号目前列为每天 50 条原创帖、200 条回复；关注技术上限为每天 400 个。平台还会应用更短时间窗口和账户级限制。</li>
-                <li><b>公开算法：</b>X 开源仓库主要解释“为你推荐”和推荐通知的候选、排序与过滤流程，不包含可用于判断自动化操作安全频率的完整反垃圾规则。</li>
-              </ul>
-              <div class="xrc-docs-note"><b>技术上限不等于安全阈值或使用许可。</b> X 没有公开反自动化评分算法，也没有认可慢、中、快、超快或“5～15 秒一条”“25～35 条一轮”等插件调度参数。</div>
-              <div class="xrc-docs-links">
-                <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer">自动化规则 ↗</a>
-                <a href="https://help.x.com/en/rules-and-policies/x-limits" target="_blank" rel="noopener noreferrer">账户限制 ↗</a>
-                <a href="https://help.x.com/en/rules-and-policies/authenticity" target="_blank" rel="noopener noreferrer">真实性政策 ↗</a>
-                <a href="https://github.com/twitter/the-algorithm" target="_blank" rel="noopener noreferrer">公开推荐算法 ↗</a>
-              </div>
-            </section>
-            <section class="xrc-docs-section" id="xrc-docs-risk">
-              <div class="xrc-docs-title"><b>02</b><span><strong>遇到风控提示时</strong><small>不要用更密集的重试对抗限制</small></span></div>
-              <ol>
-                <li>立即停止评论帖子、评论通知、互关和定时发帖任务。</li>
-                <li>不要反复点击 Reply、Post、Like 或 Follow。</li>
-                <li>按 X 页面要求完成验证码、手机号或账号验证；恢复前只进行必要的人工检查。</li>
-                <li>恢复后也不能把低于每日技术上限理解为合规或不会再次触发风控。</li>
-              </ol>
-            </section>
-            <section class="xrc-docs-section" id="xrc-docs-frequency">
-              <div class="xrc-docs-title"><b>03</b><span><strong>发推、回复和频率</strong><small>工作区只留进度和倒计时</small></span></div>
-              <ul>
-                <li><b>发布规则：</b>定时发帖先从知乎和今日头条取材，每路最多试写 12 条；模型都未写出正文时再读 AI HOT，最后使用常用社会观察。模型返回正文后直接写入待发列表，成功写入一条即进入发送；状态显示来源和试写条数，并保存出处与原始链接。</li>
-                <li><b>发什么：</b>定时发帖用已保存的 DeepSeek API Key 和发帖提示词。每条抽取 0～1 随机数：小于 0.3 时分别使用「说个暴论，」「讲个事实，」「我真心觉得」开头，其余直接交代事件。目标是用 2～3 个短段、段间空一行，写清事件和有素材依据的判断；不凑行业总结或后续推演。本地不按字数或风格退稿。</li>
-                <li><b>倒计时：</b>一条回复、一轮或一次执行结束后，面板显示下一次开始的剩余时间，到点自动继续。倒计时旁可点「立即开始」手动继续，包括操作过密后的下一轮和页面异常重连；任务停止后也可从提示卡重新启动。通知回复扫完最近 2 小时后固定等待 10 分钟再开始下一次；遇到限制时，先把还能点的赞点完，再进入这 10 分钟倒计时，回复留到下一次。</li>
-                <li><b>回复频率默认：</b>默认使用「边界测试」：从每条 6～10 秒、每轮回复 20～30 条、每次 2～3 轮、休息 10～15 分钟开始。连续一轮没有错误或限制提示，会自动提高下一轮速度和数量，并把周期逐步缩短到 5～10 分钟、3～6 分钟；前 10 条以内的零星失败只记录，不触发降档，已经成功运行至少 10 条后出现的错误或限制才作为有效边界信号。有效信号会降档并把周期放宽到 15～20 分钟，目标是在继续主动试探的同时减少真正的限制报错。这是当前账号的观察策略，不代表平台固定上限。慢是 15～30 秒、12～20 条、2～3 轮、休息 4～6 小时；中是 5～15 秒、25～35 条、3～5 轮、休息 2～3 小时；快是 3～6 秒、30～42 条、4～6 轮、休息 60～90 分钟；超快是 1～3 秒、40～55 条、5～8 轮、休息 20～40 分钟。</li>
-                <li><b>发推频率默认：</b>慢 50～70 分钟，中 25～35 分钟，快 12～18 分钟，超快 6～10 分钟。第一条立即发送。纯文字发布，不上传图片。</li>
-                <li><b>改挡位：</b>工作区单行按钮选择边界测试、慢、中、快、超快。自动任务会持续按选定频率运行，不会因为个人工作时间而暂停或减速。每一挡代表什么，在频率设置里改数字。正在执行时不能改，停下后修改会自动保存。</li>
-                <li>插件不设置每日回复总量；X 的平台限制和账号风控仍然有效。</li>
-                <li>清理未回关和回关粉丝遇到 X 的速率限制提示时，立刻停止点击，15 分钟后从当前列表继续。按钮和状态行会显示剩余时间。</li>
-                <li>回关粉丝优先处理姓名或简介含汉字的账号，其他账号随后处理；每 15 个暂停 30 分钟，每日合计最多 400 个，次日继续。清理未回关每次间隔 2 秒，不套用共享批次或每日数量上限；两项扫到列表底部后 30 分钟重新扫描。关注候选暂时停用。</li>
-              </ul>
-            </section>
-            <section class="xrc-docs-section" id="xrc-docs-releases">
-              <div class="xrc-docs-title"><b>04</b><span><strong>最近版本</strong><small>完整记录保留在站内说明页</small></span></div>
-              <div class="xrc-release-list">
-                <article><b>v3.32.0</b><span><strong>手动拉取本地更新</strong><small>新版本提示可点击立即更新；先停止任务，确认全部退出后切换版本并刷新任务页。</small></span></article>
-                <article><b>v3.31.0</b><span><strong>评论与点赞分离，关注任务自动重扫</strong><small>评论通知不再点赞；X 拒绝自动化时停止任务；关注任务每 30 分钟重扫，回关优先中文资料。</small></span></article>
-                <article><b>v3.30.0</b><span><strong>本地开发版更新提醒</strong><small>发现本地新版本时提醒；任务运行结束后自动重载并刷新已登记任务页。</small></span></article>
-                <article><b>v3.29.3</b><span><strong>保留含中文资料的互关账号</strong><small>姓名或简介任一片段有汉字就不按非中文规则取关。</small></span></article>
-                <article><b>v3.29.2</b><span><strong>任务详情按钮对齐</strong><small>详情文字在按钮内水平、垂直居中。</small></span></article>
-                <article><b>v3.29.1</b><span><strong>清理未回关间隔与限速倒计时</strong><small>每次取关后等 2 秒；X 限速时显示 15 分钟冷却。</small></span></article>
-                <article><b>v3.29.0</b><span><strong>每日报告定时上传</strong><small>同步既有历史；每天北京时间 09:00 上传前一天报告，离线后补传。</small></span></article>
-                <article><b>v3.28.0</b><span><strong>任务详情</strong><small>全流程状态条旁可查看 7 项任务各自的状态和最近更新时间。</small></span></article>
-                <article><b>v3.27.76</b><span><strong>观点型发帖</strong><small>每条随机抽签，30% 使用三种固定开头；其余直接表态。提示词收短篇幅，减少中立分析和模板建议。</small></span></article>
-                <article><b>v3.27.75</b><span><strong>模型草稿直接入队</strong><small>模型返回正文后直接待发；字数、分段、措辞和相近主题交由提示词处理，不再二次硬筛选。</small></span></article>
-                <article><b>v3.27.74</b><span><strong>热点草稿入队修复</strong><small>放宽与较长发帖提示词冲突的长度和分段限制，保留数字依据与去重检查；合格改写可进入待发列表。</small></span></article>
-                <article><b>v3.27.73</b><span><strong>操作菜单位置</strong><small>展开的操作菜单显示在“今日合计”上方，统计区和下方任务位置保持一致。</small></span></article>
-                <article><b>v3.27.72</b><span><strong>发帖取材进度</strong><small>每路热点恢复试写最多 12 条；显示当前来源、真实序号和退稿原因，避免“1/3”一直不变。</small></span></article>
-                <article><b>v3.27.71</b><span><strong>发帖草稿筛选修复</strong><small>热点写作允许明确对象上的个人观点；常用社会观察兜底逐条检查，失败时显示实际试写数与退稿原因。</small></span></article>
-                <article><b>v3.27.70</b><span><strong>文档目录并排</strong><small>目录按钮与关闭按钮并排，展开后显示悬浮菜单。</small></span></article>
-                <article><b>v3.27.18</b><span><strong>云端同步兼容旧账号</strong><small>同步云端时兼容旧版 default 占位账号，并把云端记录归并到当前账号。</small></span></article>
-                <article><b>v3.27.7</b><span><strong>任务页签图标提示</strong><small>恢复简洁的 ↗ 和 × 图标，分别用悬停提示说明跳转与关闭。</small></span></article>
-                <article><b>v3.27.6</b><span><strong>任务页签操作说明</strong><small>已打开任务明确显示“↗ 跳转”，悬停后显示独立的“关闭”按钮。</small></span></article>
-                <article><b>v3.27.5</b><span><strong>清空按钮移到主控区</strong><small>一键清空紧跟全流程按钮，说明按钮保持在最右侧。</small></span></article>
-                <article><b>v3.27.4</b><span><strong>关注与发帖统计</strong><small>关注与回关合并为关注，今日合计新增发帖数量。</small></span></article>
-                <article><b>v3.27.3</b><span><strong>频率挡位语义色</strong><small>慢、中、快、超快使用由冷到热的颜色层级，文字保持居中。</small></span></article>
-                <article><b>v3.27.2</b><span><strong>任务页签操作分开</strong><small>箭头表示点击页签跳转；叉号只在悬停时独立出现，避免误关窗口。</small></span></article>
-                <article><b>v3.27.1</b><span><strong>任务页签窗口控制</strong><small>箭头与叉号对应具体的首页互动、通知互动等子任务，关闭时只影响该窗口。</small></span></article>
-                <article><b>v3.27.0</b><span><strong>直接关闭任务窗口</strong><small>已打开任务的跳转箭头悬停后变成叉号，可关闭对应窗口。</small></span></article>
-                <article><b>v3.26.4</b><span><strong>频率挡位连线</strong><small>单行四挡之间增加贯穿横线，形成连续的频率选择器。</small></span></article>
-                <article><b>v3.26.3</b><span><strong>清空前确认</strong><small>列明清除范围；保留 API 密钥、每日统计、限制观察记录和待上传回执。</small></span></article>
-                <article><b>v3.26.2</b><span><strong>操作菜单箭头</strong><small>右上角按钮用上下箭头标识展开状态，提示语随状态切换。</small></span></article>
-                <article><b>v3.26.1</b><span><strong>频率选择压缩</strong><small>回复与发帖频率改为单行四挡按钮，选中状态直接显示在按钮上。</small></span></article>
-                <article><b>v3.26.0</b><span><strong>任务窗口导航</strong><small>已打开的窗口显示跳转箭头；页签提示明确显示打开、跳转或当前窗口。</small></span></article>
-                <article><b>v3.25.1</b><span><strong>全流程及时停止</strong><small>暂停后不再被旧任务状态卡住；模型请求会取消，超时可重试停止。</small></span></article>
-                <article><b>v3.25.0</b><span><strong>可选回复模型</strong><small>默认启用 DeepSeek、NAS、B.AI 并依次尝试；可单独关闭或只使用一种。</small></span></article>
-                <article><b>v3.24.1</b><span><strong>回复步骤持续可见</strong><small>首页互动和通知互动显示加载帖子、请求模型及回退阶段。</small></span></article>
-                <article><b>v3.24.0</b><span><strong>频率设置独立入口</strong><small>回复频率与发推频率集中到独立页面，修改后继续自动保存。</small></span></article>
-                <article><b>v3.23.0</b><span><strong>模型设置独立入口</strong><small>模型密钥与提示词独立显示，其他设置保留显示、频率和回执；NAS 404 与 B.AI 余额不足分别提示。</small></span></article>
-                <article><b>v3.22.0</b><span><strong>增加 B.AI 回复回退</strong><small>DeepSeek 与 NAS 均暂不可用时，使用设置中的 B.AI 密钥尝试第三层回复。</small></span></article>
-                <article><b>v3.21.0</b><span><strong>回复模型故障回退</strong><small>DeepSeek 临时故障时使用后台 NAS 模型；失败重试逐步延长。</small></span></article>
-                <article><b>v3.20.0</b><span><strong>点赞加入全流程</strong><small>一键启动两项点赞任务，暂停时一起停止；总览显示八项任务。</small></span></article>
-                <article><b>v3.19.3</b><span><strong>修复图标覆盖</strong><small>折叠和放大按钮在状态刷新后仍保持 SVG 图标。</small></span></article>
-                <article><b>v3.19.2</b><span><strong>右上角图标栏</strong><small>常驻四个图标与三个点对齐，不再单独占一行。</small></span></article>
-                <article><b>v3.19.1</b><span><strong>常驻操作恢复图标</strong><small>说明、折叠、放大和关闭重新使用原来的图标。</small></span></article>
-                <article><b>v3.19.0</b><span><strong>全流程任务总览</strong><small>运行中显示六项任务的执行、等待和未启动状态；失去状态更新时提示待确认。</small></span></article>
-                <article><b>v3.18.0</b><span><strong>限制观察</strong><small>按账号记录回复、点赞和关注的成功时间及受限样本，在异常中心对比时间窗口。</small></span></article>
-                <article><b>v3.17.4</b><span><strong>累计数字简写</strong><small>千、百万以上保留一位小数，例如 1204 显示为 1.2k。</small></span></article>
-                <article><b>v3.17.3</b><span><strong>点赞次数限制冷却</strong><small>保存账号冷却时间，延长间隔后重试；疑似自动化限制仍停止。</small></span></article>
-                <article><b>v3.17.2</b><span><strong>今日统计常驻</strong><small>主面板单行显示本机今日评论、点赞和关注操作合计。</small></span></article>
-                <article><b>v3.17.1</b><span><strong>常用面板操作</strong><small>说明、折叠、放大和关闭保持常驻，不占用标题栏。</small></span></article>
-                <article><b>v3.17.0</b><span><strong>操作菜单与报告页面</strong><small>异常监控直达；每日报告提供累计统计、账号筛选和日历查询。</small></span></article>
-                <article><b>v3.16.7</b><span><strong>每日统计默认可见</strong><small>每日报告默认展开，移除任务页底部重复入口并收紧面板高度。</small></span></article>
-                <article><b>v3.16.6</b><span><strong>热点短帖增加留白</strong><small>长段正文按自然停顿拆为短行，段间留空；已有待发内容发送前也会重新排版。</small></span></article>
-                <article><b>v3.16.5</b><span><strong>点赞时面板可操作</strong><small>操作面板时短暂让出点赞、滚动和页面跳转，停止与其他按钮可及时响应。</small></span></article>
-                <article><b>v3.16.4</b><span><strong>发送错误跳过当前帖</strong><small>X 明确提示发送出错时清理草稿并处理下一条；连续三条失败后暂停一分钟。</small></span></article>
-                <article><b>v3.16.3</b><span><strong>受限帖子自动跳过</strong><small>X 提示只有部分账号可以回复时，关闭弹窗并跳过该帖子，继续处理下一条。</small></span></article>
-                <article><b>v3.16.2</b><span><strong>主面板操作区整理</strong><small>清空状态和每日报告改为简洁入口，重新启动按钮不再弹出遮挡内容的提示。</small></span></article>
-                <article><b>v3.16.1</b><span><strong>点赞未确认时继续</strong><small>未确认的单条点赞会跳过，页面加载失败会短暂重试；明确受限时仍停止。</small></span></article>
-                <article><b>v3.16.0</b><span><strong>每日报告</strong><small>按北京时间保存确认成功的五类动作，历史日期可手动上传到站长后台。</small></span></article>
-                <article><b>v3.15.0</b><span><strong>一键清空本地状态</strong><small>主面板直接清空任务进度、待发与历史，重载 X 页签；保留已配置的密钥。</small></span></article>
-                <article><b>v3.14.2</b><span><strong>异常监控中心</strong><small>设置内可查看当前窗口状态，以及回复、点赞、关注、发帖各自的异常处理方式。</small></span></article>
-                <article><b>v3.14.1</b><span><strong>热点短帖提示词</strong><small>只按标题和摘要写一个观点，开头与收尾自然变化；旧规则待发草稿不再发送。</small></span></article>
-                <article><b>v3.14.0</b><span><strong>评论与点赞分组</strong><small>评论管理和点赞管理各有两个子页签；每项任务打开自己的窗口。</small></span></article>
-                <article><b>v3.13.0</b><span><strong>互动页签与自动点赞</strong><small>首页互动、通知互动更名；自动点赞单独手动运行，查看首页帖子和评论，出现限制提示即停。</small></span></article>
-                <article><b>v3.12.1</b><span><strong>发推提示词与热点改写一致</strong><small>热点改写读取设置页提示词，停止发送旧规则草稿；取消固定三行排版，拦截文艺化套话。</small></span></article>
-                <article><b>v3.12.0</b><span><strong>热点顺序与文案钩子</strong><small>先读知乎、头条，再读舆情分析；开头和结尾增加变化，避免同一种句式连发。</small></span></article>
-                <article><b>v3.11.0</b><span><strong>热点来源优先级</strong><small>定时发帖只写热点，先取 2aran 舆情分析，素材不足再读头条、知乎；待发列表和发布历史记录出处。</small></span></article>
-                <article><b>v3.10.4</b><span><strong>临时错误原地重试</strong><small>X 回复提示临时错误时关闭插件草稿并重试当前帖，不触发整页刷新。</small></span></article>
-                <article><b>v3.10.3</b><span><strong>异常进入站长通知</strong><small>页面报错、断网和草稿阻止重连会回传监控通知；离线时暂存，恢复后补报。</small></span></article>
-                <article><b>v3.10.2</b><span><strong>异常后快速重连</strong><small>检测 X 连通性后逐步重试；刷新前处理回复草稿，避免系统确认框卡住。</small></span></article>
-                <article><b>v3.10.1</b><span><strong>热点短帖口吻收紧</strong><small>用具体场景和口语反应写热点；说理、劝告式草稿会重写一次或跳过。</small></span></article>
-                <article><b>v3.10.0</b><span><strong>定时发帖增加备用热点</strong><small>王长富没有可用新帖时，随机读取头条、知乎和站内舆情的可用热点写短帖；沿用历史去重。</small></span></article>
-                <article><b>v3.9.0</b><span><strong>定时发帖改成短行</strong><small>正文缩短，每行之间空一行；过长草稿不再发送。</small></span></article>
-                <article><b>v3.8.0</b><span><strong>设置自动保存</strong><small>配置 Key 后收起主面板输入区；设置中的字段改动后自动保存。</small></span></article>
-                <article><b>v3.7.0</b><span><strong>等待可手动跳过</strong><small>回复间隔、下一轮、重连和暂停提示旁可点击「立即开始」。</small></span></article>
-                <article><b>v3.6.58</b><span><strong>关注任务失效即停止</strong><small>扩展重新加载后，旧页面无法读写共享额度时会停止关注任务，并提示刷新页面。</small></span></article>
-                <article><b>v3.6.57</b><span><strong>右上角工具箱</strong><small>推文详情页可按需导出本地 PDF，并能在工具箱中关闭此功能。</small></span></article>
-                <article><b>v3.6.56</b><span><strong>自动发帖先筛选</strong><small>保留素材首句，长期记录用过的素材与已发主题；改写过火、相似或失败时跳过，不再用原文兜底。</small></span></article>
-                <article><b>v3.6.55</b><span><strong>定时发帖跳过重复内容</strong><small>X 提示已说过时清空发帖框，跳过当前待发内容并接着发送下一条。</small></span></article>
-                <article><b>v3.6.54</b><span><strong>关注子页签可切换</strong><small>清理未回关、回关粉丝、关注候选在运行中也能点击，直接切到各自的任务窗口。</small></span></article>
-                <article><b>v3.6.53</b><span><strong>通知回复更自然</strong><small>短回复不用凑字数；原帖暂不可见时避免客服式追问和凭空总结，按对方的话自然接一句。</small></span></article>
-                <article><b>v3.6.52</b><span><strong>通知回复补全对话</strong><small>优先读取我的帖子和对方回复，再让 AI 回应；原帖暂不可见时，仍按收到回复者的身份作答。</small></span></article>
-                <article><b>v3.6.51</b><span><strong>运行中切换与立即开始</strong><small>点页签可直接切到运行中的任务窗口，不重启任务；等待下一轮或下一条发帖时可手动立即开始。</small></span></article>
-                <article><b>v3.6.50</b><span><strong>修复任务窗口打开</strong><small>新任务窗口直接打开对应 X 页面，避免先出现空白页。</small></span></article>
-                <article><b>v3.6.49</b><span><strong>修复任务页跳转循环</strong><small>定时发帖只在自己的页签恢复；跳转记录绑定目标页签，通知回复不再被其他任务带回首页。</small></span></article>
-                <article><b>v3.6.48</b><span><strong>页签打开对应页面</strong><small>四项名称统一为时间线回复、通知回复、关注管理、定时发帖。点页签只切换到该任务窗口和页面；API Key 放在全局区。</small></span></article>
-                <article><b>v3.6.47</b><span><strong>运行中可暂停</strong><small>全流程显示运行中时再点一次，会暂停全部任务；之后可重新启动。</small></span></article>
-                <article><b>v3.6.46</b><span><strong>全流程按钮有状态</strong><small>启动中、运行中、已暂停、停止中、重新启动会随任务变化。</small></span></article>
-                <article><b>v3.6.45</b><span><strong>每个任务打开自己的页面</strong><small>清理未回关打开 Following，回关粉丝打开 Followers，关注候选打开抽中的粉丝列表，通知回复打开通知页，推文浇给打开王长富主页。</small></span></article>
-                <article><b>v3.6.44</b><span><strong>首页可以正常打开</strong><small>去掉标题监听，避免和 X 的标题更新互相改写把页面卡住。</small></span></article>
-                <article><b>v3.6.43</b><span><strong>互关三项会自己开始</strong><small>全流程直接打开清理未回关、回关粉丝和关注候选的列表并开始。每个任务窗口的标题带上自己的名称。</small></span></article>
-                <article><b>v3.6.42</b><span><strong>说明改为图标</strong><small>问号挂在全流程启动右侧，启动按钮保持居中。</small></span></article>
-                <article><b>v3.6.41</b><span><strong>全流程旁增加说明</strong><small>说明里介绍四类任务。各页签的开始按钮改为「启动单项任务」。</small></span></article>
-                <article><b>v3.6.40</b><span><strong>动作回执</strong><small>确认成功、跳过或受限后上报到社区动作页。设置里填写回执密钥，不上传正文和 Cookie。</small></span></article>
-                <article><b>v3.6.39</b><span><strong>全流程启动按文字收窄</strong><small>不再铺满面板宽度。</small></span></article>
-                <article><b>v3.6.38</b><span><strong>全流程启动单独配色</strong><small>按钮收小，用紫金渐变。各流程的开始按钮改到说明后面，不再单独占一行。</small></span></article>
-                <article><b>v3.6.37</b><span><strong>全流程启动更醒目</strong><small>四个功能页签和各页开始按钮缩小、减淡，全流程启动保持最大。</small></span></article>
-                <article><b>v3.6.36</b><span><strong>全流程启动</strong><small>一个按钮打开时间线、通知回复、互关浇友和推文浇给，并让它们各自开始。</small></span></article>
-                <article><b>v3.6.35</b><span><strong>点一次走完全程</strong><small>打开王长富主页后会继续抓取和发送，不用再点第二次。</small></span></article>
-                <article><b>v3.6.34</b><span><strong>待发列表发完才再抓</strong><small>王长富是默认素材账号。抓到的纯文字帖先进入待发列表，再一条条发。</small></span></article>
-                <article><b>v3.6.33</b><span><strong>扩展刷新后不再报未捕获错误</strong><small>旧页面找不到扩展时，改用页面计时继续等待。</small></span></article>
-                <article><b>v3.6.32</b><span><strong>先改写再发</strong><small>读完王长富的纯文字帖后，先逐条总结改写成列表，再按列表发布。</small></span></article>
-                <article><b>v3.6.31</b><span><strong>关注候选随机名单</strong><small>每次从 @crazypig9y、@jianlvup、@jianlvya、@kyotom08、@Chill_Alpha 里抽一个粉丝列表。</small></span></article>
-                <article><b>v3.6.30</b><span><strong>三项共用关注额度</strong><small>清理未回关、回关粉丝和关注候选计入同一组今日合计、本批进度和暂停时间。</small></span></article>
-                <article><b>v3.6.29</b><span><strong>互关窗口对准各自标签</strong><small>三个窗口分别停在清理未回关、回关粉丝和关注候选。关注候选默认打开王长富的粉丝列表。推文浇给也改读王长富。</small></span></article>
-                <article><b>v3.6.28</b><span><strong>推文改从王长富取材</strong><small>不再调用 DeepSeek。读取他的纯文字帖，保留钩子和换行，只改说法后发布。</small></span></article>
-                <article><b>v3.6.27</b><span><strong>短帖每句空一行</strong><small>发出来的短帖在每句之间留一个空行。</small></span></article>
-                <article><b>v3.6.26</b><span><strong>先发框里已有的字</strong><small>发帖框里已经有内容时立刻发送。只有空框才生成新帖，不再把已写上的文字报成没写进去。</small></span></article>
-                <article><b>v3.6.25</b><span><strong>发帖框有字就直接发</strong><small>首页发帖框里已经有内容时，直接点发送，不再停下来避免覆盖。</small></span></article>
-                <article><b>v3.6.24</b><span><strong>通知回复 10 分钟一轮</strong><small>扫完最近 2 小时后等待 10 分钟再开始下一次，不再按 2 小时休息。</small></span></article>
-                <article><b>v3.6.23</b><span><strong>发推不再带币种代码</strong><small>不写加密货币，也不出现 $。提到 AI 或 Web3 时同样不加币种代码。</small></span></article>
-                <article><b>v3.6.22</b><span><strong>推文改成短句</strong><small>发推改成一行一句的短帖。大约每四条里有一条会带到 AI 或 Web3。</small></span></article>
-                <article><b>v3.6.21</b><span><strong>通知先补赞再等待</strong><small>通知回复遇到限制时，不立刻进入下一轮。先把还能点的赞点完，再倒计时，回复留到下一轮。</small></span></article>
-                <article><b>v3.6.20</b><span><strong>互关三项各开一个窗口</strong><small>清理未回关、回关粉丝和关注候选分别使用自己的窗口。点开互关浇友会打开这三个窗口。</small></span></article>
-                <article><b>v3.6.19</b><span><strong>互关遇到限速就等待</strong><small>清理、回关或关注时出现速率限制提示，立刻停止点击，15 分钟后继续当前列表。</small></span></article>
-                <article><b>v3.6.18</b><span><strong>原帖不可见就跳过</strong><small>X 提示帖子已删除或当前账号看不到时，关掉评论框并换下一条，不再反复重试同一条。</small></span></article>
-                <article><b>v3.6.17</b><span><strong>空评论框不再反复重连</strong><small>回复框是空的就直接写入。只有关不掉的他人内容才重连，并写明原因。</small></span></article>
-                <article><b>v3.6.16</b><span><strong>倒计时写在按钮下面</strong><small>操作过密时不再显示正在停止。按钮下方直接显示下一轮还要多久。</small></span></article>
-                <article><b>v3.6.15</b><span><strong>过密提示结束当前轮</strong><small>时间线和通知回复遇到操作过密提示时，不再停掉任务。当前轮结束，按休息时间倒计时后开始下一轮。</small></span></article>
-                <article><b>v3.6.14</b><span><strong>倒计时和设置收口</strong><small>轮次或发推等待会显示剩余时间。正文和规则说明移出工作区；提示词、密钥和慢中快超快的数字改在设置里。</small></span></article>
-                <article><b>v3.6.13</b><span><strong>四个功能各开一个窗口</strong><small>在同一个窗口里切换功能，会把正在跑的页签变成后台页，Chrome 会冻住它。现在每个功能单独开窗口，原来的任务继续跑。</small></span></article>
-                <article><b>v3.6.12</b><span><strong>运行中锁住频率</strong><small>时间线、通知回复和推文浇给在执行时不能滑动频率。暂停后可以改，改完按钮变成重启任务。</small></span></article>
-                <article><b>v3.6.11</b><span><strong>收起回复说明卡</strong><small>计划说明和当前回复预览不再占一块。轮次进度保留，只有发送失败或被限制时才出现一行提示。</small></span></article>
-                <article><b>v3.6.10</b><span><strong>开始按钮合并密钥</strong><small>没保存 Key 时，在开始按钮里填写后直接启动。保存后只留开始按钮，改 Key 放到右上角设置。</small></span></article>
-                <article><b>v3.6.9</b><span><strong>评论过密时停止回复</strong><small>页面出现自动化或发送失败提示时，停止时间线回复和通知回复，不再自动重试。</small></span></article>
-                <article><b>v3.6.8</b><span><strong>回复只保留 AI</strong><small>去掉模板随机和话术池。频率滑块放进轮次进度，不再单开运行设置。</small></span></article>
-                <article><b>v3.6.7</b><span><strong>默认右下角浮窗</strong><small>面板默认浮在页面右下角。标题栏齿轮里可以打开「嵌入到页面」，再挂到右侧搜索框下面。</small></span></article>
-                <article><b>v3.6.6</b><span><strong>功能导航改为图标页签</strong><small>时间线、通知回复、互关浇友和推文浇给改成图标加文字，当前项用下划线标出。</small></span></article>
-                <article><b>v3.6.5</b><span><strong>推文浇给加入频率滑块</strong><small>发推页可以在慢、中、快、超快之间滑动。默认「中」仍是 25～35 分钟；已经开始的等待不会改写。</small></span></article>
-                <article><b>v3.6.4</b><span><strong>面板嵌进右侧栏</strong><small>面板放在搜索框下方，随右侧栏排列，不再用左下角浮层挡住时间线。</small></span></article>
-                <article><b>v3.6.3</b><span><strong>频率调度改为四挡滑块</strong><small>运行设置里可以在慢、中、快、超快之间滑动。默认「中」保持原来的 5～15 秒、25～35 条和 2～3 小时休息；已开始的计划不会被中途改写。</small></span></article>
-                <article><b>v3.6.2</b><span><strong>移除插件每日回复总量限制</strong><small>时间线和通知回复不再被插件的 100 条日额度暂停；继续按随机间隔、随机轮次和周期休息运行。</small></span></article>
-                <article><b>v3.6.1</b><span><strong>重复回复自动换写与界面修复</strong><small>识别 X 的重复内容提示，模板自动换句、AI 自动换写；统一标题栏 SVG 图标，并修复网站把下载错误保存成 deliver.json 的问题。</small></span></article>
-                <article><b>v3.6.0</b><span><strong>随机频率调度与共享每日额度</strong><small>每次生成 3～5 轮随机计划；每轮 25～35 条、每条等待 5～15 秒，执行后休息 2～3 小时。时间线与通知共享每日 100 条插件额度；检测到风控提示会停止全部任务。</small></span></article>
-                <article><b>v3.5.0</b><span><strong>内置文档中心</strong><small>加入官方规则、风控说明、官方链接和最近版本记录。</small></span></article>
-                <article><b>v3.4.1</b><span><strong>修复 Key 被错误自动填充</strong><small>阻止密码管理器把 X 登录密码填入 DeepSeek Key。</small></span></article>
-                <article><b>v3.4.0</b><span><strong>长期循环与稳定运行计时</strong><small>回复任务按两小时周期恢复，并保留通知去重历史。</small></span></article>
-                <article><b>v3.3.3</b><span><strong>修复后台页签停止</strong><small>离屏 Worker 到点后精确唤醒对应任务页签。</small></span></article>
-                <article><b>v3.3.2</b><span><strong>修复未点击 Post</strong><small>重新获取 X 替换后的编辑器并确认实际发送。</small></span></article>
-                <article><b>v3.3.0</b><span><strong>四类任务独立页签</strong><small>任务状态分开保存，可在不同 X 页签中运行。</small></span></article>
-              </div>
-              <a class="xrc-docs-full-link" href="https://2aran.com/resources/x-reply-clipboard-extension#version-history" target="_blank" rel="noopener noreferrer">查看完整版本记录 ↗</a>
-            </section>
-          </div>
-        </section>
         <div class="xrc-workspace-nav">
           <div class="xrc-global-bar" data-xrc-global-bar>
             <label class="xrc-global-key" data-xrc-global-key data-needs-key="true">
@@ -3692,21 +3570,23 @@
           </div>
           <div class="xrc-reset-confirm" id="xrc-reset-confirm" data-xrc-reset-confirm role="dialog" aria-modal="true" aria-labelledby="xrc-reset-title" aria-describedby="xrc-reset-description" hidden>
             <div class="xrc-reset-confirm-card">
-              <strong id="xrc-reset-title">确认清空本地状态？</strong>
-              <p id="xrc-reset-description">会停止当前任务，并重新加载已打开的 X 任务窗口。</p>
+              <strong id="xrc-reset-title">清理任务状态与页面内存</strong>
+              <p id="xrc-reset-description">“优化闲置页”只重载没有运行任务的专用 X 页签，释放页面积累的内存；不清空扩展数据，也不打断运行中的任务。页面里未发送的手写草稿会丢失。</p>
               <div><b>将清空</b><p>任务进度与倒计时、待发草稿与素材去重、回复/点赞/关注处理记录、发帖历史，以及提示词、频率和面板等自定义设置。</p></div>
               <div><b>会保留</b><p>DeepSeek 与 B.AI API Key、社区回执密钥；本地每日报告、限制观察记录及尚未上传的回执日志；阶段性判断也会保留。</p></div>
+              <p>“确认清空”会停止任务、删除上述状态并重载已打开的 X 页面。</p>
               <p class="xrc-reset-confirm-warning">清空的内容无法恢复。</p>
               <span data-xrc-reset-status role="status" hidden>保留 API 与日志</span>
               <div class="xrc-reset-confirm-actions">
                 <button type="button" data-xrc-reset-cancel>取消</button>
+                <button type="button" data-xrc-refresh-idle-tabs>优化闲置页</button>
                 <button type="button" data-xrc-reset-confirm-action>确认清空</button>
               </div>
             </div>
           </div>
           <div class="xrc-flow-guide" id="xrc-flow-guide" data-xrc-flow-guide hidden>
-            <p><b>全流程说明已移到文档中心。</b>那里有任务清单、窗口跳转规则和单项运行方式。</p>
-            <button type="button" class="xrc-flow-docs-link" data-xrc-flow-docs>打开文档中心并查看全流程说明 ↗</button>
+            <p><b>全流程说明在站点文档中心。</b>那里有任务清单、窗口跳转规则和单项运行方式。</p>
+            <button type="button" class="xrc-flow-docs-link" data-xrc-flow-docs>打开站点文档 · 全流程说明 ↗</button>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
@@ -3843,11 +3723,12 @@
       panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
         if (updateActionPending) return;
         updateActionPending = true;
-        updateActionMessage = "正在检查本地版本，确认有更新后会先停止全部任务";
+        updateActionMessage = "正在检查本地版本与任务状态";
         renderPanel();
         try {
           const result = await sendExtensionMessage({ type: "xrc-dev-update-apply" });
-          updateActionMessage = result?.ok ? "任务已停止，正在重载扩展并刷新 X 任务页" : result?.error || "更新未完成，请重试";
+          updateActionMessage = result?.phase === "waiting" ? "当前任务继续运行，结束后自动加载新版"
+            : result?.ok ? "正在加载新版，随后恢复原任务" : result?.error || "更新未完成，请重试";
         } catch (error) {
           updateActionMessage = error?.message || "无法连接本地更新服务，请重试";
         } finally {
@@ -3869,7 +3750,6 @@
         configOpen = !configOpen || configPage !== nextPage;
         configPage = nextPage;
         if (configOpen) {
-          panel.querySelector("[data-xrc-docs]").hidden = true;
           monitorOpen = false;
           reportOpen = false;
           syncMonitorMenu(panel);
@@ -3897,7 +3777,6 @@
           configOpen = false;
           toolboxOpen = false;
           reportOpen = false;
-          panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
           syncToolboxMenu(panel);
           syncReportPage(panel);
@@ -3927,7 +3806,6 @@
         monitorOpen = false;
         toolboxOpen = false;
         headerMenuOpen = false;
-        panel.querySelector("[data-xrc-docs]").hidden = true;
         syncConfigMenu(panel);
         syncMonitorMenu(panel);
         syncToolboxMenu(panel);
@@ -3953,7 +3831,6 @@
           configOpen = false;
           monitorOpen = false;
           reportOpen = false;
-          panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
           syncMonitorMenu(panel);
           syncReportPage(panel);
@@ -4032,41 +3909,13 @@
         event.currentTarget.textContent = revealed ? "隐藏" : "显示";
       });
       const openDocs = (targetId = "") => {
-        if (state.panelView === "collapsed") {
-          state.panelView = "normal";
-          writeSaved({ running: state.running, total: state.total });
-          renderPanel();
-        }
-        configOpen = false;
-        toolboxOpen = false;
-        monitorOpen = false;
-        reportOpen = false;
-        headerMenuOpen = false;
-        syncConfigMenu(panel);
-        syncToolboxMenu(panel);
-        syncMonitorMenu(panel);
-        syncReportPage(panel);
-        syncHeaderMenu(panel);
-        const docs = panel.querySelector("[data-xrc-docs]");
-        docs.hidden = false;
-        if (targetId) window.setTimeout(() => {
-          const target = docs.querySelector(`#${targetId}`);
-          target?.scrollIntoView({ behavior: "smooth", block: "start" });
-          target?.classList.add("xrc-docs-targeted");
-          window.setTimeout(() => target?.classList.remove("xrc-docs-targeted"), 1200);
-        }, 0);
+        const hash = targetId ? `#${DOCS_SECTION_HASH[targetId] || String(targetId).replace(/^xrc-docs-/, "")}` : "";
+        window.open(`${DOCS_BASE_URL}${hash}`, "_blank", "noopener,noreferrer");
       };
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
       panel.querySelector("[data-xrc-flow-docs]")?.addEventListener("click", () => openDocs("xrc-docs-flow"));
       panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
-        button.addEventListener("click", () => {
-          button.closest(".xrc-docs-toc").open = false;
-          openDocs(button.dataset.xrcDocsTarget);
-        });
-      });
-      panel.querySelector("[data-xrc-docs-close]").addEventListener("click", () => {
-        panel.querySelector(".xrc-docs-toc").open = false;
-        panel.querySelector("[data-xrc-docs]").hidden = true;
+        button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
       const flowDetails = panel.querySelector("[data-xrc-flow-details]");
@@ -4122,6 +3971,23 @@
           buttons[0].focus();
         }
       });
+      panel.querySelector("[data-xrc-refresh-idle-tabs]")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const status = panel.querySelector("[data-xrc-reset-status]");
+        button.disabled = true;
+        status.hidden = false;
+        status.textContent = "正在重载闲置任务页…";
+        try {
+          const result = await sendExtensionMessage({ type: "xrc-refresh-idle-tabs" });
+          if (!result?.ok) throw new Error(result?.error || "闲置页面优化失败");
+          status.textContent = `已重载 ${result.refreshed || 0} 个闲置页${result.skipped ? `，${result.skipped} 个运行中或未能重载` : ""}${result.reloadCurrent ? "；当前页即将重载" : ""}`;
+          if (result.reloadCurrent) window.setTimeout(() => window.location.reload(), 250);
+        } catch (error) {
+          status.textContent = error?.message || "闲置页面优化失败";
+        } finally {
+          button.disabled = false;
+        }
+      });
       panel.querySelector("[data-xrc-reset-confirm-action]")?.addEventListener("click", async () => {
         if (resettingState || resetDialog.hidden) return;
         resetDialog.hidden = true;
@@ -4130,6 +3996,7 @@
         const resetRow = button.closest(".xrc-flow-launch");
         button.disabled = true;
         resetRow.dataset.state = "busy";
+        status.hidden = false;
         status.textContent = "正在清空任务状态，保留 API 与日志…";
         try {
           if (await flushConfigSave() === false) throw new Error("设置尚未保存，请先检查 API Key");
@@ -4232,8 +4099,10 @@
         button.addEventListener("click", () => {
           const mode = button.dataset.xrcMutualAction;
           const cooling = state.mutual?.running && state.mutual?.mode === mode && Number(state.mutual?.cooldownUntil) > Date.now();
+          const riskCooling = cooling && Number(state.mutual?.riskCooldownUntil) > Date.now();
           const dailyFull = mode === "followBack" && Number(state.mutual?.sharedDailyFollowed) >= 400;
-          if (cooling && !dailyFull) mutualApi?.startNow?.();
+          if (riskCooling) onMutualAction(mode);
+          else if (cooling && !dailyFull) mutualApi?.startNow?.();
           else if (cooling && dailyFull) onMutualAction(mode);
           else onMutualAction(mode);
         });
@@ -4439,11 +4308,13 @@
       const postWait = posterWaitCopy(poster);
       const postProblem = /失败|没有|无法|暂停|请先|异常|跳过|重复/.test(poster.status || "");
       if (postStatus) {
-        postStatus.hidden = !(postProblem || poster.stopping || (poster.running && !postWait));
+        postStatus.hidden = !(postProblem || poster.stopping || Number(poster.riskCooldownUntil) > Date.now() || (poster.running && !postWait));
         postStatus.textContent = poster.status || "";
       }
       postToggle.textContent = poster.stopping
         ? "正在停止"
+        : Number(poster.riskCooldownUntil) > Date.now()
+          ? "停止定时发推"
         : postWait
           ? "立即开始"
         : poster.running
@@ -4512,7 +4383,7 @@
       likeToggle.textContent = likeState.stopping
         ? "停止中"
         : likeCooldown
-          ? `冷却 ${likeCooldown} · 立即开始`
+          ? `冷却 ${likeCooldown} · 点击停止`
           : likeState.running ? "停止自动点赞" : "启动单项任务";
       likeToggle.disabled = likeState.stopping;
     }
@@ -4564,7 +4435,8 @@
         const cooldown = activeMode && mutual.cooldownUntil ? Math.max(0, Math.ceil((mutual.cooldownUntil - Date.now()) / 1000)) : 0;
         const cooldownLabel = cooldown >= 60 ? formatClock(cooldown * 1000) : `${cooldown} 秒`;
         const dailyFull = mode === "followBack" && Number(mutual.sharedDailyFollowed) >= 400;
-        button.textContent = activeMode ? dailyFull && cooldown > 0 ? `今日已满 · ${cooldownLabel} · 点此停止` : cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
+        const riskCooling = activeMode && Number(mutual.riskCooldownUntil) > Date.now();
+        button.textContent = activeMode ? riskCooling ? `等待 ${cooldownLabel} · 点此停止` : dailyFull && cooldown > 0 ? `今日已满 · ${cooldownLabel} · 点此停止` : cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
@@ -4600,13 +4472,13 @@
     collapseButton.title = state.panelView === "collapsed" ? "展开面板" : "折叠面板";
     expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
     expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
-    panel.dataset.state = state.riskPaused ? "warning" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    panel.dataset.state = state.riskPaused ? "waiting" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
       stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
         ? "停止中"
         : state.riskPaused
-          ? "风控暂停"
+          ? "等待中"
           : waitingForNextCycle
           ? "休息中"
           : reconnecting
@@ -4662,9 +4534,7 @@
         state.stopping = false;
         clearSaved();
         setRuntimeTaskActive(state.assistantMode, false);
-        if (stoppedByUser) state.status = state.riskPaused
-          ? "X 检测到疑似自动化操作，所有任务已停止；不会自动重试，请人工检查账号状态"
-          : "已停止";
+        if (stoppedByUser) state.status = "已手动停止";
         renderPanel();
       });
   }
@@ -4674,6 +4544,8 @@
       cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
+      state.riskPaused = false;
+      state.riskCooldownUntil = 0;
       state.pendingReply = "";
       state.pendingTweetId = "";
       clearSaved();
@@ -4697,7 +4569,6 @@
         configOpen = true;
         configPage = "model";
         if (panel) {
-          panel.querySelector("[data-xrc-docs]").hidden = true;
           syncConfigMenu(panel);
         }
         input?.focus();
@@ -4787,6 +4658,10 @@
     state.nextRoundAt = saved.nextRoundAt;
     state.reconnectAt = saved.reconnectAt;
     state.reconnectReason = saved.reconnectReason;
+    state.riskCooldownUntil = saved.riskCooldownUntil;
+    state.riskRetries = saved.riskRetries;
+    state.riskPaused = Boolean(saved.running && saved.riskCooldownUntil);
+    riskRoundRequested = state.riskPaused;
     state.roundIntervalSeconds = saved.roundIntervalSeconds;
     state.schedulePace = saved.schedulePace;
     state.boundaryLevel = saved.boundaryLevel;
@@ -4881,8 +4756,6 @@
       stopLocalTasks(message.reason || "全流程已暂停");
       return false;
     }
-    if (message?.type !== "xrc-risk-stop") return false;
-    applyRiskStop(message.reason);
     return false;
   });
 
@@ -4915,14 +4788,21 @@
         if (reportOpen) showDailyReport(panel);
       }
     }
-    renderPanel();
+    if (changes[PLUGIN_RUNTIME_KEY] || changes[DEV_UPDATE_KEY]) renderPanel();
   });
 
+  let idleRenderTicks = 0;
   window.setInterval(() => {
-    if (!state.stopping
-      && (state.running || state.mutual?.running || state.poster?.running || likeState.running)
-      && automationWarningNodes().length > 0) applyRiskStop();
-    renderPanel();
+    const active = state.running || state.mutual?.running || state.poster?.running || likeState.running;
+    const warnings = automationWarningNodes();
+    if (!warnings.length) acknowledgedAutomationNotices = new WeakMap();
+    if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
+      && warnings.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) applyRiskStop();
+    idleRenderTicks = active ? 0 : idleRenderTicks + 1;
+    if (active || idleRenderTicks >= 15) {
+      idleRenderTicks = 0;
+      renderPanel();
+    }
   }, 1000);
 
   window.addEventListener("online", () => { reconnectOnline = true; });

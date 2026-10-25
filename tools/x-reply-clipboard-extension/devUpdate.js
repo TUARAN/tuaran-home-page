@@ -6,7 +6,7 @@
   const ALARM_NAME = "xrc-local-dev-update-check";
   const SETTLE_MS = 60 * 1000;
   const RELOAD_EXPIRES_MS = 5 * 60 * 1000;
-  const STOP_WAIT_MS = 30 * 1000;
+  const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
 
   function compareVersions(left, right) {
     const parse = (value) => /^\d+(?:\.\d+){2,3}$/.test(String(value || ""))
@@ -34,6 +34,40 @@
     return value;
   }
 
+  async function reloadTaskTab(chromeApi, tabId, mode, at) {
+    const tab = await chromeApi.tabs.get(tabId);
+    if (!/^https:\/\/(?:x\.com|twitter\.com)\//i.test(tab?.url || "")) return false;
+    if (!mode) {
+      await chromeApi.tabs.reload(tabId);
+      return true;
+    }
+    if (!chromeApi.storage?.session?.set) return false;
+    const current = new URL(tab.url);
+    const pathname = mode === "notifications" ? "/notifications"
+      : mode.startsWith("mutual-") && /^\/[A-Za-z0-9_]+\/(?:following|followers)$/u.test(current.pathname)
+        ? current.pathname : "/home";
+    await chromeApi.storage.session.set({
+      [`xrcPendingTab:${tabId}`]: { mode, path: pathname, start: true, at }
+    });
+    if (current.pathname !== pathname) {
+      if (!chromeApi.tabs.update) return false;
+      await chromeApi.tabs.update(tabId, { url: `${current.origin}${pathname}` });
+    } else {
+      await chromeApi.tabs.reload(tabId);
+    }
+    return true;
+  }
+
+  async function allowTaskResume(chromeApi, resumeModes, at) {
+    if (!Object.keys(resumeModes || {}).length) return;
+    const stored = await chromeApi.storage.local.get(PLUGIN_RUNTIME_KEY);
+    const runtime = stored?.[PLUGIN_RUNTIME_KEY];
+    if (!runtime || !["paused", "stopping", "stopped"].includes(runtime.flow?.phase)) return;
+    await chromeApi.storage.local.set({
+      [PLUGIN_RUNTIME_KEY]: { ...runtime, flow: { phase: "idle", updatedAt: at } }
+    });
+  }
+
   async function check({ chromeApi = root.chrome, fetchApi = root.fetch, readRuntime, taskTabs, reload = () => chromeApi.runtime.reload(), now = Date.now() } = {}) {
     if (!chromeApi?.runtime?.getURL || !chromeApi.storage?.local || typeof fetchApi !== "function") return null;
     const installed = chromeApi.runtime.getManifest().version;
@@ -52,6 +86,8 @@
         await setStatus({ version: installed, phase: "updated", at: now }, chromeApi);
       } else if (previous?.phase === "available" || previous?.phase === "waiting") {
         await setStatus(null, chromeApi);
+      } else if (!previous || previous.phase === "latest" && previous.version !== installed) {
+        await setStatus({ version: installed, phase: "latest", at: now }, chromeApi);
       }
       return null;
     }
@@ -70,10 +106,9 @@
     return { ...candidate, phase: "applying" };
   }
 
-  async function applyNow({ chromeApi = root.chrome, fetchApi = root.fetch, readRuntime, taskTabs, stopTasks,
-    reload = () => chromeApi.runtime.reload(), sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    now = Date.now, stopWaitMs = STOP_WAIT_MS } = {}) {
-    if (!chromeApi?.runtime?.getURL || !chromeApi.storage?.local || !readRuntime || !taskTabs || !stopTasks) {
+  async function applyNow({ chromeApi = root.chrome, fetchApi = root.fetch, readRuntime, taskTabs, stopTasks, force = false,
+    reload = () => chromeApi.runtime.reload(), now = Date.now } = {}) {
+    if (!chromeApi?.runtime?.getURL || !chromeApi.storage?.local || !readRuntime || !taskTabs) {
       return { ok: false, error: "本地更新服务暂不可用" };
     }
     const installed = chromeApi.runtime.getManifest().version;
@@ -83,35 +118,62 @@
       if (!response.ok) throw new Error("读取本地版本失败");
       next = (await response.json())?.version;
     } catch (error) {
-      return { ok: false, error: error?.message || "读取本地版本失败；任务没有停止" };
+      return { ok: false, error: error?.message || "读取本地版本失败" };
     }
     if (compareVersions(next, installed) <= 0) {
-      return { ok: false, error: "本地目录没有比当前扩展更新的版本；任务没有停止" };
+      return { ok: false, error: "本地目录没有比当前扩展更新的版本" };
     }
-    const reason = `正在更新到 v${next}：先停止全部任务，确认退出后重载扩展和 X 任务页`;
-    await setStatus({ version: next, installed, phase: "stopping", at: now() }, chromeApi);
+    let resumeModes = {};
+    let stoppedForUpdate = false;
     try {
-      const stopped = await stopTasks(reason);
-      if (stopped?.ok === false) throw new Error(stopped.error || "停止任务失败");
-      const deadline = now() + stopWaitMs;
-      let idle = false;
-      do {
-        const runtime = await readRuntime({ prune: true });
-        idle = Object.keys(runtime?.tasks || {}).length === 0
-          && !["starting", "stopping"].includes(runtime?.flow?.phase);
-        if (idle) break;
-        if (now() >= deadline) break;
-        await sleep(500);
-      } while (true);
-      if (!idle) throw new Error("任务未能在 30 秒内全部退出，更新已取消；请检查任务状态后重试");
+      let runtime = await readRuntime({ prune: true });
+      const active = Object.keys(runtime?.tasks || {}).length > 0
+        || ["starting", "stopping"].includes(runtime?.flow?.phase);
+      if (active && !force) {
+        await setStatus({ version: next, installed, firstSeenAt: now() - SETTLE_MS, phase: "waiting" }, chromeApi);
+        return { ok: true, version: next, phase: "waiting" };
+      }
+      resumeModes = Object.fromEntries(Object.entries(runtime?.tasks || {})
+        .filter(([, task]) => Number.isInteger(task?.tabId) && ["running", "paused"].includes(task.phase))
+        .map(([mode, task]) => [String(task.tabId), mode]));
+      if (active && force) {
+        if (typeof stopTasks !== "function") throw new Error("无法停止当前任务，更新尚未开始");
+        await setStatus({ version: next, installed, phase: "stopping", at: now() }, chromeApi);
+        stoppedForUpdate = true;
+        const stopped = await stopTasks("正在更新本地扩展，稍后恢复原任务");
+        if (stopped?.ok === false) throw new Error(stopped.error || "停止任务失败，更新尚未开始");
+        const deadline = Date.now() + 30000;
+        do {
+          runtime = await readRuntime({ prune: true });
+          if (Object.keys(runtime?.tasks || {}).length === 0) break;
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        } while (Date.now() < deadline);
+        if (Object.keys(runtime?.tasks || {}).length > 0) {
+          throw new Error("等待任务停止超时，尚未更新；请检查仍在运行的任务");
+        }
+      }
       const open = await taskTabs();
-      const tabs = [...new Set(Object.values(open?.tabs || {}).filter(Number.isInteger))];
-      await chromeApi.storage.local.set({ [RELOAD_KEY]: { version: next, at: now(), tabs } });
+      const tabs = [...new Set([...Object.values(open?.tabs || {}), ...Object.keys(resumeModes).map(Number)].filter(Number.isInteger))];
+      await chromeApi.storage.local.set({ [RELOAD_KEY]: { version: next, at: now(), tabs, resumeModes } });
       await setStatus({ version: next, installed, phase: "applying", at: now() }, chromeApi);
       reload();
       return { ok: true, version: next, phase: "applying" };
     } catch (error) {
-      const message = error?.message || "更新未完成，请重试";
+      let message = error?.message || "更新未完成，请重试";
+      if (stoppedForUpdate && chromeApi.tabs?.get && chromeApi.storage?.session?.set) {
+        try {
+          const remaining = await readRuntime({ prune: true });
+          await allowTaskResume(chromeApi, resumeModes, now());
+          for (const [savedTabId, mode] of Object.entries(resumeModes)) {
+            if (remaining?.tasks?.[mode]) continue;
+            const tabId = Number(savedTabId);
+            await reloadTaskTab(chromeApi, tabId, mode, now());
+          }
+          message += "；已尝试恢复原任务";
+        } catch (restoreError) {
+          message += "；部分任务可能需要手动重新启动";
+        }
+      }
       await chromeApi.storage.local.remove(RELOAD_KEY).catch(() => {});
       await setStatus({ version: next, installed, phase: "failed", error: message, at: now() }, chromeApi);
       return { ok: false, error: message };
@@ -125,19 +187,24 @@
     await chromeApi.storage.local.remove(RELOAD_KEY);
     if (now - Number(intent.at) > RELOAD_EXPIRES_MS) return false;
     const installed = chromeApi.runtime.getManifest().version;
-    if (compareVersions(installed, intent.version) < 0) {
-      await setStatus({ version: intent.version, installed, phase: "failed", at: now }, chromeApi);
-      return false;
-    }
+    const versionReady = compareVersions(installed, intent.version) >= 0;
+    const failedModes = [];
+    await allowTaskResume(chromeApi, intent.resumeModes, now);
     for (const tabId of intent.tabs || []) {
       if (!Number.isInteger(tabId)) continue;
+      const mode = intent.resumeModes?.[String(tabId)];
       try {
-        const tab = await chromeApi.tabs.get(tabId);
-        if (!/^https:\/\/(?:x\.com|twitter\.com)\//i.test(tab?.url || "")) continue;
-        await chromeApi.tabs.reload(tabId);
+        if (!await reloadTaskTab(chromeApi, tabId, mode, now) && mode) failedModes.push(mode);
       } catch (error) {
-        // A task tab may have been closed while Chrome was reloading the extension.
+        if (mode) failedModes.push(mode);
       }
+    }
+    if (!versionReady || failedModes.length) {
+      const error = !versionReady
+        ? "本地新版未加载，已尝试恢复原任务"
+        : `新版已加载，但 ${failedModes.join("、")} 任务页未能恢复`;
+      await setStatus({ version: intent.version, installed, phase: "failed", error, at: now }, chromeApi);
+      return false;
     }
     await setStatus({ version: installed, phase: "updated", at: now }, chromeApi);
     return true;

@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../../lib/db/d1'
-import { readExtensionLive, readExtensionMonitor } from '../../../../../lib/community/communityActions'
+import { enqueueXRemoteCommand, readExtensionLive, readExtensionMonitor } from '../../../../../lib/community/communityActions'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -25,5 +25,31 @@ export async function GET(req) {
     if (/no such table/i.test(String(error?.message || error))) return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
     console.error('Plugin monitor read failed:', error)
     return Response.json({ ok: false, error: 'MONITOR_READ_FAILED' }, { status: 500 })
+  }
+}
+
+export async function POST(req) {
+  const auth = await getOwnerOrReject(req)
+  if (!auth.ok) return auth.response
+  let db
+  try { db = getD1() } catch { return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 }) }
+  if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
+  let body = null
+  try { body = await req.json() } catch { body = null }
+  if (!body || typeof body !== 'object') return Response.json({ ok: false, error: 'INVALID_COMMAND' }, { status: 400 })
+  try {
+    const result = await enqueueXRemoteCommand(db, {
+      deviceId: body.deviceId,
+      command: body.command,
+      mode: body.mode || '',
+    })
+    if (!result.ok) return Response.json(result, { status: 400 })
+    return Response.json(result)
+  } catch (error) {
+    if (/no such table/i.test(String(error?.message || error))) {
+      return Response.json({ ok: false, error: 'MIGRATION_REQUIRED' }, { status: 503 })
+    }
+    console.error('Plugin remote command failed:', error)
+    return Response.json({ ok: false, error: 'COMMAND_FAILED' }, { status: 500 })
   }
 }

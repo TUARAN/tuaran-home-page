@@ -29,6 +29,7 @@
   let chain = Promise.resolve();
   let scheduledUpload = null;
   let runtimeProvider = null;
+  let commandHandler = null;
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "comments", "notification-reply": "comments",
     "post-like": "likes", "reply-like": "likes",
@@ -233,9 +234,9 @@
     return run;
   }
 
-  async function postCurrent() {
+  async function postPayload(extra = {}) {
     const config = await ensureConfig();
-    if (!config.secret) return { ok: true, skipped: true };
+    if (!config.secret) return { ok: true, skipped: true, config };
     const version = root.chrome?.runtime?.getManifest?.().version || "";
     let runtime = null;
     try { runtime = await runtimeProvider?.(); } catch (error) {}
@@ -252,17 +253,33 @@
           platform: PLATFORM,
           extensionVersion: version,
           accountHandle: config.accountHandle,
-          events: config.queue,
-          ...(runtime ? { runtime } : {})
+          events: Array.isArray(extra.events) ? extra.events : config.queue,
+          ...(runtime ? { runtime } : {}),
+          ...(Array.isArray(extra.commandResults) ? { commandResults: extra.commandResults } : {})
         })
       });
     } catch (error) {
-      return { ok: false, error: "network" };
+      return { ok: false, error: "network", config };
     }
-    if (!response.ok) return { ok: false, error: `HTTP_${response.status}` };
-    config.queue = [];
-    await storageSet(config);
-    return { ok: true };
+    if (!response.ok) return { ok: false, error: `HTTP_${response.status}`, config };
+    const payload = typeof response.json === "function" ? await response.json().catch(() => ({})) : {};
+    return { ok: true, config, payload, commands: Array.isArray(payload?.commands) ? payload.commands : [] };
+  }
+
+  async function postCurrent() {
+    const posted = await postPayload();
+    if (!posted.ok) return posted;
+    if (posted.skipped) return posted;
+    posted.config.queue = [];
+    await storageSet(posted.config);
+    if (posted.commands.length && typeof commandHandler === "function") {
+      let results = [];
+      try { results = await commandHandler(posted.commands); } catch (error) { results = []; }
+      if (Array.isArray(results) && results.length) {
+        await postPayload({ events: [], commandResults: results.slice(0, 20) }).catch(() => {});
+      }
+    }
+    return { ok: true, commands: posted.commands };
   }
 
   function report(event) {
@@ -492,7 +509,7 @@
     loadBundledSecret().catch(() => {});
     if (!chrome?.alarms?.create || !chrome.alarms.onAlarm) return;
     try {
-      chrome.alarms.create(ALARM_NAME, { periodInMinutes: 2 });
+      chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm?.name === ALARM_NAME) heartbeatFromBackground().catch(() => {});
         if (alarm?.name === DAILY_ALARM_NAME) runScheduledDailyUpload().catch(() => {});
@@ -514,6 +531,8 @@
     accept,
     heartbeatFromBackground,
     setRuntimeProvider(provider) { runtimeProvider = typeof provider === "function" ? provider : null; },
+    setCommandHandler(handler) { commandHandler = typeof handler === "function" ? handler : null; },
+    createId,
     dailyReports,
     limitObservations,
     limitHypotheses,

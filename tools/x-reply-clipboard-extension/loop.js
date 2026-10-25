@@ -315,7 +315,12 @@
     return randomIntInclusive(minimum, maximum, random);
   }
 
+  function automationCooldownMs(retries) {
+    return Math.max(1, Math.floor(Number(retries) || 1)) * 10 * 60 * 1000;
+  }
+
   const api = {
+    automationCooldownMs,
     BATCH_SIZE,
     ROUNDS_PER_RUN,
     RUN_SIZE,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { buildXMonitorTrend, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { buildXMonitorTrend, enqueueXRemoteCommand, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -10,10 +10,91 @@ const NOW = Date.parse('2026-10-18T08:00:00Z')
 
 test('X task snapshot validates phases and does not accept arbitrary task names', () => {
   assert.equal(normalizeXRuntime({ phase: 'broken', tasks: [] }), null)
-  const runtime = normalizeXRuntime({ phase: 'running', tasks: [{ mode: 'timeline', phase: 'running', startedAt: NOW }, { mode: 'invalid', phase: 'running' }] })
-  assert.deepEqual(runtime.tasks.map((task) => task.mode), ['timeline'])
+  const runtime = normalizeXRuntime({
+    phase: 'running',
+    tasks: [
+      { mode: 'timeline', phase: 'running', startedAt: NOW },
+      { mode: 'notifications', phase: 'idle' },
+      { mode: 'likes-posts', phase: 'waiting', updatedAt: NOW },
+      { mode: 'invalid', phase: 'running' },
+    ],
+  })
+  assert.deepEqual(runtime.tasks.map((task) => [task.mode, task.phase]), [
+    ['timeline', 'running'],
+    ['notifications', 'idle'],
+    ['likes-posts', 'paused'],
+  ])
   const report = normalizeCommunityActionReport({ deviceId: 'device-x-monitor', platform: 'x', runtime: { phase: 'paused', tasks: [] } }, NOW)
   assert.equal(report.runtime.phase, 'paused')
+})
+
+test('runtime groups expose the four feature boards with idle fill-ins', () => {
+  const groups = presentXRuntimeGroups([
+    { mode: 'timeline', phase: 'running', updatedAt: NOW, detail: '正在回复' },
+    { mode: 'mutual-unfollow', phase: 'paused', updatedAt: NOW, detail: '风控等待中', waitUntil: NOW + 600000 },
+  ])
+  assert.deepEqual(groups.map((group) => [group.id, group.phase]), [
+    ['reply', 'running'],
+    ['likes', 'idle'],
+    ['mutual', 'waiting'],
+    ['poster', 'idle'],
+  ])
+  assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase]), [
+    ['timeline', 'running'],
+    ['notifications', 'idle'],
+  ])
+  assert.equal(groups[2].tasks[0].detail, '风控等待中')
+  assert.equal(groups[2].tasks[0].waitUntil, NOW + 600000)
+})
+
+test('remote commands enqueue and return on the next heartbeat report', async () => {
+  const calls = []
+  const rows = new Map()
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async run() {
+              calls.push({ sql, values })
+              if (sql.includes('INSERT INTO x_extension_commands')) {
+                rows.set(values[0], { id: values[0], device_id: values[1], command: values[2], mode: values[3], status: 'pending', created_at: values[4] })
+              }
+              if (sql.includes("status = 'claimed'")) {
+                const row = rows.get(values[1])
+                if (row) row.status = 'claimed'
+              }
+              if (sql.includes("status = ?") && sql.includes('finished_at')) {
+                const row = rows.get(values[3])
+                if (row) { row.status = values[0]; row.result = values[1] }
+              }
+              return { meta: { changes: 1 } }
+            },
+            async all() {
+              calls.push({ sql, values })
+              if (sql.includes("status = 'pending'")) {
+                return { results: [...rows.values()].filter((row) => row.status === 'pending' && row.device_id === values[0]) }
+              }
+              return { results: [] }
+            },
+          }
+        },
+      }
+    },
+  }
+  const queued = await enqueueXRemoteCommand(db, { deviceId: 'device-x-monitor', command: 'flow-pause' }, NOW)
+  assert.equal(queued.ok, true)
+  const recorded = await recordCommunityActionReport(db, {
+    deviceId: 'device-x-monitor', platform: 'x',
+    runtime: { phase: 'paused', tasks: [{ mode: 'timeline', phase: 'paused', detail: '站长后台已暂停全流程', waitUntil: 0 }] },
+  }, NOW)
+  assert.equal(recorded.commands[0].command, 'flow-pause')
+  const finished = await recordCommunityActionReport(db, {
+    deviceId: 'device-x-monitor', platform: 'x',
+    commandResults: [{ id: queued.id, status: 'done', result: '已暂停全流程' }],
+    runtime: { phase: 'paused', tasks: [] },
+  }, NOW + 1000)
+  assert.equal(finished.commandsFinished, 1)
 })
 
 test('monitor separates a fresh heartbeat from actual task state', () => {
@@ -34,6 +115,9 @@ test('monitor separates a fresh heartbeat from actual task state', () => {
   ]
   const result = presentXExtensionMonitor({ devices, runtimes, now: NOW, dateRange: xMonitorDateRange('2026-10-18', NOW), taskCounts: [{ task: 'timeline-reply', result: 'success', count: 431 }] })
   assert.deepEqual(result.devices.map((device) => device.phase), ['unknown', 'idle', 'running', 'paused', 'unknown', 'offline'])
+  assert.equal(result.devices.find((device) => device.id === 'fresh-run').groups[0].phase, 'running')
+  assert.equal(result.devices.find((device) => device.id === 'fresh-idle').groups.every((group) => group.phase === 'idle'), true)
+  assert.equal(result.devices.find((device) => device.id === 'fresh-old').groups.length, 0)
   assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 431)
 })
 
@@ -171,9 +255,9 @@ test('runtime heartbeat stores snapshot separately from action counts', async ()
     runtime: { phase: 'running', tasks: [{ mode: 'timeline', phase: 'running', startedAt: NOW }] },
   }, NOW)
   assert.equal(result.accepted, 0)
-  assert.equal(calls.length, 2)
-  assert.match(calls[1].sql, /x_extension_runtime/)
-  assert.equal(calls[1].values[2], 'running')
+  const runtimeCall = calls.find((call) => /x_extension_runtime/.test(call.sql))
+  assert.ok(runtimeCall)
+  assert.equal(runtimeCall.values[2], 'running')
 })
 
 test('extension heartbeat includes a task snapshot in the authenticated request', async () => {

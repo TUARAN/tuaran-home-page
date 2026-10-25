@@ -15,6 +15,31 @@ const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
 const devUpdate = require('../../tools/x-reply-clipboard-extension/devUpdate.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
+test('automation retries wait 10, 20, 30 minutes and keep increasing', () => {
+  assert.deepEqual([1, 2, 3, 4].map(loop.automationCooldownMs), [600000, 1200000, 1800000, 2400000])
+})
+
+test('follow and post tasks stay active while their automation cooldown grows', async () => {
+  for (const filename of ['mutual.js', 'poster.js']) {
+    const source = await readFile(new URL(filename, extensionDir), 'utf8')
+    const helper = source.match(/  function coolDownForRisk\(\) \{[\s\S]*?\n  \}/)?.[0]
+    assert.ok(helper)
+    const state = { running: true, stopping: false, mode: 'unfollow', riskCooldownUntil: 0, riskRetries: 0, cooldownUntil: 0, nextPostAt: 0 }
+    const sandbox = vm.createContext({
+      state, root: { XReplyClipboardLoop: loop }, Date: { now: () => 1000 },
+      sessionStorage: { setItem() {} }, emit() {}, formatClock: () => '10:00', savePublishList() {},
+    })
+    vm.runInContext(`${helper}\nglobalThis.cool = coolDownForRisk`, sandbox)
+    assert.equal(sandbox.cool(), true)
+    assert.equal(state.running, true)
+    assert.equal(state.riskCooldownUntil, 601000)
+    assert.equal(sandbox.cool(), false)
+    state.riskCooldownUntil = 0
+    assert.equal(sandbox.cool(), true)
+    assert.equal(state.riskCooldownUntil, 1201000)
+  }
+})
+
 test('reply and post pace controls use one compact row with accessible choices', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
@@ -158,13 +183,28 @@ test('failed local extension reload does not repeatedly restart Chrome tasks', a
   assert.equal(reloads, 0)
 })
 
-test('manual local update stops tasks before reloading and records task tabs for refresh', async () => {
+test('a failed version switch still attempts to restore tasks that were stopped for the update', async () => {
+  const values = { [devUpdate.RELOAD_KEY]: { version: '3.32.6', at: 1000, tabs: [7], resumeModes: { 7: 'timeline' } } }
+  const resumes = {}
+  const reloaded = []
+  const chromeApi = {
+    runtime: { getManifest: () => ({ version: '3.32.5' }) },
+    storage: {
+      local: { async get(key) { return { [key]: values[key] } }, async set(value) { Object.assign(values, value) }, async remove(key) { delete values[key] } },
+      session: { async set(value) { Object.assign(resumes, value) } },
+    },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+    tabs: { async get(id) { return { id, url: 'https://x.com/home' } }, async reload(id) { reloaded.push(id) } },
+  }
+  assert.equal(await devUpdate.finishReload(chromeApi, 2000), false)
+  assert.deepEqual(reloaded, [7])
+  assert.equal(resumes['xrcPendingTab:7'].start, true)
+  assert.match(values[devUpdate.STATUS_KEY].error, /已尝试恢复原任务/)
+})
+
+test('manual local update waits for active tasks instead of interrupting them', async () => {
   const values = {}
-  let clock = 1000
-  let active = true
-  let stopCalls = 0
   let reloads = 0
-  const events = []
   const chromeApi = {
     runtime: { getManifest: () => ({ version: '3.31.0' }), getURL: (path) => `chrome-extension://test/${path}` },
     storage: { local: {
@@ -177,18 +217,123 @@ test('manual local update stops tasks before reloading and records task tabs for
   const result = await devUpdate.applyNow({
     chromeApi,
     fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.0' }) }),
-    readRuntime: async () => ({ tasks: active ? { timeline: { tabId: 7 } } : {}, flow: { phase: active ? 'stopping' : 'paused' } }),
+    readRuntime: async () => ({ tasks: { timeline: { tabId: 7, phase: 'running' }, 'likes-posts': { tabId: 8, phase: 'paused' } }, flow: { phase: 'running' } }),
     taskTabs: async () => ({ tabs: { timeline: 7, notifications: 8 } }),
-    stopTasks: async (reason) => { stopCalls += 1; events.push('stop'); assert.match(reason, /先停止全部任务/); return { ok: true } },
-    sleep: async (ms) => { clock += ms; active = false }, now: () => clock,
-    reload: () => { events.push('reload'); reloads += 1 },
+    now: () => 1000,
+    reload: () => { reloads += 1 },
   })
   assert.equal(result.ok, true)
-  assert.equal(stopCalls, 1)
+  assert.equal(result.phase, 'waiting')
+  assert.equal(reloads, 0)
+  assert.equal(values[devUpdate.RELOAD_KEY], undefined)
+  assert.equal(values[devUpdate.STATUS_KEY].phase, 'waiting')
+  assert.equal((await devUpdate.check({
+    chromeApi, now: 62000,
+    fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.0' }) }),
+    readRuntime: async () => ({ tasks: {}, flow: { phase: 'idle' } }),
+    taskTabs: async () => ({ tabs: { timeline: 7, notifications: 8 } }),
+    reload: () => { reloads += 1 },
+  })).phase, 'applying')
   assert.equal(reloads, 1)
-  assert.deepEqual(events, ['stop', 'reload'])
-  assert.deepEqual(values[devUpdate.RELOAD_KEY].tabs, [7, 8])
-  assert.equal(values[devUpdate.STATUS_KEY].phase, 'applying')
+})
+
+test('manual update stops active tasks, reloads the extension, and restores only previously active modes', async () => {
+  const values = {}
+  const resumes = {}
+  const reloaded = []
+  const navigated = []
+  let active = true
+  let stops = 0
+  let reloads = 0
+  let installed = '3.32.5'
+  const chromeApi = {
+    runtime: { getManifest: () => ({ version: installed }), getURL: (path) => `chrome-extension://test/${path}` },
+    storage: {
+      local: {
+        async get(key) { return { [key]: values[key] } },
+        async set(value) { Object.assign(values, value) },
+        async remove(key) { delete values[key] },
+      },
+      session: { async set(value) { Object.assign(resumes, value) } },
+    },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+    tabs: {
+      async get(id) { return { id, url: id === 8 ? 'https://x.com/notifications' : 'https://x.com/home' } },
+      async reload(id) { reloaded.push(id) },
+      async update(id, options) { navigated.push([id, options.url]) },
+    },
+  }
+  const result = await devUpdate.applyNow({
+    chromeApi, force: true,
+    fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.6' }) }),
+    readRuntime: async () => ({ tasks: active ? { timeline: { tabId: 7, phase: 'running' }, 'likes-posts': { tabId: 8, phase: 'paused' } } : {}, flow: { phase: active ? 'running' : 'paused' } }),
+    taskTabs: async () => ({ tabs: { timeline: 7, 'likes-posts': 8, poster: 9 } }),
+    stopTasks: async () => { stops += 1; active = false; values.xrcPluginRuntime = { startedAt: null, tasks: {}, flow: { phase: 'paused' } }; return { ok: true } },
+    now: () => 1000,
+    reload: () => { reloads += 1 },
+  })
+  assert.equal(result.phase, 'applying')
+  assert.equal(stops, 1)
+  assert.equal(reloads, 1)
+  assert.deepEqual(values[devUpdate.RELOAD_KEY].resumeModes, { 7: 'timeline', 8: 'likes-posts' })
+  assert.deepEqual(values[devUpdate.RELOAD_KEY].tabs, [7, 8, 9])
+  installed = '3.32.6'
+  assert.equal(await devUpdate.finishReload(chromeApi, 2000), true)
+  assert.equal(values.xrcPluginRuntime.flow.phase, 'idle')
+  assert.deepEqual(reloaded, [7, 9])
+  assert.deepEqual(navigated, [[8, 'https://x.com/home']])
+  assert.equal(resumes['xrcPendingTab:7'].start, true)
+  assert.equal(resumes['xrcPendingTab:8'].start, true)
+  assert.equal(resumes['xrcPendingTab:9'], undefined)
+})
+
+test('manual update restores stopped tasks if it cannot prepare the new version', async () => {
+  const values = {}
+  const resumes = {}
+  const reloaded = []
+  let active = true
+  const chromeApi = {
+    runtime: { getManifest: () => ({ version: '3.32.5' }), getURL: (path) => `chrome-extension://test/${path}` },
+    storage: {
+      local: { async get(key) { return { [key]: values[key] } }, async set(value) { Object.assign(values, value) }, async remove(key) { delete values[key] } },
+      session: { async set(value) { Object.assign(resumes, value) } },
+    },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+    tabs: { async get(id) { return { id, url: 'https://x.com/home' } }, async reload(id) { reloaded.push(id) } },
+  }
+  const result = await devUpdate.applyNow({
+    chromeApi, force: true,
+    fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.6' }) }),
+    readRuntime: async () => ({ tasks: active ? { timeline: { tabId: 7, phase: 'running' } } : {}, flow: { phase: active ? 'running' : 'paused' } }),
+    stopTasks: async () => { active = false; return { ok: true } },
+    taskTabs: async () => { throw new Error('任务窗口读取失败') },
+    now: () => 1000,
+  })
+  assert.equal(result.ok, false)
+  assert.deepEqual(reloaded, [7])
+  assert.equal(resumes['xrcPendingTab:7'].start, true)
+  assert.match(result.error, /已尝试恢复原任务/)
+})
+
+test('version check marks the installed local version as latest', async () => {
+  const values = {}
+  const chromeApi = {
+    runtime: { getManifest: () => ({ version: '3.32.6' }), getURL: (path) => `chrome-extension://test/${path}` },
+    storage: { local: { async get(key) { return { [key]: values[key] } }, async set(value) { Object.assign(values, value) } } },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+  }
+  const result = await devUpdate.check({
+    chromeApi, now: 1000,
+    fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.6' }) }),
+  })
+  assert.equal(result, null)
+  assert.deepEqual(values[devUpdate.STATUS_KEY], { version: '3.32.6', phase: 'latest', at: 1000 })
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(source, /data-xrc-version-badge data-state="checking"/)
+  assert.match(source, /badge\.textContent = newer \? "有新版本"[^\n]*"最新版"/)
+  assert.match(source, /button\.hidden = phase === "updated" \|\| phase === "latest"/)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /stopTasks: pauseAllTasks,[\s\S]*?force: true/)
 })
 
 test('manual local update leaves tasks running when no newer version exists', async () => {
@@ -206,12 +351,11 @@ test('manual local update leaves tasks running when no newer version exists', as
   assert.match(result.error, /没有比当前扩展更新的版本/)
 })
 
-test('manual local update does not reload if tasks fail to stop', async () => {
+test('manual local update reloads immediately when all tasks are idle', async () => {
   const values = {}
-  let clock = 1000
   let reloads = 0
   const chromeApi = {
-    runtime: { getManifest: () => ({ version: '3.31.0' }), getURL: (path) => `chrome-extension://test/${path}` },
+    runtime: { getManifest: () => ({ version: '3.32.0' }), getURL: (path) => `chrome-extension://test/${path}` },
     storage: { local: {
       async get(key) { return { [key]: values[key] } },
       async set(value) { Object.assign(values, value) },
@@ -220,16 +364,42 @@ test('manual local update does not reload if tasks fail to stop', async () => {
     action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
   }
   const result = await devUpdate.applyNow({
-    chromeApi, fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.0' }) }),
-    readRuntime: async () => ({ tasks: { timeline: { tabId: 7 } }, flow: { phase: 'stopping' } }),
-    taskTabs: async () => ({ tabs: { timeline: 7 } }), stopTasks: async () => ({ ok: true }),
-    sleep: async (ms) => { clock += ms }, now: () => clock, stopWaitMs: 1000,
-    reload: () => { reloads += 1 },
+    chromeApi, fetchApi: async () => ({ ok: true, json: async () => ({ version: '3.32.1' }) }),
+    readRuntime: async () => ({ tasks: {}, flow: { phase: 'idle' } }),
+    taskTabs: async () => ({ tabs: { timeline: 7 } }),
+    now: () => 1000, reload: () => { reloads += 1 },
   })
-  assert.equal(result.ok, false)
-  assert.equal(reloads, 0)
-  assert.equal(values[devUpdate.STATUS_KEY].phase, 'failed')
+  assert.equal(result.phase, 'applying')
+  assert.equal(reloads, 1)
+  assert.deepEqual(values[devUpdate.RELOAD_KEY], { version: '3.32.1', at: 1000, tabs: [7], resumeModes: {} })
+})
+
+test('local update refreshes task tabs with resume intents without pausing them', async () => {
+  const values = { [devUpdate.RELOAD_KEY]: { version: '3.32.1', at: 1000, tabs: [7, 8], resumeModes: { 7: 'timeline', 8: 'likes-posts' } } }
+  const resumes = {}
+  const reloaded = []
+  const navigated = []
+  const chromeApi = {
+    runtime: { getManifest: () => ({ version: '3.32.1' }), getURL: (path) => `chrome-extension://test/${path}` },
+    storage: { local: {
+      async get(key) { return { [key]: values[key] } },
+      async set(value) { Object.assign(values, value) },
+      async remove(key) { delete values[key] },
+    }, session: { async set(value) { Object.assign(resumes, value) } } },
+    action: { async setBadgeText() {}, async setBadgeBackgroundColor() {} },
+    tabs: {
+      async get(id) { return { id, url: id === 7 ? 'https://x.com/home' : 'https://x.com/notifications' } },
+      async reload(id) { reloaded.push(id) },
+      async update(id, options) { navigated.push([id, options.url]) },
+    },
+  }
+  assert.equal(await devUpdate.finishReload(chromeApi, 2000), true)
+  assert.deepEqual(reloaded, [7])
+  assert.deepEqual(navigated, [[8, 'https://x.com/home']])
+  assert.deepEqual(resumes['xrcPendingTab:7'], { mode: 'timeline', path: '/home', start: true, at: 2000 })
+  assert.deepEqual(resumes['xrcPendingTab:8'], { mode: 'likes-posts', path: '/home', start: true, at: 2000 })
   assert.equal(values[devUpdate.RELOAD_KEY], undefined)
+  assert.equal(values[devUpdate.STATUS_KEY].phase, 'updated')
 })
 
 test('task close only removes the registered window shown by the arrow', async () => {
@@ -337,6 +507,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 3, stopping: 0, unknown: 1 })
   assert.equal(result.text, '2 项执行 · 1 项等待 · 3 项未启动 · 1 项待确认')
   assert.match(source, /data-xrc-flow-overview hidden/)
+  assert.match(source, /model\.status === "paused"[\s\S]*model\.status === "stopped"/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
 })
 
@@ -390,6 +561,22 @@ test('paused flow wins over stale stopping task records', async () => {
   context.pluginRuntime.tasks.timeline.updatedAt = Date.now() - 20000
   assert.equal(context.model().label, '重试停止')
   assert.equal(context.model().action, 'pause')
+})
+
+test('a running task remains visible when an old paused flow marker survives reload', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    flowStarting: false,
+    flowStopping: false,
+    pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'running', updatedAt: Date.now() } } },
+  })
+  vm.runInContext(`${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '暂停全部任务')
+  assert.equal(context.model().action, 'pause')
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /if \(phase !== "stopping"\)/)
 })
 
 test('limit observations retain per-account windows and deduplicate receipts', async () => {
@@ -594,6 +781,45 @@ test('reset requires an explicit confirmation that names cleared and retained da
   assert.match(source, /data-xrc-reset-confirm-action>确认清空/)
   assert.match(source, /resetTrigger\?\.addEventListener\("click", \(\) => \{[\s\S]*?resetDialog\.hidden = false/)
   assert.match(source, /data-xrc-reset-confirm-action\]"\)\?\.addEventListener\("click", async \(\) => \{[\s\S]*?sendExtensionMessage\(\{ type: "xrc-reset-state" \}\)/)
+})
+
+test('memory refresh reloads only idle registered task tabs and preserves state', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(source, /data-xrc-refresh-idle-tabs>优化闲置页/)
+  assert.match(source, /sendExtensionMessage\(\{ type: "xrc-refresh-idle-tabs" \}\)/)
+  const local = { xrcPluginRuntime: { tasks: { timeline: { tabId: 11, phase: 'running' } } }, xrcAutoLikeSeen: ['123'] }
+  const session = { xrcTaskTabs: { timeline: 11, 'likes-posts': 22, poster: 33 } }
+  const reloaded = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id } },
+      async reload(id) { reloaded.push(id) },
+    },
+  }
+  try {
+    const result = await background.refreshIdleTaskTabs({ tab: { id: 33 } })
+    assert.deepEqual(result, { ok: true, refreshed: 1, skipped: 1, reloadCurrent: true })
+    assert.deepEqual(reloaded, [22])
+    assert.deepEqual(local.xrcAutoLikeSeen, ['123'])
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('notification context cache drops oldest entries after 100 conversations', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function cacheNotificationContext\(id, conversation\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const context = vm.createContext({ Map, NOTIFICATION_CONTEXT_CACHE_LIMIT: 100, notificationContextCache: new Map() })
+  vm.runInContext(`${helper}\nglobalThis.add = cacheNotificationContext`, context)
+  for (let id = 0; id < 101; id += 1) context.add(String(id), { id })
+  assert.equal(context.notificationContextCache.size, 100)
+  assert.equal(context.notificationContextCache.has('0'), false)
+  assert.equal(context.notificationContextCache.has('100'), true)
 })
 
 test('clickbait preset switches the active post prompt and schedules an immediate save', async () => {
@@ -811,19 +1037,21 @@ test('like count limit cools down, preserves history, then resumes without a rap
   assert.deepEqual(limits, [['a', 'posts', 'rate-limited']])
 })
 
-test('repeated like rate limits stop automatic retries and persist the cooldown', async () => {
+test('repeated like rate limits extend the cooldown without rapidly retrying', async () => {
   let clock = 1000
   const saved = {}
-  const controller = autoLike.createController({
+  let controller
+  controller = autoLike.createController({
     document: { querySelector: () => ({ querySelectorAll: () => [] }), querySelectorAll: () => [{ textContent: 'You have exceeded your limit' }] },
     window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {} },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
     accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [10, 20, 30],
+    onUpdate(snapshot) { if (snapshot.rateLimitRetries === 4 && snapshot.cooldownUntil > clock) controller.stop() },
   })
   await controller.start()
-  assert.match(controller.snapshot().status, /已停止自动重试/)
+  assert.match(controller.snapshot().status, /已停止自动点赞/)
   assert.equal(controller.snapshot().rateLimitRetries, 4)
-  assert.ok(saved['xrcAutoLikeCooldown:a'].until > clock)
+  assert.equal(saved['xrcAutoLikeCooldown:a'].until - saved['xrcAutoLikeCooldown:a'].lastLimitedAt, 24 * 60 * 60 * 1000)
 })
 
 test('a restarted like task respects the saved account cooldown before clicking', async () => {
@@ -907,38 +1135,63 @@ test('reply-like task retries a temporary thread navigation failure without stop
   assert.equal(controller.snapshot().posts, 1)
 })
 
-test('auto-like refuses to click when X shows an automation restriction', async () => {
+test('auto-like cools down after an automation warning and retries when it clears', async () => {
+  let clock = 1000
   let clicks = 0
-  let warningVisible = true
-  let automationStatus = ''
+  let liked = false
+  let warningUntil = 1200
+  const updates = []
+  const saved = {}
   let controller
   const article = {
     querySelector(selector) {
       if (selector === 'time') return { closest: () => ({ href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click: () => {} }) }
-      if (selector === '[data-testid="like"]') return { click: () => { clicks += 1 } }
+      if (selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (selector === '[data-testid="like"]') return liked ? null : { click: () => { clicks += 1; liked = true } }
       return null
     },
   }
   const doc = {
     querySelector: () => ({ querySelectorAll: () => [article] }),
-    querySelectorAll: () => warningVisible ? [{ textContent: 'This request looks like it might be automated' }] : [],
+    querySelectorAll: () => clock < warningUntil ? [{ textContent: 'This request looks like it might be automated' }] : [],
   }
   controller = autoLike.createController({
     document: doc,
-    window: { location: { pathname: '/home' }, setTimeout, scrollBy: () => {} },
-    storage: { get: async () => ({}), set: async () => {} },
-    onLimit: () => { warningVisible = false },
-    onUpdate: (snapshot) => {
-      if (/疑似自动化/.test(snapshot.status)) {
-        automationStatus = snapshot.status
-      }
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    target: 'posts', now: () => clock, rateLimitCooldowns: [200],
+    onUpdate(snapshot) { updates.push(snapshot.status); if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(clicks, 1)
+  assert.ok(updates.some((status) => /疑似自动化.*分钟后自动重试/.test(status)))
+  assert.equal(saved['xrcAutoLikeCooldown:default'].reason, 'automation')
+  assert.equal(saved['xrcAutoLikeCooldown:default'].until, 601000)
+  assert.deepEqual(saved['xrcAutoLikeSeen:default:posts'], ['123'])
+  assert.equal(controller.snapshot().running, false)
+  assert.equal(controller.snapshot().count, 1)
+})
+
+test('an automation cooldown can be stopped without clicking a like', async () => {
+  let clock = 1000
+  let clicks = 0
+  const saved = {}
+  let controller
+  controller = autoLike.createController({
+    document: {
+      querySelector: () => ({ querySelectorAll: () => [{ querySelector: (selector) => selector === '[data-testid="like"]' ? { click() { clicks += 1 } } : null }] }),
+      querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
     },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {} },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    target: 'posts', now: () => clock, rateLimitCooldowns: [5000],
+    onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
   })
   await controller.start()
   assert.equal(clicks, 0)
-  assert.match(automationStatus, /疑似自动化|账号受限/)
   assert.equal(controller.snapshot().running, false)
-  assert.doesNotMatch(automationStatus, /自动重试/)
+  assert.equal(saved['xrcAutoLikeCooldown:default'].reason, 'automation')
+  assert.ok(saved['xrcAutoLikeCooldown:default'].until > clock)
 })
 
 test('settings auto-save batches edits and flushes before a task starts', async () => {
@@ -1126,6 +1379,109 @@ test('a failed X reply is recorded as skipped without increasing the success cou
   assert.equal(closes, 1)
   assert.equal(saved.total, 34)
   assert.equal(reports[0].errorCode, 'x-transient-error')
+})
+
+test('reply submission detects an X error inside the existing composer dialog', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function publishReply\(composer, replyText\) \{[\s\S]*?(?=\n  async function replyOnce\()/)?.[0]
+  assert.ok(helper)
+  const alert = { text: '' }
+  const composer = { dialog: { isConnected: true }, textbox: { isConnected: true }, submit: {} }
+  let clicks = 0
+  const sandbox = vm.createContext({
+    state: { stopping: false },
+    SUBMIT_TIMEOUT_MS: 5000, SEND_START_TIMEOUT_MS: 2500, SEND_CONFIRM_TIMEOUT_MS: 5000,
+    loopApi: { composerText: () => '待发送回复', normalizePhraseText: (text) => text, isSubmitEnabled: () => true },
+    findReplyRestrictionDialog: () => false, unavailablePostInDialog: () => false,
+    transientErrorVisible: () => Boolean(alert.text),
+    transientErrorNodes: () => alert.text ? [alert] : [],
+    textOf: (node) => node.text,
+    findDialogComposer: () => composer, waitUntil: async (predicate) => predicate(),
+    successNoticeNodes: () => [], unavailablePostToasts: () => [], unavailablePostVisible: () => false,
+    automationWarningNodes: () => [], duplicateReplyWarningVisible: () => false,
+    realClick: () => { clicks += 1; alert.text = 'Something went wrong, but don’t fret — let’s give it another shot.' },
+  })
+  vm.runInContext(`${helper}\nglobalThis.publish = publishReply`, sandbox)
+  assert.equal(await sandbox.publish(composer, '待发送回复'), 'transient-error')
+  assert.equal(clicks, 1)
+  assert.equal(await sandbox.publish(composer, '待发送回复'), 'transient-error')
+  assert.equal(clicks, 1)
+})
+
+test('persistent X send errors end the reply task with a visible reason', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function endReplyTaskAfterTransientError\(message\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const state = { running: true, stopping: false, pendingReply: '未发草稿', pendingTweetId: '123', status: '' }
+  let cleared = 0
+  let rendered = 0
+  const sandbox = vm.createContext({ state, clearSaved: () => { cleared += 1 }, renderPanel: () => { rendered += 1 } })
+  vm.runInContext(`${helper}\nglobalThis.end = endReplyTaskAfterTransientError`, sandbox)
+  assert.equal(sandbox.end('X 仍显示发送错误；评论任务已结束'), 'stopped')
+  assert.equal(state.running, false)
+  assert.equal(state.pendingReply, '')
+  assert.equal(state.status, 'X 仍显示发送错误；评论任务已结束')
+  assert.equal(cleared, 1)
+  assert.equal(rendered, 1)
+})
+
+test('a restricted reply enters a timed retry without stopping other tasks', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function applyRiskStop\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const state = { assistantMode: 'timeline', loopPromise: {}, running: true, stopping: false, riskPaused: false, riskCooldownUntil: 0, riskRetries: 0, status: '', total: 0 }
+  const calls = { like: 0, mutual: 0, poster: 0, canceled: 0, saved: 0 }
+  const acknowledgedAutomationNotices = new WeakMap()
+  const sandbox = vm.createContext({
+    state, Date: { now: () => 1000 }, loopApi: { automationCooldownMs: (retries) => retries * 600000 },
+    automationWarningNodes: () => [], acknowledgedAutomationNotices,
+    mutualApi: { coolDownForRisk() { calls.mutual += 1 } }, postApi: { coolDownForRisk() { calls.poster += 1 } },
+    cancelActiveAiRequest() { calls.canceled += 1 }, writeSaved() { calls.saved += 1 },
+    formatCountdown: () => '10:00', renderPanel() {},
+  })
+  vm.runInContext(`let riskRoundRequested = false;\n${helper}\nglobalThis.cool = applyRiskStop; globalThis.requested = () => riskRoundRequested`, sandbox)
+  sandbox.cool()
+  assert.equal(state.running, true)
+  assert.equal(state.riskPaused, true)
+  assert.equal(state.riskCooldownUntil, 601000)
+  assert.equal(sandbox.requested(), true)
+  assert.match(state.status, /后自动重试/)
+  assert.deepEqual(calls, { like: 0, mutual: 0, poster: 0, canceled: 1, saved: 1 })
+  sandbox.cool()
+  assert.equal(calls.canceled, 1)
+  state.riskCooldownUntil = 0
+  sandbox.cool()
+  assert.equal(state.riskCooldownUntil, 1201000)
+  state.assistantMode = 'mutual'
+  sandbox.cool()
+  assert.equal(calls.mutual, 1)
+  state.assistantMode = 'poster'
+  sandbox.cool()
+  assert.equal(calls.poster, 1)
+  const likeLimitHandler = source.match(/        onLimit\(accountHandle, target, errorCode\) \{[\s\S]*?\n        \},/)?.[0]
+  assert.ok(likeLimitHandler)
+  assert.doesNotMatch(likeLimitHandler, /xrc-flow-pause/)
+})
+
+test('a restricted reply waits for its deadline then resumes the same task', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function advanceRoundAfterRisk\([\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const state = { assistantMode: 'timeline', running: true, stopping: false, riskCooldownUntil: 601000, riskRetries: 1, riskPaused: true, total: 3 }
+  let waitedUntil = 0
+  let reloaded = 0
+  const sandbox = vm.createContext({
+    state, loopApi: loop, Date: { now: () => 1000 }, writeSaved() {}, formatCountdown: () => '10:00',
+    async waitForDeadline(deadline, status) { waitedUntil = deadline; assert.match(status(600000), /自动重试/); return true },
+    async reloadAndResume() { reloaded += 1; return true },
+  })
+  vm.runInContext(`let riskRoundRequested = true; let riskRoundAdvancing = false;\n${helper}\nglobalThis.resume = advanceRoundAfterRisk; globalThis.pending = () => riskRoundRequested`, sandbox)
+  assert.equal(await sandbox.resume(), 'reload')
+  assert.equal(waitedUntil, 601000)
+  assert.equal(reloaded, 1)
+  assert.equal(state.riskCooldownUntil, 0)
+  assert.equal(state.riskPaused, false)
+  assert.equal(sandbox.pending(), false)
 })
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
@@ -2443,7 +2799,7 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
   const context = vm.createContext({
     state, isFollowingPage: () => false, isFollowersPage: () => true, targetFollowHandleFromPath: () => '', listReady: () => true,
     loadSharedFollowRate: async () => {}, reset: (mode) => { state.running = true; state.mode = mode },
-    emit: () => {}, waitForSharedCooldown: async () => true, rateLimitVisible: () => false,
+    emit: () => {}, waitForSharedCooldown: async () => true, rateLimitVisible: () => false, automationWarningVisible: () => false,
     visibleRows: () => candidates, actFollowBack: async (item) => { picked.push(item.handle); state.stopping = true; return true },
     actUnfollow: async () => true, actTargetFollow: async () => true, reportMutualAction: () => {},
     waitForPlatformRateLimit: async () => true, persistSharedFollowRate: async () => {}, sleepActive: async () => {},
@@ -2479,7 +2835,7 @@ test('unfollow waits two seconds and rescans after reaching the bottom without a
     loadSharedFollowRate: async () => { storageReads += 1 },
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => {}, waitForSharedCooldown: async () => true,
-    rateLimitVisible: () => false, visibleRows: () => candidates,
+    rateLimitVisible: () => false, automationWarningVisible: () => false, visibleRows: () => candidates,
     actUnfollow: async () => { state.unfollowed += 1; if (state.unfollowed === 3) state.stopping = true; return true },
     actFollowBack: async () => true, actTargetFollow: async () => true,
     reportMutualAction: () => {}, waitForPlatformRateLimit: async () => true,
@@ -2651,7 +3007,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.0')
+  assert.equal(manifest.version, '3.32.13')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -2671,6 +3027,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(catalog, /resourceKey: 'resource:x-tweet-to-pdf-extension',[\s\S]*?legacy: true/)
   assert.match(catalog, /resourceKey: 'resource:x-mutual-cleaner-extension',[\s\S]*?legacy: true/)
   assert.match(backgroundSource, /xrc-tweet-pdf-open/)
+  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"timeline"[\s\S]*?"poster"\s*\]\)/)
+  assert.match(backgroundSource, /phase: "idle"/)
+  assert.match(backgroundSource, /phase = "unknown"/)
   const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
   await Promise.all(['pdf/print.js', 'pdf/print.css'].map((path) => readFile(new URL(path, extensionDir), 'utf8')))
   assert.match(printHtml, /print\.js/)
@@ -2792,12 +3151,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-report-page hidden aria-label="每日报告"/)
   assert.match(content, /data-xrc-monitor-current/)
   assert.match(content, /function syncMonitorMenu\(panel\)/)
-  assert.match(content, /点赞、关注和定时发帖的全部本地异常尚未统一进入消息中心|普通发帖异常目前不会全部转成站长监控通知/)
+  assert.match(content, /任务状态、风控倒计时及各项恢复规则，以站点文档中心为准/)
   assert.match(content, /功能导航/)
   assert.doesNotMatch(content, /当前助手/)
   assert.match(content, /通知回复/)
-  assert.match(content, /互关浇友/)
-  assert.match(content, /推文浇给/)
+  assert.match(content, /关注管理/)
+  assert.match(content, /定时发帖/)
   assert.match(content, /data-xrc-post-pace/)
   assert.match(content, /selectPosterPace/)
   assert.match(posterSource, /randomIntervalMs\(Math\.random, state\.schedulePace\)/)
@@ -2857,8 +3216,6 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /关注候选暂时停用|该功能暂时停用/)
   assert.match(content, /xrc-task-pending-remember/)
   assert.match(content, /state\.assistantMode === "poster" && await postApi\?\.resumeIfPending/)
-  assert.match(content, /回关粉丝优先处理姓名或简介含汉字的账号/)
-  assert.match(content, /两项扫到列表底部后 30 分钟重新扫描/)
   assert.match(content, /function selectMutualMode/)
   assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return openTaskTab\(mutualTaskKey\(mode\)\)/)
   assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
@@ -2884,14 +3241,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-post-prompt/)
   assert.doesNotMatch(content, /data-xrc-config-save/)
   assert.match(content, /scheduleConfigSave\(panel/)
-  assert.doesNotMatch(content, /当前内容/)
+  assert.doesNotMatch(content, /<strong>当前内容<\/strong>/)
   assert.doesNotMatch(content, /data-xrc-post-preview/)
-  assert.match(content, /每轮回复/)
-  assert.match(content, /插件不设置每日回复总量/)
   assert.doesNotMatch(content, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota|额度已用完/)
   assert.doesNotMatch(backgroundSource, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota/)
   assert.match(content, /class="xrc-round-pace xrc-pace-row"/)
-  assert.match(content, /频率调度/)
   assert.match(content, /data-xrc-collapse/)
   assert.match(content, /data-xrc-expand/)
   assert.match(content, /data-xrc-mini-progress/)
@@ -2955,7 +3309,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(transientMatcher, /Something went wrong/)
   assert.match(content, /本轮已结束，下一轮/)
   assert.doesNotMatch(content, /评论过于频繁，时间线和通知回复已停止/)
-  assert.match(backgroundSource, /\["timeline", "notifications"\]/)
+  assert.doesNotMatch(backgroundSource, /xrc-risk-stop-all/)
+  assert.match(content, /暂停全部任务/)
   assert.match(content, /data-xrc-config-open/)
   assert.match(content, /data-xrc-embed/)
   assert.match(content, /xrcPanelPlacement/)
@@ -2964,9 +3319,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /xrc-tab-index/)
   assert.match(resourcePage, /右侧搜索框下方/)
   assert.match(content, /data-xrc-docs-open/)
-  assert.match(content, /官方公开规则/)
-  assert.match(content, /技术上限不等于安全阈值或使用许可/)
-  assert.match(content, /X 没有公开反自动化评分算法/)
+  assert.match(content, /DOCS_BASE_URL = "https:\/\/2aran\.com\/resources\/x-reply-clipboard-extension\/docs"/)
   assert.match(content, /AUTOMATION_WARNING_RE/)
   assert.match(content, /DUPLICATE_REPLY_RE/)
   assert.match(content, /result === "duplicate-reply"/)
@@ -2976,7 +3329,6 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /post-unavailable/)
   assert.match(content, /原帖已删除或当前账号看不到，已跳过/)
   assert.match(content, /trying to reply to has been deleted or is not visible/)
-  assert.match(content, /15 分钟后从当前列表继续/)
   assert.match(content, /openMutualWindows/)
   assert.match(content, /mutual-unfollow/)
   assert.match(content, /mutual-followBack/)
@@ -2987,7 +3339,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /空评论框对不上当前帖子/)
   assert.doesNotMatch(content, /检测到其他评论弹窗/)
   assert.match(content, /nextRoundAt/)
-  assert.match(backgroundSource, /xrc-risk-stop-all/)
+  assert.doesNotMatch(backgroundSource, /xrc-risk-stop-all/)
   assert.match(resourcePage, /version: '3\.1\.2'/)
   assert.match(resourcePage, /version: '3\.1\.1'/)
   assert.match(resourcePage, /version: '3\.1\.0'/)
@@ -3011,16 +3363,50 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(toolItems, /role: 'Chrome 扩展 · 回复、互关与 AI 定时发推'/)
 })
 
-test('flow guidance lives in the documentation center with a navigable table of contents', async () => {
+test('documentation center opens the 2aran.com docs route with section hashes', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(content, /data-xrc-flow-docs[^>]*>打开文档中心并查看全流程说明/)
-  assert.match(content, /id="xrc-docs-flow"[\s\S]*全流程启动会打开对应窗口[\s\S]*顶部页签会打开尚未创建的任务窗口/)
-  assert.match(content, /data-xrc-docs-target="xrc-docs-flow"/)
-  assert.match(content, /data-xrc-docs-target="xrc-docs-frequency"/)
-  assert.match(content, /class="xrc-docs-actions"[\s\S]*class="xrc-docs-toc"[\s\S]*data-xrc-docs-close/)
-  assert.match(content, /target\?\.scrollIntoView\(\{ behavior: "smooth"/)
-  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(css, /\.xrc-docs-head > \.xrc-docs-actions \{[\s\S]*display: flex;[\s\S]*align-items: center;/)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const docsPage = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', extensionDir), 'utf8')
+  const resourcePage = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/page.jsx', extensionDir), 'utf8')
+  assert.match(content, /data-xrc-flow-docs[^>]*>打开站点文档 · 全流程说明/)
+  assert.match(content, /DOCS_BASE_URL = "https:\/\/2aran\.com\/resources\/x-reply-clipboard-extension\/docs"/)
+  assert.match(content, /window\.open\(`\$\{DOCS_BASE_URL\}\$\{hash\}`, "_blank", "noopener,noreferrer"\)/)
+  assert.match(content, /"xrc-docs-flow": "flow"/)
+  assert.match(content, /"xrc-docs-risk": "risk"/)
+  assert.match(content, /"xrc-docs-mutual-rules": "mutual-rules"/)
+  assert.match(content, /data-xrc-docs-target="xrc-docs-risk"/)
+  assert.match(content, /data-xrc-docs-target="xrc-docs-mutual-rules"/)
+  assert.doesNotMatch(content, /data-xrc-docs hidden/)
+  assert.doesNotMatch(content, /data-xrc-docs-close/)
+  assert.match(resourcePage, /href=\{`\/resources\/\$\{RESOURCE_SLUG\}\/docs`\}/)
+  assert.match(docsPage, /id="flow"/)
+  assert.match(docsPage, /id="states"/)
+  assert.match(docsPage, /id="risk"/)
+  assert.match(docsPage, /id="tasks"/)
+  assert.match(docsPage, /id="comments"/)
+  assert.match(docsPage, /id="likes"/)
+  assert.match(docsPage, /id="mutual-rules"/)
+  assert.match(docsPage, /id="poster"/)
+  assert.match(docsPage, /id="frequency"/)
+  assert.match(docsPage, /id="rules"/)
+  assert.match(docsPage, /id="maintenance"/)
+  assert.match(docsPage, /id="releases"/)
+  assert.match(docsPage, /全流程启动会打开对应窗口/)
+  assert.match(docsPage, /顶部页签会打开尚未创建的任务窗口/)
+  assert.match(docsPage, /执行中[\s\S]*等待中[\s\S]*停止中[\s\S]*已暂停[\s\S]*未启动[\s\S]*待确认/)
+  assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
+  assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
+  assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
+  assert.match(docsPage, /回关粉丝优先处理姓名或简介含汉字的账号/)
+  assert.match(docsPage, /回复默认“边界测试”/)
+  assert.match(docsPage, /插件不设每日回复总量/)
+  assert.match(docsPage, /频率与设置/)
+  assert.match(docsPage, /平台边界与官方来源/)
+  assert.match(docsPage, /不代表 X 认可的安全阈值/)
+  assert.match(docsPage, /https:\/\/help\.x\.com\/en\/rules-and-policies\/x-automation/)
+  assert.match(docsPage, /version: 'v3\.32\.13'/)
+  assert.match(content, /currentTaskDetail|currentTaskWaitUntil/)
+  assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
 })
 
 test('today totals expose a compact calendar entry and poster stats identify the current run', async () => {
@@ -3234,11 +3620,49 @@ test('full flow opens both like tasks and pauses them with the other tasks', asy
     }
     await background.pauseAllTasks()
     assert.equal(stopped.length, 7)
+    assert.equal(local.xrcPluginRuntime.flow.phase, 'paused')
+    assert.deepEqual(local.xrcPluginRuntime.tasks, {})
+    await background.updatePluginRuntime({ mode: 'poster', active: true, phase: 'running' }, { tab: { id: tabs.poster } })
+    assert.equal(local.xrcPluginRuntime.flow.phase, 'paused')
+    assert.deepEqual(local.xrcPluginRuntime.tasks, {})
+    local.xrcPluginRuntime.flow = { phase: 'paused', updatedAt: Date.now() - 30000 }
+    await background.updatePluginRuntime({ mode: 'poster', active: true, phase: 'running' }, { tab: { id: tabs.poster } })
+    assert.equal(local.xrcPluginRuntime.flow.phase, 'running')
+    assert.equal(local.xrcPluginRuntime.tasks.poster.phase, 'running')
     for (const mode of ['likes-posts', 'likes-replies']) {
       assert.ok(stopped.some(({ id, message }) => id === tabs[mode] && message.type === 'xrc-flow-stop'))
     }
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('stopping one task leaves other task tabs and the flow running', async () => {
+  const previousChrome = globalThis.chrome
+  const session = { xrcTaskTabs: { timeline: 11, poster: 22 } }
+  const local = { xrcPluginRuntime: {
+    tasks: { timeline: { tabId: 11, phase: 'running' }, poster: { tabId: 22, phase: 'running' } },
+    flow: { phase: 'running' },
+  } }
+  const messages = []
+  globalThis.chrome = {
+    storage: {
+      session: { async get(key) { return { [key]: session[key] } } },
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+    },
+    tabs: {
+      async get(id) { return { id } },
+      async sendMessage(id, message) { messages.push({ id, message }) },
+    },
+  }
+  try {
+    const result = await background.stopAllTaskTabs('当前任务受限', { modes: ['timeline'], phase: 'stopped' })
+    assert.deepEqual(messages.map(({ id }) => id), [11])
+    assert.equal(result.runtime.flow.phase, 'running')
+    assert.equal(result.runtime.tasks.timeline, undefined)
+    assert.equal(result.runtime.tasks.poster.phase, 'running')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

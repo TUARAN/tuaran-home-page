@@ -241,7 +241,7 @@ function OverviewPanel({ onOpenMode }) {
         description="依赖本机 Chrome 登录态。开始、停止和挡位在插件里；运行状态与确认回执统一在插件监控查看。"
         actions={<><AdminButton size="sm" href="/admin/community-actions/monitor">插件监控</AdminButton><AdminButton size="sm" variant="primary" onClick={() => onOpenMode('extension')}>打开插件台</AdminButton></>}
       >
-        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的本地上传报告也在那里查看。插件台管理共用密钥。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的自动同步日报也在那里查看。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>

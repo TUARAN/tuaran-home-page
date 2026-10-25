@@ -686,6 +686,56 @@ test('daily backfill uploads only older reports that changed since the last uplo
   }
 })
 
+test('heartbeat auto-syncs dirty daily reports including today', async () => {
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  const nowDate = receipt.shanghaiDate()
+  const stored = {
+    xrcCommunityReport: { secret: 'test-secret', deviceId: 'device-12345678', accountHandle: 'account', queue: [] },
+    xrcDailyReports: [
+      { date: '2026-10-21', accountHandle: 'account', counts: { comments: 2 }, updatedAt: 200, uploadedAt: 0 },
+      { date: nowDate, accountHandle: 'account', counts: { comments: 4 }, updatedAt: 400, uploadedAt: 0 },
+    ],
+  }
+  const bodies = []
+  globalThis.chrome = { runtime: { getManifest: () => ({ version: '3.32.14' }) }, storage: { local: {
+    async get(keys) {
+      const list = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(list.map((key) => [key, stored[key]]))
+    },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  globalThis.fetch = async (_url, options) => {
+    bodies.push(JSON.parse(options.body))
+    return { ok: true, async json() { return { dailyReportSaved: true, commands: [] } } }
+  }
+  try {
+    const result = await receipt.heartbeatFromBackground('account')
+    assert.equal(result.ok, true)
+    assert.equal(result.daily.uploaded, 2)
+    assert.deepEqual(bodies.filter((body) => body.dailyReport).map((body) => body.dailyReport.date), ['2026-10-21', nowDate])
+    assert.ok(stored.xrcDailyReports.every((row) => row.uploadedAt > 0))
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('daily report panel relies on automatic sync instead of manual upload or pull', async () => {
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const monitor = await readFile(new URL('../../app/(admin)/admin/community-actions/monitor/PluginMonitorClient.jsx', extensionDir), 'utf8')
+  assert.match(content, /心跳自动同步当日统计/)
+  assert.match(content, /data-xrc-daily-schedule/)
+  assert.doesNotMatch(content, /data-xrc-daily-upload(?!-|[a-z])/)
+  assert.doesNotMatch(content, /data-xrc-daily-pull/)
+  assert.doesNotMatch(content, /data-xrc-daily-upload-pending/)
+  assert.doesNotMatch(content, /同步云端/)
+  assert.doesNotMatch(content, /上传当日报告/)
+  assert.match(monitor, /自动同步日报/)
+  assert.match(monitor, /Daily Sync/)
+  assert.doesNotMatch(monitor, /本地上传报告/)
+})
+
 test('daily upload alarm starts at tomorrow 09:00 Shanghai time and retries failed uploads', async () => {
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
@@ -3007,7 +3057,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.13')
+  assert.equal(manifest.version, '3.32.14')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3400,6 +3450,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /回关粉丝优先处理姓名或简介含汉字的账号/)
   assert.match(docsPage, /回复默认“边界测试”/)
   assert.match(docsPage, /插件不设每日回复总量/)
+  assert.match(docsPage, /每日报告随心跳自动同步当日统计/)
+  assert.doesNotMatch(docsPage, /同步历史/)
   assert.match(docsPage, /频率与设置/)
   assert.match(docsPage, /平台边界与官方来源/)
   assert.match(docsPage, /不代表 X 认可的安全阈值/)

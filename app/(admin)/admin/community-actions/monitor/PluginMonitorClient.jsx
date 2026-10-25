@@ -251,15 +251,50 @@ export default function PluginMonitorClient() {
       {data?.platform === platform && !data.countsMigrationRequired ? <PluginMonitorTrend days={data.trend || []} tasks={data.tasks || []} selectedDate={selectedDate} onDateChange={changeDate} /> : <EmptyState title={data?.platform === platform && data.countsMigrationRequired ? '每日统计尚未就绪' : loading ? '正在读取动作趋势' : '暂无趋势数据'} description={data?.platform === platform && data.countsMigrationRequired ? '应用页面提示的数据库迁移后查看趋势。' : loading ? '请稍候。' : '请刷新重试。'} />}
     </Section>
 
-    <Section title={`${selectedDate} · 单日明细`} description={platform === 'x' ? '以下统计、任务结果和回执均属于所选北京时间日期；本地上传报告单独列出。' : '以下统计、任务结果和回执均属于所选北京时间日期。'} className="mt-5" actions={<div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, -1))} disabled={selectedDate <= minDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="前一天">←</button><input type="date" aria-label="选择单日明细日期" value={selectedDate} min={minDate} max={maxDate} onChange={(event) => changeDate(event.target.value)} className="rounded-md border border-[#d7dfd5] bg-white px-2.5 py-1.5 text-[13px] text-[#273228] dark:border-[#354438] dark:bg-[#101820] dark:text-gray-100" /><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, 1))} disabled={selectedDate >= maxDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="后一天">→</button><AdminButton size="sm" variant="ghost" onClick={() => changeDate(todayInShanghai())} disabled={selectedDate === maxDate}>今天</AdminButton></div>}>
+    <Section title={`${selectedDate} · 单日明细`} description={platform === 'x' ? '以下统计、任务结果和回执均属于所选北京时间日期；自动同步日报单独列出。' : '以下统计、任务结果和回执均属于所选北京时间日期。'} className="mt-5" actions={<div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, -1))} disabled={selectedDate <= minDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="前一天">←</button><input type="date" aria-label="选择单日明细日期" value={selectedDate} min={minDate} max={maxDate} onChange={(event) => changeDate(event.target.value)} className="rounded-md border border-[#d7dfd5] bg-white px-2.5 py-1.5 text-[13px] text-[#273228] dark:border-[#354438] dark:bg-[#101820] dark:text-gray-100" /><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, 1))} disabled={selectedDate >= maxDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="后一天">→</button><AdminButton size="sm" variant="ghost" onClick={() => changeDate(todayInShanghai())} disabled={selectedDate === maxDate}>今天</AdminButton></div>}>
       <dl className="-mx-4 -mt-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-3 md:-mx-5"><Metric label="确认成功" value={!visibleData || visibleData.countsMigrationRequired ? '—' : successes} detail="回执去重后的动作" tone="success" /><Metric label="失败 / 受限" value={!visibleData || visibleData.countsMigrationRequired ? '—' : issues} detail="需要查看明细" tone={issues ? 'warning' : 'default'} /><Metric label="回执总数" value={!visibleData || visibleData.countsMigrationRequired ? '—' : dailyTotal} detail="含成功、失败、受限和跳过" /></dl>
       <div className="mt-5 flex items-center justify-between gap-3"><div><h3 className="m-0 text-[14px] font-semibold text-[#273228] dark:text-gray-100">任务结果</h3><p className="mb-0 mt-0.5 text-[12px] text-[#7a8479] dark:text-gray-400">确认回执按任务聚合；默认隐藏没有动作的任务。</p></div>{activeTasks.length && activeTasks.length < tasks.length ? <button type="button" onClick={() => setShowAllTasks((value) => !value)} className="shrink-0 text-[12px] font-medium text-emerald-700 hover:underline dark:text-emerald-300">{showAllTasks ? '隐藏空任务' : `显示全部 ${tasks.length} 项`}</button> : null}</div>
       {shownTasks.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-[13px]"><thead className="text-[12px] text-[#7a8479] dark:text-gray-400"><tr><th className="py-2 font-medium">任务</th><th className="py-2 text-right font-medium">成功</th><th className="py-2 text-right font-medium">失败</th><th className="py-2 text-right font-medium">跳过</th><th className="py-2 text-right font-medium">受限</th></tr></thead><tbody>{shownTasks.map((task) => <tr key={task.task} className="border-t border-[#e5e9e2] dark:border-[#263142]"><th scope="row" className="py-2.5 font-medium text-[#273228] dark:text-gray-100">{task.label}</th><td className="py-2.5 text-right font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{task.success}</td><td className="py-2.5 text-right tabular-nums">{task.failed}</td><td className="py-2.5 text-right tabular-nums">{task.skipped}</td><td className="py-2.5 text-right tabular-nums">{task.limited}</td></tr>)}</tbody></table></div> : <div className="mt-3"><EmptyState title={visibleData?.countsMigrationRequired ? '每日统计尚未就绪' : loading ? '正在读取任务结果' : '这一天没有确认动作'} description={visibleData?.countsMigrationRequired ? '动作回执仍可在下方查看；请先应用数据库迁移。' : loading ? '请稍候。' : '选择其他日期，或等待插件上报动作回执。'} /></div>}
     </Section>
 
-    {platform === 'x' ? <Section title={`${selectedDate} · 本地上传报告`} description="X 插件在本地统计成功动作，点击插件里的「上传报告」后更新；与确认回执是两份独立记录。" className="mt-5">
-      {visibleData?.dailyMigrationRequired ? <p role="alert" className="text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
-      {reports.length ? <div className="-mx-4 -my-4 divide-y divide-[#e5e9e2] dark:divide-[#263142] md:-mx-5">{reports.map((report) => <div key={`${report.deviceId}:${report.accountHandle}`} className="grid gap-2 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center md:px-5"><div className="min-w-0"><p className="m-0 truncate text-[13px] font-semibold text-[#273228] dark:text-gray-100">{report.accountHandle ? `@${report.accountHandle}` : '账号未识别'}</p><p className="mb-0 mt-0.5 text-[11px] text-[#7a8479] dark:text-gray-400">设备 {report.deviceId.slice(0, 12)}… · 上传于 {time(report.uploadedAt)}</p></div><div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] tabular-nums text-[#4e5b50] dark:text-gray-300"><span>评论 <strong>{report.comments}</strong></span><span>点赞 <strong>{report.likes}</strong></span><span>关注 <strong>{report.follows}</strong></span><span>取关 <strong>{report.unfollows}</strong></span><span>回关 <strong>{report.followBacks}</strong></span><span>发帖 <strong>{report.posts}</strong></span></div></div>)}</div> : <EmptyState title={loading ? '正在读取每日报告' : '这一天没有上传的报告'} description={loading ? '请稍候。' : '在 X 插件主面板选择日期并点击「上传报告」。'} />}
+    {platform === 'x' ? <Section title={`${selectedDate} · 自动同步日报`} description="插件本地确认成功的动作计数，经心跳与每日 09:00 定时任务自动写入；与确认回执是两份独立记录。" className="mt-5">
+      {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
+      {reports.length ? <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
+        <div className="flex items-center justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
+          <div>
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">Daily Sync</p>
+            <p className="mb-0 mt-1 text-[12px] text-[#536471] dark:text-gray-400">与插件面板「每日报告」同一套计数；无需手动上传或拉取。</p>
+          </div>
+          <StatusPill size="sm" tone="info">自动</StatusPill>
+        </div>
+        <div className="grid gap-0 sm:grid-cols-2">
+          {reports.map((report) => (
+            <article key={`${report.deviceId}:${report.accountHandle}`} className="border-t border-[#e8eef5] px-4 py-3 sm:border-r sm:odd:border-r dark:border-[#263142] sm:[&:nth-child(2n)]:border-r-0">
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="m-0 truncate text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">{report.accountHandle ? `@${report.accountHandle}` : '账号未识别'}</h3>
+                  <p className="mb-0 mt-0.5 text-[11px] text-[#536471] dark:text-gray-400">设备 {report.deviceId.slice(0, 12)}… · 同步于 {time(report.uploadedAt)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {[
+                  ['评论', report.comments],
+                  ['点赞', report.likes],
+                  ['关注', report.follows],
+                  ['取关', report.unfollows],
+                  ['回关', report.followBacks],
+                  ['发帖', report.posts]
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-2 py-2 text-center dark:border-[#263142] dark:bg-[#101820]">
+                    <p className="m-0 text-[10px] text-[#536471] dark:text-gray-400">{label}</p>
+                    <p className="mb-0 mt-0.5 text-[14px] font-semibold tabular-nums text-[#0f1419] dark:text-gray-100">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div> : <EmptyState title={loading ? '正在读取每日报告' : '这一天还没有同步报告'} description={loading ? '请稍候。' : '配置回执密钥并保持浏览器运行后，插件会按心跳与每日 09:00 自动同步。'} />}
       <AdminPagination total={visibleData?.reportTotal || 0} offset={reportOffset} limit={visibleData?.reportLimit || 20} loading={loading} onOffsetChange={setReportOffset} />
     </Section> : null}
 

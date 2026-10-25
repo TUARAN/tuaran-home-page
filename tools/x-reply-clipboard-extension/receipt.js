@@ -351,12 +351,21 @@
     return enqueue(() => uploadDailyNow(date, accountHandle));
   }
 
-  function uploadPendingDailyReports(beforeDate = shanghaiDate()) {
+  function dirtyDailyRows({ includeToday = true, beforeDate = shanghaiDate() } = {}) {
+    return dailyReports().then((rows) => rows
+      .filter((row) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/u.test(row?.date || "")) return false;
+        const dirty = !Number(row.uploadedAt) || Number(row.updatedAt) > Number(row.uploadedAt);
+        if (!dirty) return false;
+        if (includeToday && row.date === beforeDate) return true;
+        return row.date < beforeDate;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date) || String(a.accountHandle || "").localeCompare(String(b.accountHandle || ""))));
+  }
+
+  function uploadPendingDailyReports(beforeDate = shanghaiDate(), { includeToday = false } = {}) {
     return enqueue(async () => {
-      const rows = (await dailyReports())
-        .filter((row) => /^\d{4}-\d{2}-\d{2}$/u.test(row?.date || "") && row.date < beforeDate
-          && (!Number(row.uploadedAt) || Number(row.updatedAt) > Number(row.uploadedAt)))
-        .sort((a, b) => a.date.localeCompare(b.date));
+      const rows = await dirtyDailyRows({ includeToday, beforeDate });
       let uploaded = 0;
       for (const row of rows) {
         const result = await uploadDailyNow(row.date, row.accountHandle);
@@ -365,6 +374,19 @@
       }
       return { ok: true, uploaded, pending: 0 };
     });
+  }
+
+  async function syncDailyReportsQuietly({ includeToday = true, limit = 3 } = {}) {
+    const config = await ensureConfig();
+    if (!config.secret) return { ok: true, skipped: true, uploaded: 0 };
+    const rows = (await dirtyDailyRows({ includeToday })).slice(0, Math.max(1, Number(limit) || 3));
+    let uploaded = 0;
+    for (const row of rows) {
+      const result = await uploadDailyNow(row.date, row.accountHandle);
+      if (!result.ok) return { ok: false, uploaded, error: result.error, failedDate: row.date };
+      uploaded += 1;
+    }
+    return { ok: true, uploaded, pending: Math.max(0, (await dirtyDailyRows({ includeToday })).length) };
   }
 
   function tomorrowShanghaiNine(now = Date.now()) {
@@ -379,7 +401,7 @@
   async function runScheduledDailyUpload() {
     if (scheduledUpload) return scheduledUpload;
     scheduledUpload = (async () => {
-      const result = await uploadPendingDailyReports();
+      const result = await uploadPendingDailyReports(shanghaiDate(), { includeToday: true });
       const nextRunAt = result.ok ? tomorrowShanghaiNine() : Date.now() + 15 * 60 * 1000;
       const schedule = { nextRunAt, lastAttemptAt: Date.now(), lastResult: result };
       await root.chrome.storage.local.set({ [DAILY_SCHEDULE_KEY]: schedule });
@@ -463,7 +485,12 @@
       const handle = cleanHandle(accountHandle);
       if (handle) config.accountHandle = handle;
       await storageSet(config);
-      return postCurrent();
+      const heartbeat = await postCurrent();
+      const daily = await syncDailyReportsQuietly({ includeToday: true, limit: 3 }).catch((error) => ({
+        ok: false,
+        error: error?.message || "日报同步失败"
+      }));
+      return { ...heartbeat, daily };
     });
   }
 
@@ -541,6 +568,8 @@
     recordLimitObservation,
     uploadDaily,
     uploadPendingDailyReports,
+    syncDailyReportsQuietly,
+    dirtyDailyRows,
     dailyUploadSchedule,
     installDailyUploadSchedule,
     runScheduledDailyUpload,

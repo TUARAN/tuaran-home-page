@@ -95,7 +95,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.13";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.14";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -343,10 +343,14 @@
     }
     const dailyFollows = panel.querySelector("[data-xrc-daily-follows]");
     if (dailyFollows) dailyFollows.textContent = String(dayCounts.follows + dayCounts.followBacks);
-    const upload = panel.querySelector("[data-xrc-daily-upload]");
-    if (upload) upload.disabled = selected.length !== 1;
     const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
-    if (uploaded) uploaded.textContent = selected.length > 1 ? "请选择一个账号后上传" : !selected.length ? "当日无记录" : selected[0].uploadedAt ? `上次上传：${new Date(selected[0].uploadedAt).toLocaleString("zh-CN")}` : "尚未上传";
+    if (uploaded) {
+      if (!selected.length) uploaded.textContent = "当日无记录";
+      else if (selected.every((row) => row.uploadedAt && Number(row.updatedAt || 0) <= Number(row.uploadedAt))) {
+        const latest = Math.max(...selected.map((row) => Number(row.uploadedAt) || 0));
+        uploaded.textContent = `已自动同步 · ${new Date(latest).toLocaleString("zh-CN")}`;
+      } else uploaded.textContent = "待自动同步到站长后台";
+    }
   }
 
   async function refreshDailyReport(panel) {
@@ -364,11 +368,11 @@
     if (scheduleLine) {
       const last = dailyUploadSchedule?.lastResult;
       scheduleLine.textContent = last?.ok === false
-        ? `自动上传待重试：${last.error}；本地报告已保留`
-        : `每天北京时间 09:00 上传前一天报告；电脑休眠或浏览器关闭后会补传。${last?.uploaded ? `上次同步 ${last.uploaded} 份。` : ""}`;
+        ? `自动同步待重试：${last.error}；本地报告已保留`
+        : `心跳自动同步当日统计；每天北京时间 09:00 补传前一天。休眠或关闭浏览器后下次启动会继续。${last?.uploaded ? `上次定时同步 ${last.uploaded} 份。` : ""}`;
     }
     const status = panel.querySelector("[data-xrc-daily-status]");
-    if (recovery?.changed && status) status.textContent = "已把本机旧账号记录合并到当前账号；确认后可上传当日报告。";
+    if (recovery?.changed && status) status.textContent = "已把本机旧账号记录合并到当前账号；后续由自动同步写入后台。";
   }
   let configSaveTimer = 0;
   let configSavePromise = Promise.resolve();
@@ -3433,7 +3437,7 @@
         </section>
         <section class="xrc-report-page" data-xrc-report-page hidden aria-label="每日报告">
           <div class="xrc-docs-head">
-            <div><small>DAILY REPORT</small><strong>每日报告</strong><span>本地累计与每日记录</span></div>
+            <div><small>DAILY REPORT</small><strong>每日报告</strong><span>本机累计，自动同步到站长后台</span></div>
             <button type="button" data-xrc-report-close aria-label="关闭每日报告">×</button>
           </div>
           <div class="xrc-docs-content">
@@ -3459,9 +3463,11 @@
                 <span>关注 <b data-xrc-daily-follows>0</b></span><span>取关 <b data-xrc-daily-unfollows>0</b></span>
                 <span>发帖 <b data-xrc-daily-posts>0</b></span>
               </div>
-              <div class="xrc-daily-actions"><small data-xrc-daily-uploaded>尚未上传</small><span><button type="button" data-xrc-daily-pull>同步云端</button><button type="button" data-xrc-daily-upload disabled>上传当日报告</button></span></div>
-              <div class="xrc-daily-auto"><small data-xrc-daily-schedule>每天 09:00 自动上传前一天报告</small><button type="button" data-xrc-daily-upload-pending>同步历史</button></div>
-              <p class="xrc-report-status" data-xrc-daily-status role="status">只统计插件确认成功的操作，按北京时间保存在本机。</p>
+              <div class="xrc-daily-auto">
+                <small data-xrc-daily-uploaded>等待自动同步</small>
+                <small data-xrc-daily-schedule>心跳自动同步当日统计；每天 09:00 补传前一天</small>
+              </div>
+              <p class="xrc-report-status" data-xrc-daily-status role="status">只统计插件确认成功的操作。本机保存，并按心跳和定时任务自动同步到站长后台。</p>
             </section>
           </div>
         </section>
@@ -4035,57 +4041,6 @@
           showDailyReport(panel);
         });
       }
-      panel.querySelector("[data-xrc-daily-upload]")?.addEventListener("click", async () => {
-        const selected = dailyReports.filter((report) => report.date === dailyReportDate && (dailyReportAccount === "__all__" || report.accountHandle === dailyReportAccount));
-        if (selected.length !== 1) return;
-        const button = panel.querySelector("[data-xrc-daily-upload]");
-        const status = panel.querySelector("[data-xrc-daily-status]");
-        button.disabled = true;
-        status.textContent = "正在上传…";
-        try {
-          const result = await sendExtensionMessage({ type: "xrc-daily-upload", date: selected[0].date, accountHandle: selected[0].accountHandle });
-          if (!result?.ok) throw new Error(result?.error || "上传失败");
-          await refreshDailyReport(panel);
-          status.textContent = "已上传到 2aran.com 后台的「社区动作 → 浏览器插件」。";
-        } catch (error) {
-          status.textContent = error?.message || "上传失败，报告仍保存在本机";
-          button.disabled = false;
-        }
-      });
-      panel.querySelector("[data-xrc-daily-upload-pending]")?.addEventListener("click", async () => {
-        const button = panel.querySelector("[data-xrc-daily-upload-pending]");
-        const status = panel.querySelector("[data-xrc-daily-status]");
-        button.disabled = true;
-        status.textContent = "正在同步昨天及更早尚未上传的报告…";
-        try {
-          const result = await sendExtensionMessage({ type: "xrc-daily-upload-pending" });
-          if (!result?.ok) throw new Error(`${result?.error || "同步失败"}；已同步 ${result?.uploaded || 0} 份`);
-          await refreshDailyReport(panel);
-          status.textContent = `已同步 ${result.uploaded} 份历史报告；今天的报告明早 09:00 上传。`;
-        } catch (error) {
-          status.textContent = error?.message || "同步失败，报告仍保存在本机";
-        } finally {
-          button.disabled = false;
-        }
-      });
-      panel.querySelector("[data-xrc-daily-pull]")?.addEventListener("click", async () => {
-        const button = panel.querySelector("[data-xrc-daily-pull]");
-        if (button) { button.disabled = true; button.textContent = "恢复中…"; }
-        try {
-          const result = await sendExtensionMessage({ type: "xrc-daily-pull", accountHandle: currentAccountHandle() });
-          if (!result?.ok) throw new Error(result?.error || "恢复失败");
-          await refreshDailyReport(panel);
-          const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
-          if (uploaded) uploaded.textContent = result.fallbackUsed
-            ? `已从云端旧账号记录同步 ${result.reports || 0} 天`
-            : `已从云端同步 ${result.reports || 0} 天记录`;
-        } catch (error) {
-          const uploaded = panel.querySelector("[data-xrc-daily-uploaded]");
-          if (uploaded) uploaded.textContent = error?.message || "恢复失败";
-        } finally {
-          if (button) { button.disabled = false; button.textContent = "同步云端"; }
-        }
-      });
       panel.querySelector("[data-xrc-flow-help]")?.addEventListener("click", () => {
         openDocs("xrc-docs-flow");
       });

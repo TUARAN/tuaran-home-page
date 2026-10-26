@@ -46,7 +46,7 @@ export default function PlateExhibition({ plates }) {
             <div className={styles.exhibitImage}>
               <span className={styles.exhibitNumber}>PLATE {String(index + 1).padStart(2, '0')}</span>
               <a href={plate.src} target="_blank" rel="noopener noreferrer" aria-label={`查看${plate.title}原图`}>
-                <Image src={plate.src} width={plate.width} height={plate.height} alt={`${plate.title}：${plate.caption}`} sizes="(max-width: 700px) 84vw, 530px" priority={index === 0} />
+                <Image src={plate.src} width={plate.width} height={plate.height} alt={`${plate.title}：${plate.caption}`} sizes="(max-width: 700px) 88vw, 410px" priority={index === 0} />
               </a>
             </div>
             <figcaption>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { AdminPage } from '../../components/ui'
 
@@ -90,6 +90,7 @@ export default function DbAdminClient({ embedded = false }) {
   const [tableDetails, setTableDetails] = useState({})
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
+  const catalogRef = useRef(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -148,6 +149,13 @@ export default function DbAdminClient({ embedded = false }) {
 
   const selectedMeta = tables.find((table) => table.name === selectedTable) || null
   const selected = selectedTable ? tableDetails[selectedTable] || selectedMeta : null
+  const missingTables = snapshot?.missingTables || []
+  const unlistedCount = snapshot?.extraTables?.length || 0
+  const showUnlistedTables = () => {
+    setSearch('')
+    setGroup('未归类')
+    catalogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
   const healthTone =
     snapshot?.status === 'connected'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
@@ -184,20 +192,37 @@ export default function DbAdminClient({ embedded = false }) {
 
       <section className="mb-5 grid gap-3 sm:grid-cols-3">
         <Stat label="连接状态" value={stateLabel(snapshot)} toneClass={healthTone} />
-        <Stat label="表数量" value={formatNumber(snapshot?.tableCount)} hint={`预期 ${formatNumber(snapshot?.expectedTables)} 张`} />
+        <Stat label="表数量" value={formatNumber(snapshot?.tableCount)} hint={`说明清单收录 ${formatNumber(snapshot?.expectedTables)} 张`} />
         <Stat label="刷新时间" value={formatTime(snapshot?.generatedAt)} compact />
       </section>
 
-      {(snapshot?.missingTables?.length || snapshot?.extraTables?.length) ? (
-        <section className="mb-5 grid gap-3 md:grid-cols-2">
-          <ListNotice title="缺失预期表" items={snapshot.missingTables} empty="无" />
-          <ListNotice title="额外表" items={snapshot.extraTables} empty="无" />
+      {snapshot?.status === 'connected' ? (
+        <section className="mb-5 rounded-xl border border-[#d5d7cd] bg-white/70 px-4 py-3 text-sm dark:border-[#252e39] dark:bg-[#10161f]">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <h2 className="font-semibold text-[#15140f] dark:text-gray-100">说明清单核对</h2>
+            <span className={missingTables.length ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}>
+              清单中缺失 {missingTables.length} 张
+            </span>
+            <span className="text-[#63645a] dark:text-[#9aa6b6]">尚未收录说明 {unlistedCount} 张</span>
+            {unlistedCount ? (
+              <button type="button" onClick={showUnlistedTables} className="font-medium text-[#775726] underline underline-offset-2 hover:text-[#15140f] dark:text-[#d5b36a] dark:hover:text-white">
+                在表目录中查看
+              </button>
+            ) : null}
+          </div>
+          {missingTables.length ? (
+            <details className="mt-2 border-t border-[#e5e6df] pt-2 dark:border-[#252e39]">
+              <summary className="cursor-pointer text-[#63645a] dark:text-[#9aa6b6]">查看缺失的表名</summary>
+              <ul className="mt-2 grid max-h-48 gap-x-4 gap-y-1 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+                {missingTables.map((name) => <li key={name} className="break-all font-mono text-xs text-[#63645a] dark:text-[#9aa6b6]">{name}</li>)}
+              </ul>
+            </details>
+          ) : null}
+          <p className="mt-2 text-xs leading-5 text-[#858779] dark:text-[#8e9ab0]">说明清单用于标注表用途；未收录说明不代表数据库异常。</p>
         </section>
       ) : null}
 
-      <PoemcnMigrationRunbook />
-
-      <section className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <section ref={catalogRef} className="mb-4 flex scroll-mt-6 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {groups.map((item) => (
             <FilterChip key={item} current={group} value={item} onClick={setGroup}>
@@ -213,6 +238,10 @@ export default function DbAdminClient({ embedded = false }) {
           className="w-full rounded-lg border border-[#caccc0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#a37b3c] dark:border-[#2d3744] dark:bg-[#10161f] dark:text-gray-100 sm:w-80"
         />
       </section>
+
+      <p className="mb-2 text-xs text-[#63645a] dark:text-[#9aa6b6]" role="status">
+        显示 {filteredTables.length} / {tables.length} 张表 · 点开表名查看字段、索引和行数
+      </p>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="overflow-hidden rounded-xl border border-[#d5d7cd] dark:border-[#252e39]">
@@ -253,8 +282,8 @@ export default function DbAdminClient({ embedded = false }) {
                           {table.group}
                         </span>
                         {!table.expected ? (
-                          <span className="rounded bg-[#e4e9d6] px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a6b2e] dark:bg-[#1b1c13] dark:text-[#9aa27a]">
-                            extra
+                          <span className="rounded bg-[#e4e9d6] px-1.5 py-px text-[10px] text-[#8a6b2e] dark:bg-[#1b1c13] dark:text-[#9aa27a]">
+                            未收录说明
                           </span>
                         ) : null}
                       </div>
@@ -323,6 +352,15 @@ export default function DbAdminClient({ embedded = false }) {
           )}
         </aside>
       </section>
+
+      <details className="mt-8 rounded-xl border border-[#c9c4af] bg-[#fbfaf3] dark:border-[#3b3b2d] dark:bg-[#17170f]">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#34342e] dark:text-gray-200">
+          阿燃诗词数据库改造运行手册 · 独立 D1
+        </summary>
+        <div className="px-3 pb-3">
+          <PoemcnMigrationRunbook />
+        </div>
+      </details>
     </AdminPage>
   )
 }
@@ -454,17 +492,6 @@ function Stat({ label, value, hint, toneClass, compact = false }) {
       <div className="font-mono text-[10px] uppercase tracking-[0.18em] opacity-70">{label}</div>
       <div className={`mt-1 font-semibold ${compact ? 'text-sm' : 'text-2xl'}`}>{value}</div>
       {hint ? <div className="text-[11px] opacity-70">{hint}</div> : null}
-    </div>
-  )
-}
-
-function ListNotice({ title, items, empty }) {
-  return (
-    <div className="rounded-xl border border-[#d5d7cd] bg-white/70 px-4 py-3 text-sm dark:border-[#252e39] dark:bg-[#10161f]">
-      <b className="block text-[#15140f] dark:text-gray-100">{title}</b>
-      <p className="mt-1 break-words font-mono text-[12px] text-[#63645a] dark:text-[#9aa6b6]">
-        {items?.length ? items.join('、') : empty}
-      </p>
     </div>
   )
 }

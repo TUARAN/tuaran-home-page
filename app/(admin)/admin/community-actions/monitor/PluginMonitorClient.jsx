@@ -327,9 +327,9 @@ export default function PluginMonitorClient() {
                 {[
                   ['评论', report.comments],
                   ['点赞', report.likes],
-                  ['关注', report.follows],
+                  ['关注（含回关）', report.follows + report.followBacks],
                   ['取关', report.unfollows],
-                  ['回关', report.followBacks],
+                  ['其中回关', report.followBacks],
                   ['发帖', report.posts]
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-2 py-2 text-center dark:border-[#263142] dark:bg-[#101820]">

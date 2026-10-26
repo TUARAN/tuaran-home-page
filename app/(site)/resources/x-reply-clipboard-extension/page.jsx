@@ -344,7 +344,7 @@ export default function XReplyClipboardResourcePage() {
           </span>
         </div>
 
-        <div className="mx-auto mt-8 grid max-w-[1020px] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,370px)] lg:gap-12">
+        <div className="mt-8 grid w-full items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
           <div className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
@@ -389,21 +389,22 @@ export default function XReplyClipboardResourcePage() {
             </div>
           </div>
 
-          <figure className="mx-auto w-full max-w-[370px] lg:my-0">
+          <figure className="mx-auto w-full max-w-[360px] lg:my-0">
             <Image
               src="/images/x-reply-clipboard-extension/panel-real-v3.32.20.webp"
-              alt="在 X 页面运行的 X 高频互动助手真实面板，显示任务总览、四组功能导航和评论进度"
+              alt="X 高频互动助手面板局部截图，显示任务总览、功能导航和评论进度"
               width={726}
               height={1092}
+              sizes="(max-width: 640px) calc(100vw - 72px), 360px"
               priority
-              className="h-auto w-full rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]"
+              className="block h-auto w-full rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]"
             />
-            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">真实运行界面 · 截图版本 v3.32.20</figcaption>
+            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">面板局部截图 · v3.32.20</figcaption>
           </figure>
         </div>
       </header>
 
-      <article className="prose-tuaran mt-12">
+      <article className="prose-tuaran mt-12 !max-w-none">
         <div className="not-prose relative mb-14 overflow-hidden rounded-[26px] border border-blue-200/70 bg-gradient-to-r from-blue-50 via-white to-violet-50 p-5 shadow-[0_16px_50px_rgba(37,99,235,0.09)] dark:border-blue-400/15 dark:from-[#0a1830] dark:via-[#0b1120] dark:to-[#1b1030] sm:p-7">
           <div className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-violet-400/20 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">

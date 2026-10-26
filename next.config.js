@@ -29,7 +29,7 @@ const nextConfig = {
     }
     // 后台路线图与体检记录直接读取文档正本，构建时内联，不依赖 Edge 文件系统。
     config.module.rules.push({
-      test: /(?:seo-geo-growth-roadmap|ui-ux-audit-roadmap|site-health-audit|site-design-language|loading-motion-system)\.md$/,
+      test: /(?:seo-geo-growth-roadmap|ui-ux-audit-roadmap|site-health-audit|cloudflare-usage-incidents|site-design-language|loading-motion-system)\.md$/,
       include: [path.resolve(__dirname, 'docs')],
       resourceQuery: /^\?raw$/,
       type: 'asset/source',

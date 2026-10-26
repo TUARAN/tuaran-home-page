@@ -660,16 +660,26 @@
   }
 
   function currentTaskDetail() {
+    // Countdown copy changes every second. Remote runtime state uses the fixed
+    // deadline in waitUntil, so keep its detail stable while a task waits.
+    const now = Date.now();
+    if (state.assistantMode === "poster") {
+      if (Number(state.poster?.riskCooldownUntil) > now) return "风控等待中";
+      if (Number(state.poster?.nextPostAt) > now) return "等待下一条发布";
+    } else if (!state.assistantMode.startsWith("likes-") && state.assistantMode !== "mutual") {
+      if (Number(state.riskCooldownUntil) > now) return "风控等待中";
+      if (Number(state.reconnectAt) > now) return "等待重连";
+      if (Number(state.nextRoundAt) > now || Number(state.nextCycleAt) > now) return "等待下一轮";
+      if (Number(state.waitUntil) > now) return "等待下一条";
+    }
     if (state.assistantMode.startsWith("likes-")) {
       return String(likeState.status || "").slice(0, 160);
     }
     if (state.assistantMode === "mutual") {
       return String(state.mutual?.status || "").slice(0, 160);
     }
-    if (state.assistantMode === "poster") {
-      return String(posterWaitCopy(state.poster) || state.poster?.status || "").slice(0, 160);
-    }
-    return String(replyWaitCopy() || state.status || "").slice(0, 160);
+    if (state.assistantMode === "poster") return String(state.poster?.status || "").slice(0, 160);
+    return String(state.status || "").slice(0, 160);
   }
 
   function currentTaskWaitUntil() {

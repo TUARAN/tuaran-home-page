@@ -6,6 +6,8 @@ import report from '../../../../docs/context/site-health-audit.md?raw'
 import SiteStatusConsole from '../site-status/SiteStatusConsole'
 import BloggerEyeConsole from '../blogger-eye/BloggerEyeConsole'
 import ExceptionMonitorClient from './ExceptionMonitorClient'
+import CloudflareUsageClient from './CloudflareUsageClient'
+import usageIncidents from '../../../../docs/context/cloudflare-usage-incidents.md?raw'
 import { redirect } from 'next/navigation'
 
 export const runtime = 'edge'
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'audit', label: '站点体检', href: '/admin/site-health?tab=audit' },
   { id: 'probe', label: '可用性探测', href: '/admin/site-health?tab=probe' },
   { id: 'incidents', label: '故障公告', href: '/admin/site-health?tab=incidents' },
+  { id: 'usage', label: '用量监控', href: '/admin/site-health?tab=usage' },
 ]
 
 export default async function AdminSiteHealthPage({ searchParams }) {
@@ -61,6 +64,12 @@ export default async function AdminSiteHealthPage({ searchParams }) {
         </> : null}
         {activeTab === 'probe' ? <BloggerEyeConsole embedded /> : null}
         {activeTab === 'incidents' ? <SiteStatusConsole embedded /> : null}
+        {activeTab === 'usage' ? <>
+          <CloudflareUsageClient />
+          <Section className="mt-5" title="故障与优化记录" description="已核实的原因、处理策略和部署后验证。">
+            <div className="prose prose-sm max-w-none overflow-x-auto dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: renderMarkdown(usageIncidents.replace(/^# .+\n/, '')) }} />
+          </Section>
+        </> : null}
       </AdminPage>
     </AdminPageGate>
   )

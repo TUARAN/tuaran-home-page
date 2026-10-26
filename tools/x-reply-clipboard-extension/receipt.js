@@ -30,6 +30,8 @@
   let scheduledUpload = null;
   let runtimeProvider = null;
   let commandHandler = null;
+  let lastHeartbeatAt = 0;
+  let lastHeartbeatHandle = "";
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "comments", "notification-reply": "comments",
     "post-like": "likes", "reply-like": "likes",
@@ -489,6 +491,10 @@
 
   function heartbeatFromBackground(accountHandle) {
     const handle = cleanHandle(accountHandle);
+    const now = Date.now();
+    if (now - lastHeartbeatAt < 55 * 1000 && (!handle || handle === lastHeartbeatHandle)) return Promise.resolve({ ok: true, skipped: true });
+    lastHeartbeatAt = now;
+    if (handle) lastHeartbeatHandle = handle;
     return enqueue(async () => {
       const config = await ensureConfig();
       if (handle) config.accountHandle = handle;

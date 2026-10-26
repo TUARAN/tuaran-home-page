@@ -1349,8 +1349,14 @@ globalThis.XrcCommunityReceipt?.setCommandHandler(async (commands) => {
   return results.filter((item) => item.id);
 });
 
+let lastRuntimeTelemetryAt = 0;
 function sendRuntimeTelemetry() {
   if (!chrome.runtime?.id) return;
+  // The minute alarm supplies the next heartbeat and command poll. Rendering
+  // or storage updates must never create a network request per UI tick.
+  const now = Date.now();
+  if (now - lastRuntimeTelemetryAt < 60 * 1000) return;
+  lastRuntimeTelemetryAt = now;
   globalThis.XrcCommunityReceipt?.heartbeatFromBackground().catch(() => {});
 }
 

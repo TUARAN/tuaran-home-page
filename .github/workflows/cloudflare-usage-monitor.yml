@@ -1,0 +1,40 @@
+name: Cloudflare usage daily report
+
+on:
+  schedule:
+    # UTC day ends at 08:00 Asia/Shanghai; collect after analytics settles.
+    - cron: '20 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Collect Workers and D1 usage
+        env:
+          SITE_STATUS_SECRET: ${{ secrets.SITE_STATUS_MONITOR_SECRET || secrets.AUTOMATION_ALERT_SECRET }}
+        run: |
+          if [ -z "$SITE_STATUS_SECRET" ]; then
+            echo "SITE_STATUS_MONITOR_SECRET or AUTOMATION_ALERT_SECRET is required."
+            exit 1
+          fi
+          result=$(curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-delay 5 --max-time 90 \
+            -X POST 'https://admin.2aran.com/api/admin/cloudflare-usage/collect' \
+            -H "x-site-status-secret: $SITE_STATUS_SECRET")
+          echo "$result" | jq -e '.ok == true' >/dev/null
+          {
+            echo '## Cloudflare 每日用量（UTC）'
+            echo '| 日期 | Workers 调用 | D1 读取行数 | D1 写入行数 |'
+            echo '| --- | ---: | ---: | ---: |'
+            echo "$result" | jq -r '.reports[] | "| \(.date) | \(.workers) | \(.d1RowsRead) | \(.d1RowsWritten) |"'
+            echo ''
+            echo '### 请求量最高的入口路径'
+            echo '| 路径 | 请求数 | 主要状态码 |'
+            echo '| --- | ---: | --- |'
+            echo "$result" | jq -r '.reports[].topPaths[] | "| `\(.path)` | \(.requests) | \(.statuses | to_entries | sort_by(-.value) | .[:3] | map("\(.key): \(.value)") | join(", ")) |"'
+          } >> "$GITHUB_STEP_SUMMARY"

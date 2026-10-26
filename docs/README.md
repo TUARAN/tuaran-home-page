@@ -26,6 +26,7 @@
 | ----------------------------------------------------------------------------- | ------------------ |
 | [site-autopilot.md](runbooks/site-autopilot.md)                               | 站点自迭代扫描协议          |
 | [site-status-automation.md](runbooks/site-status-automation.md)               | 故障公告自动化            |
+| [cloudflare-usage-monitor.md](runbooks/cloudflare-usage-monitor.md)           | Cloudflare Workers 与 D1 每日用量监控 |
 | [cloudflare-split-plan.md](runbooks/cloudflare-split-plan.md)                 | 公开站与后台站拆分          |
 | [frontend-weekly-data-pipeline.md](runbooks/frontend-weekly-data-pipeline.md) | 前端周看数据流水线          |
 | [content-storage-rollout.md](runbooks/content-storage-rollout.md)             | 内容存储上线与恢复          |

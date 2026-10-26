@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { IconAlertTriangle, IconInfoCircle, IconTool, IconX } from '@tabler/icons-react'
 
-const POLL_INTERVAL_MS = 60_000
+const ACTIVE_POLL_INTERVAL_MS = 60_000
+const IDLE_POLL_INTERVAL_MS = 5 * 60_000
 const DISMISSED_STATUS_KEY = 'site-status-dismissed'
 
 const TONES = {
@@ -36,18 +37,28 @@ export default function SiteStatusBanner() {
   useEffect(() => {
     let alive = true
     let timer = null
+    let active = false
+    let inFlight = false
     const load = () => {
+      if (inFlight) return
+      if (document.visibilityState === 'hidden') {
+        timer = window.setTimeout(load, IDLE_POLL_INTERVAL_MS)
+        return
+      }
+      inFlight = true
       fetch('/api/site-status', { cache: 'no-store' })
         .then((response) => (response.ok ? response.json() : null))
         .then((data) => {
           if (!alive) return
           if (!data?.active) {
+            active = false
             setStatus(null)
             try {
               window.localStorage.removeItem(DISMISSED_STATUS_KEY)
             } catch {}
             return
           }
+          active = true
           let dismissed = false
           try {
             dismissed = window.localStorage.getItem(DISMISSED_STATUS_KEY) === statusSignature(data)
@@ -56,13 +67,21 @@ export default function SiteStatusBanner() {
         })
         .catch(() => {})
         .finally(() => {
-          if (alive) timer = window.setTimeout(load, POLL_INTERVAL_MS)
+          inFlight = false
+          if (alive) timer = window.setTimeout(load, active ? ACTIVE_POLL_INTERVAL_MS : IDLE_POLL_INTERVAL_MS)
         })
     }
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (timer) window.clearTimeout(timer)
+      load()
+    }
     load()
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
       if (timer) window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
 

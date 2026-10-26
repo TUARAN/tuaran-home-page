@@ -14,7 +14,7 @@ export const runtime = 'edge'
 
 export const metadata = {
   title: '运行中心',
-  description: '异常监控、站点体检、可用性探测与故障公告。',
+  description: '异常监控、Cloudflare 用量、可用性探测与故障公告。',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
 
@@ -38,7 +38,7 @@ export default async function AdminSiteHealthPage({ searchParams }) {
     >
       <AdminPage
         title="运行中心"
-        description="集中查看异常告警、各板块处理方式和主动探测，并在同一处完成故障公告。"
+        description="集中查看异常告警、Cloudflare 用量和主动探测，并在同一处完成故障公告。"
       >
         <AdminSubnav label="运行中心视图" items={TABS} activeId={activeTab} />
 

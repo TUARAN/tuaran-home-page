@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { buildXMonitorTrend, enqueueXRemoteCommand, normalizeCommunityActionReport, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
@@ -55,6 +57,7 @@ test('remote commands enqueue and return on the next heartbeat report', async ()
       return {
         bind(...values) {
           return {
+            async first() { return null },
             async run() {
               calls.push({ sql, values })
               if (sql.includes('INSERT INTO x_extension_commands')) {
@@ -97,6 +100,52 @@ test('remote commands enqueue and return on the next heartbeat report', async ()
   assert.equal(finished.commandsFinished, 1)
 })
 
+test('ext-update remote command normalizes and enqueues without a mode', async () => {
+  assert.deepEqual(normalizeXRemoteCommand({ command: 'ext-update' }), { command: 'ext-update', mode: '' })
+  assert.equal(normalizeXRemoteCommand({ command: 'ext-update', mode: 'timeline' }), null)
+  const rows = []
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async run() {
+              if (sql.includes('INSERT INTO x_extension_commands')) rows.push(values)
+              return { meta: { changes: 1 } }
+            },
+            async all() { return { results: [] } },
+          }
+        },
+      }
+    },
+  }
+  const queued = await enqueueXRemoteCommand(db, { deviceId: 'device-x-monitor', command: 'ext-update' }, NOW)
+  assert.equal(queued.ok, true)
+  assert.equal(queued.command, 'ext-update')
+  assert.equal(rows[0][2], 'ext-update')
+})
+
+test('monitor marks outdated extension versions against the site latest', () => {
+  const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../tools/x-reply-clipboard-extension/manifest.json', import.meta.url)), 'utf8'))
+  assert.equal(X_EXTENSION_LATEST_VERSION, manifest.version)
+  assert.equal(isExtensionVersionOutdated('3.32.0'), true)
+  assert.equal(isExtensionVersionOutdated(X_EXTENSION_LATEST_VERSION), false)
+  const result = presentXExtensionMonitor({
+    devices: [
+      { id: 'old-device', account_handle: 'tarsixseveneig1', extension_version: '3.32.0', last_seen_at: NOW - 1000 },
+      { id: 'new-device', account_handle: 'tuaranx', extension_version: X_EXTENSION_LATEST_VERSION, last_seen_at: NOW - 1000 },
+    ],
+    runtimes: [],
+    now: NOW,
+    dateRange: xMonitorDateRange('2026-10-18', NOW),
+  })
+  assert.equal(result.latestExtensionVersion, X_EXTENSION_LATEST_VERSION)
+  assert.deepEqual(result.devices.map((device) => [device.id, device.updateAvailable]), [
+    ['old-device', true],
+    ['new-device', false],
+  ])
+})
+
 test('monitor separates a fresh heartbeat from actual task state', () => {
   const devices = [
     { id: 'fresh-old', last_seen_at: NOW - 1000 },
@@ -114,7 +163,14 @@ test('monitor separates a fresh heartbeat from actual task state', () => {
     { device_id: 'stale', flow_phase: 'running', tasks_json: '[{"mode":"timeline","phase":"running"}]', reported_at: NOW - 10 * 60 * 1000 },
   ]
   const result = presentXExtensionMonitor({ devices, runtimes, now: NOW, dateRange: xMonitorDateRange('2026-10-18', NOW), taskCounts: [{ task: 'timeline-reply', result: 'success', count: 431 }] })
-  assert.deepEqual(result.devices.map((device) => device.phase), ['unknown', 'idle', 'running', 'paused', 'unknown', 'offline'])
+  assert.deepEqual(result.devices.map((device) => [device.id, device.phase]), [
+    ['fresh-idle', 'idle'],
+    ['fresh-old', 'unknown'],
+    ['fresh-paused', 'paused'],
+    ['fresh-run', 'running'],
+    ['fresh-stale-snapshot', 'unknown'],
+    ['stale', 'offline'],
+  ])
   assert.equal(result.devices.find((device) => device.id === 'fresh-run').groups[0].phase, 'running')
   assert.equal(result.devices.find((device) => device.id === 'fresh-idle').groups.every((group) => group.phase === 'idle'), true)
   assert.equal(result.devices.find((device) => device.id === 'fresh-old').groups.length, 0)
@@ -145,13 +201,22 @@ test('monitor trend fills 14 Beijing dates and separates task outcomes', () => {
   assert.equal(days[0].success, 0)
 })
 
-test('monitor queries selected day for details and the latest 14 days for trends', async () => {
+test('monitor defaults X stats to tarsixseveneig1 and scopes day details by account', async () => {
+  assert.equal(resolveMonitorAccountHandle('x', ''), DEFAULT_X_MONITOR_ACCOUNT)
+  assert.equal(resolveMonitorAccountHandle('x', '__all__'), '')
+  assert.equal(resolveMonitorAccountHandle('x', '@TuaranX'), 'TuaranX')
+  assert.equal(resolveMonitorAccountHandle('juejin', ''), '')
   const calls = []
   const db = { prepare(sql) { return {
     bind(...values) { calls.push({ sql, values }); return this },
     async all() {
-      if (sql.includes('community_action_daily_counts') && sql.includes('report_date = ?')) return { results: [{ task: 'timeline-reply', result: 'success', count: 3 }] }
-      if (sql.includes('community_action_daily_counts')) return { results: [{ date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 3 }] }
+      if (sql.includes('GROUP BY task, result')) return { results: [{ task: 'timeline-reply', result: 'success', count: 3 }] }
+      if (sql.includes('GROUP BY date, task, result')) return { results: [{ date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 3 }] }
+      if (sql.includes('DISTINCT account_handle')) return { results: [{ account_handle: 'tarsixseveneig1' }, { account_handle: 'tuaranx' }] }
+      if (sql.includes('community_action_devices')) return { results: [
+        { id: 'device-a', account_handle: 'tarsixseveneig1', extension_version: '3.32.14', last_seen_at: NOW - 1000 },
+        { id: 'device-b', account_handle: 'tuaranx', extension_version: '3.32.14', last_seen_at: NOW - 1000 },
+      ] }
       return { results: [] }
     },
     async first() { return { total: 0 } },
@@ -159,19 +224,33 @@ test('monitor queries selected day for details and the latest 14 days for trends
   const result = await readXExtensionMonitor(db, { date: '2026-10-17', offset: 20, reportOffset: 20, now: NOW })
   const start = Date.parse('2026-10-17T00:00:00+08:00')
   assert.equal(result.selectedDate, '2026-10-17')
+  assert.equal(result.accountHandle, 'tarsixseveneig1')
+  assert.deepEqual(result.accounts, ['tarsixseveneig1', 'tuaranx'])
+  assert.deepEqual(result.devices.map((device) => device.id), ['device-a', 'device-b'])
+  assert.equal(compareMonitorAccountHandles('tuaranx', 'tarsixseveneig1') > 0, true)
+  assert.deepEqual(sortMonitorDevices([
+    { id: 'z', accountHandle: 'tuaranx' },
+    { id: 'a', accountHandle: 'other' },
+    { id: 'b', accountHandle: 'tarsixseveneig1' },
+  ]).map((device) => device.id), ['b', 'z', 'a'])
   assert.equal(result.offset, 20)
   assert.equal(result.limit, 20)
-  assert.deepEqual(calls.find((call) => call.sql.includes('LIMIT ? OFFSET ?')).values, ['x', start, start + 86400000, 20, 20])
-  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date = ?')).values, ['x', '2026-10-17'])
-  assert.deepEqual(calls.find((call) => call.sql.includes('community_action_daily_counts') && call.sql.includes('report_date >= ?')).values, ['x', '2026-10-05', '2026-10-18'])
-  assert.equal(calls.some((call) => call.sql.includes('GROUP BY')), false)
+  assert.deepEqual(calls.find((call) => call.sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')).values, ['x', 'tarsixseveneig1', start, start + 86400000, 20, 20])
+  assert.ok(calls.some((call) => call.sql.includes('GROUP BY task, result')))
+  assert.ok(calls.some((call) => call.sql.includes('GROUP BY date, task, result')))
+  assert.equal(calls.some((call) => call.sql.includes('community_action_daily_counts')), false)
   assert.equal(result.eventTotal, 3)
   assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 3)
   assert.equal(result.trend.length, 14)
   assert.equal(result.trend.at(-1).date, '2026-10-18')
   assert.equal(result.trend.at(-2).success, 3)
-  assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 20, 20])
+  assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 'tarsixseveneig1', 20, 20])
   assert.equal(result.reportOffset, 20)
+  calls.length = 0
+  const allAccounts = await readXExtensionMonitor(db, { date: '2026-10-17', accountHandle: '__all__', now: NOW })
+  assert.equal(allAccounts.accountHandle, '')
+  assert.deepEqual(calls.find((call) => call.sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')).values, ['x', start, start + 86400000, 20, 0])
+  assert.ok(calls.some((call) => call.sql.includes('community_action_daily_counts')))
 })
 
 test('live monitor refresh avoids trend and daily aggregate queries', async () => {
@@ -211,6 +290,11 @@ test('monitor scopes Juejin devices, receipts and trend to one platform', async 
   assert.equal(calls.some((call) => call.sql.includes('x_extension_daily_reports') || call.sql.includes('x_extension_runtime')), false)
   assert.ok(calls.filter((call) => call.sql.includes('community_action_events')).every((call) => call.values[0] === 'juejin'))
   assert.equal((await readExtensionLive(db, { platform: 'juejin', now: NOW })).devices[0].phase, 'online')
+  calls.length = 0
+  const scoped = await readExtensionMonitor(db, { platform: 'juejin', date: '2026-10-17', accountHandle: 'writer1', now: NOW })
+  assert.equal(scoped.accountHandle, 'writer1')
+  assert.ok(calls.filter((call) => call.sql.includes('community_action_events') && call.sql.includes('account_handle = ?')).every((call) => call.values[1] === 'writer1'))
+  assert.deepEqual(calls.find((call) => call.sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')).values.slice(0, 2), ['juejin', 'writer1'])
   await assert.rejects(readExtensionMonitor(db, { platform: 'unknown', now: NOW }), /INVALID_PLATFORM/)
 })
 
@@ -232,30 +316,35 @@ test('Xiaohongshu keeps paged receipts visible before all-platform count migrati
   assert.equal(calls.some((call) => call.sql.includes('community_action_daily_counts')), false)
 })
 
-test('monitor does not fall back to scanning receipts before count migration', async () => {
+test('monitor keeps X account-scoped aggregates even when platform daily counts are missing', async () => {
   const calls = []
   const db = { prepare(sql) { calls.push(sql); return {
     bind() { return this },
     async all() {
       if (sql.includes('community_action_daily_counts')) throw new Error('no such table: community_action_daily_counts')
+      if (sql.includes('GROUP BY task, result')) return { results: [{ task: 'timeline-reply', result: 'success', count: 2 }] }
+      if (sql.includes('GROUP BY date, task, result')) return { results: [{ date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 2 }] }
       return { results: [] }
     },
     async first() { return { total: 0 } },
   } } }
   const result = await readXExtensionMonitor(db, { date: '2026-10-17', now: NOW })
-  assert.equal(result.countsMigrationRequired, true)
-  assert.equal(calls.some((sql) => sql.includes('GROUP BY')), false)
+  assert.equal(result.countsMigrationRequired, false)
+  assert.equal(result.accountHandle, 'tarsixseveneig1')
+  assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 2)
+  assert.equal(calls.some((sql) => sql.includes('GROUP BY')), true)
+  assert.equal(calls.some((sql) => sql.includes('community_action_daily_counts')), false)
 })
 
 test('runtime heartbeat stores snapshot separately from action counts', async () => {
   const calls = []
-  const db = { prepare(sql) { return { bind(...values) { return { async run() { calls.push({ sql, values }); return { meta: { changes: 1 } } } } } } } }
+  const db = { prepare(sql) { return { bind(...values) { return { async first() { return null }, async run() { calls.push({ sql, values }); return { meta: { changes: 1 } } } } } } } }
   const result = await recordCommunityActionReport(db, {
     deviceId: 'device-x-monitor', platform: 'x', accountHandle: '@Tuaran',
     runtime: { phase: 'running', tasks: [{ mode: 'timeline', phase: 'running', startedAt: NOW }] },
   }, NOW)
   assert.equal(result.accepted, 0)
-  const runtimeCall = calls.find((call) => /x_extension_runtime/.test(call.sql))
+  const runtimeCall = calls.find((call) => /INSERT INTO x_extension_runtime/.test(call.sql))
   assert.ok(runtimeCall)
   assert.equal(runtimeCall.values[2], 'running')
 })

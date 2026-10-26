@@ -686,6 +686,40 @@ test('daily backfill uploads only older reports that changed since the last uplo
   }
 })
 
+test('receipt cleanHandle rejects default placeholder accounts', async () => {
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  const stored = {
+    xrcCommunityReport: { secret: 'test-secret', deviceId: 'device-12345678', accountHandle: 'tarsixseveneig1', queue: [] },
+    xrcDailyReports: [{ date: '2026-10-21', accountHandle: 'default', counts: { comments: 2 }, updatedAt: 200, uploadedAt: 0 }],
+  }
+  const bodies = []
+  globalThis.chrome = { runtime: { getManifest: () => ({ version: '3.32.16' }) }, storage: { local: {
+    async get(keys) {
+      const list = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(list.map((key) => [key, stored[key]]))
+    },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  globalThis.fetch = async (_url, options) => {
+    bodies.push(JSON.parse(options.body))
+    return { ok: true, async json() { return { dailyReportSaved: true, commands: [] } } }
+  }
+  try {
+    const skipped = await receipt.uploadDaily('2026-10-21', 'default')
+    assert.equal(skipped.ok, false)
+    assert.match(skipped.error, /账号未识别/)
+    const accepted = await receipt.accept({ task: 'post-like', result: 'success', targetId: 'tweet-1', accountHandle: 'default' })
+    assert.equal(accepted.ok, true)
+    assert.equal(stored.xrcCommunityReport.accountHandle, 'tarsixseveneig1')
+    assert.equal(bodies.at(-1).accountHandle, 'tarsixseveneig1')
+    assert.equal(bodies.every((body) => body.accountHandle !== 'default'), true)
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
+})
+
 test('heartbeat auto-syncs dirty daily reports including today', async () => {
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
@@ -733,6 +767,9 @@ test('daily report panel relies on automatic sync instead of manual upload or pu
   assert.doesNotMatch(content, /上传当日报告/)
   assert.match(monitor, /自动同步日报/)
   assert.match(monitor, /Daily Sync/)
+  assert.match(monitor, /DEFAULT_X_ACCOUNT = 'tarsixseveneig1'/)
+  assert.match(monitor, /ariaLabel="筛选动作趋势账号"/)
+  assert.match(monitor, /ariaLabel="筛选单日明细账号"/)
   assert.doesNotMatch(monitor, /本地上传报告/)
 })
 
@@ -1508,8 +1545,9 @@ test('a restricted reply enters a timed retry without stopping other tasks', asy
   state.assistantMode = 'poster'
   sandbox.cool()
   assert.equal(calls.poster, 1)
-  const likeLimitHandler = source.match(/        onLimit\(accountHandle, target, errorCode\) \{[\s\S]*?\n        \},/)?.[0]
+  const likeLimitHandler = source.match(/        onLimit\(_accountKey, target, errorCode\) \{[\s\S]*?\n        \},/)?.[0]
   assert.ok(likeLimitHandler)
+  assert.match(likeLimitHandler, /currentAccountHandle\(\) \|\| lastKnownAccountHandle/)
   assert.doesNotMatch(likeLimitHandler, /xrc-flow-pause/)
 })
 
@@ -1634,6 +1672,9 @@ test('plugin stable runtime spans multiple task tabs and stops only after the fi
     assert.equal(second.runtime.startedAt, stableStartedAt)
     assert.deepEqual(Object.keys(second.runtime.tasks).sort(), ['notifications', 'timeline'])
 
+    await background.updatePluginRuntime({ mode: 'timeline', active: false }, { tab: { id: 22 } })
+    assert.ok(savedRuntime.tasks.timeline, 'an idle tab must not clear another tab\'s running task')
+
     await background.updatePluginRuntime({ mode: 'timeline', active: false }, { tab: { id: 11 } })
     assert.equal(savedRuntime.startedAt, stableStartedAt)
     assert.deepEqual(Object.keys(savedRuntime.tasks), ['notifications'])
@@ -1641,6 +1682,39 @@ test('plugin stable runtime spans multiple task tabs and stops only after the fi
     await background.updatePluginRuntime({ mode: 'notifications', active: false }, { tab: { id: 22 } })
     assert.equal(savedRuntime.startedAt, null)
     assert.deepEqual(savedRuntime.tasks, {})
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('task detail probes show the owning tab state instead of a live but idle tab record', async () => {
+  globalThis.chrome = {
+    tabs: {
+      async sendMessage(tabId, message) {
+        assert.equal(message.type, 'xrc-task-state-probe')
+        if (tabId === 11) return { ok: true, mode: 'timeline', phase: '' }
+        if (tabId === 22) return { ok: true, mode: 'notifications', phase: 'paused', detail: '下一轮 5 分钟后', waitUntil: 5000 }
+        if (tabId === 44) return { ok: true, mode: 'timeline', phase: 'running' }
+        throw new Error('task tab has no content script')
+      },
+    },
+  }
+  try {
+    const runtime = await background.verifyTaskRuntime({
+      startedAt: 100,
+      flow: { phase: 'running' },
+      tasks: {
+        timeline: { tabId: 11, phase: 'running', updatedAt: 100 },
+        notifications: { tabId: 22, phase: 'running', updatedAt: 100 },
+        poster: { tabId: 33, phase: 'running', updatedAt: 100 },
+        'likes-posts': { tabId: 44, phase: 'running', updatedAt: 100 },
+      },
+    }, 20000)
+    assert.equal(runtime.tasks.timeline, undefined)
+    assert.equal(runtime.tasks.notifications.phase, 'paused')
+    assert.equal(runtime.tasks.notifications.detail, '下一轮 5 分钟后')
+    assert.equal(runtime.tasks.poster.phase, 'unknown')
+    assert.equal(runtime.tasks['likes-posts'], undefined)
   } finally {
     delete globalThis.chrome
   }
@@ -3057,7 +3131,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.14')
+  assert.equal(manifest.version, '3.32.20')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3165,8 +3239,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /全流程启动/)
   assert.match(content, /xrc-flow-start/)
   assert.match(content, /taskWindowLabel/)
+  assert.match(content, /stripManagedTaskTitle/)
+  assert.match(content, /@\$\{handle\} · \$\{label\}/)
+  assert.match(content, /X高频互动助手 · @\$\{handle\}/)
   assert.match(content, /当前已在\$\{label\}页面，任务尚未启动；点击下方启动单项任务/)
   assert.match(content, /document\.title/)
+  assert.match(backgroundSource, /replace\(\/\^@\[A-Za-z0-9_\]\{1,40\} · \/u, ""\)/)
   assert.match(content, /data-xrc-global-bar/)
   assert.match(content, /data-xrc-global-key/)
   assert.ok(content.indexOf('class="xrc-global-bar"') < content.indexOf('class="xrc-flow-launch"'))
@@ -3184,10 +3262,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-like-tab="replies"/)
   assert.match(content, /data-xrc-actions-toggle aria-label="展开操作菜单"/)
   const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<section class="xrc-monitor"/)?.[1] || ''
-  for (const metric of ['comments', 'likes', 'follows', 'posts']) {
+  for (const metric of ['comments', 'likes', 'follows', 'unfollows', 'posts']) {
     assert.ok(todaySummary.includes(`data-xrc-today-${metric}`), `today summary should show ${metric}`)
   }
-  assert.doesNotMatch(todaySummary, /data-xrc-today-unfollows/)
+  assert.match(todaySummary, /xrc-metric-follows">关注<\/span><span class="xrc-metric-unfollows">取关<\/span>/)
+  const todayCss = await readFile(new URL('content.css', extensionDir), 'utf8')
+  assert.match(todayCss, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/)
+  assert.match(todayCss, /calc\(20% - \.5px\).*calc\(40% - \.5px\).*calc\(60% - \.5px\).*calc\(80% - \.5px\)/s)
+  assert.doesNotMatch(todayCss, /xrc-today-strip::after[\s\S]*calc\(25%/)
   assert.ok(content.indexOf('class="xrc-header-menu"') < content.indexOf('class="xrc-today-strip"'))
   assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
   const quickActions = content.match(/<div class="xrc-quick-actions"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
@@ -3459,6 +3541,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /version: 'v3\.32\.13'/)
   assert.match(content, /currentTaskDetail|currentTaskWaitUntil/)
   assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
+  assert.match(backgroundSource, /ext-update/)
+  assert.match(backgroundSource, /applyLocalDevUpdate/)
 })
 
 test('today totals expose a compact calendar entry and poster stats identify the current run', async () => {
@@ -3596,7 +3680,7 @@ test('task windows are created once and reused without backgrounding another tas
     assert.equal(tabUpdates.at(-1).url, 'https://x.com/notifications?xrcAssistant=notifications&xrcStart=1')
     assert.equal(sessionData['xrcPendingTab:77'].start, true)
 
-    runtimeTasks = { notifications: { tabId: 77, startedAt: Date.now() } }
+    runtimeTasks = { notifications: { tabId: 77, phase: 'running', startedAt: Date.now() } }
     notificationsUrl = 'https://x.com/someone/status/123'
     await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
     assert.deepEqual(tabUpdates.at(-1), { active: true })
@@ -3741,6 +3825,35 @@ test('pending task launch is consumed only by its assigned tab and destination',
     assert.equal((await background.consumePendingLaunch({ tab: { id: 11, url: 'https://x.com/home' } })).launch.mode, 'timeline')
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('remote start resumes an idle comment task in its existing window and reports a blocked start', async () => {
+  const previousChrome = globalThis.chrome
+  let runtime = { tasks: {}, flow: { phase: 'running' } }
+  let reply = { ok: true, phase: 'running' }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      session: { async get() { return { xrcTaskTabs: { timeline: 11 } } }, async set() {} },
+      local: { async get() { return { xrcPluginRuntime: runtime } }, async set(value) { runtime = value.xrcPluginRuntime } },
+    },
+    tabs: {
+      async get() { return { id: 11, windowId: 5, url: 'https://x.com/home' } },
+      async sendMessage(id, message) { assert.equal(id, 11); assert.equal(message.type, 'xrc-task-start'); return reply },
+      async update(id, options) { updates.push(options) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    const started = await background.focusTaskTab('timeline', null, { start: true })
+    assert.equal(started.started, true)
+    assert.deepEqual(updates, [{ active: true }])
+    reply = { ok: false, error: '缺少回复模型密钥' }
+    await assert.rejects(background.focusTaskTab('timeline', null, { start: true }), /缺少回复模型密钥/)
+    assert.deepEqual(updates, [{ active: true }], 'blocked starts must not navigate or open another window')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

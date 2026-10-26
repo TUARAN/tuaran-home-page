@@ -50,12 +50,14 @@ test('X daily report validates post counts and accepts older reports without pos
   const db = { prepare(sql) { return { bind(...values) { return { async run() { writes.push({ sql, values }); return { meta: { changes: 1 } } } } } } } }
   const result = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', extensionVersion: '3.16.0', dailyReport }, NOW)
   assert.equal(result.dailyReportSaved, true)
-  assert.equal(writes.length, 2)
-  assert.match(writes[1].sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
-  assert.deepEqual(writes[1].values.slice(0, 9), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0])
+  const dailyWrite = writes.find((item) => /x_extension_daily_reports/.test(item.sql))
+  assert.ok(dailyWrite)
+  assert.match(dailyWrite.sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
+  assert.deepEqual(dailyWrite.values.slice(0, 9), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0])
+  const beforeReject = writes.length
   const rejected = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', dailyReport: { ...dailyReport, counts: { ...dailyReport.counts, posts: -1 } } }, NOW)
   assert.deepEqual(rejected, { ok: false, error: 'INVALID_DAILY_REPORT' })
-  assert.equal(writes.length, 2)
+  assert.equal(writes.length, beforeReject)
 })
 
 test('local daily report counts successful actions once and refuses a false upload acknowledgement', async () => {
@@ -129,6 +131,41 @@ test('Juejin reports and devices retain their platform in the center', () => {
   })
   assert.equal(center.devices[0].platform, 'juejin')
   assert.equal(center.tasks.find((task) => task.task === 'daily-checkin').success, 1)
+})
+
+test('unchanged heartbeats avoid runtime writes while task transitions refresh immediately', async () => {
+  const writes = []
+  let previous = null
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          return {
+            async first() { return sql.startsWith('SELECT flow_phase') ? previous : null },
+            async all() { return { results: [] } },
+            async run() {
+              writes.push({ sql, args })
+              if (sql.includes('INSERT INTO x_extension_runtime')) {
+                previous = { flow_phase: args[2], tasks_json: args[3], reported_at: args[4] }
+              }
+              return { meta: { changes: 1 } }
+            },
+          }
+        },
+      }
+    },
+  }
+  const body = { deviceId: 'device-x-throttle', platform: 'x', extensionVersion: '3.32.17', runtime: {
+    phase: 'running', tasks: [{ mode: 'timeline', phase: 'running', updatedAt: NOW }],
+  } }
+  await recordCommunityActionReport(db, body, NOW)
+  await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ ...body.runtime.tasks[0], updatedAt: NOW + 1000, detail: '扫描中' }] } }, NOW + 1000)
+  assert.equal(writes.filter((item) => item.sql.includes('INSERT INTO x_extension_runtime')).length, 1)
+  assert.match(writes[0].sql, /last_seen_at <= \?/)
+  await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ mode: 'timeline', phase: 'paused', waitUntil: NOW + 600000 }] } }, NOW + 2000)
+  assert.equal(writes.filter((item) => item.sql.includes('INSERT INTO x_extension_runtime')).length, 2)
+  await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ mode: 'timeline', phase: 'paused', waitUntil: NOW + 600000 }] } }, NOW + 3 * 60 * 1000 + 2000)
+  assert.equal(writes.filter((item) => item.sql.includes('INSERT INTO x_extension_runtime')).length, 3)
 })
 
 test('center summary counts today by task and marks a fresh device online', () => {

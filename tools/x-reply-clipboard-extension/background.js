@@ -758,8 +758,9 @@ async function findUnregisteredTaskTab(mode, tabs) {
     try {
       if (new URL(tab.url || "").searchParams.get("xrcAssistant") === mode) return true;
     } catch (error) {}
-    const title = String(tab.title || "");
-    return title.startsWith(`${label} · `) || (mode === "likes-posts" && title.startsWith("自动点赞 · "));
+    const title = String(tab.title || "").replace(/^@[A-Za-z0-9_]{1,40} · /u, "");
+    return title.startsWith(`${label} · `) || title === label
+      || (mode === "likes-posts" && (title.startsWith("自动点赞 · ") || title === "自动点赞"));
   }) || null;
 }
 
@@ -805,9 +806,28 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "" } 
       const windowId = await ensureOwnWindow(existing, tabs, selected);
       const update = { active: true };
       const pageUrl = existing.url || "";
-      const runtime = await readPluginRuntime();
+      const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
       const runningHere = Number(runtime.tasks?.[selected]?.tabId) === existingId
-        && runtime.tasks[selected]?.phase !== "stopping";
+        && ["running", "paused"].includes(runtime.tasks[selected]?.phase);
+      if (start && !runningHere && ["timeline", "notifications"].includes(selected)
+        && onTaskPath(selected, pageUrl, { accountHandle: handle })) {
+        let reply = null;
+        try {
+          reply = await chrome.tabs.sendMessage(existingId, { type: "xrc-task-start", mode: selected });
+        } catch (error) {
+          // The content script may still be loading. The URL launch below retries it.
+        }
+        if (reply?.ok) {
+          await chrome.tabs.update(existingId, { active: true });
+          if (Number.isInteger(windowId)) await chrome.windows.update(windowId, { focused: true });
+          return { ok: true, mode: selected, tabId: existingId, reused: true, started: true };
+        }
+        if (reply && !reply.ok) {
+          const error = new Error(reply.error || "任务未能启动");
+          error.remoteStartRejected = true;
+          throw error;
+        }
+      }
       if (!runningHere && (start || !onTaskPath(selected, pageUrl, { start, accountHandle: handle, currentUrl: pageUrl }))) {
         const destination = taskTabUrl(selected, pageUrl || sender?.tab?.url, {
           start,
@@ -823,6 +843,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "" } 
       if (Number.isInteger(windowId)) await chrome.windows.update(windowId, { focused: true });
       return { ok: true, mode: selected, tabId: existingId, reused: true };
     } catch (error) {
+      if (error?.remoteStartRejected) throw error;
       delete tabs[selected];
       await writeTaskTabs(tabs);
     }
@@ -848,7 +869,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "" } 
 const FLOW_TASKS = ["poster", "mutual-followBack", "mutual-unfollow", "notifications", "timeline", "likes-posts", "likes-replies"];
 
 async function openAllTasks(sender, accountHandle = "", sourceMode = "") {
-  const runtime = await readPluginRuntime();
+  const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
   runtime.flow = { phase: "starting", updatedAt: Date.now() };
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
   if (TASK_MODES.has(sourceMode) && Number.isInteger(sender?.tab?.id)) {
@@ -864,7 +885,7 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "") {
   });
   for (const mode of ordered) {
     await focusTaskTab(mode, sender, {
-      start: !runtime.tasks?.[mode] || runtime.tasks[mode]?.phase === "stopping",
+      start: !["running", "paused"].includes(runtime.tasks?.[mode]?.phase),
       accountHandle: handle
     });
   }
@@ -941,6 +962,49 @@ async function readPluginRuntime({ prune = false } = {}) {
   return runtime;
 }
 
+async function verifyTaskRuntime(runtime, now = Date.now()) {
+  if (!chrome.tabs?.sendMessage) return runtime;
+  const tasks = { ...runtime.tasks };
+  await Promise.all(Object.entries(tasks).map(async ([mode, task]) => {
+    let timer;
+    let reply = null;
+    try {
+      reply = await Promise.race([
+        chrome.tabs.sendMessage(Number(task.tabId), { type: "xrc-task-state-probe" }),
+        new Promise((resolve) => { timer = setTimeout(() => resolve(null), 800); })
+      ]);
+    } catch (error) {
+      // A navigating task tab may not have loaded its content script yet.
+    } finally {
+      clearTimeout(timer);
+    }
+    if (reply?.ok) {
+      if (reply.mode !== mode || !reply.phase) {
+        delete tasks[mode];
+        return;
+      }
+      tasks[mode] = {
+        ...task,
+        phase: reply.phase,
+        detail: String(reply.detail || "").slice(0, 160),
+        waitUntil: Number(reply.waitUntil) || 0,
+        updatedAt: now
+      };
+    } else {
+      tasks[mode] = { ...task, phase: "unknown" };
+    }
+  }));
+  const hasTasks = Object.keys(tasks).length > 0;
+  return {
+    ...runtime,
+    startedAt: hasTasks ? runtime.startedAt : null,
+    tasks,
+    flow: !hasTasks && runtime.flow?.phase === "running"
+      ? { phase: "stopped", updatedAt: now }
+      : runtime.flow
+  };
+}
+
 const RUNTIME_REPORT_MODES = Object.freeze([
   "timeline", "notifications", "likes-posts", "likes-replies",
   "mutual-unfollow", "mutual-followBack", "poster"
@@ -948,14 +1012,14 @@ const RUNTIME_REPORT_MODES = Object.freeze([
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
 
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
-  const runtime = await readPluginRuntime({ prune: true });
+  const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
   const now = Date.now();
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
     if (!task) return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: "", waitUntil: 0 };
     const updatedAt = Number(task.updatedAt) || 0;
-    let phase = ["running", "paused", "stopping"].includes(task.phase) ? task.phase : "idle";
-    if (phase !== "idle" && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) phase = "unknown";
+    let phase = ["running", "paused", "stopping", "unknown"].includes(task.phase) ? task.phase : "idle";
+    if (["running", "paused", "stopping"].includes(phase) && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) phase = "unknown";
     return {
       mode,
       phase,
@@ -970,6 +1034,20 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     tasks
   };
 });
+
+function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
+  if (!manualUpdatePromise) {
+    manualUpdatePromise = globalThis.XrcLocalDevUpdate?.applyNow?.({
+      readRuntime: readPluginRuntime,
+      taskTabs: getOpenTaskTabs,
+      stopTasks: pauseAllTasks,
+      force: true,
+      reload: () => setTimeout(() => chrome.runtime.reload(), reloadDelayMs)
+    }) || Promise.resolve({ ok: false, error: "本地更新服务没有加载" });
+    manualUpdatePromise.then(() => { manualUpdatePromise = null; }, () => { manualUpdatePromise = null; });
+  }
+  return manualUpdatePromise;
+}
 
 async function executeRemoteCommand(command) {
   const type = String(command?.command || "");
@@ -986,11 +1064,45 @@ async function executeRemoteCommand(command) {
     const mode = TASK_MODES.has(command?.mode) ? command.mode : "";
     if (!mode) throw new Error("无法识别目标任务");
     if (type === "task-start") {
-      await focusTaskTab(mode, null, { start: true, accountHandle: handle });
+      const runtime = await readPluginRuntime();
+      const resumePausedFlow = runtime.flow?.phase === "paused" && runtime.flow.intent === "manual";
+      if (resumePausedFlow) {
+        runtime.flow = { phase: "starting", updatedAt: Date.now() };
+        await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+      }
+      try {
+        const launched = await focusTaskTab(mode, null, { start: true, accountHandle: handle });
+        const deadline = Date.now() + 30000;
+        let active = false;
+        while (Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          const current = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
+          active = Number(current.tasks?.[mode]?.tabId) === launched.tabId
+            && ["running", "paused"].includes(current.tasks[mode]?.phase);
+          if (active) break;
+        }
+        if (!active) throw new Error("任务窗口已打开，但未确认开始运行；请检查该任务窗口的状态与模型设置");
+      } catch (error) {
+        if (resumePausedFlow) {
+          const current = await readPluginRuntime();
+          if (current.flow?.phase === "starting") {
+            current.flow = { phase: "paused", intent: "manual", updatedAt: Date.now() };
+            await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: current });
+          }
+        }
+        throw error;
+      }
       return `已启动 ${mode}`;
     }
     await stopAllTaskTabs("站长后台已停止该任务", { modes: [mode], phase: "stopped" });
     return `已停止 ${mode}`;
+  }
+  if (type === "ext-update") {
+    // Longer delay so the command-result heartbeat can finish before the SW reloads.
+    const result = await applyLocalDevUpdate({ reloadDelayMs: 1500 });
+    if (!result?.ok) throw new Error(result?.error || "远程更新失败");
+    if (result.phase === "waiting") return `已排队更新到 v${result.version}，等待任务结束后加载`;
+    return `正在加载本地新版 v${result.version || ""}`.trim();
   }
   throw new Error("不支持的远程指令");
 }
@@ -1046,7 +1158,12 @@ function updatePluginRuntime(message, sender) {
         detail: String(message?.detail || "").slice(0, 160),
         waitUntil: Number(message?.waitUntil) || 0
       };
+      const taskTabs = await readTaskTabs();
+      if (Number(taskTabs[mode]) !== tabId) await registerTaskTab(mode, tabId);
     } else {
+      if (runtime.tasks[mode] && Number(runtime.tasks[mode].tabId) !== tabId) {
+        return { ok: true, runtime };
+      }
       delete runtime.tasks[mode];
       if (Object.keys(runtime.tasks).length === 0) {
         runtime.startedAt = null;
@@ -1290,17 +1407,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-dev-update-apply") {
-      if (!manualUpdatePromise) {
-        manualUpdatePromise = globalThis.XrcLocalDevUpdate?.applyNow?.({
-          readRuntime: readPluginRuntime,
-          taskTabs: getOpenTaskTabs,
-          stopTasks: pauseAllTasks,
-          force: true,
-          reload: () => setTimeout(() => chrome.runtime.reload(), 750)
-        }) || Promise.resolve({ ok: false, error: "本地更新服务没有加载" });
-        manualUpdatePromise.then(() => { manualUpdatePromise = null; }, () => { manualUpdatePromise = null; });
-      }
-      manualUpdatePromise.then(sendResponse)
+      applyLocalDevUpdate()
+        .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "手动更新失败" }));
       return true;
     }
@@ -1317,7 +1425,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-runtime-get") {
-      readPluginRuntime({ prune: true })
+      readPluginRuntime({ prune: true }).then(verifyTaskRuntime)
         .then((runtime) => sendResponse({ ok: true, runtime }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态读取失败" }));
       return true;
@@ -1435,6 +1543,7 @@ if (typeof module === "object" && module.exports) {
     focusTaskTab,
     openAllTasks,
     readPluginRuntime,
+    verifyTaskRuntime,
     updatePluginRuntime,
     stopAllTaskTabs,
     pauseAllTasks,

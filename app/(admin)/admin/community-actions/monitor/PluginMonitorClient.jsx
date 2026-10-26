@@ -9,16 +9,32 @@ const MODE_LABEL = { timeline: '评论帖子', notifications: '评论通知', 'l
 const PHASE = { running: ['运行中', 'info'], paused: ['已暂停', 'warning'], stopping: ['停止中', 'warning'], idle: ['空闲', 'neutral'], online: ['有心跳', 'info'], unknown: ['状态未知', 'warning'], offline: ['离线', 'danger'] }
 const TASK_PHASE = { running: ['执行中', 'info'], waiting: ['等待中', 'warning'], paused: ['等待中', 'warning'], stopping: ['停止中', 'warning'], idle: ['未启动', 'neutral'], unknown: ['待确认', 'warning'] }
 const GROUP_PHASE = { running: ['有任务执行', 'info'], waiting: ['有任务等待', 'warning'], stopping: ['停止中', 'warning'], idle: ['未启动', 'neutral'], unknown: ['待确认', 'warning'] }
-const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务' }
+const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件' }
 const COMMAND_STATUS = { pending: ['排队中', 'warning'], claimed: ['已下发', 'info'], done: ['已完成', 'success'], failed: ['失败', 'danger'], expired: ['已过期', 'neutral'] }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
 const PLATFORMS = [{ id: 'x', label: 'X' }, { id: 'xhs', label: '小红书' }, { id: 'juejin', label: '掘金' }]
+const DEFAULT_X_ACCOUNT = 'tarsixseveneig1'
 const LIVE_POLL_INTERVAL_MS = 15_000
 const FULL_REFRESH_INTERVAL_MS = 30 * 60_000
 const time = (value) => value ? new Date(value).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '—'
 const clock = (value) => value ? new Date(value).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : ''
 const todayInShanghai = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const adjacentDate = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10)
+const cleanAccount = (value) => String(value || '').replace(/^@+/u, '').trim()
+const resolveAccount = (platform, value) => {
+  const handle = cleanAccount(value)
+  if (platform === 'x') return handle || DEFAULT_X_ACCOUNT
+  return handle
+}
+function AccountFilter({ platform, account, accounts, onChange, ariaLabel }) {
+  const allValue = platform === 'x' ? '__all__' : ''
+  return <label className="inline-flex items-center gap-2 text-[12px] text-[#697268] dark:text-gray-400">账号
+    <select aria-label={ariaLabel} value={account} onChange={(event) => onChange(event.target.value)} className="rounded-md border border-[#d7dfd5] bg-white px-2.5 py-1.5 text-[13px] text-[#273228] dark:border-[#354438] dark:bg-[#101820] dark:text-gray-100">
+      <option value={allValue}>全部账号</option>
+      {accounts.map((item) => <option key={item} value={item}>@{item}</option>)}
+    </select>
+  </label>
+}
 const waitCopy = (waitUntil, now) => {
   const remaining = Number(waitUntil) - Number(now)
   if (!(remaining > 0)) return ''
@@ -40,26 +56,29 @@ function Metric({ label, value, detail, tone = 'default' }) {
   </div>
 }
 
-function DeviceRow({ device, now, platform, onCommand, busyKey }) {
+function DeviceRow({ device, now, platform, latestExtensionVersion, onCommand, busyKey }) {
   const [label, tone] = PHASE[device.phase] || PHASE.unknown
   const quiet = device.phase === 'running' && (!device.lastAction || now - Number(device.lastAction.occurred_at) > 30 * 60 * 1000)
   const groups = Array.isArray(device.groups) ? device.groups : []
   const commands = Array.isArray(device.commands) ? device.commands : []
   const canControl = platform === 'x' && device.online && device.telemetry
+  const canUpdate = platform === 'x' && device.online && device.updateAvailable
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
   return <details className="group border-t border-[#e5e9e2] first:border-t-0 dark:border-[#263142]" open={platform === 'x' && Boolean(device.telemetry)}>
     <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 hover:bg-[#f7faf6] dark:hover:bg-[#141d26] sm:flex-nowrap">
-      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-[#273228] dark:text-gray-100">{device.accountHandle ? `@${device.accountHandle}` : '未识别账号'}</span><span className="mt-0.5 block text-[12px] text-[#7a8479] dark:text-gray-400">插件实例 {device.id.slice(0, 12)}… · v{device.extensionVersion || '未知'}</span></span>
+      <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-[#273228] dark:text-gray-100">{device.accountHandle ? `@${device.accountHandle}` : '未识别账号'}</span><span className="mt-0.5 block text-[12px] text-[#7a8479] dark:text-gray-400">插件实例 {device.id.slice(0, 12)}… · v{device.extensionVersion || '未知'}{canUpdate && latestExtensionVersion ? ` · 落后于 v${latestExtensionVersion}` : ''}</span></span>
       <span className="text-[12px] text-[#697268] dark:text-gray-400">心跳 {time(device.lastSeenAt)}</span>
+      {canUpdate ? <StatusPill size="sm" tone="warning">可更新</StatusPill> : null}
       <StatusPill size="sm" tone={tone}>{label}</StatusPill>
       <span aria-hidden="true" className="text-[#899187] transition group-open:rotate-180">⌄</span>
     </summary>
     <div className="border-t border-[#e5e9e2] bg-[#fafbf8] px-4 py-4 text-[13px] dark:border-[#263142] dark:bg-[#101820]">
       {platform === 'x' ? <>
-        {canControl ? <div className="mb-4 flex flex-wrap gap-2">
-          <AdminButton size="sm" variant="primary" disabled={Boolean(busyKey)} onClick={() => send('flow-start')}>全流程启动</AdminButton>
-          <AdminButton size="sm" disabled={Boolean(busyKey)} onClick={() => send('flow-pause')}>暂停全部</AdminButton>
-          <span className="self-center text-[11px] text-[#7a8479] dark:text-gray-400">指令随下次心跳下发（通常 1 分钟内），执行后回写结果。</span>
+        {canControl || canUpdate ? <div className="mb-4 flex flex-wrap gap-2">
+          {canControl && device.phase === 'idle' ? <AdminButton size="sm" variant="primary" disabled={Boolean(busyKey)} onClick={() => send('flow-start')}>全流程启动</AdminButton> : null}
+          {canControl && ['running', 'paused'].includes(device.phase) ? <AdminButton size="sm" disabled={Boolean(busyKey)} onClick={() => send('flow-pause')}>暂停全部</AdminButton> : null}
+          {canUpdate ? <AdminButton size="sm" variant={canControl ? 'ghost' : 'primary'} disabled={Boolean(busyKey)} onClick={() => send('ext-update')}>远程更新到 v{latestExtensionVersion}</AdminButton> : null}
+          <span className="self-center text-[11px] text-[#7a8479] dark:text-gray-400">{canUpdate ? '远程更新会停任务并重载本机已同步的新文件；目录仍是旧版时会回写失败。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</span>
         </div> : null}
         {groups.length ? <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
           <div className="flex items-center justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
@@ -93,9 +112,10 @@ function DeviceRow({ device, now, platform, onCommand, busyKey }) {
                           </div>
                           <p className="mb-0 mt-1 text-[11px] leading-5 text-[#536471] dark:text-gray-400">{detail}{task.updatedAt ? ` · 最近更新 ${clock(task.updatedAt)}` : ''}</p>
                         </div>
-                        {canControl ? <div className="flex shrink-0 gap-1">
-                          <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-start', task.mode)} className="rounded-md border border-[#cfe3f5] px-2 py-1 text-[11px] font-semibold text-[#1d9bf0] disabled:opacity-40 dark:border-[#354438]">启动</button>
-                          <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-stop', task.mode)} className="rounded-md border border-[#f0d0d3] px-2 py-1 text-[11px] font-semibold text-[#f4212e] disabled:opacity-40 dark:border-[#354438]">{taskBusy ? '…' : '停止'}</button>
+                        {canControl && task.phase !== 'unknown' ? <div className="flex shrink-0 gap-1">
+                          {task.phase === 'idle' ? <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-start', task.mode)} className="rounded-md border border-[#cfe3f5] px-2 py-1 text-[11px] font-semibold text-[#1d9bf0] disabled:opacity-40 dark:border-[#354438]">{taskBusy ? '…' : '启动'}</button> : null}
+                          {['running', 'waiting', 'paused'].includes(task.phase) ? <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-stop', task.mode)} className="rounded-md border border-[#f0d0d3] px-2 py-1 text-[11px] font-semibold text-[#f4212e] disabled:opacity-40 dark:border-[#354438]">{taskBusy ? '…' : '停止'}</button> : null}
+                          {task.phase === 'stopping' ? <span className="text-[11px] text-[#697268]">停止中…</span> : null}
                         </div> : null}
                       </div>
                     </li>
@@ -131,6 +151,7 @@ export default function PluginMonitorClient() {
   const searchParams = useSearchParams()
   const requestedPlatform = searchParams.get('platform') || 'x'
   const platform = PLATFORMS.some((item) => item.id === requestedPlatform) ? requestedPlatform : 'x'
+  const account = resolveAccount(platform, searchParams.get('account'))
   const [selectedDate, setSelectedDate] = useState(todayInShanghai)
   const [offset, setOffset] = useState(0)
   const [reportOffset, setReportOffset] = useState(0)
@@ -144,6 +165,16 @@ export default function PluginMonitorClient() {
   const requestId = useRef(0)
   const lastFullRefreshAt = useRef(0)
 
+  const writeQuery = useCallback((next = {}) => {
+    const query = new URLSearchParams()
+    const nextPlatform = next.platform || platform
+    const nextAccount = resolveAccount(nextPlatform, next.account !== undefined ? next.account : account)
+    if (nextPlatform !== 'x') query.set('platform', nextPlatform)
+    if (nextAccount) query.set('account', nextAccount)
+    const suffix = query.toString()
+    router.replace(`/admin/community-actions/monitor${suffix ? `?${suffix}` : ''}`, { scroll: false })
+  }, [account, platform, router])
+
   const refresh = useCallback(async (showLoading = false, liveOnly = false) => {
     if (document.hidden && !showLoading) return
     const id = ++requestId.current
@@ -151,6 +182,7 @@ export default function PluginMonitorClient() {
     if (!liveOnly) lastFullRefreshAt.current = Date.now()
     try {
       const query = new URLSearchParams({ platform, date: selectedDate, offset: String(offset), reportOffset: String(reportOffset) })
+      if (account) query.set('account', account)
       if (liveOnly) query.set('view', 'live')
       const response = await fetch(`/api/admin/community-actions/monitor?${query}`, { cache: 'no-store', credentials: 'same-origin' })
       const contentType = response.headers.get('content-type') || ''
@@ -159,7 +191,7 @@ export default function PluginMonitorClient() {
       if (!payload || typeof payload !== 'object') throw new Error('监控接口返回了非 JSON 数据')
       if (id !== requestId.current) return
       if (liveOnly) {
-        setData((current) => current ? { ...current, now: payload.now, devices: payload.devices, migrationRequired: payload.migrationRequired } : current)
+        setData((current) => current ? { ...current, now: payload.now, devices: payload.devices, accounts: payload.accounts || current.accounts, accountHandle: payload.accountHandle ?? current.accountHandle, latestExtensionVersion: payload.latestExtensionVersion || current.latestExtensionVersion, migrationRequired: payload.migrationRequired } : current)
       } else {
         setData(payload)
       }
@@ -169,7 +201,7 @@ export default function PluginMonitorClient() {
     } finally {
       if (id === requestId.current) setLoading(false)
     }
-  }, [platform, selectedDate, offset, reportOffset])
+  }, [account, platform, selectedDate, offset, reportOffset])
 
   const sendCommand = useCallback(async ({ deviceId, command, mode = '' }) => {
     const key = `${deviceId}:${command}:${mode || ''}`
@@ -214,9 +246,18 @@ export default function PluginMonitorClient() {
     setReportOffset(0)
     setShowAllTasks(false)
     setShowOlderDevices(false)
-    router.replace(`/admin/community-actions/monitor?platform=${nextPlatform}`, { scroll: false })
+    writeQuery({ platform: nextPlatform, account: nextPlatform === 'x' ? DEFAULT_X_ACCOUNT : '' })
   }
-  const visibleData = data?.platform === platform && data?.selectedDate === selectedDate ? data : null
+  const changeAccount = (nextAccount) => {
+    const handle = resolveAccount(platform, nextAccount)
+    if (handle === account) return
+    setOffset(0)
+    setReportOffset(0)
+    setShowAllTasks(false)
+    setShowOlderDevices(false)
+    writeQuery({ account: handle })
+  }
+  const visibleData = data?.platform === platform && data?.selectedDate === selectedDate && (account === '__all__' ? !data?.accountHandle : data?.accountHandle === account) ? data : null
   const devices = visibleData?.devices || []
   const recentDevices = devices.slice(0, 3)
   const olderDevices = devices.slice(3)
@@ -233,31 +274,35 @@ export default function PluginMonitorClient() {
   const dailyTotal = tasks.reduce((sum, task) => sum + task.success + task.failed + task.skipped + task.limited, 0)
   const minDate = visibleData?.minDate || adjacentDate(todayInShanghai(), -365)
   const maxDate = visibleData?.maxDate || todayInShanghai()
+  const accountOptions = [...new Set([...(visibleData?.accounts || data?.accounts || []), account].filter((item) => item && item !== '__all__'))]
+  const accountLabel = account && account !== '__all__' ? `@${account}` : '全部账号'
 
-  return <AdminPage title="插件监控" description="按平台查看设备心跳、四类功能实时状态、远程启停、确认回执与趋势。X 状态约每 1 分钟心跳同步，任务变更会立即上报；页面每 15 秒刷新，隐藏时暂停。" actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
-    <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="选择插件平台">{PLATFORMS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={platform === item.id} onClick={() => changePlatform(item.id)} className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${platform === item.id ? 'border-[#37624b] bg-[#37624b] text-white dark:border-emerald-300 dark:bg-emerald-300 dark:text-[#101820]' : 'border-[#d7dfd5] text-[#4e5b50] hover:border-[#77977e] dark:border-[#354438] dark:text-gray-300'}`}>{item.label}</button>)}</div>
+  return <AdminPage title="插件监控" description="按平台查看设备与任务状态；动作趋势、单日明细可按账号筛选。X 默认显示 @tarsixseveneig1 的动作数据。页面每 15 秒刷新，隐藏时暂停。" actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
+    <div className="mb-5 flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="选择插件平台">{PLATFORMS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={platform === item.id} onClick={() => changePlatform(item.id)} className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${platform === item.id ? 'border-[#37624b] bg-[#37624b] text-white dark:border-emerald-300 dark:bg-emerald-300 dark:text-[#101820]' : 'border-[#d7dfd5] text-[#4e5b50] hover:border-[#77977e] dark:border-[#354438] dark:text-gray-300'}`}>{item.label}</button>)}</div>
+    </div>
     {error ? <p role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">读取失败：{error}。请刷新重试。</p> : null}
     {commandNote ? <p role="status" className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">{commandNote}</p> : null}
     {platform === 'x' && visibleData?.migrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 0115_x_extension_runtime.sql；动作回执仍可继续接收。</p> : null}
     {visibleData?.countsMigrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 {platform === 'x' ? '0117_community_action_daily_counts.sql' : '0118_community_action_all_platform_counts.sql'}；历史统计暂不可用，实时状态与回执明细仍可查看。</p> : null}
 
-    <Section title="设备状态" description="按最近心跳显示插件实例；X 平台同步四类功能状态，并可远程全流程启动 / 暂停或单项启停。在线表示 5 分钟内收到心跳。" actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+    <Section title="设备状态" description={`实例按固定账号顺序排列（先 @tarsixseveneig1，再 @tuaranx）；不因心跳前后跳动。X 同步四类功能状态，并可远程启停与远程更新。站点最新版 v${visibleData?.latestExtensionVersion || data?.latestExtensionVersion || '—'}；落后时会出现「可更新」。在线表示 5 分钟内有心跳。下方趋势与单日明细使用同一账号筛选。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
       <dl className="-mx-4 -mt-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-3 md:-mx-5"><Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" /><Metric label={platform === 'x' ? '运行中' : '近 7 天有回执'} value={loading && !visibleData ? '—' : platform === 'x' ? running : recentActionDevices} detail={platform === 'x' ? '插件声明的任务状态' : '有确认动作的实例'} tone="success" /><Metric label="较早记录" value={loading && !visibleData ? '—' : olderDevices.length} detail="默认收起，可按需展开" /></dl>
-      {devices.length ? <div className="-mx-4 -mb-4 md:-mx-5">{recentDevices.map((device) => <DeviceRow key={device.id} device={device} now={visibleData.now} platform={platform} onCommand={sendCommand} busyKey={busyKey} />)}{olderDevices.length ? <><button type="button" onClick={() => setShowOlderDevices((value) => !value)} aria-expanded={showOlderDevices} className="w-full border-t border-[#e5e9e2] px-4 py-3 text-left text-[12px] font-medium text-[#48634b] hover:bg-[#f7faf6] dark:border-[#263142] dark:text-emerald-300 dark:hover:bg-[#141d26]">{showOlderDevices ? '收起较早记录' : `查看较早记录（${olderDevices.length} 条）`}</button>{showOlderDevices ? olderDevices.map((device) => <DeviceRow key={device.id} device={device} now={visibleData.now} platform={platform} onCommand={sendCommand} busyKey={busyKey} />) : null}</> : null}</div> : <div className="pt-4"><EmptyState title={loading ? '正在读取插件实例' : '还没有插件实例'} description={loading ? '请稍候。' : '在插件中配置回执密钥并保持浏览器运行；首次上报后会出现。'} /></div>}
-      <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">离线请检查浏览器、扩展、密钥与网络。{platform === 'x' ? '远程指令依赖插件心跳；请先执行迁移 0120_x_extension_commands.sql，并更新到支持远程操控的本地扩展。' : '此平台目前只上报心跳和动作回执。'}</p>
+      {devices.length ? <div className="-mx-4 -mb-4 md:-mx-5">{recentDevices.map((device) => <DeviceRow key={device.id} device={device} now={visibleData.now} platform={platform} latestExtensionVersion={visibleData?.latestExtensionVersion || data?.latestExtensionVersion} onCommand={sendCommand} busyKey={busyKey} />)}{olderDevices.length ? <><button type="button" onClick={() => setShowOlderDevices((value) => !value)} aria-expanded={showOlderDevices} className="w-full border-t border-[#e5e9e2] px-4 py-3 text-left text-[12px] font-medium text-[#48634b] hover:bg-[#f7faf6] dark:border-[#263142] dark:text-emerald-300 dark:hover:bg-[#141d26]">{showOlderDevices ? '收起较早记录' : `查看较早记录（${olderDevices.length} 条）`}</button>{showOlderDevices ? olderDevices.map((device) => <DeviceRow key={device.id} device={device} now={visibleData.now} platform={platform} latestExtensionVersion={visibleData?.latestExtensionVersion || data?.latestExtensionVersion} onCommand={sendCommand} busyKey={busyKey} />) : null}</> : null}</div> : <div className="pt-4"><EmptyState title={loading ? '正在读取插件实例' : '还没有插件实例'} description={loading ? '请稍候。' : '在插件中配置回执密钥并保持浏览器运行；首次上报后会出现。'} /></div>}
+      <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">离线请检查浏览器是否在跑、扩展是否已加载、回执密钥与网络。{platform === 'x' ? '远程启停与更新依赖心跳（通常 1 分钟内）；落后版本会出现「可更新」。远程更新要求该电脑本地目录已有新版文件。' : '此平台目前只上报心跳和动作回执。'}</p>
     </Section>
 
-    <Section title="最近 14 天动作趋势" description="按北京时间统计确认回执。点击柱形，查看该日期的单日明细。" className="mt-5">
-      {data?.platform === platform && !data.countsMigrationRequired ? <PluginMonitorTrend days={data.trend || []} tasks={data.tasks || []} selectedDate={selectedDate} onDateChange={changeDate} /> : <EmptyState title={data?.platform === platform && data.countsMigrationRequired ? '每日统计尚未就绪' : loading ? '正在读取动作趋势' : '暂无趋势数据'} description={data?.platform === platform && data.countsMigrationRequired ? '应用页面提示的数据库迁移后查看趋势。' : loading ? '请稍候。' : '请刷新重试。'} />}
+    <Section title="最近 14 天动作趋势" description={`${accountLabel} · 按北京时间统计确认回执。点击柱形，查看该日期的单日明细。`} className="mt-5" actions={<AccountFilter platform={platform} account={account} accounts={accountOptions} onChange={changeAccount} ariaLabel="筛选动作趋势账号" />}>
+      {visibleData && !visibleData.countsMigrationRequired ? <PluginMonitorTrend days={visibleData.trend || []} tasks={visibleData.tasks || []} selectedDate={selectedDate} onDateChange={changeDate} /> : <EmptyState title={visibleData?.countsMigrationRequired ? '每日统计尚未就绪' : loading ? '正在读取动作趋势' : '暂无趋势数据'} description={visibleData?.countsMigrationRequired ? '应用页面提示的数据库迁移后查看趋势。' : loading ? '请稍候。' : '请刷新重试。'} />}
     </Section>
 
-    <Section title={`${selectedDate} · 单日明细`} description={platform === 'x' ? '以下统计、任务结果和回执均属于所选北京时间日期；自动同步日报单独列出。' : '以下统计、任务结果和回执均属于所选北京时间日期。'} className="mt-5" actions={<div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, -1))} disabled={selectedDate <= minDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="前一天">←</button><input type="date" aria-label="选择单日明细日期" value={selectedDate} min={minDate} max={maxDate} onChange={(event) => changeDate(event.target.value)} className="rounded-md border border-[#d7dfd5] bg-white px-2.5 py-1.5 text-[13px] text-[#273228] dark:border-[#354438] dark:bg-[#101820] dark:text-gray-100" /><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, 1))} disabled={selectedDate >= maxDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="后一天">→</button><AdminButton size="sm" variant="ghost" onClick={() => changeDate(todayInShanghai())} disabled={selectedDate === maxDate}>今天</AdminButton></div>}>
+    <Section title={`${selectedDate} · 单日明细`} description={`${accountLabel} · ${platform === 'x' ? '以下统计、任务结果和回执均属于所选北京时间日期；自动同步日报单独列出。' : '以下统计、任务结果和回执均属于所选北京时间日期。'}`} className="mt-5" actions={<div className="flex flex-wrap items-center gap-2"><AccountFilter platform={platform} account={account} accounts={accountOptions} onChange={changeAccount} ariaLabel="筛选单日明细账号" /><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, -1))} disabled={selectedDate <= minDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="前一天">←</button><input type="date" aria-label="选择单日明细日期" value={selectedDate} min={minDate} max={maxDate} onChange={(event) => changeDate(event.target.value)} className="rounded-md border border-[#d7dfd5] bg-white px-2.5 py-1.5 text-[13px] text-[#273228] dark:border-[#354438] dark:bg-[#101820] dark:text-gray-100" /><button type="button" onClick={() => changeDate(adjacentDate(selectedDate, 1))} disabled={selectedDate >= maxDate} className="rounded-md border border-[#d7dfd5] px-2.5 py-1.5 text-[12px] disabled:opacity-40 dark:border-[#354438]" aria-label="后一天">→</button><AdminButton size="sm" variant="ghost" onClick={() => changeDate(todayInShanghai())} disabled={selectedDate === maxDate}>今天</AdminButton></div>}>
       <dl className="-mx-4 -mt-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-3 md:-mx-5"><Metric label="确认成功" value={!visibleData || visibleData.countsMigrationRequired ? '—' : successes} detail="回执去重后的动作" tone="success" /><Metric label="失败 / 受限" value={!visibleData || visibleData.countsMigrationRequired ? '—' : issues} detail="需要查看明细" tone={issues ? 'warning' : 'default'} /><Metric label="回执总数" value={!visibleData || visibleData.countsMigrationRequired ? '—' : dailyTotal} detail="含成功、失败、受限和跳过" /></dl>
       <div className="mt-5 flex items-center justify-between gap-3"><div><h3 className="m-0 text-[14px] font-semibold text-[#273228] dark:text-gray-100">任务结果</h3><p className="mb-0 mt-0.5 text-[12px] text-[#7a8479] dark:text-gray-400">确认回执按任务聚合；默认隐藏没有动作的任务。</p></div>{activeTasks.length && activeTasks.length < tasks.length ? <button type="button" onClick={() => setShowAllTasks((value) => !value)} className="shrink-0 text-[12px] font-medium text-emerald-700 hover:underline dark:text-emerald-300">{showAllTasks ? '隐藏空任务' : `显示全部 ${tasks.length} 项`}</button> : null}</div>
       {shownTasks.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[480px] text-left text-[13px]"><thead className="text-[12px] text-[#7a8479] dark:text-gray-400"><tr><th className="py-2 font-medium">任务</th><th className="py-2 text-right font-medium">成功</th><th className="py-2 text-right font-medium">失败</th><th className="py-2 text-right font-medium">跳过</th><th className="py-2 text-right font-medium">受限</th></tr></thead><tbody>{shownTasks.map((task) => <tr key={task.task} className="border-t border-[#e5e9e2] dark:border-[#263142]"><th scope="row" className="py-2.5 font-medium text-[#273228] dark:text-gray-100">{task.label}</th><td className="py-2.5 text-right font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{task.success}</td><td className="py-2.5 text-right tabular-nums">{task.failed}</td><td className="py-2.5 text-right tabular-nums">{task.skipped}</td><td className="py-2.5 text-right tabular-nums">{task.limited}</td></tr>)}</tbody></table></div> : <div className="mt-3"><EmptyState title={visibleData?.countsMigrationRequired ? '每日统计尚未就绪' : loading ? '正在读取任务结果' : '这一天没有确认动作'} description={visibleData?.countsMigrationRequired ? '动作回执仍可在下方查看；请先应用数据库迁移。' : loading ? '请稍候。' : '选择其他日期，或等待插件上报动作回执。'} /></div>}
     </Section>
 
-    {platform === 'x' ? <Section title={`${selectedDate} · 自动同步日报`} description="插件本地确认成功的动作计数，经心跳与每日 09:00 定时任务自动写入；与确认回执是两份独立记录。" className="mt-5">
+    {platform === 'x' ? <Section title={`${selectedDate} · 自动同步日报`} description={`${accountLabel} · 插件本地确认成功的动作计数，经心跳与每日 09:00 定时任务自动写入；与确认回执是两份独立记录。`} className="mt-5">
       {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
       {reports.length ? <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
         <div className="flex items-center justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
@@ -298,8 +343,8 @@ export default function PluginMonitorClient() {
       <AdminPagination total={visibleData?.reportTotal || 0} offset={reportOffset} limit={visibleData?.reportLimit || 20} loading={loading} onOffsetChange={setReportOffset} />
     </Section> : null}
 
-    <Section title={`${selectedDate} · 动作明细`} description="所选日期的确认回执；不保存正文、Cookie 或模型密钥。" className="mt-5">
-      {events.length ? <div className="overflow-x-auto"><table className="w-full min-w-[600px] text-left text-[13px]"><thead className="text-[12px] text-[#7a8479] dark:text-gray-400"><tr><th className="py-2 font-medium">时间</th><th className="font-medium">账号</th><th className="font-medium">任务</th><th className="font-medium">结果</th><th className="font-medium">错误码</th><th className="font-medium">目标</th></tr></thead><tbody>{events.map((event) => { const [label, tone] = RESULT[event.result] || [event.result, 'neutral']; return <tr key={event.id} className="border-t border-[#e5e9e2] dark:border-[#263142]"><td className="whitespace-nowrap py-2.5">{time(event.occurredAt)}</td><td>{event.accountHandle ? `@${event.accountHandle}` : '—'}</td><td>{event.taskLabel}</td><td><StatusPill tone={tone} size="sm">{label}</StatusPill></td><td className="text-[#7a8479] dark:text-gray-400">{event.errorCode || '—'}</td><td className="max-w-[16rem] truncate text-[#7a8479] dark:text-gray-400" title={event.targetId || ''}>{event.targetId || '—'}</td></tr> })}</tbody></table></div> : <EmptyState title={loading ? '正在读取动作明细' : '这一天没有动作明细'} description={loading ? '请稍候。' : '选择其他日期，或等待插件确认动作后上报。'} />}
+    <Section title={`${selectedDate} · 动作明细`} description={`${accountLabel} · 所选日期的确认回执；不保存正文、Cookie 或模型密钥。`} className="mt-5">
+      {events.length ? <div className="overflow-x-auto"><table className="w-full min-w-[600px] text-left text-[13px]"><thead className="text-[12px] text-[#7a8479] dark:text-gray-400"><tr><th className="py-2 font-medium">时间</th><th className="font-medium">任务</th><th className="font-medium">结果</th><th className="font-medium">错误码</th><th className="font-medium">目标</th></tr></thead><tbody>{events.map((event) => { const [label, tone] = RESULT[event.result] || [event.result, 'neutral']; return <tr key={event.id} className="border-t border-[#e5e9e2] dark:border-[#263142]"><td className="whitespace-nowrap py-2.5">{time(event.occurredAt)}</td><td>{event.taskLabel}</td><td><StatusPill tone={tone} size="sm">{label}</StatusPill></td><td className="text-[#7a8479] dark:text-gray-400">{event.errorCode || '—'}</td><td className="max-w-[16rem] truncate text-[#7a8479] dark:text-gray-400" title={event.targetId || ''}>{event.targetId || '—'}</td></tr> })}</tbody></table></div> : <EmptyState title={loading ? '正在读取动作明细' : '这一天没有动作明细'} description={loading ? '请稍候。' : '选择其他日期，或等待插件确认动作后上报。'} />}
       <AdminPagination total={visibleData?.eventTotal || 0} offset={offset} limit={visibleData?.limit || 20} loading={loading} onOffsetChange={setOffset} />
     </Section>
   </AdminPage>

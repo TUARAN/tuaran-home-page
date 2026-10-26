@@ -55,6 +55,7 @@
     if (event.result !== "success" || !metric) return;
     const date = shanghaiDate(event.occurredAt);
     const handle = cleanHandle(accountHandle).toLowerCase();
+    if (!handle) return;
     const rows = await dailyReports();
     let row = rows.find((item) => item.date === date && item.accountHandle === handle);
     if (!row) {
@@ -93,7 +94,8 @@
   }
 
   async function mergeAccountData(fromHandle, toHandle) {
-    const from = cleanHandle(fromHandle).toLowerCase();
+    const legacyHandle = (value) => cleanHandle(value, { allowPlaceholder: true }).toLowerCase();
+    const from = legacyHandle(fromHandle);
     const to = cleanHandle(toHandle).toLowerCase();
     if (!from || !to || from === to) return { ok: true, changed: false, from, to };
     return enqueue(async () => {
@@ -101,8 +103,9 @@
       const daily = Array.isArray(stored?.[DAILY_KEY]) ? stored[DAILY_KEY] : [];
       const mergedDaily = new Map();
       for (const raw of daily) {
-        const row = { ...raw, accountHandle: cleanHandle(raw?.accountHandle).toLowerCase() || to };
-        if (row.accountHandle === from) row.accountHandle = to;
+        let handle = legacyHandle(raw?.accountHandle) || to;
+        if (handle === from) handle = to;
+        const row = { ...raw, accountHandle: handle };
         const key = `${row.date || ""}::${row.accountHandle}`;
         const current = mergedDaily.get(key) || { date: row.date, accountHandle: row.accountHandle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
         for (const metric of Object.keys(current.counts)) current.counts[metric] = Math.max(0, Number(current.counts[metric]) || 0) + Math.max(0, Number(row.counts?.[metric]) || 0);
@@ -112,14 +115,14 @@
         mergedDaily.set(key, current);
       }
       const limits = Array.isArray(stored?.[LIMIT_KEY]) ? stored[LIMIT_KEY] : [];
-      const mergedLimits = limits.map((row) => ({ ...row, accountHandle: cleanHandle(row?.accountHandle).toLowerCase() === from ? to : cleanHandle(row?.accountHandle).toLowerCase() }));
+      const mergedLimits = limits.map((row) => ({ ...row, accountHandle: legacyHandle(row?.accountHandle) === from ? to : legacyHandle(row?.accountHandle) }));
       const hypotheses = Array.isArray(stored?.[HYPOTHESIS_KEY]) ? stored[HYPOTHESIS_KEY] : [];
-      const mergedHypotheses = hypotheses.map((row) => ({ ...row, accountHandle: cleanHandle(row?.accountHandle).toLowerCase() === from ? to : cleanHandle(row?.accountHandle).toLowerCase() }));
+      const mergedHypotheses = hypotheses.map((row) => ({ ...row, accountHandle: legacyHandle(row?.accountHandle) === from ? to : legacyHandle(row?.accountHandle) }));
       const config = stored?.[STORAGE_KEY] && typeof stored[STORAGE_KEY] === "object" ? { ...stored[STORAGE_KEY] } : null;
-      const configWasFrom = Boolean(config && cleanHandle(config.accountHandle).toLowerCase() === from);
+      const configWasFrom = Boolean(config && legacyHandle(config.accountHandle) === from);
       if (config) {
-        if (cleanHandle(config.accountHandle).toLowerCase() === from) config.accountHandle = to;
-        config.queue = Array.isArray(config.queue) ? config.queue.map((event) => ({ ...event, accountHandle: cleanHandle(event?.accountHandle).toLowerCase() === from ? to : event.accountHandle })) : [];
+        if (legacyHandle(config.accountHandle) === from) config.accountHandle = to;
+        config.queue = Array.isArray(config.queue) ? config.queue.map((event) => ({ ...event, accountHandle: legacyHandle(event?.accountHandle) === from ? to : event.accountHandle })) : [];
       }
       await root.chrome.storage.local.set({
         [DAILY_KEY]: [...mergedDaily.values()].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))),
@@ -127,10 +130,10 @@
         [HYPOTHESIS_KEY]: mergedHypotheses,
         ...(config ? { [STORAGE_KEY]: config } : {})
       });
-      const changed = daily.some((row) => cleanHandle(row?.accountHandle).toLowerCase() === from)
-        || limits.some((row) => cleanHandle(row?.accountHandle).toLowerCase() === from)
+      const changed = daily.some((row) => legacyHandle(row?.accountHandle) === from)
+        || limits.some((row) => legacyHandle(row?.accountHandle) === from)
         || configWasFrom
-        || (config?.queue || []).some((event, index) => cleanHandle(stored?.[STORAGE_KEY]?.queue?.[index]?.accountHandle).toLowerCase() === from);
+        || (config?.queue || []).some((event, index) => legacyHandle(stored?.[STORAGE_KEY]?.queue?.[index]?.accountHandle) === from);
       return { ok: true, changed, from, to };
     });
   }
@@ -177,8 +180,10 @@
     return `evt-${Date.now()}-${Math.random().toString(16).slice(2, 12)}`;
   }
 
-  function cleanHandle(value) {
-    return String(value || "").replace(/[\u0000-\u001f]/g, "").trim().replace(/^@+/u, "").replace(/\s+/g, "").slice(0, 40);
+  function cleanHandle(value, { allowPlaceholder = false } = {}) {
+    const handle = String(value || "").replace(/[\u0000-\u001f]/g, "").trim().replace(/^@+/u, "").replace(/\s+/g, "").slice(0, 40);
+    if (handle.toLowerCase() === "default") return allowPlaceholder ? "default" : "";
+    return handle;
   }
 
   function cleanCode(value) {
@@ -323,8 +328,10 @@
   async function uploadDailyNow(date, accountHandle) {
       const config = await ensureConfig();
       if (!config.secret) return { ok: false, error: "请先在设置里填写社区回执密钥" };
+      const handle = cleanHandle(accountHandle).toLowerCase();
+      if (!handle) return { ok: false, error: "账号未识别，跳过上传" };
       const rows = await dailyReports();
-      const row = rows.find((item) => item.date === date && item.accountHandle === accountHandle);
+      const row = rows.find((item) => item.date === date && String(item.accountHandle || "").toLowerCase() === handle);
       if (!row) return { ok: false, error: "这一天没有本地报告" };
       let response;
       try {
@@ -355,6 +362,7 @@
     return dailyReports().then((rows) => rows
       .filter((row) => {
         if (!/^\d{4}-\d{2}-\d{2}$/u.test(row?.date || "")) return false;
+        if (!cleanHandle(row?.accountHandle)) return false;
         const dirty = !Number(row.uploadedAt) || Number(row.updatedAt) > Number(row.uploadedAt);
         if (!dirty) return false;
         if (includeToday && row.date === beforeDate) return true;
@@ -480,9 +488,9 @@
   }
 
   function heartbeatFromBackground(accountHandle) {
+    const handle = cleanHandle(accountHandle);
     return enqueue(async () => {
       const config = await ensureConfig();
-      const handle = cleanHandle(accountHandle);
       if (handle) config.accountHandle = handle;
       await storageSet(config);
       const heartbeat = await postCurrent();
@@ -491,6 +499,9 @@
         error: error?.message || "日报同步失败"
       }));
       return { ...heartbeat, daily };
+    }).then(async (result) => {
+      if (handle) await mergeAccountData("default", handle).catch(() => null);
+      return result;
     });
   }
 

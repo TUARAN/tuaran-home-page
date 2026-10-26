@@ -95,7 +95,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.14";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.20";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -194,11 +194,11 @@
         storage: chrome.storage.local,
         accountKey: currentAccountHandle() || "default",
         target: state.assistantMode === "likes-replies" ? "replies" : "posts",
-        onLike(targetId, accountHandle, target) {
-          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "success", targetId, accountHandle });
+        onLike(targetId, _accountKey, target) {
+          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "success", targetId, accountHandle: currentAccountHandle() || lastKnownAccountHandle });
         },
-        onLimit(accountHandle, target, errorCode) {
-          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "limited", errorCode, accountHandle });
+        onLimit(_accountKey, target, errorCode) {
+          reportCommunityAction({ task: target === "replies" ? "reply-like" : "post-like", result: "limited", errorCode, accountHandle: currentAccountHandle() || lastKnownAccountHandle });
         },
         onUpdate(snapshot) {
           likeState = snapshot;
@@ -270,7 +270,7 @@
     const strip = panel.querySelector("[data-xrc-today-summary]");
     if (!strip) return;
     strip.title = `${today} · 本机所有账号的今日合计`;
-    for (const metric of ["comments", "likes", "posts"]) {
+    for (const metric of ["comments", "likes", "unfollows", "posts"]) {
       const node = strip.querySelector(`[data-xrc-today-${metric}]`);
       if (node) node.textContent = String(counts[metric]);
     }
@@ -790,9 +790,11 @@
       status.className = "xrc-flow-detail-status";
       status.textContent = labels[task.status];
       const note = document.createElement("small");
-      const updatedAt = Number(pluginRuntime.tasks?.[task.key]?.updatedAt) || 0;
+      const taskRuntime = pluginRuntime.tasks?.[task.key];
+      const updatedAt = Number(taskRuntime?.updatedAt) || 0;
+      const detail = String(taskRuntime?.detail || "").trim();
       note.textContent = updatedAt
-        ? `${hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+        ? `${detail && ["running", "waiting"].includes(task.status) ? detail : hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
         : hints[task.status];
       row.append(name, status, note);
       return row;
@@ -845,8 +847,11 @@
       }
       return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     }
-    if (tasks.length) {
+    if (tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
       return { label: "暂停全部任务", status: "running", action: "pause", title: "点此暂停全部任务" };
+    }
+    if (tasks.length) {
+      return { label: "状态待确认", status: "unknown", action: "start", title: "任务窗口状态不确定，点此检查并启动未运行任务" };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
@@ -865,7 +870,7 @@
     if (label) label.textContent = model.label;
     const showOverview = model.status === "running" || model.status === "paused"
       || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
-      || model.status === "stalled";
+      || model.status === "stalled" || model.status === "unknown";
     if (overview) overview.hidden = !showOverview;
     const summary = flowTaskOverview(pluginRuntime);
     if (count) count.textContent = summary.text;
@@ -2056,9 +2061,10 @@
 
   function reportCommunityAction(event) {
     try {
+      const handle = String(event?.accountHandle || currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
       globalThis.XrcCommunityReceipt?.report({
         ...event,
-        accountHandle: event?.accountHandle || currentAccountHandle() || lastKnownAccountHandle
+        accountHandle: handle.toLowerCase() === "default" ? "" : handle
       });
     } catch (error) {}
   }
@@ -3407,8 +3413,8 @@
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
-            </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-posts">发帖</span></div></div>
-          <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments>0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
+            </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-unfollows">取关</span><span class="xrc-metric-posts">发帖</span></div></div>
+          <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments>0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-unfollows" data-xrc-today-unfollows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
         </div>
         <section class="xrc-monitor" data-xrc-monitor hidden aria-label="异常监控中心">
           <div class="xrc-docs-head">
@@ -4452,6 +4458,11 @@
     paintFlowButton(panel);
     renderDevUpdateBanner(panel);
     applyTaskTitle();
+    const brand = panel.querySelector(".xrc-title");
+    if (brand) {
+      const handle = String(currentAccountHandle() || "").replace(/^@/u, "");
+      brand.textContent = handle ? `X高频互动助手 · @${handle}` : "X高频互动助手";
+    }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
     syncReportPage(panel);
@@ -4573,6 +4584,7 @@
     begin({ resume: false });
   }
 
+  const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
   const TASK_TITLE_RE = /^(?:评论帖子|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
@@ -4588,10 +4600,16 @@
     return "评论帖子";
   }
 
+  function stripManagedTaskTitle(title) {
+    return String(title || "").replace(ACCOUNT_TITLE_RE, "").replace(TASK_TITLE_RE, "").trim();
+  }
+
   function applyTaskTitle() {
     const label = taskWindowLabel();
-    const raw = String(document.title || "").replace(TASK_TITLE_RE, "").trim();
-    const next = raw ? `${label} · ${raw}` : label;
+    const handle = String(currentAccountHandle() || rememberAccountHandle() || "").replace(/^@/u, "");
+    const head = handle ? `@${handle} · ${label}` : label;
+    const raw = stripManagedTaskTitle(document.title);
+    const next = raw ? `${head} · ${raw}` : head;
     if (document.title === next) return;
     document.title = next;
   }
@@ -4650,8 +4668,10 @@
     await loadPluginRuntime();
     localDevUpdate = (await chrome.storage.local.get(DEV_UPDATE_KEY))?.[DEV_UPDATE_KEY] || null;
     await loadOpenTaskTabs();
-    if (state.assistantMode.startsWith("likes-") && pluginRuntime.tasks?.[state.assistantMode] && !launchedStart) {
-      await setRuntimeTaskActive(state.assistantMode, false);
+    const bootTaskKey = currentTaskKey();
+    if (!launchedStart && !saved.running && !state.mutual?.running && !state.poster?.running
+      && pluginRuntime.tasks?.[bootTaskKey]) {
+      await setRuntimeTaskActive(bootTaskKey, false);
     }
     await loadAiSettings();
     await loadSchedulePace();
@@ -4696,6 +4716,30 @@
   }
 
   globalThis.chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
+    if (message?.type === "xrc-task-start") {
+      if (!["timeline", "notifications"].includes(message.mode) || currentTaskKey() !== message.mode) {
+        sendResponse({ ok: false, error: "任务窗口与目标任务不一致" });
+        return false;
+      }
+      (async () => {
+        if (!state.running && state.loopPromise) return { ok: false, error: "上一轮评论任务仍在停止，请稍后重试" };
+        if (!state.running) await onToggle();
+        return state.running
+          ? { ok: true, phase: currentTaskPhase() }
+          : { ok: false, error: state.status || "评论任务未能启动" };
+      })().then(sendResponse, (error) => sendResponse({ ok: false, error: error?.message || "评论任务启动失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-task-state-probe") {
+      sendResponse({
+        ok: true,
+        mode: currentTaskKey(),
+        phase: currentTaskPhase(),
+        detail: currentTaskDetail(),
+        waitUntil: currentTaskWaitUntil()
+      });
+      return false;
+    }
     if (message?.type === "xrc-reply-progress") {
       if (state.running && message.requestId === activeAiRequestId) {
         state.status = String(message.status || "正在生成回复…");

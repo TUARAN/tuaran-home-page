@@ -5028,46 +5028,36 @@
   }
 
   .site-header-pick {
-    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    isolation: isolate;
-    overflow: hidden;
-    min-height: 2.2rem;
-    padding: 0.4rem 0.7rem;
+    gap: 0.42rem;
+    min-height: 2.15rem;
+    padding: 0.4rem 0.75rem;
     border: 1px solid var(--pick-edge);
-    border-radius: 999px;
+    border-radius: 0.7rem;
     background: var(--pick-background);
-    background-size: 180% 180%;
-    box-shadow: 0 2px 10px var(--pick-glow), inset 0 1px rgba(255, 255, 255, 0.45);
     color: var(--pick-ink);
-    font-size: 0.78rem;
-    font-weight: 750;
+    font-size: 0.76rem;
+    font-weight: 650;
     line-height: 1.2;
     text-decoration: none;
     white-space: nowrap;
-    animation: site-pick-gradient 5s ease-in-out infinite alternate;
-    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    transition: border-color 160ms ease, background-color 160ms ease;
   }
 
-  .site-header-pick > span { position: relative; z-index: 1; }
-
-  .site-header-pick::after {
-    content: "";
-    position: absolute;
-    inset: -70% auto -70% -45%;
-    width: 28%;
-    transform: rotate(24deg) translateX(-220%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
-    animation: site-pick-shine 5.5s ease-in-out infinite;
-    pointer-events: none;
+  .site-header-pick::before {
+    content: '';
+    width: 0.35rem;
+    height: 0.35rem;
+    flex: none;
+    border-radius: 50%;
+    background: var(--pick-dot);
   }
 
   .site-header-pick:hover {
-    transform: translateY(-2px) scale(1.035);
-    box-shadow: 0 5px 18px var(--pick-glow), inset 0 1px rgba(255, 255, 255, 0.6);
-    filter: saturate(1.2);
+    border-color: var(--pick-hover-edge);
+    background: var(--pick-hover-background);
     text-decoration: none;
   }
 
@@ -5078,54 +5068,48 @@
 
   .site-header-pick-book,
   .site-header-pick-book:visited {
-    --pick-edge: #e98d42;
-    --pick-background: linear-gradient(120deg, #fff2ba, #ffbf86 48%, #ffe0a6);
-    --pick-glow: rgba(229, 111, 35, 0.32);
-    --pick-ink: #702e0d;
+    --pick-edge: #e7d9c5;
+    --pick-hover-edge: #cfb792;
+    --pick-background: #faf7f1;
+    --pick-hover-background: #f4ecdf;
+    --pick-dot: #a47641;
+    --pick-ink: #715333;
     color: var(--pick-ink);
   }
 
   .site-header-pick-green,
   .site-header-pick-green:visited {
-    --pick-edge: #3cac77;
-    --pick-background: linear-gradient(120deg, #d8ffd8, #7ee9b3 48%, #c0ffe2);
-    --pick-glow: rgba(30, 167, 104, 0.3);
-    --pick-ink: #07523a;
+    --pick-edge: #d3e4da;
+    --pick-hover-edge: #a6cbb4;
+    --pick-background: #f3f8f4;
+    --pick-hover-background: #e9f3eb;
+    --pick-dot: #5b9871;
+    --pick-ink: #3b7053;
     color: var(--pick-ink);
   }
 
   .dark .site-header-pick-book,
   .dark .site-header-pick-book:visited {
-    --pick-edge: #eeaa66;
-    --pick-background: linear-gradient(120deg, #8b3d1c, #c46b2d 48%, #79321b);
-    --pick-glow: rgba(241, 130, 52, 0.35);
-    --pick-ink: #fff5e8;
+    --pick-edge: #574638;
+    --pick-hover-edge: #826649;
+    --pick-background: #302a24;
+    --pick-hover-background: #3b3128;
+    --pick-dot: #c39661;
+    --pick-ink: #e7c7a3;
   }
   .dark .site-header-pick-green,
   .dark .site-header-pick-green:visited {
-    --pick-edge: #73dfad;
-    --pick-background: linear-gradient(120deg, #0e674e, #23a477 48%, #075746);
-    --pick-glow: rgba(53, 211, 142, 0.32);
-    --pick-ink: #effff3;
+    --pick-edge: #355444;
+    --pick-hover-edge: #4e795f;
+    --pick-background: #203329;
+    --pick-hover-background: #294134;
+    --pick-dot: #8abf9a;
+    --pick-ink: #b8dfc2;
   }
 
-  @keyframes site-pick-gradient {
-    from { background-position: 0% 50%; }
-    to { background-position: 100% 50%; }
-  }
+  @media (prefers-reduced-motion: reduce) { .site-header-pick { transition: none; } }
 
-  @keyframes site-pick-shine {
-    0%, 60% { transform: rotate(24deg) translateX(-220%); }
-    82%, 100% { transform: rotate(24deg) translateX(750%); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .site-header-pick,
-    .site-header-pick::after { animation: none; }
-    .site-header-pick { transition: none; }
-  }
-
-  @media (max-width: 420px) { .site-header-compact-picks .site-header-pick { padding-inline: 0.45rem; font-size: 0.68rem; } }
+  @media (max-width: 420px) { .site-header-compact-picks .site-header-pick { gap: 0.3rem; padding-inline: 0.45rem; font-size: 0.68rem; } }
 
   .site-nav-cluster + .site-nav-cluster {
     position: relative;

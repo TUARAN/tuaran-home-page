@@ -27,7 +27,7 @@ test('follow and post tasks stay active while their automation cooldown grows', 
     const state = { running: true, stopping: false, mode: 'unfollow', riskCooldownUntil: 0, riskRetries: 0, cooldownUntil: 0, nextPostAt: 0 }
     const sandbox = vm.createContext({
       state, root: { XReplyClipboardLoop: loop }, Date: { now: () => 1000 },
-      sessionStorage: { setItem() {} }, emit() {}, formatClock: () => '10:00', savePublishList() {},
+      sessionStorage: { setItem() {} }, emit() {}, reportMutualAction() {}, formatClock: () => '10:00', savePublishList() {},
     })
     vm.runInContext(`${helper}\nglobalThis.cool = coolDownForRisk`, sandbox)
     assert.equal(sandbox.cool(), true)
@@ -38,6 +38,24 @@ test('follow and post tasks stay active while their automation cooldown grows', 
     assert.equal(sandbox.cool(), true)
     assert.equal(state.riskCooldownUntil, 1201000)
   }
+})
+
+test('follow risk retry count restores from extension storage after its tab closes', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const reset = source.match(/  async function reset\(mode, onUpdate\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(reset)
+  const now = Date.now()
+  const state = { seenHandles: new Set(), skippedHandles: new Set(), acknowledgedRateLimits: new Set() }
+  const context = vm.createContext({
+    state,
+    Date: { now: () => now },
+    followStorage: () => ({ async get() { return { 'xrcMutualRisk:unfollow': { until: now + 1200000, retries: 2, updatedAt: now } } } }),
+    sessionStorage: { getItem() { return null } },
+  })
+  vm.runInContext(`${reset}\nglobalThis.restoreRisk = reset`, context)
+  await context.restoreRisk('unfollow', () => {})
+  assert.equal(state.riskRetries, 2)
+  assert.equal(state.riskCooldownUntil, now + 1200000)
 })
 
 test('reply and post pace controls use one compact row with accessible choices', async () => {
@@ -495,6 +513,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   const context = vm.createContext({
     FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: false, items: {} },
   })
   vm.runInContext(`${definition}\nglobalThis.overview = flowTaskOverview`, context)
   const now = Date.now()
@@ -504,7 +523,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
     'mutual-unfollow': { phase: 'running', updatedAt: now - 91000 },
     poster: { phase: 'running', updatedAt: now - 1000 },
   } }, now)
-  assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 3, stopping: 0, unknown: 1 })
+  assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 3, stopping: 0, unknown: 1, blocked: 0 })
   assert.equal(result.text, '2 项执行 · 1 项等待 · 3 项未启动 · 1 项待确认')
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /model\.status === "paused"[\s\S]*model\.status === "stopped"/)
@@ -525,6 +544,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const context = vm.createContext({
     FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'running' }, tasks: {
       timeline: { phase: 'running', updatedAt: now },
       notifications: { phase: 'paused', updatedAt: now },
@@ -541,6 +561,13 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(list.children[2].children[1].textContent, '未启动')
   assert.equal(list.children[4].children[1].textContent, '待确认')
   assert.match(total.textContent, /1 项执行 · 1 项等待 · 4 项未启动 · 1 项待确认/)
+  context.taskSchedule = { enabled: true, items: { poster: { blocked: true, reason: 'risk-blocked' }, timeline: { resumeAt: now + 60000, reason: '任务状态未响应，等待自动复查' } } }
+  context.pluginRuntime.tasks.timeline = { phase: 'unknown', updatedAt: now }
+  context.paint(panel)
+  assert.equal(list.children[0].children[1].textContent, '等待中')
+  assert.match(list.children[0].children[2].textContent, /秒后自动重试/)
+  assert.equal(list.children[4].children[1].textContent, '需人工检查')
+  assert.match(list.children[4].children[2].textContent, /risk-blocked/)
   assert.match(source, /data-xrc-flow-details-open aria-haspopup="dialog"/)
   assert.match(source, /data-xrc-flow-details role="dialog" aria-modal="true"/)
   assert.match(css, /\.xrc-flow-details\[hidden\] \{ display: none; \}/)
@@ -553,6 +580,7 @@ test('paused flow wins over stale stopping task records', async () => {
   const context = vm.createContext({
     flowStarting: false,
     flowStopping: false,
+    taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'stopping' } } },
   })
   vm.runInContext(`${definition}\nglobalThis.model = flowButtonModel`, context)
@@ -570,6 +598,7 @@ test('a running task remains visible when an old paused flow marker survives rel
   const context = vm.createContext({
     flowStarting: false,
     flowStopping: false,
+    taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'running', updatedAt: Date.now() } } },
   })
   vm.runInContext(`${definition}\nglobalThis.model = flowButtonModel`, context)
@@ -2991,7 +3020,7 @@ test('mutual platform limit shows a countdown and can be stopped during cooldown
   const statuses = []
   const context = vm.createContext({
     state, Date: { now: () => 1000 }, RATE_LIMIT_COOLDOWN_MS: 15 * 60 * 1000,
-    rateLimitNodes: () => [], formatClock: () => '15:00',
+    rateLimitNodes: () => [], reportMutualAction() {}, formatClock: () => '15:00',
     emit: (status) => { if (status) statuses.push(status) },
     sleepActive: async (ms) => { assert.equal(ms, 1000); state.stopping = true },
   })
@@ -3131,7 +3160,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.20')
+  assert.equal(manifest.version, '3.32.22')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3416,8 +3445,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.32\.0\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.32\.0'/)
+  assert.match(catalog, /x-reply-clipboard-extension-v3\.32\.21\.zip/)
+  assert.match(resourcePage, /const VERSION = '3\.32\.21'/)
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -3487,12 +3516,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(downloadButton, /response\.blob\(\)/)
   assert.doesNotMatch(resourcePage, /\/resources\/x-clipboard-phrase/)
   assert.match(registry, /slug: 'x-reply-clipboard-extension', title: 'X高频互动助手'/)
-  assert.match(registry, /'通知回复'/)
+  assert.match(registry, /'评论管理'/)
   assert.match(toolItems, /id: 'x-reply-clipboard',[\s\S]*title: 'X高频互动助手'/)
   assert.doesNotMatch(toolItems, /id: 'x-mutual-cleaner'/)
   assert.doesNotMatch(toolItems, /id: 'x-clipboard-phrase'/)
   assert.doesNotMatch(catalog, /x-clipboard-phrase/)
-  assert.match(toolItems, /role: 'Chrome 扩展 · 回复、互关与 AI 定时发推'/)
+  assert.match(toolItems, /role: 'Chrome 扩展 · 评论、点赞、关注与定时发帖'/)
 })
 
 test('documentation center opens the 2aran.com docs route with section hashes', async () => {
@@ -3523,7 +3552,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="rules"/)
   assert.match(docsPage, /id="maintenance"/)
   assert.match(docsPage, /id="releases"/)
-  assert.match(docsPage, /全流程启动会打开对应窗口/)
+  assert.match(docsPage, /点赞、关注和发帖进入后台队列/)
   assert.match(docsPage, /顶部页签会打开尚未创建的任务窗口/)
   assert.match(docsPage, /执行中[\s\S]*等待中[\s\S]*停止中[\s\S]*已暂停[\s\S]*未启动[\s\S]*待确认/)
   assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
@@ -3707,7 +3736,7 @@ test('task windows are created once and reused without backgrounding another tas
   }
 })
 
-test('full flow opens both like tasks and pauses them with the other tasks', async () => {
+test('full flow keeps comments resident and schedules one queued task at a time', async () => {
   const session = {}
   const local = {}
   const opened = []
@@ -3745,29 +3774,174 @@ test('full flow opens both like tasks and pauses them with the other tasks', asy
   }
   try {
     await background.openAllTasks({ tab: { url: 'https://x.com/home' } }, 'Tuaran')
-  assert.equal(opened.length, 7)
-    for (const mode of ['likes-posts', 'likes-replies']) {
-      assert.ok(opened.includes(`https://x.com/home?xrcAssistant=${mode}&xrcStart=1`))
-    }
+    assert.equal(opened.length, 3)
+    assert.ok(opened.includes('https://x.com/home?xrcAssistant=likes-posts&xrcStart=1'))
+    assert.ok(!opened.includes('https://x.com/home?xrcAssistant=likes-replies&xrcStart=1'))
+    assert.equal(local.xrcTaskSchedule.current, 'likes-posts')
     const tabs = session.xrcTaskTabs
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
       flow: { phase: 'running' },
     }
     await background.pauseAllTasks()
-    assert.equal(stopped.length, 7)
+    assert.equal(stopped.length, 3)
+    assert.equal(local.xrcTaskSchedule.enabled, false)
     assert.equal(local.xrcPluginRuntime.flow.phase, 'paused')
     assert.deepEqual(local.xrcPluginRuntime.tasks, {})
-    await background.updatePluginRuntime({ mode: 'poster', active: true, phase: 'running' }, { tab: { id: tabs.poster } })
+    await background.updatePluginRuntime({ mode: 'likes-posts', active: true, phase: 'running' }, { tab: { id: tabs['likes-posts'] } })
     assert.equal(local.xrcPluginRuntime.flow.phase, 'paused')
     assert.deepEqual(local.xrcPluginRuntime.tasks, {})
     local.xrcPluginRuntime.flow = { phase: 'paused', updatedAt: Date.now() - 30000 }
-    await background.updatePluginRuntime({ mode: 'poster', active: true, phase: 'running' }, { tab: { id: tabs.poster } })
+    await background.updatePluginRuntime({ mode: 'likes-posts', active: true, phase: 'running' }, { tab: { id: tabs['likes-posts'] } })
     assert.equal(local.xrcPluginRuntime.flow.phase, 'running')
-    assert.equal(local.xrcPluginRuntime.tasks.poster.phase, 'running')
-    for (const mode of ['likes-posts', 'likes-replies']) {
-      assert.ok(stopped.some(({ id, message }) => id === tabs[mode] && message.type === 'xrc-flow-stop'))
+    assert.equal(local.xrcPluginRuntime.tasks['likes-posts'].phase, 'running')
+    assert.ok(stopped.some(({ id, message }) => id === tabs['likes-posts'] && message.type === 'xrc-flow-stop'))
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('queued cooldown is persisted before its window closes and the next task starts', async () => {
+  const session = {}
+  const local = {}
+  const tabs = new Map()
+  const order = []
+  let nextId = 100
+  globalThis.chrome = {
+    storage: {
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value); if (value.xrcTaskSchedule) order.push('saved') } },
+    },
+    tabs: {
+      async query() { return [] },
+      async get(id) { if (!tabs.has(id)) throw new Error('closed'); return tabs.get(id) },
+      async sendMessage(id, message) { return message.type === 'xrc-task-suspend' ? { ok: true } : { ok: true, mode: 'likes-posts', phase: 'paused', waitUntil: Date.now() + 3600000 } },
+      async remove(id) { assert.ok(local.xrcTaskSchedule.items['likes-posts']?.resumeAt > Date.now()); order.push('closed'); tabs.delete(id) },
+    },
+    windows: { async create({ url }) { const id = ++nextId; const tab = { id, windowId: id, url }; tabs.set(id, tab); return { id, tabs: [tab] } } },
+  }
+  try {
+    await background.openAllTasks({ tab: { url: 'https://x.com/home' } }, 'Tuaran')
+    const firstId = session.xrcTaskTabs['likes-posts']
+    local.xrcPluginRuntime.tasks['likes-posts'] = { tabId: firstId, phase: 'paused', waitUntil: Date.now() + 3600000, detail: 'X 次数限制', updatedAt: Date.now() }
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'likes-replies')
+    assert.ok(local.xrcTaskSchedule.items['likes-posts'].resumeAt > Date.now())
+    assert.ok(order.includes('closed'))
+    assert.equal(tabs.has(firstId), false)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('unresponsive resident comment retries after a persisted countdown without reviving manual stops', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {
+      notifications: { manualStopped: true },
+      'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+      'mutual-unfollow': { blocked: true }, 'mutual-followBack': { blocked: true }, poster: { blocked: true },
+    } },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 11, phase: 'running', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 11 } }
+  const starts = []
+  let responsive = false
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(id, message) {
+        if (message.type === 'xrc-task-state-probe') {
+          if (responsive) return { ok: true, mode: 'timeline', phase: 'running' }
+          throw new Error('content unresponsive')
+        }
+        if (message.type === 'xrc-task-start') { starts.push(id); return { ok: true } }
+        throw new Error('unexpected message')
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
+    assert.equal(starts.length, 0)
+    assert.equal(local.xrcTaskSchedule.items.notifications.manualStopped, true)
+    local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, [11])
+    assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, 1)
+    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > Date.now())
+    responsive = true
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.items.timeline.resumeAt, 0)
+    assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, 0)
+    local.xrcTaskSchedule.items.timeline.blocked = true
+    local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, [11])
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('an unresponsive queued task retries its own tab after a countdown', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, current: 'likes-posts', startedAt: Date.now() - 60000, cursor: 1,
+      items: { timeline: { manualStopped: true }, notifications: { manualStopped: true } } },
+    xrcPluginRuntime: { tasks: { 'likes-posts': { tabId: 22, phase: 'running', updatedAt: Date.now() } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'likes-posts': 22 } }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id !== 22) throw new Error('closed'); return { id, windowId: 2, url: 'https://x.com/home' } },
+      async sendMessage() { throw new Error('content unresponsive') },
+      async update(id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.ok(local.xrcTaskSchedule.items['likes-posts'].resumeAt > Date.now())
+    assert.equal(updates.length, 0)
+    local.xrcTaskSchedule.items['likes-posts'].resumeAt = Date.now() - 1
+    await background.runTaskSchedule()
+    assert.match(updates.at(-1).url, /xrcAssistant=likes-posts&xrcStart=1/)
+    assert.equal(local.xrcTaskSchedule.current, 'likes-posts')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('three consecutive restrictions block automatic retry until manual restart', async () => {
+  const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {} } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} } },
+    },
+    tabs: { async sendMessage() {} },
+  }
+  try {
+    for (let index = 0; index < 3; index += 1) {
+      await background.noteScheduledAction({ task: 'timeline-reply', result: 'limited', errorCode: 'risk-blocked' })
     }
+    assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
+    assert.equal(local.xrcTaskSchedule.items.timeline.limitedStreak, 3)
+    await background.noteScheduledAction({ task: 'timeline-reply', result: 'success' })
+    assert.equal(local.xrcTaskSchedule.items.timeline.limitedStreak, 0)
+    assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
   } finally {
     delete globalThis.chrome
   }

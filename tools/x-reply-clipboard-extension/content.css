@@ -2290,6 +2290,7 @@
 #x-reply-clipboard-panel .xrc-flow-detail-status { color: var(--xrc-muted); font-size: 11px; font-weight: 800; }
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="running"] .xrc-flow-detail-status { color: #087c62; }
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="waiting"] .xrc-flow-detail-status { color: #a96409; }
+#x-reply-clipboard-panel .xrc-flow-detail-row[data-state="blocked"] .xrc-flow-detail-status,
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="unknown"] .xrc-flow-detail-status,
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="stopping"] .xrc-flow-detail-status { color: #b4232d; }
 

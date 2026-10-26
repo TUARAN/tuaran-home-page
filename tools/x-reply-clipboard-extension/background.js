@@ -14,6 +14,8 @@ const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+const TASK_SCHEDULE_KEY = "xrcTaskSchedule";
+const TASK_SCHEDULE_ALARM = "xrc-task-schedule";
 const RESET_EPOCH_KEY = "xrcResetEpoch";
 const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport"]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
@@ -867,6 +869,177 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "" } 
 }
 
 const FLOW_TASKS = ["poster", "mutual-followBack", "mutual-unfollow", "notifications", "timeline", "likes-posts", "likes-replies"];
+const RESIDENT_TASKS = ["timeline", "notifications"];
+const QUEUED_TASKS = ["likes-posts", "likes-replies", "mutual-unfollow", "mutual-followBack", "poster"];
+const TASK_SLICE_MS = 15 * 60 * 1000;
+const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
+let scheduleWork = Promise.resolve();
+
+async function readTaskSchedule() {
+  const stored = await chrome.storage.local.get(TASK_SCHEDULE_KEY);
+  const value = stored?.[TASK_SCHEDULE_KEY];
+  return value && typeof value === "object"
+    ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
+    : { enabled: false, current: "", cursor: 0, items: {} };
+}
+
+async function saveTaskSchedule(value) {
+  await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: value });
+  if (value.enabled) await chrome.alarms?.create?.(TASK_SCHEDULE_ALARM, { periodInMinutes: 1 });
+  else await chrome.alarms?.clear?.(TASK_SCHEDULE_ALARM);
+}
+
+async function suspendScheduledTask(mode, reason) {
+  const tabs = await readTaskTabs();
+  const tabId = Number(tabs[mode]);
+  if (!Number.isInteger(tabId)) return true;
+  let saved;
+  try { saved = await chrome.tabs.sendMessage(tabId, { type: "xrc-task-suspend", reason }); }
+  catch (error) { return false; }
+  if (!saved?.ok) return false;
+  try { await chrome.tabs.remove(tabId); } catch (error) { return false; }
+  await removeTaskTab(tabId);
+  await removeRuntimeTab(tabId);
+  return true;
+}
+
+async function runTaskSchedule() {
+  const plan = await readTaskSchedule();
+  if (!plan.enabled) return plan;
+  const now = Date.now();
+  const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }), now);
+  for (const mode of RESIDENT_TASKS) {
+    const item = plan.items[mode] || {};
+    if (item.blocked || item.manualStopped) continue;
+    const phase = runtime.tasks?.[mode]?.phase;
+    if (phase === "running" || phase === "paused" || phase === "stopping") {
+      if (item.resumeAt || item.recoveryAttempts) {
+        plan.items[mode] = { ...item, resumeAt: 0, recoveryAttempts: 0, reason: "" };
+        await saveTaskSchedule(plan);
+      }
+      continue;
+    }
+    if (!Number(item.resumeAt)) {
+      plan.items[mode] = { ...item, resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(item.recoveryAttempts) || 0, 3)], reason: phase === "unknown" ? "任务状态未响应，等待自动复查" : "任务未运行，等待自动启动" };
+      await saveTaskSchedule(plan);
+      continue;
+    }
+    if (Number(item.resumeAt) > now) continue;
+    const attempts = (Number(item.recoveryAttempts) || 0) + 1;
+    plan.items[mode] = { ...item, recoveryAttempts: attempts, resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(attempts, 3)], reason: "正在自动恢复；未成功将再次尝试" };
+    await saveTaskSchedule(plan);
+    try {
+      await focusTaskTab(mode, null, { start: true, accountHandle: plan.accountHandle || "" });
+    } catch (error) {
+      plan.items[mode] = { ...plan.items[mode], reason: `自动恢复失败：${String(error?.message || "未知错误").slice(0, 100)}` };
+      await saveTaskSchedule(plan);
+    }
+  }
+  const current = plan.current;
+  if (current) {
+    const task = runtime.tasks?.[current];
+    const item = plan.items[current] || {};
+    const waitUntil = Number(task?.waitUntil) || 0;
+    const timedOut = now - Number(plan.startedAt || now) >= TASK_SLICE_MS;
+    const waiting = task?.phase === "paused" && waitUntil > now + 10000;
+    const unresponsive = (!task || task.phase === "unknown") && now - Number(plan.startedAt || now) >= 30000;
+    if (unresponsive && !item.blocked && !item.manualStopped) {
+      if (!Number(item.resumeAt)) {
+        plan.items[current] = { ...item, resumeAt: now + 60000, reason: "任务状态未响应，等待自动复查" };
+        await saveTaskSchedule(plan);
+      } else if (Number(item.resumeAt) <= now) {
+        const attempts = (Number(item.recoveryAttempts) || 0) + 1;
+        plan.items[current] = { ...item, recoveryAttempts: attempts, resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(attempts, 3)], reason: "正在自动恢复；未成功将再次尝试" };
+        await saveTaskSchedule(plan);
+        try {
+          await focusTaskTab(current, null, { start: true, accountHandle: plan.accountHandle || "" });
+        } catch (error) {
+          plan.items[current] = { ...plan.items[current], reason: `自动恢复失败：${String(error?.message || "未知错误").slice(0, 100)}` };
+          await saveTaskSchedule(plan);
+        }
+      }
+      return plan;
+    }
+    if (item.recoveryAttempts && ["running", "paused"].includes(task?.phase)) {
+      plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reason: "" };
+      plan.startedAt = now;
+      await saveTaskSchedule(plan);
+      return plan;
+    }
+    if (!waiting && !timedOut) return plan;
+    item.resumeAt = waiting ? waitUntil : now + 2 * 60000;
+    item.reason = waiting ? String(task.detail || "等待冷却").slice(0, 160) : "轮换到下一项任务";
+    // Save the deadline before asking the content script to stop and before closing its window.
+    plan.items[current] = item;
+    await saveTaskSchedule(plan);
+    if (!await suspendScheduledTask(current, item.reason)) return plan;
+    plan.current = "";
+    plan.startedAt = 0;
+    await saveTaskSchedule(plan);
+  }
+  const cursor = Number.isInteger(Number(plan.cursor)) ? Math.max(0, Number(plan.cursor)) : 0;
+  for (let offset = 0; offset < QUEUED_TASKS.length; offset += 1) {
+    const index = (cursor + offset) % QUEUED_TASKS.length;
+    const mode = QUEUED_TASKS[index];
+    const item = plan.items[mode] || {};
+    if (item.blocked || item.manualStopped || Number(item.resumeAt) > now) continue;
+    plan.current = mode;
+    plan.startedAt = now;
+    plan.cursor = (index + 1) % QUEUED_TASKS.length;
+    await saveTaskSchedule(plan);
+    try {
+      await focusTaskTab(mode, null, { start: true, accountHandle: plan.accountHandle || "" });
+    } catch (error) {
+      plan.current = "";
+      plan.items[mode] = { ...item, resumeAt: now + 5 * 60000, reason: String(error?.message || "启动失败").slice(0, 160) };
+      await saveTaskSchedule(plan);
+    }
+    break;
+  }
+  return plan;
+}
+
+function tickTaskSchedule() {
+  const work = scheduleWork.then(runTaskSchedule);
+  scheduleWork = work.catch(() => {});
+  return work;
+}
+
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster" };
+async function noteScheduledAction(event) {
+  const mode = EVENT_TASK_MODES[event?.task];
+  if (!mode || !["success", "limited"].includes(event?.result)) return;
+  const plan = await readTaskSchedule();
+  const item = plan.items[mode] || {};
+  if (event.result === "success") {
+    if (!item.limitedStreak) return;
+    item.limitedStreak = 0;
+  } else {
+    item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
+    item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
+    if (item.limitedStreak >= 3) {
+      item.blocked = true;
+      item.resumeAt = 0;
+    }
+  }
+  plan.items[mode] = item;
+  await saveTaskSchedule(plan);
+  if (item.blocked) {
+    const tabs = await readTaskTabs();
+    const tabId = Number(tabs[mode]);
+    if (Number.isInteger(tabId)) await chrome.tabs.sendMessage(tabId, { type: "xrc-flow-stop", reason: `连续 3 次受限：${item.reason}。请人工检查账号后手动启动` }).catch(() => {});
+    if (QUEUED_TASKS.includes(mode)) {
+      if (!Number.isInteger(tabId) || await suspendScheduledTask(mode, item.reason)) {
+        if (plan.current === mode) {
+          plan.current = "";
+          plan.startedAt = 0;
+          await saveTaskSchedule(plan);
+        }
+        await tickTaskSchedule();
+      }
+    }
+  }
+}
 
 async function openAllTasks(sender, accountHandle = "", sourceMode = "") {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
@@ -875,20 +1048,50 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "") {
   if (TASK_MODES.has(sourceMode) && Number.isInteger(sender?.tab?.id)) {
     await registerTaskTab(sourceMode, sender.tab.id);
   }
-  const tabs = await readTaskTabs();
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
-  const currentId = Number(sender?.tab?.id);
-  const ordered = [...FLOW_TASKS].sort((left, right) => {
-    const leftHere = Number(tabs[left]) === currentId ? 1 : 0;
-    const rightHere = Number(tabs[right]) === currentId ? 1 : 0;
-    return leftHere - rightHere;
-  });
-  for (const mode of ordered) {
+  const plan = await readTaskSchedule();
+  plan.enabled = true;
+  plan.accountHandle = handle;
+  for (const mode of FLOW_TASKS) {
+    if (plan.items?.[mode]?.manualStopped) plan.items[mode] = { ...plan.items[mode], manualStopped: false, resumeAt: 0 };
+  }
+  const oldTabs = await readTaskTabs();
+  const sourceQueued = QUEUED_TASKS.find((mode) => Number(oldTabs[mode]) === Number(sender?.tab?.id));
+  const alreadyRunning = QUEUED_TASKS.find((mode) => ["running", "paused"].includes(runtime.tasks?.[mode]?.phase)
+    && Number.isInteger(Number(oldTabs[mode]))) || sourceQueued;
+  if (alreadyRunning) {
+    plan.current = alreadyRunning;
+    plan.startedAt = Date.now();
+  } else {
+    plan.current = "";
+    plan.startedAt = 0;
+  }
+  await saveTaskSchedule(plan);
+  for (const mode of QUEUED_TASKS) {
+    if (mode === plan.current || !Number.isInteger(Number(oldTabs[mode]))) continue;
+    const item = plan.items[mode] || {};
+    item.resumeAt ||= Date.now();
+    item.reason = "已转入后台队列";
+    plan.items[mode] = item;
+    await saveTaskSchedule(plan);
+    if (!await suspendScheduledTask(mode, item.reason)) {
+      // An unresponsive task may still be completing an action. Do not open another queued window.
+      plan.current ||= mode;
+      plan.startedAt ||= Date.now();
+      await saveTaskSchedule(plan);
+      break;
+    }
+  }
+  for (const mode of RESIDENT_TASKS) {
     await focusTaskTab(mode, sender, {
       start: !["running", "paused"].includes(runtime.tasks?.[mode]?.phase),
       accountHandle: handle
     });
   }
+  if (sourceQueued === plan.current && !["running", "paused"].includes(runtime.tasks?.[sourceQueued]?.phase)) {
+    await focusTaskTab(sourceQueued, sender, { start: true, accountHandle: handle });
+  }
+  await tickTaskSchedule();
   const after = await readPluginRuntime();
   if (Object.keys(after.tasks || {}).length) {
     after.flow = { phase: "running", updatedAt: Date.now() };
@@ -1013,10 +1216,17 @@ const RUNTIME_REPORT_STALE_MS = 90 * 1000;
 
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
+  const schedule = await readTaskSchedule();
   const now = Date.now();
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
-    if (!task) return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: "", waitUntil: 0 };
+    if (!task) {
+      const queued = schedule.items?.[mode] || {};
+      if (schedule.enabled && QUEUED_TASKS.includes(mode) && !queued.blocked) {
+        return { mode, phase: "paused", startedAt: 0, updatedAt: now, detail: String(queued.reason || "后台队列等待").slice(0, 160), waitUntil: Number(queued.resumeAt) || 0 };
+      }
+      return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: queued.blocked ? `连续受限，等待人工检查：${String(queued.reason || "")}`.slice(0, 160) : "", waitUntil: 0 };
+    }
     const updatedAt = Number(task.updatedAt) || 0;
     let phase = ["running", "paused", "stopping", "unknown"].includes(task.phase) ? task.phase : "idle";
     if (["running", "paused", "stopping"].includes(phase) && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) phase = "unknown";
@@ -1030,7 +1240,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     };
   });
   return {
-    phase: ["running", "paused", "stopping", "stopped", "idle"].includes(runtime.flow?.phase) ? runtime.flow.phase : "idle",
+    phase: schedule.enabled ? "running" : ["running", "paused", "stopping", "stopped", "idle"].includes(runtime.flow?.phase) ? runtime.flow.phase : "idle",
     tasks
   };
 });
@@ -1064,6 +1274,11 @@ async function executeRemoteCommand(command) {
     const mode = TASK_MODES.has(command?.mode) ? command.mode : "";
     if (!mode) throw new Error("无法识别目标任务");
     if (type === "task-start") {
+      const plan = await readTaskSchedule();
+      if (plan.items[mode]?.blocked || plan.items[mode]?.manualStopped) {
+        plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+        await saveTaskSchedule(plan);
+      }
       const runtime = await readPluginRuntime();
       const resumePausedFlow = runtime.flow?.phase === "paused" && runtime.flow.intent === "manual";
       if (resumePausedFlow) {
@@ -1094,7 +1309,16 @@ async function executeRemoteCommand(command) {
       }
       return `已启动 ${mode}`;
     }
+    const plan = await readTaskSchedule();
+    if (plan.enabled) {
+      plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, resumeAt: 0, reason: "已手动停止" };
+      await saveTaskSchedule(plan);
+    }
     await stopAllTaskTabs("站长后台已停止该任务", { modes: [mode], phase: "stopped" });
+    if (plan.enabled && QUEUED_TASKS.includes(mode) && await suspendScheduledTask(mode, "站长后台已停止该任务")) {
+      if (plan.current === mode) { plan.current = ""; plan.startedAt = 0; await saveTaskSchedule(plan); }
+      await tickTaskSchedule();
+    }
     return `已停止 ${mode}`;
   }
   if (type === "ext-update") {
@@ -1138,6 +1362,13 @@ function updatePluginRuntime(message, sender) {
     const runtime = await readPluginRuntime();
     if (active) {
       if (!Number.isInteger(tabId)) throw new Error("无法识别任务页签");
+      if (message?.phase === "running") {
+        const plan = await readTaskSchedule();
+        if (plan.items?.[mode]?.blocked || plan.items?.[mode]?.manualStopped) {
+          plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+          await saveTaskSchedule(plan);
+        }
+      }
       const legacyPauseIsFresh = runtime.flow?.phase === "paused" && !runtime.flow.intent
         && Date.now() - Number(runtime.flow.updatedAt || 0) < 15000;
       if (runtime.flow?.phase === "stopping" || runtime.tasks[mode]?.phase === "stopping"
@@ -1235,7 +1466,26 @@ async function stopAllTaskTabs(reason, { modes = null, phase = "stopped", messag
 }
 
 async function pauseAllTasks(reason = "全流程已暂停") {
+  await scheduleWork;
+  const plan = await readTaskSchedule();
+  plan.enabled = false;
+  plan.current = "";
+  plan.startedAt = 0;
+  await saveTaskSchedule(plan);
   return stopAllTaskTabs(reason, { phase: "paused" });
+}
+
+async function markManualTaskStop(mode) {
+  if (!FLOW_TASKS.includes(mode)) return { ok: true };
+  const plan = await readTaskSchedule();
+  if (!plan.enabled) return { ok: true };
+  plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, resumeAt: 0, reason: "已手动停止" };
+  await saveTaskSchedule(plan);
+  if (QUEUED_TASKS.includes(mode) && await suspendScheduledTask(mode, "已手动停止")) {
+    if (plan.current === mode) { plan.current = ""; plan.startedAt = 0; await saveTaskSchedule(plan); }
+    await tickTaskSchedule();
+  }
+  return { ok: true };
 }
 
 async function resetExtensionState(sender) {
@@ -1406,6 +1656,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "全流程暂停失败" }));
       return true;
     }
+    if (message?.type === "xrc-task-manual-stop") {
+      markManualTaskStop(validTaskMode(message.mode))
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "任务停止状态没有保存" }));
+      return true;
+    }
     if (message?.type === "xrc-dev-update-apply") {
       applyLocalDevUpdate()
         .then(sendResponse)
@@ -1425,8 +1681,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-runtime-get") {
-      readPluginRuntime({ prune: true }).then(verifyTaskRuntime)
-        .then((runtime) => sendResponse({ ok: true, runtime }))
+      Promise.all([readPluginRuntime({ prune: true }).then(verifyTaskRuntime), readTaskSchedule()])
+        .then(([runtime, schedule]) => sendResponse({ ok: true, runtime, schedule }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态读取失败" }));
       return true;
     }
@@ -1445,6 +1701,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       const pending = message.type === "xrc-community-heartbeat"
         ? receipt.heartbeatFromBackground(message.accountHandle)
         : receipt.accept(message.event);
+      if (message.type === "xrc-community-event") noteScheduledAction(message.event).catch(() => {});
       pending
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "回执上传失败" }));
@@ -1511,6 +1768,13 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     return true;
   });
   globalThis.XrcCommunityReceipt?.install?.();
+  chrome.alarms?.onAlarm?.addListener((alarm) => {
+    if (alarm?.name === TASK_SCHEDULE_ALARM) tickTaskSchedule().catch(() => {});
+  });
+  readTaskSchedule().then((plan) => {
+    if (plan.enabled) return saveTaskSchedule(plan).then(tickTaskSchedule);
+    return null;
+  }).catch(() => {});
   globalThis.XrcLocalDevUpdate?.install?.({ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs });
   chrome.tabs?.onRemoved?.addListener((tabId) => {
     removeTaskTab(tabId).catch(() => {});
@@ -1542,6 +1806,9 @@ if (typeof module === "object" && module.exports) {
     closeTaskTab,
     focusTaskTab,
     openAllTasks,
+    readTaskSchedule,
+    runTaskSchedule,
+    noteScheduledAction,
     readPluginRuntime,
     verifyTaskRuntime,
     updatePluginRuntime,

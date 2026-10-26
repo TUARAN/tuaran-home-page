@@ -1077,6 +1077,7 @@
 
   function coolDownForRisk() {
     if (!state.running || state.stopping || state.riskCooldownUntil > Date.now()) return false;
+    globalThis.XrcCommunityReceipt?.report({ task: "tweet-post", result: "limited", errorCode: "risk-blocked" });
     state.riskRetries += 1;
     state.riskCooldownUntil = Date.now() + (root.XReplyClipboardLoop?.automationCooldownMs?.(state.riskRetries) || state.riskRetries * 600000);
     state.nextPostAt = state.riskCooldownUntil;
@@ -1112,6 +1113,7 @@
   const api = {
     snapshot,
     start,
+    persistForSuspend: savePublishList,
     startNow,
     stop,
     coolDownForRisk,

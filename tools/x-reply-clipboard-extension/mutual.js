@@ -281,10 +281,14 @@
 
   function coolDownForRisk() {
     if (!state.running || state.stopping || state.riskCooldownUntil > Date.now()) return false;
+    reportMutualAction(state.mode, "", "limited", "risk-blocked");
     state.riskRetries += 1;
     state.riskCooldownUntil = Date.now() + (root.XReplyClipboardLoop?.automationCooldownMs?.(state.riskRetries) || state.riskRetries * 600000);
     state.cooldownUntil = state.riskCooldownUntil;
     try { sessionStorage.setItem(`xrcMutualRisk:${state.mode}`, JSON.stringify({ until: state.riskCooldownUntil, retries: state.riskRetries })); } catch (error) {}
+    state.riskWrite = Promise.resolve(globalThis.chrome?.storage?.local?.set?.({
+      [`xrcMutualRisk:${state.mode}`]: { until: state.riskCooldownUntil, retries: state.riskRetries, updatedAt: Date.now() }
+    })).catch(() => {});
     emit(`X 提示疑似自动化，当前关注任务等待 ${formatClock(state.riskCooldownUntil - Date.now())} 后自动重试`);
     return true;
   }
@@ -302,6 +306,7 @@
 
   async function waitForPlatformRateLimit() {
     for (const node of rateLimitNodes()) state.acknowledgedRateLimits.add(node);
+    reportMutualAction(state.mode, "", "limited", "rate-limited");
     state.cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
     while (!state.stopping && Date.now() < state.cooldownUntil) {
       emit(`X 提示操作过密，${formatClock(state.cooldownUntil - Date.now())} 后继续`);
@@ -558,7 +563,7 @@
     return { progressed: after.top > before.top + 8 || next.map((item) => item.handle).join("|") !== signature, items: next, atBottom: after.maxTop > 0 && after.top >= after.maxTop - 24 };
   }
 
-  function reset(mode, onUpdate) {
+  async function reset(mode, onUpdate) {
     state.running = true;
     state.stopping = false;
     state.mode = mode;
@@ -569,9 +574,12 @@
     state.skipped = 0;
     state.errors = 0;
     try {
-      const savedRisk = JSON.parse(sessionStorage.getItem(`xrcMutualRisk:${mode}`) || "null");
-      state.riskRetries = Math.max(0, Number(savedRisk?.retries) || 0);
-      state.riskCooldownUntil = Math.max(0, Number(savedRisk?.until) || 0);
+      const key = `xrcMutualRisk:${mode}`;
+      const savedRisk = (await followStorage().get(key))?.[key]
+        || JSON.parse(sessionStorage.getItem(key) || "null");
+      const recent = Number(savedRisk?.updatedAt || savedRisk?.until) > Date.now() - 24 * 60 * 60 * 1000;
+      state.riskRetries = recent ? Math.max(0, Number(savedRisk?.retries) || 0) : 0;
+      state.riskCooldownUntil = recent ? Math.max(0, Number(savedRisk?.until) || 0) : 0;
       if (state.riskCooldownUntil > Date.now()) state.cooldownUntil = state.riskCooldownUntil;
     } catch (error) { state.riskCooldownUntil = 0; }
     state.seenHandles.clear();
@@ -603,7 +611,7 @@
     }
     const unlimitedUnfollow = mode === "unfollow";
     await loadSharedFollowRate();
-    reset(mode, onUpdate);
+    await reset(mode, onUpdate);
     if (unlimitedUnfollow && state.riskCooldownUntil <= Date.now()) state.cooldownUntil = 0;
     emit(mode === "unfollow" ? "开始清理未回关账号" : mode === "followBack" ? "开始回关粉丝" : "开始关注候选");
     if (!unlimitedUnfollow && !(await waitForSharedCooldown())) {
@@ -757,6 +765,7 @@
   const api = {
     run,
     stop,
+    persistForSuspend: async () => { await state.riskWrite; },
     coolDownForRisk,
     startNow,
     setUnfollowEnglishEnabled,

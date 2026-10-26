@@ -95,7 +95,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.20";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.22";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -174,6 +174,7 @@
   };
 
   let pluginRuntime = { startedAt: null, tasks: {} };
+  let taskSchedule = { enabled: false, items: {} };
   let localDevUpdate = null;
   let updateActionPending = false;
   let updateActionMessage = "";
@@ -219,7 +220,10 @@
   function toggleLikes() {
     const controller = getLikeController();
     if (!controller) return;
-    if (likeState.running) controller.stop();
+    if (likeState.running) {
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: currentTaskKey() }).catch(() => {});
+      controller.stop();
+    }
     else {
       state.riskPaused = false;
       controller.start();
@@ -600,6 +604,7 @@
     try {
       const response = await readRuntimeMessage("xrc-runtime-get");
       pluginRuntime = response.runtime || pluginRuntime;
+      taskSchedule = response.schedule || taskSchedule;
     } catch (error) {
       pluginRuntime = { startedAt: null, tasks: {} };
     }
@@ -740,16 +745,24 @@
   const FLOW_STALE_MS = 90 * 1000;
 
   function flowTaskOverview(runtime, now = Date.now()) {
-    const counts = { running: 0, waiting: 0, missing: 0, stopping: 0, unknown: 0 };
+    const counts = { running: 0, waiting: 0, missing: 0, stopping: 0, unknown: 0, blocked: 0 };
     const tasks = FLOW_TASKS.map(([key, label]) => {
       const task = runtime?.tasks?.[key];
+      const scheduled = taskSchedule.items?.[key] || {};
       let status = "missing";
-      if (task) {
+      if (taskSchedule.enabled && scheduled.blocked) {
+        status = "blocked";
+      } else if (taskSchedule.enabled && scheduled.manualStopped) {
+        status = "missing";
+      } else if (task) {
         const updatedAt = Number(task.updatedAt) || 0;
         status = !updatedAt || now - updatedAt > FLOW_STALE_MS ? "unknown"
           : task.phase === "paused" ? "waiting"
             : task.phase === "stopping" ? "stopping"
               : task.phase === "running" ? "running" : "unknown";
+        if (status === "unknown" && taskSchedule.enabled) status = "waiting";
+      } else if (taskSchedule.enabled) {
+        status = "waiting";
       }
       counts[status] += 1;
       return { key, label, status };
@@ -760,6 +773,7 @@
       counts.missing && `${counts.missing} 项未启动`,
       counts.stopping && `${counts.stopping} 项停止中`,
       counts.unknown && `${counts.unknown} 项待确认`
+      , counts.blocked && `${counts.blocked} 项需检查`
     ].filter(Boolean);
     return { counts, tasks, text: parts.join(" · ") };
   }
@@ -772,13 +786,14 @@
     const totals = dialog.querySelector("[data-xrc-flow-details-total]");
     if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" ? "全流程已暂停 · " : ""}${summary.text || "7 项任务尚未启动"}`;
     if (!list) return;
-    const labels = { running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "待确认" };
+    const labels = { running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "待确认", blocked: "需人工检查" };
     const hints = {
       running: "任务正在执行",
       waiting: "任务已启动，正在等待下一轮或冷却结束",
       missing: "当前没有运行记录",
       stopping: "正在结束当前任务",
-      unknown: "超过 90 秒没有状态更新，请检查对应窗口"
+      unknown: "超过 90 秒没有状态更新，请检查对应窗口",
+      blocked: "连续受限，已停止自动重试"
     };
     list.replaceChildren(...summary.tasks.map((task) => {
       const row = document.createElement("li");
@@ -793,9 +808,23 @@
       const taskRuntime = pluginRuntime.tasks?.[task.key];
       const updatedAt = Number(taskRuntime?.updatedAt) || 0;
       const detail = String(taskRuntime?.detail || "").trim();
-      note.textContent = updatedAt
+      const queued = taskSchedule.items?.[task.key];
+      const resumeAt = Number(queued?.resumeAt) || 0;
+      const recoveryCountdown = taskSchedule.enabled && task.status === "waiting" && resumeAt > Date.now();
+      note.textContent = queued?.blocked && taskSchedule.enabled
+        ? `连续受限：${queued.reason || "请检查账号状态"}`
+        : queued?.manualStopped && taskSchedule.enabled
+          ? "已手动停止；再次全流程启动或单项启动可恢复"
+          : recoveryCountdown
+        ? `${queued.reason || "等待自动恢复"} · ${Math.max(1, Math.ceil((resumeAt - Date.now()) / 1000))} 秒后自动重试`
+        : taskSchedule.enabled && task.status === "waiting" && taskRuntime
+          && (taskRuntime.phase === "unknown" || !updatedAt || Date.now() - updatedAt > FLOW_STALE_MS)
+          ? queued?.reason || "后台正在检查任务状态并安排自动恢复"
+        : updatedAt
         ? `${detail && ["running", "waiting"].includes(task.status) ? detail : hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-        : hints[task.status];
+        : taskSchedule.enabled && task.status === "waiting"
+          ? queued?.reason || (["timeline", "notifications"].includes(task.key) ? "后台正在检查任务状态并安排自动恢复" : "已入队，等待其他任务结束")
+          : hints[task.status];
       row.append(name, status, note);
       return row;
     }));
@@ -835,6 +864,9 @@
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     }
+    if (taskSchedule.enabled && !tasks.some((task) => task.phase === "stopping")) {
+      return { label: "暂停全部任务", status: "running", action: "pause", title: "评论持续运行；其他任务按后台队列轮流执行" };
+    }
     if (flow.phase === "paused" && !tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
       return { label: "已暂停", status: "paused", action: "start", title: "全流程已暂停，点此重新启动" };
     }
@@ -856,7 +888,7 @@
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
     }
-    return { label: "全流程启动", status: "idle", action: "start", title: "一次打开并运行回复、点赞、关注与发帖任务" };
+    return { label: "全流程启动", status: "idle", action: "start", title: "启动评论任务，点赞、关注与发帖进入后台队列" };
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
@@ -2998,6 +3030,7 @@
       return;
     }
     if (state.poster.running && Number(state.poster.riskCooldownUntil) > Date.now()) {
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "poster" }).catch(() => {});
       postApi.stop();
       return;
     }
@@ -3006,6 +3039,7 @@
       return;
     }
     if (state.poster.running) {
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "poster" }).catch(() => {});
       postApi.stop();
       return;
     }
@@ -3058,6 +3092,7 @@
     }
     if (state.mutual.running) {
       if (state.mutual.mode === mode) {
+        sendExtensionMessage({ type: "xrc-task-manual-stop", mode: mutualTaskKey(mode) }).catch(() => {});
         sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
         mutualApi.stop();
       }
@@ -4507,6 +4542,7 @@
 
   async function onToggle() {
     if (state.loopPromise) {
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: currentTaskKey() }).catch(() => {});
       cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
@@ -4755,6 +4791,20 @@
       stopLocalTasks(message.reason || "全流程已暂停");
       return false;
     }
+    if (message?.type === "xrc-task-suspend") {
+      (async () => {
+        stopLocalTasks(message.reason || "后台队列暂时关闭此窗口");
+        const deadline = Date.now() + 30000;
+        while (Date.now() < deadline && (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise)) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) return { ok: false, error: "当前动作尚未安全结束" };
+        if (state.assistantMode === "mutual") await mutualApi?.persistForSuspend?.();
+        if (state.assistantMode === "poster") await postApi?.persistForSuspend?.();
+        return { ok: true };
+      })().then(sendResponse, (error) => sendResponse({ ok: false, error: String(error?.message || error) }));
+      return true;
+    }
     return false;
   });
 
@@ -4768,6 +4818,7 @@
     if (changes[PLUGIN_RUNTIME_KEY]) {
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
     }
+    if (changes.xrcTaskSchedule) taskSchedule = changes.xrcTaskSchedule.newValue || { enabled: false, items: {} };
     if (changes[DEV_UPDATE_KEY]) {
       localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;
       if (["stopping", "applying", "updated", "failed"].includes(localDevUpdate?.phase)) updateActionMessage = "";
@@ -4787,7 +4838,7 @@
         if (reportOpen) showDailyReport(panel);
       }
     }
-    if (changes[PLUGIN_RUNTIME_KEY] || changes[DEV_UPDATE_KEY]) renderPanel();
+    if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
   });
 
   let idleRenderTicks = 0;
@@ -4801,6 +4852,8 @@
     if (active || idleRenderTicks >= 15) {
       idleRenderTicks = 0;
       renderPanel();
+    } else if (document.querySelector(`[data-xrc-flow-details]:not([hidden])`)) {
+      paintFlowDetails();
     }
   }, 1000);
 

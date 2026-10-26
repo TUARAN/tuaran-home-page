@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   IconArrowRight,
   IconBell,
@@ -25,19 +26,24 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.32.0'
+const VERSION = '3.32.21'
 
-const title = 'X高频互动助手：回复、互关与 DeepSeek 定时发推'
+const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
-  'X高频互动助手是一个本地运行的 Chrome 扩展，提供时间线回复、通知回复、关注管理和 DeepSeek 纯文字定时发帖。'
-const shareText = 'X高频互动助手：一个扩展完成时间线回复、通知回复、互关管理和 AI 定时发推。'
+  'X高频互动助手是本地运行的 Chrome 扩展，提供评论、点赞、关注管理和定时发帖；全流程按任务状态调度。'
+const shareText = 'X高频互动助手：在本地面板查看评论、点赞、关注和定时发帖的任务进度。'
 
 const VERSION_HISTORY = [
+  {
+    version: '3.32.21',
+    title: '全流程任务队列与异常恢复',
+    description: '评论任务常驻；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口；连续 3 次受限后停止该任务自动重试，详情显示原因。',
+    current: true,
+  },
   {
     version: '3.32.0',
     title: '任务状态与本地更新',
     description: '新增任务详情、暂停后的自动重扫和本地新版提醒；评论通知只回复，清理未回关按资料中的中文判断。',
-    current: true,
   },
   {
     version: '3.12.1',
@@ -276,23 +282,23 @@ function DownloadButton({ className = '' }) {
 
 const WORKFLOWS = [
   {
-    title: '时间线回复',
-    detail: '默认打开，可在首页、个人主页或搜索结果运行。轮次进度里选择慢、中、快或超快；默认「中」每次抽取 3～5 轮、每轮 25～35 条。成功后随机等待 5～15 秒，完成后休息 2～3 小时。计划、进度与截止时间跨刷新保留。',
+    title: '评论管理',
+    detail: '评论帖子与评论通知分别使用独立窗口。通知只处理近 2 小时内的回复，不执行点赞；评论任务在全流程中常驻运行。',
     icon: IconMessageCircle,
   },
   {
-    title: '通知回复',
-    detail: '只处理最近 2 小时内别人对当前账号的回复。生成回复时会读取自己帖子的上文；处理过的通知会持久去重，扫描完成后等待 10 分钟。',
+    title: '点赞管理',
+    detail: '点赞帖子与点赞评论分别记录处理历史。全流程按后台队列轮换非评论任务，连续 3 次受限后停止自动重试。',
     icon: IconBell,
   },
   {
     title: '关注管理',
-    detail: '在 Following 页清理未回关账号，在 Followers 页回关粉丝，也可按低频限制关注候选。原独立互关插件的三项能力已合并。',
+    detail: '在 Following 页清理未回关账号，在 Followers 页回关粉丝。关注候选当前暂停使用。',
     icon: IconUsers,
   },
   {
     title: '定时发帖',
-    detail: '优先从知乎、今日头条热榜取材，素材不足时读取站内舆情分析；记录原始来源和链接。用 DeepSeek 写成短帖，避免固定句式；行间留空。默认发送间隔为 25～35 分钟。',
+    detail: '优先从知乎、今日头条取材，必要时补充 AI HOT，再使用本地社会观察素材。每轮准备一条，记录来源和链接；默认发送间隔为 25～35 分钟。',
     icon: IconRobot,
   },
 ]
@@ -301,9 +307,9 @@ const INSTALL_STEPS = [
   '扫码联系站长获取解密密码，输入密码下载并解压插件包。',
   '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
   '点击「加载已解压的扩展程序」，选择解压后的目录。',
-  '登录 X，面板默认浮在页面右下角。先配置 DeepSeek API Key；之后可从右上角设置修改。',
-  '点击「全流程启动」会打开并启动四类任务；顶部页签只切换对应窗口，不会自动启动。',
-  '关注管理提供清理未回关、回关粉丝、关注候选三个子页签，分别打开对应列表。',
+  '登录 X，面板默认浮在页面右下角。使用 AI 回复或发帖前，先在模型设置中配置所需密钥。',
+  '点击「全流程启动」后，评论任务常驻，点赞、关注和发帖按后台队列轮换；顶部页签只切换对应窗口。',
+  '关注管理提供清理未回关、回关粉丝两个可用子页签；关注候选当前暂停使用。',
   '时间线模式可在首页、个人主页或搜索结果运行。轮次进度里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
   '通知回复会进入通知页，处理近 2 小时内尚未成功互动的回复。',
   '定时发帖优先读取知乎与今日头条热榜，素材不足时读取站内舆情分析。默认间隔为 25～35 分钟。',
@@ -311,10 +317,10 @@ const INSTALL_STEPS = [
 ]
 
 const TECH_NOTES = [
-  '定时发帖与 AI 回复共用一个 DeepSeek API Key。Key 只保存在 Chrome 扩展本地存储中，不会发送 X 登录 Cookie。',
-  '四类任务各自绑定一个专用 X 页签，可以同时运行；离屏计时 Worker 管理后台等待，刷新页面后会按保存的真实截止时间恢复。',
+  '模型密钥保存在 Chrome 扩展本地存储中；AI 请求不会附带 X 登录 Cookie。',
+  '评论任务可持续运行；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口。',
   '插件会先核对评论框里的文字没有重复，再等待 Reply 可用；存在无法识别的手写内容时会暂停，避免覆盖。',
-  '发送结果未确认时不会计数。时间线模式只有确认发出的回复才计入轮次，通知模式只有确认点赞并回复成功后才写入去重历史。',
+  '发送结果未确认时不会计数。评论帖子只有确认发出的回复才计入轮次，评论通知只有确认回复成功后才写入去重历史。',
   '已经加载过旧版目录时，到扩展管理页点击刷新，再回到 X 刷新已打开的标签页。',
 ]
 
@@ -334,12 +340,12 @@ export default function XReplyClipboardResourcePage() {
           <span aria-hidden="true">/</span>
           <Link href="/tools#browser-extensions" className="text-slate-400 no-underline transition hover:text-white">浏览器扩展</Link>
           <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" /> v{VERSION} LIVE
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> v{VERSION} 下载版
           </span>
         </div>
 
-        <div className="mt-8 grid items-center gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.72fr)]">
-          <div>
+        <div className="mx-auto mt-8 grid max-w-[1020px] items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,370px)] lg:gap-12">
+          <div className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
                 <IconBrandX size={15} aria-hidden="true" />
@@ -347,12 +353,12 @@ export default function XReplyClipboardResourcePage() {
               </span>
               <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-300/15 px-3 py-1.5 text-xs font-bold text-amber-200">VIP 工具 · 密码领取</span>
             </div>
-            <h1 className="max-w-3xl text-[38px] font-black leading-[1.05] tracking-[-0.045em] text-white sm:text-[52px] lg:text-[64px]">
-              让每一次互动，
-              <span className="block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">都有自己的运行轨道</span>
+            <h1 className="text-[36px] font-black leading-[1.12] tracking-[-0.04em] text-white sm:text-[46px] lg:text-[50px]">
+              X 高频互动助手
+              <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              时间线回复、通知回复、互关管理与 DeepSeek 定时发推集中在一个本地面板。四类任务使用独立页签运行，状态、计时和处理历史各自保存。
+              评论帖子与通知、点赞、关注管理和定时发帖集中在本地面板。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
@@ -379,45 +385,21 @@ export default function XReplyClipboardResourcePage() {
               <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
               <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
               <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> DeepSeek 配置</span>
-              <span>更新于 2026-10-13</span>
+              <span>打包于 2026-10-26</span>
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[470px]">
-            <div className="absolute inset-8 rounded-full bg-blue-500/30 blur-3xl" aria-hidden="true" />
-            <div className="relative overflow-hidden rounded-[26px] border border-white/15 bg-white/[0.07] p-3 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center justify-between border-b border-white/10 px-3 pb-3 pt-1">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black"><IconBrandX size={17} /></span>
-                  <div>
-                    <p className="m-0 text-xs font-bold text-white">X高频互动助手</p>
-                    <p className="m-0 font-mono text-[9px] text-slate-400">CONTROL DECK · ONLINE</p>
-                  </div>
-                </div>
-                <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2 py-1 font-mono text-[9px] text-emerald-300">运行中 02:18:43</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 p-2 pt-4">
-                {[
-                  ['时间线回复', '四挡 · 可滑动', IconMessageCircle, 'from-cyan-400/20 to-blue-500/10', 'text-cyan-300'],
-                  ['通知回复', '近 2 小时', IconBell, 'from-violet-400/20 to-fuchsia-500/10', 'text-violet-300'],
-                  ['关注管理', '3 项任务', IconUsers, 'from-amber-400/20 to-orange-500/10', 'text-amber-300'],
-                  ['定时发帖', 'AI · 四挡间隔', IconRobot, 'from-emerald-400/20 to-cyan-500/10', 'text-emerald-300'],
-                ].map(([label, value, Icon, gradient, color]) => (
-                  <div key={label} className={`rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-3.5`}>
-                    <Icon size={19} className={color} stroke={1.8} aria-hidden="true" />
-                    <p className="mb-0 mt-5 text-xs font-bold text-white">{label}</p>
-                    <p className="mb-0 mt-1 font-mono text-[10px] text-slate-400">{value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mx-2 mb-2 mt-1 rounded-2xl border border-white/10 bg-black/25 p-3.5">
-                <div className="flex items-center justify-between text-[10px] text-slate-400">
-                  <span>当前任务 · 时间线回复</span><span className="font-mono text-cyan-300">68%</span>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[68%] rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400" /></div>
-              </div>
-            </div>
-          </div>
+          <figure className="mx-auto w-full max-w-[370px] lg:my-0">
+            <Image
+              src="/images/x-reply-clipboard-extension/panel-real-v3.32.20.webp"
+              alt="在 X 页面运行的 X 高频互动助手真实面板，显示任务总览、四组功能导航和评论进度"
+              width={726}
+              height={1092}
+              priority
+              className="h-auto w-full rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]"
+            />
+            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">真实运行界面 · 截图版本 v3.32.20</figcaption>
+          </figure>
         </div>
       </header>
 
@@ -444,9 +426,9 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold tracking-[0.14em] text-blue-600 dark:text-cyan-300">功能与运行方式</p>
-              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">四项任务，各自运行</h2>
+              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">四组功能，按计划运行</h2>
             </div>
-            <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">顶部页签可切换到已有专用 X 页签，或新建页签；其他任务的状态不会被清空。</p>
+            <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">顶部页签可切换到已有专用 X 窗口，或新建窗口；任务进度独立保存。</p>
           </div>
           <ol className="m-0 list-none divide-y divide-slate-200 p-0 dark:divide-white/10">
             {WORKFLOWS.map(({ title, detail, icon: Icon }, index) => (
@@ -460,7 +442,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="grid gap-6 border-t border-slate-200 pt-6 dark:border-white/10 sm:grid-cols-2 sm:gap-10">
             <div className="flex items-start gap-3">
               <IconSparkles size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
-              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">AI 回复</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">时间线和通知回复由 DeepSeek 阅读原帖文字后生成。API Key 在扩展面板配置，只保存在 Chrome 本地。</p></div>
+              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">AI 回复</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">评论内容由已启用的模型读取原帖文字后生成。模型密钥在扩展面板配置，保存在 Chrome 本地。</p></div>
             </div>
             <div className="flex items-start gap-3">
               <IconShieldLock size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />

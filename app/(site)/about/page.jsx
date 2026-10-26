@@ -17,7 +17,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: '关于涂阿燃（TUARAN）｜FDE、KOL、矩联科技',
   description:
-    `涂阿燃（TUARAN，掘金安东尼）是 AI 前沿部署工程师、社区 KOL 与矩联科技创始人，长期研究与交付 AI Agent，著有《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
+    `涂阿燃（TUARAN，掘金安东尼）是 AI 前沿部署工程师、社区 KOL 与矩联科技创始人，长期研究与交付 AI Agent，著有《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，已有 ${OPENCLAW_ACHIEVEMENT_COUNT} 个 OpenClaw PR 合并至 main。`,
   keywords: [
     '涂阿燃',
     'tuaran',
@@ -30,7 +30,7 @@ export const metadata = {
     '技术作者',
     '程序员成长手记',
     'AI Bots 通关指南',
-    '大模型的底层逻辑',
+    'AI大模型的底层逻辑',
     'OpenClaw Contributor',
     ...OPENCLAW_ACHIEVEMENTS.map((item) => `OpenClaw PR ${item.number}`),
     '矩联科技',
@@ -82,7 +82,7 @@ const beliefs = [
 ]
 
 const introLines = [
-  { icon: '📚', text: '《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者' },
+  { icon: '📚', text: '《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者' },
   { icon: '💡', text: '专注前端工程化与 AI 智能体，深耕实战与技术社区共建' },
   {
     icon: '🧩',
@@ -98,7 +98,7 @@ const introLines = [
 ]
 
 const publisherAuthorBio =
-  '涂阿燃（TUARAN），AI 前沿部署工程师、技术作者、矩联科技创始人，曾任职于大型互联网企业与央企。长期从事前端工程化、大模型与 AI Agent 研究及产品实践，关注模型工具协议、上下文工程和智能体的工程化落地。自 2019 年开始技术写作，累计发布内容 1500 余篇，全网阅读量超过 600 万。著有《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，同时也是开源项目 OpenClaw 贡献者，多项代码贡献已合并至主分支。擅长用清晰、易懂的方式讲解复杂技术，帮助读者建立对大模型的系统认知，并将其应用到真实工作与产品开发中。'
+  '涂阿燃（TUARAN），AI 前沿部署工程师、技术作者、矩联科技创始人，曾任职于大型互联网企业与央企。长期从事前端工程化、大模型与 AI Agent 研究及产品实践，关注模型工具协议、上下文工程和智能体的工程化落地。自 2019 年开始技术写作，累计发布内容 1500 余篇，全网阅读量超过 600 万。著有《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》，同时也是开源项目 OpenClaw 贡献者，多项代码贡献已合并至主分支。擅长用清晰、易懂的方式讲解复杂技术，帮助读者建立对大模型的系统认知，并将其应用到真实工作与产品开发中。'
 
 const stats = [
   { value: '1500+', label: '公开内容/发帖' },
@@ -118,7 +118,7 @@ const timeline = [
   { year: '2023', label: '出版《程序员成长手记》' },
   { year: '2024', label: '发布《AI Bots 通关指南》' },
   { year: '2025', label: '发起「博主联盟」· 共创「前端周刊」' },
-  { year: '2026', label: '出版《大模型的底层逻辑》· 矩联科技 · AI 共创' },
+  { year: '2026', label: '出版《AI大模型的底层逻辑》· 矩联科技 · AI 共创' },
 ]
 
 const publishedWorks = PUBLISHED_WORKS
@@ -135,7 +135,7 @@ const aboutStructuredData = {
       image: `https://2aran.com${AVATAR_PATH}`,
       jobTitle: ['AI 前沿部署工程师', '社区 KOL', '矩联科技创始人'],
       description:
-        'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
+        'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
       sameAs: [
         'https://github.com/TUARAN',

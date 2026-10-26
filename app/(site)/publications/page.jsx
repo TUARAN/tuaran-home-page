@@ -18,7 +18,7 @@ const publicationItems = [
 ]
 
 const coverStyles = {
-  大模型的底层逻辑: {
+  AI大模型的底层逻辑: {
     accent: 'from-[#f1f6fa] via-[#dcecf5] to-[#b9d9eb]',
   },
   程序员成长手记: {

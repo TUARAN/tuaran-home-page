@@ -9,10 +9,10 @@ const book = PUBLISHED_WORKS[0]
 const isbn = '9787522648842'
 
 export const metadata = {
-  title: '《大模型的底层逻辑》｜涂阿燃著',
-  description: '了解涂阿燃的《大模型的底层逻辑》：从模型原理、推理与幻觉，走向 RAG、知识库、MCP 与智能体。',
+  title: '《AI大模型的底层逻辑》｜涂阿燃著',
+  description: '了解涂阿燃的《AI大模型的底层逻辑》：从模型原理、推理与幻觉，走向 RAG、知识库、MCP 与智能体。',
   openGraph: {
-    title: '《大模型的底层逻辑》｜涂阿燃著',
+    title: '《AI大模型的底层逻辑》｜涂阿燃著',
     description: '看懂原理，理解边界，建立 AI 判断力。',
     images: [book.image],
   },
@@ -25,7 +25,7 @@ const topics = [
   { number: '04', title: 'MCP 与智能体', detail: '认识模型连接工具、读取上下文和执行任务时的能力与边界。' },
 ]
 
-const searchTerm = encodeURIComponent(`大模型的底层逻辑 ${isbn}`)
+const searchTerm = encodeURIComponent(`AI大模型的底层逻辑 ${isbn}`)
 const stores = [
   { name: '京东', href: `https://search.jd.com/Search?keyword=${searchTerm}` },
   { name: '当当', href: `https://search.dangdang.com/?key=${searchTerm}` },
@@ -38,7 +38,7 @@ export default function LlmUnderlyingLogicBookPage() {
       <nav aria-label="当前位置" className="mb-6 text-[13px] text-[#766f64] dark:text-gray-400">
         <Link href="/" className="hover:underline">首页</Link><span className="mx-2" aria-hidden="true">/</span>
         <Link href="/publications" className="hover:underline">出版作品</Link><span className="mx-2" aria-hidden="true">/</span>
-        <span className="text-[#342d25] dark:text-gray-200">大模型的底层逻辑</span>
+        <span className="text-[#342d25] dark:text-gray-200">AI大模型的底层逻辑</span>
       </nav>
 
       <section className="relative overflow-hidden rounded-[28px] border border-[#e5d8c6] bg-[#f7f1e8] shadow-[0_28px_80px_rgba(70,47,24,0.1)] dark:border-[#44362b] dark:bg-[#201b18]">
@@ -49,14 +49,14 @@ export default function LlmUnderlyingLogicBookPage() {
               <IconBook2 size={16} aria-hidden="true" /> 2026 · 技术图书 · 已出版
             </div>
             <p className="mb-3 font-mono text-[12px] uppercase tracking-[0.23em] text-[#9b714e] dark:text-[#d7a071]">New publication</p>
-            <h1 className="mb-5 font-serif text-[clamp(2.4rem,5vw,4.5rem)] font-bold leading-[1.13] tracking-[0.02em] text-[#2c231d] dark:text-[#f9eee2]">大模型的<br />底层逻辑</h1>
+            <h1 className="mb-5 font-serif text-[clamp(2.4rem,5vw,4.5rem)] font-bold leading-[1.13] tracking-[0.02em] text-[#2c231d] dark:text-[#f9eee2]">AI大模型的<br />底层逻辑</h1>
             <p className="mb-6 text-[18px] font-medium leading-8 text-[#694d38] dark:text-[#e4b88f]">看懂原理，理解边界，建立 AI 判断力。</p>
             <p className="mb-7 max-w-[34rem] text-[15px] leading-8 text-[#5c554d] dark:text-[#d2c3b8]">{book.description}</p>
             <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[#5c554d] dark:text-[#d2c3b8]"><span className="h-px w-8 bg-[#b67a4b]" />涂阿燃 著<span className="text-[#aa9b8c]" aria-hidden="true">·</span><span>ISBN {isbn}</span></div>
             <a href="#buy" className="inline-flex items-center gap-2 rounded-xl bg-[#a84c12] px-6 py-3.5 text-[15px] font-semibold text-white no-underline shadow-[0_10px_25px_rgba(168,76,18,0.22)] transition hover:-translate-y-0.5 hover:bg-[#8f3d0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84c12]">查看购书渠道 <IconArrowRight size={18} aria-hidden="true" /></a>
           </div>
           <div className="mx-auto w-full max-w-[470px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_25px_65px_rgba(68,44,22,0.2)] dark:border-[#5c4e45] dark:bg-[#2b2521]">
-            <Image src={book.image} alt="《大模型的底层逻辑》图书封面，作者涂阿燃" width={1536} height={1536} sizes="(max-width: 768px) 100vw, 470px" className="h-auto w-full" priority />
+            <Image src={book.image} alt="《AI大模型的底层逻辑》图书封面，作者涂阿燃" width={1536} height={1536} sizes="(max-width: 768px) 100vw, 470px" className="h-auto w-full" priority />
           </div>
         </div>
       </section>

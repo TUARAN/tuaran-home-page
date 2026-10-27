@@ -30,6 +30,14 @@ function formatOpinionTime(value) {
   }).format(date)
 }
 
+function formatOpinionDate(value) {
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return ''
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(date)
+}
+
 function CollectionStatus({ updated }) {
   return (
     <>
@@ -78,12 +86,12 @@ export default function HomeOpinionSignals() {
       controller?.abort()
       controller = new AbortController()
       try {
-        const response = await fetch('/api/rss-fetch?id=ai-hot', { signal: controller.signal })
+        const response = await fetch('https://aihot.news/api/v1/items?mode=selected&window=7d&limit=20', { signal: controller.signal })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const next = await response.json()
-        if (next.status !== 'ok' || !Array.isArray(next.entries)) throw new Error('Invalid RSS feed')
+        if (!Array.isArray(next.items)) throw new Error('Invalid AI HOT feed')
         if (active) {
-          setRecommended(next.entries.filter((entry) => /^https?:\/\//i.test(entry.link || '')))
+          setRecommended(next.items.filter((item) => /^https?:\/\//i.test(item.links?.original || '')))
           setRecommendedFailed(false)
         }
       } catch (error) {
@@ -136,6 +144,7 @@ export default function HomeOpinionSignals() {
   const events = liveData?.snapshot?.events || []
   const groupedEvents = events.filter((event) => event.reportCount > 1 && event.topicId === activeTopic)
   const featured = groupedEvents[0]
+  const featuredPost = allPosts.find((post) => featured?.postIds?.includes(post.id))
   const otherPosts = filteredPosts.filter((post) => !featured?.postIds?.includes(post.id))
   const posts = selectHomeOpinionPosts(otherPosts, HOME_OPINION_PREVIEW_COUNT)
   const topics = (liveData?.topics || [])
@@ -184,14 +193,14 @@ export default function HomeOpinionSignals() {
         recommended?.length ? (
           <div className="home-opinion-list">
             {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => (
-              <Link key={entry.guid || entry.link} href="/public-opinion" className="home-opinion-sample no-underline">
+              <a key={entry.id} href={entry.links.original} target="_blank" rel="noopener noreferrer" className="home-opinion-sample no-underline">
                 <span className="home-opinion-sample-meta">
                   <span className="home-opinion-sample-source">AI HOT</span>
-                  {entry.date ? <time className="home-opinion-sample-time" dateTime={entry.date}>{entry.date}</time> : null}
+                  {entry.publishedAt ? <time className="home-opinion-sample-time" dateTime={entry.publishedAt}>{formatOpinionDate(entry.publishedAt)}</time> : null}
                 </span>
                 <span className="home-opinion-sample-title"><strong>{entry.title}</strong></span>
                 {entry.summary ? <small>{entry.summary}</small> : null}
-              </Link>
+              </a>
             ))}
           </div>
         ) : !recommended && !recommendedFailed ? (
@@ -209,8 +218,8 @@ export default function HomeOpinionSignals() {
       ) : liveData && allPosts.length ? (
         <>
           <div className="home-opinion-list">
-            {featured ? (
-              <Link href="/public-opinion" className="home-opinion-sample home-opinion-featured no-underline">
+            {featuredPost ? (
+              <a href={featuredPost.url} target="_blank" rel="noopener noreferrer" className="home-opinion-sample home-opinion-featured no-underline">
                 <span className="home-opinion-sample-meta">
                   <span className="home-opinion-sample-source"><T zh="热点聚焦" en="In focus" />{featuredTopic ? ` · ${featuredTopic}` : ''}</span>
                   <time className="home-opinion-sample-time" dateTime={featured.latestAt}>{featuredTime}</time>
@@ -220,13 +229,13 @@ export default function HomeOpinionSignals() {
                 </span>
                 <strong>{featured.title}</strong>
                 <small>{featured.summary}</small>
-              </Link>
+              </a>
             ) : null}
             {posts.map((post) => {
               const sentiment = getSentimentBucket(post.sentiment)
               const stance = STANCES[post.stance] ? post.stance : 'neutral'
               return (
-                <Link key={post.id} href="/public-opinion" className="home-opinion-sample no-underline">
+                <a key={post.id} href={post.url} target="_blank" rel="noopener noreferrer" className="home-opinion-sample no-underline">
                   <span className="home-opinion-sample-meta">
                     <span className="home-opinion-sample-source">{post.platform}</span>
                     <span className="home-opinion-sample-time">{post.time}</span>
@@ -240,7 +249,7 @@ export default function HomeOpinionSignals() {
                     <strong>{post.text}</strong>
                   </span>
                   <small>{post.viewpoint}</small>
-                </Link>
+                </a>
               )
             })}
           </div>

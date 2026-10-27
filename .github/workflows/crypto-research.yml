@@ -32,13 +32,14 @@ jobs:
             echo "::error::缺少 CRYPTO_RESEARCH_SECRET（或可回退的 A_SHARE_COLLECT_SECRET / PUBLIC_OPINION_COLLECT_SECRET）"
             exit 1
           fi
-          for attempt in 1 2 3; do
+          # 市场池刷新单独占用一次成功请求；限流退避后仍需留出起草续跑次数。
+          for attempt in 1 2 3 4 5 6; do
             code=$(curl -sS \
               -o /tmp/crypto-research.json -w '%{http_code}' -X POST \
               -H "x-crypto-research-secret: $TRIGGER_SECRET" \
               -H "x-github-publish-token: $GITHUB_TOKEN" \
               https://2aran.com/api/cron/crypto-research)
-            echo "请求 $attempt/3 · HTTP $code"
+            echo "请求 $attempt/6 · HTTP $code"
             cat /tmp/crypto-research.json
             echo
             if [ "$code" = "200" ]; then
@@ -63,9 +64,9 @@ jobs:
             else
               wait_seconds=$(( attempt * 30 ))
             fi
-            if [ "$attempt" -lt 3 ]; then sleep "$wait_seconds"; fi
+            if [ "$attempt" -lt 6 ]; then sleep "$wait_seconds"; fi
           done
-          echo "::error::加密调研草稿连续 3 次仍未完成"
+          echo "::error::加密调研草稿连续 6 次仍未完成"
           exit 1
 
       - name: Notify owner of failure

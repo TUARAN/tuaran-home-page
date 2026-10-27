@@ -39,6 +39,7 @@
 - `engagement-bot` 仅表示站内评论机器人，站点 API 会用这个 source 解析密钥。
 - 掘金、X、小红书浏览器插件分别登记为 `juejin-interaction-extension`、`x-reply-clipboard-extension`、`xhs-interaction-extension`。插件直接请求 DeepSeek，后台的绑定用于标明用途；插件调用不会进入站点的 `deepseek_tasks` 台账。
 - 2026-10-12 核对线上 D1 后，`DSF-juejin`、`DSF-X`、`DSF-xhs` 原先都误绑 `engagement-bot`。迁移 `0111_external_deepseek_key_bindings.sql` 按记录 ID、名称和原绑定逐条改为对应插件来源。
+- 2026-10-27 核对线上 D1 后，`bai-x-auto`（掩码 `sk-p****e60j`）仍为无绑定全局兜底，导致 A 股和加密调研误用 B.AI 密钥。已将其限定为 `x-reply-clipboard-extension`；迁移 `0121_bind_bai_x_auto_to_extension.sql` 记录同一项幂等修复。公开站 `DEEPSEEK_API_KEY` 因而重新成为站内调研的兜底密钥。
 
 ## 运行环境边界
 

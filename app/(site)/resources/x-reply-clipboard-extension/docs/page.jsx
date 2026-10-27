@@ -65,9 +65,23 @@ const STATE_ROWS = [
   ['等待中', '任务在后台队列、普通排程、冷却或自动恢复倒计时中；详情显示原因和剩余时间。评论任务或当前队列任务状态失联时，后台到期复查并逐步延长重试间隔。'],
   ['需人工检查', '该任务连续 3 次受限，已退出自动队列；检查账号状态后可单项启动。'],
   ['停止中', '已收到停止指令，正在结束当前步骤；结束后退出运行记录。'],
-  ['已暂停', '全流程已被手动暂停。点“重新启动”才会重新打开任务。'],
+  ['已暂停', '全流程已被手动暂停；主按钮仍可点击，再次点击会启动全部任务。'],
   ['未启动', '当前没有该任务的运行记录，可在对应窗口单独启动。'],
   ['待确认', '未启用全流程时，超过 90 秒没有状态更新会显示此状态；启用全流程后由后台安排自动恢复倒计时。'],
+]
+
+const FLOW_BUTTON_ROWS = [
+  ['尚未运行', '全流程启动', '启动评论任务；点赞、关注、发帖进入后台队列。'],
+  ['正在启动', '启动中', '暂不可点击，等待任务窗口建立。'],
+  ['有任务执行', '暂停全部任务', '手动停止当前任务并关闭自动调度。'],
+  ['有等待项和未启动项', '启动未运行任务', '启动未运行项；已有的等待倒计时保留。'],
+  ['全部等待，调度开启', '暂停自动调度', '停止后台调度和正在等待的任务。'],
+  ['全部等待，调度关闭', '恢复全部任务', '重新开启全流程；已有的等待倒计时保留。'],
+  ['手动暂停', '已暂停 · 再次点击启动全部', '按钮可点击；再次点击启动全部任务。'],
+  ['正在停止', '停止中 / 重试停止', '停止中暂不可点击；超过 15 秒可点击重试停止。'],
+  ['状态未确认', '状态待确认', '点击后检查任务并启动未运行项。'],
+  ['全部受限', '任务需检查', '调度关闭时先检查账号，再单项启动；调度仍开启时可暂停自动调度。'],
+  ['已停止', '重新启动', '点击后重新启动全流程。'],
 ]
 
 const RELEASES = [
@@ -207,13 +221,26 @@ export default function XReplyClipboardDocsPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>评论帖子、评论通知、点赞帖子、点赞评论、清理未回关、回关粉丝和定时发帖各用自己的任务窗口。</li>
               <li>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单项按钮只控制当前任务。</li>
-              <li>有任务执行时，主按钮显示“暂停全部任务”；只有等待任务且仍有未启动项时，显示“启动未运行任务”，点击后等待中的倒计时照常保留。全部任务都在等待时显示“暂停自动调度”。各任务的“停止”只停止该任务；风控等待不会暂停其他任务。</li>
+              <li>主按钮按下方“状态和按钮速查”显示。全流程手动暂停后，按钮显示“已暂停 · 再次点击启动全部”，仍可点击；顶部同步显示“全流程已暂停”。各任务的“停止”只停止该任务；风控等待不会暂停其他任务。</li>
+              <li>详情中的“执行中”以任务窗口的近期确认状态为准；没有执行任务时，主按钮不会显示“暂停全部任务”。停止超过 15 秒可点“重试停止”；全部任务连续受限时保留“需人工检查”，已开启的自动调度仍可手动暂停。</li>
               <li>队列任务每次运行最多 15 分钟，安全结束当前动作后轮换。连续 3 次受限会停止该任务的自动重试，详情中保留原因，人工检查后可单项重新启动。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
             </ul>
           </Section>
 
           <Section id="states" index="02" title="状态和按钮速查" summary="看到状态就知道任务会不会继续" defaultOpen>
+            <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">全流程主按钮</h3>
+            <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
+              <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
+                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">当前情况</th><th className="px-3 py-2">按钮显示</th><th className="px-3 py-2">点击结果</th></tr></thead>
+                <tbody>
+                  {FLOW_BUTTON_ROWS.map(([condition, label, action]) => (
+                    <tr key={condition} className="border-t border-[var(--site-line)]"><td className="px-3 py-2">{condition}</td><td className="px-3 py-2 font-semibold text-[var(--site-ink)]">{label}</td><td className="px-3 py-2">{action}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">单项任务详情</h3>
             <dl className="space-y-3">
               {STATE_ROWS.map(([label, text]) => (
                 <div key={label} className="grid gap-1 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-4">

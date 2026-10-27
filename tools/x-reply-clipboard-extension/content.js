@@ -96,7 +96,7 @@
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.29";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.32";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -760,18 +760,23 @@
     const tasks = FLOW_TASKS.map(([key, label]) => {
       const task = runtime?.tasks?.[key];
       const scheduled = taskSchedule.items?.[key] || {};
+      const updatedAt = Number(task?.updatedAt) || 0;
+      const fresh = updatedAt > 0 && now - updatedAt <= FLOW_STALE_MS;
       let status = "missing";
-      if (taskSchedule.enabled && scheduled.blocked) {
-        status = "blocked";
-      } else if (taskSchedule.enabled && scheduled.manualStopped) {
+      if (fresh && task.phase === "running") {
+        status = "running";
+      } else if (fresh && task.phase === "paused") {
+        status = "waiting";
+      } else if (task?.phase === "stopping" && runtime?.flow?.phase === "paused") {
         status = "missing";
-      } else if (task) {
-        const updatedAt = Number(task.updatedAt) || 0;
-        status = !updatedAt || now - updatedAt > FLOW_STALE_MS ? "unknown"
-          : task.phase === "paused" ? "waiting"
-            : task.phase === "stopping" ? "stopping"
-              : task.phase === "running" ? "running" : "unknown";
-        if (status === "unknown" && taskSchedule.enabled) status = "waiting";
+      } else if (task?.phase === "stopping") {
+        status = "stopping";
+      } else if (scheduled.blocked) {
+        status = "blocked";
+      } else if (scheduled.manualStopped) {
+        status = "missing";
+      } else if (task && !["idle", "stopped"].includes(task.phase)) {
+        status = taskSchedule.enabled ? "waiting" : "unknown";
       } else if (taskSchedule.enabled) {
         status = "waiting";
       }
@@ -795,7 +800,7 @@
     const summary = flowTaskOverview(pluginRuntime);
     const list = dialog.querySelector("[data-xrc-flow-details-list]");
     const totals = dialog.querySelector("[data-xrc-flow-details-total]");
-    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" ? "全流程已暂停 · " : ""}${summary.text || "7 项任务尚未启动"}`;
+    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "7 项任务尚未启动"}`;
     if (!list) return;
     const labels = { running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "待确认", blocked: "需人工检查" };
     const hints = {
@@ -822,9 +827,9 @@
       const queued = taskSchedule.items?.[task.key];
       const resumeAt = Number(queued?.resumeAt) || 0;
       const recoveryCountdown = taskSchedule.enabled && task.status === "waiting" && resumeAt > Date.now();
-      note.textContent = queued?.blocked && taskSchedule.enabled
+      note.textContent = task.status === "blocked"
         ? `连续受限：${queued.reason || "请检查账号状态"}`
-        : queued?.manualStopped && taskSchedule.enabled
+        : queued?.manualStopped && taskSchedule.enabled && task.status === "missing"
           ? "已手动停止；再次全流程启动或单项启动可恢复"
           : recoveryCountdown
         ? `${queued.reason || "等待自动恢复"} · ${Math.max(1, Math.ceil((resumeAt - Date.now()) / 1000))} 秒后自动重试`
@@ -857,7 +862,7 @@
       const poster = state.poster;
       if (!poster?.running) return "";
       if (poster.stopping) return "stopping";
-      if (Number(poster.nextPostAt) > Date.now()) return "paused";
+      if (Math.max(Number(poster.riskCooldownUntil) || 0, Number(poster.nextPostAt) || 0) > Date.now()) return "paused";
       return "running";
     }
     if (!state.running && !state.loopPromise) return "";
@@ -876,20 +881,11 @@
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     }
-    if (taskSchedule.enabled && !tasks.some((task) => task.phase === "stopping")) {
-      if (summary.counts.running) {
-        return { label: "暂停全部任务", status: "running", action: "pause", title: "暂停正在执行的任务和后台调度" };
-      }
-      if (summary.counts.missing || summary.counts.unknown) {
-        return { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" };
-      }
-      return { label: "暂停自动调度", status: "waiting", action: "pause", title: "当前任务均在等待；点此暂停后台调度" };
-    }
-    if (flow.phase === "paused" && !tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
-      return { label: "已暂停", status: "paused", action: "start", title: "全流程已暂停，点此重新启动" };
+    if (flow.phase === "paused" && !taskSchedule.enabled && !summary.counts.running) {
+      return { label: "已暂停 · 再次点击启动全部", status: "paused", action: "start", title: "全流程已暂停，点击启动全部任务" };
     }
     if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
-      const lastUpdate = Math.max(Number(flow.updatedAt || 0), ...tasks
+      const lastUpdate = Math.max(flow.phase === "stopping" ? Number(flow.updatedAt || 0) : 0, ...tasks
         .filter((task) => task.phase === "stopping")
         .map((task) => Number(task.updatedAt || 0)));
       if (Date.now() - lastUpdate > 15000) {
@@ -897,16 +893,51 @@
       }
       return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     }
-    if (tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
+    if (taskSchedule.enabled) {
+      if (summary.counts.running) {
+        return { label: "暂停全部任务", status: "running", action: "pause", title: "暂停正在执行的任务和后台调度" };
+      }
+      if (summary.counts.missing || summary.counts.unknown) {
+        return { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" };
+      }
+      if (summary.counts.waiting) {
+        return { label: "暂停自动调度", status: "waiting", action: "pause", title: "当前没有任务执行；点此暂停后台调度" };
+      }
+      return { label: "暂停自动调度", status: "waiting", action: "pause", title: "任务均需人工检查；点此暂停后台调度" };
+    }
+    if (summary.counts.running) {
       return { label: "暂停全部任务", status: "running", action: "pause", title: "点此暂停全部任务" };
     }
+    if (summary.counts.waiting) {
+      return summary.counts.missing || summary.counts.unknown
+        ? { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" }
+        : { label: "恢复全部任务", status: "waiting", action: "start", title: "重新启动全流程；等待中的任务按原倒计时恢复" };
+    }
+    if (summary.counts.blocked && !summary.counts.missing && !summary.counts.unknown) {
+      return { label: "任务需检查", status: "blocked", action: "", title: "任务连续受限，请先查看详情并检查账号" };
+    }
     if (tasks.length) {
-      return { label: "状态待确认", status: "unknown", action: "start", title: "任务窗口状态不确定，点此检查并启动未运行任务" };
+      return summary.counts.unknown
+        ? { label: "状态待确认", status: "unknown", action: "start", title: "任务窗口状态不确定，点此检查并启动未运行任务" }
+        : { label: "重新启动", status: "stopped", action: "start", title: "任务已停止，点此重新启动" };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
     }
     return { label: "全流程启动", status: "idle", action: "start", title: "启动评论任务，点赞、关注与发帖进入后台队列" };
+  }
+
+  function flowRuntimeLabel(model, startedAt, now = Date.now()) {
+    if (model.status === "paused") return "全流程已暂停";
+    if (model.status === "waiting") return "任务等待中";
+    if (model.status === "blocked") return "任务需检查";
+    if (model.status === "stalled") return "停止待重试";
+    if (model.status === "stopping") return "正在停止";
+    if (model.status === "starting") return "正在启动";
+    if (model.status === "unknown") return "状态待确认";
+    if (model.status === "stopped") return "已停止";
+    if (model.status === "running") return startedAt ? `稳定运行 ${formatRuntime(now - startedAt)}` : "运行中";
+    return "尚未运行";
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
@@ -918,7 +949,7 @@
     const count = button.querySelector("[data-xrc-flow-count]");
     const dots = button.querySelector("[data-xrc-flow-dots]");
     if (label) label.textContent = model.label;
-    const showOverview = model.status === "running" || model.status === "waiting" || model.status === "paused"
+    const showOverview = model.status === "running" || model.status === "waiting" || model.status === "blocked" || model.status === "paused"
       || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
       || model.status === "stalled" || model.status === "unknown";
     if (overview) overview.hidden = !showOverview;
@@ -934,7 +965,7 @@
     button.dataset.flow = model.status;
     button.removeAttribute("title");
     button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认", blocked: "需人工检查" }[task.status]}`).join("，")}` : model.title);
-    button.disabled = model.status === "starting" || model.status === "stopping";
+    button.disabled = !model.action;
     paintFlowDetails(panel);
   }
 
@@ -1015,6 +1046,7 @@
     try {
       stopLocalTasks("全流程已暂停");
       const response = await sendExtensionMessage({ type: "xrc-flow-pause", reason: "全流程已暂停" });
+      taskSchedule = { ...taskSchedule, enabled: false, current: "" };
       if (response?.runtime) pluginRuntime = response.runtime;
       else await loadPluginRuntime();
     } catch (error) {
@@ -4382,9 +4414,7 @@
     renderTodaySummary(panel);
     const stableRuntime = panel.querySelector("[data-xrc-stable-runtime]");
     if (stableRuntime) {
-      stableRuntime.textContent = pluginRuntime.startedAt
-        ? `稳定运行 ${formatRuntime(Date.now() - pluginRuntime.startedAt)}`
-        : "尚未运行";
+      stableRuntime.textContent = flowRuntimeLabel(flowButtonModel(), pluginRuntime.startedAt);
     }
     const collapseButton = panel.querySelector("[data-xrc-collapse]");
     const expandButton = panel.querySelector("[data-xrc-expand]");

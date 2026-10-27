@@ -1227,8 +1227,9 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     const task = runtime.tasks?.[mode];
     if (!task) {
       const queued = schedule.items?.[mode] || {};
-      if (schedule.enabled && QUEUED_TASKS.includes(mode) && !queued.blocked) {
-        return { mode, phase: "paused", startedAt: 0, updatedAt: now, detail: String(queued.reason || "后台队列等待").slice(0, 160), waitUntil: Number(queued.resumeAt) || 0 };
+      if (schedule.enabled && !queued.blocked && !queued.manualStopped) {
+        const reason = queued.reason || (RESIDENT_TASKS.includes(mode) ? "等待自动恢复" : "后台队列等待");
+        return { mode, phase: "paused", startedAt: 0, updatedAt: now, detail: String(reason).slice(0, 160), waitUntil: Number(queued.resumeAt) || 0 };
       }
       return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: queued.blocked ? `连续受限，等待人工检查：${String(queued.reason || "")}`.slice(0, 160) : "", waitUntil: 0 };
     }

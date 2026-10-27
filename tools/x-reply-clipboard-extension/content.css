@@ -2412,6 +2412,11 @@
   background: var(--xrc-accent);
 }
 
+#x-reply-clipboard-panel .xrc-flow-start[data-flow="blocked"] {
+  border-color: #a96409;
+  background: #b86f0b;
+}
+
 #x-reply-clipboard-panel .xrc-flow-start[data-flow="paused"] {
   border-color: #a96409;
   background: #b86f0b;

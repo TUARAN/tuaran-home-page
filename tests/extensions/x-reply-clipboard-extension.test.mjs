@@ -609,6 +609,13 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(list.children[0].children[2].textContent, /秒后自动重试/)
   assert.equal(list.children[4].children[1].textContent, '需人工检查')
   assert.match(list.children[4].children[2].textContent, /risk-blocked/)
+  context.taskSchedule.items.timeline = { manualStopped: true }
+  context.pluginRuntime.tasks.timeline = { phase: 'running', detail: '正在评论', updatedAt: now }
+  context.pluginRuntime.flow.phase = 'paused'
+  context.paint(panel)
+  assert.equal(list.children[0].children[1].textContent, '执行中')
+  assert.match(list.children[0].children[2].textContent, /正在评论/)
+  assert.doesNotMatch(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-flow-details-open aria-haspopup="dialog"/)
   assert.match(source, /data-xrc-flow-details role="dialog" aria-modal="true"/)
   assert.match(css, /\.xrc-flow-details\[hidden\] \{ display: none; \}/)
@@ -628,7 +635,11 @@ test('paused flow wins over stale stopping task records', async () => {
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'stopping' } } },
   })
   vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '已暂停')
+  assert.equal(context.model().label, '已暂停 · 再次点击启动全部')
+  assert.equal(context.model().action, 'start')
+  context.pluginRuntime.tasks.timeline = { phase: 'paused', updatedAt: Date.now() }
+  assert.equal(context.model().label, '已暂停 · 再次点击启动全部')
+  context.pluginRuntime.tasks.timeline = { phase: 'stopping' }
   context.pluginRuntime.flow = { phase: 'stopping', updatedAt: Date.now() - 20000 }
   context.pluginRuntime.tasks.timeline.updatedAt = Date.now() - 20000
   assert.equal(context.model().label, '重试停止')
@@ -679,6 +690,153 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
   assert.equal(context.model().label, '暂停自动调度')
   context.pluginRuntime.tasks.timeline.phase = 'running'
   assert.equal(context.model().label, '暂停全部任务')
+})
+
+test('a waiting post alone does not make the global button say pause all', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && definition)
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_STALE_MS: 90000,
+    flowStarting: false,
+    flowStopping: false,
+    taskSchedule: { enabled: false, items: {} },
+    pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: { poster: { phase: 'paused', updatedAt: now, detail: '等待下一条发布' } } },
+  })
+  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '启动未运行任务')
+  assert.equal(context.model().action, 'start')
+  assert.equal(context.model().status, 'waiting')
+})
+
+test('flow button and detail agree across active, stale, stopped, and blocked states', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && definition)
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: modes.map((mode) => [mode, mode]),
+    FLOW_STALE_MS: 90000,
+    flowStarting: false,
+    flowStopping: false,
+    taskSchedule: { enabled: true, items: {} },
+    pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {} },
+  })
+  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel; globalThis.overview = flowTaskOverview`, context)
+  const read = () => ({ label: context.model().label, action: context.model().action, counts: JSON.parse(JSON.stringify(context.overview(context.pluginRuntime, now).counts)) })
+
+  context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { manualStopped: true }]))
+  assert.equal(read().label, '启动未运行任务')
+  context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
+  assert.equal(read().counts.running, 1)
+  assert.equal(read().label, '暂停全部任务')
+  context.taskSchedule.items.poster = { blocked: true }
+  assert.equal(read().counts.running, 1)
+
+  context.pluginRuntime.tasks = {}
+  context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { blocked: true }]))
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '暂停自动调度', action: 'pause' })
+  context.taskSchedule.enabled = false
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '任务需检查', action: '' })
+  context.taskSchedule.enabled = true
+  context.taskSchedule.items = {}
+  assert.equal(read().label, '暂停自动调度')
+  context.pluginRuntime.flow.phase = 'stopping'
+  assert.equal(read().label, '停止中')
+
+  context.taskSchedule.enabled = false
+  context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
+  context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
+  assert.equal(read().counts.unknown, 1)
+  assert.equal(read().label, '状态待确认')
+  context.pluginRuntime.flow.phase = 'paused'
+  assert.equal(read().label, '已暂停 · 再次点击启动全部')
+  context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
+  context.pluginRuntime.tasks.poster = { phase: 'stopping', updatedAt: now - 91000 }
+  assert.equal(read().counts.stopping, 1)
+  assert.equal(read().label, '重试停止')
+  context.pluginRuntime.flow.phase = 'paused'
+  assert.equal(read().counts.missing, 7)
+  assert.equal(read().label, '已暂停 · 再次点击启动全部')
+  assert.match(source, /button\.disabled = !model\.action/)
+})
+
+test('scheduled post risk cooldown reports waiting even before the next post deadline', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function currentTaskPhase\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    state: { assistantMode: 'poster', poster: { running: true, stopping: false, nextPostAt: 0, riskCooldownUntil: Date.now() + 600000 } },
+  })
+  vm.runInContext(`${definition}\nglobalThis.phase = currentTaskPhase`, context)
+  assert.equal(context.phase(), 'paused')
+})
+
+test('background status reports resident recovery as waiting but manual stops as idle', async () => {
+  const source = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const provider = source.match(/globalThis\.XrcCommunityReceipt\?\.setRuntimeProvider\(async \(\) => \{[\s\S]*?\n\}\);/)?.[0]
+  assert.ok(provider)
+  let readStatus
+  const context = vm.createContext({
+    globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
+    RUNTIME_REPORT_MODES: ['timeline', 'notifications', 'poster'],
+    RESIDENT_TASKS: ['timeline', 'notifications'],
+    QUEUED_TASKS: ['poster'],
+    readPluginRuntime: async () => ({ tasks: {}, flow: { phase: 'running' } }),
+    verifyTaskRuntime: async (runtime) => runtime,
+    readTaskSchedule: async () => ({ enabled: true, items: {
+      timeline: { manualStopped: true },
+      notifications: { resumeAt: Date.now() + 60000, reason: '等待自动恢复' },
+      poster: { blocked: true, reason: '连续受限' },
+    } }),
+  })
+  vm.runInContext(provider, context)
+  const report = await readStatus()
+  assert.equal(report.phase, 'running')
+  assert.equal(report.tasks.find((task) => task.mode === 'timeline').phase, 'idle')
+  assert.equal(report.tasks.find((task) => task.mode === 'notifications').phase, 'paused')
+  assert.equal(report.tasks.find((task) => task.mode === 'poster').phase, 'idle')
+})
+
+test('global pause clears the local scheduler flag as soon as background confirms', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function pauseAllTasks\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    flowStarting: false,
+    flowStopping: false,
+    taskSchedule: { enabled: true, current: 'poster', items: {} },
+    pluginRuntime: { flow: { phase: 'running' }, tasks: { poster: { phase: 'paused' } } },
+    state: { status: '' },
+    stopLocalTasks() {}, paintFlowButton() {}, renderPanel() {},
+    sendExtensionMessage: async () => ({ runtime: { flow: { phase: 'paused' }, tasks: {} } }),
+  })
+  vm.runInContext(`${definition}\nglobalThis.pause = pauseAllTasks; globalThis.snapshot = () => ({ schedule: taskSchedule, runtime: pluginRuntime })`, context)
+  await context.pause()
+  assert.equal(context.snapshot().schedule.enabled, false)
+  assert.equal(context.snapshot().schedule.current, '')
+  assert.equal(context.snapshot().runtime.flow.phase, 'paused')
+})
+
+test('header runtime line uses the same global state as the main button', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowRuntimeLabel\(model, startedAt, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({ formatRuntime: (elapsed) => `${elapsed}ms` })
+  vm.runInContext(`${definition}\nglobalThis.runtimeLabel = flowRuntimeLabel`, context)
+  const cases = [
+    ['paused', '全流程已暂停'], ['waiting', '任务等待中'], ['blocked', '任务需检查'],
+    ['stalled', '停止待重试'], ['stopping', '正在停止'], ['starting', '正在启动'],
+    ['unknown', '状态待确认'], ['stopped', '已停止'], ['idle', '尚未运行'],
+  ]
+  for (const [status, expected] of cases) assert.equal(context.runtimeLabel({ status }, null, 1000), expected)
+  assert.equal(context.runtimeLabel({ status: 'running' }, 800, 1000), '稳定运行 200ms')
+  assert.match(source, /stableRuntime\.textContent = flowRuntimeLabel\(flowButtonModel\(\), pluginRuntime\.startedAt\)/)
 })
 
 test('limit observations retain per-account windows and deduplicate receipts', async () => {
@@ -3320,7 +3478,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.29')
+  assert.equal(manifest.version, '3.32.32')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3715,6 +3873,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /点赞、关注和发帖进入后台队列/)
   assert.match(docsPage, /顶部页签会打开尚未创建的任务窗口/)
   assert.match(docsPage, /执行中[\s\S]*等待中[\s\S]*停止中[\s\S]*已暂停[\s\S]*未启动[\s\S]*待确认/)
+  assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已暂停 · 再次点击启动全部/)
+  assert.match(docsPage, /全流程主按钮[\s\S]*单项任务详情/)
   assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)

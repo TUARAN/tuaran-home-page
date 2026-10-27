@@ -32,15 +32,15 @@ import {
 import DaysSince from './components/DaysSince'
 import HomeSpacexEgg from './components/HomeSpacexEgg'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
-import HomeOpenClawAchievement from './components/HomeOpenClawAchievement'
+import { HomeBookCards, HomeOpenClawCards } from './components/HomeWorkCards'
 import { T } from './components/LocaleProvider'
 import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
 import { SitePresenceProvider } from './components/SitePresenceProvider'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
 import HomePrimaryColumnsClient, { HomeInspirations } from './components/HomePrimaryColumnsClient'
+import HomeMasonry from './components/HomeMasonry'
 import { AVATAR_PATH } from '../../lib/auth/avatar'
 import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/site/siteIntro'
-import { PUBLISHED_WORKS } from '../../lib/site/publishedWorks'
 import { getHomeRecommendationCatalog } from '../../lib/home/homeHighlights'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
@@ -268,18 +268,6 @@ const SOCIAL_MEDIA_TOTALS = {
   reads: '600w+',
 }
 
-const HOME_ACHIEVEMENT_LINKS = [
-  {
-    href: '/publications',
-    title: `技术作品出版 · ${PUBLISHED_WORKS.length} 本`,
-    compact: true,
-    emoji: '📖',
-    image: PUBLISHED_WORKS[0].image,
-    imageAlt: `${PUBLISHED_WORKS[0].title}封面`,
-    icon: IconFileText,
-  },
-]
-
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
 const CLASSIC_SITE_HERO_TAGLINE_EN = `${SITE_HERO_TITLE_EN}: ${SITE_HERO_TAGLINE_EN}`
 
@@ -436,53 +424,6 @@ function SocialMediaCard({ item }) {
   )
 }
 
-function AchievementMiniCard({ item }) {
-  const Icon = item.icon
-  const content = item.compact ? (
-    <>
-      {item.image ? (
-        <span className="home-achievement-compact-media" aria-hidden="true">
-          <Image src={item.image} alt="" width={48} height={48} sizes="36px" unoptimized />
-        </span>
-      ) : null}
-      <strong>{item.emoji ? `${item.emoji} ` : ''}{item.title}</strong>
-    </>
-  ) : (
-    <>
-      {item.image ? (
-        <span className="home-achievement-media-slot">
-          <span className="home-achievement-card-cover">
-            <Image src={item.image} alt={item.imageAlt || ''} width={96} height={96} sizes="80px" unoptimized />
-          </span>
-        </span>
-      ) : (
-        <span className="home-achievement-card-icon" aria-hidden="true">
-          <Icon size={19} stroke={1.8} />
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="home-achievement-kicker">{item.kicker}</span>
-        <strong>{item.title}</strong>
-        <small>{item.desc}</small>
-      </span>
-    </>
-  )
-
-  if (isExternalHref(item.href)) {
-    return (
-      <a href={item.href} target="_blank" rel="noreferrer" className={`home-achievement-card no-external-arrow ${item.compact ? 'is-compact' : ''}`}>
-        {content}
-      </a>
-    )
-  }
-
-  return (
-    <Link href={item.href} className={`home-achievement-card ${item.compact ? 'is-compact' : ''}`}>
-      {content}
-    </Link>
-  )
-}
-
 function HomeOpinionPanel() {
   return (
     <section className="home-section home-opinion-panel min-w-0 self-start">
@@ -494,16 +435,6 @@ function HomeOpinionPanel() {
 function BuilderPanel() {
   return (
     <section className="home-section home-builder-panel">
-      <div className="home-builder-group">
-        <p className="home-builder-subtitle"><T zh="站长成就" en="Owner highlights" /></p>
-        <div className="home-achievement-list">
-          <HomeOpenClawAchievement />
-          {HOME_ACHIEVEMENT_LINKS.map((item) => (
-            <AchievementMiniCard key={item.title} item={item} />
-          ))}
-        </div>
-      </div>
-
       <div className="home-builder-group">
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="home-builder-subtitle mb-0">
@@ -842,30 +773,39 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <div className="home-backdrop" aria-hidden="true" />
       <HomeAllianceBanner />
       <FestivalBanner />
-      <div className="home-main-grid">
-        <div className="home-main-column">
+      <HomeMasonry>
+        <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
         </div>
-        <div className="home-main-column">
+        <div className="home-masonry-item"><HomeBookCards /></div>
+        <div className="home-masonry-item">
           <HomeOpinionPanel />
+        </div>
+        <div className="home-masonry-item">
           <HomeRuanYifengFeed />
-          <div className="hidden lg:block">
-            <HomeInspirations items={inspirations} />
-          </div>
         </div>
-        <div className="lg:hidden">
-          <HomeInspirations items={inspirations} instance="mobile" />
+        <div className="home-masonry-item">
+          <HomeInspirations items={inspirations} />
         </div>
+        <div className="home-masonry-item"><HomeOpenClawCards /></div>
 
-        <aside className="home-side-stack hidden lg:block">
+        <aside className="home-masonry-item home-side-stack hidden lg:block">
           <ProfileCard />
+        </aside>
 
+        <aside className="home-masonry-item home-side-stack hidden lg:block">
           <HomeCodexResetCard />
+        </aside>
 
+        <aside className="home-masonry-item home-side-stack hidden lg:block">
           <BuilderPanel />
+        </aside>
 
+        <aside className="home-masonry-item home-side-stack hidden lg:block">
           <HomeDiscoveryPanel groups={HOME_EXPLORE_GROUPS} />
+        </aside>
 
+        <aside className="home-masonry-item home-side-stack hidden lg:block">
           <section className="home-contact-panel">
             <div>
               <p className="home-kicker">Contact</p>
@@ -879,7 +819,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
             </div>
           </section>
         </aside>
-      </div>
+      </HomeMasonry>
 
       <div className="home-footer flex justify-center pb-20 text-xs md:hidden">
         <OnlinePresenceStatus />

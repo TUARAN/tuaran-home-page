@@ -164,7 +164,7 @@ export default function WorkBuddyHardwareAccessClient() {
           <article><IconRefresh size={24} /><p>CURRENT BOUNDARY</p><h2>内测已可用，公开发布还有四步</h2><ul><li>macOS Developer ID 签名与 notarization</li><li>Windows 代码签名，降低 SmartScreen 告警</li><li>手机扫码需要 HTTPS 回调与一次性配对服务</li><li>真实 5G 入口还需要生产网关端到端联调</li></ul></article>
         </section>
 
-        <section className={styles.conclusion}><div><span>REPORT SUMMARY</span><h2>可以怎么向领导汇报</h2></div><blockquote>WorkBuddy 硬件 Open API 的核心链路已跑通：OAuth 授权、云端任务、PC 本地助理与结果回传均已完成真实验证，并形成 macOS、Windows 内部测试客户端。下一阶段重点是安装包签名、扫码配对与真实 5G 生产链路。</blockquote></section>
+        <section className={styles.conclusion}><div><span>REPORT SUMMARY</span><h2>可以怎么向领导汇报</h2></div><blockquote>WorkBuddy 硬件 Open API 的核心链路已跑通：OAuth 授权、云端任务、PC 本地助理与结果回传均已完成真实验证，并形成 macOS、Windows 内部测试客户端。下一阶段重点是安装包签名、扫码配对与真实 5G 生产链路。云端任务的存储、配额、硬件带宽和权限边界见 <Link href="/articles/research/topics/workbuddy-hardware-cloud-limits">硬件接入云端模式的边界与限制</Link>。</blockquote></section>
       </div>
     </main>
   )

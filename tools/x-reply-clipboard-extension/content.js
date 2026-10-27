@@ -46,23 +46,21 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事，让没看过素材的人知道在谈什么，再给出 1 个判断；不要写中立综述、分析报告或给读者的操作清单。",
-    "事实：标题和摘要是唯一事实依据；近期主题只用于换角度。可以有鲜明看法，不编人物、数字、现场、动机或因果；提问式标题不能当作已证实的事实。不要从历史走势推断有人一直持有、已经回本或终于等到结果；材料没说持有人经历，就不要替他们编经历。",
-    "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要用‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’代替事件交代。",
-    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代素材中的具体事件，第二段只写与此事直接相关、能说清对象的判断；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补理由或总结。字数是写作目标，不是发布前的硬筛选。",
-    "口气：像和朋友聊刚看到的事，口语化、具体、可以有情绪。不用‘够硬气’‘姿态够直接’‘总算见着亮了’这类机械赞叹或替别人感动，也别用‘动作摆在这’‘别的不说’垫句子。走势夸张就直接说走势夸张；遇到拿不准的地方，可以自然反问一句，但不要把反问写成已证实的事实。0 句‘应理性看待’‘等待官方说明’式收尾；没有依据的后续发展别推演。",
-    "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
-    "结尾：说完就停，不为了凑段落追加一句感慨。0 句拔高主题、虚构长期持有者的心路历程、概括行业或揣测谁先承担代价。不要‘你怎么看’‘值得我们思考’等固定收尾。",
+    "任务：依据热点标题和摘要写一条 X 中文短帖。开头用最短一句说清谁做了什么，让没看过素材的人跟得上；接着直接亮出赞成、反对、质疑或惊讶的态度。观点可以尖锐，敢说具体做法荒唐、价格离谱、变化惊人；别把立场磨成两边都对的分析报告。",
+    "事实：标题和摘要是唯一事实依据，近期主题只用于换角度。可以对已知事实发表强烈看法，不能编人物、数字、动机、因果或后续结果；提问式标题不能写成已证实的事实，也不能替当事人编经历。",
+    "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要用介绍写作的话代替事件。",
+    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段间留一个空行。事件只需交代到读者能理解，把更多字留给具体观点；没有新信息就不要硬凑第三段。字数只是目标，不是发布前的硬筛选。",
+    "口气：像跟熟人聊刚看到的事，直接、口语、有点火气也行。自然用语气词、感叹句或反问，几处都可以，但每一句都得指向这件事；不要每条固定同一种口头禅。可以短促地夸、骂做法或吐槽结果，不辱骂个人，也别把猜测说成事实。",
+    "删掉空话：每句只保留具体事实或鲜明观点。不要‘值得关注’‘引发热议’‘意义重大’‘我们拭目以待’‘你怎么看’之类收尾；不用‘不是……而是……’等踩一捧一的假对比，不写‘本文’‘这条推文’‘下面聊聊’等自我指涉。不替事实拔高主题，说够了就停。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const CLICKBAIT_POST_PROMPT = [
-    "风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事，再给 1 个由素材支撑的具体判断；让没看过素材的人能读懂，不靠‘震惊’‘内幕’和空悬念骗点击。",
-    "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’。",
-    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机或因果。可以鲜明表态，不把猜测写成已发生的事实；不要从历史走势臆造长期持有者或他们的收益。",
-    "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代具体事件，第二段写与此事直接相关的立场；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补后果、理由或总结。字数是写作目标，不是发布前的硬筛选。",
-    "口气：像和朋友聊这件事，直接、口语化，有情绪也要说清对象。不要‘够硬气’‘姿态够直接’‘总算见着亮了’这种机械赞叹；拿不准的地方可以自然反问，不能把猜测写成事实。0 句‘真正值得关注的是’‘更像是在’‘等官方说明’式分析，0 句泛泛建议。",
-    "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
-    "结尾：具体判断或直接的赞叹说完就停，0 句拔高主题、比较两段经历、概括行业或揣测谁先承担代价。不要‘你怎么看’‘欢迎讨论’‘评论区见’。",
+    "风格：更抓人的观点短帖。第一句用具体事件带出冲突，马上说出鲜明立场；可以犀利、惊讶、吐槽，别拿‘震惊’‘内幕’或空悬念骗点击。",
+    "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要介绍自己要怎么写。",
+    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机、因果或持有者经历。不把猜测写成事实，不做未经证实的指控。",
+    "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段间留一个空行。事件用最短一句交代清楚，其余用来表达具体态度；没有新信息就不要凑第三段。字数只是目标，不是硬筛选。",
+    "口气：像跟熟人说话，观点敢往前站，语气词、感叹句和反问都可以自然多一点。直接夸、直接质疑、直接吐槽具体做法；不辱骂个人，不把口头禅每条都重复一遍。",
+    "删掉空话：不写中立总结、泛泛建议、意义拔高或求互动的固定结尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’等自我指涉。每句都要有事实或态度，说完就停。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
@@ -96,7 +94,7 @@
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.32";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.36";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -104,8 +102,14 @@
     "xrc-docs-risk": "risk",
     "xrc-docs-tasks": "tasks",
     "xrc-docs-comments": "comments",
+    "xrc-docs-reply-timeline": "reply-timeline",
+    "xrc-docs-reply-notifications": "reply-notifications",
     "xrc-docs-likes": "likes",
+    "xrc-docs-likes-posts": "likes-posts",
+    "xrc-docs-likes-replies": "likes-replies",
     "xrc-docs-mutual-rules": "mutual-rules",
+    "xrc-docs-mutual-unfollow": "mutual-unfollow",
+    "xrc-docs-mutual-followback": "mutual-followback",
     "xrc-docs-poster": "poster",
     "xrc-docs-frequency": "frequency",
     "xrc-docs-rules": "rules",
@@ -872,59 +876,59 @@
   }
 
   function flowButtonModel() {
-    if (flowStarting) return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
-    if (flowStopping) return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
+    if (flowStarting) return { label: "正在启动 · 请稍候", status: "starting", action: "", title: "正在打开各任务窗口，暂不可点击" };
+    if (flowStopping) return { label: "正在停止 · 请稍候", status: "stopping", action: "", title: "正在暂停全部任务，暂不可点击" };
     const flow = pluginRuntime.flow || {};
     const tasks = Object.values(pluginRuntime.tasks || {});
     const summary = flowTaskOverview(pluginRuntime);
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
-      return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
+      return { label: "正在启动 · 请稍候", status: "starting", action: "", title: "正在打开各任务窗口，暂不可点击" };
     }
     if (flow.phase === "paused" && !taskSchedule.enabled && !summary.counts.running) {
-      return { label: "已暂停 · 再次点击启动全部", status: "paused", action: "start", title: "全流程已暂停，点击启动全部任务" };
+      return { label: "已暂停 · 点击启动全部", status: "paused", action: "start", title: "全流程已暂停，点击启动全部任务" };
     }
     if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
       const lastUpdate = Math.max(flow.phase === "stopping" ? Number(flow.updatedAt || 0) : 0, ...tasks
         .filter((task) => task.phase === "stopping")
         .map((task) => Number(task.updatedAt || 0)));
       if (Date.now() - lastUpdate > 15000) {
-        return { label: "重试停止", status: "stalled", action: "pause", title: "停止超过 15 秒，点此再次暂停全部任务" };
+        return { label: "停止超时 · 点击重试停止", status: "stalled", action: "pause", title: "停止超过 15 秒，点击再次暂停全部任务" };
       }
-      return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
+      return { label: "正在停止 · 请稍候", status: "stopping", action: "", title: "正在暂停全部任务，暂不可点击" };
     }
     if (taskSchedule.enabled) {
       if (summary.counts.running) {
-        return { label: "暂停全部任务", status: "running", action: "pause", title: "暂停正在执行的任务和后台调度" };
+        return { label: "运行中 · 点击暂停全部", status: "running", action: "pause", title: "点击暂停全部任务和后台调度" };
       }
       if (summary.counts.missing || summary.counts.unknown) {
-        return { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" };
+        return { label: "有未启动项 · 点击启动未运行", status: "waiting", action: "start", title: "点击启动未运行任务；等待中的任务按原倒计时恢复" };
       }
       if (summary.counts.waiting) {
-        return { label: "暂停自动调度", status: "waiting", action: "pause", title: "当前没有任务执行；点此暂停后台调度" };
+        return { label: "等待中 · 点击暂停调度", status: "waiting", action: "pause", title: "当前没有任务执行；点击暂停后台调度" };
       }
-      return { label: "暂停自动调度", status: "waiting", action: "pause", title: "任务均需人工检查；点此暂停后台调度" };
+      return { label: "需人工检查 · 点击暂停调度", status: "waiting", action: "pause", title: "任务均需人工检查；点击暂停后台调度" };
     }
     if (summary.counts.running) {
-      return { label: "暂停全部任务", status: "running", action: "pause", title: "点此暂停全部任务" };
+      return { label: "运行中 · 点击暂停全部", status: "running", action: "pause", title: "点击暂停全部任务" };
     }
     if (summary.counts.waiting) {
       return summary.counts.missing || summary.counts.unknown
-        ? { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" }
-        : { label: "恢复全部任务", status: "waiting", action: "start", title: "重新启动全流程；等待中的任务按原倒计时恢复" };
+        ? { label: "有未启动项 · 点击启动未运行", status: "waiting", action: "start", title: "点击启动未运行任务；等待中的任务按原倒计时恢复" }
+        : { label: "等待中 · 点击恢复全部", status: "waiting", action: "start", title: "点击重新启动全流程；等待中的任务按原倒计时恢复" };
     }
     if (summary.counts.blocked && !summary.counts.missing && !summary.counts.unknown) {
-      return { label: "任务需检查", status: "blocked", action: "", title: "任务连续受限，请先查看详情并检查账号" };
+      return { label: "需人工检查 · 请先查看详情", status: "blocked", action: "", title: "任务连续受限，暂不可点击；请先查看详情并检查账号" };
     }
     if (tasks.length) {
       return summary.counts.unknown
-        ? { label: "状态待确认", status: "unknown", action: "start", title: "任务窗口状态不确定，点此检查并启动未运行任务" }
-        : { label: "重新启动", status: "stopped", action: "start", title: "任务已停止，点此重新启动" };
+        ? { label: "状态待确认 · 点击检查并启动", status: "unknown", action: "start", title: "任务窗口状态不确定，点击检查并启动未运行任务" }
+        : { label: "已停止 · 点击重新启动", status: "stopped", action: "start", title: "任务已停止，点击重新启动" };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
-      return { label: "重新启动", status: "stopped", action: "start", title: "全流程已停止，点此重新启动" };
+      return { label: "已停止 · 点击重新启动", status: "stopped", action: "start", title: "全流程已停止，点击重新启动" };
     }
-    return { label: "全流程启动", status: "idle", action: "start", title: "启动评论任务，点赞、关注与发帖进入后台队列" };
+    return { label: "尚未运行 · 点击启动全部", status: "idle", action: "start", title: "点击启动评论任务，点赞、关注与发帖进入后台队列" };
   }
 
   function flowRuntimeLabel(model, startedAt, now = Date.now()) {
@@ -1159,7 +1163,8 @@
       const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
       const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
       const previousBuiltInPrompt = storedPostPrompt.includes("素材真让人佩服时，可以用 0～1 句短口语直接夸");
-      state.postPrompt = (oldClickbaitPreset || (previousBuiltInPrompt && storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要"))) ? CLICKBAIT_POST_PROMPT : (oldDefaultPrompt || (previousBuiltInPrompt && storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要"))) ? "" : storedPostPrompt;
+      const currentBuiltInPrompt = storedPostPrompt.includes("姿态够直接") && storedPostPrompt.includes("字数是写作目标");
+      state.postPrompt = (oldClickbaitPreset || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要"))) ? CLICKBAIT_POST_PROMPT : (oldDefaultPrompt || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要"))) ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -3677,7 +3682,7 @@
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
               <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
-              <div class="xrc-mutual-rule-row"><span>清理规则</span><button type="button" class="xrc-mutual-rule-link" data-xrc-docs-target="xrc-docs-mutual-rules" aria-label="查看清理规则说明" title="查看清理规则说明">i</button></div>
+              <div class="xrc-task-docs-row"><span>清理规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-mutual-unfollow" aria-label="查看清理未回关说明" title="查看清理未回关说明">i</button></div>
               <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 今日合计 0/400 · 本批 0/15</div>
@@ -3686,6 +3691,7 @@
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
               <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页</small></span></div>
+              <div class="xrc-task-docs-row"><span>回关规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-mutual-followback" aria-label="查看回关粉丝说明" title="查看回关粉丝说明">i</button></div>
               <p>只点 Follow back。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
@@ -3701,6 +3707,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>点赞评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <section class="xrc-post-flow" aria-label="点赞管理">
+            <div class="xrc-task-docs-row"><span data-xrc-like-docs-label>点赞帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="likes" data-xrc-docs-target="xrc-docs-likes-posts" aria-label="查看点赞帖子说明" title="查看点赞帖子说明">i</button></div>
             <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
             <p>随全流程启动，也可以单独启停。X 出现次数限制或疑似自动化提示时会显示冷却倒计时，冷却结束后自动重试。</p>
             <div class="xrc-flow-end"><p data-xrc-like-count>已确认点赞 0 条 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>启动单项任务</button></div>
@@ -3709,6 +3716,7 @@
         </div>
         <div class="xrc-body xrc-post-body">
           <section class="xrc-post-flow" aria-label="定时发帖流程">
+            <div class="xrc-task-docs-row"><span>发帖规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-poster" aria-label="查看定时发帖说明" title="查看定时发帖说明">i</button></div>
             <div class="xrc-flow-end">
               <p><span data-xrc-post-queue>待发 0 条</span> <a data-xrc-post-source-link target="_blank" rel="noopener noreferrer" hidden>查看出处 ↗</a></p>
               <button class="xrc-inline-start" type="button" data-xrc-post-toggle>启动单项任务</button>
@@ -3731,6 +3739,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>评论帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>评论通知</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
+          <div class="xrc-task-docs-row"><span data-xrc-reply-docs-label>评论帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="reply" data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看评论帖子说明" title="查看评论帖子说明">i</button></div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span></div>
           <div class="xrc-stats">
@@ -4325,6 +4334,15 @@
     if (likeDescription) likeDescription.textContent = state.assistantMode === "likes-replies"
       ? "逐个打开首页帖子，只点赞评论。已查看的评论串不会重复处理。"
       : "从首页逐条点赞帖子。已点过赞的内容不会重复点击。";
+    const likeDocsReplies = state.assistantMode === "likes-replies";
+    const likeDocsLabel = panel.querySelector("[data-xrc-like-docs-label]");
+    if (likeDocsLabel) likeDocsLabel.textContent = likeDocsReplies ? "点赞评论规则" : "点赞帖子规则";
+    const likeDocsLink = panel.querySelector('[data-xrc-docs-link="likes"]');
+    if (likeDocsLink) {
+      likeDocsLink.dataset.xrcDocsTarget = likeDocsReplies ? "xrc-docs-likes-replies" : "xrc-docs-likes-posts";
+      likeDocsLink.setAttribute("aria-label", likeDocsReplies ? "查看点赞评论说明" : "查看点赞帖子说明");
+      likeDocsLink.title = likeDocsLink.getAttribute("aria-label");
+    }
     const likeCount = panel.querySelector("[data-xrc-like-count]");
     if (likeCount) likeCount.textContent = `已确认点赞 ${likeState.count} 条 · 已查看 ${likeState.posts} 个帖子${likeState.unconfirmed ? ` · ${likeState.unconfirmed} 条未确认已跳过` : ''}`;
     const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
@@ -4340,6 +4358,15 @@
       likeToggle.disabled = likeState.stopping;
     }
     if (state.assistantMode.startsWith("likes-")) panel.querySelector("[data-xrc-mini-progress]").textContent = `点赞管理 · ${likeState.count} 条`;
+    const replyDocsNotifications = state.assistantMode === "notifications";
+    const replyDocsLabel = panel.querySelector("[data-xrc-reply-docs-label]");
+    if (replyDocsLabel) replyDocsLabel.textContent = replyDocsNotifications ? "评论通知规则" : "评论帖子规则";
+    const replyDocsLink = panel.querySelector('[data-xrc-docs-link="reply"]');
+    if (replyDocsLink) {
+      replyDocsLink.dataset.xrcDocsTarget = replyDocsNotifications ? "xrc-docs-reply-notifications" : "xrc-docs-reply-timeline";
+      replyDocsLink.setAttribute("aria-label", replyDocsNotifications ? "查看评论通知说明" : "查看评论帖子说明");
+      replyDocsLink.title = replyDocsLink.getAttribute("aria-label");
+    }
     panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
       const selected = `likes-${button.dataset.xrcLikeTab}` === state.assistantMode;
       button.classList.toggle("is-active", selected);

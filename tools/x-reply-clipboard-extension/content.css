@@ -1207,7 +1207,7 @@
 
 #x-reply-clipboard-panel .xrc-mutual-card.is-selected { display: grid; }
 
-#x-reply-clipboard-panel .xrc-mutual-rule-row {
+#x-reply-clipboard-panel .xrc-task-docs-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1216,7 +1216,7 @@
   font-size: 10px;
   font-weight: 800;
 }
-#x-reply-clipboard-panel .xrc-mutual-rule-link {
+#x-reply-clipboard-panel .xrc-task-docs-link {
   display: grid;
   width: 19px;
   height: 19px;
@@ -1231,8 +1231,8 @@
   font-weight: 900;
   line-height: 1;
 }
-#x-reply-clipboard-panel .xrc-mutual-rule-link:hover,
-#x-reply-clipboard-panel .xrc-mutual-rule-link:focus-visible { background: rgba(29, 155, 240, 0.16); }
+#x-reply-clipboard-panel .xrc-task-docs-link:hover,
+#x-reply-clipboard-panel .xrc-task-docs-link:focus-visible { background: rgba(29, 155, 240, 0.16); }
 #x-reply-clipboard-panel .xrc-docs-subsection {
   margin-top: 4px;
   padding-top: 10px;

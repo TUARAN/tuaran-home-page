@@ -635,14 +635,14 @@ test('paused flow wins over stale stopping task records', async () => {
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'stopping' } } },
   })
   vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '已暂停 · 再次点击启动全部')
+  assert.equal(context.model().label, '已暂停 · 点击启动全部')
   assert.equal(context.model().action, 'start')
   context.pluginRuntime.tasks.timeline = { phase: 'paused', updatedAt: Date.now() }
-  assert.equal(context.model().label, '已暂停 · 再次点击启动全部')
+  assert.equal(context.model().label, '已暂停 · 点击启动全部')
   context.pluginRuntime.tasks.timeline = { phase: 'stopping' }
   context.pluginRuntime.flow = { phase: 'stopping', updatedAt: Date.now() - 20000 }
   context.pluginRuntime.tasks.timeline.updatedAt = Date.now() - 20000
-  assert.equal(context.model().label, '重试停止')
+  assert.equal(context.model().label, '停止超时 · 点击重试停止')
   assert.equal(context.model().action, 'pause')
 })
 
@@ -660,7 +660,7 @@ test('a running task remains visible when an old paused flow marker survives rel
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'running', updatedAt: Date.now() } } },
   })
   vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '暂停全部任务')
+  assert.equal(context.model().label, '运行中 · 点击暂停全部')
   assert.equal(context.model().action, 'pause')
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   assert.match(backgroundSource, /if \(phase !== "stopping"\)/)
@@ -684,12 +684,12 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
     } },
   })
   vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '启动未运行任务')
+  assert.equal(context.model().label, '有未启动项 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
   context.taskSchedule.items = {}
-  assert.equal(context.model().label, '暂停自动调度')
+  assert.equal(context.model().label, '等待中 · 点击暂停调度')
   context.pluginRuntime.tasks.timeline.phase = 'running'
-  assert.equal(context.model().label, '暂停全部任务')
+  assert.equal(context.model().label, '运行中 · 点击暂停全部')
 })
 
 test('a waiting post alone does not make the global button say pause all', async () => {
@@ -707,7 +707,7 @@ test('a waiting post alone does not make the global button say pause all', async
     pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: { poster: { phase: 'paused', updatedAt: now, detail: '等待下一条发布' } } },
   })
   vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '启动未运行任务')
+  assert.equal(context.model().label, '有未启动项 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
   assert.equal(context.model().status, 'waiting')
 })
@@ -731,38 +731,48 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   const read = () => ({ label: context.model().label, action: context.model().action, counts: JSON.parse(JSON.stringify(context.overview(context.pluginRuntime, now).counts)) })
 
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { manualStopped: true }]))
-  assert.equal(read().label, '启动未运行任务')
+  assert.equal(read().label, '有未启动项 · 点击启动未运行')
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
   assert.equal(read().counts.running, 1)
-  assert.equal(read().label, '暂停全部任务')
+  assert.equal(read().label, '运行中 · 点击暂停全部')
   context.taskSchedule.items.poster = { blocked: true }
   assert.equal(read().counts.running, 1)
 
   context.pluginRuntime.tasks = {}
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { blocked: true }]))
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '暂停自动调度', action: 'pause' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需人工检查 · 点击暂停调度', action: 'pause' })
   context.taskSchedule.enabled = false
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '任务需检查', action: '' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需人工检查 · 请先查看详情', action: '' })
   context.taskSchedule.enabled = true
   context.taskSchedule.items = {}
-  assert.equal(read().label, '暂停自动调度')
+  assert.equal(read().label, '等待中 · 点击暂停调度')
   context.pluginRuntime.flow.phase = 'stopping'
-  assert.equal(read().label, '停止中')
+  assert.equal(read().label, '正在停止 · 请稍候')
 
   context.taskSchedule.enabled = false
   context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
   assert.equal(read().counts.unknown, 1)
-  assert.equal(read().label, '状态待确认')
+  assert.equal(read().label, '状态待确认 · 点击检查并启动')
   context.pluginRuntime.flow.phase = 'paused'
-  assert.equal(read().label, '已暂停 · 再次点击启动全部')
+  assert.equal(read().label, '已暂停 · 点击启动全部')
   context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
   context.pluginRuntime.tasks.poster = { phase: 'stopping', updatedAt: now - 91000 }
   assert.equal(read().counts.stopping, 1)
-  assert.equal(read().label, '重试停止')
+  assert.equal(read().label, '停止超时 · 点击重试停止')
   context.pluginRuntime.flow.phase = 'paused'
   assert.equal(read().counts.missing, 7)
-  assert.equal(read().label, '已暂停 · 再次点击启动全部')
+  assert.equal(read().label, '已暂停 · 点击启动全部')
+  context.pluginRuntime.tasks = {}
+  context.pluginRuntime.flow = { phase: 'stopped', updatedAt: now }
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '已停止 · 点击重新启动', action: 'start' })
+  context.pluginRuntime.flow = {}
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '尚未运行 · 点击启动全部', action: 'start' })
+  context.flowStarting = true
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '正在启动 · 请稍候', action: '' })
+  context.flowStarting = false
+  context.flowStopping = true
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '正在停止 · 请稍候', action: '' })
   assert.match(source, /button\.disabled = !model\.action/)
 })
 
@@ -2380,34 +2390,33 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].id, 'opinion:po_123')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
-  assert.match(background.POST_SYSTEM_PROMPT, /先从读者视角用一句话交代具体对象和发生的事/)
+  assert.match(background.POST_SYSTEM_PROMPT, /开头用最短一句说清谁做了什么/)
   assert.match(background.POST_SYSTEM_PROMPT, /35～90 个中文字符/)
-  assert.match(background.POST_SYSTEM_PROMPT, /写成 2～3 个短段，段与段之间留 1 个空行/)
-  assert.match(background.POST_SYSTEM_PROMPT, /直接说感受，不把赞叹写成意义分析/)
-  assert.match(background.POST_SYSTEM_PROMPT, /不要为了凑段落补理由或总结/)
+  assert.match(background.POST_SYSTEM_PROMPT, /写成 2～3 个短段，段间留一个空行/)
+  assert.match(background.POST_SYSTEM_PROMPT, /自然用语气词、感叹句或反问/)
+  assert.match(background.POST_SYSTEM_PROMPT, /没有新信息就不要硬凑第三段/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /最多 1 句理由/)
-  assert.match(background.POST_SYSTEM_PROMPT, /0 句‘不是……而是……’/)
-  assert.match(background.POST_SYSTEM_PROMPT, /‘这比……更能说明……’/)
-  assert.match(background.POST_SYSTEM_PROMPT, /‘更像……而非……’/)
-  assert.match(background.POST_SYSTEM_PROMPT, /0 句‘本文认为’/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /观点型标题党/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /0 句‘不是……而是……’/)
+  assert.match(background.POST_SYSTEM_PROMPT, /‘不是……而是……’/)
+  assert.match(background.POST_SYSTEM_PROMPT, /不替事实拔高主题/)
+  assert.match(background.POST_SYSTEM_PROMPT, /自我指涉/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /更抓人的观点短帖/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /‘不是……而是……’/)
   assert.match(background.CLICKBAIT_POST_PROMPT, /45～100 个中文字符/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /不要为了凑段落补后果、理由或总结/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /0 句‘真正值得关注的是’/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /没有新信息就不要凑第三段/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /不写中立总结、泛泛建议、意义拔高/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的类似句式也要改成直接陈述/)
-  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /不要凭行业印象虚构砍预算后的人员反应/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的假对比、自我指涉和意义拔高改成直接陈述/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /不能凭行业印象虚构人员反应/)
 })
 
 test('scheduled hot-topic rewrite uses the visible post prompt and migrates the old default', async () => {
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const declaration = contentSource.match(/  const DEFAULT_POST_PROMPT = \[[\s\S]*?\n  \]\.join\("\\n"\);/)?.[0]
+  const declaration = contentSource.match(/  const DEFAULT_POST_PROMPT = \[[\s\S]*?\n\s*\]\.join\("\\n"\);/)?.[0]
   assert.ok(declaration)
   const promptContext = vm.createContext({})
   vm.runInContext(`${declaration.replace('const DEFAULT_POST_PROMPT', 'var DEFAULT_POST_PROMPT')}\nglobalThis.value = DEFAULT_POST_PROMPT`, promptContext)
   assert.equal(promptContext.value, background.POST_SYSTEM_PROMPT)
-  const clickbaitDeclaration = contentSource.match(/  const CLICKBAIT_POST_PROMPT = \[[\s\S]*?\n  \]\.join\("\\n"\);/)?.[0]
+  const clickbaitDeclaration = contentSource.match(/  const CLICKBAIT_POST_PROMPT = \[[\s\S]*?\n\s*\]\.join\("\\n"\);/)?.[0]
   assert.ok(clickbaitDeclaration)
   vm.runInContext(`${clickbaitDeclaration.replace('const CLICKBAIT_POST_PROMPT', 'var CLICKBAIT_POST_PROMPT')}\nglobalThis.clickbait = CLICKBAIT_POST_PROMPT`, promptContext)
   assert.equal(promptContext.clickbait, background.CLICKBAIT_POST_PROMPT)
@@ -2427,7 +2436,7 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     assert.match(requestBody.messages[0].content, /本接口仅用 JSON 包装结果/)
     storedPostPrompt = '从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /先从读者视角用一句话交代具体对象和发生的事/)
+    assert.match(requestBody.messages[0].content, /开头用最短一句说清谁做了什么/)
     assert.doesNotMatch(requestBody.messages[0].content, /3 到 5 行，总共 35 到 75 个字/)
     storedPostPrompt = '根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话、有一点个人判断的口气；不要模仿他的原句。不要写成三行微型故事。这话像在说 X，又像不止 X。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
@@ -2439,19 +2448,23 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     assert.doesNotMatch(requestBody.messages[0].content, /短的一行即可/)
     storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态。篇幅：目标 35～90 个中文字符。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /先从读者视角用一句话交代具体对象和发生的事/)
+    assert.match(requestBody.messages[0].content, /开头用最短一句说清谁做了什么/)
     assert.doesNotMatch(requestBody.messages[0].content, /开头就表态/)
     storedPostPrompt = '风格：标题党引子。第一句至少带出对象。素材适合时可写“真正值得注意的是”。写 3～5 个短段。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /观点型标题党/)
+    assert.match(requestBody.messages[0].content, /更抓人的观点短帖/)
     assert.doesNotMatch(requestBody.messages[0].content, /真正值得注意的是/)
     storedPostPrompt = '风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断。篇幅：目标 45～100 个中文字符。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /先用一句话说清具体对象和发生的事/)
+    assert.match(requestBody.messages[0].content, /第一句用具体事件带出冲突/)
     storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事。素材真让人佩服时，可以用 0～1 句短口语直接夸。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /不要从历史走势推断有人一直持有/)
+    assert.match(requestBody.messages[0].content, /不能替当事人编经历/)
     assert.doesNotMatch(requestBody.messages[0].content, /素材真让人佩服时/)
+    storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事。姿态够直接。字数是写作目标。最厉害的地方是……'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /开头用最短一句说清谁做了什么/)
+    assert.doesNotMatch(requestBody.messages[0].content, /姿态够直接/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
@@ -3478,7 +3491,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.32')
+  assert.equal(manifest.version, '3.32.36')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3854,7 +3867,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(content, /"xrc-docs-risk": "risk"/)
   assert.match(content, /"xrc-docs-mutual-rules": "mutual-rules"/)
   assert.match(content, /data-xrc-docs-target="xrc-docs-risk"/)
-  assert.match(content, /data-xrc-docs-target="xrc-docs-mutual-rules"/)
+  assert.match(content, /data-xrc-docs-target="xrc-docs-mutual-unfollow"/)
   assert.doesNotMatch(content, /data-xrc-docs hidden/)
   assert.doesNotMatch(content, /data-xrc-docs-close/)
   assert.match(resourcePage, /href=\{`\/resources\/\$\{RESOURCE_SLUG\}\/docs`\}/)
@@ -3873,7 +3886,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /点赞、关注和发帖进入后台队列/)
   assert.match(docsPage, /顶部页签会打开尚未创建的任务窗口/)
   assert.match(docsPage, /执行中[\s\S]*等待中[\s\S]*停止中[\s\S]*已暂停[\s\S]*未启动[\s\S]*待确认/)
-  assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已暂停 · 再次点击启动全部/)
+  assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已暂停 · 点击启动全部/)
+  assert.match(docsPage, /有任务执行', '运行中 · 点击暂停全部'/)
   assert.match(docsPage, /全流程主按钮[\s\S]*单项任务详情/)
   assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
@@ -3892,6 +3906,22 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
   assert.match(backgroundSource, /ext-update/)
   assert.match(backgroundSource, /applyLocalDevUpdate/)
+})
+
+test('each subtask info link targets its own revealed documentation section', async () => {
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const docsPage = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
+  const hashNavigation = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/DocsHashNavigation.jsx', import.meta.url), 'utf8')
+  const targets = ['reply-timeline', 'reply-notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followback', 'poster']
+  for (const target of targets) {
+    assert.match(content, new RegExp(`xrc-docs-${target}`))
+    assert.match(docsPage, new RegExp(`id="${target}"`))
+  }
+  assert.match(content, /likeDocsLink\.dataset\.xrcDocsTarget = likeDocsReplies/)
+  assert.match(content, /replyDocsLink\.dataset\.xrcDocsTarget = replyDocsNotifications/)
+  assert.match(content, /button\.addEventListener\("click", \(\) => openDocs\(button\.dataset\.xrcDocsTarget\)\)/)
+  assert.match(hashNavigation, /parent instanceof HTMLDetailsElement\) parent\.open = true/)
+  assert.match(hashNavigation, /target\.scrollIntoView/)
 })
 
 test('today totals expose a compact calendar entry and poster stats identify the current run', async () => {

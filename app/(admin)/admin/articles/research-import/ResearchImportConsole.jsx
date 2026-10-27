@@ -657,7 +657,7 @@ export default function ResearchImportConsole({ embedded = false }) {
           <p className="mb-0 mt-2 text-[12px] leading-5 text-[#7a7c70] dark:text-gray-500">
             {listMode === 'draft'
               ? '保存为草稿后留在这里，公开页不展示。'
-              : '已发布但 GitHub 正文与线上不一致时会回到待处理。'}
+              : '新调研及正文更新进入待审批；GitHub 最近提交满 3 天仍未处理，会在下次每日调度自动发布。保存草稿或撤回可停止自动发布。'}
             {syncedLabel ? ` ${syncedLabel}。` : ''}
           </p>
         )}
@@ -893,7 +893,7 @@ export default function ResearchImportConsole({ embedded = false }) {
   return (
     <AdminPage
       title="审批调研"
-      description="GitHub 里的 Markdown 是正本。push 之后在这里核对并发布，不用再找导出文件。"
+      description="GitHub 里的 Markdown 是正本。push 后可在这里核对发布；最近提交满 3 天仍待审批，将在下次每日调度自动发布。"
       actions={(
         <AdminButton href="/admin/articles" variant="ghost">
           <IconArrowLeft size={16} />打开内容管理

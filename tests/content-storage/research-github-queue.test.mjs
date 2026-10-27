@@ -6,6 +6,7 @@ import {
   decodeGitHubFileContent,
   dropUnchangedPublishedUpdates,
   extractResearchTitleFromMarkdown,
+  fetchGitHubResearchLastCommitAt,
   fillMissingResearchTitles,
   githubCompareRange,
   hashResearchSource,
@@ -129,6 +130,23 @@ test('GitHub file payloads decode UTF-8 markdown', () => {
   assert.equal(decodeGitHubFileContent({ encoding: 'base64', content: `${encoded.slice(0, 8)}\n${encoded.slice(8)}` }), text)
 })
 
+test('latest file commit supplies the review deadline without a D1 queue table', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /commits\?sha=main&path=research%2Ftopics%2F2026-09-11-pi\.md&per_page=1/)
+    return jsonResponse([{ commit: { committer: { date: '2026-09-11T02:00:00Z' } } }])
+  }
+  try {
+    const at = await fetchGitHubResearchLastCommitAt(
+      { GITHUB_SYNC_TOKEN: 't', GITHUB_REPOSITORY: 'TUARAN/tuaran-home-page' },
+      'research/topics/2026-09-11-pi.md',
+    )
+    assert.equal(at, Date.parse('2026-09-11T02:00:00Z'))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('approval console lists Chinese titles ahead of slugs', async () => {
   const { readFile } = await import('node:fs/promises')
   const source = await readFile(new URL('../../app/(admin)/admin/articles/research-import/ResearchImportConsole.jsx', import.meta.url), 'utf8')
@@ -136,7 +154,8 @@ test('approval console lists Chinese titles ahead of slugs', async () => {
   assert.match(source, /\{item\.title \|\| item\.slug\}/)
   assert.match(source, /placeholder="标题、slug、文件名"/)
   assert.match(source, /updated: '正文已改'/)
-  assert.match(source, /已发布但 GitHub 正文与线上不一致/)
+  assert.match(source, /新调研及正文更新进入待审批/)
+  assert.match(source, /最近提交满 3 天仍未处理/)
   assert.match(source, /阅览/)
   assert.match(source, /renderMarkdown/)
   assert.match(source, /prose-tuaran/)

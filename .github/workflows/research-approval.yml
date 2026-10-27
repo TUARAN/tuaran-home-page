@@ -1,0 +1,32 @@
+name: Research approval auto publication
+
+# Daily at 08:25 Beijing time, after a GitHub revision has been waiting for 72 hours.
+on:
+  schedule:
+    - cron: '25 0 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: research-approval
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Publish research past review deadline
+        env:
+          RESEARCH_APPROVAL_SECRET: ${{ secrets.RESEARCH_APPROVAL_SECRET }}
+          A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}
+          PUBLIC_OPINION_COLLECT_SECRET: ${{ secrets.PUBLIC_OPINION_COLLECT_SECRET }}
+        run: |
+          TRIGGER_SECRET="${RESEARCH_APPROVAL_SECRET:-${A_SHARE_COLLECT_SECRET:-$PUBLIC_OPINION_COLLECT_SECRET}}"
+          if [ -z "$TRIGGER_SECRET" ]; then
+            echo "::error::缺少 RESEARCH_APPROVAL_SECRET、A_SHARE_COLLECT_SECRET 或 PUBLIC_OPINION_COLLECT_SECRET"
+            exit 1
+          fi
+          curl -sS --retry 2 --retry-delay 8 --fail-with-body \
+            -X POST \
+            -H "x-research-approval-secret: $TRIGGER_SECRET" \
+            https://2aran.com/api/cron/research-approval

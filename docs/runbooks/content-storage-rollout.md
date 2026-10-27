@@ -20,6 +20,8 @@
 
 Git 调研：遵循 `research/README.md` 与现有风格约定，修改 Markdown 正本并 push 到 `main` 后，打开 `/admin/articles?panel=import` 审批发布。后台从 GitHub 读取正文，核对后写入 D1。源哈希用于追踪版本。加密内容只携带密文。冲突时刷新发布状态、核对差异，再决定是否发布。
 
+待审批的新调研和已发布正文更新由 `.github/workflows/research-approval.yml` 每天北京时间 08:25 检查。以 GitHub 上该文件最近一次提交时间计时；满 72 小时仍待审批，则写入 D1 发布。版本变更重新计时；保存为草稿或撤回会停止自动发布。无需新增 D1 表或迁移。调度密钥优先使用 `RESEARCH_APPROVAL_SECRET`，也可沿用 A 股任务两侧同值的 `A_SHARE_COLLECT_SECRET` 或 `PUBLIC_OPINION_COLLECT_SECRET`。失败的发布下次调度重试。
+
 `data/content-archive.json` 固定迁移当日的 249 篇调研和 7 篇内置文章。不要日常扩充它。新增源文件不会因此自动进入静态正文、旧 RSS 或代码目录。历史文章的 D1 快照优先于归档；下线记录保留，避免归档复活。
 
 ## 3. 媒体迁移到 R2

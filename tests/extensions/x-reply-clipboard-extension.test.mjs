@@ -3298,6 +3298,8 @@ test('selected Grok reply prompt asks for a specific second perspective', async 
     assert.match(await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true }), /^@grok /)
     modelText = '@Grok 这个处理太急了。@grok 还有什么公开依据？'
     assert.equal((await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true })).match(/@grok/giu)?.length, 1)
+    modelText = '粉丝破万挺快的。@grok 开通后按什么标准结算？\n@grok 开通后按什么标准结算？'
+    assert.equal(await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true }), '粉丝破万挺快的。@grok 开通后按什么标准结算？')
     modelText = '这个处理确实太急了。@grok 还有其他依据吗？'
     assert.doesNotMatch(await background.callDeepSeek({ postText: '项目突然提前上线' }), /@grok/)
     assert.match(request.messages[0].content, /不要提及 @grok/)
@@ -3833,7 +3835,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.43')
+  assert.equal(manifest.version, '3.32.44')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4119,8 +4121,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
-  assert.ok(catalog.includes(`x-reply-clipboard-extension-v${manifest.version}.zip`))
-  assert.ok(resourcePage.includes(`const VERSION = '${manifest.version}'`))
+  const publishedVersion = resourcePage.match(/const VERSION = '([^']+)'/)?.[1]
+  assert.ok(publishedVersion)
+  assert.ok(catalog.includes(`x-reply-clipboard-extension-v${publishedVersion}.zip`))
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -4819,6 +4822,11 @@ test('writes the phrase into Draft state and keeps Reply disabled until that wri
   draft.writeReplyDraft(node, multiline)
   assert.equal(draft.readDraftText(node), multiline)
   assert.deepEqual(editorState.content.blockMap.entries.map((entry) => entry[1].text), ['第一行', '', '第二行'])
+
+  const mentionReply = '粉丝破万挺快的。@grok 开通后按什么标准结算？'
+  draft.writeReplyDraft(node, mentionReply)
+  assert.equal(draft.readDraftText(node), mentionReply)
+  assert.equal((draft.readDraftText(node).match(/@grok/gu) || []).length, 1)
 
   const seen = []
   let index = 0

@@ -269,6 +269,14 @@
     if (visible && !forceDraft) return { ok: false, reason: "compose-mismatch", seen: visible };
 
     let node = findDraftNode(editor);
+    if (forceDraft && (!node || !characterSample(node)) && !visible) {
+      // X may expand an @mention while execCommand inserts the full reply,
+      // leaving the question twice. Seed one character, then replace DraftJS
+      // state with the exact reply without triggering mention completion.
+      insertWithCommand(editor, " ");
+      await sleep(80);
+      node = findDraftNode(replyEditor(options.scope) || editor);
+    }
     if (!node || !characterSample(node)) {
       if (forceDraft) {
         insertWithCommand(editor, phrase);

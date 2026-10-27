@@ -95,7 +95,7 @@
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.43";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.44";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -2590,7 +2590,7 @@
     const existing = loopApi.composerText(composer.textbox);
     const filled = loopApi.normalizePhraseText(existing) === loopApi.normalizePhraseText(phrase)
       ? phrase
-      : await fillComposer(composer.textbox, phrase);
+      : await fillComposer(composer.textbox, phrase, { forceDraft: /@grok\b/iu.test(phrase) });
     if (state.stopping) return "stopped";
     if (unavailablePostInDialog()) return "post-unavailable";
     if (!filled) return "compose-failed";
@@ -2606,9 +2606,18 @@
     if (unavailablePostInDialog()) return "post-unavailable";
     if (!enabled) return "submit-disabled";
 
+    // Mention completion can mutate the DraftJS editor after the first fill
+    // check. Never publish a reply whose visible text differs from the draft.
+    const visibleBeforeSend = loopApi.composerText(composer.textbox);
+    if (loopApi.normalizePhraseText(visibleBeforeSend) !== loopApi.normalizePhraseText(phrase)) {
+      const repaired = await fillComposer(composer.textbox, phrase, { forceDraft: true });
+      if (!repaired) return "compose-failed";
+    }
+
     const current = composer.dialog ? findDialogComposer() : composer;
     const submit = current?.submit || composer.submit;
     if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
+    if (loopApi.normalizePhraseText(loopApi.composerText(current?.textbox || composer.textbox)) !== loopApi.normalizePhraseText(phrase)) return "compose-failed";
     const successNoticesBefore = new Set(successNoticeNodes());
     const toastsBefore = new Set(unavailablePostToasts());
     const transientBefore = new Map(transientErrorNodes().map((node) => [node, textOf(node)]));

@@ -68,8 +68,9 @@ function finalizeReply(value, inviteGrok = false) {
   const reply = String(value || "").trim();
   if (!reply) return "";
   if (inviteGrok) {
+    const deduped = reply.replace(/(@grok\b\s*)([^?？\n]+[?？])(?:\s*(?:@grok\b\s*)?\2)+/giu, "$1$2");
     let mentioned = false;
-    const once = reply.replace(/@grok\b/giu, () => {
+    const once = deduped.replace(/@grok\b/giu, () => {
       if (mentioned) return "";
       mentioned = true;
       return "@grok";

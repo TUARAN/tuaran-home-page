@@ -18,7 +18,7 @@
     timeline: "评论帖子", notifications: "评论通知",
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
     "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
-    "mutual-targetFollow": "关注候选", poster: "定时发帖"
+    "mutual-targetFollow": "关注候选", poster: "普通发帖", "poster-premium": "精品发帖"
   };
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
@@ -46,21 +46,23 @@
     "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
-    "任务：依据热点标题和摘要写一条 X 中文短帖。开头用最短一句说清谁做了什么，让没看过素材的人跟得上；接着直接亮出赞成、反对、质疑或惊讶的态度。观点可以尖锐，敢说具体做法荒唐、价格离谱、变化惊人；别把立场磨成两边都对的分析报告。",
+    "任务：依据热点标题和摘要写一条情绪化的 X 中文短帖。开头用最短一句说清谁做了什么；马上用第一人称亮出态度——喜欢、讨厌、反对、无语、心疼、看不惯都行，把话说满。",
+    "立场：整条只站一边说话。禁止‘一方面……另一方面……’‘也有道理’‘理性看’‘辩证看’‘换个角度也成立’‘见仁见智’这类把内容拆开正反说的写法。素材里有冲突时，只挑你真正不爽或真正认可的那一头写透；别写成两边都照顾到的分析报告。",
     "事实：标题和摘要是唯一事实依据，近期主题只用于换角度。可以对已知事实发表强烈看法，不能编人物、数字、动机、因果或后续结果；提问式标题不能写成已证实的事实，也不能替当事人编经历。",
     "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要用介绍写作的话代替事件。",
-    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段间留一个空行。事件只需交代到读者能理解，把更多字留给具体观点；没有新信息就不要硬凑第三段。字数只是目标，不是发布前的硬筛选。",
-    "口气：像跟熟人聊刚看到的事，直接、口语、有点火气也行。自然用语气词、感叹句或反问，几处都可以，但每一句都得指向这件事；不要每条固定同一种口头禅。可以短促地夸、骂做法或吐槽结果，不辱骂个人，也别把猜测说成事实。",
-    "删掉空话：每句只保留具体事实或鲜明观点。不要‘值得关注’‘引发热议’‘意义重大’‘我们拭目以待’‘你怎么看’之类收尾；不用‘不是……而是……’等踩一捧一的假对比，不写‘本文’‘这条推文’‘下面聊聊’等自我指涉。不替事实拔高主题，说够了就停。",
+    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段间留一个空行。事件只需交代到读者能理解，把更多字留给情绪和态度；没有新信息就不要硬凑第三段。字数只是目标，不是发布前的硬筛选。",
+    "口气：像跟熟人吐槽或安利刚看到的事，情绪可以外露。讨厌就说讨厌，反对就说反对，佩服就说佩服；语气词、感叹句、反问自然用。可以骂具体做法荒唐、离谱、恶心，不辱骂个人，也不把猜测说成事实。不要每条固定同一种口头禅。",
+    "删掉空话：每句只保留具体事实或鲜明态度。不要‘值得关注’‘引发热议’‘意义重大’‘我们拭目以待’‘你怎么看’‘值得双方思考’‘各自有难处’之类收尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’‘下面聊聊’等自我指涉。不替事实拔高主题，说够了就停。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const CLICKBAIT_POST_PROMPT = [
-    "风格：更抓人的观点短帖。第一句用具体事件带出冲突，马上说出鲜明立场；可以犀利、惊讶、吐槽，别拿‘震惊’‘内幕’或空悬念骗点击。",
+    "风格：情绪化、只站一边的抓人短帖。第一句用具体事件带出你的火气或兴奋，马上明说喜欢、讨厌、反对或无语；可以犀利、惊讶、吐槽，别拿‘震惊’‘内幕’或空悬念骗点击。",
+    "立场：禁止正反对照和中立分析。不要补对立面的合理性，不要写‘也有人这么想’‘另一边也有道理’；整条只把你这一边的情绪说清楚。",
     "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要介绍自己要怎么写。",
     "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机、因果或持有者经历。不把猜测写成事实，不做未经证实的指控。",
     "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段间留一个空行。事件用最短一句交代清楚，其余用来表达具体态度；没有新信息就不要凑第三段。字数只是目标，不是硬筛选。",
-    "口气：像跟熟人说话，观点敢往前站，语气词、感叹句和反问都可以自然多一点。直接夸、直接质疑、直接吐槽具体做法；不辱骂个人，不把口头禅每条都重复一遍。",
-    "删掉空话：不写中立总结、泛泛建议、意义拔高或求互动的固定结尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’等自我指涉。每句都要有事实或态度，说完就停。",
+    "口气：像跟熟人说话，观点敢往前站，语气词、感叹句和反问都可以自然多一点。直接夸、直接骂、直接吐槽具体做法；不辱骂个人，不把口头禅每条都重复一遍。",
+    "删掉空话：不写中立总结、正反拆解、泛泛建议、意义拔高或求互动的固定结尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’等自我指涉。每句都要有事实或态度，说完就停。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const REPLY_PACE_LIMITS = {
@@ -95,7 +97,7 @@
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.46";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.50";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -112,6 +114,8 @@
     "xrc-docs-mutual-unfollow": "mutual-unfollow",
     "xrc-docs-mutual-followback": "mutual-followback",
     "xrc-docs-poster": "poster",
+    "xrc-docs-poster-normal": "poster-normal",
+    "xrc-docs-poster-premium": "poster-premium",
     "xrc-docs-frequency": "frequency",
     "xrc-docs-rules": "rules",
     "xrc-docs-maintenance": "maintenance",
@@ -122,10 +126,10 @@
     reply: ["timeline", "notifications"],
     likes: ["likes-posts", "likes-replies"],
     mutual: ["mutual-unfollow", "mutual-followBack"],
-    poster: ["poster"]
+    poster: ["poster", "poster-premium"]
   };
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
-  const ASSISTANT_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "mutual", "poster"]);
+  const ASSISTANT_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "mutual", "poster", "poster-premium"]);
 
   const state = {
     running: false,
@@ -195,6 +199,20 @@
   let activeAiRequestId = "";
   let posterRenderTimer = 0;
   let acknowledgedAutomationNotices = new WeakMap();
+
+  function isPosterMode(mode = state.assistantMode) {
+    return mode === "poster" || mode === "poster-premium";
+  }
+
+  function posterKindFromMode(mode = state.assistantMode) {
+    return mode === "poster-premium"
+      ? (postApi?.POST_KIND_PREMIUM || "premium")
+      : (postApi?.POST_KIND_NORMAL || "normal");
+  }
+
+  function posterTaskKey(mode = state.assistantMode) {
+    return mode === "poster-premium" ? "poster-premium" : "poster";
+  }
 
   function getLikeController() {
     if (!likeController && likeApi) {
@@ -675,7 +693,7 @@
     // Countdown copy changes every second. Remote runtime state uses the fixed
     // deadline in waitUntil, so keep its detail stable while a task waits.
     const now = Date.now();
-    if (state.assistantMode === "poster") {
+    if (isPosterMode()) {
       if (Number(state.poster?.riskCooldownUntil) > now) return "风控等待中";
       if (Number(state.poster?.nextPostAt) > now) return "等待下一条发布";
     } else if (!state.assistantMode.startsWith("likes-") && state.assistantMode !== "mutual") {
@@ -690,14 +708,14 @@
     if (state.assistantMode === "mutual") {
       return String(state.mutual?.status || "").slice(0, 160);
     }
-    if (state.assistantMode === "poster") return String(state.poster?.status || "").slice(0, 160);
+    if (isPosterMode()) return String(state.poster?.status || "").slice(0, 160);
     return String(state.status || "").slice(0, 160);
   }
 
   function currentTaskWaitUntil() {
     if (state.assistantMode.startsWith("likes-")) return Number(likeState.cooldownUntil) || 0;
     if (state.assistantMode === "mutual") return Number(state.mutual?.cooldownUntil) || Number(state.mutual?.riskCooldownUntil) || 0;
-    if (state.assistantMode === "poster") {
+    if (isPosterMode()) {
       const poster = state.poster || {};
       return Math.max(Number(poster.riskCooldownUntil) || 0, Number(poster.nextPostAt) || 0);
     }
@@ -764,7 +782,7 @@
   const FLOW_TASKS = Object.freeze([
     ["timeline", "评论帖子"], ["notifications", "评论通知"],
     ["mutual-unfollow", "清理未回关"], ["mutual-followBack", "回关粉丝"],
-    ["poster", "定时发帖"],
+    ["poster", "普通发帖"], ["poster-premium", "精品发帖"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"]
   ]);
   const FLOW_STALE_MS = 90 * 1000;
@@ -819,11 +837,12 @@
     if (task?.status === "unknown") return { label: "待确认 · 点击查看", title: "任务状态暂未确认；点击查看任务窗口", action: "focus" };
     if (task?.status !== "waiting") return null;
     if (!taskSchedule.enabled) return { label: "等待中 · 点击查看", title: "任务窗口仍在等待；点击查看任务窗口", action: "focus" };
-    const resumeAt = Number(queued.resumeAt) || 0;
-    const countdown = resumeAt > now ? ` · ${formatClock(resumeAt - now)}` : "";
+    const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
+    const remaining = resumeAt > now ? resumeAt - now : 0;
+    const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
     return {
-      label: "等待中 · 点击停止",
-      title: `${queued.reason || "等待后台调度"}${countdown}；到期后自动启动，点击只停止这一项`,
+      label: eta ? `等待 ${eta} · 点停止` : "等待中 · 点击停止",
+      title: `${queued.reason || "等待后台调度"}${eta ? `，还剩 ${eta}` : ""}；到期后自动启动，点击只停止这一项`,
       action: "stop"
     };
   }
@@ -910,14 +929,21 @@
     if (task?.status === "unknown") return { status: "unknown", title: "状态待确认", detail: "后台暂未收到任务的最新状态，请打开任务窗口检查。" };
     if (task?.status === "waiting") {
       const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
-      const countdown = resumeAt > now ? `，${formatClock(resumeAt - now)} 后自动重试` : "";
-      return { status: "waiting", title: "等待中", detail: `${queued.reason || pluginRuntime.tasks?.[mode]?.detail || "等待后台调度"}${countdown}。` };
+      const remaining = resumeAt > now ? resumeAt - now : 0;
+      const reason = queued.reason || pluginRuntime.tasks?.[mode]?.detail || "等待后台调度";
+      return {
+        status: "waiting",
+        title: waitHeadline("等待中", remaining),
+        detail: remaining > 0
+          ? `${reason}。到期后自动继续，也可点单项按钮停止等待。`
+          : `${reason}。后台正在安排恢复。`
+      };
     }
     return null;
   }
 
   function paintTaskScheduleNotice(panel = document.getElementById(PANEL_ID)) {
-    const notice = panel?.querySelector(`.xrc-${state.assistantMode.startsWith("likes-") ? "like" : state.assistantMode === "mutual" ? "mutual" : state.assistantMode === "poster" ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
+    const notice = panel?.querySelector(`.xrc-${state.assistantMode.startsWith("likes-") ? "like" : state.assistantMode === "mutual" ? "mutual" : isPosterMode() ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
     if (!notice) return;
     const info = taskScheduleNotice(currentTaskKey());
     notice.hidden = !info;
@@ -944,15 +970,22 @@
       unknown: "超过 90 秒没有状态更新，请检查对应窗口",
       blocked: "连续受限，已停止自动重试"
     };
+    const now = Date.now();
     list.replaceChildren(...summary.tasks.map((task) => {
       const row = document.createElement("li");
       row.className = "xrc-flow-detail-row";
-      row.dataset.state = task.status;
+      row.dataset.status = task.status;
       const name = document.createElement("strong");
       name.textContent = task.label;
       const status = document.createElement("span");
       status.className = "xrc-flow-detail-status";
-      status.textContent = labels[task.status];
+      const taskRuntime = pluginRuntime.tasks?.[task.key];
+      const updatedAt = Number(taskRuntime?.updatedAt) || 0;
+      const detail = String(taskRuntime?.detail || "").trim();
+      const queued = taskSchedule.items?.[task.key];
+      const resumeAt = Number(queued?.resumeAt) || Number(taskRuntime?.waitUntil) || 0;
+      const remaining = task.status === "waiting" && resumeAt > now ? resumeAt - now : 0;
+      status.textContent = remaining > 0 ? waitHeadline("等待中", remaining) : labels[task.status];
       const note = document.createElement("small");
       const go = document.createElement("button");
       go.type = "button";
@@ -960,20 +993,14 @@
       go.textContent = "前往";
       go.title = `切换或打开${task.label}的浏览器标签页，不启动任务`;
       go.setAttribute("aria-label", go.title);
-      const taskRuntime = pluginRuntime.tasks?.[task.key];
-      const updatedAt = Number(taskRuntime?.updatedAt) || 0;
-      const detail = String(taskRuntime?.detail || "").trim();
-      const queued = taskSchedule.items?.[task.key];
-      const resumeAt = Number(queued?.resumeAt) || 0;
-      const recoveryCountdown = taskSchedule.enabled && task.status === "waiting" && resumeAt > Date.now();
       note.textContent = task.status === "blocked"
         ? `连续受限：${readableTaskLimitReason(queued.reason)}；请检查账号状态`
         : queued?.manualStopped && taskSchedule.enabled && task.status === "missing"
           ? "已手动停止；再次全流程启动或单项启动可恢复"
-          : recoveryCountdown
-        ? `${queued.reason || "等待自动恢复"} · ${Math.max(1, Math.ceil((resumeAt - Date.now()) / 1000))} 秒后自动重试`
+          : remaining > 0
+        ? `${queued?.reason || "等待自动恢复"}；到期后自动继续`
         : taskSchedule.enabled && task.status === "waiting" && taskRuntime
-          && (taskRuntime.phase === "unknown" || !updatedAt || Date.now() - updatedAt > FLOW_STALE_MS)
+          && (taskRuntime.phase === "unknown" || !updatedAt || now - updatedAt > FLOW_STALE_MS)
           ? queued?.reason || "后台正在检查任务状态并安排自动恢复"
         : updatedAt
         ? `${detail && ["running", "waiting"].includes(task.status) ? detail : hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
@@ -997,7 +1024,7 @@
       if (Number(mutual.cooldownUntil) > Date.now()) return "paused";
       return "running";
     }
-    if (state.assistantMode === "poster") {
+    if (isPosterMode()) {
       const poster = state.poster;
       if (!poster?.running) return "";
       if (poster.stopping) return "stopping";
@@ -1068,14 +1095,18 @@
 
   function flowRuntimeLabel(model, startedAt, now = Date.now()) {
     if (model.status === "paused") return "全流程已暂停";
-    if (model.status === "waiting") return "任务等待中";
+    if (model.status === "waiting") return waitHeadline("任务等待中", soonestWaitMs(now));
     if (model.status === "blocked") return "任务需检查";
     if (model.status === "stalled") return "停止待重试";
     if (model.status === "stopping") return "正在停止";
     if (model.status === "starting") return "正在启动";
     if (model.status === "unknown") return "状态待确认";
     if (model.status === "stopped") return "已停止";
-    if (model.status === "running") return startedAt ? `稳定运行 ${formatRuntime(now - startedAt)}` : "运行中";
+    if (model.status === "running") {
+      const waitMs = soonestWaitMs(now);
+      if (waitMs > 0 && !flowTaskOverview(pluginRuntime, now).counts.running) return waitHeadline("任务等待中", waitMs);
+      return startedAt ? `稳定运行 ${formatRuntime(now - startedAt)}` : "运行中";
+    }
     return "尚未运行";
   }
 
@@ -1153,7 +1184,7 @@
   }
 
   function clearTaskSession() {
-    for (const key of [STORAGE_KEY, "xrc-ai-poster", "xrc-poster-used-sources"]) {
+    for (const key of [STORAGE_KEY, "xrc-ai-poster", "xrc-ai-poster-premium", "xrc-poster-used-sources"]) {
       try { sessionStorage.removeItem(key); } catch (error) { /* Session storage may be unavailable. */ }
     }
   }
@@ -1242,6 +1273,11 @@
     await openTaskTab(taskGroupTarget("likes").mode);
   }
 
+  async function openPosterWindows() {
+    await loadOpenTaskTabs();
+    await openTaskTab(taskGroupTarget("poster").mode);
+  }
+
   async function closeTaskGroupWindow(mode, tabId) {
     if (!mode || !Number.isInteger(tabId)) return;
     try {
@@ -1291,8 +1327,8 @@
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       state.replyPrompt = String(settings.replyPrompt || "").trim();
       const storedPostPrompt = String(settings.postPrompt || "").trim();
-      const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
-      const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
+      const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：更抓人的观点短帖。") && storedPostPrompt.includes("马上说出鲜明立场") && !storedPostPrompt.includes("只站一边")) || (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
+      const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据热点标题和摘要写一条 X 中文短帖。") && storedPostPrompt.includes("两边都对的分析报告") && !storedPostPrompt.includes("只站一边说话")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
       const previousBuiltInPrompt = storedPostPrompt.includes("素材真让人佩服时，可以用 0～1 句短口语直接夸");
       const currentBuiltInPrompt = storedPostPrompt.includes("姿态够直接") && storedPostPrompt.includes("字数是写作目标");
       state.postPrompt = (oldClickbaitPreset || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要"))) ? CLICKBAIT_POST_PROMPT : (oldDefaultPrompt || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要"))) ? "" : storedPostPrompt;
@@ -1926,6 +1962,33 @@
     return parts.join(" ");
   }
 
+  function waitHeadline(prefix, milliseconds) {
+    const remaining = Number(milliseconds) || 0;
+    if (!(remaining > 0)) return prefix;
+    return `${prefix} · 约 ${formatCountdown(remaining)}`;
+  }
+
+  function soonestWaitMs(now = Date.now()) {
+    let soonest = 0;
+    const consider = (until) => {
+      const remaining = Number(until) - now;
+      if (!(remaining > 0)) return;
+      soonest = soonest ? Math.min(soonest, remaining) : remaining;
+    };
+    for (const item of Object.values(taskSchedule.items || {})) consider(item?.resumeAt);
+    consider(state.waitUntil);
+    consider(state.nextCycleAt);
+    consider(state.nextRoundAt);
+    consider(state.reconnectAt);
+    consider(state.riskCooldownUntil);
+    consider(state.poster?.nextPostAt);
+    consider(state.poster?.riskCooldownUntil);
+    consider(state.mutual?.cooldownUntil);
+    consider(likeState.cooldownUntil);
+    for (const task of Object.values(pluginRuntime.tasks || {})) consider(task?.waitUntil);
+    return soonest;
+  }
+
   function resetCycleProgress() {
     state.pageCount = 0;
     state.completedRounds = 0;
@@ -2026,7 +2089,11 @@
     const draft = loopApi.composerText(open.textbox);
     if (draft && !isManagedDraft(draft)) return false;
     if (draft) {
-      await requestDraftClear();
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await requestDraftClear();
+        if (!findDialogComposer() || !loopApi.composerText(findDialogComposer().textbox)) break;
+        await sleep(150);
+      }
       if (findDialogComposer() && loopApi.composerText(findDialogComposer().textbox)) return false;
     }
     const eventInit = { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true, cancelable: true };
@@ -2052,8 +2119,21 @@
   function isManagedDraft(text) {
     const normalized = loopApi.normalizePhraseText(text);
     if (!normalized) return true;
-    return [state.pendingReply, state.lastReply].some((phrase) => phrase && loopApi.normalizePhraseText(phrase) === normalized)
+    return [state.pendingReply, state.lastReply].some((phrase) => phrase && (
+      loopApi.normalizePhraseText(phrase) === normalized || loopApi.isRecoverableGrokDuplicate(text, phrase)
+    ))
       || loopApi.phraseIndexFromText(phrases, text) >= 0;
+  }
+
+  function reloadManagedReplyDraft(message) {
+    const open = findDialogComposer();
+    if (!open || !isManagedDraft(loopApi.composerText(open.textbox))
+      || open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
+    state.status = message;
+    writeSaved({ running: true, total: state.total });
+    renderPanel();
+    window.location.reload();
+    return true;
   }
 
   function reconnectDelay(attempt) {
@@ -2466,7 +2546,7 @@
       mutualApi?.coolDownForRisk?.();
       return;
     }
-    if (state.assistantMode === "poster") {
+    if (isPosterMode()) {
       postApi?.coolDownForRisk?.();
       return;
     }
@@ -2549,7 +2629,7 @@
 
   function failureLabel(result) {
     if (result === "transient-error") return "X 发送出错，跳过当前帖子";
-    if (result === "compose-failed") return "话术没有写进评论框";
+    if (result === "compose-failed") return "评论框内容未对齐，正在自动重写";
     if (result === "submit-disabled") return "Reply 还不能点";
     if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
     if (result === "composer-already-open") return "页面已有评论弹窗，为避免覆盖内容已暂停";
@@ -2588,6 +2668,20 @@
     return opened ? findComposer(tweet.article, hadInline) : null;
   }
 
+  async function ensureReplyComposerText(composer, phrase, attempts = 3) {
+    const expected = loopApi.normalizePhraseText(phrase);
+    for (let attempt = 0; attempt < attempts && !state.stopping; attempt += 1) {
+      const current = composer.dialog ? findDialogComposer() : composer;
+      if (!current?.textbox) return false;
+      if (loopApi.normalizePhraseText(loopApi.composerText(current.textbox)) === expected) return true;
+      await fillComposer(current.textbox, phrase, { forceDraft: attempt > 0 || /@grok\b/iu.test(phrase) });
+      await sleep(150);
+      const verified = composer.dialog ? findDialogComposer() : composer;
+      if (loopApi.normalizePhraseText(loopApi.composerText(verified?.textbox)) === expected) return true;
+    }
+    return false;
+  }
+
   async function publishReply(composer, replyText) {
     if (state.stopping) return "stopped";
     if (findReplyRestrictionDialog()) return "reply-restricted";
@@ -2595,10 +2689,7 @@
     if (transientErrorVisible()) return "transient-error";
     const phrase = String(replyText || "").trim();
     if (!phrase) return "compose-failed";
-    const existing = loopApi.composerText(composer.textbox);
-    const filled = loopApi.normalizePhraseText(existing) === loopApi.normalizePhraseText(phrase)
-      ? phrase
-      : await fillComposer(composer.textbox, phrase, { forceDraft: /@grok\b/iu.test(phrase) });
+    const filled = await ensureReplyComposerText(composer, phrase);
     if (state.stopping) return "stopped";
     if (unavailablePostInDialog()) return "post-unavailable";
     if (!filled) return "compose-failed";
@@ -2614,17 +2705,13 @@
     if (unavailablePostInDialog()) return "post-unavailable";
     if (!enabled) return "submit-disabled";
 
-    // Mention completion can mutate the DraftJS editor after the first fill
-    // check. Never publish a reply whose visible text differs from the draft.
-    const visibleBeforeSend = loopApi.composerText(composer.textbox);
-    if (loopApi.normalizePhraseText(visibleBeforeSend) !== loopApi.normalizePhraseText(phrase)) {
-      const repaired = await fillComposer(composer.textbox, phrase, { forceDraft: true });
-      if (!repaired) return "compose-failed";
-    }
+    // Mention completion can mutate the DraftJS editor after the first fill.
+    // Repair it before sending; a failed repair returns to the automatic retry loop.
+    if (!await ensureReplyComposerText(composer, phrase, 2)) return "compose-failed";
 
     const current = composer.dialog ? findDialogComposer() : composer;
     const submit = current?.submit || composer.submit;
-    if (!loopApi.isSubmitEnabled(submit)) return "submit-disabled";
+    if (!await waitUntil(() => loopApi.isSubmitEnabled(current?.submit || composer.submit), SUBMIT_TIMEOUT_MS)) return "submit-disabled";
     if (loopApi.normalizePhraseText(loopApi.composerText(current?.textbox || composer.textbox)) !== loopApi.normalizePhraseText(phrase)) return "compose-failed";
     const successNoticesBefore = new Set(successNoticeNodes());
     const toastsBefore = new Set(unavailablePostToasts());
@@ -2686,7 +2773,8 @@
       const existingText = loopApi.composerText(existingComposer.textbox);
       if (!existingText) return publishReply(existingComposer, replyText);
       if (state.replyMode === "ai") {
-        if (loopApi.normalizePhraseText(existingText) !== loopApi.normalizePhraseText(replyText)) {
+        if (loopApi.normalizePhraseText(existingText) !== loopApi.normalizePhraseText(replyText)
+          && !loopApi.isRecoverableGrokDuplicate(existingText, replyText)) {
           return "composer-already-open";
         }
         return publishReply(existingComposer, replyText);
@@ -2726,6 +2814,7 @@
       && result !== "risk-blocked"
       && result !== "transient-error"
       && result !== "duplicate-reply"
+      && result !== "compose-failed"
       && loopApi.composerText(composer.textbox)
     ) {
       return "send-unconfirmed";
@@ -2968,10 +3057,13 @@
         const openDialog = findDialogComposer();
         const openText = openDialog ? loopApi.composerText(openDialog.textbox) : "";
         const sameTweet = state.pendingTweetId === next.id || dialogTargetsTweet(openDialog?.dialog, next);
-        const foreignText = Boolean(openText) && loopApi.normalizePhraseText(openText) !== loopApi.normalizePhraseText(state.pendingReply);
+        const foreignText = Boolean(openText)
+          && loopApi.normalizePhraseText(openText) !== loopApi.normalizePhraseText(state.pendingReply)
+          && !loopApi.isRecoverableGrokDuplicate(openText, state.pendingReply);
         if (openDialog && (!sameTweet || foreignText)) {
           const closed = await closeReplyComposer();
           if (!closed) {
+            if (reloadManagedReplyDraft("重复的 Grok 草稿暂时无法清空，重新载入后继续重试")) return "reload";
             return reconnectAndResume(openText ? "评论框里已有其他内容，关闭失败" : "空评论框对不上当前帖子，关闭失败");
           }
         }
@@ -3056,7 +3148,19 @@
           renderPanel();
           continue;
         }
+        if (reloadManagedReplyDraft("评论框暂时无法清空，重新载入后继续重试")) return "reload";
         return reconnectAndResume(failureLabel(result));
+      }
+      if (result === "compose-failed") {
+        state.errors += 1;
+        state.status = "评论框内容未对齐，正在自动清理并重写当前回复";
+        renderPanel();
+        if (!await closeReplyComposer()) {
+          if (reloadManagedReplyDraft("自动生成的评论草稿暂时无法清空，重新载入后继续重试")) return "reload";
+          return reconnectAndResume("评论框暂时无法安全清理，稍后自动重试", { inPlace: true });
+        }
+        await sleepActive(1500);
+        continue;
       }
       if (result === "post-unavailable" || result === "reply-restricted") {
         const restricted = result === "reply-restricted";
@@ -3214,7 +3318,7 @@
     const previousPhase = currentTaskPhase();
     state.poster = next || postApi?.snapshot?.() || state.poster;
     if (wasRunning !== Boolean(state.poster?.running) || previousPhase !== currentTaskPhase()) {
-      setRuntimeTaskActive("poster", Boolean(state.poster?.running), currentTaskPhase() || "running");
+      setRuntimeTaskActive(posterTaskKey(), Boolean(state.poster?.running), currentTaskPhase() || "running");
     }
     // Poster status can change several times while sources are being read or a
     // draft is being checked. Rebuilding the whole panel for each message makes
@@ -3227,14 +3331,16 @@
   }
 
   async function onPosterToggle() {
-    if (await stopScheduledWaitingTask("poster", Boolean(state.poster.running))) return;
+    const mode = posterTaskKey();
+    const kind = posterKindFromMode(mode);
+    if (await stopScheduledWaitingTask(mode, Boolean(state.poster.running))) return;
     if (!postApi) {
       state.poster = { ...state.poster, status: "推文发布模块没有加载，请刷新扩展后重试", errors: state.poster.errors + 1 };
       renderPanel();
       return;
     }
     if (state.poster.running && Number(state.poster.riskCooldownUntil) > Date.now()) {
-      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "poster" }).catch(() => {});
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode }).catch(() => {});
       postApi.stop();
       return;
     }
@@ -3243,11 +3349,11 @@
       return;
     }
     if (state.poster.running) {
-      sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "poster" }).catch(() => {});
+      sendExtensionMessage({ type: "xrc-task-manual-stop", mode }).catch(() => {});
       postApi.stop();
       return;
     }
-    if (!await resumeManuallyStoppedTask("poster")) return;
+    if (!await resumeManuallyStoppedTask(mode)) return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     if (!state.aiKey) {
@@ -3255,10 +3361,11 @@
       openModelSettingsForKey(document.getElementById(PANEL_ID));
       return;
     }
-    registerCurrentTaskTab("poster");
+    registerCurrentTaskTab(mode);
     state.riskPaused = false;
     state.posterPaceBaseline = state.posterPace;
-    postApi.start(updatePosterState);
+    postApi.setPostKind?.(kind);
+    postApi.start(updatePosterState, { kind });
   }
 
   let pendingMutualAutostart = false;
@@ -3342,7 +3449,7 @@
       void onMutualAction(launch.mutualMode);
       return;
     }
-    if (launch.assistantMode === "poster") {
+    if (isPosterMode(launch.assistantMode)) {
       if (state.poster?.running) return;
       onPosterToggle();
       return;
@@ -3486,10 +3593,10 @@
     panel.querySelector("[data-xrc-monitor-open]")?.setAttribute("aria-expanded", monitorOpen ? "true" : "false");
     if (!monitorOpen) return;
     const active = state.assistantMode;
-    const status = active === "poster" ? state.poster?.status
+    const status = isPosterMode(active) ? state.poster?.status
       : active === "mutual" ? state.mutual?.status
       : active.startsWith("likes-") ? likeState.status : state.status;
-    const errors = active === "poster" ? state.poster?.errors
+    const errors = isPosterMode(active) ? state.poster?.errors
       : active === "mutual" ? state.mutual?.errors
       : active.startsWith("likes-") ? null : state.errors;
     const label = {
@@ -3498,7 +3605,8 @@
       "likes-posts": "点赞管理 · 点赞帖子",
       "likes-replies": "点赞管理 · 点赞评论",
       mutual: `关注管理 · ${{ unfollow: "清理未回关", followBack: "回关粉丝", targetFollow: "关注候选" }[state.mutualMode] || "当前任务"}`,
-      poster: "定时发帖"
+      poster: "定时发帖 · 普通发帖",
+      "poster-premium": "定时发帖 · 精品发帖"
     }[active] || "当前任务";
     const current = monitor.querySelector("[data-xrc-monitor-current]");
     const detail = monitor.querySelector("[data-xrc-monitor-detail]");
@@ -3886,9 +3994,14 @@
           <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
         </div>
         <div class="xrc-body xrc-post-body">
+          <div class="xrc-post-tabs" role="tablist" aria-label="发帖功能">
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="normal"><b>01</b><span>普通发帖</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="premium"><b>02</b><span>精品发帖</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+          </div>
           <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <section class="xrc-post-flow" aria-label="定时发帖流程">
-            <div class="xrc-task-docs-row"><span>发帖规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-poster" aria-label="查看定时发帖说明" title="查看定时发帖说明">i</button></div>
+            <div class="xrc-task-docs-row"><span data-xrc-post-docs-label>普通发帖规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="poster" data-xrc-docs-target="xrc-docs-poster-normal" aria-label="查看普通发帖说明" title="查看普通发帖说明">i</button></div>
+            <p data-xrc-post-description>按所选频率连续发布热点改写稿。</p>
             <div class="xrc-flow-end">
               <p><span data-xrc-post-queue>待发 0 条</span> <a data-xrc-post-source-link target="_blank" rel="noopener noreferrer" hidden>查看出处 ↗</a></p>
               <button class="xrc-inline-start" type="button" data-xrc-post-toggle>启动单项任务</button>
@@ -3896,13 +4009,20 @@
           </section>
           <div class="xrc-status" role="status" data-xrc-post-status hidden></div>
           <section class="xrc-post-card xrc-level-card" aria-label="定时发推进度">
-            <div class="xrc-post-card-head"><span><small>定时发帖 · 本次运行</small><strong data-xrc-post-count>本次已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
+            <div class="xrc-post-card-head"><span><small data-xrc-post-card-label>普通发帖 · 本次运行</small><strong data-xrc-post-count>本次已发送 0 条</strong></span><b data-xrc-post-next>待命</b></div>
             <div class="xrc-post-meta"><span><small>下一次</small><strong data-xrc-post-interval>马上</strong></span><span><small>运行时间</small><strong data-xrc-post-runtime>00:00</strong></span><span><small>异常</small><strong data-xrc-post-errors>0</strong></span></div>
           </section>
-          <section class="xrc-level-card xrc-speed-section xrc-pace-row" aria-label="发推频率">
+          <section class="xrc-level-card xrc-speed-section xrc-pace-row" data-xrc-post-pace-section aria-label="发推频率">
             <span class="xrc-pace-caption">频率</span>
             <div class="xrc-pace-options" role="group" aria-label="发推频率挡位">
               ${(postApi?.POST_SCHEDULE_PROFILES || []).map((item) => `<button type="button" data-xrc-post-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
+            </div>
+          </section>
+          <section class="xrc-level-card xrc-pace-row" data-xrc-post-premium-schedule hidden aria-label="精品发帖排程">
+            <span class="xrc-pace-caption">排程</span>
+            <div class="xrc-pace-options" role="status">
+              <span data-xrc-post-premium-slots>08:00 / 09:30 / 12:00 / 15:00 / 19:00</span>
+              <strong data-xrc-post-premium-today>今日 0/5</strong>
             </div>
           </section>
         </div>
@@ -4277,6 +4397,9 @@
       panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
         button.addEventListener("click", () => openTaskTab(`likes-${button.dataset.xrcLikeTab}`));
       });
+      panel.querySelectorAll("[data-xrc-post-tab]").forEach((button) => {
+        button.addEventListener("click", () => openTaskTab(button.dataset.xrcPostTab === "premium" ? "poster-premium" : "poster"));
+      });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         button.addEventListener("click", () => {
           const group = button.dataset.xrcAssistant;
@@ -4290,6 +4413,10 @@
           }
           if (group === "likes") {
             openLikeWindows();
+            return;
+          }
+          if (group === "poster") {
+            openPosterWindows();
             return;
           }
           loadOpenTaskTabs().then(() => openTaskTab(taskGroupTarget(group).mode));
@@ -4430,7 +4557,8 @@
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode
           || (button.dataset.xrcAssistant === "reply" && ["timeline", "notifications"].includes(state.assistantMode))
-          || (button.dataset.xrcAssistant === "likes" && state.assistantMode.startsWith("likes-"));
+          || (button.dataset.xrcAssistant === "likes" && state.assistantMode.startsWith("likes-"))
+          || (button.dataset.xrcAssistant === "poster" && isPosterMode());
         const target = taskGroupTarget(button.dataset.xrcAssistant);
         button.classList.toggle("is-active", selected);
         const title = taskWindowTitle(target.mode);
@@ -4483,7 +4611,7 @@
       postToggle.dataset.running = poster.running ? "true" : "false";
       postToggle.disabled = Boolean(poster.stopping);
       postToggle.title = "";
-      syncScheduledTaskButton(postToggle, "poster", Boolean(poster.running));
+      syncScheduledTaskButton(postToggle, posterTaskKey(), Boolean(poster.running));
       panel.querySelector("[data-xrc-post-count]").textContent = `本次已发送 ${poster.count || 0} 条`;
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
@@ -4504,6 +4632,23 @@
         : poster.running ? "正在取材" : "待命";
       panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
+      const premiumMode = state.assistantMode === "poster-premium";
+      const postDocsLabel = panel.querySelector("[data-xrc-post-docs-label]");
+      if (postDocsLabel) postDocsLabel.textContent = premiumMode ? "精品发帖规则" : "普通发帖规则";
+      const postDocsLink = panel.querySelector('[data-xrc-docs-link="poster"]');
+      if (postDocsLink) {
+        postDocsLink.dataset.xrcDocsTarget = premiumMode ? "xrc-docs-poster-premium" : "xrc-docs-poster-normal";
+        postDocsLink.setAttribute("aria-label", premiumMode ? "查看精品发帖说明" : "查看普通发帖说明");
+        postDocsLink.title = postDocsLink.getAttribute("aria-label");
+      }
+      const postDescription = panel.querySelector("[data-xrc-post-description]");
+      if (postDescription) {
+        postDescription.textContent = premiumMode
+          ? "每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文偏完整篇幅，配图比例更高。"
+          : "按所选频率连续发布热点改写稿。";
+      }
+      const postCardLabel = panel.querySelector("[data-xrc-post-card-label]");
+      if (postCardLabel) postCardLabel.textContent = premiumMode ? "精品发帖 · 本次运行" : "普通发帖 · 本次运行";
       const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "25～35 分钟" };
       panel.querySelectorAll("[data-xrc-post-pace-input]").forEach((input) => {
         input.disabled = Boolean(poster.running);
@@ -4517,16 +4662,43 @@
       const postInterval = panel.querySelector("[data-xrc-post-interval]");
       if (postInterval) postInterval.textContent = postWait ? formatClock(Number(poster.nextPostAt) - Date.now()) : poster.running ? "正在取材" : "马上";
       const postPaceChanged = !poster.running && state.posterPaceBaseline && state.posterPace !== state.posterPaceBaseline;
-      const postPaceRow = panel.querySelector(".xrc-speed-section");
-      if (postPaceRow) postPaceRow.title = poster.running
-        ? "运行中不能改频率，暂停后可重新选择"
-        : postPaceChanged ? `已选${postSchedule.label}档，重启任务后生效` : `当前${postSchedule.label}档`;
-      if (state.assistantMode === "poster") {
+      const postPaceRow = panel.querySelector("[data-xrc-post-pace-section]");
+      if (postPaceRow) {
+        postPaceRow.hidden = premiumMode;
+        postPaceRow.title = poster.running
+          ? "运行中不能改频率，暂停后可重新选择"
+          : postPaceChanged ? `已选${postSchedule.label}档，重启任务后生效` : `当前${postSchedule.label}档`;
+      }
+      const premiumSchedule = panel.querySelector("[data-xrc-post-premium-schedule]");
+      if (premiumSchedule) {
+        premiumSchedule.hidden = !premiumMode;
+        const todayNode = panel.querySelector("[data-xrc-post-premium-today]");
+        if (todayNode) {
+          const limit = Number(poster.premiumDailyLimit) || postApi?.PREMIUM_DAILY_LIMIT || 5;
+          const todayCount = Number(poster.premiumTodayCount);
+          todayNode.textContent = `今日 ${Number.isFinite(todayCount) ? todayCount : 0}/${limit}`;
+        }
+        const slotsNode = panel.querySelector("[data-xrc-post-premium-slots]");
+        if (slotsNode) {
+          const slots = postApi?.PREMIUM_SLOT_TIMES || ["08:00", "09:30", "12:00", "15:00", "19:00"];
+          slotsNode.textContent = Array.isArray(slots) ? slots.join(" / ") : String(slots || "");
+        }
+      }
+      if (isPosterMode()) {
+        const label = premiumMode ? "精品发帖" : "普通发帖";
         panel.querySelector("[data-xrc-mini-progress]").textContent = postWait
           ? postWait
-          : poster.running ? `定时发帖 · ${poster.count || 0} 条` : "定时发帖 · 待命";
+          : poster.running ? `${label} · ${poster.count || 0} 条` : `${label} · 待命`;
       }
     }
+    panel.querySelectorAll("[data-xrc-post-tab]").forEach((button) => {
+      const mode = button.dataset.xrcPostTab === "premium" ? "poster-premium" : "poster";
+      const selected = mode === state.assistantMode;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.title = taskTabHint(mode);
+      syncSubtaskWindowControl(button, mode);
+    });
     const mutual = state.mutual || mutualApi?.snapshot?.();
     const likeStatus = panel.querySelector("[data-xrc-like-status]");
     if (likeStatus) likeStatus.textContent = likeState.status;
@@ -4631,7 +4803,7 @@
     }
     const active = anyTaskRunning() || Object.keys(pluginRuntime.tasks || {}).length > 0;
     const mutualSelected = state.assistantMode === "mutual";
-    const posterSelected = state.assistantMode === "poster";
+    const posterSelected = isPosterMode();
     const likeSelected = state.assistantMode.startsWith("likes-");
     const completed = !mutualSelected && !posterSelected && !likeSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
     const waitingForNextCycle = !mutualSelected && !posterSelected && !likeSelected && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
@@ -4653,17 +4825,31 @@
     collapseButton.title = state.panelView === "collapsed" ? "展开面板" : "折叠面板";
     expandButton.setAttribute("aria-label", state.panelView === "expanded" ? "恢复大小" : "放大面板");
     expandButton.title = state.panelView === "expanded" ? "恢复大小" : "放大面板";
-    panel.dataset.state = state.riskPaused ? "waiting" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping ? "stopping" : completed ? "complete" : failed ? "warning" : active ? "running" : "idle";
+    const waitMs = soonestWaitMs();
+    const waitingUi = state.riskPaused || waitingForNextCycle || reconnecting || waitMs > 0
+      || Boolean(replyWaitCopy()) || Boolean(posterWaitCopy(poster))
+      || taskScheduleNotice(currentTaskKey())?.status === "waiting";
+    panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
+      ? "stopping"
+      : waitingUi
+        ? "waiting"
+        : completed
+          ? "complete"
+          : failed
+            ? "warning"
+            : active
+              ? "running"
+              : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
       stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
         ? "停止中"
-        : state.riskPaused
-          ? "等待中"
+        : state.riskPaused || reconnecting
+          ? waitHeadline(reconnecting ? "重连中" : "等待中", waitMs)
           : waitingForNextCycle
-          ? "休息中"
-          : reconnecting
-            ? "重连中"
+          ? waitHeadline("休息中", waitMs)
+          : waitingUi
+            ? waitHeadline("等待中", waitMs)
             : completed
               ? "已完成"
               : failed
@@ -4790,7 +4976,7 @@
   }
 
   const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
-  const TASK_TITLE_RE = /^(?:评论帖子|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论帖子|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|精品发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -4801,7 +4987,8 @@
     if (state.assistantMode === "notifications") return "评论通知";
     if (state.assistantMode === "likes-posts") return "点赞帖子";
     if (state.assistantMode === "likes-replies") return "点赞评论";
-    if (state.assistantMode === "poster") return "定时发帖";
+    if (state.assistantMode === "poster-premium") return "精品发帖";
+    if (state.assistantMode === "poster") return "普通发帖";
     return "评论帖子";
   }
 
@@ -4894,17 +5081,22 @@
       state.mutual = await mutualApi.refreshSharedFollowRate();
     }
     if (!saved.running) {
-        state.status = state.assistantMode === "poster"
-        ? `先读取知乎、头条热点，必要时补充 AI HOT；素材不足时改写常用社会观察。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`
-        : "";
+      if (state.assistantMode === "poster-premium") {
+        state.status = "精品发帖每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文偏完整篇幅，配图比例更高。";
+      } else if (state.assistantMode === "poster") {
+        state.status = `先读取知乎、头条热点，必要时补充 AI HOT；素材不足时改写常用社会观察。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡每隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}发布。列表没发完不会重新抓取。`;
+      } else {
+        state.status = "";
+      }
     }
     renderPanel();
     globalThis.XrcCommunityReceipt?.heartbeat(currentAccountHandle());
     watchSidebarDock();
-    if (state.assistantMode === "poster" && await postApi?.resumeIfPending?.(updatePosterState)) {
-      registerCurrentTaskTab("poster");
-      setRuntimeTaskActive("poster", true, currentTaskPhase() || "running");
+    if (isPosterMode() && await postApi?.resumeIfPending?.(updatePosterState, posterKindFromMode())) {
+      registerCurrentTaskTab(posterTaskKey());
+      setRuntimeTaskActive(posterTaskKey(), true, currentTaskPhase() || "running");
     }
+    postApi?.setPostKind?.(posterKindFromMode());
     postApi?.setSchedulePace?.(state.posterPace);
     if (saved.running) {
       begin({ resume: true });
@@ -4970,7 +5162,7 @@
         }
         if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) return { ok: false, error: "当前动作尚未安全结束" };
         if (state.assistantMode === "mutual") await mutualApi?.persistForSuspend?.();
-        if (state.assistantMode === "poster") await postApi?.persistForSuspend?.();
+        if (isPosterMode()) await postApi?.persistForSuspend?.();
         return { ok: true };
       })().then(sendResponse, (error) => sendResponse({ ok: false, error: String(error?.message || error) }));
       return true;
@@ -5014,12 +5206,13 @@
   let idleRenderTicks = 0;
   window.setInterval(() => {
     const active = state.running || state.mutual?.running || state.poster?.running || likeState.running;
+    const waitingDeadline = soonestWaitMs() > 0;
     const warnings = automationWarningNodes();
     if (!warnings.length) acknowledgedAutomationNotices = new WeakMap();
     if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
       && warnings.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) applyRiskStop();
-    idleRenderTicks = active ? 0 : idleRenderTicks + 1;
-    if (active || idleRenderTicks >= 15) {
+    idleRenderTicks = active || waitingDeadline ? 0 : idleRenderTicks + 1;
+    if (active || waitingDeadline || idleRenderTicks >= 15) {
       idleRenderTicks = 0;
       renderPanel();
     } else if (document.querySelector(`[data-xrc-flow-details]:not([hidden])`)) {

@@ -1,12 +1,16 @@
 (function (root) {
   "use strict";
 
-  const STORAGE_KEY = "xrc-ai-poster";
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const POST_EDITOR_SELECTOR = '[data-testid="tweetTextarea_0"][contenteditable="true"][role="textbox"]';
   const MIN_INTERVAL_MS = 25 * 60 * 1000;
   const MAX_INTERVAL_MS = 35 * 60 * 1000;
   const DEFAULT_POST_PACE = "medium";
+  const POST_KIND_NORMAL = "normal";
+  const POST_KIND_PREMIUM = "premium";
+  const PREMIUM_DAILY_LIMIT = 5;
+  const PREMIUM_SLOT_TIMES = Object.freeze(["08:00", "09:30", "12:00", "15:00", "19:00"]);
+  const PREMIUM_DAILY_KEY = "xrcPosterPremiumDaily";
   const POST_SCHEDULE_PROFILES = [
     { id: "slow", label: "慢", minMinutes: 50, maxMinutes: 70 },
     { id: "medium", label: "中", minMinutes: 25, maxMinutes: 35 },
@@ -17,18 +21,58 @@
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
-  const PUBLISH_LIST_KEY = "xrcPosterPublishList";
   const DRAFT_POLICY_VERSION = 4;
   const CARD_VARIANTS = Object.freeze(["paper", "editorial", "highlight", "gradient"]);
-  function choosePostFormat(random = Math.random, cardIndex = 0) {
-    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", cardVariant: CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length], lengthMode: "regular" };
+
+  function sessionStorageKey(kind = POST_KIND_NORMAL) {
+    return kind === POST_KIND_PREMIUM ? "xrc-ai-poster-premium" : "xrc-ai-poster";
+  }
+
+  function publishListKey(kind = POST_KIND_NORMAL) {
+    return kind === POST_KIND_PREMIUM ? "xrcPosterPublishListPremium" : "xrcPosterPublishList";
+  }
+
+  function shanghaiDateKey(at = Date.now()) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(new Date(Number(at) || Date.now()));
+  }
+
+  function premiumSlotAt(dateKey, time) {
+    return Date.parse(`${dateKey}T${time}:00+08:00`);
+  }
+
+  function nextShanghaiDateKey(dateKey) {
+    return shanghaiDateKey(Date.parse(`${dateKey}T12:00:00+08:00`) + 36 * 60 * 60 * 1000);
+  }
+
+  function normalizePostKind(value) {
+    return value === POST_KIND_PREMIUM ? POST_KIND_PREMIUM : POST_KIND_NORMAL;
+  }
+
+  function choosePostFormat(random = Math.random, cardIndex = 0, kind = POST_KIND_NORMAL) {
+    const cardVariant = CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length];
+    if (kind === POST_KIND_PREMIUM) {
+      if (random() < 0.5) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
+      return { mediaMode: "text", lengthMode: "regular" };
+    }
+    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     return { mediaMode: "text", lengthMode: random() < 0.5 ? "compact" : "regular" };
   }
 
-  function withPostFormat(item) {
-    const lengthMode = item?.lengthMode === "compact" ? "compact" : item?.lengthMode === "regular" ? "regular" : choosePostFormat().lengthMode;
+  function withPostFormat(item, kind = state.postKind) {
+    const fallback = choosePostFormat(Math.random, 0, kind);
+    const lengthMode = item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
+      ? "compact"
+      : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
     const mediaMode = item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
-    return { ...item, mediaMode, lengthMode, ...(mediaMode === "image" ? { cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : "paper" } : {}), text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text };
+    return {
+      ...item,
+      mediaMode,
+      lengthMode,
+      ...(mediaMode === "image" ? { cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : "paper" } : {}),
+      text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text
+    };
   }
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
@@ -40,6 +84,7 @@
     running: false,
     stopping: false,
     navigating: false,
+    postKind: POST_KIND_NORMAL,
     status: "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。",
     count: 0,
     errors: 0,
@@ -49,6 +94,7 @@
     riskCooldownUntil: 0,
     riskRetries: 0,
     schedulePace: DEFAULT_POST_PACE,
+    premiumDaily: { date: "", count: 0 },
     currentPost: "",
     lastPost: "",
     lastSentText: "",
@@ -62,6 +108,65 @@
     onUpdate: null,
     loopPromise: null
   };
+
+  function idleStatusForKind(kind = state.postKind) {
+    return kind === POST_KIND_PREMIUM
+      ? "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。"
+      : "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。";
+  }
+
+  function premiumDailyCount(at = Date.now()) {
+    const date = shanghaiDateKey(at);
+    if (state.premiumDaily?.date !== date) return 0;
+    return Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(state.premiumDaily.count) || 0));
+  }
+
+  function nextPremiumPostAt(at = Date.now()) {
+    const date = shanghaiDateKey(at);
+    const count = premiumDailyCount(at);
+    if (count >= PREMIUM_DAILY_LIMIT) {
+      return premiumSlotAt(nextShanghaiDateKey(date), PREMIUM_SLOT_TIMES[0]);
+    }
+    const slotAt = premiumSlotAt(date, PREMIUM_SLOT_TIMES[count]);
+    return at >= slotAt ? 0 : slotAt;
+  }
+
+  async function loadPremiumDaily() {
+    try {
+      if (!globalThis.chrome?.storage?.local?.get) return;
+      const stored = await chrome.storage.local.get(PREMIUM_DAILY_KEY);
+      const saved = stored?.[PREMIUM_DAILY_KEY];
+      if (!saved || typeof saved !== "object") return;
+      state.premiumDaily = {
+        date: String(saved.date || ""),
+        count: Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(saved.count) || 0))
+      };
+    } catch (error) {
+      // Keep in-memory daily count if storage is unavailable.
+    }
+  }
+
+  async function bumpPremiumDaily(at = Date.now()) {
+    const date = shanghaiDateKey(at);
+    const count = premiumDailyCount(at) + 1;
+    state.premiumDaily = { date, count: Math.min(PREMIUM_DAILY_LIMIT, count) };
+    try {
+      if (globalThis.chrome?.storage?.local?.set) {
+        await chrome.storage.local.set({ [PREMIUM_DAILY_KEY]: state.premiumDaily });
+      }
+    } catch (error) {
+      // Local count still drives the rest of today's schedule.
+    }
+    return state.premiumDaily;
+  }
+
+  function setPostKind(kind) {
+    if (state.running || state.loopPromise) return state.postKind;
+    state.postKind = normalizePostKind(kind);
+    state.status = idleStatusForKind(state.postKind);
+    persist();
+    return state.postKind;
+  }
 
   const wait = (ms) => root.XInteractionTimer?.wait?.(ms) || new Promise((resolve) => window.setTimeout(resolve, ms));
   let wakePostSchedule = null;
@@ -92,6 +197,7 @@
     return {
       running: state.running,
       stopping: state.stopping,
+      postKind: state.postKind,
       status: state.status,
       count: state.count,
       errors: state.errors,
@@ -101,6 +207,9 @@
       riskCooldownUntil: state.riskCooldownUntil,
       riskRetries: state.riskRetries,
       schedulePace: state.schedulePace,
+      premiumDaily: { ...state.premiumDaily },
+      premiumTodayCount: premiumDailyCount(),
+      premiumDailyLimit: PREMIUM_DAILY_LIMIT,
       currentPost: state.currentPost,
       lastPost: state.lastPost,
       lastSentText: state.lastSentText,
@@ -122,7 +231,7 @@
 
   function persist() {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot()));
+      sessionStorage.setItem(sessionStorageKey(state.postKind), JSON.stringify(snapshot()));
     } catch (error) {
       // The current run can continue even if this tab blocks session storage.
     }
@@ -140,6 +249,7 @@
     persist();
     const payload = {
       running: Boolean(state.running),
+      postKind: state.postKind,
       items: state.publishQueue,
       count: state.count,
       nextPostAt: state.nextPostAt,
@@ -151,11 +261,12 @@
       currentSourceId: state.currentSourceId,
       retiredDraftText: state.retiredDraftText,
       startedAt: state.startedAt,
-      schedulePace: state.schedulePace
+      schedulePace: state.schedulePace,
+      premiumDaily: state.premiumDaily
     };
     try {
       if (!globalThis.chrome?.storage?.local?.set) return Promise.resolve();
-      return chrome.storage.local.set({ [PUBLISH_LIST_KEY]: payload });
+      return chrome.storage.local.set({ [publishListKey(state.postKind)]: payload });
     } catch (error) {
       return Promise.resolve();
     }
@@ -165,8 +276,9 @@
     let saved = null;
     try {
       if (globalThis.chrome?.storage?.local?.get) {
-        const stored = await chrome.storage.local.get(PUBLISH_LIST_KEY);
-        saved = stored?.[PUBLISH_LIST_KEY] || null;
+        const key = publishListKey(state.postKind);
+        const stored = await chrome.storage.local.get(key);
+        saved = stored?.[key] || null;
       }
     } catch (error) {
       saved = null;
@@ -174,8 +286,14 @@
     if (!saved || typeof saved !== "object") return false;
     state.riskCooldownUntil = Math.max(state.riskCooldownUntil, Number(saved.riskCooldownUntil) || 0);
     state.riskRetries = Math.max(state.riskRetries, Number(saved.riskRetries) || 0);
+    if (saved.premiumDaily && typeof saved.premiumDaily === "object") {
+      state.premiumDaily = {
+        date: String(saved.premiumDaily.date || ""),
+        count: Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(saved.premiumDaily.count) || 0))
+      };
+    }
     if (Array.isArray(saved.items) && saved.items.length && !state.publishQueue.length) {
-      state.publishQueue = saved.items.filter(keepSourceItem).map(withPostFormat);
+      state.publishQueue = saved.items.filter(keepSourceItem).map((item) => withPostFormat(item, state.postKind));
       if (!state.currentPost && saved.currentPost) state.currentPost = saved.currentPost;
       if (!state.currentSourceId && saved.currentSourceId) state.currentSourceId = saved.currentSourceId;
       if (!state.retiredDraftText && saved.retiredDraftText) state.retiredDraftText = saved.retiredDraftText;
@@ -188,17 +306,17 @@
     return state.publishQueue.length > 0;
   }
 
-  function readSaved() {
+  function readSaved(kind = state.postKind) {
     try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      const saved = JSON.parse(sessionStorage.getItem(sessionStorageKey(kind)) || "null");
       return saved && typeof saved === "object" ? saved : null;
     } catch (error) {
       return null;
     }
   }
 
-  function clearSaved() {
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch (error) { /* no-op */ }
+  function clearSaved(kind = state.postKind) {
+    try { sessionStorage.removeItem(sessionStorageKey(kind)); } catch (error) { /* no-op */ }
   }
 
   function postScheduleProfile(pace = DEFAULT_POST_PACE) {
@@ -555,7 +673,7 @@
       let reason = "";
       const cardIndex = history.published.filter((entry) => entry.imageStyle === "text-card").length
         + state.publishQueue.filter((entry) => entry.mediaMode === "image" && entry.imageStyle === "text-card").length;
-      const postFormat = choosePostFormat(Math.random, cardIndex);
+      const postFormat = choosePostFormat(Math.random, cardIndex, state.postKind);
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
@@ -902,6 +1020,12 @@
       await wait(5000);
     }
     if (state.stopping) return;
+    if (state.postKind === POST_KIND_PREMIUM) {
+      await loadPremiumDaily();
+      if (!Number(state.nextPostAt)) state.nextPostAt = nextPremiumPostAt();
+      const waitingForSlot = Number(state.nextPostAt) > Date.now();
+      emit(`精品发帖今日 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}${waitingForSlot ? "，等待下一档" : "，准备发布"}`);
+    }
     await loadPublishList();
     filterPromotionalSources();
     while (state.running && !state.stopping) {
@@ -984,9 +1108,12 @@
       }
       if (!queuedIsNew && state.nextPostAt > Date.now()) {
         const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
+        const premiumProgress = state.postKind === POST_KIND_PREMIUM
+          ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
+          : "";
         emit(state.lastError
           ? `上次异常：${state.lastError}；本轮发帖已结束，约 ${remaining} 分钟后再次尝试`
-          : `待发 ${state.publishQueue.length} 条，下一条约 ${remaining} 分钟后发布`);
+          : `${premiumProgress}待发 ${state.publishQueue.length} 条，下一条约 ${remaining} 分钟后发布`);
         if (state.nextPostAt <= Date.now()) continue;
         await waitForPostSchedule(Math.min(5000, state.nextPostAt - Date.now()));
         continue;
@@ -1075,12 +1202,20 @@
         state.lastSentText = state.currentPost;
         state.currentPost = "";
         state.lastError = "";
-        state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
+        if (state.postKind === POST_KIND_PREMIUM) {
+          await bumpPremiumDaily();
+          state.nextPostAt = nextPremiumPostAt();
+        } else {
+          state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
+        }
         await savePublishList();
         await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic, publishedItem);
+        const premiumNote = state.postKind === POST_KIND_PREMIUM
+          ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
+          : "";
         emit(state.publishQueue.length
-          ? `第 ${state.count} 条已发送；待发还剩 ${state.publishQueue.length} 条`
-          : `第 ${state.count} 条已发送；待发列表已空，下一次重新选取素材`);
+          ? `${premiumNote}第 ${state.count} 条已发送；待发还剩 ${state.publishQueue.length} 条`
+          : `${premiumNote}第 ${state.count} 条已发送；待发列表已空，下一次重新选取素材`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -1093,12 +1228,19 @@
     }
   }
 
-  function start(onUpdate, { resume = false } = {}) {
+  function start(onUpdate, { resume = false, kind } = {}) {
     if (state.loopPromise) return state.loopPromise;
+    if (kind) state.postKind = normalizePostKind(kind);
     state.onUpdate = onUpdate;
-    const saved = resume ? readSaved() : null;
+    const saved = resume ? readSaved(state.postKind) : null;
     if (saved?.running) {
-      Object.assign(state, saved, { onUpdate, loopPromise: null, stopping: false, navigating: false });
+      Object.assign(state, saved, {
+        onUpdate,
+        loopPromise: null,
+        stopping: false,
+        navigating: false,
+        postKind: normalizePostKind(saved.postKind || state.postKind)
+      });
       if (!Array.isArray(state.sourceQueue)) state.sourceQueue = [];
       if (!Array.isArray(state.publishQueue) || !state.publishQueue.length) {
         state.publishQueue = Array.isArray(state.rewriteQueue) ? state.rewriteQueue : [];
@@ -1108,7 +1250,7 @@
     } else {
       state.running = true;
       state.stopping = false;
-      state.status = "正在准备待发列表";
+      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备精品待发列表" : "正在准备待发列表";
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
@@ -1135,7 +1277,7 @@
       if (state.stopping) state.status = keepList ? `已停止，待发列表还剩 ${state.publishQueue.length} 条` : "已停止";
       savePublishList();
       state.stopping = false;
-      clearSaved();
+      clearSaved(state.postKind);
       state.onUpdate?.(snapshot());
     });
     return state.loopPromise;
@@ -1180,20 +1322,22 @@
     return true;
   }
 
-  async function resumeIfPending(onUpdate) {
+  async function resumeIfPending(onUpdate, kind = state.postKind) {
     if (state.loopPromise) return true;
+    state.postKind = normalizePostKind(kind);
     if (restore(onUpdate)) return true;
     let saved = null;
     try {
       if (globalThis.chrome?.storage?.local?.get) {
-        const stored = await chrome.storage.local.get(PUBLISH_LIST_KEY);
-        saved = stored?.[PUBLISH_LIST_KEY] || null;
+        const key = publishListKey(state.postKind);
+        const stored = await chrome.storage.local.get(key);
+        saved = stored?.[key] || null;
       }
     } catch (error) {
       saved = null;
     }
     if (!saved?.running) return false;
-    start(onUpdate, { resume: false });
+    start(onUpdate, { resume: false, kind: state.postKind });
     return true;
   }
 
@@ -1227,11 +1371,21 @@
     shuffleNewsItems,
     collectTopicContext,
     DEFAULT_POST_PACE,
+    POST_KIND_NORMAL,
+    POST_KIND_PREMIUM,
+    PREMIUM_DAILY_LIMIT,
+    PREMIUM_SLOT_TIMES,
     POST_SCHEDULE_PROFILES,
     postScheduleProfile,
     postPaceIndex,
     formatPostSchedule,
-    setSchedulePace
+    setSchedulePace,
+    setPostKind,
+    normalizePostKind,
+    shanghaiDateKey,
+    nextPremiumPostAt,
+    premiumDailyCount,
+    loadPremiumDaily
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   root.XInteractionPoster = api;

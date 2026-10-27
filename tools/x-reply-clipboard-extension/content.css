@@ -327,7 +327,8 @@
   --xrc-workspace-soft: rgba(120, 86, 255, 0.1);
 }
 
-#x-reply-clipboard-panel[data-assistant-mode="poster"] {
+#x-reply-clipboard-panel[data-assistant-mode="poster"],
+#x-reply-clipboard-panel[data-assistant-mode="poster-premium"] {
   --xrc-workspace: #d97706;
   --xrc-workspace-soft: rgba(217, 119, 6, 0.1);
 }
@@ -494,11 +495,19 @@
 }
 
 #x-reply-clipboard-panel[data-state="complete"] .xrc-state-dot { background: var(--xrc-accent); }
-#x-reply-clipboard-panel[data-state="waiting"] .xrc-state-dot { background: #ffad1f; }
+#x-reply-clipboard-panel[data-state="waiting"] .xrc-state-dot {
+  background: #ffad1f;
+  box-shadow: 0 0 0 3px rgba(255, 173, 31, 0.16);
+  animation: xrc-wait-pulse 1.4s ease-in-out infinite;
+}
 #x-reply-clipboard-panel[data-state="warning"] .xrc-state-dot,
 #x-reply-clipboard-panel[data-state="stopping"] .xrc-state-dot { background: #ffad1f; }
 
 @keyframes xrc-pulse { 50% { opacity: 0.5; } }
+@keyframes xrc-wait-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.86); }
+}
 
 #x-reply-clipboard-panel .xrc-close,
 #x-reply-clipboard-panel .xrc-view-button {
@@ -1043,8 +1052,10 @@
 }
 
 #x-reply-clipboard-panel .xrc-task-schedule-notice:not([hidden]) {
+  position: relative;
   display: grid;
   gap: 5px;
+  overflow: hidden;
   padding: 11px 13px;
   border: 1px solid rgba(199, 117, 28, 0.25);
   border-radius: 12px;
@@ -1054,14 +1065,28 @@
   line-height: 1.5;
 }
 
+#x-reply-clipboard-panel .xrc-task-schedule-notice[data-state="waiting"]:not([hidden])::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #ffad1f;
+  animation: xrc-wait-bar 1.6s ease-in-out infinite;
+}
+
 #x-reply-clipboard-panel .xrc-task-schedule-notice[data-state="blocked"] {
   border-color: rgba(191, 45, 45, 0.28);
   background: #fff0ef;
   color: #a92828;
 }
 
-#x-reply-clipboard-panel .xrc-task-schedule-notice strong { font-size: 12px; }
+#x-reply-clipboard-panel .xrc-task-schedule-notice strong { font-size: 12px; font-variant-numeric: tabular-nums; }
 #x-reply-clipboard-panel .xrc-task-schedule-notice p { margin: 0; overflow-wrap: anywhere; }
+
+@keyframes xrc-wait-bar {
+  0%, 100% { opacity: 0.35; transform: scaleY(0.72); transform-origin: center; }
+  50% { opacity: 1; transform: scaleY(1); transform-origin: center; }
+}
 
 #x-reply-clipboard-panel .xrc-mutual-body { display: none; }
 #x-reply-clipboard-panel .xrc-post-body { display: none; }
@@ -1072,8 +1097,10 @@
 #x-reply-clipboard-panel[data-assistant-mode="likes-replies"] .xrc-reply-body { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] .xrc-mutual-body { display: grid; }
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] .xrc-reply-body { display: none; }
-#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-post-body { display: grid; }
-#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-reply-body { display: none; }
+#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-post-body,
+#x-reply-clipboard-panel[data-assistant-mode="poster-premium"] .xrc-post-body { display: grid; }
+#x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-reply-body,
+#x-reply-clipboard-panel[data-assistant-mode="poster-premium"] .xrc-reply-body { display: none; }
 
 #x-reply-clipboard-panel .xrc-post-card,
 #x-reply-clipboard-panel .xrc-post-preview,
@@ -1136,7 +1163,8 @@
 
 #x-reply-clipboard-panel .xrc-mutual-tabs,
 #x-reply-clipboard-panel .xrc-reply-tabs,
-#x-reply-clipboard-panel .xrc-like-tabs {
+#x-reply-clipboard-panel .xrc-like-tabs,
+#x-reply-clipboard-panel .xrc-post-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px;
@@ -1147,18 +1175,21 @@
 }
 
 #x-reply-clipboard-panel .xrc-reply-tabs,
-#x-reply-clipboard-panel .xrc-like-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#x-reply-clipboard-panel .xrc-like-tabs,
+#x-reply-clipboard-panel .xrc-post-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #x-reply-clipboard-panel .xrc-mutual-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 #x-reply-clipboard-panel .xrc-reply-tabs { --xrc-subtab-color: #0b75b5; --xrc-subtab-border: rgba(29, 155, 240, 0.24); }
 #x-reply-clipboard-panel .xrc-like-tabs { --xrc-subtab-color: #ca426a; --xrc-subtab-border: rgba(202, 66, 106, 0.24); }
 #x-reply-clipboard-panel .xrc-mutual-tabs { --xrc-subtab-color: #08765f; --xrc-subtab-border: rgba(15, 138, 114, 0.24); }
+#x-reply-clipboard-panel .xrc-post-tabs { --xrc-subtab-color: #c27803; --xrc-subtab-border: rgba(217, 119, 6, 0.24); }
 
 #x-reply-clipboard-panel .xrc-subtask-slot { position: relative; min-width: 0; }
 
 #x-reply-clipboard-panel .xrc-mutual-tabs button[role="tab"],
 #x-reply-clipboard-panel .xrc-reply-tabs button[role="tab"],
-#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"] {
+#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"],
+#x-reply-clipboard-panel .xrc-post-tabs button[role="tab"] {
   position: relative;
   display: grid;
   gap: 2px;
@@ -1188,7 +1219,8 @@
 
 #x-reply-clipboard-panel .xrc-mutual-tabs button[role="tab"] b,
 #x-reply-clipboard-panel .xrc-reply-tabs button[role="tab"] b,
-#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"] b {
+#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"] b,
+#x-reply-clipboard-panel .xrc-post-tabs button[role="tab"] b {
   color: inherit;
   font-size: 8px;
   letter-spacing: 0.08em;
@@ -1196,7 +1228,8 @@
 
 #x-reply-clipboard-panel .xrc-mutual-tabs button[role="tab"] span,
 #x-reply-clipboard-panel .xrc-reply-tabs button[role="tab"] span,
-#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"] span {
+#x-reply-clipboard-panel .xrc-like-tabs button[role="tab"] span,
+#x-reply-clipboard-panel .xrc-post-tabs button[role="tab"] span {
   overflow: hidden;
   color: inherit;
   font-size: 9px;
@@ -1207,7 +1240,8 @@
 
 #x-reply-clipboard-panel .xrc-mutual-tabs button.is-active,
 #x-reply-clipboard-panel .xrc-reply-tabs button.is-active,
-#x-reply-clipboard-panel .xrc-like-tabs button.is-active {
+#x-reply-clipboard-panel .xrc-like-tabs button.is-active,
+#x-reply-clipboard-panel .xrc-post-tabs button.is-active {
   border-color: var(--xrc-subtab-border);
   background: #fff;
   color: var(--xrc-subtab-color);
@@ -2507,9 +2541,11 @@
   #x-reply-clipboard-panel .xrc-reply-tabs { --xrc-subtab-color: #73c3f6; }
   #x-reply-clipboard-panel .xrc-like-tabs { --xrc-subtab-color: #ff92b2; }
   #x-reply-clipboard-panel .xrc-mutual-tabs { --xrc-subtab-color: #70d1b5; }
+  #x-reply-clipboard-panel .xrc-post-tabs { --xrc-subtab-color: #ffc06e; }
   #x-reply-clipboard-panel .xrc-reply-tabs button.is-active,
   #x-reply-clipboard-panel .xrc-like-tabs button.is-active,
-  #x-reply-clipboard-panel .xrc-mutual-tabs button.is-active { background: rgba(15, 20, 25, 0.86); }
+  #x-reply-clipboard-panel .xrc-mutual-tabs button.is-active,
+  #x-reply-clipboard-panel .xrc-post-tabs button.is-active { background: rgba(15, 20, 25, 0.86); }
   #x-reply-clipboard-panel .xrc-ai-config { background: rgba(15, 20, 25, 0.78); }
   #x-reply-clipboard-panel .xrc-progress-section { background: linear-gradient(145deg, rgba(29, 155, 240, 0.18), rgba(120, 86, 255, 0.12) 55%, rgba(15, 20, 25, 0.72)); }
   #x-reply-clipboard-panel .xrc-settings { background: rgba(15, 20, 25, 0.72); }

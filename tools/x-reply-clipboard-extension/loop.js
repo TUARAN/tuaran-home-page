@@ -182,6 +182,18 @@
       .replace(/\s+/gu, "");
   }
 
+  function isRecoverableGrokDuplicate(text, phrase) {
+    const visible = normalizePhraseText(text);
+    const expected = normalizePhraseText(phrase);
+    if (!visible || !expected || !/@grok\b/iu.test(phrase)) return false;
+    if (visible === `${expected}${expected}`) return true;
+    const question = String(phrase).match(/@grok\b\s*([^?？\n]+[?？])/iu)?.[1];
+    if (!question) return false;
+    const repeatedQuestion = normalizePhraseText(question);
+    const repeatedMention = normalizePhraseText(`@grok ${question}`);
+    return visible === `${expected}${repeatedQuestion}` || visible === `${expected}${repeatedMention}`;
+  }
+
   function phraseIndexFromText(items, text) {
     const normalized = normalizePhraseText(text);
     if (!normalized || !Array.isArray(items)) return -1;
@@ -350,6 +362,7 @@
     isSubmitEnabled,
     composerText,
     normalizePhraseText,
+    isRecoverableGrokDuplicate,
     phraseIndexFromText,
     repeatedPhraseIndexFromText,
     placeholderMixedPhraseIndexFromText,

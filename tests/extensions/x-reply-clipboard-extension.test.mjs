@@ -24,6 +24,10 @@ test('scheduled post formats reserve one fifth for text cards and compact posts 
   assert.equal(poster.withPostFormat({ mediaMode: 'image', imageStyle: 'text-card', lengthMode: 'regular', text: '旧待发稿' }).cardVariant, 'paper')
   assert.deepEqual(poster.choosePostFormat(() => 0.2), { mediaMode: 'text', lengthMode: 'compact' })
   assert.deepEqual(poster.choosePostFormat(() => 0.8), { mediaMode: 'text', lengthMode: 'regular' })
+  assert.deepEqual(poster.choosePostFormat(() => 0.49, 0, 'premium'), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
+  assert.deepEqual(poster.choosePostFormat(() => 0.5, 0, 'premium'), { mediaMode: 'text', lengthMode: 'regular' })
+  assert.deepEqual(Array.from(poster.PREMIUM_SLOT_TIMES), ['08:00', '09:30', '12:00', '15:00', '19:00'])
+  assert.equal(poster.PREMIUM_DAILY_LIMIT, 5)
   assert.equal(postImage.cardHeadline('第一句说明新闻。\n\n第二句表态。'), '第一句说明新闻。')
   assert.equal(postImage.cardBody('第一句说明新闻。\n\n第二句表态。'), '第二句表态。')
   assert.equal(poster.formatCompactPost('具体事件发生了。\n自己的观点。\n一句短评。'), '具体事件发生了。\n\n自己的观点。\n\n一句短评。')
@@ -36,6 +40,14 @@ test('scheduled post formats reserve one fifth for text cards and compact posts 
   assert.match(source, /await attachPostImage\(existing, item\)/)
   assert.match(source, /if \(state\.imageStatus === "配图预览未确认"\) return "image-unconfirmed"/)
   assert.match(source, /if \(composerHasMedia\(\)\) \{/)
+  assert.match(source, /POST_KIND_PREMIUM/)
+  assert.match(source, /nextPremiumPostAt/)
+})
+
+test('premium posting waits for the next daily slot before the first window', () => {
+  assert.equal(poster.shanghaiDateKey(Date.parse('2026-10-27T10:00:00+08:00')), '2026-10-27')
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T07:00:00+08:00')), Date.parse('2026-10-27T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:30:00+08:00')), 0)
 })
 
 test('all text-card layouts render the headline and body into a PNG file', async () => {
@@ -567,7 +579,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     taskSchedule: { enabled: false, items: {} },
   })
@@ -579,8 +591,8 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
     'mutual-unfollow': { phase: 'running', updatedAt: now - 91000 },
     poster: { phase: 'running', updatedAt: now - 1000 },
   } }, now)
-  assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 3, stopping: 0, unknown: 1, blocked: 0 })
-  assert.equal(result.text, '2 项执行 · 1 项等待 · 3 项未启动 · 1 项待确认')
+  assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 4, stopping: 0, unknown: 1, blocked: 0 })
+  assert.equal(result.text, '2 项执行 · 1 项等待 · 4 项未启动 · 1 项待确认')
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /model\.status === "paused"[\s\S]*model\.status === "stopped"/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
@@ -599,7 +611,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const panel = { querySelector() { return dialog } }
   const now = Date.now()
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'running' }, tasks: {
@@ -611,20 +623,21 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   })
   vm.runInContext(`${overview}\n${readable}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
   context.paint(panel)
-  assert.equal(list.children.length, 7)
-  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies'])
+  assert.equal(list.children.length, 8)
+  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies'])
   assert.equal(list.children[0].children[3].textContent, '前往')
   assert.equal(list.children[0].children[0].textContent, '评论帖子')
   assert.equal(list.children[0].children[1].textContent, '执行中')
   assert.equal(list.children[1].children[1].textContent, '等待中')
   assert.equal(list.children[2].children[1].textContent, '未启动')
   assert.equal(list.children[4].children[1].textContent, '待确认')
-  assert.match(total.textContent, /1 项执行 · 1 项等待 · 4 项未启动 · 1 项待确认/)
+  assert.match(total.textContent, /1 项执行 · 1 项等待 · 5 项未启动 · 1 项待确认/)
   context.taskSchedule = { enabled: true, items: { poster: { blocked: true, reason: 'risk-blocked' }, timeline: { resumeAt: now + 60000, reason: '任务状态未响应，等待自动复查' } } }
   context.pluginRuntime.tasks.timeline = { phase: 'unknown', updatedAt: now }
+  context.waitHeadline = (prefix, ms) => ms > 0 ? `${prefix} · 约 1 分 0 秒` : prefix
   context.paint(panel)
-  assert.equal(list.children[0].children[1].textContent, '等待中')
-  assert.match(list.children[0].children[2].textContent, /秒后自动重试/)
+  assert.equal(list.children[0].children[1].textContent, '等待中 · 约 1 分 0 秒')
+  assert.match(list.children[0].children[2].textContent, /到期后自动继续/)
   assert.equal(list.children[4].children[1].textContent, '需人工检查')
   assert.match(list.children[4].children[2].textContent, /疑似自动化或账号受限/)
   context.taskSchedule.items.timeline = { manualStopped: true }
@@ -650,7 +663,7 @@ test('paused flow wins over stale stopping task records', async () => {
   const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(overview && definition)
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     flowStarting: false,
     flowStopping: false,
@@ -675,7 +688,7 @@ test('a running task remains visible when an old paused flow marker survives rel
   const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(overview && definition)
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     flowStarting: false,
     flowStopping: false,
@@ -696,11 +709,11 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
   assert.ok(overview && definition)
   const now = Date.now()
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     flowStarting: false,
     flowStopping: false,
-    taskSchedule: { enabled: true, items: Object.fromEntries(['mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies'].map((mode) => [mode, { manualStopped: true }])) },
+    taskSchedule: { enabled: true, items: Object.fromEntries(['mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies'].map((mode) => [mode, { manualStopped: true }])) },
     pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {
       timeline: { phase: 'paused', updatedAt: now },
       notifications: { phase: 'paused', updatedAt: now },
@@ -722,7 +735,7 @@ test('a waiting post alone does not make the global button say pause all', async
   assert.ok(overview && definition)
   const now = Date.now()
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '定时发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
     FLOW_STALE_MS: 90000,
     flowStarting: false,
     flowStopping: false,
@@ -740,7 +753,7 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const definition = source.match(/  function flowButtonModel\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(overview && definition)
-  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies']
   const now = Date.now()
   const context = vm.createContext({
     FLOW_TASKS: modes.map((mode) => [mode, mode]),
@@ -784,7 +797,7 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   assert.equal(read().counts.stopping, 1)
   assert.equal(read().label, '停止超时 · 点击重试停止')
   context.pluginRuntime.flow.phase = 'paused'
-  assert.equal(read().counts.missing, 7)
+  assert.equal(read().counts.missing, 8)
   assert.equal(read().label, '已暂停 · 点击启动全部')
   context.pluginRuntime.tasks = {}
   context.pluginRuntime.flow = { phase: 'stopped', updatedAt: now }
@@ -804,7 +817,7 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const control = source.match(/  function scheduledTaskButtonState\(mode, localActive, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(overview && control)
-  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies']
   const now = Date.now()
   const context = vm.createContext({
     FLOW_TASKS: modes.map((mode) => [mode, mode]),
@@ -812,14 +825,16 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
     taskSchedule: { enabled: true, items: { poster: { resumeAt: now + 60000, reason: '轮换等待' } } },
     pluginRuntime: { flow: { phase: 'running' }, tasks: {} },
     formatClock: () => '01:00',
+    formatCountdown: () => '1 分 0 秒',
   })
   vm.runInContext(`${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
   for (const mode of modes) {
-    assert.equal(context.control(mode, false, now).label, '等待中 · 点击停止')
+    const expected = mode === 'poster' ? '等待 约 1 分 0 秒 · 点停止' : '等待中 · 点击停止'
+    assert.equal(context.control(mode, false, now).label, expected)
     assert.equal(context.control(mode, false, now).action, 'stop')
     assert.equal(context.control(mode, true, now), null)
   }
-  assert.match(context.control('poster', false, now).title, /轮换等待 · 01:00/)
+  assert.match(context.control('poster', false, now).title, /轮换等待，还剩 约 1 分 0 秒/)
   context.taskSchedule.items.poster.manualStopped = true
   assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
   context.taskSchedule.items.poster.manualStopped = false
@@ -872,11 +887,12 @@ test('all seven task panels show the same blocked state with a readable reason',
   const readable = source.match(/  function readableTaskLimitReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
   const notice = source.match(/  function taskScheduleNotice\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(overview && readable && notice)
-  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies']
   const context = vm.createContext({
     FLOW_TASKS: modes.map((mode) => [mode, mode]), FLOW_STALE_MS: 90000,
     taskSchedule: { enabled: true, items: Object.fromEntries(modes.map((mode) => [mode, { blocked: true, reason: 'risk-blocked' }])) },
     pluginRuntime: { tasks: {} }, formatClock: () => '01:00',
+    waitHeadline: (prefix, ms) => ms > 0 ? `${prefix} · 约 1 分 0 秒` : prefix,
   })
   vm.runInContext(`${overview}\n${readable}\n${notice}\nglobalThis.notice = taskScheduleNotice`, context)
   for (const mode of modes) {
@@ -893,7 +909,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   const element = { hidden: true, dataset: {}, querySelector: (selector) => selector === 'strong' ? title : detail }
   context.state = { assistantMode: 'timeline' }
   context.currentTaskKey = () => 'timeline'
-  vm.runInContext(`${paint}\nglobalThis.paintNotice = paintTaskScheduleNotice`, context)
+  vm.runInContext(`function isPosterMode(mode) { const current = mode === undefined ? state.assistantMode : mode; return current === "poster" || current === "poster-premium"; }\n${paint}\nglobalThis.paintNotice = paintTaskScheduleNotice`, context)
   context.paintNotice({ querySelector: () => element })
   assert.equal(element.hidden, false)
   assert.equal(element.dataset.state, 'blocked')
@@ -987,7 +1003,7 @@ test('scheduled post risk cooldown reports waiting even before the next post dea
   const context = vm.createContext({
     state: { assistantMode: 'poster', poster: { running: true, stopping: false, nextPostAt: 0, riskCooldownUntil: Date.now() + 600000 } },
   })
-  vm.runInContext(`${definition}\nglobalThis.phase = currentTaskPhase`, context)
+  vm.runInContext(`function isPosterMode(mode) { const current = mode === undefined ? state.assistantMode : mode; return current === "poster" || current === "poster-premium"; }\n${definition}\nglobalThis.phase = currentTaskPhase`, context)
   assert.equal(context.phase(), 'paused')
 })
 
@@ -1041,7 +1057,13 @@ test('header runtime line uses the same global state as the main button', async 
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function flowRuntimeLabel\(model, startedAt, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
-  const context = vm.createContext({ formatRuntime: (elapsed) => `${elapsed}ms` })
+  const context = vm.createContext({
+    formatRuntime: (elapsed) => `${elapsed}ms`,
+    soonestWaitMs: () => 0,
+    waitHeadline: (prefix) => prefix,
+    flowTaskOverview: () => ({ counts: { running: 0 } }),
+    pluginRuntime: { tasks: {} },
+  })
   vm.runInContext(`${definition}\nglobalThis.runtimeLabel = flowRuntimeLabel`, context)
   const cases = [
     ['paused', '全流程已暂停'], ['waiting', '任务等待中'], ['blocked', '任务需检查'],
@@ -2036,6 +2058,7 @@ test('reply submission detects an X error inside the existing composer dialog', 
     state: { stopping: false },
     SUBMIT_TIMEOUT_MS: 5000, SEND_START_TIMEOUT_MS: 2500, SEND_CONFIRM_TIMEOUT_MS: 5000,
     loopApi: { composerText: () => '待发送回复', normalizePhraseText: (text) => text, isSubmitEnabled: () => true },
+    ensureReplyComposerText: async () => true,
     findReplyRestrictionDialog: () => false, unavailablePostInDialog: () => false,
     transientErrorVisible: () => Boolean(alert.text),
     transientErrorNodes: () => alert.text ? [alert] : [],
@@ -2083,7 +2106,7 @@ test('a restricted reply enters a timed retry without stopping other tasks', asy
     cancelActiveAiRequest() { calls.canceled += 1 }, writeSaved() { calls.saved += 1 },
     formatCountdown: () => '10:00', renderPanel() {},
   })
-  vm.runInContext(`let riskRoundRequested = false;\n${helper}\nglobalThis.cool = applyRiskStop; globalThis.requested = () => riskRoundRequested`, sandbox)
+  vm.runInContext(`function isPosterMode(mode) { const current = mode === undefined ? state.assistantMode : mode; return current === "poster" || current === "poster-premium"; }\nlet riskRoundRequested = false;\n${helper}\nglobalThis.cool = applyRiskStop; globalThis.requested = () => riskRoundRequested`, sandbox)
   sandbox.cool()
   assert.equal(state.running, true)
   assert.equal(state.riskPaused, true)
@@ -2687,20 +2710,25 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
   assert.match(background.POST_SYSTEM_PROMPT, /开头用最短一句说清谁做了什么/)
+  assert.match(background.POST_SYSTEM_PROMPT, /整条只站一边说话/)
+  assert.match(background.POST_SYSTEM_PROMPT, /讨厌就说讨厌，反对就说反对/)
   assert.match(background.POST_SYSTEM_PROMPT, /35～90 个中文字符/)
   assert.match(background.POST_SYSTEM_PROMPT, /写成 2～3 个短段，段间留一个空行/)
-  assert.match(background.POST_SYSTEM_PROMPT, /自然用语气词、感叹句或反问/)
+  assert.match(background.POST_SYSTEM_PROMPT, /语气词、感叹句、反问自然用/)
   assert.match(background.POST_SYSTEM_PROMPT, /没有新信息就不要硬凑第三段/)
   assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /最多 1 句理由/)
   assert.match(background.POST_SYSTEM_PROMPT, /‘不是……而是……’/)
   assert.match(background.POST_SYSTEM_PROMPT, /不替事实拔高主题/)
   assert.match(background.POST_SYSTEM_PROMPT, /自我指涉/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /更抓人的观点短帖/)
+  assert.doesNotMatch(background.POST_SYSTEM_PROMPT, /两边都对的分析报告/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /情绪化、只站一边的抓人短帖/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /禁止正反对照和中立分析/)
   assert.match(background.CLICKBAIT_POST_PROMPT, /‘不是……而是……’/)
   assert.match(background.CLICKBAIT_POST_PROMPT, /45～100 个中文字符/)
   assert.match(background.CLICKBAIT_POST_PROMPT, /没有新信息就不要凑第三段/)
-  assert.match(background.CLICKBAIT_POST_PROMPT, /不写中立总结、泛泛建议、意义拔高/)
+  assert.match(background.CLICKBAIT_POST_PROMPT, /不写中立总结、正反拆解、泛泛建议、意义拔高/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
+  assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /禁止正反对照、辩证拆解/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的假对比、自我指涉和意义拔高改成直接陈述/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /不能凭行业印象虚构人员反应/)
 })
@@ -2748,19 +2776,27 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
     assert.doesNotMatch(requestBody.messages[0].content, /开头就表态/)
     storedPostPrompt = '风格：标题党引子。第一句至少带出对象。素材适合时可写“真正值得注意的是”。写 3～5 个短段。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /更抓人的观点短帖/)
+    assert.match(requestBody.messages[0].content, /情绪化、只站一边的抓人短帖/)
     assert.doesNotMatch(requestBody.messages[0].content, /真正值得注意的是/)
     storedPostPrompt = '风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断。篇幅：目标 45～100 个中文字符。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /第一句用具体事件带出冲突/)
+    assert.match(requestBody.messages[0].content, /第一句用具体事件带出你的火气或兴奋/)
     storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事。素材真让人佩服时，可以用 0～1 句短口语直接夸。'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
     assert.match(requestBody.messages[0].content, /不能替当事人编经历/)
     assert.doesNotMatch(requestBody.messages[0].content, /素材真让人佩服时/)
     storedPostPrompt = '任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事。姿态够直接。字数是写作目标。最厉害的地方是……'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
-    assert.match(requestBody.messages[0].content, /开头用最短一句说清谁做了什么/)
+    assert.match(requestBody.messages[0].content, /整条只站一边说话/)
     assert.doesNotMatch(requestBody.messages[0].content, /姿态够直接/)
+    storedPostPrompt = '任务：依据热点标题和摘要写一条 X 中文短帖。开头用最短一句说清谁做了什么；别把立场磨成两边都对的分析报告。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /只站一边说话/)
+    assert.doesNotMatch(requestBody.messages[0].content, /两边都对的分析报告/)
+    storedPostPrompt = '风格：更抓人的观点短帖。第一句用具体事件带出冲突，马上说出鲜明立场；可以犀利、惊讶、吐槽。'
+    await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
+    assert.match(requestBody.messages[0].content, /情绪化、只站一边的抓人短帖/)
+    assert.doesNotMatch(requestBody.messages[0].content, /马上说出鲜明立场/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
@@ -2792,10 +2828,11 @@ test('post opening draw uses each fixed phrase ten percent of the time', async (
     assert.match(requestBody.messages[0].content, /正文必须以“说个暴论，”开头/)
     assert.equal(selected.post, '说个暴论，别把配置表当成安全说明。')
     const ordinary = await background.rewriteNewsPost({ title: '车辆座椅配置说明引发讨论', openingDraw: 0.8 })
-    assert.match(requestBody.messages[0].content, /先用一句话交代具体对象和事件，再说观点/)
+    assert.match(requestBody.messages[0].content, /先用一句话交代具体对象和事件，再直接说喜欢、讨厌、反对或无语；整条只站一边/)
     assert.equal(ordinary.post, '别把配置表当成安全说明。')
     await background.rewriteNewsPost({ title: '车辆座椅配置说明引发讨论', lengthMode: 'compact', openingDraw: 0.8 })
     assert.match(requestBody.messages[0].content, /约 35～60 个中文字符，分成 3～4 个短行/)
+    assert.match(requestBody.messages[0].content, /不要正反对照/)
   } finally {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
@@ -3315,6 +3352,31 @@ test('selected Grok reply prompt asks for a specific second perspective', async 
     globalThis.fetch = originalFetch
     delete globalThis.chrome
   }
+})
+
+test('Grok mention duplication is managed and the composer rewrite retries automatically', async () => {
+  const phrase = '粉丝破万挺快的。@grok 开通后按什么标准结算？'
+  assert.equal(loop.isRecoverableGrokDuplicate(`${phrase}\n@grok 开通后按什么标准结算？`, phrase), true)
+  assert.equal(loop.isRecoverableGrokDuplicate(`${phrase}\n开通后按什么标准结算？`, phrase), true)
+  assert.equal(loop.isRecoverableGrokDuplicate(`${phrase}\n@grok 为什么还没回复？`, phrase), false)
+  assert.equal(loop.isRecoverableGrokDuplicate(`${phrase} 这是我手动写的补充`, phrase), false)
+
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function ensureReplyComposerText\(composer, phrase, attempts = 3\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const textbox = { text: `${phrase}\n@grok 开通后按什么标准结算？` }
+  let writes = 0
+  const sandbox = vm.createContext({
+    state: { stopping: false },
+    loopApi: { composerText: (node) => node.text, normalizePhraseText: loop.normalizePhraseText },
+    fillComposer: async (node, text) => { writes += 1; if (writes === 2) node.text = text; return node.text === text ? text : '' },
+    sleep: async () => {},
+    findDialogComposer: () => null,
+  })
+  vm.runInContext(`${definition}\nglobalThis.ensure = ensureReplyComposerText`, sandbox)
+  assert.equal(await sandbox.ensure({ dialog: null, textbox }, phrase), true)
+  assert.equal(writes, 2)
+  assert.equal(textbox.text, phrase)
 })
 
 test('temporary DeepSeek overload falls back to NAS with the same reply context', async () => {
@@ -3838,7 +3900,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.46')
+  assert.equal(manifest.version, '3.32.50')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3858,7 +3920,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(catalog, /resourceKey: 'resource:x-tweet-to-pdf-extension',[\s\S]*?legacy: true/)
   assert.match(catalog, /resourceKey: 'resource:x-mutual-cleaner-extension',[\s\S]*?legacy: true/)
   assert.match(backgroundSource, /xrc-tweet-pdf-open/)
-  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"timeline"[\s\S]*?"poster"\s*\]\)/)
+  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"timeline"[\s\S]*?"poster-premium"\s*\]\)/)
   assert.match(backgroundSource, /phase: "idle"/)
   assert.match(backgroundSource, /phase = "unknown"/)
   const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
@@ -4054,7 +4116,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-mutual-tab="targetFollow"/)
   assert.match(content, /关注候选暂时停用|该功能暂时停用/)
   assert.match(content, /xrc-task-pending-remember/)
-  assert.match(content, /state\.assistantMode === "poster" && await postApi\?\.resumeIfPending/)
+  assert.match(content, /isPosterMode\(\) && await postApi\?\.resumeIfPending/)
   assert.match(content, /function selectMutualMode/)
   assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return openTaskTab\(mutualTaskKey\(mode\)\)/)
   assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
@@ -4250,7 +4312,9 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /平台边界与官方来源/)
   assert.match(docsPage, /不代表 X 认可的安全阈值/)
   assert.match(docsPage, /https:\/\/help\.x\.com\/en\/rules-and-policies\/x-automation/)
-  assert.match(docsPage, /version: 'v3\.32\.13'/)
+  assert.match(docsPage, /loadXExtensionReleaseWeeks/)
+  assert.match(docsPage, /周总结/)
+  assert.match(docsPage, /第 1 周从 README 里第一条带日期的版本所在周开始/)
   assert.match(content, /currentTaskDetail|currentTaskWaitUntil/)
   assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
   assert.match(backgroundSource, /ext-update/)
@@ -4261,7 +4325,7 @@ test('each subtask info link targets its own revealed documentation section', as
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const docsPage = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
   const hashNavigation = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/DocsHashNavigation.jsx', import.meta.url), 'utf8')
-  const targets = ['reply-timeline', 'reply-notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followback', 'poster']
+  const targets = ['reply-timeline', 'reply-notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followback', 'poster', 'poster-normal', 'poster-premium']
   for (const target of targets) {
     assert.match(content, new RegExp(`xrc-docs-${target}`))
     assert.match(docsPage, new RegExp(`id="${target}"`))
@@ -4277,7 +4341,7 @@ test('today totals expose a compact calendar entry and poster stats identify the
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(content, /class="xrc-today-report"[^>]*data-xrc-report-open[^>]*aria-label="打开日历统计"/)
   assert.match(content, /class="xrc-today-head"[\s\S]*class="xrc-today-labels"[\s\S]*class="xrc-today-values"/)
-  assert.match(content, /定时发帖 · 本次运行[\s\S]*本次已发送 0 条/)
+  assert.match(content, /data-xrc-post-card-label>普通发帖 · 本次运行[\s\S]*本次已发送 0 条/)
   assert.match(content, /querySelectorAll\("\[data-xrc-report-open\]"\)/)
 })
 

@@ -1,9 +1,12 @@
 import Link from 'next/link'
 
+import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import PageContainer from '../../../components/PageContainer'
 import DocsHashNavigation from './DocsHashNavigation'
 
 export const dynamic = 'force-static'
+
+const RELEASE_WEEKS = loadXExtensionReleaseWeeks()
 
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const DOCS_PATH = `/resources/${RESOURCE_SLUG}/docs`
@@ -54,6 +57,8 @@ const TOC = [
       { id: 'mutual-unfollow', label: '清理未回关', child: true },
       { id: 'mutual-followback', label: '回关粉丝', child: true },
       { id: 'poster', label: '定时发帖', child: true },
+      { id: 'poster-normal', label: '普通发帖', child: true },
+      { id: 'poster-premium', label: '精品发帖', child: true },
       { id: 'frequency', label: '05 · 频率与设置' },
     ],
   },
@@ -62,7 +67,7 @@ const TOC = [
     items: [
       { id: 'rules', label: '06 · 平台边界' },
       { id: 'maintenance', label: '07 · 更新与数据维护' },
-      { id: 'releases', label: '08 · 版本记录' },
+      { id: 'releases', label: '08 · 周总结' },
     ],
   },
 ]
@@ -103,59 +108,6 @@ const SINGLE_BUTTON_ROWS = [
   ['已经手动停止', '已停止 · 点击启动', '单独恢复该任务，不重启其他任务。'],
   ['正在停止', '停止中 · 请稍候', '暂不可点击，等待当前步骤结束。'],
   ['没有运行记录', '启动单项任务', '单独启动当前任务。'],
-]
-
-const RELEASES = [
-  {
-    version: 'v3.32.46',
-    title: '两项评论任务持续倒计时重试',
-    detail: '评论帖子和评论通知受疑似自动化限制后按 10、20、30 分钟递增等待；旧的人工检查标记迁回自动重试。',
-  },
-  {
-    version: 'v3.32.21',
-    title: '按需调度任务窗口',
-    detail: '评论任务常驻，其余任务后台排队；冷却先保存再关窗，连续受限后等待人工检查。',
-  },
-  {
-    version: 'v3.32.13',
-    title: '后台远程操控',
-    detail: '站长监控可远程启停全流程或单项任务，并显示等待原因、倒计时与指令回执。',
-  },
-  {
-    version: 'v3.32.12',
-    title: '监控状态同步',
-    detail: '站长插件监控同步评论、点赞、关注、发帖四类功能的实时状态，不只看单次动作回执。',
-  },
-  {
-    version: 'v3.32.11',
-    title: '文档中心迁到站点',
-    detail: '说明文档改在 2aran.com 独立页面阅读；插件内入口直接打开对应章节。',
-  },
-  {
-    version: 'v3.32.10',
-    title: '更新状态与文档折叠修复',
-    detail: '更新后恢复任务时清除旧暂停标记；文档章节可以正常展开和收起。',
-  },
-  {
-    version: 'v3.32.9',
-    title: '风控等待与自动重试',
-    detail: '四类任务只让受限项等待，10、20、30 分钟递增；手动停止可取消等待。',
-  },
-  {
-    version: 'v3.32.8',
-    title: '标题换行',
-    detail: '稳定运行时间单独显示一行。',
-  },
-  {
-    version: 'v3.32.7',
-    title: '全局停止状态修复',
-    detail: '停止后清理旧运行记录，定时发帖等待可立即结束。',
-  },
-  {
-    version: 'v3.32.6',
-    title: '手动更新后恢复任务',
-    detail: '加载本地新版后恢复原先运行的任务。',
-  },
 ]
 
 function Section({ id, index, title: sectionTitle, summary, children, defaultOpen = false }) {
@@ -246,7 +198,7 @@ export default function XReplyClipboardDocsPage() {
           <Section id="flow" index="01" title="运行与任务窗口" summary="全流程、单项任务和手动停止" defaultOpen>
             <p className="text-[var(--site-ink)]">全流程启动时，评论帖子和评论通知保持运行；点赞、关注和发帖进入后台队列，同一时间只启动一项。等待冷却时，后台先保存恢复时间，再关闭对应任务窗口，到期重新打开。</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li>评论帖子、评论通知、点赞帖子、点赞评论、清理未回关、回关粉丝和定时发帖各用自己的任务窗口。</li>
+              <li>评论帖子、评论通知、点赞帖子、点赞评论、清理未回关、回关粉丝、普通发帖和精品发帖各用自己的任务窗口。</li>
               <li>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。任务详情中的“前往”执行相同的跳转，不启动任务。单项按钮只控制当前任务。</li>
               <li>主按钮按下方“状态和按钮速查”显示当前状态与点击动作。单项按钮点击前会重新读取后台调度状态，排队和倒计时期间不会误启动。全流程手动暂停后显示“已暂停 · 点击启动全部”，仍可点击；顶部同步显示“全流程已暂停”。各任务的“停止”只停止该任务；风控等待不会暂停其他任务。</li>
               <li>详情和七项子功能顶部共用后台状态。评论帖子、评论通知遇到疑似自动化提示时显示等待原因和倒计时，不转成“需人工检查”。点赞、关注、发帖连续受限后的人工检查状态仍会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
@@ -344,12 +296,12 @@ export default function XReplyClipboardDocsPage() {
                   <li id="mutual-followback" className="scroll-mt-24">回关粉丝优先处理姓名或简介含汉字的账号；每 15 个暂停 30 分钟，每日最多 400 个，次日继续。关注候选暂时停用。</li>
                 </ul>
               </TaskBlock>
-              <TaskBlock id="poster" badge="帖" title="定时发帖" summary="取材 → 改写 → 待发 → 发送">
+              <TaskBlock id="poster" badge="帖" title="定时发帖" summary="普通发帖与精品发帖">
                 <ul className="list-disc space-y-2 pl-5">
-                  <li>先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。</li>
-                  <li>模型返回可用正文后写入待发列表，成功入队一条即进入发送；记录来源和原始链接，列表发完再取新素材。</li>
-                  <li>新帖子按条随机选择格式：20% 概率配原创文字卡片，40% 为原篇幅纯文字，40% 为精简纯文字。文字卡片展示标题和正文，在纸张手记、杂志分栏、暖色重点、深色渐变四种版式间轮换。精简稿目标约 35～60 字，写成 3～4 个短行，每行之间留一个空行。抽取结果随待发稿保存，重试不改变。发帖框若已有图片，会等待人工确认或移除，避免误发。</li>
-                  <li>第一条立即发送，其后按所选挡位等待；X 提示重复时跳过该条。疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
+                  <li>定时发帖下分普通发帖、精品发帖两个子任务，各自独立窗口启停，可随全流程一起调度。</li>
+                  <li id="poster-normal" className="scroll-mt-24">普通发帖：先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。新帖按条随机：20% 配图、40% 原篇幅、40% 精简。第一条立即发送，其后按所选频率挡位等待。</li>
+                  <li id="poster-premium" className="scroll-mt-24">精品发帖：每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文固定原篇幅，配图比例约 50%。错过的档位可在当天内补发，满 5 条后等到次日首档。</li>
+                  <li>模型返回可用正文后写入待发列表；发帖框若已有图片会等待人工确认或移除。X 提示重复时跳过该条；疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
                 </ul>
               </TaskBlock>
             </div>
@@ -359,7 +311,7 @@ export default function XReplyClipboardDocsPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>频率设置里可修改各挡位数字；工作区只选择边界测试、慢、中、快、超快。任务运行时不能改挡位，停止后修改会自动保存。</li>
               <li>回复默认“边界测试”：起步每条 6～10 秒、每轮 20～30 条、每次 2～3 轮、周期休息 10～15 分钟；根据已确认的运行结果调整。慢、中、快、超快的具体数字以“频率设置”为准。</li>
-              <li>发帖默认“中”：两条之间随机等待 25～35 分钟；慢为 50～70 分钟，快为 12～18 分钟，超快为 6～10 分钟。</li>
+              <li>普通发帖默认“中”：两条之间随机等待 25～35 分钟；慢为 50～70 分钟，快为 12～18 分钟，超快为 6～10 分钟。精品发帖不使用频率挡位，固定每天 5 档。</li>
               <li>回复模型、DeepSeek API Key 和两种提示词在“模型设置”管理。尚未配置 DeepSeek 时，首页只显示前往模型设置的引导，点击后定位密钥输入框。发帖正文每行之间留一个空行；精简稿目标约 35～60 字、3～4 行。随机开头和措辞由提示词控制，本地不按字数或风格退稿。</li>
               <li>插件不设每日回复总量；清理未回关不设批次或每日数量上限。平台限制仍会触发对应等待。</li>
             </ul>
@@ -383,20 +335,32 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="releases" index="08" title="最近版本" summary="只列当前相关改动；完整历史见仓库 README">
+          <Section id="releases" index="08" title="周总结" summary="从首个有日期版本所在周起算；每周提炼重点，完整条目见仓库 README">
+            <p className="m-0 text-[13px] leading-6">
+              周次按北京时间周一到周日划分。第 1 周从 README 里第一条带日期的版本所在周开始；更早且未标注日期的版本归入「起步阶段」。
+            </p>
             <div className="space-y-3">
-              {RELEASES.map((item) => (
-                <article key={item.version} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3">
+              {RELEASE_WEEKS.map((week) => (
+                <article key={week.id} id={week.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <b className="font-mono text-[12px] text-[var(--site-faint)]">{item.version}</b>
-                    <strong className="text-[14px] text-[var(--site-ink)]">{item.title}</strong>
+                    <strong className="text-[14px] text-[var(--site-ink)]">{week.title}</strong>
+                    <b className="font-mono text-[12px] text-[var(--site-faint)]">{week.versionRange}</b>
+                    <span className="text-[12px] text-[var(--site-faint)]">{week.count} 个版本</span>
                   </div>
-                  <p className="mt-1 text-[13px] leading-6">{item.detail}</p>
+                  <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-6">
+                    {week.highlights.map((item) => (
+                      <li key={`${week.id}-${item.version}`}>
+                        <span className="font-mono text-[12px] text-[var(--site-faint)]">{item.version}</span>
+                        {' '}
+                        {item.text}
+                      </li>
+                    ))}
+                  </ul>
                 </article>
               ))}
             </div>
             <p className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 text-[13px] leading-6">
-              本地开发版本记录以仓库 README 为准；公开下载页可能仍是较早版本。
+              完整版本说明以仓库 README 为准；公开下载页可能仍是较早版本。
             </p>
             <Link href={`${RESOURCE_PATH}#version-history`} className="inline-flex text-[13px] font-semibold text-[var(--site-ink)] no-underline hover:text-[var(--site-accent)]">
               查看公开版本页 ↗

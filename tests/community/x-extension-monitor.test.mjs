@@ -45,6 +45,7 @@ test('runtime groups expose the four feature boards with idle fill-ins', () => {
     ['timeline', 'running'],
     ['notifications', 'idle'],
   ])
+  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['poster', 'poster-premium'])
   assert.equal(groups[2].tasks[0].detail, '风控等待中')
   assert.equal(groups[2].tasks[0].waitUntil, NOW + 600000)
 })

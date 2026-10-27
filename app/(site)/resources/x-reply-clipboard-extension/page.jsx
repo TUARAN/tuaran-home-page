@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.32.22'
+const VERSION = '3.32.43'
 
 const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 
 const VERSION_HISTORY = [
   {
+    version: '3.32.43',
+    title: '评论、任务状态与发帖卡片更新',
+    description: '评论帖子加入约 20% 的 Grok 补充观点提问；七项任务显示后台等待与受限状态，点赞限制判断改为核对点击结果；发帖文字卡片增加四种版式。',
+    current: true,
+  },
+  {
     version: '3.32.22',
     title: '降低站点用量',
     description: '减少运行状态上报频率，避免插件持续运行时产生过多站点请求。',
-    current: true,
   },
   {
     version: '3.32.21',

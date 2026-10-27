@@ -33,6 +33,8 @@ const REPLY_SYSTEM_PROMPT = [
   "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
 ].join("\n");
 
+const GROK_REPLY_PROMPT = "这次是带 @grok 的评论帖子回复。先用自己的话回应原帖里一个具体点，给出明确但不编造事实的看法；末尾只提及一次 @grok，并针对同一个具体点问一个能补充另一种观点或依据的问题。整条尽量控制在 100 个汉字内。不要只写‘你怎么看’，不要把问题抛给原作者，也不要假装 Grok 已经回答。这里的具体追问是前述‘避免硬加反问’的例外。";
+
 const POST_SYSTEM_PROMPT = [
   "任务：依据热点标题和摘要写一条 X 中文短帖。开头用最短一句说清谁做了什么，让没看过素材的人跟得上；接着直接亮出赞成、反对、质疑或惊讶的态度。观点可以尖锐，敢说具体做法荒唐、价格离谱、变化惊人；别把立场磨成两边都对的分析报告。",
   "事实：标题和摘要是唯一事实依据，近期主题只用于换角度。可以对已知事实发表强烈看法，不能编人物、数字、动机、因果或后续结果；提问式标题不能写成已证实的事实，也不能替当事人编经历。",
@@ -53,13 +55,28 @@ const CLICKBAIT_POST_PROMPT = [
   "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
 ].join("\n");
 
-function cleanReply(value) {
+function cleanReply(value, maxLength = 100) {
   return String(value || "")
     .replace(/^(?:回复|评论)[：:]\s*/u, "")
     .replace(/^[“"']+|[”"']+$/gu, "")
     .replace(/\s*\n+\s*/gu, " ")
     .trim()
-    .slice(0, 100);
+    .slice(0, maxLength);
+}
+
+function finalizeReply(value, inviteGrok = false) {
+  const reply = String(value || "").trim();
+  if (!reply) return "";
+  if (inviteGrok) {
+    let mentioned = false;
+    const once = reply.replace(/@grok\b/giu, () => {
+      if (mentioned) return "";
+      mentioned = true;
+      return "@grok";
+    }).replace(/[ \t]{2,}/gu, " ").trim();
+    return mentioned ? once : `@grok ${once}`;
+  }
+  return reply.replace(/@grok\b/giu, "Grok");
 }
 
 function cleanPost(value) {
@@ -122,7 +139,7 @@ function timedRequestController(timeoutMs, parentSignal) {
   };
 }
 
-async function callNasReplyFallback(messages, signal) {
+async function callNasReplyFallback(messages, signal, maxLength = 100) {
   const secret = await globalThis.XrcCommunityReceipt?.readSecret?.();
   if (!secret) throw new Error("NAS 回退未配置扩展上报密钥");
   const account = await chrome.storage.local.get(ACCOUNT_HANDLE_KEY);
@@ -139,7 +156,7 @@ async function callNasReplyFallback(messages, signal) {
       if (response.status === 404) throw new Error("2aran 模型回退接口未上线（404）");
       throw new Error(data?.detail || data?.error || `NAS 回退请求失败（${response.status}）`);
     }
-    const reply = cleanReply(data?.content);
+    const reply = cleanReply(data?.content, maxLength);
     if (!reply) throw new Error("NAS 没有返回可用回复");
     return reply;
   } catch (error) {
@@ -151,7 +168,7 @@ async function callNasReplyFallback(messages, signal) {
   }
 }
 
-async function callBaiReplyFallback(messages, signal) {
+async function callBaiReplyFallback(messages, signal, maxLength = 100) {
   const { baiApiKey } = await readAiSettings();
   if (!baiApiKey) throw new Error("请在设置中填写 B.AI API Key");
   const cooldown = (await chrome.storage.local.get(BAI_COOLDOWN_KEY))?.[BAI_COOLDOWN_KEY];
@@ -183,7 +200,7 @@ async function callBaiReplyFallback(messages, signal) {
     }
     const output = Array.isArray(data?.output) ? data.output : [];
     const reply = cleanReply(output.flatMap((item) => item?.type === "message" && Array.isArray(item.content)
-      ? item.content.filter((part) => part?.type === "output_text").map((part) => part.text || "") : []).join(" "));
+      ? item.content.filter((part) => part?.type === "output_text").map((part) => part.text || "") : []).join(" "), maxLength);
     if (!reply) throw new Error("B.AI 没有返回可用回复");
     return reply;
   } catch (error) {
@@ -195,15 +212,18 @@ async function callBaiReplyFallback(messages, signal) {
   }
 }
 
-async function callDeepSeek({ postText, conversation = null, avoidReply = "", onProgress = () => {}, signal }) {
+async function callDeepSeek({ postText, conversation = null, avoidReply = "", inviteGrok = false, onProgress = () => {}, signal }) {
   onProgress("正在读取模型设置…");
   const { apiKey, replyPrompt, replyProviders } = await readAiSettings();
   if (!replyProviders.length) throw new Error("请至少启用一个回复模型");
 
+  const grokReply = Boolean(inviteGrok && !conversation);
+  const replyStyle = grokReply ? GROK_REPLY_PROMPT : "这次不要提及 @grok，直接回应原帖或对方。";
+  const replyMaxLength = grokReply ? 150 : 100;
   const messages = [
     { role: "system", content: conversation
-      ? `${replyPrompt}\n\n这次任务是回复别人发给我的话。始终站在我的身份回应对方最新一句；对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。语气像真人随手接话，不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。`
-      : replyPrompt },
+      ? `${replyPrompt}\n\n这次任务是回复别人发给我的话。始终站在我的身份回应对方最新一句；对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。语气像真人随手接话，不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n${replyStyle}`
+      : `${replyPrompt}\n${replyStyle}` },
     {
       role: "user",
       content: [
@@ -234,14 +254,14 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", on
         const response = await fetch(DEEPSEEK_ENDPOINT, {
           method: "POST",
           headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: DEEPSEEK_MODEL, messages, thinking: { type: "disabled" }, max_tokens: 96, stream: false }),
+          body: JSON.stringify({ model: DEEPSEEK_MODEL, messages, thinking: { type: "disabled" }, max_tokens: grokReply ? 160 : 96, stream: false }),
           signal: request.signal
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw Object.assign(new Error(data?.error?.message || `DeepSeek 请求失败（${response.status}）`), { status: response.status });
-        const reply = cleanReply(data?.choices?.[0]?.message?.content);
+        const reply = cleanReply(data?.choices?.[0]?.message?.content, replyMaxLength);
         if (!reply) throw new Error("DeepSeek 没有返回可用内容");
-        return reply;
+        return finalizeReply(reply, grokReply);
       } catch (error) {
         if (signal?.aborted) throw new Error("回复任务已取消");
         if (!isTransientDeepSeekFailure(error)) throw error;
@@ -253,7 +273,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", on
   }
   if (replyProviders.includes("nas")) {
     onProgress(failures.length ? "DeepSeek 暂不可用，正在尝试 NAS 模型…" : "正在请求 NAS 模型生成回复…");
-    try { return await callNasReplyFallback(messages, signal); }
+    try { return finalizeReply(await callNasReplyFallback(messages, signal, replyMaxLength), grokReply); }
     catch (error) {
       if (signal?.aborted) throw error;
       failures.push(`NAS 回退失败：${error?.message || error}`);
@@ -262,7 +282,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", on
   if (replyProviders.includes("bai")) {
     onProgress(failures.some((failure) => failure.startsWith("NAS"))
       ? "NAS 暂不可用，正在尝试 B.AI 模型…" : "正在请求 B.AI 模型生成回复…");
-    try { return await callBaiReplyFallback(messages, signal); }
+    try { return finalizeReply(await callBaiReplyFallback(messages, signal, replyMaxLength), grokReply); }
     catch (error) {
       if (signal?.aborted) throw error;
       failures.push(`B.AI 回退失败：${error?.message || error}`);
@@ -525,7 +545,7 @@ async function handleMessage(message, onProgress = () => {}, signal) {
     if (message.mode === "notifications" && !conversation?.reply?.text) {
       throw new Error("没有读取到对方回复的文字");
     }
-    const reply = await callDeepSeek({ postText, conversation, avoidReply: message.avoidReply, onProgress, signal });
+    const reply = await callDeepSeek({ postText, conversation, avoidReply: message.avoidReply, inviteGrok: message.mode === "timeline" && Boolean(message.inviteGrok), onProgress, signal });
     return { ok: true, reply };
   }
   return { ok: false, error: "未知请求" };
@@ -883,9 +903,18 @@ let scheduleWork = Promise.resolve();
 async function readTaskSchedule() {
   const stored = await chrome.storage.local.get(TASK_SCHEDULE_KEY);
   const value = stored?.[TASK_SCHEDULE_KEY];
-  return value && typeof value === "object"
+  const plan = value && typeof value === "object"
     ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
     : { enabled: false, current: "", cursor: 0, items: {} };
+  if (plan.likeDetectionVersion !== 2) {
+    for (const mode of ["likes-posts", "likes-replies"]) {
+      const item = plan.items[mode];
+      if (!item || plan.current === mode || item.manualStopped || !/(?:automation-restricted|rate-limited|疑似自动化|点赞次数受限)/iu.test(String(item.reason || ""))) continue;
+      plan.items[mode] = { ...item, blocked: false, limitedStreak: 0, resumeAt: 0, reason: "点赞异常判定已更新，等待重新确认" };
+    }
+    plan.likeDetectionVersion = 2;
+  }
+  return plan;
 }
 
 async function saveTaskSchedule(value) {
@@ -1487,7 +1516,7 @@ async function pauseAllTasks(reason = "全流程已暂停") {
   return stopAllTaskTabs(reason, { phase: "paused" });
 }
 
-async function markManualTaskStop(mode) {
+async function markManualTaskStop(mode, stopTab = false) {
   if (!FLOW_TASKS.includes(mode)) return { ok: true };
   const plan = await readTaskSchedule();
   if (!plan.enabled) return { ok: true };
@@ -1497,6 +1526,17 @@ async function markManualTaskStop(mode) {
     if (plan.current === mode) { plan.current = ""; plan.startedAt = 0; await saveTaskSchedule(plan); }
     await tickTaskSchedule();
   }
+  if (stopTab) await stopAllTaskTabs("已手动停止该任务", { modes: [mode], phase: "stopped" });
+  return { ok: true };
+}
+
+async function markManualTaskStart(mode) {
+  if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
+  const plan = await readTaskSchedule();
+  const item = plan.items[mode] || {};
+  if (!item.manualStopped && !item.blocked) return { ok: true };
+  plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+  await saveTaskSchedule(plan);
   return { ok: true };
 }
 
@@ -1669,9 +1709,15 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-task-manual-stop") {
-      markManualTaskStop(validTaskMode(message.mode))
+      markManualTaskStop(validTaskMode(message.mode), Boolean(message.stopTab))
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务停止状态没有保存" }));
+      return true;
+    }
+    if (message?.type === "xrc-task-manual-start") {
+      markManualTaskStart(validTaskMode(message.mode))
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "任务启动状态没有保存" }));
       return true;
     }
     if (message?.type === "xrc-dev-update-apply") {
@@ -1819,6 +1865,7 @@ if (typeof module === "object" && module.exports) {
     focusTaskTab,
     openAllTasks,
     readTaskSchedule,
+    markManualTaskStart,
     runTaskSchedule,
     noteScheduledAction,
     readPluginRuntime,

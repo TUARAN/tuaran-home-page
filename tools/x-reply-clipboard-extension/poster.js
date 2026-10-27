@@ -19,15 +19,16 @@
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
   const DRAFT_POLICY_VERSION = 4;
-  function choosePostFormat(random = Math.random) {
-    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", lengthMode: "regular" };
+  const CARD_VARIANTS = Object.freeze(["paper", "editorial", "highlight", "gradient"]);
+  function choosePostFormat(random = Math.random, cardIndex = 0) {
+    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", cardVariant: CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length], lengthMode: "regular" };
     return { mediaMode: "text", lengthMode: random() < 0.5 ? "compact" : "regular" };
   }
 
   function withPostFormat(item) {
     const lengthMode = item?.lengthMode === "compact" ? "compact" : item?.lengthMode === "regular" ? "regular" : choosePostFormat().lengthMode;
     const mediaMode = item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
-    return { ...item, mediaMode, lengthMode, text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text };
+    return { ...item, mediaMode, lengthMode, ...(mediaMode === "image" ? { cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : "paper" } : {}), text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text };
   }
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
@@ -552,7 +553,9 @@
       let text = "";
       let topic = "";
       let reason = "";
-      const postFormat = choosePostFormat();
+      const cardIndex = history.published.filter((entry) => entry.imageStyle === "text-card").length
+        + state.publishQueue.filter((entry) => entry.mediaMode === "image" && entry.imageStyle === "text-card").length;
+      const postFormat = choosePostFormat(Math.random, cardIndex);
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
@@ -623,7 +626,7 @@
   }
 
   async function rememberPublishedPost(sourceId, text, topic, item = null) {
-    history.published.push({ sourceId: String(sourceId || ""), text, topic, source: item?.source || "", sourceLabel: item?.sourceLabel || sourceLabel(item?.source), sourceUrl: item?.sourceUrl || "", sourcePageUrl: item?.sourcePageUrl || "", sourceTitle: item?.sourceText || "", at: Date.now() });
+    history.published.push({ sourceId: String(sourceId || ""), text, topic, imageStyle: item?.imageStyle || "", cardVariant: item?.cardVariant || "", source: item?.source || "", sourceLabel: item?.sourceLabel || sourceLabel(item?.source), sourceUrl: item?.sourceUrl || "", sourcePageUrl: item?.sourcePageUrl || "", sourceTitle: item?.sourceText || "", at: Date.now() });
     history.published = history.published.slice(-2000);
     if (sourceId) await rememberUsedSourceId(sourceId);
     else if (!await saveHistory()) throw new Error("发帖历史保存失败，已暂停这条素材");
@@ -719,7 +722,7 @@
     if (!root.XInteractionPostImage?.createPostCard) return "配图模块未加载，已改为纯文字";
     if (typeof DataTransfer !== "function") return "浏览器不支持自动选择图片，已改为纯文字";
     try {
-      const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || "话题观察");
+      const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || "话题观察", item?.cardVariant || "paper");
       const transfer = new DataTransfer();
       transfer.items.add(file);
       input.files = transfer.files;
@@ -1211,6 +1214,7 @@
     formatModelPost,
     formatCompactPost,
     choosePostFormat,
+    withPostFormat,
     editorText,
     duplicatePostNoticeNodes,
     loadHistory,

@@ -17,10 +17,15 @@ const devUpdate = require('../../tools/x-reply-clipboard-extension/devUpdate.js'
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
 
 test('scheduled post formats reserve one fifth for text cards and compact posts keep blank lines', async () => {
-  assert.deepEqual(poster.choosePostFormat(() => 0.19), { mediaMode: 'image', imageStyle: 'text-card', lengthMode: 'regular' })
+  assert.deepEqual(poster.choosePostFormat(() => 0.19), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
+  assert.deepEqual([0, 1, 2, 3, 4].map((index) => poster.choosePostFormat(() => 0, index).cardVariant), ['paper', 'editorial', 'highlight', 'gradient', 'paper'])
+  assert.deepEqual(Array.from(postImage.CARD_VARIANTS), ['paper', 'editorial', 'highlight', 'gradient'])
+  assert.equal(poster.withPostFormat({ mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'highlight', lengthMode: 'regular', text: '已保存稿' }).cardVariant, 'highlight')
+  assert.equal(poster.withPostFormat({ mediaMode: 'image', imageStyle: 'text-card', lengthMode: 'regular', text: '旧待发稿' }).cardVariant, 'paper')
   assert.deepEqual(poster.choosePostFormat(() => 0.2), { mediaMode: 'text', lengthMode: 'compact' })
   assert.deepEqual(poster.choosePostFormat(() => 0.8), { mediaMode: 'text', lengthMode: 'regular' })
   assert.equal(postImage.cardHeadline('第一句说明新闻。\n\n第二句表态。'), '第一句说明新闻。')
+  assert.equal(postImage.cardBody('第一句说明新闻。\n\n第二句表态。'), '第二句表态。')
   assert.equal(poster.formatCompactPost('具体事件发生了。\n自己的观点。\n一句短评。'), '具体事件发生了。\n\n自己的观点。\n\n一句短评。')
   const original = '这家店把常用商品价格又涨了一轮，附近不少老顾客开始换地方买，真没必要把熟客当成不会算账的人。'
   const compact = poster.formatCompactPost(original)
@@ -33,14 +38,15 @@ test('scheduled post formats reserve one fifth for text cards and compact posts 
   assert.match(source, /if \(composerHasMedia\(\)\) \{/)
 })
 
-test('text-card image renders the post headline into a PNG file', async () => {
+test('all text-card layouts render the headline and body into a PNG file', async () => {
   const draws = []
+  const positions = []
   const canvas = {
     getContext: () => ({
       createLinearGradient: () => ({ addColorStop() {} }),
-      fillRect() {}, beginPath() {}, arc() {}, fill() {},
+      fillRect() {}, beginPath() {}, roundRect() {}, rect() {}, arc() {}, fill() {},
       measureText: (value) => ({ width: value.length * 28 }),
-      fillText: (value) => draws.push(value),
+      fillText: (value, _x, y) => { draws.push(value); positions.push(y) },
     }),
     toBlob: (done) => done({ size: 2000 }),
   }
@@ -49,11 +55,20 @@ test('text-card image renders the post headline into a PNG file', async () => {
     File: class { constructor(parts, name, options) { this.parts = parts; this.name = name; this.type = options.type } },
   })
   vm.runInContext(await readFile(new URL('postImage.js', extensionDir), 'utf8'), sandbox)
-  const file = await sandbox.XInteractionPostImage.createPostCard('消息第一句。\n\n观点第二句。', '新闻话题')
-  assert.equal(file.type, 'image/png')
-  assert.match(file.name, /^post-card-\d+\.png$/)
-  assert.ok(draws.includes('新闻话题'))
-  assert.ok(draws.includes('消息第一句。'))
+  for (const variant of postImage.CARD_VARIANTS) {
+    draws.length = 0
+    positions.length = 0
+    const file = await sandbox.XInteractionPostImage.createPostCard('消息第一句。\n\n观点第二句。', '新闻话题', variant)
+    assert.equal(file.type, 'image/png')
+    assert.match(file.name, /^post-card-\d+\.png$/)
+    assert.ok(draws.includes('新闻话题'))
+    assert.ok(draws.includes('消息第一句。'))
+    assert.ok(draws.includes('观点第二句。'))
+    assert.ok(positions.every((y) => y >= 0 && y < 675))
+    positions.length = 0
+    await sandbox.XInteractionPostImage.createPostCard(`标题${'这是一条比较长的新闻描述'.repeat(8)}。\n\n正文${'这句话也很长'.repeat(20)}`, '新闻话题', variant)
+    assert.ok(positions.every((y) => y >= 0 && y < 675))
+  }
 })
 
 test('automation retries wait 10, 20, 30 minutes and keep increasing', () => {
@@ -575,8 +590,9 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const readable = source.match(/  function readableTaskLimitReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
   const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(overview && details)
+  assert.ok(overview && readable && details)
   const list = { replaceChildren(...children) { this.children = children } }
   const total = { textContent: '' }
   const dialog = { hidden: false, querySelector(selector) { return selector === '[data-xrc-flow-details-list]' ? list : total } }
@@ -591,11 +607,13 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       notifications: { phase: 'paused', updatedAt: now },
       poster: { phase: 'running', updatedAt: now - 91000 },
     } },
-    document: { createElement() { return { dataset: {}, append(...children) { this.children = children } } } },
+    document: { createElement() { return { dataset: {}, setAttribute(name, value) { this[name] = value }, append(...children) { this.children = children } } } },
   })
-  vm.runInContext(`${overview}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
+  vm.runInContext(`${overview}\n${readable}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
   context.paint(panel)
   assert.equal(list.children.length, 7)
+  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies'])
+  assert.equal(list.children[0].children[3].textContent, '前往')
   assert.equal(list.children[0].children[0].textContent, '评论帖子')
   assert.equal(list.children[0].children[1].textContent, '执行中')
   assert.equal(list.children[1].children[1].textContent, '等待中')
@@ -608,7 +626,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(list.children[0].children[1].textContent, '等待中')
   assert.match(list.children[0].children[2].textContent, /秒后自动重试/)
   assert.equal(list.children[4].children[1].textContent, '需人工检查')
-  assert.match(list.children[4].children[2].textContent, /risk-blocked/)
+  assert.match(list.children[4].children[2].textContent, /疑似自动化或账号受限/)
   context.taskSchedule.items.timeline = { manualStopped: true }
   context.pluginRuntime.tasks.timeline = { phase: 'running', detail: '正在评论', updatedAt: now }
   context.pluginRuntime.flow.phase = 'paused'
@@ -616,8 +634,13 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(list.children[0].children[1].textContent, '执行中')
   assert.match(list.children[0].children[2].textContent, /正在评论/)
   assert.doesNotMatch(total.textContent, /全流程已暂停/)
+  context.pluginRuntime.tasks.timeline.phase = 'paused'
+  context.paint(panel)
+  assert.equal(list.children[0].children[1].textContent, '未启动')
+  assert.match(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-flow-details-open aria-haspopup="dialog"/)
   assert.match(source, /data-xrc-flow-details role="dialog" aria-modal="true"/)
+  assert.match(source, /void openTaskTab\(go\.dataset\.xrcFlowTaskOpen\)/)
   assert.match(css, /\.xrc-flow-details\[hidden\] \{ display: none; \}/)
 })
 
@@ -774,6 +797,184 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   context.flowStopping = true
   assert.deepEqual({ label: read().label, action: read().action }, { label: '正在停止 · 请稍候', action: '' })
   assert.match(source, /button\.disabled = !model\.action/)
+})
+
+test('all seven scheduled task buttons use the same waiting state as the flow detail', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const control = source.match(/  function scheduledTaskButtonState\(mode, localActive, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && control)
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: modes.map((mode) => [mode, mode]),
+    FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: true, items: { poster: { resumeAt: now + 60000, reason: '轮换等待' } } },
+    pluginRuntime: { flow: { phase: 'running' }, tasks: {} },
+    formatClock: () => '01:00',
+  })
+  vm.runInContext(`${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
+  for (const mode of modes) {
+    assert.equal(context.control(mode, false, now).label, '等待中 · 点击停止')
+    assert.equal(context.control(mode, false, now).action, 'stop')
+    assert.equal(context.control(mode, true, now), null)
+  }
+  assert.match(context.control('poster', false, now).title, /轮换等待 · 01:00/)
+  context.taskSchedule.items.poster.manualStopped = true
+  assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
+  context.taskSchedule.items.poster.manualStopped = false
+  context.taskSchedule.items.poster.blocked = true
+  assert.equal(context.control('poster', false, now).label, '需人工检查 · 点击启动')
+  context.taskSchedule.items.poster.blocked = false
+  context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
+  assert.equal(context.control('poster', false, now).label, '运行中 · 点击前往')
+  assert.equal(context.control('poster', false, now).action, 'focus')
+  context.pluginRuntime.tasks.poster = { phase: 'paused', updatedAt: now }
+  context.taskSchedule.enabled = false
+  assert.equal(context.control('poster', false, now).label, '等待中 · 点击查看')
+  context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
+  assert.equal(context.control('poster', false, now).label, '待确认 · 点击查看')
+  assert.equal(context.control('timeline', false, now), null)
+})
+
+test('single task click refreshes background schedule before acting on a stale start label', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function stopScheduledWaitingTask\(mode, localActive\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const actions = []
+  const context = vm.createContext({
+    taskSchedule: { enabled: false, items: {} }, pluginRuntime: { tasks: {} }, state: {},
+    readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: {} } }),
+    scheduledTaskButtonState: () => ({ action: 'stop' }),
+    sendExtensionMessage: async (message) => { actions.push(message.type); return { ok: true } },
+    renderPanel() {},
+  })
+  vm.runInContext(`${definition}\nglobalThis.stopWaiting = stopScheduledWaitingTask`, context)
+  assert.equal(await context.stopWaiting('likes-posts', false), true)
+  assert.deepEqual(actions, ['xrc-task-manual-stop'])
+  assert.equal(context.taskSchedule.items['likes-posts'].manualStopped, true)
+
+  context.scheduledTaskButtonState = () => ({ action: 'focus' })
+  context.sendTaskMessage = async (type) => { actions.push(type); return { ok: true } }
+  context.loadOpenTaskTabs = async () => {}
+  context.TASK_MODE_LABELS = { 'likes-posts': '点赞帖子' }
+  assert.equal(await context.stopWaiting('likes-posts', false), true)
+  assert.equal(actions.at(-1), 'xrc-task-open')
+
+  context.readRuntimeMessage = async () => { throw new Error('后台暂不可用') }
+  assert.equal(await context.stopWaiting('likes-posts', false), true)
+  assert.match(context.state.status, /无法确认后台任务状态/)
+})
+
+test('all seven task panels show the same blocked state with a readable reason', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const readable = source.match(/  function readableTaskLimitReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
+  const notice = source.match(/  function taskScheduleNotice\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && readable && notice)
+  const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'likes-posts', 'likes-replies']
+  const context = vm.createContext({
+    FLOW_TASKS: modes.map((mode) => [mode, mode]), FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: true, items: Object.fromEntries(modes.map((mode) => [mode, { blocked: true, reason: 'risk-blocked' }])) },
+    pluginRuntime: { tasks: {} }, formatClock: () => '01:00',
+  })
+  vm.runInContext(`${overview}\n${readable}\n${notice}\nglobalThis.notice = taskScheduleNotice`, context)
+  for (const mode of modes) {
+    const result = context.notice(mode)
+    assert.equal(result.status, 'blocked')
+    assert.match(result.title, /需人工检查.*连续受限/)
+    assert.match(result.detail, /疑似自动化或账号受限/)
+    assert.doesNotMatch(result.detail, /risk-blocked/)
+  }
+  const paint = source.match(/  function paintTaskScheduleNotice\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(paint)
+  const title = { textContent: '' }
+  const detail = { textContent: '' }
+  const element = { hidden: true, dataset: {}, querySelector: (selector) => selector === 'strong' ? title : detail }
+  context.state = { assistantMode: 'timeline' }
+  context.currentTaskKey = () => 'timeline'
+  vm.runInContext(`${paint}\nglobalThis.paintNotice = paintTaskScheduleNotice`, context)
+  context.paintNotice({ querySelector: () => element })
+  assert.equal(element.hidden, false)
+  assert.equal(element.dataset.state, 'blocked')
+  assert.match(title.textContent, /需人工检查/)
+  assert.match(detail.textContent, /疑似自动化或账号受限/)
+  assert.equal((source.match(/data-xrc-task-schedule-notice role="status"/g) || []).length, 4)
+  assert.match(source, /paintTaskScheduleNotice\(panel\)/)
+  assert.match(source, /await loadPluginRuntime\(\);\s*renderPanel\(\);\s*\}\);/)
+})
+
+test('missing DeepSeek key guide opens model settings and focuses its saved key field', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function openModelSettingsForKey\(panel\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  let focused = 0
+  const panel = { querySelector(selector) {
+    assert.equal(selector, '[data-xrc-config-key]')
+    return { focus() { focused += 1 } }
+  } }
+  const context = vm.createContext({
+    state: { panelView: 'collapsed', running: false, total: 0 },
+    configOpen: false, configPage: 'other', monitorOpen: true, reportOpen: true,
+    toolboxOpen: true, headerMenuOpen: true,
+    writeSaved() {}, syncConfigMenu() {}, syncMonitorMenu() {}, syncReportPage() {},
+    syncToolboxMenu() {}, syncHeaderMenu() {}, renderPanel() {},
+  })
+  vm.runInContext(`${definition}\nglobalThis.open = openModelSettingsForKey`, context)
+  context.open(panel)
+  assert.equal(context.configOpen, true)
+  assert.equal(context.configPage, 'model')
+  assert.equal(context.state.panelView, 'normal')
+  assert.equal(focused, 1)
+  assert.doesNotMatch(source, /data-xrc-ai-key|xrc-deepseek-global-token/)
+})
+
+test('manual restart clears only the selected task stop and restriction flags', async () => {
+  const originalChrome = globalThis.chrome
+  let schedule = { enabled: true, current: '', items: {
+    'likes-posts': { manualStopped: true, blocked: true, resumeAt: 30000, limitedStreak: 3 },
+    poster: { resumeAt: 60000, reason: '等待发帖' },
+  } }
+  globalThis.chrome = {
+    storage: { local: {
+      async get() { return { xrcTaskSchedule: schedule } },
+      async set(value) { schedule = value.xrcTaskSchedule },
+    } },
+    alarms: { async create() {} },
+  }
+  try {
+    const result = await background.markManualTaskStart('likes-posts')
+    assert.equal(result.ok, true)
+    assert.equal(schedule.items['likes-posts'].manualStopped, false)
+    assert.equal(schedule.items['likes-posts'].blocked, false)
+    assert.equal(schedule.items['likes-posts'].resumeAt, 0)
+    assert.equal(schedule.items['likes-posts'].limitedStreak, 0)
+    assert.deepEqual(schedule.items.poster, { resumeAt: 60000, reason: '等待发帖' })
+  } finally {
+    globalThis.chrome = originalChrome
+  }
+})
+
+test('legacy like cooldowns based on old alerts are rechecked after update', async () => {
+  const originalChrome = globalThis.chrome
+  const schedule = { enabled: true, current: '', items: {
+    'likes-posts': { blocked: true, limitedStreak: 3, resumeAt: 9999999, reason: 'automation-restricted' },
+    'likes-replies': { resumeAt: 9999999, reason: 'X 点赞次数受限' },
+    poster: { resumeAt: 9999999, reason: '等待发帖' },
+  } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcTaskSchedule: schedule } } } } }
+  try {
+    const migrated = await background.readTaskSchedule()
+    assert.equal(migrated.likeDetectionVersion, 2)
+    for (const mode of ['likes-posts', 'likes-replies']) {
+      assert.equal(migrated.items[mode].resumeAt, 0)
+      assert.equal(migrated.items[mode].limitedStreak, 0)
+      assert.equal(migrated.items[mode].blocked, false)
+    }
+    assert.deepEqual(migrated.items.poster, schedule.items.poster)
+  } finally {
+    globalThis.chrome = originalChrome
+  }
 })
 
 test('scheduled post risk cooldown reports waiting even before the next post deadline', async () => {
@@ -1205,9 +1406,10 @@ test('reply-like task visits threads without liking their root posts', async () 
       if (selector.includes('AppTabBar_Home_Link')) return homeLink
       return null
     },
-    querySelectorAll: () => [],
+    querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
   }
   const saved = {}
+  let limits = 0
   let controller
   controller = autoLike.createController({
     document: doc,
@@ -1215,12 +1417,14 @@ test('reply-like task visits threads without liking their root posts', async () 
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
     accountKey: 'test',
     target: 'replies',
+    onLimit() { limits += 1 },
     onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
   })
   await controller.start()
   assert.deepEqual(clicks, { root: 0, reply: 1 })
   assert.deepEqual(saved['xrcAutoLikeSeen:test:replies'], ['123'])
   assert.equal(controller.snapshot().running, false)
+  assert.equal(limits, 0)
 })
 
 test('post-like task stays on Home and has its own processed history', async () => {
@@ -1283,6 +1487,8 @@ test('an unconfirmed like continues to the next post and only confirmed likes en
   const saved = {}
   const clicked = []
   const reported = []
+  const oldToast = { textContent: 'rate limit' }
+  let limits = 0
   const makeTweet = (id, confirms) => {
     let liked = false
     const link = { href: `https://x.com/a/status/${id}`, getAttribute: () => `/a/status/${id}` }
@@ -1298,18 +1504,20 @@ test('an unconfirmed like continues to the next post and only confirmed likes en
   controller = autoLike.createController({
     document: {
       querySelector: () => ({ querySelectorAll: () => articles }),
-      querySelectorAll: () => [],
+      querySelectorAll: () => [oldToast],
     },
     window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
     target: 'posts',
     onLike(id) { reported.push(id) },
+    onLimit() { limits += 1 },
     onUpdate(snapshot) { if (snapshot.posts === 2) controller.stop() },
   })
   await controller.start()
   assert.deepEqual(clicked, ['123', '456'])
   assert.deepEqual(reported, ['456'])
   assert.equal(controller.snapshot().count, 1)
+  assert.equal(limits, 0)
   assert.deepEqual(saved['xrcAutoLikeSeen:default:posts'], ['123', '456'])
 })
 
@@ -1344,6 +1552,68 @@ test('a like confirmed on X replacement node is counted', async () => {
   await controller.start()
   assert.deepEqual(reported, ['123'])
   assert.equal(controller.snapshot().count, 1)
+})
+
+test('an old restriction toast does not block a successful post like', async () => {
+  const oldToast = { textContent: 'This request looks like it might be automated' }
+  let liked = false
+  let limits = 0
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="unlike"]') return liked ? {} : null
+    if (selector === '[data-testid="like"]') return liked ? null : { click() { liked = true } }
+    return null
+  } }
+  let controller
+  controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }), querySelectorAll: () => [oldToast] },
+    window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async () => ({}), set: async () => {} },
+    target: 'posts', onLimit() { limits += 1 },
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(controller.snapshot().count, 1)
+  assert.equal(limits, 0)
+})
+
+test('old warnings and extension panel text do not count as fresh like restrictions', () => {
+  const panelAlert = { textContent: 'X 提示疑似自动化', closest: () => ({}) }
+  const hiddenAlert = { textContent: 'rate limit', hidden: true }
+  const oldToast = { textContent: 'This request looks like it might be automated' }
+  const doc = { querySelectorAll: () => [panelAlert, hiddenAlert, oldToast] }
+  assert.equal(autoLike.restrictionKind(doc), 'automation')
+  assert.equal(autoLike.restrictionKind(doc, new Map([[oldToast, oldToast.textContent]])), '')
+  assert.equal(autoLike.restrictionKind({ querySelectorAll: () => [{ textContent: 'Please wait and try again later' }] }), '')
+})
+
+test('a persistent X warning with two failed likes is treated as a real restriction', async () => {
+  let clock = 1000
+  let clicks = 0
+  let limits = 0
+  const oldToast = { textContent: 'This request looks like it might be automated' }
+  const articles = ['123', '456'].map((id) => {
+    const link = { href: `https://x.com/a/status/${id}`, getAttribute: () => `/a/status/${id}` }
+    return { querySelector(selector) {
+      if (selector === 'time') return { closest: () => link }
+      if (selector === '[data-testid="like"]') return { click() { clicks += 1 } }
+      return null
+    } }
+  })
+  const saved = {}
+  let controller
+  controller = autoLike.createController({
+    document: { querySelector: () => ({ querySelectorAll: () => articles }), querySelectorAll: () => [oldToast] },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+    storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+    now: () => clock, target: 'posts', onLimit() { limits += 1 },
+    onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(clicks, 2)
+  assert.equal(limits, 1)
+  assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
 })
 
 test('like count limit cools down, preserves history, then resumes without a rapid retry', async () => {
@@ -1381,7 +1651,7 @@ test('like count limit cools down, preserves history, then resumes without a rap
   await controller.start()
   assert.equal(likes, 2)
   assert.equal(controller.snapshot().count, 1)
-  assert.equal(saved['xrcAutoLikeCooldown:a'].retries, 1)
+  assert.equal(saved['xrcAutoLikeCooldownV2:a'].retries, 1)
   assert.deepEqual(saved['xrcAutoLikeSeen:a:posts'], ['123'])
   assert.ok(updates.some((status) => /分钟后自动重试/.test(status)))
   assert.deepEqual(limits, [['a', 'posts', 'rate-limited']])
@@ -1390,9 +1660,16 @@ test('like count limit cools down, preserves history, then resumes without a rap
 test('repeated like rate limits extend the cooldown without rapidly retrying', async () => {
   let clock = 1000
   const saved = {}
+  let warning = null
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="like"]') return { click() { warning = { textContent: 'You have exceeded your limit' } } }
+    return null
+  } }
   let controller
   controller = autoLike.createController({
-    document: { querySelector: () => ({ querySelectorAll: () => [] }), querySelectorAll: () => [{ textContent: 'You have exceeded your limit' }] },
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }), querySelectorAll: () => warning ? [warning] : [] },
     window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {} },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
     accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [10, 20, 30],
@@ -1401,14 +1678,14 @@ test('repeated like rate limits extend the cooldown without rapidly retrying', a
   await controller.start()
   assert.match(controller.snapshot().status, /已停止自动点赞/)
   assert.equal(controller.snapshot().rateLimitRetries, 4)
-  assert.equal(saved['xrcAutoLikeCooldown:a'].until - saved['xrcAutoLikeCooldown:a'].lastLimitedAt, 24 * 60 * 60 * 1000)
+  assert.equal(saved['xrcAutoLikeCooldownV2:a'].until - saved['xrcAutoLikeCooldownV2:a'].lastLimitedAt, 24 * 60 * 60 * 1000)
 })
 
 test('a restarted like task respects the saved account cooldown before clicking', async () => {
   let clock = 1000
   let clickedAt = 0
   let liked = false
-  const saved = { 'xrcAutoLikeCooldown:a': { until: 2000, retries: 1, lastLimitedAt: 900 } }
+  const saved = { 'xrcAutoLikeCooldownV2:a': { until: 2000, retries: 1, lastLimitedAt: 900 } }
   const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
   const article = { querySelector(selector) {
     if (selector === 'time') return { closest: () => link }
@@ -1432,7 +1709,7 @@ test('a restarted like task respects the saved account cooldown before clicking'
 test('a paused like task stops promptly without clicking another post', async () => {
   let clock = 1000
   let clicks = 0
-  const saved = { 'xrcAutoLikeCooldown:a': { until: 3601000, retries: 1, lastLimitedAt: 900 } }
+  const saved = { 'xrcAutoLikeCooldownV2:a': { until: 3601000, retries: 1, lastLimitedAt: 900 } }
   let controller
   controller = autoLike.createController({
     document: { querySelector: () => ({ querySelectorAll: () => [{ querySelector: () => ({ click() { clicks += 1 } }) }] }), querySelectorAll: () => [] },
@@ -1489,7 +1766,8 @@ test('auto-like cools down after an automation warning and retries when it clear
   let clock = 1000
   let clicks = 0
   let liked = false
-  let warningUntil = 1200
+  let warningUntil = 0
+  let warning = null
   const updates = []
   const saved = {}
   let controller
@@ -1497,13 +1775,19 @@ test('auto-like cools down after an automation warning and retries when it clear
     querySelector(selector) {
       if (selector === 'time') return { closest: () => ({ href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click: () => {} }) }
       if (selector === '[data-testid="unlike"]') return liked ? {} : null
-      if (selector === '[data-testid="like"]') return liked ? null : { click: () => { clicks += 1; liked = true } }
+      if (selector === '[data-testid="like"]') return liked ? null : { click: () => {
+        clicks += 1
+        if (clicks === 1) {
+          warningUntil = clock + 600
+          warning = { textContent: 'This request looks like it might be automated' }
+        } else liked = true
+      } }
       return null
     },
   }
   const doc = {
     querySelector: () => ({ querySelectorAll: () => [article] }),
-    querySelectorAll: () => clock < warningUntil ? [{ textContent: 'This request looks like it might be automated' }] : [],
+    querySelectorAll: () => clock < warningUntil ? [warning] : [],
   }
   controller = autoLike.createController({
     document: doc,
@@ -1513,10 +1797,10 @@ test('auto-like cools down after an automation warning and retries when it clear
     onUpdate(snapshot) { updates.push(snapshot.status); if (snapshot.posts === 1) controller.stop() },
   })
   await controller.start()
-  assert.equal(clicks, 1)
+  assert.equal(clicks, 2)
   assert.ok(updates.some((status) => /疑似自动化.*分钟后自动重试/.test(status)))
-  assert.equal(saved['xrcAutoLikeCooldown:default'].reason, 'automation')
-  assert.equal(saved['xrcAutoLikeCooldown:default'].until, 601000)
+  assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
+  assert.ok(saved['xrcAutoLikeCooldownV2:default'].until > 601000)
   assert.deepEqual(saved['xrcAutoLikeSeen:default:posts'], ['123'])
   assert.equal(controller.snapshot().running, false)
   assert.equal(controller.snapshot().count, 1)
@@ -1526,11 +1810,18 @@ test('an automation cooldown can be stopped without clicking a like', async () =
   let clock = 1000
   let clicks = 0
   const saved = {}
+  let warning = null
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="like"]') return { click() { clicks += 1; warning = { textContent: 'This request looks like it might be automated' } } }
+    return null
+  } }
   let controller
   controller = autoLike.createController({
     document: {
-      querySelector: () => ({ querySelectorAll: () => [{ querySelector: (selector) => selector === '[data-testid="like"]' ? { click() { clicks += 1 } } : null }] }),
-      querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
+      querySelector: () => ({ querySelectorAll: () => [article] }),
+      querySelectorAll: () => warning ? [warning] : [],
     },
     window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {} },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
@@ -1538,10 +1829,10 @@ test('an automation cooldown can be stopped without clicking a like', async () =
     onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
   })
   await controller.start()
-  assert.equal(clicks, 0)
+  assert.equal(clicks, 1)
   assert.equal(controller.snapshot().running, false)
-  assert.equal(saved['xrcAutoLikeCooldown:default'].reason, 'automation')
-  assert.ok(saved['xrcAutoLikeCooldown:default'].until > clock)
+  assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
+  assert.ok(saved['xrcAutoLikeCooldownV2:default'].until > clock)
 })
 
 test('settings auto-save batches edits and flushes before a task starts', async () => {
@@ -2081,12 +2372,14 @@ test('used source IDs survive a fresh scheduled-post tab', async () => {
   await first.rememberUsedSourceId('source-123')
   await first.rememberPublishedPost('source-123', '保留钩子\n这条内容已经发出', '表达方式影响讨论', {
     source: 'opinion', sourceLabel: '2aran 舆情分析', sourceText: '某个公开事件引发讨论',
+    imageStyle: 'text-card', cardVariant: 'editorial',
     sourceUrl: 'https://example.com/source', sourcePageUrl: 'https://2aran.com/public-opinion',
   })
   const second = makeTab()
   await second.loadHistory()
   assert.equal(second.readUsedSourceIds().has('source-123'), true)
   assert.equal(storage.xrcPosterHistoryV2.published[0].topic, '表达方式影响讨论')
+  assert.equal(storage.xrcPosterHistoryV2.published[0].cardVariant, 'editorial')
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourceLabel, '2aran 舆情分析')
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourceUrl, 'https://example.com/source')
   assert.equal(storage.xrcPosterHistoryV2.published[0].sourcePageUrl, 'https://2aran.com/public-opinion')
@@ -2970,6 +3263,55 @@ test('DeepSeek receives both sides of a notification conversation', async () => 
   }
 })
 
+test('AI timeline replies reserve about one fifth for a persistent Grok invitation', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const choice = source.match(/  function shouldInviteGrok\(mode, replyMode, draw = Math\.random\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(choice)
+  const context = vm.createContext({ GROK_REPLY_PROBABILITY: 0.2 })
+  vm.runInContext(`${choice}\nglobalThis.choose = shouldInviteGrok`, context)
+  assert.equal(context.choose('timeline', 'ai', () => 0), true)
+  assert.equal(context.choose('timeline', 'ai', () => 0.1999), true)
+  assert.equal(context.choose('timeline', 'ai', () => 0.2), false)
+  assert.equal(context.choose('notifications', 'ai', () => 0), false)
+  assert.equal(context.choose('timeline', 'template', () => 0), false)
+  assert.match(source, /pendingGrokInvite: state\.pendingGrokInvite/)
+  assert.match(source, /pendingGrokInvite: Boolean\(parsed\.pendingGrokInvite\)/)
+  assert.match(source, /sendAiMessage\("xrc-ai-generate", postText, phrase, conversation, state\.pendingGrokInvite\)/)
+})
+
+test('selected Grok reply prompt asks for a specific second perspective', async () => {
+  const originalFetch = globalThis.fetch
+  let request = null
+  let modelText = '这个处理确实太急了。@grok 还有哪条公开依据能支持另一种判断？'
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.fetch = async (_url, options) => {
+    request = JSON.parse(options.body)
+    return { ok: true, async json() { return { choices: [{ message: { content: modelText } }] } } }
+  }
+  try {
+    const reply = await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true })
+    assert.match(reply, /@grok/)
+    assert.match(request.messages[0].content, /先用自己的话回应原帖里一个具体点/)
+    assert.match(request.messages[0].content, /补充另一种观点或依据/)
+    assert.equal(request.max_tokens, 160)
+    modelText = '这个处理确实太急了。还有哪条公开依据能支持另一种判断？'
+    assert.match(await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true }), /^@grok /)
+    modelText = '@Grok 这个处理太急了。@grok 还有什么公开依据？'
+    assert.equal((await background.callDeepSeek({ postText: '项目突然提前上线', inviteGrok: true })).match(/@grok/giu)?.length, 1)
+    modelText = '这个处理确实太急了。@grok 还有其他依据吗？'
+    assert.doesNotMatch(await background.callDeepSeek({ postText: '项目突然提前上线' }), /@grok/)
+    assert.match(request.messages[0].content, /不要提及 @grok/)
+    await background.callDeepSeek({
+      postText: '生日快乐', inviteGrok: true,
+      conversation: { ownPost: { text: '今天过生日' }, reply: { text: '生日快乐' } },
+    })
+    assert.match(request.messages[0].content, /不要提及 @grok/)
+  } finally {
+    globalThis.fetch = originalFetch
+    delete globalThis.chrome
+  }
+})
+
 test('temporary DeepSeek overload falls back to NAS with the same reply context', async () => {
   const originalFetch = globalThis.fetch
   const originalReceipt = globalThis.XrcCommunityReceipt
@@ -3491,7 +3833,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.36')
+  assert.equal(manifest.version, '3.32.43')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -3606,7 +3948,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /document\.title/)
   assert.match(backgroundSource, /replace\(\/\^@\[A-Za-z0-9_\]\{1,40\} · \/u, ""\)/)
   assert.match(content, /data-xrc-global-bar/)
-  assert.match(content, /data-xrc-global-key/)
+  assert.match(content, /data-xrc-key-guide/)
   assert.ok(content.indexOf('class="xrc-global-bar"') < content.indexOf('class="xrc-flow-launch"'))
   assert.doesNotMatch(content, /xrc-global-paces/)
   assert.match(content, /xrc-round-pace/)
@@ -3748,14 +4090,15 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /replyMode: "ai"/)
   assert.match(content, /function validReplyMode\(\) \{\s*return "ai";/)
   assert.doesNotMatch(content, /data-xrc-mode="ai"/)
-  assert.match(content, /data-xrc-ai-key/)
+  assert.doesNotMatch(content, /data-xrc-ai-key/)
   assert.doesNotMatch(content, /type="password"/)
   assert.match(content, /data-xrc-secret-input/)
   assert.match(content, /data-1p-ignore="true"/)
   assert.match(content, /不要填写 X 登录密码/)
   assert.match(content, /xrc-ai-generate/)
   assert.doesNotMatch(content, /connectionVerified|测试连接|xrc-ai-test|data-xrc-ai-test/)
-  assert.match(content, /data-xrc-ai-key/)
+  assert.match(content, /尚未配置 DeepSeek API Key · 点击前往模型设置/)
+  assert.match(content, /openModelSettingsForKey\(panel\)/)
   assert.doesNotMatch(content, /state\.replyMode === "ai" && !state\.aiKeySaved/)
   assert.doesNotMatch(content, /AI 模式需要先通过连接测试/)
   assert.match(content, /不会发送 X 登录 Cookie/)
@@ -3776,8 +4119,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
   assert.match(content, /慢、中、快、超快/)
-  assert.match(catalog, /x-reply-clipboard-extension-v3\.32\.22\.zip/)
-  assert.match(resourcePage, /const VERSION = '3\.32\.22'/)
+  assert.ok(catalog.includes(`x-reply-clipboard-extension-v${manifest.version}.zip`))
+  assert.ok(resourcePage.includes(`const VERSION = '${manifest.version}'`))
   assert.match(resourcePage, /X高频互动助手/)
   assert.match(resourcePage, /互关浇友/)
   assert.match(resourcePage, /通知回复/)
@@ -3976,7 +4319,7 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.match(background.POST_SYSTEM_PROMPT, /2～3 个短段/)
   assert.match(backgroundText, /https:\/\/api\.deepseek\.com\/chat\/completions/)
   assert.match(backgroundText, /thinking: \{ type: "disabled" \}/)
-  assert.match(backgroundText, /max_tokens: 96/)
+  assert.match(backgroundText, /max_tokens: grokReply \? 160 : 96/)
   assert.match(backgroundText, /已被 X 判定为重复/)
   assert.match(backgroundText, /xrc-ai-post-generate/)
   assert.match(backgroundText, /xrc-ai-news-rewrite/)

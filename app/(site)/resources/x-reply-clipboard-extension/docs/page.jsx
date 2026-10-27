@@ -93,6 +93,18 @@ const FLOW_BUTTON_ROWS = [
   ['已停止', '已停止 · 点击重新启动', '点击后重新启动全流程。'],
 ]
 
+const SINGLE_BUTTON_ROWS = [
+  ['正在执行', '运行中 · 点击停止（评论、点赞、发帖按各自按钮显示）', '只停止当前任务；正常排程的“立即开始”仍只跳过普通等待。'],
+  ['在其他窗口执行', '运行中 · 点击前往', '跳转到正在执行的任务窗口，不重复启动。'],
+  ['后台队列或自动恢复倒计时', '等待中 · 点击停止', '只取消这一项的自动调度；其他任务继续等待或执行。剩余时间和原因见按钮提示、任务详情。'],
+  ['调度关闭但任务仍等待', '等待中 · 点击查看', '打开对应任务窗口查看当前等待状态。'],
+  ['状态暂未确认', '待确认 · 点击查看', '打开对应任务窗口核对状态，不直接启动第二份任务。'],
+  ['连续受限，需人工检查', '需人工检查 · 点击启动', '确认账号状态后，单独解除该任务的限制标记并重新启动。'],
+  ['已经手动停止', '已停止 · 点击启动', '单独恢复该任务，不重启其他任务。'],
+  ['正在停止', '停止中 · 请稍候', '暂不可点击，等待当前步骤结束。'],
+  ['没有运行记录', '启动单项任务', '单独启动当前任务。'],
+]
+
 const RELEASES = [
   {
     version: 'v3.32.21',
@@ -230,9 +242,9 @@ export default function XReplyClipboardDocsPage() {
             <p className="text-[var(--site-ink)]">全流程启动时，评论帖子和评论通知保持运行；点赞、关注和发帖进入后台队列，同一时间只启动一项。等待冷却时，后台先保存恢复时间，再关闭对应任务窗口，到期重新打开。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>评论帖子、评论通知、点赞帖子、点赞评论、清理未回关、回关粉丝和定时发帖各用自己的任务窗口。</li>
-              <li>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。单项按钮只控制当前任务。</li>
-              <li>主按钮按下方“状态和按钮速查”显示当前状态与点击动作。全流程手动暂停后显示“已暂停 · 点击启动全部”，仍可点击；顶部同步显示“全流程已暂停”。各任务的“停止”只停止该任务；风控等待不会暂停其他任务。</li>
-              <li>详情中的“执行中”以任务窗口的近期确认状态为准；有任务执行时主按钮显示“运行中 · 点击暂停全部”。停止超过 15 秒可点击重试停止；全部任务连续受限时保留“需人工检查”，已开启的自动调度仍可手动暂停。</li>
+              <li>顶部页签会打开尚未创建的任务窗口，已打开则跳转；不会重启任务。任务详情中的“前往”执行相同的跳转，不启动任务。单项按钮只控制当前任务。</li>
+              <li>主按钮按下方“状态和按钮速查”显示当前状态与点击动作。单项按钮点击前会重新读取后台调度状态，排队和倒计时期间不会误启动。全流程手动暂停后显示“已暂停 · 点击启动全部”，仍可点击；顶部同步显示“全流程已暂停”。各任务的“停止”只停止该任务；风控等待不会暂停其他任务。</li>
+              <li>详情和七项子功能顶部共用后台状态。连续受限时，子功能也显示“需人工检查”、可读原因和恢复动作；本地进度归零不代表受限标记已清除。打开详情刷新后台状态后，整个面板会同步更新。详情中的“执行中”以任务窗口的近期确认状态为准；有任务执行时主按钮显示“运行中 · 点击暂停全部”。停止超过 15 秒可点击重试停止；全部任务连续受限时保留“需人工检查”，已开启的自动调度仍可手动暂停。</li>
               <li>队列任务每次运行最多 15 分钟，安全结束当前动作后轮换。连续 3 次受限会停止该任务的自动重试，详情中保留原因，人工检查后可单项重新启动。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
             </ul>
@@ -245,6 +257,17 @@ export default function XReplyClipboardDocsPage() {
                 <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">当前情况</th><th className="px-3 py-2">按钮显示</th><th className="px-3 py-2">点击结果</th></tr></thead>
                 <tbody>
                   {FLOW_BUTTON_ROWS.map(([condition, label, action]) => (
+                    <tr key={condition} className="border-t border-[var(--site-line)]"><td className="px-3 py-2">{condition}</td><td className="px-3 py-2 font-semibold text-[var(--site-ink)]">{label}</td><td className="px-3 py-2">{action}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">单项任务按钮</h3>
+            <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
+              <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
+                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">当前情况</th><th className="px-3 py-2">按钮显示</th><th className="px-3 py-2">点击结果</th></tr></thead>
+                <tbody>
+                  {SINGLE_BUTTON_ROWS.map(([condition, label, action]) => (
                     <tr key={condition} className="border-t border-[var(--site-line)]"><td className="px-3 py-2">{condition}</td><td className="px-3 py-2 font-semibold text-[var(--site-ink)]">{label}</td><td className="px-3 py-2">{action}</td></tr>
                   ))}
                 </tbody>
@@ -293,8 +316,9 @@ export default function XReplyClipboardDocsPage() {
             <div className="space-y-3">
               <TaskBlock id="comments" badge="评" title="评论管理" summary="评论帖子 · 评论通知">
                 <ul className="list-disc space-y-2 pl-5">
-                  <li id="reply-timeline" className="scroll-mt-24">评论帖子从首页找可回复的帖子，不执行点赞。</li>
-                  <li id="reply-notifications" className="scroll-mt-24">评论通知只处理最近 2 小时内别人对当前账号的回复，不执行点赞。</li>
+                  <li id="reply-timeline" className="scroll-mt-24">评论帖子从首页找可回复的帖子，不执行点赞。默认 AI 模式下，每条独立抽取：约 80% 直接回应原帖，约 20% 先说自己的具体看法，再在末尾 @grok 一次，请它补充另一个有依据的角度。抽取结果随待发回复保存，重试和重复换写沿用同一选择。</li>
+                  <li id="reply-notifications" className="scroll-mt-24">评论通知只处理最近 2 小时内别人对当前账号的回复，不执行点赞，也不加入 @grok；始终直接回应对方最新一句。</li>
+                  <li>这是评论正文目前唯一的概率分配：每条独立按 20% 概率抽取，不保证每天恰好五条里有一条。手动切换到模板模式时，全部使用固定话术，不参与 AI 模式的 80%／20% 抽取；提及 Grok 也不保证它一定回复。</li>
                   <li>两项各在独立窗口运行，保留去重进度。通知列表扫完后等待 10 分钟，再检查新通知。</li>
                   <li>普通轮次和周期等待可“立即开始”；疑似自动化提示进入上面的递增冷却。</li>
                 </ul>
@@ -303,7 +327,8 @@ export default function XReplyClipboardDocsPage() {
                 <ul className="list-disc space-y-2 pl-5">
                   <li id="likes-posts" className="scroll-mt-24">点赞帖子处理首页帖。</li>
                   <li id="likes-replies" className="scroll-mt-24">点赞评论逐帖打开评论，只点赞评论，不重复点赞原帖。</li>
-                  <li>两项独立记录进度。普通次数限制使用较长冷却；疑似自动化提示使用 10 分钟起的递增冷却。</li>
+                  <li>两项独立记录进度。点击后以 X 的“已点赞”状态确认成功。未确认且出现新限制提示时进入冷却；如果旧 X 限制提示一直存在，连续两次未确认才进入冷却。插件面板文字和普通等待提示不算受限。</li>
+                  <li>确认受限后，普通次数限制使用较长冷却；疑似自动化提示使用 10 分钟起的递增冷却。</li>
                 </ul>
               </TaskBlock>
               <TaskBlock id="mutual-rules" badge="关" title="关注管理" summary="清理未回关 · 回关粉丝">
@@ -318,7 +343,7 @@ export default function XReplyClipboardDocsPage() {
                 <ul className="list-disc space-y-2 pl-5">
                   <li>先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。</li>
                   <li>模型返回可用正文后写入待发列表，成功入队一条即进入发送；记录来源和原始链接，列表发完再取新素材。</li>
-                  <li>新帖子按条随机选择格式：20% 概率配原创背景文字卡片，40% 为原篇幅纯文字，40% 为精简纯文字。精简稿目标约 35～60 字，写成 3～4 个短行，每行之间留一个空行。抽取结果随待发稿保存，重试不改变。发帖框若已有图片，会等待人工确认或移除，避免误发。</li>
+                  <li>新帖子按条随机选择格式：20% 概率配原创文字卡片，40% 为原篇幅纯文字，40% 为精简纯文字。文字卡片展示标题和正文，在纸张手记、杂志分栏、暖色重点、深色渐变四种版式间轮换。精简稿目标约 35～60 字，写成 3～4 个短行，每行之间留一个空行。抽取结果随待发稿保存，重试不改变。发帖框若已有图片，会等待人工确认或移除，避免误发。</li>
                   <li>第一条立即发送，其后按所选挡位等待；X 提示重复时跳过该条。疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
                 </ul>
               </TaskBlock>
@@ -330,7 +355,7 @@ export default function XReplyClipboardDocsPage() {
               <li>频率设置里可修改各挡位数字；工作区只选择边界测试、慢、中、快、超快。任务运行时不能改挡位，停止后修改会自动保存。</li>
               <li>回复默认“边界测试”：起步每条 6～10 秒、每轮 20～30 条、每次 2～3 轮、周期休息 10～15 分钟；根据已确认的运行结果调整。慢、中、快、超快的具体数字以“频率设置”为准。</li>
               <li>发帖默认“中”：两条之间随机等待 25～35 分钟；慢为 50～70 分钟，快为 12～18 分钟，超快为 6～10 分钟。</li>
-              <li>回复模型、DeepSeek API Key 和两种提示词在“模型设置”管理。发帖正文每行之间留一个空行；精简稿目标约 35～60 字、3～4 行。随机开头和措辞由提示词控制，本地不按字数或风格退稿。</li>
+              <li>回复模型、DeepSeek API Key 和两种提示词在“模型设置”管理。尚未配置 DeepSeek 时，首页只显示前往模型设置的引导，点击后定位密钥输入框。发帖正文每行之间留一个空行；精简稿目标约 35～60 字、3～4 行。随机开头和措辞由提示词控制，本地不按字数或风格退稿。</li>
               <li>插件不设每日回复总量；清理未回关不设批次或每日数量上限。平台限制仍会触发对应等待。</li>
             </ul>
           </Section>

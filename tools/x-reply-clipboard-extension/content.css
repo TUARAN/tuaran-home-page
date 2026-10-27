@@ -1042,6 +1042,27 @@
   scrollbar-width: thin;
 }
 
+#x-reply-clipboard-panel .xrc-task-schedule-notice:not([hidden]) {
+  display: grid;
+  gap: 5px;
+  padding: 11px 13px;
+  border: 1px solid rgba(199, 117, 28, 0.25);
+  border-radius: 12px;
+  background: #fff4e8;
+  color: #744515;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+#x-reply-clipboard-panel .xrc-task-schedule-notice[data-state="blocked"] {
+  border-color: rgba(191, 45, 45, 0.28);
+  background: #fff0ef;
+  color: #a92828;
+}
+
+#x-reply-clipboard-panel .xrc-task-schedule-notice strong { font-size: 12px; }
+#x-reply-clipboard-panel .xrc-task-schedule-notice p { margin: 0; overflow-wrap: anywhere; }
+
 #x-reply-clipboard-panel .xrc-mutual-body { display: none; }
 #x-reply-clipboard-panel .xrc-post-body { display: none; }
 #x-reply-clipboard-panel .xrc-like-body { display: none; }
@@ -2276,7 +2297,7 @@
 #x-reply-clipboard-panel .xrc-flow-details-card ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 #x-reply-clipboard-panel .xrc-flow-detail-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 3px 8px;
   padding: 8px 10px;
@@ -2286,6 +2307,9 @@
 }
 #x-reply-clipboard-panel .xrc-flow-detail-row strong { min-width: 0; color: var(--xrc-text); font-size: 12px; }
 #x-reply-clipboard-panel .xrc-flow-detail-row small { grid-column: 1 / -1; color: var(--xrc-muted); font-size: 10px; }
+#x-reply-clipboard-panel .xrc-flow-detail-row button { grid-column: 3; grid-row: 1; padding: 3px 7px; border: 1px solid var(--xrc-line); border-radius: 6px; background: var(--xrc-white); color: var(--xrc-accent); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
+#x-reply-clipboard-panel .xrc-flow-detail-row button:hover,
+#x-reply-clipboard-panel .xrc-flow-detail-row button:focus-visible { border-color: var(--xrc-accent); outline: 0; }
 #x-reply-clipboard-panel .xrc-flow-detail-status { color: var(--xrc-muted); font-size: 11px; font-weight: 800; }
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="running"] .xrc-flow-detail-status { color: #087c62; }
 #x-reply-clipboard-panel .xrc-flow-detail-row[data-state="waiting"] .xrc-flow-detail-status { color: #a96409; }
@@ -2326,34 +2350,29 @@
 
 #x-reply-clipboard-panel .xrc-global-bar[hidden] { display: none; }
 
-#x-reply-clipboard-panel .xrc-global-key {
+#x-reply-clipboard-panel .xrc-key-guide {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
   min-width: 0;
   min-height: 36px;
-  padding: 0 11px;
-  border: 1px solid var(--xrc-line);
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid rgba(29, 155, 240, 0.3);
   border-radius: 10px;
-  background: var(--xrc-soft);
-}
-
-#x-reply-clipboard-panel .xrc-global-key > span {
-  flex: 0 0 auto;
-  color: var(--xrc-muted);
+  background: rgba(29, 155, 240, 0.08);
+  color: var(--xrc-accent);
+  cursor: pointer;
+  font: inherit;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  text-align: center;
 }
-
-#x-reply-clipboard-panel .xrc-global-key .xrc-start-key {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  height: 28px;
-  border: 0;
-  background: transparent;
-  text-align: right;
+#x-reply-clipboard-panel .xrc-key-guide:hover,
+#x-reply-clipboard-panel .xrc-key-guide:focus-visible {
+  border-color: var(--xrc-accent);
+  background: rgba(29, 155, 240, 0.14);
+  outline: 0;
 }
 
 #x-reply-clipboard-panel .xrc-flow-start {
@@ -2466,8 +2485,7 @@
   #x-reply-clipboard-panel .xrc-header-actions { background: rgba(15, 20, 25, 0.72); }
   #x-reply-clipboard-panel .xrc-header-menu button { background: rgba(15, 20, 25, 0.9); }
   #x-reply-clipboard-panel .xrc-workspace-nav { background: transparent; }
-  #x-reply-clipboard-panel .xrc-global-key { background: var(--xrc-soft); }
-  #x-reply-clipboard-panel .xrc-global-key .xrc-start-key { background: transparent; }
+  #x-reply-clipboard-panel .xrc-key-guide { background: var(--xrc-soft); }
   #x-reply-clipboard-panel .xrc-assistant-tabs [data-xrc-assistant-slot="reply"] { --xrc-tab-color: #73c3f6; --xrc-tab-tint: rgba(29, 155, 240, 0.16); }
   #x-reply-clipboard-panel .xrc-assistant-tabs [data-xrc-assistant-slot="likes"] { --xrc-tab-color: #ff92b2; --xrc-tab-tint: rgba(225, 66, 118, 0.18); }
   #x-reply-clipboard-panel .xrc-assistant-tabs [data-xrc-assistant-slot="mutual"] { --xrc-tab-color: #70d1b5; --xrc-tab-tint: rgba(15, 138, 114, 0.18); }

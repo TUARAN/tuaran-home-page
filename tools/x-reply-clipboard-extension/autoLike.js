@@ -1,8 +1,8 @@
 (function (root) {
   "use strict";
 
-  const RATE_LIMIT_WARNING = /(?:rate limit|daily limit|too many requests|try again later|please wait|(?:exceeded|reached|over) (?:your |the )?(?:daily )?limit|limit exceeded|too many likes|操作过于频繁|操作太频繁|稍后再试|超出限制|超过限制|达到上限|点赞次数.*上限)/iu;
-  const AUTOMATION_WARNING = /(?:automated|unusual activity|temporarily restricted|cannot like|疑似自动化|点赞受限|账号受限)/iu;
+  const RATE_LIMIT_WARNING = /(?:rate limit|daily limit|too many requests|(?:exceeded|reached) (?:your |the )?(?:daily )?limit|limit exceeded|too many likes|操作过于频繁|操作太频繁|超出限制|超过限制|达到上限|点赞次数.*上限)/iu;
+  const AUTOMATION_WARNING = /(?:This request looks like it might be automated|unusual activity|temporarily restricted|cannot like|请求似乎可能是自动化操作|疑似自动化|点赞受限|账号受限)/iu;
   const HISTORY_LIMIT = 3000;
   const RATE_LIMIT_COOLDOWNS_MS = [60 * 60 * 1000, 2 * 60 * 60 * 1000, 6 * 60 * 60 * 1000];
   const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -25,8 +25,18 @@
     return article?.querySelector('[data-testid="like"]') || null;
   }
 
-  function restrictionKind(doc) {
-    const alerts = [...doc.querySelectorAll('[role="alert"], [role="dialog"], [data-testid="toast"], [data-testid="error-detail"]')];
+  function restrictionAlerts(doc) {
+    return [...doc.querySelectorAll('[role="alert"], [role="dialog"], [data-testid="toast"], [data-testid="error-detail"]')]
+      .filter((node) => !node.hidden && node.getAttribute?.('aria-hidden') !== 'true'
+        && !node.closest?.('#x-reply-clipboard-panel, [hidden], [aria-hidden="true"]'));
+  }
+
+  function restrictionSnapshot(doc) {
+    return new Map(restrictionAlerts(doc).map((node) => [node, String(node.textContent || '').trim()]));
+  }
+
+  function restrictionKind(doc, before = null) {
+    const alerts = restrictionAlerts(doc).filter((node) => !before || before.get(node) !== String(node.textContent || '').trim());
     if (alerts.some((node) => AUTOMATION_WARNING.test(node.textContent || ''))) return 'automation';
     return alerts.some((node) => RATE_LIMIT_WARNING.test(node.textContent || '')) ? 'rate' : '';
   }
@@ -36,7 +46,8 @@
   function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
     const selectedTarget = ['posts', 'replies'].includes(target) ? target : 'both';
     const storageKey = `xrcAutoLikeSeen:${accountKey}${selectedTarget === 'both' ? '' : `:${selectedTarget}`}`;
-    const cooldownKey = `xrcAutoLikeCooldown:${accountKey}`;
+    // Previous cooldowns could come from an unrelated or already-dismissed page alert.
+    const cooldownKey = `xrcAutoLikeCooldownV2:${accountKey}`;
     const seen = new Set();
     let running = false;
     let stopping = false;
@@ -50,6 +61,7 @@
     let cooldownReason = 'rate';
     let rateLimitRetries = 0;
     let lastLimitedAt = 0;
+    let lingeringWarningFailures = 0;
 
     const snapshot = () => ({ running, stopping, count, unconfirmed, posts, status, cooldownUntil, rateLimitRetries });
     const update = (message) => {
@@ -58,12 +70,9 @@
     };
     const wait = (ms) => new Promise((resolve) => win.setTimeout(resolve, ms));
     const active = () => running && !stopping;
-    const rateLimitError = () => Object.assign(new Error('X 提示点赞次数受限'), { xrcRateLimit: true });
-    const checkRestriction = () => {
-      const kind = restrictionKind(doc);
-      if (kind === 'automation') throw Object.assign(new Error('X 提示疑似自动化或账号受限'), { xrcAutomationLimit: true });
-      if (kind === 'rate') throw rateLimitError();
-    };
+    const restrictionError = (kind) => kind === 'automation'
+      ? Object.assign(new Error('X 提示疑似自动化或账号受限'), { xrcAutomationLimit: true })
+      : Object.assign(new Error('X 提示点赞次数受限'), { xrcRateLimit: true });
     const pauseForInteraction = (ms = 2500) => {
       if (active()) interactionUntil = Math.max(interactionUntil, Date.now() + ms);
     };
@@ -154,24 +163,43 @@
       await waitForCooldown();
       await waitForInteraction();
       if (!active()) return;
-      checkRestriction();
       const button = likeButton(article);
       if (!button) return;
       const id = tweetId(article);
+      const alertsBeforeClick = restrictionSnapshot(doc);
       try { button.click(); } catch (error) {
         unconfirmed += 1;
         update('当前点赞按钮暂时不可用，继续下一条');
         return;
       }
-      await wait(500);
-      if (!active()) return;
-      checkRestriction();
-      const current = id ? tweets().find((item) => tweetId(item) === id) : null;
-      if (!article.querySelector('[data-testid="unlike"]') && !current?.querySelector('[data-testid="unlike"]')) {
+      let confirmed = false;
+      let warning = '';
+      for (let attempt = 0; active() && attempt < 12; attempt += 1) {
+        await wait(250);
+        if (!active()) return;
+        const current = id ? tweets().find((item) => tweetId(item) === id) : null;
+        if (article.querySelector('[data-testid="unlike"]') || current?.querySelector('[data-testid="unlike"]')) {
+          confirmed = true;
+          break;
+        }
+        warning ||= restrictionKind(doc, alertsBeforeClick);
+      }
+      if (!confirmed && warning) {
+        lingeringWarningFailures = 0;
+        throw restrictionError(warning);
+      }
+      if (!confirmed) {
+        const lingeringWarning = restrictionKind(doc);
+        lingeringWarningFailures = lingeringWarning ? lingeringWarningFailures + 1 : 0;
+        if (lingeringWarningFailures >= 2) {
+          lingeringWarningFailures = 0;
+          throw restrictionError(lingeringWarning);
+        }
         unconfirmed += 1;
         update('这条点赞结果暂未显示，继续下一条');
         return;
       }
+      lingeringWarningFailures = 0;
       count += 1;
       try { onLike(id, accountKey, selectedTarget); } catch (error) { /* Daily report must not stop liking. */ }
       update(`已确认点赞 ${count} 条，已查看 ${posts} 个帖子`);
@@ -247,7 +275,6 @@
         try {
           await waitForCooldown();
           if (!active()) break;
-          checkRestriction();
           if (!/^\/(?:home)?\/?$/u.test(win.location.pathname)) await returnHome();
           let found = false;
           for (const article of tweets()) {
@@ -280,12 +307,12 @@
           win.scrollBy(0, Math.max(700, win.innerHeight || 700));
           await wait(1000);
         } catch (error) {
-          if (error?.xrcRateLimit || restrictionKind(doc) === 'rate') {
+          if (error?.xrcRateLimit) {
             await coolDownAfterRestriction('rate');
             stalled = 0;
             continue;
           }
-          if (error?.xrcAutomationLimit || restrictionKind(doc) === 'automation') {
+          if (error?.xrcAutomationLimit) {
             await coolDownAfterRestriction('automation');
             stalled = 0;
             continue;

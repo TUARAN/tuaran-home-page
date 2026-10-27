@@ -94,7 +94,8 @@
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.36";
+  const GROK_REPLY_PROBABILITY = 0.2;
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.43";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -169,6 +170,7 @@
     aiStatus: "尚未配置 DeepSeek API Key",
     pendingReply: "",
     pendingTweetId: "",
+    pendingGrokInvite: false,
     lastReply: "",
     mutual: mutualApi?.snapshot?.() || { running: false, stopping: false, mode: "", status: "选择一项互关任务开始", unfollowed: 0, followedBack: 0, targetFollowed: 0, sharedDailyFollowed: 0, sharedBatchProgress: 0, skipped: 0, errors: 0, cooldownUntil: 0 },
     poster: postApi?.snapshot?.() || { running: false, stopping: false, status: "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。", count: 0, errors: 0, startedAt: null, nextPostAt: 0, currentPost: "", lastPost: "", publishQueue: [] },
@@ -222,7 +224,8 @@
     return likeController;
   }
 
-  function toggleLikes() {
+  async function toggleLikes() {
+    if (await stopScheduledWaitingTask(currentTaskKey(), Boolean(likeState.running))) return;
     const controller = getLikeController();
     if (!controller) return;
     if (likeState.running) {
@@ -230,6 +233,7 @@
       controller.stop();
     }
     else {
+      if (!await resumeManuallyStoppedTask(currentTaskKey())) return;
       state.riskPaused = false;
       controller.start();
     }
@@ -659,8 +663,10 @@
   function taskTabHint(mode) {
     const tabId = Number(openTaskTabs[mode]);
     const label = TASK_MODE_LABELS[mode] || "任务";
+    const scheduledStatus = flowTaskOverview(pluginRuntime).tasks.find((task) => task.key === mode)?.status;
     if (mode === currentTaskKey()) return `当前${label}页面`;
     if (Number.isInteger(tabId) && tabId > 0) return `可以跳转到已打开的${label}页面`;
+    if (taskSchedule.enabled && scheduledStatus === "waiting") return `${label}等待后台调度，届时自动打开任务窗口`;
     return `尚未启动，点击打开${label}页面`;
   }
 
@@ -728,8 +734,11 @@
     const selected = validTaskKey(mode);
     const label = TASK_MODE_LABELS[selected] || "任务";
     if (selected === currentTaskKey()) {
+      const scheduledStatus = flowTaskOverview(pluginRuntime).tasks.find((task) => task.key === selected)?.status;
       state.status = currentTaskPhase()
         ? `当前已在${label}页面`
+        : taskSchedule.enabled && scheduledStatus === "waiting"
+          ? `当前已在${label}页面，任务等待后台调度自动恢复`
         : `当前已在${label}页面，任务尚未启动；点击下方启动单项任务`;
       renderPanel();
       return;
@@ -769,8 +778,6 @@
       let status = "missing";
       if (fresh && task.phase === "running") {
         status = "running";
-      } else if (fresh && task.phase === "paused") {
-        status = "waiting";
       } else if (task?.phase === "stopping" && runtime?.flow?.phase === "paused") {
         status = "missing";
       } else if (task?.phase === "stopping") {
@@ -779,6 +786,8 @@
         status = "blocked";
       } else if (scheduled.manualStopped) {
         status = "missing";
+      } else if (fresh && task.phase === "paused") {
+        status = "waiting";
       } else if (task && !["idle", "stopped"].includes(task.phase)) {
         status = taskSchedule.enabled ? "waiting" : "unknown";
       } else if (taskSchedule.enabled) {
@@ -796,6 +805,125 @@
       , counts.blocked && `${counts.blocked} 项需检查`
     ].filter(Boolean);
     return { counts, tasks, text: parts.join(" · ") };
+  }
+
+  function scheduledTaskButtonState(mode, localActive, now = Date.now()) {
+    if (localActive) return null;
+    const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
+    const queued = taskSchedule.items?.[mode] || {};
+    if (task?.status === "stopping") return { label: "停止中 · 请稍候", title: "任务正在停止，暂不可点击", action: "none", disabled: true };
+    if (task?.status === "blocked") return { label: "需人工检查 · 点击启动", title: "确认账号状态后，点击单独重新启动", action: "start" };
+    if (queued.manualStopped) return { label: "已停止 · 点击启动", title: "该任务已手动停止；点击单独启动", action: "start" };
+    if (task?.status === "running") return { label: "运行中 · 点击前往", title: "任务正在其他窗口运行；点击前往任务窗口", action: "focus" };
+    if (task?.status === "unknown") return { label: "待确认 · 点击查看", title: "任务状态暂未确认；点击查看任务窗口", action: "focus" };
+    if (task?.status !== "waiting") return null;
+    if (!taskSchedule.enabled) return { label: "等待中 · 点击查看", title: "任务窗口仍在等待；点击查看任务窗口", action: "focus" };
+    const resumeAt = Number(queued.resumeAt) || 0;
+    const countdown = resumeAt > now ? ` · ${formatClock(resumeAt - now)}` : "";
+    return {
+      label: "等待中 · 点击停止",
+      title: `${queued.reason || "等待后台调度"}${countdown}；到期后自动启动，点击只停止这一项`,
+      action: "stop"
+    };
+  }
+
+  function syncScheduledTaskButton(button, mode, localActive) {
+    if (!button) return;
+    const scheduled = scheduledTaskButtonState(mode, localActive);
+    if (!scheduled) {
+      delete button.dataset.xrcScheduledAction;
+      return;
+    }
+    button.textContent = scheduled.label;
+    button.title = scheduled.title;
+    button.dataset.xrcScheduledAction = scheduled.action;
+    if (scheduled.disabled) button.disabled = true;
+  }
+
+  async function stopScheduledWaitingTask(mode, localActive) {
+    if (localActive) return false;
+    try {
+      const response = await readRuntimeMessage("xrc-runtime-get");
+      pluginRuntime = response.runtime || pluginRuntime;
+      taskSchedule = response.schedule || taskSchedule;
+    } catch (error) {
+      state.status = `无法确认后台任务状态：${error?.message || "请稍后重试"}`;
+      renderPanel();
+      return true;
+    }
+    const action = scheduledTaskButtonState(mode, false)?.action;
+    if (action === "none") return true;
+    if (action === "focus") {
+      try {
+        await sendTaskMessage("xrc-task-open", mode);
+        await loadOpenTaskTabs();
+        state.status = `已切换到${TASK_MODE_LABELS[mode] || "任务"}窗口`;
+      } catch (error) {
+        state.status = error?.message || "没有成功打开任务窗口";
+      }
+      renderPanel();
+      return true;
+    }
+    if (action !== "stop") return false;
+    try {
+      const result = await sendExtensionMessage({ type: "xrc-task-manual-stop", mode, stopTab: true });
+      if (!result?.ok) throw new Error(result?.error || "无法停止单项任务");
+      taskSchedule.items = { ...taskSchedule.items, [mode]: { ...taskSchedule.items?.[mode], manualStopped: true, resumeAt: 0 } };
+    } catch (error) {
+      state.status = error?.message || "无法停止单项任务";
+    }
+    renderPanel();
+    return true;
+  }
+
+  async function resumeManuallyStoppedTask(mode) {
+    if (!taskSchedule.items?.[mode]?.manualStopped && !taskSchedule.items?.[mode]?.blocked) return true;
+    try {
+      const result = await sendExtensionMessage({ type: "xrc-task-manual-start", mode });
+      if (!result?.ok) throw new Error(result?.error || "无法恢复单项任务");
+      taskSchedule.items = { ...taskSchedule.items, [mode]: { ...taskSchedule.items[mode], manualStopped: false, blocked: false } };
+      return true;
+    } catch (error) {
+      state.status = error?.message || "无法恢复单项任务";
+      renderPanel();
+      return false;
+    }
+  }
+
+  function readableTaskLimitReason(reason) {
+    const value = String(reason || "").trim();
+    if (["risk-blocked", "automation-restricted"].includes(value)) return "X 提示疑似自动化或账号受限";
+    if (value === "rate-limited") return "X 提示操作次数受限";
+    return value || "X 操作受限";
+  }
+
+  function taskScheduleNotice(mode, now = Date.now()) {
+    const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
+    const queued = taskSchedule.items?.[mode] || {};
+    if (task?.status === "blocked") return {
+      status: "blocked", title: "需人工检查 · 连续受限",
+      detail: `已停止自动重试。原因：${readableTaskLimitReason(queued.reason)}。下方进度仅属于当前窗口；检查账号后可用单项按钮重新启动。`
+    };
+    if (queued.manualStopped && task?.status === "missing") return { status: "stopped", title: "已手动停止", detail: "点击单项按钮可重新启动这一项任务。" };
+    if (task?.status === "stopping") return { status: "stopping", title: "正在停止", detail: "正在结束当前步骤，请稍候。" };
+    if (task?.status === "unknown") return { status: "unknown", title: "状态待确认", detail: "后台暂未收到任务的最新状态，请打开任务窗口检查。" };
+    if (task?.status === "waiting") {
+      const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
+      const countdown = resumeAt > now ? `，${formatClock(resumeAt - now)} 后自动重试` : "";
+      return { status: "waiting", title: "等待中", detail: `${queued.reason || pluginRuntime.tasks?.[mode]?.detail || "等待后台调度"}${countdown}。` };
+    }
+    return null;
+  }
+
+  function paintTaskScheduleNotice(panel = document.getElementById(PANEL_ID)) {
+    const notice = panel?.querySelector(`.xrc-${state.assistantMode.startsWith("likes-") ? "like" : state.assistantMode === "mutual" ? "mutual" : state.assistantMode === "poster" ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
+    if (!notice) return;
+    const info = taskScheduleNotice(currentTaskKey());
+    notice.hidden = !info;
+    if (!info) return;
+    notice.dataset.state = info.status;
+    notice.querySelector("strong").textContent = info.title;
+    notice.querySelector("p").textContent = info.detail;
   }
 
   function paintFlowDetails(panel = document.getElementById(PANEL_ID)) {
@@ -825,6 +953,12 @@
       status.className = "xrc-flow-detail-status";
       status.textContent = labels[task.status];
       const note = document.createElement("small");
+      const go = document.createElement("button");
+      go.type = "button";
+      go.dataset.xrcFlowTaskOpen = task.key;
+      go.textContent = "前往";
+      go.title = `切换或打开${task.label}的浏览器标签页，不启动任务`;
+      go.setAttribute("aria-label", go.title);
       const taskRuntime = pluginRuntime.tasks?.[task.key];
       const updatedAt = Number(taskRuntime?.updatedAt) || 0;
       const detail = String(taskRuntime?.detail || "").trim();
@@ -832,7 +966,7 @@
       const resumeAt = Number(queued?.resumeAt) || 0;
       const recoveryCountdown = taskSchedule.enabled && task.status === "waiting" && resumeAt > Date.now();
       note.textContent = task.status === "blocked"
-        ? `连续受限：${queued.reason || "请检查账号状态"}`
+        ? `连续受限：${readableTaskLimitReason(queued.reason)}；请检查账号状态`
         : queued?.manualStopped && taskSchedule.enabled && task.status === "missing"
           ? "已手动停止；再次全流程启动或单项启动可恢复"
           : recoveryCountdown
@@ -845,7 +979,7 @@
         : taskSchedule.enabled && task.status === "waiting"
           ? queued?.reason || (["timeline", "notifications"].includes(task.key) ? "后台正在检查任务状态并安排自动恢复" : "已入队，等待其他任务结束")
           : hints[task.status];
-      row.append(name, status, note);
+      row.append(name, status, note, go);
       return row;
     }));
   }
@@ -1010,6 +1144,7 @@
       state.riskCooldownUntil = 0;
       state.pendingReply = "";
       state.pendingTweetId = "";
+      state.pendingGrokInvite = false;
       clearSaved();
       state.status = reason;
       renderPanel();
@@ -1073,18 +1208,9 @@
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     if (!state.aiKeySaved) {
-      const input = document.getElementById(PANEL_ID)?.querySelector("[data-xrc-ai-key]");
-      try {
-        await saveAiSettings(input?.value);
-        if (input) input.value = "";
-        renderPanel();
-      } catch (error) {
-        state.status = error?.message || "全流程包含定时发帖，请先填写 DeepSeek API Key";
-        state.aiStatus = state.status;
-        renderPanel();
-        input?.focus();
-        return;
-      }
+      state.status = "全流程包含定时发帖，请先到模型设置填写 DeepSeek API Key";
+      openModelSettingsForKey(document.getElementById(PANEL_ID));
+      return;
     }
     flowStarting = true;
     paintFlowButton();
@@ -1518,27 +1644,6 @@
     return { has: (id) => completed.has(id) || skippedIds.has(id) };
   }
 
-  async function saveAiSettings(apiKey) {
-    const key = String(apiKey || "").trim();
-    if (!validDeepSeekApiKey(key)) throw new Error("请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码");
-    if (!globalThis.chrome?.storage?.local) throw new Error("当前环境无法保存扩展配置");
-    const stored = await chrome.storage.local.get("xrcAiSettings");
-    const settings = stored?.xrcAiSettings || {};
-    await chrome.storage.local.set({
-      xrcAiSettings: {
-        ...settings,
-        apiKey: key,
-        replyMode: state.replyMode,
-        replyPrompt: state.replyPrompt,
-        postPrompt: state.postPrompt
-      }
-    });
-    state.aiKey = key;
-    state.aiKeySaved = true;
-    state.aiKeyHint = `已保存 ····${key.slice(-4)}`;
-    state.aiStatus = `${state.aiKeyHint}，可以直接开始`;
-  }
-
   async function persistReplyMode() {
     if (!globalThis.chrome?.storage?.local) return;
     const stored = await chrome.storage.local.get("xrcAiSettings");
@@ -1546,7 +1651,11 @@
     await chrome.storage.local.set({ xrcAiSettings: { ...settings, replyMode: state.replyMode } });
   }
 
-  function sendAiMessage(type, postText = "", avoidReply = "", conversation = null) {
+  function shouldInviteGrok(mode, replyMode, draw = Math.random) {
+    return mode === "timeline" && replyMode === "ai" && draw() < GROK_REPLY_PROBABILITY;
+  }
+
+  function sendAiMessage(type, postText = "", avoidReply = "", conversation = null, inviteGrok = false) {
     return new Promise((resolve, reject) => {
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("AI 服务只在已安装的 Chrome 扩展中可用"));
@@ -1554,7 +1663,7 @@
       }
       const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       activeAiRequestId = requestId;
-      const sent = chrome.runtime.sendMessage({ type, postText, avoidReply, conversation, mode: state.assistantMode, requestId }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type, postText, avoidReply, conversation, inviteGrok, mode: state.assistantMode, requestId }, (response) => {
         if (activeAiRequestId === requestId) activeAiRequestId = "";
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
@@ -1607,7 +1716,8 @@
       unfollowEnglish: true,
       replyMode: "ai",
       pendingReply: "",
-      pendingTweetId: ""
+      pendingTweetId: "",
+      pendingGrokInvite: false
     };
   }
 
@@ -1651,6 +1761,7 @@
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
+        pendingGrokInvite: Boolean(parsed.pendingGrokInvite),
         phraseIndex: Number.isInteger(phraseIndex) ? phraseIndex : null,
         processedIds: Array.isArray(parsed.processedIds)
           ? parsed.processedIds.filter((id) => /^\d+$/.test(String(id))).map(String).slice(-RUN_SIZE)
@@ -1693,6 +1804,7 @@
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
+        pendingGrokInvite: state.pendingGrokInvite,
         processedIds: Array.from(processedIds).slice(-RUN_SIZE),
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -1727,6 +1839,7 @@
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
+        pendingGrokInvite: false,
         processedIds: [],
         phraseIndex: state.phraseIndex,
         phraseStore: PHRASE_STORE
@@ -1818,6 +1931,7 @@
     state.nextReplyDelaySeconds = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     skippedIds.clear();
   }
 
@@ -2356,6 +2470,7 @@
     cancelActiveAiRequest();
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     writeSaved({ running: true, total: state.total });
     state.status = `X 提示疑似自动化，当前评论任务进入冷却；${formatCountdown(state.riskCooldownUntil - Date.now())}后自动重试`;
     renderPanel();
@@ -2367,6 +2482,7 @@
     riskRoundAdvancing = true;
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     const deadline = state.riskCooldownUntil || Date.now() + loopApi.automationCooldownMs(++state.riskRetries);
     state.riskCooldownUntil = deadline;
     writeSaved({ running: true, total: state.total });
@@ -2647,6 +2763,7 @@
     state.errors += 1;
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     writeSaved({ running: true, total: state.total });
     const closed = await closeReplyComposer();
     state.status = "遇到 X 临时错误，已关闭当前评论框并跳过这条；本轮继续处理下一条";
@@ -2659,6 +2776,7 @@
     state.stopping = false;
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     clearSaved();
     state.status = message;
     renderPanel();
@@ -2850,6 +2968,11 @@
         if (state.pendingTweetId === next.id && state.pendingReply) {
           phrase = state.pendingReply;
         } else {
+          if (state.pendingTweetId !== next.id) {
+            state.pendingTweetId = next.id;
+            state.pendingGrokInvite = shouldInviteGrok(state.assistantMode, state.replyMode);
+            writeSaved({ running: true, total: state.total });
+          }
           let conversation = null;
           if (state.assistantMode === "notifications") {
             state.status = "正在读取我的帖子和对方回复…";
@@ -2861,7 +2984,7 @@
             : conversation ? "原帖暂不可见，AI 正在根据对方回复生成回应…" : "AI 正在阅读原帖并生成回复…";
           renderPanel();
           try {
-            phrase = await sendAiMessage("xrc-ai-generate", postText, "", conversation);
+            phrase = await sendAiMessage("xrc-ai-generate", postText, "", conversation, state.pendingGrokInvite);
             aiGenerationFailures = 0;
             state.pendingReply = phrase;
             state.pendingTweetId = next.id;
@@ -2938,6 +3061,7 @@
         }
         state.pendingReply = "";
         state.pendingTweetId = "";
+        state.pendingGrokInvite = false;
         writeSaved({ running: true, total: state.total });
         const closed = restricted ? await dismissReplyRestrictionDialog() : await closeReplyComposer();
         state.status = restricted ? "这条帖子仅允许部分账号回复，已跳过" : "原帖已删除或当前账号看不到，已跳过";
@@ -2951,15 +3075,15 @@
         let alternate = "";
         if (state.replyMode === "ai") {
           state.pendingReply = "";
-          state.pendingTweetId = "";
+          state.pendingTweetId = next.id;
           state.status = "这句话与历史回复重复，AI 正在换一个说法…";
           renderPanel();
           const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
           try {
             const conversation = state.assistantMode === "notifications" ? await conversationOrFallback(next, postText) : null;
-            alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation);
+            alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation, state.pendingGrokInvite);
             if (loopApi.normalizePhraseText(alternate) === loopApi.normalizePhraseText(phrase)) {
-              alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation);
+              alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation, state.pendingGrokInvite);
             }
             state.pendingReply = alternate;
             state.pendingTweetId = next.id;
@@ -3001,6 +3125,7 @@
         if (state.replyMode === "template") advancePhrase();
         state.pendingReply = "";
         state.pendingTweetId = "";
+        state.pendingGrokInvite = false;
         reportCommunityAction({
           task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply",
           result: "success",
@@ -3041,6 +3166,8 @@
     const waiting = active && Boolean(replyWaitCopy());
     const paceChanged = !active && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
     button.dataset.running = active ? "true" : "false";
+    button.disabled = Boolean(state.stopping);
+    button.title = "";
     button.textContent = state.stopping
       ? "正在停止"
       : state.riskCooldownUntil > Date.now()
@@ -3052,6 +3179,7 @@
         : paceChanged
           ? "重启任务"
           : "启动单项任务";
+    syncScheduledTaskButton(button, currentTaskKey(), active);
   }
 
   function updateMutualState(next) {
@@ -3082,6 +3210,7 @@
   }
 
   async function onPosterToggle() {
+    if (await stopScheduledWaitingTask("poster", Boolean(state.poster.running))) return;
     if (!postApi) {
       state.poster = { ...state.poster, status: "推文发布模块没有加载，请刷新扩展后重试", errors: state.poster.errors + 1 };
       renderPanel();
@@ -3101,11 +3230,12 @@
       postApi.stop();
       return;
     }
+    if (!await resumeManuallyStoppedTask("poster")) return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     if (!state.aiKey) {
-      state.poster = { ...state.poster, status: "请先填写 DeepSeek API Key，才能生成定时发帖草稿", errors: state.poster.errors + 1 };
-      renderPanel();
+      state.poster = { ...state.poster, status: "请先到模型设置填写 DeepSeek API Key，才能生成定时发帖草稿", errors: state.poster.errors + 1 };
+      openModelSettingsForKey(document.getElementById(PANEL_ID));
       return;
     }
     registerCurrentTaskTab("poster");
@@ -3143,6 +3273,7 @@
   }
 
   async function onMutualAction(mode) {
+    if (await stopScheduledWaitingTask(mutualTaskKey(mode), Boolean(state.mutual?.running && state.mutual.mode === mode))) return;
     if (!mutualApi) {
       state.mutual = { ...state.mutual, status: "互关模块没有加载，请刷新扩展后重试", errors: state.mutual.errors + 1 };
       renderPanel();
@@ -3156,6 +3287,7 @@
       }
       return;
     }
+    if (!await resumeManuallyStoppedTask(mutualTaskKey(mode))) return;
     registerCurrentTaskTab(mutualTaskKey());
     state.riskPaused = false;
     mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
@@ -3293,6 +3425,27 @@
     if (title) title.textContent = pageMeta[0];
     if (caption) caption.textContent = pageMeta[1];
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function openModelSettingsForKey(panel) {
+    if (!panel) return;
+    if (state.panelView === "collapsed") {
+      state.panelView = "normal";
+      writeSaved({ running: state.running, total: state.total });
+    }
+    configOpen = true;
+    configPage = "model";
+    monitorOpen = false;
+    reportOpen = false;
+    toolboxOpen = false;
+    headerMenuOpen = false;
+    syncConfigMenu(panel);
+    syncMonitorMenu(panel);
+    syncReportPage(panel);
+    syncToolboxMenu(panel);
+    syncHeaderMenu(panel);
+    renderPanel();
+    panel.querySelector("[data-xrc-config-key]")?.focus();
   }
 
   function syncHeaderMenu(panel) {
@@ -3652,10 +3805,7 @@
         </div>
         <div class="xrc-workspace-nav">
           <div class="xrc-global-bar" data-xrc-global-bar>
-            <label class="xrc-global-key" data-xrc-global-key data-needs-key="true">
-              <span>DeepSeek API</span>
-              <input class="xrc-start-key" type="text" name="xrc-deepseek-global-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 DeepSeek API Key" data-xrc-secret-input data-xrc-ai-key>
-            </label>
+            <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false">尚未配置 DeepSeek API Key · 点击前往模型设置 →</button>
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
@@ -3679,6 +3829,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
+          <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
               <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
@@ -3706,6 +3857,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="posts"><b>01</b><span>点赞帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>点赞评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
+          <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <section class="xrc-post-flow" aria-label="点赞管理">
             <div class="xrc-task-docs-row"><span data-xrc-like-docs-label>点赞帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="likes" data-xrc-docs-target="xrc-docs-likes-posts" aria-label="查看点赞帖子说明" title="查看点赞帖子说明">i</button></div>
             <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
@@ -3715,6 +3867,7 @@
           <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
         </div>
         <div class="xrc-body xrc-post-body">
+          <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <section class="xrc-post-flow" aria-label="定时发帖流程">
             <div class="xrc-task-docs-row"><span>发帖规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-poster" aria-label="查看定时发帖说明" title="查看定时发帖说明">i</button></div>
             <div class="xrc-flow-end">
@@ -3739,6 +3892,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>评论帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>评论通知</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
+          <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <div class="xrc-task-docs-row"><span data-xrc-reply-docs-label>评论帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="reply" data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看评论帖子说明" title="查看评论帖子说明">i</button></div>
           <p class="xrc-wait" data-xrc-wait hidden></p>
           <div class="xrc-status xrc-reply-status" role="status" data-xrc-status-text hidden><span data-xrc-status-copy></span></div>
@@ -3825,6 +3979,10 @@
       });
       panel.querySelectorAll("[data-xrc-config-open]").forEach((button) => button.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (button.hasAttribute("data-xrc-key-guide")) {
+          openModelSettingsForKey(panel);
+          return;
+        }
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
           writeSaved({ running: state.running, total: state.total });
@@ -4011,10 +4169,16 @@
         paintFlowDetails(panel);
         panel.querySelector("[data-xrc-flow-details-close]").focus();
         await loadPluginRuntime();
-        paintFlowDetails(panel);
+        renderPanel();
       });
       panel.querySelector("[data-xrc-flow-details-close]")?.addEventListener("click", closeFlowDetails);
       flowDetails?.addEventListener("click", (event) => {
+        const go = event.target.closest?.("[data-xrc-flow-task-open]");
+        if (go) {
+          closeFlowDetails();
+          void openTaskTab(go.dataset.xrcFlowTaskOpen);
+          return;
+        }
         if (event.target === flowDetails) closeFlowDetails();
       });
       flowDetails?.addEventListener("keydown", (event) => {
@@ -4022,8 +4186,13 @@
           event.preventDefault();
           closeFlowDetails();
         } else if (event.key === "Tab") {
-          event.preventDefault();
-          panel.querySelector("[data-xrc-flow-details-close]").focus();
+          const buttons = Array.from(flowDetails.querySelectorAll("button:not([disabled])"));
+          const first = buttons[0];
+          const last = buttons.at(-1);
+          if ((event.shiftKey && event.target === first) || (!event.shiftKey && event.target === last)) {
+            event.preventDefault();
+            (event.shiftKey ? last : first)?.focus();
+          }
         }
       });
       panel.querySelector("[data-xrc-report-account]").addEventListener("change", (event) => {
@@ -4223,13 +4392,8 @@
           : `第 ${shownRound}/${plannedRounds} 轮 · ${state.pageCount}/${roundTarget}`;
       const start = panel.querySelector("[data-xrc-start]");
       const globalBar = panel.querySelector("[data-xrc-global-bar]");
-      const aiKeyInput = panel.querySelector("[data-xrc-ai-key]");
       if (start) start.dataset.needsKey = "false";
       if (globalBar) globalBar.hidden = state.aiKeySaved;
-      if (aiKeyInput) {
-        aiKeyInput.hidden = state.aiKeySaved;
-        aiKeyInput.disabled = Boolean(state.loopPromise) || state.running || Boolean(state.poster?.running);
-      }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode
           || (button.dataset.xrcAssistant === "reply" && ["timeline", "notifications"].includes(state.assistantMode))
@@ -4284,6 +4448,9 @@
             ? "重启任务"
             : "启动单项任务";
       postToggle.dataset.running = poster.running ? "true" : "false";
+      postToggle.disabled = Boolean(poster.stopping);
+      postToggle.title = "";
+      syncScheduledTaskButton(postToggle, "poster", Boolean(poster.running));
       panel.querySelector("[data-xrc-post-count]").textContent = `本次已发送 ${poster.count || 0} 条`;
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
@@ -4356,6 +4523,8 @@
           ? `冷却 ${likeCooldown} · 点击停止`
           : likeState.running ? "停止自动点赞" : "启动单项任务";
       likeToggle.disabled = likeState.stopping;
+      likeToggle.title = "";
+      syncScheduledTaskButton(likeToggle, currentTaskKey(), Boolean(likeState.running));
     }
     if (state.assistantMode.startsWith("likes-")) panel.querySelector("[data-xrc-mini-progress]").textContent = `点赞管理 · ${likeState.count} 条`;
     const replyDocsNotifications = state.assistantMode === "notifications";
@@ -4417,6 +4586,8 @@
         const riskCooling = activeMode && Number(mutual.riskCooldownUntil) > Date.now();
         button.textContent = activeMode ? riskCooling ? `等待 ${cooldownLabel} · 点此停止` : dailyFull && cooldown > 0 ? `今日已满 · ${cooldownLabel} · 点此停止` : cooldown > 0 ? `冷却 ${cooldownLabel} · 立即开始` : "运行中 · 点此停止" : idleLabel;
         button.disabled = Boolean(mutual.running && !activeMode) || Boolean(state.running || state.loopPromise);
+        button.title = "";
+        syncScheduledTaskButton(button, mutualTaskKey(mode), activeMode);
         button.classList.toggle("is-running", activeMode);
         button.closest(".xrc-mutual-card")?.classList.toggle("is-active", activeMode);
       });
@@ -4470,6 +4641,7 @@
       stateBadge?.setAttribute("title", stateLabel.textContent);
     }
     setRunningButton(panel.querySelector("[data-xrc-toggle]"));
+    paintTaskScheduleNotice(panel);
     syncCurrentTaskPhase();
     paintFlowButton(panel);
     renderDevUpdateBanner(panel);
@@ -4522,6 +4694,7 @@
   }
 
   async function onToggle() {
+    if (await stopScheduledWaitingTask(currentTaskKey(), Boolean(state.running || state.loopPromise))) return;
     if (state.loopPromise) {
       sendExtensionMessage({ type: "xrc-task-manual-stop", mode: currentTaskKey() }).catch(() => {});
       cancelActiveAiRequest();
@@ -4531,34 +4704,18 @@
       state.riskCooldownUntil = 0;
       state.pendingReply = "";
       state.pendingTweetId = "";
+      state.pendingGrokInvite = false;
       clearSaved();
       state.status = "正在停止，当前这一条结束后停下";
       renderPanel();
       return;
     }
+    if (!await resumeManuallyStoppedTask(currentTaskKey())) return;
     state.status = "正在检查模型设置…";
     renderPanel();
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     const panel = document.getElementById(PANEL_ID);
-    const input = panel?.querySelector("[data-xrc-ai-key]");
-    if (!state.aiKeySaved && input?.value?.trim()) {
-      try {
-        await saveAiSettings(input.value);
-        if (input) input.value = "";
-      } catch (error) {
-        state.status = error?.message || "DeepSeek API Key 无效";
-        state.aiStatus = state.status;
-        configOpen = true;
-        configPage = "model";
-        if (panel) {
-          syncConfigMenu(panel);
-        }
-        input?.focus();
-        renderPanel();
-        return;
-      }
-    }
     const nasSecret = state.replyProviders.includes("nas")
       ? await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => "") : "";
     const hasReplyModel = (state.replyProviders.includes("deepseek") && state.aiKeySaved)
@@ -4566,13 +4723,10 @@
       || (state.replyProviders.includes("bai") && Boolean(state.baiKey));
     if (!hasReplyModel) {
       state.status = "已启用的回复模型都缺少密钥，请到模型设置配置 DeepSeek、NAS 社区回执或 B.AI 密钥";
-      configOpen = true;
-      configPage = "model";
       if (panel) {
         panel.querySelector("[data-xrc-config-status]").textContent = state.status;
-        syncConfigMenu(panel);
       }
-      renderPanel();
+      openModelSettingsForKey(panel);
       return;
     }
     state.pageCount = 0;
@@ -4595,6 +4749,7 @@
     state.errors = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     state.lastReply = "";
     if (state.assistantMode !== "notifications") processedIds.clear();
     skippedIds.clear();
@@ -4669,6 +4824,7 @@
     state.replyMode = saved.replyMode;
     state.pendingReply = saved.pendingReply;
     state.pendingTweetId = saved.pendingTweetId;
+    state.pendingGrokInvite = saved.pendingGrokInvite;
     state.elapsedMs = 0;
     processedIds.clear();
     if (saved.assistantMode !== "notifications") {
@@ -4836,6 +4992,7 @@
     } else if (document.querySelector(`[data-xrc-flow-details]:not([hidden])`)) {
       paintFlowDetails();
     }
+    paintTaskScheduleNotice();
   }, 1000);
 
   window.addEventListener("online", () => { reconnectOnline = true; });

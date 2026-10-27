@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.32.21'
+const VERSION = '3.32.22'
 
 const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 
 const VERSION_HISTORY = [
   {
+    version: '3.32.22',
+    title: '降低站点用量',
+    description: '减少运行状态上报频率，避免插件持续运行时产生过多站点请求。',
+    current: true,
+  },
+  {
     version: '3.32.21',
     title: '全流程任务队列与异常恢复',
     description: '评论任务常驻；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口；连续 3 次受限后停止该任务自动重试，详情显示原因。',
-    current: true,
   },
   {
     version: '3.32.0',
@@ -390,16 +395,18 @@ export default function XReplyClipboardResourcePage() {
           </div>
 
           <figure className="mx-auto w-full max-w-[360px] lg:my-0">
-            <Image
-              src="/images/x-reply-clipboard-extension/panel-real-v3.32.20.webp"
-              alt="X 高频互动助手面板局部截图，显示任务总览、功能导航和评论进度"
-              width={726}
-              height={1092}
-              sizes="(max-width: 640px) calc(100vw - 72px), 360px"
-              priority
-              className="block h-auto w-full rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]"
-            />
-            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">面板局部截图 · v3.32.20</figcaption>
+            <div className="relative aspect-[720/737] overflow-hidden rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
+              <Image
+                src="/images/x-reply-clipboard-extension/panel-real-v3.32.20.webp"
+                alt="X 高频互动助手任务区旧版截图，显示今日统计、功能导航和评论进度"
+                width={726}
+                height={1092}
+                sizes="(max-width: 640px) calc(100vw - 72px), 360px"
+                priority
+                className="absolute bottom-0 right-0 block h-auto w-[101%] max-w-none"
+              />
+            </div>
+            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">任务区示意 · 旧版面板截图</figcaption>
           </figure>
         </div>
       </header>

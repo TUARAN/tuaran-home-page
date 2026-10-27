@@ -30,14 +30,6 @@ function formatOpinionTime(value) {
   }).format(date)
 }
 
-function formatOpinionDate(value) {
-  const date = new Date(value)
-  if (!Number.isFinite(date.getTime())) return ''
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(date)
-}
-
 function CollectionStatus({ updated }) {
   return (
     <>
@@ -74,38 +66,7 @@ function OpinionListSkeleton({ label }) {
 export default function HomeOpinionSignals() {
   const [data, setData] = useState(null)
   const [failed, setFailed] = useState(false)
-  const [activeTopic, setActiveTopic] = useState('recommended')
-  const [recommended, setRecommended] = useState(null)
-  const [recommendedFailed, setRecommendedFailed] = useState(false)
-  const [recommendationRetry, setRecommendationRetry] = useState(0)
-
-  useEffect(() => {
-    let active = true
-    let controller
-    async function refresh() {
-      controller?.abort()
-      controller = new AbortController()
-      try {
-        const response = await fetch('https://aihot.news/api/v1/items?mode=selected&window=7d&limit=20', { signal: controller.signal })
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        const next = await response.json()
-        if (!Array.isArray(next.items)) throw new Error('Invalid AI HOT feed')
-        if (active) {
-          setRecommended(next.items.filter((item) => /^https?:\/\//i.test(item.links?.original || '')))
-          setRecommendedFailed(false)
-        }
-      } catch (error) {
-        if (active && error.name !== 'AbortError') setRecommendedFailed(true)
-      }
-    }
-    refresh()
-    const timer = setInterval(refresh, 5 * 60 * 1000)
-    return () => {
-      active = false
-      controller?.abort()
-      clearInterval(timer)
-    }
-  }, [recommendationRetry])
+  const [activeTopic, setActiveTopic] = useState('llm')
 
   useEffect(() => {
     let active = true
@@ -155,7 +116,7 @@ export default function HomeOpinionSignals() {
   const updated = collectedAt > 0 && Number.isFinite(collectedAt)
     ? formatOpinionTime(collectedAt * 1000)
     : ''
-  const showCollectionStatus = activeTopic !== 'recommended' && liveData && allPosts.length && updated
+  const showCollectionStatus = liveData && allPosts.length && updated
   const featuredTime = formatOpinionTime(featured?.latestAt)
   const featuredSentiment = featured ? getSentimentBucket(featured.sentiment) : null
   return (
@@ -179,9 +140,6 @@ export default function HomeOpinionSignals() {
       </div>
       <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
       <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
-        <button type="button" className={`home-tab-link ${activeTopic === 'recommended' ? 'is-active' : ''}`} aria-label="推荐" title="推荐" aria-pressed={activeTopic === 'recommended'} onClick={() => setActiveTopic('recommended')}>
-          <T zh="推荐" en="For you" />
-        </button>
         {topics.map((topic) => (
           <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>
         ))}
@@ -189,33 +147,7 @@ export default function HomeOpinionSignals() {
           <Skeleton key={index} className="mx-3 my-auto h-4 w-12 shrink-0 rounded" />
         )) : null}
       </div>
-      {activeTopic === 'recommended' ? (
-        recommended?.length ? (
-          <div className="home-opinion-list">
-            {recommended.slice(0, HOME_OPINION_PREVIEW_COUNT).map((entry) => (
-              <a key={entry.id} href={entry.links.original} target="_blank" rel="noopener noreferrer" className="home-opinion-sample no-underline">
-                <span className="home-opinion-sample-meta">
-                  <span className="home-opinion-sample-source">AI HOT</span>
-                  {entry.publishedAt ? <time className="home-opinion-sample-time" dateTime={entry.publishedAt}>{formatOpinionDate(entry.publishedAt)}</time> : null}
-                </span>
-                <span className="home-opinion-sample-title"><strong>{entry.title}</strong></span>
-                {entry.summary ? <small>{entry.summary}</small> : null}
-              </a>
-            ))}
-          </div>
-        ) : !recommended && !recommendedFailed ? (
-          <OpinionListSkeleton label="正在获取 AI HOT 订阅" />
-        ) : (
-          <div className="home-opinion-empty">
-            <p><T zh="AI HOT 订阅暂时不可用。" en="AI HOT feed is unavailable." /></p>
-            <button type="button" className="home-section-more" onClick={() => {
-              setRecommended(null)
-              setRecommendedFailed(false)
-              setRecommendationRetry((value) => value + 1)
-            }}><T zh="重试" en="Retry" /></button>
-          </div>
-        )
-      ) : liveData && allPosts.length ? (
+      {liveData && allPosts.length ? (
         <>
           <div className="home-opinion-list">
             {featuredPost ? (

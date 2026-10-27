@@ -848,9 +848,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
         </div>
         <div className="home-main-column">
           <HomeOpinionPanel />
-          <div className="hidden lg:block">
-            <HomeRuanYifengFeed />
-          </div>
+          <HomeRuanYifengFeed />
           <div className="hidden lg:block">
             <HomeInspirations items={inspirations} />
           </div>

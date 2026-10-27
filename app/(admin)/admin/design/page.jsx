@@ -1,4 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
+import AdminSubnav from '../../components/AdminSubnav'
 import { AdminButton, AdminPage, CollapsibleSection, Section, StatCard, StatusPill } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import audit from '../../../../docs/context/ui-ux-audit-roadmap.md?raw'
@@ -105,9 +106,9 @@ export default function AdminDesignPage() {
           <StatCard label="审计基线" value="2026-09-08" sub="GPT6-Astra · 桌面观察与代码审计" icon="researchStyle" />
           <StatCard label="验证状态" value="待复测" sub="移动端、多主题与完整交互尚未验证" icon="audit" tone="warning" />
         </div>
-        <nav aria-label="设计文档导航" className="my-5 flex flex-wrap gap-2">
-          {documents.map((document) => <AdminButton key={document.id} href={`#${document.id}`} size="sm">{document.title}</AdminButton>)}
-        </nav>
+        <div className="mt-5">
+          <AdminSubnav label="设计文档导航" items={documents.map((document) => ({ id: document.id, label: document.title, href: `#${document.id}` }))} />
+        </div>
         <p className="mb-5 text-sm leading-7 text-[var(--admin-muted)]">
           先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。三份设计文档直接展示，各章节可按需展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
         </p>

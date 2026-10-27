@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { DOMAIN_REGISTRY, DOMAIN_REGISTRY_UPDATED_AT } from '../../../../lib/site/domainRegistry'
 import AdminPageGate from '../../components/AdminPageGate'
+import AdminSubnav from '../../components/AdminSubnav'
 import { AdminPage } from '../../components/ui'
 import {
   AI_PRODUCTS,
@@ -31,14 +32,14 @@ import {
 } from './data'
 
 export const metadata = {
-  title: SHARE_COPY.title,
-  description: SHARE_COPY.lead,
+  title: '站点架构',
+  description: 'Cloudflare 架构、运行时边界、DNS 与部署配置快照。',
   robots: { index: false, follow: false },
 }
 
 const SECTIONS = [
   { id: 'overview', label: '概览' },
-  { id: 'domains', label: '域名看板' },
+  { id: 'domains', label: 'DNS 与部署' },
   { id: 'runtime', label: '运行时边界' },
   { id: 'arch', label: '技术架构' },
   { id: 'security', label: '安全防御' },
@@ -175,7 +176,7 @@ function ArchitectureDiagram() {
 
 function CloudflarePersonalSiteMapContent() {
   return (
-    <AdminPage title="Cloudflare 个人站技术地图" description={SHARE_COPY.lead}>
+    <AdminPage title="站点架构" description="查看 Cloudflare 技术架构、运行时边界及 DNS 与部署配置快照。">
       <div className="border-b border-[#dee0db] pb-4 dark:border-gray-800">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8a5a14] dark:text-[#9ba475]">
@@ -187,13 +188,9 @@ function CloudflarePersonalSiteMapContent() {
         </div>
       </div>
 
-      <nav aria-label="页面章节" className="sticky top-0 z-10 mt-5 flex flex-wrap gap-x-3 gap-y-2 border-b border-[#dee0d6] bg-[#f7f8f5]/95 py-3 backdrop-blur dark:border-gray-800 dark:bg-[#111]/95">
-        {SECTIONS.map((section) => (
-          <a key={section.id} href={`#${section.id}`} className="text-[12px] font-medium text-[#67695d] no-underline underline-offset-4 hover:text-[#8b5a1f] hover:underline dark:text-gray-400 dark:hover:text-[#a1ab76]">
-            {section.label}
-          </a>
-        ))}
-      </nav>
+      <div className="mt-5">
+        <AdminSubnav label="站点架构章节" items={SECTIONS.map((section) => ({ ...section, href: `#${section.id}` }))} />
+      </div>
 
       <Section id="overview" title="概览">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -233,8 +230,8 @@ function CloudflarePersonalSiteMapContent() {
 
       <Section
         id="domains"
-        title="域名与运行面看板"
-        description={`配置快照更新于 ${DOMAIN_REGISTRY_UPDATED_AT}。状态分开记录 DNS 代理、承载目标、访问范围与生命周期；“已代理”不等同于证书已经激活。`}
+        title="DNS 与部署快照"
+        description={`代码配置快照更新于 ${DOMAIN_REGISTRY_UPDATED_AT}，用于核对 DNS、承载目标与证书状态。站点资料和服务关系在二级站点台账维护；“已代理”不等同于证书已经激活。`}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
@@ -283,6 +280,7 @@ function CloudflarePersonalSiteMapContent() {
         <div className="mt-4 rounded-md border border-[#d3e0d0] bg-[#f2f6f1] px-4 py-3 text-[12px] leading-6 text-[#374d34] dark:border-[#293628] dark:bg-[#141f14] dark:text-[#a3c2a0]">
           rank.2aran.com 已完成代理 DNS、Pages 自定义域、证书与 HTTP 验证，当前记录为“已上线”。
         </div>
+        <p className="mt-4 text-sm text-[var(--admin-muted)]">维护站点资料、归属与服务依赖：<Link href="/admin/subsites" className="underline">二级站点</Link>。</p>
       </Section>
 
       <Section id="runtime" title="运行时边界" description="public / admin / API 的职责分层。">
@@ -407,7 +405,7 @@ function CloudflarePersonalSiteMapContent() {
 export default function CloudflarePersonalSiteMapPage() {
   return (
     <AdminPageGate
-      label="Cloudflare 个人站技术地图"
+      label="站点架构"
       returnTo="/admin/cloudflare-personal-site-map"
       description="本站 Cloudflare 架构、public/admin/API 边界与后续技术细节，仅站长本人可见。"
     >

@@ -3,7 +3,7 @@ import ProjectWorkspace from './ProjectWorkspace'
 
 export const metadata = {
   title: '工程与运维',
-  description: '项目管理、研发建设、运行保障、配置安全与工程实验。',
+  description: '规划交付、设计架构、站点运行、配置安全与工程实验。',
   robots: { index: false, follow: false },
 }
 

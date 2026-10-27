@@ -119,7 +119,7 @@ export default function SubsiteManager() {
   }
 
   return (
-    <AdminPage title="二级站管理" description="统一管理公开子站、内部服务与历史入口，维护部署资料、主从归属及账号、燃币、内容和服务依赖。"
+    <AdminPage title="二级站点" description="统一管理公开子站、内部服务与历史入口，维护部署资料、主从归属及账号、燃币、内容和服务依赖。"
       actions={<>
         <span className="group relative inline-flex">
           <AdminButton type="button" variant="ghost" aria-label="管理台账说明" aria-describedby="subsite-ledger-tip">

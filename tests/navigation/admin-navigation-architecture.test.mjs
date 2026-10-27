@@ -61,12 +61,14 @@ test('private data navigation titles use four Chinese characters', () => {
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
-test('engineering workspace follows the build-run-govern lifecycle', () => {
+test('engineering workspace groups each tool by responsibility without repeated section titles', () => {
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
   assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '运行中心', '配置中心', '涉密自检', '逆向测试'])
-  assert.deepEqual(projects.sections.map((section) => section.label), ['项目管理', '研发建设', '运行保障', '配置与安全', '工程实验'])
+  assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '设计与架构', '站点运行', '配置与安全', '工程实验'])
+  assert.equal(new Set(projects.sections.flatMap((section) => section.items.map((item) => item.href))).size, titles.length)
+  assert.ok(projects.sections.every((section) => !section.items.some((item) => item.label === section.label)))
 })
 
 test('previously hidden admin routes have explicit child entries', () => {

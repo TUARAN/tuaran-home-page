@@ -47,20 +47,20 @@
   ].join("\n");
   const DEFAULT_POST_PROMPT = [
     "任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事，让没看过素材的人知道在谈什么，再给出 1 个判断；不要写中立综述、分析报告或给读者的操作清单。",
-    "事实：标题和摘要是唯一事实依据；近期主题只用于换角度。可以有鲜明看法，不编人物、数字、现场、动机或因果；提问式标题不能当作已证实的事实。",
+    "事实：标题和摘要是唯一事实依据；近期主题只用于换角度。可以有鲜明看法，不编人物、数字、现场、动机或因果；提问式标题不能当作已证实的事实。不要从历史走势推断有人一直持有、已经回本或终于等到结果；材料没说持有人经历，就不要替他们编经历。",
     "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要用‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’代替事件交代。",
     "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代素材中的具体事件，第二段只写与此事直接相关、能说清对象的判断；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补理由或总结。字数是写作目标，不是发布前的硬筛选。",
-    "口气：像本人随手发，判断可以鲜明，但每句话都要有具体对象和可追溯的素材依据。素材真让人佩服时，可以用 0～1 句短口语直接夸，不必解释为什么值得夸。0 句‘应理性看待’‘等待官方说明’式收尾，0 句空泛提醒；没有依据的后续发展就别推演。",
+    "口气：像和朋友聊刚看到的事，口语化、具体、可以有情绪。不用‘够硬气’‘姿态够直接’‘总算见着亮了’这类机械赞叹或替别人感动，也别用‘动作摆在这’‘别的不说’垫句子。走势夸张就直接说走势夸张；遇到拿不准的地方，可以自然反问一句，但不要把反问写成已证实的事实。0 句‘应理性看待’‘等待官方说明’式收尾；没有依据的后续发展别推演。",
     "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
-    "结尾：具体判断或直接的赞叹说完就停，0 句拔高主题、比较两段经历、概括行业或揣测谁先承担代价。不要‘你怎么看’‘值得我们思考’等固定收尾。",
+    "结尾：说完就停，不为了凑段落追加一句感慨。0 句拔高主题、虚构长期持有者的心路历程、概括行业或揣测谁先承担代价。不要‘你怎么看’‘值得我们思考’等固定收尾。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
   ].join("\n");
   const CLICKBAIT_POST_PROMPT = [
     "风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事，再给 1 个由素材支撑的具体判断；让没看过素材的人能读懂，不靠‘震惊’‘内幕’和空悬念骗点击。",
     "开头：严格遵守本次单独给出的随机开头指令。无论是否有固定开头，都先点明素材中的人、事或变化，再自然接上观点；不要‘看到新闻说’‘对于普通人来说’‘真正值得关注的是’。",
-    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机或因果。可以鲜明表态，不把猜测写成已发生的事实。",
+    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机或因果。可以鲜明表态，不把猜测写成已发生的事实；不要从历史走势臆造长期持有者或他们的收益。",
     "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段与段之间留 1 个空行。第一段交代具体事件，第二段写与此事直接相关的立场；有第三段时必须增加素材里已有的具体信息。不要为了凑段落补后果、理由或总结。字数是写作目标，不是发布前的硬筛选。",
-    "口气：像本人随手发，少解释。素材真让人佩服时，可以用 0～1 句短口语直接夸，不必解释为什么值得夸。0 句‘真正值得关注的是’‘更像是在’‘等官方说明’式分析，0 句泛泛建议，0 次三段式说理。",
+    "口气：像和朋友聊这件事，直接、口语化，有情绪也要说清对象。不要‘够硬气’‘姿态够直接’‘总算见着亮了’这种机械赞叹；拿不准的地方可以自然反问，不能把猜测写成事实。0 句‘真正值得关注的是’‘更像是在’‘等官方说明’式分析，0 句泛泛建议。",
     "表达：不要靠踩另一件事来抬高眼前这件事。0 句‘不是……而是……’‘更像……而非……’‘最厉害的地方是……’‘这比……更能说明……’等比较、讲解自己感受的套式；事实已经有分量时，直接说感受，不把赞叹写成意义分析。0 句‘本文认为’‘下面聊聊’‘接下来’等介绍写作过程的话。",
     "结尾：具体判断或直接的赞叹说完就停，0 句拔高主题、比较两段经历、概括行业或揣测谁先承担代价。不要‘你怎么看’‘欢迎讨论’‘评论区见’。",
     "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
@@ -95,7 +95,8 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.22";
+  const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.29";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -870,12 +871,19 @@
     if (flowStopping) return { label: "停止中", status: "stopping", action: "", title: "正在暂停全部任务" };
     const flow = pluginRuntime.flow || {};
     const tasks = Object.values(pluginRuntime.tasks || {});
+    const summary = flowTaskOverview(pluginRuntime);
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return { label: "启动中", status: "starting", action: "", title: "正在打开各任务窗口" };
     }
     if (taskSchedule.enabled && !tasks.some((task) => task.phase === "stopping")) {
-      return { label: "暂停全部任务", status: "running", action: "pause", title: "评论持续运行；其他任务按后台队列轮流执行" };
+      if (summary.counts.running) {
+        return { label: "暂停全部任务", status: "running", action: "pause", title: "暂停正在执行的任务和后台调度" };
+      }
+      if (summary.counts.missing || summary.counts.unknown) {
+        return { label: "启动未运行任务", status: "waiting", action: "start", title: "启动未运行任务；等待中的任务按原倒计时恢复" };
+      }
+      return { label: "暂停自动调度", status: "waiting", action: "pause", title: "当前任务均在等待；点此暂停后台调度" };
     }
     if (flow.phase === "paused" && !tasks.some((task) => task.phase === "running" || task.phase === "paused")) {
       return { label: "已暂停", status: "paused", action: "start", title: "全流程已暂停，点此重新启动" };
@@ -910,7 +918,7 @@
     const count = button.querySelector("[data-xrc-flow-count]");
     const dots = button.querySelector("[data-xrc-flow-dots]");
     if (label) label.textContent = model.label;
-    const showOverview = model.status === "running" || model.status === "paused"
+    const showOverview = model.status === "running" || model.status === "waiting" || model.status === "paused"
       || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
       || model.status === "stalled" || model.status === "unknown";
     if (overview) overview.hidden = !showOverview;
@@ -921,11 +929,11 @@
     }
     dots?.querySelectorAll("i").forEach((dot, index) => {
       dot.dataset.state = summary.tasks[index].status;
-      dot.title = `${summary.tasks[index].label}：${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认" }[summary.tasks[index].status]}`;
+      dot.title = `${summary.tasks[index].label}：${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认", blocked: "需人工检查" }[summary.tasks[index].status]}`;
     });
     button.dataset.flow = model.status;
     button.removeAttribute("title");
-    button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认" }[task.status]}`).join("，")}` : model.title);
+    button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${{ running: "执行中", waiting: "等待中", missing: "未启动", stopping: "停止中", unknown: "状态待确认", blocked: "需人工检查" }[task.status]}`).join("，")}` : model.title);
     button.disabled = model.status === "starting" || model.status === "stopping";
     paintFlowDetails(panel);
   }
@@ -1118,7 +1126,8 @@
       const storedPostPrompt = String(settings.postPrompt || "").trim();
       const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
       const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
-      state.postPrompt = oldClickbaitPreset ? CLICKBAIT_POST_PROMPT : oldDefaultPrompt ? "" : storedPostPrompt;
+      const previousBuiltInPrompt = storedPostPrompt.includes("素材真让人佩服时，可以用 0～1 句短口语直接夸");
+      state.postPrompt = (oldClickbaitPreset || (previousBuiltInPrompt && storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要"))) ? CLICKBAIT_POST_PROMPT : (oldDefaultPrompt || (previousBuiltInPrompt && storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要"))) ? "" : storedPostPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -1583,7 +1592,9 @@
         completedRounds: Number(parsed.completedRounds) || 0,
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
-        nextCycleAt: Math.max(0, Number(parsed.nextCycleAt) || 0),
+        nextCycleAt: validAssistantMode(parsed.assistantMode) === "notifications"
+          && Number(parsed.notificationCyclePolicyVersion) !== NOTIFICATION_CYCLE_POLICY_VERSION
+          ? 0 : Math.max(0, Number(parsed.nextCycleAt) || 0),
         nextRoundAt: Math.max(0, Number(parsed.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
         reconnectReason: String(parsed.reconnectReason || "").trim(),
@@ -1624,6 +1635,7 @@
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
+        notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
         nextRoundAt: Math.max(0, Number(value.nextRoundAt ?? state.nextRoundAt) || 0),
         reconnectAt: Math.max(0, Number(value.reconnectAt ?? state.reconnectAt) || 0),
         reconnectReason: String(value.reconnectReason ?? state.reconnectReason ?? "").trim(),
@@ -1662,6 +1674,7 @@
         startedAt: null,
         cycleCount: 0,
         nextCycleAt: 0,
+        notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
         nextRoundAt: 0,
         reconnectAt: 0,
         reconnectReason: "",
@@ -2121,15 +2134,13 @@
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`))
       .filter((article) => !isNestedTweet(article) && !isPromoted(article))
       .map((article) => {
-        const timeNode = article.querySelector('a[href*="/status/"] time');
+        const timeNode = article.querySelector('a[href*="/status/"] time') || article.querySelector('time[datetime]');
         const timeLink = timeNode?.closest("a");
         const href = timeLink?.getAttribute("href") || article.querySelector('a[href*="/status/"]')?.getAttribute("href") || "";
         const id = loopApi.statusIdFromHref(href);
         const authorHandle = loopApi.handleFromStatusHref(href);
         const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute("datetime"));
         const replyButton = article.querySelector('[data-testid="reply"]');
-        const likeButton = article.querySelector('[data-testid="like"]');
-        const unlikeButton = article.querySelector('[data-testid="unlike"]');
         const rect = article.getBoundingClientRect();
         return {
           id,
@@ -2137,8 +2148,6 @@
           permalink: href ? new URL(href, window.location.origin).href : "",
           article,
           replyButton,
-          likeButton,
-          unlikeButton,
           timestamp,
           repliesToOwnAccount: loopApi.isNotificationReplyText(textOf(article), ownHandle),
           top: rect.top + window.scrollY
@@ -2147,16 +2156,18 @@
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
         tweet.repliesToOwnAccount &&
-        loopApi.isWithinNotificationWindow(tweet.timestamp) &&
-        (tweet.likeButton || tweet.unlikeButton)
+        loopApi.isWithinNotificationWindow(tweet.timestamp)
       ));
   }
 
   function hasReachedNotificationCutoff() {
     if (state.assistantMode !== "notifications") return false;
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
-    return Array.from(main.querySelectorAll('article[data-testid="tweet"] time[datetime]'))
-      .some((time) => loopApi.isOlderThanNotificationWindow(loopApi.timestampFromDatetime(time.getAttribute("datetime"))));
+    return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
+      .filter((article) => !isNestedTweet(article))
+      .some((article) => Array.from(article.querySelectorAll('time[datetime]'))
+        .some((time) => time.closest('article[data-testid="tweet"]') === article
+          && loopApi.isOlderThanNotificationWindow(loopApi.timestampFromDatetime(time.getAttribute("datetime")))));
   }
 
   function cacheNotificationContext(id, conversation) {
@@ -3612,38 +3623,12 @@
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
             <button class="xrc-flow-details-trigger" type="button" data-xrc-flow-details-open aria-haspopup="dialog" aria-controls="xrc-flow-details" aria-label="查看任务详情">详情</button>
-            <button class="xrc-reset-trigger" type="button" data-xrc-reset-state aria-haspopup="dialog" aria-label="一键清空任务状态" aria-controls="xrc-reset-confirm" title="一键清空任务状态（保留 API 与日志）">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 4.5h9"></path><path d="M6 4.5V3h4v1.5"></path><path d="m5 6.2.45 6.3h5.1L11 6.2"></path><path d="M7 7.5v3.2M9 7.5v3.2"></path></svg>
-            </button>
-            <button class="xrc-flow-help" type="button" data-xrc-flow-help aria-expanded="false" aria-controls="xrc-flow-guide" aria-label="说明" title="说明">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M6.4 6.2a1.6 1.6 0 1 1 2.5 1.3c-.5.3-.9.7-.9 1.3V9.4"></path><path d="M8 11.4h.01"></path></svg>
-            </button>
           </div>
           <div class="xrc-flow-details" id="xrc-flow-details" data-xrc-flow-details role="dialog" aria-modal="true" aria-labelledby="xrc-flow-details-title" hidden>
             <div class="xrc-flow-details-card">
               <div class="xrc-flow-details-head"><div><strong id="xrc-flow-details-title">任务详情</strong><p data-xrc-flow-details-total>正在读取任务状态…</p></div><button type="button" data-xrc-flow-details-close aria-label="关闭任务详情">×</button></div>
               <ul data-xrc-flow-details-list></ul>
             </div>
-          </div>
-          <div class="xrc-reset-confirm" id="xrc-reset-confirm" data-xrc-reset-confirm role="dialog" aria-modal="true" aria-labelledby="xrc-reset-title" aria-describedby="xrc-reset-description" hidden>
-            <div class="xrc-reset-confirm-card">
-              <strong id="xrc-reset-title">清理任务状态与页面内存</strong>
-              <p id="xrc-reset-description">“优化闲置页”只重载没有运行任务的专用 X 页签，释放页面积累的内存；不清空扩展数据，也不打断运行中的任务。页面里未发送的手写草稿会丢失。</p>
-              <div><b>将清空</b><p>任务进度与倒计时、待发草稿与素材去重、回复/点赞/关注处理记录、发帖历史，以及提示词、频率和面板等自定义设置。</p></div>
-              <div><b>会保留</b><p>DeepSeek 与 B.AI API Key、社区回执密钥；本地每日报告、限制观察记录及尚未上传的回执日志；阶段性判断也会保留。</p></div>
-              <p>“确认清空”会停止任务、删除上述状态并重载已打开的 X 页面。</p>
-              <p class="xrc-reset-confirm-warning">清空的内容无法恢复。</p>
-              <span data-xrc-reset-status role="status" hidden>保留 API 与日志</span>
-              <div class="xrc-reset-confirm-actions">
-                <button type="button" data-xrc-reset-cancel>取消</button>
-                <button type="button" data-xrc-refresh-idle-tabs>优化闲置页</button>
-                <button type="button" data-xrc-reset-confirm-action>确认清空</button>
-              </div>
-            </div>
-          </div>
-          <div class="xrc-flow-guide" id="xrc-flow-guide" data-xrc-flow-guide hidden>
-            <p><b>全流程说明在站点文档中心。</b>那里有任务清单、窗口跳转规则和单项运行方式。</p>
-            <button type="button" class="xrc-flow-docs-link" data-xrc-flow-docs>打开站点文档 · 全流程说明 ↗</button>
           </div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
@@ -3970,7 +3955,6 @@
         window.open(`${DOCS_BASE_URL}${hash}`, "_blank", "noopener,noreferrer");
       };
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
-      panel.querySelector("[data-xrc-flow-docs]")?.addEventListener("click", () => openDocs("xrc-docs-flow"));
       panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
@@ -4001,73 +3985,6 @@
           panel.querySelector("[data-xrc-flow-details-close]").focus();
         }
       });
-      const resetDialog = panel.querySelector("[data-xrc-reset-confirm]");
-      const resetTrigger = panel.querySelector("[data-xrc-reset-state]");
-      const closeResetDialog = () => {
-        resetDialog.hidden = true;
-        resetTrigger.focus();
-      };
-      resetTrigger?.addEventListener("click", () => {
-        if (resettingState) return;
-        resetDialog.hidden = false;
-        panel.querySelector("[data-xrc-reset-cancel]").focus();
-      });
-      panel.querySelector("[data-xrc-reset-cancel]")?.addEventListener("click", closeResetDialog);
-      resetDialog?.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeResetDialog();
-        }
-        if (event.key !== "Tab") return;
-        const buttons = [panel.querySelector("[data-xrc-reset-cancel]"), panel.querySelector("[data-xrc-reset-confirm-action]")];
-        if (event.shiftKey && document.activeElement === buttons[0]) {
-          event.preventDefault();
-          buttons[1].focus();
-        } else if (!event.shiftKey && document.activeElement === buttons[1]) {
-          event.preventDefault();
-          buttons[0].focus();
-        }
-      });
-      panel.querySelector("[data-xrc-refresh-idle-tabs]")?.addEventListener("click", async (event) => {
-        const button = event.currentTarget;
-        const status = panel.querySelector("[data-xrc-reset-status]");
-        button.disabled = true;
-        status.hidden = false;
-        status.textContent = "正在重载闲置任务页…";
-        try {
-          const result = await sendExtensionMessage({ type: "xrc-refresh-idle-tabs" });
-          if (!result?.ok) throw new Error(result?.error || "闲置页面优化失败");
-          status.textContent = `已重载 ${result.refreshed || 0} 个闲置页${result.skipped ? `，${result.skipped} 个运行中或未能重载` : ""}${result.reloadCurrent ? "；当前页即将重载" : ""}`;
-          if (result.reloadCurrent) window.setTimeout(() => window.location.reload(), 250);
-        } catch (error) {
-          status.textContent = error?.message || "闲置页面优化失败";
-        } finally {
-          button.disabled = false;
-        }
-      });
-      panel.querySelector("[data-xrc-reset-confirm-action]")?.addEventListener("click", async () => {
-        if (resettingState || resetDialog.hidden) return;
-        resetDialog.hidden = true;
-        const button = panel.querySelector("[data-xrc-reset-state]");
-        const status = panel.querySelector("[data-xrc-reset-status]");
-        const resetRow = button.closest(".xrc-flow-launch");
-        button.disabled = true;
-        resetRow.dataset.state = "busy";
-        status.hidden = false;
-        status.textContent = "正在清空任务状态，保留 API 与日志…";
-        try {
-          if (await flushConfigSave() === false) throw new Error("设置尚未保存，请先检查 API Key");
-          const result = await sendExtensionMessage({ type: "xrc-reset-state" });
-          if (!result?.ok) throw new Error(result?.error || "清空状态失败");
-          status.textContent = "已清空，正在重新加载 X 页面…";
-          window.setTimeout(() => window.location.reload(), 100);
-        } catch (error) {
-          resettingState = false;
-          button.disabled = false;
-          resetRow.dataset.state = "error";
-          status.textContent = error?.message || "清空状态失败，请重试";
-        }
-      });
       panel.querySelector("[data-xrc-report-account]").addEventListener("change", (event) => {
         dailyReportAccount = event.currentTarget.value;
         showDailyReport(panel);
@@ -4092,9 +4009,6 @@
           showDailyReport(panel);
         });
       }
-      panel.querySelector("[data-xrc-flow-help]")?.addEventListener("click", () => {
-        openDocs("xrc-docs-flow");
-      });
       panel.querySelector("[data-xrc-toggle]").addEventListener("click", () => {
         if (state.running && canStartReplyNow()) startReplyNow();
         else onToggle();

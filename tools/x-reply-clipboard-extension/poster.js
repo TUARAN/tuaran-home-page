@@ -19,6 +19,16 @@
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const PUBLISH_LIST_KEY = "xrcPosterPublishList";
   const DRAFT_POLICY_VERSION = 4;
+  function choosePostFormat(random = Math.random) {
+    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", lengthMode: "regular" };
+    return { mediaMode: "text", lengthMode: random() < 0.5 ? "compact" : "regular" };
+  }
+
+  function withPostFormat(item) {
+    const lengthMode = item?.lengthMode === "compact" ? "compact" : item?.lengthMode === "regular" ? "regular" : choosePostFormat().lengthMode;
+    const mediaMode = item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
+    return { ...item, mediaMode, lengthMode, text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text };
+  }
   const USED_SOURCE_KEY = "xrc-poster-used-sources";
   const HISTORY_KEY = "xrcPosterHistoryV2";
   const history = { sourceIds: [], published: [] };
@@ -42,6 +52,7 @@
     lastPost: "",
     lastSentText: "",
     lastError: "",
+    imageStatus: "",
     currentSourceId: "",
     currentPostAttempts: 0,
     retiredDraftText: "",
@@ -93,6 +104,7 @@
       lastPost: state.lastPost,
       lastSentText: state.lastSentText,
       lastError: state.lastError,
+      imageStatus: state.imageStatus,
       currentSourceId: state.currentSourceId,
       currentPostAttempts: state.currentPostAttempts,
       retiredDraftText: state.retiredDraftText,
@@ -162,7 +174,7 @@
     state.riskCooldownUntil = Math.max(state.riskCooldownUntil, Number(saved.riskCooldownUntil) || 0);
     state.riskRetries = Math.max(state.riskRetries, Number(saved.riskRetries) || 0);
     if (Array.isArray(saved.items) && saved.items.length && !state.publishQueue.length) {
-      state.publishQueue = saved.items.filter(keepSourceItem);
+      state.publishQueue = saved.items.filter(keepSourceItem).map(withPostFormat);
       if (!state.currentPost && saved.currentPost) state.currentPost = saved.currentPost;
       if (!state.currentSourceId && saved.currentSourceId) state.currentSourceId = saved.currentSourceId;
       if (!state.retiredDraftText && saved.retiredDraftText) state.retiredDraftText = saved.retiredDraftText;
@@ -306,6 +318,29 @@
     return formatShortPost(text);
   }
 
+  function formatCompactPost(value) {
+    const text = preserveLines(value);
+    if (!text) return "";
+    const lines = text.split(/\n+/u).map((line) => line.trim()).filter(Boolean);
+    if (lines.length >= 3 && lines.length <= 4) return lines.join("\n\n");
+    const characters = Array.from(lines.join(""));
+    if (characters.length < 24) return lines.join("\n\n");
+    const count = characters.length >= 56 ? 4 : 3;
+    const result = [];
+    let offset = 0;
+    for (let index = 0; index < count - 1; index += 1) {
+      const remaining = count - index;
+      const ideal = offset + Math.round((characters.length - offset) / remaining);
+      const nearPunctuation = Array.from({ length: 9 }, (_, n) => ideal - 4 + n)
+        .filter((position) => position > offset + 5 && position < characters.length - (remaining - 1) * 6 && /[，,。！？!?；;]/u.test(characters[position - 1]));
+      const split = nearPunctuation.sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal))[0] || ideal;
+      result.push(characters.slice(offset, split).join(""));
+      offset = split;
+    }
+    result.push(characters.slice(offset).join(""));
+    return result.join("\n\n");
+  }
+
   function normalized(value) {
     return String(value || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
   }
@@ -402,7 +437,7 @@
       return { ...item, source, sourceLabel: item.sourceLabel || sourceLabel(source), sourcePageUrl: item.sourcePageUrl || item.sourceUrl || item.url || "" };
     }) : [];
     state.sourceQueue = retained(state.sourceQueue);
-    state.publishQueue = retained(state.publishQueue).filter(keepPublishItem);
+    state.publishQueue = retained(state.publishQueue).filter(keepPublishItem).map(withPostFormat);
     if ((state.currentPost && !state.currentSourceId) || (state.currentSourceId && !state.publishQueue.some((item) => item.id === state.currentSourceId))) {
       state.retiredDraftText = previousDraft;
       state.currentPost = "";
@@ -411,13 +446,13 @@
     }
   }
 
-  function requestSourceRewrite(sourceText, recentTopics, item = null, avoidPost = "", avoidReason = "", recentOpenings = [], recentEndings = []) {
+  function requestSourceRewrite(sourceText, recentTopics, item = null, avoidPost = "", avoidReason = "", recentOpenings = [], recentEndings = [], lengthMode = "regular") {
     return new Promise((resolve, reject) => {
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("改写只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason, lengthMode }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接改写服务"));
@@ -517,17 +552,18 @@
       let text = "";
       let topic = "";
       let reason = "";
+      const postFormat = choosePostFormat();
       try {
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
         const recentEndings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").filter(Boolean).at(-1)).filter(Boolean).slice(-8);
         const tryModel = item.source !== "evergreen" || (!rewriteServiceError && evergreenModelCandidates++ < 3);
         if (tryModel) {
-          const result = await requestSourceRewrite(item.text, recentTopics, item, "", "", recentOpenings, recentEndings);
+          const result = await requestSourceRewrite(item.text, recentTopics, item, "", "", recentOpenings, recentEndings, postFormat.lengthMode);
           if (result.skip) {
             reason = item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
           } else {
-            text = formatModelPost(simplifyPostRhetoric(result.post));
+            text = (postFormat.lengthMode === "compact" ? formatCompactPost : formatModelPost)(simplifyPostRhetoric(result.post));
             topic = String(result.topic || item.text).trim().slice(0, 60);
             if (!text) reason = "模型未返回正文";
           }
@@ -542,7 +578,7 @@
         const fallback = buildEvergreenFallback(item);
         const fallbackReason = !fallback.text ? "没有正文" : recentEntries().some((entry) => sameDraftText(entry.text, fallback.text)) ? "正文与已发内容完全相同" : "";
         if (!fallbackReason) {
-          text = fallback.text;
+          text = postFormat.lengthMode === "compact" ? formatCompactPost(fallback.text) : fallback.text;
           topic = fallback.topic;
           reason = "";
           emit(rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地常用社会观察内容` : "模型暂未返回合适草稿，已切换常用社会观察兜底内容");
@@ -554,7 +590,7 @@
         if (rewriteServiceError && item.source !== "evergreen") break;
         continue;
       }
-      state.publishQueue.push({ id: item.id, text, topic, sourceText: item.text, sourceSummary: item.summary || "", sourceType: item.source === "evergreen" ? "evergreen" : "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
+      state.publishQueue.push({ id: item.id, text, topic, ...postFormat, sourceText: item.text, sourceSummary: item.summary || "", sourceType: item.source === "evergreen" ? "evergreen" : "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
       await savePublishList();
       await rememberUsedSourceId(item.id);
       emit(`待发列表 ${state.publishQueue.length}/${total} 条。列表发完前不会重新抓取`);
@@ -667,6 +703,34 @@
     return Boolean(button && !button.disabled && button.getAttribute("aria-disabled") !== "true");
   }
 
+  function composerHasMedia(composer = findInlineComposer()) {
+    return Boolean(composer?.container?.querySelector?.('[data-testid="attachments"] img, [data-testid="tweetPhoto"] img, [data-testid="attachments"] video, [data-testid="tweetPhoto"] video'));
+  }
+
+  function composerImageInput(composer = findInlineComposer()) {
+    const selector = 'input[data-testid="fileInput"][type="file"], input[type="file"][accept*="image"]';
+    return composer?.container?.querySelector?.(selector) || Array.from(document.querySelectorAll(selector))
+      .find((input) => !input.closest('[role="dialog"]') && !input.closest("article")) || null;
+  }
+
+  async function attachPostImage(postText, item) {
+    const input = composerImageInput();
+    if (!input) return "页面没有图片上传入口，已改为纯文字";
+    if (!root.XInteractionPostImage?.createPostCard) return "配图模块未加载，已改为纯文字";
+    if (typeof DataTransfer !== "function") return "浏览器不支持自动选择图片，已改为纯文字";
+    try {
+      const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || "话题观察");
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      const preview = await waitUntil(() => composerHasMedia(), 15000);
+      return preview ? "已配图" : "配图预览未确认";
+    } catch (error) {
+      return `配图失败，已改为纯文字：${String(error?.message || "未知错误").slice(0, 80)}`;
+    }
+  }
+
   function realClick(element) {
     element?.scrollIntoView?.({ block: "center", behavior: "auto" });
     element?.dispatchEvent?.(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
@@ -774,14 +838,20 @@
     return true;
   }
 
-  async function publishPost(postText) {
+  async function publishPost(postText, item = null) {
     let composer = findInlineComposer();
     if (!composer) {
       await waitForHomeComposer(12000);
       composer = findInlineComposer();
       if (!composer) return "no-composer";
     }
+    if (composerHasMedia(composer)) return "existing-media";
     let existing = editorText(composer.editor);
+    if (existing && item?.lengthMode === "compact" && !/\n\s*\n/u.test(textOf(composer.editor))) {
+      const cleared = await requestDraftFill("", { clear: true });
+      if (!cleared.ok || editorText(findInlineComposer()?.editor)) return "compose-failed";
+      existing = "";
+    }
     if (!existing) {
       await requestDraftFill(postText);
       composer = findInlineComposer();
@@ -789,6 +859,11 @@
       if (!existing) return "compose-failed";
     }
     state.currentPost = existing;
+    state.imageStatus = "";
+    if (item?.mediaMode === "image" && item?.imageStyle === "text-card") {
+      state.imageStatus = await attachPostImage(existing, item);
+      if (state.imageStatus === "配图预览未确认") return "image-unconfirmed";
+    }
     const ready = await waitUntil(() => submitEnabled(findInlineComposer()?.submit), 8000);
     if (!ready) return "submit-disabled";
     const noticesBefore = new Set(successNoticeNodes());
@@ -808,6 +883,8 @@
 
   function failureLabel(result) {
     if (result === "no-composer") return "没有找到 X 首页发帖框";
+    if (result === "existing-media") return "发帖框仍有旧图片，请先移除图片";
+    if (result === "image-unconfirmed") return "图片上传后没有确认预览，请检查发帖框";
     if (result === "compose-failed") return "生成内容没有写进发帖框";
     if (result === "submit-disabled") return "Post 按钮仍不可用";
     if (result === "send-unconfirmed") return "没有确认推文发送成功";
@@ -892,6 +969,11 @@
         }
       }
       const queuedIsNew = Boolean(queued) && !sameDraftText(queued, state.lastSentText) && !sameDraftText(queued, state.currentPost);
+      if (composerHasMedia()) {
+        emit("发帖框已有图片，请先确认或移除，避免误发或重复配图");
+        await wait(1500);
+        continue;
+      }
       if (queuedIsNew) {
         emit("发帖框有未发送内容，请手动处理后继续热点发帖");
         await wait(1500);
@@ -926,7 +1008,9 @@
         } else {
           emit(`正在重试待发列表中的这一条，还剩 ${state.publishQueue.length} 条`);
         }
-        const revisedCurrentPost = simplifyPostRhetoric(state.currentPost);
+        const revisedCurrentPost = state.publishQueue[0]?.lengthMode === "compact"
+          ? formatCompactPost(simplifyPostRhetoric(state.currentPost))
+          : simplifyPostRhetoric(state.currentPost);
         if (revisedCurrentPost !== state.currentPost) {
           const existingDraft = editorText(findInlineComposer()?.editor);
           if (existingDraft && sameDraftText(existingDraft, state.currentPost)) {
@@ -941,7 +1025,7 @@
           if (state.publishQueue[0]) state.publishQueue[0].text = revisedCurrentPost;
           await savePublishList();
         }
-        const result = await publishPost(state.currentPost);
+        const result = await publishPost(state.currentPost, state.publishQueue[0]);
         if (result !== "ok" && automationWarningVisible()) {
           coolDownForRisk();
           continue;
@@ -1125,6 +1209,8 @@
     formatShortPost,
     simplifyPostRhetoric,
     formatModelPost,
+    formatCompactPost,
+    choosePostFormat,
     editorText,
     duplicatePostNoticeNodes,
     loadHistory,

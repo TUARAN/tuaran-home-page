@@ -30,8 +30,8 @@ export default function PlateExhibition({ plates }) {
     <section id="plates" className={styles.exhibition} aria-label="大互动图版展览">
       <div className={styles.exhibitionHeader}>
         <div>
-          <p className={styles.sectionIndex}>THE EXHIBITION / 01—04</p>
-          <h2>四张图，四个观点。</h2>
+          <p className={styles.sectionIndex}>THE EXHIBITION / 01—{String(plates.length).padStart(2, '0')}</p>
+          <h2>从日常出发，走向互动</h2>
           <p>左右滑动浏览图版。每一张图都指向一次从观察到行动的推进。</p>
         </div>
         <div className={styles.exhibitionControls} aria-label="图版切换">

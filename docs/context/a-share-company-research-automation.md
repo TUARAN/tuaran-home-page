@@ -39,7 +39,7 @@ POST `https://2aran.com/api/cron/a-share-research`（`x-a-share-secret` 头鉴�
   站长可提前发布或将其退回为 `rejected`。每日调度先检查过期稿，每次最多自动发布最早到期的一篇，
   已复核、已退回和已发布稿不会进入自动发布。自动发布失败时恢复 `pending` 并保留原到期时间，后续调度重试。
 - 人工发布与自动发布共用 `lib/a-share/aSharePublisher.js`，通过 GitHub Contents API 提交 `main`，随后由 Cloudflare Pages 构建上线。
-- 定时触发见 `.github/workflows/a-share-research.yml`（每天北京时间 01:00）。
+- 定时触发见 `.github/workflows/a-share-research.yml`（每天北京时间 08:10，在 Cloudflare 免费额度 UTC 00:00 重置后）。
 - 定时任务失败时（含 GitHub Actions runner 未接单、端点返回非 200），工作流会调用
   `POST /api/automation/alert` 向站长消息中心写入「自动化监控」通知（幂等按 workflow+runId 去重，
   鉴权复用 `AUTOMATION_ALERT_SECRET` / `WEEKLY_SUMMARY_SECRET` / `PUBLIC_OPINION_COLLECT_SECRET` 回退链）。

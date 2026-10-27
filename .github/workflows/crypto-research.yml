@@ -1,11 +1,11 @@
 name: Crypto research daily
 
-# 每天北京时间 01:30，先自动发布已到期的待复核草稿，再按市值选择尚未完成的加密资产。
+# 每天北京时间 08:40（Cloudflare 免费额度重置后），先自动发布已到期的待复核草稿，再按市值选择尚未完成的加密资产。
 # 发布使用本次 Actions 的 GITHUB_TOKEN，避免 Cloudflare 里过期的长期 PAT 把系列卡住。
 # 已复核、已退回和已发布稿不自动发布；发布失败保留原到期时间，后续调度重试。同步池后允许续跑同一选题。
 on:
   schedule:
-    - cron: '30 17 * * *'
+    - cron: '40 0 * * *'
   workflow_dispatch: {}
 
 concurrency:

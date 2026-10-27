@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   IconArrowUpRight, IconBook2, IconChevronRight, IconCoin, IconEdit,
   IconFileText, IconHistory, IconHome, IconMail, IconMap2,
-  IconMessageCircle, IconRocket, IconShieldLock, IconUserCircle,
+  IconMessageCircle, IconShieldLock, IconUserCircle,
 } from '@tabler/icons-react'
 
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/site/siteNav'
@@ -166,13 +166,6 @@ const HELP_SECTIONS = [
   },
 ]
 
-const QUICK_LINKS = [
-  { href: '/articles', title: '浏览内容', description: '文章、分析、实践与资源', icon: IconBook2 },
-  { href: '/account', title: '管理账号', description: '登录、权益与授权记录', icon: IconUserCircle },
-  { href: '/ranbi', title: '了解燃币', description: '获取、使用与实时规则', icon: IconCoin },
-  { href: '#contact', title: '联系与反馈', description: '故障、更正与数据请求', icon: IconMail },
-]
-
 function Sidebar() {
   return <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
     <nav aria-label="站点帮助目录" className="flex gap-3 overflow-x-auto pb-2 lg:block lg:max-h-[calc(100vh-var(--site-header-height)-3rem)] lg:space-y-6 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-[var(--site-line)] lg:bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] lg:p-4 lg:shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)]">
@@ -224,36 +217,9 @@ function DocumentationArticle({ item, index }) {
 
 export default function HelpPage() {
   let articleIndex = 0
-  const articleCount = HELP_SECTIONS.reduce((count, section) => count + section.items.length, 0)
   return <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
-    <header className="relative isolate overflow-hidden rounded-[28px] border border-[var(--site-line)] bg-[var(--site-panel-strong)] px-5 py-8 shadow-[0_24px_80px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)] md:px-9 md:py-10 lg:px-12">
-      <div className="pointer-events-none absolute -right-24 -top-32 -z-10 h-80 w-80 rounded-full bg-[color-mix(in_srgb,var(--site-green)_16%,transparent)] blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-40 left-[30%] -z-10 h-72 w-72 rounded-full bg-[color-mix(in_srgb,var(--site-accent)_10%,transparent)] blur-3xl" aria-hidden="true" />
-      <div className="relative max-w-3xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--site-green)_24%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--site-green)]"><IconRocket size={15} stroke={1.8} aria-hidden="true" />Help center</div>
-        <h1 className="mt-5 font-serif text-[36px] font-semibold leading-[1.15] tracking-[-0.025em] text-[var(--site-ink)] md:text-[52px]">需要帮助？<br className="hidden sm:block" />从这里找到答案。</h1>
-        <p className="mt-4 max-w-2xl text-[14px] leading-7 text-[var(--site-muted)] md:text-[15px]">集中查看站点使用方法、账号与权益、内容规则、隐私说明和联系方式。按任务选择入口，或沿目录浏览全部指南。</p>
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-[var(--site-faint)]">
-          <span><strong className="mr-1.5 font-mono text-[var(--site-ink)]">{articleCount}</strong>个帮助主题</span>
-          <span className="hidden h-3 w-px bg-[var(--site-line)] sm:block" aria-hidden="true" />
-          <span>最后整理：2026 年 8 月 27 日</span>
-        </div>
-      </div>
-    </header>
-
-    <section aria-labelledby="quick-links-title" className="mt-5">
-      <h2 id="quick-links-title" className="sr-only">常用入口</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{QUICK_LINKS.map((item) => {
-        const Icon = item.icon
-        return <Link key={item.href} href={item.href} className="group flex items-center gap-3 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_80%,transparent)] p-4 no-underline transition duration-300 hover:-translate-y-0.5 hover:border-[var(--site-line-strong)] hover:shadow-[0_14px_38px_color-mix(in_srgb,var(--site-shadow)_16%,transparent)]">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--site-green)_9%,var(--site-panel))] text-[var(--site-green)]"><Icon size={20} stroke={1.7} aria-hidden="true" /></span>
-          <span className="min-w-0 flex-1"><strong className="block text-[13px] font-semibold text-[var(--site-ink)]">{item.title}</strong><span className="mt-0.5 block text-[11px] leading-5 text-[var(--site-muted)]">{item.description}</span></span>
-          <IconChevronRight size={16} className="shrink-0 text-[var(--site-faint)] transition group-hover:translate-x-0.5 group-hover:text-[var(--site-green)]" aria-hidden="true" />
-        </Link>
-      })}</div>
-    </section>
-
-    <div className="mt-10 grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+    <h1 className="sr-only">站点帮助</h1>
+    <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
       <Sidebar />
       <div className="min-w-0">
         <div>{HELP_SECTIONS.map((section, sectionIndex) => <section key={section.id} id={section.id} className="scroll-mt-24 pt-11 first:pt-0 md:pt-14">

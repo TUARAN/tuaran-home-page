@@ -23,7 +23,7 @@ export const metadata = {
 
 const chapters = [
   { id: 'foreword', number: '序', title: '从一次交流开始' },
-  { id: 'plates', number: '卷首', title: '四张图版与观点' },
+  { id: 'plates', number: '卷首', title: '卷首图版' },
   { id: 'framework', number: '第一章', title: '走向互动之前' },
   { id: 'mechanism', number: '第二章', title: '互动怎样形成反馈' },
   { id: 'quality', number: '第三章', title: '判断互动的质量' },
@@ -44,6 +44,7 @@ const plates = [
   { src: '/resources/big-interaction-whitepaper/02.jpg', width: 688, height: 1024, title: '走出封闭', viewpoint: '主动走出去，让陌生的观点进入生活。', caption: '表达、倾听与结识新朋友，让熟悉的视角有机会被更新。' },
   { src: '/resources/big-interaction-whitepaper/03.jpg', width: 941, height: 1656, title: '行动循环', viewpoint: '接近边界，接收反馈，再修正行动。', caption: '从主动互动到获得反馈，反复校准自己的表达与判断。原图下半部含图书推广信息。' },
   { src: '/resources/big-interaction-whitepaper/01.jpg', width: 1024, height: 1516, title: '互动质量', viewpoint: '每一次互动，都值得认真对待。', caption: '次数、深度、对象、内容价值与持续性，帮助复盘互动的质量。' },
+  { src: '/resources/big-interaction-whitepaper/05.webp', width: 1024, height: 1529, title: '持续练习', viewpoint: '选择能持续的行动，认真交流并根据反馈调整。', caption: '原图以高额评论、点赞、关注和发帖数量描绘“每日挑战”；这些数字是画面设定，不是适合所有人的每日目标。' },
 ]
 
 const jsonLd = {
@@ -145,6 +146,8 @@ export default function BigInteractionWhitepaperPage() {
             </ol>
             <h3 id="review">4.2 复盘三个问题</h3>
             <div className={styles.promptBox}><p>哪次交流改变了我的看法？</p><p>我从谁那里得到帮助，又给谁提供了具体回应？</p><p>下周我准备验证或修正哪一个判断？</p></div>
+            <h3 id="sustainable-practice">4.3 选择可持续的节奏</h3>
+            <p>卷首的“每日挑战”图把评论 1000 条、点赞 2000 个、关注 200 人和发帖 200 条写成目标。它表达了持续参与的愿望，但这些数量不适合作为日常练习标准。可以从一次有内容的回应、一个具体问题或一段认真完成的合作开始，再根据时间、精力与收到的反馈调整频率。</p>
           </section>
 
           <section id="boundaries" className={styles.section}>

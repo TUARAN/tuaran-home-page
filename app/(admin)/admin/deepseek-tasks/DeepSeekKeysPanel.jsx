@@ -53,14 +53,14 @@ const DEEPSEEK_GITHUB_ACTIONS_USES = [
 const DEEPSEEK_GITHUB_TRIGGERED_USES = [
   {
     name: 'A 股研究自动化',
-    schedule: '每天 · 北京时间 01:00',
+    schedule: '每天 · 北京时间 08:10',
     workflow: 'a-share-research.yml',
     source: 'a-share-research',
     taskTypes: ['daily-draft'],
   },
   {
     name: '加密调研自动化',
-    schedule: '每天 · 北京时间 01:30',
+    schedule: '每天 · 北京时间 08:40',
     workflow: 'crypto-research.yml',
     source: 'crypto-research',
     taskTypes: ['daily-draft'],

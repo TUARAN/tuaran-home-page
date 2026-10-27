@@ -2350,7 +2350,8 @@
 
 #x-reply-clipboard-panel .xrc-global-bar[hidden] { display: none; }
 
-#x-reply-clipboard-panel .xrc-key-guide {
+#x-reply-clipboard-panel .xrc-key-guide,
+#x-reply-clipboard-panel .xrc-key-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2362,12 +2363,25 @@
   border-radius: 10px;
   background: rgba(29, 155, 240, 0.08);
   color: var(--xrc-accent);
-  cursor: pointer;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
   text-align: center;
 }
+#x-reply-clipboard-panel .xrc-key-guide { cursor: pointer; }
+#x-reply-clipboard-panel .xrc-key-guide[hidden],
+#x-reply-clipboard-panel .xrc-key-loading[hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-key-loading { gap: 7px; color: var(--xrc-muted); }
+#x-reply-clipboard-panel .xrc-key-spinner {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: xrc-key-spin 800ms linear infinite;
+}
+@keyframes xrc-key-spin { to { transform: rotate(360deg); } }
 #x-reply-clipboard-panel .xrc-key-guide:hover,
 #x-reply-clipboard-panel .xrc-key-guide:focus-visible {
   border-color: var(--xrc-accent);

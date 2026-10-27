@@ -95,7 +95,7 @@
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.44";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.45";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -164,6 +164,7 @@
     baiKey: "",
     replyProviders: [...REPLY_PROVIDER_ORDER],
     aiKeySaved: false,
+    aiSettingsStatus: "loading",
     aiKeyHint: "",
     replyPrompt: "",
     postPrompt: "",
@@ -1267,7 +1268,11 @@
   }
 
   async function loadAiSettings() {
-    if (!globalThis.chrome?.storage?.local) return;
+    if (!globalThis.chrome?.storage?.local) {
+      state.aiSettingsStatus = "error";
+      state.aiStatus = "当前环境无法读取模型设置";
+      return;
+    }
     try {
       const stored = await chrome.storage.local.get("xrcAiSettings");
       const settings = stored?.xrcAiSettings || {};
@@ -1294,8 +1299,10 @@
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
+      state.aiSettingsStatus = "ready";
     } catch (error) {
       state.aiStatus = "读取 AI 配置失败";
+      state.aiSettingsStatus = "error";
     }
   }
 
@@ -1514,6 +1521,7 @@
     state.baiKey = baiKey;
     state.replyProviders = replyProviders;
     state.aiKeySaved = Boolean(key);
+    state.aiSettingsStatus = "ready";
     state.aiKeyHint = key ? `已保存 ····${key.slice(-4)}` : "";
     state.aiStatus = key ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
     state.replyPrompt = storedReplyPrompt;
@@ -3814,7 +3822,9 @@
         </div>
         <div class="xrc-workspace-nav">
           <div class="xrc-global-bar" data-xrc-global-bar>
-            <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false">尚未配置 DeepSeek API Key · 点击前往模型设置 →</button>
+            <div class="xrc-key-loading" data-xrc-key-loading role="status"><span class="xrc-key-spinner" aria-hidden="true"></span>正在读取模型设置…</div>
+            <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false" hidden>尚未配置 DeepSeek API Key · 点击前往模型设置 →</button>
+            <button class="xrc-key-guide" type="button" data-xrc-key-retry hidden>模型设置读取失败 · 点击重试</button>
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
@@ -3985,6 +3995,12 @@
       panel.querySelector("[data-xrc-actions-toggle]").addEventListener("click", () => {
         headerMenuOpen = !headerMenuOpen;
         syncHeaderMenu(panel);
+      });
+      panel.querySelector("[data-xrc-key-retry]").addEventListener("click", async () => {
+        state.aiSettingsStatus = "loading";
+        renderPanel();
+        await loadAiSettings();
+        renderPanel();
       });
       panel.querySelectorAll("[data-xrc-config-open]").forEach((button) => button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -4402,7 +4418,15 @@
       const start = panel.querySelector("[data-xrc-start]");
       const globalBar = panel.querySelector("[data-xrc-global-bar]");
       if (start) start.dataset.needsKey = "false";
-      if (globalBar) globalBar.hidden = state.aiKeySaved;
+      if (globalBar) {
+        const loading = state.aiSettingsStatus === "loading";
+        const failed = state.aiSettingsStatus === "error";
+        const missingKey = state.aiSettingsStatus === "ready" && !state.aiKeySaved;
+        globalBar.hidden = !(loading || failed || missingKey);
+        globalBar.querySelector("[data-xrc-key-loading]").hidden = !loading;
+        globalBar.querySelector("[data-xrc-key-guide]").hidden = !missingKey;
+        globalBar.querySelector("[data-xrc-key-retry]").hidden = !failed;
+      }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode
           || (button.dataset.xrcAssistant === "reply" && ["timeline", "notifications"].includes(state.assistantMode))

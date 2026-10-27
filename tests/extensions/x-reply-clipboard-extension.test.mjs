@@ -962,7 +962,10 @@ test('legacy like cooldowns based on old alerts are rechecked after update', asy
     'likes-replies': { resumeAt: 9999999, reason: 'X 点赞次数受限' },
     poster: { resumeAt: 9999999, reason: '等待发帖' },
   } }
-  globalThis.chrome = { storage: { local: { async get() { return { xrcTaskSchedule: schedule } } } } }
+  globalThis.chrome = { storage: { local: {
+    async get() { return { xrcTaskSchedule: schedule } },
+    async set(value) { Object.assign(schedule, value.xrcTaskSchedule) },
+  } } }
   try {
     const migrated = await background.readTaskSchedule()
     assert.equal(migrated.likeDetectionVersion, 2)
@@ -3835,7 +3838,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.45')
+  assert.equal(manifest.version, '3.32.46')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4620,7 +4623,7 @@ test('an unresponsive queued task retries its own tab after a countdown', async 
   }
 })
 
-test('three consecutive restrictions block automatic retry until manual restart', async () => {
+test('both comment tasks keep a growing cooldown instead of requiring manual restart', async () => {
   const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {} } }
   globalThis.chrome = {
     storage: {
@@ -4630,14 +4633,45 @@ test('three consecutive restrictions block automatic retry until manual restart'
     tabs: { async sendMessage() {} },
   }
   try {
-    for (let index = 0; index < 3; index += 1) {
-      await background.noteScheduledAction({ task: 'timeline-reply', result: 'limited', errorCode: 'risk-blocked' })
+    for (const task of ['timeline-reply', 'notification-reply']) {
+      const mode = task === 'timeline-reply' ? 'timeline' : 'notifications'
+      for (let index = 1; index <= 4; index += 1) {
+        const before = Date.now()
+        await background.noteScheduledAction({ task, result: 'limited', errorCode: 'risk-blocked' })
+        const item = local.xrcTaskSchedule.items[mode]
+        assert.equal(item.blocked, false)
+        assert.equal(item.limitedStreak, index)
+        assert.ok(item.resumeAt >= before + index * 10 * 60000)
+        assert.match(item.reason, /自动重试/)
+      }
+      await background.noteScheduledAction({ task, result: 'success' })
+      assert.equal(local.xrcTaskSchedule.items[mode].limitedStreak, 0)
+      assert.equal(local.xrcTaskSchedule.items[mode].resumeAt, 0)
     }
-    assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
-    assert.equal(local.xrcTaskSchedule.items.timeline.limitedStreak, 3)
-    await background.noteScheduledAction({ task: 'timeline-reply', result: 'success' })
-    assert.equal(local.xrcTaskSchedule.items.timeline.limitedStreak, 0)
-    assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('old blocked comment tasks migrate once to saved automatic cooldowns', async () => {
+  const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {
+    timeline: { blocked: true, limitedStreak: 3, reason: 'risk-blocked' },
+    notifications: { blocked: true, limitedStreak: 2, reason: 'risk-blocked' },
+  } } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: local[key] } },
+    async set(value) { Object.assign(local, value) },
+  } } }
+  try {
+    const before = Date.now()
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.replyRiskVersion, 1)
+    for (const [mode, minutes] of [['timeline', 30], ['notifications', 20]]) {
+      assert.equal(plan.items[mode].blocked, false)
+      assert.ok(plan.items[mode].resumeAt >= before + minutes * 60000)
+    }
+    const deadline = plan.items.timeline.resumeAt
+    assert.equal((await background.readTaskSchedule()).items.timeline.resumeAt, deadline)
   } finally {
     delete globalThis.chrome
   }

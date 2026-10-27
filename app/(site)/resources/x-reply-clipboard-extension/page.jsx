@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '3.32.45'
+const VERSION = '3.32.46'
 
 const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 
 const VERSION_HISTORY = [
   {
+    version: '3.32.46',
+    title: '评论受限后继续倒计时',
+    description: '评论帖子和评论通知遇到疑似自动化提示后持续按 10、20、30 分钟递增等待，到期自动重试；旧的人工检查状态自动迁移。',
+    current: true,
+  },
+  {
     version: '3.32.45',
     title: '模型设置读取状态',
     description: '首次读取配置时显示加载状态；确认未配置后才出现 DeepSeek API Key 引导，读取失败可点击重试。',
-    current: true,
   },
   {
     version: '3.32.44',

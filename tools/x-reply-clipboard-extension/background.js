@@ -899,6 +899,7 @@ const RESIDENT_TASKS = ["timeline", "notifications"];
 const QUEUED_TASKS = ["likes-posts", "likes-replies", "mutual-unfollow", "mutual-followBack", "poster"];
 const TASK_SLICE_MS = 15 * 60 * 1000;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
+const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 let scheduleWork = Promise.resolve();
 
 async function readTaskSchedule() {
@@ -914,6 +915,21 @@ async function readTaskSchedule() {
       plan.items[mode] = { ...item, blocked: false, limitedStreak: 0, resumeAt: 0, reason: "点赞异常判定已更新，等待重新确认" };
     }
     plan.likeDetectionVersion = 2;
+  }
+  if (plan.replyRiskVersion !== 1) {
+    for (const mode of RESIDENT_TASKS) {
+      const item = plan.items[mode];
+      if (!item?.blocked) continue;
+      const streak = Math.max(1, Number(item.limitedStreak) || 1);
+      plan.items[mode] = {
+        ...item,
+        blocked: false,
+        resumeAt: item.manualStopped ? 0 : Date.now() + streak * REPLY_RISK_COOLDOWN_MS,
+        reason: item.manualStopped ? "已手动停止" : `X 提示疑似自动化，第 ${streak} 次冷却后自动重试`
+      };
+    }
+    plan.replyRiskVersion = 1;
+    await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
   }
   return plan;
 }
@@ -947,6 +963,7 @@ async function runTaskSchedule() {
     const item = plan.items[mode] || {};
     if (item.blocked || item.manualStopped) continue;
     const phase = runtime.tasks?.[mode]?.phase;
+    if (!item.recoveryAttempts && Number(item.resumeAt) > now && ["running", "paused"].includes(phase)) continue;
     if (phase === "running" || phase === "paused" || phase === "stopping") {
       if (item.resumeAt || item.recoveryAttempts) {
         plan.items[mode] = { ...item, resumeAt: 0, recoveryAttempts: 0, reason: "" };
@@ -1049,10 +1066,22 @@ async function noteScheduledAction(event) {
   if (event.result === "success") {
     if (!item.limitedStreak) return;
     item.limitedStreak = 0;
+    if (RESIDENT_TASKS.includes(mode)) {
+      item.blocked = false;
+      item.resumeAt = 0;
+      item.reason = "";
+    }
   } else {
     item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
-    item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
-    if (item.limitedStreak >= 3) {
+    if (RESIDENT_TASKS.includes(mode)) {
+      item.blocked = false;
+      item.recoveryAttempts = 0;
+      item.resumeAt = Date.now() + item.limitedStreak * REPLY_RISK_COOLDOWN_MS;
+      item.reason = `X 提示疑似自动化，第 ${item.limitedStreak} 次冷却后自动重试`;
+    } else {
+      item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
+    }
+    if (!RESIDENT_TASKS.includes(mode) && item.limitedStreak >= 3) {
       item.blocked = true;
       item.resumeAt = 0;
     }

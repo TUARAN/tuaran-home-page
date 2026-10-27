@@ -33,6 +33,8 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['内容', '文章分发'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '站内互动'])
   assert.deepEqual(resolveAdminTrail('/admin/community-actions').map((item) => item.label), ['自动化', '社区动作'])
+  assert.deepEqual(resolveAdminTrail('/admin/community-actions/monitor').map((item) => item.label), ['数据', '插件监控'])
+  assert.deepEqual(resolveAdminTrail('/admin/community-actions/x-monitor').map((item) => item.label), ['数据', '插件监控'])
   assert.deepEqual(resolveAdminTrail('/admin/morning-greeting').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/x-replies').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
@@ -155,8 +157,8 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
 test('data workspace groups statistics and database management', async () => {
   const data = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/data')
-  assert.deepEqual(listWorkspaceChildren(data).map((item) => item.href), ['/admin/content-weekly', '/admin/db'])
-  assert.deepEqual(getWorkspaceHubProps('/admin/data').sections.map((section) => section.title), ['数据分析', '数据存储'])
+  assert.deepEqual(listWorkspaceChildren(data).map((item) => item.href), ['/admin/content-weekly', '/admin/db', '/admin/community-actions/monitor'])
+  assert.deepEqual(getWorkspaceHubProps('/admin/data').sections.map((section) => section.title), ['数据分析', '数据存储', '插件状态'])
   const oldSiteHealth = await readFile(new URL('../../app/(admin)/admin/site-health/page.jsx', import.meta.url), 'utf8')
   assert.match(oldSiteHealth, /params\?\.tab === 'data'\) redirect\('\/admin\/db'\)/)
 })
@@ -167,7 +169,7 @@ test('automation workspace hub and sidebar expose one task center plus focused p
 
   assert.deepEqual(
     listWorkspaceChildren(automation).map((item) => item.label),
-    ['任务中心', 'A 股研究自动化', '加密调研自动化', '社区动作', '插件监控', '站内互动']
+    ['任务中心', 'A 股研究自动化', '加密调研自动化', '社区动作', '站内互动']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

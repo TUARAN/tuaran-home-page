@@ -108,7 +108,6 @@
     roundIntervalSeconds: 10
   });
   const BOUNDARY_PROBE_WAIT_MINUTES = Object.freeze([15, 30, 45, 60, 90, 120]);
-  const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
@@ -142,18 +141,6 @@
   function timestampFromDatetime(value) {
     const timestamp = Date.parse(String(value || ""));
     return Number.isFinite(timestamp) ? timestamp : 0;
-  }
-
-  function isWithinNotificationWindow(timestamp, now = Date.now(), windowMs = NOTIFICATION_WINDOW_MS) {
-    const time = Number(timestamp);
-    const current = Number(now);
-    if (!Number.isFinite(time) || time <= 0 || !Number.isFinite(current)) return false;
-    return time >= current - windowMs && time <= current + (5 * 60 * 1000);
-  }
-
-  function isOlderThanNotificationWindow(timestamp, now = Date.now(), windowMs = NOTIFICATION_WINDOW_MS) {
-    const time = Number(timestamp);
-    return Number.isFinite(time) && time > 0 && time < Number(now) - windowMs;
   }
 
   function nextTweet(tweets, processedIds) {
@@ -389,15 +376,12 @@
     DEFAULT_SCHEDULE_PACE,
     DEFAULT_PROFILE,
     SCHEDULE_PROFILES,
-    NOTIFICATION_WINDOW_MS,
     statusIdFromHref,
     normalizeHandle,
     handleFromStatusHref,
     isNotificationReplyText,
     isReplyRestrictedText,
     timestampFromDatetime,
-    isWithinNotificationWindow,
-    isOlderThanNotificationWindow,
     nextTweet,
     shouldReload,
     batchTransition,

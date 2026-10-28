@@ -662,19 +662,107 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const readable = source.match(/  function readableTaskLimitReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
+  const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePreview = source.match(/  function schedulePreview\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const taskActionCount = source.match(/  function taskActionCount\(mode, count\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleBoard = source.match(/  function paintScheduleBoard\(dialog\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleDesk = source.match(/  function paintScheduleDesk\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePulse = source.match(/  function scheduleItemPulse\(mode, preview, overviewTask\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(overview && readable && details && schedulePreview && scheduleBoard && scheduleDesk && schedulePulse)
+  assert.ok(overview && readable && waitInfo && details && schedulePreview && taskActionCount && scheduleBoard && scheduleDesk && schedulePulse)
   const list = { replaceChildren(...children) { this.children = children } }
   const total = { textContent: '' }
   const deskTotal = { textContent: '' }
-  const scheduleList = { replaceChildren(...children) { this.children = children } }
+  const makeNode = () => {
+    const node = {
+      className: '',
+      textContent: '',
+      title: '',
+      tabIndex: 0,
+      dataset: {},
+      children: [],
+      setAttribute(name, value) { this[name] = value },
+      append(...children) {
+        for (const child of children) {
+          child.parentNode = this
+          this.children.push(child)
+        }
+      },
+      appendChild(child) {
+        if (child.parentNode) {
+          const siblings = child.parentNode.children
+          const at = siblings.indexOf(child)
+          if (at >= 0) siblings.splice(at, 1)
+        }
+        child.parentNode = this
+        this.children.push(child)
+        return child
+      },
+      insertBefore(child, reference) {
+        if (child.parentNode) {
+          const siblings = child.parentNode.children
+          const at = siblings.indexOf(child)
+          if (at >= 0) siblings.splice(at, 1)
+        }
+        child.parentNode = this
+        if (!reference) this.children.push(child)
+        else {
+          const at = this.children.indexOf(reference)
+          this.children.splice(at < 0 ? this.children.length : at, 0, child)
+        }
+        return child
+      },
+      remove() {
+        if (!this.parentNode) return
+        const siblings = this.parentNode.children
+        const at = siblings.indexOf(this)
+        if (at >= 0) siblings.splice(at, 1)
+        this.parentNode = null
+      },
+      querySelector(selector) {
+        const walk = (items) => {
+          for (const item of items) {
+            if (selector === '.xrc-schedule-item-body strong' && item.tagName === 'STRONG') return item
+            if (selector === '.xrc-schedule-item-body small' && item.tagName === 'SMALL') return item
+            if (selector === '.xrc-schedule-item-status' && item.className === 'xrc-schedule-item-status') return item
+            if (item.className === 'xrc-schedule-item-body') {
+              const nested = walk(item.children || [])
+              if (nested) return nested
+            }
+            const nested = walk(item.children || [])
+            if (nested) return nested
+          }
+          return null
+        }
+        return walk(this.children || [])
+      },
+    }
+    return node
+  }
+  const scheduleList = {
+    children: [],
+    querySelectorAll(selector) {
+      if (selector !== '.xrc-schedule-item') return []
+      return this.children.filter((item) => item.className === 'xrc-schedule-item')
+    },
+    insertBefore(child, reference) {
+      if (child.parentNode) {
+        const siblings = child.parentNode.children
+        const at = siblings.indexOf(child)
+        if (at >= 0) siblings.splice(at, 1)
+      }
+      child.parentNode = this
+      if (!reference) this.children.push(child)
+      else {
+        const at = this.children.indexOf(reference)
+        this.children.splice(at < 0 ? this.children.length : at, 0, child)
+      }
+      return child
+    },
+  }
   const scheduleSummary = { textContent: '' }
   const historyList = { replaceChildren(...children) { this.children = children } }
-  const focusExecution = { hidden: true }
+  const focusExecution = { hidden: true, dataset: {} }
   const deskPast = { textContent: '' }
   const deskNow = { textContent: '' }
   const deskNext = { textContent: '' }
@@ -709,7 +797,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   } }
   const now = Date.now()
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['mutual-followBack', '回关粉丝'], ['mutual-unfollow', '清理未回关']],
     FLOW_STALE_MS: 90000,
     TASK_MODE_LABELS: { timeline: '评论帖子', notifications: '评论通知' },
     scheduleLoaded: true,
@@ -717,6 +805,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     selectedTaskMode: 'timeline',
     validTaskKey: (mode) => mode || 'timeline',
     formatCountdown: () => '1 分 0 秒',
+    formatClock: () => '01:00',
     formatScheduleTime: () => '10/28 12:00',
     taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'running' }, tasks: {
@@ -724,12 +813,22 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       notifications: { phase: 'paused', updatedAt: now },
       poster: { phase: 'running', updatedAt: now - 91000 },
     } },
-    document: { createElement() { return { dataset: {}, setAttribute(name, value) { this[name] = value }, append(...children) { this.children = children } } } },
+    document: {
+      createElement(tag) {
+        const node = makeNode()
+        node.tagName = String(tag || 'div').toUpperCase()
+        return node
+      },
+    },
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${schedulePreview}\n${schedulePulse}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${waitInfo}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
+  assert.equal(context.countLabel('timeline', 12), '12 条回复')
+  assert.equal(context.countLabel('notifications', 3), '3 条回复')
+  assert.equal(context.countLabel('likes-posts', 4), '4 个点赞')
+  assert.equal(context.countLabel('likes-replies', 5), '5 个点赞')
   context.paint(panel)
   assert.equal(list.children.length, 8)
-  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies'])
+  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster', 'poster-premium', 'mutual-followBack', 'mutual-unfollow'])
   assert.equal(list.children[0].children[3].textContent, '进入')
   assert.equal(list.children[0].children[0].textContent, '评论帖子')
   assert.equal(list.children[0].children[1].textContent, '运行中')
@@ -739,6 +838,9 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(total.textContent, /1 项运行中 · 1 项等待中 · 1 项需处理 · 5 项已停止/)
   assert.equal(scheduleList.children.length, 8)
   assert.match(scheduleSummary.textContent, /排班已暂停/)
+  const firstScheduleRow = scheduleList.children[0]
+  assert.equal(firstScheduleRow.dataset.pulse, 'running')
+  assert.ok(firstScheduleRow.children.some((child) => child.className === 'xrc-schedule-orbit-dot'))
   context.taskSchedule = { enabled: true, items: { poster: { blocked: true, reason: 'risk-blocked' }, timeline: { resumeAt: now + 60000, reason: '任务状态未响应，等待自动复查' } } }
   context.taskSchedule.current = 'notifications'
   context.taskSchedule.dueModes = ['notifications', 'likes-posts', 'likes-replies']
@@ -747,7 +849,9 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   context.paint(panel)
   assert.match(scheduleSummary.textContent, /当前 评论通知 · 下一 /)
   assert.equal(scheduleList.children[0].children[1].children[0].textContent, '评论通知')
+  assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'timeline'), firstScheduleRow)
   assert.equal(focusExecution.hidden, false)
+  assert.equal(focusExecution.dataset.currentTask, 'notifications')
   assert.equal(list.children[0].children[1].textContent, '等待中')
   assert.equal(list.children[4].children[1].textContent, '需处理')
   context.taskSchedule.items.timeline = { manualStopped: true }
@@ -770,6 +874,16 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(css, /data-pulse="running"/)
   assert.match(css, /data-pulse="stopped"/)
   assert.match(css, /xrc-border-breathe/)
+  assert.match(css, /xrc-dot-orbit/)
+  assert.match(css, /left:\s*calc\(100% - 12px\)/)
+  assert.match(css, /--xrc-orbit-tempo/)
+  assert.match(css, /xrc-schedule-orbit-dot/)
+  assert.match(css, /xrc-schedule-wait-dots/)
+  assert.match(css, /xrc-ellipsis-bounce/)
+  assert.match(source, /xrc-schedule-wait-dots/)
+  assert.match(source, /xrc-schedule-orbit-dot/)
+  assert.match(source, /Upsert in place/)
+  assert.ok(css.lastIndexOf('data-pulse="running"') > css.indexOf('.xrc-schedule-board .xrc-schedule-item {'))
   assert.match(css, /\[data-desk="home"\] \.xrc-assistant-tabs/)
   assert.match(css, /\[data-desk="task"\] \.xrc-assistant-tabs/)
   assert.match(css, /\[data-desk="task"\]\[data-assistant-mode="timeline"\] \.xrc-reply-body/)
@@ -851,6 +965,9 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
   vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
   assert.equal(context.model().label, '已停止 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
+  context.taskSchedule.current = 'timeline'
+  assert.equal(context.model().label, '等待中 · 点击暂停调度')
+  context.taskSchedule.current = ''
   context.taskSchedule.items = {}
   assert.equal(context.model().label, '等待中 · 点击暂停调度')
   context.pluginRuntime.tasks.timeline.phase = 'running'
@@ -974,8 +1091,8 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   assert.match(context.control('poster', false, now).title, /轮换等待，还剩 约 1 分 0 秒/)
   context.deskHome = false
   context.selectedTaskMode = 'poster'
-  assert.equal(context.control('poster', false, now).action, 'stop')
-  assert.match(context.control('poster', false, now).label, /点击停止/)
+  assert.equal(context.control('poster', false, now).action, 'start')
+  assert.match(context.control('poster', false, now).label, /点击立即启动/)
   context.deskHome = true
   context.taskSchedule.items.poster.manualStopped = true
   assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
@@ -1014,14 +1131,15 @@ test('single task click refreshes background schedule before acting on a stale s
       else busyModes.delete(mode)
     },
     readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: {} } }),
-    scheduledTaskButtonState: () => ({ action: 'stop' }),
+    scheduledTaskButtonState: () => ({ action: 'start' }),
     sendExtensionMessage: async (message) => { actions.push(message.type); return { ok: true } },
     renderPanel() {},
   })
   vm.runInContext(`${definition}\nglobalThis.stopWaiting = stopScheduledWaitingTask`, context)
   assert.equal(await context.stopWaiting('likes-posts', false), true)
-  assert.deepEqual(actions, ['xrc-task-manual-stop'])
-  assert.equal(context.taskSchedule.items['likes-posts'].manualStopped, true)
+  assert.deepEqual(actions, ['xrc-task-manual-start'])
+  assert.equal(context.taskSchedule.items['likes-posts'].manualStopped, false)
+  assert.equal(context.taskSchedule.items['likes-posts'].resumeAt, 0)
 
   context.scheduledTaskButtonState = () => ({ action: 'focus' })
   context.sendTaskMessage = async (type) => { actions.push(type); return { ok: true } }
@@ -1041,11 +1159,12 @@ test('single task click refreshes background schedule before acting on a stale s
   assert.match(context.state.status, /无法确认后台任务状态/)
 })
 
-test('current scheduled task stays running in overview and hides recovery notice', async () => {
+test('a reserved schedule slot waits until its page confirms the loop', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const notice = source.match(/  function taskScheduleNotice\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(overview && notice)
+  assert.ok(overview && waitInfo && notice)
   const now = Date.now()
   const context = vm.createContext({
     FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['mutual-unfollow', '清理未回关'], ['mutual-followBack', '回关粉丝'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论']],
@@ -1055,15 +1174,139 @@ test('current scheduled task stays running in overview and hides recovery notice
     formatClock: () => '01:00',
     waitHeadline: (prefix, ms) => ms > 0 ? `${prefix} · 约 1 分 0 秒` : prefix,
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${notice}\nglobalThis.overview = flowTaskOverview; globalThis.notice = taskScheduleNotice`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${waitInfo}\n${notice}\nglobalThis.overview = flowTaskOverview; globalThis.notice = taskScheduleNotice`, context)
   const result = context.overview({ tasks: {} }, now)
-  assert.equal(result.tasks.find((task) => task.key === 'timeline').status, 'running')
+  assert.equal(result.tasks.find((task) => task.key === 'timeline').status, 'waiting')
   assert.equal(result.tasks.find((task) => task.key === 'notifications').status, 'waiting')
+  assert.equal(context.notice('timeline', now).title, '启动中')
+  context.pluginRuntime.tasks.timeline = { phase: 'running', updatedAt: now }
+  assert.equal(context.overview({ tasks: context.pluginRuntime.tasks }, now).tasks.find((task) => task.key === 'timeline').status, 'running')
   assert.equal(context.notice('timeline', now), null)
   context.taskSchedule.items.timeline.resumeAt = now + 60000
   context.pluginRuntime.tasks.timeline = { phase: 'paused', updatedAt: now, waitUntil: now + 60000 }
   assert.equal(context.overview({ tasks: context.pluginRuntime.tasks }, now).tasks.find((task) => task.key === 'timeline').status, 'waiting')
   assert.match(context.notice('timeline', now).detail, /到期后自动继续/)
+})
+
+test('waiting copy explains queue, platform cooldown, and fixed posting slot', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const definition = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '评论通知'], ['poster-premium', '精品发帖']],
+    taskSchedule: { current: 'timeline', items: {}, timeline: { future: [] } },
+    pluginRuntime: { tasks: { timeline: { phase: 'running' } } },
+  })
+  vm.runInContext(`${definition}\nglobalThis.waitInfo = scheduledWaitInfo`, context)
+  assert.match(context.waitInfo('notifications', now).label, /排队中，等待评论帖子/)
+  context.taskSchedule.items.notifications = { reason: 'X 提示疑似自动化，第 2 次冷却后自动重试', resumeAt: now + 60000 }
+  const limited = context.waitInfo('notifications', now)
+  assert.equal(limited.label, 'X 限制冷却中')
+  assert.equal(limited.remaining, 60000)
+  context.taskSchedule.timeline.future = [{ mode: 'poster-premium', readyAt: now + 3600000 }]
+  assert.equal(context.waitInfo('poster-premium', now).label, '等待精品发帖档位')
+  assert.match(css, /xrc-task-schedule-notice\[data-state="waiting"\] strong::before/)
+  assert.match(css, /prefers-reduced-motion: reduce/)
+})
+
+test('comment, like and poster handoff wait for the target loop before reporting success', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const start = source.match(/  async function startLaunchedTask\(launch\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(start)
+  const likeState = { running: false, status: '点赞任务待命' }
+  const state = { running: false, loopPromise: null, status: '评论任务待命', poster: { running: false, status: '发帖任务待命' } }
+  let releaseLike
+  let releasePoster
+  const context = vm.createContext({
+    likeState, state,
+    toggleLikes: async (options) => {
+      assert.equal(options.scheduledStart, true)
+      await new Promise((resolve) => { releaseLike = resolve })
+      likeState.running = true
+    },
+    onPosterToggle: async (options) => {
+      assert.equal(options.scheduledStart, true)
+      await new Promise((resolve) => { releasePoster = resolve })
+      state.poster.running = true
+    },
+    onToggle: async (options) => {
+      assert.equal(options.scheduledStart, true)
+      state.running = true
+    },
+    isPosterMode: (mode) => mode === 'poster' || mode === 'poster-premium',
+  })
+  vm.runInContext(`${start}\nglobalThis.startLaunchedTask = startLaunchedTask`, context)
+  let settled = false
+  const likeStart = context.startLaunchedTask({ start: true, assistantMode: 'likes-posts' }).then(() => { settled = true })
+  await Promise.resolve()
+  assert.equal(settled, false)
+  releaseLike()
+  await likeStart
+  assert.equal(likeState.running, true)
+  const postStart = context.startLaunchedTask({ start: true, assistantMode: 'poster-premium' })
+  await Promise.resolve()
+  assert.equal(state.poster.running, false)
+  releasePoster()
+  await postStart
+  assert.equal(state.poster.running, true)
+  state.poster.running = false
+  context.onPosterToggle = async () => {}
+  await assert.rejects(context.startLaunchedTask({ start: true, assistantMode: 'poster' }), /发帖任务待命/)
+  await context.startLaunchedTask({ start: true, assistantMode: 'timeline' })
+  assert.equal(state.running, true)
+  state.running = false
+  context.onToggle = async () => {}
+  await assert.rejects(context.startLaunchedTask({ start: true, assistantMode: 'timeline' }), /评论任务待命/)
+})
+
+test('scheduled starts bypass manual waiting-button actions', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const likeToggle = source.match(/  async function toggleLikes\(\{ scheduledStart = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  const posterToggle = source.match(/  async function onPosterToggle\(\{ scheduledStart = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(likeToggle && posterToggle)
+  assert.match(source, /async function onToggle\(\{ scheduledStart = false \} = \{\}\) \{\s*if \(!scheduledStart && await stopScheduledWaitingTask/)
+  assert.match(source, /if \(!state\.running\) await onToggle\(\{ scheduledStart: true \}\)/)
+  const likeState = { running: false }
+  const state = { poster: { running: false }, aiKey: 'test-key', riskPaused: true, posterPace: 'medium' }
+  let manualActions = 0
+  let starts = 0
+  const context = vm.createContext({
+    likeState, state,
+    currentTaskKey: () => 'likes-posts', posterTaskKey: () => 'poster', posterKindFromMode: () => 'normal',
+    stopScheduledWaitingTask: async () => { manualActions += 1; return true },
+    resumeManuallyStoppedTask: async () => { manualActions += 1; return false },
+    getLikeController: () => ({ start() { likeState.running = true; starts += 1 } }),
+    postApi: { setPostKind() {}, start() { state.poster.running = true; starts += 1 } },
+    flushConfigSave: async () => true, loadAiSettings: async () => {},
+    registerCurrentTaskTab() {}, updatePosterState() {}, renderPanel() {},
+  })
+  vm.runInContext(`${likeToggle}\n${posterToggle}\nglobalThis.startLike = toggleLikes; globalThis.startPoster = onPosterToggle`, context)
+  await context.startLike({ scheduledStart: true })
+  await context.startPoster({ scheduledStart: true })
+  assert.equal(starts, 2)
+  assert.equal(manualActions, 0)
+})
+
+test('handoff cannot report running from another task while the target is idle', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const handoff = source.match(/  async function handoffInPageTask\(mode\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(handoff)
+  const state = { running: true, loopPromise: null, mutual: { running: false }, poster: { running: false } }
+  const context = vm.createContext({
+    state, likeState: { running: false, stopping: false }, deskHome: false, selectedTaskMode: '',
+    launchFromMode: () => ({ taskKey: 'likes-posts', assistantMode: 'likes-posts', start: true }),
+    pathReadyForTask: () => true,
+    currentTaskKey: () => 'timeline', stopLocalTasks: () => { state.running = false },
+    sessionStorage: { setItem() {} },
+    applyTaskTitle() {}, registerCurrentTaskTab: async () => {},
+    startLaunchedTask: async () => {}, renderPanel() {}, currentTaskPhase: () => '',
+  })
+  vm.runInContext(`${handoff}\nglobalThis.handoff = handoffInPageTask`, context)
+  const result = await context.handoff('likes-posts')
+  assert.equal(result.ok, false)
+  assert.match(result.error, /任务未能启动/)
 })
 
 test('all seven task panels show the same blocked state with a readable reason', async () => {
@@ -1135,7 +1378,7 @@ test('missing DeepSeek key guide opens model settings and focuses its saved key 
 
 test('manual restart clears only the selected task stop and restriction flags', async () => {
   const originalChrome = globalThis.chrome
-  let schedule = { enabled: true, current: '', items: {
+  let schedule = { enabled: false, current: '', items: {
     'likes-posts': { manualStopped: true, blocked: true, resumeAt: 30000, limitedStreak: 3 },
     poster: { resumeAt: 60000, reason: '等待发帖' },
   } }
@@ -1153,6 +1396,7 @@ test('manual restart clears only the selected task stop and restriction flags', 
     assert.equal(schedule.items['likes-posts'].blocked, false)
     assert.equal(schedule.items['likes-posts'].resumeAt, 0)
     assert.equal(schedule.items['likes-posts'].limitedStreak, 0)
+    assert.ok(schedule.items['likes-posts'].manualRequestedAt > 0)
     assert.deepEqual(schedule.items.poster, { resumeAt: 60000, reason: '等待发帖' })
   } finally {
     globalThis.chrome = originalChrome
@@ -1414,6 +1658,8 @@ test('receipt cleanHandle rejects default placeholder accounts', async () => {
     const accepted = await receipt.accept({ task: 'post-like', result: 'success', targetId: 'tweet-1', accountHandle: 'default' })
     assert.equal(accepted.ok, true)
     assert.equal(stored.xrcCommunityReport.accountHandle, 'tarsixseveneig1')
+    assert.equal(stored.xrcCommunityReport.queue[0].accountHandle, '')
+    await receipt.syncStatsFromBackground('tarsixseveneig1', { force: true })
     assert.equal(bodies.at(-1).accountHandle, 'tarsixseveneig1')
     assert.equal(bodies.every((body) => body.accountHandle !== 'default'), true)
   } finally {
@@ -1422,7 +1668,7 @@ test('receipt cleanHandle rejects default placeholder accounts', async () => {
   }
 })
 
-test('heartbeat auto-syncs dirty daily reports including today', async () => {
+test('hourly stats sync uploads dirty daily reports including today', async () => {
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
   const nowDate = receipt.shanghaiDate()
@@ -1446,7 +1692,11 @@ test('heartbeat auto-syncs dirty daily reports including today', async () => {
     return { ok: true, async json() { return { dailyReportSaved: true, commands: [] } } }
   }
   try {
-    const result = await receipt.heartbeatFromBackground('account')
+    const monitor = await receipt.heartbeatFromBackground('account')
+    assert.equal(monitor.ok, true)
+    assert.equal(monitor.mode, 'monitor')
+    assert.equal(bodies.every((body) => !body.dailyReport && Array.isArray(body.events) && body.events.length === 0), true)
+    const result = await receipt.syncStatsFromBackground('account', { force: true })
     assert.equal(result.ok, true)
     assert.equal(result.daily.uploaded, 2)
     assert.deepEqual(bodies.filter((body) => body.dailyReport).map((body) => body.dailyReport.date), ['2026-10-21', nowDate])
@@ -1460,7 +1710,9 @@ test('heartbeat auto-syncs dirty daily reports including today', async () => {
 test('daily report panel relies on automatic sync instead of manual upload or pull', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const monitor = await readFile(new URL('../../app/(admin)/admin/community-actions/monitor/PluginMonitorClient.jsx', extensionDir), 'utf8')
-  assert.match(content, /心跳自动同步当日统计/)
+  assert.match(content, /次数统计约每小时/)
+  assert.match(content, /立即更新监控状态/)
+  assert.match(content, /data-xrc-community-stats-sync/)
   assert.match(content, /data-xrc-daily-schedule/)
   assert.doesNotMatch(content, /data-xrc-daily-upload(?!-|[a-z])/)
   assert.doesNotMatch(content, /data-xrc-daily-pull/)
@@ -1573,7 +1825,7 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-schedule-desk/)
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 42px;/)
+  assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
 })
 
 test('memory refresh reloads only idle registered task tabs and preserves state', async () => {
@@ -1698,6 +1950,44 @@ test('post-like task stays on Home and has its own processed history', async () 
   assert.equal(clicks, 1)
   assert.deepEqual(saved['xrcAutoLikeSeen:test:posts'], ['123'])
   assert.equal(location.pathname, '/home')
+})
+
+test('post likes finish the configured two-round run before entering the scheduler wait', async () => {
+  const originalPlan = loop.createRunPlan
+  const originalDelay = loop.randomCycleDelayMs
+  loop.createRunPlan = () => ({ pace: 'medium', rounds: 2, roundTargets: [1, 1], total: 2 })
+  loop.randomCycleDelayMs = () => 60000
+  let clock = 1000
+  const articles = ['101', '102'].map((id) => {
+    let liked = false
+    const link = { href: `https://x.com/a/status/${id}`, getAttribute: () => `/a/status/${id}` }
+    return { querySelector(selector) {
+      if (selector === 'time') return { closest: () => link }
+      if (selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (selector === '[data-testid="like"]') return liked ? null : { click() { liked = true } }
+      return null
+    } }
+  })
+  let controller
+  const phases = []
+  try {
+    controller = autoLike.createController({
+      document: { querySelector: () => ({ querySelectorAll: () => articles }), querySelectorAll: () => [] },
+      window: { location: { pathname: '/home' }, setTimeout(callback) { clock += 1000; queueMicrotask(callback) }, scrollBy() {}, innerHeight: 700 },
+      storage: { async get() { return {} }, async set() {} },
+      target: 'posts', now: () => clock,
+      onUpdate(snapshot) {
+        phases.push({ count: snapshot.runCount, rounds: snapshot.completedRounds, waitUntil: snapshot.cooldownUntil })
+        if (snapshot.cooldownUntil > clock && snapshot.completedRounds === 2) controller.stop()
+      },
+    })
+    await controller.start()
+    assert.ok(phases.some((phase) => phase.count === 1 && phase.rounds === 1 && !phase.waitUntil))
+    assert.ok(phases.some((phase) => phase.count === 2 && phase.rounds === 2 && phase.waitUntil > clock - 60000))
+  } finally {
+    loop.createRunPlan = originalPlan
+    loop.randomCycleDelayMs = originalDelay
+  }
 })
 
 test('using the panel pauses auto-like clicks while Stop remains responsive', async () => {
@@ -1942,7 +2232,7 @@ test('like count limit cools down, preserves history, then resumes without a rap
   assert.equal(controller.snapshot().count, 1)
   assert.equal(saved['xrcAutoLikeCooldownV2:a'].retries, 1)
   assert.deepEqual(saved['xrcAutoLikeSeen:a:posts'], ['123'])
-  assert.ok(updates.some((status) => /分钟后自动重试/.test(status)))
+  assert.ok(updates.some((status) => /已结束本次轮次；冷却后重新排班/.test(status)))
   assert.deepEqual(limits, [['a', 'posts', 'rate-limited']])
 })
 
@@ -2087,7 +2377,7 @@ test('auto-like cools down after an automation warning and retries when it clear
   })
   await controller.start()
   assert.equal(clicks, 2)
-  assert.ok(updates.some((status) => /疑似自动化.*分钟后自动重试/.test(status)))
+  assert.ok(updates.some((status) => /已结束本次轮次；冷却后重新排班/.test(status)))
   assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
   assert.ok(saved['xrcAutoLikeCooldownV2:default'].until > 601000)
   assert.deepEqual(saved['xrcAutoLikeSeen:default:posts'], ['123'])
@@ -3824,14 +4114,10 @@ test('B.AI billing restriction pauses repeated third-provider requests', async (
   }
 })
 
-test('limits notification interaction to the most recent two hours', () => {
-  const now = Date.parse('2026-10-09T12:00:00.000Z')
-  assert.equal(loop.NOTIFICATION_WINDOW_MS, 2 * 60 * 60 * 1000)
+test('notification timestamps remain parsable without a time-window restriction', () => {
   assert.equal(loop.timestampFromDatetime('2026-10-09T10:30:00.000Z'), Date.parse('2026-10-09T10:30:00.000Z'))
-  assert.equal(loop.isWithinNotificationWindow(Date.parse('2026-10-09T10:00:00.000Z'), now), true)
-  assert.equal(loop.isWithinNotificationWindow(Date.parse('2026-10-09T09:59:59.000Z'), now), false)
-  assert.equal(loop.isOlderThanNotificationWindow(Date.parse('2026-10-09T09:59:59.000Z'), now), true)
   assert.equal(loop.timestampFromDatetime('not-a-date'), 0)
+  assert.equal(loop.isWithinNotificationWindow, undefined)
 })
 
 test('notification replies remain eligible without a like button', async () => {
@@ -3903,26 +4189,32 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['125'])
 })
 
-test('an old quoted post does not end a fresh notification scan', async () => {
+test('notification candidates are not cut off by a two-hour timestamp', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const definition = source.match(/  function hasReachedNotificationCutoff\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
-  const article = { querySelectorAll: () => [oldQuotedTime] }
-  const oldQuotedTime = {
-    closest: () => ({ quote: true }),
-    getAttribute: () => new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+  const article = {
+    textContent: 'Replying to @tuaranx 已有旧回复',
+    closest: () => null,
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return {
+        getAttribute: () => new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        closest: () => ({ getAttribute: () => '/reader/status/123456789' }),
+      }
+      if (selector === '[data-testid="reply"]') return {}
+      return null
+    },
+    getBoundingClientRect: () => ({ top: 0 }),
   }
   const main = { querySelectorAll: () => [article] }
   const context = vm.createContext({
     state: { assistantMode: 'notifications' },
-    document: { querySelector: () => main, body: main },
-    isNestedTweet: () => false,
-    loopApi: loop,
+    document: { querySelector: () => main, body: main }, window: { location: { origin: 'https://x.com' }, scrollY: 0 }, PANEL_ID: 'x-reply-clipboard-panel',
+    currentAccountHandle: () => 'tuaranx', isNotificationPath: () => true, isNestedTweet: () => false,
+    isPromoted: () => false, textOf: (node) => node?.textContent || '', loopApi: loop, URL,
   })
-  vm.runInContext(`${definition}\nglobalThis.cutoff = hasReachedNotificationCutoff`, context)
-  assert.equal(context.cutoff(), false)
-  oldQuotedTime.closest = () => article
-  assert.equal(context.cutoff(), true)
+  vm.runInContext(`${definition}\nglobalThis.collect = collectTweets`, context)
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {
@@ -4217,7 +4509,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.10')
+  assert.equal(manifest.version, '4.0.30')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4239,7 +4531,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(backgroundSource, /xrc-tweet-pdf-open/)
   assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"timeline"[\s\S]*?"poster-premium"\s*\]\)/)
   assert.match(backgroundSource, /phase: "idle"/)
-  assert.match(backgroundSource, /phase = "unknown"/)
+  assert.match(backgroundSource, /phase: "unknown"/)
   const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
   await Promise.all(['pdf/print.js', 'pdf/print.css'].map((path) => readFile(new URL(path, extensionDir), 'utf8')))
   assert.match(printHtml, /print\.js/)
@@ -4394,7 +4686,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(css, /data-assistant-mode="likes-posts"[\s\S]*--xrc-workspace: #e14276/)
   assert.match(css, /\.xrc-inline-start \{[\s\S]*background: linear-gradient\(135deg, var\(--xrc-workspace\)/)
   assert.match(css, /\.xrc-flow-start\[data-flow="paused"\],[\s\S]*\.xrc-flow-start\[data-flow="stopped"\]/)
-  assert.match(content, /NOTIFICATION_CYCLE_DELAY_MS = 10 \* 60 \* 1000/)
+  assert.doesNotMatch(content, /NOTIFICATION_CYCLE_DELAY_MS/)
   assert.match(content, /RECONNECT_INITIAL_MS = 2000/)
   assert.match(content, /RECONNECT_MAX_MS = 30000/)
   assert.match(content, /window\.addEventListener\("online"/)
@@ -4426,7 +4718,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.ok(content.indexOf('data-xrc-assistant="reply"') < content.indexOf('data-xrc-assistant="likes"'))
   assert.ok(content.indexOf('data-xrc-assistant="likes"') < content.indexOf('data-xrc-assistant="mutual"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
-  assert.match(content, /最近 2 小时/)
+  assert.doesNotMatch(content, /最近 2 小时/)
   assert.match(content, /state\.assistantMode !== "notifications"/)
   assert.match(content, /persistNotificationProcessed\(next\.id\)/)
   assert.doesNotMatch(content, /document\.hidden|visibilitychange|waitForForeground/)
@@ -4447,7 +4739,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
   assert.match(content, /data-xrc-timeline-past/)
   assert.match(content, /预计当前结束后|预计 \$\{formatScheduleTime/)
-  assert.match(content, /打开当前执行页签/)
+  assert.match(content, /查看当前任务详情/)
+  assert.match(content, /const currentMode = taskSchedule\.current \|\| focus\.dataset\.currentTask;\s*if \(currentMode\) openDeskTask\(currentMode\)/)
   assert.match(content, /action === "inspect"/)
   assert.doesNotMatch(content, /button\.disabled = anyTaskRunning\(\)/)
   assert.match(content, /mutualMode/)
@@ -4482,7 +4775,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-start/)
   assert.match(content, /data-xrc-config-key/)
   assert.match(content, /panelView/)
-  assert.match(content, /本轮已完成/)
+  assert.match(content, /本轮已回复/)
   assert.match(content, /replyMode: "ai"/)
   assert.match(content, /function validReplyMode\(\) \{\s*return "ai";/)
   assert.doesNotMatch(content, /data-xrc-mode="ai"/)
@@ -4624,10 +4917,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="maintenance"/)
   assert.match(docsPage, /id="releases"/)
   assert.match(docsPage, /评论、点赞、关注和发帖共八项任务/)
-  assert.match(docsPage, /点击任务只切换面板里的只读详情，不改变排班队列/)
-  assert.match(docsPage, /打开当前执行页签/)
+  assert.match(docsPage, /点击任务只切换面板里的详情，不改变排班队列/)
+  assert.match(docsPage, /查看当前任务详情/)
   assert.match(docsPage, /上一任务 \/ 当前任务 \/ 下一任务/)
-  assert.match(docsPage, /单项最长占用默认 30 秒/)
+  assert.match(docsPage, /完成本次全部轮次后让出共享页签/)
   assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
   assert.match(docsPage, /运行中绿边跑马灯，等待中黄边跑马灯，已停止 \/ 需处理红边呼吸/)
   assert.match(docsPage, /SINGLE_BUTTON_ROWS[\s\S]*正在停止', '等待中 · 请稍候'/)
@@ -4648,6 +4941,9 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /发帖波浪时间线/)
   assert.match(docsPage, /id: 'comments', label: '评论管理', depth: 1/)
   assert.match(docsPage, /id: 'reply-timeline', label: '评论帖子', depth: 2/)
+  assert.match(docsPage, /id="reply-timeline"[\s\S]*一次任务会按所选速度档位生成多轮计划/)
+  assert.match(docsPage, /每轮各有回复条数目标/)
+  assert.match(docsPage, /正常情况下完成本次全部轮次后才让出共享执行页签/)
   assert.match(docsPage, /id: 'poster', label: '定时发帖', depth: 1/)
   assert.match(docsPage, /id: 'poster-wave', label: '发帖波浪时间线', depth: 2/)
   assert.match(docsPage, /border-l border-\[var\(--site-line\)\]/)
@@ -4876,7 +5172,7 @@ test('mutual unfollow defaults to about once a week and keeps a longer occupancy
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
   assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
-  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 30_000)
+  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 8 * 60 * 60 * 1000)
 
   const recent = {
     enabledAt: now - 60000,
@@ -4901,6 +5197,150 @@ test('mutual unfollow defaults to about once a week and keeps a longer occupancy
   const unfollow = timeline.future.find((entry) => entry.mode === 'mutual-unfollow')
   assert.equal(unfollow.status, 'scheduled')
   assert.ok(unfollow.readyAt >= now + 4 * 24 * 60 * 60 * 1000)
+})
+
+test('default schedule ranks frequent actions first and reserves follow-back for night', () => {
+  const now = Date.parse('2026-10-28T23:00:00+08:00')
+  const rules = background.normalizedTaskRules({})
+  assert.equal(rules.timeline.pace, 'boundary')
+  assert.equal(rules.notifications.pace, 'medium')
+  assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
+  assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
+  assert.equal(rules['mutual-followBack'].window, 'overnight')
+  assert.equal(background.sliceMsForMode('mutual-followBack', { sliceSeconds: 30 }), background.FOLLOW_BACK_SLICE_MS)
+  assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
+    'timeline', 'notifications', 'likes-posts', 'likes-replies',
+    'poster', 'mutual-followBack', 'mutual-unfollow',
+  ])
+  const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
+  recent.items['mutual-followBack'].lastRunAt = now - 25 * 60 * 60 * 1000
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
+  assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T13:00:00+08:00')).includes('mutual-followBack'), false)
+  assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T05:00:00+08:00')).includes('mutual-followBack'), true)
+  const nightSession = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': {
+    lastRunAt: now, followBackSessionUntil: background.followBackNightEndsAt(now), resumeAt: now + 30 * 60000,
+  } } }
+  assert.equal(background.dueTaskModes(nightSession, now + 20 * 60000).includes('mutual-followBack'), false)
+  assert.equal(background.dueTaskModes(nightSession, now + 31 * 60000).includes('mutual-followBack'), true)
+  assert.equal(background.followBackNightEndsAt(now), Date.parse('2026-10-29T06:00:00+08:00'))
+  assert.equal(background.followBackNightEndsAt(Date.parse('2026-10-29T05:00:00+08:00')), Date.parse('2026-10-29T06:00:00+08:00'))
+  const dawnStart = Date.parse('2026-10-29T05:00:00+08:00')
+  const nextDawn = Date.parse('2026-10-30T05:00:00+08:00')
+  const afterDawnSession = { enabledAt: dawnStart, rules: {}, items: { 'mutual-followBack': {
+    lastRunAt: dawnStart, followBackSessionUntil: background.followBackNightEndsAt(dawnStart), resumeAt: nextDawn,
+  } } }
+  assert.equal(background.dueTaskModes(afterDawnSession, Date.parse('2026-10-29T23:00:00+08:00')).includes('mutual-followBack'), false)
+  assert.equal(background.dueTaskModes(afterDawnSession, nextDawn).includes('mutual-followBack'), true)
+})
+
+test('an explicit start request takes the next free schedule slot even before its retry deadline', () => {
+  const now = Date.parse('2026-10-28T13:00:00+08:00')
+  const plan = { enabledAt: now - 60000, rules: {}, items: {
+    timeline: { resumeAt: now + 60000, manualRequestedAt: now },
+    'mutual-followBack': { resumeAt: now + 30 * 60000, lastRunAt: now, manualRequestedAt: now },
+  } }
+  const due = background.dueTaskModes(plan, now)
+  assert.equal(due[0], 'timeline')
+  assert.ok(due.includes('mutual-followBack'))
+  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('notifications'))
+})
+
+test('existing schedule receives the daily follow-back cadence and new default weights once', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', items: {}, likeDetectionVersion: 2, replyRiskVersion: 1,
+    rules: {
+      timeline: { priority: 2 }, notifications: { priority: 2 },
+      'likes-posts': { priority: 2 }, 'likes-replies': { priority: 1 },
+      poster: { priority: 1 }, 'poster-premium': { priority: 1 },
+      'mutual-followBack': { priority: 1, minGapMs: 0 },
+    },
+  } }
+  let writes = 0
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value); writes += 1 },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.rules.timeline.priority, 3)
+    assert.equal(plan.rules['likes-posts'].priority, 3)
+    assert.equal(plan.rules.poster.priority, 2)
+    assert.equal(plan.rules['mutual-followBack'].priority, 1)
+    assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-followBack'].window, 'overnight')
+    assert.equal(plan.priorityOrderVersion, 1)
+    assert.equal(plan.followBackNightVersion, 1)
+    await background.readTaskSchedule()
+    assert.equal(writes, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('confirmed follow-back action stays in its daily pass until the pass ends', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const stored = { xrcTaskSchedule: {
+    enabled: true, strategyVersion: 4, current: 'mutual-followBack', startedAt: now,
+    priorityOrderVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    items: { 'mutual-followBack': { sliceActions: 0 } },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } }, alarms: { async create() {}, async clear() {} } }
+  try {
+    await background.noteScheduledAction({ task: 'mutual-follow-back', result: 'success' })
+    assert.equal(stored.xrcTaskSchedule.current, 'mutual-followBack')
+    assert.equal(stored.xrcTaskSchedule.items['mutual-followBack'].sliceActions, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('follow-back yields a 30-minute batch cooldown and can resume within its night session', async () => {
+  const previousChrome = globalThis.chrome
+  const previousDateNow = Date.now
+  const now = Date.parse('2026-10-28T23:00:00+08:00')
+  Date.now = () => now
+  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster', 'poster-premium', 'mutual-unfollow']
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'mutual-followBack', workTabId: 11,
+      startedAt: now - 10 * 60 * 1000 - 1000, priorityOrderVersion: 1,
+      likeDetectionVersion: 2, replyRiskVersion: 1,
+      items: { 'mutual-followBack': { sliceActions: 2, manualRequestedAt: now }, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
+    },
+    xrcPluginRuntime: { tasks: { 'mutual-followBack': { tabId: 11, phase: 'paused', waitUntil: now + 30 * 60000, detail: '每 15 个暂停 30 分钟', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'mutual-followBack': 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id === 11) return { id, url: 'https://x.com/account/followers' }; throw new Error('missing') },
+      async sendMessage(_id, message) { return message.type === 'xrc-task-state-probe'
+        ? { ok: true, mode: 'mutual-followBack', phase: 'paused', waitUntil: now + 30 * 60000, detail: '每 15 个暂停 30 分钟' } : { ok: true } },
+      async remove() {},
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].lastRunAt, now - 10 * 60 * 1000 - 1000)
+    assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].resumeAt, now + 30 * 60000)
+    assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].manualRequestedAt, 0)
+    assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].followBackSessionUntil, Date.parse('2026-10-29T06:00:00+08:00'))
+    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 31 * 60000).includes('mutual-followBack'), true)
+  } finally {
+    globalThis.chrome = previousChrome
+    Date.now = previousDateNow
+  }
 })
 
 test('schedule desk records finished shifts and estimates the next ready task', () => {
@@ -4932,6 +5372,112 @@ test('schedule desk records finished shifts and estimates the next ready task', 
   assert.ok(waiting.readyAt >= now + 30 * 60000)
   const stopped = timeline.future.find((entry) => entry.mode === 'poster')
   assert.equal(stopped.status, 'stopped')
+})
+
+test('a waiting schedule keeps its shared tab and reuses it when the next task is due', async () => {
+  const previousChrome = globalThis.chrome
+  const previousDateNow = Date.now
+  const now = Date.parse('2026-10-28T13:00:00+08:00')
+  let clock = now
+  Date.now = () => clock
+  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-unfollow']
+  const local = { xrcTaskSchedule: {
+    enabled: true, strategyVersion: 4, current: '', workTabId: 11, startedAt: 0,
+    priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    items: { poster: { resumeAt: now + 60000 }, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
+  }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
+  const session = { xrcTaskTabs: {} }
+  const opened = []
+  const started = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(id, message) { started.push({ id, message }); return { ok: true, phase: 'running' } },
+      async update() {},
+      async create(options) { opened.push(options); throw new Error('unexpected new tab') },
+      async remove(id) { opened.push({ removed: id }) },
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(local.xrcTaskSchedule.workTabId, 11)
+    assert.deepEqual(opened, [])
+    clock += 60000
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'poster')
+    assert.equal(local.xrcTaskSchedule.workTabId, 11)
+    assert.ok(started.some(({ id, message }) => id === 11 && message.type === 'xrc-task-start' && message.mode === 'poster'))
+    assert.deepEqual(opened, [])
+  } finally {
+    globalThis.chrome = previousChrome
+    Date.now = previousDateNow
+  }
+})
+
+test('a schedule with a lost tab reference adopts the active X tab for the same account', async () => {
+  const previousChrome = globalThis.chrome
+  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-unfollow']
+  const local = { xrcTaskSchedule: {
+    enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: '', workTabId: 0,
+    priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    items: { poster: {}, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
+  }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
+  const session = { xrcTaskTabs: {} }
+  const opened = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async query() { return [{ id: 11, windowId: 1, active: true, url: 'https://x.com/home' }] },
+      async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(id, message) {
+        assert.equal(id, 11)
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', accountHandle: 'tuaran', scheduleEnabled: true }
+        if (message.type === 'xrc-task-start') return { ok: true, phase: 'running' }
+        throw new Error(`unexpected ${message.type}`)
+      },
+      async create(options) { opened.push(options); throw new Error('unexpected new tab') },
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'poster')
+    assert.equal(local.xrcTaskSchedule.workTabId, 11)
+    assert.deepEqual(opened, [])
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('clicking a posting cooldown never marks the scheduled task as manually stopped', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const toggle = source.match(/  async function onPosterToggle\(\{ scheduledStart = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(toggle)
+  const state = { poster: { running: true, riskCooldownUntil: Date.now() + 60000, status: '' } }
+  const actions = []
+  const context = vm.createContext({
+    state,
+    posterTaskKey: () => 'poster', posterKindFromMode: () => 'normal',
+    stopScheduledWaitingTask: async () => false,
+    postApi: { stop() { actions.push('stopped') } },
+    sendExtensionMessage() { actions.push('manual-stop') },
+    renderPanel() {},
+    Date,
+  })
+  vm.runInContext(`${toggle}\nglobalThis.toggle = onPosterToggle`, context)
+  await context.toggle()
+  assert.deepEqual(actions, [])
+  assert.match(state.poster.status, /冷却中，到期后自动重试/)
+  assert.match(source, /formatUserStateAction\(USER_STATE_LABELS\.waiting, "冷却后自动重试"\)/)
 })
 
 test('full flow starts one shared execution tab and keeps all eight tasks in one schedule', async () => {
@@ -4972,7 +5518,11 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
         opened.push(url)
         return tab
       },
-      async update(id, options) { focused.push({ id, options }) },
+      async update(id, options) {
+        focused.push({ id, options })
+        const tab = liveTabs.get(id)
+        if (tab && options?.url) tab.url = options.url
+      },
       async remove(id) { liveTabs.delete(id) },
     },
     windows: {
@@ -5092,9 +5642,19 @@ test('a legacy task that cannot confirm suspension keeps its window and stops mi
 })
 
 test('a waiting comment saves its deadline before the shared tab switches tasks', async () => {
-  const session = {}
-  const local = { xrcTaskSchedule: { rules: { 'poster-premium': { enabled: false } } } }
-  const tabs = new Map()
+  const firstId = 101
+  const session = { xrcTaskTabs: { timeline: firstId } }
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: 'timeline',
+      workTabId: firstId, startedAt: Date.now(), items: {},
+      rules: { 'poster-premium': { enabled: false } },
+    },
+    xrcPluginRuntime: { flow: { phase: 'running', updatedAt: Date.now() }, tasks: {
+      timeline: { tabId: firstId, phase: 'paused', waitUntil: Date.now() + 3600000, detail: 'X 次数限制', updatedAt: Date.now() },
+    } },
+  }
+  const tabs = new Map([[firstId, { id: firstId, windowId: firstId, url: 'https://x.com/home' }]])
   const order = []
   let nextId = 100
   globalThis.chrome = {
@@ -5118,9 +5678,6 @@ test('a waiting comment saves its deadline before the shared tab switches tasks'
     windows: { async create({ url }) { const id = ++nextId; const tab = { id, windowId: id, url }; tabs.set(id, tab); return { id, tabs: [tab] } } },
   }
   try {
-    await background.openAllTasks({ tab: { url: 'https://x.com/home' } }, 'Tuaran')
-    const firstId = session.xrcTaskTabs.timeline
-    local.xrcPluginRuntime.tasks.timeline = { tabId: firstId, phase: 'paused', waitUntil: Date.now() + 3600000, detail: 'X 次数限制', updatedAt: Date.now() }
     await background.runTaskSchedule()
     assert.equal(local.xrcTaskSchedule.current, 'notifications')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > Date.now())
@@ -5132,7 +5689,7 @@ test('a waiting comment saves its deadline before the shared tab switches tasks'
   }
 })
 
-test('a confirmed action yields the shared tab within the short slice', async () => {
+test('one confirmed comment keeps the tab until the full run enters its next-cycle wait', async () => {
   const now = Date.parse('2026-10-28T03:00:00.000Z')
   const RealDate = Date
   globalThis.Date = class extends RealDate {
@@ -5154,6 +5711,7 @@ test('a confirmed action yields the shared tab within the short slice', async ()
   }
   const session = { xrcTaskTabs: { timeline: 11 } }
   const suspended = []
+  let probePhase = 'running'
   globalThis.chrome = {
     storage: {
       local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
@@ -5162,7 +5720,7 @@ test('a confirmed action yields the shared tab within the short slice', async ()
     tabs: {
       async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
       async sendMessage(id, message) {
-        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: 'running' }
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: probePhase, waitUntil: probePhase === 'paused' ? now + 60000 : 0 }
         if (message.type === 'xrc-task-suspend') { suspended.push(message.reason); return { ok: true } }
         if (message.type === 'xrc-task-start') return { ok: true }
         return { ok: true }
@@ -5175,17 +5733,119 @@ test('a confirmed action yields the shared tab within the short slice', async ()
   }
   try {
     await background.noteScheduledAction({ task: 'timeline-reply', result: 'success' })
-    assert.ok(suspended.some((reason) => /本轮动作已完成/.test(reason)))
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    assert.deepEqual(suspended, [])
+    probePhase = 'paused'
+    await background.runTaskSchedule()
+    assert.ok(suspended.some((reason) => /本次计划已完成|等待冷却/.test(reason)))
     assert.equal(local.xrcTaskSchedule.current, 'notifications')
-    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt >= now + background.SLICE_YIELD_COOLDOWN_MS - 1)
-    assert.match(local.xrcTaskSchedule.items.timeline.reason, /本轮动作已完成/)
+    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt >= now + 60000)
   } finally {
     globalThis.Date = RealDate
     delete globalThis.chrome
   }
 })
 
-test('an unresponsive comment keeps the shared tab and waits for a probe before resuming', async () => {
+test('shared exec tab stores pending launch before navigating to X', async () => {
+  const previousChrome = globalThis.chrome
+  const session = {}
+  const local = { xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: '', workTabId: 0, items: {} } }
+  const liveTabs = new Map()
+  let nextTabId = 40
+  const created = []
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: {
+        async get(key) { return key in session ? { [key]: session[key] } : {} },
+        async set(value) { Object.assign(session, value) },
+      },
+    },
+    tabs: {
+      async get(id) { if (!liveTabs.has(id)) throw new Error('missing'); return liveTabs.get(id) },
+      async create({ url, active }) {
+        const id = ++nextTabId
+        const tab = { id, windowId: 1, url, active: Boolean(active) }
+        liveTabs.set(id, tab)
+        created.push({ id, url })
+        return tab
+      },
+      async update(id, options) {
+        updates.push({ id, ...options })
+        const tab = liveTabs.get(id)
+        if (tab && options.url) tab.url = options.url
+      },
+      async sendMessage() { return { ok: true, phase: 'running' } },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    const result = await background.focusTaskTab('timeline', null, { start: true, activate: false })
+    assert.equal(created[0]?.url, 'about:blank')
+    assert.ok(session[`xrcPendingTab:${result.tabId}`]?.start)
+    assert.equal(session[`xrcPendingTab:${result.tabId}`].mode, 'timeline')
+    assert.ok(updates.some((entry) => entry.id === result.tabId && /xrcStart=1/.test(entry.url || '')))
+    assert.equal(local.xrcTaskSchedule.workTabId, result.tabId)
+
+    local.xrcTaskSchedule.workTabId = 0
+    local.xrcTaskSchedule.current = 'notifications'
+    const opened = await background.focusTaskTab('notifications', null, { start: false })
+    assert.equal(created.at(-1)?.url, 'about:blank')
+    assert.equal(local.xrcTaskSchedule.workTabId, opened.tabId)
+    assert.ok(updates.some((entry) => entry.id === opened.tabId && entry.active === true))
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a failed page launch releases the current slot and records a retry', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const modes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium']
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'likes-posts', workTabId: 41, startedAt: now - 3000,
+      likeDetectionVersion: 2, replyRiskVersion: 1,
+      rules: Object.fromEntries(modes.map((mode) => [mode, { enabled: mode === 'likes-posts' }])),
+      items: { 'likes-posts': {} },
+    },
+    xrcPluginRuntime: { tasks: { 'likes-posts': { tabId: 41, phase: 'starting', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  globalThis.chrome = {
+    storage: { local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } } },
+    tabs: { async get(id) { if (id === 41) return { id, url: 'https://x.com/home' }; throw new Error('missing') }, async remove() {} },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    const result = await background.failScheduledStart('likes-posts', 41, '缺少模型配置')
+    assert.equal(result.ok, true)
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.ok(local.xrcTaskSchedule.items['likes-posts'].resumeAt > now)
+    assert.match(local.xrcTaskSchedule.items['likes-posts'].reason, /缺少模型配置/)
+    assert.equal(local.xrcPluginRuntime.tasks['likes-posts'], undefined)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('background accepts an in-page start only after a running phase is confirmed', async () => {
+  const previousChrome = globalThis.chrome
+  let phase = 'starting'
+  globalThis.chrome = { tabs: { async sendMessage(_id, message) {
+    assert.equal(message.type, 'xrc-task-start')
+    return { ok: true, phase }
+  } } }
+  try {
+    await assert.rejects(background.tryInPageTaskStart(41, 'likes-posts'), /未获确认/)
+    phase = 'running'
+    assert.equal((await background.tryInPageTaskStart(41, 'likes-posts')).phase, 'running')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a brief probe timeout does not close the single shared tab', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const local = {
@@ -5197,8 +5857,152 @@ test('an unresponsive comment keeps the shared tab and waits for a probe before 
     xrcPluginRuntime: { tasks: { timeline: { tabId: 11, phase: 'running', updatedAt: now } }, flow: { phase: 'running' } },
   }
   const session = { xrcTaskTabs: { timeline: 11 } }
+  const removed = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage() { throw new Error('content unresponsive') },
+      async remove(id) { removed.push(id) },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.workTabId, 11)
+    assert.equal(removed.length, 0)
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    assert.equal(local.xrcPluginRuntime.tasks.timeline.phase, 'unknown')
+    assert.ok(Number(local.xrcPluginRuntime.tasks.timeline.unknownSince) > 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('probe unknownSince is persisted so grace can accumulate across schedule ticks', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 11, startedAt: now - 40_000,
+      items: {
+        notifications: { manualStopped: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-unfollow': { blocked: true }, 'mutual-followBack': { blocked: true }, poster: { blocked: true },
+      },
+    },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 11, phase: 'running', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage() { throw new Error('content unresponsive') },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    const firstUnknownSince = Number(local.xrcPluginRuntime.tasks.timeline.unknownSince)
+    assert.ok(firstUnknownSince > 0)
+    assert.equal(local.xrcPluginRuntime.tasks.timeline.phase, 'unknown')
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    await background.runTaskSchedule()
+    assert.equal(Number(local.xrcPluginRuntime.tasks.timeline.unknownSince), firstUnknownSince)
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('sustained unknown recovers on the same shared tab without closing it', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 180000,
+      items: {
+        notifications: { resumeAt: now - 1, reason: '执行未确认，已保留当前页签并等待安全重试' },
+        timeline: { manualStopped: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-unfollow': { blocked: true }, 'mutual-followBack': { blocked: true }, poster: { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'unknown', unknownSince: now - 100000, updatedAt: now - 100000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { notifications: 77 } }
+  const removed = []
   const starts = []
-  let responsive = false
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: {
+        async get(key) { return key in session ? { [key]: session[key] } : {} },
+        async set(value) { Object.assign(session, value) },
+      },
+    },
+    tabs: {
+      async get(id) {
+        if (id === 77) return { id, windowId: 1, url: 'https://x.com/notifications' }
+        throw new Error('missing')
+      },
+      async remove(id) { removed.push(id) },
+      async update() {},
+      async sendMessage(id, message) {
+        if (message.type === 'xrc-task-start') {
+          starts.push(id)
+          return { ok: true, phase: 'running' }
+        }
+        if (message.type === 'xrc-task-state-probe') return null
+        return null
+      },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(removed, [])
+    assert.equal(local.xrcTaskSchedule.workTabId, 77)
+    assert.deepEqual(starts, [77])
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a never-started shared tab is reloaded in place after the boot grace', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 11, startedAt: now - 95_000,
+      items: {
+        notifications: { manualStopped: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-unfollow': { blocked: true }, 'mutual-followBack': { blocked: true }, poster: { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { timeline: { tabId: 11, phase: 'starting', updatedAt: now - 95_000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { timeline: 11 } }
+  const updates = []
+  const removed = []
   globalThis.chrome = {
     storage: {
       local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
@@ -5207,41 +6011,29 @@ test('an unresponsive comment keeps the shared tab and waits for a probe before 
     tabs: {
       async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
       async sendMessage(id, message) {
-        if (message.type === 'xrc-task-state-probe') {
-          if (responsive) return { ok: true, mode: 'timeline', phase: 'running' }
-          throw new Error('content unresponsive')
-        }
-        if (message.type === 'xrc-task-start') { starts.push(id); return { ok: true } }
-        throw new Error('unexpected message')
+        if (message.type === 'xrc-task-start') return null
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: 'starting' }
+        return null
       },
-      async update() {},
+      async update(id, update) { updates.push(update) },
+      async remove(id) { removed.push(id) },
     },
     windows: { async update() {} },
   }
   try {
     await background.runTaskSchedule()
-    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
-    assert.equal(starts.length, 0)
-    assert.equal(local.xrcTaskSchedule.items.notifications.manualStopped, true)
-    local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
-    await background.runTaskSchedule()
-    assert.deepEqual(starts, [])
+    assert.deepEqual(removed, [])
+    assert.equal(local.xrcTaskSchedule.workTabId, 11)
     assert.equal(local.xrcTaskSchedule.current, 'timeline')
-    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > Date.now())
-    responsive = true
-    await background.runTaskSchedule()
-    assert.equal(local.xrcTaskSchedule.items.timeline.resumeAt, 0)
-    assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, 0)
-    local.xrcTaskSchedule.items.timeline.blocked = true
-    local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
-    await background.runTaskSchedule()
-    assert.deepEqual(starts, [])
+    assert.ok(session['xrcPendingTab:11']?.start)
+    assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.active === true))
+    assert.match(local.xrcTaskSchedule.items.timeline.reason, /同一页签重新装载/)
   } finally {
     globalThis.chrome = previousChrome
   }
 })
 
-test('an unresponsive task does not reload a page while its action is unconfirmed', async () => {
+test('a briefly unresponsive likes task holds the shared tab without reloading', async () => {
   const previousChrome = globalThis.chrome
   const local = {
     xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'likes-posts', workTabId: 22, startedAt: Date.now() - 60000, cursor: 1,
@@ -5264,12 +6056,11 @@ test('an unresponsive task does not reload a page while its action is unconfirme
   }
   try {
     await background.runTaskSchedule()
-    assert.ok(local.xrcTaskSchedule.items['likes-posts'].resumeAt > Date.now())
-    assert.equal(updates.length, 0)
-    local.xrcTaskSchedule.items['likes-posts'].resumeAt = Date.now() - 1
-    await background.runTaskSchedule()
     assert.equal(updates.length, 0)
     assert.equal(local.xrcTaskSchedule.current, 'likes-posts')
+    assert.equal(local.xrcTaskSchedule.workTabId, 22)
+    assert.equal(local.xrcPluginRuntime.tasks['likes-posts'].phase, 'unknown')
+    assert.ok(Number(local.xrcPluginRuntime.tasks['likes-posts'].unknownSince) > 0)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -5381,6 +6172,88 @@ test('pending task launch is consumed only by its assigned tab and destination',
     assert.equal((await background.consumePendingLaunch({ tab: { id: 11, url: 'https://x.com/home' } })).launch.mode, 'timeline')
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('notifications pending launch survives X redirect to /notifications/mentions', async () => {
+  const sessionData = {}
+  globalThis.chrome = {
+    storage: {
+      session: {
+        async get(key) { return { [key]: sessionData[key] } },
+        async set(value) { Object.assign(sessionData, value) },
+        async remove(key) { delete sessionData[key] },
+      },
+    },
+  }
+  try {
+    assert.equal(background.onTaskPath('notifications', 'https://x.com/notifications/mentions'), true)
+    assert.equal(background.onTaskPath('notifications', 'https://x.com/notifications/all'), true)
+    assert.equal(background.onTaskPath('notifications', 'https://x.com/home'), false)
+    await background.rememberPendingLaunch('notifications', 'https://x.com/notifications?xrcAssistant=notifications&xrcStart=1', true, 44)
+    const consumed = await background.consumePendingLaunch({
+      tab: { id: 44, url: 'https://x.com/notifications/mentions' },
+      url: 'https://x.com/notifications/mentions',
+    })
+    assert.equal(consumed.launch?.mode, 'notifications')
+    assert.equal(consumed.launch?.start, true)
+    assert.equal(sessionData['xrcPendingTab:44'], undefined)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('unresponsive notifications on a redirected path restarts in-page instead of waiting forever', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 55, startedAt: now - 95_000,
+      items: {
+        notifications: { resumeAt: now - 1, reason: '执行未确认，已保留当前页签并等待安全重试' },
+        timeline: { manualStopped: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-unfollow': { blocked: true }, 'mutual-followBack': { blocked: true }, poster: { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 55, phase: 'starting', updatedAt: now - 95_000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { notifications: 55 } }
+  const starts = []
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) {
+        if (id !== 55) throw new Error('closed')
+        return { id, windowId: 1, url: 'https://x.com/notifications/mentions' }
+      },
+      async sendMessage(id, message) {
+        if (message.type === 'xrc-task-start') {
+          starts.push({ id, mode: message.mode })
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update(id, update) { updates.push({ id, update }) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, [{ id: 55, mode: 'notifications' }])
+    assert.equal(updates.some((entry) => /xrcStart=1|\/notifications\?/.test(entry.update?.url || '')), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcTaskSchedule.items.notifications.resumeAt, 0)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reason, '')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

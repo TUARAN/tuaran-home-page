@@ -12,7 +12,14 @@
   const EVENT_MESSAGE = "xrc-community-event";
   const HEARTBEAT_MESSAGE = "xrc-community-heartbeat";
   const ALARM_NAME = "xrc-community-heartbeat";
+  const STATS_ALARM_NAME = "xrc-community-stats";
   const DAILY_ALARM_NAME = "xrc-daily-upload";
+  // Monitor: runtime + remote commands about once a minute.
+  // Stats: queued action events + daily counts about once an hour.
+  const HEARTBEAT_MIN_INTERVAL_MS = 55 * 1000;
+  const HEARTBEAT_ALARM_MINUTES = 1;
+  const STATS_MIN_INTERVAL_MS = 60 * 60 * 1000;
+  const STATS_ALARM_MINUTES = 60;
   const REPORT_URL = "https://2aran.com/api/community-actions/report";
   const TASKS = new Set([
     "timeline-reply",
@@ -32,6 +39,7 @@
   let commandHandler = null;
   let lastHeartbeatAt = 0;
   let lastHeartbeatHandle = "";
+  let lastStatsSyncAt = 0;
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "comments", "notification-reply": "comments",
     "post-like": "likes", "reply-like": "likes",
@@ -273,20 +281,32 @@
     return { ok: true, config, payload, commands: Array.isArray(payload?.commands) ? payload.commands : [] };
   }
 
+  async function handleRemoteCommands(commands) {
+    if (!commands?.length || typeof commandHandler !== "function") return;
+    let results = [];
+    try { results = await commandHandler(commands); } catch (error) { results = []; }
+    if (Array.isArray(results) && results.length) {
+      await postPayload({ events: [], commandResults: results.slice(0, 20) }).catch(() => {});
+    }
+  }
+
+  /** Monitor-only POST: runtime + command poll, do not flush action queue. */
+  async function postMonitorOnly() {
+    const posted = await postPayload({ events: [] });
+    if (!posted.ok || posted.skipped) return posted;
+    await handleRemoteCommands(posted.commands);
+    return { ok: true, commands: posted.commands, mode: "monitor" };
+  }
+
+  /** Flush queued action events (and optionally keep runtime). */
   async function postCurrent() {
     const posted = await postPayload();
     if (!posted.ok) return posted;
     if (posted.skipped) return posted;
     posted.config.queue = [];
     await storageSet(posted.config);
-    if (posted.commands.length && typeof commandHandler === "function") {
-      let results = [];
-      try { results = await commandHandler(posted.commands); } catch (error) { results = []; }
-      if (Array.isArray(results) && results.length) {
-        await postPayload({ events: [], commandResults: results.slice(0, 20) }).catch(() => {});
-      }
-    }
-    return { ok: true, commands: posted.commands };
+    await handleRemoteCommands(posted.commands);
+    return { ok: true, commands: posted.commands, mode: "stats" };
   }
 
   function report(event) {
@@ -300,13 +320,14 @@
     } catch (error) {}
   }
 
-  function heartbeat(accountHandle) {
+  function heartbeat(accountHandle, options = {}) {
     const chrome = root.chrome;
     if (!chrome?.runtime?.sendMessage) return;
     try {
       chrome.runtime.sendMessage({
         type: HEARTBEAT_MESSAGE,
-        accountHandle: cleanHandle(accountHandle)
+        accountHandle: cleanHandle(accountHandle),
+        force: Boolean(options.force)
       }, () => {
         void chrome.runtime.lastError;
       });
@@ -316,6 +337,7 @@
   function accept(event) {
     const payload = normalizeEvent(event);
     if (!payload) return Promise.resolve({ ok: false, error: "invalid" });
+    // Queue locally; hourly stats sync (or manual sync) uploads counts. Monitor uses a separate minute beat.
     return enqueue(async () => {
       const config = await ensureConfig();
       if (payload.accountHandle) config.accountHandle = payload.accountHandle;
@@ -323,7 +345,7 @@
       await recordLimitObservation(payload, payload.accountHandle || config.accountHandle);
       config.queue = [...config.queue, payload].slice(-40);
       await storageSet(config);
-      return postCurrent();
+      return { ok: true, queued: true, queueSize: config.queue.length };
     });
   }
 
@@ -489,25 +511,44 @@
     });
   }
 
-  function heartbeatFromBackground(accountHandle) {
+  function heartbeatFromBackground(accountHandle, options = {}) {
     const handle = cleanHandle(accountHandle);
+    const force = Boolean(options?.force);
     const now = Date.now();
-    if (now - lastHeartbeatAt < 55 * 1000 && (!handle || handle === lastHeartbeatHandle)) return Promise.resolve({ ok: true, skipped: true });
+    if (!force && now - lastHeartbeatAt < HEARTBEAT_MIN_INTERVAL_MS && (!handle || handle === lastHeartbeatHandle)) {
+      return Promise.resolve({ ok: true, skipped: true, mode: "monitor" });
+    }
     lastHeartbeatAt = now;
     if (handle) lastHeartbeatHandle = handle;
     return enqueue(async () => {
       const config = await ensureConfig();
       if (handle) config.accountHandle = handle;
       await storageSet(config);
-      const heartbeat = await postCurrent();
-      const daily = await syncDailyReportsQuietly({ includeToday: true, limit: 3 }).catch((error) => ({
-        ok: false,
-        error: error?.message || "日报同步失败"
-      }));
-      return { ...heartbeat, daily };
+      return postMonitorOnly();
     }).then(async (result) => {
       if (handle) await mergeAccountData("default", handle).catch(() => null);
       return result;
+    });
+  }
+
+  function syncStatsFromBackground(accountHandle, options = {}) {
+    const handle = cleanHandle(accountHandle);
+    const force = Boolean(options?.force);
+    const now = Date.now();
+    if (!force && now - lastStatsSyncAt < STATS_MIN_INTERVAL_MS) {
+      return Promise.resolve({ ok: true, skipped: true, mode: "stats" });
+    }
+    lastStatsSyncAt = now;
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      if (handle) config.accountHandle = handle;
+      await storageSet(config);
+      const flushed = await postCurrent();
+      const daily = await syncDailyReportsQuietly({ includeToday: true, limit: 5 }).catch((error) => ({
+        ok: false,
+        error: error?.message || "日报同步失败"
+      }));
+      return { ...flushed, daily, mode: "stats" };
     });
   }
 
@@ -553,9 +594,11 @@
     loadBundledSecret().catch(() => {});
     if (!chrome?.alarms?.create || !chrome.alarms.onAlarm) return;
     try {
-      chrome.alarms.create(ALARM_NAME, { periodInMinutes: 1 });
+      chrome.alarms.create(ALARM_NAME, { periodInMinutes: HEARTBEAT_ALARM_MINUTES });
+      chrome.alarms.create(STATS_ALARM_NAME, { periodInMinutes: STATS_ALARM_MINUTES });
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm?.name === ALARM_NAME) heartbeatFromBackground().catch(() => {});
+        if (alarm?.name === STATS_ALARM_NAME) syncStatsFromBackground().catch(() => {});
         if (alarm?.name === DAILY_ALARM_NAME) runScheduledDailyUpload().catch(() => {});
       });
       installDailyUploadSchedule().catch(() => {});
@@ -569,11 +612,16 @@
     REPORT_URL,
     EVENT_MESSAGE,
     HEARTBEAT_MESSAGE,
+    HEARTBEAT_MIN_INTERVAL_MS,
+    HEARTBEAT_ALARM_MINUTES,
+    STATS_MIN_INTERVAL_MS,
+    STATS_ALARM_MINUTES,
     normalizeEvent,
     report,
     heartbeat,
     accept,
     heartbeatFromBackground,
+    syncStatsFromBackground,
     setRuntimeProvider(provider) { runtimeProvider = typeof provider === "function" ? provider : null; },
     setCommandHandler(handler) { commandHandler = typeof handler === "function" ? handler : null; },
     createId,

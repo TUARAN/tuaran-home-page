@@ -641,6 +641,21 @@ function pathnameOf(url) {
   }
 }
 
+function isNotificationsPathname(pathname) {
+  return /^\/notifications(?:\/|$)/iu.test(String(pathname || ""));
+}
+
+function pathsMatchTask(mode, expectedPath, actualPath) {
+  const expected = String(expectedPath || "").replace(/\/+$/u, "") || "/";
+  const actual = String(actualPath || "").replace(/\/+$/u, "") || "/";
+  if (!expected || !actual) return false;
+  const selected = validTaskMode(mode);
+  // X often redirects /notifications → /notifications/mentions (or similar).
+  if (selected === "notifications" || expected === "/notifications") return isNotificationsPathname(actual);
+  if (expected === "/home") return actual === "/home" || actual === "/";
+  return actual.toLowerCase() === expected.toLowerCase();
+}
+
 function taskPath(mode, { start = false, accountHandle = "", currentUrl = "" } = {}) {
   const selected = validTaskMode(mode);
   const handle = accountHandleFrom(accountHandle);
@@ -663,8 +678,7 @@ function onTaskPath(mode, url, options = {}) {
   if (!expected) return false;
   const current = pathnameOf(url);
   if (!current) return false;
-  if (expected === "/home") return current === "/home" || current === "/";
-  return current.toLowerCase() === expected.toLowerCase();
+  return pathsMatchTask(mode, expected, current);
 }
 
 function taskPageUrl(mode, sourceUrl = "https://x.com/home", options = {}) {
@@ -701,7 +715,11 @@ async function consumePendingLaunch(sender) {
   const launch = stored?.[key];
   if (!launch) return { ok: true, launch: null };
   const expired = Date.now() - Number(launch.at) > 30000;
-  const samePath = pathnameOf(sender?.url || sender?.tab?.url).toLowerCase() === String(launch.path || "").toLowerCase();
+  const samePath = pathsMatchTask(
+    launch.mode,
+    launch.path,
+    pathnameOf(sender?.url || sender?.tab?.url)
+  );
   if (expired || samePath) await chrome.storage.session.remove(key);
   return { ok: true, launch: !expired && samePath ? launch : null };
 }
@@ -859,13 +877,13 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
         } catch (error) {
           // The content script may still be loading. The URL launch below retries it.
         }
-        if (reply?.ok) {
+        if (reply?.ok && ["running", "paused"].includes(reply.phase)) {
           await chrome.tabs.update(existingId, { active: true });
           if (Number.isInteger(windowId)) await chrome.windows.update(windowId, { focused: true });
           return { ok: true, mode: selected, tabId: existingId, reused: true, started: true };
         }
-        if (reply && !reply.ok) {
-          const error = new Error(reply.error || "任务未能启动");
+        if (reply && (!reply.ok || !["running", "paused"].includes(reply.phase))) {
+          const error = new Error(reply.error || "页内任务启动未获确认");
           error.remoteStartRejected = true;
           throw error;
         }
@@ -914,6 +932,31 @@ async function activateTabIfNeeded(tabId, windowId, activate) {
   if (Number.isInteger(windowId)) await chrome.windows?.update?.(windowId, { focused: true });
 }
 
+async function findReusableScheduledXTab(accountHandle = "") {
+  if (!chrome.tabs?.query || !chrome.tabs?.sendMessage) return null;
+  let candidates;
+  try {
+    candidates = await chrome.tabs.query({ active: true, url: ["https://x.com/*", "https://twitter.com/*"] });
+  } catch (error) {
+    return null;
+  }
+  const expectedHandle = accountHandleFrom(accountHandle).toLowerCase();
+  for (const tab of candidates || []) {
+    const id = Number(tab?.id);
+    if (!Number.isInteger(id) || id <= 0) continue;
+    try {
+      const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
+      if (!probe?.ok || !probe.scheduleEnabled) continue;
+      const actualHandle = accountHandleFrom(probe.accountHandle).toLowerCase();
+      if (expectedHandle && actualHandle !== expectedHandle) continue;
+      return tab;
+    } catch (error) {
+      // This X tab has not loaded the extension or belongs to another profile.
+    }
+  }
+  return null;
+}
+
 async function tryInPageTaskStart(tabId, mode, accountHandle = "") {
   if (!chrome.tabs?.sendMessage || !Number.isInteger(tabId)) return null;
   let reply = null;
@@ -922,7 +965,12 @@ async function tryInPageTaskStart(tabId, mode, accountHandle = "") {
   } catch (error) {
     return null;
   }
-  if (reply?.ok) return reply;
+  if (reply?.ok && ["running", "paused"].includes(reply.phase)) return reply;
+  if (reply?.ok) {
+    const error = new Error("页内任务启动未获确认");
+    error.remoteStartRejected = true;
+    throw error;
+  }
   if (reply?.needNavigate) return null;
   if (reply && !reply.ok) {
     const error = new Error(reply.error || "任务未能启动");
@@ -932,23 +980,36 @@ async function tryInPageTaskStart(tabId, mode, accountHandle = "") {
   return null;
 }
 
-async function createSharedExecTab(destination, sender, activate) {
+async function createSharedExecTab(destination, sender, activate, { mode = "", start = false } = {}) {
   const windowId = Number(sender?.tab?.windowId);
+  const openBlankThenNavigate = async (createTab) => {
+    const created = await createTab();
+    const tabId = Number(created?.tabId);
+    if (!Number.isInteger(tabId)) return null;
+    // Store pending launch before X.com can strip ?xrcAssistant / ?xrcStart from the URL.
+    if (mode) await rememberPendingLaunch(mode, destination, start, tabId);
+    await chrome.tabs.update(tabId, { url: destination, ...(activate ? { active: true } : {}) });
+    return { tabId, windowId: Number(created.windowId) || windowId || 0, reused: false };
+  };
   if (chrome.tabs?.create) {
     try {
-      const options = { url: destination, active: Boolean(activate) };
-      if (Number.isInteger(windowId)) options.windowId = windowId;
-      const created = await chrome.tabs.create(options);
-      const tabId = Number(created?.id);
-      if (Number.isInteger(tabId)) return { tabId, windowId: Number(created?.windowId) || windowId, reused: false };
+      const opened = await openBlankThenNavigate(async () => {
+        const options = { url: "about:blank", active: Boolean(activate) };
+        if (Number.isInteger(windowId)) options.windowId = windowId;
+        const created = await chrome.tabs.create(options);
+        return { tabId: created?.id, windowId: created?.windowId };
+      });
+      if (opened) return opened;
     } catch (error) {
       // Fall through to a dedicated window when the current window cannot host the tab.
     }
   }
-  const created = await chrome.windows.create({ url: destination, focused: Boolean(activate), type: "normal" });
-  const tabId = Number(created?.tabs?.[0]?.id);
-  if (!Number.isInteger(tabId)) throw new Error("没有成功创建共享执行页签");
-  return { tabId, windowId: Number(created?.id) || 0, reused: false };
+  const opened = await openBlankThenNavigate(async () => {
+    const created = await chrome.windows.create({ url: "about:blank", focused: Boolean(activate), type: "normal" });
+    return { tabId: created?.tabs?.[0]?.id, windowId: created?.id };
+  });
+  if (!opened) throw new Error("没有成功创建共享执行页签");
+  return opened;
 }
 
 async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate } = {}) {
@@ -969,6 +1030,10 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
       tabId = 0;
     }
   }
+  if (!tab && start) {
+    tab = await findReusableScheduledXTab(accountHandle);
+    tabId = Number(tab?.id) || 0;
+  }
   if (tab) {
     const owner = Object.entries(tabs).find(([, savedId]) => Number(savedId) === tabId)?.[0]
       || (plan.current && Number(plan.workTabId) === tabId ? plan.current : "");
@@ -977,8 +1042,8 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
       return { ok: true, mode, tabId, reused: true, queued: owner !== mode };
     }
     if (owner === mode) {
-      const runtime = await readPluginRuntime({ prune: true });
-      if (["running", "paused", "stopping"].includes(runtime.tasks?.[mode]?.phase)) {
+      const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
+      if (["running", "paused"].includes(runtime.tasks?.[mode]?.phase)) {
         await activateTabIfNeeded(tabId, tab.windowId, shouldActivate);
         return { ok: true, mode, tabId, reused: true, started: true };
       }
@@ -1002,6 +1067,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
         plan.current = mode;
         plan.startedAt = Date.now();
         await saveTaskSchedule(plan);
+        await seedRuntimeOccupancy(mode, tabId, started.phase || "running", "页内启动已确认");
         await activateTabIfNeeded(tabId, tab.windowId, shouldActivate);
         return { ok: true, mode, tabId, reused: true, started: true, inPage: true };
       }
@@ -1019,34 +1085,102 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
     }
     await registerTaskTab(mode, tabId);
     plan.workTabId = tabId;
-    if (start) { plan.current = mode; plan.startedAt = Date.now(); }
+    if (start) {
+      plan.current = mode;
+      plan.startedAt = Date.now();
+      await seedRuntimeOccupancy(mode, tabId, "starting", "正在装载执行页");
+    }
     await saveTaskSchedule(plan);
     await activateTabIfNeeded(tabId, tab.windowId, shouldActivate);
     return { ok: true, mode, tabId, reused: true };
   }
-  if (!start) return { ok: true, mode, idle: true, queued: true };
+  // "打开当前执行页签" used to return idle when workTabId was cleared; always open a live tab.
   const destination = taskTabUrl(mode, sender?.tab?.url, { start, accountHandle });
-  const created = await createSharedExecTab(destination, sender, shouldActivate);
+  const created = await createSharedExecTab(destination, sender, start ? shouldActivate : true, { mode, start });
   tabId = created.tabId;
   await registerTaskTab(mode, tabId);
   plan.workTabId = tabId;
-  if (start) { plan.current = mode; plan.startedAt = Date.now(); }
+  if (start) {
+    plan.current = mode;
+    plan.startedAt = Date.now();
+    await seedRuntimeOccupancy(mode, tabId, "starting", "正在创建执行页");
+  }
   await saveTaskSchedule(plan);
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["poster", "poster-premium", "mutual-followBack", "mutual-unfollow", "notifications", "timeline", "likes-posts", "likes-replies"];
+const FLOW_TASKS = ["timeline", "notifications", "likes-posts", "likes-replies", "poster", "poster-premium", "mutual-followBack", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications"];
-const QUEUED_TASKS = ["timeline", "notifications", "likes-posts", "likes-replies", "mutual-unfollow", "mutual-followBack", "poster", "poster-premium"];
+const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
 const SLICE_YIELD_COOLDOWN_MS = 60 * 1000;
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
+const FOLLOW_BACK_MIN_GAP_MS = 24 * 60 * 60 * 1000;
+const FOLLOW_BACK_SLICE_MS = 10 * 60 * 1000;
+const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
+const FOLLOW_BACK_NIGHT_END_MINUTE = 6 * 60;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
+/** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
+const STARTING_GRACE_MS = 90 * 1000;
+/** Probe can time out while the page is busy; require sustained unknown before recovery. */
+const UNKNOWN_GRACE_MS = 90 * 1000;
 const TASK_SLICE_ALARM = "xrc-task-slice";
 let scheduleWork = Promise.resolve();
+let activateNextExecTab = false;
+
+async function seedRuntimeOccupancy(mode, tabId, phase = "starting", detail = "") {
+  const selected = validTaskMode(mode);
+  const id = Number(tabId);
+  if (!selected || !Number.isInteger(id) || id <= 0) return null;
+  const mutate = async () => {
+    const runtime = await readPluginRuntime();
+    const previous = runtime.tasks?.[selected];
+    runtime.startedAt ||= Date.now();
+    if (phase !== "stopping") runtime.flow = { phase: "running", updatedAt: Date.now() };
+    runtime.tasks[selected] = {
+      tabId: id,
+      startedAt: Number(previous?.startedAt) || Date.now(),
+      updatedAt: Date.now(),
+      phase: ["running", "paused", "stopping", "starting"].includes(phase) ? phase : "starting",
+      detail: String(detail || "").slice(0, 160),
+      waitUntil: Number(previous?.waitUntil) || 0
+    };
+    await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+    return runtime;
+  };
+  runtimeMutation = runtimeMutation.then(mutate, mutate);
+  return runtimeMutation;
+}
+
+async function failScheduledStart(mode, tabId, reason) {
+  const selected = validTaskMode(mode);
+  const id = Number(tabId);
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    if (!plan.enabled || plan.current !== selected || Number(plan.workTabId) !== id) return { ok: false };
+    const now = Date.now();
+    const item = plan.items[selected] || {};
+    recordScheduleSegment(plan, selected, "页内启动失败", now);
+    plan.current = "";
+    plan.startedAt = 0;
+    plan.items[selected] = {
+      ...item,
+      resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(item.recoveryAttempts) || 0, 3)],
+      recoveryAttempts: (Number(item.recoveryAttempts) || 0) + 1,
+      reason: `页内启动失败：${String(reason || "未知原因").slice(0, 110)}`
+    };
+    await saveTaskSchedule(plan);
+    await removeRuntimeTab(id);
+    return { ok: true };
+  });
+  scheduleWork = work.catch(() => {});
+  const result = await work;
+  if (result.ok) await tickTaskSchedule();
+  return result;
+}
 
 function normalizedSliceSeconds(value) {
   const seconds = Number(value);
@@ -1062,17 +1196,29 @@ function migrateSliceSeconds(plan) {
 
 function sliceMsForMode(mode, plan) {
   const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
+  // Interaction tasks own the shared tab until their in-page run plan finishes.
+  // The long cap is only a recovery guard for a loop that never reports completion.
+  if (["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode)) return 8 * 60 * 60 * 1000;
+  if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
   // Weekly unfollow pass needs a longer occupancy than the short reply/like slices.
   if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
   return base;
 }
 
+function defaultTaskPriority(mode) {
+  if (["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode)) return 3;
+  if (["poster", "poster-premium"].includes(mode)) return 2;
+  return 1;
+}
+
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
     enabled: true,
-    priority: REPLY_TASKS.includes(mode) ? 2 : 1,
-    window: mode === "poster-premium" ? "day" : "all",
-    minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS : 0
+    priority: defaultTaskPriority(mode),
+    pace: mode === "timeline" ? "boundary" : "medium",
+    window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
+    minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
+      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS : 0
   }]));
 }
 
@@ -1085,7 +1231,8 @@ function normalizedTaskRules(value) {
     defaults[mode] = {
       enabled: rule.enabled !== false,
       priority: Math.max(1, Math.min(3, Number(rule.priority) || defaults[mode].priority)),
-      window: ["all", "day", "peak"].includes(rule.window) ? rule.window : defaults[mode].window,
+      pace: ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace,
+      window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
       minGapMs: Number.isFinite(requestedGap)
         ? Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
@@ -1100,11 +1247,21 @@ function taskWindowOpen(mode, rule, now) {
   const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
   if (rule.window === "day" && (minutes < 480 || minutes >= 1200)) return false;
   if (rule.window === "peak" && !((minutes >= 480 && minutes < 600) || (minutes >= 1080 && minutes < 1200))) return false;
+  if (rule.window === "overnight" && minutes < FOLLOW_BACK_NIGHT_START_MINUTE && minutes >= FOLLOW_BACK_NIGHT_END_MINUTE) return false;
   if (mode === "poster-premium" && ![480, 570, 720, 900, 1140].some((slot) => minutes >= slot && minutes < slot + 15)) return false;
   return true;
 }
 
-function taskGapReadyAt(item, rule) {
+function followBackNightEndsAt(startedAt) {
+  const shanghai = new Date(startedAt + 8 * 60 * 60000);
+  const day = Date.UTC(shanghai.getUTCFullYear(), shanghai.getUTCMonth(), shanghai.getUTCDate());
+  const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
+  return day + (minutes >= FOLLOW_BACK_NIGHT_START_MINUTE ? 24 * 60 : 0) * 60000
+    + FOLLOW_BACK_NIGHT_END_MINUTE * 60000 - 8 * 60 * 60000;
+}
+
+function taskGapReadyAt(item, rule, now = Date.now()) {
+  if (Number(item?.followBackSessionUntil) > now) return 0;
   const gap = Number(rule?.minGapMs) || 0;
   const lastRunAt = Number(item?.lastRunAt) || 0;
   if (!gap || !lastRunAt) return 0;
@@ -1115,15 +1272,19 @@ function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
     .filter(({ mode, item, rule }) => {
-      const gapUntil = taskGapReadyAt(item, rule);
+      const gapUntil = taskGapReadyAt(item, rule, now);
+      const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
       return rule.enabled && !item.blocked && !item.manualStopped
-        && Number(item.resumeAt || 0) <= now
-        && gapUntil <= now
-        && taskWindowOpen(mode, rule, now);
+        && (manuallyRequested || Number(item.resumeAt || 0) <= now)
+        && (manuallyRequested || gapUntil <= now)
+        && (manuallyRequested || taskWindowOpen(mode, rule, now));
     })
     .sort((a, b) => {
       if (a.mode === "poster-premium") return -1;
       if (b.mode === "poster-premium") return 1;
+      const manualA = Number(a.item.manualRequestedAt) > 0;
+      const manualB = Number(b.item.manualRequestedAt) > 0;
+      if (manualA !== manualB) return manualA ? -1 : 1;
       const aging = (entry) => Math.min(3, Math.floor((now - Number(entry.item.lastRunAt || plan.enabledAt || now)) / (15 * 60000)));
       const score = (entry) => entry.rule.priority + aging(entry);
       return score(b) - score(a) || a.index - b.index;
@@ -1162,7 +1323,7 @@ function scheduleTimeline(plan, now = Date.now()) {
     const status = !plan.enabled ? "paused" : !rule.enabled ? "disabled" : item.manualStopped ? "stopped"
       : item.blocked ? "blocked" : due.includes(mode) ? "ready" : "scheduled";
     const readyAt = status === "ready" ? now : status === "scheduled"
-      ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0, taskGapReadyAt(item, rule))) : 0;
+      ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0, taskGapReadyAt(item, rule, now))) : 0;
     return { mode, status, readyAt, reason: String(item.reason || "").slice(0, 100), order: due.indexOf(mode), index };
   }).sort((a, b) => {
     const rank = (entry) => entry.status === "ready" ? 0 : entry.status === "scheduled" ? 1 : 2;
@@ -1179,6 +1340,21 @@ async function readTaskSchedule() {
     ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
     : { enabled: false, current: "", cursor: 0, items: {} };
   plan.rules = normalizedTaskRules(plan.rules);
+  let scheduleMigrated = false;
+  if (plan.priorityOrderVersion !== 1) {
+    for (const mode of QUEUED_TASKS) {
+      plan.rules[mode].priority = defaultTaskPriority(mode);
+    }
+    plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    plan.priorityOrderVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.followBackNightVersion !== 1) {
+    plan.rules["mutual-followBack"].window = "overnight";
+    plan.followBackNightVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
   plan.sliceSeconds = migrateSliceSeconds(plan);
   delete plan.sliceMinutes;
   if (plan.likeDetectionVersion !== 2) {
@@ -1229,6 +1405,28 @@ async function saveTaskSchedule(value) {
   }
 }
 
+async function abandonScheduledTab(tabId) {
+  const id = Number(tabId);
+  if (!Number.isInteger(id) || id <= 0) return { abandoned: true, closed: true };
+  let exists = true;
+  try { await chrome.tabs.get(id); }
+  catch (error) { exists = false; }
+  let closed = !exists;
+  if (exists) {
+    try {
+      await chrome.tabs.remove(id);
+      closed = true;
+    } catch (error) {
+      try { await chrome.tabs.get(id); }
+      catch { closed = true; exists = false; }
+    }
+  }
+  await removeTaskTab(id);
+  await removeRuntimeTab(id);
+  // Even if Chrome refuses to close, drop our handle so the scheduler can create a fresh tab.
+  return { abandoned: true, closed, stuck: Boolean(exists && !closed) };
+}
+
 async function suspendScheduledTask(mode, reason, { keepTab = false } = {}) {
   const tabs = await readTaskTabs();
   const tabId = Number(tabs[mode]);
@@ -1243,10 +1441,8 @@ async function suspendScheduledTask(mode, reason, { keepTab = false } = {}) {
     await removeRuntimeTab(tabId);
     return true;
   }
-  try { await chrome.tabs.remove(tabId); } catch (error) { return false; }
-  await removeTaskTab(tabId);
-  await removeRuntimeTab(tabId);
-  return true;
+  const result = await abandonScheduledTab(tabId);
+  return result.closed || result.abandoned;
 }
 
 async function runTaskSchedule() {
@@ -1265,64 +1461,148 @@ async function runTaskSchedule() {
     return runTaskSchedule();
   }
   const now = Date.now();
-  const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }), now);
+  let runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }), now);
+  // Persist probe outcomes so unknownSince / starting survive across alarm ticks.
+  // Without this, every tick re-reads a stale "running/starting" row, resets grace, and never recovers.
+  if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
   const current = plan.current;
   if (current) {
-    const task = runtime.tasks?.[current];
+    let task = runtime.tasks?.[current];
+    // Single shared tab: schedule occupancy must not depend on content having reported yet.
+    if (!task && Number(plan.workTabId) > 0) {
+      await seedRuntimeOccupancy(current, plan.workTabId, "starting", "排班已占用共享页签");
+      runtime = await readPluginRuntime();
+      task = runtime.tasks?.[current];
+    }
     const item = plan.items[current] || {};
     const waitUntil = Number(task?.waitUntil) || 0;
     const sliceMs = sliceMsForMode(current, plan);
     const timedOut = now - Number(plan.startedAt || now) >= sliceMs;
-    // Weekly unfollow should keep working through the longer pass; do not yield after the first action.
-    const actionDone = current !== "mutual-unfollow" && Number(item.sliceActions) > 0;
+    // Replies and likes report a paused phase at the end of their full run plan.
+    // A single confirmed action must never end their occupancy.
+    const actionDone = ["poster", "poster-premium"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
-    const premiumDue = current !== "poster-premium" && dueTaskModes(plan, now)[0] === "poster-premium";
+    const completeRunOccupancy = ["timeline", "notifications", "likes-posts", "likes-replies"].includes(current);
+    const premiumDue = !completeRunOccupancy && current !== "poster-premium" && dueTaskModes(plan, now)[0] === "poster-premium";
+    const requestedMode = dueTaskModes(plan, now)[0];
+    const manualDue = !completeRunOccupancy && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
+    const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled;
     const haltedCurrent = Boolean(item.blocked || item.manualStopped);
-    const unresponsive = (!task || task.phase === "unknown") && now - Number(plan.startedAt || now) >= Math.max(sliceMs, 30000);
-    if (unresponsive && !item.blocked && !item.manualStopped) {
-      if (!Number(item.resumeAt)) {
-        plan.items[current] = { ...item, resumeAt: now + 60000, reason: "任务状态未响应，等待自动复查" };
-        await saveTaskSchedule(plan);
-      } else if (Number(item.resumeAt) <= now && now - Number(plan.startedAt || now) >= 120000) {
-        // No content script can confirm the old action. Close the stuck tab before allowing another task.
-        const tabId = Number(plan.workTabId);
-        if (Number.isInteger(tabId) && tabId > 0) {
-          try { await chrome.tabs.remove(tabId); }
-          catch (error) {
-            plan.items[current] = { ...item, resumeAt: now + 60000, reason: "页签仍无响应，未能安全关闭；继续等待" };
-            await saveTaskSchedule(plan);
-            return plan;
+    const occupancyAge = now - Number(plan.startedAt || now);
+    const missingTask = !task;
+    const unknownTask = task?.phase === "unknown";
+    const startingTask = task?.phase === "starting";
+    const unknownAge = unknownTask ? now - (Number(task.unknownSince) || now) : 0;
+    // Single-tab model: boot/navigation and brief probe timeouts are normal.
+    // Do not treat "busy for one slice" as a dead tab that must be closed.
+    const unresponsiveMissing = missingTask && occupancyAge >= STARTING_GRACE_MS;
+    const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
+    const unresponsiveStarting = startingTask && occupancyAge >= STARTING_GRACE_MS;
+    const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
+      && !item.blocked && !item.manualStopped;
+    if (unresponsive) {
+      const workTabId = Number(plan.workTabId);
+      if (Number.isInteger(workTabId) && workTabId > 0 && (!Number(item.resumeAt) || Number(item.resumeAt) <= now)) {
+        try {
+          const live = await chrome.tabs.get(workTabId);
+          await activateTabIfNeeded(workTabId, live.windowId, true);
+          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" })) {
+            const started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
+            if (started) {
+              plan.startedAt = now;
+              plan.items[current] = { ...item, resumeAt: 0, reason: "", recoveryAttempts: 0, reloadAttempts: 0 };
+              await saveTaskSchedule(plan);
+              await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
+              return plan;
+            }
           }
-          await removeTaskTab(tabId);
-          await removeRuntimeTab(tabId);
+          const destination = taskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "" });
+          if (destination) {
+            const reloads = Number(item.reloadAttempts) || 0;
+            if (reloads < 2) {
+              await rememberPendingLaunch(current, destination, true, workTabId);
+              await chrome.tabs.update(workTabId, { url: destination, active: true });
+              plan.startedAt = now;
+              plan.items[current] = {
+                ...item,
+                resumeAt: now + 60000,
+                reloadAttempts: reloads + 1,
+                reason: "执行页未确认，已在同一页签重新装载"
+              };
+              await saveTaskSchedule(plan);
+              await seedRuntimeOccupancy(current, workTabId, "starting", "同一页签重新装载中");
+              return plan;
+            }
+          }
+        } catch (error) {
+          // Fall through to yield the slot while keeping the shared tab.
         }
-        plan.workTabId = 0;
-        recordScheduleSegment(plan, current, "任务页签持续无响应", now);
+      }
+      // Keep the single shared tab. Yield the schedule slot and retry later.
+      const latestItem = plan.items[current] || item;
+      recordScheduleSegment(plan, current, "执行未确认，保留共享页签", now);
+      plan.current = "";
+      plan.startedAt = 0;
+      plan.items[current] = {
+        ...latestItem,
+        recoveryAttempts: (Number(latestItem.recoveryAttempts) || 0) + 1,
+        reloadAttempts: 0,
+        resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(latestItem.recoveryAttempts) || 0, 3)],
+        reason: "执行未确认，已保留当前页签并等待安全重试"
+      };
+      await saveTaskSchedule(plan);
+      return runTaskSchedule();
+    }
+    if (startingTask && Number(item.manualRequestedAt) > 0 && Number(plan.workTabId) > 0) {
+      try {
+        const started = await tryInPageTaskStart(Number(plan.workTabId), current, plan.accountHandle || "");
+        if (started) {
+          plan.startedAt = now;
+          plan.items[current] = { ...item, manualRequestedAt: 0, resumeAt: 0, reason: "", recoveryAttempts: 0, reloadAttempts: 0 };
+          await saveTaskSchedule(plan);
+          await seedRuntimeOccupancy(current, Number(plan.workTabId), started.phase || "running", "手动请求后页内启动已确认");
+          return plan;
+        }
+      } catch (error) {
+        recordScheduleSegment(plan, current, "手动请求启动失败", now);
         plan.current = "";
         plan.startedAt = 0;
-        plan.items[current] = { ...item, recoveryAttempts: (Number(item.recoveryAttempts) || 0) + 1,
-          resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(item.recoveryAttempts) || 0, 3)],
-          reason: "任务页签持续无响应，已关闭并等待安全重试" };
+        plan.items[current] = { ...item, manualRequestedAt: 0,
+          resumeAt: now + RESIDENT_RETRY_DELAYS_MS[0], reason: `启动失败：${String(error?.message || "页内未能启动").slice(0, 100)}；稍后自动重试` };
         await saveTaskSchedule(plan);
-      } else if (Number(item.resumeAt) <= now) {
-        plan.items[current] = { ...item, resumeAt: now + 60000, reason: "任务状态仍未响应，继续等待复查" };
-        await saveTaskSchedule(plan);
+        return runTaskSchedule();
       }
-      if (!plan.current) return runTaskSchedule();
-      return plan;
     }
-    if ((item.recoveryAttempts || /状态.*未响应/u.test(String(item.reason || ""))) && ["running", "paused"].includes(task?.phase)) {
-      plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reason: "" };
+    // Boot / brief probe loss: hold the slice. Never rotate away before grace ends.
+    const settling = !item.blocked && !item.manualStopped && (
+      startingTask
+      || missingTask
+      || (unknownTask && unknownAge < UNKNOWN_GRACE_MS)
+    );
+    if (settling) return plan;
+    if ((item.recoveryAttempts || /状态.*未响应|执行未确认|重新装载/u.test(String(item.reason || "")))
+      && ["running", "paused"].includes(task?.phase)) {
+      plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reloadAttempts: 0, reason: "" };
       plan.startedAt = now;
       await saveTaskSchedule(plan);
       return plan;
     }
-    if (!waiting && !timedOut && !actionDone && !premiumDue && !disabledCurrent && !haltedCurrent) return plan;
+    if (!waiting && !timedOut && !actionDone && !premiumDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + (premiumDue ? 60000 : SLICE_YIELD_COOLDOWN_MS);
-    item.resumeAt = Math.max(baseResumeAt, minGapMs ? now + minGapMs : 0);
+    const followBack = current === "mutual-followBack";
+    if (followBack && (Number(item.followBackSessionUntil) || 0) <= Number(plan.startedAt)) {
+      item.followBackSessionUntil = followBackNightEndsAt(Number(plan.startedAt) || now);
+      item.lastRunAt = Number(plan.startedAt) || now;
+    }
+    const followBackSessionOpen = followBack && Number(item.followBackSessionUntil) > now;
+    item.resumeAt = followBackSessionOpen ? baseResumeAt
+      : Math.max(baseResumeAt, minGapMs ? (followBack ? Number(item.lastRunAt) || now : now) + minGapMs : 0);
+    // An explicit start may reach a real X cooldown; do not keep bypassing its
+    // persisted deadline after the page has confirmed it is still paused.
+    if (waiting) item.manualRequestedAt = 0;
     item.reason = waiting
       ? String(task.detail || "等待冷却").slice(0, 160)
       : haltedCurrent
@@ -1331,12 +1611,20 @@ async function runTaskSchedule() {
           ? "已从排班中停用"
           : premiumDue
             ? "精品发帖档位到期，安全轮换"
+            : manualDue
+              ? "另一项任务已请求优先启动，安全轮换"
+            : windowClosed
+              ? "夜间回关时段已结束，等待下一晚"
             : current === "mutual-unfollow" && minGapMs
               ? "清理未回关约每周一次，等待下次排班"
+              : followBackSessionOpen
+                ? "夜间回关时段内，等待下一轮或批次冷却结束"
+              : current === "mutual-followBack" && minGapMs
+                ? "本次夜间回关已结束，等待下一晚"
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";
-    item.lastRunAt = now;
+    if (!followBack) item.lastRunAt = now;
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
     await saveTaskSchedule(plan);
@@ -1347,14 +1635,21 @@ async function runTaskSchedule() {
     plan.startedAt = 0;
     await saveTaskSchedule(plan);
   }
+  const activateNext = activateNextExecTab;
+  activateNextExecTab = false;
   for (const mode of dueTaskModes(plan, now)) {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
-    plan.items[mode] = { ...item, reason: "", recoveryAttempts: 0, sliceActions: 0 };
+    plan.items[mode] = { ...item, reason: "", manualRequestedAt: 0, recoveryAttempts: 0, sliceActions: 0 };
     await saveTaskSchedule(plan);
     try {
-      await focusScheduledTask(mode, null, { start: true, accountHandle: plan.accountHandle || "" });
+      await focusScheduledTask(mode, null, {
+        start: true,
+        accountHandle: plan.accountHandle || "",
+        // After an unresponsive close, bring the new execution tab forward so pending launch can bind.
+        activate: activateNext || undefined
+      });
     } catch (error) {
       plan.current = "";
       plan.items[mode] = { ...item, resumeAt: now + 5 * 60000, reason: String(error?.message || "启动失败").slice(0, 160) };
@@ -1362,15 +1657,8 @@ async function runTaskSchedule() {
     }
     break;
   }
-  if (!plan.current && Number(plan.workTabId) > 0 && Number.isInteger(Number(plan.workTabId))) {
-    const idleTabId = Number(plan.workTabId);
-    try { await chrome.tabs.remove(idleTabId); }
-    catch (error) { return plan; }
-    await removeTaskTab(idleTabId);
-    await removeRuntimeTab(idleTabId);
-    plan.workTabId = 0;
-    await saveTaskSchedule(plan);
-  }
+  // Keep the one shared execution tab while every task is waiting. The next
+  // alarm can reuse it instead of opening a fresh X tab after each cooldown.
   return plan;
 }
 
@@ -1407,7 +1695,7 @@ async function noteScheduledAction(event) {
     } else {
       item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
     }
-    if (!REPLY_TASKS.includes(mode) && item.limitedStreak >= 3) {
+    if (!REPLY_TASKS.includes(mode) && !["likes-posts", "likes-replies"].includes(mode) && item.limitedStreak >= 3) {
       item.blocked = true;
       item.resumeAt = 0;
     }
@@ -1432,8 +1720,10 @@ async function noteScheduledAction(event) {
     }
     return;
   }
-  // One confirmed action finishes this short occupancy; yield so the next due task can run.
-  if (event.result === "success" && plan.enabled && plan.current === mode && Number(item.sliceActions) > 0) {
+  // Posting releases after a confirmed post. Reply and like loops keep the tab
+  // until all planned rounds finish or a real cooldown makes them yield.
+  if (event.result === "success" && plan.enabled && plan.current === mode
+    && ["poster", "poster-premium"].includes(mode) && Number(item.sliceActions) > 0) {
     await tickTaskSchedule();
   }
 }
@@ -1598,19 +1888,50 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       clearTimeout(timer);
     }
     if (reply?.ok) {
-      if (reply.mode !== mode || !reply.phase) {
+      if (reply.mode !== mode) {
+        // Content already handed off to another task on this shared tab.
         delete tasks[mode];
         return;
       }
-      tasks[mode] = {
+      const reported = String(reply.phase || "");
+      // Empty phase used to delete occupancy and falsely trip unresponsive recovery
+      // while the single shared tab was still booting or between loops.
+      if (!reported || reported === "idle") {
+        if (task.phase === "starting") {
+          tasks[mode] = { ...task, phase: "starting", updatedAt: now };
+          return;
+        }
+        if (task.phase === "unknown") {
+          tasks[mode] = {
+            ...task,
+            phase: "unknown",
+            unknownSince: Number(task.unknownSince) || now,
+            updatedAt: now
+          };
+          return;
+        }
+        delete tasks[mode];
+        return;
+      }
+      const next = {
         ...task,
-        phase: reply.phase,
+        phase: reported,
         detail: String(reply.detail || "").slice(0, 160),
         waitUntil: Number(reply.waitUntil) || 0,
         updatedAt: now
       };
+      delete next.unknownSince;
+      tasks[mode] = next;
+    } else if (task.phase === "starting") {
+      // Content script may not be injectable yet during navigation; keep boot occupancy.
+      tasks[mode] = { ...task, phase: "starting", updatedAt: now };
     } else {
-      tasks[mode] = { ...task, phase: "unknown" };
+      tasks[mode] = {
+        ...task,
+        phase: "unknown",
+        unknownSince: Number(task.unknownSince) || now,
+        updatedAt: now
+      };
     }
   }));
   const hasTasks = Object.keys(tasks).length > 0;
@@ -1668,10 +1989,10 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     }
 
     if (schedule.enabled && schedule.current === mode) {
-      const livePhase = fresh && ["running", "paused", "stopping"].includes(task?.phase) ? task.phase : "running";
+      const livePhase = fresh && ["running", "paused", "stopping"].includes(task?.phase) ? task.phase : "starting";
       return {
         mode,
-        phase: livePhase === "stopping" ? "stopping" : livePhase === "paused" ? "paused" : "running",
+        phase: livePhase,
         startedAt: Number(task?.startedAt) || Number(schedule.startedAt) || 0,
         updatedAt: updatedAt || now,
         detail: String(task?.detail || "当前轮班占用中").slice(0, 160),
@@ -1709,7 +2030,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     if (schedule.enabled && ruleEnabled) {
       const ready = readyModes.has(mode) || (resumeAt > 0 && resumeAt <= now);
       const detail = ready
-        ? (queuedReason.includes("无响应") ? "页签已关闭，可安全重试" : queuedReason || "已到期，等待进入轮班")
+        ? (queuedReason || "已到期，等待进入轮班")
         : (queuedReason || "后台排班等待");
       return {
         mode,
@@ -1882,13 +2203,14 @@ globalThis.XrcCommunityReceipt?.setCommandHandler(async (commands) => {
   return results.filter((item) => item.id);
 });
 
+const RUNTIME_TELEMETRY_MIN_INTERVAL_MS = 60 * 1000;
 let lastRuntimeTelemetryAt = 0;
 function sendRuntimeTelemetry() {
   if (!chrome.runtime?.id) return;
-  // The minute alarm supplies the next heartbeat and command poll. Rendering
-  // or storage updates must never create a network request per UI tick.
+  // Minute monitor heartbeat: runtime snapshot + remote command poll only.
+  // Action counts flush on the hourly stats alarm (or manual sync).
   const now = Date.now();
-  if (now - lastRuntimeTelemetryAt < 60 * 1000) return;
+  if (now - lastRuntimeTelemetryAt < RUNTIME_TELEMETRY_MIN_INTERVAL_MS) return;
   lastRuntimeTelemetryAt = now;
   globalThis.XrcCommunityReceipt?.heartbeatFromBackground().catch(() => {});
 }
@@ -2023,7 +2345,7 @@ async function markManualTaskStop(mode, stopTab = false) {
   if (!FLOW_TASKS.includes(mode)) return { ok: true };
   const plan = await readTaskSchedule();
   if (!plan.enabled) return { ok: true };
-  plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, resumeAt: 0, reason: "已手动停止" };
+  plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, manualRequestedAt: 0, resumeAt: 0, reason: "已手动停止" };
   await saveTaskSchedule(plan);
   if (QUEUED_TASKS.includes(mode) && await suspendScheduledTask(mode, "已手动停止")) {
     if (plan.current === mode) {
@@ -2043,9 +2365,10 @@ async function markManualTaskStart(mode) {
   if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
   const plan = await readTaskSchedule();
   const item = plan.items[mode] || {};
-  if (!item.manualStopped && !item.blocked) return { ok: true };
-  plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+  plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0,
+    manualRequestedAt: Date.now(), reason: "已请求优先启动" };
   await saveTaskSchedule(plan);
+  if (plan.enabled) await tickTaskSchedule();
   return { ok: true };
 }
 
@@ -2181,6 +2504,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务跳转记录失败" }));
       return true;
     }
+    if (message?.type === "xrc-task-start-failed") {
+      failScheduledStart(message.mode, sender?.tab?.id, message.reason)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "启动失败状态写入失败" }));
+      return true;
+    }
     if (message?.type === "xrc-notification-context") {
       readNotificationContext(message, sender)
         .then(sendResponse)
@@ -2283,19 +2612,24 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     }
     if (message?.type === "xrc-runtime-task-state") {
       updatePluginRuntime(message, sender)
-        .then(sendResponse)
+        .then((result) => {
+          sendResponse(result);
+          if (message.active && message.phase === "paused") tickTaskSchedule().catch(() => {});
+        })
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
       return true;
     }
-    if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat") {
+    if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat" || message?.type === "xrc-community-stats-sync") {
       const receipt = globalThis.XrcCommunityReceipt;
       if (!receipt) {
         sendResponse({ ok: false, error: "回执模块没有加载" });
         return true;
       }
       const pending = message.type === "xrc-community-heartbeat"
-        ? receipt.heartbeatFromBackground(message.accountHandle)
-        : receipt.accept(message.event);
+        ? receipt.heartbeatFromBackground(message.accountHandle, { force: Boolean(message.force) })
+        : message.type === "xrc-community-stats-sync"
+          ? receipt.syncStatsFromBackground(message.accountHandle, { force: Boolean(message.force) })
+          : receipt.accept(message.event);
       if (message.type === "xrc-community-event") noteScheduledAction(message.event).catch(() => {});
       pending
         .then(sendResponse)
@@ -2405,12 +2739,15 @@ if (typeof module === "object" && module.exports) {
     validTaskMode,
     taskTabUrl,
     taskPageUrl,
+    onTaskPath,
+    pathsMatchTask,
     rememberPendingLaunch,
     consumePendingLaunch,
     registerTaskTab,
     getOpenTaskTabs,
     closeTaskTab,
     focusTaskTab,
+    tryInPageTaskStart,
     openAllTasks,
     readTaskSchedule,
     dueTaskModes,
@@ -2419,6 +2756,7 @@ if (typeof module === "object" && module.exports) {
     scheduleTimeline,
     markManualTaskStart,
     runTaskSchedule,
+    failScheduledStart,
     noteScheduledAction,
     normalizedSliceSeconds,
     migrateSliceSeconds,
@@ -2427,10 +2765,16 @@ if (typeof module === "object" && module.exports) {
     SLICE_YIELD_COOLDOWN_MS,
     UNFOLLOW_MIN_GAP_MS,
     UNFOLLOW_SLICE_MS,
+    FOLLOW_BACK_MIN_GAP_MS,
+    FOLLOW_BACK_SLICE_MS,
+    followBackNightEndsAt,
+    STARTING_GRACE_MS,
+    UNKNOWN_GRACE_MS,
     sliceMsForMode,
     normalizedTaskRules,
     defaultTaskRules,
     taskGapReadyAt,
+    seedRuntimeOccupancy,
     readPluginRuntime,
     verifyTaskRuntime,
     updatePluginRuntime,

@@ -7,22 +7,25 @@ const TASKS = [
   { id: 'notifications', label: '评论通知', group: '评论', page: 'X 通知' },
   { id: 'like-posts', label: '点赞帖子', group: '点赞', page: 'X 首页' },
   { id: 'like-replies', label: '点赞评论', group: '点赞', page: 'X 通知 / 帖子' },
-  { id: 'unfollow', label: '清理未回关', group: '关注', page: 'Following' },
-  { id: 'follow-back', label: '回关粉丝', group: '关注', page: 'Followers' },
   { id: 'poster', label: '普通发帖', group: '发帖', page: 'X 首页' },
   { id: 'premium-poster', label: '精品发帖', group: '发帖', page: 'X 首页' },
+  { id: 'follow-back', label: '回关粉丝', group: '关注', page: 'Followers', cadence: '夜间 22–06；每 15 个冷却 30 分钟' },
+  { id: 'unfollow', label: '清理未回关', group: '关注', page: 'Following', cadence: '约每 7 天一轮' },
 ]
 
 const WINDOWS = {
   all: { label: '全天', allows: () => true },
   day: { label: '白天 08–20', allows: (hour) => hour >= 8 && hour < 20 },
   peak: { label: '高峰 08–10 / 18–20', allows: (hour) => (hour >= 8 && hour < 10) || (hour >= 18 && hour < 20) },
+  overnight: { label: '夜间 22–06', allows: (hour) => hour >= 22 || hour < 6 },
 }
 
 const MOMENTS = [
   { label: '09:30 · 精品发帖档', hour: 9, premium: true },
   { label: '13:00 · 日常轮转', hour: 13, premium: false },
   { label: '21:00 · 夜间轮转', hour: 21, premium: false },
+  { label: '23:00 · 夜间回关', hour: 23, premium: false },
+  { label: '05:00 · 清晨回关', hour: 5, premium: false },
 ]
 
 const PREMIUM_SLOTS = '08:00 / 09:30 / 12:00 / 15:00 / 19:00'
@@ -30,8 +33,8 @@ const PREMIUM_SLOTS = '08:00 / 09:30 / 12:00 / 15:00 / 19:00'
 function createPlan() {
   return Object.fromEntries(TASKS.map((task) => [task.id, {
     enabled: true,
-    priority: task.group === '评论' ? 2 : 1,
-    window: task.id === 'premium-poster' ? 'day' : 'all',
+    priority: task.group === '评论' || task.group === '点赞' ? 3 : task.group === '发帖' ? 2 : 1,
+    window: task.id === 'premium-poster' ? 'day' : task.id === 'follow-back' ? 'overnight' : 'all',
   }]))
 }
 
@@ -107,6 +110,7 @@ export default function TaskSchedulePrototype() {
                   <div>
                     <span className="text-[10px] text-[var(--site-faint)]">{task.group} · {task.page}</span>
                     <div className="text-[12px] font-semibold text-[var(--site-ink)]">{task.label}</div>
+                    {task.cadence ? <div className="text-[10px] text-[var(--site-faint)]">{task.cadence}</div> : null}
                   </div>
                   <label className="flex items-center gap-1.5 text-[11px] text-[var(--site-muted)]">
                     <input type="checkbox" checked={settings.enabled} onChange={(event) => updateTask(task.id, 'enabled', event.target.checked)} className="accent-[var(--site-green)]" />参与
@@ -166,7 +170,7 @@ export default function TaskSchedulePrototype() {
           </div>
         </div>
       </div>
-      <figcaption className="border-t border-[var(--site-line)] px-4 py-3 text-[11px] leading-5 text-[var(--site-faint)] md:px-5">原型只演示单次候选顺序：精品发帖到档且可运行时优先，其余先看优先级。正式调度还需保存每项最近执行时间、进度与冷却截止时间，避免低优先级任务长期排不到；切换前确认当前动作已完成。设置与预览均不会写入浏览器存储。</figcaption>
+      <figcaption className="border-t border-[var(--site-line)] px-4 py-3 text-[11px] leading-5 text-[var(--site-faint)] md:px-5">原型只演示单次候选顺序：默认先评论、再点赞、再发帖、最后关注；精品发帖到固定档位时优先。回关默认在夜间 22:00–06:00 进行，每确认 15 个冷却 30 分钟，夜间到期后继续；清理未回关约每 7 天重新入队。正式调度还会参考最近执行时间与冷却截止时间。设置与预览均不会写入浏览器存储。</figcaption>
     </figure>
   )
 }

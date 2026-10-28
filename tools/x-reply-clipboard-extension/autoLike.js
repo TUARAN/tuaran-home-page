@@ -44,7 +44,7 @@
 
   function restrictionVisible(doc) { return Boolean(restrictionKind(doc)); }
 
-  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
+  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', pace = 'medium', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
     const selectedTarget = ['posts', 'replies'].includes(target) ? target : 'both';
     const storageKey = `xrcAutoLikeSeen:${accountKey}${selectedTarget === 'both' ? '' : `:${selectedTarget}`}`;
     // Previous cooldowns could come from an unrelated or already-dismissed page alert.
@@ -63,14 +63,23 @@
     let rateLimitRetries = 0;
     let lastLimitedAt = 0;
     let lingeringWarningFailures = 0;
+    const loopApi = root.XReplyClipboardLoop;
+    let runPlan = null;
+    let runCount = 0;
+    let completedRounds = 0;
+    let roundWaitUntil = 0;
+    let cycleUntil = 0;
+    let runComplete = false;
 
-    const snapshot = () => ({ running, stopping, count, unconfirmed, posts, status, cooldownUntil, rateLimitRetries });
+    const newRunPlan = () => loopApi?.createRunPlan?.(Math.random, pace) || { rounds: 1, roundTargets: [30], total: 30 };
+
+    const snapshot = () => ({ running, stopping, count, unconfirmed, posts, status, cooldownUntil: Math.max(cooldownUntil, cycleUntil), rateLimitRetries, runPlan, runCount, completedRounds });
     const update = (message) => {
       if (message) status = message;
       onUpdate(snapshot());
     };
     const wait = (ms) => new Promise((resolve) => win.setTimeout(resolve, ms));
-    const active = () => running && !stopping;
+    const active = () => running && !stopping && !runComplete;
     const restrictionError = (kind) => kind === 'automation'
       ? Object.assign(new Error('X 提示疑似自动化或账号受限'), { xrcAutomationLimit: true })
       : Object.assign(new Error('X 提示点赞次数受限'), { xrcRateLimit: true });
@@ -136,7 +145,12 @@
     async function coolDownAfterRestriction(kind) {
       await readCooldown();
       if (!active()) return;
-      if (cooldownUntil > now()) return waitForCooldown();
+      if (cooldownUntil > now()) {
+        runComplete = true;
+        cycleUntil = cooldownUntil;
+        update('本次点赞任务遇到 X 限制，已结束本次轮次；冷却后重新排班');
+        return;
+      }
       try { onLimit(accountKey, selectedTarget, kind === 'automation' ? 'automation-restricted' : 'rate-limited'); } catch (error) { /* Monitoring must not stop the task. */ }
       rateLimitRetries += 1;
       lastLimitedAt = now();
@@ -149,7 +163,9 @@
       } catch (error) {
         throw new Error('无法保存点赞冷却时间，已停止以免连续触发限制');
       }
-      await waitForCooldown();
+      runComplete = true;
+      cycleUntil = cooldownUntil;
+      update('本次点赞任务遇到 X 限制，已结束本次轮次；冷却后重新排班');
     }
 
     async function markSeen(id) {
@@ -160,6 +176,8 @@
 
     async function like(article) {
       if (!active()) return;
+      while (active() && roundWaitUntil > now()) await wait(Math.min(1000, roundWaitUntil - now()));
+      if (roundWaitUntil && roundWaitUntil <= now()) roundWaitUntil = 0;
       await readCooldown();
       await waitForCooldown();
       await waitForInteraction();
@@ -215,8 +233,18 @@
       }
       lingeringWarningFailures = 0;
       count += 1;
+      runCount += 1;
+      const completedTarget = runPlan?.roundTargets?.[completedRounds] || runPlan?.total || 30;
+      const completedBefore = (runPlan?.roundTargets || []).slice(0, completedRounds).reduce((sum, value) => sum + value, 0);
+      if (runCount - completedBefore >= completedTarget) {
+        completedRounds += 1;
+        if (completedRounds >= (runPlan?.rounds || 1)) runComplete = true;
+        else roundWaitUntil = now() + (loopApi?.scheduleProfile?.(pace)?.roundIntervalSeconds || 5) * 1000;
+      }
       try { onLike(id, accountKey, selectedTarget); } catch (error) { /* Daily report must not stop liking. */ }
-      update(`已确认点赞 ${count} 条，已查看 ${posts} 个帖子`);
+      update(runComplete
+        ? `本次 ${runPlan?.rounds || 1} 轮已完成，确认 ${runCount} 个点赞`
+        : `第 ${completedRounds + 1}/${runPlan?.rounds || 1} 轮，本次确认 ${runCount}/${runPlan?.total || 30} 个点赞`);
     }
 
     async function waitForPath(test, timeout = 9000) {
@@ -284,7 +312,22 @@
       await loadHistory();
       await readCooldown();
       let stalled = 0;
-      while (active()) {
+      while (running && !stopping) {
+        if (runComplete) {
+          if (cycleUntil <= now()) cycleUntil = now() + (loopApi?.randomCycleDelayMs?.(Math.random, pace) || 30 * 60000);
+          update(cooldownUntil > now()
+            ? '本次点赞已结束，X 限制冷却中；等待其他任务运行'
+            : `本次 ${runPlan?.rounds || 1} 轮已完成，等待下次排班`);
+          while (running && !stopping && cycleUntil > now()) await wait(Math.min(1000, cycleUntil - now()));
+          if (!running || stopping) break;
+          cycleUntil = 0;
+          runPlan = newRunPlan();
+          runCount = 0;
+          completedRounds = 0;
+          roundWaitUntil = 0;
+          runComplete = false;
+          update('新的一次点赞计划开始');
+        }
         try {
           await waitForCooldown();
           if (!active()) break;
@@ -298,15 +341,21 @@
             if (!link) continue;
             found = true;
             if (selectedTarget !== 'replies') await like(article);
-            if (!active()) break;
+            if (!active()) {
+              if (runComplete) { posts += 1; await markSeen(id); }
+              break;
+            }
             if (selectedTarget !== 'posts') {
               update(`正在查看第 ${posts + 1} 个帖子的评论`);
               await processThread(link, id);
             }
-            if (!active()) break;
+            if (!active()) {
+              if (runComplete) { posts += 1; await markSeen(id); }
+              break;
+            }
             posts += 1;
             await markSeen(id);
-            update(`已确认点赞 ${count} 条，已查看 ${posts} 个帖子${unconfirmed ? ` · ${unconfirmed} 条未确认已跳过` : ''}`);
+            update(`已确认 ${count} 个点赞，已查看 ${posts} 个帖子${unconfirmed ? ` · ${unconfirmed} 个未确认已跳过` : ''}`);
             if (selectedTarget !== 'posts') break; // 返回首页后，旧的 article 节点已失效。
           }
           stalled = found ? 0 : stalled + 1;
@@ -316,7 +365,10 @@
             stalled = 0;
           }
           await waitForInteraction();
-          if (!active()) break;
+          if (!active()) {
+            if (runComplete) continue;
+            break;
+          }
           win.scrollBy(0, Math.max(700, win.innerHeight || 700));
           await wait(1000);
         } catch (error) {
@@ -339,6 +391,12 @@
 
     function start() {
       if (work) return work;
+      runPlan = newRunPlan();
+      runCount = 0;
+      completedRounds = 0;
+      roundWaitUntil = 0;
+      cycleUntil = 0;
+      runComplete = false;
       running = true;
       stopping = false;
       update('正在读取首页帖子…');

@@ -1348,7 +1348,24 @@
 
 #x-reply-clipboard-panel .xrc-mutual-body { display: none; }
 #x-reply-clipboard-panel .xrc-post-body { display: none; }
-#x-reply-clipboard-panel .xrc-like-body { display: none; }
+#x-reply-clipboard-panel .xrc-like-body {
+  display: none;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  overflow-x: hidden;
+}
+#x-reply-clipboard-panel .xrc-like-body > * {
+  min-width: 0;
+  max-width: 100%;
+}
+#x-reply-clipboard-panel .xrc-like-body .xrc-post-flow {
+  grid-template-columns: minmax(0, 1fr);
+}
+#x-reply-clipboard-panel .xrc-like-body .xrc-post-flow > p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 #x-reply-clipboard-panel[data-assistant-mode="likes-posts"] .xrc-like-body,
 #x-reply-clipboard-panel[data-assistant-mode="likes-replies"] .xrc-like-body { display: grid; }
 #x-reply-clipboard-panel[data-assistant-mode="likes-posts"] .xrc-reply-body,
@@ -2550,7 +2567,17 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
+  gap: 6px;
 }
+#x-reply-clipboard-panel .xrc-flow-hint {
+  margin: 0;
+  padding: 0 2px;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+#x-reply-clipboard-panel .xrc-flow-hint[hidden] { display: none; }
 
 #x-reply-clipboard-panel .xrc-schedule-strip {
   display: flex;

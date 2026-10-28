@@ -941,9 +941,10 @@ async function findReusableScheduledXTab(accountHandle = "") {
     return null;
   }
   const expectedHandle = accountHandleFrom(accountHandle).toLowerCase();
+  const excluded = new Set((await readTaskSchedule()).detachedReplyTabIds || []);
   for (const tab of candidates || []) {
     const id = Number(tab?.id);
-    if (!Number.isInteger(id) || id <= 0) continue;
+    if (!Number.isInteger(id) || id <= 0 || excluded.has(id)) continue;
     try {
       const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
       if (!probe?.ok || !probe.scheduleEnabled) continue;
@@ -1413,10 +1414,16 @@ async function abandonScheduledTab(tabId) {
   catch (error) { exists = false; }
   let closed = !exists;
   if (exists) {
+    let timeout;
     try {
-      await chrome.tabs.remove(id);
-      closed = true;
-    } catch (error) {
+      closed = await Promise.race([
+        Promise.resolve().then(() => chrome.tabs.remove(id)).then(() => true, () => false),
+        new Promise((resolve) => { timeout = setTimeout(() => resolve(false), 2500); })
+      ]);
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!closed) {
       try { await chrome.tabs.get(id); }
       catch { closed = true; exists = false; }
     }
@@ -1427,14 +1434,46 @@ async function abandonScheduledTab(tabId) {
   return { abandoned: true, closed, stuck: Boolean(exists && !closed) };
 }
 
-async function suspendScheduledTask(mode, reason, { keepTab = false } = {}) {
+async function releaseBlockedReplyTab(tabId) {
+  // Leave the browser tab intact. It may still contain a native leave-site
+  // prompt or a user draft; neither should be destroyed to rotate the queue.
+  await removeTaskTab(tabId);
+  await removeRuntimeTab(tabId);
+  const plan = await readTaskSchedule();
+  plan.detachedReplyTabIds = [...new Set([...(plan.detachedReplyTabIds || []), Number(tabId)])].slice(-16);
+  if (Number(plan.workTabId) === Number(tabId)) {
+    plan.workTabId = 0;
+  }
+  await saveTaskSchedule(plan);
+}
+
+async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFailure = false } = {}) {
   const tabs = await readTaskTabs();
   const tabId = Number(tabs[mode]);
   if (!Number.isInteger(tabId) || tabId <= 0) return true;
   let saved;
-  try { saved = await chrome.tabs.sendMessage(tabId, { type: "xrc-task-suspend", reason }); }
-  catch (error) { return false; }
-  if (!saved?.ok) return false;
+  let timeout;
+  try {
+    saved = await Promise.race([
+      chrome.tabs.sendMessage(tabId, { type: "xrc-task-suspend", reason }),
+      new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error("执行页停止超时")), 8000); })
+    ]);
+  } catch (error) {
+    if (!releaseOnFailure || !REPLY_TASKS.includes(mode)) return false;
+    await releaseBlockedReplyTab(tabId);
+    return true;
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!saved?.ok) {
+    if (releaseOnFailure && REPLY_TASKS.includes(mode)) {
+      // A reply window that cannot confirm its stop must release the slot.
+      // Keep the page and its contents intact; never navigate it into a native prompt.
+      await releaseBlockedReplyTab(tabId);
+      return true;
+    }
+    return false;
+  }
   if (keepTab) {
     delete tabs[mode];
     await writeTaskTabs(tabs);
@@ -1628,7 +1667,7 @@ async function runTaskSchedule() {
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
     await saveTaskSchedule(plan);
-    if (!await suspendScheduledTask(current, item.reason, { keepTab: true })) return plan;
+    if (!await suspendScheduledTask(current, item.reason, { keepTab: true, releaseOnFailure: true })) return plan;
     plan = await readTaskSchedule();
     recordScheduleSegment(plan, current, item.reason, Date.now());
     plan.current = "";
@@ -2223,8 +2262,9 @@ function updatePluginRuntime(message, sender) {
     const runtime = await readPluginRuntime();
     if (active) {
       if (!Number.isInteger(tabId)) throw new Error("无法识别任务页签");
+      const plan = await readTaskSchedule();
+      if ((plan.detachedReplyTabIds || []).includes(tabId)) return { ok: true, runtime };
       if (message?.phase === "running") {
-        const plan = await readTaskSchedule();
         if (plan.items?.[mode]?.blocked || plan.items?.[mode]?.manualStopped) {
           plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
           await saveTaskSchedule(plan);
@@ -2755,6 +2795,7 @@ if (typeof module === "object" && module.exports) {
     recordScheduleSegment,
     scheduleTimeline,
     markManualTaskStart,
+    suspendScheduledTask,
     runTaskSchedule,
     failScheduledStart,
     noteScheduledAction,

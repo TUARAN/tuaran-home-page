@@ -276,6 +276,121 @@
     }
   }
 
+  function currentLikePace() {
+    return loopApi.scheduleProfile(taskSchedule.rules?.[state.assistantMode]?.pace || "medium").id;
+  }
+
+  async function selectLikePace(pace) {
+    if (likeState.running || likeState.stopping) return;
+    const mode = currentTaskKey();
+    if (!mode.startsWith("likes-")) return;
+    const profile = loopApi.scheduleProfile(pace);
+    const rules = {
+      ...(taskSchedule.rules || {}),
+      [mode]: { ...(taskSchedule.rules?.[mode] || {}), pace: profile.id }
+    };
+    try {
+      const saved = await sendExtensionMessage({
+        type: "xrc-schedule-config-set",
+        rules,
+        sliceSeconds: Number(taskSchedule.sliceSeconds) || 30
+      });
+      taskSchedule = { ...taskSchedule, rules: saved.rules || rules, sliceSeconds: saved.sliceSeconds || taskSchedule.sliceSeconds };
+    } catch (error) {
+      taskSchedule = { ...taskSchedule, rules };
+      likeState = { ...likeState, status: "频率挡位已在当前页面生效，但没有写入扩展存储" };
+    }
+    likeController = null;
+    likeControllerMode = "";
+    likeControllerPace = "";
+    renderPanel();
+  }
+
+  function paintLikeProgress(panel) {
+    if (!panel || !state.assistantMode.startsWith("likes-")) return;
+    const paceProfile = loopApi.scheduleProfile(currentLikePace());
+    const plan = likeState.runPlan;
+    const plannedRounds = plan?.rounds || paceProfile.maxRoundsPerRun || ROUNDS_PER_RUN;
+    const runTarget = plan?.total || (paceProfile.maxRepliesPerRound * plannedRounds) || RUN_SIZE;
+    const roundIndex = Math.min(likeState.completedRounds || 0, Math.max(0, plannedRounds - 1));
+    const shownRound = Math.min((likeState.completedRounds || 0) + 1, plannedRounds);
+    const completedBefore = (plan?.roundTargets || []).slice(0, roundIndex).reduce((sum, value) => sum + value, 0);
+    const roundTarget = plan?.roundTargets?.[roundIndex]
+      || `${paceProfile.minRepliesPerRound}～${paceProfile.maxRepliesPerRound}`;
+    const roundDone = plan
+      ? Math.max(0, Math.min(Number(roundTarget) || 0, (likeState.runCount || 0) - completedBefore))
+      : 0;
+    const runCount = likeState.runCount || 0;
+    const totalPercent = plan ? Math.min(100, Math.round((runCount / Math.max(1, runTarget)) * 100)) : 0;
+    const setText = (selector, text) => {
+      const node = panel.querySelector(selector);
+      if (node) node.textContent = text;
+    };
+    setText("[data-xrc-like-cycle-title]", plan
+      ? `本次任务 · 共 ${plannedRounds} 轮`
+      : `待命 · ${paceProfile.label}档 · ${paceProfile.minRoundsPerRun}～${paceProfile.maxRoundsPerRun} 轮`);
+    setText("[data-xrc-like-round-title]", plan ? `第 ${shownRound} 轮` : "等待启动");
+    setText("[data-xrc-like-progress-prefix]", "本轮已点赞");
+    setText("[data-xrc-like-page]", String(roundDone));
+    setText("[data-xrc-like-progress-suffix]", ` / ${roundTarget} 个`);
+    setText("[data-xrc-like-round-meta-label]", "当前轮次");
+    setText("[data-xrc-like-round]", plan ? `${shownRound}/${plannedRounds}` : `${paceProfile.minRoundsPerRun}～${paceProfile.maxRoundsPerRun}`);
+    setText("[data-xrc-like-page-meta-label]", "本轮点赞");
+    setText("[data-xrc-like-page-meta]", plan ? `${roundDone}/${roundTarget} 个` : `${paceProfile.minRepliesPerRound}～${paceProfile.maxRepliesPerRound} 个`);
+    setText("[data-xrc-like-posts]", `${likeState.posts || 0} 帖`);
+    setText("[data-xrc-like-count]", `${likeState.count || 0} 个点赞`);
+    setText("[data-xrc-like-total]", plan ? `${runCount}/${runTarget} 个点赞` : "启动后生成计划");
+    setText("[data-xrc-like-total-percent]", `${totalPercent}%`);
+    const roundTrack = panel.querySelector("[data-xrc-like-round-track]");
+    const roundLegend = panel.querySelector("[data-xrc-like-round-legend]");
+    if (roundTrack) {
+      roundTrack.style.gridTemplateColumns = `repeat(${plannedRounds}, minmax(0, 1fr))`;
+      roundTrack.setAttribute("aria-valuenow", String(runCount));
+      roundTrack.setAttribute("aria-valuemax", String(runTarget));
+    }
+    if (roundLegend) roundLegend.style.gridTemplateColumns = `repeat(${plannedRounds}, minmax(0, 1fr))`;
+    let completedBeforeRound = 0;
+    panel.querySelectorAll("[data-xrc-like-round-segment]").forEach((segment, index) => {
+      const target = plan?.roundTargets?.[index] || 0;
+      const likesInRound = target ? Math.max(0, Math.min(target, runCount - completedBeforeRound)) : 0;
+      segment.hidden = index >= plannedRounds;
+      const fill = segment.querySelector("i");
+      if (fill) fill.style.width = target ? `${Math.round((likesInRound / target) * 100)}%` : "0%";
+      segment.classList.toggle("is-current", index === shownRound - 1 && (likeState.completedRounds || 0) < plannedRounds);
+      segment.classList.toggle("is-complete", target > 0 && likesInRound >= target);
+      completedBeforeRound += target;
+    });
+    panel.querySelectorAll("[data-xrc-like-round-legend-item]").forEach((legend, index) => {
+      legend.hidden = index >= plannedRounds;
+      legend.textContent = plan?.roundTargets?.[index] ? `第 ${index + 1} 轮 · ${plan.roundTargets[index]} 个` : `第 ${index + 1} 轮`;
+      legend.classList.toggle("is-current", index === shownRound - 1 && (likeState.completedRounds || 0) < plannedRounds);
+      legend.classList.toggle("is-complete", index < (likeState.completedRounds || 0));
+    });
+    const likePaceLocked = Boolean(likeState.running || likeState.stopping);
+    const likePace = currentLikePace();
+    panel.querySelectorAll("[data-xrc-like-pace-label]").forEach((label) => {
+      const active = label.dataset.xrcLikePaceLabel === likePace;
+      label.classList.toggle("is-active", active);
+      label.setAttribute("aria-pressed", String(active));
+      label.disabled = likePaceLocked;
+    });
+    const likePaceRow = panel.querySelector("[data-xrc-like-pace]");
+    if (likePaceRow) {
+      likePaceRow.title = likePaceLocked
+        ? "运行中不能改频率，暂停后可重新选择"
+        : "与评论帖子相同的评次频率：慢 / 中 / 快 / 超快 / 边界测试";
+    }
+    const statusCopy = panel.querySelector("[data-xrc-like-status-copy]");
+    if (statusCopy) statusCopy.textContent = likeState.status || "待命";
+    else {
+      const likeStatus = panel.querySelector("[data-xrc-like-status]");
+      if (likeStatus) likeStatus.textContent = likeState.status || "待命";
+    }
+    panel.querySelector("[data-xrc-mini-progress]").textContent = likeState.running
+      ? `第 ${shownRound}/${plannedRounds} 轮 · ${roundDone}/${roundTarget} 个点赞`
+      : `点赞管理 · ${likeState.count || 0} 条`;
+  }
+
   const processedIds = new Set();
   const processedNotificationIds = new Set();
   const notificationContextCache = new Map();
@@ -431,6 +546,7 @@
   let toolboxExporting = false;
   let riskRoundRequested = false;
   let riskRoundAdvancing = false;
+  let replyComposerCleanup = null;
   let skipScheduledWait = false;
   let wakeScheduledWait = null;
   let reconnectOnline = false;
@@ -913,6 +1029,34 @@
     return `${stateLabel} · ${actionLabel}`;
   }
 
+  // Button stays short (状态 · 动作). Longer “what next” copy goes to hint / title.
+  function formatFlowPrompt(nowLabel, nextLabel, actionLabel) {
+    return [nowLabel, nextLabel, actionLabel].filter(Boolean).join(" · ");
+  }
+
+  function scheduleWaitFlowModel({ confirming = false } = {}) {
+    const waitMs = soonestWaitMs();
+    const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}后继续` : "";
+    if (confirming) {
+      return {
+        label: formatUserStateAction("后台调度中", "点击暂停"),
+        hint: "正在确认当前任务是否已启动，确认后开始执行。",
+        status: "waiting",
+        action: "pause",
+        title: "后台正在调度，并确认页内任务是否已启动；确认后开始执行。点击可暂停排班。"
+      };
+    }
+    return {
+      label: formatUserStateAction("后台调度中", "点击暂停"),
+      hint: eta ? `等待下一项到期，${eta}。` : "等待下一项到期后自动切换。",
+      status: "waiting",
+      action: "pause",
+      title: eta
+        ? `后台正在调度；${eta}。点击可暂停排班。`
+        : "后台正在调度；暂无到期任务，到期后会自动切换。点击可暂停排班。"
+    };
+  }
+
   function flowTaskOverview(runtime, now = Date.now()) {
     const counts = { running: 0, waiting: 0, missing: 0, stopping: 0, unknown: 0, blocked: 0 };
     const tasks = FLOW_TASKS.map(([key, label]) => {
@@ -994,10 +1138,11 @@
     const remaining = resumeAt > now ? resumeAt - now : 0;
     const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
     const onThisSubpage = !deskHome && selectedTaskMode === mode;
+    const waitReason = String(queued.reason || "").trim() || "后台排队中";
     if (!taskSchedule.enabled) {
       return {
         label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
-        title: scheduleDashboardActive() ? "任务仍在等待；点击只查看详情" : "任务窗口仍在等待；点击查看任务窗口",
+        title: `${waitReason}；排班已关闭。点击只查看详情，不改变状态。`,
         action: scheduleDashboardActive() ? "inspect" : "focus"
       };
     }
@@ -1008,7 +1153,7 @@
         label: eta
           ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 点击查看`)
           : formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
-        title: `${queued.reason || "等待后台调度"}${eta ? `，还剩 ${eta}` : ""}；点击只查看详情，不改变排班`,
+        title: `${waitReason}${eta ? `，还剩 ${eta}` : ""}；点击只查看详情，不改变排班。`,
         action: "inspect"
       };
     }
@@ -1016,7 +1161,7 @@
       label: eta
         ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 点击立即启动`)
         : formatUserStateAction(USER_STATE_LABELS.waiting, "点击立即启动"),
-      title: `${queued.reason || "等待后台调度"}${eta ? `，自动重试还剩 ${eta}` : ""}；点击请求优先启动这一项`,
+      title: `${waitReason}${eta ? `，自动重试还剩 ${eta}` : ""}；点击可请求优先启动这一项。`,
       action: "start"
     };
   }
@@ -1544,79 +1689,194 @@
 
   function flowButtonModel() {
     if (flowStarting) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"), status: "starting", action: "", title: "正在打开各任务窗口，暂不可点击" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"),
+        hint: "正在打开执行页，完成后自动开始。",
+        status: "starting",
+        action: "",
+        title: "正在建立共享执行页并接入排班；完成后会自动开始。请稍候，暂不可点击。"
+      };
     }
     if (flowStopping) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"), status: "stopping", action: "", title: "正在暂停全部任务，暂不可点击" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"),
+        hint: "正在结束全部任务，结束后可再启动。",
+        status: "stopping",
+        action: "",
+        title: "正在暂停全部任务并关闭后台调度；结束后可再启动。请稍候，暂不可点击。"
+      };
     }
     const flow = pluginRuntime.flow || {};
     const tasks = Object.values(pluginRuntime.tasks || {});
     const summary = flowTaskOverview(pluginRuntime);
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"), status: "starting", action: "", title: "正在打开各任务窗口，暂不可点击" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"),
+        hint: "正在打开执行页，完成后自动开始。",
+        status: "starting",
+        action: "",
+        title: "正在建立共享执行页并接入排班；完成后会自动开始。请稍候，暂不可点击。"
+      };
     }
     if (flow.phase === "paused" && !taskSchedule.enabled && !summary.counts.running) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"), status: "paused", action: "start", title: "全流程已暂停，点击启动全部任务" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"),
+        hint: "全流程已暂停，可重新启动。",
+        status: "paused",
+        action: "start",
+        title: "全流程已暂停。点击后重新启动评论任务，点赞、关注与发帖进入后台队列。"
+      };
     }
     if (tasks.some((task) => task.phase === "stopping") || flow.phase === "stopping") {
       const lastUpdate = Math.max(flow.phase === "stopping" ? Number(flow.updatedAt || 0) : 0, ...tasks
         .filter((task) => task.phase === "stopping")
         .map((task) => Number(task.updatedAt || 0)));
       if (Date.now() - lastUpdate > 15000) {
-        return { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击重试停止"), status: "stalled", action: "pause", title: "停止超过 15 秒，点击再次暂停全部任务" };
+        return {
+          label: formatUserStateAction(USER_STATE_LABELS.needs, "点击重试停止"),
+          hint: "停止超时，请再点一次暂停。",
+          status: "stalled",
+          action: "pause",
+          title: "停止已超过 15 秒仍未完成。点击再次发送暂停指令。"
+        };
       }
-      return { label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"), status: "stopping", action: "", title: "正在暂停全部任务，暂不可点击" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"),
+        hint: "正在结束全部任务，结束后可再启动。",
+        status: "stopping",
+        action: "",
+        title: "正在暂停全部任务并关闭后台调度；结束后可再启动。请稍候，暂不可点击。"
+      };
     }
     if (taskSchedule.enabled) {
       if (summary.counts.running) {
-        return { label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"), status: "running", action: "pause", title: "点击暂停全部任务和后台调度" };
+        return {
+          label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"),
+          hint: "有任务正在执行。",
+          status: "running",
+          action: "pause",
+          title: "当前有任务在共享执行页运行。点击可暂停全部任务并关闭后台调度。"
+        };
       }
       if (taskSchedule.current && summary.counts.waiting) {
-        return { label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击暂停调度"), status: "waiting", action: "pause", title: "当前任务正在启动或等待确认；点击暂停后台调度" };
+        return scheduleWaitFlowModel({ confirming: true });
       }
       if (summary.counts.missing || summary.counts.unknown) {
-        return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"), status: "waiting", action: "start", title: "点击启动未运行任务；等待中的任务按原倒计时恢复" };
+        return {
+          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"),
+          hint: "有任务尚未启动；已有倒计时会保留。",
+          status: "waiting",
+          action: "start",
+          title: "部分任务尚未启动；已在等待的倒计时会保留。点击只启动未运行项。"
+        };
       }
       if (summary.counts.waiting) {
-        return { label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击暂停调度"), status: "waiting", action: "pause", title: "当前没有任务执行；点击暂停后台调度" };
+        return scheduleWaitFlowModel();
       }
-      return { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击暂停调度"), status: "waiting", action: "pause", title: "任务均需处理；点击暂停后台调度" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.needs, "点击暂停"),
+        hint: "任务受限，请先查看详情。",
+        status: "waiting",
+        action: "pause",
+        title: "各项任务均需你确认账号状态后再继续。可先看详情；点击可暂停排班。"
+      };
     }
     if (summary.counts.running) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"), status: "running", action: "pause", title: "点击暂停全部任务" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"),
+        hint: "有任务正在执行。",
+        status: "running",
+        action: "pause",
+        title: "当前有任务在执行。点击可暂停全部任务。"
+      };
     }
     if (summary.counts.waiting) {
       return summary.counts.missing || summary.counts.unknown
-        ? { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"), status: "waiting", action: "start", title: "点击启动未运行任务；等待中的任务按原倒计时恢复" }
-        : { label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击恢复全部"), status: "waiting", action: "start", title: "点击重新启动全流程；等待中的任务按原倒计时恢复" };
+        ? {
+          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"),
+          hint: "有任务尚未启动；已有倒计时会保留。",
+          status: "waiting",
+          action: "start",
+          title: "部分任务尚未启动；已在等待的倒计时会保留。点击只启动未运行项。"
+        }
+        : {
+          label: formatUserStateAction("等待恢复", "点击恢复全部"),
+          hint: "排班已关，倒计时仍保留。",
+          status: "waiting",
+          action: "start",
+          title: "排班已关闭，但仍有任务在冷却或排队。点击可重新开启全流程；原有倒计时保留。"
+        };
     }
     if (summary.counts.blocked && !summary.counts.missing && !summary.counts.unknown) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.needs, "请先查看详情"), status: "blocked", action: "", title: "任务连续受限，暂不可点击；请先查看详情并检查账号" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.needs, "请先看详情"),
+        hint: "任务受限，确认账号后再单独启动。",
+        status: "blocked",
+        action: "",
+        title: "任务连续受限。请先查看详情并检查账号；确认后再单独启动。"
+      };
     }
     if (tasks.length) {
       return summary.counts.unknown
-        ? { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击检查并启动"), status: "unknown", action: "start", title: "任务窗口状态不确定，点击检查并启动未运行任务" }
-        : { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"), status: "stopped", action: "start", title: "任务已停止，点击重新启动" };
+        ? {
+          label: formatUserStateAction(USER_STATE_LABELS.needs, "点击检查并启动"),
+          hint: "任务状态未同步，点击后检查并启动。",
+          status: "unknown",
+          action: "start",
+          title: "任务窗口状态不确定。点击后检查并启动未运行项。"
+        }
+        : {
+          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"),
+          hint: "当前没有任务在跑。",
+          status: "stopped",
+          action: "start",
+          title: "任务已停止。点击可重新启动全流程。"
+        };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"), status: "stopped", action: "start", title: "全流程已停止，点击重新启动" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"),
+        hint: "全流程已结束。",
+        status: "stopped",
+        action: "start",
+        title: "全流程已停止。点击可重新启动。"
+      };
     }
-    return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"), status: "idle", action: "start", title: "点击启动评论任务，点赞、关注与发帖进入后台队列" };
+    return {
+      label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"),
+      hint: "启动后评论先跑，其他任务进入后台队列。",
+      status: "idle",
+      action: "start",
+      title: "点击后启动评论任务；点赞、关注与发帖进入后台队列，按排班轮换。"
+    };
   }
 
   function flowRuntimeLabel(model, startedAt, now = Date.now()) {
-    if (model.status === "paused") return formatUserStateAction(USER_STATE_LABELS.stopped, "全流程已暂停");
-    if (model.status === "waiting") return waitHeadline(USER_STATE_LABELS.waiting, soonestWaitMs(now));
-    if (model.status === "blocked") return USER_STATE_LABELS.needs;
-    if (model.status === "stalled") return formatUserStateAction(USER_STATE_LABELS.needs, "停止超时");
-    if (model.status === "stopping" || model.status === "starting") return USER_STATE_LABELS.waiting;
-    if (model.status === "unknown") return USER_STATE_LABELS.needs;
+    if (model.status === "paused") return "已停止 · 全流程已暂停";
+    if (model.status === "waiting") {
+      if (taskSchedule.enabled) {
+        const waitMs = soonestWaitMs(now);
+        return waitMs > 0
+          ? `后台调度中 · 约 ${formatCountdown(waitMs)}后继续`
+          : taskSchedule.current
+            ? "后台调度中 · 正在确认当前任务"
+            : "后台调度中 · 等待下一项到期";
+      }
+      return waitHeadline("等待恢复", soonestWaitMs(now));
+    }
+    if (model.status === "blocked") return "需处理 · 任务受限";
+    if (model.status === "stalled") return "需处理 · 停止超时";
+    if (model.status === "stopping") return "停止中 · 正在结束全部任务";
+    if (model.status === "starting") return "启动中 · 正在打开执行页";
+    if (model.status === "unknown") return "需处理 · 状态未同步";
     if (model.status === "stopped") return USER_STATE_LABELS.stopped;
     if (model.status === "running") {
       const waitMs = soonestWaitMs(now);
-      if (waitMs > 0 && !flowTaskOverview(pluginRuntime, now).counts.running) return waitHeadline(USER_STATE_LABELS.waiting, waitMs);
-      return startedAt ? `稳定运行 ${formatRuntime(now - startedAt)}` : USER_STATE_LABELS.running;
+      if (waitMs > 0 && !flowTaskOverview(pluginRuntime, now).counts.running) {
+        return `后台调度中 · 约 ${formatCountdown(waitMs)}后继续`;
+      }
+      return startedAt ? `运行中 · 已稳定 ${formatRuntime(now - startedAt)}` : "运行中 · 有任务正在执行";
     }
     return USER_STATE_LABELS.stopped;
   }
@@ -1629,6 +1889,7 @@
     const overview = button.querySelector("[data-xrc-flow-overview]");
     const count = button.querySelector("[data-xrc-flow-count]");
     const dots = button.querySelector("[data-xrc-flow-dots]");
+    const hint = panel?.querySelector("[data-xrc-flow-hint]");
     if (label) label.textContent = model.label;
     const showOverview = model.status === "running" || model.status === "waiting" || model.status === "blocked" || model.status === "paused"
       || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
@@ -1643,11 +1904,16 @@
       dot.dataset.state = summary.tasks[index].status;
       dot.title = `${summary.tasks[index].label}：${userStateLabelForTask(summary.tasks[index].status)}`;
     });
+    if (hint) {
+      const tip = String(model.hint || "").trim();
+      hint.hidden = !tip;
+      hint.textContent = tip;
+    }
     button.dataset.flow = model.status;
     const busy = flowStarting || flowStopping || model.status === "starting" || model.status === "stopping";
     if (busy) button.dataset.busy = "true";
     else delete button.dataset.busy;
-    button.removeAttribute("title");
+    button.title = model.title || "";
     button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${userStateLabelForTask(task.status)}`).join("，")}` : model.title);
     button.disabled = !model.action || busy;
     paintFlowDetails(panel);
@@ -2681,6 +2947,19 @@
     return !findDialogComposer();
   }
 
+  async function prepareReplyForTabSwitch() {
+    if (replyComposerCleanup) return replyComposerCleanup;
+    replyComposerCleanup = (async () => {
+      if (findDialogComposer() && !await closeReplyComposer()) return false;
+      // A remaining draft can still trigger Chrome's native leave-site prompt.
+      // Never navigate away from user text or an unconfirmed reply.
+      return !Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
+        .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
+    })();
+    try { return await replyComposerCleanup; }
+    finally { replyComposerCleanup = null; }
+  }
+
   function isManagedDraft(text) {
     const normalized = loopApi.normalizePhraseText(text);
     if (!normalized) return true;
@@ -2690,10 +2969,11 @@
       || loopApi.phraseIndexFromText(phrases, text) >= 0;
   }
 
-  function reloadManagedReplyDraft(message) {
+  async function reloadManagedReplyDraft(message) {
     const open = findDialogComposer();
     if (!open || !isManagedDraft(loopApi.composerText(open.textbox))
       || open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
+    if (!await prepareReplyForTabSwitch()) return false;
     state.status = message;
     writeSaved({ running: true, total: state.total });
     renderPanel();
@@ -3111,21 +3391,24 @@
     state.riskPaused = true;
     riskRoundRequested = true;
     cancelActiveAiRequest();
-    state.pendingReply = "";
-    state.pendingTweetId = "";
-    state.pendingGrokInvite = false;
+    // Keep the pending text until the composer is cleared. It identifies the
+    // extension-owned draft when the scheduler suspends this task.
     writeSaved({ running: true, total: state.total });
     state.status = `X 提示疑似自动化，当前评论任务进入冷却；${formatCountdown(state.riskCooldownUntil - Date.now())}后自动重试`;
     renderPanel();
+    void prepareReplyForTabSwitch().then((cleared) => {
+      if (!cleared) return;
+      state.pendingReply = "";
+      state.pendingTweetId = "";
+      state.pendingGrokInvite = false;
+      writeSaved({ running: true, total: state.total });
+    }).catch(() => {});
   }
 
   async function advanceRoundAfterRisk(summary = "X 提示疑似自动化") {
     if (state.assistantMode !== "timeline" && state.assistantMode !== "notifications") return "ignored";
     if (riskRoundAdvancing) return "cooldown";
     riskRoundAdvancing = true;
-    state.pendingReply = "";
-    state.pendingTweetId = "";
-    state.pendingGrokInvite = false;
     const deadline = state.riskCooldownUntil || Date.now() + loopApi.automationCooldownMs(++state.riskRetries);
     state.riskCooldownUntil = deadline;
     writeSaved({ running: true, total: state.total });
@@ -3133,11 +3416,18 @@
       deadline,
       (remaining) => `${summary}；${formatCountdown(remaining)}后自动重试当前评论任务`
     );
-    if (!ready) return "stopped";
+    if (!ready) {
+      riskRoundAdvancing = false;
+      return "stopped";
+    }
     state.riskCooldownUntil = 0;
     state.riskPaused = false;
     riskRoundRequested = false;
     riskRoundAdvancing = false;
+    if (!await prepareReplyForTabSwitch()) return reconnectAndResume("风控冷却已结束，等待回复草稿安全清理");
+    state.pendingReply = "";
+    state.pendingTweetId = "";
+    state.pendingGrokInvite = false;
     writeSaved({ running: true, total: state.total });
     return await reloadAndResume("风控冷却结束，正在刷新并继续评论任务") ? "reload" : "stopped";
   }
@@ -3611,7 +3901,7 @@
         if (openDialog && (!sameTweet || foreignText)) {
           const closed = await closeReplyComposer();
           if (!closed) {
-            if (reloadManagedReplyDraft("重复的 Grok 草稿暂时无法清空，重新载入后继续重试")) return "reload";
+            if (await reloadManagedReplyDraft("重复的 Grok 草稿暂时无法清空，重新载入后继续重试")) return "reload";
             return reconnectAndResume(openText ? "评论框里已有其他内容，关闭失败" : "空评论框对不上当前帖子，关闭失败");
           }
         }
@@ -3696,7 +3986,7 @@
           renderPanel();
           continue;
         }
-        if (reloadManagedReplyDraft("评论框暂时无法清空，重新载入后继续重试")) return "reload";
+        if (await reloadManagedReplyDraft("评论框暂时无法清空，重新载入后继续重试")) return "reload";
         return reconnectAndResume(failureLabel(result));
       }
       if (result === "compose-failed") {
@@ -3704,7 +3994,7 @@
         state.status = "评论框内容未对齐，正在自动清理并重写当前回复";
         renderPanel();
         if (!await closeReplyComposer()) {
-          if (reloadManagedReplyDraft("自动生成的评论草稿暂时无法清空，重新载入后继续重试")) return "reload";
+          if (await reloadManagedReplyDraft("自动生成的评论草稿暂时无法清空，重新载入后继续重试")) return "reload";
           return reconnectAndResume("评论框暂时无法安全清理，稍后自动重试", { inPlace: true });
         }
         await sleepActive(1500);
@@ -4532,6 +4822,7 @@
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
+            <p class="xrc-flow-hint" data-xrc-flow-hint hidden></p>
           </div>
           <div class="xrc-schedule-strip" data-xrc-schedule-strip role="status"><div class="xrc-timeline-summary"><p><b>上一任务</b><span data-xrc-timeline-past>暂无轮班记录</span></p><p><b>当前任务</b><span data-xrc-timeline-current>正在读取排班状态…</span></p><p><b>下一任务</b><span data-xrc-timeline-next>等待任务到期</span></p></div><button type="button" data-xrc-desk-home>排班</button></div>
           <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="八项任务由后台排班，共用一个执行页签；点分组进入子页">
@@ -4611,13 +4902,48 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-like-tab="replies"><b>02</b><span>点赞评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
-          <section class="xrc-post-flow" aria-label="点赞管理">
-            <div class="xrc-task-docs-row"><span data-xrc-like-docs-label>点赞帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="likes" data-xrc-docs-target="xrc-docs-likes-posts" aria-label="查看点赞帖子说明" title="查看点赞帖子说明">i</button></div>
-            <p data-xrc-like-description>从首页逐条点赞帖子。已点过赞的内容不会重复点击。</p>
-            <p>随全流程启动，也可以单独启停。X 出现次数限制或疑似自动化提示时会显示冷却倒计时，冷却结束后自动重试。</p>
-            <div class="xrc-flow-end"><p data-xrc-like-count>累计确认 0 个点赞 · 已查看 0 个帖子</p><button class="xrc-inline-start" type="button" data-xrc-like-toggle>已停止 · 点击启动</button></div>
-          </section>
-          <div class="xrc-status" role="status" data-xrc-like-status>待命</div>
+          <div class="xrc-task-docs-row"><span data-xrc-like-docs-label>点赞帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="likes" data-xrc-docs-target="xrc-docs-likes-posts" aria-label="查看点赞帖子说明" title="查看点赞帖子说明">i</button></div>
+          <p class="xrc-wait" data-xrc-like-wait hidden></p>
+          <div class="xrc-status xrc-reply-status" role="status" data-xrc-like-status><span data-xrc-like-status-copy>待命</span></div>
+          <div class="xrc-stats">
+            <section class="xrc-level-card xrc-progress-section" aria-label="点赞执行进度">
+              <div class="xrc-progress-header">
+                <div class="xrc-progress-heading">
+                  <span class="xrc-section-eyebrow" data-xrc-like-cycle-title>第 1 次任务 · 计划生成中</span>
+                  <strong data-xrc-like-round-title>第 1 轮</strong>
+                  <small><span data-xrc-like-progress-prefix>本轮已点赞</span> <b data-xrc-like-page>0</b><span data-xrc-like-progress-suffix> / 25～35 个</span></small>
+                </div>
+                <div class="xrc-progress-summary">
+                  <strong data-xrc-like-total>随机计划生成中</strong>
+                  <span data-xrc-like-total-percent>0%</span>
+                </div>
+              </div>
+              <div class="xrc-progress-meta">
+                <span><small data-xrc-like-round-meta-label>当前轮次</small><strong data-xrc-like-round>1/3～5</strong></span>
+                <span><small data-xrc-like-page-meta-label>本轮点赞</small><strong data-xrc-like-page-meta>0/25～35 个</strong></span>
+                <span><small>已查看</small><strong data-xrc-like-posts>0 帖</strong></span>
+                <span><small>累计确认</small><strong data-xrc-like-count>0 个点赞</strong></span>
+              </div>
+              <div class="xrc-round-track" role="progressbar" aria-valuemin="0" aria-valuemax="${RUN_SIZE}" aria-valuenow="0" data-xrc-like-round-track>
+                ${Array.from({ length: REPLY_PACE_LIMITS.maxRoundsPerRun[1] }, (_, index) => `
+                  <div class="xrc-round-segment" data-xrc-like-round-segment="${index}"><i></i></div>
+                `).join("")}
+              </div>
+              <div class="xrc-round-legend" data-xrc-like-round-legend>
+                ${Array.from({ length: REPLY_PACE_LIMITS.maxRoundsPerRun[1] }, (_, index) => `<span data-xrc-like-round-legend-item="${index}">第 ${index + 1} 轮</span>`).join("")}
+              </div>
+              <div class="xrc-round-pace xrc-pace-row" data-xrc-like-pace aria-label="点赞频率">
+                <span class="xrc-pace-caption">频率</span>
+                <div class="xrc-pace-options" role="group" aria-label="点赞频率挡位">
+                  ${loopApi.SCHEDULE_PROFILES.filter((item) => item.id !== "boundary").map((item) => `<button type="button" data-xrc-like-pace-label="${item.id}" aria-pressed="false">${item.label}</button>`).join("")}
+                </div>
+                <button class="xrc-boundary-pace" type="button" data-xrc-like-pace-label="boundary" aria-pressed="false" title="根据上一轮结果自动升档或降档">边界测试</button>
+              </div>
+              <div class="xrc-flow-end xrc-start">
+                <button class="xrc-inline-start" type="button" data-xrc-like-toggle>已停止 · 点击启动</button>
+              </div>
+            </section>
+          </div>
         </div>
         <div class="xrc-body xrc-post-body">
           <div class="xrc-post-tabs" role="tablist" aria-label="发帖功能">
@@ -5063,6 +5389,11 @@
           selectSchedulePace(label.dataset.xrcPaceLabel);
         });
       });
+      panel.querySelectorAll("[data-xrc-like-pace-label]").forEach((label) => {
+        label.addEventListener("click", () => {
+          selectLikePace(label.dataset.xrcLikePaceLabel);
+        });
+      });
       panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
         label.addEventListener("click", () => {
           selectPosterPace(label.dataset.xrcPostPaceLabel);
@@ -5338,11 +5669,11 @@
       if (postDescription) {
         postDescription.textContent = premiumMode
           ? "每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文偏完整篇幅，配图比例更高。"
-          : "按所选频率发布热点改写稿；早 7–10 点、午 12:30–13:30、晚 18–22 点更密，其他时段更疏。";
+          : "一次抓一批改写稿，条间约 10～20 秒发完；发完再倒计时抓下一批。高峰一次多抓，慢挡一次少抓。";
       }
       const postCardLabel = panel.querySelector("[data-xrc-post-card-label]");
-      if (postCardLabel) postCardLabel.textContent = premiumMode ? "精品发帖 · 本次运行" : "普通发帖 · 本次运行";
-      const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "25～35 分钟" };
+      if (postCardLabel) postCardLabel.textContent = premiumMode ? "精品发帖 · 本次运行" : "普通发帖 · 本批任务";
+      const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "medium", label: "中", interval: "条间 10～18 秒 · 每次 10～16 条" };
       panel.querySelectorAll("[data-xrc-post-pace-input]").forEach((input) => {
         input.disabled = Boolean(poster.running);
       });
@@ -5393,12 +5724,6 @@
       syncSubtaskWindowControl(button, mode);
     });
     const mutual = state.mutual || mutualApi?.snapshot?.();
-    const likeStatus = panel.querySelector("[data-xrc-like-status]");
-    if (likeStatus) likeStatus.textContent = likeState.status;
-    const likeDescription = panel.querySelector("[data-xrc-like-description]");
-    if (likeDescription) likeDescription.textContent = state.assistantMode === "likes-replies"
-      ? "逐个打开首页帖子，只点赞评论。已查看的评论串不会重复处理。"
-      : "从首页逐条点赞帖子。已点过赞的内容不会重复点击。";
     const likeDocsReplies = state.assistantMode === "likes-replies";
     const likeDocsLabel = panel.querySelector("[data-xrc-like-docs-label]");
     if (likeDocsLabel) likeDocsLabel.textContent = likeDocsReplies ? "点赞评论规则" : "点赞帖子规则";
@@ -5408,15 +5733,7 @@
       likeDocsLink.setAttribute("aria-label", likeDocsReplies ? "查看点赞评论说明" : "查看点赞帖子说明");
       likeDocsLink.title = likeDocsLink.getAttribute("aria-label");
     }
-    const likeCount = panel.querySelector("[data-xrc-like-count]");
-    if (likeCount) {
-      const plan = likeState.runPlan;
-      const roundIndex = Math.min(likeState.completedRounds || 0, Math.max(0, (plan?.rounds || 1) - 1));
-      const completedBefore = (plan?.roundTargets || []).slice(0, roundIndex).reduce((sum, value) => sum + value, 0);
-      const roundTarget = plan?.roundTargets?.[roundIndex] || plan?.total || 0;
-      const roundDone = Math.max(0, Math.min(roundTarget, (likeState.runCount || 0) - completedBefore));
-      likeCount.textContent = `${plan ? `本次任务共 ${plan.rounds} 轮 · 第 ${roundIndex + 1} 轮 ${roundDone}/${roundTarget} 个点赞 · 本次 ${likeState.runCount || 0}/${plan.total} 个点赞 · ` : ""}累计确认 ${likeState.count} 个点赞 · 已查看 ${likeState.posts} 个帖子${likeState.unconfirmed ? ` · ${likeState.unconfirmed} 个未确认已跳过` : ""}`;
-    }
+    paintLikeProgress(panel);
     const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
     if (likeToggle) {
       const likeCooldown = likeState.running && Number(likeState.cooldownUntil) > Date.now()
@@ -5438,7 +5755,6 @@
       likeToggle.title = "";
       syncScheduledTaskButton(likeToggle, currentTaskKey(), Boolean(likeState.running));
     }
-    if (state.assistantMode.startsWith("likes-")) panel.querySelector("[data-xrc-mini-progress]").textContent = `点赞管理 · ${likeState.count} 条`;
     const replyDocsNotifications = state.assistantMode === "notifications";
     const replyDocsLabel = panel.querySelector("[data-xrc-reply-docs-label]");
     if (replyDocsLabel) replyDocsLabel.textContent = replyDocsNotifications ? "评论通知规则" : "评论帖子规则";
@@ -5821,7 +6137,8 @@
       if (state.assistantMode === "poster-premium") {
         state.status = "精品发帖每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文偏完整篇幅，配图比例更高。";
       } else if (state.assistantMode === "poster") {
-        state.status = `先读取知乎、头条热点，必要时补充 AI HOT；素材不足时改写常用社会观察。形成待发列表后按「${postApi?.formatPostSchedule?.(state.posterPace)?.label || "中"}」挡基础间隔 ${postApi?.formatPostSchedule?.(state.posterPace)?.interval || "25～35 分钟"}，早 7–10 / 午 12:30–13:30 / 晚 18–22 更密，其他时段更疏。列表没发完不会重新抓取。`;
+        const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || {};
+        state.status = `一次先抓一批改写稿（「${postSchedule.label || "中"}」挡 ${postSchedule.interval || "条间 10～20 秒 · 每次 10～16 条"}），发完再进入批次倒计时。早 7–10 / 午 12:30–13:30 / 晚 18–22 一次多抓，其他时段一次少抓。本批没发完不会重新抓取。`;
       } else {
         state.status = "";
       }
@@ -5959,10 +6276,37 @@
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
         if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) return { ok: false, error: "当前动作尚未安全结束" };
+        if (["timeline", "notifications"].includes(mode)) {
+          if (!await prepareReplyForTabSwitch()) {
+            const composer = findDialogComposer();
+            const hasUserDraft = Boolean(composer?.dialog?.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]'))
+              || Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR)).some((textbox) => {
+                if (textbox.closest(`#${PANEL_ID}`)) return false;
+                const text = loopApi.composerText(textbox);
+                return Boolean(text && !isManagedDraft(text));
+              });
+            const key = taskStateKey(mode);
+            const saved = { ...readSaved(mode), running: false, phraseStore: PHRASE_STORE,
+              notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION, unfollowEnglishDefaultVersion: 1 };
+            await taskSnapshotWrite.catch(() => {});
+            await chrome.storage.local.set({ [key]: saved });
+            sessionStorage.setItem(key, JSON.stringify(saved));
+            suspendingTask = false;
+            state.status = hasUserDraft
+              ? "检测到非插件草稿，保留原页签；其他任务将在新页签继续"
+              : "X 回复框暂未清理，保留原页签；其他任务将在新页签继续";
+            renderPanel();
+            return { ok: false, error: state.status, errorCode: hasUserDraft ? "user-draft" : "composer-cleanup-failed" };
+          }
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          state.pendingGrokInvite = false;
+        }
         if (state.assistantMode === "mutual") await mutualApi?.persistForSuspend?.();
         if (isPosterMode()) await postApi?.persistForSuspend?.();
         const snapshot = readSaved(mode);
         const saved = { ...snapshot, running: false, assistantMode: state.assistantMode, mutualMode: state.mutualMode,
+          pendingReply: state.pendingReply, pendingTweetId: state.pendingTweetId, pendingGrokInvite: state.pendingGrokInvite,
           phraseStore: PHRASE_STORE, notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
           unfollowEnglishDefaultVersion: 1 };
         const key = taskStateKey(mode);

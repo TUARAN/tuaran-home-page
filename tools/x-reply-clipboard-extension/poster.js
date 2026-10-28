@@ -3,21 +3,20 @@
 
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const POST_EDITOR_SELECTOR = '[data-testid="tweetTextarea_0"][contenteditable="true"][role="textbox"]';
-  const MIN_INTERVAL_MS = 25 * 60 * 1000;
-  const MAX_INTERVAL_MS = 35 * 60 * 1000;
   const DEFAULT_POST_PACE = "medium";
   const POST_KIND_NORMAL = "normal";
   const POST_KIND_PREMIUM = "premium";
   const PREMIUM_DAILY_LIMIT = 5;
   const PREMIUM_SLOT_TIMES = Object.freeze(["08:00", "09:30", "12:00", "15:00", "19:00"]);
   const PREMIUM_DAILY_KEY = "xrcPosterPremiumDaily";
+  // One session = fetch a batch, send them with short gaps, then wait for the next session.
   const POST_SCHEDULE_PROFILES = [
-    { id: "slow", label: "慢", minMinutes: 50, maxMinutes: 70 },
-    { id: "medium", label: "中", minMinutes: 25, maxMinutes: 35 },
-    { id: "fast", label: "快", minMinutes: 12, maxMinutes: 18 },
-    { id: "turbo", label: "超快", minMinutes: 6, maxMinutes: 10 }
+    { id: "slow", label: "慢", minBatch: 5, maxBatch: 10, minGapSeconds: 12, maxGapSeconds: 20, minCycleMinutes: 45, maxCycleMinutes: 70 },
+    { id: "medium", label: "中", minBatch: 10, maxBatch: 16, minGapSeconds: 10, maxGapSeconds: 18, minCycleMinutes: 25, maxCycleMinutes: 40 },
+    { id: "fast", label: "快", minBatch: 16, maxBatch: 24, minGapSeconds: 8, maxGapSeconds: 15, minCycleMinutes: 15, maxCycleMinutes: 28 },
+    { id: "turbo", label: "超快", minBatch: 20, maxBatch: 30, minGapSeconds: 6, maxGapSeconds: 12, minCycleMinutes: 10, maxCycleMinutes: 18 }
   ];
-  // Shanghai-local peak windows: denser posting inside, sparser outside (still posts).
+  // Shanghai-local peak windows: larger session batches inside, smaller outside.
   const POST_WAVE_WINDOWS = Object.freeze([
     { start: 7 * 60, end: 10 * 60 },
     { start: 12 * 60 + 30, end: 13 * 60 + 30 },
@@ -118,7 +117,7 @@
   function idleStatusForKind(kind = state.postKind) {
     return kind === POST_KIND_PREMIUM
       ? "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。"
-      : "待命。先读知乎、头条，必要时补充 AI HOT；普通发帖按早晚高峰更密、其余时段更疏的波浪节奏排队。";
+      : "待命。一次先抓一批改写稿，条间约 10～20 秒发完；发完进入倒计时再抓下一批。高峰一次多抓，慢挡一次少抓。";
   }
 
   function premiumDailyCount(at = Date.now()) {
@@ -343,8 +342,9 @@
     return {
       id: profile.id,
       label: profile.label,
-      interval: `${profile.minMinutes}～${profile.maxMinutes} 分钟`,
-      wave: "高峰更密 · 低峰更疏"
+      interval: `条间 ${profile.minGapSeconds}～${profile.maxGapSeconds} 秒 · 每次 ${profile.minBatch}～${profile.maxBatch} 条`,
+      wave: "高峰一次多抓 · 低峰一次少抓",
+      cycle: `批次间隔 ${profile.minCycleMinutes}～${profile.maxCycleMinutes} 分钟`
     };
   }
 
@@ -392,23 +392,49 @@
     return 2.0;
   }
 
-  function randomIntervalMs(random = Math.random, pace = DEFAULT_POST_PACE) {
-    const profile = postScheduleProfile(pace);
-    const minimum = profile.minMinutes * 60 * 1000;
-    const maximum = profile.maxMinutes * 60 * 1000;
+  function randomInRange(random, minimum, maximum) {
+    const low = Math.min(Number(minimum) || 0, Number(maximum) || 0);
+    const high = Math.max(Number(minimum) || 0, Number(maximum) || 0);
     const value = Math.min(0.999999999999, Math.max(0, Number(random()) || 0));
-    return minimum + Math.floor(value * (maximum - minimum + 1));
+    return low + Math.floor(value * (high - low + 1));
   }
 
-  function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE) {
+  function randomPostGapMs(random = Math.random, pace = DEFAULT_POST_PACE) {
     const profile = postScheduleProfile(pace);
-    const baseMs = randomIntervalMs(random, pace);
-    const roughAt = Number(from) + baseMs;
-    const factor = postWaveFactor(roughAt);
-    const minWait = Math.round(profile.minMinutes * 60 * 1000 * 0.5);
-    const maxWait = Math.round(profile.maxMinutes * 60 * 1000 * 2.5);
-    const wait = Math.min(maxWait, Math.max(minWait, Math.round(baseMs * factor)));
-    return Number(from) + wait;
+    return randomInRange(random, profile.minGapSeconds, profile.maxGapSeconds) * 1000;
+  }
+
+  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_POST_PACE, at = Date.now()) {
+    const profile = postScheduleProfile(pace);
+    const baseMs = randomInRange(random, profile.minCycleMinutes, profile.maxCycleMinutes) * 60 * 1000;
+    const factor = postWaveFactor(Number(at) + baseMs);
+    const minWait = Math.round(profile.minCycleMinutes * 60 * 1000 * 0.5);
+    const maxWait = Math.round(profile.maxCycleMinutes * 60 * 1000 * 2.5);
+    return Math.min(maxWait, Math.max(minWait, Math.round(baseMs * factor)));
+  }
+
+  // Peak → larger batch (e.g. 20–30 on turbo); off-peak / slow → smaller batch (e.g. 5–10).
+  function sessionBatchSize(random = Math.random, pace = DEFAULT_POST_PACE, at = Date.now()) {
+    const profile = postScheduleProfile(pace);
+    const inPeak = postWaveFactor(at) <= 0.7;
+    const low = inPeak
+      ? Math.round((profile.minBatch + profile.maxBatch) / 2)
+      : profile.minBatch;
+    const high = inPeak
+      ? profile.maxBatch
+      : Math.max(profile.minBatch, Math.round((profile.minBatch + profile.maxBatch) / 2));
+    return randomInRange(random, low, high);
+  }
+
+  // Within a session: short gap. After the batch is empty: wait for the next session.
+  function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE, { queueRemaining = 0 } = {}) {
+    if (Number(queueRemaining) > 0) return Number(from) + randomPostGapMs(random, pace);
+    return Number(from) + randomCycleDelayMs(random, pace, from);
+  }
+
+  // Backward-compatible name used by older tests: now returns the within-session gap.
+  function randomIntervalMs(random = Math.random, pace = DEFAULT_POST_PACE) {
+    return randomPostGapMs(random, pace);
   }
 
   function formatPost(value) {
@@ -666,27 +692,28 @@
   }
 
   async function collectNewsFallback() {
-    emit("正在读取知乎、头条热点…");
+    const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
+    emit(`正在准备本批 ${batchTarget} 条待发稿…`);
     rewriteServiceError = "";
     rewriteRejections = [];
     const used = readUsedSourceIds();
     const errors = [];
     const sourceCounts = [];
     for (const tier of ["external", "aihot"]) {
-      if (state.stopping || state.publishQueue.length || rewriteServiceError) break;
-      if (tier === "aihot") emit(`知乎、头条尚未写出可发草稿（${sourceCounts.join("；") || "来源读取失败"}），正在读取 AI HOT…`);
+      if (state.stopping || state.publishQueue.length >= batchTarget || rewriteServiceError) break;
+      if (tier === "aihot") emit(`知乎、头条尚未写满本批（${sourceCounts.join("；") || "来源读取失败"}），正在读取 AI HOT…`);
       let result;
       try { result = await requestNewsSources(tier); }
       catch (error) { errors.push(`${tier === "aihot" ? "AI HOT" : "头条、知乎"}：${error?.message || "读取失败"}`); continue; }
       errors.push(...result.errors);
       const sources = tier === "aihot" ? ["aihot"] : ["zhihu", "toutiao"];
       for (const source of sources) {
+        if (state.publishQueue.length >= batchTarget || state.stopping || rewriteServiceError) break;
         const parsed = result.items.filter((item) => item?.source === source && keepSourceItem(item));
         const items = shuffleNewsItems(parsed.filter((item) => !used.has(item.id)));
         sourceCounts.push(`${sourceLabel(source)} ${parsed.length} 条，未用 ${items.length} 条`);
-        state.sourceQueue = items.slice(0, 12);
-        if (state.sourceQueue.length) await buildPublishList(1);
-        if (state.publishQueue.length || state.stopping || rewriteServiceError) break;
+        state.sourceQueue = items.slice(0, Math.max(batchTarget * 2, 12));
+        if (state.sourceQueue.length) await buildPublishList(batchTarget - state.publishQueue.length);
       }
     }
     if (!state.publishQueue.length && !state.stopping) {
@@ -698,12 +725,12 @@
         id: `${item.id}:reuse:${Math.floor(Date.now() / 86400000)}:${index}`,
         summary: `${item.summary} 这是常用主题的再次取材，必须换一个具体角度，避免重复近期发帖。`
       }));
-      state.sourceQueue = (freshEvergreen.length ? freshEvergreen : reusableEvergreen()).slice(0, 15);
-      if (state.sourceQueue.length) await buildPublishList(1);
-      if (!state.publishQueue.length && freshEvergreen.length && !state.stopping && !rewriteServiceError) {
-        emit("常用主题已写过，换角度再次生成…");
-        state.sourceQueue = reusableEvergreen().slice(0, 15);
-        await buildPublishList(1);
+      state.sourceQueue = (freshEvergreen.length ? freshEvergreen : reusableEvergreen()).slice(0, Math.max(batchTarget * 2, 15));
+      if (state.sourceQueue.length) await buildPublishList(batchTarget);
+      if (state.publishQueue.length < batchTarget && freshEvergreen.length && !state.stopping && !rewriteServiceError) {
+        emit("常用主题已写过，换角度继续补满本批…");
+        state.sourceQueue = reusableEvergreen().slice(0, Math.max(batchTarget * 2, 15));
+        await buildPublishList(batchTarget - state.publishQueue.length);
       }
     }
     if (!state.publishQueue.length && !state.stopping) {
@@ -1165,13 +1192,18 @@
         continue;
       }
       if (!queuedIsNew && state.nextPostAt > Date.now()) {
-        const remaining = Math.ceil((state.nextPostAt - Date.now()) / 60000);
+        const remainMs = state.nextPostAt - Date.now();
+        const remainText = remainMs >= 60000
+          ? `约 ${Math.ceil(remainMs / 60000)} 分钟`
+          : `约 ${Math.max(1, Math.ceil(remainMs / 1000))} 秒`;
         const premiumProgress = state.postKind === POST_KIND_PREMIUM
           ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
           : "";
         emit(state.lastError
-          ? `上次异常：${state.lastError}；本轮发帖已结束，约 ${remaining} 分钟后再次尝试`
-          : `${premiumProgress}待发 ${state.publishQueue.length} 条，下一条约 ${remaining} 分钟后发布`);
+          ? `上次异常：${state.lastError}；${remainText}后再次尝试`
+          : state.publishQueue.length
+            ? `${premiumProgress}本批待发 ${state.publishQueue.length} 条，${remainText}后发下一条`
+            : `${premiumProgress}本批已发完，${remainText}后开始下一批`);
         if (state.nextPostAt <= Date.now()) continue;
         await waitForPostSchedule(Math.min(5000, state.nextPostAt - Date.now()));
         continue;
@@ -1264,7 +1296,9 @@
           await bumpPremiumDaily();
           state.nextPostAt = nextPremiumPostAt(Date.now() + 1);
         } else {
-          state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace);
+          state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace, {
+            queueRemaining: state.publishQueue.length
+          });
         }
         await savePublishList();
         await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic, publishedItem);
@@ -1272,8 +1306,8 @@
           ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
           : "";
         emit(state.publishQueue.length
-          ? `${premiumNote}第 ${state.count} 条已发送；待发还剩 ${state.publishQueue.length} 条`
-          : `${premiumNote}第 ${state.count} 条已发送；待发列表已空，下一次重新选取素材`);
+          ? `${premiumNote}第 ${state.count} 条已发送；本批还剩 ${state.publishQueue.length} 条`
+          : `${premiumNote}第 ${state.count} 条已发送；本批发完，等待下一批取材`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -1410,6 +1444,9 @@
     resumeIfPending,
     shouldCollect,
     randomIntervalMs,
+    randomPostGapMs,
+    randomCycleDelayMs,
+    sessionBatchSize,
     scheduleNextNormalPostAt,
     postWaveFactor,
     shanghaiMinutesOfDay,

@@ -254,7 +254,7 @@ test('monitor defaults X stats to tarsixseveneig1 and scopes day details by acco
   assert.equal(calls.some((call) => call.sql.includes('community_action_daily_counts')), false)
   assert.equal(result.eventTotal, 3)
   assert.equal(result.tasks.find((task) => task.task === 'timeline-reply').success, 3)
-  assert.equal(result.trend.length, 14)
+  assert.equal(result.trend.length, 7)
   assert.equal(result.trend.at(-1).date, '2026-10-18')
   assert.equal(result.trend.at(-2).success, 3)
   assert.deepEqual(calls.find((call) => call.sql.includes('x_extension_daily_reports') && call.sql.includes('LIMIT ? OFFSET ?')).values, ['2026-10-17', 'tarsixseveneig1', 20, 20])

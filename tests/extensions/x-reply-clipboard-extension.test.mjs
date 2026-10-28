@@ -27,6 +27,39 @@ const USER_STATE_HELPERS = `
     return USER_STATE_LABELS.stopped;
   }
   function formatUserStateAction(stateLabel, actionLabel) { return \`\${stateLabel} · \${actionLabel}\`; }
+  function formatFlowPrompt(nowLabel, nextLabel, actionLabel) {
+    return [nowLabel, nextLabel, actionLabel].filter(Boolean).join(" · ");
+  }
+  function formatCountdown(milliseconds) {
+    const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const parts = [];
+    if (hours > 0) parts.push(\`\${hours} 小时\`);
+    if (minutes > 0 || hours > 0) parts.push(\`\${minutes} 分\`);
+    parts.push(\`\${seconds} 秒\`);
+    return parts.join(" ");
+  }
+  function soonestWaitMs() { return 0; }
+  function scheduleWaitFlowModel({ confirming = false } = {}) {
+    const waitMs = soonestWaitMs();
+    const eta = waitMs > 0 ? \`约 \${formatCountdown(waitMs)}后继续\` : "";
+    if (confirming) {
+      return {
+        label: formatUserStateAction("后台调度中", "点击暂停"),
+        hint: "正在确认当前任务是否已启动，确认后开始执行。",
+        status: "waiting", action: "pause",
+        title: "后台正在调度，并确认页内任务是否已启动；确认后开始执行。点击可暂停排班。"
+      };
+    }
+    return {
+      label: formatUserStateAction("后台调度中", "点击暂停"),
+      hint: eta ? \`等待下一项到期，\${eta}。\` : "等待下一项到期后自动切换。",
+      status: "waiting", action: "pause",
+      title: "后台正在调度；暂无到期任务，到期后会自动切换。点击可暂停排班。"
+    };
+  }
 `
 
 test('scheduled post formats reserve one fifth for text cards and compact posts keep blank lines', async () => {
@@ -915,6 +948,7 @@ test('paused flow wins over stale stopping task records', async () => {
   })
   vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
   assert.equal(context.model().label, '已停止 · 点击启动全部')
+  assert.equal(context.model().hint, '全流程已暂停，可重新启动。')
   assert.equal(context.model().action, 'start')
   context.pluginRuntime.tasks.timeline = { phase: 'paused', updatedAt: Date.now() }
   assert.equal(context.model().label, '已停止 · 点击启动全部')
@@ -940,6 +974,7 @@ test('a running task remains visible when an old paused flow marker survives rel
   })
   vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
   assert.equal(context.model().label, '运行中 · 点击暂停全部')
+  assert.equal(context.model().hint, '有任务正在执行。')
   assert.equal(context.model().action, 'pause')
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   assert.match(backgroundSource, /if \(phase !== "stopping"\)/)
@@ -966,10 +1001,12 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
   assert.equal(context.model().label, '已停止 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
   context.taskSchedule.current = 'timeline'
-  assert.equal(context.model().label, '等待中 · 点击暂停调度')
+  assert.equal(context.model().label, '后台调度中 · 点击暂停')
+  assert.equal(context.model().hint, '正在确认当前任务是否已启动，确认后开始执行。')
   context.taskSchedule.current = ''
   context.taskSchedule.items = {}
-  assert.equal(context.model().label, '等待中 · 点击暂停调度')
+  assert.equal(context.model().label, '后台调度中 · 点击暂停')
+  assert.equal(context.model().hint, '等待下一项到期后自动切换。')
   context.pluginRuntime.tasks.timeline.phase = 'running'
   assert.equal(context.model().label, '运行中 · 点击暂停全部')
 })
@@ -1010,7 +1047,7 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
     pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {} },
   })
   vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel; globalThis.overview = flowTaskOverview`, context)
-  const read = () => ({ label: context.model().label, action: context.model().action, counts: JSON.parse(JSON.stringify(context.overview(context.pluginRuntime, now).counts)) })
+  const read = () => ({ label: context.model().label, hint: context.model().hint, action: context.model().action, counts: JSON.parse(JSON.stringify(context.overview(context.pluginRuntime, now).counts)) })
 
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { manualStopped: true }]))
   assert.equal(read().label, '已停止 · 点击启动未运行')
@@ -1022,12 +1059,13 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
 
   context.pluginRuntime.tasks = {}
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { blocked: true }]))
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 点击暂停调度', action: 'pause' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 点击暂停', action: 'pause' })
   context.taskSchedule.enabled = false
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 请先查看详情', action: '' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 请先看详情', action: '' })
   context.taskSchedule.enabled = true
   context.taskSchedule.items = {}
-  assert.equal(read().label, '等待中 · 点击暂停调度')
+  assert.equal(read().label, '后台调度中 · 点击暂停')
+  assert.equal(read().hint, '等待下一项到期后自动切换。')
   context.pluginRuntime.flow.phase = 'stopping'
   assert.equal(read().label, '停止中 · 请稍候')
 
@@ -1056,6 +1094,7 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   context.flowStopping = true
   assert.deepEqual({ label: read().label, action: read().action }, { label: '停止中 · 请稍候', action: '' })
   assert.match(source, /button\.disabled = !model\.action/)
+  assert.match(source, /data-xrc-flow-hint/)
 })
 
 test('all seven scheduled task buttons use the same waiting state as the flow detail', async () => {
@@ -1083,7 +1122,9 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   })
   vm.runInContext(`${USER_STATE_HELPERS}\n${deskDefinition}\n${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
   for (const mode of modes) {
-    const expected = mode === 'poster' ? '等待中 · 约 1 分 0 秒 · 点击查看' : '等待中 · 点击查看'
+    const expected = mode === 'poster'
+      ? '等待中 · 约 1 分 0 秒 · 点击查看'
+      : '等待中 · 点击查看'
     assert.equal(context.control(mode, false, now).label, expected)
     assert.equal(context.control(mode, false, now).action, 'inspect')
     assert.equal(context.control(mode, true, now), null)
@@ -1092,7 +1133,7 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.deskHome = false
   context.selectedTaskMode = 'poster'
   assert.equal(context.control('poster', false, now).action, 'start')
-  assert.match(context.control('poster', false, now).label, /点击立即启动/)
+  assert.equal(context.control('poster', false, now).label, '等待中 · 约 1 分 0 秒 · 点击立即启动')
   context.deskHome = true
   context.taskSchedule.items.poster.manualStopped = true
   assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
@@ -1513,15 +1554,24 @@ test('header runtime line uses the same global state as the main button', async 
     waitHeadline: (prefix) => prefix,
     flowTaskOverview: () => ({ counts: { running: 0 } }),
     pluginRuntime: { tasks: {} },
+    taskSchedule: { enabled: true, current: '' },
   })
   vm.runInContext(`${USER_STATE_HELPERS}\n${definition}\nglobalThis.runtimeLabel = flowRuntimeLabel`, context)
   const cases = [
-    ['paused', '已停止 · 全流程已暂停'], ['waiting', '等待中'], ['blocked', '需处理'],
-    ['stalled', '需处理 · 停止超时'], ['stopping', '等待中'], ['starting', '等待中'],
-    ['unknown', '需处理'], ['stopped', '已停止'], ['idle', '已停止'],
+    ['paused', '已停止 · 全流程已暂停'],
+    ['waiting', '后台调度中 · 等待下一项到期'],
+    ['blocked', '需处理 · 任务受限'],
+    ['stalled', '需处理 · 停止超时'],
+    ['stopping', '停止中 · 正在结束全部任务'],
+    ['starting', '启动中 · 正在打开执行页'],
+    ['unknown', '需处理 · 状态未同步'],
+    ['stopped', '已停止'],
+    ['idle', '已停止'],
   ]
   for (const [status, expected] of cases) assert.equal(context.runtimeLabel({ status }, null, 1000), expected)
-  assert.equal(context.runtimeLabel({ status: 'running' }, 800, 1000), '稳定运行 200ms')
+  assert.equal(context.runtimeLabel({ status: 'running' }, 800, 1000), '运行中 · 已稳定 200ms')
+  context.taskSchedule.enabled = false
+  assert.equal(context.runtimeLabel({ status: 'waiting' }, null, 1000), '等待恢复')
   assert.match(source, /stableRuntime\.textContent = flowRuntimeLabel\(flowButtonModel\(\), pluginRuntime\.startedAt\)/)
 })
 
@@ -1950,6 +2000,40 @@ test('post-like task stays on Home and has its own processed history', async () 
   assert.equal(clicks, 1)
   assert.deepEqual(saved['xrcAutoLikeSeen:test:posts'], ['123'])
   assert.equal(location.pathname, '/home')
+})
+
+test('post likes dismiss only the X Views dialog and continue liking', async () => {
+  const location = { pathname: '/home' }
+  let viewsOpen = true
+  let dismisses = 0
+  let clickedLike = 0
+  let liked = false
+  const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
+  const article = { querySelector(selector) {
+    if (selector === 'time') return { closest: () => link }
+    if (selector === '[data-testid="unlike"]') return liked ? {} : null
+    if (selector === '[data-testid="like"]') return liked ? null : { click() { assert.equal(viewsOpen, false); clickedLike += 1; liked = true } }
+    return null
+  } }
+  const dismissButton = { textContent: 'Dismiss', click() { dismisses += 1; viewsOpen = false } }
+  const views = { textContent: 'Views Times this post was seen. Dismiss', querySelectorAll: () => [dismissButton] }
+  const unrelated = { textContent: 'Delete post? Dismiss', querySelectorAll: () => [{ textContent: 'Dismiss', click() { throw new Error('wrong dialog') } }] }
+  const doc = {
+    querySelector: () => ({ querySelectorAll: () => [article] }),
+    querySelectorAll(selector) { return selector.includes('[role="dialog"]') && viewsOpen ? [unrelated, views] : [] },
+  }
+  let controller
+  controller = autoLike.createController({
+    document: doc,
+    window: { location, setTimeout: (callback) => queueMicrotask(callback), scrollBy() {}, innerHeight: 700 },
+    storage: { async get() { return {} }, async set() {} },
+    target: 'posts',
+    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+  })
+  await controller.start()
+  assert.equal(dismisses, 1)
+  assert.equal(clickedLike, 1)
+  assert.equal(controller.snapshot().count, 1)
 })
 
 test('post likes finish the configured two-round run before entering the scheduler wait', async () => {
@@ -2646,17 +2730,18 @@ test('persistent X send errors end the reply task with a visible reason', async 
   assert.equal(rendered, 1)
 })
 
-test('a restricted reply enters a timed retry without stopping other tasks', async () => {
+test('a restricted reply clears its managed draft immediately and enters a timed retry', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function applyRiskStop\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(helper)
-  const state = { assistantMode: 'timeline', loopPromise: {}, running: true, stopping: false, riskPaused: false, riskCooldownUntil: 0, riskRetries: 0, status: '', total: 0 }
+  const state = { assistantMode: 'timeline', loopPromise: {}, running: true, stopping: false, riskPaused: false, riskCooldownUntil: 0, riskRetries: 0, status: '', total: 0, pendingReply: '尚未发出的回复', pendingTweetId: '123' }
   const calls = { like: 0, mutual: 0, poster: 0, canceled: 0, saved: 0 }
   const acknowledgedAutomationNotices = new WeakMap()
   const sandbox = vm.createContext({
     state, Date: { now: () => 1000 }, loopApi: { automationCooldownMs: (retries) => retries * 600000 },
     automationWarningNodes: () => [], acknowledgedAutomationNotices,
     mutualApi: { coolDownForRisk() { calls.mutual += 1 } }, postApi: { coolDownForRisk() { calls.poster += 1 } },
+    prepareReplyForTabSwitch: async () => true,
     cancelActiveAiRequest() { calls.canceled += 1 }, writeSaved() { calls.saved += 1 },
     formatCountdown: () => '10:00', renderPanel() {},
   })
@@ -2666,8 +2751,15 @@ test('a restricted reply enters a timed retry without stopping other tasks', asy
   assert.equal(state.riskPaused, true)
   assert.equal(state.riskCooldownUntil, 601000)
   assert.equal(sandbox.requested(), true)
+  assert.equal(state.pendingReply, '尚未发出的回复')
+  assert.equal(state.pendingTweetId, '123')
   assert.match(state.status, /后自动重试/)
   assert.deepEqual(calls, { like: 0, mutual: 0, poster: 0, canceled: 1, saved: 1 })
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(state.pendingReply, '')
+  assert.equal(state.pendingTweetId, '')
+  assert.equal(calls.saved, 2)
   sandbox.cool()
   assert.equal(calls.canceled, 1)
   state.riskCooldownUntil = 0
@@ -2695,6 +2787,7 @@ test('a restricted reply waits for its deadline then resumes the same task', asy
   const sandbox = vm.createContext({
     state, loopApi: loop, Date: { now: () => 1000 }, writeSaved() {}, formatCountdown: () => '10:00',
     async waitForDeadline(deadline, status) { waitedUntil = deadline; assert.match(status(600000), /自动重试/); return true },
+    async prepareReplyForTabSwitch() { return true },
     async reloadAndResume() { reloaded += 1; return true },
   })
   vm.runInContext(`let riskRoundRequested = true; let riskRoundAdvancing = false;\n${helper}\nglobalThis.resume = advanceRoundAfterRisk; globalThis.pending = () => riskRoundRequested`, sandbox)
@@ -2704,6 +2797,145 @@ test('a restricted reply waits for its deadline then resumes the same task', asy
   assert.equal(state.riskCooldownUntil, 0)
   assert.equal(state.riskPaused, false)
   assert.equal(sandbox.pending(), false)
+})
+
+test('reply handoff clears a managed composer before navigation and keeps an unconfirmed draft in place', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const prepare = source.match(/  async function prepareReplyForTabSwitch\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const reload = source.match(/  async function reloadManagedReplyDraft\(message\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(prepare && reload)
+  let draft = '扩展生成但未发送'
+  let closes = 0
+  let reloads = 0
+  let allowClose = false
+  const editor = { closest: () => null }
+  const state = { pendingReply: draft, status: '', total: 0 }
+  const dialog = { textbox: editor, dialog: { querySelector: () => null } }
+  const context = vm.createContext({
+    state, PANEL_ID: 'xrc-panel', REPLY_EDITOR_SELECTOR: '[role="textbox"]',
+    findDialogComposer: () => draft ? dialog : null,
+    async closeReplyComposer() { closes += 1; if (!allowClose) return false; draft = ''; return true },
+    document: { querySelectorAll: () => draft ? [editor] : [] },
+    loopApi: { composerText: () => draft }, isManagedDraft: () => true,
+    writeSaved() {}, renderPanel() {}, window: { location: { reload() { reloads += 1 } } },
+  })
+  vm.runInContext(`let replyComposerCleanup = null;\n${prepare}\n${reload}\nglobalThis.prepare = prepareReplyForTabSwitch; globalThis.reload = reloadManagedReplyDraft`, context)
+  assert.equal(await context.prepare(), false)
+  assert.equal(await context.reload('等待安全重试'), false)
+  assert.equal(reloads, 0)
+  allowClose = true
+  assert.equal(await context.reload('已清理草稿'), true)
+  assert.equal(reloads, 1)
+  assert.ok(closes >= 2)
+  draft = '用户尚未发送的内容'
+  allowClose = false
+  assert.equal(await context.prepare(), false)
+})
+
+test('a blocked reply composer releases the schedule slot without discarding a user draft', async () => {
+  for (const response of [
+    { ok: false, errorCode: 'composer-cleanup-failed' },
+    { ok: false, errorCode: 'user-draft' },
+    { ok: false, error: '当前动作尚未安全结束' },
+  ]) {
+    const tabId = 303
+    const session = { xrcTaskTabs: { timeline: tabId } }
+    const local = {
+      xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'timeline', workTabId: tabId, items: {} },
+      xrcPluginRuntime: { tasks: { timeline: { tabId, phase: 'paused' } } },
+    }
+    const removed = []
+    globalThis.chrome = {
+      storage: {
+        session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+        local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      },
+      tabs: {
+        async get(id) { return { id } },
+        async sendMessage() { return response },
+        async remove(id) { removed.push(id) },
+      },
+    }
+    try {
+      assert.equal(await background.suspendScheduledTask('timeline', 'X 受限，切换任务', { keepTab: true, releaseOnFailure: true }), true)
+      assert.deepEqual(removed, [])
+      assert.deepEqual(session.xrcTaskTabs, {})
+      assert.equal(local.xrcTaskSchedule.workTabId, 0)
+      assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [tabId])
+      assert.equal(local.xrcPluginRuntime.tasks.timeline, undefined)
+    } finally { delete globalThis.chrome }
+  }
+})
+
+test('an unreachable reply tab cannot hold the schedule slot', async () => {
+  const tabId = 404
+  const session = { xrcTaskTabs: { notifications: tabId } }
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'notifications', workTabId: tabId, items: {} },
+    xrcPluginRuntime: { tasks: { notifications: { tabId, phase: 'paused' } } },
+  }
+  const removed = []
+  globalThis.chrome = {
+    storage: {
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+    },
+    tabs: {
+      async get(id) { return { id } },
+      async sendMessage() { throw new Error('tab blocked by dialog') },
+      async remove(id) { removed.push(id) },
+    },
+  }
+  try {
+    assert.equal(await background.suspendScheduledTask('notifications', '切换任务', { releaseOnFailure: true }), true)
+    assert.deepEqual(removed, [])
+    assert.equal(local.xrcTaskSchedule.workTabId, 0)
+    assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [tabId])
+  } finally { delete globalThis.chrome }
+})
+
+test('a failed reply cleanup lets the scheduler start the next due task', async () => {
+  const firstId = 505
+  const now = Date.now()
+  const session = { xrcTaskTabs: { timeline: firstId } }
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: 'timeline',
+      workTabId: firstId, startedAt: now, items: {},
+      rules: { 'poster-premium': { enabled: false } },
+    },
+    xrcPluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {
+      timeline: { tabId: firstId, phase: 'paused', waitUntil: now + 3600000, detail: 'X 限制冷却', updatedAt: now },
+    } },
+  }
+  const tabs = new Map([[firstId, { id: firstId, windowId: firstId, url: 'https://x.com/home' }]])
+  let nextId = firstId
+  globalThis.chrome = {
+    storage: {
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+    },
+    tabs: {
+      async query() { return tabs.has(firstId) ? [tabs.get(firstId)] : [] },
+      async get(id) { if (!tabs.has(id)) throw new Error('closed'); return tabs.get(id) },
+      async sendMessage(id, message) {
+        if (message.type === 'xrc-task-suspend') return { ok: false, errorCode: 'composer-cleanup-failed' }
+        return { ok: true, mode: id === firstId ? 'timeline' : 'notifications', phase: id === firstId ? 'paused' : 'running', waitUntil: id === firstId ? now + 3600000 : 0 }
+      },
+      async remove(id) { tabs.delete(id) },
+      async update(id, options) { tabs.set(id, { ...tabs.get(id), ...options }) },
+      async create({ url }) { const id = ++nextId; const tab = { id, windowId: id, url }; tabs.set(id, tab); return tab },
+    },
+    windows: { async create({ url }) { const id = ++nextId; const tab = { id, windowId: id, url }; tabs.set(id, tab); return { id, tabs: [tab] } } },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(tabs.has(firstId), true)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
+    assert.notEqual(local.xrcTaskSchedule.workTabId, firstId)
+    assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [firstId])
+  } finally { delete globalThis.chrome }
 })
 
 test('offscreen timer message wakes a wait without relying on the page timer', async () => {
@@ -2898,27 +3130,34 @@ test('short DOM polling stays local instead of flooding the offscreen timer chan
   assert.equal(sent, 0)
 })
 
-test('AI poster formats blank lines and keeps the random interval between 25 and 35 minutes', async () => {
-  assert.equal(poster.randomIntervalMs(() => 0), 25 * 60 * 1000)
-  assert.ok(poster.randomIntervalMs(() => 0.999999) <= 35 * 60 * 1000)
-  assert.equal(poster.randomIntervalMs(() => 0, 'slow'), 50 * 60 * 1000)
-  assert.equal(poster.randomIntervalMs(() => 1, 'turbo'), 10 * 60 * 1000)
-  assert.equal(poster.randomIntervalMs(() => 0, 'fast'), 12 * 60 * 1000)
+test('AI poster uses short within-batch gaps and larger peak session batches', async () => {
+  assert.equal(poster.randomPostGapMs(() => 0, 'medium'), 10 * 1000)
+  assert.ok(poster.randomPostGapMs(() => 0.999999, 'medium') <= 18 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 0, 'slow'), 12 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 1, 'turbo'), 12 * 1000)
+  assert.equal(poster.randomIntervalMs(() => 0, 'fast'), 8 * 1000)
   assert.equal(poster.postScheduleProfile('missing').id, 'medium')
-  assert.equal(poster.formatPostSchedule('fast').interval, '12～18 分钟')
-  assert.equal(poster.formatPostSchedule('medium').wave, '高峰更密 · 低峰更疏')
+  assert.equal(poster.formatPostSchedule('fast').interval, '条间 8～15 秒 · 每次 16～24 条')
+  assert.equal(poster.formatPostSchedule('medium').wave, '高峰一次多抓 · 低峰一次少抓')
   assert.equal(poster.minutesToPostWavePeak(8 * 60), 0)
   assert.equal(poster.minutesToPostWavePeak(12 * 60 + 45), 0)
   assert.equal(poster.minutesToPostWavePeak(19 * 60), 0)
   assert.equal(poster.postWaveFactor(Date.parse('2026-10-28T08:30:00+08:00')), 0.55)
   assert.ok(poster.postWaveFactor(Date.parse('2026-10-28T03:00:00+08:00')) > 2)
-  const peakWait = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T08:00:00+08:00'), () => 0, 'medium')
+  const withinBatch = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T08:00:00+08:00'), () => 0, 'medium', { queueRemaining: 3 })
     - Date.parse('2026-10-28T08:00:00+08:00')
-  const offPeakWait = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T03:00:00+08:00'), () => 0, 'medium')
+  assert.ok(withinBatch >= 10 * 1000 && withinBatch <= 18 * 1000)
+  const peakBatch = poster.sessionBatchSize(() => 0.999999, 'turbo', Date.parse('2026-10-28T08:30:00+08:00'))
+  const offPeakSlow = poster.sessionBatchSize(() => 0, 'slow', Date.parse('2026-10-28T03:00:00+08:00'))
+  assert.ok(peakBatch >= 20 && peakBatch <= 30)
+  assert.ok(offPeakSlow >= 5 && offPeakSlow <= 10)
+  const peakCycle = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T08:00:00+08:00'), () => 0, 'medium', { queueRemaining: 0 })
+    - Date.parse('2026-10-28T08:00:00+08:00')
+  const offPeakCycle = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T03:00:00+08:00'), () => 0, 'medium', { queueRemaining: 0 })
     - Date.parse('2026-10-28T03:00:00+08:00')
-  assert.ok(peakWait < offPeakWait)
+  assert.ok(peakCycle < offPeakCycle)
   const posterSource = await readFile(new URL('poster.js', extensionDir), 'utf8')
-  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace\)/)
+  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace, \{\s*queueRemaining: state\.publishQueue\.length/)
   assert.equal(poster.snapshot().nextPostAt, 0)
   poster.setSchedulePace('turbo')
   assert.equal(poster.snapshot().schedulePace, 'turbo')
@@ -3035,19 +3274,26 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   const storage = {}
   const seen = []
   const rewrites = []
+  const feed = Array.from({ length: 20 }, (_, index) => ({
+    id: `toutiao:${index}`,
+    sourceType: 'news',
+    source: 'toutiao',
+    text: `一个关于新工具使用方式的公开讨论${index}`,
+    summary: '',
+    url: `https://www.toutiao.com/a${index}`,
+  }))
   const context = vm.createContext({
     chrome: {
       runtime: {
         lastError: null,
         sendMessage(message, respond) {
           seen.push(`${message.type}:${message.tier || ''}`)
-          if (message.type === 'xrc-ai-news-sources') respond({ ok: true, items: [
-            { id: 'toutiao:123', sourceType: 'news', source: 'toutiao', text: '一个关于新工具使用方式的公开讨论', summary: '', url: 'https://www.toutiao.com/a123' },
-          ] })
-          else {
-            rewrites.push(message)
-            respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
+          if (message.type === 'xrc-ai-news-sources') {
+            respond({ ok: true, items: message.tier === 'external' ? feed : [] })
+            return
           }
+          rewrites.push(message)
+          respond({ ok: true, topic: '新工具上线跟风', post: '新工具刚上线\n\n不少人还没打开看一眼，\n\n名字已经先被吹上天了。' })
         },
       },
       storage: { local: {
@@ -3059,19 +3305,18 @@ test('scheduled poster fills an empty queue from fresh hot topics and remembers 
   })
   vm.runInContext(source, context)
   const api = context.XInteractionPoster
+  api.setSchedulePace('slow')
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(seen, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:'])
-  assert.equal(api.snapshot().publishQueue.length, 1)
+  assert.equal(seen[0], 'xrc-ai-news-sources:external')
+  assert.ok(seen.filter((item) => item === 'xrc-ai-news-rewrite:').length >= 5)
+  assert.ok(!seen.includes('xrc-ai-news-sources:aihot'))
+  assert.ok(api.snapshot().publishQueue.length >= 5)
   assert.equal(api.snapshot().publishQueue[0].sourceType, 'news')
   assert.equal(api.snapshot().publishQueue[0].sourceLabel, '今日头条')
-  assert.equal(api.snapshot().publishQueue[0].sourceUrl, 'https://www.toutiao.com/a123')
-  assert.equal(api.readUsedSourceIds().has('toutiao:123'), true)
-  api.snapshot().publishQueue.length = 0
-  await api.collectNewsFallback()
-  assert.equal(api.snapshot().publishQueue[0].source, 'toutiao')
-  assert.equal(api.snapshot().publishQueue[0].sourceLabel, '今日头条')
-  assert.equal(rewrites.at(-1).source, 'toutiao')
+  assert.ok(String(api.snapshot().publishQueue[0].sourceUrl).includes('toutiao.com'))
+  assert.equal(api.readUsedSourceIds().has(api.snapshot().publishQueue[0].id), true)
+  assert.ok(rewrites.every((item) => item.source === 'toutiao'))
 })
 
 test('a rewrite service failure falls back locally without exhausting news sources or marking them used', async () => {
@@ -3096,12 +3341,14 @@ test('a rewrite service failure falls back locally without exhausting news sourc
   })
   vm.runInContext(source, context)
   const api = context.XInteractionPoster
+  api.setSchedulePace('slow')
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(calls, ['xrc-ai-news-sources:external', 'xrc-ai-news-rewrite:'])
+  assert.equal(calls[0], 'xrc-ai-news-sources:external')
+  assert.ok(calls.includes('xrc-ai-news-rewrite:'))
   assert.equal(api.readUsedSourceIds().has('toutiao:123'), false)
-  assert.equal(api.snapshot().publishQueue.length, 1)
-  assert.equal(api.snapshot().publishQueue[0].source, 'evergreen')
+  assert.ok(api.snapshot().publishQueue.length >= 5)
+  assert.ok(api.snapshot().publishQueue.every((item) => item.source === 'evergreen'))
   assert.ok(api.snapshot().publishQueue[0].text)
 })
 
@@ -3214,11 +3461,14 @@ test('scheduled poster drafts Zhihu topics before Toutiao topics', async () => {
   })
   vm.runInContext(source, context)
   const api = context.XInteractionPoster
+  api.setSchedulePace('slow')
   await api.loadHistory()
   await api.collectNewsFallback()
-  assert.deepEqual(rewritten, ['zhihu'])
-  assert.deepEqual(Array.from(api.snapshot().publishQueue, (item) => item.source), ['zhihu'])
-  assert.equal(rewriteRequests.length, 1)
+  assert.equal(rewritten[0], 'zhihu')
+  assert.ok(rewritten.includes('toutiao'))
+  assert.equal(api.snapshot().publishQueue[0].source, 'zhihu')
+  assert.ok(api.snapshot().publishQueue.some((item) => item.source === 'toutiao'))
+  assert.ok(rewriteRequests.length >= 2)
 })
 
 test('scheduled poster keeps trying fetched topics and reports the actual source and position', async () => {
@@ -4509,7 +4759,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.30')
+  assert.equal(manifest.version, '4.0.33')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4562,8 +4812,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(posterSource, /if \(!saved\?\.running\) return false/)
   assert.equal(poster.shouldCollect(0), true)
   assert.equal(poster.shouldCollect(3), false)
-  assert.match(posterSource, /MIN_INTERVAL_MS = 25 \* 60 \* 1000/)
-  assert.match(posterSource, /MAX_INTERVAL_MS = 35 \* 60 \* 1000/)
+  assert.match(posterSource, /minGapSeconds: 10, maxGapSeconds: 18/)
+  assert.match(posterSource, /sessionBatchSize/)
+  assert.match(posterSource, /minBatch: 20, maxBatch: 30/)
   assert.match(posterSource, /RETRY_INTERVAL_MS = 60 \* 1000/)
   assert.match(posterSource, /depth < 30/)
   assert.match(posterSource, /visibleSubmits/)
@@ -4672,7 +4923,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /定时发帖/)
   assert.match(content, /data-xrc-post-pace/)
   assert.match(content, /selectPosterPace/)
-  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace\)/)
+  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace, \{\s*queueRemaining: state\.publishQueue\.length/)
+  assert.match(content, /data-xrc-like-pace-label/)
+  assert.match(content, /paintLikeProgress/)
   assert.match(content, /loopApi\.randomCycleDelayMs\(Math\.random, state\.schedulePace(?:, state\.boundaryLevel)?\)/)
   assert.match(content, /边界测试本轮稳定，升到第/)
   assert.match(content, /边界测试在 .* 条后发现限制，降到第/)
@@ -4916,17 +5169,34 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="rules"/)
   assert.match(docsPage, /id="maintenance"/)
   assert.match(docsPage, /id="releases"/)
+  assert.match(docsPage, /从 v3 升级到 v4/)
+  assert.match(docsPage, /多页签并行/)
+  assert.match(docsPage, /单页签串行/)
+  assert.match(docsPage, /不再为无关等待干耗时间/)
+  assert.match(docsPage, /id="v3-to-v4"/)
+  assert.match(docsPage, /TaskWindowPlan/)
+  assert.doesNotMatch(docsPage, /TaskSchedulePrototype/)
+  const windowPlan = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/TaskWindowPlan.jsx', extensionDir), 'utf8')
+  assert.match(windowPlan, /panel-v4-schedule-desk\.webp/)
+  assert.match(windowPlan, /panel-v4-task-rounds\.webp/)
+  assert.match(windowPlan, /panel-v4-premium-detail\.webp/)
+  assert.match(windowPlan, /真实面板截图/)
+  assert.doesNotMatch(windowPlan, /账号 A/)
   assert.match(docsPage, /评论、点赞、关注和发帖共八项任务/)
   assert.match(docsPage, /点击任务只切换面板里的详情，不改变排班队列/)
   assert.match(docsPage, /查看当前任务详情/)
   assert.match(docsPage, /上一任务 \/ 当前任务 \/ 下一任务/)
-  assert.match(docsPage, /完成本次全部轮次后让出共享页签/)
+  assert.match(docsPage, /完成本次全部轮次后才让出共享执行页签|完成本次全部轮次后让出共享页签/)
   assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
   assert.match(docsPage, /运行中绿边跑马灯，等待中黄边跑马灯，已停止 \/ 需处理红边呼吸/)
   assert.match(docsPage, /SINGLE_BUTTON_ROWS[\s\S]*正在停止', '等待中 · 请稍候'/)
   assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已停止 · 点击启动全部/)
   assert.match(docsPage, /有任务执行', '运行中 · 点击暂停全部'/)
+  assert.match(docsPage, /后台调度中 · 点击暂停/)
+  assert.match(docsPage, /按钮下方提示/)
   assert.match(docsPage, /全流程主按钮[\s\S]*四类状态/)
+  assert.match(docsPage, /一次按速度档位抓一批/)
+  assert.match(docsPage, /从已安装的 v3 下载包切到本地 v4/)
   assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)

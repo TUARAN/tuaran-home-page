@@ -26,6 +26,24 @@
     return article?.querySelector('[data-testid="like"]') || null;
   }
 
+  function viewsDialog(doc) {
+    return [...doc.querySelectorAll('[role="dialog"], [aria-modal="true"]')].find((node) => {
+      const text = String(node.textContent || '').replace(/\s+/gu, ' ').trim();
+      return /\bViews\b/iu.test(text) && /Times this post was seen/iu.test(text);
+    }) || null;
+  }
+
+  function dismissViewsDialog(doc) {
+    const dialog = viewsDialog(doc);
+    if (!dialog) return false;
+    const dismiss = [...dialog.querySelectorAll('button, [role="button"]')]
+      .find((button) => /^Dismiss$/iu.test(String(button.textContent || '').trim()))
+      || dialog.querySelector('[data-testid="app-bar-close"], [aria-label="Close"]');
+    if (!dismiss) return false;
+    dismiss.click();
+    return true;
+  }
+
   function restrictionAlerts(doc) {
     return [...doc.querySelectorAll('[role="alert"], [role="dialog"], [data-testid="toast"], [data-testid="error-detail"]')]
       .filter((node) => !node.hidden && node.getAttribute?.('aria-hidden') !== 'true'
@@ -93,6 +111,18 @@
     };
     const primary = () => doc.querySelector('[data-testid="primaryColumn"]') || doc.querySelector('main');
     const tweets = () => [...(primary()?.querySelectorAll('[data-testid="tweet"]') || [])];
+
+    async function clearViewsDialog() {
+      if (!viewsDialog(doc)) return;
+      for (let attempt = 0; attempt < 3 && viewsDialog(doc); attempt += 1) {
+        if (!dismissViewsDialog(doc)) break;
+        await wait(300);
+      }
+      if (viewsDialog(doc)) {
+        throw Object.assign(new Error('X 的 Views 弹窗无法关闭'), { xrcViewsDialog: true });
+      }
+      update('已关闭 X 的 Views 弹窗，继续点赞');
+    }
 
     async function loadHistory() {
       try {
@@ -182,6 +212,7 @@
       await waitForCooldown();
       await waitForInteraction();
       if (!active()) return;
+      await clearViewsDialog();
       const activeRestriction = restrictionKind(doc);
       if (activeRestriction) throw restrictionError(activeRestriction);
       const button = likeButton(article);
@@ -198,6 +229,7 @@
       for (let attempt = 0; active() && attempt < 20; attempt += 1) {
         await wait(250);
         if (!active()) return;
+        await clearViewsDialog();
         warning = restrictionKind(doc, alertsBeforeClick) || restrictionKind(doc);
         if (warning) break;
         const current = id ? tweets().find((item) => tweetId(item) === id) : null;
@@ -250,6 +282,7 @@
     async function waitForPath(test, timeout = 9000) {
       const end = Date.now() + timeout;
       while (active() && Date.now() < end) {
+        await clearViewsDialog();
         if (test(win.location.pathname) && tweets().length) return true;
         await wait(300);
       }
@@ -260,6 +293,7 @@
       if (!active() || /^\/(?:home)?\/?$/u.test(win.location.pathname)) return;
       await waitForInteraction();
       if (!active()) return;
+      await clearViewsDialog();
       const home = doc.querySelector('a[data-testid="AppTabBar_Home_Link"], a[href="/home"]');
       if (!home) throw new Error('找不到首页入口，自动点赞已停止');
       home.click();
@@ -272,6 +306,7 @@
     async function processThread(link, rootId) {
       await waitForInteraction();
       if (!active()) return;
+      await clearViewsDialog();
       link.click();
       if (!await waitForPath((path) => path.includes(`/status/${rootId}`))) {
         throw new Error('帖子评论页加载超时，自动点赞已停止');
@@ -331,6 +366,7 @@
         try {
           await waitForCooldown();
           if (!active()) break;
+          await clearViewsDialog();
           if (!/^\/(?:home)?\/?$/u.test(win.location.pathname)) await returnHome();
           let found = false;
           for (const article of tweets()) {
@@ -372,6 +408,12 @@
           win.scrollBy(0, Math.max(700, win.innerHeight || 700));
           await wait(1000);
         } catch (error) {
+          if (error?.xrcViewsDialog) {
+            runComplete = true;
+            cycleUntil = now() + 60000;
+            update('Views 弹窗暂时无法关闭，已让出本次点赞任务；稍后再试');
+            continue;
+          }
           if (error?.xrcRateLimit) {
             await coolDownAfterRestriction('rate');
             stalled = 0;
@@ -422,7 +464,7 @@
     return { start, stop, startNow, snapshot, pauseForInteraction };
   }
 
-  const api = { createController, tweetId, likeButton, restrictionVisible, restrictionKind };
+  const api = { createController, tweetId, likeButton, dismissViewsDialog, restrictionVisible, restrictionKind };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XInteractionAutoLike = api;
 })(typeof globalThis === 'object' ? globalThis : this);

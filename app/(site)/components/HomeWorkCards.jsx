@@ -29,7 +29,7 @@ export function HomeBookCards() {
               <Image src={book.image} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 78px, 92px" className="object-cover" />
             </span>
             <span className="home-work-copy">
-              <span className="home-work-meta">{book.year} · {book.type} · {book.status}</span>
+              <span className="home-work-meta">{book.year} · {book.type}{book.publisher ? ` · ${book.publisher}` : ''} · {book.status}</span>
               <strong>{book.title}</strong>
               <small>{book.description}</small>
             </span>

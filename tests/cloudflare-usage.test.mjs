@@ -34,7 +34,51 @@ test('collector queries a UTC calendar day with account and zone scope', async (
   assert.equal(body.variables.end, '2026-10-27T00:00:00.000Z')
   assert.equal(body.variables.zoneTag, 'zone')
   assert.equal(report.workers.total, 0)
+  assert.equal(body.variables.accountTag, '4c0eea1ce5d93ebf856f6d5ee1d58bfb')
   assert.equal(utcDate(Date.parse('2026-10-26T23:59:59Z')), '2026-10-26')
+})
+
+function jsonResponse(payload, { ok = true, status = ok ? 200 : 403 } = {}) {
+  return { ok, status, text: async () => JSON.stringify(payload) }
+}
+
+const emptyUsage = { data: { viewer: { accounts: [{ workersOverviewRequestsAdaptiveGroups: [], d1AnalyticsAdaptiveGroups: [] }], zones: [{ httpRequestsAdaptiveGroups: [] }] } } }
+
+test('html error pages stay http errors instead of json parse failures', async () => {
+  await assert.rejects(
+    collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async () => ({
+      ok: false, status: 403, text: async () => '<!DOCTYPE html><html><title>Error</title>',
+    })),
+    /CLOUDFLARE_USAGE_HTTP_403/,
+  )
+})
+
+test('graphql authorization errors are read from a non-200 json body', async () => {
+  await assert.rejects(
+    collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (url) => {
+      if (String(url).includes('/graphql')) return jsonResponse({ errors: [{ message: 'not authorized for that account' }] }, { ok: false, status: 403 })
+      return jsonResponse({ success: false, errors: [{ message: 'no access' }] }, { ok: false, status: 403 })
+    }),
+    /CLOUDFLARE_USAGE_GRAPHQL:not authorized for that account/,
+  )
+})
+
+test('account authorization failure retries with the zone account id', async () => {
+  const accounts = []
+  const report = await collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone-1' }, '2026-10-26', async (url, options) => {
+    const target = String(url)
+    if (target.endsWith('/graphql')) {
+      const accountTag = JSON.parse(options.body).variables.accountTag
+      accounts.push(accountTag)
+      if (accountTag === 'acct-real') return jsonResponse(emptyUsage)
+      return jsonResponse({ data: null, errors: [{ message: 'not authorized for that account' }] })
+    }
+    if (target.endsWith('/zones/zone-1')) return jsonResponse({ success: true, result: { account: { id: 'acct-real' } } })
+    throw new Error(`unexpected ${target}`)
+  })
+  assert.deepEqual(accounts, ['4c0eea1ce5d93ebf856f6d5ee1d58bfb', 'acct-real'])
+  assert.equal(report.date, '2026-10-26')
+  assert.equal(report.workers.total, 0)
 })
 
 test('daily snapshot persists without D1 and history is newest first', async () => {

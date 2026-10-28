@@ -4,6 +4,24 @@ import { useEffect, useState } from 'react'
 
 const number = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0)
 const pct = (value, limit) => `${((Number(value) || 0) / limit * 100).toFixed(1)}%`
+const jsonHeaders = { Accept: 'application/json' }
+
+async function readJson(response) {
+  const text = (await response.text()).trim()
+  if (!text.startsWith('{') && !text.startsWith('[')) {
+    throw new Error(text.startsWith('<')
+      ? `HTTP ${response.status}，接口返回了网页而不是 JSON`
+      : `HTTP ${response.status || '未知'}`)
+  }
+  let result
+  try {
+    result = JSON.parse(text)
+  } catch {
+    throw new Error(`HTTP ${response.status}，响应不是 JSON`)
+  }
+  if (!response.ok || !result?.ok) throw new Error(result?.error || result?.detail || result?.title || `HTTP ${response.status}`)
+  return result
+}
 
 export default function CloudflareUsageClient() {
   const [data, setData] = useState(null)
@@ -16,10 +34,8 @@ export default function CloudflareUsageClient() {
   async function load(cached = false) {
     setLoading(true)
     try {
-      const response = await fetch(`/api/admin/cloudflare-usage${cached ? '?cached=1' : ''}`, { cache: 'no-store' })
-      const result = await response.json()
-      if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`)
-      setData(result)
+      const response = await fetch(`/api/admin/cloudflare-usage${cached ? '?cached=1' : ''}`, { cache: 'no-store', headers: jsonHeaders })
+      setData(await readJson(response))
       setError('')
     } catch (cause) { setError(String(cause?.message || cause)) }
     finally { setLoading(false) }
@@ -33,9 +49,8 @@ export default function CloudflareUsageClient() {
   async function refresh(date = '') {
     setRefreshing(true)
     try {
-      const response = await fetch(`/api/admin/cloudflare-usage${date ? `?date=${encodeURIComponent(date)}` : ''}`, { method: 'POST' })
-      const result = await response.json()
-      if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`)
+      const response = await fetch(`/api/admin/cloudflare-usage${date ? `?date=${encodeURIComponent(date)}` : ''}`, { method: 'POST', headers: jsonHeaders })
+      await readJson(response)
       await load(true)
       if (date) setSelectedDate(date)
     } catch (cause) { setError(String(cause?.message || cause)) }

@@ -101,7 +101,7 @@
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "4.0.8";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "4.0.10";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -1250,7 +1250,10 @@
     const sliceSeconds = [20, 30, 45].includes(Number(taskSchedule.sliceSeconds))
       ? Number(taskSchedule.sliceSeconds)
       : 30;
-    const switchAt = current && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + sliceSeconds * 1000 : 0;
+    const currentSliceMs = current === "mutual-unfollow"
+      ? Math.max(sliceSeconds * 1000, 10 * 60 * 1000)
+      : sliceSeconds * 1000;
+    const switchAt = current && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + currentSliceMs : 0;
     const overviewByMode = Object.fromEntries(flowTaskOverview(pluginRuntime, now).tasks.map((task) => [task.key, task]));
     const pending = FLOW_TASKS.map(([mode, label]) => {
       const rule = taskSchedule.rules?.[mode] || {};
@@ -1392,10 +1395,12 @@
       const note = document.createElement("small");
       const priority = Math.max(1, Math.min(3, Number(task.rule.priority) || 1));
       const windowText = { all: "全天", day: "08–20", peak: "08–10 / 18–20" }[task.rule.window] || "全天";
+      const gapText = Number(task.rule.minGapMs) >= 7 * 24 * 60 * 60 * 1000 ? "约每周一次"
+        : Number(task.rule.minGapMs) > 0 ? `间隔 ${Math.round(Number(task.rule.minGapMs) / 3600000)} 小时` : "";
       const etaText = futureEntry?.status === "ready" ? "预计当前结束后"
         : futureEntry?.status === "scheduled" ? `预计 ${formatScheduleTime(futureEntry.readyAt)}`
         : task.eta ? `倒计时 ${task.eta}` : "";
-      note.textContent = [task.reason, etaText, `优先级 ${priority}`, windowText].filter(Boolean).join(" · ");
+      note.textContent = [task.reason, etaText, `优先级 ${priority}`, windowText, gapText].filter(Boolean).join(" · ");
       body.append(label, note);
       row.append(mark, body, status);
       return row;
@@ -4025,7 +4030,7 @@
 
   function scheduleRuleRowsMarkup() {
     return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
-      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><strong>${label}</strong></label>
+      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><strong>${label}</strong>${mode === "mutual-unfollow" ? "<small>默认约每周一次</small>" : ""}</label>
       <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级"><option value="1">常规</option><option value="2">优先</option><option value="3">最高</option></select></label>
       <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option></select></label>
     </div>`).join("");
@@ -4981,7 +4986,9 @@
           const status = panel.querySelector("[data-xrc-schedule-status]");
           const rules = { ...(taskSchedule.rules || {}) };
           panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
-            rules[row.dataset.xrcScheduleRule] = {
+            const mode = row.dataset.xrcScheduleRule;
+            rules[mode] = {
+              ...(rules[mode] || {}),
               enabled: Boolean(row.querySelector("[data-xrc-schedule-enabled]")?.checked),
               priority: Number(row.querySelector("[data-xrc-schedule-priority]")?.value) || 1,
               window: row.querySelector("[data-xrc-schedule-window]")?.value || "all"

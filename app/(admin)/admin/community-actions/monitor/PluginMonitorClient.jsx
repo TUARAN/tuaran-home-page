@@ -170,6 +170,7 @@ export default function PluginMonitorClient() {
   const events = visibleData?.offset === offset ? visibleData.events : []
   const online = devices.filter((device) => device.online).length
   const running = devices.filter((device) => device.phase === 'running').length
+  const updateable = devices.filter((device) => device.online && device.updateAvailable).length
   const recentActionDevices = devices.filter((device) => device.lastAction).length
   const successes = tasks.reduce((sum, task) => sum + task.success, 0)
   const issues = tasks.reduce((sum, task) => sum + task.failed + task.limited, 0)
@@ -263,11 +264,12 @@ export default function PluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地插件排班台：上一 / 当前 / 下一任务与四类功能状态。约 10 秒刷新运行态；站点最新版 v${latestVersion || '—'}。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description={`对齐本地插件排班台与版本条。约 10 秒刷新运行态；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
           {accountSwitcher}
-          <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-3 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
+          <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />
             <Metric label="运行中" value={loading && !visibleData ? '—' : running} detail="排班或任务声明运行中" tone="success" />
+            <Metric label="可更新" value={loading && !visibleData ? '—' : updateable} detail={`对照站点 v${latestVersion || '—'}`} tone={updateable ? 'warning' : 'default'} />
             <Metric label="较早记录" value={loading && !visibleData ? '—' : olderDevices.length} detail="默认收起，可按需展开" />
           </dl>
           {devices.length ? (
@@ -289,7 +291,7 @@ export default function PluginMonitorClient() {
           ) : (
             <div className="pt-4"><EmptyState title={loading ? '正在读取插件实例' : '该账号还没有插件实例'} description={loading ? '请稍候。' : '在插件中配置回执密钥并保持浏览器运行；首次上报后会出现。'} /></div>
           )}
-          <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">离线请检查浏览器是否在跑、扩展是否已加载、回执密钥与网络。远程启停与更新依赖心跳（通常 1 分钟内）；落后版本会出现「可更新」。</p>
+          <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">每台实例顶部固定显示「插件版本」条。落后时可远程更新；已是最新也会显示状态，不会再把入口藏起来。远程启停与更新都依赖心跳（通常 1 分钟内）。</p>
         </Section>
 
         <div className="mt-8 border-t border-[#e5e9e2] pt-6 dark:border-[#263142]">

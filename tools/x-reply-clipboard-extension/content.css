@@ -2978,6 +2978,7 @@
 #x-reply-clipboard-panel .xrc-schedule-rule label,
 #x-reply-clipboard-panel .xrc-schedule-slice { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--xrc-muted); }
 #x-reply-clipboard-panel .xrc-schedule-rule strong { font-size: 12px; color: var(--xrc-text); }
+#x-reply-clipboard-panel .xrc-schedule-name small { display: block; margin-top: 2px; font-size: 10px; color: var(--xrc-muted); }
 #x-reply-clipboard-panel .xrc-schedule-rule select,
 #x-reply-clipboard-panel .xrc-schedule-slice select { min-width: 66px; max-width: 118px; padding: 5px; border: 1px solid var(--xrc-line); border-radius: 8px; background: #fff; color: var(--xrc-text); }
 #x-reply-clipboard-panel .xrc-schedule-rule input { accent-color: #0f8a72; }

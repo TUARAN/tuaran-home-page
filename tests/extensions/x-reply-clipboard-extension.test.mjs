@@ -1202,29 +1202,40 @@ test('background status reports resident recovery as waiting but manual stops as
   let readStatus
   const context = vm.createContext({
     globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
-    RUNTIME_REPORT_MODES: ['timeline', 'notifications', 'poster'],
+    RUNTIME_REPORT_MODES: ['timeline', 'notifications', 'likes-posts', 'poster'],
+    RUNTIME_REPORT_STALE_MS: 90_000,
     RESIDENT_TASKS: ['timeline', 'notifications'],
     QUEUED_TASKS: ['poster'],
-    TASK_TITLE_LABELS: { timeline: '评论帖子', notifications: '评论通知', poster: '普通发帖' },
+    TASK_TITLE_LABELS: { timeline: '评论帖子', notifications: '评论通知', 'likes-posts': '点赞帖子', poster: '普通发帖' },
     normalizedSliceSeconds: (value) => [20, 30, 45].includes(Number(value)) ? Number(value) : 30,
     scheduleTimeline: () => ({ history: [], future: [{ mode: 'notifications', status: 'scheduled', readyAt: Date.now() + 60000, reason: '等待自动恢复' }] }),
-    readPluginRuntime: async () => ({ tasks: {}, flow: { phase: 'running' } }),
+    readPluginRuntime: async () => ({
+      tasks: {
+        // Stale runtime row must not override an explicit manual stop.
+        'likes-posts': { phase: 'paused', updatedAt: Date.now(), detail: '旧等待状态' },
+      },
+      flow: { phase: 'running' },
+    }),
     verifyTaskRuntime: async (runtime) => runtime,
     readTaskSchedule: async () => ({ enabled: true, current: '', items: {
-      timeline: { manualStopped: true },
+      timeline: { manualStopped: true, reason: '已手动停止' },
       notifications: { resumeAt: Date.now() + 60000, reason: '等待自动恢复' },
+      'likes-posts': { manualStopped: true, reason: '已手动停止' },
       poster: { blocked: true, reason: '连续受限' },
-    } }),
+    }, rules: {} }),
   })
   vm.runInContext(provider, context)
   const report = await readStatus()
   assert.equal(report.phase, 'running')
   assert.equal(report.tasks.find((task) => task.mode === 'timeline').phase, 'idle')
   assert.equal(report.tasks.find((task) => task.mode === 'notifications').phase, 'paused')
-  assert.equal(report.tasks.find((task) => task.mode === 'poster').phase, 'idle')
+  assert.equal(report.tasks.find((task) => task.mode === 'likes-posts').phase, 'idle')
+  assert.match(report.tasks.find((task) => task.mode === 'likes-posts').detail, /已手动停止/)
+  assert.equal(report.tasks.find((task) => task.mode === 'poster').phase, 'unknown')
   assert.equal(report.schedule.enabled, true)
   assert.equal(report.schedule.next.mode, 'notifications')
   assert.equal(report.schedule.facing.waiting, 1)
+  assert.equal(report.schedule.facing.needs, 1)
   assert.equal(report.schedule.facing.stopped, 2)
 })
 
@@ -1463,6 +1474,11 @@ test('daily report panel relies on automatic sync instead of manual upload or pu
   assert.match(monitor, /XPluginStatusDeck/)
   assert.match(monitor, /LIVE_POLL_INTERVAL_MS = 10_000/)
   assert.match(monitor, /FULL_REFRESH_INTERVAL_MS = 60_000/)
+  assert.match(monitor, /可更新/)
+  const statusDeck = await readFile(new URL('../../app/(admin)/admin/community-actions/monitor/XPluginStatusDeck.jsx', extensionDir), 'utf8')
+  assert.match(statusDeck, /插件版本/)
+  assert.match(statusDeck, /远程更新到 v/)
+  assert.match(statusDeck, /ext-update/)
   assert.doesNotMatch(monitor, /本地上传报告/)
 })
 
@@ -4201,7 +4217,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.8')
+  assert.equal(manifest.version, '4.0.10')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4853,6 +4869,38 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     'likes-replies': { lastRunAt: afternoon - 60 * 60000 },
   } }
   assert.ok(background.dueTaskModes(fairPlan, afternoon).indexOf('likes-replies') < background.dueTaskModes(fairPlan, afternoon).indexOf('timeline'))
+})
+
+test('mutual unfollow defaults to about once a week and keeps a longer occupancy pass', () => {
+  const now = Date.parse('2026-10-28T10:00:00+08:00')
+  const rules = background.normalizedTaskRules({})
+  assert.equal(rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+  assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
+  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 30_000)
+
+  const recent = {
+    enabledAt: now - 60000,
+    rules: {},
+    items: { 'mutual-unfollow': { lastRunAt: now - 2 * 24 * 60 * 60 * 1000 } },
+  }
+  assert.ok(!background.dueTaskModes(recent, now).includes('mutual-unfollow'))
+
+  const ready = {
+    enabledAt: now - 60000,
+    rules: {},
+    items: { 'mutual-unfollow': { lastRunAt: now - 8 * 24 * 60 * 60 * 1000 } },
+  }
+  assert.ok(background.dueTaskModes(ready, now).includes('mutual-unfollow'))
+
+  const timeline = background.scheduleTimeline({
+    enabled: true,
+    current: 'timeline',
+    items: { 'mutual-unfollow': { lastRunAt: now - 2 * 24 * 60 * 60 * 1000, reason: '清理未回关约每周一次，等待下次排班' } },
+    rules: {},
+  }, now)
+  const unfollow = timeline.future.find((entry) => entry.mode === 'mutual-unfollow')
+  assert.equal(unfollow.status, 'scheduled')
+  assert.ok(unfollow.readyAt >= now + 4 * 24 * 60 * 60 * 1000)
 })
 
 test('schedule desk records finished shifts and estimates the next ready task', () => {

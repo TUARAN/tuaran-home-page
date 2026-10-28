@@ -316,7 +316,7 @@ export default function XReplyClipboardDocsPage() {
               </TaskBlock>
               <TaskBlock id="mutual-rules" badge="关" title="关注管理" summary="清理未回关 · 回关粉丝">
                 <ul className="list-disc space-y-2 pl-5">
-                  <li id="mutual-unfollow" className="scroll-mt-24">清理未回关：没有“Follows you”标记的 Following 会进入取关候选；已回关账号默认保留。</li>
+                  <li id="mutual-unfollow" className="scroll-mt-24">清理未回关：没有“Follows you”标记的 Following 会进入取关候选；已回关账号默认保留。全流程排班默认约每周一次，到点后占用约 10 分钟做一轮清理，不会和其他任务一样频繁轮换。</li>
                   <li>默认开启“非中文资料也清理”：已回关账号的姓名和简介都有文字且都不含汉字时，也会进入取关候选；任一处有汉字就保留。未回关账号照常清理。</li>
                   <li>清理操作每次间隔 2 秒，不套用回关的批次或每日数量上限。</li>
                   <li id="mutual-followback" className="scroll-mt-24">回关粉丝优先处理姓名或简介含汉字的账号；每 15 个暂停 30 分钟，每日最多 400 个，次日继续。关注候选暂时停用。</li>

@@ -1041,6 +1041,8 @@ const QUEUED_TASKS = ["timeline", "notifications", "likes-posts", "likes-replies
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
 const SLICE_YIELD_COOLDOWN_MS = 60 * 1000;
+const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 const TASK_SLICE_ALARM = "xrc-task-slice";
@@ -1058,9 +1060,19 @@ function migrateSliceSeconds(plan) {
   return DEFAULT_SLICE_SECONDS;
 }
 
+function sliceMsForMode(mode, plan) {
+  const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
+  // Weekly unfollow pass needs a longer occupancy than the short reply/like slices.
+  if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
+  return base;
+}
+
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: true, priority: REPLY_TASKS.includes(mode) ? 2 : 1, window: mode === "poster-premium" ? "day" : "all"
+    enabled: true,
+    priority: REPLY_TASKS.includes(mode) ? 2 : 1,
+    window: mode === "poster-premium" ? "day" : "all",
+    minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS : 0
   }]));
 }
 
@@ -1068,10 +1080,16 @@ function normalizedTaskRules(value) {
   const defaults = defaultTaskRules();
   for (const mode of QUEUED_TASKS) {
     const rule = value?.[mode] || {};
+    const fallbackGap = Number(defaults[mode].minGapMs) || 0;
+    const requestedGap = Number(rule.minGapMs);
     defaults[mode] = {
       enabled: rule.enabled !== false,
       priority: Math.max(1, Math.min(3, Number(rule.priority) || defaults[mode].priority)),
-      window: ["all", "day", "peak"].includes(rule.window) ? rule.window : defaults[mode].window
+      window: ["all", "day", "peak"].includes(rule.window) ? rule.window : defaults[mode].window,
+      // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
+      minGapMs: Number.isFinite(requestedGap)
+        ? Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
+        : fallbackGap
     };
   }
   return defaults;
@@ -1086,11 +1104,23 @@ function taskWindowOpen(mode, rule, now) {
   return true;
 }
 
+function taskGapReadyAt(item, rule) {
+  const gap = Number(rule?.minGapMs) || 0;
+  const lastRunAt = Number(item?.lastRunAt) || 0;
+  if (!gap || !lastRunAt) return 0;
+  return lastRunAt + gap;
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
-    .filter(({ mode, item, rule }) => rule.enabled && !item.blocked && !item.manualStopped
-      && Number(item.resumeAt || 0) <= now && taskWindowOpen(mode, rule, now))
+    .filter(({ mode, item, rule }) => {
+      const gapUntil = taskGapReadyAt(item, rule);
+      return rule.enabled && !item.blocked && !item.manualStopped
+        && Number(item.resumeAt || 0) <= now
+        && gapUntil <= now
+        && taskWindowOpen(mode, rule, now);
+    })
     .sort((a, b) => {
       if (a.mode === "poster-premium") return -1;
       if (b.mode === "poster-premium") return 1;
@@ -1115,7 +1145,8 @@ function recordScheduleSegment(plan, mode, reason, endedAt = Date.now()) {
 function nextTaskWindowAt(mode, rule, earliest) {
   if (taskWindowOpen(mode, rule, earliest)) return earliest;
   const firstMinute = Math.ceil(earliest / 60000) * 60000;
-  for (let minute = 0; minute < 48 * 60; minute += 1) {
+  const horizonMinutes = Math.max(48 * 60, Math.ceil((Number(rule?.minGapMs) || 0) / 60000) + 24 * 60);
+  for (let minute = 0; minute < horizonMinutes; minute += 1) {
     const at = firstMinute + minute * 60000;
     if (taskWindowOpen(mode, rule, at)) return at;
   }
@@ -1131,7 +1162,7 @@ function scheduleTimeline(plan, now = Date.now()) {
     const status = !plan.enabled ? "paused" : !rule.enabled ? "disabled" : item.manualStopped ? "stopped"
       : item.blocked ? "blocked" : due.includes(mode) ? "ready" : "scheduled";
     const readyAt = status === "ready" ? now : status === "scheduled"
-      ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0)) : 0;
+      ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0, taskGapReadyAt(item, rule))) : 0;
     return { mode, status, readyAt, reason: String(item.reason || "").slice(0, 100), order: due.indexOf(mode), index };
   }).sort((a, b) => {
     const rank = (entry) => entry.status === "ready" ? 0 : entry.status === "scheduled" ? 1 : 2;
@@ -1179,7 +1210,7 @@ async function readTaskSchedule() {
 async function armSliceAlarm(plan, now = Date.now()) {
   await chrome.alarms?.clear?.(TASK_SLICE_ALARM);
   if (!plan?.enabled || !plan.current || !Number(plan.startedAt)) return;
-  const limitMs = normalizedSliceSeconds(plan.sliceSeconds) * 1000;
+  const limitMs = sliceMsForMode(plan.current, plan);
   const elapsed = Math.max(0, now - Number(plan.startedAt));
   const remainMs = Math.max(3000, limitMs - elapsed);
   await chrome.alarms?.create?.(TASK_SLICE_ALARM, { when: now + remainMs });
@@ -1240,9 +1271,10 @@ async function runTaskSchedule() {
     const task = runtime.tasks?.[current];
     const item = plan.items[current] || {};
     const waitUntil = Number(task?.waitUntil) || 0;
-    const sliceMs = normalizedSliceSeconds(plan.sliceSeconds) * 1000;
+    const sliceMs = sliceMsForMode(current, plan);
     const timedOut = now - Number(plan.startedAt || now) >= sliceMs;
-    const actionDone = Number(item.sliceActions) > 0;
+    // Weekly unfollow should keep working through the longer pass; do not yield after the first action.
+    const actionDone = current !== "mutual-unfollow" && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
     const premiumDue = current !== "poster-premium" && dueTaskModes(plan, now)[0] === "poster-premium";
     const disabledCurrent = !plan.rules?.[current]?.enabled;
@@ -1287,7 +1319,10 @@ async function runTaskSchedule() {
       return plan;
     }
     if (!waiting && !timedOut && !actionDone && !premiumDue && !disabledCurrent && !haltedCurrent) return plan;
-    item.resumeAt = waiting ? waitUntil : now + (premiumDue ? 60000 : SLICE_YIELD_COOLDOWN_MS);
+    const currentRule = normalizedTaskRules(plan.rules)[current] || {};
+    const minGapMs = Number(currentRule.minGapMs) || 0;
+    const baseResumeAt = waiting ? waitUntil : now + (premiumDue ? 60000 : SLICE_YIELD_COOLDOWN_MS);
+    item.resumeAt = Math.max(baseResumeAt, minGapMs ? now + minGapMs : 0);
     item.reason = waiting
       ? String(task.detail || "等待冷却").slice(0, 160)
       : haltedCurrent
@@ -1296,9 +1331,11 @@ async function runTaskSchedule() {
           ? "已从排班中停用"
           : premiumDue
             ? "精品发帖档位到期，安全轮换"
-            : actionDone
-              ? "本轮动作已完成，等待下次轮班"
-              : "占用超时，轮换到下一项任务";
+            : current === "mutual-unfollow" && minGapMs
+              ? "清理未回关约每周一次，等待下次排班"
+              : actionDone
+                ? "本轮动作已完成，等待下次轮班"
+                : "占用超时，轮换到下一项任务";
     item.lastRunAt = now;
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
@@ -1597,33 +1634,102 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
   const schedule = await readTaskSchedule();
   const now = Date.now();
+  const timeline = scheduleTimeline(schedule, now);
+  const readyModes = new Set((timeline.future || []).filter((entry) => entry.status === "ready").map((entry) => entry.mode));
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
     const queued = schedule.items?.[mode] || {};
-    if (!task) {
-      if (schedule.enabled && schedule.current === mode && !queued.blocked && !queued.manualStopped) {
-        return { mode, phase: "running", startedAt: Number(schedule.startedAt) || 0, updatedAt: now, detail: "当前轮班占用中", waitUntil: 0 };
-      }
-      if (schedule.enabled && !queued.blocked && !queued.manualStopped) {
-        const reason = queued.reason || "后台排班等待";
-        return { mode, phase: "paused", startedAt: 0, updatedAt: now, detail: String(reason).slice(0, 160), waitUntil: Number(queued.resumeAt) || 0 };
-      }
-      return { mode, phase: "idle", startedAt: 0, updatedAt: 0, detail: queued.blocked ? `连续受限，等待人工检查：${String(queued.reason || "")}`.slice(0, 160) : queued.manualStopped ? "已手动停止" : "", waitUntil: 0 };
+    const ruleEnabled = schedule.rules?.[mode]?.enabled !== false;
+    const updatedAt = Number(task?.updatedAt) || 0;
+    const fresh = updatedAt > 0 && now - updatedAt <= RUNTIME_REPORT_STALE_MS;
+    const resumeAt = Number(queued.resumeAt) || 0;
+    const queuedReason = String(queued.reason || "").slice(0, 160);
+
+    // Prefer schedule halt flags over stale runtime rows, matching local four-state facing.
+    if (queued.manualStopped || schedule.rules?.[mode]?.enabled === false) {
+      return {
+        mode,
+        phase: "idle",
+        startedAt: 0,
+        updatedAt: updatedAt || now,
+        detail: queued.manualStopped ? (queuedReason || "已手动停止") : "未参与排班",
+        waitUntil: 0
+      };
     }
-    const updatedAt = Number(task.updatedAt) || 0;
-    let phase = ["running", "paused", "stopping", "unknown"].includes(task.phase) ? task.phase : "idle";
-    if (schedule.enabled && schedule.current === mode && phase === "idle") phase = "running";
-    if (["running", "paused", "stopping"].includes(phase) && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS) && schedule.current !== mode) phase = "unknown";
+    if (queued.blocked) {
+      return {
+        mode,
+        phase: "unknown",
+        startedAt: 0,
+        updatedAt: updatedAt || now,
+        detail: `连续受限，等待人工检查：${queuedReason}`.slice(0, 160),
+        waitUntil: 0
+      };
+    }
+
+    if (schedule.enabled && schedule.current === mode) {
+      const livePhase = fresh && ["running", "paused", "stopping"].includes(task?.phase) ? task.phase : "running";
+      return {
+        mode,
+        phase: livePhase === "stopping" ? "stopping" : livePhase === "paused" ? "paused" : "running",
+        startedAt: Number(task?.startedAt) || Number(schedule.startedAt) || 0,
+        updatedAt: updatedAt || now,
+        detail: String(task?.detail || "当前轮班占用中").slice(0, 160),
+        waitUntil: Number(task?.waitUntil) || 0
+      };
+    }
+
+    if (fresh && task?.phase === "stopping") {
+      return { mode, phase: "stopping", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "正在结束当前任务").slice(0, 160), waitUntil: 0 };
+    }
+    if (fresh && task?.phase === "running") {
+      return { mode, phase: "running", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "任务正在执行").slice(0, 160), waitUntil: 0 };
+    }
+    if (fresh && task?.phase === "paused") {
+      return {
+        mode,
+        phase: "paused",
+        startedAt: Number(task.startedAt) || 0,
+        updatedAt,
+        detail: String(task.detail || queuedReason || "任务已启动，正在等待下一轮或冷却结束").slice(0, 160),
+        waitUntil: Number(task.waitUntil) || resumeAt
+      };
+    }
+    if (task && !["idle", "stopped"].includes(task.phase) && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) {
+      return {
+        mode,
+        phase: schedule.enabled ? "paused" : "unknown",
+        startedAt: Number(task.startedAt) || 0,
+        updatedAt: updatedAt || now,
+        detail: String(task.detail || queuedReason || (schedule.enabled ? "后台排班等待" : "超过 90 秒没有状态更新")).slice(0, 160),
+        waitUntil: resumeAt
+      };
+    }
+
+    if (schedule.enabled && ruleEnabled) {
+      const ready = readyModes.has(mode) || (resumeAt > 0 && resumeAt <= now);
+      const detail = ready
+        ? (queuedReason.includes("无响应") ? "页签已关闭，可安全重试" : queuedReason || "已到期，等待进入轮班")
+        : (queuedReason || "后台排班等待");
+      return {
+        mode,
+        phase: "paused",
+        startedAt: 0,
+        updatedAt: now,
+        detail: String(detail).slice(0, 160),
+        waitUntil: ready ? 0 : resumeAt
+      };
+    }
+
     return {
       mode,
-      phase,
-      startedAt: Number(task.startedAt) || Number(schedule.startedAt) || 0,
-      updatedAt: updatedAt || now,
-      detail: String(task.detail || queued.reason || "").slice(0, 160),
-      waitUntil: Number(task.waitUntil) || Number(queued.resumeAt) || 0
+      phase: "idle",
+      startedAt: 0,
+      updatedAt: updatedAt || 0,
+      detail: "",
+      waitUntil: 0
     };
   });
-  const timeline = scheduleTimeline(schedule, now);
   const past = timeline.history?.[0] || null;
   const next = timeline.future?.find((entry) => ["ready", "scheduled"].includes(entry.status)) || null;
   const facing = tasks.reduce((counts, task) => {
@@ -1658,7 +1764,8 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
         label: TASK_TITLE_LABELS[next.mode] || next.mode,
         status: next.status,
         readyAt: Number(next.readyAt) || 0,
-        reason: String(next.reason || "").slice(0, 100)
+        // Ready cards should not keep advertising the previous failure reason.
+        reason: next.status === "ready" ? "" : String(next.reason || "").slice(0, 100)
       } : null,
       facing
     }
@@ -2318,6 +2425,12 @@ if (typeof module === "object" && module.exports) {
     DEFAULT_SLICE_SECONDS,
     SLICE_SECONDS_OPTIONS,
     SLICE_YIELD_COOLDOWN_MS,
+    UNFOLLOW_MIN_GAP_MS,
+    UNFOLLOW_SLICE_MS,
+    sliceMsForMode,
+    normalizedTaskRules,
+    defaultTaskRules,
+    taskGapReadyAt,
     readPluginRuntime,
     verifyTaskRuntime,
     updatePluginRuntime,

@@ -78,8 +78,8 @@ function railText(card, fallback) {
   if (!card) return fallback
   const bits = [card.label || MODE_LABEL[card.mode] || card.mode]
   if (Number(card.actions) > 0) bits.push(`${card.actions} 次`)
-  if (card.reason) bits.push(card.reason)
   if (card.status === 'ready') bits.push('可立即运行')
+  else if (card.reason) bits.push(card.reason)
   else if (Number(card.readyAt) > 0) bits.push(`约 ${clock(card.readyAt)}`)
   else if (Number(card.endedAt) > 0) bits.push(clock(card.endedAt))
   return bits.filter(Boolean).join(' · ')
@@ -103,10 +103,23 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const commands = Array.isArray(device.commands) ? device.commands : []
   const schedule = device.schedule
   const canControl = device.online && device.telemetry
-  const canUpdate = device.online && device.updateAvailable
+  const installedVersion = String(device.extensionVersion || '').trim()
+  const siteVersion = String(latestExtensionVersion || '').trim()
+  const updateAvailable = Boolean(device.updateAvailable)
+  const canUpdate = device.online && updateAvailable && Boolean(siteVersion)
+  const updateBusy = busyKey === `${device.id}:ext-update:`
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
   const facing = device.facing || schedule?.facing
   const flowBusy = Boolean(busyKey)
+  const versionTone = !device.online ? 'neutral' : updateAvailable ? 'warning' : installedVersion ? 'success' : 'neutral'
+  const versionLabel = !device.online ? '离线' : updateAvailable ? '可更新' : installedVersion ? '已是最新' : '版本未知'
+  const versionDetail = !device.online
+    ? '上线后可远程比对并下发更新'
+    : updateAvailable
+      ? `本机 v${installedVersion || '未知'} 落后于站点 v${siteVersion}；下发后会停任务并重载本机已同步的新文件`
+      : installedVersion
+        ? `本机 v${installedVersion} · 站点最新 v${siteVersion || installedVersion}`
+        : `站点最新 v${siteVersion || '—'}；等待插件心跳上报版本`
 
   return (
     <article className="border-t border-[#e5e9e2] first:border-t-0 dark:border-[#263142]">
@@ -116,34 +129,48 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
             {device.accountHandle ? `@${device.accountHandle}` : '未识别账号'}
           </span>
           <span className="mt-0.5 block text-[12px] text-[#7a8479] dark:text-gray-400">
-            插件实例 {device.id.slice(0, 12)}… · v{device.extensionVersion || '未知'}
-            {canUpdate && latestExtensionVersion ? ` · 落后于 v${latestExtensionVersion}` : ''}
+            插件实例 {device.id.slice(0, 12)}… · v{installedVersion || '未知'}
+            {updateAvailable && siteVersion ? ` · 落后于 v${siteVersion}` : ''}
           </span>
         </span>
         <span className="text-[12px] text-[#697268] dark:text-gray-400">心跳 {time(device.lastSeenAt)}</span>
-        {canUpdate ? <StatusPill size="sm" tone="warning">可更新</StatusPill> : null}
+        <StatusPill size="sm" tone={versionTone}>{versionLabel}</StatusPill>
         <StatusPill size="sm" tone={tone}>{label}</StatusPill>
       </header>
 
       <div className="border-t border-[#e5e9e2] bg-[#fafbf8] px-4 py-4 text-[13px] dark:border-[#263142] dark:bg-[#101820]">
-        {canControl || canUpdate ? (
+        <div className={`mb-4 overflow-hidden rounded-2xl border px-4 py-3 ${updateAvailable ? 'border-[#f0d0a8] bg-[#fff8ef] dark:border-amber-900/60 dark:bg-amber-950/20' : 'border-[#d7e3f4] bg-white dark:border-[#263142] dark:bg-[#0d141c]'}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">插件版本</p>
+              <p className="mb-0 mt-1 text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">
+                {updateAvailable ? `发现可远程更新 v${siteVersion}` : installedVersion ? `当前 v${installedVersion}` : '等待版本上报'}
+              </p>
+              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">{versionDetail}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {canUpdate ? (
+                <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('ext-update')}>
+                  {updateBusy ? '排队中…' : `远程更新到 v${siteVersion}`}
+                </AdminButton>
+              ) : (
+                <AdminButton size="sm" variant="ghost" disabled title={device.online ? (updateAvailable ? '站点最新版未知' : '本机已是站点最新版') : '实例离线，无法下发'}>
+                  {device.online ? (updateAvailable ? '无法下发' : '已是最新') : '离线不可更新'}
+                </AdminButton>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {canControl ? (
           <div className="mb-4 flex flex-wrap gap-2">
-            {canControl && device.phase === 'idle' ? (
+            {device.phase === 'idle' ? (
               <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('flow-start')}>全流程启动</AdminButton>
             ) : null}
-            {canControl && ['running', 'paused'].includes(device.phase) ? (
+            {['running', 'paused'].includes(device.phase) ? (
               <AdminButton size="sm" disabled={flowBusy} onClick={() => send('flow-pause')}>暂停全部</AdminButton>
             ) : null}
-            {canUpdate ? (
-              <AdminButton size="sm" variant={canControl ? 'ghost' : 'primary'} disabled={flowBusy} onClick={() => send('ext-update')}>
-                远程更新到 v{latestExtensionVersion}
-              </AdminButton>
-            ) : null}
-            <span className="self-center text-[11px] text-[#7a8479] dark:text-gray-400">
-              {canUpdate
-                ? '远程更新会停任务并重载本机已同步的新文件；目录仍是旧版时会回写失败。'
-                : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}
-            </span>
+            <span className="self-center text-[11px] text-[#7a8479] dark:text-gray-400">指令随下次心跳下发（通常 1 分钟内），执行后回写结果。</span>
           </div>
         ) : null}
 

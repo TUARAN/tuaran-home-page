@@ -32,7 +32,7 @@ export default function PlateExhibition({ plates }) {
         <div>
           <p className={styles.sectionIndex}>THE EXHIBITION / 01—{String(plates.length).padStart(2, '0')}</p>
           <h2>从日常出发，走向互动</h2>
-          <p>左右滑动浏览图版。每一张图都指向一次从观察到行动的推进。</p>
+          <p>左右滑动浏览五张图。它们分别对应日常台阶、走出封闭、行动循环、互动质量和持续练习。</p>
         </div>
         <div className={styles.exhibitionControls} aria-label="图版切换">
           <span aria-live="polite">{String(active + 1).padStart(2, '0')} <i>/</i> {String(plates.length).padStart(2, '0')}</span>

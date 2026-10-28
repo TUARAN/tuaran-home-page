@@ -1,11 +1,21 @@
 .page { padding-top: 28px; padding-bottom: 64px; color: #213a31; }
-.sectionIndex, .chapterNav { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.masthead { max-width: 1088px; margin: 8px auto 36px; }
+.kicker, .readingStat, .chapterNav { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.kicker { margin: 0 0 12px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
+.masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(40px, 6vw, 68px); font-weight: 700; line-height: 1.12; letter-spacing: .02em; }
+.deck { max-width: 680px; margin: 16px 0 0; color: #203f2f; font-size: 18px; font-weight: 600; line-height: 1.8; }
+.metaLine { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 16px 0 0; color: #667c6a; font-size: 12px; line-height: 1.6; }
+.metaLine time, .metaLine span { white-space: nowrap; }
+.sectionIndex { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .readingLayout { display: grid; grid-template-columns: 204px minmax(0, 1fr); align-items: start; gap: 28px; max-width: 1088px; margin: 0 auto; }
 .chapterNav { position: sticky; top: calc(var(--site-header-height, 64px) + 24px); max-height: calc(100dvh - var(--site-header-height, 64px) - 48px); overflow-y: auto; padding: 18px 12px; border: 1px solid #d8e2d5; border-top: 2px solid #356e4f; border-radius: 12px; background: #f4f8f0; }
 .chapterNavTitle { margin: 0 0 12px 8px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
 .chapterNav ol { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
 .chapterNav a { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: start; gap: 5px; padding: 9px 8px; border-radius: 8px; color: #496d56; font-size: 12px; font-weight: 700; line-height: 1.5; text-decoration: none; }
-.chapterNav a:hover, .chapterNav a:focus-visible { background: #e5efdf; color: #145337; }
+.chapterNav a:hover, .chapterNav a:focus-visible, .chapterNav a.chapterActive { background: #e5efdf; color: #145337; }
+.readingStat { margin: -4px 8px 10px; color: #2b6846; font-size: 11px; font-weight: 700; line-height: 1.5; }
+.navProgress { height: 3px; margin: 0 8px 12px; overflow: hidden; border-radius: 99px; background: #d5e4d2; }
+.navProgress span { display: block; height: 100%; background: #2f7a45; }
 .chapterNav a:focus-visible { outline: 2px solid #356e4f; outline-offset: 1px; }
 .chapterNav a span { color: #779b7d; font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
 .paper { min-width: 0; max-width: 870px; }
@@ -21,9 +31,16 @@
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 28px 0; }
 .steps>div { padding: 20px 17px; border: 1px solid #d6e2d2; background: #f3f7ef; }
 .steps span, .dimension>span { color: #5e9863; font: 700 11px ui-monospace, monospace; }
-.steps h3 { margin: 13px 0 9px; color: #234a32; font-size: 19px; }
+.steps h3 { margin: 13px 0 8px; color: #234a32; font-size: 19px; }
+.steps strong { display: block; margin-bottom: 8px; color: #395b43; font-size: 13px; line-height: 1.6; }
 .steps p, .dimension p { margin: 0; color: #5e7464; font-size: 12px; line-height: 1.8; }
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 28px 0 37px; padding: 23px 12px; background: #153e2d; color: #f4f7e9; }
+.chipRow, .signpost { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 8px 0 22px; }
+.chipRow > div, .signpost > div { padding: 14px 12px; border-top: 2px solid #356e4f; background: #f3f7ef; }
+.chipRow b, .signpost b { color: #5e9863; font: 700 11px ui-monospace, monospace; }
+.chipRow strong, .signpost span { display: block; margin-top: 6px; color: #234a32; font-size: 14px; }
+.chipRow span { display: block; margin-top: 6px; color: #5e7464; font-size: 12px; line-height: 1.7; }
+.signpost { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; margin: 28px 0 37px; padding: 23px 12px; background: #153e2d; color: #f4f7e9; }
 .flow>div { position: relative; display: grid; justify-items: center; gap: 9px; text-align: center; }
 .flow>div:not(:last-child):after { content: '→'; position: absolute; top: 8px; right: -8px; color: #bbd6ae; }
 .flow b { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #9bc494; border-radius: 50%; color: #d0efb8; font-size: 12px; }
@@ -40,6 +57,13 @@
 .practiceList span { font-size: 13px; }
 .promptBox { margin-top: 24px; padding: 18px 24px; border-left: 3px solid #6aa56e; background: #eaf2e6; }
 .promptBox p { margin: 7px 0; color: #27543a; font-size: 15px; font-weight: 600; line-height: 1.8; }
+.splitGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 22px 0 8px; }
+.splitGrid > div { padding: 18px 18px 6px; border: 1px solid #d6e2d2; background: #fbfcf8; }
+.splitGrid h3 { margin: 0 0 4px; color: #214631; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 18px; }
+.splitGrid ul { margin: 0; padding: 0; list-style: none; }
+.splitGrid li { display: grid; gap: 2px; padding: 11px 0; border-top: 1px solid #dce6da; }
+.splitGrid strong { color: #1e5638; font-size: 14px; }
+.splitGrid span { color: #5e7464; font-size: 12px; line-height: 1.7; }
 
 .exhibition { scroll-margin-top: 90px; margin: 0 0 76px; padding: 0 0 65px; border-bottom: 1px solid #d8e2d5; }
 .exhibitionHeader { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 25px; }
@@ -70,18 +94,23 @@
 .footer a:hover { text-decoration: underline; }
 
 :global(.dark) .page { color: #e3eee2; }
+:global(.dark) .masthead h1, :global(.dark) .deck, :global(.dark) .kicker, :global(.dark) .readingStat { color: #e8f1e2; }
+:global(.dark) .kicker, :global(.dark) .readingStat { color: #b8d9b5; }
+:global(.dark) .metaLine { color: #b6c9b8; }
+:global(.dark) .navProgress { background: #2c4634; }
 :global(.dark) .chapterNav { border-color: #3a5843; border-top-color: #80b783; background: #1a3325; }
 :global(.dark) .chapterNavTitle { color: #b8d9b5; }
 :global(.dark) .section, :global(.dark) .exhibition, :global(.dark) .footer, :global(.dark) .practiceList li { border-color: #3a5843; }
 :global(.dark) .section h1, :global(.dark) .section h2, :global(.dark) .section>h3, :global(.dark) .exhibitionHeader h2, :global(.dark) .section .lead { color: #e8f1e2; }
 :global(.dark) .chapterNav a, :global(.dark) .section>p:not(.sectionIndex), :global(.dark) .section li { color: #c0d1c2; }
-:global(.dark) .chapterNav a:hover, :global(.dark) .chapterNav a:focus-visible { background: #294a34; color: #e8f1e2; }
-:global(.dark) .section blockquote, :global(.dark) .steps>div, :global(.dark) .dimension, :global(.dark) .promptBox, :global(.dark) .exhibit { border-color: #3a5843; background: #1a3325; }
-:global(.dark) .section blockquote, :global(.dark) .steps h3, :global(.dark) .dimension h3, :global(.dark) .dimension strong, :global(.dark) .practiceList strong, :global(.dark) .promptBox p, :global(.dark) .exhibit figcaption strong { color: #e3f0df; }
-:global(.dark) .steps p, :global(.dark) .dimension p, :global(.dark) .exhibit figcaption p { color: #b6c9b8; }
+:global(.dark) .chapterNav a:hover, :global(.dark) .chapterNav a:focus-visible, :global(.dark) .chapterNav a.chapterActive { background: #294a34; color: #e8f1e2; }
+:global(.dark) .section blockquote, :global(.dark) .steps>div, :global(.dark) .chipRow > div, :global(.dark) .signpost > div, :global(.dark) .splitGrid > div, :global(.dark) .dimension, :global(.dark) .promptBox, :global(.dark) .exhibit { border-color: #3a5843; background: #1a3325; }
+:global(.dark) .section blockquote, :global(.dark) .steps h3, :global(.dark) .steps strong, :global(.dark) .chipRow strong, :global(.dark) .signpost span, :global(.dark) .splitGrid h3, :global(.dark) .splitGrid strong, :global(.dark) .dimension h3, :global(.dark) .dimension strong, :global(.dark) .practiceList strong, :global(.dark) .promptBox p, :global(.dark) .exhibit figcaption strong { color: #e3f0df; }
+:global(.dark) .steps p, :global(.dark) .dimension p, :global(.dark) .chipRow span, :global(.dark) .splitGrid span, :global(.dark) .exhibit figcaption p { color: #b6c9b8; }
+:global(.dark) .splitGrid li { border-color: #3a5843; }
 
-@media (max-width: 960px) { .readingLayout { display: block; } .chapterNav { position: static; max-width: 870px; max-height: none; margin: 0 auto 32px; padding: 14px 16px; } .chapterNav ol { display: flex; flex-wrap: wrap; gap: 0 12px; } .chapterNav a { display: inline-flex; align-items: baseline; gap: 7px; } .paper { margin: 0 auto; } .footer { max-width: 870px; margin-inline: auto; } }
-@media (max-width: 900px) { .steps { grid-template-columns: 1fr; } .steps>div { padding: 15px; } }
-@media (max-width: 700px) { .page { padding-top: 14px; } .chapterNav { margin-bottom: 35px; } .chapterNav ol { gap: 0 16px; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: min(88%, 410px); } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 960px) { .readingLayout { display: block; } .chapterNav { position: static; max-width: 870px; max-height: none; margin: 0 auto 32px; padding: 14px 16px; } .chapterNav ol { display: flex; flex-wrap: wrap; gap: 0 12px; } .chapterNav a { display: inline-flex; align-items: baseline; gap: 7px; } .paper, .masthead { margin-left: auto; margin-right: auto; } .footer { max-width: 870px; margin-inline: auto; } }
+@media (max-width: 900px) { .steps, .chipRow, .splitGrid { grid-template-columns: 1fr; } .steps>div { padding: 15px; } .signpost { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .page { padding-top: 14px; } .chapterNav { margin-bottom: 35px; } .chapterNav ol { gap: 0 16px; } .flow { grid-template-columns: 1fr; gap: 10px; padding: 16px 18px; } .flow>div { grid-template-columns: 36px minmax(0, 1fr); justify-items: start; align-items: center; text-align: left; } .flow>div:not(:last-child):after { content: none; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: min(88%, 410px); } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
 @media (max-width: 440px) { .exhibit figcaption { min-height: 175px; } .flow { padding-inline: 5px; } .flow span { font-size: 10px; } .flow b { width: 31px; height: 31px; } .footer { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .exhibitionProgress span { transition: none; } }

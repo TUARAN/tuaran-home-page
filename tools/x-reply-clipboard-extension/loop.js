@@ -35,15 +35,16 @@
     {
       id: "boundary",
       label: "边界测试",
-      minReplyDelaySeconds: 8,
-      maxReplyDelaySeconds: 12,
-      minRepliesPerRound: 20,
-      maxRepliesPerRound: 30,
-      minRoundsPerRun: 2,
-      maxRoundsPerRun: 3,
-      minCycleDelayMinutes: 180,
-      maxCycleDelayMinutes: 240,
-      roundIntervalSeconds: 10
+      // Base profile is a placeholder; runtime uses explore/probe overlays.
+      minReplyDelaySeconds: 1,
+      maxReplyDelaySeconds: 3,
+      minRepliesPerRound: 40,
+      maxRepliesPerRound: 55,
+      minRoundsPerRun: 5,
+      maxRoundsPerRun: 8,
+      minCycleDelayMinutes: 15,
+      maxCycleDelayMinutes: 25,
+      roundIntervalSeconds: 1
     },
     {
       id: "fast",
@@ -82,12 +83,31 @@
   const MAX_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.maxReplyDelaySeconds;
   const MIN_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.minCycleDelayMinutes / 60;
   const MAX_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.maxCycleDelayMinutes / 60;
-  const BOUNDARY_LEVELS = [
-    { minReplyDelaySeconds: 8, maxReplyDelaySeconds: 12, minRepliesPerRound: 15, maxRepliesPerRound: 25, minRoundsPerRun: 2, maxRoundsPerRun: 2, minCycleDelayMinutes: 15, maxCycleDelayMinutes: 20, roundIntervalSeconds: 10 },
-    { minReplyDelaySeconds: 6, maxReplyDelaySeconds: 10, minRepliesPerRound: 20, maxRepliesPerRound: 30, minRoundsPerRun: 2, maxRoundsPerRun: 3, minCycleDelayMinutes: 10, maxCycleDelayMinutes: 15, roundIntervalSeconds: 8 },
-    { minReplyDelaySeconds: 4, maxReplyDelaySeconds: 8, minRepliesPerRound: 25, maxRepliesPerRound: 35, minRoundsPerRun: 3, maxRoundsPerRun: 4, minCycleDelayMinutes: 5, maxCycleDelayMinutes: 10, roundIntervalSeconds: 6 },
-    { minReplyDelaySeconds: 3, maxReplyDelaySeconds: 6, minRepliesPerRound: 30, maxRepliesPerRound: 40, minRoundsPerRun: 3, maxRoundsPerRun: 4, minCycleDelayMinutes: 3, maxCycleDelayMinutes: 6, roundIntervalSeconds: 5 }
-  ];
+  // Explore = push like turbo until an automation toast appears.
+  // Probe = after automation hit, send exactly one reply per attempt with growing waits.
+  const BOUNDARY_EXPLORE = Object.freeze({
+    minReplyDelaySeconds: 1,
+    maxReplyDelaySeconds: 3,
+    minRepliesPerRound: 40,
+    maxRepliesPerRound: 55,
+    minRoundsPerRun: 5,
+    maxRoundsPerRun: 8,
+    minCycleDelayMinutes: 15,
+    maxCycleDelayMinutes: 25,
+    roundIntervalSeconds: 1
+  });
+  const BOUNDARY_PROBE = Object.freeze({
+    minReplyDelaySeconds: 8,
+    maxReplyDelaySeconds: 15,
+    minRepliesPerRound: 1,
+    maxRepliesPerRound: 1,
+    minRoundsPerRun: 1,
+    maxRoundsPerRun: 1,
+    minCycleDelayMinutes: 15,
+    maxCycleDelayMinutes: 20,
+    roundIntervalSeconds: 10
+  });
+  const BOUNDARY_PROBE_WAIT_MINUTES = Object.freeze([15, 30, 45, 60, 90, 120]);
   const NOTIFICATION_WINDOW_MS = 2 * 60 * 60 * 1000;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
@@ -256,10 +276,20 @@
     return SCHEDULE_PROFILES.find((item) => item.id === pace) || DEFAULT_PROFILE;
   }
 
-  function effectiveScheduleProfile(pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
+  function normalizeBoundaryPhase(value) {
+    return value === "probe" ? "probe" : "explore";
+  }
+
+  function effectiveScheduleProfile(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
     const profile = scheduleProfile(pace);
     if (profile.id !== "boundary") return profile;
-    return { ...profile, ...BOUNDARY_LEVELS[Math.min(BOUNDARY_LEVELS.length - 1, Math.max(0, Number(boundaryLevel) || 0))] };
+    const phase = normalizeBoundaryPhase(boundaryPhase);
+    return { ...profile, ...(phase === "probe" ? BOUNDARY_PROBE : BOUNDARY_EXPLORE) };
+  }
+
+  function boundaryProbeCooldownMs(streak = 1) {
+    const index = Math.min(BOUNDARY_PROBE_WAIT_MINUTES.length - 1, Math.max(0, Math.floor(Number(streak) || 1) - 1));
+    return BOUNDARY_PROBE_WAIT_MINUTES[index] * 60 * 1000;
   }
 
   function nextAvailableAt(now = Date.now()) {
@@ -287,21 +317,30 @@
     return `${minimum}～${maximum} 分钟`;
   }
 
-  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
-    const profile = effectiveScheduleProfile(pace, boundaryLevel);
+  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+    const profile = effectiveScheduleProfile(pace, boundaryPhase);
+    const phase = normalizeBoundaryPhase(boundaryPhase);
     return {
       id: profile.id,
       label: profile.label,
+      phase: profile.id === "boundary" ? phase : "",
+      phaseLabel: profile.id !== "boundary" ? "" : phase === "probe" ? "单条试探" : "超快冲刺",
       replyDelay: `${profile.minReplyDelaySeconds}～${profile.maxReplyDelaySeconds} 秒`,
-      repliesPerRound: `${profile.minRepliesPerRound}～${profile.maxRepliesPerRound} 条`,
-      roundsPerRun: `${profile.minRoundsPerRun}～${profile.maxRoundsPerRun} 轮`,
-      cycleDelay: formatMinuteSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes),
+      repliesPerRound: profile.id === "boundary" && phase === "probe"
+        ? "每次 1 条"
+        : `${profile.minRepliesPerRound}～${profile.maxRepliesPerRound} 条`,
+      roundsPerRun: profile.id === "boundary" && phase === "probe"
+        ? "1 轮"
+        : `${profile.minRoundsPerRun}～${profile.maxRoundsPerRun} 轮`,
+      cycleDelay: profile.id === "boundary" && phase === "probe"
+        ? "遇自动化后 15～120 分钟递增"
+        : formatMinuteSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes),
       roundInterval: `${profile.roundIntervalSeconds} 秒`
     };
   }
 
-  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
-    const profile = effectiveScheduleProfile(pace, boundaryLevel);
+  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+    const profile = effectiveScheduleProfile(pace, boundaryPhase);
     const rounds = randomIntInclusive(profile.minRoundsPerRun, profile.maxRoundsPerRun, random);
     const roundTargets = Array.from(
       { length: rounds },
@@ -315,13 +354,13 @@
     };
   }
 
-  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
-    const profile = effectiveScheduleProfile(pace, boundaryLevel);
+  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+    const profile = effectiveScheduleProfile(pace, boundaryPhase);
     return randomIntInclusive(profile.minReplyDelaySeconds, profile.maxReplyDelaySeconds, random);
   }
 
-  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryLevel = 1) {
-    const profile = effectiveScheduleProfile(pace, boundaryLevel);
+  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+    const profile = effectiveScheduleProfile(pace, boundaryPhase);
     const minimum = profile.minCycleDelayMinutes * 60 * 1000;
     const maximum = profile.maxCycleDelayMinutes * 60 * 1000;
     return randomIntInclusive(minimum, maximum, random);
@@ -333,6 +372,9 @@
 
   const api = {
     automationCooldownMs,
+    boundaryProbeCooldownMs,
+    normalizeBoundaryPhase,
+    BOUNDARY_PROBE_WAIT_MINUTES,
     BATCH_SIZE,
     ROUNDS_PER_RUN,
     RUN_SIZE,

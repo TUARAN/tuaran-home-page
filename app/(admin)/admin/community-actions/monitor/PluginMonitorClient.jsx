@@ -6,9 +6,9 @@ import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPil
 import PluginMonitorTrend from './PluginMonitorTrend'
 
 const MODE_LABEL = { timeline: '评论帖子', notifications: '评论通知', 'likes-posts': '点赞帖子', 'likes-replies': '点赞评论', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
-const PHASE = { running: ['运行中', 'info'], paused: ['已暂停', 'warning'], stopping: ['停止中', 'warning'], idle: ['空闲', 'neutral'], online: ['有心跳', 'info'], unknown: ['状态未知', 'warning'], offline: ['离线', 'danger'] }
-const TASK_PHASE = { running: ['执行中', 'info'], waiting: ['等待中', 'warning'], paused: ['等待中', 'warning'], stopping: ['停止中', 'warning'], idle: ['未启动', 'neutral'], unknown: ['待确认', 'warning'] }
-const GROUP_PHASE = { running: ['有任务执行', 'info'], waiting: ['有任务等待', 'warning'], stopping: ['停止中', 'warning'], idle: ['未启动', 'neutral'], unknown: ['待确认', 'warning'] }
+const PHASE = { running: ['运行中', 'info'], paused: ['已停止', 'warning'], stopping: ['停止中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
+const TASK_PHASE = { running: ['运行中', 'info'], waiting: ['等待中', 'warning'], paused: ['等待中', 'warning'], stopping: ['停止中', 'warning'], idle: ['已停止', 'neutral'], unknown: ['需处理', 'warning'], blocked: ['需处理', 'warning'] }
+const GROUP_PHASE = { running: ['运行中', 'info'], waiting: ['等待中', 'warning'], stopping: ['停止中', 'warning'], idle: ['已停止', 'neutral'], unknown: ['需处理', 'warning'] }
 const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件' }
 const COMMAND_STATUS = { pending: ['排队中', 'warning'], claimed: ['已下发', 'info'], done: ['已完成', 'success'], failed: ['失败', 'danger'], expired: ['已过期', 'neutral'] }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }

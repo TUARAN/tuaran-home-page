@@ -17,6 +17,12 @@
     { id: "fast", label: "快", minMinutes: 12, maxMinutes: 18 },
     { id: "turbo", label: "超快", minMinutes: 6, maxMinutes: 10 }
   ];
+  // Shanghai-local peak windows: denser posting inside, sparser outside (still posts).
+  const POST_WAVE_WINDOWS = Object.freeze([
+    { start: 7 * 60, end: 10 * 60 },
+    { start: 12 * 60 + 30, end: 13 * 60 + 30 },
+    { start: 18 * 60, end: 22 * 60 }
+  ]);
   const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
@@ -43,7 +49,7 @@
   }
 
   function nextShanghaiDateKey(dateKey) {
-    return shanghaiDateKey(Date.parse(`${dateKey}T12:00:00+08:00`) + 36 * 60 * 60 * 1000);
+    return shanghaiDateKey(Date.parse(`${dateKey}T12:00:00+08:00`) + 24 * 60 * 60 * 1000);
   }
 
   function normalizePostKind(value) {
@@ -112,7 +118,7 @@
   function idleStatusForKind(kind = state.postKind) {
     return kind === POST_KIND_PREMIUM
       ? "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。"
-      : "待命。先读知乎、头条，必要时补充 AI HOT，最后改写常用社会观察。";
+      : "待命。先读知乎、头条，必要时补充 AI HOT；普通发帖按早晚高峰更密、其余时段更疏的波浪节奏排队。";
   }
 
   function premiumDailyCount(at = Date.now()) {
@@ -127,8 +133,9 @@
     if (count >= PREMIUM_DAILY_LIMIT) {
       return premiumSlotAt(nextShanghaiDateKey(date), PREMIUM_SLOT_TIMES[0]);
     }
-    const slotAt = premiumSlotAt(date, PREMIUM_SLOT_TIMES[count]);
-    return at >= slotAt ? 0 : slotAt;
+    const nextSlot = PREMIUM_SLOT_TIMES.map((time) => premiumSlotAt(date, time))
+      .find((slotAt) => slotAt >= at);
+    return nextSlot ?? premiumSlotAt(nextShanghaiDateKey(date), PREMIUM_SLOT_TIMES[0]);
   }
 
   async function loadPremiumDaily() {
@@ -336,7 +343,8 @@
     return {
       id: profile.id,
       label: profile.label,
-      interval: `${profile.minMinutes}～${profile.maxMinutes} 分钟`
+      interval: `${profile.minMinutes}～${profile.maxMinutes} 分钟`,
+      wave: "高峰更密 · 低峰更疏"
     };
   }
 
@@ -346,12 +354,61 @@
     return state.schedulePace;
   }
 
+  function shanghaiMinutesOfDay(at = Date.now()) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Shanghai",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(new Date(Number(at) || Date.now()));
+    const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+    const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+    return hour * 60 + minute;
+  }
+
+  function minutesToPostWavePeak(minutes) {
+    const day = ((Number(minutes) % 1440) + 1440) % 1440;
+    for (const window of POST_WAVE_WINDOWS) {
+      if (day >= window.start && day < window.end) return 0;
+    }
+    let best = 1440;
+    for (const window of POST_WAVE_WINDOWS) {
+      const distance = day < window.start
+        ? window.start - day
+        : Math.min(day - window.end, window.start + 1440 - day);
+      best = Math.min(best, distance);
+    }
+    return best;
+  }
+
+  function postWaveFactor(at = Date.now()) {
+    const minutes = shanghaiMinutesOfDay(at);
+    const distance = minutesToPostWavePeak(minutes);
+    if (distance === 0) return 0.55;
+    if (distance <= 60) return 0.55 + (distance / 60) * 0.45;
+    if (distance <= 180) return 1 + ((distance - 60) / 120) * 0.8;
+    // Deep off-peak / overnight: still allow posts, just much sparser.
+    if (minutes >= 22 * 60 || minutes < 7 * 60) return 2.4;
+    return 2.0;
+  }
+
   function randomIntervalMs(random = Math.random, pace = DEFAULT_POST_PACE) {
     const profile = postScheduleProfile(pace);
     const minimum = profile.minMinutes * 60 * 1000;
     const maximum = profile.maxMinutes * 60 * 1000;
     const value = Math.min(0.999999999999, Math.max(0, Number(random()) || 0));
     return minimum + Math.floor(value * (maximum - minimum + 1));
+  }
+
+  function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE) {
+    const profile = postScheduleProfile(pace);
+    const baseMs = randomIntervalMs(random, pace);
+    const roughAt = Number(from) + baseMs;
+    const factor = postWaveFactor(roughAt);
+    const minWait = Math.round(profile.minMinutes * 60 * 1000 * 0.5);
+    const maxWait = Math.round(profile.maxMinutes * 60 * 1000 * 2.5);
+    const wait = Math.min(maxWait, Math.max(minWait, Math.round(baseMs * factor)));
+    return Number(from) + wait;
   }
 
   function formatPost(value) {
@@ -773,7 +830,7 @@
     if (state.stopping) return state.publishQueue.length;
     if (!state.publishQueue.length) throw new Error("热点没有形成可发草稿");
     state.lastError = "";
-    state.nextPostAt = 0;
+    if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
     await savePublishList();
     await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页发送`);
     return state.publishQueue.length;
@@ -930,7 +987,7 @@
     state.currentPost = "";
     state.currentSourceId = "";
     state.lastError = "";
-    state.nextPostAt = 0;
+    if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
     await savePublishList();
     emit(state.publishQueue.length ? `X 提示这条内容已说过，已跳过并发送下一条；待发 ${state.publishQueue.length} 条` : "X 提示这条内容已说过，已跳过，正在读取新内容");
     return true;
@@ -1020,13 +1077,13 @@
       await wait(5000);
     }
     if (state.stopping) return;
+    if (state.postKind === POST_KIND_PREMIUM) await loadPremiumDaily();
+    await loadPublishList();
     if (state.postKind === POST_KIND_PREMIUM) {
-      await loadPremiumDaily();
-      if (!Number(state.nextPostAt)) state.nextPostAt = nextPremiumPostAt();
+      state.nextPostAt = nextPremiumPostAt();
       const waitingForSlot = Number(state.nextPostAt) > Date.now();
       emit(`精品发帖今日 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}${waitingForSlot ? "，等待下一档" : "，准备发布"}`);
     }
-    await loadPublishList();
     filterPromotionalSources();
     while (state.running && !state.stopping) {
       if (state.riskCooldownUntil > Date.now()) {
@@ -1040,6 +1097,7 @@
           coolDownForRisk();
           continue;
         }
+        if (state.postKind === POST_KIND_PREMIUM) state.nextPostAt = nextPremiumPostAt();
         emit("风控冷却结束，继续定时发帖");
       }
       if (state.lastError.startsWith("发帖历史保存失败")) {
@@ -1067,7 +1125,7 @@
       }
       if (homePath() && state.lastError === "没有找到 X 首页发帖框" && findInlineComposer()) {
         state.lastError = "";
-        state.nextPostAt = 0;
+        if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
         await savePublishList();
       }
       const queued = editorText(findInlineComposer()?.editor);
@@ -1175,7 +1233,7 @@
               state.currentPostAttempts = 0;
               state.currentPost = "";
               state.currentSourceId = "";
-              state.nextPostAt = 0;
+              if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
               emit(`这条内容连续失败 3 次，已跳过；待发 ${state.publishQueue.length} 条`);
               continue;
             }
@@ -1204,9 +1262,9 @@
         state.lastError = "";
         if (state.postKind === POST_KIND_PREMIUM) {
           await bumpPremiumDaily();
-          state.nextPostAt = nextPremiumPostAt();
+          state.nextPostAt = nextPremiumPostAt(Date.now() + 1);
         } else {
-          state.nextPostAt = Date.now() + randomIntervalMs(Math.random, state.schedulePace);
+          state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace);
         }
         await savePublishList();
         await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic, publishedItem);
@@ -1296,7 +1354,7 @@
   }
 
   async function startNow() {
-    if (!state.running || state.stopping || state.riskCooldownUntil > Date.now() || state.nextPostAt <= Date.now()) return false;
+    if (!state.running || state.stopping || state.postKind === POST_KIND_PREMIUM || state.riskCooldownUntil > Date.now() || state.nextPostAt <= Date.now()) return false;
     state.nextPostAt = 0;
     await savePublishList();
     emit("手动开始，正在准备下一条");
@@ -1352,6 +1410,11 @@
     resumeIfPending,
     shouldCollect,
     randomIntervalMs,
+    scheduleNextNormalPostAt,
+    postWaveFactor,
+    shanghaiMinutesOfDay,
+    minutesToPostWavePeak,
+    POST_WAVE_WINDOWS,
     formatPost,
     formatShortPost,
     simplifyPostRhetoric,

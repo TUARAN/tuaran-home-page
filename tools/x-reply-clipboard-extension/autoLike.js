@@ -6,6 +6,7 @@
   const HISTORY_LIMIT = 3000;
   const RATE_LIMIT_COOLDOWNS_MS = [60 * 60 * 1000, 2 * 60 * 60 * 1000, 6 * 60 * 60 * 1000];
   const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const LIKE_CONFIRM_STABLE_POLLS = 5;
 
   function tweetId(article) {
     const link = article?.querySelector('time')?.closest('a[href*="/status/"]')
@@ -163,6 +164,8 @@
       await waitForCooldown();
       await waitForInteraction();
       if (!active()) return;
+      const activeRestriction = restrictionKind(doc);
+      if (activeRestriction) throw restrictionError(activeRestriction);
       const button = likeButton(article);
       if (!button) return;
       const id = tweetId(article);
@@ -172,23 +175,24 @@
         update('当前点赞按钮暂时不可用，继续下一条');
         return;
       }
-      let confirmed = false;
+      let stableConfirmed = 0;
       let warning = '';
-      for (let attempt = 0; active() && attempt < 12; attempt += 1) {
+      for (let attempt = 0; active() && attempt < 20; attempt += 1) {
         await wait(250);
         if (!active()) return;
+        warning = restrictionKind(doc, alertsBeforeClick) || restrictionKind(doc);
+        if (warning) break;
         const current = id ? tweets().find((item) => tweetId(item) === id) : null;
         if (article.querySelector('[data-testid="unlike"]') || current?.querySelector('[data-testid="unlike"]')) {
-          confirmed = true;
-          break;
-        }
-        warning ||= restrictionKind(doc, alertsBeforeClick);
+          stableConfirmed += 1;
+          if (stableConfirmed >= LIKE_CONFIRM_STABLE_POLLS) break;
+        } else stableConfirmed = 0;
       }
-      if (!confirmed && warning) {
+      if (warning) {
         lingeringWarningFailures = 0;
         throw restrictionError(warning);
       }
-      if (!confirmed) {
+      if (stableConfirmed < LIKE_CONFIRM_STABLE_POLLS) {
         const lingeringWarning = restrictionKind(doc);
         lingeringWarningFailures = lingeringWarning ? lingeringWarningFailures + 1 : 0;
         if (lingeringWarningFailures >= 2) {
@@ -199,11 +203,20 @@
         update('这条点赞结果暂未显示，继续下一条');
         return;
       }
+      await wait(500);
+      if (!active()) return;
+      const finalWarning = restrictionKind(doc, alertsBeforeClick) || restrictionKind(doc);
+      if (finalWarning) throw restrictionError(finalWarning);
+      const finalArticle = id ? tweets().find((item) => tweetId(item) === id) : null;
+      if (!article.querySelector('[data-testid="unlike"]') && !finalArticle?.querySelector('[data-testid="unlike"]')) {
+        unconfirmed += 1;
+        update('点赞按钮没有保持成功状态，未计入已确认点赞');
+        return;
+      }
       lingeringWarningFailures = 0;
       count += 1;
       try { onLike(id, accountKey, selectedTarget); } catch (error) { /* Daily report must not stop liking. */ }
       update(`已确认点赞 ${count} 条，已查看 ${posts} 个帖子`);
-      await wait(500);
     }
 
     async function waitForPath(test, timeout = 9000) {

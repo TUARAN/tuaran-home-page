@@ -15,6 +15,20 @@ const autoLike = require('../../tools/x-reply-clipboard-extension/autoLike.js')
 const receipt = require('../../tools/x-reply-clipboard-extension/receipt.js')
 const devUpdate = require('../../tools/x-reply-clipboard-extension/devUpdate.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
+const USER_STATE_HELPERS = `
+  const USER_STATE_LABELS = Object.freeze({
+    running: "运行中", waiting: "等待中", needs: "需处理", stopped: "已停止",
+    starting: "启动中", stopping: "停止中"
+  });
+  function userStateLabelForTask(status) {
+    if (status === "running") return USER_STATE_LABELS.running;
+    if (status === "waiting") return USER_STATE_LABELS.waiting;
+    if (status === "stopping") return USER_STATE_LABELS.stopping;
+    if (status === "blocked" || status === "unknown") return USER_STATE_LABELS.needs;
+    return USER_STATE_LABELS.stopped;
+  }
+  function formatUserStateAction(stateLabel, actionLabel) { return \`\${stateLabel} · \${actionLabel}\`; }
+`
 
 test('scheduled post formats reserve one fifth for text cards and compact posts keep blank lines', async () => {
   assert.deepEqual(poster.choosePostFormat(() => 0.19), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
@@ -44,10 +58,17 @@ test('scheduled post formats reserve one fifth for text cards and compact posts 
   assert.match(source, /nextPremiumPostAt/)
 })
 
-test('premium posting waits for the next daily slot before the first window', () => {
+test('premium posting skips missed slots instead of publishing the daily quota in a burst', async () => {
   assert.equal(poster.shanghaiDateKey(Date.parse('2026-10-27T10:00:00+08:00')), '2026-10-27')
   assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T07:00:00+08:00')), Date.parse('2026-10-27T08:00:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:30:00+08:00')), 0)
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:00:00+08:00')), Date.parse('2026-10-27T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:30:00+08:00')), Date.parse('2026-10-27T09:30:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T18:00:00+08:00')), Date.parse('2026-10-27T19:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T19:30:00+08:00')), Date.parse('2026-10-28T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T19:00:00+08:00') + 1), Date.parse('2026-10-28T08:00:00+08:00'))
+  const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  assert.match(source, /async function ensureSources\(\) \{[\s\S]*?if \(state\.postKind !== POST_KIND_PREMIUM\) state\.nextPostAt = 0;/)
+  assert.match(source, /async function startNow\(\) \{[\s\S]*?state\.postKind === POST_KIND_PREMIUM/)
 })
 
 test('all text-card layouts render the headline and body into a PNG file', async () => {
@@ -592,7 +613,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
     poster: { phase: 'running', updatedAt: now - 1000 },
   } }, now)
   assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 4, stopping: 0, unknown: 1, blocked: 0 })
-  assert.equal(result.text, '2 项执行 · 1 项等待 · 4 项未启动 · 1 项待确认')
+  assert.equal(result.text, '2 项运行中 · 1 项等待中 · 1 项需处理 · 4 项已停止')
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /model\.status === "paused"[\s\S]*model\.status === "stopped"/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
@@ -621,35 +642,35 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     } },
     document: { createElement() { return { dataset: {}, setAttribute(name, value) { this[name] = value }, append(...children) { this.children = children } } } },
   })
-  vm.runInContext(`${overview}\n${readable}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${details}\nglobalThis.paint = paintFlowDetails`, context)
   context.paint(panel)
   assert.equal(list.children.length, 8)
   assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies'])
   assert.equal(list.children[0].children[3].textContent, '前往')
   assert.equal(list.children[0].children[0].textContent, '评论帖子')
-  assert.equal(list.children[0].children[1].textContent, '执行中')
+  assert.equal(list.children[0].children[1].textContent, '运行中')
   assert.equal(list.children[1].children[1].textContent, '等待中')
-  assert.equal(list.children[2].children[1].textContent, '未启动')
-  assert.equal(list.children[4].children[1].textContent, '待确认')
-  assert.match(total.textContent, /1 项执行 · 1 项等待 · 5 项未启动 · 1 项待确认/)
+  assert.equal(list.children[2].children[1].textContent, '已停止')
+  assert.equal(list.children[4].children[1].textContent, '需处理')
+  assert.match(total.textContent, /1 项运行中 · 1 项等待中 · 1 项需处理 · 5 项已停止/)
   context.taskSchedule = { enabled: true, items: { poster: { blocked: true, reason: 'risk-blocked' }, timeline: { resumeAt: now + 60000, reason: '任务状态未响应，等待自动复查' } } }
   context.pluginRuntime.tasks.timeline = { phase: 'unknown', updatedAt: now }
   context.waitHeadline = (prefix, ms) => ms > 0 ? `${prefix} · 约 1 分 0 秒` : prefix
   context.paint(panel)
   assert.equal(list.children[0].children[1].textContent, '等待中 · 约 1 分 0 秒')
   assert.match(list.children[0].children[2].textContent, /到期后自动继续/)
-  assert.equal(list.children[4].children[1].textContent, '需人工检查')
+  assert.equal(list.children[4].children[1].textContent, '需处理')
   assert.match(list.children[4].children[2].textContent, /疑似自动化或账号受限/)
   context.taskSchedule.items.timeline = { manualStopped: true }
   context.pluginRuntime.tasks.timeline = { phase: 'running', detail: '正在评论', updatedAt: now }
   context.pluginRuntime.flow.phase = 'paused'
   context.paint(panel)
-  assert.equal(list.children[0].children[1].textContent, '执行中')
+  assert.equal(list.children[0].children[1].textContent, '运行中')
   assert.match(list.children[0].children[2].textContent, /正在评论/)
   assert.doesNotMatch(total.textContent, /全流程已暂停/)
   context.pluginRuntime.tasks.timeline.phase = 'paused'
   context.paint(panel)
-  assert.equal(list.children[0].children[1].textContent, '未启动')
+  assert.equal(list.children[0].children[1].textContent, '已停止')
   assert.match(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-flow-details-open aria-haspopup="dialog"/)
   assert.match(source, /data-xrc-flow-details role="dialog" aria-modal="true"/)
@@ -670,15 +691,15 @@ test('paused flow wins over stale stopping task records', async () => {
     taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'stopping' } } },
   })
-  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '已暂停 · 点击启动全部')
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '已停止 · 点击启动全部')
   assert.equal(context.model().action, 'start')
   context.pluginRuntime.tasks.timeline = { phase: 'paused', updatedAt: Date.now() }
-  assert.equal(context.model().label, '已暂停 · 点击启动全部')
+  assert.equal(context.model().label, '已停止 · 点击启动全部')
   context.pluginRuntime.tasks.timeline = { phase: 'stopping' }
   context.pluginRuntime.flow = { phase: 'stopping', updatedAt: Date.now() - 20000 }
   context.pluginRuntime.tasks.timeline.updatedAt = Date.now() - 20000
-  assert.equal(context.model().label, '停止超时 · 点击重试停止')
+  assert.equal(context.model().label, '需处理 · 点击重试停止')
   assert.equal(context.model().action, 'pause')
 })
 
@@ -695,7 +716,7 @@ test('a running task remains visible when an old paused flow marker survives rel
     taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'paused', updatedAt: Date.now() }, tasks: { timeline: { phase: 'running', updatedAt: Date.now() } } },
   })
-  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
   assert.equal(context.model().label, '运行中 · 点击暂停全部')
   assert.equal(context.model().action, 'pause')
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
@@ -719,8 +740,8 @@ test('flow button starts missing tasks when only two tasks are waiting', async (
       notifications: { phase: 'paused', updatedAt: now },
     } },
   })
-  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '有未启动项 · 点击启动未运行')
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '已停止 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
   context.taskSchedule.items = {}
   assert.equal(context.model().label, '等待中 · 点击暂停调度')
@@ -742,8 +763,8 @@ test('a waiting post alone does not make the global button say pause all', async
     taskSchedule: { enabled: false, items: {} },
     pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: { poster: { phase: 'paused', updatedAt: now, detail: '等待下一条发布' } } },
   })
-  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
-  assert.equal(context.model().label, '有未启动项 · 点击启动未运行')
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel`, context)
+  assert.equal(context.model().label, '已停止 · 点击启动未运行')
   assert.equal(context.model().action, 'start')
   assert.equal(context.model().status, 'waiting')
 })
@@ -763,11 +784,11 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
     taskSchedule: { enabled: true, items: {} },
     pluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {} },
   })
-  vm.runInContext(`${overview}\n${definition}\nglobalThis.model = flowButtonModel; globalThis.overview = flowTaskOverview`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${definition}\nglobalThis.model = flowButtonModel; globalThis.overview = flowTaskOverview`, context)
   const read = () => ({ label: context.model().label, action: context.model().action, counts: JSON.parse(JSON.stringify(context.overview(context.pluginRuntime, now).counts)) })
 
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { manualStopped: true }]))
-  assert.equal(read().label, '有未启动项 · 点击启动未运行')
+  assert.equal(read().label, '已停止 · 点击启动未运行')
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
   assert.equal(read().counts.running, 1)
   assert.equal(read().label, '运行中 · 点击暂停全部')
@@ -776,39 +797,39 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
 
   context.pluginRuntime.tasks = {}
   context.taskSchedule.items = Object.fromEntries(modes.map((mode) => [mode, { blocked: true }]))
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '需人工检查 · 点击暂停调度', action: 'pause' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 点击暂停调度', action: 'pause' })
   context.taskSchedule.enabled = false
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '需人工检查 · 请先查看详情', action: '' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '需处理 · 请先查看详情', action: '' })
   context.taskSchedule.enabled = true
   context.taskSchedule.items = {}
   assert.equal(read().label, '等待中 · 点击暂停调度')
   context.pluginRuntime.flow.phase = 'stopping'
-  assert.equal(read().label, '正在停止 · 请稍候')
+  assert.equal(read().label, '停止中 · 请稍候')
 
   context.taskSchedule.enabled = false
   context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
   assert.equal(read().counts.unknown, 1)
-  assert.equal(read().label, '状态待确认 · 点击检查并启动')
+  assert.equal(read().label, '需处理 · 点击检查并启动')
   context.pluginRuntime.flow.phase = 'paused'
-  assert.equal(read().label, '已暂停 · 点击启动全部')
+  assert.equal(read().label, '已停止 · 点击启动全部')
   context.pluginRuntime.flow = { phase: 'running', updatedAt: now }
   context.pluginRuntime.tasks.poster = { phase: 'stopping', updatedAt: now - 91000 }
   assert.equal(read().counts.stopping, 1)
-  assert.equal(read().label, '停止超时 · 点击重试停止')
+  assert.equal(read().label, '需处理 · 点击重试停止')
   context.pluginRuntime.flow.phase = 'paused'
   assert.equal(read().counts.missing, 8)
-  assert.equal(read().label, '已暂停 · 点击启动全部')
+  assert.equal(read().label, '已停止 · 点击启动全部')
   context.pluginRuntime.tasks = {}
   context.pluginRuntime.flow = { phase: 'stopped', updatedAt: now }
   assert.deepEqual({ label: read().label, action: read().action }, { label: '已停止 · 点击重新启动', action: 'start' })
   context.pluginRuntime.flow = {}
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '尚未运行 · 点击启动全部', action: 'start' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '已停止 · 点击启动全部', action: 'start' })
   context.flowStarting = true
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '正在启动 · 请稍候', action: '' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '启动中 · 请稍候', action: '' })
   context.flowStarting = false
   context.flowStopping = true
-  assert.deepEqual({ label: read().label, action: read().action }, { label: '正在停止 · 请稍候', action: '' })
+  assert.deepEqual({ label: read().label, action: read().action }, { label: '停止中 · 请稍候', action: '' })
   assert.match(source, /button\.disabled = !model\.action/)
 })
 
@@ -827,9 +848,9 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
     formatClock: () => '01:00',
     formatCountdown: () => '1 分 0 秒',
   })
-  vm.runInContext(`${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
   for (const mode of modes) {
-    const expected = mode === 'poster' ? '等待 约 1 分 0 秒 · 点停止' : '等待中 · 点击停止'
+    const expected = mode === 'poster' ? '等待中 · 约 1 分 0 秒 · 点击停止' : '等待中 · 点击停止'
     assert.equal(context.control(mode, false, now).label, expected)
     assert.equal(context.control(mode, false, now).action, 'stop')
     assert.equal(context.control(mode, true, now), null)
@@ -839,7 +860,7 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
   context.taskSchedule.items.poster.manualStopped = false
   context.taskSchedule.items.poster.blocked = true
-  assert.equal(context.control('poster', false, now).label, '需人工检查 · 点击启动')
+  assert.equal(context.control('poster', false, now).label, '需处理 · 点击启动')
   context.taskSchedule.items.poster.blocked = false
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
   assert.equal(context.control('poster', false, now).label, '运行中 · 点击前往')
@@ -848,7 +869,7 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.taskSchedule.enabled = false
   assert.equal(context.control('poster', false, now).label, '等待中 · 点击查看')
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
-  assert.equal(context.control('poster', false, now).label, '待确认 · 点击查看')
+  assert.equal(context.control('poster', false, now).label, '需处理 · 点击查看')
   assert.equal(context.control('timeline', false, now), null)
 })
 
@@ -857,8 +878,13 @@ test('single task click refreshes background schedule before acting on a stale s
   const definition = source.match(/  async function stopScheduledWaitingTask\(mode, localActive\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   const actions = []
+  const busyModes = new Set()
   const context = vm.createContext({
     taskSchedule: { enabled: false, items: {} }, pluginRuntime: { tasks: {} }, state: {},
+    setTaskActionBusy(mode, busy) {
+      if (busy) busyModes.add(mode)
+      else busyModes.delete(mode)
+    },
     readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: {} } }),
     scheduledTaskButtonState: () => ({ action: 'stop' }),
     sendExtensionMessage: async (message) => { actions.push(message.type); return { ok: true } },
@@ -894,11 +920,11 @@ test('all seven task panels show the same blocked state with a readable reason',
     pluginRuntime: { tasks: {} }, formatClock: () => '01:00',
     waitHeadline: (prefix, ms) => ms > 0 ? `${prefix} · 约 1 分 0 秒` : prefix,
   })
-  vm.runInContext(`${overview}\n${readable}\n${notice}\nglobalThis.notice = taskScheduleNotice`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${notice}\nglobalThis.notice = taskScheduleNotice`, context)
   for (const mode of modes) {
     const result = context.notice(mode)
     assert.equal(result.status, 'blocked')
-    assert.match(result.title, /需人工检查.*连续受限/)
+    assert.match(result.title, /需处理.*连续受限/)
     assert.match(result.detail, /疑似自动化或账号受限/)
     assert.doesNotMatch(result.detail, /risk-blocked/)
   }
@@ -913,7 +939,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   context.paintNotice({ querySelector: () => element })
   assert.equal(element.hidden, false)
   assert.equal(element.dataset.state, 'blocked')
-  assert.match(title.textContent, /需人工检查/)
+  assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
   assert.equal((source.match(/data-xrc-task-schedule-notice role="status"/g) || []).length, 4)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -1064,11 +1090,11 @@ test('header runtime line uses the same global state as the main button', async 
     flowTaskOverview: () => ({ counts: { running: 0 } }),
     pluginRuntime: { tasks: {} },
   })
-  vm.runInContext(`${definition}\nglobalThis.runtimeLabel = flowRuntimeLabel`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${definition}\nglobalThis.runtimeLabel = flowRuntimeLabel`, context)
   const cases = [
-    ['paused', '全流程已暂停'], ['waiting', '任务等待中'], ['blocked', '任务需检查'],
-    ['stalled', '停止待重试'], ['stopping', '正在停止'], ['starting', '正在启动'],
-    ['unknown', '状态待确认'], ['stopped', '已停止'], ['idle', '尚未运行'],
+    ['paused', '已停止 · 全流程已暂停'], ['waiting', '等待中'], ['blocked', '需处理'],
+    ['stalled', '需处理 · 停止超时'], ['stopping', '停止中'], ['starting', '启动中'],
+    ['unknown', '需处理'], ['stopped', '已停止'], ['idle', '已停止'],
   ]
   for (const [status, expected] of cases) assert.equal(context.runtimeLabel({ status }, null, 1000), expected)
   assert.equal(context.runtimeLabel({ status: 'running' }, 800, 1000), '稳定运行 200ms')
@@ -1431,7 +1457,7 @@ test('reply-like task visits threads without liking their root posts', async () 
       if (selector.includes('AppTabBar_Home_Link')) return homeLink
       return null
     },
-    querySelectorAll: () => [{ textContent: 'This request looks like it might be automated' }],
+    querySelectorAll: () => [],
   }
   const saved = {}
   let limits = 0
@@ -1512,7 +1538,6 @@ test('an unconfirmed like continues to the next post and only confirmed likes en
   const saved = {}
   const clicked = []
   const reported = []
-  const oldToast = { textContent: 'rate limit' }
   let limits = 0
   const makeTweet = (id, confirms) => {
     let liked = false
@@ -1529,7 +1554,7 @@ test('an unconfirmed like continues to the next post and only confirmed likes en
   controller = autoLike.createController({
     document: {
       querySelector: () => ({ querySelectorAll: () => articles }),
-      querySelectorAll: () => [oldToast],
+      querySelectorAll: () => [],
     },
     window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
@@ -1579,10 +1604,58 @@ test('a like confirmed on X replacement node is counted', async () => {
   assert.equal(controller.snapshot().count, 1)
 })
 
-test('an old restriction toast does not block a successful post like', async () => {
+test('an optimistic unlike with an automation toast counts neither post nor reply likes', async () => {
+  for (const target of ['posts', 'replies']) {
+    let clock = 1000
+    let clicks = 0
+    let warning = null
+    let liked = false
+    const reported = []
+    const saved = {}
+    const location = { pathname: '/home' }
+    const rootLink = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123', click() { location.pathname = '/a/status/123' } }
+    const replyLink = { href: 'https://x.com/b/status/456', getAttribute: () => '/b/status/456' }
+    const root = { querySelector(selector) {
+      if (selector === 'time') return { closest: () => rootLink }
+      if (target === 'posts' && selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (target === 'posts' && selector === '[data-testid="like"]') return { click() { clicks += 1; liked = true; warning = { textContent: 'This request looks like it might be automated' } } }
+      return null
+    } }
+    const reply = { querySelector(selector) {
+      if (selector === 'time') return { closest: () => replyLink }
+      if (selector === '[data-testid="unlike"]') return liked ? {} : null
+      if (selector === '[data-testid="like"]') return { click() { clicks += 1; liked = true; warning = { textContent: 'This request looks like it might be automated' } } }
+      return null
+    } }
+    const doc = {
+      querySelector(selector) {
+        if (selector === '[data-testid="primaryColumn"]') return { querySelectorAll: () => location.pathname === '/home' ? [root] : [root, reply] }
+        return null
+      },
+      querySelectorAll: () => warning ? [warning] : [],
+    }
+    let controller
+    controller = autoLike.createController({
+      document: doc,
+      window: { location, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
+      storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
+      target, now: () => clock,
+      onLike(id) { reported.push(id) },
+      onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
+    })
+    await controller.start()
+    assert.equal(clicks, 1, `${target}: one attempted click`)
+    assert.equal(controller.snapshot().count, 0, `${target}: no confirmed success`)
+    assert.deepEqual(reported, [], `${target}: no success receipt`)
+    assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
+  }
+})
+
+test('a visible automation toast stops new likes before they can be counted', async () => {
   const oldToast = { textContent: 'This request looks like it might be automated' }
   let liked = false
   let limits = 0
+  let clock = 1000
   const link = { href: 'https://x.com/a/status/123', getAttribute: () => '/a/status/123' }
   const article = { querySelector(selector) {
     if (selector === 'time') return { closest: () => link }
@@ -1593,14 +1666,15 @@ test('an old restriction toast does not block a successful post like', async () 
   let controller
   controller = autoLike.createController({
     document: { querySelector: () => ({ querySelectorAll: () => [article] }), querySelectorAll: () => [oldToast] },
-    window: { location: { pathname: '/home' }, setTimeout: (callback) => queueMicrotask(callback), scrollBy: () => {}, innerHeight: 700 },
+    window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
     storage: { get: async () => ({}), set: async () => {} },
-    target: 'posts', onLimit() { limits += 1 },
-    onUpdate(snapshot) { if (snapshot.posts === 1) controller.stop() },
+    target: 'posts', now: () => clock, onLimit() { limits += 1 },
+    onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
   })
   await controller.start()
-  assert.equal(controller.snapshot().count, 1)
-  assert.equal(limits, 0)
+  assert.equal(liked, false)
+  assert.equal(controller.snapshot().count, 0)
+  assert.equal(limits, 1)
 })
 
 test('old warnings and extension panel text do not count as fresh like restrictions', () => {
@@ -1613,7 +1687,7 @@ test('old warnings and extension panel text do not count as fresh like restricti
   assert.equal(autoLike.restrictionKind({ querySelectorAll: () => [{ textContent: 'Please wait and try again later' }] }), '')
 })
 
-test('a persistent X warning with two failed likes is treated as a real restriction', async () => {
+test('a persistent X warning triggers cooldown without attempting two more likes', async () => {
   let clock = 1000
   let clicks = 0
   let limits = 0
@@ -1636,7 +1710,7 @@ test('a persistent X warning with two failed likes is treated as a real restrict
     onUpdate(snapshot) { if (snapshot.cooldownUntil > clock) controller.stop() },
   })
   await controller.start()
-  assert.equal(clicks, 2)
+  assert.equal(clicks, 0)
   assert.equal(limits, 1)
   assert.equal(saved['xrcAutoLikeCooldownV2:default'].reason, 'automation')
 })
@@ -1669,7 +1743,7 @@ test('like count limit cools down, preserves history, then resumes without a rap
     document: doc,
     window: { location: { pathname: '/home' }, setTimeout(callback, ms) { clock += ms; queueMicrotask(callback) }, scrollBy: () => {}, innerHeight: 700 },
     storage: { get: async (key) => ({ [key]: saved[key] }), set: async (value) => Object.assign(saved, value) },
-    accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [200],
+    accountKey: 'a', target: 'posts', now: () => clock, rateLimitCooldowns: [1000],
     onLimit(account, target, kind) { limits.push([account, target, kind]) },
     onUpdate(snapshot) { updates.push(snapshot.status); if (snapshot.posts === 1) controller.stop() },
   })
@@ -2344,7 +2418,7 @@ test('short DOM polling stays local instead of flooding the offscreen timer chan
   assert.equal(sent, 0)
 })
 
-test('AI poster formats blank lines and keeps the random interval between 25 and 35 minutes', () => {
+test('AI poster formats blank lines and keeps the random interval between 25 and 35 minutes', async () => {
   assert.equal(poster.randomIntervalMs(() => 0), 25 * 60 * 1000)
   assert.ok(poster.randomIntervalMs(() => 0.999999) <= 35 * 60 * 1000)
   assert.equal(poster.randomIntervalMs(() => 0, 'slow'), 50 * 60 * 1000)
@@ -2352,6 +2426,19 @@ test('AI poster formats blank lines and keeps the random interval between 25 and
   assert.equal(poster.randomIntervalMs(() => 0, 'fast'), 12 * 60 * 1000)
   assert.equal(poster.postScheduleProfile('missing').id, 'medium')
   assert.equal(poster.formatPostSchedule('fast').interval, '12～18 分钟')
+  assert.equal(poster.formatPostSchedule('medium').wave, '高峰更密 · 低峰更疏')
+  assert.equal(poster.minutesToPostWavePeak(8 * 60), 0)
+  assert.equal(poster.minutesToPostWavePeak(12 * 60 + 45), 0)
+  assert.equal(poster.minutesToPostWavePeak(19 * 60), 0)
+  assert.equal(poster.postWaveFactor(Date.parse('2026-10-28T08:30:00+08:00')), 0.55)
+  assert.ok(poster.postWaveFactor(Date.parse('2026-10-28T03:00:00+08:00')) > 2)
+  const peakWait = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T08:00:00+08:00'), () => 0, 'medium')
+    - Date.parse('2026-10-28T08:00:00+08:00')
+  const offPeakWait = poster.scheduleNextNormalPostAt(Date.parse('2026-10-28T03:00:00+08:00'), () => 0, 'medium')
+    - Date.parse('2026-10-28T03:00:00+08:00')
+  assert.ok(peakWait < offPeakWait)
+  const posterSource = await readFile(new URL('poster.js', extensionDir), 'utf8')
+  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace\)/)
   assert.equal(poster.snapshot().nextPostAt, 0)
   poster.setSchedulePace('turbo')
   assert.equal(poster.snapshot().schedulePace, 'turbo')
@@ -3138,14 +3225,18 @@ test('reloads after 35 successful replies and after the timeline stalls', () => 
 
 test('creates one persisted-size random execution plan within the configured ranges', () => {
   const minimumPlan = loop.createRunPlan(() => 0)
-  assert.deepEqual(minimumPlan, { pace: 'boundary', rounds: 2, roundTargets: [20, 20], total: 40 })
+  assert.deepEqual(minimumPlan, { pace: 'boundary', rounds: 5, roundTargets: [40, 40, 40, 40, 40], total: 200 })
 
   const maximumPlan = loop.createRunPlan(() => 1)
-  assert.deepEqual(maximumPlan, { pace: 'boundary', rounds: 3, roundTargets: [30, 30, 30], total: 90 })
-  assert.equal(loop.randomReplyDelaySeconds(() => 0), 6)
-  assert.equal(loop.randomReplyDelaySeconds(() => 1), 10)
-  assert.equal(loop.randomCycleDelayMs(() => 0), 10 * 60 * 1000)
-  assert.equal(loop.randomCycleDelayMs(() => 1), 15 * 60 * 1000)
+  assert.deepEqual(maximumPlan, { pace: 'boundary', rounds: 8, roundTargets: [55, 55, 55, 55, 55, 55, 55, 55], total: 440 })
+  assert.equal(loop.randomReplyDelaySeconds(() => 0), 1)
+  assert.equal(loop.randomReplyDelaySeconds(() => 1), 3)
+  assert.equal(loop.randomCycleDelayMs(() => 0), 15 * 60 * 1000)
+  assert.equal(loop.randomCycleDelayMs(() => 1), 25 * 60 * 1000)
+  assert.deepEqual(loop.createRunPlan(() => 0, 'boundary', 'probe'), { pace: 'boundary', rounds: 1, roundTargets: [1], total: 1 })
+  assert.equal(loop.randomReplyDelaySeconds(() => 0, 'boundary', 'probe'), 8)
+  assert.equal(loop.boundaryProbeCooldownMs(1), 15 * 60 * 1000)
+  assert.equal(loop.boundaryProbeCooldownMs(6), 120 * 60 * 1000)
 
   assert.deepEqual(loop.SCHEDULE_PROFILES.map((item) => item.label), ['慢', '中', '边界测试', '快', '超快'])
   assert.equal(loop.DEFAULT_SCHEDULE_PACE, 'boundary')
@@ -3587,6 +3678,41 @@ test('notification replies remain eligible without a like button', async () => {
   assert.equal(context.collect()[0].id, '123456789')
 })
 
+test('Grok reply notifications are skipped while ordinary replies mentioning Grok stay eligible', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const makeArticle = (handle, id, text) => ({
+    textContent: text,
+    closest: () => null,
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return {
+        getAttribute: () => new Date().toISOString(),
+        closest: () => ({ getAttribute: () => `/${handle}/status/${id}` }),
+      }
+      if (selector === '[data-testid="reply"]') return {}
+      return null
+    },
+    getBoundingClientRect: () => ({ top: 10 }),
+  })
+  const articles = [
+    makeArticle('grok', '123', 'Replying to @tuaranx 我补充一点'),
+    makeArticle('Grok', '124', 'Replying to @tuaranx 另一条回复'),
+    makeArticle('reader', '125', 'Replying to @tuaranx @grok 这个问题怎么看？'),
+  ]
+  const main = { querySelectorAll: () => articles }
+  const context = vm.createContext({
+    document: { querySelector: () => main, body: main },
+    window: { location: { origin: 'https://x.com' }, scrollY: 0 },
+    state: { assistantMode: 'notifications' }, PANEL_ID: 'x-reply-clipboard-panel',
+    currentAccountHandle: () => 'tuaranx', isNotificationPath: () => true,
+    isNestedTweet: () => false, isPromoted: () => false,
+    textOf: (article) => article?.textContent || '', loopApi: loop, URL,
+  })
+  vm.runInContext(`${definition}\nglobalThis.collect = collectTweets`, context)
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['125'])
+})
+
 test('an old quoted post does not end a fresh notification scan', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function hasReachedNotificationCutoff\(\) \{[\s\S]*?\n  \}/)?.[0]
@@ -3900,7 +4026,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '3.32.50')
+  assert.equal(manifest.version, '3.32.56')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4011,7 +4137,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /stripManagedTaskTitle/)
   assert.match(content, /@\$\{handle\} · \$\{label\}/)
   assert.match(content, /X高频互动助手 · @\$\{handle\}/)
-  assert.match(content, /当前已在\$\{label\}页面，任务尚未启动；点击下方启动单项任务/)
+  assert.match(content, /当前已在\$\{label\}页面，任务已停止；点击下方启动/)
   assert.match(content, /document\.title/)
   assert.match(backgroundSource, /replace\(\/\^@\[A-Za-z0-9_\]\{1,40\} · \/u, ""\)/)
   assert.match(content, /data-xrc-global-bar/)
@@ -4021,7 +4147,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /xrc-round-pace/)
   assert.match(content, /xrc-speed-section/)
   assert.doesNotMatch(content, /data-xrc-flow-help/)
-  assert.match(content, /启动单项任务/)
+  assert.match(content, /已停止 · 点击启动/)
+  assert.match(content, /dataset\.busy = "true"/)
+  assert.match(content, /setTaskActionBusy\(/)
+  assert.match(content, /withNavBusy\(/)
   assert.match(content, /data-xrc-assistant="mutual"/)
   assert.match(content, /data-xrc-assistant="reply"/)
   assert.match(content, /data-xrc-assistant="likes"/)
@@ -4060,7 +4189,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /定时发帖/)
   assert.match(content, /data-xrc-post-pace/)
   assert.match(content, /selectPosterPace/)
-  assert.match(posterSource, /randomIntervalMs\(Math\.random, state\.schedulePace\)/)
+  assert.match(posterSource, /scheduleNextNormalPostAt\(Date\.now\(\), Math\.random, state\.schedulePace\)/)
   assert.match(content, /loopApi\.randomCycleDelayMs\(Math\.random, state\.schedulePace(?:, state\.boundaryLevel)?\)/)
   assert.match(content, /边界测试本轮稳定，升到第/)
   assert.match(content, /边界测试在 .* 条后发现限制，降到第/)
@@ -4069,6 +4198,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-boundary-info[\s\S]*?data-xrc-monitor-open/) 
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(css, /xrc-round-pace \.xrc-pace-options button[\s\S]*?border-radius: 50%/)
+  assert.match(css, /\.xrc-inline-start\[data-busy="true"\]::before/)
+  assert.match(css, /\.xrc-flow-start\[data-busy="true"\] \[data-xrc-flow-label\]::before/)
+  assert.match(css, /data-assistant-mode="likes-posts"[\s\S]*--xrc-workspace: #e14276/)
+  assert.match(css, /\.xrc-inline-start \{[\s\S]*background: linear-gradient\(135deg, var\(--xrc-workspace\)/)
+  assert.match(css, /\.xrc-flow-start\[data-flow="paused"\],[\s\S]*\.xrc-flow-start\[data-flow="stopped"\]/)
   assert.match(content, /NOTIFICATION_CYCLE_DELAY_MS = 10 \* 60 \* 1000/)
   assert.match(content, /RECONNECT_INITIAL_MS = 2000/)
   assert.match(content, /RECONNECT_MAX_MS = 30000/)
@@ -4296,10 +4430,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="releases"/)
   assert.match(docsPage, /点赞、关注和发帖进入后台队列/)
   assert.match(docsPage, /顶部页签会打开尚未创建的任务窗口/)
-  assert.match(docsPage, /执行中[\s\S]*等待中[\s\S]*停止中[\s\S]*已暂停[\s\S]*未启动[\s\S]*待确认/)
-  assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已暂停 · 点击启动全部/)
+  assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
+  assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*已停止 · 点击启动全部/)
   assert.match(docsPage, /有任务执行', '运行中 · 点击暂停全部'/)
-  assert.match(docsPage, /全流程主按钮[\s\S]*单项任务详情/)
+  assert.match(docsPage, /全流程主按钮[\s\S]*四类状态/)
   assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
@@ -4309,12 +4443,27 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /每日报告随心跳自动同步当日统计/)
   assert.doesNotMatch(docsPage, /同步历史/)
   assert.match(docsPage, /频率与设置/)
+  assert.match(docsPage, /PostWaveTimeline/)
+  assert.match(docsPage, /id: 'poster-wave'/)
+  assert.match(docsPage, /发帖波浪时间线/)
+  assert.match(docsPage, /id: 'comments', label: '评论管理', depth: 1/)
+  assert.match(docsPage, /id: 'reply-timeline', label: '评论帖子', depth: 2/)
+  assert.match(docsPage, /id: 'poster', label: '定时发帖', depth: 1/)
+  assert.match(docsPage, /id: 'poster-wave', label: '发帖波浪时间线', depth: 2/)
+  assert.match(docsPage, /border-l border-\[var\(--site-line\)\]/)
   assert.match(docsPage, /平台边界与官方来源/)
   assert.match(docsPage, /不代表 X 认可的安全阈值/)
   assert.match(docsPage, /https:\/\/help\.x\.com\/en\/rules-and-policies\/x-automation/)
   assert.match(docsPage, /loadXExtensionReleaseWeeks/)
   assert.match(docsPage, /周总结/)
   assert.match(docsPage, /第 1 周从 README 里第一条带日期的版本所在周开始/)
+  assert.match(docsPage, /id="poster-wave"/)
+  const waveTimeline = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/PostWaveTimeline.jsx', extensionDir), 'utf8')
+  assert.match(waveTimeline, /普通发帖 · 一天波浪时间线/)
+  assert.match(waveTimeline, /07:00–10:00/)
+  assert.match(waveTimeline, /12:30–13:30/)
+  assert.match(waveTimeline, /18:00–22:00/)
+  assert.match(waveTimeline, /精品发帖固定档位/)
   assert.match(content, /currentTaskDetail|currentTaskWaitUntil/)
   assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
   assert.match(backgroundSource, /ext-update/)
@@ -4325,7 +4474,7 @@ test('each subtask info link targets its own revealed documentation section', as
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const docsPage = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
   const hashNavigation = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/DocsHashNavigation.jsx', import.meta.url), 'utf8')
-  const targets = ['reply-timeline', 'reply-notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followback', 'poster', 'poster-normal', 'poster-premium']
+  const targets = ['reply-timeline', 'reply-notifications', 'likes-posts', 'likes-replies', 'mutual-unfollow', 'mutual-followback', 'poster', 'poster-normal', 'poster-wave', 'poster-premium']
   for (const target of targets) {
     assert.match(content, new RegExp(`xrc-docs-${target}`))
     assert.match(docsPage, new RegExp(`id="${target}"`))

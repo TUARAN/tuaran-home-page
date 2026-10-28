@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import PageContainer from '../../../components/PageContainer'
 import DocsHashNavigation from './DocsHashNavigation'
+import TaskWindowPlan from './TaskWindowPlan'
+import TaskSchedulePrototype from './TaskSchedulePrototype'
 
 export const dynamic = 'force-static'
 
@@ -39,6 +41,8 @@ const TOC = [
     heading: '先看这里',
     items: [
       { id: 'flow', label: '01 · 运行与任务窗口' },
+      { id: 'task-window-plan', label: '规划：单页签排班', depth: 1 },
+      { id: 'task-schedule-prototype', label: '原型：排班管理', depth: 1 },
       { id: 'states', label: '02 · 状态和按钮' },
       { id: 'risk', label: '03 · 风控与自动恢复' },
     ],
@@ -205,6 +209,20 @@ export default function XReplyClipboardDocsPage() {
               <li>队列任务每次运行最多 15 分钟，安全结束当前动作后轮换。点赞、关注、发帖连续 3 次受限会停止该任务的自动重试；评论两项持续按 10、20、30 分钟递增倒计时，到期自动重试。手动停止仍会取消对应任务的自动重试。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
             </ul>
+            <div id="task-window-plan" className="scroll-mt-24">
+              <TaskWindowPlan />
+            </div>
+            <div id="task-schedule-prototype" className="scroll-mt-24">
+              <TaskSchedulePrototype />
+            </div>
+            <div className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4">
+              <h3 className="text-[14px] font-semibold text-[var(--site-ink)]">单页签排班要先满足的条件</h3>
+              <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[12px] leading-6">
+                <li>后台按账号、按任务分别保存已处理记录、草稿、运行阶段、下次到期时间与冷却原因；页签只执行当前获选任务。</li>
+                <li>到期的评论、点赞、关注、发帖公平轮转；精品发帖按自己的档期进入队列，错过档期不集中补发。</li>
+                <li>只在确认当前点击或发送完成后切换 X 页面。单项冷却只延后该项；账号级限制由该账号单独等待，另一个账号继续排班。</li>
+              </ol>
+            </div>
           </Section>
 
           <Section id="states" index="02" title="状态和按钮速查" summary="看到状态就知道任务会不会继续" defaultOpen>

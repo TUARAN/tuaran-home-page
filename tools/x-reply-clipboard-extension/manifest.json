@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "3.32.56",
-  "description": "Run home and notification interactions, optional likes, follow management, and scheduled posts in dedicated X tabs.",
+  "version": "4.0.8",
+  "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

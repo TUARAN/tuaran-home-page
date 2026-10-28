@@ -21,6 +21,10 @@
     "mutual-targetFollow": "关注候选", poster: "普通发帖", "poster-premium": "精品发帖"
   };
   const STORAGE_KEY = "x-reply-clipboard-loop";
+  const TASK_STATE_PREFIX = "xrcTaskSnapshot:";
+  let taskSnapshotWrite = Promise.resolve();
+  let suspendingTask = false;
+  let taskSnapshotAccount = "default";
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
   const DEV_UPDATE_KEY = "xrcLocalDevUpdate";
@@ -97,7 +101,7 @@
   const NOTIFICATION_CYCLE_DELAY_MS = 10 * 60 * 1000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.2;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "3.32.55";
+  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "4.0.8";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -187,6 +191,12 @@
 
   let pluginRuntime = { startedAt: null, tasks: {} };
   let taskSchedule = { enabled: false, items: {} };
+  let scheduleLoaded = false;
+  let scheduleLoadError = false;
+  let lastScheduleReadAt = 0;
+  let scheduleRefreshPromise = null;
+  let selectedTaskMode = sessionStorage.getItem("xrcSelectedTaskMode") || "timeline";
+  let deskHome = sessionStorage.getItem("xrcDeskHome") !== "0";
   let localDevUpdate = null;
   let updateActionPending = false;
   let updateActionMessage = "";
@@ -456,6 +466,10 @@
     return state.assistantMode === "mutual" ? mutualTaskKey() : validAssistantMode(state.assistantMode);
   }
 
+  function scheduleDashboardActive() {
+    return taskSchedule.enabled || Number(taskSchedule.strategyVersion) >= 4;
+  }
+
   function launchFromMode(mode, start) {
     if (mode === "likes") mode = "likes-posts";
     if (mode === "mutual-targetFollow") return null;
@@ -637,9 +651,21 @@
       const response = await readRuntimeMessage("xrc-runtime-get");
       pluginRuntime = response.runtime || pluginRuntime;
       taskSchedule = response.schedule || taskSchedule;
+      scheduleLoaded = true;
+      scheduleLoadError = false;
+      lastScheduleReadAt = Date.now();
     } catch (error) {
       pluginRuntime = { startedAt: null, tasks: {} };
+      scheduleLoaded = false;
+      scheduleLoadError = true;
+      lastScheduleReadAt = Date.now();
     }
+  }
+
+  function refreshScheduleView() {
+    if (scheduleRefreshPromise) return scheduleRefreshPromise;
+    scheduleRefreshPromise = loadPluginRuntime().then(renderPanel).finally(() => { scheduleRefreshPromise = null; });
+    return scheduleRefreshPromise;
   }
 
   async function loadOpenTaskTabs() {
@@ -663,6 +689,7 @@
 
   function taskWindowTitle(mode, tabs = openTaskTabs, currentMode = currentTaskKey()) {
     const label = TASK_MODE_LABELS[mode] || "任务";
+    if (scheduleDashboardActive()) return `查看${label}详情，不改变排班`;
     if (mode === currentMode) return `当前${label}窗口`;
     return Number.isInteger(Number(tabs?.[mode])) && Number(tabs[mode]) > 0
       ? `跳转到已打开的${label}窗口`
@@ -674,7 +701,7 @@
     const close = slot?.querySelector("[data-xrc-task-close]");
     if (!slot || !close) return;
     const tabId = Number(openTaskTabs[mode]);
-    const openedElsewhere = mode !== currentTaskKey() && Number.isInteger(tabId) && tabId > 0;
+    const openedElsewhere = !scheduleDashboardActive() && mode !== currentTaskKey() && Number.isInteger(tabId) && tabId > 0;
     slot.classList.toggle("is-open", openedElsewhere);
     close.disabled = !openedElsewhere;
     close.dataset.xrcTargetMode = openedElsewhere ? mode : "";
@@ -687,6 +714,7 @@
     const tabId = Number(openTaskTabs[mode]);
     const label = TASK_MODE_LABELS[mode] || "任务";
     const scheduledStatus = flowTaskOverview(pluginRuntime).tasks.find((task) => task.key === mode)?.status;
+    if (scheduleDashboardActive()) return `查看${label}详情，不改变排班或执行页签`;
     if (mode === currentTaskKey()) return `当前${label}页面`;
     if (Number.isInteger(tabId) && tabId > 0) return `可以跳转到已打开的${label}页面`;
     if (taskSchedule.enabled && scheduledStatus === "waiting") return `${label}等待后台调度，届时自动打开任务窗口`;
@@ -771,12 +799,58 @@
     try {
       const result = await sendTaskMessage("xrc-task-open", selected);
       await loadOpenTaskTabs();
-      state.status = result?.reused ? `已切换到${label}页面` : `已打开${label}页面`;
+      state.status = result?.idle ? `${label}等待后台调度；当前没有执行页签` : result?.queued ? `${label}正在排队；已打开当前执行页签` : result?.reused ? `已切换到${label}页面` : `已打开${label}页面`;
       renderPanel();
     } catch (error) {
       state.status = error?.message || "没有成功打开任务窗口";
       renderPanel();
     }
+  }
+
+  function assistantModeForTask(mode) {
+    const key = validTaskKey(mode);
+    if (key.startsWith("likes-")) return key;
+    if (key.startsWith("mutual-")) return "mutual";
+    if (key === "poster" || key === "poster-premium") return key;
+    return key === "notifications" ? "notifications" : "timeline";
+  }
+
+  function openScheduleDesk() {
+    deskHome = true;
+    sessionStorage.setItem("xrcDeskHome", "1");
+    const dialog = document.querySelector("[data-xrc-flow-details]");
+    if (dialog) dialog.hidden = true;
+    renderPanel();
+    void refreshScheduleView();
+  }
+
+  function taskBodySelector(mode = state.assistantMode) {
+    if (String(mode || "").startsWith("likes-")) return ".xrc-like-body";
+    if (mode === "mutual") return ".xrc-mutual-body";
+    if (isPosterMode(mode)) return ".xrc-post-body";
+    return ".xrc-reply-body";
+  }
+
+  function openTaskSubpage(mode) {
+    const key = validTaskKey(mode);
+    if (!key) return;
+    selectedTaskMode = key;
+    sessionStorage.setItem("xrcSelectedTaskMode", key);
+    deskHome = false;
+    sessionStorage.setItem("xrcDeskHome", "0");
+    state.assistantMode = assistantModeForTask(key);
+    if (key.startsWith("mutual-")) state.mutualMode = key.slice("mutual-".length);
+    if (key === "poster" || key === "poster-premium") postApi?.setPostKind?.(posterKindFromMode(key));
+    const dialog = document.querySelector("[data-xrc-flow-details]");
+    if (dialog) dialog.hidden = true;
+    renderPanel();
+    const panel = document.getElementById(PANEL_ID);
+    panel?.querySelector(taskBodySelector())?.scrollIntoView?.({ block: "nearest" });
+    void refreshScheduleView();
+  }
+
+  function selectTaskForInspection(mode) {
+    openTaskSubpage(mode);
   }
 
   let flowStarting = false;
@@ -815,8 +889,8 @@
 
   function userStateLabelForTask(status) {
     if (status === "running") return USER_STATE_LABELS.running;
-    if (status === "waiting") return USER_STATE_LABELS.waiting;
-    if (status === "stopping") return USER_STATE_LABELS.stopping;
+    // Docs: stopping / cooldown / queue all face as 等待中.
+    if (status === "waiting" || status === "stopping") return USER_STATE_LABELS.waiting;
     if (status === "blocked" || status === "unknown") return USER_STATE_LABELS.needs;
     return USER_STATE_LABELS.stopped;
   }
@@ -841,13 +915,21 @@
         status = "stopping";
       } else if (scheduled.blocked) {
         status = "blocked";
+      } else if (taskSchedule.rules?.[key]?.enabled === false) {
+        status = "missing";
       } else if (scheduled.manualStopped) {
         status = "missing";
       } else if (fresh && task.phase === "paused") {
         status = "waiting";
       } else if (task && !["idle", "stopped"].includes(task.phase)) {
         status = taskSchedule.enabled ? "waiting" : "unknown";
+      } else if (taskSchedule.enabled && taskSchedule.current === key) {
+        // Desk already faces the current occupant as 运行中; keep overview aligned
+        // even before the content script reports a fresh running heartbeat.
+        status = "running";
       } else if (taskSchedule.enabled) {
+        // Participating scheduled tasks stay "waiting" for the flow button.
+        // Idle/not-due must not look manually stopped; stop is only via explicit subpage action.
         status = "waiting";
       }
       counts[status] += 1;
@@ -873,7 +955,7 @@
     const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
     const queued = taskSchedule.items?.[mode] || {};
     if (task?.status === "stopping") {
-      return { label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"), title: "任务正在停止，暂不可点击", action: "none", disabled: true };
+      return { label: formatUserStateAction(USER_STATE_LABELS.waiting, "请稍候"), title: "任务正在停止，暂不可点击", action: "none", disabled: true };
     }
     if (task?.status === "blocked") {
       return { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击启动"), title: "确认账号状态后，点击单独重新启动", action: "start" };
@@ -882,18 +964,41 @@
       return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动"), title: "该任务已手动停止；点击单独启动", action: "start" };
     }
     if (task?.status === "running") {
+      if (scheduleDashboardActive()) {
+        return { label: formatUserStateAction(USER_STATE_LABELS.running, "点击查看"), title: "任务正在共用执行页签运行；点击只查看详情，不改变排班", action: "inspect" };
+      }
       return { label: formatUserStateAction(USER_STATE_LABELS.running, "点击前往"), title: "任务正在其他窗口运行；点击前往任务窗口", action: "focus" };
     }
     if (task?.status === "unknown") {
-      return { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击查看"), title: "任务状态暂未确认；点击查看任务窗口", action: "focus" };
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.needs, "点击查看"),
+        title: scheduleDashboardActive() ? "任务状态暂未确认；点击只查看详情" : "任务状态暂未确认；点击查看任务窗口",
+        action: scheduleDashboardActive() ? "inspect" : "focus"
+      };
     }
     if (task?.status !== "waiting") return null;
-    if (!taskSchedule.enabled) {
-      return { label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"), title: "任务窗口仍在等待；点击查看任务窗口", action: "focus" };
-    }
     const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
     const remaining = resumeAt > now ? resumeAt - now : 0;
     const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
+    const onThisSubpage = !deskHome && selectedTaskMode === mode;
+    if (!taskSchedule.enabled) {
+      return {
+        label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
+        title: scheduleDashboardActive() ? "任务仍在等待；点击只查看详情" : "任务窗口仍在等待；点击查看任务窗口",
+        action: scheduleDashboardActive() ? "inspect" : "focus"
+      };
+    }
+    // v4: desk/other pages only inspect. Stop requires opening that task subpage first,
+    // so browsing cannot mass-mark tasks as manually stopped.
+    if (!onThisSubpage) {
+      return {
+        label: eta
+          ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 点击查看`)
+          : formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
+        title: `${queued.reason || "等待后台调度"}${eta ? `，还剩 ${eta}` : ""}；点击只查看详情，不改变排班`,
+        action: "inspect"
+      };
+    }
     return {
       label: eta
         ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 点击停止`)
@@ -939,11 +1044,17 @@
       }
       const action = scheduledTaskButtonState(mode, false)?.action;
       if (action === "none") return true;
+      if (action === "inspect") {
+        selectTaskForInspection(mode);
+        state.status = `已查看${TASK_MODE_LABELS[mode] || "任务"}详情；排班未改变`;
+        renderPanel();
+        return true;
+      }
       if (action === "focus") {
         try {
-          await sendTaskMessage("xrc-task-open", mode);
+          const result = await sendTaskMessage("xrc-task-open", mode);
           await loadOpenTaskTabs();
-          state.status = `已切换到${TASK_MODE_LABELS[mode] || "任务"}窗口`;
+          state.status = result?.idle ? `${TASK_MODE_LABELS[mode] || "任务"}等待后台调度；当前没有执行页签` : result?.queued ? `${TASK_MODE_LABELS[mode] || "任务"}正在排队；已打开当前执行页签` : `已切换到${TASK_MODE_LABELS[mode] || "任务"}窗口`;
         } catch (error) {
           state.status = error?.message || "没有成功打开任务窗口";
         }
@@ -995,6 +1106,7 @@
   function taskScheduleNotice(mode, now = Date.now()) {
     const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
     const queued = taskSchedule.items?.[mode] || {};
+    const isCurrent = Boolean(taskSchedule.enabled && taskSchedule.current === mode);
     if (task?.status === "blocked") return {
       status: "blocked",
       title: formatUserStateAction(USER_STATE_LABELS.needs, "连续受限"),
@@ -1004,11 +1116,11 @@
       return { status: "stopped", title: USER_STATE_LABELS.stopped, detail: "点击单项按钮可重新启动这一项任务。" };
     }
     if (task?.status === "stopping") {
-      return { status: "stopping", title: USER_STATE_LABELS.stopping, detail: "正在结束当前步骤，请稍候。" };
+      return { status: "waiting", title: formatUserStateAction(USER_STATE_LABELS.waiting, "正在停止"), detail: "正在结束当前步骤，请稍候。" };
     }
     if (task?.status === "unknown") {
       return {
-        status: "unknown",
+        status: "needs",
         title: formatUserStateAction(USER_STATE_LABELS.needs, "状态未同步"),
         detail: "后台暂未收到任务的最新状态，请打开任务窗口检查。"
       };
@@ -1016,6 +1128,9 @@
     if (task?.status === "waiting") {
       const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
       const remaining = resumeAt > now ? resumeAt - now : 0;
+      // Current occupant is already faced as 运行中 on the desk; do not contradict
+      // with “等待后台调度 / 安排恢复” when there is no real countdown.
+      if (isCurrent && remaining <= 0) return null;
       const reason = queued.reason || pluginRuntime.tasks?.[mode]?.detail || "等待后台调度";
       return {
         status: "waiting",
@@ -1031,7 +1146,8 @@
   function paintTaskScheduleNotice(panel = document.getElementById(PANEL_ID)) {
     const notice = panel?.querySelector(`.xrc-${state.assistantMode.startsWith("likes-") ? "like" : state.assistantMode === "mutual" ? "mutual" : isPosterMode() ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
     if (!notice) return;
-    const info = taskScheduleNotice(currentTaskKey());
+    const mode = (!deskHome && selectedTaskMode) || currentTaskKey();
+    const info = taskScheduleNotice(mode);
     notice.hidden = !info;
     if (!info) return;
     notice.dataset.state = info.status;
@@ -1040,59 +1156,248 @@
   }
 
   function paintFlowDetails(panel = document.getElementById(PANEL_ID)) {
+    paintScheduleDesk(panel);
     const dialog = panel?.querySelector("[data-xrc-flow-details]");
     if (!dialog || dialog.hidden) return;
     const summary = flowTaskOverview(pluginRuntime);
-    const list = dialog.querySelector("[data-xrc-flow-details-list]");
     const totals = dialog.querySelector("[data-xrc-flow-details-total]");
     if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "8 项任务已停止"}`;
-    if (!list) return;
-    const hints = {
-      running: "任务正在执行",
-      waiting: "任务已启动，正在等待下一轮或冷却结束",
-      missing: "当前没有运行记录",
-      stopping: "正在结束当前任务",
-      unknown: "超过 90 秒没有状态更新，请检查对应窗口",
-      blocked: "连续受限，已停止自动重试"
-    };
-    const now = Date.now();
-    list.replaceChildren(...summary.tasks.map((task) => {
+    const list = dialog.querySelector("[data-xrc-flow-details-list]");
+    if (list) {
+      list.replaceChildren(...summary.tasks.map((task) => {
+        const row = document.createElement("li");
+        row.className = "xrc-flow-detail-row";
+        row.dataset.state = task.status;
+        const name = document.createElement("strong");
+        name.textContent = task.label;
+        const status = document.createElement("span");
+        status.className = "xrc-flow-detail-status";
+        status.textContent = userStateLabelForTask(task.status);
+        const note = document.createElement("small");
+        note.textContent = "点击进入任务子页";
+        const go = document.createElement("button");
+        go.type = "button";
+        go.dataset.xrcFlowTaskOpen = task.key;
+        go.textContent = "进入";
+        go.title = `进入${task.label}子页，不改变排班`;
+        row.append(name, status, note, go);
+        return row;
+      }));
+    }
+    paintScheduleBoard(dialog);
+  }
+
+  function paintScheduleDesk(panel = document.getElementById(PANEL_ID)) {
+    const desk = panel?.querySelector("[data-xrc-schedule-desk]");
+    if (!desk) return;
+    const summary = flowTaskOverview(pluginRuntime);
+    const totals = desk.querySelector("[data-xrc-desk-total]");
+    if (totals) {
+      totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "8 项任务已停止"}`;
+    }
+    const past = desk.querySelector("[data-xrc-desk-past]");
+    const nowNode = desk.querySelector("[data-xrc-desk-now]");
+    const nextNode = desk.querySelector("[data-xrc-desk-next]");
+    const nowCard = desk.querySelector('[data-rail="now"]');
+    if (!scheduleLoaded) {
+      if (nowNode) nowNode.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
+    } else {
+      const preview = schedulePreview();
+      const latest = taskSchedule.timeline?.history?.[0];
+      const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
+      const currentActions = Number(taskSchedule.items?.[preview.current]?.sliceActions) || 0;
+      if (past) {
+        past.textContent = latest
+          ? `${TASK_MODE_LABELS[latest.mode] || latest.mode} · ${latest.actions || 0} 次`
+          : "暂无轮班记录";
+      }
+      if (nowNode) {
+        nowNode.textContent = !taskSchedule.enabled
+          ? "排班已暂停"
+          : preview.current
+            ? `${TASK_MODE_LABELS[preview.current]} · ${currentActions} 次`
+            : "空闲";
+      }
+      if (nextNode) {
+        nextNode.textContent = nextEntry
+          ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "结束后" : formatScheduleTime(nextEntry.readyAt)}`
+          : "等待任务到期";
+      }
+      if (nowCard) {
+        nowCard.dataset.tone = !taskSchedule.enabled ? "paused" : preview.current ? "running" : "idle";
+      }
+    }
+    paintScheduleBoard(desk);
+  }
+
+  function scheduleItemPulse(mode, preview, overviewTask) {
+    if (taskSchedule.enabled && preview.current === mode) return "running";
+    if (overviewTask?.status === "running") return "running";
+    if (overviewTask?.status === "waiting" || overviewTask?.status === "stopping") return "waiting";
+    const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
+    if (future?.status === "ready" || future?.status === "scheduled") return "waiting";
+    if (overviewTask?.status === "blocked" || overviewTask?.status === "unknown") return "stopped";
+    if (taskSchedule.items?.[mode]?.manualStopped || taskSchedule.items?.[mode]?.blocked) return "stopped";
+    if (future?.status === "stopped" || future?.status === "blocked" || future?.status === "paused") return "stopped";
+    return "";
+  }
+
+  function schedulePreview(now = Date.now()) {
+    const dueModes = Array.isArray(taskSchedule.dueModes) ? taskSchedule.dueModes : [];
+    const current = taskSchedule.current || "";
+    const next = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status))?.mode
+      || dueModes.find((mode) => mode !== current) || "";
+    const sliceSeconds = [20, 30, 45].includes(Number(taskSchedule.sliceSeconds))
+      ? Number(taskSchedule.sliceSeconds)
+      : 30;
+    const switchAt = current && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + sliceSeconds * 1000 : 0;
+    const overviewByMode = Object.fromEntries(flowTaskOverview(pluginRuntime, now).tasks.map((task) => [task.key, task]));
+    const pending = FLOW_TASKS.map(([mode, label]) => {
+      const rule = taskSchedule.rules?.[mode] || {};
+      const item = taskSchedule.items?.[mode] || {};
+      const resumeAt = Number(item.resumeAt) || 0;
+      const rank = dueModes.indexOf(mode);
+      const overview = overviewByMode[mode];
+      // Face only the four states; keep reason/ETA in the note line.
+      let status = userStateLabelForTask(overview?.status || "missing");
+      if (!taskSchedule.enabled && status === USER_STATE_LABELS.waiting && !overview?.status) {
+        status = USER_STATE_LABELS.stopped;
+      }
+      if (rule.enabled === false) status = USER_STATE_LABELS.stopped;
+      return {
+        mode,
+        label,
+        status,
+        rank,
+        reason: String(item.reason || "").trim(),
+        eta: resumeAt > now ? formatCountdown(resumeAt - now) : "",
+        rule
+      };
+    });
+    pending.sort((a, b) => (a.mode === current ? -1 : b.mode === current ? 1 : 0)
+      || ((a.rank < 0 ? 99 : a.rank) - (b.rank < 0 ? 99 : b.rank)));
+    return { current, next, switchAt, pending };
+  }
+
+  function paintScheduleStrip(panel = document.getElementById(PANEL_ID)) {
+    const strip = panel?.querySelector("[data-xrc-schedule-strip]");
+    if (!strip) return;
+    const past = strip.querySelector("[data-xrc-timeline-past]");
+    const current = strip.querySelector("[data-xrc-timeline-current]");
+    const next = strip.querySelector("[data-xrc-timeline-next]");
+    if (!scheduleLoaded) {
+      current.textContent = scheduleLoadError ? "排班状态读取失败；点击排班重试" : "正在读取排班状态…";
+      return;
+    }
+    const preview = schedulePreview();
+    const latest = taskSchedule.timeline?.history?.[0];
+    const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
+    past.textContent = latest
+      ? `${TASK_MODE_LABELS[latest.mode] || latest.mode} · ${latest.actions || 0} 次 · ${latest.reason || "本轮结束"} · ${formatScheduleTime(latest.endedAt)}`
+      : "暂无轮班记录";
+    const currentActions = Number(taskSchedule.items?.[preview.current]?.sliceActions) || 0;
+    current.textContent = taskSchedule.enabled
+      ? `${TASK_MODE_LABELS[preview.current] || "空闲"}${preview.current ? ` · 本轮 ${currentActions} 次确认动作` : ""}${preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
+      : "排班已暂停";
+    next.textContent = nextEntry
+      ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
+      : "等待任务到期";
+  }
+
+  function formatScheduleTime(value) {
+    if (!Number(value)) return "时间未定";
+    return new Date(Number(value)).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function paintScheduleBoard(dialog) {
+    const board = dialog?.querySelector("[data-xrc-schedule-board]");
+    if (!board) return;
+    const summary = board.querySelector("[data-xrc-schedule-summary]");
+    const list = board.querySelector("[data-xrc-schedule-list]");
+    const historyList = board.querySelector("[data-xrc-schedule-history]");
+    const focusExecution = board.querySelector("[data-xrc-focus-execution]");
+    if (!scheduleLoaded) {
+      if (summary) summary.textContent = scheduleLoadError ? "后台排班读取失败，请关闭后重新打开" : "正在读取后台排班…";
+      historyList?.replaceChildren?.();
+      list?.replaceChildren?.();
+      return;
+    }
+    const preview = schedulePreview();
+    if (focusExecution) focusExecution.hidden = !taskSchedule.enabled || !preview.current;
+    const current = TASK_MODE_LABELS[preview.current] || "无";
+    const nextLabel = TASK_MODE_LABELS[preview.next] || "等待任务到期";
+    const nextEntry = taskSchedule.timeline?.future?.find((entry) => entry.mode === preview.next);
+    const nextText = !preview.next ? nextLabel
+      : nextEntry?.status === "ready" ? `${nextLabel}（预计当前结束后）`
+      : nextEntry?.readyAt ? `${nextLabel}（预计 ${formatScheduleTime(nextEntry.readyAt)}）`
+      : nextLabel;
+    const switchText = preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : "";
+    if (summary) {
+      summary.textContent = taskSchedule.enabled
+        ? `当前 ${current} · 下一 ${nextText}${switchText}`
+        : `排班已暂停${taskSchedule.reason ? ` · ${taskSchedule.reason}` : ""}`;
+    }
+    const history = taskSchedule.timeline?.history || [];
+    historyList?.replaceChildren?.(...(history.length ? history : [null]).map((entry) => {
       const row = document.createElement("li");
-      row.className = "xrc-flow-detail-row";
-      row.dataset.state = task.status;
-      const name = document.createElement("strong");
-      name.textContent = task.label;
+      row.className = "xrc-schedule-history-item";
+      if (!entry) {
+        row.textContent = "暂无已结束的轮班";
+        return row;
+      }
+      const when = document.createElement("strong");
+      when.textContent = `${formatScheduleTime(entry.startedAt)}–${formatScheduleTime(entry.endedAt)}`;
+      const what = document.createElement("span");
+      what.textContent = `${TASK_MODE_LABELS[entry.mode] || entry.mode} · ${entry.actions || 0} 次`;
+      const why = document.createElement("small");
+      why.textContent = entry.reason || "本轮结束";
+      row.append(when, what, why);
+      return row;
+    }));
+    if (!list?.replaceChildren) return;
+    const timelineFuture = taskSchedule.timeline?.future;
+    const ordered = Array.isArray(timelineFuture) ? [
+      ...preview.pending.filter((task) => task.mode === preview.current),
+      ...timelineFuture.map((entry) => preview.pending.find((task) => task.mode === entry.mode)).filter(Boolean)
+    ] : preview.pending;
+    const overviewByMode = Object.fromEntries(flowTaskOverview(pluginRuntime).tasks.map((task) => [task.key, task]));
+    list.replaceChildren(...ordered.map((task) => {
+      const row = document.createElement("li");
+      row.className = "xrc-schedule-item";
+      row.dataset.mode = task.mode;
+      row.dataset.xrcInspectTask = task.mode;
+      row.title = `进入${task.label}子页`;
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      const pulse = scheduleItemPulse(task.mode, preview, overviewByMode[task.mode]);
+      if (pulse) row.dataset.pulse = pulse;
+      else delete row.dataset.pulse;
+      const mark = document.createElement("i");
+      mark.className = "xrc-schedule-mark";
+      mark.setAttribute("aria-hidden", "true");
+      const body = document.createElement("div");
+      body.className = "xrc-schedule-item-body";
+      const label = document.createElement("strong");
+      label.textContent = task.label;
       const status = document.createElement("span");
-      status.className = "xrc-flow-detail-status";
-      const taskRuntime = pluginRuntime.tasks?.[task.key];
-      const updatedAt = Number(taskRuntime?.updatedAt) || 0;
-      const detail = String(taskRuntime?.detail || "").trim();
-      const queued = taskSchedule.items?.[task.key];
-      const resumeAt = Number(queued?.resumeAt) || Number(taskRuntime?.waitUntil) || 0;
-      const remaining = task.status === "waiting" && resumeAt > now ? resumeAt - now : 0;
-      status.textContent = remaining > 0 ? waitHeadline(USER_STATE_LABELS.waiting, remaining) : userStateLabelForTask(task.status);
+      const futureEntry = timelineFuture?.find((entry) => entry.mode === task.mode);
+      const overviewStatus = overviewByMode[task.mode]?.status;
+      status.textContent = userStateLabelForTask(
+        pulse === "running" || overviewStatus === "running" ? "running"
+          : pulse === "waiting" || overviewStatus === "waiting" || overviewStatus === "stopping"
+            || futureEntry?.status === "ready" || futureEntry?.status === "scheduled" ? "waiting"
+          : overviewStatus === "blocked" || overviewStatus === "unknown" ? "blocked"
+          : "missing"
+      );
       const note = document.createElement("small");
-      const go = document.createElement("button");
-      go.type = "button";
-      go.dataset.xrcFlowTaskOpen = task.key;
-      go.textContent = "前往";
-      go.title = `切换或打开${task.label}的浏览器标签页，不启动任务`;
-      go.setAttribute("aria-label", go.title);
-      note.textContent = task.status === "blocked"
-        ? `连续受限：${readableTaskLimitReason(queued.reason)}；请检查账号状态`
-        : queued?.manualStopped && taskSchedule.enabled && task.status === "missing"
-          ? "已手动停止；再次全流程启动或单项启动可恢复"
-          : remaining > 0
-        ? `${queued?.reason || "等待自动恢复"}；到期后自动继续`
-        : taskSchedule.enabled && task.status === "waiting" && taskRuntime
-          && (taskRuntime.phase === "unknown" || !updatedAt || now - updatedAt > FLOW_STALE_MS)
-          ? queued?.reason || "后台正在检查任务状态并安排自动恢复"
-        : updatedAt
-        ? `${detail && ["running", "waiting"].includes(task.status) ? detail : hints[task.status]} · 最近更新 ${new Date(updatedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-        : taskSchedule.enabled && task.status === "waiting"
-          ? queued?.reason || (["timeline", "notifications"].includes(task.key) ? "后台正在检查任务状态并安排自动恢复" : "已入队，等待其他任务结束")
-          : hints[task.status];
-      row.append(name, status, note, go);
+      const priority = Math.max(1, Math.min(3, Number(task.rule.priority) || 1));
+      const windowText = { all: "全天", day: "08–20", peak: "08–10 / 18–20" }[task.rule.window] || "全天";
+      const etaText = futureEntry?.status === "ready" ? "预计当前结束后"
+        : futureEntry?.status === "scheduled" ? `预计 ${formatScheduleTime(futureEntry.readyAt)}`
+        : task.eta ? `倒计时 ${task.eta}` : "";
+      note.textContent = [task.reason, etaText, `优先级 ${priority}`, windowText].filter(Boolean).join(" · ");
+      body.append(label, note);
+      row.append(mark, body, status);
       return row;
     }));
   }
@@ -1187,8 +1492,7 @@
     if (model.status === "waiting") return waitHeadline(USER_STATE_LABELS.waiting, soonestWaitMs(now));
     if (model.status === "blocked") return USER_STATE_LABELS.needs;
     if (model.status === "stalled") return formatUserStateAction(USER_STATE_LABELS.needs, "停止超时");
-    if (model.status === "stopping") return USER_STATE_LABELS.stopping;
-    if (model.status === "starting") return USER_STATE_LABELS.starting;
+    if (model.status === "stopping" || model.status === "starting") return USER_STATE_LABELS.waiting;
     if (model.status === "unknown") return USER_STATE_LABELS.needs;
     if (model.status === "stopped") return USER_STATE_LABELS.stopped;
     if (model.status === "running") {
@@ -1229,6 +1533,8 @@
     button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${userStateLabelForTask(task.status)}`).join("，")}` : model.title);
     button.disabled = !model.action || busy;
     paintFlowDetails(panel);
+    paintScheduleStrip(panel);
+    paintScheduleDesk(panel);
   }
 
   function syncCurrentTaskPhase() {
@@ -1255,28 +1561,32 @@
     setRuntimeTaskActive(key, true, phase);
   }
 
-  function stopLocalTasks(reason = "全流程已暂停") {
+  function stopLocalTasks(reason = "全流程已暂停", { suspend = false } = {}) {
     if (likeState.running) likeController?.stop?.();
     if (state.mutual?.running) mutualApi?.stop?.();
     sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
     if (state.poster?.running) postApi?.stop?.();
     if (state.loopPromise || state.running) {
+      if (suspend) suspendingTask = true;
       cancelActiveAiRequest();
       state.stopping = true;
       state.running = false;
-      state.riskPaused = false;
-      state.riskCooldownUntil = 0;
-      state.pendingReply = "";
-      state.pendingTweetId = "";
-      state.pendingGrokInvite = false;
-      clearSaved();
+      if (!suspend) {
+        state.riskPaused = false;
+        state.riskCooldownUntil = 0;
+        state.pendingReply = "";
+        state.pendingTweetId = "";
+        state.pendingGrokInvite = false;
+        clearSaved();
+      }
       state.status = reason;
       renderPanel();
     }
   }
 
   function clearTaskSession() {
-    for (const key of [STORAGE_KEY, "xrc-ai-poster", "xrc-ai-poster-premium", "xrc-poster-used-sources"]) {
+    const taskKeys = Object.keys(sessionStorage).filter((key) => key.startsWith(TASK_STATE_PREFIX));
+    for (const key of [STORAGE_KEY, "xrcAssignedTaskMode", "xrc-ai-poster", "xrc-ai-poster-premium", "xrc-poster-used-sources", ...taskKeys]) {
       try { sessionStorage.removeItem(key); } catch (error) { /* Session storage may be unavailable. */ }
     }
   }
@@ -1877,9 +2187,26 @@
     };
   }
 
-  function readSaved() {
+  function taskStateKey(mode = currentTaskKey()) {
+    return `${TASK_STATE_PREFIX}${taskSnapshotAccount}:${validTaskKey(mode)}`;
+  }
+
+  async function hydrateTaskSnapshot(mode) {
+    const key = taskStateKey(mode);
     try {
-      const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      if (sessionStorage.getItem(key)) return;
+      const stored = await chrome.storage.local.get(key);
+      if (stored?.[key]) sessionStorage.setItem(key, JSON.stringify(stored[key]));
+    } catch (error) { /* A missing snapshot starts a fresh task. */ }
+  }
+
+  function readSaved(mode = currentTaskKey()) {
+    try {
+      const keyed = sessionStorage.getItem(taskStateKey(mode));
+      const legacy = sessionStorage.getItem(STORAGE_KEY);
+      const parsed = JSON.parse(keyed || legacy || "null");
+      const legacyMode = parsed?.assistantMode === "mutual" ? `mutual-${parsed.mutualMode}` : parsed?.assistantMode;
+      if (!keyed && legacy && legacyMode !== mode) return savedDefaults();
       if (!parsed || typeof parsed !== "object" || parsed.phraseStore !== PHRASE_STORE) {
         return savedDefaults();
       }
@@ -1930,7 +2257,7 @@
 
   function writeSaved(value) {
     sessionStorage.setItem(
-      STORAGE_KEY,
+      taskStateKey(),
       JSON.stringify({
         running: Boolean(value.running),
         total: Number(value.total) || 0,
@@ -1966,11 +2293,20 @@
         phraseStore: PHRASE_STORE
       })
     );
+    persistTaskSnapshot();
+  }
+
+  function persistTaskSnapshot() {
+    const key = taskStateKey();
+    let snapshot;
+    try { snapshot = JSON.parse(sessionStorage.getItem(key) || "null"); } catch (error) { return; }
+    if (!snapshot || !chrome.storage?.local?.set) return;
+    taskSnapshotWrite = taskSnapshotWrite.catch(() => {}).then(() => chrome.storage.local.set({ [key]: snapshot }));
   }
 
   function clearSaved() {
     sessionStorage.setItem(
-      STORAGE_KEY,
+      taskStateKey(),
       JSON.stringify({
         running: false,
         total: 0,
@@ -2001,6 +2337,7 @@
         phraseStore: PHRASE_STORE
       })
     );
+    persistTaskSnapshot();
   }
 
   function currentPhrase() {
@@ -3582,7 +3919,7 @@
   }
 
   function selectMutualMode(mode) {
-    return openTaskTab(mutualTaskKey(mode));
+    return scheduleDashboardActive() ? selectTaskForInspection(mutualTaskKey(mode)) : openTaskTab(mutualTaskKey(mode));
   }
 
   function centerPhraseItem(panel, item, behavior = "smooth") {
@@ -3667,11 +4004,31 @@
     const pageMeta = {
       model: ["模型设置", "密钥、回退顺序与提示词"],
       pace: ["频率设置", "回复与发帖的间隔和轮次"],
+      schedule: ["排班设置", "八项任务共用一个执行页签"],
       other: ["其他设置", "显示与社区回执"],
     }[configPage] || ["其他设置", "显示与社区回执"];
     if (title) title.textContent = pageMeta[0];
     if (caption) caption.textContent = pageMeta[1];
+    const slice = panel.querySelector("[data-xrc-schedule-slice]");
+    if (slice && document.activeElement !== slice) slice.value = String([20, 30, 45].includes(Number(taskSchedule.sliceSeconds)) ? taskSchedule.sliceSeconds : 30);
+    panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
+      const rule = taskSchedule.rules?.[row.dataset.xrcScheduleRule] || {};
+      const enabled = row.querySelector("[data-xrc-schedule-enabled]");
+      const priority = row.querySelector("[data-xrc-schedule-priority]");
+      const windowSelect = row.querySelector("[data-xrc-schedule-window]");
+      if (enabled && document.activeElement !== enabled) enabled.checked = rule.enabled !== false;
+      if (priority && document.activeElement !== priority) priority.value = String(rule.priority || (["timeline", "notifications"].includes(row.dataset.xrcScheduleRule) ? 2 : 1));
+      if (windowSelect && document.activeElement !== windowSelect) windowSelect.value = rule.window || (row.dataset.xrcScheduleRule === "poster-premium" ? "day" : "all");
+    });
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function scheduleRuleRowsMarkup() {
+    return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
+      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><strong>${label}</strong></label>
+      <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级"><option value="1">常规</option><option value="2">优先</option><option value="3">最高</option></select></label>
+      <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option></select></label>
+    </div>`).join("");
   }
 
   function openModelSettingsForKey(panel) {
@@ -3886,8 +4243,8 @@
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <div class="xrc-quick-actions" aria-label="面板操作">
               <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
-              <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg></button>
-              <button type="button" data-xrc-expand aria-label="放大面板" title="放大面板"><svg class="xrc-icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg><svg class="xrc-icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6h3V3M13 6h-3V3M10 13v-3h3M6 13v-3H3"></path></svg></button>
+              <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M4.5 6 8 2.5 11.5 6M4.5 10 8 13.5 11.5 10"></path></svg></button>
+              <button type="button" data-xrc-expand aria-label="放大面板" title="放大面板"><svg class="xrc-icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg><svg class="xrc-icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 5h7v7H5zM3.5 9.5v-6h6"></path></svg></button>
               <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
             </div>
             <button class="xrc-view-button xrc-actions-toggle" type="button" data-xrc-actions-toggle aria-label="展开操作菜单" aria-expanded="false" aria-controls="xrc-header-menu" title="展开操作菜单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"></path></svg></button>
@@ -3899,6 +4256,7 @@
           <button type="button" data-xrc-monitor-open aria-expanded="false">异常监控</button>
           <button type="button" data-xrc-config-open="model" aria-expanded="false">模型设置</button>
           <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率设置</button>
+          <button type="button" data-xrc-config-open="schedule" aria-expanded="false">排班设置</button>
           <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
           <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
           <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
@@ -3977,6 +4335,14 @@
             <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
           </div>
           <div class="xrc-docs-content">
+            <section class="xrc-docs-section" data-xrc-config-section="schedule">
+              <div class="xrc-docs-title"><b>01</b><span><strong>单页签轮班</strong><small>同一账号同时只执行一项；等待时让出页签</small></span></div>
+              <p class="xrc-config-note">在这里选择参与任务、优先级和北京时间可运行时段。冷却与发帖档位仍优先；切换前会等待当前动作安全结束。每个 Chrome 配置文件单独保存。</p>
+              <label class="xrc-schedule-slice">单项最长占用 <select data-xrc-schedule-slice aria-label="单项最长占用时间"><option value="20">20 秒</option><option value="30">30 秒</option><option value="45">45 秒</option></select></label>
+              <div class="xrc-schedule-rules">${scheduleRuleRowsMarkup()}</div>
+              <p class="xrc-config-note" data-xrc-schedule-status role="status">设置修改后自动保存；高优先级不会跳过其他任务的到期和冷却。</p>
+              <button type="button" class="xrc-flow-docs-link" data-xrc-docs-target="xrc-docs-flow">查看单页签排班说明 ↗</button>
+            </section>
             <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
               <label class="xrc-config-row">
@@ -4059,20 +4425,50 @@
           </div>
           <div class="xrc-flow-launch">
             <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
-            <button class="xrc-flow-details-trigger" type="button" data-xrc-flow-details-open aria-haspopup="dialog" aria-controls="xrc-flow-details" aria-label="查看任务详情">详情</button>
+            <button class="xrc-flow-details-trigger" type="button" data-xrc-desk-home aria-label="回到排班台">排班台</button>
           </div>
-          <div class="xrc-flow-details" id="xrc-flow-details" data-xrc-flow-details role="dialog" aria-modal="true" aria-labelledby="xrc-flow-details-title" hidden>
-            <div class="xrc-flow-details-card">
-              <div class="xrc-flow-details-head"><div><strong id="xrc-flow-details-title">任务详情</strong><p data-xrc-flow-details-total>正在读取任务状态…</p></div><button type="button" data-xrc-flow-details-close aria-label="关闭任务详情">×</button></div>
-              <ul data-xrc-flow-details-list></ul>
-            </div>
-          </div>
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="每项使用独立窗口。切过去后，原来的任务仍是自己窗口里的当前页">
+          <div class="xrc-schedule-strip" data-xrc-schedule-strip role="status"><div class="xrc-timeline-summary"><p><b>上一任务</b><span data-xrc-timeline-past>暂无轮班记录</span></p><p><b>当前任务</b><span data-xrc-timeline-current>正在读取排班状态…</span></p><p><b>下一任务</b><span data-xrc-timeline-next>等待任务到期</span></p></div><button type="button" data-xrc-desk-home>排班</button></div>
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="八项任务由后台排班，共用一个执行页签；点分组进入子页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="poster"><button type="button" role="tab" data-xrc-assistant="poster"><span>定时发帖</span></button></div>
           </div>
+        </div>
+        <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk aria-label="排班台">
+          <div class="xrc-desk-head">
+            <div>
+              <div class="xrc-desk-kicker">单页签轮班</div>
+              <strong>排班台</strong>
+              <p data-xrc-desk-total>正在读取任务状态…</p>
+            </div>
+            <div class="xrc-desk-legend" aria-hidden="true">
+              <span data-tone="running"><i></i>运行</span>
+              <span data-tone="waiting"><i></i>等待</span>
+              <span data-tone="stopped"><i></i>停止</span>
+            </div>
+          </div>
+          <div class="xrc-desk-rail" role="status">
+            <div class="xrc-desk-rail-card" data-rail="past"><em>上一任务</em><strong data-xrc-desk-past>暂无轮班记录</strong></div>
+            <div class="xrc-desk-rail-card is-now" data-rail="now"><em>当前任务</em><strong data-xrc-desk-now>正在读取…</strong></div>
+            <div class="xrc-desk-rail-card" data-rail="next"><em>下一任务</em><strong data-xrc-desk-next>等待任务到期</strong></div>
+          </div>
+          <section class="xrc-schedule-board" data-xrc-schedule-board aria-label="实时排班情况">
+            <div class="xrc-desk-section-head">
+              <h3>轮班队列</h3>
+              <p data-xrc-schedule-summary>正在读取后台排班…</p>
+            </div>
+            <button class="xrc-focus-execution" type="button" data-xrc-focus-execution hidden>打开当前执行页签</button>
+            <ul data-xrc-schedule-list></ul>
+            <div class="xrc-desk-section-head xrc-desk-history-head">
+              <h3>最近轮班</h3>
+            </div>
+            <ul data-xrc-schedule-history></ul>
+          </section>
+        </div>
+        <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
+          <button type="button" data-xrc-desk-back>← 排班台</button>
+          <strong data-xrc-task-subnav-label>任务子页</strong>
         </div>
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
@@ -4426,42 +4822,30 @@
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
-      const flowDetails = panel.querySelector("[data-xrc-flow-details]");
-      const flowDetailsTrigger = panel.querySelector("[data-xrc-flow-details-open]");
-      const closeFlowDetails = () => {
-        flowDetails.hidden = true;
-        flowDetailsTrigger.focus();
-      };
-      flowDetailsTrigger?.addEventListener("click", async () => {
-        flowDetails.hidden = false;
-        paintFlowDetails(panel);
-        panel.querySelector("[data-xrc-flow-details-close]").focus();
-        await loadPluginRuntime();
-        renderPanel();
+      panel.querySelectorAll("[data-xrc-desk-home], [data-xrc-desk-back]").forEach((button) => {
+        button.addEventListener("click", () => openScheduleDesk());
       });
-      panel.querySelector("[data-xrc-flow-details-close]")?.addEventListener("click", closeFlowDetails);
-      flowDetails?.addEventListener("click", (event) => {
-        const go = event.target.closest?.("[data-xrc-flow-task-open]");
-        if (go) {
-          closeFlowDetails();
-          void openTaskTab(go.dataset.xrcFlowTaskOpen);
+      const openDeskTask = (mode) => {
+        if (mode) openTaskSubpage(mode);
+      };
+      const onScheduleDeskActivate = (event) => {
+        const focus = event.target.closest?.("[data-xrc-focus-execution]");
+        if (focus && taskSchedule.current) {
+          void sendTaskMessage("xrc-task-open", taskSchedule.current).then(() => {
+            state.status = "已打开当前执行页签；排班未改变";
+            renderPanel();
+          }).catch((error) => { state.status = error?.message || "没有找到当前执行页签"; renderPanel(); });
           return;
         }
-        if (event.target === flowDetails) closeFlowDetails();
-      });
-      flowDetails?.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeFlowDetails();
-        } else if (event.key === "Tab") {
-          const buttons = Array.from(flowDetails.querySelectorAll("button:not([disabled])"));
-          const first = buttons[0];
-          const last = buttons.at(-1);
-          if ((event.shiftKey && event.target === first) || (!event.shiftKey && event.target === last)) {
-            event.preventDefault();
-            (event.shiftKey ? last : first)?.focus();
-          }
-        }
+        const go = event.target.closest?.("[data-xrc-inspect-task]");
+        if (go?.dataset?.xrcInspectTask) openDeskTask(go.dataset.xrcInspectTask);
+      };
+      panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("click", onScheduleDeskActivate);
+      panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        if (!event.target.closest?.("[data-xrc-inspect-task], [data-xrc-focus-execution]")) return;
+        event.preventDefault();
+        onScheduleDeskActivate(event);
       });
       panel.querySelector("[data-xrc-report-account]").addEventListener("change", (event) => {
         dailyReportAccount = event.currentTarget.value;
@@ -4515,17 +4899,24 @@
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
       });
       panel.querySelectorAll("[data-xrc-reply-tab]").forEach((button) => {
-        button.addEventListener("click", () => openTaskTab(button.dataset.xrcReplyTab));
+        button.addEventListener("click", () => scheduleDashboardActive() ? selectTaskForInspection(button.dataset.xrcReplyTab) : openTaskTab(button.dataset.xrcReplyTab));
       });
       panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
-        button.addEventListener("click", () => openTaskTab(`likes-${button.dataset.xrcLikeTab}`));
+        button.addEventListener("click", () => scheduleDashboardActive() ? selectTaskForInspection(`likes-${button.dataset.xrcLikeTab}`) : openTaskTab(`likes-${button.dataset.xrcLikeTab}`));
       });
       panel.querySelectorAll("[data-xrc-post-tab]").forEach((button) => {
-        button.addEventListener("click", () => openTaskTab(button.dataset.xrcPostTab === "premium" ? "poster-premium" : "poster"));
+        button.addEventListener("click", () => {
+          const mode = button.dataset.xrcPostTab === "premium" ? "poster-premium" : "poster";
+          return scheduleDashboardActive() ? selectTaskForInspection(mode) : openTaskTab(mode);
+        });
       });
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         button.addEventListener("click", () => {
           const group = button.dataset.xrcAssistant;
+          if (scheduleDashboardActive()) {
+            selectTaskForInspection(taskGroupTarget(group).mode);
+            return;
+          }
           if (group === "mutual") {
             openMutualWindows();
             return;
@@ -4583,6 +4974,28 @@
             return;
           }
           scheduleConfigSave(panel, true);
+        });
+      });
+      panel.querySelectorAll("[data-xrc-schedule-slice], [data-xrc-schedule-enabled], [data-xrc-schedule-priority], [data-xrc-schedule-window]").forEach((input) => {
+        input.addEventListener("change", async () => {
+          const status = panel.querySelector("[data-xrc-schedule-status]");
+          const rules = { ...(taskSchedule.rules || {}) };
+          panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
+            rules[row.dataset.xrcScheduleRule] = {
+              enabled: Boolean(row.querySelector("[data-xrc-schedule-enabled]")?.checked),
+              priority: Number(row.querySelector("[data-xrc-schedule-priority]")?.value) || 1,
+              window: row.querySelector("[data-xrc-schedule-window]")?.value || "all"
+            };
+          });
+          if (status) status.textContent = "正在保存排班设置…";
+          try {
+            const saved = await sendExtensionMessage({ type: "xrc-schedule-config-set", rules,
+              sliceSeconds: Number(panel.querySelector("[data-xrc-schedule-slice]")?.value) || 30 });
+            taskSchedule = { ...taskSchedule, rules: saved.rules, sliceSeconds: saved.sliceSeconds };
+            if (status) status.textContent = "排班设置已保存；后台会在安全节点应用";
+          } catch (error) {
+            if (status) status.textContent = error?.message || "排班设置保存失败";
+          }
         });
       });
       panel.querySelector("[data-xrc-community-secret]")?.addEventListener("change", async () => {
@@ -4967,7 +5380,14 @@
     panel.dataset.view = state.panelView;
     panel.dataset.assistantMode = state.assistantMode;
     panel.dataset.replyMode = state.replyMode;
+    panel.dataset.desk = deskHome ? "home" : "task";
     panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : "main";
+    const subnav = panel.querySelector("[data-xrc-task-subnav]");
+    if (subnav) {
+      subnav.hidden = deskHome;
+      const subnavLabel = subnav.querySelector("[data-xrc-task-subnav-label]");
+      if (subnavLabel) subnavLabel.textContent = TASK_MODE_LABELS[selectedTaskMode] || TASK_MODE_LABELS[currentTaskKey()] || "任务子页";
+    }
     renderTodaySummary(panel);
     const stableRuntime = panel.querySelector("[data-xrc-stable-runtime]");
     if (stableRuntime) {
@@ -4997,18 +5417,13 @@
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
       stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
-        ? USER_STATE_LABELS.stopping
-        : state.riskPaused || reconnecting
-          ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
-          : waitingForNextCycle
-          ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
-          : waitingUi
-            ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
-            : completed
-              ? USER_STATE_LABELS.stopped
-              : failed
-                ? USER_STATE_LABELS.needs
-                : active ? USER_STATE_LABELS.running : USER_STATE_LABELS.stopped;
+        || state.riskPaused || reconnecting || waitingForNextCycle || waitingUi
+        ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
+        : completed
+          ? USER_STATE_LABELS.stopped
+          : failed
+            ? USER_STATE_LABELS.needs
+            : active ? USER_STATE_LABELS.running : USER_STATE_LABELS.stopped;
       const stateBadge = stateLabel.closest(".xrc-state");
       stateBadge?.setAttribute("aria-label", stateLabel.textContent);
       stateBadge?.setAttribute("title", stateLabel.textContent);
@@ -5059,7 +5474,8 @@
         state.startedAt = null;
         state.running = false;
         state.stopping = false;
-        clearSaved();
+        if (suspendingTask) writeSaved({ running: false, total: state.total });
+        else clearSaved();
         setRuntimeTaskActive(state.assistantMode, false);
         if (stoppedByUser) state.status = "已手动停止";
         renderPanel();
@@ -5162,12 +5578,21 @@
 
   async function boot() {
     await clearStaleSessionAfterReset();
-    const saved = readSaved();
-    rememberAccountHandle();
+    const knownHandle = rememberAccountHandle();
+    let storedAccount = "";
+    if (!knownHandle) {
+      try { storedAccount = (await chrome.storage.local.get("xrcAccountHandle"))?.xrcAccountHandle || ""; }
+      catch (error) { /* Keep a separate anonymous snapshot until the account is known. */ }
+    }
+    taskSnapshotAccount = loopApi.normalizeHandle(knownHandle || storedAccount) || "default";
     await mergeLegacyAccountData();
     const requested = requestedLaunch();
     const pending = await consumePendingLaunch();
     const launch = requested || pending;
+    const assignedMode = launch?.taskKey || sessionStorage.getItem("xrcAssignedTaskMode") || "timeline";
+    await hydrateTaskSnapshot(assignedMode);
+    const saved = readSaved(assignedMode);
+    if (launch?.taskKey) sessionStorage.setItem("xrcAssignedTaskMode", launch.taskKey);
     state.total = saved.total;
     state.pageCount = saved.pageCount;
     state.completedRounds = saved.completedRounds;
@@ -5267,18 +5692,62 @@
     boot();
   }
 
+  function pathReadyForTask(mode) {
+    const key = validTaskKey(mode);
+    const path = window.location.pathname.replace(/\/+$/u, "") || "/";
+    if (key === "notifications") return isNotificationPath();
+    if (key.startsWith("mutual-")) {
+      const mutualMode = key.slice("mutual-".length);
+      return Boolean(mutualApi?.listReady?.(mutualMode));
+    }
+    return path === "/home" || path === "/";
+  }
+
+  async function handoffInPageTask(mode) {
+    const launch = launchFromMode(mode, true);
+    if (!launch?.taskKey) return { ok: false, error: "无法识别目标任务" };
+    if (!pathReadyForTask(launch.taskKey)) return { ok: false, needNavigate: true };
+    if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) {
+      stopLocalTasks("安全切换到下一项任务", { suspend: true });
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline && (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise)) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) {
+        return { ok: false, error: "当前动作尚未安全结束" };
+      }
+    }
+    deskHome = true;
+    sessionStorage.setItem("xrcDeskHome", "1");
+    sessionStorage.setItem("xrcAssignedTaskMode", launch.taskKey);
+    selectedTaskMode = launch.taskKey;
+    sessionStorage.setItem("xrcSelectedTaskMode", launch.taskKey);
+    state.assistantMode = launch.assistantMode;
+    state.mutualMode = launch.mutualMode || state.mutualMode || "";
+    applyTaskTitle();
+    await registerCurrentTaskTab(launch.taskKey);
+    await startLaunchedTask(launch);
+    renderPanel();
+    const phase = currentTaskPhase();
+    if (!phase && !state.running && !likeState.running && !state.mutual?.running && !state.poster?.running) {
+      return { ok: false, error: state.status || "任务未能启动" };
+    }
+    return { ok: true, phase: phase || "running" };
+  }
+
   globalThis.chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
     if (message?.type === "xrc-task-start") {
-      if (!["timeline", "notifications"].includes(message.mode) || currentTaskKey() !== message.mode) {
-        sendResponse({ ok: false, error: "任务窗口与目标任务不一致" });
-        return false;
-      }
       (async () => {
-        if (!state.running && state.loopPromise) return { ok: false, error: "上一轮评论任务仍在停止，请稍后重试" };
-        if (!state.running) await onToggle();
-        return state.running
-          ? { ok: true, phase: currentTaskPhase() }
-          : { ok: false, error: state.status || "评论任务未能启动" };
+        const mode = validTaskKey(message.mode);
+        if (!mode) return { ok: false, error: "无法识别目标任务" };
+        if (currentTaskKey() === mode && ["timeline", "notifications"].includes(mode)) {
+          if (!state.running && state.loopPromise) return { ok: false, error: "上一轮评论任务仍在停止，请稍后重试" };
+          if (!state.running) await onToggle();
+          return state.running
+            ? { ok: true, phase: currentTaskPhase() }
+            : { ok: false, error: state.status || "评论任务未能启动" };
+        }
+        return handoffInPageTask(mode);
       })().then(sendResponse, (error) => sendResponse({ ok: false, error: error?.message || "评论任务启动失败" }));
       return true;
     }
@@ -5309,7 +5778,8 @@
     }
     if (message?.type === "xrc-task-suspend") {
       (async () => {
-        stopLocalTasks(message.reason || "后台队列暂时关闭此窗口");
+        const mode = currentTaskKey();
+        stopLocalTasks(message.reason || "后台队列暂时关闭此窗口", { suspend: true });
         const deadline = Date.now() + 30000;
         while (Date.now() < deadline && (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise)) {
           await new Promise((resolve) => setTimeout(resolve, 250));
@@ -5317,6 +5787,15 @@
         if (likeState.stopping || state.mutual?.stopping || state.poster?.stopping || state.loopPromise) return { ok: false, error: "当前动作尚未安全结束" };
         if (state.assistantMode === "mutual") await mutualApi?.persistForSuspend?.();
         if (isPosterMode()) await postApi?.persistForSuspend?.();
+        const snapshot = readSaved(mode);
+        const saved = { ...snapshot, running: false, assistantMode: state.assistantMode, mutualMode: state.mutualMode,
+          phraseStore: PHRASE_STORE, notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
+          unfollowEnglishDefaultVersion: 1 };
+        const key = taskStateKey(mode);
+        await taskSnapshotWrite.catch(() => {});
+        await chrome.storage.local.set({ [key]: saved });
+        sessionStorage.setItem(key, JSON.stringify(saved));
+        suspendingTask = false;
         return { ok: true };
       })().then(sendResponse, (error) => sendResponse({ ok: false, error: String(error?.message || error) }));
       return true;
@@ -5334,7 +5813,10 @@
     if (changes[PLUGIN_RUNTIME_KEY]) {
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
     }
-    if (changes.xrcTaskSchedule) taskSchedule = changes.xrcTaskSchedule.newValue || { enabled: false, items: {} };
+    if (changes.xrcTaskSchedule) {
+      taskSchedule = changes.xrcTaskSchedule.newValue || { enabled: false, items: {} };
+      if (Date.now() - lastScheduleReadAt > 3000) void refreshScheduleView();
+    }
     if (changes[DEV_UPDATE_KEY]) {
       localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;
       if (["stopping", "applying", "updated", "failed"].includes(localDevUpdate?.phase)) updateActionMessage = "";
@@ -5359,6 +5841,7 @@
 
   let idleRenderTicks = 0;
   window.setInterval(() => {
+    if (taskSchedule.enabled && Date.now() - lastScheduleReadAt > 30000) void refreshScheduleView();
     const active = state.running || state.mutual?.running || state.poster?.running || likeState.running;
     const waitingDeadline = soonestWaitMs() > 0;
     const warnings = automationWarningNodes();

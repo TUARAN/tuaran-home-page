@@ -77,7 +77,7 @@ export default function TaskWindowPlan() {
   return (
     <figure className="overflow-hidden rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_88%,transparent)]" aria-labelledby="task-window-plan-title">
       <div className="border-b border-[var(--site-line)] px-4 py-4 md:px-5">
-        <span className="inline-flex rounded-full border border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] px-2 py-0.5 text-[10px] font-semibold text-[var(--site-green)]">规划方案 · 尚未实施</span>
+        <span className="inline-flex rounded-full border border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] px-2 py-0.5 text-[10px] font-semibold text-[var(--site-green)]">v4 本地开发 · 场景示意</span>
         <h4 id="task-window-plan-title" className="mt-2 text-[15px] font-semibold text-[var(--site-ink)]">一个账号一个执行页签 · 八项任务轮班</h4>
         <p className="mt-1 text-[12px] leading-5 text-[var(--site-muted)]">两个账号分别调度。页签负责当前动作，扩展后台保管每项任务的进度、等待原因和下次执行时间。</p>
       </div>
@@ -107,7 +107,7 @@ export default function TaskWindowPlan() {
         </div>
       </div>
       <figcaption className="border-t border-[var(--site-line)] px-4 py-3 text-[11px] leading-5 text-[var(--site-faint)] md:px-5">
-        这是拟改造的排班示意。切换页面前必须确认当前动作已结束并保存草稿、已处理记录、冷却截止时间；面板不能把排队中的任务显示成正在执行。
+        这是排班场景示意。切换页面前，扩展会等待当前动作结束并保存草稿、已处理记录和冷却截止时间；排队中的任务显示为等待中。
       </figcaption>
     </figure>
   )

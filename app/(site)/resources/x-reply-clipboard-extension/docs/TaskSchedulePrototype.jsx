@@ -67,7 +67,7 @@ export default function TaskSchedulePrototype() {
   const [account, setAccount] = useState('a')
   const [momentIndex, setMomentIndex] = useState(0)
   const [coolingTask, setCoolingTask] = useState('')
-  const [slice, setSlice] = useState(15)
+  const [slice, setSlice] = useState(30)
   const plan = plans[account]
   const moment = MOMENTS[momentIndex]
   const { eligible, excluded } = buildPreview(plan, moment, coolingTask)
@@ -142,7 +142,7 @@ export default function TaskSchedulePrototype() {
             </label>
             <label className="flex items-center gap-1 text-[11px] text-[var(--site-muted)]">单次占用
               <select value={slice} onChange={(event) => setSlice(Number(event.target.value))} className={selectClass}>
-                <option value={5}>5 分钟</option><option value={10}>10 分钟</option><option value={15}>15 分钟</option>
+                <option value={20}>20 秒</option><option value={30}>30 秒</option><option value={45}>45 秒</option>
               </select>
             </label>
             <label className="flex items-center gap-1 text-[11px] text-[var(--site-muted)]">模拟冷却
@@ -155,7 +155,7 @@ export default function TaskSchedulePrototype() {
             <div className="rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] p-3">
               <div className="text-[10px] font-semibold text-[var(--site-faint)]">当前可运行队列 · {eligible.length} 项</div>
               {eligible.length ? <ol className="mt-2 space-y-1.5">
-                {eligible.map((task, index) => <li key={task.id} className="flex items-center gap-2 text-[11px] text-[var(--site-muted)]"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${index === 0 ? 'bg-[var(--site-green)] text-white' : 'bg-[var(--site-panel-strong)] text-[var(--site-faint)]'}`}>{index + 1}</span><span className={index === 0 ? 'font-semibold text-[var(--site-ink)]' : ''}>{task.label}</span><span className="ml-auto text-[10px] text-[var(--site-faint)]">{index === 0 ? `执行 ≤ ${slice} 分钟` : '等待轮换'}</span></li>)}
+                {eligible.map((task, index) => <li key={task.id} className="flex items-center gap-2 text-[11px] text-[var(--site-muted)]"><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${index === 0 ? 'bg-[var(--site-green)] text-white' : 'bg-[var(--site-panel-strong)] text-[var(--site-faint)]'}`}>{index + 1}</span><span className={index === 0 ? 'font-semibold text-[var(--site-ink)]' : ''}>{task.label}</span><span className="ml-auto text-[10px] text-[var(--site-faint)]">{index === 0 ? `执行 ≤ ${slice} 秒` : '等待轮换'}</span></li>)}
               </ol> : <p className="mt-2 text-[11px] text-[var(--site-muted)]">当前没有可运行任务；页签保持空闲，等待下一次到期检查。</p>}
             </div>
             <div className="rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] p-3">

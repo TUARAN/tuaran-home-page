@@ -7,6 +7,14 @@
   const SETTLE_MS = 60 * 1000;
   const RELOAD_EXPIRES_MS = 5 * 60 * 1000;
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+  const TASK_SCHEDULE_KEY = "xrcTaskSchedule";
+
+  async function restoreTaskSchedule(chromeApi, shouldResume) {
+    if (!shouldResume) return;
+    const stored = await chromeApi.storage.local.get(TASK_SCHEDULE_KEY);
+    const schedule = stored?.[TASK_SCHEDULE_KEY];
+    if (schedule && !schedule.enabled) await chromeApi.storage.local.set({ [TASK_SCHEDULE_KEY]: { ...schedule, enabled: true } });
+  }
 
   function compareVersions(left, right) {
     const parse = (value) => /^\d+(?:\.\d+){2,3}$/.test(String(value || ""))
@@ -124,9 +132,12 @@
       return { ok: false, error: "本地目录没有比当前扩展更新的版本" };
     }
     let resumeModes = {};
+    let resumeSchedule = false;
     let stoppedForUpdate = false;
     try {
       let runtime = await readRuntime({ prune: true });
+      const scheduleStored = await chromeApi.storage.local.get(TASK_SCHEDULE_KEY);
+      resumeSchedule = Boolean(scheduleStored?.[TASK_SCHEDULE_KEY]?.enabled);
       const active = Object.keys(runtime?.tasks || {}).length > 0
         || ["starting", "stopping"].includes(runtime?.flow?.phase);
       if (active && !force) {
@@ -136,6 +147,7 @@
       resumeModes = Object.fromEntries(Object.entries(runtime?.tasks || {})
         .filter(([, task]) => Number.isInteger(task?.tabId) && ["running", "paused"].includes(task.phase))
         .map(([mode, task]) => [String(task.tabId), mode]));
+      if (resumeSchedule) resumeModes = {};
       if (active && force) {
         if (typeof stopTasks !== "function") throw new Error("无法停止当前任务，更新尚未开始");
         await setStatus({ version: next, installed, phase: "stopping", at: now() }, chromeApi);
@@ -154,7 +166,7 @@
       }
       const open = await taskTabs();
       const tabs = [...new Set([...Object.values(open?.tabs || {}), ...Object.keys(resumeModes).map(Number)].filter(Number.isInteger))];
-      await chromeApi.storage.local.set({ [RELOAD_KEY]: { version: next, at: now(), tabs, resumeModes } });
+      await chromeApi.storage.local.set({ [RELOAD_KEY]: { version: next, at: now(), tabs, resumeModes, resumeSchedule } });
       await setStatus({ version: next, installed, phase: "applying", at: now() }, chromeApi);
       reload();
       return { ok: true, version: next, phase: "applying" };
@@ -169,6 +181,7 @@
             const tabId = Number(savedTabId);
             await reloadTaskTab(chromeApi, tabId, mode, now());
           }
+          await restoreTaskSchedule(chromeApi, resumeSchedule);
           message += "；已尝试恢复原任务";
         } catch (restoreError) {
           message += "；部分任务可能需要手动重新启动";
@@ -199,6 +212,7 @@
         if (mode) failedModes.push(mode);
       }
     }
+    await restoreTaskSchedule(chromeApi, intent.resumeSchedule);
     if (!versionReady || failedModes.length) {
       const error = !versionReady
         ? "本地新版未加载，已尝试恢复原任务"

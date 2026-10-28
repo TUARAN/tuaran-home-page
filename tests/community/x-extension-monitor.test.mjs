@@ -20,12 +20,24 @@ test('X task snapshot validates phases and does not accept arbitrary task names'
       { mode: 'likes-posts', phase: 'waiting', updatedAt: NOW },
       { mode: 'invalid', phase: 'running' },
     ],
-  })
+    schedule: {
+      enabled: true,
+      current: 'timeline',
+      sliceSeconds: 30,
+      now: { mode: 'timeline', label: '评论帖子', actions: 1 },
+      next: { mode: 'notifications', status: 'ready', readyAt: NOW + 1000 },
+      facing: { running: 1, waiting: 2, needs: 0, stopped: 5 },
+    },
+  }, NOW)
   assert.deepEqual(runtime.tasks.map((task) => [task.mode, task.phase]), [
     ['timeline', 'running'],
     ['notifications', 'idle'],
     ['likes-posts', 'paused'],
   ])
+  assert.equal(runtime.schedule.enabled, true)
+  assert.equal(runtime.schedule.current, 'timeline')
+  assert.equal(runtime.schedule.next.mode, 'notifications')
+  assert.equal(runtime.schedule.facing.running, 1)
   const report = normalizeCommunityActionReport({ deviceId: 'device-x-monitor', platform: 'x', runtime: { phase: 'paused', tasks: [] } }, NOW)
   assert.equal(report.runtime.phase, 'paused')
 })

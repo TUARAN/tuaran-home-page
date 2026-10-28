@@ -1,0 +1,287 @@
+'use client'
+
+import { AdminButton, StatusPill } from '../../../components/ui'
+
+const MODE_LABEL = {
+  timeline: '评论帖子',
+  notifications: '评论通知',
+  'likes-posts': '点赞帖子',
+  'likes-replies': '点赞评论',
+  poster: '普通发帖',
+  'poster-premium': '精品发帖',
+  'mutual-unfollow': '清理未回关',
+  'mutual-followBack': '回关粉丝',
+  'mutual-targetFollow': '关注候选',
+}
+const TASK_PHASE = {
+  running: ['运行中', 'info'],
+  waiting: ['等待中', 'warning'],
+  paused: ['等待中', 'warning'],
+  stopping: ['等待中', 'warning'],
+  idle: ['已停止', 'neutral'],
+  unknown: ['需处理', 'warning'],
+  blocked: ['需处理', 'warning'],
+}
+const GROUP_PHASE = {
+  running: ['运行中', 'info'],
+  waiting: ['等待中', 'warning'],
+  stopping: ['等待中', 'warning'],
+  idle: ['已停止', 'neutral'],
+  unknown: ['需处理', 'warning'],
+}
+const COMMAND_LABEL = {
+  'flow-start': '全流程启动',
+  'flow-pause': '暂停全部',
+  'task-start': '启动任务',
+  'task-stop': '停止任务',
+  'ext-update': '远程更新插件',
+}
+const COMMAND_STATUS = {
+  pending: ['排队中', 'warning'],
+  claimed: ['已下发', 'info'],
+  done: ['已完成', 'success'],
+  failed: ['失败', 'danger'],
+  expired: ['已过期', 'neutral'],
+}
+const DEVICE_PHASE = {
+  running: ['运行中', 'info'],
+  paused: ['等待中', 'warning'],
+  stopping: ['等待中', 'warning'],
+  idle: ['已停止', 'neutral'],
+  online: ['有心跳', 'info'],
+  unknown: ['需处理', 'warning'],
+  offline: ['离线', 'danger'],
+}
+
+const time = (value) => (value ? new Date(value).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '—')
+const clock = (value) => (value ? new Date(value).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '')
+const waitCopy = (waitUntil, now) => {
+  const remaining = Number(waitUntil) - Number(now)
+  if (!(remaining > 0)) return ''
+  const total = Math.ceil(remaining / 1000)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const seconds = total % 60
+  if (hours > 0) return `${hours} 小时 ${minutes} 分`
+  if (minutes > 0) return `${minutes} 分 ${seconds} 秒`
+  return `${seconds} 秒`
+}
+
+const toneDot = (phase) => {
+  if (phase === 'running') return 'bg-emerald-400'
+  if (phase === 'waiting' || phase === 'paused' || phase === 'stopping') return 'bg-amber-400'
+  if (phase === 'unknown' || phase === 'blocked') return 'bg-rose-300'
+  return 'bg-slate-300'
+}
+
+function railText(card, fallback) {
+  if (!card) return fallback
+  const bits = [card.label || MODE_LABEL[card.mode] || card.mode]
+  if (Number(card.actions) > 0) bits.push(`${card.actions} 次`)
+  if (card.reason) bits.push(card.reason)
+  if (card.status === 'ready') bits.push('可立即运行')
+  else if (Number(card.readyAt) > 0) bits.push(`约 ${clock(card.readyAt)}`)
+  else if (Number(card.endedAt) > 0) bits.push(clock(card.endedAt))
+  return bits.filter(Boolean).join(' · ')
+}
+
+function facingSummary(facing) {
+  if (!facing) return '暂无任务状态'
+  const parts = [
+    facing.running ? `${facing.running} 项运行中` : '',
+    facing.waiting ? `${facing.waiting} 项等待中` : '',
+    facing.needs ? `${facing.needs} 项需处理` : '',
+    facing.stopped ? `${facing.stopped} 项已停止` : '',
+  ].filter(Boolean)
+  return parts.join(' · ') || '全部已停止'
+}
+
+export default function XPluginStatusDeck({ device, now, latestExtensionVersion, onCommand, busyKey }) {
+  const [label, tone] = DEVICE_PHASE[device.phase] || DEVICE_PHASE.unknown
+  const quiet = device.phase === 'running' && (!device.lastAction || now - Number(device.lastAction.occurred_at) > 30 * 60 * 1000)
+  const groups = Array.isArray(device.groups) ? device.groups : []
+  const commands = Array.isArray(device.commands) ? device.commands : []
+  const schedule = device.schedule
+  const canControl = device.online && device.telemetry
+  const canUpdate = device.online && device.updateAvailable
+  const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
+  const facing = device.facing || schedule?.facing
+  const flowBusy = Boolean(busyKey)
+
+  return (
+    <article className="border-t border-[#e5e9e2] first:border-t-0 dark:border-[#263142]">
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-semibold text-[#273228] dark:text-gray-100">
+            {device.accountHandle ? `@${device.accountHandle}` : '未识别账号'}
+          </span>
+          <span className="mt-0.5 block text-[12px] text-[#7a8479] dark:text-gray-400">
+            插件实例 {device.id.slice(0, 12)}… · v{device.extensionVersion || '未知'}
+            {canUpdate && latestExtensionVersion ? ` · 落后于 v${latestExtensionVersion}` : ''}
+          </span>
+        </span>
+        <span className="text-[12px] text-[#697268] dark:text-gray-400">心跳 {time(device.lastSeenAt)}</span>
+        {canUpdate ? <StatusPill size="sm" tone="warning">可更新</StatusPill> : null}
+        <StatusPill size="sm" tone={tone}>{label}</StatusPill>
+      </header>
+
+      <div className="border-t border-[#e5e9e2] bg-[#fafbf8] px-4 py-4 text-[13px] dark:border-[#263142] dark:bg-[#101820]">
+        {canControl || canUpdate ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {canControl && device.phase === 'idle' ? (
+              <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('flow-start')}>全流程启动</AdminButton>
+            ) : null}
+            {canControl && ['running', 'paused'].includes(device.phase) ? (
+              <AdminButton size="sm" disabled={flowBusy} onClick={() => send('flow-pause')}>暂停全部</AdminButton>
+            ) : null}
+            {canUpdate ? (
+              <AdminButton size="sm" variant={canControl ? 'ghost' : 'primary'} disabled={flowBusy} onClick={() => send('ext-update')}>
+                远程更新到 v{latestExtensionVersion}
+              </AdminButton>
+            ) : null}
+            <span className="self-center text-[11px] text-[#7a8479] dark:text-gray-400">
+              {canUpdate
+                ? '远程更新会停任务并重载本机已同步的新文件；目录仍是旧版时会回写失败。'
+                : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}
+            </span>
+          </div>
+        ) : null}
+
+        {device.telemetry ? (
+          <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
+            <div className="flex items-start justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
+              <div>
+                <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">排班台</p>
+                <p className="mb-0 mt-1 text-[12px] text-[#536471] dark:text-gray-400">
+                  {schedule?.enabled ? `单页签轮班 · 单次占用 ${schedule.sliceSeconds || 30} 秒` : '排班未启用或尚未上报轮班快照'}
+                </p>
+                <p className="mb-0 mt-1 text-[12px] text-[#0f1419] dark:text-gray-100">{facingSummary(facing)}</p>
+              </div>
+              <div className="flex gap-1" aria-hidden="true">
+                {groups.flatMap((group) => group.tasks).map((task) => (
+                  <i key={task.mode} className={`block h-2 w-2 rounded-full ${toneDot(task.phase)}`} title={`${task.label} · ${(TASK_PHASE[task.phase] || TASK_PHASE.idle)[0]}`} />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142] sm:grid-cols-3">
+              <div className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-3 py-2.5 dark:border-[#263142] dark:bg-[#101820]">
+                <em className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#697268] not-italic">上一任务</em>
+                <strong className="mt-1 block text-[12px] font-semibold text-[#0f1419] dark:text-gray-100">{railText(schedule?.past, '暂无轮班记录')}</strong>
+              </div>
+              <div className="rounded-xl border border-[#cfe3f5] bg-[#f0f8ff] px-3 py-2.5 dark:border-[#1d9bf0]/40 dark:bg-[#0f1a24]">
+                <em className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#1d9bf0] not-italic">当前任务</em>
+                <strong className="mt-1 block text-[12px] font-semibold text-[#0f1419] dark:text-gray-100">{railText(schedule?.now, device.phase === 'running' ? '轮班占用中' : '当前空闲')}</strong>
+              </div>
+              <div className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-3 py-2.5 dark:border-[#263142] dark:bg-[#101820]">
+                <em className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#697268] not-italic">下一任务</em>
+                <strong className="mt-1 block text-[12px] font-semibold text-[#0f1419] dark:text-gray-100">{railText(schedule?.next, '等待任务到期')}</strong>
+              </div>
+            </div>
+
+            {groups.length ? (
+              <div className="grid gap-0 sm:grid-cols-2">
+                {groups.map((group) => {
+                  const [groupLabel, groupTone] = GROUP_PHASE[group.phase] || GROUP_PHASE.idle
+                  return (
+                    <section key={group.id} className="border-t border-[#e8eef5] px-4 py-3 sm:border-r sm:odd:border-r dark:border-[#263142] sm:[&:nth-child(2n)]:border-r-0">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="m-0 text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">{group.label}</h3>
+                        <StatusPill size="sm" tone={groupTone}>{groupLabel}</StatusPill>
+                      </div>
+                      <ul className="m-0 list-none space-y-2 p-0">
+                        {group.tasks.map((task) => {
+                          const [taskLabel, taskTone] = TASK_PHASE[task.phase] || TASK_PHASE.idle
+                          const countdown = waitCopy(task.waitUntil, now)
+                          const detail = task.detail
+                            || (task.phase === 'waiting' || task.phase === 'paused' ? '任务已启动，正在等待下一轮或冷却结束'
+                              : task.phase === 'idle' ? '当前没有运行记录'
+                                : task.phase === 'unknown' ? '超过 90 秒没有状态更新'
+                                  : task.phase === 'stopping' ? '正在结束当前任务'
+                                    : '任务正在执行')
+                          const taskBusy = busyKey === `${device.id}:task-start:${task.mode}` || busyKey === `${device.id}:task-stop:${task.mode}`
+                          return (
+                            <li key={task.mode} className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-3 py-2.5 dark:border-[#263142] dark:bg-[#101820]">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <strong className="text-[12px] text-[#0f1419] dark:text-gray-100">{task.label || MODE_LABEL[task.mode] || task.mode}</strong>
+                                    <StatusPill size="sm" tone={taskTone}>{taskLabel}</StatusPill>
+                                    {countdown ? <span className="text-[11px] tabular-nums text-amber-700 dark:text-amber-300">{countdown}</span> : null}
+                                  </div>
+                                  <p className="mb-0 mt-1 text-[11px] leading-5 text-[#536471] dark:text-gray-400">
+                                    {detail}{task.updatedAt ? ` · 最近更新 ${clock(task.updatedAt)}` : ''}
+                                  </p>
+                                </div>
+                                {canControl && task.phase !== 'unknown' ? (
+                                  <div className="flex shrink-0 gap-1">
+                                    {task.phase === 'idle' ? (
+                                      <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-start', task.mode)} className="rounded-md border border-[#cfe3f5] px-2 py-1 text-[11px] font-semibold text-[#1d9bf0] disabled:opacity-40 dark:border-[#354438]">
+                                        {taskBusy ? '…' : '启动'}
+                                      </button>
+                                    ) : null}
+                                    {['running', 'waiting', 'paused'].includes(task.phase) ? (
+                                      <button type="button" disabled={Boolean(busyKey)} onClick={() => send('task-stop', task.mode)} className="rounded-md border border-[#f0d0d3] px-2 py-1 text-[11px] font-semibold text-[#f4212e] disabled:opacity-40 dark:border-[#354438]">
+                                        {taskBusy ? '…' : '停止'}
+                                      </button>
+                                    ) : null}
+                                    {task.phase === 'stopping' ? <span className="text-[11px] text-[#697268]">等待中…</span> : null}
+                                  </div>
+                                ) : null}
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </section>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="m-0 px-4 py-3 text-[#697268] dark:text-gray-400">当前没有任务状态快照</p>
+            )}
+          </div>
+        ) : (
+          <p className="m-0 text-[#697268] dark:text-gray-400">插件尚未上报任务状态；请更新到支持远程操控的版本并配置回执密钥。</p>
+        )}
+
+        {commands.length ? (
+          <div className="mt-4">
+            <h4 className="m-0 text-[12px] font-semibold text-[#273228] dark:text-gray-100">最近指令回执</h4>
+            <ul className="mt-2 list-none space-y-1.5 p-0">
+              {commands.slice(0, 5).map((item) => {
+                const [statusLabel, statusTone] = COMMAND_STATUS[item.status] || COMMAND_STATUS.pending
+                return (
+                  <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#e5e9e2] bg-white px-3 py-2 text-[12px] dark:border-[#263142] dark:bg-[#0d141c]">
+                    <span className="font-medium text-[#273228] dark:text-gray-100">
+                      {COMMAND_LABEL[item.command] || item.command}{item.modeLabel ? ` · ${item.modeLabel}` : ''}
+                    </span>
+                    <StatusPill size="sm" tone={statusTone}>{statusLabel}</StatusPill>
+                    <span className="text-[#7a8479] dark:text-gray-400">{time(item.finishedAt || item.claimedAt || item.createdAt)}</span>
+                    {item.result ? <span className="w-full text-[#536471] dark:text-gray-400">{item.result}</span> : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ) : null}
+
+        <dl className="mb-0 mt-4 grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-[#7a8479] dark:text-gray-400">最近确认动作</dt>
+            <dd className="m-0 mt-1">{device.lastAction ? `${time(device.lastAction.occurred_at)} · ${device.lastAction.taskLabel}` : '近 7 天无回执'}</dd>
+          </div>
+          <div>
+            <dt className="text-[#7a8479] dark:text-gray-400">最近失败或受限</dt>
+            <dd className="m-0 mt-1">{device.lastFailure ? `${time(device.lastFailure.occurred_at)} · ${device.lastFailure.taskLabel} · ${device.lastFailure.error_code || device.lastFailure.result}` : '近 7 天无异常回执'}</dd>
+          </div>
+        </dl>
+        {quiet ? (
+          <p className="mb-0 mt-3 rounded-md bg-amber-50 px-3 py-2 text-[12px] text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+            任务声明运行中，但近 30 分钟没有确认动作。可检查插件任务页是否在等待或受阻。
+          </p>
+        ) : null}
+      </div>
+    </article>
+  )
+}

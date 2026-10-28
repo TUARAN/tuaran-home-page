@@ -8431,11 +8431,28 @@
     scrollbar-gutter: stable;
   }
 
+  /* 标题和章数固定，只有条目区滚动，避免和面板自己的滚动条叠在一起 */
+  .toc-scroll-panel.toc-scroll-frame {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    scrollbar-gutter: auto;
+  }
+
+  .toc-scroll-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
   .toc-scroll-panel.article-toc-panel {
     position: static;
     top: auto;
     max-height: none;
     overflow: visible;
+    scrollbar-gutter: auto;
   }
 
   @media (min-width: 768px) {

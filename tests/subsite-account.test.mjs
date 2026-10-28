@@ -69,7 +69,7 @@ test('session exposes only verified identity and the canonical balance, without 
   assert.match(response.headers.get('Vary'), /Origin/)
 })
 
-test('guest identity and seed come from the existing signed guest service', async () => {
+test('guest session reads the existing balance and does not grant trial coins', async () => {
   const cookie = 'tuaran_guest=signed; Domain=.2aran.com; HttpOnly; Secure; SameSite=Lax'
   const { api, calls } = services({
     getUserFromRequest: async () => null,
@@ -80,7 +80,7 @@ test('guest identity and seed come from the existing signed guest service', asyn
   assert.equal(response.status, 200)
   assert.equal(response.headers.get('Set-Cookie'), cookie)
   assert.deepEqual(await response.json(), { version: 1, user: null, isGuest: true, balance: 123, checkedInToday: false })
-  assert.deepEqual(calls, ['guest:known-guest', 'guest:known-guest'])
+  assert.deepEqual(calls, ['guest:known-guest'])
 })
 
 test('blocked users and unavailable dependencies never become guests or zero balances', async () => {

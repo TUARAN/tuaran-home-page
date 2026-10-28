@@ -4,10 +4,14 @@ import test from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
 
 import {
+  GUEST_RETURN_GAP_MS,
   getGuestDirectoryEntry,
   getGuestDirectoryStats,
+  guestSegmentFromCounts,
   listGuestDirectory,
+  normalizeGuestStats,
 } from '../lib/auth/guestDirectory.js'
+import { balanceWithGuestTrial } from '../lib/ledger/guestTrial.js'
 
 function fakeD1({ allRows = [], firstRows = [] } = {}) {
   const calls = []
@@ -33,49 +37,80 @@ function fakeD1({ allRows = [], firstRows = [] } = {}) {
   }
 }
 
-test('游客列表只查询物化目录并限制为当前页', async () => {
+test('游客列表默认只查要关注的层，并限制为当前页', async () => {
   const rows = Array.from({ length: 31 }, (_, index) => ({
     user_id: `guest:${String(index).padStart(2, '0')}`,
     last_seen_at: 1000 - index,
+    unlock_count: 1,
   }))
   const db = fakeD1({ allRows: rows })
   const result = await listGuestDirectory(db, { limit: 30, status: 'active' })
 
   assert.equal(result.guests.length, 30)
+  assert.equal(result.guests[0].segment, 'unlocked')
   assert.equal(result.page.hasMore, true)
   assert.match(result.page.nextCursor, /^971:guest%3A29$/)
   assert.equal(db.calls.length, 1)
   assert.match(db.calls[0].sql, /FROM guest_directory/)
-  assert.match(db.calls[0].sql, /is_bound = \?1/)
+  assert.match(db.calls[0].sql, /FROM guest_directory/)
+  assert.match(db.calls[0].sql, /unlock_count > 0 OR spent > 0 OR comment_count > 0/)
   assert.doesNotMatch(db.calls[0].sql, /point_ledger|resource_unlocks|article_comments|guest_bindings/)
-  assert.deepEqual(db.calls[0].binds, [0, 31])
+  assert.deepEqual(db.calls[0].binds, [31])
 })
 
 test('游客深分页使用复合游标范围，不使用 OFFSET 或 OR 回扫', async () => {
   const db = fakeD1({ allRows: [] })
   await listGuestDirectory(db, { limit: 30, status: 'bound', cursor: '971:guest%3A29' })
 
-  assert.match(db.calls[0].sql, /\(last_seen_at, user_id\) < \(\?2, \?3\)/)
+  assert.match(db.calls[0].sql, /is_bound = 1/)
+  assert.match(db.calls[0].sql, /\(last_seen_at, user_id\) < \(\?1, \?2\)/)
   assert.match(db.calls[0].sql, /ORDER BY last_seen_at DESC, user_id DESC/)
-  assert.doesNotMatch(db.calls[0].sql, /\bOFFSET\b|last_seen_at\s*</i)
-  assert.deepEqual(db.calls[0].binds, [1, 971, 'guest:29', 31])
+  assert.doesNotMatch(db.calls[0].sql, /\bOFFSET\b/)
+  assert.doesNotMatch(db.calls[0].sql, /last_seen_at\s*</)
+  assert.deepEqual(db.calls[0].binds, [971, 'guest:29', 31])
 })
 
-test('游客详情按主键 user_id 查询，全局统计只读单行汇总', async () => {
+test('搜索词查全库游客 ID，不再套用当前分层', async () => {
+  const db = fakeD1({ allRows: [] })
+  await listGuestDirectory(db, { limit: 30, status: 'seed', query: 'Guest:ABC' })
+
+  assert.doesNotMatch(db.calls[0].sql, /comment_count = 0 AND last_seen_at/)
+  assert.match(db.calls[0].sql, /lower\(user_id\) = \?1/)
+  assert.match(db.calls[0].sql, /instr\(lower\(bound_user_id\), \?3\)/)
+  assert.deepEqual(db.calls[0].binds, ['guest:abc', 'guest:abc', 'guest:abc', 31])
+})
+
+test('游客分层按归并、解锁、评论、回访、试用互斥', () => {
+  assert.equal(guestSegmentFromCounts({ boundUserId: 'email:a', unlockCount: 2 }), 'bound')
+  assert.equal(guestSegmentFromCounts({ spent: 5 }), 'unlocked')
+  assert.equal(guestSegmentFromCounts({ commentCount: 1 }), 'commented')
+  assert.equal(guestSegmentFromCounts({ firstSeenAt: 1_000, lastSeenAt: 1_000 + GUEST_RETURN_GAP_MS }), 'returned')
+  assert.equal(guestSegmentFromCounts({ firstSeenAt: 1_000, lastSeenAt: 1_000 + GUEST_RETURN_GAP_MS - 1, ledgerCount: 1 }), 'seed')
+  assert.equal(normalizeGuestStats({ total: 10 }, { unlocked: 2, seed: 8 }).conversion, 0.25)
+  assert.equal(balanceWithGuestTrial({ balance: 0, seedAvailable: true, guestSeed: 5 }), 5)
+  assert.equal(balanceWithGuestTrial({ balance: 1, seedAvailable: false, guestSeed: 5 }), 1)
+})
+
+test('游客详情按主键 user_id 查询，分层统计另读物化目录一行汇总', async () => {
   const db = fakeD1({
     firstRows: [
-      { user_id: 'guest:abc', balance: 9, last_seen_at: 123 },
+      { user_id: 'guest:abc', balance: 9, last_seen_at: 123, unlock_count: 1 },
       { id: 1, total: 10, active: 8, bound: 2 },
+      { unlocked: 4, commented: 1, returned: 1, seed: 2, bound: 2 },
     ],
   })
   const guest = await getGuestDirectoryEntry(db, 'guest:abc')
   const stats = await getGuestDirectoryStats(db)
 
   assert.equal(guest.userId, 'guest:abc')
+  assert.equal(guest.segment, 'unlocked')
   assert.equal(stats.total, 10)
+  assert.equal(stats.segments.attention, 6)
+  assert.equal(stats.conversion, 2)
   assert.match(db.calls[0].sql, /WHERE user_id = \?1/)
   assert.deepEqual(db.calls[0].binds, ['guest:abc'])
   assert.equal(db.calls[1].sql, 'SELECT * FROM guest_stats WHERE id = 1')
+  assert.match(db.calls[2].sql, /FROM guest_directory/)
 })
 
 test('0088 迁移回填目录，并通过触发器增量维护目录和全局统计', () => {
@@ -146,13 +181,13 @@ test('同页并发请求和一分钟内重复访问只读一次，过期后重�
   const db = fakeD1()
   const [a, b] = await Promise.all([read(db), read(db)])
   assert.equal(a, b)
-  assert.equal(db.calls.length, 2)
+  assert.equal(db.calls.length, 3)
   time += 59_999
   assert.equal(await read(db), a)
-  assert.equal(db.calls.length, 2)
+  assert.equal(db.calls.length, 3)
   time += 1
   assert.notEqual(await read(db), a)
-  assert.equal(db.calls.length, 4)
+  assert.equal(db.calls.length, 6)
 })
 
 test('筛选、游标、数据库隔离；手动刷新使旧分页失效', async () => {
@@ -164,20 +199,20 @@ test('筛选、游标、数据库隔离；手动刷新使旧分页失效', async
   await read(db, next)
   await read(db, { status: 'bound' })
   await read(db, active)
-  assert.equal(db.calls.length, 6)
+  assert.equal(db.calls.length, 9)
   const other = fakeD1()
   await read(other, active)
-  assert.equal(other.calls.length, 2)
+  assert.equal(other.calls.length, 3)
   await read(db, active, true)
   await read(db, next)
-  assert.equal(db.calls.length, 10)
+  assert.equal(db.calls.length, 15)
 })
 
 test('缓存数量有上限，被淘汰的页重新查询', async () => {
   const read = createGuestDirectoryCache({ maxEntries: 2 })
   const db = fakeD1()
   for (const status of ['active', 'bound', 'all', 'active']) await read(db, { status })
-  assert.equal(db.calls.length, 8)
+  assert.equal(db.calls.length, 12)
 })
 
 test('查询失败不缓存，下一次请求可以恢复', async () => {
@@ -188,5 +223,5 @@ test('查询失败不缓存，下一次请求可以恢复', async () => {
   await assert.rejects(read(db), /D1 unavailable/)
   db.prepare = prepare
   assert.equal((await read(db)).guests.length, 0)
-  assert.equal(db.calls.length, 2)
+  assert.equal(db.calls.length, 3)
 })

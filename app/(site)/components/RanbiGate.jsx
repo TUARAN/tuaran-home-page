@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 import { useSessionAccount } from './SessionProvider'
 import { Skeleton } from '../../components/loading/LoadingPrimitives'
+import { balanceWithGuestTrial, guestTrialCredit } from '../../../lib/ledger/guestTrial'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -93,6 +94,8 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
   const isGuest = !user
   const cost = Number(state.cost || 0)
   const balance = Number(state.balance || 0)
+  const trial = guestTrialCredit(state)
+  const affordable = balanceWithGuestTrial(state) >= cost
 
   return (
     <div className="my-6">
@@ -103,7 +106,7 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
           需 <span className="font-semibold">{cost}</span> 燃币解锁，解锁后永久可读。
         </p>
 
-        {isGuest && balance < cost ? (
+        {isGuest && !affordable ? (
           <button
             type="button"
             onClick={goToLogin}
@@ -121,7 +124,10 @@ export default function RanbiGate({ resourceKey, children, preview = null, title
             >
               {busy ? '解锁中…' : `使用 ${cost} 燃币解锁`}
             </button>
-            <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">当前余额 {balance} 燃币</span>
+            <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">
+              当前余额 {balance} 燃币
+              {trial > 0 ? `，解锁时领取试用 ${trial} 燃币` : ''}
+            </span>
           </div>
         )}
 

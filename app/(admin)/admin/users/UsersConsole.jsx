@@ -20,6 +20,31 @@ const providerLabels = {
   email: '邮箱',
 }
 
+const GUEST_SEGMENT_LABELS = {
+  attention: '要关注',
+  unlocked: '已解锁',
+  commented: '写过评论',
+  returned: '回来过',
+  seed: '只领了试用',
+  bound: '已归并',
+}
+
+const guestSegmentStyles = {
+  unlocked: 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200',
+  commented: 'bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200',
+  returned: 'bg-[#eef1f6] text-[#475467] dark:bg-gray-800 dark:text-gray-300',
+  seed: 'bg-[#f4f4ef] text-[#67695d] dark:bg-gray-900 dark:text-gray-400',
+  bound: 'bg-[#eef1f6] text-[#475467] dark:bg-gray-800 dark:text-gray-300',
+}
+
+function formatGuestConversion(value) {
+  if (value == null || !Number.isFinite(value)) return '—'
+  const percent = value * 100
+  if (percent >= 10) return `${Math.round(percent)}%`
+  if (percent >= 1) return `${percent.toFixed(1)}%`
+  return `${percent.toFixed(2)}%`
+}
+
 const stickyUserTh =
   'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-16px_rgba(21,20,15,0.45)] dark:bg-[#0d1218]'
 const stickyUserTd =
@@ -71,7 +96,8 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
   const [guestStatus, setGuestStatus] = useState('idle')
   const [guestMessage, setGuestMessage] = useState('')
   const [guestQuery, setGuestQuery] = useState('')
-  const [guestFilter, setGuestFilter] = useState('active')
+  const [appliedGuestQuery, setAppliedGuestQuery] = useState('')
+  const [guestFilter, setGuestFilter] = useState('attention')
   const [guestDetail, setGuestDetail] = useState(null)
   const [guestDetailTarget, setGuestDetailTarget] = useState(null)
   const [guestDetailStatus, setGuestDetailStatus] = useState('idle')
@@ -136,6 +162,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
     setGuestMessage('')
     try {
       const params = new URLSearchParams({ limit: '30', status: guestFilter })
+      if (appliedGuestQuery) params.set('q', appliedGuestQuery)
       if (cursor) params.set('cursor', cursor)
       if (fresh) params.set('fresh', '1')
       const res = await fetch(`/api/admin/guests?${params}`, { cache: 'no-store', credentials: 'same-origin' })
@@ -155,9 +182,14 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
       setGuestStatus('error')
       setGuestMessage(String(error?.message || error))
     }
-  }, [guestFilter])
+  }, [guestFilter, appliedGuestQuery])
 
   const refreshGuests = useCallback(() => loadGuestPage('', [], true), [loadGuestPage])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedGuestQuery(guestQuery.trim()), 250)
+    return () => clearTimeout(timer)
+  }, [guestQuery])
 
   useEffect(() => {
     if (tabReady && activeTab === 'guests') {
@@ -191,26 +223,6 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
         .includes(q)
     })
   }, [users, query, roleFilter])
-
-  const filteredGuests = useMemo(() => {
-    const q = guestQuery.trim().toLowerCase()
-    return guests.filter((guest) => {
-      if (!q) return true
-      const u = displayNameForUserId(guest.userId)
-      return [
-        guest.userId,
-        guest.gid,
-        guest.boundUserId,
-        guest.latestLedger?.reason,
-        guest.latestLedger?.ref,
-        u.name,
-        u.short,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
-    })
-  }, [guests, guestQuery])
 
   const usersById = useMemo(() => Object.fromEntries(users.map((user) => [user.id, user])), [users])
 
@@ -565,13 +577,13 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
       width: '96px',
       tdClassName: 'whitespace-nowrap',
       render: (guest) =>
-        guest.boundUserId ? (
-          <span className="inline-block max-w-full truncate rounded-full bg-[#eef1f6] px-2 py-1 text-xs text-[#475467] dark:bg-gray-800 dark:text-gray-300" title={guest.boundUserId}>
-            历史身份 -&gt; {displayNameForUserId(guest.boundUserId).short}
+        guest.segment === 'bound' && guest.boundUserId ? (
+          <span className={`inline-block max-w-full truncate rounded-full px-2 py-1 text-xs ${guestSegmentStyles.bound}`} title={guest.boundUserId}>
+            已归并 → {displayNameForUserId(guest.boundUserId).short}
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-            未绑定
+          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${guestSegmentStyles[guest.segment] || guestSegmentStyles.seed}`}>
+            {GUEST_SEGMENT_LABELS[guest.segment] || '游客'}
           </span>
         ),
     },
@@ -807,12 +819,17 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
           ) : null}
 
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="游客总数" value={guestStats?.total ?? guests.length} icon="users" />
-            <StatCard label="未绑定" value={guestStats?.active ?? 0} tone="success" />
-            <StatCard label="已绑定" value={guestStats?.bound ?? 0} />
-            <StatCard label="历史游客余额" value={guestStats?.totalBalance ?? 0} />
-            <StatCard label="累计解锁" value={guestStats?.unlocks ?? 0} />
-            <StatCard label="解锁燃币" value={guestStats?.totalSpent ?? 0} tone="danger" />
+            <StatCard label="已解锁" value={guestStats?.segments?.unlocked ?? 0} tone="warning" sub="花过燃币或解开过内容" />
+            <StatCard label="写过评论" value={guestStats?.segments?.commented ?? 0} tone="info" />
+            <StatCard label="回来过" value={guestStats?.segments?.returned ?? 0} sub="隔了至少 1 小时又出现" />
+            <StatCard label="只领了试用" value={guestStats?.segments?.seed ?? 0} sub={guestStats ? `目录共 ${guestStats.total} 条` : '不进默认列表'} />
+            <StatCard label="已归并" value={guestStats?.segments?.bound ?? guestStats?.bound ?? 0} sub="人在登录用户里" />
+            <StatCard
+              label="解锁 / 试用"
+              value={formatGuestConversion(guestStats?.conversion)}
+              tone="success"
+              sub={guestStats ? `${guestStats.segments?.unlocked ?? 0} / ${guestStats.segments?.seed ?? 0}` : '已解锁 ÷ 只领试用'}
+            />
           </div>
 
           <Section
@@ -823,14 +840,17 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
                   value={guestQuery}
                   onChange={(event) => setGuestQuery(event.target.value)}
                   type="search"
-                  placeholder="筛选当前页昵称 / guest ID"
+                  placeholder="搜索全库游客 ID / 绑定账号"
                   className="w-full rounded-lg border border-[#d8dad0] bg-white px-3 py-1.5 text-sm outline-none focus:border-[#15140f] dark:border-[#2d3744] dark:bg-[#0d1218] dark:text-gray-100 dark:focus:border-[#4a5568] sm:w-72"
                 />
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    ['active', '未绑定'],
-                    ['all', '全部'],
-                    ['bound', '已绑定'],
+                    ['attention', '要关注'],
+                    ['unlocked', '已解锁'],
+                    ['commented', '写过评论'],
+                    ['returned', '回来过'],
+                    ['seed', '只领了试用'],
+                    ['bound', '已归并'],
                   ].map(([value, label]) => (
                     <button
                       key={value}
@@ -853,7 +873,7 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
           >
             <DataTable
               columns={guestColumns}
-              rows={guestStatus === 'loading' ? [] : filteredGuests}
+              rows={guestStatus === 'loading' ? [] : guests}
               rowKey={(guest) => guest.userId}
               tableClassName="min-w-[884px] table-fixed"
               empty={
@@ -861,23 +881,31 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
                   title={
                     guestStatus === 'loading'
                       ? '加载中…'
-                      : guests.length
+                      : appliedGuestQuery
                         ? '没有匹配的游客'
-                        : '暂无游客'
+                        : guestFilter === 'attention'
+                          ? '还没有需要关注的游客'
+                          : '这一层还没有游客'
                   }
                   description={
                     guestStatus === 'loading'
                       ? undefined
-                      : guests.length
-                        ? '换个关键词或状态筛选试试。'
-                        : '游客产生燃币、解锁或评论后会出现在这里。'
+                      : appliedGuestQuery
+                        ? '换一个游客 ID 或绑定账号再搜。'
+                        : guestFilter === 'attention'
+                          ? '只领试用和已归并的人数在上面，默认列表不展开。'
+                          : '换一层，或用游客 ID 搜索全库。'
                   }
                 />
               }
             />
 
             <div className="flex items-center justify-between border-t border-[#e2e3da] px-4 py-3 text-xs text-[#67695d] dark:border-[#1e2733] dark:text-gray-400">
-              <span>每页最多 30 位游客，仅筛选当前页数据</span>
+              <span>
+                {appliedGuestQuery
+                  ? '正在全库搜索，不受当前分层限制。每页 30 条。'
+                  : '每页 30 条。只领试用和已归并默认不展开。'}
+              </span>
               <div className="flex gap-2">
                 <button
                   type="button"

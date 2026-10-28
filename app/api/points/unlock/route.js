@@ -1,6 +1,6 @@
 import { getD1 } from '../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
-import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/auth/guestSession'
+import { GUEST_USER_PREFIX, getGuestId, getOrIssueGuest } from '../../../../lib/auth/guestSession'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
 import {
   cleanupRateLimits,
@@ -8,7 +8,7 @@ import {
   getClientIp,
   rateLimitResponse,
 } from '../../../../lib/auth/abuseControls'
-import { awardGuestSeed, getResourceStatus, unlockResource } from '../../../../lib/ledger/points'
+import { awardGuestSeed, getGuestSeedOffer, getResourceStatus, unlockResource } from '../../../../lib/ledger/points'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,7 @@ function normalizeKey(value) {
 
 /**
  * 查询某资源的解锁状态（前端燃币墙据此展示）。
- * 游客也参与：首次进入受保护资源时领取试用额度（authed:false, isGuest:true）。
+ * 只读：不签发游客身份，也不发放试用。试用在真正解锁时写入。
  */
 export async function GET(req) {
   try {
@@ -39,17 +39,13 @@ export async function GET(req) {
       return Response.json({ authed: true, isGuest: false, ...status })
     }
 
-    // 游客：只有进入受保护资源才创建身份并领取试用额度。
-    const guest = await getOrIssueGuest(req)
-    if (!guest) {
-      const status = await getResourceStatus(db, '', resourceKey)
-      return Response.json({ authed: false, isGuest: true, ...status })
-    }
-    const guestId = `${GUEST_USER_PREFIX}${guest.gid}`
-    await awardGuestSeed(db, guestId)
-    const status = await getResourceStatus(db, guestId, resourceKey)
-    const headers = guest.setCookie ? { 'Set-Cookie': guest.setCookie } : undefined
-    return Response.json({ authed: false, isGuest: true, ...status }, { headers })
+    const gid = await getGuestId(req)
+    const guestId = gid ? `${GUEST_USER_PREFIX}${gid}` : ''
+    const [status, seed] = await Promise.all([
+      getResourceStatus(db, guestId, resourceKey),
+      getGuestSeedOffer(db, guestId),
+    ])
+    return Response.json({ authed: false, isGuest: true, ...seed, ...status })
   } catch {
     return Response.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

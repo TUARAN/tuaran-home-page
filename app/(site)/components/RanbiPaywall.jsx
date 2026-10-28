@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { balanceWithGuestTrial } from '../../../lib/ledger/guestTrial'
+
 async function safeJson(res) {
   const text = await res.text()
   if (!text) return null
@@ -88,8 +90,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       if (data.unlocked) return setPhase('content')
 
       const cost = Number(data.cost || 0)
-      const balance = Number(data.balance || 0)
-      if (balance >= cost) {
+      if (balanceWithGuestTrial(data) >= cost) {
         // 内容页只有这一个受控入口；服务端以 resource_unlocks 幂等，重复进入不重复扣款。
         await autoUnlock(data)
         return

@@ -1,7 +1,7 @@
 import { getD1 } from '../../../../lib/db/d1'
 import { getSecrets, getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import { getOrIssueGuest } from '../../../../lib/auth/guestSession'
-import { awardGuestSeed, getBalance, hasCheckedInToday } from '../../../../lib/ledger/points'
+import { getBalance, hasCheckedInToday } from '../../../../lib/ledger/points'
 import { handleSubsiteSession, subsitePreflight } from '../../../../lib/site/subsiteAccount'
 
 export const runtime = 'edge'
@@ -18,7 +18,7 @@ async function getUserRole(db, userId) {
 export function GET(request) {
   return handleSubsiteSession(request, {
     getD1, getSecrets, getUserFromRequest, getOrIssueGuest, getUserRole,
-    awardGuestSeed, getBalance, hasCheckedInToday,
+    getBalance, hasCheckedInToday,
   })
 }
 

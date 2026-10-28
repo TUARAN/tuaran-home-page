@@ -34,6 +34,7 @@ export async function GET(req) {
       limit: url.searchParams.get('limit'),
       status: url.searchParams.get('status'),
       cursor: url.searchParams.get('cursor'),
+      query: url.searchParams.get('q'),
     }, url.searchParams.get('fresh') === '1')
     return Response.json({ status: 'ok', ...snapshot }, {
       headers: { 'Cache-Control': 'private, no-store' },

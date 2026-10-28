@@ -150,7 +150,7 @@ export default async function RanbiPage() {
       <section id="earn" className="mb-10 scroll-mt-24">
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">三、怎么获得</h2>
         <p className="mb-4 text-[14px] leading-7 text-[var(--site-muted)]">
-          游客首次尝试受保护资源时获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
+          游客解锁受保护资源时获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
           所有奖励都从公开储备池转出，储备池耗尽后停止发放。
           活动与游戏奖励按各项目规则发放。余额不够用时，可以{' '}
           <Link href="/help#contact" className="underline underline-offset-2">联系站长</Link>
@@ -212,7 +212,7 @@ export default async function RanbiPage() {
         <h2 className="mb-3 font-serif text-[20px] text-[var(--site-ink)]">五、权益如何保存</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            ['游客试用', `首次尝试受保护资源时，当前浏览器按匿名身份获得 ${R.guestSeed} 燃币，可以体验一项文字内容。`],
+            ['游客试用', `解锁受保护资源时，当前浏览器按匿名身份获得 ${R.guestSeed} 燃币，可以体验一项文字内容。只打开页面不会发币。`],
             ['登录归档', '登录时会把当前浏览器中的游客余额、评论和已解锁权益归入账号。游客历史消费仍保留在原流水中。'],
             ['永久解锁', '同一内容或工具只结算一次，刷新、再次打开和从领取记录返回都不会重复使用燃币。'],
             ['记录可查', '个人资料会显示余额、已解锁资源和领取记录；异常流水可以联系站长复核。'],

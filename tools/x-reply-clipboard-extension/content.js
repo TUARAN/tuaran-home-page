@@ -1332,23 +1332,63 @@
     return false;
   }
 
+  function joinScheduleFields(entries) {
+    return (Array.isArray(entries) ? entries : [])
+      .map((entry) => {
+        const label = String(entry?.[0] || "").trim();
+        const value = String(entry?.[1] || "").trim();
+        return label && value ? `${label}：${value}` : "";
+      })
+      .filter(Boolean)
+      .join("｜");
+  }
+
   function formatScheduleCardNote(task, wait) {
     const parts = [];
     if (wait) {
-      parts.push(`状态：${wait.label}`);
-      if (wait.waitingFor) parts.push(`等待：${wait.waitingFor}`);
-      if (wait.remaining > 0) parts.push(`剩余：${formatClock(wait.remaining)}`);
+      parts.push(["状态", wait.label]);
+      if (wait.waitingFor) parts.push(["等待", wait.waitingFor]);
+      if (wait.remaining > 0) parts.push(["剩余", formatClock(wait.remaining)]);
       const detail = String(wait.detail || "").trim();
-      if (detail && !isRedundantScheduleDetail(wait.label, detail)) parts.push(`说明：${detail}`);
+      if (detail && !isRedundantScheduleDetail(wait.label, detail)) parts.push(["说明", detail]);
     } else {
       const reason = String(task.reason || "").trim();
-      if (reason) parts.push(`状态：${reason}`);
+      if (reason) parts.push(["状态", reason]);
     }
-    parts.push(`优先级：${schedulePriorityLabel(task.rule?.priority)}`);
-    parts.push(`时段：${scheduleWindowLabel(task.rule?.window)}`);
+    parts.push(["优先级", schedulePriorityLabel(task.rule?.priority)]);
+    parts.push(["时段", scheduleWindowLabel(task.rule?.window)]);
     const pace = schedulePaceLabel(task.rule?.minGapMs);
-    if (pace) parts.push(`节奏：${pace}`);
-    return parts.join("｜");
+    if (pace) parts.push(["节奏", pace]);
+    return joinScheduleFields(parts);
+  }
+
+  function formatDeskPastNote(latest) {
+    if (!latest) return joinScheduleFields([["说明", "完成一轮占用后会出现在这里"]]);
+    return joinScheduleFields([
+      ["起止", `${formatScheduleTime(latest.startedAt)}–${formatScheduleTime(latest.endedAt)}`],
+      ["完成", taskActionCount(latest.mode, latest.actions)],
+      ["说明", latest.reason || "本轮结束"]
+    ]);
+  }
+
+  function formatDeskDispatchNote({ nextEntry, preview, waitMs }) {
+    const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}` : "";
+    const nextLabel = nextEntry
+      ? (TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode)
+      : (TASK_MODE_LABELS[preview?.next] || "");
+    if (!nextEntry && !nextLabel) {
+      return joinScheduleFields([
+        ["剩余", eta],
+        ["说明", eta ? "自动切换下一任务" : "暂无到期任务，到期后会自动切换"]
+      ]);
+    }
+    return joinScheduleFields([
+      ["下一", nextLabel],
+      ["剩余", eta],
+      ["预计", nextEntry?.status === "ready"
+        ? "当前空档结束后接入"
+        : (Number(nextEntry?.readyAt) > 0 ? formatScheduleTime(nextEntry.readyAt) : "等待到期")]
+    ]);
   }
 
   function scheduledWaitInfo(mode, now = Date.now()) {
@@ -1485,8 +1525,13 @@
         const note = document.createElement("small");
         const wait = task.status === "waiting" || task.status === "stopping" ? scheduledWaitInfo(task.key) : null;
         note.textContent = wait
-          ? `${wait.label}${wait.remaining ? ` · 还需 ${formatClock(wait.remaining)}` : ""}；${wait.detail}`
-          : "点击进入任务子页";
+          ? joinScheduleFields([
+            ["状态", wait.label],
+            ["等待", wait.waitingFor],
+            ["剩余", wait.remaining ? formatClock(wait.remaining) : ""],
+            ["说明", wait.detail]
+          ])
+          : joinScheduleFields([["说明", "点击进入任务子页"]]);
         const go = document.createElement("button");
         go.type = "button";
         go.dataset.xrcFlowTaskOpen = task.key;
@@ -1511,14 +1556,14 @@
     const nowStatus = desk.querySelector("[data-xrc-desk-now-status]");
     if (!scheduleLoaded) {
       if (past) past.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
-      if (pastNote) pastNote.textContent = "正在同步轮班记录";
+      if (pastNote) pastNote.textContent = joinScheduleFields([["说明", "正在同步轮班记录"]]);
       if (pastStatus) pastStatus.textContent = "读取中";
       if (nowRow) {
         nowRow.hidden = false;
         nowRow.dataset.pulse = "waiting";
       }
       if (nowTitle) nowTitle.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
-      if (nowNote) nowNote.textContent = "正在同步当前占用";
+      if (nowNote) nowNote.textContent = joinScheduleFields([["说明", "正在同步当前占用"]]);
       if (nowStatus) nowStatus.textContent = "读取中";
     } else {
       const latest = taskSchedule.timeline?.history?.[0];
@@ -1533,15 +1578,7 @@
           ? (TASK_MODE_LABELS[latest.mode] || latest.mode)
           : "暂无轮班记录";
       }
-      if (pastNote) {
-        pastNote.textContent = latest
-          ? [
-              `${formatScheduleTime(latest.startedAt)}–${formatScheduleTime(latest.endedAt)}`,
-              taskActionCount(latest.mode, latest.actions),
-              latest.reason || ""
-            ].filter(Boolean).join(" · ")
-          : "完成一轮占用后会出现在这里";
-      }
+      if (pastNote) pastNote.textContent = formatDeskPastNote(latest);
       if (pastStatus) pastStatus.textContent = latest ? "已结束" : "暂无";
       // No occupied / running slot: show「当前任务 · 正在调度中」between past and next.
       const showDispatch = !nowMode;
@@ -1551,27 +1588,14 @@
           if (!taskSchedule.enabled) {
             nowRow.dataset.pulse = "stopped";
             if (nowTitle) nowTitle.textContent = "排班已暂停";
-            if (nowNote) nowNote.textContent = taskSchedule.reason || "恢复排班后继续自动切换";
+            if (nowNote) nowNote.textContent = joinScheduleFields([["说明", taskSchedule.reason || "恢复排班后继续自动切换"]]);
             if (nowStatus) nowStatus.textContent = "已暂停";
           } else {
             nowRow.dataset.pulse = "waiting";
-            const waitMs = soonestWaitMs();
-            const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}后` : "";
-            // Title stays「正在调度中」; countdown sits before 预计 on the note line.
+            // Title stays「正在调度中」; countdown sits in 剩余 on the note line.
             if (nowTitle) nowTitle.textContent = "正在调度中";
             if (nowStatus) nowStatus.textContent = "调度中";
-            if (nowNote) {
-              const nextLabel = nextEntry
-                ? (TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode)
-                : (TASK_MODE_LABELS[preview.next] || "");
-              nowNote.textContent = nextEntry
-                ? nextEntry.status === "ready"
-                  ? [`下一 ${nextLabel}`, eta, "预计当前空档结束后接入"].filter(Boolean).join(" · ")
-                  : [`下一 ${nextLabel}`, eta, `预计 ${formatScheduleTime(nextEntry.readyAt)}`].filter(Boolean).join(" · ")
-                : eta
-                  ? `${eta}自动切换下一任务`
-                  : "暂无到期任务，到期后会自动切换";
-            }
+            if (nowNote) nowNote.textContent = formatDeskDispatchNote({ nextEntry, preview, waitMs: soonestWaitMs() });
           }
         }
       }
@@ -5139,9 +5163,11 @@
         </div>
         <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk aria-label="排班台">
           <div class="xrc-desk-head">
-            <button type="button" class="xrc-desk-settings" data-xrc-config-open="schedule" aria-label="排班设置" title="排班设置">
+            <button type="button" class="xrc-desk-settings" data-xrc-config-open="schedule" aria-label="排班设置" title="排班设置：任务、优先级与时段">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
+                <path fill="currentColor" d="M4 7h8v2H4V7zm12 0h4v2h-4V7zm-8 8H4v2h4v-2zm12 0h-8v2h8v-2z"/>
+                <circle fill="currentColor" cx="14" cy="8" r="2.25"/>
+                <circle fill="currentColor" cx="10" cy="16" r="2.25"/>
               </svg>
             </button>
             <strong>排班台</strong>

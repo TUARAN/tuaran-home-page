@@ -694,7 +694,10 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     source.match(/  function scheduleWindowLabel\(window\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePaceLabel\(minGapMs\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function isRedundantScheduleDetail\(label, detail\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function joinScheduleFields\(entries\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function formatScheduleCardNote\(task, wait\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function formatDeskPastNote\(latest\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
   const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const readiness = source.match(/  function scheduleReadinessAt\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
@@ -970,9 +973,9 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'likes-posts')?.dataset.warmth, '2')
   assert.equal(deskNowRow.hidden, false)
   assert.equal(deskNow.textContent, '正在调度中')
-  assert.match(deskNowNote.textContent, /下一/)
-  assert.match(deskNowNote.textContent, /约 7 分 31 秒后/)
-  assert.match(deskNowNote.textContent, /预计/)
+  assert.match(deskNowNote.textContent, /下一：/)
+  assert.match(deskNowNote.textContent, /剩余：约 7 分 31 秒/)
+  assert.match(deskNowNote.textContent, /预计：/)
   context.taskSchedule.items.timeline = { manualStopped: true }
   context.pluginRuntime.tasks.timeline = { phase: 'running', detail: '正在评论', updatedAt: now }
   context.pluginRuntime.flow.phase = 'paused'
@@ -1356,11 +1359,22 @@ test('schedule card notes use titled fields separated by fullwidth bars', async 
     source.match(/  function scheduleWindowLabel\(window\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePaceLabel\(minGapMs\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function isRedundantScheduleDetail\(label, detail\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function joinScheduleFields\(entries\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function formatScheduleCardNote\(task, wait\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function formatDeskPastNote\(latest\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
-  assert.match(helpers, /状态：/)
-  const context = vm.createContext({ formatClock: (ms) => ms === 60000 ? '01:00' : '00:00' })
-  vm.runInContext(`${helpers}\nglobalThis.format = formatScheduleCardNote`, context)
+  assert.match(helpers, /\["状态"/)
+  assert.match(helpers, /function formatDeskPastNote/)
+  assert.match(helpers, /function formatDeskDispatchNote/)
+  const context = vm.createContext({
+    formatClock: (ms) => ms === 60000 ? '01:00' : '00:00',
+    formatCountdown: () => '13 分 14 秒',
+    formatScheduleTime: () => '10/29 08:59',
+    taskActionCount: () => '0 条帖子',
+    TASK_MODE_LABELS: { timeline: '评论帖子', poster: '普通发帖' },
+  })
+  vm.runInContext(`${helpers}\nglobalThis.format = formatScheduleCardNote; globalThis.pastNote = formatDeskPastNote; globalThis.dispatchNote = formatDeskDispatchNote`, context)
   const task = { reason: '', rule: { priority: 3, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
@@ -1381,6 +1395,18 @@ test('schedule card notes use titled fields separated by fullwidth bars', async 
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
     '状态：本次已完成｜剩余：01:00｜优先级：最高｜时段：全天'
+  )
+  assert.equal(
+    context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
+    '起止：10/29 08:59–10/29 08:59｜完成：0 条帖子｜说明：风控等待中'
+  )
+  assert.equal(
+    context.dispatchNote({
+      nextEntry: { mode: 'timeline', status: 'scheduled', readyAt: 2 },
+      preview: {},
+      waitMs: 451000,
+    }),
+    '下一：评论帖子｜剩余：约 13 分 14 秒｜预计：10/29 08:59'
   )
 })
 
@@ -4884,7 +4910,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.40')
+  assert.equal(manifest.version, '4.0.42')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -5230,6 +5256,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-flow-hint hidden><\/p>\s*<button[^>]*data-xrc-flow-stop/)
   assert.match(content, /xrc-desk-settings/)
   assert.match(content, /data-xrc-config-open="schedule"/)
+  assert.match(content, /xrc-desk-settings[\s\S]*?<circle fill="currentColor" cx="14" cy="8"/)
+  assert.doesNotMatch(content, /xrc-desk-settings[\s\S]*?M19\.14 12\.94/)
+  assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
   assert.match(content, /xrc-schedule-settings/)
   assert.match(content, /xrc-schedule-rule-controls/)
   assert.match(content, /data-xrc-config-open/)

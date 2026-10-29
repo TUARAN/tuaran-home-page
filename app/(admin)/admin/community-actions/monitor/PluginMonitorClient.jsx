@@ -6,7 +6,17 @@ import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPil
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
 
-const MODE_LABEL = { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子', 'likes-replies': '点赞评论', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
+const MODE_LABEL = {
+  timeline: '评论帖子',
+  notifications: '回复评论',
+  'likes-posts': '点赞帖子',
+  'likes-replies': '点赞评论',
+  poster: '普通发帖',
+  'poster-premium': '精品发帖',
+  'mutual-unfollow': '清理未回关',
+  'mutual-followBack': '回关粉丝',
+  'mutual-targetFollow': '关注候选',
+}
 const PHASE = { running: ['运行中', 'info'], paused: ['等待中', 'warning'], stopping: ['等待中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
 const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件' }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
@@ -264,7 +274,7 @@ export default function PluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地插件排班台与版本条。约 10 秒刷新运行态；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description={`对齐本地档位：评论(最重要→很重要) → 发帖 → 点赞(一般) → 关注。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
           {accountSwitcher}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />

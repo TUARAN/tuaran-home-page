@@ -42,24 +42,27 @@ test('X task snapshot validates phases and does not accept arbitrary task names'
   assert.equal(report.runtime.phase, 'paused')
 })
 
-test('runtime groups expose the four feature boards with idle fill-ins', () => {
+test('runtime groups follow schedule priority order with idle fill-ins', () => {
   const groups = presentXRuntimeGroups([
     { mode: 'timeline', phase: 'running', updatedAt: NOW, detail: '正在回复' },
     { mode: 'mutual-unfollow', phase: 'paused', updatedAt: NOW, detail: '风控等待中', waitUntil: NOW + 600000 },
   ])
   assert.deepEqual(groups.map((group) => [group.id, group.phase]), [
     ['reply', 'running'],
+    ['poster', 'idle'],
     ['likes', 'idle'],
     ['mutual', 'waiting'],
-    ['poster', 'idle'],
   ])
-  assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase]), [
-    ['timeline', 'running'],
-    ['notifications', 'idle'],
+  assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase, task.priority]), [
+    ['notifications', 'idle', 9],
+    ['timeline', 'running', 8],
   ])
-  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['poster', 'poster-premium'])
-  assert.equal(groups[2].tasks[0].detail, '风控等待中')
-  assert.equal(groups[2].tasks[0].waitUntil, NOW + 600000)
+  assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['poster-premium', 'poster'])
+  assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
+  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
+  assert.equal(groups[3].tasks[2].detail, '风控等待中')
+  assert.equal(groups[3].tasks[2].waitUntil, NOW + 600000)
+  assert.equal(groups[3].tasks[2].priority, 2)
 })
 
 test('remote commands enqueue and return on the next heartbeat report', async () => {

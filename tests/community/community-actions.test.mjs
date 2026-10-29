@@ -74,7 +74,10 @@ test('local daily report counts successful actions once and refuses a false uplo
     await xReceipt.recordDailySuccess(event, 'Tuaran')
     await xReceipt.recordDailySuccess(event, 'Tuaran')
     await xReceipt.recordDailySuccess({ id: 'event-follow-001', task: 'mutual-target-follow', result: 'success', occurredAt: NOW }, 'Tuaran')
-    assert.deepEqual(saved.xrcDailyReports[0].counts, { comments: 0, likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0 })
+    assert.deepEqual(saved.xrcDailyReports[0].counts, {
+      comments: 0, timelineComments: 0, notificationComments: 0,
+      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0,
+    })
     const uploaded = await xReceipt.uploadDaily('2026-10-12', 'tuaran')
     assert.equal(uploaded.ok, false)
     assert.equal(saved.xrcDailyReports[0].uploadedAt, 0)

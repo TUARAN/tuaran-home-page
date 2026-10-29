@@ -431,7 +431,7 @@
   let resettingState = false;
   let dailyReports = [];
   let dailyUploadSchedule = null;
-  const REPORT_METRICS = ["comments", "likes", "follows", "unfollows", "followBacks", "posts"];
+  const REPORT_METRICS = ["comments", "timelineComments", "notificationComments", "likes", "follows", "unfollows", "followBacks", "posts"];
   const MUTUAL_ACTIVE_KEY = "xrcMutualActiveMode";
   let dailyReportAccount = "__all__";
   let dailyReportDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
@@ -441,6 +441,8 @@
   function sumDailyCounts(reports) {
     const counts = Object.fromEntries(REPORT_METRICS.map((metric) => [metric, 0]));
     for (const report of reports) for (const metric of REPORT_METRICS) counts[metric] += Math.max(0, Number(report.counts?.[metric]) || 0);
+    const split = Math.max(0, Number(counts.timelineComments) || 0) + Math.max(0, Number(counts.notificationComments) || 0);
+    if (split > 0) counts.comments = Math.max(counts.comments, split);
     return counts;
   }
 
@@ -457,11 +459,25 @@
 
   function renderTodaySummary(panel) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
-    const counts = sumDailyCounts(dailyReports.filter((report) => report.date === today));
+    const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "").toLowerCase();
+    const todayRows = dailyReports.filter((report) => report.date === today);
+    const scoped = handle
+      ? todayRows.filter((report) => String(report.accountHandle || "").toLowerCase() === handle)
+      : todayRows;
+    const counts = sumDailyCounts(scoped.length ? scoped : todayRows);
     const strip = panel.querySelector("[data-xrc-today-summary]");
     if (!strip) return;
-    strip.title = `${today} · 本机所有账号的今日合计`;
-    for (const metric of ["comments", "likes", "unfollows", "posts"]) {
+    const scopeLabel = handle ? `@${handle}` : "本机全部账号";
+    const timeline = counts.timelineComments || 0;
+    const notifications = counts.notificationComments || 0;
+    const comments = Math.max(counts.comments || 0, timeline + notifications);
+    strip.title = `${today} · ${scopeLabel} · 评论帖子 ${timeline} · 回复评论 ${notifications} · 合计评论 ${comments}（仅统计 X 成功提示确认的发送）`;
+    const commentsNode = strip.querySelector("[data-xrc-today-comments]");
+    if (commentsNode) {
+      commentsNode.textContent = String(comments);
+      commentsNode.title = `评论帖子 ${timeline} · 回复评论 ${notifications}`;
+    }
+    for (const metric of ["likes", "unfollows", "posts"]) {
       const node = strip.querySelector(`[data-xrc-today-${metric}]`);
       if (node) node.textContent = String(counts[metric]);
     }
@@ -1029,9 +1045,9 @@
     return taskActionBusy.has(String(mode || ""));
   }
   const FLOW_TASKS = Object.freeze([
-    ["timeline", "评论帖子"], ["notifications", "回复评论"],
+    ["notifications", "回复评论"], ["timeline", "评论帖子"],
+    ["poster-premium", "精品发帖"], ["poster", "普通发帖"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
-    ["poster", "普通发帖"], ["poster-premium", "精品发帖"],
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
   ]);
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
@@ -1304,17 +1320,30 @@
     return value || "X 操作受限";
   }
 
+  const DEFAULT_SCHEDULE_PRIORITY = Object.freeze({
+    notifications: 9, timeline: 8, "poster-premium": 7, poster: 6,
+    "likes-posts": 5, "likes-replies": 5, "mutual-followBack": 4,
+    "mutual-targetFollow": 3, "mutual-unfollow": 2
+  });
+
+  function schedulePriorityFor(mode, rule) {
+    const raw = Number(rule?.priority);
+    if (Number.isFinite(raw) && raw >= 1) return Math.max(1, Math.min(9, raw));
+    return DEFAULT_SCHEDULE_PRIORITY[mode] || 1;
+  }
+
   function schedulePriorityLabel(priority) {
     const rank = Math.max(1, Math.min(9, Number(priority) || 1));
+    // 评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)
     return ({
-      9: "回复评论档",
-      8: "评论帖子档",
-      7: "精品发帖档",
-      6: "普通发帖档",
-      5: "点赞档",
-      4: "回关档",
-      3: "关注候选档",
-      2: "取消未回关档",
+      9: "最重要",
+      8: "很重要",
+      7: "重要",
+      6: "较重要",
+      5: "一般",
+      4: "较低",
+      3: "低",
+      2: "很低",
       1: "最低"
     })[rank] || `${rank}`;
   }
@@ -1367,9 +1396,11 @@
       const reason = String(task.reason || "").trim();
       if (reason) parts.push(["状态", reason]);
     }
-    parts.push(["优先级", schedulePriorityLabel(task.rule?.priority)]);
+    parts.push(["优先级", schedulePriorityLabel(schedulePriorityFor(task.mode, task.rule))]);
     parts.push(["时段", scheduleWindowLabel(task.rule?.window)]);
-    const pace = schedulePaceLabel(task.rule?.minGapMs);
+    const pace = schedulePaceLabel(Number(task.rule?.minGapMs) || (
+      ["likes-posts", "likes-replies"].includes(task.mode) ? 45 * 60 * 1000 : 0
+    ));
     if (pace) parts.push(["节奏", pace]);
     return joinScheduleFields(parts);
   }
@@ -1635,7 +1666,8 @@
     const sliceSeconds = [20, 30, 45].includes(Number(taskSchedule.sliceSeconds))
       ? Number(taskSchedule.sliceSeconds)
       : 30;
-    const currentSliceMs = ["timeline", "notifications", "likes-posts", "likes-replies"].includes(current) ? 0
+    const currentSliceMs = ["timeline", "notifications"].includes(current) ? 0
+      : ["likes-posts", "likes-replies"].includes(current) ? Math.max(sliceSeconds * 1000, 3 * 60 * 1000)
       : ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"].includes(current)
       ? Math.max(sliceSeconds * 1000, 10 * 60 * 1000)
       : sliceSeconds * 1000;
@@ -3464,6 +3496,16 @@
 
   function reportCommunityAction(event) {
     try {
+      const task = String(event?.task || "");
+      const mode = task === "timeline-reply" ? "timeline"
+        : task === "notification-reply" ? "notifications"
+          : task === "post-like" ? "likes-posts"
+            : task === "reply-like" ? "likes-replies"
+              : "";
+      // When the shared tab belongs to another schedule slot, ignore success counts from a stale loop.
+      if (event?.result === "success" && mode && taskSchedule.enabled && taskSchedule.current && taskSchedule.current !== mode) {
+        return;
+      }
       const handle = String(event?.accountHandle || currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
       globalThis.XrcCommunityReceipt?.report({
         ...event,
@@ -3864,7 +3906,10 @@
     if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
     if (duplicateReplyWarningVisible()) return "duplicate-reply";
     if (!confirmed) return "send-unconfirmed";
-    if (hasNewSuccessNotice() && composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
+    // Only count a send when X shows a success notice. Dialog close / draft clear alone
+    // used to inflate「今日合计·评论」while 评论帖子 was not actually posting.
+    if (!hasNewSuccessNotice()) return "send-unconfirmed";
+    if (composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
       const closedNaturally = await waitUntil(
         () => !composer.dialog?.isConnected || !findDialogComposer(),
         2000
@@ -4738,15 +4783,15 @@
 
   function scheduleRuleRowsMarkup() {
     const priorityOptions = [
-      ["9", "9 回复评论档"],
-      ["8", "8 评论帖子档"],
-      ["7", "7 精品发帖档"],
-      ["6", "6 普通发帖档"],
-      ["5", "5 点赞档"],
-      ["4", "4 回关档"],
-      ["3", "3 关注候选档"],
-      ["2", "2 取消未回关档"],
-      ["1", "1 最低"],
+      ["9", "最重要 · 回复评论"],
+      ["8", "很重要 · 评论帖子"],
+      ["7", "重要 · 精品发帖"],
+      ["6", "较重要 · 普通发帖"],
+      ["5", "一般 · 点赞短轮"],
+      ["4", "较低 · 回关粉丝"],
+      ["3", "低 · 关注候选"],
+      ["2", "很低 · 取消未回关"],
+      ["1", "最低"],
     ].map(([value, text]) => `<option value="${value}">${text}</option>`).join("");
     return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
       <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><span><strong>${label}</strong>${mode === "mutual-unfollow" || mode === "mutual-targetFollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>默认约每天一次</small>" : ["likes-posts", "likes-replies"].includes(mode) ? "<small>默认短轮约 3 分钟，间隔约 45 分钟</small>" : ""}</span></label>
@@ -4980,8 +5025,8 @@
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
               <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg>
-            </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-unfollows">取关</span><span class="xrc-metric-posts">发帖</span></div></div>
-          <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments>0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-unfollows" data-xrc-today-unfollows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
+            </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments" title="评论帖子 + 回复评论，仅计成功提示">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-unfollows">取关</span><span class="xrc-metric-posts">发帖</span></div></div>
+          <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments title="悬停看评论帖子 / 回复评论拆分">0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-unfollows" data-xrc-today-unfollows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
         </div>
         <section class="xrc-hub" data-xrc-hub hidden aria-label="设置中心">
           <div class="xrc-docs-head">

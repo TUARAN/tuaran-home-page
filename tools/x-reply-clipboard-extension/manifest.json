@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "4.0.43",
+  "version": "4.0.44",
   "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",

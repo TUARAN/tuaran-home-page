@@ -41,7 +41,8 @@
   let lastHeartbeatHandle = "";
   let lastStatsSyncAt = 0;
   const DAILY_TASKS = Object.freeze({
-    "timeline-reply": "comments", "notification-reply": "comments",
+    "timeline-reply": "timelineComments",
+    "notification-reply": "notificationComments",
     "post-like": "likes", "reply-like": "likes",
     "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
     "mutual-follow-back": "followBacks", "tweet-post": "posts"
@@ -52,7 +53,19 @@
   }
 
   function emptyCounts() {
-    return { comments: 0, likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0 };
+    return {
+      comments: 0, timelineComments: 0, notificationComments: 0,
+      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0
+    };
+  }
+
+  function syncCommentTotal(counts) {
+    const timeline = Math.max(0, Number(counts.timelineComments) || 0);
+    const notifications = Math.max(0, Number(counts.notificationComments) || 0);
+    counts.timelineComments = timeline;
+    counts.notificationComments = notifications;
+    counts.comments = timeline + notifications;
+    return counts;
   }
 
   async function dailyReports() {
@@ -69,11 +82,21 @@
     const rows = await dailyReports();
     let row = rows.find((item) => item.date === date && item.accountHandle === handle);
     if (!row) {
-      row = { date, accountHandle: handle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
+      row = { date, accountHandle: handle, counts: emptyCounts(), eventIds: [], targetKeys: [], updatedAt: 0, uploadedAt: 0 };
       rows.push(row);
     }
+    if (!row.counts || typeof row.counts !== "object") row.counts = emptyCounts();
+    row.counts = { ...emptyCounts(), ...row.counts };
     if (row.eventIds.includes(event.id)) return;
+    const targetId = String(event.targetId || "").trim();
+    if (targetId) {
+      const targetKey = `${event.task}:${targetId}`;
+      row.targetKeys = Array.isArray(row.targetKeys) ? row.targetKeys : [];
+      if (row.targetKeys.includes(targetKey)) return;
+      row.targetKeys = [...row.targetKeys, targetKey].slice(-500);
+    }
     row.counts[metric] = Math.max(0, Number(row.counts[metric]) || 0) + 1;
+    syncCommentTotal(row.counts);
     row.eventIds = [...row.eventIds, event.id].slice(-300);
     row.updatedAt = Date.now();
     const oldest = shanghaiDate(Date.now() - 365 * 24 * 60 * 60 * 1000);

@@ -13,6 +13,25 @@ const MODE_LABEL = {
   'mutual-followBack': '回关粉丝',
   'mutual-targetFollow': '关注候选',
 }
+const DEFAULT_PRIORITY = {
+  notifications: 9,
+  timeline: 8,
+  'poster-premium': 7,
+  poster: 6,
+  'likes-posts': 5,
+  'likes-replies': 5,
+  'mutual-followBack': 4,
+  'mutual-targetFollow': 3,
+  'mutual-unfollow': 2,
+}
+const PRIORITY_HINT = '评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)'
+const PRIORITY_LABELS = {
+  9: '最重要', 8: '很重要', 7: '重要', 6: '较重要', 5: '一般', 4: '较低', 3: '低', 2: '很低', 1: '最低',
+}
+const priorityLabel = (mode, priority) => {
+  const rank = Math.max(1, Math.min(9, Number(priority) || DEFAULT_PRIORITY[mode] || 1))
+  return PRIORITY_LABELS[rank] || String(rank)
+}
 const TASK_PHASE = {
   running: ['运行中', 'info'],
   waiting: ['等待中', 'warning'],
@@ -180,13 +199,19 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
               <div>
                 <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">排班台</p>
                 <p className="mb-0 mt-1 text-[12px] text-[#536471] dark:text-gray-400">
-                  {schedule?.enabled ? `单页签轮班 · 单次占用 ${schedule.sliceSeconds || 30} 秒` : '排班未启用或尚未上报轮班快照'}
+                  {schedule?.enabled
+                    ? `单页签轮班 · ${schedule.priorityHint || PRIORITY_HINT}`
+                    : '排班未启用或尚未上报轮班快照'}
                 </p>
                 <p className="mb-0 mt-1 text-[12px] text-[#0f1419] dark:text-gray-100">{facingSummary(facing)}</p>
               </div>
-              <div className="flex gap-1" aria-hidden="true">
+              <div className="flex flex-wrap gap-1" aria-hidden="true">
                 {groups.flatMap((group) => group.tasks).map((task) => (
-                  <i key={task.mode} className={`block h-2 w-2 rounded-full ${toneDot(task.phase)}`} title={`${task.label} · ${(TASK_PHASE[task.phase] || TASK_PHASE.idle)[0]}`} />
+                  <i
+                    key={task.mode}
+                    className={`block h-2 w-2 rounded-full ${toneDot(task.phase)}`}
+                    title={`${task.label} · ${priorityLabel(task.mode, task.priority)} · ${(TASK_PHASE[task.phase] || TASK_PHASE.idle)[0]}`}
+                  />
                 ))}
               </div>
             </div>
@@ -233,6 +258,9 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <strong className="text-[12px] text-[#0f1419] dark:text-gray-100">{task.label || MODE_LABEL[task.mode] || task.mode}</strong>
+                                    <span className="rounded-md border border-[#d7e3f4] px-1.5 py-0.5 text-[10px] font-semibold text-[#536471] dark:border-[#354438] dark:text-gray-400">
+                                      {priorityLabel(task.mode, task.priority)}
+                                    </span>
                                     <StatusPill size="sm" tone={taskTone}>{taskLabel}</StatusPill>
                                     {countdown ? <span className="text-[11px] tabular-nums text-amber-700 dark:text-amber-300">{countdown}</span> : null}
                                   </div>

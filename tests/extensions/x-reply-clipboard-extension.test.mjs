@@ -690,6 +690,8 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const readable = source.match(/  function readableTaskLimitReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
   const cardNoteHelpers = [
+    source.match(/  const DEFAULT_SCHEDULE_PRIORITY = Object\.freeze\(\{[\s\S]*?\}\);/)?.[0],
+    source.match(/  function schedulePriorityFor\(mode, rule\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePriorityLabel\(priority\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function scheduleWindowLabel\(window\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePaceLabel\(minGapMs\) \{[\s\S]*?\n  \}/)?.[0],
@@ -871,7 +873,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   } }
   const now = Date.now()
   const context = vm.createContext({
-    FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '回复评论'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论'], ['poster', '普通发帖'], ['poster-premium', '精品发帖'], ['mutual-followBack', '回关粉丝'], ['mutual-targetFollow', '关注候选'], ['mutual-unfollow', '清理未回关']],
+    FLOW_TASKS: [['notifications', '回复评论'], ['timeline', '评论帖子'], ['poster-premium', '精品发帖'], ['poster', '普通发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论'], ['mutual-followBack', '回关粉丝'], ['mutual-targetFollow', '关注候选'], ['mutual-unfollow', '清理未回关']],
     FLOW_STALE_MS: 90000,
     TASK_MODE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'mutual-targetFollow': '关注候选' },
     scheduleLoaded: true,
@@ -911,13 +913,13 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(context.countLabel('likes-replies', 5), '5 个点赞')
   context.paint(panel)
   assert.equal(list.children.length, 9)
-  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster', 'poster-premium', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
+  assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['notifications', 'timeline', 'poster-premium', 'poster', 'likes-posts', 'likes-replies', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
   assert.equal(list.children[0].children[3].textContent, '进入')
-  assert.equal(list.children[0].children[0].textContent, '评论帖子')
-  assert.equal(list.children[0].children[1].textContent, '运行中')
-  assert.equal(list.children[1].children[1].textContent, '等待中')
+  assert.equal(list.children[0].children[0].textContent, '回复评论')
+  assert.equal(list.children[0].children[1].textContent, '等待中')
+  assert.equal(list.children[1].children[1].textContent, '运行中')
   assert.equal(list.children[2].children[1].textContent, '已停止')
-  assert.equal(list.children[4].children[1].textContent, '需处理')
+  assert.equal(list.children[3].children[1].textContent, '需处理')
   assert.match(total.textContent, /1 项运行中 · 1 项等待中 · 1 项需处理 · 6 项已停止/)
   assert.equal(scheduleList.children.length, 9)
   const firstScheduleRow = scheduleList.children[0]
@@ -936,7 +938,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(nowGo?.textContent, '查看')
   assert.equal(nowGo?.dataset.currentTask, 'notifications')
   assert.equal(list.children[0].children[1].textContent, '等待中')
-  assert.equal(list.children[4].children[1].textContent, '需处理')
+  assert.equal(list.children[3].children[1].textContent, '需处理')
   // Desk order follows readiness clock, not fixed FLOW_TASKS / dueModes sequence.
   context.taskSchedule.current = ''
   context.pluginRuntime.tasks = {}
@@ -980,11 +982,11 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   context.pluginRuntime.tasks.timeline = { phase: 'running', detail: '正在评论', updatedAt: now }
   context.pluginRuntime.flow.phase = 'paused'
   context.paint(panel)
-  assert.equal(list.children[0].children[1].textContent, '运行中')
+  assert.equal(list.children[1].children[1].textContent, '运行中')
   assert.doesNotMatch(total.textContent, /全流程已暂停/)
   context.pluginRuntime.tasks.timeline.phase = 'paused'
   context.paint(panel)
-  assert.equal(list.children[0].children[1].textContent, '已停止')
+  assert.equal(list.children[1].children[1].textContent, '已停止')
   assert.match(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-desk-home/)
   assert.match(source, /data-xrc-timeline-current>正在读取排班状态/)
@@ -1355,6 +1357,8 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
 test('schedule card notes use titled fields separated by fullwidth bars', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helpers = [
+    source.match(/  const DEFAULT_SCHEDULE_PRIORITY = Object\.freeze\(\{[\s\S]*?\}\);/)?.[0],
+    source.match(/  function schedulePriorityFor\(mode, rule\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePriorityLabel\(priority\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function scheduleWindowLabel\(window\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function schedulePaceLabel\(minGapMs\) \{[\s\S]*?\n  \}/)?.[0],
@@ -1378,23 +1382,23 @@ test('schedule card notes use titled fields separated by fullwidth bars', async 
   const task = { reason: '', rule: { priority: 9, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
-    '状态：X 限制冷却｜剩余：01:00｜说明：到期自动重试｜优先级：回复评论档｜时段：全天'
+    '状态：X 限制冷却｜剩余：01:00｜说明：到期自动重试｜优先级：最重要｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '风控等待中', remaining: 60000 }),
-    '状态：X 限制冷却｜剩余：01:00｜优先级：回复评论档｜时段：全天'
+    '状态：X 限制冷却｜剩余：01:00｜优先级：最重要｜时段：全天'
   )
   assert.equal(
     context.format({ ...task, rule: { priority: 5, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
-    '状态：排队中｜等待：评论帖子｜优先级：点赞档｜时段：全天'
+    '状态：排队中｜等待：评论帖子｜优先级：一般｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '等待下次排班', remaining: 60000 }),
-    '状态：本次已完成｜剩余：01:00｜说明：等待下次排班｜优先级：回复评论档｜时段：全天'
+    '状态：本次已完成｜剩余：01:00｜说明：等待下次排班｜优先级：最重要｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
-    '状态：本次已完成｜剩余：01:00｜优先级：回复评论档｜时段：全天'
+    '状态：本次已完成｜剩余：01:00｜优先级：最重要｜时段：全天'
   )
   assert.equal(
     context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
@@ -1647,9 +1651,18 @@ test('background status reports resident recovery as waiting but manual stops as
     globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
     RUNTIME_REPORT_MODES: ['timeline', 'notifications', 'likes-posts', 'poster'],
     RUNTIME_REPORT_STALE_MS: 90_000,
+    MAX_TASK_PRIORITY: 9,
+    SCHEDULE_PRIORITY_HINT: '评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)',
     RESIDENT_TASKS: ['timeline', 'notifications'],
     QUEUED_TASKS: ['poster'],
     TASK_TITLE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子', poster: '普通发帖' },
+    defaultTaskPriority: (mode) => ({ notifications: 9, timeline: 8, poster: 6, 'likes-posts': 5 }[mode] || 1),
+    normalizedTaskRules: () => ({
+      timeline: { enabled: true, priority: 8 },
+      notifications: { enabled: true, priority: 9 },
+      'likes-posts': { enabled: true, priority: 5 },
+      poster: { enabled: true, priority: 6 },
+    }),
     normalizedSliceSeconds: (value) => [20, 30, 45].includes(Number(value)) ? Number(value) : 30,
     scheduleTimeline: () => ({ history: [], future: [{ mode: 'notifications', status: 'scheduled', readyAt: Date.now() + 60000, reason: '等待自动恢复' }] }),
     readPluginRuntime: async () => ({
@@ -1759,7 +1772,10 @@ test('merge account data consolidates legacy default logs into the active handle
   try {
     const result = await receipt.mergeAccountData('default', 'tarsixseveneig1')
     assert.equal(result.changed, true)
-    assert.deepEqual(stored.xrcDailyReports[0].counts, { comments: 5, likes: 5, follows: 0, unfollows: 0, followBacks: 0, posts: 0 })
+    assert.deepEqual(stored.xrcDailyReports[0].counts, {
+      comments: 5, timelineComments: 0, notificationComments: 0,
+      likes: 5, follows: 0, unfollows: 0, followBacks: 0, posts: 0,
+    })
     assert.equal(stored.xrcDailyReports[0].accountHandle, 'tarsixseveneig1')
     assert.equal(stored.xrcLimitObservations[0].accountHandle, 'tarsixseveneig1')
     assert.equal(stored.xrcCommunityReport.accountHandle, 'tarsixseveneig1')
@@ -4910,7 +4926,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.43')
+  assert.equal(manifest.version, '4.0.44')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -4930,7 +4946,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(catalog, /resourceKey: 'resource:x-tweet-to-pdf-extension',[\s\S]*?legacy: true/)
   assert.match(catalog, /resourceKey: 'resource:x-mutual-cleaner-extension',[\s\S]*?legacy: true/)
   assert.match(backgroundSource, /xrc-tweet-pdf-open/)
-  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"timeline"[\s\S]*?"poster-premium"\s*\]\)/)
+  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"notifications"[\s\S]*?"mutual-unfollow"\s*\]\)/)
   assert.match(backgroundSource, /phase: "idle"/)
   assert.match(backgroundSource, /phase: "unknown"/)
   const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
@@ -6076,11 +6092,11 @@ test('legacy task windows are consolidated only after the other task confirms su
   }
   try {
     await background.openAllTasks(null, 'tuaran')
-    assert.deepEqual([...live.keys()], [11])
-    assert.equal(local.xrcTaskSchedule.current, 'timeline')
-    assert.equal(local.xrcTaskSchedule.workTabId, 11)
-    assert.deepEqual(session.xrcTaskTabs, { timeline: 11 })
-    assert.ok(local.xrcTaskSchedule.items.notifications.resumeAt >= now)
+    assert.deepEqual([...live.keys()], [22])
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcTaskSchedule.workTabId, 22)
+    assert.deepEqual(session.xrcTaskTabs, { notifications: 22 })
+    assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt >= now)
   } finally {
     globalThis.Date = RealDate
     delete globalThis.chrome

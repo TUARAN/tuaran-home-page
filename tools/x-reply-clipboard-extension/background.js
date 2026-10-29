@@ -1192,13 +1192,13 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["timeline", "notifications", "likes-posts", "likes-replies", "poster", "poster-premium", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "poster-premium", "poster", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
 const SLICE_YIELD_COOLDOWN_MS = 60 * 1000;
-const PRIORITY_ORDER_VERSION = 2;
+const PRIORITY_ORDER_VERSION = 3;
 const MAX_TASK_PRIORITY = 9;
 const LIKE_MIN_GAP_MS = 45 * 60 * 1000;
 const LIKE_SLICE_MS = 3 * 60 * 1000;
@@ -1849,6 +1849,12 @@ async function noteScheduledAction(event) {
       item.recoveryAttempts = 0;
       item.resumeAt = Date.now() + item.limitedStreak * REPLY_RISK_COOLDOWN_MS;
       item.reason = `X 提示疑似自动化，第 ${item.limitedStreak} 次冷却后自动重试`;
+    } else if (["likes-posts", "likes-replies"].includes(mode)) {
+      // Likes must release the shared tab on the first automation hit so replies/posts can run.
+      item.blocked = false;
+      item.lastRunAt = Date.now();
+      item.resumeAt = Date.now() + Math.max(LIKE_MIN_GAP_MS, item.limitedStreak * REPLY_RISK_COOLDOWN_MS);
+      item.reason = String(event.errorCode || "X 点赞受限，已让出页签").slice(0, 160);
     } else {
       item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
     }
@@ -1859,6 +1865,18 @@ async function noteScheduledAction(event) {
   }
   plan.items[mode] = item;
   await saveTaskSchedule(plan);
+  if (["likes-posts", "likes-replies"].includes(mode) && event.result === "limited" && plan.enabled && plan.current === mode) {
+    if (await suspendScheduledTask(mode, item.reason, { keepTab: true, releaseOnFailure: true })) {
+      const latest = await readTaskSchedule();
+      recordScheduleSegment(latest, mode, item.reason);
+      latest.current = "";
+      latest.startedAt = 0;
+      latest.items[mode] = { ...(latest.items[mode] || {}), ...item };
+      await saveTaskSchedule(latest);
+      await tickTaskSchedule();
+    }
+    return;
+  }
   if (item.blocked) {
     const tabs = await readTaskTabs();
     const tabId = Number(tabs[mode]);
@@ -2103,17 +2121,24 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "timeline", "notifications", "likes-posts", "likes-replies",
-  "mutual-unfollow", "mutual-followBack", "poster", "poster-premium"
+  "notifications", "timeline", "poster-premium", "poster",
+  "likes-posts", "likes-replies",
+  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
+const SCHEDULE_PRIORITY_HINT = "评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)";
 
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
   const schedule = await readTaskSchedule();
   const now = Date.now();
   const timeline = scheduleTimeline(schedule, now);
+  const rules = normalizedTaskRules(schedule.rules);
   const readyModes = new Set((timeline.future || []).filter((entry) => entry.status === "ready").map((entry) => entry.mode));
+  const withPriority = (row, mode) => ({
+    ...row,
+    priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rules[mode]?.priority) || defaultTaskPriority(mode)))
+  });
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
     const queued = schedule.items?.[mode] || {};
@@ -2125,63 +2150,63 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
 
     // Prefer schedule halt flags over stale runtime rows, matching local four-state facing.
     if (queued.manualStopped || schedule.rules?.[mode]?.enabled === false) {
-      return {
+      return withPriority({
         mode,
         phase: "idle",
         startedAt: 0,
         updatedAt: updatedAt || now,
         detail: queued.manualStopped ? (queuedReason || "已手动停止") : "未参与排班",
         waitUntil: 0
-      };
+      }, mode);
     }
     if (queued.blocked) {
-      return {
+      return withPriority({
         mode,
         phase: "unknown",
         startedAt: 0,
         updatedAt: updatedAt || now,
         detail: `连续受限，等待人工检查：${queuedReason}`.slice(0, 160),
         waitUntil: 0
-      };
+      }, mode);
     }
 
     if (schedule.enabled && schedule.current === mode) {
       const livePhase = fresh && ["running", "paused", "stopping"].includes(task?.phase) ? task.phase : "starting";
-      return {
+      return withPriority({
         mode,
         phase: livePhase,
         startedAt: Number(task?.startedAt) || Number(schedule.startedAt) || 0,
         updatedAt: updatedAt || now,
         detail: String(task?.detail || "当前轮班占用中").slice(0, 160),
         waitUntil: Number(task?.waitUntil) || 0
-      };
+      }, mode);
     }
 
     if (fresh && task?.phase === "stopping") {
-      return { mode, phase: "stopping", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "正在结束当前任务").slice(0, 160), waitUntil: 0 };
+      return withPriority({ mode, phase: "stopping", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "正在结束当前任务").slice(0, 160), waitUntil: 0 }, mode);
     }
     if (fresh && task?.phase === "running") {
-      return { mode, phase: "running", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "任务正在执行").slice(0, 160), waitUntil: 0 };
+      return withPriority({ mode, phase: "running", startedAt: Number(task.startedAt) || 0, updatedAt, detail: String(task.detail || "任务正在执行").slice(0, 160), waitUntil: 0 }, mode);
     }
     if (fresh && task?.phase === "paused") {
-      return {
+      return withPriority({
         mode,
         phase: "paused",
         startedAt: Number(task.startedAt) || 0,
         updatedAt,
         detail: String(task.detail || queuedReason || "任务已启动，正在等待下一轮或冷却结束").slice(0, 160),
         waitUntil: Number(task.waitUntil) || resumeAt
-      };
+      }, mode);
     }
     if (task && !["idle", "stopped"].includes(task.phase) && (!updatedAt || now - updatedAt > RUNTIME_REPORT_STALE_MS)) {
-      return {
+      return withPriority({
         mode,
         phase: schedule.enabled ? "paused" : "unknown",
         startedAt: Number(task.startedAt) || 0,
         updatedAt: updatedAt || now,
         detail: String(task.detail || queuedReason || (schedule.enabled ? "后台排班等待" : "超过 90 秒没有状态更新")).slice(0, 160),
         waitUntil: resumeAt
-      };
+      }, mode);
     }
 
     if (schedule.enabled && ruleEnabled) {
@@ -2189,24 +2214,24 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
       const detail = ready
         ? (queuedReason || "已到期，等待进入轮班")
         : (queuedReason || "后台排班等待");
-      return {
+      return withPriority({
         mode,
         phase: "paused",
         startedAt: 0,
         updatedAt: now,
         detail: String(detail).slice(0, 160),
         waitUntil: ready ? 0 : resumeAt
-      };
+      }, mode);
     }
 
-    return {
+    return withPriority({
       mode,
       phase: "idle",
       startedAt: 0,
       updatedAt: updatedAt || 0,
       detail: "",
       waitUntil: 0
-    };
+    }, mode);
   });
   const past = timeline.history?.[0] || null;
   const next = timeline.future?.find((entry) => ["ready", "scheduled"].includes(entry.status)) || null;
@@ -2225,6 +2250,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
       current: schedule.current || "",
       startedAt: Number(schedule.startedAt) || 0,
       sliceSeconds: normalizedSliceSeconds(schedule.sliceSeconds),
+      priorityHint: SCHEDULE_PRIORITY_HINT,
       past: past ? {
         mode: past.mode,
         label: TASK_TITLE_LABELS[past.mode] || past.mode,

@@ -39,7 +39,7 @@ OpenAI 在 [dots 发布页](https://openai.com/index/introducing-dots/) 展示�
 
 另一个值得看的演示是 [Dots Phone 的一分钟视频](https://phone.gabea.nyc/demo/)。用户问洗衣机什么时候送到，dot 准备好订单信息后，拨打测试号码，按电话语音菜单输入订单号，听完配送时间，再把结果告诉用户。这才是“AI 替你给别人打电话”。演示使用的是自有测试号码和虚构订单。
 
-Dots Phone 是**独立开发者做的插件**，不是 OpenAI 官方发布的 dots 原生功能。它需要额外配置电话服务。这里的设计逻辑是：很多商家的信息还锁在电话菜单里，AI 要替你查，得能拨号、按键、听结果。视频页面提供下载按钮，但视频文件对当前下载请求返回了访问限制；可以从[演示页直接观看](https://phone.gabea.nyc/demo/)。
+Dots Phone 是**独立开发者做的插件**。这段代拨电话演示通过插件接入 Twilio，并在用户自己的电脑上运行。OpenAI 官方也提供 dot 短信测试，但[只说使用第三方短信服务商](https://help.openai.com/en/articles/20001530-getting-started-with-your-dot)，没有说是不是 Twilio，也没有公布 dot 通信有多少比例使用 Twilio。这里的设计逻辑是：很多商家的信息还锁在电话菜单里，AI 要替你查，得能拨号、按键、听结果。视频页面提供下载按钮，但视频文件对当前下载请求返回了访问限制；可以从[演示页直接观看](https://phone.gabea.nyc/demo/)。
 
 ## Google：先帮你拨通，再尝试替你说完
 
@@ -85,21 +85,45 @@ xAI 的 [Grok Bot 发布页](https://x.ai/news/introducing-grok-bot)把它描述
 
 ::video[Friend 官方发布短片](https://x.com/AviSchiffmann/status/1818284595902922884)
 
-## 这些产品到底在设计什么
+## 五款重点产品：谁给谁发消息、打电话
 
-| 产品 | 你怎么找 AI | AI 怎么找你 | AI 怎么联系别人 |
+| 产品 | 你怎么跟它说话 | 它怎么回你 | 它能怎么联系别人 |
 | --- | --- | --- | --- |
-| ChatGPT dots | ChatGPT 消息、语音；部分用户可用短信 | 发进度、问题和确认请求 | 可借助第三方 Dots Phone 拨号；不属于 OpenAI 官方原生电话功能 |
-| Google Gemini / Duplex | 对 Gemini 说需求 | 返回消息或预约结果 | Gemini 帮你拨通 WhatsApp 联系人；Duplex 自己和商家通话 |
-| Meta Muse | Muse 应用、WhatsApp 消息 | 在对话里继续任务和征求确认 | 发邮件等动作按权限执行；电话能力以官方具体发布为准 |
-| Instinct | 短信、电话 | 通过原对话回复 | 创始人称能使用电话和电脑；公开演示细节仍需逐项核对 |
-| Grok Bot | 手机、电脑消息或语音聊天 | 回报进度、请求批准 | 可在连接的应用里办事；未见官方普通电话拨号演示 |
+| ChatGPT dots | 打开 ChatGPT App 或网页版，给自己的 dot 发消息；也能在对话里点电话按钮，直接和它说话。美国部分 Pro 用户接入后，还能用手机短信给 dot 发消息。 | 它会在对话里告诉你进度；缺资料或需要你决定时，会发消息来问。开通短信后，它也能给你的手机回短信。目前它不能主动打电话给你。 | 目前这段“dot 替人打客服”的演示，是独立开发者用 Dots Phone 插件接入 Twilio 做出来的。OpenAI 没有公布 dot 的通信服务有多少比例经过 Twilio；官方短信测试使用第三方服务商，但未说明是哪一家。 |
+| Google Gemini / Duplex | 在 Android 手机的 Gemini App 里打字或说话，让它帮你联系某人。Google 的 Duplex 发布视频则演示了：向 Google Assistant 说出餐馆、时间和人数。 | Gemini 在手机上给你回复；Duplex 演示中，助手打完预约电话后把结果通知你。 | Gemini 可以通过你手机上的 WhatsApp 发消息或发起通话，接通后由你自己说话。Duplex 发布视频里，AI 自己打给商家，替你交谈并完成预约。 |
+| Meta Muse | 在 Muse App 或 WhatsApp 的聊天窗口里给 Muse 发消息，告诉它想办什么事。 | 它在同一段对话里回复你；需要你决定或批准时，会回来问你。 | 你给了相应权限后，它可以用连接的应用发邮件。官方发布资料没有明确展示它替用户拨打普通电话的通用功能。 |
+| Instinct | 按创始人的介绍，你可以给 Instinct 的号码发短信，或直接拨电话，把要办的事告诉它。 | 它在原来的消息对话里回复你，告诉你结果或继续问你。 | 创始人说它能使用电话和电脑办事；公开的订位视频没有说明整通电话是否都由 AI 独立完成。 |
+| Grok Bot | 打开 Grok Bot 的手机或电脑 App，给 Bot 发消息交代工作；手机端也能开启语音聊天，直接对它说。 | 它在对话里报告进度和结果；碰到要你批准的步骤，就来问你。 | 它能在你连接的应用里办事。官方发布资料没有展示它自己拨打普通电话号码、与商家交谈。 |
+
+## 其他产品：发消息与打电话怎么配合
+
+个人助手产品中的“你”是使用者本人；企业产品中的“你”是设置智能体的商家。视频栏只写查到的官方影片或产品演示，找不到发布片就直接标明。
+
+| 智能体产品 | 视频演示 | 你怎么找 AI | AI 怎么找你或你的客户 | AI 怎么联系别人 | 设计逻辑 |
+| --- | --- | --- | --- | --- | --- |
+| [Tab](https://tab.bot/)（个人助手，内测） | 官网有[短信和代拨电话的场景说明](https://tab.bot/)；暂未找到官方发布片。 | 给 Tab 发短信，直接说“帮我改酒店预订”，也能把截图、文件发给它。 | 它在同一个短信对话里追问、报进度，办完再把结果发回来。 | 官网称它可以自己打给酒店、诊所或餐馆，等接通后询问、改约。 | **一条短信交代整件事。** 用户不用守在电话旁等客服接听。 |
+| [Lindy](https://www.lindy.ai/product/phone)（个人与团队助手） | [官网电话场景演示](https://www.lindy.ai/product/phone) | 可以给 Lindy 发短信、语音留言、邮件，或在 Slack 里交代任务。 | 它能用短信或 Slack 告诉你谁来过电话、对方要什么、约到了什么时间。 | 它有自己的号码，可以替你给牙医或商家打电话，也能替你接听来电。官网说明目前电话以美国号码和通话为主。 | **给助手一个号码。** 它既替你打出去，也替你接进来，再把结果发回原来的沟通渠道。 |
+| [Poke Human](https://poke.com/docs/release-notes)（个人助手加真人协助） | [官方发布视频](https://x.com/interaction/status/2070186007299772700) | 在 Apple Messages、WhatsApp 或 Telegram 给 Poke 发消息，说明想订餐厅、叫车等。 | Poke 在消息对话里回复你；需要真人处理时，会把具体任务交给工作人员。 | 需要电话或线下操作的事，Poke Human 可以安排**真人**去做，不能把这些电话说成 AI 自己打的。 | **消息由 AI 接，难办的电话交给真人。** 它把交代任务的入口留在聊天窗口。 |
+| [Cal.ai](https://cal.com/ai)（企业预约助手） | [官方宣传视频](https://www.youtube.com/watch?v=3nwW7X-9WO0) | 商家在 Cal.com 设置：有人预约、爽约或临近会议时，让 AI 打电话。客户也可以拨打测试号码体验。 | 预约和通话结果留在 Cal.com；商家还可以把短信提醒接进同一套预约流程。 | AI 按设定给预约人打电话，确认、改期或提醒。短信是 Cal.com 工作流里的另一项动作。 | **围绕预约打电话。** 每通电话都由一次明确的预约事件触发，结果回到日历。 |
+| [Televox](https://televox.ai/demo/videos)（商家接待助手） | [真实接听演示](https://youtu.be/j0A3y9GkeGo)、[电话与消息宣传片](https://youtu.be/eZfGJ78F3vo) | 商家设置接待号码；顾客可以直接打电话，也能从 WhatsApp 发消息或语音便条。 | AI 在电话或 WhatsApp 回顾客，订位后还可发短信确认；商家在后台看记录。 | 它主要代表商家**接听顾客来电**，回答问题、查空位、完成预约。 | **同一个接待员管多个入口。** 电话里谈好的时间，随后用短信确认，商家后台也能看到。 |
+| [PolyAI](https://poly.ai/use-cases/call-routing)（企业客服助手） | [官方银行案例，含通话介绍](https://poly.ai/customers/savings-bank)；该页不是发布片。 | 商家把客服来电接给 PolyAI；顾客照常拨打客服电话。 | AI 在电话里回答顾客；需要查看网页或表单时，可以给来电人发短信链接。 | 它接听来电、弄清顾客的问题，再回答或转给人工客服。 | **电话说不完的内容，用短信补上。** 顾客不必在通话里记网址。 |
+| [Humane Ai Pin](https://vimeo.com/882968794)（历史产品，已停服） | [官方发布片](https://vimeo.com/882968794) | 当年用户可通过佩戴设备的语音和触摸操作，给联系人打电话、发消息。 | 来电和消息会在设备上提醒，用户可用语音和手势处理。 | 当年的设计是让用户通过佩戴设备联系真实的人。[服务已于 2025 年停止](https://techcrunch.com/2025/02/18/humanes-ai-pin-is-dead-as-hp-buys-startups-assets-for-116m/)，不能当作现在可用的功能。 | **把通信入口从手机屏幕移到身上。** 发布片适合看交互方式，不适合作为现有产品选型。 |
+
+Poke、Cal.ai 和 Televox 三条片子适合连着看：Poke 展示**真人接手电话任务**，Cal.ai 展示**预约触发 AI 外呼**，Televox 展示**AI 接电话后再发短信确认**。
+
+::video[Poke Human 官方发布片：AI 把电话任务交给真人](https://x.com/interaction/status/2070186007299772700)
+
+::video[Cal.ai 官方宣传片：预约触发 AI 电话](https://www.youtube.com/watch?v=3nwW7X-9WO0)
+
+::video[Televox 官方宣传片：电话、WhatsApp 和短信接续](https://youtu.be/eZfGJ78F3vo)
 
 这些发布片最值得学的一点是：**让用户始终知道谁在说话、谁会收到消息、哪一步要自己确认**。消息和电话一旦发出去，就会影响真实的人。产品越想替人办事，越要把这些动作交代明白。
 
 ## 主要来源与持续验证
 
 资料核对至 **2026 年 10 月 29 日**。主要依据 [OpenAI dots 发布页](https://openai.com/index/introducing-dots/)及[使用帮助](https://help.openai.com/en/articles/20001530-getting-started-with-your-dot)、[Google Gemini 帮助](https://support.google.com/gemini/answer/15574928?hl=en)与[Duplex 发布介绍](https://blog.google/products-and-platforms/products/assistant/io18/)、[Meta Muse 发布页](https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/)、[Instinct 创始人发布帖](https://x.com/noahrshinn/status/2092691344456351744)、[xAI Grok Bot 发布页](https://x.ai/news/introducing-grok-bot)和 [Dots Phone 演示说明](https://phone.gabea.nyc/demo/)。
+
+其他产品以 [Tab 官网](https://tab.bot/)、[Lindy 电话产品页](https://www.lindy.ai/product/phone)、[Poke 更新说明](https://poke.com/docs/release-notes)、[Cal.ai 产品页](https://cal.com/ai)、[Televox 视频页](https://televox.ai/demo/videos)、[PolyAI 客服案例](https://poly.ai/customers/savings-bank)和 [Humane 官方发布片](https://vimeo.com/882968794)为依据。Poke Human 的电话任务由真人执行；Tab 仍是内测产品；Humane 已停服。
 
 - Instinct 和 Muse 的外部电话能力仍要以可复现的官方演示、开放范围及具体版本继续核对。
 - dots 短信、电话插件和 Grok Bot 的开放范围可能变化，使用前以各产品当前说明为准。

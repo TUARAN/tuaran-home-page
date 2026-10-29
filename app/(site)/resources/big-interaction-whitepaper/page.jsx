@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import PageContainer from '../../components/PageContainer'
@@ -14,7 +16,7 @@ const shareUrl = 'https://2aran.com/x'
 const title = '大互动理论'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、七日实践与退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
-const updated = '2026-10-28'
+const updated = '2026-10-29'
 
 export const metadata = {
   title: `${title}｜互动、反馈与边界`,
@@ -142,6 +144,15 @@ export default function BigInteractionWhitepaperPage() {
             <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" display prefix="·" />
           </p>
         </header>
+
+        <aside className={styles.toolGuide} aria-label="X 高频互动助手入口">
+          <div>
+            <p className={styles.toolGuideEyebrow}>把交流方法用在 X 上</p>
+            <h2>X 高频互动助手</h2>
+            <p>想在 X 上持续参与讨论？这个本地 Chrome 扩展把评论、点赞、关注管理和定时发帖放进同一排班面板，方便查看进度和调整节奏。工具页有功能说明、使用边界和获取方式。</p>
+          </div>
+          <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看工具与获取方式 <span aria-hidden="true">→</span></Link>
+        </aside>
 
         <div className={styles.readingLayout}>
           <ChapterNav chapters={chapters} />

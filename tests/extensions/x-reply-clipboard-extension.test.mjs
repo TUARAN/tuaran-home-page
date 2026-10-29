@@ -1375,26 +1375,26 @@ test('schedule card notes use titled fields separated by fullwidth bars', async 
     TASK_MODE_LABELS: { timeline: '评论帖子', poster: '普通发帖' },
   })
   vm.runInContext(`${helpers}\nglobalThis.format = formatScheduleCardNote; globalThis.pastNote = formatDeskPastNote; globalThis.dispatchNote = formatDeskDispatchNote`, context)
-  const task = { reason: '', rule: { priority: 3, window: 'all', minGapMs: 0 } }
+  const task = { reason: '', rule: { priority: 9, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
-    '状态：X 限制冷却｜剩余：01:00｜说明：到期自动重试｜优先级：最高｜时段：全天'
+    '状态：X 限制冷却｜剩余：01:00｜说明：到期自动重试｜优先级：回复评论档｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '风控等待中', remaining: 60000 }),
-    '状态：X 限制冷却｜剩余：01:00｜优先级：最高｜时段：全天'
+    '状态：X 限制冷却｜剩余：01:00｜优先级：回复评论档｜时段：全天'
   )
   assert.equal(
-    context.format({ ...task, rule: { priority: 2, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
-    '状态：排队中｜等待：评论帖子｜优先级：优先｜时段：全天'
+    context.format({ ...task, rule: { priority: 5, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
+    '状态：排队中｜等待：评论帖子｜优先级：点赞档｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '等待下次排班', remaining: 60000 }),
-    '状态：本次已完成｜剩余：01:00｜说明：等待下次排班｜优先级：最高｜时段：全天'
+    '状态：本次已完成｜剩余：01:00｜说明：等待下次排班｜优先级：回复评论档｜时段：全天'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
-    '状态：本次已完成｜剩余：01:00｜优先级：最高｜时段：全天'
+    '状态：本次已完成｜剩余：01:00｜优先级：回复评论档｜时段：全天'
   )
   assert.equal(
     context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
@@ -4910,7 +4910,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.42')
+  assert.equal(manifest.version, '4.0.43')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -5300,6 +5300,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(resourcePage, /<ExtensionDownloadButton href=\{DOWNLOAD_URL\} version=\{VERSION\}/)
   assert.match(downloadButton, /获取邀请码并下载 v\$\{version\}/)
   assert.match(downloadButton, /ZIP 会内置回执密钥/)
+  assert.match(downloadButton, /INVITE_BOUND/)
+  assert.match(downloadButton, /已激活为设备码/)
   assert.match(downloadButton, /INVALID_PASSWORD/)
   assert.match(downloadButton, /method: 'POST'/)
   assert.match(downloadButton, /qrcode-wechat\.jpg/)
@@ -5603,18 +5605,19 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     'mutual-unfollow': { window: 'peak' },
   }, items: { notifications: { resumeAt: morning + 3600000 } } }
   const morningDue = background.dueTaskModes(plan, morning)
-  assert.equal(morningDue[0], 'poster-premium')
+  assert.equal(morningDue[0], 'timeline')
+  assert.ok(morningDue.indexOf('timeline') < morningDue.indexOf('poster-premium'))
   assert.ok(!morningDue.includes('notifications'))
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, night).includes('poster-premium'))
-  const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { timeline: { priority: 3 }, 'likes-replies': { priority: 1 } }, items: {
+  const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { timeline: { priority: 8 }, 'likes-replies': { priority: 5 } }, items: {
     timeline: { lastRunAt: afternoon - 60000 },
     'likes-replies': { lastRunAt: afternoon - 60 * 60000 },
   } }
-  assert.ok(background.dueTaskModes(fairPlan, afternoon).indexOf('likes-replies') < background.dueTaskModes(fairPlan, afternoon).indexOf('timeline'))
+  assert.ok(background.dueTaskModes(fairPlan, afternoon).indexOf('timeline') < background.dueTaskModes(fairPlan, afternoon).indexOf('likes-replies'))
 })
 
 test('mutual unfollow defaults to about once a week and keeps a longer occupancy pass', () => {
@@ -5623,6 +5626,15 @@ test('mutual unfollow defaults to about once a week and keeps a longer occupancy
   assert.equal(rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
   assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
   assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 8 * 60 * 60 * 1000)
+  assert.equal(background.sliceMsForMode('likes-posts', { sliceSeconds: 30 }), background.LIKE_SLICE_MS)
+  assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
+  assert.equal(rules['likes-posts'].pace, 'slow')
+  assert.equal(rules['likes-replies'].priority, rules['likes-posts'].priority)
+  assert.ok(rules.notifications.priority > rules.timeline.priority)
+  assert.ok(rules.timeline.priority > rules['poster-premium'].priority)
+  assert.ok(rules['poster-premium'].priority > rules.poster.priority)
+  assert.ok(rules.poster.priority > rules['likes-posts'].priority)
+  assert.ok(rules['likes-posts'].priority > rules['mutual-followBack'].priority)
 
   const recent = {
     enabledAt: now - 60000,
@@ -5662,8 +5674,8 @@ test('default schedule ranks frequent actions first and reserves follow-back for
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'timeline', 'notifications', 'likes-posts', 'likes-replies',
-    'poster', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow',
+    'notifications', 'timeline', 'poster', 'likes-posts', 'likes-replies',
+    'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
@@ -5717,13 +5729,18 @@ test('existing schedule receives the daily follow-back cadence and new default w
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.timeline.priority, 3)
-    assert.equal(plan.rules['likes-posts'].priority, 3)
-    assert.equal(plan.rules.poster.priority, 2)
-    assert.equal(plan.rules['mutual-followBack'].priority, 1)
+    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.timeline.priority, 8)
+    assert.equal(plan.rules['poster-premium'].priority, 7)
+    assert.equal(plan.rules.poster.priority, 6)
+    assert.equal(plan.rules['likes-posts'].priority, 5)
+    assert.equal(plan.rules['likes-replies'].priority, 5)
+    assert.equal(plan.rules['likes-posts'].pace, 'slow')
+    assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-followBack'].priority, 4)
     assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-followBack'].window, 'overnight')
-    assert.equal(plan.priorityOrderVersion, 1)
+    assert.equal(plan.priorityOrderVersion, background.PRIORITY_ORDER_VERSION)
     assert.equal(plan.followBackNightVersion, 1)
     await background.readTaskSchedule()
     assert.equal(writes, 1)
@@ -5999,7 +6016,12 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    assert.ok(stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode))
+    // Highest default rank is notifications; from /home that may navigate first, then start in-page.
+    assert.equal(activeMode, 'notifications')
+    assert.ok(
+      stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
+      || focused.some((entry) => /notifications/i.test(String(entry.options?.url || ''))),
+    )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
       flow: { phase: 'running' },

@@ -1198,6 +1198,10 @@ const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
 const SLICE_YIELD_COOLDOWN_MS = 60 * 1000;
+const PRIORITY_ORDER_VERSION = 2;
+const MAX_TASK_PRIORITY = 9;
+const LIKE_MIN_GAP_MS = 45 * 60 * 1000;
+const LIKE_SLICE_MS = 3 * 60 * 1000;
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_MIN_GAP_MS = 24 * 60 * 60 * 1000;
@@ -1281,9 +1285,11 @@ function migrateSliceSeconds(plan) {
 
 function sliceMsForMode(mode, plan) {
   const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
-  // Interaction tasks own the shared tab until their in-page run plan finishes.
+  // Reply tasks own the shared tab until their in-page run plan finishes.
   // The long cap is only a recovery guard for a loop that never reports completion.
-  if (["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode)) return 8 * 60 * 60 * 1000;
+  if (["timeline", "notifications"].includes(mode)) return 8 * 60 * 60 * 1000;
+  // Likes only take a short burst, then yield so replies/posts can reclaim the tab.
+  if (["likes-posts", "likes-replies"].includes(mode)) return Math.max(base, LIKE_SLICE_MS);
   if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
   if (mode === "mutual-targetFollow") return Math.max(base, TARGET_FOLLOW_SLICE_MS);
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
@@ -1292,8 +1298,15 @@ function sliceMsForMode(mode, plan) {
 }
 
 function defaultTaskPriority(mode) {
-  if (["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode)) return 3;
-  if (["poster", "poster-premium"].includes(mode)) return 2;
+  // 回复评论 > 评论帖子 > 精品发帖 > 普通发帖 > 点赞帖子 = 点赞评论 > 回关 > 关注候选 > 取消未回关
+  if (mode === "notifications") return 9;
+  if (mode === "timeline") return 8;
+  if (mode === "poster-premium") return 7;
+  if (mode === "poster") return 6;
+  if (["likes-posts", "likes-replies"].includes(mode)) return 5;
+  if (mode === "mutual-followBack") return 4;
+  if (mode === "mutual-targetFollow") return 3;
+  if (mode === "mutual-unfollow") return 2;
   return 1;
 }
 
@@ -1301,11 +1314,15 @@ function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
     enabled: true,
     priority: defaultTaskPriority(mode),
-    pace: mode === "timeline" ? "boundary" : "medium",
+    pace: mode === "timeline" ? "boundary"
+      : ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+      : "medium",
     window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
     minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
-      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS : 0
+      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+      : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
+      : 0
   }]));
 }
 
@@ -1317,7 +1334,7 @@ function normalizedTaskRules(value) {
     const requestedGap = Number(rule.minGapMs);
     defaults[mode] = {
       enabled: rule.enabled !== false,
-      priority: Math.max(1, Math.min(3, Number(rule.priority) || defaults[mode].priority)),
+      priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
       pace: ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
@@ -1367,14 +1384,13 @@ function dueTaskModes(plan, now = Date.now()) {
         && (manuallyRequested || taskWindowOpen(mode, rule, now));
     })
     .sort((a, b) => {
-      if (a.mode === "poster-premium") return -1;
-      if (b.mode === "poster-premium") return 1;
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
+      // Strict rank first so aging cannot let likes outrank replies/posts.
+      if (b.rule.priority !== a.rule.priority) return b.rule.priority - a.rule.priority;
       const aging = (entry) => Math.min(3, Math.floor((now - Number(entry.item.lastRunAt || plan.enabledAt || now)) / (15 * 60000)));
-      const score = (entry) => entry.rule.priority + aging(entry);
-      return score(b) - score(a) || a.index - b.index;
+      return aging(b) - aging(a) || a.index - b.index;
     })
     .map(({ mode }) => mode);
 }
@@ -1428,12 +1444,14 @@ async function readTaskSchedule() {
     : { enabled: false, current: "", cursor: 0, items: {} };
   plan.rules = normalizedTaskRules(plan.rules);
   let scheduleMigrated = false;
-  if (plan.priorityOrderVersion !== 1) {
+  if (plan.priorityOrderVersion !== PRIORITY_ORDER_VERSION) {
     for (const mode of QUEUED_TASKS) {
       plan.rules[mode].priority = defaultTaskPriority(mode);
+      plan.rules[mode].pace = defaultTaskRules()[mode].pace;
+      plan.rules[mode].minGapMs = defaultTaskRules()[mode].minGapMs;
     }
-    plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
-    plan.priorityOrderVersion = 1;
+    plan.rules["mutual-followBack"].window = "overnight";
+    plan.priorityOrderVersion = PRIORITY_ORDER_VERSION;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {
@@ -1607,9 +1625,17 @@ async function runTaskSchedule() {
     // A single confirmed action must never end their occupancy.
     const actionDone = ["poster", "poster-premium"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
-    const completeRunOccupancy = ["timeline", "notifications", "likes-posts", "likes-replies"].includes(current);
-    const premiumDue = !completeRunOccupancy && current !== "poster-premium" && dueTaskModes(plan, now)[0] === "poster-premium";
-    const requestedMode = dueTaskModes(plan, now)[0];
+    // Only reply tasks keep the tab until their full run finishes; likes yield on slice/higher priority.
+    const completeRunOccupancy = ["timeline", "notifications"].includes(current);
+    const dueNow = dueTaskModes(plan, now);
+    const requestedMode = dueNow[0];
+    const currentPriority = Number(normalizedTaskRules(plan.rules)[current]?.priority) || 0;
+    const requestedPriority = Number(normalizedTaskRules(plan.rules)[requestedMode]?.priority) || 0;
+    const higherPriorityDue = !completeRunOccupancy
+      && requestedMode
+      && requestedMode !== current
+      && requestedPriority > currentPriority;
+    const premiumDue = higherPriorityDue && requestedMode === "poster-premium";
     const manualDue = !completeRunOccupancy && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
     const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled;
@@ -1713,10 +1739,10 @@ async function runTaskSchedule() {
       await saveTaskSchedule(plan);
       return plan;
     }
-    if (!waiting && !timedOut && !actionDone && !premiumDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
+    if (!waiting && !timedOut && !actionDone && !higherPriorityDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
-    const baseResumeAt = waiting ? waitUntil : now + (premiumDue ? 60000 : SLICE_YIELD_COOLDOWN_MS);
+    const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
     const followBack = current === "mutual-followBack";
     if (followBack && (Number(item.followBackSessionUntil) || 0) <= Number(plan.startedAt)) {
       item.followBackSessionUntil = followBackNightEndsAt(Number(plan.startedAt) || now);
@@ -1736,6 +1762,8 @@ async function runTaskSchedule() {
           ? "已从排班中停用"
           : premiumDue
             ? "精品发帖档位到期，安全轮换"
+            : higherPriorityDue
+              ? "更高优先级任务到期，安全轮换"
             : manualDue
               ? "另一项任务已请求优先启动，安全轮换"
             : windowClosed
@@ -1744,6 +1772,8 @@ async function runTaskSchedule() {
               ? "清理未回关约每周一次，等待下次排班"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选约每周一次，等待下次排班"
+              : ["likes-posts", "likes-replies"].includes(current) && minGapMs
+                ? "点赞短轮已结束，等待间隔后再排"
               : followBackSessionOpen
                 ? "夜间回关时段内，等待下一轮或批次冷却结束"
               : current === "mutual-followBack" && minGapMs
@@ -2892,12 +2922,17 @@ if (typeof module === "object" && module.exports) {
     DEFAULT_SLICE_SECONDS,
     SLICE_SECONDS_OPTIONS,
     SLICE_YIELD_COOLDOWN_MS,
+    PRIORITY_ORDER_VERSION,
+    MAX_TASK_PRIORITY,
+    LIKE_MIN_GAP_MS,
+    LIKE_SLICE_MS,
     UNFOLLOW_MIN_GAP_MS,
     UNFOLLOW_SLICE_MS,
     FOLLOW_BACK_MIN_GAP_MS,
     FOLLOW_BACK_SLICE_MS,
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
+    defaultTaskPriority,
     DEFAULT_TARGET_FOLLOW_HANDLES,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,

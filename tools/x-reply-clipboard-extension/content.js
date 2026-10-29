@@ -1305,7 +1305,18 @@
   }
 
   function schedulePriorityLabel(priority) {
-    return ({ 1: "常规", 2: "优先", 3: "最高" })[Math.max(1, Math.min(3, Number(priority) || 1))] || "常规";
+    const rank = Math.max(1, Math.min(9, Number(priority) || 1));
+    return ({
+      9: "回复评论档",
+      8: "评论帖子档",
+      7: "精品发帖档",
+      6: "普通发帖档",
+      5: "点赞档",
+      4: "回关档",
+      3: "关注候选档",
+      2: "取消未回关档",
+      1: "最低"
+    })[rank] || `${rank}`;
   }
 
   function scheduleWindowLabel(window) {
@@ -1315,6 +1326,7 @@
   function schedulePaceLabel(minGapMs) {
     const gap = Number(minGapMs) || 0;
     if (gap >= 7 * 24 * 60 * 60 * 1000) return "约每周一次";
+    if (gap > 0 && gap < 60 * 60 * 1000) return `间隔 ${Math.max(1, Math.round(gap / 60000))} 分钟`;
     if (gap > 0) return `间隔 ${Math.round(gap / 3600000)} 小时`;
     return "";
   }
@@ -1752,8 +1764,8 @@
       .sort((a, b) => {
         const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
         if (readyDiff) return readyDiff;
-        const priorityA = Math.max(1, Math.min(3, Number(a.rule.priority) || 1));
-        const priorityB = Math.max(1, Math.min(3, Number(b.rule.priority) || 1));
+        const priorityA = Math.max(1, Math.min(9, Number(a.rule.priority) || 1));
+        const priorityB = Math.max(1, Math.min(9, Number(b.rule.priority) || 1));
         return priorityB - priorityA || String(a.mode).localeCompare(String(b.mode));
       });
     const nowTask = nowMode ? byMode.get(nowMode) : null;
@@ -4663,9 +4675,24 @@
       const windowSelect = row.querySelector("[data-xrc-schedule-window]");
       const paceSelect = row.querySelector("[data-xrc-schedule-pace]");
       if (enabled && document.activeElement !== enabled) enabled.checked = rule.enabled !== false;
-      if (priority && document.activeElement !== priority) priority.value = String(rule.priority || (["timeline", "notifications", "likes-posts", "likes-replies"].includes(row.dataset.xrcScheduleRule) ? 3 : ["poster", "poster-premium"].includes(row.dataset.xrcScheduleRule) ? 2 : 1));
+      if (priority && document.activeElement !== priority) {
+        const mode = row.dataset.xrcScheduleRule;
+        const fallback = mode === "notifications" ? 9
+          : mode === "timeline" ? 8
+          : mode === "poster-premium" ? 7
+          : mode === "poster" ? 6
+          : ["likes-posts", "likes-replies"].includes(mode) ? 5
+          : mode === "mutual-followBack" ? 4
+          : mode === "mutual-targetFollow" ? 3
+          : mode === "mutual-unfollow" ? 2
+          : 1;
+        priority.value = String(rule.priority || fallback);
+      }
       if (windowSelect && document.activeElement !== windowSelect) windowSelect.value = rule.window || (row.dataset.xrcScheduleRule === "poster-premium" ? "day" : row.dataset.xrcScheduleRule === "mutual-followBack" ? "overnight" : "all");
-      if (paceSelect && document.activeElement !== paceSelect) paceSelect.value = rule.pace || (row.dataset.xrcScheduleRule === "timeline" ? "boundary" : "medium");
+      if (paceSelect && document.activeElement !== paceSelect) {
+        const mode = row.dataset.xrcScheduleRule;
+        paceSelect.value = rule.pace || (mode === "timeline" ? "boundary" : ["likes-posts", "likes-replies"].includes(mode) ? "slow" : "medium");
+      }
     });
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
   }
@@ -4710,10 +4737,21 @@
   }
 
   function scheduleRuleRowsMarkup() {
+    const priorityOptions = [
+      ["9", "9 回复评论档"],
+      ["8", "8 评论帖子档"],
+      ["7", "7 精品发帖档"],
+      ["6", "6 普通发帖档"],
+      ["5", "5 点赞档"],
+      ["4", "4 回关档"],
+      ["3", "3 关注候选档"],
+      ["2", "2 取消未回关档"],
+      ["1", "1 最低"],
+    ].map(([value, text]) => `<option value="${value}">${text}</option>`).join("");
     return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
-      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><span><strong>${label}</strong>${mode === "mutual-unfollow" || mode === "mutual-targetFollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>默认约每天一次</small>" : ""}</span></label>
+      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><span><strong>${label}</strong>${mode === "mutual-unfollow" || mode === "mutual-targetFollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>默认约每天一次</small>" : ["likes-posts", "likes-replies"].includes(mode) ? "<small>默认短轮约 3 分钟，间隔约 45 分钟</small>" : ""}</span></label>
       <div class="xrc-schedule-rule-controls">
-        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级"><option value="1">常规</option><option value="2">优先</option><option value="3">最高</option></select></label>
+        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${priorityOptions}</select></label>
         <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
         ${["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode) ? `<label>速度 <select data-xrc-schedule-pace aria-label="${label}每次任务的轮数与速度"><option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option><option value="boundary">边界测试</option></select></label>` : ""}
       </div>

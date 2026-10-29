@@ -75,6 +75,7 @@ const TOC = [
       { id: 'rules', label: '06 · 平台边界' },
       { id: 'maintenance', label: '07 · 更新与数据维护' },
       { id: 'releases', label: '08 · 周总结' },
+      { id: 'ops-journal', label: '09 · 运营纪事' },
     ],
   },
 ]
@@ -110,7 +111,7 @@ const SINGLE_BUTTON_ROWS = [
   ['正在停止', '等待中 · 请稍候', '暂不可点击；正在停止归入等待中。'],
 ]
 
-function Section({ id, index, title: sectionTitle, summary, children, defaultOpen = false }) {
+function Section({ id, index, title: sectionTitle, summary, children, defaultOpen = true }) {
   return (
     <details id={id} className="group scroll-mt-24 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_88%,transparent)] open:shadow-[0_14px_45px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]" open={defaultOpen || undefined}>
       <summary className="flex cursor-pointer list-none items-start gap-3 px-5 py-4 marker:content-none md:px-6 md:py-5 [&::-webkit-details-marker]:hidden">
@@ -456,6 +457,64 @@ export default function XReplyClipboardDocsPage() {
             <Link href={`${RESOURCE_PATH}#version-history`} className="inline-flex text-[13px] font-semibold text-[var(--site-ink)] no-underline hover:text-[var(--site-accent)]">
               查看公开版本页 ↗
             </Link>
+          </Section>
+
+          <Section id="ops-journal" index="09" title="运营纪事" summary="增长实验台账：阶段事实、指标对照、假设与自检；观察与推断分开">
+            <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
+              账号侧曝光、互动与助手运行的对照记录。正本可续写：
+              <code className="mx-1 rounded bg-[var(--site-panel)] px-1.5 py-0.5 font-mono text-[12px]">docs/specs/x-extension-ops-journal.md</code>
+              。不替代周总结（版本交付）或平台边界（合规引用）。
+            </p>
+
+            <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">阶段时间线（事实）</h3>
+            <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
+              <li>更早：互关 + 高频发帖；规则改成更看重原创后，手工日回约五六百条开始有起色。</li>
+              <li>近约三周：助手运行后曝光曾冲到约 5M（站长侧观测）。</li>
+              <li>近约两天：曝光塌到约数千；本机面板今日合计仍很高，X 后台可见评论 / 发帖明显更少（口径待核实）。</li>
+              <li>约 2026-10-28～29：本地到 v4 排班；昨天仍可见约 1000 条评论级动作——因此「单纯 v3→v4 bug」未证实。</li>
+            </ul>
+
+            <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">指标对照（样本）</h3>
+            <div className="overflow-x-auto">
+              <table className="mt-2 w-full min-w-[32rem] border-collapse text-left text-[13px] leading-6">
+                <thead>
+                  <tr className="border-b border-[var(--site-line)] text-[var(--site-faint)]">
+                    <th className="py-2 pr-3 font-semibold">指标</th>
+                    <th className="py-2 pr-3 font-semibold">此前</th>
+                    <th className="py-2 font-semibold">近况（约 10/29）</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[var(--site-ink)]">
+                  <tr className="border-b border-[var(--site-line)]"><td className="py-2 pr-3">曝光</td><td className="py-2 pr-3">峰值约 5M / 曾近百万级</td><td className="py-2">约 3K–5K</td></tr>
+                  <tr className="border-b border-[var(--site-line)]"><td className="py-2 pr-3">原创相关流量</td><td className="py-2 pr-3">约 70K→120K</td><td className="py-2">待核实</td></tr>
+                  <tr className="border-b border-[var(--site-line)]"><td className="py-2 pr-3">关注数</td><td className="py-2 pr-3">约 7500 顶</td><td className="py-2">清理后约 6000+</td></tr>
+                  <tr className="border-b border-[var(--site-line)]"><td className="py-2 pr-3">互动率</td><td className="py-2 pr-3">相对较低</td><td className="py-2">升高（观测）</td></tr>
+                  <tr className="border-b border-[var(--site-line)]"><td className="py-2 pr-3">外测评分</td><td className="py-2 pr-3">—</td><td className="py-2">约 58</td></tr>
+                  <tr><td className="py-2 pr-3">本机今日合计</td><td className="py-2 pr-3">—</td><td className="py-2">评论 ~258 · 点赞 ~881 · 发帖 ~48（本机确认，≠ 后台）</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">已排除 / 未证实</h3>
+            <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
+              <li>未证实：曝光断崖单纯因为 v3→v4。</li>
+              <li>当前样本不支持：整号已废（外测约 58、互动率升）。</li>
+              <li>未对齐：面板数字 ≠ X Analytics；点赞尤甚。</li>
+            </ul>
+
+            <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">开放假设</h3>
+            <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
+              <li>更像分发 / 信任被压：推荐管收窄，留下的人更贴 → 曝光断、互动率升。</li>
+              <li>约 2026-08 原创激励变化：评论当入口、变现认原创合格曝光。</li>
+              <li>短时海量相似评论 + 关注墙附近大批清理未回关，可叠成「不真实行为」信号。</li>
+              <li>本机统计可能虚高：DOM 确认成功，非官方 API；「全部账号」合计会抬高今日条。评论/发帖在弹窗关或框清空时也可能 +1；点赞认 unlike 按钮约 1.75s。排班卡在点赞帖子：整次轮次占满共享页签，其它任务插不进来。</li>
+            </ul>
+
+            <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">自检与下一窗口</h3>
+            <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
+              <li>未登录看自己内容；热帖回复是否沉底；近 7 天曝光断崖还是阴跌；有官方可见性标签再申诉。</li>
+              <li>下一窗口：降量约 48–72h 后记曝光、回复可见性、面板与后台差。窗口内不做定论。</li>
+            </ul>
           </Section>
         </div>
       </div>

@@ -79,76 +79,142 @@ async function copyText(text) {
   input.remove()
 }
 
-function XReplyDownloadPasswordPanel({ onInviteGenerated }) {
-  const [status, setStatus] = useState(null)
-  const [password, setPassword] = useState('')
+const INVITE_STATUS_LABEL = {
+  downloadable: '可下载',
+  bound: '已绑设备',
+  revoked: '已作废',
+}
+
+function PersonInvitesPanel() {
+  const [invites, setInvites] = useState([])
+  const [label, setLabel] = useState('')
+  const [freshCode, setFreshCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+
+  const refresh = useCallback(async () => {
+    const response = await fetch('/api/admin/community-actions/person-invites', { cache: 'no-store', credentials: 'same-origin' })
+    const data = await safeJson(response)
+    if (!response.ok) throw new Error(data?.migrationRequired || data?.error || '列表读取失败')
+    setInvites(Array.isArray(data?.invites) ? data.invites : [])
+  }, [])
 
   useEffect(() => {
     let mounted = true
-    fetch('/api/admin/community-actions/x-reply-download-password', { cache: 'no-store', credentials: 'same-origin' })
-      .then(async (response) => {
-        const data = await safeJson(response)
-        if (!response.ok) throw new Error(data?.error || '状态读取失败')
-        if (mounted) setStatus(data)
-      })
-      .catch(() => { if (mounted) setNotice('邀请码状态暂时无法读取。') })
+    refresh()
+      .catch((refreshError) => { if (mounted) setError(refreshError.message || '人员码暂时无法读取。') })
     return () => { mounted = false }
-  }, [])
+  }, [refresh])
 
-  async function generate() {
-    if (busy || !window.confirm('生成新邀请码后，旧下载码与回执密钥会一起失效。确定继续吗？')) return
+  async function createInvite() {
+    if (busy) return
     setBusy(true)
     setNotice('')
+    setError('')
     try {
-      const response = await fetch('/api/admin/community-actions/x-reply-download-password', {
+      const response = await fetch('/api/admin/community-actions/person-invites', {
         method: 'POST',
         credentials: 'same-origin',
         cache: 'no-store',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'create', label }),
       })
       const data = await safeJson(response)
-      if (!response.ok || !data?.password) throw new Error(data?.error || '生成失败')
-      setPassword(data.password)
-      setStatus(data)
-      onInviteGenerated?.(data.password)
-      setNotice('新邀请码已生效：同一把码用于下载，并会写入 ZIP 内置回执密钥。请立即复制，刷新后无法再看明文。')
-    } catch {
-      setNotice('生成失败，旧邀请码仍可使用；请稍后重试。')
+      if (!response.ok || !data?.code) throw new Error(data?.error || '生成失败')
+      setFreshCode(data.code)
+      setLabel('')
+      await refresh()
+      setNotice('新人码已生成：先可下载，首次心跳后变为设备码并禁止再下。请立即复制，刷新后无法再看明文。')
+    } catch (createError) {
+      setError(createError.message || '生成失败。')
     } finally {
       setBusy(false)
     }
   }
 
-  async function copyPassword() {
+  async function runAction(action, id, confirmText) {
+    if (busy || !window.confirm(confirmText)) return
+    setBusy(true)
+    setNotice('')
+    setError('')
     try {
-      await copyText(password)
-      setNotice('邀请码已复制。')
-    } catch {
-      setNotice('复制失败，请手动选中邀请码。')
+      const response = await fetch('/api/admin/community-actions/person-invites', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action, id }),
+      })
+      const data = await safeJson(response)
+      if (!response.ok) throw new Error(data?.error || '操作失败')
+      await refresh()
+      setNotice(action === 'reset' ? '已重置为可下载，旧设备绑定已清空。' : '已作废该人员码。')
+    } catch (actionError) {
+      setError(actionError.message || '操作失败。')
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
     <div className="mt-3 min-w-0 max-w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] p-3 dark:border-[#263142] dark:bg-[#10161f]">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">邀请码（下载 + 回执）</p>
-          <p className="mb-0 mt-1 text-[12px] text-[#6d7066] dark:text-gray-400">
-            {status?.initial ? '当前仍是发布时的初始下载码；生成一次后会与回执密钥强绑定。' : status?.createdAt ? `上次生成：${formatTime(status.createdAt)}` : '正在读取状态…'}
-          </p>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">人员码（一人一码）</p>
+          <p className="mb-0 mt-1 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">先作下载凭证并写入 ZIP；对方首次心跳后转为设备码，不能再下载。站长总密钥不受影响。</p>
         </div>
-        <AdminButton size="sm" variant="primary" onClick={generate} disabled={busy}>{busy ? '生成中…' : '生成邀请码'}</AdminButton>
       </div>
-      <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">一把码同时解锁下载并同步后台回执密钥；对方下载的 ZIP 会内置 community-secret.local，安装后自动写入本机，无需再粘贴。</p>
-      {password ? (
+      <div className="mt-3 flex min-w-0 flex-wrap gap-2">
+        <input
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="备注（人名）"
+          aria-label="人员码备注"
+          className="min-w-[10rem] flex-1 rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100"
+        />
+        <AdminButton size="sm" variant="primary" onClick={createInvite} disabled={busy}>{busy ? '处理中…' : '生成人员码'}</AdminButton>
+        <AdminButton size="sm" onClick={() => refresh().catch((refreshError) => setError(refreshError.message || '刷新失败'))} disabled={busy}>刷新</AdminButton>
+      </div>
+      {freshCode ? (
         <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-          <input readOnly value={password} aria-label="新生成的插件邀请码" className="col-span-2 min-w-0 w-full rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100 sm:col-span-1" />
-          <AdminButton size="sm" onClick={copyPassword}>复制邀请码</AdminButton>
-          <AdminButton size="sm" variant="ghost" onClick={() => setPassword('')}>隐藏</AdminButton>
+          <input readOnly value={freshCode} aria-label="新生成的人员码" className="col-span-2 min-w-0 w-full rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100 sm:col-span-1" />
+          <AdminButton size="sm" onClick={async () => { try { await copyText(freshCode); setNotice('人员码已复制。') } catch { setNotice('复制失败，请手动选中。') } }}>复制</AdminButton>
+          <AdminButton size="sm" variant="ghost" onClick={() => setFreshCode('')}>隐藏</AdminButton>
         </div>
       ) : null}
+      {invites.length ? (
+        <ul className="mb-0 mt-3 grid gap-2 p-0">
+          {invites.map((item) => (
+            <li key={item.id} className="min-w-0 rounded-lg border border-[#e4e6dc] bg-white px-3 py-2 dark:border-[#263142] dark:bg-[#0b111a]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label || '未命名'}</p>
+                  <p className="mb-0 mt-1 text-[12px] text-[#6d7066] dark:text-gray-400">
+                    {INVITE_STATUS_LABEL[item.status] || item.status}
+                    {item.deviceId ? ` · 设备 ${item.deviceId.slice(0, 10)}…` : ''}
+                    {item.accountHandle ? ` · @${item.accountHandle}` : ''}
+                    {` · 下载 ${item.downloadCount || 0} 次`}
+                    {item.lastSeenAt ? ` · 最近 ${formatTime(item.lastSeenAt)}` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.status !== 'downloadable' ? (
+                    <AdminButton size="sm" onClick={() => runAction('reset', item.id, '重置后可再次下载，旧设备绑定会清空。确定吗？')} disabled={busy}>重置可下</AdminButton>
+                  ) : null}
+                  {item.status !== 'revoked' ? (
+                    <AdminButton size="sm" variant="danger" onClick={() => runAction('revoke', item.id, '作废后不可下载也不可回执。确定吗？')} disabled={busy}>作废</AdminButton>
+                  ) : null}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mb-0 mt-3 text-[12px] text-[#6d7066] dark:text-gray-400">还没有人员码。</p>
+      )}
       {notice ? <p role="status" className="mb-0 mt-2 text-[12px] text-[#5f6156] dark:text-gray-300">{notice}</p> : null}
+      {error ? <p role="alert" className="mb-0 mt-2 text-[12px] text-rose-700 dark:text-rose-300">{error}</p> : null}
     </div>
   )
 }
@@ -171,7 +237,7 @@ function resolveView(searchParams) {
   return { mode: 'overview', panel: 'x-publish' }
 }
 
-function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret, onInviteGenerated }) {
+function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
       {error ? <p className="mb-0 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
@@ -188,8 +254,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       </div>
 
       <Section
-        title="回执密钥 / 邀请码"
-        description="与 X 插件下载邀请码是同一把。下载 ZIP 会内置到本机；也可手动复制贴到 X、小红书和掘金助手设置。三个插件共用。重新生成会同时作废旧下载码。"
+        title="站长总密钥"
+        description="仅站长本机使用：永久可下载、永久鉴权回执，不绑设备。重新生成只影响站长机器，不影响已发人员码。"
         actions={(
           <>
             <AdminButton size="sm" variant="primary" onClick={onCopySecret} disabled={!center?.secret}>复制</AdminButton>
@@ -201,7 +267,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
           readOnly
           value={center?.secret || ''}
           className="block min-w-0 w-full max-w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#10161f] dark:text-gray-100"
-          aria-label="社区回执密钥"
+          aria-label="站长总密钥"
         />
       </Section>
 
@@ -218,7 +284,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                 <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
                 {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
               </div>
-              {item.id === 'x-assistant' ? <XReplyDownloadPasswordPanel onInviteGenerated={onInviteGenerated} /> : null}
+              {item.id === 'x-assistant' ? <PersonInvitesPanel /> : null}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}
@@ -345,19 +411,14 @@ export default function CommunityActionsClient() {
     if (!center?.secret) return
     try {
       await copyText(center.secret)
-      setNotice('邀请码 / 回执密钥已复制。')
+      setNotice('站长总密钥已复制。')
     } catch {
       setNotice('浏览器没有允许复制，请手动选择密钥。')
     }
   }
 
-  function applyInvite(secret) {
-    if (!secret) return
-    setCenter((current) => ({ ...(current || {}), secret }))
-  }
-
   async function regenerateSecret() {
-    if (!window.confirm('重新生成后，旧下载邀请码与三个插件里的回执密钥会一起失效。已分发的 ZIP 内置密钥也会对不上，需要对方重新下载或粘贴。')) return
+    if (!window.confirm('重新生成只更换站长总密钥，已发人员码不受影响。站长本机需要改贴新密钥。确定继续吗？')) return
     setRotating(true)
     setNotice('')
     try {
@@ -369,8 +430,8 @@ export default function CommunityActionsClient() {
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
-      applyInvite(payload.secret)
-      setNotice('已生成新邀请码（下载 + 回执）。请把新码发给对方，或让对方重新下载 ZIP。')
+      setCenter((current) => ({ ...(current || {}), secret: payload.secret }))
+      setNotice('站长总密钥已更新。请贴到站长本机插件设置；人员码无需改动。')
     } catch (rotateError) {
       setError(rotateError.message || '密钥没有换成功。')
     } finally {
@@ -417,7 +478,6 @@ export default function CommunityActionsClient() {
           onRefresh={refresh}
           onCopySecret={copySecret}
           onRegenerateSecret={regenerateSecret}
-          onInviteGenerated={applyInvite}
         />
       ) : null}
 

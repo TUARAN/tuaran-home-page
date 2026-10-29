@@ -7,7 +7,7 @@ import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import { recordResourceEvent } from '../../../../lib/content/resourceEvents'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
 import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensionPackage'
-import { readXReplyDownloadPassword, verifyXReplyDownloadPassword } from '../../../../lib/content/xReplyDownloadPassword.mjs'
+import { authorizeDownloadInvite, markPersonInviteDownloaded } from '../../../../lib/content/xReplyPersonInvite.mjs'
 import { communitySecretLocalJson, injectZipStoredFile } from '../../../../lib/content/zipStoredAppend.mjs'
 
 export const runtime = 'edge'
@@ -112,6 +112,10 @@ async function deliver(req, options = {}) {
       itemKey,
     })
 
+    if (locked && options.personInviteId) {
+      await markPersonInviteDownloaded(db, options.personInviteId).catch(() => {})
+    }
+
     let body = embedded?.bytes || object.body
     let size = embedded?.size ?? object?.size
     if (locked && invite && embedded?.bytes) {
@@ -149,12 +153,18 @@ export async function POST(req) {
     return jsonError('INVALID_PASSWORD', 400)
   }
   const invite = String(payload?.password || payload?.invite || '').trim()
-  let passwordRecord
+  let auth
   try {
-    passwordRecord = await readXReplyDownloadPassword(getD1())
-  } catch {
-    return jsonError('PASSWORD_STORE_UNAVAILABLE', 503)
+    auth = await authorizeDownloadInvite(getD1(), invite)
+  } catch (error) {
+    if (/no such table/i.test(String(error?.message || error))) {
+      return jsonError('PASSWORD_STORE_UNAVAILABLE', 503)
+    }
+    throw error
   }
-  if (!(await verifyXReplyDownloadPassword(invite, passwordRecord))) return jsonError('INVALID_PASSWORD', 403)
-  return deliver(req, { invite })
+  if (!auth.ok) return jsonError(auth.error, auth.status || 403)
+  return deliver(req, {
+    invite,
+    personInviteId: auth.kind === 'person' ? auth.invite?.id : '',
+  })
 }

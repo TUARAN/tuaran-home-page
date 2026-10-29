@@ -1,10 +1,7 @@
 import { getD1 } from '../../../../lib/db/d1'
 import { callOllama } from '../../../../lib/ai/ollama'
-import {
-  COMMUNITY_ACTION_SECRET_HEADER,
-  COMMUNITY_ACTION_SECRET_KEY,
-  communityActionAuthorized,
-} from '../../../../lib/community/communityActions'
+import { COMMUNITY_ACTION_SECRET_HEADER } from '../../../../lib/community/communityActions'
+import { authorizeCommunitySecret } from '../../../../lib/content/xReplyPersonInvite.mjs'
 import { normalizeXModelFallbackRequest, X_MODEL_FALLBACK_MAX_CALLS_PER_HOUR } from '../../../../lib/community/xModelFallback'
 
 export const runtime = 'edge'
@@ -18,8 +15,7 @@ export async function POST(request) {
     return Response.json({ error: 'DB_UNAVAILABLE' }, { status: 503 })
   }
 
-  const secretRow = await db.prepare('SELECT value FROM site_settings WHERE key = ?').bind(COMMUNITY_ACTION_SECRET_KEY).first()
-  const authorized = communityActionAuthorized(request.headers.get(COMMUNITY_ACTION_SECRET_HEADER), secretRow?.value)
+  const authorized = await authorizeCommunitySecret(db, request.headers.get(COMMUNITY_ACTION_SECRET_HEADER), { bind: false })
   if (!authorized.ok) return Response.json({ error: authorized.error }, { status: authorized.status })
 
   const contentLength = Number(request.headers.get('content-length') || 0)

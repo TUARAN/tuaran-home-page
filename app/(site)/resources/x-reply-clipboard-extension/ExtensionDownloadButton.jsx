@@ -30,6 +30,10 @@ function errorMessage(data) {
     case 'INVALID_PASSWORD':
     case 'PASSWORD_REQUIRED':
       return '邀请码不正确，请联系站长确认。'
+    case 'INVITE_BOUND':
+      return '此邀请码已激活为设备码，无法再次下载。请联系站长重置或换发新人码。'
+    case 'INVITE_REVOKED':
+      return '此邀请码已作废，请联系站长换发。'
     case 'USER_BLOCKED':
       return '当前账号暂时无法领取这个工具包。'
     case 'FILE_NOT_FOUND':

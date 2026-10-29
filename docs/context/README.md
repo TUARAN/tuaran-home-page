@@ -18,7 +18,7 @@
 | [seo-geo-growth-roadmap.md](seo-geo-growth-roadmap.md) | SEO / GEO 现状审计、内容增长方向、分阶段任务与验收标准 | 2026-09-08 基线；后台 `/admin/seo` 直接读取，进度以文内清单为准 |
 | [ui-ux-audit-roadmap.md](ui-ux-audit-roadmap.md) | UI / 交互页面问题、证据边界、10 项改造任务与复测矩阵 | 2026-09-08 首轮记录；后台 `/admin/design` 直接读取。视觉规范沿用 [docs/specs/site-design-language.md](../specs/site-design-language.md) |
 | [site-health-audit.md](site-health-audit.md) | 流量、错误率、缓存与运行负载 | 后台 `/admin/site-health` 直接读取 |
-| [cloudflare-usage-incidents.md](cloudflare-usage-incidents.md) | 2026-10-25 D1 与 2026-10-26 Pages Functions 用量故障、优化及验证状态 | 后台 `/admin/site-health?tab=usage` 直接读取 |
+| [cloudflare-usage-incidents.md](cloudflare-usage-incidents.md) | 2026-10-25 至 2026-10-28 Cloudflare 用量故障、优化及验证状态 | 后台 `/admin/site-health?tab=usage` 直接读取 |
 | [web-llm-integration-notes.md](web-llm-integration-notes.md) | /web-llm 与参考项目的对照与维护原则 | 维护 /web-llm 前阅读 |
 | [web-llm-port-handoff.md](web-llm-port-handoff.md) | Web LLM 1:1 移植手册（跨站点复用） | 给其它仓库或新 session 用的迁移指南 |
 | [site-tools-shortener.md](site-tools-shortener.md) | 站内工具「转短」设计记录 | 维护短链功能时引用 |

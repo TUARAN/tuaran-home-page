@@ -52,7 +52,16 @@ export default function LlmUnderlyingLogicBookPage() {
             <h1 className="mb-5 font-serif text-[clamp(2.4rem,5vw,4.5rem)] font-bold leading-[1.13] tracking-[0.02em] text-[#2c231d] dark:text-[#f9eee2]">AI大模型的<br />底层逻辑</h1>
             <p className="mb-6 text-[18px] font-medium leading-8 text-[#694d38] dark:text-[#e4b88f]">看懂原理，理解边界，建立 AI 判断力。</p>
             <p className="mb-7 max-w-[34rem] text-[15px] leading-8 text-[#5c554d] dark:text-[#d2c3b8]">{book.description}</p>
-            <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[#5c554d] dark:text-[#d2c3b8]"><span className="h-px w-8 bg-[#b67a4b]" />涂阿燃 著<span className="text-[#aa9b8c]" aria-hidden="true">·</span><span>ISBN {isbn}</span></div>
+            <div className="mb-8 flex flex-wrap gap-3">
+              <div className="min-w-[11rem] rounded-xl border border-[#d9c6ae] bg-white/75 px-4 py-3 dark:border-[#6b5140] dark:bg-[#302720]">
+                <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">作者</span>
+                <span className="mt-1 block text-[19px] font-bold text-[#2c231d] dark:text-[#f9eee2]">涂阿燃 著</span>
+              </div>
+              <div className="min-w-[13rem] rounded-xl border border-[#d9c6ae] bg-white/75 px-4 py-3 dark:border-[#6b5140] dark:bg-[#302720]">
+                <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">ISBN</span>
+                <span className="mt-1 block text-[18px] font-bold tabular-nums text-[#2c231d] dark:text-[#f9eee2]">{isbn}</span>
+              </div>
+            </div>
             <a href="#buy" className="inline-flex items-center gap-2 rounded-xl bg-[#a84c12] px-6 py-3.5 text-[15px] font-semibold text-white no-underline shadow-[0_10px_25px_rgba(168,76,18,0.22)] transition hover:-translate-y-0.5 hover:bg-[#8f3d0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84c12]">查看购书渠道 <IconArrowRight size={18} aria-hidden="true" /></a>
           </div>
           <div className="mx-auto w-full max-w-[470px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_25px_65px_rgba(68,44,22,0.2)] dark:border-[#5c4e45] dark:bg-[#2b2521]">

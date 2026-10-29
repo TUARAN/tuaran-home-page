@@ -18,7 +18,7 @@ export function HomeBookCards() {
       <div className="home-work-heading">
         <div>
           <p className="home-kicker">Books · {PUBLISHED_WORKS.length}</p>
-          <h2 id="home-books-title" className="home-section-title"><T zh="出版作品" en="Published books" /></h2>
+          <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
         <Link href="/publications" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>
       </div>

@@ -3209,16 +3209,46 @@
     return "reload";
   }
 
-  async function closeReplyComposer({ confirmedSent = false } = {}) {
+  function automationOwnsReplyDraft() {
+    if (state.running) return true;
+    if (!taskSchedule.enabled) return false;
+    const current = taskSchedule.current || state.assistantMode;
+    return ["timeline", "notifications"].includes(current);
+  }
+
+  async function clearInlineReplyEditors() {
+    const editors = Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
+      .filter((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
+    for (const textbox of editors) {
+      try {
+        textbox.focus();
+        await requestDraftClear();
+        await sleep(120);
+        if (loopApi.composerText(textbox)) {
+          await fillComposer(textbox, "", { forceDraft: true });
+          await sleep(120);
+        }
+      } catch (error) {
+        // Keep trying other editors; reloadAndResume can still hard-reload.
+      }
+    }
+    return !Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
+      .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
+  }
+
+  async function closeReplyComposer({ confirmedSent = false, forceClear = false } = {}) {
     const open = findDialogComposer();
     if (!open) return true;
     if (open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
     const draft = loopApi.composerText(open.textbox);
-    if (draft && !isManagedDraft(draft)) return false;
+    // During scheduled/manual reply runs, leftover plugin drafts must be wiped instead of hanging.
+    // Preserve only when the operator is idle and the text is clearly not ours.
+    if (draft && !isManagedDraft(draft) && !forceClear && !automationOwnsReplyDraft()) return false;
     if (draft) {
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
         await requestDraftClear();
         if (!findDialogComposer() || !loopApi.composerText(findDialogComposer().textbox)) break;
+        await fillComposer(open.textbox, "", { forceDraft: true }).catch(() => {});
         await sleep(150);
       }
       if (findDialogComposer() && loopApi.composerText(findDialogComposer().textbox)) return false;
@@ -3246,9 +3276,9 @@
   async function prepareReplyForTabSwitch() {
     if (replyComposerCleanup) return replyComposerCleanup;
     replyComposerCleanup = (async () => {
-      if (findDialogComposer() && !await closeReplyComposer()) return false;
+      if (findDialogComposer() && !await closeReplyComposer({ forceClear: automationOwnsReplyDraft() })) return false;
+      if (!(await clearInlineReplyEditors())) return false;
       // A remaining draft can still trigger Chrome's native leave-site prompt.
-      // Never navigate away from user text or an unconfirmed reply.
       return !Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
         .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
     })();
@@ -3324,12 +3354,13 @@
       state.reconnectAt = 0;
       writeSaved({ running: true, total: state.total });
       if (inPlace) {
-        if (!await closeReplyComposer()) {
+        if (!await closeReplyComposer({ forceClear: true })) {
+          await clearInlineReplyEditors();
           if (!draftReported) {
             draftReported = true;
             reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: state.pendingTweetId, errorCode: "x-draft-blocked" });
           }
-          state.status = "回复框暂时无法关闭，保留内容并继续等待";
+          state.status = "回复框暂时无法关闭，正在强制清空后重试";
           renderPanel();
           continue;
         }
@@ -3982,9 +4013,10 @@
 
   async function reloadAndResume(message) {
     let draftReported = false;
-    while (state.running && !state.stopping) {
+    for (let attempt = 0; state.running && !state.stopping && attempt < 5; attempt += 1) {
       const dialog = findDialogComposer();
-      const closed = !dialog || await closeReplyComposer();
+      const closed = !dialog || await closeReplyComposer({ forceClear: true });
+      await clearInlineReplyEditors();
       const draft = Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
         .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
       if (closed && !draft) {
@@ -4001,9 +4033,20 @@
         draftReported = true;
         reportCommunityAction({ task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply", result: "failed", targetId: state.pendingTweetId, errorCode: "x-draft-blocked" });
       }
-      state.status = "回复框有未发送内容，等待清空后安全重连";
+      state.status = attempt < 4
+        ? `回复框有残留内容，正在强制清空（${attempt + 1}/5）`
+        : "回复框仍未清空，重新载入页面继续";
       renderPanel();
-      await sleep(2000);
+      await sleep(800);
+    }
+    if (state.running && !state.stopping) {
+      state.reconnectAt = 0;
+      state.reconnectReason = "";
+      writeSaved({ running: true, total: state.total });
+      state.status = message || "重新载入页面以清除残留回复框";
+      renderPanel();
+      window.location.reload();
+      return true;
     }
     return false;
   }
@@ -4289,7 +4332,7 @@
         return advanceRoundAfterRisk();
       }
       if (result === "composer-already-open") {
-        const closed = await closeReplyComposer();
+        const closed = await closeReplyComposer({ forceClear: true });
         if (closed) {
           state.status = "已关闭原来的评论框，继续当前这条";
           renderPanel();
@@ -4302,7 +4345,7 @@
         state.errors += 1;
         state.status = "评论框内容未对齐，正在自动清理并重写当前回复";
         renderPanel();
-        if (!await closeReplyComposer()) {
+        if (!await closeReplyComposer({ forceClear: true })) {
           if (await reloadManagedReplyDraft("自动生成的评论草稿暂时无法清空，重新载入后继续重试")) return "reload";
           return reconnectAndResume("评论框暂时无法安全清理，稍后自动重试", { inPlace: true });
         }

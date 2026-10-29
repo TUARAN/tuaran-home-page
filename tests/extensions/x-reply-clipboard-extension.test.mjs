@@ -2959,7 +2959,7 @@ test('a restricted reply waits for its deadline then resumes the same task', asy
   assert.equal(sandbox.pending(), false)
 })
 
-test('reply handoff clears a managed composer before navigation and keeps an unconfirmed draft in place', async () => {
+test('reply handoff clears a managed composer before navigation and keeps an idle user draft in place', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const prepare = source.match(/  async function prepareReplyForTabSwitch\(\) \{[\s\S]*?\n  \}/)?.[0]
   const reload = source.match(/  async function reloadManagedReplyDraft\(message\) \{[\s\S]*?\n  \}/)?.[0]
@@ -2969,12 +2969,15 @@ test('reply handoff clears a managed composer before navigation and keeps an unc
   let reloads = 0
   let allowClose = false
   const editor = { closest: () => null }
-  const state = { pendingReply: draft, status: '', total: 0 }
+  const state = { pendingReply: draft, status: '', total: 0, running: false }
   const dialog = { textbox: editor, dialog: { querySelector: () => null } }
   const context = vm.createContext({
     state, PANEL_ID: 'xrc-panel', REPLY_EDITOR_SELECTOR: '[role="textbox"]',
+    taskSchedule: { enabled: false, current: '' },
     findDialogComposer: () => draft ? dialog : null,
     async closeReplyComposer() { closes += 1; if (!allowClose) return false; draft = ''; return true },
+    async clearInlineReplyEditors() { return !draft },
+    automationOwnsReplyDraft: () => Boolean(state.running),
     document: { querySelectorAll: () => draft ? [editor] : [] },
     loopApi: { composerText: () => draft }, isManagedDraft: () => true,
     writeSaved() {}, renderPanel() {}, window: { location: { reload() { reloads += 1 } } },
@@ -2989,6 +2992,7 @@ test('reply handoff clears a managed composer before navigation and keeps an unc
   assert.ok(closes >= 2)
   draft = '用户尚未发送的内容'
   allowClose = false
+  state.running = false
   assert.equal(await context.prepare(), false)
 })
 
@@ -4926,7 +4930,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.44')
+  assert.equal(manifest.version, '4.0.45')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -5113,7 +5117,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /window\.addEventListener\("online"/)
   assert.match(content, /fetch\(`\$\{window\.location\.origin\}\/robots\.txt/)
   assert.match(content, /if \(result === "transient-error"\) \{[\s\S]*?skipTransientReply\(next\)/)
-  assert.match(content, /if \(draft && !isManagedDraft\(draft\)\) return false/)
+  assert.match(content, /if \(draft && !isManagedDraft\(draft\) && !forceClear && !automationOwnsReplyDraft\(\)\) return false/)
+  assert.match(content, /回复框有残留内容，正在强制清空/)
+  assert.match(content, /重新载入页面以清除残留回复框/)
   assert.match(content, /finishCycleAndScheduleNext/)
   assert.match(content, /reconnectAndResume/)
   assert.doesNotMatch(content, /data-xrc-stable-runtime/)

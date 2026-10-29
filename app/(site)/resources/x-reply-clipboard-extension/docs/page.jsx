@@ -385,15 +385,16 @@ export default function XReplyClipboardDocsPage() {
               <small className="mt-0.5 block text-[13px] leading-6 text-[var(--site-muted)]">正例 · 反例 · 不定期汇总后更新默认提示</small>
             </div>
             <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
-              发出来感觉不对的帖子或回复，以及觉得写得好的，都可以丢给站长助手记录。反例写清「哪里不像人话 / 哪里假 / 哪里油」；正例写清「哪一句立住了」。条目落在仓库
+              发出来感觉不对的帖子或回复，以及觉得写得好的，可在站长后台录入。反例写清「哪里不像人话 / 哪里假 / 哪里油」；正例写清「哪一句立住了」。站内先保存原文、评价和语境；攒一批后导出复盘，同步仓库规范
               <code className="mx-1 rounded bg-[var(--site-panel)] px-1.5 py-0.5 font-mono text-[12px]">docs/specs/x-extension-prompt-feedback.md</code>
-              ，攒一批后对照四份默认提示一起改：评论帖子、回复评论、普通发帖、精品发帖。
+              ，再对照四份默认提示一起改：评论帖子、回复评论、普通发帖、精品发帖。
             </p>
             <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7 text-[var(--site-ink)]">
               <li>反反馈优先：腔调、假对比、客服腔、自我指涉、空赞、编事实、钩子后没内容。</li>
               <li>正反馈优先：短、贴原帖、钩子有用、立场清楚、像随手打的。</li>
               <li>单条反馈只入库，不立刻改线上提示；综合分析后再动默认文案与设置中心里的四份提示词。</li>
             </ul>
+            <Link href="/admin/community-actions?tab=feedback" className="inline-flex rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-2 text-[13px] font-semibold text-[var(--site-ink)] hover:border-[var(--site-green)]">打开站内反馈台账 →</Link>
           </section>
 
           <Section id="frequency" index="05" title="频率与设置" summary="默认值、修改位置和运行中的限制">

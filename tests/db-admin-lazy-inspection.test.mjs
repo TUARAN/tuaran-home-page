@@ -49,7 +49,16 @@ test('只有点开单表后才执行该表体检', async () => {
   assert.equal(detail.name, 'article_comments')
   assert.ok(db.calls.some((call) => /PRAGMA table_info\("article_comments"\)/.test(call.sql)))
   assert.ok(db.calls.some((call) => /COUNT\(\*\).*"article_comments"/.test(call.sql)))
+  assert.ok(db.calls.every((call) => !/SUM\(/.test(call.sql)), '默认不扫 SUM(LENGTH) 文本量')
+  assert.equal(detail.approxTextBytes, null)
   assert.ok(db.calls.every((call) => !/FROM "user_points"/.test(call.sql)))
+})
+
+test('stats=full 才估算文本字节量', async () => {
+  const db = fakeD1()
+  const detail = await getD1TableDetail(db, 'article_comments', { includeTextBytes: true })
+  assert.equal(detail.approxTextBytes, 456)
+  assert.ok(db.calls.some((call) => /SUM\(/.test(call.sql)))
 })
 
 test('数据库管理页提供诗词独立 D1 的安全迁移运行手册', async () => {

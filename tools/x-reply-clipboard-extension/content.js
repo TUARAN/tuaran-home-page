@@ -15,7 +15,7 @@
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const TASK_MODE_LABELS = {
-    timeline: "评论帖子", notifications: "评论通知",
+    timeline: "评论帖子", notifications: "回复评论",
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
     "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "普通发帖", "poster-premium": "精品发帖"
@@ -43,32 +43,40 @@
   const POSTER_PACE_KEY = "xrcPosterSchedulePace";
   const PACE_SETTINGS_KEY = "xrcPaceSettings";
   const TOOLBOX_SETTINGS_KEY = "xrcToolboxSettings";
-  const DEFAULT_REPLY_PROMPT = [
-    "你是 X（Twitter）中文互动回复助手。",
-    "请根据对话角色写一条自然、有趣、友善、像真人写的回复。有我的帖子和对方回复时，回应对方最新回复；只看到对方回复时，也要以收到回复的人的身份回应。",
-    "像本人随手回一句，长短按语境决定，短到几个字也可以。回应对方说的具体内容，不要把对方的话原样说回去。例如对方说生日快乐，应表示感谢，而不是再次祝对方生日快乐。避免客服式套话、空泛道歉、为了收尾硬加反问。不要使用引号；最多使用 1 个 Emoji；不要营销；不要编造事实；不要作出无法确认的承诺。",
-    "只输出回复正文，不要解释，不要添加“回复：”等前缀。"
+  const DEFAULT_REPLY_TIMELINE_PROMPT = [
+    "你在 X 上随手回别人的帖子。只输出回复正文，不要解释。",
+    "目标：短小精悍，一针见血；优先幽默、共鸣、网络热梗，别写成客服或小作文。",
+    "多数时候 1～2 句就够，短到几个字也可以；别为完整硬凑。",
+    "回一个具体点，别复述对方原句。可吐槽、可玩梗、可轻轻抬杠，别人身攻击，别编事实。",
+    "默认不要用提问收尾；不要假对比（不是…而是…）；不要自我指涉（我来回复一下）。",
+    "最多 1 个 emoji；不要用引号包整句；不要营销。"
   ].join("\n");
-  const DEFAULT_POST_PROMPT = [
-    "任务：依据热点标题和摘要写一条情绪化的 X 中文短帖。开头用最短一句说清谁做了什么；马上用第一人称亮出态度——喜欢、讨厌、反对、无语、心疼、看不惯都行，把话说满。",
-    "立场：整条只站一边说话。禁止‘一方面……另一方面……’‘也有道理’‘理性看’‘辩证看’‘换个角度也成立’‘见仁见智’这类把内容拆开正反说的写法。素材里有冲突时，只挑你真正不爽或真正认可的那一头写透；别写成两边都照顾到的分析报告。",
-    "事实：标题和摘要是唯一事实依据，近期主题只用于换角度。可以对已知事实发表强烈看法，不能编人物、数字、动机、因果或后续结果；提问式标题不能写成已证实的事实，也不能替当事人编经历。",
-    "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要用介绍写作的话代替事件。",
-    "篇幅：目标 35～90 个中文字符，写成 2～3 个短段，段间留一个空行。事件只需交代到读者能理解，把更多字留给情绪和态度；没有新信息就不要硬凑第三段。字数只是目标，不是发布前的硬筛选。",
-    "口气：像跟熟人吐槽或安利刚看到的事，情绪可以外露。讨厌就说讨厌，反对就说反对，佩服就说佩服；语气词、感叹句、反问自然用。可以骂具体做法荒唐、离谱、恶心，不辱骂个人，也不把猜测说成事实。不要每条固定同一种口头禅。",
-    "删掉空话：每句只保留具体事实或鲜明态度。不要‘值得关注’‘引发热议’‘意义重大’‘我们拭目以待’‘你怎么看’‘值得双方思考’‘各自有难处’之类收尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’‘下面聊聊’等自我指涉。不替事实拔高主题，说够了就停。",
-    "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
+  const DEFAULT_REPLY_COMMENT_PROMPT = [
+    "你在回复别人对你帖子或评论的留言。只输出回复正文。",
+    "重心：接住对方这句话，前后文连贯；对方提了什么就顺着什么往下说，别答非所问。",
+    "站在我这边说话。祝福或夸赞多表示收到；提问只答能确认的；批评可简短认或辩，别空转客服腔。",
+    "可短，但要比评论帖子更贴对方原话。别复读对方整句，别装作读过你没看到的上文结论，别硬加反问收尾。",
+    "别假对比，别自我指涉写作过程。最多 1 个 emoji。不 @grok。"
   ].join("\n");
-  const CLICKBAIT_POST_PROMPT = [
-    "风格：情绪化、只站一边的抓人短帖。第一句用具体事件带出你的火气或兴奋，马上明说喜欢、讨厌、反对或无语；可以犀利、惊讶、吐槽，别拿‘震惊’‘内幕’或空悬念骗点击。",
-    "立场：禁止正反对照和中立分析。不要补对立面的合理性，不要写‘也有人这么想’‘另一边也有道理’；整条只把你这一边的情绪说清楚。",
-    "开头：严格遵守本次单独给出的随机开头指令。有固定开头时紧接具体事件；没有时直接说事，随后表态。不要介绍自己要怎么写。",
-    "事实：只用标题和摘要里的信息；不编人物、数字、现场、动机、因果或持有者经历。不把猜测写成事实，不做未经证实的指控。",
-    "篇幅：目标 45～100 个中文字符，写成 2～3 个短段，段间留一个空行。事件用最短一句交代清楚，其余用来表达具体态度；没有新信息就不要凑第三段。字数只是目标，不是硬筛选。",
-    "口气：像跟熟人说话，观点敢往前站，语气词、感叹句和反问都可以自然多一点。直接夸、直接骂、直接吐槽具体做法；不辱骂个人，不把口头禅每条都重复一遍。",
-    "删掉空话：不写中立总结、正反拆解、泛泛建议、意义拔高或求互动的固定结尾；不用‘不是……而是……’等假对比，不写‘本文’‘这条推文’等自我指涉。每句都要有事实或态度，说完就停。",
-    "输出：只写短帖正文，不附标题或解释；不写未经证实的指控、加密货币、代币、合约地址或 $ 符号。"
+  const DEFAULT_POST_NORMAL_PROMPT = [
+    "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
+    "可以用平台常见钩子开头，例如：说个暴论， / 我真心觉得， / 我操我操我操。钩子后换行（可空一行），再写具体事和看法。没有钩子时，第一句直接说清谁做了什么。",
+    "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
+    "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
+    "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
+    "不写币、代币、合约、$。"
   ].join("\n");
+  const DEFAULT_POST_PREMIUM_PROMPT = [
+    "依据热点标题和摘要，写一条偏「观点精剖」的 X 中文短帖。只输出正文。",
+    "目标：选一个切口，把判断说透一点——为什么成立、卡在哪、和常见说法差在哪。可大胆、可反常识，但必须贴素材里的具体事，不编事实。",
+    "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
+    "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
+    "整条有明确立场，不必两边讨好；禁止假对比套话和自我指涉写作过程。",
+    "不写币、代币、合约、$。"
+  ].join("\n");
+  const DEFAULT_REPLY_PROMPT = DEFAULT_REPLY_TIMELINE_PROMPT;
+  const DEFAULT_POST_PROMPT = DEFAULT_POST_NORMAL_PROMPT;
+  const CLICKBAIT_POST_PROMPT = DEFAULT_POST_NORMAL_PROMPT;
   const REPLY_PACE_LIMITS = {
     minReplyDelaySeconds: [1, 180],
     maxReplyDelaySeconds: [1, 180],
@@ -86,7 +94,19 @@
     ["minRoundsPerRun", "maxRoundsPerRun", "每次轮数"],
     ["minCycleDelayMinutes", "maxCycleDelayMinutes", "执行后休息（分钟）"]
   ];
-  const POST_PACE_LIMITS = { minMinutes: [1, 240], maxMinutes: [1, 240] };
+  const POST_PACE_LIMITS = {
+    minBatch: [1, 60],
+    maxBatch: [1, 60],
+    minGapSeconds: [1, 120],
+    maxGapSeconds: [1, 120],
+    minCycleMinutes: [1, 240],
+    maxCycleMinutes: [1, 240]
+  };
+  const POST_PACE_PAIRS = [
+    ["minBatch", "maxBatch", "每批条数"],
+    ["minGapSeconds", "maxGapSeconds", "条间间隔（秒）"],
+    ["minCycleMinutes", "maxCycleMinutes", "批次间隔（分钟）"]
+  ];
   const PANEL_PLACEMENT_KEY = "xrcPanelPlacement";
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 5000;
@@ -99,7 +119,7 @@
   const RECONNECT_INITIAL_MS = 2000;
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
-  const GROK_REPLY_PROBABILITY = 0.2;
+  const GROK_REPLY_PROBABILITY = 0.1;
   const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "4.0.14";
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
@@ -116,10 +136,12 @@
     "xrc-docs-mutual-rules": "mutual-rules",
     "xrc-docs-mutual-unfollow": "mutual-unfollow",
     "xrc-docs-mutual-followback": "mutual-followback",
+    "xrc-docs-mutual-target": "mutual-target",
     "xrc-docs-poster": "poster",
     "xrc-docs-poster-normal": "poster-normal",
     "xrc-docs-poster-wave": "poster-wave",
     "xrc-docs-poster-premium": "poster-premium",
+    "xrc-docs-prompt-feedback": "prompt-feedback",
     "xrc-docs-frequency": "frequency",
     "xrc-docs-rules": "rules",
     "xrc-docs-maintenance": "maintenance",
@@ -129,7 +151,7 @@
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications"],
     likes: ["likes-posts", "likes-replies"],
-    mutual: ["mutual-unfollow", "mutual-followBack"],
+    mutual: ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"],
     poster: ["poster", "poster-premium"]
   };
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
@@ -173,6 +195,10 @@
     aiKeySaved: false,
     aiSettingsStatus: "loading",
     aiKeyHint: "",
+    replyTimelinePrompt: "",
+    replyCommentPrompt: "",
+    postNormalPrompt: "",
+    postPremiumPrompt: "",
     replyPrompt: "",
     postPrompt: "",
     aiStatus: "尚未配置 DeepSeek API Key",
@@ -401,7 +427,7 @@
   let configPage = "model";
   let monitorOpen = false;
   let reportOpen = false;
-  let headerMenuOpen = false;
+  let hubOpen = false;
   let resettingState = false;
   let dailyReports = [];
   let dailyUploadSchedule = null;
@@ -480,7 +506,10 @@
     const coverage = panel.querySelector("[data-xrc-report-coverage]");
     if (coverage) coverage.textContent = `本机已存记录 · ${new Set(filtered.map((report) => report.date)).size} 天有记录`;
     panel.querySelector("[data-xrc-report-month]").textContent = dailyReportMonth.replace("-", " 年 ") + " 月";
-    panel.querySelector("[data-xrc-report-date]").value = dailyReportDate;
+    const reportDateInput = panel.querySelector("[data-xrc-report-date]");
+    if (reportDateInput && /^\d{4}-\d{2}-\d{2}$/.test(String(dailyReportDate || ""))) {
+      reportDateInput.value = dailyReportDate;
+    }
     const calendar = panel.querySelector("[data-xrc-report-calendar]");
     calendar.replaceChildren();
     const [year, month] = dailyReportMonth.split("-").map(Number);
@@ -596,7 +625,6 @@
 
   function launchFromMode(mode, start) {
     if (mode === "likes") mode = "likes-posts";
-    if (mode === "mutual-targetFollow") return null;
     if (mode === "mutual-unfollow" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
       return { assistantMode: "mutual", mutualMode: mode.slice("mutual-".length), taskKey: mode, start: Boolean(start) };
     }
@@ -1001,11 +1029,12 @@
     return taskActionBusy.has(String(mode || ""));
   }
   const FLOW_TASKS = Object.freeze([
-    ["timeline", "评论帖子"], ["notifications", "评论通知"],
+    ["timeline", "评论帖子"], ["notifications", "回复评论"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
     ["poster", "普通发帖"], ["poster-premium", "精品发帖"],
-    ["mutual-followBack", "回关粉丝"], ["mutual-unfollow", "清理未回关"]
+    ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
   ]);
+  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const FLOW_STALE_MS = 90 * 1000;
   // User-facing states collapse internal phases into four buckets.
   const USER_STATE_LABELS = Object.freeze({
@@ -1039,21 +1068,23 @@
     const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}后继续` : "";
     if (confirming) {
       return {
-        label: formatUserStateAction("后台调度中", "点击暂停"),
+        label: "后台调度中",
         hint: "正在确认当前任务是否已启动，确认后开始执行。",
         status: "waiting",
-        action: "pause",
-        title: "后台正在调度，并确认页内任务是否已启动；确认后开始执行。点击可暂停排班。"
+        action: "",
+        canStop: true,
+        title: "后台正在调度，并确认页内任务是否已启动；确认后开始执行。需要全停时到排班设置。"
       };
     }
     return {
-      label: formatUserStateAction("后台调度中", "点击暂停"),
+      label: "后台调度中",
       hint: eta ? `等待下一项到期，${eta}。` : "等待下一项到期后自动切换。",
       status: "waiting",
-      action: "pause",
+      action: "",
+      canStop: true,
       title: eta
-        ? `后台正在调度；${eta}。点击可暂停排班。`
-        : "后台正在调度；暂无到期任务，到期后会自动切换。点击可暂停排班。"
+        ? `后台正在调度；${eta}。需要全停时到排班设置。`
+        : "后台正在调度；暂无到期任务，到期后会自动切换。需要全停时到排班设置。"
     };
   }
 
@@ -1273,6 +1304,53 @@
     return value || "X 操作受限";
   }
 
+  function schedulePriorityLabel(priority) {
+    return ({ 1: "常规", 2: "优先", 3: "最高" })[Math.max(1, Math.min(3, Number(priority) || 1))] || "常规";
+  }
+
+  function scheduleWindowLabel(window) {
+    return ({ all: "全天", day: "08–20", peak: "08–10 / 18–20", overnight: "22–06" })[window] || "全天";
+  }
+
+  function schedulePaceLabel(minGapMs) {
+    const gap = Number(minGapMs) || 0;
+    if (gap >= 7 * 24 * 60 * 60 * 1000) return "约每周一次";
+    if (gap > 0) return `间隔 ${Math.round(gap / 3600000)} 小时`;
+    return "";
+  }
+
+  function isRedundantScheduleDetail(label, detail) {
+    const status = String(label || "").trim();
+    const text = String(detail || "").trim();
+    if (!text) return true;
+    if (!status) return false;
+    if (text === status || text === "风控等待中") return true;
+    if (text.includes(status)) return true;
+    if (/冷却|限制/u.test(status) && /冷却|限制|等待其他任务|风控等待/u.test(text)) return true;
+    if (/已完成/u.test(status) && /轮已完成|本次计划已完成|本次.*完成，/u.test(text)) return true;
+    if (/排队/u.test(status) && (/结束后自动|后台会安排|结束本次运行后/u.test(text) || text.length <= 12)) return true;
+    return false;
+  }
+
+  function formatScheduleCardNote(task, wait) {
+    const parts = [];
+    if (wait) {
+      parts.push(`状态：${wait.label}`);
+      if (wait.waitingFor) parts.push(`等待：${wait.waitingFor}`);
+      if (wait.remaining > 0) parts.push(`剩余：${formatClock(wait.remaining)}`);
+      const detail = String(wait.detail || "").trim();
+      if (detail && !isRedundantScheduleDetail(wait.label, detail)) parts.push(`说明：${detail}`);
+    } else {
+      const reason = String(task.reason || "").trim();
+      if (reason) parts.push(`状态：${reason}`);
+    }
+    parts.push(`优先级：${schedulePriorityLabel(task.rule?.priority)}`);
+    parts.push(`时段：${scheduleWindowLabel(task.rule?.window)}`);
+    const pace = schedulePaceLabel(task.rule?.minGapMs);
+    if (pace) parts.push(`节奏：${pace}`);
+    return parts.join("｜");
+  }
+
   function scheduledWaitInfo(mode, now = Date.now()) {
     const queued = taskSchedule.items?.[mode] || {};
     const live = pluginRuntime.tasks?.[mode] || {};
@@ -1282,37 +1360,55 @@
     const remaining = Math.max(0, until - now);
     const reason = String((current && live.detail) || queued.reason || live.detail || future?.reason || "").trim();
     if (current && !remaining && live.phase !== "paused") {
-      return { kind: "starting", label: "正在启动任务", detail: "已分配执行页签，正在确认页内任务启动。", remaining };
+      return { kind: "starting", label: "正在启动", detail: "正在确认页内任务启动", remaining };
     }
     if (/疑似自动化|账号受限|操作受限|次数受限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
-      return { kind: "cooldown", label: "X 限制冷却中", detail: reason || "到期后自动重新加入排班。", remaining };
+      return { kind: "cooldown", label: "X 限制冷却", detail: "到期自动重试", remaining };
     }
     if (remaining && mode === "mutual-followBack" && /批次冷却|每确认 15 个|回关.*冷却/iu.test(reason)) {
-      return { kind: "cooldown", label: "回关批次冷却中", detail: "每确认 15 个后休息 30 分钟，到期后自动重新排班。", remaining };
+      return { kind: "cooldown", label: "回关批次冷却", detail: "每确认 15 个后休息 30 分钟", remaining };
     }
     if (remaining && ["poster", "poster-premium"].includes(mode) && /等待下一条发布|等待发帖|下一条发帖/iu.test(reason)) {
-      return { kind: "next-run", label: "等待下一条发帖", detail: reason, remaining };
+      return { kind: "next-run", label: "等待下一条发帖", detail: "到点后自动继续", remaining };
     }
     if (/本次计划已完成|本次.*轮.*完成|下一次|下一轮|等待下一条发布|等待发帖/iu.test(reason)) {
-      return { kind: "next-run", label: "本次已完成，等待下次运行", detail: reason || "倒计时结束后自动重新加入排班。", remaining };
+      return { kind: "next-run", label: "本次已完成", detail: "等待下次排班", remaining };
     }
     if (remaining && mode === "poster-premium") {
-      return { kind: "time-slot", label: "等待精品发帖档位", detail: "到固定发帖时间后自动加入排班。", remaining };
+      return { kind: "time-slot", label: "等待精品档位", detail: "到固定发帖时间后继续", remaining };
     }
     if (remaining && mode === "mutual-followBack") {
-      return { kind: "time-slot", label: "等待夜间回关时段", detail: "到夜间时段后自动加入排班。", remaining };
+      return { kind: "time-slot", label: "等待夜间回关", detail: "到夜间时段后继续", remaining };
     }
     if (remaining && mode === "mutual-unfollow") {
-      return { kind: "time-slot", label: "等待每周清理时间", detail: "到期后自动加入排班。", remaining };
+      return { kind: "time-slot", label: "等待每周清理", detail: "到期后自动加入排班", remaining };
     }
     if (remaining) {
-      return { kind: "timer", label: "等待下次运行时间", detail: reason || "倒计时结束后自动重新加入排班。", remaining };
+      return { kind: "timer", label: "等待下次运行", detail: "倒计时结束后继续", remaining };
     }
     if (taskSchedule.current && !current) {
       const currentLabel = FLOW_TASKS.find(([key]) => key === taskSchedule.current)?.[1] || "当前任务";
-      return { kind: "queue", label: `排队中，等待${currentLabel}`, detail: `${currentLabel}结束本次运行后，后台会安排下一项任务。`, remaining };
+      return { kind: "queue", label: "排队中", waitingFor: currentLabel, detail: "当前项结束后自动轮到", remaining };
     }
-    return { kind: "queue", label: "等待后台安排", detail: reason || "任务已在队列中，轮到时会自动启动。", remaining };
+    return { kind: "queue", label: "等待安排", detail: reason || "轮到时自动启动", remaining };
+  }
+
+  // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.
+  function scheduleReadinessAt(mode, now = Date.now()) {
+    const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
+    const rule = taskSchedule.rules?.[mode] || {};
+    const item = taskSchedule.items?.[mode] || {};
+    if (rule.enabled === false || item.manualStopped || item.blocked
+      || ["stopped", "blocked", "paused", "disabled"].includes(String(future?.status || ""))) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const wait = scheduledWaitInfo(mode, now);
+    if (wait?.remaining > 0) return now + wait.remaining;
+    if (future?.status === "ready") return now;
+    if (Number(future?.readyAt) > 0) return Number(future.readyAt);
+    if (Number(item.resumeAt) > now) return Number(item.resumeAt);
+    const dueRank = Array.isArray(taskSchedule.dueModes) ? taskSchedule.dueModes.indexOf(mode) : -1;
+    return dueRank >= 0 ? now + dueRank : now + 1e12;
   }
 
   function taskScheduleNotice(mode, now = Date.now()) {
@@ -1344,8 +1440,13 @@
       }
       return {
         status: "waiting",
-        title: `${USER_STATE_LABELS.waiting} · ${wait.label}${wait.remaining ? ` · ${formatClock(wait.remaining)}` : ""}`,
-        detail: `${wait.detail}${wait.remaining ? " 到期后自动继续。" : " 后台会自动安排。"}`
+        title: [
+          USER_STATE_LABELS.waiting,
+          wait.label,
+          wait.waitingFor || "",
+          wait.remaining ? formatClock(wait.remaining) : ""
+        ].filter(Boolean).join(" · "),
+        detail: `${wait.detail || "后台会自动安排"}${wait.remaining ? "；到期后自动继续。" : "。"}`
       };
     }
     return null;
@@ -1369,7 +1470,7 @@
     if (!dialog || dialog.hidden) return;
     const summary = flowTaskOverview(pluginRuntime);
     const totals = dialog.querySelector("[data-xrc-flow-details-total]");
-    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "8 项任务已停止"}`;
+    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "9 项任务已停止"}`;
     const list = dialog.querySelector("[data-xrc-flow-details-list]");
     if (list) {
       list.replaceChildren(...summary.tasks.map((task) => {
@@ -1401,43 +1502,78 @@
   function paintScheduleDesk(panel = document.getElementById(PANEL_ID)) {
     const desk = panel?.querySelector("[data-xrc-schedule-desk]");
     if (!desk) return;
-    const summary = flowTaskOverview(pluginRuntime);
-    const totals = desk.querySelector("[data-xrc-desk-total]");
-    if (totals) {
-      totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "8 项任务已停止"}`;
-    }
     const past = desk.querySelector("[data-xrc-desk-past]");
-    const nowNode = desk.querySelector("[data-xrc-desk-now]");
-    const nextNode = desk.querySelector("[data-xrc-desk-next]");
-    const nowCard = desk.querySelector('[data-rail="now"]');
+    const pastNote = desk.querySelector("[data-xrc-desk-past-note]");
+    const pastStatus = desk.querySelector("[data-xrc-desk-past-status]");
+    const nowRow = desk.querySelector("[data-xrc-desk-now-row]");
+    const nowTitle = desk.querySelector("[data-xrc-desk-now]");
+    const nowNote = desk.querySelector("[data-xrc-desk-now-note]");
+    const nowStatus = desk.querySelector("[data-xrc-desk-now-status]");
     if (!scheduleLoaded) {
-      if (nowNode) nowNode.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
+      if (past) past.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
+      if (pastNote) pastNote.textContent = "正在同步轮班记录";
+      if (pastStatus) pastStatus.textContent = "读取中";
+      if (nowRow) {
+        nowRow.hidden = false;
+        nowRow.dataset.pulse = "waiting";
+      }
+      if (nowTitle) nowTitle.textContent = scheduleLoadError ? "排班状态读取失败" : "正在读取…";
+      if (nowNote) nowNote.textContent = "正在同步当前占用";
+      if (nowStatus) nowStatus.textContent = "读取中";
     } else {
-      const preview = schedulePreview();
       const latest = taskSchedule.timeline?.history?.[0];
-      const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
-      const currentActions = Number(taskSchedule.items?.[preview.current]?.sliceActions) || 0;
+      const preview = schedulePreview();
+      const overview = flowTaskOverview(pluginRuntime);
+      const runningMode = overview.tasks.find((task) => task.status === "running")?.key || "";
+      const nowMode = runningMode || preview.current || "";
+      const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status) && entry.mode !== nowMode)
+        || taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
       if (past) {
         past.textContent = latest
-          ? `${TASK_MODE_LABELS[latest.mode] || latest.mode} · ${taskActionCount(latest.mode, latest.actions)}`
+          ? (TASK_MODE_LABELS[latest.mode] || latest.mode)
           : "暂无轮班记录";
       }
-      if (nowNode) {
-        nowNode.textContent = !taskSchedule.enabled
-          ? "排班已暂停"
-          : preview.current
-            ? `${TASK_MODE_LABELS[preview.current]} · 本次已确认 ${taskActionCount(preview.current, currentActions)}`
-            : nextEntry ? `${scheduledWaitInfo(nextEntry.mode).label} · ${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode}` : "等待任务到期";
+      if (pastNote) {
+        pastNote.textContent = latest
+          ? [
+              `${formatScheduleTime(latest.startedAt)}–${formatScheduleTime(latest.endedAt)}`,
+              taskActionCount(latest.mode, latest.actions),
+              latest.reason || ""
+            ].filter(Boolean).join(" · ")
+          : "完成一轮占用后会出现在这里";
       }
-      if (nextNode) {
-        nextNode.textContent = nextEntry
-          ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "结束后" : formatScheduleTime(nextEntry.readyAt)}`
-          : "等待任务到期";
-      }
-      if (nowCard) {
-        const currentStatus = flowTaskOverview(pluginRuntime).tasks.find((task) => task.key === preview.current)?.status;
-        nowCard.dataset.tone = !taskSchedule.enabled ? "paused" : preview.current
-          ? currentStatus === "running" ? "running" : "waiting" : "idle";
+      if (pastStatus) pastStatus.textContent = latest ? "已结束" : "暂无";
+      // No occupied / running slot: show「当前任务 · 正在调度中」between past and next.
+      const showDispatch = !nowMode;
+      if (nowRow) {
+        nowRow.hidden = !showDispatch;
+        if (showDispatch) {
+          if (!taskSchedule.enabled) {
+            nowRow.dataset.pulse = "stopped";
+            if (nowTitle) nowTitle.textContent = "排班已暂停";
+            if (nowNote) nowNote.textContent = taskSchedule.reason || "恢复排班后继续自动切换";
+            if (nowStatus) nowStatus.textContent = "已暂停";
+          } else {
+            nowRow.dataset.pulse = "waiting";
+            const waitMs = soonestWaitMs();
+            const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}后` : "";
+            // Title stays「正在调度中」; countdown sits before 预计 on the note line.
+            if (nowTitle) nowTitle.textContent = "正在调度中";
+            if (nowStatus) nowStatus.textContent = "调度中";
+            if (nowNote) {
+              const nextLabel = nextEntry
+                ? (TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode)
+                : (TASK_MODE_LABELS[preview.next] || "");
+              nowNote.textContent = nextEntry
+                ? nextEntry.status === "ready"
+                  ? [`下一 ${nextLabel}`, eta, "预计当前空档结束后接入"].filter(Boolean).join(" · ")
+                  : [`下一 ${nextLabel}`, eta, `预计 ${formatScheduleTime(nextEntry.readyAt)}`].filter(Boolean).join(" · ")
+                : eta
+                  ? `${eta}自动切换下一任务`
+                  : "暂无到期任务，到期后会自动切换";
+            }
+          }
+        }
       }
     }
     paintScheduleBoard(desk);
@@ -1464,7 +1600,7 @@
       ? Number(taskSchedule.sliceSeconds)
       : 30;
     const currentSliceMs = ["timeline", "notifications", "likes-posts", "likes-replies"].includes(current) ? 0
-      : ["mutual-unfollow", "mutual-followBack"].includes(current)
+      : ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"].includes(current)
       ? Math.max(sliceSeconds * 1000, 10 * 60 * 1000)
       : sliceSeconds * 1000;
     const switchAt = current && currentSliceMs && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + currentSliceMs : 0;
@@ -1534,50 +1670,28 @@
     return `${amount} 个账号`;
   }
 
-  function paintScheduleBoard(dialog) {
-    const board = dialog?.querySelector("[data-xrc-schedule-board]");
-    if (!board) return;
-    const summary = board.querySelector("[data-xrc-schedule-summary]");
-    const list = board.querySelector("[data-xrc-schedule-list]");
-    const historyList = board.querySelector("[data-xrc-schedule-history]");
-    const focusExecution = board.querySelector("[data-xrc-focus-execution]");
+  function paintScheduleHistory(panel = document.getElementById(PANEL_ID)) {
+    const historyList = panel?.querySelector("[data-xrc-schedule-history]");
+    const historyCount = panel?.querySelector("[data-xrc-schedule-history-count]");
+    const historyNote = panel?.querySelector("[data-xrc-schedule-history-note]");
     if (!scheduleLoaded) {
-      if (summary) summary.textContent = scheduleLoadError ? "后台排班读取失败，请关闭后重新打开" : "正在读取后台排班…";
       historyList?.replaceChildren?.();
-      list?.replaceChildren?.();
+      if (historyCount) historyCount.textContent = "读取中";
+      if (historyNote) historyNote.textContent = "正在同步本机轮班记录。";
       return;
     }
-    const preview = schedulePreview();
-    if (focusExecution) {
-      focusExecution.hidden = !taskSchedule.enabled || !preview.current;
-      focusExecution.dataset.currentTask = preview.current || "";
-    }
-    const current = TASK_MODE_LABELS[preview.current] || "无";
-    const nextLabel = TASK_MODE_LABELS[preview.next] || "等待任务到期";
-    const nextEntry = taskSchedule.timeline?.future?.find((entry) => entry.mode === preview.next);
-    const nextText = !preview.next ? nextLabel
-      : nextEntry?.status === "ready" ? `${nextLabel}（预计当前结束后）`
-      : nextEntry?.readyAt ? `${nextLabel}（预计 ${formatScheduleTime(nextEntry.readyAt)}）`
-      : nextLabel;
-    const switchText = preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : "";
-    if (summary) {
-      summary.textContent = taskSchedule.enabled
-        ? preview.current ? `当前 ${current} · 下一 ${nextText}${switchText}`
-          : `当前等待任务到期 · 下一 ${nextText}`
-        : `排班已暂停${taskSchedule.reason ? ` · ${taskSchedule.reason}` : ""}`;
-    }
     const history = taskSchedule.timeline?.history || [];
-    const historyNote = board.querySelector("[data-xrc-schedule-history-note]");
+    if (historyCount) historyCount.textContent = history.length ? `${history.length} 条` : "暂无";
     if (historyNote) {
       historyNote.textContent = history.length
-        ? `本机记录：任务占满共享页签后为何让出。正在显示最近 ${history.length} 条（最多 10 条；后台可存 30 条）。`
-        : "本机记录：某一任务占满共享页签后为何让出。只保留最近 10 条供查看，后台最多存 30 条。";
+        ? `最近 ${history.length} 条本机记录（最多 10 条）。`
+        : "完成一轮占用后会出现在这里。";
     }
     historyList?.replaceChildren?.(...(history.length ? history : [null]).map((entry) => {
       const row = document.createElement("li");
       row.className = "xrc-schedule-history-item";
       if (!entry) {
-        row.textContent = "还没有已结束的轮次。开始排班并完成一轮占用后，会出现在这里。";
+        row.textContent = "还没有已结束的轮次。";
         return row;
       }
       const when = document.createElement("strong");
@@ -1585,17 +1699,47 @@
       const what = document.createElement("span");
       what.textContent = `${TASK_MODE_LABELS[entry.mode] || entry.mode} · ${taskActionCount(entry.mode, entry.actions)}`;
       const why = document.createElement("small");
-      why.textContent = `结束原因：${entry.reason || "本轮结束"}`;
+      why.textContent = entry.reason || "本轮结束";
       row.append(when, what, why);
       return row;
     }));
+  }
+
+  function paintScheduleBoard(dialog) {
+    const board = dialog?.querySelector("[data-xrc-schedule-board]");
+    if (!board) return;
+    const list = board.querySelector("[data-xrc-schedule-list]");
+    const historyRoot = (typeof document?.getElementById === "function" && document.getElementById(PANEL_ID)) || dialog;
+    paintScheduleHistory(historyRoot);
+    if (!scheduleLoaded) {
+      list?.replaceChildren?.();
+      return;
+    }
+    const preview = schedulePreview();
     if (!list) return;
-    const timelineFuture = taskSchedule.timeline?.future;
-    const ordered = Array.isArray(timelineFuture) ? [
-      ...preview.pending.filter((task) => task.mode === preview.current),
-      ...timelineFuture.map((entry) => preview.pending.find((task) => task.mode === entry.mode)).filter(Boolean)
-    ] : preview.pending;
     const overviewByMode = Object.fromEntries(flowTaskOverview(pluginRuntime).tasks.map((task) => [task.key, task]));
+    // Prefer a page-confirmed running task as「当前」; schedule.current may still be the next assignee mid-switch.
+    const runningMode = preview.pending.find((task) => overviewByMode[task.mode]?.status === "running")?.mode || "";
+    const nowMode = runningMode || preview.current || "";
+    const byMode = new Map(preview.pending.map((task) => [task.mode, task]));
+    const readinessNow = Date.now();
+    const waitingQueue = [...byMode.values()]
+      .filter((task) => task.mode !== nowMode)
+      .sort((a, b) => {
+        const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
+        if (readyDiff) return readyDiff;
+        const priorityA = Math.max(1, Math.min(3, Number(a.rule.priority) || 1));
+        const priorityB = Math.max(1, Math.min(3, Number(b.rule.priority) || 1));
+        return priorityB - priorityA || String(a.mode).localeCompare(String(b.mode));
+      });
+    const nowTask = nowMode ? byMode.get(nowMode) : null;
+    // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
+    const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
+    const nextMode = waitingQueue.find((task) => scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY)?.mode || "";
+    const candidateModes = waitingQueue
+      .map((task) => task.mode)
+      .filter((mode) => mode && mode !== nextMode);
+    const timelineFuture = taskSchedule.timeline?.future;
     // Upsert in place. Full replaceChildren every second restarted the green orbit mid-edge.
     const keepModes = new Set(ordered.map((task) => task.mode));
     for (const stale of [...list.querySelectorAll(".xrc-schedule-item")]) {
@@ -1617,8 +1761,11 @@
         const body = document.createElement("div");
         body.className = "xrc-schedule-item-body";
         body.append(document.createElement("strong"), document.createElement("small"));
+        const side = document.createElement("div");
+        side.className = "xrc-schedule-item-side";
         const status = document.createElement("span");
         status.className = "xrc-schedule-item-status";
+        side.append(status);
         const orbit = document.createElement("i");
         orbit.className = "xrc-schedule-orbit-dot";
         orbit.setAttribute("aria-hidden", "true");
@@ -1626,18 +1773,36 @@
         dots.className = "xrc-schedule-wait-dots";
         dots.setAttribute("aria-hidden", "true");
         for (let dotIndex = 0; dotIndex < 6; dotIndex += 1) dots.append(document.createElement("i"));
-        row.append(mark, body, status, orbit, dots);
+        row.append(mark, body, side, orbit, dots);
       }
       const pulse = scheduleItemPulse(task.mode, preview, overviewByMode[task.mode]);
       row.title = `进入${task.label}子页`;
       if (pulse) row.dataset.pulse = pulse;
       else delete row.dataset.pulse;
+      const candidateRank = candidateModes.indexOf(task.mode);
+      const phase = task.mode === nowMode ? "now"
+        : task.mode === nextMode ? "next"
+        : candidateRank >= 0 ? "candidate" : "";
+      if (phase) row.dataset.phase = phase;
+      else delete row.dataset.phase;
+      if (phase === "next") row.dataset.warmth = "0";
+      else if (phase === "candidate" && pulse !== "stopped") row.dataset.warmth = String(Math.min(candidateRank + 1, 5));
+      else delete row.dataset.warmth;
       const futureEntry = timelineFuture?.find((entry) => entry.mode === task.mode);
       const overviewStatus = overviewByMode[task.mode]?.status;
       const label = row.querySelector(".xrc-schedule-item-body strong");
       const note = row.querySelector(".xrc-schedule-item-body small");
       const status = row.querySelector(".xrc-schedule-item-status");
-      if (label) label.textContent = task.label;
+      if (label) {
+        label.replaceChildren();
+        if (phase) {
+          const tag = document.createElement("span");
+          tag.className = "xrc-desk-phase-tag";
+          tag.textContent = phase === "now" ? "当前任务" : phase === "next" ? "下一任务" : "候选任务";
+          label.append(tag);
+        }
+        label.append(document.createTextNode(task.label));
+      }
       if (status) {
         status.textContent = userStateLabelForTask(
           pulse === "running" || overviewStatus === "running" ? "running"
@@ -1647,14 +1812,34 @@
             : "missing"
         );
       }
+      let side = row.querySelector(".xrc-schedule-item-side");
+      if (!side && status) {
+        side = document.createElement("div");
+        side.className = "xrc-schedule-item-side";
+        status.replaceWith(side);
+        side.append(status);
+      }
+      let go = row.querySelector("[data-xrc-focus-execution]");
+      if (phase === "now" && taskSchedule.enabled && nowMode) {
+        if (!go) {
+          go = document.createElement("button");
+          go.type = "button";
+          go.className = "xrc-schedule-card-go";
+          go.dataset.xrcFocusExecution = "1";
+        }
+        const host = side || row;
+        if (status?.parentNode === host) host.insertBefore(go, status);
+        else if (go.parentNode !== host) host.prepend(go);
+        go.hidden = false;
+        go.textContent = "查看";
+        go.title = "查看当前任务详情";
+        go.dataset.currentTask = nowMode;
+      } else if (go) {
+        go.remove();
+      }
       if (note) {
-        const priority = Math.max(1, Math.min(3, Number(task.rule.priority) || 1));
-        const windowText = { all: "全天", day: "08–20", peak: "08–10 / 18–20", overnight: "22–06" }[task.rule.window] || "全天";
-        const gapText = Number(task.rule.minGapMs) >= 7 * 24 * 60 * 60 * 1000 ? "约每周一次"
-          : Number(task.rule.minGapMs) > 0 ? `间隔 ${Math.round(Number(task.rule.minGapMs) / 3600000)} 小时` : "";
         const wait = pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
-        const waitText = wait ? `${wait.label}${wait.remaining ? ` · 剩余 ${formatClock(wait.remaining)}` : ""}` : "";
-        note.textContent = [waitText, wait?.detail || task.reason, `优先级 ${priority}`, windowText, gapText].filter(Boolean).join(" · ");
+        note.textContent = formatScheduleCardNote(task, wait);
       }
       // Only move when order changed — appendChild every tick restarts CSS animations.
       const current = list.children[index];
@@ -1690,20 +1875,22 @@
   function flowButtonModel() {
     if (flowStarting) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"),
+        label: "启动中",
         hint: "正在打开执行页，完成后自动开始。",
         status: "starting",
         action: "",
-        title: "正在建立共享执行页并接入排班；完成后会自动开始。请稍候，暂不可点击。"
+        canStop: false,
+        title: "正在建立共享执行页并接入排班；完成后会自动开始。"
       };
     }
     if (flowStopping) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"),
+        label: "正在停止",
         hint: "正在结束全部任务，结束后可再启动。",
         status: "stopping",
         action: "",
-        title: "正在暂停全部任务并关闭后台调度；结束后可再启动。请稍候，暂不可点击。"
+        canStop: false,
+        title: "正在停止全部任务并关闭后台调度；结束后可再启动。"
       };
     }
     const flow = pluginRuntime.flow || {};
@@ -1712,19 +1899,21 @@
     const startingAge = Date.now() - Number(flow.updatedAt || 0);
     if (!tasks.length && flow.phase === "starting" && startingAge < 20000) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"),
+        label: "启动中",
         hint: "正在打开执行页，完成后自动开始。",
         status: "starting",
         action: "",
-        title: "正在建立共享执行页并接入排班；完成后会自动开始。请稍候，暂不可点击。"
+        canStop: false,
+        title: "正在建立共享执行页并接入排班；完成后会自动开始。"
       };
     }
     if (flow.phase === "paused" && !taskSchedule.enabled && !summary.counts.running) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"),
+        label: "启动排班",
         hint: "全流程已暂停，可重新启动。",
         status: "paused",
         action: "start",
+        canStop: false,
         title: "全流程已暂停。点击后重新启动评论任务，点赞、关注与发帖进入后台队列。"
       };
     }
@@ -1734,29 +1923,32 @@
         .map((task) => Number(task.updatedAt || 0)));
       if (Date.now() - lastUpdate > 15000) {
         return {
-          label: formatUserStateAction(USER_STATE_LABELS.needs, "点击重试停止"),
-          hint: "停止超时，请再点一次暂停。",
+          label: "停止超时",
+          hint: "停止未完成，可到排班设置再试「停止全部」。",
           status: "stalled",
-          action: "pause",
-          title: "停止已超过 15 秒仍未完成。点击再次发送暂停指令。"
+          action: "",
+          canStop: true,
+          title: "停止已超过 15 秒仍未完成。可到排班设置再试「停止全部」。"
         };
       }
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候"),
+        label: "正在停止",
         hint: "正在结束全部任务，结束后可再启动。",
         status: "stopping",
         action: "",
-        title: "正在暂停全部任务并关闭后台调度；结束后可再启动。请稍候，暂不可点击。"
+        canStop: false,
+        title: "正在停止全部任务并关闭后台调度；结束后可再启动。"
       };
     }
     if (taskSchedule.enabled) {
       if (summary.counts.running) {
         return {
-          label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"),
-          hint: "有任务正在执行。",
+          label: USER_STATE_LABELS.running,
+          hint: "有任务正在执行；单项启停在任务子页。",
           status: "running",
-          action: "pause",
-          title: "当前有任务在共享执行页运行。点击可暂停全部任务并关闭后台调度。"
+          action: "",
+          canStop: true,
+          title: "当前有任务在共享执行页运行。需要全停时到排班设置。"
         };
       }
       if (taskSchedule.current && summary.counts.waiting) {
@@ -1764,10 +1956,11 @@
       }
       if (summary.counts.missing || summary.counts.unknown) {
         return {
-          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"),
+          label: "启动未运行",
           hint: "有任务尚未启动；已有倒计时会保留。",
           status: "waiting",
           action: "start",
+          canStop: true,
           title: "部分任务尚未启动；已在等待的倒计时会保留。点击只启动未运行项。"
         };
       }
@@ -1775,121 +1968,103 @@
         return scheduleWaitFlowModel();
       }
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.needs, "点击暂停"),
+        label: USER_STATE_LABELS.needs,
         hint: "任务受限，请先查看详情。",
         status: "waiting",
-        action: "pause",
-        title: "各项任务均需你确认账号状态后再继续。可先看详情；点击可暂停排班。"
+        action: "",
+        canStop: true,
+        title: "各项任务均需你确认账号状态后再继续。可先看详情；需要全停时到排班设置。"
       };
     }
     if (summary.counts.running) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.running, "点击暂停全部"),
-        hint: "有任务正在执行。",
+        label: USER_STATE_LABELS.running,
+        hint: "有任务正在执行；单项启停在任务子页。",
         status: "running",
-        action: "pause",
-        title: "当前有任务在执行。点击可暂停全部任务。"
+        action: "",
+        canStop: true,
+        title: "当前有任务在执行。需要全停时到排班设置。"
       };
     }
     if (summary.counts.waiting) {
       return summary.counts.missing || summary.counts.unknown
         ? {
-          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动未运行"),
+          label: "启动未运行",
           hint: "有任务尚未启动；已有倒计时会保留。",
           status: "waiting",
           action: "start",
+          canStop: false,
           title: "部分任务尚未启动；已在等待的倒计时会保留。点击只启动未运行项。"
         }
         : {
-          label: formatUserStateAction("等待恢复", "点击恢复全部"),
+          label: "恢复排班",
           hint: "排班已关，倒计时仍保留。",
           status: "waiting",
           action: "start",
+          canStop: false,
           title: "排班已关闭，但仍有任务在冷却或排队。点击可重新开启全流程；原有倒计时保留。"
         };
     }
     if (summary.counts.blocked && !summary.counts.missing && !summary.counts.unknown) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.needs, "请先看详情"),
+        label: USER_STATE_LABELS.needs,
         hint: "任务受限，确认账号后再单独启动。",
         status: "blocked",
         action: "",
+        canStop: false,
         title: "任务连续受限。请先查看详情并检查账号；确认后再单独启动。"
       };
     }
     if (tasks.length) {
       return summary.counts.unknown
         ? {
-          label: formatUserStateAction(USER_STATE_LABELS.needs, "点击检查并启动"),
+          label: "检查并启动",
           hint: "任务状态未同步，点击后检查并启动。",
           status: "unknown",
           action: "start",
+          canStop: false,
           title: "任务窗口状态不确定。点击后检查并启动未运行项。"
         }
         : {
-          label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"),
+          label: "启动排班",
           hint: "当前没有任务在跑。",
           status: "stopped",
           action: "start",
+          canStop: false,
           title: "任务已停止。点击可重新启动全流程。"
         };
     }
     if (flow.phase === "stopped" || (flow.phase === "starting" && startingAge >= 20000)) {
       return {
-        label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击重新启动"),
+        label: "启动排班",
         hint: "全流程已结束。",
         status: "stopped",
         action: "start",
+        canStop: false,
         title: "全流程已停止。点击可重新启动。"
       };
     }
     return {
-      label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动全部"),
+      label: "启动排班",
       hint: "启动后评论先跑，其他任务进入后台队列。",
       status: "idle",
       action: "start",
+      canStop: false,
       title: "点击后启动评论任务；点赞、关注与发帖进入后台队列，按排班轮换。"
     };
-  }
-
-  function flowRuntimeLabel(model, startedAt, now = Date.now()) {
-    if (model.status === "paused") return "已停止 · 全流程已暂停";
-    if (model.status === "waiting") {
-      if (taskSchedule.enabled) {
-        const waitMs = soonestWaitMs(now);
-        return waitMs > 0
-          ? `后台调度中 · 约 ${formatCountdown(waitMs)}后继续`
-          : taskSchedule.current
-            ? "后台调度中 · 正在确认当前任务"
-            : "后台调度中 · 等待下一项到期";
-      }
-      return waitHeadline("等待恢复", soonestWaitMs(now));
-    }
-    if (model.status === "blocked") return "需处理 · 任务受限";
-    if (model.status === "stalled") return "需处理 · 停止超时";
-    if (model.status === "stopping") return "停止中 · 正在结束全部任务";
-    if (model.status === "starting") return "启动中 · 正在打开执行页";
-    if (model.status === "unknown") return "需处理 · 状态未同步";
-    if (model.status === "stopped") return USER_STATE_LABELS.stopped;
-    if (model.status === "running") {
-      const waitMs = soonestWaitMs(now);
-      if (waitMs > 0 && !flowTaskOverview(pluginRuntime, now).counts.running) {
-        return `后台调度中 · 约 ${formatCountdown(waitMs)}后继续`;
-      }
-      return startedAt ? `运行中 · 已稳定 ${formatRuntime(now - startedAt)}` : "运行中 · 有任务正在执行";
-    }
-    return USER_STATE_LABELS.stopped;
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
     const button = panel?.querySelector("[data-xrc-flow-start]");
     if (!button) return;
     const model = flowButtonModel();
+    const launch = panel?.querySelector(".xrc-flow-launch");
     const label = button.querySelector("[data-xrc-flow-label]");
     const overview = button.querySelector("[data-xrc-flow-overview]");
     const count = button.querySelector("[data-xrc-flow-count]");
     const dots = button.querySelector("[data-xrc-flow-dots]");
     const hint = panel?.querySelector("[data-xrc-flow-hint]");
+    const stop = panel?.querySelector("[data-xrc-flow-stop]");
     if (label) label.textContent = model.label;
     const showOverview = model.status === "running" || model.status === "waiting" || model.status === "blocked" || model.status === "paused"
       || model.status === "stopped" || model.status === "starting" || model.status === "stopping"
@@ -1906,16 +2081,27 @@
     });
     if (hint) {
       const tip = String(model.hint || "").trim();
-      hint.hidden = !tip;
+      // Desk「当前任务 · 调度中」already shows the wait countdown; drop the duplicate strip.
+      const deskOwnsCountdown = deskHome && taskSchedule.enabled && model.status === "waiting"
+        && !summary.counts.running && !taskSchedule.current;
+      hint.hidden = !tip || deskOwnsCountdown;
       hint.textContent = tip;
     }
-    button.dataset.flow = model.status;
+    const canStart = model.action === "start";
     const busy = flowStarting || flowStopping || model.status === "starting" || model.status === "stopping";
+    button.dataset.flow = model.status;
+    button.dataset.role = canStart ? "start" : "status";
+    if (launch) launch.dataset.role = canStart ? "start" : "status";
     if (busy) button.dataset.busy = "true";
     else delete button.dataset.busy;
     button.title = model.title || "";
     button.setAttribute("aria-label", showOverview ? `${model.title}。${summary.text}。${summary.tasks.map((task) => `${task.label}${userStateLabelForTask(task.status)}`).join("，")}` : model.title);
-    button.disabled = !model.action || busy;
+    button.disabled = !canStart || busy;
+    if (stop) {
+      const showStop = Boolean(model.canStop) && !busy;
+      stop.hidden = !showStop;
+      stop.disabled = !showStop;
+    }
     paintFlowDetails(panel);
     paintScheduleStrip(panel);
     paintScheduleDesk(panel);
@@ -2015,14 +2201,16 @@
     }
   }
 
+  async function requestPauseAllTasks() {
+    if (flowStopping || flowStarting) return;
+    if (!window.confirm("确定停止全部任务并关闭排班？\n各任务可在子页单独启停。")) return;
+    await pauseAllTasks();
+  }
+
   async function startAllTasks() {
     if (flowStarting || flowStopping) return;
     const model = flowButtonModel();
-    if (model.status === "stopping") return;
-    if (model.action === "pause") {
-      await pauseAllTasks();
-      return;
-    }
+    if (model.action !== "start") return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     if (!state.aiKeySaved) {
@@ -2098,7 +2286,8 @@
   }
 
   function validMutualMode(value) {
-    return value === "followBack" ? value : "unfollow";
+    if (value === "followBack" || value === "targetFollow") return value;
+    return "unfollow";
   }
 
   function anyTaskRunning() {
@@ -2131,13 +2320,22 @@
         : [...REPLY_PROVIDER_ORDER];
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
-      state.replyPrompt = String(settings.replyPrompt || "").trim();
-      const storedPostPrompt = String(settings.postPrompt || "").trim();
-      const oldClickbaitPreset = (storedPostPrompt.startsWith("风格：更抓人的观点短帖。") && storedPostPrompt.includes("马上说出鲜明立场") && !storedPostPrompt.includes("只站一边")) || (storedPostPrompt.startsWith("风格：标题党引子。") && storedPostPrompt.includes("真正值得注意的是") && storedPostPrompt.includes("写 3～5 个短段")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，第一句直接给 1 个有冲突感的判断") && storedPostPrompt.includes("目标 45～100 个中文字符")) || (storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要，先用一句话说清具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多用 1 个素材细节支撑、补 1 句个人判断或后果") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……"))));
-      const oldDefaultPrompt = (storedPostPrompt.startsWith("任务：依据热点标题和摘要写一条 X 中文短帖。") && storedPostPrompt.includes("两边都对的分析报告") && !storedPostPrompt.includes("只站一边说话")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。只选 1 个判断，开头就表态") && storedPostPrompt.includes("目标 35～90 个中文字符")) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，写一条有明确立场的 X 中文短帖。先从读者视角用一句话交代具体对象和发生的事") && (storedPostPrompt.includes("1～3 个短段") || storedPostPrompt.includes("最多 1 句理由") || (storedPostPrompt.includes("写成 2～3 个短段") && !storedPostPrompt.includes("最厉害的地方是……")))) || (storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要，原创一条 X 中文短帖。参考王长富口语直白、带少量个人判断的节奏") && storedPostPrompt.includes("结构：总共 18～70 字")) || storedPostPrompt.includes("80 到 220 个中文字符") || storedPostPrompt.includes("$代币") || storedPostPrompt.includes("总共 40 到 90 个字") || storedPostPrompt.includes("从素材里抓一件具体的事，用口语短句写。3 到 5 行") || storedPostPrompt.includes("短的一行即可，长的 2～4 行") || storedPostPrompt.includes("支撑不了具体判断就放弃选题") || (storedPostPrompt.includes("根据给定热点写一条原创 X 短帖。参考王长富那种直接说人话") && storedPostPrompt.includes("这话像在说 X，又像不止 X"));
-      const previousBuiltInPrompt = storedPostPrompt.includes("素材真让人佩服时，可以用 0～1 句短口语直接夸");
-      const currentBuiltInPrompt = storedPostPrompt.includes("姿态够直接") && storedPostPrompt.includes("字数是写作目标");
-      state.postPrompt = (oldClickbaitPreset || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("风格：观点型标题党。依据热点标题和摘要"))) ? CLICKBAIT_POST_PROMPT : (oldDefaultPrompt || ((previousBuiltInPrompt || currentBuiltInPrompt) && storedPostPrompt.startsWith("任务：依据给定热点的标题和摘要"))) ? "" : storedPostPrompt;
+      const legacyReply = String(settings.replyPrompt || "").trim();
+      const legacyPost = String(settings.postPrompt || "").trim();
+      const legacyPostIsBuiltin = !legacyPost
+        || legacyPost.startsWith("风格：")
+        || legacyPost.startsWith("任务：依据")
+        || legacyPost.includes("$代币")
+        || legacyPost.includes("支撑不了具体判断就放弃选题")
+        || legacyPost.includes("素材真让人佩服时")
+        || (legacyPost.includes("姿态够直接") && legacyPost.includes("字数是写作目标"))
+        || legacyPost.includes("情绪化的 X 中文短帖");
+      state.replyTimelinePrompt = String(settings.replyTimelinePrompt || "").trim() || legacyReply;
+      state.replyCommentPrompt = String(settings.replyCommentPrompt || "").trim() || legacyReply;
+      state.postNormalPrompt = String(settings.postNormalPrompt || "").trim() || (legacyPostIsBuiltin ? "" : legacyPost);
+      state.postPremiumPrompt = String(settings.postPremiumPrompt || "").trim() || (legacyPostIsBuiltin ? "" : legacyPost);
+      state.replyPrompt = state.replyTimelinePrompt;
+      state.postPrompt = state.postNormalPrompt;
       state.aiStatus = apiKey
         ? `${state.aiKeyHint}，可以直接开始`
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
@@ -2200,8 +2398,13 @@
     for (const profile of postApi.POST_SCHEDULE_PROFILES) {
       const custom = postPaces[profile.id];
       if (!custom || typeof custom !== "object") continue;
+      const legacy = {
+        ...custom,
+        minCycleMinutes: custom.minCycleMinutes ?? custom.minMinutes,
+        maxCycleMinutes: custom.maxCycleMinutes ?? custom.maxMinutes
+      };
       for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
-        const number = Math.round(Number(custom[field]));
+        const number = Math.round(Number(legacy[field]));
         if (Number.isInteger(number) && number >= limits[0] && number <= limits[1]) profile[field] = number;
       }
     }
@@ -2253,13 +2456,20 @@
       for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
         const input = panel.querySelector(`[data-xrc-post-pace-input][data-pace="${profile.id}"][data-field="${field}"]`);
         const number = readPaceNumber(input, limits);
-        if (number === null) return { error: `发推「${profile.label}」的分钟数需要在 ${limits[0]} 到 ${limits[1]} 之间` };
+        if (number === null) return { error: `发推「${profile.label}」的数字需要在 ${limits[0]} 到 ${limits[1]} 之间` };
         next[field] = number;
       }
-      if (next.minMinutes > next.maxMinutes) return { error: `发推「${profile.label}」的最短间隔不能大于最长间隔` };
+      for (const [minField, maxField, label] of POST_PACE_PAIRS) {
+        if (next[minField] > next[maxField]) return { error: `发推「${profile.label}」的${label}，左边不能大于右边` };
+      }
       value[profile.id] = next;
     }
     return { value };
+  }
+
+  function paceNumberValue(value, fallback) {
+    const number = Math.round(Number(value));
+    return Number.isFinite(number) ? String(number) : String(fallback);
   }
 
   function replyPaceEditorHtml() {
@@ -2270,14 +2480,14 @@
           <label class="xrc-field">
             <span>${label}</span>
             <span class="xrc-pair">
-              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${minField}" value="${profile[minField]}" min="${REPLY_PACE_LIMITS[minField][0]}" max="${REPLY_PACE_LIMITS[minField][1]}">
-              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${maxField}" value="${profile[maxField]}" min="${REPLY_PACE_LIMITS[maxField][0]}" max="${REPLY_PACE_LIMITS[maxField][1]}">
+              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${minField}" value="${paceNumberValue(profile[minField], REPLY_PACE_LIMITS[minField][0])}" min="${REPLY_PACE_LIMITS[minField][0]}" max="${REPLY_PACE_LIMITS[minField][1]}">
+              <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${maxField}" value="${paceNumberValue(profile[maxField], REPLY_PACE_LIMITS[maxField][0])}" min="${REPLY_PACE_LIMITS[maxField][0]}" max="${REPLY_PACE_LIMITS[maxField][1]}">
             </span>
           </label>
         `).join("")}
         <label class="xrc-field">
           <span>轮间停顿（秒）</span>
-          <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="roundIntervalSeconds" value="${profile.roundIntervalSeconds}" min="1" max="180">
+          <input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="roundIntervalSeconds" value="${paceNumberValue(profile.roundIntervalSeconds, 1)}" min="1" max="180">
         </label>
       </fieldset>
     `).join("");
@@ -2285,13 +2495,18 @@
 
   function postPaceEditorHtml() {
     return (postApi?.POST_SCHEDULE_PROFILES || []).map((profile) => `
-      <label class="xrc-field">
-        <span>${profile.label}（分钟）</span>
-        <span class="xrc-pair">
-          <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="minMinutes" value="${profile.minMinutes}" min="1" max="240">
-          <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="maxMinutes" value="${profile.maxMinutes}" min="1" max="240">
-        </span>
-      </label>
+      <fieldset class="xrc-pace-set">
+        <legend>${profile.label}</legend>
+        ${POST_PACE_PAIRS.map(([minField, maxField, label]) => `
+          <label class="xrc-field">
+            <span>${label}</span>
+            <span class="xrc-pair">
+              <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="${minField}" value="${paceNumberValue(profile[minField], POST_PACE_LIMITS[minField][0])}" min="${POST_PACE_LIMITS[minField][0]}" max="${POST_PACE_LIMITS[minField][1]}">
+              <input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="${maxField}" value="${paceNumberValue(profile[maxField], POST_PACE_LIMITS[maxField][0])}" min="${POST_PACE_LIMITS[maxField][0]}" max="${POST_PACE_LIMITS[maxField][1]}">
+            </span>
+          </label>
+        `).join("")}
+      </fieldset>
     `).join("");
   }
 
@@ -2300,8 +2515,10 @@
     const key = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
     const baiKey = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
     const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
-    const replyPrompt = String(panel.querySelector("[data-xrc-reply-prompt]")?.value || "").trim();
-    const postPrompt = String(panel.querySelector("[data-xrc-post-prompt]")?.value || "").trim();
+    const replyTimelinePrompt = String(panel.querySelector("[data-xrc-reply-timeline-prompt]")?.value || "").trim();
+    const replyCommentPrompt = String(panel.querySelector("[data-xrc-reply-comment-prompt]")?.value || "").trim();
+    const postNormalPrompt = String(panel.querySelector("[data-xrc-post-normal-prompt]")?.value || "").trim();
+    const postPremiumPrompt = String(panel.querySelector("[data-xrc-post-premium-prompt]")?.value || "").trim();
     if (key && !validDeepSeekApiKey(key)) {
       status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
       return false;
@@ -2314,11 +2531,12 @@
       status.textContent = "请至少启用一个回复模型";
       return false;
     }
-    if (!replyPrompt || !postPrompt) {
-      status.textContent = "提示词不能为空";
+    const prompts = [replyTimelinePrompt, replyCommentPrompt, postNormalPrompt, postPremiumPrompt];
+    if (prompts.some((value) => !value)) {
+      status.textContent = "四份提示词都不能为空";
       return false;
     }
-    if (replyPrompt.length > 2000 || postPrompt.length > 2000) {
+    if (prompts.some((value) => value.length > 2000)) {
       status.textContent = "提示词请控制在 2000 字以内";
       return false;
     }
@@ -2341,8 +2559,10 @@
     const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
     const settings = stored?.xrcAiSettings || {};
     const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
-    const storedReplyPrompt = replyPrompt === DEFAULT_REPLY_PROMPT ? "" : replyPrompt;
-    const storedPostPrompt = postPrompt === DEFAULT_POST_PROMPT ? "" : postPrompt;
+    const storedReplyTimeline = replyTimelinePrompt === DEFAULT_REPLY_TIMELINE_PROMPT ? "" : replyTimelinePrompt;
+    const storedReplyComment = replyCommentPrompt === DEFAULT_REPLY_COMMENT_PROMPT ? "" : replyCommentPrompt;
+    const storedPostNormal = postNormalPrompt === DEFAULT_POST_NORMAL_PROMPT ? "" : postNormalPrompt;
+    const storedPostPremium = postPremiumPrompt === DEFAULT_POST_PREMIUM_PROMPT ? "" : postPremiumPrompt;
     await chrome.storage.local.set({
       xrcAiSettings: {
         ...settings,
@@ -2350,8 +2570,12 @@
         baiApiKey: baiKey,
         replyProviders,
         replyMode: state.replyMode,
-        replyPrompt: storedReplyPrompt,
-        postPrompt: storedPostPrompt
+        replyTimelinePrompt: storedReplyTimeline,
+        replyCommentPrompt: storedReplyComment,
+        postNormalPrompt: storedPostNormal,
+        postPremiumPrompt: storedPostPremium,
+        replyPrompt: storedReplyTimeline,
+        postPrompt: storedPostNormal
       },
       [PACE_SETTINGS_KEY]: {
         ...paceSettings,
@@ -2366,8 +2590,12 @@
     state.aiSettingsStatus = "ready";
     state.aiKeyHint = key ? `已保存 ····${key.slice(-4)}` : "";
     state.aiStatus = key ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
-    state.replyPrompt = storedReplyPrompt;
-    state.postPrompt = storedPostPrompt;
+    state.replyTimelinePrompt = storedReplyTimeline;
+    state.replyCommentPrompt = storedReplyComment;
+    state.postNormalPrompt = storedPostNormal;
+    state.postPremiumPrompt = storedPostPremium;
+    state.replyPrompt = storedReplyTimeline;
+    state.postPrompt = storedPostNormal;
     if (replyPaces) {
       applyStoredReplyPaces(replyPaces.value);
       applySchedulePace(state.schedulePace, { replaceIdlePlan: true });
@@ -4393,11 +4621,15 @@
     const pageMeta = {
       model: ["模型设置", "密钥、回退顺序与提示词"],
       pace: ["频率设置", "回复与发帖的间隔和轮次"],
-      schedule: ["排班设置", "八项任务共用一个执行页签"],
+      schedule: ["排班设置", "九项任务共用一个执行页签"],
       other: ["其他设置", "显示与社区回执"],
     }[configPage] || ["其他设置", "显示与社区回执"];
     if (title) title.textContent = pageMeta[0];
     if (caption) caption.textContent = pageMeta[1];
+    if (configOpen && configPage === "schedule") {
+      paintScheduleHistory(panel);
+      void syncTargetFollowHandlesField(panel);
+    }
     const slice = panel.querySelector("[data-xrc-schedule-slice]");
     if (slice && document.activeElement !== slice) slice.value = String([20, 30, 45].includes(Number(taskSchedule.sliceSeconds)) ? taskSchedule.sliceSeconds : 30);
     panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
@@ -4414,12 +4646,53 @@
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
   }
 
+  function normalizeTargetFollowHandlesText(value) {
+    const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,，;；\n]+/u))
+      .map((item) => String(item || "").trim().replace(/^@/u, ""))
+      .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
+        && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
+    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+  }
+
+  async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
+    const field = panel?.querySelector("[data-xrc-target-follow-handles]");
+    if (!field || document.activeElement === field) return;
+    let handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    try {
+      if (mutualApi?.loadTargetFollowHandles) handles = await mutualApi.loadTargetFollowHandles();
+      else {
+        const stored = await chrome.storage.local.get("xrcTargetFollowHandles");
+        handles = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
+      }
+    } catch (error) {
+      handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    }
+    field.value = handles.map((handle) => `@${handle}`).join("\n");
+  }
+
+  async function saveTargetFollowHandlesFromField(panel = document.getElementById(PANEL_ID)) {
+    const field = panel?.querySelector("[data-xrc-target-follow-handles]");
+    const status = panel?.querySelector("[data-xrc-target-follow-status]");
+    if (!field) return;
+    const handles = normalizeTargetFollowHandlesText(field.value);
+    try {
+      if (mutualApi?.saveTargetFollowHandles) await mutualApi.saveTargetFollowHandles(handles);
+      await chrome.storage.local.set({ xrcTargetFollowHandles: handles });
+      field.value = handles.map((handle) => `@${handle}`).join("\n");
+      if (status) status.textContent = `已保存 ${handles.length} 个候选账号`;
+    } catch (error) {
+      if (status) status.textContent = error?.message || "候选名单保存失败";
+    }
+  }
+
   function scheduleRuleRowsMarkup() {
     return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
-      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><strong>${label}</strong>${mode === "mutual-unfollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>默认约每天一次</small>" : ""}</label>
-      <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级"><option value="1">常规</option><option value="2">优先</option><option value="3">最高</option></select></label>
-      <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
-      ${["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode) ? `<label>每次任务的轮数与速度 <select data-xrc-schedule-pace aria-label="${label}每次任务的轮数与速度"><option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option><option value="boundary">边界测试</option></select></label>` : ""}
+      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><span><strong>${label}</strong>${mode === "mutual-unfollow" || mode === "mutual-targetFollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>默认约每天一次</small>" : ""}</span></label>
+      <div class="xrc-schedule-rule-controls">
+        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级"><option value="1">常规</option><option value="2">优先</option><option value="3">最高</option></select></label>
+        <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
+        ${["timeline", "notifications", "likes-posts", "likes-replies"].includes(mode) ? `<label>速度 <select data-xrc-schedule-pace aria-label="${label}每次任务的轮数与速度"><option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option><option value="boundary">边界测试</option></select></label>` : ""}
+      </div>
     </div>`).join("");
   }
 
@@ -4434,23 +4707,21 @@
     monitorOpen = false;
     reportOpen = false;
     toolboxOpen = false;
-    headerMenuOpen = false;
+    hubOpen = false;
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
     syncReportPage(panel);
     syncToolboxMenu(panel);
-    syncHeaderMenu(panel);
+    syncHubPage(panel);
     renderPanel();
     panel.querySelector("[data-xrc-config-key]")?.focus();
   }
 
-  function syncHeaderMenu(panel) {
-    const menu = panel.querySelector("[data-xrc-header-menu]");
-    if (menu) menu.hidden = !headerMenuOpen;
-    const toggle = panel.querySelector("[data-xrc-actions-toggle]");
-    toggle?.setAttribute("aria-expanded", headerMenuOpen ? "true" : "false");
-    toggle?.setAttribute("aria-label", headerMenuOpen ? "收起操作菜单" : "展开操作菜单");
-    if (toggle) toggle.title = headerMenuOpen ? "收起操作菜单" : "展开操作菜单";
+  function syncHubPage(panel) {
+    const hub = panel.querySelector("[data-xrc-hub]");
+    if (hub) hub.hidden = !hubOpen;
+    const toggle = panel.querySelector("[data-xrc-hub-open]");
+    toggle?.setAttribute("aria-expanded", hubOpen ? "true" : "false");
   }
 
   function syncReportPage(panel) {
@@ -4473,7 +4744,7 @@
       : active.startsWith("likes-") ? null : state.errors;
     const label = {
       timeline: "评论管理 · 评论帖子",
-      notifications: "评论管理 · 评论通知",
+      notifications: "评论管理 · 回复评论",
       "likes-posts": "点赞管理 · 点赞帖子",
       "likes-replies": "点赞管理 · 点赞评论",
       mutual: `关注管理 · ${{ unfollow: "清理未回关", followBack: "回关粉丝", targetFollow: "关注候选" }[state.mutualMode] || "当前任务"}`,
@@ -4628,7 +4899,7 @@
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
               <div class="xrc-title">X高频互动助手</div>
-              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div><div class="xrc-runtime-line" data-xrc-stable-runtime>已停止</div></div>
+              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div></div>
             </div>
           </div>
           <div class="xrc-header-actions">
@@ -4639,20 +4910,10 @@
               <button type="button" data-xrc-expand aria-label="放大面板" title="放大面板"><svg class="xrc-icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v3M10 3h3v3M13 10v3h-3M3 10v3h3"></path></svg><svg class="xrc-icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 5h7v7H5zM3.5 9.5v-6h6"></path></svg></button>
               <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
             </div>
-            <button class="xrc-view-button xrc-actions-toggle" type="button" data-xrc-actions-toggle aria-label="展开操作菜单" aria-expanded="false" aria-controls="xrc-header-menu" title="展开操作菜单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"></path></svg></button>
+            <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
           </div>
         </div>
-        <div class="xrc-header-menu" id="xrc-header-menu" data-xrc-header-menu hidden>
-          <span class="xrc-mini-progress" data-xrc-mini-progress>第 1 轮 · 0/35</span>
-          <button type="button" data-xrc-report-open>每日报告</button>
-          <button type="button" data-xrc-monitor-open aria-expanded="false">异常监控</button>
-          <button type="button" data-xrc-config-open="model" aria-expanded="false">模型设置</button>
-          <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率设置</button>
-          <button type="button" data-xrc-config-open="schedule" aria-expanded="false">排班设置</button>
-          <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
-          <button type="button" data-xrc-paused-candidate title="关注候选暂时停用">关注候选（已暂停）</button>
-          <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
-        </div>
+        <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
         <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止当前任务、加载本地新版后恢复原任务">立即更新并恢复</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-head"><div class="xrc-today-title"><strong>今日合计</strong><button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" title="打开日历统计">
@@ -4660,6 +4921,31 @@
             </button></div><div class="xrc-today-labels"><span class="xrc-metric-comments">评论</span><span class="xrc-metric-likes">点赞</span><span class="xrc-metric-follows">关注</span><span class="xrc-metric-unfollows">取关</span><span class="xrc-metric-posts">发帖</span></div></div>
           <div class="xrc-today-values"><b class="xrc-metric-comments" data-xrc-today-comments>0</b><b class="xrc-metric-likes" data-xrc-today-likes>0</b><b class="xrc-metric-follows" data-xrc-today-follows>0</b><b class="xrc-metric-unfollows" data-xrc-today-unfollows>0</b><b class="xrc-metric-posts" data-xrc-today-posts>0</b></div>
         </div>
+        <section class="xrc-hub" data-xrc-hub hidden aria-label="设置中心">
+          <div class="xrc-docs-head">
+            <div><small>SETTINGS HUB</small><strong>设置中心</strong><span>运营工具与各项设置</span></div>
+            <button type="button" data-xrc-hub-close aria-label="关闭设置中心">×</button>
+          </div>
+          <div class="xrc-docs-content">
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>01</b><span><strong>运营</strong><small>报告、监控与工具</small></span></div>
+              <div class="xrc-menu-grid">
+                <button type="button" data-xrc-report-open>每日报告</button>
+                <button type="button" data-xrc-monitor-open aria-expanded="false">异常监控</button>
+                <button type="button" data-xrc-toolbox-open aria-expanded="false">工具箱</button>
+              </div>
+            </section>
+            <section class="xrc-docs-section">
+              <div class="xrc-docs-title"><b>02</b><span><strong>设置</strong><small>模型、频率、排班与显示</small></span></div>
+              <div class="xrc-menu-grid">
+                <button type="button" data-xrc-config-open="model" aria-expanded="false">模型设置</button>
+                <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率设置</button>
+                <button type="button" data-xrc-config-open="schedule" aria-expanded="false">排班设置</button>
+                <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
+              </div>
+            </section>
+          </div>
+        </section>
         <section class="xrc-monitor" data-xrc-monitor hidden aria-label="异常监控中心">
           <div class="xrc-docs-head">
             <div><small>EXCEPTION MONITOR</small><strong>异常监控中心</strong><span>当前窗口状态与各任务异常处理</span></div>
@@ -4727,13 +5013,28 @@
             <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
           </div>
           <div class="xrc-docs-content">
-            <section class="xrc-docs-section" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>01</b><span><strong>单页签轮班</strong><small>同一账号同时只执行一项；等待时让出页签</small></span></div>
-              <p class="xrc-config-note">在这里选择参与任务、优先级和北京时间可运行时段。冷却与发帖档位仍优先；切换前会等待当前动作安全结束。每个 Chrome 配置文件单独保存。</p>
-              <label class="xrc-schedule-slice">单项最长占用 <select data-xrc-schedule-slice aria-label="单项最长占用时间"><option value="20">20 秒</option><option value="30">30 秒</option><option value="45">45 秒</option></select></label>
+            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
+              <div class="xrc-docs-title"><b>01</b><span><strong>任务与时段</strong><small>同一账号同时只跑一项；冷却与发帖档位仍优先</small></span></div>
+              <label class="xrc-schedule-slice"><span>单项最长占用</span><select data-xrc-schedule-slice aria-label="单项最长占用时间"><option value="20">20 秒</option><option value="30">30 秒</option><option value="45">45 秒</option></select></label>
               <div class="xrc-schedule-rules">${scheduleRuleRowsMarkup()}</div>
-              <p class="xrc-config-note" data-xrc-schedule-status role="status">设置修改后自动保存；高优先级不会跳过其他任务的到期和冷却。</p>
+              <p class="xrc-config-note" data-xrc-schedule-status role="status">修改后自动保存；高优先级不会跳过其他任务的到期和冷却。</p>
               <button type="button" class="xrc-flow-docs-link" data-xrc-docs-target="xrc-docs-flow">查看单页签排班说明 ↗</button>
+            </section>
+            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
+              <div class="xrc-docs-title"><b>02</b><span><strong>本机记录</strong><small data-xrc-schedule-history-count>暂无</small></span></div>
+              <p class="xrc-config-note" data-xrc-schedule-history-note>最近 10 条已结束轮次，只保存在本机。</p>
+              <ul class="xrc-schedule-history-list" data-xrc-schedule-history aria-label="本机已结束轮次"></ul>
+            </section>
+            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
+              <div class="xrc-docs-title"><b>03</b><span><strong>关注候选名单</strong><small>每周一轮 · 每轮最多 15 个 · 可配置账号</small></span></div>
+              <p class="xrc-config-note">每行一个 X 账号（可带 @）。排班到关注候选时，会从名单里随机打开一个账号的 Followers 页，按 15 个一批关注。</p>
+              <textarea class="xrc-target-follow-handles" data-xrc-target-follow-handles rows="5" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea>
+              <p class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存。</p>
+            </section>
+            <section class="xrc-docs-section xrc-schedule-settings xrc-schedule-settings-stop" data-xrc-config-section="schedule">
+              <div class="xrc-docs-title"><b>04</b><span><strong>全流程停止</strong><small>关页签不会关掉后台排班</small></span></div>
+              <p class="xrc-config-note">停止全部会关闭排班并结束各任务；只关执行页签时，到期后后台仍可能再开页签继续。</p>
+              <button type="button" class="xrc-schedule-stop-all" data-xrc-flow-stop hidden>停止全部</button>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
@@ -4768,17 +5069,19 @@
               <p class="xrc-config-note">修改后自动保存。NAS 使用社区回执密钥；B.AI 按用量计费，余额不足时无法使用。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
-              <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>决定回复和发推写什么</small></span></div>
-              <label class="xrc-field"><span>回复提示词</span><textarea data-xrc-reply-prompt></textarea></label>
-              <label class="xrc-field"><span>发推提示词</span><textarea data-xrc-post-prompt></textarea></label>
-              <div class="xrc-prompt-presets"><span>快速套用风格</span><button type="button" data-xrc-post-preset="clickbait">标题党引子</button></div>
+              <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>评论帖子 / 回复评论 / 普通发帖 / 精品发帖 分开配置</small></span></div>
+              <label class="xrc-field"><span>评论帖子</span><textarea data-xrc-reply-timeline-prompt rows="5"></textarea></label>
+              <label class="xrc-field"><span>回复评论</span><textarea data-xrc-reply-comment-prompt rows="5"></textarea></label>
+              <label class="xrc-field"><span>普通发帖</span><textarea data-xrc-post-normal-prompt rows="5"></textarea></label>
+              <label class="xrc-field"><span>精品发帖</span><textarea data-xrc-post-premium-prompt rows="5"></textarea></label>
+              <p class="xrc-config-note">改完自动保存。文档中心「提示词反馈台账」会持续收集正反例，用来迭代这四份默认提示。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
               <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>边界测试与慢、中、快、超快各自的数字</small></span></div>
               <div class="xrc-pace-editor">${replyPaceEditorHtml()}</div>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
-              <div class="xrc-docs-title"><b>02</b><span><strong>发推频率</strong><small>每一挡的随机间隔，单位是分钟</small></span></div>
+              <div class="xrc-docs-title"><b>02</b><span><strong>发推频率</strong><small>每批条数、条间秒数与批次间隔分钟</small></span></div>
               <div class="xrc-pace-editor">${postPaceEditorHtml()}</div>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="other">
@@ -4820,12 +5123,14 @@
             <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false" hidden>尚未配置 DeepSeek API Key · 点击前往模型设置 →</button>
             <button class="xrc-key-guide" type="button" data-xrc-key-retry hidden>模型设置读取失败 · 点击重试</button>
           </div>
-          <div class="xrc-flow-launch">
-            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start><span data-xrc-flow-label>全流程启动</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
-            <p class="xrc-flow-hint" data-xrc-flow-hint hidden></p>
+          <div class="xrc-flow-launch" data-role="start">
+            <button class="xrc-button xrc-flow-start" type="button" data-xrc-flow-start data-role="start"><span data-xrc-flow-label>启动排班</span><span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span></button>
+            <div class="xrc-flow-meta">
+              <p class="xrc-flow-hint" data-xrc-flow-hint hidden></p>
+            </div>
           </div>
           <div class="xrc-schedule-strip" data-xrc-schedule-strip role="status"><div class="xrc-timeline-summary"><p><b>上一任务</b><span data-xrc-timeline-past>暂无轮班记录</span></p><p><b>当前任务</b><span data-xrc-timeline-current>正在读取排班状态…</span></p><p><b>下一任务</b><span data-xrc-timeline-next>等待任务到期</span></p></div><button type="button" data-xrc-desk-home>排班</button></div>
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="八项任务由后台排班，共用一个执行页签；点分组进入子页">
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="九项任务由后台排班，共用一个执行页签；点分组进入子页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
@@ -4834,44 +5139,56 @@
         </div>
         <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk aria-label="排班台">
           <div class="xrc-desk-head">
-            <div>
-              <div class="xrc-desk-kicker">单页签轮班</div>
-              <strong>排班台</strong>
-              <p data-xrc-desk-total>正在读取任务状态…</p>
-            </div>
+            <button type="button" class="xrc-desk-settings" data-xrc-config-open="schedule" aria-label="排班设置" title="排班设置">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
+              </svg>
+            </button>
+            <strong>排班台</strong>
             <div class="xrc-desk-legend" aria-hidden="true">
               <span data-tone="running"><i></i>运行</span>
               <span data-tone="waiting"><i></i>等待</span>
               <span data-tone="stopped"><i></i>停止</span>
             </div>
           </div>
-          <div class="xrc-desk-rail" role="status">
-            <div class="xrc-desk-rail-card" data-rail="past"><em>上一任务</em><strong data-xrc-desk-past>暂无轮班记录</strong></div>
-            <div class="xrc-desk-rail-card is-now" data-rail="now"><em>当前任务</em><strong data-xrc-desk-now>正在读取…</strong></div>
-            <div class="xrc-desk-rail-card" data-rail="next"><em>下一任务</em><strong data-xrc-desk-next>等待任务到期</strong></div>
-          </div>
           <section class="xrc-schedule-board" data-xrc-schedule-board aria-label="实时排班情况">
-            <div class="xrc-desk-section-head">
-              <h3>轮班队列</h3>
-              <p data-xrc-schedule-summary>正在读取后台排班…</p>
-            </div>
-            <button class="xrc-focus-execution" type="button" data-xrc-focus-execution hidden>查看当前任务详情</button>
+            <ul class="xrc-desk-past-list" aria-label="上一任务">
+              <li class="xrc-schedule-item" data-phase="past" data-xrc-desk-past-row role="status">
+                <i class="xrc-schedule-mark" aria-hidden="true"></i>
+                <div class="xrc-schedule-item-body">
+                  <strong><span class="xrc-desk-phase-tag">上一任务</span><span data-xrc-desk-past>暂无轮班记录</span></strong>
+                  <small data-xrc-desk-past-note>本机上一轮让出记录</small>
+                </div>
+                <div class="xrc-schedule-item-side">
+                  <span class="xrc-schedule-item-status" data-xrc-desk-past-status>已结束</span>
+                </div>
+              </li>
+            </ul>
+            <ul class="xrc-desk-now-list" aria-label="当前任务">
+              <li class="xrc-schedule-item" data-phase="now" data-pulse="waiting" data-xrc-desk-now-row role="status" hidden>
+                <i class="xrc-schedule-mark" aria-hidden="true"></i>
+                <div class="xrc-schedule-item-body">
+                  <strong><span class="xrc-desk-phase-tag">当前任务</span><span data-xrc-desk-now>正在调度中</span></strong>
+                  <small data-xrc-desk-now-note>等待下一任务到期后自动切换</small>
+                </div>
+                <div class="xrc-schedule-item-side">
+                  <span class="xrc-schedule-item-status" data-xrc-desk-now-status>调度中</span>
+                </div>
+                <span class="xrc-schedule-wait-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              </li>
+            </ul>
             <ul data-xrc-schedule-list></ul>
-            <div class="xrc-desk-section-head xrc-desk-history-head">
-              <h3>已结束轮次</h3>
-              <p data-xrc-schedule-history-note>本机记录：某一任务占满共享页签后为何让出。只保留最近 10 条供查看，后台最多存 30 条。</p>
-            </div>
-            <ul data-xrc-schedule-history aria-label="已结束轮次"></ul>
           </section>
         </div>
         <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
-          <button type="button" data-xrc-desk-back aria-label="返回排班台">← 排班台</button>
+          <button type="button" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
           <strong data-xrc-task-subnav-label>任务子页</strong>
         </div>
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>03</b><span>关注候选</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <div class="xrc-mutual-actions">
@@ -4891,6 +5208,15 @@
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack">本次回关 0 · 今日合计 0/400 · 本批 0/15</div>
                 <button class="xrc-inline-start" type="button" data-xrc-mutual-action="followBack">已停止 · 点击启动</button>
+              </div>
+            </section>
+            <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
+              <div><b>03</b><span><strong>关注候选</strong><small>从可配置名单随机打开 Followers</small></span></div>
+              <div class="xrc-task-docs-row"><span>候选规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-target="xrc-docs-mutual-target" aria-label="查看关注候选说明" title="查看关注候选说明">i</button></div>
+              <p>每周排一次；一次可多轮，每轮最多 15 个。名单在排班设置里改。</p>
+              <div class="xrc-flow-end">
+                <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
+                <button class="xrc-inline-start" type="button" data-xrc-mutual-action="targetFollow">已停止 · 点击启动</button>
               </div>
             </section>
           </div>
@@ -4981,7 +5307,7 @@
         <div class="xrc-body xrc-reply-body">
           <div class="xrc-reply-tabs" role="tablist" aria-label="回复功能">
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="timeline"><b>01</b><span>评论帖子</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>评论通知</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-reply-tab="notifications"><b>02</b><span>回复评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-task-schedule-notice" data-xrc-task-schedule-notice role="status" hidden><strong></strong><p></p></div>
           <div class="xrc-task-docs-row"><span data-xrc-reply-docs-label>评论帖子规则</span><button type="button" class="xrc-task-docs-link" data-xrc-docs-link="reply" data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看评论帖子说明" title="查看评论帖子说明">i</button></div>
@@ -5064,9 +5390,29 @@
           renderPanel();
         }
       });
-      panel.querySelector("[data-xrc-actions-toggle]").addEventListener("click", () => {
-        headerMenuOpen = !headerMenuOpen;
-        syncHeaderMenu(panel);
+      panel.querySelector("[data-xrc-hub-open]").addEventListener("click", () => {
+        if (state.panelView === "collapsed") {
+          state.panelView = "normal";
+          writeSaved({ running: state.running, total: state.total });
+        }
+        hubOpen = !hubOpen;
+        if (hubOpen) {
+          configOpen = false;
+          monitorOpen = false;
+          reportOpen = false;
+          toolboxOpen = false;
+          syncConfigMenu(panel);
+          syncMonitorMenu(panel);
+          syncReportPage(panel);
+          syncToolboxMenu(panel);
+        }
+        syncHubPage(panel);
+        renderPanel();
+      });
+      panel.querySelector("[data-xrc-hub-close]").addEventListener("click", () => {
+        hubOpen = false;
+        syncHubPage(panel);
+        renderPanel();
       });
       panel.querySelector("[data-xrc-key-retry]").addEventListener("click", async () => {
         state.aiSettingsStatus = "loading";
@@ -5094,17 +5440,12 @@
           syncReportPage(panel);
           toolboxOpen = false;
           syncToolboxMenu(panel);
-          headerMenuOpen = false;
-          syncHeaderMenu(panel);
+          hubOpen = false;
+          syncHubPage(panel);
         }
         syncConfigMenu(panel);
         renderPanel();
       }));
-      panel.querySelector("[data-xrc-paused-candidate]")?.addEventListener("click", () => {
-        state.status = "关注候选暂时停用，不会随全流程启动，也不会自动打开任务窗口";
-        headerMenuOpen = false;
-        renderPanel();
-      });
       panel.querySelector("[data-xrc-monitor-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
@@ -5115,11 +5456,11 @@
           configOpen = false;
           toolboxOpen = false;
           reportOpen = false;
+          hubOpen = false;
           syncConfigMenu(panel);
           syncToolboxMenu(panel);
           syncReportPage(panel);
-          headerMenuOpen = false;
-          syncHeaderMenu(panel);
+          syncHubPage(panel);
         }
         syncMonitorMenu(panel);
         if (monitorOpen) void loadLimitMonitor(panel);
@@ -5143,11 +5484,11 @@
         configOpen = false;
         monitorOpen = false;
         toolboxOpen = false;
-        headerMenuOpen = false;
+        hubOpen = false;
         syncConfigMenu(panel);
         syncMonitorMenu(panel);
         syncToolboxMenu(panel);
-        syncHeaderMenu(panel);
+        syncHubPage(panel);
         syncReportPage(panel);
         refreshDailyReport(panel).catch((error) => {
           panel.querySelector("[data-xrc-daily-status]").textContent = error?.message || "读取报告失败";
@@ -5169,11 +5510,11 @@
           configOpen = false;
           monitorOpen = false;
           reportOpen = false;
+          hubOpen = false;
           syncConfigMenu(panel);
           syncMonitorMenu(panel);
           syncReportPage(panel);
-          headerMenuOpen = false;
-          syncHeaderMenu(panel);
+          syncHubPage(panel);
         }
         syncToolboxMenu(panel);
         renderPanel();
@@ -5223,19 +5564,10 @@
       panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
         input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
       });
-      panel.querySelector("[data-xrc-reply-prompt]").value = state.replyPrompt || DEFAULT_REPLY_PROMPT;
-      panel.querySelector("[data-xrc-post-prompt]").value = state.postPrompt || DEFAULT_POST_PROMPT;
-      panel.querySelectorAll("[data-xrc-post-preset]").forEach((button) => {
-        button.addEventListener("click", () => {
-          if (button.dataset.xrcPostPreset !== "clickbait") return;
-          const input = panel.querySelector("[data-xrc-post-prompt]");
-          input.value = CLICKBAIT_POST_PROMPT;
-          state.postPrompt = CLICKBAIT_POST_PROMPT;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          scheduleConfigSave(panel);
-          panel.querySelector("[data-xrc-config-status]").textContent = "已套用“标题党引子”，正在保存";
-        });
-      });
+      panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
+      panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
+      panel.querySelector("[data-xrc-post-normal-prompt]").value = state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT;
+      panel.querySelector("[data-xrc-post-premium-prompt]").value = state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT;
       panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-key]");
         const revealed = input.classList.toggle("is-revealed");
@@ -5255,6 +5587,7 @@
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
       panel.querySelector("[data-xrc-flow-start]")?.addEventListener("click", startAllTasks);
+      panel.querySelector("[data-xrc-flow-stop]")?.addEventListener("click", requestPauseAllTasks);
       panel.querySelectorAll("[data-xrc-desk-home], [data-xrc-desk-back]").forEach((button) => {
         button.addEventListener("click", () => openScheduleDesk());
       });
@@ -5374,13 +5707,13 @@
       });
       panel.querySelector("[data-xrc-collapse]").addEventListener("click", () => {
         state.panelView = state.panelView === "collapsed" ? "normal" : "collapsed";
-        headerMenuOpen = false;
+        hubOpen = false;
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
       });
       panel.querySelector("[data-xrc-expand]").addEventListener("click", () => {
         state.panelView = state.panelView === "expanded" ? "normal" : "expanded";
-        headerMenuOpen = false;
+        hubOpen = false;
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
       });
@@ -5399,7 +5732,7 @@
           selectPosterPace(label.dataset.xrcPostPaceLabel);
         });
       });
-      panel.querySelectorAll("[data-xrc-config-key], [data-xrc-config-bai-key], [data-xrc-reply-provider], [data-xrc-reply-prompt], [data-xrc-post-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
+      panel.querySelectorAll("[data-xrc-config-key], [data-xrc-config-bai-key], [data-xrc-reply-provider], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
         input.addEventListener("input", () => {
           if (!input.matches("[data-xrc-reply-provider]")) scheduleConfigSave(panel);
         });
@@ -5437,6 +5770,9 @@
           }
         });
       });
+      const targetFollowField = panel.querySelector("[data-xrc-target-follow-handles]");
+      targetFollowField?.addEventListener("change", () => { void saveTargetFollowHandlesFromField(panel); });
+      targetFollowField?.addEventListener("blur", () => { void saveTargetFollowHandlesFromField(panel); });
       panel.querySelector("[data-xrc-community-secret]")?.addEventListener("change", async () => {
         const status = panel.querySelector("[data-xrc-community-status]");
         try {
@@ -5757,11 +6093,11 @@
     }
     const replyDocsNotifications = state.assistantMode === "notifications";
     const replyDocsLabel = panel.querySelector("[data-xrc-reply-docs-label]");
-    if (replyDocsLabel) replyDocsLabel.textContent = replyDocsNotifications ? "评论通知规则" : "评论帖子规则";
+    if (replyDocsLabel) replyDocsLabel.textContent = replyDocsNotifications ? "回复评论规则" : "评论帖子规则";
     const replyDocsLink = panel.querySelector('[data-xrc-docs-link="reply"]');
     if (replyDocsLink) {
       replyDocsLink.dataset.xrcDocsTarget = replyDocsNotifications ? "xrc-docs-reply-notifications" : "xrc-docs-reply-timeline";
-      replyDocsLink.setAttribute("aria-label", replyDocsNotifications ? "查看评论通知说明" : "查看评论帖子说明");
+      replyDocsLink.setAttribute("aria-label", replyDocsNotifications ? "查看回复评论说明" : "查看评论帖子说明");
       replyDocsLink.title = replyDocsLink.getAttribute("aria-label");
     }
     panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
@@ -5852,7 +6188,7 @@
     panel.dataset.assistantMode = state.assistantMode;
     panel.dataset.replyMode = state.replyMode;
     panel.dataset.desk = deskHome ? "home" : "task";
-    panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : "main";
+    panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : hubOpen ? "hub" : "main";
     const subnav = panel.querySelector("[data-xrc-task-subnav]");
     if (subnav) {
       subnav.hidden = deskHome;
@@ -5860,10 +6196,6 @@
       if (subnavLabel) subnavLabel.textContent = TASK_MODE_LABELS[selectedTaskMode] || TASK_MODE_LABELS[currentTaskKey()] || "任务子页";
     }
     renderTodaySummary(panel);
-    const stableRuntime = panel.querySelector("[data-xrc-stable-runtime]");
-    if (stableRuntime) {
-      stableRuntime.textContent = flowRuntimeLabel(flowButtonModel(), pluginRuntime.startedAt);
-    }
     const collapseButton = panel.querySelector("[data-xrc-collapse]");
     const expandButton = panel.querySelector("[data-xrc-expand]");
     collapseButton.setAttribute("aria-label", state.panelView === "collapsed" ? "展开面板" : "折叠面板");
@@ -5913,7 +6245,7 @@
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
     syncReportPage(panel);
-    syncHeaderMenu(panel);
+    syncHubPage(panel);
     placePanel(panel);
   }
 
@@ -6020,7 +6352,7 @@
   }
 
   const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
-  const TASK_TITLE_RE = /^(?:评论帖子|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|精品发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论帖子|回复评论|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|精品发帖|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -6028,7 +6360,7 @@
       if (state.mutualMode === "targetFollow") return "关注候选";
       return "清理未回关";
     }
-    if (state.assistantMode === "notifications") return "评论通知";
+    if (state.assistantMode === "notifications") return "回复评论";
     if (state.assistantMode === "likes-posts") return "点赞帖子";
     if (state.assistantMode === "likes-replies") return "点赞评论";
     if (state.assistantMode === "poster-premium") return "精品发帖";

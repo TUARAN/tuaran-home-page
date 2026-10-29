@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getIntegrationEnv } from '../../../../lib/site/integrationKeys'
-import { collectCloudflareUsage, readUsageHistory, utcDate, writeUsageDay } from '../../../../lib/site/cloudflareUsage'
+import { readUsageHistory, utcDate } from '../../../../lib/site/cloudflareUsage'
+import { persistUsageReport, usageDashboardMeta } from '../../../../lib/site/cloudflareUsageOps'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -16,15 +17,24 @@ export async function GET(request) {
     const today = utcDate()
     const current = history.find((row) => row.date === today)
     let refreshError = ''
+    let notified = 0
     if (new URL(request.url).searchParams.get('cached') !== '1' && (!current || Date.now() - Number(current.collectedAt || 0) > 15 * 60_000)) {
       try {
-        await writeUsageDay(bucket, await collectCloudflareUsage(env, today))
+        const saved = await persistUsageReport(env, today, { alert: true })
+        notified = saved.notification.created
         history = await readUsageHistory(bucket)
       } catch (error) {
         refreshError = String(error?.message || error)
       }
     }
-    return Response.json({ ok: true, history, refreshError })
+    const meta = usageDashboardMeta(history)
+    return Response.json({
+      ok: true,
+      history,
+      refreshError,
+      notified,
+      ...meta,
+    })
   } catch (error) {
     return Response.json({ ok: false, error: String(error?.message || error) }, { status: 500 })
   }
@@ -41,9 +51,13 @@ export async function POST(request) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(at) || utcDate(at) !== date || at > Date.now() || Date.now() - at > 31 * 86_400_000) {
       return Response.json({ ok: false, error: 'INVALID_DATE' }, { status: 400 })
     }
-    const report = await collectCloudflareUsage(env, date)
-    await writeUsageDay(env.CONTENT_FEED, report)
-    return Response.json({ ok: true, report })
+    const saved = await persistUsageReport(env, date, { alert: date === utcDate() })
+    return Response.json({
+      ok: true,
+      report: saved.report,
+      alerts: saved.pressure,
+      notified: saved.notification.created,
+    })
   } catch (error) {
     return Response.json({ ok: false, error: String(error?.message || error) }, { status: 502 })
   }

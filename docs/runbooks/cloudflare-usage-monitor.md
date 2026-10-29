@@ -2,6 +2,10 @@
 
 后台入口：`/admin/site-health?tab=usage`。每个快照按 Cloudflare UTC 自然日存入 `CONTENT_FEED` R2 的 `cloudflare-usage/YYYY-MM-DD.json`，不写 D1。页面显示最近 14 天；当天数据至少间隔 15 分钟才重新查询一次。站长可手动采集当天。
 
+## 预警
+
+Workers 调用、D1 读取行数、D1 写入行数任一达到 Free 参考额度的 **80% / 95% / 100%** 时，写入站长消息中心（`automation_monitor`，跳转到用量页）。同一 UTC 日、同一指标、同一档位只通知一次。定时采集约每 3 小时采样今日并检查；额度耗尽后 D1 可能无法再写通知，因此依赖 80% 提前预警。
+
 ## 上线配置
 
 1. 后台 Pages 项目配置 `CONTENT_FEED` R2 binding，指向现有 `tuaran-content-feed`。
@@ -15,6 +19,8 @@ GitHub Actions 每天 00:20 UTC（北京时间 08:20）调用后台采集接口�
 
 - Workers / Pages Functions：账号范围的 `workersOverviewRequestsAdaptiveGroups`，并按脚本列出调用量。
 - D1：`d1AnalyticsAdaptiveGroups` 对指定数据库的读写行数与查询次数。参考额度以 Free 套餐显示；其他套餐以 Cloudflare 控制台为准。
+- Free 套餐每日行读/写限额是**账号级**：主站 D1 与同账号其它库（如 `china-poetry`）共用。优化单库不够时，要一起看账号总用量。
+- 行读取按扫描计费：无索引过滤、`COUNT(*)`、`SUM(LENGTH)`、大 `LIMIT` 历史拉取都会快速消耗额度。后台库表详情默认不算文本量；需要时再带 `stats=full`。
 - 入口路径：区域 `httpRequestsAdaptiveGroups` 的请求数，并列出主要 HTTP 状态码。包括缓存命中和超出免费 Functions 额度后未进入脚本的请求，因此不能等同于函数调用量。
 - Cloudflare Analytics 为采样/汇总数据，最近数分钟可能延迟。当天数值会变化；每日 08:20 的前一天快照供复盘。
 

@@ -35,7 +35,7 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'x-assistant',
     platform: 'x',
     label: 'X 高频互动助手',
-    summary: '评论帖子、评论通知、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
+    summary: '评论帖子、回复评论、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
     href: '/resources/x-reply-clipboard-extension',
   },
   {

@@ -75,6 +75,18 @@ test('X extension alerts open plugin monitoring', () => {
   assert.equal(item.destinationLabel, '查看插件监控')
 })
 
+test('Cloudflare usage alerts open the usage monitor', () => {
+  const item = presentNotification({
+    type: 'automation_monitor',
+    actor_user_name: 'Cloudflare 用量 · D1 读取行数 达 80%',
+    article_key: 'cloudflare-usage:2026-10-28:d1-read:warn',
+    message_excerpt: 'D1 读取行数 超过 80%',
+  })
+  assert.equal(item.title, 'Cloudflare 用量 · D1 读取行数 达 80%')
+  assert.equal(item.href, '/admin/site-health?tab=usage')
+  assert.equal(item.destinationLabel, '查看用量监控')
+})
+
 test('RSS updates open the matching feed card', () => {
   assert.equal(
     notificationHref({

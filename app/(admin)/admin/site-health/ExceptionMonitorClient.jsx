@@ -25,6 +25,16 @@ const MODULES = [
     link: '查看数据健康',
   },
   {
+    name: 'Cloudflare 免费额度',
+    coverage: '80% / 95% / 耗尽预警',
+    tone: 'amber',
+    trigger: 'Workers 调用、D1 读取行数或 D1 写入行数达到当日 Free 参考额度的 80%、95% 或 100%。',
+    handling: '定时任务约每 3 小时采集今日用量；打开用量页超过 15 分钟也会刷新。越过阈值时写入消息中心，同一 UTC 日同一指标同一档位只提醒一次。',
+    boundary: '额度真正耗尽后 D1 无法再写通知，因此必须依赖 80% 提前预警。路径入口量含缓存命中，不能直接等同 Workers 调用。',
+    href: '/admin/site-health?tab=usage',
+    link: '查看用量监控',
+  },
+  {
     name: '可用性探测',
     coverage: '探测记录',
     tone: 'sky',

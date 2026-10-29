@@ -6,7 +6,7 @@ import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPil
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
 
-const MODE_LABEL = { timeline: '评论帖子', notifications: '评论通知', 'likes-posts': '点赞帖子', 'likes-replies': '点赞评论', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
+const MODE_LABEL = { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子', 'likes-replies': '点赞评论', poster: '定时发帖', 'mutual-unfollow': '清理未回关', 'mutual-followBack': '回关粉丝', 'mutual-targetFollow': '关注候选' }
 const PHASE = { running: ['运行中', 'info'], paused: ['等待中', 'warning'], stopping: ['等待中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
 const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件' }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }

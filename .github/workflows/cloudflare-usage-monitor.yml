@@ -4,6 +4,8 @@ on:
   schedule:
     # UTC day ends at 08:00 Asia/Shanghai; collect after analytics settles.
     - cron: '20 0 * * *'
+    # Sample today's usage every 3 hours so 80% free-tier alerts fire before exhaustion.
+    - cron: '10 */3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -41,13 +43,15 @@ jobs:
           result=$(cat "$body_file")
           echo "$result" | jq -e '.ok == true' >/dev/null
           {
-            echo '## Cloudflare 每日用量（UTC）'
-            echo '| 日期 | Workers 调用 | D1 读取行数 | D1 写入行数 |'
-            echo '| --- | ---: | ---: | ---: |'
-            echo "$result" | jq -r '.reports[] | "| \(.date) | \(.workers) | \(.d1RowsRead) | \(.d1RowsWritten) |"'
+            echo '## Cloudflare 用量（UTC）'
+            echo '| 日期 | Workers 调用 | D1 读取行数 | D1 写入行数 | 预警 |'
+            echo '| --- | ---: | ---: | ---: | ---: |'
+            echo "$result" | jq -r '.reports[] | "| \(.date) | \(.workers) | \(.d1RowsRead) | \(.d1RowsWritten) | \((.alerts // []) | length) |"'
             echo ''
-            echo '### 请求量最高的入口路径'
+            echo "今日新增站长通知：$(echo "$result" | jq -r '.notified // 0')"
+            echo ''
+            echo '### 请求量最高的入口路径（今日快照优先）'
             echo '| 路径 | 请求数 | 主要状态码 |'
             echo '| --- | ---: | --- |'
-            echo "$result" | jq -r '.reports[].topPaths[] | "| `\(.path)` | \(.requests) | \(.statuses | to_entries | sort_by(-.value) | .[:3] | map("\(.key): \(.value)") | join(", ")) |"'
+            echo "$result" | jq -r '(.reports | reverse)[0].topPaths[]? // empty | "| `\(.path)` | \(.requests) | \(.statuses | to_entries | sort_by(-.value) | .[:3] | map("\(.key): \(.value)") | join(", ")) |"'
           } >> "$GITHUB_STEP_SUMMARY"

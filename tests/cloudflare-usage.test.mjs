@@ -1,7 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { collectCloudflareUsage, normalizeUsageData, readUsageHistory, usageObjectKey, utcDate, writeUsageDay } from '../lib/site/cloudflareUsage.js'
+import {
+  buildCloudflareUsageAlertExcerpt,
+  cloudflareUsageAlertKey,
+  collectCloudflareUsage,
+  evaluateUsageAlerts,
+  normalizeUsageData,
+  readUsageHistory,
+  usageAlertPressureDays,
+  usageObjectKey,
+  utcDate,
+  writeUsageDay,
+  WORKERS_FREE_DAILY_REQUESTS,
+  D1_FREE_DAILY_ROWS_READ,
+  D1_FREE_DAILY_ROWS_WRITTEN,
+} from '../lib/site/cloudflareUsage.js'
+import { notificationDestinationLabel, notificationHref, notificationTitle } from '../lib/site/siteNotificationsDisplay.js'
 
 test('daily report keeps Workers invocations separate from zone path traffic', async () => {
   const report = normalizeUsageData({ viewer: {
@@ -91,4 +106,37 @@ test('daily snapshot persists without D1 and history is newest first', async () 
   await writeUsageDay(bucket, { date: '2026-10-26', workers: { total: 6 } })
   assert.deepEqual((await readUsageHistory(bucket, Date.parse('2026-10-26T12:00:00Z'), 2)).map((row) => row.date), ['2026-10-26', '2026-10-25'])
   assert.throws(() => usageObjectKey('../bad'), /INVALID_USAGE_DATE/)
+})
+
+test('usage alerts escalate at 80%, 95% and 100% with stable keys', () => {
+  const report = {
+    date: '2026-10-28',
+    workers: { total: Math.round(WORKERS_FREE_DAILY_REQUESTS * 0.81) },
+    d1: { rowsRead: Math.round(D1_FREE_DAILY_ROWS_READ * 0.96), rowsWritten: D1_FREE_DAILY_ROWS_WRITTEN },
+    limits: {
+      workersRequests: WORKERS_FREE_DAILY_REQUESTS,
+      d1RowsRead: D1_FREE_DAILY_ROWS_READ,
+      d1RowsWritten: D1_FREE_DAILY_ROWS_WRITTEN,
+    },
+    topPaths: [{ path: '/api/community-actions/report' }],
+  }
+  const alerts = evaluateUsageAlerts(report)
+  assert.deepEqual(alerts.map((row) => `${row.metric}:${row.level}`), [
+    'workers:warn',
+    'd1-read:warn',
+    'd1-read:critical',
+    'd1-write:warn',
+    'd1-write:critical',
+    'd1-write:exhausted',
+  ])
+  assert.equal(cloudflareUsageAlertKey('2026-10-28', 'd1-read', 'critical'), 'cloudflare-usage:2026-10-28:d1-read:critical')
+  assert.match(buildCloudflareUsageAlertExcerpt(alerts[1]), /D1 读取行数/)
+  assert.deepEqual(usageAlertPressureDays([report, { date: '2026-10-27', workers: { total: 1 }, d1: { rowsRead: 1, rowsWritten: 1 }, limits: report.limits }]), ['2026-10-28'])
+})
+
+test('usage alert notifications open the usage monitor', () => {
+  const key = 'cloudflare-usage:2026-10-28:d1-read:warn'
+  assert.equal(notificationHref({ type: 'automation_monitor', articleKey: key }), '/admin/site-health?tab=usage')
+  assert.equal(notificationDestinationLabel('automation_monitor', 'Cloudflare', key), '查看用量监控')
+  assert.equal(notificationTitle('automation_monitor', 'Cloudflare 用量 · D1 读取行数 达 80%', key), 'Cloudflare 用量 · D1 读取行数 达 80%')
 })

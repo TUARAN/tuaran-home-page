@@ -654,7 +654,7 @@
         reject(new Error("改写只在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason, lengthMode }, (response) => {
+      const sent = chrome.runtime.sendMessage({ type: "xrc-ai-news-rewrite", title: sourceText, summary: item?.summary, source: item?.source, recentTopics, recentOpenings, recentEndings, avoidPost, avoidReason, lengthMode, postKind: state.postKind }, (response) => {
         const runtimeError = chrome.runtime.lastError;
         if (runtimeError) {
           reject(new Error(runtimeError.message || "无法连接改写服务"));

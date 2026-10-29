@@ -98,7 +98,10 @@ export default function DbAdminClient({ embedded = false }) {
     try {
       const res = await fetch('/api/admin/db', { cache: 'no-store', credentials: 'same-origin' })
       const data = await safeJson(res)
-      if (!res.ok) throw new Error(data?.error || `HTTP_${res.status}`)
+      if (!res.ok) {
+        const parts = [data?.error || `HTTP_${res.status}`, data?.message, data?.detail].filter(Boolean)
+        throw new Error(parts.join(' · '))
+      }
       setSnapshot(data)
       setSelectedTable('')
       setTableDetails({})
@@ -164,7 +167,7 @@ export default function DbAdminClient({ embedded = false }) {
   return (
     <AdminPage embedded={embedded}
       title="数据库管理"
-      description="首屏只读取表目录。行数、字段、索引、最近记录和文本量仅在点开单表时查询，避免每次挂载扫描整库。"
+      description="首屏只读取表目录。点开单表才查行数、字段、索引和最近记录；默认不算文本量（全表 SUM），避免大表一次扫穿 D1 日读取额度。"
       actions={
         <button
           type="button"

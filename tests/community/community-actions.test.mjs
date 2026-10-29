@@ -25,7 +25,7 @@ test('X monitor task labels match the extension task names', () => {
     Object.fromEntries(COMMUNITY_ACTION_TASKS.filter((item) => item.platform === 'x').map((item) => [item.task, item.label])),
     {
       'timeline-reply': '评论帖子',
-      'notification-reply': '评论通知',
+      'notification-reply': '回复评论',
       'mutual-unfollow': '清理未回关',
       'mutual-follow-back': '回关粉丝',
       'mutual-target-follow': '关注候选',
@@ -164,7 +164,7 @@ test('unchanged heartbeats avoid runtime writes while task transitions refresh i
   assert.match(writes[0].sql, /last_seen_at <= \?/)
   await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ mode: 'timeline', phase: 'paused', waitUntil: NOW + 600000 }] } }, NOW + 2000)
   assert.equal(writes.filter((item) => item.sql.includes('INSERT INTO x_extension_runtime')).length, 2)
-  await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ mode: 'timeline', phase: 'paused', waitUntil: NOW + 600000 }] } }, NOW + 3 * 60 * 1000 + 2000)
+  await recordCommunityActionReport(db, { ...body, runtime: { ...body.runtime, tasks: [{ mode: 'timeline', phase: 'paused', waitUntil: NOW + 600000 }] } }, NOW + 2 * 60 * 1000 + 2000)
   assert.equal(writes.filter((item) => item.sql.includes('INSERT INTO x_extension_runtime')).length, 3)
 })
 
@@ -173,7 +173,7 @@ test('center summary counts today by task and marks a fresh device online', () =
     now: NOW,
     devices: [
       { id: 'device-x-001', platform: 'x', extension_version: '3.6.40', account_handle: 'Tuaran', last_seen_at: NOW - 60 * 1000, created_at: NOW },
-      { id: 'device-xhs-1', platform: 'xhs', extension_version: '0.2.3', account_handle: '', last_seen_at: NOW - 10 * 60 * 1000, created_at: NOW },
+      { id: 'device-xhs-1', platform: 'xhs', extension_version: '0.2.3', account_handle: '', last_seen_at: NOW - 30 * 60 * 1000, created_at: NOW },
     ],
     counts: [
       { platform: 'x', task: 'timeline-reply', result: 'success', count: 2 },
@@ -228,7 +228,7 @@ test('recording upserts the device and ignores a duplicate event id', async () =
   assert.equal(calls[1].args[3], 'tweet-post')
 })
 
-test('extension receipt posts a normalized event and keeps the queue when the secret is missing', async () => {
+test('extension receipt queues events and flushes them when a secret is saved', async () => {
   const store = {}
   const requests = []
   globalThis.chrome = {
@@ -244,12 +244,12 @@ test('extension receipt posts a normalized event and keeps the queue when the se
   }
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options })
-    return { ok: true }
+    return { ok: true, async json() { return { commands: [] } } }
   }
 
   try {
-    const skipped = await xReceipt.accept({ task: 'timeline-reply', result: 'success', targetId: '99', accountHandle: '@Tuaran' })
-    assert.equal(skipped.skipped, true)
+    const queued = await xReceipt.accept({ task: 'timeline-reply', result: 'success', targetId: '99', accountHandle: '@Tuaran' })
+    assert.equal(queued.queued, true)
     assert.equal(requests.length, 0)
     assert.equal(store.xrcCommunityReport.queue.length, 1)
 

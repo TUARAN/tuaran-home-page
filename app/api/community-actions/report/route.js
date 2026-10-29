@@ -13,6 +13,8 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const MAX_BODY_CHARS = 20000
+const SECRET_CACHE_MS = 60 * 1000
+let cachedSecret = { value: '', at: 0 }
 
 function dbOrNull() {
   try {
@@ -23,8 +25,11 @@ function dbOrNull() {
 }
 
 async function readSecret(db) {
+  const now = Date.now()
+  if (cachedSecret.value && now - cachedSecret.at < SECRET_CACHE_MS) return cachedSecret.value
   const row = await db.prepare('SELECT value FROM site_settings WHERE key = ?').bind(COMMUNITY_ACTION_SECRET_KEY).first()
-  return String(row?.value || '')
+  cachedSecret = { value: String(row?.value || ''), at: now }
+  return cachedSecret.value
 }
 
 function isMissingTable(error) {

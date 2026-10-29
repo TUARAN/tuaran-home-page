@@ -4,7 +4,7 @@ import { AdminButton, StatusPill } from '../../../components/ui'
 
 const MODE_LABEL = {
   timeline: '评论帖子',
-  notifications: '评论通知',
+  notifications: '回复评论',
   'likes-posts': '点赞帖子',
   'likes-replies': '点赞评论',
   poster: '普通发帖',

@@ -8,7 +8,9 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
-  const TARGET_FOLLOW_HANDLES = ["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"];
+  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
+  const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
+  let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
@@ -156,6 +158,34 @@
     }
   }
 
+  function normalizeTargetFollowHandles(value) {
+    const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,，;；\n]+/u))
+      .map((item) => String(item || "").trim().replace(/^@/u, ""))
+      .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
+        && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
+    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+  }
+
+  async function loadTargetFollowHandles() {
+    try {
+      const stored = await followStorage().get(TARGET_FOLLOW_HANDLES_KEY);
+      TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+    } catch (error) {
+      TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    }
+    return TARGET_FOLLOW_HANDLES;
+  }
+
+  async function saveTargetFollowHandles(value) {
+    TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(value);
+    try {
+      await followStorage().set({ [TARGET_FOLLOW_HANDLES_KEY]: TARGET_FOLLOW_HANDLES });
+    } catch (error) {
+      // Keep in-memory list even if storage is temporarily unavailable.
+    }
+    return TARGET_FOLLOW_HANDLES;
+  }
+
   function targetFollowHandleFromPath(pathname = pagePath()) {
     const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
     if (!match) return "";
@@ -163,7 +193,8 @@
   }
 
   function pickTargetFollowHandle() {
-    return TARGET_FOLLOW_HANDLES[Math.floor(Math.random() * TARGET_FOLLOW_HANDLES.length)];
+    const handles = TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : DEFAULT_TARGET_FOLLOW_HANDLES;
+    return handles[Math.floor(Math.random() * handles.length)];
   }
 
   function listReady(mode) {
@@ -606,6 +637,7 @@
     if (state.running) return false;
     if (mode === "unfollow" && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
     if (mode === "followBack" && !isFollowersPage()) return { navigate: targetPath(mode), error: "请打开自己的 Followers 页面" };
+    if (mode === "targetFollow") await loadTargetFollowHandles();
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
       return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
     }
@@ -784,6 +816,10 @@
     isFollowersPath,
     isFollowingPage,
     isFollowersPage,
+    loadTargetFollowHandles,
+    saveTargetFollowHandles,
+    normalizeTargetFollowHandles,
+    targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
     constants: {
       FOLLOW_ACTION_DELAY_MS,
       FOLLOW_BATCH_SIZE,
@@ -792,7 +828,8 @@
       FOLLOW_DAILY_LIMIT,
       RATE_LIMIT_COOLDOWN_MS,
       RESCAN_INTERVAL_MS,
-      TARGET_FOLLOW_HANDLES
+      DEFAULT_TARGET_FOLLOW_HANDLES,
+      get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }
     }
   };
   if (typeof module === "object" && module.exports) module.exports = api;

@@ -8509,6 +8509,15 @@
     @apply [&_.research-inline-image_figcaption]:m-0 [&_.research-inline-image_figcaption]:border-t [&_.research-inline-image_figcaption]:border-[#dee0db] dark:[&_.research-inline-image_figcaption]:border-gray-800;
     @apply [&_.research-inline-image_figcaption]:px-3 [&_.research-inline-image_figcaption]:py-2 [&_.research-inline-image_figcaption]:text-[11px] [&_.research-inline-image_figcaption]:text-[#63655f] dark:[&_.research-inline-image_figcaption]:text-gray-400;
 
+    @apply [&_.research-inline-video]:my-8 [&_.research-inline-video]:overflow-hidden;
+    @apply [&_.research-inline-video]:rounded-md [&_.research-inline-video]:border [&_.research-inline-video]:border-[#dee0db] dark:[&_.research-inline-video]:border-gray-800;
+    @apply [&_.research-inline-video]:bg-black;
+    @apply [&_.research-inline-video_iframe]:m-0 [&_.research-inline-video_iframe]:block [&_.research-inline-video_iframe]:aspect-video [&_.research-inline-video_iframe]:w-full;
+    @apply [&_.research-inline-video_video]:m-0 [&_.research-inline-video_video]:block [&_.research-inline-video_video]:aspect-video [&_.research-inline-video_video]:w-full;
+    @apply [&_.research-inline-video--tweet_iframe]:aspect-auto [&_.research-inline-video--tweet_iframe]:min-h-[600px];
+    @apply [&_.research-inline-video_figcaption]:m-0 [&_.research-inline-video_figcaption]:bg-white [&_.research-inline-video_figcaption]:px-3 [&_.research-inline-video_figcaption]:py-2;
+    @apply [&_.research-inline-video_figcaption]:text-[11px] [&_.research-inline-video_figcaption]:text-[#63655f] dark:[&_.research-inline-video_figcaption]:bg-gray-900 dark:[&_.research-inline-video_figcaption]:text-gray-400;
+
     @apply [&_.research-inline-diagram]:my-8 [&_.research-inline-diagram]:overflow-hidden;
     @apply [&_.research-inline-diagram]:rounded-md [&_.research-inline-diagram]:border [&_.research-inline-diagram]:border-[#dee0db] dark:[&_.research-inline-diagram]:border-gray-800;
     @apply [&_.research-inline-diagram]:bg-white dark:[&_.research-inline-diagram]:bg-gray-900;

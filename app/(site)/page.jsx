@@ -504,20 +504,8 @@ function ProfileCard() {
               <p className="home-profile-name"><T zh="涂阿燃" en="TUARAN" /></p>
               <p className="home-profile-role">
                 <T
-                  zh={
-                    <>
-                      <span className="home-profile-role-line">输入决定输出</span>
-                      <span className="home-profile-role-pause">，</span>
-                      <span className="home-profile-role-line home-profile-role-line-end">输出暴露输入</span>
-                    </>
-                  }
-                  en={
-                    <>
-                      <span className="home-profile-role-line">Input shapes output</span>
-                      <span className="home-profile-role-pause">;</span>{' '}
-                      <span className="home-profile-role-line home-profile-role-line-end">output reveals input</span>
-                    </>
-                  }
+                  zh={<span className="home-profile-role-zh">输入决定输出，输出暴露输入</span>}
+                  en="Input shapes output; output reveals input"
                 />
               </p>
             </div>

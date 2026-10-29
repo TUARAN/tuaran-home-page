@@ -8,6 +8,7 @@ import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 import CommunityOperationsPlan from './CommunityOperationsPlan'
+import PromptFeedbackClient from './PromptFeedbackClient'
 
 const PLATFORM_LABEL = {
   x: 'X',
@@ -21,6 +22,7 @@ const MODE_TABS = Object.freeze([
   { id: 'extension', label: '浏览器插件' },
   { id: 'cloud', label: '纯云端' },
   { id: 'api', label: '模型 API 密钥' },
+  { id: 'feedback', label: '提示词反馈' },
 ])
 
 const CLOUD_PANELS = Object.freeze([
@@ -77,7 +79,7 @@ async function copyText(text) {
   input.remove()
 }
 
-function XReplyDownloadPasswordPanel() {
+function XReplyDownloadPasswordPanel({ onInviteGenerated }) {
   const [status, setStatus] = useState(null)
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -91,12 +93,12 @@ function XReplyDownloadPasswordPanel() {
         if (!response.ok) throw new Error(data?.error || '状态读取失败')
         if (mounted) setStatus(data)
       })
-      .catch(() => { if (mounted) setNotice('下载密码状态暂时无法读取。') })
+      .catch(() => { if (mounted) setNotice('邀请码状态暂时无法读取。') })
     return () => { mounted = false }
   }, [])
 
   async function generate() {
-    if (busy || !window.confirm('生成新密码后，旧密码会立即失效。确定继续吗？')) return
+    if (busy || !window.confirm('生成新邀请码后，旧下载码与回执密钥会一起失效。确定继续吗？')) return
     setBusy(true)
     setNotice('')
     try {
@@ -109,9 +111,10 @@ function XReplyDownloadPasswordPanel() {
       if (!response.ok || !data?.password) throw new Error(data?.error || '生成失败')
       setPassword(data.password)
       setStatus(data)
-      setNotice('新密码已生效。请立即复制，刷新页面后无法再次查看。')
+      onInviteGenerated?.(data.password)
+      setNotice('新邀请码已生效：同一把码用于下载，并会写入 ZIP 内置回执密钥。请立即复制，刷新后无法再看明文。')
     } catch {
-      setNotice('生成失败，旧密码仍可使用；请稍后重试。')
+      setNotice('生成失败，旧邀请码仍可使用；请稍后重试。')
     } finally {
       setBusy(false)
     }
@@ -120,9 +123,9 @@ function XReplyDownloadPasswordPanel() {
   async function copyPassword() {
     try {
       await copyText(password)
-      setNotice('下载密码已复制。')
+      setNotice('邀请码已复制。')
     } catch {
-      setNotice('复制失败，请手动选中密码。')
+      setNotice('复制失败，请手动选中邀请码。')
     }
   }
 
@@ -130,18 +133,18 @@ function XReplyDownloadPasswordPanel() {
     <div className="mt-3 min-w-0 max-w-full rounded-lg border border-[#d9ddd2] bg-[#f7f8f4] p-3 dark:border-[#263142] dark:bg-[#10161f]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">插件下载密码</p>
+          <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">邀请码（下载 + 回执）</p>
           <p className="mb-0 mt-1 text-[12px] text-[#6d7066] dark:text-gray-400">
-            {status?.initial ? '当前使用发布时的初始密码。' : status?.createdAt ? `上次生成：${formatTime(status.createdAt)}` : '正在读取状态…'}
+            {status?.initial ? '当前仍是发布时的初始下载码；生成一次后会与回执密钥强绑定。' : status?.createdAt ? `上次生成：${formatTime(status.createdAt)}` : '正在读取状态…'}
           </p>
         </div>
-        <AdminButton size="sm" variant="primary" onClick={generate} disabled={busy}>{busy ? '生成中…' : '生成新密码'}</AdminButton>
+        <AdminButton size="sm" variant="primary" onClick={generate} disabled={busy}>{busy ? '生成中…' : '生成邀请码'}</AdminButton>
       </div>
-      <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">新密码立即生效，旧密码失效。数据库只存校验值；密码仅在生成时显示一次。</p>
+      <p className="mb-0 mt-2 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">一把码同时解锁下载并同步后台回执密钥；对方下载的 ZIP 会内置 community-secret.local，安装后自动写入本机，无需再粘贴。</p>
       {password ? (
         <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-          <input readOnly value={password} aria-label="新生成的插件下载密码" className="col-span-2 min-w-0 w-full rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100 sm:col-span-1" />
-          <AdminButton size="sm" onClick={copyPassword}>复制密码</AdminButton>
+          <input readOnly value={password} aria-label="新生成的插件邀请码" className="col-span-2 min-w-0 w-full rounded-lg border border-[#d9ddd2] bg-white px-3 py-2 font-mono text-[13px] text-[#25261f] dark:border-[#263142] dark:bg-[#0b111a] dark:text-gray-100 sm:col-span-1" />
+          <AdminButton size="sm" onClick={copyPassword}>复制邀请码</AdminButton>
           <AdminButton size="sm" variant="ghost" onClick={() => setPassword('')}>隐藏</AdminButton>
         </div>
       ) : null}
@@ -156,6 +159,7 @@ function resolveView(searchParams) {
     return { mode: 'extension', panel: 'x-publish' }
   }
   if (raw === 'api') return { mode: 'api', panel: 'x-publish' }
+  if (raw === 'feedback') return { mode: 'feedback', panel: 'x-publish' }
   if (raw === 'plan') return { mode: 'plan', panel: 'x-publish' }
   if (CLOUD_PANEL_IDS.has(raw)) {
     return { mode: 'cloud', panel: raw }
@@ -167,7 +171,7 @@ function resolveView(searchParams) {
   return { mode: 'overview', panel: 'x-publish' }
 }
 
-function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret }) {
+function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, onCopySecret, onRegenerateSecret, onInviteGenerated }) {
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
       {error ? <p className="mb-0 text-[13px] text-rose-700 dark:text-rose-300">{error}</p> : null}
@@ -184,8 +188,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       </div>
 
       <Section
-        title="回执密钥"
-        description="复制后贴到 X、小红书和掘金高频互动助手的设置里。三个插件用同一把密钥。插件直接请求 2aran.com，不经过这个页面。"
+        title="回执密钥 / 邀请码"
+        description="与 X 插件下载邀请码是同一把。下载 ZIP 会内置到本机；也可手动复制贴到 X、小红书和掘金助手设置。三个插件共用。重新生成会同时作废旧下载码。"
         actions={(
           <>
             <AdminButton size="sm" variant="primary" onClick={onCopySecret} disabled={!center?.secret}>复制</AdminButton>
@@ -214,7 +218,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                 <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
                 {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
               </div>
-              {item.id === 'x-assistant' ? <XReplyDownloadPasswordPanel /> : null}
+              {item.id === 'x-assistant' ? <XReplyDownloadPasswordPanel onInviteGenerated={onInviteGenerated} /> : null}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}
@@ -308,6 +312,8 @@ export default function CommunityActionsClient() {
       params.set('tab', 'extension')
     } else if (mode === 'api') {
       params.set('tab', 'api')
+    } else if (mode === 'feedback') {
+      params.set('tab', 'feedback')
     } else if (CLOUD_PANEL_IDS.has(panel)) {
       params.set('tab', panel)
     } else {
@@ -339,14 +345,19 @@ export default function CommunityActionsClient() {
     if (!center?.secret) return
     try {
       await copyText(center.secret)
-      setNotice('回执密钥已复制。')
+      setNotice('邀请码 / 回执密钥已复制。')
     } catch {
       setNotice('浏览器没有允许复制，请手动选择密钥。')
     }
   }
 
+  function applyInvite(secret) {
+    if (!secret) return
+    setCenter((current) => ({ ...(current || {}), secret }))
+  }
+
   async function regenerateSecret() {
-    if (!window.confirm('重新生成后，三个插件里原来的密钥会失效，需要重新粘贴。')) return
+    if (!window.confirm('重新生成后，旧下载邀请码与三个插件里的回执密钥会一起失效。已分发的 ZIP 内置密钥也会对不上，需要对方重新下载或粘贴。')) return
     setRotating(true)
     setNotice('')
     try {
@@ -358,8 +369,8 @@ export default function CommunityActionsClient() {
       })
       const payload = await safeJson(response)
       if (!response.ok) throw new Error(payload?.error || `HTTP_${response.status}`)
-      setCenter((current) => ({ ...(current || {}), secret: payload.secret }))
-      setNotice('已生成新密钥。请重新贴到三个插件的设置里。')
+      applyInvite(payload.secret)
+      setNotice('已生成新邀请码（下载 + 回执）。请把新码发给对方，或让对方重新下载 ZIP。')
     } catch (rotateError) {
       setError(rotateError.message || '密钥没有换成功。')
     } finally {
@@ -406,10 +417,13 @@ export default function CommunityActionsClient() {
           onRefresh={refresh}
           onCopySecret={copySecret}
           onRegenerateSecret={regenerateSecret}
+          onInviteGenerated={applyInvite}
         />
       ) : null}
 
       {view.mode === 'api' ? <DeepSeekKeysPanel /> : null}
+
+      {view.mode === 'feedback' ? <PromptFeedbackClient /> : null}
 
       {view.mode === 'cloud' ? (
         <div className="grid min-w-0 gap-4">

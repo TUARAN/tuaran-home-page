@@ -2,10 +2,10 @@ import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../lib/db/d1'
 import {
   COMMUNITY_ACTION_SECRET_KEY,
-  createCommunityActionSecret,
   presentCommunityActionCenter,
   readCommunityActionCenter,
 } from '../../../../lib/community/communityActions'
+import { saveBoundXReplyInvite } from '../../../../lib/content/xReplyInviteBind.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -27,23 +27,11 @@ async function readSetting(db, key) {
   return String(row?.value || '')
 }
 
-async function writeSetting(db, key, value, actor) {
-  await db.prepare(
-    `INSERT INTO site_settings (key, value, updated_at, updated_by)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(key) DO UPDATE SET
-       value = excluded.value,
-       updated_at = excluded.updated_at,
-       updated_by = excluded.updated_by`,
-  ).bind(key, value, Date.now(), actor).run()
-}
-
 async function ensureSecret(db, actor) {
   const existing = await readSetting(db, COMMUNITY_ACTION_SECRET_KEY)
   if (existing) return existing
-  const secret = createCommunityActionSecret()
-  await writeSetting(db, COMMUNITY_ACTION_SECRET_KEY, secret, actor)
-  return secret
+  const bound = await saveBoundXReplyInvite(db, actor)
+  return bound.secret
 }
 
 export async function GET(req) {
@@ -88,7 +76,6 @@ export async function POST(req) {
   if (body?.action !== 'regenerate-secret') {
     return Response.json({ ok: false, error: 'UNKNOWN_ACTION' }, { status: 400 })
   }
-  const secret = createCommunityActionSecret()
-  await writeSetting(db, COMMUNITY_ACTION_SECRET_KEY, secret, auth.user?.login || 'owner')
-  return Response.json({ ok: true, secret })
+  const bound = await saveBoundXReplyInvite(db, auth.user?.login || 'owner')
+  return Response.json({ ok: true, secret: bound.secret, invite: bound.invite, password: bound.invite })
 }

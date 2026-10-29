@@ -8,6 +8,7 @@ import { recordResourceEvent } from '../../../../lib/content/resourceEvents'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
 import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensionPackage'
 import { readXReplyDownloadPassword, verifyXReplyDownloadPassword } from '../../../../lib/content/xReplyDownloadPassword.mjs'
+import { communitySecretLocalJson, injectZipStoredFile } from '../../../../lib/content/zipStoredAppend.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -34,7 +35,8 @@ async function actorFor(req) {
   return { userId: `${GUEST_USER_PREFIX}${guest.gid}`, setCookie: guest.setCookie }
 }
 
-async function deliver(req, passwordVerified = false) {
+async function deliver(req, options = {}) {
+  const invite = String(options.invite || '').trim()
   try {
     const url = new URL(req.url)
     const resourceKey = String(url.searchParams.get('resourceKey') || '').trim()
@@ -43,7 +45,7 @@ async function deliver(req, passwordVerified = false) {
     const delivery = getResourceDelivery(resourceKey, fileKey || wallpaperId)
     if (!delivery) return jsonError('DELIVERY_NOT_FOUND', 404)
     const locked = resourceKey === LOCKED_RESOURCE
-    if (locked && !passwordVerified) return jsonError('PASSWORD_REQUIRED', 403)
+    if (locked && !invite) return jsonError('PASSWORD_REQUIRED', 403)
 
     const db = getD1()
     const actor = await actorFor(req)
@@ -110,15 +112,21 @@ async function deliver(req, passwordVerified = false) {
       itemKey,
     })
 
+    let body = embedded?.bytes || object.body
+    let size = embedded?.size ?? object?.size
+    if (locked && invite && embedded?.bytes) {
+      body = injectZipStoredFile(embedded.bytes, 'community-secret.local', communitySecretLocalJson(invite))
+      size = body.byteLength
+    }
+
     const headers = new Headers({
       'Content-Type': embedded?.contentType || object?.httpMetadata?.contentType || 'application/octet-stream',
       'Content-Disposition': attachmentHeader(fileName),
       'Cache-Control': 'private, no-store',
     })
-    const size = embedded?.size ?? object?.size
     if (size != null) headers.set('Content-Length', String(size))
     if (actor.setCookie) headers.set('Set-Cookie', actor.setCookie)
-    return new Response(embedded?.bytes || object.body, { headers })
+    return new Response(body, { headers })
   } catch (error) {
     return Response.json({ error: 'DELIVERY_FAILED', detail: String(error?.message || error) }, { status: 500 })
   }
@@ -140,12 +148,13 @@ export async function POST(req) {
   } catch {
     return jsonError('INVALID_PASSWORD', 400)
   }
+  const invite = String(payload?.password || payload?.invite || '').trim()
   let passwordRecord
   try {
     passwordRecord = await readXReplyDownloadPassword(getD1())
   } catch {
     return jsonError('PASSWORD_STORE_UNAVAILABLE', 503)
   }
-  if (!(await verifyXReplyDownloadPassword(payload?.password, passwordRecord))) return jsonError('INVALID_PASSWORD', 403)
-  return deliver(req, true)
+  if (!(await verifyXReplyDownloadPassword(invite, passwordRecord))) return jsonError('INVALID_PASSWORD', 403)
+  return deliver(req, { invite })
 }

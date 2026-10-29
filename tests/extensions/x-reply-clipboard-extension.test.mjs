@@ -26,6 +26,11 @@ const USER_STATE_HELPERS = `
     if (status === "blocked" || status === "unknown") return USER_STATE_LABELS.needs;
     return USER_STATE_LABELS.stopped;
   }
+  function isScheduleWaitReason(reason) {
+    const text = String(reason || "").trim();
+    if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
+    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待每周|点赞短轮/u.test(text);
+  }
   function formatUserStateAction(stateLabel, actionLabel) { return \`\${stateLabel} · \${actionLabel}\`; }
   function formatFlowPrompt(nowLabel, nextLabel, actionLabel) {
     return [nowLabel, nextLabel, actionLabel].filter(Boolean).join(" · ");
@@ -668,7 +673,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
     FLOW_STALE_MS: 90000,
     taskSchedule: { enabled: false, items: {} },
   })
-  vm.runInContext(`${definition}\nglobalThis.overview = flowTaskOverview`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${definition}\nglobalThis.overview = flowTaskOverview`, context)
   const now = Date.now()
   const result = context.overview({ tasks: {
     timeline: { phase: 'running', updatedAt: now - 1000 },
@@ -681,6 +686,44 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /model\.status === "paused"[\s\S]*model\.status === "stopped"/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
+})
+
+test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const pulse = source.match(/  function scheduleItemPulse\(mode, preview, overviewTask\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition && pulse)
+  const now = Date.now()
+  const modes = ['notifications', 'timeline', 'poster-premium', 'poster', 'likes-posts', 'likes-replies', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
+  const context = vm.createContext({
+    FLOW_TASKS: modes.map((mode) => [mode, mode]),
+    FLOW_STALE_MS: 90000,
+    taskSchedule: {
+      enabled: true,
+      current: 'timeline',
+      items: {
+        'likes-posts': { manualStopped: true, reason: '本次 3 轮已完成，等待下次排班', resumeAt: now + 45 * 60000 },
+        poster: { manualStopped: true, reason: '已手动停止' },
+        'likes-replies': { manualStopped: true, reason: '已手动停止' },
+      },
+      rules: Object.fromEntries(modes.map((mode) => [mode, { enabled: true, priority: 5 }])),
+      timeline: { future: modes.filter((mode) => mode !== 'timeline').map((mode) => ({ mode, status: 'scheduled', readyAt: now + 60000 })) },
+    },
+  })
+  vm.runInContext(`${USER_STATE_HELPERS}\n${definition}\n${pulse}\nglobalThis.overview = flowTaskOverview; globalThis.pulse = scheduleItemPulse`, context)
+  const result = context.overview({ tasks: {
+    timeline: { phase: 'running', updatedAt: now },
+  } }, now)
+  assert.equal(result.counts.running, 1)
+  assert.equal(result.counts.missing, 2)
+  assert.equal(result.counts.waiting, 6)
+  assert.equal(result.text, '1 项运行中 · 6 项等待中 · 2 项已停止')
+  assert.equal(result.tasks.find((task) => task.key === 'likes-posts').status, 'waiting')
+  assert.equal(result.tasks.find((task) => task.key === 'notifications').status, 'waiting')
+  assert.equal(result.tasks.find((task) => task.key === 'poster').status, 'missing')
+  assert.equal(context.pulse('likes-posts', { current: 'timeline' }, { status: 'waiting' }), 'waiting')
+  assert.equal(context.pulse('poster', { current: 'timeline' }, { status: 'missing' }), 'stopped')
+  assert.equal(context.pulse('notifications', { current: 'timeline' }, { status: 'waiting' }), 'waiting')
 })
 
 test('flow detail dialog lists all seven tasks using the overview statuses', async () => {
@@ -1232,13 +1275,20 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.deskHome = false
   context.selectedTaskMode = 'poster'
   assert.equal(context.control('poster', false, now).action, 'start')
-  assert.equal(context.control('poster', false, now).label, '等待中 · 约 1 分 0 秒 · 点击立即启动')
+  assert.equal(context.control('poster', false, now).label, '等待中 · 约 1 分 0 秒 · 立即开启当前任务')
+  assert.match(context.control('poster', false, now).title, /会先停止再开启这项/)
   context.deskHome = true
   context.taskSchedule.items.poster.manualStopped = true
   assert.equal(context.control('poster', false, now).label, '已停止 · 点击启动')
+  context.deskHome = false
+  assert.equal(context.control('poster', false, now).label, '已停止 · 立即开启当前任务')
+  context.deskHome = true
   context.taskSchedule.items.poster.manualStopped = false
   context.taskSchedule.items.poster.blocked = true
   assert.equal(context.control('poster', false, now).label, '需处理 · 点击启动')
+  context.deskHome = false
+  assert.equal(context.control('poster', false, now).label, '需处理 · 立即开启当前任务')
+  context.deskHome = true
   context.taskSchedule.items.poster.blocked = false
   context.taskSchedule.items.poster.resumeAt = 0
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now }
@@ -1262,16 +1312,21 @@ test('single task click refreshes background schedule before acting on a stale s
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  async function stopScheduledWaitingTask\(mode, localActive\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
+  assert.match(source, /确定立即开启/)
+  assert.match(source, /会停止正在执行的/)
+  assert.match(source, /立即开启当前任务/)
   const actions = []
   const busyModes = new Set()
   const context = vm.createContext({
     taskSchedule: { enabled: false, items: {} }, pluginRuntime: { tasks: {} }, state: {},
+    TASK_MODE_LABELS: { 'likes-posts': '点赞帖子', timeline: '评论帖子' },
     setTaskActionBusy(mode, busy) {
       if (busy) busyModes.add(mode)
       else busyModes.delete(mode)
     },
     readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: {} } }),
     scheduledTaskButtonState: () => ({ action: 'start' }),
+    confirmOpenViewedTask: () => true,
     sendExtensionMessage: async (message) => { actions.push(message.type); return { ok: true } },
     renderPanel() {},
   })
@@ -1280,6 +1335,12 @@ test('single task click refreshes background schedule before acting on a stale s
   assert.deepEqual(actions, ['xrc-task-manual-start'])
   assert.equal(context.taskSchedule.items['likes-posts'].manualStopped, false)
   assert.equal(context.taskSchedule.items['likes-posts'].resumeAt, 0)
+
+  context.confirmOpenViewedTask = () => false
+  actions.length = 0
+  assert.equal(await context.stopWaiting('likes-posts', false), true)
+  assert.deepEqual(actions, [])
+  assert.match(context.state.status, /已取消开启/)
 
   context.scheduledTaskButtonState = () => ({ action: 'focus' })
   context.sendTaskMessage = async (type) => { actions.push(type); return { ok: true } }
@@ -1297,6 +1358,54 @@ test('single task click refreshes background schedule before acting on a stale s
   context.readRuntimeMessage = async () => { throw new Error('后台暂不可用') }
   assert.equal(await context.stopWaiting('likes-posts', false), true)
   assert.match(context.state.status, /无法确认后台任务状态/)
+})
+
+test('inspecting another task keeps the live runtime mode and only changes the view', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helpers = [
+    source.match(/  function validAssistantMode\(value\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function validTaskKey\(value\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function mutualTaskKey\(mode = state\.mutualMode\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function currentTaskKey\(\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function anyLocalTaskRunning\(\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function viewTaskKey\(\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function viewAssistantMode\(\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function assistantModeForTask\(mode\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function isPosterMode\(mode = state\.assistantMode\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function openTaskSubpage\(mode\) \{[\s\S]*?\n  \}/)?.[0],
+  ].join('\n')
+  assert.match(source, /Body visibility follows the inspected card/)
+  assert.match(source, /do not hijack the live runtime assistantMode|Only retarget the runtime assistant/)
+  assert.ok(helpers.includes('viewAssistantMode') && helpers.includes('openTaskSubpage'))
+  const session = new Map()
+  const context = vm.createContext({
+    ASSISTANT_MODES: new Set(['timeline', 'notifications', 'likes-posts', 'likes-replies', 'mutual', 'poster', 'poster-premium']),
+    PANEL_ID: 'x-reply-clipboard-panel',
+    state: { assistantMode: 'poster', mutualMode: 'unfollow', poster: { running: true }, running: false, loopPromise: null },
+    likeState: { running: false, stopping: false },
+    selectedTaskMode: 'poster',
+    deskHome: true,
+    sessionStorage: {
+      setItem(key, value) { session.set(key, String(value)) },
+      getItem(key) { return session.has(key) ? session.get(key) : null },
+    },
+    document: { querySelector() { return null }, getElementById() { return null } },
+    postApi: { setPostKind() { context.kindSet = true } },
+    renderPanel() { context.rendered = true },
+    refreshScheduleView() { return Promise.resolve() },
+    taskBodySelector(mode) { return mode },
+  })
+  vm.runInContext(`${helpers}\nglobalThis.open = openTaskSubpage; globalThis.viewMode = viewAssistantMode; globalThis.viewKey = viewTaskKey; globalThis.liveKey = currentTaskKey`, context)
+  context.open('notifications')
+  assert.equal(context.deskHome, false)
+  assert.equal(context.selectedTaskMode, 'notifications')
+  assert.equal(context.viewMode(), 'notifications')
+  assert.equal(context.viewKey(), 'notifications')
+  assert.equal(context.state.assistantMode, 'poster')
+  assert.equal(context.liveKey(), 'poster')
+  assert.equal(context.rendered, true)
+  assert.equal(session.get('xrcSelectedTaskMode'), 'notifications')
+  assert.equal(session.get('xrcDeskHome'), '0')
 })
 
 test('a reserved schedule slot waits until its page confirms the loop', async () => {
@@ -1542,6 +1651,8 @@ test('all seven task panels show the same blocked state with a readable reason',
   context.deskHome = false
   context.selectedTaskMode = 'timeline'
   context.currentTaskKey = () => 'timeline'
+  context.viewTaskKey = () => context.selectedTaskMode || context.currentTaskKey()
+  context.viewAssistantMode = () => context.viewTaskKey()
   vm.runInContext(`function isPosterMode(mode) { const current = mode === undefined ? state.assistantMode : mode; return current === "poster" || current === "poster-premium"; }\n${paint}\nglobalThis.paintNotice = paintTaskScheduleNotice`, context)
   context.paintNotice({ querySelector: () => element })
   assert.equal(element.hidden, false)
@@ -1645,7 +1756,8 @@ test('scheduled post risk cooldown reports waiting even before the next post dea
 test('background status reports resident recovery as waiting but manual stops as idle', async () => {
   const source = await readFile(new URL('background.js', extensionDir), 'utf8')
   const provider = source.match(/globalThis\.XrcCommunityReceipt\?\.setRuntimeProvider\(async \(\) => \{[\s\S]*?\n\}\);/)?.[0]
-  assert.ok(provider)
+  const waitReason = source.match(/function isScheduleWaitReason\(reason\) \{[\s\S]*?\n\}/)?.[0]
+  assert.ok(provider && waitReason)
   let readStatus
   const context = vm.createContext({
     globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
@@ -1680,7 +1792,7 @@ test('background status reports resident recovery as waiting but manual stops as
       poster: { blocked: true, reason: '连续受限' },
     }, rules: {} }),
   })
-  vm.runInContext(provider, context)
+  vm.runInContext(`${waitReason}\n${provider}`, context)
   const report = await readStatus()
   assert.equal(report.phase, 'running')
   assert.equal(report.tasks.find((task) => task.mode === 'timeline').phase, 'idle')
@@ -4129,8 +4241,8 @@ test('creates one persisted-size random execution plan within the configured ran
 
   const maximumPlan = loop.createRunPlan(() => 1)
   assert.deepEqual(maximumPlan, { pace: 'boundary', rounds: 8, roundTargets: [55, 55, 55, 55, 55, 55, 55, 55], total: 440 })
-  assert.equal(loop.randomReplyDelaySeconds(() => 0), 1)
-  assert.equal(loop.randomReplyDelaySeconds(() => 1), 3)
+  assert.equal(loop.randomReplyDelaySeconds(() => 0), 2)
+  assert.equal(loop.randomReplyDelaySeconds(() => 1), 4)
   assert.equal(loop.randomCycleDelayMs(() => 0), 15 * 60 * 1000)
   assert.equal(loop.randomCycleDelayMs(() => 1), 25 * 60 * 1000)
   assert.deepEqual(loop.createRunPlan(() => 0, 'boundary', 'probe'), { pace: 'boundary', rounds: 1, roundTargets: [1], total: 1 })
@@ -4147,13 +4259,13 @@ test('creates one persisted-size random execution plan within the configured ran
   assert.equal(loop.createRunPlan(() => 0, 'slow').roundTargets[0], 12)
   assert.equal(loop.createRunPlan(() => 1, 'turbo').rounds, 8)
   assert.equal(loop.createRunPlan(() => 1, 'turbo').roundTargets[0], 55)
-  assert.equal(loop.randomReplyDelaySeconds(() => 0, 'turbo'), 1)
+  assert.equal(loop.randomReplyDelaySeconds(() => 0, 'turbo'), 2)
   assert.equal(loop.randomReplyDelaySeconds(() => 1, 'fast'), 6)
   assert.equal(loop.randomCycleDelayMs(() => 0, 'turbo'), 20 * 60 * 1000)
   assert.equal(loop.randomCycleDelayMs(() => 1, 'slow'), 6 * 60 * 60 * 1000)
   assert.equal(loop.formatSchedule('medium').cycleDelay, '2～3 小时')
   assert.equal(loop.formatSchedule('fast').cycleDelay, '60～90 分钟')
-  assert.equal(loop.formatSchedule('turbo').replyDelay, '1～3 秒')
+  assert.equal(loop.formatSchedule('turbo').replyDelay, '2～4 秒')
   assert.deepEqual(loop.scheduleBounds(), { minReplies: 12, maxReplies: 55, minRounds: 2, maxRounds: 8 })
 })
 
@@ -4930,7 +5042,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.45')
+  assert.equal(manifest.version, '4.0.50')
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
@@ -5014,13 +5126,22 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /seen === phrase/)
   assert.match(content, /SUBMIT_TIMEOUT_MS = 5000/)
   assert.match(content, /SEND_CONFIRM_TIMEOUT_MS = 5000/)
+  assert.match(content, /REPLY_RECEIPT_GRACE_MS = 2000/)
+  assert.match(content, /MIN_REPLY_GAP_SECONDS = 2/)
   assert.match(content, /ROUNDS_PER_RUN/)
   assert.match(content, /completedRounds/)
   assert.match(content, /processedIds: Array\.from\(processedIds\)/)
   assert.match(content, /result === "sent-composer-open" && !await closeReplyComposer\(\{ confirmedSent: true \}\)/)
   assert.match(content, /send-unconfirmed/)
+  assert.match(content, /ambiguous-sent/)
+  assert.match(content, /rememberRecentReply/)
+  assert.match(content, /Never click the same wording again/)
   assert.match(content, /稍后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
+  assert.match(content, /回复\)已发送/)
+  assert.match(content, /a\[href\*=\"\/status\/\"\]/)
+  assert.match(content, /localMode && localMode !== mode/)
+  assert.match(content, /Math\.max\(\s*MIN_REPLY_GAP_SECONDS/)
   assert.match(content, /currentAccountHandle/)
   assert.match(content, /tweet\.authorHandle !== ownHandle/)
   assert.doesNotMatch(content, /processedIds\.add\(next\.id\);\s*advancePhrase\(\);\s*writeSaved/)
@@ -5294,7 +5415,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /DOCS_BASE_URL = "https:\/\/2aran\.com\/resources\/x-reply-clipboard-extension\/docs"/)
   assert.match(content, /AUTOMATION_WARNING_RE/)
   assert.match(content, /DUPLICATE_REPLY_RE/)
-  assert.match(content, /result === "duplicate-reply"/)
+  assert.match(content, /result === "duplicate-reply" \|\| result === "send-unconfirmed"/)
   assert.match(content, /forceDraft: true/)
   assert.match(content, /本轮提前结束/)
   assert.match(content, /applyRiskStop\(\)/)

@@ -1378,7 +1378,8 @@ function dueTaskModes(plan, now = Date.now()) {
     .filter(({ mode, item, rule }) => {
       const gapUntil = taskGapReadyAt(item, rule, now);
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
-      return rule.enabled && !item.blocked && !item.manualStopped
+      const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
+      return rule.enabled && !item.blocked && !manualStopped
         && (manuallyRequested || Number(item.resumeAt || 0) <= now)
         && (manuallyRequested || gapUntil <= now)
         && (manuallyRequested || taskWindowOpen(mode, rule, now));
@@ -1417,13 +1418,31 @@ function nextTaskWindowAt(mode, rule, earliest) {
   return 0;
 }
 
+function isScheduleWaitReason(reason) {
+  const text = String(reason || "").trim();
+  if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
+  return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待每周|点赞短轮/u.test(text);
+}
+
+function healStaleManualStops(plan) {
+  let changed = false;
+  for (const mode of QUEUED_TASKS) {
+    const item = plan.items?.[mode];
+    if (!item?.manualStopped || !isScheduleWaitReason(item.reason)) continue;
+    plan.items[mode] = { ...item, manualStopped: false };
+    changed = true;
+  }
+  return changed;
+}
+
 function scheduleTimeline(plan, now = Date.now()) {
   const due = plan.enabled ? dueTaskModes(plan, now).filter((mode) => mode !== plan.current) : [];
   const rules = normalizedTaskRules(plan.rules);
   const future = QUEUED_TASKS.filter((mode) => mode !== plan.current).map((mode, index) => {
     const item = plan.items?.[mode] || {};
     const rule = rules[mode];
-    const status = !plan.enabled ? "paused" : !rule.enabled ? "disabled" : item.manualStopped ? "stopped"
+    const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
+    const status = !plan.enabled ? "paused" : !rule.enabled ? "disabled" : manualStopped ? "stopped"
       : item.blocked ? "blocked" : due.includes(mode) ? "ready" : "scheduled";
     const readyAt = status === "ready" ? now : status === "scheduled"
       ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0, taskGapReadyAt(item, rule, now))) : 0;
@@ -1443,7 +1462,7 @@ async function readTaskSchedule() {
     ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
     : { enabled: false, current: "", cursor: 0, items: {} };
   plan.rules = normalizedTaskRules(plan.rules);
-  let scheduleMigrated = false;
+  let scheduleMigrated = healStaleManualStops(plan);
   if (plan.priorityOrderVersion !== PRIORITY_ORDER_VERSION) {
     for (const mode of QUEUED_TASKS) {
       plan.rules[mode].priority = defaultTaskPriority(mode);
@@ -1639,7 +1658,7 @@ async function runTaskSchedule() {
     const manualDue = !completeRunOccupancy && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
     const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled;
-    const haltedCurrent = Boolean(item.blocked || item.manualStopped);
+    const haltedCurrent = Boolean(item.blocked || (item.manualStopped && !isScheduleWaitReason(item.reason)));
     const occupancyAge = now - Number(plan.startedAt || now);
     const missingTask = !task;
     const unknownTask = task?.phase === "unknown";
@@ -1781,6 +1800,8 @@ async function runTaskSchedule() {
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";
+    // Yield / gap wait must re-enter the queue; never leave a stale manualStopped red card.
+    if (!haltedCurrent) item.manualStopped = false;
     if (!followBack) item.lastRunAt = now;
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
@@ -2149,13 +2170,14 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
     const queuedReason = String(queued.reason || "").slice(0, 160);
 
     // Prefer schedule halt flags over stale runtime rows, matching local four-state facing.
-    if (queued.manualStopped || schedule.rules?.[mode]?.enabled === false) {
+    const manualStopped = Boolean(queued.manualStopped) && !isScheduleWaitReason(queuedReason);
+    if (manualStopped || schedule.rules?.[mode]?.enabled === false) {
       return withPriority({
         mode,
         phase: "idle",
         startedAt: 0,
         updatedAt: updatedAt || now,
-        detail: queued.manualStopped ? (queuedReason || "已手动停止") : "未参与排班",
+        detail: manualStopped ? (queuedReason || "已手动停止") : "未参与排班",
         waitUntil: 0
       }, mode);
     }

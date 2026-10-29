@@ -36,8 +36,8 @@
       id: "boundary",
       label: "边界测试",
       // Base profile is a placeholder; runtime uses explore/probe overlays.
-      minReplyDelaySeconds: 1,
-      maxReplyDelaySeconds: 3,
+      minReplyDelaySeconds: 2,
+      maxReplyDelaySeconds: 4,
       minRepliesPerRound: 40,
       maxRepliesPerRound: 55,
       minRoundsPerRun: 5,
@@ -62,8 +62,8 @@
     {
       id: "turbo",
       label: "超快",
-      minReplyDelaySeconds: 1,
-      maxReplyDelaySeconds: 3,
+      minReplyDelaySeconds: 2,
+      maxReplyDelaySeconds: 4,
       minRepliesPerRound: 40,
       maxRepliesPerRound: 55,
       minRoundsPerRun: 5,
@@ -86,8 +86,8 @@
   // Explore = push like turbo until an automation toast appears.
   // Probe = after automation hit, send exactly one reply per attempt with growing waits.
   const BOUNDARY_EXPLORE = Object.freeze({
-    minReplyDelaySeconds: 1,
-    maxReplyDelaySeconds: 3,
+    minReplyDelaySeconds: 2,
+    maxReplyDelaySeconds: 4,
     minRepliesPerRound: 40,
     maxRepliesPerRound: 55,
     minRoundsPerRun: 5,

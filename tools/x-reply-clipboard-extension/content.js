@@ -113,6 +113,8 @@
   const SUBMIT_TIMEOUT_MS = 5000;
   const SEND_START_TIMEOUT_MS = 2500;
   const SEND_CONFIRM_TIMEOUT_MS = 5000;
+  const REPLY_RECEIPT_GRACE_MS = 2000;
+  const MIN_REPLY_GAP_SECONDS = 2;
   const STALL_LIMIT = 5;
   const SCROLL_WAIT_MS = 900;
   const RESUME_DELAY_MS = 1200;
@@ -635,6 +637,26 @@
     return state.assistantMode === "mutual" ? mutualTaskKey() : validAssistantMode(state.assistantMode);
   }
 
+  function anyLocalTaskRunning() {
+    return Boolean(state.running || state.loopPromise || likeState.running || likeState.stopping
+      || state.mutual?.running || state.mutual?.stopping
+      || state.poster?.running || state.poster?.stopping);
+  }
+
+  // Desk card → subpage is view-only when another task still owns this shared tab.
+  // selectedTaskMode drives the visible body; assistantMode stays with the live runner.
+  function viewTaskKey() {
+    if (!deskHome) {
+      const key = validTaskKey(selectedTaskMode);
+      if (key) return key;
+    }
+    return currentTaskKey();
+  }
+
+  function viewAssistantMode() {
+    return assistantModeForTask(viewTaskKey());
+  }
+
   function scheduleDashboardActive() {
     return taskSchedule.enabled || Number(taskSchedule.strategyVersion) >= 4;
   }
@@ -1012,14 +1034,21 @@
     sessionStorage.setItem("xrcSelectedTaskMode", key);
     deskHome = false;
     sessionStorage.setItem("xrcDeskHome", "0");
-    state.assistantMode = assistantModeForTask(key);
+    // Always refresh view-only fields for the card the user opened.
     if (key.startsWith("mutual-")) state.mutualMode = key.slice("mutual-".length);
-    if (key === "poster" || key === "poster-premium") postApi?.setPostKind?.(posterKindFromMode(key));
+    const live = anyLocalTaskRunning();
+    const liveKey = currentTaskKey();
+    // Only retarget the runtime assistant when this page is idle, or the user
+    // opened the same task that is already running here.
+    if (!live || liveKey === key) {
+      state.assistantMode = assistantModeForTask(key);
+      if (key === "poster" || key === "poster-premium") postApi?.setPostKind?.(posterKindFromMode(key));
+    }
     const dialog = document.querySelector("[data-xrc-flow-details]");
     if (dialog) dialog.hidden = true;
     renderPanel();
     const panel = document.getElementById(PANEL_ID);
-    panel?.querySelector(taskBodySelector())?.scrollIntoView?.({ block: "nearest" });
+    panel?.querySelector(taskBodySelector(viewAssistantMode()))?.scrollIntoView?.({ block: "nearest" });
     void refreshScheduleView();
   }
 
@@ -1068,6 +1097,13 @@
     if (status === "waiting" || status === "stopping") return USER_STATE_LABELS.waiting;
     if (status === "blocked" || status === "unknown") return USER_STATE_LABELS.needs;
     return USER_STATE_LABELS.stopped;
+  }
+
+  // Gap / queue / completed-slice copy is not a manual stop. Stale flags must not paint red.
+  function isScheduleWaitReason(reason) {
+    const text = String(reason || "").trim();
+    if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
+    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待每周|点赞短轮/u.test(text);
   }
 
   function formatUserStateAction(stateLabel, actionLabel) {
@@ -1122,7 +1158,7 @@
         status = "blocked";
       } else if (taskSchedule.rules?.[key]?.enabled === false) {
         status = "missing";
-      } else if (scheduled.manualStopped) {
+      } else if (scheduled.manualStopped && !(taskSchedule.enabled && isScheduleWaitReason(scheduled.reason))) {
         status = "missing";
       } else if (fresh && task.phase === "paused") {
         status = "waiting";
@@ -1154,17 +1190,54 @@
     return { counts, facing, tasks, text: parts.join(" · ") };
   }
 
+  function liveScheduleOccupant(now = Date.now()) {
+    const overview = flowTaskOverview(pluginRuntime, now);
+    const running = overview.tasks.find((task) => task.status === "running")?.key || "";
+    if (running) return running;
+    if (anyLocalTaskRunning()) return currentTaskKey();
+    const current = validTaskKey(taskSchedule.current);
+    if (current && taskSchedule.enabled) return current;
+    return "";
+  }
+
+  function confirmOpenViewedTask(mode) {
+    const target = TASK_MODE_LABELS[mode] || "这项任务";
+    const occupant = liveScheduleOccupant();
+    if (occupant && occupant !== mode) {
+      const live = TASK_MODE_LABELS[occupant] || "当前任务";
+      return window.confirm(
+        `确定立即开启「${target}」？\n\n这会停止正在执行的「${live}」，然后开始这项任务。`
+      );
+    }
+    return window.confirm(`确定立即开启「${target}」？`);
+  }
+
   function scheduledTaskButtonState(mode, localActive, now = Date.now()) {
     if (localActive) return null;
     const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
     const queued = taskSchedule.items?.[mode] || {};
+    const onThisSubpage = !deskHome && selectedTaskMode === mode;
     if (task?.status === "stopping") {
       return { label: formatUserStateAction(USER_STATE_LABELS.waiting, "请稍候"), title: "任务正在停止，暂不可点击", action: "none", disabled: true };
     }
     if (task?.status === "blocked") {
+      if (onThisSubpage) {
+        return {
+          label: formatUserStateAction(USER_STATE_LABELS.needs, "立即开启当前任务"),
+          title: "确认账号后可立即开启；若有其他任务正在跑，会先停掉再开这项。",
+          action: "start"
+        };
+      }
       return { label: formatUserStateAction(USER_STATE_LABELS.needs, "点击启动"), title: "确认账号状态后，点击单独重新启动", action: "start" };
     }
     if (queued.manualStopped) {
+      if (onThisSubpage) {
+        return {
+          label: formatUserStateAction(USER_STATE_LABELS.stopped, "立即开启当前任务"),
+          title: "立即开启这项任务；若有其他任务正在跑，会先停掉再开这项。",
+          action: "start"
+        };
+      }
       return { label: formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动"), title: "该任务已手动停止；点击单独启动", action: "start" };
     }
     if (task?.status === "running") {
@@ -1184,7 +1257,6 @@
     const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
     const remaining = resumeAt > now ? resumeAt - now : 0;
     const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
-    const onThisSubpage = !deskHome && selectedTaskMode === mode;
     const waitReason = String(queued.reason || "").trim() || "后台排队中";
     if (!taskSchedule.enabled) {
       return {
@@ -1193,8 +1265,7 @@
         action: scheduleDashboardActive() ? "inspect" : "focus"
       };
     }
-    // Browsing the schedule desk only inspects; the task subpage can request an
-    // immediate retry without accidentally marking the task as manually stopped.
+    // Desk cards only open the detail view. Starting happens on the subpage button.
     if (!onThisSubpage) {
       return {
         label: eta
@@ -1206,9 +1277,9 @@
     }
     return {
       label: eta
-        ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 点击立即启动`)
-        : formatUserStateAction(USER_STATE_LABELS.waiting, "点击立即启动"),
-      title: `${waitReason}${eta ? `，自动重试还剩 ${eta}` : ""}；点击可请求优先启动这一项。`,
+        ? formatUserStateAction(USER_STATE_LABELS.waiting, `${eta} · 立即开启当前任务`)
+        : "立即开启当前任务",
+      title: `${waitReason}${eta ? `，自动重试还剩 ${eta}` : ""}；点击后若有其他任务在跑，会先停止再开启这项。`,
       action: "start"
     };
   }
@@ -1267,6 +1338,11 @@
         return true;
       }
       if (action === "start") {
+        if (!confirmOpenViewedTask(mode)) {
+          state.status = "已取消开启；排班未改变";
+          renderPanel();
+          return true;
+        }
         try {
           const result = await sendExtensionMessage({ type: "xrc-task-manual-start", mode });
           if (!result?.ok) throw new Error(result?.error || "无法请求立即启动");
@@ -1282,7 +1358,10 @@
       try {
         const result = await sendExtensionMessage({ type: "xrc-task-manual-stop", mode, stopTab: true });
         if (!result?.ok) throw new Error(result?.error || "无法停止单项任务");
-        taskSchedule.items = { ...taskSchedule.items, [mode]: { ...taskSchedule.items?.[mode], manualStopped: true, resumeAt: 0 } };
+        taskSchedule.items = {
+          ...taskSchedule.items,
+          [mode]: { ...taskSchedule.items?.[mode], manualStopped: true, resumeAt: 0, reason: "已手动停止" }
+        };
       } catch (error) {
         state.status = error?.message || "无法停止单项任务";
       }
@@ -1481,7 +1560,8 @@
     const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
     const rule = taskSchedule.rules?.[mode] || {};
     const item = taskSchedule.items?.[mode] || {};
-    if (rule.enabled === false || item.manualStopped || item.blocked
+    const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
+    if (rule.enabled === false || manualStopped || item.blocked
       || ["stopped", "blocked", "paused", "disabled"].includes(String(future?.status || ""))) {
       return Number.POSITIVE_INFINITY;
     }
@@ -1536,9 +1616,10 @@
   }
 
   function paintTaskScheduleNotice(panel = document.getElementById(PANEL_ID)) {
-    const notice = panel?.querySelector(`.xrc-${state.assistantMode.startsWith("likes-") ? "like" : state.assistantMode === "mutual" ? "mutual" : isPosterMode() ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
+    const viewMode = viewAssistantMode();
+    const notice = panel?.querySelector(`.xrc-${String(viewMode).startsWith("likes-") ? "like" : viewMode === "mutual" ? "mutual" : isPosterMode(viewMode) ? "post" : "reply"}-body [data-xrc-task-schedule-notice]`);
     if (!notice) return;
-    const mode = (!deskHome && selectedTaskMode) || currentTaskKey();
+    const mode = viewTaskKey();
     const info = taskScheduleNotice(mode);
     notice.hidden = !info;
     if (!info) return;
@@ -1648,12 +1729,22 @@
 
   function scheduleItemPulse(mode, preview, overviewTask) {
     if (overviewTask?.status === "running") return "running";
-    if (taskSchedule.enabled && preview.current === mode) return "waiting";
+    const item = taskSchedule.items?.[mode] || {};
+    const rule = taskSchedule.rules?.[mode] || {};
+    if (overviewTask?.status === "blocked" || overviewTask?.status === "unknown" || item.blocked) return "stopped";
+    if (rule.enabled === false) return "stopped";
+    if (item.manualStopped && !isScheduleWaitReason(item.reason)) return "stopped";
+    // Single-tab schedule: only one runs; every other participant stays yellow while queued / cooling.
+    if (taskSchedule.enabled) {
+      if (preview.current === mode) return "waiting";
+      if (overviewTask?.status === "waiting" || overviewTask?.status === "stopping") return "waiting";
+      const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
+      if (!future || future.status === "ready" || future.status === "scheduled") return "waiting";
+      if (isScheduleWaitReason(item.reason) || isScheduleWaitReason(future.reason)) return "waiting";
+    }
     if (overviewTask?.status === "waiting" || overviewTask?.status === "stopping") return "waiting";
     const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
     if (future?.status === "ready" || future?.status === "scheduled") return "waiting";
-    if (overviewTask?.status === "blocked" || overviewTask?.status === "unknown") return "stopped";
-    if (taskSchedule.items?.[mode]?.manualStopped || taskSchedule.items?.[mode]?.blocked) return "stopped";
     if (future?.status === "stopped" || future?.status === "blocked" || future?.status === "paused") return "stopped";
     return "";
   }
@@ -1872,10 +1963,12 @@
         label.append(document.createTextNode(task.label));
       }
       if (status) {
+        const waitReason = isScheduleWaitReason(task.reason) || isScheduleWaitReason(futureEntry?.reason);
         status.textContent = userStateLabelForTask(
           pulse === "running" || overviewStatus === "running" ? "running"
             : pulse === "waiting" || overviewStatus === "waiting" || overviewStatus === "stopping"
-              || futureEntry?.status === "ready" || futureEntry?.status === "scheduled" ? "waiting"
+              || futureEntry?.status === "ready" || futureEntry?.status === "scheduled"
+              || (taskSchedule.enabled && waitReason && pulse !== "stopped") ? "waiting"
             : overviewStatus === "blocked" || overviewStatus === "unknown" ? "blocked"
             : "missing"
         );
@@ -3022,8 +3115,15 @@
 
   function currentPhrase() {
     const count = phrases.length;
+    if (!count) return "";
     if (!Number.isInteger(state.phraseIndex) || state.phraseIndex < 0 || state.phraseIndex >= count) {
       state.phraseIndex = Math.floor(Math.random() * count);
+    }
+    if (!isRecentReplyText(phrases[state.phraseIndex])) return phrases[state.phraseIndex];
+    // Prefer a phrase that X has not seen in the recent cooldown window.
+    for (let step = 0; step < count; step += 1) {
+      advancePhrase();
+      if (!isRecentReplyText(phrases[state.phraseIndex])) return phrases[state.phraseIndex];
     }
     return phrases[state.phraseIndex];
   }
@@ -3533,9 +3633,11 @@
           : task === "post-like" ? "likes-posts"
             : task === "reply-like" ? "likes-replies"
               : "";
-      // When the shared tab belongs to another schedule slot, ignore success counts from a stale loop.
-      if (event?.result === "success" && mode && taskSchedule.enabled && taskSchedule.current && taskSchedule.current !== mode) {
-        return;
+      // Drop only when this page's live runtime mode already belongs to another task.
+      // schedule.current alone is too flaky mid-switch and was wiping real reply counts.
+      if (event?.result === "success" && mode) {
+        const localMode = currentTaskKey();
+        if (localMode && localMode !== mode) return;
       }
       const handle = String(event?.accountHandle || currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
       globalThis.XrcCommunityReceipt?.report({
@@ -3665,15 +3767,64 @@
     return { dialog: null, textbox, submit };
   }
 
-  const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|你的(?:帖子|回复)已发送|(?:帖子|回复)已发送成功)/i;
+  const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|(?:Post|Reply)(?: was)? sent\.?|你的?(?:帖子|回复)已发送|(?:帖子|回复)已发送(?:成功)?|(?:已成功发送|发送成功))/i;
   const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const TRANSIENT_ERROR_RE = /(?:Something went wrong(?:, but don(?:’t|'t) fret)?|give it another shot|出了点问题|请重试)/i;
-  const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了)?|已经发布过相同内容/i;
+  const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了|了)?|已经发布过相同内容/i;
+  const RECENT_REPLY_COOLDOWN_MS = 45 * 60 * 1000;
+  const RECENT_REPLY_LIMIT = 40;
+  let recentReplyTexts = loadRecentReplyTexts();
+
+  function loadRecentReplyTexts() {
+    try {
+      const raw = JSON.parse(sessionStorage.getItem("xrcRecentReplyTexts") || "[]");
+      if (!Array.isArray(raw)) return [];
+      const now = Date.now();
+      return raw
+        .map((entry) => ({ text: String(entry?.text || ""), at: Number(entry?.at) || 0 }))
+        .filter((entry) => entry.text && now - entry.at < RECENT_REPLY_COOLDOWN_MS)
+        .slice(-RECENT_REPLY_LIMIT);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function persistRecentReplyTexts() {
+    try {
+      sessionStorage.setItem("xrcRecentReplyTexts", JSON.stringify(recentReplyTexts.slice(-RECENT_REPLY_LIMIT)));
+    } catch (error) {
+      // Ignore quota / private-mode write failures.
+    }
+  }
+
+  function rememberRecentReply(text) {
+    const normalized = loopApi.normalizePhraseText(text);
+    if (!normalized) return;
+    const now = Date.now();
+    recentReplyTexts = recentReplyTexts
+      .filter((entry) => entry.text !== normalized && now - entry.at < RECENT_REPLY_COOLDOWN_MS)
+      .concat({ text: normalized, at: now })
+      .slice(-RECENT_REPLY_LIMIT);
+    persistRecentReplyTexts();
+  }
+
+  function isRecentReplyText(text) {
+    const normalized = loopApi.normalizePhraseText(text);
+    if (!normalized) return false;
+    const now = Date.now();
+    recentReplyTexts = recentReplyTexts.filter((entry) => now - entry.at < RECENT_REPLY_COOLDOWN_MS);
+    return recentReplyTexts.some((entry) => entry.text === normalized);
+  }
   const UNAVAILABLE_POST_RE = /(?:trying to reply to has been deleted or is not visible|要回复的帖子已被删除|尝试回复的帖子已被删除|帖子已被删除或你无法查看)/i;
 
   function successNoticeNodes() {
     return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
-      .filter((node) => SUCCESS_NOTICE_RE.test(textOf(node)));
+      .filter((node) => {
+        if (node.closest(`#${PANEL_ID}`)) return false;
+        if (SUCCESS_NOTICE_RE.test(textOf(node))) return true;
+        // X often puts a View link to the new /status/ inside the sent toast.
+        return Boolean(node.matches?.('[data-testid="toast"]') && node.querySelector('a[href*="/status/"]'));
+      });
   }
 
   function automationWarningNodes() {
@@ -3813,7 +3964,8 @@
     if (result === "transient-error") return "X 发送出错，跳过当前帖子";
     if (result === "compose-failed") return "评论框内容未对齐，正在自动重写";
     if (result === "submit-disabled") return "Reply 还不能点";
-    if (result === "send-unconfirmed") return "发送结果未确认，保留弹窗后重试";
+    if (result === "send-unconfirmed") return "发送结果未确认，换一句后继续";
+    if (result === "ambiguous-sent") return "发送结果未确认，已跳过以免重复";
     if (result === "composer-already-open") return "页面已有评论弹窗，为避免覆盖内容已暂停";
     if (result === "composer-mismatch") return "评论框内容与当前话术不一致";
     if (result === "no-composer") return "评论弹窗没有打开";
@@ -3901,15 +4053,22 @@
     const hasNewSuccessNotice = () => successNoticeNodes().some((node) => !successNoticesBefore.has(node));
     const unavailableAfterClick = () => unavailablePostVisible(toastsBefore);
     const transientAfterClick = () => transientErrorNodes().some((node) => textOf(node) !== transientBefore.get(node));
+    const composerCleared = () => (composer.dialog
+      ? !findDialogComposer()
+      : !composer.textbox.isConnected || !loopApi.composerText(composer.textbox));
+    const receiptFailure = () => {
+      if (unavailableAfterClick()) return "post-unavailable";
+      if (automationWarningNodes().length > 0) return "risk-blocked";
+      if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
+      if (duplicateReplyWarningVisible()) return "duplicate-reply";
+      return "";
+    };
     realClick(submit);
 
     const sendStarted = await waitUntil(() => {
-      if (unavailableAfterClick()) return true;
-      if (automationWarningNodes().length > 0) return true;
-      if (transientAfterClick()) return true;
-      if (duplicateReplyWarningVisible()) return true;
+      if (receiptFailure()) return true;
       if (hasNewSuccessNotice()) return true;
-      if (composer.dialog && !findDialogComposer()) return true;
+      if (composerCleared()) return true;
       if (!composer.textbox.isConnected) return true;
       const active = composer.dialog ? findDialogComposer() : composer;
       const activeSubmit = active?.submit || submit;
@@ -3919,36 +4078,55 @@
     }, SEND_START_TIMEOUT_MS);
 
     if (state.stopping) return "stopped";
-    if (unavailableAfterClick()) return "post-unavailable";
-    if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
-    if (duplicateReplyWarningVisible()) return "duplicate-reply";
-    if (!sendStarted) return "send-unconfirmed";
-
-    const confirmed = composer.dialog
-      ? await waitUntil(() => unavailableAfterClick() || transientAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !findDialogComposer(), SEND_CONFIRM_TIMEOUT_MS)
-      : await waitUntil(
-          () => unavailableAfterClick() || transientAfterClick() || duplicateReplyWarningVisible() || hasNewSuccessNotice() || !composer.textbox.isConnected || !loopApi.composerText(composer.textbox),
-          SEND_CONFIRM_TIMEOUT_MS
-        );
-    if (state.stopping) return "stopped";
-    if (unavailableAfterClick()) return "post-unavailable";
-    if (automationWarningNodes().length > 0) return "risk-blocked";
-    if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
-    if (duplicateReplyWarningVisible()) return "duplicate-reply";
-    if (!confirmed) return "send-unconfirmed";
-    // Only count a send when X shows a success notice. Dialog close / draft clear alone
-    // used to inflate「今日合计·评论」while 评论帖子 was not actually posting.
-    if (!hasNewSuccessNotice()) return "send-unconfirmed";
-    if (composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
-      const closedNaturally = await waitUntil(
-        () => !composer.dialog?.isConnected || !findDialogComposer(),
-        2000
-      );
-      if (closedNaturally) return "ok";
-      return "sent-composer-open";
+    {
+      const earlyFail = receiptFailure();
+      if (earlyFail) return earlyFail;
     }
-    return "ok";
+    if (!sendStarted && !hasNewSuccessNotice() && !composerCleared()) {
+      await waitUntil(
+        () => Boolean(receiptFailure()) || hasNewSuccessNotice() || composerCleared(),
+        REPLY_RECEIPT_GRACE_MS
+      );
+      if (state.stopping) return "stopped";
+      const lateFail = receiptFailure();
+      if (lateFail) return lateFail;
+      if (!hasNewSuccessNotice() && !composerCleared()) return "send-unconfirmed";
+    }
+
+    // Wait for toast and/or composer clear; after clear, hold REPLY_RECEIPT_GRACE_MS
+    // so a lagging toast or error can still arrive before we count the send.
+    const confirmDeadline = Date.now() + SEND_CONFIRM_TIMEOUT_MS;
+    let clearedAt = 0;
+    while (!state.stopping) {
+      const fail = receiptFailure();
+      if (fail) return fail;
+      if (hasNewSuccessNotice()) {
+        if (composer.dialog?.isConnected && loopApi.composerText(composer.textbox)) {
+          const closedNaturally = await waitUntil(
+            () => Boolean(receiptFailure()) || !composer.dialog?.isConnected || !findDialogComposer(),
+            REPLY_RECEIPT_GRACE_MS
+          );
+          if (state.stopping) return "stopped";
+          const afterFail = receiptFailure();
+          if (afterFail) return afterFail;
+          if (closedNaturally && (!composer.dialog?.isConnected || !findDialogComposer())) return "ok";
+          return "sent-composer-open";
+        }
+        return "ok";
+      }
+      if (composerCleared()) {
+        if (!clearedAt) clearedAt = Date.now();
+        if (Date.now() - clearedAt >= REPLY_RECEIPT_GRACE_MS) {
+          // Composer cleared cleanly and no error arrived in the grace window → count.
+          return "ok";
+        }
+      } else {
+        clearedAt = 0;
+        if (Date.now() >= confirmDeadline) return "send-unconfirmed";
+      }
+      await sleepActive(150);
+    }
+    return "stopped";
   }
 
   async function replyOnce(tweet, replyText) {
@@ -3994,6 +4172,7 @@
       result !== "ok"
       && result !== "stopped"
       && result !== "sent-composer-open"
+      && result !== "ambiguous-sent"
       && result !== "post-unavailable"
       && result !== "reply-restricted"
       && result !== "risk-blocked"
@@ -4380,20 +4559,25 @@
         if (!closed) return reconnectAndResume("回复权限弹窗未能关闭，准备重新载入页面");
         continue;
       }
-      if (result === "duplicate-reply") {
+      if (result === "duplicate-reply" || result === "send-unconfirmed") {
+        // Never click the same wording again. X may have accepted the first click
+        // without a toast; retrying that text is what produces「You already said that」.
+        rememberRecentReply(phrase);
         state.errors += 1;
         const composer = findDialogComposer();
         let alternate = "";
         if (state.replyMode === "ai") {
           state.pendingReply = "";
           state.pendingTweetId = next.id;
-          state.status = "这句话与历史回复重复，AI 正在换一个说法…";
+          state.status = result === "duplicate-reply"
+            ? "这句话与历史回复重复，AI 正在换一个说法…"
+            : "发送未确认，AI 正在换一句以免重复发送…";
           renderPanel();
           const postText = textOf(next.article.querySelector('[data-testid="tweetText"]'));
           try {
             const conversation = state.assistantMode === "notifications" ? await conversationOrFallback(next, postText) : null;
             alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation, state.pendingGrokInvite);
-            if (loopApi.normalizePhraseText(alternate) === loopApi.normalizePhraseText(phrase)) {
+            if (loopApi.normalizePhraseText(alternate) === loopApi.normalizePhraseText(phrase) || isRecentReplyText(alternate)) {
               alternate = await sendAiMessage("xrc-ai-generate", postText, phrase, conversation, state.pendingGrokInvite);
             }
             state.pendingReply = alternate;
@@ -4401,7 +4585,7 @@
           } catch (error) {
             state.aiStatus = error?.message || "AI 换写失败";
             writeSaved({ running: true, total: state.total });
-            return reconnectAndResume("重复内容换写失败");
+            return reconnectAndResume(result === "duplicate-reply" ? "重复内容换写失败" : "未确认发送后换写失败");
           }
         } else {
           advancePhrase();
@@ -4411,12 +4595,40 @@
         writeSaved({ running: true, total: state.total });
         const replaced = composer ? await fillComposer(composer.textbox, alternate, { forceDraft: true }) : "";
         if (!replaced) return reconnectAndResume("已换一条回复，刷新后继续发送");
-        const warningCleared = await waitUntil(() => !duplicateReplyWarningVisible(), 1500);
-        if (!warningCleared) {
-          await reloadAndResume("重复提示仍在页面中，刷新后使用新回复继续");
-          return "reload";
+        if (result === "duplicate-reply") {
+          const warningCleared = await waitUntil(() => !duplicateReplyWarningVisible(), 1500);
+          if (!warningCleared) {
+            await reloadAndResume("重复提示仍在页面中，刷新后使用新回复继续");
+            return "reload";
+          }
         }
-        state.status = `原回复与历史内容重复，已换成：${alternate}`;
+        state.status = result === "duplicate-reply"
+          ? `原回复与历史内容重复，已换成：${alternate}`
+          : `发送未确认，已换成：${alternate}`;
+        renderPanel();
+        await sleepActive(800);
+        continue;
+      }
+
+      if (result === "ambiguous-sent") {
+        // Dialog cleared without a toast: do not count, but never resend this text/tweet.
+        rememberRecentReply(phrase);
+        consecutiveTransientFailures = 0;
+        if (state.assistantMode === "notifications") {
+          try {
+            await persistNotificationProcessed(next.id);
+          } catch (error) {
+            state.errors += 1;
+          }
+        } else {
+          processedIds.add(next.id);
+        }
+        if (state.replyMode === "template") advancePhrase();
+        state.pendingReply = "";
+        state.pendingTweetId = "";
+        state.pendingGrokInvite = false;
+        writeSaved({ running: true, total: state.total });
+        state.status = "发送结果未确认，已跳过该帖以免重复发送";
         renderPanel();
         await sleepActive(800);
         continue;
@@ -4424,6 +4636,7 @@
 
       if (result === "ok" || result === "sent-composer-open") {
         consecutiveTransientFailures = 0;
+        rememberRecentReply(phrase);
         if (state.assistantMode === "notifications") {
           try {
             await persistNotificationProcessed(next.id);
@@ -4440,7 +4653,8 @@
         reportCommunityAction({
           task: state.assistantMode === "notifications" ? "notification-reply" : "timeline-reply",
           result: "success",
-          targetId: next.id
+          targetId: next.id,
+          accountHandle: currentAccountHandle() || lastKnownAccountHandle
         });
         state.pageCount += 1;
         state.total += 1;
@@ -4451,7 +4665,10 @@
           return reconnectAndResume("回复已确认，但评论弹窗暂时无法关闭");
         }
         if (state.pageCount < currentRoundTarget()) {
-          state.nextReplyDelaySeconds = loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace, state.boundaryLevel);
+          state.nextReplyDelaySeconds = Math.max(
+            MIN_REPLY_GAP_SECONDS,
+            loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace, state.boundaryLevel)
+          );
           writeSaved({ running: true, total: state.total });
           await waitRateLimit(
             state.nextReplyDelaySeconds,
@@ -4471,10 +4688,11 @@
 
   function setRunningButton(button) {
     if (!button) return;
-    const active = Boolean(state.loopPromise) || state.running;
+    const replyKey = ["timeline", "notifications"].includes(viewAssistantMode()) ? viewTaskKey() : currentTaskKey();
+    const active = (Boolean(state.loopPromise) || state.running) && currentTaskKey() === replyKey;
     const waiting = active && Boolean(replyWaitCopy());
     const paceChanged = !active && state.replyPaceBaseline && state.schedulePace !== state.replyPaceBaseline;
-    const busy = Boolean(state.stopping) || isTaskActionBusy(currentTaskKey());
+    const busy = Boolean(state.stopping) || isTaskActionBusy(replyKey);
     button.dataset.running = active ? "true" : "false";
     if (busy) button.dataset.busy = "true";
     else delete button.dataset.busy;
@@ -4493,7 +4711,7 @@
         : paceChanged
           ? formatUserStateAction(USER_STATE_LABELS.stopped, "点击重启")
           : formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动");
-    syncScheduledTaskButton(button, currentTaskKey(), active);
+    syncScheduledTaskButton(button, replyKey, active);
   }
 
   function updateMutualState(next) {
@@ -6123,7 +6341,10 @@
       else delete postToggle.dataset.busy;
       postToggle.disabled = postBusy || postRiskCooling || postFixedSlotWaiting;
       postToggle.title = "";
-      syncScheduledTaskButton(postToggle, posterTaskKey(), Boolean(poster.running));
+      {
+        const postKey = isPosterMode(viewAssistantMode()) ? viewTaskKey() : posterTaskKey();
+        syncScheduledTaskButton(postToggle, postKey, Boolean(poster.running) && currentTaskKey() === postKey);
+      }
       panel.querySelector("[data-xrc-post-count]").textContent = `本次已发送 ${poster.count || 0} 条`;
       const queueLine = panel.querySelector("[data-xrc-post-queue]");
       if (queueLine) {
@@ -6144,7 +6365,7 @@
         : poster.running ? "正在取材" : "待命";
       panel.querySelector("[data-xrc-post-runtime]").textContent = formatRuntime(poster.startedAt ? Date.now() - poster.startedAt : poster.elapsedMs || 0);
       panel.querySelector("[data-xrc-post-errors]").textContent = String(poster.errors || 0);
-      const premiumMode = state.assistantMode === "poster-premium";
+      const premiumMode = viewAssistantMode() === "poster-premium";
       const postDocsLabel = panel.querySelector("[data-xrc-post-docs-label]");
       if (postDocsLabel) postDocsLabel.textContent = premiumMode ? "精品发帖规则" : "普通发帖规则";
       const postDocsLink = panel.querySelector('[data-xrc-docs-link="poster"]');
@@ -6196,7 +6417,7 @@
           slotsNode.textContent = Array.isArray(slots) ? slots.join(" / ") : String(slots || "");
         }
       }
-      if (isPosterMode()) {
+      if (isPosterMode(viewAssistantMode())) {
         const label = premiumMode ? "精品发帖" : "普通发帖";
         panel.querySelector("[data-xrc-mini-progress]").textContent = postWait
           ? postWait
@@ -6205,14 +6426,14 @@
     }
     panel.querySelectorAll("[data-xrc-post-tab]").forEach((button) => {
       const mode = button.dataset.xrcPostTab === "premium" ? "poster-premium" : "poster";
-      const selected = mode === state.assistantMode;
+      const selected = mode === viewAssistantMode();
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
       button.title = taskTabHint(mode);
       syncSubtaskWindowControl(button, mode);
     });
     const mutual = state.mutual || mutualApi?.snapshot?.();
-    const likeDocsReplies = state.assistantMode === "likes-replies";
+    const likeDocsReplies = viewAssistantMode() === "likes-replies";
     const likeDocsLabel = panel.querySelector("[data-xrc-like-docs-label]");
     if (likeDocsLabel) likeDocsLabel.textContent = likeDocsReplies ? "点赞评论规则" : "点赞帖子规则";
     const likeDocsLink = panel.querySelector('[data-xrc-docs-link="likes"]');
@@ -6224,10 +6445,11 @@
     paintLikeProgress(panel);
     const likeToggle = panel.querySelector("[data-xrc-like-toggle]");
     if (likeToggle) {
+      const likeKey = String(viewAssistantMode()).startsWith("likes-") ? viewTaskKey() : currentTaskKey();
       const likeCooldown = likeState.running && Number(likeState.cooldownUntil) > Date.now()
         ? formatClock(Number(likeState.cooldownUntil) - Date.now())
         : "";
-      const likeBusy = Boolean(likeState.stopping) || isTaskActionBusy(currentTaskKey());
+      const likeBusy = Boolean(likeState.stopping) || isTaskActionBusy(likeKey);
       likeToggle.textContent = likeState.stopping
         ? formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候")
         : likeBusy
@@ -6241,9 +6463,9 @@
       else delete likeToggle.dataset.busy;
       likeToggle.disabled = likeBusy;
       likeToggle.title = "";
-      syncScheduledTaskButton(likeToggle, currentTaskKey(), Boolean(likeState.running));
+      syncScheduledTaskButton(likeToggle, likeKey, Boolean(likeState.running) && currentTaskKey() === likeKey);
     }
-    const replyDocsNotifications = state.assistantMode === "notifications";
+    const replyDocsNotifications = viewAssistantMode() === "notifications";
     const replyDocsLabel = panel.querySelector("[data-xrc-reply-docs-label]");
     if (replyDocsLabel) replyDocsLabel.textContent = replyDocsNotifications ? "回复评论规则" : "评论帖子规则";
     const replyDocsLink = panel.querySelector('[data-xrc-docs-link="reply"]');
@@ -6253,14 +6475,14 @@
       replyDocsLink.title = replyDocsLink.getAttribute("aria-label");
     }
     panel.querySelectorAll("[data-xrc-like-tab]").forEach((button) => {
-      const selected = `likes-${button.dataset.xrcLikeTab}` === state.assistantMode;
+      const selected = `likes-${button.dataset.xrcLikeTab}` === viewAssistantMode();
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
       button.title = taskTabHint(`likes-${button.dataset.xrcLikeTab}`);
       syncSubtaskWindowControl(button, `likes-${button.dataset.xrcLikeTab}`);
     });
     panel.querySelectorAll("[data-xrc-reply-tab]").forEach((button) => {
-      const selected = button.dataset.xrcReplyTab === state.assistantMode;
+      const selected = button.dataset.xrcReplyTab === viewAssistantMode();
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
       button.title = taskTabHint(button.dataset.xrcReplyTab);
@@ -6328,16 +6550,22 @@
       }
     }
     const active = anyTaskRunning() || Object.keys(pluginRuntime.tasks || {}).length > 0;
-    const mutualSelected = state.assistantMode === "mutual";
-    const posterSelected = isPosterMode();
-    const likeSelected = state.assistantMode.startsWith("likes-");
-    const completed = !mutualSelected && !posterSelected && !likeSelected && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
-    const waitingForNextCycle = !mutualSelected && !posterSelected && !likeSelected && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
-    const reconnecting = !mutualSelected && !posterSelected && !likeSelected && state.reconnectAt > Date.now();
+    const viewMode = viewAssistantMode();
+    const viewKey = viewTaskKey();
+    const mutualSelected = viewMode === "mutual";
+    const posterSelected = isPosterMode(viewMode);
+    const likeSelected = String(viewMode).startsWith("likes-");
+    const viewingLiveTask = viewKey === currentTaskKey();
+    const completed = !mutualSelected && !posterSelected && !likeSelected && viewingLiveTask
+      && !state.running && state.completedRounds >= (state.runPlan?.rounds || ROUNDS_PER_RUN);
+    const waitingForNextCycle = !mutualSelected && !posterSelected && !likeSelected && viewingLiveTask
+      && (state.nextCycleAt > Date.now() || state.nextRoundAt > Date.now());
+    const reconnecting = !mutualSelected && !posterSelected && !likeSelected && viewingLiveTask && state.reconnectAt > Date.now();
     const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : likeSelected ? likeState.status : state.status;
     const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
-    panel.dataset.assistantMode = state.assistantMode;
+    // Body visibility follows the inspected card, not whichever task currently owns the tab.
+    panel.dataset.assistantMode = viewMode;
     panel.dataset.replyMode = state.replyMode;
     panel.dataset.desk = deskHome ? "home" : "task";
     panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : hubOpen ? "hub" : "main";
@@ -6345,7 +6573,7 @@
     if (subnav) {
       subnav.hidden = deskHome;
       const subnavLabel = subnav.querySelector("[data-xrc-task-subnav-label]");
-      if (subnavLabel) subnavLabel.textContent = TASK_MODE_LABELS[selectedTaskMode] || TASK_MODE_LABELS[currentTaskKey()] || "任务子页";
+      if (subnavLabel) subnavLabel.textContent = TASK_MODE_LABELS[viewKey] || TASK_MODE_LABELS[selectedTaskMode] || "任务子页";
     }
     renderTodaySummary(panel);
     const collapseButton = panel.querySelector("[data-xrc-collapse]");
@@ -6357,7 +6585,7 @@
     const waitMs = soonestWaitMs();
     const waitingUi = state.riskPaused || waitingForNextCycle || reconnecting || waitMs > 0
       || Boolean(replyWaitCopy()) || Boolean(posterWaitCopy(poster))
-      || taskScheduleNotice(currentTaskKey())?.status === "waiting";
+      || taskScheduleNotice(viewKey)?.status === "waiting";
     panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping
       ? "stopping"
       : waitingUi
@@ -6572,6 +6800,17 @@
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
     state.assistantMode = launch?.assistantMode || saved.assistantMode;
+    // After a soft reload, session may still be on a task subpage while the
+    // assigned/runtime mode is a different schedule task. Keep runtime on the
+    // assigned mode; the visible body follows selectedTaskMode via viewAssistantMode().
+    if (!deskHome) {
+      const viewKey = validTaskKey(selectedTaskMode) || currentTaskKey();
+      selectedTaskMode = viewKey;
+      sessionStorage.setItem("xrcSelectedTaskMode", viewKey);
+      if (!saved.running && !launch?.start && !anyLocalTaskRunning()) {
+        state.assistantMode = assistantModeForTask(viewKey);
+      }
+    }
     if (state.assistantMode === "likes-posts") likeState.status = "待命。全流程或单项启动后，点赞首页帖子。";
     if (state.assistantMode === "likes-replies") likeState.status = "待命。全流程或单项启动后，点赞帖子评论。";
     state.mutualMode = launch?.mutualMode || saved.mutualMode;
@@ -6816,8 +7055,16 @@
       pluginRuntime = changes[PLUGIN_RUNTIME_KEY].newValue || { startedAt: null, tasks: {} };
     }
     if (changes.xrcTaskSchedule) {
-      taskSchedule = changes.xrcTaskSchedule.newValue || { enabled: false, items: {} };
-      if (Date.now() - lastScheduleReadAt > 3000) void refreshScheduleView();
+      const next = changes.xrcTaskSchedule.newValue || { enabled: false, items: {} };
+      // Storage writes are raw plan rows and omit computed timeline/dueModes.
+      // Keep the last evaluated queue until runtime-get refreshes, or idle cards flash red.
+      taskSchedule = {
+        ...next,
+        timeline: next.timeline || taskSchedule.timeline,
+        dueModes: Array.isArray(next.dueModes) ? next.dueModes : (next.enabled ? taskSchedule.dueModes : []),
+        evaluatedAt: next.evaluatedAt || taskSchedule.evaluatedAt
+      };
+      void refreshScheduleView();
     }
     if (changes[DEV_UPDATE_KEY]) {
       localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;

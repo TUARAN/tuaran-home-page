@@ -26,7 +26,7 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '4.0.42'
+const VERSION = '4.0.50'
 
 const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
@@ -35,10 +35,15 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 
 const VERSION_HISTORY = [
   {
+    version: '4.0.50',
+    title: '评论成功确认与计数',
+    description: '发送后等 2 秒确认再计入今日合计；匹配中文成功提示；条间至少 2 秒；详情页开启任务先确认。',
+    current: true,
+  },
+  {
     version: '4.0.42',
     title: '单页签排班与邀请码内置',
     description: '全流程改为单执行页签轮班；排班台与设置中心分开；下载用一把邀请码，ZIP 内置回执密钥到本机。',
-    current: true,
   },
   {
     version: '3.32.46',

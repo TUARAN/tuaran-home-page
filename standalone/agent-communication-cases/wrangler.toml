@@ -1,0 +1,8 @@
+name = "acc"
+compatibility_date = "2026-10-30"
+pages_build_output_dir = "./public"
+
+[[d1_databases]]
+binding = "STATS_DB"
+database_name = "acc-visitor-stats"
+database_id = "6062678a-4f25-4488-b7cf-ea4388a5f509"

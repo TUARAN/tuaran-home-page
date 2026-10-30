@@ -48,7 +48,7 @@ const VERSION_HISTORY = [
   {
     version: '3.32.46',
     title: '评论受限后继续倒计时',
-    description: '评论帖子和评论通知遇到疑似自动化提示后持续按 10、20、30 分钟递增等待，到期自动重试；旧的人工检查状态自动迁移。',
+    description: '评论首页和评论通知遇到疑似自动化提示后持续按 10、20、30 分钟递增等待，到期自动重试；旧的人工检查状态自动迁移。',
   },
   {
     version: '3.32.45',
@@ -63,7 +63,7 @@ const VERSION_HISTORY = [
   {
     version: '3.32.43',
     title: '评论、任务状态与发帖卡片更新',
-    description: '评论帖子加入约 20% 的 Grok 补充观点提问；七项任务显示后台等待与受限状态，点赞限制判断改为核对点击结果；发帖文字卡片增加四种版式。',
+    description: '评论首页加入约 20% 的 Grok 补充观点提问；七项任务显示后台等待与受限状态，点赞限制判断改为核对点击结果；发帖文字卡片增加四种版式。',
   },
   {
     version: '3.32.22',
@@ -318,7 +318,7 @@ function DownloadButton({ className = '' }) {
 const WORKFLOWS = [
   {
     title: '评论管理',
-    detail: '评论帖子与评论通知分别使用独立窗口。通知只处理近 2 小时内的回复，不执行点赞；评论任务在全流程中常驻运行。',
+    detail: '评论首页与评论通知分别使用独立窗口。通知只处理近 2 小时内的回复，不执行点赞；评论任务在全流程中常驻运行。',
     icon: IconMessageCircle,
   },
   {
@@ -355,7 +355,7 @@ const TECH_NOTES = [
   '模型密钥保存在 Chrome 扩展本地存储中；AI 请求不会附带 X 登录 Cookie。',
   '评论任务可持续运行；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口。',
   '插件会先核对评论框里的文字没有重复，再等待 Reply 可用；存在无法识别的手写内容时会暂停，避免覆盖。',
-  '发送结果未确认时不会计数。评论帖子只有确认发出的回复才计入轮次，评论通知只有确认回复成功后才写入去重历史。',
+  '发送结果未确认时不会计数。评论首页只有确认发出的回复才计入轮次，评论通知只有确认回复成功后才写入去重历史。',
   '已经加载过旧版目录时，到扩展管理页点击刷新，再回到 X 刷新已打开的标签页。',
 ]
 
@@ -393,7 +393,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论帖子与通知、点赞、关注管理和定时发帖集中在本地面板。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
+              评论首页与通知、点赞、关注管理和定时发帖集中在本地面板。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />

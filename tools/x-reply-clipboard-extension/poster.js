@@ -111,6 +111,7 @@
     riskCooldownUntil: 0,
     riskRetries: 0,
     schedulePace: DEFAULT_POST_PACE,
+    unlimited: false,
     premiumDaily: { date: "", count: 0 },
     currentPost: "",
     lastPost: "",
@@ -439,7 +440,11 @@
   }
 
   // Within a session: short gap. After the batch is empty: wait for the next session.
-  function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE, { queueRemaining = 0 } = {}) {
+  function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE, { queueRemaining = 0, unlimited = state.unlimited } = {}) {
+    if (unlimited) {
+      if (Number(queueRemaining) > 0) return Number(from) + 1500;
+      return Number(from) + 3000;
+    }
     if (Number(queueRemaining) > 0) return Number(from) + randomPostGapMs(random, pace);
     return Number(from) + randomCycleDelayMs(random, pace, from);
   }
@@ -912,8 +917,37 @@
     return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题" }[source] || "热点";
   }
 
+  function publishedKind(item) {
+    if (item?.postKind === POST_KIND_PREMIUM || item?.postKind === POST_KIND_X || item?.postKind === POST_KIND_NORMAL) return item.postKind;
+    if (item?.source === "xtheme") return POST_KIND_X;
+    return POST_KIND_NORMAL;
+  }
+
+  function listPublished(kind, limit = 8) {
+    const selected = normalizePostKind(kind);
+    const size = Math.min(20, Math.max(1, Number(limit) || 8));
+    return history.published
+      .filter((item) => item?.text && publishedKind(item) === selected)
+      .slice(-size)
+      .reverse();
+  }
+
   async function rememberPublishedPost(sourceId, text, topic, item = null) {
-    history.published.push({ sourceId: String(sourceId || ""), text, topic, imageStyle: item?.imageStyle || "", cardVariant: item?.cardVariant || "", source: item?.source || "", sourceLabel: item?.sourceLabel || sourceLabel(item?.source), sourceUrl: item?.sourceUrl || "", sourcePageUrl: item?.sourcePageUrl || "", sourceTitle: item?.sourceText || "", at: Date.now() });
+    const at = Date.now();
+    history.published.push({
+      sourceId: String(sourceId || `local-${at}`),
+      postKind: normalizePostKind(state.postKind),
+      text,
+      topic,
+      imageStyle: item?.imageStyle || "",
+      cardVariant: item?.cardVariant || "",
+      source: item?.source || "",
+      sourceLabel: item?.sourceLabel || sourceLabel(item?.source),
+      sourceUrl: item?.sourceUrl || "",
+      sourcePageUrl: item?.sourcePageUrl || "",
+      sourceTitle: item?.sourceText || "",
+      at
+    });
     history.published = history.published.slice(-2000);
     if (sourceId) await rememberUsedSourceId(sourceId);
     else if (!await saveHistory()) throw new Error("发帖历史保存失败，已暂停这条素材");
@@ -1387,7 +1421,8 @@
           state.nextPostAt = nextPremiumPostAt(Date.now() + 1);
         } else {
           state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace, {
-            queueRemaining: state.publishQueue.length
+            queueRemaining: state.publishQueue.length,
+            unlimited: state.unlimited
           });
         }
         await savePublishList();
@@ -1396,8 +1431,8 @@
           ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
           : "";
         emit(state.publishQueue.length
-          ? `${premiumNote}第 ${state.count} 条已发送；本批还剩 ${state.publishQueue.length} 条`
-          : `${premiumNote}第 ${state.count} 条已发送；本批发完，等待下一批取材`);
+          ? `${premiumNote}${state.unlimited ? "不限速 · " : ""}第 ${state.count} 条已发送；本批还剩 ${state.publishQueue.length} 条`
+          : `${premiumNote}${state.unlimited ? "不限速 · " : ""}第 ${state.count} 条已发送；${state.unlimited ? "马上取材下一批" : "本批发完，等待下一批取材"}`);
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -1410,9 +1445,10 @@
     }
   }
 
-  function start(onUpdate, { resume = false, kind } = {}) {
+  function start(onUpdate, { resume = false, kind, unlimited = false } = {}) {
     if (state.loopPromise) return state.loopPromise;
     if (kind) state.postKind = normalizePostKind(kind);
+    state.unlimited = state.postKind === POST_KIND_PREMIUM ? false : Boolean(unlimited);
     state.onUpdate = onUpdate;
     const saved = resume ? readSaved(state.postKind) : null;
     if (saved?.running) {
@@ -1555,6 +1591,8 @@
     readUsedSourceIds,
     rememberUsedSourceId,
     rememberPublishedPost,
+    listPublished,
+    publishedKind,
     buildPublishList,
     collectNewsFallback,
     DRAFT_POLICY_VERSION,

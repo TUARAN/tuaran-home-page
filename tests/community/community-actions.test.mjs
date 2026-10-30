@@ -24,12 +24,14 @@ test('X monitor task labels match the extension task names', () => {
   assert.deepEqual(
     Object.fromEntries(COMMUNITY_ACTION_TASKS.filter((item) => item.platform === 'x').map((item) => [item.task, item.label])),
     {
-      'timeline-reply': '评论帖子',
-      'notification-reply': '回复评论',
+      'timeline-reply': '评论首页',
+      'notification-reply': '评论回复',
+      'kol-reply': '评论大V',
       'mutual-unfollow': '清理未回关',
       'mutual-follow-back': '回关粉丝',
       'mutual-target-follow': '关注候选',
       'tweet-post': '定时发帖',
+      'post-prune': '清理低质帖',
       'post-like': '点赞帖子',
       'reply-like': '点赞评论',
     },
@@ -40,7 +42,18 @@ test('X daily report validates post counts and accepts older reports without pos
   const dailyReport = { date: '2026-10-12', accountHandle: '@Tuaran', counts: { comments: 3, likes: 5, follows: 2, unfollows: 1, followBacks: 4 } }
   assert.equal(normalizeXDailyReport(dailyReport, NOW).accountHandle, 'Tuaran')
   assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.posts, 0)
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.prunes, 0)
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.timelineComments, 0)
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.kolComments, 0)
   assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, posts: 7 } }, NOW).counts.posts, 7)
+  assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, prunes: 4 } }, NOW).counts.prunes, 4)
+  const withSplits = normalizeXDailyReport({
+    ...dailyReport,
+    counts: { ...dailyReport.counts, comments: 1, timelineComments: 2, notificationComments: 3, kolComments: 4 },
+  }, NOW)
+  assert.equal(withSplits.counts.comments, 9)
+  assert.equal(withSplits.counts.timelineComments, 2)
+  assert.equal(withSplits.counts.kolComments, 4)
   for (const posts of [-1, 1.5, 100001, NaN, Infinity, '7', null]) {
     assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, posts } }, NOW), null)
   }
@@ -53,10 +66,13 @@ test('X daily report validates post counts and accepts older reports without pos
   const dailyWrite = writes.find((item) => /x_extension_daily_reports/.test(item.sql))
   assert.ok(dailyWrite)
   assert.match(dailyWrite.sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
-  assert.deepEqual(dailyWrite.values.slice(0, 9), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0])
+  assert.match(dailyWrite.sql, /timeline_comments/)
+  assert.deepEqual(dailyWrite.values.slice(0, 13), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0, 0, 0, 0, 0])
   const beforeReject = writes.length
   const rejected = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', dailyReport: { ...dailyReport, counts: { ...dailyReport.counts, posts: -1 } } }, NOW)
   assert.deepEqual(rejected, { ok: false, error: 'INVALID_DAILY_REPORT' })
+  const rejectedPrunes = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', dailyReport: { ...dailyReport, counts: { ...dailyReport.counts, prunes: -1 } } }, NOW)
+  assert.deepEqual(rejectedPrunes, { ok: false, error: 'INVALID_DAILY_REPORT' })
   assert.equal(writes.length, beforeReject)
 })
 
@@ -74,9 +90,11 @@ test('local daily report counts successful actions once and refuses a false uplo
     await xReceipt.recordDailySuccess(event, 'Tuaran')
     await xReceipt.recordDailySuccess(event, 'Tuaran')
     await xReceipt.recordDailySuccess({ id: 'event-follow-001', task: 'mutual-target-follow', result: 'success', occurredAt: NOW }, 'Tuaran')
+    await xReceipt.recordDailySuccess({ id: 'event-prune-001', task: 'post-prune', result: 'success', targetId: 'status-1', occurredAt: NOW }, 'Tuaran')
+    await xReceipt.recordDailySuccess({ id: 'event-prune-002', task: 'post-prune', result: 'success', targetId: 'status-1', occurredAt: NOW }, 'Tuaran')
     assert.deepEqual(saved.xrcDailyReports[0].counts, {
-      comments: 0, timelineComments: 0, notificationComments: 0,
-      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0,
+      comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
+      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0, prunes: 1,
     })
     const uploaded = await xReceipt.uploadDaily('2026-10-12', 'tuaran')
     assert.equal(uploaded.ok, false)
@@ -192,7 +210,7 @@ test('center summary counts today by task and marks a fresh device online', () =
   assert.equal(summary.tasks.find((task) => task.task === 'note-post').limited, 1)
   assert.equal(summary.tasks.length, COMMUNITY_ACTION_TASKS.length)
   assert.deepEqual(summary.devices.map((device) => device.online), [true, false])
-  assert.equal(summary.recent[0].taskLabel, '评论帖子')
+  assert.equal(summary.recent[0].taskLabel, '评论首页')
   assert.equal(shanghaiDayStart(NOW), Date.parse('2026-10-12T00:00:00+08:00'))
 })
 

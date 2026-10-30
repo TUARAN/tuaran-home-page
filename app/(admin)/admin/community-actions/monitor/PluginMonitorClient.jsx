@@ -2,21 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
 
-const MODE_LABEL = {
-  timeline: '评论帖子',
-  notifications: '回复评论',
-  'likes-posts': '点赞帖子',
-  'likes-replies': '点赞评论',
-  poster: '普通发帖',
-  'poster-premium': '精品发帖',
-  'mutual-unfollow': '清理未回关',
-  'mutual-followBack': '回关粉丝',
-  'mutual-targetFollow': '关注候选',
-}
+const MODE_LABEL = X_RUNTIME_MODE_LABELS
 const PHASE = { running: ['运行中', 'info'], paused: ['等待中', 'warning'], stopping: ['等待中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
 const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件' }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
@@ -216,12 +207,12 @@ export default function PluginMonitorClient() {
       </Section>
 
       {platform === 'x' ? <Section title={`${selectedDate} · 自动同步日报`} description={`${accountLabel} · 插件本地确认成功的动作计数，经心跳与每日 09:00 定时任务自动写入；与确认回执是两份独立记录。`} className="mt-5">
-        {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">请先应用数据库迁移 0112_x_extension_daily_reports.sql。</p> : null}
+        {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">日报表结构待升级：请应用 0126_x_extension_daily_report_prunes.sql 与 0127_x_extension_daily_report_comment_splits.sql（旧迁移 0112 / 0119 也需已执行）。未升级前仍可读合计，评论拆分为 0。</p> : null}
         {reports.length ? <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
           <div className="flex items-center justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
             <div>
               <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">Daily Sync</p>
-              <p className="mb-0 mt-1 text-[12px] text-[#536471] dark:text-gray-400">与插件面板「每日报告」同一套计数；无需手动上传或拉取。</p>
+              <p className="mb-0 mt-1 text-[12px] text-[#536471] dark:text-gray-400">与插件面板「每日报告」同一套计数；评论拆成评论首页 / 评论回复 / 评论大V。</p>
             </div>
             <StatusPill size="sm" tone="info">自动</StatusPill>
           </div>
@@ -234,14 +225,18 @@ export default function PluginMonitorClient() {
                     <p className="mb-0 mt-0.5 text-[11px] text-[#536471] dark:text-gray-400">设备 {report.deviceId.slice(0, 12)}… · 同步于 {time(report.uploadedAt)}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-5">
                   {[
-                    ['评论', report.comments],
+                    ['评论合计', report.comments],
+                    ['评论首页', report.timelineComments],
+                    ['评论回复', report.notificationComments],
+                    ['评论大V', report.kolComments],
                     ['点赞', report.likes],
                     ['关注（含回关）', report.follows + report.followBacks],
                     ['取关', report.unfollows],
                     ['其中回关', report.followBacks],
-                    ['发帖', report.posts]
+                    ['发帖', report.posts],
+                    ['删帖', report.prunes]
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-2 py-2 text-center dark:border-[#263142] dark:bg-[#101820]">
                       <p className="m-0 text-[10px] text-[#536471] dark:text-gray-400">{label}</p>
@@ -274,7 +269,7 @@ export default function PluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地优先级：1～10 分，分值越大越重要。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description={`对齐本地十二项排班（含评论首页 / 评论回复 / 评论大V）：优先级 1～10 分，分值越大越重要。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
           {accountSwitcher}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />

@@ -85,7 +85,7 @@
 
   function restrictionVisible(doc) { return Boolean(restrictionKind(doc)); }
 
-  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', pace = 'medium', now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
+  function createController({ document: doc, window: win, storage, onUpdate = () => {}, onLike = () => {}, onLimit = () => {}, accountKey = 'default', target = 'both', pace = 'medium', unlimited = false, now = Date.now, rateLimitCooldowns = RATE_LIMIT_COOLDOWNS_MS }) {
     const selectedTarget = ['posts', 'replies'].includes(target) ? target : 'both';
     const storageKey = `xrcAutoLikeSeen:${accountKey}${selectedTarget === 'both' ? '' : `:${selectedTarget}`}`;
     // Previous cooldowns could come from an unrelated or already-dismissed page alert.
@@ -105,6 +105,7 @@
     let lastLimitedAt = 0;
     let lingeringWarningFailures = 0;
     const loopApi = root.XReplyClipboardLoop;
+    const unlimitedMode = Boolean(unlimited);
     let runPlan = null;
     let runCount = 0;
     let completedRounds = 0;
@@ -291,12 +292,14 @@
       if (runCount - completedBefore >= completedTarget) {
         completedRounds += 1;
         if (completedRounds >= (runPlan?.rounds || 1)) runComplete = true;
-        else roundWaitUntil = now() + (loopApi?.scheduleProfile?.(pace)?.roundIntervalSeconds || 5) * 1000;
+        else roundWaitUntil = now() + (unlimitedMode ? 1000 : (loopApi?.scheduleProfile?.(pace)?.roundIntervalSeconds || 5) * 1000);
       }
       try { onLike(id, accountKey, selectedTarget); } catch (error) { /* Daily report must not stop liking. */ }
       update(runComplete
-        ? `本次 ${runPlan?.rounds || 1} 轮已完成，确认 ${runCount} 个点赞`
-        : `第 ${completedRounds + 1}/${runPlan?.rounds || 1} 轮，本次确认 ${runCount}/${runPlan?.total || 30} 个点赞`);
+        ? (unlimitedMode
+          ? `不限速 · 本组已确认 ${runCount} 个点赞，继续`
+          : `本次 ${runPlan?.rounds || 1} 轮已完成，确认 ${runCount} 个点赞`)
+        : `${unlimitedMode ? '不限速 · ' : ''}第 ${completedRounds + 1}/${runPlan?.rounds || 1} 轮，本次确认 ${runCount}/${runPlan?.total || 30} 个点赞`);
     }
 
     async function waitForPath(test, timeout = 9000) {
@@ -369,19 +372,24 @@
       let stalled = 0;
       while (running && !stopping) {
         if (runComplete) {
-          if (cycleUntil <= now()) cycleUntil = now() + (loopApi?.randomCycleDelayMs?.(Math.random, pace) || 30 * 60000);
-          update(cooldownUntil > now()
-            ? '本次点赞已结束，X 限制冷却中；等待其他任务运行'
-            : `本次 ${runPlan?.rounds || 1} 轮已完成，等待下次排班`);
-          while (running && !stopping && cycleUntil > now()) await wait(Math.min(1000, cycleUntil - now()));
-          if (!running || stopping) break;
-          cycleUntil = 0;
+          if (unlimitedMode) {
+            cycleUntil = 0;
+            update(`不限速 · 已确认 ${count} 个点赞，立即开始下一组`);
+          } else {
+            if (cycleUntil <= now()) cycleUntil = now() + (loopApi?.randomCycleDelayMs?.(Math.random, pace) || 30 * 60000);
+            update(cooldownUntil > now()
+              ? '本次点赞已结束，X 限制冷却中；等待其他任务运行'
+              : `本次 ${runPlan?.rounds || 1} 轮已完成，等待下次排班`);
+            while (running && !stopping && cycleUntil > now()) await wait(Math.min(1000, cycleUntil - now()));
+            if (!running || stopping) break;
+            cycleUntil = 0;
+          }
           runPlan = newRunPlan();
           runCount = 0;
           completedRounds = 0;
           roundWaitUntil = 0;
           runComplete = false;
-          update('新的一次点赞计划开始');
+          update(unlimitedMode ? '不限速 · 新一组点赞开始' : '新的一次点赞计划开始');
         }
         try {
           await waitForCooldown();
@@ -461,7 +469,7 @@
       runComplete = false;
       running = true;
       stopping = false;
-      update('正在读取首页帖子…');
+      update(unlimitedMode ? '不限速 · 正在读取首页帖子…' : '正在读取首页帖子…');
       work = run().catch((error) => update(error?.message || '自动点赞异常，已停止'))
         .finally(() => { running = false; stopping = false; work = null; onUpdate(snapshot()); });
       return work;

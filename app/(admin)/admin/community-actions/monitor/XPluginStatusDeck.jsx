@@ -1,34 +1,16 @@
 'use client'
 
+import {
+  X_DEFAULT_TASK_PRIORITY,
+  X_RUNTIME_MODE_LABELS,
+  X_SCHEDULE_PRIORITY_HINT,
+  xPriorityLabel,
+} from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, StatusPill } from '../../../components/ui'
 
-const MODE_LABEL = {
-  timeline: '评论帖子',
-  notifications: '回复评论',
-  'likes-posts': '点赞帖子',
-  'likes-replies': '点赞评论',
-  poster: '普通发帖',
-  'poster-premium': '精品发帖',
-  'mutual-unfollow': '清理未回关',
-  'mutual-followBack': '回关粉丝',
-  'mutual-targetFollow': '关注候选',
-}
-const DEFAULT_PRIORITY = {
-  notifications: 9,
-  timeline: 8,
-  'poster-premium': 7,
-  poster: 6,
-  'likes-posts': 5,
-  'likes-replies': 5,
-  'mutual-followBack': 4,
-  'mutual-targetFollow': 3,
-  'mutual-unfollow': 2,
-}
-const PRIORITY_HINT = '优先级 1～10 分，分值越大越重要'
-const priorityLabel = (mode, priority) => {
-  const rank = Math.max(1, Math.min(10, Number(priority) || DEFAULT_PRIORITY[mode] || 1))
-  return `${rank}分`
-}
+const MODE_LABEL = X_RUNTIME_MODE_LABELS
+const PRIORITY_HINT = X_SCHEDULE_PRIORITY_HINT
+const priorityLabel = (mode, priority) => xPriorityLabel(Number(priority) || X_DEFAULT_TASK_PRIORITY[mode] || 1)
 const TASK_PHASE = {
   running: ['运行中', 'info'],
   waiting: ['等待中', 'warning'],

@@ -24,12 +24,14 @@
   const TASKS = new Set([
     "timeline-reply",
     "notification-reply",
+    "kol-reply",
     "mutual-unfollow",
     "mutual-follow-back",
     "mutual-target-follow",
     "post-like",
     "reply-like",
-    "tweet-post"
+    "tweet-post",
+    "post-prune"
   ]);
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
   const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
@@ -43,9 +45,11 @@
   const DAILY_TASKS = Object.freeze({
     "timeline-reply": "timelineComments",
     "notification-reply": "notificationComments",
+    "kol-reply": "kolComments",
     "post-like": "likes", "reply-like": "likes",
     "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
-    "mutual-follow-back": "followBacks", "tweet-post": "posts"
+    "mutual-follow-back": "followBacks", "tweet-post": "posts",
+    "post-prune": "prunes"
   });
 
   function shanghaiDate(at = Date.now()) {
@@ -54,17 +58,19 @@
 
   function emptyCounts() {
     return {
-      comments: 0, timelineComments: 0, notificationComments: 0,
-      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0
+      comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
+      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0
     };
   }
 
   function syncCommentTotal(counts) {
     const timeline = Math.max(0, Number(counts.timelineComments) || 0);
     const notifications = Math.max(0, Number(counts.notificationComments) || 0);
+    const kol = Math.max(0, Number(counts.kolComments) || 0);
     counts.timelineComments = timeline;
     counts.notificationComments = notifications;
-    counts.comments = timeline + notifications;
+    counts.kolComments = kol;
+    counts.comments = timeline + notifications + kol;
     return counts;
   }
 
@@ -588,6 +594,83 @@
     return config.secret;
   }
 
+  const VOTE_URL = "https://2aran.com/api/community-actions/prompt-votes";
+  const VOTE_QUEUE_KEY = "xrcPromptVoteQueue";
+  const VOTE_STATE_KEY = "xrcPromptVoteState";
+
+  async function readVoteQueue() {
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local) return [];
+    const stored = await chrome.storage.local.get(VOTE_QUEUE_KEY);
+    return Array.isArray(stored?.[VOTE_QUEUE_KEY]) ? stored[VOTE_QUEUE_KEY] : [];
+  }
+
+  async function writeVoteQueue(queue) {
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local) return;
+    await chrome.storage.local.set({ [VOTE_QUEUE_KEY]: queue.slice(-80) });
+  }
+
+  async function rememberVoteState(vote) {
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local || !vote?.sourceId) return;
+    const stored = await chrome.storage.local.get(VOTE_STATE_KEY);
+    const map = stored?.[VOTE_STATE_KEY] && typeof stored[VOTE_STATE_KEY] === "object" ? stored[VOTE_STATE_KEY] : {};
+    map[String(vote.sourceId)] = { kind: vote.kind === "bad" ? "bad" : "good", at: Date.now() };
+    await chrome.storage.local.set({ [VOTE_STATE_KEY]: map });
+  }
+
+  async function queuePromptVote(vote) {
+    const sourceId = String(vote?.sourceId || "").trim();
+    if (!sourceId) return { ok: false, error: "INVALID_VOTE" };
+    await rememberVoteState({ ...vote, sourceId });
+    const queue = (await readVoteQueue()).filter((item) => item?.sourceId !== sourceId);
+    queue.push({ ...vote, sourceId, queuedAt: Date.now() });
+    await writeVoteQueue(queue);
+    return flushPromptVotes();
+  }
+
+  async function flushPromptVotes() {
+    return enqueue(async () => {
+      const config = await ensureConfig();
+      const queue = await readVoteQueue();
+      if (!queue.length) return { ok: true, synced: 0 };
+      if (!config.secret) return { ok: false, skipped: true, error: "NO_SECRET" };
+      const pending = [];
+      let synced = 0;
+      for (const vote of queue) {
+        let response;
+        try {
+          response = await fetch(VOTE_URL, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-community-action-secret": config.secret
+            },
+            body: JSON.stringify({
+              deviceId: config.deviceId,
+              accountHandle: vote.accountHandle || config.accountHandle,
+              sourceId: vote.sourceId,
+              promptKey: vote.promptKey,
+              kind: vote.kind,
+              content: vote.content,
+              topic: vote.topic || "",
+              sourceLabel: vote.sourceLabel || "",
+              sourceUrl: vote.sourceUrl || ""
+            })
+          });
+        } catch (error) {
+          pending.push(vote);
+          continue;
+        }
+        if (response.ok) synced += 1;
+        else if (response.status !== 400) pending.push(vote);
+      }
+      await writeVoteQueue(pending);
+      return { ok: pending.length === 0, synced, pending: pending.length };
+    });
+  }
+
   function loadBundledSecret() {
     const chrome = root.chrome;
     if (!chrome?.runtime?.getURL) return Promise.resolve("");
@@ -621,7 +704,10 @@
       chrome.alarms.create(STATS_ALARM_NAME, { periodInMinutes: STATS_ALARM_MINUTES });
       chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm?.name === ALARM_NAME) heartbeatFromBackground().catch(() => {});
-        if (alarm?.name === STATS_ALARM_NAME) syncStatsFromBackground().catch(() => {});
+        if (alarm?.name === STATS_ALARM_NAME) {
+          syncStatsFromBackground().catch(() => {});
+          flushPromptVotes().catch(() => {});
+        }
         if (alarm?.name === DAILY_ALARM_NAME) runScheduledDailyUpload().catch(() => {});
       });
       installDailyUploadSchedule().catch(() => {});
@@ -668,6 +754,9 @@
     shanghaiDate,
     saveSecret,
     readSecret,
+    queuePromptVote,
+    flushPromptVotes,
+    VOTE_URL,
     install
   };
   root.XrcCommunityReceipt = api;

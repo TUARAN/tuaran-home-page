@@ -24,7 +24,7 @@ test('X task snapshot validates phases and does not accept arbitrary task names'
       enabled: true,
       current: 'timeline',
       sliceSeconds: 30,
-      now: { mode: 'timeline', label: '评论帖子', actions: 1 },
+      now: { mode: 'timeline', label: '评论首页', actions: 1 },
       next: { mode: 'notifications', status: 'ready', readyAt: NOW + 1000 },
       facing: { running: 1, waiting: 2, needs: 0, stopped: 5 },
     },
@@ -54,15 +54,16 @@ test('runtime groups follow schedule priority order with idle fill-ins', () => {
     ['mutual', 'waiting'],
   ])
   assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase, task.priority]), [
-    ['notifications', 'idle', 9],
-    ['timeline', 'running', 8],
+    ['notifications', 'idle', 10],
+    ['timeline', 'running', 9],
+    ['kol', 'idle', 8],
   ])
-  assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['poster-premium', 'poster'])
+  assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['poster-premium', 'poster', 'poster-x', 'prune-posts'])
   assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
   assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
   assert.equal(groups[3].tasks[2].detail, '风控等待中')
   assert.equal(groups[3].tasks[2].waitUntil, NOW + 600000)
-  assert.equal(groups[3].tasks[2].priority, 2)
+  assert.equal(groups[3].tasks[2].priority, 3)
 })
 
 test('remote commands enqueue and return on the next heartbeat report', async () => {

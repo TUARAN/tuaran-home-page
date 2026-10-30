@@ -21,7 +21,16 @@ const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcL
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
-const TASK_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const KOL_HANDLES_KEY = "xrcKolHandles";
+const DEFAULT_KOL_HANDLES = Object.freeze([
+  "xupaopaogm", "thankucrypto", "hotmailfromsh", "weiyux2021", "huoshan007",
+  "alanshao111", "vicentyip", "xiaqingfeng666", "JMkernt", "DISONYYDS"
+]);
+const RESERVED_X_PATHS = new Set([
+  "home", "i", "explore", "notifications", "messages", "settings", "compose",
+  "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
+]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "prune-posts", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -41,7 +50,7 @@ const REPLY_COMMENT_PROMPT = [
   "你在回复别人对你帖子或评论的留言。只输出回复正文。",
   "重心：接住对方这句话，前后文连贯；对方提了什么就顺着什么往下说，别答非所问。",
   "站在我这边说话。祝福或夸赞多表示收到；提问只答能确认的；批评可简短认或辩，别空转客服腔。",
-  "可短，但要比评论帖子更贴对方原话。别复读对方整句，别装作读过你没看到的上文结论，别硬加反问收尾。",
+  "可短，但要比评论首页更贴对方原话。别复读对方整句，别装作读过你没看到的上文结论，别硬加反问收尾。",
   "别假对比，别自我指涉写作过程。最多 1 个 emoji。不 @grok。"
 ].join("\n");
 
@@ -694,7 +703,17 @@ function normalizeTargetFollowHandles(value) {
   return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
 }
 
+function normalizeKolHandles(value) {
+  const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,，;；]+/u))
+    .map((item) => String(item || "").trim().replace(/^@/u, ""))
+    .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
+      && !RESERVED_X_PATHS.has(handle.toLowerCase())
+      && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
+  return list.length ? list : [...DEFAULT_KOL_HANDLES];
+}
+
 let targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+let kolHandlesCache = [...DEFAULT_KOL_HANDLES];
 
 async function readTargetFollowHandles() {
   try {
@@ -711,6 +730,24 @@ async function writeTargetFollowHandles(value) {
   const handles = normalizeTargetFollowHandles(value);
   targetFollowHandlesCache = handles;
   await chrome.storage.local.set({ [TARGET_FOLLOW_HANDLES_KEY]: handles });
+  return handles;
+}
+
+async function readKolHandles() {
+  try {
+    const stored = await chrome.storage.local.get(KOL_HANDLES_KEY);
+    kolHandlesCache = normalizeKolHandles(stored?.[KOL_HANDLES_KEY]);
+    return kolHandlesCache;
+  } catch (error) {
+    kolHandlesCache = [...DEFAULT_KOL_HANDLES];
+    return kolHandlesCache;
+  }
+}
+
+async function writeKolHandles(value) {
+  const handles = normalizeKolHandles(value);
+  kolHandlesCache = handles;
+  await chrome.storage.local.set({ [KOL_HANDLES_KEY]: handles });
   return handles;
 }
 
@@ -750,15 +787,21 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
   // X often redirects /notifications → /notifications/mentions (or similar).
   if (selected === "notifications" || expected === "/notifications") return isNotificationsPathname(actual);
   if (expected === "/home") return actual === "/home" || actual === "/";
+  if (selected === "kol") {
+    const expectedHandle = expected.match(/^\/([^/]+)$/iu)?.[1] || "";
+    const actualHandle = actual.match(/^\/([^/]+)$/iu)?.[1] || "";
+    return Boolean(expectedHandle && actualHandle && expectedHandle.toLowerCase() === actualHandle.toLowerCase());
+  }
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
-function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", targetFollowHandles = null } = {}) {
+function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", targetFollowHandles = null, kolHandles = null } = {}) {
   const selected = validTaskMode(mode);
   const handle = accountHandleFrom(accountHandle);
   const current = pathnameOf(currentUrl);
   if (selected === "notifications") return "/notifications";
   if (selected === "mutual-unfollow") return handle ? `/${handle}/following` : "";
+  if (selected === "prune-posts") return handle ? `/${handle}` : "";
   if (selected === "mutual-followBack") return handle ? `/${handle}/followers` : "";
   if (selected === "mutual-targetFollow") {
     const handles = normalizeTargetFollowHandles(targetFollowHandles || targetFollowHandlesCache);
@@ -766,6 +809,14 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
     const picked = handles[Math.floor(Math.random() * handles.length)];
     return `/${picked}/followers`;
+  }
+  if (selected === "kol") {
+    const handles = normalizeKolHandles(kolHandles || kolHandlesCache);
+    const match = current.match(/^\/([^/]+)$/iu);
+    if (match && !RESERVED_X_PATHS.has(match[1].toLowerCase())
+      && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
+    const picked = handles[Math.floor(Math.random() * handles.length)];
+    return `/${picked}`;
   }
   if (selected === "poster" || selected === "poster-premium" || selected === "poster-x") return "/home";
   return "/home";
@@ -879,13 +930,15 @@ async function registerTaskTab(mode, tabId) {
 }
 
 const TASK_TITLE_LABELS = {
-  timeline: "评论帖子",
-  notifications: "回复评论",
+  timeline: "评论首页",
+  kol: "评论大V",
+  notifications: "评论回复",
   "likes-posts": "点赞帖子",
   "likes-replies": "点赞评论",
   poster: "普通发帖",
   "poster-premium": "精品发帖",
   "poster-x": "X主题发帖",
+  "prune-posts": "清理低质帖",
   "mutual-unfollow": "清理未回关",
   "mutual-followBack": "回关粉丝",
   "mutual-targetFollow": "关注候选"
@@ -940,6 +993,7 @@ async function ensureOwnWindow(tab, tabs, mode) {
 async function focusTaskTab(mode, sender, { start = false, accountHandle = "", activate } = {}) {
   const selected = validTaskMode(mode);
   if (selected === "mutual-targetFollow") await readTargetFollowHandles();
+  if (selected === "kol") await readKolHandles();
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
   const schedule = await readTaskSchedule();
   // v4 single-tab profiles must never fall back to per-task windows, even while paused.
@@ -969,7 +1023,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
       const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
       const runningHere = Number(runtime.tasks?.[selected]?.tabId) === existingId
         && ["running", "paused"].includes(runtime.tasks[selected]?.phase);
-      if (start && !runningHere && ["timeline", "notifications"].includes(selected)
+      if (start && !runningHere && ["timeline", "notifications", "kol"].includes(selected)
         && onTaskPath(selected, pageUrl, { accountHandle: handle })) {
         let reply = null;
         try {
@@ -1115,6 +1169,7 @@ async function createSharedExecTab(destination, sender, activate, { mode = "", s
 
 async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate } = {}) {
   if (validTaskMode(mode) === "mutual-targetFollow") await readTargetFollowHandles();
+  if (validTaskMode(mode) === "kol") await readKolHandles();
   const shouldActivate = activate == null ? !start : Boolean(activate);
   let plan = await readTaskSchedule();
   const tabs = await readTaskTabs();
@@ -1211,8 +1266,8 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "poster-premium", "poster", "poster-x", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
-const REPLY_TASKS = ["timeline", "notifications"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "prune-posts", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
@@ -1234,10 +1289,14 @@ const LEGACY_DEFAULT_PRIORITY = Object.freeze({
   "mutual-unfollow": 2
 });
 const LIKE_SLICE_MS = 3 * 60 * 1000;
+const PRUNE_MIN_GAP_MS = 24 * 60 * 60 * 1000;
+const PRUNE_SLICE_MS = 25 * 60 * 1000;
+const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
+const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_MIN_GAP_MS = 24 * 60 * 60 * 1000;
-const FOLLOW_BACK_SLICE_MS = 10 * 60 * 1000;
+const FOLLOW_BACK_SLICE_MS = 25 * 60 * 1000;
 const TARGET_FOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const TARGET_FOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
@@ -1319,26 +1378,46 @@ function sliceMsForMode(mode, plan) {
   const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
   // Reply tasks own the shared tab until their in-page run plan finishes.
   // The long cap is only a recovery guard for a loop that never reports completion.
-  if (["timeline", "notifications"].includes(mode)) return 8 * 60 * 60 * 1000;
+  if (["timeline", "notifications", "kol"].includes(mode)) return 8 * 60 * 60 * 1000;
   // Likes only take a short burst, then yield so replies/posts can reclaim the tab.
   if (["likes-posts", "likes-replies"].includes(mode)) return Math.max(base, LIKE_SLICE_MS);
   if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
   if (mode === "mutual-targetFollow") return Math.max(base, TARGET_FOLLOW_SLICE_MS);
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
   if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
+  if (mode === "prune-posts") return Math.max(base, PRUNE_SLICE_MS);
   return base;
 }
 
+async function readTaskUnlimitedMap() {
+  try {
+    const stored = await chrome.storage.local.get([TASK_UNLIMITED_KEY, PRUNE_UNLIMITED_LEGACY_KEY]);
+    const raw = stored?.[TASK_UNLIMITED_KEY];
+    const map = raw && typeof raw === "object" ? { ...raw } : {};
+    if (stored?.[PRUNE_UNLIMITED_LEGACY_KEY] === true && map["prune-posts"] == null) map["prune-posts"] = true;
+    return map;
+  } catch (error) {
+    return {};
+  }
+}
+
+async function isTaskUnlimitedMode(mode) {
+  if (!TASK_MODES.has(mode)) return false;
+  const map = await readTaskUnlimitedMap();
+  return map[mode] === true;
+}
+
 function defaultTaskPriority(mode) {
-  // 回复评论 > 评论帖子 > 精品发帖 > 普通发帖 > 点赞帖子 = 点赞评论 > 回关 > 关注候选 > 取消未回关
+  // 评论回复 > 评论首页 > 评论大V = 精品发帖 > 普通发帖 > 点赞帖子 = 点赞评论 > 回关 > 关注候选 > 取消未回关
   if (mode === "notifications") return 10;
   if (mode === "timeline") return 9;
-  if (mode === "poster-premium") return 8;
+  if (mode === "kol" || mode === "poster-premium") return 8;
   if (mode === "poster" || mode === "poster-x") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 5;
   if (mode === "mutual-targetFollow") return 4;
   if (mode === "mutual-unfollow") return 3;
+  if (mode === "prune-posts") return 2;
   return 1;
 }
 
@@ -1354,11 +1433,12 @@ function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
     enabled: true,
     priority: defaultTaskPriority(mode),
-    pace: mode === "timeline" ? "boundary"
+    pace: mode === "timeline" || mode === "kol" ? "boundary"
       : mode === "poster" || mode === "poster-x" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
-    minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
+    minGapMs: mode === "prune-posts" ? PRUNE_MIN_GAP_MS
+      : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
       : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
@@ -1694,13 +1774,16 @@ async function runTaskSchedule() {
     const item = plan.items[current] || {};
     const waitUntil = Number(task?.waitUntil) || 0;
     const sliceMs = sliceMsForMode(current, plan);
-    const timedOut = now - Number(plan.startedAt || now) >= sliceMs;
     // Replies and likes report a paused phase at the end of their full run plan.
     // A single confirmed action must never end their occupancy.
     const actionDone = ["poster", "poster-premium", "poster-x"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
-    // Only reply tasks keep the tab until their full run finishes; likes yield on slice/higher priority.
-    const completeRunOccupancy = ["timeline", "notifications"].includes(current);
+    // Unlimited mode keeps the shared tab until pause, rate-limit, or an explicit
+    // manual start of another task. Due tasks stay queued instead of preempting.
+    const unlimitedOccupancy = await isTaskUnlimitedMode(current);
+    const timedOut = !unlimitedOccupancy && now - Number(plan.startedAt || now) >= sliceMs;
+    // Reply tasks and unlimited tasks keep the tab until their run finishes.
+    const completeRunOccupancy = unlimitedOccupancy || ["timeline", "notifications", "kol"].includes(current);
     const dueNow = dueTaskModes(plan, now);
     const requestedMode = dueNow[0];
     const currentPriority = Number(normalizedTaskRules(plan.rules)[current]?.priority) || 0;
@@ -1851,7 +1934,7 @@ async function runTaskSchedule() {
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
               : followBackSessionOpen
-                ? "夜间回关时段内，等待下一轮或批次冷却结束"
+                ? "夜间回关还没做完，稍后继续"
               : current === "mutual-followBack" && minGapMs
                 ? "本次夜间回关已结束，等待下一晚"
               : actionDone
@@ -1903,7 +1986,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster" };
 async function noteScheduledAction(event) {
   const plan = await readTaskSchedule();
   const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x"].includes(plan.current)
@@ -2199,9 +2282,10 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "poster-premium", "poster", "poster-x",
+  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x",
   "likes-posts", "likes-replies",
-  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"
+  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
+  "prune-posts"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
 const SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要";
@@ -3033,6 +3117,8 @@ if (typeof module === "object" && module.exports) {
     MAX_TASK_PRIORITY,
     LIKE_MIN_GAP_MS,
     LIKE_SLICE_MS,
+    PRUNE_MIN_GAP_MS,
+    PRUNE_SLICE_MS,
     UNFOLLOW_MIN_GAP_MS,
     UNFOLLOW_SLICE_MS,
     FOLLOW_BACK_MIN_GAP_MS,
@@ -3044,10 +3130,19 @@ if (typeof module === "object" && module.exports) {
     normalizeTargetFollowHandles,
     readTargetFollowHandles,
     writeTargetFollowHandles,
+    DEFAULT_KOL_HANDLES,
+    normalizeKolHandles,
+    readKolHandles,
+    writeKolHandles,
+    KOL_HANDLES_KEY,
+    RESERVED_X_PATHS,
     followBackNightEndsAt,
     STARTING_GRACE_MS,
     UNKNOWN_GRACE_MS,
     sliceMsForMode,
+    isTaskUnlimitedMode,
+    readTaskUnlimitedMap,
+    TASK_UNLIMITED_KEY,
     normalizedTaskRules,
     defaultTaskRules,
     taskGapReadyAt,

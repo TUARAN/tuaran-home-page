@@ -270,8 +270,8 @@ export default function XReplyClipboardDocsPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
-        <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
-          <nav aria-label="文档目录" className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] p-4 shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)] lg:max-h-[calc(100dvh-var(--site-header-height)-3rem)] lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-gutter:stable]">
+        <aside className="x-extension-docs-toc">
+          <nav aria-label="文档目录" className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] p-4 shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">On this page</p>
             <div className="mt-4 space-y-4">
               {TOC.map((group) => (

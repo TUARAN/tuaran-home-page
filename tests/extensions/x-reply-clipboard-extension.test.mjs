@@ -5711,6 +5711,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="rules"/)
   assert.match(docsPage, /id="maintenance"/)
   assert.match(docsPage, /id="releases"/)
+  assert.match(docsPage, /x-extension-docs-toc/)
   assert.match(docsPage, /id="version-path"/)
   assert.match(docsPage, /来时路 · v0 → v4/)
   assert.match(docsPage, /VERSION_ERAS/)

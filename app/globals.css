@@ -9935,3 +9935,16 @@ body:has(.x-mutual-page) footer a:hover {
     content: none !important;
   }
 }
+
+/* X 插件文档中心：大屏侧栏目录可独立滚动（calc 运算符两侧必须有空格，避免 max-height 整段失效） */
+@media (min-width: 1024px) {
+  .x-extension-docs-toc {
+    position: sticky;
+    top: calc(var(--site-header-height, 53px) + 1.5rem);
+    align-self: start;
+    max-height: calc(100dvh - var(--site-header-height, 53px) - 3rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}

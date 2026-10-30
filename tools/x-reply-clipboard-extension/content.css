@@ -1113,12 +1113,14 @@
 #x-reply-clipboard-panel[data-desk="home"] .xrc-like-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-mutual-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-post-body,
+#x-reply-clipboard-panel[data-desk="home"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-prune-body { display: none !important; }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-schedule-desk { display: none !important; }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-reply-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-like-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-mutual-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-post-body,
+#x-reply-clipboard-panel[data-desk="task"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-prune-body {
   display: none !important;
 }
@@ -1131,6 +1133,7 @@
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="poster"] .xrc-post-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="poster-premium"] .xrc-post-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="poster-x"] .xrc-post-body,
+#x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="article"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-posts"] .xrc-prune-body {
   display: grid !important;
   min-height: 160px;
@@ -1230,31 +1233,9 @@
   align-items: center;
   gap: 0 8px;
 }
-#x-reply-clipboard-panel .xrc-desk-settings {
-  grid-column: 1;
-  justify-self: start;
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--xrc-soft) 45%, #fff);
-  color: var(--xrc-muted);
-  cursor: pointer;
-}
-#x-reply-clipboard-panel .xrc-desk-settings:hover,
-#x-reply-clipboard-panel .xrc-desk-settings:focus-visible,
-#x-reply-clipboard-panel .xrc-desk-settings[aria-expanded="true"] {
-  border-color: color-mix(in srgb, var(--xrc-accent) 36%, var(--xrc-line));
-  background: color-mix(in srgb, var(--xrc-accent) 10%, #fff);
-  color: var(--xrc-accent);
-  outline: none;
-}
-#x-reply-clipboard-panel .xrc-desk-settings svg {
-  display: block;
+#x-reply-clipboard-panel .xrc-desk-head > strong {
+  grid-column: 2;
+  justify-self: center;
 }
 #x-reply-clipboard-panel .xrc-desk-corner {
   grid-column: 3;
@@ -1480,6 +1461,7 @@
 
 #x-reply-clipboard-panel .xrc-mutual-body { display: none; }
 #x-reply-clipboard-panel .xrc-post-body,
+#x-reply-clipboard-panel .xrc-article-body,
 #x-reply-clipboard-panel .xrc-prune-body {
   display: none;
   position: relative;
@@ -1511,10 +1493,12 @@
 #x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-post-body,
 #x-reply-clipboard-panel[data-assistant-mode="poster-premium"] .xrc-post-body,
 #x-reply-clipboard-panel[data-assistant-mode="poster-x"] .xrc-post-body { display: grid; }
+#x-reply-clipboard-panel[data-assistant-mode="article"] .xrc-article-body { display: grid; }
 #x-reply-clipboard-panel[data-assistant-mode="prune-posts"] .xrc-prune-body { display: grid; }
 #x-reply-clipboard-panel[data-assistant-mode="poster"] .xrc-reply-body,
 #x-reply-clipboard-panel[data-assistant-mode="poster-premium"] .xrc-reply-body,
 #x-reply-clipboard-panel[data-assistant-mode="poster-x"] .xrc-reply-body,
+#x-reply-clipboard-panel[data-assistant-mode="article"] .xrc-reply-body,
 #x-reply-clipboard-panel[data-assistant-mode="prune-posts"] .xrc-reply-body { display: none; }
 
 #x-reply-clipboard-panel .xrc-post-card,
@@ -2244,6 +2228,51 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules {
+  display: grid;
+  margin: 8px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(72px, 0.7fr) minmax(88px, 0.9fr);
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules-head {
+  background: var(--xrc-soft);
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules-row span {
+  min-width: 0;
+  padding: 7px 6px;
+  border-top: 1px solid var(--xrc-line);
+  border-left: 1px solid var(--xrc-line);
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules-row span:first-child {
+  border-left: 0;
+}
+
+#x-reply-clipboard-panel .xrc-prune-rules-head span {
+  border-top: 0;
+}
+
+#x-reply-clipboard-panel .xrc-prune-note {
+  margin: 8px 0 0;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 #x-reply-clipboard-panel .xrc-pace-table {
@@ -3080,56 +3109,6 @@
   text-align: center;
 }
 #x-reply-clipboard-panel .xrc-flow-hint[hidden] { display: none; }
-#x-reply-clipboard-panel .xrc-schedule-settings {
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, #fff 92%, var(--xrc-soft));
-}
-#x-reply-clipboard-panel .xrc-schedule-settings .xrc-docs-title > b {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  font-size: 9px;
-  background: color-mix(in srgb, var(--xrc-accent) 12%, var(--xrc-soft));
-}
-#x-reply-clipboard-panel .xrc-schedule-settings .xrc-config-note {
-  margin: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--xrc-soft) 55%, #fff);
-  font-size: 10px;
-  line-height: 1.45;
-}
-#x-reply-clipboard-panel .xrc-schedule-settings-stop {
-  border-color: color-mix(in srgb, #ef4444 22%, var(--xrc-line));
-  background: color-mix(in srgb, #fef2f2 42%, #fff);
-}
-#x-reply-clipboard-panel .xrc-schedule-stop-all {
-  justify-self: start;
-  margin: 2px 0 0;
-  padding: 8px 14px;
-  border: 1px solid color-mix(in srgb, #ef4444 34%, var(--xrc-line));
-  border-radius: 8px;
-  background: color-mix(in srgb, #fff 70%, #fee2e2);
-  color: #b91c1c;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.35;
-  cursor: pointer;
-}
-#x-reply-clipboard-panel .xrc-schedule-stop-all:hover,
-#x-reply-clipboard-panel .xrc-schedule-stop-all:focus-visible {
-  border-color: color-mix(in srgb, #ef4444 58%, var(--xrc-line));
-  background: color-mix(in srgb, #fee2e2 70%, #fff);
-  outline: none;
-}
-#x-reply-clipboard-panel .xrc-schedule-stop-all:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-#x-reply-clipboard-panel .xrc-schedule-stop-all[hidden] { display: none; }
 #x-reply-clipboard-panel .xrc-flow-start[data-role="status"],
 #x-reply-clipboard-panel .xrc-flow-start[data-role="status"]:disabled {
   cursor: default;
@@ -3337,14 +3316,25 @@
   box-shadow: 0 1px 6px rgba(15, 20, 25, 0.04);
   outline: none;
 }
-#x-reply-clipboard-panel .xrc-schedule-card-enable {
+#x-reply-clipboard-panel .xrc-schedule-card-rail {
   display: inline-grid;
   place-items: center;
   align-self: start;
   width: 20px;
+  min-height: 18px;
+  margin: 0;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-enable {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
   height: 18px;
   margin: 0;
   cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-enable[hidden],
+#x-reply-clipboard-panel .xrc-schedule-card-mark[hidden] {
+  display: none !important;
 }
 #x-reply-clipboard-panel .xrc-schedule-card-enable input {
   width: 14px;
@@ -3352,6 +3342,11 @@
   margin: 0;
   accent-color: #0f8a72;
   cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-mark {
+  width: 8px;
+  height: 8px;
+  margin: 0;
 }
 #x-reply-clipboard-panel .xrc-schedule-item-main {
   display: grid;
@@ -3372,45 +3367,42 @@
   gap: 6px;
   min-width: 0;
 }
-#x-reply-clipboard-panel .xrc-schedule-item-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+#x-reply-clipboard-panel .xrc-task-section {
+  display: grid;
+  gap: 8px;
   min-width: 0;
-  margin-top: 1px;
 }
-#x-reply-clipboard-panel .xrc-schedule-card-expand {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 2px 7px;
-  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, #fff 82%, var(--xrc-soft));
+#x-reply-clipboard-panel .xrc-task-section-head,
+#x-reply-clipboard-panel .xrc-task-schedule-config .xrc-task-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+#x-reply-clipboard-panel .xrc-task-section-head strong,
+#x-reply-clipboard-panel .xrc-task-schedule-config .xrc-task-section-head strong {
+  color: var(--xrc-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+#x-reply-clipboard-panel .xrc-task-section-head small,
+#x-reply-clipboard-panel .xrc-task-schedule-config .xrc-task-section-head small {
   color: var(--xrc-muted);
-  font: inherit;
   font-size: 10px;
-  font-weight: 750;
-  line-height: 1.3;
-  cursor: pointer;
+  font-weight: 650;
 }
-#x-reply-clipboard-panel .xrc-schedule-card-expand:hover,
-#x-reply-clipboard-panel .xrc-schedule-card-expand:focus-visible,
-#x-reply-clipboard-panel .xrc-schedule-item.is-expanded .xrc-schedule-card-expand {
-  border-color: color-mix(in srgb, var(--xrc-accent) 34%, var(--xrc-line));
-  background: color-mix(in srgb, var(--xrc-accent) 8%, #fff);
-  color: var(--xrc-accent);
-  outline: none;
-}
-#x-reply-clipboard-panel .xrc-schedule-card-config {
+#x-reply-clipboard-panel .xrc-task-schedule-config {
   display: grid;
   gap: 7px;
   min-width: 0;
-  margin-top: 1px;
-  padding-top: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--xrc-line) 80%, transparent);
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #fff 92%, var(--xrc-soft));
 }
-#x-reply-clipboard-panel .xrc-schedule-card-config[hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-task-schedule-config[hidden] { display: none; }
 #x-reply-clipboard-panel .xrc-schedule-card-list {
   display: grid;
   gap: 4px;
@@ -3432,19 +3424,6 @@
   font-size: 11px;
   line-height: 1.4;
   resize: vertical;
-}
-#x-reply-clipboard-panel .xrc-desk-globals {
-  display: grid;
-  gap: 6px;
-  margin-top: 4px;
-  padding: 8px 2px 2px;
-  border-top: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
-}
-#x-reply-clipboard-panel .xrc-desk-globals-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
 }
 #x-reply-clipboard-panel .xrc-schedule-item strong { color: var(--xrc-text); font-size: 12px; font-weight: 800; }
 #x-reply-clipboard-panel .xrc-schedule-item .xrc-schedule-item-status {
@@ -4054,6 +4033,7 @@
   #x-reply-clipboard-panel .xrc-monitor,
   #x-reply-clipboard-panel .xrc-report-page { background: rgba(0, 0, 0, 0.98); }
   #x-reply-clipboard-panel .xrc-hub .xrc-menu-grid button { background: rgba(15, 20, 25, 0.9); }
+  #x-reply-clipboard-panel .xrc-prune-rules,
   #x-reply-clipboard-panel .xrc-pace-table,
   #x-reply-clipboard-panel table.xrc-pace-edit,
   #x-reply-clipboard-panel table.xrc-pace-edit input { background: #101418; }

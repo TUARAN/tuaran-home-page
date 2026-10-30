@@ -8,20 +8,75 @@ const prune = require('../../tools/x-reply-clipboard-extension/prunePosts.js')
 const DAY = 24 * 60 * 60 * 1000
 const now = Date.parse('2026-10-30T09:00:00+08:00')
 
-test('low-quality posts are views under 100, after one day, ignoring comment count', () => {
-  const base = { own: true, repost: false, pinned: false, at: now - DAY - 1000, views: 100, replies: 2 }
+test('low-quality posts use view tiers and still require a full day', () => {
+  const base = {
+    own: true, repost: false, pinned: false, at: now - DAY - 1000,
+    views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0, bookmarks: 0,
+  }
   assert.equal(prune.VIEW_LIMIT, 100)
+  assert.equal(prune.VIEW_WEAK, 400)
   assert.equal(prune.classifyPost({ ...base, views: 99 }, now), true)
-  assert.equal(prune.classifyPost({ ...base, views: 99, replies: 20 }, now), true)
-  assert.equal(prune.classifyPost({ ...base, views: 100, replies: 0 }, now), false)
-  assert.equal(prune.classifyPost({ ...base, views: null, replies: 0 }, now), false)
-  assert.equal(prune.classifyPost({ ...base, views: 0, replies: 3, at: now - 60 * 60 * 1000 }, now), false)
-  assert.equal(prune.classifyPost({ ...base, views: 0, replies: 3, at: now - 60 * 60 * 1000 }, now, { ignoreAge: true }), true)
+  assert.equal(prune.classifyPost({ ...base, views: 99, likes: 1 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, views: 99, likes: 2 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 80, replies: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 80, reposts: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 80, quotes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 80, bookmarks: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 100 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, views: 399 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, views: 250, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 400 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 2000 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: null }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 20, likes: null }, now), false)
+  assert.equal(prune.classifyPost({ ...base, views: 0, at: now - 60 * 60 * 1000 }, now), false)
   assert.equal(prune.classifyPost({ ...base, views: 0, pinned: true }, now), false)
   assert.equal(prune.classifyPost({ ...base, views: 0, repost: true }, now), false)
   assert.equal(prune.classifyPost({ ...base, views: 0, own: false }, now), false)
+  assert.equal(prune.VIEW_STEP, 50)
+  assert.equal(prune.ageViewLimit(30 * DAY), 150)
+  assert.equal(prune.ageViewLimit(60 * DAY), 200)
+  assert.equal(prune.ageViewLimit(90 * DAY), 250)
+  assert.equal(prune.ageViewLimit(120 * DAY), 300)
+  assert.equal(prune.ageViewLimit(150 * DAY), 350)
+  assert.equal(prune.ageViewLimit(360 * DAY), 700)
+  assert.equal(prune.ageViewLimit(29 * DAY), null)
+  assert.equal(prune.classifyPost({ ...base, at: now - 30 * DAY, views: 149, likes: 5, replies: 2 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 30 * DAY, views: 150, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 29 * DAY, views: 149, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 60 * DAY, views: 199, likes: 4, replies: 3 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 60 * DAY, views: 200, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 59 * DAY, views: 180, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 60 * DAY, views: 80, likes: null }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 90 * DAY, views: 249, likes: 9, replies: 3 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 90 * DAY, views: 250, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 120 * DAY, views: 299, likes: null }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 120 * DAY, views: 300, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...base, at: now - 210 * DAY, views: 449, likes: 8 }, now), true)
+  assert.equal(prune.classifyPost({ ...base, at: now - 210 * DAY, views: 450, likes: 1 }, now), false)
+  assert.equal(prune.TEXT_VIEW_EXTRA, 100)
+  const media = { ...base, textOnly: false }
+  assert.equal(prune.classifyPost({ ...media, views: 150, likes: 1 }, now), true)
+  assert.equal(prune.classifyPost({ ...media, views: 200, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...media, views: 499 }, now), true)
+  assert.equal(prune.classifyPost({ ...media, views: 500 }, now), false)
+  assert.equal(prune.classifyPost({ ...media, at: now - 30 * DAY, views: 249, likes: 5, replies: 2 }, now), true)
+  assert.equal(prune.classifyPost({ ...media, at: now - 30 * DAY, views: 250, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...media, at: now - 90 * DAY, views: 349, likes: 4 }, now), true)
+  assert.equal(prune.classifyPost({ ...media, at: now - 90 * DAY, views: 350, likes: 1 }, now), false)
+  const text = { ...base, textOnly: true }
+  assert.equal(prune.classifyPost({ ...text, views: 150, likes: 1 }, now), false)
+  assert.equal(prune.classifyPost({ ...text, at: now - 30 * DAY, views: 149, likes: 5 }, now), true)
+  assert.equal(prune.classifyPost({ ...text, at: now - 30 * DAY, views: 150, likes: 1 }, now), false)
+  assert.equal(prune.postIsTextOnly({ querySelector: () => null }), true)
+  assert.equal(prune.postIsTextOnly({ querySelector: (selector) => String(selector).includes("tweetPhoto") ? {} : null }), false)
+  assert.equal(prune.postIsTextOnly({ querySelector: (selector) => String(selector).includes("videoPlayer") ? {} : null }), false)
   assert.equal(prune.viewCountFromLabel('99 views. View post analytics'), 99)
   assert.equal(prune.viewCountFromLabel('1.2万 次查看'), 12000)
+  assert.equal(prune.likeCountFromLabel('Like', ''), 0)
+  assert.equal(prune.likeCountFromLabel('2 Likes. Like', '2'), 2)
+  assert.equal(prune.bookmarkCountFromLabel('Bookmark', ''), 0)
+  assert.equal(prune.repostCountFromLabel('1 次转帖。转帖', '1'), 1)
 })
 
 test('delete confirmation only matches the delete action', () => {
@@ -76,6 +131,9 @@ test('a prune session keeps deleting after 15 posts until the planned rounds fin
         if (name.includes('/status/')) return { getAttribute: () => `/me/status/${id}` }
         if (name.includes('socialContext')) return { innerText: '', textContent: '' }
         if (name.includes('reply')) return { getAttribute: () => '0 Replies. Reply', innerText: '0', textContent: '0' }
+        if (name.includes('like')) return { getAttribute: () => '0 Likes. Like', innerText: '0', textContent: '0' }
+        if (name.includes('retweet')) return { getAttribute: () => '0 reposts. Repost', innerText: '0', textContent: '0' }
+        if (name.includes('bookmark')) return { getAttribute: () => 'Bookmark', innerText: '', textContent: '' }
         if (name.includes('analytics')) return { getAttribute: () => '19 views. View post analytics', innerText: '19', textContent: '19' }
         if (name === 'time') return { getAttribute: () => postedAt }
         if (name.includes('caret')) return { click() { current = article } }
@@ -134,8 +192,8 @@ test('a prune session keeps deleting after 15 posts until the planned rounds fin
   }
 })
 
-test('unlimited prune skips round waits, deletes posts within 24 hours, and keeps scrolling while new ids appear', async () => {
-  const freshAt = new Date(now - 30 * 60 * 1000).toISOString()
+test('unlimited prune keeps the day-old rule, skips round waits, and rescans after the profile ends', async () => {
+  const freshAt = new Date(now - DAY - 1000).toISOString()
   const pool = Array.from({ length: 24 }, (_, index) => {
     const id = index + 1
     let connected = true
@@ -148,6 +206,9 @@ test('unlimited prune skips round waits, deletes posts within 24 hours, and keep
         if (name.includes('/status/')) return { getAttribute: () => `/me/status/${id}` }
         if (name.includes('socialContext')) return { innerText: '', textContent: '' }
         if (name.includes('reply')) return { getAttribute: () => '0 Replies. Reply', innerText: '0', textContent: '0' }
+        if (name.includes('like')) return { getAttribute: () => '0 Likes. Like', innerText: '0', textContent: '0' }
+        if (name.includes('retweet')) return { getAttribute: () => '0 reposts. Repost', innerText: '0', textContent: '0' }
+        if (name.includes('bookmark')) return { getAttribute: () => 'Bookmark', innerText: '', textContent: '' }
         if (name.includes('analytics')) return { getAttribute: () => '10 views', innerText: '10', textContent: '10' }
         if (name === 'time') return { getAttribute: () => freshAt }
         if (name.includes('caret')) return { click() { active = article } }
@@ -197,11 +258,15 @@ test('unlimited prune skips round waits, deletes posts within 24 hours, and keep
   let clock = now
   const previousLoop = globalThis.XReplyClipboardLoop
   globalThis.XReplyClipboardLoop = require('../../tools/x-reply-clipboard-extension/loop.js')
-  const controller = prune.createController({
+  const messages = []
+  let controller = null
+  controller = prune.createController({
     document: doc,
+    onUpdate(snapshot) { messages.push(snapshot.status) },
     window: {
       get scrollY() { return scrollY },
       innerHeight: 700,
+      scrollTo() { scrollY = 0 },
       scrollBy(_opts, maybeY) {
         const delta = typeof _opts === 'number' ? _opts : (Number(maybeY) || Number(_opts?.top) || 700)
         if (cursor < pool.length) {
@@ -218,6 +283,7 @@ test('unlimited prune skips round waits, deletes posts within 24 hours, and keep
     sleep: async (ms) => {
       waits.push(ms)
       clock += ms
+      if (ms === prune.RESCAN_GAP_MS) controller.stop()
     },
   })
   try {
@@ -227,7 +293,8 @@ test('unlimited prune skips round waits, deletes posts within 24 hours, and keep
     assert.equal(result.rounds, 0)
     assert.equal(waits.includes(15000), false)
     assert.ok(waits.filter((ms) => ms === prune.UNLIMITED_DELETE_GAP_MS).length >= 20)
-    assert.match(result.status, /不限速|扫完|删除/)
+    assert.ok(waits.includes(prune.RESCAN_GAP_MS))
+    assert.ok(messages.some((message) => /从顶部继续/.test(message)))
     assert.equal(result.running, false)
   } finally {
     if (previousLoop) globalThis.XReplyClipboardLoop = previousLoop
@@ -250,6 +317,9 @@ test('unlimited prune stops immediately when X shows a rate-limit warning', asyn
         if (name.includes('/status/')) return { getAttribute: () => `/me/status/${id}` }
         if (name.includes('socialContext')) return { innerText: '', textContent: '' }
         if (name.includes('reply')) return { getAttribute: () => '0 Replies. Reply', innerText: '0', textContent: '0' }
+        if (name.includes('like')) return { getAttribute: () => '0 Likes. Like', innerText: '0', textContent: '0' }
+        if (name.includes('retweet')) return { getAttribute: () => '0 reposts. Repost', innerText: '0', textContent: '0' }
+        if (name.includes('bookmark')) return { getAttribute: () => 'Bookmark', innerText: '', textContent: '' }
         if (name.includes('analytics')) return { getAttribute: () => '10 views', innerText: '10', textContent: '10' }
         if (name === 'time') return { getAttribute: () => postedAt }
         if (name.includes('caret')) return { click() { current = article } }
@@ -318,6 +388,9 @@ test('prune stops the session when the profile runs out before the planned round
         if (name.includes('/status/')) return { getAttribute: () => `/me/status/${id}` }
         if (name.includes('socialContext')) return { innerText: '', textContent: '' }
         if (name.includes('reply')) return { getAttribute: () => '0 Replies. Reply', innerText: '0', textContent: '0' }
+        if (name.includes('like')) return { getAttribute: () => '0 Likes. Like', innerText: '0', textContent: '0' }
+        if (name.includes('retweet')) return { getAttribute: () => '0 reposts. Repost', innerText: '0', textContent: '0' }
+        if (name.includes('bookmark')) return { getAttribute: () => 'Bookmark', innerText: '', textContent: '' }
         if (name.includes('analytics')) return { getAttribute: () => '10 views', innerText: '10', textContent: '10' }
         if (name === 'time') return { getAttribute: () => postedAt }
         if (name.includes('caret')) return { click() { active = article } }

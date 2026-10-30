@@ -104,7 +104,8 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const installedVersion = String(device.extensionVersion || '').trim()
   const siteVersion = String(latestExtensionVersion || '').trim()
   const updateAvailable = Boolean(device.updateAvailable)
-  const canUpdate = device.online && updateAvailable && Boolean(siteVersion)
+  const canReloadLocal = device.online && !updateAvailable && Boolean(installedVersion)
+  const canUpdate = device.online && (updateAvailable ? Boolean(siteVersion) : Boolean(installedVersion))
   const updateBusy = busyKey === `${device.id}:ext-update:`
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
   const facing = device.facing || schedule?.facing
@@ -116,7 +117,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
     : updateAvailable
       ? `本机 v${installedVersion || '未知'} 落后于站点 v${siteVersion}；下发后会停任务并重载本机已同步的新文件`
       : installedVersion
-        ? `本机 v${installedVersion} · 站点最新 v${siteVersion || installedVersion}`
+        ? `本机 v${installedVersion} · 站点最新 v${siteVersion || installedVersion}。更新本地会停掉当前任务，并重载本机目录里更新的文件`
         : `站点最新 v${siteVersion || '—'}；等待插件心跳上报版本`
 
   return (
@@ -149,11 +150,11 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
             <div className="flex flex-wrap items-center gap-2">
               {canUpdate ? (
                 <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('ext-update')}>
-                  {updateBusy ? '排队中…' : `远程更新到 v${siteVersion}`}
+                  {updateBusy ? '排队中…' : (canReloadLocal ? '更新本地' : `远程更新到 v${siteVersion}`)}
                 </AdminButton>
               ) : (
-                <AdminButton size="sm" variant="ghost" disabled title={device.online ? (updateAvailable ? '站点最新版未知' : '本机已是站点最新版') : '实例离线，无法下发'}>
-                  {device.online ? (updateAvailable ? '无法下发' : '已是最新') : '离线不可更新'}
+                <AdminButton size="sm" variant="ghost" disabled title={device.online ? '站点最新版未知' : '实例离线，无法下发'}>
+                  {device.online ? '无法下发' : '离线不可更新'}
                 </AdminButton>
               )}
             </div>

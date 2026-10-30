@@ -1,6 +1,6 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js");
+if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js");
 
 const AI_SETTINGS_KEY = "xrcAiSettings";
 const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
@@ -30,7 +30,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "prune-posts", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "article", "prune-posts", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -603,6 +603,60 @@ async function generateTopicalPost({ contextText, lastPost, postKind = "normal" 
   }
 }
 
+async function generateArticleDraft() {
+  const core = globalThis.XrcArticleDraft;
+  if (!core?.cleanArticle) throw new Error("发文模块没有加载");
+  const { apiKey } = await readAiSettings();
+  if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
+  const newsResponse = await fetch(ARTICLE_NEWS_URL, { signal: AbortSignal.timeout(15000) });
+  if (!newsResponse.ok) throw new Error(`资讯读取失败（${newsResponse.status}）`);
+  const news = await newsResponse.json();
+  const items = (news.hits || []).filter((item) => item.title && /^https:\/\//.test(item.url || "") && /\b(ai|llm|model|agent|coding|openai|deepseek|gemini)\b/i.test(item.title)).slice(0, 8);
+  if (!items.length) throw new Error("没有可用的 AI 资讯");
+  const stored = await chrome.storage.local.get(ARTICLE_USED_KEY);
+  const used = new Set(Array.isArray(stored?.[ARTICLE_USED_KEY]) ? stored[ARTICLE_USED_KEY] : []);
+  const item = items.find((candidate) => !used.has(String(candidate.objectID)));
+  if (!item) throw new Error("资讯已经用完，请稍后再试");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch(DEEPSEEK_ENDPOINT, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: "system", content: ARTICLE_SYSTEM_PROMPT },
+          { role: "user", content: JSON.stringify({ title: item.title, sourceUrl: item.url }) }
+        ],
+        thinking: { type: "disabled" },
+        max_tokens: 2200,
+        stream: false
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || `DeepSeek 请求失败（${response.status}）`);
+    const draft = core.cleanArticle(data?.choices?.[0]?.message?.content);
+    if (draft.sourceUrl !== item.url) throw new Error("生成内容的来源链接发生变化");
+    return { ...draft, sourceId: String(item.objectID) };
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("DeepSeek 请求超过 60 秒，请稍后重试");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function rememberArticleSource(sourceId) {
+  const id = String(sourceId || "").trim();
+  if (!id) return { ok: true };
+  const stored = await chrome.storage.local.get(ARTICLE_USED_KEY);
+  const used = Array.isArray(stored?.[ARTICLE_USED_KEY]) ? stored[ARTICLE_USED_KEY] : [];
+  await chrome.storage.local.set({ [ARTICLE_USED_KEY]: [...new Set([...used, id])].slice(-100) });
+  return { ok: true };
+}
+
 async function handleMessage(message, onProgress = () => {}, signal) {
   if (message?.type === "xrc-ai-news-sources") {
     return { ok: true, ...await collectNewsSources(message.tier) };
@@ -614,6 +668,12 @@ async function handleMessage(message, onProgress = () => {}, signal) {
   if (message?.type === "xrc-ai-post-generate") {
     const post = await generateTopicalPost({ contextText: message.contextText, lastPost: message.lastPost, postKind: message.postKind });
     return { ok: true, post };
+  }
+  if (message?.type === "xrc-ai-article-generate") {
+    return { ok: true, draft: await generateArticleDraft() };
+  }
+  if (message?.type === "xrc-ai-article-source-used") {
+    return rememberArticleSource(message.sourceId);
   }
   if (message?.type === "xrc-ai-generate") {
     const postText = String(message.postText || "").trim();
@@ -792,6 +852,7 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
     const actualHandle = actual.match(/^\/([^/]+)$/iu)?.[1] || "";
     return Boolean(expectedHandle && actualHandle && expectedHandle.toLowerCase() === actualHandle.toLowerCase());
   }
+  if (selected === "article") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
@@ -819,6 +880,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     return `/${picked}`;
   }
   if (selected === "poster" || selected === "poster-premium" || selected === "poster-x") return "/home";
+  if (selected === "article") return "/compose/articles";
   return "/home";
 }
 
@@ -938,6 +1000,7 @@ const TASK_TITLE_LABELS = {
   poster: "普通发帖",
   "poster-premium": "精品发帖",
   "poster-x": "X主题发帖",
+  article: "普通发文",
   "prune-posts": "清理低质帖",
   "mutual-unfollow": "清理未回关",
   "mutual-followBack": "回关粉丝",
@@ -1266,7 +1329,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "prune-posts", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article", "prune-posts", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1289,16 +1352,22 @@ const LEGACY_DEFAULT_PRIORITY = Object.freeze({
   "mutual-unfollow": 2
 });
 const LIKE_SLICE_MS = 3 * 60 * 1000;
-const PRUNE_MIN_GAP_MS = 24 * 60 * 60 * 1000;
+const LEGACY_PRUNE_GAP_MS = 24 * 60 * 60 * 1000;
+const PRUNE_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const PRUNE_SLICE_MS = 25 * 60 * 1000;
+const ARTICLE_SLICE_MS = 8 * 60 * 1000;
+const ARTICLE_NEWS_URL = "https://hn.algolia.com/api/v1/search_by_date?tags=story&query=AI&hitsPerPage=30";
+const ARTICLE_USED_KEY = "xrcArticleUsedSources";
+const ARTICLE_SYSTEM_PROMPT = "根据给出的资讯标题和链接，写一篇中文技术文章，至少 500 字。仅把标题可确认的内容写成事实；其余写明确的分析、实践方法或待核实问题。不要编造数据、引言或产品功能。返回 JSON：{\"title\":\"\",\"body\":\"Markdown 正文\",\"sourceUrl\":\"\"}。sourceUrl 原样返回。";
 const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_MIN_GAP_MS = 24 * 60 * 60 * 1000;
-const FOLLOW_BACK_SLICE_MS = 25 * 60 * 1000;
+// Round gaps are 5～30 minutes; keep the overnight session long enough to finish paced rounds.
+const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
 const TARGET_FOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
-const TARGET_FOLLOW_SLICE_MS = 10 * 60 * 1000;
+const TARGET_FOLLOW_SLICE_MS = 45 * 60 * 1000;
 const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
 const FOLLOW_BACK_NIGHT_END_MINUTE = 6 * 60;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
@@ -1386,6 +1455,7 @@ function sliceMsForMode(mode, plan) {
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
   if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
   if (mode === "prune-posts") return Math.max(base, PRUNE_SLICE_MS);
+  if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   return base;
 }
 
@@ -1401,10 +1471,19 @@ async function readTaskUnlimitedMap() {
   }
 }
 
+function taskUnlimitedEnabled(mode, map = {}) {
+  if (mode === "prune-posts") return true;
+  if (mode === "mutual-unfollow") {
+    if (map?.[mode] == null) return true;
+    return map[mode] === true;
+  }
+  return map?.[mode] === true;
+}
+
 async function isTaskUnlimitedMode(mode) {
   if (!TASK_MODES.has(mode)) return false;
   const map = await readTaskUnlimitedMap();
-  return map[mode] === true;
+  return taskUnlimitedEnabled(mode, map);
 }
 
 function defaultTaskPriority(mode) {
@@ -1412,13 +1491,20 @@ function defaultTaskPriority(mode) {
   if (mode === "notifications") return 10;
   if (mode === "timeline") return 9;
   if (mode === "kol" || mode === "poster-premium") return 8;
-  if (mode === "poster" || mode === "poster-x") return 7;
+  if (mode === "poster" || mode === "poster-x" || mode === "article") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 5;
   if (mode === "mutual-targetFollow") return 4;
   if (mode === "mutual-unfollow") return 3;
   if (mode === "prune-posts") return 2;
   return 1;
+}
+
+function articleMinGapMs(pace) {
+  if (pace === "medium") return 25 * 60000;
+  if (pace === "fast") return 12 * 60000;
+  if (pace === "turbo") return 6 * 60000;
+  return 50 * 60000;
 }
 
 function likeMinGapMs(pace) {
@@ -1434,10 +1520,11 @@ function defaultTaskRules() {
     enabled: true,
     priority: defaultTaskPriority(mode),
     pace: mode === "timeline" || mode === "kol" ? "boundary"
-      : mode === "poster" || mode === "poster-x" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+      : mode === "poster" || mode === "poster-x" || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
-    minGapMs: mode === "prune-posts" ? PRUNE_MIN_GAP_MS
+    minGapMs: mode === "article" ? articleMinGapMs("slow")
+      : mode === "prune-posts" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
       : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
@@ -1452,18 +1539,21 @@ function normalizedTaskRules(value) {
     const rule = value?.[mode] || {};
     const pace = ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
     const likeMode = ["likes-posts", "likes-replies"].includes(mode);
-    const fallbackGap = likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
+    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
     const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
+    const legacyPruneGap = mode === "prune-posts" && requestedGap === LEGACY_PRUNE_GAP_MS;
     defaults[mode] = {
       enabled: rule.enabled !== false,
       priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: legacyLikeGap || !Number.isFinite(requestedGap)
-        ? fallbackGap
-        : Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
+      minGapMs: mode === "article"
+        ? articleMinGapMs(pace)
+        : legacyLikeGap || legacyPruneGap || !Number.isFinite(requestedGap)
+          ? fallbackGap
+          : Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
     };
   }
   return defaults;
@@ -1585,8 +1675,9 @@ async function readTaskSchedule() {
     ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
     : { enabled: false, current: "", cursor: 0, items: {} };
   const storedLikeGapIsLegacy = ["likes-posts", "likes-replies"].some((mode) => Number(plan.rules?.[mode]?.minGapMs) === LEGACY_LIKE_GAP_MS);
+  const storedPruneGapIsLegacy = Number(plan.rules?.["prune-posts"]?.minGapMs) === LEGACY_PRUNE_GAP_MS;
   plan.rules = normalizedTaskRules(plan.rules);
-  let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy;
+  let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy || storedPruneGapIsLegacy;
   if (plan.priorityOrderVersion !== PRIORITY_ORDER_VERSION) {
     for (const mode of QUEUED_TASKS) {
       plan.rules[mode].priority = defaultTaskPriority(mode);
@@ -1624,20 +1715,78 @@ async function readTaskSchedule() {
     }
     plan.likeDetectionVersion = 2;
   }
-  if (plan.replyRiskVersion !== 1) {
-    for (const mode of REPLY_TASKS) {
-      const item = plan.items[mode];
-      if (!item?.blocked) continue;
-      const streak = Math.max(1, Number(item.limitedStreak) || 1);
-      plan.items[mode] = {
-        ...item,
-        blocked: false,
-        resumeAt: item.manualStopped ? 0 : Date.now() + streak * REPLY_RISK_COOLDOWN_MS,
-        reason: item.manualStopped ? "已手动停止" : `X 提示疑似自动化，第 ${streak} 次冷却后自动重试`
-      };
+  if (plan.replyRiskVersion !== 2) {
+    if (plan.replyRiskVersion !== 1) {
+      for (const mode of REPLY_TASKS) {
+        const item = plan.items[mode];
+        if (!item?.blocked) continue;
+        const streak = Math.max(1, Number(item.limitedStreak) || 1);
+        plan.items[mode] = {
+          ...item,
+          blocked: false,
+          resumeAt: item.manualStopped ? 0 : Date.now() + streak * REPLY_RISK_COOLDOWN_MS,
+          reason: item.manualStopped ? "已手动停止" : `X 提示疑似自动化，第 ${streak} 次冷却后自动重试`
+        };
+      }
     }
-    plan.replyRiskVersion = 1;
+    // Comment home / notifications / KOL share one X reply-risk cooldown.
+    const sharedStreak = Math.max(0, ...REPLY_TASKS.map((mode) => Number(plan.items?.[mode]?.limitedStreak) || 0));
+    const sharedResumeAt = Math.max(0, ...REPLY_TASKS.map((mode) => Number(plan.items?.[mode]?.resumeAt) || 0));
+    const sharedReason = REPLY_TASKS.map((mode) => String(plan.items?.[mode]?.reason || ""))
+      .find((text) => /疑似自动化|自动重试/u.test(text)) || "";
+    if (sharedStreak > 0 || sharedResumeAt > Date.now()) {
+      applySharedReplyRisk(plan, {
+        streak: Math.max(1, sharedStreak),
+        resumeAt: sharedResumeAt > Date.now()
+          ? sharedResumeAt
+          : Date.now() + Math.max(1, sharedStreak) * REPLY_RISK_COOLDOWN_MS,
+        reason: sharedReason || `X 提示疑似自动化，第 ${Math.max(1, sharedStreak)} 次冷却后自动重试（评论三项共用）`
+      });
+    }
+    plan.replyRiskVersion = 2;
     await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
+  }
+  return plan;
+}
+
+function applySharedReplyRisk(plan, { streak, resumeAt, reason }) {
+  const nextStreak = Math.max(0, Number(streak) || 0);
+  const nextResumeAt = Math.max(0, Number(resumeAt) || 0);
+  const nextReason = String(reason || "").slice(0, 160);
+  for (const mode of REPLY_TASKS) {
+    const prior = plan.items?.[mode] || {};
+    if (prior.manualStopped) {
+      plan.items[mode] = {
+        ...prior,
+        blocked: false,
+        limitedStreak: nextStreak,
+        resumeAt: 0,
+        reason: prior.reason || "已手动停止"
+      };
+      continue;
+    }
+    plan.items[mode] = {
+      ...prior,
+      blocked: false,
+      recoveryAttempts: 0,
+      limitedStreak: nextStreak,
+      resumeAt: nextResumeAt,
+      reason: nextReason
+    };
+  }
+  return plan;
+}
+
+function clearSharedReplyRisk(plan, { keepReason = "" } = {}) {
+  for (const mode of REPLY_TASKS) {
+    const prior = plan.items?.[mode] || {};
+    plan.items[mode] = {
+      ...prior,
+      blocked: false,
+      limitedStreak: 0,
+      resumeAt: prior.manualStopped ? 0 : 0,
+      reason: prior.manualStopped ? (prior.reason || "已手动停止") : keepReason
+    };
   }
   return plan;
 }
@@ -1776,10 +1925,11 @@ async function runTaskSchedule() {
     const sliceMs = sliceMsForMode(current, plan);
     // Replies and likes report a paused phase at the end of their full run plan.
     // A single confirmed action must never end their occupancy.
-    const actionDone = ["poster", "poster-premium", "poster-x"].includes(current) && Number(item.sliceActions) > 0;
+    const actionDone = ["poster", "poster-premium", "poster-x", "article"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
-    // Unlimited mode keeps the shared tab until pause, rate-limit, or an explicit
-    // manual start of another task. Due tasks stay queued instead of preempting.
+    const runFinished = task?.phase === "stopped" || task?.phase === "idle";
+    // Unlimited mode keeps the shared tab until the in-page run stops, or an
+    // explicit manual start of another task. Due tasks stay queued instead of preempting.
     const unlimitedOccupancy = await isTaskUnlimitedMode(current);
     const timedOut = !unlimitedOccupancy && now - Number(plan.startedAt || now) >= sliceMs;
     // Reply tasks and unlimited tasks keep the tab until their run finishes.
@@ -1898,7 +2048,7 @@ async function runTaskSchedule() {
       await saveTaskSchedule(plan);
       return plan;
     }
-    if (!waiting && !timedOut && !actionDone && !higherPriorityDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
+    if (!waiting && !timedOut && !runFinished && !actionDone && !higherPriorityDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
@@ -1908,8 +2058,10 @@ async function runTaskSchedule() {
       item.lastRunAt = Number(plan.startedAt) || now;
     }
     const followBackSessionOpen = followBack && Number(item.followBackSessionUntil) > now;
-    item.resumeAt = followBackSessionOpen ? baseResumeAt
+    const computedResumeAt = followBackSessionOpen ? baseResumeAt
       : Math.max(baseResumeAt, minGapMs ? (followBack ? Number(item.lastRunAt) || now : now) + minGapMs : 0);
+    const heldResumeAt = current === "article" ? Number(item.resumeAt) || 0 : 0;
+    item.resumeAt = Math.max(computedResumeAt, heldResumeAt);
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -1927,6 +2079,12 @@ async function runTaskSchedule() {
               ? "另一项任务已请求优先启动，安全轮换"
             : windowClosed
               ? "夜间回关时段已结束，等待下一晚"
+            : runFinished && (current === "prune-posts" || current === "mutual-unfollow")
+              ? (current === "prune-posts" ? "清理低质帖约每周一次，等待下次排班" : "清理未回关约每周一次，等待下次排班")
+            : runFinished
+              ? "本次已结束，等待下次排班"
+            : current === "prune-posts" && minGapMs
+              ? "清理低质帖约每周一次，等待下次排班"
             : current === "mutual-unfollow" && minGapMs
               ? "清理未回关约每周一次，等待下次排班"
               : current === "mutual-targetFollow" && minGapMs
@@ -1986,7 +2144,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article" };
 async function noteScheduledAction(event) {
   const plan = await readTaskSchedule();
   const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x"].includes(plan.current)
@@ -1996,57 +2154,85 @@ async function noteScheduledAction(event) {
   if (event.result === "success") {
     item.confirmedActions = Math.max(0, Number(item.confirmedActions) || 0) + 1;
     if (plan.current === mode) item.sliceActions = Math.max(0, Number(item.sliceActions) || 0) + 1;
+    if (mode === "article") item.resumeAt = Math.max(Number(item.resumeAt) || 0, Number(event.resumeAt) || 0);
     item.lastActionAt = Date.now();
     item.limitedStreak = 0;
+    plan.items[mode] = item;
     if (REPLY_TASKS.includes(mode)) {
-      item.blocked = false;
-      item.resumeAt = 0;
-      item.reason = "";
+      // One successful reply means the account-level comment limit lifted for all three.
+      clearSharedReplyRisk(plan);
+      plan.items[mode] = {
+        ...(plan.items[mode] || {}),
+        confirmedActions: item.confirmedActions,
+        sliceActions: item.sliceActions,
+        lastActionAt: item.lastActionAt
+      };
     }
   } else {
-    item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
     if (REPLY_TASKS.includes(mode)) {
-      item.blocked = false;
-      item.recoveryAttempts = 0;
-      item.resumeAt = Date.now() + item.limitedStreak * REPLY_RISK_COOLDOWN_MS;
-      item.reason = `X 提示疑似自动化，第 ${item.limitedStreak} 次冷却后自动重试`;
-    } else if (["likes-posts", "likes-replies"].includes(mode)) {
-      // Likes must release the shared tab on the first automation hit so replies/posts can run.
-      item.blocked = false;
-      item.lastRunAt = Date.now();
-      item.resumeAt = Date.now() + Math.max(LIKE_MIN_GAP_MS, item.limitedStreak * REPLY_RISK_COOLDOWN_MS);
-      item.reason = String(event.errorCode || "X 点赞受限，已让出页签").slice(0, 160);
+      const streak = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) || 0)) + 1;
+      const resumeAt = Date.now() + streak * REPLY_RISK_COOLDOWN_MS;
+      const reason = `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`;
+      applySharedReplyRisk(plan, { streak, resumeAt, reason });
     } else {
-      item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
-    }
-    if (!REPLY_TASKS.includes(mode) && !["likes-posts", "likes-replies"].includes(mode) && item.limitedStreak >= 3) {
-      item.blocked = true;
-      item.resumeAt = 0;
+      item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
+      if (["likes-posts", "likes-replies"].includes(mode)) {
+        // Likes must release the shared tab on the first automation hit so replies/posts can run.
+        item.blocked = false;
+        item.lastRunAt = Date.now();
+        item.resumeAt = Date.now() + Math.max(LIKE_MIN_GAP_MS, item.limitedStreak * REPLY_RISK_COOLDOWN_MS);
+        item.reason = String(event.errorCode || "X 点赞受限，已让出页签").slice(0, 160);
+      } else {
+        item.reason = String(event.errorCode || "X 操作受限").slice(0, 160);
+      }
+      if (!["likes-posts", "likes-replies"].includes(mode) && item.limitedStreak >= 3) {
+        item.blocked = true;
+        item.resumeAt = 0;
+      }
+      plan.items[mode] = item;
     }
   }
-  plan.items[mode] = item;
+  const savedItem = plan.items[mode] || item;
   await saveTaskSchedule(plan);
-  if (["likes-posts", "likes-replies"].includes(mode) && event.result === "limited" && plan.enabled && plan.current === mode) {
-    if (await suspendScheduledTask(mode, item.reason, { keepTab: true, releaseOnFailure: true })) {
+  if (REPLY_TASKS.includes(mode) && event.result === "limited" && plan.enabled && REPLY_TASKS.includes(plan.current)) {
+    const yieldMode = plan.current;
+    const yieldReason = String(plan.items?.[yieldMode]?.reason || savedItem.reason || "评论受限，已让出页签");
+    if (await suspendScheduledTask(yieldMode, yieldReason, { keepTab: true, releaseOnFailure: true })) {
       const latest = await readTaskSchedule();
-      recordScheduleSegment(latest, mode, item.reason);
+      recordScheduleSegment(latest, yieldMode, yieldReason);
       latest.current = "";
       latest.startedAt = 0;
-      latest.items[mode] = { ...(latest.items[mode] || {}), ...item };
+      applySharedReplyRisk(latest, {
+        streak: Number(plan.items?.[mode]?.limitedStreak) || 1,
+        resumeAt: Number(plan.items?.[mode]?.resumeAt) || 0,
+        reason: yieldReason
+      });
       await saveTaskSchedule(latest);
       await tickTaskSchedule();
     }
     return;
   }
-  if (item.blocked) {
+  if (["likes-posts", "likes-replies"].includes(mode) && event.result === "limited" && plan.enabled && plan.current === mode) {
+    if (await suspendScheduledTask(mode, savedItem.reason, { keepTab: true, releaseOnFailure: true })) {
+      const latest = await readTaskSchedule();
+      recordScheduleSegment(latest, mode, savedItem.reason);
+      latest.current = "";
+      latest.startedAt = 0;
+      latest.items[mode] = { ...(latest.items[mode] || {}), ...savedItem };
+      await saveTaskSchedule(latest);
+      await tickTaskSchedule();
+    }
+    return;
+  }
+  if (savedItem.blocked) {
     const tabs = await readTaskTabs();
     const tabId = Number(tabs[mode]);
-    if (Number.isInteger(tabId)) await chrome.tabs.sendMessage(tabId, { type: "xrc-flow-stop", reason: `连续 3 次受限：${item.reason}。请人工检查账号后手动启动` }).catch(() => {});
+    if (Number.isInteger(tabId)) await chrome.tabs.sendMessage(tabId, { type: "xrc-flow-stop", reason: `连续 3 次受限：${savedItem.reason}。请人工检查账号后手动启动` }).catch(() => {});
     if (QUEUED_TASKS.includes(mode)) {
-      if (!Number.isInteger(tabId) || await suspendScheduledTask(mode, item.reason)) {
+      if (!Number.isInteger(tabId) || await suspendScheduledTask(mode, savedItem.reason)) {
         if (plan.current === mode) {
           const latest = await readTaskSchedule();
-          recordScheduleSegment(latest, mode, `连续受限：${item.reason}`);
+          recordScheduleSegment(latest, mode, `连续受限：${savedItem.reason}`);
           latest.current = "";
           latest.startedAt = 0;
           await saveTaskSchedule(latest);
@@ -2059,7 +2245,7 @@ async function noteScheduledAction(event) {
   // Posting releases after a confirmed post. Reply and like loops keep the tab
   // until all planned rounds finish or a real cooldown makes them yield.
   if (event.result === "success" && plan.enabled && plan.current === mode
-    && ["poster", "poster-premium", "poster-x"].includes(mode) && Number(item.sliceActions) > 0) {
+    && ["poster", "poster-premium", "poster-x", "article"].includes(mode) && Number(item.sliceActions) > 0) {
     await tickTaskSchedule();
   }
 }
@@ -2282,7 +2468,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x",
+  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
   "prune-posts"
@@ -2469,8 +2655,24 @@ async function executeRemoteCommand(command) {
     if (!mode) throw new Error("无法识别目标任务");
     if (type === "task-start") {
       const plan = await readTaskSchedule();
-      if (plan.items[mode]?.blocked || plan.items[mode]?.manualStopped) {
-        plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+      if (plan.items[mode]?.blocked || plan.items[mode]?.manualStopped
+        || (REPLY_TASKS.includes(mode) && REPLY_TASKS.some((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) > 0
+          || Number(plan.items?.[replyMode]?.resumeAt) > Date.now()))) {
+        if (REPLY_TASKS.includes(mode)) {
+          clearSharedReplyRisk(plan, { keepReason: "人工重新启动" });
+          for (const replyMode of REPLY_TASKS) {
+            plan.items[replyMode] = {
+              ...(plan.items[replyMode] || {}),
+              blocked: false,
+              manualStopped: false,
+              limitedStreak: 0,
+              resumeAt: 0,
+              reason: replyMode === mode ? "人工重新启动" : ""
+            };
+          }
+        } else {
+          plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
+        }
         await saveTaskSchedule(plan);
       }
       const runtime = await readPluginRuntime();
@@ -2572,7 +2774,22 @@ function updatePluginRuntime(message, sender) {
       const plan = await readTaskSchedule();
       if ((plan.detachedReplyTabIds || []).includes(tabId)) return { ok: true, runtime };
       if (message?.phase === "running") {
-        if (plan.items?.[mode]?.blocked || plan.items?.[mode]?.manualStopped) {
+        if (REPLY_TASKS.includes(mode) && (plan.items?.[mode]?.blocked || plan.items?.[mode]?.manualStopped
+          || REPLY_TASKS.some((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) > 0
+            || Number(plan.items?.[replyMode]?.resumeAt) > Date.now()))) {
+          clearSharedReplyRisk(plan, { keepReason: "人工重新启动" });
+          for (const replyMode of REPLY_TASKS) {
+            plan.items[replyMode] = {
+              ...(plan.items[replyMode] || {}),
+              blocked: false,
+              manualStopped: false,
+              limitedStreak: 0,
+              resumeAt: 0,
+              reason: replyMode === mode ? "人工重新启动" : ""
+            };
+          }
+          await saveTaskSchedule(plan);
+        } else if (plan.items?.[mode]?.blocked || plan.items?.[mode]?.manualStopped) {
           plan.items[mode] = { ...plan.items[mode], blocked: false, manualStopped: false, limitedStreak: 0, resumeAt: 0, reason: "人工重新启动" };
           await saveTaskSchedule(plan);
         }
@@ -2711,9 +2928,25 @@ async function markManualTaskStop(mode, stopTab = false) {
 async function markManualTaskStart(mode) {
   if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
   const plan = await readTaskSchedule();
-  const item = plan.items[mode] || {};
-  plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0,
-    manualRequestedAt: Date.now(), reason: "已请求优先启动" };
+  if (REPLY_TASKS.includes(mode)) {
+    clearSharedReplyRisk(plan);
+    for (const replyMode of REPLY_TASKS) {
+      const prior = plan.items[replyMode] || {};
+      plan.items[replyMode] = {
+        ...prior,
+        manualStopped: false,
+        blocked: false,
+        limitedStreak: 0,
+        resumeAt: 0,
+        manualRequestedAt: replyMode === mode ? Date.now() : 0,
+        reason: replyMode === mode ? "已请求优先启动" : ""
+      };
+    }
+  } else {
+    const item = plan.items[mode] || {};
+    plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0,
+      manualRequestedAt: Date.now(), reason: "已请求优先启动" };
+  }
   await saveTaskSchedule(plan);
   const updated = plan.enabled ? await tickTaskSchedule() : plan;
   return { ok: true, assigned: updated.current === mode, current: updated.current || "" };
@@ -3117,8 +3350,11 @@ if (typeof module === "object" && module.exports) {
     MAX_TASK_PRIORITY,
     LIKE_MIN_GAP_MS,
     LIKE_SLICE_MS,
+    LEGACY_PRUNE_GAP_MS,
     PRUNE_MIN_GAP_MS,
     PRUNE_SLICE_MS,
+    ARTICLE_SLICE_MS,
+    articleMinGapMs,
     UNFOLLOW_MIN_GAP_MS,
     UNFOLLOW_SLICE_MS,
     FOLLOW_BACK_MIN_GAP_MS,
@@ -3141,6 +3377,7 @@ if (typeof module === "object" && module.exports) {
     UNKNOWN_GRACE_MS,
     sliceMsForMode,
     isTaskUnlimitedMode,
+    taskUnlimitedEnabled,
     readTaskUnlimitedMap,
     TASK_UNLIMITED_KEY,
     normalizedTaskRules,

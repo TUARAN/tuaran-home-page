@@ -17,7 +17,26 @@
     return editor;
   }
 
+  function articleEditor() {
+    const rootNode = document.querySelector("[data-testid='composer']");
+    if (!rootNode) return null;
+    if (rootNode.getAttribute("contenteditable") === "true") return visibleEditor(rootNode);
+    return visibleEditor(rootNode.querySelector("[contenteditable='true']"));
+  }
+
+  function compactText(value) {
+    return String(value || "").replace(/\s+/gu, "");
+  }
+
+  function articleFilled(rendered, phrase) {
+    const left = compactText(rendered);
+    const right = compactText(phrase);
+    if (!right || right.length < 40) return false;
+    return left === right || (left.includes(right.slice(0, 40)) && left.includes(right.slice(-24)));
+  }
+
   function replyEditor(scope = "reply") {
+    if (scope === "article") return articleEditor();
     if (scope === "post") {
       return Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
         .find((editor) => !editor.closest('[role="dialog"]') && !editor.closest("article") && visibleEditor(editor)) || null;
@@ -204,6 +223,26 @@
     if (!phrase) return { ok: false, reason: "compose-failed" };
     const editor = replyEditor(options.scope);
     if (!editor) return { ok: false, reason: "no-editor" };
+
+    if (options.scope === "article") {
+      insertWithCommand(editor, " ");
+      await sleep(80);
+      const liveEditor = replyEditor("article") || editor;
+      const node = findDraftNode(liveEditor);
+      if (!node || !characterSample(node)) return { ok: false, reason: "compose-failed" };
+      let nextState = null;
+      try {
+        nextState = writeReplyDraft(node, phrase);
+      } catch (error) {
+        return { ok: false, reason: "compose-failed" };
+      }
+      const seen = readDraftText({ props: { editorState: nextState } });
+      await sleep(120);
+      const rendered = visibleDraftText(replyEditor("article") || liveEditor);
+      return articleFilled(seen, phrase) && articleFilled(rendered, phrase)
+        ? { ok: true, via: "draft-blocks" }
+        : { ok: false, reason: "compose-failed", seen: rendered || seen };
+    }
 
     let visible = comparableDraftText(editor, options.scope);
     if (options.scope === "post") {

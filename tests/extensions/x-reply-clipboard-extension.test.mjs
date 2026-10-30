@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url)
 const loop = require('../../tools/x-reply-clipboard-extension/loop.js')
 const mutual = require('../../tools/x-reply-clipboard-extension/mutual.js')
 const poster = require('../../tools/x-reply-clipboard-extension/poster.js')
+const articleDraft = require('../../tools/x-reply-clipboard-extension/articleDraft.js')
 const postImage = require('../../tools/x-reply-clipboard-extension/postImage.js')
 const context = require('../../tools/x-reply-clipboard-extension/context.js')
 const background = require('../../tools/x-reply-clipboard-extension/background.js')
@@ -66,6 +67,24 @@ const USER_STATE_HELPERS = `
     };
   }
 `
+
+test('article drafts keep a source link and stay unpublished copy', () => {
+  const draft = articleDraft.cleanArticle(JSON.stringify({
+    title: '模型发布了一项新能力',
+    body: '甲'.repeat(420),
+    sourceUrl: 'https://example.com/story',
+  }))
+  assert.equal(draft.title, '模型发布了一项新能力')
+  assert.equal(draft.sourceUrl, 'https://example.com/story')
+  const text = articleDraft.articleBodyText('## 做法\n\n先核对标题。', draft.sourceUrl)
+  assert.match(text, /做法/)
+  assert.match(text, /来源：https:\/\/example.com\/story/)
+  assert.equal(articleDraft.dailyCount({ day: articleDraft.dayKey(Date.parse('2026-10-30T12:00:00+08:00')), count: 3 }, Date.parse('2026-10-30T18:00:00+08:00')), 3)
+  assert.equal(articleDraft.intervalMs('slow', () => 0), 50 * 60000)
+  assert.equal(articleDraft.draftSavedStatus('已保存'), true)
+  assert.equal(articleDraft.draftSavedStatus('保存中'), false)
+  assert.throws(() => articleDraft.cleanArticle('{"title":"短","body":"太短","sourceUrl":"https://example.com"}'), /文章内容不完整/)
+})
 
 test('scheduled post formats reserve one fifth for text cards and compact posts keep blank lines', async () => {
   assert.deepEqual(poster.choosePostFormat(() => 0.19), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
@@ -775,25 +794,37 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePreview = source.match(/  function schedulePreview\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const taskActionCount = source.match(/  function taskActionCount\(mode, count\) \{[\s\S]*?\n  \}/)?.[0]
-  const scheduleHistory = source.match(/  function paintScheduleHistory\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleBoard = source.match(/  function paintScheduleBoard\(dialog\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleDesk = source.match(/  function paintScheduleDesk\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePulse = source.match(/  function scheduleItemPulse\(mode, preview, overviewTask\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleCardHelpers = [
-    source.match(/  const SCHEDULE_PACE_MODES = [\s\S]*?;/)?.[0],
     source.match(/  function schedulePriorityOptionsMarkup\(\) \{[\s\S]*?\n  \}/)?.[0],
-    source.match(/  function scheduleCardConfigInnerMarkup\(mode, label\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function taskSectionHead\(title, hint = ""\) \{[\s\S]*?\n  \}/)?.[0],
+    source.match(/  function taskScheduleConfigMarkup\(mode, label\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function defaultSchedulePriority\(mode\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function syncScheduleCardRuleControls\(row, mode\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
-  assert.ok(overview && readable && cardNoteHelpers.includes('formatScheduleCardNote') && waitInfo && readiness && details && schedulePreview && taskActionCount && scheduleHistory && scheduleBoard && scheduleDesk && schedulePulse)
-  assert.match(source, /data-xrc-schedule-expand/)
-  assert.match(source, /data-xrc-schedule-config/)
+  assert.ok(overview && readable && cardNoteHelpers.includes('formatScheduleCardNote') && waitInfo && readiness && details && schedulePreview && taskActionCount && scheduleBoard && scheduleDesk && schedulePulse)
+  assert.doesNotMatch(source, /data-xrc-schedule-config-open/)
+  assert.match(source, /data-xrc-task-schedule-config/)
+  assert.match(source, /xrc-task-section-head/)
+  assert.match(source, /taskSectionHead\("运行"/)
+  assert.doesNotMatch(source, /data-xrc-task-config/)
+  assert.doesNotMatch(source, /focusTaskScheduleConfig/)
   assert.match(source, /xrc-schedule-card-enable/)
-  assert.match(source, /scheduleCardExpandedMode/)
+  assert.doesNotMatch(source, /scheduleCardExpandedMode/)
+  assert.doesNotMatch(source, /data-xrc-schedule-expand/)
+  assert.doesNotMatch(source, /xrc-schedule-card-config-go/)
   assert.match(source, /collectAndSaveScheduleRules/)
-  assert.match(source, /data-xrc-desk-globals/)
+  assert.doesNotMatch(source, /data-xrc-desk-globals/)
+  assert.doesNotMatch(source, /data-xrc-flow-stop/)
   assert.doesNotMatch(source, /scheduleRuleRowsMarkup/)
+  assert.doesNotMatch(source, /data-xrc-schedule-slice/)
+  assert.doesNotMatch(source, /data-xrc-schedule-history/)
+  assert.doesNotMatch(source, /单项最长占用/)
+  assert.doesNotMatch(source, /本机记录/)
+  assert.doesNotMatch(source, /全流程停止/)
+  assert.doesNotMatch(source, /查看单页签排班说明/)
   assert.match(source, /Who is ready soonest becomes/)
   assert.match(source, /Title stays「正在调度中」/)
   assert.match(source, /deskOwnsCountdown/)
@@ -899,12 +930,9 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
             if (selector === '.xrc-schedule-item-side' && item.className === 'xrc-schedule-item-side') return item
             if (selector === '.xrc-schedule-item-head' && item.className === 'xrc-schedule-item-head') return item
             if (selector === '[data-xrc-inspect-task]' && item.dataset?.xrcInspectTask) return item
-            if (selector === '[data-xrc-schedule-expand]' && item.dataset?.xrcScheduleExpand) return item
-            if (selector === '[data-xrc-schedule-config]' && item.dataset?.xrcScheduleConfig != null) return item
             if (selector === '[data-xrc-schedule-enabled]' && item.dataset?.xrcScheduleEnabled) return item
             if (selector === '[data-xrc-schedule-priority]' && 'xrcSchedulePriority' in (item.dataset || {})) return item
             if (selector === '[data-xrc-schedule-window]' && 'xrcScheduleWindow' in (item.dataset || {})) return item
-            if (selector === '[data-xrc-schedule-pace]' && 'xrcSchedulePace' in (item.dataset || {})) return item
             const nested = walk(item.children || [])
             if (nested) return nested
           }
@@ -988,7 +1016,6 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       poster: { phase: 'running', updatedAt: now - 91000 },
     } },
     PANEL_ID: 'x-reply-clipboard-panel',
-    scheduleCardExpandedMode: '',
     syncTargetFollowHandlesField: async () => {},
     syncKolHandlesField: async () => {},
     document: {
@@ -1007,7 +1034,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       },
     },
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleHistory}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
   // USER_STATE_HELPERS stubs soonestWaitMs to 0; desk countdown needs a real wait.
   context.soonestWaitMs = () => 451000
   assert.equal(context.countLabel('timeline', 12), '12 条回复')
@@ -1017,7 +1044,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   context.paint(panel)
   assert.equal(list.children.length, 9)
   assert.deepEqual(Array.from(list.children, (row) => row.children[3].dataset.xrcFlowTaskOpen), ['notifications', 'timeline', 'poster-premium', 'poster', 'likes-posts', 'likes-replies', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
-  assert.equal(list.children[0].children[3].textContent, '进入')
+  assert.equal(list.children[0].children[3].textContent, '查看')
   assert.equal(list.children[0].children[0].textContent, '回复评论')
   assert.equal(list.children[0].children[1].textContent, '等待中')
   assert.equal(list.children[1].children[1].textContent, '运行中')
@@ -1040,7 +1067,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const nowGo = scheduleList.children[0].querySelector('[data-xrc-inspect-task]')
   assert.equal(nowGo?.textContent, '查看')
   assert.equal(nowGo?.dataset.xrcInspectTask, 'notifications')
-  assert.ok(scheduleList.children[0].querySelector('[data-xrc-schedule-expand]'))
+  assert.equal(scheduleList.children[0].querySelector('[data-xrc-schedule-config-open]'), null)
   assert.ok(scheduleList.children[0].querySelector('[data-xrc-schedule-enabled]'))
   assert.equal(list.children[0].children[1].textContent, '等待中')
   assert.equal(list.children[3].children[1].textContent, '需处理')
@@ -1098,7 +1125,8 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(source, /data-xrc-schedule-desk/)
   assert.match(source, /data-xrc-schedule-board aria-label="实时排班情况"/)
   assert.match(source, /data-xrc-inspect-task/)
-  assert.match(source, /data-xrc-schedule-expand/)
+  assert.doesNotMatch(source, /data-xrc-schedule-config-open/)
+  assert.doesNotMatch(source, /data-xrc-schedule-expand/)
   assert.doesNotMatch(source, /data-xrc-focus-execution/)
   assert.match(source, /dataset\.pulse/)
   assert.match(css, /data-pulse="waiting"/)
@@ -1299,16 +1327,18 @@ test('flow button and detail agree across active, stale, stopped, and blocked st
   context.flowStopping = true
   assert.deepEqual({ label: read().label, action: read().action }, { label: '正在停止', action: '' })
   assert.match(source, /toggle\.textContent = mode === "pause" \? "暂停" : "开始"/)
-  assert.match(source, /data-xrc-flow-stop/)
+  assert.match(source, /data-xrc-schedule-toggle/)
+  assert.doesNotMatch(source, /data-xrc-flow-stop/)
   assert.match(source, /data-xrc-flow-hint/)
 })
 
 test('all seven scheduled task buttons use the same waiting state as the flow detail', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const control = source.match(/  function scheduledTaskButtonState\(mode, localActive, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const deskDefinition = source.match(/  function scheduleDashboardActive\(\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(overview && control && deskDefinition)
+  assert.ok(overview && waitInfo && control && deskDefinition)
   const modes = ['timeline', 'notifications', 'mutual-unfollow', 'mutual-followBack', 'poster', 'poster-premium', 'likes-posts', 'likes-replies']
   const now = Date.now()
   const context = vm.createContext({
@@ -1326,7 +1356,7 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
     formatClock: () => '01:00',
     formatCountdown: () => '1 分 0 秒',
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${deskDefinition}\n${overview}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${deskDefinition}\n${overview}\n${waitInfo}\n${control}\nglobalThis.control = scheduledTaskButtonState`, context)
   for (const mode of modes) {
     const expected = mode === 'poster'
       ? '等待中 · 约 1 分 0 秒 · 点击查看'
@@ -1370,6 +1400,21 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.pluginRuntime.tasks.poster = { phase: 'running', updatedAt: now - 91000 }
   assert.equal(context.control('poster', false, now).label, '需处理 · 点击查看')
   assert.equal(context.control('timeline', false, now), null)
+
+  context.taskSchedule.enabled = true
+  context.deskHome = false
+  context.selectedTaskMode = 'notifications'
+  context.taskSchedule.current = 'notifications'
+  context.taskSchedule.startedAt = now - 30000
+  context.pluginRuntime.tasks = { notifications: { phase: 'starting', updatedAt: now } }
+  const starting = context.control('notifications', false, now)
+  assert.equal(starting.label, '启动中 · 约 1 分 0 秒 · 请稍候')
+  assert.equal(starting.action, 'none')
+  assert.equal(starting.disabled, true)
+  assert.equal(starting.busy, true)
+  assert.match(starting.title, /正在确认页内任务启动/)
+  context.taskSchedule.startedAt = 0
+  assert.equal(context.control('notifications', false, now).label, '启动中 · 请稍候')
 })
 
 test('single task click refreshes background schedule before acting on a stale start label', async () => {
@@ -1572,6 +1617,15 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   assert.equal(limited.remaining, 60000)
   context.taskSchedule.timeline.future = [{ mode: 'poster-premium', readyAt: now + 3600000 }]
   assert.equal(context.waitInfo('poster-premium', now).label, '等待精品档位')
+  context.pluginRuntime.tasks.timeline = { phase: 'starting' }
+  context.taskSchedule.startedAt = now - 30000
+  const starting = context.waitInfo('timeline', now)
+  assert.equal(starting.kind, 'starting')
+  assert.equal(starting.label, '正在启动')
+  assert.equal(starting.detail, '正在确认页内任务启动')
+  assert.equal(starting.remaining, 60000)
+  context.taskSchedule.startedAt = 0
+  assert.equal(context.waitInfo('timeline', now).remaining, 0)
   assert.match(css, /xrc-task-schedule-notice\[data-state="waiting"\] strong::before/)
   assert.match(css, /prefers-reduced-motion: reduce/)
 })
@@ -1731,6 +1785,7 @@ test('scheduled starts bypass manual waiting-button actions', async () => {
     getLikeController: () => ({ start() { likeState.running = true; starts += 1 } }),
     postApi: { setPostKind() {}, start() { state.poster.running = true; starts += 1 } },
     flushConfigSave: async () => true, loadAiSettings: async () => {},
+    isTaskUnlimited: () => false,
     registerCurrentTaskTab() {}, updatePosterState() {}, renderPanel() {},
   })
   vm.runInContext(`${likeToggle}\n${posterToggle}\nglobalThis.startLike = toggleLikes; globalThis.startPoster = onPosterToggle`, context)
@@ -1749,6 +1804,8 @@ test('handoff cannot report running from another task while the target is idle',
     state, likeState: { running: false, stopping: false }, deskHome: false, selectedTaskMode: 'notifications',
     launchFromMode: () => ({ taskKey: 'likes-posts', assistantMode: 'likes-posts', start: true }),
     pathReadyForTask: () => true,
+    pruneState: { running: false, stopping: false },
+    articleState: { running: false, stopping: false },
     currentTaskKey: () => 'timeline', stopLocalTasks: () => { state.running = false },
     sessionStorage: { setItem() {} },
     applyTaskTitle() {}, registerCurrentTaskTab: async () => {},
@@ -1800,7 +1857,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 7)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 8)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -5053,7 +5110,10 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.isFollowersPath('/home'), false)
   assert.equal(mutual.constants.FOLLOW_ACTION_DELAY_MS, 2000)
   assert.equal(mutual.constants.FOLLOW_BATCH_SIZE, 15)
-  assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 1800000)
+  assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 20 * 60 * 1000)
+  assert.deepEqual(mutual.constants.FOLLOW_ROUND_GAP_SECONDS, { slow: 30 * 60, medium: 20 * 60, fast: 10 * 60, turbo: 5 * 60 })
+  assert.equal(mutual.followBatchCooldownMs('slow'), 30 * 60 * 1000)
+  assert.equal(mutual.createFollowBackPlan('medium', () => 0).roundIntervalMs, 20 * 60 * 1000)
   assert.equal(mutual.constants.FOLLOW_MAX_PER_RUN, 400)
   assert.equal(mutual.constants.FOLLOW_DAILY_LIMIT, 400)
   assert.equal(mutual.constants.RATE_LIMIT_COOLDOWN_MS, 15 * 60 * 1000)
@@ -5079,7 +5139,7 @@ test('a followed-back account is kept when any name or bio fragment contains Chi
 test('follow-back checks a Chinese name or bio before other visible fans', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const profileHasChinese = source.match(/  function profileHasChinese\(row\) \{[\s\S]*?\n  \}/)?.[0]
-  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate\) \{[\s\S]*?\n  \}/)?.[0]
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(profileHasChinese && runWithStorage)
   const profileContext = vm.createContext({ textOf: (node) => node.textContent, FOLLOWS_YOU_RE: /(Follows you|关注了你)/i })
   vm.runInContext(`${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
@@ -5101,8 +5161,9 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
     visibleRows: () => candidates, actFollowBack: async (item) => { picked.push(item.handle); state.stopping = true; return true },
     actUnfollow: async () => true, actTargetFollow: async () => true, reportMutualAction: () => {},
     waitForPlatformRateLimit: async () => true, persistSharedFollowRate: async () => {}, sleepActive: async () => {},
-    FOLLOW_DAILY_LIMIT: 400, FOLLOW_BATCH_SIZE: 15, FOLLOW_BATCH_COOLDOWN_MS: 1800000,
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_BATCH_SIZE: 15, FOLLOW_BATCH_COOLDOWN_MS: 20 * 60 * 1000,
     FOLLOW_ACTION_DELAY_MS: 2000, MAX_STALLED_SCROLLS: 4,
+    followBatchCooldownMs: () => 20 * 60 * 1000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   assert.equal(await context.runTest('followBack', () => {}), true)
@@ -5111,7 +5172,7 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
 
 test('unfollow waits two seconds and rescans after reaching the bottom without applying the shared follow quota', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
-  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate\) \{[\s\S]*?\n  \}/)?.[0]
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(runWithStorage)
   const waits = []
   let clock = 1000
@@ -5144,9 +5205,10 @@ test('unfollow waits two seconds and rescans after reaching the bottom without a
     Date: { now: () => clock },
     formatClock: () => '30:00',
     FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
-    FOLLOW_BATCH_SIZE: 15, FOLLOW_BATCH_COOLDOWN_MS: 1800000,
+    FOLLOW_BATCH_SIZE: 15, FOLLOW_BATCH_COOLDOWN_MS: 20 * 60 * 1000,
     FOLLOW_ACTION_DELAY_MS: 2000, MAX_STALLED_SCROLLS: 4, RESCAN_INTERVAL_MS: 30 * 60 * 1000,
     SCROLL_DELAY_MS: 450,
+    followBatchCooldownMs: () => 20 * 60 * 1000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   assert.equal(await context.runTest('unfollow', () => {}), true)
@@ -5657,23 +5719,26 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /评论过于频繁，时间线和通知回复已停止/)
   assert.doesNotMatch(backgroundSource, /xrc-risk-stop-all/)
   assert.match(content, /停止全部任务/)
-  assert.match(content, /data-xrc-flow-stop/)
-  assert.match(content, /全流程停止/)
-  assert.match(content, /关页签不会关掉后台排班/)
-  assert.match(content, /xrc-schedule-stop-all/)
-  assert.match(content, /xrc-schedule-stop-all" data-xrc-flow-stop/)
-  assert.doesNotMatch(content, /data-xrc-flow-hint hidden><\/p>\s*<button[^>]*data-xrc-flow-stop/)
-  assert.match(content, /xrc-desk-settings/)
-  assert.match(content, /data-xrc-desk-globals-open/)
-  assert.match(content, /data-xrc-desk-globals/)
+  assert.doesNotMatch(content, /data-xrc-flow-stop/)
+  assert.doesNotMatch(content, /全流程停止/)
+  assert.doesNotMatch(content, /xrc-schedule-stop-all/)
+  assert.doesNotMatch(content, /data-xrc-desk-globals/)
+  assert.doesNotMatch(content, /data-xrc-desk-globals-open/)
+  assert.doesNotMatch(content, /xrc-desk-settings/)
   assert.doesNotMatch(content, /data-xrc-config-open="schedule"/)
   assert.doesNotMatch(content, /scheduleRuleRowsMarkup/)
-  assert.match(content, /xrc-desk-settings[\s\S]*?<circle fill="currentColor" cx="14" cy="8"/)
-  assert.doesNotMatch(content, /xrc-desk-settings[\s\S]*?M19\.14 12\.94/)
   assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
-  assert.match(content, /xrc-schedule-settings/)
+  assert.match(content, /data-xrc-desk-home>排班台/)
   assert.match(content, /xrc-schedule-rule-controls/)
-  assert.match(content, /xrc-schedule-card-expand/)
+  assert.doesNotMatch(content, /xrc-schedule-card-config-go/)
+  assert.doesNotMatch(content, /data-xrc-schedule-config-open/)
+  assert.match(content, /data-xrc-task-schedule-config/)
+  assert.match(content, /xrc-task-section/)
+  assert.match(content, /xrc-reply-body[\s\S]*?taskSectionHead\("运行"[\s\S]*?data-xrc-toggle[\s\S]*?taskScheduleConfigMarkup\("kol"/)
+  assert.doesNotMatch(content, /data-xrc-task-config/)
+  assert.doesNotMatch(content, /xrc-task-config-link/)
+  assert.doesNotMatch(content, /xrc-schedule-card-expand/)
+  assert.doesNotMatch(content, /data-xrc-schedule-expand/)
   assert.match(content, /data-xrc-config-open/)
   assert.match(content, /data-xrc-embed/)
   assert.match(content, /xrcPanelPlacement/)
@@ -5780,25 +5845,29 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(windowPlan, /真实面板/)
   assert.match(windowPlan, /面板长什么样/)
   assert.doesNotMatch(windowPlan, /账号 A/)
-  assert.match(docsPage, /评论、点赞、关注和发帖共十二项任务/)
+  assert.match(docsPage, /评论、点赞、关注、发帖和普通发文共十三项任务/)
   assert.match(docsPage, /id: 'reply-kol', label: '评论大V', depth: 2/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
-  assert.match(docsPage, /「进入」或「查看」/)
+  assert.match(docsPage, /右侧「查看」打开任务子页/)
+  assert.match(docsPage, /子页先速度表与启停/)
+  assert.doesNotMatch(docsPage, /右上角「配置」/)
+  assert.doesNotMatch(docsPage, /「进入」/)
+  assert.doesNotMatch(docsPage, /展开配置|卡片展开区/)
   assert.match(docsPage, /上一任务 \/ 当前任务 \/ 下一任务/)
   assert.match(docsPage, /完成本次全部轮次后才让出共享执行页签|完成本次全部轮次后让出共享页签/)
   assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
   assert.match(docsPage, /运行中绿边跑马灯，等待中黄边跑马灯，已停止 \/ 需处理红边呼吸/)
   assert.match(docsPage, /未勾选参与的卡片降饱和并沉底/)
-  assert.match(docsPage, /台底全局区有「停止全部」|台底全局区仍有「停止全部」/)
+  assert.doesNotMatch(docsPage, /台底全局区/)
+  assert.doesNotMatch(docsPage, /停止全部/)
   assert.match(docsPage, /SINGLE_BUTTON_ROWS[\s\S]*正在停止', '等待中 · 请稍候'/)
   assert.match(docsPage, /FLOW_BUTTON_ROWS[\s\S]*启动排班/)
   assert.match(docsPage, /有任务在跑', '状态点', '右上角「暂停」'/)
   assert.match(docsPage, /在排队等下一项', '状态点', '右上角「暂停」'/)
-  assert.match(docsPage, /停止全部/)
   assert.match(docsPage, /右上角「暂停」/)
   assert.match(content, /data-xrc-schedule-toggle data-mode="pause">暂停/)
   assert.match(docsPage, /只关页签不会关掉后台排班|只关执行页签不会关掉后台排班/)
@@ -5806,7 +5875,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
   assert.match(docsPage, /一次按速度抓一批/)
   assert.match(docsPage, /从已安装的 v3 下载包切到本地 v4/)
-  assert.match(docsPage, /第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
+  assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
+  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
   assert.match(docsPage, /回关粉丝优先处理姓名或简介含汉字的账号/)
@@ -6059,6 +6129,13 @@ test('mutual unfollow defaults to about once a week and keeps a longer occupancy
   const now = Date.parse('2026-10-28T10:00:00+08:00')
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+  assert.equal(rules['prune-posts'].minGapMs, background.PRUNE_MIN_GAP_MS)
+  assert.equal(background.PRUNE_MIN_GAP_MS, 7 * 24 * 60 * 60 * 1000)
+  assert.equal(background.normalizedTaskRules({ 'prune-posts': { minGapMs: background.LEGACY_PRUNE_GAP_MS } })['prune-posts'].minGapMs, background.PRUNE_MIN_GAP_MS)
+  assert.equal(background.taskUnlimitedEnabled('prune-posts', {}), true)
+  assert.equal(background.taskUnlimitedEnabled('mutual-unfollow', {}), true)
+  assert.equal(background.taskUnlimitedEnabled('prune-posts', { 'prune-posts': false }), true)
+  assert.equal(background.taskUnlimitedEnabled('timeline', {}), false)
   assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
   assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 8 * 60 * 60 * 1000)
   assert.equal(background.sliceMsForMode('likes-posts', { sliceSeconds: 30 }), background.LIKE_SLICE_MS)
@@ -6069,6 +6146,10 @@ test('mutual unfollow defaults to about once a week and keeps a longer occupancy
   assert.ok(rules.timeline.priority > rules['poster-premium'].priority)
   assert.ok(rules['poster-premium'].priority > rules.poster.priority)
   assert.equal(rules['poster-x'].priority, rules.poster.priority)
+  assert.equal(rules.article.priority, rules.poster.priority)
+  assert.equal(rules.article.pace, 'slow')
+  assert.equal(rules.article.minGapMs, background.articleMinGapMs('slow'))
+  assert.equal(background.sliceMsForMode('article', { sliceSeconds: 30 }), background.ARTICLE_SLICE_MS)
   assert.equal(rules['poster-x'].pace, 'slow')
   assert.equal(rules['poster-x'].enabled, true)
   assert.ok(rules.poster.priority > rules['likes-posts'].priority)
@@ -6112,8 +6193,8 @@ test('default schedule ranks frequent actions first and reserves follow-back for
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'notifications', 'timeline', 'poster', 'poster-x', 'likes-posts', 'likes-replies',
-    'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow',
+    'notifications', 'timeline', 'kol', 'poster', 'poster-x', 'article', 'likes-posts', 'likes-replies',
+    'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow', 'prune-posts',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
@@ -7083,8 +7164,8 @@ test('a briefly unresponsive likes task holds the shared tab without reloading',
   }
 })
 
-test('both comment tasks keep a growing cooldown instead of requiring manual restart', async () => {
-  const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {} } }
+test('comment tasks share one growing cooldown and clear it together on success', async () => {
+  const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {}, replyRiskVersion: 2 } }
   globalThis.chrome = {
     storage: {
       local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
@@ -7093,18 +7174,21 @@ test('both comment tasks keep a growing cooldown instead of requiring manual res
     tabs: { async sendMessage() {} },
   }
   try {
-    for (const task of ['timeline-reply', 'notification-reply']) {
-      const mode = task === 'timeline-reply' ? 'timeline' : 'notifications'
-      for (let index = 1; index <= 4; index += 1) {
-        const before = Date.now()
-        await background.noteScheduledAction({ task, result: 'limited', errorCode: 'risk-blocked' })
+    const replyModes = ['timeline', 'notifications', 'kol']
+    for (let index = 1; index <= 4; index += 1) {
+      const before = Date.now()
+      const task = index % 3 === 1 ? 'timeline-reply' : index % 3 === 2 ? 'notification-reply' : 'kol-reply'
+      await background.noteScheduledAction({ task, result: 'limited', errorCode: 'risk-blocked' })
+      for (const mode of replyModes) {
         const item = local.xrcTaskSchedule.items[mode]
         assert.equal(item.blocked, false)
         assert.equal(item.limitedStreak, index)
         assert.ok(item.resumeAt >= before + index * 10 * 60000)
-        assert.match(item.reason, /自动重试/)
+        assert.match(item.reason, /评论三项共用/)
       }
-      await background.noteScheduledAction({ task, result: 'success' })
+    }
+    await background.noteScheduledAction({ task: 'kol-reply', result: 'success' })
+    for (const mode of replyModes) {
       assert.equal(local.xrcTaskSchedule.items[mode].limitedStreak, 0)
       assert.equal(local.xrcTaskSchedule.items[mode].resumeAt, 0)
     }
@@ -7113,7 +7197,7 @@ test('both comment tasks keep a growing cooldown instead of requiring manual res
   }
 })
 
-test('old blocked comment tasks migrate once to saved automatic cooldowns', async () => {
+test('old blocked comment tasks migrate once to a shared automatic cooldown', async () => {
   const local = { xrcTaskSchedule: { enabled: true, current: '', cursor: 0, items: {
     timeline: { blocked: true, limitedStreak: 3, reason: 'risk-blocked' },
     notifications: { blocked: true, limitedStreak: 2, reason: 'risk-blocked' },
@@ -7125,12 +7209,16 @@ test('old blocked comment tasks migrate once to saved automatic cooldowns', asyn
   try {
     const before = Date.now()
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.replyRiskVersion, 1)
-    for (const [mode, minutes] of [['timeline', 30], ['notifications', 20]]) {
+    assert.equal(plan.replyRiskVersion, 2)
+    for (const mode of ['timeline', 'notifications', 'kol']) {
       assert.equal(plan.items[mode].blocked, false)
-      assert.ok(plan.items[mode].resumeAt >= before + minutes * 60000)
+      assert.equal(plan.items[mode].limitedStreak, 3)
+      assert.ok(plan.items[mode].resumeAt >= before + 30 * 60000)
+      assert.match(plan.items[mode].reason, /评论三项共用|自动重试/)
     }
     const deadline = plan.items.timeline.resumeAt
+    assert.equal(plan.items.notifications.resumeAt, deadline)
+    assert.equal(plan.items.kol.resumeAt, deadline)
     assert.equal((await background.readTaskSchedule()).items.timeline.resumeAt, deadline)
   } finally {
     delete globalThis.chrome

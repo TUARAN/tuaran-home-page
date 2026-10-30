@@ -2,11 +2,18 @@
   "use strict";
 
   const VIEW_LIMIT = 100;
+  const VIEW_WEAK = 400;
+  const VIEW_STEP = 50;
+  const TEXT_VIEW_EXTRA = 100;
+  const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="videoPlayer"], [data-testid="videoComponent"]';
+  const LOW_LIKE_KEEP = 2;
   const MIN_AGE_MS = 24 * 60 * 60 * 1000;
+  const MONTH_AGE_MS = 30 * MIN_AGE_MS;
   const DELETE_GAP_MS = 3500;
   const UNLIMITED_DELETE_GAP_MS = 400;
+  const RESCAN_GAP_MS = 60 * 1000;
   const ROUND_SIZE = 15;
-  const SESSION_GAP_MS = 24 * 60 * 60 * 1000;
+  const SESSION_GAP_MS = 7 * 24 * 60 * 60 * 1000;
   const RATE_LIMIT_WARNING = /(?:rate limit|too many requests|操作过于频繁|超出限制|达到上限|暂时无法)/iu;
 
   function parseCount(value) {
@@ -21,14 +28,35 @@
     return Number.isFinite(amount) ? amount : null;
   }
 
-  function replyCountFromLabel(label, visibleText = "") {
+  function countFromLabel(label, visibleText, verbPattern) {
     const source = `${label || ""} ${visibleText || ""}`;
-    const matched = source.match(/(\d+(?:\.\d+)?\s*[kKmM万]?)\s*(?:repl(?:y|ies)|条回复|回复)/iu);
+    const matched = source.match(new RegExp(`(\\d+(?:\\.\\d+)?\\s*[kKmM万]?)\\s*(?:个|次)?\\s*(?:${verbPattern})`, "iu"));
     if (matched) return parseCount(matched[1]);
     const visible = String(visibleText || "").trim();
     if (/^\d/u.test(visible)) return parseCount(visible);
-    if (/^(?:reply|回复)$/iu.test(String(label || "").trim()) && !/\d/u.test(visible)) return 0;
+    const verbOnly = new RegExp(`^(?:${verbPattern})$`, "iu");
+    if (verbOnly.test(String(label || "").trim()) && !/\d/u.test(visible)) return 0;
     return null;
+  }
+
+  function replyCountFromLabel(label, visibleText = "") {
+    return countFromLabel(label, visibleText, "repl(?:y|ies)|条回复|回复");
+  }
+
+  function likeCountFromLabel(label, visibleText = "") {
+    return countFromLabel(label, visibleText, "likes?|喜欢|赞");
+  }
+
+  function repostCountFromLabel(label, visibleText = "") {
+    return countFromLabel(label, visibleText, "reposts?|转帖|转推");
+  }
+
+  function bookmarkCountFromLabel(label, visibleText = "") {
+    return countFromLabel(label, visibleText, "bookmarks?|书签|收藏");
+  }
+
+  function quoteCountFromLabel(label, visibleText = "") {
+    return countFromLabel(label, visibleText, "quotes?|引用");
   }
 
   function viewCountFromLabel(label, visibleText = "") {
@@ -40,13 +68,44 @@
     return null;
   }
 
-  function classifyPost(post, now, options = {}) {
+  function knownCount(value) {
+    if (value == null || value === "") return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : null;
+  }
+
+  function ageViewLimit(age) {
+    const steps = Math.floor(Number(age) / MONTH_AGE_MS);
+    if (steps < 1) return null;
+    return VIEW_LIMIT + VIEW_STEP * steps;
+  }
+
+  function postIsTextOnly(article) {
+    return !article?.querySelector?.(MEDIA_SELECTOR);
+  }
+
+  function classifyPost(post, now) {
     if (!post?.own || post.repost || post.pinned) return false;
     const at = Number(post.at) || 0;
-    if (at <= 0) return false;
-    if (!options.ignoreAge && now - at < MIN_AGE_MS) return false;
-    const views = Number(post.views);
-    return post.views != null && Number.isFinite(views) && views < VIEW_LIMIT;
+    if (at <= 0 || now - at < MIN_AGE_MS) return false;
+    const views = knownCount(post.views);
+    if (views == null) return false;
+    const age = now - at;
+    const extra = post.textOnly === false ? TEXT_VIEW_EXTRA : 0;
+    const ageLimit = ageViewLimit(age);
+    if (ageLimit != null && views < ageLimit + extra) return true;
+    const likes = knownCount(post.likes);
+    const replies = knownCount(post.replies);
+    const reposts = knownCount(post.reposts);
+    const bookmarks = knownCount(post.bookmarks);
+    if (likes == null || replies == null || reposts == null || bookmarks == null) return false;
+    const quotes = knownCount(post.quotes) || 0;
+    const strong = replies + reposts + quotes + bookmarks;
+    const viewLimit = VIEW_LIMIT + extra;
+    const viewWeak = VIEW_WEAK + extra;
+    if (views < viewLimit) return strong === 0 && likes < LOW_LIKE_KEEP;
+    if (views < viewWeak) return likes + strong === 0;
+    return false;
   }
 
   function articleText(node) {
@@ -66,6 +125,10 @@
     const owner = String(handle || "").replace(/^@/u, "").toLowerCase();
     const context = articleText(article.querySelector?.('[data-testid="socialContext"]'));
     const reply = article.querySelector?.('[data-testid="reply"]');
+    const like = article.querySelector?.('[data-testid="like"], [data-testid="unlike"]');
+    const repost = article.querySelector?.('[data-testid="retweet"], [data-testid="unretweet"]');
+    const bookmark = article.querySelector?.('[data-testid="bookmark"], [data-testid="removeBookmark"]');
+    const quote = article.querySelector?.('a[href*="/quotes"]');
     const analytics = article.querySelector?.('a[href*="/analytics"]');
     const time = Date.parse(article.querySelector?.("time")?.getAttribute?.("datetime") || "");
     return {
@@ -76,6 +139,11 @@
       at: Number.isFinite(time) ? time : 0,
       views: viewCountFromLabel(analytics?.getAttribute?.("aria-label") || "", articleText(analytics)),
       replies: replyCountFromLabel(reply?.getAttribute?.("aria-label") || "", articleText(reply)),
+      likes: likeCountFromLabel(like?.getAttribute?.("aria-label") || "", articleText(like)),
+      reposts: repostCountFromLabel(repost?.getAttribute?.("aria-label") || "", articleText(repost)),
+      bookmarks: bookmarkCountFromLabel(bookmark?.getAttribute?.("aria-label") || "", articleText(bookmark)),
+      quotes: quote ? quoteCountFromLabel(quote.getAttribute?.("aria-label") || "", articleText(quote)) || 0 : 0,
+      textOnly: postIsTextOnly(article),
       now
     };
   }
@@ -165,11 +233,10 @@
 
     function nextCandidate() {
       const handle = accountHandle();
-      const ignoreAge = Boolean(plan?.unlimited);
       for (const article of profileArticles()) {
         const metrics = readPostMetrics(article, handle, now());
         if (!metrics?.id || skipped.has(metrics.id)) continue;
-        if (!classifyPost(metrics, now(), { ignoreAge })) {
+        if (!classifyPost(metrics, now())) {
           skipped.add(metrics.id);
           continue;
         }
@@ -230,7 +297,7 @@
       const deleteGapMs = unlimited ? UNLIMITED_DELETE_GAP_MS : DELETE_GAP_MS;
       skipped.clear();
       update(unlimited
-        ? `开始不限速清理低质帖：含 24 小时内帖子，连续删除直到暂停或 X 提示受限。`
+        ? "开始清理低质帖：不限速，图文和纯文字按各自阅读线连续删除，直到 X 提示受限。"
         : `开始清理低质帖，本次 ${plan.rounds} 轮，每轮 ${plan.roundSize} 条。`);
       let stagnant = 0;
       const stagnantLimit = unlimited ? 10 : 5;
@@ -257,8 +324,12 @@
           if (stagnant >= stagnantLimit) {
             if (plan.roundCount > 0) plan.completedRounds += 1;
             if (unlimited) {
-              update(`主页已扫完，不限速共删除 ${deleted} 条`);
-              break;
+              skipped.clear();
+              stagnant = 0;
+              if (typeof win?.scrollTo === "function") win.scrollTo(0, 0);
+              update(`不限速 · 已删 ${deleted} 条 · 主页已扫完，从顶部继续`);
+              await sleep(RESCAN_GAP_MS);
+              continue;
             }
             await holdForNextDay(`主页已扫完，本次 ${plan.completedRounds} 轮已完成，共删除 ${deleted} 条`);
             break;
@@ -323,13 +394,26 @@
 
   const api = {
     VIEW_LIMIT,
+    VIEW_WEAK,
+    VIEW_STEP,
+    TEXT_VIEW_EXTRA,
+    LOW_LIKE_KEEP,
     MIN_AGE_MS,
+    MONTH_AGE_MS,
+    ageViewLimit,
+    postIsTextOnly,
     DELETE_GAP_MS,
     UNLIMITED_DELETE_GAP_MS,
+    RESCAN_GAP_MS,
     ROUND_SIZE,
     createPrunePlan,
     parseCount,
+    countFromLabel,
     replyCountFromLabel,
+    likeCountFromLabel,
+    repostCountFromLabel,
+    bookmarkCountFromLabel,
+    quoteCountFromLabel,
     viewCountFromLabel,
     classifyPost,
     readPostMetrics,

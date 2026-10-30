@@ -44,6 +44,7 @@ import { SITE_HERO_TAGLINE, SITE_HERO_TITLE } from '../../lib/site/siteIntro'
 import { getHomeRecommendationCatalog } from '../../lib/home/homeHighlights'
 import { getLatestFeedItems } from './feed/data'
 import { SECONDARY_SITES } from '../../lib/site/secondarySites'
+import { HOME_MOBILE_CHANNELS } from '../../lib/site/siteMobileNav'
 import HomeCodexResetCard from './components/HomeCodexResetCard'
 import HomeOpinionSignals from './components/HomeOpinionSignals'
 import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
@@ -424,6 +425,34 @@ function SocialMediaCard({ item }) {
   )
 }
 
+function HomeMobileDirectory() {
+  return (
+    <nav className="home-mobile-directory lg:hidden" aria-label="首页入口">
+      {HOME_MOBILE_CHANNELS.map((group) => (
+        <section key={group.key} className="home-mobile-directory-group" aria-labelledby={`home-mobile-${group.key}`}>
+          <h2 id={`home-mobile-${group.key}`}>
+            <T zh={group.label} en={group.labelEn} />
+          </h2>
+          <div className="home-mobile-directory-links">
+            {group.items.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                data-analytics-event="entry_click"
+                data-analytics-surface="home_mobile_directory"
+                data-analytics-destination-kind="page"
+                data-analytics-destination-id={item.key}
+              >
+                <T zh={item.label} en={item.labelEn} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
+    </nav>
+  )
+}
+
 function HomeOpinionPanel() {
   return (
     <section className="home-section home-opinion-panel min-w-0 self-start">
@@ -761,6 +790,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <div className="home-backdrop" aria-hidden="true" />
       <HomeAllianceBanner />
       <FestivalBanner />
+      <HomeMobileDirectory />
       <HomeMasonry>
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />

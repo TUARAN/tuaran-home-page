@@ -24,10 +24,14 @@ test('H5 tab bar covers the five high-frequency destinations', () => {
   assert.deepEqual(tabKeys, ['home', 'content', 'tools', 'community', 'me'])
 })
 
-test('home mobile channels stay on reading destinations', () => {
-  assert.match(navSource, /href: '\/#articles'[\s\S]*label: '推荐'/)
+test('home mobile channels keep article titles plus interactive and circle entries', () => {
+  assert.match(navSource, /label: '文章'[\s\S]*href: '\/#articles'[\s\S]*label: '推荐阅读'/)
   assert.match(navSource, /href: '\/frontend-weekly'[\s\S]*label: '周看'/)
   assert.match(navSource, /href: '\/web3'[\s\S]*label: '市场'/)
+  assert.match(navSource, /label: '互动'[\s\S]*href: '\/rich-pages'[\s\S]*label: '互动专题'/)
+  assert.match(navSource, /label: '圈子'[\s\S]*href: '\/circles'[\s\S]*label: '交友进社群'/)
+  assert.match(pageSource, /home-mobile-directory/)
+  assert.match(pageSource, /HOME_MOBILE_CHANNELS/)
   assert.doesNotMatch(navSource, /href: '\/a-share-research'[\s\S]*label: 'A股'/)
   assert.doesNotMatch(navSource, /href: '\/crypto-research'[\s\S]*label: '加密'/)
   assert.doesNotMatch(navSource, /本站为什么|接下来/)

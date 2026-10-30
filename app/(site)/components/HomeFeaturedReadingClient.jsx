@@ -290,7 +290,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
         <p className="home-section-description"><T zh="研究文章、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
       </div>
       <div className="home-article-scopes">
-        <p className="h5-feed-label md:hidden">文章精选</p>
+        <h2 className="h5-feed-label md:hidden"><T zh="文章精选" en="Selected articles" /></h2>
         <nav className="home-section-tabs" role="tablist" aria-label="首页文章范围">
           {HOME_ARTICLE_SCOPE_KEYS.map((key) => {
             const active = scope === key

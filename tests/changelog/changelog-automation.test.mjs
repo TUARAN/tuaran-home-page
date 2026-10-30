@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
+import { CHANGELOG } from '../../lib/automation/changelogData.js'
 import {
   buildChangelogPrompt,
   compactCommitHistory,
@@ -29,6 +31,15 @@ const PERIOD = {
   highlights: ['完成第一项可验证变化。', '完成第二项可验证变化。', '完成第三项可验证变化。'],
   signal: '后续继续观察自动生成质量和任务运行稳定性。',
 }
+
+test('scheduled update has a commit cursor and stages the files it writes', () => {
+  assert.match(CHANGELOG[0].lastCommit, /^[0-9a-f]{40}$/)
+  const workflow = readFileSync(new URL('../../.github/workflows/changelog-update.yml', import.meta.url), 'utf8')
+  for (const file of ['lib/automation/changelogData.js', 'lib/automation/changelogPeriodSummaries.js']) {
+    assert.match(workflow, new RegExp(file.replaceAll('/', '\\/').replaceAll('.', '\\.')))
+  }
+  assert.doesNotMatch(workflow, /lib\/changelogData\.js|lib\/changelogPeriodSummaries\.js/)
+})
 
 test('commits are grouped by ISO week in chronological order', () => {
   const groups = groupCommitsByIsoWeek([

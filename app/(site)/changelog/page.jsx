@@ -27,11 +27,10 @@ export default function ChangelogPage() {
           Site Changelog · 站点更新记录
         </p>
         <h1 className="mt-2 font-serif text-2xl font-semibold tracking-wide text-[#15140f] dark:text-gray-100 md:text-3xl">
-          按时间看这个站点如何长出来
+          功能与内容更新记录
         </h1>
         <p className="mt-3 max-w-3xl text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-          这里既记录站点已经完成的迭代，也保留接下来准备推进的事项。默认按自然周查看，也可以切换到月度、
-          季度和年度；同一周期内发生的多次更新会自动收拢，不再重复展示多套版本号。
+          按自然周查看已完成的功能与内容更新，也可以切换到月度、季度和年度。部分历史记录还列有后续计划。
         </p>
         <dl className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[

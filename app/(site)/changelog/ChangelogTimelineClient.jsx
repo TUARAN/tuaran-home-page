@@ -29,7 +29,7 @@ function ChangelogSections({ entry }) {
   }
 
   return (
-    <div className="mt-3 grid gap-4 xl:grid-cols-2">
+    <div className={`mt-3 grid gap-4 ${plannedItems.length > 0 ? 'xl:grid-cols-2' : ''}`}>
       <section>
         <h4 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-accent)]">
           已做
@@ -40,16 +40,14 @@ function ChangelogSections({ entry }) {
           <p className="text-[13px] leading-6 text-[var(--site-faint)]">（本周期尚未交付）</p>
         )}
       </section>
-      <section>
-        <h4 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">
-          计划
-        </h4>
-        {plannedItems.length > 0 ? (
+      {plannedItems.length > 0 ? (
+        <section>
+          <h4 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--site-faint)]">
+            计划
+          </h4>
           <ChangelogItemList items={plannedItems} markerClass="bg-[#c8cabb] dark:bg-[#4a5568]" />
-        ) : (
-          <p className="text-[13px] leading-6 text-[var(--site-faint)]">（暂无后续计划）</p>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   )
 }

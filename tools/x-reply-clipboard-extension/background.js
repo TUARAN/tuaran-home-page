@@ -21,7 +21,7 @@ const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcL
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
-const TASK_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "poster", "poster-premium", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -52,7 +52,7 @@ const GROK_REPLY_PROMPT = "这条可以带 @grok。可直接以 @grok 开头接�
 
 const POST_NORMAL_PROMPT = [
   "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
-  "可以用平台常见钩子开头，例如：说个暴论， / 我真心觉得， / 我操我操我操。钩子后换行（可空一行），再写具体事和看法。没有钩子时，第一句直接说清谁做了什么。",
+  "可以用平台常见钩子开头，例如：说个暴论， / 我真心觉得， / 卧槽卧槽卧槽。钩子后换行（可空一行），再写具体事和看法。没有钩子时，第一句直接说清谁做了什么。",
   "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
   "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
   "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
@@ -65,6 +65,15 @@ const POST_PREMIUM_PROMPT = [
   "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
   "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
   "整条有明确立场，不必两边讨好；禁止假对比套话和自我指涉写作过程。",
+  "不写币、代币、合约、$。"
+].join("\n");
+
+const POST_X_PROMPT = [
+  "依据给出的主题，写一条 X 中文短帖，发出去时会做成文字卡片。只输出正文。",
+  "题材只限：X 的时间线和社交功能、Grok 与 xAI、Tesla 的电动车储能和机器人、SpaceX 的火箭与星链、Neuralink、The Boring Company。",
+  "只写两行，发出去时两行都在文字卡片里居中。每行一个完整短句，大约 8～16 个字，两行之间空一行。不要第三行。",
+  "只写已经公开的产品和使用方式。不编造财报、发射次数、销量和未宣布的能力。",
+  "不要用「说个暴论」「我真心觉得」「卧槽」当开头。禁止假对比和自我指涉写作过程。",
   "不写币、代币、合约、$。"
 ].join("\n");
 
@@ -134,7 +143,8 @@ function resolvePromptBundle(settings = {}) {
     replyTimelinePrompt: String(settings.replyTimelinePrompt || "").trim() || legacyReply || REPLY_TIMELINE_PROMPT,
     replyCommentPrompt: String(settings.replyCommentPrompt || "").trim() || legacyReply || REPLY_COMMENT_PROMPT,
     postNormalPrompt: String(settings.postNormalPrompt || "").trim() || legacyPost || POST_NORMAL_PROMPT,
-    postPremiumPrompt: String(settings.postPremiumPrompt || "").trim() || legacyPost || POST_PREMIUM_PROMPT
+    postPremiumPrompt: String(settings.postPremiumPrompt || "").trim() || legacyPost || POST_PREMIUM_PROMPT,
+    postXPrompt: String(settings.postXPrompt || "").trim() || POST_X_PROMPT
   };
 }
 
@@ -258,13 +268,16 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
 
   const commentReply = mode === "notifications" || Boolean(conversation);
   const replyPrompt = commentReply ? replyCommentPrompt : replyTimelinePrompt;
-  const grokReply = Boolean(inviteGrok && !commentReply);
+  const grokReply = Boolean(inviteGrok);
+  const replyPromptForModel = grokReply
+    ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").trim()
+    : replyPrompt;
   const replyStyle = grokReply ? GROK_REPLY_PROMPT : commentReply ? "" : "这次不要提及 @grok，直接回应原帖。";
   const replyMaxLength = grokReply ? 120 : commentReply ? 120 : 80;
   const messages = [
     { role: "system", content: commentReply
-      ? `${replyPrompt}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。`
-      : `${replyPrompt}\n${replyStyle}` },
+      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。`
+      : `${replyPromptForModel}\n${replyStyle}` },
     {
       role: "user",
       content: [
@@ -401,7 +414,7 @@ function parseAihotFeed(payload) {
   }).filter(Boolean).slice(0, 30);
 }
 
-const POST_OPENING_PREFIXES = ["说个暴论，", "我真心觉得，", "我操我操我操"];
+const POST_OPENING_PREFIXES = ["说个暴论，", "我真心觉得，", "卧槽卧槽卧槽"];
 
 function choosePostOpening(draw = Math.random()) {
   if (!Number.isFinite(draw) || draw < 0 || draw >= 0.3) return "";
@@ -409,7 +422,7 @@ function choosePostOpening(draw = Math.random()) {
 }
 
 function applyPostOpening(post, prefix) {
-  const body = cleanRewrite(post).replace(/^(?:说个暴论|讲个事实|我真心觉得|我操我操我操)[，,：:\s]*/u, "").trim();
+  const body = cleanRewrite(post).replace(/^(?:说个暴论|讲个事实|我真心觉得|我操我操我操|卧槽卧槽卧槽)[，,：:\s]*/u, "").trim();
   if (!body) return "";
   if (!prefix) return body;
   return `${prefix}\n\n${body}`;
@@ -453,17 +466,22 @@ async function collectNewsSources(tier = "all") {
 }
 
 async function rewriteNewsPost({ title, summary = "", source = "", recentTopics = [], recentOpenings = [], recentEndings = [], avoidPost = "", avoidReason = "", lengthMode = "regular", postKind = "normal", openingDraw = Math.random() }) {
-  const { apiKey, postNormalPrompt, postPremiumPrompt } = await readAiSettings();
+  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
   const premium = postKind === "premium";
-  const postPrompt = premium ? postPremiumPrompt : postNormalPrompt;
-  const openingPrefix = premium ? "" : choosePostOpening(openingDraw);
+  const xTheme = postKind === "x";
+  const postPrompt = xTheme ? postXPrompt : premium ? postPremiumPrompt : postNormalPrompt;
+  const openingPrefix = premium || xTheme ? "" : choosePostOpening(openingDraw);
   const openingDirective = openingPrefix
     ? `本次随机开头：正文第一行写“${openingPrefix}”，随后空一行，再写具体事件和看法；不要随后补对立面。`
-    : premium
+    : xTheme
+      ? "本次写成文字卡片：正好两行，两行都会居中。每行一个完整短句，不要加固定钩子，不要第三行。"
+      : premium
       ? "本次可不加强制钩子；若用钩子，钩子后必须进入具体剖析。"
       : "本次随机开头：不用固定钩子，先用一句话交代具体对象和事件，再写一边的看法；整条只站一边。";
-  const lengthDirective = lengthMode === "compact"
+  const lengthDirective = xTheme
+    ? "本次篇幅：正好两行，每行约 8～16 个中文字符，两行之间空一行。不要第三行。"
+    : lengthMode === "compact"
     ? "本次篇幅优先于默认篇幅：只写约 35～60 个中文字符，分成 3～4 个短行，每行之间留一个空行。第一行交代具体人或事，后面只把一边的看法说清楚；不要正反对照，更不要补凑字数的总结。不添加标题。"
     : premium
       ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。"
@@ -477,7 +495,7 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: `${postPrompt}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}\n\n${openingDirective}\n\n${lengthDirective}${source === "evergreen" ? "\n\n这是常用民生观点池的取材：它不是一条待核实的新闻。请从给出的领域和观点出发，直接写一条可发布的原创短帖；不要因为没有新闻时间、人物或链接而返回 skip。可以结合普通人的生活选择展开，但不要虚构具体数字、事件或当事人。" : ""}` },
+          { role: "system", content: `${postPrompt}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}\n\n${openingDirective}\n\n${lengthDirective}${source === "evergreen" ? "\n\n这是常用民生观点池的取材：它不是一条待核实的新闻。请从给出的领域和观点出发，直接写一条可发布的原创短帖；不要因为没有新闻时间、人物或链接而返回 skip。可以结合普通人的生活选择展开，但不要虚构具体数字、事件或当事人。" : ""}${source === "xtheme" ? "\n\n这是 X 主题卡片的取材：它不是一条待核实的新闻。请只围绕给出的公司或产品写判断，不要因为没有新闻时间或链接而返回 skip。不要改写成与这些公司无关的社会新闻。" : ""}` },
           { role: "user", content: `来源：${String(source).slice(0, 30)}\n标题：${String(title).slice(0, 180)}\n摘要：${String(summary).slice(0, 320)}\n近期已用主题：${Array.isArray(recentTopics) ? recentTopics.slice(-30).join("；").slice(0, 1200) : ""}\n近期已用开头：${Array.isArray(recentOpenings) ? recentOpenings.slice(-8).join("；").slice(0, 500) : ""}\n近期已用结尾：${Array.isArray(recentEndings) ? recentEndings.slice(-8).join("；").slice(0, 500) : ""}${avoidPost ? `\n上一稿因“${String(avoidReason).slice(0, 40)}”被退回：${String(avoidPost).slice(0, 180)}。请换个具体切口和开头结尾，从头重写。` : ""}` }
         ],
         thinking: { type: "disabled" },
@@ -531,11 +549,11 @@ function parseSourceRewrite(value, sourceTitle = "") {
 }
 
 async function generateTopicalPost({ contextText, lastPost, postKind = "normal" }) {
-  const { apiKey, postNormalPrompt, postPremiumPrompt } = await readAiSettings();
+  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = await readAiSettings();
   if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
   const context = String(contextText || "").trim().slice(0, 6000);
   if (!context) throw new Error("没有读取到可用的话题素材");
-  const postPrompt = postKind === "premium" ? postPremiumPrompt : postNormalPrompt;
+  const postPrompt = postKind === "x" ? postXPrompt : postKind === "premium" ? postPremiumPrompt : postNormalPrompt;
   const steer = Math.random() < 0.25
     ? "这次用一两句白话带到 AI 或 Web3，仍然短。不要写币，不要出现 $。"
     : "这次不要写 AI、Web3 或加密货币。不要出现 $。就顺着素材里的一件具体事。";
@@ -599,7 +617,7 @@ async function handleMessage(message, onProgress = () => {}, signal) {
       postText,
       conversation,
       avoidReply: message.avoidReply,
-      inviteGrok: message.mode === "timeline" && Boolean(message.inviteGrok),
+      inviteGrok: Boolean(message.inviteGrok),
       mode: message.mode === "notifications" ? "notifications" : "timeline",
       onProgress,
       signal
@@ -749,7 +767,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     const picked = handles[Math.floor(Math.random() * handles.length)];
     return `/${picked}/followers`;
   }
-  if (selected === "poster" || selected === "poster-premium") return "/home";
+  if (selected === "poster" || selected === "poster-premium" || selected === "poster-x") return "/home";
   return "/home";
 }
 
@@ -867,6 +885,7 @@ const TASK_TITLE_LABELS = {
   "likes-replies": "点赞评论",
   poster: "普通发帖",
   "poster-premium": "精品发帖",
+  "poster-x": "X主题发帖",
   "mutual-unfollow": "清理未回关",
   "mutual-followBack": "回关粉丝",
   "mutual-targetFollow": "关注候选"
@@ -1192,15 +1211,28 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "poster-premium", "poster", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "poster-premium", "poster", "poster-x", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
 const SLICE_YIELD_COOLDOWN_MS = 60 * 1000;
 const PRIORITY_ORDER_VERSION = 3;
-const MAX_TASK_PRIORITY = 9;
-const LIKE_MIN_GAP_MS = 45 * 60 * 1000;
+const PRIORITY_SCORE_VERSION = 4;
+const MAX_TASK_PRIORITY = 10;
+const LEGACY_LIKE_GAP_MS = 45 * 60 * 1000;
+const LIKE_MIN_GAP_MS = 4 * 60 * 60 * 1000;
+const LEGACY_DEFAULT_PRIORITY = Object.freeze({
+  notifications: 9,
+  timeline: 8,
+  "poster-premium": 7,
+  poster: 6,
+  "likes-posts": 5,
+  "likes-replies": 5,
+  "mutual-followBack": 4,
+  "mutual-targetFollow": 3,
+  "mutual-unfollow": 2
+});
 const LIKE_SLICE_MS = 3 * 60 * 1000;
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
@@ -1299,15 +1331,23 @@ function sliceMsForMode(mode, plan) {
 
 function defaultTaskPriority(mode) {
   // 回复评论 > 评论帖子 > 精品发帖 > 普通发帖 > 点赞帖子 = 点赞评论 > 回关 > 关注候选 > 取消未回关
-  if (mode === "notifications") return 9;
-  if (mode === "timeline") return 8;
-  if (mode === "poster-premium") return 7;
-  if (mode === "poster") return 6;
-  if (["likes-posts", "likes-replies"].includes(mode)) return 5;
-  if (mode === "mutual-followBack") return 4;
-  if (mode === "mutual-targetFollow") return 3;
-  if (mode === "mutual-unfollow") return 2;
+  if (mode === "notifications") return 10;
+  if (mode === "timeline") return 9;
+  if (mode === "poster-premium") return 8;
+  if (mode === "poster" || mode === "poster-x") return 7;
+  if (["likes-posts", "likes-replies"].includes(mode)) return 6;
+  if (mode === "mutual-followBack") return 5;
+  if (mode === "mutual-targetFollow") return 4;
+  if (mode === "mutual-unfollow") return 3;
   return 1;
+}
+
+function likeMinGapMs(pace) {
+  if (pace === "medium") return 2 * 60 * 60 * 1000;
+  if (pace === "fast") return 60 * 60 * 1000;
+  if (pace === "turbo") return 20 * 60 * 1000;
+  if (pace === "boundary") return 90 * 60 * 1000;
+  return LIKE_MIN_GAP_MS;
 }
 
 function defaultTaskRules() {
@@ -1315,7 +1355,7 @@ function defaultTaskRules() {
     enabled: true,
     priority: defaultTaskPriority(mode),
     pace: mode === "timeline" ? "boundary"
-      : ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+      : mode === "poster" || mode === "poster-x" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
     minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
@@ -1330,17 +1370,20 @@ function normalizedTaskRules(value) {
   const defaults = defaultTaskRules();
   for (const mode of QUEUED_TASKS) {
     const rule = value?.[mode] || {};
-    const fallbackGap = Number(defaults[mode].minGapMs) || 0;
+    const pace = ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
+    const likeMode = ["likes-posts", "likes-replies"].includes(mode);
+    const fallbackGap = likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
+    const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
     defaults[mode] = {
       enabled: rule.enabled !== false,
       priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
-      pace: ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace,
+      pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: Number.isFinite(requestedGap)
-        ? Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
-        : fallbackGap
+      minGapMs: legacyLikeGap || !Number.isFinite(requestedGap)
+        ? fallbackGap
+        : Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
     };
   }
   return defaults;
@@ -1461,8 +1504,9 @@ async function readTaskSchedule() {
   const plan = value && typeof value === "object"
     ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
     : { enabled: false, current: "", cursor: 0, items: {} };
+  const storedLikeGapIsLegacy = ["likes-posts", "likes-replies"].some((mode) => Number(plan.rules?.[mode]?.minGapMs) === LEGACY_LIKE_GAP_MS);
   plan.rules = normalizedTaskRules(plan.rules);
-  let scheduleMigrated = healStaleManualStops(plan);
+  let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy;
   if (plan.priorityOrderVersion !== PRIORITY_ORDER_VERSION) {
     for (const mode of QUEUED_TASKS) {
       plan.rules[mode].priority = defaultTaskPriority(mode);
@@ -1471,6 +1515,17 @@ async function readTaskSchedule() {
     }
     plan.rules["mutual-followBack"].window = "overnight";
     plan.priorityOrderVersion = PRIORITY_ORDER_VERSION;
+    scheduleMigrated = true;
+  }
+  if (plan.priorityScoreVersion !== PRIORITY_SCORE_VERSION) {
+    const untouched = QUEUED_TASKS.every((mode) => !(mode in LEGACY_DEFAULT_PRIORITY) || Number(plan.rules[mode]?.priority) === LEGACY_DEFAULT_PRIORITY[mode]);
+    if (untouched) {
+      for (const mode of QUEUED_TASKS) plan.rules[mode].priority = defaultTaskPriority(mode);
+    }
+    for (const mode of ["likes-posts", "likes-replies"]) {
+      if (Number(plan.rules[mode]?.minGapMs) === LEGACY_LIKE_GAP_MS) plan.rules[mode].minGapMs = likeMinGapMs(plan.rules[mode].pace);
+    }
+    plan.priorityScoreVersion = PRIORITY_SCORE_VERSION;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {
@@ -1642,7 +1697,7 @@ async function runTaskSchedule() {
     const timedOut = now - Number(plan.startedAt || now) >= sliceMs;
     // Replies and likes report a paused phase at the end of their full run plan.
     // A single confirmed action must never end their occupancy.
-    const actionDone = ["poster", "poster-premium"].includes(current) && Number(item.sliceActions) > 0;
+    const actionDone = ["poster", "poster-premium", "poster-x"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
     // Only reply tasks keep the tab until their full run finishes; likes yield on slice/higher priority.
     const completeRunOccupancy = ["timeline", "notifications"].includes(current);
@@ -1655,7 +1710,9 @@ async function runTaskSchedule() {
       && requestedMode !== current
       && requestedPriority > currentPriority;
     const premiumDue = higherPriorityDue && requestedMode === "poster-premium";
-    const manualDue = !completeRunOccupancy && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
+    // A person explicitly chose "立即开启" after confirming the current task
+    // would stop. Do not let a comment task's full-run occupancy swallow it.
+    const manualDue = requestedMode && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
     const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled;
     const haltedCurrent = Boolean(item.blocked || (item.manualStopped && !isScheduleWaitReason(item.reason)));
@@ -1849,8 +1906,8 @@ function tickTaskSchedule() {
 const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster" };
 async function noteScheduledAction(event) {
   const plan = await readTaskSchedule();
-  const mode = event?.task === "tweet-post" && plan.current === "poster-premium"
-    ? "poster-premium" : EVENT_TASK_MODES[event?.task];
+  const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x"].includes(plan.current)
+    ? plan.current : EVENT_TASK_MODES[event?.task];
   if (!mode || !["success", "limited"].includes(event?.result)) return;
   const item = plan.items[mode] || {};
   if (event.result === "success") {
@@ -1919,7 +1976,7 @@ async function noteScheduledAction(event) {
   // Posting releases after a confirmed post. Reply and like loops keep the tab
   // until all planned rounds finish or a real cooldown makes them yield.
   if (event.result === "success" && plan.enabled && plan.current === mode
-    && ["poster", "poster-premium"].includes(mode) && Number(item.sliceActions) > 0) {
+    && ["poster", "poster-premium", "poster-x"].includes(mode) && Number(item.sliceActions) > 0) {
     await tickTaskSchedule();
   }
 }
@@ -2142,12 +2199,12 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "poster-premium", "poster",
+  "notifications", "timeline", "poster-premium", "poster", "poster-x",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
-const SCHEDULE_PRIORITY_HINT = "评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)";
+const SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要";
 
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
@@ -2574,8 +2631,8 @@ async function markManualTaskStart(mode) {
   plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0,
     manualRequestedAt: Date.now(), reason: "已请求优先启动" };
   await saveTaskSchedule(plan);
-  if (plan.enabled) await tickTaskSchedule();
-  return { ok: true };
+  const updated = plan.enabled ? await tickTaskSchedule() : plan;
+  return { ok: true, assigned: updated.current === mode, current: updated.current || "" };
 }
 
 async function resetExtensionState(sender) {
@@ -2971,6 +3028,8 @@ if (typeof module === "object" && module.exports) {
     SLICE_SECONDS_OPTIONS,
     SLICE_YIELD_COOLDOWN_MS,
     PRIORITY_ORDER_VERSION,
+    PRIORITY_SCORE_VERSION,
+    LEGACY_LIKE_GAP_MS,
     MAX_TASK_PRIORITY,
     LIKE_MIN_GAP_MS,
     LIKE_SLICE_MS,

@@ -29,19 +29,42 @@
   function viewsDialog(doc) {
     return [...doc.querySelectorAll('[role="dialog"], [aria-modal="true"]')].find((node) => {
       const text = String(node.textContent || '').replace(/\s+/gu, ' ').trim();
-      return /\bViews\b/iu.test(text) && /Times this post was seen/iu.test(text);
+      return (/\bViews\b/iu.test(text) && /Times this post was seen/iu.test(text))
+        || /查看次数|这条帖子被查看|次浏览/u.test(text);
     }) || null;
+  }
+
+  function pressControl(node) {
+    if (!node) return false;
+    const view = node.ownerDocument?.defaultView;
+    const rect = node.getBoundingClientRect?.() || { left: 0, top: 0, width: 1, height: 1 };
+    const init = {
+      bubbles: true,
+      cancelable: true,
+      view,
+      button: 0,
+      clientX: rect.left + Math.max(rect.width, 1) / 2,
+      clientY: rect.top + Math.max(rect.height, 1) / 2
+    };
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {
+      const EventClass = type.startsWith('pointer') && typeof view?.PointerEvent === 'function' ? view.PointerEvent : view?.MouseEvent;
+      if (EventClass) node.dispatchEvent(new EventClass(type, init));
+    }
+    node.click?.();
+    return true;
+  }
+
+  function viewsCloseButton(dialog) {
+    const close = dialog.querySelector?.('[data-testid="app-bar-close"], [aria-label="Close"], [aria-label="关闭"]');
+    if (close) return close;
+    return [...dialog.querySelectorAll('button, [role="button"]')]
+      .find((button) => /^(?:Dismiss|Got it|知道了|关闭)$/iu.test(String(button.innerText || button.textContent || '').replace(/\s+/gu, ' ').trim())) || null;
   }
 
   function dismissViewsDialog(doc) {
     const dialog = viewsDialog(doc);
     if (!dialog) return false;
-    const dismiss = [...dialog.querySelectorAll('button, [role="button"]')]
-      .find((button) => /^Dismiss$/iu.test(String(button.textContent || '').trim()))
-      || dialog.querySelector('[data-testid="app-bar-close"], [aria-label="Close"]');
-    if (!dismiss) return false;
-    dismiss.click();
-    return true;
+    return pressControl(viewsCloseButton(dialog));
   }
 
   function restrictionAlerts(doc) {
@@ -116,12 +139,9 @@
       if (!viewsDialog(doc)) return;
       for (let attempt = 0; attempt < 3 && viewsDialog(doc); attempt += 1) {
         if (!dismissViewsDialog(doc)) break;
-        await wait(300);
+        await wait(200);
       }
-      if (viewsDialog(doc)) {
-        throw Object.assign(new Error('X 的 Views 弹窗无法关闭'), { xrcViewsDialog: true });
-      }
-      update('已关闭 X 的 Views 弹窗，继续点赞');
+      if (!viewsDialog(doc)) update('已关闭 X 的 Views 弹窗，继续点赞');
     }
 
     async function loadHistory() {

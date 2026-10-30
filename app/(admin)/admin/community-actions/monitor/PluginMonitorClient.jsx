@@ -274,7 +274,7 @@ export default function PluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地档位：评论(最重要→很重要) → 发帖 → 点赞(一般) → 关注。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description={`对齐本地优先级：1～10 分，分值越大越重要。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，落后实例可远程更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
           {accountSwitcher}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />

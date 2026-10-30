@@ -35,16 +35,16 @@
     {
       id: "boundary",
       label: "边界测试",
-      // Base profile is a placeholder; runtime uses explore/probe overlays.
-      minReplyDelaySeconds: 2,
-      maxReplyDelaySeconds: 4,
-      minRepliesPerRound: 40,
-      maxRepliesPerRound: 55,
-      minRoundsPerRun: 5,
-      maxRoundsPerRun: 8,
-      minCycleDelayMinutes: 15,
-      maxCycleDelayMinutes: 25,
-      roundIntervalSeconds: 1
+      // Placeholder matches gear 1 (起步). Runtime overlays the selected gear or probe.
+      minReplyDelaySeconds: 6,
+      maxReplyDelaySeconds: 10,
+      minRepliesPerRound: 20,
+      maxRepliesPerRound: 30,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 90,
+      maxCycleDelayMinutes: 120,
+      roundIntervalSeconds: 8
     },
     {
       id: "fast",
@@ -83,19 +83,56 @@
   const MAX_REPLY_DELAY_SECONDS = MEDIUM_PROFILE.maxReplyDelaySeconds;
   const MIN_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.minCycleDelayMinutes / 60;
   const MAX_CYCLE_DELAY_HOURS = MEDIUM_PROFILE.maxCycleDelayMinutes / 60;
-  // Explore = push like turbo until an automation toast appears.
+  // Gears stay inside the daily comment budget. Gear 1 is the start.
+  // Gear 0 is the slower step after a real limit. Gears 2–3 only tighten the gap.
   // Probe = after automation hit, send exactly one reply per attempt with growing waits.
-  const BOUNDARY_EXPLORE = Object.freeze({
-    minReplyDelaySeconds: 2,
-    maxReplyDelaySeconds: 4,
-    minRepliesPerRound: 40,
-    maxRepliesPerRound: 55,
-    minRoundsPerRun: 5,
-    maxRoundsPerRun: 8,
-    minCycleDelayMinutes: 15,
-    maxCycleDelayMinutes: 25,
-    roundIntervalSeconds: 1
-  });
+  const BOUNDARY_GEARS = Object.freeze([
+    Object.freeze({
+      minReplyDelaySeconds: 10,
+      maxReplyDelaySeconds: 16,
+      minRepliesPerRound: 12,
+      maxRepliesPerRound: 20,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 2,
+      minCycleDelayMinutes: 150,
+      maxCycleDelayMinutes: 180,
+      roundIntervalSeconds: 12
+    }),
+    Object.freeze({
+      minReplyDelaySeconds: 6,
+      maxReplyDelaySeconds: 10,
+      minRepliesPerRound: 20,
+      maxRepliesPerRound: 30,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 90,
+      maxCycleDelayMinutes: 120,
+      roundIntervalSeconds: 8
+    }),
+    Object.freeze({
+      minReplyDelaySeconds: 5,
+      maxReplyDelaySeconds: 8,
+      minRepliesPerRound: 22,
+      maxRepliesPerRound: 32,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 90,
+      maxCycleDelayMinutes: 120,
+      roundIntervalSeconds: 6
+    }),
+    Object.freeze({
+      minReplyDelaySeconds: 4,
+      maxReplyDelaySeconds: 7,
+      minRepliesPerRound: 24,
+      maxRepliesPerRound: 34,
+      minRoundsPerRun: 2,
+      maxRoundsPerRun: 3,
+      minCycleDelayMinutes: 90,
+      maxCycleDelayMinutes: 120,
+      roundIntervalSeconds: 5
+    })
+  ]);
+  const BOUNDARY_GEAR_NAMES = Object.freeze(["降档", "起步", "加快", "最高"]);
   const BOUNDARY_PROBE = Object.freeze({
     minReplyDelaySeconds: 8,
     maxReplyDelaySeconds: 15,
@@ -267,11 +304,22 @@
     return value === "probe" ? "probe" : "explore";
   }
 
-  function effectiveScheduleProfile(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+  function boundaryGearIndex(boundaryPhase = 1) {
+    if (boundaryPhase === "explore") return 1;
+    const level = Number(boundaryPhase);
+    if (!Number.isInteger(level)) return 1;
+    return Math.max(0, Math.min(BOUNDARY_GEARS.length - 1, level));
+  }
+
+  function boundaryGearName(boundaryPhase = 1) {
+    return BOUNDARY_GEAR_NAMES[boundaryGearIndex(boundaryPhase)] || "起步";
+  }
+
+  function effectiveScheduleProfile(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = scheduleProfile(pace);
     if (profile.id !== "boundary") return profile;
-    const phase = normalizeBoundaryPhase(boundaryPhase);
-    return { ...profile, ...(phase === "probe" ? BOUNDARY_PROBE : BOUNDARY_EXPLORE) };
+    if (boundaryPhase === "probe") return { ...profile, ...BOUNDARY_PROBE };
+    return { ...profile, ...BOUNDARY_GEARS[boundaryGearIndex(boundaryPhase)] };
   }
 
   function boundaryProbeCooldownMs(streak = 1) {
@@ -304,29 +352,30 @@
     return `${minimum}～${maximum} 分钟`;
   }
 
-  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+  function formatSchedule(pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
-    const phase = normalizeBoundaryPhase(boundaryPhase);
+    const probe = profile.id === "boundary" && boundaryPhase === "probe";
+    const gear = probe ? 1 : boundaryGearIndex(boundaryPhase);
     return {
       id: profile.id,
       label: profile.label,
-      phase: profile.id === "boundary" ? phase : "",
-      phaseLabel: profile.id !== "boundary" ? "" : phase === "probe" ? "单条试探" : "超快冲刺",
+      phase: profile.id === "boundary" ? (probe ? "probe" : gear) : "",
+      phaseLabel: profile.id !== "boundary" ? "" : probe ? "单条试探" : boundaryGearName(gear),
       replyDelay: `${profile.minReplyDelaySeconds}～${profile.maxReplyDelaySeconds} 秒`,
-      repliesPerRound: profile.id === "boundary" && phase === "probe"
+      repliesPerRound: probe
         ? "每次 1 条"
         : `${profile.minRepliesPerRound}～${profile.maxRepliesPerRound} 条`,
-      roundsPerRun: profile.id === "boundary" && phase === "probe"
+      roundsPerRun: probe
         ? "1 轮"
         : `${profile.minRoundsPerRun}～${profile.maxRoundsPerRun} 轮`,
-      cycleDelay: profile.id === "boundary" && phase === "probe"
+      cycleDelay: probe
         ? "遇自动化后 15～120 分钟递增"
         : formatMinuteSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes),
       roundInterval: `${profile.roundIntervalSeconds} 秒`
     };
   }
 
-  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+  function createRunPlan(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
     const rounds = randomIntInclusive(profile.minRoundsPerRun, profile.maxRoundsPerRun, random);
     const roundTargets = Array.from(
@@ -341,12 +390,12 @@
     };
   }
 
-  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+  function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
     return randomIntInclusive(profile.minReplyDelaySeconds, profile.maxReplyDelaySeconds, random);
   }
 
-  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = "explore") {
+  function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
     const minimum = profile.minCycleDelayMinutes * 60 * 1000;
     const maximum = profile.maxCycleDelayMinutes * 60 * 1000;
@@ -360,6 +409,8 @@
   const api = {
     automationCooldownMs,
     boundaryProbeCooldownMs,
+    boundaryGearIndex,
+    boundaryGearName,
     normalizeBoundaryPhase,
     BOUNDARY_PROBE_WAIT_MINUTES,
     BATCH_SIZE,

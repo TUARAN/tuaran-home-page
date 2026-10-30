@@ -24,13 +24,10 @@ const DEFAULT_PRIORITY = {
   'mutual-targetFollow': 3,
   'mutual-unfollow': 2,
 }
-const PRIORITY_HINT = '评论(最重要→很重要) → 发帖(重要→较重要) → 点赞(一般) → 关注(较低→很低)'
-const PRIORITY_LABELS = {
-  9: '最重要', 8: '很重要', 7: '重要', 6: '较重要', 5: '一般', 4: '较低', 3: '低', 2: '很低', 1: '最低',
-}
+const PRIORITY_HINT = '优先级 1～10 分，分值越大越重要'
 const priorityLabel = (mode, priority) => {
-  const rank = Math.max(1, Math.min(9, Number(priority) || DEFAULT_PRIORITY[mode] || 1))
-  return PRIORITY_LABELS[rank] || String(rank)
+  const rank = Math.max(1, Math.min(10, Number(priority) || DEFAULT_PRIORITY[mode] || 1))
+  return `${rank}分`
 }
 const TASK_PHASE = {
   running: ['运行中', 'info'],

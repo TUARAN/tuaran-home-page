@@ -8,7 +8,6 @@ import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 import CommunityOperationsPlan from './CommunityOperationsPlan'
-import PromptFeedbackClient from './PromptFeedbackClient'
 
 const PLATFORM_LABEL = {
   x: 'X',
@@ -22,7 +21,6 @@ const MODE_TABS = Object.freeze([
   { id: 'extension', label: '浏览器插件' },
   { id: 'cloud', label: '纯云端' },
   { id: 'api', label: '模型 API 密钥' },
-  { id: 'feedback', label: '提示词反馈' },
 ])
 
 const CLOUD_PANELS = Object.freeze([
@@ -225,7 +223,6 @@ function resolveView(searchParams) {
     return { mode: 'extension', panel: 'x-publish' }
   }
   if (raw === 'api') return { mode: 'api', panel: 'x-publish' }
-  if (raw === 'feedback') return { mode: 'feedback', panel: 'x-publish' }
   if (raw === 'plan') return { mode: 'plan', panel: 'x-publish' }
   if (CLOUD_PANEL_IDS.has(raw)) {
     return { mode: 'cloud', panel: raw }
@@ -378,8 +375,6 @@ export default function CommunityActionsClient() {
       params.set('tab', 'extension')
     } else if (mode === 'api') {
       params.set('tab', 'api')
-    } else if (mode === 'feedback') {
-      params.set('tab', 'feedback')
     } else if (CLOUD_PANEL_IDS.has(panel)) {
       params.set('tab', panel)
     } else {
@@ -483,7 +478,6 @@ export default function CommunityActionsClient() {
 
       {view.mode === 'api' ? <DeepSeekKeysPanel /> : null}
 
-      {view.mode === 'feedback' ? <PromptFeedbackClient /> : null}
 
       {view.mode === 'cloud' ? (
         <div className="grid min-w-0 gap-4">

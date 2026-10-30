@@ -65,8 +65,10 @@ const TOC = [
       { id: 'poster-normal', label: '普通发帖', depth: 2 },
       { id: 'poster-wave', label: '发帖波浪时间线', depth: 2 },
       { id: 'poster-premium', label: '精品发帖', depth: 2 },
+      { id: 'poster-x', label: 'X主题发帖', depth: 2 },
       { id: 'prompt-feedback', label: '提示词反馈台账', depth: 2 },
       { id: 'frequency', label: '05 · 频率与设置' },
+      { id: 'daily-volume', label: '一天大约多少', depth: 1 },
     ],
   },
   {
@@ -84,20 +86,20 @@ const STATE_ROWS = [
   ['运行中', '当前任务正在扫描、生成或发送；详情显示最近更新时间。'],
   ['等待中', '在排队、冷却、档期倒计时，或正在停止。详情写明原因和剩余时间。'],
   ['需处理', '要你先确认账号或详情后再继续，例如点赞 / 关注 / 发帖连续受限。评论两项一般继续倒计时，不进此态。'],
-  ['已停止', '还没启动、已手动停，或全流程已关。可点「启动排班」，也可在任务子页单独启动。'],
+  ['已停止', '还没启动、已手动停，或全流程已关。可点排班台右上角「开始」，也可在任务子页单独启动。'],
 ]
 
-// 主区只做两件事：可点的启动按钮，或不可点的状态条。全停在排班设置。
+// 主区是状态点和一句提示。排班台右上角在「暂停」和「开始」之间切换。
 const FLOW_BUTTON_ROWS = [
-  ['还没跑 / 已全停', '启动排班', '按钮', '点一下开启排班；评论先跑，其他进队列。'],
-  ['正在打开执行页', '启动中', '状态条', '等它自己开好，不用点。'],
-  ['有任务在跑', '运行中', '状态条', '看排班台；单项启停去任务子页。要全停去排班设置。'],
-  ['在排队等下一项', '后台调度中', '状态条', '到期会自动切换；倒计时写在调度卡上。全停去排班设置。'],
-  ['部分任务还没进队', '启动未运行', '按钮', '只把还没跑的拉起来；已有倒计时保留。'],
-  ['排班关了但仍有冷却', '恢复排班', '按钮', '重新打开排班；原来的倒计时还在。'],
-  ['正在全停', '正在停止', '状态条', '等停完。超时后到排班设置再试「停止全部」。'],
-  ['状态对不上', '检查并启动', '按钮', '点一下核对并启动未运行项。'],
-  ['任务连续受限', '需处理', '状态条', '先看详情和账号；确认后在子页单独启动。'],
+  ['还没跑 / 已全停', '状态点', '右上角「开始」', '点「开始」启动排班；评论先跑，其他进队列。'],
+  ['正在打开执行页', '状态点', '右上角暂时不可点', '等它自己开好。'],
+  ['有任务在跑', '状态点', '右上角「暂停」', '看排班台；单项启停去任务子页。'],
+  ['在排队等下一项', '状态点', '右上角「暂停」', '到期会自动切换；倒计时写在调度卡上。'],
+  ['部分任务还没进队', '状态点', '右上角「暂停」', '排班已经开着。已有倒计时保留。'],
+  ['排班关了但仍有冷却', '状态点', '右上角「开始」', '点「开始」重新打开排班；原来的倒计时还在。'],
+  ['正在全停', '状态点', '右上角暂时不可点', '等停完。停完后右上角变成「开始」。超时后可再点「暂停」。'],
+  ['状态对不上', '状态点', '右上角「开始」', '点「开始」核对并启动未运行项。'],
+  ['任务连续受限', '状态点', '看详情', '先看详情和账号；确认后在子页单独启动。'],
 ]
 
 const SINGLE_BUTTON_ROWS = [
@@ -158,7 +160,7 @@ export default function XReplyClipboardDocsPage() {
         </div>
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">文档中心</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
-          v4 把多页签并行改成单页签串行排班：九项任务按到期轮班，冷却只卡住自己，其他到期项立刻接手。下面是状态速查、任务规则、异常恢复与设置边界。
+          v4 把多页签并行改成单页签串行排班：十项任务按到期轮班，冷却只卡住自己，其他到期项立刻接手。下面是状态速查、任务规则、异常恢复与设置边界。
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link href={RESOURCE_PATH} className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
@@ -214,7 +216,7 @@ export default function XReplyClipboardDocsPage() {
                 <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">从 v3 升级到 v4</h3>
               </div>
               <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
-                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注和发帖共九项任务按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
+                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注和发帖共十项任务按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
               </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-3.5">
@@ -228,7 +230,7 @@ export default function XReplyClipboardDocsPage() {
                 <div className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_35%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] p-3.5">
                   <strong className="text-[12px] text-[var(--site-green)]">v4 · 单页签串行</strong>
                   <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-4 text-[13px] leading-6 text-[var(--site-muted)]">
-                    <li>一账号一个执行页签，九项任务轮班占用</li>
+                    <li>一账号一个执行页签，十项任务轮班占用</li>
                     <li>冷却、档期等待只卡住自己，到期项马上接手</li>
                     <li>排班台按上一 / 当前 / 下一展示，查看不改队列</li>
                   </ul>
@@ -237,13 +239,13 @@ export default function XReplyClipboardDocsPage() {
               <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">v4 仍是本地开发版，尚未打包；站内下载包仍是 v3，按旧规则运行。加载本地 v4 后，旧多窗口会在首次启动时安全收敛到单页签。</p>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
-            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排九项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
+            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li>评论帖子、回复评论、点赞帖子、点赞评论、清理未回关、回关粉丝、普通发帖和精品发帖进入同一队列。任务切换前会等当前操作结束并保存状态；冷却、发帖排程和手动停止优先于排班。</li>
+              <li>评论帖子、回复评论、点赞帖子、点赞评论、清理未回关、回关粉丝、普通发帖、精品发帖和 X主题发帖进入同一队列。任务切换前会等当前操作结束并保存状态；冷却、发帖排程和手动停止优先于排班。</li>
               <li>点击任务只切换面板里的详情，不改变排班队列。当前任务卡上的「查看」直接打开当前任务子页，不新开或切换浏览器页签。单项按钮只控制对应任务的启停。</li>
-              <li>顶部大按钮只负责启动：未跑时写「启动排班」；已在跑或排队时改成状态条（如「运行中」「后台调度中」），不再点主按钮去暂停。需要全停时到排班设置点「停止全部」，并二次确认；只关页签不会关掉后台排班。单项启停仍在任务子页；风控等待不会暂停其他任务。</li>
-              <li>详情和九项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。评论帖子、回复评论遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
-              <li>排班台是默认常驻主界面；队列用统一卡片标注「上一任务 / 当前任务 / 下一任务」。运行中绿边跑马灯，等待中黄边跑马灯，已停止 / 需处理红边呼吸。点任务或当前卡「查看」进入单项详情，「← 返回排班台」返回；查看不改变排班。默认权重依次为评论帖子、回复评论、点赞帖子、点赞评论、普通发帖、精品发帖、回关粉丝、清理未回关；精品发帖到固定档位时优先。评论和点赞各按自己的速度档位完成本次全部轮次后让出共享页签；遇 X 频率限制时先保存冷却截止时间并让其他任务运行。8 小时占用上限仅用于异常恢复。普通发帖按批次发完后进入周期等待再让位。回关粉丝在北京时间 22:00–次日 06:00 处理，约每天一次，每确认 15 个冷却 30 分钟；清理未回关约每 7 天一轮。排班设置可分别选择四项评论、点赞任务的轮次速度。精品发帖仍按北京时间 08:00、09:30、12:00、15:00、19:00 排程，不集中补发。</li>
+              <li>排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。排班设置里仍有「停止全部」，点下去会再确认一次。只关页签不会关掉后台排班。单项启停仍在任务子页；风控等待不会暂停其他任务。</li>
+              <li>详情和十项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。评论帖子、回复评论遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
+              <li>排班台是默认常驻主界面；队列用统一卡片标注「上一任务 / 当前任务 / 下一任务」。运行中绿边跑马灯，等待中黄边跑马灯，已停止 / 需处理红边呼吸。点任务或当前卡「查看」进入单项详情，「← 返回排班台」返回；查看不改变排班。默认优先级为回复评论 10 分、评论帖子 9 分、精品发帖 8 分、普通发帖和 X主题发帖 7 分、点赞帖子和点赞评论 6 分、回关粉丝 5 分、关注候选 4 分、取消未回关 3 分。仍停在旧默认分上的配置会各加 1 分；手改过的分数保持不动。精品发帖到固定档位时优先。评论按速度档位完成本次全部轮次后让出共享页签；点赞每次约 3 分钟，慢档后再隔约 4～6 小时。遇 X 频率限制时先保存冷却截止时间并让其他任务运行。8 小时占用上限仅用于异常恢复。普通发帖和 X主题发帖按批次发完后进入周期等待再让位。X主题发帖每条都是两行居中的文字卡片。回关粉丝在北京时间 22:00–次日 06:00 处理，约每天一次，每确认 15 个冷却 30 分钟；清理未回关约每 7 天一轮。排班设置可分别选择四项评论、点赞任务的轮次速度。精品发帖仍按北京时间 08:00、09:30、12:00、15:00、19:00 排程，不集中补发。</li>
               <li>一次任务包含若干轮；评论帖子与回复评论每轮设置要完成的回复条数，点赞帖子与点赞评论每轮设置要完成的点赞个数。界面分别写“第几次任务”“第几轮”“几条回复 / 几个点赞”，排班历史也按实际单位计数。</li>
               <li>单项冷却时先持久化恢复时间，再让执行页签轮给其他到期任务。点赞、关注、发帖连续 3 次受限会停止该任务的自动重试；评论两项持续按 10、20、30 分钟递增倒计时，到期自动重试。手动停止仍会取消对应任务的自动重试。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
@@ -261,14 +263,14 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="states" index="02" title="状态和按钮速查" summary="主区只负责启动；跑起来后是状态条，全停在排班设置" defaultOpen>
+          <Section id="states" index="02" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停」和「开始」之间切换" defaultOpen>
             <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">排班启动与状态</h3>
             <p className="m-0 text-[13px] leading-6">
-              顶部大块不是万能开关：没跑时是「启动排班」；跑起来或排队时变成状态条，点不动。真正要关掉全部时，点排班台左侧齿轮进排班设置，再点「停止全部」（会再确认一次）；只关执行页签不会关掉后台排班。日常只管排班台和单项任务。
+              排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。排班设置里仍有「停止全部」，点下去会再确认一次。只关执行页签不会关掉后台排班。日常只管排班台和单项任务。
             </p>
             <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
               <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
-                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">你看到的情况</th><th className="px-3 py-2">主区文字</th><th className="px-3 py-2">类型</th><th className="px-3 py-2">你怎么做</th></tr></thead>
+                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">你看到的情况</th><th className="px-3 py-2">主区</th><th className="px-3 py-2">右上角</th><th className="px-3 py-2">你怎么做</th></tr></thead>
                 <tbody>
                   {FLOW_BUTTON_ROWS.map(([condition, label, kind, action]) => (
                     <tr key={condition} className="border-t border-[var(--site-line)]"><td className="px-3 py-2">{condition}</td><td className="px-3 py-2 font-semibold text-[var(--site-ink)]">{label}</td><td className="px-3 py-2">{kind}</td><td className="px-3 py-2">{action}</td></tr>
@@ -339,11 +341,11 @@ export default function XReplyClipboardDocsPage() {
                     <li>从首页寻找可回复的帖子，只发送评论，不顺手点赞；已处理的帖子会记录下来，避免重复回复。</li>
                     <li>一次任务会按所选速度档位生成多轮计划，每轮各有回复条数目标。例如本次计划 5 轮，每轮约 30 条，合计约 150 条；各轮实际目标可能不同。界面的“第几次任务”指整次计划，“第几轮”指当前轮，进度和排班历史按已确认的“条回复”计数。</li>
                     <li>正常情况下完成本次全部轮次后才让出共享执行页签；轮间短暂等待仍属于本次任务。遇到 X 频率限制时，先保存冷却截止时间并让其他到期任务运行，到期后自动重新排班。普通周期等待可请求立即开始，风控冷却不能跳过。</li>
-                    <li>默认 AI 模式下，每条回复独立抽取：约 90% 直接回应原帖；约 10% 可短问或短评并 @grok 一次（可直接以 @grok 开头）。选择随待发回复保存，重试时沿用；模板模式使用固定话术，不参与这项抽取。提及 Grok 不保证它一定回复。</li>
+                    <li>评论帖子页有 @Grok 开关，默认关闭。打开后，AI 模式约 5% 的回复会短问或短评并 @grok 一次（可直接以 @grok 开头），其余直接回应原帖。选择随待发回复保存，重试时沿用；模板模式使用固定话术，不参与这项抽取。提及 Grok 不保证它一定回复。</li>
                   </ol>
                 </div>
                 <ul className="list-disc space-y-2 pl-5">
-                  <li id="reply-notifications" className="scroll-mt-24">回复评论按所选速度档位的轮数与每轮回复条数处理别人对当前账号的回复，不按通知时间划定两小时范围；已处理通知持续去重。@grok 发来的通知直接跳过，不回复、不计入成功数。其余通知不执行点赞，也不加入 @grok；直接回应对方最新一句。</li>
+                  <li id="reply-notifications" className="scroll-mt-24">回复评论按所选速度档位的轮数与每轮回复条数处理别人对当前账号的回复，不按通知时间划定两小时范围；已处理通知持续去重。@grok 发来的通知直接跳过，不回复、不计入成功数。其余通知不执行点赞，直接回应对方最新一句。回复评论页的 @Grok 开关默认关闭；打开后约 5% 的 AI 回复会带一次 @grok。</li>
                   <li>两项轮流占用同一个执行页签，分别保留去重进度。完成本次全部轮次或通知页没有更多待处理内容后，按各自速度档位等待下一次排班；本次计划内的轮间等待不让位。</li>
                   <li>两项评论任务遇到疑似自动化提示都会进入上面的递增冷却，到期自动重试；普通轮次和周期等待可“立即开始”，风控冷却不能跳过。</li>
                 </ul>
@@ -353,7 +355,7 @@ export default function XReplyClipboardDocsPage() {
                   <li id="likes-posts" className="scroll-mt-24">点赞帖子处理首页帖。</li>
                   <li id="likes-replies" className="scroll-mt-24">点赞评论逐帖打开评论，只点赞评论，不重复点赞原帖。</li>
                   <li>两项独立记录进度。点击后以 X 的“已点赞”状态确认成功。未确认且出现新限制提示时进入冷却；如果旧 X 限制提示一直存在，连续两次未确认才进入冷却。插件面板文字和普通等待提示不算受限。</li>
-                  <li>点赞帖子和点赞评论各自按排班设置中的速度档位生成本次轮数和每轮点赞个数；本次完成后让位，X 提示频率限制时保存冷却时间并先运行其他任务。</li>
+                  <li>点赞帖子和点赞评论各自按排班设置中的速度档位生成本次轮数和每轮点赞个数。排班每次大约只给 3 分钟；慢档结束后约 4～6 小时再排。X 提示频率限制时保存冷却时间并先运行其他任务。</li>
                   <li>确认受限后，普通次数限制使用较长冷却；疑似自动化提示使用 10 分钟起的递增冷却。</li>
                 </ul>
               </TaskBlock>
@@ -366,11 +368,12 @@ export default function XReplyClipboardDocsPage() {
                   <li id="mutual-target" className="scroll-mt-24">关注候选约每周一次；从排班设置里的可配置名单随机打开一个账号的 Followers 页，一次可多轮，每轮最多 15 个，与回关粉丝共用每日关注额度。名单默认含若干账号，可随时增删。</li>
                 </ul>
               </TaskBlock>
-              <TaskBlock id="poster" badge="帖" title="定时发帖" summary="普通发帖与精品发帖">
+              <TaskBlock id="poster" badge="帖" title="定时发帖" summary="普通发帖 · 精品发帖 · X主题发帖">
                 <ul className="list-disc space-y-2 pl-5">
-                  <li>定时发帖下分普通发帖、精品发帖两个子任务，各自独立窗口启停，可随全流程一起调度。</li>
-                  <li id="poster-normal" className="scroll-mt-24">普通发帖：先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。新帖按条随机：20% 配图、40% 原篇幅、40% 精简。一次按速度档位抓一批（慢约 5～10 条，高峰快档可达约 20～30 条），条间约 10～20 秒发完；本批发完后再进入周期倒计时抓下一批。周期长短仍按北京时间波浪加密：早 7:00–10:00、午 12:30–13:30、晚 18:00–22:00 更密，其他时段更疏。完整曲线见下方<a href="#poster-wave" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖波浪时间线</a>。</li>
+                  <li>定时发帖下分普通发帖、精品发帖、X主题发帖三个子任务，各自独立启停，可在排班设置里单独关掉，也可随全流程一起调度。</li>
+                  <li id="poster-normal" className="scroll-mt-24">普通发帖：先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。新帖按条随机：20% 配图、40% 原篇幅、40% 精简。开头钩子可以用「说个暴论」「我真心觉得」「卧槽卧槽卧槽」。一次按速度档位抓一批（慢约 5～10 条，高峰快档可达约 20～30 条），条间约 10～20 秒发完；本批发完后再进入周期倒计时抓下一批。周期长短仍按北京时间波浪加密：早 7:00–10:00、午 12:30–13:30、晚 18:00–22:00 更密，其他时段更疏。完整曲线见下方<a href="#poster-wave" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖波浪时间线</a>。</li>
                   <li id="poster-premium" className="scroll-mt-24">精品发帖：每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文固定原篇幅，配图比例约 50%。晚启动或准备超时会跳过已经错过的档位，等待下一档；当天最后一档过后等到次日 08:00，不集中补发。等待时按钮可停止任务。</li>
+                  <li id="poster-x" className="scroll-mt-24">X主题发帖：批次、条间间隔和波浪时间与普通发帖相同，默认慢档。每条都生成文字卡片，卡片上正好两行，两行都居中。题材只围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company，不改写无关热点。模型没写出正文时，用本地准备好的同题短稿。排班设置里可以单独关掉。</li>
                   <li>模型返回可用正文后写入待发列表；发帖框若已有图片会等待人工确认或移除。X 提示重复时跳过该条；疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
                 </ul>
                 <div id="poster-wave" className="mt-4 scroll-mt-24">
@@ -383,27 +386,75 @@ export default function XReplyClipboardDocsPage() {
           <section id="prompt-feedback" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_88%,transparent)] px-5 py-5 md:px-6">
             <div>
               <strong className="block text-[17px] font-semibold leading-7 text-[var(--site-ink)] md:text-[18px]">提示词反馈台账</strong>
-              <small className="mt-0.5 block text-[13px] leading-6 text-[var(--site-muted)]">正例 · 反例 · 不定期汇总后更新默认提示</small>
+              <small className="mt-0.5 block text-[13px] leading-6 text-[var(--site-muted)]">正例 · 反例 · 五份默认提示的修改记录</small>
             </div>
-            <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
-              发出来感觉不对的帖子或回复，以及觉得写得好的，可在站长后台录入。反例写清「哪里不像人话 / 哪里假 / 哪里油」；正例写清「哪一句立住了」。站内先保存原文、评价和语境；攒一批后导出复盘，同步仓库规范
-              <code className="mx-1 rounded bg-[var(--site-panel)] px-1.5 py-0.5 font-mono text-[12px]">docs/specs/x-extension-prompt-feedback.md</code>
-              ，再对照四份默认提示一起改：评论帖子、回复评论、普通发帖、精品发帖。
-            </p>
-            <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7 text-[var(--site-ink)]">
-              <li>反反馈优先：腔调、假对比、客服腔、自我指涉、空赞、编事实、钩子后没内容。</li>
-              <li>正反馈优先：短、贴原帖、钩子有用、立场清楚、像随手打的。</li>
-              <li>单条反馈只入库，不立刻改线上提示；综合分析后再动默认文案与设置中心里的四份提示词。</li>
-            </ul>
-            <Link href="/admin/community-actions?tab=feedback" className="inline-flex rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-2 text-[13px] font-semibold text-[var(--site-ink)] hover:border-[var(--site-green)]">打开站内反馈台账 →</Link>
+            <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">评论帖子、回复评论、普通发帖、精品发帖、X主题发帖各有一份默认提示。改默认提示时，反例看腔调、假对比、客服腔、自我指涉、空赞、编出来的事实，以及钩子后面没有内容。正例看短、贴着原帖、钩子有用、立场清楚、像随手打的。一批例子放在一起改，不按单条立刻更换。</p>
+            <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
+              <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
+                <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">默认提示修改记录</caption>
+                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">日期</th>
+                    <th className="px-4 py-2 font-semibold">改了什么</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['2026-10-29', 'X主题发帖的文字卡片固定两行，两行都居中。'],
+                    ['2026-10-29', '普通发帖的开头钩子改为「卧槽卧槽卧槽」。新增 X主题发帖，文字卡片只写 X、Grok/xAI、Tesla、SpaceX、Neuralink、The Boring Company，节奏同普通发帖。'],
+                    ['2026-10-29', '评论帖子、回复评论的 @Grok 各自有开关，默认关闭；打开后仍约 5%。'],
+                    ['2026-10-29', '评论帖子 @Grok 的抽取从约 10% 降到约 5%。'],
+                    ['2026-10-29', '四份提示去掉客服腔和假对比。评论帖子偏短，回复评论重连贯，普通发帖保留开头钩子，精品发帖偏把观点写完。'],
+                  ].map(([date, change]) => (
+                    <tr key={change} className="border-t border-[var(--site-line)]">
+                      <td className="whitespace-nowrap px-4 py-2 font-mono text-[var(--site-muted)]">{date}</td>
+                      <td className="px-4 py-2 text-[var(--site-ink)]">{change}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
-          <Section id="frequency" index="05" title="频率与设置" summary="默认值、修改位置和运行中的限制">
+          <Section id="frequency" index="05" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
+            <div id="daily-volume" className="scroll-mt-24 overflow-x-auto rounded-xl border border-[var(--site-line)]">
+              <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
+                <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">一个账号全天排班、没有碰到 X 限制时，一天大约能做多少</caption>
+                <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">任务</th>
+                    <th className="px-4 py-2 font-semibold">分</th>
+                    <th className="px-4 py-2 font-semibold">一天大约</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['回复评论', '10', '500～800 条；@Grok 默认关闭，打开后约 25～40 条'],
+                    ['评论帖子', '9', '300～500 条；@Grok 默认关闭，打开后约 15～25 条'],
+                    ['精品发帖', '8', '5 条，卡在五个钟点上'],
+                    ['普通发帖', '7', '80～120 条，慢档；页签空着大约 210～240 条'],
+                    ['X主题发帖', '7', '节奏同普通发帖；每条都是两行居中的文字卡片。和普通发帖一起开时共用发帖时间'],
+                    ['点赞帖子', '6', '40～80 个'],
+                    ['点赞评论', '6', '40～80 个'],
+                    ['回关粉丝', '5', '30～60 个，只在 22:00–06:00'],
+                    ['关注候选', '4', '大约 15 个 / 周'],
+                    ['取消未回关', '3', '一周一轮，大约几十个'],
+                  ].map(([task, score, amount]) => (
+                    <tr key={task} className="border-t border-[var(--site-line)]">
+                      <td className="px-4 py-2 text-[var(--site-ink)]">{task}</td>
+                      <td className="px-4 py-2 font-mono text-[var(--site-muted)]">{score}</td>
+                      <td className="px-4 py-2 text-[var(--site-ink)]">{amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-muted)]">评论两项加起来大约 800～1300 条，回复评论略多于评论帖子。这是按默认档估算的：回复评论用「中」，评论帖子用边界测试起步档，点赞和普通发帖用「慢」。模型每次回复大约再占 20 秒。通知不够、素材不够，或者升到边界测试的更高档，实际条数会离开这个区间。分值决定谁先拿到页签；一天多少条由每轮数量和休息时间决定。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>频率设置里可修改各挡位数字；工作区只选择边界测试、慢、中、快、超快。任务运行时不能改挡位，停止后修改会自动保存。</li>
-              <li>回复默认“边界测试”：起步每条 6～10 秒、每轮 20～30 条、每次 2～3 轮、周期休息 10～15 分钟；根据已确认的运行结果调整。慢、中、快、超快的具体数字以“频率设置”为准。</li>
-              <li>普通发帖默认“中”：一次抓一批、条间短间隔发完，再按档位进入批次间倒计时；早晚高峰批次更大、间隔更短，低峰相反（见<a href="#poster-wave" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖波浪时间线</a>）。精品发帖不使用频率挡位，固定每天 5 档。</li>
-              <li>回复模型、DeepSeek API Key，以及评论帖子 / 回复评论 / 普通发帖 / 精品发帖四份提示词，在设置中心的「模型」里管理。尚未配置 DeepSeek 时，首页只显示前往模型设置的引导。发帖正文每行之间留一个空行；精简稿目标约 35～60 字、3～4 行。随机开头和措辞由提示词控制，本地不按字数或风格退稿。正反例持续记在「提示词反馈台账」，用来迭代默认提示。</li>
+              <li>评论帖子默认“边界测试”，从第 2 档「起步」开始：每条 6～10 秒、每轮 20～30 条、每次 2～3 轮、休息 90～120 分钟。稳定后升到「加快」「最高」，条间略缩短，休息仍在 90～120 分钟；满 10 条后的限制降到「降档」，休息 150～180 分钟。回复评论默认“中”。慢、中、快、超快的具体数字以“频率设置”为准。</li>
+              <li>普通发帖和 X主题发帖默认“慢”：一次大约 5～10 条，条间 12～20 秒，批次之间 45～70 分钟；早晚高峰会把下一批提前、一批略多，夜里更疏（见<a href="#poster-wave" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖波浪时间线</a>）。和评论一起排班时，普通发帖一天大约 80～120 条；页签只发帖时大约 210～240 条。X主题发帖占用同一段发帖时间，两项一起开时不会各算一份。原先停在“中”的普通发帖会自动改成“慢”，手选过快或超快的保持原样。精品发帖不使用频率挡位，固定每天 5 档。</li>
+              <li>回复模型、DeepSeek API Key，以及评论帖子 / 回复评论 / 普通发帖 / 精品发帖 / X主题发帖五份提示词，在设置中心的「模型」里管理。尚未配置 DeepSeek 时，首页只显示前往模型设置的引导。发帖正文每行之间留一个空行；精简稿目标约 35～60 字、3～4 行。随机开头和措辞由提示词控制，本地不按字数或风格退稿。正反例和修改记录写在文档中心「提示词反馈台账」。</li>
               <li>插件不设每日回复总量；清理未回关不设批次或每日数量上限。平台限制仍会触发对应等待。</li>
             </ul>
           </Section>

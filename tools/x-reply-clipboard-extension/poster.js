@@ -3,9 +3,10 @@
 
   const DRAFT_CHANNEL = "x-reply-clipboard-draft-v2";
   const POST_EDITOR_SELECTOR = '[data-testid="tweetTextarea_0"][contenteditable="true"][role="textbox"]';
-  const DEFAULT_POST_PACE = "medium";
+  const DEFAULT_POST_PACE = "slow";
   const POST_KIND_NORMAL = "normal";
   const POST_KIND_PREMIUM = "premium";
+  const POST_KIND_X = "x";
   const PREMIUM_DAILY_LIMIT = 5;
   const PREMIUM_SLOT_TIMES = Object.freeze(["08:00", "09:30", "12:00", "15:00", "19:00"]);
   const PREMIUM_DAILY_KEY = "xrcPosterPremiumDaily";
@@ -30,11 +31,15 @@
   const CARD_VARIANTS = Object.freeze(["paper", "editorial", "highlight", "gradient"]);
 
   function sessionStorageKey(kind = POST_KIND_NORMAL) {
-    return kind === POST_KIND_PREMIUM ? "xrc-ai-poster-premium" : "xrc-ai-poster";
+    if (kind === POST_KIND_PREMIUM) return "xrc-ai-poster-premium";
+    if (kind === POST_KIND_X) return "xrc-ai-poster-x";
+    return "xrc-ai-poster";
   }
 
   function publishListKey(kind = POST_KIND_NORMAL) {
-    return kind === POST_KIND_PREMIUM ? "xrcPosterPublishListPremium" : "xrcPosterPublishList";
+    if (kind === POST_KIND_PREMIUM) return "xrcPosterPublishListPremium";
+    if (kind === POST_KIND_X) return "xrcPosterPublishListX";
+    return "xrcPosterPublishList";
   }
 
   function shanghaiDateKey(at = Date.now()) {
@@ -52,11 +57,14 @@
   }
 
   function normalizePostKind(value) {
-    return value === POST_KIND_PREMIUM ? POST_KIND_PREMIUM : POST_KIND_NORMAL;
+    if (value === POST_KIND_PREMIUM) return POST_KIND_PREMIUM;
+    if (value === POST_KIND_X) return POST_KIND_X;
+    return POST_KIND_NORMAL;
   }
 
   function choosePostFormat(random = Math.random, cardIndex = 0, kind = POST_KIND_NORMAL) {
     const cardVariant = CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length];
+    if (kind === POST_KIND_X) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     if (kind === POST_KIND_PREMIUM) {
       if (random() < 0.5) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
       return { mediaMode: "text", lengthMode: "regular" };
@@ -67,15 +75,19 @@
 
   function withPostFormat(item, kind = state.postKind) {
     const fallback = choosePostFormat(Math.random, 0, kind);
-    const lengthMode = item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
+    const lengthMode = kind === POST_KIND_X
+      ? "regular"
+      : item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
       ? "compact"
       : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
-    const mediaMode = item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
+    const mediaMode = kind === POST_KIND_X
+      ? "image"
+      : item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
     return {
       ...item,
       mediaMode,
       lengthMode,
-      ...(mediaMode === "image" ? { cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : "paper" } : {}),
+      ...(mediaMode === "image" ? { imageStyle: "text-card", cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : (kind === POST_KIND_X ? fallback.cardVariant : "paper") } : {}),
       text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text
     };
   }
@@ -115,9 +127,9 @@
   };
 
   function idleStatusForKind(kind = state.postKind) {
-    return kind === POST_KIND_PREMIUM
-      ? "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。"
-      : "待命。一次先抓一批改写稿，条间约 10～20 秒发完；发完进入倒计时再抓下一批。高峰一次多抓，慢挡一次少抓。";
+    if (kind === POST_KIND_PREMIUM) return "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。";
+    if (kind === POST_KIND_X) return "待命。X 主题发帖沿用普通发帖的批次节奏，每条都生成文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
+    return "待命。一次先抓一批改写稿，条间约 10～20 秒发完；发完进入倒计时再抓下一批。高峰一次多抓，慢挡一次少抓。";
   }
 
   function premiumDailyCount(at = Date.now()) {
@@ -327,9 +339,9 @@
 
   function postScheduleProfile(pace = DEFAULT_POST_PACE) {
     if (Number.isInteger(pace)) {
-      return POST_SCHEDULE_PROFILES[Math.min(POST_SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || POST_SCHEDULE_PROFILES[1];
+      return POST_SCHEDULE_PROFILES[Math.min(POST_SCHEDULE_PROFILES.length - 1, Math.max(0, pace))] || postScheduleProfile();
     }
-    return POST_SCHEDULE_PROFILES.find((item) => item.id === pace) || POST_SCHEDULE_PROFILES[1];
+    return POST_SCHEDULE_PROFILES.find((item) => item.id === pace) || postScheduleProfile();
   }
 
   function postPaceIndex(pace = DEFAULT_POST_PACE) {
@@ -509,6 +521,14 @@
     return remaining || revised;
   }
 
+  function formatXThemePost(value) {
+    const lines = preserveLines(value).split(/\n+/u).map((line) => line.trim()).filter(Boolean).slice(0, 2);
+    if (lines.length >= 2) return `${lines[0]}\n\n${lines[1]}`;
+    if (!lines.length) return "";
+    const formatted = formatModelPost(lines[0]).split(/\n+/u).map((line) => line.trim()).filter(Boolean).slice(0, 2);
+    return formatted.join("\n\n");
+  }
+
   function formatModelPost(value) {
     const text = preserveLines(value);
     if (!text) return "";
@@ -592,7 +612,7 @@
   }
 
   function keepSourceItem(item) {
-    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
+    return Boolean(item?.sourceType === "news" && /^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme):/u.test(String(item.id || "")) && item.text && !isSubscriptionPromotion(item.text));
   }
 
   const EVERGREEN_TOPIC_ITEMS = [
@@ -622,6 +642,36 @@
     url: "https://2aran.com/",
     sourcePageUrl: "https://2aran.com/"
   }));
+
+  const X_THEME_TOPIC_ITEMS = [
+    ["X", "时间线把回复顶到原帖前面之后，讨论经常接不上上下文。", "时间线把回复顶到前面，原帖上下文经常丢了。\n\n想看完整对话，还是得点进那条帖子。"],
+    ["X", "关注页和推荐页混在一起时，想看的人反而更容易被冲走。", "关注页里掺进推荐之后，想看的账号更容易被冲走。\n\n想稳定看到某个人，还是得专门点进主页。"],
+    ["Grok", "Grok 把依据写在句子旁边，比先甩结论再补链接更容易核对。", "Grok 把依据放在句子旁边，核对起来少翻一层。\n\n先给结论、链接藏在折叠里的回答，更像让人直接相信。"],
+    ["xAI", "xAI 把模型和 X 的时间线放在一起，问答会带上正在发生的讨论。", "xAI 把模型和 X 的时间线放在一起，问答能碰到正在发生的讨论。\n\n实时不等于已经核对过，引用还是要能点开。"],
+    ["Tesla", "电动车真正影响日常的，是家充能不能稳定过夜，不是宣传续航数字。", "电动车进家庭，先看家里能不能稳定过夜充电。\n\n宣传续航解决不了小区电桩排队。"],
+    ["Tesla", "家用储能值钱的时候，是电价在峰谷之间差得开，而不是电池参数表更长。", "家用储能有没有用，看峰谷电价能不能拉开。\n\n电池参数表再长，电价贴在一起就省不下钱。"],
+    ["Tesla", "机器人进工厂，先要能重复做同一道工序，再谈进家庭。", "工厂里的机器人，先看能不能把同一道工序重复做稳。\n\n进家庭之前，这条还没过。"],
+    ["SpaceX", "火箭能不能重复飞，比单次发射画面更决定发射还能不能排上。", "火箭能不能再飞一次，比单次发射画面更决定后面还能不能排上。\n\n回收失败一次，后面的窗口就要重排。"],
+    ["星链", "星链解决的是地面网络到不了的地方，城市里已经有宽带时它不是默认选项。", "星链补的是地面网络到不了的地方。\n\n城里已经有宽带时，它不是第一选择。"],
+    ["Neuralink", "脑机接口现在能讨论的是已公开的植入和信号，不是未宣布的能力。", "脑机接口现在能谈的，是已经公开的植入和读出的信号。\n\n没宣布的能力，不能当成已经做到。"],
+    ["The Boring Company", "地下隧道值不值得挖，要看两端出入口能不能接上现有的路，不是看洞有多长。", "隧道值不值得挖，看两端出入口能不能接上现有的路。\n\n洞挖得再长，出口还在堵，车还是出不来。"],
+    ["X", "长帖折叠之后，第一句就要把判断说完，后面的展开才有人点开。", "长帖一折叠，第一句就得把判断说完。\n\n后面的展开，是给愿意点开的人看的。"]
+  ].map(([topic, text, fallbackText]) => ({
+    id: `xtheme:${topic}:${text}`,
+    sourceType: "news",
+    source: "xtheme",
+    sourceLabel: "X主题",
+    text,
+    fallbackText,
+    summary: `围绕${topic}的产品与使用方式写一条文字卡片。只使用已经公开的产品事实，不编造财报、销量和未宣布的能力。`,
+    url: "https://x.com/",
+    sourcePageUrl: "https://x.com/"
+  }));
+
+  function buildXThemeFallback(item) {
+    const topic = String(item?.text || "X主题").replace(/[？?！!。]+$/u, "").trim().slice(0, 36) || "X主题";
+    return { topic, text: formatXThemePost(item?.fallbackText || "") };
+  }
 
   function buildEvergreenFallback(item) {
     const topic = String(item?.text || "常用社会观察").replace(/[？?！!。]+$/u, "").trim().slice(0, 36) || "常用社会观察";
@@ -691,7 +741,35 @@
     return shuffled;
   }
 
+  async function collectXThemeBatch() {
+    const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
+    emit(`正在准备本批 ${batchTarget} 条 X 主题文字卡片…`);
+    rewriteServiceError = "";
+    rewriteRejections = [];
+    const used = readUsedSourceIds();
+    const fresh = shuffleNewsItems(X_THEME_TOPIC_ITEMS).filter((item) => !used.has(item.id));
+    const reusable = () => shuffleNewsItems(X_THEME_TOPIC_ITEMS).map((item, index) => ({
+      ...item,
+      id: `${item.id}:reuse:${Math.floor(Date.now() / 86400000)}:${index}`,
+      summary: `${item.summary} 这是同一主题的再次取材，必须换一个具体切口，避免重复近期卡片。`
+    }));
+    state.sourceQueue = (fresh.length ? fresh : reusable()).slice(0, Math.max(batchTarget * 2, 12));
+    if (state.sourceQueue.length) await buildPublishList(batchTarget);
+    if (state.publishQueue.length < batchTarget && fresh.length && !state.stopping && !rewriteServiceError) {
+      emit("X 主题已写过，换切口继续补满本批…");
+      state.sourceQueue = reusable().slice(0, Math.max(batchTarget * 2, 12));
+      await buildPublishList(batchTarget - state.publishQueue.length);
+    }
+    if (!state.publishQueue.length && !state.stopping) {
+      const rejected = [...new Set(rewriteRejections)].slice(-5).join("；");
+      throw new Error(`本轮未写出 X 主题卡片${rejected ? `；未通过：${rejected}` : ""}${state.lastError ? `；改写：${state.lastError}` : ""}`);
+    }
+    state.lastError = "";
+    return state.publishQueue.length;
+  }
+
   async function collectNewsFallback() {
+    if (state.postKind === POST_KIND_X) return collectXThemeBatch();
     const batchTarget = sessionBatchSize(Math.random, state.schedulePace);
     emit(`正在准备本批 ${batchTarget} 条待发稿…`);
     rewriteServiceError = "";
@@ -762,13 +840,18 @@
         const recentTopics = recentEntries().map((entry) => entry.topic).filter(Boolean).slice(-30);
         const recentOpenings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").find(Boolean)).filter(Boolean).slice(-8);
         const recentEndings = recentEntries().map((entry) => preserveLines(entry.text).split("\n").filter(Boolean).at(-1)).filter(Boolean).slice(-8);
-        const tryModel = item.source !== "evergreen" || (!rewriteServiceError && evergreenModelCandidates++ < 3);
+        const tryModel = item.source === "xtheme"
+          ? !rewriteServiceError
+          : item.source !== "evergreen" || (!rewriteServiceError && evergreenModelCandidates++ < 3);
         if (tryModel) {
           const result = await requestSourceRewrite(item.text, recentTopics, item, "", "", recentOpenings, recentEndings, postFormat.lengthMode);
           if (result.skip) {
-            reason = item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
+            reason = item.source === "xtheme" ? "模型未返回 X 主题草稿" : item.source === "evergreen" ? "模型未返回常用社会观察草稿" : "主题与近期内容重复或素材不足";
           } else {
-            text = (postFormat.lengthMode === "compact" ? formatCompactPost : formatModelPost)(simplifyPostRhetoric(result.post));
+            const rewritten = simplifyPostRhetoric(result.post);
+            text = state.postKind === POST_KIND_X
+              ? formatXThemePost(rewritten)
+              : (postFormat.lengthMode === "compact" ? formatCompactPost : formatModelPost)(rewritten);
             topic = String(result.topic || item.text).trim().slice(0, 60);
             if (!text) reason = "模型未返回正文";
           }
@@ -779,20 +862,22 @@
         rewriteServiceError = reason;
       }
       if (state.stopping) return state.publishQueue.length;
-      if (item.source === "evergreen" && (reason || !text)) {
-        const fallback = buildEvergreenFallback(item);
+      if ((item.source === "evergreen" || item.source === "xtheme") && (reason || !text)) {
+        const fallback = item.source === "xtheme" ? buildXThemeFallback(item) : buildEvergreenFallback(item);
         const fallbackReason = !fallback.text ? "没有正文" : recentEntries().some((entry) => sameDraftText(entry.text, fallback.text)) ? "正文与已发内容完全相同" : "";
         if (!fallbackReason) {
           text = postFormat.lengthMode === "compact" ? formatCompactPost(fallback.text) : fallback.text;
           topic = fallback.topic;
           reason = "";
-          emit(rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地常用社会观察内容` : "模型暂未返回合适草稿，已切换常用社会观察兜底内容");
+          emit(item.source === "xtheme"
+            ? (rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地 X 主题卡片` : "模型暂未返回合适草稿，已切换本地 X 主题卡片")
+            : (rewriteServiceError ? `改写服务异常（${rewriteServiceError}），已切换本地常用社会观察内容` : "模型暂未返回合适草稿，已切换常用社会观察兜底内容"));
         } else reason = `本地兜底${fallbackReason}`;
       }
       if (reason) {
         rewriteRejections.push(`${sourceLabel(item.source)}：${reason}`);
         emit(`${sourceLabel(item.source)}第 ${index + 1}/${total} 条未通过：${reason}；继续尝试下一条`);
-        if (rewriteServiceError && item.source !== "evergreen") break;
+        if (rewriteServiceError && item.source !== "evergreen" && item.source !== "xtheme") break;
         continue;
       }
       state.publishQueue.push({ id: item.id, text, topic, ...postFormat, sourceText: item.text, sourceSummary: item.summary || "", sourceType: item.source === "evergreen" ? "evergreen" : "news", draftPolicyVersion: DRAFT_POLICY_VERSION, source: item.source, sourceLabel: item.sourceLabel || sourceLabel(item.source), sourceUrl: item.url || "", sourcePageUrl: item.sourcePageUrl || item.url || "" });
@@ -808,7 +893,7 @@
   function readUsedSourceIds() {
     const published = new Set(history.published.map((item) => String(item.sourceId || "")).filter(Boolean));
     const queued = new Set(state.publishQueue.map((item) => String(item.id || "")).filter(Boolean));
-    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
+    return new Set(history.sourceIds.filter((id) => !/^(?:aihot|evergreen|opinion|toutiao|zhihu|xtheme):/u.test(id) || published.has(id) || queued.has(id)).concat([...published, ...queued]));
   }
 
   async function rememberUsedSourceId(id) {
@@ -824,7 +909,7 @@
   }
 
   function sourceLabel(source) {
-    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎" }[source] || "热点";
+    return { aihot: "AI HOT", evergreen: "常用社会观察", opinion: "2aran 舆情分析", toutiao: "今日头条", zhihu: "知乎", xtheme: "X主题" }[source] || "热点";
   }
 
   async function rememberPublishedPost(sourceId, text, topic, item = null) {
@@ -855,7 +940,7 @@
     if (!shouldCollect()) return state.publishQueue.length;
     if (!state.stopping) await collectNewsFallback();
     if (state.stopping) return state.publishQueue.length;
-    if (!state.publishQueue.length) throw new Error("热点没有形成可发草稿");
+    if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : "热点没有形成可发草稿");
     state.lastError = "";
     if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
     await savePublishList();
@@ -924,7 +1009,12 @@
     if (!root.XInteractionPostImage?.createPostCard) return "配图模块未加载，已改为纯文字";
     if (typeof DataTransfer !== "function") return "浏览器不支持自动选择图片，已改为纯文字";
     try {
-      const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || "话题观察", item?.cardVariant || "paper");
+      const file = await root.XInteractionPostImage.createPostCard(
+        postText,
+        item?.topic || "话题观察",
+        item?.cardVariant || "paper",
+        state.postKind === POST_KIND_X ? { align: "center" } : {}
+      );
       const transfer = new DataTransfer();
       transfer.items.add(file);
       input.files = transfer.files;
@@ -1342,7 +1432,7 @@
     } else {
       state.running = true;
       state.stopping = false;
-      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备精品待发列表" : "正在准备待发列表";
+      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备精品待发列表" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
@@ -1473,6 +1563,7 @@
     DEFAULT_POST_PACE,
     POST_KIND_NORMAL,
     POST_KIND_PREMIUM,
+    POST_KIND_X,
     PREMIUM_DAILY_LIMIT,
     PREMIUM_SLOT_TIMES,
     POST_SCHEDULE_PROFILES,

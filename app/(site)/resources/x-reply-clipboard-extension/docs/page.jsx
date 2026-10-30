@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import PageContainer from '../../../components/PageContainer'
 import DocsHashNavigation from './DocsHashNavigation'
+import DocsToc from './DocsToc'
 import PostWaveTimeline from './PostWaveTimeline'
 import PromptVoteLedger from './PromptVoteLedger'
 import TaskWindowPlan from './TaskWindowPlan'
@@ -94,7 +95,7 @@ const VERSION_ERAS = [
     oneLiner: '一账号一个执行页签，十二项按到期串行轮班。',
     points: [
       '冷却、档期只卡住自己；到期项立刻接手，不再为无关等待干耗页签。',
-      '排班台按上一 / 当前 / 下一展示；点任务只看详情，启停在子页。',
+      '排班台卡片可勾选参与、展开改优先级/时段/速度；右侧「进入」进子页启停。',
       '在此底座上继续加评论大V、清理低质帖、提示词台账、不限速等，仍共用同一执行页签。',
     ],
   },
@@ -106,6 +107,11 @@ const TOC = [
     items: [
       { id: 'flow', label: '01 · 运行与任务窗口' },
       { id: 'version-path', label: '来时路 · v0→v4', depth: 1 },
+      { id: 'era-v0', label: 'v0 · 原型闭环', depth: 2 },
+      { id: 'era-v1', label: 'v1 · 正式面板', depth: 2 },
+      { id: 'era-v2', label: 'v2 · AI 回复', depth: 2 },
+      { id: 'era-v3', label: 'v3 · 多任务并行', depth: 2 },
+      { id: 'era-v4', label: 'v4 · 单页签排班', depth: 2 },
       { id: 'v3-to-v4', label: 'v3 → v4 对照', depth: 2 },
       { id: 'task-window-plan', label: '面板截图', depth: 1 },
       { id: 'states', label: '02 · 状态和按钮' },
@@ -270,36 +276,8 @@ export default function XReplyClipboardDocsPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
-        <aside className="x-extension-docs-toc">
-          <nav aria-label="文档目录" className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] p-4 shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">On this page</p>
-            <div className="mt-4 space-y-4">
-              {TOC.map((group) => (
-                <div key={group.heading}>
-                  <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--site-faint)]">{group.heading}</p>
-                  <div className="space-y-0.5">
-                    {group.items.map((item) => {
-                      const depth = Number(item.depth) || 0
-                      const depthClass = depth === 1
-                        ? 'pl-4 text-[12.5px] font-medium text-[var(--site-ink)]'
-                        : depth >= 2
-                          ? 'ml-4 border-l border-[var(--site-line)] pl-3 text-[12px] text-[var(--site-muted)]'
-                          : 'text-[13px]'
-                      return (
-                        <a
-                          key={item.id}
-                          href={`#${item.id}`}
-                          className={`block rounded-lg px-2 py-1.5 text-[var(--site-muted)] no-underline transition hover:bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] hover:text-[var(--site-ink)] ${depthClass}`}
-                        >
-                          {item.label}
-                        </a>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </nav>
+        <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
+          <DocsToc groups={TOC} />
         </aside>
 
         <div className="min-w-0 space-y-3">
@@ -309,20 +287,28 @@ export default function XReplyClipboardDocsPage() {
                 <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">来时路 · v0 → v4</h3>
                 <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">世代摘要；逐条补丁见周总结与仓库 README</p>
               </div>
-              <ol className="m-0 grid list-none gap-3 p-0 md:grid-cols-5">
+              <ol className="m-0 flex list-none flex-col gap-3 p-0">
                 {VERSION_ERAS.map((era) => (
-                  <li key={era.id} id={era.id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_70%,transparent)] p-3">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <strong className="font-mono text-[13px] text-[var(--site-ink)]">{era.version}</strong>
-                      <span className="text-[12px] font-semibold text-[var(--site-ink)]">{era.title}</span>
+                  <li
+                    key={era.id}
+                    id={era.id}
+                    className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_70%,transparent)] p-3.5 md:p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-5">
+                      <div className="flex shrink-0 flex-row items-baseline gap-x-2 md:w-36 md:flex-col md:gap-y-1">
+                        <strong className="font-mono text-[15px] text-[var(--site-ink)]">{era.version}</strong>
+                        <span className="text-[13px] font-semibold text-[var(--site-ink)]">{era.title}</span>
+                        <span className="text-[11px] leading-5 text-[var(--site-faint)] md:mt-0.5">{era.span}</span>
+                      </div>
+                      <div className="min-w-0 flex-1 border-[var(--site-line)] md:border-l md:pl-5">
+                        <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">{era.oneLiner}</p>
+                        <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-4 text-[12px] leading-6 text-[var(--site-muted)]">
+                          {era.points.map((point) => (
+                            <li key={point}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    <p className="m-0 mt-0.5 text-[11px] leading-5 text-[var(--site-faint)]">{era.span}</p>
-                    <p className="m-0 mt-2 text-[13px] leading-6 text-[var(--site-ink)]">{era.oneLiner}</p>
-                    <ul className="mb-0 mt-2 list-disc space-y-1 pl-4 text-[12px] leading-5 text-[var(--site-muted)]">
-                      {era.points.map((point) => (
-                        <li key={point}>{point}</li>
-                      ))}
-                    </ul>
                   </li>
                 ))}
               </ol>
@@ -352,7 +338,7 @@ export default function XReplyClipboardDocsPage() {
                   <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-4 text-[13px] leading-6 text-[var(--site-muted)]">
                     <li>一账号一个执行页签，十二项任务轮班占用</li>
                     <li>冷却、档期等待只卡住自己，到期项马上接手</li>
-                    <li>排班台按上一 / 当前 / 下一展示，查看不改队列</li>
+                    <li>排班台卡片勾选参与、展开配置；「进入」查看不改队列</li>
                   </ul>
                 </div>
               </div>
@@ -362,10 +348,10 @@ export default function XReplyClipboardDocsPage() {
             <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十二项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>评论首页、评论回复、评论大V、点赞帖子、点赞评论、清理未回关、回关粉丝、普通发帖、精品发帖和 X主题发帖进入同一队列。任务切换前会等当前操作结束并保存状态；冷却、发帖排程和手动停止优先于排班。</li>
-              <li>点击任务只切换面板里的详情，不改变排班队列。当前任务卡上的「查看」直接打开当前任务子页，不新开或切换浏览器页签。单项按钮只控制对应任务的启停。</li>
-              <li>排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。排班设置里仍有「停止全部」，点下去会再确认一次。只关页签不会关掉后台排班。单项启停仍在任务子页；风控等待不会暂停其他任务。</li>
+              <li>卡片左侧勾选是否参与自动排班；点「配置」展开改优先级、时段与速度（关注候选 / 评论大V 另有名单）；右侧「进入」或「查看」打开任务子页，不新开或切换浏览器页签。整卡不再一点就进子页。单项启停仍在子页。</li>
+              <li>排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。台底全局区有「停止全部」，点下去会再确认一次；单项最长占用与本机轮次记录也在台底。只关页签不会关掉后台排班。风控等待不会暂停其他任务。</li>
               <li>详情和十二项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
-              <li>排班台是默认常驻主界面；队列用统一卡片标注「上一任务 / 当前任务 / 下一任务」。运行中绿边跑马灯，等待中黄边跑马灯，已停止 / 需处理红边呼吸。点任务或当前卡「查看」进入单项详情，「← 返回排班台」返回；查看不改变排班。默认优先级为评论回复 10 分、评论首页 9 分、精品发帖 8 分、普通发帖和 X主题发帖 7 分、点赞帖子和点赞评论 6 分、回关粉丝 5 分、关注候选 4 分、取消未回关 3 分。仍停在旧默认分上的配置会各加 1 分；手改过的分数保持不动。精品发帖到固定档位时优先。评论按速度档位完成本次全部轮次后让出共享页签；点赞每次约 3 分钟，慢档后再隔约 4～6 小时。遇 X 频率限制时先保存冷却截止时间并让其他任务运行。8 小时占用上限仅用于异常恢复。普通发帖和 X主题发帖按批次发完后进入周期等待再让位。X主题发帖每条都是两行居中的文字卡片。回关粉丝在北京时间 22:00–次日 06:00 处理，约每天一次；15 个为一轮，每次轮数随速度。清理未回关约每 7 天一轮。排班设置可分别选择评论、点赞和回关粉丝的轮次速度。精品发帖仍按北京时间 08:00、09:30、12:00、15:00、19:00 排程，不集中补发。</li>
+              <li>排班台是默认常驻主界面；队列用统一卡片标注「上一任务 / 当前任务 / 下一任务」。运行中绿边跑马灯，等待中黄边跑马灯，已停止 / 需处理红边呼吸；未勾选参与的卡片降饱和并沉底，状态写「未参与」，不画成手动停止红卡。点「进入」或「查看」进单项详情，「← 返回排班台」返回；查看不改变排班。默认优先级为评论回复 10 分、评论首页 9 分、精品发帖 8 分、普通发帖和 X主题发帖 7 分、点赞帖子和点赞评论 6 分、回关粉丝 5 分、关注候选 4 分、取消未回关 3 分。仍停在旧默认分上的配置会各加 1 分；手改过的分数保持不动。精品发帖到固定档位时优先。评论按速度档位完成本次全部轮次后让出共享页签；点赞每次约 3 分钟，慢档后再隔约 4～6 小时。遇 X 频率限制时先保存冷却截止时间并让其他任务运行。8 小时占用上限仅用于异常恢复。普通发帖和 X主题发帖按批次发完后进入周期等待再让位。X主题发帖每条都是两行居中的文字卡片。回关粉丝在北京时间 22:00–次日 06:00 处理，约每天一次；15 个为一轮，每次轮数随速度。清理未回关约每 7 天一轮。各任务卡片展开区可分别选择评论、点赞和回关粉丝的轮次速度。精品发帖仍按北京时间 08:00、09:30、12:00、15:00、19:00 排程，不集中补发。</li>
               <li>一次任务包含若干轮；评论首页与评论回复每轮设置要完成的回复条数，点赞帖子与点赞评论每轮设置要完成的点赞个数。速度用轮次表选择，表下写明本次共几轮、现在第几轮、每轮多少条、现在第几条。排班历史按实际单位计数。</li>
               <li>单项冷却时先持久化恢复时间，再让执行页签轮给其他到期任务。点赞、关注、发帖连续 3 次受限会停止该任务的自动重试；评论两项持续按 10、20、30 分钟递增倒计时，到期自动重试。手动停止仍会取消对应任务的自动重试。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
@@ -386,7 +372,7 @@ export default function XReplyClipboardDocsPage() {
           <Section id="states" index="02" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停」和「开始」之间切换" defaultOpen>
             <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">排班启动与状态</h3>
             <p className="m-0 text-[13px] leading-6">
-              排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。排班设置里仍有「停止全部」，点下去会再确认一次。只关执行页签不会关掉后台排班。日常只管排班台和单项任务。
+              排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。台底全局区仍有「停止全部」，点下去会再确认一次。只关执行页签不会关掉后台排班。日常在排班台勾选与配置，单项启停进子页。
             </p>
             <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
               <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
@@ -466,7 +452,7 @@ export default function XReplyClipboardDocsPage() {
                 </div>
                 <ul className="list-disc space-y-2 pl-5">
                   <li id="reply-notifications" className="scroll-mt-24">评论回复按所选速度档位的轮数与每轮回复条数处理别人对当前账号的回复，不按通知时间划定两小时范围；已处理通知持续去重。@grok 发来的通知直接跳过，不回复、不计入成功数。其余通知不执行点赞，直接回应对方最新一句。评论回复页的 @Grok 开关默认关闭；打开后约 5% 的 AI 回复会带一次 @grok。</li>
-                  <li id="reply-kol" className="scroll-mt-24">评论大V：打开排班设置里的大V名单账号主页，优先评论他们当天的帖子；当天没有可评的就换下一个。轮次、速度表和评论首页同一套。名单可对照 <a href="https://xbangdan.com/accounts/" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">X榜单账号榜</a> 自行增删，默认带一组简体中文社区常见账号。</li>
+                  <li id="reply-kol" className="scroll-mt-24">评论大V：打开排班台「评论大V」卡片展开区里的大V名单账号主页，优先评论他们当天的帖子；当天没有可评的就换下一个。轮次、速度表和评论首页同一套。名单可对照 <a href="https://xbangdan.com/accounts/" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">X榜单账号榜</a> 自行增删，默认带一组简体中文社区常见账号。</li>
                   <li>三项轮流占用同一个执行页签，分别保留去重进度。完成本次全部轮次、通知页没有更多待处理内容，或大V名单扫完后，按各自速度档位等待下一次排班；本次计划内的轮间等待不让位。</li>
                   <li>三项评论任务遇到疑似自动化提示都会进入上面的递增冷却，到期自动重试；普通轮次和周期等待可“立即开始”，风控冷却不能跳过。</li>
                 </ul>
@@ -486,15 +472,15 @@ export default function XReplyClipboardDocsPage() {
                   <li>默认开启“非中文资料也清理”：已回关账号的姓名和简介都有文字且都不含汉字时，也会进入取关候选；任一处有汉字就保留。未回关账号照常清理。</li>
                   <li>清理操作每次间隔 2 秒，不套用回关的批次或每日数量上限。</li>
                   <li id="mutual-followback" className="scroll-mt-24">回关粉丝优先处理姓名或简介含汉字的账号；默认在北京时间 22:00–次日 06:00 开启夜间处理，约每天一次。15 个为一轮，每次轮数和轮间停顿见<a href="#pace-follow" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">回关轮次表</a>。这次做完等到下一晚。每日 400 个是底层上限。任务自身冷却与 X 限制仍优先。</li>
-                  <li id="mutual-target" className="scroll-mt-24">关注候选约每周一次；从排班设置里的可配置名单随机打开一个账号的 Followers 页，一次可多轮，每轮最多 15 个，与回关粉丝共用每日关注额度。名单默认含若干账号，可随时增删。</li>
+                  <li id="mutual-target" className="scroll-mt-24">关注候选约每周一次；从排班台「关注候选」卡片展开区的可配置名单随机打开一个账号的 Followers 页，一次可多轮，每轮最多 15 个，与回关粉丝共用每日关注额度。名单默认含若干账号，可随时增删。</li>
                 </ul>
               </TaskBlock>
               <TaskBlock id="poster" badge="帖" title="定时发帖" summary="普通发帖 · 精品发帖 · X主题发帖 · 清理低质帖">
                 <ul className="list-disc space-y-2 pl-5">
-                  <li>定时发帖下分普通发帖、精品发帖、X主题发帖、清理低质帖，各自独立启停，可在排班设置里单独关掉，也可随全流程一起调度。</li>
+                  <li>定时发帖下分普通发帖、精品发帖、X主题发帖、清理低质帖，各自独立启停，可在排班台对应卡片取消勾选单独退出自动排班，也可随全流程一起调度。</li>
                   <li id="poster-normal" className="scroll-mt-24">普通发帖：先读知乎、今日头条，每路最多试写 12 条；仍没有草稿时补充 AI HOT，最后使用常用社会观察。新帖按条随机：20% 配图、40% 原篇幅、40% 精简。开头钩子可以用「说个暴论」「我真心觉得」「卧槽卧槽卧槽」。一次按速度抓一批，条间发完后再进入周期倒计时抓下一批，数字见<a href="#pace-post" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖速度表</a>。周期长短仍按北京时间波浪加密：早 7:00–10:00、午 12:30–13:30、晚 18:00–22:00 更密，其他时段更疏。完整曲线见下方<a href="#poster-wave" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">发帖波浪时间线</a>。</li>
                   <li id="poster-premium" className="scroll-mt-24">精品发帖：每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文固定原篇幅，配图比例约 50%。晚启动或准备超时会跳过已经错过的档位，等待下一档；当天最后一档过后等到次日 08:00，不集中补发。等待时按钮可停止任务。</li>
-                  <li id="poster-x" className="scroll-mt-24">X主题发帖：批次、条间间隔和波浪时间与普通发帖相同，默认慢档。每条都生成文字卡片，卡片上正好两行，两行都居中。题材只围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company，不改写无关热点。模型没写出正文时，用本地准备好的同题短稿。排班设置里可以单独关掉。</li>
+                  <li id="poster-x" className="scroll-mt-24">X主题发帖：批次、条间间隔和波浪时间与普通发帖相同，默认慢档。每条都生成文字卡片，卡片上正好两行，两行都居中。题材只围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company，不改写无关热点。模型没写出正文时，用本地准备好的同题短稿。排班台卡片可单独取消勾选退出自动排班。</li>
                   <li id="prune-posts" className="scroll-mt-24">清理低质帖：打开自己的主页，删除发出超过 24 小时、浏览量低于 100 的帖子，不看评论数。置顶和转帖留着。15 条为一轮，每次轮数和轮间停顿见<a href="#pace-prune" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">清理轮次表</a>。这次做完等到下一天。确认删掉的帖子计入今日合计和每日报告的「删帖」。优先级 2 分。</li>
                   <li>模型返回可用正文后写入待发列表；发帖框若已有图片会等待人工确认或移除。X 提示重复时跳过该条；疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
                 </ul>
@@ -582,7 +568,7 @@ export default function XReplyClipboardDocsPage() {
                 headers={['速度', '每次轮数', '一轮条数', '条与条之间', '轮与轮之间', '做完休息']}
                 rows={[
                   ['慢', '2～3 轮', '12～20 条', '15～30 秒', '15 秒', '4～6 小时'],
-                  ['中（评论回复默认）', '3～5 轮', '25～35 条', '5～15 秒', '5 秒', '2～3 小时'],
+                  ['中（默认）', '3～5 轮', '25～35 条', '5～15 秒', '5 秒', '2～3 小时'],
                   ['快', '4～6 轮', '30～42 条', '3～6 秒', '3 秒', '1～1.5 小时'],
                   ['超快', '5～8 轮', '40～55 条', '2～4 秒', '1 秒', '20～40 分钟'],
                 ]}
@@ -594,7 +580,7 @@ export default function XReplyClipboardDocsPage() {
                 headers={['档位', '每次轮数', '一轮数量', '条与条之间', '轮与轮之间', '做完休息']}
                 rows={[
                   ['降档', '2 轮', '12～20', '10～16 秒', '12 秒', '2.5～3 小时'],
-                  ['起步（评论首页默认）', '2～3 轮', '20～30', '6～10 秒', '8 秒', '1.5～2 小时'],
+                  ['起步（默认）', '2～3 轮', '20～30', '6～10 秒', '8 秒', '1.5～2 小时'],
                   ['加快', '2～3 轮', '22～32', '5～8 秒', '6 秒', '1.5～2 小时'],
                   ['最高', '2～3 轮', '24～34', '4～7 秒', '5 秒', '1.5～2 小时'],
                 ]}
@@ -735,6 +721,7 @@ export default function XReplyClipboardDocsPage() {
               <li>近约两天：曝光从单日逼近约 100 万断阶跌到约 5 千（约 ÷20）；本机面板今日合计仍可能偏高，X 后台可见评论 / 发帖更少（口径待核实）。</li>
               <li>约 2026-10-28～29：本地到 v4 排班；昨天仍可见约 1000 条评论级动作——因此「单纯 v3→v4 bug」未证实。</li>
               <li>约 2026-10-30：评论拆成评论首页（For You）与评论大V；关注、质量发帖、大V评论按一套联动实验，不单押首页回复条数。</li>
+              <li>约 2026-10-30：痛定思痛，推倒重来——开清浏览量低于 100 的低质帖。对照：发帖从约 10K 堆到约 30K 大约半个月；从约 30K 清回，或许只要约 1 天。堆易清快，先收低质存量。</li>
             </ul>
 
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">指标对照（样本）</h3>
@@ -776,7 +763,7 @@ export default function XReplyClipboardDocsPage() {
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">自检与下一窗口</h3>
             <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
               <li>未登录看自己内容；热帖回复是否沉底；近 7 天曝光断崖还是阴跌；有官方可见性标签再申诉。</li>
-              <li>下一窗口：记曝光倍数差、回复可见性、面板与后台差；并对照评论首页 / 评论大V拆分。策略实验：大V评论 + 质量发帖 + 关注重建联动，不单押首页条数。窗口内不做定论。</li>
+              <li>下一窗口：记曝光倍数差、回复可见性、面板与后台差；并对照评论首页 / 评论大V拆分。策略实验：大V评论 + 质量发帖 + 关注重建联动，不单押首页条数；同步清浏览量低于 100 的低质存量。窗口内不做定论。</li>
             </ul>
           </Section>
         </div>

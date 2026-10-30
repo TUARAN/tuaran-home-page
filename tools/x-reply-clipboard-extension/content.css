@@ -1329,16 +1329,26 @@
 }
 #x-reply-clipboard-panel .xrc-desk-phase-tag {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 78%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--xrc-soft) 55%, #fff);
   color: var(--xrc-muted);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.02em;
+  line-height: 1.35;
 }
 #x-reply-clipboard-panel .xrc-schedule-item .xrc-schedule-item-body strong {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 6px;
+  align-items: center;
+  gap: 5px 7px;
+  min-height: 18px;
+  line-height: 1.25;
 }
 /* 上一灰 · 当前绿 · 下一/候选黄阶见下方（须压过 pulse=waiting） */
 #x-reply-clipboard-panel .xrc-schedule-item[data-phase="past"] {
@@ -3232,20 +3242,32 @@
 }
 #x-reply-clipboard-panel .xrc-schedule-history-item strong { color: var(--xrc-text); font-size: 10px; }
 #x-reply-clipboard-panel .xrc-schedule-history-item span { color: var(--xrc-accent); font-weight: 800; }
+#x-reply-clipboard-panel .xrc-schedule-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-width: 0;
+}
+#x-reply-clipboard-panel .xrc-schedule-item-head > strong {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 #x-reply-clipboard-panel .xrc-schedule-item-side {
   display: inline-flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
-  align-self: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
   gap: 8px;
-  min-width: 0;
-  min-height: 100%;
+  min-height: 18px;
+  margin-top: 1px;
 }
 #x-reply-clipboard-panel .xrc-schedule-card-go {
   flex: 0 0 auto;
   margin: 0;
-  padding: 0;
+  padding: 2px 0;
   border: 0;
   background: transparent;
   color: var(--xrc-accent);
@@ -3268,28 +3290,74 @@
   color: color-mix(in srgb, var(--xrc-muted) 55%, var(--xrc-text));
   font-weight: 700;
 }
+#x-reply-clipboard-panel .xrc-schedule-board [data-xrc-schedule-list] {
+  gap: 6px;
+}
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item {
   position: relative;
   isolation: isolate;
   overflow: visible;
   display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 8px;
+  row-gap: 0;
+  min-height: 68px;
+  box-sizing: border-box;
+  padding: 11px 11px 10px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 90%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, #fff 92%, var(--xrc-soft));
+  cursor: default;
+  transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, filter 120ms ease;
+}
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-pulse="waiting"]:not([data-phase="now"]) {
+  padding-bottom: 15px;
+}
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-xrc-desk-past-row],
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-xrc-desk-now-row] {
   grid-template-columns: 7px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1px 6px;
   min-height: 52px;
-  box-sizing: border-box;
-  padding: 7px 8px;
-  border: 1px solid color-mix(in srgb, var(--xrc-line) 90%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, #fff 92%, var(--xrc-soft));
-  cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  padding: 8px 10px;
+  cursor: default;
+}
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item.is-disabled {
+  opacity: 0.62;
+  filter: saturate(0.55);
+}
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item.is-expanded {
+  align-items: stretch;
+  min-height: 0;
+  padding-bottom: 11px;
 }
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item:hover,
-#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item:focus-visible {
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item:focus-within {
   border-color: color-mix(in srgb, var(--xrc-accent) 28%, var(--xrc-line));
   box-shadow: 0 1px 6px rgba(15, 20, 25, 0.04);
   outline: none;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-enable {
+  display: inline-grid;
+  place-items: center;
+  align-self: start;
+  width: 20px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-enable input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #0f8a72;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-schedule-item-main {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 #x-reply-clipboard-panel .xrc-schedule-mark {
   width: 7px;
@@ -3300,13 +3368,107 @@
 }
 #x-reply-clipboard-panel .xrc-schedule-item-body {
   display: grid;
-  align-content: center;
-  gap: 2px;
+  align-content: start;
+  gap: 6px;
   min-width: 0;
 }
+#x-reply-clipboard-panel .xrc-schedule-item-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 1px;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-expand {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, #fff 82%, var(--xrc-soft));
+  color: var(--xrc-muted);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.3;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-expand:hover,
+#x-reply-clipboard-panel .xrc-schedule-card-expand:focus-visible,
+#x-reply-clipboard-panel .xrc-schedule-item.is-expanded .xrc-schedule-card-expand {
+  border-color: color-mix(in srgb, var(--xrc-accent) 34%, var(--xrc-line));
+  background: color-mix(in srgb, var(--xrc-accent) 8%, #fff);
+  color: var(--xrc-accent);
+  outline: none;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-config {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin-top: 1px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--xrc-line) 80%, transparent);
+}
+#x-reply-clipboard-panel .xrc-schedule-card-config[hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-schedule-card-list {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+#x-reply-clipboard-panel .xrc-schedule-card-list textarea {
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--xrc-text);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  resize: vertical;
+}
+#x-reply-clipboard-panel .xrc-desk-globals {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 2px 2px;
+  border-top: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
+}
+#x-reply-clipboard-panel .xrc-desk-globals-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
 #x-reply-clipboard-panel .xrc-schedule-item strong { color: var(--xrc-text); font-size: 12px; font-weight: 800; }
-#x-reply-clipboard-panel .xrc-schedule-item .xrc-schedule-item-status { color: var(--xrc-accent); font-size: 10px; font-weight: 750; white-space: nowrap; }
-#x-reply-clipboard-panel .xrc-schedule-item small { color: var(--xrc-muted); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+#x-reply-clipboard-panel .xrc-schedule-item .xrc-schedule-item-status {
+  color: color-mix(in srgb, var(--xrc-muted) 35%, var(--xrc-accent));
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+#x-reply-clipboard-panel .xrc-schedule-item-body > small {
+  display: block;
+  min-width: 0;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+#x-reply-clipboard-panel .xrc-schedule-item small {
+  color: var(--xrc-muted);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
 
 /* Status motion: green orbit · yellow bounce · red breathe */
 #x-reply-clipboard-panel .xrc-schedule-board {
@@ -3397,13 +3559,13 @@
 #x-reply-clipboard-panel .xrc-schedule-wait-dots {
   display: none;
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 3px;
-  justify-content: center;
+  left: 28px;
+  right: 12px;
+  bottom: 4px;
+  justify-content: flex-start;
   align-items: flex-end;
-  gap: 5px;
-  height: 10px;
+  gap: 4px;
+  height: 8px;
   pointer-events: none;
   z-index: 2;
 }
@@ -3471,9 +3633,14 @@
   animation: none;
 }
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="now"] .xrc-desk-phase-tag,
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-xrc-desk-now-row] .xrc-desk-phase-tag {
+  border-color: color-mix(in srgb, #16a34a 32%, var(--xrc-line));
+  background: color-mix(in srgb, #bbf7d0 48%, #fff);
+  color: #14532d;
+  font-weight: 800;
+}
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="now"] .xrc-schedule-item-status,
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="now"][data-pulse] .xrc-schedule-item-status,
-#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-xrc-desk-now-row] .xrc-desk-phase-tag,
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-xrc-desk-now-row] .xrc-schedule-item-status {
   color: #14532d;
   font-weight: 800;
@@ -3503,7 +3670,11 @@
   box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.18);
   animation: xrc-wait-mark 2s ease-in-out infinite;
 }
-#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="next"] .xrc-desk-phase-tag,
+#x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="next"] .xrc-desk-phase-tag {
+  border-color: color-mix(in srgb, #d97706 28%, var(--xrc-line));
+  background: color-mix(in srgb, #fde68a 42%, #fff);
+  color: #a16207;
+}
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="next"] .xrc-schedule-item-status {
   color: #a16207;
   font-weight: 700;
@@ -3540,6 +3711,8 @@
   background: color-mix(in srgb, #f8fafc 70%, #fff);
 }
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="candidate"] .xrc-desk-phase-tag {
+  border-color: color-mix(in srgb, #d97706 22%, var(--xrc-line));
+  background: color-mix(in srgb, #fef3c7 48%, #fff);
   color: #a16207;
 }
 #x-reply-clipboard-panel .xrc-schedule-board .xrc-schedule-item[data-phase="candidate"][data-warmth="4"] .xrc-desk-phase-tag,

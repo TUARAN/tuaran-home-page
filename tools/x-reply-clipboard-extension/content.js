@@ -255,6 +255,7 @@
   let scheduleRefreshPromise = null;
   let selectedTaskMode = sessionStorage.getItem("xrcSelectedTaskMode") || "timeline";
   let deskHome = sessionStorage.getItem("xrcDeskHome") !== "0";
+  let scheduleCardExpandedMode = "";
   let localDevUpdate = null;
   let updateActionPending = false;
   let updateActionMessage = "";
@@ -1567,6 +1568,20 @@
     if (scheduled.disabled || busy) button.disabled = true;
   }
 
+  // When the schedule button already shows resumeAt, hide page-local risk countdown copy.
+  function scheduleButtonOwnsWait(mode, localActive = false, now = Date.now()) {
+    if (localActive || !taskSchedule.enabled) return false;
+    const queued = taskSchedule.items?.[mode] || {};
+    const resumeAt = Number(queued.resumeAt) || Number(pluginRuntime.tasks?.[mode]?.waitUntil) || 0;
+    if (resumeAt > now) return true;
+    const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
+    return task?.status === "waiting";
+  }
+
+  function isRiskOrCooldownStatusCopy(text) {
+    return /后自动重试|风控等待中|进入冷却|疑似自动化|冷却后|限制冷却|X 限制/iu.test(String(text || ""));
+  }
+
   async function stopScheduledWaitingTask(mode, localActive) {
     if (localActive) return false;
     setTaskActionBusy(mode, true);
@@ -1994,7 +2009,8 @@
     const item = taskSchedule.items?.[mode] || {};
     const rule = taskSchedule.rules?.[mode] || {};
     if (overviewTask?.status === "blocked" || overviewTask?.status === "unknown" || item.blocked) return "stopped";
-    if (rule.enabled === false) return "stopped";
+    // Unchecked = not in rotation; keep off the red「手动停止」pulse and just desaturate the card.
+    if (rule.enabled === false) return "";
     if (item.manualStopped && !isScheduleWaitReason(item.reason)) return "stopped";
     // Single-tab schedule: only one runs; every other participant stays yellow while queued / cooling.
     if (taskSchedule.enabled) {
@@ -2132,6 +2148,10 @@
     const list = board.querySelector("[data-xrc-schedule-list]");
     const historyRoot = (typeof document?.getElementById === "function" && document.getElementById(PANEL_ID)) || dialog;
     paintScheduleHistory(historyRoot);
+    const slice = historyRoot?.querySelector?.("[data-xrc-schedule-slice]");
+    if (slice && document.activeElement !== slice) {
+      slice.value = String([20, 30, 45].includes(Number(taskSchedule.sliceSeconds)) ? taskSchedule.sliceSeconds : 30);
+    }
     if (!scheduleLoaded) {
       list?.replaceChildren?.();
       return;
@@ -2147,6 +2167,9 @@
     const waitingQueue = [...byMode.values()]
       .filter((task) => task.mode !== nowMode)
       .sort((a, b) => {
+        const aOff = a.rule?.enabled === false ? 1 : 0;
+        const bOff = b.rule?.enabled === false ? 1 : 0;
+        if (aOff !== bOff) return aOff - bOff;
         const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
         if (readyDiff) return readyDiff;
         const priorityA = Math.max(1, Math.min(10, Number(a.rule.priority) || 1));
@@ -2156,11 +2179,15 @@
     const nowTask = nowMode ? byMode.get(nowMode) : null;
     // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
     const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
-    const nextMode = waitingQueue.find((task) => scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY)?.mode || "";
+    const nextMode = waitingQueue.find((task) => task.rule?.enabled !== false
+      && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY)?.mode || "";
     const candidateModes = waitingQueue
       .map((task) => task.mode)
-      .filter((mode) => mode && mode !== nextMode);
+      .filter((mode) => mode && mode !== nextMode && byMode.get(mode)?.rule?.enabled !== false);
     const timelineFuture = taskSchedule.timeline?.future;
+    if (scheduleCardExpandedMode && !ordered.some((task) => task.mode === scheduleCardExpandedMode)) {
+      scheduleCardExpandedMode = "";
+    }
     // Upsert in place. Full replaceChildren every second restarted the green orbit mid-edge.
     const keepModes = new Set(ordered.map((task) => task.mode));
     for (const stale of [...list.querySelectorAll(".xrc-schedule-item")]) {
@@ -2173,20 +2200,48 @@
         row = document.createElement("li");
         row.className = "xrc-schedule-item";
         row.dataset.mode = task.mode;
-        row.dataset.xrcInspectTask = task.mode;
-        row.tabIndex = 0;
-        row.setAttribute("role", "button");
-        const mark = document.createElement("i");
-        mark.className = "xrc-schedule-mark";
-        mark.setAttribute("aria-hidden", "true");
+        row.dataset.xrcScheduleRule = task.mode;
+        const enable = document.createElement("label");
+        enable.className = "xrc-schedule-card-enable";
+        enable.title = "勾选后参与排班";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.xrcScheduleEnabled = "1";
+        checkbox.setAttribute("aria-label", `${task.label}参与排班`);
+        enable.append(checkbox);
+        const main = document.createElement("div");
+        main.className = "xrc-schedule-item-main";
         const body = document.createElement("div");
         body.className = "xrc-schedule-item-body";
-        body.append(document.createElement("strong"), document.createElement("small"));
+        const head = document.createElement("div");
+        head.className = "xrc-schedule-item-head";
         const side = document.createElement("div");
         side.className = "xrc-schedule-item-side";
         const status = document.createElement("span");
         status.className = "xrc-schedule-item-status";
-        side.append(status);
+        const enter = document.createElement("button");
+        enter.type = "button";
+        enter.className = "xrc-schedule-card-go";
+        enter.dataset.xrcInspectTask = task.mode;
+        enter.textContent = "进入";
+        enter.title = `进入${task.label}子页`;
+        side.append(status, enter);
+        head.append(document.createElement("strong"), side);
+        const expand = document.createElement("button");
+        expand.type = "button";
+        expand.className = "xrc-schedule-card-expand";
+        expand.dataset.xrcScheduleExpand = task.mode;
+        expand.textContent = "配置 ▾";
+        const foot = document.createElement("div");
+        foot.className = "xrc-schedule-item-foot";
+        foot.append(expand);
+        body.append(head, document.createElement("small"), foot);
+        const config = document.createElement("div");
+        config.className = "xrc-schedule-card-config";
+        config.dataset.xrcScheduleConfig = task.mode;
+        config.hidden = true;
+        config.innerHTML = scheduleCardConfigInnerMarkup(task.mode, task.label);
+        main.append(body, config);
         const orbit = document.createElement("i");
         orbit.className = "xrc-schedule-orbit-dot";
         orbit.setAttribute("aria-hidden", "true");
@@ -2194,10 +2249,21 @@
         dots.className = "xrc-schedule-wait-dots";
         dots.setAttribute("aria-hidden", "true");
         for (let dotIndex = 0; dotIndex < 6; dotIndex += 1) dots.append(document.createElement("i"));
-        row.append(mark, body, side, orbit, dots);
+        row.append(enable, main, orbit, dots);
       }
+      const enabled = task.rule?.enabled !== false;
+      row.classList.toggle("is-disabled", !enabled);
+      const expanded = scheduleCardExpandedMode === task.mode;
+      row.classList.toggle("is-expanded", expanded);
+      const config = row.querySelector("[data-xrc-schedule-config]");
+      if (config) config.hidden = !expanded;
+      const expand = row.querySelector("[data-xrc-schedule-expand]");
+      if (expand) {
+        expand.textContent = expanded ? "收起 ▴" : "配置 ▾";
+        expand.setAttribute("aria-expanded", String(expanded));
+      }
+      syncScheduleCardRuleControls(row, task.mode);
       const pulse = scheduleItemPulse(task.mode, preview, overviewByMode[task.mode]);
-      row.title = `进入${task.label}子页`;
       if (pulse) row.dataset.pulse = pulse;
       else delete row.dataset.pulse;
       const candidateRank = candidateModes.indexOf(task.mode);
@@ -2226,48 +2292,36 @@
       }
       if (status) {
         const waitReason = isScheduleWaitReason(task.reason) || isScheduleWaitReason(futureEntry?.reason);
-        status.textContent = userStateLabelForTask(
-          pulse === "running" || overviewStatus === "running" ? "running"
-            : pulse === "waiting" || overviewStatus === "waiting" || overviewStatus === "stopping"
-              || futureEntry?.status === "ready" || futureEntry?.status === "scheduled"
-              || (taskSchedule.enabled && waitReason && pulse !== "stopped") ? "waiting"
-            : overviewStatus === "blocked" || overviewStatus === "unknown" ? "blocked"
-            : "missing"
-        );
+        status.textContent = !enabled
+          ? "未参与"
+          : userStateLabelForTask(
+            pulse === "running" || overviewStatus === "running" ? "running"
+              : pulse === "waiting" || overviewStatus === "waiting" || overviewStatus === "stopping"
+                || futureEntry?.status === "ready" || futureEntry?.status === "scheduled"
+                || (taskSchedule.enabled && waitReason && pulse !== "stopped") ? "waiting"
+              : overviewStatus === "blocked" || overviewStatus === "unknown" ? "blocked"
+              : "missing"
+          );
       }
-      let side = row.querySelector(".xrc-schedule-item-side");
-      if (!side && status) {
-        side = document.createElement("div");
-        side.className = "xrc-schedule-item-side";
-        status.replaceWith(side);
-        side.append(status);
-      }
-      let go = row.querySelector("[data-xrc-focus-execution]");
-      if (phase === "now" && taskSchedule.enabled && nowMode) {
-        if (!go) {
-          go = document.createElement("button");
-          go.type = "button";
-          go.className = "xrc-schedule-card-go";
-          go.dataset.xrcFocusExecution = "1";
-        }
-        const host = side || row;
-        if (status?.parentNode === host) host.insertBefore(go, status);
-        else if (go.parentNode !== host) host.prepend(go);
-        go.hidden = false;
-        go.textContent = "查看";
-        go.title = "查看当前任务详情";
-        go.dataset.currentTask = nowMode;
-      } else if (go) {
-        go.remove();
+      const enter = row.querySelector("[data-xrc-inspect-task]");
+      if (enter) {
+        enter.dataset.xrcInspectTask = task.mode;
+        enter.textContent = phase === "now" ? "查看" : "进入";
+        enter.title = phase === "now" ? "查看当前任务详情" : `进入${task.label}子页`;
       }
       if (note) {
-        const wait = pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
-        note.textContent = formatScheduleCardNote(task, wait);
+        if (!enabled) note.textContent = "未勾选，不参与自动排班；仍可进入子页手动启停";
+        else {
+          const wait = pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
+          note.textContent = formatScheduleCardNote(task, wait);
+        }
       }
       // Only move when order changed — appendChild every tick restarts CSS animations.
       const current = list.children[index];
       if (current !== row) list.insertBefore(row, current || null);
     }
+    if (scheduleCardExpandedMode === "mutual-targetFollow") void syncTargetFollowHandlesField(historyRoot);
+    if (scheduleCardExpandedMode === "kol") void syncKolHandlesField(historyRoot);
   }
 
   function currentTaskPhase() {
@@ -4402,7 +4456,8 @@
     // Keep the pending text until the composer is cleared. It identifies the
     // extension-owned draft when the scheduler suspends this task.
     writeSaved({ running: true, total: state.total });
-    state.status = `X 提示疑似自动化，当前评论任务进入冷却；${formatCountdown(state.riskCooldownUntil - Date.now())}后自动重试`;
+    // Do not embed a frozen countdown here; the schedule button owns resumeAt timing.
+    state.status = "X 提示疑似自动化，当前评论任务进入冷却";
     renderPanel();
     void prepareReplyForTabSwitch().then((cleared) => {
       if (!cleared) return;
@@ -5600,47 +5655,37 @@
     const pageMeta = {
       model: ["模型设置", "密钥、回退顺序与提示词"],
       pace: ["频率设置", "回复与发帖的间隔和轮次"],
-      schedule: ["排班设置", "十二项任务共用一个执行页签"],
       other: ["其他设置", "显示与社区回执"],
     }[configPage] || ["其他设置", "显示与社区回执"];
     if (title) title.textContent = pageMeta[0];
     if (caption) caption.textContent = pageMeta[1];
-    if (configOpen && configPage === "schedule") {
-      paintScheduleHistory(panel);
-      void syncTargetFollowHandlesField(panel);
-      void syncKolHandlesField(panel);
-    }
     const slice = panel.querySelector("[data-xrc-schedule-slice]");
     if (slice && document.activeElement !== slice) slice.value = String([20, 30, 45].includes(Number(taskSchedule.sliceSeconds)) ? taskSchedule.sliceSeconds : 30);
-    panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
-      const rule = taskSchedule.rules?.[row.dataset.xrcScheduleRule] || {};
-      const enabled = row.querySelector("[data-xrc-schedule-enabled]");
-      const priority = row.querySelector("[data-xrc-schedule-priority]");
-      const windowSelect = row.querySelector("[data-xrc-schedule-window]");
-      const paceSelect = row.querySelector("[data-xrc-schedule-pace]");
-      if (enabled && document.activeElement !== enabled) enabled.checked = rule.enabled !== false;
-      if (priority && document.activeElement !== priority) {
-        const mode = row.dataset.xrcScheduleRule;
-        const fallback = mode === "notifications" ? 10
-          : mode === "timeline" ? 9
-          : mode === "kol" || mode === "poster-premium" ? 8
-          : mode === "poster" || mode === "poster-x" ? 7
-          : ["likes-posts", "likes-replies"].includes(mode) ? 6
-          : mode === "mutual-followBack" ? 5
-          : mode === "mutual-targetFollow" ? 4
-          : mode === "mutual-unfollow" ? 3
-          : mode === "prune-posts" ? 2
-          : 1;
-        priority.value = String(rule.priority || fallback);
-      }
-      if (windowSelect && document.activeElement !== windowSelect) windowSelect.value = rule.window || (row.dataset.xrcScheduleRule === "poster-premium" ? "day" : row.dataset.xrcScheduleRule === "mutual-followBack" ? "overnight" : "all");
-      if (paceSelect && document.activeElement !== paceSelect) {
-        const mode = row.dataset.xrcScheduleRule;
-        const pace = rule.pace || (mode === "timeline" || mode === "kol" ? "boundary" : ["likes-posts", "likes-replies", "poster", "poster-x"].includes(mode) ? "slow" : "medium");
-        paceSelect.value = ["mutual-followBack", "prune-posts"].includes(mode) && !["slow", "medium", "fast", "turbo"].includes(pace) ? "medium" : pace;
-      }
-    });
     panel.dataset.xrcConfig = configOpen ? "open" : "closed";
+  }
+
+  function openScheduleDeskGlobals(panel = document.getElementById(PANEL_ID)) {
+    if (!panel) return;
+    if (state.panelView === "collapsed") {
+      state.panelView = "normal";
+      writeSaved({ running: state.running, total: state.total });
+    }
+    hubOpen = false;
+    configOpen = false;
+    monitorOpen = false;
+    reportOpen = false;
+    toolboxOpen = false;
+    openScheduleDesk();
+    syncHubPage(panel);
+    syncConfigMenu(panel);
+    syncMonitorMenu(panel);
+    syncReportPage(panel);
+    syncToolboxMenu(panel);
+    const globals = panel.querySelector("[data-xrc-desk-globals]");
+    if (globals?.scrollIntoView) {
+      globals.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    panel.querySelector("[data-xrc-schedule-slice]")?.focus?.();
   }
 
   function normalizeTargetFollowHandlesText(value) {
@@ -5733,20 +5778,98 @@
     }).format(new Date(Number(at) || Date.now()));
   }
 
-  function scheduleRuleRowsMarkup() {
-    const priorityOptions = Array.from({ length: 10 }, (_, index) => {
+  const SCHEDULE_PACE_MODES = new Set([
+    "timeline", "notifications", "kol", "likes-posts", "likes-replies", "mutual-followBack", "prune-posts"
+  ]);
+
+  function schedulePriorityOptionsMarkup() {
+    return Array.from({ length: 10 }, (_, index) => {
       const score = 10 - index;
       const tip = score === 10 ? "（最高）" : score === 1 ? "（最低）" : "";
       return `<option value="${score}">${score}分${tip}</option>`;
     }).join("");
-    return FLOW_TASKS.map(([mode, label]) => `<div class="xrc-schedule-rule" data-xrc-schedule-rule="${mode}">
-      <label class="xrc-schedule-name"><input type="checkbox" data-xrc-schedule-enabled checked><span><strong>${label}</strong>${mode === "mutual-unfollow" || mode === "mutual-targetFollow" ? "<small>默认约每周一次</small>" : mode === "mutual-followBack" ? "<small>每轮 15 个，轮数随速度，约每天一次</small>" : mode === "prune-posts" ? "<small>每轮 15 条，轮数随速度，约每天一次</small>" : ["likes-posts", "likes-replies"].includes(mode) ? "<small>默认短轮约 3 分钟，慢档间隔约 4～6 小时</small>" : ""}</span></label>
-      <div class="xrc-schedule-rule-controls">
-        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${priorityOptions}</select></label>
-        <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
-        ${["timeline", "notifications", "kol", "likes-posts", "likes-replies", "mutual-followBack", "prune-posts"].includes(mode) ? `<label>速度 <select data-xrc-schedule-pace aria-label="${label}每次任务的轮数与速度">${["mutual-followBack", "prune-posts"].includes(mode) ? `<option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option>` : `<option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option><option value="boundary">边界测试</option>`}</select></label>` : ""}
-      </div>
-    </div>`).join("");
+  }
+
+  function scheduleCardConfigInnerMarkup(mode, label) {
+    const paceSelect = SCHEDULE_PACE_MODES.has(mode)
+      ? `<label>速度 <select data-xrc-schedule-pace aria-label="${label}每次任务的轮数与速度">${
+        ["mutual-followBack", "prune-posts"].includes(mode)
+          ? `<option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option>`
+          : `<option value="slow">慢</option><option value="medium">中</option><option value="fast">快</option><option value="turbo">超快</option><option value="boundary">边界测试</option>`
+      }</select></label>`
+      : "";
+    const listField = mode === "mutual-targetFollow"
+      ? `<label class="xrc-schedule-card-list"><span>关注候选名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存</small></label>`
+      : mode === "kol"
+        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">修改后自动保存</small></label>`
+        : "";
+    return `<div class="xrc-schedule-rule-controls">
+      <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${schedulePriorityOptionsMarkup()}</select></label>
+      <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
+      ${paceSelect}
+    </div>${listField}`;
+  }
+
+  function defaultSchedulePriority(mode) {
+    return mode === "notifications" ? 10
+      : mode === "timeline" ? 9
+      : mode === "kol" || mode === "poster-premium" ? 8
+      : mode === "poster" || mode === "poster-x" ? 7
+      : ["likes-posts", "likes-replies"].includes(mode) ? 6
+      : mode === "mutual-followBack" ? 5
+      : mode === "mutual-targetFollow" ? 4
+      : mode === "mutual-unfollow" ? 3
+      : mode === "prune-posts" ? 2
+      : 1;
+  }
+
+  function syncScheduleCardRuleControls(row, mode) {
+    if (!row || !mode) return;
+    const rule = taskSchedule.rules?.[mode] || {};
+    const enabled = row.querySelector("[data-xrc-schedule-enabled]");
+    const priority = row.querySelector("[data-xrc-schedule-priority]");
+    const windowSelect = row.querySelector("[data-xrc-schedule-window]");
+    const paceSelect = row.querySelector("[data-xrc-schedule-pace]");
+    if (enabled && document.activeElement !== enabled) enabled.checked = rule.enabled !== false;
+    if (priority && document.activeElement !== priority) priority.value = String(rule.priority || defaultSchedulePriority(mode));
+    if (windowSelect && document.activeElement !== windowSelect) {
+      windowSelect.value = rule.window || (mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all");
+    }
+    if (paceSelect && document.activeElement !== paceSelect) {
+      const pace = rule.pace || (mode === "timeline" || mode === "kol" ? "boundary"
+        : ["likes-posts", "likes-replies", "poster", "poster-x"].includes(mode) ? "slow" : "medium");
+      paceSelect.value = ["mutual-followBack", "prune-posts"].includes(mode) && !["slow", "medium", "fast", "turbo"].includes(pace)
+        ? "medium" : pace;
+    }
+  }
+
+  async function collectAndSaveScheduleRules(panel = document.getElementById(PANEL_ID)) {
+    const status = panel?.querySelector("[data-xrc-schedule-status]");
+    const rules = { ...(taskSchedule.rules || {}) };
+    panel?.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
+      const mode = row.dataset.xrcScheduleRule;
+      if (!mode) return;
+      rules[mode] = {
+        ...(rules[mode] || {}),
+        enabled: Boolean(row.querySelector("[data-xrc-schedule-enabled]")?.checked),
+        priority: Number(row.querySelector("[data-xrc-schedule-priority]")?.value) || defaultSchedulePriority(mode),
+        window: row.querySelector("[data-xrc-schedule-window]")?.value || "all",
+        pace: row.querySelector("[data-xrc-schedule-pace]")?.value || rules[mode]?.pace || "medium"
+      };
+    });
+    if (status) status.textContent = "正在保存排班设置…";
+    try {
+      const saved = await sendExtensionMessage({
+        type: "xrc-schedule-config-set",
+        rules,
+        sliceSeconds: Number(panel?.querySelector("[data-xrc-schedule-slice]")?.value) || 30
+      });
+      taskSchedule = { ...taskSchedule, rules: saved.rules, sliceSeconds: saved.sliceSeconds };
+      if (status) status.textContent = "排班设置已保存；后台会在安全节点应用";
+      renderPanel();
+    } catch (error) {
+      if (status) status.textContent = error?.message || "排班设置保存失败";
+    }
   }
 
   function openModelSettingsForKey(panel) {
@@ -6077,7 +6200,7 @@
               <div class="xrc-menu-grid">
                 <button type="button" data-xrc-config-open="model" aria-expanded="false">模型设置</button>
                 <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率设置</button>
-                <button type="button" data-xrc-config-open="schedule" aria-expanded="false">排班设置</button>
+                <button type="button" data-xrc-desk-globals-open>排班设置</button>
                 <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
               </div>
             </section>
@@ -6150,35 +6273,6 @@
             <button type="button" data-xrc-config-close aria-label="关闭设置">×</button>
           </div>
           <div class="xrc-docs-content">
-            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>01</b><span><strong>任务与时段</strong><small>同一账号同时只跑一项；冷却与发帖档位仍优先</small></span></div>
-              <label class="xrc-schedule-slice"><span>单项最长占用</span><select data-xrc-schedule-slice aria-label="单项最长占用时间"><option value="20">20 秒</option><option value="30">30 秒</option><option value="45">45 秒</option></select></label>
-              <div class="xrc-schedule-rules">${scheduleRuleRowsMarkup()}</div>
-              <p class="xrc-config-note" data-xrc-schedule-status role="status">修改后自动保存；优先级 1～10 分，分值越大越优先；高分不会跳过其他任务的到期和冷却。</p>
-              <button type="button" class="xrc-flow-docs-link" data-xrc-docs-target="xrc-docs-flow">查看单页签排班说明 ↗</button>
-            </section>
-            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>02</b><span><strong>本机记录</strong><small data-xrc-schedule-history-count>暂无</small></span></div>
-              <p class="xrc-config-note" data-xrc-schedule-history-note>最近 10 条已结束轮次，只保存在本机。</p>
-              <ul class="xrc-schedule-history-list" data-xrc-schedule-history aria-label="本机已结束轮次"></ul>
-            </section>
-            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>03</b><span><strong>关注候选名单</strong><small>每周一轮 · 每轮最多 15 个 · 可配置账号</small></span></div>
-              <p class="xrc-config-note">每行一个 X 账号（可带 @）。排班到关注候选时，会从名单里随机打开一个账号的 Followers 页，按 15 个一批关注。</p>
-              <textarea class="xrc-target-follow-handles" data-xrc-target-follow-handles rows="5" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea>
-              <p class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存。</p>
-            </section>
-            <section class="xrc-docs-section xrc-schedule-settings" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>04</b><span><strong>评论大V名单</strong><small>简体中文社区热门博主 · 可对照 X榜单更新</small></span></div>
-              <p class="xrc-config-note">每行一个 X 账号（可带 @）。评论大V会打开名单里账号的主页，评论他们当天的帖子。轮次与速度和评论首页同一套表。</p>
-              <textarea class="xrc-target-follow-handles" data-xrc-kol-handles rows="6" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea>
-              <p class="xrc-config-note" data-xrc-kol-status role="status">修改后自动保存。</p>
-            </section>
-            <section class="xrc-docs-section xrc-schedule-settings xrc-schedule-settings-stop" data-xrc-config-section="schedule">
-              <div class="xrc-docs-title"><b>05</b><span><strong>全流程停止</strong><small>关页签不会关掉后台排班</small></span></div>
-              <p class="xrc-config-note">停止全部会关闭排班并结束各任务；只关执行页签时，到期后后台仍可能再开页签继续。</p>
-              <button type="button" class="xrc-schedule-stop-all" data-xrc-flow-stop hidden>停止全部</button>
-            </section>
             <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>01</b><span><strong>显示</strong><small>面板默认浮在右下角</small></span></div>
               <label class="xrc-config-row">
@@ -6285,7 +6379,7 @@
         </div>
         <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk aria-label="排班台">
           <div class="xrc-desk-head">
-            <button type="button" class="xrc-desk-settings" data-xrc-config-open="schedule" aria-label="排班设置" title="排班设置：任务、优先级与时段">
+            <button type="button" class="xrc-desk-settings" data-xrc-desk-globals-open aria-label="排班全局项" title="打开台底：占用上限、停止全部与本机记录">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
                 <path fill="currentColor" d="M4 7h8v2H4V7zm12 0h4v2h-4V7zm-8 8H4v2h4v-2zm12 0h-8v2h8v-2z"/>
                 <circle fill="currentColor" cx="14" cy="8" r="2.25"/>
@@ -6325,6 +6419,21 @@
             </ul>
             <ul data-xrc-schedule-list></ul>
           </section>
+          <section class="xrc-desk-globals xrc-schedule-settings" data-xrc-desk-globals aria-label="排班全局项">
+            <div class="xrc-desk-globals-row">
+              <label class="xrc-schedule-slice"><span>单项最长占用</span><select data-xrc-schedule-slice aria-label="单项最长占用时间"><option value="20">20 秒</option><option value="30">30 秒</option><option value="45">45 秒</option></select></label>
+              <button type="button" class="xrc-schedule-stop-all" data-xrc-flow-stop hidden>停止全部</button>
+            </div>
+            <p class="xrc-config-note" data-xrc-schedule-status role="status">左侧勾选参与排班；点「配置」改优先级、时段与速度；「进入」打开任务子页启停。</p>
+            <div class="xrc-schedule-settings-stop">
+              <p class="xrc-config-note">停止全部会关闭排班并结束各任务；只关执行页签时，到期后后台仍可能再开页签继续。关页签不会关掉后台排班。</p>
+              <p class="xrc-config-note"><strong>全流程停止</strong></p>
+            </div>
+            <div class="xrc-docs-title"><b>本机</b><span><strong>本机记录</strong><small data-xrc-schedule-history-count>暂无</small></span></div>
+            <p class="xrc-config-note" data-xrc-schedule-history-note>最近 10 条已结束轮次，只保存在本机。</p>
+            <ul class="xrc-schedule-history-list" data-xrc-schedule-history aria-label="本机已结束轮次"></ul>
+            <button type="button" class="xrc-flow-docs-link" data-xrc-docs-target="xrc-docs-flow">查看单页签排班说明 ↗</button>
+          </section>
         </div>
         <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
           <button type="button" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
@@ -6362,7 +6471,7 @@
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
               <div><b>03</b><span><strong>关注候选</strong><small>从可配置名单随机打开 Followers</small></span></div>
-              <p>每周排一次；一次可多轮，每轮最多 15 个。名单在排班设置里改。</p>
+              <p>每周排一次；一次可多轮，每轮最多 15 个。名单在排班台「关注候选」卡片里改。</p>
               <div class="xrc-flow-end">
                 <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日合计 0/400 · 本批 0/15</div>
                 <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
@@ -6702,21 +6811,46 @@
         if (mode) openTaskSubpage(mode);
       };
       const onScheduleDeskActivate = (event) => {
-        const focus = event.target.closest?.("[data-xrc-focus-execution]");
-        if (focus) {
-          const currentMode = focus.dataset.currentTask || taskSchedule.current;
-          if (currentMode) openDeskTask(currentMode);
+        const expand = event.target.closest?.("[data-xrc-schedule-expand]");
+        if (expand) {
+          event.preventDefault();
+          const mode = expand.dataset.xrcScheduleExpand || "";
+          scheduleCardExpandedMode = scheduleCardExpandedMode === mode ? "" : mode;
+          paintScheduleBoard(panel.querySelector("[data-xrc-schedule-desk]") || panel);
           return;
         }
+        if (event.target.closest?.("input, select, textarea, label, [data-xrc-desk-globals], .xrc-schedule-card-config, .xrc-desk-globals")) return;
         const go = event.target.closest?.("[data-xrc-inspect-task]");
         if (go?.dataset?.xrcInspectTask) openDeskTask(go.dataset.xrcInspectTask);
       };
       panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("click", onScheduleDeskActivate);
       panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
-        if (!event.target.closest?.("[data-xrc-inspect-task], [data-xrc-focus-execution]")) return;
+        if (!event.target.closest?.("[data-xrc-inspect-task], [data-xrc-schedule-expand]")) return;
         event.preventDefault();
         onScheduleDeskActivate(event);
+      });
+      panel.querySelectorAll("[data-xrc-desk-globals-open]").forEach((button) => {
+        button.addEventListener("click", () => openScheduleDeskGlobals(panel));
+      });
+      panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("change", (event) => {
+        const target = event.target;
+        if (target?.matches?.("[data-xrc-schedule-slice], [data-xrc-schedule-enabled], [data-xrc-schedule-priority], [data-xrc-schedule-window], [data-xrc-schedule-pace]")) {
+          void collectAndSaveScheduleRules(panel);
+          return;
+        }
+        if (target?.matches?.("[data-xrc-target-follow-handles]")) {
+          void saveTargetFollowHandlesFromField(panel);
+          return;
+        }
+        if (target?.matches?.("[data-xrc-kol-handles]")) {
+          void saveKolHandlesFromField(panel);
+        }
+      });
+      panel.querySelector("[data-xrc-schedule-desk]")?.addEventListener("focusout", (event) => {
+        const target = event.target;
+        if (target?.matches?.("[data-xrc-target-follow-handles]")) void saveTargetFollowHandlesFromField(panel);
+        if (target?.matches?.("[data-xrc-kol-handles]")) void saveKolHandlesFromField(panel);
       });
       panel.querySelector("[data-xrc-report-account]").addEventListener("change", (event) => {
         dailyReportAccount = event.currentTarget.value;
@@ -6903,37 +7037,6 @@
           scheduleConfigSave(panel, true);
         });
       });
-      panel.querySelectorAll("[data-xrc-schedule-slice], [data-xrc-schedule-enabled], [data-xrc-schedule-priority], [data-xrc-schedule-window], [data-xrc-schedule-pace]").forEach((input) => {
-        input.addEventListener("change", async () => {
-          const status = panel.querySelector("[data-xrc-schedule-status]");
-          const rules = { ...(taskSchedule.rules || {}) };
-          panel.querySelectorAll("[data-xrc-schedule-rule]").forEach((row) => {
-            const mode = row.dataset.xrcScheduleRule;
-            rules[mode] = {
-              ...(rules[mode] || {}),
-              enabled: Boolean(row.querySelector("[data-xrc-schedule-enabled]")?.checked),
-              priority: Number(row.querySelector("[data-xrc-schedule-priority]")?.value) || 1,
-              window: row.querySelector("[data-xrc-schedule-window]")?.value || "all",
-              pace: row.querySelector("[data-xrc-schedule-pace]")?.value || rules[mode]?.pace || "medium"
-            };
-          });
-          if (status) status.textContent = "正在保存排班设置…";
-          try {
-            const saved = await sendExtensionMessage({ type: "xrc-schedule-config-set", rules,
-              sliceSeconds: Number(panel.querySelector("[data-xrc-schedule-slice]")?.value) || 30 });
-            taskSchedule = { ...taskSchedule, rules: saved.rules, sliceSeconds: saved.sliceSeconds };
-            if (status) status.textContent = "排班设置已保存；后台会在安全节点应用";
-          } catch (error) {
-            if (status) status.textContent = error?.message || "排班设置保存失败";
-          }
-        });
-      });
-      const targetFollowField = panel.querySelector("[data-xrc-target-follow-handles]");
-      targetFollowField?.addEventListener("change", () => { void saveTargetFollowHandlesFromField(panel); });
-      targetFollowField?.addEventListener("blur", () => { void saveTargetFollowHandlesFromField(panel); });
-      const kolHandlesField = panel.querySelector("[data-xrc-kol-handles]");
-      kolHandlesField?.addEventListener("change", () => { void saveKolHandlesFromField(panel); });
-      kolHandlesField?.addEventListener("blur", () => { void saveKolHandlesFromField(panel); });
       panel.querySelector("[data-xrc-community-secret]")?.addEventListener("change", async () => {
         const status = panel.querySelector("[data-xrc-community-status]");
         try {
@@ -6996,12 +7099,18 @@
 
     const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
-    const replyWait = replyWaitCopy();
+    const replyViewKey = ["timeline", "notifications", "kol"].includes(viewAssistantMode()) ? viewTaskKey() : currentTaskKey();
+    const replyLocalActive = (Boolean(state.loopPromise) || state.running) && currentTaskKey() === replyViewKey;
+    const replyScheduleOwnsWait = scheduleButtonOwnsWait(replyViewKey, replyLocalActive);
+    const replyWait = replyScheduleOwnsWait ? "" : replyWaitCopy();
     if (status) {
       const attention = state.riskPaused || /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开|请输入|缺少|过于频繁|已停止|没有成功|已跳过)/.test(state.status || "");
       const showStatus = state.running || state.stopping || state.loopPromise || /正在检查模型设置/.test(state.status || "") || attention;
-      status.hidden = !(replyWait || showStatus);
-      status.querySelector("[data-xrc-status-copy]").textContent = replyWait || (showStatus ? state.status : "");
+      const hideDuplicateWait = replyScheduleOwnsWait && isRiskOrCooldownStatusCopy(state.status || "");
+      status.hidden = hideDuplicateWait || !(replyWait || showStatus);
+      status.querySelector("[data-xrc-status-copy]").textContent = hideDuplicateWait
+        ? ""
+        : (replyWait || (showStatus ? state.status : ""));
     }
     if (stats) {
       const plan = state.runPlan;
@@ -7086,10 +7195,15 @@
     if (poster) {
       const postStatus = panel.querySelector("[data-xrc-post-status]");
       const postToggle = panel.querySelector("[data-xrc-post-toggle]");
-          const postWait = posterWaitCopy(poster);
+      const postViewKey = isPosterMode(viewAssistantMode()) ? viewTaskKey() : posterTaskKey();
+      const postLocalActive = Boolean(poster.running) && currentTaskKey() === postViewKey;
+      const postScheduleOwnsWait = scheduleButtonOwnsWait(postViewKey, postLocalActive);
+      const postWait = postScheduleOwnsWait ? "" : posterWaitCopy(poster);
       if (postStatus) {
-        postStatus.hidden = !(poster.status || postWait || poster.stopping || Number(poster.riskCooldownUntil) > Date.now());
-        postStatus.textContent = poster.status || "";
+        const hideDuplicateWait = postScheduleOwnsWait && isRiskOrCooldownStatusCopy(poster.status || "");
+        postStatus.hidden = hideDuplicateWait
+          || !(poster.status || postWait || poster.stopping || Number(poster.riskCooldownUntil) > Date.now());
+        postStatus.textContent = hideDuplicateWait ? "" : (poster.status || "");
       }
       const postRiskCooling = Number(poster.riskCooldownUntil) > Date.now();
       const postFixedSlotWaiting = Boolean(postWait && poster.postKind === "premium");

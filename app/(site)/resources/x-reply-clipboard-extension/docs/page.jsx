@@ -140,6 +140,7 @@ const TOC = [
       { id: 'poster-x', label: 'X主题发帖', depth: 2 },
       { id: 'article', label: '普通发文', depth: 2 },
       { id: 'prune-posts', label: '清理低质帖', depth: 2 },
+      { id: 'prune-size', label: '帖子体积估计', depth: 2 },
       { id: 'prompt-feedback', label: '提示词反馈台账', depth: 2 },
       { id: 'frequency', label: '05 · 频率与设置' },
       { id: 'daily-volume', label: '一天大约多少', depth: 1 },
@@ -484,7 +485,7 @@ export default function XReplyClipboardDocsPage() {
                   <li id="poster-premium" className="scroll-mt-24">精品发帖：每天最多 5 条，按北京时间 08:00 / 09:30 / 12:00 / 15:00 / 19:00 发布；正文固定原篇幅，配图比例约 50%。晚启动或准备超时会跳过已经错过的档位，等待下一档；当天最后一档过后等到次日 08:00，不集中补发。等待时按钮可停止任务。</li>
                   <li id="poster-x" className="scroll-mt-24">X主题发帖：批次、条间间隔和波浪时间与普通发帖相同，默认慢档。每条都生成文字卡片，卡片上正好两行，两行都居中。题材只围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company，不改写无关热点。模型没写出正文时，用本地准备好的同题短稿。排班台卡片可单独取消勾选退出自动排班。</li>
                   <li id="article" className="scroll-mt-24">普通发文：打开 X 文章草稿页，按一条 AI 资讯写一篇中文文章，填进标题和正文，等页面自动保存进草稿。不点发布。慢档约 50～70 分钟一篇，中档 25～35 分钟，快档 12～18 分钟，超快 6～10 分钟。每天最多 3 篇，写满等到第二天。编辑器里已有内容时暂停，避免覆盖。</li>
-                  <li id="prune-posts" className="scroll-mt-24">清理低质帖：不限速，打开自己的主页连续删除，直到 X 提示受限或手动暂停；停下后约 7 天再排。图文和纯文字的阅读线见<a href="#prune-rules" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">清理规则表</a>。有图片或视频的图文，各档比纯文字高 100。置顶和转帖留下。阅读读不到就跳过；未满 30 天时，赞、回复、转帖或收藏读不到也跳过。确认删掉的帖子计入今日合计和每日报告的「删帖」。优先级 2 分。</li>
+                  <li id="prune-posts" className="scroll-mt-24">清理低质帖：不限速，打开自己的主页连续删除，直到 X 提示受限或手动暂停；停下后约 7 天再排。图文和纯文字的阅读线见<a href="#prune-rules" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">清理规则表</a>。有图片或视频的图文，各档比纯文字高 100。置顶和转帖留下。阅读读不到就跳过；未满 30 天时，赞、回复、转帖或收藏读不到也跳过。确认删掉的帖子计入今日合计和每日报告的「删帖」。优先级 2 分。大约 3 万条按普通发帖现在的比例，内容体积大约 0.6～1.2 GB，拆开见<a href="#prune-size" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">帖子体积估计</a>。</li>
                   <li>模型返回可用正文后写入待发列表；发帖框若已有图片会等待人工确认或移除。X 提示重复时跳过该条；疑似自动化提示会暂停当前发帖任务并倒计时重试。</li>
                 </ul>
                 <div id="poster-wave" className="mt-4 scroll-mt-24">
@@ -627,6 +628,19 @@ export default function XReplyClipboardDocsPage() {
                   ['之后每满 30 天', '仍比纯文字高 100', '再加 50'],
                 ]}
                 note="不限速，连续删除直到 X 提示受限或手动暂停，停下后约 7 天再排。有图片或视频按图文，阅读线比纯文字高 100。置顶和转帖留下。阅读读不到就跳过。未满 30 天时，赞、回复、转帖或收藏读不到也跳过。"
+              />
+              <PaceTable
+                id="prune-size"
+                caption="清理低质帖 · 大约 3 万条的体积估计"
+                headers={['组成', '大约多少', '体积']}
+                rows={[
+                  ['正文', '3 万条里的文字', '大约 10 MB'],
+                  ['文字卡片', '大约 6 千张，占 20%', '0.6～1.2 GB'],
+                  ['合计', '按现在的普通发帖比例', '0.6～1.2 GB'],
+                  ['几乎没有图', '3 万条纯文字', '大约十几 MB'],
+                  ['一半带图', '大约 1.5 万张', '1.5～3 GB'],
+                ]}
+                note="2026-10-30 的预算估计，按普通发帖现在的比例：20% 文字卡片、40% 原篇幅、40% 精简。文字卡片按上传到 X 之后计算，一张多在 100～200 KB。视频另计。X 账号页不显示这项占用。"
               />
               <PaceTable
                 id="pace-premium"

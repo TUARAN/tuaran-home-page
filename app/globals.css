@@ -1573,6 +1573,7 @@
     font-weight: 700;
   }
 
+  .home-alliance-actions a,
   .home-alliance-actions button {
     display: inline-flex;
     align-items: center;
@@ -1586,6 +1587,13 @@
     white-space: nowrap;
   }
 
+  .home-alliance-site,
+  .home-alliance-site:visited {
+    border: 1px solid #465bd8;
+    background: rgba(255, 255, 255, 0.72);
+    color: #344fc6;
+  }
+
   .home-alliance-contact {
     border: 0;
     background: #465bd8;
@@ -1594,6 +1602,7 @@
     box-shadow: 0 5px 12px rgba(70, 91, 216, 0.2);
   }
 
+  .home-alliance-actions a:hover,
   .home-alliance-actions button:hover {
     opacity: 0.82;
   }
@@ -1609,6 +1618,12 @@
   .dark .home-alliance-stats small { color: #c8d0f4; }
   .dark .home-alliance-stats strong { color: #dbe2ff; }
   .dark .home-alliance-stats > span + span { border-color: #5b69a5; }
+  .dark .home-alliance-site,
+  .dark .home-alliance-site:visited {
+    border-color: #a5b5ff;
+    background: transparent;
+    color: #dbe2ff;
+  }
   .dark .home-alliance-contact { background: #a5b5ff; color: #202b56; }
 
   @media (max-width: 1279px) {
@@ -1751,12 +1766,38 @@
       white-space: nowrap;
     }
 
-    .home-alliance-h5-cta {
+    .home-alliance-h5-actions {
+      display: flex;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .home-alliance-h5-site,
+    .home-alliance-h5-site:visited {
       display: inline-flex;
+      flex: none;
       align-items: center;
       justify-content: center;
       gap: 0.35rem;
-      width: 100%;
+      min-height: 2.55rem;
+      padding: 0 0.85rem;
+      border: 1px solid #465bd8;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #344fc6;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .home-alliance-h5-cta {
+      display: inline-flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-width: 0;
       min-height: 2.55rem;
       border: 0;
       border-radius: 8px;
@@ -1805,6 +1846,13 @@
 
     .dark .home-alliance-h5-chip small {
       color: #c8d0f4;
+    }
+
+    .dark .home-alliance-h5-site,
+    .dark .home-alliance-h5-site:visited {
+      border-color: #a5b5ff;
+      background: transparent;
+      color: #dbe2ff;
     }
 
     .dark .home-alliance-h5-cta {

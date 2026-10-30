@@ -172,6 +172,9 @@ export default function HomeAllianceBanner() {
               ))}
             </div>
             <div className="home-alliance-actions">
+              <a href={ALLIANCE_URL} target="_blank" rel="noreferrer" className="home-alliance-site no-external-arrow">
+                <T zh="官网" en="Website" /> <span aria-hidden="true">→</span>
+              </a>
               <button
                 ref={desktopTriggerRef}
                 type="button"
@@ -216,15 +219,21 @@ export default function HomeAllianceBanner() {
               ))}
             </div>
 
-            <button
-              ref={mobileTriggerRef}
-              type="button"
-              className="home-alliance-h5-cta"
-              onClick={() => openModal(mobileTriggerRef.current)}
-            >
-              <T zh="私人订制合作方案" en="Get a tailored plan" />
-              <span aria-hidden="true">→</span>
-            </button>
+            <div className="home-alliance-h5-actions">
+              <a href={ALLIANCE_URL} target="_blank" rel="noreferrer" className="home-alliance-h5-site no-external-arrow">
+                <T zh="官网" en="Website" />
+                <span aria-hidden="true">→</span>
+              </a>
+              <button
+                ref={mobileTriggerRef}
+                type="button"
+                className="home-alliance-h5-cta"
+                onClick={() => openModal(mobileTriggerRef.current)}
+              >
+                <T zh="私人订制合作方案" en="Get a tailored plan" />
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
           </div>
         </section>
       </div>

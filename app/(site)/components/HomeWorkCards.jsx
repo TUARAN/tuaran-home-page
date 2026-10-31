@@ -14,10 +14,10 @@ function CardLink({ href, children, className }) {
 
 export function HomeBookCards() {
   return (
-    <section className="home-work-stack" aria-labelledby="home-books-title">
+    <section className="home-work-stack home-book-stack" aria-labelledby="home-books-title">
       <div className="home-work-heading">
         <div>
-          <p className="home-kicker">Books · {PUBLISHED_WORKS.length}</p>
+          <p className="home-kicker hidden md:block">Books · {PUBLISHED_WORKS.length}</p>
           <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
         <Link href="/publications" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>
@@ -26,7 +26,7 @@ export function HomeBookCards() {
         {PUBLISHED_WORKS.map((book) => (
           <CardLink key={book.title} href={book.href} className="home-work-card home-book-card">
             <span className="home-book-cover">
-              <Image src={book.image} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 78px, 92px" className="object-cover" />
+              <Image src={book.image} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 56px, 92px" className="object-cover" />
             </span>
             <span className="home-work-copy">
               <span className="home-work-meta">{book.year} · {book.type}{book.publisher ? ` · ${book.publisher}` : ''} · {book.status}</span>

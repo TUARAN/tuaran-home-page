@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import PageContainer from '../../../components/PageContainer'
@@ -92,7 +93,7 @@ const VERSION_ERAS = [
     version: 'v4',
     title: '单页签排班',
     span: '4.0 起',
-    oneLiner: '一账号一个执行页签，十三项按到期串行轮班。',
+    oneLiner: '一账号一个执行页签，十四项按到期串行轮班。',
     points: [
       '冷却、档期只卡住自己；到期项立刻接手，不再为无关等待干耗页签。',
       '排班台卡片可勾选参与；右侧「查看」进子页改优先级/时段与速度并启停。',
@@ -113,9 +114,11 @@ const TOC = [
       { id: 'era-v3', label: 'v3 · 多任务并行', depth: 2 },
       { id: 'era-v4', label: 'v4 · 单页签排班', depth: 2 },
       { id: 'v3-to-v4', label: 'v3 → v4 对照', depth: 2 },
+      { id: 'system-architecture', label: '当前系统结构图', depth: 1 },
       { id: 'task-window-plan', label: '面板截图', depth: 1 },
       { id: 'states', label: '02 · 状态和按钮' },
       { id: 'risk', label: '03 · 风控与自动恢复' },
+      { id: 'action-review-proposal', label: '动作审阅流程建议', depth: 1 },
     ],
   },
   {
@@ -325,7 +328,7 @@ export default function XReplyClipboardDocsPage() {
                 <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">从 v3 升级到 v4</h3>
               </div>
               <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
-                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注、发帖和普通发文共十三项任务按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
+                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注、发帖、普通发文和清理共十四项任务按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
               </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-3.5">
@@ -339,7 +342,7 @@ export default function XReplyClipboardDocsPage() {
                 <div className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_35%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] p-3.5">
                   <strong className="text-[12px] text-[var(--site-green)]">v4 · 单页签串行</strong>
                   <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-4 text-[13px] leading-6 text-[var(--site-muted)]">
-                    <li>一账号一个执行页签，十三项任务轮班占用</li>
+                    <li>一账号一个执行页签，十四项任务轮班占用</li>
                     <li>冷却、档期等待只卡住自己，到期项马上接手</li>
                     <li>排班台卡片勾选参与；「查看」进子页，不改队列</li>
                   </ul>
@@ -347,13 +350,24 @@ export default function XReplyClipboardDocsPage() {
               </div>
               <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">v4 仍是本地开发版，尚未打包；站内下载包仍是 v3，按旧规则运行。加载本地 v4 后，旧多窗口会在首次启动时安全收敛到单页签。</p>
             </div>
+            <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
+              <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">当前系统结构图 · 本地 v4 源码</h3>
+              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 14 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复可按配置使用 DeepSeek、站点 NAS 回退或 b.ai，发帖生成使用 DeepSeek。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
+              <figure className="m-0">
+                <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
+                  <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 高频互动助手的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
+                </a>
+                <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据当前本地 v4 源码梳理的组件与数据流。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
+              </figure>
+              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">14 项任务分别是评论 3 项、点赞 2 项、关注与取关 3 项、发帖与文章草稿 4 项、清理 2 项；它们按排班顺序占用执行页签，不会同时在这一页签执行。</p>
+            </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
-            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十三项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
+            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十四项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>评论首页、评论回复、评论大V、点赞帖子、点赞评论、清理未回关、回关粉丝、普通发帖、精品发帖、X主题发帖和普通发文进入同一队列。任务切换前会等当前操作结束并保存状态；冷却、发帖排程和手动停止优先于排班。</li>
               <li>卡片左侧勾选是否参与自动排班；右侧「查看」打开任务子页。子页先速度表与启停，排班（优先级、时段、名单）靠后。不新开或切换浏览器页签。整卡不再一点就进子页。</li>
               <li>排班台上方是各任务的状态点和一句提示。排班开着时，右上角是「暂停」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」，点一下重新打开排班。只关页签不会关掉后台排班。风控等待不会暂停其他任务。</li>
-              <li>详情和十三项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
+              <li>详情和十四项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
               <li>排班台是默认常驻主界面；队列用统一卡片标注「上一任务 / 当前任务 / 下一任务」。运行中绿边跑马灯，等待中黄边跑马灯，已停止 / 需处理红边呼吸；未勾选参与的卡片降饱和并沉底，状态写「未参与」，不画成手动停止红卡。点「查看」进单项详情，「← 返回排班台」返回；查看不改变排班。默认优先级为评论回复 10 分、评论首页 9 分、精品发帖 8 分、普通发帖、X主题发帖和普通发文 7 分、点赞帖子和点赞评论 6 分、回关粉丝 5 分、关注候选 4 分、取消未回关 3 分。仍停在旧默认分上的配置会各加 1 分；手改过的分数保持不动。精品发帖到固定档位时优先。评论按速度档位完成本次全部轮次后让出共享页签；点赞每次约 3 分钟，慢档后再隔约 4～6 小时。遇 X 频率限制时先保存冷却截止时间并让其他任务运行。8 小时占用上限仅用于异常恢复。普通发帖和 X主题发帖按批次发完后进入周期等待再让位。X主题发帖每条都是两行居中的文字卡片。回关粉丝在北京时间 22:00–次日 06:00 处理，约每天一次；15 个为一轮，每次轮数随速度。清理未回关默认连续取关，直到 X 报错或手动暂停，停下后约 7 天再排。各任务子页速度表可分别选择评论、点赞和回关粉丝的轮次速度。精品发帖仍按北京时间 08:00、09:30、12:00、15:00、19:00 排程，不集中补发。</li>
               <li>一次任务包含若干轮；评论首页与评论回复每轮设置要完成的回复条数，点赞帖子与点赞评论每轮设置要完成的点赞个数。速度用轮次表选择，表下写明本次共几轮、现在第几轮、每轮多少条、现在第几条。排班历史按实际单位计数。</li>
               <li>单项冷却时先持久化恢复时间，再让执行页签轮给其他到期任务。点赞、关注、发帖连续 3 次受限会停止该任务的自动重试；评论两项持续按 10、20、30 分钟递增倒计时，到期自动重试。手动停止仍会取消对应任务的自动重试。</li>
@@ -437,6 +451,20 @@ export default function XReplyClipboardDocsPage() {
                   <li>评论或发帖遇到临时错误，会跳过当前内容、短暂重试或重连；无法安全关闭的草稿和缺失的配置会给出具体提示。</li>
                   <li>验证码、手机号验证或账号状态异常需要按 X 页面提示人工处理；倒计时不能代替账号验证。</li>
                 </ul>
+              </div>
+              <div id="action-review-proposal" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">动作审阅流程 · 改进建议</h3>
+                  <span className="rounded-full border border-[var(--site-line)] px-2 py-0.5 text-[11px] font-semibold text-[var(--site-faint)]">尚未实现</span>
+                </div>
+                <p className="m-0 text-[13px] leading-6">这张图描绘建议采用的操作闭环，不是当前插件的运行步骤。插件先发现候选内容并给出来源与判断理由，再按动作风险进入不同的人工审阅：回复和发帖核对正文与互动对象；删除和取关核对候选清单与批次。确认后只执行一项动作，记录页面能确认的结果，再观察内容可见性、对话质量和账号限制，作为下一轮筛选依据。</p>
+                <figure className="m-0">
+                  <a href="/images/x-reply-clipboard-extension/action-review-proposal.png" target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-[var(--site-line)] bg-white p-3" aria-label="打开动作审阅流程建议原图">
+                    <Image src="/images/x-reply-clipboard-extension/action-review-proposal.png" alt="建议流程：发现候选内容，说明来源与判断理由；回复发帖交由人工审阅内容与对象，删除取关交由人工确认候选清单与批次；每次执行一项，记录结果，并观察可见性、对话质量与账号限制" width={968} height={1524} className="mx-auto h-auto w-full max-w-[560px]" sizes="(min-width: 768px) 560px, 100vw" />
+                  </a>
+                  <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 2 · 目标流程草图。图中的人工审阅、批次确认和逐项执行尚未作为统一流程接入插件；当前自动任务仍按各自规则运行。点击可查看原图。</figcaption>
+                </figure>
+                <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">“记录真实结果”应区分插件检测到的页面操作成功与 X 后台的曝光、可见性等效果数据；账号限制也需单独记录，不能从本机动作计数推断。清理动作一旦在 X 确认删除，原内容无法由插件恢复。</p>
               </div>
             </div>
           </Section>

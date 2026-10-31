@@ -65,7 +65,7 @@ export default function PublicationsPage() {
               已出版作品封面
             </p>
             <span className="font-mono text-[10px] tracking-[0.12em] text-[#858779] dark:text-[#8e9ab0]">
-              共 {publishedCovers.length} 本 · 有外部链接的封面可点击 · 可横向滑动
+              共 {publishedCovers.length} 本 · 点击封面查看详情 · 可横向滑动
             </span>
           </div>
           <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1">

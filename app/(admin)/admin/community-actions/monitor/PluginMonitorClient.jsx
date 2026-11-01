@@ -207,7 +207,7 @@ export default function PluginMonitorClient() {
       </Section>
 
       {platform === 'x' ? <Section title={`${selectedDate} · 自动同步日报`} description={`${accountLabel} · 插件本地确认成功的动作计数，经心跳与每日 09:00 定时任务自动写入；与确认回执是两份独立记录。`} className="mt-5">
-        {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">日报表结构待升级：请应用 0126_x_extension_daily_report_prunes.sql 与 0127_x_extension_daily_report_comment_splits.sql（旧迁移 0112 / 0119 也需已执行）。未升级前仍可读合计，评论拆分为 0。</p> : null}
+        {visibleData?.dailyMigrationRequired ? <p role="alert" className="mb-3 text-[12px] text-amber-700 dark:text-amber-300">日报表结构待升级：请应用 0126、0127 和 0128 迁移（旧迁移 0112 / 0119 也需已执行）。未升级的字段暂显示 0。</p> : null}
         {reports.length ? <div className="overflow-hidden rounded-2xl border border-[#d7e3f4] bg-white shadow-[0_10px_30px_rgba(15,20,25,0.06)] dark:border-[#263142] dark:bg-[#0d141c]">
           <div className="flex items-center justify-between gap-3 border-b border-[#e8eef5] px-4 py-3 dark:border-[#263142]">
             <div>
@@ -236,7 +236,8 @@ export default function PluginMonitorClient() {
                     ['取关', report.unfollows],
                     ['其中回关', report.followBacks],
                     ['发帖', report.posts],
-                    ['删帖', report.prunes]
+                    ['删帖', report.prunes],
+                    ['删评论', report.replyPrunes]
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl border border-[#eef3f8] bg-[#f8fbff] px-2 py-2 text-center dark:border-[#263142] dark:bg-[#101820]">
                       <p className="m-0 text-[10px] text-[#536471] dark:text-gray-400">{label}</p>

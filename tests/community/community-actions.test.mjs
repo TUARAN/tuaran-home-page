@@ -31,7 +31,9 @@ test('X monitor task labels match the extension task names', () => {
       'mutual-follow-back': '回关粉丝',
       'mutual-target-follow': '关注候选',
       'tweet-post': '定时发帖',
+    'article-draft': '普通发文草稿',
       'post-prune': '清理低质帖',
+      'reply-prune': '清理低质评论',
       'post-like': '点赞帖子',
       'reply-like': '点赞评论',
     },
@@ -43,10 +45,14 @@ test('X daily report validates post counts and accepts older reports without pos
   assert.equal(normalizeXDailyReport(dailyReport, NOW).accountHandle, 'Tuaran')
   assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.posts, 0)
   assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.prunes, 0)
+  assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.replyPrunes, 0)
   assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.timelineComments, 0)
   assert.equal(normalizeXDailyReport(dailyReport, NOW).counts.kolComments, 0)
   assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, posts: 7 } }, NOW).counts.posts, 7)
   assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, prunes: 4 } }, NOW).counts.prunes, 4)
+  assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, replyPrunes: 4 } }, NOW).counts.replyPrunes, 4)
+  assert.equal(normalizeXDailyReport({ ...dailyReport, counts: { ...dailyReport.counts, replyPrunes: -1 } }, NOW), null)
+  assert.equal(xReceipt.normalizeEvent({ id: 'event-reply-prune-001', task: 'reply-prune', result: 'success', targetId: '123' }).task, 'reply-prune')
   const withSplits = normalizeXDailyReport({
     ...dailyReport,
     counts: { ...dailyReport.counts, comments: 1, timelineComments: 2, notificationComments: 3, kolComments: 4 },
@@ -67,6 +73,7 @@ test('X daily report validates post counts and accepts older reports without pos
   assert.ok(dailyWrite)
   assert.match(dailyWrite.sql, /ON CONFLICT\(device_id, report_date, account_handle\) DO UPDATE/)
   assert.match(dailyWrite.sql, /timeline_comments/)
+  assert.match(dailyWrite.sql, /reply_prunes/)
   assert.deepEqual(dailyWrite.values.slice(0, 13), ['device-x-daily', '2026-10-12', 'Tuaran', 3, 5, 2, 1, 4, 0, 0, 0, 0, 0])
   const beforeReject = writes.length
   const rejected = await recordCommunityActionReport(db, { deviceId: 'device-x-daily', platform: 'x', dailyReport: { ...dailyReport, counts: { ...dailyReport.counts, posts: -1 } } }, NOW)
@@ -92,9 +99,11 @@ test('local daily report counts successful actions once and refuses a false uplo
     await xReceipt.recordDailySuccess({ id: 'event-follow-001', task: 'mutual-target-follow', result: 'success', occurredAt: NOW }, 'Tuaran')
     await xReceipt.recordDailySuccess({ id: 'event-prune-001', task: 'post-prune', result: 'success', targetId: 'status-1', occurredAt: NOW }, 'Tuaran')
     await xReceipt.recordDailySuccess({ id: 'event-prune-002', task: 'post-prune', result: 'success', targetId: 'status-1', occurredAt: NOW }, 'Tuaran')
+    await xReceipt.recordDailySuccess({ id: 'event-reply-prune-001', task: 'reply-prune', result: 'success', targetId: 'reply-1', occurredAt: NOW }, 'Tuaran')
+    await xReceipt.recordDailySuccess({ id: 'event-reply-prune-002', task: 'reply-prune', result: 'success', targetId: 'reply-1', occurredAt: NOW }, 'Tuaran')
     assert.deepEqual(saved.xrcDailyReports[0].counts, {
       comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
-      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0, prunes: 1,
+      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0, prunes: 1, replyPrunes: 1, articleDrafts: 0,
     })
     const uploaded = await xReceipt.uploadDaily('2026-10-12', 'tuaran')
     assert.equal(uploaded.ok, false)

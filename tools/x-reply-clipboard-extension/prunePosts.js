@@ -10,11 +10,94 @@
   const MIN_AGE_MS = 24 * 60 * 60 * 1000;
   const MONTH_AGE_MS = 30 * MIN_AGE_MS;
   const DELETE_GAP_MS = 3500;
+  // Let X settle each deletion before opening the next menu. A zero-delay
+  // cleanup can overload the shared X tab while the page is rendering.
   const UNLIMITED_DELETE_GAP_MS = 400;
-  const RESCAN_GAP_MS = 60 * 1000;
+  const MENU_POLL_MS = 40;
+  const GONE_POLL_MS = 40;
+  const SCROLL_GAP_MS = 700;
+  const UNLIMITED_SCROLL_GAP_MS = 450;
+  const SEARCH_SCROLL_GAP_MS = 1200;
+  const SEARCH_RETRY_COOLDOWN_MS = 5 * 60 * 1000;
+  const RESCAN_GAP_MS = 1500;
   const ROUND_SIZE = 15;
   const SESSION_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+  const PRUNE_SEARCH_EARLIEST_YEAR = 2006;
   const RATE_LIMIT_WARNING = /(?:rate limit|too many requests|操作过于频繁|超出限制|达到上限|暂时无法)/iu;
+  const SEARCH_LOAD_ERROR = /(?:something went wrong|try reloading|出了点问题|出错了，请重试)/iu;
+  const SEARCH_NO_RESULTS = /(?:no results for|没有搜索结果|未找到结果|暂无搜索结果)/iu;
+
+  function beijingYmd(ms) {
+    const date = new Date(Number(ms) || 0);
+    if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) return "";
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
+    const pick = (type) => parts.find((part) => part.type === type)?.value || "";
+    const year = pick("year");
+    const month = pick("month");
+    const day = pick("day");
+    return year && month && day ? `${year}-${month}-${day}` : "";
+  }
+
+  function parseYmd(ymd) {
+    const match = String(ymd || "").match(/^(\d{4})-(\d{2})-(\d{2})$/u);
+    if (!match) return null;
+    return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+  }
+
+  function monthWindow(year, month) {
+    const since = `${year}-${String(month).padStart(2, "0")}-01`;
+    const nextYear = month === 12 ? year + 1 : year;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const until = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+    return { since, until, label: `${year}年${month}月 · since:${since} until:${until}` };
+  }
+
+  function previousMonthWindow(ymd) {
+    const parsed = parseYmd(ymd);
+    if (!parsed) return null;
+    const year = parsed.month === 1 ? parsed.year - 1 : parsed.year;
+    const month = parsed.month === 1 ? 12 : parsed.month - 1;
+    return monthWindow(year, month);
+  }
+
+  function isPruneMonthWindow(since, until) {
+    const parsed = parseYmd(since);
+    if (!parsed || parsed.day !== 1) return false;
+    return monthWindow(parsed.year, parsed.month).until === until;
+  }
+
+  function acceptPruneMonth(window) {
+    if (!window || Number(String(window.since).slice(0, 4)) < PRUNE_SEARCH_EARLIEST_YEAR) return null;
+    return window;
+  }
+
+  function nextPruneSearchWindow({ onProfile = false, oldestAt = 0, currentSince = "", currentUntil = "", now = Date.now() } = {}) {
+    // Already on a calendar-month search: the month is done, always step one month earlier.
+    // Do not re-open the same month just because kept posts are still visible.
+    if (isPruneMonthWindow(currentSince, currentUntil)) {
+      return acceptPruneMonth(previousMonthWindow(currentSince));
+    }
+    if (onProfile && !(Number(oldestAt) > 0)) return acceptPruneMonth(previousMonthWindow(beijingYmd(now)));
+    if (Number(oldestAt) > 0) {
+      const oldest = beijingYmd(oldestAt);
+      const parsed = parseYmd(oldest);
+      if (!parsed) return null;
+      return acceptPruneMonth(monthWindow(parsed.year, parsed.month));
+    }
+    const base = currentSince || currentUntil;
+    if (!base) return null;
+    return acceptPruneMonth(previousMonthWindow(base));
+  }
+
+  function freshPruneSearchProgress(now = Date.now()) {
+    const range = nextPruneSearchWindow({ onProfile: true, oldestAt: 0, now });
+    return range ? { doneMonths: [], nextSince: range.since, nextUntil: range.until, nextKind: "posts", deleted: 0 } : null;
+  }
 
   function parseCount(value) {
     const text = String(value || "").replace(/[,，\s]/g, "");
@@ -108,6 +191,16 @@
     return false;
   }
 
+  function classifyReply(post, now) {
+    if (!post?.own || post.repost || post.pinned) return false;
+    const at = Number(post.at) || 0;
+    if (at <= 0 || now - at < MONTH_AGE_MS) return false;
+    const counts = [post.likes, post.replies, post.reposts, post.bookmarks, post.quotes]
+      .map(knownCount);
+    return counts.every((count) => count != null)
+      && counts.every((count) => count === 0);
+  }
+
   function articleText(node) {
     return String(node?.innerText || node?.textContent || "").replace(/\s+/g, " ").trim();
   }
@@ -118,7 +211,8 @@
 
   function readPostMetrics(article, handle, now = Date.now()) {
     if (!article || isNestedTweet(article)) return null;
-    const status = article.querySelector?.('a[href*="/status/"]');
+    const timeNode = article.querySelector?.("time");
+    const status = timeNode?.closest?.('a[href*="/status/"]') || article.querySelector?.('a[href*="/status/"]');
     const href = String(status?.getAttribute?.("href") || "");
     const author = href.match(/^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)/u);
     const id = author?.[2] || "";
@@ -130,11 +224,11 @@
     const bookmark = article.querySelector?.('[data-testid="bookmark"], [data-testid="removeBookmark"]');
     const quote = article.querySelector?.('a[href*="/quotes"]');
     const analytics = article.querySelector?.('a[href*="/analytics"]');
-    const time = Date.parse(article.querySelector?.("time")?.getAttribute?.("datetime") || "");
+    const time = Date.parse(timeNode?.getAttribute?.("datetime") || "");
     return {
       id,
       own: Boolean(owner && author && author[1].toLowerCase() === owner),
-      repost: /转帖|reposted/iu.test(context),
+      repost: /转帖|转发|reposted|retweeted/iu.test(context),
       pinned: /置顶|pinned/iu.test(context),
       at: Number.isFinite(time) ? time : 0,
       views: viewCountFromLabel(analytics?.getAttribute?.("aria-label") || "", articleText(analytics)),
@@ -161,6 +255,13 @@
       || null;
   }
 
+  function findUndoRepostMenuItem(doc) {
+    return doc.querySelector?.('[data-testid="unretweetConfirm"]')
+      || [...(doc.querySelectorAll?.('[role="menuitem"]') || [])]
+        .find((node) => /^(?:撤销转帖|取消转帖|撤销转发|取消转发|Undo Repost|Undo Retweet)$/iu.test(articleText(node)))
+      || null;
+  }
+
   function createPrunePlan(pace, random = Math.random) {
     const requested = ["slow", "medium", "fast", "turbo"].includes(String(pace || "")) ? String(pace) : "medium";
     const profile = root.XReplyClipboardLoop?.scheduleProfile?.(requested)
@@ -178,10 +279,11 @@
     };
   }
 
-  function createController({ document: doc, window: win, onUpdate = () => {}, onDeleted = () => {}, accountHandle = () => "", now = Date.now, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
+  function createController({ document: doc, window: win, target = "posts", onUpdate = () => {}, onDeleted = () => {}, onUnreposted = () => {}, onTimelineStalled = null, accountHandle = () => "", now = Date.now, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
     let running = false;
     let stopping = false;
     let deleted = 0;
+    let unreposted = 0;
     let cooldownUntil = 0;
     let plan = null;
     let status = "待命。打开自己的主页后开始。";
@@ -191,6 +293,7 @@
       running,
       stopping,
       deleted,
+      unreposted,
       status,
       cooldownUntil,
       unlimited: Boolean(plan?.unlimited),
@@ -231,28 +334,84 @@
       return { top, height, view, maxTop: Math.max(0, height - view) };
     }
 
-    function nextCandidate() {
+    function nextCandidate(repostSearch = false) {
       const handle = accountHandle();
       for (const article of profileArticles()) {
         const metrics = readPostMetrics(article, handle, now());
         if (!metrics?.id || skipped.has(metrics.id)) continue;
-        if (!classifyPost(metrics, now())) {
+        const ownRepost = target !== "replies" && Boolean(article.querySelector?.('[data-testid="unretweet"]'))
+          && (repostSearch || metrics.repost);
+        const eligible = target === "replies" ? classifyReply(metrics, now()) : classifyPost(metrics, now());
+        if (!ownRepost && (repostSearch || !eligible)) {
           skipped.add(metrics.id);
           continue;
         }
-        return { article, metrics };
+        return { article, metrics, kind: ownRepost ? "repost" : "post" };
       }
       return null;
     }
 
+    function oldestVisibleAt() {
+      const handle = accountHandle();
+      let oldest = 0;
+      for (const article of profileArticles()) {
+        const metrics = readPostMetrics(article, handle, now());
+        const at = Number(metrics?.at) || 0;
+        if (metrics?.own && at > 0 && (oldest === 0 || at < oldest)) oldest = at;
+      }
+      return oldest;
+    }
+
+    function searchRetryButton() {
+      if (profileArticles().length) return null;
+      const main = doc.querySelector?.('main[role="main"]') || doc;
+      if (!SEARCH_LOAD_ERROR.test(articleText(main))) return null;
+      return [...(main.querySelectorAll?.('button, [role="button"]') || [])]
+        .find((node) => /^(?:retry|重试)$/iu.test(articleText(node))) || null;
+    }
+
+    function searchHasNoResults() {
+      if (profileArticles().length) return false;
+      const main = doc.querySelector?.('main[role="main"]') || doc;
+      return SEARCH_NO_RESULTS.test(articleText(main));
+    }
+
+    async function nudgeTimeline() {
+      const view = Math.max(scrollMetrics().view, 600);
+      win?.scrollBy?.(0, -view);
+      await sleep(700);
+      win?.scrollBy?.(0, Math.max(view * 1.2, 800));
+      await sleep(900);
+    }
+
     async function removeCandidate(candidate) {
+      if (candidate.kind === "repost") {
+        const undo = candidate.article.querySelector?.('[data-testid="unretweet"]');
+        if (!undo) return false;
+        undo.click?.();
+        const menuDeadline = now() + 2500;
+        let item = null;
+        while (now() < menuDeadline && !item) {
+          item = findUndoRepostMenuItem(doc);
+          if (!item) await sleep(MENU_POLL_MS);
+        }
+        if (!item) return !candidate.article.isConnected || !candidate.article.querySelector?.('[data-testid="unretweet"]');
+        item.click?.();
+        const goneDeadline = now() + 4000;
+        while (now() < goneDeadline) {
+          if (RATE_LIMIT_WARNING.test(articleText(doc.body || doc))) return "limited";
+          if (!candidate.article.isConnected || !candidate.article.querySelector?.('[data-testid="unretweet"]')) return true;
+          await sleep(GONE_POLL_MS);
+        }
+        return false;
+      }
       const caret = candidate.article.querySelector?.('[data-testid="caret"]');
       caret?.click?.();
       const menuDeadline = now() + 2500;
       let item = null;
       while (now() < menuDeadline && !item) {
         item = findDeleteMenuItem(doc);
-        if (!item) await sleep(150);
+        if (!item) await sleep(MENU_POLL_MS);
       }
       if (!item) return false;
       item.click?.();
@@ -260,7 +419,7 @@
       let confirm = null;
       while (now() < confirmDeadline && !confirm) {
         confirm = findDeleteConfirm(doc);
-        if (!confirm) await sleep(150);
+        if (!confirm) await sleep(MENU_POLL_MS);
       }
       if (!confirm) return false;
       confirm.click?.();
@@ -268,7 +427,7 @@
       while (now() < goneDeadline) {
         if (RATE_LIMIT_WARNING.test(articleText(doc.body || doc))) return "limited";
         if (!candidate.article.isConnected) return true;
-        await sleep(200);
+        await sleep(GONE_POLL_MS);
       }
       return candidate.article.isConnected ? false : true;
     }
@@ -285,7 +444,8 @@
       if (running) return snapshot();
       running = true;
       stopping = false;
-      deleted = 0;
+      deleted = Math.max(0, Number(options?.initialDeleted) || 0);
+      unreposted = Math.max(0, Number(options?.initialUnreposted) || 0);
       cooldownUntil = 0;
       const unlimited = Boolean(options?.unlimited);
       plan = createPrunePlan(options?.pace, options?.random);
@@ -296,41 +456,128 @@
       }
       const deleteGapMs = unlimited ? UNLIMITED_DELETE_GAP_MS : DELETE_GAP_MS;
       skipped.clear();
+      const searchLabel = String(options?.searchLabel || "").trim();
+      const progress = (detail) => target === "replies"
+        ? `不限速 · 已删 ${deleted} 条评论${detail ? ` · ${detail}` : ""}`
+        : `不限速 · 已删 ${deleted} 条 · 已撤销转发 ${unreposted} 条${detail ? ` · ${detail}` : ""}`;
       update(unlimited
-        ? "开始清理低质帖：不限速，图文和纯文字按各自阅读线连续删除，直到 X 提示受限。"
+        ? progress(searchLabel ? `正在删 ${searchLabel}` : "正在扫主页")
         : `开始清理低质帖，本次 ${plan.rounds} 轮，每轮 ${plan.roundSize} 条。`);
       let stagnant = 0;
-      const stagnantLimit = unlimited ? 10 : 5;
+      let nudges = 0;
+      let deepest = 0;
+      let searchRetryCount = 0;
+      let initialSearchWaits = 0;
+      const onSearchMonth = Boolean(searchLabel);
+      const repostSearch = Boolean(options?.repostSearch);
+      const advanceTimeline = options.onTimelineStalled || onTimelineStalled;
+      const stagnantLimit = unlimited ? (onSearchMonth ? 2 : 6) : 5;
+      const nudgeLimit = onSearchMonth ? 0 : 3;
+
+      async function advancePastCurrentWindow(reason) {
+        if (plan.roundCount > 0) plan.completedRounds += 1;
+        update(progress(reason));
+        const stalled = await advanceTimeline?.({ deleted, unreposted, oldestAt: oldestVisibleAt() });
+        if (stalled) {
+          update(typeof stalled === "string" ? stalled : progress("转到更早的搜索结果"));
+          running = false;
+          stopping = false;
+          return true;
+        }
+        if (typeof advanceTimeline === "function") {
+          update(progress("更早的帖没有继续加载"));
+          return "stop";
+        }
+        if (onSearchMonth) {
+          update(progress(`${searchLabel} 已扫完，暂时无法切换到上个月`));
+          return "stop";
+        }
+        return false;
+      }
+
       while (running && !stopping) {
         if (RATE_LIMIT_WARNING.test(articleText(doc.body || doc))) {
           update("X 提示操作受限，本次先停下。");
           break;
         }
-        const candidate = nextCandidate();
+        if (onSearchMonth) {
+          const retry = searchRetryButton();
+          if (retry) {
+            if (searchRetryCount >= 3) {
+              cooldownUntil = now() + SEARCH_RETRY_COOLDOWN_MS;
+              update(`${searchLabel} 搜索加载失败，保留当前月份，5 分钟后自动重试`);
+              while (running && !stopping && now() < cooldownUntil) {
+                await sleep(Math.min(1000, Math.max(1, cooldownUntil - now())));
+              }
+              if (stopping) break;
+              cooldownUntil = 0;
+              searchRetryCount = 0;
+              continue;
+            }
+            searchRetryCount += 1;
+            update(progress(`${searchLabel} 搜索加载失败，正在重试 ${searchRetryCount}/3`));
+            retry.click?.();
+            await sleep(1500);
+            continue;
+          }
+          if (searchHasNoResults()) {
+            const advanced = await advancePastCurrentWindow(`${searchLabel} 没有结果，转到更早的月份`);
+            if (advanced === true) return snapshot();
+            if (advanced === "stop") break;
+          }
+          if (!profileArticles().length && initialSearchWaits < 3) {
+            initialSearchWaits += 1;
+            update(progress(`${searchLabel} 等待搜索结果加载`));
+            await sleep(SEARCH_SCROLL_GAP_MS);
+            continue;
+          }
+        }
+        const candidate = nextCandidate(repostSearch);
         if (!candidate) {
           const beforeIds = new Set(visiblePostIds());
           const before = scrollMetrics();
           if (unlimited) {
-            update(`不限速 · 已删 ${deleted} 条 · 继续向下扫主页`);
+            update(progress(searchLabel ? `正在删 ${searchLabel}` : "继续向下扫主页"));
           }
           win?.scrollBy?.(0, Math.max(before.view * 0.9, 700));
-          await sleep(unlimited ? 1100 : 700);
+          await sleep(onSearchMonth ? SEARCH_SCROLL_GAP_MS : unlimited ? UNLIMITED_SCROLL_GAP_MS : SCROLL_GAP_MS);
           const afterIds = visiblePostIds();
           const after = scrollMetrics();
           const gainedIds = afterIds.some((id) => !beforeIds.has(id));
-          const moved = after.top > before.top + 8 || after.height > before.height + 8;
-          if (gainedIds || moved) stagnant = 0;
-          else stagnant += 1;
+          const deeper = after.top > deepest + 8;
+          if (after.top > deepest) deepest = after.top;
+          // Only a new post ID proves that the month search reached more results.
+          // Kept posts are visited once; layout-height jitter cannot restart this month.
+          if (onSearchMonth) {
+            stagnant = gainedIds ? 0 : stagnant + 1;
+          } else if (gainedIds || after.height > before.height + 8 || deeper) {
+            stagnant = 0;
+          } else {
+            stagnant += 1;
+          }
           if (stagnant >= stagnantLimit) {
-            if (plan.roundCount > 0) plan.completedRounds += 1;
             if (unlimited) {
+              if (nudges < nudgeLimit) {
+                nudges += 1;
+                stagnant = 0;
+                update(progress(searchLabel ? `${searchLabel} 暂时没有更多，往回带一下再往下刷` : "暂时没有更早的帖，往回带一下再往下刷"));
+                await nudgeTimeline();
+                continue;
+              }
+              const advanced = await advancePastCurrentWindow(searchLabel
+                ? `${searchLabel} 这个月刷完了，标记后往前一个月`
+                : "主页不再往下加载，转到更早的搜索结果");
+              if (advanced === true) return snapshot();
+              if (advanced === "stop") break;
               skipped.clear();
               stagnant = 0;
+              nudges = 0;
               if (typeof win?.scrollTo === "function") win.scrollTo(0, 0);
-              update(`不限速 · 已删 ${deleted} 条 · 主页已扫完，从顶部继续`);
+              update(progress("主页已扫完，从顶部继续"));
               await sleep(RESCAN_GAP_MS);
               continue;
             }
+            if (plan.roundCount > 0) plan.completedRounds += 1;
             await holdForNextDay(`主页已扫完，本次 ${plan.completedRounds} 轮已完成，共删除 ${deleted} 条`);
             break;
           }
@@ -338,7 +585,7 @@
         }
         stagnant = 0;
         update(unlimited
-          ? `不限速 · 已删 ${deleted} 条 · 本轮 ${plan.roundCount}/${plan.roundSize}`
+          ? progress(searchLabel ? `正在清理 ${searchLabel}` : `本轮 ${plan.roundCount}/${plan.roundSize}`)
           : `第 ${Math.min(plan.completedRounds + 1, plan.rounds)}/${plan.rounds} 轮，本轮 ${plan.roundCount}/${plan.roundSize}。`);
         const removed = await removeCandidate(candidate);
         skipped.add(candidate.metrics.id);
@@ -347,12 +594,18 @@
           break;
         }
         if (removed === true) {
-          deleted += 1;
+          if (candidate.kind === "repost") {
+            unreposted += 1;
+            onUnreposted(candidate.metrics.id);
+          } else {
+            deleted += 1;
+            onDeleted(candidate.metrics.id);
+          }
+          nudges = 0;
           plan.roundCount += 1;
-          onDeleted(candidate.metrics.id);
           update(unlimited
-            ? `不限速 · 已删 ${deleted} 条 · 本轮 ${plan.roundCount}/${plan.roundSize}`
-            : `第 ${Math.min(plan.completedRounds + 1, plan.rounds)}/${plan.rounds} 轮，本轮已删除 ${plan.roundCount} 条。`);
+            ? progress(searchLabel ? `正在清理 ${searchLabel}` : `本轮 ${plan.roundCount}/${plan.roundSize}`)
+            : `第 ${Math.min(plan.completedRounds + 1, plan.rounds)}/${plan.rounds} 轮，本轮已处理 ${plan.roundCount} 条。`);
         }
         if (stopping) break;
         if (plan.roundCount >= plan.roundSize) {
@@ -363,7 +616,7 @@
             break;
           }
           if (unlimited) {
-            update(`不限速 · 已完成 ${plan.completedRounds} 轮，共删除 ${deleted} 条，继续`);
+            update(progress(searchLabel ? `正在删 ${searchLabel}` : `已完成 ${plan.completedRounds} 轮，继续`));
             stagnant = 0;
             continue;
           }
@@ -406,6 +659,9 @@
     UNLIMITED_DELETE_GAP_MS,
     RESCAN_GAP_MS,
     ROUND_SIZE,
+    isPruneMonthWindow,
+    nextPruneSearchWindow,
+    freshPruneSearchProgress,
     createPrunePlan,
     parseCount,
     countFromLabel,
@@ -416,9 +672,11 @@
     quoteCountFromLabel,
     viewCountFromLabel,
     classifyPost,
+    classifyReply,
     readPostMetrics,
     findDeleteMenuItem,
     findDeleteConfirm,
+    findUndoRepostMenuItem,
     createController
   };
   root.XrcPrunePosts = api;

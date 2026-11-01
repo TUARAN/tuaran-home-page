@@ -23,7 +23,8 @@
     // service worker/offscreen document makes foreground work slower and floods
     // the extension message channel. Long waits still use the offscreen worker
     // so changing browser tabs does not restart the deadline.
-    if (delayMs < BACKGROUND_TIMER_MIN_MS || !extensionAlive()) return localWait(delayMs);
+    const hidden = root.document?.visibilityState === "hidden" || root.document?.hidden === true;
+    if ((!hidden && delayMs < BACKGROUND_TIMER_MIN_MS) || !extensionAlive()) return localWait(delayMs);
 
     const requestId = `xrc_${Date.now()}_${sequence += 1}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {

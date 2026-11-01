@@ -30,8 +30,8 @@
     "mutual-target-follow",
     "post-like",
     "reply-like",
-    "tweet-post",
-    "post-prune"
+    "tweet-post", "article-draft",
+    "post-prune", "reply-prune"
   ]);
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
   const ID_RE = /^[A-Za-z0-9_-]{8,80}$/;
@@ -49,7 +49,14 @@
     "post-like": "likes", "reply-like": "likes",
     "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
     "mutual-follow-back": "followBacks", "tweet-post": "posts",
-    "post-prune": "prunes"
+    "post-prune": "prunes", "reply-prune": "replyPrunes", "article-draft": "articleDrafts"
+  });
+  const TASK_MODES = Object.freeze({
+    "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol",
+    "post-like": "likes-posts", "reply-like": "likes-replies",
+    "mutual-target-follow": "mutual-targetFollow", "mutual-follow-back": "mutual-followBack",
+    "mutual-unfollow": "mutual-unfollow", "post-prune": "prune-posts", "reply-prune": "prune-replies",
+    "article-draft": "article"
   });
 
   function shanghaiDate(at = Date.now()) {
@@ -59,7 +66,7 @@
   function emptyCounts() {
     return {
       comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
-      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0
+      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0
     };
   }
 
@@ -102,6 +109,11 @@
       row.targetKeys = [...row.targetKeys, targetKey].slice(-500);
     }
     row.counts[metric] = Math.max(0, Number(row.counts[metric]) || 0) + 1;
+    const taskMode = event.task === "tweet-post" ? ({ premium: "poster-premium", x: "poster-x" }[event.postKind] || "poster") : TASK_MODES[event.task];
+    if (taskMode) {
+      row.taskCounts = row.taskCounts && typeof row.taskCounts === "object" ? row.taskCounts : {};
+      row.taskCounts[taskMode] = Math.max(0, Number(row.taskCounts[taskMode]) || 0) + 1;
+    }
     syncCommentTotal(row.counts);
     row.eventIds = [...row.eventIds, event.id].slice(-300);
     row.updatedAt = Date.now();
@@ -148,6 +160,8 @@
         const key = `${row.date || ""}::${row.accountHandle}`;
         const current = mergedDaily.get(key) || { date: row.date, accountHandle: row.accountHandle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
         for (const metric of Object.keys(current.counts)) current.counts[metric] = Math.max(0, Number(current.counts[metric]) || 0) + Math.max(0, Number(row.counts?.[metric]) || 0);
+        current.taskCounts ||= {};
+        for (const [mode, count] of Object.entries(row.taskCounts || {})) current.taskCounts[mode] = Math.max(0, Number(current.taskCounts[mode]) || 0) + Math.max(0, Number(count) || 0);
         current.eventIds = [...new Set([...current.eventIds, ...(Array.isArray(row.eventIds) ? row.eventIds : [])])].slice(-300);
         current.updatedAt = Math.max(Number(current.updatedAt) || 0, Number(row.updatedAt) || 0);
         current.uploadedAt = Math.max(Number(current.uploadedAt) || 0, Number(row.uploadedAt) || 0);
@@ -238,6 +252,7 @@
       id: ID_RE.test(suppliedId) ? suppliedId : createId(),
       task,
       result,
+      postKind: task === "tweet-post" && ["premium", "x"].includes(raw?.postKind) ? raw.postKind : "normal",
       targetId: String(raw?.targetId || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 80),
       accountHandle: cleanHandle(raw?.accountHandle),
       errorCode: cleanCode(raw?.errorCode),
@@ -530,6 +545,8 @@
         const key = `${row.date}::${handle}`;
         const current = merged.get(key) || { date: row.date, accountHandle: handle, counts: emptyCounts(), eventIds: [], updatedAt: 0, uploadedAt: 0 };
         for (const metric of Object.keys(current.counts)) current.counts[metric] = Math.max(Number(current.counts[metric]) || 0, Number(row.counts?.[metric]) || 0);
+        current.taskCounts ||= {};
+        for (const [mode, count] of Object.entries(row.taskCounts || {})) current.taskCounts[mode] = Math.max(Number(current.taskCounts[mode]) || 0, Number(count) || 0);
         current.updatedAt = Math.max(Number(current.updatedAt) || 0, Number(row.updatedAt) || 0);
         current.uploadedAt = Math.max(Number(current.uploadedAt) || 0, Number(row.uploadedAt) || 0);
         merged.set(key, current);

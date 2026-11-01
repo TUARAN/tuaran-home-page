@@ -1,6 +1,8 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js");
+if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js");
+
+const replyHistory = globalThis.XrcReplyHistory?.createReplyHistory(globalThis.chrome?.storage?.local, globalThis.indexedDB);
 
 const AI_SETTINGS_KEY = "xrcAiSettings";
 const DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions";
@@ -30,7 +32,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "article", "prune-posts", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "article", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -61,7 +63,7 @@ const GROK_REPLY_PROMPT = "这条可以带 @grok。可直接以 @grok 开头接�
 
 const POST_NORMAL_PROMPT = [
   "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
-  "可以用平台常见钩子开头，例如：说个暴论， / 我真心觉得， / 卧槽卧槽卧槽。钩子后换行（可空一行），再写具体事和看法。没有钩子时，第一句直接说清谁做了什么。",
+  "普通帖第一行必须用一个抓人的口语开头，随后空一行，紧接具体事件和观点。可参考：我真的很好奇、说个暴论、卧槽卧槽卧槽、讲真、说句难听的、我有点想不通、这事真离谱、等等，这就有意思了、我突然意识到一件事、我越想越不对劲、这回我站这一边、我是真没想到、先说结论、别急，先看这件事、说实话我不服、这点太关键了。按话题选自然的一句，不要空喊情绪，也不要编造亲历。",
   "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
   "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
   "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
@@ -423,15 +425,20 @@ function parseAihotFeed(payload) {
   }).filter(Boolean).slice(0, 30);
 }
 
-const POST_OPENING_PREFIXES = ["说个暴论，", "我真心觉得，", "卧槽卧槽卧槽"];
+const POST_OPENING_PREFIXES = [
+  "我真的很好奇，", "说个暴论，", "卧槽卧槽卧槽，", "讲真，",
+  "说句难听的，", "我有点想不通，", "这事真离谱，", "等等，这就有意思了。",
+  "我突然意识到一件事，", "我越想越不对劲，", "这回我站这一边，", "我是真没想到，",
+  "先说结论，", "别急，先看这件事。", "说实话我不服，", "这点太关键了，"
+];
 
 function choosePostOpening(draw = Math.random()) {
-  if (!Number.isFinite(draw) || draw < 0 || draw >= 0.3) return "";
-  return POST_OPENING_PREFIXES[Math.min(2, Math.floor(draw * 10))];
+  const value = Number.isFinite(draw) ? Math.max(0, Math.min(0.999999, draw)) : 0;
+  return POST_OPENING_PREFIXES[Math.floor(value * POST_OPENING_PREFIXES.length)];
 }
 
 function applyPostOpening(post, prefix) {
-  const body = cleanRewrite(post).replace(/^(?:说个暴论|讲个事实|我真心觉得|我操我操我操|卧槽卧槽卧槽)[，,：:\s]*/u, "").trim();
+  const body = cleanRewrite(post).replace(/^(?:我真的很好奇|说个暴论|卧槽卧槽卧槽|讲真|说句难听的|我有点想不通|这事真离谱|等等，这就有意思了|我突然意识到一件事|我越想越不对劲|这回我站这一边|我是真没想到|先说结论|别急，先看这件事|说实话我不服|这点太关键了|讲个事实|我真心觉得|我操我操我操)[，,。：:\s]*/u, "").trim();
   if (!body) return "";
   if (!prefix) return body;
   return `${prefix}\n\n${body}`;
@@ -487,14 +494,14 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
       ? "本次写成文字卡片：正好两行，两行都会居中。每行一个完整短句，不要加固定钩子，不要第三行。"
       : premium
       ? "本次可不加强制钩子；若用钩子，钩子后必须进入具体剖析。"
-      : "本次随机开头：不用固定钩子，先用一句话交代具体对象和事件，再写一边的看法；整条只站一边。";
+      : "第一行使用指定的抓人开头，接着交代具体对象和事件；整条只站一边。";
   const lengthDirective = xTheme
     ? "本次篇幅：正好两行，每行约 8～16 个中文字符，两行之间空一行。不要第三行。"
     : lengthMode === "compact"
-    ? "本次篇幅优先于默认篇幅：只写约 35～60 个中文字符，分成 3～4 个短行，每行之间留一个空行。第一行交代具体人或事，后面只把一边的看法说清楚；不要正反对照，更不要补凑字数的总结。不添加标题。"
+    ? "本次篇幅优先于默认篇幅：开头之后只写约 35～60 个中文字符，分成 2～3 个短行，每行之间留一个空行。尽快交代具体人或事，只把一边的看法说清楚；不要正反对照，更不要补凑字数的总结。不添加标题。"
     : premium
       ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。"
-      : "本次篇幅：沿用普通发帖提示词原有的字数与分段方式。";
+      : "本次篇幅：沿用普通发帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
@@ -727,6 +734,8 @@ async function scheduleBackgroundTimer(message, sender) {
   const frameId = Number(sender?.frameId);
   if (!requestId) throw new Error("后台计时请求无效");
   if (!Number.isInteger(tabId)) throw new Error("无法识别需要唤醒的 X 页签");
+  // Protect every requesting execution tab, including background accounts.
+  try { await chrome.tabs.update(tabId, { autoDiscardable: false }); } catch (error) {}
   await ensureOffscreenDocument();
   await chrome.runtime.sendMessage({
     type: "xrc-offscreen-schedule",
@@ -862,7 +871,10 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   const current = pathnameOf(currentUrl);
   if (selected === "notifications") return "/notifications";
   if (selected === "mutual-unfollow") return handle ? `/${handle}/following` : "";
-  if (selected === "prune-posts") return handle ? `/${handle}` : "";
+  if (selected === "prune-posts" || selected === "prune-replies") {
+    if (current === "/search") return "/search";
+    return handle ? `/${handle}` : "";
+  }
   if (selected === "mutual-followBack") return handle ? `/${handle}/followers` : "";
   if (selected === "mutual-targetFollow") {
     const handles = normalizeTargetFollowHandles(targetFollowHandles || targetFollowHandlesCache);
@@ -898,9 +910,77 @@ function taskPageUrl(mode, sourceUrl = "https://x.com/home", options = {}) {
   return `${pageOrigin(sourceUrl)}${pathname}`;
 }
 
+function beijingMonthParts(ms = Date.now()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit"
+  }).formatToParts(new Date(ms));
+  const pick = (type) => Number(parts.find((part) => part.type === type)?.value) || 0;
+  return { year: pick("year"), month: pick("month") };
+}
+
+function previousMonthSearchQuery(handle, now = Date.now()) {
+  const { year, month } = beijingMonthParts(now);
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const since = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
+  const untilYear = prevMonth === 12 ? prevYear + 1 : prevYear;
+  const untilMonth = prevMonth === 12 ? 1 : prevMonth + 1;
+  const until = `${untilYear}-${String(untilMonth).padStart(2, "0")}-01`;
+  return `from:${handle} since:${since} until:${until} -filter:replies`;
+}
+
+function previousMonthReplySearchQuery(handle, now = Date.now()) {
+  return previousMonthSearchQuery(handle, now).replace("-filter:replies", "filter:replies");
+}
+
+function isPruneMonthSearch(query, handle) {
+  const since = (String(query || "").match(/since:(\d{4}-\d{2}-\d{2})/iu) || [])[1] || "";
+  const until = (String(query || "").match(/until:(\d{4}-\d{2}-\d{2})/iu) || [])[1] || "";
+  if (!new RegExp(`(?:^|\\s)from:${handle}\\b`, "iu").test(String(query || ""))) return false;
+  if (!/^\d{4}-\d{2}-01$/u.test(since)) return false;
+  const year = Number(since.slice(0, 4));
+  const month = Number(since.slice(5, 7));
+  const untilYear = month === 12 ? year + 1 : year;
+  const untilMonth = month === 12 ? 1 : month + 1;
+  return until === `${untilYear}-${String(untilMonth).padStart(2, "0")}-01`;
+}
+
+async function readPruneSearchStart() {
+  try {
+    return Boolean((await chrome.storage.local.get("xrcPruneSearchStart"))?.xrcPruneSearchStart);
+  } catch (error) {
+    return false;
+  }
+}
+
 function taskTabUrl(mode, sourceUrl = "https://x.com/home", options = {}) {
   const selected = validTaskMode(mode);
   const autostart = options.start ? "&xrcStart=1" : "";
+  if (selected === "prune-posts" || selected === "prune-replies") {
+    try {
+      const current = new URL(options.currentUrl || sourceUrl, "https://x.com");
+      const path = current.pathname.replace(/\/+$/u, "") || "/";
+      const query = current.searchParams.get("q") || "";
+      const handle = accountHandleFrom(options.accountHandle);
+      const searchFirst = selected === "prune-replies" || options.pruneSearchStart;
+      const expectedFilter = selected === "prune-replies" ? /(?:^|\s)filter:replies(?:\s|$)/iu : /(?:^|\s)(?:-filter:replies|filter:nativereposts)(?:\s|$)/iu;
+      if (searchFirst && handle && !(path === "/search" && isPruneMonthSearch(query, handle) && expectedFilter.test(query))) {
+        const search = selected === "prune-replies" ? previousMonthReplySearchQuery(handle) : previousMonthSearchQuery(handle);
+        const autostart = options.start ? "&xrcStart=1" : "";
+        return `${pageOrigin(sourceUrl)}/search?q=${encodeURIComponent(search)}&src=typed_query&f=live&xrcAssistant=${selected}${autostart}`;
+      }
+      if (path === "/search" && /(?:^|\s)from:/iu.test(query) && expectedFilter.test(query)) {
+        current.searchParams.set("xrcAssistant", selected);
+        if (options.start) current.searchParams.set("xrcStart", "1");
+        else current.searchParams.delete("xrcStart");
+        return current.toString();
+      }
+    } catch (error) {
+      // Fall through to the profile page when the current search URL cannot be reused.
+    }
+  }
   const page = taskPageUrl(mode, sourceUrl, options) || `${pageOrigin(sourceUrl)}/home`;
   return `${page}?xrcAssistant=${encodeURIComponent(selected)}${autostart}`;
 }
@@ -1002,6 +1082,7 @@ const TASK_TITLE_LABELS = {
   "poster-x": "X主题发帖",
   article: "普通发文",
   "prune-posts": "清理低质帖",
+  "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
   "mutual-followBack": "回关粉丝",
   "mutual-targetFollow": "关注候选"
@@ -1058,6 +1139,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   if (selected === "mutual-targetFollow") await readTargetFollowHandles();
   if (selected === "kol") await readKolHandles();
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
+  const pruneSearchStart = selected === "prune-posts" && await readPruneSearchStart();
   const schedule = await readTaskSchedule();
   // v4 single-tab profiles must never fall back to per-task windows, even while paused.
   if ((schedule.enabled || Number(schedule.strategyVersion) >= 4) && QUEUED_TASKS.includes(selected)) {
@@ -1109,7 +1191,8 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
         const destination = taskTabUrl(selected, pageUrl || sender?.tab?.url, {
           start,
           accountHandle: handle,
-          currentUrl: pageUrl
+          currentUrl: pageUrl,
+          pruneSearchStart
         });
         if (destination) {
           await rememberPendingLaunch(selected, destination, start, existingId);
@@ -1125,7 +1208,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
       await writeTaskTabs(tabs);
     }
   }
-  const destination = taskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle });
+  const destination = taskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
   const url = destination || `${pageOrigin(sender?.tab?.url)}/home?xrcAssistant=${encodeURIComponent(selected)}`;
   const createdWindow = await chrome.windows.create({
     url,
@@ -1153,7 +1236,7 @@ async function findReusableScheduledXTab(accountHandle = "") {
   if (!chrome.tabs?.query || !chrome.tabs?.sendMessage) return null;
   let candidates;
   try {
-    candidates = await chrome.tabs.query({ active: true, url: ["https://x.com/*", "https://twitter.com/*"] });
+    candidates = await chrome.tabs.query({ url: ["https://x.com/*", "https://twitter.com/*"] });
   } catch (error) {
     return null;
   }
@@ -1233,6 +1316,7 @@ async function createSharedExecTab(destination, sender, activate, { mode = "", s
 async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate } = {}) {
   if (validTaskMode(mode) === "mutual-targetFollow") await readTargetFollowHandles();
   if (validTaskMode(mode) === "kol") await readKolHandles();
+  const pruneSearchStart = validTaskMode(mode) === "prune-posts" && await readPruneSearchStart();
   const shouldActivate = activate == null ? !start : Boolean(activate);
   let plan = await readTaskSchedule();
   const tabs = await readTaskTabs();
@@ -1293,7 +1377,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
       }
     }
     const destination = taskTabUrl(mode, tab.url || sender?.tab?.url, {
-      start, accountHandle, currentUrl: tab.url || ""
+      start, accountHandle, currentUrl: tab.url || "", pruneSearchStart
     });
     if (destination) {
       await rememberPendingLaunch(mode, destination, start, tabId);
@@ -1315,7 +1399,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
     return { ok: true, mode, tabId, reused: true };
   }
   // "打开当前执行页签" used to return idle when workTabId was cleared; always open a live tab.
-  const destination = taskTabUrl(mode, sender?.tab?.url, { start, accountHandle });
+  const destination = taskTabUrl(mode, sender?.tab?.url, { start, accountHandle, pruneSearchStart });
   const created = await createSharedExecTab(destination, sender, start ? shouldActivate : true, { mode, start });
   tabId = created.tabId;
   await registerTaskTab(mode, tabId);
@@ -1329,7 +1413,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article", "prune-posts", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1363,14 +1447,32 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-const FOLLOW_BACK_MIN_GAP_MS = 24 * 60 * 60 * 1000;
+const FOLLOW_BACK_MIN_GAP_MS = 30 * 60 * 1000;
+const FOLLOW_DAILY_TARGET = 300;
+const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // Round gaps are 5～30 minutes; keep the overnight session long enough to finish paced rounds.
 const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
-const TARGET_FOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+const TARGET_FOLLOW_MIN_GAP_MS = 30 * 60 * 1000;
+const LEGACY_FOLLOW_BACK_GAP_MS = 24 * 60 * 60 * 1000;
+const LEGACY_TARGET_FOLLOW_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const TARGET_FOLLOW_SLICE_MS = 45 * 60 * 1000;
 const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
 const FOLLOW_BACK_NIGHT_END_MINUTE = 6 * 60;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
+const KOL_START_FAILURE_LIMIT = 3;
+
+function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
+  const attempts = (Number(item.recoveryAttempts) || 0) + 1;
+  const blocked = mode === "kol" && attempts >= KOL_START_FAILURE_LIMIT;
+  return {
+    ...item,
+    recoveryAttempts: attempts,
+    reloadAttempts: 0,
+    resumeAt: blocked ? 0 : now + RESIDENT_RETRY_DELAYS_MS[Math.min(attempts - 1, 3)],
+    blocked: blocked || Boolean(item.blocked),
+    reason: blocked ? `评论大V连续 ${attempts} 次启动未确认，已停止自动重试；请检查执行页与模型设置。最近原因：${reason}` : reason
+  };
+}
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 /** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
 const STARTING_GRACE_MS = 90 * 1000;
@@ -1415,12 +1517,7 @@ async function failScheduledStart(mode, tabId, reason) {
     recordScheduleSegment(plan, selected, "页内启动失败", now);
     plan.current = "";
     plan.startedAt = 0;
-    plan.items[selected] = {
-      ...item,
-      resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(item.recoveryAttempts) || 0, 3)],
-      recoveryAttempts: (Number(item.recoveryAttempts) || 0) + 1,
-      reason: `页内启动失败：${String(reason || "未知原因").slice(0, 110)}`
-    };
+    plan.items[selected] = scheduledStartRetryItem(item, selected, `页内启动失败：${String(reason || "未知原因").slice(0, 110)}`, now);
     await saveTaskSchedule(plan);
     await removeRuntimeTab(id);
     return { ok: true };
@@ -1454,7 +1551,7 @@ function sliceMsForMode(mode, plan) {
   if (mode === "mutual-targetFollow") return Math.max(base, TARGET_FOLLOW_SLICE_MS);
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
   if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
-  if (mode === "prune-posts") return Math.max(base, PRUNE_SLICE_MS);
+  if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   return base;
 }
@@ -1472,7 +1569,9 @@ async function readTaskUnlimitedMap() {
 }
 
 function taskUnlimitedEnabled(mode, map = {}) {
-  if (mode === "prune-posts") return true;
+  if (mode === "poster" || mode === "poster-x") return false;
+  if (mode === "prune-posts" || mode === "prune-replies") return true;
+  if (mode === "mutual-followBack" || mode === "mutual-targetFollow") return false;
   if (mode === "mutual-unfollow") {
     if (map?.[mode] == null) return true;
     return map[mode] === true;
@@ -1496,7 +1595,7 @@ function defaultTaskPriority(mode) {
   if (mode === "mutual-followBack") return 5;
   if (mode === "mutual-targetFollow") return 4;
   if (mode === "mutual-unfollow") return 3;
-  if (mode === "prune-posts") return 2;
+  if (mode === "prune-posts" || mode === "prune-replies") return 2;
   return 1;
 }
 
@@ -1517,14 +1616,14 @@ function likeMinGapMs(pace) {
 
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: true,
+    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x"].includes(mode),
     priority: defaultTaskPriority(mode),
-    pace: mode === "timeline" || mode === "kol" ? "boundary"
-      : mode === "poster" || mode === "poster-x" || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+    pace: mode === "timeline" ? "boundary"
+      : mode === "kol" || mode === "poster" || mode === "poster-x" || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
     minGapMs: mode === "article" ? articleMinGapMs("slow")
-      : mode === "prune-posts" ? PRUNE_MIN_GAP_MS
+      : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
       : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
@@ -1537,14 +1636,16 @@ function normalizedTaskRules(value) {
   const defaults = defaultTaskRules();
   for (const mode of QUEUED_TASKS) {
     const rule = value?.[mode] || {};
-    const pace = ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
+    const pace = mode === "kol" && rule.pace === "boundary"
+      ? "slow"
+      : ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
     const likeMode = ["likes-posts", "likes-replies"].includes(mode);
     const fallbackGap = mode === "article" ? articleMinGapMs(pace) : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
     const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
     const legacyPruneGap = mode === "prune-posts" && requestedGap === LEGACY_PRUNE_GAP_MS;
     defaults[mode] = {
-      enabled: rule.enabled !== false,
+      enabled: typeof rule.enabled === "boolean" ? rule.enabled : defaults[mode].enabled,
       priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
@@ -1578,7 +1679,7 @@ function followBackNightEndsAt(startedAt) {
 }
 
 function taskGapReadyAt(item, rule, now = Date.now()) {
-  if (Number(item?.followBackSessionUntil) > now) return 0;
+  if (item?.retryKind === "prune-search-load") return 0;
   const gap = Number(rule?.minGapMs) || 0;
   const lastRunAt = Number(item?.lastRunAt) || 0;
   if (!gap || !lastRunAt) return 0;
@@ -1591,22 +1692,43 @@ function dueTaskModes(plan, now = Date.now()) {
     .filter(({ mode, item, rule }) => {
       const gapUntil = taskGapReadyAt(item, rule, now);
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
+      const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode);
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
       return rule.enabled && !item.blocked && !manualStopped
-        && (manuallyRequested || Number(item.resumeAt || 0) <= now)
-        && (manuallyRequested || gapUntil <= now)
-        && (manuallyRequested || taskWindowOpen(mode, rule, now));
+        && (mayBypassWait || Number(item.resumeAt || 0) <= now)
+        && (mayBypassWait || gapUntil <= now)
+        && (mayBypassWait || taskWindowOpen(mode, rule, now));
     })
     .sort((a, b) => {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
-      // Strict rank first so aging cannot let likes outrank replies/posts.
-      if (b.rule.priority !== a.rule.priority) return b.rule.priority - a.rule.priority;
+      // Reserve an eligible follow batch while below the daily goal; comments
+      // remain ahead, and both follow tasks still honor the shared cooldown.
+      const priority = (entry) => {
+        if (entry.mode === "poster-premium") return Math.max(entry.rule.priority, 8.75);
+        return SHARED_FOLLOW_MODES.includes(entry.mode)
+          && Number.isFinite(Number(plan.sharedFollowTodayCount))
+          && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
+          && now - Number(entry.item.lastRunAt || 0) >= FOLLOW_BACK_MIN_GAP_MS
+            ? Math.max(entry.rule.priority, 8.5) : entry.rule.priority;
+      };
+      if (priority(b) !== priority(a)) return priority(b) - priority(a);
       const aging = (entry) => Math.min(3, Math.floor((now - Number(entry.item.lastRunAt || plan.enabledAt || now)) / (15 * 60000)));
       return aging(b) - aging(a) || a.index - b.index;
     })
     .map(({ mode }) => mode);
+}
+
+async function readSharedFollowTodayCount(now = Date.now()) {
+  try {
+    const saved = (await chrome.storage.local.get(FOLLOW_RATE_STORAGE_KEY))?.[FOLLOW_RATE_STORAGE_KEY];
+    if (!saved || typeof saved !== "object") return 0;
+    const today = new Date(now + 8 * 60 * 60000).toISOString().slice(0, 10);
+    return saved?.date === today ? Math.max(0, Number(saved.count) || 0) : 0;
+  } catch (error) {
+    return NaN;
+  }
 }
 
 function recordScheduleSegment(plan, mode, reason, endedAt = Date.now()) {
@@ -1702,6 +1824,34 @@ async function readTaskSchedule() {
   if (plan.followBackNightVersion !== 1) {
     plan.rules["mutual-followBack"].window = "overnight";
     plan.followBackNightVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.sharedFollowCadenceVersion !== 1) {
+    const oldFollowBackGap = Number(value?.rules?.["mutual-followBack"]?.minGapMs);
+    const oldTargetGap = Number(value?.rules?.["mutual-targetFollow"]?.minGapMs);
+    if (!Number.isFinite(oldFollowBackGap) || oldFollowBackGap === LEGACY_FOLLOW_BACK_GAP_MS) {
+      plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    }
+    if (!Number.isFinite(oldTargetGap) || oldTargetGap === LEGACY_TARGET_FOLLOW_GAP_MS) {
+      plan.rules["mutual-targetFollow"].minGapMs = TARGET_FOLLOW_MIN_GAP_MS;
+    }
+    for (const mode of ["mutual-followBack", "mutual-targetFollow"]) {
+      const item = plan.items?.[mode];
+      if (!item || item.manualStopped) continue;
+      const longWait = Number(item.resumeAt) > Date.now() + 60 * 60 * 1000;
+      const reason = String(item.reason || "");
+      const oldCadenceWait = longWait && !/受限|冷却|限制|风险|今日|额度/u.test(reason);
+      const oldBlockedRisk = item.blocked && /risk-blocked|rate-limited|受限|疑似自动化/u.test(reason);
+      plan.items[mode] = {
+        ...item,
+        blocked: oldBlockedRisk ? false : item.blocked,
+        resumeAt: oldBlockedRisk ? Date.now() + FOLLOW_BACK_MIN_GAP_MS : oldCadenceWait ? 0 : item.resumeAt,
+        lastRunAt: oldCadenceWait ? 0 : item.lastRunAt,
+        reason: oldBlockedRisk ? "关注受限，按共享冷却重新排班" : oldCadenceWait ? "按共享关注冷却重新排班" : reason
+      };
+      delete plan.items[mode].followBackSessionUntil;
+    }
+    plan.sharedFollowCadenceVersion = 1;
     scheduleMigrated = true;
   }
   if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
@@ -1907,6 +2057,7 @@ async function runTaskSchedule() {
     return runTaskSchedule();
   }
   const now = Date.now();
+  plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
   let runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }), now);
   // Persist probe outcomes so unknownSince / starting survive across alarm ticks.
   // Without this, every tick re-reads a stale "running/starting" row, resets grace, and never recovers.
@@ -1966,7 +2117,8 @@ async function runTaskSchedule() {
       if (Number.isInteger(workTabId) && workTabId > 0 && (!Number(item.resumeAt) || Number(item.resumeAt) <= now)) {
         try {
           const live = await chrome.tabs.get(workTabId);
-          await activateTabIfNeeded(workTabId, live.windowId, true);
+          // Automatic recovery must never steal focus from another profile.
+          try { await chrome.tabs.update(workTabId, { autoDiscardable: false }); } catch (error) {}
           if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" })) {
             const started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
             if (started) {
@@ -1977,12 +2129,12 @@ async function runTaskSchedule() {
               return plan;
             }
           }
-          const destination = taskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "" });
+          const destination = taskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "", pruneSearchStart: current === "prune-posts" && await readPruneSearchStart() });
           if (destination) {
             const reloads = Number(item.reloadAttempts) || 0;
             if (reloads < 2) {
               await rememberPendingLaunch(current, destination, true, workTabId);
-              await chrome.tabs.update(workTabId, { url: destination, active: true });
+              await chrome.tabs.update(workTabId, { url: destination, autoDiscardable: false });
               plan.startedAt = now;
               plan.items[current] = {
                 ...item,
@@ -2004,13 +2156,7 @@ async function runTaskSchedule() {
       recordScheduleSegment(plan, current, "执行未确认，保留共享页签", now);
       plan.current = "";
       plan.startedAt = 0;
-      plan.items[current] = {
-        ...latestItem,
-        recoveryAttempts: (Number(latestItem.recoveryAttempts) || 0) + 1,
-        reloadAttempts: 0,
-        resumeAt: now + RESIDENT_RETRY_DELAYS_MS[Math.min(Number(latestItem.recoveryAttempts) || 0, 3)],
-        reason: "执行未确认，已保留当前页签并等待安全重试"
-      };
+      plan.items[current] = scheduledStartRetryItem(latestItem, current, "执行未确认，已保留当前页签并等待安全重试", now);
       await saveTaskSchedule(plan);
       return runTaskSchedule();
     }
@@ -2028,8 +2174,8 @@ async function runTaskSchedule() {
         recordScheduleSegment(plan, current, "手动请求启动失败", now);
         plan.current = "";
         plan.startedAt = 0;
-        plan.items[current] = { ...item, manualRequestedAt: 0,
-          resumeAt: now + RESIDENT_RETRY_DELAYS_MS[0], reason: `启动失败：${String(error?.message || "页内未能启动").slice(0, 100)}；稍后自动重试` };
+        plan.items[current] = scheduledStartRetryItem({ ...item, manualRequestedAt: 0 }, current,
+          `启动失败：${String(error?.message || "页内未能启动").slice(0, 100)}`, now);
         await saveTaskSchedule(plan);
         return runTaskSchedule();
       }
@@ -2052,16 +2198,12 @@ async function runTaskSchedule() {
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
-    const followBack = current === "mutual-followBack";
-    if (followBack && (Number(item.followBackSessionUntil) || 0) <= Number(plan.startedAt)) {
-      item.followBackSessionUntil = followBackNightEndsAt(Number(plan.startedAt) || now);
-      item.lastRunAt = Number(plan.startedAt) || now;
-    }
-    const followBackSessionOpen = followBack && Number(item.followBackSessionUntil) > now;
-    const computedResumeAt = followBackSessionOpen ? baseResumeAt
-      : Math.max(baseResumeAt, minGapMs ? (followBack ? Number(item.lastRunAt) || now : now) + minGapMs : 0);
+    const sharedFollow = current === "mutual-followBack" || current === "mutual-targetFollow";
+    const computedResumeAt = Math.max(baseResumeAt, minGapMs ? now + minGapMs : 0);
     const heldResumeAt = current === "article" ? Number(item.resumeAt) || 0 : 0;
-    item.resumeAt = Math.max(computedResumeAt, heldResumeAt);
+    const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
+    item.retryKind = shortPruneRetry ? "prune-search-load" : "";
+    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, sharedFollow ? Number(item.resumeAt) || 0 : 0);
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -2079,30 +2221,29 @@ async function runTaskSchedule() {
               ? "另一项任务已请求优先启动，安全轮换"
             : windowClosed
               ? "夜间回关时段已结束，等待下一晚"
-            : runFinished && (current === "prune-posts" || current === "mutual-unfollow")
-              ? (current === "prune-posts" ? "清理低质帖约每周一次，等待下次排班" : "清理未回关约每周一次，等待下次排班")
+            : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
+              ? (current === "mutual-unfollow" ? "清理未回关约每周一次，等待下次排班" : `${TASK_TITLE_LABELS[current]}约每周一次，等待下次排班`)
             : runFinished
               ? "本次已结束，等待下次排班"
-            : current === "prune-posts" && minGapMs
-              ? "清理低质帖约每周一次，等待下次排班"
+            : ["prune-posts", "prune-replies"].includes(current) && minGapMs
+              ? `${TASK_TITLE_LABELS[current]}约每周一次，等待下次排班`
             : current === "mutual-unfollow" && minGapMs
               ? "清理未回关约每周一次，等待下次排班"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选约每周一次，等待下次排班"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
-              : followBackSessionOpen
-                ? "夜间回关还没做完，稍后继续"
               : current === "mutual-followBack" && minGapMs
-                ? "本次夜间回关已结束，等待下一晚"
+                ? "回关批次结束，等待共享冷却后继续"
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";
     // Yield / gap wait must re-enter the queue; never leave a stale manualStopped red card.
     if (!haltedCurrent) item.manualStopped = false;
-    if (!followBack) item.lastRunAt = now;
+    item.lastRunAt = now;
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
+    if (sharedFollow && waiting) applySharedFollowWait(plan, item.resumeAt, item.reason);
     await saveTaskSchedule(plan);
     if (!await suspendScheduledTask(current, item.reason, { keepTab: true, releaseOnFailure: true })) return plan;
     plan = await readTaskSchedule();
@@ -2113,11 +2254,12 @@ async function runTaskSchedule() {
   }
   const activateNext = activateNextExecTab;
   activateNextExecTab = false;
+  plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
   for (const mode of dueTaskModes(plan, now)) {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
-    plan.items[mode] = { ...item, reason: "", manualRequestedAt: 0, recoveryAttempts: 0, sliceActions: 0 };
+    plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, recoveryAttempts: 0, sliceActions: 0 };
     await saveTaskSchedule(plan);
     try {
       await focusScheduledTask(mode, null, {
@@ -2144,11 +2286,25 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "reply-prune": "prune-replies" };
+const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
+
+function applySharedFollowWait(plan, until, reason, streak = 0) {
+  for (const mode of SHARED_FOLLOW_MODES) {
+    const item = plan.items?.[mode] || {};
+    plan.items[mode] = {
+      ...item,
+      blocked: false,
+      resumeAt: item.manualStopped ? 0 : Math.max(Number(item.resumeAt) || 0, Number(until) || 0),
+      limitedStreak: Math.max(Number(item.limitedStreak) || 0, streak),
+      reason: item.manualStopped ? String(item.reason || "已手动停止") : String(reason || "共享关注冷却").slice(0, 160)
+    };
+  }
+}
 async function noteScheduledAction(event) {
   const plan = await readTaskSchedule();
   const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x"].includes(plan.current)
-    ? plan.current : EVENT_TASK_MODES[event?.task];
+    ? plan.current : event?.task === "mutual-target-follow" ? "mutual-targetFollow" : EVENT_TASK_MODES[event?.task];
   if (!mode || !["success", "limited"].includes(event?.result)) return;
   const item = plan.items[mode] || {};
   if (event.result === "success") {
@@ -2168,12 +2324,22 @@ async function noteScheduledAction(event) {
         lastActionAt: item.lastActionAt
       };
     }
+    if (SHARED_FOLLOW_MODES.includes(mode)) {
+      for (const followMode of SHARED_FOLLOW_MODES) {
+        const followItem = plan.items[followMode] || {};
+        plan.items[followMode] = { ...followItem, blocked: false, limitedStreak: 0 };
+      }
+    }
   } else {
     if (REPLY_TASKS.includes(mode)) {
       const streak = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) || 0)) + 1;
       const resumeAt = Date.now() + streak * REPLY_RISK_COOLDOWN_MS;
       const reason = `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`;
       applySharedReplyRisk(plan, { streak, resumeAt, reason });
+    } else if (SHARED_FOLLOW_MODES.includes(mode)) {
+      const streak = Math.max(0, ...SHARED_FOLLOW_MODES.map((followMode) => Number(plan.items?.[followMode]?.limitedStreak) || 0)) + 1;
+      const delay = event.errorCode === "risk-blocked" ? Math.min(60, streak * 10) * 60000 : 30 * 60000;
+      applySharedFollowWait(plan, Date.now() + delay, `X 关注受限，回关与关注候选共用冷却 ${Math.ceil(delay / 60000)} 分钟`, streak);
     } else {
       item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
       if (["likes-posts", "likes-replies"].includes(mode)) {
@@ -2471,7 +2637,7 @@ const RUNTIME_REPORT_MODES = Object.freeze([
   "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
-  "prune-posts"
+  "prune-posts", "prune-replies"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
 const SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要";
@@ -2480,6 +2646,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
   const schedule = await readTaskSchedule();
   const now = Date.now();
+  schedule.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
   const timeline = scheduleTimeline(schedule, now);
   const rules = normalizedTaskRules(schedule.rules);
   const readyModes = new Set((timeline.future || []).filter((entry) => entry.status === "ready").map((entry) => entry.mode));
@@ -2490,7 +2657,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
     const queued = schedule.items?.[mode] || {};
-    const ruleEnabled = schedule.rules?.[mode]?.enabled !== false;
+    const ruleEnabled = rules[mode]?.enabled === true;
     const updatedAt = Number(task?.updatedAt) || 0;
     const fresh = updatedAt > 0 && now - updatedAt <= RUNTIME_REPORT_STALE_MS;
     const resumeAt = Number(queued.resumeAt) || 0;
@@ -2908,20 +3075,24 @@ async function pauseAllTasks(reason = "全流程已暂停") {
 async function markManualTaskStop(mode, stopTab = false) {
   if (!FLOW_TASKS.includes(mode)) return { ok: true };
   const plan = await readTaskSchedule();
-  if (!plan.enabled) return { ok: true };
+  const runtime = await readPluginRuntime();
+  const wasActive = plan.enabled ? plan.current === mode : Boolean(runtime.tasks?.[mode]);
   plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, manualRequestedAt: 0, resumeAt: 0, reason: "已手动停止" };
   await saveTaskSchedule(plan);
-  if (QUEUED_TASKS.includes(mode) && await suspendScheduledTask(mode, "已手动停止")) {
-    if (plan.current === mode) {
-      const latest = await readTaskSchedule();
-      recordScheduleSegment(latest, mode, "已手动停止");
-      latest.current = "";
-      latest.startedAt = 0;
-      await saveTaskSchedule(latest);
-    }
+  const suspended = plan.enabled && wasActive && QUEUED_TASKS.includes(mode)
+    ? await suspendScheduledTask(mode, "已手动停止", { keepTab: true })
+    : false;
+  if (stopTab && wasActive && !suspended) {
+    await stopAllTaskTabs("已手动停止该任务", { modes: [mode], phase: "stopped" });
+  }
+  if (plan.enabled && plan.current === mode && (suspended || stopTab)) {
+    const latest = await readTaskSchedule();
+    recordScheduleSegment(latest, mode, "已手动停止");
+    latest.current = "";
+    latest.startedAt = 0;
+    await saveTaskSchedule(latest);
     await tickTaskSchedule();
   }
-  if (stopTab) await stopAllTaskTabs("已手动停止该任务", { modes: [mode], phase: "stopped" });
   return { ok: true };
 }
 
@@ -2934,17 +3105,19 @@ async function markManualTaskStart(mode) {
       const prior = plan.items[replyMode] || {};
       plan.items[replyMode] = {
         ...prior,
-        manualStopped: false,
+        manualStopped: replyMode === mode ? false : Boolean(prior.manualStopped),
         blocked: false,
         limitedStreak: 0,
+        recoveryAttempts: replyMode === mode ? 0 : Number(prior.recoveryAttempts) || 0,
+        reloadAttempts: replyMode === mode ? 0 : Number(prior.reloadAttempts) || 0,
         resumeAt: 0,
         manualRequestedAt: replyMode === mode ? Date.now() : 0,
-        reason: replyMode === mode ? "已请求优先启动" : ""
+        reason: replyMode === mode ? "已请求优先启动" : prior.manualStopped ? (prior.reason || "已手动停止") : ""
       };
     }
   } else {
     const item = plan.items[mode] || {};
-    plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, resumeAt: 0,
+    plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, recoveryAttempts: 0, reloadAttempts: 0, resumeAt: 0,
       manualRequestedAt: Date.now(), reason: "已请求优先启动" };
   }
   await saveTaskSchedule(plan);
@@ -3041,6 +3214,17 @@ async function readNotificationContext(message, sender) {
 
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type?.startsWith("xrc-reply-history-")) {
+      const action = message.type.slice("xrc-reply-history-".length);
+      const operation = action === "needs-migration" ? replyHistory?.needsMigration(message.accountHandle)
+        : action === "load" ? replyHistory?.load(message.accountHandle, message.legacyIds || [])
+          : action === "has" ? replyHistory?.has(message.accountHandle, message.targetId)
+            : action === "add" ? replyHistory?.add(message.accountHandle, message.targetId) : null;
+      if (!operation) { sendResponse({ ok: false, error: "已回复记录操作不可用" }); return false; }
+      Promise.resolve(operation).then((value) => sendResponse({ ok: true, value }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "已回复记录操作失败" }));
+      return true;
+    }
     if (message?.type === "xrc-tweet-pdf-open") {
       const exportId = String(message.exportId || "");
       if (!/^xrcPdfTweet-[\w-]+$/.test(exportId)) {
@@ -3182,11 +3366,14 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-runtime-get") {
-      Promise.all([readPluginRuntime({ prune: true }).then(verifyTaskRuntime), readTaskSchedule()])
-        .then(([runtime, schedule]) => sendResponse({ ok: true, runtime, schedule: {
-          ...schedule, dueModes: schedule.enabled ? dueTaskModes(schedule) : [],
-          timeline: scheduleTimeline(schedule), evaluatedAt: Date.now()
-        } }))
+      Promise.all([readPluginRuntime({ prune: true }).then(verifyTaskRuntime), readTaskSchedule(), readSharedFollowTodayCount()])
+        .then(([runtime, schedule, followCount]) => {
+          const viewSchedule = { ...schedule, sharedFollowTodayCount: followCount };
+          sendResponse({ ok: true, runtime, schedule: {
+            ...viewSchedule, dueModes: viewSchedule.enabled ? dueTaskModes(viewSchedule) : [],
+            timeline: scheduleTimeline(viewSchedule), evaluatedAt: Date.now()
+          } });
+        })
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态读取失败" }));
       return true;
     }

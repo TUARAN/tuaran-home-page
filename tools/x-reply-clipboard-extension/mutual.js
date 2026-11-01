@@ -3,23 +3,23 @@
 
   const FOLLOW_ACTION_DELAY_MS = 2000;
   const FOLLOW_BATCH_SIZE = 15;
-  // 关注满 15 个后易触发限制；回关 / 关注候选轮间按档位拉长（慢→超快）。
+  // 两项关注任务共用一条节奏：每确认 15 个后至少休息 30 分钟。
   const FOLLOW_ROUND_GAP_SECONDS = Object.freeze({
     slow: 30 * 60,
-    medium: 20 * 60,
-    fast: 10 * 60,
-    turbo: 5 * 60
+    medium: 30 * 60,
+    fast: 30 * 60,
+    turbo: 30 * 60
   });
   const FOLLOW_BATCH_COOLDOWN_MS = FOLLOW_ROUND_GAP_SECONDS.medium * 1000;
   const FOLLOW_MAX_PER_RUN = 400;
   const FOLLOW_DAILY_LIMIT = 400;
-  const RATE_LIMIT_COOLDOWN_MS = 15 * 60 * 1000;
+  const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
   let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
-  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
@@ -112,6 +112,7 @@
   function startNow() {
     if (!state.running || state.stopping) return false;
     if (state.riskCooldownUntil > Date.now()) return false;
+    if (["followBack", "targetFollow"].includes(state.mode) && state.cooldownUntil > Date.now()) return false;
     state.cooldownUntil = 0;
     state.wakeRequested = true;
     state.wakeResolver?.();
@@ -334,6 +335,8 @@
       ? Math.max(0, Math.min(FOLLOW_BATCH_SIZE, Number(saved.batchProgress ?? (state.sharedDailyFollowed % FOLLOW_BATCH_SIZE)) || 0))
       : 0;
     state.cooldownUntil = isToday && Number(saved.cooldownUntil) > Date.now() ? Number(saved.cooldownUntil) : 0;
+    state.riskCooldownUntil = Number(saved?.riskCooldownUntil) > Date.now() ? Number(saved.riskCooldownUntil) : 0;
+    state.riskRetries = Math.max(0, Number(saved?.riskRetries) || 0);
     state.followSessionUntil = Number(saved?.followSessionUntil) > Date.now() ? Number(saved.followSessionUntil) : 0;
     state.followPlan = readSavedFollowPlan(saved, isToday || nightCarry);
     if (applyBatchCooldown && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE && !state.cooldownUntil) {
@@ -352,6 +355,8 @@
           count: state.sharedDailyFollowed,
           batchProgress: state.sharedBatchProgress,
           cooldownUntil: state.cooldownUntil,
+          riskCooldownUntil: state.riskCooldownUntil,
+          riskRetries: state.riskRetries,
           followSessionUntil: state.followSessionUntil || 0,
           followPlan: state.followPlan || null
         }
@@ -362,25 +367,21 @@
   }
 
   async function recordSharedFollow() {
-    await loadSharedFollowRate({ applyBatchCooldown: state.mode !== "followBack" });
+    await loadSharedFollowRate({ applyBatchCooldown: true });
     state.sharedDailyFollowed += 1;
-    if (state.mode !== "followBack") state.sharedBatchProgress += 1;
+    state.sharedBatchProgress += 1;
+    state.riskCooldownUntil = 0;
+    state.riskRetries = 0;
     await persistSharedFollowRate();
   }
 
   async function prepareFollowBackSession() {
     const plan = state.followPlan;
     const incomplete = Boolean(plan && plan.completedRounds < plan.rounds);
-    if (!incomplete && state.followBackScheduled && state.followSessionUntil > Date.now()) {
-      state.followPlan = null;
-      state.cooldownUntil = state.followSessionUntil;
-      return "hold";
-    }
     if (!incomplete) {
       state.followPlan = createFollowBackPlan(state.followPace || "medium");
       state.followSessionUntil = 0;
     }
-    if (state.riskCooldownUntil <= Date.now()) state.cooldownUntil = 0;
     await persistSharedFollowRate();
     return "run";
   }
@@ -412,8 +413,11 @@
     state.riskRetries += 1;
     state.riskCooldownUntil = Date.now() + (root.XReplyClipboardLoop?.automationCooldownMs?.(state.riskRetries) || state.riskRetries * 600000);
     state.cooldownUntil = state.riskCooldownUntil;
+    state.riskWrite = typeof persistSharedFollowRate === "function"
+      ? persistSharedFollowRate().catch(() => {})
+      : Promise.resolve();
     try { sessionStorage.setItem(`xrcMutualRisk:${state.mode}`, JSON.stringify({ until: state.riskCooldownUntil, retries: state.riskRetries })); } catch (error) {}
-    state.riskWrite = Promise.resolve(globalThis.chrome?.storage?.local?.set?.({
+    state.riskWrite = state.riskWrite.then(() => globalThis.chrome?.storage?.local?.set?.({
       [`xrcMutualRisk:${state.mode}`]: { until: state.riskCooldownUntil, retries: state.riskRetries, updatedAt: Date.now() }
     })).catch(() => {});
     emit(`X 提示疑似自动化，当前关注任务等待 ${formatClock(state.riskCooldownUntil - Date.now())} 后自动重试`);
@@ -435,6 +439,7 @@
     for (const node of rateLimitNodes()) state.acknowledgedRateLimits.add(node);
     reportMutualAction(state.mode, "", "limited", "rate-limited");
     state.cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+    await persistSharedFollowRate();
     while (!state.stopping && Date.now() < state.cooldownUntil) {
       emit(`X 提示操作过密，${formatClock(state.cooldownUntil - Date.now())} 后继续`);
       await sleepActive(Math.min(1000, Math.max(0, state.cooldownUntil - Date.now())));
@@ -706,8 +711,8 @@
       const savedRisk = (await followStorage().get(key))?.[key]
         || JSON.parse(sessionStorage.getItem(key) || "null");
       const recent = Number(savedRisk?.updatedAt || savedRisk?.until) > Date.now() - 24 * 60 * 60 * 1000;
-      state.riskRetries = recent ? Math.max(0, Number(savedRisk?.retries) || 0) : 0;
-      state.riskCooldownUntil = recent ? Math.max(0, Number(savedRisk?.until) || 0) : 0;
+      state.riskRetries = Math.max(Number(state.riskRetries) || 0, recent ? Math.max(0, Number(savedRisk?.retries) || 0) : 0);
+      state.riskCooldownUntil = Math.max(Number(state.riskCooldownUntil) || 0, recent ? Math.max(0, Number(savedRisk?.until) || 0) : 0);
       if (state.riskCooldownUntil > Date.now()) state.cooldownUntil = state.riskCooldownUntil;
     } catch (error) { state.riskCooldownUntil = 0; }
     state.seenHandles.clear();
@@ -742,32 +747,16 @@
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
       return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
     }
-    const unlimited = Boolean(options?.unlimited) || mode === "unfollow";
+    const unlimited = mode === "unfollow";
     await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
     await reset(mode, onUpdate);
-    if (unlimited && state.riskCooldownUntil <= Date.now()) state.cooldownUntil = 0;
-    const followBackHold = !unlimited && mode === "followBack" && typeof prepareFollowBackSession === "function"
-      ? (await prepareFollowBackSession()) === "hold"
-      : false;
+    if (!unlimited && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
       ? "开始清理未回关账号"
       : mode === "followBack"
-        ? (unlimited ? "开始不限速回关粉丝：跳过轮次与等到下一晚" : "开始回关粉丝")
+        ? "开始回关粉丝"
         : "开始关注候选");
-    if (followBackHold) {
-      while (!state.stopping && Date.now() < state.cooldownUntil) {
-        emit(`本次回关已完成，${formatClock(state.cooldownUntil - Date.now())} 后进入下一晚`);
-        await sleepActive(Math.min(60000, Math.max(1, state.cooldownUntil - Date.now())));
-      }
-      state.running = false;
-      state.stopping = false;
-      state.cooldownUntil = 0;
-      emit("本次回关已完成，等待下一晚");
-      state.mode = "";
-      emit();
-      return true;
-    }
-    if (!unlimited && mode !== "followBack" && !(await waitForSharedCooldown())) {
+    if (!unlimited && !(await waitForSharedCooldown())) {
       state.running = false;
       state.stopping = false;
       emit("已停止；共享暂停时间仍会保留");
@@ -776,7 +765,6 @@
     let stalled = 0;
     let preferChinese = mode === "followBack";
     let stopReason = "";
-    let planFinished = false;
 
     followLoop: while (!state.stopping) {
       if (state.riskCooldownUntil > Date.now()) {
@@ -803,7 +791,7 @@
           : "X 提示操作受限，本次先停下。";
         break;
       }
-      if (!unlimited) await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
+      if (!unlimited) await loadSharedFollowRate({ applyBatchCooldown: true });
       if (!unlimited && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
         const tomorrow = new Date();
         tomorrow.setHours(24, 1, 0, 0);
@@ -816,7 +804,7 @@
         state.cooldownUntil = 0;
         continue;
       }
-      if (!unlimited && mode !== "followBack" && !(await waitForSharedCooldown())) break;
+      if (!unlimited && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
         if (!(await waitForPlatformRateLimit())) break;
         continue;
@@ -871,29 +859,13 @@
             state.followPlan.roundCount = 0;
             if (state.followPlan.completedRounds >= state.followPlan.rounds) {
               const finishedRounds = state.followPlan.rounds;
-              if (unlimited) {
-                state.followPlan = createFollowBackPlan(state.followPace || "medium");
-                await persistSharedFollowRate();
-                emit(`不限速 · 已完成 ${finishedRounds} 轮，共回关 ${state.followedBack} 个，继续`);
-                await sleepActive(400);
-                continue;
-              }
-              state.followPlan = null;
-              state.followSessionUntil = nextFollowBackNightStart(Date.now());
-              state.cooldownUntil = state.followSessionUntil;
-              await persistSharedFollowRate();
-              planFinished = true;
-              stopReason = `本次 ${finishedRounds} 轮已完成，共回关 ${state.followedBack} 个`;
-              while (!state.stopping && Date.now() < state.cooldownUntil) {
-                emit(stopReason);
-                await sleepActive(Math.min(60000, Math.max(1, state.cooldownUntil - Date.now())));
-              }
-              break followLoop;
+              state.followPlan = createFollowBackPlan(state.followPace || "medium");
+              emit(`本次 ${finishedRounds} 轮已完成，稍后继续回关`);
             }
+            state.sharedBatchProgress = 0;
+            state.cooldownUntil = Date.now() + FOLLOW_BATCH_COOLDOWN_MS;
             await persistSharedFollowRate();
-            const waitMs = unlimited ? 400 : state.followPlan.roundIntervalMs;
-            emit(`第 ${state.followPlan.completedRounds}/${state.followPlan.rounds} 轮已完成，${formatFollowGapLabel(waitMs)}后继续下一轮`);
-            await sleepActive(waitMs);
+            if (!(await waitForSharedCooldown())) break;
           } else {
             await persistSharedFollowRate();
             await sleepActive(unlimited ? 400 : FOLLOW_ACTION_DELAY_MS);
@@ -950,7 +922,7 @@
         : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`));
     state.mode = "";
     emit();
-    return stopReason && !planFinished ? { error: stopReason } : true;
+    return stopReason ? { error: stopReason } : true;
   }
 
   function stop() {

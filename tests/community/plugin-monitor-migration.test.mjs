@@ -90,7 +90,20 @@ test('post migration preserves old rows, repeated uploads replace counts, and hi
     assert.equal(splitMonitor.dailyReports[0].timelineComments, 2)
     assert.equal(splitMonitor.dailyReports[0].notificationComments, 3)
     assert.equal(splitMonitor.dailyReports[0].kolComments, 4)
-    assert.equal(splitMonitor.dailyMigrationRequired, false)
+    assert.equal(splitMonitor.dailyReports[0].replyPrunes, 0)
+    assert.equal(splitMonitor.dailyMigrationRequired, true)
+    const pendingReplyPrunes = {
+      ...withSplits,
+      dailyReport: { ...withSplits.dailyReport, counts: { ...withSplits.dailyReport.counts, replyPrunes: 3 } },
+    }
+    assert.equal((await recordCommunityActionReport(db, pendingReplyPrunes, now + 4)).dailyReportSaved, false)
+    assert.equal(sqlite.prepare('SELECT uploaded_at FROM x_extension_daily_reports').get().uploaded_at, now + 3)
+    sqlite.exec(migration('0128_x_extension_daily_report_reply_prunes.sql'))
+    assert.equal((await recordCommunityActionReport(db, pendingReplyPrunes, now + 5)).dailyReportSaved, true)
+    assert.equal(sqlite.prepare('SELECT reply_prunes FROM x_extension_daily_reports').get().reply_prunes, 3)
+    const upgraded = await readXExtensionMonitor(db, { date: '2026-10-17', accountHandle: 'Tuaran', now })
+    assert.equal(upgraded.dailyReports[0].replyPrunes, 3)
+    assert.equal(upgraded.dailyMigrationRequired, false)
   } finally {
     sqlite.close()
   }

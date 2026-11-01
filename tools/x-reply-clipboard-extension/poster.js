@@ -10,12 +10,12 @@
   const PREMIUM_DAILY_LIMIT = 5;
   const PREMIUM_SLOT_TIMES = Object.freeze(["08:00", "09:30", "12:00", "15:00", "19:00"]);
   const PREMIUM_DAILY_KEY = "xrcPosterPremiumDaily";
-  // One session = fetch a batch, send them with short gaps, then wait for the next session.
+  // One scheduled posting turn prepares and sends one post.
   const POST_SCHEDULE_PROFILES = [
-    { id: "slow", label: "慢", minBatch: 5, maxBatch: 10, minGapSeconds: 12, maxGapSeconds: 20, minCycleMinutes: 45, maxCycleMinutes: 70 },
-    { id: "medium", label: "中", minBatch: 10, maxBatch: 16, minGapSeconds: 10, maxGapSeconds: 18, minCycleMinutes: 25, maxCycleMinutes: 40 },
-    { id: "fast", label: "快", minBatch: 16, maxBatch: 24, minGapSeconds: 8, maxGapSeconds: 15, minCycleMinutes: 15, maxCycleMinutes: 28 },
-    { id: "turbo", label: "超快", minBatch: 20, maxBatch: 30, minGapSeconds: 6, maxGapSeconds: 12, minCycleMinutes: 10, maxCycleMinutes: 18 }
+    { id: "slow", label: "慢", minBatch: 1, maxBatch: 1, minGapSeconds: 12, maxGapSeconds: 20, minCycleMinutes: 45, maxCycleMinutes: 70 },
+    { id: "medium", label: "中", minBatch: 1, maxBatch: 1, minGapSeconds: 10, maxGapSeconds: 18, minCycleMinutes: 25, maxCycleMinutes: 40 },
+    { id: "fast", label: "快", minBatch: 1, maxBatch: 1, minGapSeconds: 8, maxGapSeconds: 15, minCycleMinutes: 15, maxCycleMinutes: 28 },
+    { id: "turbo", label: "超快", minBatch: 1, maxBatch: 1, minGapSeconds: 6, maxGapSeconds: 12, minCycleMinutes: 10, maxCycleMinutes: 18 }
   ];
   // Shanghai-local peak windows: larger session batches inside, smaller outside.
   const POST_WAVE_WINDOWS = Object.freeze([
@@ -26,7 +26,7 @@
   const RETRY_INTERVAL_MS = 60 * 1000;
   const SUCCESS_NOTICE_RE = /(?:Your post was sent\.?|你的帖子已发送|帖子已发送成功)/i;
   const DUPLICATE_POST_RE = /(?:Whoops!\s*)?You already said that\.?|(?:这句话|该内容|此内容).{0,8}(?:已经|已).{0,6}(?:说过|发布过|发过)|你已经说过了/u;
-  const AUTOMATION_WARNING_RE = /(?:This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   const DRAFT_POLICY_VERSION = 4;
   const CARD_VARIANTS = Object.freeze(["paper", "editorial", "highlight", "gradient"]);
 
@@ -69,8 +69,10 @@
       if (random() < 0.5) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
       return { mediaMode: "text", lengthMode: "regular" };
     }
-    if (random() < 0.2) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
-    return { mediaMode: "text", lengthMode: random() < 0.5 ? "compact" : "regular" };
+    const draw = random();
+    if (draw < 0.8) return { mediaMode: "text", lengthMode: "compact" };
+    if (draw < 0.9) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
+    return { mediaMode: "text", lengthMode: "regular" };
   }
 
   function withPostFormat(item, kind = state.postKind) {
@@ -129,8 +131,8 @@
 
   function idleStatusForKind(kind = state.postKind) {
     if (kind === POST_KIND_PREMIUM) return "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。";
-    if (kind === POST_KIND_X) return "待命。X 主题发帖沿用普通发帖的批次节奏，每条都生成文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
-    return "待命。一次先抓一批改写稿，条间约 10～20 秒发完；发完进入倒计时再抓下一批。高峰一次多抓，慢挡一次少抓。";
+    if (kind === POST_KIND_X) return "待命。X 主题发帖每次任务只发 1 张文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
+    return "待命。每次发帖任务只准备并发送 1 条；发完进入下一次排班倒计时，高峰等待较短。";
   }
 
   function premiumDailyCount(at = Date.now()) {
@@ -304,6 +306,7 @@
     }
     if (!saved || typeof saved !== "object") return false;
     state.riskCooldownUntil = Math.max(state.riskCooldownUntil, Number(saved.riskCooldownUntil) || 0);
+    state.nextPostAt = Math.max(Number(state.nextPostAt) || 0, Number(saved.nextPostAt) || 0);
     state.riskRetries = Math.max(state.riskRetries, Number(saved.riskRetries) || 0);
     if (saved.premiumDaily && typeof saved.premiumDaily === "object") {
       state.premiumDaily = {
@@ -355,9 +358,9 @@
     return {
       id: profile.id,
       label: profile.label,
-      interval: `条间 ${profile.minGapSeconds}～${profile.maxGapSeconds} 秒 · 每次 ${profile.minBatch}～${profile.maxBatch} 条`,
-      wave: "高峰一次多抓 · 低峰一次少抓",
-      cycle: `批次间隔 ${profile.minCycleMinutes}～${profile.maxCycleMinutes} 分钟`
+      interval: "每次任务 1 条",
+      wave: "高峰等待较短 · 低峰等待较长",
+      cycle: `下次间隔 ${profile.minCycleMinutes}～${profile.maxCycleMinutes} 分钟`
     };
   }
 
@@ -426,26 +429,13 @@
     return Math.min(maxWait, Math.max(minWait, Math.round(baseMs * factor)));
   }
 
-  // Peak → larger batch (e.g. 20–30 on turbo); off-peak / slow → smaller batch (e.g. 5–10).
   function sessionBatchSize(random = Math.random, pace = DEFAULT_POST_PACE, at = Date.now()) {
-    const profile = postScheduleProfile(pace);
-    const inPeak = postWaveFactor(at) <= 0.7;
-    const low = inPeak
-      ? Math.round((profile.minBatch + profile.maxBatch) / 2)
-      : profile.minBatch;
-    const high = inPeak
-      ? profile.maxBatch
-      : Math.max(profile.minBatch, Math.round((profile.minBatch + profile.maxBatch) / 2));
-    return randomInRange(random, low, high);
+    return 1;
   }
 
   // Within a session: short gap. After the batch is empty: wait for the next session.
   function scheduleNextNormalPostAt(from = Date.now(), random = Math.random, pace = DEFAULT_POST_PACE, { queueRemaining = 0, unlimited = state.unlimited } = {}) {
-    if (unlimited) {
-      if (Number(queueRemaining) > 0) return Number(from) + 1500;
-      return Number(from) + 3000;
-    }
-    if (Number(queueRemaining) > 0) return Number(from) + randomPostGapMs(random, pace);
+    // A saved queue from an older release must not trigger another post seconds later.
     return Number(from) + randomCycleDelayMs(random, pace, from);
   }
 
@@ -537,18 +527,31 @@
   function formatModelPost(value) {
     const text = preserveLines(value);
     if (!text) return "";
-    if (text.includes("\n")) return text.replace(/\n+/gu, "\n\n");
-    const sentences = text.match(/^(.+?[。！？!?])(.+)$/u);
-    if (sentences && Array.from(sentences[1]).length >= 8 && Array.from(sentences[2]).length >= 8) {
-      return `${sentences[1]}\n\n${sentences[2]}`;
-    }
-    return formatShortPost(text);
+    return text.split(/\n+/u).flatMap((paragraph) => {
+      const sentences = paragraph.match(/[^。！？!?]+[。！？!?]+[”’」』]?|[^。！？!?]+$/gu) || [paragraph];
+      return sentences.flatMap((sentence) => {
+        if (Array.from(sentence).length <= 60) return [sentence.trim()];
+        const clauses = sentence.match(/[^，；,;]+[，；,;]?/gu) || [sentence];
+        const lines = [];
+        let line = "";
+        for (const clause of clauses) {
+          if (line && Array.from(line + clause).length > 50) {
+            lines.push(line.trim());
+            line = "";
+          }
+          line += clause;
+        }
+        if (line) lines.push(line.trim());
+        return lines;
+      });
+    }).filter(Boolean).join("\n\n");
   }
 
   function formatCompactPost(value) {
     const text = preserveLines(value);
     if (!text) return "";
     const lines = text.split(/\n+/u).map((line) => line.trim()).filter(Boolean);
+    if (lines.length >= 2 && /^(?:我真的很好奇|说个暴论|卧槽卧槽卧槽|讲真|说句难听的|我有点想不通|这事真离谱|等等，这就有意思了|我突然意识到一件事|我越想越不对劲|这回我站这一边|我是真没想到|先说结论|别急，先看这件事|说实话我不服|这点太关键了)/u.test(lines[0])) return lines.join("\n\n");
     if (lines.length >= 3 && lines.length <= 4) return lines.join("\n\n");
     const characters = Array.from(lines.join(""));
     if (characters.length < 24) return lines.join("\n\n");
@@ -976,7 +979,6 @@
     if (state.stopping) return state.publishQueue.length;
     if (!state.publishQueue.length) throw new Error(state.postKind === POST_KIND_X ? "X 主题没有形成可发草稿" : "热点没有形成可发草稿");
     state.lastError = "";
-    if (state.postKind !== POST_KIND_PREMIUM) state.nextPostAt = 0;
     await savePublishList();
     await leaveFor("/home", `待发 ${state.publishQueue.length} 条，回到首页发送`);
     return state.publishQueue.length;
@@ -1237,6 +1239,11 @@
     }
     filterPromotionalSources();
     while (state.running && !state.stopping) {
+      if (state.postKind !== POST_KIND_PREMIUM && state.nextPostAt > Date.now()) {
+        emit(`本次已发完，约 ${Math.ceil((state.nextPostAt - Date.now()) / 60000)} 分钟后再发下一条`);
+        await waitForPostSchedule(Math.min(5000, state.nextPostAt - Date.now()));
+        continue;
+      }
       if (state.riskCooldownUntil > Date.now()) {
         emit(`X 提示疑似自动化，${Math.ceil((state.riskCooldownUntil - Date.now()) / 60000)} 分钟后自动重试定时发帖`);
         await waitForPostSchedule(Math.min(5000, state.riskCooldownUntil - Date.now()));
@@ -1404,6 +1411,7 @@
           globalThis.XrcCommunityReceipt?.report({
             task: "tweet-post",
             result: "success",
+            postKind: state.postKind,
             targetId: state.currentSourceId || ""
           });
         } catch (error) {}
@@ -1430,9 +1438,10 @@
         const premiumNote = state.postKind === POST_KIND_PREMIUM
           ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
           : "";
-        emit(state.publishQueue.length
-          ? `${premiumNote}${state.unlimited ? "不限速 · " : ""}第 ${state.count} 条已发送；本批还剩 ${state.publishQueue.length} 条`
-          : `${premiumNote}${state.unlimited ? "不限速 · " : ""}第 ${state.count} 条已发送；${state.unlimited ? "马上取材下一批" : "本批发完，等待下一批取材"}`);
+        emit(state.postKind === POST_KIND_PREMIUM
+          ? `${premiumNote}第 ${state.count} 条已发送，等待下一档`
+          : `本次任务已发送 1 条${state.publishQueue.length ? `；待发列表还剩 ${state.publishQueue.length} 条` : ""}`);
+        if (state.postKind !== POST_KIND_PREMIUM) break;
       } catch (error) {
         state.errors += 1;
         state.currentPost = "";
@@ -1448,7 +1457,7 @@
   function start(onUpdate, { resume = false, kind, unlimited = false } = {}) {
     if (state.loopPromise) return state.loopPromise;
     if (kind) state.postKind = normalizePostKind(kind);
-    state.unlimited = state.postKind === POST_KIND_PREMIUM ? false : Boolean(unlimited);
+    state.unlimited = false;
     state.onUpdate = onUpdate;
     const saved = resume ? readSaved(state.postKind) : null;
     if (saved?.running) {
@@ -1459,6 +1468,7 @@
         navigating: false,
         postKind: normalizePostKind(saved.postKind || state.postKind)
       });
+      state.unlimited = false;
       if (!Array.isArray(state.sourceQueue)) state.sourceQueue = [];
       if (!Array.isArray(state.publishQueue) || !state.publishQueue.length) {
         state.publishQueue = Array.isArray(state.rewriteQueue) ? state.rewriteQueue : [];

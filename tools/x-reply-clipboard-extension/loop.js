@@ -169,6 +169,11 @@
     return new RegExp(`(?:Replying\\s+to|正在回复|回复)\\s*@${escaped}(?:\\b|$)`, "i").test(String(text || ""));
   }
 
+  function hasVisibleReplyCount(button) {
+    const count = String(button?.textContent || "").replace(/\s+/gu, "").trim();
+    return /^(?:[1-9]\d*(?:[.,]\d+)?|0[.,]\d*[1-9]\d*)(?:[KMB万亿])?$/iu.test(count);
+  }
+
   function isReplyRestrictedText(text) {
     const value = String(text || "").replace(/\s+/gu, " ").trim();
     return /Who can reply\? Only some accounts can reply\.?/iu.test(value)
@@ -431,6 +436,7 @@
     normalizeHandle,
     handleFromStatusHref,
     isNotificationReplyText,
+    hasVisibleReplyCount,
     isReplyRestrictedText,
     timestampFromDatetime,
     nextTweet,

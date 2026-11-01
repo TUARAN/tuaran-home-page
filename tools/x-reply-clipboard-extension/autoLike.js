@@ -2,7 +2,7 @@
   "use strict";
 
   const RATE_LIMIT_WARNING = /(?:rate limit|daily limit|too many requests|(?:exceeded|reached) (?:your |the )?(?:daily )?limit|limit exceeded|too many likes|操作过于频繁|操作太频繁|超出限制|超过限制|达到上限|点赞次数.*上限)/iu;
-  const AUTOMATION_WARNING = /(?:This request looks like it might be automated|unusual activity|temporarily restricted|cannot like|请求似乎可能是自动化操作|疑似自动化|点赞受限|账号受限)/iu;
+  const AUTOMATION_WARNING = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|unusual activity|temporarily restricted|cannot like|请求似乎可能是自动化操作|疑似自动化|点赞受限|账号受限)/iu;
   const HISTORY_LIMIT = 3000;
   const RATE_LIMIT_COOLDOWNS_MS = [60 * 60 * 1000, 2 * 60 * 60 * 1000, 6 * 60 * 60 * 1000];
   const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -120,7 +120,7 @@
       if (message) status = message;
       onUpdate(snapshot());
     };
-    const wait = (ms) => new Promise((resolve) => win.setTimeout(resolve, ms));
+    const wait = (ms) => root.XInteractionTimer?.wait?.(ms) || new Promise((resolve) => win.setTimeout(resolve, ms));
     const active = () => running && !stopping && !runComplete;
     const restrictionError = (kind) => kind === 'automation'
       ? Object.assign(new Error('X 提示疑似自动化或账号受限'), { xrcAutomationLimit: true })

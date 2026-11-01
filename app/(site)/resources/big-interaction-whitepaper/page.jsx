@@ -154,6 +154,11 @@ export default function BigInteractionWhitepaperPage() {
           <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看工具与获取方式 <span aria-hidden="true">→</span></Link>
         </aside>
 
+        <aside className={styles.toolGuide} aria-label="圆桌大会入口">
+          <div><p className={styles.toolGuideEyebrow}>THE BIG INTERACTION ASSEMBLY</p><h2>大互动 · 圆桌大会</h2><p>围着圆桌认识 X 认证粉丝列表中的交流伙伴，从不同的视角讨论表达、倾听与反馈。</p></div>
+          <Link href="/resources/big-interaction-whitepaper/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
+        </aside>
+
         <div className={styles.readingLayout}>
           <ChapterNav chapters={chapters} />
 

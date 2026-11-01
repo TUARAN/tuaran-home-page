@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 219,
-    "redirects": 19,
-    "private": 59,
-    "registeredStatic": 101,
-    "indexable": 119,
-    "canonical": 137,
-    "openGraph": 73,
-    "jsonLd": 49,
-    "errors": 5,
-    "warnings": 135
+    "routes": 232,
+    "redirects": 21,
+    "private": 61,
+    "registeredStatic": 104,
+    "indexable": 127,
+    "canonical": 142,
+    "openGraph": 80,
+    "jsonLd": 51,
+    "errors": 11,
+    "warnings": 146
   },
   "routes": [
     {
@@ -340,6 +340,39 @@
       }
     },
     {
+      "path": "/admin/community-actions/monitor",
+      "file": "app/(admin)/admin/community-actions/monitor/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/community-actions/x-monitor",
+      "file": "app/(admin)/admin/community-actions/x-monitor/page.jsx",
+      "kind": "redirect",
+      "redirect": "/admin/community-actions/monitor?platform=x",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/content",
       "file": "app/(admin)/admin/content/page.jsx",
       "kind": "private",
@@ -422,6 +455,22 @@
     {
       "path": "/admin/crypto-research",
       "file": "app/(admin)/admin/crypto-research/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/data",
+      "file": "app/(admin)/admin/data/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -725,6 +774,22 @@
       }
     },
     {
+      "path": "/admin/private-data/documents",
+      "file": "app/(admin)/admin/private-data/documents/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/projects",
       "file": "app/(admin)/admin/projects/page.jsx",
       "kind": "private",
@@ -936,7 +1001,8 @@
     {
       "path": "/admin/site-health",
       "file": "app/(admin)/admin/site-health/page.jsx",
-      "kind": "private",
+      "kind": "redirect",
+      "redirect": "/admin/db",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -1419,6 +1485,54 @@
         ],
         "noindex": "inherited",
         "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/books/ai-bots-guide",
+      "file": "app/(site)/books/ai-bots-guide/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/books/llm-underlying-logic",
+      "file": "app/(site)/books/llm-underlying-logic/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/books/programmer-growth-notes",
+      "file": "app/(site)/books/programmer-growth-notes/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
         "jsonLd": false,
         "ogUrls": []
       }
@@ -2513,6 +2627,26 @@
       }
     },
     {
+      "path": "/resources",
+      "file": "app/(site)/resources/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": [
+          "https://2aran.com/resources"
+        ]
+      }
+    },
+    {
       "path": "/resources/2aran-desktop",
       "file": "app/(site)/resources/2aran-desktop/page.jsx",
       "kind": "static",
@@ -2564,6 +2698,42 @@
         "openGraph": true,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/big-interaction-whitepaper",
+      "file": "app/(site)/resources/big-interaction-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/big-interaction-whitepaper/roundtable",
+      "file": "app/(site)/resources/big-interaction-whitepaper/roundtable/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/big-interaction-whitepaper/roundtable"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/resources/big-interaction-whitepaper/roundtable"
+        ]
       }
     },
     {
@@ -2976,6 +3146,22 @@
       }
     },
     {
+      "path": "/resources/x-reply-clipboard-extension/docs",
+      "file": "app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/resources/x-tweet-to-pdf-extension",
       "file": "app/(site)/resources/x-tweet-to-pdf-extension/page.jsx",
       "kind": "static",
@@ -3024,6 +3210,22 @@
           "/ru-shi-dao"
         ],
         "noindex": "index",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/search",
+      "file": "app/(site)/search/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "explicit",
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
@@ -3129,6 +3331,24 @@
         "noindex": "inherited",
         "openGraph": true,
         "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/song-dongyang-ma-sheng-xu",
+      "file": "app/(site)/song-dongyang-ma-sheng-xu/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/song-dongyang-ma-sheng-xu"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
         "ogUrls": []
       }
     },
@@ -3782,6 +4002,27 @@
       "message": "页面没有声明 canonical。"
     },
     {
+      "id": "canonical.missing:/books/ai-bots-guide",
+      "rule": "canonical.missing",
+      "route": "/books/ai-bots-guide",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/books/llm-underlying-logic",
+      "rule": "canonical.missing",
+      "route": "/books/llm-underlying-logic",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/books/programmer-growth-notes",
+      "rule": "canonical.missing",
+      "route": "/books/programmer-growth-notes",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
       "id": "canonical.missing:/feed/[id]",
       "rule": "canonical.missing",
       "route": "/feed/[id]",
@@ -3820,6 +4061,13 @@
       "id": "canonical.missing:/resources/cz-memoirs/[chapter]",
       "rule": "canonical.missing",
       "route": "/resources/cz-memoirs/[chapter]",
+      "severity": "warning",
+      "message": "页面没有声明 canonical。"
+    },
+    {
+      "id": "canonical.missing:/search",
+      "rule": "canonical.missing",
+      "route": "/search",
       "severity": "warning",
       "message": "页面没有声明 canonical。"
     },
@@ -3897,6 +4145,27 @@
       "id": "jsonld.missing:/bookmarks/youtube",
       "rule": "jsonld.missing",
       "route": "/bookmarks/youtube",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/books/ai-bots-guide",
+      "rule": "jsonld.missing",
+      "route": "/books/ai-bots-guide",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/books/llm-underlying-logic",
+      "rule": "jsonld.missing",
+      "route": "/books/llm-underlying-logic",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/books/programmer-growth-notes",
+      "rule": "jsonld.missing",
+      "route": "/books/programmer-growth-notes",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -4055,6 +4324,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/resources",
+      "rule": "jsonld.missing",
+      "route": "/resources",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/resources/2aran-desktop",
       "rule": "jsonld.missing",
       "route": "/resources/2aran-desktop",
@@ -4195,6 +4471,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/resources/x-reply-clipboard-extension/docs",
+      "rule": "jsonld.missing",
+      "route": "/resources/x-reply-clipboard-extension/docs",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/resources/x-tweet-to-pdf-extension",
       "rule": "jsonld.missing",
       "route": "/resources/x-tweet-to-pdf-extension",
@@ -4233,6 +4516,13 @@
       "id": "jsonld.missing:/skill-center/[skillId]",
       "rule": "jsonld.missing",
       "route": "/skill-center/[skillId]",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
+      "id": "jsonld.missing:/song-dongyang-ma-sheng-xu",
+      "rule": "jsonld.missing",
+      "route": "/song-dongyang-ma-sheng-xu",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -4629,6 +4919,13 @@
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },
     {
+      "id": "og.missing:/song-dongyang-ma-sheng-xu",
+      "rule": "og.missing",
+      "route": "/song-dongyang-ma-sheng-xu",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
       "id": "og.missing:/tools",
       "rule": "og.missing",
       "route": "/tools",
@@ -4734,6 +5031,27 @@
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },
     {
+      "id": "registry.missing:/books/ai-bots-guide",
+      "rule": "registry.missing",
+      "route": "/books/ai-bots-guide",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/books/llm-underlying-logic",
+      "rule": "registry.missing",
+      "route": "/books/llm-underlying-logic",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/books/programmer-growth-notes",
+      "rule": "registry.missing",
+      "route": "/books/programmer-growth-notes",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
       "id": "registry.missing:/products/new-message-phone",
       "rule": "registry.missing",
       "route": "/products/new-message-phone",
@@ -4741,9 +5059,30 @@
       "message": "普通静态页面未登记到统一注册表。"
     },
     {
+      "id": "registry.missing:/resources/x-reply-clipboard-extension/docs",
+      "rule": "registry.missing",
+      "route": "/resources/x-reply-clipboard-extension/docs",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
       "id": "registry.missing:/resources/x-tweet-to-pdf-extension",
       "rule": "registry.missing",
       "route": "/resources/x-tweet-to-pdf-extension",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/search",
+      "rule": "registry.missing",
+      "route": "/search",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/song-dongyang-ma-sheng-xu",
+      "rule": "registry.missing",
+      "route": "/song-dongyang-ma-sheng-xu",
       "severity": "error",
       "message": "普通静态页面未登记到统一注册表。"
     }

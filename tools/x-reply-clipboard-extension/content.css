@@ -4190,3 +4190,5 @@
   #x-reply-clipboard-panel .xrc-flow-dots i[data-state="waiting"],
   #x-reply-clipboard-panel .xrc-schedule-wait-dots i { animation: none; transition: none; }
 }
+
+.xrc-experiments{margin:12px;padding:12px;border:1px solid #b49ae4;border-radius:12px;background:#f5f0ff;color:#302047;font-size:12px;line-height:1.6}.xrc-experiments summary{cursor:pointer;font-weight:700}.xrc-experiments p{margin:8px 0;white-space:normal}.xrc-experiments button{border:1px solid #b49ae4;border-radius:8px;padding:6px 10px;margin:4px 6px 4px 0;background:#fff;color:#302047;cursor:pointer}

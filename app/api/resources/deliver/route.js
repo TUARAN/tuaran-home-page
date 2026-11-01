@@ -2,11 +2,11 @@ import { getD1 } from '../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/auth/guestSession'
 import { awardGuestSeed, unlockResource } from '../../../../lib/ledger/points'
-import { getR2 } from '../../../../lib/db/r2'
+import { getR2, getPrivateDocumentsR2 } from '../../../../lib/db/r2'
 import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import { recordResourceEvent } from '../../../../lib/content/resourceEvents'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
-import { embeddedResourcePackage } from '../../../../lib/generated/xReplyExtensionPackage'
+import { readPrivateExtensionPackage } from '../../../../lib/content/privateExtensionPackage.mjs'
 import { authorizeDownloadInvite, markPersonInviteDownloaded } from '../../../../lib/content/xReplyPersonInvite.mjs'
 import { communitySecretLocalJson, injectZipStoredFile } from '../../../../lib/content/zipStoredAppend.mjs'
 
@@ -97,14 +97,8 @@ async function deliver(req, options = {}) {
     // This release must never be placed in the public R2 bucket.
     const bucket = locked ? null : getR2()
     const object = locked ? null : await bucket.get(objectKey)
-    const embedded = locked ? embeddedResourcePackage(objectKey) : object ? null : embeddedResourcePackage(objectKey)
+    const embedded = locked || !object ? await readPrivateExtensionPackage(getPrivateDocumentsR2(), objectKey) : null
     if (!object && !embedded) return jsonError('FILE_NOT_FOUND', 404, actor.setCookie)
-    if (embedded && !locked) {
-      await bucket.put(objectKey, embedded.bytes, {
-        httpMetadata: { contentType: embedded.contentType },
-        customMetadata: { sha256: embedded.sha256, source: 'embedded-release-fallback' },
-      }).catch(() => {})
-    }
     await recordResourceEvent(db, {
       userId: actor.userId,
       resourceKey,

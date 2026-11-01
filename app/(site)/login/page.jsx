@@ -1,7 +1,6 @@
 import LoginClient from './LoginClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: '登录',

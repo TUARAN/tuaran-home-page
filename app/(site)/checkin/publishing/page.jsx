@@ -1,8 +1,7 @@
 import PageContainer from '../../components/PageContainer'
 import PublishingCheckinClient from './PublishingCheckinClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: '发文打卡 · 每日内容发布记录',

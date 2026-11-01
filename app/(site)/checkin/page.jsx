@@ -1,8 +1,7 @@
 import PageContainer from '../components/PageContainer'
 import CheckinRewardsClient from './CheckinRewardsClient'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: '签到中心 · 领取燃币兑换礼物',

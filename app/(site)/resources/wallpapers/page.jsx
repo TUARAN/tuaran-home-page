@@ -3,8 +3,7 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import { T } from '../../components/LocaleProvider'
 import PageContainer from '../../components/PageContainer'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: '壁纸下载｜可下载壁纸资源',

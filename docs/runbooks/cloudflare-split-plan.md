@@ -101,3 +101,11 @@ Target outcome:
 - Public listing and discussion title resolution read `content_index`.
 - The Pages Worker no longer imports the generated research catalog for public runtime paths.
 - Adding or editing research content does not require rebuilding the whole site.
+
+### 2026-11-01 Public Worker 体积优化
+
+登录、注册、签到、发文打卡、壁纸页面只渲染客户端组件，页面外壳改为静态生成，实时数据和写入仍由原 API 处理。长期罗盘保留原固定跳转，改为静态跳转。
+
+受保护的插件 ZIP 从 Worker 内嵌 base64 改为 `PRIVATE_DOCUMENTS` 私有 R2 对象。下载接口保持原鉴权及个性化回执密钥注入；读取时核验元数据里的大小和 SHA-256。发布生成器只生成元数据，新安装包必须先上传到私有桶，不能上传到公开 MEDIA 桶。
+
+本机正式公开站构建：raw 从 17,988,961 降到 17,002,869 bytes，gzip 为 3,827,009 bytes；125 条 Edge 路由。相对 2026-10-14 原基线 raw 增长 4.20%，通过原有 5% / 512 KiB 回归门禁。未修改体积基线、阈值或鉴权规则。

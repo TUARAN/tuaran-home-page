@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 export const metadata = {
   title: '长期罗盘',

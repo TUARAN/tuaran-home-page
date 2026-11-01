@@ -6,6 +6,7 @@ import PageContainer from '../../components/PageContainer'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
 
 const book = PUBLISHED_WORKS[1]
+const isbn = '9787111745600'
 
 
 export const metadata = {
@@ -19,7 +20,15 @@ export const metadata = {
 }
 
 const topics = [{'number': '01', 'title': '程序员成长', 'detail': '围绕技术学习与经验积累，探索持续成长的路径。'}, {'number': '02', 'title': '工程实践', 'detail': '关注开发工作中的工程实践。'}, {'number': '03', 'title': '职业发展', 'detail': '结合程序员的工作场景，思考职业发展的方向。'}]
-const stores = [{ name: '得到', href: book.purchaseUrl }]
+const searchTerm = encodeURIComponent('程序员成长手记 涂阿燃')
+const stores = [
+  { name: '得到', href: book.purchaseUrl, label: '前往得到阅读' },
+  { name: '京东', href: `https://search.jd.com/Search?keyword=${searchTerm}` },
+  { name: '当当', href: `https://search.dangdang.com/?key=${searchTerm}` },
+  { name: '淘宝', href: `https://s.taobao.com/search?q=${searchTerm}` },
+  { name: '拼多多', href: `https://mobile.yangkeduo.com/search_result.html?search_key=${searchTerm}` },
+  { name: '微信读书', href: `https://weread.qq.com/web/search/books?keyword=${searchTerm}` },
+]
 
 export default function LlmUnderlyingLogicBookPage() {
   return (
@@ -50,6 +59,10 @@ export default function LlmUnderlyingLogicBookPage() {
                 <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">出版方</span>
                 <span className="mt-1 block text-[18px] font-bold tabular-nums text-[#2c231d] dark:text-[#f9eee2]">{book.publisher}</span>
               </div>
+              <div className="min-w-[13rem] rounded-xl border border-[#d9c6ae] bg-white/75 px-4 py-3 dark:border-[#6b5140] dark:bg-[#302720]">
+                <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">ISBN</span>
+                <span className="mt-1 block text-[18px] font-bold tabular-nums text-[#2c231d] dark:text-[#f9eee2]">{isbn}</span>
+              </div>
             </div>
             <a href="#buy" className="inline-flex items-center gap-2 rounded-xl bg-[#a84c12] px-6 py-3.5 text-[15px] font-semibold text-white no-underline shadow-[0_10px_25px_rgba(168,76,18,0.22)] transition hover:-translate-y-0.5 hover:bg-[#8f3d0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84c12]">查看购书渠道 <IconArrowRight size={18} aria-hidden="true" /></a>
           </div>
@@ -70,8 +83,8 @@ export default function LlmUnderlyingLogicBookPage() {
       <section id="buy" className="scroll-mt-28 rounded-[24px] border border-[#e0d2c1] bg-[#fffaf3] px-6 py-8 dark:border-[#46392e] dark:bg-[#201b18] md:px-10 md:py-10" aria-labelledby="buy-heading">
         <p className="mb-2 font-mono text-[12px] uppercase tracking-[0.2em] text-[#ad693c] dark:text-[#e4a66c]">Find the book</p>
         <h2 id="buy-heading" className="mb-3 font-serif text-[27px] font-semibold text-[#2c2924] dark:text-gray-100">购书渠道</h2>
-        <p className="mb-6 max-w-[46rem] text-[14px] leading-7 text-[#6c675f] dark:text-gray-300">通过得到查看作品介绍、试读与购买信息。</p>
-        <div className="grid gap-3 sm:grid-cols-2">{stores.map((store) => <a key={store.name} href={store.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between rounded-xl border border-[#dfc5ac] bg-white px-5 py-4 text-[15px] font-semibold text-[#743e22] no-underline transition hover:-translate-y-0.5 hover:border-[#ae6e3e] hover:shadow-[0_10px_24px_rgba(112,65,26,0.1)] dark:border-[#654a36] dark:bg-[#2a2420] dark:text-[#ffd1a4]"><span>前往{store.name}</span><IconExternalLink size={18} className="transition group-hover:translate-x-0.5" aria-hidden="true" /></a>)}</div>
+        <p className="mb-6 max-w-[46rem] text-[14px] leading-7 text-[#6c675f] dark:text-gray-300">通过得到查看阅读与购买信息，也可在其他平台搜索纸质书。具体上架与库存以平台结果为准，下单前请核对书名、作者和 ISBN {isbn}。</p>
+        <div className="grid gap-3 sm:grid-cols-2">{stores.map((store) => <a key={store.name} href={store.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between rounded-xl border border-[#dfc5ac] bg-white px-5 py-4 text-[15px] font-semibold text-[#743e22] no-underline transition hover:-translate-y-0.5 hover:border-[#ae6e3e] hover:shadow-[0_10px_24px_rgba(112,65,26,0.1)] dark:border-[#654a36] dark:bg-[#2a2420] dark:text-[#ffd1a4]"><span>{store.label || `去${store.name}搜索`}</span><IconExternalLink size={18} className="transition group-hover:translate-x-0.5" aria-hidden="true" /></a>)}</div>
       </section>
     </PageContainer>
   )

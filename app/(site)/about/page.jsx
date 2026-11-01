@@ -118,7 +118,7 @@ const timeline = [
   { year: '2023', label: '出版《程序员成长手记》' },
   { year: '2024', label: '发布《AI Bots 通关指南》' },
   { year: '2025', label: '发起「博主联盟」· 共创「前端周刊」' },
-  { year: '2026', label: '矩联科技\n新书出版\nAI 共创\nX大互动' },
+  { year: '2026', label: '矩联科技 / 新书出版\nAI 共创 / X大互动' },
 ]
 
 const publishedWorks = PUBLISHED_WORKS

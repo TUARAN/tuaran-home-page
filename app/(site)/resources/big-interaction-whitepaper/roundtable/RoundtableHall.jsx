@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import styles from './roundtable.module.css'
 
 const PER_PAGE = 8
@@ -11,7 +11,21 @@ function Seat({ person, position }) {
     <strong>{person.name}</strong><small>@{person.handle}</small>
   </a>
 }
-export default function RoundtableHall({ people }) {
+export default function RoundtableHall() {
+  const [people, setPeople] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoading(true)
+    setError('')
+    fetch('/data/interaction/roundtable.json', { signal: controller.signal })
+      .then(response => { if (!response.ok) throw new Error('名录暂时无法加载'); return response.json() })
+      .then(snapshot => { setPeople(snapshot.people); setLoading(false) })
+      .catch(error => { if (controller.signal.aborted) return; setError(error.message); setLoading(false) })
+    return () => controller.abort()
+  }, [attempt])
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const filtered = useMemo(() => {
@@ -21,6 +35,8 @@ export default function RoundtableHall({ people }) {
   const count = Math.ceil(filtered.length / 8)
   const pages = Math.ceil(count / PER_PAGE)
   const current = Math.min(page, Math.max(0, pages - 1))
+  if (loading) return <p className={styles.noResults} role="status">伙伴们正在入座，请稍候……</p>
+  if (error) return <div className={styles.controls} role="alert"><p>{error}</p><button onClick={() => setAttempt(attempt + 1)}>重新加载名录</button></div>
   return <>
     <div className={styles.controls}><label>找一位交流伙伴<input type="search" value={query} placeholder="搜索昵称或 @账号" onChange={event => { setQuery(event.target.value); setPage(0) }} /></label><p role="status">{filtered.length} 位伙伴 · {count} 张圆桌 · 每桌 8 席</p></div>
     {!filtered.length && <p className={styles.noResults}>没有找到匹配的伙伴，试试其他昵称或账号。</p>}

@@ -32,10 +32,11 @@ const HELP_SECTIONS = [
           '站点集中呈现原创文章、专题分析、真实项目复盘、工程实践、交互作品和整理后的资料。',
           '内容由涂阿燃选题、核验并承担最终责任；搜索、代码和大模型工具用于整理、校对和辅助表达。',
           '公开内容可以直接阅读。登录用于跨设备保存燃币、资源权益、评论归属和客户端授权记录。',
+          'Windows、macOS 安装包，以及 iPhone、iPad 的测试步骤，都在客户端下载页。',
           '讨论围绕具体内容展开，不开放自由发帖；读者可以补充事实、指出错误和交流实践。',
           '引用时请保留作者、标题和原始链接；第三方数据、图片和代码仍需遵守原始来源的许可。',
         ],
-        actions: [{ href: '/articles', label: '进入知识库' }, { href: '/about', label: '了解站长' }],
+        actions: [{ href: '/articles', label: '进入知识库' }, { href: '/resources/2aran-desktop', label: '打开客户端下载' }, { href: '/about', label: '了解站长' }],
       },
       {
         id: 'browse-content', title: '浏览内容', description: '从统一内容目录进入，再按主题、对象或内容类型缩小范围。', icon: IconBook2,

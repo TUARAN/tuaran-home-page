@@ -21,6 +21,7 @@
 ## 关键目录
 
 - `app/`：页面、布局、API 路由；`app/(admin)/admin/*` 为站长后台，由 `AdminPageGate` 鉴权。
+- `ios/`：SwiftUI iPhone/iPad 应用。首页读取 `https://2aran.com/api/content`；内容、工具、圈子、我的用 WKWebView 打开对应公开页。签名和 TestFlight 需要本机完整 Xcode 与 Apple Developer 团队。
 - `lib/`：运行时封装与数据，按域分子目录，不再往根上加文件。`lib/auth/edgeSession.js` 处理自定义 GitHub OAuth 与签名 Cookie；`lib/db/d1.js` 读取 D1 binding；`lib/research/researchStyleTemplates.js` 是调研风格库；`lib/content/contentPipeline.js` 是文章、调研、资源的统一内容注册表，`contentKey` 与评论的 `articleKey`、燃币的 `resourceKey` 使用同一套约定。
 - `research/`：调研知识库（companies / topics / people），Markdown 落盘，构建时由 loader 渲染到 `/articles`。
 - `migrations/`：D1 SQL。

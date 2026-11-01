@@ -53,14 +53,14 @@ const downloads = [
   },
 ]
 
-const title = '2aran 桌面应用下载：Windows / macOS'
-const description = '2aran 桌面应用测试版本下载入口，会根据当前系统推荐 Windows 或 macOS 安装包，并提供首次安装指引。'
-const shareText = '2aran 桌面应用测试版本下载入口：自动推荐 Windows / macOS 安装包，并提供首次安装指引。'
+const title = '2aran 客户端：Windows / macOS 下载，iPhone / iPad 测试'
+const description = '领取 2aran 的 Windows 与 macOS 测试安装包，并查看 iPhone、iPad 在 Xcode 里的测试步骤。'
+const shareText = '2aran 客户端：Windows / macOS 测试安装包，以及 iPhone、iPad 的 Xcode 测试说明。'
 
 export const metadata = {
   title,
   description,
-  keywords: ['2aran 桌面应用', 'Windows 下载', 'macOS 下载', '桌面客户端', '2aran Desktop'],
+  keywords: ['2aran 桌面应用', 'Windows 下载', 'macOS 下载', 'iPhone', 'iPad', '桌面客户端', '2aran Desktop'],
   alternates: {
     canonical: `/resources/${RESOURCE_SLUG}`,
   },
@@ -99,15 +99,14 @@ export default function DesktopResourcePage() {
         </h1>
 
         <p className="mt-4 max-w-3xl text-base leading-8 text-[#555] dark:text-gray-300">
-          面向 Windows 和 macOS 的桌面客户端下载页。当前是测试版本，安装包已经上传到 Cloudflare R2；
-          页面会根据当前系统推荐下载，其他架构和平台可以展开后手动选择。
+          Windows 和 macOS 安装包已经上传，页面会按当前系统推荐下载。iPhone 和 iPad 的测试步骤写在下方，当前从 Xcode 运行。
         </p>
         <p className="mt-2 text-sm text-[#8a7a55] dark:text-amber-300/80">
           说明免费阅读；首次点击领取任一安装包使用 10 燃币，之后可永久重复下载。
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {['Windows', 'macOS', '桌面客户端', '本地工作流', '站内工具'].map((tag) => (
+          {['Windows', 'macOS', 'iPhone', 'iPad', '桌面客户端'].map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-[#e2dac8] bg-[#fbf7ee] px-3 py-1 text-xs text-[#7a5b1e] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
@@ -126,7 +125,7 @@ export default function DesktopResourcePage() {
               url={`/resources/${RESOURCE_SLUG}`}
               category="tools"
               slug={RESOURCE_SLUG}
-              tags={['桌面应用', 'Windows', 'macOS']}
+              tags={['桌面应用', 'Windows', 'macOS', 'iPhone', 'iPad']}
               kindLabel="工具"
             />
           </ArticleActionsDropdown>
@@ -135,6 +134,19 @@ export default function DesktopResourcePage() {
 
       <article className="prose-tuaran mt-8">
         <DesktopDownloadChooser downloads={downloads} version={VERSION} />
+
+        <h2>iPhone 与 iPad</h2>
+        <p>
+          工程在仓库 <code>ios/Tuaran.xcodeproj</code>，显示名是 2aran。首页读取公开内容索引；内容、工具、圈子和我的打开对应的站内页面。
+        </p>
+        <ol>
+          <li>从 Mac App Store 安装 Xcode。只装命令行工具还不能打开模拟器。</li>
+          <li>用 Xcode 打开 <code>ios/Tuaran.xcodeproj</code>，在 Signing 里选中自己的 Apple 团队。</li>
+          <li>选择一台 iPhone 模拟器，按 Run。</li>
+        </ol>
+        <p>
+          这页现在不能直接领取 iPhone 安装包。免费 Apple ID 可以把应用装到自己的 iPhone 上，大约 7 天后需要重新安装。TestFlight 需要付费的 Apple Developer Program：在 Xcode 里执行 Product、Archive，上传到 App Store Connect 之后，安装入口在 TestFlight。
+        </p>
 
         <h2>测试版本说明</h2>
         <p>
@@ -189,7 +201,7 @@ export default function DesktopResourcePage() {
               url={`/resources/${RESOURCE_SLUG}`}
               category="tools"
               slug={RESOURCE_SLUG}
-              tags={['桌面应用', 'Windows', 'macOS']}
+              tags={['桌面应用', 'Windows', 'macOS', 'iPhone', 'iPad']}
               kindLabel="工具"
             />
           </ArticleActionsDropdown>

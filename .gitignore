@@ -24,6 +24,9 @@ output/
 .env.production.local
 
 # IDE and editor files
+ios/.derived/
+xcuserdata/
+*.xcuserstate
 .vscode/
 .idea/
 *.swp

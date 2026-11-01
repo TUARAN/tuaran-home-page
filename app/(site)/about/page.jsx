@@ -112,9 +112,9 @@ const stats = [
 const timeline = [
   { year: '2016', label: '开始编程学习' },
   { year: '2018', label: '毕业于 某211' },
-  { year: '2019', label: '入职某大厂（996.icu）· 开始技术写作' },
+  { year: '2019', label: '入职某大厂（996.icu）\n开始技术写作' },
   { year: '2020', label: '掘金优秀作者' },
-  { year: '2021', label: '入职某央企（955.WLB）· 编程 + PMP 项目' },
+  { year: '2021', label: '入职某央企（955.WLB）\n编程 + PMP 项目' },
   { year: '2023', label: '出版《程序员成长手记》' },
   { year: '2024', label: '发布《AI Bots 通关指南》' },
   { year: '2025', label: '发起「博主联盟」\n共创「前端周刊」' },

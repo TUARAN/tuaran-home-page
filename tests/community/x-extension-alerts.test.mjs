@@ -23,10 +23,14 @@ test('X receipt preserves an offline error and uploads it after reconnect', asyn
   }
   try {
     const result = await xReceipt.accept({ task: 'timeline-reply', result: 'failed', errorCode: 'x-transient-error', targetId: '123' })
-    assert.equal(result.error, 'network')
+    assert.equal(result.queued, true)
+    assert.equal(requests.length, 0)
+    assert.equal(store.xrcCommunityReport.queue.length, 1)
+    const failedSync = await xReceipt.syncStatsFromBackground(undefined, { force: true })
+    assert.equal(failedSync.error, 'network')
     assert.equal(store.xrcCommunityReport.queue.length, 1)
     offline = false
-    await xReceipt.heartbeatFromBackground()
+    await xReceipt.syncStatsFromBackground(undefined, { force: true })
     assert.equal(store.xrcCommunityReport.queue.length, 0)
     assert.equal(JSON.parse(requests[0].options.body).events[0].errorCode, 'x-transient-error')
   } finally {

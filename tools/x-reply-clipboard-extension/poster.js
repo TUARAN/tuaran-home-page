@@ -1239,6 +1239,15 @@
     }
     filterPromotionalSources();
     while (state.running && !state.stopping) {
+      // Resolve a confirmed duplicate left in the composer before waiting for the next slot.
+      // Cleanup does not send a post and must not consume another publishing interval.
+      if (state.currentPost && state.lastError === "没有确认推文发送成功" && duplicatePostNoticeNodes().length) {
+        const draft = editorText(findInlineComposer()?.editor);
+        if (sameDraftText(draft, state.currentPost)) {
+          await skipDuplicatePost();
+          continue;
+        }
+      }
       if (state.postKind !== POST_KIND_PREMIUM && state.nextPostAt > Date.now()) {
         emit(`本次已发完，约 ${Math.ceil((state.nextPostAt - Date.now()) / 60000)} 分钟后再发下一条`);
         await waitForPostSchedule(Math.min(5000, state.nextPostAt - Date.now()));

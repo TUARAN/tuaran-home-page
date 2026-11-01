@@ -229,21 +229,12 @@ test('follow risk retry count restores from extension storage after its tab clos
   assert.equal(state.riskCooldownUntil, now + 1200000)
 })
 
-test('reply and post pace controls use one compact row with accessible choices', async () => {
+test('removed frequency settings stay out of the settings hub', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(source, /xrc-speed-section xrc-pace-row/)
-  assert.match(source, /xrc-round-pace xrc-pace-row/)
-  assert.match(source, /<button type="button" data-xrc-post-pace-label="\$\{item\.id\}" aria-pressed="false">/)
-  assert.match(source, /<button type="button" data-xrc-pace-label="\$\{item\.id\}" aria-pressed="false">/)
-  assert.match(source, /label\.setAttribute\("aria-pressed", String\(active\)\)/)
-  assert.match(source, /label\.disabled = replyPaceLocked/)
-  assert.match(source, /label\.disabled = Boolean\(poster\.running\)/)
-  assert.doesNotMatch(source, /data-xrc-pace aria-label="频率挡位"/)
-  assert.match(css, /\.xrc-pace-row \{\s*display: flex;/)
-  assert.match(css, /\.xrc-pace-options \{\s*display: grid;/)
-  assert.match(css, /\.xrc-pace-options::before \{[\s\S]*?right: 12\.5%;[\s\S]*?left: 12\.5%;[\s\S]*?height: 2px;/)
-  assert.match(css, /\.xrc-pace-options button \{[\s\S]*?position: relative;[\s\S]*?background: #fff;/)
+  const hub = source.slice(source.indexOf('<section class="xrc-hub"'), source.indexOf('<section class="xrc-hub"') + 6500)
+  assert.ok(hub.includes('设置中心'))
+  assert.doesNotMatch(hub, /xrc-speed-section xrc-pace-row/)
+  assert.doesNotMatch(hub, /data-xrc-post-pace-label/)
 })
 
 test('task window hints distinguish opening, jumping, and current window', async () => {
@@ -326,7 +317,7 @@ test('task window state drops closed tabs before showing jump hints', async () =
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("receipt\.js", "devUpdate\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -1027,6 +1018,8 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     FLOW_TASKS: [['notifications', '回复评论'], ['timeline', '评论帖子'], ['poster-premium', '精品发帖'], ['poster', '普通发帖'], ['likes-posts', '点赞帖子'], ['likes-replies', '点赞评论'], ['mutual-followBack', '回关粉丝'], ['mutual-targetFollow', '关注候选'], ['mutual-unfollow', '清理未回关']],
     FLOW_STALE_MS: 90000,
     TASK_MODE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'mutual-targetFollow': '关注候选' },
+    scheduleRuleEnabled: (_mode, rule) => rule?.enabled !== false,
+    scheduleReadinessAt: () => 0,
     scheduleLoaded: true,
     deskHome: true,
     selectedTaskMode: 'timeline',
@@ -1174,7 +1167,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(css, /\[data-desk="task"\] \.xrc-reply-tabs/)
   assert.match(css, /\[data-desk="task"\] \.xrc-post-tabs/)
   assert.doesNotMatch(css, /\[data-desk="task"\] \.xrc-reply-body,\s*\n#x-reply-clipboard-panel\[data-desk="task"\]\[data-assistant-mode="likes-posts"\]/)
-  assert.match(backgroundSource, /dueModes: schedule\.enabled \? dueTaskModes\(schedule\) : \[\]/)
+  assert.match(backgroundSource, /dueModes: viewSchedule\.enabled \? dueTaskModes\(viewSchedule\) : \[\]/)
   assert.match(backgroundSource, /strategyVersion\) >= 4/)
   assert.match(source, /Number\(taskSchedule\.strategyVersion\) >= 4/)
   assert.match(source, /openTaskSubpage\(/)
@@ -2073,6 +2066,7 @@ test('background status reports resident recovery as waiting but manual stops as
   const context = vm.createContext({
     globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
     RUNTIME_REPORT_MODES: ['timeline', 'notifications', 'likes-posts', 'poster'],
+    readSharedFollowTodayCount: async () => 0,
     RUNTIME_REPORT_STALE_MS: 90_000,
     MAX_TASK_PRIORITY: 10,
     SCHEDULE_PRIORITY_HINT: '优先级 1～10 分，分值越大越重要',
@@ -2432,8 +2426,8 @@ test('cumulative report counts use one decimal only when needed and keep exact d
   for (const [value, expected] of [[0, '0'], [999, '999'], [1000, '1k'], [1099, '1k'], [1100, '1.1k'], [1204, '1.2k'], [9999, '9.9k'], [10000, '10k'], [10100, '10.1k'], [999999, '999.9k'], [1000000, '1m'], [1200000, '1.2m']]) {
     assert.equal(context.compact(value), expected)
   }
-  assert.match(source, /data-xrc-report-total-\$\{metric\}\]\`\);[\s\S]*?formatCompactCount\(total\[metric\]\)/)
-  assert.match(source, /data-xrc-daily-\$\{metric\}\]\`\);[\s\S]*?String\(dayCounts\[metric\]\)/)
+  assert.match(source, /data-xrc-report-total-\$\{metricDataName\(metric\)\}\]\`\);[\s\S]*?formatCompactCount\(total\[metric\]\)/)
+  assert.match(source, /data-xrc-daily-\$\{metricDataName\(metric\)\}\]\`\);[\s\S]*?String\(dayCounts\[metric\]\)/)
 })
 
 test('background reset clears task state while retaining API credentials and logs', async () => {
@@ -3396,6 +3390,7 @@ test('a failed X reply is recorded as skipped without increasing the success cou
   let closes = 0
   const sandbox = vm.createContext({
     state, skippedIds, processedIds,
+    replyCommunityTask: () => "timeline-reply",
     reportCommunityAction: (event) => reports.push(event),
     writeSaved: (value) => { saved = value },
     closeReplyComposer: async () => { closes += 1; return true },
@@ -3515,6 +3510,7 @@ test('a restricted reply waits for its deadline then resumes the same task', asy
   let waitedUntil = 0
   let reloaded = 0
   const sandbox = vm.createContext({
+    taskSchedule: { enabled: false },
     state, loopApi: loop, Date: { now: () => 1000 }, writeSaved() {}, formatCountdown: () => '10:00',
     async waitForDeadline(deadline, status) { waitedUntil = deadline; assert.match(status(600000), /自动重试/); return true },
     async prepareReplyForTabSwitch() { return true },
@@ -5228,7 +5224,7 @@ test('notification replies remain eligible without a like button', async () => {
     loopApi: loop,
     URL,
   })
-  vm.runInContext(`${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
+  vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
   assert.equal(context.collect().length, 1)
   assert.equal(context.collect()[0].id, '123456789')
   replyButton.textContent = '2'
@@ -5339,7 +5335,7 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
     isNestedTweet: () => false, isPromoted: () => false,
     textOf: (article) => article?.textContent || '', loopApi: loop, URL,
   })
-  vm.runInContext(`${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
+  vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['125'])
 })
 
@@ -5368,7 +5364,7 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
     currentAccountHandle: () => 'tuaranx', isNotificationPath: () => true, isNestedTweet: () => false,
     isPromoted: () => false, textOf: (node) => node?.textContent || '', loopApi: loop, URL,
   })
-  vm.runInContext(`${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
+  vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
 })
 
@@ -5689,9 +5685,10 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X Interaction Assistant')
-  assert.equal(manifest.version, '4.0.66')
+  const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
+  assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
   assert.match(content, /\$\{score\}分/)
-  assert.match(content, /优先级 1～10 分/)
+  assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要"/)
   assert.match(backgroundSource, /MAX_TASK_PRIORITY = 10/)
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
@@ -5700,7 +5697,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'content.js'])
+  assert.deepEqual(manifest.content_scripts[2].js, ['receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -5712,7 +5709,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(catalog, /resourceKey: 'resource:x-tweet-to-pdf-extension',[\s\S]*?legacy: true/)
   assert.match(catalog, /resourceKey: 'resource:x-mutual-cleaner-extension',[\s\S]*?legacy: true/)
   assert.match(backgroundSource, /xrc-tweet-pdf-open/)
-  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"notifications"[\s\S]*?"mutual-unfollow"\s*\]\)/)
+  assert.match(backgroundSource, /RUNTIME_REPORT_MODES = Object\.freeze\(\[[\s\S]*?"notifications"[\s\S]*?"mutual-unfollow",[\s\S]*?"prune-posts", "prune-replies"\s*\]\)/)
   assert.match(backgroundSource, /phase: "idle"/)
   assert.match(backgroundSource, /phase: "unknown"/)
   const printHtml = await readFile(new URL('pdf/print.html', extensionDir), 'utf8')
@@ -5747,14 +5744,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.equal(poster.shouldCollect(3), false)
   assert.match(posterSource, /minGapSeconds: 10, maxGapSeconds: 18/)
   assert.match(posterSource, /sessionBatchSize/)
-  assert.match(posterSource, /minBatch: 20, maxBatch: 30/)
+  assert.ok(poster.POST_SCHEDULE_PROFILES.every(profile => profile.minBatch === 1 && profile.maxBatch === 1))
   assert.match(posterSource, /RETRY_INTERVAL_MS = 60 \* 1000/)
   assert.match(posterSource, /depth < 30/)
   assert.match(posterSource, /visibleSubmits/)
   assert.match(posterSource, /上次异常：\$\{state\.lastError\}/)
   assert.match(posterSource, /正在重试待发列表中的这一条/)
   assert.match(posterSource, /发帖框有未发送内容，请手动处理/)
-  assert.ok(posterSource.indexOf('const queued = editorText') < posterSource.indexOf('state.nextPostAt > Date.now()'))
+  assert.ok(posterSource.indexOf('const draft = editorText') < posterSource.indexOf('state.nextPostAt > Date.now()'))
   assert.ok(posterSource.indexOf('首页已打开，等待发帖框和 Post 按钮加载') < posterSource.indexOf('const queued = editorText'))
   assert.match(posterSource, /await waitForHomeComposer\(30000\)/)
   assert.doesNotMatch(posterSource, /为避免覆盖已暂停/)
@@ -5785,7 +5782,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /send-unconfirmed/)
   assert.match(content, /ambiguous-sent/)
   assert.match(content, /rememberRecentReply/)
-  assert.match(content, /Never click the same wording again/)
+  assert.match(content, /if \(result === "ambiguous-sent"\) \{[\s\S]*?rememberRecentReply\(phrase\)/)
   assert.match(content, /稍后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
   assert.match(content, /回复\)已发送/)
@@ -5821,7 +5818,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.ok(content.indexOf('class="xrc-global-bar"') < content.indexOf('class="xrc-flow-launch"'))
   assert.doesNotMatch(content, /xrc-global-paces/)
   assert.match(content, /xrc-round-pace/)
-  assert.match(content, /xrc-speed-section/)
+  assert.doesNotMatch(content, /xrc-speed-section/)
   assert.doesNotMatch(content, /data-xrc-flow-help/)
   assert.match(content, /已停止 · 点击启动/)
   assert.match(content, /dataset\.busy = "true"/)
@@ -5837,13 +5834,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-hub-open aria-label="设置中心"/)
   assert.match(content, /data-xrc-hub hidden aria-label="设置中心"/)
   const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<section class="xrc-hub"/)?.[1] || ''
-  for (const metric of ['comments', 'likes', 'follows', 'unfollows', 'posts']) {
-    assert.ok(todaySummary.includes(`data-xrc-today-${metric}`), `today summary should show ${metric}`)
+  for (const category of ['comment', 'like', 'post', 'follow', 'clean']) {
+    assert.ok(todaySummary.includes(`"${category}"`), `today summary should show ${category}`)
   }
-  assert.match(todaySummary, /xrc-metric-follows">关注<\/span><span class="xrc-metric-unfollows">取关<\/span>/)
+  assert.match(todaySummary, /data-xrc-today-category/)
+  assert.match(todaySummary, /TODAY_TASKS.map/)
+  assert.match(todaySummary, /data-xrc-today-task/)
   const todayCss = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(todayCss, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/)
-  assert.match(todayCss, /calc\(20% - \.5px\).*calc\(40% - \.5px\).*calc\(60% - \.5px\).*calc\(80% - \.5px\)/s)
   assert.doesNotMatch(todayCss, /xrc-today-strip::after[\s\S]*calc\(25%/)
   assert.ok(content.indexOf('class="xrc-today-strip"') < content.indexOf('class="xrc-hub"'))
   assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
@@ -5872,7 +5870,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /loopApi\.randomCycleDelayMs\(Math\.random, state\.schedulePace(?:, state\.boundaryLevel)?\)/)
   assert.match(content, /边界测试本轮稳定，升到第/)
   assert.match(content, /边界测试在 .* 条后发现限制，降到第/)
-  assert.match(content, /data-xrc-boundary-info aria-label="查看边界测试说明和限制监测"/)
+  assert.match(content, /data-xrc-boundary-info aria-label="异常监控"/)
   assert.match(content, /querySelector\("\[data-xrc-boundary-info\]"\)\?\.addEventListener\("click"/)
   assert.match(content, /data-xrc-boundary-info[\s\S]*?data-xrc-monitor-open/) 
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
@@ -5902,7 +5900,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /conversation = await conversationOrFallback\(next, postText\)/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十四项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -5941,21 +5939,21 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-timeline-past|data-xrc-desk-past-row/)
   assert.match(content, /预计当前结束后|预计 \$\{formatScheduleTime/)
   assert.match(content, /查看当前任务详情/)
-  assert.match(content, /const currentMode = focus\.dataset\.currentTask \|\| taskSchedule\.current;\s*if \(currentMode\) openDeskTask\(currentMode\)/)
+  assert.match(content, /enter\.title = phase === "now" \? "查看当前任务详情"/)
   assert.match(content, /action === "inspect"/)
   assert.doesNotMatch(content, /button\.disabled = anyTaskRunning\(\)/)
   assert.match(content, /mutualMode/)
   assert.match(content, /button\.disabled = false;\s*button\.title = taskTabHint/)
   assert.match(content, /mutualApi\.run/)
   assert.match(content, /result !== "sent-composer-open"/)
-  assert.match(content, /data-xrc-round-track/)
-  assert.match(content, /data-xrc-round-segment/)
-  assert.match(content, /data-xrc-page-meta/)
-  assert.match(content, /class="xrc-round-pace xrc-pace-row"/)
+  assert.doesNotMatch(content, /data-xrc-round-track/)
+  assert.doesNotMatch(content, /data-xrc-round-segment/)
+  assert.doesNotMatch(content, /data-xrc-page-meta/)
+  assert.doesNotMatch(content, /class="xrc-round-pace xrc-pace-row"/)
   assert.doesNotMatch(content, /class="xrc-phrase-pool"/)
   assert.doesNotMatch(content, /data-xrc-mode="template"/)
   assert.match(content, /aria-selected/)
-  assert.match(content, /data-xrc-runtime/)
+  assert.doesNotMatch(content, /data-xrc-runtime/)
   assert.match(content, /randomReplyDelaySeconds\(Math\.random, state\.schedulePace(?:, state\.boundaryLevel)?\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /每条间隔/)
@@ -5973,14 +5971,14 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-post-preview/)
   assert.doesNotMatch(content, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota|额度已用完/)
   assert.doesNotMatch(backgroundSource, /REPLY_DAILY_LIMIT|xrcReplyDailyQuota|xrc-reply-quota/)
-  assert.match(content, /class="xrc-round-pace xrc-pace-row"/)
+  assert.doesNotMatch(content, /class="xrc-round-pace xrc-pace-row"/)
   assert.match(content, /data-xrc-collapse/)
   assert.doesNotMatch(content, /data-xrc-expand/)
   assert.match(content, /data-xrc-mini-progress/)
   assert.match(content, /data-xrc-start/)
   assert.match(content, /data-xrc-config-key/)
   assert.match(content, /panelView/)
-  assert.match(content, /本轮已回复/)
+  assert.doesNotMatch(content, /本轮已回复/)
   assert.match(content, /replyMode: "ai"/)
   assert.match(content, /function validReplyMode\(\) \{\s*return "ai";/)
   assert.doesNotMatch(content, /data-xrc-mode="ai"/)
@@ -6001,7 +5999,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /function waitRateLimit/)
   assert.match(content, /nextReplyDelaySeconds/)
   assert.match(content, /roundIntervalSeconds/)
-  assert.match(content, /第 \$\{shownRound\} 轮/)
+  assert.match(content, /pacePositionLine\(shownRound, plannedRounds, state\.pageCount, roundSize, "条"\)/)
   assert.doesNotMatch(content, /本次执行/)
   assert.match(content, /function formatRuntime/)
   assert.match(content, /startedAt/)
@@ -6169,7 +6167,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(windowPlan, /真实面板/)
   assert.match(windowPlan, /面板长什么样/)
   assert.doesNotMatch(windowPlan, /账号 A/)
-  assert.match(docsPage, /评论、点赞、关注、发帖和普通发文共十三项任务/)
+  assert.match(docsPage, /评论、点赞、关注、发帖、普通发文和清理共十四项任务/)
   assert.match(docsPage, /id: 'reply-kol', label: '评论大V', depth: 2/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
@@ -6197,7 +6195,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /只关页签不会关掉后台排班|只关执行页签不会关掉后台排班/)
   assert.match(docsPage, /右上角在「暂停全部」和「开始」之间切换/)
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
-  assert.match(docsPage, /一次按速度抓一批/)
+  assert.match(docsPage, /每确认 15 个[\s\S]*30 分钟/)
   assert.match(docsPage, /从已安装的 v3 下载包切到本地 v4/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
@@ -6374,7 +6372,7 @@ test('task windows are created once and reused without backgrounding another tas
         if (tabId === 22) return { id: 22, windowId: 5, url: 'https://x.com/notifications' }
         throw new Error('missing tab')
       },
-      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '评论帖子 · Home / X' }] },
+      async query() { return [{ id: 11, windowId: 5, url: 'https://x.com/home', title: '评论首页 · Home / X' }] },
       async update(tabId, options) { focusedTabs.push(tabId); tabUpdates.push(options) },
     },
     windows: {
@@ -6705,7 +6703,7 @@ test('follow-back and target-follow share a 30-minute batch cooldown', async () 
   const previousDateNow = Date.now
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   Date.now = () => now
-  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster', 'poster-premium', 'mutual-unfollow']
+  const otherModes = ['kol', 'article', 'prune-posts', 'prune-replies', 'poster-x', 'timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster', 'poster-premium', 'mutual-unfollow']
   const local = {
     xrcTaskSchedule: {
       enabled: true, strategyVersion: 4, current: 'mutual-followBack', workTabId: 11,
@@ -6863,7 +6861,7 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
   const now = Date.parse('2026-10-28T13:00:00+08:00')
   let clock = now
   Date.now = () => clock
-  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'poster-x', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
+  const otherModes = ['kol', 'article', 'prune-posts', 'prune-replies', 'poster-x', 'timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'poster-x', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, current: '', workTabId: 11, startedAt: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
@@ -6905,7 +6903,7 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
 
 test('a schedule with a lost tab reference adopts the active X tab for the same account', async () => {
   const previousChrome = globalThis.chrome
-  const otherModes = ['timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
+  const otherModes = ['kol', 'article', 'prune-posts', 'prune-replies', 'poster-x', 'timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: '', workTabId: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
@@ -7562,7 +7560,7 @@ test('a never-started shared tab is reloaded in place after the boot grace', asy
     assert.equal(local.xrcTaskSchedule.workTabId, 11)
     assert.equal(local.xrcTaskSchedule.current, 'timeline')
     assert.ok(session['xrcPendingTab:11']?.start)
-    assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.active === true))
+    assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.autoDiscardable === false && entry.active !== true))
     assert.match(local.xrcTaskSchedule.items.timeline.reason, /同一页签重新装载/)
   } finally {
     globalThis.chrome = previousChrome

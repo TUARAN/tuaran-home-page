@@ -126,3 +126,18 @@
 @media (max-width: 700px) { .page { padding-top: 14px; } .toolGuide { align-items: stretch; flex-direction: column; gap: 17px; padding: 19px; } .toolGuideLink { width: fit-content; max-width: 100%; white-space: normal; } .chapterNav { margin-bottom: 35px; } .chapterNav ol { gap: 0 16px; } .flow { grid-template-columns: 1fr; gap: 10px; padding: 16px 18px; } .flow>div { grid-template-columns: 36px minmax(0, 1fr); justify-items: start; align-items: center; text-align: left; } .flow>div:not(:last-child):after { content: none; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: min(88%, 410px); } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
 @media (max-width: 440px) { .exhibit figcaption { min-height: 175px; } .flow { padding-inline: 5px; } .flow span { font-size: 10px; } .flow b { width: 31px; height: 31px; } .footer { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .exhibitionProgress span { transition: none; } }
+
+.entryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 1088px; margin: 0 auto 34px; }
+.entryGrid .toolGuide { flex-direction: column; align-items: flex-start; gap: 20px; width: 100%; min-width: 0; margin: 0; padding: 26px; border-radius: 20px; background: linear-gradient(135deg, #edf5ea, #fafbf6); }
+.entryGrid .toolGuide h2 { font-size: clamp(20px, 2vw, 25px); letter-spacing: -.025em; }
+.entryGrid .toolGuideLink { margin-top: auto; padding: 0; min-height: 32px; border-radius: 4px; background: transparent; color: #1d6840; }
+.entryGrid .toolGuideLink:hover { background: transparent; color: #103c25; }
+.entryGrid .toolGuideLink span { margin-left: 8px; }
+:global(.dark) .entryGrid .toolGuide { background: linear-gradient(135deg, #183d29, #172b20); }
+:global(.dark) .entryGrid .toolGuideLink { background: transparent; color: #b4e6bf; }
+@media (max-width: 600px) {
+  .entryGrid { grid-template-columns: 1fr; gap: 0; border: 1px solid #c6dac7; border-radius: 18px; overflow: hidden; }
+  .entryGrid .toolGuide { padding: 20px; border: 0; border-radius: 0; gap: 12px; }
+  .entryGrid .toolGuide + .toolGuide { border-top: 1px solid #c6dac7; }
+  :global(.dark) .entryGrid, :global(.dark) .entryGrid .toolGuide + .toolGuide { border-color: #3a5843; }
+}

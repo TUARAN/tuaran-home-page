@@ -145,19 +145,22 @@ export default function BigInteractionWhitepaperPage() {
           </p>
         </header>
 
+        <div className={styles.entryGrid}>
         <aside className={styles.toolGuide} aria-label="X 高频互动助手入口">
           <div>
             <p className={styles.toolGuideEyebrow}>把交流方法用在 X 上</p>
             <h2>X 高频互动助手</h2>
-            <p>想在 X 上持续参与讨论？这个本地 Chrome 扩展把评论、点赞、关注管理和定时发帖放进同一排班面板，方便查看进度和调整节奏。工具页有功能说明、使用边界和获取方式。</p>
+            <p>用本地 Chrome 扩展管理评论、点赞、关注与定时发帖，查看进度，调整互动节奏。</p>
           </div>
           <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看工具与获取方式 <span aria-hidden="true">→</span></Link>
         </aside>
 
         <aside className={styles.toolGuide} aria-label="圆桌大会入口">
-          <div><p className={styles.toolGuideEyebrow}>THE BIG INTERACTION ASSEMBLY</p><h2>大互动 · 圆桌大会</h2><p>围着圆桌认识 X 认证粉丝列表中的交流伙伴，从不同的视角讨论表达、倾听与反馈。</p></div>
+          <div><p className={styles.toolGuideEyebrow}>认识交流伙伴</p><h2>大互动 · 圆桌大会</h2><p>围着圆桌认识 X 认证粉丝列表中的交流伙伴，从不同的视角讨论表达、倾听与反馈。</p></div>
           <Link href="/resources/big-interaction-whitepaper/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
         </aside>
+
+        </div>
 
         <div className={styles.readingLayout}>
           <ChapterNav chapters={chapters} />

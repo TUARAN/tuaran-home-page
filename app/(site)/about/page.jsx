@@ -111,14 +111,14 @@ const stats = [
 
 const timeline = [
   { year: '2016', label: '开始编程学习' },
-  { year: '2018', label: '本科毕业（华南师大）' },
+  { year: '2018', label: '毕业于 某211' },
   { year: '2019', label: '入职某大厂（996.icu）· 开始技术写作' },
   { year: '2020', label: '掘金优秀作者' },
   { year: '2021', label: '入职某央企（955.WLB）· 编程 + PMP 项目' },
   { year: '2023', label: '出版《程序员成长手记》' },
   { year: '2024', label: '发布《AI Bots 通关指南》' },
   { year: '2025', label: '发起「博主联盟」· 共创「前端周刊」' },
-  { year: '2026', label: '出版《AI大模型的底层逻辑》· 矩联科技 · AI 共创' },
+  { year: '2026', label: '矩联科技\n新书出版\nAI 共创\nX大互动' },
 ]
 
 const publishedWorks = PUBLISHED_WORKS
@@ -481,7 +481,7 @@ export default function AboutPage() {
                       >
                         {item.year}
                       </span>
-                      <p className={`mt-1 font-semibold leading-[1.45] text-[#2d291f] ${isCurrent ? 'text-[13px] sm:text-[14px]' : 'text-[11px] sm:text-[12px]'}`}>
+                      <p className={`mt-1 whitespace-pre-line font-semibold leading-[1.45] text-[#2d291f] ${isCurrent ? 'text-[13px] sm:text-[14px]' : 'text-[11px] sm:text-[12px]'}`}>
                         {item.label}
                       </p>
                     </li>

@@ -66,29 +66,16 @@ export default function DocsToc({ groups }) {
       frame = window.requestAnimationFrame(syncToPage)
     }
 
-    // 目录高于一屏时，滚轮如果被目录自己吃掉，右侧正文不会动。
-    // 这里把目录上的滚轮交给整页，目录只跟着当前章节露出对应条目。
-    const onWheel = (event) => {
-      if (!window.matchMedia(DESKTOP_QUERY).matches) return
-      if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return
-      let delta = event.deltaY
-      if (event.deltaMode === 1) delta *= 16
-      else if (event.deltaMode === 2) delta *= window.innerHeight
-      event.preventDefault()
-      window.scrollBy({ top: delta, left: 0, behavior: 'auto' })
-    }
 
     syncToPage()
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     window.addEventListener('hashchange', schedule)
-    nav.addEventListener('wheel', onWheel, { passive: false })
     return () => {
       window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
       window.removeEventListener('hashchange', schedule)
-      nav.removeEventListener('wheel', onWheel)
     }
   }, [groups])
 
@@ -98,10 +85,10 @@ export default function DocsToc({ groups }) {
       aria-label="文档目录"
       className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] p-4 shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]"
     >
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">On this page</p>
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">分类目录</p>
       <div
         ref={listRef}
-        className="mt-4 space-y-4 lg:max-h-[calc(100dvh-var(--site-header-height)-7rem)] lg:overflow-y-hidden lg:[scrollbar-width:none]"
+        className="mt-4 space-y-4 lg:max-h-[calc(100dvh-var(--site-header-height)-7rem)] lg:overflow-y-auto lg:[scrollbar-width:none]"
       >
         {groups.map((group) => (
           <div key={group.heading}>

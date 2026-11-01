@@ -4,36 +4,8 @@ import Image from 'next/image'
 import { useState } from 'react'
 
 const SHOTS = [
-  {
-    id: 'schedule-desk',
-    step: '01',
-    label: '排班台',
-    src: '/images/x-reply-clipboard-extension/panel-v4-schedule-desk.webp',
-    width: 659,
-    height: 1024,
-    title: '单页签排班台',
-    caption: '今日统计与排班台卡片（勾选参与、「查看」进子页）；右上角暂停 / 开始。运行绿边、等待黄边、停止红边。',
-  },
-  {
-    id: 'task-rounds',
-    step: '02',
-    label: '任务评次',
-    src: '/images/x-reply-clipboard-extension/panel-v4-task-rounds.webp',
-    width: 668,
-    height: 948,
-    title: '任务子页',
-    caption: '子页先速度表与启停，排班配置靠后；「← 返回排班台」返回，不改队列。',
-  },
-  {
-    id: 'panel-overview',
-    step: '03',
-    label: '面板全貌',
-    src: '/images/x-reply-clipboard-extension/panel-v4-panel-overview.webp',
-    width: 501,
-    height: 1024,
-    title: '顶栏与轮班记录',
-    caption: '账号、版本和今日合计在顶栏；下方是本机轮班历史，记录每轮为何让出页签。',
-  },
+  { id: 'schedule-desk', step: '01', label: '排班台', src: '/images/x-reply-clipboard-extension/panel-v4.3.24-schedule.webp', width: 720, height: 1450, title: '排班台与等待原因', caption: 'v4.3.24 · 2026-11-02 实拍。顶部分类统计、任务明细、当前与候选任务；冷却原因和排班状态分开显示。截图中的勾选和速度是示例账号设置。' },
+  { id: 'task-rounds', step: '02', label: '任务详情', src: '/images/x-reply-clipboard-extension/panel-v4.3.24-task.webp', width: 720, height: 1520, title: '评论首页任务详情', caption: 'v4.3.24 · 2026-11-02 实拍。返回排班台、暂停当前任务、速度表、边界测试与不限速选项；底部排班配置包含优先级和时段。截图所选超快档不代表默认档。' },
 ]
 
 function PhoneFrame({ shot, active }) {
@@ -74,7 +46,7 @@ export default function TaskWindowPlan() {
       <div className="border-b border-[var(--site-line)] px-4 py-4 md:px-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex rounded-full border border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] px-2 py-0.5 text-[10px] font-semibold text-[var(--site-green)]">
-            真实面板 · v4
+            真实面板 · v4.3.24
           </span>
           <span className="text-[11px] text-[var(--site-faint)]">一账号一页签 · 串行轮班</span>
         </div>
@@ -117,7 +89,7 @@ export default function TaskWindowPlan() {
           </div>
         </div>
 
-        <div className="hidden gap-6 lg:grid lg:grid-cols-3">
+        <div className="hidden gap-6 lg:grid lg:grid-cols-2">
           {SHOTS.map((shot) => (
             <div key={shot.id}>
               <PhoneFrame shot={shot} active={false} />

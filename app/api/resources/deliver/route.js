@@ -2,7 +2,7 @@ import { getD1 } from '../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/auth/guestSession'
 import { awardGuestSeed, unlockResource } from '../../../../lib/ledger/points'
-import { getR2, getPrivateDocumentsR2 } from '../../../../lib/db/r2'
+import { getR2, getPrivateDocumentsR2, publicUrlFor } from '../../../../lib/db/r2'
 import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import { recordResourceEvent } from '../../../../lib/content/resourceEvents'
 import { getUserRole } from '../../../../lib/auth/userDirectory'
@@ -115,6 +115,19 @@ async function deliver(req, options = {}) {
     if (locked && invite && embedded?.bytes) {
       body = injectZipStoredFile(embedded.bytes, 'community-secret.local', communitySecretLocalJson(invite))
       size = body.byteLength
+    }
+
+    // 一百多 MB 的安装包经 Worker 转发时会被截断，磁盘镜像打不开。公开对象先扣费，再跳到 R2 让浏览器下完整文件。
+    if (!embedded && object) {
+      const publicUrl = publicUrlFor(objectKey)
+      if (publicUrl) {
+        const headers = new Headers({
+          Location: publicUrl,
+          'Cache-Control': 'private, no-store',
+        })
+        if (actor.setCookie) headers.set('Set-Cookie', actor.setCookie)
+        return new Response(null, { status: 302, headers })
+      }
     }
 
     const headers = new Headers({

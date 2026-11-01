@@ -76,7 +76,6 @@ export default function DesktopDownloadChooser({ downloads, version }) {
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
               href={recommended.href}
-              download
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#f3d15e] px-6 py-3 text-sm font-bold text-[#111418] no-underline transition hover:bg-[#ffde6d] dark:bg-[#111418] dark:text-white dark:hover:bg-[#34383f]"
             >
               下载推荐版本
@@ -106,7 +105,6 @@ export default function DesktopDownloadChooser({ downloads, version }) {
                 <a
                   key={item.file}
                   href={item.href}
-                  download
                   className="block rounded-md bg-white/[0.08] px-4 py-3 text-sm text-white no-underline transition hover:bg-white/[0.14] dark:bg-black/[0.06] dark:text-[#111418] dark:hover:bg-black/[0.1]"
                 >
                   <span className="block font-semibold">

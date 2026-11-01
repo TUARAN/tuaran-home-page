@@ -160,7 +160,7 @@ export default function DesktopResourcePage() {
         <h2>安装指引</h2>
         <h3>macOS</h3>
         <ol>
-          <li>下载对应芯片的 DMG。Apple Silicon 通常是 M1/M2/M3/M4；较早的 Mac 请选择 Intel。</li>
+          <li>下载对应芯片的 DMG。Apple Silicon 通常是 M1/M2/M3/M4；较早的 Mac 请选择 Intel。Apple Silicon 安装包大约 114 MB。打开时如果提示没有可装载的文件系统，说明文件没下完，删掉后重新下载。</li>
           <li>打开 DMG，把 2aran 拖到 Applications 文件夹。</li>
           <li>
             如果系统提示“无法验证开发者”，进入“系统设置 - 隐私与安全性”，在安全提示处选择“仍要打开”；也可以在应用图标上右键选择“打开”。

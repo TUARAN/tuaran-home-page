@@ -1,9 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { getDownloadItemsByDate } from '../../../lib/site/downloadItems'
 import { OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
 import { PUBLISHED_WORKS } from '../../../lib/site/publishedWorks'
 import { T } from './LocaleProvider'
+
+const DOWNLOAD_KIND = {
+  extension: { zh: '浏览器扩展', en: 'Browser extension' },
+  desktop: { zh: '桌面应用', en: 'Desktop app' },
+}
 
 function CardLink({ href, children, className }) {
   if (href.startsWith('http')) {
@@ -68,6 +74,38 @@ export function HomeOpenClawCards() {
             <span className="home-work-arrow" aria-hidden="true">↗</span>
           </CardLink>
         ))}
+      </div>
+    </section>
+  )
+}
+
+export function HomeDownloadCards() {
+  const items = getDownloadItemsByDate()
+  return (
+    <section className="home-download-section" aria-labelledby="home-downloads-title">
+      <div className="home-work-heading">
+        <div>
+          <p className="home-kicker">Downloads · {items.length}</p>
+          <h2 id="home-downloads-title" className="home-section-title"><T zh="客户端下载" en="Downloads" /></h2>
+        </div>
+        <Link href="/tools#downloads" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>
+      </div>
+      <div className="home-download-grid">
+        {items.map((item) => {
+          const kind = DOWNLOAD_KIND[item.downloadType] || DOWNLOAD_KIND.desktop
+          const platforms = Array.isArray(item.platforms) ? item.platforms.slice(0, 3).join(' / ') : ''
+          return (
+            <CardLink key={item.id} href={item.href} className="home-download-card">
+              <span className="home-work-meta">
+                <T zh={kind.zh} en={kind.en} />
+                {platforms ? ` · ${platforms}` : ''}
+              </span>
+              <strong>{item.title}</strong>
+              <small>{item.summary}</small>
+              <span className="home-download-action"><T zh={item.actionLabel || '查看下载'} en="Open" /> →</span>
+            </CardLink>
+          )
+        })}
       </div>
     </section>
   )

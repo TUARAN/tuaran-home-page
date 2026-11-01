@@ -32,7 +32,7 @@ import {
 import DaysSince from './components/DaysSince'
 import HomeSpacexEgg from './components/HomeSpacexEgg'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
-import { HomeBookCards, HomeOpenClawCards } from './components/HomeWorkCards'
+import { HomeBookCards, HomeDownloadCards, HomeOpenClawCards } from './components/HomeWorkCards'
 import { T } from './components/LocaleProvider'
 import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
 import { SitePresenceProvider } from './components/SitePresenceProvider'
@@ -808,6 +808,8 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
           </section>
         </aside>
       </HomeMasonry>
+
+      <HomeDownloadCards />
 
       <div className="home-footer flex justify-center pb-20 text-xs md:hidden">
         <OnlinePresenceStatus />

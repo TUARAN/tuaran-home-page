@@ -215,7 +215,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const installedVersion = String(device.extensionVersion || '').trim()
   const siteVersion = String(device.localUpdate?.version || '').trim()
   const updateAvailable = Boolean(device.updateAvailable)
-  const canUpdate = device.online && (updateAvailable ? Boolean(siteVersion) : Boolean(installedVersion))
+  const canUpdate = device.online && updateAvailable && Boolean(siteVersion) && siteVersion !== installedVersion
   const updateBusy = busyKey === `${device.id}:ext-update:`
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
   const facing = device.facing || schedule?.facing
@@ -264,8 +264,8 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
                   {updateBusy ? '排队中…' : '立即更新'}
                 </AdminButton>
               ) : (
-                <AdminButton size="sm" variant="ghost" disabled title={device.online ? '等待本地版本上报' : '实例离线，无法下发'}>
-                  {device.online ? '无法下发' : '离线不可更新'}
+                <AdminButton size="sm" variant="ghost" disabled title={device.online ? (device.localUpdate ? '本地暂无可更新版本' : '等待本地版本上报') : '实例离线，无法下发'}>
+                  {device.online ? '立即更新' : '离线不可更新'}
                 </AdminButton>
               )}
             </div>

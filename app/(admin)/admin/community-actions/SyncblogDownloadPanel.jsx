@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { AdminButton, Section, StatusPill } from '../../components/ui'
+import { AdminButton, StatusPill } from '../../components/ui'
 const endpoint = '/api/admin/syncblog-download'
 export default function SyncblogDownloadPanel() {
   const [status, setStatus] = useState(null)
@@ -26,12 +26,8 @@ export default function SyncblogDownloadPanel() {
     } catch (error) { setNotice(error.message) } finally { setBusy(false) }
   }
   return (
-    <Section
-      title="AI 分发大师"
-      description="浏览器插件：将文章分发到多个内容平台。在这里管理提供给读者的安装包与下载密码。"
-      actions={<AdminButton size="sm" href="/tools/syncblog-publisher">公开下载页</AdminButton>}
-    >
-      <div id="syncblog-download" className="scroll-mt-24 space-y-5 text-[13px]">
+    <div className="p-3">
+      <div className="scroll-mt-24 space-y-5 text-[13px]">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill size="sm" tone={status?.ready ? 'success' : 'neutral'} icon={false}>
             {!status ? '正在读取配置' : status.ready ? '可下载' : '待配置'}
@@ -54,6 +50,6 @@ export default function SyncblogDownloadPanel() {
         </div>
         {notice ? <p role="status" className="m-0 leading-6 text-[#5f6156] dark:text-gray-300">{notice}</p> : null}
       </div>
-    </Section>
+    </div>
   )
 }

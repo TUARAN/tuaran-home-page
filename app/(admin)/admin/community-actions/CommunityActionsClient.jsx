@@ -14,6 +14,7 @@ const PLATFORM_LABEL = {
   x: 'X',
   xhs: '小红书',
   juejin: '掘金',
+  multi: '多平台',
 }
 
 const MODE_TABS = Object.freeze([
@@ -32,6 +33,13 @@ const CLOUD_PANELS = Object.freeze([
 const CLOUD_PANEL_IDS = new Set(CLOUD_PANELS.map((item) => item.id))
 
 const EXTENSION_TASKS = Object.freeze([
+  {
+    id: 'syncblog-download',
+    platform: 'multi',
+    label: 'AI 分发大师',
+    summary: '整理观点、文章、电子书和项目介绍，适配多个平台并准备草稿，核对后手动发布。',
+    href: '/tools/syncblog-publisher',
+  },
   {
     id: 'x-assistant',
     platform: 'x',
@@ -269,8 +277,6 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         />
       </Section>
 
-      <SyncblogDownloadPanel />
-
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
         <ul className="m-0 grid gap-2 p-0">
           {EXTENSION_TASKS.map((item) => (
@@ -281,10 +287,16 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
               </div>
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
+                {item.platform !== 'multi' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton> : null}
                 {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
               </div>
               {item.id === 'x-assistant' ? <PersonInvitesPanel /> : null}
+              {item.id === 'syncblog-download' ? (
+                <details className="mt-3 rounded-lg border border-[#e4e6dc] dark:border-[#263142]">
+                  <summary className="cursor-pointer px-3 py-2 text-[12px] font-medium">安装包与下载密码</summary>
+                  <SyncblogDownloadPanel />
+                </details>
+              ) : null}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}

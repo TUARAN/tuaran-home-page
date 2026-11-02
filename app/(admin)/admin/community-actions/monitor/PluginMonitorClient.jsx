@@ -113,15 +113,18 @@ export default function PluginMonitorClient() {
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ deviceId, command, mode }),
+        signal: AbortSignal.timeout(15000),
       })
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
         throw new Error(payload?.error === 'MIGRATION_REQUIRED' ? '请先执行迁移 0120_x_extension_commands.sql' : payload?.error || `指令下发失败（HTTP ${response.status}）`)
       }
-      setCommandNote(`${COMMAND_LABEL[command] || command}${mode ? ` · ${MODE_LABEL[mode] || mode}` : ''} 已排队，等待插件心跳执行`)
-      await refresh(false, true)
+      if (command !== 'ext-update') setCommandNote(`${COMMAND_LABEL[command] || command}${mode ? ` · ${MODE_LABEL[mode] || mode}` : ''} 已排队，等待插件心跳执行`)
+      void refresh(false, true)
+      return { ...payload, ok: true }
     } catch (issue) {
-      setCommandNote(issue.message || '指令下发失败')
+      if (command !== 'ext-update') setCommandNote(issue.message || '指令下发失败')
+      return { ok: false, error: issue.message || '指令下发失败' }
     } finally {
       setBusyKey('')
     }

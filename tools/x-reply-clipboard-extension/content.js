@@ -75,11 +75,10 @@
     "最多 1 个 emoji；不要用引号包整句；不要营销。"
   ].join("\n");
   const DEFAULT_REPLY_COMMENT_PROMPT = [
-    "你在回复别人对你帖子或评论的留言。只输出回复正文。",
-    "重心：接住对方这句话，前后文连贯；对方提了什么就顺着什么往下说，别答非所问。",
-    "站在我这边说话。祝福或夸赞多表示收到；提问只答能确认的；批评可简短认或辩，别空转客服腔。",
-    "可短，但要比评论首页更贴对方原话。别复读对方整句，别装作读过你没看到的上文结论，别硬加反问收尾。",
-    "别假对比，别自我指涉写作过程。最多 1 个 emoji。不 @grok。"
+    "你在回复别人对你帖子的留言。只输出回复正文。",
+    "语气短、友好、轻松，像朋友随手回：通常几个字就够，多带表情。可参考：对对对✅、你说的真对、我也觉得、😂、嘻嘻😁、哈哈哈哈、收到🙏；按对方原话换说法，不要条条相同。",
+    "意思到了就停，不要解释、总结、补观点或追问。对方真在问具体问题时，一句话答要点，仍可带一个表情。",
+    "严肃或难过的语境别用嬉笑表情敷衍。不复读对方整句，不编事实，不用客服腔，不写假对比和写作过程。不 @grok。"
   ].join("\n");
   const DEFAULT_POST_NORMAL_PROMPT = [
     "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
@@ -2291,7 +2290,7 @@
   }
 
     const DEFAULT_SCHEDULE_PRIORITY = Object.freeze({
-    notifications: 10, timeline: 9, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
+    notifications: 8, timeline: 9, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
     "likes-posts": 6, "likes-replies": 6, "mutual-followBack": 7,
     "mutual-targetFollow": 7, "mutual-unfollow": 3
   });
@@ -3506,7 +3505,15 @@
         || (legacyPost.includes("姿态够直接") && legacyPost.includes("字数是写作目标"))
         || legacyPost.includes("情绪化的 X 中文短帖");
       state.replyTimelinePrompt = String(settings.replyTimelinePrompt || "").trim() || legacyReply;
-      state.replyCommentPrompt = String(settings.replyCommentPrompt || "").trim() || legacyReply;
+      {
+        const savedComment = String(settings.replyCommentPrompt || "").trim();
+        const legacyComment = savedComment || legacyReply;
+        const legacyCommentIsBuiltin = !legacyComment
+          || legacyComment.includes("重心：接住对方这句话")
+          || legacyComment.includes("像朋友聊天时随手回一句：通常 2～10 个字")
+          || (legacyComment.includes("最多 1 个 emoji") && legacyComment.includes("对你帖子或评论的留言"));
+        state.replyCommentPrompt = legacyCommentIsBuiltin ? "" : legacyComment;
+      }
       state.postNormalPrompt = String(settings.postNormalPrompt || "").trim() || (legacyPostIsBuiltin ? "" : legacyPost);
       state.postPremiumPrompt = String(settings.postPremiumPrompt || "").trim() || (legacyPostIsBuiltin ? "" : legacyPost);
       state.postXPrompt = String(settings.postXPrompt || "").trim();
@@ -5053,6 +5060,10 @@
       || !conversation?.ownPost?.text || !conversation?.reply?.text) {
       throw new Error("没有确认我的帖子与对方回复属于同一段会话");
     }
+    if (typeof conversation.ownThread !== "boolean") {
+      const rootHandle = String(conversation.rootPost?.authorHandle || conversation.ownPost.authorHandle || "").toLowerCase();
+      conversation.ownThread = rootHandle === ownHandle;
+    }
     cacheNotificationContext(tweet.id, conversation);
     return conversation;
   }
@@ -5063,7 +5074,8 @@
     } catch (error) {
       const fallback = {
         ownPost: null,
-        reply: { id: tweet.id, authorHandle: tweet.authorHandle, text: replyText }
+        reply: { id: tweet.id, authorHandle: tweet.authorHandle, text: replyText },
+        ownThread: null
       };
       cacheNotificationContext(tweet.id, fallback);
       return fallback;
@@ -5927,6 +5939,22 @@
             state.status = "正在读取我的帖子和对方回复…";
             renderPanel();
             conversation = await conversationOrFallback(next, postText);
+            // Own reply under someone else's post: do not keep the back-and-forth going.
+            if (conversation?.ownThread === false) {
+              skippedIds.add(next.id);
+              try {
+                await persistNotificationProcessed(next.id);
+              } catch (error) {
+                state.errors += 1;
+              }
+              state.pendingReply = "";
+              state.pendingTweetId = "";
+              state.pendingGrokInvite = false;
+              writeSaved({ running: true, total: state.total });
+              state.status = "别人帖子下已回过，不再继续回";
+              renderPanel();
+              continue;
+            }
           }
           state.status = conversation?.ownPost?.text
             ? "AI 正在结合双方内容生成回复…"
@@ -5953,6 +5981,25 @@
         }
       }
       if (state.stopping || !state.running) return "stopped";
+      if (state.assistantMode === "notifications" && state.replyMode !== "ai") {
+        const postText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
+        const conversation = await conversationOrFallback(next, postText || " ");
+        if (conversation?.ownThread === false) {
+          skippedIds.add(next.id);
+          try {
+            await persistNotificationProcessed(next.id);
+          } catch (error) {
+            state.errors += 1;
+          }
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          state.pendingGrokInvite = false;
+          writeSaved({ running: true, total: state.total });
+          state.status = "别人帖子下已回过，不再继续回";
+          renderPanel();
+          continue;
+        }
+      }
       state.status = state.replyMode === "ai" ? `AI 已生成：${phrase}` : `正在回复：${phrase}`;
       renderPanel();
       const result = await replyOnce(next, phrase);
@@ -6665,9 +6712,8 @@
   }
 
   function defaultSchedulePriority(mode) {
-    return mode === "notifications" ? 10
-      : mode === "timeline" ? 9
-      : mode === "kol" || mode === "poster-premium" ? 8
+    return mode === "timeline" ? 9
+      : mode === "notifications" || mode === "kol" || mode === "poster-premium" ? 8
       : mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" ? 7
       : ["likes-posts", "likes-replies"].includes(mode) ? 6
       : mode === "mutual-followBack" ? 7

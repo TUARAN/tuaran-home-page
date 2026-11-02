@@ -54,7 +54,7 @@ test('runtime groups follow schedule priority order with idle fill-ins', () => {
     ['mutual', 'waiting'],
   ])
   assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase, task.priority]), [
-    ['notifications', 'idle', 10],
+    ['notifications', 'idle', 8],
     ['timeline', 'running', 9],
     ['kol', 'idle', 8],
   ])
@@ -131,6 +131,10 @@ test('ext-update remote command normalizes and enqueues without a mode', async (
               return { meta: { changes: 1 } }
             },
             async all() { return { results: [] } },
+            async first() {
+              const inserted = rows.at(-1)
+              return inserted ? { id: inserted[0], created_at: inserted[2] } : null
+            },
           }
         },
       }
@@ -139,7 +143,8 @@ test('ext-update remote command normalizes and enqueues without a mode', async (
   const queued = await enqueueXRemoteCommand(db, { deviceId: 'device-x-monitor', command: 'ext-update' }, NOW)
   assert.equal(queued.ok, true)
   assert.equal(queued.command, 'ext-update')
-  assert.equal(rows[0][2], 'ext-update')
+  assert.equal(queued.mode, '')
+  assert.equal(rows[0][1], 'device-x-monitor')
 })
 
 test('monitor does not infer local updates from the site version', () => {

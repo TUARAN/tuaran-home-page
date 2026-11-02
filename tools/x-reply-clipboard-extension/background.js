@@ -49,12 +49,20 @@ const REPLY_TIMELINE_PROMPT = [
 ].join("\n");
 
 const REPLY_COMMENT_PROMPT = [
-  "你在回复别人对你帖子或评论的留言。只输出回复正文。",
-  "像朋友聊天时随手回一句：通常 2～10 个字，意思到了就停。合适时只回 1～2 个表情，不必每条都有文字。",
-  "前后文连贯，根据对方原话选一种自然回应；祝福或夸赞简单表示感谢，玩笑可以笑一下。不要每次都解释、总结、补观点或追问。",
-  "对方确实在问具体问题时，只答能确认的关键点，尽量一句话、24 字以内。严肃或难过的语境别用嬉笑表情敷衍。",
-  "不复读对方整句，不编事实，不硬凑完整句式，不用客服腔，不写假对比和写作过程。不 @grok。"
+  "你在回复别人对你帖子的留言。只输出回复正文。",
+  "语气短、友好、轻松，像朋友随手回：通常几个字就够，多带表情。可参考：对对对✅、你说的真对、我也觉得、😂、嘻嘻😁、哈哈哈哈、收到🙏；按对方原话换说法，不要条条相同。",
+  "意思到了就停，不要解释、总结、补观点或追问。对方真在问具体问题时，一句话答要点，仍可带一个表情。",
+  "严肃或难过的语境别用嬉笑表情敷衍。不复读对方整句，不编事实，不用客服腔，不写假对比和写作过程。不 @grok。"
 ].join("\n");
+
+function isLegacyBuiltInReplyCommentPrompt(value) {
+  const prompt = String(value || "").trim();
+  if (!prompt) return true;
+  if (prompt.includes("重心：接住对方这句话")) return true;
+  if (prompt.includes("像朋友聊天时随手回一句：通常 2～10 个字")) return true;
+  if (prompt.includes("最多 1 个 emoji") && prompt.includes("对你帖子或评论的留言")) return true;
+  return false;
+}
 
 // Back-compat alias for older tests and migrations.
 const REPLY_SYSTEM_PROMPT = REPLY_TIMELINE_PROMPT;
@@ -152,7 +160,12 @@ function resolvePromptBundle(settings = {}) {
   const legacyPost = isLegacyBuiltInPostPrompt(legacyPostRaw) ? "" : legacyPostRaw;
   return {
     replyTimelinePrompt: String(settings.replyTimelinePrompt || "").trim() || legacyReply || REPLY_TIMELINE_PROMPT,
-    replyCommentPrompt: String(settings.replyCommentPrompt || "").trim() || legacyReply || REPLY_COMMENT_PROMPT,
+    replyCommentPrompt: (() => {
+      const saved = String(settings.replyCommentPrompt || "").trim();
+      if (saved && !isLegacyBuiltInReplyCommentPrompt(saved)) return saved;
+      if (legacyReply && !isLegacyBuiltInReplyCommentPrompt(legacyReply)) return legacyReply;
+      return REPLY_COMMENT_PROMPT;
+    })(),
     postNormalPrompt: String(settings.postNormalPrompt || "").trim() || legacyPost || POST_NORMAL_PROMPT,
     postPremiumPrompt: String(settings.postPremiumPrompt || "").trim() || legacyPost || POST_PREMIUM_PROMPT,
     postXPrompt: String(settings.postXPrompt || "").trim() || POST_X_PROMPT
@@ -284,10 +297,10 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
     ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").trim()
     : replyPrompt;
   const replyStyle = grokReply ? GROK_REPLY_PROMPT : commentReply ? "" : "这次不要提及 @grok，直接回应原帖。";
-  const replyMaxLength = grokReply ? 120 : commentReply ? 32 : 80;
+  const replyMaxLength = grokReply ? 120 : commentReply ? 36 : 80;
   const messages = [
     { role: "system", content: commentReply
-      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以简短自然为先：通常 2～10 个字，或仅用 1～2 个表情；不必解释或总结，具体问题才用一句话答要点。不要机械套用同一句谢谢、哈哈或同一组表情；表情和语气必须贴合上下文。`
+      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以短、友好、多表情为先：通常几个字就够，鼓励带 ✅😂😁🙏 一类表情；也可只回表情。不必解释或总结；具体问题才用一句话答要点。不要条条都用同一句「对对对」或同一组表情；语气贴合上下文。`
       : `${replyPromptForModel}\n${replyStyle}` },
     {
       role: "user",
@@ -296,12 +309,12 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
           ? [
             `我的帖子：\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
             `对方针对这条帖子写的回复：\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
-            "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。优先几个字或合适的表情；确有问题才简短答要点，不要反问对方。"
+            "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。优先短句加表情，或只回表情；确有问题才简短答要点，不要反问对方。"
           ].join("\n\n")
           : conversation?.reply?.text
             ? [
               `对方回复给我的内容：\n${String(conversation.reply.text).trim().slice(0, 800)}`,
-              "我之前的帖子暂时没有读到。请根据对方这句话合理推测语境，以收到回复的人的身份随手接一句。祝福、夸赞通常表示感谢；提问只回答能确认的部分；批评表达散乱时可自然承认写散了。不要装作知道原帖结论，不要反问对方，不要把对方的话原样重复。"
+              "我之前的帖子暂时没有读到。请根据对方这句话合理推测语境，以收到回复的人的身份随手接一句，短、友好、可多表情。祝福、夸赞通常表示感谢；提问只回答能确认的部分；批评表达散乱时可自然承认写散了。不要装作知道原帖结论，不要反问对方，不要把对方的话原样重复。"
             ].join("\n\n")
             : `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`,
         avoidReply ? `\n下面这句已被 X 判定为重复，请换一个明显不同的角度和说法，不能只替换个别词：\n${String(avoidReply).trim().slice(0, 180)}` : ""
@@ -1586,10 +1599,9 @@ async function isTaskUnlimitedMode(mode) {
 }
 
 function defaultTaskPriority(mode) {
-  // 评论回复 > 评论首页 > 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
-  if (mode === "notifications") return 10;
+  // 评论首页 > 评论回复 = 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
   if (mode === "timeline") return 9;
-  if (mode === "kol" || mode === "poster-premium") return 8;
+  if (mode === "notifications" || mode === "kol" || mode === "poster-premium") return 8;
   if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
@@ -1858,6 +1870,14 @@ async function readTaskSchedule() {
   if (plan.followPriorityVersion !== 1) {
     for (const mode of ["mutual-followBack", "mutual-targetFollow"]) plan.rules[mode].priority = 7;
     plan.followPriorityVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.notificationsPriorityVersion !== 1) {
+    // Old default was 10; hand-tuned values other than 10 stay.
+    if (Number(plan.rules?.notifications?.priority) === 10) {
+      plan.rules.notifications.priority = defaultTaskPriority("notifications");
+    }
+    plan.notificationsPriorityVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {
@@ -3722,6 +3742,7 @@ if (typeof module === "object" && module.exports) {
     CLICKBAIT_POST_PROMPT,
     resolvePromptBundle,
     isLegacyBuiltInPostPrompt,
+    isLegacyBuiltInReplyCommentPrompt,
     NEWS_REWRITE_SYSTEM_PROMPT,
     DEEPSEEK_MODEL,
     REQUEST_TIMEOUT_MS

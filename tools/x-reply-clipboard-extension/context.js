@@ -31,7 +31,10 @@
     const own = String(ownHandle || "").toLowerCase();
     for (let i = index - 1; i >= 0; i -= 1) {
       if (tweets[i].authorHandle === own && tweets[i].text) {
-        return { ownPost: tweets[i], reply };
+        const rootPost = tweets[0] || null;
+        // Someone else's root post: we already left a reply in their thread — do not keep going.
+        const ownThread = Boolean(rootPost?.authorHandle && rootPost.authorHandle === own);
+        return { ownPost: tweets[i], reply, rootPost, ownThread };
       }
     }
     return null;

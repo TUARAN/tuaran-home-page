@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useMemo, useRef, useState } from 'react'
+
 import {
   X_DEFAULT_TASK_PRIORITY,
   X_RUNTIME_MODE_LABELS,
@@ -209,17 +211,66 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const [label, tone] = DEVICE_PHASE[device.phase] || DEVICE_PHASE.unknown
   const quiet = device.phase === 'running' && (!device.lastAction || now - Number(device.lastAction.occurred_at) > 30 * 60 * 1000)
   const groups = Array.isArray(device.groups) ? device.groups : []
-  const commands = Array.isArray(device.commands) ? device.commands : []
+  const commands = useMemo(() => Array.isArray(device.commands) ? device.commands : [], [device.commands])
   const schedule = device.schedule
   const canControl = device.online && device.telemetry
   const installedVersion = String(device.extensionVersion || '').trim()
   const siteVersion = String(device.localUpdate?.version || '').trim()
   const updateAvailable = Boolean(device.updateAvailable)
   const canUpdate = device.online && updateAvailable && Boolean(siteVersion) && siteVersion !== installedVersion
-  const updateBusy = busyKey === `${device.id}:ext-update:`
+  const [updateRequest, setUpdateRequest] = useState(null)
+  const [updateResult, setUpdateResult] = useState('')
+  const updateLock = useRef(false)
+  const [updateNow, setUpdateNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = window.setInterval(() => setUpdateNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const latestUpdateCommand = commands.find((item) => item.command === 'ext-update')
+  const trackedCommand = updateRequest?.id
+    ? commands.find((item) => item.id === updateRequest.id)
+    : latestUpdateCommand
+  const activeSince = updateRequest?.at || Number(trackedCommand?.createdAt) || 0
+  const timedOut = activeSince > 0 && updateNow - activeSince >= 120000
+  const commandPending = trackedCommand && ['pending', 'claimed'].includes(trackedCommand.status)
+  const localApplying = ['stopping', 'applying'].includes(device.localUpdate?.phase)
+  const updateBusy = busyKey === `${device.id}:ext-update:` || (!timedOut && (Boolean(updateRequest) || commandPending || localApplying))
+  useEffect(() => {
+    if (!updateRequest) return
+    if (installedVersion === updateRequest.version) {
+      setUpdateResult(`更新成功，正在运行 v${installedVersion}`)
+    } else if (trackedCommand?.status === 'done') {
+      setUpdateResult(trackedCommand.result || '插件已完成更新指令')
+    } else if (trackedCommand?.status === 'failed' || trackedCommand?.status === 'expired') {
+      setUpdateResult(trackedCommand.result || '本地更新失败，请检查插件后重试')
+    } else if (timedOut) {
+      setUpdateResult('两分钟内未收到更新回执，请检查本地插件连接后重试')
+    } else return
+    setUpdateRequest(null)
+  }, [updateRequest, installedVersion, trackedCommand, timedOut])
+  const updateMessage = updateBusy
+    ? (localApplying ? '本地正在加载更新…' : trackedCommand?.status === 'claimed' ? '插件已接收，正在执行更新…' : '等待插件接收更新指令…')
+    : updateResult || (timedOut && commandPending ? '两分钟内未收到更新回执，请检查本地插件连接后重试' : '')
+  const requestUpdate = async () => {
+    if (updateLock.current || updateBusy) return
+    updateLock.current = true
+    setUpdateResult('')
+    setUpdateRequest({ at: Date.now(), version: siteVersion })
+    try {
+      const result = await onCommand?.({ deviceId: device.id, command: 'ext-update', mode: '' })
+      if (!result?.ok) {
+        setUpdateRequest(null)
+        setUpdateResult(result?.error || '更新指令下发失败')
+      } else {
+        setUpdateRequest({ at: result.createdAt || Date.now(), version: siteVersion, id: result.id })
+      }
+    } finally {
+      updateLock.current = false
+    }
+  }
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
   const facing = device.facing || schedule?.facing
-  const flowBusy = Boolean(busyKey)
+  const flowBusy = Boolean(busyKey?.startsWith(`${device.id}:`) && !busyKey.endsWith(':ext-update:'))
   const desk = buildDesk(groups, schedule)
   let candidateWarmth = 0
   const versionTone = !device.online ? 'neutral' : updateAvailable ? 'warning' : installedVersion ? 'success' : 'neutral'
@@ -256,12 +307,12 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
               <p className="mb-0 mt-1 text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">
                 {updateAvailable ? `本地可更新至 v${siteVersion}` : installedVersion ? `当前 v${installedVersion}` : '等待版本上报'}
               </p>
-              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">{versionDetail}</p>
+              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">{updateMessage || versionDetail}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {canUpdate ? (
-                <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('ext-update')}>
-                  {updateBusy ? '排队中…' : '立即更新'}
+              {canUpdate || updateBusy ? (
+                <AdminButton size="sm" variant="primary" disabled={updateBusy} onClick={requestUpdate}>
+                  {updateBusy ? <span role="status" className="inline-flex items-center gap-2"><span aria-hidden="true" className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />更新中…</span> : '立即更新'}
                 </AdminButton>
               ) : (
                 <AdminButton size="sm" variant="ghost" disabled title={device.online ? (device.localUpdate ? '本地暂无可更新版本' : '等待本地版本上报') : '实例离线，无法下发'}>
@@ -364,7 +415,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
             <h4 className="m-0 text-[12px] font-semibold text-[#273228] dark:text-gray-100">最近指令回执</h4>
             <ul className="mt-2 list-none space-y-1.5 p-0">
               {commands.slice(0, 5).map((item) => {
-                const [statusLabel, statusTone] = COMMAND_STATUS[item.status] || COMMAND_STATUS.pending
+                const [statusLabel, statusTone] = ['pending', 'claimed'].includes(item.status) && updateNow - Number(item.createdAt) >= 120000 && item.command === 'ext-update' ? ['回执超时', 'warning'] : COMMAND_STATUS[item.status] || COMMAND_STATUS.pending
                 return (
                   <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#e5e9e2] bg-white px-3 py-2 text-[12px] dark:border-[#263142] dark:bg-[#0d141c]">
                     <span className="font-medium text-[#273228] dark:text-gray-100">

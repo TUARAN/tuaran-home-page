@@ -19,7 +19,7 @@ function detectPlatform() {
     return {
       key: 'macos-arm64',
       label: '已识别为 macOS',
-      detail: '浏览器通常不能可靠识别 Mac 芯片类型，默认推荐 Apple Silicon；Intel Mac 请展开其他版本。',
+      detail: '浏览器通常不能可靠识别 Mac 芯片类型，默认推荐 Apple Silicon；Intel Mac 请在其他版本里下载。',
     }
   }
 
@@ -96,7 +96,7 @@ export default function DesktopDownloadChooser({ downloads, version }) {
           <p className="mt-3 text-sm leading-7 text-white/[0.68] dark:text-black/[0.64]">
             当前安装包未做 Apple Developer ID / Windows EV 证书签名，属于公开测试版本。首次打开时系统可能出现安全提示。
           </p>
-          <details className="mt-5">
+          <details className="mt-5" open>
             <summary className="cursor-pointer text-sm font-semibold text-[#f3d15e] dark:text-[#6f5617]">
               查看其他版本下载
             </summary>

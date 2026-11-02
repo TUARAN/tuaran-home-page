@@ -4859,8 +4859,18 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   const result = context.findConversation(articles, '103', 'me', 'friend')
   assert.equal(result.ownPost.text, '我补充的上下文')
   assert.equal(result.reply.text, '对方最新回复')
+  assert.equal(result.ownThread, true)
   assert.equal(context.findConversation(articles, '103', 'me', 'stranger'), null)
   assert.equal(context.findConversation([articles.at(-1)], '103', 'me', 'friend'), null)
+
+  const foreign = [
+    article('/friend/status/200', '别人的原帖'),
+    article('/me/status/201', '我之前回过一句'),
+    article('/friend/status/202', '对方又回了我'),
+  ]
+  const foreignResult = context.findConversation(foreign, '202', 'me', 'friend')
+  assert.equal(foreignResult.ownPost.text, '我之前回过一句')
+  assert.equal(foreignResult.ownThread, false)
 })
 
 test('notification context opens a background conversation tab and closes it after reading', async () => {
@@ -6175,6 +6185,9 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id: 'reply-kol', label: '评论大V', depth: 2/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
+  assert.match(docsPage, /只回「别人回你自己帖子」这一类/)
+  assert.match(docsPage, /短、友好、多表情/)
+  assert.match(docsPage, /默认优先级 8 分/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
@@ -6209,7 +6222,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /评论首页默认用下面的边界测试/)
   assert.match(docsPage, /评论大V · 每个账号/)
   assert.match(docsPage, /id="daily-volume"/)
-  assert.match(docsPage, /500～800 条/)
+  assert.match(docsPage, /短友好多表情；只回别人对你帖子的留言/)
   assert.match(docsPage, /插件不设每日回复总量/)
   assert.match(docsPage, /每日报告随心跳自动同步当日统计/)
   assert.doesNotMatch(docsPage, /同步历史/)
@@ -6546,7 +6559,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'notifications', 'timeline', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
+    'timeline', 'notifications', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
     'likes-posts', 'likes-replies',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
@@ -6618,7 +6631,7 @@ test('existing schedule receives the daily follow-back cadence and new default w
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 10)
+    assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.rules.timeline.priority, 9)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -6629,6 +6642,7 @@ test('existing schedule receives the daily follow-back cadence and new default w
     assert.equal(plan.rules['mutual-followBack'].priority, 7)
     assert.equal(plan.rules['mutual-targetFollow'].priority, 7)
     assert.equal(plan.followPriorityVersion, 1)
+    assert.equal(plan.notificationsPriorityVersion, 1)
     assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-followBack'].window, 'all')
     assert.equal(plan.priorityOrderVersion, background.PRIORITY_ORDER_VERSION)
@@ -6666,11 +6680,12 @@ test('untouched default scores move up one point and a hand-edited score stays',
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 10)
+    assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.rules.timeline.priority, 9)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
     assert.equal(plan.priorityScoreVersion, background.PRIORITY_SCORE_VERSION)
+    assert.equal(plan.notificationsPriorityVersion, 1)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8146,6 +8161,35 @@ test('X account action denial is recognized as a restriction in every action mod
   }
 })
 
+test('notification priority 10 migrates to 8 while other hand-tuned scores stay', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', items: {},
+    priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+    priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
+    followPriorityVersion: 1,
+    followBackNightVersion: 1,
+    likeDetectionVersion: 2,
+    replyRiskVersion: 2,
+    rules: {
+      notifications: { priority: 10, pace: 'medium', enabled: true, window: 'all', minGapMs: 0 },
+      timeline: { priority: 6, pace: 'boundary', enabled: true, window: 'all', minGapMs: 0 },
+    },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.rules.notifications.priority, 8)
+    assert.equal(plan.rules.timeline.priority, 6)
+    assert.equal(plan.notificationsPriorityVersion, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('notification replies accept emoji-only responses and apply brevity to saved prompts', async () => {
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
@@ -8159,11 +8203,11 @@ test('notification replies accept emoji-only responses and apply brevity to save
     const result = await background.callDeepSeek({ postText: '哈哈太有意思了', mode: 'notifications', conversation: { ownPost: { text: '今天遇到的趣事' }, reply: { text: '哈哈太有意思了' } } })
     assert.equal(result, '😂👍')
     assert.match(request.messages[0].content, /已有自定义回复提示词/)
-    assert.match(request.messages[0].content, /通常 2～10 个字/)
-    assert.match(request.messages[0].content, /仅用 1～2 个表情/)
-    assert.match(request.messages[0].content, /表情和语气必须贴合上下文/)
+    assert.match(request.messages[0].content, /短、友好、多表情/)
+    assert.match(request.messages[0].content, /鼓励带/)
+    assert.match(request.messages[0].content, /语气贴合上下文/)
     await background.callDeepSeek({ postText: '一个普通首页帖子', mode: 'timeline' })
-    assert.doesNotMatch(request.messages[0].content, /本次以简短自然为先/)
+    assert.doesNotMatch(request.messages[0].content, /本次以短、友好、多表情为先/)
   } finally {
     globalThis.chrome = previousChrome
     globalThis.fetch = previousFetch

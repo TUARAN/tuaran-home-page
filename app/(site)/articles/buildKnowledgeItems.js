@@ -1,3 +1,4 @@
+import { isResourceDirectoryItem } from '../../../lib/content/directoryMembership'
 import { researchKnowledgeItem } from '../../../lib/research/researchKnowledgeItem'
 import { articles } from '../../../lib/article/articleMetadata'
 import {
@@ -113,7 +114,7 @@ export function buildKnowledgeItems({ includeOwner = false } = {}) {
 
   const researchItems = listResearch().filter((entry) => !entry.encrypted && !isAShareResearchEntry(entry)).map(researchKnowledgeItem)
 
-  const resourceItems = HOME_RESOURCE_ITEMS.map((p) => {
+  const resourceItems = HOME_RESOURCE_ITEMS.filter(isResourceDirectoryItem).map((p) => {
     const pvKey = RESOURCE_PV_KEY_BY_HREF.get(p.href) || ''
     return {
       id: `resource:${p.resourceType}:${p.href}`,

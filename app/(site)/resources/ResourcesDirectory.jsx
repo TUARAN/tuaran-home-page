@@ -7,7 +7,6 @@ const CATEGORIES = [
   { id: 'learning', title: '学习与开发' },
   { id: 'media', title: '视觉与影音' },
   { id: 'collections', title: '收藏与订阅' },
-  { id: 'downloads', title: '工具与下载' },
 ]
 
 const VISUALS = {
@@ -15,13 +14,12 @@ const VISUALS = {
   learning: { eyebrow: 'LEARN', icon: 'brain', image: '/images/directory-covers/resources/learning.webp', cover: 'from-[#dbe8ed] via-[#eef4f4] to-[#cbdfe4] text-[#386677] dark:from-[#1b3540] dark:via-[#1a2b35] dark:to-[#294754] dark:text-[#bfdee8]' },
   media: { eyebrow: 'EXPLORE', icon: 'sparkles', image: '/images/directory-covers/resources/media.webp', cover: 'from-[#eaddf2] via-[#f4ecf6] to-[#ddcfeb] text-[#705780] dark:from-[#34263e] dark:via-[#2b2537] dark:to-[#493450] dark:text-[#e4ceef]' },
   collections: { eyebrow: 'SAVE', icon: 'list', image: '/images/directory-covers/resources/collections.webp', cover: 'from-[#dcebdc] via-[#eff4e9] to-[#d2e3d0] text-[#466a48] dark:from-[#213b2d] dark:via-[#203329] dark:to-[#30513b] dark:text-[#c7e2c8]' },
-  downloads: { eyebrow: 'GET', icon: 'download', image: '/images/directory-covers/resources/downloads.webp', cover: 'from-[#e3e9f3] via-[#f0f3f8] to-[#d7e0ee] text-[#425a7b] dark:from-[#26344b] dark:via-[#202c3e] dark:to-[#344662] dark:text-[#d1def3]' },
 }
 
 const CONFIG = {
   eyebrow: 'Resources',
   title: '资源',
-  description: '按用途浏览资料原文、学习索引、视觉影音、收藏订阅和可领取的工具。搜索标题与关键词，直接打开需要的资源。',
+  description: '按用途浏览资料原文、学习索引、视觉影音、收藏订阅。搜索标题与关键词，直接打开需要的资源。',
   countLabel: '项资源',
   filterAriaLabel: '筛选资源',
   searchPlaceholder: '搜索资源、主题或标签',
@@ -35,7 +33,7 @@ const CONFIG = {
   gridColumns: 4,
   share: {
     title: '资源',
-    text: '资料、学习、下载与收藏，集中查找和使用。',
+    text: '资料、学习、影音与收藏，集中查找和使用。',
     url: 'https://2aran.com/resources',
   },
 }
@@ -44,7 +42,6 @@ function resourceCategory(item) {
   const href = item.href || ''
   const type = item.resourceType || ''
   if (/^\/(bookmarks|frontend-weekly)/.test(href) || href === '/resources/rss' || ['rss', 'twitter', 'youtube'].includes(type)) return 'collections'
-  if (/(extension|desktop|protal-todo-assistant|codex-model-switcher)/.test(href) || type === 'tool') return 'downloads'
   if (['film-media', 'ai-music', 'visual-assets'].includes(type) || /(nano-banana-gallery|wallpapers|niu-lai-movie|ai-music)/.test(href)) return 'media'
   if (type === 'ai-dev' || /\/(ai-learning-library|edge-agent-development|codex-learning-resource-map-yichen)$/.test(href)) return 'learning'
   return 'reading'

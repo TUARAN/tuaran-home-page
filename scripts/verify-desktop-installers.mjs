@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync, statSync, mkdtempSync, rmSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 const root = process.cwd()
@@ -8,11 +10,11 @@ const sourceDir = path.join(root, 'desktop-dist')
 const artifacts = [
   {
     platform: 'macOS Apple Silicon',
-    file: '2aran-desktop-macos-arm64-v0.1.0.dmg',
+    file: '2aran-desktop-macos-arm64-v0.1.0-test.1.dmg',
   },
   {
     platform: 'macOS Intel',
-    file: '2aran-desktop-macos-x64-v0.1.0.dmg',
+    file: '2aran-desktop-macos-x64-v0.1.0-test.1.dmg',
   },
   {
     platform: 'Windows',
@@ -44,6 +46,19 @@ for (const item of artifacts) {
   }
 
   found += 1
+  if (process.platform === 'darwin' && item.file.endsWith('.dmg')) {
+    execFileSync('hdiutil', ['verify', filePath], { stdio: 'inherit' })
+    const mount = mkdtempSync(path.join(tmpdir(), '2aran-installer-check-'))
+    let attached = false
+    try {
+      execFileSync('hdiutil', ['attach', '-readonly', '-nobrowse', '-mountpoint', mount, filePath])
+      attached = true
+      execFileSync('codesign', ['--verify', '--deep', '--strict', path.join(mount, '2aran Desktop.app')], { stdio: 'inherit' })
+    } finally {
+      if (attached) execFileSync('hdiutil', ['detach', mount])
+      rmSync(mount, { recursive: true, force: true })
+    }
+  }
   const size = statSync(filePath).size
   const digest = await sha256(filePath)
   console.log(`[desktop] ${item.platform}: desktop-dist/${item.file} (${formatMiB(size)}) sha256=${digest}`)

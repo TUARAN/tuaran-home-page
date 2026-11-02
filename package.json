@@ -13,7 +13,7 @@
     "start": "next start -p 3000",
     "desktop:dev": "ELECTRON_START_URL=http://127.0.0.1:3000 electron desktop/main.cjs",
     "desktop:build": "electron-builder --projectDir desktop --config ../electron-builder.desktop.json --mac dmg --x64 --arm64 --win nsis --x64 --publish=never && node scripts/verify-desktop-installers.mjs",
-    "desktop:build:mac": "electron-builder --projectDir desktop --config ../electron-builder.desktop.json --mac dmg --x64 --arm64 --publish=never && node scripts/verify-desktop-installers.mjs",
+    "desktop:build:mac": "node scripts/build-desktop-mac.mjs",
     "desktop:build:win": "electron-builder --projectDir desktop --config ../electron-builder.desktop.json --win nsis --x64 --publish=never && node scripts/verify-desktop-installers.mjs",
     "gallery:sync": "node scripts/generate-nano-banana-gallery.mjs",
     "library:sync": "node scripts/generate-ai-learning-library.mjs",

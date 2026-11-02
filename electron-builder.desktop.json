@@ -12,12 +12,15 @@
     "package.json"
   ],
   "npmRebuild": false,
+  "afterSign": "desktop/build/verify-app.cjs",
   "mac": {
+    "identity": "-",
+    "hardenedRuntime": false,
     "target": [
       "dmg"
     ],
     "category": "public.app-category.productivity",
-    "artifactName": "2aran-desktop-macos-${arch}-v0.1.0.${ext}"
+    "artifactName": "2aran-desktop-macos-${arch}-v0.1.0-test.1.${ext}"
   },
   "win": {
     "target": [

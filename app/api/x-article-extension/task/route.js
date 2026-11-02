@@ -8,6 +8,8 @@ import {
   pickDailyXArticle,
   shanghaiDateKey,
 } from '../../../../lib/x/xArticleExtension'
+import { COMMUNITY_ACTION_SECRET_HEADER } from '../../../../lib/community/communityActions'
+import { authorizeCommunitySecret } from '../../../../lib/content/xReplyPersonInvite.mjs'
 import { MORNING_GREETING_SETTING_KEY, isAutomationPaused } from '../../../../lib/automation/morningGreeting'
 
 export const runtime = 'edge'
@@ -41,7 +43,13 @@ function requestContext() {
   return { env, secret, db: env.DB || null }
 }
 
-function authorize(req, secret) {
+async function authorize(req, secret, db) {
+  const pluginSecret = req.headers.get(COMMUNITY_ACTION_SECRET_HEADER)
+  if (pluginSecret) {
+    if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
+    const authorized = await authorizeCommunitySecret(db, pluginSecret, { bind: false })
+    return authorized.ok ? null : Response.json({ ok: false, error: authorized.error }, { status: authorized.status })
+  }
   if (!secret) {
     return Response.json({ ok: false, error: 'X_ARTICLE_EXTENSION_SECRET_NOT_CONFIGURED' }, { status: 503 })
   }
@@ -53,7 +61,7 @@ function authorize(req, secret) {
 
 export async function GET(req) {
   const { db, secret } = requestContext()
-  const rejected = authorize(req, secret)
+  const rejected = await authorize(req, secret, db)
   if (rejected) return rejected
   if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
 
@@ -114,7 +122,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   const { db, secret } = requestContext()
-  const rejected = authorize(req, secret)
+  const rejected = await authorize(req, secret, db)
   if (rejected) return rejected
   if (!db) return Response.json({ ok: false, error: 'DB_UNAVAILABLE' }, { status: 503 })
 

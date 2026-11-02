@@ -818,15 +818,13 @@
   }
 
   async function loadSiteForwardSettings(panel = document.getElementById(PANEL_ID)) {
-    const secret = panel?.querySelector("[data-xrc-site-forward-secret]");
     const table = panel?.querySelector("[data-xrc-site-forward-table]");
-    if (!secret || secret.dataset.xrcLoaded === "1") return;
+    if (!table || table.dataset.xrcLoaded === "1") return;
     try {
       const stored = await chrome.storage.local.get("xrcSiteForwardSettings");
       const settings = stored?.xrcSiteForwardSettings || {};
-      if (document.activeElement !== secret) secret.value = settings.secret || "";
       if (table) table.checked = settings.tableMode === "text";
-      secret.dataset.xrcLoaded = "1";
+      table.dataset.xrcLoaded = "1";
     } catch (error) {}
   }
 
@@ -7483,7 +7481,6 @@
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "每天一篇长文")}
               <p class="xrc-pace-now">北京时间 14:00 后，领取一篇 2aran.com 文章，保留结构、链接、表格、Mermaid 和正文图片，发布为 X Article。每天成功一篇后等到次日。</p>
-              <label class="xrc-field"><span>领取密钥</span><input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="与站内 X Article 领取密钥相同" data-xrc-site-forward-secret></label>
               <label class="xrc-grok-toggle">
                 <input type="checkbox" data-xrc-site-forward-table>
                 <span>表格改为文字</span>
@@ -7914,9 +7911,6 @@
       });
       panel.querySelector("[data-xrc-article-toggle]")?.addEventListener("click", () => onArticleToggle());
       panel.querySelector("[data-xrc-site-forward-toggle]")?.addEventListener("click", () => onSiteForwardToggle());
-      panel.querySelector("[data-xrc-site-forward-secret]")?.addEventListener("change", (event) => {
-        sendExtensionMessage({ type: "xrc-site-forward-settings-set", secret: event.target.value }).catch(() => {});
-      });
       panel.querySelector("[data-xrc-site-forward-table]")?.addEventListener("change", (event) => {
         sendExtensionMessage({ type: "xrc-site-forward-settings-set", tableMode: event.target.checked ? "text" : "image" }).catch(() => {});
       });

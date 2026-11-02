@@ -60,7 +60,7 @@
     const saved = await chrome.storage.local.get(SETTINGS_KEY);
     const value = saved?.[SETTINGS_KEY] && typeof saved[SETTINGS_KEY] === "object" ? saved[SETTINGS_KEY] : {};
     return {
-      secret: String(value.secret || "").trim(),
+      secret: String(await root.XrcCommunityReceipt?.readSecret?.() || "").trim(),
       tableMode: value.tableMode === "text" ? "text" : "image"
     };
   }
@@ -68,7 +68,6 @@
   async function writeSettings(patch) {
     const current = await readSettings();
     const next = {
-      secret: patch.secret === undefined ? current.secret : String(patch.secret || "").trim(),
       tableMode: patch.tableMode === "text" || patch.tableMode === "image" ? patch.tableMode : current.tableMode
     };
     await chrome.storage.local.set({ [SETTINGS_KEY]: next });
@@ -123,7 +122,7 @@
     const response = await fetch(TASK_ENDPOINT, {
       method: "GET",
       cache: "no-store",
-      headers: { "x-x-article-extension-secret": secret }
+      headers: { "x-community-action-secret": secret }
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(payload?.detail || payload?.error || `领取失败 HTTP ${response.status}`);
@@ -135,7 +134,7 @@
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-x-article-extension-secret": secret
+        "x-community-action-secret": secret
       },
       body: JSON.stringify(report)
     });
@@ -251,7 +250,7 @@
     const date = shanghaiDateKey();
     const state = await readForwardState();
     if (!settings.secret) {
-      const detail = "请先在站长转发里填写领取密钥";
+      const detail = "插件配套密钥不可用，请检查插件授权";
       await setForwardState({ running: false, status: "error", detail });
       return { ok: true, skipped: "missing-secret", detail };
     }

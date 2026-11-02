@@ -8,6 +8,7 @@ import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 import CommunityOperationsPlan from './CommunityOperationsPlan'
+import SyncblogDownloadPanel from './SyncblogDownloadPanel'
 
 const PLATFORM_LABEL = {
   x: 'X',
@@ -267,6 +268,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
           aria-label="站长总密钥"
         />
       </Section>
+
+      <SyncblogDownloadPanel />
 
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
         <ul className="m-0 grid gap-2 p-0">

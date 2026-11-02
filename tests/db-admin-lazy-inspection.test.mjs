@@ -71,3 +71,39 @@ test('数据库管理页提供诗词独立 D1 的安全迁移运行手册', asyn
   assert.match(source, /EXPLAIN 出现意外全表扫描/)
   assert.match(source, /旧 D1 和旧 R2 release 暂不删除/)
 })
+
+test('说明清单覆盖迁移最终业务表，排除重建临时表', async () => {
+  const { readdir } = await import('node:fs/promises')
+  const { EXPECTED_D1_TABLES } = await import('../lib/admin/dbAdmin.js')
+  const names = new Set()
+  const dir = new URL('../migrations/', import.meta.url)
+  for (const file of (await readdir(dir)).filter((name) => name.endsWith('.sql')).sort()) {
+    const sql = (await readFile(new URL(file, dir), 'utf8')).replace(/--[^\n]*/g, '')
+    const pattern = /CREATE TABLE\s+(?:IF NOT EXISTS\s+)?["`]?([\w]+)|DROP TABLE\s+(?:IF EXISTS\s+)?["`]?([\w]+)|ALTER TABLE\s+["`]?([\w]+)["`]?\s+RENAME TO\s+["`]?([\w]+)/gi
+    for (const match of sql.matchAll(pattern)) {
+      if (match[1]) names.add(match[1])
+      if (match[2]) names.delete(match[2])
+      if (match[3]) { names.delete(match[3]); names.add(match[4]) }
+    }
+  }
+  const catalog = new Map(EXPECTED_D1_TABLES.map((table) => [table.name, table]))
+  assert.equal(catalog.size, EXPECTED_D1_TABLES.length, '表名不得重复')
+  for (const name of names) {
+    const meta = catalog.get(name)
+    assert.ok(meta, `${name} 缺少说明`)
+    assert.ok(meta.label && meta.label !== name, `${name} 缺少中文名`)
+    assert.ok(meta.group && meta.group !== '未归类')
+    assert.ok(meta.description)
+  }
+})
+
+test('列表和详情均使用说明清单，未知表仍提示未收录', async () => {
+  const snapshot = await getD1AdminSnapshot(fakeD1())
+  const balance = snapshot.tables.find((table) => table.name === 'user_points')
+  assert.equal(balance.group, '运营')
+  assert.equal(balance.expected, true)
+  assert.equal(snapshot.extraTables.length, 0)
+  assert.ok(!snapshot.missingTables.includes('_cf_KV'))
+  assert.equal((await getD1TableDetail(fakeD1(), 'user_points')).label, balance.label)
+  assert.equal((await getD1TableDetail(fakeD1(), 'unknown_future_table')).expected, false)
+})

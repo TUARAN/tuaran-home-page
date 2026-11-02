@@ -1463,15 +1463,16 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-const FOLLOW_BACK_MIN_GAP_MS = 30 * 60 * 1000;
+const FOLLOW_BACK_MIN_GAP_MS = 5 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
-// Round gaps are 5～30 minutes; keep the overnight session long enough to finish paced rounds.
+// A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
 const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
-const TARGET_FOLLOW_MIN_GAP_MS = 30 * 60 * 1000;
+const TARGET_FOLLOW_MIN_GAP_MS = 5 * 60 * 1000;
 const LEGACY_FOLLOW_BACK_GAP_MS = 24 * 60 * 60 * 1000;
 const LEGACY_TARGET_FOLLOW_GAP_MS = 7 * 24 * 60 * 60 * 1000;
-const TARGET_FOLLOW_SLICE_MS = 45 * 60 * 1000;
+const LEGACY_FOLLOW_BATCH_GAP_MS = 30 * 60 * 1000;
+const TARGET_FOLLOW_SLICE_MS = 90 * 60 * 1000;
 const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
 const FOLLOW_BACK_NIGHT_END_MINUTE = 6 * 60;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
@@ -1611,6 +1612,13 @@ function defaultTaskPriority(mode) {
   return 1;
 }
 
+function followSessionGapMs(pace) {
+  if (pace === "slow") return 10 * 60 * 1000;
+  if (pace === "fast") return 3 * 60 * 1000;
+  if (pace === "turbo") return 2 * 60 * 1000;
+  return 5 * 60 * 1000;
+}
+
 function articleMinGapMs(pace) {
   if (pace === "medium") return 25 * 60000;
   if (pace === "fast") return 12 * 60000;
@@ -1640,8 +1648,7 @@ function defaultTaskRules() {
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
-      : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
-      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+      : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? followSessionGapMs("medium")
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
       : 0
   }]));
@@ -1665,7 +1672,9 @@ function normalizedTaskRules(value) {
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? cleanupMinGapMs(pace) : mode === "site-forward"
+      minGapMs: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? cleanupMinGapMs(pace)
+        : mode === "mutual-followBack" || mode === "mutual-targetFollow" ? followSessionGapMs(pace)
+        : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
         : mode === "article"
         ? articleMinGapMs(pace)
@@ -1747,8 +1756,16 @@ function dueTaskModes(plan, now = Date.now()) {
             ? Math.max(entry.rule.priority, 8.5) : entry.rule.priority;
       };
       if (priority(b) !== priority(a)) return priority(b) - priority(a);
-      const aging = (entry) => Math.min(3, Math.floor((now - Number(entry.item.lastRunAt || plan.enabledAt || now)) / (15 * 60000)));
-      return aging(b) - aging(a) || a.index - b.index;
+      // Same score means both should run. A task that has not run yet goes
+      // first; otherwise the longer wait goes first. List order only breaks an exact tie.
+      const waitedMs = (entry) => {
+        const lastRunAt = Number(entry.item.lastRunAt) || 0;
+        if (!lastRunAt) return Number.POSITIVE_INFINITY;
+        return Math.max(0, now - lastRunAt);
+      };
+      const waitDiff = waitedMs(b) - waitedMs(a);
+      if (waitDiff) return waitDiff;
+      return a.index - b.index;
     })
     .map(({ mode }) => mode);
 }
@@ -1916,6 +1933,30 @@ async function readTaskSchedule() {
       delete plan.items[mode].followBackSessionUntil;
     }
     plan.sharedFollowCadenceVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.followSessionVersion !== 1) {
+    for (const mode of ["mutual-followBack", "mutual-targetFollow"]) {
+      const pace = plan.rules?.[mode]?.pace || "medium";
+      const gap = followSessionGapMs(pace);
+      if (plan.rules?.[mode]) plan.rules[mode].minGapMs = gap;
+      const item = plan.items?.[mode];
+      if (!item || item.manualStopped || item.blocked) continue;
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const remain = Number(item.resumeAt) - Date.now();
+      // Only pull in the old 30-minute batch rest. Leave daily-cap and multi-hour waits alone.
+      if (!risk && remain > gap && remain <= LEGACY_FOLLOW_BATCH_GAP_MS + 5 * 60 * 1000) {
+        plan.items[mode] = {
+          ...item,
+          resumeAt: Date.now() + gap,
+          reason: /15 个|30 分钟|共享关注冷却|关注批次|回关批次/u.test(reason)
+            ? `关注满 100 个后休息 ${Math.round(gap / 60000)} 分钟`
+            : reason
+        };
+      }
+    }
+    plan.followSessionVersion = 1;
     scheduleMigrated = true;
   }
   if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
@@ -2153,10 +2194,14 @@ async function runTaskSchedule() {
     const requestedMode = dueNow[0];
     const currentPriority = Number(normalizedTaskRules(plan.rules)[current]?.priority) || 0;
     const requestedPriority = Number(normalizedTaskRules(plan.rules)[requestedMode]?.priority) || 0;
+    // A follow session keeps the tab until the page pauses at 100 confirms, or X limits it.
+    // Comments and likes cannot cut in mid-session. A due premium post still can.
+    const followSessionActive = (current === "mutual-followBack" || current === "mutual-targetFollow") && task?.phase === "running";
     const higherPriorityDue = !completeRunOccupancy
       && requestedMode
       && requestedMode !== current
-      && requestedPriority > currentPriority;
+      && requestedPriority > currentPriority
+      && !(followSessionActive && requestedMode !== "poster-premium");
     const premiumDue = higherPriorityDue && requestedMode === "poster-premium";
     // A person explicitly chose "立即开启" after confirming the current task
     // would stop. Do not let a comment task's full-run occupancy swallow it.

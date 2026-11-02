@@ -977,7 +977,7 @@
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "mutual-unfollow") return "默认连续取关，未回关才处理；占住页签，直到 X 报错或手动暂停";
-    if (mode === "mutual-followBack") return "回关与关注候选共用每 15 个后的 30 分钟冷却";
+    if (mode === "mutual-followBack") return "回关与关注候选确认满 100 个才让出页签；之后慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -2408,8 +2408,8 @@
     if (/疑似自动化|账号受限|操作受限|次数受限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
       return { kind: "cooldown", label: "X 限制冷却", detail: "到期自动重试", remaining };
     }
-    if (remaining && ["mutual-followBack", "mutual-targetFollow"].includes(mode) && /批次冷却|共享.*冷却|共享频率限制|每确认 15 个|回关.*冷却/iu.test(reason)) {
-      return { kind: "cooldown", label: "关注批次冷却", detail: "每确认 15 个后休息 30 分钟", remaining };
+    if (remaining && ["mutual-followBack", "mutual-targetFollow"].includes(mode) && /批次冷却|共享.*冷却|共享频率限制|每确认 (?:15|100) 个|关注满 100 个|回关.*冷却/iu.test(reason)) {
+      return { kind: "cooldown", label: "关注批次冷却", detail: "每确认 100 个后按速度档休息", remaining };
     }
     if (remaining && ["poster", "poster-premium", "poster-x", "poster-xhs"].includes(mode) && /等待下一条发布|等待发帖|下一条发帖/iu.test(reason)) {
       return { kind: "next-run", label: "等待下一条发帖", detail: "到点后自动继续", remaining };
@@ -3725,7 +3725,7 @@
   }
 
   function followRoundGapMinutes(pace) {
-    const seconds = mutualApi?.followRoundGapSeconds?.(pace) || 30 * 60;
+    const seconds = mutualApi?.followRoundGapSeconds?.(pace) || 5 * 60;
     return Math.max(1, Math.round(seconds / 60));
   }
 
@@ -3739,8 +3739,8 @@
       unlimitedFixed: true,
       columns: [
         { label: "进度段轮数", value: (profile) => paceSpan(profile.minRoundsPerRun, profile.maxRoundsPerRun, "轮") },
-        { label: "一轮人数", value: () => "15" },
-        { label: "每 15 人共享冷却", value: (profile) => `${followRoundGapMinutes(profile.id)} 分钟` }
+        { label: "一轮人数", value: () => "100" },
+        { label: "满 100 人后休息", value: (profile) => `${followRoundGapMinutes(profile.id)} 分钟` }
       ]
     });
   }
@@ -7389,7 +7389,7 @@
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>
                 <div class="xrc-flow-end">
-                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日关注 0/300 目标（上限 400）· 本批 0/15</div>
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日关注 0/300 目标（上限 400）· 本批 0/100</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
                   <button class="xrc-inline-start" type="button" data-xrc-mutual-action="targetFollow">已停止 · 点击启动</button>
                 </div>
@@ -8419,10 +8419,11 @@
     const unfollowEnglish = panel.querySelector("[data-xrc-unfollow-english]");
     if (unfollowEnglish) unfollowEnglish.checked = Boolean(state.unfollowEnglish);
     if (mutual) {
-      const sharedFollowStatus = `今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）· 本批 ${mutual.sharedBatchProgress || 0}/15`;
+      const followBatchSize = mutualApi?.constants?.FOLLOW_BATCH_SIZE || 100;
+      const sharedFollowStatus = `今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）· 本批 ${mutual.sharedBatchProgress || 0}/${followBatchSize}`;
       const followPlan = mutual.followPlan;
       const followRounds = followPlan?.rounds || 0;
-      const followSize = followPlan?.roundSize || 15;
+      const followSize = followPlan?.roundSize || followBatchSize;
       const followRoundNo = followRounds ? Math.min((followPlan.completedRounds || 0) + 1, followRounds) : 0;
       const followFinished = Boolean(followPlan && (followPlan.completedRounds || 0) >= followRounds && !(mutual.running && mutual.mode === "followBack"));
       const followActive = Boolean(followPlan && ((mutual.running && mutual.mode === "followBack") || followPlan.completedRounds || followPlan.roundCount));

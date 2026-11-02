@@ -2,13 +2,13 @@
   "use strict";
 
   const FOLLOW_ACTION_DELAY_MS = 2000;
-  const FOLLOW_BATCH_SIZE = 15;
-  // 两项关注任务共用一条节奏：每确认 15 个后至少休息 30 分钟。
+  const FOLLOW_BATCH_SIZE = 100;
+  // 两项关注任务共用一条节奏：确认满 100 个才休息并让出页签。休息跟速度档，不再固定 30 分钟。
   const FOLLOW_ROUND_GAP_SECONDS = Object.freeze({
-    slow: 30 * 60,
-    medium: 30 * 60,
-    fast: 30 * 60,
-    turbo: 30 * 60
+    slow: 10 * 60,
+    medium: 5 * 60,
+    fast: 3 * 60,
+    turbo: 2 * 60
   });
   const FOLLOW_BATCH_COOLDOWN_MS = FOLLOW_ROUND_GAP_SECONDS.medium * 1000;
   const FOLLOW_MAX_PER_RUN = 400;
@@ -355,6 +355,12 @@
     state.riskRetries = Math.max(0, Number(saved?.riskRetries) || 0);
     state.followSessionUntil = Number(saved?.followSessionUntil) > Date.now() ? Number(saved.followSessionUntil) : 0;
     state.followPlan = readSavedFollowPlan(saved, isToday || nightCarry);
+    const sessionGap = followBatchCooldownMs(state.targetFollowPace || state.followPace);
+    const leftover = state.cooldownUntil - Date.now();
+    if (!state.riskCooldownUntil && leftover > sessionGap && leftover <= 35 * 60 * 1000) {
+      state.cooldownUntil = Date.now() + sessionGap;
+      await persistSharedFollowRate();
+    }
     if (applyBatchCooldown && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE && !state.cooldownUntil) {
       state.sharedBatchProgress = 0;
       state.cooldownUntil = Date.now() + followBatchCooldownMs(state.targetFollowPace || state.followPace);
@@ -883,7 +889,7 @@
               emit(`本次 ${finishedRounds} 轮已完成，稍后继续回关`);
             }
             state.sharedBatchProgress = 0;
-            state.cooldownUntil = Date.now() + FOLLOW_BATCH_COOLDOWN_MS;
+            state.cooldownUntil = Date.now() + followBatchCooldownMs(state.followPace);
             await persistSharedFollowRate();
             if (!(await waitForSharedCooldown())) break;
           } else {

@@ -102,7 +102,7 @@ const VERSION_ERAS = [
   },
 ]
 
-const TOC = [{'heading': '开始使用', 'items': [{'id': 'quick-start', 'label': '快速开始'}, {'id': 'flow', 'label': '运行与界面'}, {'id': 'task-window-plan', 'label': '面板截图'}, {'id': 'states', 'label': '状态和按钮'}]}, {'heading': '任务与配置', 'items': [{'id': 'tasks', 'label': '十六项任务'}, {'id': 'comments', 'label': '评论管理'}, {'id': 'likes', 'label': '点赞管理'}, {'id': 'mutual-rules', 'label': '关注与取关'}, {'id': 'poster', 'label': '发帖、草稿与清理'}, {'id': 'prune-posts', 'label': '清理低质帖'}, {'id': 'prune-replies', 'label': '清理低质评论'}, {'id': 'frequency', 'label': '速度与排班设置'}, {'id': 'prompt-feedback', 'label': '提示词反馈台账'}]}, {'heading': '排查与维护', 'items': [{'id': 'risk', 'label': '异常恢复'}, {'id': 'rules', 'label': '平台边界'}, {'id': 'maintenance', 'label': '更新与数据'}]}, {'heading': '历史与观察', 'items': [{'id': 'history', 'label': '版本演进'}, {'id': 'releases', 'label': '周总结'}, {'id': 'ops-journal', 'label': '运营纪事'}]}]
+const TOC = [{'heading': '开始使用', 'items': [{'id': 'quick-start', 'label': '快速开始'}, {'id': 'flow', 'label': '运行与界面'}, {'id': 'task-window-plan', 'label': '面板截图'}, {'id': 'states', 'label': '状态和按钮'}]}, {'heading': '任务与配置', 'items': [{'id': 'tasks', 'label': '十六项任务'}, {'id': 'comments', 'label': '评论管理'}, {'id': 'likes', 'label': '点赞管理'}, {'id': 'mutual-rules', 'label': '关注与取关'}, {'id': 'poster', 'label': '发帖、草稿与清理'}, {'id': 'prune-posts', 'label': '清理低质帖'}, {'id': 'prune-replies', 'label': '清理低质评论'}, {'id': 'schedule-order', 'label': '排序'}, {'id': 'frequency', 'label': '速度与排班设置'}, {'id': 'prompt-feedback', 'label': '提示词反馈台账'}]}, {'heading': '排查与维护', 'items': [{'id': 'risk', 'label': '异常恢复'}, {'id': 'rules', 'label': '平台边界'}, {'id': 'maintenance', 'label': '更新与数据'}]}, {'heading': '历史与观察', 'items': [{'id': 'history', 'label': '版本演进'}, {'id': 'releases', 'label': '周总结'}, {'id': 'ops-journal', 'label': '运营纪事'}]}]
 
 const STATE_ROWS = [
   ['运行中', '当前任务正在扫描、生成或发送；详情显示最近更新时间。'],
@@ -263,7 +263,7 @@ export default function XReplyClipboardDocsPage() {
               <li>详情和十六项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。每个任务子页顶部都有「暂停当前任务」，只手动暂停这一项；重新开启使用该页的启动按钮。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
               <li>排班台标注「当前任务 / 下一任务 / 候选任务」。绿边表示运行，黄边表示等待，红边表示已停止或需处理。未参与的任务降饱和并排在后面；「查看」只进入详情，不改变排班。</li>
               <li>到期任务还需满足时段、共享冷却与优先级条件。评论完成本次轮次后让位；纯文字帖和 X主题发帖每次只发 1 条，随后等待下一周期。具体数值见「速度与排班设置」。</li>
-              <li>回关粉丝和关注候选默认全天，均为 7 分；每确认 15 个共享休息 30 分钟。清理类可连续执行，遇 X 受限或手动暂停后停止；下次时间与异常原因以卡片为准。</li>
+              <li>回关粉丝和关注候选默认全天，均为 7 分。确认满 100 个才让出页签，然后按速度档休息：慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟。清理类可连续执行，遇 X 受限或手动暂停后停止；下次时间与异常原因以卡片为准。</li>
               <li>一次任务包含若干轮；评论首页与评论回复每轮设置要完成的回复条数，点赞帖子与点赞评论每轮设置要完成的点赞个数。速度用轮次表选择，表下写明本次共几轮、现在第几轮、每轮多少条、现在第几条。排班历史按实际单位计数。</li>
               <li>单项冷却时先持久化恢复时间，再让执行页签轮给其他到期任务。点赞、关注、发帖连续 3 次受限会停止该任务的自动重试；评论两项持续按 10、20、30 分钟递增倒计时，到期自动重试。手动停止仍会取消对应任务的自动重试。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
@@ -357,9 +357,9 @@ export default function XReplyClipboardDocsPage() {
                   <li id="mutual-unfollow" className="scroll-mt-24">清理未回关：没有“Follows you”标记的 Following 会进入取关候选；已回关账号默认保留。按慢 / 中 / 快 / 超快分段，每次最多尝试 15 / 30 / 45 / 60 个；下次间隔为 240 / 120 / 60 / 30 分钟。遇 X 受限立即停止。</li>
                   <li>默认开启“非中文资料也清理”：已回关账号的姓名和简介都有文字且都不含汉字时，也会进入取关候选；任一处有汉字就保留。未回关账号照常清理。</li>
                   <li>清理操作每次间隔 2 秒，不套用回关的批次或每日数量上限。</li>
-                  <li id="mutual-followback" className="scroll-mt-24">回关粉丝优先处理姓名或简介含汉字的账号，默认全天排班，已有旧夜间配置会迁移一次；之后自定义的时段保留。回关与关注候选合计每天以 300 个确认为目标、400 个为上限；每确认 15 个共享 30 分钟冷却。完成一个进度段后继续排班，无须等到下一晚。X 提示受限时两项共用倒计时，结束后再试；其他任务可在此期间运行。实际数量取决于候选和 X 的限制，不保证达到目标。进度见<a href="#pace-follow" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">回关 / 关注轮次表</a>。</li>
-                  <li id="mutual-target" className="scroll-mt-24">关注候选从「关注候选」子页配置区的名单随机打开一个账号的 Followers 页，与回关粉丝分批交替排班，不再每周只运行一次；两项共用每日计数、15 人批次冷却和 X 受限倒计时。名单可随时增删。</li>
-                  <li>排班示例：夜间先回关 15 人，记录已确认数量并冷却 30 分钟；这段时间共享页签可以执行评论、点赞或发帖。两项在允许时段内、存在可处理账号且共享冷却结束后，继续竞争下一次排班。一天内两项累计到 300 人后恢复通常优先级；到 400 人后当天都不再关注。300 是目标，不是保证完成的数量。</li>
+                  <li id="mutual-followback" className="scroll-mt-24">回关粉丝优先处理姓名或简介含汉字的账号，默认全天排班，已有旧夜间配置会迁移一次；之后自定义的时段保留。回关与关注候选合计每天以 300 个确认为目标、400 个为上限。每确认 100 个才共享休息，慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟；这一轮没做完时，评论和点赞不能把页签抢走。X 提示受限时两项共用倒计时并立即让位，其他任务可在此期间运行。实际数量取决于候选和 X 的限制，不保证达到目标。进度见<a href="#pace-follow" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">回关 / 关注轮次表</a>。</li>
+                  <li id="mutual-target" className="scroll-mt-24">关注候选从「关注候选」子页配置区的名单随机打开一个账号的 Followers 页，与回关粉丝分批交替排班，不再每周只运行一次；两项共用每日计数、100 人一轮和 X 受限倒计时。名单可随时增删。</li>
+                  <li>排班示例：先连续关注或回关 100 人，再按当前速度档休息。休息期间共享页签可以执行评论、点赞或发帖。一天内两项累计到 300 人后恢复通常优先级；到 400 人后当天都不再关注。300 是目标，不是保证完成的数量。</li>
                   <li>进度段的「2～3 轮」等数字只用于展示本次计划，不要求一口气占住页签做完；每满 15 人先让位。若 X 明确提示关注受限，两项一起等待相同的限制倒计时，到期后重新排班。排班台和两个子页应显示同一份每日计数与冷却状态；手动点“立即开始”也不能越过共享冷却或当日上限。</li>
                 </ul>
               </TaskBlock>
@@ -384,7 +384,19 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="frequency" index="04" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
+          <Section id="schedule-order" index="04" title="排序" summary="空档出现时，谁先拿到共享页签">
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">空档出现时，只在已经可以跑的任务里排先后。可以跑的条件：已参与排班，没有手动停止，自己的冷却和间隔已经到点，并且落在设定时段里。站长转发当天已经发过不再入队。精品发帖只在北京时间档位的 15 分钟内入队。点「立即开启」可以跳过普通等待；共享关注冷却和精品发帖档位不能靠手动跳过。</p>
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">可以跑的任务按下面四步排。前一步已经分出先后，就不再看后一步。</p>
+            <ol className="list-decimal space-y-2 pl-5 text-[13px] leading-6 text-[var(--site-ink)]">
+              <li>有人点过「立即开启」的任务排最前。</li>
+              <li>比较有效分，分高的先上。默认分：评论首页 9；评论回复、评论大V、精品发帖 8；纯文字帖、X主题发帖、小红书发帖、普通发文、站长转发、回关粉丝、关注候选 7；点赞帖子、点赞评论 6；取消未回关 3；清理低质帖、清理低质评论 2。子页里改过的分按改过的数比较。两项临时加分盖在这个分上：精品发帖在档位内至少按 8.75；当天关注确认还没到 300，并且距离上次关注休息已经结束时，回关和关注候选至少按 8.5。评论首页的 9 仍高于这两项加分。</li>
+              <li>有效分相同：还没跑过的排在已经跑过的前面；两边都跑过，谁距离上次跑完更久，谁先上。评论回复和评论大V默认都是 8 分，就按这一步轮流。评论大V还没跑过时，下一档空档先给它。</li>
+              <li>等待时间也完全相同：按任务列表的固定顺序，评论回复排在评论大V前面。这一步只处理完全同时的情况。</li>
+            </ol>
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">排序只决定下一个空档给谁。正在进行的评论计划占住页签，直到这次计划做完并进入休息，更高分的任务也不能中途抢走。关注确认满 100 个之前，评论和点赞同样不能抢走；精品发帖到点可以插入。</p>
+          </Section>
+
+          <Section id="frequency" index="05" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
             <div id="daily-volume" className="scroll-mt-24 overflow-x-auto rounded-xl border border-[var(--site-line)]">
               <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
                 <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">一个账号全天排班、没有碰到 X 限制时，一天大约能做多少</caption>
@@ -404,8 +416,8 @@ export default function XReplyClipboardDocsPage() {
                     ['X主题发帖', '7', '节奏同纯文字帖；每条都是两行居中的文字卡片。和纯文字帖一起开时共用发帖时间'],
                     ['点赞帖子', '6', '40～80 个'],
                     ['点赞评论', '6', '40～80 个'],
-                    ['回关粉丝', '7', '每批 15 个；默认全天，冷却后按优先级排班'],
-                    ['关注候选', '7', '每批 15 个；全天补量，冷却后继续'],
+                    ['回关粉丝', '7', '每批 100 个；默认全天，休息后按优先级排班'],
+                    ['关注候选', '7', '每批 100 个；全天补量，休息后继续'],
                     ['取消未回关', '3', '按速度档分段；未回关才取'],
                     ['清理低质帖', '2', '按速度档分段。图文阅读线比纯文字高 100'],
                     ['清理低质评论', '2', '满 30 天且零互动；按整月往前清理'],
@@ -419,7 +431,7 @@ export default function XReplyClipboardDocsPage() {
                 </tbody>
               </table>
             </div>
-            <p className="m-0 text-[13px] leading-6 text-[var(--site-muted)]">评论回复默认用「中」，评论首页用边界测试起步档，评论大V默认用「慢」（每个账号最多 3 条），点赞和纯文字帖用「慢」。模型每次回复大约再占 20 秒。通知量、大V名单长度及当天可评帖子数都会影响实际总量。分值决定谁先拿到页签；评论大V的单次上限由每个账号的条数和名单长度决定。</p>
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-muted)]">评论回复默认用「中」，评论首页用边界测试起步档，评论大V默认用「慢」（每个账号最多 3 条），点赞和纯文字帖用「慢」。模型每次回复大约再占 20 秒。通知量、大V名单长度及当天可评帖子数都会影响实际总量。谁先拿到页签见「排序」。评论大V的单次上限由每个账号的条数和名单长度决定。</p>
             <p className="m-0 text-[13px] leading-6 text-[var(--site-muted)]">评论大V按每个账号的条数计，不使用轮次。其他任务的默认轮次如下；点赞的慢 / 中 / 快 / 超快与评论表共用轮数，回关 / 关注候选的进度段轮数也跟这组。清理三项独立选择速度档，完成本段后让出页签，规则见下方清理规则表。</p>
             <div className="space-y-3">
               <PaceTable
@@ -473,14 +485,14 @@ export default function XReplyClipboardDocsPage() {
               <PaceTable
                 id="pace-follow"
                 caption="回关粉丝 · 关注候选"
-                headers={['速度', '进度段轮数', '一轮人数', '每 15 人共享冷却']}
+                headers={['速度', '进度段轮数', '一轮人数', '满 100 人后休息']}
                 rows={[
-                  ['慢', '2～3 轮', '15', '30 分钟'],
-                  ['中（默认）', '3～5 轮', '15', '30 分钟'],
-                  ['快', '4～6 轮', '15', '30 分钟'],
-                  ['超快', '5～8 轮', '15', '30 分钟'],
+                  ['慢', '2～3 轮', '100', '10 分钟'],
+                  ['中（默认）', '3～5 轮', '100', '5 分钟'],
+                  ['快', '4～6 轮', '100', '3 分钟'],
+                  ['超快', '5～8 轮', '100', '2 分钟'],
                 ]}
-                note="速度档决定进度段长度，不改变每 15 个后的共享 30 分钟冷却。回关与关注候选默认全天运行，可在任务子页自定义时段；两项合计最多 400 个。"
+                note="速度档决定满 100 人后的休息。这一轮进行中，评论和点赞不能把页签抢走。回关与关注候选默认全天运行；两项合计最多 400 个。"
               />
               <PaceTable
                 id="prune-rules"
@@ -544,7 +556,7 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="risk" index="05" title="风控与异常恢复" summary="10 → 20 → 30 分钟；只等待触发提示的任务">
+          <Section id="risk" index="06" title="风控与异常恢复" summary="10 → 20 → 30 分钟；只等待触发提示的任务">
             <div className="space-y-5">
               <div>
                 <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">疑似自动化提示</h3>
@@ -584,7 +596,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="rules" index="06" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
+          <Section id="rules" index="07" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
             <p>X 的公开自动化、账户限制和真实性规则适用于这些操作。扩展的频率挡位与倒计时只是本地调度参数，不代表 X 认可的安全阈值。</p>
             <p>公开的每日数量、账户状态和更短时间窗口是不同约束；发生限制时，应以 X 页面给出的验证或限制提示为准。</p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -594,7 +606,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="maintenance" index="07" title="更新与数据维护" summary="版本提示、自动维护、每日报告">
+          <Section id="maintenance" index="08" title="更新与数据维护" summary="版本提示、自动维护、每日报告">
             <ul className="list-disc space-y-2 pl-5">
               <li>标题旁“检查中 / 最新版 / 有新版本”比较当前加载的扩展与本地开发目录。“立即更新”会先停止运行中的任务，加载新版后只恢复原先在运行或冷却的任务；没有新版本时不会停任务。</li>
               <li>从已安装的 v3 下载包切到本地 v4 时，首次启动会把旧多窗口任务安全收敛到单执行页签；排班与冷却状态保留在扩展本地，不需要手动清数据。下载包与本地开发版分别核对版本号，不根据文档截图推断下载包版本。</li>
@@ -604,7 +616,7 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="history" index="08" title="版本演进与迁移" summary="历史行为仅供版本对照，不作为当前操作指南">
+          <Section id="history" index="09" title="版本演进与迁移" summary="历史行为仅供版本对照，不作为当前操作指南">
             <div id="version-path" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">来时路 · v0 → v4</h3>
@@ -669,7 +681,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="releases" index="09" title="周总结" summary="从首个有日期版本所在周起算；每周提炼重点，完整条目见仓库 README">
+          <Section id="releases" index="10" title="周总结" summary="从首个有日期版本所在周起算；每周提炼重点，完整条目见仓库 README">
             <p className="m-0 text-[13px] leading-6">
               周次按北京时间周一到周日划分。第 1 周从 README 里第一条带日期的版本所在周开始；更早且未标注日期的版本归入「起步阶段」。
             </p>
@@ -701,7 +713,7 @@ export default function XReplyClipboardDocsPage() {
             </Link>
           </Section>
 
-          <Section id="ops-journal" index="10" title="运营纪事" summary="增长实验台账：阶段事实、指标对照、假设与自检；观察与推断分开">
+          <Section id="ops-journal" index="11" title="运营纪事" summary="增长实验台账：阶段事实、指标对照、假设与自检；观察与推断分开">
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">阶段时间线（事实）</h3>
             <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
               <li>更早：互关 + 高频发帖；规则改成更看重原创后，手工日回约五六百条开始有起色。</li>

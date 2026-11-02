@@ -74,3 +74,37 @@ test('actual delivery handler gates AI ZIP before storage access and injects the
   assert.match(delivered.headers.get('content-disposition'), /ai-distribution-master/)
   assert.ok((await delivered.arrayBuffer()).byteLength > bytes.length)
 })
+
+test('standalone admin download authorizes owner before reading a private personalized ZIP', async () => {
+  const vm = await import('node:vm')
+  const route = await readFile(new URL('../../app/api/admin/community-actions/extension-package/route.js', import.meta.url), 'utf8')
+  assert.doesNotMatch(route, /from ['"].*resources\/deliver\/route/)
+  const source = route.replace(/^import .*\n/gm, '').replace(/^export (const|async function)/gm, '$1')
+  let owner = false, reads = 0
+  const context = vm.createContext({ Request, Response, URL, console, encodeURIComponent,
+    getOwnerOrReject: async () => owner ? { ok: true } : { ok: false, response: new Response(null, { status: 403 }) },
+    getD1: () => ({}), readOwnerCommunitySecret: async () => 'test-owner-credential',
+    MANAGED_EXTENSIONS, getPrivateDocumentsR2: () => ({}),
+    readPrivateExtensionPackage: async (_bucket, objectKey, metadata) => {
+      reads++; assert.equal(objectKey, release.objectKey); assert.equal(metadata, release)
+      return { ...release, bytes: new Uint8Array([1, 2]) }
+    },
+    communitySecretLocalJson,
+    injectZipStoredFile: (_bytes, name, credential) => {
+      assert.equal(name, 'community-secret.local')
+      assert.equal(JSON.parse(credential).secret, 'test-owner-credential')
+      return new Uint8Array([3, 4, 5])
+    },
+  })
+  vm.runInContext(`${source}\nglobalThis.handle=GET`, context)
+  const request = new Request('https://admin.2aran.com/api/admin/community-actions/extension-package?plugin=ai-distributor&download=1')
+  assert.equal((await context.handle(request)).status, 403)
+  assert.equal(reads, 0)
+  owner = true
+  const response = await context.handle(request)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store')
+  assert.match(response.headers.get('Content-Disposition'), new RegExp(release.fileName.replaceAll('.', '\\.')))
+  assert.equal(response.headers.get('Content-Length'), '3')
+  assert.equal(reads, 1)
+})

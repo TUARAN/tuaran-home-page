@@ -59,6 +59,18 @@
 .guestbookHeading h2 { margin: 0; color: #f2f3df; font-size: 23px; font-weight: 700; }
 .guestbookHeading span { color: #b4cdc2; font-size: 12px; }
 .guestbookIntro { margin: 12px 0 24px; color: #b4cdc2; font-size: 14px; line-height: 1.8; }
+.guestForm { display: grid; gap: 10px; margin: 0 0 28px; }
+.guestLabel { color: #b4cdc2; font-size: 13px; line-height: 1.6; }
+.guestInput { width: 100%; min-height: 112px; resize: vertical; padding: 14px 16px; border: 1px solid #6c918255; border-radius: 12px; background: #091e1c; color: #f2f3df; font: inherit; font-size: 15px; line-height: 1.7; }
+.guestInput::placeholder { color: #a3bdb4; }
+.guestInput:focus-visible { outline: 2px solid #d3bd86; outline-offset: 3px; }
+.guestActions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.guestActions span { color: #a3bdb4; font-size: 12px; }
+.guestActions button { border: 1px solid #d3bd86; border-radius: 10px; background: #16352f; color: #f2f3df; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+.guestActions button:hover { background: #2b5042; }
+.guestActions button:disabled { opacity: .45; cursor: not-allowed; }
+.guestActions button:focus-visible { outline: 2px solid #d3bd86; outline-offset: 3px; }
+.guestError { margin: 0; color: #f0c7b0; font-size: 13px; }
 .guestComments { margin: 0; padding: 0; list-style: none; }
 .guestComments li + li { margin-top: 22px; padding-top: 22px; border-top: 1px solid #bad1bc26; }
 .guestComments header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; }

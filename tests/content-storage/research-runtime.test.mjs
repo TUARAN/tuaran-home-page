@@ -120,6 +120,33 @@ test('knowledge directory keeps the catalog when D1 is not bound', async () => {
   )
 })
 
+test('research override list is reused until a fresh read is requested', async () => {
+  let reads = 0
+  const db = { prepare() { return { bind() { return this }, async all() {
+    reads += 1
+    if (reads === 1) throw new Error('no such table: content_documents')
+    return { results: [{ content_key: 'research:topics:a', status: 'published', metadata_json: '{}', source_path: 'a', updated_at: 1 }] }
+  } } } }
+  const runtime = load('lib/research/researchRuntime.js', {
+    cache: (fn) => fn,
+    getD1: () => db,
+    readContentCatalog: async () => ({}),
+    readContentAsset: async () => null,
+    readResearchRoute: async () => ({ found: false }),
+    readResearchDocument: async () => ({ found: false }),
+    RESEARCH_EDIT_COUNTS: {},
+  }, ['listResearchOverrides'])
+  assert.deepEqual(await runtime.listResearchOverrides(), [])
+  assert.equal(reads, 1)
+  const first = await runtime.listResearchOverrides()
+  const second = await runtime.listResearchOverrides()
+  assert.equal(reads, 2)
+  assert.equal(second, first)
+  assert.equal(second.length, 1)
+  await runtime.listResearchOverrides({ fresh: true })
+  assert.equal(reads, 3)
+})
+
 test('admin list reports real Git document states, including unpublished and encrypted records',()=>{
   const {mergeAdminContentItems}=load('lib/admin/adminContentList.js',{},['mergeAdminContentItems'])
   const researchDocuments=['draft','published','retired'].map((status)=>({content_key:`research:topics:${status}`,status,updated_at:100,metadata_json:JSON.stringify({category:'topics',slug:status,title:status,encrypted:status==='published'})}))

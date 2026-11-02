@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -369,6 +369,42 @@ test('runtime heartbeat stores snapshot separately from action counts', async ()
   const runtimeCall = calls.find((call) => /INSERT INTO x_extension_runtime/.test(call.sql))
   assert.ok(runtimeCall)
   assert.equal(runtimeCall.values[2], 'running')
+})
+
+test('non-x community center reads each platform through the time index', async () => {
+  const calls = []
+  const db = { prepare(sql) { return {
+    bind(...values) { calls.push({ sql, values }); return this },
+    async all() {
+      const platform = calls.at(-1).values[0]
+      if (sql.includes('community_action_devices')) return { results: [{ id: platform, platform, last_seen_at: platform === 'juejin' ? 20 : 10 }] }
+      return { results: [{ id: platform, platform, occurred_at: platform === 'xhs' ? 30 : 5 }] }
+    },
+  } } }
+  const result = await readCommunityActionCenter(db, 100)
+  assert.equal(calls.some((call) => call.sql.includes('!=')), false)
+  assert.deepEqual(calls.filter((call) => call.sql.includes('community_action_events')).map((call) => call.values[0]).sort(), ['juejin', 'xhs'])
+  assert.equal(result.recent[0].platform, 'xhs')
+  assert.equal(result.devices[0].platform, 'juejin')
+})
+
+test('account monitor reuses the event aggregate for two minutes', async () => {
+  let grouped = 0
+  const db = { prepare(sql) { return {
+    bind() { return this },
+    async all() {
+      if (sql.includes('GROUP BY')) grouped += 1
+      if (sql.includes('GROUP BY task, result')) return { results: [{ task: 'timeline-reply', result: 'success', count: 3 }] }
+      if (sql.includes('GROUP BY date, task, result')) return { results: [{ date: '2026-10-17', task: 'timeline-reply', result: 'success', count: 3 }] }
+      return { results: [] }
+    },
+    async first() { return { total: 0 } },
+  } } }
+  const first = await readXExtensionMonitor(db, { date: '2026-10-17', now: NOW })
+  const second = await readXExtensionMonitor(db, { date: '2026-10-17', now: NOW })
+  assert.equal(first.tasks.find((task) => task.task === 'timeline-reply').success, 3)
+  assert.equal(second.tasks.find((task) => task.task === 'timeline-reply').success, 3)
+  assert.equal(grouped, 2)
 })
 
 test('extension heartbeat includes a task snapshot in the authenticated request', async () => {

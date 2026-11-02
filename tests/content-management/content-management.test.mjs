@@ -131,7 +131,7 @@ test('admin exposes one content management entry and one unified list', () => {
   assert.match(consoleSource, /title="内容管理"/)
   assert.match(consoleSource, /fetch\(`\/api\/admin\/content-list/)
   assert.match(contentListRouteSource, /countAdminContentItems\(merged\)/)
-  assert.match(contentListRouteSource, /researchDocuments = await listResearchOverrides\(\)/)
+  assert.match(contentListRouteSource, /researchDocuments = await listResearchOverrides\(\{ fresh: true \}\)/)
   assert.match(contentListRouteSource, /D1 不可用时仍展示构建期调研目录/)
   assert.match(consoleSource, /AdminPagination/)
   assert.match(consoleSource, /写文章/)

@@ -81,7 +81,7 @@ export async function GET(req) {
   }
 
   try {
-    const [itemsResult, countRow, unreadRow] = await Promise.all([
+    const [itemsResult, summary] = await Promise.all([
       db
         .prepare(
           `SELECT id, type, actor_user_id, actor_user_provider, actor_user_name, actor_user_image,
@@ -95,17 +95,10 @@ export async function GET(req) {
         .all(),
       db
         .prepare(
-          `SELECT COUNT(*) AS total
+          `SELECT COUNT(*) AS total,
+                  COALESCE(SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END), 0) AS unread
            FROM comment_notifications
            WHERE ${where}`
-        )
-        .bind(...whereParams)
-        .first(),
-      db
-        .prepare(
-          `SELECT COUNT(*) AS unread
-           FROM comment_notifications
-           WHERE ${where} AND read_at IS NULL`
         )
         .bind(...whereParams)
         .first(),
@@ -117,8 +110,8 @@ export async function GET(req) {
 
     return Response.json({
       status: 'ok',
-      unread: Number(unreadRow?.unread) || 0,
-      total: Number(countRow?.total) || 0,
+      unread: Number(summary?.unread) || 0,
+      total: Number(summary?.total) || 0,
       items: (itemsResult?.results || []).map((row) => mapNotification(row, metaMap)),
     })
   } catch {

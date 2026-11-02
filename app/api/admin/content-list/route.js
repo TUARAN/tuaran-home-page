@@ -45,7 +45,7 @@ export async function GET(req) {
   }
 
   try {
-    researchDocuments = await listResearchOverrides()
+    researchDocuments = await listResearchOverrides({ fresh: true })
   } catch {
     // D1 不可用时仍展示构建期调研目录
   }

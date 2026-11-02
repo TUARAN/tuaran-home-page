@@ -191,8 +191,8 @@ function LegacyPluginMonitorClient() {
   const accountLabel = account && account !== '__all__' ? `@${account}` : '全部账号'
   const latestVersion = visibleData?.latestExtensionVersion || data?.latestExtensionVersion
   const pageDescription = platform === 'x'
-    ? '状态监控对齐本地排班台（约 10 秒刷新）；数据板块含今日统计与趋势（约 1 分钟刷新）。'
-    : '按平台和账号查看设备心跳与动作回执。页面约 10 秒刷新状态，约 1 分钟刷新统计。'
+    ? '状态监控对齐本地排班台（约 10 秒刷新）；回执约 1 分钟刷新。今日统计和趋势沿用最近 2 分钟内的汇总，避免每次打开都重扫动作记录。'
+    : '按平台和账号查看设备心跳与动作回执。页面约 10 秒刷新状态，回执约 1 分钟刷新；指定账号时，统计沿用最近 2 分钟内的汇总。'
 
   const accountSwitcher = accountTabs.length > 1 ? (
     <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="选择插件账号">

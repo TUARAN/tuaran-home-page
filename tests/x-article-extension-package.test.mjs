@@ -150,24 +150,22 @@ test('图片经后台下载后调用 X 自身上传处理器，并校验上传�
   assert.match(siteSource, /\/_next\/image/)
 })
 
-test('插件已接入统一工具目录和独立下载介绍页', async () => {
+test('旧的 X Article 自动发布页重定向到站长转发说明', async () => {
   const manifest = JSON.parse(await read('manifest.json'))
   const workItems = await readFile(new URL('../lib/site/downloadItems.js', import.meta.url), 'utf8')
   const toolItems = await readFile(new URL('../lib/site/toolItems.js', import.meta.url), 'utf8')
   const catalog = await readFile(new URL('../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
   const registry = await readFile(new URL('../lib/content/contentRegistry.js', import.meta.url), 'utf8')
-  const resourcePage = await readFile(
-    new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url),
-    'utf8',
-  )
+  const nextConfig = await readFile(new URL('../next.config.js', import.meta.url), 'utf8')
 
   assert.match(workItems, /\.\/toolItems\.js/)
-  for (const source of [toolItems, catalog, registry]) {
-    assert.match(source, /x-article-autopublisher-extension/)
-  }
-  assert.ok(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/resources/x-article-autopublisher-extension' && entry.sitemap))
+  assert.match(nextConfig, /source: '\/resources\/x-article-autopublisher-extension',[\s\S]*?destination: '\/resources\/x-reply-clipboard-extension\/docs#site-forward'/)
+  assert.match(catalog, /resourceKey: 'resource:x-article-autopublisher-extension',[\s\S]*?legacy: true/)
+  assert.match(catalog, /href: '\/resources\/x-reply-clipboard-extension\/docs#site-forward'/)
+  assert.doesNotMatch(registry, /slug: 'x-article-autopublisher-extension'/)
+  assert.match(toolItems, /站长转发/)
+  assert.doesNotMatch(toolItems, /id: 'x-article-autopublisher'/)
+  assert.equal(STATIC_PAGE_REGISTRY.some((entry) => entry.path === '/resources/x-article-autopublisher-extension'), false)
   assert.match(catalog, new RegExp(`x-article-autopublisher-extension-v${manifest.version.replaceAll('.', '\\.')}\\.zip`))
-  assert.ok(resourcePage.includes(`const VERSION = '${manifest.version}'`))
-  assert.match(resourcePage, /领取密钥有什么用/)
-  assert.match(resourcePage, /Chrome 需要保持运行/)
+  await assert.rejects(readFile(new URL('../app/(site)/resources/x-article-autopublisher-extension/page.jsx', import.meta.url)))
 })

@@ -1,6 +1,6 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js");
+if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
 
 const replyHistory = globalThis.XrcReplyHistory?.createReplyHistory(globalThis.chrome?.storage?.local, globalThis.indexedDB);
 
@@ -32,7 +32,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "article", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -50,10 +50,10 @@ const REPLY_TIMELINE_PROMPT = [
 
 const REPLY_COMMENT_PROMPT = [
   "你在回复别人对你帖子或评论的留言。只输出回复正文。",
-  "重心：接住对方这句话，前后文连贯；对方提了什么就顺着什么往下说，别答非所问。",
-  "站在我这边说话。祝福或夸赞多表示收到；提问只答能确认的；批评可简短认或辩，别空转客服腔。",
-  "可短，但要比评论首页更贴对方原话。别复读对方整句，别装作读过你没看到的上文结论，别硬加反问收尾。",
-  "别假对比，别自我指涉写作过程。最多 1 个 emoji。不 @grok。"
+  "像朋友聊天时随手回一句：通常 2～10 个字，意思到了就停。合适时只回 1～2 个表情，不必每条都有文字。",
+  "前后文连贯，根据对方原话选一种自然回应；祝福或夸赞简单表示感谢，玩笑可以笑一下。不要每次都解释、总结、补观点或追问。",
+  "对方确实在问具体问题时，只答能确认的关键点，尽量一句话、24 字以内。严肃或难过的语境别用嬉笑表情敷衍。",
+  "不复读对方整句，不编事实，不硬凑完整句式，不用客服腔，不写假对比和写作过程。不 @grok。"
 ].join("\n");
 
 // Back-compat alias for older tests and migrations.
@@ -284,10 +284,10 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
     ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").trim()
     : replyPrompt;
   const replyStyle = grokReply ? GROK_REPLY_PROMPT : commentReply ? "" : "这次不要提及 @grok，直接回应原帖。";
-  const replyMaxLength = grokReply ? 120 : commentReply ? 120 : 80;
+  const replyMaxLength = grokReply ? 120 : commentReply ? 32 : 80;
   const messages = [
     { role: "system", content: commentReply
-      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。`
+      ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以简短自然为先：通常 2～10 个字，或仅用 1～2 个表情；不必解释或总结，具体问题才用一句话答要点。不要机械套用同一句谢谢、哈哈或同一组表情；表情和语气必须贴合上下文。`
       : `${replyPromptForModel}\n${replyStyle}` },
     {
       role: "user",
@@ -296,7 +296,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
           ? [
             `我的帖子：\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
             `对方针对这条帖子写的回复：\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
-            "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。若对方批评没重点，就从我的帖子里挑真正的重点用一句话说清，不要反问对方。"
+            "请站在我的立场，直接回应对方这条回复。结合我的帖子理解上下文，不要复述我的原话，也不要把我的帖子当成对方说的话。优先几个字或合适的表情；确有问题才简短答要点，不要反问对方。"
           ].join("\n\n")
           : conversation?.reply?.text
             ? [
@@ -488,20 +488,20 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
   const xTheme = postKind === "x";
   const postPrompt = xTheme ? postXPrompt : premium ? postPremiumPrompt : postNormalPrompt;
   const openingPrefix = premium || xTheme ? "" : choosePostOpening(openingDraw);
-  const openingDirective = openingPrefix
+  const openingDirective = postKind === "xhs" ? "写成适合小红书图文的 Markdown：一个简短一级标题、2～4 个小节，每节只讲一个具体要点；清晰分段，适度强调关键词，不编造亲历。正文 200～450 字，不附绘图指令。" : openingPrefix
     ? `本次随机开头：正文第一行写“${openingPrefix}”，随后空一行，再写具体事件和看法；不要随后补对立面。`
     : xTheme
       ? "本次写成文字卡片：正好两行，两行都会居中。每行一个完整短句，不要加固定钩子，不要第三行。"
       : premium
       ? "本次可不加强制钩子；若用钩子，钩子后必须进入具体剖析。"
       : "第一行使用指定的抓人开头，接着交代具体对象和事件；整条只站一边。";
-  const lengthDirective = xTheme
+  const lengthDirective = postKind === "xhs" ? "本次篇幅：200～450 字 Markdown，标题与短段落有明确层级。" : xTheme
     ? "本次篇幅：正好两行，每行约 8～16 个中文字符，两行之间空一行。不要第三行。"
     : lengthMode === "compact"
     ? "本次篇幅优先于默认篇幅：开头之后只写约 35～60 个中文字符，分成 2～3 个短行，每行之间留一个空行。尽快交代具体人或事，只把一边的看法说清楚；不要正反对照，更不要补凑字数的总结。不添加标题。"
     : premium
       ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。"
-      : "本次篇幅：沿用普通发帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
+      : "本次篇幅：沿用纯文字帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
@@ -861,7 +861,7 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
     const actualHandle = actual.match(/^\/([^/]+)$/iu)?.[1] || "";
     return Boolean(expectedHandle && actualHandle && expectedHandle.toLowerCase() === actualHandle.toLowerCase());
   }
-  if (selected === "article") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
+  if (selected === "article" || selected === "site-forward") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
@@ -891,8 +891,8 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     const picked = handles[Math.floor(Math.random() * handles.length)];
     return `/${picked}`;
   }
-  if (selected === "poster" || selected === "poster-premium" || selected === "poster-x") return "/home";
-  if (selected === "article") return "/compose/articles";
+  if (selected === "poster" || selected === "poster-premium" || ["poster-x", "poster-xhs"].includes(selected)) return "/home";
+  if (selected === "article" || selected === "site-forward") return "/compose/articles";
   return "/home";
 }
 
@@ -1077,10 +1077,11 @@ const TASK_TITLE_LABELS = {
   notifications: "评论回复",
   "likes-posts": "点赞帖子",
   "likes-replies": "点赞评论",
-  poster: "普通发帖",
+  poster: "纯文字帖",
   "poster-premium": "精品发帖",
-  "poster-x": "X主题发帖",
+  "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
   article: "普通发文",
+  "site-forward": "站长转发",
   "prune-posts": "清理低质帖",
   "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
@@ -1413,7 +1414,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1440,6 +1441,8 @@ const LEGACY_PRUNE_GAP_MS = 24 * 60 * 60 * 1000;
 const PRUNE_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const PRUNE_SLICE_MS = 25 * 60 * 1000;
 const ARTICLE_SLICE_MS = 8 * 60 * 1000;
+const SITE_FORWARD_SLICE_MS = 20 * 60 * 1000;
+const SITE_FORWARD_RETRY_MS = 15 * 60 * 1000;
 const ARTICLE_NEWS_URL = "https://hn.algolia.com/api/v1/search_by_date?tags=story&query=AI&hitsPerPage=30";
 const ARTICLE_USED_KEY = "xrcArticleUsedSources";
 const ARTICLE_SYSTEM_PROMPT = "根据给出的资讯标题和链接，写一篇中文技术文章，至少 500 字。仅把标题可确认的内容写成事实；其余写明确的分析、实践方法或待核实问题。不要编造数据、引言或产品功能。返回 JSON：{\"title\":\"\",\"body\":\"Markdown 正文\",\"sourceUrl\":\"\"}。sourceUrl 原样返回。";
@@ -1553,6 +1556,7 @@ function sliceMsForMode(mode, plan) {
   if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
   if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
+  if (mode === "site-forward") return Math.max(base, SITE_FORWARD_SLICE_MS);
   return base;
 }
 
@@ -1569,13 +1573,9 @@ async function readTaskUnlimitedMap() {
 }
 
 function taskUnlimitedEnabled(mode, map = {}) {
-  if (mode === "poster" || mode === "poster-x") return false;
-  if (mode === "prune-posts" || mode === "prune-replies") return true;
+  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return false;
+  if (["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode)) return false;
   if (mode === "mutual-followBack" || mode === "mutual-targetFollow") return false;
-  if (mode === "mutual-unfollow") {
-    if (map?.[mode] == null) return true;
-    return map[mode] === true;
-  }
   return map?.[mode] === true;
 }
 
@@ -1586,14 +1586,14 @@ async function isTaskUnlimitedMode(mode) {
 }
 
 function defaultTaskPriority(mode) {
-  // 评论回复 > 评论首页 > 评论大V = 精品发帖 > 普通发帖 > 点赞帖子 = 点赞评论 > 回关 > 关注候选 > 取消未回关
+  // 评论回复 > 评论首页 > 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
   if (mode === "notifications") return 10;
   if (mode === "timeline") return 9;
   if (mode === "kol" || mode === "poster-premium") return 8;
-  if (mode === "poster" || mode === "poster-x" || mode === "article") return 7;
+  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
-  if (mode === "mutual-followBack") return 5;
-  if (mode === "mutual-targetFollow") return 4;
+  if (mode === "mutual-followBack") return 7;
+  if (mode === "mutual-targetFollow") return 7;
   if (mode === "mutual-unfollow") return 3;
   if (mode === "prune-posts" || mode === "prune-replies") return 2;
   return 1;
@@ -1614,15 +1614,18 @@ function likeMinGapMs(pace) {
   return LIKE_MIN_GAP_MS;
 }
 
+function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, turbo: 30 }[pace] || 240) * 60000; }
+
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x"].includes(mode),
+    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward"].includes(mode),
     priority: defaultTaskPriority(mode),
-    pace: mode === "timeline" ? "boundary"
-      : mode === "kol" || mode === "poster" || mode === "poster-x" || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+    pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+      : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
-    window: mode === "poster-premium" ? "day" : mode === "mutual-followBack" ? "overnight" : "all",
-    minGapMs: mode === "article" ? articleMinGapMs("slow")
+    window: mode === "poster-premium" ? "day" : "all",
+    minGapMs: mode === "site-forward" ? SITE_FORWARD_RETRY_MS
+      : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
@@ -1640,7 +1643,7 @@ function normalizedTaskRules(value) {
       ? "slow"
       : ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
     const likeMode = ["likes-posts", "likes-replies"].includes(mode);
-    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
+    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : mode === "site-forward" ? SITE_FORWARD_RETRY_MS : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
     const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
     const legacyPruneGap = mode === "prune-posts" && requestedGap === LEGACY_PRUNE_GAP_MS;
@@ -1650,7 +1653,9 @@ function normalizedTaskRules(value) {
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: mode === "article"
+      minGapMs: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? cleanupMinGapMs(pace) : mode === "site-forward"
+        ? SITE_FORWARD_RETRY_MS
+        : mode === "article"
         ? articleMinGapMs(pace)
         : legacyLikeGap || legacyPruneGap || !Number.isFinite(requestedGap)
           ? fallbackGap
@@ -1667,7 +1672,18 @@ function taskWindowOpen(mode, rule, now) {
   if (rule.window === "peak" && !((minutes >= 480 && minutes < 600) || (minutes >= 1080 && minutes < 1200))) return false;
   if (rule.window === "overnight" && minutes < FOLLOW_BACK_NIGHT_START_MINUTE && minutes >= FOLLOW_BACK_NIGHT_END_MINUTE) return false;
   if (mode === "poster-premium" && ![480, 570, 720, 900, 1140].some((slot) => minutes >= slot && minutes < slot + 15)) return false;
+  if (mode === "site-forward" && minutes < 14 * 60) return false;
   return true;
+}
+
+function shanghaiDateKey(now = Date.now()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+function nextSiteForwardSlot(now = Date.now()) {
+  const today = Date.parse(`${shanghaiDateKey(now)}T14:00:00+08:00`);
+  if (!Number.isFinite(today)) return now + 24 * 60 * 60 * 1000;
+  return now < today ? today : today + 24 * 60 * 60 * 1000;
 }
 
 function followBackNightEndsAt(startedAt) {
@@ -1680,6 +1696,10 @@ function followBackNightEndsAt(startedAt) {
 
 function taskGapReadyAt(item, rule, now = Date.now()) {
   if (item?.retryKind === "prune-search-load") return 0;
+  // A manual start may skip only the scheduler's ordinary gap. The due filter
+  // still honors resumeAt for shared-follow tasks, and the page enforces persisted
+  // batch/risk cooldowns and the daily limit before any follow click.
+  if (Number(item?.manualRequestedAt) > 0) return 0;
   const gap = Number(rule?.minGapMs) || 0;
   const lastRunAt = Number(item?.lastRunAt) || 0;
   if (!gap || !lastRunAt) return 0;
@@ -1694,7 +1714,8 @@ function dueTaskModes(plan, now = Date.now()) {
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
       const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode);
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
-      return rule.enabled && !item.blocked && !manualStopped
+      const forwardedToday = mode === "site-forward" && (item.successDate === shanghaiDateKey(now) || item.uncertainDate === shanghaiDateKey(now));
+      return rule.enabled && !item.blocked && !manualStopped && !forwardedToday
         && (mayBypassWait || Number(item.resumeAt || 0) <= now)
         && (mayBypassWait || gapUntil <= now)
         && (mayBypassWait || taskWindowOpen(mode, rule, now));
@@ -1800,13 +1821,26 @@ async function readTaskSchedule() {
   const storedPruneGapIsLegacy = Number(plan.rules?.["prune-posts"]?.minGapMs) === LEGACY_PRUNE_GAP_MS;
   plan.rules = normalizedTaskRules(plan.rules);
   let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy || storedPruneGapIsLegacy;
+  if (plan.cleanupPaceVersion !== 1) {
+    for (const mode of ["mutual-unfollow", "prune-posts", "prune-replies"]) {
+      plan.rules[mode] = { ...plan.rules[mode], pace: "slow", minGapMs: cleanupMinGapMs("slow") };
+      const item = plan.items[mode];
+      if (item && /每周|下次排班/u.test(item.reason || "") && !item.manualStopped && !item.blocked) {
+        item.resumeAt = Math.min(Number(item.resumeAt) || 0, Date.now() + cleanupMinGapMs("slow"));
+        item.reason = "清理按慢档分段，等待下次排班";
+      }
+    }
+    plan.cleanupPaceVersion = 1;
+    scheduleMigrated = true;
+  }
+
   if (plan.priorityOrderVersion !== PRIORITY_ORDER_VERSION) {
     for (const mode of QUEUED_TASKS) {
       plan.rules[mode].priority = defaultTaskPriority(mode);
       plan.rules[mode].pace = defaultTaskRules()[mode].pace;
       plan.rules[mode].minGapMs = defaultTaskRules()[mode].minGapMs;
     }
-    plan.rules["mutual-followBack"].window = "overnight";
+    plan.rules["mutual-followBack"].window = "all";
     plan.priorityOrderVersion = PRIORITY_ORDER_VERSION;
     scheduleMigrated = true;
   }
@@ -1821,9 +1855,19 @@ async function readTaskSchedule() {
     plan.priorityScoreVersion = PRIORITY_SCORE_VERSION;
     scheduleMigrated = true;
   }
+  if (plan.followPriorityVersion !== 1) {
+    for (const mode of ["mutual-followBack", "mutual-targetFollow"]) plan.rules[mode].priority = 7;
+    plan.followPriorityVersion = 1;
+    scheduleMigrated = true;
+  }
   if (plan.followBackNightVersion !== 1) {
-    plan.rules["mutual-followBack"].window = "overnight";
+    plan.rules["mutual-followBack"].window = "all";
     plan.followBackNightVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.followBackAllDayVersion !== 1) {
+    plan.rules["mutual-followBack"].window = "all";
+    plan.followBackAllDayVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.sharedFollowCadenceVersion !== 1) {
@@ -2076,7 +2120,7 @@ async function runTaskSchedule() {
     const sliceMs = sliceMsForMode(current, plan);
     // Replies and likes report a paused phase at the end of their full run plan.
     // A single confirmed action must never end their occupancy.
-    const actionDone = ["poster", "poster-premium", "poster-x", "article"].includes(current) && Number(item.sliceActions) > 0;
+    const actionDone = ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
     const runFinished = task?.phase === "stopped" || task?.phase === "idle";
     // Unlimited mode keeps the shared tab until the in-page run stops, or an
@@ -2222,15 +2266,15 @@ async function runTaskSchedule() {
             : windowClosed
               ? "夜间回关时段已结束，等待下一晚"
             : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
-              ? (current === "mutual-unfollow" ? "清理未回关约每周一次，等待下次排班" : `${TASK_TITLE_LABELS[current]}约每周一次，等待下次排班`)
+              ? (current === "mutual-unfollow" ? "清理未回关按速度档等待下次排班" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
             : runFinished
               ? "本次已结束，等待下次排班"
             : ["prune-posts", "prune-replies"].includes(current) && minGapMs
-              ? `${TASK_TITLE_LABELS[current]}约每周一次，等待下次排班`
+              ? `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`
             : current === "mutual-unfollow" && minGapMs
-              ? "清理未回关约每周一次，等待下次排班"
+              ? "清理未回关按速度档等待下次排班"
               : current === "mutual-targetFollow" && minGapMs
-                ? "关注候选约每周一次，等待下次排班"
+                ? "关注候选等待下次扫描或共享关注冷却"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
               : current === "mutual-followBack" && minGapMs
@@ -2243,7 +2287,7 @@ async function runTaskSchedule() {
     item.lastRunAt = now;
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
-    if (sharedFollow && waiting) applySharedFollowWait(plan, item.resumeAt, item.reason);
+    if (sharedFollow && waiting && shouldShareFollowWait(item.reason)) applySharedFollowWait(plan, item.resumeAt, item.reason);
     await saveTaskSchedule(plan);
     if (!await suspendScheduledTask(current, item.reason, { keepTab: true, releaseOnFailure: true })) return plan;
     plan = await readTaskSchedule();
@@ -2286,8 +2330,13 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "reply-prune": "prune-replies" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "reply-prune": "prune-replies" };
 const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
+
+function shouldShareFollowWait(reason) {
+  // A checked candidate list is source-specific; it is not an account-wide X restriction.
+  return !/名单已检查|重新扫描|来源已检查/u.test(String(reason || ""));
+}
 
 function applySharedFollowWait(plan, until, reason, streak = 0) {
   for (const mode of SHARED_FOLLOW_MODES) {
@@ -2303,14 +2352,15 @@ function applySharedFollowWait(plan, until, reason, streak = 0) {
 }
 async function noteScheduledAction(event) {
   const plan = await readTaskSchedule();
-  const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x"].includes(plan.current)
+  const mode = event?.task === "tweet-post" && ["poster", "poster-premium", "poster-x", "poster-xhs"].includes(plan.current)
     ? plan.current : event?.task === "mutual-target-follow" ? "mutual-targetFollow" : EVENT_TASK_MODES[event?.task];
   if (!mode || !["success", "limited"].includes(event?.result)) return;
   const item = plan.items[mode] || {};
   if (event.result === "success") {
     item.confirmedActions = Math.max(0, Number(item.confirmedActions) || 0) + 1;
     if (plan.current === mode) item.sliceActions = Math.max(0, Number(item.sliceActions) || 0) + 1;
-    if (mode === "article") item.resumeAt = Math.max(Number(item.resumeAt) || 0, Number(event.resumeAt) || 0);
+    if (mode === "article" || mode === "site-forward") item.resumeAt = Math.max(Number(item.resumeAt) || 0, Number(event.resumeAt) || 0);
+    if (mode === "site-forward" && event.successDate) item.successDate = String(event.successDate);
     item.lastActionAt = Date.now();
     item.limitedStreak = 0;
     plan.items[mode] = item;
@@ -2411,7 +2461,7 @@ async function noteScheduledAction(event) {
   // Posting releases after a confirmed post. Reply and like loops keep the tab
   // until all planned rounds finish or a real cooldown makes them yield.
   if (event.result === "success" && plan.enabled && plan.current === mode
-    && ["poster", "poster-premium", "poster-x", "article"].includes(mode) && Number(item.sliceActions) > 0) {
+    && ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"].includes(mode) && Number(item.sliceActions) > 0) {
     await tickTaskSchedule();
   }
 }
@@ -2634,7 +2684,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "article",
+  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
   "prune-posts", "prune-replies"
@@ -3213,6 +3263,46 @@ async function readNotificationContext(message, sender) {
   }
 }
 
+async function finishSiteForward(result) {
+  const now = Date.now();
+  const published = Boolean(result?.published || result?.skipped === "already-published" || result?.skipped === "server-done");
+  if (published) {
+    const plan = await readTaskSchedule();
+    const event = {
+      task: "site-forward",
+      result: "success",
+      targetId: String(result.taskId || result.successDate || shanghaiDateKey(now)).slice(0, 80),
+      resumeAt: Number(result.resumeAt) || nextSiteForwardSlot(now),
+      successDate: result.successDate || shanghaiDateKey(now),
+      accountHandle: plan.accountHandle || ""
+    };
+    if (result?.published) await globalThis.XrcCommunityReceipt?.accept?.(event).catch(() => {});
+    await noteScheduledAction(event);
+    return;
+  }
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    const mode = "site-forward";
+    const item = { ...(plan.items?.[mode] || {}) };
+    item.manualStopped = Boolean(result?.stopped);
+    item.resumeAt = result?.stopped ? 0 : Number(result?.resumeAt) || now + SITE_FORWARD_RETRY_MS;
+    if (result?.uncertainDate) item.uncertainDate = result.uncertainDate;
+    item.reason = String(result?.detail || "站长转发等待下次排班").slice(0, 160);
+    item.lastRunAt = now;
+    plan.items[mode] = item;
+    if (plan.current === mode) {
+      recordScheduleSegment(plan, mode, item.reason, now);
+      plan.items[mode] = { ...plan.items[mode], ...item, sliceActions: 0 };
+      plan.current = "";
+      plan.startedAt = 0;
+    }
+    await saveTaskSchedule(plan);
+  });
+  scheduleWork = work.catch(() => {});
+  await work;
+  await tickTaskSchedule();
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type?.startsWith("xrc-reply-history-")) {
@@ -3273,6 +3363,41 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       failScheduledStart(message.mode, sender?.tab?.id, message.reason)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "启动失败状态写入失败" }));
+      return true;
+    }
+    if (message?.type === "x-article-submission-started") {
+      globalThis.XrcSiteForward?.noteSubmission?.();
+      sendResponse({ ok: true });
+      return false;
+    }
+    if (message?.type === "xrc-site-forward-stop") {
+      globalThis.XrcSiteForward?.requestCancel?.();
+      sendResponse({ ok: true });
+      return false;
+    }
+    if (message?.type === "xrc-site-forward-settings-set") {
+      const writer = globalThis.XrcSiteForward?.writeSettings;
+      if (!writer) {
+        sendResponse({ ok: false, error: "站长转发模块没有加载" });
+        return false;
+      }
+      writer({ secret: message.secret, tableMode: message.tableMode })
+        .then((settings) => sendResponse({ ok: true, tableMode: settings.tableMode }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "站长转发设置保存失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-site-forward-run") {
+      const runner = globalThis.XrcSiteForward?.run;
+      if (!runner) {
+        sendResponse({ ok: false, error: "站长转发模块没有加载" });
+        return false;
+      }
+      runner({ workTabId: sender?.tab?.id, force: Boolean(message.force) })
+        .then(async (result) => {
+          await finishSiteForward(result);
+          sendResponse({ ok: true, ...(result || {}) });
+        })
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "站长转发失败" }));
       return true;
     }
     if (message?.type === "xrc-notification-context") {
@@ -3542,6 +3667,11 @@ if (typeof module === "object" && module.exports) {
     PRUNE_MIN_GAP_MS,
     PRUNE_SLICE_MS,
     ARTICLE_SLICE_MS,
+    SITE_FORWARD_SLICE_MS,
+    SITE_FORWARD_RETRY_MS,
+    shanghaiDateKey,
+    nextSiteForwardSlot,
+    finishSiteForward,
     articleMinGapMs,
     UNFOLLOW_MIN_GAP_MS,
     UNFOLLOW_SLICE_MS,
@@ -3550,6 +3680,7 @@ if (typeof module === "object" && module.exports) {
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
     defaultTaskPriority,
+    shouldShareFollowWait,
     DEFAULT_TARGET_FOLLOW_HANDLES,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,

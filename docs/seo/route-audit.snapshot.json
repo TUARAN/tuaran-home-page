@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 232,
+    "routes": 231,
     "redirects": 21,
     "private": 61,
-    "registeredStatic": 104,
-    "indexable": 127,
-    "canonical": 142,
-    "openGraph": 80,
-    "jsonLd": 51,
-    "errors": 11,
-    "warnings": 146
+    "registeredStatic": 106,
+    "indexable": 126,
+    "canonical": 144,
+    "openGraph": 79,
+    "jsonLd": 54,
+    "errors": 8,
+    "warnings": 139
   },
   "routes": [
     {
@@ -1493,48 +1493,60 @@
       "path": "/books/ai-bots-guide",
       "file": "app/(site)/books/ai-bots-guide/page.jsx",
       "kind": "static",
-      "registered": false,
+      "registered": true,
       "indexable": true,
-      "sitemap": false,
+      "sitemap": true,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
+        "canonical": true,
+        "canonicalValues": [
+          "/books/ai-bots-guide"
+        ],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": false,
-        "ogUrls": []
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/books/ai-bots-guide"
+        ]
       }
     },
     {
       "path": "/books/llm-underlying-logic",
       "file": "app/(site)/books/llm-underlying-logic/page.jsx",
       "kind": "static",
-      "registered": false,
+      "registered": true,
       "indexable": true,
-      "sitemap": false,
+      "sitemap": true,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
+        "canonical": true,
+        "canonicalValues": [
+          "/books/llm-underlying-logic"
+        ],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": false,
-        "ogUrls": []
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/books/llm-underlying-logic"
+        ]
       }
     },
     {
       "path": "/books/programmer-growth-notes",
       "file": "app/(site)/books/programmer-growth-notes/page.jsx",
       "kind": "static",
-      "registered": false,
+      "registered": true,
       "indexable": true,
-      "sitemap": false,
+      "sitemap": true,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
+        "canonical": true,
+        "canonicalValues": [
+          "/books/programmer-growth-notes"
+        ],
         "noindex": "inherited",
         "openGraph": true,
-        "jsonLd": false,
-        "ogUrls": []
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/books/programmer-growth-notes"
+        ]
       }
     },
     {
@@ -3076,24 +3088,6 @@
       }
     },
     {
-      "path": "/resources/x-article-autopublisher-extension",
-      "file": "app/(site)/resources/x-article-autopublisher-extension/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
-      "signals": {
-        "canonical": true,
-        "canonicalValues": [
-          "/resources/${RESOURCE_SLUG}"
-        ],
-        "noindex": "inherited",
-        "openGraph": true,
-        "jsonLd": false,
-        "ogUrls": []
-      }
-    },
-    {
       "path": "/resources/x-clipboard-phrase",
       "file": "app/(site)/resources/x-clipboard-phrase/page.jsx",
       "kind": "redirect",
@@ -4002,27 +3996,6 @@
       "message": "页面没有声明 canonical。"
     },
     {
-      "id": "canonical.missing:/books/ai-bots-guide",
-      "rule": "canonical.missing",
-      "route": "/books/ai-bots-guide",
-      "severity": "warning",
-      "message": "页面没有声明 canonical。"
-    },
-    {
-      "id": "canonical.missing:/books/llm-underlying-logic",
-      "rule": "canonical.missing",
-      "route": "/books/llm-underlying-logic",
-      "severity": "warning",
-      "message": "页面没有声明 canonical。"
-    },
-    {
-      "id": "canonical.missing:/books/programmer-growth-notes",
-      "rule": "canonical.missing",
-      "route": "/books/programmer-growth-notes",
-      "severity": "warning",
-      "message": "页面没有声明 canonical。"
-    },
-    {
       "id": "canonical.missing:/feed/[id]",
       "rule": "canonical.missing",
       "route": "/feed/[id]",
@@ -4145,27 +4118,6 @@
       "id": "jsonld.missing:/bookmarks/youtube",
       "rule": "jsonld.missing",
       "route": "/bookmarks/youtube",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/books/ai-bots-guide",
-      "rule": "jsonld.missing",
-      "route": "/books/ai-bots-guide",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/books/llm-underlying-logic",
-      "rule": "jsonld.missing",
-      "route": "/books/llm-underlying-logic",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/books/programmer-growth-notes",
-      "rule": "jsonld.missing",
-      "route": "/books/programmer-growth-notes",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -4453,13 +4405,6 @@
       "id": "jsonld.missing:/resources/workbuddy-smart-hardware-whitepaper",
       "rule": "jsonld.missing",
       "route": "/resources/workbuddy-smart-hardware-whitepaper",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/resources/x-article-autopublisher-extension",
-      "rule": "jsonld.missing",
-      "route": "/resources/x-article-autopublisher-extension",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -5029,27 +4974,6 @@
       "route": "/writing-monetization-2026",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
-    },
-    {
-      "id": "registry.missing:/books/ai-bots-guide",
-      "rule": "registry.missing",
-      "route": "/books/ai-bots-guide",
-      "severity": "error",
-      "message": "普通静态页面未登记到统一注册表。"
-    },
-    {
-      "id": "registry.missing:/books/llm-underlying-logic",
-      "rule": "registry.missing",
-      "route": "/books/llm-underlying-logic",
-      "severity": "error",
-      "message": "普通静态页面未登记到统一注册表。"
-    },
-    {
-      "id": "registry.missing:/books/programmer-growth-notes",
-      "rule": "registry.missing",
-      "route": "/books/programmer-growth-notes",
-      "severity": "error",
-      "message": "普通静态页面未登记到统一注册表。"
     },
     {
       "id": "registry.missing:/products/new-message-phone",

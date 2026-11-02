@@ -90,15 +90,18 @@
     say(`已导出 ${saved.people.length} 人的 JSON，包含原头像链接；图片文件未打包`);
   }
   function mount() {
-    const panel = document.querySelector('[data-xrc-hub]')?.parentElement;
-    if (!panel || panel.querySelector('[data-xrc-experiments]')) return;
+    const hub = document.querySelector('[data-xrc-hub]');
+    const content = hub?.querySelector('.xrc-docs-content');
+    if (!content) return;
+    const existing = document.querySelector('[data-xrc-experiments]');
+    if (existing) { if (existing.parentElement !== content) content.appendChild(existing); return; }
     box = document.createElement('details'); box.dataset.xrcExperiments = '';
     box.className = 'xrc-experiments';
     box.innerHTML = '<summary>实验 · 名录与头像采集</summary><p>在关注 / 全部粉丝 / 认证粉丝页读取账号、昵称、原头像链接。每轮保存在此浏览器本机，刷新后可继续；不同账号和名单分别保存。</p><p>采集会滚动当前页面，请先暂停排班并保持此页在前台。不会执行关注、点赞或发帖。</p><div><button type="button" data-capture-start>开始 / 继续采集</button><button type="button" data-capture-export>导出本机 JSON</button></div><p role="status" aria-live="polite" data-capture-status>等待开始。头像保存为原图链接，导出不包含图片文件。</p>';
     status = box.querySelector('[data-capture-status]');
     box.querySelector('[data-capture-start]').addEventListener('click', start);
     box.querySelector('[data-capture-export]').addEventListener('click', () => exportData().catch(e => say(`导出失败：${e.message}`)));
-    panel.appendChild(box);
+    content.appendChild(box);
   }
   setInterval(mount, 1500); mount();
 })(typeof globalThis !== 'undefined' ? globalThis : this);

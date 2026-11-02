@@ -148,6 +148,12 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // 原「X Article 自动发布」已并入高频互动助手的发帖任务「站长转发」
+        source: '/resources/x-article-autopublisher-extension',
+        destination: '/resources/x-reply-clipboard-extension/docs#site-forward',
+        permanent: true,
+      },
+      {
         source: '/resources/x-clipboard-phrase',
         destination: '/tools',
         permanent: true,

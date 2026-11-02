@@ -127,6 +127,7 @@ test('repost search undoes reposts without deleting the original or counting a d
     isConnected: true,
     parentElement: null,
     querySelector(selector) {
+      if (selector === "time") return { getAttribute: () => new Date(now - 60 * DAY).toISOString() }
       if (String(selector).includes('/status/')) return { getAttribute: () => '/other/status/123' }
       if (selector === '[data-testid="unretweet"]') return reposted ? { click() {} } : null
       return null
@@ -951,4 +952,96 @@ test('unlimited prune leaves the profile for an older search when scrolling stop
   assert.equal(stalls[0].deleted, 0)
   assert.equal(result.running, false)
   assert.match(result.status, /搜索/)
+})
+
+test('cleanup stops at five calendar years and keeps older posts and replies', () => {
+  const now = Date.parse('2026-11-15T04:00:00Z')
+  const cutoff = Date.parse('2021-11-15T04:00:00Z')
+  assert.equal(prune.pruneHistoryCutoff(now), cutoff)
+  assert.equal(prune.isPruneRangeWithinHistory('2021-10-01', '2021-11-01', now), false)
+  assert.equal(prune.isPruneRangeWithinHistory('2021-11-01', '2021-12-01', now), true)
+  assert.equal(prune.nextPruneSearchWindow({ currentSince: '2021-11-01', currentUntil: '2021-12-01', now }), null)
+  assert.equal(prune.nextPruneSearchWindow({ currentSince: '2019-01-01', currentUntil: '2019-02-01', now }), null)
+  const post = { own: true, at: cutoff, views: 0, likes: 0, replies: 0, reposts: 0, bookmarks: 0, quotes: 0 }
+  for (const classify of [prune.classifyPost, prune.classifyReply]) {
+    assert.equal(classify(post, now), false)
+    assert.equal(classify({ ...post, at: cutoff - 1 }, now), false)
+    assert.equal(classify({ ...post, at: cutoff + 1 }, now), true)
+  }
+  assert.equal(prune.pruneHistoryCutoff(Date.parse('2024-02-29T12:00:00Z')), Date.parse('2019-02-28T12:00:00Z'))
+})
+
+test('bounded cleanup ignores legacy unlimited and stops after the selected slow segment', async () => {
+  const postedAt = new Date(now - DAY - 1000).toISOString()
+  let serial = 0
+  let current = null
+  const makeArticle = (id) => {
+    let connected = true
+    const article = {
+      get isConnected() { return connected },
+      parentElement: null,
+      querySelector(selector) {
+        const name = String(selector)
+        if (name.includes('/status/')) return { getAttribute: () => `/me/status/${id}` }
+        if (name.includes('socialContext')) return { innerText: '', textContent: '' }
+        if (name.includes('reply')) return { getAttribute: () => '0 Replies. Reply', innerText: '0', textContent: '0' }
+        if (name.includes('like')) return { getAttribute: () => '0 Likes. Like', innerText: '0', textContent: '0' }
+        if (name.includes('retweet')) return { getAttribute: () => '0 reposts. Repost', innerText: '0', textContent: '0' }
+        if (name.includes('bookmark')) return { getAttribute: () => 'Bookmark', innerText: '', textContent: '' }
+        if (name.includes('analytics')) return { getAttribute: () => '19 views. View post analytics', innerText: '19', textContent: '19' }
+        if (name === 'time') return { getAttribute: () => postedAt }
+        if (name.includes('caret')) return { click() { current = article } }
+        return null
+      },
+      disconnect() { connected = false },
+    }
+    return article
+  }
+  const doc = {
+    body: { innerText: '', textContent: '' },
+    documentElement: { scrollHeight: 800 },
+    querySelector(selector) {
+      return String(selector).includes('main') ? doc : null
+    },
+    querySelectorAll(selector) {
+      const name = String(selector)
+      if (name.includes('tweet')) {
+        if (!current || !current.isConnected) current = makeArticle(++serial)
+        return [current]
+      }
+      if (name === '[role="menuitem"]') return [{ innerText: '删除', textContent: '删除', click() {} }]
+      if (name.includes('dialog') || name.includes('confirmation')) {
+        return [{
+          innerText: '删除帖子？',
+          textContent: '删除帖子？',
+          querySelector: () => ({ click() { current?.disconnect() } }),
+          querySelectorAll: () => [],
+        }]
+      }
+      return []
+    },
+  }
+  const waits = []
+  let clock = now
+  const previousLoop = globalThis.XReplyClipboardLoop
+  globalThis.XReplyClipboardLoop = require('../../tools/x-reply-clipboard-extension/loop.js')
+  const controller = prune.createController({
+    document: doc,
+    window: { scrollBy() {}, innerHeight: 700 },
+    accountHandle: () => 'me',
+    now: () => clock,
+    sleep: async (ms) => {
+      waits.push(ms)
+      clock += ms
+    },
+  })
+  try {
+    const result = await controller.start({ pace: 'slow', boundedCleanup: true, unlimited: true, random: () => 0 })
+    assert.equal(result.deleted, 15)
+    assert.equal(waits.filter((ms) => ms === 15000).length, 0)
+    assert.equal(result.running, false)
+  } finally {
+    if (previousLoop) globalThis.XReplyClipboardLoop = previousLoop
+    else delete globalThis.XReplyClipboardLoop
+  }
 })

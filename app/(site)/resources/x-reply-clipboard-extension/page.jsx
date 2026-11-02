@@ -393,7 +393,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论首页与通知、点赞、关注管理和定时发帖集中在本地面板。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
+              评论首页与通知、点赞、关注管理和定时发帖集中在本地面板。发帖类里的站长转发会把一篇 2aran.com 文章审阅后发布为 X Article。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />

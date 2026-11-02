@@ -22,7 +22,23 @@
   const RESCAN_GAP_MS = 1500;
   const ROUND_SIZE = 15;
   const SESSION_GAP_MS = 7 * 24 * 60 * 60 * 1000;
-  const PRUNE_SEARCH_EARLIEST_YEAR = 2006;
+  const PRUNE_HISTORY_YEARS = 5;
+
+  function pruneHistoryCutoff(now = Date.now()) {
+    const date = new Date(now);
+    const month = date.getUTCMonth();
+    const year = date.getUTCFullYear() - PRUNE_HISTORY_YEARS;
+    const day = Math.min(date.getUTCDate(), new Date(Date.UTC(year, month + 1, 0)).getUTCDate());
+    date.setUTCDate(1);
+    date.setUTCFullYear(year);
+    date.setUTCMonth(month);
+    date.setUTCDate(day);
+    return date.getTime();
+  }
+
+  function isPruneRangeWithinHistory(since, until, now = Date.now()) {
+    return isPruneMonthWindow(since, until) && until > beijingYmd(pruneHistoryCutoff(now));
+  }
   const RATE_LIMIT_WARNING = /(?:rate limit|too many requests|操作过于频繁|超出限制|达到上限|暂时无法)/iu;
   const SEARCH_LOAD_ERROR = /(?:something went wrong|try reloading|出了点问题|出错了，请重试)/iu;
   const SEARCH_NO_RESULTS = /(?:no results for|没有搜索结果|未找到结果|暂无搜索结果)/iu;
@@ -71,8 +87,8 @@
     return monthWindow(parsed.year, parsed.month).until === until;
   }
 
-  function acceptPruneMonth(window) {
-    if (!window || Number(String(window.since).slice(0, 4)) < PRUNE_SEARCH_EARLIEST_YEAR) return null;
+  function acceptPruneMonth(window, now) {
+    if (!window || !isPruneRangeWithinHistory(window.since, window.until, now)) return null;
     return window;
   }
 
@@ -80,18 +96,18 @@
     // Already on a calendar-month search: the month is done, always step one month earlier.
     // Do not re-open the same month just because kept posts are still visible.
     if (isPruneMonthWindow(currentSince, currentUntil)) {
-      return acceptPruneMonth(previousMonthWindow(currentSince));
+      return acceptPruneMonth(previousMonthWindow(currentSince), now);
     }
-    if (onProfile && !(Number(oldestAt) > 0)) return acceptPruneMonth(previousMonthWindow(beijingYmd(now)));
+    if (onProfile && !(Number(oldestAt) > 0)) return acceptPruneMonth(previousMonthWindow(beijingYmd(now)), now);
     if (Number(oldestAt) > 0) {
       const oldest = beijingYmd(oldestAt);
       const parsed = parseYmd(oldest);
       if (!parsed) return null;
-      return acceptPruneMonth(monthWindow(parsed.year, parsed.month));
+      return acceptPruneMonth(monthWindow(parsed.year, parsed.month), now);
     }
     const base = currentSince || currentUntil;
     if (!base) return null;
-    return acceptPruneMonth(previousMonthWindow(base));
+    return acceptPruneMonth(previousMonthWindow(base), now);
   }
 
   function freshPruneSearchProgress(now = Date.now()) {
@@ -170,7 +186,7 @@
   function classifyPost(post, now) {
     if (!post?.own || post.repost || post.pinned) return false;
     const at = Number(post.at) || 0;
-    if (at <= 0 || now - at < MIN_AGE_MS) return false;
+    if (at <= 0 || at <= pruneHistoryCutoff(now) || now - at < MIN_AGE_MS) return false;
     const views = knownCount(post.views);
     if (views == null) return false;
     const age = now - at;
@@ -194,7 +210,7 @@
   function classifyReply(post, now) {
     if (!post?.own || post.repost || post.pinned) return false;
     const at = Number(post.at) || 0;
-    if (at <= 0 || now - at < MONTH_AGE_MS) return false;
+    if (at <= 0 || at <= pruneHistoryCutoff(now) || now - at < MONTH_AGE_MS) return false;
     const counts = [post.likes, post.replies, post.reposts, post.bookmarks, post.quotes]
       .map(knownCount);
     return counts.every((count) => count != null)
@@ -339,6 +355,7 @@
       for (const article of profileArticles()) {
         const metrics = readPostMetrics(article, handle, now());
         if (!metrics?.id || skipped.has(metrics.id)) continue;
+        if (!(metrics.at > pruneHistoryCutoff(now()))) { skipped.add(metrics.id); continue; }
         const ownRepost = target !== "replies" && Boolean(article.querySelector?.('[data-testid="unretweet"]'))
           && (repostSearch || metrics.repost);
         const eligible = target === "replies" ? classifyReply(metrics, now()) : classifyPost(metrics, now());
@@ -433,11 +450,7 @@
     }
 
     async function holdForNextDay(message) {
-      cooldownUntil = now() + SESSION_GAP_MS;
-      while (running && !stopping && now() < cooldownUntil) {
-        update(message);
-        await sleep(Math.min(60000, Math.max(1, cooldownUntil - now())));
-      }
+      update(`${message}，等待下次排班`);
     }
 
     async function run(options = {}) {
@@ -447,8 +460,9 @@
       deleted = Math.max(0, Number(options?.initialDeleted) || 0);
       unreposted = Math.max(0, Number(options?.initialUnreposted) || 0);
       cooldownUntil = 0;
-      const unlimited = Boolean(options?.unlimited);
+      const unlimited = Boolean(options?.unlimited) && !options?.boundedCleanup;
       plan = createPrunePlan(options?.pace, options?.random);
+      if (options?.boundedCleanup) plan.rounds = ({ slow: 1, medium: 2, fast: 3, turbo: 4 })[options?.pace] || 1;
       plan.unlimited = unlimited;
       if (unlimited) {
         plan.rounds = Number.MAX_SAFE_INTEGER;
@@ -485,7 +499,7 @@
           return true;
         }
         if (typeof advanceTimeline === "function") {
-          update(progress("更早的帖没有继续加载"));
+          update(progress("已到清理边界或搜索无法继续，仅清理最近五年"));
           return "stop";
         }
         if (onSearchMonth) {
@@ -660,6 +674,8 @@
     RESCAN_GAP_MS,
     ROUND_SIZE,
     isPruneMonthWindow,
+    pruneHistoryCutoff,
+    isPruneRangeWithinHistory,
     nextPruneSearchWindow,
     freshPruneSearchProgress,
     createPrunePlan,

@@ -207,6 +207,22 @@
     return TARGET_FOLLOW_HANDLES.find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
   }
 
+  function nextTargetFollowSource(handles, current, visited = []) {
+    const checked = new Set([...visited, current].map(handle => String(handle).toLowerCase()));
+    return handles.find(handle => !checked.has(String(handle).toLowerCase())) || "";
+  }
+
+  function advanceTargetFollowSource() {
+    const key = `xrcTargetFollowScan:${currentAccountHandle() || "default"}`;
+    let saved = {};
+    try { saved = JSON.parse(sessionStorage.getItem(key) || "{}"); } catch {}
+    const visited = Date.now() - Number(saved.at || 0) < RESCAN_INTERVAL_MS && Array.isArray(saved.visited) ? saved.visited : [];
+    const current = targetFollowHandleFromPath();
+    const next = nextTargetFollowSource(TARGET_FOLLOW_HANDLES, current, visited);
+    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), visited: next ? [...new Set([...visited, current])] : [] }));
+    return next;
+  }
+
   function pickTargetFollowHandle() {
     const handles = TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : DEFAULT_TARGET_FOLLOW_HANDLES;
     return handles[Math.floor(Math.random() * handles.length)];
@@ -747,16 +763,18 @@
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
       return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
     }
-    const unlimited = mode === "unfollow";
+    const independentCleanup = mode === "unfollow";
+    const cleanupLimit = ({ slow: 15, medium: 30, fast: 45, turbo: 60 })[state.followPace] || 15;
+    let cleanupAttempts = 0;
     await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
     await reset(mode, onUpdate);
-    if (!unlimited && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
+    if (!independentCleanup && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
       ? "开始清理未回关账号"
       : mode === "followBack"
         ? "开始回关粉丝"
         : "开始关注候选");
-    if (!unlimited && !(await waitForSharedCooldown())) {
+    if (!independentCleanup && !(await waitForSharedCooldown())) {
       state.running = false;
       state.stopping = false;
       emit("已停止；共享暂停时间仍会保留");
@@ -791,8 +809,8 @@
           : "X 提示操作受限，本次先停下。";
         break;
       }
-      if (!unlimited) await loadSharedFollowRate({ applyBatchCooldown: true });
-      if (!unlimited && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
+      if (!independentCleanup) await loadSharedFollowRate({ applyBatchCooldown: true });
+      if (!independentCleanup && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) {
         const tomorrow = new Date();
         tomorrow.setHours(24, 1, 0, 0);
         state.cooldownUntil = tomorrow.getTime();
@@ -804,11 +822,12 @@
         state.cooldownUntil = 0;
         continue;
       }
-      if (!unlimited && !(await waitForSharedCooldown())) break;
+      if (!independentCleanup && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
         if (!(await waitForPlatformRateLimit())) break;
         continue;
       }
+      if (mode === "unfollow" && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
@@ -822,6 +841,7 @@
       if (candidate) {
         stalled = 0;
         state.seenHandles.add(candidate.handle);
+        if (mode === "unfollow") cleanupAttempts += 1;
         const ok = mode === "unfollow"
           ? await actUnfollow(candidate)
           : mode === "followBack"
@@ -851,7 +871,7 @@
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
-        if (!unlimited && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) continue;
+        if (!independentCleanup && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) continue;
         if (mode === "followBack" && state.followPlan && ok) {
           state.followPlan.roundCount += 1;
           if (state.followPlan.roundCount >= FOLLOW_BATCH_SIZE) {
@@ -868,11 +888,11 @@
             if (!(await waitForSharedCooldown())) break;
           } else {
             await persistSharedFollowRate();
-            await sleepActive(unlimited ? 400 : FOLLOW_ACTION_DELAY_MS);
+            await sleepActive(FOLLOW_ACTION_DELAY_MS);
           }
           continue;
         }
-        if (!unlimited && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        if (!independentCleanup && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + followBatchCooldownMs(state.targetFollowPace || state.followPace);
           await persistSharedFollowRate();
@@ -895,6 +915,13 @@
           emit("含中文资料的粉丝已优先检查，继续检查其他粉丝");
           await sleepActive(SCROLL_DELAY_MS);
           continue;
+        }
+        if (mode === "targetFollow") {
+          const nextSource = advanceTargetFollowSource();
+          if (nextSource) {
+            emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
+            return { navigate: `/${nextSource}/followers` };
+          }
         }
         state.cooldownUntil = Date.now() + RESCAN_INTERVAL_MS;
         while (!state.stopping && Date.now() < state.cooldownUntil) {
@@ -966,6 +993,7 @@
     saveTargetFollowHandles,
     normalizeTargetFollowHandles,
     targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
+    nextTargetFollowSource,
     createFollowBackPlan,
     followRoundGapSeconds,
     followBatchCooldownMs,

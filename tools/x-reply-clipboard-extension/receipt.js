@@ -30,7 +30,7 @@
     "mutual-target-follow",
     "post-like",
     "reply-like",
-    "tweet-post", "article-draft",
+    "tweet-post", "article-draft", "site-forward",
     "post-prune", "reply-prune"
   ]);
   const RESULTS = new Set(["success", "failed", "skipped", "limited"]);
@@ -49,14 +49,15 @@
     "post-like": "likes", "reply-like": "likes",
     "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
     "mutual-follow-back": "followBacks", "tweet-post": "posts",
-    "post-prune": "prunes", "reply-prune": "replyPrunes", "article-draft": "articleDrafts"
+    "post-prune": "prunes", "reply-prune": "replyPrunes", "article-draft": "articleDrafts",
+    "site-forward": "siteForwards"
   });
   const TASK_MODES = Object.freeze({
     "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol",
     "post-like": "likes-posts", "reply-like": "likes-replies",
     "mutual-target-follow": "mutual-targetFollow", "mutual-follow-back": "mutual-followBack",
     "mutual-unfollow": "mutual-unfollow", "post-prune": "prune-posts", "reply-prune": "prune-replies",
-    "article-draft": "article"
+    "article-draft": "article", "site-forward": "site-forward"
   });
 
   function shanghaiDate(at = Date.now()) {
@@ -66,7 +67,7 @@
   function emptyCounts() {
     return {
       comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
-      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0
+      likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0
     };
   }
 

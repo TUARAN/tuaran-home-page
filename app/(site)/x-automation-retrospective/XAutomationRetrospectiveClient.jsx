@@ -127,7 +127,7 @@ function OverviewPanel({ onSelectPhase }) {
         <ul className="mt-3 flex flex-wrap gap-2 text-[13px]">
           <li><Link href="/admin/morning-greeting" className="rounded-full border border-[var(--site-line)] px-3 py-1 no-underline text-[var(--site-muted)] hover:text-[var(--site-ink)]">X 发布任务后台</Link></li>
           <li><a href="https://github.com/TUARAN/tuaran-home-page/actions/workflows/morning-greeting.yml" target="_blank" rel="noreferrer" className="rounded-full border border-[var(--site-line)] px-3 py-1 no-underline text-[var(--site-muted)] hover:text-[var(--site-ink)]">GitHub Actions</a></li>
-          <li><Link href="/resources/x-article-autopublisher-extension" className="rounded-full border border-[var(--site-line)] px-3 py-1 no-underline text-[var(--site-muted)] hover:text-[var(--site-ink)]">X Article 自动发布</Link></li>
+          <li><Link href="/resources/x-reply-clipboard-extension/docs#site-forward" className="rounded-full border border-[var(--site-line)] px-3 py-1 no-underline text-[var(--site-muted)] hover:text-[var(--site-ink)]">站长转发</Link></li>
         </ul>
       </section>
     </div>

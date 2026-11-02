@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "4.3.15",
+  "version": "4.9.0",
   "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",
@@ -18,28 +18,93 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage", "offscreen", "alarms"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*", "https://api.deepseek.com/*", "https://api.b.ai/*", "https://2aran.com/*", "https://aihot.news/*", "https://www.toutiao.com/*", "https://www.zhihu.com/*", "https://hn.algolia.com/*"],
+  "permissions": [
+    "storage",
+    "offscreen",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://api.deepseek.com/*",
+    "https://api.b.ai/*",
+    "https://2aran.com/*",
+    "https://aihot.news/*",
+    "https://www.toutiao.com/*",
+    "https://www.zhihu.com/*",
+    "https://hn.algolia.com/*",
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["draftFill.js"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "draftFill.js",
+        "vendor/x-article/main-world.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["context.js"],
+      "matches": ["https://2aran.com/articles/*"],
+      "js": ["vendor/x-article/format-core.js", "vendor/x-article/site-content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "context.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["receipt.js", "phrases.js", "loop.js", "timer.js", "postImage.js", "poster.js", "mutual.js", "tweetPdf.js", "autoLike.js", "prunePosts.js", "articleDraft.js", "content.js", "experiments.js"],
-      "css": ["content.css"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "vendor/x-article/format-core.js",
+        "vendor/x-article/x-content.js",
+        "receipt.js",
+        "phrases.js",
+        "loop.js",
+        "timer.js",
+        "postImage.js",
+        "vendor/xhs-textcard/bundle.js",
+        "poster.js",
+        "mutual.js",
+        "tweetPdf.js",
+        "autoLike.js",
+        "prunePosts.js",
+        "articleDraft.js",
+        "content.js",
+        "experiments.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "debugDrafts.html",
+        "debugDrafts.js"
+      ],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ]
     }
   ]
 }

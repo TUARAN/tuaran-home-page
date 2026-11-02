@@ -32,12 +32,14 @@
 
   function sessionStorageKey(kind = POST_KIND_NORMAL) {
     if (kind === POST_KIND_PREMIUM) return "xrc-ai-poster-premium";
+    if (kind === "xhs") return "xrc-ai-poster-xhs";
     if (kind === POST_KIND_X) return "xrc-ai-poster-x";
     return "xrc-ai-poster";
   }
 
   function publishListKey(kind = POST_KIND_NORMAL) {
     if (kind === POST_KIND_PREMIUM) return "xrcPosterPublishListPremium";
+    if (kind === "xhs") return "xrcPosterPublishListXhs";
     if (kind === POST_KIND_X) return "xrcPosterPublishListX";
     return "xrcPosterPublishList";
   }
@@ -58,6 +60,7 @@
 
   function normalizePostKind(value) {
     if (value === POST_KIND_PREMIUM) return POST_KIND_PREMIUM;
+    if (value === "xhs") return "xhs";
     if (value === POST_KIND_X) return POST_KIND_X;
     return POST_KIND_NORMAL;
   }
@@ -69,20 +72,21 @@
       if (random() < 0.5) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
       return { mediaMode: "text", lengthMode: "regular" };
     }
+    if (kind === "xhs") return { mediaMode: "text", lengthMode: "regular" };
     const draw = random();
-    if (draw < 0.8) return { mediaMode: "text", lengthMode: "compact" };
-    if (draw < 0.9) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
+    if (draw < 0.9) return { mediaMode: "text", lengthMode: "compact" };
     return { mediaMode: "text", lengthMode: "regular" };
   }
 
   function withPostFormat(item, kind = state.postKind) {
+    kind = normalizePostKind(kind);
     const fallback = choosePostFormat(Math.random, 0, kind);
     const lengthMode = kind === POST_KIND_X
       ? "regular"
       : item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
       ? "compact"
       : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
-    const mediaMode = kind === POST_KIND_X
+    const mediaMode = kind === POST_KIND_NORMAL ? "text" : kind === POST_KIND_X
       ? "image"
       : item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
     return {
@@ -697,7 +701,7 @@
       return { ...item, source, sourceLabel: item.sourceLabel || sourceLabel(source), sourcePageUrl: item.sourcePageUrl || item.sourceUrl || item.url || "" };
     }) : [];
     state.sourceQueue = retained(state.sourceQueue);
-    state.publishQueue = retained(state.publishQueue).filter(keepPublishItem).map(withPostFormat);
+    state.publishQueue = retained(state.publishQueue).filter(keepPublishItem).map(item => withPostFormat(item, state.postKind));
     if ((state.currentPost && !state.currentSourceId) || (state.currentSourceId && !state.publishQueue.some((item) => item.id === state.currentSourceId))) {
       state.retiredDraftText = previousDraft;
       state.currentPost = "";
@@ -1170,6 +1174,19 @@
   }
 
   async function publishPost(postText, item = null) {
+    if (["x", "xhs"].includes(state.postKind)) {
+      const images = state.postKind === "xhs"
+        ? await root.XrcXhsCards.render(postText)
+        : [await new Promise(async (resolve, reject) => {
+            try { const file = await root.XInteractionPostImage.createPostCard(postText, item?.topic || '', item?.cardVariant || 'paper', {align:'center'}); const reader = new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); } catch(error) { reject(error); }
+          })];
+      const key = 'xrcDebugDrafts';
+      const stored = await chrome.storage.local.get(key);
+      const drafts = Array.isArray(stored[key]) ? stored[key] : [];
+      await chrome.storage.local.set({[key]:[{id:Date.now(),kind:state.postKind,text:postText,images,createdAt:new Date().toISOString(),status:'draft'},...drafts].slice(0,8)});
+      return "draft-saved";
+    }
+
     let composer = findInlineComposer();
     if (!composer) {
       await waitForHomeComposer(12000);
@@ -1232,6 +1249,21 @@
     if (state.stopping) return;
     if (state.postKind === POST_KIND_PREMIUM) await loadPremiumDaily();
     await loadPublishList();
+    if (["x", "xhs"].includes(state.postKind)) {
+      if (state.nextPostAt > Date.now()) { emit("图文草稿等待下次排班"); return; }
+      try {
+        if (!state.publishQueue.length) await collectNewsFallback();
+        if (state.stopping) return;
+        const item = state.publishQueue[0];
+        if (!item?.text) throw new Error("尚未形成图文草稿");
+        await publishPost(item.text, item);
+        state.publishQueue.shift(); state.currentPost = ""; state.currentSourceId = "";
+        state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace);
+        await savePublishList();
+        emit("图文已保存到本机草稿库（调试中，未发布）");
+      } catch (error) { state.lastError = error?.message || "草稿保存失败"; state.errors += 1; await savePublishList(); emit(state.lastError); }
+      return;
+    }
     if (state.postKind === POST_KIND_PREMIUM) {
       state.nextPostAt = nextPremiumPostAt();
       const waitingForSlot = Number(state.nextPostAt) > Date.now();
@@ -1386,6 +1418,12 @@
           await savePublishList();
         }
         const result = await publishPost(state.currentPost, state.publishQueue[0]);
+        if (result === "draft-saved") {
+          state.publishQueue.shift(); state.currentPost = ""; state.currentSourceId = "";
+          state.currentPostAttempts = 0; state.lastError = "";
+          state.nextPostAt = scheduleNextNormalPostAt(Date.now(), Math.random, state.schedulePace);
+          await savePublishList(); emit("图文已保存到本机草稿库（调试中，未发布）"); break;
+        }
         if (result !== "ok" && automationWarningVisible()) {
           coolDownForRisk();
           continue;
@@ -1580,6 +1618,7 @@
 
   const api = {
     snapshot,
+    publishPost,
     start,
     persistForSuspend: savePublishList,
     startNow,

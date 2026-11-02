@@ -12,7 +12,7 @@ import { communitySecretLocalJson, injectZipStoredFile } from '../../../../lib/c
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
-const LOCKED_RESOURCE = 'resource:x-reply-clipboard-extension'
+import { isManagedExtensionResource, privateExtensionReleaseForKey } from '../../../../lib/content/managedExtensions.mjs'
 
 function jsonError(error, status, setCookie = null, details = {}) {
   return Response.json({ error, ...details }, { status, headers: setCookie ? { 'Set-Cookie': setCookie } : undefined })
@@ -44,7 +44,7 @@ async function deliver(req, options = {}) {
     const wallpaperId = String(url.searchParams.get('wallpaperId') || '').trim()
     const delivery = getResourceDelivery(resourceKey, fileKey || wallpaperId)
     if (!delivery) return jsonError('DELIVERY_NOT_FOUND', 404)
-    const locked = resourceKey === LOCKED_RESOURCE
+    const locked = isManagedExtensionResource(resourceKey)
     if (locked && !invite) return jsonError('PASSWORD_REQUIRED', 403)
 
     const db = getD1()
@@ -97,7 +97,7 @@ async function deliver(req, options = {}) {
     // This release must never be placed in the public R2 bucket.
     const bucket = locked ? null : getR2()
     const object = locked ? null : await bucket.get(objectKey)
-    const embedded = locked || !object ? await readPrivateExtensionPackage(getPrivateDocumentsR2(), objectKey) : null
+    const embedded = locked || !object ? await readPrivateExtensionPackage(getPrivateDocumentsR2(), objectKey, privateExtensionReleaseForKey(objectKey)) : null
     if (!object && !embedded) return jsonError('FILE_NOT_FOUND', 404, actor.setCookie)
     await recordResourceEvent(db, {
       userId: actor.userId,
@@ -149,7 +149,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   const url = new URL(req.url)
-  if (url.searchParams.get('resourceKey') !== LOCKED_RESOURCE || url.searchParams.get('file') !== 'extension-zip') {
+  if (!isManagedExtensionResource(url.searchParams.get('resourceKey')) || url.searchParams.get('file') !== 'extension-zip') {
     return jsonError('DELIVERY_NOT_FOUND', 404)
   }
   if (Number(req.headers.get('content-length') || 0) > 512) return jsonError('INVALID_PASSWORD', 400)

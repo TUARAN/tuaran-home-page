@@ -2388,7 +2388,7 @@ test('daily report panel relies on automatic sync instead of manual upload or pu
   assert.match(monitor, /可更新/)
   const statusDeck = await readFile(new URL('../../app/(admin)/admin/community-actions/monitor/XPluginStatusDeck.jsx', extensionDir), 'utf8')
   assert.match(statusDeck, /插件版本/)
-  assert.match(statusDeck, /远程更新到 v/)
+  assert.match(statusDeck, /立即更新/)
   assert.match(statusDeck, /ext-update/)
   assert.doesNotMatch(monitor, /本地上传报告/)
 })

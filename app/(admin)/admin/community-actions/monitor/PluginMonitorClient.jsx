@@ -6,6 +6,8 @@ import { X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMo
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
+import DistributionMonitor from './DistributionMonitor'
+import PluginPicker from './PluginPicker'
 
 const MODE_LABEL = X_RUNTIME_MODE_LABELS
 const PHASE = { running: ['运行中', 'info'], paused: ['等待中', 'warning'], stopping: ['等待中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
@@ -47,6 +49,11 @@ function SimpleDeviceRow({ device }) {
 }
 
 export default function PluginMonitorClient() {
+  const params = useSearchParams()
+  return params.get('platform') === 'ai-distributor' ? <DistributionMonitor /> : <LegacyPluginMonitorClient />
+}
+
+function LegacyPluginMonitorClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const requestedPlatform = searchParams.get('platform') || 'x'
@@ -263,9 +270,7 @@ export default function PluginMonitorClient() {
   )
 
   return <AdminPage title="插件监控" description={pageDescription} actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
-    <div className="mb-5 flex flex-wrap items-center gap-3">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="选择插件平台">{PLATFORMS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={platform === item.id} onClick={() => changePlatform(item.id)} className={`rounded-full border px-4 py-2 text-[13px] font-medium transition ${platform === item.id ? 'border-[#37624b] bg-[#37624b] text-white dark:border-emerald-300 dark:bg-emerald-300 dark:text-[#101820]' : 'border-[#d7dfd5] text-[#4e5b50] hover:border-[#77977e] dark:border-[#354438] dark:text-gray-300'}`}>{item.label}</button>)}</div>
-    </div>
+    <PluginPicker selected={platform} />
     {error ? <p role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">读取失败：{error}。请刷新重试。</p> : null}
     {commandNote ? <p role="status" className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">{commandNote}</p> : null}
     {platform === 'x' && visibleData?.migrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 0115_x_extension_runtime.sql；动作回执仍可继续接收。</p> : null}

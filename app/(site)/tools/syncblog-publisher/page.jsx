@@ -34,11 +34,12 @@ export default function SyncblogPublisherPage() {
         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">在网站创作，在平台执行。把观点、文章、电子书和项目介绍整理好，通过一个插件切换平台、预览 AI 改写、准备草稿，检查后自行发布。</p>
         <div className="mt-7 flex flex-wrap gap-3">
           <a href="https://syncblog.2aran.com/" className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-slate-950">打开创作台 ↗</a>
-          <ExtensionDownloadButton href="/api/resources/syncblog-download" title="AI 分发大师" credentialLabel="下载密码" buttonLabel="VIP 下载 · 扫码联系站长" downloadHint="添加站长微信 atar24，领取 VIP 下载密码后输入，即可下载安装包。" />
+          <ExtensionDownloadButton href="/api/resources/syncblog-download" title="AI 分发大师" credentialLabel="人员码 / 站长总密钥" buttonLabel="VIP 下载 · 输入人员码" downloadHint="联系站长微信 atar24 获取人员码。安装包已打包并内置凭证，安装后自动读取，首次心跳绑定设备。" />
           <SharePageButton title="AI 分发大师" text="整理内容、适配平台，核对草稿后发布。" url="https://2aran.com/tools/syncblog-publisher" />
+          <Link href="/tools/syncblog-publisher/docs" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">文档中心</Link>
           <a href="#install" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">安装与使用</a>
         </div>
-        <p className="mt-5 text-xs leading-6 text-slate-400">VIP 安装包请扫码添加站长微信 atar24，领取下载密码。支持 Chrome / Edge 116+。</p>
+        <p className="mt-5 text-xs leading-6 text-slate-400">VIP 安装包已打包；联系站长微信 atar24 获取人员码，站长可使用总密钥领取。支持 Chrome / Edge 116+。</p>
       </header>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-3" aria-label="工作流程">
@@ -49,7 +50,7 @@ export default function SyncblogPublisherPage() {
 
       <section className={`mt-10 ${card}`}><h2 className="text-2xl font-semibold">平台能力现状</h2><p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">使用前请确认已登录目标平台。平台编辑器和账号权限可能影响填写；准备草稿后，请逐项核对并刷新确认保存结果。</p><dl className="mt-5 divide-y divide-slate-200 dark:divide-slate-800">{platforms.map(([name, status]) => <div key={name} className="py-4"><dt className="font-medium">{name}</dt><dd className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">{status}</dd></div>)}</dl><p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-7 text-amber-950 dark:bg-amber-950 dark:text-amber-100">“已准备”表示页面填写并回读成功。云端保存需刷新后核对，正式发布需另行确认。打开页面、填写、保存和发布分别记录与判断。</p></section>
 
-      <section id="install" className={`mt-10 scroll-mt-24 ${card}`}><h2 className="text-2xl font-semibold">安装与使用</h2><ol className="mt-5 list-decimal space-y-3 pl-5 text-sm leading-7"><li>点击 VIP 下载，扫码添加站长微信并领取下载密码；验证后下载并解压安装包，在 Chrome / Edge 扩展管理页开启开发者模式，加载包内含 manifest.json 的目录。已有安装请重新加载原目录。</li><li>打开目标平台并登录，点击浏览器工具栏图标或页面浮动入口，确认识别的平台。</li><li>切换内容类型，填写标题、正文和来源链接，保存本地草稿。</li><li>需要 AI 改写时，配置自己的 HTTPS 模型服务、模型名和密钥，授权服务域名；检查预览后采用。请求会把材料发给所配服务。</li><li>选择平台准备草稿，查看分项记录。失败项重试前先核对平台是否已留下内容；已有正文的编辑器应停止填写。</li><li>核对标题、段落、链接与格式，刷新检查保存状态，最后自行发布。</li></ol><p className="mt-5 text-sm leading-7 text-slate-500 dark:text-slate-400">模型密钥、本地草稿与记录保存在扩展本地。卸载或清理扩展数据会丢失；本地保存不等于网站账号同步。</p></section>
+      <section id="install" className={`mt-10 scroll-mt-24 ${card}`}><h2 className="text-2xl font-semibold">安装与使用</h2><ol className="mt-5 list-decimal space-y-3 pl-5 text-sm leading-7"><li>点击 VIP 下载，输入人员码或站长总密钥；领取已内置凭证的安装包并解压，在 Chrome / Edge 扩展管理页开启开发者模式，加载包内含 manifest.json 的目录。已有安装请重新加载原目录。</li><li>打开目标平台并登录，点击浏览器工具栏图标或页面浮动入口，确认识别的平台。</li><li>切换内容类型，填写标题、正文和来源链接，保存本地草稿。</li><li>需要 AI 改写时，配置自己的 HTTPS 模型服务、模型名和密钥，授权服务域名；检查预览后采用。请求会把材料发给所配服务。</li><li>选择平台准备草稿，查看分项记录。失败项重试前先核对平台是否已留下内容；已有正文的编辑器应停止填写。</li><li>核对标题、段落、链接与格式，刷新检查保存状态，最后自行发布。</li></ol><p className="mt-5 text-sm leading-7 text-slate-500 dark:text-slate-400">模型密钥、本地草稿与记录保存在扩展本地。卸载或清理扩展数据会丢失；本地保存不等于网站账号同步。</p></section>
 
       <footer className="mt-10 border-t border-slate-200 pt-6 text-sm leading-7 text-slate-500 dark:border-slate-800">创作前往 <a href="https://syncblog.2aran.com/" className="underline">syncblog.2aran.com</a>。VIP 安装包请通过上方下载入口领取。平台保存与发布结果请在目标网站确认。</footer>
     </PageContainer>

@@ -8,7 +8,7 @@ import MorningGreetingClient from '../morning-greeting/MorningGreetingClient'
 import XReplyTasksClient from '../x-replies/XReplyTasksClient'
 import DeepSeekKeysPanel from '../deepseek-tasks/DeepSeekKeysPanel'
 import CommunityOperationsPlan from './CommunityOperationsPlan'
-import SyncblogDownloadPanel from './SyncblogDownloadPanel'
+import ExtensionPackagePanel from './ExtensionPackagePanel'
 
 const PLATFORM_LABEL = {
   x: 'X',
@@ -169,7 +169,7 @@ function PersonInvitesPanel() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">人员码（一人一码）</p>
-          <p className="mb-0 mt-1 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">先作下载凭证并写入 ZIP；对方首次心跳后转为设备码，不能再下载。站长总密钥不受影响。</p>
+          <p className="mb-0 mt-1 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">X 助手和 AI 分发大师共用这套领取规则。每个插件安装实例分别使用一个人员码；下载时写入 ZIP，首次心跳后绑定设备并禁止再下载。站长总密钥不受影响。</p>
         </div>
       </div>
       <div className="mt-3 flex min-w-0 flex-wrap gap-2">
@@ -255,7 +255,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
-        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">X、小红书和掘金的设备状态、日期统计与回执统一在插件监控查看。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师、X、小红书和掘金的设备状态、日期统计与回执统一在插件监控查看。</p>
         <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/monitor" variant="primary">插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
@@ -277,6 +277,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
         />
       </Section>
 
+      <PersonInvitesPanel />
+
       <Section title="插件任务" description="这些动作必须在本机 Chrome 登录态下执行，云端不能代替。">
         <ul className="m-0 grid gap-2 p-0">
           {EXTENSION_TASKS.map((item) => (
@@ -286,17 +288,12 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
                 <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
               </div>
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.platform !== 'multi' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton> : null}
-                {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
-              </div>
-              {item.id === 'x-assistant' ? <PersonInvitesPanel /> : null}
-              {item.id === 'syncblog-download' ? (
-                <details className="mt-3 rounded-lg border border-[#e4e6dc] dark:border-[#263142]">
-                  <summary className="cursor-pointer px-3 py-2 text-[12px] font-medium">安装包与下载密码</summary>
-                  <SyncblogDownloadPanel />
-                </details>
-              ) : null}
+              {['x-assistant', 'syncblog-download'].includes(item.id) ? <ExtensionPackagePanel pluginId={item.id === 'x-assistant' ? 'x' : 'ai-distributor'} /> : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
+                  {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
+                </div>
+              )}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
             </li>
           ))}

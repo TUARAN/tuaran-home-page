@@ -81,7 +81,8 @@
     "content-proof:pin": "node scripts/pin-content-replica.mjs",
     "content-proof:drill": "node scripts/content-ledger-key-drill.mjs",
     "spacex:video:match": "node scripts/archive-spacex-video.mjs match",
-    "spacex:video:archive": "node scripts/archive-spacex-video.mjs archive"
+    "spacex:video:archive": "node scripts/archive-spacex-video.mjs archive",
+    "syncblog:release": "node scripts/release-syncblog-extension.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",

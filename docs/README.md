@@ -35,6 +35,7 @@
 | [mcp-stdio-demo.md](runbooks/mcp-stdio-demo.md)                               | 本地 stdio MCP Demo  |
 | [subsite-management.md](runbooks/subsite-management.md)                       | 二级站管理              |
 | [subsite-account-integration.md](runbooks/subsite-account-integration.md)     | 子站统一账号接入           |
+| [plugin-monitor.md](runbooks/plugin-monitor.md) | AI 分发大师设备监控、远程指令与部署验收 |
 
 ## plans
 

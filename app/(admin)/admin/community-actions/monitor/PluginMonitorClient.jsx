@@ -270,7 +270,7 @@ export default function PluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地十三项排班（含评论首页 / 评论回复 / 评论大V / 普通发文）：优先级 1～10 分，分值越大越重要。约 10 秒刷新；站点最新版 v${latestVersion || '—'}，可远程通知实例加载本机目录中的新版。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description={`对齐本地十三项排班（含评论首页 / 评论回复 / 评论大V / 普通发文）：优先级 1～10 分，分值越大越重要。约 10 秒刷新；版本与更新状态由本地实例上报，可下发本地立即更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
           {accountSwitcher}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />
@@ -297,7 +297,7 @@ export default function PluginMonitorClient() {
           ) : (
             <div className="pt-4"><EmptyState title={loading ? '正在读取插件实例' : '该账号还没有插件实例'} description={loading ? '请稍候。' : '在插件中配置回执密钥并保持浏览器运行；首次上报后会出现。'} /></div>
           )}
-          <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">每台实例顶部固定显示「插件版本」条。站点版本表示已发布源码的版本；远程更新只会重载本机扩展目录中的文件，不会下载站点代码。请先同步本机目录，再点「更新本地」。远程启停与更新都依赖心跳（通常 1 分钟内）。</p>
+          <p className="mb-0 mt-4 text-[12px] leading-5 text-[#7a8479] dark:text-gray-400">每台实例显示正在运行的版本与本地检测到的新版。「立即更新」调用插件本地更新流程，停止当前任务、加载本地文件后恢复任务。远程操作依赖心跳（通常 1 分钟内）。</p>
         </Section>
 
         <div className="mt-8 border-t border-[#e5e9e2] pt-6 dark:border-[#263142]">

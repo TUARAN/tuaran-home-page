@@ -213,9 +213,8 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const schedule = device.schedule
   const canControl = device.online && device.telemetry
   const installedVersion = String(device.extensionVersion || '').trim()
-  const siteVersion = String(latestExtensionVersion || '').trim()
+  const siteVersion = String(device.localUpdate?.version || '').trim()
   const updateAvailable = Boolean(device.updateAvailable)
-  const canReloadLocal = device.online && !updateAvailable && Boolean(installedVersion)
   const canUpdate = device.online && (updateAvailable ? Boolean(siteVersion) : Boolean(installedVersion))
   const updateBusy = busyKey === `${device.id}:ext-update:`
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
@@ -224,14 +223,13 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const desk = buildDesk(groups, schedule)
   let candidateWarmth = 0
   const versionTone = !device.online ? 'neutral' : updateAvailable ? 'warning' : installedVersion ? 'success' : 'neutral'
-  const versionLabel = !device.online ? '离线' : updateAvailable ? '可更新' : installedVersion ? '已是最新' : '版本未知'
+  const versionLabel = !device.online ? '离线' : updateAvailable ? '可更新' : installedVersion ? '运行中' : '版本未知'
   const versionDetail = !device.online
-    ? '上线后可远程比对并下发更新'
+    ? '上线后可下发本地立即更新'
     : updateAvailable
-      ? `本机 v${installedVersion || '未知'} 落后于站点 v${siteVersion}；下发后会停任务并重载本机已同步的新文件`
-      : installedVersion
-        ? `本机 v${installedVersion} · 站点最新 v${siteVersion || installedVersion}。更新本地会停掉当前任务，并重载本机目录里更新的文件`
-        : `站点最新 v${siteVersion || '—'}；等待插件心跳上报版本`
+      ? `正在运行 v${installedVersion || '未知'} · 本地可更新至 v${siteVersion}；点击后停止任务、加载本地新版并恢复任务`
+      : `正在运行 v${installedVersion || '未知'} · ${device.localUpdate ? '本地暂未检测到新版' : '等待本地更新状态上报'}；更新操作与插件内「立即更新」相同`
+
 
   return (
     <article className="border-t border-[#e5e9e2] first:border-t-0 dark:border-[#263142]">
@@ -256,17 +254,17 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
             <div className="min-w-0">
               <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">插件版本</p>
               <p className="mb-0 mt-1 text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">
-                {updateAvailable ? `发现可远程更新 v${siteVersion}` : installedVersion ? `当前 v${installedVersion}` : '等待版本上报'}
+                {updateAvailable ? `本地可更新至 v${siteVersion}` : installedVersion ? `当前 v${installedVersion}` : '等待版本上报'}
               </p>
               <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">{versionDetail}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {canUpdate ? (
                 <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('ext-update')}>
-                  {updateBusy ? '排队中…' : (canReloadLocal ? '更新本地' : `远程更新到 v${siteVersion}`)}
+                  {updateBusy ? '排队中…' : '立即更新'}
                 </AdminButton>
               ) : (
-                <AdminButton size="sm" variant="ghost" disabled title={device.online ? '站点最新版未知' : '实例离线，无法下发'}>
+                <AdminButton size="sm" variant="ghost" disabled title={device.online ? '等待本地版本上报' : '实例离线，无法下发'}>
                   {device.online ? '无法下发' : '离线不可更新'}
                 </AdminButton>
               )}

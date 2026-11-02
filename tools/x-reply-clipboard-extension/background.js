@@ -2761,6 +2761,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   return {
     phase: schedule.enabled ? "running" : ["running", "paused", "stopping", "stopped", "idle"].includes(runtime.flow?.phase) ? runtime.flow.phase : "idle",
     tasks,
+    localUpdate: await globalThis.XrcLocalDevUpdate?.status?.(),
     schedule: {
       enabled: Boolean(schedule.enabled),
       current: schedule.current || "",

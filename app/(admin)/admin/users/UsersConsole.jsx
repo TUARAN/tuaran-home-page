@@ -987,7 +987,19 @@ export default function UsersConsole({ initialTab = 'users', mode = 'all' }) {
                               header: '已解锁内容',
                               render: (row) => (
                                 <div>
-                                  <p className="font-medium text-[#33352c] dark:text-gray-200">{row.title}</p>
+                                  <p className="font-medium text-[#33352c] dark:text-gray-200">
+                                    {row.href ? (
+                                      <a
+                                        href={row.href.startsWith('/') ? `https://2aran.com${row.href}` : row.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-700 underline underline-offset-2 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
+                                      >
+                                        {row.title}
+                                        <span className="sr-only">（在新页签打开）</span>
+                                      </a>
+                                    ) : row.title}
+                                  </p>
                                   <p className="mt-1 font-mono text-[11px] text-[#94a3b8] dark:text-gray-500">{row.resourceKey}</p>
                                 </div>
                               ),

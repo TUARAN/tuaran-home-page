@@ -1468,7 +1468,8 @@
   }
 
   .home-alliance-top {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     width: 100%;
     align-items: center;
     justify-content: space-between;
@@ -1483,6 +1484,7 @@
   }
 
   .home-alliance-message {
+    grid-column: 1 / -1;
     min-width: 0;
     flex: 1;
     gap: 0.55rem;
@@ -1517,6 +1519,14 @@
     color: #4e5f8e;
     font-size: 0.92rem;
     line-height: 1.45;
+    height: 1.45em;
+  }
+
+  .home-alliance-description .home-alliance-copy {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .home-alliance-copy {
@@ -1627,10 +1637,7 @@
   .dark .home-alliance-contact { background: #a5b5ff; color: #202b56; }
 
   @media (max-width: 1279px) {
-    .home-alliance-top { width: 100%; flex-wrap: wrap; }
-    .home-alliance-message { width: 100%; flex-wrap: wrap; }
-    .home-alliance-description { flex-basis: 100%; }
-    .home-alliance-actions { margin-left: auto; }
+    .home-alliance-stats { flex-wrap: wrap; row-gap: 0.5rem; }
   }
 
   /* H5 首页顶部：独立资讯 App 结构，不压缩桌面横条 */

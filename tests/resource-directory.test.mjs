@@ -18,6 +18,8 @@ test('互动、资源、工具目录互斥，锚点和查询参数不改变归�
   }
   assert.equal(isResourceDirectoryItem({ href: '/resources/new-interactive', contentKind: 'interactive' }), false)
   assert.equal(isResourceDirectoryItem({ href: '/resources/wallpapers' }), true)
+  assert.equal(isResourceDirectoryItem({ href: '/resources/big-interaction-whitepaper' }), false)
+  assert.equal(isResourceDirectoryItem({ href: '/resources/big-interaction-whitepaper?from=search#intro' }), false)
 })
 
 test('工具目录中的所有入口均从资源目录排除，包括历史下载 URL', () => {

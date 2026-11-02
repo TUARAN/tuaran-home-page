@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import vm from 'node:vm'
 import test from 'node:test'
+import { isToolDirectoryItem } from '../../lib/content/resourceDirectory.js'
 
 // Evaluate the real navigation modules without Next's extensionless import resolver.
 const sources = await Promise.all(['site/engineeringWorks', 'content/communityTopics', 'site/siteNav'].map(async (name) =>
@@ -10,7 +11,7 @@ const sources = await Promise.all(['site/engineeringWorks', 'content/communityTo
 ))
 const { SITE_CHANNELS, SITE_CONTENT_SHORTCUTS, getChannelNavSections, getActiveNavHref } = vm.runInNewContext(
   `${sources.join('\n')}\n;({ SITE_CHANNELS, SITE_CONTENT_SHORTCUTS, getChannelNavSections, getActiveNavHref })`,
-  { URL, URLSearchParams },
+  { URL, URLSearchParams, isToolDirectoryItem },
 )
 const sectionsFor = (key) => getChannelNavSections(SITE_CHANNELS.find((channel) => channel.key === key), null)
 
@@ -18,6 +19,10 @@ test('content shortcuts select interactive works and resources without claiming 
   const interactive = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'interactive')
   const resources = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'resources')
   assert.equal(interactive.match('/rich-pages'), true)
+  for (const path of ['/resources/big-interaction-whitepaper', '/resources/big-interaction-whitepaper/roundtable']) {
+    assert.equal(interactive.match(path), true)
+    assert.equal(resources.match(path, new URLSearchParams()), false)
+  }
   assert.equal(interactive.match('/x-automation-retrospective'), true)
   assert.equal(resources.match('/articles', new URLSearchParams('group=resource')), true)
   assert.equal(resources.href, '/resources')

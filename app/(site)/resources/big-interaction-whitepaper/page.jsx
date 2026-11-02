@@ -14,7 +14,7 @@ const path = '/resources/big-interaction-whitepaper'
 const url = `https://2aran.com${path}`
 const shareUrl = 'https://2aran.com/x'
 const title = '大互动理论'
-const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、七日实践与退出边界，建立自己的互动方法。'
+const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
 const updated = '2026-10-29'
 
@@ -33,8 +33,7 @@ const chapters = [
   { id: 'framework', number: '第一章', title: '走向互动之前' },
   { id: 'mechanism', number: '第二章', title: '互动怎样形成反馈' },
   { id: 'quality', number: '第三章', title: '判断互动的质量' },
-  { id: 'practice', number: '第四章', title: '七日实践' },
-  { id: 'boundaries', number: '第五章', title: '边界与局限' },
+  { id: 'boundaries', number: '第四章', title: '边界与局限' },
 ]
 
 const layers = [
@@ -82,25 +81,6 @@ const keepSources = [
   { title: '可能一起做事的人', detail: '讨论能落到一个小目标、一次分工或一次反馈。' },
 ]
 
-const weekPlan = [
-  { day: '第一天 · 选一个场景', detail: '从愿意参与的社区、朋友对话或共同项目开始，并写清这次最多花多少时间。' },
-  { day: '第二天 · 提出问题', detail: '说清自己已经知道什么，以及仍想弄明白的一个具体问题。' },
-  { day: '第三天 · 认真听完', detail: '先复述对方的意思，再回应其中的事实、条件和结论。' },
-  { day: '第四天 · 提供帮助', detail: '分享一条可靠资料、一段亲身经验，或一次可以落实的协助。' },
-  { day: '第五天 · 接触异议', detail: '问清判断依据，记下自己原本忽略的条件。侮辱和骚扰在这里停止。' },
-  { day: '第六天 · 完成合作', detail: '围绕一个小目标分工，约定谁在什么时候反馈进展。' },
-  { day: '第七天 · 回看修正', detail: '留下有用的反馈，整理信息来源，决定下周只改变一件事。' },
-]
-
-const challengeMoves = [
-  { plate: '评论 1000 条', action: '留下一条有事实或问题的回应', note: '图版写的是「真诚互动，留下有价值的观点」。' },
-  { plate: '点赞 2000 个', action: '只标记自己真的想再看的内容', note: '图版写的是「发现更多优质内容」。' },
-  { plate: '关注 200 个', action: '结识一个能双向交流的人，并清掉一个不再回应的来源', note: '图版写的是「主动结识同频的伙伴」。' },
-  { plate: '发帖 200 条', action: '分享一段自己的观察或思考', note: '图版写的是「持续输出，分享思考」。' },
-]
-
-const signposts = ['持续行动', '真诚互动', '不断优化', '逼近极限', '看到风景']
-
 const plates = [
   { src: '/resources/big-interaction-whitepaper/04.jpg', width: 1122, height: 1402, title: '三层递进', viewpoint: '先照顾好身体，再走向更大的世界。', caption: '大睡、大水、大互动组成台阶。互动一层里的小循环是互相鼓励、观点碰撞、认识自我、调整行动。' },
   { src: '/resources/big-interaction-whitepaper/02.jpg', width: 688, height: 1024, title: '走出封闭', viewpoint: '主动走出去，让陌生的观点进入生活。', caption: '独处可以保留。图版把下一步收成走出封闭、互动真诚、持续修正，并指向新朋友、新视角和新机会。' },
@@ -140,7 +120,7 @@ export default function BigInteractionWhitepaperPage() {
           <p className={styles.metaLine}>
             <time dateTime={published}>{published}</time>
             <span>更新 {updated}</span>
-            <span>五章 · 约 6 分钟</span>
+            <span>四章 · 约 6 分钟</span>
             <ContentPvBeacon category="resource" slug="big-interaction-whitepaper" display prefix="·" />
           </p>
         </header>
@@ -172,7 +152,7 @@ export default function BigInteractionWhitepaperPage() {
               <p className={styles.lead}>大互动理论关注一个可以重复的过程：主动接触他人，表达自己的判断，听见不同的经验，再带着反馈调整行动。</p>
               <p>交流可以从一条认真写下的评论、一次追问、一段共同完成的工作开始。对方能够回应，你也愿意根据回应重新检查自己的想法，这一次接触才算进入互动。</p>
               <blockquote>互动让判断接受现实检验；反馈让行动有下一次改进的方向。</blockquote>
-              <p>卷首五张图提供观察线索：日常台阶、走出封闭、行动循环、互动质量、持续练习。后面五章把这些线索收成可以执行的动作，并写明什么时候该停。</p>
+              <p>卷首五张图提供观察线索：日常台阶、走出封闭、行动循环、互动质量、持续练习。后面四章把这些线索收成可以执行的动作，并写明什么时候该停。</p>
             </section>
 
             <PlateExhibition plates={plates} />
@@ -234,7 +214,7 @@ export default function BigInteractionWhitepaperPage() {
               <p>先写清自己现在能参与的场合、时间和话题。逼近极限指的是比上次多走一小步：多问一个具体问题，多听完一段不同意见，多完成一次可以退出的合作。主动行动扩大的是接触面。身体不适、照护责任已经占满时间，或者对方不欢迎继续，这一步就停在「理解边界」。</p>
               <h3 id="express">2.2 真诚互动</h3>
               <p>说明自己观察到了什么、根据什么作出判断、还想知道什么。具体的问题比空泛的赞同或反对更容易让对方接上话。尊重不同观点，是把思想碰撞留在同一件事上：事实是否成立，条件是否相同，结论还能不能用。</p>
-              <p>图版鼓励「不怕冲突」。可以继续的冲突，是双方都还在讨论问题。侮辱、骚扰、威胁和权力明显不对等的施压，属于停止信号，放到第五章处理。</p>
+              <p>图版鼓励「不怕冲突」。可以继续的冲突，是双方都还在讨论问题。侮辱、骚扰、威胁和权力明显不对等的施压，属于停止信号，放到第四章处理。</p>
               <h3 id="revise">2.3 带走一次修正</h3>
               <p>交流结束后记下一个新信息、一处尚未解决的疑问，以及下一步能验证的小行动。反馈可能带来支持，也可能暴露表达问题。修正发生在后续的表达、判断和行动里，不发生在当时的情绪上。</p>
               <p>第三张图把这个过程画成五个路标，底下还有一句：「一个人的世界有多大，取决于他敢于与多大的世界互动。」敢于的前提是还能回来。原图下半部的购书信息是推广，不参与这套循环。</p>
@@ -284,48 +264,15 @@ export default function BigInteractionWhitepaperPage() {
               <p className={styles.smallNote}>五个维度和两份名单都是个人复盘线索，不用来给别人打分，也不衡量人的价值。</p>
             </section>
 
-            <section id="practice" className={styles.section}>
-              <p className={styles.sectionIndex}>CHAPTER 04 / 第四章</p>
-              <h2>七日实践</h2>
-              <p className={styles.lead}>用一周时间完成七个小动作。可以跳过不适合自己的环节，也可以把一天的练习延长到一周。</p>
-              <h3 id="weekly-plan">4.1 一周行动表</h3>
-              <ol className={styles.practiceList}>
-                {weekPlan.map((item) => (
-                  <li key={item.day}><strong>{item.day}</strong><span>{item.detail}</span></li>
-                ))}
-              </ol>
-              <h3 id="review">4.2 复盘三个问题</h3>
-              <div className={styles.promptBox}>
-                <p>哪次交流改变了我的看法？</p>
-                <p>我从谁那里得到帮助，又给谁提供了具体回应？</p>
-                <p>下周我准备验证或修正哪一个判断？</p>
-              </div>
-              <h3 id="sources-practice">4.3 用一天整理来源</h3>
-              <p>第七天可以顺手做图版上的清理清单：认出长期不更新的来源，清掉纯广告，标出标题盖过事实的内容，记下值得回看的创作者，再补回一个能双向交流的人。整理的结果用一句话收束：少而精，更同频，更真实，更有价值。</p>
-              <h3 id="sustainable-practice">4.4 把图版数字译成动作</h3>
-              <p>第五张图的标题是「就是逼近极限，就能看到风景」。每日挑战写成评论 1000 条、点赞 2000 个、关注 200 人、发帖 200 条，笔记本上还照抄了一遍。这些数量是画面设定，不适合作为日常指标。旁边的小字写着每项动作真正要完成的事，可以译成这四次。</p>
-              <ol className={styles.practiceList}>
-                {challengeMoves.map((item) => (
-                  <li key={item.plate}><strong>{item.action}</strong><span>{item.plate}。{item.note}</span></li>
-                ))}
-              </ol>
-              <p>路标从近到远写着五步。能由自己决定的是前四步；「看到风景」在图上被画成更清楚的自己、不同的朋友和更大的问题范围。更高的影响力、更好的机会并不由练习次数保证。</p>
-              <div className={styles.signpost} aria-label="持续练习的五个路标">
-                {signposts.map((item, index) => (
-                  <div key={item}><b>{String(index + 1).padStart(2, '0')}</b><span>{item}</span></div>
-                ))}
-              </div>
-            </section>
-
             <section id="boundaries" className={styles.section}>
-              <p className={styles.sectionIndex}>CHAPTER 05 / 第五章</p>
+              <p className={styles.sectionIndex}>CHAPTER 05 / 第四章</p>
               <h2>边界与局限</h2>
-              <h3 id="choice">5.1 自愿与退出</h3>
+              <h3 id="choice">4.1 自愿与退出</h3>
               <p>互动需要自愿、尊重和时间边界。独处、拒绝无效交流、暂停高消耗关系，都是合理的选择。面对冒犯或骚扰，结束接触优先于「继续互动」。</p>
-              <h3 id="limit-reading">5.2 怎么理解逼近极限</h3>
+              <h3 id="limit-reading">4.2 怎么理解逼近极限</h3>
               <p>逼近极限以还能退出为前提。比上次多听完一段话、多问一个问题、多参加一次有时间上限的合作，都算逼近。生病、照护、睡眠不足，或者对方已经表示不想继续，停下来就是这次练习的完成。</p>
               <p>不怕冲突指的是把分歧留在事实和条件上。对方开始侮辱、骚扰、威胁，或者你因为身份、工作、年龄处在说不的代价很高的位置，退出是这套方法的一部分。</p>
-              <h3 id="scope">5.3 方法的适用范围</h3>
+              <h3 id="scope">4.3 方法的适用范围</h3>
               <p>互动机会受到工作、照护责任、健康和资源条件影响。评论、点赞、关注和发帖不能衡量人的价值或关系质量。行动循环那张图的下半部是图书推广，不属于理论内容。</p>
               <p>这套方法适合自我观察与小范围实践。目前没有足以证明它具有普遍因果效果的研究数据。睡好、喝够、多互动之间也不存在可照搬的医学顺序。</p>
             </section>

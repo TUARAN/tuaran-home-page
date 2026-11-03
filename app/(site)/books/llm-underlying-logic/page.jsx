@@ -74,6 +74,10 @@ export default function LlmUnderlyingLogicBookPage() {
                 <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">ISBN</span>
                 <span className="mt-1 block text-[16px] font-bold tabular-nums text-[#2c231d] dark:text-[#f9eee2]">{isbn}</span>
               </div>
+              <div className="min-w-[10rem] rounded-xl border border-[#d9c6ae] bg-white/75 px-4 py-3 dark:border-[#6b5140] dark:bg-[#302720]">
+                <span className="block text-[12px] font-semibold text-[#8c471f] dark:text-[#f6bf89]">出版方</span>
+                <span className="mt-1 block text-[16px] font-bold text-[#2c231d] dark:text-[#f9eee2]">{book.publisher}</span>
+              </div>
             </div>
             <a href="#buy" className="inline-flex items-center gap-2 rounded-xl bg-[#a84c12] px-6 py-3.5 text-[15px] font-semibold text-white no-underline shadow-[0_10px_25px_rgba(168,76,18,0.22)] transition hover:-translate-y-0.5 hover:bg-[#8f3d0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84c12]">查看购书渠道 <IconArrowRight size={18} aria-hidden="true" /></a>
           </div>

@@ -5566,22 +5566,16 @@
     outline-offset: 2px;
   }
 
-  .site-nav-trigger-active,
-  .site-nav-trigger-active:visited {
-    border-color: transparent;
-    background-color: var(--site-accent-strong);
-    color: #fff;
-  }
-
-  .site-nav-trigger-active:hover {
+  button.site-nav-trigger.site-nav-trigger-active,
+  a.site-nav-trigger.site-nav-trigger-active,
+  button.site-nav-trigger.site-nav-trigger-active:visited,
+  a.site-nav-trigger.site-nav-trigger-active:visited,
+  button.site-nav-trigger.site-nav-trigger-active:hover,
+  a.site-nav-trigger.site-nav-trigger-active:hover,
+  button.site-nav-trigger.site-nav-trigger-active:focus-visible,
+  a.site-nav-trigger.site-nav-trigger-active:focus-visible {
     border-color: transparent;
     background-color: var(--site-ink);
-    color: #fff;
-  }
-
-  .dark .site-nav-trigger-active,
-  .dark .site-nav-trigger-active:visited,
-  .dark .site-nav-trigger-active:hover {
     color: var(--page-bg);
   }
 

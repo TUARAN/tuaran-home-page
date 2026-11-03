@@ -395,3 +395,106 @@
 :global(.dark) .item[data-phase="next"] { background: #292107; border-color: #a16207; }
 :global(.dark) .item[data-pulse="stopped"] { background: #2a1215; }
 :global(.dark) .flowStart { background: #0f1a24; }
+
+.start { grid-column: 1; justify-self: start; }
+
+.panelWide { max-width: 720px; }
+
+.libraryToggle,
+.libraryToggleOn {
+  margin: 0;
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, #1d9bf0 42%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, #1d9bf0 12%, #fff);
+  color: #1d9bf0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.libraryToggleOn { background: #1d9bf0; color: #fff; }
+
+.feedback {
+  margin: 0;
+  padding: 0 12px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 0 12px 4px;
+}
+
+.workspace .board { padding-left: 0; padding-right: 0; }
+
+.library {
+  min-width: 0;
+  min-height: 180px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.library h3,
+.queueTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.library h3 small,
+.queueTitle small { color: var(--muted); font-size: 10px; font-weight: 400; }
+
+.queueTitle { padding: 0 12px; }
+
+.itemJoin { grid-template-columns: 18px 9px minmax(0, 1fr); }
+
+.join {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+.join input { accent-color: #0f8a72; }
+
+.window {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.window select {
+  max-width: 108px;
+  padding: 1px 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.window select:disabled { opacity: 0.45; }
+
+@media (max-width: 720px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+}
+
+:global(.dark) .libraryToggleOn { background: #1d9bf0; }
+:global(.dark) .window select { background: #101820; color: var(--text); }

@@ -2749,7 +2749,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article",
+  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
   "prune-posts", "prune-replies"
@@ -2767,7 +2767,9 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const readyModes = new Set((timeline.future || []).filter((entry) => entry.status === "ready").map((entry) => entry.mode));
   const withPriority = (row, mode) => ({
     ...row,
-    priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rules[mode]?.priority) || defaultTaskPriority(mode)))
+    priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rules[mode]?.priority) || defaultTaskPriority(mode))),
+    enabled: rules[mode]?.enabled === true,
+    window: ["all", "day", "peak", "overnight"].includes(rules[mode]?.window) ? rules[mode].window : "all"
   });
   const tasks = RUNTIME_REPORT_MODES.map((mode) => {
     const task = runtime.tasks?.[mode];
@@ -2903,10 +2905,43 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
         // Ready cards should not keep advertising the previous failure reason.
         reason: next.status === "ready" ? "" : String(next.reason || "").slice(0, 100)
       } : null,
-      facing
+      facing,
+      rules: QUEUED_TASKS.map((mode) => ({
+        mode,
+        enabled: rules[mode]?.enabled === true,
+        priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rules[mode]?.priority) || defaultTaskPriority(mode))),
+        window: ["all", "day", "peak", "overnight"].includes(rules[mode]?.window) ? rules[mode].window : "all"
+      }))
     }
   };
 });
+
+async function applyRemoteScheduleConfig(raw) {
+  let parsed = raw;
+  if (typeof raw === "string") {
+    try { parsed = JSON.parse(raw); } catch { throw new Error("排班配置无法识别"); }
+  }
+  const patch = parsed?.rules;
+  if (!patch || typeof patch !== "object") throw new Error("排班配置无法识别");
+  const plan = await readTaskSchedule();
+  const rules = normalizedTaskRules(plan.rules);
+  const skipped = [];
+  for (const mode of QUEUED_TASKS) {
+    const next = patch[mode];
+    if (!next || typeof next !== "object") continue;
+    if (typeof next.enabled === "boolean") {
+      if (!next.enabled && plan.enabled && plan.current === mode) skipped.push(TASK_TITLE_LABELS[mode] || mode);
+      else rules[mode].enabled = next.enabled;
+    }
+    if (["all", "day", "peak", "overnight"].includes(next.window)) rules[mode].window = next.window;
+    const priority = Number(next.priority);
+    if (Number.isInteger(priority) && priority >= 1 && priority <= MAX_TASK_PRIORITY) rules[mode].priority = priority;
+  }
+  plan.rules = normalizedTaskRules(rules);
+  await saveTaskSchedule(plan);
+  if (plan.enabled) await tickTaskSchedule();
+  return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班与时段";
+}
 
 function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
   if (!manualUpdatePromise) {
@@ -2924,6 +2959,7 @@ function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
 
 async function executeRemoteCommand(command) {
   const type = String(command?.command || "");
+  if (type === "schedule-set") return applyRemoteScheduleConfig(command?.mode);
   const handle = await savedAccountHandle();
   if (type === "flow-start") {
     await openAllTasks(null, handle);

@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   X_DEFAULT_TASK_PRIORITY,
   X_RUNTIME_MODE_LABELS,
+  X_SCHEDULE_WINDOWS,
+  defaultXTaskWindow,
 } from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, StatusPill } from '../../../components/ui'
 import styles from './xMonitorDesk.module.css'
@@ -25,6 +27,7 @@ const COMMAND_LABEL = {
   'task-start': '启动任务',
   'task-stop': '停止任务',
   'ext-update': '远程更新插件',
+  'schedule-set': '排班与时段',
 }
 const COMMAND_STATUS = {
   pending: ['排队中', 'warning'],
@@ -170,11 +173,31 @@ function facingSummary(facing) {
   return parts.join(' · ') || '全部已停止'
 }
 
-function DeskCard({ phase, warmth, pulse, disabled, tag, title, note, status, action }) {
+function WindowSelect({ label, value, disabled, onChange }) {
+  return (
+    <label className={styles.window}>
+      <span>时段</span>
+      <select aria-label={`${label}时段`} disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)}>
+        {X_SCHEDULE_WINDOWS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </label>
+  )
+}
+
+function JoinBox({ label, checked, disabled, onChange }) {
+  return (
+    <label className={styles.join}>
+      <input type="checkbox" checked={checked} disabled={disabled} aria-label={`${label}参与排班`} onChange={(event) => onChange(event.target.checked)} />
+    </label>
+  )
+}
+
+function DeskCard({ phase, warmth, pulse, disabled, tag, title, note, status, action, leading }) {
   const showDots = pulse === 'waiting' && phase !== 'now' && phase !== 'past'
   const showOrbit = pulse === 'running' && phase === 'now'
   return (
-    <li className={`${styles.item} ${disabled ? styles.disabled : ''}`} data-phase={phase || undefined} data-pulse={pulse || undefined} data-warmth={warmth || undefined}>
+    <li className={`${styles.item} ${leading ? styles.itemJoin : ''} ${disabled ? styles.disabled : ''}`} data-phase={phase || undefined} data-pulse={pulse || undefined} data-warmth={warmth || undefined}>
+      {leading}
       <i className={styles.mark} aria-hidden="true" />
       <div className={styles.body}>
         <div className={styles.itemHead}>
@@ -269,9 +292,83 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
     }
   }
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
+  const libraryStorageKey = `x-monitor-task-library:${device.id}`
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [pendingRules, setPendingRules] = useState({})
+  useEffect(() => {
+    try { setLibraryOpen(window.localStorage.getItem(libraryStorageKey) === 'open') } catch { setLibraryOpen(false) }
+  }, [libraryStorageKey])
+  const remoteRules = useMemo(() => {
+    const map = {}
+    for (const rule of schedule?.rules || []) map[rule.mode] = rule
+    return map
+  }, [schedule])
+  const shownRules = useMemo(() => {
+    const map = { ...remoteRules }
+    for (const [mode, patch] of Object.entries(pendingRules)) map[mode] = { ...map[mode], ...patch, mode }
+    return map
+  }, [pendingRules, remoteRules])
+  const configured = Object.keys(remoteRules).length > 0
+  useEffect(() => {
+    if (!Object.keys(pendingRules).length) return
+    const rest = {}
+    for (const [mode, patch] of Object.entries(pendingRules)) {
+      const remote = remoteRules[mode]
+      const waiting = Object.entries(patch).some(([key, value]) => remote?.[key] !== value)
+      if (waiting) rest[mode] = patch
+    }
+    if (Object.keys(rest).length !== Object.keys(pendingRules).length) setPendingRules(rest)
+  }, [pendingRules, remoteRules])
+  const saveRules = async (mode, patch) => {
+    setPendingRules((current) => ({ ...current, [mode]: { ...current[mode], ...patch } }))
+    const result = await onCommand?.({ deviceId: device.id, command: 'schedule-set', mode: '', payload: { rules: { [mode]: patch } } })
+    if (result?.ok) return
+    setPendingRules((current) => {
+      const next = { ...current }
+      const item = { ...next[mode] }
+      for (const key of Object.keys(patch)) {
+        if (item[key] === patch[key]) delete item[key]
+      }
+      if (Object.keys(item).length) next[mode] = item
+      else delete next[mode]
+      return next
+    })
+  }
+  const toggleLibrary = () => {
+    setLibraryOpen((open) => {
+      const next = !open
+      try { window.localStorage.setItem(libraryStorageKey, next ? 'open' : 'closed') } catch { /* 视窗状态只保存在这台浏览器。 */ }
+      return next
+    })
+  }
+  const joined = (task) => {
+    if (!task) return false
+    if (!configured) return true
+    if (task.mode === schedule?.current) return true
+    return shownRules[task.mode]?.enabled !== false
+  }
   const facing = device.facing || schedule?.facing
   const flowBusy = Boolean(busyKey?.startsWith(`${device.id}:`) && !busyKey.endsWith(':ext-update:'))
   const desk = buildDesk(groups, schedule)
+  const controlsBusy = !canControl || flowBusy
+  const taskChrome = (task) => {
+    const rule = shownRules[task.mode]
+    const current = task.mode === schedule?.current
+    return {
+      leading: libraryOpen && configured ? (
+        <JoinBox label={task.label || MODE_LABEL[task.mode] || task.mode} checked={rule?.enabled !== false} disabled={controlsBusy || current} onChange={(enabled) => saveRules(task.mode, { enabled })} />
+      ) : null,
+      action: (
+        <>
+          {configured ? (
+            <WindowSelect label={task.label || MODE_LABEL[task.mode] || task.mode} value={rule?.window || defaultXTaskWindow(task.mode)} disabled={controlsBusy} onChange={(windowId) => saveRules(task.mode, { window: windowId })} />
+          ) : null}
+          <TaskControl task={task} deviceId={device.id} canControl={canControl} busyKey={busyKey} flowBusy={flowBusy} send={send} />
+        </>
+      ),
+    }
+  }
+  const libraryTasks = configured ? desk.ordered.filter((task) => shownRules[task.mode]?.enabled === false && task.mode !== schedule?.current) : []
   let candidateWarmth = 0
   const versionTone = !device.online ? 'neutral' : updateAvailable ? 'warning' : installedVersion ? 'success' : 'neutral'
   const versionLabel = !device.online ? '离线' : updateAvailable ? '可更新' : installedVersion ? '运行中' : '版本未知'
@@ -324,8 +421,13 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
         </div>
 
         {device.telemetry ? (
-          <div className={styles.panel}>
+          <div className={`${styles.panel} ${libraryOpen && configured ? styles.panelWide : ''}`}>
             <div className={styles.head}>
+              <div className={styles.start}>
+                {configured ? (
+                  <button type="button" className={libraryOpen ? styles.libraryToggleOn : styles.libraryToggle} aria-expanded={libraryOpen} onClick={toggleLibrary}>增减任务</button>
+                ) : null}
+              </div>
               <strong className={styles.title}>排班台</strong>
               <div className={styles.corner}>
                 {canControl ? (
@@ -345,6 +447,32 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
               </span>
               <p className={styles.hint}>{facingSummary(facing)}</p>
             </div>
+            {libraryOpen && configured ? <p className={styles.feedback}>勾选加入排班，或取消勾选移出。时段写入这台插件的本机排班。</p> : null}
+            <div className={libraryOpen && configured ? styles.workspace : undefined}>
+              {libraryOpen && configured ? (
+                <section className={styles.library} aria-label="任务库">
+                  <h3>任务库 <small>勾选加入排班</small></h3>
+                  {libraryTasks.length ? (
+                    <ul className={styles.board}>
+                      {libraryTasks.map((task) => {
+                        const chrome = taskChrome(task)
+                        return (
+                          <DeskCard
+                            key={task.mode}
+                            leading={chrome.leading}
+                            title={task.label || MODE_LABEL[task.mode] || task.mode}
+                            note="未加入自动排班"
+                            status="可添加"
+                            action={chrome.action}
+                          />
+                        )
+                      })}
+                    </ul>
+                  ) : <p className={styles.note}>全部任务已加入排班。</p>}
+                </section>
+              ) : null}
+              <section aria-label="已加入排班">
+                {libraryOpen && configured ? <h3 className={styles.queueTitle}>排班台 <small>{desk.ordered.filter((task) => joined(task)).length} 项已加入</small></h3> : null}
             <ul className={styles.board}>
               <DeskCard
                 phase="past"
@@ -357,11 +485,12 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
                 <DeskCard
                   phase="now"
                   pulse={cardPulse(desk.nowTask)}
+                  leading={taskChrome(desk.nowTask).leading}
                   tag="当前任务"
                   title={desk.nowTask.label || MODE_LABEL[desk.nowTask.mode]}
                   note={[taskNote(desk.nowTask, now), Number(schedule?.now?.actions) ? `本次已确认 ${actionCount(desk.nowTask.mode, schedule.now.actions)}` : ''].filter(Boolean).join(' · ')}
                   status={statusText(desk.nowTask)}
-                  action={<TaskControl task={desk.nowTask} deviceId={device.id} canControl={canControl} busyKey={busyKey} flowBusy={flowBusy} send={send} />}
+                  action={taskChrome(desk.nowTask).action}
                 />
               ) : (
                 <DeskCard
@@ -373,38 +502,43 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
                   status={schedule?.enabled ? '调度中' : '已暂停'}
                 />
               )}
-              {desk.nextTask ? (
+              {desk.nextTask && joined(desk.nextTask) ? (
                 <DeskCard
                   phase="next"
                   pulse={cardPulse(desk.nextTask)}
+                  leading={taskChrome(desk.nextTask).leading}
                   tag="下一任务"
                   title={desk.nextTask.label || MODE_LABEL[desk.nextTask.mode]}
                   note={taskNote(desk.nextTask, now)}
                   status={statusText(desk.nextTask)}
-                  action={<TaskControl task={desk.nextTask} deviceId={device.id} canControl={canControl} busyKey={busyKey} flowBusy={flowBusy} send={send} />}
+                  action={taskChrome(desk.nextTask).action}
                 />
               ) : null}
-              {desk.rest.map((task) => {
+              {desk.rest.filter(joined).map((task) => {
                 const pulse = cardPulse(task)
                 const waiting = pulse === 'waiting'
                 const warmth = waiting ? String(Math.min(candidateWarmth += 1, 5)) : ''
+                const chrome = taskChrome(task)
                 return (
                   <DeskCard
                     key={task.mode}
                     phase={waiting ? 'candidate' : ''}
                     warmth={warmth}
                     pulse={pulse}
+                    leading={chrome.leading}
                     disabled={optedOut(task) || (task.phase === 'idle' && !manualStop(task))}
                     tag={waiting ? '候选任务' : ''}
                     title={task.label || MODE_LABEL[task.mode] || task.mode}
                     note={taskNote(task, now)}
                     status={statusText(task)}
-                    action={<TaskControl task={task} deviceId={device.id} canControl={canControl} busyKey={busyKey} flowBusy={flowBusy} send={send} />}
+                    action={chrome.action}
                   />
                 )
               })}
             </ul>
-            <p className={styles.note}>指令随下次心跳下发（通常 1 分钟内），执行后回写结果。</p>
+              </section>
+            </div>
+            <p className={styles.note}>{configured ? '增减任务和时段随下次心跳写入插件本机（通常 1 分钟内），插件面板会一起更新。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</p>
           </div>
         ) : (
           <p className="m-0 text-[#697268] dark:text-gray-400">插件尚未上报任务状态；请更新到支持远程操控的版本并配置回执密钥。</p>

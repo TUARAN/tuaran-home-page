@@ -43,6 +43,7 @@ export async function POST(req) {
       deviceId: body.deviceId,
       command: body.command,
       mode: body.mode || '',
+      payload: body.payload,
     })
     if (!result.ok) return Response.json(result, { status: 400 })
     return Response.json(result)

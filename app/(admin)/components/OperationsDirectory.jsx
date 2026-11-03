@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { listOperationsDirectory } from '../../../lib/admin/adminRoutes'
 
 /**
- * 现场运行和检查记录共用的目录。
+ * 现场运行和检查记录共用的目录。授权实验不出现在这组胶囊里。
  * 两组分开排，避免异常、探测、公告、用量和定期检查挤在同一行。
  */
 export default function OperationsDirectory({ activeHref }) {

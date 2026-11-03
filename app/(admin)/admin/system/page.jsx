@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AdminSystemOperationsPage() {
   return (
-    <AdminPageGate label="工程与运维" returnTo="/admin/projects" description="项目规划、工程交付、现场运行和检查记录的统一入口，仅站长本人可见。">
+    <AdminPageGate label="工程与运维" returnTo="/admin/projects" description="从项目规划、站点配置到现场运行和检查验证的统一入口，仅站长本人可见。">
       <SystemOperations />
     </AdminPageGate>
   )

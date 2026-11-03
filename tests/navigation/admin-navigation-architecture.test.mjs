@@ -26,6 +26,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/articles').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/new').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/research-import').map((item) => item.label), ['内容', '审批调研'])
+  assert.deepEqual(resolveAdminTrail('/admin/research-methods').map((item) => item.label), ['内容', '调研方法'])
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
   assert.deepEqual(resolveAdminTrail('/admin/content-weekly').map((item) => item.label), ['数据', '数据统计'])
   assert.deepEqual(resolveAdminTrail('/admin/db').map((item) => item.label), ['数据', '数据库管理'])
@@ -75,10 +76,15 @@ test('engineering workspace groups each tool by responsibility without repeated 
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '异常监控', '可用性探测', '故障公告', '用量监控', '站点体检', '巡检看板', '涉密自检', '配置中心', '逆向测试'])
-  assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '设计与架构', '现场运行', '检查记录', '配置', '工程实验'])
+  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '二级站点', '上下文库', '配置中心', '异常监控', '可用性探测', '故障公告', '用量监控', '站点体检', '巡检看板', '涉密自检', '逆向测试'])
+  assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '站点与配置', '现场运行', '检查与验证'])
+  assert.ok(projects.sections.every((section) => section.items.length >= 2))
   assert.equal(new Set(projects.sections.flatMap((section) => section.items.map((item) => item.href))).size, titles.length)
   assert.ok(projects.sections.every((section) => !section.items.some((item) => item.label === section.label)))
+  assert.equal(
+    projects.sections.find((section) => section.id === 'runtime').items.some((item) => item.href === '/admin/subsites'),
+    false,
+  )
 })
 
 test('operations directory separates live tools from review records', () => {
@@ -163,7 +169,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', 'SEO 管理', '短链管理', 'RSS 与分发', '短句存档', '存档管理']
+    ['内容管理', '审批调研', '调研方法', '分类管理', '推荐管理', '节日横幅', 'SEO 管理', '短链管理', 'RSS 与分发', '短句存档', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

@@ -301,12 +301,14 @@ export default function AdminDashboardClient() {
           {recentUsers.length || activeStyle ? (
             <ul className="divide-y divide-[#eceee6] px-4 dark:divide-[#1b2430] md:px-5">
               {activeStyle ? (
-                <li className="flex items-center gap-3 py-3">
-                  <IconTypography size={25} className="shrink-0 text-[#a6a99a] dark:text-[#566376]" aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12px] font-medium text-[#3f4039] dark:text-gray-200">{activeStyle.label}</p>
-                    <p className="mt-0.5 truncate text-[10.5px] text-[#929487] dark:text-gray-500">调研风格 · {activeStyle.date}</p>
-                  </div>
+                <li>
+                  <Link href="/admin/research-methods?method=styles" className="flex items-center gap-3 py-3">
+                    <IconTypography size={25} className="shrink-0 text-[#a6a99a] dark:text-[#566376]" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12px] font-medium text-[#3f4039] dark:text-gray-200">{activeStyle.label}</p>
+                      <p className="mt-0.5 truncate text-[10.5px] text-[#929487] dark:text-gray-500">调研方法 · {activeStyle.date}</p>
+                    </div>
+                  </Link>
                 </li>
               ) : null}
               {recentUsers.slice(0, 4).map((u) => (

@@ -2,20 +2,16 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  IconBook2,
   IconEdit,
   IconExternalLink,
   IconCircleCheck,
-  IconList,
   IconPlus,
   IconTrash,
-  IconTypography,
 } from '@tabler/icons-react'
 
 import { AdminButton, AdminPage, AdminPagination, Section, StatCard } from '../../components/ui'
-import ResearchStyleClient from '../research-style/ResearchStyleClient'
 import { LoadingState } from '../../../components/loading/LoadingPrimitives'
 
 const TYPE_LABELS = {
@@ -38,35 +34,9 @@ const SOURCE_LABELS = {
   sync: '构建同步',
 }
 
-const PANELS = [
-  { id: 'list', label: '全部内容', icon: IconList },
-  { id: 'style', label: '写作规范', icon: IconTypography },
-  { id: 'research-style', label: '调研风格', icon: IconBook2 },
-]
-
-const PANEL_IDS = PANELS.map((panel) => panel.id)
-
 function formatTime(value) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-}
-
-function useContentPanel() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const raw = searchParams.get('panel')
-  const panel = PANEL_IDS.includes(raw) ? raw : 'list'
-
-  function setPanel(next) {
-    const params = new URLSearchParams(searchParams.toString())
-    if (next === 'list') params.delete('panel')
-    else params.set('panel', next)
-    const query = params.toString()
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }
-
-  return [panel, setPanel]
 }
 
 function PublishChannels() {
@@ -92,7 +62,7 @@ function PublishChannels() {
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道二</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">Git 调研</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            正本在 GitHub 的 <code>research/*.md</code>。push 之后打开「审批调研」，核对正文再发布。commit 加上 <code>[CF-Pages-Skip]</code>。
+            正本在 GitHub 的 <code>research/*.md</code>。push 之后打开「审批调研」，核对正文再发布。commit 加上 <code>[CF-Pages-Skip]</code>。写法在 <Link href="/admin/research-methods" className="underline">调研方法</Link>。
           </p>
           <div className="mt-3">
             <AdminButton href="/admin/articles/research-import" size="sm">
@@ -199,7 +169,14 @@ function ContentSourceGuide({ counts }) {
 }
 
 function ArticlesConsoleBody() {
-  const [panel, setPanel] = useContentPanel()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const legacyPanel = searchParams.get('panel')
+
+  useEffect(() => {
+    if (legacyPanel === 'style') router.replace('/admin/research-methods?method=rules')
+    if (legacyPanel === 'research-style') router.replace('/admin/research-methods?method=styles')
+  }, [legacyPanel, router])
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [counts, setCounts] = useState(null)
@@ -301,33 +278,13 @@ function ArticlesConsoleBody() {
         <ContentSourceGuide counts={counts} />
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="内容管理工作区">
-        {PANELS.map((item) => {
-          const Icon = item.icon
-          const active = panel === item.id
-          return (
-            <AdminButton
-              key={item.id}
-              type="button"
-              variant={active ? 'default' : 'ghost'}
-              aria-selected={active}
-              onClick={() => setPanel(item.id)}
-            >
-              <Icon size={16} />
-              {item.label}
-            </AdminButton>
-          )
-        })}
-      </div>
-
-      {panel === 'list' && error ? (
+      {error ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           {error}
         </div>
       ) : null}
 
-      {panel === 'list' ? (
-        <div className="space-y-4">
+      <div className="space-y-4">
           <PublishChannels />
           <Section
             title="全部内容"
@@ -483,12 +440,8 @@ function ArticlesConsoleBody() {
               loading={loading}
             />
           </Section>
-        </div>
-      ) : null}
+      </div>
 
-      {panel === 'style' ? <ResearchStyleClient embedded view="rules" /> : null}
-
-      {panel === 'research-style' ? <ResearchStyleClient embedded view="styles" /> : null}
     </AdminPage>
   )
 }

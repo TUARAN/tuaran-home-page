@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 231,
-    "redirects": 21,
-    "private": 61,
+    "routes": 234,
+    "redirects": 22,
+    "private": 62,
     "registeredStatic": 106,
-    "indexable": 126,
-    "canonical": 144,
+    "indexable": 127,
+    "canonical": 145,
     "openGraph": 79,
     "jsonLd": 54,
-    "errors": 8,
-    "warnings": 139
+    "errors": 9,
+    "warnings": 141
   },
   "routes": [
     {
@@ -262,6 +262,22 @@
     {
       "path": "/admin/automation",
       "file": "app/(admin)/admin/automation/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/autopilot-scans",
+      "file": "app/(admin)/admin/autopilot-scans/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -1083,6 +1099,23 @@
       "path": "/admin/subsites",
       "file": "app/(admin)/admin/subsites/page.jsx",
       "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/syncblog-download",
+      "file": "app/(admin)/admin/syncblog-download/page.jsx",
+      "kind": "redirect",
+      "redirect": "/admin/community-actions?tab=extension#syncblog-download",
       "registered": false,
       "indexable": false,
       "sitemap": false,
@@ -3617,6 +3650,24 @@
       }
     },
     {
+      "path": "/tools/syncblog-publisher/docs",
+      "file": "app/(site)/tools/syncblog-publisher/docs/page.jsx",
+      "kind": "static",
+      "registered": false,
+      "indexable": true,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/syncblog-publisher/docs"
+        ],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/tools/workbuddy-acp-bridge",
       "file": "app/(site)/tools/workbuddy-acp-bridge/page.jsx",
       "kind": "static",
@@ -4563,6 +4614,13 @@
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
     {
+      "id": "jsonld.missing:/tools/syncblog-publisher/docs",
+      "rule": "jsonld.missing",
+      "route": "/tools/syncblog-publisher/docs",
+      "severity": "warning",
+      "message": "可索引页面缺少页面级 JSON-LD。"
+    },
+    {
       "id": "jsonld.missing:/web3",
       "rule": "jsonld.missing",
       "route": "/web3",
@@ -4948,6 +5006,13 @@
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },
     {
+      "id": "og.missing:/tools/syncblog-publisher/docs",
+      "rule": "og.missing",
+      "route": "/tools/syncblog-publisher/docs",
+      "severity": "warning",
+      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
+    },
+    {
       "id": "og.missing:/web3",
       "rule": "og.missing",
       "route": "/web3",
@@ -5007,6 +5072,13 @@
       "id": "registry.missing:/song-dongyang-ma-sheng-xu",
       "rule": "registry.missing",
       "route": "/song-dongyang-ma-sheng-xu",
+      "severity": "error",
+      "message": "普通静态页面未登记到统一注册表。"
+    },
+    {
+      "id": "registry.missing:/tools/syncblog-publisher/docs",
+      "rule": "registry.missing",
+      "route": "/tools/syncblog-publisher/docs",
       "severity": "error",
       "message": "普通静态页面未登记到统一注册表。"
     }

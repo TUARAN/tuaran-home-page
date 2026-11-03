@@ -42,6 +42,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/security-self-check').map((item) => item.label), ['工程与运维', '涉密自检'])
   assert.deepEqual(resolveAdminTrail('/admin/design').map((item) => item.label), ['工程与运维', 'UI 设计'])
   assert.deepEqual(resolveAdminTrail('/admin/site-health').map((item) => item.label), ['工程与运维', '运行中心'])
+  assert.deepEqual(resolveAdminTrail('/admin/autopilot-scans').map((item) => item.label), ['工程与运维', '巡检看板'])
   assert.deepEqual(resolveAdminTrail('/admin/settings').map((item) => item.label), ['工程与运维', '配置中心'])
   assert.deepEqual(resolveAdminTrail('/admin/seo').map((item) => item.label), ['内容', 'SEO 管理'])
   assert.deepEqual(resolveAdminTrail('/admin/short-links').map((item) => item.label), ['内容', '短链管理'])
@@ -67,7 +68,7 @@ test('engineering workspace groups each tool by responsibility without repeated 
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '运行中心', '配置中心', '涉密自检', '逆向测试'])
+  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '运行中心', '巡检看板', '配置中心', '涉密自检', '逆向测试'])
   assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '设计与架构', '站点运行', '配置与安全', '工程实验'])
   assert.equal(new Set(projects.sections.flatMap((section) => section.items.map((item) => item.href))).size, titles.length)
   assert.ok(projects.sections.every((section) => !section.items.some((item) => item.label === section.label)))

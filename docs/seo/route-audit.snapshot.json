@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 238,
+    "routes": 241,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 109,
-    "indexable": 130,
-    "canonical": 148,
-    "openGraph": 82,
-    "jsonLd": 57,
+    "registeredStatic": 112,
+    "indexable": 133,
+    "canonical": 151,
+    "openGraph": 85,
+    "jsonLd": 60,
     "errors": 9,
     "warnings": 141
   },
@@ -3780,6 +3780,46 @@
       }
     },
     {
+      "path": "/topics/books",
+      "file": "app/(site)/topics/books/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/topics/books"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/topics/books"
+        ]
+      }
+    },
+    {
+      "path": "/topics/editorial",
+      "file": "app/(site)/topics/editorial/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/topics/editorial"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/topics/editorial"
+        ]
+      }
+    },
+    {
       "path": "/topics/frontend-cloud",
       "file": "app/(site)/topics/frontend-cloud/page.jsx",
       "kind": "static",
@@ -3796,6 +3836,26 @@
         "jsonLd": true,
         "ogUrls": [
           "/topics/frontend-cloud"
+        ]
+      }
+    },
+    {
+      "path": "/topics/openclaw",
+      "file": "app/(site)/topics/openclaw/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/topics/openclaw"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/topics/openclaw"
         ]
       }
     },

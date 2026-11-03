@@ -186,6 +186,14 @@ const TIER_SECTION_STYLES = {
     wrap: 'site-tier-section site-tier-research',
     title: 'site-tier-title site-tier-title-research',
   },
+  '按体裁': {
+    wrap: 'site-tier-section site-tier-research',
+    title: 'site-tier-title site-tier-title-research',
+  },
+  '按时间': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
+  },
   '按主题': {
     wrap: 'site-tier-section site-tier-archive',
     title: 'site-tier-title site-tier-title-archive',
@@ -271,7 +279,7 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
 
   return (
     <div
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -307,7 +315,7 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
       {isOpen ? (
         <div
           role="menu"
-          className={`absolute top-full z-[120] w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
+          className={`site-nav-dropdown absolute top-full w-[min(calc(100vw-1rem),440px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${positionClass}`}
         >
           <div className="site-dropdown-panel rounded-2xl border p-3">
             {sections.map((section) => {
@@ -378,7 +386,7 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
 
   return (
     <div
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={() => {
         if (canHoverAuthorityMenu()) openMenu()
       }}
@@ -408,7 +416,7 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
         <div
           id="site-authority-menu"
           role="menu"
-          className="absolute left-0 top-full z-[120] w-[min(calc(100vw-1rem),320px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
+          className="site-nav-dropdown absolute left-0 top-full w-[min(calc(100vw-1rem),320px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
         >
           <div className="site-dropdown-panel rounded-2xl border p-2">
             <p className="mb-1 px-2 text-[12px] font-medium leading-5 text-[#c8c4b8]">
@@ -1010,7 +1018,7 @@ export default function SiteHeader() {
           </div> : null}
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
-            <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
+            <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="site-header-nav flex shrink-0 items-center gap-2">
               <div className="site-nav-cluster">
                 <AuthorityMenu
                   isOpen={openChannel === 'authority'}
@@ -1095,7 +1103,7 @@ export default function SiteHeader() {
             {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} />)}
           </div>
 
-          <div className="flex items-center gap-1 2xl:hidden">
+          <div className="flex items-center gap-1 xl:hidden">
             <div className="xl:hidden"><SettingsButton /></div>
             <button
               type="button"
@@ -1130,7 +1138,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'fixed inset-0 z-[115] bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 2xl:hidden',
+          'fixed inset-0 z-[115] bg-[color-mix(in_srgb,var(--site-accent-strong)_18%,transparent)] transition-opacity duration-200 xl:hidden',
           mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={() => setMobileMenuOpen(false)}
@@ -1139,7 +1147,7 @@ export default function SiteHeader() {
 
       <div
         className={[
-          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 2xl:hidden',
+          'site-mobile-drawer fixed right-0 top-[calc(var(--site-header-height)+env(safe-area-inset-top,0px))] z-[120] max-h-[calc(100dvh-var(--site-header-height)-var(--site-tabbar-height)-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] w-[min(88vw,340px)] overflow-y-auto border-l px-4 py-5 transition-transform duration-200 xl:hidden',
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >

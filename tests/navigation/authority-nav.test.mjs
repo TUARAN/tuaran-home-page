@@ -19,14 +19,16 @@ test('authority entry points live in the header menu instead of a homepage band'
   for (const href of [
     '/topics/ai-agents',
     '/topics/frontend-cloud',
-    '/publications',
-    '/about#openclaw-contributions',
-    '/editorial',
+    '/topics/books',
+    '/topics/openclaw',
+    '/topics/editorial',
   ]) {
     assert.match(authorityBlock, new RegExp(`href: '${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`))
   }
   assert.match(nav, /label: '主线'/)
   assert.match(header, /<nav ref=\{navWrapRef\}[\s\S]*<AuthorityMenu/)
+  assert.match(header, /site-header-nav flex shrink-0/)
+  assert.match(header, /xl:hidden/)
   assert.match(header, /id="site-authority-menu"/)
   assert.match(header, /<AuthorityDrawerLinks/)
   assert.match(header, /site-mobile-authority-link/)

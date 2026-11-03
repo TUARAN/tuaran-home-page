@@ -118,3 +118,12 @@ test('batch publish summary keeps successes and names remaining failures', () =>
     },
   )
 })
+
+test('batch draft summary reports successful returns and failures', () => {
+  assert.deepEqual(summarizeBatchPublish([{ ok: true, label: '甲' }], 'draft'), {
+    tone: 'success', text: '已退回为草稿 1 篇。',
+  })
+  assert.deepEqual(summarizeBatchPublish([{ ok: false, label: '甲', error: '冲突' }], 'draft'), {
+    tone: 'danger', text: '退回为草稿失败 1 篇：甲（冲突）',
+  })
+})

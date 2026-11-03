@@ -80,12 +80,14 @@ export function visibleSelectionState(selected, visiblePaths) {
   }
 }
 
-export function summarizeBatchPublish(results) {
+export function summarizeBatchPublish(results, status = 'published') {
+  const action = status === 'draft' ? '退回为草稿' : '发布'
+  const completed = status === 'draft' ? '已退回为草稿' : '已发布'
   const published = results.filter((item) => item.ok)
   const failed = results.filter((item) => !item.ok)
   if (!results.length) return { tone: 'info', text: '' }
-  if (!failed.length) return { tone: 'success', text: `已发布 ${published.length} 篇。` }
+  if (!failed.length) return { tone: 'success', text: `${completed} ${published.length} 篇。` }
   const failedText = failed.map((item) => item.error ? `${item.label}（${item.error}）` : item.label).join('；')
-  if (!published.length) return { tone: 'danger', text: `发布失败 ${failed.length} 篇：${failedText}` }
-  return { tone: 'warning', text: `已发布 ${published.length} 篇，失败 ${failed.length} 篇：${failedText}` }
+  if (!published.length) return { tone: 'danger', text: `${action}失败 ${failed.length} 篇：${failedText}` }
+  return { tone: 'warning', text: `${completed} ${published.length} 篇，失败 ${failed.length} 篇：${failedText}` }
 }

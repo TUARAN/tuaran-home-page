@@ -573,7 +573,7 @@ export default function ResearchImportConsole({ embedded = false }) {
         const item = selectedItems[index]
         const label = item.title || item.slug || item.filename
         setMessageTone('info')
-        setMessage(`正在发布 ${index + 1}/${selectedItems.length}：${label}`)
+        setMessage(`正在${status === 'draft' ? '退回为草稿' : '发布'} ${index + 1}/${selectedItems.length}：${label}`)
         try {
           const expectedRevision = item.sourcePath === sourcePath ? (current?.revision || 0) : (item.revision || 0)
           const data = await publishPath(item.sourcePath, status, expectedRevision)
@@ -589,7 +589,7 @@ export default function ResearchImportConsole({ embedded = false }) {
           results.push({ ok: false, label, error: error.message })
         }
       }
-      const summary = summarizeBatchPublish(results)
+      const summary = summarizeBatchPublish(results, status)
       setMessageTone(summary.tone)
       setMessage(summary.text)
     } finally {
@@ -762,15 +762,14 @@ export default function ResearchImportConsole({ embedded = false }) {
             />
             <span>{selection.selectedCount ? `已选 ${selection.selectedCount} 篇` : '全选'}</span>
           </label>
-          <AdminButton
-            type="button"
-            variant="primary"
-            size="sm"
-            disabled={busy || !selection.selectedCount}
-            onClick={() => saveSelected('published')}
-          >
-            审批并发布
-          </AdminButton>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminButton type="button" size="sm" disabled={busy || !selection.selectedCount} onClick={() => saveSelected('draft')}>
+              退回为草稿
+            </AdminButton>
+            <AdminButton type="button" variant="primary" size="sm" disabled={busy || !selection.selectedCount} onClick={() => saveSelected('published')}>
+              审批并发布
+            </AdminButton>
+          </div>
         </div>
       ) : visibleList.length ? (
         <div className="border-t border-[var(--admin-line-soft)] px-3 py-2.5 text-[12px] text-[#8b8d82] dark:text-gray-500">

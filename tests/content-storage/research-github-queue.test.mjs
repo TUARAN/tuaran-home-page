@@ -166,6 +166,7 @@ test('approval console lists Chinese titles ahead of slugs', async () => {
   assert.doesNotMatch(source, /\['pending', '待审批', pending\.length\]/)
   assert.match(source, /全选当前列表/)
   assert.match(source, /saveSelected\('published'\)/)
+  assert.match(source, /saveSelected\('draft'\)/)
   assert.match(source, /type="checkbox"/)
   assert.match(pill, /whitespace-nowrap/)
   assert.match(pill, /shrink-0/)

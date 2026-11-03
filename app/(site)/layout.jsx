@@ -23,6 +23,7 @@ const structuredData = {
   sameAs: [
     'https://juejin.cn/user/1521379823340792',
     'https://github.com/TUARAN',
+    'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/',
     'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e',
   ],
 }

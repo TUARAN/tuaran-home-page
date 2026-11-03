@@ -139,6 +139,7 @@ const aboutStructuredData = {
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
       sameAs: [
         'https://github.com/TUARAN',
+        'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/',
         'https://juejin.cn/user/1521379823340792',
         'https://blog.csdn.net/aifs2025',
         'https://blog.51cto.com/u_15298598',
@@ -171,6 +172,7 @@ const socialLinks = [
   { label: 'CSDN', href: 'https://blog.csdn.net/aifs2025' },
   { label: '51CTO', href: 'https://blog.51cto.com/u_15298598' },
   { label: 'GitHub', href: 'https://github.com/TUARAN' },
+  { label: '领英', href: 'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/' },
 ]
 
 const contactItems = [

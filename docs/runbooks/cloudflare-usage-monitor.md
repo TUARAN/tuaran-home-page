@@ -1,6 +1,6 @@
 # Cloudflare 每日用量监控
 
-后台入口：`/admin/site-health?tab=usage`。每个快照按 Cloudflare UTC 自然日存入 `CONTENT_FEED` R2 的 `cloudflare-usage/YYYY-MM-DD.json`，不写 D1。页面显示最近 14 天；当天数据至少间隔 15 分钟才重新查询一次。站长可手动采集当天。
+后台入口：`/admin/site-health?tab=usage`。每个快照按 Cloudflare UTC 自然日存入 `CONTENT_FEED` R2 的 `cloudflare-usage/YYYY-MM-DD.json`，不写 D1。页面显示最近 14 天；当天数据至少间隔 15 分钟才重新查询一次。站长可手动采集当天。当日指标下方有「最近几次事故时间线」，详细口径在 `docs/context/cloudflare-usage-incidents.md`。
 
 ## 预警
 

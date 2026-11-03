@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { CLOUDFLARE_USAGE_INCIDENT_CALLOUT, CLOUDFLARE_USAGE_INCIDENTS } from '../../../../lib/site/cloudflareUsageIncidents'
 
 const number = (value) => new Intl.NumberFormat('zh-CN').format(Number(value) || 0)
 const pct = (value, limit) => ((Number(value) || 0) / Math.max(1, Number(limit) || 1)) * 100
@@ -155,6 +156,9 @@ export default function CloudflareUsageClient() {
         <Metric label="D1 写入行数" value={latest.d1.rowsWritten} limit={latest.limits.d1RowsWritten} />
       </div>
       <p className="text-xs text-slate-500">最后采集：{new Date(latest.collectedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}。阈值为 Cloudflare Free 套餐参考值；若账户套餐不同，请以 Cloudflare 账单为准。额度耗尽后 D1/Functions 会失败，预警必须在 80% 就发出。</p>
+    </> : null}
+    <UsageIncidentTimeline />
+    {latest ? <>
       <div className="grid gap-4 lg:grid-cols-2">
         <Table title="Workers / Pages Functions 调用来源" rows={latest.workers.scripts.slice(0, 12)} label="脚本" getName={(row) => row.name} getCount={(row) => row.requests} />
         <Table title="入口请求最多的路径" rows={latest.topPaths.slice(0, 12)} label="路径" getName={(row) => row.path} getCount={(row) => row.requests} getDetail={(row) => Object.entries(row.statuses || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([status, value]) => `${status}: ${number(value)}`).join(' · ')} />
@@ -180,6 +184,39 @@ export default function CloudflareUsageClient() {
       </section>
     </> : null}
   </div>
+}
+
+function UsageIncidentTimeline() {
+  const { title, body } = CLOUDFLARE_USAGE_INCIDENT_CALLOUT
+  return <section className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+    <h3 className="font-semibold">最近几次事故时间线</h3>
+    <p className="mt-1 text-xs text-slate-500">2026-10-25 至 2026-11-02。完整口径在下方故障与优化记录。</p>
+    <p className={`mt-3 rounded-xl border px-3 py-2 text-sm leading-6 ${TONE_CLASS.caution}`}>
+      <span className="font-medium">{title}。</span>{body}
+    </p>
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-sm">
+        <thead>
+          <tr>
+            <th className="py-2 pr-3">日期</th>
+            <th className="py-2 pr-3">现象</th>
+            <th className="py-2 pr-3">主因</th>
+            <th className="py-2">已做</th>
+          </tr>
+        </thead>
+        <tbody>
+          {CLOUDFLARE_USAGE_INCIDENTS.map((row) => (
+            <tr key={row.iso} className="border-t border-slate-200 align-top dark:border-slate-700">
+              <td className="whitespace-nowrap py-2 pr-3 tabular-nums" title={row.iso}>{row.date}</td>
+              <td className="py-2 pr-3">{row.symptom}</td>
+              <td className="py-2 pr-3">{row.cause}</td>
+              <td className="py-2">{row.done}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
 }
 
 function Metric({ label, value, limit }) {

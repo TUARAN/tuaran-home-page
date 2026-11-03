@@ -26,6 +26,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/articles').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/new').map((item) => item.label), ['内容', '内容管理'])
   assert.deepEqual(resolveAdminTrail('/admin/articles/research-import').map((item) => item.label), ['内容', '审批调研'])
+  assert.deepEqual(resolveAdminTrail('/admin/research-methods').map((item) => item.label), ['内容', '调研方法'])
   assert.deepEqual(resolveAdminTrail('/admin/content-taxonomy').map((item) => item.label), ['内容', '分类管理'])
   assert.deepEqual(resolveAdminTrail('/admin/content-weekly').map((item) => item.label), ['数据', '数据统计'])
   assert.deepEqual(resolveAdminTrail('/admin/db').map((item) => item.label), ['数据', '数据库管理'])
@@ -163,7 +164,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', 'SEO 管理', '短链管理', 'RSS 与分发', '短句存档', '存档管理']
+    ['内容管理', '审批调研', '调研方法', '分类管理', '推荐管理', '节日横幅', 'SEO 管理', '短链管理', 'RSS 与分发', '短句存档', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

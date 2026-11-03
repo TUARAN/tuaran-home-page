@@ -12,8 +12,8 @@ research/companies/<YYYY-MM-DD>-<slug>.md
 
 ## 风格正本（执行前必读）
 
-写作结构与措辞规则的**唯一正本**是 `lib/researchStyleTemplates.js` 中 `status === 'active'` 的版本
-（站长可在内容管理「调研风格」页签查看）。
+写作结构与措辞规则的**唯一正本**是 `lib/research/researchStyleTemplates.js` 中 `status === 'active'` 的版本
+（站长可在后台「调研方法」查看）。
 
 **动笔前先读该文件的 active 版本**，全文按其 `principles`（当前骨架、事实研判分离、表格优先、
 先结论后展开）与 `howToApply`（frontmatter 分工、来源与持续验证、收口三件套、措辞 grep 黑名单）执行。
@@ -27,7 +27,7 @@ research/companies/<YYYY-MM-DD>-<slug>.md
 
 ## 步骤
 
-1. **读风格正本**：`lib/researchStyleTemplates.js` 的 active 版本
+1. **读风格正本**：`lib/research/researchStyleTemplates.js` 的 active 版本
 2. **确认 slug 与日期**：`YYYY-MM-DD` 用今天的本地日期；slug 全小写英文/数字/连字符，优先用域名主干或公司英文名简写
 3. **检查重复**：列出 `research/companies/`，若同 slug 已存在，基于现有内容更新（保留合理 frontmatter，更新 `date`）而非新建
 4. **frontmatter 字段定义**见 `research/README.md`（category 为 `companies`；`assistance` / `model` / `pv` 必填；`time` 用当前北京时间）；summary / tldr 的分工按风格正本执行

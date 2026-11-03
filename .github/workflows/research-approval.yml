@@ -1,6 +1,6 @@
 name: Research approval auto publication
 
-# Daily at 08:25 Beijing time, after a GitHub revision has been waiting for 72 hours.
+# Daily at 08:25 Beijing time: publish unreviewed revisions after 72 hours and delete drafts idle for 30 days.
 on:
   schedule:
     - cron: '25 0 * * *'
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Publish research past review deadline
+      - name: Publish research and clean stale drafts
         env:
           RESEARCH_APPROVAL_SECRET: ${{ secrets.RESEARCH_APPROVAL_SECRET }}
           A_SHARE_COLLECT_SECRET: ${{ secrets.A_SHARE_COLLECT_SECRET }}

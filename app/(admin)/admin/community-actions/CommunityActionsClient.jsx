@@ -34,6 +34,13 @@ const CLOUD_PANEL_IDS = new Set(CLOUD_PANELS.map((item) => item.id))
 
 const EXTENSION_TASKS = Object.freeze([
   {
+    id: 'article-distribution',
+    platform: 'multi',
+    label: '站内文章分发插件',
+    summary: '选择站内文章，通过本机浏览器插件写入六个平台草稿，核对后手动发布。',
+    href: '/admin/article-distribution',
+  },
+  {
     id: 'syncblog-download',
     platform: 'multi',
     label: 'AI 分发大师',
@@ -290,8 +297,8 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {['x-assistant', 'syncblog-download'].includes(item.id) ? <ExtensionPackagePanel pluginId={item.id === 'x-assistant' ? 'x' : 'ai-distributor'} /> : (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
-                  {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>插件下载页</AdminButton> : null}
+                  {item.id !== 'article-distribution' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton> : null}
+                  {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>{item.id === 'article-distribution' ? '打开分发页面' : '插件下载页'}</AdminButton> : null}
                 </div>
               )}
               {item.sourcePath ? <code className="mt-2 block text-[12px] text-[#5f6156] dark:text-gray-300">{item.sourcePath}</code> : null}
@@ -322,6 +329,8 @@ function OverviewPanel({ onOpenMode }) {
       >
         <p className="m-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">插件监控按平台查看设备状态、历史趋势和确认回执；X 的自动同步日报也在那里查看。插件台管理共用密钥。</p>
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
+          <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
+          <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>
           <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
           <li>小红书高频互动助手：推荐评论、笔记浇给</li>
           <li>掘金高频互动助手：每日签到、沸点和文章；支持每日上限与高频两种模式</li>

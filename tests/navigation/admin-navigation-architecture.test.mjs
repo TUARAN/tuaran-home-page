@@ -30,8 +30,8 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/content-weekly').map((item) => item.label), ['数据', '数据统计'])
   assert.deepEqual(resolveAdminTrail('/admin/db').map((item) => item.label), ['数据', '数据库管理'])
   assert.deepEqual(resolveAdminTrail('/admin/ops').map((item) => item.label), ['自动化', '任务中心'])
-  assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['内容', '短句内容'])
-  assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['内容', '文章分发'])
+  assert.deepEqual(resolveAdminTrail('/admin/quotes').map((item) => item.label), ['内容', '短句存档'])
+  assert.deepEqual(resolveAdminTrail('/admin/article-distribution').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/engagement-bots').map((item) => item.label), ['自动化', '站内互动'])
   assert.deepEqual(resolveAdminTrail('/admin/community-actions').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/community-actions/monitor').map((item) => item.label), ['数据', '插件监控'])
@@ -52,6 +52,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/settings').map((item) => item.label), ['工程与运维', '配置中心'])
   assert.deepEqual(resolveAdminTrail('/admin/seo').map((item) => item.label), ['内容', 'SEO 管理'])
   assert.deepEqual(resolveAdminTrail('/admin/short-links').map((item) => item.label), ['内容', '短链管理'])
+  assert.deepEqual(resolveAdminTrail('/admin/wallpapers').map((item) => item.label), ['私密数据', '壁纸资源'])
   assert.deepEqual(resolveAdminTrail('/admin/archives').map((item) => item.label), ['内容', '存档管理'])
   assert.deepEqual(resolveAdminTrail('/admin/personal-profile').map((item) => item.label), ['私密数据', '个人画像'])
   assert.deepEqual(resolveAdminTrail('/admin/contract-renewal').map((item) => item.label), ['私密数据', '续签述职'])
@@ -66,7 +67,7 @@ test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '私密文档', '书签导航'])
+  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '私密文档', '书签导航', '壁纸资源'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
@@ -162,7 +163,7 @@ test('content workspace hub and sidebar share the same grouped entries', () => {
 
   assert.deepEqual(
     listWorkspaceChildren(content).map((item) => item.label),
-    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', '文章分发', 'SEO 管理', '短链管理', 'RSS 与分发', '壁纸资源', '短句内容', '存档管理']
+    ['内容管理', '审批调研', '分类管理', '推荐管理', '节日横幅', 'SEO 管理', '短链管理', 'RSS 与分发', '短句存档', '存档管理']
   )
   assert.deepEqual(
     hub.sections.map((section) => [section.title, section.items.map((item) => item.title)]),

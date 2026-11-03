@@ -33,7 +33,7 @@ test('只把插件已声明的平台解析为已勾选账号', () => {
   assert.ok(accounts.every((account) => account.checked === true))
 })
 
-test('后台内容工作区和导航都登记文章分发', async () => {
+test('文章分发入口位于社区动作的浏览器插件中', async () => {
   const [workspace, routes, page, articleRoute] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/content/ContentCenter.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../lib/admin/adminRoutes.js', import.meta.url), 'utf8'),
@@ -42,6 +42,10 @@ test('后台内容工作区和导航都登记文章分发', async () => {
   ])
   assert.match(workspace, /getWorkspaceHubProps\('\/admin\/content'\)/)
   assert.match(routes, /\/admin\/article-distribution/)
+  assert.doesNotMatch(routes, /href: '\/admin\/article-distribution', label: '文章分发'/)
+  const communityActions = await readFile(new URL('../app/(admin)/admin/community-actions/CommunityActionsClient.jsx', import.meta.url), 'utf8')
+  assert.match(communityActions, /label: '站内文章分发插件'/)
+  assert.match(communityActions, /href: '\/admin\/article-distribution'/)
   assert.match(page, /window\.\$cose\.addTask/)
   assert.match(page, /草稿模式/)
   assert.match(page, /2aran-article-distributor-extension-v1\.3\.7\.zip/)

@@ -1,24 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { IconSparkles } from '@tabler/icons-react'
-
-import { AdminButton, AdminPage } from '../../components/ui'
+import { AdminPage } from '../../components/ui'
 
 async function readJson(response) {
   try { return await response.json() } catch { return null }
 }
 
 export default function QuotesConsole() {
-  const [prompt, setPrompt] = useState('')
   const [quote, setQuote] = useState(null)
   const [quotes, setQuotes] = useState([])
   const [quoteCount, setQuoteCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [persistent, setPersistent] = useState(true)
-  const [paused, setPaused] = useState(true)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
@@ -31,8 +24,6 @@ export default function QuotesConsole() {
       setQuote(data?.quote || null)
       setQuotes(Array.isArray(data?.quotes) ? data.quotes : [])
       setQuoteCount(Number(data?.quoteCount) || 0)
-      setPersistent(data?.persistent !== false)
-      setPaused(data?.paused === true)
     } catch (reason) {
       setError(reason?.message || 'FETCH_FAILED')
     } finally {
@@ -42,62 +33,10 @@ export default function QuotesConsole() {
 
   useEffect(() => { load() }, [load])
 
-  async function generate(event) {
-    event.preventDefault()
-    const value = prompt.trim()
-    if (!value) return
-
-    setGenerating(true)
-    setError('')
-    setMessage('')
-    try {
-      const response = await fetch('/api/admin/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ prompt: value }),
-      })
-      const data = await readJson(response)
-      if (!response.ok) throw new Error(data?.detail || data?.error || `HTTP_${response.status}`)
-      setQuote(data?.quote || null)
-      setQuotes((current) => data?.quote ? [data.quote, ...current.filter((item) => item.id !== data.quote.id)] : current)
-      if (data?.quote) setQuoteCount((current) => current + 1)
-      setMessage('已生成并加入名言池，前台会随机展示。')
-      setPrompt('')
-    } catch (reason) {
-      setError(reason?.message || 'QUOTE_GENERATION_FAILED')
-    } finally {
-      setGenerating(false)
-    }
-  }
-
   return (
-    <AdminPage title="短句内容" description="既有原创格言继续留档并供前台随机展示；自动生成已暂停。">
+    <AdminPage title="短句存档" description="查看既有原创短句和生成记录。">
       <div className="mx-auto max-w-3xl space-y-5">
-        {paused ? <Notice tone="warning">名言生成已暂停。定时任务和手动生成均不会新增内容，现有名言池继续展示。</Notice> : null}
-        {!persistent ? <Notice tone="warning">当前环境没有可写入的 D1 数据库。</Notice> : null}
         {error ? <Notice tone="error">{error}</Notice> : null}
-        {message ? <Notice tone="success">{message}</Notice> : null}
-
-        <form onSubmit={generate} className="rounded-xl border border-[#d9dbd0] bg-white p-5 shadow-sm dark:border-[#252e39] dark:bg-[#10161f]">
-          <label className="block text-sm font-medium text-[#33342e] dark:text-gray-200">
-            提示语
-            <textarea
-              autoFocus
-              required
-              maxLength={500}
-              rows={4}
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              disabled={paused}
-              className="mt-2 w-full resize-y rounded-lg border border-[#d7d8ce] bg-white px-3 py-2 text-sm leading-6 text-[#292a24] outline-none transition focus:border-[#818472] dark:border-[#34404d] dark:bg-[#0c1118] dark:text-gray-100"
-              placeholder="例如：为什么反复准备有时会变成拖延？"
-            />
-          </label>
-          <AdminButton type="submit" variant="primary" disabled={paused || generating || !persistent || !prompt.trim()} className="mt-4">
-            <IconSparkles size={15} />{paused ? '生成已暂停' : generating ? '生成中…' : '生成并入库'}
-          </AdminButton>
-        </form>
 
         <section className="rounded-xl border border-[#d9dbd0] bg-white p-6 shadow-sm dark:border-[#252e39] dark:bg-[#10161f]">
           <div className="flex items-center justify-between gap-4">

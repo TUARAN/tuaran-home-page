@@ -2,17 +2,17 @@ import AdminPageGate from '../../components/AdminPageGate'
 import QuotesConsole from './QuotesConsole'
 
 export const metadata = {
-  title: '短句内容',
-  description: '维护原创短句、保留记录并供前台随机展示。',
+  title: '短句存档',
+  description: '查看原创短句的历史记录。',
   robots: { index: false, follow: false },
 }
 
 export default function QuotesAdminPage() {
   return (
     <AdminPageGate
-      label="短句内容"
+      label="短句存档"
       returnTo="/admin/quotes"
-      description="维护原创短句与前台随机展示内容，仅站长本人可用。"
+      description="原创短句历史记录，仅站长本人可用。"
     >
       <QuotesConsole />
     </AdminPageGate>

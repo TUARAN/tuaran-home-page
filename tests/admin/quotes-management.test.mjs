@@ -27,9 +27,8 @@ test('manual quote generation remains owner-only but is paused', () => {
     assert.match(apiSource, new RegExp(`export async function ${method}`))
   }
   assert.doesNotMatch(apiSource, /export async function (PATCH|DELETE)/)
-  assert.match(consoleSource, /名言生成/)
-  assert.match(consoleSource, /生成已暂停/)
-  assert.match(consoleSource, /JSON\.stringify\(\{ prompt: value \}\)/)
+  assert.match(consoleSource, /短句存档/)
+  assert.doesNotMatch(consoleSource, /method: 'POST'|<form|生成并入库/)
   assert.match(apiSource, /QUOTE_GENERATION_PAUSED/)
   assert.match(apiSource, /QUOTE_GENERATION_PAUSED'.*status: 423|QUOTE_GENERATION_PAUSED[\s\S]*status: 423/)
   assert.doesNotMatch(consoleSource, /候选|新增名言|编辑名言|核验来源/)

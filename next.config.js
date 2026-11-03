@@ -121,11 +121,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/editorial',
-        destination: '/help#editorial',
-        permanent: true,
-      },
-      {
         source: '/privacy',
         destination: '/help#privacy',
         permanent: true,

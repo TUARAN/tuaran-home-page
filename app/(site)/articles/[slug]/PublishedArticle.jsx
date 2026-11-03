@@ -15,6 +15,8 @@ import CopyMarkdownButton from '../research/[category]/[slug]/CopyMarkdownButton
 import { isMarkdownDocument } from '../../../../lib/article/articleDocument.mjs'
 import { renderMarkdown, extractToc } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/content/contentTaxonomy'
+import { topicDisclaimerKind } from '../../../../lib/content/topicDisclaimers'
+import TopicDisclaimer from '../../components/TopicDisclaimer'
 import { getContentProofCredential } from '../../../../lib/content/contentProofRegistry'
 import { resolveContentVersion } from '../../../../lib/content/contentEditCount'
 
@@ -66,6 +68,14 @@ export default function PublishedArticle({ article, siteUrl }) {
   }
   const articleKey = `article:${article.slug}`
   const proofCredential = getContentProofCredential(articleKey)
+  const articleTaxonomy = taxonomyForArticle(article)
+  const disclaimerKind = topicDisclaimerKind({
+    ...articleTaxonomy,
+    title: article.title,
+    slug: article.slug,
+    tags: article.tags,
+    href: `/articles/${article.slug}`,
+  })
   const tocItems = isMarkdownDocument(article.content) ? extractToc(article.content.markdown) : getArticlePostToc(article.content)
 
   return (
@@ -74,7 +84,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         {JSON.stringify(structuredData)}
       </Script>
       <ArticleDetailHeader
-        taxonomy={taxonomyForArticle(article)}
+        taxonomy={articleTaxonomy}
         categoryHref="/articles?tab=posts"
         categoryLabel="精选文章"
         dateLabel={dateLabel(article.publishedAt)}
@@ -119,6 +129,7 @@ export default function PublishedArticle({ article, siteUrl }) {
         summaryLabel="TL;DR"
         tags={article.tags}
       />
+      <TopicDisclaimer kind={disclaimerKind} />
       <ArticleReadingLayout
         toc={<ArticleToc items={tocItems} />}
         support={<ArticleSupportCard articleKey={articleKey} />}

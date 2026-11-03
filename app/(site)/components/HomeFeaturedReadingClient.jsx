@@ -26,6 +26,7 @@ import {
   sliceHomeArticleScopeItems,
   writeHomeRecommendationBatchOffset,
 } from '../../../lib/home/homeRecommendationEngine'
+import { HOME_OBSERVATION_ENTRY_LINKS } from '../../../lib/home/homeAuthority'
 import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
@@ -237,6 +238,10 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
     })
   }, [catalog, items.length, scope, settings])
 
+  const observationPreview = useMemo(
+    () => sliceHomeArticleScopeItems(listHomeArticleScopeCatalog(catalog, settings, 'observation'), 4),
+    [catalog, settings],
+  )
   const eligibleCount = catalog.filter((item) => settings.sources[item.section]?.enabled === true).length
   const canRotateRecommended = scope === 'recommended' && eligibleCount > items.length
 
@@ -287,7 +292,7 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
             </button>
           ) : null}
         </div>
-        <p className="home-section-description"><T zh="研究文章、实践记录与长期写作" en="Research, field notes, and long-form writing" /></p>
+        <p className="home-section-description"><T zh="AI 智能体、前端工程、开源实践与著作" en="AI agents, frontend engineering, open source, and books" /></p>
       </div>
       <div className="home-article-scopes">
         <h2 className="h5-feed-label md:hidden"><T zh="文章精选" en="Selected articles" /></h2>
@@ -338,6 +343,31 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
         </div>
 
       </div>
+      {scope === 'recommended' && observationPreview.length ? (
+        <div className="mt-8 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540]">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+            <h3 className="mb-0 text-[16px] font-semibold text-[var(--site-ink)]"><T zh="更多观察" en="More notes" /></h3>
+            <button type="button" className="text-[12px] text-[var(--site-muted)] underline-offset-4 hover:underline" onClick={() => selectScope('observation')}>
+              <T zh="查看这一栏" en="Show this list" />
+            </button>
+          </div>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {HOME_OBSERVATION_ENTRY_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="rounded-full border border-[var(--site-line)] px-2.5 py-1 text-[12px] text-[var(--site-muted)] no-underline hover:text-[var(--site-ink)]">
+                <T zh={link.label} en={link.labelEn} />
+              </Link>
+            ))}
+          </div>
+          {observationPreview.map((item, index) => (
+            <FeaturedLink
+              key={item.id}
+              item={item}
+              position={index + 1}
+              surface="home_observation"
+            />
+          ))}
+        </div>
+      ) : null}
       {canRotateRecommended ? (
         <div className="h5-batch-more mt-6 hidden flex-col items-center gap-3 border-t border-[#ded9cc] pt-6 dark:border-[#2c3540] md:flex">
           <p className="mb-0 text-[12px] font-medium tracking-[0.08em] text-[#77746a] dark:text-[#98a3b1]">

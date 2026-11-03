@@ -411,7 +411,7 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
           className="absolute left-0 top-full z-[120] w-[min(calc(100vw-1rem),320px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
         >
           <div className="site-dropdown-panel rounded-2xl border p-2">
-            <p className="mb-1 px-2 text-[12px] font-medium leading-5 text-[var(--site-ink)]">
+            <p className="mb-1 px-2 text-[12px] font-medium leading-5 text-[#c8c4b8]">
               {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
             </p>
             <div className="grid grid-cols-1 gap-0.5">
@@ -424,8 +424,8 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
                 />
               ))}
             </div>
-            <div className="mt-1 border-t border-[var(--site-line)] px-1 pt-2">
-              <WeChatContact className="w-full justify-between" />
+            <div className="mt-1 border-t border-[#332d26] px-1 pt-2">
+              <WeChatContact tone="panel" />
             </div>
           </div>
         </div>
@@ -437,14 +437,16 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
 function AuthorityDrawerLinks({ pathname, onNavigate }) {
   const { locale } = useLocale()
   return (
-    <div className="mb-4 border-b border-[var(--site-line)] pb-4">
-      <p className="site-menu-desc mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.22em]">
-        {navLabel(SITE_AUTHORITY_SUMMARY, locale)}
-      </p>
-      <p className="mb-2 px-1 text-[12px] leading-5 text-[var(--site-ink)]">
-        {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
-      </p>
-      <div className="flex flex-wrap gap-1">
+    <section className="site-mobile-card mb-3 overflow-hidden rounded-2xl border" aria-label={navLabel(SITE_AUTHORITY_SUMMARY, locale)}>
+      <div className="px-3.5 pb-1 pt-3">
+        <p className="site-menu-desc mb-0.5 font-mono text-[10px] uppercase tracking-[0.18em]">
+          {navLabel(SITE_AUTHORITY_SUMMARY, locale)}
+        </p>
+        <p className="m-0 text-[12px] leading-5 text-[#c8c4b8]">
+          {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
+        </p>
+      </div>
+      <nav className="grid px-1.5 pb-1">
         {SITE_AUTHORITY_LINKS.map((item) => {
           const active = isAuthorityLinkActive(item, pathname)
           return (
@@ -453,21 +455,22 @@ function AuthorityDrawerLinks({ pathname, onNavigate }) {
               href={item.href}
               onClick={onNavigate}
               aria-current={active ? 'page' : undefined}
-              className={`site-nav-trigger ${active ? 'site-nav-trigger-active' : ''}`}
+              className={`site-mobile-authority-link${active ? ' is-active' : ''}`}
               data-analytics-event="entry_click"
               data-analytics-surface="global_nav"
               data-analytics-destination-kind="page"
               data-analytics-destination-id={item.href}
             >
-              {navLabel(item, locale)}
+              <span>{navLabel(item, locale)}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">→</span>
             </Link>
           )
         })}
+      </nav>
+      <div className="border-t border-[#332d26] px-2 py-2">
+        <WeChatContact tone="panel" />
       </div>
-      <div className="mt-2">
-        <WeChatContact />
-      </div>
-    </div>
+    </section>
   )
 }
 
@@ -778,7 +781,7 @@ function AccountPopoverLink({ href, onClick, icon: Icon, children, indicator = f
   )
 }
 
-function MobileAccountPanel({ account, pathname, onNavigate }) {
+function MobileAccountPanel({ account, pathname, onNavigate, embedded = false }) {
   const { locale } = useLocale()
   const returnTo = getReturnPath(pathname)
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`
@@ -787,10 +790,14 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   const unread = Number(notifications?.unread) || 0
   const hasRssUpdates = Number(rssUpdates?.unread) > 0
   const showAdminLink = isAdminNavVisible(account, account?.navOverrides)
+  const hasActivity = Array.isArray(notifications?.items) && notifications.items.some((item) => !item.readAt)
+  const shell = embedded
+    ? ''
+    : 'site-mobile-card mb-4 overflow-hidden rounded-2xl border'
 
   if (!loading && !user) {
     return (
-      <div className="site-mobile-card mb-4 flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3">
+      <div className={`${embedded ? '' : 'site-mobile-card mb-4 rounded-2xl border'} flex items-center justify-between gap-3 px-3.5 py-3`}>
         <div className="flex items-center gap-3">
           <UserAvatar loading={false} />
           <div>
@@ -811,8 +818,8 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
   }
 
   return (
-    <div className="site-mobile-card mb-4 overflow-hidden rounded-2xl border">
-      <div className="site-dropdown-strip border-b px-3.5 py-3">
+    <div className={shell}>
+      <div className="site-dropdown-strip border-b border-[#332d26] px-3.5 py-3">
         <div className="flex items-center justify-between gap-3">
           <AccountIdentity user={user} isOwner={isOwner} loading={loading} size="lg" />
           <NotificationBadge count={unread} />
@@ -820,20 +827,22 @@ function MobileAccountPanel({ account, pathname, onNavigate }) {
       </div>
       {!loading && user ? (
         <div>
-          <div className="border-b border-[var(--site-line)] px-2 py-2">
-            <div className="mb-1.5 flex items-center justify-between px-1.5">
-              <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
-                {pick(locale, '最近互动', 'Recent activity')}
-              </p>
-              <NotificationBadge count={unread} />
+          {hasActivity ? (
+            <div className="border-b border-[#332d26] px-2 py-2">
+              <div className="mb-1.5 flex items-center justify-between px-1.5">
+                <p className="site-menu-desc mb-0 font-mono text-[10px] uppercase tracking-[0.16em]">
+                  {pick(locale, '最近互动', 'Recent activity')}
+                </p>
+                <NotificationBadge count={unread} />
+              </div>
+              <NotificationList
+                notifications={notifications}
+                onNavigate={onNavigate}
+                onRead={(id) => { void account.markNotificationsRead({ id }) }}
+                emptyLabel={pick(locale, '暂无新互动', 'No new activity.')}
+              />
             </div>
-            <NotificationList
-              notifications={notifications}
-              onNavigate={onNavigate}
-              onRead={(id) => { void account.markNotificationsRead({ id }) }}
-              emptyLabel={pick(locale, '暂无新互动', 'No new activity.')}
-            />
-          </div>
+          ) : null}
           <div className="px-1.5 py-1.5">
             {showAdminLink ? (
               <Link
@@ -1134,55 +1143,55 @@ export default function SiteHeader() {
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
-        <p className="site-menu-desc mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em]">
-          Menu
-        </p>
+        {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-3 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
         <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-        {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-4 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
-        <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav mb-4">
-          {MOBILE_PRIMARY_CHANNELS.map((channel) => (
-            <Link
-              key={channel.key}
-              href={channel.href}
-              onClick={() => setMobileMenuOpen(false)}
-              aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
-              className={`site-mobile-quick-link ${channel.match(pathname, searchParams) ? 'is-active' : ''}`}
-              data-analytics-event="entry_click"
-              data-analytics-surface="global_nav"
-              data-analytics-destination-kind="page"
-              data-analytics-destination-id={channel.href}
+        <section className="site-mobile-card overflow-hidden rounded-2xl border" aria-label={pick(locale, '常用入口', 'Quick links')}>
+          <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav">
+            {MOBILE_PRIMARY_CHANNELS.map((channel) => (
+              <Link
+                key={channel.key}
+                href={channel.href}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-current={channel.match(pathname, searchParams) ? 'page' : undefined}
+                className={`site-mobile-quick-link ${channel.match(pathname, searchParams) ? 'is-active' : ''}`}
+                data-analytics-event="entry_click"
+                data-analytics-surface="global_nav"
+                data-analytics-destination-kind="page"
+                data-analytics-destination-id={channel.href}
+              >
+                {navLabel(channel, locale)}
+              </Link>
+            ))}
+          </nav>
+          <MobileAccountPanel
+            account={account}
+            pathname={pathname}
+            embedded
+            onNavigate={() => setMobileMenuOpen(false)}
+          />
+          {!installed ? (
+            <button
+              type="button"
+              className="site-menu-item site-mobile-account-link flex w-full items-center justify-between border-t border-[#332d26] font-medium"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                openInstallGuide()
+              }}
             >
-              {navLabel(channel, locale)}
-            </Link>
-          ))}
-        </nav>
-        <MobileAccountPanel
-          account={account}
-          pathname={pathname}
-          onNavigate={() => setMobileMenuOpen(false)}
-        />
-        {!installed ? (
-          <button
-            type="button"
-            className="site-mobile-card mb-4 flex w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left"
-            onClick={() => {
-              setMobileMenuOpen(false)
-              openInstallGuide()
-            }}
-          >
-            <span className="flex items-center gap-2.5">
-              <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
-              <span className="site-menu-title text-[13.5px] font-medium">{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
-            </span>
-            <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
-          </button>
-        ) : null}
-        {pathname !== '/' ? <div className="mb-4 border-b border-[var(--site-line)] pb-4" aria-label={pick(locale, '推荐', 'Picks')}>
-          <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] text-[var(--site-faint)]">{pick(locale, '推荐', 'PICKS')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
-          </div>
-        </div> : null}
+              <span className="flex items-center gap-2.5">
+                <IconDeviceMobile size={18} stroke={1.7} aria-hidden="true" />
+                <span>{pick(locale, '添加到桌面', 'Add to Home Screen')}</span>
+              </span>
+              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70">→</span>
+            </button>
+          ) : null}
+          {pathname !== '/' ? <div className="border-t border-[#332d26] px-3 py-3" aria-label={pick(locale, '推荐', 'Picks')}>
+            <p className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-[#aaa69a]">{pick(locale, '推荐', 'PICKS')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {HEADER_RECOMMENDATIONS.map((item) => <RecommendationLink key={item.href} item={item} onNavigate={() => setMobileMenuOpen(false)} />)}
+            </div>
+          </div> : null}
+        </section>
       </div>
     </>
   )

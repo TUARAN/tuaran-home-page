@@ -2,6 +2,12 @@
 
 目标：让 tuaran-home-page 在「作者永远是站长、AI 是助手」的边界内自我迭代。本系统由三个错峰定时扫描任务组成，扫描全自动，修复走分支 + Draft PR，merge 永远由站长人工完成。
 
+## 站长看板
+
+入口：后台 `/admin/autopilot-scans`（工程与运维 → 站点运行 → 巡检看板）。自动化台账里的安全、性能、设计巡检也可以从「进入管理」打开同一页。
+
+看板用静态快照汇总仍开着的巡检 Issue：最新安全单与性能单的发现，以及无痛可做、搁置、已由最新单覆盖三类处理。数据在 `lib/admin/autopilotScanBoard.js`，Edge 运行时不调用 GitHub API。当前快照以 [#69](https://github.com/TUARAN/tuaran-home-page/issues/69)（2026-11-02 安全）和 [#68](https://github.com/TUARAN/tuaran-home-page/issues/68)（2026-10-28 性能）为准。HSTS、CSP、大版本依赖和超大文件拆分记在搁置里，看板页面本身不改配置或依赖。
+
 ## 三个定时任务
 
 | 任务 | 频率 | 扫描范围 | 修复 PR 示例 | 分支前缀 |

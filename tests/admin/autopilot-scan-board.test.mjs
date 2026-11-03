@@ -5,6 +5,7 @@ import test from 'node:test'
 import { AUTOMATION_REGISTRY } from '../../lib/admin/adminOpsRegistry.js'
 import { ADMIN_NAV_GROUPS, resolveAdminTrail } from '../../lib/admin/adminRoutes.js'
 import {
+  AUTOPILOT_CLOSED_ISSUES,
   AUTOPILOT_OPEN_ISSUES,
   AUTOPILOT_PERFORMANCE_FINDINGS,
   AUTOPILOT_SCAN_PLAN,
@@ -17,12 +18,15 @@ import {
 test('巡检看板快照与 #69/#68 的分桶一致', () => {
   assert.deepEqual(autopilotScanBoardProblems(), [])
   const summary = summarizeAutopilotScanBoard()
-  assert.equal(summary.openTotal, 21)
+  assert.equal(summary.openTotal, 2)
+  assert.equal(summary.closed, 21)
+  assert.deepEqual(AUTOPILOT_OPEN_ISSUES.map((item) => item.number), [69, 68])
+  assert.equal(AUTOPILOT_CLOSED_ISSUES.length, 21)
+  assert.ok(AUTOPILOT_CLOSED_ISSUES.every((item) => item.state === 'closed'))
   assert.equal(summary.latestSecurity.date, '2026-11-02')
   assert.equal(summary.latestPerformance.date, '2026-10-28')
   assert.equal(AUTOPILOT_SECURITY_FINDINGS.length, 29)
   assert.equal(AUTOPILOT_PERFORMANCE_FINDINGS.length, 15)
-  assert.equal(AUTOPILOT_OPEN_ISSUES.filter((item) => item.latest).map((item) => item.number).join(','), '69,68')
   assert.ok(AUTOPILOT_SCAN_PLAN.some((item) => item.includes('npm audit fix')))
   assert.ok(AUTOPILOT_SCAN_PLAN.some((item) => item.includes('HSTS')))
   assert.ok(AUTOPILOT_SCAN_PLAN.some((item) => item.includes('nanoBananaCases.js')))
@@ -63,6 +67,9 @@ test('巡检看板挂在工程运行导航，并回到自动化台账', async ()
   assert.match(pageSource, /<StatCard/)
   assert.match(pageSource, /latestSecurity\.number/)
   assert.match(pageSource, /latestPerformance\.url/)
+  assert.match(pageSource, /已关闭/)
+  assert.doesNotMatch(pageSource, /已由最新单覆盖/)
+  assert.doesNotMatch(runbook, /已由最新单覆盖/)
   assert.doesNotMatch(pageSource, /runtime = 'edge'/)
   assert.match(runbook, /\/admin\/autopilot-scans/)
   assert.match(runbook, /lib\/admin\/autopilotScanBoard\.js/)

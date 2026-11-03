@@ -186,6 +186,14 @@ const TIER_SECTION_STYLES = {
     wrap: 'site-tier-section site-tier-research',
     title: 'site-tier-title site-tier-title-research',
   },
+  '按体裁': {
+    wrap: 'site-tier-section site-tier-research',
+    title: 'site-tier-title site-tier-title-research',
+  },
+  '按时间': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
+  },
   '按主题': {
     wrap: 'site-tier-section site-tier-archive',
     title: 'site-tier-title site-tier-title-archive',

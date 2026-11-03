@@ -35,13 +35,21 @@ test('finance and health pieces get a disclaimer while ordinary engineering does
 })
 
 test('topic hubs only point at existing site paths', () => {
-  assert.deepEqual(TOPIC_HUB_LIST.map((hub) => hub.path), ['/topics/ai-agents', '/topics/frontend-cloud'])
+  assert.deepEqual(TOPIC_HUB_LIST.map((hub) => hub.path), [
+    '/topics/ai-agents',
+    '/topics/frontend-cloud',
+    '/topics/books',
+    '/topics/openclaw',
+    '/topics/editorial',
+  ])
   for (const hub of TOPIC_HUB_LIST) {
     assert.equal(getTopicHub(hub.slug).title.length > 0, true)
     assert.ok(hub.leads.length >= 4)
     assert.ok(hub.leads.every((lead) => lead.href.startsWith('/')))
     assert.ok(hub.leads.every((lead) => TOPIC_HUB_GROUPS.some((group) => group.id === lead.group)))
   }
-  assert.ok(getTopicHub('ai-agents').leads.some((lead) => lead.href === '/about#openclaw-contributions'))
+  assert.ok(getTopicHub('openclaw').leads.some((lead) => lead.href === '/about#openclaw-contributions'))
+  assert.ok(getTopicHub('books').leads.some((lead) => lead.href === '/books/llm-underlying-logic'))
+  assert.ok(getTopicHub('editorial').leads.some((lead) => lead.href === '/editorial'))
   assert.ok(getTopicHub('frontend-cloud').leads.some((lead) => lead.href.includes('cloudflare-d1-free-tier-limit-enforcement')))
 })

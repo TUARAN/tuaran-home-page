@@ -19,9 +19,9 @@ test('authority entry points live in the header menu instead of a homepage band'
   for (const href of [
     '/topics/ai-agents',
     '/topics/frontend-cloud',
-    '/publications',
-    '/about#openclaw-contributions',
-    '/editorial',
+    '/topics/books',
+    '/topics/openclaw',
+    '/topics/editorial',
   ]) {
     assert.match(authorityBlock, new RegExp(`href: '${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`))
   }

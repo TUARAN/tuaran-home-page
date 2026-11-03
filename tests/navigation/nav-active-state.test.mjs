@@ -32,24 +32,25 @@ test('content shortcuts select interactive works and resources without claiming 
   assert.equal(resources.match('/articles', new URLSearchParams('group=article')), false)
 })
 
-test('content dropdown leads with the core line and keeps side topics in a secondary section', () => {
+test('content dropdown browses by form and time, and leaves topics to the mainline menu', () => {
   const content = SITE_CHANNELS.find((channel) => channel.key === 'content')
   const visible = sectionsFor('content')
   const itemsIn = (sections, title) => sections.find((section) => section.title === title).items
+  assert.equal(visible.some((section) => section.title === '内容主题'), false)
+  assert.equal(content.match('/topics/ai-agents', new URLSearchParams()), false)
   assert.deepEqual(
-    Array.from(itemsIn(visible, '内容主题'), (item) => item.label),
-    ['AI 智能体', 'AI 与开发', '前端与云', 'Web 与云', '站点工程'],
+    Array.from(itemsIn(visible, '按体裁'), (item) => item.label),
+    ['精选', '分析', '实践', '互动', '资源'],
+  )
+  assert.deepEqual(
+    Array.from(itemsIn(visible, '按时间'), (item) => item.label),
+    ['最新灵感', '前端周看'],
   )
   assert.deepEqual(
     Array.from(itemsIn(visible, '更多观察'), (item) => item.label),
     ['市场与 Web3', '商业与市场', '公司调研', '产品与体验', '生活与家庭', '人文与历史'],
   )
-  assert.deepEqual(
-    Array.from(itemsIn(visible, '内容类型'), (item) => item.label),
-    ['互动', '资源', '精选'],
-  )
-  assert.ok(itemsIn(content.sections, '内容主题').length > 4)
-  assert.ok(itemsIn(content.sections, '内容类型').length > 3)
+  assert.ok(itemsIn(content.sections, '内容主题').some((item) => item.href === '/topics/books' && item.nav === false))
 })
 
 test('public opinion and Codex reset select their own analysis entries', () => {
@@ -120,11 +121,11 @@ test('all visible internal entries have exactly one owning channel and select th
 
 test('query filters beat overview links and do not select unrelated filters', () => {
   const sections = sectionsFor('content')
-  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('subject=ai_dev&q=test')), '/articles?subject=ai_dev')
+  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('subject=ai_dev&q=test')), '/articles')
   assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=resource')), '/articles')
   assert.equal(getActiveNavHref(sections, '/resources'), '/resources')
   assert.equal(getActiveNavHref(sections, '/resources/rss'), '/resources')
-  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=analysis')), '/articles')
+  assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('group=analysis')), '/articles?group=analysis')
   assert.equal(getActiveNavHref(sections, '/articles', new URLSearchParams('q=test')), '/articles')
   assert.equal(getActiveNavHref(sections, '/articles/example'), '/articles')
 })

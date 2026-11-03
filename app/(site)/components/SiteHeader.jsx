@@ -24,12 +24,15 @@ import {
 import SettingsButton from './SettingsButton'
 import SiteSearch from './SiteSearch'
 import UserAvatar from './UserAvatar'
+import WeChatContact from './WeChatContact'
 import { useLocale } from './LocaleProvider'
 import { usePwaInstall } from './PwaInstallGuide'
 import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/site/i18n'
 import {
   SITE_ADMIN_NAV_LINK,
+  SITE_AUTHORITY_LINKS,
+  SITE_AUTHORITY_SUMMARY,
   SITE_CHANNELS,
   SITE_CONTENT_SHORTCUTS,
   getActiveNavHref,
@@ -328,6 +331,142 @@ function ChannelTrigger({ channel, isOpen, isActive, pathname, searchParams, onT
           </div>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+function isAuthorityLinkActive(item, pathname) {
+  if (!pathname || !item?.href || item.href.includes('#')) return false
+  const path = item.href.split('?')[0].replace(/\/+$/, '') || '/'
+  const current = pathname.replace(/\/+$/, '') || '/'
+  return current === path || current.startsWith(`${path}/`)
+}
+
+function canHoverAuthorityMenu() {
+  return typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+}
+
+function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
+  const { locale } = useLocale()
+  const closeTimerRef = useRef(null)
+  const isActive = SITE_AUTHORITY_LINKS.some((item) => isAuthorityLinkActive(item, pathname))
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
+
+  function openMenu() {
+    clearCloseTimer()
+    if (!isOpen) {
+      trackSiteEvent('menu_open', {
+        surface: 'global_nav',
+        destination_id: 'authority',
+      })
+    }
+    onToggle.open()
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => {
+        if (canHoverAuthorityMenu()) openMenu()
+      }}
+      onMouseLeave={() => {
+        if (!canHoverAuthorityMenu()) return
+        clearCloseTimer()
+        closeTimerRef.current = setTimeout(() => onToggle.close(), 120)
+      }}
+    >
+      <button
+        type="button"
+        className={['site-nav-trigger cursor-pointer bg-transparent', isActive ? 'site-nav-trigger-active' : ''].join(' ')}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls="site-authority-menu"
+        onClick={(event) => {
+          const fromKeyboard = event.detail === 0
+          if (!fromKeyboard && canHoverAuthorityMenu() && isOpen) return
+          if (isOpen) onToggle.close()
+          else openMenu()
+        }}
+      >
+        <span>{navLabel(SITE_AUTHORITY_SUMMARY, locale)}</span>
+        <ChevronDown />
+      </button>
+      {isOpen ? (
+        <div
+          id="site-authority-menu"
+          role="menu"
+          className="absolute left-0 top-full z-[120] w-[min(calc(100vw-1rem),320px)] pt-2 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-['']"
+        >
+          <div className="site-dropdown-panel rounded-2xl border p-2">
+            <p className="mb-1 px-2 text-[12px] font-medium leading-5 text-[var(--site-ink)]">
+              {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
+            </p>
+            <div className="grid grid-cols-1 gap-0.5">
+              {SITE_AUTHORITY_LINKS.map((item) => (
+                <MenuItem
+                  key={item.href}
+                  item={item}
+                  active={isAuthorityLinkActive(item, pathname)}
+                  onNavigate={onClose}
+                />
+              ))}
+            </div>
+            <div className="mt-1 border-t border-[var(--site-line)] px-1 pt-2">
+              <WeChatContact className="w-full justify-between" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function AuthorityDrawerLinks({ pathname, onNavigate }) {
+  const { locale } = useLocale()
+  return (
+    <div className="mb-4 border-b border-[var(--site-line)] pb-4">
+      <p className="site-menu-desc mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.22em]">
+        {navLabel(SITE_AUTHORITY_SUMMARY, locale)}
+      </p>
+      <p className="mb-2 px-1 text-[12px] leading-5 text-[var(--site-ink)]">
+        {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {SITE_AUTHORITY_LINKS.map((item) => {
+          const active = isAuthorityLinkActive(item, pathname)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
+              className={`site-nav-trigger ${active ? 'site-nav-trigger-active' : ''}`}
+              data-analytics-event="entry_click"
+              data-analytics-surface="global_nav"
+              data-analytics-destination-kind="page"
+              data-analytics-destination-id={item.href}
+            >
+              {navLabel(item, locale)}
+            </Link>
+          )
+        })}
+      </div>
+      <div className="mt-2">
+        <WeChatContact />
+      </div>
     </div>
   )
 }
@@ -863,6 +1002,17 @@ export default function SiteHeader() {
 
           <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
             <nav ref={navWrapRef} aria-label={pick(locale, '主导航', 'Main navigation')} className="flex items-center gap-2">
+              <div className="site-nav-cluster">
+                <AuthorityMenu
+                  isOpen={openChannel === 'authority'}
+                  pathname={pathname}
+                  onToggle={{
+                    open: () => setOpenChannel('authority'),
+                    close: () => setOpenChannel((cur) => (cur === 'authority' ? null : cur)),
+                  }}
+                  onClose={() => setOpenChannel(null)}
+                />
+              </div>
               {NAV_GROUPS.map((group) => (
                 <div key={group.key} className="site-nav-cluster">
                   {group.shortcuts?.map((item) => (
@@ -987,6 +1137,7 @@ export default function SiteHeader() {
         <p className="site-menu-desc mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.22em]">
           Menu
         </p>
+        <AuthorityDrawerLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
         {pathname === '/' ? <Link href="/search" className="site-mobile-card site-menu-title mb-4 block rounded-2xl border px-4 py-3 text-[14px] no-underline" onClick={() => setMobileMenuOpen(false)}>{pick(locale, '搜索页面和内容', 'Search pages and content')} →</Link> : null}
         <nav aria-label={pick(locale, '常用入口', 'Quick links')} className="site-mobile-quick-nav mb-4">
           {MOBILE_PRIMARY_CHANNELS.map((channel) => (

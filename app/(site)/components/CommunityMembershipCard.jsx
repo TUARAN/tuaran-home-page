@@ -115,7 +115,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
     {
       icon: IconShieldCheck,
       title: '核对后交付',
-      desc: selectedPlan.id === 'personal-service' ? '确认信息后拉群，并预约一对一交流时间。' : '确认信息后，由站长邀请进入对应群聊。',
+      desc: selectedPlan.id === 'personal-service' ? '确认信息后安排加入，并预约一对一交流时间。' : '确认信息后，按圈子所在平台邀请加入。',
     },
   ]
 

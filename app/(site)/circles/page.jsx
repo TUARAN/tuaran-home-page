@@ -97,7 +97,7 @@ export default function CirclesPage() {
             <div className="community-stats">
               <div className="community-stat"><strong>{DISCUSSION_COMMUNITY_TOPICS.length}</strong><span>主题圈子</span></div>
               <div className="community-stat"><strong>¥{COMMUNITY_MEMBERSHIP.plans[0].price} 起</strong><span>主题圈年卡</span></div>
-              <div className="community-stat"><strong>微信</strong><span>人工拉群</span></div>
+              <div className="community-stat"><strong>三个平台</strong><span>微信、小红书、X</span></div>
             </div>
           </div>
         </header>

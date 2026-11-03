@@ -21,10 +21,10 @@ const RESOURCE_SLUG = 'x-mutual-aid-circle'
 const RESOURCE_URL = `https://2aran.com/${RESOURCE_SLUG}`
 const PROFILE_SCREENSHOT_SRC = '/images/diary/x-blue-v-mutual-profile-2026-07-09.png'
 
-const title = 'X 互帮互助圈子：真实互动，一起把 X 流量玩明白'
+const title = 'X互动圈：真实互动，一起把 X 流量玩明白'
 
 const shareText =
-  '推文总破不了 1000 曝光？多半是早期互动没启动。我们建了个 X 互帮互助群：真实点赞评论互相带，还配了互关清理插件、发帖时段热力图、Tweepcred 评分和账号状态自查工具，自取。'
+  '推文总破不了 1000 曝光？多半是早期互动没启动。X互动圈在 X 上，用真实点赞和评论互相带，还配了互关清理插件、发帖时段热力图、Tweepcred 评分和账号状态自查工具，自取。'
 
 export const metadata = createRichPageMetadata('x-mutual-aid-circle')
 
@@ -162,7 +162,7 @@ export default function XMutualAidCirclePage() {
           </div>
 
           <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.01em] text-[#e7e9ea] md:text-7xl">
-            X 互帮互助
+            X互动圈
           </h1>
           <p className="mt-3 text-xl font-semibold text-[#1d9bf0] md:text-2xl">真实互动，一起把 X 流量玩明白。</p>
 
@@ -174,7 +174,7 @@ export default function XMutualAidCirclePage() {
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {['X 互帮互助群', '真实互动', '互关清理插件', '发帖时段热力图', 'Tweepcred 评分'].map((tag) => (
+            {['X互动圈', '真实互动', '互关清理插件', '发帖时段热力图', 'Tweepcred 评分'].map((tag) => (
               <span
                 key={tag}
                 className="rounded-full border border-[#2f3336] bg-[#080808] px-3 py-1 text-xs font-medium text-[#e7e9ea]"

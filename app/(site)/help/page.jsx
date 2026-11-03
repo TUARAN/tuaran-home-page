@@ -168,8 +168,8 @@ const HELP_SECTIONS = [
 ]
 
 function Sidebar() {
-  return <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
-    <nav aria-label="站点帮助目录" className="flex gap-3 overflow-x-auto pb-2 lg:block lg:max-h-[calc(100vh-var(--site-header-height)-3rem)] lg:space-y-6 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-[var(--site-line)] lg:bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] lg:p-4 lg:shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)]">
+  return <aside className="min-w-0 lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start">
+    <nav aria-label="站点帮助目录" className="flex w-full min-w-0 gap-3 overflow-x-auto pb-2 lg:block lg:max-h-[calc(100vh-var(--site-header-height)-3rem)] lg:space-y-6 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-[var(--site-line)] lg:bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] lg:p-4 lg:shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_18%,transparent)]">
       <div className="hidden border-b border-[var(--site-line)] pb-4 lg:block">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">On this page</p>
         <p className="mt-1.5 text-[13px] leading-5 text-[var(--site-muted)]">按主题快速定位说明</p>
@@ -220,7 +220,7 @@ export default function HelpPage() {
   let articleIndex = 0
   return <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
     <h1 className="sr-only">站点帮助</h1>
-    <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+    <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
       <Sidebar />
       <div className="min-w-0">
         <div>{HELP_SECTIONS.map((section, sectionIndex) => <section key={section.id} id={section.id} className="scroll-mt-24 pt-11 first:pt-0 md:pt-14">

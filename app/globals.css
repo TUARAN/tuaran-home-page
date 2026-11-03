@@ -5547,6 +5547,8 @@
   .site-nav-trigger:focus-visible,
   .site-account-button:focus-visible,
   .site-menu-item:focus-visible,
+  .site-mobile-authority-link:focus-visible,
+  .site-wechat-contact:focus-visible,
   .header-icon-link:focus-visible,
   .site-mobile-card > button:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--site-accent) 70%, transparent);
@@ -6111,6 +6113,48 @@
     min-height: 2.75rem;
     align-items: center;
     border-block: 1px solid #332d26;
+  }
+
+  .site-mobile-card > .site-mobile-quick-nav {
+    border-top: 0;
+  }
+
+  .site-mobile-authority-link {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.7rem;
+    color: #f1f0ea;
+    font-size: 0.875rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .site-mobile-authority-link:visited {
+    color: #f1f0ea;
+  }
+
+  .site-mobile-authority-link:hover,
+  .site-mobile-authority-link:focus-visible,
+  .site-mobile-authority-link.is-active {
+    background-color: #302e28;
+    color: #f8f7f0;
+    text-decoration: none;
+  }
+
+  .site-mobile-drawer .site-account-button {
+    border-color: #3c372e;
+    background-color: #1c1b17;
+    color: #f1f0ea;
+  }
+
+  .site-mobile-drawer .site-account-button:visited,
+  .site-mobile-drawer .site-account-button:hover {
+    border-color: #8f9478;
+    color: #f8f7f0;
   }
 
   .site-mobile-quick-link {

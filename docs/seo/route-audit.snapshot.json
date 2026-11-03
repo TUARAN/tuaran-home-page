@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 237,
+    "routes": 238,
     "redirects": 22,
-    "private": 62,
+    "private": 63,
     "registeredStatic": 109,
     "indexable": 130,
     "canonical": 148,
@@ -854,10 +854,26 @@
       }
     },
     {
+      "path": "/admin/research-methods",
+      "file": "app/(admin)/admin/research-methods/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
       "path": "/admin/research-style",
       "file": "app/(admin)/admin/research-style/page.jsx",
       "kind": "redirect",
-      "redirect": "/admin/articles?panel=research-style",
+      "redirect": "/admin/research-methods?method=styles",
       "registered": false,
       "indexable": false,
       "sitemap": false,

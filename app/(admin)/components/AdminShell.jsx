@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import AdminSidebar from './AdminSidebar'
 import AdminTopbar from './AdminTopbar'
@@ -9,9 +9,22 @@ import { resolveAdminTrail } from '../../../lib/admin/adminRoutes'
 
 const COLLAPSE_KEY = 'admin:nav:collapsed'
 
+function AdminSearchSync({ onSearch }) {
+  const searchParams = useSearchParams()
+  const search = searchParams?.toString() || ''
+
+  useEffect(() => {
+    onSearch(search)
+  }, [onSearch, search])
+
+  return null
+}
+
 export default function AdminShell({ children }) {
   const pathname = usePathname() || '/admin'
-  const activeTrail = resolveAdminTrail(pathname)
+  const [search, setSearch] = useState('')
+  const onSearch = useCallback((value) => setSearch(value), [])
+  const activeTrail = resolveAdminTrail(pathname, search)
 
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -68,12 +81,15 @@ export default function AdminShell({ children }) {
 
   return (
     <div className="admin-shell min-h-screen min-w-0 w-full">
+      <Suspense fallback={null}>
+        <AdminSearchSync onSearch={onSearch} />
+      </Suspense>
       <aside
         className={`fixed inset-y-0 left-0 z-40 hidden border-r border-[#e6e7df] transition-[width] dark:border-[#1b2430] md:block ${
           collapsed ? 'md:w-[64px]' : 'md:w-[236px]'
         }`}
       >
-        <AdminSidebar pathname={pathname} collapsed={collapsed} badges={badges} />
+        <AdminSidebar pathname={pathname} search={search} collapsed={collapsed} badges={badges} />
       </aside>
 
       {mobileOpen ? (
@@ -91,6 +107,7 @@ export default function AdminShell({ children }) {
           >
             <AdminSidebar
               pathname={pathname}
+              search={search}
               collapsed={false}
               badges={badges}
               onNavigate={() => setMobileOpen(false)}

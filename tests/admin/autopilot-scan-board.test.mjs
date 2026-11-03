@@ -49,8 +49,8 @@ test('巡检看板挂在工程运行导航，并回到自动化台账', async ()
   assert.deepEqual(resolveAdminTrail('/admin/autopilot-scans').map((item) => item.label), ['工程与运维', '巡检看板'])
   const engineering = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) => item.href === '/admin/projects')
   assert.ok(engineering.activePaths.includes('/admin/autopilot-scans'))
-  const runtime = engineering.sections.find((section) => section.id === 'runtime')
-  assert.ok(runtime.items.some((item) => item.href === '/admin/autopilot-scans' && item.label === '巡检看板'))
+  const reviews = engineering.sections.find((section) => section.id === 'reviews')
+  assert.ok(reviews.items.some((item) => item.href === '/admin/autopilot-scans' && item.label === '巡检看板'))
 
   for (const id of ['autopilot-security-scan', 'autopilot-perf-scan', 'autopilot-design-scan']) {
     const entry = AUTOMATION_REGISTRY.find((item) => item.id === id)

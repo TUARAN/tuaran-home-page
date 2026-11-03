@@ -8,24 +8,23 @@ const reportSource = await readFile(new URL('../../docs/context/site-health-audi
 const designSource = await readFile(new URL('../../app/(admin)/admin/design/page.jsx', import.meta.url), 'utf8')
 const nextConfigSource = await readFile(new URL('../../next.config.js', import.meta.url), 'utf8')
 
-test('UI design stays in engineering while runtime tools share one operations center', () => {
+test('UI design stays in engineering while runtime tools stay on the operations pages', () => {
   assert.match(designSource, /title="UI 设计"/)
-  assert.match(designSource, /href="\/admin\/site-health"/)
+  assert.match(designSource, /href="\/admin\/site-health\?tab=audit"/)
   assert.doesNotMatch(designSource, /site-health-audit\.md/)
-  assert.match(pageSource, /title="运行中心"/)
-  assert.match(pageSource, /label: '站点体检'/)
-  assert.match(pageSource, /label: '数据健康'/)
-  assert.match(pageSource, /label: '可用性探测'/)
-  assert.match(pageSource, /label: '故障公告'/)
-  assert.match(pageSource, /<DbAdminClient embedded \/>/)
+  assert.match(pageSource, /OperationsDirectory/)
+  assert.match(pageSource, /findOperationsEntry/)
+  assert.match(pageSource, /<ExceptionMonitorClient \/>/)
   assert.match(pageSource, /<BloggerEyeConsole embedded \/>/)
   assert.match(pageSource, /<SiteStatusConsole embedded \/>/)
+  assert.match(pageSource, /<CloudflareUsageClient \/>/)
+  assert.doesNotMatch(pageSource, /<DbAdminClient/)
   assert.match(pageSource, /site-health-audit\.md\?raw/)
   assert.match(nextConfigSource, /site-health-audit/)
 })
 
 test('exception monitor uses owner notifications and explains the limits of each signal', () => {
-  assert.match(pageSource, /label: '异常监控'/)
+  assert.match(pageSource, /tab === 'exceptions'/)
   assert.match(pageSource, /<ExceptionMonitorClient \/>/)
   assert.match(monitorSource, /\/api\/notifications\?type=automation&limit=30/)
   assert.match(monitorSource, /没有告警也可能是任务未运行、尚未接入上报或上报失败/)

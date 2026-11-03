@@ -9,6 +9,7 @@ import {
   ADMIN_NAV_GROUPS,
   getWorkspaceHubProps,
   isActiveAdminPath,
+  listOperationsDirectory,
   listWorkspaceChildren,
   resolveAdminTrail,
 } from '../../lib/admin/adminRoutes.js'
@@ -41,7 +42,12 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
   assert.deepEqual(resolveAdminTrail('/admin/security-self-check').map((item) => item.label), ['工程与运维', '涉密自检'])
   assert.deepEqual(resolveAdminTrail('/admin/design').map((item) => item.label), ['工程与运维', 'UI 设计'])
-  assert.deepEqual(resolveAdminTrail('/admin/site-health').map((item) => item.label), ['工程与运维', '运行中心'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health').map((item) => item.label), ['工程与运维', '异常监控'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=probe').map((item) => item.label), ['工程与运维', '可用性探测'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=incidents').map((item) => item.label), ['工程与运维', '故障公告'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=usage').map((item) => item.label), ['工程与运维', '用量监控'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=audit').map((item) => item.label), ['工程与运维', '站点体检'])
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=unknown').map((item) => item.label), ['工程与运维', '异常监控'])
   assert.deepEqual(resolveAdminTrail('/admin/autopilot-scans').map((item) => item.label), ['工程与运维', '巡检看板'])
   assert.deepEqual(resolveAdminTrail('/admin/settings').map((item) => item.label), ['工程与运维', '配置中心'])
   assert.deepEqual(resolveAdminTrail('/admin/seo').map((item) => item.label), ['内容', 'SEO 管理'])
@@ -68,10 +74,19 @@ test('engineering workspace groups each tool by responsibility without repeated 
   const projects = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/projects')
   const titles = projects.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '运行中心', '巡检看板', '配置中心', '涉密自检', '逆向测试'])
-  assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '设计与架构', '站点运行', '配置与安全', '工程实验'])
+  assert.deepEqual(titles, ['项目管理', '开发发布', 'UI 设计', '站点架构', '上下文库', '二级站点', '异常监控', '可用性探测', '故障公告', '用量监控', '站点体检', '巡检看板', '涉密自检', '配置中心', '逆向测试'])
+  assert.deepEqual(projects.sections.map((section) => section.label), ['规划与交付', '设计与架构', '现场运行', '检查记录', '配置', '工程实验'])
   assert.equal(new Set(projects.sections.flatMap((section) => section.items.map((item) => item.href))).size, titles.length)
   assert.ok(projects.sections.every((section) => !section.items.some((item) => item.label === section.label)))
+})
+
+test('operations directory separates live tools from review records', () => {
+  const groups = listOperationsDirectory()
+
+  assert.deepEqual(groups.map((group) => group.label), ['现场运行', '检查记录'])
+  assert.deepEqual(groups[0].items.map((item) => item.label), ['异常监控', '可用性探测', '故障公告', '用量监控'])
+  assert.deepEqual(groups[1].items.map((item) => item.label), ['站点体检', '巡检看板', '涉密自检'])
+  assert.equal(groups.flatMap((group) => group.items).some((item) => item.href === '/admin/subsites'), false)
 })
 
 test('previously hidden admin routes have explicit child entries', () => {
@@ -120,7 +135,7 @@ test('sidebar expands only the active workspace and restores the current item in
   )
   assert.match(source, /!collapsed && active && sections\.length/)
   assert.match(source, /scrollIntoView\(\{ block: 'nearest' \}\)/)
-  assert.match(source, /resolveActiveAdminChild\(pathname\)/)
+  assert.match(source, /resolveActiveAdminChild\(pathname, search\)/)
   assert.match(source, /child === activeChild/)
   assert.match(source, /sections\.length > 1/)
   assert.doesNotMatch(source, /expandableSectionIds/)

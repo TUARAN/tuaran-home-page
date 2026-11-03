@@ -38,8 +38,8 @@ test('91HTTP responses support text, nested JSON and de-duplicate proxies', () =
 test('admin exposes a cloud-first blogger eye while the legacy service stays loopback-only', async () => {
   const engineering = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) => item.href === '/admin/projects')
   assert.ok(engineering.activePaths.includes('/admin/blogger-eye'))
-  assert.ok(engineering.sections.flatMap((section) => section.items).some((item) => item.href === '/admin/site-health'))
-  assert.deepEqual(resolveAdminTrail('/admin/site-health').map((item) => item.label), ['工程与运维', '运行中心'])
+  assert.ok(engineering.sections.flatMap((section) => section.items).some((item) => item.href === '/admin/site-health?tab=probe'))
+  assert.deepEqual(resolveAdminTrail('/admin/site-health', 'tab=probe').map((item) => item.label), ['工程与运维', '可用性探测'])
   const [page, consoleSource, route, server, service, packageJson] = await Promise.all([
     readFile(new URL('../app/(admin)/admin/blogger-eye/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/(admin)/admin/blogger-eye/BloggerEyeConsole.jsx', import.meta.url), 'utf8'),

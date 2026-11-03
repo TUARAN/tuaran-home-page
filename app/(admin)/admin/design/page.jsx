@@ -99,7 +99,7 @@ export default function AdminDesignPage() {
       <AdminPage
         title="UI 设计"
         description="集中查看设计规范、界面交互问题和改造验收；运行质量与流量异常已拆分到站点体检。"
-        actions={<><AdminButton href="/admin/site-health" size="sm">站点体检</AdminButton><AdminButton href="/admin/seo" size="sm">SEO 管理</AdminButton><AdminButton href="/admin/planning" size="sm">规划与待办</AdminButton></>}
+        actions={<><AdminButton href="/admin/site-health?tab=audit" size="sm">站点体检</AdminButton><AdminButton href="/admin/seo" size="sm">SEO 管理</AdminButton><AdminButton href="/admin/planning" size="sm">规划与待办</AdminButton></>}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <StatCard label="归档任务进度" value={`${completed}/${total}`} sub="以审计文档的勾选记录为准" icon="planning" tone="info" />

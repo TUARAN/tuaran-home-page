@@ -1,5 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
-import AdminSubnav from '../../components/AdminSubnav'
+import OperationsDirectory from '../../components/OperationsDirectory'
 import { AdminPage, Section, StatCard } from '../../components/ui'
 import { renderMarkdown } from '../../../../lib/research/markdown'
 import report from '../../../../docs/context/site-health-audit.md?raw'
@@ -8,42 +8,44 @@ import BloggerEyeConsole from '../blogger-eye/BloggerEyeConsole'
 import ExceptionMonitorClient from './ExceptionMonitorClient'
 import CloudflareUsageClient from './CloudflareUsageClient'
 import usageIncidents from '../../../../docs/context/cloudflare-usage-incidents.md?raw'
+import { findOperationsEntry, siteHealthTabFromSearch } from '../../../../lib/admin/adminRoutes'
 import { redirect } from 'next/navigation'
 
 export const runtime = 'edge'
 
-export const metadata = {
-  title: '运行中心',
-  description: '异常监控、Cloudflare 用量、可用性探测与故障公告。',
-  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+function entryFor(searchParams) {
+  const tab = siteHealthTabFromSearch(searchParams?.tab ? `tab=${searchParams.tab}` : '')
+  return findOperationsEntry(`/admin/site-health?tab=${tab}`)
 }
 
-const TABS = [
-  { id: 'exceptions', label: '异常监控', href: '/admin/site-health?tab=exceptions' },
-  { id: 'audit', label: '站点体检', href: '/admin/site-health?tab=audit' },
-  { id: 'probe', label: '可用性探测', href: '/admin/site-health?tab=probe' },
-  { id: 'incidents', label: '故障公告', href: '/admin/site-health?tab=incidents' },
-  { id: 'usage', label: '用量监控', href: '/admin/site-health?tab=usage' },
-]
+export async function generateMetadata({ searchParams }) {
+  const params = await searchParams
+  const entry = entryFor(params)
+  return {
+    title: entry?.label || '异常监控',
+    description: entry?.desc || '异常监控、可用性探测、故障公告、用量监控与站点体检。',
+    robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+  }
+}
 
 export default async function AdminSiteHealthPage({ searchParams }) {
   const params = await searchParams
   if (params?.tab === 'data') redirect('/admin/db')
-  const activeTab = TABS.some((tab) => tab.id === params?.tab) ? params.tab : 'exceptions'
+  const entry = entryFor(params)
+  const activeHref = entry?.href || '/admin/site-health?tab=exceptions'
+  const tab = siteHealthTabFromSearch(activeHref)
+
   return (
     <AdminPageGate
-      label="运行中心"
-      returnTo="/admin/site-health"
-      description="站点异常告警、运行质量、主动探测和故障处置的统一入口，仅站长本人可见。"
+      label={entry?.label || '异常监控'}
+      returnTo={activeHref}
+      description="站点异常、探测、故障公告、用量和检查记录的站长入口，仅站长本人可见。"
     >
-      <AdminPage
-        title="运行中心"
-        description="集中查看异常告警、Cloudflare 用量和主动探测，并在同一处完成故障公告。"
-      >
-        <AdminSubnav label="运行中心视图" items={TABS} activeId={activeTab} />
+      <AdminPage title={entry?.label || '异常监控'} description={entry?.desc || ''}>
+        <OperationsDirectory activeHref={activeHref} />
 
-        {activeTab === 'exceptions' ? <ExceptionMonitorClient /> : null}
-        {activeTab === 'audit' ? <>
+        {tab === 'exceptions' ? <ExceptionMonitorClient /> : null}
+        {tab === 'audit' ? <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="主域真实请求" value="1.55M" sub="最近 30 天 · 已排除内部请求" icon="analytics" tone="info" />
             <StatCard label="真实 4xx" value="11.75%" sub="404 为主要组成" icon="audit" tone="warning" />
@@ -62,9 +64,9 @@ export default async function AdminSiteHealthPage({ searchParams }) {
             />
           </Section>
         </> : null}
-        {activeTab === 'probe' ? <BloggerEyeConsole embedded /> : null}
-        {activeTab === 'incidents' ? <SiteStatusConsole embedded /> : null}
-        {activeTab === 'usage' ? <>
+        {tab === 'probe' ? <BloggerEyeConsole embedded /> : null}
+        {tab === 'incidents' ? <SiteStatusConsole embedded /> : null}
+        {tab === 'usage' ? <>
           <CloudflareUsageClient />
           <Section className="mt-5" title="故障与优化记录" description="已核实的原因、处理策略和部署后验证。">
             <div className="prose prose-sm max-w-none overflow-x-auto dark:prose-invert [&>:first-child]:mt-0 [&>:last-child]:mb-0" dangerouslySetInnerHTML={{ __html: renderMarkdown(usageIncidents.replace(/^# .+\n/, '')) }} />

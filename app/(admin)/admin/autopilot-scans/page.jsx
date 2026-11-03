@@ -1,4 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
+import OperationsDirectory from '../../components/OperationsDirectory'
 import { AdminButton, AdminPage, DataTable, Section, StatCard, StatusPill } from '../../components/ui'
 import {
   AUTOPILOT_BUCKETS,
@@ -67,6 +68,7 @@ export default function AutopilotScanBoardPage() {
           </>
         )}
       >
+        <OperationsDirectory activeHref="/admin/autopilot-scans" />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard label="未关安全单" value={summary.openSecurity} sub={`最新 #${summary.latestSecurity.number} · ${summary.latestSecurity.date}`} icon="audit" tone="danger" />
           <StatCard label="未关性能单" value={summary.openPerformance} sub={`最新 #${summary.latestPerformance.number} · ${summary.latestPerformance.date}`} icon="audit" tone="warning" />

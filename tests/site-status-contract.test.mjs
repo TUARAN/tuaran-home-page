@@ -48,6 +48,6 @@ test('monitor route is secret protected and status storage is independent from D
 
 test('admin navigation exposes incidents through the unified operations center', async () => {
   const routes = await read('../lib/admin/adminRoutes.js')
-  assert.match(routes, /href: '\/admin\/site-health', label: '运行中心'/)
+  assert.match(routes, /href: '\/admin\/site-health\?tab=incidents'[\s\S]*label: '故障公告'/)
   assert.match(routes, /'\/admin\/site-status': '\/admin\/site-health\?tab=incidents'/)
 })

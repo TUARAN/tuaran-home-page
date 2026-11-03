@@ -79,7 +79,7 @@ function PrimaryNavItem({ item, pathname, collapsed, badges, onNavigate, onAdmin
 }
 
 /** 稳定两级导航：工作区始终可点击，只展开当前工作区的具体页面。 */
-export default function AdminSidebar({ pathname, collapsed = false, badges = null, onNavigate, onClose }) {
+export default function AdminSidebar({ pathname, search = '', collapsed = false, badges = null, onNavigate, onClose }) {
   const [onAdminHost, setOnAdminHost] = useState(false)
   const navRef = useRef(null)
 
@@ -93,12 +93,12 @@ export default function AdminSidebar({ pathname, collapsed = false, badges = nul
       current?.scrollIntoView({ block: 'nearest' })
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [pathname, collapsed])
+  }, [pathname, search, collapsed])
 
   const canonicalHomeHref = onAdminHost ? `https://${CANONICAL_HOST}/` : '/'
   const overview = ADMIN_NAV_GROUPS.find((group) => group.id === 'overview')?.items?.[0]
   const workspaces = ADMIN_NAV_GROUPS.find((group) => group.id === 'workspaces')?.items || []
-  const activeChild = resolveActiveAdminChild(pathname)
+  const activeChild = resolveActiveAdminChild(pathname, search)
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-[#0f141c]">

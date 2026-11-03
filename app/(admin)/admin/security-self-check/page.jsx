@@ -1,4 +1,5 @@
 import AdminPageGate from '../../components/AdminPageGate'
+import OperationsDirectory from '../../components/OperationsDirectory'
 import { AdminPage, Section, StatCard, StatusPill } from '../../components/ui'
 import {
   ACCEPTED_PUBLIC_METADATA,
@@ -36,6 +37,7 @@ export default function SecuritySelfCheckPage() {
       description="仓库公开前的秘密、隐私、架构信息与历史风险检查，仅站长本人可见。"
     >
       <AdminPage title={SECURITY_SELF_CHECK_SUMMARY.title} description={SECURITY_SELF_CHECK_SUMMARY.conclusion}>
+        <OperationsDirectory activeHref="/admin/security-self-check" />
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="检查日期" value={SECURITY_SELF_CHECK_UPDATED_AT} sub="本次为只读人工审计快照" icon="audit" tone="info" />
           <StatCard label="确认明文凭据" value="0" sub="未发现生产 Key、密码、Cookie 或 .env 明文" icon="information" tone="success" />

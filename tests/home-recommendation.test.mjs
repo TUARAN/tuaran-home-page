@@ -324,7 +324,7 @@ test('home article latest scope lists enabled items by recency, resources stay i
   assert.equal(homeArticleScopeSurface('recommended'), 'home_recommendation')
 })
 
-test('home article scopes include WorkBuddy, AI and Web3 tabs filtered by subject', () => {
+test('home article scopes lead with AI, engineering and WorkBuddy, and park side topics under observation', () => {
   const mixed = [
     { id: 'wb-old', section: 'research', sortKey: '2026-08-01T00:00:00', subjects: ['workbuddy'] },
     { id: 'wb-new', section: 'research', sortKey: '2026-09-18T00:00:00', subjects: ['workbuddy'] },
@@ -335,39 +335,59 @@ test('home article scopes include WorkBuddy, AI and Web3 tabs filtered by subjec
   ]
   const workbuddy = listHomeArticleScopeCatalog(mixed, {}, 'workbuddy')
   const ai = listHomeArticleScopeCatalog(mixed, {}, 'ai_dev')
-  const web3 = listHomeArticleScopeCatalog(mixed, {}, 'web3')
-
-  assert.deepEqual(HOME_ARTICLE_SCOPE_KEYS, ['recommended', 'latest', 'resources', 'ai_dev', 'web3', 'workbuddy'])
+  const observation = listHomeArticleScopeCatalog(mixed, {}, 'observation')
+  assert.deepEqual(HOME_ARTICLE_SCOPE_KEYS, ['recommended', 'latest', 'ai_dev', 'web_cloud', 'workbuddy', 'resources', 'observation'])
   assert.equal(HOME_ARTICLE_SCOPE_META.workbuddy.label, SUBJECT_META.workbuddy.label)
   assert.equal(HOME_ARTICLE_SCOPE_META.ai_dev.label, 'AI')
-  assert.equal(HOME_ARTICLE_SCOPE_META.web3.label, SUBJECT_META.web3.label)
+  assert.equal(HOME_ARTICLE_SCOPE_META.web_cloud.label, '工程')
+  assert.equal(HOME_ARTICLE_SCOPE_META.observation.label, '更多观察')
   assert.deepEqual(workbuddy.map((item) => item.id), ['wb-new', 'wb-old'])
   assert.deepEqual(ai.map((item) => item.id), ['ai-new', 'ai-old'])
-  assert.deepEqual(web3.map((item) => item.id), ['web3-resource', 'web3-mid'])
+  assert.deepEqual(observation.map((item) => item.id), ['web3-resource', 'web3-mid'])
   assert.equal(isHomeArticleScope('workbuddy'), true)
   assert.equal(isHomeArticleScope('ai_dev'), true)
-  assert.equal(isHomeArticleScope('web3'), true)
+  assert.equal(isHomeArticleScope('web_cloud'), true)
+  assert.equal(isHomeArticleScope('web3'), false)
+  assert.equal(isHomeArticleScope('observation'), true)
   assert.equal(homeArticleScopeSurface('workbuddy'), 'home_workbuddy')
   assert.equal(homeArticleScopeSurface('ai_dev'), 'home_ai_dev')
-  assert.equal(homeArticleScopeSurface('web3'), 'home_web3')
+  assert.equal(homeArticleScopeSurface('web_cloud'), 'home_web_cloud')
+  assert.equal(homeArticleScopeSurface('observation'), 'home_observation')
 })
 
-test('home recommendation catalog exposes WorkBuddy, AI and Web3 articles for homepage tabs', () => {
+test('home recommendation catalog exposes WorkBuddy, AI, engineering and observation articles', () => {
   const catalog = buildHomeRecommendationCatalog([], Object.values(RESEARCH_ENTRY_META))
   const workbuddy = listHomeArticleScopeCatalog(catalog, {}, 'workbuddy')
   const ai = listHomeArticleScopeCatalog(catalog, {}, 'ai_dev')
-  const web3 = listHomeArticleScopeCatalog(catalog, {}, 'web3')
+  const engineering = listHomeArticleScopeCatalog(catalog, {}, 'web_cloud')
+  const observation = listHomeArticleScopeCatalog(catalog, {}, 'observation')
 
   assert.ok(workbuddy.length >= 8)
   assert.ok(ai.length >= 8)
-  assert.ok(web3.length >= 10)
+  assert.ok(engineering.length >= 8)
+  assert.ok(observation.length >= 10)
   assert.ok(workbuddy.every((item) => item.subjects.includes('workbuddy')))
   assert.ok(ai.every((item) => item.subjects.includes('ai_dev')))
-  assert.ok(web3.every((item) => item.subjects.includes('web3')))
+  assert.ok(engineering.every((item) => item.subjects.includes('web_cloud')))
+  assert.ok(observation.every((item) => item.subjects.some((subject) => ['web3', 'business_market', 'life_family', 'humanities_history', 'people_profiles', 'workplace_org'].includes(subject)) || /a-share-|crypto-/.test(item.href)))
   assert.ok(workbuddy.some((item) => item.id === 'research:topics:workbuddy-beginner-guide'))
   assert.ok(ai.some((item) => item.id === 'research:topics:vibe-coding-judgment-structure'))
-  assert.ok(web3.some((item) => item.id === 'research:topics:crypto-bitcoin'))
+  assert.ok(engineering.some((item) => item.id === 'research:topics:cloudflare-d1-free-tier-limit-enforcement'))
+  assert.ok(observation.some((item) => item.id === 'research:topics:crypto-bitcoin'))
   assert.ok(!workbuddy.some((item) => item.id === 'research:topics:china-mobile-mobilework'))
+})
+
+test('ordered home recommendations fill with the core line before newer observation items', () => {
+  const mixed = [
+    { id: 'share-new', section: 'research', sortKey: '2026-11-03T09:00:00', subjects: ['business_market'], href: '/articles/research/companies/a-share-600000' },
+    { id: 'core-old', section: 'research', sortKey: '2026-05-01T00:00:00', subjects: ['ai_dev'], href: '/articles/research/topics/agent-memory-mechanisms' },
+    { id: 'cloud-mid', section: 'column', sortKey: '2026-06-02T00:00:00', subjects: ['web_cloud'], href: '/articles/cloudflare-notes' },
+    { id: 'support-new', section: 'resources', sortKey: '2026-11-02T00:00:00', subjects: ['company_research'], href: '/articles/research/companies/cloudflare' },
+  ]
+  const batch = chooseHomeRecommendationBatch(mixed, { batchSize: 14, rotationMode: 'ordered' }, 0)
+  assert.deepEqual(batch.map((item) => item.id), ['support-new', 'cloud-mid', 'core-old', 'share-new'])
+  assert.equal(batch.find((item) => item.isLatest)?.id, 'support-new')
+  assert.ok(batch.findIndex((item) => item.id === 'share-new') > batch.findIndex((item) => item.id === 'core-old'))
 })
 
 test('homepage reload uses the same batch change path as 换一批', async () => {

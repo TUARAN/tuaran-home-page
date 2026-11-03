@@ -9,6 +9,7 @@ import {
   OPENCLAW_RESOLVED_ISSUES,
 } from '../../../lib/site/openClawAchievements'
 import SharePageButton from '../components/SharePageButton'
+import WeChatContact from '../components/WeChatContact'
 import CopyIntroButton from '../components/CopyIntroButton'
 import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
 
@@ -364,6 +365,19 @@ export default function AboutPage() {
               ))}
             </ul>
 
+            <div id="wechat" className="mt-5 scroll-mt-24 rounded-xl border border-[#2d4d61] bg-[#102032]/80 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">WeChat</p>
+              <p className="mt-1 text-[14px] leading-6 text-[#d5e4f2]">
+                项目合作、产品交流、内容更正，加微信 <span className="font-mono text-[#7fe6da]">atar24</span>。
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <WeChatContact tone="dark" />
+                <Link href="/editorial" className="font-mono text-[11px] text-[#8ea3bb] no-underline hover:text-[#7fe6da]">
+                  内容说明 →
+                </Link>
+              </div>
+            </div>
+
             <div className="mt-5 flex flex-wrap items-center gap-1.5">
               {identityTags.map((tag) => (
                 <Link
@@ -576,7 +590,7 @@ export default function AboutPage() {
       </section>
 
       {/* 联系方式 + 当前工作 */}
-      <section className="border-t border-[#1c2a3c]">
+      <section id="contact" className="scroll-mt-24 border-t border-[#1c2a3c]">
         <div className={`grid grid-cols-1 items-start gap-6 py-8 lg:grid-cols-[300px_minmax(0,1fr)] ${sectionInner}`}>
           <div className="rounded-2xl border border-[#1d2c3e] bg-[#0a1018]/70 p-4" aria-label="联系方式">
             <h2 className="mb-3 font-mono text-[14px] font-bold text-[#e2ecf6]">

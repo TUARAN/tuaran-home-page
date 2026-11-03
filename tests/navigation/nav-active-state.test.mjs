@@ -32,13 +32,17 @@ test('content shortcuts select interactive works and resources without claiming 
   assert.equal(resources.match('/articles', new URLSearchParams('group=article')), false)
 })
 
-test('content dropdown shows four selected topics and three content types', () => {
+test('content dropdown leads with the core line and keeps side topics in a secondary section', () => {
   const content = SITE_CHANNELS.find((channel) => channel.key === 'content')
   const visible = sectionsFor('content')
   const itemsIn = (sections, title) => sections.find((section) => section.title === title).items
   assert.deepEqual(
     Array.from(itemsIn(visible, '内容主题'), (item) => item.label),
-    ['AI 与开发', 'Web 与云', '产品与体验', '公司调研'],
+    ['AI 智能体', 'AI 与开发', '前端与云', 'Web 与云', '站点工程'],
+  )
+  assert.deepEqual(
+    Array.from(itemsIn(visible, '更多观察'), (item) => item.label),
+    ['市场与 Web3', '商业与市场', '公司调研', '产品与体验', '生活与家庭', '人文与历史'],
   )
   assert.deepEqual(
     Array.from(itemsIn(visible, '内容类型'), (item) => item.label),

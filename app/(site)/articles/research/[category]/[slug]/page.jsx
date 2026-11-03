@@ -29,6 +29,8 @@ import LifeTrafficTest from './LifeTrafficTest'
 import RebuttalPersonalityTest from './RebuttalPersonalityTest'
 import AShareCompanyList from './AShareCompanyList'
 import { taxonomyForResearch } from '../../../../../../lib/content/contentTaxonomy'
+import { topicDisclaimerKind } from '../../../../../../lib/content/topicDisclaimers'
+import TopicDisclaimer from '../../../../components/TopicDisclaimer'
 import { getContentProofCredential } from '../../../../../../lib/content/contentProofRegistry'
 import { resolveContentVersion } from '../../../../../../lib/content/contentEditCount'
 
@@ -147,6 +149,14 @@ export default async function ResearchDetailPage({ params }) {
     ? shareTitle
     : entry.summary || entry.tldr || entry.title
   const articleKey = `research:${entry.category}:${entry.slug}`
+  const researchTaxonomy = taxonomyForResearch(entry)
+  const disclaimerKind = topicDisclaimerKind({
+    ...researchTaxonomy,
+    title: entry.title,
+    slug: entry.slug,
+    tags: entry.tags,
+    href: `/articles/research/${entry.category}/${entry.slug}`,
+  })
   const sourcePath = parseResearchSourcePath(`research/${entry.category}/${entry.filename || ''}`)?.sourcePath || ''
   const proofCredential = getContentProofCredential(articleKey)
   const showLifeTrafficTest = entry.category === 'topics' && entry.slug === 'lifetime-human-attention-traffic-pv-uv'
@@ -235,7 +245,7 @@ export default async function ResearchDetailPage({ params }) {
       </Script>
 
       <ArticleDetailHeader
-        taxonomy={taxonomyForResearch(entry)}
+        taxonomy={researchTaxonomy}
         categoryHref={categoryHref}
         categoryLabel={isAShareResearch ? 'A股调研' : isCryptoResearch ? '加密调研' : categoryLabel}
         dateLabel={entry.dateLabel || entry.date}
@@ -283,7 +293,7 @@ export default async function ResearchDetailPage({ params }) {
           {entry.showAssistance && assistance && !isEncrypted ? (
             <>
               <span aria-hidden="true">·</span>
-              <Link href="/help#editorial" className="underline decoration-dotted underline-offset-4">
+              <Link href="/editorial" className="underline decoration-dotted underline-offset-4">
                 协助：{entry.assistanceLabel || entry.sourceLabel || 'TUARAN'}
               </Link>
             </>
@@ -337,6 +347,8 @@ export default async function ResearchDetailPage({ params }) {
         summaryLabel={entry.tldr ? 'TL;DR' : ''}
         tags={entry.tags || []}
       />
+
+      <TopicDisclaimer kind={disclaimerKind} />
 
       {showRebuttalPersonalityTest && !isEncrypted ? <RebuttalPersonalityTest /> : null}
 

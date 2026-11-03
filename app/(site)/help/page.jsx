@@ -111,8 +111,8 @@ const HELP_SECTIONS = [
           '健康、金融、法律和未成年人相关内容只作信息参考，不替代诊断、持牌投资建议或正式法律意见。',
           '发现事实错误、失效链接或重要遗漏后会直接修订；影响主要结论的改动会保留修订说明。',
         ],
-        note: '提交更正时，请附页面网址、具体段落、可核验来源和建议修改方式。',
-        actions: [{ href: '#contact', label: '提交更正' }],
+        note: '提交更正时，请附页面网址、具体段落、可核验来源和建议修改方式。完整规则以内容说明页为准。',
+        actions: [{ href: '/editorial', label: '查看完整说明' }, { href: '#contact', label: '提交更正' }],
       },
       {
         id: 'privacy', title: '隐私政策', description: '本政策适用于 2aran.com，最后更新于 2026 年 8 月 24 日。', icon: IconShieldLock,

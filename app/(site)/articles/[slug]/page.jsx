@@ -17,6 +17,8 @@ import { getPublishedArticlePostBySlug } from '../../../../lib/article/articlePo
 import { buildArticleOgUrl } from '../../../../lib/article/articleOg'
 import { extractToc, renderMarkdown } from '../../../../lib/research/markdown'
 import { taxonomyForArticle } from '../../../../lib/content/contentTaxonomy'
+import { topicDisclaimerKind } from '../../../../lib/content/topicDisclaimers'
+import TopicDisclaimer from '../../components/TopicDisclaimer'
 import { getContentProofCredential } from '../../../../lib/content/contentProofRegistry'
 import { resolveContentVersion } from '../../../../lib/content/contentEditCount'
 import PublishedArticle from './PublishedArticle'
@@ -290,6 +292,19 @@ export default async function ArticleDetailPage({ params }) {
       '@id': articleUrl,
     },
   }
+  const articleTaxonomy = taxonomyForArticle({
+    category: article.homeCategory,
+    slug: article.slug,
+    href: article.href,
+    title: article.title,
+  })
+  const disclaimerKind = topicDisclaimerKind({
+    ...articleTaxonomy,
+    title: article.title,
+    slug: article.slug,
+    tags: article.tags,
+    href: article.href,
+  })
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-4 py-6 sm:py-8">
@@ -298,12 +313,7 @@ export default async function ArticleDetailPage({ params }) {
       </Script>
 
       <ArticleDetailHeader
-        taxonomy={taxonomyForArticle({
-          category: article.homeCategory,
-          slug: article.slug,
-          href: article.href,
-          title: article.title,
-        })}
+        taxonomy={articleTaxonomy}
         categoryHref="/articles?tab=posts"
         categoryLabel="精选文章"
         dateLabel={article.date}
@@ -360,6 +370,8 @@ export default async function ArticleDetailPage({ params }) {
         summaryLabel="TL;DR"
         tags={article.tags || []}
       />
+
+      <TopicDisclaimer kind={disclaimerKind} />
 
       <ArticleReadingLayout
         toc={<ArticleToc items={tocItems} title={enableDiaryToc ? '目录' : '文章目录'} />}

@@ -72,7 +72,11 @@ export default function ArticleFooterCta() {
       </div>
 
       <p className="mt-6 text-center text-[12px] text-[#999] dark:text-gray-500">
-        合作 / 咨询 / 内容分析见 <Link href="/services" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">合作说明</Link> · 微信 <span className="font-mono">atar24</span>
+        合作 / 咨询 / 内容分析见 <Link href="/services" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">合作说明</Link>
+        {' · '}
+        <Link href="/editorial" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">内容说明</Link>
+        {' · '}
+        微信 <span className="font-mono">atar24</span>
       </p>
     </aside>
   )

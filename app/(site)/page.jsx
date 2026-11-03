@@ -49,6 +49,7 @@ import HomeOpinionSignals from './components/HomeOpinionSignals'
 import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
+import WeChatContact from './components/WeChatContact'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -75,9 +76,21 @@ const HOME_EXPLORE_GROUPS = [
     tone: 'knowledge',
     items: [
       { id: 'learn-ai', href: '/articles?subject=ai_dev', title: 'AI 与开发', titleEn: 'AI & development', desc: '模型、Agent 与开发工具', descEn: 'Models, agents and developer tools', icon: IconRobot },
-      { id: 'companies', href: '/articles?subject=company_research', title: '公司调研', titleEn: 'Company research', desc: '公司画像与商业分析', descEn: 'Companies and business analysis', icon: IconBuildingSkyscraper },
+      { id: 'agents', href: '/topics/ai-agents', title: 'AI 智能体', titleEn: 'AI agents', desc: '智能体实践与 OpenClaw', descEn: 'Agent practice and OpenClaw', icon: IconRobot },
       { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconTools },
+      { id: 'cloud', href: '/topics/frontend-cloud', title: '前端与云', titleEn: 'Frontend and cloud', desc: 'Next.js、Cloudflare 与站点工程', descEn: 'Next.js, Cloudflare and site engineering', icon: IconCloud },
       { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconNews },
+      { id: 'books', href: '/publications', title: '著作', titleEn: 'Books', desc: '已出版图书与电子小册', descEn: 'Published books and guides', icon: IconFileText },
+    ],
+  },
+  {
+    id: 'observe',
+    label: '更多观察',
+    labelEn: 'More notes',
+    tone: 'knowledge',
+    items: [
+      { id: 'companies', href: '/articles?subject=company_research', title: '公司调研', titleEn: 'Company research', desc: '公司画像与商业分析', descEn: 'Companies and business analysis', icon: IconBuildingSkyscraper },
+      { id: 'markets', href: '/web3', title: '市场与 Web3', titleEn: 'Markets and Web3', desc: 'A 股、加密与链上内容', descEn: 'A-share, crypto and onchain notes', icon: IconCoin },
     ],
   },
   {
@@ -542,6 +555,36 @@ function FounderCompanyText() {
   )
 }
 
+function HomeAuthorityBar() {
+  const links = [
+    { href: '/topics/ai-agents', label: 'AI 智能体', labelEn: 'AI agents' },
+    { href: '/topics/frontend-cloud', label: '前端与云', labelEn: 'Frontend & cloud' },
+    { href: '/publications', label: '著作', labelEn: 'Books' },
+    { href: '/about#openclaw-contributions', label: 'OpenClaw', labelEn: 'OpenClaw' },
+    { href: '/editorial', label: '内容说明', labelEn: 'Editorial' },
+  ]
+  return (
+    <section className="relative z-[1] mb-4 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)]/95 px-4 py-3 shadow-[0_8px_24px_rgba(28,24,18,0.04)]" aria-label="站长与主线">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--site-muted)]">TUARAN · 2aran.com</p>
+          <p className="mb-0 text-[15px] font-semibold leading-6 text-[var(--site-ink)]">
+            <T zh="AI 智能体、前端工程、开源与著作" en="AI agents, frontend engineering, open source, and books" />
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className="rounded-full border border-[var(--site-line)] px-3 py-1.5 text-[12px] text-[var(--site-ink)] no-underline hover:border-[var(--site-line-strong)]">
+              <T zh={link.label} en={link.labelEn} />
+            </Link>
+          ))}
+          <WeChatContact />
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function ClassicHomePage({ featuredPicks }) {
   return (
     <main className="home-classic-root mx-auto flex w-full max-w-[1880px] flex-1 flex-col px-4 pt-2 pb-9 sm:px-6 md:pt-3 md:pb-12 lg:px-10">
@@ -761,6 +804,7 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <div className="home-backdrop" aria-hidden="true" />
       <HomeAllianceBanner />
       <FestivalBanner />
+      <HomeAuthorityBar />
       <HomeMasonry>
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 234,
+    "routes": 237,
     "redirects": 22,
     "private": 62,
-    "registeredStatic": 106,
-    "indexable": 127,
-    "canonical": 145,
-    "openGraph": 79,
-    "jsonLd": 54,
+    "registeredStatic": 109,
+    "indexable": 130,
+    "canonical": 148,
+    "openGraph": 82,
+    "jsonLd": 57,
     "errors": 9,
     "warnings": 141
   },
@@ -1955,6 +1955,26 @@
       }
     },
     {
+      "path": "/editorial",
+      "file": "app/(site)/editorial/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/editorial"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/editorial"
+        ]
+      }
+    },
+    {
       "path": "/feed",
       "file": "app/(site)/feed/page.jsx",
       "kind": "static",
@@ -3720,6 +3740,46 @@
         "jsonLd": true,
         "ogUrls": [
           "https://2aran.com"
+        ]
+      }
+    },
+    {
+      "path": "/topics/ai-agents",
+      "file": "app/(site)/topics/ai-agents/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/topics/ai-agents"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/topics/ai-agents"
+        ]
+      }
+    },
+    {
+      "path": "/topics/frontend-cloud",
+      "file": "app/(site)/topics/frontend-cloud/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/topics/frontend-cloud"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/topics/frontend-cloud"
         ]
       }
     },

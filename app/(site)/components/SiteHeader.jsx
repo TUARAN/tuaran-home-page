@@ -171,6 +171,14 @@ const TIER_SECTION_STYLES = {
     wrap: 'site-tier-section site-tier-column',
     title: 'site-tier-title site-tier-title-column',
   },
+  '内容主题': {
+    wrap: 'site-tier-section site-tier-column',
+    title: 'site-tier-title site-tier-title-column',
+  },
+  '更多观察': {
+    wrap: 'site-tier-section site-tier-archive',
+    title: 'site-tier-title site-tier-title-archive',
+  },
   '内容类型': {
     wrap: 'site-tier-section site-tier-research',
     title: 'site-tier-title site-tier-title-research',

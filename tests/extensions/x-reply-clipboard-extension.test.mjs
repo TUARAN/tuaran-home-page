@@ -5761,7 +5761,7 @@ test('saved reply keys enable DeepSeek and B.AI unless all models were explicitl
     assert.equal(await background.callDeepSeek({ postText: '你好', onProgress: (status) => progress.push(status) }), 'B.AI 回复')
     assert.deepEqual(requests, ['https://api.deepseek.com/chat/completions', 'https://api.b.ai/v1/responses'])
     assert.equal(progress.some((status) => status.includes('NAS')), false)
-    settings = { ...settings, replyProviders: [], replyProvidersManual: true }
+    settings = { ...settings, replyProviders: [], replyProvidersManual: true, replyProvidersDisabled: ['deepseek', 'bai'] }
     await assert.rejects(background.callDeepSeek({ postText: '你好' }), /请至少启用一个回复模型/)
   } finally {
     globalThis.fetch = originalFetch

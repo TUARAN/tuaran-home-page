@@ -321,6 +321,7 @@
     aiKey: "",
     baiKey: "",
     replyProviders: [],
+    replyProvidersDisabled: [],
     nasSecretAvailable: false,
     aiKeySaved: false,
     aiSettingsStatus: "loading",
@@ -3697,13 +3698,14 @@
     const stored = hasList
       ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
       : [...DEFAULT_REPLY_PROVIDERS];
-    if (settings?.replyProvidersManual === true || stored.length) return { providers: stored, persist: false };
+    const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
     const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
       ? validDeepSeekApiKey(String(settings?.apiKey || "").trim())
       : provider === "bai"
         ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
         : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-    return { providers: configured, persist: configured.length > 0 };
+    const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
+    return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
   }
 
   function showModelSaveNotice(message) {
@@ -3764,6 +3766,7 @@
       state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
       state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
       state.replyProviders = resolvedProviders.providers;
+      state.replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
       state.nasSecretAvailable = nasSecretAvailable;
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
@@ -4179,6 +4182,9 @@
     const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
     const selected = new Set(resolveReplyProviders(settings).providers);
+    const replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled)
+      ? settings.replyProvidersDisabled.filter((provider) => provider !== which)
+      : [];
     if (value) selected.add(which);
     else selected.delete(which);
     const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => selected.has(provider));
@@ -4187,7 +4193,8 @@
         ...settings,
         ...(isBai ? { baiApiKey: value } : { apiKey: value }),
         replyProviders,
-        replyProvidersManual: true
+        replyProvidersManual: true,
+        replyProvidersDisabled
       }
     });
     await loadAiSettings();
@@ -4258,6 +4265,7 @@
         mobileOfficeVerified: mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true,
         replyProviders,
         replyProvidersManual: true,
+        replyProvidersDisabled: state.replyProvidersDisabled || [],
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
         grokInviteTimeline: state.grokInviteTimeline === true,
@@ -8705,6 +8713,12 @@
           if (!input.matches("[data-xrc-reply-provider]")) scheduleConfigSave(panel);
         });
         input.addEventListener("change", () => {
+          if (input.matches("[data-xrc-reply-provider]")) {
+            const disabled = new Set(state.replyProvidersDisabled || []);
+            if (input.checked) disabled.delete(input.dataset.xrcReplyProvider);
+            else disabled.add(input.dataset.xrcReplyProvider);
+            state.replyProvidersDisabled = REPLY_PROVIDER_ORDER.filter((provider) => disabled.has(provider));
+          }
           if (input.matches('[data-xrc-reply-provider="mobileoffice"]')) syncMobileOfficeSettings();
           scheduleConfigSave(panel, true);
         });

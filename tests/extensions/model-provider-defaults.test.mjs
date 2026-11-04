@@ -4,6 +4,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 
 const contentPromise = readFile(new URL('../../tools/x-reply-clipboard-extension/content.js', import.meta.url), 'utf8')
+const backgroundPromise = readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
 
 function modelFunctions(source, values = {}) {
   const start = source.indexOf('  function resolveReplyProviders(settings) {')
@@ -54,19 +55,34 @@ test('a new install starts with no reply provider selected and uses a general se
   assert.doesNotMatch(content, /尚未配置 DeepSeek API Key · 点击前往模型设置/)
 })
 
-test('saved credentials enable their provider once, but an explicit all-off choice remains off', async () => {
+test('saved credentials repair an old empty selection, while a new explicit opt-out remains off', async () => {
   const { resolveReplyProviders } = modelFunctions(await contentPromise)
   assert.deepEqual(Array.from(resolveReplyProviders({}).providers), [])
   const oldSettings = { apiKey: 'sk-12345678', replyProviders: [] }
   assert.deepEqual(Array.from(resolveReplyProviders(oldSettings).providers), ['deepseek'])
   assert.equal(resolveReplyProviders(oldSettings).persist, true)
-  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersManual: true }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersManual: true }).providers), ['deepseek'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProviders: ['deepseek'], replyProvidersDisabled: ['deepseek'] }).providers), [])
   assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: [] }).providers), ['bai'])
+})
+
+test('background model selection agrees with the panel for saved keys and opt-outs', async () => {
+  const source = await backgroundPromise
+  const start = source.indexOf('function resolveReplyProviders(settings) {')
+  const end = source.indexOf('async function readAiSettings()', start)
+  assert.ok(start >= 0 && end > start)
+  const context = { REPLY_PROVIDER_ORDER: ['mobileoffice', 'deepseek', 'nas', 'bai'], DEFAULT_REPLY_PROVIDERS: [] }
+  vm.createContext(context)
+  vm.runInContext(source.slice(start, end), context)
+  const legacy = { apiKey: 'sk-12345678', replyProviders: [], replyProvidersManual: true }
+  assert.deepEqual(Array.from(context.resolveReplyProviders(legacy).providers), ['deepseek'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ ...legacy, replyProvidersDisabled: ['deepseek'] }).providers), [])
 })
 
 for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['bai', '[data-xrc-config-bai-key]']]) {
   test(`saving a valid ${provider} key also selects its model in storage and the open panel`, async () => {
-    let settings = { replyProviders: [] }
+    let settings = { replyProviders: [], replyProvidersDisabled: [provider] }
     let renders = 0
     const chrome = { storage: { local: {
       get: async () => ({ xrcAiSettings: settings }),
@@ -91,6 +107,7 @@ for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['
     assert.deepEqual(Array.from(settings.replyProviders), [provider])
     assert.deepEqual(Array.from(state.replyProviders), [provider])
     assert.equal(settings.replyProvidersManual, true)
+    assert.deepEqual(Array.from(settings.replyProvidersDisabled), [])
     assert.equal(checkbox.checked, true)
     assert.equal(renders, 1)
   })

@@ -185,13 +185,14 @@ function resolveReplyProviders(settings) {
   const stored = hasList
     ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
     : [...DEFAULT_REPLY_PROVIDERS];
-  if (settings?.replyProvidersManual === true || stored.length) return { providers: stored, persist: false };
+  const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
   const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
     ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
     : provider === "bai"
       ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
       : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-  return { providers: configured, persist: configured.length > 0 };
+  const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
+  return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
 }
 
 async function readAiSettings() {

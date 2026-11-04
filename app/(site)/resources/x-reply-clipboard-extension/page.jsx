@@ -95,7 +95,7 @@ const INSTALL_STEPS = [
   '核对下载按钮标注的打包版版本；本地开发版的新增功能以本页和文档中心单独标注。',
   '联系站长获取人员邀请码，下载 ZIP，解压后在 chrome://extensions/ 开启开发者模式并加载目录。',
   '登录 X，确认面板显示的账号与版本。重新加载扩展后，也要刷新已打开的 X 标签页。',
-  '在模型设置中核对已勾选的回复模型，按需调整并完成相应配置。',
+  '本地开发版新安装时回复模型默认全部不勾选；在模型设置中选用需要的服务并完成配置。',
   '本地开发版在排班台勾选要运行的任务，再点击「开始」；同一账号的任务共用一个执行页签。',
   '群聊分享、X主题发帖、小红书图卡等仍在本地开发或调试，先核对对应文档与版本范围。',
 ]
@@ -229,7 +229,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="grid gap-6 border-t border-slate-200 pt-6 dark:border-white/10 sm:grid-cols-2 sm:gap-10">
             <div className="flex items-start gap-3">
               <IconSparkles size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
-              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">核对回复模型</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">在模型设置中检查勾选状态，按需调整服务并完成配置。密钥保存在 Chrome 本地。</p></div>
+              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">按需启用回复模型</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">本地开发版新安装时默认全部不勾选；在模型设置中选用服务并完成配置。密钥保存在 Chrome 本地。</p></div>
             </div>
             <div className="flex items-start gap-3">
               <IconShieldLock size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />

@@ -35,7 +35,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
@@ -71,6 +71,12 @@ function isLegacyBuiltInReplyCommentPrompt(value) {
 const REPLY_SYSTEM_PROMPT = REPLY_TIMELINE_PROMPT;
 
 const GROK_REPLY_PROMPT = "这条可以带 @grok。可直接以 @grok 开头接一句短问或短评，指向原帖一个具体点；整条尽量短，不要先写一大段再 @。只提及一次 @grok。";
+
+const COMMUNITY_NOTE_PROMPT = [
+  "你在把自己刚发的帖子同步到一个已加入的 X 社群。只输出 1～2 句口语中文。",
+  "概括原帖或接一句反应，像顺手说给社群里的人听。不要写成公告，不要称呼大家好。",
+  "禁止：不是…而是…；本文/本篇/下面聊聊；编造原帖没有的事实；链接；@；复述整段原文。"
+].join("\n");
 
 const POST_NORMAL_PROMPT = [
   "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
@@ -374,15 +380,21 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
   const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders, mobileOfficeToken, mobileOfficeVerified } = await readAiSettings();
   if (!replyProviders.length) throw new Error("请至少启用一个回复模型");
 
-  const commentReply = mode === "notifications" || Boolean(conversation);
+  const communityNote = mode === "community-share";
+  const commentReply = !communityNote && (mode === "notifications" || Boolean(conversation));
   const replyPrompt = commentReply ? replyCommentPrompt : replyTimelinePrompt;
   const grokReply = Boolean(inviteGrok);
   const replyPromptForModel = grokReply
     ? String(replyPrompt || "").replace(/\s*不 @grok。?/u, "").trim()
     : replyPrompt;
   const replyStyle = grokReply ? GROK_REPLY_PROMPT : commentReply ? "" : "这次不要提及 @grok，直接回应原帖。";
-  const replyMaxLength = grokReply ? 120 : commentReply ? 36 : 80;
-  const messages = [
+  const replyMaxLength = communityNote ? 80 : grokReply ? 120 : commentReply ? 36 : 80;
+  const messages = communityNote
+    ? [
+      { role: "system", content: COMMUNITY_NOTE_PROMPT },
+      { role: "user", content: `${String(postText || "").trim().slice(0, 800)}\n\n只输出 1～2 句中文短评，放在原帖前面。不要链接，不要复述整段原文。` }
+    ]
+    : [
     { role: "system", content: commentReply
       ? `${replyPromptForModel}${grokReply ? `\n${GROK_REPLY_PROMPT}` : ""}\n\n对方说“生日快乐”时表达感谢，不要反过来祝对方生日快乐。不要用“你最关心哪一部分”“我直接说结论”“感谢你的反馈”这类客服话术。\n本次以短、友好、多表情为先：通常几个字就够，鼓励带 ✅😂😁🙏 一类表情；也可只回表情。不必解释或总结；具体问题才用一句话答要点。不要条条都用同一句「对对对」或同一组表情；语气贴合上下文。`
       : `${replyPromptForModel}\n${replyStyle}` },
@@ -799,6 +811,18 @@ async function handleMessage(message, onProgress = () => {}, signal) {
   if (message?.type === "xrc-ai-article-source-used") {
     return rememberArticleSource(message.sourceId);
   }
+  if (message?.type === "xrc-ai-community-note") {
+    const postText = String(message.postText || "").trim();
+    if (!postText) return { ok: true, reply: "" };
+    const communityName = String(message.communityName || "").trim().slice(0, 40);
+    const reply = await callDeepSeek({
+      postText: `社群：${communityName || "已加入的社群"}\n原帖：\n${postText}`,
+      mode: "community-share",
+      onProgress,
+      signal
+    });
+    return { ok: true, reply };
+  }
   if (message?.type === "xrc-ai-generate") {
     const postText = String(message.postText || "").trim();
     if (!postText) throw new Error("没有读取到原帖文字");
@@ -979,6 +1003,12 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
     return Boolean(expectedHandle && actualHandle && expectedHandle.toLowerCase() === actualHandle.toLowerCase());
   }
   if (selected === "article" || selected === "site-forward") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
+  if (selected === "community-share") {
+    if (actual === "/home" || actual === "/") return true;
+    if (/^\/i\/communities(?:\/\d+)?$/iu.test(actual)) return true;
+    const segment = actual.match(/^\/([A-Za-z0-9_]{1,15})$/iu)?.[1] || "";
+    return Boolean(segment && !RESERVED_X_PATHS.has(segment.toLowerCase()));
+  }
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
@@ -1008,6 +1038,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     const picked = handles[Math.floor(Math.random() * handles.length)];
     return `/${picked}`;
   }
+  if (selected === "community-share") return handle ? `/${handle}` : "/home";
   if (selected === "poster" || selected === "poster-premium" || ["poster-x", "poster-xhs"].includes(selected)) return "/home";
   if (selected === "article" || selected === "site-forward") return "/compose/articles";
   return "/home";
@@ -1199,6 +1230,7 @@ const TASK_TITLE_LABELS = {
   "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
   article: "普通发文",
   "site-forward": "站长转发",
+  "community-share": "社群分发",
   "prune-posts": "清理低质帖",
   "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
@@ -1531,7 +1563,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1560,6 +1592,8 @@ const PRUNE_SLICE_MS = 25 * 60 * 1000;
 const ARTICLE_SLICE_MS = 8 * 60 * 1000;
 const SITE_FORWARD_SLICE_MS = 20 * 60 * 1000;
 const SITE_FORWARD_RETRY_MS = 15 * 60 * 1000;
+const COMMUNITY_SHARE_SLICE_MS = 45 * 60 * 1000;
+const COMMUNITY_SHARE_RETRY_MS = 15 * 60 * 1000;
 const ARTICLE_NEWS_URL = "https://hn.algolia.com/api/v1/search_by_date?tags=story&query=AI&hitsPerPage=30";
 const ARTICLE_USED_KEY = "xrcArticleUsedSources";
 const ARTICLE_SYSTEM_PROMPT = "根据给出的资讯标题和链接，写一篇中文技术文章，至少 500 字。仅把标题可确认的内容写成事实；其余写明确的分析、实践方法或待核实问题。不要编造数据、引言或产品功能。返回 JSON：{\"title\":\"\",\"body\":\"Markdown 正文\",\"sourceUrl\":\"\"}。sourceUrl 原样返回。";
@@ -1675,6 +1709,7 @@ function sliceMsForMode(mode, plan) {
   if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   if (mode === "site-forward") return Math.max(base, SITE_FORWARD_SLICE_MS);
+  if (mode === "community-share") return Math.max(base, COMMUNITY_SHARE_SLICE_MS);
   return base;
 }
 
@@ -1707,7 +1742,7 @@ function defaultTaskPriority(mode) {
   // 评论首页 > 评论回复 = 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
   if (mode === "timeline") return 9;
   if (mode === "notifications" || mode === "kol" || mode === "poster-premium") return 8;
-  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward") return 7;
+  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
   if (mode === "mutual-targetFollow") return 7;
@@ -1742,13 +1777,14 @@ function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, tur
 
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward"].includes(mode),
+    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
-      : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+      : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
-    minGapMs: mode === "site-forward" ? SITE_FORWARD_RETRY_MS
+      minGapMs: mode === "site-forward" ? SITE_FORWARD_RETRY_MS
+      : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
@@ -1766,7 +1802,7 @@ function normalizedTaskRules(value) {
       ? "slow"
       : ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
     const likeMode = ["likes-posts", "likes-replies"].includes(mode);
-    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : mode === "site-forward" ? SITE_FORWARD_RETRY_MS : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
+    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : mode === "site-forward" ? SITE_FORWARD_RETRY_MS : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
     const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
     const legacyPruneGap = mode === "prune-posts" && requestedGap === LEGACY_PRUNE_GAP_MS;
@@ -1780,6 +1816,8 @@ function normalizedTaskRules(value) {
         : mode === "mutual-followBack" || mode === "mutual-targetFollow" ? followSessionGapMs(pace)
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
+        : mode === "community-share"
+        ? COMMUNITY_SHARE_RETRY_MS
         : mode === "article"
         ? articleMinGapMs(pace)
         : legacyLikeGap || legacyPruneGap || !Number.isFinite(requestedGap)
@@ -2499,7 +2537,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "reply-prune": "prune-replies" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
 const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
 
 function shouldShareFollowWait(reason) {
@@ -2853,7 +2891,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 }
 
 const RUNTIME_REPORT_MODES = Object.freeze([
-  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward",
+  "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share",
   "likes-posts", "likes-replies",
   "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
   "prune-posts", "prune-replies"
@@ -3430,6 +3468,15 @@ async function refreshIdleTaskTabs(sender) {
   return { ok: true, refreshed, skipped, reloadCurrent };
 }
 
+function notificationContextIsReady(context) {
+  return Boolean(context?.ownPost?.text && context?.reply?.text && context.rootSettled === true);
+}
+
+function notificationContextUnresolved(context) {
+  if (!context?.ownPost?.text || !context?.reply?.text) return null;
+  return { ...context, ownThread: false, rootSettled: false };
+}
+
 async function readNotificationContext(message, sender) {
   const replyId = String(message.replyId || "");
   const ownHandle = accountHandleFrom(message.ownHandle);
@@ -3447,20 +3494,23 @@ async function readNotificationContext(message, sender) {
   if (!Number.isInteger(tab?.id)) throw new Error("无法打开回复会话页");
   contextTabs.add(tab.id);
   try {
+    let latest = null;
     const deadline = Date.now() + 10000;
     while (Date.now() < deadline) {
       try {
         const result = await chrome.tabs.sendMessage(tab.id, {
           type: "xrc-context-read", replyId, ownHandle, replyAuthor
         });
-        if (result?.context?.ownPost?.text && result.context.reply?.text) {
-          return { ok: true, context: result.context };
-        }
+        const context = result?.context;
+        if (notificationContextIsReady(context)) return { ok: true, context };
+        if (context?.ownPost?.text && context?.reply?.text) latest = context;
       } catch (error) {
         // The conversation tab may still be loading its content script.
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
+    const unresolved = notificationContextUnresolved(latest);
+    if (unresolved) return { ok: true, context: unresolved };
     throw new Error("会话页没有加载出我的帖子");
   } finally {
     await chrome.tabs.remove(tab.id).catch(() => {});
@@ -3876,6 +3926,9 @@ if (typeof module === "object" && module.exports) {
     ARTICLE_SLICE_MS,
     SITE_FORWARD_SLICE_MS,
     SITE_FORWARD_RETRY_MS,
+    COMMUNITY_SHARE_SLICE_MS,
+    COMMUNITY_SHARE_RETRY_MS,
+    COMMUNITY_SHARE_RETRY_MS,
     shanghaiDateKey,
     nextSiteForwardSlot,
     finishSiteForward,
@@ -3917,6 +3970,8 @@ if (typeof module === "object" && module.exports) {
     pauseAllTasks,
     resetExtensionState,
     refreshIdleTaskTabs,
+    notificationContextIsReady,
+    notificationContextUnresolved,
     readNotificationContext,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,

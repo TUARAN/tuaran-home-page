@@ -1910,6 +1910,7 @@ test('handoff cannot report running from another task while the target is idle',
     pruneState: { running: false, stopping: false },
     articleState: { running: false, stopping: false },
     forwardState: { running: false, stopping: false },
+    communityState: { running: false, stopping: false },
     currentTaskKey: () => 'timeline', stopLocalTasks: () => { state.running = false },
     sessionStorage: { setItem() {} },
     applyTaskTitle() {}, registerCurrentTaskTab: async () => {},
@@ -1961,7 +1962,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 9)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 10)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -1974,7 +1975,7 @@ test('all seven task panels show the same blocked state with a readable reason',
 
 test('missing DeepSeek key guide opens model settings and focuses its saved key field', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const definition = source.match(/  function openModelSettingsForKey\(panel\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  function openModelSettingsForKey\(panel(?:, [^\)]*)?\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   let focused = 0
   const panel = { querySelector(selector) {
@@ -2195,7 +2196,7 @@ test('merge account data consolidates legacy default logs into the active handle
     assert.deepEqual(stored.xrcDailyReports[0].counts, {
       comments: 5, timelineComments: 0, notificationComments: 0,
       likes: 5, follows: 0, unfollows: 0, followBacks: 0, posts: 0,
-      kolComments: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0,
+      kolComments: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0, communityShares: 0,
     })
     assert.equal(stored.xrcDailyReports[0].accountHandle, 'tarsixseveneig1')
     assert.equal(stored.xrcLimitObservations[0].accountHandle, 'tarsixseveneig1')
@@ -3870,6 +3871,41 @@ test('hidden tab short polling wakes even when page timers never fire', async ()
   assert.equal(sent, 1)
 })
 
+test('a background timer still ends when the service worker never answers', async () => {
+  const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  const timers = []
+  const context = vm.createContext({
+    window: {
+      setTimeout(fn, ms) {
+        const id = timers.length + 1
+        timers.push({ id, fn, ms, cleared: false })
+        return id
+      },
+      clearTimeout(id) {
+        const item = timers.find((timer) => timer.id === id)
+        if (item) item.cleared = true
+      },
+    },
+    chrome: {
+      runtime: {
+        id: 'test-extension',
+        lastError: null,
+        onMessage: { addListener() {} },
+        sendMessage() {},
+      },
+    },
+  })
+  vm.runInContext(source, context)
+  let done = false
+  const pending = context.XInteractionTimer.wait(1000).then(() => { done = true })
+  await Promise.resolve()
+  const fallback = timers.find((timer) => timer.ms === 6000 && !timer.cleared)
+  assert.ok(fallback)
+  fallback.fn()
+  await pending
+  assert.equal(done, true)
+})
+
 test('short DOM polling stays local instead of flooding the offscreen timer channel', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
   let sent = 0
@@ -4310,7 +4346,7 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.match(background.POST_PREMIUM_PROMPT, /60～120 字/)
   assert.equal(background.CLICKBAIT_POST_PROMPT, background.POST_NORMAL_PROMPT)
   assert.match(background.REPLY_TIMELINE_PROMPT, /短小精悍/)
-  assert.match(background.REPLY_COMMENT_PROMPT, /前后文连贯/)
+  assert.match(background.REPLY_COMMENT_PROMPT, /短、友好、轻松/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /禁止正反对照与辩证拆解/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的假对比、自我指涉和意义拔高改成直接陈述/)
@@ -4869,6 +4905,57 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   assert.equal(state.completedRounds, 3)
 })
 
+test('a disabled reply button is retried on a local timer and cancelled when the task stops', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function waitUntilReplyButtonReady\(tweet, ms, plan\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  assert.match(source, /result === "reply-disabled"[\s\S]*replyButtonRetryPlan\(misses\)/)
+  assert.match(source, /waitUntilReplyButtonReady\(next, plan\.delaySeconds \* 1000, plan\)/)
+  assert.match(source, /if \(waited === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(source, /这条帖子的评论按钮一直不可用，已跳过/)
+  let now = 10_000
+  let enabled = false
+  const state = { stopping: false, running: true, status: '' }
+  const button = { disabled: true }
+  const article = { isConnected: true, scrollIntoView() {} }
+  const sandbox = vm.createContext({
+    article,
+    state,
+    Date: { now: () => now },
+    Math,
+    riskRoundPending: () => false,
+    findReplyRestrictionDialog: () => false,
+    replyButtonForArticle: () => button,
+    loopApi: { isSubmitEnabled: (item) => item && !item.disabled },
+    renderPanel() {},
+    sleep: async (ms) => {
+      now += ms
+      if (now >= 11_000) state.stopping = true
+    },
+  })
+  vm.runInContext(`${helper}\nglobalThis.waitReady = waitUntilReplyButtonReady`, sandbox)
+  assert.equal(await vm.runInContext('waitReady({ article }, 3000, { attempt: 1, limit: 3 })', sandbox), 'stopped')
+  assert.match(state.status, /秒后重试同一条（1\/3）/)
+  assert.equal(enabled, false)
+
+  now = 20_000
+  state.stopping = false
+  state.running = true
+  sandbox.sleep = async (ms) => {
+    now += ms
+    if (now >= 20_400) button.disabled = false
+  }
+  assert.equal(await vm.runInContext('waitReady({ article }, 3000, { attempt: 2, limit: 3 })', sandbox), 'ready')
+})
+
+test('a disabled reply button retries twice, then skips that post', () => {
+  assert.equal(loop.REPLY_BUTTON_RETRY_LIMIT, 3)
+  assert.equal(loop.REPLY_BUTTON_RETRY_SECONDS, 3)
+  assert.deepEqual(loop.replyButtonRetryPlan(1), { action: 'retry', attempt: 1, limit: 3, delaySeconds: 3 })
+  assert.deepEqual(loop.replyButtonRetryPlan(2), { action: 'retry', attempt: 2, limit: 3, delaySeconds: 3 })
+  assert.deepEqual(loop.replyButtonRetryPlan(3), { action: 'skip', attempt: 3, limit: 3, delaySeconds: 0 })
+})
+
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
   assert.equal(loop.isSubmitEnabled(null), false)
   assert.equal(loop.isSubmitEnabled({ disabled: true, getAttribute() { return null } }), false)
@@ -4919,7 +5006,12 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   const result = context.findConversation(articles, '103', 'me', 'friend')
   assert.equal(result.ownPost.text, '我补充的上下文')
   assert.equal(result.reply.text, '对方最新回复')
+  assert.equal(result.rootPost.authorHandle, 'me')
+  assert.equal(result.rootSettled, true)
   assert.equal(result.ownThread, true)
+  assert.equal(context.allowsContinuedDialogue(result, 'me'), true)
+  assert.equal(context.allowsContinuedDialogue(result, '@ME'), true)
+  assert.equal(context.allowsContinuedDialogue(result, 'otheraccount'), false)
   assert.equal(context.findConversation(articles, '103', 'me', 'stranger'), null)
   assert.equal(context.findConversation([articles.at(-1)], '103', 'me', 'friend'), null)
 
@@ -4930,7 +5022,233 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   ]
   const foreignResult = context.findConversation(foreign, '202', 'me', 'friend')
   assert.equal(foreignResult.ownPost.text, '我之前回过一句')
+  assert.equal(foreignResult.rootPost.authorHandle, 'friend')
+  assert.equal(foreignResult.rootSettled, true)
   assert.equal(foreignResult.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(foreignResult, 'me'), false)
+  assert.equal(context.allowsContinuedDialogue(foreignResult, 'friend'), true)
+})
+
+test('continued dialogue follows the active account root, not an earlier reply in someone else\'s thread', () => {
+  const article = (href, text, replyingTo = '') => {
+    const replyLine = replyingTo ? `Replying to @${replyingTo}` : ''
+    return {
+      parentElement: { closest() { return null } },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: text, textContent: text }
+        return null
+      },
+      querySelectorAll(selector) {
+        if (selector === 'div, span, a' && replyLine) {
+          return [{
+            closest() { return null },
+            querySelector() { return null },
+            innerText: replyLine,
+            textContent: replyLine,
+          }]
+        }
+        if (selector === 'a[href*="/status/"] time') return []
+        return []
+      },
+    }
+  }
+  const foreignThread = [
+    article('/stranger/status/200', '白裙子原帖'),
+    article('/tuaranx/status/201', '边界感这东西，说早了是清醒，说晚了是欠条。', 'stranger'),
+    article('/nowxono/status/202', '担心你马上被抬走', 'tuaranx'),
+  ]
+  const visibleRoot = context.findConversation(foreignThread, '202', 'tuaranx', 'nowxono')
+  assert.equal(visibleRoot.rootPost.authorHandle, 'stranger')
+  assert.equal(visibleRoot.rootPost.isReply, false)
+  assert.equal(visibleRoot.ownPost.text, '边界感这东西，说早了是清醒，说晚了是欠条。')
+  assert.equal(visibleRoot.rootSettled, true)
+  assert.equal(visibleRoot.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, '@TuaranX'), false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'stranger'), true)
+
+  const collapsedRoot = [
+    article('/tuaranx/status/201', '边界感这东西，说早了是清醒，说晚了是欠条。', 'stranger'),
+    article('/nowxono/status/202', '担心你马上被抬走', 'tuaranx'),
+    article('/tuaranx/status/203', '哈哈哈哈我还能撑', 'nowxono'),
+    article('/nowxono/status/204', '小心点吧', 'tuaranx'),
+  ]
+  const collapsed = context.findConversation(collapsedRoot, '204', '@TuaranX', '@nowXono')
+  assert.equal(collapsed.ownPost.authorHandle, 'tuaranx')
+  assert.equal(collapsed.rootPost.isReply, true)
+  assert.deepEqual(collapsed.rootPost.replyToHandles, ['stranger'])
+  assert.equal(collapsed.rootSettled, false)
+  assert.equal(collapsed.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(collapsed, 'tuaranx'), false)
+
+  const chinese = context.findConversation([
+    {
+      ...article('/tuaranx/status/301', '我先回了一句', 'stranger'),
+      querySelectorAll(selector) {
+        if (selector !== 'div, span, a') return []
+        return [{
+          closest() { return null },
+          querySelector() { return null },
+          innerText: '正在回复 @stranger',
+          textContent: '正在回复 @stranger',
+        }]
+      },
+    },
+    article('/nowxono/status/302', '再接一句', 'tuaranx'),
+  ], '302', 'tuaranx', 'nowxono')
+  assert.equal(chinese.rootPost.replyToHandles[0], 'stranger')
+  assert.equal(context.allowsContinuedDialogue(chinese, 'tuaranx'), false)
+
+  const ownThread = [
+    article('/tuaranx/status/400', '我的原帖'),
+    article('/nowxono/status/401', '对方第一次回我', 'tuaranx'),
+    article('/tuaranx/status/402', '我继续接', 'nowxono'),
+    article('/nowxono/status/403', '对方又回了', 'tuaranx'),
+  ]
+  const own = context.findConversation(ownThread, '403', 'tuaranx', 'nowxono')
+  assert.equal(own.rootPost.authorHandle, 'tuaranx')
+  assert.equal(own.rootPost.isReply, false)
+  assert.equal(own.ownPost.text, '我继续接')
+  assert.equal(own.rootSettled, true)
+  assert.equal(context.allowsContinuedDialogue(own, 'tuaranx'), true)
+  assert.equal(context.allowsContinuedDialogue(own, 'nowxono'), false)
+  const asOtherAccount = context.findConversation(ownThread, '403', 'nowxono', 'nowxono')
+  assert.equal(asOtherAccount.rootPost.authorHandle, 'tuaranx')
+  assert.equal(asOtherAccount.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(asOtherAccount, 'nowxono'), false)
+
+  assert.equal(context.allowsContinuedDialogue({
+    ownThread: true,
+    ownPost: { authorHandle: 'tuaranx', text: '我之前回过一句' },
+    reply: { text: '对方又回了' },
+  }, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue({
+    ownThread: false,
+    rootSettled: false,
+    rootPost: { authorHandle: 'tuaranx', isReply: true, replyToHandles: ['stranger'], text: '我之前回过一句' },
+    ownPost: { authorHandle: 'tuaranx', text: '我之前回过一句' },
+    reply: { text: '对方又回了' },
+  }, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue(null, 'tuaranx'), false)
+})
+
+test('conversation reader keeps a root rendered outside article tags and ignores the parent preview link', () => {
+  const rootTweet = { parentElement: { closest() { return null } } }
+  const nested = { parentElement: { closest(selector) { return selector === '[data-testid="tweet"]' ? rootTweet : null } } }
+  const reply = { parentElement: { closest() { return null } } }
+  const doc = {
+    querySelector(selector) {
+      return selector === '[data-testid="primaryColumn"]' ? this : null
+    },
+    querySelectorAll(selector) {
+      return selector === '[data-testid="tweet"]' ? [rootTweet, nested, reply] : []
+    },
+  }
+  assert.deepEqual(context.conversationTweetNodes(doc), [rootTweet, reply])
+
+  function node({ testid = '', href = '', text = '', tag = 'div', children = [] }) {
+    const item = {
+      testid,
+      href,
+      text,
+      tag,
+      children,
+      parentElement: null,
+      getAttribute(name) {
+        if (name === 'href') return href || null
+        if (name === 'data-testid') return testid || null
+        return null
+      },
+      closest(selector) {
+        let current = item.parentElement
+        while (current) {
+          if (selector === 'a' && current.tag === 'a') return current
+          if (selector === '[data-testid="tweet"]' && current.testid === 'tweet') return current
+          if (selector === '[data-testid="tweetText"]' && current.testid === 'tweetText') return current
+          current = current.parentElement
+        }
+        return null
+      },
+      querySelector(selector) {
+        return item.querySelectorAll(selector)[0] || null
+      },
+      querySelectorAll(selector) {
+        const hits = []
+        const walk = (entry) => {
+          const linkTime = selector === 'a[href*="/status/"] time' && entry.testid === 'time'
+          const replyButton = selector === '[data-testid="reply"]' && entry.testid === 'reply'
+          const tweetText = selector === '[data-testid="tweetText"]' && entry.testid === 'tweetText'
+          const copyNode = selector === 'div, span, a' && ['div', 'span', 'a'].includes(entry.tag)
+          if (linkTime || replyButton || tweetText || copyNode) hits.push(entry)
+          for (const child of entry.children) walk(child)
+        }
+        for (const child of item.children) walk(child)
+        return hits
+      },
+      innerText: text,
+      textContent: text,
+    }
+    for (const child of children) child.parentElement = item
+    return item
+  }
+  const timeLink = (href) => node({
+    tag: 'a',
+    href,
+    children: [node({ testid: 'time', tag: 'time' })],
+  })
+  const replyArticle = node({
+    testid: 'tweet',
+    tag: 'article',
+    children: [
+      node({ tag: 'div', text: 'Replying to @stranger' }),
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '担心你马上被抬走' }),
+      node({
+        tag: 'div',
+        children: [
+          timeLink('/nowxono/status/202'),
+          node({ testid: 'reply', tag: 'button' }),
+        ],
+      }),
+    ],
+  })
+  const rootArticle = node({
+    testid: 'tweet',
+    tag: 'div',
+    children: [
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '白裙子原帖' }),
+      node({ testid: 'reply', tag: 'button' }),
+    ],
+  })
+  const parsed = context.findConversation([rootArticle, replyArticle], '202', 'tuaranx', 'nowxono')
+  assert.equal(parsed, null)
+
+  const ownReply = node({
+    testid: 'tweet',
+    tag: 'article',
+    children: [
+      node({ tag: 'div', text: 'Replying to @stranger' }),
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '边界感这东西' }),
+      node({
+        tag: 'div',
+        children: [
+          timeLink('/tuaranx/status/201'),
+          node({ testid: 'reply', tag: 'button' }),
+        ],
+      }),
+    ],
+  })
+  const followed = context.findConversation([rootArticle, ownReply, replyArticle], '202', 'tuaranx', 'nowxono')
+  assert.equal(followed.rootPost.authorHandle, 'stranger')
+  assert.equal(followed.rootPost.id, '200')
+  assert.equal(followed.ownPost.authorHandle, 'tuaranx')
+  assert.equal(followed.ownPost.id, '201')
+  assert.equal(followed.reply.authorHandle, 'nowxono')
+  assert.equal(followed.reply.id, '202')
+  assert.equal(context.allowsContinuedDialogue(followed, 'tuaranx'), false)
 })
 
 test('notification context opens a background conversation tab and closes it after reading', async () => {
@@ -4942,7 +5260,15 @@ test('notification context opens a background conversation tab and closes it aft
       async sendMessage(id, message) {
         assert.equal(id, 91)
         assert.equal(message.replyId, '103')
-        return { context: { ownPost: { text: '我的帖子' }, reply: { text: '对方回复' } } }
+        return {
+          context: {
+            ownPost: { authorHandle: 'me', text: '我的帖子' },
+            reply: { authorHandle: 'friend', text: '对方回复' },
+            rootPost: { authorHandle: 'me', text: '我的帖子', isReply: false, replyToHandles: [] },
+            ownThread: true,
+            rootSettled: true,
+          },
+        }
       },
       async remove(id) { removed = id },
     },
@@ -4951,11 +5277,124 @@ test('notification context opens a background conversation tab and closes it aft
     const result = await background.readNotificationContext({
       replyUrl: 'https://x.com/friend/status/103', replyId: '103', ownHandle: 'me', replyAuthor: 'friend',
     }, { tab: { windowId: 7 } })
+    assert.equal(result.context.rootSettled, true)
     assert.equal(result.context.ownPost.text, '我的帖子')
     assert.equal(new URL(created.url).searchParams.get('xrcContext'), '1')
     assert.equal(created.active, false)
     assert.equal(removed, 91)
   } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('notification context waits for a settled root and does not keep an unsettled thread', async () => {
+  assert.equal(background.notificationContextIsReady({
+    ownPost: { text: '我的原帖' }, reply: { text: '对方回复' }, rootSettled: true,
+  }), true)
+  assert.equal(background.notificationContextIsReady({
+    ownPost: { text: '我先回了一句' }, reply: { text: '对方又回了' }, rootSettled: false,
+  }), false)
+  const unresolved = background.notificationContextUnresolved({
+    ownPost: { authorHandle: 'tuaranx', text: '我先回了一句' },
+    reply: { text: '对方又回了' },
+    rootPost: { authorHandle: 'tuaranx', isReply: true, replyToHandles: ['stranger'] },
+    ownThread: true,
+    rootSettled: false,
+  })
+  assert.equal(unresolved.ownThread, false)
+  assert.equal(unresolved.rootSettled, false)
+  assert.equal(context.allowsContinuedDialogue(unresolved, 'tuaranx'), false)
+
+  const originalNow = Date.now
+  const originalSetTimeout = globalThis.setTimeout
+  let now = 5_000
+  let calls = 0
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => {
+    now += 500
+    fn()
+    return 0
+  }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 91 } },
+      async sendMessage() {
+        calls += 1
+        if (calls < 3) {
+          return {
+            context: {
+              ownPost: { authorHandle: 'tuaranx', text: '边界感这东西' },
+              reply: { authorHandle: 'nowxono', text: '担心你马上被抬走' },
+              rootPost: { authorHandle: 'tuaranx', text: '边界感这东西', isReply: true, replyToHandles: ['stranger'] },
+              ownThread: false,
+              rootSettled: false,
+            },
+          }
+        }
+        return {
+          context: {
+            ownPost: { authorHandle: 'tuaranx', text: '我的原帖' },
+            reply: { authorHandle: 'nowxono', text: '对方回复' },
+            rootPost: { authorHandle: 'tuaranx', text: '我的原帖', isReply: false, replyToHandles: [] },
+            ownThread: true,
+            rootSettled: true,
+          },
+        }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    const settled = await background.readNotificationContext({
+      replyUrl: 'https://x.com/nowxono/status/103', replyId: '103', ownHandle: 'tuaranx', replyAuthor: 'nowxono',
+    }, { tab: { windowId: 7 } })
+    assert.equal(calls, 3)
+    assert.equal(settled.context.rootSettled, true)
+    assert.equal(context.allowsContinuedDialogue(settled.context, 'tuaranx'), true)
+    assert.equal(context.allowsContinuedDialogue(settled.context, 'nowxono'), false)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
+    delete globalThis.chrome
+  }
+
+  now = 5_000
+  calls = 0
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => {
+    now += 1_000
+    fn()
+    return 0
+  }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 92 } },
+      async sendMessage() {
+        calls += 1
+        return {
+          context: {
+            ownPost: { authorHandle: 'tuaranx', text: '边界感这东西' },
+            reply: { authorHandle: 'nowxono', text: '小心点吧' },
+            rootPost: { authorHandle: 'tuaranx', text: '边界感这东西', isReply: true, replyToHandles: ['stranger'] },
+            ownThread: true,
+            rootSettled: false,
+          },
+        }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    const stalled = await background.readNotificationContext({
+      replyUrl: 'https://x.com/nowxono/status/204', replyId: '204', ownHandle: 'TuaranX', replyAuthor: 'nowXono',
+    }, { tab: { windowId: 7 } })
+    assert.equal(stalled.context.ownThread, false)
+    assert.equal(stalled.context.rootSettled, false)
+    assert.equal(context.allowsContinuedDialogue(stalled.context, 'tuaranx'), false)
+    assert.ok(calls >= 2)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
     delete globalThis.chrome
   }
 })
@@ -5887,7 +6326,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -5974,6 +6413,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /rememberRecentReply/)
   assert.match(content, /if \(result === "ambiguous-sent"\) \{[\s\S]*?rememberRecentReply\(phrase\)/)
   assert.match(content, /稍后重试同一条/)
+  assert.match(content, /result === "reply-disabled"[\s\S]*replyButtonRetryPlan\(misses\)/)
+  assert.match(content, /waitUntilReplyButtonReady\(next, plan\.delaySeconds \* 1000, plan\)/)
+  assert.match(content, /if \(waited === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(content, /这条帖子的评论按钮一直不可用，已跳过/)
+  assert.match(content, /评论按钮暂时不可用，\$\{remaining\} 秒后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
   assert.match(content, /回复\)已发送/)
   assert.match(content, /a\[href\*=\"\/status\/\"\]/)
@@ -6098,10 +6542,15 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /nextCycleAt/)
   assert.match(content, /xrc-task-open/)
   assert.match(content, /xrc-task-register/)
-  assert.match(content, /conversation = await conversationOrFallback\(next, postText\)/)
+  assert.match(content, /notificationConversation = await conversationOrFallback\(next, noteText \|\| " "\)/)
+  assert.match(content, /allowsNotificationDialogue\(notificationConversation, currentAccountHandle\(\)\)/)
+  assert.match(content, /XrcNotificationContext\?\.allowsContinuedDialogue/)
+  assert.doesNotMatch(content, /rootPost\?\.authorHandle \|\| conversation\.ownPost\.authorHandle/)
+  assert.match(content, /ownThread: false/)
+  assert.match(content, /rootSettled: false/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十六项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十七项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -6190,7 +6639,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /function validReplyMode\(\) \{\s*return "ai";/)
   assert.doesNotMatch(content, /data-xrc-mode="ai"/)
   assert.doesNotMatch(content, /data-xrc-ai-key/)
-  assert.doesNotMatch(content, /type="password"/)
+  assert.match(content, /data-xrc-mobileoffice-token/)
+  assert.doesNotMatch(content, /data-xrc-secret-input[^>]{0,160}type="password"/)
   assert.match(content, /data-xrc-secret-input/)
   assert.match(content, /data-1p-ignore="true"/)
   assert.match(content, /不要填写 X 登录密码/)
@@ -6354,8 +6804,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="version-path"/)
   assert.match(docsPage, /来时路 · v0 → v4/)
   assert.match(docsPage, /VERSION_ERAS/)
-  assert.match(docsPage, /id: 'era-v0', label: 'v0 · 原型闭环'/)
-  assert.match(docsPage, /id: 'era-v4', label: 'v4 · 单页签排班'/)
+  assert.match(docsPage, /id: 'era-v0'/)
+  assert.match(docsPage, /title: '原型闭环'/)
+  assert.match(docsPage, /id: 'era-v4'/)
+  assert.match(docsPage, /title: '单页签排班'/)
   assert.match(docsPage, /flex flex-col gap-3 md:flex-row md:items-start/)
   assert.match(docsPage, /原型闭环/)
   assert.match(docsPage, /正式面板/)
@@ -6368,17 +6820,18 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /TaskWindowPlan/)
   assert.doesNotMatch(docsPage, /TaskSchedulePrototype/)
   const windowPlan = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/TaskWindowPlan.jsx', extensionDir), 'utf8')
-  assert.match(windowPlan, /panel-v4-schedule-desk\.webp/)
-  assert.match(windowPlan, /panel-v4-task-rounds\.webp/)
-  assert.match(windowPlan, /panel-v4-panel-overview\.webp/)
+  assert.match(windowPlan, /panel-v4\.3\.24-schedule\.webp/)
+  assert.match(windowPlan, /panel-v4\.3\.24-task\.webp/)
   assert.match(windowPlan, /真实面板/)
   assert.match(windowPlan, /面板长什么样/)
   assert.doesNotMatch(windowPlan, /账号 A/)
-  assert.match(docsPage, /评论、点赞、关注、发帖、普通发文、站长转发和清理/)
-  assert.match(docsPage, /id: 'reply-kol', label: '评论大V', depth: 2/)
+  assert.match(docsPage, /评论、点赞、关注、发帖、普通发文、站长转发、社群分发和清理/)
+  assert.match(docsPage, /id="reply-kol"/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
-  assert.match(docsPage, /只回「别人回你自己帖子」这一类/)
+  assert.match(docsPage, /只继续回当前登录账号自己的原帖/)
+  assert.match(docsPage, /已经写在别人帖子下面的评论不会被当成自己的原帖/)
+  assert.match(docsPage, /换账号后按新账号判断/)
   assert.match(docsPage, /短、友好、多表情/)
   assert.match(docsPage, /默认优先级 8 分/)
   assert.match(docsPage, /PromptVoteLedger/)
@@ -6423,13 +6876,13 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /PostWaveTimeline/)
   assert.match(docsPage, /id: 'poster-wave'/)
   assert.match(docsPage, /发帖波浪时间线/)
-  assert.match(docsPage, /id: 'comments', label: '评论管理', depth: 1/)
-  assert.match(docsPage, /id: 'reply-timeline', label: '评论首页', depth: 2/)
+  assert.match(docsPage, /id: 'comments', label: '评论管理'/)
+  assert.match(docsPage, /id="reply-timeline"/)
   assert.match(docsPage, /id="reply-timeline"[\s\S]*一次任务会按所选速度档位生成多轮计划/)
   assert.match(docsPage, /每轮各有回复条数目标/)
   assert.match(docsPage, /正常情况下完成本次全部轮次后才让出共享执行页签/)
-  assert.match(docsPage, /id: 'poster', label: '定时发帖', depth: 1/)
-  assert.match(docsPage, /id: 'poster-wave', label: '发帖波浪时间线', depth: 2/)
+  assert.match(docsPage, /id: 'poster', label: '发帖、草稿与清理'/)
+  assert.match(docsPage, /id="poster-wave"/)
   const docsToc = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/DocsToc.jsx', extensionDir), 'utf8')
   assert.match(docsToc, /border-l border-\[var\(--site-line\)\]/)
   assert.match(docsToc, /scrollBy\(\{ top: delta/)
@@ -6701,7 +7154,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
   assert.equal(rules['likes-replies'].priority, rules['likes-posts'].priority)
-  assert.ok(rules.notifications.priority > rules.timeline.priority)
+  assert.ok(rules.timeline.priority > rules.notifications.priority)
   assert.ok(rules.timeline.priority > rules['poster-premium'].priority)
   assert.ok(rules['poster-premium'].priority > rules.poster.priority)
   assert.equal(rules['poster-x'].priority, rules.poster.priority)
@@ -6755,7 +7208,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward']) {
+  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -6804,7 +7257,7 @@ test('cleanup and X-themed post checkboxes start unchecked unless saved choices 
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward']) {
+  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)
@@ -7320,11 +7773,11 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // Highest default rank is notifications; from /home that may navigate first, then start in-page.
-    assert.equal(activeMode, 'notifications')
+    // Highest default rank is 评论首页; from /home that may navigate first, then start in-page.
+    assert.equal(activeMode, 'timeline')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /notifications/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => /xrcAssistant=timeline/i.test(String(entry.options?.url || ''))),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -8539,6 +8992,128 @@ test('manual follow requests skip ordinary scan spacing but retain explicit cool
     stored.xrcTaskSchedule.rules['mutual-followBack'].window = 'day'
     assert.equal((await background.readTaskSchedule()).rules['mutual-followBack'].window, 'day')
   } finally { globalThis.chrome = previousChrome }
+})
+
+const communityShare = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+
+test('community share picks the newest original post and skips pinned replies and reposts', () => {
+  const picked = communityShare.pickLatestOriginalPost([
+    { id: '1', own: true, pinned: true, text: '置顶' },
+    { id: '2', own: true, repost: true, text: '转发' },
+    { id: '3', own: true, reply: true, text: '回复' },
+    { id: '4', own: true, text: '最新原创' },
+    { id: '5', own: false, text: '别人的帖' },
+  ])
+  assert.equal(picked.id, '4')
+  assert.equal(communityShare.pickLatestOriginalPost([{ id: '9', own: true, reply: true }]), null)
+})
+
+test('community share only keeps joined communities and caps the list', () => {
+  const cards = [
+    { id: '11', href: '/i/communities/11', name: '已加入社群', joinControl: '已加入' },
+    { id: '12', href: '/i/communities/12', name: '推荐社群', joinControl: '加入' },
+    { id: '13', href: '/i/communities/13', name: '发现社群', explore: true },
+    { id: '11', href: '/i/communities/11', name: '重复', joinControl: 'Joined' },
+    { id: '14', href: '/i/communities/14', name: '无按钮社群' },
+  ]
+  const joined = communityShare.collectJoinedCommunities(cards)
+  assert.deepEqual(joined.map((item) => item.id), ['11', '14'])
+  const capped = communityShare.collectJoinedCommunities(
+    Array.from({ length: 40 }, (_, index) => ({ id: String(100 + index), name: `社群${index}` })),
+    { limit: 30 },
+  )
+  assert.equal(capped.length, 30)
+})
+
+test('community share commentary stays within two sentences and can fall back to a template', () => {
+  const template = communityShare.templateCommentary('今天把排班改成单页签。', '产品社群')
+  assert.match(template, /产品社群/)
+  assert.match(template, /感兴趣可以直接看原帖/)
+  assert.doesNotMatch(template, /不是.+而是/)
+  const cleaned = communityShare.normalizeCommentary('不是广告，而是同步。\nhttps://x.com/a/status/1', template)
+  assert.equal(cleaned, template)
+  const kept = communityShare.normalizeCommentary('这条也放过来。想看的直接点原帖。再加一句就不该留下。', template)
+  assert.equal(kept, '这条也放过来。想看的直接点原帖。')
+  const draft = communityShare.shareDraft(kept, 'https://x.com/tuaran/status/99')
+  assert.match(draft, /想看的直接点原帖。\n\nhttps:\/\/x.com\/tuaran\/status\/99/)
+})
+
+test('community share delays follow the speed tier and retries then skip', () => {
+  assert.ok(communityShare.itemDelayMs('slow', () => 0) >= 20000)
+  assert.ok(communityShare.itemDelayMs('turbo', () => 0.99) <= 6000)
+  assert.equal(communityShare.shareGapMs('medium'), 3 * 60 * 60 * 1000)
+  const cursor = communityShare.normalizeCursor({
+    phase: 'share',
+    handle: 'tuaran',
+    source: { id: '99', href: '/tuaran/status/99', text: '原文' },
+    communities: [{ id: '11', name: '产品社群' }],
+    opens: { 11: 2 },
+  })
+  const skipped = communityShare.decideStep(cursor, {
+    path: '/i/communities/11',
+    composerReady: false,
+  })
+  assert.equal(skipped.action, 'skip')
+  assert.equal(skipped.reason, 'no-composer')
+  const filled = communityShare.decideStep(communityShare.normalizeCursor({
+    ...cursor,
+    opens: {},
+    fills: { 11: 2 },
+  }), { path: '/i/communities/11', composerReady: true, draftReady: false })
+  assert.equal(filled.reason, 'fill-failed')
+  const submitted = communityShare.decideStep(communityShare.normalizeCursor({
+    ...cursor,
+    opens: {},
+    fills: { 11: 1 },
+    attempts: { 11: 2 },
+  }), { path: '/i/communities/11', composerReady: true, draftReady: true })
+  assert.equal(submitted.reason, 'submit-failed')
+})
+
+test('community share step finds the profile post, skips an already shared community, and stops on a limit', () => {
+  const found = communityShare.decideStep(communityShare.normalizeCursor({ handle: 'tuaran' }), {
+    path: '/tuaran',
+    posts: [
+      { id: '1', own: true, pinned: true },
+      { id: '2', own: true, text: '最新原创' },
+    ],
+  })
+  assert.equal(found.action, 'navigate')
+  assert.match(found.url, /\/i\/communities\?xrcAssistant=community-share/)
+  assert.equal(found.cursor.source.id, '2')
+  const listed = communityShare.decideStep(found.cursor, {
+    path: '/i/communities',
+    canScroll: false,
+    cards: [{ id: '11', name: '产品社群', joinControl: '已加入' }, { id: '12', name: '推荐', joinControl: '加入' }],
+  })
+  assert.equal(listed.action, 'navigate')
+  assert.match(listed.url, /\/i\/communities\/11/)
+  const again = communityShare.decideStep(listed.cursor, {
+    path: '/i/communities/11',
+    canScroll: false,
+  }, ['11'])
+  assert.equal(again.action, 'finish')
+  const limited = communityShare.decideStep(listed.cursor, {
+    path: '/i/communities/11',
+    limited: true,
+  })
+  assert.equal(limited.action, 'limited')
+  const ledger = communityShare.rememberLedgerShare({ posts: {} }, '2', '11', 1_000)
+  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 6 * 24 * 60 * 60 * 1000), ['11'])
+  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 8 * 24 * 60 * 60 * 1000), [])
+})
+
+test('community share is a scheduled task that stays off until enabled', () => {
+  const rules = background.normalizedTaskRules({})
+  assert.equal(rules['community-share'].enabled, false)
+  assert.equal(rules['community-share'].priority, 7)
+  assert.equal(rules['community-share'].pace, 'slow')
+  assert.equal(rules['community-share'].minGapMs, background.COMMUNITY_SHARE_RETRY_MS)
+  assert.equal(background.sliceMsForMode('community-share', { sliceSeconds: 30 }), background.COMMUNITY_SHARE_SLICE_MS)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/tuaran', { accountHandle: 'tuaran' }), true)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), true)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/explore', { accountHandle: 'tuaran' }), false)
+  assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

@@ -1,6 +1,8 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
+if (typeof importScripts === "function") importScripts("kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
+
+const kolRoster = globalThis.XrcKolRoster || (typeof require === "function" ? require("./kolRoster.js") : null);
 
 const replyHistory = globalThis.XrcReplyHistory?.createReplyHistory(globalThis.chrome?.storage?.local, globalThis.indexedDB);
 
@@ -26,11 +28,8 @@ const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcL
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
-const KOL_HANDLES_KEY = "xrcKolHandles";
-const DEFAULT_KOL_HANDLES = Object.freeze([
-  "xupaopaogm", "thankucrypto", "hotmailfromsh", "weiyux2021", "huoshan007",
-  "alanshao111", "vicentyip", "xiaqingfeng666", "JMkernt", "DISONYYDS"
-]);
+const KOL_HANDLES_KEY = kolRoster.KOL_HANDLES_KEY;
+const DEFAULT_KOL_HANDLES = kolRoster.KOL_CATALOG;
 const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
@@ -913,17 +912,13 @@ function normalizeTargetFollowHandles(value) {
   return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
 }
 
-function normalizeKolHandles(value) {
-  const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,，;；]+/u))
-    .map((item) => String(item || "").trim().replace(/^@/u, ""))
-    .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
-      && !RESERVED_X_PATHS.has(handle.toLowerCase())
-      && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-  return list.length ? list : [...DEFAULT_KOL_HANDLES];
+function normalizeKolHandles(value, now = Date.now()) {
+  const parsed = kolRoster.parseKolHandles(value);
+  return parsed.length ? parsed : kolRoster.poolHandles(kolRoster.poolIndex(now));
 }
 
 let targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
-let kolHandlesCache = [...DEFAULT_KOL_HANDLES];
+let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
 
 async function readTargetFollowHandles() {
   try {
@@ -943,22 +938,86 @@ async function writeTargetFollowHandles(value) {
   return handles;
 }
 
-async function readKolHandles() {
+async function readKolCycleStore() {
   try {
-    const stored = await chrome.storage.local.get(KOL_HANDLES_KEY);
-    kolHandlesCache = normalizeKolHandles(stored?.[KOL_HANDLES_KEY]);
+    const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+    return stored?.[kolRoster.KOL_CYCLE_KEY] || { byAccount: {} };
+  } catch (error) {
+    return { byAccount: {} };
+  }
+}
+
+async function readKolHandles(now = Date.now()) {
+  try {
+    const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY]);
+    const decision = kolRoster.resolveKolRoster({
+      storedHandles: stored?.[KOL_HANDLES_KEY],
+      meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+      now
+    });
+    kolHandlesCache = decision.handles;
+    if (decision.persist) {
+      try {
+        await chrome.storage.local.set({
+          [KOL_HANDLES_KEY]: decision.handles,
+          [kolRoster.KOL_ROSTER_KEY]: decision.meta
+        });
+      } catch (error) {
+        // Keep the resolved roster in memory when storage is temporarily unavailable.
+      }
+    }
     return kolHandlesCache;
   } catch (error) {
-    kolHandlesCache = [...DEFAULT_KOL_HANDLES];
+    kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex(now));
     return kolHandlesCache;
   }
 }
 
-async function writeKolHandles(value) {
-  const handles = normalizeKolHandles(value);
-  kolHandlesCache = handles;
-  await chrome.storage.local.set({ [KOL_HANDLES_KEY]: handles });
-  return handles;
+async function writeKolHandles(value, now = Date.now()) {
+  const decision = kolRoster.resolveKolRoster({ storedHandles: value, meta: null, now });
+  kolHandlesCache = decision.handles;
+  await chrome.storage.local.set({
+    [KOL_HANDLES_KEY]: decision.handles,
+    [kolRoster.KOL_ROSTER_KEY]: decision.meta
+  });
+  return decision.handles;
+}
+
+async function prepareKolNavigationOrder(accountHandle, random = Math.random) {
+  const handles = await readKolHandles();
+  const account = accountHandle || await savedAccountHandle();
+  const store = await readKolCycleStore();
+  const next = kolRoster.navigationOrder(kolRoster.readCycleRecord(store, account), handles, random);
+  if (!next.reused) {
+    const updated = kolRoster.writeCycleRecord(store, account, {
+      active: true,
+      rosterKey: next.rosterKey,
+      order: next.order,
+      visited: [],
+      createdAt: next.createdAt
+    });
+    try {
+      await chrome.storage.local.set({ [kolRoster.KOL_CYCLE_KEY]: updated });
+    } catch (error) {
+      // The content script shuffles again when this record is missing.
+    }
+  }
+  return next;
+}
+
+async function launchTaskTabUrl(mode, sourceUrl, options = {}) {
+  if (validTaskMode(mode) !== "kol") return taskTabUrl(mode, sourceUrl, options);
+  const handles = await readKolHandles();
+  const current = pathnameOf(options.currentUrl || "");
+  const match = current.match(/^\/([^/]+)$/iu);
+  const onRoster = Boolean(match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase()));
+  const plan = onRoster ? null : await prepareKolNavigationOrder(options.accountHandle || "");
+  return taskTabUrl(mode, sourceUrl, {
+    ...options,
+    kolHandles: handles,
+    kolVisitOrder: plan?.order || null,
+    kolVisitedHandles: plan?.visited || null
+  });
 }
 
 function accountHandleFrom(value) {
@@ -1012,7 +1071,7 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
-function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", targetFollowHandles = null, kolHandles = null } = {}) {
+function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", targetFollowHandles = null, kolHandles = null, kolVisitOrder = null, kolVisitedHandles = null } = {}) {
   const selected = validTaskMode(mode);
   const handle = accountHandleFrom(accountHandle);
   const current = pathnameOf(currentUrl);
@@ -1032,10 +1091,11 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   }
   if (selected === "kol") {
     const handles = normalizeKolHandles(kolHandles || kolHandlesCache);
+    const order = kolRoster.parseKolHandles(kolVisitOrder).filter((handle) =>
+      handles.some((item) => item.toLowerCase() === handle.toLowerCase()));
     const match = current.match(/^\/([^/]+)$/iu);
-    if (match && !RESERVED_X_PATHS.has(match[1].toLowerCase())
-      && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
-    const picked = handles[Math.floor(Math.random() * handles.length)];
+    if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
+    const picked = kolRoster.nextUnvisitedHandle(order, kolVisitedHandles) || order[0] || handles[0];
     return `/${picked}`;
   }
   if (selected === "community-share") return handle ? `/${handle}` : "/home";
@@ -1338,7 +1398,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
         }
       }
       if (!runningHere && (start || !onTaskPath(selected, pageUrl, { start, accountHandle: handle, currentUrl: pageUrl }))) {
-        const destination = taskTabUrl(selected, pageUrl || sender?.tab?.url, {
+        const destination = await launchTaskTabUrl(selected, pageUrl || sender?.tab?.url, {
           start,
           accountHandle: handle,
           currentUrl: pageUrl,
@@ -1358,7 +1418,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
       await writeTaskTabs(tabs);
     }
   }
-  const destination = taskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
+  const destination = await launchTaskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
   const url = destination || `${pageOrigin(sender?.tab?.url)}/home?xrcAssistant=${encodeURIComponent(selected)}`;
   const createdWindow = await chrome.windows.create({
     url,
@@ -1526,7 +1586,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
         return { ok: true, mode, tabId, reused: true, started: true, inPage: true };
       }
     }
-    const destination = taskTabUrl(mode, tab.url || sender?.tab?.url, {
+    const destination = await launchTaskTabUrl(mode, tab.url || sender?.tab?.url, {
       start, accountHandle, currentUrl: tab.url || "", pruneSearchStart
     });
     if (destination) {
@@ -1549,7 +1609,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
     return { ok: true, mode, tabId, reused: true };
   }
   // "打开当前执行页签" used to return idle when workTabId was cleared; always open a live tab.
-  const destination = taskTabUrl(mode, sender?.tab?.url, { start, accountHandle, pruneSearchStart });
+  const destination = await launchTaskTabUrl(mode, sender?.tab?.url, { start, accountHandle, pruneSearchStart });
   const created = await createSharedExecTab(destination, sender, start ? shouldActivate : true, { mode, start });
   tabId = created.tabId;
   await registerTaskTab(mode, tabId);
@@ -2380,7 +2440,7 @@ async function runTaskSchedule() {
               return plan;
             }
           }
-          const destination = taskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "", pruneSearchStart: current === "prune-posts" && await readPruneSearchStart() });
+          const destination = await launchTaskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "", pruneSearchStart: current === "prune-posts" && await readPruneSearchStart() });
           if (destination) {
             const reloads = Number(item.reloadAttempts) || 0;
             if (reloads < 2) {
@@ -3949,6 +4009,7 @@ if (typeof module === "object" && module.exports) {
     normalizeKolHandles,
     readKolHandles,
     writeKolHandles,
+    prepareKolNavigationOrder,
     KOL_HANDLES_KEY,
     RESERVED_X_PATHS,
     followBackNightEndsAt,

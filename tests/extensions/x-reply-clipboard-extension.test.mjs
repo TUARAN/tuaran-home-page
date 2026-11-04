@@ -317,7 +317,7 @@ test('task window state drops closed tabs before showing jump hints', async () =
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -1488,7 +1488,7 @@ test('single task click refreshes background schedule before acting on a stale s
 
 test('starting the inspected reply targets that task while another task owns the shared tab', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const toggle = source.match(/  async function onToggle\(\{ scheduledStart = false, requestedMode = "" \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  const toggle = source.match(/  async function onToggle\(\{ scheduledStart = false, requestedMode = "", kolLaunchHandle = "" \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(toggle)
   const requested = []
   const context = vm.createContext({
@@ -1871,7 +1871,7 @@ test('scheduled starts bypass manual waiting-button actions', async () => {
   const likeToggle = source.match(/  async function toggleLikes\(\{ scheduledStart = false, requestedMode = "" \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   const posterToggle = source.match(/  async function onPosterToggle\(\{ scheduledStart = false, requestedMode = "" \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(likeToggle && posterToggle)
-  assert.match(source, /async function onToggle\(\{ scheduledStart = false, requestedMode = "" \} = \{\}\)/)
+  assert.match(source, /async function onToggle\(\{ scheduledStart = false, requestedMode = "", kolLaunchHandle = "" \} = \{\}\)/)
   assert.match(source, /async function onMutualAction\(mode, \{ scheduledStart = false \} = \{\}\)/)
   assert.match(source, /if \(!scheduledStart && await stopScheduledWaitingTask\(mutualTaskKey\(mode\)/)
   assert.match(source, /await onMutualAction\(launch\.mutualMode, \{ scheduledStart: true \}\)/)
@@ -4873,17 +4873,23 @@ test('first pace migration selects boundary testing instead of leaving turbo hig
 
 test('commenting on KOL accounts uses four per-account limits and finishes after one pass', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const kolRoster = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
   assert.match(source, /KOL_REPLIES_PER_HANDLE = Object\.freeze\(\{ slow: 3, medium: 5, fast: 7, turbo: 11/)
   assert.match(source, /state\.assistantMode === "kol" && state\.pageCount >= currentRoundTarget\(\)/)
   assert.match(source, /data-xrc-reply-pace-kol>\$\{kolPaceTableHtml\(\)\}/)
+  assert.match(source, /if \(state\.assistantMode === "kol"\) \{\s*const aligned = await alignKolProfileToVisitOrder\(\)/)
   const definition = source.match(/  async function rotateKolProfileAndResume\(message\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
+  assert.match(definition, /nextUnvisitedHandle/)
+  assert.doesNotMatch(definition, /slice\(currentIndex/)
   const destinations = []
   let current = 'a'
   const state = { kolVisitedHandles: [], completedRounds: 0, pageCount: 3, total: 3, status: '' }
   const context = vm.createContext({
     state,
-    loadKolHandles: async () => ['a', 'b', 'c'],
+    kolRoster,
+    ensureKolVisitOrder: async () => ['c', 'a', 'b'],
+    persistKolCycle: async () => {},
     currentKolHandleFromPath: () => current,
     finishCycleAndScheduleNext: async () => 'complete',
     renderPanel: () => {},
@@ -4892,17 +4898,91 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   })
   vm.runInContext(`${definition}\nglobalThis.rotate = rotateKolProfileAndResume`, context)
   assert.equal(await context.rotate(), 'reload')
-  assert.equal(destinations[0], 'https://x.com/b?xrcAssistant=kol&xrcStart=1')
+  assert.equal(destinations[0], 'https://x.com/c?xrcAssistant=kol&xrcStart=1')
   assert.equal(state.pageCount, 0)
-  current = 'b'
+  current = 'c'
   state.pageCount = 5
   assert.equal(await context.rotate(), 'reload')
-  assert.equal(destinations[1], 'https://x.com/c?xrcAssistant=kol&xrcStart=1')
-  current = 'c'
+  assert.equal(destinations[1], 'https://x.com/b?xrcAssistant=kol&xrcStart=1')
+  current = 'b'
   state.pageCount = 7
   assert.equal(await context.rotate(), 'complete')
   assert.equal(destinations.length, 2)
   assert.equal(state.completedRounds, 3)
+})
+
+test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing days', () => {
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const day0 = Date.parse('2026-01-05T00:30:00+08:00')
+  const day6 = Date.parse('2026-01-11T23:00:00+08:00')
+  const day7 = Date.parse('2026-01-12T00:30:00+08:00')
+  const day14 = Date.parse('2026-01-19T00:30:00+08:00')
+  assert.equal(kol.KOL_POOL_DAYS, 7)
+  assert.equal(kol.poolIndex(day0), 0)
+  assert.equal(kol.poolIndex(day6), 0)
+  assert.equal(kol.poolIndex(day7), 1)
+  assert.equal(kol.poolIndex(day14), 0)
+  assert.notDeepEqual(
+    kol.poolHandles(0).map((handle) => handle.toLowerCase()).sort(),
+    kol.poolHandles(1).map((handle) => handle.toLowerCase()).sort(),
+  )
+  const input = ['a', 'b', 'c', 'd']
+  let draw = 0
+  const draws = [0, 0, 0]
+  const shuffled = kol.shuffleHandles(input, () => draws[draw++] ?? 0)
+  assert.deepEqual(shuffled, ['b', 'c', 'd', 'a'])
+  assert.deepEqual(input, ['a', 'b', 'c', 'd'])
+  assert.equal(kol.nextUnvisitedHandle(shuffled, ['b']), 'c')
+  assert.equal(kol.nextUnvisitedHandle(shuffled, ['b', 'C', 'd', 'a']), '')
+  const active = { active: true, order: ['b', 'c', 'd', 'a'], visited: ['b'], createdAt: day0 }
+  const reused = kol.navigationOrder(active, ['a', 'b', 'c', 'd'], () => 0)
+  assert.equal(reused.reused, true)
+  assert.equal(kol.nextUnvisitedHandle(reused.order, reused.visited), 'c')
+  const exhausted = kol.navigationOrder({ active: true, order: ['b', 'a'], visited: ['b', 'a'] }, ['a', 'b'], () => 0)
+  assert.equal(exhausted.reused, false)
+  assert.deepEqual(exhausted.visited, [])
+  const weekOne = kol.resolveKolRoster({ storedHandles: kol.KOL_CATALOG, meta: null, now: day0 })
+  assert.equal(weekOne.custom, false)
+  assert.deepEqual(weekOne.handles, kol.poolHandles(0))
+  const weekTwo = kol.resolveKolRoster({ storedHandles: weekOne.handles, meta: weekOne.meta, now: day7 })
+  assert.deepEqual(weekTwo.handles, kol.poolHandles(1))
+  assert.equal(weekTwo.persist, true)
+  const empty = kol.resolveKolRoster({ storedHandles: '', meta: null, now: day7 })
+  assert.equal(empty.custom, false)
+  assert.deepEqual(empty.handles, kol.poolHandles(1))
+  const custom = kol.resolveKolRoster({ storedHandles: ['alpha_one', 'beta_two'], meta: null, now: day0 })
+  assert.equal(custom.custom, true)
+  assert.deepEqual(custom.handles, ['alpha_one', 'beta_two'])
+  const customLater = kol.resolveKolRoster({ storedHandles: custom.handles, meta: custom.meta, now: day14 })
+  assert.equal(customLater.custom, true)
+  assert.deepEqual(customLater.handles, ['alpha_one', 'beta_two'])
+  assert.equal(customLater.persist, false)
+  const pinnedPool = kol.resolveKolRoster({ storedHandles: kol.poolHandles(1), meta: null, now: day0 })
+  assert.equal(pinnedPool.custom, false)
+  assert.deepEqual(pinnedPool.handles, kol.poolHandles(0))
+  const first = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
+  const second = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
+  assert.equal(first, 'https://x.com/alpha')
+  assert.equal(second, first)
+  assert.equal(
+    background.taskPageUrl('kol', 'https://x.com/home', {
+      kolHandles: ['alpha', 'beta', 'gamma'],
+      kolVisitOrder: ['gamma', 'alpha', 'beta'],
+      kolVisitedHandles: ['gamma'],
+    }),
+    'https://x.com/alpha',
+  )
+  assert.equal(
+    background.taskPageUrl('kol', 'https://x.com/beta', {
+      currentUrl: 'https://x.com/beta',
+      kolHandles: ['alpha', 'beta', 'gamma'],
+      kolVisitOrder: ['gamma', 'alpha'],
+    }),
+    'https://x.com/beta',
+  )
+  const store = kol.writeCycleRecord(null, 'Alice', { active: true, order: ['a'] })
+  assert.deepEqual(kol.readCycleRecord(store, '@alice').order, ['a'])
+  assert.equal(kol.readCycleRecord(store, 'bob'), null)
 })
 
 test('a disabled reply button is retried on a local timer and cancelled when the task stops', async () => {
@@ -6326,7 +6406,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))

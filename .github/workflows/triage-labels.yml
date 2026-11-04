@@ -63,35 +63,11 @@ jobs:
               created.append(name)
               print(f"created {name}")
 
-          # 一次性：关掉权限探测误开的空单，并给流程 Issue 补标签。
-          probe = json.loads(gh("issue", "view", "92", "--json", "title,state"))
-          if probe["title"] == "probe-delete-me" and probe["state"] == "OPEN":
-              gh(
-                  "issue",
-                  "close",
-                  "92",
-                  "--reason",
-                  "not planned",
-                  "--comment",
-                  "权限探测时误开的空单，关闭。聊天需求的流程单另开。",
-              )
-              print("closed #92")
-          else:
-              print(f"skip close #92 {probe['title']} {probe['state']}")
-
-          target = "流程：聊天需求先 Issue、再分诊、再开 PR"
-          listed = json.loads(gh("issue", "list", "--state", "open", "--limit", "50", "--json", "number,title"))
-          matches = [item["number"] for item in listed if item["title"] == target]
-          if not matches:
-              raise SystemExit(f"missing issue: {target}")
-          for number in matches:
-              gh("issue", "edit", str(number), "--add-label", "type:ops", "--add-label", "priority:now")
-              print(f"labeled #{number}")
-
           summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
           if summary_path:
+              skipped = [name for name, _color, _desc in labels if name not in created]
               with open(summary_path, "a", encoding="utf-8") as handle:
                   handle.write("## Triage labels\n\n")
                   handle.write(f"- created: {', '.join(created) if created else '(none)'}\n")
-                  handle.write(f"- labeled issues: {', '.join(f'#{number}' for number in matches)}\n")
+                  handle.write(f"- skipped: {', '.join(skipped) if skipped else '(none)'}\n")
           PY

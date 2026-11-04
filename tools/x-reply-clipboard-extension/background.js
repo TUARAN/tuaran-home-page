@@ -3468,6 +3468,15 @@ async function refreshIdleTaskTabs(sender) {
   return { ok: true, refreshed, skipped, reloadCurrent };
 }
 
+function notificationContextIsReady(context) {
+  return Boolean(context?.ownPost?.text && context?.reply?.text && context.rootSettled === true);
+}
+
+function notificationContextUnresolved(context) {
+  if (!context?.ownPost?.text || !context?.reply?.text) return null;
+  return { ...context, ownThread: false, rootSettled: false };
+}
+
 async function readNotificationContext(message, sender) {
   const replyId = String(message.replyId || "");
   const ownHandle = accountHandleFrom(message.ownHandle);
@@ -3485,20 +3494,23 @@ async function readNotificationContext(message, sender) {
   if (!Number.isInteger(tab?.id)) throw new Error("无法打开回复会话页");
   contextTabs.add(tab.id);
   try {
+    let latest = null;
     const deadline = Date.now() + 10000;
     while (Date.now() < deadline) {
       try {
         const result = await chrome.tabs.sendMessage(tab.id, {
           type: "xrc-context-read", replyId, ownHandle, replyAuthor
         });
-        if (result?.context?.ownPost?.text && result.context.reply?.text) {
-          return { ok: true, context: result.context };
-        }
+        const context = result?.context;
+        if (notificationContextIsReady(context)) return { ok: true, context };
+        if (context?.ownPost?.text && context?.reply?.text) latest = context;
       } catch (error) {
         // The conversation tab may still be loading its content script.
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
+    const unresolved = notificationContextUnresolved(latest);
+    if (unresolved) return { ok: true, context: unresolved };
     throw new Error("会话页没有加载出我的帖子");
   } finally {
     await chrome.tabs.remove(tab.id).catch(() => {});
@@ -3958,6 +3970,8 @@ if (typeof module === "object" && module.exports) {
     pauseAllTasks,
     resetExtensionState,
     refreshIdleTaskTabs,
+    notificationContextIsReady,
+    notificationContextUnresolved,
     readNotificationContext,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,

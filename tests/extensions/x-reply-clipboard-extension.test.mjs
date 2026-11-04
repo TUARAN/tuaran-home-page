@@ -5006,7 +5006,12 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   const result = context.findConversation(articles, '103', 'me', 'friend')
   assert.equal(result.ownPost.text, '我补充的上下文')
   assert.equal(result.reply.text, '对方最新回复')
+  assert.equal(result.rootPost.authorHandle, 'me')
+  assert.equal(result.rootSettled, true)
   assert.equal(result.ownThread, true)
+  assert.equal(context.allowsContinuedDialogue(result, 'me'), true)
+  assert.equal(context.allowsContinuedDialogue(result, '@ME'), true)
+  assert.equal(context.allowsContinuedDialogue(result, 'otheraccount'), false)
   assert.equal(context.findConversation(articles, '103', 'me', 'stranger'), null)
   assert.equal(context.findConversation([articles.at(-1)], '103', 'me', 'friend'), null)
 
@@ -5017,7 +5022,233 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   ]
   const foreignResult = context.findConversation(foreign, '202', 'me', 'friend')
   assert.equal(foreignResult.ownPost.text, '我之前回过一句')
+  assert.equal(foreignResult.rootPost.authorHandle, 'friend')
+  assert.equal(foreignResult.rootSettled, true)
   assert.equal(foreignResult.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(foreignResult, 'me'), false)
+  assert.equal(context.allowsContinuedDialogue(foreignResult, 'friend'), true)
+})
+
+test('continued dialogue follows the active account root, not an earlier reply in someone else\'s thread', () => {
+  const article = (href, text, replyingTo = '') => {
+    const replyLine = replyingTo ? `Replying to @${replyingTo}` : ''
+    return {
+      parentElement: { closest() { return null } },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: text, textContent: text }
+        return null
+      },
+      querySelectorAll(selector) {
+        if (selector === 'div, span, a' && replyLine) {
+          return [{
+            closest() { return null },
+            querySelector() { return null },
+            innerText: replyLine,
+            textContent: replyLine,
+          }]
+        }
+        if (selector === 'a[href*="/status/"] time') return []
+        return []
+      },
+    }
+  }
+  const foreignThread = [
+    article('/stranger/status/200', '白裙子原帖'),
+    article('/tuaranx/status/201', '边界感这东西，说早了是清醒，说晚了是欠条。', 'stranger'),
+    article('/nowxono/status/202', '担心你马上被抬走', 'tuaranx'),
+  ]
+  const visibleRoot = context.findConversation(foreignThread, '202', 'tuaranx', 'nowxono')
+  assert.equal(visibleRoot.rootPost.authorHandle, 'stranger')
+  assert.equal(visibleRoot.rootPost.isReply, false)
+  assert.equal(visibleRoot.ownPost.text, '边界感这东西，说早了是清醒，说晚了是欠条。')
+  assert.equal(visibleRoot.rootSettled, true)
+  assert.equal(visibleRoot.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, '@TuaranX'), false)
+  assert.equal(context.allowsContinuedDialogue(visibleRoot, 'stranger'), true)
+
+  const collapsedRoot = [
+    article('/tuaranx/status/201', '边界感这东西，说早了是清醒，说晚了是欠条。', 'stranger'),
+    article('/nowxono/status/202', '担心你马上被抬走', 'tuaranx'),
+    article('/tuaranx/status/203', '哈哈哈哈我还能撑', 'nowxono'),
+    article('/nowxono/status/204', '小心点吧', 'tuaranx'),
+  ]
+  const collapsed = context.findConversation(collapsedRoot, '204', '@TuaranX', '@nowXono')
+  assert.equal(collapsed.ownPost.authorHandle, 'tuaranx')
+  assert.equal(collapsed.rootPost.isReply, true)
+  assert.deepEqual(collapsed.rootPost.replyToHandles, ['stranger'])
+  assert.equal(collapsed.rootSettled, false)
+  assert.equal(collapsed.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(collapsed, 'tuaranx'), false)
+
+  const chinese = context.findConversation([
+    {
+      ...article('/tuaranx/status/301', '我先回了一句', 'stranger'),
+      querySelectorAll(selector) {
+        if (selector !== 'div, span, a') return []
+        return [{
+          closest() { return null },
+          querySelector() { return null },
+          innerText: '正在回复 @stranger',
+          textContent: '正在回复 @stranger',
+        }]
+      },
+    },
+    article('/nowxono/status/302', '再接一句', 'tuaranx'),
+  ], '302', 'tuaranx', 'nowxono')
+  assert.equal(chinese.rootPost.replyToHandles[0], 'stranger')
+  assert.equal(context.allowsContinuedDialogue(chinese, 'tuaranx'), false)
+
+  const ownThread = [
+    article('/tuaranx/status/400', '我的原帖'),
+    article('/nowxono/status/401', '对方第一次回我', 'tuaranx'),
+    article('/tuaranx/status/402', '我继续接', 'nowxono'),
+    article('/nowxono/status/403', '对方又回了', 'tuaranx'),
+  ]
+  const own = context.findConversation(ownThread, '403', 'tuaranx', 'nowxono')
+  assert.equal(own.rootPost.authorHandle, 'tuaranx')
+  assert.equal(own.rootPost.isReply, false)
+  assert.equal(own.ownPost.text, '我继续接')
+  assert.equal(own.rootSettled, true)
+  assert.equal(context.allowsContinuedDialogue(own, 'tuaranx'), true)
+  assert.equal(context.allowsContinuedDialogue(own, 'nowxono'), false)
+  const asOtherAccount = context.findConversation(ownThread, '403', 'nowxono', 'nowxono')
+  assert.equal(asOtherAccount.rootPost.authorHandle, 'tuaranx')
+  assert.equal(asOtherAccount.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(asOtherAccount, 'nowxono'), false)
+
+  assert.equal(context.allowsContinuedDialogue({
+    ownThread: true,
+    ownPost: { authorHandle: 'tuaranx', text: '我之前回过一句' },
+    reply: { text: '对方又回了' },
+  }, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue({
+    ownThread: false,
+    rootSettled: false,
+    rootPost: { authorHandle: 'tuaranx', isReply: true, replyToHandles: ['stranger'], text: '我之前回过一句' },
+    ownPost: { authorHandle: 'tuaranx', text: '我之前回过一句' },
+    reply: { text: '对方又回了' },
+  }, 'tuaranx'), false)
+  assert.equal(context.allowsContinuedDialogue(null, 'tuaranx'), false)
+})
+
+test('conversation reader keeps a root rendered outside article tags and ignores the parent preview link', () => {
+  const rootTweet = { parentElement: { closest() { return null } } }
+  const nested = { parentElement: { closest(selector) { return selector === '[data-testid="tweet"]' ? rootTweet : null } } }
+  const reply = { parentElement: { closest() { return null } } }
+  const doc = {
+    querySelector(selector) {
+      return selector === '[data-testid="primaryColumn"]' ? this : null
+    },
+    querySelectorAll(selector) {
+      return selector === '[data-testid="tweet"]' ? [rootTweet, nested, reply] : []
+    },
+  }
+  assert.deepEqual(context.conversationTweetNodes(doc), [rootTweet, reply])
+
+  function node({ testid = '', href = '', text = '', tag = 'div', children = [] }) {
+    const item = {
+      testid,
+      href,
+      text,
+      tag,
+      children,
+      parentElement: null,
+      getAttribute(name) {
+        if (name === 'href') return href || null
+        if (name === 'data-testid') return testid || null
+        return null
+      },
+      closest(selector) {
+        let current = item.parentElement
+        while (current) {
+          if (selector === 'a' && current.tag === 'a') return current
+          if (selector === '[data-testid="tweet"]' && current.testid === 'tweet') return current
+          if (selector === '[data-testid="tweetText"]' && current.testid === 'tweetText') return current
+          current = current.parentElement
+        }
+        return null
+      },
+      querySelector(selector) {
+        return item.querySelectorAll(selector)[0] || null
+      },
+      querySelectorAll(selector) {
+        const hits = []
+        const walk = (entry) => {
+          const linkTime = selector === 'a[href*="/status/"] time' && entry.testid === 'time'
+          const replyButton = selector === '[data-testid="reply"]' && entry.testid === 'reply'
+          const tweetText = selector === '[data-testid="tweetText"]' && entry.testid === 'tweetText'
+          const copyNode = selector === 'div, span, a' && ['div', 'span', 'a'].includes(entry.tag)
+          if (linkTime || replyButton || tweetText || copyNode) hits.push(entry)
+          for (const child of entry.children) walk(child)
+        }
+        for (const child of item.children) walk(child)
+        return hits
+      },
+      innerText: text,
+      textContent: text,
+    }
+    for (const child of children) child.parentElement = item
+    return item
+  }
+  const timeLink = (href) => node({
+    tag: 'a',
+    href,
+    children: [node({ testid: 'time', tag: 'time' })],
+  })
+  const replyArticle = node({
+    testid: 'tweet',
+    tag: 'article',
+    children: [
+      node({ tag: 'div', text: 'Replying to @stranger' }),
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '担心你马上被抬走' }),
+      node({
+        tag: 'div',
+        children: [
+          timeLink('/nowxono/status/202'),
+          node({ testid: 'reply', tag: 'button' }),
+        ],
+      }),
+    ],
+  })
+  const rootArticle = node({
+    testid: 'tweet',
+    tag: 'div',
+    children: [
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '白裙子原帖' }),
+      node({ testid: 'reply', tag: 'button' }),
+    ],
+  })
+  const parsed = context.findConversation([rootArticle, replyArticle], '202', 'tuaranx', 'nowxono')
+  assert.equal(parsed, null)
+
+  const ownReply = node({
+    testid: 'tweet',
+    tag: 'article',
+    children: [
+      node({ tag: 'div', text: 'Replying to @stranger' }),
+      timeLink('/stranger/status/200'),
+      node({ testid: 'tweetText', text: '边界感这东西' }),
+      node({
+        tag: 'div',
+        children: [
+          timeLink('/tuaranx/status/201'),
+          node({ testid: 'reply', tag: 'button' }),
+        ],
+      }),
+    ],
+  })
+  const followed = context.findConversation([rootArticle, ownReply, replyArticle], '202', 'tuaranx', 'nowxono')
+  assert.equal(followed.rootPost.authorHandle, 'stranger')
+  assert.equal(followed.rootPost.id, '200')
+  assert.equal(followed.ownPost.authorHandle, 'tuaranx')
+  assert.equal(followed.ownPost.id, '201')
+  assert.equal(followed.reply.authorHandle, 'nowxono')
+  assert.equal(followed.reply.id, '202')
+  assert.equal(context.allowsContinuedDialogue(followed, 'tuaranx'), false)
 })
 
 test('notification context opens a background conversation tab and closes it after reading', async () => {
@@ -5029,7 +5260,15 @@ test('notification context opens a background conversation tab and closes it aft
       async sendMessage(id, message) {
         assert.equal(id, 91)
         assert.equal(message.replyId, '103')
-        return { context: { ownPost: { text: '我的帖子' }, reply: { text: '对方回复' } } }
+        return {
+          context: {
+            ownPost: { authorHandle: 'me', text: '我的帖子' },
+            reply: { authorHandle: 'friend', text: '对方回复' },
+            rootPost: { authorHandle: 'me', text: '我的帖子', isReply: false, replyToHandles: [] },
+            ownThread: true,
+            rootSettled: true,
+          },
+        }
       },
       async remove(id) { removed = id },
     },
@@ -5038,11 +5277,124 @@ test('notification context opens a background conversation tab and closes it aft
     const result = await background.readNotificationContext({
       replyUrl: 'https://x.com/friend/status/103', replyId: '103', ownHandle: 'me', replyAuthor: 'friend',
     }, { tab: { windowId: 7 } })
+    assert.equal(result.context.rootSettled, true)
     assert.equal(result.context.ownPost.text, '我的帖子')
     assert.equal(new URL(created.url).searchParams.get('xrcContext'), '1')
     assert.equal(created.active, false)
     assert.equal(removed, 91)
   } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('notification context waits for a settled root and does not keep an unsettled thread', async () => {
+  assert.equal(background.notificationContextIsReady({
+    ownPost: { text: '我的原帖' }, reply: { text: '对方回复' }, rootSettled: true,
+  }), true)
+  assert.equal(background.notificationContextIsReady({
+    ownPost: { text: '我先回了一句' }, reply: { text: '对方又回了' }, rootSettled: false,
+  }), false)
+  const unresolved = background.notificationContextUnresolved({
+    ownPost: { authorHandle: 'tuaranx', text: '我先回了一句' },
+    reply: { text: '对方又回了' },
+    rootPost: { authorHandle: 'tuaranx', isReply: true, replyToHandles: ['stranger'] },
+    ownThread: true,
+    rootSettled: false,
+  })
+  assert.equal(unresolved.ownThread, false)
+  assert.equal(unresolved.rootSettled, false)
+  assert.equal(context.allowsContinuedDialogue(unresolved, 'tuaranx'), false)
+
+  const originalNow = Date.now
+  const originalSetTimeout = globalThis.setTimeout
+  let now = 5_000
+  let calls = 0
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => {
+    now += 500
+    fn()
+    return 0
+  }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 91 } },
+      async sendMessage() {
+        calls += 1
+        if (calls < 3) {
+          return {
+            context: {
+              ownPost: { authorHandle: 'tuaranx', text: '边界感这东西' },
+              reply: { authorHandle: 'nowxono', text: '担心你马上被抬走' },
+              rootPost: { authorHandle: 'tuaranx', text: '边界感这东西', isReply: true, replyToHandles: ['stranger'] },
+              ownThread: false,
+              rootSettled: false,
+            },
+          }
+        }
+        return {
+          context: {
+            ownPost: { authorHandle: 'tuaranx', text: '我的原帖' },
+            reply: { authorHandle: 'nowxono', text: '对方回复' },
+            rootPost: { authorHandle: 'tuaranx', text: '我的原帖', isReply: false, replyToHandles: [] },
+            ownThread: true,
+            rootSettled: true,
+          },
+        }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    const settled = await background.readNotificationContext({
+      replyUrl: 'https://x.com/nowxono/status/103', replyId: '103', ownHandle: 'tuaranx', replyAuthor: 'nowxono',
+    }, { tab: { windowId: 7 } })
+    assert.equal(calls, 3)
+    assert.equal(settled.context.rootSettled, true)
+    assert.equal(context.allowsContinuedDialogue(settled.context, 'tuaranx'), true)
+    assert.equal(context.allowsContinuedDialogue(settled.context, 'nowxono'), false)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
+    delete globalThis.chrome
+  }
+
+  now = 5_000
+  calls = 0
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => {
+    now += 1_000
+    fn()
+    return 0
+  }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 92 } },
+      async sendMessage() {
+        calls += 1
+        return {
+          context: {
+            ownPost: { authorHandle: 'tuaranx', text: '边界感这东西' },
+            reply: { authorHandle: 'nowxono', text: '小心点吧' },
+            rootPost: { authorHandle: 'tuaranx', text: '边界感这东西', isReply: true, replyToHandles: ['stranger'] },
+            ownThread: true,
+            rootSettled: false,
+          },
+        }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    const stalled = await background.readNotificationContext({
+      replyUrl: 'https://x.com/nowxono/status/204', replyId: '204', ownHandle: 'TuaranX', replyAuthor: 'nowXono',
+    }, { tab: { windowId: 7 } })
+    assert.equal(stalled.context.ownThread, false)
+    assert.equal(stalled.context.rootSettled, false)
+    assert.equal(context.allowsContinuedDialogue(stalled.context, 'tuaranx'), false)
+    assert.ok(calls >= 2)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
     delete globalThis.chrome
   }
 })
@@ -6190,7 +6542,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /nextCycleAt/)
   assert.match(content, /xrc-task-open/)
   assert.match(content, /xrc-task-register/)
-  assert.match(content, /conversation = await conversationOrFallback\(next, postText\)/)
+  assert.match(content, /notificationConversation = await conversationOrFallback\(next, noteText \|\| " "\)/)
+  assert.match(content, /allowsNotificationDialogue\(notificationConversation, currentAccountHandle\(\)\)/)
+  assert.match(content, /XrcNotificationContext\?\.allowsContinuedDialogue/)
+  assert.doesNotMatch(content, /rootPost\?\.authorHandle \|\| conversation\.ownPost\.authorHandle/)
+  assert.match(content, /ownThread: false/)
+  assert.match(content, /rootSettled: false/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
   assert.match(content, /十七项任务由后台排班，共用一个执行页签/)
@@ -6472,7 +6829,9 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="reply-kol"/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
-  assert.match(docsPage, /只回「别人回你自己帖子」这一类/)
+  assert.match(docsPage, /只继续回当前登录账号自己的原帖/)
+  assert.match(docsPage, /已经写在别人帖子下面的评论不会被当成自己的原帖/)
+  assert.match(docsPage, /换账号后按新账号判断/)
   assert.match(docsPage, /短、友好、多表情/)
   assert.match(docsPage, /默认优先级 8 分/)
   assert.match(docsPage, /PromptVoteLedger/)

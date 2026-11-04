@@ -5284,12 +5284,14 @@
       || !conversation?.ownPost?.text || !conversation?.reply?.text) {
       throw new Error("没有确认我的帖子与对方回复属于同一段会话");
     }
-    if (typeof conversation.ownThread !== "boolean") {
-      const rootHandle = String(conversation.rootPost?.authorHandle || conversation.ownPost.authorHandle || "").toLowerCase();
-      conversation.ownThread = rootHandle === ownHandle;
-    }
     cacheNotificationContext(tweet.id, conversation);
     return conversation;
+  }
+
+  function allowsNotificationDialogue(conversation, ownHandle = currentAccountHandle()) {
+    const decide = globalThis.XrcNotificationContext?.allowsContinuedDialogue;
+    if (typeof decide !== "function") return false;
+    return decide(conversation, ownHandle) === true;
   }
 
   async function conversationOrFallback(tweet, replyText) {
@@ -5299,7 +5301,9 @@
       const fallback = {
         ownPost: null,
         reply: { id: tweet.id, authorHandle: tweet.authorHandle, text: replyText },
-        ownThread: null
+        rootPost: null,
+        ownThread: false,
+        rootSettled: false
       };
       cacheNotificationContext(tweet.id, fallback);
       return fallback;
@@ -6168,6 +6172,33 @@
 
       stalled = 0;
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
+      let notificationConversation = null;
+      if (state.assistantMode === "notifications") {
+        const noteText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
+        if (noteText || state.replyMode !== "ai") {
+          state.status = "正在确认这条回复是不是在我的帖子下…";
+          renderPanel();
+          notificationConversation = await conversationOrFallback(next, noteText || " ");
+          if (state.stopping || !state.running) return "stopped";
+          if (!allowsNotificationDialogue(notificationConversation, currentAccountHandle())) {
+            skippedIds.add(next.id);
+            try {
+              await persistNotificationProcessed(next.id);
+            } catch (error) {
+              state.errors += 1;
+            }
+            state.pendingReply = "";
+            state.pendingTweetId = "";
+            state.pendingGrokInvite = false;
+            writeSaved({ running: true, total: state.total });
+            state.status = notificationConversation?.rootSettled === true
+              ? "别人帖子下已回过，不再继续回"
+              : "没有确认是我的帖子，不再继续回";
+            renderPanel();
+            continue;
+          }
+        }
+      }
       if (state.replyMode === "ai") {
         const openDialog = findDialogComposer();
         const openText = openDialog ? loopApi.composerText(openDialog.textbox) : "";
@@ -6197,28 +6228,7 @@
             state.pendingGrokInvite = shouldInviteGrok(state.assistantMode, state.replyMode, Math.random, grokInviteEnabled(state.assistantMode));
             writeSaved({ running: true, total: state.total });
           }
-          let conversation = null;
-          if (state.assistantMode === "notifications") {
-            state.status = "正在读取我的帖子和对方回复…";
-            renderPanel();
-            conversation = await conversationOrFallback(next, postText);
-            // Own reply under someone else's post: do not keep the back-and-forth going.
-            if (conversation?.ownThread === false) {
-              skippedIds.add(next.id);
-              try {
-                await persistNotificationProcessed(next.id);
-              } catch (error) {
-                state.errors += 1;
-              }
-              state.pendingReply = "";
-              state.pendingTweetId = "";
-              state.pendingGrokInvite = false;
-              writeSaved({ running: true, total: state.total });
-              state.status = "别人帖子下已回过，不再继续回";
-              renderPanel();
-              continue;
-            }
-          }
+          const conversation = state.assistantMode === "notifications" ? notificationConversation : null;
           state.status = conversation?.ownPost?.text
             ? "AI 正在结合双方内容生成回复…"
             : conversation ? "原帖暂不可见，AI 正在根据对方回复生成回应…" : "AI 正在阅读原帖并生成回复…";
@@ -6244,25 +6254,6 @@
         }
       }
       if (state.stopping || !state.running) return "stopped";
-      if (state.assistantMode === "notifications" && state.replyMode !== "ai") {
-        const postText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
-        const conversation = await conversationOrFallback(next, postText || " ");
-        if (conversation?.ownThread === false) {
-          skippedIds.add(next.id);
-          try {
-            await persistNotificationProcessed(next.id);
-          } catch (error) {
-            state.errors += 1;
-          }
-          state.pendingReply = "";
-          state.pendingTweetId = "";
-          state.pendingGrokInvite = false;
-          writeSaved({ running: true, total: state.total });
-          state.status = "别人帖子下已回过，不再继续回";
-          renderPanel();
-          continue;
-        }
-      }
       state.status = state.replyMode === "ai" ? `AI 已生成：${phrase}` : `正在回复：${phrase}`;
       renderPanel();
       const result = await replyOnce(next, phrase);

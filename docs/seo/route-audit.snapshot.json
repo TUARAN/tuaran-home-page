@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 242,
+    "routes": 243,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 113,
-    "indexable": 134,
-    "canonical": 152,
-    "openGraph": 86,
-    "jsonLd": 61,
+    "registeredStatic": 114,
+    "indexable": 135,
+    "canonical": 153,
+    "openGraph": 87,
+    "jsonLd": 62,
     "errors": 9,
     "warnings": 141
   },
@@ -3260,6 +3260,26 @@
         "openGraph": true,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/xiaohongshu-community",
+      "file": "app/(site)/resources/xiaohongshu-community/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/xiaohongshu-community"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/resources/xiaohongshu-community"
+        ]
       }
     },
     {

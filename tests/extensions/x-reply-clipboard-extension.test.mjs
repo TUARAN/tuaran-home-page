@@ -4739,6 +4739,8 @@ test('creates one persisted-size random execution plan within the configured ran
   assert.equal(loop.boundaryProbeCooldownMs(6), 120 * 60 * 1000)
 
   assert.deepEqual(loop.SCHEDULE_PROFILES.map((item) => item.label), ['慢', '中', '边界测试', '快', '超快'])
+  assert.deepEqual(loop.SCHEDULE_PROFILES.map((item) => item.roundIntervalSeconds), [300, 240, 180, 120, 60])
+  assert.equal(loop.formatSchedule('boundary').roundInterval, '3 分钟')
   assert.equal(loop.DEFAULT_SCHEDULE_PACE, 'boundary')
   assert.equal(loop.schedulePaceIndex('slow'), 0)
   assert.equal(loop.schedulePaceIndex('turbo'), 4)
@@ -4749,12 +4751,70 @@ test('creates one persisted-size random execution plan within the configured ran
   assert.equal(loop.createRunPlan(() => 1, 'turbo').roundTargets[0], 55)
   assert.equal(loop.randomReplyDelaySeconds(() => 0, 'turbo'), 2)
   assert.equal(loop.randomReplyDelaySeconds(() => 1, 'fast'), 6)
+  assert.deepEqual([...loop.COMMENT_BROWSE_PAUSE_MS], [1000, 3000, 5000, 8000])
+  assert.equal(loop.randomCommentBrowsePauseMs(() => 0), 1000)
+  assert.equal(loop.randomCommentBrowsePauseMs(() => 1), 8000)
+  const browseSamples = new Set(Array.from({ length: 24 }, () => loop.randomCommentBrowsePauseMs()))
+  for (const sample of browseSamples) assert.ok(loop.COMMENT_BROWSE_PAUSE_MS.includes(sample))
   assert.equal(loop.randomCycleDelayMs(() => 0, 'turbo'), 20 * 60 * 1000)
   assert.equal(loop.randomCycleDelayMs(() => 1, 'slow'), 6 * 60 * 60 * 1000)
   assert.equal(loop.formatSchedule('medium').cycleDelay, '2～3 小时')
   assert.equal(loop.formatSchedule('fast').cycleDelay, '60～90 分钟')
   assert.equal(loop.formatSchedule('turbo').replyDelay, '2～4 秒')
   assert.deepEqual(loop.scheduleBounds(), { minReplies: 12, maxReplies: 55, minRounds: 2, maxRounds: 8 })
+})
+
+test('browse pause waits on the post and cancels before a comment is sent', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function browseBeforeComment\(tweet\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const replyOnceBody = source.match(/async function replyOnce\(tweet, replyText\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(replyOnceBody)
+  assert.ok(replyOnceBody.includes('publishReply(composer, outgoing)'))
+  assert.ok(replyOnceBody.indexOf('await browseBeforeComment(tweet)') < replyOnceBody.indexOf('openComposer(tweet)'))
+  assert.ok(replyOnceBody.indexOf('await browseBeforeComment(tweet)') < replyOnceBody.indexOf('publishReply(composer, outgoing)'))
+  assert.match(source, /if \(!existingText\) \{\s*composer = existingComposer;\s*\}/)
+  assert.match(source, /if \(browse === "risk-yield" \|\| browse === "stopped"\) return "stopped"/)
+  assert.match(source, /if \(result === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(source, /评论前会在这条帖子上随机停留 1、3、5 或 8 秒，再回复。/)
+  assert.equal(source.includes('await sleepActive(300)'), false)
+  const scrolled = []
+  const article = { isConnected: true, scrollIntoView(options) { scrolled.push(options) } }
+  let now = 1_000
+  const state = { stopping: false, running: true, status: '' }
+  let renders = 0
+  const sandbox = vm.createContext({
+    state,
+    article,
+    riskRoundPending: () => false,
+    findReplyRestrictionDialog: () => false,
+    renderPanel() { renders += 1 },
+    loopApi: { randomCommentBrowsePauseMs: () => 1000 },
+    sleep: async (ms) => { now += ms },
+    Date: { now: () => now },
+    Math,
+  })
+  vm.runInContext(`${helper}\nglobalThis.browse = browseBeforeComment`, sandbox)
+  assert.equal(await vm.runInContext('browse({ article })', sandbox), '')
+  assert.equal(now, 2_000)
+  assert.equal(scrolled.length, 1)
+  assert.equal(scrolled[0].block, 'center')
+  assert.equal(scrolled[0].inline, 'nearest')
+  assert.match(state.status, /正在浏览这条帖子，约 1 秒后评论/)
+  assert.equal(renders, 1)
+
+  now = 5_000
+  state.stopping = false
+  state.running = true
+  sandbox.sleep = async () => { state.stopping = true }
+  assert.equal(await vm.runInContext('browse({ article })', sandbox), 'stopped')
+
+  now = 8_000
+  state.stopping = false
+  state.running = true
+  sandbox.riskRoundPending = () => true
+  sandbox.sleep = async () => { throw new Error('limited browse must not keep waiting') }
+  assert.equal(await vm.runInContext('browse({ article })', sandbox), 'risk-yield')
 })
 
 test('boundary testing keeps automation running through personal work hours', () => {
@@ -5027,11 +5087,71 @@ test('Grok mention duplication is managed and the composer rewrite retries autom
   assert.equal(textbox.text, phrase)
 })
 
+test('verified MobileOffice bridge handles replies and connection tests without DeepSeek', async () => {
+  const originalFetch = globalThis.fetch
+  const requests = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: {
+    replyProviders: ['mobileoffice', 'deepseek'], mobileOfficeToken: 'test-token', mobileOfficeVerified: true,
+    apiKey: 'sk-12345678'
+  } } } } } }
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options })
+    return { ok: true, async json() { return { reply: options.body.includes('连接成功') ? '连接成功' : '说得好！' } } }
+  }
+  try {
+    assert.equal(await background.callDeepSeek({ postText: '今天进展不错' }), '说得好！')
+    assert.equal(requests.length, 1)
+    assert.equal(requests[0].url, 'http://127.0.0.1:8765/chat')
+    assert.equal(requests[0].options.headers['X-Bridge-Token'], 'test-token')
+    assert.match(JSON.parse(requests[0].options.body).prompt, /今天进展不错/)
+    assert.deepEqual(await background.handleMessage({ type: 'xrc-ai-mobileoffice-test', token: 'test-token' }), { ok: true, reply: '连接成功' })
+    const completion = await background.fetchConfiguredModel('https://api.deepseek.com/chat/completions', {
+      body: JSON.stringify({ messages: [{ role: 'system', content: '只输出正文' }, { role: 'user', content: '发帖素材' }] })
+    })
+    assert.equal((await completion.json()).choices[0].message.content, '说得好！')
+    assert.match(JSON.parse(requests.at(-1).options.body).prompt, /发帖素材/)
+    assert.ok(requests.every((request) => request.url === 'http://127.0.0.1:8765/chat'))
+  } finally {
+    globalThis.fetch = originalFetch
+    delete globalThis.chrome
+  }
+})
+
+test('MobileOffice selection requires a successful connection test', async () => {
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: {
+    replyProviders: ['mobileoffice'], mobileOfficeToken: 'test-token', mobileOfficeVerified: false
+  } } } } } }
+  try {
+    await assert.rejects(background.callDeepSeek({ postText: '你好' }), /测试 MobileOffice 连接/)
+  } finally { delete globalThis.chrome }
+})
+
+test('MobileOffice failure keeps saved keys and falls through to DeepSeek', async () => {
+  const originalFetch = globalThis.fetch
+  const requests = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: {
+    replyProviders: ['mobileoffice', 'deepseek', 'nas', 'bai'], mobileOfficeToken: 'test-token', mobileOfficeVerified: true,
+    apiKey: 'sk-12345678', baiApiKey: 'sk-87654321'
+  } } } } } }
+  globalThis.fetch = async (url) => {
+    requests.push(url)
+    if (url.includes('127.0.0.1')) throw new TypeError('bridge offline')
+    return { ok: true, async json() { return { choices: [{ message: { content: '继续使用 DeepSeek' } }] } } }
+  }
+  try {
+    assert.equal(await background.callDeepSeek({ postText: '你好' }), '继续使用 DeepSeek')
+    assert.deepEqual(requests, ['http://127.0.0.1:8765/chat', 'https://api.deepseek.com/chat/completions'])
+  } finally {
+    globalThis.fetch = originalFetch
+    delete globalThis.chrome
+  }
+})
+
 test('temporary DeepSeek overload falls back to NAS with the same reply context', async () => {
   const originalFetch = globalThis.fetch
   const originalReceipt = globalThis.XrcCommunityReceipt
   const requests = []
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' }, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek', 'nas', 'bai'], replyProvidersDefaultVersion: 2 }, xrcAccountHandle: 'Tuaran' } } } } }
   globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options })
@@ -5058,7 +5178,7 @@ test('temporary DeepSeek overload falls back to NAS with the same reply context'
       return { ok: false, status: 401, async json() { return { error: { message: 'Invalid API key' } } } }
     }
     await assert.rejects(background.callDeepSeek({ postText: '你好' }), /Invalid API key/)
-    assert.equal(requests.length, 1)
+    assert.equal(requests.length, 2)
   } finally {
     globalThis.fetch = originalFetch
     globalThis.XrcCommunityReceipt = originalReceipt
@@ -5071,7 +5191,7 @@ test('NAS failure falls back to configured B.AI without losing reply context', a
   const originalReceipt = globalThis.XrcCommunityReceipt
   const requests = []
   const progress = []
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' }, xrcAccountHandle: 'Tuaran' } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyProviders: ['deepseek', 'nas', 'bai'], replyProvidersDefaultVersion: 2 }, xrcAccountHandle: 'Tuaran' } } } } }
   globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options })
@@ -5100,6 +5220,62 @@ test('NAS failure falls back to configured B.AI without losing reply context', a
     assert.equal(baiBody.reasoning.effort, 'none')
     assert.match(baiBody.input[0].content, /我的帖子：\n我今天过生日/)
     assert.match(baiBody.input[0].content, /生日快乐/)
+  } finally {
+    globalThis.fetch = originalFetch
+    globalThis.XrcCommunityReceipt = originalReceipt
+    delete globalThis.chrome
+  }
+})
+
+test('missing reply provider selection uses DeepSeek and B.AI without NAS', async () => {
+  const originalFetch = globalThis.fetch
+  const requests = []
+  const progress = []
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' } } } } } }
+  globalThis.fetch = async (url) => {
+    requests.push(url)
+    if (url.includes('api.deepseek.com')) return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
+    return { ok: true, async json() { return { output: [{ type: 'message', content: [{ type: 'output_text', text: 'B.AI 回复' }] }] } } }
+  }
+  try {
+    assert.equal(await background.callDeepSeek({ postText: '你好', onProgress: (status) => progress.push(status) }), 'B.AI 回复')
+    assert.deepEqual(requests, ['https://api.deepseek.com/chat/completions', 'https://api.b.ai/v1/responses'])
+    assert.equal(progress.some((status) => status.includes('NAS')), false)
+  } finally {
+    globalThis.fetch = originalFetch
+    delete globalThis.chrome
+  }
+})
+
+test('legacy provider selection preserves NAS and all saved keys', async () => {
+  const originalFetch = globalThis.fetch
+  const originalReceipt = globalThis.XrcCommunityReceipt
+  const storage = { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyProviders: ['deepseek', 'nas', 'bai'] } }
+  const requests = []
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return typeof key === 'string' ? { [key]: storage[key] } : storage },
+    async set(value) { Object.assign(storage, value) },
+  } } }
+  globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
+  globalThis.fetch = async (url) => {
+    requests.push(url)
+    if (url.includes('api.deepseek.com')) return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
+    return { ok: true, async json() { return { output: [{ type: 'message', content: [{ type: 'output_text', text: 'B.AI 回复' }] }] } } }
+  }
+  try {
+    assert.equal(await background.callDeepSeek({ postText: '你好' }), 'B.AI 回复')
+    assert.deepEqual(requests, ['https://api.deepseek.com/chat/completions', 'https://2aran.com/api/community-actions/model-fallback', 'https://api.b.ai/v1/responses'])
+    assert.deepEqual(storage.xrcAiSettings.replyProviders, ['deepseek', 'nas', 'bai'])
+    assert.equal(storage.xrcAiSettings.baiApiKey, 'sk-bai-test-key')
+    storage.xrcAiSettings = { ...storage.xrcAiSettings, replyProviders: ['deepseek', 'nas', 'bai'], replyProvidersDefaultVersion: 2 }
+    requests.length = 0
+    globalThis.fetch = async (url) => {
+      requests.push(url)
+      if (url.includes('2aran.com')) return { ok: true, async json() { return { content: 'NAS 回复' } } }
+      return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
+    }
+    assert.equal(await background.callDeepSeek({ postText: '你好' }), 'NAS 回复')
+    assert.equal(requests[1], 'https://2aran.com/api/community-actions/model-fallback')
   } finally {
     globalThis.fetch = originalFetch
     globalThis.XrcCommunityReceipt = originalReceipt
@@ -5165,7 +5341,7 @@ test('cancelling a NAS reply aborts its request without trying the next model', 
 test('B.AI billing restriction pauses repeated third-provider requests', async () => {
   const originalFetch = globalThis.fetch
   const originalReceipt = globalThis.XrcCommunityReceipt
-  const storage = { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' } }
+  const storage = { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyProviders: ['deepseek', 'nas', 'bai'], replyProvidersDefaultVersion: 2 } }
   const requests = []
   globalThis.chrome = { storage: { local: {
     async get(key) { return typeof key === 'string' ? { [key]: storage[key] } : storage },
@@ -5815,7 +5991,18 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /phraseIndexFromText\(phrases, existingText\)/)
   assert.match(content, /repeatedPhraseIndexFromText\(phrases, existingText\)/)
   assert.match(content, /placeholderMixedPhraseIndexFromText\(phrases, existingText\)/)
-  assert.match(content, /if \(!existingText\) return publishReply\(existingComposer, replyText\)/)
+  assert.match(content, /if \(!existingText\) \{\s*composer = existingComposer;\s*\}/)
+  assert.match(content, /publishReply\(composer, outgoing\)/)
+  const replyOnceBody = content.match(/async function replyOnce\(tweet, replyText\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(replyOnceBody)
+  assert.ok(replyOnceBody.indexOf('await browseBeforeComment(tweet)') < replyOnceBody.indexOf('openComposer(tweet)'))
+  assert.ok(replyOnceBody.indexOf('await browseBeforeComment(tweet)') < replyOnceBody.indexOf('publishReply(composer, outgoing)'))
+  assert.match(content, /async function browseBeforeComment\(tweet\)/)
+  assert.match(content, /randomCommentBrowsePauseMs\(Math\.random\)/)
+  assert.match(content, /正在浏览这条帖子，约 \$\{seconds\} 秒后评论/)
+  assert.match(content, /if \(browse === "risk-yield" \|\| browse === "stopped"\) return "stopped"/)
+  assert.match(content, /if \(result === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(content, /评论前会在这条帖子上随机停留 1、3、5 或 8 秒，再回复。/)
   assert.match(content, /getManifest/)
   assert.match(content, /X高频互动助手/)
   assert.match(content, /启动排班/)
@@ -5991,6 +6178,12 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-mini-progress/)
   assert.match(content, /data-xrc-start/)
   assert.match(content, /data-xrc-config-key/)
+  assert.match(content, /data-xrc-key-save="deepseek"/)
+  assert.match(content, /data-xrc-key-save="bai"/)
+  assert.match(content, /saveSingleApiKey/)
+  assert.match(content, /returnHomeAfterModelSave/)
+  assert.doesNotMatch(content, /data-xrc-model-save/)
+  assert.doesNotMatch(content, /data-xrc-reply-provider="nas" checked/)
   assert.match(content, /panelView/)
   assert.doesNotMatch(content, /本轮已回复/)
   assert.match(content, /replyMode: "ai"/)
@@ -8278,6 +8471,36 @@ test('target-follow scans other configured sources before rescanning an exhauste
   assert.equal(mutual.nextTargetFollowSource(handles, 'Beta', ['alpha']), 'Gamma')
   assert.equal(mutual.nextTargetFollowSource(handles, 'Gamma', ['Alpha', 'beta']), '')
   assert.equal(mutual.nextTargetFollowSource(['Alpha'], 'alpha', []), '')
+})
+
+test('target-follow changes source after ten seconds without new rows even above page bottom', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
+  const rows = [{ handle: '@seen', candidate: false }]
+  let clock = 1000
+  let scrolls = 0
+  const context = vm.createContext({
+    state, Date: { now: () => clock },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => rows, scrollForward: async () => {
+      scrolls += 1
+      clock += 1000
+      return { progressed: false, atBottom: false, items: rows }
+    },
+    advanceTargetFollowSource: () => 'beta',
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  assert.equal((await context.runTest('targetFollow', () => {})).navigate, '/beta/followers')
+  assert.equal(scrolls, 11)
 })
 
 test('source rescan waits do not pause the other follow task', () => {

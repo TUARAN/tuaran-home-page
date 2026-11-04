@@ -601,6 +601,60 @@
   background: var(--xrc-soft);
 }
 
+#x-reply-clipboard-panel .xrc-provider-list .xrc-config-row.is-inactive {
+  opacity: 0.48;
+  cursor: default;
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-connection {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
+  background: var(--xrc-soft);
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-test-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  min-width: 0;
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-test {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--xrc-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-test:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-status {
+  flex: 1 1 110px;
+  min-width: 0;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+#x-reply-clipboard-panel .xrc-mobileoffice-status[data-result="success"] { color: #14804a; }
+#x-reply-clipboard-panel .xrc-mobileoffice-status[data-result="error"] { color: var(--xrc-danger); }
+
 #x-reply-clipboard-panel .xrc-start-key {
   width: 100%;
   height: 34px;
@@ -684,8 +738,9 @@
 
 #x-reply-clipboard-panel .xrc-key-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
+  align-items: center;
 }
 
 #x-reply-clipboard-panel .xrc-config-save {
@@ -703,8 +758,26 @@
 #x-reply-clipboard-panel .xrc-key-line button {
   height: 34px;
   padding: 0 12px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
   background: var(--xrc-soft);
   color: var(--xrc-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#x-reply-clipboard-panel .xrc-key-line .xrc-key-save {
+  border: 0;
+  background: var(--xrc-accent);
+  color: #fff;
+  font-weight: 750;
+}
+
+#x-reply-clipboard-panel .xrc-key-line .xrc-key-save:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 #x-reply-clipboard-panel .xrc-community-sync-actions {
@@ -2590,6 +2663,14 @@
   min-width: 0;
 }
 
+#x-reply-clipboard-panel .xrc-pace-browse {
+  margin: 6px 2px 0;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 #x-reply-clipboard-panel .xrc-pace-table-scroll {
   margin-top: 8px;
   overflow-x: auto;
@@ -3224,6 +3305,10 @@
   text-align: center;
 }
 #x-reply-clipboard-panel .xrc-flow-hint[hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-flow-hint[data-tone="success"] {
+  color: #0f6cbd;
+  font-weight: 750;
+}
 #x-reply-clipboard-panel .xrc-flow-start[data-role="status"],
 #x-reply-clipboard-panel .xrc-flow-start[data-role="status"]:disabled {
   cursor: default;

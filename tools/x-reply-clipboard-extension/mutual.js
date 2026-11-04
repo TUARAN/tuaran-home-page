@@ -24,6 +24,7 @@
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
+  const TARGET_SOURCE_IDLE_MS = 10 * 1000;
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
   const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
   const FOLLOW_RE = /^(Follow|关注)$/i;
@@ -787,6 +788,8 @@
       return true;
     }
     let stalled = 0;
+    let sourceIdleSince = 0;
+    const observedSourceHandles = new Set();
     let preferChinese = mode === "followBack";
     let stopReason = "";
 
@@ -846,6 +849,7 @@
         && (!preferChinese || item.hasChineseProfile));
       if (candidate) {
         stalled = 0;
+        sourceIdleSince = 0;
         state.seenHandles.add(candidate.handle);
         if (mode === "unfollow") cleanupAttempts += 1;
         const ok = mode === "unfollow"
@@ -910,11 +914,19 @@
       }
 
       emit("当前屏没有可处理账号，继续向下查找");
+      if (mode === "targetFollow" && !sourceIdleSince) sourceIdleSince = Date.now();
       const signature = items.map((item) => item.handle).join("|");
       const result = await scrollForward(signature, mode);
+      if (mode === "targetFollow") {
+        const newHandles = (result.items || []).filter((item) => !observedSourceHandles.has(item.handle));
+        for (const item of items) observedSourceHandles.add(item.handle);
+        for (const item of result.items || []) observedSourceHandles.add(item.handle);
+        if (newHandles.length) sourceIdleSince = Date.now();
+      }
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
-      if (stalled >= MAX_STALLED_SCROLLS) {
+      if (stalled >= MAX_STALLED_SCROLLS || (mode === "targetFollow" && Date.now() - sourceIdleSince >= TARGET_SOURCE_IDLE_MS)) {
         stalled = 0;
+        sourceIdleSince = 0;
         if (preferChinese) {
           preferChinese = false;
           window.scrollTo({ top: 0, behavior: "auto" });
@@ -925,6 +937,7 @@
         if (mode === "targetFollow") {
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
+            state.running = false;
             emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
             return { navigate: `/${nextSource}/followers` };
           }
@@ -1013,6 +1026,7 @@
       FOLLOW_DAILY_LIMIT,
       RATE_LIMIT_COOLDOWN_MS,
       RESCAN_INTERVAL_MS,
+      TARGET_SOURCE_IDLE_MS,
       DEFAULT_TARGET_FOLLOW_HANDLES,
       get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }
     }

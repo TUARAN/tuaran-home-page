@@ -116,7 +116,7 @@
     maxRoundsPerRun: [1, 12],
     minCycleDelayMinutes: [1, 1440],
     maxCycleDelayMinutes: [1, 1440],
-    roundIntervalSeconds: [1, 180]
+    roundIntervalSeconds: [1, 300]
   };
   const REPLY_PACE_PAIRS = [
     ["minReplyDelaySeconds", "maxReplyDelaySeconds", "每条间隔（秒）"],
@@ -184,7 +184,9 @@
     "xrc-docs-maintenance": "maintenance",
     "xrc-docs-releases": "releases"
   };
-  const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
+  const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
+  const DEFAULT_REPLY_PROVIDERS = ["deepseek", "bai"];
+  const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications", "kol"],
     likes: ["likes-posts", "likes-replies"],
@@ -231,7 +233,7 @@
     grokInviteNotifications: false,
     aiKey: "",
     baiKey: "",
-    replyProviders: [...REPLY_PROVIDER_ORDER],
+    replyProviders: ["deepseek", "bai"],
     aiKeySaved: false,
     aiSettingsStatus: "loading",
     aiKeyHint: "",
@@ -786,8 +788,8 @@
     if (!scheduledStart && !await resumeManuallyStoppedTask("article")) return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
-    if (!state.aiKey) {
-      articleState = { ...articleState, status: "请先到模型设置填写 DeepSeek API Key，才能写文章草稿", errors: (articleState.errors || 0) + 1 };
+    if (!state.aiKey && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) {
+      articleState = { ...articleState, status: "请先在模型设置中配置 DeepSeek 或测试 MobileOffice，才能写文章草稿", errors: (articleState.errors || 0) + 1 };
       openModelSettingsForKey(document.getElementById(PANEL_ID));
       renderPanel();
       return;
@@ -1144,6 +1146,9 @@
   let panelDismissed = false;
   let configOpen = false;
   let configPage = "model";
+  let modelSaveNoticeUntil = 0;
+  let modelSaveNoticeTimer = 0;
+  let modelSaveNoticeText = "";
   let monitorOpen = false;
   let reportOpen = false;
   let hubOpen = false;
@@ -3233,12 +3238,19 @@
       dot.title = `${summary.tasks[index].label}：${userStateLabelForTask(summary.tasks[index].status)}`;
     });
     if (hint) {
-      const tip = String(model.hint || "").trim();
-      // Desk「当前任务 · 调度中」already shows the wait countdown; drop the duplicate strip.
-      const deskOwnsCountdown = deskHome && taskSchedule.enabled && model.status === "waiting"
-        && !summary.counts.running && !taskSchedule.current;
-      hint.hidden = !tip || deskOwnsCountdown;
-      hint.textContent = tip;
+      if (Date.now() < modelSaveNoticeUntil) {
+        hint.hidden = false;
+        hint.dataset.tone = "success";
+        hint.textContent = modelSaveNoticeText || "密钥已保存";
+      } else {
+        delete hint.dataset.tone;
+        const tip = String(model.hint || "").trim();
+        // Desk「当前任务 · 调度中」already shows the wait countdown; drop the duplicate strip.
+        const deskOwnsCountdown = deskHome && taskSchedule.enabled && model.status === "waiting"
+          && !summary.counts.running && !taskSchedule.current;
+        hint.hidden = !tip || deskOwnsCountdown;
+        hint.textContent = tip;
+      }
     }
     const busy = flowStarting || flowStopping || model.status === "starting" || model.status === "stopping";
     status.dataset.flow = model.status;
@@ -3383,8 +3395,8 @@
     if (model.action !== "start") return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
-    if (!state.aiKeySaved) {
-      state.status = "全流程包含定时发帖，请先到模型设置填写 DeepSeek API Key";
+    if (!state.aiKeySaved && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) {
+      state.status = "全流程包含定时发帖，请先配置 DeepSeek 或测试 MobileOffice";
       openModelSettingsForKey(document.getElementById(PANEL_ID));
       return;
     }
@@ -3468,6 +3480,36 @@
     return /^\/notifications(?:\/|$)/.test(window.location.pathname);
   }
 
+  function resolveReplyProviders(settings) {
+    const hasList = Array.isArray(settings?.replyProviders);
+    const stored = hasList
+      ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
+      : [...DEFAULT_REPLY_PROVIDERS];
+    const version = Number(settings?.replyProvidersDefaultVersion || 0);
+    return { providers: stored, persist: false };
+  }
+
+  function showModelSaveNotice(message) {
+    modelSaveNoticeText = message || "密钥已保存";
+    modelSaveNoticeUntil = Date.now() + 4500;
+    window.clearTimeout(modelSaveNoticeTimer);
+    modelSaveNoticeTimer = window.setTimeout(() => {
+      modelSaveNoticeUntil = 0;
+      modelSaveNoticeText = "";
+      paintFlowButton();
+    }, 4600);
+  }
+
+  function returnHomeAfterModelSave(message) {
+    configOpen = false;
+    hubOpen = false;
+    monitorOpen = false;
+    reportOpen = false;
+    toolboxOpen = false;
+    showModelSaveNotice(message);
+    openScheduleDesk();
+  }
+
   async function loadAiSettings() {
     if (!globalThis.chrome?.storage?.local) {
       state.aiSettingsStatus = "error";
@@ -3476,20 +3518,30 @@
     }
     try {
       const stored = await chrome.storage.local.get("xrcAiSettings");
-      const settings = stored?.xrcAiSettings || {};
+      let settings = stored?.xrcAiSettings || {};
       const savedValue = String(settings.apiKey || "").trim();
       const apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
       if (savedValue && !apiKey) {
-        await chrome.storage.local.set({ xrcAiSettings: { ...settings, apiKey: "" } });
+        settings = { ...settings, apiKey: "" };
+        await chrome.storage.local.set({ xrcAiSettings: settings });
+      }
+      const resolvedProviders = resolveReplyProviders(settings);
+      if (resolvedProviders.persist) {
+        settings = {
+          ...settings,
+          replyProviders: resolvedProviders.providers,
+          replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+        };
+        await chrome.storage.local.set({ xrcAiSettings: settings });
       }
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.grokInviteTimeline = settings.grokInviteTimeline === true;
       state.grokInviteNotifications = settings.grokInviteNotifications === true;
       state.aiKey = apiKey;
       state.baiKey = /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "";
-      state.replyProviders = Array.isArray(settings.replyProviders)
-        ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
-        : [...REPLY_PROVIDER_ORDER];
+      state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
+      state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
+      state.replyProviders = resolvedProviders.providers;
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       const legacyReply = String(settings.replyPrompt || "").trim();
@@ -3778,7 +3830,9 @@
       columns: [
         { label: "每次轮数", value: (profile) => paceSpan(profile.minRoundsPerRun, profile.maxRoundsPerRun, "轮") },
         { label: like ? "一轮个数" : "一轮条数", value: (profile) => paceSpan(profile.minRepliesPerRound, profile.maxRepliesPerRound, unit) },
-        { label: "轮与轮之间", value: (profile) => `${profile.roundIntervalSeconds} 秒` }
+        { label: "轮与轮之间", value: (profile) => profile.roundIntervalSeconds % 60 === 0
+          ? `${profile.roundIntervalSeconds / 60} 分钟`
+          : `${profile.roundIntervalSeconds} 秒` }
       ]
     });
   }
@@ -3881,10 +3935,48 @@
     return `${hour}:${minute}`;
   }
 
+  async function saveSingleApiKey(panel, which) {
+    const status = panel.querySelector("[data-xrc-config-status]");
+    const isBai = which === "bai";
+    const input = panel.querySelector(isBai ? "[data-xrc-config-bai-key]" : "[data-xrc-config-key]");
+    const value = String(input?.value || "").trim();
+    if (isBai && value && !/^sk-\S{8,}$/u.test(value)) {
+      if (status) status.textContent = "请输入有效的 B.AI API Key";
+      return false;
+    }
+    if (!isBai && value && !validDeepSeekApiKey(value)) {
+      if (status) status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
+      return false;
+    }
+    if (!globalThis.chrome?.storage?.local) {
+      if (status) status.textContent = "当前环境无法保存扩展配置";
+      return false;
+    }
+    const stored = await chrome.storage.local.get("xrcAiSettings");
+    const settings = stored?.xrcAiSettings || {};
+    await chrome.storage.local.set({
+      xrcAiSettings: {
+        ...settings,
+        ...(isBai ? { baiApiKey: value } : { apiKey: value })
+      }
+    });
+    if (isBai) {
+      state.baiKey = value;
+    } else {
+      state.aiKey = value;
+      state.aiKeySaved = Boolean(value);
+      state.aiKeyHint = value ? `已保存 ····${value.slice(-4)}` : "";
+      state.aiStatus = value ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
+    }
+    state.aiSettingsStatus = "ready";
+    return true;
+  }
+
   async function saveConfigForm(panel) {
     const status = panel.querySelector("[data-xrc-config-status]");
-    const key = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
-    const baiKey = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
+    const key = String(state.aiKey || "").trim();
+    const baiKey = String(state.baiKey || "").trim();
+    const mobileOfficeToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
     const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
     const replyTimelinePrompt = String(panel.querySelector("[data-xrc-reply-timeline-prompt]")?.value || "").trim();
     const replyCommentPrompt = String(panel.querySelector("[data-xrc-reply-comment-prompt]")?.value || "").trim();
@@ -3941,7 +4033,10 @@
         ...settings,
         apiKey: key,
         baiApiKey: baiKey,
+        mobileOfficeToken,
+        mobileOfficeVerified: mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true,
         replyProviders,
+        replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
         grokInviteTimeline: state.grokInviteTimeline === true,
         grokInviteNotifications: state.grokInviteNotifications === true,
@@ -3961,6 +4056,8 @@
     });
     state.aiKey = key;
     state.baiKey = baiKey;
+    state.mobileOfficeVerified = mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true;
+    state.mobileOfficeToken = mobileOfficeToken;
     state.replyProviders = replyProviders;
     state.aiKeySaved = Boolean(key);
     state.aiSettingsStatus = "ready";
@@ -5515,51 +5612,63 @@
     if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
     if (findReplyRestrictionDialog()) return "reply-restricted";
     const existingComposer = findDialogComposer();
+    let composer = null;
+    let outgoing = replyText;
     if (existingComposer) {
       if (state.assistantMode === "notifications" && existingComposer.dialog && dialogConflictsWithTweet(existingComposer.dialog, tweet)) {
         await closeReplyComposer({ forceClear: true });
         return "wrong-target";
       }
       const existingText = loopApi.composerText(existingComposer.textbox);
-      if (!existingText) return publishReply(existingComposer, replyText);
-      if (state.replyMode === "ai") {
+      if (!existingText) {
+        composer = existingComposer;
+      } else if (state.replyMode === "ai") {
         if (loopApi.normalizePhraseText(existingText) !== loopApi.normalizePhraseText(replyText)
           && !loopApi.isRecoverableGrokDuplicate(existingText, replyText)) {
           return "composer-already-open";
         }
-        return publishReply(existingComposer, replyText);
-      }
-      const existingPhraseIndex = loopApi.phraseIndexFromText(phrases, existingText);
-      if (existingPhraseIndex >= 0) {
-        state.phraseIndex = existingPhraseIndex;
+        composer = existingComposer;
       } else {
-        const repeatedPhraseIndex = loopApi.repeatedPhraseIndexFromText(phrases, existingText);
-        if (repeatedPhraseIndex >= 0) {
-          state.phraseIndex = repeatedPhraseIndex;
+        const existingPhraseIndex = loopApi.phraseIndexFromText(phrases, existingText);
+        if (existingPhraseIndex >= 0) {
+          state.phraseIndex = existingPhraseIndex;
         } else {
-          const mixedPhraseIndex = loopApi.placeholderMixedPhraseIndexFromText(phrases, existingText);
-          if (mixedPhraseIndex >= 0) {
-            state.phraseIndex = mixedPhraseIndex;
-          } else if (loopApi.phraseIndexFromText(legacyPhrases, existingText) < 0) {
-            return "composer-already-open";
+          const repeatedPhraseIndex = loopApi.repeatedPhraseIndexFromText(phrases, existingText);
+          if (repeatedPhraseIndex >= 0) {
+            state.phraseIndex = repeatedPhraseIndex;
+          } else {
+            const mixedPhraseIndex = loopApi.placeholderMixedPhraseIndexFromText(phrases, existingText);
+            if (mixedPhraseIndex >= 0) {
+              state.phraseIndex = mixedPhraseIndex;
+            } else if (loopApi.phraseIndexFromText(legacyPhrases, existingText) < 0) {
+              return "composer-already-open";
+            }
           }
         }
+        composer = existingComposer;
+        outgoing = currentPhrase();
       }
-      return publishReply(existingComposer, currentPhrase());
-    }
-    if (!loopApi.isSubmitEnabled(tweet.replyButton)) return "reply-disabled";
-    tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
-    await sleepActive(300);
-    if (state.stopping) return "stopped";
-    if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
-    const composer = await openComposer(tweet);
-    if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
-    if (state.assistantMode === "notifications" && composer.dialog && dialogConflictsWithTweet(composer.dialog, tweet)) {
-      await closeReplyComposer({ forceClear: true });
-      return "wrong-target";
+    } else if (!loopApi.isSubmitEnabled(tweet.replyButton)) {
+      return "reply-disabled";
     }
 
-    const result = await publishReply(composer, replyText);
+    const browse = await browseBeforeComment(tweet);
+    if (browse === "risk-yield" || browse === "stopped") return "stopped";
+    if (browse) return browse;
+    if (state.stopping || !state.running || riskRoundPending()) return "stopped";
+    if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
+    state.status = `正在评论：${outgoing}`;
+    renderPanel();
+    if (!composer) {
+      composer = await openComposer(tweet);
+      if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
+      if (state.assistantMode === "notifications" && composer.dialog && dialogConflictsWithTweet(composer.dialog, tweet)) {
+        await closeReplyComposer({ forceClear: true });
+        return "wrong-target";
+      }
+    }
+
+    const result = await publishReply(composer, outgoing);
     if (
       result !== "ok"
       && result !== "stopped"
@@ -5576,6 +5685,33 @@
       return "send-unconfirmed";
     }
     return result;
+  }
+
+  async function browseBeforeComment(tweet) {
+    const blocked = () => {
+      if (state.stopping || !state.running) return "stopped";
+      if (riskRoundPending()) return "risk-yield";
+      if (findReplyRestrictionDialog()) return "reply-restricted";
+      return "";
+    };
+    let reason = blocked();
+    if (reason) return reason;
+    if (tweet?.article?.isConnected) {
+      tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+    const pauseMs = loopApi.randomCommentBrowsePauseMs(Math.random);
+    const seconds = Math.round(pauseMs / 1000);
+    state.status = `正在浏览这条帖子，约 ${seconds} 秒后评论`;
+    renderPanel();
+    const deadline = Date.now() + pauseMs;
+    while (Date.now() < deadline) {
+      reason = blocked();
+      if (reason) return reason;
+      const chunk = Math.min(200, Math.max(0, deadline - Date.now()));
+      if (chunk <= 0) break;
+      await sleep(chunk);
+    }
+    return blocked();
   }
 
   function tweetSignature(tweets) {
@@ -6002,6 +6138,7 @@
       renderPanel();
       const result = await replyOnce(next, phrase);
       if (result === "stopped") {
+        if (riskRoundRequested) return advanceRoundAfterRisk();
         break;
       }
       if (result === "already-replied") {
@@ -6325,8 +6462,8 @@
     if (!scheduledStart && !await resumeManuallyStoppedTask(mode)) return;
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
-    if (!state.aiKey) {
-      state.poster = { ...state.poster, status: "请先到模型设置填写 DeepSeek API Key，才能生成定时发帖草稿", errors: state.poster.errors + 1 };
+    if (!state.aiKey && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) {
+      state.poster = { ...state.poster, status: "请先配置 DeepSeek 或测试 MobileOffice，才能生成定时发帖草稿", errors: state.poster.errors + 1 };
       openModelSettingsForKey(document.getElementById(PANEL_ID));
       return;
     }
@@ -6346,14 +6483,14 @@
     return String(left || "").replace(/\/+$/u, "").toLowerCase() === String(right || "").replace(/\/+$/u, "").toLowerCase();
   }
 
-  async function openMutualList(mode, { start = false } = {}) {
+  async function openMutualList(mode, { start = false, path = "" } = {}) {
     const selected = validMutualMode(mode);
     const deadline = Date.now() + 20000;
     let lockedPath = "";
     let assigned = false;
     while (Date.now() < deadline) {
-      if (mutualApi?.listReady?.(selected)) return lockedPath || mutualApi.targetPath(selected) || window.location.pathname;
-      if (!lockedPath) lockedPath = mutualApi?.targetPath(selected) || "";
+      if (!path && mutualApi?.listReady?.(selected)) return lockedPath || mutualApi.targetPath(selected) || window.location.pathname;
+      if (!lockedPath) lockedPath = path || mutualApi?.targetPath(selected) || "";
       if (lockedPath && !assigned && !samePath(window.location.pathname, lockedPath)) {
         assigned = true;
         if (start) {
@@ -6365,7 +6502,21 @@
       }
       await sleep(400);
     }
-    return mutualApi?.listReady?.(selected) ? lockedPath || window.location.pathname : "";
+    return mutualApi?.listReady?.(selected) && (!path || samePath(window.location.pathname, path)) ? lockedPath || window.location.pathname : "";
+  }
+
+  async function handleMutualResult(mode, result, scheduledStart) {
+    if (result?.navigate) {
+      state.mutual = { ...state.mutual, status: `正在打开 ${result.navigate}…` };
+      renderPanel();
+      await openMutualList(mode, { start: true, path: result.navigate });
+      return;
+    }
+    if (result?.error) {
+      sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
+      state.mutual = { ...state.mutual, status: result.error };
+      renderPanel();
+    }
   }
 
   async function onMutualAction(mode, { scheduledStart = false } = {}) {
@@ -6405,7 +6556,10 @@
       while (!settled && Date.now() < deadline && !(state.mutual?.running && state.mutual.mode === mode)) {
         await Promise.race([finished, sleep(50)]);
       }
-      if (state.mutual?.running && state.mutual.mode === mode) return;
+      if (state.mutual?.running && state.mutual.mode === mode) {
+        void finished.then((value) => handleMutualResult(mode, value, scheduledStart)).catch(() => {});
+        return;
+      }
       if (!settled) {
         state.mutual = { ...state.mutual, status: state.mutual?.status || "回关任务未能启动" };
         renderPanel();
@@ -6415,20 +6569,7 @@
     } else {
       result = await runPromise;
     }
-    if (result?.navigate) {
-      state.mutual = { ...state.mutual, status: `${result.error}，正在打开对应列表…` };
-      renderPanel();
-      const opened = await openMutualList(mode, { start: pendingMutualAutostart || scheduledStart });
-      pendingMutualAutostart = false;
-      if (!opened || state.mutual?.running) return;
-      await onMutualAction(mode, { scheduledStart });
-      return;
-    }
-    if (result?.error) {
-      sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
-      state.mutual = { ...state.mutual, status: result.error };
-      renderPanel();
-    }
+    await handleMutualResult(mode, result, scheduledStart);
   }
 
   async function navigateLaunchedMutualList(mode, start = false) {
@@ -6801,7 +6942,7 @@
     }
   }
 
-  function openModelSettingsForKey(panel) {
+  function openModelSettingsForKey(panel, focusSelector = "[data-xrc-config-key]") {
     if (!panel) return;
     if (state.panelView === "collapsed") {
       state.panelView = "normal";
@@ -6819,7 +6960,7 @@
     syncToolboxMenu(panel);
     syncHubPage(panel);
     renderPanel();
-    panel.querySelector("[data-xrc-config-key]")?.focus();
+    panel.querySelector(focusSelector)?.focus();
   }
 
   function syncHubPage(panel) {
@@ -7210,19 +7351,28 @@
               </label>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
-              <div class="xrc-docs-title"><b>01</b><span><strong>回复模型</strong><small>默认全部启用，按顺序尝试</small></span></div>
+              <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>勾选的模型共存，按下列顺序尝试</small></span></div>
               <div class="xrc-provider-list" role="group" aria-label="启用的回复模型">
-                <label class="xrc-config-row"><span><strong>1 · DeepSeek</strong><small>首选模型</small></span><input type="checkbox" data-xrc-reply-provider="deepseek" checked></label>
-                <label class="xrc-config-row"><span><strong>2 · NAS</strong><small>DeepSeek 临时故障时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas" checked></label>
-                <label class="xrc-config-row"><span><strong>3 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai" checked></label>
+                <label class="xrc-config-row"><span><strong>1 · MobileOffice 本地桥接</strong><small>测试通过后优先使用</small></span><input type="checkbox" data-xrc-reply-provider="mobileoffice"></label>
+                <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek" checked></label>
+                <label class="xrc-config-row"><span><strong>3 · NAS</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas"></label>
+                <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai" checked></label>
               </div>
-              <p class="xrc-config-note">关闭的模型会跳过；只选一个时直接使用它。定时发帖仍使用 DeepSeek。</p>
+              <div class="xrc-mobileoffice-connection" data-xrc-mobileoffice-connection hidden>
+                <label class="xrc-field"><span>MobileOffice 本地连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
+                <div class="xrc-mobileoffice-test-row">
+                  <button class="xrc-mobileoffice-test" type="button" data-xrc-mobileoffice-test>测试连接</button>
+                  <span class="xrc-mobileoffice-status" data-xrc-mobileoffice-status role="status"></span>
+                </div>
+              </div>
+              <p class="xrc-config-note" data-xrc-mobileoffice-note hidden>连接码只保存在当前浏览器扩展里。连接码变化需重新测试；连接不可用时继续尝试后续勾选的模型。</p>
               <div class="xrc-docs-title"><b>02</b><span><strong>服务密钥</strong><small data-xrc-config-key-hint>DeepSeek 尚未配置</small></span></div>
               <label class="xrc-field">
                 <span>DeepSeek API Key</span>
                 <span class="xrc-key-line">
                   <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
                   <button type="button" data-xrc-config-key-reveal>显示</button>
+                  <button type="button" class="xrc-key-save" data-xrc-key-save="deepseek">保存</button>
                 </span>
               </label>
               <label class="xrc-field">
@@ -7230,9 +7380,10 @@
                 <span class="xrc-key-line">
                   <input type="text" name="xrc-bai-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 B.AI 的 sk-..." data-xrc-secret-input data-xrc-config-bai-key>
                   <button type="button" data-xrc-config-bai-key-reveal>显示</button>
+                  <button type="button" class="xrc-key-save" data-xrc-key-save="bai">保存</button>
                 </span>
               </label>
-              <p class="xrc-config-note">修改后自动保存。NAS 使用社区回执密钥；B.AI 按用量计费，余额不足时无法使用。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
+              <p class="xrc-config-note">点旁边的保存，只写入这一条密钥，然后回到首页。NAS 使用社区回执密钥；B.AI 按用量计费，余额不足时无法使用。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
               <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>评论首页 / 评论回复 / 纯文字帖 / 精品发帖 / X主题发帖 分开配置</small></span></div>
@@ -7535,6 +7686,7 @@
                   <div data-xrc-reply-pace-standard>${interactionPaceTableHtml("data-xrc-pace-label", "回复速度")}</div>
                   <div data-xrc-reply-pace-kol>${kolPaceTableHtml()}</div>
                   <p class="xrc-pace-now"><span data-xrc-pace-now>当前尚未开始</span><button class="xrc-boundary-info" type="button" data-xrc-boundary-info aria-label="异常监控" title="异常监控"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.2h2.4l1.5-3.4 2.3 6.6 1.5-3.2h5.3"/></svg></button></p>
+                  <p class="xrc-pace-browse">评论前会在这条帖子上随机停留 1、3、5 或 8 秒，再回复。</p>
                 </div>
                 <label class="xrc-grok-toggle">
                   <input type="checkbox" data-xrc-grok-invite>
@@ -7759,8 +7911,49 @@
       });
       panel.querySelector("[data-xrc-config-key]").value = state.aiKey || "";
       panel.querySelector("[data-xrc-config-bai-key]").value = state.baiKey || "";
+      panel.querySelector("[data-xrc-mobileoffice-token]").value = state.mobileOfficeToken || "";
       panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
         input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
+      });
+      const syncMobileOfficeSettings = () => {
+        const selected = panel.querySelector('[data-xrc-reply-provider="mobileoffice"]')?.checked;
+        panel.querySelector('[data-xrc-mobileoffice-connection]').hidden = !selected;
+        panel.querySelector('[data-xrc-mobileoffice-note]').hidden = !selected;
+      };
+      syncMobileOfficeSettings();
+      const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
+      mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
+      mobileOfficeStatus.dataset.result = state.mobileOfficeVerified ? "success" : "idle";
+      panel.querySelector("[data-xrc-mobileoffice-test]").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const status = panel.querySelector("[data-xrc-mobileoffice-status]");
+        const token = String(panel.querySelector("[data-xrc-mobileoffice-token]").value || "").trim();
+        if (!token) { status.textContent = "请先填写连接码"; status.dataset.result = "error"; return; }
+        button.disabled = true;
+        status.textContent = "正在测试，可能需要约 2 分钟…";
+        status.dataset.result = "pending";
+        try {
+          const result = await chrome.runtime.sendMessage({ type: "xrc-ai-mobileoffice-test", token });
+          if (!result?.ok) throw new Error(result?.error || "测试失败");
+          state.mobileOfficeToken = token;
+          state.mobileOfficeVerified = true;
+          const stored = await chrome.storage.local.get("xrcAiSettings");
+          await chrome.storage.local.set({ xrcAiSettings: { ...(stored.xrcAiSettings || {}), mobileOfficeToken: token, mobileOfficeVerified: true } });
+          status.textContent = "连接成功，可以勾选使用";
+          status.dataset.result = "success";
+        } catch (error) {
+          state.mobileOfficeVerified = false;
+          const stored = await chrome.storage.local.get("xrcAiSettings");
+          await chrome.storage.local.set({ xrcAiSettings: { ...(stored.xrcAiSettings || {}), mobileOfficeToken: token, mobileOfficeVerified: false } });
+          status.textContent = error?.message || "测试失败";
+          status.dataset.result = "error";
+        } finally { button.disabled = false; }
+      });
+      panel.querySelector("[data-xrc-mobileoffice-token]").addEventListener("input", () => {
+        state.mobileOfficeVerified = false;
+        const status = panel.querySelector("[data-xrc-mobileoffice-status]");
+        status.textContent = "连接码已修改，请重新测试";
+        status.dataset.result = "idle";
       });
       panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
       panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
@@ -8070,17 +8263,43 @@
           selectPosterPace(label.dataset.xrcPostPaceLabel);
         });
       });
-      panel.querySelectorAll("[data-xrc-config-key], [data-xrc-config-bai-key], [data-xrc-reply-provider], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
+      panel.querySelectorAll("[data-xrc-mobileoffice-token], [data-xrc-reply-provider], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
         input.addEventListener("input", () => {
           if (!input.matches("[data-xrc-reply-provider]")) scheduleConfigSave(panel);
         });
         input.addEventListener("change", () => {
+          if (input.matches('[data-xrc-reply-provider="mobileoffice"]')) syncMobileOfficeSettings();
           if (input.matches("[data-xrc-reply-provider]") && !panel.querySelector("[data-xrc-reply-provider]:checked")) {
             input.checked = true;
             panel.querySelector("[data-xrc-config-status]").textContent = "至少保留一个回复模型";
             return;
           }
           scheduleConfigSave(panel, true);
+        });
+      });
+      panel.querySelectorAll("[data-xrc-key-save]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          if (button.disabled) return;
+          button.disabled = true;
+          window.clearTimeout(configSaveTimer);
+          configSaveTimer = 0;
+          const which = button.dataset.xrcKeySave === "bai" ? "bai" : "deepseek";
+          try {
+            await configSavePromise.catch(() => false);
+            const saved = await saveSingleApiKey(panel, which);
+            if (!saved) {
+              panel.querySelector("[data-xrc-config-status]")?.scrollIntoView?.({ block: "nearest" });
+              return;
+            }
+            const label = which === "bai" ? "B.AI" : "DeepSeek";
+            const value = which === "bai" ? state.baiKey : state.aiKey;
+            returnHomeAfterModelSave(value ? `${label} 密钥已保存` : `${label} 密钥已清除`);
+          } catch (error) {
+            const status = panel.querySelector("[data-xrc-config-status]");
+            if (status) status.textContent = error?.message || "保存失败，请重试";
+          } finally {
+            if (button.isConnected) button.disabled = false;
+          }
         });
       });
       panel.querySelector("[data-xrc-community-secret]")?.addEventListener("change", async () => {
@@ -8196,7 +8415,7 @@
       if (globalBar) {
         const loading = state.aiSettingsStatus === "loading";
         const failed = state.aiSettingsStatus === "error";
-        const missingKey = state.aiSettingsStatus === "ready" && !state.aiKeySaved;
+        const missingKey = state.aiSettingsStatus === "ready" && !state.aiKeySaved && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified);
         globalBar.hidden = !(loading || failed || missingKey);
         globalBar.querySelector("[data-xrc-key-loading]").hidden = !loading;
         globalBar.querySelector("[data-xrc-key-guide]").hidden = !missingKey;
@@ -8772,9 +8991,16 @@
     if (await flushConfigSave() === false) return;
     await loadAiSettings();
     const panel = document.getElementById(PANEL_ID);
+    if (state.replyProviders.includes("mobileoffice") && !state.mobileOfficeVerified) {
+      state.status = "MobileOffice 尚未测试通过，请到模型设置填写连接码并测试";
+      if (panel) panel.querySelector("[data-xrc-config-status]").textContent = state.status;
+      openModelSettingsForKey(panel, "[data-xrc-mobileoffice-token]");
+      return;
+    }
     const nasSecret = state.replyProviders.includes("nas")
       ? await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => "") : "";
-    const hasReplyModel = (state.replyProviders.includes("deepseek") && state.aiKeySaved)
+    const hasReplyModel = (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+      || (state.replyProviders.includes("deepseek") && state.aiKeySaved)
       || (state.replyProviders.includes("nas") && Boolean(nasSecret))
       || (state.replyProviders.includes("bai") && Boolean(state.baiKey));
     if (!hasReplyModel) {

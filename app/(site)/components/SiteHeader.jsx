@@ -398,7 +398,7 @@ function AuthorityMenu({ isOpen, pathname, onToggle, onClose }) {
     >
       <button
         type="button"
-        className={['site-nav-trigger cursor-pointer bg-transparent', isActive ? 'site-nav-trigger-active' : ''].join(' ')}
+        className={['site-nav-trigger site-authority-trigger cursor-pointer', (isActive || isOpen) ? 'site-nav-trigger-active' : ''].join(' ')}
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-controls="site-authority-menu"

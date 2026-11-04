@@ -146,3 +146,7 @@ node scripts/scan-handoff.mjs security   # 本地只看摘要（不建 Issue）
 - 视觉回归：关键页面截图 + 基线对比，捕获移动端错位与样式漂移。
 - 依赖更新交给 GitHub 原生 Dependabot 每周 PR，security-scan 专注代码逻辑与配置层面的问题，两者分工不重叠。
 - 内容侧：调研自动起草、死链检测、SEO 审计按内容管线单独建任务，与本站三个工程巡检解耦。
+
+## 与聊天需求的分工
+
+定时巡检继续走本文件：扫描、待修 Issue、Draft PR，merge 由站长完成。站长或助手在聊天里提出的需求走 [issue-first-workflow.md](issue-first-workflow.md)：先 Issue、再分诊，`priority:now` 且没有 `needs:*` 才开 PR。两条路都不在助手侧自行 squash 或 merge。

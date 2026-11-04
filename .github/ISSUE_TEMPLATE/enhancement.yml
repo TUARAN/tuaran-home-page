@@ -1,0 +1,44 @@
+name: 改进
+description: 新能力、体验调整或流程改动
+title: "[Enhancement] "
+labels:
+  - type:enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        站长与助手的步骤见 `docs/runbooks/issue-first-workflow.md`。勾选设计、决策或素材后，先停在 Issue，不直接开 PR。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题
+      description: 现在哪里不够用，谁会遇到。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 建议做成什么样。已有替代做法可以写在这里。
+    validations:
+      required: true
+  - type: checkboxes
+    id: dependencies
+    attributes:
+      label: 是否依赖设计、决策或素材
+      description: 勾选后打对应 needs 标签，并停在 Issue。
+      options:
+        - label: needs:design 需要设计
+        - label: needs:decision 需要站长决策
+        - label: needs:assets 需要素材
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级建议
+      description: 助手据此打 priority:now、priority:next 或 priority:parked。有 needs 时即使选 now 也不开 PR。
+      options:
+        - now：现在做
+        - next：下一轮
+        - parked：先搁置
+    validations:
+      required: true

@@ -63,7 +63,16 @@ const nextConfig = {
       }
       config.module.rules.push({
         test: /\.wasm$/,
-        type: 'asset/resource',
+        oneOf: [
+          {
+            // onnxruntime-web 的 asyncify 包约 26.8 MiB，超过 Cloudflare Pages 单文件 25 MiB。
+            // transformers 运行时改从 jsDelivr 加载同一文件，不必写进静态产物。
+            test: /ort-wasm-simd-threaded\.asyncify\.wasm$/,
+            type: 'asset/resource',
+            generator: { emit: false },
+          },
+          { type: 'asset/resource' },
+        ],
       })
       // pptxgenjs 在浏览器构建时仍会出现 import('node:fs') / import('node:https')
       // 的字面量动态导入；用 NormalModuleReplacementPlugin 把它们重写到空模块。

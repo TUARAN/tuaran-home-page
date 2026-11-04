@@ -276,6 +276,7 @@
 #x-reply-clipboard-panel .xrc-today-category[data-category="post"], #x-reply-clipboard-panel .xrc-today-task[data-category="post"] { --xrc-category: #aa5c0b; }
 #x-reply-clipboard-panel .xrc-today-category[data-category="follow"], #x-reply-clipboard-panel .xrc-today-task[data-category="follow"] { --xrc-category: #087b67; }
 #x-reply-clipboard-panel .xrc-today-category[data-category="clean"], #x-reply-clipboard-panel .xrc-today-task[data-category="clean"] { --xrc-category: #7048aa; }
+#x-reply-clipboard-panel .xrc-today-category[data-category="community"], #x-reply-clipboard-panel .xrc-today-task[data-category="community"] { --xrc-category: #0b6e8a; }
 
 #x-reply-clipboard-panel[data-assistant-mode="timeline"] {
   --xrc-workspace: #1d9bf0;
@@ -301,6 +302,11 @@
 #x-reply-clipboard-panel[data-assistant-mode="mutual"] {
   --xrc-workspace: #0f8a72;
   --xrc-workspace-soft: rgba(15, 138, 114, 0.1);
+}
+
+#x-reply-clipboard-panel[data-assistant-mode="community-share"] {
+  --xrc-workspace: #0b6e8a;
+  --xrc-workspace-soft: rgba(11, 110, 138, 0.12);
 }
 
 #x-reply-clipboard-panel[data-assistant-mode="poster"],
@@ -1139,6 +1145,7 @@
 #x-reply-clipboard-panel[data-desk="home"] .xrc-post-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-forward-body,
+#x-reply-clipboard-panel[data-desk="home"] .xrc-community-body,
 #x-reply-clipboard-panel[data-desk="home"] .xrc-prune-body { display: none !important; }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-schedule-desk { display: none !important; }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-reply-body,
@@ -1147,6 +1154,7 @@
 #x-reply-clipboard-panel[data-desk="task"] .xrc-post-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-forward-body,
+#x-reply-clipboard-panel[data-desk="task"] .xrc-community-body,
 #x-reply-clipboard-panel[data-desk="task"] .xrc-prune-body {
   display: none !important;
 }
@@ -1161,6 +1169,7 @@
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="poster-x"] .xrc-post-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="article"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="site-forward"] .xrc-forward-body,
+#x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="community-share"] .xrc-community-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-posts"] .xrc-prune-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-replies"] .xrc-prune-body {
   display: grid !important;
@@ -1453,6 +1462,7 @@
 #x-reply-clipboard-panel .xrc-task-category-badge[data-category="post"] { --xrc-category: #aa5c0b; }
 #x-reply-clipboard-panel .xrc-task-category-badge[data-category="follow"] { --xrc-category: #087b67; }
 #x-reply-clipboard-panel .xrc-task-category-badge[data-category="clean"] { --xrc-category: #7048aa; }
+#x-reply-clipboard-panel .xrc-task-category-badge[data-category="community"] { --xrc-category: #0b6e8a; }
 #x-reply-clipboard-panel .xrc-task-category-badge[data-category="post"] .xrc-task-category-icon,
 #x-reply-clipboard-panel .xrc-task-category-badge[data-category="clean"] .xrc-task-category-icon { border-radius: 5px; }
 #x-reply-clipboard-panel .xrc-schedule-item.is-disabled .xrc-task-category-badge { opacity: 0.78; }

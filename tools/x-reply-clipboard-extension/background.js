@@ -3618,7 +3618,36 @@ async function finishSiteForward(result) {
   await tickTaskSchedule();
 }
 
+const XRC_PANEL_REOPEN = "xrc-panel-reopen";
+
+function isXExtensionPage(url) {
+  try {
+    const parsed = new URL(String(url || ""));
+    return parsed.protocol === "https:" && (parsed.hostname === "x.com" || parsed.hostname === "twitter.com");
+  } catch (error) {
+    return false;
+  }
+}
+
+async function reopenExtensionPanel(tab, deps = {}) {
+  const tabId = Number(tab?.id);
+  if (!Number.isInteger(tabId) || tabId <= 0 || !isXExtensionPage(tab?.url)) {
+    return { ok: false, error: "not-x-tab" };
+  }
+  const sendMessage = deps.sendMessage || ((id, message) => chrome.tabs.sendMessage(id, message));
+  try {
+    const response = await sendMessage(tabId, { type: XRC_PANEL_REOPEN });
+    if (response?.ok) return { ok: true, shown: Boolean(response.shown) };
+    return { ok: false, error: String(response?.error || "panel-not-ready") };
+  } catch (error) {
+    return { ok: false, error: String(error?.message || error || "panel-not-ready") };
+  }
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
+  chrome.action?.onClicked?.addListener((tab) => {
+    reopenExtensionPanel(tab).catch(() => {});
+  });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type?.startsWith("xrc-reply-history-")) {
       const action = message.type.slice("xrc-reply-history-".length);
@@ -4034,6 +4063,9 @@ if (typeof module === "object" && module.exports) {
     notificationContextIsReady,
     notificationContextUnresolved,
     readNotificationContext,
+    XRC_PANEL_REOPEN,
+    isXExtensionPage,
+    reopenExtensionPanel,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,
     REPLY_SYSTEM_PROMPT,

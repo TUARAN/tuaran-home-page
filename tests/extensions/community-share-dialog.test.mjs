@@ -161,13 +161,16 @@ test('selects a group and clicks Send inside the picker', async () => {
   assert.equal(sent, true)
   assert.equal(outsideSent, false)
   assert.equal(controller.snapshot().shared, 1)
-  assert.equal(Object.keys(savedLedger['123'] || {}).length, 1)
+  assert.equal(Object.keys(savedLedger['123'] || {}).length, 2)
+  assert.ok(Number(savedLedger['123'].__completedAt) > 0)
 })
 
 test('selects two groups before one Send and records none when X rejects the batch', async () => {
   let response = ''
   let sends = 0
   let shouldFail = false
+  let postId = '456'
+  let persistFails = false
   let savedLedger = {}
   const body = {}
   const rows = ['First Group 825 people', 'Second Group 267 people'].map((label) => ({
@@ -204,7 +207,7 @@ test('selects two groups before one Send and records none when X rejects the bat
   search.parentElement = picker
   send.parentElement = picker
   const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
-  const timeLink = { getAttribute: () => '/tuaran/status/456', querySelector: () => ({}), closest: () => article }
+  const timeLink = { getAttribute: () => `/tuaran/status/${postId}`, querySelector: () => ({}), closest: () => article }
   const doc = {
     body,
     querySelector: () => null,
@@ -224,29 +227,42 @@ test('selects two groups before one Send and records none when X rejects the bat
     wait: async () => {},
     random: () => 0,
     loadLedger: async () => ({ [LEDGER_KEY]: savedLedger }),
-    saveLedger: async (value) => { savedLedger = value },
+    saveLedger: async (value) => { if (persistFails) throw new Error('storage unavailable'); savedLedger = value },
   })
 
   await controller.start({ handle: 'tuaran' })
   assert.equal(sends, 1)
   assert.equal(controller.snapshot().shared, 2)
   assert.equal(controller.snapshot().running, false)
-  assert.equal(Object.keys(savedLedger['456'] || {}).length, 2)
-  assert.match(controller.snapshot().status, /一次发送到 2 个群聊，本轮完成/)
+  assert.equal(Object.keys(savedLedger['456'] || {}).length, 3)
+  assert.ok(Number(savedLedger['456'].__completedAt) > 0)
+  assert.match(controller.snapshot().status, /最新帖子已标记为已分发，本轮完成/)
 
   savedLedger = { '456': { 'First Group|825 people': Date.now(), 'Second Group|267 people': Date.now() } }
   rows[0].innerText = 'First Group 826 people'
   await controller.start({ handle: 'tuaran' })
   assert.equal(sends, 1)
-  assert.match(controller.snapshot().status, /没有新的可点击群聊/)
+  assert.match(controller.snapshot().status, /已标记为已分发，跳过本轮/)
 
-  savedLedger = {}
+  postId = '789'
   shouldFail = true
   await controller.start({ handle: 'tuaran' })
   assert.equal(sends, 2)
   assert.equal(controller.snapshot().shared, 0)
-  assert.equal(Object.keys(savedLedger['456'] || {}).length, 0)
+  assert.equal(Object.keys(savedLedger['789'] || {}).length, 0)
   assert.match(controller.snapshot().status, /未记录成功/)
+
+  shouldFail = false
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(sends, 3)
+  assert.ok(Number(savedLedger['789'].__completedAt) > 0)
+
+  postId = '999'
+  persistFails = true
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(sends, 4)
+  assert.equal(savedLedger['999'], undefined)
+  assert.match(controller.snapshot().status, /无法保存已分发标记/)
 })
 
 test('a completed batch releases the scheduled task slot', async () => {

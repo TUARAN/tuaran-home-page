@@ -186,18 +186,23 @@
     function load() {
       try { const value = JSON.parse(win().sessionStorage?.getItem?.(SESSION_KEY) || 'null'); state = value?.version === 4 ? { ...initialState(), ...value } : initialState(); } catch (_) { state = initialState(); }
     }
-    async function ledger() { try { return (await (env.loadLedger ? env.loadLedger() : root.chrome?.storage?.local?.get?.(LEDGER_KEY)))?.[LEDGER_KEY] || {}; } catch (_) { return {}; } }
-    async function remember(groupId) {
+    async function ledger() {
+      const stored = await (env.loadLedger ? env.loadLedger() : root.chrome?.storage?.local?.get?.(LEDGER_KEY));
+      if (!stored) throw new Error('无法读取已分发记录');
+      return stored[LEDGER_KEY] || {};
+    }
+    async function rememberBatch(groupIds) {
       const data = await ledger();
       const key = state.sourceId;
-      data[key] = { ...(data[key] || {}), [groupId]: Date.now() };
-      try { if (env.saveLedger) await env.saveLedger(data); else await root.chrome?.storage?.local?.set?.({ [LEDGER_KEY]: data }); } catch (_) {}
+      const sentAt = Date.now();
+      const next = { ...data, [key]: { ...(data[key] || {}), ...Object.fromEntries(groupIds.map((id) => [id, sentAt])), __completedAt: sentAt } };
+      if (env.saveLedger) await env.saveLedger(next);
+      else if (root.chrome?.storage?.local?.set) await root.chrome.storage.local.set({ [LEDGER_KEY]: next });
+      else throw new Error('无法保存已分发标记');
     }
-    async function confirmed(groupId) {
+    async function confirmedPost() {
       const data = await ledger();
-      const entries = Object.entries(data[state.sourceId] || {});
-      return entries.some(([key, at]) => (key.toLocaleLowerCase() === groupId || key.split('|')[0].toLocaleLowerCase() === groupId)
-        && Date.now() - Number(at || 0) < 604800000);
+      return Object.values(data[state.sourceId] || {}).some((at) => Number(at) > 0);
     }
     async function wait(ms) { if (env.wait) await env.wait(ms); else await sleep(ms, win()); }
     function finish(message, limited = false) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = false; state.limited = limited; state.nextAt = 0; save(); }
@@ -217,6 +222,9 @@
       if (!post) { finish(found.observed ? `已读取 ${found.observed} 条帖子，但没有符合条件的本人非置顶帖子` : '主页帖子尚未加载或无法识别，未发送'); return; }
       if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.selected = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
       state.sourceId = post.id; state.phase = 'share'; save();
+      try {
+        if (await confirmedPost()) { finish('最新帖子已标记为已分发，跳过本轮'); return; }
+      } catch (_) { halt('无法读取已分发记录，已停止以免重复发送'); return; }
       let dialog = shareDialog(doc());
       if (!dialog) {
         let share = null;
@@ -253,7 +261,7 @@
         state.total = state.seen.length; save();
         let target = null;
         for (const row of rows) {
-          if (selected.has(row.id) || await confirmed(row.id)) continue;
+          if (selected.has(row.id)) continue;
           target = row; break;
         }
         if (!target) {
@@ -296,12 +304,13 @@
       if (stopping) return;
       if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊；未记录成功，请检查 X 的提示`); return; }
       if (!SENT_RE.test(result) || result === beforeSend) { halt(`已点 Send，但未看到成功提示；请手动核对，未记录成功`); return; }
+      try { await rememberBatch([...selected]); }
+      catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对'); return; }
       for (const groupId of selected) {
-        await remember(groupId);
-        root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) });
+        try { root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) }); } catch (_) {}
       }
       state.shared = selected.size;
-      finish(`已确认一次发送到 ${selected.size} 个群聊，本轮完成`);
+      finish(`已确认一次发送到 ${selected.size} 个群聊；最新帖子已标记为已分发，本轮完成`);
     }
     async function start(options = {}) {
       stopping = false; load();

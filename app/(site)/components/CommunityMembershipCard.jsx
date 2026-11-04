@@ -11,7 +11,33 @@ import {
   IconShieldCheck,
 } from '@tabler/icons-react'
 
-import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPlanPrice } from '../../../lib/auth/communityMembership'
+import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPaymentQr, getCommunityPlanPrice } from '../../../lib/auth/communityMembership'
+
+function PlanPaymentQr({ plan, compact }) {
+  const dedicated = getCommunityPaymentQr(plan)
+  const fallback = COMMUNITY_MEMBERSHIP.paymentQr
+  const [src, setSrc] = useState(dedicated)
+
+  useEffect(() => {
+    setSrc(dedicated)
+  }, [dedicated])
+
+  return (
+    <Image
+      key={src}
+      src={src}
+      alt={`微信收款码，${plan.name}，固定金额 ${getCommunityPlanPrice(plan)} 元`}
+      width={1279}
+      height={1743}
+      sizes={compact ? '180px' : '240px'}
+      unoptimized
+      className="h-full w-full object-contain"
+      onError={() => {
+        if (src !== fallback) setSrc(fallback)
+      }}
+    />
+  )
+}
 
 function ActivityCountdown({ countdown }) {
   const parts = [
@@ -105,7 +131,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
     {
       icon: IconReceipt,
       title: '选择方案并扫码付款',
-      desc: `支付 ${selectedPrice} 元，并备注“${selectedPlan.name} + 你的微信昵称”。`,
+      desc: `请扫码支付固定金额 ¥${selectedPrice}，并备注“${selectedPlan.name} + 你的微信昵称”。`,
     },
     {
       icon: IconMessageCircleCheck,
@@ -193,17 +219,22 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
           <strong>¥{selectedPrice}.00</strong>
         </div>
         <div className="community-membership-payment-qr">
-          <Image
-            src={COMMUNITY_MEMBERSHIP.paymentQr}
-            alt={`微信付款码，${selectedPlan.name}费用 ${selectedPrice} 元`}
-            width={1279}
-            height={1743}
-            sizes={compact ? '180px' : '240px'}
-            unoptimized
-            className="h-full w-full object-contain"
-          />
+          <PlanPaymentQr plan={selectedPlan} compact={compact} />
         </div>
-        <p>付款时请手动填写 ¥{selectedPrice}，备注所选方案并保留付款截图。</p>
+        {selectedPlan.paymentQrAlipay ? (
+          <div className="community-membership-payment-qr">
+            <Image
+              src={selectedPlan.paymentQrAlipay}
+              alt={`支付宝收款码，${selectedPlan.name}，固定金额 ${selectedPrice} 元`}
+              width={1279}
+              height={1743}
+              sizes={compact ? '180px' : '240px'}
+              unoptimized
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : null}
+        <p>请扫码支付固定金额 ¥{selectedPrice}。备注「{selectedPlan.name} + 你的微信昵称」，并保留付款截图。</p>
         <div className="community-membership-invoice">
           <IconFileInvoice size={16} aria-hidden="true" />
           <span><strong>支持开具电子发票</strong>{COMMUNITY_MEMBERSHIP.invoice}</span>

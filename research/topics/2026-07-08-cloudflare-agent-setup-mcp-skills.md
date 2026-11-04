@@ -1,135 +1,96 @@
 ---
-title: Cloudflare Agent Setup：Skills 与 MCP 服务器集成分析
+title: Cloudflare Agent Setup：Skills、MCP 与开发代理接线
 category: topics
 topic_type: tech
 tech_type: agents_automation
 content_type: guide
 date: 2026-07-08
-tags: [Cloudflare, MCP, Skills, Codex, Claude Code, Cursor, Windsurf, OpenCode, AI Agent, 开发环境]
-summary: Cloudflare 发布了一份面向 AI 编程代理的 Agent Setup 指南，用 Skills 提供平台知识，用远程 MCP 服务器提供文档、账户资源、Bindings、Builds 和 Observability 能力；对个人站和边缘应用开发者来说，它更像一套“让代理理解 Cloudflare 项目”的开发环境入口。
-tldr: Cloudflare 的 Agent Setup 文档已经在 developers.cloudflare.com 上公开返回 text/markdown，适合用于 Codex、Claude Code、Cursor、Windsurf、OpenCode 等代理的 Cloudflare 开发环境配置。它的价值不在于安装几个命令本身，而在于把“平台知识、官方文档、账户级资源、构建与观测”接进代理工作流。落地时应区分只读文档服务器和需要 OAuth 的账户服务器，不建议在没有明确意图时让代理自动修改全局配置或触发登录。
-assistance: codex
-model: gpt-5
-review_ready: true
+updated: 2026-11-04
+tags: [Cloudflare, MCP, Skills, Agents SDK, Codex, Claude Code, Cursor, AI Agent, 开发环境]
+summary: 对照现行 developers.cloudflare.com/agent-setup 与托管 MCP 目录：Skills 提供平台知识，远程 MCP（尤其 Code Mode 的 cloudflare API server）提供账户与文档工具；与「在 Workers 上托管边缘 Agent」是不同问题。
+tldr: Agent Setup 解决的是「写 Cloudflare 项目的编码代理如何接官方知识与账户工具」，不是 Durable Object Agent 运行时本身。现行 prompt 对多数代理默认注册 `https://mcp.cloudflare.com/mcp`；产品专用 MCP 为可选。docs 只读与账户 OAuth 风险等级不同，应按任务最小化授权。
+subjects: [web_cloud]
+assistance: cursor
+model: grok
+show_assistance: false
+review_ready: false
+ad_eligible: false
 pv: 0
 ---
 
-按 2026-07-08 11:28（Asia/Shanghai）前后访问 Cloudflare 官方地址整理。原始页面地址为 [https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)，HTTP 响应为 `200`，`content-type` 为 `text/markdown; charset=utf-8`。涉及命令和服务器地址时，应以 Cloudflare 官方页面为准。
+## 一、先给结论
 
-## 一、结论
+1. **Cloudflare Agent Setup** 是给 Claude Code、Codex、Cursor、OpenCode 等**编码代理**读的官方接线说明，入口为可抓取的 Markdown：[`/agent-setup/prompt.md`](https://developers.cloudflare.com/agent-setup/prompt.md)（2026-11-04 复核仍返回官方说明正文）。
+2. **两层能力**：Skills（平台知识包）+ 远程 MCP（工具）。现行主推的账户侧入口是 **Cloudflare API MCP** `https://mcp.cloudflare.com/mcp`（Code Mode：`search` / `execute` / `docs`），官方称覆盖 2,500+ API 端点且以约千级 token 暴露工具面。[servers-for-cloudflare](https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/)
+3. **与边缘 Agent 专文分工**：[`cloudflare-edge-agents-practice`](/articles/research/topics/cloudflare-edge-agents-practice) 讲 Workers / Durable Objects / Agents SDK **托管运行时**；这里只讲**开发机上的代理如何接 Cloudflare 文档与账户**。不在此重复 DO / Workflows 限额表。
+4. **权限边界**：`docs` 类只读检索与带 OAuth 的账户 API 风险不同；未明确「要改账户 / 看构建 / 查日志」时，不应默认完成全套登录。
+5. **命令会改本地全局配置**：prompt 语气面向代理「自己执行」；人审任务若只是调研，应停在核验与分析，不自动跑安装。
 
-Cloudflare 这份 Agent Setup 文档是一份给 AI 编程代理读取和执行的环境配置提示词。它要解决的问题很具体：当开发者用 Codex、Claude Code、Cursor、Windsurf、OpenCode 或 GitHub Copilot 写 Cloudflare 项目时，代理不能只靠训练语料猜 Workers、Pages、D1、R2、Bindings、Builds、Observability 的最新用法，而应该接入 Cloudflare 提供的 Skills 和 MCP servers。
+## 二、事实层：现行官方接线（2026-11-04）
 
-这件事有三个直接价值。
+### 2.1 prompt.md 在装什么
 
-第一，**把平台知识前置到代理上下文**。Skills 负责提供 Cloudflare 平台、Workers、Pages、D1、Durable Objects、Workers AI、Agents SDK 等产品的结构化知识，让代理在做架构判断时不完全依赖过期记忆。
+复核当日 `prompt.md` 结构可概括为：
 
-第二，**把官方文档变成可查询工具**。`cloudflare-docs` MCP server 是公开的，不需要认证，适合让代理在生成代码、解释限制、查 API 或校验配置时直接检索 Cloudflare Docs。
+| 步骤 | 现行公开做法 |
+|---|---|
+| Claude Code | `claude plugin marketplace add cloudflare/skills` → `claude plugin install cloudflare@cloudflare`，再 `/reload-plugins` |
+| 其他代理 Skills | `npx -y skills add cloudflare/skills --skill '*' --yes --global`（或各代理文档中的 Skills 目录） |
+| 多数代理的 MCP | 注册 `https://mcp.cloudflare.com/mcp`，首次工具调用触发 OAuth；Codex / Pi 等用各自 `mcp add` + `login` |
+| 可选 | 安装 beta CLI `cf`，并在代理说明文件中约定优先用 `cf`（无 Wrangler 配置时） |
 
-第三，**把账户级能力接入开发循环**。`cloudflare`、`cloudflare-bindings`、`cloudflare-builds`、`cloudflare-observability` 这些 MCP servers 会涉及账户、项目、绑定、构建和观测能力，通常需要 OAuth 授权。它们更适合在需要真实部署、诊断构建、检查绑定或查看运行状态时使用。
+配置字段名因代理而异：Cursor / Copilot 常用 `url`；部分桌面代理用 `serverUrl`；OpenCode 用 remote + `oauth` 对象。以各代理 MCP 文档与当日 prompt 为准。
 
-一句话概括：**这份文档是 Cloudflare 给“AI 开发代理时代”的官方接线图。**
+### 2.2 托管 MCP 目录（主 server + 可选专用）
 
-## 二、官方来源是否可信
+[Cloudflare's own MCP servers](https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/)（文档更新标注 Oct 27, 2026）写明：
 
-可信度较高，原因有三点。
+- 连接 Streamable HTTP 的 `/mcp`；
+- **声明支持 MCP `2026-07-28`**，并兼容 2025 Streamable HTTP 客户端的无状态请求；
+- **主推荐**：`https://mcp.cloudflare.com/mcp`（API + 文档；Code Mode）；
+- **可选产品专用**（官方表，主 server 已覆盖全 API 时多数人不必再挂）：例如 docs、containers、browser、DEX、CASB、Agents SDK docs 等独立 URL。
 
-首先，页面位于 Cloudflare 官方开发者文档域名 `developers.cloudflare.com` 下，路径是 `/agent-setup/prompt.md`，而不是第三方博客、仓库 issue 或社区复制稿。
+历史文稿常并列五个远程 server（cloudflare / docs / bindings / builds / observability）。**现行 prompt 对多数代理已收敛到主 `cloudflare` URL**；专用 server 仍存在于目录页，属于可选增强，不是「必须装五个才算完成」。
 
-其次，页面返回 Markdown 原文，且响应头显示由 Cloudflare 服务提供。它是可被代理直接抓取的提示词文件。
+`cloudflare-docs` 一类公开文档检索在旧说明中常标为无需认证；主 API server 则走 OAuth 或 API Token。以你实际添加的 URL 与授权页为准。
 
-第三，文档中列出的资源链接都指向对应生态的官方入口，包括 Anthropic Claude Code MCP 文档、Cursor MCP 文档、Windsurf MCP 文档、OpenCode MCP 文档、VS Code Copilot MCP 文档，以及 Cloudflare 自己的 Skills 和 MCP GitHub 仓库。
+### 2.3 Agents 运行时里的 MCP（交叉引用，不展开）
 
-需要注意的是，可信不等于应该无条件执行。文档里的语气面向 AI 代理，会要求代理“直接运行命令”。对于本地开发机，这类命令可能修改全局配置、安装技能、注册远程 MCP 服务器，并触发 Cloudflare OAuth 登录。因此，真正落地时要看当前任务是不是“安装配置”，而不是只因为文档这么写就执行。
+Agents 文档另有一条线：在 Workers 上跑的 Agent **作为 MCP 客户端** `addMcpServer()`，把外部工具传入模型调用。[Agents → MCP](https://developers.cloudflare.com/agents/tools/mcp/)
 
-## 三、它安装的到底是什么
+那是**部署在 Cloudflare 上的 agent 调外部 MCP**，与「本地编码代理调 Cloudflare MCP」方向相反。架构零件（DO、Lifecycle、harness）见边缘智能体专文与 [Agents 总览](https://developers.cloudflare.com/agents/)。
 
-这份指南把 Cloudflare Agent 环境拆成两层。
+## 三、结构：什么时候该接、接到哪一层
 
-第一层是 **Skills**。Skills 更像代理的本地知识包，告诉代理 Cloudflare 平台有哪些产品、什么时候选 Workers、什么时候选 Pages、什么时候用 D1/R2/KV/Durable Objects、什么时候查最新文档。它解决的是“代理知道什么”的问题。
-
-第二层是 **MCP servers**。MCP 是 Model Context Protocol，用来把外部工具、文档、账户资源暴露给代理。Cloudflare 这里给了五类远程 server：
-
-| MCP server | 作用判断 | 是否通常需要认证 |
+| 任务 | 建议接线 | 理由 |
 |---|---|---|
-| `cloudflare` | Cloudflare 账户和平台 API 入口 | 需要 OAuth |
-| `cloudflare-docs` | 官方文档检索 | 不需要认证 |
-| `cloudflare-bindings` | 项目绑定、资源连接、环境能力 | 需要 OAuth |
-| `cloudflare-builds` | 构建、部署相关上下文 | 需要 OAuth |
-| `cloudflare-observability` | 日志、指标、观测排障 | 需要 OAuth |
+| 查 Workers / D1 / Wrangler 现行限制 | Skills + 文档检索（主 server `docs` 或可选 docs server） | 降低过期语料直接写配置的风险 |
+| 解释概念、写示例、不碰账户 | 可不登录账户 API | 缩小 blast radius |
+| 排障构建、绑定、观测、改真实资源 | 再完成 OAuth / Token，并尽量用权限受限账户 | 账户工具可读写 |
+| 设计边缘 Agent 拓扑 | 读 Agents / DO 文档；运行时问题转边缘专文 | 避免把 Setup 当成 SDK 教程 |
 
-这五个 server 的分工很重要。对于只写文章、查 API、解释概念，`cloudflare-docs` 足够；对于改真实项目配置、看部署、查日志，就会进入需要 OAuth 的账户能力。
+对本站这类已有 Wrangler / Pages / D1 痕迹的项目，Agent Setup 的实际收益通常是：**查文档更稳、部署排障更短、少把过期 API 写进 PR**——前提是操作者知道代理何时持有账户权限。
 
-## 四、不同代理的集成方式
+## 四、外部研判
 
-Cloudflare 给不同代理分别写了安装方式。
+Cloudflare 把 Skills 与 MCP 做成「给编码代理的官方接线图」，说明平台默认读者不再只是人类点控制台，而是会执行命令的代理。价值在接线清晰；风险也在接线过于自动——prompt 要求代理直接跑安装时，调研任务与安装任务必须由人分开授权。
 
-Claude Code 走插件体系，用 Cloudflare plugin marketplace 安装。它的特点是插件命令同时处理 Skills 和 MCP，不建议再手动混用 `npx skills` 或 `claude mcp add`。
+主 server 的 Code Mode（少量工具 + 动态生成调用代码）是在用工程手段压工具 schema 的 token 税；这与「把每个 REST 端点暴露成一个 MCP tool」是不同产品策略。是否足够安全，取决于沙箱、OAuth scope 与你是否审查模型生成的调用——本稿不做未实测的安全评级。
 
-Codex 走命令式注册。流程是先安装 Skills，再用 `codex mcp add` 逐个注册远程 MCP server，最后对 `cloudflare` 执行登录。对当前这个站点的开发环境来说，如果未来要让 Codex 直接管理 Cloudflare Pages、Workers、D1 或观测数据，Codex 这一段就是最相关的。
+## 五、信息来源与持续验证
 
-OpenCode、Windsurf、Cursor、GitHub Copilot 则主要是编辑对应的 MCP 配置文件。差异点在于配置字段名称：Windsurf 使用 `serverUrl`，Cursor / Copilot / 通用代理通常使用 `url`，OpenCode 使用 `"type": "remote"` 和 `"enabled": true` 这类结构。
+资料复核截至 **2026-11-04（Asia/Shanghai）**。
 
-这说明 Cloudflare 的策略是把 MCP server 做成远程标准入口，再按各家代理的配置格式分别接入。
+- [Agent Setup prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)
+- [Agent setup 入口](https://developers.cloudflare.com/agent-setup/)
+- [Cloudflare's own MCP servers](https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/)
+- [Agents 作为 MCP 客户端](https://developers.cloudflare.com/agents/tools/mcp/)
+- [Agents 总览](https://developers.cloudflare.com/agents/)
+- Skills / MCP 仓库入口（prompt 引用）：`cloudflare/skills`、`cloudflare/mcp`、`cloudflare/mcp-server-cloudflare`
 
-## 五、对本站开发的实际意义
+交叉阅读（不重复展开）：站内《Cloudflare 边缘智能体：Workers、Durable Objects 与 Agents SDK》。
 
-这个站点本身已经部署和维护在 Cloudflare 生态附近：仓库里有 `wrangler.toml`，也有 Pages、D1、R2、Next on Pages、Cloudflare split plan 等相关痕迹。把 Cloudflare Agent Setup 集成进开发环境，实际收益主要体现在四类任务。
+### 持续验证
 
-第一，**查文档更稳**。例如 Workers runtime、Next on Pages、D1 SQL、R2 资源访问、Pages 构建限制、Wrangler 配置项经常变化，代理接入 `cloudflare-docs` 后，可以优先查官方文档再动手。
-
-第二，**部署排障更短**。当 Pages build、Bindings、环境变量、D1 migration、R2 bucket、Workers logs 出问题时，代理如果能访问 builds 和 observability 上下文，就不必只靠本地猜测。
-
-第三，**架构决策更贴近平台边界**。例如什么时候用 D1，什么时候用 KV，什么时候用 Durable Objects，什么时候把资源放 R2，什么时候让 Pages Functions 计入 Workers 限制，这些判断都依赖 Cloudflare 当前规则。
-
-第四，**减少“旧知识生成新代码”的风险**。Cloudflare Workers 的 Node 兼容、compatibility flags、runtime API、Wrangler 配置、Agents SDK 都在快速变动。让代理在关键节点检索官方文档，比静态记忆可靠。
-
-## 六、风险与边界
-
-这份文档的核心是权限边界，技术配置本身并不复杂。
-
-第一，安装 Skills 和注册 MCP servers 会改变代理的全局配置。对 Codex 来说，这通常是当前用户环境的能力变更。
-
-第二，OAuth 登录会把代理接到 Cloudflare 账户。后续如果工具权限足够，代理可能读取账户资源、项目配置、构建状态或观测数据。应该用最小权限账户或明确知道授权范围。
-
-第三，`cloudflare-docs` 和其他 server 的风险等级不同。只读文档检索风险低，账户 API、Bindings、Builds、Observability 风险更高。建议在团队环境里把“查文档”和“操作账户”分开授权。
-
-第四，自动执行提示词存在供应链和上下文污染问题。即便页面来自官方，也不代表任意任务都应该执行其中命令。更稳妥的做法是：当任务明确是“安装 Cloudflare Agent Setup”时再执行；当任务只是“调研这份文档”时，只核验和分析。
-
-## 七、建议的落地顺序
-
-如果只是个人站开发，推荐按保守路径推进。
-
-第一步，只接入或使用 Cloudflare Docs 能力。它无需认证，主要解决“查最新文档”的问题。
-
-第二步，在需要真实部署和排障时，再注册账户级 MCP servers，并完成 OAuth。
-
-第三步，把 Cloudflare Skills 当成长期知识层使用，但不要让它替代官方文档检索。涉及价格、限制、API 字段、Wrangler schema、compatibility flags 时仍应查最新来源。
-
-第四步，在团队或生产环境里单独建立 Cloudflare 开发账户或权限受限 token，避免把主账户的高权限能力直接交给代理。
-
-## 八、原文位置与短摘录
-
-官方原文地址：[https://developers.cloudflare.com/agent-setup/prompt.md](https://developers.cloudflare.com/agent-setup/prompt.md)。
-
-短摘录如下：
-
-> official instructions from Cloudflare
-
-> Install Cloudflare Skills and MCP servers
-
-> Restart your agent to load the MCP servers
-
-这三个短句基本覆盖了文档的性质、目标和安装后的必要动作。完整原文建议直接以官方页面为准，因为该页面本身就是给代理和开发者读取的 Markdown 文件，也便于后续重新核验是否发生变化。
-
-## 九、参考链接
-
-- Cloudflare Agent Setup prompt：<https://developers.cloudflare.com/agent-setup/prompt.md>
-- Cloudflare Skills：<https://github.com/cloudflare/skills>
-- Cloudflare API MCP server：<https://github.com/cloudflare/mcp>
-- Cloudflare MCP server collection：<https://github.com/cloudflare/mcp-server-cloudflare>
-- Claude Code MCP：<https://docs.anthropic.com/en/docs/claude-code/mcp>
-- Cursor MCP：<https://cursor.com/docs/mcp>
-- Windsurf MCP：<https://docs.windsurf.com/windsurf/cascade/mcp>
-- OpenCode MCP servers：<https://opencode.ai/docs/mcp-servers/>
-- GitHub Copilot MCP servers：<https://code.visualstudio.com/docs/copilot/customization/mcp-servers>
+- `prompt.md` 若再次增删默认 MCP URL 或代理分段（例如重新强制五个 server），第二节表需按当日正文替换。  
+- Code Mode 的工具名、token 对比数字来自 Cloudflare 文档表；若文档改口径，应更新事实层而非沿用旧对比。

@@ -55,7 +55,7 @@
   }
 
   function findAction(scope, pattern) {
-    return Array.from(scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"]') || []).find((node) => enabled(node) && pattern.test(clean(`${node.getAttribute('aria-label') || ''} ${textOf(node)}`)) && !node.closest('#x-reply-clipboard-panel')) || null;
+    return Array.from(scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"]') || []).find((node) => enabled(node) && (pattern.test(clean(node.getAttribute('aria-label'))) || pattern.test(textOf(node))) && !node.closest('#x-reply-clipboard-panel')) || null;
   }
 
   function shareDialog(doc) {
@@ -105,6 +105,7 @@
       }
       const post = latestOwnPost(profilePosts(doc(), handle));
       if (!post) { finish('主页没有找到可分享的最新帖子，未发送'); return; }
+      if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.done = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
       state.sourceId = post.id; state.phase = 'share'; save();
       for (let step = 0; step < 300 && !stopping; step++) {
         const alertText = toast(doc());
@@ -172,7 +173,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, profilePosts, groupRows, enabled, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, profilePosts, groupRows, enabled, findAction, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

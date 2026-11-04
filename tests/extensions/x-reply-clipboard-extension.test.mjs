@@ -9120,6 +9120,17 @@ test('group chat sharing only targets enabled group rows, never personal account
   assert.deepEqual(communityShare.groupRows(dialog).map((item) => item.name), ['BlueV Mutual Follow Group', '汤臣一品'])
 })
 
+test('group chat sharing finds controls with both a label and visible text', () => {
+  const button = {
+    innerText: 'Send via Chat',
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ pointerEvents: 'auto' }) } },
+    getAttribute: (key) => key === 'aria-label' ? 'Send via Chat' : null,
+    getClientRects: () => [1],
+    closest: () => null,
+  }
+  assert.equal(communityShare.findAction({ querySelectorAll: () => [button] }, /^Send via Chat$/u), button)
+})
+
 test('group chat sharing stays off by default and runs on the own profile', () => {
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['community-share'].enabled, false)

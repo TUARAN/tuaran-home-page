@@ -1064,7 +1064,6 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
   if (selected === "article" || selected === "site-forward") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
   if (selected === "community-share") {
     if (actual === "/home" || actual === "/") return true;
-    if (/^\/i\/communities(?:\/\d+)?$/iu.test(actual)) return true;
     const segment = actual.match(/^\/([A-Za-z0-9_]{1,15})$/iu)?.[1] || "";
     return Boolean(segment && !RESERVED_X_PATHS.has(segment.toLowerCase()));
   }

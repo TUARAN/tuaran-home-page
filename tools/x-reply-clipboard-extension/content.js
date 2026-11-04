@@ -368,7 +368,7 @@
   let pruneState = { running: false, stopping: false, deleted: 0, unreposted: 0, status: "清理低质帖待命。" };
   let articleState = { running: false, stopping: false, status: "待命。写一篇文章放进 X 草稿，不发布。", count: 0, errors: 0, nextAt: 0, pace: "slow" };
   let forwardState = { running: false, stopping: false, status: "待命。每天 14:00 后把一篇站内文章发布为 X Article。", nextAt: 0 };
-  let communityState = { running: false, stopping: false, status: "待命。把当前账号最新原创帖发进已加入的社群。", shared: 0, skipped: 0, total: 0, nextAt: 0, limited: false };
+  let communityState = { running: false, stopping: false, status: "待命。把当前账号最新帖子发送给可用群聊。", shared: 0, skipped: 0, total: 0, nextAt: 0, limited: false };
   let communityController = null;
   const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
   const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
@@ -966,19 +966,7 @@
 
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
-      communityController = communityApi.createController({
-        document,
-        window,
-        generateNote: async ({ text, communityName }) => {
-          if (!state.aiKey && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) return "";
-          const response = await sendExtensionMessage({
-            type: "xrc-ai-community-note",
-            postText: text,
-            communityName
-          });
-          return String(response?.reply || "");
-        }
-      });
+      communityController = communityApi.createController({ document, window });
       communityController.subscribe((snapshot) => {
         communityState = {
           ...communityState,
@@ -1625,8 +1613,8 @@
       ? /^\/notifications(?:\/|$)/iu.test(path)
       : mode === "article" || mode === "site-forward" || pendingPath === "/compose/articles"
         ? /^\/compose\/articles(?:\/|$)/iu.test(path)
-      : mode === "community-share" || pendingPath === "/i/communities" || /^\/i\/communities\/\d+$/iu.test(pendingPath)
-        ? path === "/home" || path === "/" || /^\/i\/communities(?:\/\d+)?$/iu.test(path) || /^\/[A-Za-z0-9_]{1,15}$/iu.test(path)
+      : mode === "community-share"
+        ? path === "/home" || path === "/" || /^\/[A-Za-z0-9_]{1,15}$/iu.test(path)
       : pendingPath === "/home"
         ? path === "/home" || path === "/"
         : pendingPath.toLowerCase() === path.toLowerCase();
@@ -2917,7 +2905,7 @@
     if (["likes-posts", "likes-replies"].includes(mode)) return `${amount} 个点赞`;
     if (["poster", "poster-premium", "poster-x", "poster-xhs"].includes(mode)) return `${amount} 条帖子`;
     if (mode === "article" || mode === "site-forward") return `${amount} 篇文章`;
-    if (mode === "community-share") return `${amount} 个社群`;
+    if (mode === "community-share") return `${amount} 个群聊`;
     return `${amount} 个账号`;
   }
 
@@ -8075,9 +8063,9 @@
         <div class="xrc-body xrc-community-body">
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
-              ${taskSectionHead("运行", "最新帖分发到已加入社群")}
-              <p class="xrc-pace-now">读取当前账号主页上最新的原创帖（跳过置顶、纯回复和纯转发），只带原帖链接，发进 `/i/communities` 里已加入的社群，单轮最多 30 个。短评用已配置的回复模型，没有模型就用短中文模板。每个社群试两次，仍失败就跳过；按钮文案不是「发帖 / Post / 在此社群」也跳过。X 提示受限时结束本轮。同一条帖 7 天内不重复发进同一个社群。</p>
-              <label class="xrc-schedule-card-list"><span>社群之间的停顿</span>
+              ${taskSectionHead("运行", "最新帖发送到可用群聊")}
+              <p class="xrc-pace-now">打开当前账号主页的最新帖子，通过右下角分享按钮选择「Send via Chat」。只发送到分享窗口中可点击的群聊；置灰群聊和个人账号均跳过。每次发送须看到成功提示才记录，无法确认时停止并提示手动核对。同一条帖 7 天内不重复发送到同一个群聊。</p>
+              <label class="xrc-schedule-card-list"><span>群聊之间的停顿</span>
                 <select data-xrc-community-pace aria-label="社群分发速度">
                   <option value="slow">慢 · 约 20–35 秒，本轮后约 6 小时</option>
                   <option value="medium">中 · 约 12–20 秒，本轮后约 3 小时</option>

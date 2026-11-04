@@ -9076,137 +9076,38 @@ test('manual follow requests skip ordinary scan spacing but retain explicit cool
 
 const communityShare = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
-test('community share picks the newest original post and skips pinned replies and reposts', () => {
-  const picked = communityShare.pickLatestOriginalPost([
-    { id: '1', own: true, pinned: true, text: '置顶' },
-    { id: '2', own: true, repost: true, text: '转发' },
-    { id: '3', own: true, reply: true, text: '回复' },
-    { id: '4', own: true, text: '最新原创' },
-    { id: '5', own: false, text: '别人的帖' },
+test('group chat sharing chooses the latest own post and excludes pinned or reposted items', () => {
+  const picked = communityShare.latestOwnPost([
+    { id: '1', own: true, pinned: true },
+    { id: '2', own: true, repost: true },
+    { id: '3', own: false },
+    { id: '4', own: true },
   ])
   assert.equal(picked.id, '4')
-  assert.equal(communityShare.pickLatestOriginalPost([{ id: '9', own: true, reply: true }]), null)
 })
 
-test('community share only keeps joined communities and caps the list', () => {
-  const cards = [
-    { id: '11', href: '/i/communities/11', name: '已加入社群', joinControl: '已加入' },
-    { id: '12', href: '/i/communities/12', name: '推荐社群', joinControl: '加入' },
-    { id: '13', href: '/i/communities/13', name: '发现社群', explore: true },
-    { id: '11', href: '/i/communities/11', name: '重复', joinControl: 'Joined' },
-    { id: '14', href: '/i/communities/14', name: '无按钮社群' },
-  ]
-  const joined = communityShare.collectJoinedCommunities(cards)
-  assert.deepEqual(joined.map((item) => item.id), ['11', '14'])
-  const capped = communityShare.collectJoinedCommunities(
-    Array.from({ length: 40 }, (_, index) => ({ id: String(100 + index), name: `社群${index}` })),
-    { limit: 30 },
-  )
-  assert.equal(capped.length, 30)
+test('group chat sharing only targets enabled group rows, never personal accounts', () => {
+  const row = (label, disabled = false) => ({
+    innerText: label,
+    disabled,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ pointerEvents: 'auto' }) } },
+    getAttribute: (key) => key === 'aria-disabled' && disabled ? 'true' : null,
+    getClientRects: () => [1],
+    closest: () => null,
+    contains: () => false,
+  })
+  const rows = [row('BlueV Mutual Follow Group 825 people'), row('NGSLin @NGSLin99'), row('Rory, Seayo and 843 others 845 people', true), row('汤臣一品 43 people')]
+  const dialog = { querySelectorAll: () => rows }
+  assert.deepEqual(communityShare.groupRows(dialog).map((item) => item.name), ['BlueV Mutual Follow Group', '汤臣一品'])
 })
 
-test('community share commentary stays within two sentences and can fall back to a template', () => {
-  const template = communityShare.templateCommentary('今天把排班改成单页签。', '产品社群')
-  assert.match(template, /产品社群/)
-  assert.match(template, /感兴趣可以直接看原帖/)
-  assert.doesNotMatch(template, /不是.+而是/)
-  const cleaned = communityShare.normalizeCommentary('不是广告，而是同步。\nhttps://x.com/a/status/1', template)
-  assert.equal(cleaned, template)
-  const kept = communityShare.normalizeCommentary('这条也放过来。想看的直接点原帖。再加一句就不该留下。', template)
-  assert.equal(kept, '这条也放过来。想看的直接点原帖。')
-  const draft = communityShare.shareDraft(kept, 'https://x.com/tuaran/status/99')
-  assert.match(draft, /想看的直接点原帖。\n\nhttps:\/\/x.com\/tuaran\/status\/99/)
-})
-
-test('community share delays follow the speed tier and retries then skip', () => {
-  assert.ok(communityShare.itemDelayMs('slow', () => 0) >= 20000)
-  assert.ok(communityShare.itemDelayMs('turbo', () => 0.99) <= 6000)
-  assert.equal(communityShare.shareGapMs('medium'), 3 * 60 * 60 * 1000)
-  const cursor = communityShare.normalizeCursor({
-    phase: 'share',
-    handle: 'tuaran',
-    source: { id: '99', href: '/tuaran/status/99', text: '原文' },
-    communities: [{ id: '11', name: '产品社群' }],
-    opens: { 11: 2 },
-  })
-  const skipped = communityShare.decideStep(cursor, {
-    path: '/i/communities/11',
-    composerReady: false,
-  })
-  assert.equal(skipped.action, 'skip')
-  assert.equal(skipped.reason, 'no-composer')
-  const filled = communityShare.decideStep(communityShare.normalizeCursor({
-    ...cursor,
-    opens: {},
-    fills: { 11: 2 },
-  }), { path: '/i/communities/11', composerReady: true, draftReady: false })
-  assert.equal(filled.reason, 'fill-failed')
-  const submitted = communityShare.decideStep(communityShare.normalizeCursor({
-    ...cursor,
-    opens: {},
-    fills: { 11: 1 },
-    attempts: { 11: 2 },
-  }), { path: '/i/communities/11', composerReady: true, draftReady: true })
-  assert.equal(submitted.reason, 'submit-failed')
-})
-
-test('community share step finds the profile post, skips an already shared community, and stops on a limit', () => {
-  const found = communityShare.decideStep(communityShare.normalizeCursor({ handle: 'tuaran' }), {
-    path: '/tuaran',
-    posts: [
-      { id: '1', own: true, pinned: true },
-      { id: '2', own: true, text: '最新原创' },
-    ],
-  })
-  assert.equal(found.action, 'navigate')
-  assert.match(found.url, /\/i\/communities\?xrcAssistant=community-share/)
-  assert.equal(found.cursor.source.id, '2')
-  const listed = communityShare.decideStep(found.cursor, {
-    path: '/i/communities',
-    canScroll: false,
-    cards: [{ id: '11', name: '产品社群', joinControl: '已加入' }, { id: '12', name: '推荐', joinControl: '加入' }],
-  })
-  assert.equal(listed.action, 'navigate')
-  assert.match(listed.url, /\/i\/communities\/11/)
-  const again = communityShare.decideStep(listed.cursor, {
-    path: '/i/communities/11',
-    canScroll: false,
-  }, ['11'])
-  assert.equal(again.action, 'finish')
-  const limited = communityShare.decideStep(listed.cursor, {
-    path: '/i/communities/11',
-    limited: true,
-  })
-  assert.equal(limited.action, 'limited')
-  const ledger = communityShare.rememberLedgerShare({ posts: {} }, '2', '11', 1_000)
-  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 6 * 24 * 60 * 60 * 1000), ['11'])
-  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 8 * 24 * 60 * 60 * 1000), [])
-})
-
-test('community share is a scheduled task that stays off until enabled', () => {
+test('group chat sharing stays off by default and runs on the own profile', () => {
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['community-share'].enabled, false)
   assert.equal(rules['community-share'].priority, 7)
-  assert.equal(rules['community-share'].pace, 'slow')
-  assert.equal(rules['community-share'].minGapMs, background.COMMUNITY_SHARE_RETRY_MS)
-  assert.equal(background.sliceMsForMode('community-share', { sliceSeconds: 30 }), background.COMMUNITY_SHARE_SLICE_MS)
   assert.equal(background.onTaskPath('community-share', 'https://x.com/tuaran', { accountHandle: 'tuaran' }), true)
-  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), true)
-  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/explore', { accountHandle: 'tuaran' }), false)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), false)
   assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
-})
-
-test('community share retries an empty or failed round without a six-hour cooldown', async () => {
-  const fifteenMinutes = 15 * 60 * 1000
-  const sixHours = 6 * 60 * 60 * 1000
-  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: null }), fifteenMinutes)
-  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [] }), fifteenMinutes)
-  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [{ id: '2' }], skipped: [{ id: '2' }] }), fifteenMinutes)
-  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 1, source: { id: '1' }, communities: [{ id: '2' }] }), sixHours)
-  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [{ id: '2' }] }), sixHours)
-  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(content, /force: scheduledStart \|\| Number\(communityState\.nextAt\) > Date\.now\(\)/)
-  assert.match(content, /communityState\.running && Number\(communityState\.nextAt\) <= Date\.now\(\)/)
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

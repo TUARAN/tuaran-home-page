@@ -1,23 +1,24 @@
 ---
-title: 编码与办公智能体的记忆机制：Codex / WorkBuddy 双版本调研
+title: 编码与办公智能体的记忆机制
 category: topics
 date: 2026-08-28
+updated: 2026-11-04
 time: 16:24
 tags: [AI, 智能体, 记忆机制, Claude Code, Codex, Cursor, GitHub Copilot, Hermes Agent, WorkBuddy]
-summary: 对照 Codex 与 WorkBuddy 两份调研，拆解智能体的记忆分层、自动提取、用户画像、更新纠错与云端同步；区分产品事实、历史能力和设计建议。
+summary: 对照 Claude Code、Codex、Hermes、Cursor 与 WorkBuddy 的公开机制，拆解智能体记忆分层、自动提取、用户画像、更新纠错与云端同步；区分产品事实与设计建议。
 tldr: 本地优先，少量已确认偏好常驻，项目经验按需检索；自动提取先审查，跨工具共享保留来源与权限边界。
 topic_type: tech
 tech_type: agents_automation
 subjects: [ai_dev]
 content_type: analysis
-assistance: codex
-show_assistance: true
+assistance: cursor
+model: grok
+show_assistance: false
 review_ready: false
 ad_eligible: false
-pv: 0
 ---
 
-## 一、核心结论
+## 结论
 
 1. **记忆需要一条完整的数据处理链。** 完整链路包括：记录事件、识别值得保留的信息、提取、分类、核验、去重、处理冲突、持久化、检索、注入、纠正和删除。
 2. **会话继续、上下文压缩、长期记忆、用户画像是四件不同的事。** 能恢复昨天的聊天，不代表能在新任务里正确使用昨天学到的偏好。
@@ -584,7 +585,7 @@ LongMemEval 覆盖信息提取、跨会话推理、知识更新、时间推理�
 
 这三个答案决定架构，远比“选哪款向量数据库”更重要。
 
-## 十五、尚未确认与容易误读的事项
+## 持续验证
 
 - **Cursor 当前本地 Chat Memories**：能确认历史发布与当前规则／自动化记忆，但本次未验证各版本客户端仍以相同方式提供旧 Memories。
 - **WorkBuddy 存储后端**：官方桌面文档未公开具体数据库与同步一致性协议。本报告不采用社区教程里的路径作为现行官方保证。
@@ -596,7 +597,7 @@ LongMemEval 覆盖信息提取、跨会话推理、知识更新、时间推理�
 
 ---
 
-## 结论
+## 外部判断
 
 好的智能体记忆应当做到：**该记的有来源，该用的能找到，过期的能识别，记错的能纠正，撤回的不会再生，跨工具共享有边界。**
 
@@ -613,7 +614,7 @@ LongMemEval 覆盖信息提取、跨会话推理、知识更新、时间推理�
 这是文档与源码调研，不是五款产品在相同数据上的实测。默认值、路径和实验功能会随版本变化。尤其应区分 **WorkBuddy 桌面端与 CodeBuddy Code**、**Cursor 历史 Chat Memories 与当前云端自动化记忆**、**Codex 本地记忆与 ChatGPT 记忆**。
 
 
-资料日期：2026-08-28。核心对象为 Claude Code、Codex、Hermes Agent、Cursor 与 WorkBuddy；补充讨论 CodeBuddy Code 和通用记忆组件。`hemers` 统一按 Hermes Agent 处理。
+资料核验：首写 2026-08-28；本稿链接复核 2026-11-04（北京）。核心对象为 Claude Code、Codex、Hermes Agent、Cursor 与 WorkBuddy；补充讨论 CodeBuddy Code 和通用记忆组件。`hemers` 统一按 Hermes Agent 处理。
 
 ### 来源索引（31 个链接）
 
@@ -648,386 +649,3 @@ LongMemEval 覆盖信息提取、跨会话推理、知识更新、时间推理�
 29. [Letta Memory & dreaming](https://docs.letta.com/configuration/memory)
 30. [LongMemEval](https://xiaowu0162.github.io/long-mem-eval/)
 31. [LongMemEval-V2](https://xiaowu0162.github.io/longmemeval-v2/)
-
-<!-- variant:workbuddy -->
-
-## 1. 结论速览（TL;DR）
-
-所有主流编码智能体已收敛到同一套分层记忆模型：稳定的规则层（人写、可 git 共享：CLAUDE.md / AGENTS.md / Rules）＋ 自动记忆层（AI 写、本机私有：Auto Memory / Memories）＋ 会话层（上下文压缩管理）。差异主要在「自动提取的质量控制」和「遗忘机制」。
-
-提取策略的共识是「双阶段」：先用一个模型生成候选记忆，再用第二个模型/提示词严格评分筛选（Cursor 的 1–5 分评估提示词是范式样本），且「用户显式要求记住」永远最高优先级。
-
-遗忘是功能不是缺陷：Copilot 28 天 TTL、Codex 30 天未召回即剪枝、Mem0 的 DELETE/NOOP 决策——业界已普遍认识到「无限增长的记忆库会劣化检索质量」。
-
-云端与团队共享有两条路线：轻量级 = 把记忆文件当 git 工件共享（AGENTS.md / 规则文件）；重量级 = 中央 MCP 记忆服务器或托管服务（Cloudflare Agent Memory、Mem0 Cloud、Zep Cloud），支持审计、权限、实时同步。
-
-记忆正在从「应用层 hack」下沉为「平台层标配」：2026 年通用记忆框架（Mem0 55k+ stars、Letta 22k、Graphiti 20k）+ 托管服务 + 评测基准（LoCoMo / LongMemEval）已形成完整生态；「百万上下文窗口会杀死记忆层」的论点被成本/时序/可审计性三个因素证伪。
-
-## 2. 记忆分类学：智能体记忆的统一框架
-
-当前主流框架普遍借用认知科学（Endel Tulving 1972）的分类，采用三到四层结构。可用以下分类对照不同产品的实现：
-
-| 层级 | 类比 | 生命周期 | 典型实现 | 写入者 |
-| --- | --- | --- | --- | --- |
-| 工作记忆（Working） | RAM | 单次请求 | 模型上下文窗口 | 系统自动 |
-| 会话/短期记忆（Session） | 磁盘缓存 | 单次会话 | 对话历史 + 压缩摘要（compaction）、session 记忆文件 | 系统自动 |
-| 长期语义记忆（Semantic） | 硬盘 | 跨会话持久 | 事实/偏好存储：CLAUDE.md、Auto Memory、Cursor Memories、Mem0 fact store | 人写 + AI 自动提取 |
-| 情景/程序记忆（Episodic / Procedural） | 经验库 | 跨会话持久 | 历史会话检索（FTS5/向量）、技能文件（SKILL.md）、Letta memory blocks、Zep temporal edges | 主要 AI 自动生成 |
-| 画像记忆（Profile） | 用户档案 | 跨项目长期 | WorkBuddy 云端画像、Hermes USER.md、Copilot user-level preference、Honcho 辩证用户建模 | 服务端自动蒸馏 / AI 维护 |
-
-RAG 与交互记忆的数据来源和维护方式不同。RAG 的数据源是预先准备的文档（知识问答），记忆层的数据源是运行时交互（个性化与经验）。生产级 agent 通常两者共存：RAG 提供领域知识，记忆提供用户上下文。
-
-## 3. 各产品记忆机制深度拆解
-
-### 3.1 Claude Code（Anthropic）
-
-Claude Code 是「双记忆机制」的标杆实现：CLAUDE.md 是你写的，Auto Memory 是 Claude 自己写的。
-
-| 维度 | CLAUDE.md | Auto Memory |
-| --- | --- | --- |
-| 谁来写 | 你 / 团队 | Claude 自动（v2.1.59 起默认开启） |
-| 内容性质 | 规则、指令、标准 | 经验、发现、习惯 |
-| 加载方式 | 每次会话全文加载 | 启动时只加载 MEMORY.md 前 200 行 / 25KB（先到为准） |
-| 存储位置 | 项目根目录（企业级 / 用户级 / 项目级 / CLAUDE.local.md 四级作用域） | `~/.claude/projects/<repo-hash>/memory/`，同一 git 仓库所有 worktree 共享 |
-| 团队共享 | ✓（走 git） | ✗（本机私有，不跨机器、不进云端环境） |
-
-#### Auto Memory 的目录结构（索引 + 按需加载主题文件）
-
-```text
-~/.claude/projects/my-repo-hash/memory/
-├── MEMORY.md        # 索引：每次启动加载前 200 行
-├── debugging.md     # 主题文件：不占启动上下文，Claude 判断相关时才读
-├── patterns.md      # 例：「团队用 zod 做所有 API 校验，不用 joi」
-└── build-notes.md   # 例：「webpack 需要 NODE_OPTIONS=--max-old-space-size=4096」
-```
-
-#### 压缩（Compaction）后各机制的存活情况
-
-| 机制 | 压缩后 |
-| --- | --- |
-| 系统提示词 / 输出风格 | 不变（不在消息历史内） |
-| 项目根 CLAUDE.md、未限定作用域的规则 | 从磁盘重新注入 |
-| Auto Memory | 从磁盘重新注入 |
-| 带 paths frontmatter 的规则、嵌套 CLAUDE.md | 丢失，直到再次读到匹配文件才重新加载 |
-| 已调用的 Skill 正文 | 重新注入但有上限（单 skill 5,000 token、总量 25,000 token，最旧的先丢） |
-| 仅在对话中口头说的指令 | 丢失（"Claude 忘了我说过的话"的最常见根源） |
-
-#### 配套机制
-
-官方决策树：每次会话都要 → 团队共享进项目 CLAUDE.md，个人进 CLAUDE.local.md；只对特定文件类型生效 → .claude/rules/ 路径作用域规则；多步骤流程 → Skill（按需加载，不占启动上下文）；必须强制执行的动作 → Hooks（确定性执行，不依赖模型自觉）。
-
-容量纪律：官方建议单文件控制在 200 行以内；「删掉这行会导致 Claude 犯错吗？不会就删」。
-
-成本优化：CLAUDE.md 属于 prompt cache 前缀，多轮会话中后续命中缓存成本近似为零。
-
-社区生态：AutoDream（2026.2）在会话间隙以后台子代理身份审查和整理记忆文件，模拟 REM 睡眠记忆巩固。
-
-### 3.2 OpenAI Codex CLI
-
-Codex 用「两层」实现记忆增强生成（MAG），且是最早把异步睡眠式巩固产品化的：
-
-#### 第一层：AGENTS.md（配置层，人写）
-
-| 层级 | 位置 | 用途 |
-| --- | --- | --- |
-| 全局 | ~/.codex/AGENTS.md | 跨项目偏好 |
-| 全局覆盖 | ~/.codex/AGENTS.override.md | 临时全局覆盖 |
-| 项目根 | ./AGENTS.md | 仓库级约定 |
-| 子目录 | ./services/payments/AGENTS.md | 组件级规则（可层层覆盖） |
-
-发现顺序：全局 → 仓库根 → 当前目录，逐层拼接，越靠近工作目录优先级越高；合并上限默认 32 KiB（project_doc_max_bytes 可调），超限静默截断。
-
-支持自定义回退文件名（project_doc_fallback_filenames），兼容 TEAM_GUIDE.md、.agents.md 等。
-
-#### 第二层：Memories（生成层，AI 写，v0.128 起 GA）
-
-```text
-会话结束
- → 空闲 6 小时后触发
- → 模型 A 逐会话提取（含密钥脱敏）
- → 模型 B 合并进全局库
- → 下次会话注入 memory_summary.md（约 5,000 token）
-```
-
-双模型分工：提取与合并是不同问题，分开调优——这是业界公认的最佳实践。
-
-遗忘机制：30 天未被召回的记忆被剪枝。
-
-检索是 grep 不是向量：摘要整体注入，细节靠 agent 主动 grep 长文 MEMORY.md。工程上可调试（能 cat 自己的记忆），代价是措辞不一致时召回失败。
-
-溯源：记忆条目可回溯到来源会话文件与行号（citation block），但缺少「争议/废弃」语义——坏记忆只能靠隐式合并修正。
-
-隐私：EEA/英国/瑞士账户暂不可用；v0.139 起外部工具输出（MCP/网页搜索内容）不入库，防记忆库污染。
-
-默认关闭，需在 config.toml 开启 [features] memories = true。
-
-#### 上下文工程四策略（Write / Select / Compress / Isolate）
-
-社区把 Codex 的上下文管理总结为：Write（AGENTS.md / Memories / Skills / PLANS.md 写到窗口外）、Select（MCP、Tool Search 按需选择）、Compress（compaction、schema 剪枝、token 预算）、Isolate（子代理、profiles、沙箱隔离）。范式演进路径：Prompt Engineering（2022–24）→ Context Engineering（2025–26）→ Harness Engineering（2026+）。
-
-### 3.3 Cursor
-
-Cursor 的哲学是「显式控制优先于不透明自动记忆」，因此它是几家里自动记忆最克制、但提示词工程质量最高的。
-
-| 机制 | 本质 | 关键细节 |
-| --- | --- | --- |
-| Rules（.cursor/rules/*.mdc） | 人写的持久规则 | 4 种触发：Always（每次注入）/ Agent Decides（模型按描述判断相关性）/ Specific Files（globs 匹配）/ Manual（仅 @ 引用） |
-| Memories（Cursor 1.0，2025.6，取代 Notepads） | AI 主动学习的事实库 | 项目级 + 个人级两种作用域；三种建立方式：对话自动学习 / 手动添加 / 显式"remember that…" |
-| Notepads（0.40+，旧机制） | 会话持久便签 | @mention 注入，适合放 API 契约、sprint 上下文等「太长放 rules、太重要不想重打」的内容 |
-| @Codebase 索引 | 持久代码记忆 | 全仓库语义嵌入索引，跨会话更新——「知道你的代码，不知道你的对话」 |
-| Cursor Docs | 外部文档索引 | 私有 API 文档索引后可 @ 引用 |
-
-#### Memories 的双提示词设计（值得抄的范本）
-
-生成提示词：从对话判断哪些信息未来有用，正/负标准 + 大量正/反例。负面标准明确排除：一次性任务细节、实现细节、临时上下文、仅当前文件的上下文、模糊偏好（"喜欢良好错误处理"）、任何开发者都懂的通用原则（DRY/SOLID/KISS）。
-
-评估提示词：给候选记忆打 1–5 分。设计要点：倾向低分（"评分过高用户会极其不满"）、边界情况给 3 分、用户显式要求记住直接给 5 分、背景生成的记忆需用户批准才保存。
-
-核心理念：未审查的记忆 = 一份你从未同意过的隐形系统提示词。Memories 是「Cursor 学到的关于你的东西」，Rules 是「团队对这个仓库的决定」——如果一条事实被违反会引发 code review 评论，它就该进 Rule 而不是 Memory。
-
-### 3.4 GitHub Copilot（含 VS Code）
-
-Copilot Memory 是目前跨面共享 + 自愈做得最激进的：
-
-记忆条目四元组：Subject（主题）+ Fact（学到的事实）+ Citations（代码位置：文件路径+行号）+ Reason（对未来任务的可执行含义）。
-
-两种作用域：仓库级事实（对仓库所有贡献者可见，写权限创建、读权限使用）＋ 用户级偏好（仅自己可见、跨仓库生效，2026.6 起 Business/Enterprise 可用）。
-
-跨面共享：同一记忆池被 coding agent（云代理）、code review、Copilot CLI、VS Code、JetBrains（2026.8.11 起）共同读写——code review 发现命名规范违规，下次 coding agent 写码时直接继承。
-
-引用式自愈：应用记忆前即时验证引用的代码位置是否仍存在且一致；发现矛盾自动生成修正版本。GitHub 内部用「植入对抗性记忆」测试，agent 能稳定检出并纠正。
-
-28 天 TTL：记忆 28 天过期，被使用则刷新时间戳——「活跃相关的存活，无人使用的剪枝」（对比：Claude Code 自动记忆无内置过期）。
-
-VS Code 三作用域：User（跨所有工作区，前 200 行每会话加载）/ Repository（当前工作区跨会话，开启 Copilot Memory 后并入共享池）/ Session（会话结束即清）。本地文件在 %APPDATA%\Code\User\memories\。
-
-采集知情同意：存储前有权限提示，说明条目将落入哪个作用域。
-
-仓库管理员可逐条审查/删除记忆（带引用展示）或整仓关闭。
-
-### 3.5 Hermes Agent（Nous Research，2026.2 开源）
-
-定位「唯一内置学习闭环的 Agent」——记忆 + 技能自进化是它的核心卖点，4 个月 175k stars。
-
-| 层级 | 机制 | 约束 |
-| --- | --- | --- |
-| 1 — 高信号状态 | ~/.hermes/memories/MEMORY.md（关于世界的笔记）+ USER.md（关于你的笔记） | 字符上限：2,200 + 1,375（约 1,300 token，每个系统提示词永久携带） |
-| 2 — 跨会话检索 | SQLite + FTS5 全文索引全部会话历史 + LLM 摘要 | 无硬上限 |
-| 3 — 外部集成 | 可选 mem0、Supermemory、自定义向量库 | 取决于 provider |
-
-#### 两个工程设计
-
-字符预算而非 token 预算：换模型（Sonnet→Opus→任何未来模型）预算不漂移。且把「内存使用率」（67% — 1,474/2,200 chars）直接展示给模型，让模型自己管理油箱——超过 80% 时先巩固再新增。
-
-冻结快照（frozen snapshot）：会话开始时把记忆读入系统提示词后整场冻结——会话中新写的记忆落盘但不进当前提示词，下次会话才可见。牺牲会话内体验，换取整个长会话的 prompt cache 前缀稳定（不冻结则每次写记忆都使缓存失效，长会话成本爆炸）。
-
-主动自我提醒：每 10 轮对话做一次内部审查，判断是否有值得持久化的偏好或可固化为技能的流程，不被动等用户说「记住这个」。
-
-技能自动生成与自我改进：解决复杂问题后自动把过程提炼为 SKILL.md（遵循 agentskills.io 开放标准），使用中持续优化；官方内部基准：20+ 自建技能的 agent 做同类任务快 40%。另有 Honcho 辩证式用户建模（画像记忆）。
-
-上下文压缩：超过窗口 50% 时压缩——移除旧工具输出、摘要中段、保留首尾消息。
-
-风险提示（业界共识）：自己给自己写技能/记忆的 agent，产出应视为需要人审的草稿而非可信自动化——记忆投毒会随时间复利放大。
-
-### 3.6 WorkBuddy（供对照）
-
-WorkBuddy 采用「三层、双通道」记忆架构，是画像记忆做得最重的一家：
-
-| 层 | 载体 | 读写策略 |
-| --- | --- | --- |
-| 云端画像（只读注入） | 服务端生成的用户长期画像摘要，会话启动时注入 | 服务端隐式学习；本地不可写，缓存于 ~/.workbuddy/memory/，下次会话覆盖 |
-| 历史会话检索 | conversation_search 服务端检索全部历史对话 | 按需调用、服务端排序；解决「上次聊过的那个方案」类跨会话回溯，零本地依赖 |
-| 用户级本地记忆 | ~/.workbuddy/MEMORY.md（上限 4,000 字符/会话） | 用户显式要求记住的跨项目规则，显式写入 |
-| 工作区记忆 | .workbuddy/memory/YYYY-MM-DD.md（日志，仅追加）+ MEMORY.md（主题笔记，上限 3,000 字符/会话） | 完成实质性工作后由 AI 追加日志；长期事实沉淀到 MEMORY.md；30 天以上日志蒸馏进 MEMORY.md 后删除 |
-
-特点：画像走云端隐式学习（类似 ChatGPT Memory 的黑箱路线但可被注入观察），规则走本地显式文件（类似 CLAUDE.md 路线），会话检索走服务端（类似 Letta recall memory）。三层各司其职，互相不混。
-
-## 4. 横向对比总表
-
-| 维度 | Claude Code | Codex CLI | Cursor | Copilot | Hermes | WorkBuddy |
-| --- | --- | --- | --- | --- | --- | --- |
-| 规则文件 | CLAUDE.md（4 级作用域） | AGENTS.md（层级 + override） | .mdc Rules（4 种触发） | instructions / Spaces | —（靠 MEMORY.md） | SOUL/IDENTITY/USER.md |
-| 自动记忆 | Auto Memory（v2.1.59+，默认开） | Memories（默认关，需开启） | Memories（需批准） | Copilot Memory（默认开） | MEMORY.md + USER.md | 云端画像 + 本地 MEMORY.md |
-| 画像记忆 | ✗（项目粒度） | ✗（项目粒度） | 个人级 Memories | user-level preference（跨仓库） | USER.md + Honcho | 云端画像（跨项目）✓ |
-| 历史会话检索 | resume / session 文件 | grep MEMORY.md | ✗（无跨会话检索） | 有限 | SQLite+FTS5 ✓ | conversation_search ✓ |
-| 启动加载预算 | MEMORY.md 前 200 行/25KB | AGENTS.md 32KiB；摘要约 5,000 token | 按规则触发类型 | User 记忆前 200 行 | 3,575 字符（约 1,300 token） | 画像注入 + 4,000 字符写额 |
-| 提取质量控制 | 模型自行判断 | 双模型（提取+合并） | 双提示词（生成+1–5 评分），最严 | 引用验证 + 自愈 | 预算压力驱动策展 | 画像服务端蒸馏 |
-| 遗忘机制 | 无内置过期 | 30 天未召回剪枝 | 手动审计删除 | 28 天 TTL，使用刷新 | 预算满需巩固 | 30 天日志蒸馏 |
-| 团队/云端共享 | CLAUDE.md 走 git；自动记忆本机私有 | AGENTS.md 走 git | Rules 走 git；Memories 个人 | 云端共享池（跨 5 个面）✓✓ | 自托管文件，可同步 | 云端画像天然跨设备 |
-| 可审计性 | 纯 Markdown，可 cat | 纯 Markdown + 溯源引用 | 设置面板审查 | 管理面板逐条审查（带引用） | 纯 Markdown | 本地文件 + 云端黑箱 |
-| 压缩后存活 | CLAUDE.md/auto memory 重注入；对话指令丢失 | AGENTS.md 每轮重读 | Always 规则常驻 | 记忆独立于会话 | 快照冻结（cache 优先） | 画像每次注入 |
-| 技能自进化 | Skills（人写为主，可积累） | Skills（人写） | Skills（团队打包） | ✗ | 自动生成 + 自我改进 ✓✓ | SkillManage（会话中沉淀） |
-
-## 5. 通用记忆框架（自建/集成时的技术底座）
-
-| 维度 | Mem0（中间件派） | Letta / MemGPT（OS 派） | Zep / Graphiti（图谱派） |
-| --- | --- | --- | --- |
-| 核心抽象 | 提取 + 检索的 Memory API | Agent OS：窗口=RAM，外存=磁盘，agent 自己分页 | 时序知识图谱 |
-| 记忆模型 | 事实条目 → 向量库（可选实体图） | 三层：core（常驻可编辑块）/ recall（可检索历史）/ archival（外部库） | 双时序（事件时间+摄取时间），边带有效期 |
-| 写入决策 | LLM 判 ADD / UPDATE / DELETE / NOOP | agent 工具调用自主管理（元认知） | 矛盾时失效旧边而非删除（保留历史） |
-| 社区热度/融资 | 55k+ stars，$24M | 22k+ stars，$10M | Graphiti 20k+ stars |
-| 基准表现 | LoCoMo 91.6 / LongMemEval 93.4；~6,900 token/次检索 | DMR 93.4% | DMR 94.8%；延迟降 90%（厂商自报） |
-| 最强场景 | 快速集成、大规模个性化 | 长期运行、需要自我改进的 agent | 时序推理、企业合规审计 |
-| 最大风险 | 被模型厂商内化 | 框架锁定 | 图谱构建成本高、冷启动慢 |
-
-#### 关键数据点（原稿数值，待核验）
-
-以下数字缺少可定位的实验原文、模型配置和样本说明，暂不用于产品排名或收益承诺。
-
-~7,000 vs 26,000+ token
-
-Mem0 对比：选择性检索用约 7k token 达到 91.6 准确率，全量塞上下文 26k+ token 分数反而更低——「装得下」≠「记得住」
-
-3–4× 成本差
-
-分层记忆（HOT<2K / WARM 2–8K / COLD 无限）使活跃上下文降 60–80%，单会话 token 成本 0.25–0.35×
-
-+8.3pp / +6.8pp
-
-记忆代理「选择性干预」在 Terminal-Bench 2.0 / τ²-Bench 上的提升，显著优于被动全量注入和通用检索（Mem0 通用检索反而仅 +1.8/+1.8）
-
-#### 其他选项
-
-LangMem SDK（LangChain 官方）：thread 级 checkpointer（会话记忆）+ 跨线程带命名空间的 store（长期记忆），原生接 LangGraph。
-
-MCP 记忆服务器（agentmemory / mcp-automem / OpenMemory / Memorix）：把记忆做成 MCP 工具，一份记忆池接所有支持 MCP 的编码智能体（Claude Code、Codex、Cursor、Windsurf、Gemini CLI）——跨工具记忆的事实标准路线。
-
-Cloudflare Agent Memory（2026.4）：托管 + 边缘分发 + 团队共享 + SLA 的企业选项。
-
-## 6. 记忆提取策略专题
-
-### 6.1 常规方案（已定型）
-
-| 策略 | 代表 | 要点 |
-| --- | --- | --- |
-| 双阶段生成+评估 | Cursor（1–5 评分）、mcp-automem | 候选生成与质量把关分离；评分从严，宁缺勿滥 |
-| 双模型分工 | Codex（提取模型 + 合并模型） | 提取解决「发现了什么」，合并解决「与已有知识怎么融合」 |
-| 用户显式指令最高优先 | 所有产品 | 原稿主张显式记住请求优先；仍需核对范围、权限与敏感信息，不可跳过安全审查 |
-| 索引+按需加载 | Claude Code（200 行索引 + 主题文件） | 启动成本恒定，细节按需读——文件系统本身当分层缓存用 |
-| 负面清单 | Cursor 评估提示词 | 显式排除：一次性细节、临时上下文、当前文件局部信息、模糊偏好、通用工程原则 |
-| 批准门控 | Cursor（后台记忆需批准）、生产通用模式 | 人审通过才入长期库——对抗记忆投毒的务实手段 |
-
-### 6.2 巩固（Consolidation）管线
-
-从原始对话到可复用知识的异步管线（Codex / Mem0 / LangMem 共同范式）：
-
-```text
-原始会话
- → 提取：newFacts / updatedFacts / episodes / procedures
- → 合并：ADD/UPDATE/DELETE/NOOP
- → 冲突消解：新近优先/置信度优先/并存加时间戳/升级人审
- → 衰减与剪枝
-```
-
-调度时机三种模式：定时（每 N 小时，简单但空闲时浪费）、事件触发（会话结束/上下文阈值，响应快但可能过频）、混合（活动时重置计时器，安静期才巩固——最接近「睡眠」）。业界一致选择异步离线巩固，绝不阻塞交互回路。
-
-### 6.3 检索策略
-
-整注 + grep（Codex）：摘要全量注入，细节词法检索。可调试、可预测，但改写措辞会漏。
-
-语义向量检索（Mem0 / Cursor @Codebase）：解决措辞差异，但需要向量库基建。
-
-多路混合（Mem0 语义/关键词/实体三路并行加权）：生产推荐。
-
-两阶段召回（mcp-automem）：先取全局偏好与近期更新（20 条），再按当前任务取项目相关（30 条）。
-
-选择性干预（学术前沿）：由独立的记忆代理判断「何时注入提醒」，而非被动全量暴露——效果最好的注入方式。
-
-## 7. 自动化更新与优化机制
-
-| 机制 | 实现方 | 做法 |
-| --- | --- | --- |
-| 生命周期钩子 | Claude Code / Codex hooks | SessionEnd 触发记忆巩固、PostToolUse 触发状态一致性检查（检测「刚做的动作与既有事实矛盾」即注入提醒） |
-| 睡眠式巩固 | Codex（空闲 6h）、AutoDream、OpenAI Dreaming V3 | 会话间隙后台子代理审查整理记忆，类比 REM 睡眠 |
-| 预算压力自管理 | Hermes | 把使用率（67%/2,200 chars）展示给模型，>80% 触发先巩固后写入 |
-| 定期自我提醒 | Hermes | 每 10 轮对话内部审查：有什么该存？有什么可固化为技能？ |
-| 引用自愈 | Copilot | 应用记忆前验证引用代码位置仍存在且一致，矛盾自动改写 |
-| TTL / 衰减 | Copilot（28 天）、Codex（30 天未召回）、Mem0（temporal decay） | 使用刷新时间戳；过期即剪枝 |
-| 技能化固化 | Hermes / Claude Code Skills / WorkBuddy SkillManage | 把重复出现的多步流程提炼成 SKILL.md / 可复用技能，从「记得」升级为「会用」 |
-| 记忆→规则晋升 | 通用最佳实践 | 记忆是约定被发现的地方，指令文件是约定被固化的地方——被反复验证有用的记忆晋升为 git 管理的规则 |
-
-## 8. 云端同步与团队共享方案
-
-#### 方案 A：Git 工件（轻量）
-
-CLAUDE.md / AGENTS.md / Rules 本身进版本库，随代码 review 演进。
-
-变体：共享记忆仓库 + 各成员 MCP 配置指向同一 DB 文件（AGENTMEMORY_DB_PATH）。
-
-优点：零基建、可见于 code review、天然版本化。
-
-缺点：无实时性、无权限粒度、自动记忆难以纳入。
-
-#### 方案 B：中央记忆服务（重量）
-
-中央 MCP 服务器（SSE/HTTP）或托管服务（Mem0 Cloud / Letta Cloud / Zep Cloud / Cloudflare Agent Memory）。
-
-优点：写一次处处读、审计追踪（谁改了什么记忆、何时）、RBAC 权限、实时同步。
-
-原稿建议 10 人以上团队采用；所列收益未附实验出处，待核验：新人 onboarding 快 2–3×，重复解释同一约定减少 80%，风格一致性 62%→89%。
-
-#### 层级画像（团队共享的组织形态）
-
-个人 profile（个人偏好）+ 团队 profile（共享约定）+ 组织 profile（公司标准）。原稿提出“个人 > 团队 > 组织”的偏好覆盖顺序，但未提供支持其为通用标准的来源。实际设计应先执行组织权限与安全约束，再在允许范围内应用个人偏好。
-
-「记忆护照」主张（Mem0 创始人）：AI 记忆应像邮箱一样可跨应用携带。模型内置记忆（ChatGPT Memory 等）是黑箱——无法审计、无法导出、无法跨模型迁移，对企业是不可接受的商业风险。这为独立记忆层提供了存在理由。
-
-## 9. 常见坑与对策
-
-| 坑 | 症状 | 对策 |
-| --- | --- | --- |
-| 上下文污染 | 低价值信息存太多，检索返回一堆无关结果，性能反而崩（有团队存了所有用过的变量名） | 重要性评分：只存「几周后仍有用」的信息，不存「几分钟后有用」的 |
-| 过期记忆 | 项目已弃用某模式，agent 仍按老记忆推荐 | 时间衰减 / TTL / 显式版本化；Zep 式「失效而非删除」保留审计链 |
-| 记忆投毒 | 错误结论第 1 周入库，第 4 周被自信应用；多 agent 间可经合法通信互相污染（arXiv 2604.16548） | 人审门控、置信度、TTL 兜底；溯源引用只能告诉你来源，不能阻止应用——需要「争议/废弃」语义 |
-| 压缩失忆 | 口头指令被 compaction 摘要掉 | 要跨会话生效的内容必须落盘（CLAUDE.md / 记忆库），口头说的视为临时 |
-| 存储错配 | 全部塞向量库，多跳推理失败 | 混合存储：向量（语义检索）+ 图（关系）+ SQL（结构化事实） |
-| 静默截断 | AGENTS.md 超 32KiB 被无声截断、session 记忆文件被静默清除 | 定期审计（把 agent 记忆当需要园艺的知识库）；关键信息落普通文件而非会话记忆 |
-| 过度建设 | 三天寿命的脚本项目上记忆基建 | 项目寿命 < 1 个月别上记忆层；单会话原型用 buffer+summary 即可 |
-
-## 10. 未来方向
-
-格式收敛与标准化：CLAUDE.md / AGENTS.md / .cursorrules 正向跨工具标准收敛（AGENTS.md 已成事实公约）；MCP 成为记忆互操作端口；更可能出现「记忆层的 OpenTelemetry 式接口标准」而非单一赢家。
-
-睡眠时计算（Sleep-time Compute）：OpenAI Dreaming V3、AutoDream 等把记忆巩固搬到空闲期后台——agent「做梦」整理白天经验成为标配范式；学术侧出现神经认知架构的离线巩固周期（arXiv 2603.29023）。
-
-记忆管理策略本身可学习：MemRL（2026.1）用强化信号学习「哪些经验值得存」；MemEvolve（2025.12）用元学习进化整个记忆管理策略而非仅内容。
-
-记忆感知规划：规划时检索 K 个最相似历史任务，复用成功模式、规避已记录的失败模式——相当于用自身历史做动态 few-shot。
-
-多智能体共享记忆：共享全局 / 层级（团队+角色+私有）/ 消息传递隔离三种模式竞争；MemoryOS（EMNLP 2025，LoCoMo F1 +49.11%）用类 LRU 缓存管理三层记忆——分布式系统理论正向 agent 记忆迁移。A2A 协议尚未覆盖共享记忆语义，是开放问题。
-
-评测缺口：LoCoMo / LongMemEval / MemoryArena 只测「能否检索到」，测不了「该不该保留」——遗忘决策的 ground truth 尚不存在。跨会话人格一致性需要的不只是事实记忆，还有叙事记忆（agent 是谁、做过什么的连贯故事）。
-
-记忆即护城河：McKinsey 2026 分析将第一方纵向用户数据（正是持久记忆积累的东西）列为可防御 AI 优势的首要来源；2026 年春季 31 天内 4 个主要记忆基建发布，超过此前 6 个月总和。
-
-范式演进：Prompt Engineering → Context Engineering → Harness Engineering——记忆已是 harness（编排多 agent 上下文的脚手架）的核心构件。
-
-## 11. 落地建议（个人与团队场景）
-
-| 场景 | 建议 |
-| --- | --- |
-| 个人编码效率（Electron/Next.js 多项目） | 项目级用 CLAUDE.md/AGENTS.md（≤200 行纪律）+ 默认开启 Claude Code Auto Memory；跨项目通用偏好（如「UI 文本全中文汉化」「紧凑信息密度」）放用户级全局文件，一次配置全部项目受益 |
-| 工作流沉淀（周期性内容整理等） | 照抄 Hermes 的「技能固化」路线：跑通的流程立刻提炼成 SKILL.md / 技能库，而不是留在记忆里——记忆会衰减，技能是可版本化资产 |
-| 团队协作（多人数据项目等） | 规则走 git（AGENTS.md 约定数据采集/更新规范）；若需要跨工具、跨成员共享运行时发现，上 MCP 记忆服务器（agentmemory 或 Mem0 自托管），支持审计与权限 |
-| 质量门控 | 自动提取的记忆加人审批准（Cursor 模式）；每季度做一次记忆审计（园艺式修剪）；被反复验证的记忆晋升进 git 规则文件 |
-| 别做的事 | 不要把密钥/凭据放记忆（走 secret 管理）；不要为短命项目上记忆基建；不要期待口头指令能活过 compaction |
-
-## 信息来源与说明
-
-Claude Code 官方文档（context window / memory）；morphllm.com、thepromptshelf.dev、CSDN 分析文章（2026）
-
-OpenAI Codex 官方文档；mer.vin、dev.to（Memory-Augmented Generation 分析）、codex.danielvaughan.com（Context Engineering 系列，2026.6–7）
-
-Cursor 官方文档；volcengine 转载的 Cursor 记忆系统提示词全文（2025.6）；localskills.sh、aiguides.pro
-
-GitHub Engineering Blog / VS Code docs / changelog（Copilot Memory）；agentpatterns.ai、devactivity.com
-
-Nous Research Hermes Agent；mem0.ai（Hermes 记忆机制分析）、betterstack.com、aibuilderclub.com（2026）
-
-Mem0 (arXiv:2504.19413)、Zep/Graphiti (arXiv:2501.13956)、MemGPT (arXiv:2310.08560)；chanl.ai、datarekha.com、futurepicker.com、aiworkflowlab.dev
-
-Zylos Research（Agent Memory Architectures 2026.4；Consolidation & Forgetting 2026.6）；dibi8.com、reptile.haus、byteiota.com
-
-报告生成于 2026-08-28 ｜ 各产品版本信息以调研时点公开资料为准，迭代较快（如 Codex v0.139、Claude Code v2.1.198）
-
-附件只保留来源名称与域名，未提供逐条超链接；这些名称用于后续补查，不代表已完成来源验证。两版对照用于识别调查范围与证据边界的差异，不以相互转述作为独立证据。

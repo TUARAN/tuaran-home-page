@@ -1,0 +1,73 @@
+name: Triage labels
+
+# 幂等创建 Issue 优先流程的分诊标签。名称和说明与
+# docs/runbooks/issue-first-workflow.md 的分诊表一致。已存在则跳过。
+on:
+  push:
+    paths:
+      - .github/workflows/triage-labels.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: triage-labels
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync triage labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Create missing labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python3 << 'PY'
+          import json
+          import os
+          import subprocess
+
+          labels = [
+              ("type:bug", "d73a4a", "缺陷：行为与预期不符"),
+              ("type:enhancement", "1d76db", "改进：新能力或体验调整"),
+              ("type:content", "0e8a16", "内容：文章、调研或资料稿"),
+              ("type:ui", "fbca04", "界面：访客或站长能看见的改动"),
+              ("type:ops", "5319e7", "运维：流程、构建、巡检与发布"),
+              ("priority:now", "b60205", "现在做：没有 needs 阻塞即可开 PR"),
+              ("priority:next", "e99695", "下一轮：先记下，不立刻开工"),
+              ("priority:parked", "cfd3d7", "搁置：有结论前不排期"),
+              ("needs:design", "d93f0b", "缺设计：停在 Issue，不直接开 PR"),
+              ("needs:decision", "0052cc", "缺站长决策：停在 Issue，不直接开 PR"),
+              ("needs:assets", "f9d0c4", "缺素材：停在 Issue，不直接开 PR"),
+          ]
+
+          def gh(*args):
+              result = subprocess.run(["gh", *args], text=True, capture_output=True)
+              if result.returncode != 0:
+                  detail = (result.stderr or result.stdout or "").strip()
+                  raise SystemExit(detail or f"gh failed: {' '.join(args)}")
+              return result.stdout
+
+          existing = {item["name"] for item in json.loads(gh("label", "list", "--limit", "200", "--json", "name") or "[]")}
+          created = []
+          for name, color, desc in labels:
+              if name in existing:
+                  print(f"skip {name}")
+                  continue
+              gh("label", "create", name, "--color", color, "--description", desc)
+              created.append(name)
+              print(f"created {name}")
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              skipped = [name for name, _color, _desc in labels if name not in created]
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write("## Triage labels\n\n")
+                  handle.write(f"- created: {', '.join(created) if created else '(none)'}\n")
+                  handle.write(f"- skipped: {', '.join(skipped) if skipped else '(none)'}\n")
+          PY

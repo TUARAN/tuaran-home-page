@@ -47,6 +47,8 @@ test('topic hubs only point at existing site paths', () => {
     assert.ok(hub.leads.length >= 4)
     assert.ok(hub.leads.every((lead) => lead.href.startsWith('/')))
     assert.ok(hub.leads.every((lead) => TOPIC_HUB_GROUPS.some((group) => group.id === lead.group)))
+    assert.equal(typeof hub.standing, 'string')
+    assert.ok(hub.standing.length > 8)
   }
   assert.ok(getTopicHub('openclaw').leads.some((lead) => lead.href === '/about#openclaw-contributions'))
   assert.ok(getTopicHub('books').leads.some((lead) => lead.href === '/books/llm-underlying-logic'))

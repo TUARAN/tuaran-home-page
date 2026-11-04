@@ -7814,7 +7814,7 @@
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖分发到已加入社群")}
-              <p class="xrc-pace-now">读取当前账号主页上最新的原创帖（跳过置顶、纯回复和纯转发），再发进已加入的社群。每个社群配 1～2 句短评，并带上原帖链接。同一条帖在 7 天内不重复发进同一个社群。模型没写出短评时，用一句模板接着发。</p>
+              <p class="xrc-pace-now">读取当前账号主页上最新的原创帖（跳过置顶、纯回复和纯转发），只带原帖链接，发进 `/i/communities` 里已加入的社群，单轮最多 30 个。短评用已配置的回复模型，没有模型就用短中文模板。每个社群试两次，仍失败就跳过；按钮文案不是「发帖 / Post / 在此社群」也跳过。X 提示受限时结束本轮。同一条帖 7 天内不重复发进同一个社群。</p>
               <label class="xrc-schedule-card-list"><span>社群之间的停顿</span>
                 <select data-xrc-community-pace aria-label="社群分发速度">
                   <option value="slow">慢 · 约 20–35 秒，本轮后约 6 小时</option>

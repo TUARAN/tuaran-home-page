@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { shareDialog, waitForShareDialog, findAction, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+const { shareDialog, waitForShareDialog, findAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
 test('recognizes the visible group picker by Search, group rows and Send even without a Share heading', async () => {
   const body = {}
@@ -12,15 +12,18 @@ test('recognizes the visible group picker by Search, group rows and Send even wi
     getAttribute: () => null,
     getClientRects: () => [1],
     closest: () => null,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '1', pointerEvents: 'auto' }) } },
   }
   const picker = {
     innerText: 'Search BlueV Mutual Follow Group 825 people NGSLin @NGSLin99 Creator Circle 267 people Write a message... Send',
     parentElement: body,
     closest: () => null,
     querySelector: (selector) => selector.includes('placeholder') ? search : null,
-    querySelectorAll: (selector) => selector.includes('button') ? [send] : [],
+    querySelectorAll: (selector) => selector.includes('input') ? [search] : selector.includes('button') ? [send] : [],
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '0.5', pointerEvents: 'auto' }) } },
   }
-  const search = { parentElement: picker, matches: () => false }
+  send.parentElement = picker
+  const search = { parentElement: picker, matches: () => false, placeholder: 'Search' }
   const doc = {
     body,
     querySelectorAll: (selector) => selector.includes('role="dialog"') ? [] : [search],
@@ -28,7 +31,40 @@ test('recognizes the visible group picker by Search, group rows and Send even wi
 
   assert.equal(shareDialog(doc), picker)
   assert.equal(await waitForShareDialog(doc, async () => {}), picker)
-  assert.equal(findAction(picker, /^Send$/u), send)
+  assert.equal(findAction(picker, /^Send$/u), null)
+  assert.equal(findAction(picker, /^Send$/u, { ignoreAncestorOpacity: true }), send)
+})
+
+test('finds the compose picker from an accessible Search input before Send becomes ready', () => {
+  const body = {}
+  const search = { getAttribute: (name) => name === 'aria-label' ? 'Search' : null, matches: () => false }
+  const picker = {
+    innerText: 'BlueV Mutual Follow Group 825 people',
+    parentElement: body,
+    closest: () => null,
+    querySelectorAll: (selector) => selector.includes('input') ? [search] : [],
+  }
+  let parent = picker
+  for (let depth = 0; depth < 15; depth++) {
+    const wrapper = { parentElement: parent, closest: () => null, innerText: '', querySelectorAll: () => [] }
+    parent = wrapper
+  }
+  search.parentElement = parent
+  const doc = {
+    body,
+    defaultView: { location: { pathname: '/messages/compose' } },
+    querySelectorAll: (selector) => selector.includes('role="dialog"') ? [] : [search],
+  }
+
+  assert.equal(shareDialog(doc), picker)
+})
+
+test('finds Send in the picker footer when the list and footer are sibling containers', () => {
+  const body = {}
+  const send = { innerText: 'Send', getAttribute: () => null, getClientRects: () => [1], closest: () => null }
+  const wrapper = { parentElement: body, querySelectorAll: () => [send] }
+  const list = { parentElement: wrapper, querySelectorAll: () => [] }
+  assert.equal(sendButtonNearDialog(list, { body }), send)
 })
 
 test('selects a group and clicks Send inside the picker', async () => {
@@ -55,11 +91,14 @@ test('selects a group and clicks Send inside the picker', async () => {
     parentElement: body,
     closest: () => null,
     querySelector: (selector) => selector.includes('placeholder') ? search : null,
-    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('button') ? [pickerSend] : [],
+    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('input') ? [search] : selector.includes('button') ? [pickerSend] : [],
     scrollTop: 0,
     clientHeight: 600,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '0.5', pointerEvents: 'auto' }) } },
   }
-  const search = { parentElement: picker, matches: () => false }
+  pickerSend.parentElement = picker
+  pickerSend.ownerDocument = { defaultView: { getComputedStyle: () => ({ opacity: '1', pointerEvents: 'auto' }) } }
+  const search = { parentElement: picker, matches: () => false, placeholder: 'Search' }
   const article = {
     parentElement: null,
     querySelector: () => null,

@@ -9124,11 +9124,11 @@ test('group chat sharing scrolls the profile repeatedly before reporting no post
 
 test('group chat sharing retries until the visible Share dialog appears', async () => {
   const heading = { innerText: 'Share' }
+  const search = { placeholder: 'Search' }
   const dialog = {
     innerText: 'Share Search BlueV Mutual Follow Group 825 people',
     closest: () => null,
-    querySelectorAll: () => [heading],
-    querySelector: () => ({}),
+    querySelectorAll: (selector) => selector.includes('heading') ? [heading] : selector.includes('input') ? [search] : [],
   }
   let reads = 0
   const doc = { querySelectorAll: () => ++reads < 4 ? [] : [dialog] }

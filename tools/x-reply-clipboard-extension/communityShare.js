@@ -76,6 +76,24 @@
     return Array.from(scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"]') || []).find((node) => enabled(node) && (pattern.test(clean(node.getAttribute('aria-label'))) || pattern.test(textOf(node))) && !node.closest('#x-reply-clipboard-panel')) || null;
   }
 
+  function findPostShareButton(article) {
+    const labeled = article?.querySelector?.('[data-testid="share"], [aria-label="Share"], [aria-label="分享"], [aria-label*="Share post"], [aria-label*="分享帖子"]');
+    const direct = labeled?.closest?.('button, [role="button"]') || labeled;
+    if (direct && enabled(direct)) return direct;
+    const named = findAction(article, /^(?:share|share post|分享|分享帖子)$/iu);
+    if (named) return named;
+    const bookmark = article?.querySelector?.('[data-testid="bookmark"], [aria-label="Bookmark"], [aria-label="加入书签"]');
+    if (!bookmark) return null;
+    let parent = bookmark.parentElement;
+    for (let depth = 0; parent && parent !== article && depth < 5; depth++, parent = parent.parentElement) {
+      const controls = Array.from(parent.querySelectorAll?.('button, [role="button"]') || [])
+        .filter((node) => node.closest?.('article[data-testid="tweet"]') === article);
+      const index = controls.findIndex((node) => node === bookmark || node.contains?.(bookmark));
+      if (index >= 0 && controls[index + 1] && enabled(controls[index + 1])) return controls[index + 1];
+    }
+    return null;
+  }
+
   function shareDialog(doc) {
     return Array.from(doc?.querySelectorAll?.('[role="dialog"]') || []).find((node) => /^(?:Share|分享)(?:\s|$)/iu.test(textOf(node).slice(0, 30)) && (node.querySelector('input[placeholder], input[aria-label]') || groupRows(node).length)) || null;
   }
@@ -135,8 +153,10 @@
         if (!dialog) {
           const current = profilePosts(doc(), handle).find((item) => item.id === state.sourceId);
           if (!current) { finish('分享过程中找不到原帖，已停止'); return; }
-          const share = current.article.querySelector('[data-testid="share"]') || findAction(current.article, /^(?:share|分享)$/iu);
-          if (!enabled(share)) { finish('找不到原帖右下角的分享按钮，已停止'); return; }
+          current.article.scrollIntoView?.({ block: 'center', behavior: 'instant' });
+          await wait(250);
+          const share = findPostShareButton(current.article);
+          if (!share) { finish('已找到原帖，但无法识别书签右侧的分享按钮，已停止'); return; }
           share.click(); await wait(350);
           const menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
           if (!menu) { finish('分享菜单中没有“Send via Chat”，已停止'); return; }
@@ -199,7 +219,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

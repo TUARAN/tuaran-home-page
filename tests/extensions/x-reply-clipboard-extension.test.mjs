@@ -9162,6 +9162,21 @@ test('group chat sharing finds controls with both a label and visible text', () 
   assert.equal(communityShare.findAction({ querySelectorAll: () => [button] }, /^Send via Chat$/u), button)
 })
 
+test('group chat sharing finds the share control immediately after bookmark', () => {
+  const article = { querySelector: (selector) => selector.includes('bookmark') ? bookmark : null, querySelectorAll: () => [] }
+  const group = { parentElement: article, querySelectorAll: () => [bookmark, share] }
+  const control = () => ({
+    parentElement: group,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ pointerEvents: 'auto' }) } },
+    getAttribute: () => null,
+    getClientRects: () => [1],
+    closest: (selector) => selector.includes('article[data-testid') ? article : null,
+  })
+  const bookmark = control()
+  const share = control()
+  assert.equal(communityShare.findPostShareButton(article), share)
+})
+
 test('group chat sharing stays off by default and runs on the own profile', () => {
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['community-share'].enabled, false)

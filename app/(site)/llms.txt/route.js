@@ -1,6 +1,7 @@
 import { CATEGORY_META, listResearch } from '../../../lib/research/archive'
 import { researchPublicSummary } from '../../../lib/research/researchPublicSummary'
 import { renderContentProofLlmsSection } from '../../../lib/content/contentProofDiscovery.js'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600
@@ -8,7 +9,7 @@ export const revalidate = 3600
 const SITE_URL = 'https://2aran.com'
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
 const SITE_DESC =
-  '涂阿燃（TUARAN，微信 atar24）：AI 智能体、前端工程与开源实践，著有《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》。' +
+  `涂阿燃（TUARAN，微信 ${WECHAT_CONTACT.value}）：AI 智能体、前端工程与开源实践，著有《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》。` +
   '主理博主联盟与前端周看。市场、健康和其他观察仍可检索。'
 
 function line(entry) {
@@ -33,7 +34,8 @@ export function GET() {
     '## 主要页面',
     `- [首页](${SITE_URL}/): 个人主页与网络日志`,
     `- [站点帮助](${SITE_URL}/help): 站点定位、使用方法、全站导航、内容规则、隐私政策与联系方式`,
-    `- [关于站长](${SITE_URL}/about): 涂阿燃，FDE / KOL / 矩联科技，微信 atar24`,
+    `- [关于站长](${SITE_URL}/about): 涂阿燃，FDE / KOL / 矩联科技，微信 ${WECHAT_CONTACT.value}`,
+    `- [联系](${SITE_URL}/contact): 微信 ${WECHAT_CONTACT.value}、邮箱与社交平台`,
     `- [AI 智能体](${SITE_URL}/topics/ai-agents): 智能体实践、OpenClaw 与相关文章`,
     `- [前端与云工程](${SITE_URL}/topics/frontend-cloud): Next.js、Cloudflare 与站点工程`,
     `- [求职简历](${SITE_URL}/about/resume): 涂阿燃一页式求职履历，可打印或另存 PDF`,

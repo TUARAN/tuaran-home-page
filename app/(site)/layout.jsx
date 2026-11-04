@@ -1,6 +1,7 @@
 import Script from 'next/script'
 
 import LayoutChrome from './components/LayoutChrome'
+import { listContactSameAs } from '../../lib/site/contactChannels'
 import { LocaleProvider } from './components/LocaleProvider'
 import { SessionProvider } from './components/SessionProvider'
 import { ThemeProvider } from './components/ThemeProvider'
@@ -20,12 +21,7 @@ const structuredData = {
   url: SITE_URL,
   headline: SITE_TITLE,
   description: SITE_DESCRIPTION,
-  sameAs: [
-    'https://juejin.cn/user/1521379823340792',
-    'https://github.com/TUARAN',
-    'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/',
-    'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e',
-  ],
+  sameAs: listContactSameAs(),
 }
 
 export default function SiteLayout({ children }) {

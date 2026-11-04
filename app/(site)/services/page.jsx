@@ -1,7 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import PageContainer from '../components/PageContainer'
+import { ContactCards, ContactDialogButton } from '../components/ContactCards'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 
@@ -140,7 +141,9 @@ export default function ServicesPage() {
               >
                 先看案例
               </a>
-              <span className="font-mono text-[11px] text-[#858876] dark:text-[#8e9ab0]">微信 atar24</span>
+              <ContactDialogButton className="bg-transparent p-0 font-mono text-[11px] text-[#858876] dark:text-[#8e9ab0]">
+                微信 {WECHAT_CONTACT.value}
+              </ContactDialogButton>
             </div>
           </div>
         </div>
@@ -314,48 +317,22 @@ export default function ServicesPage() {
         id="contact"
         className="scroll-mt-24 border-t border-[#c7c6bb] pt-7 dark:border-[#33404d] md:pt-8"
       >
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_190px] md:items-center">
-          <div>
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
-              Contact
-            </p>
-            <h2 className="mb-3 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
-              联系方式
-            </h2>
-            <p className="mb-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
-              微信 <span className="font-mono font-semibold text-[#15140f] dark:text-gray-100">atar24</span>。
-              建议备注“来自 2aran.com / 合作类型 / 公司或项目”。如果有明确需求，直接附目标、时间和期望交付物。
-            </p>
-            <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
-              如果不适合，我会直接说明，不绕弯。
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-            <div className="flex flex-col items-center gap-2 border border-[#d9dad2] bg-[#f9faf7] p-3 dark:border-[#303947] dark:bg-[#151c25]">
-              <Image
-                src="/qrcodewechat3.png"
-                alt="微信二维码"
-                width={96}
-                height={96}
-                unoptimized
-                className="h-24 w-24 rounded-sm border border-[#e5e5e5] bg-white dark:border-gray-800"
-              />
-              <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">微信</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 border border-[#d9dad2] bg-[#f9faf7] p-3 dark:border-[#303947] dark:bg-[#151c25]">
-              <Link href="/donate" className="flex flex-col items-center gap-2 no-underline">
-                <Image
-                  src="/donate-wechat.jpg"
-                  alt="微信赞助收款码"
-                  width={96}
-                  height={131}
-                  unoptimized
-                  className="h-[131px] w-24 rounded-sm border border-[#e5e5e5] bg-white object-contain dark:border-gray-800"
-                />
-                <span className="font-mono text-[10px] tracking-[0.14em] text-[#858779] dark:text-[#8e9ab0]">赞助本站 · 请我喝咖啡</span>
-              </Link>
-            </div>
-          </div>
+        <div className="max-w-2xl">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858876] dark:text-[#8e9ab0]">
+            Contact
+          </p>
+          <h2 className="mb-3 border-b-0 pb-0 font-serif text-[1.45rem] font-semibold tracking-wide text-[#15140f] dark:text-gray-100">
+            联系方式
+          </h2>
+          <p className="mb-3 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
+            建议备注“来自 2aran.com / 合作类型 / 公司或项目”。如果有明确需求，直接附目标、时间和期望交付物。
+          </p>
+          <p className="mb-0 text-[12px] leading-6 text-[#76786c] dark:text-[#7f8aa0]">
+            如果不适合，我会直接说明。
+          </p>
+        </div>
+        <div className="mt-6">
+          <ContactCards />
         </div>
       </section>
     </PageContainer>

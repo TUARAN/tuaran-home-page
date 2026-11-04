@@ -4,6 +4,7 @@ import { IconArrowRight } from '@tabler/icons-react'
 import { DISCUSSION_COMMUNITY_TOPICS } from '../../../lib/content/communityTopics'
 import { COMMUNITY_MEMBERSHIP } from '../../../lib/auth/communityMembership'
 import CommunityMembershipCard from '../components/CommunityMembershipCard'
+import { ContactDialogButton } from '../components/ContactCards'
 import PageContainer from '../components/PageContainer'
 
 export const dynamic = 'force-static'
@@ -91,6 +92,9 @@ export default function CirclesPage() {
               <a href="#join" className="community-secondary-button">
                 查看加群方式
               </a>
+              <ContactDialogButton className="community-secondary-button">
+                联系站长
+              </ContactDialogButton>
             </div>
           </div>
           <div className="community-hero-side">

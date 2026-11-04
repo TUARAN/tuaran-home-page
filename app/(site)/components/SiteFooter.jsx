@@ -6,6 +6,7 @@ import { useLocale } from './LocaleProvider'
 import { useSessionAccount } from './SessionProvider'
 import { pick } from '../../../lib/site/i18n'
 import { getFooterLinks, navLabel } from '../../../lib/site/siteNav'
+import { ContactDialogButton } from './ContactCards'
 import { useSitePresence } from './SitePresenceProvider'
 
 const FEEDBACK_ISSUES_URL = 'https://github.com/TUARAN/tuaran-home-page/issues'
@@ -32,6 +33,14 @@ export function OnlinePresenceStatus({ className = '' }) {
 
 function FooterLink({ link, locale, className = '' }) {
   const classes = `opacity-80 transition-colors hover:text-[#666] hover:opacity-100 dark:hover:text-gray-300 ${className}`
+
+  if (link.dialog) {
+    return (
+      <ContactDialogButton className={`${classes} bg-transparent p-0 text-inherit`}>
+        {navLabel(link, locale)}
+      </ContactDialogButton>
+    )
+  }
 
   if (link.external) {
     return (

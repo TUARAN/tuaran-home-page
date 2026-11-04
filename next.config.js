@@ -126,11 +126,6 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/contact',
-        destination: '/help#contact',
-        permanent: true,
-      },
-      {
         // 「智慧边界」已从资源库迁移到多维页面
         source: '/resources/wisdom-frontier',
         destination: '/wisdom-frontier',

@@ -153,7 +153,7 @@ export default async function RanbiPage() {
           游客解锁受保护资源时获得试用额度；登录后可点击签到免费领取，也可通过有效评论、已开放的活动和游戏获取。
           所有奖励都从公开储备池转出，储备池耗尽后停止发放。
           活动与游戏奖励按各项目规则发放。余额不够用时，可以{' '}
-          <Link href="/help#contact" className="underline underline-offset-2">联系站长</Link>
+          <Link href="/contact" className="underline underline-offset-2">联系站长</Link>
           ，说明账号和用途，申请免费补充。
         </p>
         <RanbiSupplySnapshot supply={SUPPLY} />

@@ -2,6 +2,11 @@ import Link from 'next/link'
 
 import PageContainer from '../components/PageContainer'
 import WeChatContact from '../components/WeChatContact'
+import { ContactDialogButton } from '../components/ContactCards'
+import { getContactChannel } from '../../../lib/site/contactChannels'
+
+const email = getContactChannel('email')
+const wechat = getContactChannel('wechat')
 
 export const dynamic = 'force-static'
 
@@ -50,7 +55,7 @@ const sections = [
     title: '修订与更正',
     paragraphs: [
       '事实错误、失效链接或重要遗漏会直接改在页面上。影响主要结论的修改会留下修订说明。',
-      '提交更正时请附页面网址、具体段落、可核验来源和建议修改方式。邮件 tuaran666@gmail.com，或微信 atar24。',
+      `提交更正时请附页面网址、具体段落、可核验来源和建议修改方式。邮件 ${email.value}，或微信 ${wechat.value}。`,
     ],
   },
   {
@@ -97,7 +102,9 @@ export default function EditorialPage() {
       <div className="mb-8 flex flex-wrap items-center gap-3">
         <WeChatContact />
         <Link href="/about" className="text-[13px] text-[var(--site-muted)] underline-offset-4 hover:underline">关于涂阿燃</Link>
-        <Link href="/help#contact" className="text-[13px] text-[var(--site-muted)] underline-offset-4 hover:underline">其他联系方式</Link>
+        <ContactDialogButton className="bg-transparent p-0 text-[13px] text-[var(--site-muted)] underline-offset-4 hover:underline">
+          其他联系方式
+        </ContactDialogButton>
       </div>
       <div className="space-y-8">
         {sections.map((section) => (

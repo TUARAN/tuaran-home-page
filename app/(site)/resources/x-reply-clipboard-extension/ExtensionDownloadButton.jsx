@@ -4,6 +4,8 @@ import { useId, useState } from 'react'
 import Image from 'next/image'
 import { IconArrowRight, IconDownload, IconLoader2, IconLock, IconX } from '@tabler/icons-react'
 
+import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
+
 function fileNameFromResponse(response, fallback) {
   const disposition = response.headers.get('content-disposition') || ''
   const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
@@ -110,7 +112,7 @@ export default function ExtensionDownloadButton({ href, version, className = '',
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">扫描微信二维码，备注「{title}」。{downloadHint}</p>
             <div className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-200 p-3 dark:border-slate-700">
               <Image src="/qrcode-wechat.jpg" alt="站长微信二维码" width={108} height={146} className="h-28 w-24 rounded-lg object-contain" unoptimized />
-              <div className="text-sm"><p className="m-0 font-bold">站长微信：atar24</p><p className="mb-0 mt-2 text-slate-600 dark:text-slate-300">扫码添加后索取插件{credentialLabel}。</p></div>
+              <div className="text-sm"><p className="m-0 font-bold">站长微信：{WECHAT_CONTACT.value}</p><p className="mb-0 mt-2 text-slate-600 dark:text-slate-300">扫码添加后索取插件{credentialLabel}。</p></div>
             </div>
             <form onSubmit={download} className="mt-5 space-y-3">
               <label htmlFor={passwordId} className="block text-sm font-semibold">{credentialLabel}</label>

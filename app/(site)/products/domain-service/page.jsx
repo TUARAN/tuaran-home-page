@@ -14,6 +14,7 @@ import {
 
 import PageContainer from '../../components/PageContainer'
 import { DOMAIN_SERVICE_DOMAINS } from '../../../../lib/site/workItems'
+import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 
@@ -178,11 +179,11 @@ export default function DomainServicePage() {
               <h2 className="relative mb-2 border-0 p-0 text-[22px] font-black">发现感兴趣的名字？</h2>
               <p className="relative mb-5 text-[12px] leading-6 text-slate-400">扫码添加微信，备注“域名 + 感兴趣的域名”。是否出售与价格以沟通结果为准。</p>
               <div className="relative mx-auto w-fit rounded-[22px] bg-white p-3 shadow-[0_16px_35px_rgba(0,0,0,0.25)]">
-                <Image src="/qrcodewechat3.png" alt="域名购买咨询微信二维码" width={190} height={190} unoptimized className="h-[190px] w-[190px] rounded-xl" />
+                <Image src={WECHAT_CONTACT.qr} alt={WECHAT_CONTACT.qrAlt} width={190} height={190} unoptimized className="h-[190px] w-[190px] rounded-xl" />
               </div>
               <div className="relative mt-5 flex items-center justify-center gap-2 text-[12px] text-slate-300">
                 <IconBrandWechat size={16} className="text-[#5ee193]" />
-                微信 <span className="font-mono font-bold text-white">atar24</span>
+                微信 <span className="font-mono font-bold text-white">{WECHAT_CONTACT.value}</span>
               </div>
             </div>
 

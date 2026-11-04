@@ -10,8 +10,14 @@ import {
 } from '../../../lib/site/openClawAchievements'
 import SharePageButton from '../components/SharePageButton'
 import WeChatContact from '../components/WeChatContact'
+import { ContactDialogButton } from '../components/ContactCards'
 import CopyIntroButton from '../components/CopyIntroButton'
 import OpenClawAchievementsCarousel from './OpenClawAchievementsCarousel'
+import {
+  getContactChannel,
+  listContactSameAs,
+  listProfileLinks,
+} from '../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 
@@ -138,13 +144,7 @@ const aboutStructuredData = {
       description:
         'AI 前沿部署工程师、社区 KOL 与矩联科技创始人。《AI大模型的底层逻辑》《程序员成长手记》《AI Bots 通关指南》作者，OpenClaw Contributor。',
       knowsAbout: ['前端工程化', 'AI Agent', 'OpenClaw', '技术写作', '产品实践'],
-      sameAs: [
-        'https://github.com/TUARAN',
-        'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/',
-        'https://juejin.cn/user/1521379823340792',
-        'https://blog.csdn.net/aifs2025',
-        'https://blog.51cto.com/u_15298598',
-      ],
+      sameAs: listContactSameAs(),
     },
     ...publishedWorks.map((work) => ({
       '@type': 'Book',
@@ -167,19 +167,14 @@ const aboutStructuredData = {
   ],
 }
 
-const socialLinks = [
-  { label: '掘金', href: 'https://juejin.cn/user/1521379823340792' },
-  { label: '小红书', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e' },
-  { label: 'CSDN', href: 'https://blog.csdn.net/aifs2025' },
-  { label: '51CTO', href: 'https://blog.51cto.com/u_15298598' },
-  { label: 'GitHub', href: 'https://github.com/TUARAN' },
-  { label: '领英', href: 'https://www.linkedin.com/in/%E6%B6%82%E9%98%BF%E7%87%83-tuaran-473841210/' },
-]
+const wechat = getContactChannel('wechat')
+const email = getContactChannel('email')
+const socialLinks = listProfileLinks()
 
 const contactItems = [
   { label: 'home', value: '2aran.com', href: 'https://2aran.com' },
-  { label: 'wechat', value: 'atar24' },
-  { label: 'email', value: 'tuaran666@gmail.com', href: 'mailto:tuaran666@gmail.com' },
+  { label: 'wechat', value: wechat.value },
+  { label: 'email', value: email.value, href: email.href },
   { label: 'alias', value: '掘金安东尼 · 安东尼404 · 安东尼与AI' },
 ]
 
@@ -368,10 +363,13 @@ export default function AboutPage() {
             <div id="wechat" className="mt-5 scroll-mt-24 rounded-xl border border-[#2d4d61] bg-[#102032]/80 p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">WeChat</p>
               <p className="mt-1 text-[14px] leading-6 text-[#d5e4f2]">
-                项目合作、产品交流、内容更正，加微信 <span className="font-mono text-[#7fe6da]">atar24</span>。
+                项目合作、产品交流、内容更正，加微信 <span className="font-mono text-[#7fe6da]">{wechat.value}</span>。
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <WeChatContact tone="dark" />
+                <ContactDialogButton className="inline-flex min-h-10 items-center rounded-full border border-[#2d4d61] bg-[#102032] px-3 font-mono text-[11px] text-[#7fe6da]">
+                  全部渠道
+                </ContactDialogButton>
                 <Link href="/editorial" className="font-mono text-[11px] text-[#8ea3bb] no-underline hover:text-[#7fe6da]">
                   内容说明 →
                 </Link>
@@ -680,7 +678,7 @@ export default function AboutPage() {
               </p>
             </div>
             <a
-              href="mailto:tuaran666@gmail.com?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE"
+              href={`${email.href}?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE`}
               className="no-external-arrow inline-flex w-fit items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
             >
               交换友链
@@ -720,7 +718,7 @@ export default function AboutPage() {
             })}
 
             <a
-              href="mailto:tuaran666@gmail.com?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE&body=%E7%AB%99%E7%82%B9%E5%90%8D%EF%BC%9A%0A%E9%93%BE%E6%8E%A5%EF%BC%9A%0A%E7%AE%80%E4%BB%8B%EF%BC%9A"
+              href={`${email.href}?subject=%E4%BA%A4%E6%8D%A2%E5%8F%8B%E9%93%BE&body=%E7%AB%99%E7%82%B9%E5%90%8D%EF%BC%9A%0A%E9%93%BE%E6%8E%A5%EF%BC%9A%0A%E7%AE%80%E4%BB%8B%EF%BC%9A`}
               className="no-external-arrow flex min-h-[126px] flex-col justify-between rounded-xl border border-dashed border-[#2d4d61] bg-[#07101a]/70 p-3.5 no-underline transition hover:border-[#34e0d0] hover:bg-[#0c1a28]"
             >
               <div>

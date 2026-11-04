@@ -1,7 +1,7 @@
 (function (root) {
   "use strict";
 
-  const SESSION_KEY = "xrcGroupChatShareRunV2";
+  const SESSION_KEY = "xrcGroupChatShareRunV3";
   const LEDGER_KEY = "xrcGroupChatShareLedgerV2";
   const GAP_MS = { slow: 21600000, medium: 10800000, fast: 5400000, turbo: 2700000 };
   const PAUSE_MS = { slow: [20000, 35000], medium: [12000, 20000], fast: [6000, 12000], turbo: [3000, 6000] };
@@ -44,14 +44,15 @@
 
   async function waitForLatestPost(doc, handle, wait, shouldStop = () => false) {
     let observed = [];
-    for (let attempt = 0; attempt < 30 && !shouldStop(); attempt++) {
+    for (let attempt = 0; attempt < 48 && !shouldStop(); attempt++) {
       observed = profilePosts(doc, handle);
       const post = latestOwnPost(observed);
       if (post) return { post, observed: observed.length };
-      if (attempt === 7 || attempt === 15 || attempt === 23) {
+      if (attempt >= 7 && (attempt - 7) % 4 === 0) {
         const column = doc.querySelector?.('[data-testid="primaryColumn"]');
-        const scroller = column?.scrollHeight > column?.clientHeight + 20 ? column : doc.scrollingElement;
-        if (scroller) scroller.scrollTop = (Number(scroller.scrollTop) || 0) + 650;
+        const scroller = [column, doc.scrollingElement].find((node) => node?.scrollHeight > node?.clientHeight + 20);
+        if (scroller) scroller.scrollTop = (Number(scroller.scrollTop) || 0) + 550;
+        else doc.defaultView?.scrollBy?.(0, 550);
       }
       await wait(500);
     }
@@ -59,7 +60,7 @@
   }
 
   function groupRows(dialog) {
-    const nodes = Array.from(dialog?.querySelectorAll?.('[data-testid="cellInnerDiv"], [role="option"], [role="button"]') || []);
+    const nodes = Array.from(dialog?.querySelectorAll?.('[data-testid="cellInnerDiv"], [data-testid="UserCell"], [role="option"], [role="button"], [tabindex="0"]') || []);
     return nodes.filter((node) => {
       if (nodes.some((other) => other !== node && node.contains(other) && GROUP_RE.test(textOf(other)))) return false;
       const label = textOf(node);
@@ -95,7 +96,34 @@
   }
 
   function shareDialog(doc) {
-    return Array.from(doc?.querySelectorAll?.('[role="dialog"]') || []).find((node) => /^(?:Share|分享)(?:\s|$)/iu.test(textOf(node).slice(0, 30)) && (node.querySelector('input[placeholder], input[aria-label]') || groupRows(node).length)) || null;
+    const isShare = (node) => {
+      if (!node || node.closest?.('#x-reply-clipboard-panel')) return false;
+      const heading = Array.from(node.querySelectorAll?.('h1, h2, [role="heading"]') || [])
+        .some((item) => /^(?:Share|分享)$/iu.test(textOf(item)));
+      const title = heading || /^(?:Share|分享)(?:\s|$)/iu.test(textOf(node).slice(0, 40));
+      return title && Boolean(node.querySelector?.('input, [role="searchbox"]') || GROUP_RE.test(textOf(node)));
+    };
+    const dialogs = Array.from(doc?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
+    const visible = dialogs.find(isShare);
+    if (visible) return visible;
+    const headings = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"]') || []);
+    for (const heading of headings) {
+      if (!/^(?:Share|分享)$/iu.test(textOf(heading))) continue;
+      let parent = heading.parentElement;
+      for (let depth = 0; parent && parent !== doc.body && depth < 6; depth++, parent = parent.parentElement) {
+        if (isShare(parent) && GROUP_RE.test(textOf(parent))) return parent;
+      }
+    }
+    return null;
+  }
+
+  async function waitForShareDialog(doc, wait, shouldStop = () => false) {
+    for (let attempt = 0; attempt < 20 && !shouldStop(); attempt++) {
+      const dialog = shareDialog(doc);
+      if (dialog) return dialog;
+      await wait(400);
+    }
+    return null;
   }
 
   function toast(doc) {
@@ -103,7 +131,7 @@
   }
 
   function initialState() {
-    return { version: 2, running: false, stopped: false, phase: 'profile', handle: '', sourceId: '', shared: 0, skipped: 0, total: 0, seen: [], done: [], scan: 0, pace: 'slow', status: '待命。把主页最新帖子发送给可用群聊。', nextAt: 0, limited: false, pendingGroup: '' };
+    return { version: 3, running: false, stopped: false, phase: 'profile', handle: '', sourceId: '', shared: 0, skipped: 0, total: 0, seen: [], done: [], scan: 0, pace: 'slow', status: '待命。把主页最新帖子发送给可用群聊。', nextAt: 0, limited: false, pendingGroup: '' };
   }
 
   function createController(env = {}) {
@@ -118,7 +146,7 @@
       for (const listener of listeners) { try { listener(snapshot()); } catch (_) {} }
     }
     function load() {
-      try { const value = JSON.parse(win().sessionStorage?.getItem?.(SESSION_KEY) || 'null'); state = value?.version === 2 ? { ...initialState(), ...value } : initialState(); } catch (_) { state = initialState(); }
+      try { const value = JSON.parse(win().sessionStorage?.getItem?.(SESSION_KEY) || 'null'); state = value?.version === 3 ? { ...initialState(), ...value } : initialState(); } catch (_) { state = initialState(); }
     }
     async function ledger() { try { return (await (env.loadLedger ? env.loadLedger() : root.chrome?.storage?.local?.get?.(LEDGER_KEY)))?.[LEDGER_KEY] || {}; } catch (_) { return {}; } }
     async function remember(groupId) {
@@ -131,6 +159,7 @@
     async function wait(ms) { if (env.wait) await env.wait(ms); else await sleep(ms, win()); }
     async function pause() { let remaining = delayFor(state.pace, env.random); while (!stopping && remaining > 0) { const slice = Math.min(250, remaining); await wait(slice); remaining -= slice; } }
     function finish(message, limited = false) { state.status = message; state.phase = 'done'; state.running = true; state.limited = limited; state.nextAt = Date.now() + (limited ? Math.max(retryFor(state), 1800000) : retryFor(state)); save(); }
+    function halt(message) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = true; state.nextAt = 0; save(); }
     async function run() {
       const handle = state.handle;
       if (!/^[A-Za-z0-9_]{1,15}$/u.test(handle)) { finish('无法确认当前账号，未发送'); return; }
@@ -151,18 +180,29 @@
         if (LIMIT_RE.test(alertText)) { finish('X 提示操作受限，已停止发送', true); return; }
         let dialog = shareDialog(doc());
         if (!dialog) {
-          const current = profilePosts(doc(), handle).find((item) => item.id === state.sourceId);
-          if (!current) { finish('分享过程中找不到原帖，已停止'); return; }
-          current.article.scrollIntoView?.({ block: 'center', behavior: 'instant' });
-          await wait(250);
-          const share = findPostShareButton(current.article);
-          if (!share) { finish('已找到原帖，但无法识别书签右侧的分享按钮，已停止'); return; }
+          let share = null;
+          for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
+            const current = profilePosts(doc(), handle).find((item) => item.id === state.sourceId);
+            current?.article.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+            share = findPostShareButton(current?.article);
+            if (share) break;
+            await wait(400);
+          }
+          if (stopping) return;
+          if (!share) { halt('已找到原帖，但无法识别书签右侧的分享按钮，已停止'); return; }
           share.click(); await wait(350);
-          const menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
-          if (!menu) { finish('分享菜单中没有“Send via Chat”，已停止'); return; }
+          let menu = null;
+          for (let attempt = 0; attempt < 8 && !stopping; attempt++) {
+            menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
+            if (menu) break;
+            await wait(300);
+          }
+          if (stopping) return;
+          if (!menu) { halt('分享菜单中没有“Send via Chat”，已停止'); return; }
           menu.click(); await wait(500);
-          dialog = shareDialog(doc());
-          if (!dialog) { finish('未打开群聊选择窗口，已停止'); return; }
+          dialog = await waitForShareDialog(doc(), wait, () => stopping);
+          if (stopping) return;
+          if (!dialog) { halt('多次检查仍未识别群聊选择窗口，已停止'); return; }
         }
         const rows = groupRows(dialog);
         for (const row of rows) if (!state.seen.includes(row.id)) state.seen.push(row.id);
@@ -189,10 +229,10 @@
         target.node.click(); await wait(450);
         const beforeSend = toast(doc());
         let send = findAction(doc().querySelector('[role="dialog"]') || doc(), /^(?:Send|发送)$/iu);
-        if (!send) { finish(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
+        if (!send) { halt(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
         send.click(); await wait(1100);
         const result = toast(doc());
-        if (!SENT_RE.test(result) || result === beforeSend) { finish(`“${target.name}”未出现发送成功提示；请手动核对，已停止避免重复发送`); return; }
+        if (!SENT_RE.test(result) || result === beforeSend) { halt(`“${target.name}”未出现发送成功提示；请手动核对，已停止避免重复发送`); return; }
         await remember(target.id);
         state.done.push(target.id); state.shared += 1; state.pendingGroup = '';
         state.status = `已发送到 ${target.name}，累计 ${state.shared} 个群聊`; save();
@@ -219,7 +259,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, waitForShareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

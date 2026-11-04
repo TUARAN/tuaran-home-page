@@ -9124,8 +9124,34 @@ test('group chat sharing waits for the profile feed and skips its pinned post', 
   assert.equal(waits, 4)
 })
 
+test('group chat sharing scrolls the profile repeatedly before reporting no post', async () => {
+  const scroller = { scrollTop: 0, scrollHeight: 10000, clientHeight: 600 }
+  const doc = { querySelectorAll: () => [], querySelector: () => null, scrollingElement: scroller }
+  let waits = 0
+  const found = await communityShare.waitForLatestPost(doc, 'tuaran', async () => { waits += 1 })
+  assert.equal(found.post, null)
+  assert.ok(scroller.scrollTop >= 4 * 550)
+  assert.equal(waits, 48)
+})
+
+test('group chat sharing retries until the visible Share dialog appears', async () => {
+  const heading = { innerText: 'Share' }
+  const dialog = {
+    innerText: 'Share Search BlueV Mutual Follow Group 825 people',
+    closest: () => null,
+    querySelectorAll: () => [heading],
+    querySelector: () => ({}),
+  }
+  let reads = 0
+  const doc = { querySelectorAll: () => ++reads < 4 ? [] : [dialog] }
+  let waits = 0
+  const found = await communityShare.waitForShareDialog(doc, async () => { waits += 1 })
+  assert.equal(found, dialog)
+  assert.ok(waits >= 2)
+})
+
 test('stopping a waiting group share clears its cooldown', async () => {
-  const storage = new Map([['xrcGroupChatShareRunV2', JSON.stringify({ version: 2, running: true, phase: 'done', handle: 'tuaran', nextAt: Date.now() + 3600000 })]])
+  const storage = new Map([['xrcGroupChatShareRunV3', JSON.stringify({ version: 3, running: true, phase: 'done', handle: 'tuaran', nextAt: Date.now() + 3600000 })]])
   const window = { sessionStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) } }
   const controller = communityShare.createController({ window })
   await controller.start({ handle: 'tuaran' })
@@ -9184,6 +9210,16 @@ test('group chat sharing stays off by default and runs on the own profile', () =
   assert.equal(background.onTaskPath('community-share', 'https://x.com/tuaran', { accountHandle: 'tuaran' }), true)
   assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), false)
   assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
+})
+
+test('group chat pace uses the shared selectable table and keeps rules in documentation', async () => {
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const docs = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
+  assert.match(content, /communityPaceTableHtml\(\)/)
+  assert.match(content, /data-xrc-community-pace/)
+  assert.doesNotMatch(content, /<select data-xrc-community-pace/)
+  assert.doesNotMatch(content, /<p class="xrc-pace-now">在当前账号主页跳过置顶/)
+  assert.match(docs, /书签右侧的分享按钮/)
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

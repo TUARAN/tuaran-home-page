@@ -1,317 +1,125 @@
 ---
 title: 类 AGI 智能体调研：真正能干活的第一梯队，以及谁真的在用
 category: topics
+topic_type: industry
+subjects: [ai_dev]
+content_type: analysis
 date: 2026-06-17
 time: 09:16
-tags: [AI Agent, 类AGI, Codex, Claude Code, Computer Use, ChatGPT Agent, Project Astra, Microsoft Copilot Studio, Manus, OpenClaw, Vibe Coding, 智能体, 行业调研]
-summary: 这篇调研整理我截至 2026-06-17 对「类 AGI 智能体」的一个阶段性认识：我把判断标准放在真实工作、电脑/代码库操作和可验收交付上，而不放在聊天能力上。
-tldr: 如果把话说重一点：截至 2026-06-17，我认知里最强的通用工作型智能体是 Codex；第一用户样本，是把 Codex / Claude Code / OpenClaw 这类 agent 真正用出工作流收益的 OpenClaw 核心小团队。柔和一点说，Codex 和 Claude Code 是目前最接近「能干活」的第一梯队，很多其他产品还停在对话、演示或轻任务层。
-topic_type: industry
-assistance: codex
-model: gpt-5-codex
+updated: 2026-11-04
+tags: [AI Agent, 类AGI, Codex, Claude Code, Computer Use, ChatGPT, Project Astra, Microsoft Copilot Studio, Manus, OpenClaw, 智能体, 行业调研]
+summary: 把「类 AGI」收窄为可验收的工作闭环：操作代码库 / 电脑环境、多步执行、结果可审。事实层列公开产品能力；用户图景与梯队排序标为外部观察，避免写成已验证全球排名。
+tldr: 按「能干活、可验收」口径，公开可见的第一梯队仍是工程向 agent（Codex 系与 Claude Code 系）。对话入口里的任务助手、多模态随身原型、企业流程平台、自托管工作台分属不同层，不宜压成单一「最强」。谁真的在用，只能描述可见工作方式样本，不能写成全球用户冠军榜。
+assistance: cursor
+model: grok
+show_assistance: false
+review_ready: false
+ad_eligible: false
 pv: 0
 ---
 
-> **写在前面**：这篇不是要宣布谁已经实现 AGI。这个词太大，也太容易把文章写虚。我这里说的「类 AGI」，标准很窄：能不能真正工作，能不能操作电脑或代码库，能不能跑一段时间后交出一个可以验收的结果。只会对话、只会给建议，我不把它放进第一梯队。
+## 一、先给结论
 
-## 一、先把话说直
+「类 AGI」的比较标准收得很窄：**能不能接复杂目标、操作环境、跑一段时间后交出可验收结果**。只会对话或给建议，不进入「工作型第一梯队」比较。
 
-我现在的判断是：
+目前能站住的判断：
 
-**最接近类 AGI 体验的东西，核心不在某个单独模型，在一套能干活的系统。**
+1. **工作感来自系统，不只来自单模型**：终端、文件系统、代码库、浏览器、测试、权限确认，以及人在终点验收，共同构成闭环。
+2. **工程向 agent 最先穿过「真实工作流」门**：公开产品里，Codex（ChatGPT / CLI / Cloud 工作流）与 Claude Code（本地仓库级 harness）证据最密。
+3. **其他产品线服务不同问题**：ChatGPT 的任务 / Work 入口偏知识工作；Project Astra / Gemini 偏随身多模态；Copilot Studio 偏企业权限与流程；OpenClaw / Manus 等偏自建工作台。
+4. **用户侧没有可核验的「全球第一用户」榜**：下文把 AI-native 小团队、高级程序员、研究员、企业业务团队、超级个体写成**使用形态样本**，不写成名次。
 
-模型只是里面最亮的那一块。真正让我觉得「它开始像智能体了」的，是它背后接上了终端、文件系统、代码库、浏览器、测试环境、权限确认，还有一个人在最后验收。
+---
 
-按这个口径看，今天的第一梯队大概可以这样分：
+## 二、事实层（复核截至 2026-11-04）
 
-| 我怎么看 | 代表产品 | 最强的地方 | 主要是谁在用 |
+### 2.1 产品能力对照（公开资料，非基准跑分）
+
+| 产品线 | 公开可见能力 | 更像哪一类问题 | 资料锚点 |
 |---|---|---|---|
-| 真正能工作的第一梯队 | Codex、Claude Code | 读代码库、改文件、跑验证、交付可审查结果 | 程序员、vibe coder、AI-native 小团队 |
-| 目前最普世好用 | Codex | 云端/本地都能接任务，操作成本低，结果容易验收 | 程序员、独立开发者、做项目的人 |
-| 本地终端最强工作流 | Claude Code | 贴近 shell、仓库、本地工具链，适合深度开发者 | 高级程序员、工程团队 |
-| 对话入口里的任务助手 | ChatGPT Agent | 查资料、整理内容、跑轻量任务 | 知识工作者、研究员、运营、创作者 |
-| 未来随身助理原型 | Gemini / Project Astra | 语音、视觉、实时多模态、跨设备 | Google 生态用户、早期测试者、未来手机/眼镜用户 |
-| 企业落地平台 | Microsoft Copilot Studio | 权限、流程、内部数据、审批、审计 | 大企业 IT、客服、财务、HR、法务 |
-| 小团队工作台 | OpenClaw、Manus、Genspark、Comet | 把搜索、浏览器、文档、代码、消息入口串起来 | 超级个体、独立开发者、自动化玩家 |
+| **OpenAI Codex** | 读改代码库、跑命令与测试、云沙箱并行任务；CLI / ChatGPT Desktop / Cloud 多入口；可用 AGENTS.md 约束仓库习惯 | 软件工程交付 | [Introducing Codex](https://openai.com/index/introducing-codex/)；Help Center「ChatGPT Work and Codex」 |
+| **Anthropic Claude Code** | 本地终端与仓库级 agent harness；工具循环、子 agent、hooks / skills / MCP | 深度本地开发工作流 | [Claude Code](https://www.anthropic.com/claude-code)；Building Effective Agents |
+| **ChatGPT Agent / Work** | 对话入口上的多步任务、研究与交付物；与 Codex 分工（Work 偏通用交付，Codex 偏软件） | 知识工作与轻任务 | OpenAI 产品说明与 Help Center |
+| **Computer use（Anthropic 等）** | 模型操作图形界面的参考实现 / API 能力 | GUI 操作，稳定性与成本仍是约束 | Anthropic computer use 公告 |
+| **Gemini / Project Astra** | 实时多模态、跨设备助理原型 | 随身 AI 形态 | [Project Astra](https://deepmind.google/models/project-astra/) |
+| **Microsoft Copilot Studio** | 企业 agent 搭建：连接器、权限、审批、审计 | 企业流程落地 | [Copilot Studio](https://www.microsoft.com/en-us/microsoft-365-copilot/microsoft-copilot-studio) |
+| **OpenClaw** | 自托管网关 + 多消息渠道 + Skills；星标高，**无权威公开 MAU** | 极客 / 自建执行层 | 仓库与 [gradually.ai 统计述评](https://www.gradually.ai/en/openclaw-statistics/) |
+| **Manus / Genspark / Comet 等** | 浏览器或综合工作台，把搜索、文档、页面生成串起来 | 个人任务台 | 各产品页（功能迭代快） |
 
-如果一定要压成一句话，我会这么写：
+说明：表中「更像哪一类问题」是归类，**不是**强度排名。同一厂商产品线在 2026 年内多次改名与合并入口，引用以当日帮助中心 / 文档为准。
 
-**真正能干活的第一梯队，是 Codex 和 Claude Code；其中 Codex 目前最普世、最好用。OpenClaw 这类系统更像高手自己搭出来的 agent 操作系统。**
+### 2.2 编码场景为什么证据更密
 
-再暴论一点：
+编码任务自带客观反馈：编译、测试、类型检查、diff 审查。OpenAI 与 Anthropic 都把 coding agent 当作优先验证场（SWE-bench 类评测、内部工程使用案例）。这解释了为何「能干活」的体感最先出现在仓库里，而不是先出现在全生活助理里。
 
-**截至 2026-06-17，我认知里最强的通用工作型智能体是 Codex；最值得观察的第一用户样本，是 OpenClaw 核心 3 人团队。**
+### 2.3 企业与个人的验收标准不同
 
-这里我故意说「用户样本」，不说「全球第一用户」。因为用量、收益、真实产出这些东西外部很难完全核验。但从公开可见的工作方式看，他们代表的方向很清楚：AI 不是聊天工具，agent 是执行层。
+| 主体 | 常问的问题 | 公开可见落地形态 |
+|---|---|---|
+| 个人开发者 | 能否改完、测过、可审查 | Codex / Claude Code / IDE agent |
+| 知识工作者 | 能否出报告、表、稿 | ChatGPT Work / 研究型 agent |
+| 企业 IT | 权限、连接器、审计、谁负责 | Copilot Studio 等平台 |
+| 自托管爱好者 | 数据是否留本地、渠道是否自控 | OpenClaw 等 |
 
-## 二、我目前看到的几条线
+---
 
-### 2.1 Codex：目前最普世好用的工作型 agent
+## 三、结构分析：差距从 prompt 移到工作系统
 
-如果只按「能不能真正工作」来排，我会把 Codex 放在最前面。
-
-原因很朴素：它能进代码库，能读文件，能改文件，能跑命令，能看报错，能再改，最后把结果摆出来让人审。这个闭环很重要。没有闭环，智能体再会说，也只是建议。
-
-Codex 最普世的地方也在这里。它不像很多本地 agent 那样先要你折腾一堆配置，也不像纯聊天产品那样停在回答层。你给它一个工程任务，它能开始干活。对普通开发者、独立开发者、小团队来说，这已经很接近「把一个人叫过来帮我改项目」的感觉了。
-
-当然，它也不是全自动员工。需求拆得烂，它会跑偏；测试不完整，它也可能漏；涉及产品判断和线上风险，还是要人看。但在当前能用到的智能体里，Codex 的「工作感」最强。
-
-这也是我现在会说「Codex 最普世好用」的原因。它当然不是什么都能做；但在真正能工作这件事上，它门槛低、闭环清楚、结果可验收。
-
-如果把「通用」理解成普通人生活里的所有杂事，Codex 当然不是。但如果把「通用」理解成一个智能体能接复杂目标、能操作环境、能产出结果、能被验收，那 Codex 目前很靠前。
-
-### 2.2 Claude Code：更贴近本地终端的强工具
-
-Claude Code 是另一条很强的线。它更贴近本地终端，更适合已经习惯 shell、仓库、脚本、MCP、hook 的开发者。
-
-它的优点不在「更像普通人助手」，在「更像开发者手边的第二双手」。它可以贴着当前项目跑，读上下文，改跨文件任务，接本地工具链。对高级程序员来说，这种贴近本地环境的感觉很重要。
-
-如果说 Codex 的优势是普世好用，Claude Code 的优势就是深度。它更吃使用者能力。会用的人可以把它用得很猛，不会用的人可能只觉得它是一个命令行版聊天框。
-
-### 2.3 ChatGPT Agent：我不会把它放第一
-
-ChatGPT Agent 当然有价值。它能查资料、整理内容、跑一些轻量任务，普通人也容易理解。
-
-但按我这篇文章的标准，它不能放在第一。原因也很直接：它给人的主要体验还是对话入口里的任务助手，离「真的接管电脑干活」还差一层。
-
-我不想把「能对话、能查资料、能整理文档」和「能操作电脑、能改项目、能跑验证」放在同一个强度里比。前者有用，但后者才是我这里说的类 AGI 智能体。
-
-### 2.4 Project Astra / Gemini：更像未来的随身 AI
-
-Google 的 Project Astra 走的是另一条路。它不止是网页里的助手，还往实时、多模态、能看见、能听见、能跟着设备走的方向走。
-
-这条线今天未必最能提高生产力，但它最接近很多人想象里的「个人 AI」。
-
-手机、眼镜、耳机、车机，这些入口一旦串起来，AI 就不再只是你打开网页后才出现的工具。它会更像一直在你身边的东西。
-
-我对 Astra 的看法是：它现在不一定最能干活，但它代表了一个方向。未来如果真有一个像随身助理一样的智能体，大概率会更接近这条线，命令行工具不会是唯一答案。
-
-### 2.5 Microsoft Copilot Studio：企业不会先要一个万能机器人
-
-企业对智能体的想法和个人不一样。
-
-个人会问：它聪不聪明？  
-企业会问：它能不能接 SharePoint？能不能进 Teams？能不能按权限读数据？能不能审计？出了事谁负责？
-
-这就是 Microsoft Copilot Studio 这类平台的价值。
-
-它未必给人最强的科幻感，但它更像企业里真正会落地的 agent 基础设施。客服一个 agent，财务一个 agent，HR 一个 agent，IT 工单一个 agent，每个 agent 权限都受限，有日志，有流程，有人兜底。
-
-企业版的「类 AGI」不会先表现为一个全能大脑。它更可能表现为一堆窄一些、但真的接进业务流程的小 agent。
-
-### 2.6 OpenClaw / Manus / Genspark / Comet：高手的工作台
-
-Manus、Genspark、Comet、OpenClaw 这一类，我不想简单放进「谁强谁弱」。
-
-它们更像工作台。有的偏浏览器，有的偏搜索和内容，有的偏本地执行，有的偏全套任务流。
-
-| 系统 | 我会怎么理解 |
-|---|---|
-| Manus | 把一个想法推进成网页、文档、应用、PPT 的任务台 |
-| Genspark | 面向研究、内容、表格、网页、图像的综合工作区 |
-| Comet | 浏览器里长出来的 AI 助手 |
-| OpenClaw 系 | 本地 agent 操作层，可以接工具、消息入口和 skills |
-
-OpenClaw 这类东西最有意思的地方，除了它自己能做什么，还有会用的人能把它搭成什么。
-
-一个普通人看它，可能觉得部署麻烦、权限吓人、成本不清楚。一个高手看它，会想：我能不能把微信、GitHub、Cloudflare、脚本、浏览器、文件系统和自己的工作流接起来，让 agent 变成一个长期在线的执行层？
-
-差距就在这里。
-
-## 三、到底是谁在真用
-
-### 3.1 AI-native 小团队
-
-我最想看的其实是这类团队。
-
-重点不在他们人数少。重点是他们已经在按一种新的方式组织工作。
-
-人不再事事亲手做。人的位置变成：
-
-- 判断方向
-- 拆任务
-- 设边界
-- 看结果
-- 决定要不要发布
-
-agent 做的则是：
-
-- 查资料
-- 写代码
-- 改文件
-- 跑测试
-- 生成草稿
-- 整理证据
-- 反复执行那些以前需要人一点点磨的活
-
-OpenClaw 3 人团队如果作为样本，我不想写成「他们是不是全球最厉害」。这个没法证明，也容易写成吹捧。
-
-更有价值的说法是：
-
-**他们代表了一种 AI-native 小团队的形态。少数人负责判断和系统设计，agent 负责高密度执行。**
-
-如果允许我说得冲一点，他们就是我目前看到的「第一用户」候选：会不会喊概念不重要，重要的是他们真的把用量、工作流和收益绑在了一起。这个判断仍然需要更多公开数据验证，但方向我愿意先押在这里。
-
-这件事比「谁最会 vibe」更重要。
-
-### 3.2 高级程序员和 vibe coder
-
-程序员是最先深度使用 agent 的一群人。
-
-因为代码任务有验收标准。能不能 build，测试过不过，diff 合不合理，线上有没有报错，这些东西都能看。
-
-这类人的工具栈通常不是单一产品：
-
-- Cursor / Windsurf 做 IDE 里的即时交互
-- Codex / Claude Code 做跨文件任务、终端任务、仓库级任务
-- GitHub Copilot coding agent 接 issue 和 PR 流程
-- Devin / Replit Agent 承接更完整的软件项目执行
-- OpenClaw / MCP / 本地脚本补上个人自动化
-
-真正厉害的 vibe coder，重点不在「会让 AI 写代码」。那已经不稀奇了。
-
-厉害的是他知道怎么把需求切成 agent 能完成的块，知道什么时候让它跑，什么时候必须自己停下来判断。
-
-### 3.3 研究员、分析师、内容创作者
-
-这一类人用 ChatGPT Agent、Deep Research、Genspark、Comet 会很顺。
-
-他们的工作本来就长这样：
-
-- 找资料
-- 比来源
-- 归纳结构
-- 做表格
-- 写报告
-- 出 PPT
-- 追行业变化
-
-这里不一定需要会代码。只要能问出好问题，能看来源，能判断结论有没有过头，agent 就已经能省下大量体力活。
-
-但这类使用者也最容易踩坑。因为报告看起来像完成了，不代表真的查清楚了。越像成品，越要回头看来源。
-
-### 3.4 企业业务团队
-
-企业里真正用 agent 的人，未必会说自己在用「类 AGI」。
-
-他们会说：
-
-- 做了一个客服机器人
-- 做了一个合同审查流程
-- 做了一个销售助理
-- 做了一个 IT 工单 agent
-- 把内部知识库接进 Teams
-
-这些听起来没有那么酷，但更真实。
-
-企业不会一上来就要一个万能助手。它会先把一个流程拆开，把其中一段交给 agent，再用权限、日志、审批和人工复核兜住。
-
-### 3.5 超级个体
-
-还有一类人很值得看：超级个体。
-
-他们可能不是职业程序员，但会把 agent 用在个人网站、调研文章、课程整理、内容分发、商业线索、小工具、社群运营上。
-
-对他们来说，最重要的是能不能形成一个稳定的个人生产系统，单个模型多强反而只是其中一项。
-
-ChatGPT Agent、Codex、Claude Code、Comet、OpenClaw、Notion、GitHub、Cloudflare、Vercel，这些东西单独看只是工具。串起来以后，才像一个人的生产线。
-
-## 四、我自己的判断
-
-### 4.1 差距不在 prompt 了
-
-早期用 AI，大家比的是 prompt。
-
-现在这个差距还在，但没那么决定性了。因为产品越来越会帮你补 prompt，模型也越来越能理解含糊的话。
-
-新的差距更像这几件事：
+早期差距常被说成 prompt 技巧。公开产品演进后，更硬的差距变成：
 
 | 能力 | 具体表现 |
 |---|---|
-| 拆任务 | 把一句模糊目标切成 agent 能执行的小块 |
-| 定验收 | 知道什么叫真的完成，什么只是看起来像完成 |
-| 管权限 | 知道哪些账号、数据、目录、生产环境不能随便交出去 |
-| 组工具 | 把浏览器、代码库、脚本、云平台、文档串起来 |
-| 看质量 | 能发现幻觉、偷懒、过度发挥和边界错误 |
+| 拆任务 | 把模糊目标切成 agent 能执行的块 |
+| 定验收 | 区分「看起来完成」与「真的完成」 |
+| 管权限 | 哪些目录、账号、生产环境不能交出去 |
+| 组工具 | 浏览器、仓库、脚本、云、文档是否串得起来 |
+| 看质量 | 幻觉、偷懒、越权、边界错误能否被抓住 |
 
-同一个 Codex，同一个 Claude Code，在不同人手里差距很大。工具放大的不是神秘能力，更多是人的判断结构。
+同一 Codex 或同一 Claude Code，在不同人手里差距可以很大——放大的是判断结构，不是神秘提示词。站内 [Vibe Coding 的判断结构](/articles/research/topics/vibe-coding-judgment-structure) 写过同一机制。
 
-### 4.2 类 AGI 体验会先在可验证的地方出现
+类 AGI **体验**也会先出现在可验证域：代码、表格、带来源的报告、有日志的企业流程。手机跨 App、长期生活决策、情感陪伴看起来更像终局助理，但权限、隐私与责任链更长，公开落地更慢。
 
-我越来越觉得，最强 agent 体验会先出现在代码、表格、数据、报告、企业流程这些地方。
+---
 
-原因很实际：这些地方能验收。
+## 四、外部研判（观察，非排名）
 
-代码能跑测试。表格能算数。报告能查来源。企业流程有权限和日志。
+以下为作者外部观察，置信度中等，**可被反证推翻**。
 
-反过来，手机跨 App 操作、长期生活助理、情感陪伴、替你做个人决策，看起来更像 AGI，但落地更慢。这里面全是权限、隐私、责任和平台关系。
+**对「第一梯队」的柔和表述**：若问题是「工程师能否把复杂工程任务交给 agent 并回收可审结果」，Codex 系与 Claude Code 系仍是公开证据最密的两档。若问题是「普通人生活杂事是否已有类 AGI」，答案是否定的——多数仍停在对话或轻任务。
 
-所以，今天你真正能感受到「agent 变强了」的地方，往往是代码库、研究工作台和企业流程。
+**对「谁真的在用」**：
 
-### 4.3 OpenClaw 这类系统的关键，是人怎么组织它
+- **AI-native 小团队**：人负责方向、边界与发布；agent 负责高密度执行。OpenClaw 核心贡献者团队常被外界当成样本，但公开材料**不足以**证明「全球最会用 agent」；只适合说「工作方式样本」。
+- **高级程序员 / vibe coder**：工具栈通常是 IDE agent + 仓库级 agent + CI / 脚本，而不是单一产品。
+- **研究员与创作者**：Deep Research / 工作台式产品省体力，但成品感越强越要查来源。
+- **企业业务团队**：客服、工单、合同、知识库——窄流程 + 权限，比「万能机器人」更常见。
+- **超级个体**：把站点、调研、分发、小工具串成个人生产线；单模型分数只是其中一项。
 
-我会把 OpenClaw 看成一种工作方式，而不是只看成一个工具。
+旧稿中「截至某日最强通用工作型智能体是 Codex」「第一用户是 OpenClaw 三人团队」这类**绝对句**，在证据不足时应降级为个人偏好或样本假说。本版删除全球冠军句式。
 
-比较理想的链路是：
+---
 
-```text
-人提出目标
-agent 拆任务
-工具开始执行
-人看结果
-把有效流程沉淀成 skill
-下次复用
-```
+## 五、信息来源与持续验证
 
-这条链路如果跑通，三个人确实可能做出过去十几个人的执行量。
+资料复核截至 **2026-11-04（北京）**。
 
-但前提也很硬。你要懂任务边界，要能快速验收，要知道哪些权限不能给，要能从失败里沉淀流程。否则 agent 做了很多动作，事情未必真的推进。
+**官方 / 一手**
 
-这也是我现在看「谁最会用 AI」时最在意的点：谁能把 agent 变成一个可复用、可验收、可收敛的工作系统。
-
-## 五、没法确认的地方
-
-这篇有几个地方不能写死：
-
-| 问题 | 我现在能说到哪里 |
-|---|---|
-| 谁是全球最强通用智能体 | 没有统一排名，只能按任务类型拆开看 |
-| OpenClaw 3 人团队是不是最会用 agent 的团队 | 没有客观榜单；我会把它当「第一用户候选样本」，不写成已证实事实 |
-| Codex、Claude Code、ChatGPT Agent 到底提升多少生产力 | 官方案例和个人体验都有偏差，需要同一任务集实测 |
-| 企业 agent 到底用了多深 | 厂商会披露客户数，但很少披露真实使用深度 |
-| 手机/眼镜会不会成为最终入口 | 方向很清楚，节奏还不清楚 |
-
-## 六、收口
-
-截至 2026-06-17，我会这样概括：
-
-我的暴论版结论是：截至 2026-06-17，最强的通用工作型智能体是 Codex；第一用户候选，是 OpenClaw 核心 3 人团队。
-
-柔和一点说：Codex 和 Claude Code 是工程师已经用起来的第一梯队。Project Astra 更像未来随身 AI 的样子。Microsoft Copilot Studio 是企业里更现实的 agent 基础设施。OpenClaw、Manus、Genspark、Comet 这些工具，则代表个人和小团队正在自己搭工作台。ChatGPT Agent 有价值，但在这篇文章的标准里，它还不能放在最前面。
-
-最后拉开差距的，不会只是会不会 prompt。
-
-更像是：你能不能把一个模糊目标拆开，交给 agent 去跑，再把结果收回来验收。能做到这一步的人，已经在用一种很早期的类 AGI 了。
-
-很多产品今天看起来热闹，但还停在对话、演示或轻任务层。说它们「都是自嗨」太重了，我会改成：它们还没有穿过「真实工作流」这层门。
-
-以上是我的阶段性行业观察，不是已验证排名，也不是建议。
-
-## 七、信息来源
-
-### 官方 / 一手资料
-
-- [OpenAI：Introducing ChatGPT Agent](https://openai.com/index/introducing-chatgpt-agent/)
 - [OpenAI：Introducing Codex](https://openai.com/index/introducing-codex/)
+- [OpenAI Help：ChatGPT Work and Codex](https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex)
 - [Anthropic：Claude Code](https://www.anthropic.com/claude-code)
-- [Anthropic：Computer use](https://www.anthropic.com/news/3-5-models-and-computer-use)
+- [Anthropic：Building effective agents](https://www.anthropic.com/research/building-effective-agents)
 - [Google DeepMind：Project Astra](https://deepmind.google/models/project-astra/)
-- [Microsoft：Copilot Studio](https://www.microsoft.com/en-us/microsoft-365-copilot/microsoft-copilot-studio)
-- [GitHub Blog：GitHub Copilot coding agent public preview](https://github.blog/changelog/2025-05-19-github-copilot-coding-agent-in-public-preview/)
+- [Microsoft Copilot Studio](https://www.microsoft.com/en-us/microsoft-365-copilot/microsoft-copilot-studio)
 
-### 站内交叉阅读
+**站内交叉**
 
-- [国内通用智能体（本地操作型 Agent）深度测评对比](/articles/research/topics/china-general-agents)
-- [OpenClaw 火爆半年后：普通人真的用了吗？](/articles/research/topics/openclaw-mainstream-adoption-reality-check)
-- [AI 时代的判断力结构](/articles/research/topics/vibe-coding-judgment-structure)
-- [本地与云端 AI 开发工具编排](/articles/research/topics/local-cloud-dev-tooling-orchestration)
+- [国内通用智能体对比](/articles/research/topics/china-general-agents)
+- [OpenClaw 主流采用现实检验](/articles/research/topics/openclaw-mainstream-adoption-reality-check)
+- [Vibe Coding 的判断结构](/articles/research/topics/vibe-coding-judgment-structure)
+
+**持续验证**
+
+- OpenAI / Anthropic 若发布可复现的同一任务集人机对照生产力数据，第二节梯队表述可升级或改写。
+- 若出现非编码域（客服 / 办公）可公开审计的大规模闭环指标，并稳定超过编码域，「体验先出现在可验证域」需重写。
+- OpenClaw 若公布可定义的安装 / 活跃口径（而非未定义的「new claws」），用户样本段可补定量。

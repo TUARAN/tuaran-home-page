@@ -161,3 +161,72 @@ test('selects a group and clicks Send inside the picker', async () => {
   assert.equal(controller.snapshot().shared, 1)
   assert.equal(Object.keys(savedLedger['123'] || {}).length, 1)
 })
+
+test('skips a group rejected by X and only records a later confirmed send', async () => {
+  let selected = ''
+  let response = ''
+  let savedLedger = {}
+  const body = {}
+  const rows = ['First Group 825 people', 'Second Group 267 people'].map((label) => ({
+    innerText: label,
+    click: () => { selected = label; response = '' },
+    getAttribute: () => null,
+    getClientRects: () => [1],
+    closest: () => null,
+    contains: () => false,
+  }))
+  const send = {
+    innerText: 'Send',
+    click: () => { response = selected.startsWith('First') ? 'Could not send message' : 'Message sent' },
+    getAttribute: () => null,
+    getClientRects: () => [1],
+    closest: () => null,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '1', pointerEvents: 'auto' }) } },
+  }
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search First Group 825 people Second Group 267 people Send',
+    parentElement: body,
+    closest: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('cellInnerDiv')) return rows
+      if (selector.includes('input')) return [search]
+      if (selector.includes('data-testid="toast"')) return response ? [{ innerText: response }] : []
+      if (selector.includes('button')) return [send]
+      return []
+    },
+    scrollTop: 0,
+    clientHeight: 600,
+  }
+  search.parentElement = picker
+  send.parentElement = picker
+  const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
+  const timeLink = { getAttribute: () => '/tuaran/status/456', querySelector: () => ({}), closest: () => article }
+  const doc = {
+    body,
+    querySelector: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('article[data-testid="tweet"]')) return [article]
+      if (selector.includes('xchatEmbedShare')) return [{ shadowRoot: picker }]
+      return []
+    },
+  }
+  const sessionStorage = new Map()
+  const controller = createController({
+    document: doc,
+    window: {
+      location: { pathname: '/tuaran' },
+      sessionStorage: { getItem: (key) => sessionStorage.get(key), setItem: (key, value) => sessionStorage.set(key, value) },
+    },
+    wait: async () => {},
+    random: () => 0,
+    loadLedger: async () => ({ [LEDGER_KEY]: savedLedger }),
+    saveLedger: async (value) => { savedLedger = value },
+  })
+
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(controller.snapshot().shared, 1)
+  assert.equal(controller.snapshot().skipped, 1)
+  assert.equal(Object.keys(savedLedger['456'] || {}).length, 1)
+  assert.match(controller.snapshot().status, /已确认发送到 1 个群聊/)
+})

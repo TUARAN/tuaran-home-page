@@ -8,6 +8,7 @@
   const RETRY_MS = 900000;
   const LIMIT_RE = /automated|not allowed|try again later|rate limit|操作过于频繁|暂时无法|请求似乎可能是自动化/iu;
   const SENT_RE = /(?:post|message) (?:was )?sent|sent successfully|消息已发送|帖子已发送|已发送给/iu;
+  const SEND_FAILED_RE = /could not send message|failed to send|unable to send|消息发送失败|无法发送消息/iu;
   const GROUP_RE = /(?:\d[\d,]*\s*(?:people|members|人)|\d[\d,.]*\s*[万千]?人)/iu;
   const PRIVATE_RE = /@[A-Za-z0-9_]{1,15}\b/u;
   const clean = (value) => String(value || "").replace(/[\u200b-\u200d\ufeff]/gu, "").replace(/\s+/gu, " ").trim();
@@ -169,7 +170,8 @@
   }
 
   function toast(doc) {
-    return shareScopes(doc).flatMap((scope) => Array.from(scope?.querySelectorAll?.('[data-testid="toast"], [role="alert"]') || [])).map(textOf).join(' ');
+    return shareScopes(doc).flatMap((scope) => Array.from(scope?.querySelectorAll?.('[data-testid="toast"], [role="alert"], [role="status"]') || []))
+      .filter((node) => !node.closest?.('#x-reply-clipboard-panel')).map(textOf).join(' ');
   }
 
   function initialState() {
@@ -217,6 +219,7 @@
       if (!post) { finish(found.observed ? `已读取 ${found.observed} 条帖子，但没有符合条件的本人非置顶帖子` : '主页帖子尚未加载或无法识别，未发送'); return; }
       if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.done = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
       state.sourceId = post.id; state.phase = 'share'; save();
+      let consecutiveSendFailures = 0;
       for (let step = 0; step < 300 && !stopping; step++) {
         const alertText = toast(doc());
         if (LIMIT_RE.test(alertText)) { finish('X 提示操作受限，已停止发送', true); return; }
@@ -281,7 +284,22 @@
         if (!send) { halt(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
         send.click(); await wait(1100);
         const result = toast(doc());
+        if (SEND_FAILED_RE.test(result) && result !== beforeSend) {
+          state.done.push(target.id);
+          state.skipped += 1;
+          state.pendingGroup = '';
+          consecutiveSendFailures += 1;
+          if (consecutiveSendFailures >= 3) {
+            halt(`X 连续拒绝发送到 ${consecutiveSendFailures} 个群聊，已停止；请检查账号或平台限制`);
+            return;
+          }
+          state.status = `X 无法发送到“${target.name}”，已跳过；继续尝试其他群聊`;
+          save();
+          await pause();
+          continue;
+        }
         if (!SENT_RE.test(result) || result === beforeSend) { halt(`“${target.name}”未出现发送成功提示；请手动核对，已停止避免重复发送`); return; }
+        consecutiveSendFailures = 0;
         await remember(target.id);
         state.done.push(target.id); state.shared += 1; state.pendingGroup = '';
         state.status = `已发送到 ${target.name}，累计 ${state.shared} 个群聊`; save();

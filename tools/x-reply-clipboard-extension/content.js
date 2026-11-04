@@ -157,7 +157,85 @@
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.05;
-  const EXTENSION_VERSION = globalThis.chrome?.runtime?.getManifest?.().version || "4.3.13";
+  function readExtensionVersion() {
+    try {
+      return globalThis.chrome?.runtime?.getManifest?.().version || "4.3.13";
+    } catch (error) {
+      return "4.3.13";
+    }
+  }
+  const EXTENSION_VERSION = readExtensionVersion();
+  let extensionContextRetired = false;
+  let panelRenderTimer = 0;
+  let viewsDismissTimer = 0;
+
+  function extensionContextAlive() {
+    if (extensionContextRetired) return false;
+    const api = globalThis.XrcExtensionContext;
+    if (typeof api?.extensionContextAlive === "function") return api.extensionContextAlive();
+    try {
+      return Boolean(globalThis.chrome?.runtime?.id);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function isExtensionContextInvalidatedError(error) {
+    const api = globalThis.XrcExtensionContext;
+    if (typeof api?.isExtensionContextInvalidatedError === "function") return api.isExtensionContextInvalidatedError(error);
+    return /extension context invalidated/i.test(String(error?.message || error));
+  }
+
+  function retireExtensionContext() {
+    if (extensionContextRetired) return;
+    extensionContextRetired = true;
+    if (panelRenderTimer) window.clearInterval(panelRenderTimer);
+    if (viewsDismissTimer) window.clearInterval(viewsDismissTimer);
+    panelRenderTimer = 0;
+    viewsDismissTimer = 0;
+    if (updateNoticeTimer) window.clearTimeout(updateNoticeTimer);
+    try { globalThis.chrome?.storage?.onChanged?.removeListener?.(onExtensionStorageChanged); } catch (error) { /* The invalidated runtime no longer accepts listener removal. */ }
+    try { globalThis.chrome?.runtime?.onMessage?.removeListener?.(onExtensionRuntimeMessage); } catch (error) { /* The invalidated runtime no longer accepts listener removal. */ }
+  }
+
+  function noteExtensionContextFailure(error) {
+    if (!extensionContextAlive() || isExtensionContextInvalidatedError(error)) {
+      retireExtensionContext();
+      return true;
+    }
+    return false;
+  }
+
+  function ensureExtensionContext() {
+    if (extensionContextAlive()) return true;
+    retireExtensionContext();
+    return false;
+  }
+
+  function deliverExtensionMessage(payload, onResponse) {
+    if (!ensureExtensionContext()) throw new Error("Extension context invalidated.");
+    if (!globalThis.chrome?.runtime?.sendMessage) throw new Error("扩展后台不可用");
+    let sent;
+    try {
+      sent = chrome.runtime.sendMessage(payload, (response) => {
+        let runtimeError = null;
+        try {
+          runtimeError = chrome.runtime.lastError;
+        } catch (error) {
+          noteExtensionContextFailure(error);
+          onResponse(undefined, { message: "Extension context invalidated." });
+          return;
+        }
+        onResponse(response, runtimeError);
+      });
+    } catch (error) {
+      noteExtensionContextFailure(error);
+      throw error;
+    }
+    if (sent && typeof sent.catch === "function") {
+      sent.catch((error) => { noteExtensionContextFailure(error); });
+    }
+  }
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
@@ -1569,49 +1647,65 @@
 
   function sendTaskMessage(type, mode) {
     return new Promise((resolve, reject) => {
+      if (!extensionContextAlive()) {
+        retireExtensionContext();
+        reject(new Error("Extension context invalidated."));
+        return;
+      }
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("任务页签调度仅在已安装的 Chrome 扩展中可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({
-        type,
-        mode: validTaskKey(mode),
-        accountHandle: rememberAccountHandle()
-      }, (response) => {
-        const runtimeError = chrome.runtime.lastError;
-        if (runtimeError) {
-          reject(new Error(runtimeError.message || "无法连接扩展后台"));
-          return;
-        }
-        if (!response?.ok) {
-          reject(new Error(response?.error || "任务页签调度失败"));
-          return;
-        }
-        resolve(response);
-      });
-      if (sent && typeof sent.catch === "function") sent.catch(() => {});
+      try {
+        deliverExtensionMessage({
+          type,
+          mode: validTaskKey(mode),
+          accountHandle: rememberAccountHandle()
+        }, (response, runtimeError) => {
+          if (runtimeError) {
+            if (isExtensionContextInvalidatedError(runtimeError)) noteExtensionContextFailure(runtimeError);
+            reject(new Error(runtimeError.message || "无法连接扩展后台"));
+            return;
+          }
+          if (!response?.ok) {
+            reject(new Error(response?.error || "任务页签调度失败"));
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
   function sendExtensionMessage(message) {
     return new Promise((resolve, reject) => {
+      if (!extensionContextAlive()) {
+        retireExtensionContext();
+        reject(new Error("Extension context invalidated."));
+        return;
+      }
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("扩展后台不可用"));
         return;
       }
-      const sent = chrome.runtime.sendMessage(message, (response) => {
-        const runtimeError = chrome.runtime.lastError;
-        if (runtimeError) {
-          reject(new Error(runtimeError.message || "扩展后台没有响应"));
-          return;
-        }
-        if (!response?.ok) {
-          reject(new Error(response?.error || "扩展后台操作失败"));
-          return;
-        }
-        resolve(response);
-      });
-      if (sent && typeof sent.catch === "function") sent.catch(() => {});
+      try {
+        deliverExtensionMessage(message, (response, runtimeError) => {
+          if (runtimeError) {
+            if (isExtensionContextInvalidatedError(runtimeError)) noteExtensionContextFailure(runtimeError);
+            reject(new Error(runtimeError.message || "扩展后台没有响应"));
+            return;
+          }
+          if (!response?.ok) {
+            reject(new Error(response?.error || "扩展后台操作失败"));
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
@@ -1715,19 +1809,27 @@
 
   function readRuntimeMessage(type, payload = {}) {
     return new Promise((resolve, reject) => {
+      if (!extensionContextAlive()) {
+        retireExtensionContext();
+        reject(new Error("Extension context invalidated."));
+        return;
+      }
       if (!globalThis.chrome?.runtime?.sendMessage) {
         reject(new Error("无法连接扩展后台"));
         return;
       }
-      const sent = chrome.runtime.sendMessage({ type, ...payload }, (response) => {
-        const runtimeError = chrome.runtime.lastError;
-        if (runtimeError || !response?.ok) {
-          reject(new Error(runtimeError?.message || response?.error || "运行状态同步失败"));
-          return;
-        }
-        resolve(response);
-      });
-      if (sent && typeof sent.catch === "function") sent.catch(() => {});
+      try {
+        deliverExtensionMessage({ type, ...payload }, (response, runtimeError) => {
+          if (runtimeError && isExtensionContextInvalidatedError(runtimeError)) noteExtensionContextFailure(runtimeError);
+          if (runtimeError || !response?.ok) {
+            reject(new Error(runtimeError?.message || response?.error || "运行状态同步失败"));
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
@@ -1748,8 +1850,15 @@
   }
 
   function refreshScheduleView() {
+    if (!ensureExtensionContext()) return Promise.resolve();
     if (scheduleRefreshPromise) return scheduleRefreshPromise;
-    scheduleRefreshPromise = loadPluginRuntime().then(renderPanel).finally(() => { scheduleRefreshPromise = null; });
+    scheduleRefreshPromise = loadPluginRuntime().then(() => {
+      if (!extensionContextAlive()) return null;
+      renderPanel();
+      return null;
+    }).catch((error) => {
+      if (!noteExtensionContextFailure(error)) throw error;
+    }).finally(() => { scheduleRefreshPromise = null; });
     return scheduleRefreshPromise;
   }
 
@@ -3324,6 +3433,15 @@
   }
 
   function paintFlowButton(panel = document.getElementById(PANEL_ID)) {
+    if (!ensureExtensionContext()) return;
+    try {
+      paintFlowButtonNow(panel);
+    } catch (error) {
+      if (!noteExtensionContextFailure(error)) throw error;
+    }
+  }
+
+  function paintFlowButtonNow(panel) {
     const status = panel?.querySelector("[data-xrc-flow-start]");
     if (!status) return;
     const model = flowButtonModel();
@@ -4567,8 +4685,16 @@
     const key = taskStateKey();
     let snapshot;
     try { snapshot = JSON.parse(sessionStorage.getItem(key) || "null"); } catch (error) { return; }
-    if (!snapshot || !chrome.storage?.local?.set) return;
-    taskSnapshotWrite = taskSnapshotWrite.catch(() => {}).then(() => chrome.storage.local.set({ [key]: snapshot }));
+    if (!snapshot || !ensureExtensionContext()) return;
+    taskSnapshotWrite = taskSnapshotWrite.catch(() => {}).then(() => {
+      if (!extensionContextAlive()) return null;
+      try {
+        return chrome.storage.local.set({ [key]: snapshot });
+      } catch (error) {
+        noteExtensionContextFailure(error);
+        return null;
+      }
+    }).catch((error) => { noteExtensionContextFailure(error); });
   }
 
   function clearSaved() {
@@ -5056,9 +5182,14 @@
 
   function looksLoggedIn() {
     if (isLoginPage()) return false;
+    // /compose/post can show the composer without primaryColumn. The profile link,
+    // Post button, and composer belong to a logged-in session.
     return Boolean(
-      document.querySelector('[data-testid="primaryColumn"]') ||
-        document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]')
+      document.querySelector('[data-testid="primaryColumn"]')
+      || document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]')
+      || document.querySelector('[data-testid="AppTabBar_Profile_Link"], a[aria-label="Profile"], a[aria-label="个人资料"]')
+      || document.querySelector('[data-testid="SideNav_NewTweet_Button"]')
+      || document.querySelector('[data-testid^="tweetTextarea_"]')
     );
   }
 
@@ -5181,9 +5312,13 @@
   function rememberAccountHandle(handle = currentAccountHandle()) {
     const selected = String(handle || "").replace(/^@/u, "");
     if (selected) lastKnownAccountHandle = selected;
-    if (!/^[A-Za-z0-9_]{1,15}$/u.test(selected) || !globalThis.chrome?.storage?.local?.set) return selected;
-    const saved = chrome.storage.local.set({ xrcAccountHandle: selected });
-    if (saved && typeof saved.catch === "function") saved.catch(() => {});
+    if (!/^[A-Za-z0-9_]{1,15}$/u.test(selected) || !ensureExtensionContext()) return selected;
+    try {
+      const saved = chrome.storage.local.set({ xrcAccountHandle: selected });
+      if (saved && typeof saved.catch === "function") saved.catch((error) => { noteExtensionContextFailure(error); });
+    } catch (error) {
+      noteExtensionContextFailure(error);
+    }
     return selected;
   }
 
@@ -7495,6 +7630,15 @@
   }
 
   function renderPanel() {
+    if (!ensureExtensionContext()) return;
+    try {
+      paintExtensionPanel();
+    } catch (error) {
+      if (!noteExtensionContextFailure(error)) throw error;
+    }
+  }
+
+  function paintExtensionPanel() {
     if (panelDismissed && !state.running) return;
     if (!looksLoggedIn()) {
       document.getElementById(PANEL_ID)?.remove();
@@ -7520,7 +7664,7 @@
               <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
               <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M4.5 6 8 2.5 11.5 6M4.5 10 8 13.5 11.5 10"></path></svg></button>
               <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" aria-expanded="false" title="打开日历统计"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg></button>
-              <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
+              <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板。点工具栏里的扩展图标可以重新打开"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
             </div>
             <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
           </div>
@@ -9598,10 +9742,16 @@
     }
   }
 
+  function startPanelBoot() {
+    Promise.resolve(boot()).catch((error) => {
+      if (!noteExtensionContextFailure(error)) throw error;
+    });
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
+    document.addEventListener("DOMContentLoaded", startPanelBoot, { once: true });
   } else {
-    boot();
+    startPanelBoot();
   }
 
   function pathReadyForTask(mode) {
@@ -9661,7 +9811,23 @@
     return { ok: true, phase };
   }
 
-  globalThis.chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
+  function onExtensionRuntimeMessage(message, sender, sendResponse) {
+    if (!ensureExtensionContext()) return false;
+    if (message?.type === "xrc-panel-reopen") {
+      panelDismissed = false;
+      try {
+        renderPanel();
+      } catch (error) {
+        if (noteExtensionContextFailure(error)) {
+          sendResponse({ ok: false, error: "extension-context-invalidated" });
+          return false;
+        }
+        sendResponse({ ok: false, error: String(error?.message || error) });
+        return false;
+      }
+      sendResponse({ ok: true, shown: Boolean(document.getElementById(PANEL_ID)) });
+      return false;
+    }
     if (message?.type === "xrc-task-start") {
       (async () => {
         const mode = validTaskKey(message.mode);
@@ -9759,9 +9925,16 @@
       return true;
     }
     return false;
-  });
+  }
 
-  globalThis.chrome?.storage?.onChanged?.addListener((changes, areaName) => {
+  try {
+    if (extensionContextAlive()) globalThis.chrome.runtime.onMessage.addListener(onExtensionRuntimeMessage);
+  } catch (error) {
+    noteExtensionContextFailure(error);
+  }
+
+  function onExtensionStorageChanged(changes, areaName) {
+    if (!ensureExtensionContext()) return;
     if (areaName === "session" && changes.xrcTaskTabs) {
       openTaskTabs = changes.xrcTaskTabs.newValue || {};
       renderPanel();
@@ -9814,30 +9987,49 @@
       }
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
-  });
+  }
 
-  window.setInterval(() => {
-    try { likeApi?.dismissViewsDialog?.(document); } catch (error) { /* A Views sheet must not stop the page script. */ }
+  try {
+    if (extensionContextAlive()) globalThis.chrome.storage.onChanged.addListener(onExtensionStorageChanged);
+  } catch (error) {
+    noteExtensionContextFailure(error);
+  }
+
+  viewsDismissTimer = window.setInterval(() => {
+    if (!ensureExtensionContext()) return;
+    try { likeApi?.dismissViewsDialog?.(document); } catch (error) {
+      noteExtensionContextFailure(error);
+    }
   }, 400);
 
   let idleRenderTicks = 0;
-  window.setInterval(() => {
-    if (taskSchedule.enabled && Date.now() - lastScheduleReadAt > 30000) void refreshScheduleView();
-    const active = state.running || state.mutual?.running || state.poster?.running || likeState.running;
-    const confirmingStart = Boolean(confirmingStartCopy(taskSchedule.current || ""));
-    const waitingDeadline = soonestWaitMs() > 0 || confirmingStart;
-    const warnings = automationWarningNodes();
-    if (!warnings.length) acknowledgedAutomationNotices = new WeakMap();
-    if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
-      && warnings.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) applyRiskStop();
-    idleRenderTicks = active || waitingDeadline ? 0 : idleRenderTicks + 1;
-    if (active || waitingDeadline || idleRenderTicks >= 15) {
-      idleRenderTicks = 0;
-      renderPanel();
-    } else if (document.querySelector(`[data-xrc-flow-details]:not([hidden])`)) {
-      paintFlowDetails();
+  panelRenderTimer = window.setInterval(() => {
+    try {
+      if (!ensureExtensionContext()) return;
+      if (taskSchedule.enabled && Date.now() - lastScheduleReadAt > 30000) {
+        refreshScheduleView().catch((error) => {
+          if (!noteExtensionContextFailure(error)) throw error;
+        });
+      }
+      const active = state.running || state.mutual?.running || state.poster?.running || likeState.running;
+      const confirmingStart = Boolean(confirmingStartCopy(taskSchedule.current || ""));
+      const waitingDeadline = soonestWaitMs() > 0 || confirmingStart;
+      const warnings = automationWarningNodes();
+      if (!warnings.length) acknowledgedAutomationNotices = new WeakMap();
+      if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
+        && warnings.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) applyRiskStop();
+      idleRenderTicks = active || waitingDeadline ? 0 : idleRenderTicks + 1;
+      const panelMissing = !panelDismissed && !document.getElementById(PANEL_ID);
+      if (active || waitingDeadline || idleRenderTicks >= 15 || panelMissing) {
+        idleRenderTicks = 0;
+        renderPanel();
+      } else if (document.querySelector(`[data-xrc-flow-details]:not([hidden])`)) {
+        paintFlowDetails();
+      }
+      paintTaskScheduleNotice();
+    } catch (error) {
+      if (!noteExtensionContextFailure(error)) throw error;
     }
-    paintTaskScheduleNotice();
   }, 1000);
 
   window.addEventListener("online", () => { reconnectOnline = true; });

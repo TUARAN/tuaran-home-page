@@ -85,6 +85,6 @@ test('scattered entries reuse the dialog or the contact page', async () => {
   assert.match(services, /<ContactCards/)
   assert.doesNotMatch(services, /donate-wechat/)
   assert.match(page, /<ContactCards/)
-  assert.match(page, /canonical: CONTACT_PAGE_PATH/)
+  assert.match(page, /canonical: '\/contact'/)
   assert.match(page, /application\/ld\+json/)
 })

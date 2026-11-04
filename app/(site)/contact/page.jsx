@@ -15,11 +15,11 @@ const description = `合作、内容更正和日常交流加微信 ${WECHAT_CONT
 export const metadata = {
   title,
   description,
-  alternates: { canonical: CONTACT_PAGE_PATH },
+  alternates: { canonical: '/contact' },
   openGraph: {
     title,
     description,
-    url: CONTACT_PAGE_PATH,
+    url: '/contact',
     type: 'website',
   },
   robots: { index: true, follow: true },

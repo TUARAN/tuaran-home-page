@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 241,
+    "routes": 242,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 112,
-    "indexable": 133,
-    "canonical": 151,
-    "openGraph": 85,
-    "jsonLd": 60,
+    "registeredStatic": 113,
+    "indexable": 134,
+    "canonical": 152,
+    "openGraph": 86,
+    "jsonLd": 61,
     "errors": 9,
     "warnings": 141
   },
@@ -1810,6 +1810,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/contact",
+      "file": "app/(site)/contact/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/contact"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/contact"
+        ]
       }
     },
     {

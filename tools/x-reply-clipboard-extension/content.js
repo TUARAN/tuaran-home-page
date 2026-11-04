@@ -4213,6 +4213,9 @@
       }
     });
     await loadAiSettings();
+    const providerInput = panel.querySelector(`[data-xrc-reply-provider="${which}"]`);
+    if (providerInput) providerInput.checked = state.replyProviders.includes(which);
+    renderPanel();
     return true;
   }
 

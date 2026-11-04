@@ -64,25 +64,37 @@ test('saved credentials enable their provider once, but an explicit all-off choi
   assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: [] }).providers), ['bai'])
 })
 
-test('saving a valid DeepSeek key also selects DeepSeek in storage and panel state', async () => {
-  let settings = { replyProviders: [] }
-  const chrome = { storage: { local: {
-    get: async () => ({ xrcAiSettings: settings }),
-    set: async ({ xrcAiSettings }) => { settings = xrcAiSettings },
-  } } }
-  const state = { replyProviders: [], aiSettingsStatus: 'loading' }
-  const loadAiSettings = async () => {
-    state.replyProviders = settings.replyProviders
-    state.aiSettingsStatus = 'ready'
-  }
-  const { saveSingleApiKey } = modelFunctions(await contentPromise, { chrome, globalThis: { chrome }, state, loadAiSettings })
-  const panel = { querySelector: (selector) => selector === '[data-xrc-config-key]' ? { value: 'sk-12345678' } : { textContent: '' } }
+for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['bai', '[data-xrc-config-bai-key]']]) {
+  test(`saving a valid ${provider} key also selects its model in storage and the open panel`, async () => {
+    let settings = { replyProviders: [] }
+    let renders = 0
+    const chrome = { storage: { local: {
+      get: async () => ({ xrcAiSettings: settings }),
+      set: async ({ xrcAiSettings }) => { settings = xrcAiSettings },
+    } } }
+    const state = { replyProviders: [], aiSettingsStatus: 'loading' }
+    const loadAiSettings = async () => {
+      state.replyProviders = settings.replyProviders
+      state.aiSettingsStatus = 'ready'
+    }
+    const { saveSingleApiKey } = modelFunctions(await contentPromise, {
+      chrome, globalThis: { chrome }, state, loadAiSettings, renderPanel: () => { renders += 1 },
+    })
+    const checkbox = { checked: false }
+    const panel = { querySelector: (selector) => {
+      if (selector === keySelector) return { value: 'sk-12345678' }
+      if (selector === `[data-xrc-reply-provider="${provider}"]`) return checkbox
+      return { textContent: '' }
+    } }
 
-  assert.equal(await saveSingleApiKey(panel, 'deepseek'), true)
-  assert.deepEqual(Array.from(settings.replyProviders), ['deepseek'])
-  assert.deepEqual(Array.from(state.replyProviders), ['deepseek'])
-  assert.equal(settings.replyProvidersManual, true)
-})
+    assert.equal(await saveSingleApiKey(panel, provider), true)
+    assert.deepEqual(Array.from(settings.replyProviders), [provider])
+    assert.deepEqual(Array.from(state.replyProviders), [provider])
+    assert.equal(settings.replyProvidersManual, true)
+    assert.equal(checkbox.checked, true)
+    assert.equal(renders, 1)
+  })
+}
 
 test('the home prompt waits until saved keys and receipt settings finish loading', async () => {
   let finishStorage

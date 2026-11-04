@@ -19,6 +19,9 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
+import { X_REPLY_EXTENSION_PACKAGE } from '../../../../lib/generated/xReplyExtensionPackage'
+import { X_EXTENSION_LATEST_VERSION } from '../../../../lib/community/xExtensionVersion'
+import { loadXExtensionReleaseWeeks } from '../../../../lib/community/xExtensionReleaseWeeks'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from './ExtensionDownloadButton'
 
@@ -27,261 +30,24 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '4.0.50'
+const VERSION = X_REPLY_EXTENSION_PACKAGE.fileName.match(/-v(\d+\.\d+\.\d+)\.zip$/u)?.[1] || '未知'
+const LOCAL_VERSION = X_EXTENSION_LATEST_VERSION
 
-const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
+const title = 'X 高频互动助手：任务排班与本地开发进展'
 const description =
-  'X高频互动助手是本地运行的 Chrome 扩展，提供评论、点赞、关注管理和定时发帖；全流程按任务状态调度。'
-const shareText = 'X高频互动助手：在本地面板查看评论、点赞、关注和定时发帖的任务进度。'
+  'X 高频互动助手的下载包与本地开发源码版本说明，以及评论、点赞、关注、发帖、群聊分享和清理任务的使用文档。'
+const shareText = 'X 高频互动助手：查看站点配置的下载包、本地开发版与任务说明。'
 
-const VERSION_HISTORY = [
-  {
-    version: '4.0.50',
-    title: '评论成功确认与计数',
-    description: '发送后等 2 秒确认再计入今日合计；匹配中文成功提示；条间至少 2 秒；详情页开启任务先确认。',
-    current: true,
-  },
-  {
-    version: '4.0.42',
-    title: '单页签排班与邀请码内置',
-    description: '全流程改为单执行页签轮班；排班台与设置中心分开；下载用一把邀请码，ZIP 内置回执密钥到本机。',
-  },
-  {
-    version: '3.32.46',
-    title: '评论受限后继续倒计时',
-    description: '评论首页和评论通知遇到疑似自动化提示后持续按 10、20、30 分钟递增等待，到期自动重试；旧的人工检查状态自动迁移。',
-  },
-  {
-    version: '3.32.45',
-    title: '模型设置读取状态',
-    description: '首次读取配置时显示加载状态；确认未配置后才出现 DeepSeek API Key 引导，读取失败可点击重试。',
-  },
-  {
-    version: '3.32.44',
-    title: '修复 Grok 评论重复',
-    description: '合并模型生成的重复 Grok 问题；写入回复框时避免提及补全重复插入，发送前核对草稿全文。',
-  },
-  {
-    version: '3.32.43',
-    title: '评论、任务状态与发帖卡片更新',
-    description: '评论首页加入约 20% 的 Grok 补充观点提问；七项任务显示后台等待与受限状态，点赞限制判断改为核对点击结果；发帖文字卡片增加四种版式。',
-  },
-  {
-    version: '3.32.22',
-    title: '降低站点用量',
-    description: '减少运行状态上报频率，避免插件持续运行时产生过多站点请求。',
-  },
-  {
-    version: '3.32.21',
-    title: '全流程任务队列与异常恢复',
-    description: '评论任务常驻；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口；连续 3 次受限后停止该任务自动重试，详情显示原因。',
-  },
-  {
-    version: '3.32.0',
-    title: '任务状态与本地更新',
-    description: '新增任务详情、暂停后的自动重扫和本地新版提醒；评论通知只回复，清理未回关按资料中的中文判断。',
-  },
-  {
-    version: '3.12.1',
-    title: '热点发帖提示词与取材修正',
-    description: '发帖实际使用设置中的提示词；旧草稿不再发送。知乎、头条优先，素材不足时读取站内舆情分析，并保留来源。写法避免固定三行和空悬念。下载需联系站长获取密码。',
-  },
-  {
-    version: '3.9.0',
-    title: '短行发帖与设置自动保存',
-    description: '定时发帖保留素材首句，改写为 35～75 字、3～5 行，每行之间留空行；过长的旧草稿会跳过。配置 DeepSeek Key 后主面板收起密钥栏，设置中的修改自动保存。任务等待可手动点击「立即开始」。PDF 导出已并入右上角工具箱。',
-  },
-  {
-    version: '3.6.11',
-    title: '收起回复说明卡',
-    description: '时间线和通知回复不再展示计划说明，也不再重复当前 AI 回复。轮次进度还在。只有发送失败、密钥无效或评论过密被停时，才出现一行提示。',
-  },
-  {
-    version: '3.6.10',
-    title: '开始按钮合并密钥输入',
-    description: '时间线和通知回复只保留一个开始按钮，文字居中。还没保存 DeepSeek Key 时，在这个按钮里粘贴后直接开始。保存之后输入框收起，之后到右上角设置里修改。',
-  },
-  {
-    version: '3.6.9',
-    title: '评论过密时停止时间线和通知回复',
-    description: '评论框或页面底部出现“看起来像自动操作”或“Something went wrong, but don’t fret”时，时间线回复和通知回复都会停止，不再自动重试。互关和定时发推不受这次停止影响。',
-  },
-  {
-    version: '3.6.8',
-    title: '回复只保留 AI，频率收进轮次',
-    description: '时间线和通知回复不再提供模板随机，也不再展示话术池。回复由 DeepSeek 阅读原帖后生成。频率滑块放在轮次进度里，原来的运行设置收起来了。',
-  },
-  {
-    version: '3.6.7',
-    title: '默认右下角浮窗，嵌入改为设置项',
-    description: '面板默认浮在页面右下角。标题栏齿轮里可以打开设置，「嵌入到页面」会把面板挂到右侧搜索框下面。右侧栏还没出现时先保持浮窗，出现后再挂上去。',
-  },
-  {
-    version: '3.6.6',
-    title: '功能导航改为图标页签',
-    description: '面板顶部的时间线、通知回复、互关浇友和推文浇给改成图标加文字的一排页签。当前项用蓝色文字和下划线标出，不再使用带底色的胶囊按钮。',
-  },
-  {
-    version: '3.6.5',
-    title: '推文浇给加入频率滑块',
-    description: '推文浇给页面可以在慢、中、快、超快之间滑动。默认「中」仍是发送成功后随机等待 25～35 分钟。慢是 50～70 分钟，快是 12～18 分钟，超快是 6～10 分钟。已经开始的等待不会改写，新挡位从下一次发送成功后生效。',
-  },
-  {
-    version: '3.6.4',
-    title: '面板嵌进右侧搜索框下方',
-    description: '面板直接排在 X 右侧栏搜索框下面，跟着页面滚动，不再用左下角浮层挡住时间线。右侧栏还没出现时先不显示，出现后自动挂回去。',
-  },
-  {
-    version: '3.6.3',
-    title: '频率调度改为四挡滑块',
-    description: '时间线和通知回复的运行设置增加慢、中、快、超快四挡。拖动滑块后，每条间隔、每轮条数、每次轮数和执行后休息都会切换到对应区间。默认「中」保持原来的 5～15 秒、每轮 25～35 条、每次 3～5 轮、休息 2～3 小时。已经开始的计划和正在进行的等待不会中途改写。',
-  },
-  {
-    version: '3.6.2',
-    title: '移除插件每日回复总量限制',
-    description: '时间线回复与通知回复不再共享插件自设的每日 100 条额度，也不会等到次日才恢复。随机回复间隔、随机轮次、执行后休息、通知去重和 X 风控提示停机机制继续保留。',
-  },
-  {
-    version: '3.6.1',
-    title: '重复回复自动换写、标题栏与下载修复',
-    description: '识别 X 的重复内容提示：模板随机会切换下一句，AI 模式会避开被拒绝的文案重新生成并替换评论框。标题栏按钮统一改为 SVG；下载按钮只保存真正的 ZIP，接口错误改为页面中文提示。',
-  },
-  {
-    version: '3.6.0',
-    title: '随机频率调度、共享每日额度与风控停止',
-    description: '时间线每次执行固定抽取 3～5 轮，每轮固定抽取 25～35 条；每条成功后随机等待 5～15 秒，执行完成后随机休息 2～3 小时。抽取结果和真实截止时间跨刷新保留。时间线与通知回复共享每日 100 条插件额度；检测到 X 疑似自动化提示时停止所有任务，不再自动重试。',
-  },
-  {
-    version: '3.5.0',
-    title: '在插件内加入官方规则与版本文档中心',
-    description: '标题栏新增文档中心入口，集中解释 X 的自动化规则、公开技术上限、反自动化提示和应对方式，并在插件内保留最近版本记录。文档明确区分技术上限、平台许可与风控安全值：X 没有公开反自动化评分算法，也没有认可插件当前的操作间隔或轮次参数。',
-  },
-  {
-    version: '3.4.1',
-    title: '阻止密码管理器把 X 密码填进 AI Key',
-    description: 'DeepSeek Key 输入框改为普通文本字段配合视觉掩码，并加入主流密码管理器忽略标记，不再被识别成 X 登录密码框。保存时必须是以 sk- 开头的 DeepSeek Key；升级后若检测到旧版误存的其他内容会自动清除。',
-  },
-  {
-    version: '3.4.0',
-    title: '回复任务升级为长期循环并加入稳定运行计时',
-    description: '时间线每完成 5 轮、通知回复每处理完近 2 小时内容后，都会休息 2 小时再自动开始下一次；处理历史继续防止通知重复互动。标题栏显示整个插件的稳定运行时长，各任务保留独立运行时长。页面暂时不可用时保存真实重连截止时间，刷新、切页签或扩展后台重启后继续恢复。',
-  },
-  {
-    version: '3.3.3',
-    title: '修复切换浏览器页签后任务停止',
-    description: '离屏 Worker 到点后，由扩展后台按原始 tabId 和 frameId 将唤醒消息精确发回任务页签，不再依赖会被 Chrome 后台限频的页面计时器。时间线、通知回复、互关浇友和推文浇给切到后台后都能继续推进。',
-  },
-  {
-    version: '3.3.2',
-    title: '修复内容已出现但没有点击 Post',
-    description: '发帖模式不再把多段正文作为一次 insertText 写入，改为每行一个 DraftJS block，避免末段被复制到首段。写入后重新获取 X 替换过的编辑器节点，再核对当前内容、等待 Post 可用并点击发送。',
-  },
-  {
-    version: '3.3.1',
-    title: '修复 AI 定时发推找不到 Post 按钮',
-    description: '适配 X 首页编辑器与 Post 按钮相隔较深的真实 DOM：扩大同区查找范围，并增加全页可见按钮兜底。失败原因会保留在倒计时中，未发出的内容按 1 分钟重试，不再反复生成新文案。',
-  },
-  {
-    version: '3.3.0',
-    title: '四类任务改用独立 X 页签并行运行',
-    description: '顶部功能导航改为任务页签入口：已有页签会直接切回，没有则新建并传入对应任务。时间线、通知回复、互关浇友和推文浇给分别保存状态，切换面板功能不会清空或停止其他任务。回复状态与当前内容合并为一张提示卡。',
-  },
-  {
-    version: '3.2.0',
-    title: '新增「推文浇给」AI 定时发推',
-    description: 'DeepSeek 从当前时间线与趋势区提炼话题，生成带空行排版的纯文字推文；发送成功后随机等待 25～35 分钟。后台计时同时改为长等待走离屏 Worker、短 DOM 轮询留在页面内，减少跨进程消息和无效重试。',
-  },
-  {
-    version: '3.1.6',
-    title: '时间线优先并精简 AI 配置',
-    description: '时间线调整为第一项和默认项，其后为通知回复、互关浇友；删除 DeepSeek 测试连接，并用扩展离屏计时 Worker 保持后台任务运行。',
-  },
-  {
-    version: '3.1.5',
-    title: '支持后台页签继续执行',
-    description: '移除切换浏览器页签后的主动暂停；等待和频率限制改按真实时间计算，切回 X 时不会重新等待。',
-  },
-  {
-    version: '3.1.4',
-    title: '通知回复改为两小时时间窗',
-    description: '通知模式只处理最近 2 小时内尚未互动的回复，完成后停止；成功记录持久保存，后续运行不会重复处理。',
-  },
-  {
-    version: '3.1.3',
-    title: '合并关注频率与每日额度',
-    description: '回关粉丝与关注候选统一为 2 秒一个，共享每批 15 个、暂停 30 分钟和每日合计 400 个的状态。',
-  },
-  {
-    version: '3.1.2',
-    title: '重建助手导航层级',
-    description: '顶部改为明确的功能导航，开始按钮移动到工作区首位；回复方式与频率限制合并为可折叠的运行设置。',
-  },
-  {
-    version: '3.1.1',
-    title: '互关子 Tab 与标题栏修复',
-    description: '互关三项任务改为独立子 Tab，选择后跳转到对应列表；同时压缩标题栏状态区，避免窄面板下控件拥挤。',
-  },
-  {
-    version: '3.1.0',
-    title: '互关能力完成合并',
-    description: '新增「互关浇友」Tab，完整整合清理未回关、回关粉丝与关注候选；任务运行时锁定其他 Tab。',
-  },
-  {
-    version: '3.0.0',
-    title: '升级为 X高频互动助手',
-    description: '增加时间线回复与通知回复双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
-  },
-  {
-    version: '2.1.0',
-    title: '重新设计任务进度',
-    description: '用一条五色分段进度条表示 5 轮、175 次任务，并集中展示当前轮、本轮次数、总次数和运行时间。',
-  },
-  {
-    version: '2.0.0',
-    title: '新增 DeepSeek AI 模式',
-    description: '可读取当前推文文字生成自然回复；API Key 保存在 Chrome 本地，请求设置 10 秒超时。',
-  },
-  {
-    version: '1.5.0',
-    title: '面板支持折叠与放大',
-    description: '重构信息层级，加入迷你状态与放大视图，显示模式随当前标签页保存。',
-  },
-  {
-    version: '1.4.0',
-    title: '话术池扩充到 100 条',
-    description: '短词、单字和纯 Emoji 改写为更自然的完整句子，同时保留旧话术识别能力。',
-  },
-  {
-    version: '1.3.0',
-    title: '加入轮次与频率限制',
-    description: '35 次回复组成一轮，一次执行 5 轮；每条回复与每轮之间的等待时间可单独设置。',
-  },
-  {
-    version: '1.2.0',
-    title: '新增运行时间统计',
-    description: '跨页面刷新累计运行时间，停止或完成任务后保留最终用时。',
-  },
-  {
-    version: '1.1.0',
-    title: '加入可浏览话术池',
-    description: '当前话术自动升到首位、高亮并播放扫光动画，切换时形成走马灯效果。',
-  },
-  {
-    version: '1.0.0',
-    title: '完成第一版正式界面',
-    description: '加入轮次、整体进度、运行状态、当前话术与重试次数，统一使用真实的自动发送状态描述。',
-  },
-  {
-    version: '0.2.13–0.2.18',
-    title: '集中修复 X 编辑器兼容问题',
-    description: '解决重复写入、占位文字混入、编辑器定位错误、空弹窗接管和发送成功后弹窗残留等问题。',
-  },
-  {
-    version: '0.2.1',
-    title: '建立自动回复闭环',
-    description: '从时间线打开评论弹窗，随机选择固定话术、写入 X 编辑器并点击 Reply，成功 35 条后刷新继续。',
-  },
-]
+const VERSION_HISTORY = loadXExtensionReleaseWeeks()
+  .flatMap((week) => week.entries)
+  .filter((entry) => entry.version.startsWith('v4.'))
+  .slice(0, 5)
+  .map((entry, index) => ({
+    version: entry.version,
+    title: `${entry.date || '未注明日期'} · ${entry.status || '本地记录'}`,
+    description: entry.body,
+    current: index === 0,
+  }))
 
 export const metadata = {
   title,
@@ -317,47 +83,29 @@ function DownloadButton({ className = '' }) {
 }
 
 const WORKFLOWS = [
-  {
-    title: '评论管理',
-    detail: '评论首页与评论通知分别使用独立窗口。通知只处理近 2 小时内的回复，不执行点赞；评论任务在全流程中常驻运行。',
-    icon: IconMessageCircle,
-  },
-  {
-    title: '点赞管理',
-    detail: '点赞帖子与点赞评论分别记录处理历史。全流程按后台队列轮换非评论任务，连续 3 次受限后停止自动重试。',
-    icon: IconBell,
-  },
-  {
-    title: '关注管理',
-    detail: '在 Following 页清理未回关账号，在 Followers 页回关粉丝；关注候选约每周一次，从可配置名单关注，每轮最多 15 个。',
-    icon: IconUsers,
-  },
-  {
-    title: '定时发帖',
-    detail: '优先从知乎、今日头条取材，必要时补充 AI HOT，再使用本地社会观察素材。每轮准备一条，记录来源和链接；默认发送间隔为 25～35 分钟。',
-    icon: IconRobot,
-  },
+  { title: '评论管理', detail: '评论首页、评论回复、评论大V分别保留进度，按排班依次占用共享执行页签。', icon: IconMessageCircle },
+  { title: '点赞管理', detail: '点赞帖子与点赞评论分别计数，确认 X 页面结果后才记录成功。', icon: IconBell },
+  { title: '关注管理', detail: '清理未回关、回关粉丝、关注候选分别配置；回关与关注候选共享每日计数和冷却。', icon: IconUsers },
+  { title: '发帖与草稿', detail: '纯文字帖、精品发帖、X主题发帖、小红书图卡、普通发文和站长转发各自按规则运行；草稿任务不自动发布。', icon: IconRobot },
+  { title: '社群分发', detail: '本地开发版从本人最新非置顶帖进入「Send via Chat」，只尝试可点击的群聊；真实页面全链路仍待验证。', icon: IconBrandX },
+  { title: '清理管理', detail: '低质帖与低质评论独立处理、独立计数；删除前核对各自的条件。', icon: IconShieldLock },
 ]
 
 const INSTALL_STEPS = [
-  '扫码联系站长获取解密密码，输入密码下载并解压插件包。',
-  '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
-  '点击「加载已解压的扩展程序」，选择解压后的目录。',
-  '登录 X，面板默认浮在页面右下角。关掉面板后，点浏览器工具栏里的扩展图标可以重新打开。使用 AI 回复或发帖前，先在模型设置中配置所需密钥。',
-  '点击「全流程启动」后，评论任务常驻，点赞、关注和发帖按后台队列轮换；顶部页签只切换对应窗口。',
-  '关注管理提供清理未回关、回关粉丝、关注候选三个子页签；关注候选名单在排班台对应卡片里配置。',
-  '时间线模式可在首页、个人主页或搜索结果运行。轮次进度里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
-  '通知回复会进入通知页，处理近 2 小时内尚未成功互动的回复。',
-  '定时发帖优先读取知乎与今日头条热榜，素材不足时读取站内舆情分析。默认基础间隔 25～35 分钟，并按早晚高峰更密、其余时段更疏排队。',
-  '单独运行时按钮显示「已停止 · 点击启动」；倒计时可点「等待中 · 立即开始」，需要停下时点「运行中 · 点击停止」。',
+  '核对下载按钮标注的打包版版本；本地开发版的新增功能以本页和文档中心单独标注。',
+  '联系站长获取人员邀请码，下载 ZIP，解压后在 chrome://extensions/ 开启开发者模式并加载目录。',
+  '登录 X，确认面板显示的账号与版本。重新加载扩展后，也要刷新已打开的 X 标签页。',
+  '在模型设置中核对已勾选的回复模型，按需调整并完成相应配置。',
+  '本地开发版在排班台勾选要运行的任务，再点击「开始」；同一账号的任务共用一个执行页签。',
+  '群聊分享、X主题发帖、小红书图卡等仍在本地开发或调试，先核对对应文档与版本范围。',
 ]
 
 const TECH_NOTES = [
-  '模型密钥保存在 Chrome 扩展本地存储中；AI 请求不会附带 X 登录 Cookie。',
-  '评论任务可持续运行；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口。',
-  '插件会先核对评论框里的文字没有重复，再等待 Reply 可用；存在无法识别的手写内容时会暂停，避免覆盖。',
-  '发送结果未确认时不会计数。评论首页只有确认发出的回复才计入轮次，评论通知只有确认回复成功后才写入去重历史。',
-  '已经加载过旧版目录时，到扩展管理页点击刷新，再刷新已打开的 X 标签页。只是关掉浮窗时，点工具栏里的扩展图标即可重新打开。',
+  '同一 Chrome 配置文件中的一个 X 账号使用一个共享执行页签；任务按到期时间和优先级轮换。',
+  '回复模型按勾选项配置；密钥保存在 Chrome 扩展本地。AI 请求不附带 X 登录 Cookie。',
+  '评论、点赞、发帖、关注和清理只在确认结果后计入本地统计；无法确认的动作会显示原因。',
+  '本地开发版与可下载 ZIP 的功能和版本可能不同；下载按钮只代表当前配置的打包文件。',
+  '更新已解压目录后，到 Chrome 扩展管理页重新加载扩展，再刷新已打开的 X 标签页。',
 ]
 
 export default function XReplyClipboardResourcePage() {
@@ -394,7 +142,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论首页与通知、点赞、关注管理和定时发帖集中在本地面板。发帖类里的站长转发会把一篇 2aran.com 文章审阅后发布为 X Article。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
+              下载按钮提供当前已打包版本；下方功能说明对应本地开发源码 v{LOCAL_VERSION}。本地版将十七项任务放进六组，同一账号共用一个执行页签，运行与等待进度保存在扩展本地。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
@@ -420,8 +168,8 @@ export default function XReplyClipboardResourcePage() {
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
               <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
-              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> DeepSeek 配置</span>
-              <span>打包于 2026-10-26</span>
+              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> 按需配置回复模型</span>
+              <span>本地源码 v{LOCAL_VERSION} · 下载包 v{VERSION}</span>
             </div>
           </div>
 
@@ -465,9 +213,9 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold tracking-[0.14em] text-blue-600 dark:text-cyan-300">功能与运行方式</p>
-              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">四组功能，按计划运行</h2>
+              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">本地开发版：六组十七项任务</h2>
             </div>
-            <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">顶部页签可切换到已有专用 X 窗口，或新建窗口；任务进度独立保存。</p>
+            <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">排班台按到期时间轮换，同一账号共用执行页签；各任务进度独立保存。</p>
           </div>
           <ol className="m-0 list-none divide-y divide-slate-200 p-0 dark:divide-white/10">
             {WORKFLOWS.map(({ title, detail, icon: Icon }, index) => (
@@ -481,11 +229,11 @@ export default function XReplyClipboardResourcePage() {
           <div className="grid gap-6 border-t border-slate-200 pt-6 dark:border-white/10 sm:grid-cols-2 sm:gap-10">
             <div className="flex items-start gap-3">
               <IconSparkles size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
-              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">AI 回复</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">评论内容由已启用的模型读取原帖文字后生成。模型密钥在扩展面板配置，保存在 Chrome 本地。</p></div>
+              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">核对回复模型</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">在模型设置中检查勾选状态，按需调整服务并完成配置。密钥保存在 Chrome 本地。</p></div>
             </div>
             <div className="flex items-start gap-3">
               <IconShieldLock size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
-              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">本地运行</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">插件在已登录的 x.com 或 twitter.com 页面运行。不读取密码，也不把评论上传到本站；AI 请求不包含 X 登录 Cookie。</p></div>
+              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">本地运行</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">扩展在已登录的 X 页面内执行任务；AI 请求不包含 X 登录 Cookie。动作回执和统计按配置同步。</p></div>
             </div>
           </div>
         </section>
@@ -525,10 +273,10 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 via-blue-50 to-violet-50 px-6 py-5 dark:border-white/10 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-violet-950/30 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300">Changelog</p>
-              <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到完整互动工具</h3>
+              <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">本地源码近期更新</h3>
             </div>
             <span className="w-fit rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
-              当前版本 v{VERSION}
+              本地源码 v{LOCAL_VERSION}
             </span>
           </div>
           <ol className="m-0 list-none divide-y divide-slate-100 p-0 dark:divide-white/5">
@@ -536,9 +284,9 @@ export default function XReplyClipboardResourcePage() {
               <li key={release.version} className={`grid gap-3 px-6 py-4 transition hover:bg-blue-50/50 dark:hover:bg-white/[0.025] md:grid-cols-[110px_minmax(0,1fr)] ${release.current ? 'bg-blue-50/60 dark:bg-blue-500/[0.06]' : ''}`}>
                 <div className="flex items-center gap-2 md:items-start">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${release.current ? 'bg-sky-500 text-white' : 'bg-[#eff3f4] text-[#536471] dark:bg-gray-800 dark:text-gray-300'}`}>
-                    v{release.version}
+                    {release.version}
                   </span>
-                  {release.current ? <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-300">最新版</span> : null}
+                  {release.current ? <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-300">当前源码</span> : null}
                 </div>
                 <div>
                   <h4 className="m-0 text-sm font-semibold text-[var(--site-ink)]">{release.title}</h4>
@@ -547,6 +295,9 @@ export default function XReplyClipboardResourcePage() {
               </li>
             ))}
           </ol>
+          <div className="border-t border-slate-200 px-6 py-4 text-sm leading-6 text-slate-600 dark:border-white/10 dark:text-slate-300">
+            站点配置的 ZIP 为 v{VERSION}；上方是本地源码记录，新增功能尚未打入该 ZIP。完整版本流水与使用边界见<Link href={`/resources/${RESOURCE_SLUG}/docs#releases`} className="ml-1 font-semibold text-blue-700 dark:text-cyan-300">文档中心</Link>。
+          </div>
         </div>
 
         <div className="not-prose mt-16">
@@ -585,8 +336,8 @@ export default function XReplyClipboardResourcePage() {
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">Launch your workflow</p>
-              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black text-white">准备好后，从最新版开始</h2>
-              <p className="m-0 mt-2 text-sm text-blue-100">联系站长获取密码后即可下载；更新扩展时保留原目录并重新加载即可。</p>
+              <h2 className="m-0 mt-2 border-0 p-0 text-2xl font-black text-white">下载前核对版本</h2>
+              <p className="m-0 mt-2 text-sm text-blue-100">当前下载包为 v{VERSION}；本地源码 v{LOCAL_VERSION} 的新增功能尚未打包。更新已解压目录后，重新加载扩展并刷新 X 页面。</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <DownloadButton />

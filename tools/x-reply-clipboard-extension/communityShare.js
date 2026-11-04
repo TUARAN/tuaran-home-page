@@ -30,14 +30,32 @@
     const owner = clean(handle).replace(/^@/u, "").toLowerCase();
     return Array.from(doc?.querySelectorAll?.('article[data-testid="tweet"]') || []).filter((article) => !article.parentElement?.closest?.('article[data-testid="tweet"]')).map((article) => {
       const timeLink = Array.from(article.querySelectorAll('a[href*="/status/"]')).find((a) => a.querySelector('time') && a.closest('article[data-testid="tweet"]') === article);
-      const match = String(timeLink?.getAttribute("href") || "").match(/^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)/u);
+      const href = String(timeLink?.getAttribute("href") || "");
+      const pathname = (() => { try { return new URL(href, 'https://x.com').pathname; } catch (_) { return ''; } })();
+      const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)/u);
       const context = textOf(article.querySelector('[data-testid="socialContext"]'));
-      return { id: match?.[2] || "", href: timeLink?.getAttribute("href") || "", own: Boolean(owner && match?.[1]?.toLowerCase() === owner), pinned: /pinned|置顶/iu.test(context), repost: /reposted|retweeted|转帖|转发/iu.test(context), article };
+      return { id: match?.[2] || "", href, own: Boolean(owner && match?.[1]?.toLowerCase() === owner), pinned: /pinned|置顶/iu.test(context), repost: /reposted|retweeted|转帖|转发/iu.test(context), article };
     }).filter((post) => post.id);
   }
 
   function latestOwnPost(posts) {
     return (posts || []).find((post) => post.own && !post.pinned && !post.repost) || null;
+  }
+
+  async function waitForLatestPost(doc, handle, wait, shouldStop = () => false) {
+    let observed = [];
+    for (let attempt = 0; attempt < 30 && !shouldStop(); attempt++) {
+      observed = profilePosts(doc, handle);
+      const post = latestOwnPost(observed);
+      if (post) return { post, observed: observed.length };
+      if (attempt === 7 || attempt === 15 || attempt === 23) {
+        const column = doc.querySelector?.('[data-testid="primaryColumn"]');
+        const scroller = column?.scrollHeight > column?.clientHeight + 20 ? column : doc.scrollingElement;
+        if (scroller) scroller.scrollTop = (Number(scroller.scrollTop) || 0) + 650;
+      }
+      await wait(500);
+    }
+    return { post: null, observed: observed.length };
   }
 
   function groupRows(dialog) {
@@ -103,8 +121,11 @@
         win().location.assign(`/${handle}?xrcAssistant=community-share&xrcStart=1`);
         return;
       }
-      const post = latestOwnPost(profilePosts(doc(), handle));
-      if (!post) { finish('主页没有找到可分享的最新帖子，未发送'); return; }
+      state.status = '正在等主页帖子加载，并跳过置顶帖'; save();
+      const found = await waitForLatestPost(doc(), handle, wait, () => stopping);
+      if (stopping) return;
+      const post = found.post;
+      if (!post) { finish(found.observed ? `已读取 ${found.observed} 条帖子，但没有符合条件的本人非置顶帖子` : '主页帖子尚未加载或无法识别，未发送'); return; }
       if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.done = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
       state.sourceId = post.id; state.phase = 'share'; save();
       for (let step = 0; step < 300 && !stopping; step++) {
@@ -162,18 +183,23 @@
     }
     async function start(options = {}) {
       stopping = false; load();
-      if (state.phase === 'done' && state.nextAt > Date.now() && !options.force) { state.running = true; save(); return snapshot(); }
-      if (state.phase === 'done' || state.sourceId && state.handle !== String(options.handle || state.handle).replace(/^@/u, '')) state = initialState();
+      if (state.phase === 'done' && state.nextAt > Date.now() && !options.force && !state.stopped) { state.running = true; save(); return snapshot(); }
+      if (state.stopped || state.phase === 'done' || state.sourceId && state.handle !== String(options.handle || state.handle).replace(/^@/u, '')) state = initialState();
       state.handle = String(options.handle || state.handle || '').replace(/^@/u, '');
       state.pace = PAUSE_MS[options.pace] ? options.pace : 'slow';
       state.running = true; state.stopped = false; state.nextAt = 0; save();
-      await run(); return snapshot();
+      await run();
+      if (stopping) {
+        state.running = false; state.stopped = true; state.nextAt = 0;
+        stopping = false; save();
+      }
+      return snapshot();
     }
-    function stop() { stopping = true; state.running = false; state.stopped = true; state.status = '已停止群聊分享'; save(); }
+    function stop() { stopping = state.phase !== 'done'; state.running = false; state.stopped = true; state.nextAt = 0; state.status = '已停止群聊分享'; save(); }
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, profilePosts, groupRows, enabled, findAction, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, shareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

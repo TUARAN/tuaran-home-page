@@ -9105,6 +9105,37 @@ test('group chat sharing reads the pinned marker from the post page', () => {
   assert.equal(communityShare.latestOwnPost(posts).id, '2')
 })
 
+test('group chat sharing waits for the profile feed and skips its pinned post', async () => {
+  const article = (id, marker) => {
+    const post = {
+      parentElement: null,
+      querySelectorAll: () => [{ getAttribute: () => `/tuaran/status/${id}`, querySelector: () => ({}), closest: () => post }],
+      querySelector: () => ({ innerText: marker }),
+    }
+    return post
+  }
+  const pinned = article('1', 'Pinned')
+  const newest = article('2', '')
+  let reads = 0
+  let waits = 0
+  const doc = { querySelectorAll: () => (++reads < 3 ? [] : reads < 5 ? [pinned] : [pinned, newest]) }
+  const found = await communityShare.waitForLatestPost(doc, 'tuaran', async () => { waits += 1 })
+  assert.equal(found.post.id, '2')
+  assert.equal(waits, 4)
+})
+
+test('stopping a waiting group share clears its cooldown', async () => {
+  const storage = new Map([['xrcGroupChatShareRunV2', JSON.stringify({ version: 2, running: true, phase: 'done', handle: 'tuaran', nextAt: Date.now() + 3600000 })]])
+  const window = { sessionStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) } }
+  const controller = communityShare.createController({ window })
+  await controller.start({ handle: 'tuaran' })
+  assert.ok(controller.snapshot().nextAt > Date.now())
+  controller.stop()
+  assert.equal(controller.snapshot().nextAt, 0)
+  assert.equal(controller.snapshot().running, false)
+  assert.equal(controller.snapshot().stopping, false)
+})
+
 test('group chat sharing only targets enabled group rows, never personal accounts', () => {
   const row = (label, disabled = false) => ({
     innerText: label,

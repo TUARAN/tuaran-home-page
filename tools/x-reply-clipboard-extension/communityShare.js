@@ -13,13 +13,13 @@
   const clean = (value) => String(value || "").replace(/[\u200b-\u200d\ufeff]/gu, "").replace(/\s+/gu, " ").trim();
   const textOf = (node) => clean(node?.innerText || node?.textContent);
   const sleep = (ms, win) => new Promise((resolve) => (win.setTimeout || setTimeout)(resolve, ms));
-  function enabled(node) {
+  function enabled(node, { ignoreAncestorOpacity = false } = {}) {
     if (!node || node.disabled || node.getAttribute?.('disabled') !== null || node.getAttribute?.('aria-disabled') === 'true' || node.getAttribute?.('data-disabled') === 'true' || node.closest?.("[aria-disabled='true'], [inert]")) return false;
     if ((node.getClientRects?.().length ?? 1) === 0) return false;
     let current = node;
     for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
       const style = current.ownerDocument?.defaultView?.getComputedStyle?.(current);
-      if (style?.pointerEvents === 'none' || style?.visibility === 'hidden' || style?.display === 'none' || Number(style?.opacity ?? 1) < 0.6) return false;
+      if (style?.pointerEvents === 'none' || style?.visibility === 'hidden' || style?.display === 'none' || (Number(style?.opacity ?? 1) < 0.6 && (!ignoreAncestorOpacity || current === node))) return false;
     }
     return true;
   }
@@ -73,8 +73,8 @@
     }).filter((row) => row.name);
   }
 
-  function findAction(scope, pattern) {
-    return Array.from(scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"]') || []).find((node) => enabled(node) && (pattern.test(clean(node.getAttribute('aria-label'))) || pattern.test(textOf(node))) && !node.closest('#x-reply-clipboard-panel')) || null;
+  function findAction(scope, pattern, options) {
+    return Array.from(scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"]') || []).find((node) => enabled(node, options) && (pattern.test(clean(node.getAttribute('aria-label'))) || pattern.test(textOf(node))) && !node.closest('#x-reply-clipboard-panel')) || null;
   }
 
   function findPostShareButton(article) {
@@ -96,23 +96,29 @@
   }
 
   function shareDialog(doc) {
+    const searchInputs = (node) => Array.from(node?.querySelectorAll?.('input, [role="searchbox"]') || []).filter((input) =>
+      /search|搜索/iu.test(clean(input.getAttribute?.('placeholder') || input.placeholder || input.getAttribute?.('aria-label') || '')));
     const isShare = (node) => {
       if (!node || node.closest?.('#x-reply-clipboard-panel')) return false;
       const heading = Array.from(node.querySelectorAll?.('h1, h2, [role="heading"]') || [])
         .some((item) => /^(?:Share|分享)$/iu.test(textOf(item)));
-      const hasSearch = Boolean(node.querySelector?.('input[placeholder*="Search"], input[placeholder*="搜索"], [role="searchbox"]'));
+      const hasSearch = searchInputs(node).length > 0;
       const hasGroups = GROUP_RE.test(textOf(node));
-      const hasSend = Boolean(findAction(node, /^(?:Send|发送)$/iu));
-      return hasGroups && ((heading && hasSearch) || (hasSearch && hasSend));
+      const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || [])
+        .some((button) => /^(?:Send|发送)$/iu.test(clean(button.getAttribute?.('aria-label'))) || /^(?:Send|发送)$/iu.test(textOf(button)));
+      const onCompose = /\/messages\/compose(?:\/|$)/u.test(doc?.defaultView?.location?.pathname || doc?.location?.pathname || '');
+      return hasSearch && hasGroups && (heading || hasSend || onCompose);
     };
     const dialogs = Array.from(doc?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
     const visible = dialogs.find(isShare);
     if (visible) return visible;
-    const landmarks = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"], input[placeholder*="Search"], input[placeholder*="搜索"], [role="searchbox"]') || []);
+    const landmarks = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"], input, [role="searchbox"]') || []);
     for (const landmark of landmarks) {
-      if (landmark.matches?.('h1, h2, [role="heading"]') && !/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
+      if (landmark.matches?.('h1, h2, [role="heading"]')) {
+        if (!/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
+      } else if (!/search|搜索/iu.test(clean(landmark.getAttribute?.('placeholder') || landmark.placeholder || landmark.getAttribute?.('aria-label') || ''))) continue;
       let parent = landmark.parentElement;
-      for (let depth = 0; parent && parent !== doc.body && depth < 12; depth++, parent = parent.parentElement) {
+      for (let depth = 0; parent && parent !== doc.body && depth < 24; depth++, parent = parent.parentElement) {
         if (isShare(parent)) return parent;
       }
     }
@@ -120,10 +126,19 @@
   }
 
   async function waitForShareDialog(doc, wait, shouldStop = () => false) {
-    for (let attempt = 0; attempt < 20 && !shouldStop(); attempt++) {
+    for (let attempt = 0; attempt < 30 && !shouldStop(); attempt++) {
       const dialog = shareDialog(doc);
       if (dialog) return dialog;
       await wait(400);
+    }
+    return null;
+  }
+
+  function sendButtonNearDialog(dialog, doc) {
+    let scope = dialog;
+    for (let depth = 0; scope && scope !== doc?.body && depth < 12; depth++, scope = scope.parentElement) {
+      const send = findAction(scope, /^(?:Send|发送)$/iu, { ignoreAncestorOpacity: true });
+      if (send) return send;
     }
     return null;
   }
@@ -230,8 +245,14 @@
         state.status = `正在发送到群聊：${target.name}`; save();
         target.node.click(); await wait(450);
         const beforeSend = toast(doc());
-        const sendScope = shareDialog(doc()) || dialog;
-        let send = findAction(sendScope, /^(?:Send|发送)$/iu);
+        let send = null;
+        for (let attempt = 0; attempt < 12 && !stopping; attempt++) {
+          const sendScope = shareDialog(doc()) || dialog;
+          send = sendButtonNearDialog(sendScope, doc());
+          if (send) break;
+          await wait(250);
+        }
+        if (stopping) return;
         if (!send) { halt(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
         send.click(); await wait(1100);
         const result = toast(doc());
@@ -262,7 +283,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, waitForShareDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, waitForShareDialog, sendButtonNearDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

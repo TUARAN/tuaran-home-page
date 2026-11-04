@@ -11,7 +11,10 @@ const NAS_FALLBACK_ENDPOINT = "https://2aran.com/api/community-actions/model-fal
 const BAI_ENDPOINT = "https://api.b.ai/v1/responses";
 const BAI_MODEL = "gpt-6-luna";
 const BAI_COOLDOWN_KEY = "xrcBaiAccessCooldown";
-const REPLY_PROVIDER_ORDER = ["deepseek", "nas", "bai"];
+const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
+const DEFAULT_REPLY_PROVIDERS = ["deepseek", "bai"];
+const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
+const MOBILEOFFICE_ENDPOINT = "http://127.0.0.1:8765/chat";
 const REQUEST_TIMEOUT_MS = 10000;
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
@@ -172,21 +175,101 @@ function resolvePromptBundle(settings = {}) {
   };
 }
 
+function resolveReplyProviders(settings) {
+  const hasList = Array.isArray(settings?.replyProviders);
+  const stored = hasList
+    ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
+    : [...DEFAULT_REPLY_PROVIDERS];
+  return { providers: stored, persist: false };
+}
+
 async function readAiSettings() {
   const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
-  const settings = stored?.[AI_SETTINGS_KEY] || {};
+  let settings = stored?.[AI_SETTINGS_KEY] || {};
+  const resolved = resolveReplyProviders(settings);
+  if (resolved.persist && typeof chrome.storage?.local?.set === "function") {
+    settings = {
+      ...settings,
+      replyProviders: resolved.providers,
+      replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+    };
+    await chrome.storage.local.set({ [AI_SETTINGS_KEY]: settings });
+  }
   const apiKey = String(settings.apiKey || "").trim();
   const prompts = resolvePromptBundle(settings);
   return {
     apiKey: /^sk-\S{8,}$/u.test(apiKey) ? apiKey : "",
     baiApiKey: /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "",
-    replyProviders: Array.isArray(settings.replyProviders)
-      ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
-      : [...REPLY_PROVIDER_ORDER],
+    mobileOfficeToken: String(settings.mobileOfficeToken || "").trim(),
+    mobileOfficeVerified: settings.mobileOfficeVerified === true,
+    replyProviders: resolved.providers,
     ...prompts,
     replyPrompt: prompts.replyTimelinePrompt,
     postPrompt: prompts.postNormalPrompt
   };
+}
+
+async function callMobileOffice(prompt, token, signal) {
+  if (!token) throw new Error("请先填写 MobileOffice 连接码并测试");
+  const request = timedRequestController(125000, signal);
+  try {
+    const response = await fetch(MOBILEOFFICE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Bridge-Token": token },
+      body: JSON.stringify({ prompt }),
+      signal: request.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `MobileOffice 请求失败（${response.status}）`);
+    const reply = String(data.reply || "").trim();
+    if (!reply) throw new Error("MobileOffice 没有返回内容");
+    return reply;
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("MobileOffice 等待回复超时");
+    throw error;
+  } finally {
+    request.dispose();
+  }
+}
+
+function usesMobileOffice(settings) {
+  return settings.replyProviders.includes("mobileoffice");
+}
+
+async function fetchConfiguredModel(url, options) {
+  const settings = await readAiSettings();
+  if (!settings.replyProviders.length) throw new Error("请至少启用一个模型");
+  const messages = JSON.parse(options.body).messages || [];
+  const failures = [];
+  for (const provider of settings.replyProviders) {
+    if (options.signal?.aborted) throw new Error("生成任务已取消");
+    try {
+      let reply;
+      if (provider === "mobileoffice") {
+        if (!settings.mobileOfficeVerified) throw new Error("请先在模型设置中测试 MobileOffice 连接");
+        const prompt = messages.map((item) => `${item.role === "system" ? "规则" : "内容"}：\n${item.content}`).join("\n\n");
+        reply = await callMobileOffice(prompt, settings.mobileOfficeToken, options.signal);
+      } else if (provider === "deepseek") {
+        if (!settings.apiKey) throw new Error("未配置 API Key");
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error?.message || `请求失败（${response.status}）`);
+        }
+        reply = (await response.json())?.choices?.[0]?.message?.content;
+      } else if (provider === "nas") {
+        reply = await callNasReplyFallback(messages, options.signal, 12000);
+      } else if (provider === "bai") {
+        reply = await callBaiReplyFallback(messages, options.signal, 12000);
+      }
+      if (!String(reply || "").trim()) throw new Error("没有返回内容");
+      return { ok: true, async json() { return { choices: [{ message: { content: reply } }] }; } };
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      failures.push(`${provider}: ${error?.message || error}`);
+    }
+  }
+  throw new Error(failures.join("；"));
 }
 
 function isTransientDeepSeekFailure(error) {
@@ -229,7 +312,7 @@ async function callNasReplyFallback(messages, signal, maxLength = 100) {
       if (response.status === 404) throw new Error("2aran 模型回退接口未上线（404）");
       throw new Error(data?.detail || data?.error || `NAS 回退请求失败（${response.status}）`);
     }
-    const reply = cleanReply(data?.content, maxLength);
+    const reply = maxLength > 1000 ? String(data?.content || "").trim() : cleanReply(data?.content, maxLength);
     if (!reply) throw new Error("NAS 没有返回可用回复");
     return reply;
   } catch (error) {
@@ -258,7 +341,7 @@ async function callBaiReplyFallback(messages, signal, maxLength = 100) {
         instructions: messages[0].content,
         input: [{ role: "user", content: messages[1].content }],
         reasoning: { effort: "none" },
-        max_output_tokens: 160,
+        max_output_tokens: maxLength > 1000 ? 4000 : 160,
         stream: false
       }),
       signal: request.signal
@@ -272,8 +355,9 @@ async function callBaiReplyFallback(messages, signal, maxLength = 100) {
       throw new Error(`B.AI 请求失败（${response.status}）：${String(data?.error?.message || "请检查密钥与模型权限").slice(0, 160)}`);
     }
     const output = Array.isArray(data?.output) ? data.output : [];
-    const reply = cleanReply(output.flatMap((item) => item?.type === "message" && Array.isArray(item.content)
-      ? item.content.filter((part) => part?.type === "output_text").map((part) => part.text || "") : []).join(" "), maxLength);
+    const raw = output.flatMap((item) => item?.type === "message" && Array.isArray(item.content)
+      ? item.content.filter((part) => part?.type === "output_text").map((part) => part.text || "") : []).join(maxLength > 1000 ? "\n" : " ");
+    const reply = maxLength > 1000 ? raw.trim() : cleanReply(raw, maxLength);
     if (!reply) throw new Error("B.AI 没有返回可用回复");
     return reply;
   } catch (error) {
@@ -287,7 +371,7 @@ async function callBaiReplyFallback(messages, signal, maxLength = 100) {
 
 async function callDeepSeek({ postText, conversation = null, avoidReply = "", inviteGrok = false, mode = "timeline", onProgress = () => {}, signal }) {
   onProgress("正在读取模型设置…");
-  const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders } = await readAiSettings();
+  const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders, mobileOfficeToken, mobileOfficeVerified } = await readAiSettings();
   if (!replyProviders.length) throw new Error("请至少启用一个回复模型");
 
   const commentReply = mode === "notifications" || Boolean(conversation);
@@ -322,6 +406,19 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
     }
   ];
   const failures = [];
+  if (replyProviders.includes("mobileoffice")) {
+    try {
+      if (!mobileOfficeVerified) throw new Error("请先在模型设置中测试 MobileOffice 连接");
+      onProgress("正在请求 MobileOffice 生成回复…");
+      const prompt = messages.map((item) => `${item.role === "system" ? "规则" : "内容"}：\n${item.content}`).join("\n\n") + "\n\n只输出回复正文。";
+      const reply = cleanReply(await callMobileOffice(prompt, mobileOfficeToken, signal), replyMaxLength);
+      if (!reply) throw new Error("MobileOffice 没有返回可用回复");
+      return finalizeReply(reply, grokReply);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      failures.push(`MobileOffice：${error?.message || error}`);
+    }
+  }
   if (replyProviders.includes("deepseek")) {
     if (!apiKey) {
       failures.push("DeepSeek 未配置 API Key");
@@ -342,7 +439,6 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
         return finalizeReply(reply, grokReply);
       } catch (error) {
         if (signal?.aborted) throw new Error("回复任务已取消");
-        if (!isTransientDeepSeekFailure(error)) throw error;
         failures.push(error?.name === "AbortError" ? "DeepSeek 请求超过 10 秒" : error?.message || "DeepSeek 暂不可用");
       } finally {
         request.dispose();
@@ -495,8 +591,9 @@ async function collectNewsSources(tier = "all") {
 }
 
 async function rewriteNewsPost({ title, summary = "", source = "", recentTopics = [], recentOpenings = [], recentEndings = [], avoidPost = "", avoidReason = "", lengthMode = "regular", postKind = "normal", openingDraw = Math.random() }) {
-  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = await readAiSettings();
-  if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
+  const settings = await readAiSettings();
+  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = settings;
+  if (!settings.replyProviders.length) throw new Error("请至少启用一个模型");
   const premium = postKind === "premium";
   const xTheme = postKind === "x";
   const postPrompt = xTheme ? postXPrompt : premium ? postPremiumPrompt : postNormalPrompt;
@@ -516,9 +613,9 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
       ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。"
       : "本次篇幅：沿用纯文字帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 300000);
   try {
-    const response = await fetch(DEEPSEEK_ENDPOINT, {
+    const response = await fetchConfiguredModel(DEEPSEEK_ENDPOINT, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -578,8 +675,9 @@ function parseSourceRewrite(value, sourceTitle = "") {
 }
 
 async function generateTopicalPost({ contextText, lastPost, postKind = "normal" }) {
-  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = await readAiSettings();
-  if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
+  const settings = await readAiSettings();
+  const { apiKey, postNormalPrompt, postPremiumPrompt, postXPrompt } = settings;
+  if (!settings.replyProviders.length) throw new Error("请至少启用一个模型");
   const context = String(contextText || "").trim().slice(0, 6000);
   if (!context) throw new Error("没有读取到可用的话题素材");
   const postPrompt = postKind === "x" ? postXPrompt : postKind === "premium" ? postPremiumPrompt : postNormalPrompt;
@@ -587,9 +685,9 @@ async function generateTopicalPost({ contextText, lastPost, postKind = "normal" 
     ? "这次用一两句白话带到 AI 或 Web3，仍然短。不要写币，不要出现 $。"
     : "这次不要写 AI、Web3 或加密货币。不要出现 $。就顺着素材里的一件具体事。";
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), 300000);
   try {
-    const response = await fetch(DEEPSEEK_ENDPOINT, {
+    const response = await fetchConfiguredModel(DEEPSEEK_ENDPOINT, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -626,8 +724,9 @@ async function generateTopicalPost({ contextText, lastPost, postKind = "normal" 
 async function generateArticleDraft() {
   const core = globalThis.XrcArticleDraft;
   if (!core?.cleanArticle) throw new Error("发文模块没有加载");
-  const { apiKey } = await readAiSettings();
-  if (!apiKey) throw new Error("请先填写并保存 DeepSeek API Key");
+  const settings = await readAiSettings();
+  const { apiKey } = settings;
+  if (!settings.replyProviders.length) throw new Error("请至少启用一个模型");
   const newsResponse = await fetch(ARTICLE_NEWS_URL, { signal: AbortSignal.timeout(15000) });
   if (!newsResponse.ok) throw new Error(`资讯读取失败（${newsResponse.status}）`);
   const news = await newsResponse.json();
@@ -638,9 +737,9 @@ async function generateArticleDraft() {
   const item = items.find((candidate) => !used.has(String(candidate.objectID)));
   if (!item) throw new Error("资讯已经用完，请稍后再试");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000);
+  const timeout = setTimeout(() => controller.abort(), 300000);
   try {
-    const response = await fetch(DEEPSEEK_ENDPOINT, {
+    const response = await fetchConfiguredModel(DEEPSEEK_ENDPOINT, {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -678,6 +777,11 @@ async function rememberArticleSource(sourceId) {
 }
 
 async function handleMessage(message, onProgress = () => {}, signal) {
+  if (message?.type === "xrc-ai-mobileoffice-test") {
+    const reply = await callMobileOffice("只回复：连接成功", String(message.token || "").trim(), signal);
+    if (!reply.includes("连接成功")) throw new Error(`MobileOffice 已响应，但测试内容不符合预期：${reply.slice(0, 80)}`);
+    return { ok: true, reply };
+  }
   if (message?.type === "xrc-ai-news-sources") {
     return { ok: true, ...await collectNewsSources(message.tier) };
   }
@@ -3730,6 +3834,8 @@ if (typeof module === "object" && module.exports) {
     collectNewsSources,
     rewriteNewsPost,
     callDeepSeek,
+    handleMessage,
+    fetchConfiguredModel,
     validTaskMode,
     taskTabUrl,
     taskPageUrl,

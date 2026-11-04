@@ -17,7 +17,7 @@
       maxRoundsPerRun: 3,
       minCycleDelayMinutes: 240,
       maxCycleDelayMinutes: 360,
-      roundIntervalSeconds: 15
+      roundIntervalSeconds: 300
     },
     {
       id: "medium",
@@ -30,7 +30,7 @@
       maxRoundsPerRun: 5,
       minCycleDelayMinutes: 120,
       maxCycleDelayMinutes: 180,
-      roundIntervalSeconds: 5
+      roundIntervalSeconds: 240
     },
     {
       id: "boundary",
@@ -44,7 +44,7 @@
       maxRoundsPerRun: 3,
       minCycleDelayMinutes: 90,
       maxCycleDelayMinutes: 120,
-      roundIntervalSeconds: 8
+      roundIntervalSeconds: 180
     },
     {
       id: "fast",
@@ -57,7 +57,7 @@
       maxRoundsPerRun: 6,
       minCycleDelayMinutes: 60,
       maxCycleDelayMinutes: 90,
-      roundIntervalSeconds: 3
+      roundIntervalSeconds: 120
     },
     {
       id: "turbo",
@@ -70,7 +70,7 @@
       maxRoundsPerRun: 8,
       minCycleDelayMinutes: 20,
       maxCycleDelayMinutes: 40,
-      roundIntervalSeconds: 1
+      roundIntervalSeconds: 60
     }
   ];
   const MEDIUM_PROFILE = SCHEDULE_PROFILES.find((item) => item.id === "medium");
@@ -96,7 +96,7 @@
       maxRoundsPerRun: 2,
       minCycleDelayMinutes: 150,
       maxCycleDelayMinutes: 180,
-      roundIntervalSeconds: 12
+      roundIntervalSeconds: 300
     }),
     Object.freeze({
       minReplyDelaySeconds: 6,
@@ -107,7 +107,7 @@
       maxRoundsPerRun: 3,
       minCycleDelayMinutes: 90,
       maxCycleDelayMinutes: 120,
-      roundIntervalSeconds: 8
+      roundIntervalSeconds: 180
     }),
     Object.freeze({
       minReplyDelaySeconds: 5,
@@ -118,7 +118,7 @@
       maxRoundsPerRun: 3,
       minCycleDelayMinutes: 90,
       maxCycleDelayMinutes: 120,
-      roundIntervalSeconds: 6
+      roundIntervalSeconds: 150
     }),
     Object.freeze({
       minReplyDelaySeconds: 4,
@@ -129,7 +129,7 @@
       maxRoundsPerRun: 3,
       minCycleDelayMinutes: 90,
       maxCycleDelayMinutes: 120,
-      roundIntervalSeconds: 5
+      roundIntervalSeconds: 120
     })
   ]);
   const BOUNDARY_GEAR_NAMES = Object.freeze(["降档", "起步", "加快", "最高"]);
@@ -142,9 +142,11 @@
     maxRoundsPerRun: 1,
     minCycleDelayMinutes: 15,
     maxCycleDelayMinutes: 20,
-    roundIntervalSeconds: 10
+    roundIntervalSeconds: 180
   });
   const BOUNDARY_PROBE_WAIT_MINUTES = Object.freeze([15, 30, 45, 60, 90, 120]);
+  // One look at the post before each automatic comment. Independent of pace gaps.
+  const COMMENT_BROWSE_PAUSE_MS = Object.freeze([1000, 3000, 5000, 8000]);
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
@@ -376,7 +378,9 @@
       cycleDelay: probe
         ? "遇自动化后 15～120 分钟递增"
         : formatMinuteSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes),
-      roundInterval: `${profile.roundIntervalSeconds} 秒`
+      roundInterval: profile.roundIntervalSeconds % 60 === 0
+        ? `${profile.roundIntervalSeconds / 60} 分钟`
+        : `${profile.roundIntervalSeconds} 秒`
     };
   }
 
@@ -398,6 +402,11 @@
   function randomReplyDelaySeconds(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
     return randomIntInclusive(profile.minReplyDelaySeconds, profile.maxReplyDelaySeconds, random);
+  }
+
+  function randomCommentBrowsePauseMs(random = Math.random) {
+    const index = randomIntInclusive(0, COMMENT_BROWSE_PAUSE_MS.length - 1, random);
+    return COMMENT_BROWSE_PAUSE_MS[index];
   }
 
   function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
@@ -457,7 +466,9 @@
     scheduleBounds,
     formatSchedule,
     createRunPlan,
+    COMMENT_BROWSE_PAUSE_MS,
     randomReplyDelaySeconds,
+    randomCommentBrowsePauseMs,
     randomCycleDelayMs,
     nextAvailableAt
   };

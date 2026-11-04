@@ -3636,7 +3636,7 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
     xrcTaskSchedule: {
       enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: 'timeline',
       workTabId: firstId, startedAt: now, items: {},
-      rules: { 'poster-premium': { enabled: false } },
+      rules: { 'poster-premium': { enabled: false }, notifications: { enabled: false } },
     },
     xrcPluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {
       timeline: { tabId: firstId, phase: 'paused', waitUntil: now + 3600000, detail: 'X 限制冷却', updatedAt: now },
@@ -6917,7 +6917,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /已经写在别人帖子下面的评论不会被当成自己的原帖/)
   assert.match(docsPage, /换账号后按新账号判断/)
   assert.match(docsPage, /短、友好、多表情/)
-  assert.match(docsPage, /默认优先级 8 分/)
+  assert.match(docsPage, /默认优先级 9 分，高于评论首页的 8 分/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
@@ -7189,22 +7189,22 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     'mutual-unfollow': { enabled: true, window: 'peak' },
   }, items: { notifications: { resumeAt: morning + 3600000 } } }
   const morningDue = background.dueTaskModes(plan, morning)
-  assert.equal(morningDue[0], 'timeline')
-  assert.ok(morningDue.indexOf('timeline') < morningDue.indexOf('poster-premium'))
+  assert.equal(morningDue[0], 'poster-premium')
+  assert.ok(morningDue.indexOf('poster-premium') < morningDue.indexOf('timeline'))
   assert.ok(!morningDue.includes('notifications'))
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, night).includes('poster-premium'))
-  const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { timeline: { priority: 8 }, 'likes-replies': { priority: 5, minGapMs: 0 } }, items: {
+  const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { notifications: { priority: 8 }, timeline: { priority: 8 }, 'likes-replies': { priority: 5, minGapMs: 0 } }, items: {
     timeline: { lastRunAt: afternoon - 60000 },
     'likes-replies': { lastRunAt: afternoon - 60 * 60000 },
   } }
   assert.ok(background.dueTaskModes(fairPlan, afternoon).indexOf('timeline') < background.dueTaskModes(fairPlan, afternoon).indexOf('likes-replies'))
   const sameScore = {
     enabledAt: afternoon - 6 * 60 * 60000,
-    rules: {},
+    rules: { notifications: { priority: 8 } },
     items: {
       notifications: { lastRunAt: afternoon - 3 * 60 * 60000 },
       kol: { lastRunAt: afternoon - 5 * 60 * 60000 },
@@ -7238,8 +7238,9 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
   assert.equal(rules['likes-replies'].priority, rules['likes-posts'].priority)
-  assert.ok(rules.timeline.priority > rules.notifications.priority)
-  assert.ok(rules.timeline.priority > rules['poster-premium'].priority)
+  assert.equal(rules.notifications.priority, 9)
+  assert.equal(rules.timeline.priority, 8)
+  assert.equal(rules.timeline.priority, rules['poster-premium'].priority)
   assert.ok(rules['poster-premium'].priority > rules.poster.priority)
   assert.equal(rules['poster-x'].priority, rules.poster.priority)
   assert.equal(rules.article.priority, rules.poster.priority)
@@ -7306,7 +7307,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'timeline', 'notifications', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
+    'notifications', 'timeline', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
     'likes-posts', 'likes-replies',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
@@ -7380,8 +7381,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 8)
-    assert.equal(plan.rules.timeline.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
     assert.equal(plan.rules['likes-posts'].priority, 6)
@@ -7396,6 +7397,7 @@ test('existing schedule receives the daily follow-back cadence and new default w
     assert.equal(plan.rules['mutual-followBack'].window, 'all')
     assert.equal(plan.priorityOrderVersion, background.PRIORITY_ORDER_VERSION)
     assert.equal(plan.priorityScoreVersion, background.PRIORITY_SCORE_VERSION)
+    assert.equal(plan.commentPrioritySwapVersion, 1)
     assert.equal(plan.followBackNightVersion, 1)
     await background.readTaskSchedule()
     assert.ok(writes >= 1)
@@ -7429,8 +7431,8 @@ test('untouched default scores move up one point and a hand-edited score stays',
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 8)
-    assert.equal(plan.rules.timeline.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
     assert.equal(plan.priorityScoreVersion, background.PRIORITY_SCORE_VERSION)
@@ -7572,7 +7574,8 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
     'mutual-targetFollow': { lastRunAt: now - 31 * 60000 },
   } }
   const due = background.dueTaskModes(plan, now)
-  assert.ok(due.indexOf('timeline') < due.indexOf('mutual-followBack'))
+  assert.ok(due.indexOf('notifications') < due.indexOf('mutual-followBack'))
+  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('timeline'))
   assert.ok(due.indexOf('mutual-followBack') < due.indexOf('likes-posts'))
   const premiumNow = Date.parse('2026-10-29T09:35:00+08:00')
   const premiumPlan = { ...plan, rules: { 'mutual-followBack': { window: 'all' } } }
@@ -7857,11 +7860,11 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // Highest default rank is 评论首页; from /home that may navigate first, then start in-page.
-    assert.equal(activeMode, 'timeline')
+    // 评论回复现在是默认最高分；调度会先打开通知任务。
+    assert.equal(activeMode, 'notifications')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /xrcAssistant=timeline/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => /xrcAssistant=notifications/i.test(String(entry.options?.url || ''))),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -7964,7 +7967,7 @@ test('a waiting comment saves its deadline before the shared tab switches tasks'
     xrcTaskSchedule: {
       enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: 'timeline',
       workTabId: firstId, startedAt: Date.now(), items: {},
-      rules: { 'poster-premium': { enabled: false } },
+      rules: { 'poster-premium': { enabled: false }, notifications: { enabled: false } },
     },
     xrcPluginRuntime: { flow: { phase: 'running', updatedAt: Date.now() }, tasks: {
       timeline: { tabId: firstId, phase: 'paused', waitUntil: Date.now() + 3600000, detail: 'X 次数限制', updatedAt: Date.now() },
@@ -8017,7 +8020,7 @@ test('one confirmed comment keeps the tab until the full run enters its next-cyc
       enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 11, startedAt: now - 5000, sliceSeconds: 30,
       items: {
         timeline: { sliceActions: 0 },
-        notifications: { resumeAt: 0 },
+        notifications: { manualStopped: true },
         'likes-posts': { manualStopped: true }, 'likes-replies': { manualStopped: true },
         'mutual-unfollow': { manualStopped: true }, 'mutual-followBack': { manualStopped: true },
         poster: { manualStopped: true }, 'poster-premium': { manualStopped: true },
@@ -8949,7 +8952,7 @@ test('X account action denial is recognized as a restriction in every action mod
   }
 })
 
-test('notification priority 10 migrates to 8 while other hand-tuned scores stay', async () => {
+test('notification priority 10 migrates to 9 while other hand-tuned scores stay', async () => {
   const previousChrome = globalThis.chrome
   const stored = { xrcTaskSchedule: {
     enabled: false, current: '', items: {},
@@ -8970,9 +8973,38 @@ test('notification priority 10 migrates to 8 while other hand-tuned scores stay'
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 8)
+    assert.equal(plan.rules.notifications.priority, 9)
     assert.equal(plan.rules.timeline.priority, 6)
     assert.equal(plan.notificationsPriorityVersion, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('existing default comment priorities swap once without changing custom scores', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', items: {},
+    priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+    priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
+    notificationsPriorityVersion: 1, followPriorityVersion: 1, followBackNightVersion: 1,
+    rules: { notifications: { priority: 8 }, timeline: { priority: 9 }, kol: { priority: 6 } },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.timeline.priority, 8)
+    assert.equal(plan.rules.kol.priority, 6)
+    assert.equal(plan.commentPrioritySwapVersion, 1)
+    const again = await background.readTaskSchedule()
+    assert.equal(again.rules.notifications.priority, 9)
+    assert.equal(again.rules.timeline.priority, 8)
+    assert.ok(background.dueTaskModes({ ...plan, enabled: true, items: {} }).indexOf('notifications')
+      < background.dueTaskModes({ ...plan, enabled: true, items: {} }).indexOf('timeline'))
   } finally {
     globalThis.chrome = previousChrome
   }

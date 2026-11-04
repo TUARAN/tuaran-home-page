@@ -1450,7 +1450,9 @@ test('single task click refreshes background schedule before acting on a stale s
       if (busy) busyModes.add(mode)
       else busyModes.delete(mode)
     },
-    readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: {} } }),
+    readRuntimeMessage: async () => ({ runtime: { tasks: {} }, schedule: { enabled: true, items: actions.includes('xrc-task-manual-start')
+      ? { 'likes-posts': { manualStopped: false, resumeAt: 0, manualRequestedAt: Date.now() } }
+      : {} } }),
     scheduledTaskButtonState: () => ({ action: 'start' }),
     confirmOpenViewedTask: () => true,
     sendExtensionMessage: async (message) => { actions.push(message.type); return { ok: true } },
@@ -8207,6 +8209,44 @@ test('background accepts an in-page start only after a running phase is confirme
     await assert.rejects(background.tryInPageTaskStart(41, 'likes-posts'), /未获确认/)
     phase = 'running'
     assert.equal((await background.tryInPageTaskStart(41, 'likes-posts')).phase, 'running')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a manual reply start switches past another task that is still confirming startup', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'likes-posts', workTabId: 11, startedAt: now - 10000,
+      items: { notifications: { manualRequestedAt: now, resumeAt: 0 }, 'likes-posts': {} } },
+    xrcPluginRuntime: { tasks: { 'likes-posts': { tabId: 11, phase: 'starting', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'likes-posts': 11 } }
+  const messages = []
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(_id, message) {
+        messages.push(message.type)
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'likes-posts', phase: 'starting' }
+        if (message.type === 'xrc-task-suspend') return { ok: true }
+        return { ok: true }
+      },
+      async update(id, update) { updates.push({ id, update }); return { id, windowId: 1, url: update.url || 'https://x.com/home' } },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.ok(messages.includes('xrc-task-suspend'))
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.ok(updates.some(({ update }) => /\/notifications/.test(update.url || '')))
   } finally {
     globalThis.chrome = previousChrome
   }

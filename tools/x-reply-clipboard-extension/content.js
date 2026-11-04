@@ -2429,10 +2429,17 @@
         try {
           const result = await sendExtensionMessage({ type: "xrc-task-manual-start", mode });
           if (!result?.ok) throw new Error(result?.error || "无法请求立即启动");
-          taskSchedule.items = { ...taskSchedule.items, [mode]: { ...taskSchedule.items?.[mode], manualStopped: false, blocked: false, resumeAt: 0, reason: "已请求优先启动" } };
+          try {
+            const refreshed = await readRuntimeMessage("xrc-runtime-get");
+            pluginRuntime = refreshed.runtime || pluginRuntime;
+            taskSchedule = refreshed.schedule || taskSchedule;
+          } catch (error) {
+            taskSchedule.items = { ...taskSchedule.items, [mode]: { ...taskSchedule.items?.[mode], manualStopped: false, blocked: false, resumeAt: 0, manualRequestedAt: Date.now(), reason: "已请求优先启动" } };
+            taskSchedule.timeline = { ...taskSchedule.timeline, future: taskSchedule.timeline?.future?.filter((entry) => entry.mode !== mode) || [] };
+          }
           state.status = result.assigned
             ? `${TASK_MODE_LABELS[mode] || "任务"}已切入执行页，正在确认页内启动`
-            : `${TASK_MODE_LABELS[mode] || "任务"}已优先排队；当前任务尚未安全结束，后台会继续切换`;
+            : `${TASK_MODE_LABELS[mode] || "任务"}已优先排队；正在安全停止当前任务后切换`;
         } catch (error) {
           state.status = error?.message || "无法请求立即启动";
         }

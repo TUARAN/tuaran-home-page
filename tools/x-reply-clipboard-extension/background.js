@@ -2437,7 +2437,7 @@ async function runTaskSchedule() {
     const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
     const unresponsiveStarting = startingTask && occupancyAge >= STARTING_GRACE_MS;
     const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
-      && !item.blocked && !item.manualStopped;
+      && !item.blocked && !item.manualStopped && !manualDue;
     if (unresponsive) {
       const workTabId = Number(plan.workTabId);
       if (Number.isInteger(workTabId) && workTabId > 0 && (!Number(item.resumeAt) || Number(item.resumeAt) <= now)) {
@@ -2512,8 +2512,8 @@ async function runTaskSchedule() {
       || missingTask
       || (unknownTask && unknownAge < UNKNOWN_GRACE_MS)
     );
-    if (settling) return plan;
-    if ((item.recoveryAttempts || /状态.*未响应|执行未确认|重新装载/u.test(String(item.reason || "")))
+    if (settling && !manualDue) return plan;
+    if (!manualDue && (item.recoveryAttempts || /状态.*未响应|执行未确认|重新装载/u.test(String(item.reason || "")))
       && ["running", "paused"].includes(task?.phase)) {
       plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reloadAttempts: 0, reason: "" };
       plan.startedAt = now;

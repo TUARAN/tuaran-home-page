@@ -16,6 +16,8 @@
   const legacyPhrases = globalThis.XReplyClipboardLegacyPhrases || [];
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
+  const kolRoster = globalThis.XrcKolRoster;
+
   const PANEL_ID = "x-reply-clipboard-panel";
   const TASK_MODE_LABELS = {
     timeline: "评论首页", notifications: "评论回复", kol: "评论大V",
@@ -206,6 +208,9 @@
     pageCount: 0,
     completedRounds: 0,
     kolVisitedHandles: [],
+    kolVisitOrder: [],
+    kolCycleRetired: false,
+    kolCycleCreatedAt: 0,
     total: 0,
     startedAt: null,
     elapsedMs: 0,
@@ -1988,15 +1993,11 @@
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
   ]);
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
-  const DEFAULT_KOL_HANDLES = Object.freeze([
-    "xupaopaogm", "thankucrypto", "hotmailfromsh", "weiyux2021", "huoshan007",
-    "alanshao111", "vicentyip", "xiaqingfeng666", "JMkernt", "DISONYYDS"
-  ]);
   const RESERVED_X_PATHS = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
   ]);
-  const KOL_HANDLES_KEY = "xrcKolHandles";
+  const KOL_HANDLES_KEY = kolRoster?.KOL_HANDLES_KEY || "xrcKolHandles";
   const FLOW_STALE_MS = 90 * 1000;
   // User-facing states collapse internal phases into four buckets.
   const USER_STATE_LABELS = Object.freeze({
@@ -4413,6 +4414,8 @@
       pageCount: 0,
       completedRounds: 0,
       kolVisitedHandles: [],
+      kolVisitOrder: [],
+      kolCycleRetired: false,
       startedAt: null,
       cycleCount: 0,
       nextCycleAt: 0,
@@ -4492,6 +4495,10 @@
         kolVisitedHandles: Array.isArray(parsed.kolVisitedHandles)
           ? parsed.kolVisitedHandles.filter((handle) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)).slice(0, 100)
           : [],
+        kolVisitOrder: Array.isArray(parsed.kolVisitOrder)
+          ? parsed.kolVisitOrder.filter((handle) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)).slice(0, 100)
+          : [],
+        kolCycleRetired: Boolean(parsed.kolCycleRetired),
         runPlan: normalizeRunPlan(parsed.runPlan, schedulePace),
         nextReplyDelaySeconds: Math.max(0, Number(parsed.nextReplyDelaySeconds) || 0),
         panelView: validPanelView(parsed.panelView),
@@ -4535,6 +4542,8 @@
         boundaryErrorsAtStart: state.boundaryErrorsAtStart,
         boundarySuccessAtStart: state.boundarySuccessAtStart,
         kolVisitedHandles: state.kolVisitedHandles,
+        kolVisitOrder: state.kolVisitOrder,
+        kolCycleRetired: state.kolCycleRetired,
         runPlan: state.runPlan,
         nextReplyDelaySeconds: state.nextReplyDelaySeconds,
         panelView: state.panelView,
@@ -4716,6 +4725,9 @@
     state.pageCount = 0;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
+    state.kolVisitOrder = [];
+    state.kolCycleRetired = true;
+    state.kolCycleCreatedAt = 0;
     state.total = 0;
     state.boundarySuccessAtStart = 0;
     state.nextCycleAt = 0;
@@ -5858,15 +5870,14 @@
   }
 
   async function rotateKolProfileAndResume(message) {
-    const handles = await loadKolHandles();
+    const order = await ensureKolVisitOrder();
     const current = currentKolHandleFromPath();
-    const currentIndex = handles.findIndex((handle) => handle.toLowerCase() === current.toLowerCase());
     const visited = new Set(state.kolVisitedHandles.map((handle) => handle.toLowerCase()));
     if (current) visited.add(current.toLowerCase());
     state.kolVisitedHandles = [...visited];
     state.completedRounds = visited.size;
-    const ordered = handles.slice(currentIndex + 1).concat(handles.slice(0, currentIndex + 1));
-    const nextHandle = ordered.find((handle) => !visited.has(handle.toLowerCase()));
+    await persistKolCycle(order, state.kolVisitedHandles, true);
+    const nextHandle = kolRoster.nextUnvisitedHandle(order, state.kolVisitedHandles);
     if (!nextHandle) return finishCycleAndScheduleNext(`大V名单已扫完，本次共评论 ${state.total} 条`);
     state.pageCount = 0;
     state.status = message || `换到 @${nextHandle} 继续评论`;
@@ -5874,6 +5885,20 @@
     writeSaved({ running: true, total: state.total });
     const destination = `${window.location.origin}/${nextHandle}?xrcAssistant=kol&xrcStart=1`;
     window.location.assign(destination);
+    return "reload";
+  }
+
+  async function alignKolProfileToVisitOrder() {
+    const order = await ensureKolVisitOrder();
+    const nextHandle = kolRoster.nextUnvisitedHandle(order, state.kolVisitedHandles);
+    if (!nextHandle) return finishCycleAndScheduleNext(`大V名单已扫完，本次共评论 ${state.total} 条`);
+    const current = currentKolHandleFromPath();
+    if (current && current.toLowerCase() === nextHandle.toLowerCase()) return "";
+    state.pageCount = 0;
+    state.status = `按本轮顺序打开 @${nextHandle}`;
+    renderPanel();
+    writeSaved({ running: true, total: state.total });
+    window.location.assign(`${window.location.origin}/${nextHandle}?xrcAssistant=kol&xrcStart=1`);
     return "reload";
   }
 
@@ -6003,6 +6028,10 @@
       writeSaved({ running: true, total: state.total });
     }
     if (state.reconnectAt > 0) return reconnectAndResume(state.reconnectReason || "页面连接暂时不可用");
+    if (state.assistantMode === "kol") {
+      const aligned = await alignKolProfileToVisitOrder();
+      if (aligned) return aligned;
+    }
     scrollTimelineToTop();
     ensureRunPlan();
     state.status = state.assistantMode === "notifications"
@@ -6771,7 +6800,10 @@
       return;
     }
     if (state.running || state.loopPromise) return;
-    await onToggle({ scheduledStart: true });
+    await onToggle({
+      scheduledStart: true,
+      kolLaunchHandle: launch.taskKey === "kol" ? currentKolHandleFromPath() : ""
+    });
     if (!state.running && !state.loopPromise) throw new Error(state.status || "评论循环未能启动");
   }
 
@@ -6907,40 +6939,135 @@
     }
   }
 
-  function normalizeKolHandlesText(value) {
-    const list = (Array.isArray(value) ? value : String(value || "").split(/[\s,，;；\n]+/u))
-      .map((item) => String(item || "").trim().replace(/^@/u, ""))
-      .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
-        && !RESERVED_X_PATHS.has(handle.toLowerCase())
-        && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-    return list.length ? list : [...DEFAULT_KOL_HANDLES];
+  function kolRosterStatusText(decision) {
+    if (!decision) return "修改后自动保存";
+    if (decision.custom) return `自定义 ${decision.handles.length} 个账号，每一轮打乱顺序`;
+    return `内置第 ${decision.poolIndex + 1}/${kolRoster.KOL_POOLS.length} 组，每 ${kolRoster.KOL_POOL_DAYS} 天更换`;
+  }
+
+  async function loadKolRoster() {
+    const now = Date.now();
+    try {
+      const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY]);
+      const decision = kolRoster.resolveKolRoster({
+        storedHandles: stored?.[KOL_HANDLES_KEY],
+        meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+        now
+      });
+      if (decision.persist) {
+        try {
+          await chrome.storage.local.set({
+            [KOL_HANDLES_KEY]: decision.handles,
+            [kolRoster.KOL_ROSTER_KEY]: decision.meta
+          });
+        } catch (error) {
+          // Show the resolved roster even if this write does not land.
+        }
+      }
+      return decision;
+    } catch (error) {
+      return kolRoster.resolveKolRoster({ storedHandles: null, meta: null, now });
+    }
   }
 
   async function loadKolHandles() {
+    const decision = await loadKolRoster();
+    return decision.handles;
+  }
+
+  async function readFreshKolNavigationOrder(launchHandle) {
+    const current = String(launchHandle || "").replace(/^@/u, "");
+    if (!current) return null;
     try {
-      const stored = await chrome.storage.local.get(KOL_HANDLES_KEY);
-      return normalizeKolHandlesText(stored?.[KOL_HANDLES_KEY]);
+      const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+      const record = kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount);
+      const handles = await loadKolHandles();
+      if (!record?.active || Date.now() - Number(record.createdAt) > 120000) return null;
+      if ((record.visited || []).length) return null;
+      if (kolRoster.rosterKey(record.order || []) !== kolRoster.rosterKey(handles)) return null;
+      const first = kolRoster.nextUnvisitedHandle(record.order, []);
+      if (!first || first.toLowerCase() !== current.toLowerCase()) return null;
+      return record;
     } catch (error) {
-      return [...DEFAULT_KOL_HANDLES];
+      return null;
     }
+  }
+
+  async function persistKolCycle(order = state.kolVisitOrder, visited = state.kolVisitedHandles, active = true) {
+    if (!state.kolCycleCreatedAt) state.kolCycleCreatedAt = Date.now();
+    const record = {
+      active: Boolean(active),
+      rosterKey: kolRoster.rosterKey(order),
+      order: order.slice(),
+      visited: visited.slice(),
+      createdAt: Number(state.kolCycleCreatedAt) || Date.now()
+    };
+    try {
+      const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+      const next = kolRoster.writeCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount, record);
+      await chrome.storage.local.set({ [kolRoster.KOL_CYCLE_KEY]: next });
+    } catch (error) {
+      // The in-page snapshot still keeps this cycle's order.
+    }
+  }
+
+  async function ensureKolVisitOrder() {
+    if (!state.kolCycleRetired && state.kolVisitOrder.length) return state.kolVisitOrder;
+    if (!state.kolCycleRetired) {
+      try {
+        const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+        const record = kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount);
+        const handles = await loadKolHandles();
+        const plan = kolRoster.navigationOrder(record, handles, Math.random);
+        if (plan.reused) {
+          state.kolVisitOrder = plan.order.slice();
+          if (!state.kolVisitedHandles.length) state.kolVisitedHandles = plan.visited.slice();
+          state.kolCycleCreatedAt = Number(record?.createdAt) || plan.createdAt;
+          state.kolCycleRetired = false;
+          return state.kolVisitOrder;
+        }
+      } catch (error) {
+        // Fall through and draw a new order.
+      }
+    }
+    const handles = await loadKolHandles();
+    const order = kolRoster.shuffleHandles(handles, Math.random);
+    const keepVisited = !state.kolCycleRetired && state.kolVisitedHandles.length > 0;
+    state.kolVisitOrder = order;
+    if (!keepVisited) {
+      state.kolVisitedHandles = [];
+      state.completedRounds = 0;
+    }
+    state.kolCycleRetired = false;
+    state.kolCycleCreatedAt = Date.now();
+    await persistKolCycle(order, state.kolVisitedHandles, true);
+    writeSaved({ running: state.running, total: state.total });
+    return order;
   }
 
   async function syncKolHandlesField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-kol-handles]");
+    const status = panel?.querySelector("[data-xrc-kol-status]");
     if (!field || document.activeElement === field) return;
-    const handles = await loadKolHandles();
-    field.value = handles.map((handle) => `@${handle}`).join("\n");
+    const decision = await loadKolRoster();
+    field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
+    if (status) status.textContent = kolRosterStatusText(decision);
   }
 
   async function saveKolHandlesFromField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-kol-handles]");
     const status = panel?.querySelector("[data-xrc-kol-status]");
     if (!field) return;
-    const handles = normalizeKolHandlesText(field.value);
+    const decision = kolRoster.resolveKolRoster({ storedHandles: field.value, meta: null, now: Date.now() });
     try {
-      await chrome.storage.local.set({ [KOL_HANDLES_KEY]: handles });
-      field.value = handles.map((handle) => `@${handle}`).join("\n");
-      if (status) status.textContent = `已保存 ${handles.length} 个大V账号`;
+      await chrome.storage.local.set({
+        [KOL_HANDLES_KEY]: decision.handles,
+        [kolRoster.KOL_ROSTER_KEY]: decision.meta
+      });
+      field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
+      if (status) status.textContent = decision.custom
+        ? `已固定 ${decision.handles.length} 个账号，每一轮打乱顺序`
+        : `已使用${kolRosterStatusText(decision)}`;
     } catch (error) {
       if (status) status.textContent = error?.message || "大V名单保存失败";
     }
@@ -6974,7 +7101,7 @@
     const listField = mode === "mutual-targetFollow"
       ? `<label class="xrc-schedule-card-list"><span>关注候选名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存</small></label>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">修改后自动保存</small></label>`
+        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="清空、与内置总名单相同，或与某一组内置名单相同，会按北京时间每 7 天换组。增删账号后固定这份名单，每一轮仍打乱访问顺序。进行中的一轮走完已经抽出的顺序。">修改后自动保存</small></label>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "优先级、时段与名单")}
@@ -9190,7 +9317,7 @@
       });
   }
 
-  async function onToggle({ scheduledStart = false, requestedMode = "" } = {}) {
+  async function onToggle({ scheduledStart = false, requestedMode = "", kolLaunchHandle = "" } = {}) {
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
     if (!scheduledStart && await stopScheduledWaitingTask(targetMode, Boolean(state.running || state.loopPromise) && currentTaskKey() === targetMode)) return;
     if (!scheduledStart && targetMode !== currentTaskKey()) return;
@@ -9241,6 +9368,15 @@
     state.pageCount = 0;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
+    state.kolVisitOrder = [];
+    state.kolCycleRetired = true;
+    state.kolCycleCreatedAt = 0;
+    const freshCycle = await readFreshKolNavigationOrder(kolLaunchHandle);
+    if (freshCycle) {
+      state.kolVisitOrder = freshCycle.order.slice();
+      state.kolCycleRetired = false;
+      state.kolCycleCreatedAt = Number(freshCycle.createdAt) || Date.now();
+    }
     state.total = 0;
     state.startedAt = null;
     state.elapsedMs = 0;
@@ -9342,6 +9478,8 @@
     state.boundaryErrorsAtStart = saved.boundaryErrorsAtStart;
     state.runPlan = saved.runPlan;
     state.kolVisitedHandles = saved.kolVisitedHandles;
+    state.kolVisitOrder = saved.kolVisitOrder;
+    state.kolCycleRetired = saved.kolCycleRetired;
     state.nextReplyDelaySeconds = saved.nextReplyDelaySeconds;
     state.panelView = saved.panelView;
     state.assistantMode = launch?.assistantMode || saved.assistantMode;

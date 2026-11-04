@@ -2,7 +2,7 @@ import Link from 'next/link'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from '../../resources/x-reply-clipboard-extension/ExtensionDownloadButton'
-import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
+import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 export const metadata = {

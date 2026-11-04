@@ -100,18 +100,20 @@
       if (!node || node.closest?.('#x-reply-clipboard-panel')) return false;
       const heading = Array.from(node.querySelectorAll?.('h1, h2, [role="heading"]') || [])
         .some((item) => /^(?:Share|分享)$/iu.test(textOf(item)));
-      const title = heading || /^(?:Share|分享)(?:\s|$)/iu.test(textOf(node).slice(0, 40));
-      return title && Boolean(node.querySelector?.('input, [role="searchbox"]') || GROUP_RE.test(textOf(node)));
+      const hasSearch = Boolean(node.querySelector?.('input[placeholder*="Search"], input[placeholder*="搜索"], [role="searchbox"]'));
+      const hasGroups = GROUP_RE.test(textOf(node));
+      const hasSend = Boolean(findAction(node, /^(?:Send|发送)$/iu));
+      return hasGroups && ((heading && hasSearch) || (hasSearch && hasSend));
     };
     const dialogs = Array.from(doc?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
     const visible = dialogs.find(isShare);
     if (visible) return visible;
-    const headings = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"]') || []);
-    for (const heading of headings) {
-      if (!/^(?:Share|分享)$/iu.test(textOf(heading))) continue;
-      let parent = heading.parentElement;
-      for (let depth = 0; parent && parent !== doc.body && depth < 6; depth++, parent = parent.parentElement) {
-        if (isShare(parent) && GROUP_RE.test(textOf(parent))) return parent;
+    const landmarks = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"], input[placeholder*="Search"], input[placeholder*="搜索"], [role="searchbox"]') || []);
+    for (const landmark of landmarks) {
+      if (landmark.matches?.('h1, h2, [role="heading"]') && !/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
+      let parent = landmark.parentElement;
+      for (let depth = 0; parent && parent !== doc.body && depth < 12; depth++, parent = parent.parentElement) {
+        if (isShare(parent)) return parent;
       }
     }
     return null;
@@ -228,7 +230,8 @@
         state.status = `正在发送到群聊：${target.name}`; save();
         target.node.click(); await wait(450);
         const beforeSend = toast(doc());
-        let send = findAction(doc().querySelector('[role="dialog"]') || doc(), /^(?:Send|发送)$/iu);
+        const sendScope = shareDialog(doc()) || dialog;
+        let send = findAction(sendScope, /^(?:Send|发送)$/iu);
         if (!send) { halt(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
         send.click(); await wait(1100);
         const result = toast(doc());

@@ -147,6 +147,8 @@
   const BOUNDARY_PROBE_WAIT_MINUTES = Object.freeze([15, 30, 45, 60, 90, 120]);
   // One look at the post before each automatic comment. Independent of pace gaps.
   const COMMENT_BROWSE_PAUSE_MS = Object.freeze([1000, 3000, 5000, 8000]);
+  const REPLY_BUTTON_RETRY_LIMIT = 3;
+  const REPLY_BUTTON_RETRY_SECONDS = 3;
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply)$/i;
   const PLACEHOLDERS = ["Post your reply", "发布你的回复", "写回复", "Tweet your reply"];
 
@@ -409,6 +411,19 @@
     return COMMENT_BROWSE_PAUSE_MS[index];
   }
 
+  function replyButtonRetryPlan(failures) {
+    const count = Math.max(0, Math.floor(Number(failures) || 0));
+    if (count >= REPLY_BUTTON_RETRY_LIMIT) {
+      return { action: "skip", attempt: count, limit: REPLY_BUTTON_RETRY_LIMIT, delaySeconds: 0 };
+    }
+    return {
+      action: "retry",
+      attempt: count,
+      limit: REPLY_BUTTON_RETRY_LIMIT,
+      delaySeconds: REPLY_BUTTON_RETRY_SECONDS
+    };
+  }
+
   function randomCycleDelayMs(random = Math.random, pace = DEFAULT_SCHEDULE_PACE, boundaryPhase = 1) {
     const profile = effectiveScheduleProfile(pace, boundaryPhase);
     const minimum = profile.minCycleDelayMinutes * 60 * 1000;
@@ -467,8 +482,11 @@
     formatSchedule,
     createRunPlan,
     COMMENT_BROWSE_PAUSE_MS,
+    REPLY_BUTTON_RETRY_LIMIT,
+    REPLY_BUTTON_RETRY_SECONDS,
     randomReplyDelaySeconds,
     randomCommentBrowsePauseMs,
+    replyButtonRetryPlan,
     randomCycleDelayMs,
     nextAvailableAt
   };

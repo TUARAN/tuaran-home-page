@@ -33,6 +33,7 @@ test('X monitor task labels match the extension task names', () => {
       'tweet-post': '定时发帖',
     'article-draft': '普通发文草稿',
       'site-forward': '站长转发',
+      'community-share': '社群分发',
       'post-prune': '清理低质帖',
       'reply-prune': '清理低质评论',
       'post-like': '点赞帖子',
@@ -104,7 +105,7 @@ test('local daily report counts successful actions once and refuses a false uplo
     await xReceipt.recordDailySuccess({ id: 'event-reply-prune-002', task: 'reply-prune', result: 'success', targetId: 'reply-1', occurredAt: NOW }, 'Tuaran')
     assert.deepEqual(saved.xrcDailyReports[0].counts, {
       comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
-      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0, prunes: 1, replyPrunes: 1, articleDrafts: 0, siteForwards: 0,
+      likes: 1, follows: 1, unfollows: 0, followBacks: 0, posts: 0, prunes: 1, replyPrunes: 1, articleDrafts: 0, siteForwards: 0, communityShares: 0,
     })
     const uploaded = await xReceipt.uploadDaily('2026-10-12', 'tuaran')
     assert.equal(uploaded.ok, false)

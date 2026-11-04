@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "4.9.5",
+  "version": "4.9.8",
   "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",
@@ -87,6 +87,7 @@
         "autoLike.js",
         "prunePosts.js",
         "articleDraft.js",
+        "communityShare.js",
         "content.js",
         "experiments.js"
       ],

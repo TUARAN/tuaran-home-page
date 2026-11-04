@@ -28,27 +28,30 @@
 
     const requestId = `xrc_${Date.now()}_${sequence += 1}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
+      let settled = false;
       let fallbackTimer = null;
       const finish = () => {
-        if (!pending.delete(requestId)) return;
+        if (settled) return;
+        settled = true;
+        pending.delete(requestId);
         if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
         resolve();
       };
       const settleLocal = () => {
-        if (!pending.delete(requestId)) return;
+        if (settled) return;
+        settled = true;
+        pending.delete(requestId);
         if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
         localWait(delayMs).then(resolve);
       };
 
       pending.set(requestId, finish);
+      // Arm the page timer before the service worker answers. A missing reply must not freeze the task.
+      fallbackTimer = window.setTimeout(finish, delayMs + 5000);
       try {
         const sent = chrome.runtime.sendMessage({ type: "xrc-timer-schedule", requestId, delayMs }, (response) => {
           const runtimeError = chrome.runtime.lastError;
-          if (!runtimeError && response?.ok) {
-            // The local timer is only a safety net. The offscreen worker normally wakes this tab.
-            fallbackTimer = window.setTimeout(finish, delayMs + 5000);
-            return;
-          }
+          if (!runtimeError && response?.ok) return;
           settleLocal();
         });
         if (sent && typeof sent.catch === "function") sent.catch(() => settleLocal());

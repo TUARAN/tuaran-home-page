@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 
-export const WECHAT_ID = 'atar24'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
+
+export const WECHAT_ID = WECHAT_CONTACT.value
 
 export default function WeChatContact({ tone = 'site', className = '' }) {
   const [copied, setCopied] = useState(false)

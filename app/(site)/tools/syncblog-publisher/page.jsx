@@ -2,6 +2,7 @@ import Link from 'next/link'
 import PageContainer from '../../components/PageContainer'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from '../../resources/x-reply-clipboard-extension/ExtensionDownloadButton'
+import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
 
 export const dynamic = 'force-static'
 export const metadata = {
@@ -34,12 +35,12 @@ export default function SyncblogPublisherPage() {
         <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">在网站创作，在平台执行。把观点、文章、电子书和项目介绍整理好，通过一个插件切换平台、预览 AI 改写、准备草稿，检查后自行发布。</p>
         <div className="mt-7 flex flex-wrap gap-3">
           <a href="https://syncblog.2aran.com/" className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-slate-950">打开创作台 ↗</a>
-          <ExtensionDownloadButton href="/api/resources/syncblog-download" title="AI 分发大师" credentialLabel="人员码 / 站长总密钥" buttonLabel="VIP 下载 · 输入人员码" downloadHint="联系站长微信 atar24 获取人员码。安装包已打包并内置凭证，安装后自动读取，首次心跳绑定设备。" />
+          <ExtensionDownloadButton href="/api/resources/syncblog-download" title="AI 分发大师" credentialLabel="人员码 / 站长总密钥" buttonLabel="VIP 下载 · 输入人员码" downloadHint={`联系站长微信 ${WECHAT_CONTACT.value} 获取人员码。安装包已打包并内置凭证，安装后自动读取，首次心跳绑定设备。`} />
           <SharePageButton title="AI 分发大师" text="整理内容、适配平台，核对草稿后发布。" url="https://2aran.com/tools/syncblog-publisher" />
           <Link href="/tools/syncblog-publisher/docs" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">文档中心</Link>
           <a href="#install" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">安装与使用</a>
         </div>
-        <p className="mt-5 text-xs leading-6 text-slate-400">VIP 安装包已打包；联系站长微信 atar24 获取人员码，站长可使用总密钥领取。支持 Chrome / Edge 116+。</p>
+        <p className="mt-5 text-xs leading-6 text-slate-400">VIP 安装包已打包；联系站长微信 {WECHAT_CONTACT.value} 获取人员码，站长可使用总密钥领取。支持 Chrome / Edge 116+。</p>
       </header>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-3" aria-label="工作流程">

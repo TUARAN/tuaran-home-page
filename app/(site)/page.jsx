@@ -35,6 +35,8 @@ import { HomeHeroGoal } from './components/HomeHeroGoal'
 import { HomeBookCards, HomeDownloadCards, HomeOpenClawCards } from './components/HomeWorkCards'
 import { T } from './components/LocaleProvider'
 import SiteFooter, { OnlinePresenceStatus } from './components/SiteFooter'
+import { ContactDialogButton } from './components/ContactCards'
+import { WECHAT_CONTACT } from '../../lib/site/contactChannels'
 import { SitePresenceProvider } from './components/SitePresenceProvider'
 import HomeDiscoveryPanel from './components/HomeDiscoveryPanel'
 import HomePrimaryColumnsClient, { HomeInspirations } from './components/HomePrimaryColumnsClient'
@@ -743,7 +745,9 @@ function ClassicHomePage({ featuredPicks }) {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#646655] dark:text-[#acaf9d]">
-                  <span><T zh="微信 atar24" en="WeChat atar24" /></span>
+                  <ContactDialogButton className="bg-transparent p-0 text-inherit underline-offset-2 hover:underline">
+                    <T zh={`微信 ${WECHAT_CONTACT.value}`} en={`WeChat ${WECHAT_CONTACT.value}`} />
+                  </ContactDialogButton>
                   <span aria-hidden="true">·</span>
                   <Link href="/donate" className="text-inherit underline-offset-2 hover:underline">
                     <T zh="请我喝咖啡" en="Buy me a coffee" />
@@ -812,10 +816,13 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
               <h2><T zh="保持联系" en="Keep in touch" /></h2>
               <p>
                 <T
-                  zh={<>项目合作、产品交流，可添加微信 <span className="font-mono">atar24</span>；如果本站内容对你有帮助，也欢迎<Link href="/donate">请我喝杯咖啡</Link>。</>}
-                  en={<>For collaboration and product talk, add <span className="font-mono">atar24</span> on WeChat. If this site has helped you, you can also <Link href="/donate">buy me a coffee</Link>.</>}
+                  zh={<>项目合作、产品交流，加微信 <span className="font-mono">{WECHAT_CONTACT.value}</span>。</>}
+                  en={<>For collaboration and product talk, add <span className="font-mono">{WECHAT_CONTACT.value}</span> on WeChat.</>}
                 />
               </p>
+              <ContactDialogButton className="mt-3 inline-flex min-h-10 items-center rounded-full border border-[var(--site-line)] bg-white/80 px-3 text-[12px] font-semibold text-[var(--site-ink)] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-100">
+                <T zh="全部渠道" en="All channels" />
+              </ContactDialogButton>
             </div>
           </section>
         </aside>

@@ -70,7 +70,7 @@ export default function DonateContent() {
               <Link href="/ranbi#earn" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 {t.ranbi}
               </Link>
-              <Link href="/help#contact" className="opacity-80 hover:opacity-100 underline underline-offset-4">
+              <Link href="/contact" className="opacity-80 hover:opacity-100 underline underline-offset-4">
                 {t.contact}
               </Link>
             </div>

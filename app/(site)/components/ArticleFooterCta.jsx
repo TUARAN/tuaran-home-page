@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import NewsletterSignup from './NewsletterSignup'
+import { ContactDialogButton } from './ContactCards'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 /**
  * 文章底部统一 CTA：留住流量、引导下一步
@@ -31,18 +33,15 @@ export default function ArticleFooterCta() {
           </div>
         </a>
 
-        <Link
-          href="/help#contact"
-          className="group flex items-baseline gap-3 rounded-xl border border-[#dee0db] bg-white p-4 no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600"
-        >
+        <ContactDialogButton className="group flex w-full items-baseline gap-3 rounded-xl border border-[#dee0db] bg-white p-4 text-left no-underline transition hover:-translate-y-0.5 hover:border-[#c2c4b7] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600">
           <span className="text-[18px]" aria-hidden="true">💬</span>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">联系与讨论 →</div>
+            <div className="text-[15px] font-semibold text-[#15140f] dark:text-gray-100">联系与讨论</div>
             <p className="mt-0.5 text-[12px] leading-5 text-[#666] dark:text-gray-400">
               提交问题、补充资料或讨论合作
             </p>
           </div>
-        </Link>
+        </ContactDialogButton>
 
         <Link
           href="/articles"
@@ -76,7 +75,7 @@ export default function ArticleFooterCta() {
         {' · '}
         <Link href="/editorial" className="text-[#646655] no-underline hover:text-[#15140f] dark:text-[#acaf9d] dark:hover:text-gray-100">内容说明</Link>
         {' · '}
-        微信 <span className="font-mono">atar24</span>
+        微信 <span className="font-mono">{WECHAT_CONTACT.value}</span>
       </p>
     </aside>
   )

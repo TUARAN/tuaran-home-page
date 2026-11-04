@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { T } from './LocaleProvider'
+import { WECHAT_CONTACT } from '../../../lib/site/contactChannels'
 
 const ALLIANCE_URL = 'https://blogger-alliance.cn/'
 
@@ -252,8 +253,8 @@ export default function HomeAllianceBanner() {
             </div>
             <div className="home-alliance-modal-wechat">
               <span><T zh="扫码微信咨询合作" en="Scan on WeChat to discuss a partnership" /></span>
-              <Image src="/qrcodewechat3.png" alt="合作咨询微信二维码" width={260} height={260} unoptimized loading="eager" sizes="260px" />
-              <strong>atar24</strong>
+              <Image src={WECHAT_CONTACT.qr} alt={WECHAT_CONTACT.qrAlt} width={260} height={260} unoptimized loading="eager" sizes="260px" />
+              <strong>{WECHAT_CONTACT.value}</strong>
               <small><T zh="备注“博主联盟”" en="Mention Blogger Alliance when adding us" /></small>
             </div>
           </div>

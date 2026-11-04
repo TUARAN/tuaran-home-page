@@ -6,7 +6,12 @@ import {
 } from '@tabler/icons-react'
 
 import { SITE_CHANNELS, isItemVisibleForAccount } from '../../../lib/site/siteNav'
+import { getContactChannel } from '../../../lib/site/contactChannels'
 import PageContainer from '../components/PageContainer'
+
+const wechat = getContactChannel('wechat')
+const email = getContactChannel('email')
+const github = getContactChannel('github')
 
 export const dynamic = 'force-static'
 
@@ -152,15 +157,15 @@ const HELP_SECTIONS = [
         id: 'contact', title: '联系方式', description: '按问题类型选择评论、邮件、微信或 GitHub。', icon: IconMail,
         steps: [
           '具体文章或资源的公开补充，可以直接留在对应页面评论区。',
-          '账号、隐私、数据删除和正式合作请发邮件至 tuaran666@gmail.com，便于确认身份并保留处理记录。',
-          '资源领取、燃币调整和轻量交流可添加微信 atar24；开源代码问题可前往 github.com/TUARAN。',
+          `账号、隐私、数据删除和正式合作请发邮件至 ${email.value}，便于确认身份并保留处理记录。`,
+          `资源领取、燃币调整和轻量交流可添加微信 ${wechat.value}；开源代码问题可前往 github.com/${github.value}。`,
           '反馈故障时请附页面网址、发生时间、浏览器或设备、操作步骤和截图；不要发送密码或登录 Cookie。',
         ],
         note: '描述“期望发生什么”和“实际发生什么”，通常能最快定位问题。',
         actions: [
-          { href: 'mailto:tuaran666@gmail.com', label: '发送邮件', external: true },
-          { href: 'https://github.com/TUARAN', label: '打开 GitHub', external: true },
-          { href: '/services', label: '查看合作说明' },
+          { href: email.href, label: '发送邮件', external: true },
+          { href: github.href, label: '打开 GitHub', external: true },
+          { href: '/contact', label: '全部联系方式' },
         ],
       },
     ],

@@ -18,6 +18,7 @@ import ArticleFooterCta from '../../components/ArticleFooterCta'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
+import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from './ExtensionDownloadButton'
 
@@ -453,7 +454,7 @@ export default function XReplyClipboardResourcePage() {
                 把互动工作流装进 Chrome
               </h2>
               <p className="m-0 mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                扫码添加站长微信 atar24，获取解密密码。输入密码后下载 ZIP，解压并在 Chrome 扩展管理页安装。
+                扫码添加站长微信 {WECHAT_CONTACT.value}，获取解密密码。输入密码后下载 ZIP，解压并在 Chrome 扩展管理页安装。
               </p>
             </div>
             <DownloadButton className="shrink-0" />

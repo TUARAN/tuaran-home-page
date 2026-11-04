@@ -20,7 +20,7 @@ regexes = [
   '''^b101ab8a1d712d7b036826d4292634fd90896068e9ac282cf96082eda265bb00$''',
 ]
 
-[allowlist]
+[[allowlists]]
 description = "Generated public content catalog. A one-line rewrite makes existing pvKey and slug strings look like new API keys."
 paths = [
   '''public/data/content-catalog\.json''',

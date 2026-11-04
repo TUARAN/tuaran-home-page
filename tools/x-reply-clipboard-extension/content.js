@@ -268,7 +268,7 @@
     "xrc-docs-releases": "releases"
   };
   const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
-  const DEFAULT_REPLY_PROVIDERS = ["deepseek", "bai"];
+  const DEFAULT_REPLY_PROVIDERS = [];
   const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications", "kol"],
@@ -320,7 +320,8 @@
     grokInviteNotifications: false,
     aiKey: "",
     baiKey: "",
-    replyProviders: ["deepseek", "bai"],
+    replyProviders: [],
+    nasSecretAvailable: false,
     aiKeySaved: false,
     aiSettingsStatus: "loading",
     aiKeyHint: "",
@@ -3756,6 +3757,7 @@
       state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
       state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
       state.replyProviders = resolvedProviders.providers;
+      state.nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       const legacyReply = String(settings.replyPrompt || "").trim();
@@ -4221,10 +4223,6 @@
     }
     if (baiKey && !/^sk-\S{8,}$/u.test(baiKey)) {
       status.textContent = "请输入有效的 B.AI API Key";
-      return false;
-    }
-    if (!replyProviders.length) {
-      status.textContent = "请至少启用一个回复模型";
       return false;
     }
     const prompts = [replyTimelinePrompt, replyCommentPrompt, postNormalPrompt, postPremiumPrompt, postXPrompt];
@@ -7785,9 +7783,9 @@
               <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>勾选的模型共存，按下列顺序尝试</small></span></div>
               <div class="xrc-provider-list" role="group" aria-label="启用的回复模型">
                 <label class="xrc-config-row"><span><strong>1 · MobileOffice 本地桥接</strong><small>测试通过后优先使用</small></span><input type="checkbox" data-xrc-reply-provider="mobileoffice"></label>
-                <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek" checked></label>
+                <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek"></label>
                 <label class="xrc-config-row"><span><strong>3 · NAS</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas"></label>
-                <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai" checked></label>
+                <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai"></label>
               </div>
               <div class="xrc-mobileoffice-connection" data-xrc-mobileoffice-connection hidden>
                 <label class="xrc-field"><span>MobileOffice 本地连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
@@ -7869,7 +7867,7 @@
         <div class="xrc-workspace-nav">
           <div class="xrc-global-bar" data-xrc-global-bar>
             <div class="xrc-key-loading" data-xrc-key-loading role="status"><span class="xrc-key-spinner" aria-hidden="true"></span>正在读取模型设置…</div>
-            <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false" hidden>尚未配置 DeepSeek API Key · 点击前往模型设置 →</button>
+            <button class="xrc-key-guide" type="button" data-xrc-config-open="model" data-xrc-key-guide aria-expanded="false" hidden>尚未启用回复模型 · 点击前往模型设置 →</button>
             <button class="xrc-key-guide" type="button" data-xrc-key-retry hidden>模型设置读取失败 · 点击重试</button>
           </div>
           <div class="xrc-flow-launch" data-role="status">
@@ -8771,6 +8769,8 @@
         const status = panel.querySelector("[data-xrc-community-status]");
         try {
           const secret = await globalThis.XrcCommunityReceipt?.saveSecret(panel.querySelector("[data-xrc-community-secret]")?.value);
+          state.nasSecretAvailable = Boolean(secret);
+          renderPanel();
           if (status) status.textContent = secret ? "回执密钥已保存" : "已清空回执密钥，之后不再上传";
         } catch (error) {
           if (status) status.textContent = "当前环境无法保存回执密钥";
@@ -8880,10 +8880,18 @@
       if (globalBar) {
         const loading = state.aiSettingsStatus === "loading";
         const failed = state.aiSettingsStatus === "error";
-        const missingKey = state.aiSettingsStatus === "ready" && !state.aiKeySaved && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified);
+        const hasReplyModel = (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+          || (state.replyProviders.includes("deepseek") && state.aiKeySaved)
+          || (state.replyProviders.includes("nas") && state.nasSecretAvailable)
+          || (state.replyProviders.includes("bai") && Boolean(state.baiKey));
+        const missingKey = state.aiSettingsStatus === "ready" && !hasReplyModel;
         globalBar.hidden = !(loading || failed || missingKey);
         globalBar.querySelector("[data-xrc-key-loading]").hidden = !loading;
-        globalBar.querySelector("[data-xrc-key-guide]").hidden = !missingKey;
+        const keyGuide = globalBar.querySelector("[data-xrc-key-guide]");
+        keyGuide.hidden = !missingKey;
+        keyGuide.textContent = state.replyProviders.length
+          ? "已启用的回复模型尚未配置 · 点击前往模型设置 →"
+          : "尚未启用回复模型 · 点击前往模型设置 →";
         globalBar.querySelector("[data-xrc-key-retry]").hidden = !failed;
       }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {

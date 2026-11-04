@@ -1305,6 +1305,7 @@
   let panelDismissed = false;
   let configOpen = false;
   let configPage = "model";
+  let aiSettingsReadId = 0;
   let modelSaveNoticeUntil = 0;
   let modelSaveNoticeTimer = 0;
   let modelSaveNoticeText = "";
@@ -3700,8 +3701,13 @@
     const stored = hasList
       ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
       : [...DEFAULT_REPLY_PROVIDERS];
-    const version = Number(settings?.replyProvidersDefaultVersion || 0);
-    return { providers: stored, persist: false };
+    if (settings?.replyProvidersManual === true || stored.length) return { providers: stored, persist: false };
+    const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
+      ? validDeepSeekApiKey(String(settings?.apiKey || "").trim())
+      : provider === "bai"
+        ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
+        : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+    return { providers: configured, persist: configured.length > 0 };
   }
 
   function showModelSaveNotice(message) {
@@ -3726,6 +3732,8 @@
   }
 
   async function loadAiSettings() {
+    const readId = ++aiSettingsReadId;
+    state.aiSettingsStatus = "loading";
     if (!globalThis.chrome?.storage?.local) {
       state.aiSettingsStatus = "error";
       state.aiStatus = "当前环境无法读取模型设置";
@@ -3742,6 +3750,7 @@
       }
       const resolvedProviders = resolveReplyProviders(settings);
       if (resolvedProviders.persist) {
+        if (readId !== aiSettingsReadId) return;
         settings = {
           ...settings,
           replyProviders: resolvedProviders.providers,
@@ -3749,6 +3758,8 @@
         };
         await chrome.storage.local.set({ xrcAiSettings: settings });
       }
+      const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+      if (readId !== aiSettingsReadId) return;
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.grokInviteTimeline = settings.grokInviteTimeline === true;
       state.grokInviteNotifications = settings.grokInviteNotifications === true;
@@ -3757,7 +3768,7 @@
       state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
       state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
       state.replyProviders = resolvedProviders.providers;
-      state.nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+      state.nasSecretAvailable = nasSecretAvailable;
       state.aiKeySaved = Boolean(apiKey);
       state.aiKeyHint = apiKey ? `已保存 ····${apiKey.slice(-4)}` : "";
       const legacyReply = String(settings.replyPrompt || "").trim();
@@ -3790,6 +3801,7 @@
         : savedValue ? "已清除误填内容；请粘贴以 sk- 开头的 DeepSeek API Key" : "尚未配置 DeepSeek API Key";
       state.aiSettingsStatus = "ready";
     } catch (error) {
+      if (readId !== aiSettingsReadId) return;
       state.aiStatus = "读取 AI 配置失败";
       state.aiSettingsStatus = "error";
     }
@@ -4188,21 +4200,19 @@
     }
     const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
+    const selected = new Set(resolveReplyProviders(settings).providers);
+    if (value) selected.add(which);
+    else selected.delete(which);
+    const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => selected.has(provider));
     await chrome.storage.local.set({
       xrcAiSettings: {
         ...settings,
-        ...(isBai ? { baiApiKey: value } : { apiKey: value })
+        ...(isBai ? { baiApiKey: value } : { apiKey: value }),
+        replyProviders,
+        replyProvidersManual: true
       }
     });
-    if (isBai) {
-      state.baiKey = value;
-    } else {
-      state.aiKey = value;
-      state.aiKeySaved = Boolean(value);
-      state.aiKeyHint = value ? `已保存 ····${value.slice(-4)}` : "";
-      state.aiStatus = value ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
-    }
-    state.aiSettingsStatus = "ready";
+    await loadAiSettings();
     return true;
   }
 
@@ -4266,6 +4276,7 @@
         mobileOfficeToken,
         mobileOfficeVerified: mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true,
         replyProviders,
+        replyProvidersManual: true,
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
         grokInviteTimeline: state.grokInviteTimeline === true,
@@ -4290,7 +4301,6 @@
     state.mobileOfficeToken = mobileOfficeToken;
     state.replyProviders = replyProviders;
     state.aiKeySaved = Boolean(key);
-    state.aiSettingsStatus = "ready";
     state.aiKeyHint = key ? `已保存 ····${key.slice(-4)}` : "";
     state.aiStatus = key ? `${state.aiKeyHint}，可以直接开始` : "尚未配置 DeepSeek API Key";
     state.replyTimelinePrompt = storedReplyTimeline;
@@ -4300,6 +4310,7 @@
     state.postXPrompt = storedPostX;
     state.replyPrompt = storedReplyTimeline;
     state.postPrompt = storedPostNormal;
+    await loadAiSettings();
     if (replyPaces) {
       applyStoredReplyPaces(replyPaces.value);
       applySchedulePace(state.schedulePace, { replaceIdlePlan: true });
@@ -8732,11 +8743,6 @@
         });
         input.addEventListener("change", () => {
           if (input.matches('[data-xrc-reply-provider="mobileoffice"]')) syncMobileOfficeSettings();
-          if (input.matches("[data-xrc-reply-provider]") && !panel.querySelector("[data-xrc-reply-provider]:checked")) {
-            input.checked = true;
-            panel.querySelector("[data-xrc-config-status]").textContent = "至少保留一个回复模型";
-            return;
-          }
           scheduleConfigSave(panel, true);
         });
       });

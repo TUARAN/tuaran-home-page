@@ -60,17 +60,23 @@
   }
 
   function groupRows(dialog) {
-    const nodes = Array.from(dialog?.querySelectorAll?.('[data-testid="cellInnerDiv"], [data-testid="UserCell"], [role="option"], [role="button"], [tabindex="0"]') || []);
-    return nodes.filter((node) => {
-      if (nodes.some((other) => other !== node && node.contains(other) && GROUP_RE.test(textOf(other)))) return false;
+    const tagged = Array.from(dialog?.querySelectorAll?.('[data-testid="cellInnerDiv"], [data-testid="UserCell"], [role="option"], [role="button"], [tabindex="0"]') || []);
+    const generic = Array.from(dialog?.querySelectorAll?.('div, li, button') || []);
+    const nodes = [...tagged, ...generic.filter((node) => !tagged.includes(node))];
+    const rows = nodes.filter((node) => {
       const label = textOf(node);
-      return GROUP_RE.test(label) && !PRIVATE_RE.test(label) && enabled(node);
+      if (!GROUP_RE.test(label) || PRIVATE_RE.test(label) || label.length > 180 || !enabled(node)) return false;
+      const count = label.match(GROUP_RE)?.[0] || '';
+      if (!clean(label.replace(count, ''))) return false;
+      return !nodes.some((other) => other !== node && node.contains?.(other)
+        && GROUP_RE.test(textOf(other)) && clean(textOf(other).replace(textOf(other).match(GROUP_RE)?.[0] || '', '')));
     }).map((node) => {
       const label = textOf(node);
       const count = label.match(GROUP_RE)?.[0] || "";
       const name = clean(label.replace(count, ""));
       return { node, name, id: `${name}|${count}` };
-    }).filter((row) => row.name);
+    });
+    return rows.filter((row, index) => rows.findIndex((other) => other.id === row.id) === index);
   }
 
   function findAction(scope, pattern, options) {
@@ -95,6 +101,22 @@
     return null;
   }
 
+  function shareScopes(doc) {
+    const scopes = [doc];
+    const hosts = Array.from(doc?.querySelectorAll?.('[data-testid="xchatEmbedShare"]') || []);
+    for (const host of hosts) {
+      const root = host.shadowRoot;
+      if (!root) continue;
+      const queue = [root];
+      while (queue.length) {
+        const scope = queue.shift();
+        scopes.unshift(scope);
+        for (const nested of scope.querySelectorAll?.('*') || []) if (nested.shadowRoot) queue.push(nested.shadowRoot);
+      }
+    }
+    return scopes;
+  }
+
   function shareDialog(doc) {
     const searchInputs = (node) => Array.from(node?.querySelectorAll?.('input, [role="searchbox"]') || []).filter((input) =>
       /search|搜索/iu.test(clean(input.getAttribute?.('placeholder') || input.placeholder || input.getAttribute?.('aria-label') || '')));
@@ -109,17 +131,20 @@
       const onCompose = /\/messages\/compose(?:\/|$)/u.test(doc?.defaultView?.location?.pathname || doc?.location?.pathname || '');
       return hasSearch && hasGroups && (heading || hasSend || onCompose);
     };
-    const dialogs = Array.from(doc?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
-    const visible = dialogs.find(isShare);
-    if (visible) return visible;
-    const landmarks = Array.from(doc?.querySelectorAll?.('h1, h2, [role="heading"], input, [role="searchbox"]') || []);
-    for (const landmark of landmarks) {
-      if (landmark.matches?.('h1, h2, [role="heading"]')) {
-        if (!/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
-      } else if (!/search|搜索/iu.test(clean(landmark.getAttribute?.('placeholder') || landmark.placeholder || landmark.getAttribute?.('aria-label') || ''))) continue;
-      let parent = landmark.parentElement;
-      for (let depth = 0; parent && parent !== doc.body && depth < 24; depth++, parent = parent.parentElement) {
-        if (isShare(parent)) return parent;
+    for (const scope of shareScopes(doc)) {
+      const dialogs = Array.from(scope?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
+      const visible = dialogs.find(isShare);
+      if (visible) return visible;
+      if (scope !== doc && isShare(scope)) return scope;
+      const landmarks = Array.from(scope?.querySelectorAll?.('h1, h2, [role="heading"], input, [role="searchbox"]') || []);
+      for (const landmark of landmarks) {
+        if (landmark.matches?.('h1, h2, [role="heading"]')) {
+          if (!/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
+        } else if (!/search|搜索/iu.test(clean(landmark.getAttribute?.('placeholder') || landmark.placeholder || landmark.getAttribute?.('aria-label') || ''))) continue;
+        let parent = landmark.parentElement;
+        for (let depth = 0; parent && parent !== doc.body && depth < 24; depth++, parent = parent.parentElement || parent.getRootNode?.()?.host) {
+          if (isShare(parent)) return parent;
+        }
       }
     }
     return null;
@@ -136,7 +161,7 @@
 
   function sendButtonNearDialog(dialog, doc) {
     let scope = dialog;
-    for (let depth = 0; scope && scope !== doc?.body && depth < 12; depth++, scope = scope.parentElement) {
+    for (let depth = 0; scope && scope !== doc?.body && depth < 12; depth++, scope = scope.parentElement || scope.getRootNode?.()?.host) {
       const send = findAction(scope, /^(?:Send|发送)$/iu, { ignoreAncestorOpacity: true });
       if (send) return send;
     }
@@ -144,7 +169,7 @@
   }
 
   function toast(doc) {
-    return Array.from(doc?.querySelectorAll?.('[data-testid="toast"], [role="alert"]') || []).map(textOf).join(' ');
+    return shareScopes(doc).flatMap((scope) => Array.from(scope?.querySelectorAll?.('[data-testid="toast"], [role="alert"]') || [])).map(textOf).join(' ');
   }
 
   function initialState() {
@@ -283,7 +308,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareDialog, waitForShareDialog, sendButtonNearDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, delayFor, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

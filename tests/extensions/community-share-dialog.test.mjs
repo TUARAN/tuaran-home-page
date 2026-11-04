@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 
 const require = createRequire(import.meta.url)
-const { shareDialog, waitForShareDialog, findAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
 test('recognizes the visible group picker by Search, group rows and Send even without a Share heading', async () => {
   const body = {}
@@ -67,6 +67,22 @@ test('finds Send in the picker footer when the list and footer are sibling conta
   assert.equal(sendButtonNearDialog(list, { body }), send)
 })
 
+test('finds clickable XChat group rows even when they have no legacy test IDs', () => {
+  const row = (label, opacity) => ({
+    innerText: label,
+    getAttribute: () => null,
+    getClientRects: () => [1],
+    closest: () => null,
+    contains: () => false,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity, pointerEvents: 'auto' }) } },
+  })
+  const group = row('BlueV Mutual Follow Group 825 people', '1')
+  const grey = row('Rory, Seayo and 843 others 845 people', '0.4')
+  const person = row('NGSLin @NGSLin99', '1')
+  const picker = { querySelectorAll: (selector) => selector === 'div, li, button' ? [group, grey, person] : [] }
+  assert.deepEqual(groupRows(picker).map(({ name }) => name), ['BlueV Mutual Follow Group'])
+})
+
 test('selects a group and clicks Send inside the picker', async () => {
   let selected = false
   let sent = false
@@ -91,7 +107,7 @@ test('selects a group and clicks Send inside the picker', async () => {
     parentElement: body,
     closest: () => null,
     querySelector: (selector) => selector.includes('placeholder') ? search : null,
-    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('input') ? [search] : selector.includes('button') ? [pickerSend] : [],
+    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('input') ? [search] : selector.includes('data-testid="toast"') ? sent ? [{ innerText: 'Message sent' }] : [] : selector.includes('button') ? [pickerSend] : [],
     scrollTop: 0,
     clientHeight: 600,
     ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '0.5', pointerEvents: 'auto' }) } },
@@ -109,18 +125,22 @@ test('selects a group and clicks Send inside the picker', async () => {
     querySelector: () => ({}),
     closest: () => article,
   }
+  const embed = { shadowRoot: picker }
   const doc = {
     body,
     querySelector: () => null,
     querySelectorAll: (selector) => {
       if (selector.includes('article[data-testid="tweet"]')) return [article]
+      if (selector.includes('xchatEmbedShare')) return [embed]
       if (selector.includes('role="dialog"')) return []
-      if (selector.includes('data-testid="toast"')) return sent ? [{ innerText: 'Message sent' }] : []
+      if (selector.includes('data-testid="toast"')) return []
       if (selector.includes('role="heading"')) return [search]
       if (selector.includes('button')) return [outsideSend, pickerSend]
       return []
     },
   }
+  assert.equal(shareScopes(doc)[0], picker)
+  assert.equal(shareDialog(doc), picker)
   const sessionStorage = new Map()
   const controller = createController({
     document: doc,

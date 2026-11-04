@@ -50,6 +50,7 @@ test('runtime groups follow schedule priority order with idle fill-ins', () => {
   assert.deepEqual(groups.map((group) => [group.id, group.phase]), [
     ['reply', 'running'],
     ['poster', 'idle'],
+    ['community', 'idle'],
     ['likes', 'idle'],
     ['mutual', 'waiting'],
   ])
@@ -59,11 +60,13 @@ test('runtime groups follow schedule priority order with idle fill-ins', () => {
     ['kol', 'idle', 8],
   ])
   assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['poster-premium', 'poster', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'prune-posts', 'prune-replies'])
-  assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
-  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
-  assert.equal(groups[3].tasks[2].detail, '风控等待中')
-  assert.equal(groups[3].tasks[2].waitUntil, NOW + 600000)
-  assert.equal(groups[3].tasks[2].priority, 3)
+  assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['community-share'])
+  assert.equal(groups[2].tasks[0].priority, 7)
+  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
+  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
+  assert.equal(groups[4].tasks[2].detail, '风控等待中')
+  assert.equal(groups[4].tasks[2].waitUntil, NOW + 600000)
+  assert.equal(groups[4].tasks[2].priority, 3)
 })
 
 test('remote commands enqueue and return on the next heartbeat report', async () => {

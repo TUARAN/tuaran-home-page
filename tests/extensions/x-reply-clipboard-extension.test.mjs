@@ -1910,6 +1910,7 @@ test('handoff cannot report running from another task while the target is idle',
     pruneState: { running: false, stopping: false },
     articleState: { running: false, stopping: false },
     forwardState: { running: false, stopping: false },
+    communityState: { running: false, stopping: false },
     currentTaskKey: () => 'timeline', stopLocalTasks: () => { state.running = false },
     sessionStorage: { setItem() {} },
     applyTaskTitle() {}, registerCurrentTaskTab: async () => {},
@@ -1961,7 +1962,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 9)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 10)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -1974,7 +1975,7 @@ test('all seven task panels show the same blocked state with a readable reason',
 
 test('missing DeepSeek key guide opens model settings and focuses its saved key field', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const definition = source.match(/  function openModelSettingsForKey\(panel\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  function openModelSettingsForKey\(panel(?:, [^\)]*)?\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   let focused = 0
   const panel = { querySelector(selector) {
@@ -2195,7 +2196,7 @@ test('merge account data consolidates legacy default logs into the active handle
     assert.deepEqual(stored.xrcDailyReports[0].counts, {
       comments: 5, timelineComments: 0, notificationComments: 0,
       likes: 5, follows: 0, unfollows: 0, followBacks: 0, posts: 0,
-      kolComments: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0,
+      kolComments: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0, communityShares: 0,
     })
     assert.equal(stored.xrcDailyReports[0].accountHandle, 'tarsixseveneig1')
     assert.equal(stored.xrcLimitObservations[0].accountHandle, 'tarsixseveneig1')
@@ -4345,7 +4346,7 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.match(background.POST_PREMIUM_PROMPT, /60～120 字/)
   assert.equal(background.CLICKBAIT_POST_PROMPT, background.POST_NORMAL_PROMPT)
   assert.match(background.REPLY_TIMELINE_PROMPT, /短小精悍/)
-  assert.match(background.REPLY_COMMENT_PROMPT, /前后文连贯/)
+  assert.match(background.REPLY_COMMENT_PROMPT, /短、友好、轻松/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /发推提示词同样适用于本次热点改写/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /禁止正反对照与辩证拆解/)
   assert.match(background.NEWS_REWRITE_SYSTEM_PROMPT, /来源材料里的假对比、自我指涉和意义拔高改成直接陈述/)
@@ -5973,7 +5974,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -6192,7 +6193,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /conversation = await conversationOrFallback\(next, postText\)/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十六项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十七项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -6281,7 +6282,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /function validReplyMode\(\) \{\s*return "ai";/)
   assert.doesNotMatch(content, /data-xrc-mode="ai"/)
   assert.doesNotMatch(content, /data-xrc-ai-key/)
-  assert.doesNotMatch(content, /type="password"/)
+  assert.match(content, /data-xrc-mobileoffice-token/)
+  assert.doesNotMatch(content, /data-xrc-secret-input[^>]{0,160}type="password"/)
   assert.match(content, /data-xrc-secret-input/)
   assert.match(content, /data-1p-ignore="true"/)
   assert.match(content, /不要填写 X 登录密码/)
@@ -6445,8 +6447,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="version-path"/)
   assert.match(docsPage, /来时路 · v0 → v4/)
   assert.match(docsPage, /VERSION_ERAS/)
-  assert.match(docsPage, /id: 'era-v0', label: 'v0 · 原型闭环'/)
-  assert.match(docsPage, /id: 'era-v4', label: 'v4 · 单页签排班'/)
+  assert.match(docsPage, /id: 'era-v0'/)
+  assert.match(docsPage, /title: '原型闭环'/)
+  assert.match(docsPage, /id: 'era-v4'/)
+  assert.match(docsPage, /title: '单页签排班'/)
   assert.match(docsPage, /flex flex-col gap-3 md:flex-row md:items-start/)
   assert.match(docsPage, /原型闭环/)
   assert.match(docsPage, /正式面板/)
@@ -6459,14 +6463,13 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /TaskWindowPlan/)
   assert.doesNotMatch(docsPage, /TaskSchedulePrototype/)
   const windowPlan = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/TaskWindowPlan.jsx', extensionDir), 'utf8')
-  assert.match(windowPlan, /panel-v4-schedule-desk\.webp/)
-  assert.match(windowPlan, /panel-v4-task-rounds\.webp/)
-  assert.match(windowPlan, /panel-v4-panel-overview\.webp/)
+  assert.match(windowPlan, /panel-v4\.3\.24-schedule\.webp/)
+  assert.match(windowPlan, /panel-v4\.3\.24-task\.webp/)
   assert.match(windowPlan, /真实面板/)
   assert.match(windowPlan, /面板长什么样/)
   assert.doesNotMatch(windowPlan, /账号 A/)
-  assert.match(docsPage, /评论、点赞、关注、发帖、普通发文、站长转发和清理/)
-  assert.match(docsPage, /id: 'reply-kol', label: '评论大V', depth: 2/)
+  assert.match(docsPage, /评论、点赞、关注、发帖、普通发文、站长转发、社群分发和清理/)
+  assert.match(docsPage, /id="reply-kol"/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
   assert.match(docsPage, /优先评论他们当天的帖子/)
   assert.match(docsPage, /只回「别人回你自己帖子」这一类/)
@@ -6514,13 +6517,13 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /PostWaveTimeline/)
   assert.match(docsPage, /id: 'poster-wave'/)
   assert.match(docsPage, /发帖波浪时间线/)
-  assert.match(docsPage, /id: 'comments', label: '评论管理', depth: 1/)
-  assert.match(docsPage, /id: 'reply-timeline', label: '评论首页', depth: 2/)
+  assert.match(docsPage, /id: 'comments', label: '评论管理'/)
+  assert.match(docsPage, /id="reply-timeline"/)
   assert.match(docsPage, /id="reply-timeline"[\s\S]*一次任务会按所选速度档位生成多轮计划/)
   assert.match(docsPage, /每轮各有回复条数目标/)
   assert.match(docsPage, /正常情况下完成本次全部轮次后才让出共享执行页签/)
-  assert.match(docsPage, /id: 'poster', label: '定时发帖', depth: 1/)
-  assert.match(docsPage, /id: 'poster-wave', label: '发帖波浪时间线', depth: 2/)
+  assert.match(docsPage, /id: 'poster', label: '发帖、草稿与清理'/)
+  assert.match(docsPage, /id="poster-wave"/)
   const docsToc = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/DocsToc.jsx', extensionDir), 'utf8')
   assert.match(docsToc, /border-l border-\[var\(--site-line\)\]/)
   assert.match(docsToc, /scrollBy\(\{ top: delta/)
@@ -6792,7 +6795,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
   assert.equal(rules['likes-replies'].priority, rules['likes-posts'].priority)
-  assert.ok(rules.notifications.priority > rules.timeline.priority)
+  assert.ok(rules.timeline.priority > rules.notifications.priority)
   assert.ok(rules.timeline.priority > rules['poster-premium'].priority)
   assert.ok(rules['poster-premium'].priority > rules.poster.priority)
   assert.equal(rules['poster-x'].priority, rules.poster.priority)
@@ -6846,7 +6849,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward']) {
+  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -6895,7 +6898,7 @@ test('cleanup and X-themed post checkboxes start unchecked unless saved choices 
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward']) {
+  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)
@@ -7411,11 +7414,11 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // Highest default rank is notifications; from /home that may navigate first, then start in-page.
-    assert.equal(activeMode, 'notifications')
+    // Highest default rank is 评论首页; from /home that may navigate first, then start in-page.
+    assert.equal(activeMode, 'timeline')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /notifications/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => /xrcAssistant=timeline/i.test(String(entry.options?.url || ''))),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -8630,6 +8633,128 @@ test('manual follow requests skip ordinary scan spacing but retain explicit cool
     stored.xrcTaskSchedule.rules['mutual-followBack'].window = 'day'
     assert.equal((await background.readTaskSchedule()).rules['mutual-followBack'].window, 'day')
   } finally { globalThis.chrome = previousChrome }
+})
+
+const communityShare = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+
+test('community share picks the newest original post and skips pinned replies and reposts', () => {
+  const picked = communityShare.pickLatestOriginalPost([
+    { id: '1', own: true, pinned: true, text: '置顶' },
+    { id: '2', own: true, repost: true, text: '转发' },
+    { id: '3', own: true, reply: true, text: '回复' },
+    { id: '4', own: true, text: '最新原创' },
+    { id: '5', own: false, text: '别人的帖' },
+  ])
+  assert.equal(picked.id, '4')
+  assert.equal(communityShare.pickLatestOriginalPost([{ id: '9', own: true, reply: true }]), null)
+})
+
+test('community share only keeps joined communities and caps the list', () => {
+  const cards = [
+    { id: '11', href: '/i/communities/11', name: '已加入社群', joinControl: '已加入' },
+    { id: '12', href: '/i/communities/12', name: '推荐社群', joinControl: '加入' },
+    { id: '13', href: '/i/communities/13', name: '发现社群', explore: true },
+    { id: '11', href: '/i/communities/11', name: '重复', joinControl: 'Joined' },
+    { id: '14', href: '/i/communities/14', name: '无按钮社群' },
+  ]
+  const joined = communityShare.collectJoinedCommunities(cards)
+  assert.deepEqual(joined.map((item) => item.id), ['11', '14'])
+  const capped = communityShare.collectJoinedCommunities(
+    Array.from({ length: 40 }, (_, index) => ({ id: String(100 + index), name: `社群${index}` })),
+    { limit: 30 },
+  )
+  assert.equal(capped.length, 30)
+})
+
+test('community share commentary stays within two sentences and can fall back to a template', () => {
+  const template = communityShare.templateCommentary('今天把排班改成单页签。', '产品社群')
+  assert.match(template, /产品社群/)
+  assert.match(template, /感兴趣可以直接看原帖/)
+  assert.doesNotMatch(template, /不是.+而是/)
+  const cleaned = communityShare.normalizeCommentary('不是广告，而是同步。\nhttps://x.com/a/status/1', template)
+  assert.equal(cleaned, template)
+  const kept = communityShare.normalizeCommentary('这条也放过来。想看的直接点原帖。再加一句就不该留下。', template)
+  assert.equal(kept, '这条也放过来。想看的直接点原帖。')
+  const draft = communityShare.shareDraft(kept, 'https://x.com/tuaran/status/99')
+  assert.match(draft, /想看的直接点原帖。\n\nhttps:\/\/x.com\/tuaran\/status\/99/)
+})
+
+test('community share delays follow the speed tier and retries then skip', () => {
+  assert.ok(communityShare.itemDelayMs('slow', () => 0) >= 20000)
+  assert.ok(communityShare.itemDelayMs('turbo', () => 0.99) <= 6000)
+  assert.equal(communityShare.shareGapMs('medium'), 3 * 60 * 60 * 1000)
+  const cursor = communityShare.normalizeCursor({
+    phase: 'share',
+    handle: 'tuaran',
+    source: { id: '99', href: '/tuaran/status/99', text: '原文' },
+    communities: [{ id: '11', name: '产品社群' }],
+    opens: { 11: 2 },
+  })
+  const skipped = communityShare.decideStep(cursor, {
+    path: '/i/communities/11',
+    composerReady: false,
+  })
+  assert.equal(skipped.action, 'skip')
+  assert.equal(skipped.reason, 'no-composer')
+  const filled = communityShare.decideStep(communityShare.normalizeCursor({
+    ...cursor,
+    opens: {},
+    fills: { 11: 2 },
+  }), { path: '/i/communities/11', composerReady: true, draftReady: false })
+  assert.equal(filled.reason, 'fill-failed')
+  const submitted = communityShare.decideStep(communityShare.normalizeCursor({
+    ...cursor,
+    opens: {},
+    fills: { 11: 1 },
+    attempts: { 11: 2 },
+  }), { path: '/i/communities/11', composerReady: true, draftReady: true })
+  assert.equal(submitted.reason, 'submit-failed')
+})
+
+test('community share step finds the profile post, skips an already shared community, and stops on a limit', () => {
+  const found = communityShare.decideStep(communityShare.normalizeCursor({ handle: 'tuaran' }), {
+    path: '/tuaran',
+    posts: [
+      { id: '1', own: true, pinned: true },
+      { id: '2', own: true, text: '最新原创' },
+    ],
+  })
+  assert.equal(found.action, 'navigate')
+  assert.match(found.url, /\/i\/communities\?xrcAssistant=community-share/)
+  assert.equal(found.cursor.source.id, '2')
+  const listed = communityShare.decideStep(found.cursor, {
+    path: '/i/communities',
+    canScroll: false,
+    cards: [{ id: '11', name: '产品社群', joinControl: '已加入' }, { id: '12', name: '推荐', joinControl: '加入' }],
+  })
+  assert.equal(listed.action, 'navigate')
+  assert.match(listed.url, /\/i\/communities\/11/)
+  const again = communityShare.decideStep(listed.cursor, {
+    path: '/i/communities/11',
+    canScroll: false,
+  }, ['11'])
+  assert.equal(again.action, 'finish')
+  const limited = communityShare.decideStep(listed.cursor, {
+    path: '/i/communities/11',
+    limited: true,
+  })
+  assert.equal(limited.action, 'limited')
+  const ledger = communityShare.rememberLedgerShare({ posts: {} }, '2', '11', 1_000)
+  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 6 * 24 * 60 * 60 * 1000), ['11'])
+  assert.deepEqual(communityShare.ledgerIdsFor(ledger, '2', 1_000 + 8 * 24 * 60 * 60 * 1000), [])
+})
+
+test('community share is a scheduled task that stays off until enabled', () => {
+  const rules = background.normalizedTaskRules({})
+  assert.equal(rules['community-share'].enabled, false)
+  assert.equal(rules['community-share'].priority, 7)
+  assert.equal(rules['community-share'].pace, 'slow')
+  assert.equal(rules['community-share'].minGapMs, background.COMMUNITY_SHARE_RETRY_MS)
+  assert.equal(background.sliceMsForMode('community-share', { sliceSeconds: 30 }), background.COMMUNITY_SHARE_SLICE_MS)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/tuaran', { accountHandle: 'tuaran' }), true)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), true)
+  assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/explore', { accountHandle: 'tuaran' }), false)
+  assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

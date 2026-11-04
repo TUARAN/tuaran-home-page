@@ -20,7 +20,7 @@ const DOCS_URL = `https://2aran.com${DOCS_PATH}`
 
 const title = 'X高频互动助手文档中心'
 const description =
-  'X 高频互动助手使用手册：快速开始、十六项任务、排班设置、异常恢复、数据维护与版本记录。'
+  'X 高频互动助手使用手册：快速开始、十七项任务、排班设置、异常恢复、数据维护与版本记录。'
 
 export const metadata = {
   title,
@@ -93,7 +93,7 @@ const VERSION_ERAS = [
     version: 'v4',
     title: '单页签排班',
     span: '4.0 起',
-    oneLiner: '一账号一个执行页签，十六项按到期串行轮班。',
+    oneLiner: '一账号一个执行页签，十七项按到期串行轮班。',
     points: [
       '冷却、档期只卡住自己；到期项立刻接手，不再为无关等待干耗页签。',
       '排班台卡片可勾选参与；右侧「查看」进子页改优先级/时段与速度并启停。',
@@ -102,7 +102,7 @@ const VERSION_ERAS = [
   },
 ]
 
-const TOC = [{'heading': '开始使用', 'items': [{'id': 'quick-start', 'label': '快速开始'}, {'id': 'flow', 'label': '运行与界面'}, {'id': 'task-window-plan', 'label': '面板截图'}, {'id': 'states', 'label': '状态和按钮'}]}, {'heading': '任务与配置', 'items': [{'id': 'tasks', 'label': '十六项任务'}, {'id': 'comments', 'label': '评论管理'}, {'id': 'likes', 'label': '点赞管理'}, {'id': 'mutual-rules', 'label': '关注与取关'}, {'id': 'poster', 'label': '发帖、草稿与清理'}, {'id': 'prune-posts', 'label': '清理低质帖'}, {'id': 'prune-replies', 'label': '清理低质评论'}, {'id': 'schedule-order', 'label': '排序'}, {'id': 'frequency', 'label': '速度与排班设置'}, {'id': 'prompt-feedback', 'label': '提示词反馈台账'}]}, {'heading': '排查与维护', 'items': [{'id': 'risk', 'label': '异常恢复'}, {'id': 'rules', 'label': '平台边界'}, {'id': 'maintenance', 'label': '更新与数据'}]}, {'heading': '历史与观察', 'items': [{'id': 'history', 'label': '版本演进'}, {'id': 'releases', 'label': '周总结'}, {'id': 'ops-journal', 'label': '运营纪事'}]}]
+const TOC = [{'heading': '开始使用', 'items': [{'id': 'quick-start', 'label': '快速开始'}, {'id': 'flow', 'label': '运行与界面'}, {'id': 'task-window-plan', 'label': '面板截图'}, {'id': 'states', 'label': '状态和按钮'}]}, {'heading': '任务与配置', 'items': [{'id': 'tasks', 'label': '十七项任务'}, {'id': 'community-share', 'label': '社群分发', 'depth': 2}, {'id': 'comments', 'label': '评论管理'}, {'id': 'likes', 'label': '点赞管理'}, {'id': 'mutual-rules', 'label': '关注与取关'}, {'id': 'poster', 'label': '发帖、草稿与清理'}, {'id': 'prune-posts', 'label': '清理低质帖'}, {'id': 'prune-replies', 'label': '清理低质评论'}, {'id': 'schedule-order', 'label': '排序'}, {'id': 'frequency', 'label': '速度与排班设置'}, {'id': 'prompt-feedback', 'label': '提示词反馈台账'}]}, {'heading': '排查与维护', 'items': [{'id': 'risk', 'label': '异常恢复'}, {'id': 'rules', 'label': '平台边界'}, {'id': 'maintenance', 'label': '更新与数据'}]}, {'heading': '历史与观察', 'items': [{'id': 'history', 'label': '版本演进'}, {'id': 'releases', 'label': '周总结'}, {'id': 'ops-journal', 'label': '运营纪事'}]}]
 
 const STATE_ROWS = [
   ['运行中', '当前任务正在扫描、生成或发送；详情显示最近更新时间。'],
@@ -255,12 +255,12 @@ export default function XReplyClipboardDocsPage() {
               <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注与取关 3 项、发帖与长文 6 项、清理 2 项。发帖与长文包含纯文字帖、精品发帖、X主题发帖、小红书发帖、普通发文和站长转发。它们按排班顺序占用执行页签，不会同时在这一页签执行。</p>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
-            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十六项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
+            <p className="text-[var(--site-ink)]">后台按到期时间、时段与优先级安排十七项任务；没有到期任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>评论首页、评论回复、评论大V、点赞帖子、点赞评论、清理未回关、回关粉丝、纯文字帖、精品发帖、X主题发帖、普通发文和站长转发进入同一队列。任务切换前会等当前操作结束并保存状态；冷却、发帖排程和手动停止优先于排班。</li>
               <li>卡片左侧勾选是否参与自动排班；清理未回关、清理低质帖、清理低质评论、X主题发帖、小红书发帖和站长转发默认不勾选，需要时手动加入，已保存的个人选择继续生效。X主题发帖卡片标注「调试中」。右侧「查看」打开任务子页。子页先速度表与启停，排班（优先级、时段、名单）靠后。不新开或切换浏览器页签。整卡不再一点就进子页。</li>
               <li>排班台左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关页签不会关掉后台排班。风控等待不会暂停其他任务。</li>
-              <li>详情和十六项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。每个任务子页顶部都有「暂停当前任务」，只手动暂停这一项；重新开启使用该页的启动按钮。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
+              <li>详情和十七项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。每个任务子页顶部都有「暂停当前任务」，只手动暂停这一项；重新开启使用该页的启动按钮。评论首页、评论回复、评论大V遇到疑似自动化提示时显示等待原因和倒计时，不转成“需处理”。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
               <li>排班台标注「当前任务 / 下一任务 / 候选任务」。绿边表示运行，黄边表示等待，红边表示已停止或需处理。未参与的任务降饱和并排在后面；「查看」只进入详情，不改变排班。</li>
               <li>到期任务还需满足时段、共享冷却与优先级条件。评论完成本次轮次后让位；纯文字帖和 X主题发帖每次只发 1 条，随后等待下一周期。具体数值见「速度与排班设置」。</li>
               <li>回关粉丝和关注候选默认全天，均为 7 分。确认满 100 个才让出页签，然后按速度档休息：慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟。清理类可连续执行，遇 X 受限或手动暂停后停止；下次时间与异常原因以卡片为准。</li>
@@ -324,7 +324,7 @@ export default function XReplyClipboardDocsPage() {
             </p>
           </Section>
 
-          <Section id="tasks" index="03" title="十六项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 清理">
+          <Section id="tasks" index="03" title="十七项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 社群 · 清理">
             <div className="space-y-3">
               <TaskBlock id="comments" badge="评" title="评论管理" summary="评论首页 · 评论回复 · 评论大V">
                 <div id="reply-timeline" className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
@@ -341,6 +341,15 @@ export default function XReplyClipboardDocsPage() {
                   <li id="reply-kol" className="scroll-mt-24">评论大V：打开「评论大V」子页配置区里的大V名单账号主页，优先评论他们当天的帖子。慢、中、快、超快分别在每个大V主页评论最多 3、5、7、11 条；达到上限或当天没有可评的帖子就换下一个，名单扫完后休息。连续 3 次无法确认启动时停止自动重试，显示原因，检查执行页和模型设置后可手动重新启动。名单可对照 <a href="https://xbangdan.com/accounts/" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">X榜单账号榜</a> 自行增删，默认带一组简体中文社区常见账号。</li>
                   <li>三项轮流占用同一个执行页签，分别保留去重进度。评论首页与评论回复完成本次全部轮次后休息；评论大V扫完名单后休息。通知页没有更多待处理内容时也会结束本次任务。</li>
                   <li>三项评论任务共用上面的递增冷却；排班开着时会先让出执行页签，到期后按优先级继续。普通轮次和周期等待可“立即开始”，风控冷却不能跳过。</li>
+                </ul>
+              </TaskBlock>
+              <TaskBlock id="community-share" badge="社" title="社群类" summary="社群分发">
+                <ul className="list-disc space-y-2 pl-5">
+                  <li id="community-share-rules" className="scroll-mt-24">社群分发默认不参与排班。在任务库勾选「社群类 · 社群分发」，或打开子页后点启动。它和其余任务共用同一个执行页签。</li>
+                  <li>启动后先打开当前登录账号的主页，取最新一条原创帖。置顶、纯回复和纯转发会跳过。回复串不会整段带上，只带这条原帖的链接。</li>
+                  <li>然后打开社群列表，只收已加入的社群，发现页或带「加入」按钮的推荐不发。单轮最多 30 个。每个社群发一次：1～2 句短评，再加原帖链接。已配置的回复模型会写短评；没写出就用模板。</li>
+                  <li>某个社群打不开发帖框、写不进短评或两次都没发出，就记下并继续下一个。X 提示受限时整轮停下。同一条帖发进同一个社群后，7 天内不再重复发。</li>
+                  <li>社群之间按速度档停顿：慢约 20–35 秒，中约 12–20 秒，快约 6–12 秒，超快约 3–6 秒。一轮做完后，慢档约 6 小时、中档约 3 小时、快档约 90 分钟、超快约 45 分钟再排。中途被更高优先级任务换走后，大约 15 分钟可以接着发还没发过的社群。</li>
                 </ul>
               </TaskBlock>
               <TaskBlock id="likes" badge="赞" title="点赞管理" summary="点赞帖子 · 点赞评论">
@@ -657,7 +666,7 @@ export default function XReplyClipboardDocsPage() {
                 <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">从 v3 升级到 v4</h3>
               </div>
               <p className="m-0 text-[14px] leading-7 text-[var(--site-ink)]">
-                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注、发帖、普通发文、站长转发和清理按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
+                v3 常为多项任务同时开多个 X 页签并行跑；某一项在冷却或排队时，其他项也容易跟着空等，页签多、切换乱。v4 改为每个 Chrome 配置文件里的一个 X 账号共用一个执行页签，评论、点赞、关注、发帖、普通发文、站长转发、社群分发和清理按到期时间串行轮班：当前项做完、让位或进入冷却后，其他到期项立刻接手，不再为无关等待干耗时间。
               </p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] p-3.5">
@@ -671,7 +680,7 @@ export default function XReplyClipboardDocsPage() {
                 <div className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_35%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] p-3.5">
                   <strong className="text-[12px] text-[var(--site-green)]">v4 · 单页签串行</strong>
                   <ul className="mb-0 mt-2 list-disc space-y-1.5 pl-4 text-[13px] leading-6 text-[var(--site-muted)]">
-                    <li>一账号一个执行页签，十六项任务轮班占用</li>
+                    <li>一账号一个执行页签，十七项任务轮班占用</li>
                     <li>冷却中的任务让位，其他允许执行的到期项按优先级排班</li>
                     <li>排班台卡片勾选参与；「查看」进子页，不改队列</li>
                   </ul>

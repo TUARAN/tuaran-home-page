@@ -1937,14 +1937,16 @@ function taskGapReadyAt(item, rule, now = Date.now()) {
 
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
+  const manualFocusMode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
     .filter(({ mode, item, rule }) => {
+      if (manualFocusMode && mode !== manualFocusMode) return false;
       const gapUntil = taskGapReadyAt(item, rule, now);
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
       const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode);
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
       const forwardedToday = mode === "site-forward" && (item.successDate === shanghaiDateKey(now) || item.uncertainDate === shanghaiDateKey(now));
-      return rule.enabled && !item.blocked && !manualStopped && !forwardedToday
+      return (rule.enabled || manualFocusMode === mode) && !item.blocked && !manualStopped && !forwardedToday
         && (mayBypassWait || Number(item.resumeAt || 0) <= now)
         && (mayBypassWait || gapUntil <= now)
         && (mayBypassWait || taskWindowOpen(mode, rule, now));
@@ -2031,11 +2033,13 @@ function healStaleManualStops(plan) {
 function scheduleTimeline(plan, now = Date.now()) {
   const due = plan.enabled ? dueTaskModes(plan, now).filter((mode) => mode !== plan.current) : [];
   const rules = normalizedTaskRules(plan.rules);
+  const manualFocusMode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
   const future = QUEUED_TASKS.filter((mode) => mode !== plan.current).map((mode, index) => {
     const item = plan.items?.[mode] || {};
     const rule = rules[mode];
     const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
-    const status = !plan.enabled ? "paused" : !rule.enabled ? "disabled" : manualStopped ? "stopped"
+    const status = !plan.enabled ? "paused" : manualFocusMode && mode !== manualFocusMode ? "held"
+      : !rule.enabled && manualFocusMode !== mode ? "disabled" : manualStopped ? "stopped"
       : item.blocked ? "blocked" : due.includes(mode) ? "ready" : "scheduled";
     const readyAt = status === "ready" ? now : status === "scheduled"
       ? nextTaskWindowAt(mode, rule, Math.max(now, Number(item.resumeAt) || 0, taskGapReadyAt(item, rule, now))) : 0;
@@ -2052,8 +2056,8 @@ async function readTaskSchedule() {
   const stored = await chrome.storage.local.get(TASK_SCHEDULE_KEY);
   const value = stored?.[TASK_SCHEDULE_KEY];
   const plan = value && typeof value === "object"
-    ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
-    : { enabled: false, current: "", cursor: 0, items: {} };
+    ? { ...value, enabled: Boolean(value.enabled), current: QUEUED_TASKS.includes(value.current) ? value.current : "", manualFocusMode: QUEUED_TASKS.includes(value.manualFocusMode) ? value.manualFocusMode : "", items: value.items && typeof value.items === "object" ? { ...value.items } : {} }
+    : { enabled: false, current: "", manualFocusMode: "", cursor: 0, items: {} };
   const storedLikeGapIsLegacy = ["likes-posts", "likes-replies"].some((mode) => Number(plan.rules?.[mode]?.minGapMs) === LEGACY_LIKE_GAP_MS);
   const storedPruneGapIsLegacy = Number(plan.rules?.["prune-posts"]?.minGapMs) === LEGACY_PRUNE_GAP_MS;
   plan.rules = normalizedTaskRules(plan.rules);
@@ -2424,7 +2428,7 @@ async function runTaskSchedule() {
     // would stop. Do not let a comment task's full-run occupancy swallow it.
     const manualDue = requestedMode && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
     const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
-    const disabledCurrent = !plan.rules?.[current]?.enabled;
+    const disabledCurrent = !plan.rules?.[current]?.enabled && plan.manualFocusMode !== current;
     const haltedCurrent = Boolean(item.blocked || (item.manualStopped && !isScheduleWaitReason(item.reason)));
     const occupancyAge = now - Number(plan.startedAt || now);
     const missingTask = !task;
@@ -2758,6 +2762,7 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "", { tick 
     throw new Error("当前 X 账号与排班账号不一致，请先暂停全流程并确认账号");
   }
   plan.enabled = false;
+  plan.manualFocusMode = "";
   plan.accountHandle = handle;
   plan.enabledAt = Date.now();
   for (const mode of FLOW_TASKS) {
@@ -3459,6 +3464,7 @@ async function pauseAllTasks(reason = "全流程已暂停") {
   const plan = await readTaskSchedule();
   const current = plan.current;
   plan.enabled = false;
+  plan.manualFocusMode = "";
   await saveTaskSchedule(plan);
   const result = await stopAllTaskTabs(reason, { phase: "paused" });
   const latest = await readTaskSchedule();
@@ -3474,6 +3480,7 @@ async function markManualTaskStop(mode, stopTab = false) {
   const plan = await readTaskSchedule();
   const runtime = await readPluginRuntime();
   const wasActive = plan.enabled ? plan.current === mode : Boolean(runtime.tasks?.[mode]);
+  if (plan.manualFocusMode === mode) plan.manualFocusMode = "";
   plan.items[mode] = { ...(plan.items[mode] || {}), manualStopped: true, manualRequestedAt: 0, resumeAt: 0, reason: "已手动停止" };
   await saveTaskSchedule(plan);
   const suspended = plan.enabled && wasActive && QUEUED_TASKS.includes(mode)
@@ -3496,6 +3503,12 @@ async function markManualTaskStop(mode, stopTab = false) {
 async function markManualTaskStart(mode) {
   if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
   const plan = await readTaskSchedule();
+  plan.manualFocusMode = mode;
+  for (const otherMode of FLOW_TASKS) {
+    if (otherMode !== mode && Number(plan.items?.[otherMode]?.manualRequestedAt) > 0) {
+      plan.items[otherMode] = { ...plan.items[otherMode], manualRequestedAt: 0 };
+    }
+  }
   if (REPLY_TASKS.includes(mode)) {
     clearSharedReplyRisk(plan);
     for (const replyMode of REPLY_TASKS) {
@@ -4043,6 +4056,7 @@ if (typeof module === "object" && module.exports) {
     recordScheduleSegment,
     scheduleTimeline,
     markManualTaskStart,
+    markManualTaskStop,
     suspendScheduledTask,
     runTaskSchedule,
     failScheduledStart,

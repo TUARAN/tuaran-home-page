@@ -2547,6 +2547,7 @@
   function formatScheduleCardNote(task, wait) {
     let status = String(wait?.label || task.reason || "").trim();
     if (wait?.waitingFor) status = `等待「${wait.waitingFor}」完成`;
+    else if (status === "等待手动任务") status = "等待手动任务";
     else if (wait?.kind === "queue" || /^(已到期|排队中)$/u.test(status)) status = "等待安排";
     else if (status === "本次已完成") status = "等待下次排班";
     if (!status) status = task.rule?.enabled === false ? "可添加到排班" : "等待安排";
@@ -2566,6 +2567,7 @@
   }
 
   function formatDeskDispatchNote({ nextEntry, preview, waitMs }) {
+    if (taskSchedule.manualFocusMode) return "手动任务优先；其他任务暂停轮换，手动停止该任务后恢复";
     const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}` : "";
     const nextLabel = nextEntry
       ? (TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode)
@@ -2604,6 +2606,10 @@
       const slotStarted = Number(taskSchedule.startedAt) || 0;
       const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
       return { kind: "starting", label: "正在启动", detail: "正在确认页内任务启动", remaining: confirmLeft };
+    }
+    if (taskSchedule.manualFocusMode && mode !== taskSchedule.manualFocusMode) {
+      const focusLabel = TASK_MODE_LABELS[taskSchedule.manualFocusMode] || "手动任务";
+      return { kind: "queue", label: "等待手动任务", detail: `手动开启的「${focusLabel}」正在优先运行`, remaining: 0 };
     }
     if (!remaining && (future?.status === "ready" || until > 0 && until <= now)) {
       const currentLabel = FLOW_TASKS.find(([key]) => key === taskSchedule.current)?.[1];
@@ -2656,8 +2662,8 @@
     const rule = taskSchedule.rules?.[mode] || {};
     const item = taskSchedule.items?.[mode] || {};
     const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
-    if (rule.enabled === false || manualStopped || item.blocked
-      || ["stopped", "blocked", "paused", "disabled"].includes(String(future?.status || ""))) {
+    if (rule.enabled === false && taskSchedule.manualFocusMode !== mode || manualStopped || item.blocked
+      || ["stopped", "blocked", "paused", "disabled", "held"].includes(String(future?.status || ""))) {
       return Number.POSITIVE_INFINITY;
     }
     const wait = scheduledWaitInfo(mode, now);
@@ -2821,14 +2827,14 @@
     const rule = taskSchedule.rules?.[mode] || {};
     if (overviewTask?.status === "blocked" || overviewTask?.status === "unknown" || item.blocked) return "stopped";
     // Unchecked = not in rotation; keep off the red「手动停止」pulse and just desaturate the card.
-    if (rule.enabled === false) return "";
+    if (rule.enabled === false && taskSchedule.manualFocusMode !== mode) return "";
     if (item.manualStopped && !isScheduleWaitReason(item.reason)) return "stopped";
     // Single-tab schedule: only one runs; every other participant stays yellow while queued / cooling.
     if (taskSchedule.enabled) {
       if (preview.current === mode) return "waiting";
       if (overviewTask?.status === "waiting" || overviewTask?.status === "stopping") return "waiting";
       const future = taskSchedule.timeline?.future?.find((entry) => entry.mode === mode);
-      if (!future || future.status === "ready" || future.status === "scheduled") return "waiting";
+      if (!future || future.status === "ready" || future.status === "scheduled" || future.status === "held") return "waiting";
       if (isScheduleWaitReason(item.reason) || isScheduleWaitReason(future.reason)) return "waiting";
     }
     if (overviewTask?.status === "waiting" || overviewTask?.status === "stopping") return "waiting";
@@ -2864,7 +2870,7 @@
       if (!taskSchedule.enabled && status === USER_STATE_LABELS.waiting && !overview?.status) {
         status = USER_STATE_LABELS.stopped;
       }
-      if (rule.enabled === false) status = USER_STATE_LABELS.stopped;
+      if (rule.enabled === false && taskSchedule.manualFocusMode !== mode) status = USER_STATE_LABELS.stopped;
       return {
         mode,
         label,
@@ -2893,9 +2899,9 @@
     const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
     const currentActions = Number(taskSchedule.items?.[preview.current]?.sliceActions) || 0;
     current.textContent = taskSchedule.enabled
-      ? `${TASK_MODE_LABELS[preview.current] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
+      ? `${taskSchedule.manualFocusMode ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || taskSchedule.manualFocusMode] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${!taskSchedule.manualFocusMode && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
       : "排班已暂停";
-    next.textContent = nextEntry
+    next.textContent = taskSchedule.manualFocusMode ? "其他任务等待手动任务结束" : nextEntry
       ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
       : "等待任务到期";
   }
@@ -3028,7 +3034,7 @@
         for (let dotIndex = 0; dotIndex < 6; dotIndex += 1) dots.append(document.createElement("i"));
         row.append(rail, main, orbit, dots);
       }
-      const enabled = scheduleRuleEnabled(task.mode, task.rule);
+      const enabled = scheduleRuleEnabled(task.mode, task.rule) || taskSchedule.manualFocusMode === task.mode;
       row.classList.toggle("is-disabled", !enabled);
       syncScheduleCardRuleControls(row, task.mode);
       const pulse = scheduleItemPulse(task.mode, preview, overviewByMode[task.mode]);
@@ -3063,13 +3069,14 @@
       const status = row.querySelector(".xrc-schedule-item-status");
       if (label) {
         const category = categoryByMode[task.mode];
-        const signature = `${phase}|${pulse}|${task.label}|${category?.[0] || ""}`;
+        const signature = `${phase}|${pulse}|${task.label}|${category?.[0] || ""}|${taskSchedule.manualFocusMode || ""}`;
         if (label.dataset.xrcLabelSignature !== signature) {
           label.replaceChildren();
           if (phase) {
             const tag = document.createElement("span");
             tag.className = "xrc-desk-phase-tag";
-            tag.textContent = phase === "now" ? (pulse === "running" ? "当前正在执行" : pulse === "stopped" ? "当前已暂停" : "当前等待中") : phase === "next" ? "下一任务" : "候选任务";
+            tag.textContent = phase === "now" ? (pulse === "running" ? "当前正在执行" : pulse === "stopped" ? "当前已暂停" : "当前等待中")
+              : taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode ? "等待手动任务" : phase === "next" ? "下一任务" : "候选任务";
             label.append(tag);
           }
           label.append(document.createTextNode(task.label));
@@ -3115,7 +3122,8 @@
       if (note) {
         if (!enabled) note.textContent = "未勾选，不参与自动排班；仍可查看子页手动启停";
         else {
-          const wait = pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
+          const wait = taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode
+            ? scheduledWaitInfo(task.mode) : pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
           note.textContent = formatScheduleCardNote(task, wait);
         }
       }
@@ -3131,7 +3139,7 @@
     if (library) {
       let count = 0;
       for (const task of ordered) {
-        const enabled = scheduleRuleEnabled(task.mode, task.rule);
+        const enabled = scheduleRuleEnabled(task.mode, task.rule) || taskSchedule.manualFocusMode === task.mode;
         if (enabled || task.mode === nowMode) count++;
         let card = [...library.children].find((node) => node.dataset.mode === task.mode);
         if (!card) {

@@ -1751,6 +1751,7 @@ test('schedule card notes separate concise status from scheduling parameters', a
   assert.match(helpers, /function formatDeskPastNote/)
   assert.match(helpers, /function formatDeskDispatchNote/)
   const context = vm.createContext({
+    taskSchedule: { manualFocusMode: '' },
     formatClock: (ms) => ms === 60000 ? '01:00' : '00:00',
     formatCountdown: () => '13 分 14 秒',
     formatScheduleTime: () => '10/29 08:59',
@@ -2021,7 +2022,39 @@ test('manual restart clears only the selected task stop and restriction flags', 
     assert.equal(schedule.items['likes-posts'].resumeAt, 0)
     assert.equal(schedule.items['likes-posts'].limitedStreak, 0)
     assert.ok(schedule.items['likes-posts'].manualRequestedAt > 0)
+    assert.equal(schedule.manualFocusMode, 'likes-posts')
     assert.deepEqual(schedule.items.poster, { resumeAt: 60000, reason: '等待发帖' })
+  } finally {
+    globalThis.chrome = originalChrome
+  }
+})
+
+test('a manually started task holds the queue through its own wait and releases on manual stop', async () => {
+  const originalChrome = globalThis.chrome
+  const now = Date.now()
+  let schedule = { enabled: false, current: '', items: {
+    notifications: {}, timeline: { manualRequestedAt: now - 1000 },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: key === 'xrcTaskSchedule' ? schedule : undefined } },
+    async set(value) { if (value.xrcTaskSchedule) schedule = value.xrcTaskSchedule },
+  } }, alarms: { async create() {} } }
+  try {
+    await background.markManualTaskStart('notifications')
+    assert.equal(schedule.manualFocusMode, 'notifications')
+    assert.equal(schedule.items.timeline.manualRequestedAt, 0)
+    const runningPlan = { ...schedule, enabled: true, items: { ...schedule.items, notifications: { resumeAt: 0 } } }
+    assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
+    runningPlan.rules = { notifications: { enabled: false } }
+    assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
+    assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'notifications').status, 'ready')
+    runningPlan.items.notifications.resumeAt = now + 60000
+    assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), [])
+    assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'timeline').status, 'held')
+    schedule = { ...runningPlan, enabled: false }
+    await background.markManualTaskStop('notifications')
+    assert.equal(schedule.manualFocusMode, '')
+    assert.ok(background.dueTaskModes({ ...schedule, enabled: true }, now).includes('timeline'))
   } finally {
     globalThis.chrome = originalChrome
   }

@@ -1028,7 +1028,7 @@
     const runPromise = controller.start({
       pace: currentCommunityPace(),
       handle: currentAccountHandle() || lastKnownAccountHandle || "",
-      force: !scheduledStart && Number(communityState.nextAt) > Date.now()
+      force: scheduledStart || Number(communityState.nextAt) > Date.now()
     });
     if (scheduledStart) {
       const deadline = Date.now() + 15000;
@@ -6929,7 +6929,7 @@
       return;
     }
     if (launch.assistantMode === "community-share") {
-      if (communityState.running) return;
+      if (communityState.running && Number(communityState.nextAt) <= Date.now()) return;
       await onCommunityToggle({ scheduledStart: true });
       if (!communityState.running) throw new Error(communityState.status || "社群分发未能启动");
       return;

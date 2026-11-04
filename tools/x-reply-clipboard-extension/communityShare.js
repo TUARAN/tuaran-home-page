@@ -17,6 +17,7 @@
     fast: 90 * 60 * 1000,
     turbo: 45 * 60 * 1000
   });
+  const EMPTY_RUN_RETRY_MS = 15 * 60 * 1000;
   const ITEM_DELAY_MS = Object.freeze({
     slow: [20000, 35000],
     medium: [12000, 20000],
@@ -29,6 +30,15 @@
 
   function shareGapMs(pace) {
     return SHARE_GAP_MS[pace] || SHARE_GAP_MS.slow;
+  }
+
+  function nextShareDelayMs(cursor, limited = false) {
+    const gap = shareGapMs(cursor?.pace);
+    if (limited) return Math.max(gap, 30 * 60 * 1000);
+    if (!cursor?.shared && (!cursor?.source || !cursor?.communities?.length || cursor?.skipped?.length)) {
+      return EMPTY_RUN_RETRY_MS;
+    }
+    return gap;
   }
 
   function itemDelayMs(pace, random = Math.random) {
@@ -650,8 +660,7 @@
     }
 
     function finishWait(limited) {
-      const gap = shareGapMs(cursor.pace);
-      cursor.nextAt = Date.now() + (limited ? Math.max(gap, 30 * 60 * 1000) : gap);
+      cursor.nextAt = Date.now() + nextShareDelayMs(cursor, limited);
       cursor.phase = "done";
       cursor.running = true;
       cursor.limited = Boolean(limited);
@@ -742,6 +751,7 @@
     MAX_COMMUNITIES,
     MAX_SUBMIT_ATTEMPTS,
     shareGapMs,
+    nextShareDelayMs,
     itemDelayMs,
     classifyProfilePost,
     pickLatestOriginalPost,

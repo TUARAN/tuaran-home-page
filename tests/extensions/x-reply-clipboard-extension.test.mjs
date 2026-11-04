@@ -9196,6 +9196,19 @@ test('community share is a scheduled task that stays off until enabled', () => {
   assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
 })
 
+test('community share retries an empty or failed round without a six-hour cooldown', async () => {
+  const fifteenMinutes = 15 * 60 * 1000
+  const sixHours = 6 * 60 * 60 * 1000
+  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: null }), fifteenMinutes)
+  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [] }), fifteenMinutes)
+  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [{ id: '2' }], skipped: [{ id: '2' }] }), fifteenMinutes)
+  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 1, source: { id: '1' }, communities: [{ id: '2' }] }), sixHours)
+  assert.equal(communityShare.nextShareDelayMs({ pace: 'slow', shared: 0, source: { id: '1' }, communities: [{ id: '2' }] }), sixHours)
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(content, /force: scheduledStart \|\| Number\(communityState\.nextAt\) > Date\.now\(\)/)
+  assert.match(content, /communityState\.running && Number\(communityState\.nextAt\) <= Date\.now\(\)/)
+})
+
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {
   const previousChrome = globalThis.chrome
   const previousDateNow = Date.now

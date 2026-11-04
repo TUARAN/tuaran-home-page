@@ -8064,7 +8064,7 @@
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖发送到可用群聊")}
-              <p class="xrc-pace-now">打开当前账号主页的最新帖子，通过右下角分享按钮选择「Send via Chat」。只发送到分享窗口中可点击的群聊；置灰群聊和个人账号均跳过。每次发送须看到成功提示才记录，无法确认时停止并提示手动核对。同一条帖 7 天内不重复发送到同一个群聊。</p>
+              <p class="xrc-pace-now">在当前账号主页跳过置顶和转发，取最新的本人帖子，通过右下角分享按钮选择「Send via Chat」。只发送到分享窗口中可点击的群聊；置灰群聊和个人账号均跳过。每次发送须看到成功提示才记录，无法确认时停止并提示手动核对。同一条帖 7 天内不重复发送到同一个群聊。</p>
               <label class="xrc-schedule-card-list"><span>群聊之间的停顿</span>
                 <select data-xrc-community-pace aria-label="社群分发速度">
                   <option value="slow">慢 · 约 20–35 秒，本轮后约 6 小时</option>

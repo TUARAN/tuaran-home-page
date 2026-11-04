@@ -9086,6 +9086,25 @@ test('group chat sharing chooses the latest own post and excludes pinned or repo
   assert.equal(picked.id, '4')
 })
 
+test('group chat sharing reads the pinned marker from the post page', () => {
+  const article = (id, marker) => {
+    const link = {
+      getAttribute: () => `/tuaran/status/${id}`,
+      querySelector: () => ({}),
+      closest: () => post,
+    }
+    const post = {
+      parentElement: null,
+      querySelectorAll: () => [link],
+      querySelector: () => ({ innerText: marker }),
+    }
+    return post
+  }
+  const posts = communityShare.profilePosts({ querySelectorAll: () => [article('1', 'Pinned'), article('2', '')] }, 'tuaran')
+  assert.equal(posts[0].pinned, true)
+  assert.equal(communityShare.latestOwnPost(posts).id, '2')
+})
+
 test('group chat sharing only targets enabled group rows, never personal accounts', () => {
   const row = (label, disabled = false) => ({
     innerText: label,

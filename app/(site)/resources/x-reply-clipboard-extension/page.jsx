@@ -380,7 +380,7 @@ export default function XReplyClipboardResourcePage() {
           </span>
         </div>
 
-        <div className="mt-8 grid w-full items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
+        <div className="mt-8 w-full">
           <div className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm">
@@ -425,19 +425,19 @@ export default function XReplyClipboardResourcePage() {
             </div>
           </div>
 
-          <figure className="mx-auto w-full max-w-[360px] lg:my-0">
-            <div className="relative aspect-[720/737] overflow-hidden rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
+          <figure className="mx-auto mt-8 w-full lg:mt-10">
+            <div className="relative aspect-[2974/1844] overflow-hidden rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
               <Image
-                src="/images/x-reply-clipboard-extension/panel-real-v3.32.20.webp"
-                alt="X 高频互动助手任务区旧版截图，显示今日统计、功能导航和评论进度"
-                width={726}
-                height={1092}
-                sizes="(max-width: 640px) calc(100vw - 72px), 360px"
+                src="/images/x-reply-clipboard-extension/panel-dual-account.webp"
+                alt="X 高频互动助手同时开在 @tarsixseveneig1 与 @tuaranx：左侧评论首页正在执行，右侧排班台显示当前任务和等待安排"
+                width={2974}
+                height={1844}
+                sizes="(min-width: 1120px) 1008px, calc(100vw - 72px)"
                 priority
-                className="absolute bottom-0 right-0 block h-auto w-[101%] max-w-none"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
-            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">任务区示意 · 旧版面板截图</figcaption>
+            <figcaption className="mt-3 text-center text-xs leading-5 text-slate-400">双账号实拍 · @tarsixseveneig1 / @tuaranx</figcaption>
           </figure>
         </div>
       </header>

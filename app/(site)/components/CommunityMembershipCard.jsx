@@ -27,8 +27,8 @@ function PlanPaymentQr({ plan, compact }) {
       key={src}
       src={src}
       alt={`微信收款码，${plan.name}，固定金额 ${getCommunityPlanPrice(plan)} 元`}
-      width={1279}
-      height={1743}
+      width={828}
+      height={1124}
       sizes={compact ? '180px' : '240px'}
       unoptimized
       className="h-full w-full object-contain"

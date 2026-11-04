@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPaymentQr, getCommunityPlanPrice } from '../lib/auth/communityMembership.js'
@@ -25,7 +25,7 @@ test('topic circle annual price is always 69', () => {
   assert.equal(getCommunityPlanPrice(COMMUNITY_MEMBERSHIP.plans[1]), 199)
 })
 
-test('each plan uses its own fixed-amount WeChat code and can reserve Alipay', () => {
+test('each plan uses its own fixed-amount WeChat code and can reserve Alipay', async () => {
   assert.deepEqual(
     COMMUNITY_MEMBERSHIP.plans.map((plan) => [plan.price, getCommunityPaymentQr(plan), plan.paymentQrAlipay]),
     [
@@ -35,6 +35,10 @@ test('each plan uses its own fixed-amount WeChat code and can reserve Alipay', (
     ],
   )
   assert.equal(getCommunityPaymentQr({}), COMMUNITY_MEMBERSHIP.paymentQr)
+  for (const plan of COMMUNITY_MEMBERSHIP.plans) {
+    const fileUrl = new URL(`../public${getCommunityPaymentQr(plan)}`, import.meta.url)
+    await access(fileUrl)
+  }
   assert.match(membershipCard, /请扫码支付固定金额 ¥/)
   assert.match(membershipCard, /getCommunityPaymentQr\(plan\)/)
   assert.match(membershipCard, /paymentQrAlipay/)

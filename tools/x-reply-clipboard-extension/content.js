@@ -1143,6 +1143,7 @@
   const notificationContextCache = new Map();
   const NOTIFICATION_CONTEXT_CACHE_LIMIT = 100;
   const skippedIds = new Set();
+  const replyButtonMisses = new Map();
   let panelDismissed = false;
   let configOpen = false;
   let configPage = "model";
@@ -4621,6 +4622,7 @@
     state.pendingTweetId = "";
     state.pendingGrokInvite = false;
     skippedIds.clear();
+    replyButtonMisses.clear();
   }
 
   function riskRoundPending() {
@@ -4889,6 +4891,27 @@
 
   function advancePhrase() {
     state.phraseIndex = loopApi.nextPhraseIndex(phrases.length, state.phraseIndex);
+  }
+
+  async function waitUntilReplyButtonReady(tweet, ms, plan) {
+    if (tweet?.article?.isConnected) {
+      tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+    const deadline = Date.now() + Math.max(0, Number(ms) || 0);
+    while (Date.now() < deadline) {
+      if (state.stopping || !state.running || riskRoundPending()) return "stopped";
+      if (findReplyRestrictionDialog()) return "reply-restricted";
+      const live = tweet?.article?.isConnected ? replyButtonForArticle(tweet.article) : null;
+      if (live && loopApi.isSubmitEnabled(live)) return "ready";
+      const remaining = Math.max(1, Math.ceil((deadline - Date.now()) / 1000));
+      state.status = `评论按钮暂时不可用，${remaining} 秒后重试同一条（${plan.attempt}/${plan.limit}）`;
+      renderPanel();
+      await sleep(Math.min(200, Math.max(0, deadline - Date.now())));
+    }
+    if (state.stopping || !state.running || riskRoundPending()) return "stopped";
+    if (findReplyRestrictionDialog()) return "reply-restricted";
+    const live = tweet?.article?.isConnected ? replyButtonForArticle(tweet.article) : null;
+    return live && loopApi.isSubmitEnabled(live) ? "ready" : "pending";
   }
 
   async function sleepActive(ms) {
@@ -6350,6 +6373,7 @@
         if (result === "sent-composer-open" && !await closeReplyComposer({ confirmedSent: true })) {
           return reconnectAndResume("回复已确认，但评论弹窗暂时无法关闭");
         }
+        replyButtonMisses.delete(next.id);
         if (state.pageCount < currentRoundTarget()) {
           state.nextReplyDelaySeconds = isTaskUnlimited(state.assistantMode)
             ? Math.max(2, Math.min(MIN_REPLY_GAP_SECONDS, 3))
@@ -6363,6 +6387,33 @@
             (remaining) => `${state.assistantMode === "notifications" ? "互动" : "回复"}成功，本次随机等待 ${state.nextReplyDelaySeconds} 秒；还剩 ${remaining} 秒`
           );
         }
+      } else if (result === "reply-disabled") {
+        const misses = (replyButtonMisses.get(next.id) || 0) + 1;
+        replyButtonMisses.set(next.id, misses);
+        const plan = loopApi.replyButtonRetryPlan(misses);
+        if (plan.action === "skip") {
+          skippedIds.add(next.id);
+          replyButtonMisses.delete(next.id);
+          reportCommunityAction({
+            task: replyCommunityTask(),
+            result: "skipped",
+            targetId: next.id,
+            errorCode: "reply-disabled"
+          });
+          state.pendingReply = "";
+          state.pendingTweetId = "";
+          state.pendingGrokInvite = false;
+          writeSaved({ running: true, total: state.total });
+          state.status = "这条帖子的评论按钮一直不可用，已跳过";
+          renderPanel();
+          continue;
+        }
+        const waited = await waitUntilReplyButtonReady(next, plan.delaySeconds * 1000, plan);
+        if (waited === "stopped") {
+          if (riskRoundRequested) return advanceRoundAfterRisk();
+          break;
+        }
+        if (waited === "ready") replyButtonMisses.delete(next.id);
       } else {
         state.errors += 1;
         state.status = `尚未发送：${failureLabel(result)}。稍后重试同一条`;
@@ -9036,6 +9087,7 @@
     state.lastReply = "";
     if (state.assistantMode !== "notifications") processedIds.clear();
     skippedIds.clear();
+    replyButtonMisses.clear();
     begin({ resume: false });
   }
 

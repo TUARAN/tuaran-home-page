@@ -3870,6 +3870,41 @@ test('hidden tab short polling wakes even when page timers never fire', async ()
   assert.equal(sent, 1)
 })
 
+test('a background timer still ends when the service worker never answers', async () => {
+  const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
+  const timers = []
+  const context = vm.createContext({
+    window: {
+      setTimeout(fn, ms) {
+        const id = timers.length + 1
+        timers.push({ id, fn, ms, cleared: false })
+        return id
+      },
+      clearTimeout(id) {
+        const item = timers.find((timer) => timer.id === id)
+        if (item) item.cleared = true
+      },
+    },
+    chrome: {
+      runtime: {
+        id: 'test-extension',
+        lastError: null,
+        onMessage: { addListener() {} },
+        sendMessage() {},
+      },
+    },
+  })
+  vm.runInContext(source, context)
+  let done = false
+  const pending = context.XInteractionTimer.wait(1000).then(() => { done = true })
+  await Promise.resolve()
+  const fallback = timers.find((timer) => timer.ms === 6000 && !timer.cleared)
+  assert.ok(fallback)
+  fallback.fn()
+  await pending
+  assert.equal(done, true)
+})
+
 test('short DOM polling stays local instead of flooding the offscreen timer channel', async () => {
   const source = await readFile(new URL('timer.js', extensionDir), 'utf8')
   let sent = 0
@@ -4867,6 +4902,57 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   assert.equal(await context.rotate(), 'complete')
   assert.equal(destinations.length, 2)
   assert.equal(state.completedRounds, 3)
+})
+
+test('a disabled reply button is retried on a local timer and cancelled when the task stops', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function waitUntilReplyButtonReady\(tweet, ms, plan\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  assert.match(source, /result === "reply-disabled"[\s\S]*replyButtonRetryPlan\(misses\)/)
+  assert.match(source, /waitUntilReplyButtonReady\(next, plan\.delaySeconds \* 1000, plan\)/)
+  assert.match(source, /if \(waited === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(source, /这条帖子的评论按钮一直不可用，已跳过/)
+  let now = 10_000
+  let enabled = false
+  const state = { stopping: false, running: true, status: '' }
+  const button = { disabled: true }
+  const article = { isConnected: true, scrollIntoView() {} }
+  const sandbox = vm.createContext({
+    article,
+    state,
+    Date: { now: () => now },
+    Math,
+    riskRoundPending: () => false,
+    findReplyRestrictionDialog: () => false,
+    replyButtonForArticle: () => button,
+    loopApi: { isSubmitEnabled: (item) => item && !item.disabled },
+    renderPanel() {},
+    sleep: async (ms) => {
+      now += ms
+      if (now >= 11_000) state.stopping = true
+    },
+  })
+  vm.runInContext(`${helper}\nglobalThis.waitReady = waitUntilReplyButtonReady`, sandbox)
+  assert.equal(await vm.runInContext('waitReady({ article }, 3000, { attempt: 1, limit: 3 })', sandbox), 'stopped')
+  assert.match(state.status, /秒后重试同一条（1\/3）/)
+  assert.equal(enabled, false)
+
+  now = 20_000
+  state.stopping = false
+  state.running = true
+  sandbox.sleep = async (ms) => {
+    now += ms
+    if (now >= 20_400) button.disabled = false
+  }
+  assert.equal(await vm.runInContext('waitReady({ article }, 3000, { attempt: 2, limit: 3 })', sandbox), 'ready')
+})
+
+test('a disabled reply button retries twice, then skips that post', () => {
+  assert.equal(loop.REPLY_BUTTON_RETRY_LIMIT, 3)
+  assert.equal(loop.REPLY_BUTTON_RETRY_SECONDS, 3)
+  assert.deepEqual(loop.replyButtonRetryPlan(1), { action: 'retry', attempt: 1, limit: 3, delaySeconds: 3 })
+  assert.deepEqual(loop.replyButtonRetryPlan(2), { action: 'retry', attempt: 2, limit: 3, delaySeconds: 3 })
+  assert.deepEqual(loop.replyButtonRetryPlan(3), { action: 'skip', attempt: 3, limit: 3, delaySeconds: 0 })
 })
 
 test('treats a disabled Reply button and empty composer placeholders as not ready', () => {
@@ -5974,6 +6060,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /rememberRecentReply/)
   assert.match(content, /if \(result === "ambiguous-sent"\) \{[\s\S]*?rememberRecentReply\(phrase\)/)
   assert.match(content, /稍后重试同一条/)
+  assert.match(content, /result === "reply-disabled"[\s\S]*replyButtonRetryPlan\(misses\)/)
+  assert.match(content, /waitUntilReplyButtonReady\(next, plan\.delaySeconds \* 1000, plan\)/)
+  assert.match(content, /if \(waited === "stopped"\) \{\s*if \(riskRoundRequested\) return advanceRoundAfterRisk\(\);\s*break;\s*\}/)
+  assert.match(content, /这条帖子的评论按钮一直不可用，已跳过/)
+  assert.match(content, /评论按钮暂时不可用，\$\{remaining\} 秒后重试同一条/)
   assert.match(content, /Your \(\?:post\|reply\) was sent/)
   assert.match(content, /回复\)已发送/)
   assert.match(content, /a\[href\*=\"\/status\/\"\]/)

@@ -5746,11 +5746,12 @@ test('NAS failure falls back to configured B.AI without losing reply context', a
   }
 })
 
-test('missing reply provider selection uses DeepSeek and B.AI without NAS', async () => {
+test('saved reply keys enable DeepSeek and B.AI unless all models were explicitly disabled', async () => {
   const originalFetch = globalThis.fetch
   const requests = []
   const progress = []
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' } } } } } }
+  let settings = { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings } } } } }
   globalThis.fetch = async (url) => {
     requests.push(url)
     if (url.includes('api.deepseek.com')) return { ok: false, status: 503, async json() { return { error: { message: 'Service is too busy' } } } }
@@ -5760,6 +5761,8 @@ test('missing reply provider selection uses DeepSeek and B.AI without NAS', asyn
     assert.equal(await background.callDeepSeek({ postText: '你好', onProgress: (status) => progress.push(status) }), 'B.AI 回复')
     assert.deepEqual(requests, ['https://api.deepseek.com/chat/completions', 'https://api.b.ai/v1/responses'])
     assert.equal(progress.some((status) => status.includes('NAS')), false)
+    settings = { ...settings, replyProviders: [], replyProvidersManual: true }
+    await assert.rejects(background.callDeepSeek({ postText: '你好' }), /请至少启用一个回复模型/)
   } finally {
     globalThis.fetch = originalFetch
     delete globalThis.chrome
@@ -9151,18 +9154,6 @@ test('group chat sharing retries until the visible Share dialog appears', async 
   assert.ok(waits >= 2)
 })
 
-test('stopping a waiting group share clears its cooldown', async () => {
-  const storage = new Map([['xrcGroupChatShareRunV3', JSON.stringify({ version: 3, running: true, phase: 'done', handle: 'tuaran', nextAt: Date.now() + 3600000 })]])
-  const window = { sessionStorage: { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) } }
-  const controller = communityShare.createController({ window })
-  await controller.start({ handle: 'tuaran' })
-  assert.ok(controller.snapshot().nextAt > Date.now())
-  controller.stop()
-  assert.equal(controller.snapshot().nextAt, 0)
-  assert.equal(controller.snapshot().running, false)
-  assert.equal(controller.snapshot().stopping, false)
-})
-
 test('group chat sharing only targets enabled group rows, never personal accounts', () => {
   const row = (label, disabled = false) => ({
     innerText: label,
@@ -9213,14 +9204,13 @@ test('group chat sharing stays off by default and runs on the own profile', () =
   assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)
 })
 
-test('group chat pace uses the shared selectable table and keeps rules in documentation', async () => {
+test('group chat sharing has one batch Send and no speed picker', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const docs = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
-  assert.match(content, /communityPaceTableHtml\(\)/)
-  assert.match(content, /data-xrc-community-pace/)
-  assert.doesNotMatch(content, /<select data-xrc-community-pace/)
-  assert.doesNotMatch(content, /<p class="xrc-pace-now">在当前账号主页跳过置顶/)
+  assert.doesNotMatch(content, /communityPaceTableHtml\(\)|data-xrc-community-pace/)
+  assert.match(content, /选中所有可点击的群聊后，只点一次 Send/)
   assert.match(docs, /书签右侧的分享按钮/)
+  assert.match(docs, /没有群聊速度设置/)
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

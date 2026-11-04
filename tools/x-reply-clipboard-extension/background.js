@@ -14,7 +14,7 @@ const BAI_ENDPOINT = "https://api.b.ai/v1/responses";
 const BAI_MODEL = "gpt-6-luna";
 const BAI_COOLDOWN_KEY = "xrcBaiAccessCooldown";
 const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
-const DEFAULT_REPLY_PROVIDERS = ["deepseek", "bai"];
+const DEFAULT_REPLY_PROVIDERS = [];
 const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
 const MOBILEOFFICE_ENDPOINT = "http://127.0.0.1:8765/chat";
 const REQUEST_TIMEOUT_MS = 10000;
@@ -185,7 +185,13 @@ function resolveReplyProviders(settings) {
   const stored = hasList
     ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
     : [...DEFAULT_REPLY_PROVIDERS];
-  return { providers: stored, persist: false };
+  if (settings?.replyProvidersManual === true || stored.length) return { providers: stored, persist: false };
+  const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
+    ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
+    : provider === "bai"
+      ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
+      : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+  return { providers: configured, persist: configured.length > 0 };
 }
 
 async function readAiSettings() {
@@ -3355,6 +3361,34 @@ function updatePluginRuntime(message, sender) {
   return runtimeMutation;
 }
 
+async function completeCommunityShare(sender, status) {
+  const tabId = Number(sender?.tab?.id);
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    if (plan.enabled && plan.current === "community-share" && Number(plan.workTabId) === tabId) {
+      const now = Date.now();
+      const reason = String(status || "社群分发本轮已结束").slice(0, 160);
+      recordScheduleSegment(plan, "community-share", reason, now);
+      plan.items["community-share"] = {
+        ...(plan.items["community-share"] || {}),
+        lastRunAt: now,
+        resumeAt: now + COMMUNITY_SHARE_RETRY_MS,
+        manualStopped: false,
+        reason
+      };
+      plan.current = "";
+      plan.startedAt = 0;
+      await saveTaskSchedule(plan);
+    }
+    await updatePluginRuntime({ mode: "community-share", active: false }, sender);
+    return { ok: true };
+  });
+  scheduleWork = work.catch(() => {});
+  const result = await work;
+  tickTaskSchedule().catch(() => {});
+  return result;
+}
+
 async function removeRuntimeTab(tabId) {
   const runtime = await readPluginRuntime();
   let changed = false;
@@ -3853,6 +3887,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
           if (message.active && message.phase === "paused") tickTaskSchedule().catch(() => {});
         })
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-community-share-finished") {
+      completeCommunityShare(sender, message.status)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "社群分发结束状态保存失败" }));
       return true;
     }
     if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat" || message?.type === "xrc-community-stats-sync") {

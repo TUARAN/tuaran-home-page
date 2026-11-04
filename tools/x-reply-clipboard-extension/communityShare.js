@@ -1,11 +1,8 @@
 (function (root) {
   "use strict";
 
-  const SESSION_KEY = "xrcGroupChatShareRunV3";
+  const SESSION_KEY = "xrcGroupChatShareRunV4";
   const LEDGER_KEY = "xrcGroupChatShareLedgerV2";
-  const GAP_MS = { slow: 21600000, medium: 10800000, fast: 5400000, turbo: 2700000 };
-  const PAUSE_MS = { slow: [20000, 35000], medium: [12000, 20000], fast: [6000, 12000], turbo: [3000, 6000] };
-  const RETRY_MS = 900000;
   const LIMIT_RE = /automated|not allowed|try again later|rate limit|操作过于频繁|暂时无法|请求似乎可能是自动化/iu;
   const SENT_RE = /(?:post|message) (?:was )?sent|sent successfully|消息已发送|帖子已发送|已发送给/iu;
   const SEND_FAILED_RE = /could not send message|failed to send|unable to send|消息发送失败|无法发送消息/iu;
@@ -24,9 +21,6 @@
     }
     return true;
   }
-  const delayFor = (pace, random = Math.random) => { const [min, max] = PAUSE_MS[pace] || PAUSE_MS.slow; return min + Math.floor(Math.max(0, Math.min(0.999999, random())) * (max - min + 1)); };
-  const retryFor = (state) => state.shared > 0 ? (GAP_MS[state.pace] || GAP_MS.slow) : RETRY_MS;
-
   function profilePosts(doc, handle) {
     const owner = clean(handle).replace(/^@/u, "").toLowerCase();
     return Array.from(doc?.querySelectorAll?.('article[data-testid="tweet"]') || []).filter((article) => !article.parentElement?.closest?.('article[data-testid="tweet"]')).map((article) => {
@@ -75,7 +69,7 @@
       const label = textOf(node);
       const count = label.match(GROUP_RE)?.[0] || "";
       const name = clean(label.replace(count, ""));
-      return { node, name, id: `${name}|${count}` };
+      return { node, name, id: name.toLocaleLowerCase() };
     });
     return rows.filter((row, index) => rows.findIndex((other) => other.id === row.id) === index);
   }
@@ -175,7 +169,7 @@
   }
 
   function initialState() {
-    return { version: 3, running: false, stopped: false, phase: 'profile', handle: '', sourceId: '', shared: 0, skipped: 0, total: 0, seen: [], done: [], scan: 0, pace: 'slow', status: '待命。把主页最新帖子发送给可用群聊。', nextAt: 0, limited: false, pendingGroup: '' };
+    return { version: 4, running: false, stopped: false, phase: 'profile', handle: '', sourceId: '', shared: 0, skipped: 0, total: 0, seen: [], selected: [], scan: 0, status: '待命。把主页最新帖子一次发送给可用群聊。', nextAt: 0, limited: false };
   }
 
   function createController(env = {}) {
@@ -190,7 +184,7 @@
       for (const listener of listeners) { try { listener(snapshot()); } catch (_) {} }
     }
     function load() {
-      try { const value = JSON.parse(win().sessionStorage?.getItem?.(SESSION_KEY) || 'null'); state = value?.version === 3 ? { ...initialState(), ...value } : initialState(); } catch (_) { state = initialState(); }
+      try { const value = JSON.parse(win().sessionStorage?.getItem?.(SESSION_KEY) || 'null'); state = value?.version === 4 ? { ...initialState(), ...value } : initialState(); } catch (_) { state = initialState(); }
     }
     async function ledger() { try { return (await (env.loadLedger ? env.loadLedger() : root.chrome?.storage?.local?.get?.(LEDGER_KEY)))?.[LEDGER_KEY] || {}; } catch (_) { return {}; } }
     async function remember(groupId) {
@@ -199,10 +193,14 @@
       data[key] = { ...(data[key] || {}), [groupId]: Date.now() };
       try { if (env.saveLedger) await env.saveLedger(data); else await root.chrome?.storage?.local?.set?.({ [LEDGER_KEY]: data }); } catch (_) {}
     }
-    async function confirmed(groupId) { const data = await ledger(); return Date.now() - Number(data[state.sourceId]?.[groupId] || 0) < 604800000; }
+    async function confirmed(groupId) {
+      const data = await ledger();
+      const entries = Object.entries(data[state.sourceId] || {});
+      return entries.some(([key, at]) => (key.toLocaleLowerCase() === groupId || key.split('|')[0].toLocaleLowerCase() === groupId)
+        && Date.now() - Number(at || 0) < 604800000);
+    }
     async function wait(ms) { if (env.wait) await env.wait(ms); else await sleep(ms, win()); }
-    async function pause() { let remaining = delayFor(state.pace, env.random); while (!stopping && remaining > 0) { const slice = Math.min(250, remaining); await wait(slice); remaining -= slice; } }
-    function finish(message, limited = false) { state.status = message; state.phase = 'done'; state.running = true; state.limited = limited; state.nextAt = Date.now() + (limited ? Math.max(retryFor(state), 1800000) : retryFor(state)); save(); }
+    function finish(message, limited = false) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = false; state.limited = limited; state.nextAt = 0; save(); }
     function halt(message) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = true; state.nextAt = 0; save(); }
     async function run() {
       const handle = state.handle;
@@ -217,103 +215,98 @@
       if (stopping) return;
       const post = found.post;
       if (!post) { finish(found.observed ? `已读取 ${found.observed} 条帖子，但没有符合条件的本人非置顶帖子` : '主页帖子尚未加载或无法识别，未发送'); return; }
-      if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.done = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
+      if (state.sourceId && state.sourceId !== post.id) { state.seen = []; state.selected = []; state.scan = 0; state.shared = 0; state.skipped = 0; }
       state.sourceId = post.id; state.phase = 'share'; save();
-      let consecutiveSendFailures = 0;
+      let dialog = shareDialog(doc());
+      if (!dialog) {
+        let share = null;
+        for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
+          const current = profilePosts(doc(), handle).find((item) => item.id === state.sourceId);
+          current?.article.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+          share = findPostShareButton(current?.article);
+          if (share) break;
+          await wait(400);
+        }
+        if (stopping) return;
+        if (!share) { halt('已找到原帖，但无法识别书签右侧的分享按钮，已停止'); return; }
+        share.click(); await wait(350);
+        let menu = null;
+        for (let attempt = 0; attempt < 8 && !stopping; attempt++) {
+          menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
+          if (menu) break;
+          await wait(300);
+        }
+        if (stopping) return;
+        if (!menu) { halt('分享菜单中没有“Send via Chat”，已停止'); return; }
+        menu.click(); await wait(500);
+        dialog = await waitForShareDialog(doc(), wait, () => stopping);
+        if (stopping) return;
+        if (!dialog) { halt('多次检查仍未识别群聊选择窗口，已停止'); return; }
+      }
+      const selected = new Set();
       for (let step = 0; step < 300 && !stopping; step++) {
         const alertText = toast(doc());
-        if (LIMIT_RE.test(alertText)) { finish('X 提示操作受限，已停止发送', true); return; }
-        let dialog = shareDialog(doc());
-        if (!dialog) {
-          let share = null;
-          for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
-            const current = profilePosts(doc(), handle).find((item) => item.id === state.sourceId);
-            current?.article.scrollIntoView?.({ block: 'center', behavior: 'auto' });
-            share = findPostShareButton(current?.article);
-            if (share) break;
-            await wait(400);
-          }
-          if (stopping) return;
-          if (!share) { halt('已找到原帖，但无法识别书签右侧的分享按钮，已停止'); return; }
-          share.click(); await wait(350);
-          let menu = null;
-          for (let attempt = 0; attempt < 8 && !stopping; attempt++) {
-            menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
-            if (menu) break;
-            await wait(300);
-          }
-          if (stopping) return;
-          if (!menu) { halt('分享菜单中没有“Send via Chat”，已停止'); return; }
-          menu.click(); await wait(500);
-          dialog = await waitForShareDialog(doc(), wait, () => stopping);
-          if (stopping) return;
-          if (!dialog) { halt('多次检查仍未识别群聊选择窗口，已停止'); return; }
-        }
-        const rows = groupRows(dialog);
+        if (LIMIT_RE.test(alertText)) { halt('X 提示操作受限，已停止发送'); return; }
+        const currentDialog = shareDialog(doc()) || dialog;
+        const rows = groupRows(currentDialog);
         for (const row of rows) if (!state.seen.includes(row.id)) state.seen.push(row.id);
         state.total = state.seen.length; save();
         let target = null;
         for (const row of rows) {
-          if (state.done.includes(row.id) || await confirmed(row.id)) { if (!state.done.includes(row.id)) state.done.push(row.id); continue; }
+          if (selected.has(row.id) || await confirmed(row.id)) continue;
           target = row; break;
         }
         if (!target) {
-          const scroll = Array.from(dialog.querySelectorAll("*"))
+          const scroll = Array.from(currentDialog.querySelectorAll("*"))
             .filter((node) => node.scrollHeight > node.clientHeight + 20)
-            .sort((a, b) => (b.clientHeight || 0) - (a.clientHeight || 0))[0] || dialog;
+            .sort((a, b) => (b.clientHeight || 0) - (a.clientHeight || 0))[0] || currentDialog;
           const before = scroll.scrollTop;
           scroll.scrollTop = before + Math.max(400, scroll.clientHeight || 600);
           await wait(450);
           state.scan += 1; save();
           if (scroll.scrollTop > before && state.scan < 100) continue;
-          finish(state.shared ? `已确认发送到 ${state.shared} 个群聊` : '没有找到可点击且未发送的群聊'); return;
+          break;
         }
         state.scan = 0;
-        state.pendingGroup = target.id;
-        state.status = `正在发送到群聊：${target.name}`; save();
-        target.node.click(); await wait(450);
-        const beforeSend = toast(doc());
-        let send = null;
-        for (let attempt = 0; attempt < 12 && !stopping; attempt++) {
-          const sendScope = shareDialog(doc()) || dialog;
-          send = sendButtonNearDialog(sendScope, doc());
-          if (send) break;
-          await wait(250);
-        }
-        if (stopping) return;
-        if (!send) { halt(`已选择“${target.name}”，但未找到发送按钮；请手动检查是否已发送`); return; }
-        send.click(); await wait(1100);
-        const result = toast(doc());
-        if (SEND_FAILED_RE.test(result) && result !== beforeSend) {
-          state.done.push(target.id);
-          state.skipped += 1;
-          state.pendingGroup = '';
-          consecutiveSendFailures += 1;
-          if (consecutiveSendFailures >= 3) {
-            halt(`X 连续拒绝发送到 ${consecutiveSendFailures} 个群聊，已停止；请检查账号或平台限制`);
-            return;
-          }
-          state.status = `X 无法发送到“${target.name}”，已跳过；继续尝试其他群聊`;
-          save();
-          await pause();
-          continue;
-        }
-        if (!SENT_RE.test(result) || result === beforeSend) { halt(`“${target.name}”未出现发送成功提示；请手动核对，已停止避免重复发送`); return; }
-        consecutiveSendFailures = 0;
-        await remember(target.id);
-        state.done.push(target.id); state.shared += 1; state.pendingGroup = '';
-        state.status = `已发送到 ${target.name}，累计 ${state.shared} 个群聊`; save();
-        root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${target.id}`.slice(0, 80) });
-        await pause();
+        target.node.click();
+        selected.add(target.id);
+        state.selected = [...selected];
+        state.status = `已选 ${selected.size} 个群聊，继续查找可用群聊`; save();
+        await wait(300);
       }
-      if (!stopping) finish('本轮步骤达到上限，稍后继续');
+      if (stopping) return;
+      if (!selected.size) { finish('最新帖子没有新的可点击群聊，本轮已结束'); return; }
+      const beforeSend = toast(doc());
+      let send = null;
+      for (let attempt = 0; attempt < 12 && !stopping; attempt++) {
+        send = sendButtonNearDialog(shareDialog(doc()) || dialog, doc());
+        if (send) break;
+        await wait(250);
+      }
+      if (stopping) return;
+      if (!send) { halt(`已选 ${selected.size} 个群聊，但未找到 Send；请手动核对，未记录成功`); return; }
+      state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
+      send.click();
+      let result = '';
+      for (let attempt = 0; attempt < 20 && !stopping; attempt++) {
+        await wait(300);
+        result = toast(doc());
+        if (result !== beforeSend && (SENT_RE.test(result) || SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) break;
+      }
+      if (stopping) return;
+      if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊；未记录成功，请检查 X 的提示`); return; }
+      if (!SENT_RE.test(result) || result === beforeSend) { halt(`已点 Send，但未看到成功提示；请手动核对，未记录成功`); return; }
+      for (const groupId of selected) {
+        await remember(groupId);
+        root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) });
+      }
+      state.shared = selected.size;
+      finish(`已确认一次发送到 ${selected.size} 个群聊，本轮完成`);
     }
     async function start(options = {}) {
       stopping = false; load();
-      if (state.phase === 'done' && state.nextAt > Date.now() && !options.force && !state.stopped) { state.running = true; save(); return snapshot(); }
       if (state.stopped || state.phase === 'done' || state.sourceId && state.handle !== String(options.handle || state.handle).replace(/^@/u, '')) state = initialState();
       state.handle = String(options.handle || state.handle || '').replace(/^@/u, '');
-      state.pace = PAUSE_MS[options.pace] ? options.pace : 'slow';
       state.running = true; state.stopped = false; state.nextAt = 0; save();
       await run();
       if (stopping) {
@@ -326,7 +319,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, delayFor, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

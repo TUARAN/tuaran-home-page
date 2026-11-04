@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import test from 'node:test'
+import vm from 'node:vm'
 
 const require = createRequire(import.meta.url)
 const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
@@ -162,14 +164,15 @@ test('selects a group and clicks Send inside the picker', async () => {
   assert.equal(Object.keys(savedLedger['123'] || {}).length, 1)
 })
 
-test('skips a group rejected by X and only records a later confirmed send', async () => {
-  let selected = ''
+test('selects two groups before one Send and records none when X rejects the batch', async () => {
   let response = ''
+  let sends = 0
+  let shouldFail = false
   let savedLedger = {}
   const body = {}
   const rows = ['First Group 825 people', 'Second Group 267 people'].map((label) => ({
     innerText: label,
-    click: () => { selected = label; response = '' },
+    click: () => { response = '' },
     getAttribute: () => null,
     getClientRects: () => [1],
     closest: () => null,
@@ -177,7 +180,7 @@ test('skips a group rejected by X and only records a later confirmed send', asyn
   }))
   const send = {
     innerText: 'Send',
-    click: () => { response = selected.startsWith('First') ? 'Could not send message' : 'Message sent' },
+    click: () => { sends += 1; response = shouldFail ? 'Could not send message' : 'Message sent' },
     getAttribute: () => null,
     getClientRects: () => [1],
     closest: () => null,
@@ -225,8 +228,53 @@ test('skips a group rejected by X and only records a later confirmed send', asyn
   })
 
   await controller.start({ handle: 'tuaran' })
-  assert.equal(controller.snapshot().shared, 1)
-  assert.equal(controller.snapshot().skipped, 1)
-  assert.equal(Object.keys(savedLedger['456'] || {}).length, 1)
-  assert.match(controller.snapshot().status, /已确认发送到 1 个群聊/)
+  assert.equal(sends, 1)
+  assert.equal(controller.snapshot().shared, 2)
+  assert.equal(controller.snapshot().running, false)
+  assert.equal(Object.keys(savedLedger['456'] || {}).length, 2)
+  assert.match(controller.snapshot().status, /一次发送到 2 个群聊，本轮完成/)
+
+  savedLedger = { '456': { 'First Group|825 people': Date.now(), 'Second Group|267 people': Date.now() } }
+  rows[0].innerText = 'First Group 826 people'
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(sends, 1)
+  assert.match(controller.snapshot().status, /没有新的可点击群聊/)
+
+  savedLedger = {}
+  shouldFail = true
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(sends, 2)
+  assert.equal(controller.snapshot().shared, 0)
+  assert.equal(Object.keys(savedLedger['456'] || {}).length, 0)
+  assert.match(controller.snapshot().status, /未记录成功/)
+})
+
+test('a completed batch releases the scheduled task slot', async () => {
+  const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
+  const start = source.indexOf('async function completeCommunityShare(sender, status) {')
+  const end = source.indexOf('async function removeRuntimeTab(', start)
+  assert.ok(start >= 0 && end > start)
+  const plan = { enabled: true, current: 'community-share', workTabId: 7, startedAt: 123, items: { 'community-share': {} } }
+  let saved = false
+  let inactive = false
+  let ticked = false
+  const context = {
+    COMMUNITY_SHARE_RETRY_MS: 900000,
+    readTaskSchedule: async () => plan,
+    recordScheduleSegment: () => {},
+    saveTaskSchedule: async () => { saved = true },
+    updatePluginRuntime: async (message) => { inactive = message.mode === 'community-share' && message.active === false },
+    tickTaskSchedule: async () => { ticked = true },
+  }
+  vm.createContext(context)
+  vm.runInContext(`let scheduleWork = Promise.resolve();\n${source.slice(start, end)}`, context)
+  await context.completeCommunityShare({ tab: { id: 7 } }, '本轮完成')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(plan.current, '')
+  assert.equal(plan.startedAt, 0)
+  assert.ok(plan.items['community-share'].resumeAt > Date.now())
+  assert.equal(plan.items['community-share'].reason, '本轮完成')
+  assert.equal(saved, true)
+  assert.equal(inactive, true)
+  assert.equal(ticked, true)
 })

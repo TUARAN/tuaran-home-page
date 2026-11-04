@@ -960,15 +960,11 @@
     if (!scheduledStart) await run;
   }
 
-  function currentCommunityPace() {
-    const pace = taskSchedule.rules?.["community-share"]?.pace;
-    return ["slow", "medium", "fast", "turbo"].includes(pace) ? pace : "slow";
-  }
-
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
       communityController = communityApi.createController({ document, window });
       communityController.subscribe((snapshot) => {
+        const wasRunning = communityState.running;
         communityState = {
           ...communityState,
           running: Boolean(snapshot?.running),
@@ -983,6 +979,8 @@
         const phase = snapshot?.stopping ? "stopping" : Number(snapshot?.nextAt) > Date.now() ? "paused" : snapshot?.running ? "running" : "";
         if (snapshot?.running || snapshot?.stopping) {
           setRuntimeTaskActive("community-share", true, phase || "running").catch(() => {});
+        } else if (wasRunning && snapshot?.phase === "done") {
+          sendExtensionMessage({ type: "xrc-community-share-finished", status: snapshot.status || "本轮已结束" }).catch(() => {});
         }
         renderPanel();
       });
@@ -1015,9 +1013,7 @@
     registerCurrentTaskTab("community-share");
     state.assistantMode = "community-share";
     const runPromise = controller.start({
-      pace: currentCommunityPace(),
       handle: currentAccountHandle() || lastKnownAccountHandle || "",
-      force: scheduledStart || Number(communityState.nextAt) > Date.now()
     });
     if (scheduledStart) {
       const deadline = Date.now() + 15000;
@@ -3962,24 +3958,6 @@
       ? `<label class="xrc-pace-table-row xrc-pace-unlimited"><span class="xrc-pace-pick"><input type="checkbox" data-xrc-unlimited="${unlimitedKey}"${unlimitedAttr}></span><span>不限速</span><span class="xrc-pace-unlimited-note" style="grid-column:3 / span ${noteSpan}">${unlimitedHint(unlimitedKey)}</span></label>`
       : "";
     return `<div class="xrc-pace-table${extraClass ? ` ${extraClass}` : ""}" role="radiogroup" aria-label="${label}" style="--xrc-pace-cols:${columns.length + 1}"><div class="xrc-pace-table-head" role="row">${head}</div>${rows}${unlimitedRow}</div>`;
-  }
-
-  function communityPaceTableHtml() {
-    return paceTableHtml({
-      label: "群聊之间的停顿",
-      attr: "data-xrc-community-pace",
-      defaultId: "slow",
-      profiles: [
-        { id: "slow", label: "慢", between: "20～35 秒", after: "约 6 小时" },
-        { id: "medium", label: "中", between: "12～20 秒", after: "约 3 小时" },
-        { id: "fast", label: "快", between: "6～12 秒", after: "约 90 分钟" },
-        { id: "turbo", label: "超快", between: "3～6 秒", after: "约 45 分钟" }
-      ],
-      columns: [
-        { label: "群聊之间", value: (profile) => profile.between },
-        { label: "本轮之后", value: (profile) => profile.after }
-      ]
-    });
   }
 
   function replyPaceInput(profile, field) {
@@ -8094,7 +8072,7 @@
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖发送到可用群聊")}
-              ${communityPaceTableHtml()}
+              <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；发送结果确认后本轮结束。</p>
               <p class="xrc-pace-now" data-xrc-community-now>当前尚未开始</p>
               <div class="xrc-flow-end">
                 <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
@@ -8563,24 +8541,6 @@
       panel.querySelector("[data-xrc-article-toggle]")?.addEventListener("click", () => onArticleToggle());
       panel.querySelector("[data-xrc-site-forward-toggle]")?.addEventListener("click", () => onSiteForwardToggle());
       panel.querySelector("[data-xrc-community-toggle]")?.addEventListener("click", () => onCommunityToggle());
-      panel.querySelectorAll("[data-xrc-community-pace]").forEach((button) => button.addEventListener("click", async () => {
-        const pace = ["slow", "medium", "fast", "turbo"].includes(button.dataset.xrcCommunityPace) ? button.dataset.xrcCommunityPace : "slow";
-        const rules = {
-          ...(taskSchedule.rules || {}),
-          "community-share": { ...(taskSchedule.rules?.["community-share"] || {}), pace }
-        };
-        try {
-          const saved = await sendExtensionMessage({
-            type: "xrc-schedule-config-set",
-            rules,
-            sliceSeconds: Number(taskSchedule.sliceSeconds) || 30
-          });
-          taskSchedule = { ...taskSchedule, rules: saved.rules || rules };
-        } catch (error) {
-          taskSchedule = { ...taskSchedule, rules };
-        }
-        renderPanel();
-      }));
       panel.querySelector("[data-xrc-site-forward-table]")?.addEventListener("change", (event) => {
         sendExtensionMessage({ type: "xrc-site-forward-settings-set", tableMode: event.target.checked ? "text" : "image" }).catch(() => {});
       });
@@ -9253,12 +9213,6 @@
       communityStatus.hidden = !communityState.status;
       communityStatus.textContent = communityState.status || "";
     }
-    panel.querySelectorAll("[data-xrc-community-pace]").forEach((button) => {
-      const active = button.dataset.xrcCommunityPace === currentCommunityPace();
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-checked", String(active));
-      button.setAttribute("aria-pressed", String(active));
-    });
     if (communityToggle) {
       const communityBusy = Boolean(communityState.stopping) || isTaskActionBusy("community-share");
       const communityWaiting = communityState.running && Number(communityState.nextAt) > Date.now();

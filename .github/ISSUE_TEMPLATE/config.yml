@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Issue 优先工作流
+    url: https://github.com/TUARAN/tuaran-home-page/blob/main/docs/runbooks/issue-first-workflow.md
+    about: 站长与助手先开 Issue、打分诊标签，再决定是否开 PR。

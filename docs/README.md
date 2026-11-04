@@ -24,6 +24,7 @@
 
 | 文档                                                                            | 内容                 |
 | ----------------------------------------------------------------------------- | ------------------ |
+| [issue-first-workflow.md](runbooks/issue-first-workflow.md)                   | 聊天需求先 Issue、再分诊、再开 PR |
 | [site-autopilot.md](runbooks/site-autopilot.md)                               | 站点自迭代扫描协议          |
 | [site-status-automation.md](runbooks/site-status-automation.md)               | 故障公告自动化            |
 | [cloudflare-usage-monitor.md](runbooks/cloudflare-usage-monitor.md)           | Cloudflare Workers 与 D1 每日用量监控 |

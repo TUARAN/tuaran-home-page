@@ -79,9 +79,21 @@
 - 既往经验：打开浏览器会阻塞，而且经常打不开、验不完。
 - 界面和接口改动用测试、`curl`、读渲染结果和代码路径核对。只有用户当次明确要求看页面时，才打开浏览器。
 
+## Issue 优先（强制遵守）
+
+站长在聊天或助手侧提出的非琐碎需求，按 `docs/runbooks/issue-first-workflow.md` 执行。
+
+- 先搜索 open/closed Issue 与相关 PR，开新 Issue 或复用已有 Issue，再开 PR。
+- PR 正文写明 `Closes #N` 或 `Related: #N`。
+- 打分诊标签。不得跳过。带 `needs:design`、`needs:decision` 或 `needs:assets` 时停在 Issue。
+- 只有 `priority:now` 且没有上述 `needs:*` 时才开 PR。
+- 例外：纯笔误、修复已经变红的 CI、站长当次明确说「直接改」或「别开 Issue」。
+- 助手不 squash、不 merge。站长说「合」之后才 squash。
+
 ## Git 发布规则
 
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
 - 用户说“开 PR”或“建分支”时，创建 `codex/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。
+- 非琐碎需求即使站长说「开 PR」，也先完成「Issue 优先」里的 Issue 和分诊，除非命中该节的例外。
 - 工作区混有其他改动时，默认只暂存当前任务相关文件；只有用户明确要求提交全部待提交改动时，才一并提交。
 - 用户对本次发布方式的明确指令优先于默认工作流或工具建议。

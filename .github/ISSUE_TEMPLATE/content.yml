@@ -1,0 +1,42 @@
+name: 内容与调研
+description: 文章、调研或资料稿。默认 review_ready=false，不自动发布。
+title: "[Content] "
+labels:
+  - type:content
+body:
+  - type: markdown
+    attributes:
+      value: |
+        站长与助手的步骤见 `docs/runbooks/issue-first-workflow.md`。内容稿以 `review_ready: false` 入库。助手不把该字段改成 true，也不调用发布接口。
+  - type: input
+    id: slug
+    attributes:
+      label: slug
+      description: 预期文件名主干。
+      placeholder: YYYY-MM-DD-slug
+    validations:
+      required: true
+  - type: dropdown
+    id: review_ready
+    attributes:
+      label: review_ready 预期
+      description: 未完成人工复核时保持 false。
+      options:
+        - "false：入库待复核，不自动发布"
+        - "true：仅站长确认复核完成后"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要回答的问题
+      description: 读者要搞清的事实或判断。
+    validations:
+      required: true
+  - type: textarea
+    id: action
+    attributes:
+      label: 建议动作
+      description: 新建、修订、入库或只列资料。发布留给站长。
+    validations:
+      required: true

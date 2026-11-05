@@ -1,7 +1,7 @@
 {
   "account": "tarsixseveneig1",
-  "checked": 32,
-  "capturedAt": "2026-11-05T11:59:34.522Z",
+  "checked": 90,
+  "capturedAt": "2026-11-05T12:28:17.792Z",
   "posts": [
     {
       "id": "2118227929754948000",
@@ -80,6 +80,25 @@
       ],
       "topic": "关注突破",
       "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2117590691874562103",
+      "createdAt": "2026-11-03T12:12:18.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2117590691874562103",
+      "text": "卧槽！卧槽！卧槽！\n\n兄弟们！我是不是，回来了？！\n\n你还愿意跟我浇朋友吗 #蓝朋友",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HWMxfq8akAAEdLb?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2117590691874562103-1.jpg"
+        },
+        {
+          "url": "https://pbs.twimg.com/media/HWMxfrObYAApBjT?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2117590691874562103-2.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
       "textMayBeTruncated": false
     },
     {
@@ -427,6 +446,31 @@
       "textMayBeTruncated": false
     },
     {
+      "id": "2109581955566326200",
+      "createdAt": "2026-10-12T09:48:27.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2109581955566326200",
+      "text": "冠军儿🏆\n\n就是这么的朴素无华\n\n浇朋友🧑‍🤝‍🧑\n\n给我往死里浇！！#浇朋友\n\n没浇到的，辛苦私信，我的朋友♥️",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HUa9mlwboAAW53I?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2109581955566326200-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2108879044615835657",
+      "createdAt": "2026-10-10T11:15:19.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2108879044615835657",
+      "text": "我回消息经常慢半拍，互关之后偶尔来串门就挺好，不用客套。今天有哪件很小的事，让你心情好了一点？",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
       "id": "2108854541815038461",
       "createdAt": "2026-10-10T09:37:58.000Z",
       "url": "https://x.com/tarsixseveneig1/status/2108854541815038461",
@@ -442,11 +486,546 @@
       "textMayBeTruncated": false
     },
     {
+      "id": "2108851072655831195",
+      "createdAt": "2026-10-10T09:24:10.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2108851072655831195",
+      "text": "我想浇朋友#蓝V 我想上7000关注#互关",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2108734217743958283",
+      "createdAt": "2026-10-10T01:39:50.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2108734217743958283",
+      "text": "最近爱发散步时随手拍的路边小事，树影、旧招牌、猫蹲在门口那种。对得上的人来聊，互关随意。你时间线里刷到最多的，是哪一类？",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HUO6l-6W8AAivW4?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2108734217743958283-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2107793230393970903",
+      "createdAt": "2026-10-07T11:20:41.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2107793230393970903",
+      "text": "我回消息一般不快，有时隔几天冒个头，但看到有意思的碎碎念会认真接。互关不用急，偶尔来串门就挺好。今天有哪件很小的事让你心情好了一点？",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
       "id": "2106008661487452220",
       "createdAt": "2026-10-02T13:09:27.000Z",
       "url": "https://x.com/tarsixseveneig1/status/2106008661487452220",
       "text": "晃一眼\n\n马上要上6000关注了\n\n就在今明两日\n\n兄弟们，再祝我破鼎！！#浇朋友#蓝V",
       "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2100950575148044493",
+      "createdAt": "2026-09-18T14:10:25.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2100950575148044493",
+      "text": "最近 X 清理、封禁了不少账号，有些朋友可能暂时找不到了。\n\n大家别心急，平台有限制，我们就稳步向前。继续浇朋友 💦\n\n真诚连接，慢慢生长。❤",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSgTNzWbsAAnlan?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2100950575148044493-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2100791248298635273",
+      "createdAt": "2026-09-18T03:37:19.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2100791248298635273",
+      "text": "午安，刚把午饭对付过去。①扒拉两口外卖；②对着屏幕发呆三秒；③决定晚饭不能再这样。你们中午都吃了什么，说来让我羡慕一下🍜🥢😄 新老推友，蓝V不蓝V，都欢迎来互关唠嗑。",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSeCgYrXMAAoZqe?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2100791248298635273-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2100185809685287069",
+      "createdAt": "2026-09-16T11:31:31.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2100185809685287069",
+      "text": "推友们，来交个朋友呀 🐱 互关之后不用客气，常来串门聊聊天就好。我回得可能慢，但看到都会认真接话 ☕ 今天有什么小事让你偷偷开心了一下？",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSVb3NRbQAAoi0o?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2100185809685287069-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2100067122525184214",
+      "createdAt": "2026-09-16T03:39:54.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2100067122525184214",
+      "text": "午安，刚翻到一本讲宋代点茶的书，发现把茶粉打出泡沫这步竟和咖啡拉花有点像。你最近在琢磨什么？留个言聊聊。互关慢慢来。",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2099311169731489871",
+      "createdAt": "2026-09-14T01:36:00.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2099311169731489871",
+      "text": "哈喽推友们👋 我最近迷上了“同城串门”式交友，不赶景点，就找家附近的小店坐坐，顺便听听你那儿的生活节奏。愿意互相关注慢慢聊的来交个朋友呀🐱 你那里现在热不热？",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSJAYkKbsAA_Gzc?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2099311169731489871-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2099283867790360632",
+      "createdAt": "2026-09-13T23:47:31.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2099283867790360632",
+      "text": "早安，周一。咖啡还在煮，猫已经蹲在碗边——它比我更懂什么叫准时上班。2026年9月14日，欢迎新老推友包括蓝V和非蓝V，互关慢慢来，先聊两句今天早饭吃什么。🐱☕",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSInjYraMAE-yZl?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2099283867790360632-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2098982634286362701",
+      "createdAt": "2026-09-13T03:50:31.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2098982634286362701",
+      "text": "午安，刚翻到上周互关后还没聊过的几位，顺手点进主页看了会儿。蓝V和非蓝V都一样，常来串门才慢慢熟。\n\n你最近主页上冒出来的那件小事，是怎么开始的？",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2098723006034088440",
+      "createdAt": "2026-09-12T10:38:51.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2098723006034088440",
+      "text": "推友们好呀，我常来这儿逛逛，混个脸熟 👋 比起互关任务，更想和熟面孔慢慢聊成朋友。有时记住一个人，靠的是那只猫头像，而不是昵称 🐱 你更容易记住推友的头像还是昵称呢？☕",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HSApc7cakAAs11u?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2098723006034088440-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2098589702433427563",
+      "createdAt": "2026-09-12T01:49:09.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2098589702433427563",
+      "text": "嗨，来交个朋友 👋 我平时爱看猫图和碎碎念，也喜欢在评论区唠两句。想认识互关后还会偶尔聊日常的人，不用秒回，看到就聊。🐱 你的时间线里，哪类内容最多？☕",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HR-wNn5WwAgx-P_?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2098589702433427563-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2098228115818291260",
+      "createdAt": "2026-09-11T01:52:20.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2098228115818291260",
+      "text": "刚刷到几位新推友，先挥个手 👋 我喜欢在评论区慢聊，不急着刷屏。互关之后常来串门就好，像邻居家那只总来蹭饭的猫 🐱 用三个词介绍你的兴趣，会选什么？",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2095077056531034493",
+      "createdAt": "2026-09-02T09:11:09.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2095077056531034493",
+      "text": "2 个月前我才 1k 关注，2 个月后已经 5k+ 了！！\n\n我知道你很急，但是你别急！！\n\nJUST DO 😂 #浇朋友 #走面儿",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HRM1OGyaUAABbN5?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2095077056531034493-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2091798766445862930",
+      "createdAt": "2026-08-24T08:04:24.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2091798766445862930",
+      "text": "我还需要一炮拳（58）壮士助我破鼎！\n\n给我破！！！😁😁😁",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HQePwA4agAAmEFl?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2091798766445862930-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2091505385983422609",
+      "createdAt": "2026-08-23T12:38:36.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2091505385983422609",
+      "text": "谁来助我！今晚上 4900！！#浇朋友",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2089943704761233541",
+      "createdAt": "2026-08-19T05:13:03.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2089943704761233541",
+      "text": "X 起号其实没那么复杂：\n\n① 开个蓝 V，先把基础配置拉满\n② 偶尔发点日常，让账号有点“活人感”\n③ 去其他老板的交友贴下面唠嗑\n保持真诚互动，保持真诚互动，保持真诚互动。\n重要的事情说三遍 😂\n④ 点我主页看看「我的关注者」，遇到聊得来的主动关注，等一波回关\n\n一个人烧火慢，一群人添柴快。🔥\n大家目标都差不多，互相认识、互相互动、互相抬一手，涨起来只是时间问题。\n\n冷启动解决以后，剩下的时间就好好规划高质量原创。\n\n毕竟最后大家的目标都一样：\n\n争取早日领上马老板的“低保” 😂",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HQD4uJvbIAABepG?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2089943704761233541-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2089615645554188373",
+      "createdAt": "2026-08-18T07:29:27.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2089615645554188373",
+      "text": "还有比这更惨的吗😭\n\n好久没有浇朋友了，我要浇朋友～",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HP_OPr9bsAAedvw?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2089615645554188373-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2086690916409221451",
+      "createdAt": "2026-08-10T05:47:37.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2086690916409221451",
+      "text": "从3000粉丝涨到4000粉丝，用了10天✨\n\n最近X平台迎来了创作者收益的重大变动，规则一直在变。\n\n但我始终觉得，这些都不重要。\n\n真诚的互动，永远是第一位的，每个人都值得被用心看见。\n\n当我们把重复的生产力交给AI\n\n我们就应该腾出更多时间，好好交友、好好相处。\n\n大家说，对吗？",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HPVqUhFbAAALFxp?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2086690916409221451-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2086452498500649222",
+      "createdAt": "2026-08-09T14:00:14.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2086452498500649222",
+      "text": "十点了，兄弟们，我先睡了😴\n\n睡前继续许个愿：\n醒来一看——4000关注！😂\n\n人先睡，愿望先挂这儿。\n主打一个诚意，剩下的交给家人们了🙏\n\n晚安，明早验收！🌙",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HPSRe-7b0AEV1w4?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2086452498500649222-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2086100592188178700",
+      "createdAt": "2026-08-08T14:41:53.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2086100592188178700",
+      "text": "今天的涨粉速度连昨天的一半都还不到。\n\n好了，\n\n我知道大家，真的被新规则搞怕了。\n\n兄弟们，别怂啊，不会怎么样的，交朋友交起来！！！！！",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HPNRbhtbkAAXqJ9?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2086100592188178700-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2085939221492031642",
+      "createdAt": "2026-08-08T04:00:39.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2085939221492031642",
+      "text": "交友大军，何在？",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HPK-qTGWsAARM2N?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2085939221492031642-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2085895425421349255",
+      "createdAt": "2026-08-08T01:06:38.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2085895425421349255",
+      "text": "新规则下：去蹭评论不再重要了！\n\n新规则下：交朋友依然非常重要！可以说，更重要了！！",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2085683036750811550",
+      "createdAt": "2026-08-07T11:02:40.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2085683036750811550",
+      "text": "还差一百来位壮士！助我破鼎4000！\n\n三十功名尘与土，八千里路云和月。",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HPHVqQmXQAAYrcv?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2085683036750811550-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2085566982699831305",
+      "createdAt": "2026-08-07T03:21:31.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2085566982699831305",
+      "text": "我现在认知 X：  \n\n1、交朋友文化+早安午安晚安+自动化帖子+高频回复；\n\n2、然后到 5k fo开通 OKX  发韭菜经历；\n\n3、然后到 1w fo 二创泛娱乐+蹭热帖回复；\n\n—— 差不多就能开通领工资了，对吗 @grok",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2084571349557887288",
+      "createdAt": "2026-08-04T09:25:13.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2084571349557887288",
+      "text": "有部分国区的朋友真的是太过分了，点进去看了好几个，关注数远远小于被关注数。\n\n但是我们都是交朋友出生，形成的时间线，怎么现在这样了呢？\n\n随便点击一个越南老表的账号，人家关注数几千、上万都是很正常，远远大于被关注数都是家常便饭。\n\n不知道我们在纠结个啥？一会关，一会取关？\n\n被关注数远远大于关注数就说明你很有实力吗？沙雕！",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HO3iZkuaEAAHDJ8?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2084571349557887288-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2082801054526369975",
+      "createdAt": "2026-07-30T12:10:42.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2082801054526369975",
+      "text": "12天📆\n\n2000➡️3000✅\n\n爱你们各位兄弟姐妹～\n\n蓝V党、交友党、走面党等等☝️\n\n永不为奴😺",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HOeYhEsa8AA1orq?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2082801054526369975-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2082733045829025884",
+      "createdAt": "2026-07-30T07:40:28.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2082733045829025884",
+      "text": "还差15位壮士！！家人们，助我破鼎！！⬆️⬆️⬆️",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HOdaqhdaoAAGE2t?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2082733045829025884-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2081573119404425254",
+      "createdAt": "2026-07-27T02:51:20.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2081573119404425254",
+      "text": "科普什么是「关注套利」（follow churn）：\n\n大批量关注他人，等待对方回关涨粉，随后统一取关，反复循环制造虚假粉丝。\n\n正常整理关注列表没问题。\n\n恶意循环刷粉行为会被风控识别，账号将面临相应限制。",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2080584403617816815",
+      "createdAt": "2026-07-24T09:22:31.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2080584403617816815",
+      "text": "回来了！家人们！都回来了！\n\n前两天时间线全是交友、关注列表的推荐内容，现在终于回来了！\n\n因为梁圣录音稿的各类解读，现在时间线都是 AI 大佬！\n\n我爱看 AI ！！😂",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2079414013839212710",
+      "createdAt": "2026-07-21T03:51:49.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2079414013839212710",
+      "text": "X 平台每日大赛这种都能常青藤一样的存在，而我们互关大军现在却变成了交朋友大军了，我不服，墙外平台不该如此。",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2079114108969042121",
+      "createdAt": "2026-07-20T08:00:06.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2079114108969042121",
+      "text": "我就喜欢交朋友，我每天的爱好就是去别人的关注列表里面找一些有趣的灵魂来点关注，这个有问题吗？\n\n会促发封控吗？\n\n给我最真实的回答，骗我你就是地表最差大模型@grok",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2078385146546573505",
+      "createdAt": "2026-07-18T07:43:28.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2078385146546573505",
+      "text": "🎉 2000 Followers on X，达成！\n一个月从 0 到 2000，每一次关注、点赞、评论、转发，都让这段旅程变得更有意义。❤️\n谢谢一路同行的每一位朋友。\n希望这里不仅是分享 AI、技术、生活的地方，也是认识新朋友、互相成长的小社区。\n🚀 下一站，5000！\n🤝 交个朋友，一起成长。\n💬 欢迎评论区打个招呼，说说你正在关注什么、正在做什么。\n#BuildInPublic #AI #Tech #ChatGPT #Claude #OpenAI #XCreators #100DaysOfAI #交个朋友",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HNfoDxBb0AAb4M_?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2078385146546573505-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2078145752262754765",
+      "createdAt": "2026-07-17T15:52:12.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2078145752262754765",
+      "text": "深夜11:50。\n今天大A回调，币圈持续扛单，市场喧嚣起落，人心跟着浮沉。\n\n我的账号停在1950粉，只差50位就能踏入2000。\n下一个目标呢？可能是5000，看似很近，却也藏着漫长的等待。\n\n现在发的每一条内容，或许只有几十、上百人看见，寥寥点赞、零星互动。\n社群热闹聒噪，我不喜争辩、不爱跟风。\n能坚持输出、持续记录、认真建站、沉淀内容，是我和这个世界最温柔的连接。\n\n行情会波动，数据会起落，粉丝会慢慢增长。\n无人关注的日子，默默深耕、安静等待、持续发光。\n慢慢来，一切都来得及🌊\n依旧@grok",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2077915587783901492",
+      "createdAt": "2026-07-17T00:37:36.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2077915587783901492",
+      "text": "任何 UGC 平台都有它的所谓的创作者红利期，比如抖音、比如公众号等等，都有过机制的空子，x平台目前这波互关文化估计是要被扼杀了。\n\n不敢相信，我这1个月相当于是踩中了红利的最后一波。往后大家心照不宣，留言：我看到你了～",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2077592422612381716",
+      "createdAt": "2026-07-16T03:13:28.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2077592422612381716",
+      "text": "都说2000关注是个槛，我还差百来个，大家祝我破鼎！给我破！😁",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2077552765996572819",
+      "createdAt": "2026-07-16T00:35:53.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2077552765996572819",
+      "text": "现在时间线全是：Follows you，当然，我也互关了。可是，没有新面孔，如何增长互关呢 #互关",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2077378608008679908",
+      "createdAt": "2026-07-15T13:03:50.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2077378608008679908",
+      "text": "现在的 X 是不是就跟朋友圈一样，每个点到主页都是互关哈哈哈哈哈",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2076967987723333930",
+      "createdAt": "2026-07-14T09:52:11.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2076967987723333930",
+      "text": "真的吗真的吗，现在时间线都是互关。",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "待复核",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2076194774118474129",
+      "createdAt": "2026-07-12T06:39:42.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2076194774118474129",
+      "text": "给我把互关油门踩死，刹车直接丢掉",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HNAgI3CaQAAqK43?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2076194774118474129-1.jpg"
+        }
+      ],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2075028982760874177",
+      "createdAt": "2026-07-09T01:27:16.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2075028982760874177",
+      "text": "一周多时间涨了 1000 粉，主页动态基本都围绕蓝 V 互关。和过去差别很大：以前圈子清一色程序员、AI 从业者，内容全是行业焦虑；现在覆盖的赛道丰富多元。\n大家虽然以互关起量，但达成了统一共识：想要流量就得高频活跃、主动输出，多点赞评论深度互动。列表里几位长期坚持真诚表达的博主，彼此慢慢熟悉，形成了稳定的社交圈层。\n加上蓝 V 订阅门槛、网络环境限制，能留下来的这批人思路都很通透。我后续会持续深耕这条路，即便靠互关起号，能做到前排也实属不易，也建议所有人做真实内容、真诚交流。#互关",
+      "images": [],
+      "topic": "关注突破",
+      "reviewStatus": "明确相关",
+      "textMayBeTruncated": false
+    },
+    {
+      "id": "2073794076831625384",
+      "createdAt": "2026-07-05T15:40:11.000Z",
+      "url": "https://x.com/tarsixseveneig1/status/2073794076831625384",
+      "text": "还有3个粉丝突破1k粉，谁会是那个我记住的 1000? 不过每个你们都很重要‼️我想努努力，3个月后突破 1w，反正那么多万粉，为啥不能多我一个？😁",
+      "images": [
+        {
+          "url": "https://pbs.twimg.com/media/HMeYKAXaoAAc4oM?format=jpg&name=medium",
+          "localPath": "/resources/big-interaction-whitepaper/archive/2073794076831625384-1.jpg"
+        }
+      ],
       "topic": "关注突破",
       "reviewStatus": "明确相关",
       "textMayBeTruncated": false

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { archiveImageView } from '../../../../lib/interaction/archiveImage'
+import { archiveImageView, archiveShanghaiDate } from '../../../../lib/interaction/archiveImage'
 import archive from '../../../../lib/interaction/bigInteractionArchive.json'
 
 import ContentEngagement from '../../components/ContentEngagement'
@@ -19,6 +19,8 @@ const title = '大互动理论'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
 const updated = '2026-11-05'
+const archiveImageCount = archive.posts.reduce((count, post) => count + (Array.isArray(post.images) ? post.images.length : 0), 0)
+const archivePostsWithoutImages = archive.posts.filter((post) => !post.images?.length).length
 
 function ArchivePostImages({ images }) {
   const views = (Array.isArray(images) ? images : []).map(archiveImageView).filter(Boolean)
@@ -297,15 +299,15 @@ export default function BigInteractionWhitepaperPage() {
             <section id="archive" className={styles.section}>
               <p className={styles.sectionIndex}>SOURCE ARCHIVE / 来源资料</p>
               <h2>X 原帖归档</h2>
-              <p className={styles.lead}>@{archive.account} 的原帖归档共 {archive.posts.length} 条，时间从 2026-10-02 21:09 到 2026-11-05 14:24（Asia/Shanghai）。每条保留原帖链接、采集文字和配图。配图使用本站文件。2113806563941257537 与 2106008661487452220 没有配图。</p>
-              <p>第一次收录从主页检查 319 条帖子，留下 15 条，最早到 2026-10-24。这次按「大互动」「大互动理论」「关注突破」「破鼎」检索，命中 {archive.checked} 个不重复帖子，补入 15 条更早或上次未留下的原帖。checked 字段记下这次关键词检索的 {archive.checked} 个唯一 ID。主页扫描另行检查过 319 条。</p>
-              <p>正文不含这些词的帖子不会出现在这次检索结果里。翻页在 2106008661487452220 之后没有继续返回。该账号仍可能有尚未收录的帖子。「待复核」表示主题关联较弱。标有「文字可能截断」的条目，以 X 原帖为准。</p>
+              <p className={styles.lead}>@{archive.account} 的原帖归档共 {archive.posts.length} 条，时间从 2026-07-05 23:40 到 2026-11-05 14:24（Asia/Shanghai）。每条保留原帖链接、采集文字和配图。{archiveImageCount} 张配图使用本站文件。{archivePostsWithoutImages} 条原帖没有配图，这些帖子本身不带图片。</p>
+              <p>第一次收录从主页检查 319 条帖子，留下 15 条，最早到 2026-10-24。第二次按「大互动」「大互动理论」「关注突破」「破鼎」检索，命中 32 个不重复帖子，留下 30 条，最早到 2026-10-02。这次补上「互关」「交朋友」「交友」「互相关注」「浇友」，以及关注里程碑（N000关注、即将N、破鼎、破粉），再加入 45 条。checked 字段是 {archive.checked}，记下这次扩展关键词检索的唯一 ID 数量。主页扫描另行检查过 319 条。</p>
+              <p>正文不含这些词的帖子不会出现在这几次检索结果里。这组关键词再往 2026-07-05 之前翻页，结果已经为空。该账号仍可能有尚未收录的帖子。「待复核」表示主题关联较弱。标有「文字可能截断」的条目，以 X 原帖为准。</p>
               <div className={styles.archiveTableWrap}>
                 <table className={styles.archiveTable}>
                   <thead><tr><th scope="col">日期与原帖</th><th scope="col">主题 / 核对</th><th scope="col">采集文字</th><th scope="col">配图</th></tr></thead>
                   <tbody>{archive.posts.map((post) => (
                     <tr key={post.id}>
-                      <td><time dateTime={post.createdAt}>{post.createdAt.slice(0, 10)}</time><a href={post.url} target="_blank" rel="noopener noreferrer">查看原帖 ↗</a></td>
+                      <td><time dateTime={post.createdAt}>{archiveShanghaiDate(post.createdAt)}</time><a href={post.url} target="_blank" rel="noopener noreferrer">查看原帖 ↗</a></td>
                       <td><strong>{post.topic}</strong><span>{post.reviewStatus}</span>{post.textMayBeTruncated && <span>文字可能截断</span>}</td>
                       <td className={styles.archiveText}>{post.text}</td>
                       <td><ArchivePostImages images={post.images} /></td>

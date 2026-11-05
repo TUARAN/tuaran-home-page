@@ -128,6 +128,18 @@
 @media (prefers-reduced-motion: reduce) { .exhibitionProgress span { transition: none; } }
 
 .entryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 1088px; margin: 0 auto 34px; }
+.archiveTableWrap { max-width: 100%; overflow-x: auto; margin: 24px 0; }
+.archiveTable { width: 100%; min-width: 730px; border-collapse: collapse; font-size: 13px; line-height: 1.65; }
+.archiveTable th, .archiveTable td { border-bottom: 1px solid #b9cdb9; padding: 13px 10px; text-align: left; vertical-align: top; }
+.archiveTable th { background: #e7efe2; color: #234a32; white-space: nowrap; }
+.archiveTable td:first-child { min-width: 110px; }
+.archiveTable td:first-child a, .archiveTable td:nth-child(2) span { display: block; }
+.archiveTable td:nth-child(2) { min-width: 105px; }
+.archiveTable td:nth-child(2) span { color: #617967; }
+.archiveText { min-width: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.archiveTable img { display: block; width: 96px; max-height: 130px; object-fit: cover; border-radius: 5px; }
+:global(.dark) .archiveTable th { background: #193d29; color: #d7eed7; }
+:global(.dark) .archiveTable th, :global(.dark) .archiveTable td { border-color: #43644b; }
 .entryGrid .toolGuide { flex-direction: column; align-items: flex-start; gap: 20px; width: 100%; min-width: 0; margin: 0; padding: 26px; border-radius: 20px; background: linear-gradient(135deg, #edf5ea, #fafbf6); }
 .entryGrid .toolGuide h2 { font-size: clamp(20px, 2vw, 25px); letter-spacing: -.025em; }
 .entryGrid .toolGuideLink { margin-top: auto; padding: 0; min-height: 32px; border-radius: 4px; background: transparent; color: #1d6840; }

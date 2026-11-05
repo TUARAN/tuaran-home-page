@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import archive from '../../../../lib/interaction/bigInteractionArchive.json'
 
 import ContentEngagement from '../../components/ContentEngagement'
 import ContentPvBeacon from '../../components/ContentPvBeacon'
@@ -16,7 +17,7 @@ const shareUrl = 'https://2aran.com/x'
 const title = '大互动理论'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
-const updated = '2026-10-29'
+const updated = '2026-11-05'
 
 export const metadata = {
   title: `${title}｜互动、反馈与边界`,
@@ -34,6 +35,7 @@ const chapters = [
   { id: 'mechanism', number: '第二章', title: '互动怎样形成反馈' },
   { id: 'quality', number: '第三章', title: '判断互动的质量' },
   { id: 'boundaries', number: '第四章', title: '边界与局限' },
+  { id: 'archive', number: '资料', title: 'X 原帖归档' },
 ]
 
 const layers = [
@@ -275,6 +277,26 @@ export default function BigInteractionWhitepaperPage() {
               <h3 id="scope">4.3 方法的适用范围</h3>
               <p>互动机会受到工作、照护责任、健康和资源条件影响。评论、点赞、关注和发帖不能衡量人的价值或关系质量。行动循环那张图的下半部是图书推广，不属于理论内容。</p>
               <p>这套方法适合自我观察与小范围实践。目前没有足以证明它具有普遍因果效果的研究数据。睡好、喝够、多互动之间也不存在可照搬的医学顺序。</p>
+            </section>
+
+            <section id="archive" className={styles.section}>
+              <p className={styles.sectionIndex}>SOURCE ARCHIVE / 来源资料</p>
+              <h2>X 原帖归档</h2>
+              <p className={styles.lead}>从 @{archive.account} 的主页扫描 {archive.checked} 条帖子，模型筛出 {archive.posts.length} 条候选。每条保留原帖链接、采集到的文字和配图链接。</p>
+              <p>以下是一次主页扫描的结果，不能据此认定账号历史帖子已全部收录。「待复核」表示主题关联较弱；标有「文字可能截断」的条目，应以 X 原帖为准。图片仍使用 X 媒体地址。</p>
+              <div className={styles.archiveTableWrap}>
+                <table className={styles.archiveTable}>
+                  <thead><tr><th scope="col">日期与原帖</th><th scope="col">主题 / 核对</th><th scope="col">采集文字</th><th scope="col">配图</th></tr></thead>
+                  <tbody>{archive.posts.map((post) => (
+                    <tr key={post.id}>
+                      <td><time dateTime={post.createdAt}>{post.createdAt.slice(0, 10)}</time><a href={post.url} target="_blank" rel="noopener noreferrer">查看原帖 ↗</a></td>
+                      <td><strong>{post.topic}</strong><span>{post.reviewStatus}</span>{post.textMayBeTruncated && <span>文字可能截断</span>}</td>
+                      <td className={styles.archiveText}>{post.text}</td>
+                      <td>{post.images.length ? post.images.map((src, index) => <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={`查看第 ${index + 1} 张原帖图片`}><img src={src} alt={`原帖配图 ${index + 1}`} loading="lazy" referrerPolicy="no-referrer" /></a>) : '无配图'}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
             </section>
           </article>
         </div>

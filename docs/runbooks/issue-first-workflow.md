@@ -16,6 +16,45 @@
 6. 带 `needs:design`、`needs:decision` 或 `needs:assets`：停在 Issue。把缺什么写进评论。不直接开 PR。`priority:now` 不能压过 `needs:*`；now 只表示阻塞一解除就开工。
 7. 站长说「合」之后才 squash。在那之前助手不 squash、不 merge。界面改动先看 Cloudflare Pages 分支预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
+本地 Codex 与聊天助手同时在场时，落地路径见「本地 Codex 与助手协同」。
+
+## 本地 Codex 与助手协同
+
+GitHub Issue 是唯一台账。PR 是唯一合入入口。非琐碎改动开 PR 合入，不直接推 `main`。
+
+本地 Codex 和聊天里的助手可以同时在场。同一条 Issue 只由一条路径落地。搜重、五段正文、分诊标签和关闭关键词仍按「标准流程」和「关闭关键词」执行。
+
+**路径 A：站长或 Codex 先在本地改**
+
+1. 先搜重。同一问题已有 open Issue 就复用，没有再新开。正文仍写五段：问题、影响、建议动作、阻塞、来源聊天摘要。
+2. 打上至少一个 `type:*`、恰好一个 `priority:*`。缺设计、决策或素材时，再打对应的 `needs:*`。
+3. `priority:now` 且没有任何 `needs:*`：在本地改完，开 PR，正文写 `Closes #N`。
+4. 在该 Issue 下评论，或在聊天里告诉助手：「Codex 已本地落地 #N」，并附上 PR 链接。
+5. 之后只审阅这条 PR。站长说「合」之后，由开发助手按「预览、内容与合并」squash。不为同一条 Issue 再启动云端代理，也不另开第二条 PR。
+
+**路径 B：站长在聊天里交给助手**
+
+1. 开发助手去重，开新 Issue 或复用已有 Issue，并打分诊标签。
+2. `priority:now` 且没有任何 `needs:*` 时，由 CloudAgent 开 PR。
+3. 云端任务还在这条 Issue 上进行时，Codex 不改同一条。站长当次明确说「改由 Codex 接手，云端停」之后，停掉云端任务，改走路径 A，并在 Issue 评论里写明接手。
+
+**冲突**
+
+同一条 Issue 出现两个 PR 时，以先出现的 PR 为准。后出现的 PR 关闭，不合并。在 Issue 评论里写明谁负责落地、哪条 PR 继续、哪条已关闭。
+
+**合并**
+
+合并策略不随路径改变。界面改动先看 Cloudflare Pages 分支预览，站长说「合」之后才 squash。内容稿可以以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
+
+**分工**
+
+| 角色 | 职责 |
+| --- | --- |
+| Issues 助手 | 去重、分诊、补标签 |
+| 开发助手 | 开 PR；站长说「合」之后 squash 合并 |
+
+开 PR 和 squash 由开发助手做。开发助手在站长说「合」之前不 squash、不 merge。
+
 ## 关闭关键词
 
 本机 Mac、Codex 插件和 `codex/*` 分支是正式贡献路径，与云端助手同级。Issue 优先照走。本地改插件很常见；PR 正文要写对关闭关键词，合并后 GitHub 才会关掉对应 Issue。

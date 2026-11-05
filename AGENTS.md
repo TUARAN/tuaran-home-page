@@ -85,6 +85,7 @@
 
 - 先搜索 open/closed Issue 与相关 PR，开新 Issue 或复用已有 Issue，再开 PR。
 - 本机 Mac、Codex 与 `codex/*` 分支是正式贡献路径，同样先走 Issue 优先。
+- 本地 Codex 与聊天助手并行时，同一条 Issue 只走一条落地路径。细则见 `docs/runbooks/issue-first-workflow.md` 的「本地 Codex 与助手协同」。
 - 本 PR 做完某 Issue 的建议动作时，每条写一行 `Closes #N`（可多条；一个 PR 可以关闭多条）。做完的不要写成 `Related`。
 - `Related: #N` 只用于合并后仍应打开的 Issue：部分推进、依赖或后续。
 - 合并后若做完的 Issue 因只写了 `Related` 仍开着，Issues 助手或站长按已完成关闭，并引用该 PR。细则见 `docs/runbooks/issue-first-workflow.md` 的「关闭关键词」。

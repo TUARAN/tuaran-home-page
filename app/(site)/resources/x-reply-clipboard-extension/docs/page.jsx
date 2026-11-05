@@ -347,7 +347,18 @@ export default function XReplyClipboardDocsPage() {
                       <li>已处理通知持续去重，任务不顺手点赞。每核对一条不同通知就推进本轮检查进度，成功发出回复另计；没有足够可回复通知时，本次扫描结束，不等待凑满成功数。默认优先级 8 分，与评论首页、评论大V同分轮换。评论回复页的 @Grok 开关默认关闭；打开后约 5% 的 AI 回复会带一次 @grok。</li>
                     </ol>
                   </li>
-                  <li id="reply-kol" className="scroll-mt-24">评论大V：打开「评论大V」子页配置区里的大V名单账号主页，优先评论他们当天的帖子。每一轮开始时打乱当前名单，再按这个顺序逐个访问；换到下一个时，取本轮还没去过的账号。慢、中、快、超快分别在每个大V主页评论最多 3、5、7、11 条；达到上限或当天没有可评的帖子就换下一个，名单扫完后休息，下一轮重新打乱。内置名单分成 2 组，按北京时间每 7 天换一组，进行中的这一轮仍走完已经抽出的顺序。排班设置里清空名单，或保存结果与内置总名单、某一组内置名单完全相同，会继续自动换组；增删账号后固定使用这份名单，只打乱顺序。名单按当前 Chrome 配置文件保存，并按登录账号分开。连续 3 次无法确认启动时停止自动重试，显示原因，检查执行页和模型设置后可手动重新启动。名单可对照 <a href="https://xbangdan.com/accounts/" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">X榜单账号榜</a> 自行增删，默认带一组简体中文社区常见账号。</li>
+                  <li id="reply-kol" className="scroll-mt-24 space-y-2">
+                    <strong className="text-[var(--site-ink)]">评论大V：名单与访问方式</strong>
+                    <p>内置名单是源码中固定的 10 个账号，没有按粉丝数、互动率或 X 排名实时筛选；源码没有记录这批账号最初的量化入选标准。当前使用哪一组，以「评论大V」子页的名单和状态提示为准。</p>
+                    <ul className="list-disc space-y-1 pl-5">
+                      <li>内置第 1 组：@xupaopaogm、@thankucrypto、@hotmailfromsh、@weiyux2021、@huoshan007。</li>
+                      <li>内置第 2 组：@alanshao111、@vicentyip、@xiaqingfeng666、@JMkernt、@DISONYYDS。</li>
+                      <li>两组按北京时间每 7 天交替。换组时，正在进行的一轮仍走完已抽出的顺序；下一轮才使用新组。每轮开始时只打乱当前名单一次，轮内按抽出的顺序访问尚未访问的账号。</li>
+                      <li>在排班设置里清空名单，或保存与内置总名单、任一内置组完全相同的账号集合，会继续自动换组。增删账号后使用固定的自定义名单，每轮仍打乱访问顺序。名单保存在当前 Chrome 配置文件；每个登录 X 账号的本轮访问进度分别保存。</li>
+                      <li>逐个打开名单里的账号主页，优先评论当天的帖子。慢、中、快、超快分别在每个主页最多评论 3、5、7、11 条；达到上限或当天没有可评帖子就换下一个。名单扫完后休息，下一轮重新打乱。连续 3 次无法确认启动时停止自动重试并显示原因，检查执行页和模型设置后可手动重启。</li>
+                    </ul>
+                    <p>需要调整名单时，可参考 <a href="https://xbangdan.com/accounts/" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">X榜单账号榜</a> 等资料自行核对账号；这个链接不代表内置名单来自该榜单。</p>
+                  </li>
                   <li>三项轮流占用同一个执行页签，分别保留去重进度。评论首页与评论回复完成本次全部轮次后休息；评论大V扫完名单后休息。通知页没有更多待处理内容时也会结束本次任务。</li>
                   <li>三项评论任务共用上面的递增冷却；排班开着时会先让出执行页签，到期后按优先级继续。普通轮次和周期等待可“立即开始”，风控冷却不能跳过。</li>
                 </ul>

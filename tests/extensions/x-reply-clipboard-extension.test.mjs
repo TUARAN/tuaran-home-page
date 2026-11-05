@@ -7467,7 +7467,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
   assert.equal(rules.timeline.pace, 'boundary')
-  assert.equal(rules.notifications.pace, 'turbo')
+  assert.equal(rules.notifications.pace, 'medium')
   assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
@@ -7552,8 +7552,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 9)
-    assert.equal(plan.rules.notifications.pace, 'turbo')
-    assert.equal(plan.notificationPaceDefaultVersion, 1)
+    assert.equal(plan.rules.notifications.pace, 'medium')
+    assert.equal(plan.notificationPaceDefaultVersion, 2)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -7573,6 +7573,27 @@ test('existing schedule receives the daily follow-back cadence and new default w
     assert.equal(plan.followBackNightVersion, 1)
     await background.readTaskSchedule()
     assert.ok(writes >= 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('previous turbo default for notification replies returns to medium once', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', items: {},
+    notificationPaceDefaultVersion: 1,
+    rules: { notifications: { pace: 'turbo' } },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.rules.notifications.pace, 'medium')
+    assert.equal(plan.notificationPaceDefaultVersion, 2)
+    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'medium')
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -7604,7 +7625,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 9)
-    assert.equal(plan.rules.notifications.pace, 'turbo')
+    assert.equal(plan.rules.notifications.pace, 'medium')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)

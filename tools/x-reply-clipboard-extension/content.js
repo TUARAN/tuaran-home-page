@@ -8968,7 +8968,7 @@
       });
       const viewedPace = viewingLiveReply && (state.running || state.loopPromise)
         ? state.schedulePace
-        : taskSchedule.rules?.[replyViewKey]?.pace || (replyViewKey === "notifications" ? "turbo" : "medium");
+        : taskSchedule.rules?.[replyViewKey]?.pace || "medium";
       const schedule = loopApi.formatSchedule(viewedPace, boundaryPlanKey());
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
         const activePace = viewTaskKey() === "kol" && schedule.id === "boundary" ? "slow" : schedule.id;

@@ -1,0 +1,16 @@
+.pageBackdrop {
+  background-color: #fff1f4;
+  background-image:
+    url('/images/xiaohongshu-community/page-background.webp'),
+    linear-gradient(180deg, #fff5f3 0%, #fff1f4 48%, #ffece6 100%);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: 100% auto, cover;
+  min-height: 100%;
+}
+
+@media (max-width: 768px) {
+  .pageBackdrop {
+    background-size: auto 760px, cover;
+  }
+}

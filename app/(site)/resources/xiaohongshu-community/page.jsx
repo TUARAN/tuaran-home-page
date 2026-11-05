@@ -7,6 +7,7 @@ import {
   xiaohongshuCommunityJsonLd,
 } from '../../../../lib/page-data/xiaohongshuCommunity'
 import XiaohongshuCommunityView from './XiaohongshuCommunityView'
+import styles from './xiaohongshu-community.module.css'
 
 export const dynamic = 'force-static'
 
@@ -35,11 +36,13 @@ export default function XiaohongshuCommunityPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <PageContainer className="py-6 md:py-8">
-        <ContentPvBeacon category="resource" slug={XIAOHONGSHU_COMMUNITY_SLUG} />
-        <XiaohongshuCommunityView page={XIAOHONGSHU_COMMUNITY} />
-      </PageContainer>
-      <ContentEngagement contentKey={`resource:${XIAOHONGSHU_COMMUNITY_SLUG}`} width="standard" />
+      <div className={styles.pageBackdrop}>
+        <PageContainer className="py-6 md:py-8">
+          <ContentPvBeacon category="resource" slug={XIAOHONGSHU_COMMUNITY_SLUG} />
+          <XiaohongshuCommunityView page={XIAOHONGSHU_COMMUNITY} />
+        </PageContainer>
+        <ContentEngagement contentKey={`resource:${XIAOHONGSHU_COMMUNITY_SLUG}`} width="standard" />
+      </div>
     </>
   )
 }

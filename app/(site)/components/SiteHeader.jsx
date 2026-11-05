@@ -454,8 +454,8 @@ function AuthorityDrawerLinks({ pathname, onNavigate }) {
           {navDesc(SITE_AUTHORITY_SUMMARY, locale)}
         </p>
       </div>
-      <nav className="grid px-1.5 pb-1">
-        {SITE_AUTHORITY_LINKS.map((item) => {
+      <nav className="grid px-3 pb-2">
+        {SITE_AUTHORITY_LINKS.map((item, index) => {
           const active = isAuthorityLinkActive(item, pathname)
           return (
             <Link
@@ -469,8 +469,12 @@ function AuthorityDrawerLinks({ pathname, onNavigate }) {
               data-analytics-destination-kind="page"
               data-analytics-destination-id={item.href}
             >
-              <span>{navLabel(item, locale)}</span>
-              <span className="font-mono text-[10px] tracking-[0.12em] opacity-70" aria-hidden="true">→</span>
+              <span className="font-mono text-[11px] opacity-55" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block">{navLabel(item, locale)}</span>
+                <span className="block text-[11px] font-normal leading-5 opacity-65">{navDesc(item, locale)}</span>
+              </span>
+              <span className="font-mono text-[13px] opacity-70" aria-hidden="true">↗</span>
             </Link>
           )
         })}

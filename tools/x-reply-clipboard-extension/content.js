@@ -7335,8 +7335,7 @@
   }
 
   function defaultSchedulePriority(mode) {
-    return mode === "timeline" ? 9
-      : mode === "notifications" || mode === "kol" || mode === "poster-premium" ? 8
+    return mode === "timeline" || mode === "notifications" || mode === "kol" || mode === "poster-premium" ? 8
       : mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share" ? 7
       : ["likes-posts", "likes-replies"].includes(mode) ? 6
       : mode === "mutual-followBack" ? 7

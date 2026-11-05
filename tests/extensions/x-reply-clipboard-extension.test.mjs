@@ -7100,7 +7100,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /已经写在别人帖子下面的评论不会被当成自己的原帖/)
   assert.match(docsPage, /换账号后按新账号判断/)
   assert.match(docsPage, /短、友好、多表情/)
-  assert.match(docsPage, /默认优先级 9 分，高于评论首页的 8 分/)
+  assert.match(docsPage, /默认优先级 8 分，与评论首页、评论大V同分轮换/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
@@ -7402,6 +7402,16 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   sameScore.items.kol.lastRunAt = afternoon - 5 * 60 * 60000
   const exactTie = background.dueTaskModes(sameScore, afternoon)
   assert.ok(exactTie.indexOf('notifications') < exactTie.indexOf('kol'))
+  const threeComments = background.dueTaskModes({
+    enabledAt: afternoon - 6 * 60 * 60000,
+    rules: {},
+    items: {
+      notifications: { lastRunAt: afternoon - 60_000 },
+      timeline: { lastRunAt: afternoon - 120_000 },
+      kol: { lastRunAt: afternoon - 180_000 },
+    },
+  }, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
+  assert.deepEqual(threeComments, ['kol', 'timeline', 'notifications'])
 })
 
 test('cleanup defaults to bounded slow segments and keeps a longer occupancy pass', () => {
@@ -7421,7 +7431,9 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
   assert.equal(rules['likes-replies'].priority, rules['likes-posts'].priority)
-  assert.equal(rules.notifications.priority, 9)
+  assert.equal(rules.notifications.priority, 8)
+  assert.equal(rules.timeline.priority, 8)
+  assert.equal(rules.kol.priority, 8)
   assert.equal(rules.timeline.priority, 8)
   assert.equal(rules.timeline.priority, rules['poster-premium'].priority)
   assert.ok(rules['poster-premium'].priority > rules.poster.priority)
@@ -7565,7 +7577,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 8)
+    assert.equal(plan.commentEqualPriorityVersion, 1)
     assert.equal(plan.rules.notifications.pace, 'medium')
     assert.equal(plan.notificationPaceDefaultVersion, 2)
     assert.equal(plan.rules.timeline.priority, 8)
@@ -7638,7 +7651,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.rules.notifications.pace, 'medium')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
@@ -7739,7 +7752,7 @@ test('follow-back and target-follow share the pace rest after 100 confirms', asy
 test('a running follow session is not preempted by comments before it pauses', async () => {
   const previousChrome = globalThis.chrome
   const previousDateNow = Date.now
-  const now = Date.parse('2026-10-28T15:00:00+08:00')
+  const now = Date.parse('2026-10-28T15:20:00+08:00')
   Date.now = () => now
   const local = {
     xrcTaskSchedule: {
@@ -7783,7 +7796,7 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
     'mutual-targetFollow': { lastRunAt: now - 31 * 60000 },
   } }
   const due = background.dueTaskModes(plan, now)
-  assert.ok(due.indexOf('notifications') < due.indexOf('mutual-followBack'))
+  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('notifications'))
   assert.ok(due.indexOf('mutual-followBack') < due.indexOf('timeline'))
   assert.ok(due.indexOf('mutual-followBack') < due.indexOf('likes-posts'))
   const premiumNow = Date.parse('2026-10-29T09:35:00+08:00')
@@ -8069,11 +8082,11 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // 评论回复现在是默认最高分；调度会先打开通知任务。
-    assert.equal(activeMode, 'notifications')
+    // 关注目标未达成时，8.5 分的回关任务会先于三项 8 分评论任务。
+    assert.equal(activeMode, 'mutual-followBack')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /xrcAssistant=notifications/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => /xrcAssistant=mutual-followBack/i.test(String(entry.options?.url || ''))),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -9272,7 +9285,7 @@ test('X account action denial is recognized as a restriction in every action mod
   }
 })
 
-test('notification priority 10 migrates to 9 while other hand-tuned scores stay', async () => {
+test('notification priority 10 migrates to 8 while other hand-tuned scores stay', async () => {
   const previousChrome = globalThis.chrome
   const stored = { xrcTaskSchedule: {
     enabled: false, current: '', items: {},
@@ -9293,7 +9306,7 @@ test('notification priority 10 migrates to 9 while other hand-tuned scores stay'
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.rules.timeline.priority, 6)
     assert.equal(plan.notificationsPriorityVersion, 1)
   } finally {
@@ -9301,7 +9314,7 @@ test('notification priority 10 migrates to 9 while other hand-tuned scores stay'
   }
 })
 
-test('existing default comment priorities swap once without changing custom scores', async () => {
+test('existing comment defaults converge to 8 without changing other custom scores', async () => {
   const previousChrome = globalThis.chrome
   const stored = { xrcTaskSchedule: {
     enabled: false, current: '', items: {},
@@ -9316,15 +9329,18 @@ test('existing default comment priorities swap once without changing custom scor
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules.kol.priority, 6)
     assert.equal(plan.commentPrioritySwapVersion, 1)
+    assert.equal(plan.commentEqualPriorityVersion, 1)
     const again = await background.readTaskSchedule()
-    assert.equal(again.rules.notifications.priority, 9)
+    assert.equal(again.rules.notifications.priority, 8)
     assert.equal(again.rules.timeline.priority, 8)
-    assert.ok(background.dueTaskModes({ ...plan, enabled: true, items: {} }).indexOf('notifications')
-      < background.dueTaskModes({ ...plan, enabled: true, items: {} }).indexOf('timeline'))
+    const rotated = background.dueTaskModes({ ...plan, enabled: true, items: {
+      notifications: { lastRunAt: Date.now() - 60_000 },
+    } })
+    assert.ok(rotated.indexOf('timeline') < rotated.indexOf('notifications'))
   } finally {
     globalThis.chrome = previousChrome
   }

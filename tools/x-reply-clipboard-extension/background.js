@@ -1807,8 +1807,7 @@ async function isTaskUnlimitedMode(mode) {
 
 function defaultTaskPriority(mode) {
   // 评论回复 > 评论首页 = 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
-  if (mode === "notifications") return 9;
-  if (mode === "timeline" || mode === "kol" || mode === "poster-premium") return 8;
+  if (mode === "timeline" || mode === "notifications" || mode === "kol" || mode === "poster-premium") return 8;
   if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
@@ -2117,6 +2116,11 @@ async function readTaskSchedule() {
       plan.rules.timeline.priority = 8;
     }
     plan.commentPrioritySwapVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.commentEqualPriorityVersion !== 1) {
+    if (Number(plan.rules.notifications.priority) === 9) plan.rules.notifications.priority = 8;
+    plan.commentEqualPriorityVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.notificationPaceDefaultVersion !== 2) {

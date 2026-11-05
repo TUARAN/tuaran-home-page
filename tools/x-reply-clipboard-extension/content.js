@@ -286,6 +286,7 @@
     stopping: false,
     pageCount: 0,
     notificationCheckedIds: new Set(),
+    notificationBoundaryRefreshed: false,
     completedRounds: 0,
     kolVisitedHandles: [],
     kolVisitOrder: [],
@@ -4601,6 +4602,7 @@
       pageCount: 0,
       completedRounds: 0,
       kolVisitedHandles: [],
+      notificationBoundaryRefreshed: false,
       kolVisitOrder: [],
       kolCycleRetired: false,
       startedAt: null,
@@ -4664,6 +4666,7 @@
         total: Number(parsed.total) || 0,
         pageCount: Number(parsed.pageCount) || 0,
         completedRounds: Number(parsed.completedRounds) || 0,
+        notificationBoundaryRefreshed: Boolean(parsed.notificationBoundaryRefreshed),
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
         nextCycleAt: validAssistantMode(parsed.assistantMode) === "notifications"
@@ -4714,6 +4717,7 @@
         total: Number(value.total) || 0,
         pageCount: Number(value.pageCount ?? state.pageCount) || 0,
         completedRounds: Number(value.completedRounds ?? state.completedRounds) || 0,
+        notificationBoundaryRefreshed: Boolean(value.notificationBoundaryRefreshed ?? state.notificationBoundaryRefreshed),
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
@@ -4775,6 +4779,7 @@
         pageCount: 0,
         completedRounds: 0,
         startedAt: null,
+        notificationBoundaryRefreshed: false,
         cycleCount: 0,
         nextCycleAt: 0,
         notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
@@ -4919,6 +4924,7 @@
   function resetCycleProgress() {
     state.pageCount = 0;
     state.notificationCheckedIds.clear();
+    state.notificationBoundaryRefreshed = false;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];
@@ -5468,6 +5474,7 @@
       })
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
+        loopApi.notificationWithinWindow(tweet.timestamp) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
         !loopApi.hasVisibleReplyCount(tweet.replyButton)
@@ -5476,6 +5483,27 @@
     if (!kolMode) return tweets;
     const todayTweets = tweets.filter((tweet) => tweet.timestamp && shanghaiDayKey(tweet.timestamp) === todayKey);
     return todayTweets.length ? todayTweets : tweets;
+  }
+
+  function notificationFeedReachedOldBoundary(now = Date.now()) {
+    if (state.assistantMode !== "notifications") return false;
+    const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+    return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
+      .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`) && !isNestedTweet(article))
+      .some((article) => {
+        const timeNode = listOwn(article, "time[datetime]")[0];
+        const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute?.("datetime"));
+        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now);
+      });
+  }
+
+  async function finishNotificationScan(reason = "最近 24 小时的通知已扫完") {
+    if (!state.notificationBoundaryRefreshed) {
+      state.notificationBoundaryRefreshed = true;
+      writeSaved({ running: true, total: state.total });
+      return await reloadAndResume(`${reason}，刷新后复核最新回复`) ? "reload" : "stopped";
+    }
+    return finishCycleAndScheduleNext(`已复核最近 24 小时的回复，本次确认 ${state.total} 条`);
   }
 
   async function collectDailyKolFromHome(tweets, now = Date.now()) {
@@ -6279,7 +6307,7 @@
     if (state.stopping) return "stopped";
 
     let ready = await waitUntil(
-      () => collectTweets().length > 0,
+      () => collectTweets().length > 0 || notificationFeedReachedOldBoundary(),
       15000
     );
     if (state.stopping) return "stopped";
@@ -6287,7 +6315,7 @@
       const closed = await closeReplyComposer();
       if (closed) {
         ready = await waitUntil(
-          () => collectTweets().length > 0,
+          () => collectTweets().length > 0 || notificationFeedReachedOldBoundary(),
           8000
         );
       }
@@ -6310,7 +6338,7 @@
         return reconnectAndResume("暂时无法识别当前登录账号，为避免回复自己，本轮已暂停");
       }
       if (state.assistantMode === "notifications") {
-        return finishCycleAndScheduleNext("通知页没有待处理回复，本次扫描结束");
+        return finishNotificationScan(notificationFeedReachedOldBoundary() ? "已到 24 小时前的通知" : "通知页没有待处理回复");
       }
       if (state.assistantMode === "kol") {
         return rotateKolProfileAndResume("这个主页暂时没有可评论的帖子，换一个大V继续");
@@ -6400,14 +6428,20 @@
         return reconnectAndResume(state.status, { inPlace: true });
       }
       if (!next) {
+        if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
+          return finishNotificationScan("已到 24 小时前的通知");
+        }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
         await sleepActive(SCROLL_WAIT_MS);
         const after = tweetSignature(collectTweets());
+        if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
+          return finishNotificationScan("已到 24 小时前的通知");
+        }
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
           if (state.assistantMode === "notifications") {
-            return finishCycleAndScheduleNext(`通知页没有更多待处理回复，本次完成 ${state.total} 条`);
+            return finishNotificationScan("通知页没有更多待处理回复");
           }
           if (state.assistantMode === "kol") {
             return rotateKolProfileAndResume(`@${currentKolHandleFromPath() || "大V"} 主页已扫完，换下一个继续`);
@@ -9684,6 +9718,7 @@
     }
     state.pageCount = 0;
     state.notificationCheckedIds.clear();
+    state.notificationBoundaryRefreshed = false;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];
@@ -9783,6 +9818,7 @@
     state.startedAt = saved.startedAt;
     state.cycleCount = saved.cycleCount;
     state.nextCycleAt = saved.nextCycleAt;
+    state.notificationBoundaryRefreshed = saved.notificationBoundaryRefreshed;
     state.nextRoundAt = saved.nextRoundAt;
     state.reconnectAt = saved.reconnectAt;
     state.reconnectReason = saved.reconnectReason;

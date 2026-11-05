@@ -6242,6 +6242,7 @@ test('notification replies remain eligible without a like button', async () => {
     closest: () => null,
     querySelector(selector) {
       if (selector === 'a[href*="/status/"] time') return time
+      if (selector === 'time[datetime]') return time
       if (selector === '[data-testid="reply"]') return replyButton
       return null
     },
@@ -6294,8 +6295,8 @@ test('notification replies target the comment, not the parent post shown above i
   assert.ok(definition && helpers)
   const parentLink = { getAttribute: () => '/author/status/111' }
   const commentLink = { getAttribute: () => '/reader/status/222' }
-  const parentTime = { closest: (selector) => selector === 'a' ? parentLink : null, getAttribute: () => '' }
-  const commentTime = { closest: (selector) => selector === 'a' ? commentLink : null, getAttribute: () => '' }
+  const parentTime = { closest: (selector) => selector === 'a' ? parentLink : null, getAttribute: () => new Date().toISOString() }
+  const commentTime = { closest: (selector) => selector === 'a' ? commentLink : null, getAttribute: () => new Date().toISOString() }
   const parentButton = { textContent: '9' }
   const commentButton = { textContent: '' }
   const commentBlock = {
@@ -6309,6 +6310,7 @@ test('notification replies target the comment, not the parent post shown above i
     getBoundingClientRect: () => ({ top: 0 }),
     querySelectorAll(selector) {
       if (selector === 'a[href*="/status/"] time') return [parentTime, commentTime]
+      if (selector === 'time[datetime]') return [parentTime, commentTime]
       if (selector === '[data-testid="reply"]') return [parentButton, commentButton]
       if (selector === '[data-testid="tweetText"]') return [{}, {}]
       return []
@@ -6354,6 +6356,7 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
         getAttribute: () => new Date().toISOString(),
         closest: () => ({ getAttribute: () => `/${handle}/status/${id}` }),
       }
+      if (selector === 'time[datetime]') return { getAttribute: () => new Date().toISOString() }
       if (selector === '[data-testid="reply"]') return {}
       return null
     },
@@ -6382,14 +6385,16 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   const replyTargetHelpers = source.match(/  function outsideNestedTweet\(article, node\) \{[\s\S]*?\n  function ownTweetText\(article\) \{[\s\S]*?\n  \}/)?.[0]
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(replyTargetHelpers && definition)
+  let ageHours = 3
   const article = {
     textContent: 'Replying to @tuaranx 已有旧回复',
     closest: () => null,
     querySelector(selector) {
       if (selector === 'a[href*="/status/"] time') return {
-        getAttribute: () => new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        getAttribute: () => new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString(),
         closest: () => ({ getAttribute: () => '/reader/status/123456789' }),
       }
+      if (selector === 'time[datetime]') return { getAttribute: () => new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString() }
       if (selector === '[data-testid="reply"]') return {}
       return null
     },
@@ -6404,6 +6409,44 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   })
   vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
+  ageHours = 25
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
+})
+
+test('notification scan accepts the last 24 hours and excludes older or unknown timestamps', () => {
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  assert.equal(loop.notificationWithinWindow(now - 23 * 60 * 60 * 1000, now), true)
+  assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000, now), true)
+  assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000 - 1, now), false)
+  assert.equal(loop.notificationWithinWindow(0, now), false)
+})
+
+test('notification scan stops at the old boundary, refreshes once, then schedules the next cycle', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
+  assert.ok(boundary && finish)
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  let ageHours = 25
+  const article = { closest: () => null }
+  const events = []
+  const context = vm.createContext({
+    state: { assistantMode: 'notifications', notificationBoundaryRefreshed: false, total: 2 },
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }) },
+    PANEL_ID: 'x-reply-clipboard-panel', isNestedTweet: () => false,
+    listOwn: () => [{ getAttribute: () => new Date(now - ageHours * 60 * 60 * 1000).toISOString() }],
+    loopApi: loop,
+    writeSaved: () => events.push('saved'),
+    reloadAndResume: async () => { events.push('refreshed'); return true },
+    finishCycleAndScheduleNext: async () => { events.push('scheduled'); return 'scheduled' },
+  })
+  vm.runInContext(`${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
+  assert.equal(context.atBoundary(now), true)
+  ageHours = 23
+  assert.equal(context.atBoundary(now), false)
+  assert.equal(await context.finish(), 'reload')
+  assert.equal(await context.finish(), 'scheduled')
+  assert.deepEqual(events, ['saved', 'refreshed', 'scheduled'])
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {

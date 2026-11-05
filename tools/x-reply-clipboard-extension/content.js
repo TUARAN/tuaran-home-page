@@ -2919,7 +2919,12 @@
     current.textContent = taskSchedule.enabled
       ? `${taskSchedule.manualFocusMode ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || taskSchedule.manualFocusMode] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${!taskSchedule.manualFocusMode && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
       : "排班已暂停";
-    next.textContent = taskSchedule.manualFocusMode ? "其他任务等待手动任务结束" : nextEntry
+    const readyComments = (taskSchedule.timeline?.future || []).filter((entry) => ["timeline", "notifications", "kol"].includes(entry.mode) && entry.status === "ready");
+    const commentLottery = !taskSchedule.manualFocusMode && ["timeline", "notifications", "kol"].includes(nextEntry?.mode)
+      && readyComments.filter((entry) => Number(taskSchedule.rules?.[entry.mode]?.priority) === Number(taskSchedule.rules?.[nextEntry.mode]?.priority)).length > 1;
+    next.textContent = taskSchedule.manualFocusMode ? "其他任务等待手动任务结束" : commentLottery
+      ? "评论任务等概率抽选 · 当前结束后"
+      : nextEntry
       ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
       : "等待任务到期";
   }
@@ -2968,6 +2973,7 @@
     }
     const preview = schedulePreview();
     if (!list) return;
+    const dueModes = Array.isArray(taskSchedule.dueModes) ? taskSchedule.dueModes : [];
     const overviewByMode = Object.fromEntries(flowTaskOverview(pluginRuntime).tasks.map((task) => [task.key, task]));
     // Prefer a page-confirmed running task as「当前」; schedule.current may still be the next assignee mid-switch.
     const runningMode = preview.pending.find((task) => overviewByMode[task.mode]?.status === "running")?.mode || "";
@@ -2989,8 +2995,13 @@
     const nowTask = nowMode ? byMode.get(nowMode) : null;
     // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
     const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
-    const nextMode = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
-      && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY)?.mode || "";
+    const firstReady = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
+      && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY);
+    const lotteryModes = ["timeline", "notifications", "kol"].filter((mode) => mode !== nowMode
+      && dueModes.includes(mode)
+      && Number(byMode.get(mode)?.rule?.priority) === Number(firstReady?.rule?.priority));
+    const commentLottery = !taskSchedule.manualFocusMode && ["timeline", "notifications", "kol"].includes(firstReady?.mode) && lotteryModes.length > 1;
+    const nextMode = commentLottery ? "" : firstReady?.mode || "";
     const candidateModes = waitingQueue
       .map((task) => task.mode)
       .filter((mode) => mode && mode !== nextMode && scheduleRuleEnabled(mode, byMode.get(mode)?.rule));
@@ -3094,7 +3105,8 @@
             const tag = document.createElement("span");
             tag.className = "xrc-desk-phase-tag";
             tag.textContent = phase === "now" ? (pulse === "running" ? "当前正在执行" : pulse === "stopped" ? "当前已暂停" : "当前等待中")
-              : taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode ? "等待手动任务" : phase === "next" ? "下一任务" : "候选任务";
+              : taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode ? "等待手动任务" : phase === "next" ? "下一任务"
+              : commentLottery && lotteryModes.includes(task.mode) ? "等概率候选" : "候选任务";
             label.append(tag);
           }
           label.append(document.createTextNode(task.label));

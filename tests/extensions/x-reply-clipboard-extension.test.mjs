@@ -7296,7 +7296,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /不去别人帖子的评论区反复对话/)
   assert.match(docsPage, /换账号后按新账号重新判断/)
   assert.match(docsPage, /短、友好、自然/)
-  assert.match(docsPage, /默认优先级 8 分，与评论首页、评论大V同分轮换/)
+  assert.match(docsPage, /默认优先级 8 分；与评论首页、评论大V同分且同时可运行时等概率抽选/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
@@ -7608,6 +7608,31 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     },
   }, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
   assert.deepEqual(threeComments, ['kol', 'timeline', 'notifications'])
+})
+
+test('three due comment tasks have equal launch odds without overriding manual starts or cooldowns', () => {
+  const now = Date.parse('2026-10-28T13:00:00+08:00')
+  const plan = {
+    enabledAt: now - 6 * 60 * 60000,
+    rules: { 'poster-premium': { enabled: false } },
+    items: {
+      notifications: { lastRunAt: now - 60_000 },
+      timeline: { lastRunAt: now - 120_000 },
+      kol: { lastRunAt: now - 180_000 },
+    },
+  }
+  const due = background.dueTaskModes(plan, now)
+  const picks = [0, 1 / 3, 2 / 3].map((value) => background.drawDueReplyTask(plan, due, () => value)[0])
+  assert.equal(new Set(picks).size, 3)
+  assert.deepEqual(picks.sort(), ['kol', 'notifications', 'timeline'])
+  assert.equal(background.drawDueReplyTask(plan, due, () => 0.999999)[0], due.filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode)).at(-1))
+
+  const manual = { ...plan, items: { ...plan.items, notifications: { manualRequestedAt: now } } }
+  assert.equal(background.drawDueReplyTask(manual, background.dueTaskModes(manual, now), () => 0.99)[0], 'notifications')
+  const cooling = { ...plan, items: { ...plan.items, kol: { resumeAt: now + 60_000 } } }
+  const coolingDue = background.dueTaskModes(cooling, now)
+  assert.ok(!coolingDue.includes('kol'))
+  assert.equal(new Set([0, 0.99].map((value) => background.drawDueReplyTask(cooling, coolingDue, () => value)[0])).size, 2)
 })
 
 test('cleanup defaults to bounded slow segments and keeps a longer occupancy pass', () => {

@@ -1833,7 +1833,7 @@ async function isTaskUnlimitedMode(mode) {
 }
 
 function defaultTaskPriority(mode) {
-  // 评论回复 > 评论首页 = 评论大V = 精品发帖 > 纯文字帖 = 回关 = 关注候选 > 点赞帖子 = 点赞评论 > 取消未回关
+  // 三项评论默认同为 8 分；同时到期时在排班启动前等概率抽选。
   if (mode === "timeline" || mode === "notifications" || mode === "kol" || mode === "poster-premium") return 8;
   if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
@@ -2005,6 +2005,19 @@ function dueTaskModes(plan, now = Date.now()) {
       return a.index - b.index;
     })
     .map(({ mode }) => mode);
+}
+
+function drawDueReplyTask(plan, due, random = Math.random) {
+  const first = due[0];
+  if (!REPLY_TASKS.includes(first) || Number(plan.items?.[first]?.manualRequestedAt) > 0) return due;
+  const rules = normalizedTaskRules(plan.rules);
+  const candidates = due.filter((mode) => REPLY_TASKS.includes(mode)
+    && rules[mode].priority === rules[first].priority
+    && !(Number(plan.items?.[mode]?.manualRequestedAt) > 0));
+  if (candidates.length < 2) return due;
+  const draw = Math.min(1 - Number.EPSILON, Math.max(0, Number(random()) || 0));
+  const chosen = candidates[Math.floor(draw * candidates.length)];
+  return [chosen, ...due.filter((mode) => mode !== chosen)];
 }
 
 async function readSharedFollowTodayCount(now = Date.now()) {
@@ -2622,7 +2635,7 @@ async function runTaskSchedule() {
   const activateNext = activateNextExecTab;
   activateNextExecTab = false;
   plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
-  for (const mode of dueTaskModes(plan, now)) {
+  for (const mode of drawDueReplyTask(plan, dueTaskModes(plan, now))) {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
@@ -4146,6 +4159,7 @@ if (typeof module === "object" && module.exports) {
     openAllTasks,
     readTaskSchedule,
     dueTaskModes,
+    drawDueReplyTask,
     taskWindowOpen,
     recordScheduleSegment,
     scheduleTimeline,

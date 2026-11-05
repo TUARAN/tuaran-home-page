@@ -84,8 +84,7 @@ function NoteCard({ item, tone }) {
 export default function XiaohongshuCommunityView({ page }) {
   return (
     <div
-      className="relative overflow-hidden rounded-[28px] bg-[#fff6f4] bg-cover bg-top px-3 py-5 text-[#3a2a2e] sm:px-5 sm:py-6"
-      style={{ backgroundImage: 'url("/images/xiaohongshu-community/page-bg.svg")' }}
+      className="relative overflow-hidden rounded-[28px] bg-[#fff8f6]/80 px-3 py-5 text-[#3a2a2e] shadow-[0_18px_60px_rgba(177,91,105,0.08)] sm:px-5 sm:py-6"
     >
       <header className="relative overflow-hidden rounded-[22px]">
         <div

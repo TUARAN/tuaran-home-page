@@ -978,12 +978,15 @@ async function readKolCycleStore() {
   }
 }
 
-async function readKolHandles(now = Date.now()) {
+async function readKolHandles(now = Date.now(), accountHandle = "") {
   try {
-    const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY]);
+    const account = accountHandle || await savedAccountHandle();
+    const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY, kolRoster.KOL_DISCOVERY_KEY]);
     const decision = kolRoster.resolveKolRoster({
       storedHandles: stored?.[KOL_HANDLES_KEY],
       meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+      discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
+      account,
       now
     });
     kolHandlesCache = decision.handles;
@@ -1015,8 +1018,8 @@ async function writeKolHandles(value, now = Date.now()) {
 }
 
 async function prepareKolNavigationOrder(accountHandle, random = Math.random) {
-  const handles = await readKolHandles();
   const account = accountHandle || await savedAccountHandle();
+  const handles = await readKolHandles(Date.now(), account);
   const store = await readKolCycleStore();
   const next = kolRoster.navigationOrder(kolRoster.readCycleRecord(store, account), handles, random);
   if (!next.reused) {

@@ -2097,6 +2097,7 @@
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
   ]);
   const KOL_HANDLES_KEY = kolRoster?.KOL_HANDLES_KEY || "xrcKolHandles";
+  let lastKolDiscoveryAt = 0;
   const FLOW_STALE_MS = 90 * 1000;
   // User-facing states collapse internal phases into four buckets.
   const USER_STATE_LABELS = Object.freeze({
@@ -5465,6 +5466,30 @@
     return todayTweets.length ? todayTweets : tweets;
   }
 
+  async function collectDailyKolFromHome(tweets, now = Date.now()) {
+    if (state.assistantMode !== "timeline" || !/^\/(?:home)?\/?$/u.test(window.location.pathname)
+      || now - lastKolDiscoveryAt < 60000 || !kolRoster?.collectDailyCandidates) return;
+    lastKolDiscoveryAt = now;
+    const account = currentAccountHandle();
+    if (!account || !globalThis.XrcPrunePosts?.readPostMetrics) return;
+    const posts = (tweets || []).map((tweet) => {
+      const metrics = globalThis.XrcPrunePosts.readPostMetrics(tweet.article, account, now);
+      return {
+        handle: tweet.authorHandle, text: tweet.tweetText, at: tweet.timestamp,
+        likes: metrics?.likes, reposts: metrics?.reposts, repost: metrics?.repost,
+        reply: /(?:Replying to|正在回复|回复)\s*@/iu.test(String(tweet.article?.innerText || ""))
+      };
+    }).filter((post) => kolRoster.qualifyingDailyPost(post, now));
+    if (!posts.length) return;
+    try {
+      const stored = await chrome.storage.local.get(kolRoster.KOL_DISCOVERY_KEY);
+      const updated = kolRoster.collectDailyCandidates(stored?.[kolRoster.KOL_DISCOVERY_KEY], account, posts, now);
+      await chrome.storage.local.set({ [kolRoster.KOL_DISCOVERY_KEY]: updated });
+    } catch (error) {
+      // The existing built-in roster remains available if collection fails.
+    }
+  }
+
   function cacheNotificationContext(id, conversation) {
     notificationContextCache.set(id, conversation);
     if (notificationContextCache.size > NOTIFICATION_CONTEXT_CACHE_LIMIT) {
@@ -6346,6 +6371,7 @@
       }
 
       const tweets = collectTweets();
+      if (state.assistantMode === "timeline") void collectDailyKolFromHome(tweets);
       try {
         await loadRepliedTargets();
       } catch (error) {
@@ -7163,16 +7189,19 @@
   function kolRosterStatusText(decision) {
     if (!decision) return "修改后自动保存";
     if (decision.custom) return `自定义 ${decision.handles.length} 个账号，每一轮打乱顺序`;
-    return `内置第 ${decision.poolIndex + 1}/${kolRoster.KOL_POOLS.length} 组，每 ${kolRoster.KOL_POOL_DAYS} 天更换`;
+    if (decision.source === "daily") return `今日首页活跃账号 ${decision.handles.length} 个 · ${decision.day}`;
+    return `今日候选不足，回退内置第 ${decision.poolIndex + 1}/${kolRoster.KOL_POOLS.length} 组`;
   }
 
   async function loadKolRoster() {
     const now = Date.now();
     try {
-      const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY]);
+      const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY, kolRoster.KOL_DISCOVERY_KEY]);
       const decision = kolRoster.resolveKolRoster({
         storedHandles: stored?.[KOL_HANDLES_KEY],
         meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+        discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
+        account: taskSnapshotAccount,
         now
       });
       if (decision.persist) {
@@ -7322,7 +7351,7 @@
     const listField = mode === "mutual-targetFollow"
       ? `<label class="xrc-schedule-card-list"><span>关注候选名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存</small></label>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="清空、与内置总名单相同，或与某一组内置名单相同，会按北京时间每 7 天换组。增删账号后固定这份名单，每一轮仍打乱访问顺序。进行中的一轮走完已经抽出的顺序。">修改后自动保存</small></label>`
+        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="每天从首页当天中文高互动原创帖选 5 个账号；不足时使用内置组。增删账号后固定自定义名单。每一轮打乱访问顺序，进行中的一轮走完已抽出的顺序。">修改后自动保存</small></label>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "优先级、时段与名单")}

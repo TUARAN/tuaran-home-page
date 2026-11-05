@@ -5100,6 +5100,84 @@ test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing da
   assert.equal(kol.readCycleRecord(store, 'bob'), null)
 })
 
+test('daily KOL roster uses qualified home authors, stays fixed today, and falls back when sparse', () => {
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const today = Date.parse('2026-11-05T12:00:00+08:00')
+  const tomorrow = today + 86400000
+  const post = (handle, likes, reposts = 12, text = '今天的中文原创内容', at = today) =>
+    ({ handle, likes, reposts, text, at })
+  const posts = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
+    .map((handle, index) => post(handle, 400 - index * 25))
+  assert.equal(kol.qualifyingDailyPost(post('low', 99), today), null)
+  assert.equal(kol.qualifyingDailyPost(post('english', 400, 20, 'English only'), today), null)
+  assert.equal(kol.qualifyingDailyPost({ ...post('repeat', 400), repost: true }, today), null)
+  const sparse = kol.collectDailyCandidates(null, 'myaccount', posts.slice(0, 4), today)
+  assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'fallback')
+  const collected = kol.collectDailyCandidates(sparse, 'myaccount', posts.slice(4), today)
+  const daily = kol.resolveKolRoster({ discovery: collected, account: 'myaccount', now: today })
+  assert.equal(daily.source, 'daily')
+  assert.equal(daily.handles.length, 5)
+  assert.deepEqual(daily.handles, ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
+  const extra = kol.collectDailyCandidates(collected, 'myaccount', [post('newstar', 2000)], today)
+  const frozen = kol.resolveKolRoster({ storedHandles: daily.handles, meta: daily.meta,
+    discovery: extra, account: 'myaccount', now: today })
+  assert.deepEqual(frozen.handles, daily.handles)
+  const tomorrowPosts = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'newstar']
+    .map((handle, index) => post(handle, 500 - index * 20, 15, '明天的中文原创内容', tomorrow))
+  const nextDiscovery = kol.collectDailyCandidates(extra, 'myaccount', tomorrowPosts, tomorrow)
+  const nextDay = kol.resolveKolRoster({ storedHandles: frozen.handles, meta: frozen.meta,
+    discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
+  assert.equal(nextDay.source, 'daily')
+  assert.notDeepEqual(nextDay.handles, daily.handles)
+  assert.equal(nextDay.handles[0], 'newstar')
+  const custom = kol.resolveKolRoster({ storedHandles: ['my_one', 'my_two'], meta: null,
+    discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
+  assert.equal(custom.source, 'custom')
+  assert.deepEqual(custom.handles, ['my_one', 'my_two'])
+})
+
+test('timeline discovery stores qualified authors from the current X home page', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function collectDailyKolFromHome\(tweets, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  const stored = {}
+  const context = vm.createContext({
+    state: { assistantMode: 'timeline' }, window: { location: { pathname: '/home' } },
+    kolRoster: kol, lastKolDiscoveryAt: 0, currentAccountHandle: () => 'myaccount',
+    XrcPrunePosts: { readPostMetrics: () => ({ likes: 350, reposts: 12, repost: false }) },
+    chrome: { storage: { local: {
+      async get(key) { return { [key]: stored[key] } },
+      async set(value) { Object.assign(stored, value) },
+    } } },
+  })
+  vm.runInContext(`${definition}\nglobalThis.collect = collectDailyKolFromHome`, context)
+  await context.collect([{ authorHandle: 'activewriter', tweetText: '今天的中文原创内容', timestamp: now,
+    article: { innerText: '今天的中文原创内容' } }], now)
+  assert.equal(stored[kol.KOL_DISCOVERY_KEY].byAccount.myaccount.candidates.activewriter.handle, 'activewriter')
+})
+
+test('background KOL launch reads the current account daily roster from extension storage', async () => {
+  const originalChrome = globalThis.chrome
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  const posts = ['authora', 'authorb', 'authorc', 'authord', 'authore']
+    .map((handle, index) => ({ handle, text: '今天的中文原创帖', likes: 400 - index * 20, reposts: 12, at: now }))
+  const local = { [kol.KOL_DISCOVERY_KEY]: kol.collectDailyCandidates(null, 'myaccount', posts, now) }
+  globalThis.chrome = { storage: { local: {
+    async get(keys) { return Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map((key) => [key, local[key]])) },
+    async set(value) { Object.assign(local, value) },
+  } } }
+  try {
+    const handles = await background.readKolHandles(now, 'myaccount')
+    assert.deepEqual(handles, ['authora', 'authorb', 'authorc', 'authord', 'authore'])
+    assert.equal(local[kol.KOL_ROSTER_KEY].dailyByAccount.myaccount.day, kol.beijingDayKey(now))
+  } finally {
+    globalThis.chrome = originalChrome
+  }
+})
+
 test('a disabled reply button is retried on a local timer and cancelled when the task stops', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  async function waitUntilReplyButtonReady\(tweet, ms, plan\) \{[\s\S]*?\n  \}/)?.[0]
@@ -7161,11 +7239,11 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /评论、点赞、关注、发帖、普通发文、站长转发、社群分发和清理/)
   assert.match(docsPage, /id="reply-kol"/)
   assert.match(docsPage, /id="reply-kol"[\s\S]*评论大V/)
-  assert.match(docsPage, /优先评论他们当天的帖子/)
-  assert.match(docsPage, /只继续回当前登录账号自己的原帖/)
-  assert.match(docsPage, /已经写在别人帖子下面的评论不会被当成自己的原帖/)
-  assert.match(docsPage, /换账号后按新账号判断/)
-  assert.match(docsPage, /短、友好、多表情/)
+  assert.match(docsPage, /优先评论当天的帖子/)
+  assert.match(docsPage, /任务只对当前登录账号自己的原帖继续接话/)
+  assert.match(docsPage, /不去别人帖子的评论区反复对话/)
+  assert.match(docsPage, /换账号后按新账号重新判断/)
+  assert.match(docsPage, /短、友好、自然/)
   assert.match(docsPage, /默认优先级 8 分，与评论首页、评论大V同分轮换/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)

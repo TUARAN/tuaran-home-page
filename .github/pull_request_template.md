@@ -4,7 +4,7 @@
 
 Closes #
 
-<!-- 不关闭 Issue 时，把上一行改成 Related: # -->
+<!-- 做完的 Issue 每条一行 Closes #N，可多条。合并后仍应打开（部分推进、依赖、后续）才把该行改成 Related: #N。做完的不要写成 Related。 -->
 
 ## 改了什么
 

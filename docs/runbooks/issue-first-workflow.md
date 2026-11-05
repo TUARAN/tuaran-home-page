@@ -12,11 +12,20 @@
 2. 助手先搜重。open、closed 的 Issue 和相关 PR 都要看。命令见下方「去重」。
 3. 开新 Issue，或复用已有 Issue。正文写清五段：问题、影响、建议动作、阻塞、来源聊天摘要。来源摘要只保留这次聊天里和需求有关的事实，不贴 token、密码、私人联系方式。
 4. 打分诊标签。类型至少一个，优先级恰好一个。规则见「分诊标签」。
-5. `priority:now` 且没有任何 `needs:*`：开 PR。正文含 `Closes #N` 或 `Related: #N`，并套用 `.github/pull_request_template.md`。
+5. `priority:now` 且没有任何 `needs:*`：开 PR。正文按「关闭关键词」列出每条 `Closes #N` 或 `Related: #N`，并套用 `.github/pull_request_template.md`。
 6. 带 `needs:design`、`needs:decision` 或 `needs:assets`：停在 Issue。把缺什么写进评论。不直接开 PR。`priority:now` 不能压过 `needs:*`；now 只表示阻塞一解除就开工。
 7. 站长说「合」之后才 squash。在那之前助手不 squash、不 merge。界面改动先看 Cloudflare Pages 分支预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
-做完 Issue 里的建议动作时用 `Closes #N`，合并后 GitHub 会关闭该 Issue。只推进一部分，或例外修复顺带关联时，用 `Related: #N`，Issue 保持打开。
+## 关闭关键词
+
+本机 Mac、Codex 插件和 `codex/*` 分支是正式贡献路径，与云端助手同级。Issue 优先照走。本地改插件很常见；PR 正文要写对关闭关键词，合并后 GitHub 才会关掉对应 Issue。
+
+- 本 PR 做完了某条 Issue 的建议动作：该条写 `Closes #N`。做完几条就写几条，一行一个。一个 PR 可以关闭多条 Issue。X 高频互动助手插件的本地批次经常一次交付多条，每条做完的都要 `Closes`。
+- 已经做完的 Issue 不要写成 `Related: #N`。`Related` 不会在合并时关闭 Issue。
+- `Related: #N` 只用于合并之后这条 Issue 仍应保持打开：只推进了一部分、存在依赖，或留下后续动作。
+- 合并后若某条已经做完的 Issue 仍开着，原因是正文只写了 `Related`：Issues 助手或站长按已完成关闭，评论里引用该 PR。
+
+先例：PR #105 交付了 #106、#108、#117、#118、#119、#120、#121、#122，正文只有 `Closes #104`，其余写成 `Related`。合并后那些 Issue 仍开着，站长另行按已完成关闭。
 
 ## 去重
 
@@ -39,7 +48,7 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 - CI 红修：这次只修已经变红的检查，不顺手改别的。
 - 站长当次明确说「直接改」或「别开 Issue」。
 
-命中例外时，PR 正文写明命中哪一条。已经有相关 Issue 的，仍然写 `Closes #N` 或 `Related: #N`。能对应上的 `type:*` 和 `priority:*` 仍要打上；令牌不能改标签时，把应打的标签名写进 PR 正文。
+命中例外时，PR 正文写明命中哪一条。已经有相关 Issue 的，做完写 `Closes #N`，没做完写 `Related: #N`。能对应上的 `type:*` 和 `priority:*` 仍要打上；令牌不能改标签时，把应打的标签名写进 PR 正文。
 
 ## 分诊标签
 
@@ -65,8 +74,8 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 
 ## 开 PR
 
-- 分支只包含该 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `codex/<简短任务名>`。云端代理使用当次指定的分支模板。
-- 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、`Closes #N` 或 `Related: #N`、界面是否要预览后再合。
+- 分支只包含这些 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `codex/<简短任务名>`。云端代理使用当次指定的分支模板。
+- 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、每条已完成 Issue 的 `Closes #N`、仍应打开的 `Related: #N`、界面是否要预览后再合。关键词见「关闭关键词」。
 - 纯文档、模板、标签说明的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 构建。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
 
 ## 预览、内容与合并

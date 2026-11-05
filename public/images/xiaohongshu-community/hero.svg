@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe3ea"/>
+      <stop offset="0.42" stop-color="#ffd3c4"/>
+      <stop offset="1" stop-color="#ffe6c4"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="82%" cy="28%" r="36%">
+      <stop offset="0" stop-color="#fff6df"/>
+      <stop offset="0.55" stop-color="#ffe0b4" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffe0b4" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="speck" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="3" r="0.9" fill="#fff" opacity="0.45"/>
+      <circle cx="14" cy="16" r="0.6" fill="#c96b84" opacity="0.2"/>
+    </pattern>
+  </defs>
+  <rect width="1400" height="720" fill="url(#sky)"/>
+  <rect width="1400" height="720" fill="url(#lamp)"/>
+  <ellipse cx="180" cy="80" rx="260" ry="150" fill="#ffb7c9" opacity="0.55"/>
+  <ellipse cx="1180" cy="560" rx="320" ry="180" fill="#ffc9a4" opacity="0.5"/>
+  <path d="M0 520 C 220 470, 380 610, 620 540 C 860 470, 1040 620, 1400 500 L 1400 720 L 0 720 Z" fill="#fff6f2" opacity="0.38"/>
+  <g transform="translate(1080 250)">
+    <g fill="#ff7f9d">
+      <ellipse cx="0" cy="-78" rx="42" ry="74"/>
+      <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(60)"/>
+      <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(120)"/>
+      <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(180)"/>
+      <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(240)"/>
+      <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(300)"/>
+    </g>
+    <circle r="28" fill="#ffe7ae"/>
+    <circle r="12" fill="#f4b454"/>
+  </g>
+  <g transform="translate(860 430) scale(0.62)" fill="#ff9eb4" opacity="0.9">
+    <ellipse cx="0" cy="-78" rx="42" ry="74"/>
+    <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(60)"/>
+    <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(120)"/>
+    <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(180)"/>
+    <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(240)"/>
+    <ellipse cx="0" cy="-78" rx="42" ry="74" transform="rotate(300)"/>
+    <circle r="26" fill="#fff1c9"/>
+  </g>
+  <g transform="translate(1240 120) rotate(18)" fill="#7d9a62" opacity="0.8">
+    <ellipse cx="0" cy="0" rx="18" ry="46"/>
+    <ellipse cx="34" cy="18" rx="16" ry="40" transform="rotate(28 34 18)"/>
+    <ellipse cx="-28" cy="22" rx="14" ry="36" transform="rotate(-24 -28 22)"/>
+  </g>
+  <g fill="#fff" opacity="0.55">
+    <circle cx="980" cy="90" r="46"/>
+    <circle cx="760" cy="150" r="18"/>
+    <circle cx="1320" cy="390" r="28"/>
+  </g>
+  <rect width="1400" height="720" fill="url(#speck)"/>
+</svg>

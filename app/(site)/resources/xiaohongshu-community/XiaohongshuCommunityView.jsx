@@ -2,12 +2,12 @@ import Link from 'next/link'
 
 // 喜欢 / 收藏是封面装饰，不绑定真实互动，也不展示数量。
 const TONES = [
-  { bg: 'bg-[#ffd5df]', fg: 'text-[#9d2946]', height: 'h-[7.25rem]' },
-  { bg: 'bg-[#ffe3c4]', fg: 'text-[#94501f]', height: 'h-[9.25rem]' },
-  { bg: 'bg-[#ffd9cf]', fg: 'text-[#9a3d32]', height: 'h-[8rem]' },
-  { bg: 'bg-[#f8d7e6]', fg: 'text-[#873a5c]', height: 'h-[10rem]' },
-  { bg: 'bg-[#ffe8b5]', fg: 'text-[#8a5a10]', height: 'h-[7.75rem]' },
-  { bg: 'bg-[#ffd0dc]', fg: 'text-[#a12b4a]', height: 'h-[9rem]' },
+  { src: '/images/xiaohongshu-community/cover-blush.svg', fg: 'text-[#9d2946]', height: 'h-[7.25rem]' },
+  { src: '/images/xiaohongshu-community/cover-peach.svg', fg: 'text-[#94501f]', height: 'h-[9.25rem]' },
+  { src: '/images/xiaohongshu-community/cover-coral.svg', fg: 'text-[#9a3d32]', height: 'h-[8rem]' },
+  { src: '/images/xiaohongshu-community/cover-lilac.svg', fg: 'text-[#873a5c]', height: 'h-[10rem]' },
+  { src: '/images/xiaohongshu-community/cover-apricot.svg', fg: 'text-[#8a5a10]', height: 'h-[7.75rem]' },
+  { src: '/images/xiaohongshu-community/cover-rose.svg', fg: 'text-[#a12b4a]', height: 'h-[9rem]' },
 ]
 
 function Decorations() {
@@ -27,8 +27,11 @@ function NoteCard({ item, tone }) {
   const placeholder = item.status === 'placeholder' || !item.href
   const body = (
     <>
-      <div className={`relative flex flex-col justify-between overflow-hidden p-3 ${tone.bg} ${tone.height}`}>
-        <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-6 h-20 w-20 rounded-full bg-white/50" />
+      <div
+        className={`relative flex flex-col justify-between overflow-hidden bg-cover bg-center p-3 ${tone.height}`}
+        style={{ backgroundImage: `url("${tone.src}")` }}
+      >
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/25 to-transparent" />
         <span className="relative flex items-start justify-between gap-2">
           <span className="text-[28px] leading-none" aria-hidden="true">{item.emoji}</span>
           {placeholder ? (
@@ -80,8 +83,18 @@ function NoteCard({ item, tone }) {
 
 export default function XiaohongshuCommunityView({ page }) {
   return (
-    <div className="rounded-[28px] bg-[linear-gradient(180deg,#ffe4eb_0%,#fff6f4_240px)] px-3 py-5 text-[#3a2a2e] sm:px-5 sm:py-6">
-      <header>
+    <div
+      className="relative overflow-hidden rounded-[28px] bg-[#fff6f4] bg-cover bg-top px-3 py-5 text-[#3a2a2e] sm:px-5 sm:py-6"
+      style={{ backgroundImage: 'url("/images/xiaohongshu-community/page-bg.svg")' }}
+    >
+      <header className="relative overflow-hidden rounded-[22px]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url("/images/xiaohongshu-community/hero.svg")' }}
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#fff8f6]/75 via-[#fff8f6]/40 to-transparent" />
+        <div className="relative px-4 py-5 sm:px-5">
         <p className="mb-0 flex flex-wrap items-center gap-2 text-[12px] text-[#7a4e5a]">
           <Link href="/resources" className="no-underline hover:text-[#c23b58]">资源</Link>
           <span aria-hidden="true">/</span>
@@ -92,8 +105,8 @@ export default function XiaohongshuCommunityView({ page }) {
         <div className="mt-4 flex items-center gap-3">
           <span aria-hidden="true" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#ffd0db] text-[18px] font-semibold text-[#c23b58]">燃</span>
           <div className="min-w-0">
-            <p className="mb-0 text-[12px] text-[#9a3d52]">涂阿燃 · 群公告</p>
-            <h1 className="mb-0 mt-0.5 text-[1.7rem] font-semibold leading-tight tracking-tight text-[#3a2a2e] sm:text-[2rem]">
+            <p className="mb-0 text-[13px] font-semibold tracking-wide text-[#c23b58]">{page.groupName}</p>
+            <h1 className="mb-0 mt-0.5 text-[1.55rem] font-semibold leading-tight tracking-tight text-[#3a2a2e] sm:text-[2rem]">
               {page.title}
             </h1>
           </div>
@@ -111,6 +124,7 @@ export default function XiaohongshuCommunityView({ page }) {
             </a>
           ))}
         </nav>
+        </div>
       </header>
 
       <div className="mt-5 space-y-6">

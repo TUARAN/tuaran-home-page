@@ -61,7 +61,7 @@ test('xiaohongshu community page is a registered public resource', () => {
   const registrySource = read('lib/content/contentRegistry.js')
   assert.match(registrySource, /slug: 'xiaohongshu-community'/)
   assert.match(registrySource, /href: '\/resources\/xiaohongshu-community'/)
-  assert.match(registrySource, /title: '专供小红书社群'/)
+  assert.match(registrySource, /title: '专供小红书社群「硅基前沿」'/)
   assert.equal(isResourceDirectoryItem({ href: XIAOHONGSHU_COMMUNITY_PATH, category: 'resource' }), true)
 
   const home = HOME_RESOURCE_ITEMS.find((item) => item.href === XIAOHONGSHU_COMMUNITY_PATH)
@@ -69,15 +69,19 @@ test('xiaohongshu community page is a registered public resource', () => {
   assert.equal(home.resourceType, 'ai-dev')
   assert.deepEqual(home.subjects, ['content_creation'])
   assert.match(home.title, /专供小红书社群/)
+  assert.match(home.title, /硅基前沿/)
+  assert.match(home.summary, /硅基前沿/)
   assert.match(home.summary, /种草笔记/)
   assert.match(home.summary, /今日想安利/)
   assert.equal(home.updated, '2026-11-05')
-  assert.match(home.tagLabel, /种草笔记/)
+  assert.match(home.tagLabel, /硅基前沿/)
 })
 
 test('xiaohongshu community landing has three sections, real links, and honest placeholders', () => {
-  assert.equal(XIAOHONGSHU_COMMUNITY.title, '专供小红书社群')
+  assert.equal(XIAOHONGSHU_COMMUNITY.title, '专供小红书社群「硅基前沿」')
+  assert.equal(XIAOHONGSHU_COMMUNITY.groupName, '硅基前沿')
   assert.match(XIAOHONGSHU_COMMUNITY.purpose, /群公告/)
+  assert.match(XIAOHONGSHU_COMMUNITY.purpose, /硅基前沿/)
   assert.match(XIAOHONGSHU_COMMUNITY.honesty, /陆续补充/)
   assert.deepEqual(
     XIAOHONGSHU_COMMUNITY.sections.map((section) => section.title),
@@ -133,11 +137,13 @@ test('xiaohongshu community page metadata and markup stay announcement-safe', as
   assert.match(source, /openGraph/)
   assert.match(source, /application\/ld\+json/)
   assert.doesNotMatch(source, /x-mutual-aid-circle/)
-  assert.equal(XIAOHONGSHU_COMMUNITY.title, '专供小红书社群')
+  assert.equal(XIAOHONGSHU_COMMUNITY.title, '专供小红书社群「硅基前沿」')
   assert.equal(XIAOHONGSHU_COMMUNITY.description.includes('专供小红书社群'), true)
+  assert.equal(XIAOHONGSHU_COMMUNITY.description.includes('硅基前沿'), true)
 
   const html = await renderView()
-  assert.match(html, /<h1[^>]*>专供小红书社群<\/h1>/)
+  assert.match(html, /<h1[^>]*>专供小红书社群「硅基前沿」<\/h1>/)
+  assert.match(html, /硅基前沿/)
   assert.match(html, /群公告贴这里/)
   assert.match(html, /今日想安利/)
   assert.match(html, /上手小抄/)
@@ -146,6 +152,22 @@ test('xiaohongshu community page metadata and markup stay announcement-safe', as
   assert.match(html, /可以直接抄的说话稿/)
   assert.match(html, /columns-2/)
   assert.match(html, /rounded-\[18px\]/)
+  assert.match(html, /\/images\/xiaohongshu-community\/page-bg\.svg/)
+  assert.match(html, /\/images\/xiaohongshu-community\/hero\.svg/)
+  assert.match(html, /\/images\/xiaohongshu-community\/cover-blush\.svg/)
+  for (const file of [
+    'public/images/xiaohongshu-community/page-bg.svg',
+    'public/images/xiaohongshu-community/hero.svg',
+    'public/images/xiaohongshu-community/cover-blush.svg',
+    'public/images/xiaohongshu-community/cover-peach.svg',
+    'public/images/xiaohongshu-community/cover-coral.svg',
+    'public/images/xiaohongshu-community/cover-lilac.svg',
+    'public/images/xiaohongshu-community/cover-apricot.svg',
+    'public/images/xiaohongshu-community/cover-rose.svg',
+  ]) {
+    assert.equal(existsSync(path.join(ROOT, file)), true, file)
+  }
+  assert.doesNotMatch(html, /xhscdn|ci\.xiaohongshu\.com/)
   assert.match(html, /href="\/prompt-center"/)
   assert.match(html, /href="\/prompt-center#task-brief"/)
   assert.match(html, /href="\/topics\/ai-agents"/)

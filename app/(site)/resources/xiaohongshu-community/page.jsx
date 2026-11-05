@@ -13,7 +13,7 @@ export const dynamic = 'force-static'
 export const metadata = {
   title: XIAOHONGSHU_COMMUNITY.title,
   description: XIAOHONGSHU_COMMUNITY.description,
-  keywords: ['小红书社群', '专供小红书社群', '种草', '笔记', '群公告', '涂阿燃', 'tuaran'],
+  keywords: ['小红书社群', '专供小红书社群', '硅基前沿', '种草', '笔记', '群公告', '涂阿燃', 'tuaran'],
   alternates: { canonical: '/resources/xiaohongshu-community' },
   openGraph: {
     title: XIAOHONGSHU_COMMUNITY.title,

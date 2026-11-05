@@ -3973,7 +3973,7 @@
       const name = profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
       const title = profile.id === "boundary" ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
       const cells = columns.map((column) => `<span>${column.value(profile)}</span>`).join("");
-      return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span><span>${name}</span>${cells}</button>`;
+      return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span><span data-xrc-pace-name>${name}</span>${cells}</button>`;
     }).join("");
     const noteSpan = Math.max(1, columns.length);
     const unlimitedAttr = unlimitedFixed && unlimitedKey ? ` data-xrc-unlimited-fixed="${unlimitedKey}"` : "";
@@ -4082,6 +4082,11 @@
           : `${profile.roundIntervalSeconds} 秒` }
       ]
     });
+  }
+
+  function replyPaceName(profile, mode) {
+    const defaultId = mode === "notifications" ? "medium" : mode === "kol" ? "slow" : "boundary";
+    return profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
   }
 
   function kolPaceTableHtml() {
@@ -8972,6 +8977,8 @@
       const schedule = loopApi.formatSchedule(viewedPace, boundaryPlanKey());
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
         const activePace = viewTaskKey() === "kol" && schedule.id === "boundary" ? "slow" : schedule.id;
+        const name = label.querySelector("[data-xrc-pace-name]");
+        if (name) name.textContent = replyPaceName(loopApi.scheduleProfile(label.dataset.xrcPaceLabel), replyViewKey);
         const active = label.dataset.xrcPaceLabel === activePace;
         label.classList.toggle("is-active", active);
         label.setAttribute("aria-checked", String(active));

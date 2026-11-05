@@ -4914,6 +4914,20 @@ test('browse pause waits on the post and cancels before a comment is sent', asyn
   assert.equal(await vm.runInContext('browse({ article })', sandbox), 'risk-yield')
 })
 
+test('reply pace rows label the default for the current reply task', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function replyPaceName\(profile, mode\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const sandbox = vm.createContext({})
+  vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
+  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '中（默认）')
+  assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
+  assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
+  assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '超快')
+  assert.match(source, /<span data-xrc-pace-name>\$\{name\}<\/span>/)
+  assert.match(source, /name\.textContent = replyPaceName\(loopApi\.scheduleProfile\(label\.dataset\.xrcPaceLabel\), replyViewKey\)/)
+})
+
 test('boundary testing keeps automation running through personal work hours', () => {
   const mondayLunch = new Date(2026, 9, 19, 12, 30).getTime()
   const mondayEvening = new Date(2026, 9, 19, 18, 0).getTime()

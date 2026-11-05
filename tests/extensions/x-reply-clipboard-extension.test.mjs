@@ -5461,6 +5461,81 @@ test('notification context opens a background conversation tab and closes it aft
   }
 })
 
+test('stalled notification context activates its tab and restores the task tab after reading', async () => {
+  const originalNow = Date.now
+  const originalSetTimeout = globalThis.setTimeout
+  let now = 10_000
+  let active = 7
+  const switches = []
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => { now += 500; fn(); return 0 }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 91 } },
+      async query() { return [{ id: active }] },
+      async update(id, options) { assert.equal(options.active, true); active = id; switches.push(id) },
+      async sendMessage() {
+        return active === 91 ? {
+          context: {
+            ownPost: { text: '我的原帖' }, reply: { text: '对方回复' },
+            rootPost: { authorHandle: 'me', isReply: false }, rootSettled: true,
+          },
+        } : { context: null, observation: { count: 0, targetSeen: false } }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    const result = await background.readNotificationContext({
+      replyUrl: 'https://x.com/friend/status/103', replyId: '103', ownHandle: 'me', replyAuthor: 'friend',
+    }, { tab: { id: 7, windowId: 4 } })
+    assert.equal(result.context.rootSettled, true)
+    assert.deepEqual(switches, [91, 7])
+    assert.equal(active, 7)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
+    delete globalThis.chrome
+  }
+})
+
+test('notification context does not override a later user tab switch', async () => {
+  const originalNow = Date.now
+  const originalSetTimeout = globalThis.setTimeout
+  let now = 10_000
+  let active = 7
+  const switches = []
+  Date.now = () => now
+  globalThis.setTimeout = (fn) => { now += 500; fn(); return 0 }
+  globalThis.chrome = {
+    tabs: {
+      async create() { return { id: 91 } },
+      async query() { return [{ id: active }] },
+      async update(id) { active = id; switches.push(id) },
+      async sendMessage() {
+        if (active !== 91) return { context: null, observation: { count: 0, targetSeen: false } }
+        active = 99
+        return { context: {
+          ownPost: { text: '我的原帖' }, reply: { text: '对方回复' },
+          rootPost: { authorHandle: 'me', isReply: false }, rootSettled: true,
+        } }
+      },
+      async remove() {},
+    },
+  }
+  try {
+    await background.readNotificationContext({
+      replyUrl: 'https://x.com/friend/status/103', replyId: '103', ownHandle: 'me', replyAuthor: 'friend',
+    }, { tab: { id: 7, windowId: 4 } })
+    assert.deepEqual(switches, [91])
+    assert.equal(active, 99)
+  } finally {
+    Date.now = originalNow
+    globalThis.setTimeout = originalSetTimeout
+    delete globalThis.chrome
+  }
+})
+
 test('notification context waits for a settled root and does not keep an unsettled thread', async () => {
   assert.equal(background.notificationContextIsReady({
     ownPost: { text: '我的原帖' }, reply: { text: '对方回复' }, rootSettled: true,

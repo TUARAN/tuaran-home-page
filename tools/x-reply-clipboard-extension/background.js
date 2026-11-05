@@ -3617,6 +3617,9 @@ async function readNotificationContext(message, sender) {
   const tab = await chrome.tabs.create(options);
   if (!Number.isInteger(tab?.id)) throw new Error("无法打开回复会话页");
   contextTabs.add(tab.id);
+  const taskTabId = Number(sender?.tab?.id);
+  const windowId = Number(sender?.tab?.windowId);
+  let activatedContext = false;
   try {
     let latest = null;
     let observation = null;
@@ -3635,7 +3638,21 @@ async function readNotificationContext(message, sender) {
       } catch (error) {
         // The conversation tab may still be loading its content script.
       }
-      if (!reloaded && Date.now() - startedAt >= 6000 && !observation?.targetSeen) {
+      if (!activatedContext && Date.now() - startedAt >= 3000
+        && Number.isInteger(taskTabId) && chrome.tabs.update) {
+        let activeTabId = taskTabId;
+        if (Number.isInteger(windowId) && chrome.tabs.query) {
+          try { activeTabId = (await chrome.tabs.query({ active: true, windowId }))?.[0]?.id; }
+          catch (error) { activeTabId = null; }
+        }
+        if (activeTabId === taskTabId) {
+          try {
+            await chrome.tabs.update(tab.id, { active: true });
+            activatedContext = true;
+          } catch (error) { /* Keep polling without taking over a different tab. */ }
+        }
+      }
+      if (!reloaded && Date.now() - startedAt >= 12000 && !observation?.targetSeen) {
         reloaded = true;
         if (chrome.tabs.reload) await chrome.tabs.reload(tab.id).catch(() => {});
       }
@@ -3651,6 +3668,14 @@ async function readNotificationContext(message, sender) {
           ? "目标回复已显示，但上方未加载出本人帖子"
           : "本人帖子已显示，但会话关系仍未确认");
   } finally {
+    if (activatedContext && chrome.tabs.update) {
+      let contextStillActive = true;
+      if (Number.isInteger(windowId) && chrome.tabs.query) {
+        try { contextStillActive = (await chrome.tabs.query({ active: true, windowId }))?.[0]?.id === tab.id; }
+        catch (error) { contextStillActive = false; }
+      }
+      if (contextStillActive) await chrome.tabs.update(taskTabId, { active: true }).catch(() => {});
+    }
     await chrome.tabs.remove(tab.id).catch(() => {});
     contextTabs.delete(tab.id);
   }

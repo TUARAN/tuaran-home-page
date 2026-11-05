@@ -3549,6 +3549,16 @@ async function markManualTaskStart(mode) {
   }
   await saveTaskSchedule(plan);
   const updated = plan.enabled ? await tickTaskSchedule() : plan;
+  // A manual choice should show its execution tab. X can defer background-tab
+  // boot until it becomes active, leaving the scheduler waiting for a report.
+  if (updated.current === mode && Number(updated.workTabId) > 0) {
+    try {
+      const tab = await chrome.tabs.get(Number(updated.workTabId));
+      await activateTabIfNeeded(tab.id, tab.windowId, true);
+    } catch (error) {
+      // The scheduler will report a missing tab and retry it on the next tick.
+    }
+  }
   return { ok: true, assigned: updated.current === mode, current: updated.current || "" };
 }
 

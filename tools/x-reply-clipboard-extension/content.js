@@ -2609,11 +2609,17 @@
     if (current && !remaining && live.phase === "running" && liveFresh) {
       return { kind: "running", label: "正在运行", detail: reason || "正在执行当前任务", remaining: 0 };
     }
-    if (current && !remaining && live.phase !== "paused") {
-      // Same window as background STARTING_GRACE_MS: show it counting down instead of a frozen "正在启动".
+    if (current && live.phase === "starting") {
+      // Keep the boot stage visible even while a reload has a settling deadline.
       const slotStarted = Number(taskSchedule.startedAt) || 0;
       const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
-      return { kind: "starting", label: "正在启动", detail: queued.lastStartError ? `上次启动未确认：${queued.lastStartError}` : "正在确认页内任务启动", remaining: confirmLeft };
+      const stage = String(live.detail || queued.reason || "等待执行页回报启动结果").trim();
+      return { kind: "starting", label: "正在启动", detail: stage, remaining: confirmLeft };
+    }
+    if (current && !remaining && live.phase !== "paused") {
+      const slotStarted = Number(taskSchedule.startedAt) || 0;
+      const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
+      return { kind: "starting", label: "正在启动", detail: "等待执行页回报启动结果", remaining: confirmLeft };
     }
     if (taskSchedule.manualFocusMode && mode !== taskSchedule.manualFocusMode) {
       const focusLabel = TASK_MODE_LABELS[taskSchedule.manualFocusMode] || "手动任务";
@@ -2659,11 +2665,12 @@
     const wait = scheduledWaitInfo(mode, now);
     if (wait?.kind !== "starting") return "";
     const eta = wait.remaining > 0 ? `约 ${formatCountdown(wait.remaining)}` : "";
-    const previousError = String(taskSchedule.items?.[mode]?.lastStartError || "").trim();
-    const prefix = previousError ? `上次启动未确认：${previousError}；正在重试` : "正在确认页内任务启动";
-    return eta
-      ? `${prefix}，${eta}内未确认会自动重试`
-      : `${prefix}，超时后会自动重试`;
+    const queued = taskSchedule.items?.[mode] || {};
+    const previousError = String(queued.lastStartError || "").trim();
+    const stage = wait.detail || "等待执行页回报启动结果";
+    const attempt = Number(queued.recoveryAttempts) || 0;
+    const retry = previousError ? `上次未确认：${previousError}；第 ${attempt + 1} 次尝试。` : "";
+    return `${retry}当前步骤：${stage}。${eta ? `若仍未收到页内回报，${eta}后检查执行页并尝试恢复。` : "正在检查执行页是否已启动。"}`;
   }
 
   // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.

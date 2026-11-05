@@ -1742,12 +1742,35 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   const starting = context.waitInfo('timeline', now)
   assert.equal(starting.kind, 'starting')
   assert.equal(starting.label, '正在启动')
-  assert.equal(starting.detail, '正在确认页内任务启动')
+  assert.equal(starting.detail, '等待执行页回报启动结果')
   assert.equal(starting.remaining, 60000)
+  context.pluginRuntime.tasks.timeline.detail = '正在装载执行页'
+  context.taskSchedule.items.timeline = { resumeAt: now + 20000 }
+  assert.equal(context.waitInfo('timeline', now).detail, '正在装载执行页')
   context.taskSchedule.startedAt = 0
   assert.equal(context.waitInfo('timeline', now).remaining, 0)
   assert.match(css, /xrc-task-schedule-notice\[data-state="waiting"\] strong::before/)
   assert.match(css, /prefers-reduced-motion: reduce/)
+})
+
+test('timeline startup copy names the current step and explains the recovery countdown', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const startupCopy = source.match(/  function confirmingStartCopy\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(waitInfo && startupCopy)
+  const now = Date.now()
+  const context = vm.createContext({
+    taskSchedule: { enabled: true, current: 'timeline', startedAt: now - 30000,
+      items: { timeline: { recoveryAttempts: 1, lastStartError: '执行页未确认' } }, timeline: { future: [] } },
+    pluginRuntime: { tasks: { timeline: { phase: 'starting', detail: '正在装载执行页' } } },
+    FLOW_STALE_MS: 90000,
+    formatCountdown: () => '1 分钟',
+  })
+  vm.runInContext(`${waitInfo}\n${startupCopy}\nglobalThis.copy = confirmingStartCopy`, context)
+  const copy = context.copy('timeline', now)
+  assert.match(copy, /上次未确认：执行页未确认；第 2 次尝试/)
+  assert.match(copy, /当前步骤：正在装载执行页/)
+  assert.match(copy, /1 分钟后检查执行页并尝试恢复/)
 })
 
 test('schedule card notes separate concise status from scheduling parameters', async () => {
@@ -8333,7 +8356,7 @@ test('confirming an immediate post start safely preempts a running comment task'
         if (message.type === 'xrc-task-start') return { ok: true, phase: 'running' }
         throw new Error(`unexpected ${message.type}`)
       },
-      async update(id, options) { assert.equal(id, 11); if (options.url) tab.url = options.url; actions.push('navigate') },
+      async update(id, options) { assert.equal(id, 11); if (options.url) tab.url = options.url; actions.push(options.active ? 'active-tab' : 'navigate') },
       async create() { throw new Error('must reuse the shared tab') },
     },
     alarms: { async create() {}, async clear() {} },
@@ -8345,6 +8368,7 @@ test('confirming an immediate post start safely preempts a running comment task'
     assert.equal(local.xrcTaskSchedule.current, 'poster')
     assert.ok(actions.indexOf('xrc-task-suspend') >= 0)
     assert.ok(actions.includes('navigate') || actions.includes('xrc-task-start'))
+    assert.ok(actions.includes('active-tab'))
     assert.ok(actions.indexOf('xrc-task-suspend') < Math.max(actions.indexOf('navigate'), actions.indexOf('xrc-task-start')))
     assert.equal(local.xrcTaskSchedule.items.poster.manualRequestedAt, 0)
   } finally {

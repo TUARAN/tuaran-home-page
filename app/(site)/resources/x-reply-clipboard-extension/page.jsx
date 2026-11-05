@@ -19,6 +19,8 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
+import { X_EXTENSION_LATEST_VERSION } from '../../../../lib/community/xExtensionVersion'
+import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from './ExtensionDownloadButton'
 
@@ -27,7 +29,8 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const VERSION = '4.0.50'
+const SOURCE_VERSION = X_EXTENSION_LATEST_VERSION
+const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || ''
 
 const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
 const description =
@@ -36,10 +39,45 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 
 const VERSION_HISTORY = [
   {
-    version: '4.0.50',
-    title: '评论成功确认与计数',
-    description: '发送后等 2 秒确认再计入今日合计；匹配中文成功提示；条间至少 2 秒；详情页开启任务先确认。',
+    version: SOURCE_VERSION,
+    title: '手动核对待取关账号',
+    description: '清理未回关默认只扫描并保存候选清单；打开资料页后由人判断和取关。互关搅拌风险较高，未回关或资料语言不能单独作为取关依据。当前仍是本地源码，尚未打包。',
     current: true,
+  },
+  {
+    version: '4.9.38',
+    title: '评论大V每日动态名单',
+    description: '自动名单从当前账号首页推荐流选取中文高互动原创帖作者，候选不足时回退内置名单；自定义名单保持不变。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.37',
+    title: '评论回复补全会话上下文',
+    description: '模型按顺序读取自己的原帖及双方已有回复；同一段对话最多接话三次。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.35',
+    title: '手动启动与任务状态',
+    description: '手动开启任务时优先激活执行页签，显示装载步骤与启动检查倒计时；排班台区分已排班和未排班任务。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.33',
+    title: '评论任务轮换',
+    description: '评论首页、评论回复与评论大V默认同为 8 分，按上次运行时间轮换；用户手动指定的任务保持优先。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.23',
+    title: '模型密钥与选择同步',
+    description: '读取完成后判断是否需要配置提示；保存有效密钥时同步启用对应模型，明确手动关闭的选择仍保留。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.21',
+    title: '社群分发批量发送与去重',
+    description: '最新非置顶原创帖可一次选中可用群聊并发送；确认成功后按帖子记录，重复运行跳过已分发帖子。本地源码，尚未打包。',
+  },
+  {
+    version: '4.0.50',
+    title: '下载包配置版本：评论成功确认与计数',
+    description: '发送后等 2 秒确认再计入今日合计；匹配中文成功提示；条间至少 2 秒；详情页开启任务先确认。',
   },
   {
     version: '4.0.42',
@@ -313,29 +351,39 @@ export const metadata = {
 }
 
 function DownloadButton({ className = '' }) {
-  return <ExtensionDownloadButton href={DOWNLOAD_URL} version={VERSION} className={className} />
+  return <ExtensionDownloadButton href={DOWNLOAD_URL} version={DOWNLOAD_VERSION} className={className} />
 }
 
 const WORKFLOWS = [
   {
     title: '评论管理',
-    detail: '评论首页与评论通知分别使用独立窗口。通知只处理近 2 小时内的回复，不执行点赞；评论任务在全流程中常驻运行。',
+    detail: '评论首页、评论回复和评论大V按排班轮换。评论回复核对本人原帖与会话上下文；评论大V可使用每日动态名单。',
     icon: IconMessageCircle,
   },
   {
     title: '点赞管理',
-    detail: '点赞帖子与点赞评论分别记录处理历史。全流程按后台队列轮换非评论任务，连续 3 次受限后停止自动重试。',
+    detail: '点赞帖子与点赞评论分别记录进度，按任务状态进入同一排班队列。',
     icon: IconBell,
   },
   {
     title: '关注管理',
-    detail: '在 Following 页扫描未回关账号，默认先保存待取关清单供人工核对；在 Followers 页回关粉丝。',
+    detail: '回关粉丝与关注候选按排班运行；清理未回关默认生成待人工核对清单，由你决定是否取关。',
     icon: IconUsers,
   },
   {
     title: '定时发帖',
-    detail: '优先从知乎、今日头条取材，必要时补充 AI HOT，再使用本地社会观察素材。每轮准备一条，记录来源和链接；默认发送间隔为 25～35 分钟。',
+    detail: '纯文字、精品、主题帖等发帖任务按各自时段和速度运行，草稿、等待与发送结果分别保存。',
     icon: IconRobot,
+  },
+  {
+    title: '社群分发',
+    detail: '把最新的非置顶原创帖发送到可选择的群聊；确认发送成功后按帖子记录，避免重复分发。',
+    icon: IconUsers,
+  },
+  {
+    title: '清理管理',
+    detail: '清理低质帖和评论分别核对条件与进度；取关建议先查看人工核对清单。',
+    icon: IconShieldLock,
   },
 ]
 
@@ -344,17 +392,16 @@ const INSTALL_STEPS = [
   '打开 Chrome 的 chrome://extensions/，开启「开发者模式」。',
   '点击「加载已解压的扩展程序」，选择解压后的目录。',
   '登录 X，面板默认浮在页面右下角。关掉面板后，点浏览器工具栏里的扩展图标可以重新打开。使用 AI 回复或发帖前，先在模型设置中配置所需密钥。',
-  '点击「全流程启动」后，评论任务常驻，点赞、关注和发帖按后台队列轮换；顶部页签只切换对应窗口。',
-  '关注管理提供清理未回关、回关粉丝、关注候选三个子页签；关注候选名单在排班台对应卡片里配置。',
-  '时间线模式可在首页、个人主页或搜索结果运行。轮次进度里把频率滑到慢、中、快或超快；默认「中」每次随机安排 3～5 轮，每轮 25～35 条。',
-  '通知回复会进入通知页，处理近 2 小时内尚未成功互动的回复。',
-  '定时发帖优先读取知乎与今日头条热榜，素材不足时读取站内舆情分析。默认基础间隔 25～35 分钟，并按早晚高峰更密、其余时段更疏排队。',
-  '单独运行时按钮显示「已停止 · 点击启动」；倒计时可点「等待中 · 立即开始」，需要停下时点「运行中 · 点击停止」。',
+  '在排班台勾选要运行的任务，再点击「开始」。同一账号共用一个执行页签；评论、点赞、关注、社群和发帖任务按时段、优先级与等待状态轮换。',
+  '手动开启某项任务后，该项保持优先，直到你手动停止或暂停全部。任务子页可查看运行步骤和等待原因。',
+  '清理未回关默认使用手动模式：先生成待核对清单，再逐个打开账号资料页决定是否取关。',
+  '回复模型可在设置中心按需启用；只有配置读取完成且没有可用模型时，首页才提示去配置。',
+  '更新本地扩展时，先在扩展管理页重新加载，再刷新已经打开的 X 页面。',
 ]
 
 const TECH_NOTES = [
   '模型密钥保存在 Chrome 扩展本地存储中；AI 请求不会附带 X 登录 Cookie。',
-  '评论任务可持续运行；点赞、关注和发帖按后台队列轮换。等待与冷却截止时间保存在扩展本地，到期重开任务窗口。',
+  '十七项任务按排班状态轮换；等待与冷却截止时间保存在扩展本地。手动选择的任务优先于自动轮换。',
   '插件会先核对评论框里的文字没有重复，再等待 Reply 可用；存在无法识别的手写内容时会暂停，避免覆盖。',
   '发送结果未确认时不会计数。评论首页只有确认发出的回复才计入轮次，评论通知只有确认回复成功后才写入去重历史。',
   '已经加载过旧版目录时，到扩展管理页点击刷新，再刷新已打开的 X 标签页。只是关掉浮窗时，点工具栏里的扩展图标即可重新打开。',
@@ -376,7 +423,7 @@ export default function XReplyClipboardResourcePage() {
           <span aria-hidden="true">/</span>
           <Link href="/tools#browser-extensions" className="text-slate-400 no-underline transition hover:text-white">浏览器扩展</Link>
           <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> v{VERSION} 下载版
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> 本地源码 v{SOURCE_VERSION}
           </span>
         </div>
 
@@ -394,7 +441,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论首页与通知、点赞、关注管理和定时发帖集中在本地面板。发帖类里的站长转发会把一篇 2aran.com 文章审阅后发布为 X Article。全流程让评论任务持续运行，其他任务按后台队列轮换，进度与等待时间保存在扩展本地。
+              评论、点赞、关注、社群分发、发帖与清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
@@ -420,8 +467,8 @@ export default function XReplyClipboardResourcePage() {
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5"><IconBrandChrome size={15} className="text-cyan-300" /> Manifest V3</span>
               <span className="inline-flex items-center gap-1.5"><IconShieldLock size={15} className="text-emerald-300" /> 本地运行</span>
-              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> DeepSeek 配置</span>
-              <span>打包于 2026-10-26</span>
+              <span className="inline-flex items-center gap-1.5"><IconRobot size={15} className="text-violet-300" /> 多模型可选</span>
+              <span>本地源码 v{SOURCE_VERSION} · 下载包配置 v{DOWNLOAD_VERSION || '待核对'}</span>
             </div>
           </div>
 
@@ -465,7 +512,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold tracking-[0.14em] text-blue-600 dark:text-cyan-300">功能与运行方式</p>
-              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">四组功能，按计划运行</h2>
+              <h2 id="workflow-heading" className="m-0 mt-2 border-0 p-0 text-3xl font-black tracking-[-0.035em] text-slate-950 dark:text-white">六组功能，按计划运行</h2>
             </div>
             <p className="m-0 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">顶部页签可切换到已有专用 X 窗口，或新建窗口；任务进度独立保存。</p>
           </div>
@@ -481,7 +528,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="grid gap-6 border-t border-slate-200 pt-6 dark:border-white/10 sm:grid-cols-2 sm:gap-10">
             <div className="flex items-start gap-3">
               <IconSparkles size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
-              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">AI 回复</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">评论内容由已启用的模型读取原帖文字后生成。模型密钥在扩展面板配置，保存在 Chrome 本地。</p></div>
+              <div><h3 className="m-0 text-sm font-bold text-slate-950 dark:text-white">AI 回复</h3><p className="m-0 mt-1 text-sm leading-7 text-slate-600 dark:text-slate-300">在设置中心按需启用 MobileOffice、DeepSeek、NAS 或 B.AI。已配置的密钥保存在 Chrome 本地；回复时会结合原帖和适用的会话上下文。</p></div>
             </div>
             <div className="flex items-start gap-3">
               <IconShieldLock size={21} stroke={1.8} className="mt-0.5 shrink-0 text-blue-600 dark:text-cyan-300" aria-hidden="true" />
@@ -504,6 +551,7 @@ export default function XReplyClipboardResourcePage() {
             <li>X 的自动化规则明确禁止使用脚本直接自动操作网站，并提示可能导致账号永久停用。</li>
             <li>自动回复仅适用于事先明确选择接收联系的用户，每次用户互动最多一条；AI 回复机器人需要事先获得 X 的书面批准。</li>
             <li>自动点赞不被允许；批量、激进或无差别自动关注和取关也被禁止。</li>
+            <li>互关搅拌风险很高。清理未回关默认只生成待核对清单；先判断内容价值、主题关联和真实往来，再由人逐个决定是否取关。</li>
             <li>未认证账号每天 50 条原创帖、200 条回复以及每天关注 400 个，属于公开技术上限，不代表平台许可、合规保证或风控安全值。</li>
             <li>X 的开源算法仓库主要涉及时间线与通知的推荐流程，不提供自动化操作的安全频率或完整反垃圾判定逻辑。</li>
               </ul>
@@ -528,7 +576,7 @@ export default function XReplyClipboardResourcePage() {
               <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到完整互动工具</h3>
             </div>
             <span className="w-fit rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
-              当前版本 v{VERSION}
+              本地源码 v{SOURCE_VERSION} · 下载包配置 v{DOWNLOAD_VERSION || '待核对'}
             </span>
           </div>
           <ol className="m-0 list-none divide-y divide-slate-100 p-0 dark:divide-white/5">

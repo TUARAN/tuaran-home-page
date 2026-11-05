@@ -292,12 +292,8 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
     }
   }
   const send = (command, mode = '') => onCommand?.({ deviceId: device.id, command, mode })
-  const libraryStorageKey = `x-monitor-task-library:${device.id}`
-  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(true)
   const [pendingRules, setPendingRules] = useState({})
-  useEffect(() => {
-    try { setLibraryOpen(window.localStorage.getItem(libraryStorageKey) === 'open') } catch { setLibraryOpen(false) }
-  }, [libraryStorageKey])
   const remoteRules = useMemo(() => {
     const map = {}
     for (const rule of schedule?.rules || []) map[rule.mode] = rule
@@ -334,13 +330,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
       return next
     })
   }
-  const toggleLibrary = () => {
-    setLibraryOpen((open) => {
-      const next = !open
-      try { window.localStorage.setItem(libraryStorageKey, next ? 'open' : 'closed') } catch { /* 视窗状态只保存在这台浏览器。 */ }
-      return next
-    })
-  }
+  const toggleLibrary = () => setLibraryOpen((open) => !open)
   const joined = (task) => {
     if (!task) return false
     if (!configured) return true

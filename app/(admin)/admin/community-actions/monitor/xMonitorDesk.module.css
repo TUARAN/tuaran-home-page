@@ -129,6 +129,7 @@
 
 .itemHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px 12px;
@@ -147,6 +148,8 @@
   font-weight: 800;
   line-height: 1.25;
 }
+
+.itemHead > strong > span:last-child { white-space: nowrap; }
 
 .side {
   display: inline-flex;
@@ -398,7 +401,7 @@
 
 .start { grid-column: 1; justify-self: start; }
 
-.panelWide { max-width: 720px; }
+.panelWide { max-width: 1080px; }
 
 .libraryToggle,
 .libraryToggleOn {
@@ -427,7 +430,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
   gap: 12px;
   align-items: start;
   padding: 0 12px 4px;

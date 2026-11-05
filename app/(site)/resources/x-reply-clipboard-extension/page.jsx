@@ -351,7 +351,7 @@ export const metadata = {
 }
 
 function DownloadButton({ className = '' }) {
-  return <ExtensionDownloadButton href={DOWNLOAD_URL} version={DOWNLOAD_VERSION} className={className} />
+  return <ExtensionDownloadButton href={DOWNLOAD_URL} version={DOWNLOAD_VERSION} buttonLabel="获取邀请码并下载" className={className} />
 }
 
 const WORKFLOWS = [
@@ -443,6 +443,7 @@ export default function XReplyClipboardResourcePage() {
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
               评论、点赞、关注、社群分发、发帖与清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
             </p>
+            <p className="mt-3 max-w-2xl text-xs leading-6 text-slate-400">以下功能说明对应本地源码 v{SOURCE_VERSION}。站内 ZIP 使用单独的下载包配置，未打包的功能不会随下载自动获得。</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
               <Link

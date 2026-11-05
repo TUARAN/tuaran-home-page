@@ -84,7 +84,10 @@
 站长在聊天或助手侧提出的非琐碎需求，按 `docs/runbooks/issue-first-workflow.md` 执行。
 
 - 先搜索 open/closed Issue 与相关 PR，开新 Issue 或复用已有 Issue，再开 PR。
-- PR 正文写明 `Closes #N` 或 `Related: #N`。
+- 本机 Mac、Codex 与 `codex/*` 分支是正式贡献路径，同样先走 Issue 优先。
+- 本 PR 做完某 Issue 的建议动作时，每条写一行 `Closes #N`（可多条；一个 PR 可以关闭多条）。做完的不要写成 `Related`。
+- `Related: #N` 只用于合并后仍应打开的 Issue：部分推进、依赖或后续。
+- 合并后若做完的 Issue 因只写了 `Related` 仍开着，Issues 助手或站长按已完成关闭，并引用该 PR。细则见 `docs/runbooks/issue-first-workflow.md` 的「关闭关键词」。
 - 打分诊标签。不得跳过。带 `needs:design`、`needs:decision` 或 `needs:assets` 时停在 Issue。
 - 只有 `priority:now` 且没有上述 `needs:*` 时才开 PR。
 - 例外：纯笔误、修复已经变红的 CI、站长当次明确说「直接改」或「别开 Issue」。

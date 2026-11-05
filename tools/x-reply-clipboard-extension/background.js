@@ -3619,23 +3619,37 @@ async function readNotificationContext(message, sender) {
   contextTabs.add(tab.id);
   try {
     let latest = null;
-    const deadline = Date.now() + 10000;
+    let observation = null;
+    let reloaded = false;
+    const startedAt = Date.now();
+    const deadline = startedAt + 60000;
     while (Date.now() < deadline) {
       try {
         const result = await chrome.tabs.sendMessage(tab.id, {
           type: "xrc-context-read", replyId, ownHandle, replyAuthor
         });
         const context = result?.context;
+        observation = result?.observation || observation;
         if (notificationContextIsReady(context)) return { ok: true, context };
         if (context?.ownPost?.text && context?.reply?.text) latest = context;
       } catch (error) {
         // The conversation tab may still be loading its content script.
       }
+      if (!reloaded && Date.now() - startedAt >= 6000 && !observation?.targetSeen) {
+        reloaded = true;
+        if (chrome.tabs.reload) await chrome.tabs.reload(tab.id).catch(() => {});
+      }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     const unresolved = notificationContextUnresolved(latest);
     if (unresolved) return { ok: true, context: unresolved };
-    throw new Error("会话页没有加载出我的帖子");
+    throw new Error(!observation?.count
+      ? "会话页未显示帖子"
+      : !observation.targetSeen
+        ? "会话页未显示目标回复"
+        : !observation.earlierOwnSeen
+          ? "目标回复已显示，但上方未加载出本人帖子"
+          : "本人帖子已显示，但会话关系仍未确认");
   } finally {
     await chrome.tabs.remove(tab.id).catch(() => {});
     contextTabs.delete(tab.id);
@@ -3718,7 +3732,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       const operation = action === "needs-migration" ? replyHistory?.needsMigration(message.accountHandle)
         : action === "load" ? replyHistory?.load(message.accountHandle, message.legacyIds || [])
           : action === "has" ? replyHistory?.has(message.accountHandle, message.targetId)
-            : action === "add" ? replyHistory?.add(message.accountHandle, message.targetId) : null;
+            : action === "add" ? replyHistory?.add(message.accountHandle, message.targetId)
+              : action === "forget-skipped" ? replyHistory?.forgetSkipped(message.accountHandle, message.targetIds || []) : null;
       if (!operation) { sendResponse({ ok: false, error: "已回复记录操作不可用" }); return false; }
       Promise.resolve(operation).then((value) => sendResponse({ ok: true, value }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "已回复记录操作失败" }));

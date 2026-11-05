@@ -83,6 +83,17 @@
       .filter((node) => !node.parentElement?.closest?.('[data-testid="tweet"]'));
   }
 
+  function conversationObservation(articles, replyId, ownHandle) {
+    const tweets = Array.from(articles).map(tweetFromArticle);
+    const targetIndex = tweets.findIndex((tweet) => tweet.id === String(replyId));
+    const own = normalizeHandle(ownHandle);
+    return {
+      count: tweets.length,
+      targetSeen: targetIndex >= 0,
+      earlierOwnSeen: targetIndex > 0 && tweets.slice(0, targetIndex).some((tweet) => tweet.authorHandle === own)
+    };
+  }
+
   function findConversation(articles, replyId, ownHandle, replyAuthor = "") {
     const tweets = Array.from(articles)
       .filter((article) => !article.parentElement?.closest?.('[data-testid="tweet"]'))
@@ -120,6 +131,7 @@
   }
 
   if (root.chrome?.runtime?.onMessage && root.document) {
+    let ancestorScrollAttempted = false;
     if (new URL(root.location.href).searchParams.get("xrcContext") === "1") {
       try { root.sessionStorage.setItem("xrcContextTab", "1"); } catch (error) {}
     }
@@ -130,7 +142,20 @@
         return false;
       }
       const articles = conversationTweetNodes(root.document);
-      sendResponse({ ok: true, context: findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor) });
+      const observation = conversationObservation(articles, message.replyId, message.ownHandle);
+      const context = findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor);
+      if (!context && observation.targetSeen && !observation.earlierOwnSeen && !ancestorScrollAttempted) {
+        ancestorScrollAttempted = true;
+        try {
+          if (root.document.scrollingElement) root.document.scrollingElement.scrollTop = 0;
+          root.scrollTo?.(0, 0);
+        } catch (error) {}
+      }
+      sendResponse({
+        ok: true,
+        context,
+        observation
+      });
       return false;
     });
   }
@@ -140,6 +165,7 @@
     handleFromHref,
     normalizeHandle,
     conversationTweetNodes,
+    conversationObservation,
     findConversation,
     allowsContinuedDialogue
   };

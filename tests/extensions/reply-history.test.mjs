@@ -38,6 +38,14 @@ function memoryIndexedDB() {
                 tx.pending -= 1
                 if (tx.pending === 0) tx.oncomplete?.()
               })
+            },
+            delete(key) {
+              tx.pending += 1
+              queueMicrotask(() => {
+                rows.delete(key)
+                tx.pending -= 1
+                if (tx.pending === 0) tx.oncomplete?.()
+              })
             }
           }
         }
@@ -97,6 +105,18 @@ test('migration retains more than the old 2000 notification records', async () =
   await nextRun.load('alice')
   assert.equal(await nextRun.has('alice', '1'), true)
   assert.equal(await nextRun.has('alice', '2200'), true)
+})
+
+test('old skipped notifications can be retried without deleting confirmed reply receipts', async () => {
+  const storage = memoryStorage({
+    xrcDailyReports: [{ accountHandle: 'alice', targetKeys: ['notification-reply:22'] }],
+  })
+  const history = createReplyHistory(storage, memoryIndexedDB())
+  await history.load('alice', ['11', '22'])
+  assert.equal(await history.has('alice', '11'), true)
+  assert.equal(await history.forgetSkipped('alice', ['11', '22']), 1)
+  assert.equal(await history.has('alice', '11'), false)
+  assert.equal(await history.has('alice', '22'), true)
 })
 
 test('content asks the extension background before selecting a reply target', async () => {

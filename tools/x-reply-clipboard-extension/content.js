@@ -50,7 +50,8 @@
   let taskSnapshotWrite = Promise.resolve();
   let suspendingTask = false;
   let taskSnapshotAccount = "default";
-  const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
+  const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIdsV2";
+  const LEGACY_NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
   const DEV_UPDATE_KEY = "xrcLocalDevUpdate";
   const RESET_EPOCH_KEY = "xrcResetEpoch";
@@ -346,6 +347,7 @@
     phraseIndex: null,
     loopPromise: null
   };
+  let legacyNotificationSkippedIds = [];
 
   let pluginRuntime = { startedAt: null, tasks: {} };
   let taskSchedule = { enabled: false, items: {} };
@@ -4428,7 +4430,10 @@
     processedNotificationIds.clear();
     if (!globalThis.chrome?.storage?.local) return;
     try {
-      const stored = await chrome.storage.local.get(NOTIFICATION_HISTORY_KEY);
+      const stored = await chrome.storage.local.get([NOTIFICATION_HISTORY_KEY, LEGACY_NOTIFICATION_HISTORY_KEY]);
+      legacyNotificationSkippedIds = Array.isArray(stored?.[LEGACY_NOTIFICATION_HISTORY_KEY]?.ids)
+        ? stored[LEGACY_NOTIFICATION_HISTORY_KEY].ids.filter((id) => /^\d+$/u.test(String(id))).map(String)
+        : [];
       const ids = stored?.[NOTIFICATION_HISTORY_KEY]?.ids;
       if (!Array.isArray(ids)) return;
       for (const id of ids) {
@@ -4458,9 +4463,12 @@
 
   async function loadRepliedTargets() {
     const account = replyHistoryAccount();
-    const legacyIds = account === taskSnapshotAccount
-      ? [...processedNotificationIds] : [];
-    await sendExtensionMessage({ type: "xrc-reply-history-load", accountHandle: account, legacyIds });
+    await sendExtensionMessage({ type: "xrc-reply-history-load", accountHandle: account });
+    if (state.assistantMode === "notifications" && legacyNotificationSkippedIds.length && account === taskSnapshotAccount) {
+      await sendExtensionMessage({ type: "xrc-reply-history-forget-skipped", accountHandle: account, targetIds: legacyNotificationSkippedIds });
+      await chrome.storage.local.remove(LEGACY_NOTIFICATION_HISTORY_KEY);
+      legacyNotificationSkippedIds = [];
+    }
   }
 
   async function persistRepliedTarget(id) {
@@ -4469,7 +4477,8 @@
   }
 
   function processedForCurrentMode() {
-    return { has: (id) => processedIds.has(id) || skippedIds.has(id) };
+    return { has: (id) => processedIds.has(id) || skippedIds.has(id)
+      || state.assistantMode === "notifications" && processedNotificationIds.has(id) };
   }
 
   async function nextUnrepliedTweet(tweets) {
@@ -5462,7 +5471,7 @@
       || !conversation?.ownPost?.text || !conversation?.reply?.text) {
       throw new Error("没有确认我的帖子与对方回复属于同一段会话");
     }
-    cacheNotificationContext(tweet.id, conversation);
+    if (conversation.rootSettled === true) cacheNotificationContext(tweet.id, conversation);
     return conversation;
   }
 
@@ -5484,7 +5493,6 @@
         rootSettled: false,
         lookupError: String(error?.message || "会话页未加载完成").slice(0, 100)
       };
-      cacheNotificationContext(tweet.id, fallback);
       return fallback;
     }
   }
@@ -6374,16 +6382,26 @@
         markNotificationChecked(next);
         const noteText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (noteText || state.replyMode !== "ai") {
-          state.status = `正在核对第 ${state.pageCount}/${currentRoundTarget()} 条通知是否属于本人原帖（最多约 10 秒）…`;
+          state.status = `正在核对第 ${state.pageCount}/${currentRoundTarget()} 条通知的原帖作者…`;
           renderPanel();
-          notificationConversation = await conversationOrFallback(next, noteText || " ");
+          const contextStartedAt = Date.now();
+          const contextProgress = setInterval(() => {
+            if (!state.running || state.stopping) return;
+            state.status = `第 ${state.pageCount}/${currentRoundTarget()} 条：会话仍在加载，已等待 ${Math.floor((Date.now() - contextStartedAt) / 1000)} 秒`;
+            renderPanel();
+          }, 5000);
+          try {
+            notificationConversation = await conversationOrFallback(next, noteText || " ");
+          } finally {
+            clearInterval(contextProgress);
+          }
           if (state.stopping || !state.running) return "stopped";
           if (!allowsNotificationDialogue(notificationConversation, currentAccountHandle())) {
             skippedIds.add(next.id);
-            try {
-              await persistNotificationProcessed(next.id);
-            } catch (error) {
-              state.errors += 1;
+            const settled = notificationConversation?.rootSettled === true;
+            if (settled) {
+              try { await persistNotificationProcessed(next.id); }
+              catch (error) { state.errors += 1; }
             }
             state.pendingReply = "";
             state.pendingTweetId = "";
@@ -6391,10 +6409,10 @@
             writeSaved({ running: true, total: state.total });
             const reason = notificationConversation?.lookupError
               ? `会话读取失败：${notificationConversation.lookupError}`
-              : notificationConversation?.rootSettled === true
+              : settled
                 ? "原帖不属于当前账号"
                 : "无法确认原帖归属";
-            state.status = `第 ${state.pageCount}/${currentRoundTarget()} 条：${reason}，已跳过；继续检查下一条`;
+            state.status = `第 ${state.pageCount}/${currentRoundTarget()} 条：${reason}，${settled ? "已跳过" : "本轮暂缓，下次扫描再核对"}；继续检查下一条`;
             renderPanel();
             await sleepActive(900);
             continue;

@@ -5170,6 +5170,39 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   assert.equal(context.allowsContinuedDialogue(foreignResult, 'friend'), true)
 })
 
+test('conversation reader distinguishes a missing target from an unloaded parent', () => {
+  const article = (href) => ({
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return { closest: () => ({ getAttribute: () => href }) }
+      return null
+    },
+    querySelectorAll: () => [],
+  })
+  const own = article('/me/status/100')
+  const reply = article('/friend/status/101')
+  assert.equal(context.conversationObservation([own, reply], '101', 'me').earlierOwnSeen, true)
+  assert.equal(context.conversationObservation([reply], '101', 'me').earlierOwnSeen, false)
+  assert.equal(context.conversationObservation([own], '101', 'me').targetSeen, false)
+})
+
+test('unreadable notification context is deferred without caching a permanent rejection', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  async function conversationOrFallback\(tweet, replyText\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const cache = new Map()
+  const sandbox = vm.createContext({
+    conversationForNotification: async () => { throw new Error('目标回复已显示，但上方未加载出本人帖子') },
+    cacheNotificationContext: (id, value) => cache.set(id, value),
+  })
+  vm.runInContext(`${helper}\nglobalThis.read = conversationOrFallback`, sandbox)
+  const result = await sandbox.read({ id: '101', authorHandle: 'friend' }, '你好')
+  assert.equal(result.rootSettled, false)
+  assert.match(result.lookupError, /上方未加载出本人帖子/)
+  assert.equal(cache.size, 0)
+  assert.match(source, /if \(settled\) \{\s*try \{ await persistNotificationProcessed\(next\.id\); \}/)
+  assert.doesNotMatch(source, /最多约 10 秒/)
+})
+
 test('continued dialogue follows the active account root, not an earlier reply in someone else\'s thread', () => {
   const article = (href, text, replyingTo = '') => {
     const replyLine = replyingTo ? `Replying to @${replyingTo}` : ''

@@ -260,13 +260,16 @@
   color: var(--xrc-muted);
   font-variant-numeric: tabular-nums;
 }
-#x-reply-clipboard-panel .xrc-today-categories { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+#x-reply-clipboard-panel .xrc-today-categories { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
 #x-reply-clipboard-panel .xrc-today-category,
 #x-reply-clipboard-panel .xrc-today-task { min-width: 0; border: 1px solid var(--xrc-line); border-radius: 10px; background: var(--xrc-soft); }
-#x-reply-clipboard-panel .xrc-today-category { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 3px; }
-#x-reply-clipboard-panel .xrc-today-category-name { display: flex; max-width: 100%; align-items: center; justify-content: center; gap: 3px; color: var(--xrc-category); font-size: 10px; font-weight: 800; white-space: nowrap; }
-#x-reply-clipboard-panel .xrc-today-category-name i { display: grid; flex: 0 0 17px; width: 17px; height: 17px; place-items: center; border-radius: 5px; background: color-mix(in srgb, var(--xrc-category) 14%, transparent); font-size: 12px; font-style: normal; }
-#x-reply-clipboard-panel .xrc-today-category b { max-width: 100%; overflow: hidden; color: var(--xrc-category); font-size: 17px; font-weight: 900; line-height: 1.1; text-align: center; text-overflow: ellipsis; }
+#x-reply-clipboard-panel .xrc-today-category { display: flex; min-height: 52px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 1px; }
+#x-reply-clipboard-panel .xrc-today-category-name { display: flex; min-width: 0; max-width: 100%; align-items: center; justify-content: center; gap: 2px; color: var(--xrc-category); font-size: 9px; font-weight: 800; white-space: nowrap; }
+#x-reply-clipboard-panel .xrc-today-category-name i { display: grid; flex: 0 0 12px; width: 12px; height: 12px; place-items: center; border-radius: 4px; background: color-mix(in srgb, var(--xrc-category) 14%, transparent); font-size: 9px; font-style: normal; }
+#x-reply-clipboard-panel .xrc-today-category b { max-width: 100%; overflow: hidden; color: var(--xrc-category); font-size: 16px; font-weight: 900; line-height: 1.1; text-align: center; text-overflow: ellipsis; }
+@media (max-width: 340px) {
+  #x-reply-clipboard-panel .xrc-today-category-name i { display: none; }
+}
 #x-reply-clipboard-panel .xrc-today-tasks { display: flex; gap: 5px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 3px; }
 #x-reply-clipboard-panel .xrc-today-task { display: flex; flex: 0 0 88px; align-items: center; justify-content: space-between; gap: 4px; padding: 6px; border-left: 3px solid var(--xrc-category); }
 #x-reply-clipboard-panel .xrc-today-task span { overflow: hidden; color: var(--xrc-muted); font-size: 9px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }

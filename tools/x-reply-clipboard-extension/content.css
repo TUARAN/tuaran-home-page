@@ -1934,6 +1934,21 @@
 
 #x-reply-clipboard-panel .xrc-mutual-card button:disabled { cursor: not-allowed; opacity: 0.48; }
 
+#x-reply-clipboard-panel .xrc-unfollow-modes { display: grid; gap: 7px; margin: 10px 0; }
+#x-reply-clipboard-panel .xrc-unfollow-modes label { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--xrc-line); border-radius: 10px; cursor: pointer; }
+#x-reply-clipboard-panel .xrc-unfollow-modes label:has(input:checked) { border-color: #1d9bf0; background: rgba(29, 155, 240, 0.09); }
+#x-reply-clipboard-panel .xrc-unfollow-modes span { display: grid; gap: 3px; }
+#x-reply-clipboard-panel .xrc-unfollow-modes small { color: var(--xrc-muted); }
+#x-reply-clipboard-panel [data-xrc-unfollow-auto-options][hidden] { display: none; }
+#x-reply-clipboard-panel .xrc-unfollow-review { margin: 12px 0; display: grid; gap: 8px; }
+#x-reply-clipboard-panel [data-xrc-unfollow-review-list] { max-height: 220px; overflow-y: auto; border: 1px solid var(--xrc-line); border-radius: 10px; }
+#x-reply-clipboard-panel [data-xrc-unfollow-review-list]:empty { padding: 10px; }
+#x-reply-clipboard-panel .xrc-unfollow-review-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--xrc-line); }
+#x-reply-clipboard-panel .xrc-unfollow-review-row:last-child { border-bottom: 0; }
+#x-reply-clipboard-panel .xrc-unfollow-review-row a { flex: 1; color: #1d9bf0; overflow-wrap: anywhere; }
+#x-reply-clipboard-panel .xrc-unfollow-review-row span { color: var(--xrc-muted); font-size: 11px; }
+#x-reply-clipboard-panel .xrc-unfollow-review-row button { border: 1px solid var(--xrc-line); border-radius: 8px; padding: 4px 7px; }
+
 #x-reply-clipboard-panel .xrc-status {
   min-height: 38px;
   padding: 10px 12px;

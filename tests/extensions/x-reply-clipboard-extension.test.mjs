@@ -6506,7 +6506,7 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
   assert.deepEqual(picked, ['@chinese'])
 })
 
-test('unfollow waits two seconds and rescans after reaching the bottom without applying the shared follow quota', async () => {
+test('automatic unfollow waits two seconds and rescans after reaching the bottom without applying the shared follow quota', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(runWithStorage)
@@ -6519,7 +6519,7 @@ test('unfollow waits two seconds and rescans after reaching the bottom without a
     { handle: '@person2', candidate: true, followsYou: false },
   ]
   const state = {
-    running: false, stopping: false, mode: '', unfollowed: 0,
+    running: false, stopping: false, mode: '', unfollowMode: 'auto', unfollowed: 0,
     sharedDailyFollowed: 400, sharedBatchProgress: 15,
     skipped: 0, errors: 0, cooldownUntil: 1,
     seenHandles: new Set(), skippedHandles: new Set(),
@@ -6528,6 +6528,7 @@ test('unfollow waits two seconds and rescans after reaching the bottom without a
     state, isFollowingPage: () => true, isFollowersPage: () => false, listReady: () => true,
     targetFollowHandleFromPath: () => '', targetPath: () => '',
     loadSharedFollowRate: async () => { storageReads += 1 },
+    loadUnfollowReview: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => {}, waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false, visibleRows: () => candidates,
@@ -6553,6 +6554,56 @@ test('unfollow waits two seconds and rescans after reaching the bottom without a
   assert.equal(state.unfollowed, 3)
   assert.equal(scrollsToTop, 1)
   assert.equal(state.cooldownUntil, 0)
+})
+
+test('manual unfollow records each candidate once and finishes without clicking Following', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  const state = { running: false, stopping: false, mode: '', unfollowMode: 'manual', unfollowReview: [],
+    seenHandles: new Set(), skippedHandles: new Set(), skipped: 0, errors: 0, cooldownUntil: 0 }
+  const recorded = []
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, isFollowersPage: () => false, listReady: () => true,
+    loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [{ handle: '@person1', candidate: true, followsYou: false },
+      { handle: '@person2', candidate: true, followsYou: false }],
+    addUnfollowReview: async (item) => { recorded.push(item.handle); state.unfollowReview.push({ handle: item.handle }) },
+    actUnfollow: async () => { throw new Error('manual scan clicked Following') },
+    scrollForward: async () => ({ progressed: false, atBottom: true }),
+    sleepActive: async () => {}, formatClock: () => '',
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  assert.equal(await context.runTest('unfollow', () => {}), true)
+  assert.deepEqual(recorded, ['@person1', '@person2'])
+  assert.equal(state.running, false)
+  assert.equal(state.unfollowReview.length, 2)
+})
+
+test('unfollow review defaults to manual mode and persists account-specific removals', async () => {
+  const saved = {}
+  globalThis.document = { querySelector: () => null }
+  globalThis.chrome = { runtime: { id: 'test-extension' }, storage: { local: {
+    async get(keys) { return Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map((key) => [key, saved[key]])) },
+    async set(value) { Object.assign(saved, value) },
+  } } }
+  try {
+    const initial = await mutual.loadUnfollowReview()
+    assert.equal(initial.unfollowMode, 'manual')
+    assert.deepEqual(initial.unfollowReview, [])
+    await mutual.setUnfollowMode('auto')
+    assert.equal((await mutual.loadUnfollowReview()).unfollowMode, 'auto')
+    saved.xrcUnfollowReview = []
+    saved['xrcUnfollowReview:default'] = [{ handle: 'person1', reason: 'notFollowingBack', addedAt: 1 }]
+    assert.equal((await mutual.loadUnfollowReview()).unfollowReview.length, 1)
+    await mutual.removeUnfollowReview('person1')
+    assert.deepEqual(saved['xrcUnfollowReview:default'], [])
+  } finally {
+    delete globalThis.chrome
+    delete globalThis.document
+  }
 })
 
 test('mutual platform limit shows a countdown and can be stopped during cooldown', async () => {

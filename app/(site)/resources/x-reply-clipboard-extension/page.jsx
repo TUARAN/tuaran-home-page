@@ -329,7 +329,7 @@ const WORKFLOWS = [
   },
   {
     title: '关注管理',
-    detail: '在 Following 页清理未回关账号，在 Followers 页回关粉丝；关注候选约每周一次，从可配置名单关注，每轮最多 15 个。',
+    detail: '在 Following 页扫描未回关账号，默认先保存待取关清单供人工核对；在 Followers 页回关粉丝。',
     icon: IconUsers,
   },
   {

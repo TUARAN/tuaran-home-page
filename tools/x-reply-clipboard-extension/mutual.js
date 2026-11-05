@@ -17,6 +17,7 @@
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
+  const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
@@ -54,6 +55,8 @@
     targetFollowPace: "medium",
     followBackScheduled: false,
     unfollowEnglish: true,
+    unfollowMode: "manual",
+    unfollowReview: [],
     seenHandles: new Set(),
     skippedHandles: new Set(),
     acknowledgedRateLimits: new Set(),
@@ -83,6 +86,8 @@
       riskCooldownUntil: state.riskCooldownUntil,
       riskRetries: state.riskRetries,
       unfollowEnglish: state.unfollowEnglish,
+      unfollowMode: state.unfollowMode,
+      unfollowReview: state.unfollowReview.map((item) => ({ ...item })),
       followPlan: state.followPlan ? { ...state.followPlan } : null,
       followSessionUntil: state.followSessionUntil || 0
     };
@@ -318,6 +323,52 @@
     const storage = globalThis.chrome?.storage?.local;
     if (!storage) throw followStorageError(new Error("扩展存储不可用"));
     return storage;
+  }
+
+  function unfollowReviewStorageKey() {
+    let account = "";
+    try { account = currentAccountHandle(); } catch (error) { /* page may still be loading */ }
+    return `${UNFOLLOW_REVIEW_KEY}:${account || "default"}`;
+  }
+
+  async function loadUnfollowReview() {
+    const key = unfollowReviewStorageKey();
+    const stored = (await followStorage().get(["xrcUnfollowMode", key])) || {};
+    state.unfollowMode = stored.xrcUnfollowMode === "auto" ? "auto" : "manual";
+    state.unfollowReview = (Array.isArray(stored[key]) ? stored[key] : [])
+      .filter((item) => /^@?[A-Za-z0-9_]{1,15}$/u.test(String(item?.handle || "")))
+      .map((item) => ({ handle: String(item.handle).replace(/^@/u, ""), reason: item.reason === "nonChinese" ? "nonChinese" : "notFollowingBack", addedAt: Number(item.addedAt) || Date.now() }));
+    emit();
+    return snapshot();
+  }
+
+  async function setUnfollowMode(mode) {
+    if (state.running && state.mode === "unfollow") return state.unfollowMode;
+    state.unfollowMode = mode === "auto" ? "auto" : "manual";
+    await followStorage().set({ xrcUnfollowMode: state.unfollowMode });
+    emit();
+    return state.unfollowMode;
+  }
+
+  async function addUnfollowReview(item) {
+    const handle = item.handle.replace(/^@/u, "");
+    if (state.unfollowReview.some((entry) => entry.handle.toLowerCase() === handle.toLowerCase())) return false;
+    const next = [...state.unfollowReview, {
+      handle,
+      reason: item.followsYou ? "nonChinese" : "notFollowingBack",
+      addedAt: Date.now()
+    }];
+    await followStorage().set({ [unfollowReviewStorageKey()]: next });
+    state.unfollowReview = next;
+    emit(`已记录 @${handle}，待人工核对`);
+    return true;
+  }
+
+  async function removeUnfollowReview(handle) {
+    const next = state.unfollowReview.filter((item) => item.handle.toLowerCase() !== String(handle).replace(/^@/u, "").toLowerCase());
+    await followStorage().set({ [unfollowReviewStorageKey()]: next });
+    state.unfollowReview = next;
+    emit("已从待取关清单移除");
   }
 
   function followStorageError(error) {
@@ -771,13 +822,15 @@
       return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
     }
     const independentCleanup = mode === "unfollow";
+    if (independentCleanup) await loadUnfollowReview();
+    const manualUnfollow = independentCleanup && state.unfollowMode === "manual";
     const cleanupLimit = ({ slow: 15, medium: 30, fast: 45, turbo: 60 })[state.followPace] || 15;
     let cleanupAttempts = 0;
     await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
     await reset(mode, onUpdate);
     if (!independentCleanup && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
-      ? "开始清理未回关账号"
+      ? manualUnfollow ? "正在扫描 Following 列表，记录待取关账号" : "开始自动清理未回关账号"
       : mode === "followBack"
         ? "开始回关粉丝"
         : "开始关注候选");
@@ -836,7 +889,7 @@
         if (!(await waitForPlatformRateLimit())) break;
         continue;
       }
-      if (mode === "unfollow" && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
+      if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
@@ -851,6 +904,10 @@
         stalled = 0;
         sourceIdleSince = 0;
         state.seenHandles.add(candidate.handle);
+        if (mode === "unfollow" && manualUnfollow) {
+          await addUnfollowReview(candidate);
+          continue;
+        }
         if (mode === "unfollow") cleanupAttempts += 1;
         const ok = mode === "unfollow"
           ? await actUnfollow(candidate)
@@ -942,6 +999,10 @@
             return { navigate: `/${nextSource}/followers` };
           }
         }
+        if (manualUnfollow) {
+          stopReason = `扫描完成：待人工核对 ${state.unfollowReview.length} 个账号`;
+          break;
+        }
         state.cooldownUntil = Date.now() + RESCAN_INTERVAL_MS;
         while (!state.stopping && Date.now() < state.cooldownUntil) {
           emit(`本轮名单已检查，${formatClock(state.cooldownUntil - Date.now())} 后重新扫描`);
@@ -968,7 +1029,7 @@
         : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`));
     state.mode = "";
     emit();
-    return stopReason ? { error: stopReason } : true;
+    return stopReason && !manualUnfollow ? { error: stopReason } : true;
   }
 
   function stop() {
@@ -993,6 +1054,9 @@
     coolDownForRisk,
     startNow,
     setUnfollowEnglishEnabled,
+    loadUnfollowReview,
+    setUnfollowMode,
+    removeUnfollowReview,
     snapshot,
     refreshSharedFollowRate: async () => {
       try {

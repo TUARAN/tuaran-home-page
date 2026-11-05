@@ -1136,7 +1136,7 @@
   function unlimitedHint(mode) {
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
-    if (mode === "mutual-unfollow") return "默认连续取关，未回关才处理；占住页签，直到 X 报错或手动暂停";
+    if (mode === "mutual-unfollow") return "默认手动模式：扫描后保存待取关清单，由你逐个核对并取关";
     if (mode === "mutual-followBack") return "回关与关注候选确认满 100 个才让出页签；之后慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
@@ -8049,10 +8049,15 @@
               <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "启停与选项")}
-                ${cleanupPaceTableHtml()}
+                <div class="xrc-unfollow-modes" role="group" aria-label="取关模式">
+                  <label><input type="radio" name="xrc-unfollow-mode" value="manual" data-xrc-unfollow-mode><span><strong>手动模式（默认）</strong><small>扫描并记录候选，由你打开资料页取关</small></span></label>
+                  <label><input type="radio" name="xrc-unfollow-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
+                </div>
+                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
                 <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
+                <div class="xrc-unfollow-review"><strong>待人工核对清单</strong><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
-                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">已取消 0 · 今日合计 0/400 · 本批 0/15</div>
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
                   <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollow">已停止 · 点击启动</button>
                 </div>
@@ -8714,6 +8719,19 @@
         writeSaved({ running: state.running, total: state.total });
         renderPanel();
       });
+      panel.querySelectorAll("[data-xrc-unfollow-mode]").forEach((input) => input.addEventListener("change", async (event) => {
+        if (!event.currentTarget.checked || state.mutual?.running) return;
+        await mutualApi?.setUnfollowMode?.(event.currentTarget.value);
+        state.mutual = mutualApi?.snapshot?.() || state.mutual;
+        renderPanel();
+      }));
+      panel.querySelector("[data-xrc-unfollow-review-list]")?.addEventListener("click", async (event) => {
+        const button = event.target.closest?.("[data-xrc-unfollow-reviewed]");
+        if (!button) return;
+        await mutualApi?.removeUnfollowReview?.(button.dataset.xrcUnfollowReviewed);
+        state.mutual = mutualApi?.snapshot?.() || state.mutual;
+        renderPanel();
+      });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
       });
@@ -9214,6 +9232,36 @@
     });
     const unfollowEnglish = panel.querySelector("[data-xrc-unfollow-english]");
     if (unfollowEnglish) unfollowEnglish.checked = Boolean(state.unfollowEnglish);
+    const unfollowMode = mutual?.unfollowMode === "auto" ? "auto" : "manual";
+    panel.querySelectorAll("[data-xrc-unfollow-mode]").forEach((input) => {
+      input.checked = input.value === unfollowMode;
+      input.disabled = Boolean(mutual?.running && mutual.mode === "unfollow");
+    });
+    const autoOptions = panel.querySelector("[data-xrc-unfollow-auto-options]");
+    if (autoOptions) autoOptions.hidden = unfollowMode !== "auto";
+    const reviewList = panel.querySelector("[data-xrc-unfollow-review-list]");
+    if (reviewList) {
+      reviewList.replaceChildren();
+      const entries = Array.isArray(mutual?.unfollowReview) ? mutual.unfollowReview : [];
+      if (!entries.length) reviewList.textContent = "暂无候选。启动扫描后会保存到这里。";
+      for (const item of entries) {
+        const row = document.createElement("div");
+        row.className = "xrc-unfollow-review-row";
+        const link = document.createElement("a");
+        link.href = `https://x.com/${item.handle}`;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = `@${item.handle}`;
+        const reason = document.createElement("span");
+        reason.textContent = item.reason === "nonChinese" ? "非中文资料" : "未回关";
+        const done = document.createElement("button");
+        done.type = "button";
+        done.dataset.xrcUnfollowReviewed = item.handle;
+        done.textContent = "已处理";
+        row.append(link, reason, done);
+        reviewList.append(row);
+      }
+    }
     if (mutual) {
       const followBatchSize = mutualApi?.constants?.FOLLOW_BATCH_SIZE || 100;
       const sharedFollowStatus = `今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）· 本批 ${mutual.sharedBatchProgress || 0}/${followBatchSize}`;
@@ -9233,7 +9281,9 @@
             : pacePositionLine(followRoundNo || 1, followRounds, followPlan.roundCount || 0, followSize, "个"));
       }
       const stats = {
-        unfollow: `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
+        unfollow: unfollowMode === "manual"
+          ? `待人工核对 ${(mutual.unfollowReview || []).length} 个 · 扫描跳过 ${mutual.skipped} 个`
+          : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
         followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus}`,
         targetFollow: `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
       };
@@ -9803,6 +9853,9 @@
     catch (error) { /* runLoop will wait and retry instead of posting without history. */ }
     if (mutualApi?.refreshSharedFollowRate) {
       state.mutual = await mutualApi.refreshSharedFollowRate();
+    }
+    if (mutualApi?.loadUnfollowReview) {
+      try { state.mutual = await mutualApi.loadUnfollowReview(); } catch (error) { /* keep the panel usable while storage reconnects */ }
     }
     if (!saved.running) {
       if (state.assistantMode === "poster-premium") {

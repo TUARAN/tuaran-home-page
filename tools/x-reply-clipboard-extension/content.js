@@ -2190,7 +2190,11 @@
         status = "waiting";
       }
       counts[status] += 1;
-      return { key, label, status };
+      const manuallyStopped = scheduled.manualStopped && !(taskSchedule.enabled && isScheduleWaitReason(scheduled.reason));
+      const ruleEnabled = taskSchedule.rules?.[key]?.enabled;
+      const inSchedule = ruleEnabled === false || manuallyStopped
+        ? false : ruleEnabled === true || status !== "missing";
+      return { key, label, status, inSchedule };
     });
     const facing = {
       running: counts.running,
@@ -2198,13 +2202,14 @@
       needs: counts.blocked + counts.unknown,
       stopped: counts.missing
     };
-    const parts = [
-      facing.running && `${facing.running} 项运行中`,
-      facing.waiting && `${facing.waiting} 项等待中`,
-      facing.needs && `${facing.needs} 项需处理`,
-      facing.stopped && `${facing.stopped} 项已停止`
-    ].filter(Boolean);
-    return { counts, facing, tasks, text: parts.join(" · ") };
+    const scheduledTasks = tasks.filter((task) => task.inSchedule);
+    const scheduledRunning = scheduledTasks.filter((task) => task.status === "running").length;
+    const scheduledNeeds = scheduledTasks.filter((task) => task.status === "blocked" || task.status === "unknown").length;
+    const scheduledWaiting = scheduledTasks.length - scheduledRunning - scheduledNeeds;
+    const scheduledDetails = [`${scheduledRunning} 项运行中`, `${scheduledWaiting} 项等待中`];
+    if (scheduledNeeds) scheduledDetails.push(`${scheduledNeeds} 项需处理`);
+    const text = `${scheduledTasks.length} 项已排班（${scheduledDetails.join("，")}） · ${tasks.length - scheduledTasks.length} 项未排班`;
+    return { counts, facing, tasks, text };
   }
 
   function liveScheduleOccupant(now = Date.now()) {
@@ -2747,7 +2752,7 @@
     if (!dialog || dialog.hidden) return;
     const summary = flowTaskOverview(pluginRuntime);
     const totals = dialog.querySelector("[data-xrc-flow-details-total]");
-    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text || "9 项任务已停止"}`;
+    if (totals) totals.textContent = `${pluginRuntime.flow?.phase === "paused" && !summary.counts.running ? "全流程已暂停 · " : ""}${summary.text}`;
     const list = dialog.querySelector("[data-xrc-flow-details-list]");
     if (list) {
       list.replaceChildren(...summary.tasks.map((task) => {

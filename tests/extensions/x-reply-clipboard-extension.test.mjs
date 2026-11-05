@@ -742,7 +742,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
     poster: { phase: 'running', updatedAt: now - 1000 },
   } }, now)
   assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 4, stopping: 0, unknown: 1, blocked: 0 })
-  assert.equal(result.text, '2 项运行中 · 1 项等待中 · 1 项需处理 · 4 项已停止')
+  assert.equal(result.text, '4 项已排班（2 项运行中，1 项等待中，1 项需处理） · 4 项未排班')
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /if \(overview\) overview\.hidden = false/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
@@ -777,13 +777,30 @@ test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', as
   assert.equal(result.counts.running, 1)
   assert.equal(result.counts.missing, 2)
   assert.equal(result.counts.waiting, 6)
-  assert.equal(result.text, '1 项运行中 · 6 项等待中 · 2 项已停止')
+  assert.equal(result.text, '7 项已排班（1 项运行中，6 项等待中） · 2 项未排班')
   assert.equal(result.tasks.find((task) => task.key === 'likes-posts').status, 'waiting')
   assert.equal(result.tasks.find((task) => task.key === 'notifications').status, 'waiting')
   assert.equal(result.tasks.find((task) => task.key === 'poster').status, 'missing')
   assert.equal(context.pulse('likes-posts', { current: 'timeline' }, { status: 'waiting' }), 'waiting')
   assert.equal(context.pulse('poster', { current: 'timeline' }, { status: 'missing' }), 'stopped')
   assert.equal(context.pulse('notifications', { current: 'timeline' }, { status: 'waiting' }), 'waiting')
+})
+
+test('flow overview counts configured tasks as scheduled even while the whole flow is paused', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '评论首页'], ['notifications', '评论回复'], ['kol', '评论大V']],
+    FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: false, items: { kol: { manualStopped: true } }, rules: {
+      timeline: { enabled: true }, notifications: { enabled: true }, kol: { enabled: true },
+    } },
+  })
+  vm.runInContext(`${USER_STATE_HELPERS}\n${definition}\nglobalThis.overview = flowTaskOverview`, context)
+  const result = context.overview({ flow: { phase: 'paused' }, tasks: {} })
+  assert.equal(result.text, '2 项已排班（0 项运行中，2 项等待中） · 1 项未排班')
+  assert.equal(result.tasks.find((task) => task.key === 'kol').inSchedule, false)
 })
 
 test('flow detail dialog lists all seven tasks using the overview statuses', async () => {
@@ -1067,7 +1084,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(list.children[1].children[1].textContent, '运行中')
   assert.equal(list.children[2].children[1].textContent, '已停止')
   assert.equal(list.children[3].children[1].textContent, '需处理')
-  assert.match(total.textContent, /1 项运行中 · 1 项等待中 · 1 项需处理 · 6 项已停止/)
+  assert.match(total.textContent, /3 项已排班（1 项运行中，1 项等待中，1 项需处理） · 6 项未排班/)
   assert.equal(scheduleList.children.length, 9)
   const firstScheduleRow = scheduleList.children[0]
   assert.equal(firstScheduleRow.dataset.pulse, 'running')

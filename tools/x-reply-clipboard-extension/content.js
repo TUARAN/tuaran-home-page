@@ -2605,7 +2605,7 @@
       // Same window as background STARTING_GRACE_MS: show it counting down instead of a frozen "正在启动".
       const slotStarted = Number(taskSchedule.startedAt) || 0;
       const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
-      return { kind: "starting", label: "正在启动", detail: "正在确认页内任务启动", remaining: confirmLeft };
+      return { kind: "starting", label: "正在启动", detail: queued.lastStartError ? `上次启动未确认：${queued.lastStartError}` : "正在确认页内任务启动", remaining: confirmLeft };
     }
     if (taskSchedule.manualFocusMode && mode !== taskSchedule.manualFocusMode) {
       const focusLabel = TASK_MODE_LABELS[taskSchedule.manualFocusMode] || "手动任务";
@@ -2651,9 +2651,11 @@
     const wait = scheduledWaitInfo(mode, now);
     if (wait?.kind !== "starting") return "";
     const eta = wait.remaining > 0 ? `约 ${formatCountdown(wait.remaining)}` : "";
+    const previousError = String(taskSchedule.items?.[mode]?.lastStartError || "").trim();
+    const prefix = previousError ? `上次启动未确认：${previousError}；正在重试` : "正在确认页内任务启动";
     return eta
-      ? `正在确认页内任务启动，${eta}内未确认会自动重试`
-      : "正在确认页内任务启动，超时后会自动重试";
+      ? `${prefix}，${eta}内未确认会自动重试`
+      : `${prefix}，超时后会自动重试`;
   }
 
   // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.
@@ -9488,7 +9490,12 @@
     }
     state.status = "正在检查模型设置…";
     renderPanel();
-    if (await flushConfigSave() === false) return;
+    if (await flushConfigSave() === false) {
+      state.status = document.getElementById(PANEL_ID)?.querySelector("[data-xrc-config-status]")?.textContent?.trim()
+        || "模型设置未保存，评论任务没有启动";
+      renderPanel();
+      return;
+    }
     await loadAiSettings();
     const panel = document.getElementById(PANEL_ID);
     if (state.replyProviders.includes("mobileoffice") && !state.mobileOfficeVerified) {

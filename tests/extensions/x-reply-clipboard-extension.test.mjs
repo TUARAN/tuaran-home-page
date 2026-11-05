@@ -2584,7 +2584,7 @@ test('restarting one reply subpage leaves other manually paused replies paused',
   assert.equal(plan.items.kol.manualStopped, true)
 })
 
-test('KOL profile pages can start in place and repeated startup failures stop retrying', async () => {
+test('KOL profile pages can start in place and repeated reply startup failures stop retrying', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const ready = content.match(/  function pathReadyForTask\(mode\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(ready)
@@ -2602,7 +2602,7 @@ test('KOL profile pages can start in place and repeated startup failures stop re
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const retry = backgroundSource.match(/function scheduledStartRetryItem\(item, mode, reason, now = Date\.now\(\)\) \{[\s\S]*?\n\}/)?.[0]
   assert.ok(retry)
-  const retries = vm.createContext({ RESIDENT_RETRY_DELAYS_MS: [60000, 120000, 300000, 600000], KOL_START_FAILURE_LIMIT: 3 })
+  const retries = vm.createContext({ RESIDENT_RETRY_DELAYS_MS: [60000, 120000, 300000, 600000], REPLY_START_FAILURE_LIMIT: 3, REPLY_TASKS: ['timeline', 'notifications', 'kol'], TASK_TITLE_LABELS: { timeline: '评论首页', notifications: '评论回复', kol: '评论大V' } })
   vm.runInContext(`${retry}\nglobalThis.retry = scheduledStartRetryItem`, retries)
   let item = {}
   for (let i = 0; i < 3; i += 1) item = retries.retry(item, 'kol', '页内未确认', 1000)
@@ -2612,7 +2612,8 @@ test('KOL profile pages can start in place and repeated startup failures stop re
   assert.match(item.reason, /已停止自动重试/)
   let timeline = {}
   for (let i = 0; i < 3; i += 1) timeline = retries.retry(timeline, 'timeline', '页内未确认', 1000)
-  assert.equal(timeline.blocked, false)
+  assert.equal(timeline.blocked, true)
+  assert.match(timeline.reason, /评论首页连续 3 次启动未确认/)
 })
 
 test('memory refresh reloads only idle registered task tabs and preserves state', async () => {
@@ -8468,6 +8469,79 @@ test('a never-started shared tab is reloaded in place after the boot grace', asy
     assert.ok(session['xrcPendingTab:11']?.start)
     assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.autoDiscardable === false && entry.active !== true))
     assert.match(local.xrcTaskSchedule.items.timeline.reason, /同一页签重新装载/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a manually selected timeline task retries in-page during startup instead of waiting for the 90-second guard', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'timeline', manualFocusMode: 'timeline', workTabId: 11, startedAt: now - 5000,
+      items: { timeline: { recoveryAttempts: 1, lastStartError: '上次未确认' } } },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 11, phase: 'starting', updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 11 } }
+  const starts = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: 'starting' }
+        if (message.type === 'xrc-task-start') { starts.push(message.mode); return { ok: true, phase: 'running' } }
+        return null
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['timeline'])
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, 0)
+    assert.equal(local.xrcTaskSchedule.items.timeline.lastStartError, '')
+    assert.equal(local.xrcPluginRuntime.tasks.timeline.phase, 'running')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('an immediate timeline start rejection records the reason and stops after three attempts', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: '', manualFocusMode: 'timeline', workTabId: 11,
+      items: { timeline: { manualRequestedAt: Date.now() } } },
+    xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(_id, message) { return message.type === 'xrc-task-start' ? { ok: false, error: '模型设置读取失败' } : null },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      await background.runTaskSchedule()
+      assert.equal(local.xrcTaskSchedule.current, '')
+      assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, attempt)
+      assert.match(local.xrcTaskSchedule.items.timeline.lastStartError, /模型设置读取失败/)
+      if (attempt < 3) local.xrcTaskSchedule.items.timeline.resumeAt = 0
+    }
+    assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
+    assert.equal(local.xrcTaskSchedule.items.timeline.resumeAt, 0)
   } finally {
     globalThis.chrome = previousChrome
   }

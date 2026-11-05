@@ -1680,18 +1680,19 @@ const TARGET_FOLLOW_SLICE_MS = 90 * 60 * 1000;
 const FOLLOW_BACK_NIGHT_START_MINUTE = 22 * 60;
 const FOLLOW_BACK_NIGHT_END_MINUTE = 6 * 60;
 const RESIDENT_RETRY_DELAYS_MS = [60, 120, 300, 600].map((seconds) => seconds * 1000);
-const KOL_START_FAILURE_LIMIT = 3;
+const REPLY_START_FAILURE_LIMIT = 3;
 
 function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
   const attempts = (Number(item.recoveryAttempts) || 0) + 1;
-  const blocked = mode === "kol" && attempts >= KOL_START_FAILURE_LIMIT;
+  const blocked = REPLY_TASKS.includes(mode) && attempts >= REPLY_START_FAILURE_LIMIT;
   return {
     ...item,
     recoveryAttempts: attempts,
     reloadAttempts: 0,
     resumeAt: blocked ? 0 : now + RESIDENT_RETRY_DELAYS_MS[Math.min(attempts - 1, 3)],
     blocked: blocked || Boolean(item.blocked),
-    reason: blocked ? `评论大V连续 ${attempts} 次启动未确认，已停止自动重试；请检查执行页与模型设置。最近原因：${reason}` : reason
+    reason: blocked ? `${TASK_TITLE_LABELS[mode]}连续 ${attempts} 次启动未确认，已停止自动重试；请检查执行页与模型设置。最近原因：${reason}` : reason,
+    lastStartError: reason
   };
 }
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
@@ -2453,7 +2454,7 @@ async function runTaskSchedule() {
             const started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
             if (started) {
               plan.startedAt = now;
-              plan.items[current] = { ...item, resumeAt: 0, reason: "", recoveryAttempts: 0, reloadAttempts: 0 };
+              plan.items[current] = { ...item, resumeAt: 0, reason: "", lastStartError: "", recoveryAttempts: 0, reloadAttempts: 0 };
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
               return plan;
@@ -2490,12 +2491,12 @@ async function runTaskSchedule() {
       await saveTaskSchedule(plan);
       return runTaskSchedule();
     }
-    if (startingTask && Number(item.manualRequestedAt) > 0 && Number(plan.workTabId) > 0) {
+    if (startingTask && (Number(item.manualRequestedAt) > 0 || plan.manualFocusMode === current) && Number(plan.workTabId) > 0) {
       try {
         const started = await tryInPageTaskStart(Number(plan.workTabId), current, plan.accountHandle || "");
         if (started) {
           plan.startedAt = now;
-          plan.items[current] = { ...item, manualRequestedAt: 0, resumeAt: 0, reason: "", recoveryAttempts: 0, reloadAttempts: 0 };
+          plan.items[current] = { ...item, manualRequestedAt: 0, resumeAt: 0, reason: "", lastStartError: "", recoveryAttempts: 0, reloadAttempts: 0 };
           await saveTaskSchedule(plan);
           await seedRuntimeOccupancy(current, Number(plan.workTabId), started.phase || "running", "手动请求后页内启动已确认");
           return plan;
@@ -2519,7 +2520,7 @@ async function runTaskSchedule() {
     if (settling && !manualDue) return plan;
     if (!manualDue && (item.recoveryAttempts || /状态.*未响应|执行未确认|重新装载/u.test(String(item.reason || "")))
       && ["running", "paused"].includes(task?.phase)) {
-      plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reloadAttempts: 0, reason: "" };
+      plan.items[current] = { ...item, resumeAt: 0, recoveryAttempts: 0, reloadAttempts: 0, reason: "", lastStartError: "" };
       plan.startedAt = now;
       await saveTaskSchedule(plan);
       return plan;
@@ -2598,9 +2599,16 @@ async function runTaskSchedule() {
         // After an unresponsive close, bring the new execution tab forward so pending launch can bind.
         activate: activateNext || undefined
       });
+      if (plan.manualFocusMode === mode) {
+        try { await chrome.alarms?.create?.(TASK_SLICE_ALARM, { when: Date.now() + 30000 }); }
+        catch (error) { /* The normal schedule alarm still checks startup. */ }
+      }
     } catch (error) {
       plan.current = "";
-      plan.items[mode] = { ...item, resumeAt: now + 5 * 60000, reason: String(error?.message || "启动失败").slice(0, 160) };
+      const reason = String(error?.message || "启动失败").slice(0, 160);
+      plan.items[mode] = REPLY_TASKS.includes(mode)
+        ? scheduledStartRetryItem(item, mode, `页内启动失败：${reason}`, now)
+        : { ...item, resumeAt: now + 5 * 60000, reason };
       await saveTaskSchedule(plan);
     }
     break;

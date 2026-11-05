@@ -13,6 +13,8 @@
     return String(handle || "").replace(/^@/u, "").trim().toLowerCase();
   }
 
+  const MAX_OWN_REPLIES_PER_DIALOGUE = 3;
+
   function nodeText(node) {
     return String(node?.innerText || node?.textContent || "").replace(/\s+/gu, " ").trim();
   }
@@ -83,6 +85,17 @@
       .filter((node) => !node.parentElement?.closest?.('[data-testid="tweet"]'));
   }
 
+  function conversationObservation(articles, replyId, ownHandle) {
+    const tweets = Array.from(articles).map(tweetFromArticle);
+    const targetIndex = tweets.findIndex((tweet) => tweet.id === String(replyId));
+    const own = normalizeHandle(ownHandle);
+    return {
+      count: tweets.length,
+      targetSeen: targetIndex >= 0,
+      earlierOwnSeen: targetIndex > 0 && tweets.slice(0, targetIndex).some((tweet) => tweet.authorHandle === own)
+    };
+  }
+
   function findConversation(articles, replyId, ownHandle, replyAuthor = "") {
     const tweets = Array.from(articles)
       .filter((article) => !article.parentElement?.closest?.('[data-testid="tweet"]'))
@@ -100,7 +113,11 @@
         // someone else's post is still a reply, even when it is the first tweet loaded.
         const rootSettled = Boolean(rootPost?.authorHandle && rootPost.isReply !== true);
         const ownThread = Boolean(rootSettled && rootPost.authorHandle === own);
-        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled };
+        // The root post is not a reply round. Count our earlier replies on the
+        // ancestor path before the notification being considered.
+        const ownReplyCount = tweets.slice(1, index).filter((tweet) => tweet.authorHandle === own).length;
+        const thread = tweets.slice(0, index + 1).map(({ id, authorHandle, text }) => ({ id, authorHandle, text }));
+        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount, thread };
       }
     }
     return null;
@@ -108,6 +125,14 @@
 
   // Continued dialogue requires the active session to own the root post.
   // An earlier reply of ours, a missing root, or another logged-in account does not.
+  function replyLimitReached(conversation, ownHandle) {
+    const own = normalizeHandle(ownHandle);
+    return Boolean(own && conversation?.rootSettled === true
+      && conversation?.rootPost?.isReply !== true
+      && normalizeHandle(conversation?.rootPost?.authorHandle) === own
+      && Number(conversation?.ownReplyCount) >= MAX_OWN_REPLIES_PER_DIALOGUE);
+  }
+
   function allowsContinuedDialogue(conversation, ownHandle) {
     if (!conversation || conversation.rootSettled === false) return false;
     const own = normalizeHandle(ownHandle);
@@ -116,10 +141,12 @@
     if (!own || !rootHandle || rootHandle !== own) return false;
     if (root.isReply === true) return false;
     if (Array.isArray(root.replyToHandles) && root.replyToHandles.length > 0) return false;
+    if (replyLimitReached(conversation, ownHandle)) return false;
     return true;
   }
 
   if (root.chrome?.runtime?.onMessage && root.document) {
+    let ancestorScrollAttempted = false;
     if (new URL(root.location.href).searchParams.get("xrcContext") === "1") {
       try { root.sessionStorage.setItem("xrcContextTab", "1"); } catch (error) {}
     }
@@ -130,7 +157,20 @@
         return false;
       }
       const articles = conversationTweetNodes(root.document);
-      sendResponse({ ok: true, context: findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor) });
+      const observation = conversationObservation(articles, message.replyId, message.ownHandle);
+      const context = findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor);
+      if (!context && observation.targetSeen && !observation.earlierOwnSeen && !ancestorScrollAttempted) {
+        ancestorScrollAttempted = true;
+        try {
+          if (root.document.scrollingElement) root.document.scrollingElement.scrollTop = 0;
+          root.scrollTo?.(0, 0);
+        } catch (error) {}
+      }
+      sendResponse({
+        ok: true,
+        context,
+        observation
+      });
       return false;
     });
   }
@@ -140,7 +180,9 @@
     handleFromHref,
     normalizeHandle,
     conversationTweetNodes,
+    conversationObservation,
     findConversation,
+    replyLimitReached,
     allowsContinuedDialogue
   };
   if (typeof module === "object" && module.exports) module.exports = api;

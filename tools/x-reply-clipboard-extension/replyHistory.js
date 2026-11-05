@@ -120,7 +120,37 @@
       return true;
     }
 
-    return { needsMigration, load, has, add };
+    async function forgetSkipped(value, ids = []) {
+      const name = accountName(value);
+      const valid = [...new Set(ids.map(String).filter((id) => /^\d+$/u.test(id)))];
+      if (!valid.length) return 0;
+      const old = storage?.get ? await storage.get("xrcDailyReports") : {};
+      const confirmed = new Set();
+      for (const row of Array.isArray(old?.xrcDailyReports) ? old.xrcDailyReports : []) {
+        if (String(row.accountHandle || "").replace(/^@/u, "").toLowerCase() !== name) continue;
+        for (const item of Array.isArray(row.targetKeys) ? row.targetKeys : []) {
+          const id = String(item).match(/^(?:timeline-reply|notification-reply|kol-reply):(\d+)$/u)?.[1];
+          if (id) confirmed.add(id);
+        }
+      }
+      const removable = valid.filter((id) => !confirmed.has(id));
+      for (let index = 0; index < removable.length; index += MIGRATION_BATCH) {
+        const batch = removable.slice(index, index + MIGRATION_BATCH);
+        const db = await database();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.oncomplete = resolve;
+          tx.onabort = () => reject(tx.error || new Error("旧通知记录清理失败"));
+          tx.onerror = () => reject(tx.error || new Error("旧通知记录清理失败"));
+          const store = tx.objectStore(STORE);
+          for (const id of batch) store.delete(`${name}:${id}`);
+        });
+        for (const id of batch) knownReplied.delete(`${name}:${id}`);
+      }
+      return removable.length;
+    }
+
+    return { needsMigration, load, has, add, forgetSkipped };
   }
 
   const api = { createReplyHistory };

@@ -10,7 +10,9 @@
   const KOL_HANDLES_KEY = "xrcKolHandles";
   const KOL_ROSTER_KEY = "xrcKolRoster";
   const KOL_CYCLE_KEY = "xrcKolCycle";
+  const KOL_DISCOVERY_KEY = "xrcKolDiscovery";
   const KOL_POOL_DAYS = 7;
+  const KOL_DAILY_SIZE = 5;
   const KOL_EPOCH_ORIGIN_MS = Date.parse("2026-01-05T00:00:00+08:00");
   const RESERVED_X_PATHS = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
@@ -53,6 +55,56 @@
     return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
   }
 
+  function beijingDayKey(ms = Date.now()) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(new Date(Number(ms)));
+  }
+
+  function qualifyingDailyPost(post, now = Date.now()) {
+    const handle = parseKolHandles([post?.handle])[0] || "";
+    const text = String(post?.text || "").trim();
+    const likes = Number(post?.likes) || 0;
+    const reposts = Number(post?.reposts) || 0;
+    const at = Number(post?.at) || 0;
+    if (!handle || !at || !text || !/[\u3400-\u9fff]/u.test(text) || post?.repost || post?.reply
+      || beijingDayKey(at) !== beijingDayKey(now) || likes < 100 || (reposts < 10 && likes < 300)) return null;
+    return { handle, score: Math.round(likes + reposts * 4), at };
+  }
+
+  function collectDailyCandidates(stored, account, posts, now = Date.now()) {
+    const key = cycleAccountKey(account);
+    if (key === "default") return stored || { byAccount: {} };
+    const day = beijingDayKey(now);
+    const previous = stored?.byAccount?.[key] || {};
+    const candidates = previous.day === day ? { ...(previous.candidates || {}) } : {};
+    for (const post of posts || []) {
+      const candidate = qualifyingDailyPost(post, now);
+      if (!candidate || candidate.handle.toLowerCase() === key) continue;
+      const handleKey = candidate.handle.toLowerCase();
+      if (candidate.score > (Number(candidates[handleKey]?.score) || 0)) candidates[handleKey] = candidate;
+    }
+    const topCandidates = Object.fromEntries(Object.entries(candidates)
+      .sort((left, right) => right[1].score - left[1].score).slice(0, 200));
+    return { byAccount: { ...(stored?.byAccount || {}), [key]: { day, candidates: topCandidates } } };
+  }
+
+  function dailyHandles(discovery, account, now = Date.now(), previousHandles = []) {
+    const row = discovery?.byAccount?.[cycleAccountKey(account)];
+    if (row?.day !== beijingDayKey(now)) return [];
+    const candidates = Object.values(row.candidates || {})
+      .filter((item) => parseKolHandles([item?.handle]).length === 1
+        && Number(item?.score) >= 100 && Number(item?.at) > 0
+        && beijingDayKey(item.at) === row.day)
+      .sort((left, right) => right.score - left.score || left.handle.localeCompare(right.handle));
+    if (candidates.length < KOL_DAILY_SIZE) return [];
+    const previous = new Set(parseKolHandles(previousHandles).map((handle) => handle.toLowerCase()));
+    const fresh = candidates.filter((item) => !previous.has(item.handle.toLowerCase()));
+    if (!fresh.length && candidates.length === KOL_DAILY_SIZE && previous.size) return [];
+    return [...fresh, ...candidates.filter((item) => previous.has(item.handle.toLowerCase()))]
+      .slice(0, KOL_DAILY_SIZE).map((item) => item.handle);
+  }
+
   function poolEpoch(now = Date.now()) {
     return Math.floor((beijingDayNumber(now) - beijingDayNumber(KOL_EPOCH_ORIGIN_MS)) / KOL_POOL_DAYS);
   }
@@ -75,17 +127,30 @@
     return KOL_POOLS.some((pool) => sameHandleSet(parsed, pool));
   }
 
-  function resolveKolRoster({ storedHandles, meta, now = Date.now() } = {}) {
+  function resolveKolRoster({ storedHandles, meta, discovery, account = "", now = Date.now() } = {}) {
     const parsed = parseKolHandles(storedHandles);
     const epoch = poolEpoch(now);
     const index = poolIndex(now);
     const pool = poolHandles(index);
     const explicit = meta && typeof meta.custom === "boolean" ? meta.custom : null;
     const custom = explicit === true ? parsed.length > 0 : explicit === false ? false : !isBuiltInHandleSet(parsed);
-    const handles = custom ? parsed.slice() : pool.slice();
-    const nextMeta = { custom, poolEpoch: epoch, poolIndex: custom ? -1 : index };
-    const persist = !sameHandleSet(parsed, handles) || explicit !== custom;
-    return { handles, custom, poolIndex: nextMeta.poolIndex, epoch, meta: nextMeta, persist };
+    const accountKey = cycleAccountKey(account);
+    const day = beijingDayKey(now);
+    const priorDaily = meta?.dailyByAccount?.[accountKey];
+    const frozen = priorDaily?.day === day && parseKolHandles(priorDaily.handles).length === KOL_DAILY_SIZE
+      ? parseKolHandles(priorDaily.handles) : [];
+    const discovered = custom ? [] : frozen.length ? frozen
+      : dailyHandles(discovery, account, now, priorDaily?.handles || []);
+    const handles = custom ? parsed.slice() : discovered.length ? discovered : pool.slice();
+    const source = custom ? "custom" : discovered.length ? "daily" : "fallback";
+    const dailyByAccount = { ...(meta?.dailyByAccount || {}) };
+    if (source === "daily") dailyByAccount[accountKey] = { day, handles: discovered.slice() };
+    const nextMeta = { custom, poolEpoch: custom && meta?.poolEpoch != null ? Number(meta.poolEpoch) : epoch,
+      poolIndex: custom || discovered.length ? -1 : index, dailyByAccount };
+    const persist = !sameHandleSet(parsed, handles) || explicit !== custom
+      || meta?.poolEpoch !== nextMeta.poolEpoch || meta?.poolIndex !== nextMeta.poolIndex
+      || JSON.stringify(meta?.dailyByAccount || {}) !== JSON.stringify(dailyByAccount);
+    return { handles, custom, source, day, poolIndex: nextMeta.poolIndex, epoch, meta: nextMeta, persist };
   }
 
   function shuffleHandles(handles, random = Math.random) {
@@ -156,6 +221,8 @@
     KOL_HANDLES_KEY,
     KOL_ROSTER_KEY,
     KOL_CYCLE_KEY,
+    KOL_DISCOVERY_KEY,
+    KOL_DAILY_SIZE,
     KOL_POOL_DAYS,
     KOL_EPOCH_ORIGIN_MS,
     KOL_POOLS,
@@ -165,6 +232,10 @@
     sameHandleSet,
     rosterKey,
     beijingDayNumber,
+    beijingDayKey,
+    qualifyingDailyPost,
+    collectDailyCandidates,
+    dailyHandles,
     poolEpoch,
     poolIndex,
     poolHandles,

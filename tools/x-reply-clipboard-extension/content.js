@@ -8966,7 +8966,9 @@
       panel.querySelectorAll("[data-xrc-reply-pace-input]").forEach((input) => {
         input.disabled = replyPaceLocked;
       });
-      const viewedPace = viewingLiveReply ? state.schedulePace : taskSchedule.rules?.[replyViewKey]?.pace || "medium";
+      const viewedPace = viewingLiveReply && (state.running || state.loopPromise)
+        ? state.schedulePace
+        : taskSchedule.rules?.[replyViewKey]?.pace || (replyViewKey === "notifications" ? "turbo" : "medium");
       const schedule = loopApi.formatSchedule(viewedPace, boundaryPlanKey());
       panel.querySelectorAll("[data-xrc-pace-label]").forEach((label) => {
         const activePace = viewTaskKey() === "kol" && schedule.id === "boundary" ? "slow" : schedule.id;
@@ -9534,9 +9536,7 @@
       return;
     }
     if (!await resumeManuallyStoppedTask(currentTaskKey())) return;
-    if (scheduledStart) {
-      applySchedulePace(taskSchedule.rules?.[state.assistantMode]?.pace || state.schedulePace, { replaceIdlePlan: true });
-    }
+    applySchedulePace(taskSchedule.rules?.[state.assistantMode]?.pace || state.schedulePace, { replaceIdlePlan: true });
     state.status = "正在检查模型设置…";
     renderPanel();
     if (await flushConfigSave() === false) {

@@ -7467,7 +7467,8 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
   assert.equal(rules.timeline.pace, 'boundary')
-  assert.equal(rules.notifications.pace, 'medium')
+  assert.equal(rules.notifications.pace, 'turbo')
+  assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
   assert.equal(rules['mutual-followBack'].window, 'all')
@@ -7551,6 +7552,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.pace, 'turbo')
+    assert.equal(plan.notificationPaceDefaultVersion, 1)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -7601,6 +7604,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 9)
+    assert.equal(plan.rules.notifications.pace, 'turbo')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
@@ -7614,7 +7618,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
     ...base,
     rules: {
       ...legacyRules,
-      notifications: { priority: 7, pace: 'medium' },
+      notifications: { priority: 7, pace: 'fast' },
     },
   } }
   globalThis.chrome = { storage: { local: {
@@ -7624,6 +7628,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 7)
+    assert.equal(plan.rules.notifications.pace, 'fast')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   } finally {

@@ -1846,7 +1846,7 @@ function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
     enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
-    pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+    pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary" : mode === "notifications" ? "turbo"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2117,6 +2117,11 @@ async function readTaskSchedule() {
       plan.rules.timeline.priority = 8;
     }
     plan.commentPrioritySwapVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.notificationPaceDefaultVersion !== 1) {
+    if (plan.rules.notifications.pace === "medium") plan.rules.notifications.pace = "turbo";
+    plan.notificationPaceDefaultVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {

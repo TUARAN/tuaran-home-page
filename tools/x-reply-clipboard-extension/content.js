@@ -5498,6 +5498,10 @@
     return decide(conversation, ownHandle) === true;
   }
 
+  function notificationReplyLimitReached(conversation, ownHandle = currentAccountHandle()) {
+    return globalThis.XrcNotificationContext?.replyLimitReached?.(conversation, ownHandle) === true;
+  }
+
   async function conversationOrFallback(tweet, replyText) {
     try {
       return await conversationForNotification(tweet);
@@ -6426,6 +6430,8 @@
             writeSaved({ running: true, total: state.total });
             const reason = notificationConversation?.lookupError
               ? `会话读取失败：${notificationConversation.lookupError}`
+              : notificationReplyLimitReached(notificationConversation, currentAccountHandle())
+                ? "这段对话已回复 3 轮，后续不再回复"
               : settled
                 ? "原帖不属于当前账号"
                 : "无法确认原帖归属";

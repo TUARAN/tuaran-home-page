@@ -13,6 +13,8 @@
     return String(handle || "").replace(/^@/u, "").trim().toLowerCase();
   }
 
+  const MAX_OWN_REPLIES_PER_DIALOGUE = 3;
+
   function nodeText(node) {
     return String(node?.innerText || node?.textContent || "").replace(/\s+/gu, " ").trim();
   }
@@ -111,7 +113,10 @@
         // someone else's post is still a reply, even when it is the first tweet loaded.
         const rootSettled = Boolean(rootPost?.authorHandle && rootPost.isReply !== true);
         const ownThread = Boolean(rootSettled && rootPost.authorHandle === own);
-        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled };
+        // The root post is not a reply round. Count our earlier replies on the
+        // ancestor path before the notification being considered.
+        const ownReplyCount = tweets.slice(1, index).filter((tweet) => tweet.authorHandle === own).length;
+        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount };
       }
     }
     return null;
@@ -119,6 +124,14 @@
 
   // Continued dialogue requires the active session to own the root post.
   // An earlier reply of ours, a missing root, or another logged-in account does not.
+  function replyLimitReached(conversation, ownHandle) {
+    const own = normalizeHandle(ownHandle);
+    return Boolean(own && conversation?.rootSettled === true
+      && conversation?.rootPost?.isReply !== true
+      && normalizeHandle(conversation?.rootPost?.authorHandle) === own
+      && Number(conversation?.ownReplyCount) >= MAX_OWN_REPLIES_PER_DIALOGUE);
+  }
+
   function allowsContinuedDialogue(conversation, ownHandle) {
     if (!conversation || conversation.rootSettled === false) return false;
     const own = normalizeHandle(ownHandle);
@@ -127,6 +140,7 @@
     if (!own || !rootHandle || rootHandle !== own) return false;
     if (root.isReply === true) return false;
     if (Array.isArray(root.replyToHandles) && root.replyToHandles.length > 0) return false;
+    if (replyLimitReached(conversation, ownHandle)) return false;
     return true;
   }
 
@@ -167,6 +181,7 @@
     conversationTweetNodes,
     conversationObservation,
     findConversation,
+    replyLimitReached,
     allowsContinuedDialogue
   };
   if (typeof module === "object" && module.exports) module.exports = api;

@@ -5224,6 +5224,31 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   assert.equal(context.allowsContinuedDialogue(foreignResult, 'friend'), true)
 })
 
+test('notification dialogue stops after three replies by the signed-in account in one thread', () => {
+  const article = (handle, id, text) => ({
+    parentElement: { closest() { return null } },
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return `/${handle}/status/${id}` } } } }
+      if (selector === '[data-testid="tweetText"]') return { innerText: text }
+      return null
+    },
+  })
+  const thread = [
+    article('me', 100, '我的原帖'),
+    article('friend', 101, '第一次回复'), article('me', 102, '我的第一轮'),
+    article('friend', 103, '第二次回复'), article('me', 104, '我的第二轮'),
+    article('friend', 105, '第三次回复'), article('me', 106, '我的第三轮'),
+    article('friend', 107, '第四次回复'),
+  ]
+  const second = context.findConversation(thread.slice(0, 6), '105', 'me', 'friend')
+  assert.equal(second.ownReplyCount, 2)
+  assert.equal(context.allowsContinuedDialogue(second, 'me'), true)
+  const fourth = context.findConversation(thread, '107', 'me', 'friend')
+  assert.equal(fourth.ownReplyCount, 3)
+  assert.equal(context.replyLimitReached(fourth, 'me'), true)
+  assert.equal(context.allowsContinuedDialogue(fourth, 'me'), false)
+})
+
 test('conversation reader distinguishes a missing target from an unloaded parent', () => {
   const article = (href) => ({
     querySelector(selector) {

@@ -2654,6 +2654,25 @@ test('notification context cache drops oldest entries after 100 conversations', 
   assert.equal(context.notificationContextCache.has('100'), true)
 })
 
+test('notification rounds advance once per inspected notification even when no reply succeeds', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function markNotificationChecked\(tweet\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const saved = []
+  const state = { assistantMode: 'notifications', notificationCheckedIds: new Set(), pageCount: 0, total: 0 }
+  const sandbox = vm.createContext({ state, writeSaved: (value) => saved.push(value) })
+  vm.runInContext(`${helper}\nglobalThis.markChecked = markNotificationChecked`, sandbox)
+  assert.equal(sandbox.markChecked({ id: '101' }), true)
+  assert.equal(sandbox.markChecked({ id: '101' }), false)
+  assert.equal(sandbox.markChecked({ id: '102' }), true)
+  assert.equal(state.pageCount, 2)
+  assert.equal(state.total, 0)
+  assert.equal(saved.length, 2)
+  assert.match(source, /if \(state\.assistantMode !== "notifications"\) state\.pageCount \+= 1/)
+  assert.match(source, /reloadDecision\.reason === "stalled" && state\.assistantMode === "timeline"/)
+  assert.match(source, /本轮已检查 \$\{state\.pageCount\}\/\$\{roundSize\} 条，成功回复 \$\{state\.total\} 条/)
+})
+
 test('settings expose four editable prompt fields without a clickbait preset', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /data-xrc-reply-timeline-prompt/)
@@ -4874,6 +4893,12 @@ test('browse pause waits on the post and cancels before a comment is sent', asyn
   assert.equal(scrolled[0].inline, 'nearest')
   assert.match(state.status, /正在浏览这条帖子，约 1 秒后评论/)
   assert.equal(renders, 1)
+
+  state.assistantMode = 'notifications'
+  assert.equal(await vm.runInContext('browse({ article })', sandbox), '')
+  assert.equal(now, 2_000)
+  assert.equal(scrolled.length, 1)
+  state.assistantMode = 'timeline'
 
   now = 5_000
   state.stopping = false

@@ -284,6 +284,7 @@
     running: false,
     stopping: false,
     pageCount: 0,
+    notificationCheckedIds: new Set(),
     completedRounds: 0,
     kolVisitedHandles: [],
     kolVisitOrder: [],
@@ -4484,6 +4485,14 @@
     }
   }
 
+  function markNotificationChecked(tweet) {
+    if (state.assistantMode !== "notifications" || state.notificationCheckedIds.has(tweet.id)) return false;
+    state.notificationCheckedIds.add(tweet.id);
+    state.pageCount += 1;
+    writeSaved({ running: true, total: state.total });
+    return true;
+  }
+
   async function persistReplyMode() {
     if (!globalThis.chrome?.storage?.local) return;
     const stored = await chrome.storage.local.get("xrcAiSettings");
@@ -4870,6 +4879,7 @@
 
   function resetCycleProgress() {
     state.pageCount = 0;
+    state.notificationCheckedIds.clear();
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];
@@ -5471,7 +5481,8 @@
         reply: { id: tweet.id, authorHandle: tweet.authorHandle, text: replyText },
         rootPost: null,
         ownThread: false,
-        rootSettled: false
+        rootSettled: false,
+        lookupError: String(error?.message || "会话页未加载完成").slice(0, 100)
       };
       cacheNotificationContext(tweet.id, fallback);
       return fallback;
@@ -5997,6 +6008,7 @@
     };
     let reason = blocked();
     if (reason) return reason;
+    if (state.assistantMode === "notifications") return "";
     if (tweet?.article?.isConnected) {
       tweet.article.scrollIntoView({ block: "center", inline: "nearest" });
     }
@@ -6298,7 +6310,7 @@
           await reloadAndResume(`第 ${state.completedRounds} 轮已完成，正在刷新并开始第 ${state.completedRounds + 1} 轮`);
           return "reload";
         }
-        if (reloadDecision.reload && reloadDecision.reason === "stalled" && state.assistantMode !== "kol") {
+        if (reloadDecision.reload && reloadDecision.reason === "stalled" && state.assistantMode === "timeline") {
           await reloadAndResume("这一页已经到底，刷新后从顶部继续");
           return "reload";
         }
@@ -6359,9 +6371,10 @@
       let phrase = state.replyMode === "ai" ? state.pendingReply : currentPhrase();
       let notificationConversation = null;
       if (state.assistantMode === "notifications") {
+        markNotificationChecked(next);
         const noteText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (noteText || state.replyMode !== "ai") {
-          state.status = "正在确认这条回复是不是在我的帖子下…";
+          state.status = `正在核对第 ${state.pageCount}/${currentRoundTarget()} 条通知是否属于本人原帖（最多约 10 秒）…`;
           renderPanel();
           notificationConversation = await conversationOrFallback(next, noteText || " ");
           if (state.stopping || !state.running) return "stopped";
@@ -6376,12 +6389,19 @@
             state.pendingTweetId = "";
             state.pendingGrokInvite = false;
             writeSaved({ running: true, total: state.total });
-            state.status = notificationConversation?.rootSettled === true
-              ? "别人帖子下已回过，不再继续回"
-              : "没有确认是我的帖子，不再继续回";
+            const reason = notificationConversation?.lookupError
+              ? `会话读取失败：${notificationConversation.lookupError}`
+              : notificationConversation?.rootSettled === true
+                ? "原帖不属于当前账号"
+                : "无法确认原帖归属";
+            state.status = `第 ${state.pageCount}/${currentRoundTarget()} 条：${reason}，已跳过；继续检查下一条`;
             renderPanel();
+            await sleepActive(900);
             continue;
           }
+          state.status = `第 ${state.pageCount}/${currentRoundTarget()} 条：确认是本人原帖，准备回复`;
+          renderPanel();
+          await sleepActive(500);
         }
       }
       if (state.replyMode === "ai") {
@@ -6401,6 +6421,10 @@
         const postText = next.tweetText || textOf(next.article.querySelector('[data-testid="tweetText"]'));
         if (!postText) {
           skippedIds.add(next.id);
+          if (state.assistantMode === "notifications") {
+            try { await persistNotificationProcessed(next.id); }
+            catch (error) { state.errors += 1; }
+          }
           state.status = state.assistantMode === "notifications" ? "这条回复没有文字，已跳过" : "AI 模式已跳过一条没有文字内容的帖子";
           renderPanel();
           continue;
@@ -6645,7 +6669,7 @@
           targetId: next.id,
           accountHandle: currentAccountHandle() || lastKnownAccountHandle
         });
-        state.pageCount += 1;
+        if (state.assistantMode !== "notifications") state.pageCount += 1;
         state.total += 1;
         writeSaved({ running: true, total: state.total });
         state.status = state.assistantMode === "kol"
@@ -8853,6 +8877,11 @@
       const replyActive = viewingLiveReply && Boolean(plan && (state.running || state.total || state.pageCount || state.completedRounds));
       const kolProgress = `@${currentKolHandleFromPath() || "大V"} ${state.pageCount}/${currentRoundTarget()} 条 · 本次共 ${state.total} 条`;
       const paceNow = panel.querySelector("[data-xrc-pace-now]");
+      const browseNote = panel.querySelector(".xrc-reply-body .xrc-pace-browse");
+      if (browseNote) browseNote.hidden = replyViewKey !== "timeline";
+      const replyProgress = replyViewKey === "notifications" && viewingLiveReply
+        ? `当前任务共 ${plannedRounds} 轮，现在第 ${shownRound} 轮；本轮已检查 ${state.pageCount}/${roundSize} 条，成功回复 ${state.total} 条`
+        : pacePositionLine(shownRound, plannedRounds, state.pageCount, roundSize, "条");
       if (paceNow) {
         const replyConfirming = confirmingStartCopy(replyViewKey);
         paceNow.textContent = replyConfirming || (!viewingLiveReply
@@ -8862,8 +8891,10 @@
           : !replyActive
           ? "当前尚未开始"
           : replyFinished
-            ? pacePositionLine(plannedRounds, plannedRounds, roundSize, roundSize, "条")
-            : pacePositionLine(shownRound, plannedRounds, state.pageCount, roundSize, "条"));
+            ? replyViewKey === "notifications"
+              ? `本次已检查 ${state.pageCount} 条，成功回复 ${state.total} 条`
+              : pacePositionLine(plannedRounds, plannedRounds, roundSize, roundSize, "条")
+            : replyProgress);
       }
       const replyWaitLine = panel.querySelector("[data-xrc-wait]");
       if (replyWaitLine) replyWaitLine.hidden = true;
@@ -8872,7 +8903,7 @@
         : !viewingLiveReply
           ? taskSchedule.items?.[replyViewKey]?.manualStopped ? "此任务已手动暂停" : "此任务当前未运行"
         : state.running
-          ? state.assistantMode === "kol" ? kolProgress : pacePositionLine(shownRound, plannedRounds, state.pageCount, roundSize, "条")
+          ? state.assistantMode === "kol" ? kolProgress : replyProgress
           : `评论管理 · ${state.total || 0} 条`;
       const start = panel.querySelector("[data-xrc-start]");
       const globalBar = panel.querySelector("[data-xrc-global-bar]");
@@ -9519,6 +9550,7 @@
       return;
     }
     state.pageCount = 0;
+    state.notificationCheckedIds.clear();
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];

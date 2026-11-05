@@ -69,15 +69,23 @@ test('xiaohongshu community page is a registered public resource', () => {
   assert.equal(home.resourceType, 'ai-dev')
   assert.deepEqual(home.subjects, ['content_creation'])
   assert.match(home.title, /专供小红书社群/)
+  assert.match(home.summary, /种草笔记/)
+  assert.match(home.summary, /今日想安利/)
+  assert.equal(home.updated, '2026-11-05')
+  assert.match(home.tagLabel, /种草笔记/)
 })
 
 test('xiaohongshu community landing has three sections, real links, and honest placeholders', () => {
   assert.equal(XIAOHONGSHU_COMMUNITY.title, '专供小红书社群')
   assert.match(XIAOHONGSHU_COMMUNITY.purpose, /群公告/)
-  assert.match(XIAOHONGSHU_COMMUNITY.honesty, /占位/)
+  assert.match(XIAOHONGSHU_COMMUNITY.honesty, /陆续补充/)
   assert.deepEqual(
     XIAOHONGSHU_COMMUNITY.sections.map((section) => section.title),
-    ['资讯精选', '提示词 / Prompt 技巧', '实用清单与入门路径'],
+    ['今日想安利', '上手小抄', '一起慢慢学'],
+  )
+  assert.doesNotMatch(
+    XIAOHONGSHU_COMMUNITY.sections.flatMap((section) => section.items).map((item) => `${item.title} ${item.note} ${item.cover}`).join('\n'),
+    /AI 智能体|前端周看|开发资源|Prompt|智能体|DevOps/,
   )
 
   for (const section of XIAOHONGSHU_COMMUNITY.sections) {
@@ -130,17 +138,25 @@ test('xiaohongshu community page metadata and markup stay announcement-safe', as
 
   const html = await renderView()
   assert.match(html, /<h1[^>]*>专供小红书社群<\/h1>/)
-  assert.match(html, /给小红书群公告用的资源入口/)
-  assert.match(html, /资讯精选/)
-  assert.match(html, /提示词 \/ Prompt 技巧/)
-  assert.match(html, /实用清单与入门路径/)
+  assert.match(html, /群公告贴这里/)
+  assert.match(html, /今日想安利/)
+  assert.match(html, /上手小抄/)
+  assert.match(html, /一起慢慢学/)
+  assert.match(html, /让它自己去跑一趟/)
+  assert.match(html, /可以直接抄的说话稿/)
+  assert.match(html, /columns-2/)
+  assert.match(html, /rounded-\[18px\]/)
   assert.match(html, /href="\/prompt-center"/)
   assert.match(html, /href="\/prompt-center#task-brief"/)
   assert.match(html, /href="\/topics\/ai-agents"/)
   assert.match(html, /href="\/articles\/research\/companies\/matrixlink-blogger-alliance"/)
-  assert.match(html, />占位</)
   assert.match(html, /陆续补充/)
+  assert.doesNotMatch(html, />占位</)
+  assert.doesNotMatch(html, /AI 智能体|前端周看|Prompt|开发资源/)
   assert.doesNotMatch(html, /x-mutual-aid/)
   assert.doesNotMatch(html, /circles\/xiaohongshu/)
-  assert.equal((html.match(/aria-label="[^"]*，占位"/g) || []).length, 3)
+  assert.doesNotMatch(html, /xiaohongshu\.com/)
+  assert.doesNotMatch(html, /(?:赞|收藏|喜欢)\s*\d|\d+\s*(?:万\s*)?(?:赞|收藏|喜欢)/)
+  assert.match(html, /aria-hidden="true"/)
+  assert.equal((html.match(/aria-label="[^"]*，陆续补充"/g) || []).length, 3)
 })

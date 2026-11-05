@@ -137,6 +137,7 @@
 .archiveTable td:nth-child(2) { min-width: 105px; }
 .archiveTable td:nth-child(2) span { color: #617967; }
 .archiveText { min-width: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.archiveImages { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .archiveTable img { display: block; width: 96px; max-height: 130px; object-fit: cover; border-radius: 5px; }
 :global(.dark) .archiveTable th { background: #193d29; color: #d7eed7; }
 :global(.dark) .archiveTable th, :global(.dark) .archiveTable td { border-color: #43644b; }

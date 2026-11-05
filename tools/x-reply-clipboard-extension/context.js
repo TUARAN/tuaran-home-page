@@ -116,7 +116,8 @@
         // The root post is not a reply round. Count our earlier replies on the
         // ancestor path before the notification being considered.
         const ownReplyCount = tweets.slice(1, index).filter((tweet) => tweet.authorHandle === own).length;
-        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount };
+        const thread = tweets.slice(0, index + 1).map(({ id, authorHandle, text }) => ({ id, authorHandle, text }));
+        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount, thread };
       }
     }
     return null;

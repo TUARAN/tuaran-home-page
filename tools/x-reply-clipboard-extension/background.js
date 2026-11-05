@@ -381,6 +381,30 @@ async function callBaiReplyFallback(messages, signal, maxLength = 100) {
   }
 }
 
+function notificationConversationText(conversation) {
+  const turns = Array.isArray(conversation?.thread) ? conversation.thread : [];
+  if (turns.length < 2 || !turns[0]?.text || !conversation?.rootPost?.text) return "";
+  const ownHandle = String(conversation.rootPost.authorHandle || "").toLowerCase();
+  if (!ownHandle || String(turns[0].authorHandle || "").toLowerCase() !== ownHandle) return "";
+  const lines = [`我的原帖：\n${String(turns[0].text).trim()}`];
+  let ownReplies = 0;
+  let otherReplies = 0;
+  for (const turn of turns.slice(1)) {
+    const author = String(turn?.authorHandle || "").toLowerCase();
+    const text = String(turn?.text || "").trim();
+    if (!text) continue;
+    if (author === ownHandle) {
+      ownReplies += 1;
+      lines.push(`我的第 ${ownReplies} 次回复：\n${text}`);
+    } else {
+      otherReplies += 1;
+      lines.push(`对方第 ${otherReplies} 次回复（@${author || "未知账号"}）：\n${text}`);
+    }
+  }
+  lines.push("请按上述时间顺序理解对话，只回应对方最新一句。站在我的立场，短、友好、自然地接话；不要复述我的原帖或已经说过的话，不要把我的话当成对方的话。");
+  return lines.join("\n\n");
+}
+
 async function callDeepSeek({ postText, conversation = null, avoidReply = "", inviteGrok = false, mode = "timeline", onProgress = () => {}, signal }) {
   onProgress("正在读取模型设置…");
   const { apiKey, replyTimelinePrompt, replyCommentPrompt, replyProviders, mobileOfficeToken, mobileOfficeVerified } = await readAiSettings();
@@ -407,7 +431,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
     {
       role: "user",
       content: [
-        conversation?.ownPost?.text
+        notificationConversationText(conversation) || (conversation?.ownPost?.text
           ? [
             `我的帖子：\n${String(conversation.ownPost.text).trim().slice(0, 1200)}`,
             `对方针对这条帖子写的回复：\n${String(conversation.reply?.text || "").trim().slice(0, 800)}`,
@@ -418,7 +442,7 @@ async function callDeepSeek({ postText, conversation = null, avoidReply = "", in
               `对方回复给我的内容：\n${String(conversation.reply.text).trim().slice(0, 800)}`,
               "我之前的帖子暂时没有读到。请根据对方这句话合理推测语境，以收到回复的人的身份随手接一句，短、友好、可多表情。祝福、夸赞通常表示感谢；提问只回答能确认的部分；批评表达散乱时可自然承认写散了。不要装作知道原帖结论，不要反问对方，不要把对方的话原样重复。"
             ].join("\n\n")
-            : `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`,
+            : `原帖内容：\n${String(postText || "").trim().slice(0, 1800)}`),
         avoidReply ? `\n下面这句已被 X 判定为重复，请换一个明显不同的角度和说法，不能只替换个别词：\n${String(avoidReply).trim().slice(0, 180)}` : ""
       ].join("")
     }

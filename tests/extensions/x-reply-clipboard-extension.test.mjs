@@ -5204,6 +5204,7 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   assert.equal(result.rootPost.authorHandle, 'me')
   assert.equal(result.rootSettled, true)
   assert.equal(result.ownThread, true)
+  assert.deepEqual(result.thread.map((turn) => turn.text), ['我的原帖', '别人的中间回复', '我补充的上下文', '对方最新回复'])
   assert.equal(context.allowsContinuedDialogue(result, 'me'), true)
   assert.equal(context.allowsContinuedDialogue(result, '@ME'), true)
   assert.equal(context.allowsContinuedDialogue(result, 'otheraccount'), false)
@@ -9430,6 +9431,38 @@ test('notification replies accept emoji-only responses and apply brevity to save
     assert.match(request.messages[0].content, /语气贴合上下文/)
     await background.callDeepSeek({ postText: '一个普通首页帖子', mode: 'timeline' })
     assert.doesNotMatch(request.messages[0].content, /本次以短、友好、多表情为先/)
+  } finally {
+    globalThis.chrome = previousChrome
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('notification model receives the root post and every earlier turn in order', async () => {
+  const previousChrome = globalThis.chrome
+  const previousFetch = globalThis.fetch
+  let request
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key' } } } } } }
+  globalThis.fetch = async (_url, options) => {
+    request = JSON.parse(options.body)
+    return { ok: true, async json() { return { choices: [{ message: { content: '接上了😂' } }] } } }
+  }
+  try {
+    const longRoot = `我的原文${'正文'.repeat(700)}结尾保留`
+    await background.callDeepSeek({ mode: 'notifications', postText: '对方第二次回', conversation: {
+      ownPost: { text: '我第一次回' }, reply: { text: '对方第二次回' },
+      thread: [
+        { authorHandle: 'me', text: longRoot },
+        { authorHandle: 'friend', text: '对方第一次回' },
+        { authorHandle: 'me', text: '我第一次回' },
+        { authorHandle: 'friend', text: '对方第二次回' },
+      ], rootPost: { authorHandle: 'me', text: longRoot },
+    } })
+    const prompt = request.messages[1].content
+    assert.ok(prompt.indexOf('我的原文') < prompt.indexOf('对方第一次回'))
+    assert.ok(prompt.indexOf('对方第一次回') < prompt.indexOf('我第一次回'))
+    assert.ok(prompt.indexOf('我第一次回') < prompt.indexOf('对方第二次回'))
+    assert.match(prompt, /只回应对方最新一句/)
+    assert.match(prompt, /结尾保留/)
   } finally {
     globalThis.chrome = previousChrome
     globalThis.fetch = previousFetch

@@ -7,7 +7,7 @@ import MoreBooks from '../MoreBooks'
 import PageContainer from '../../components/PageContainer'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
 
-const book = PUBLISHED_WORKS[1]
+const book = PUBLISHED_WORKS.find((work) => work.href === '/books/programmer-growth-notes')
 const isbn = '9787111745600'
 
 

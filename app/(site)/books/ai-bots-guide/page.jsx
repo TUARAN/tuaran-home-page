@@ -7,7 +7,7 @@ import MoreBooks from '../MoreBooks'
 import PageContainer from '../../components/PageContainer'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
 
-const book = PUBLISHED_WORKS[2]
+const book = PUBLISHED_WORKS.find((work) => work.href === '/books/ai-bots-guide')
 
 
 export const dynamic = 'force-static'

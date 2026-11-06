@@ -12,7 +12,6 @@ export const metadata = {
 const publicationItems = [
   ...PUBLISHED_WORKS.map((work) => ({ ...work, period: work.year })),
   { title: '《智能体实战（扣子 · n8n · Dify）》', type: '联合创作', period: '2025-2026', status: '撰写中' },
-  { title: '《Seedance 2.0 电影级 AI 视频创作指南》', type: '联合创作', period: '2026 上半年', status: '已交稿 · 出版中' },
   { title: '《具身智能》', type: '技术图书', period: '2025 立项', status: '立项中' },
 ]
 

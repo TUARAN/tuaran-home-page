@@ -522,6 +522,10 @@ export default function AboutPage() {
           <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
             截至 2026 年 10 月，共有 {OPENCLAW_ACHIEVEMENT_COUNT} 个由 TUARAN 提交的 Pull Request 合并至 openclaw:main，其中已明确关联并关闭 {OPENCLAW_RESOLVED_ISSUES.length} 个 issue（{OPENCLAW_RESOLVED_ISSUES.map((issue) => `#${issue.number}`).join('、')}）。每项记录均链接到公开的 GitHub PR 与合并截图。
           </p>
+          <p className="mt-2 max-w-[760px] text-[13.5px] leading-7 text-[#9aabc0]">
+            <span className="mr-2 inline-block rounded-md border border-[#34e0d0] bg-[#123b3d] px-2 py-0.5 font-mono text-[11px] text-[#a6fff5]">我提出</span>
+            TUARAN 提交的 <a href="https://github.com/openclaw/openclaw/issues/181212" target="_blank" rel="noreferrer" className="underline underline-offset-2">issue #181212</a> 指出无效更新通道值未经转义，可能伪造诊断行。steipete 提交并合并了修复 <a href="https://github.com/openclaw/openclaw/pull/181298" target="_blank" rel="noreferrer" className="underline underline-offset-2">PR #181298</a>，PR 正文明确感谢 @TUARAN 的报告。这项贡献不计入上方由 TUARAN 提交的 PR 数。
+          </p>
 
           <OpenClawAchievementsCarousel achievements={OPENCLAW_ACHIEVEMENTS} />
         </div>

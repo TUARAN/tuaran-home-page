@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { useCallback, useMemo, useState } from 'react'
 
 import {
-  getOpenClawAchievementCategory,
   getOpenClawAchievementFacts,
+  getOpenClawContributionLabel,
   getOpenClawAchievements,
   OPENCLAW_ACHIEVEMENT_CATEGORIES,
 } from '../../../lib/site/openClawAchievements'
@@ -123,6 +123,9 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">
             Merged Pull Request · #{activeItem.number}
           </p>
+          <span className="mt-2 inline-block rounded-md border border-[#34e0d0] bg-[#123b3d] px-2.5 py-1 font-mono text-[11px] text-[#a6fff5]">
+            {getOpenClawContributionLabel(activeItem)}
+          </span>
           <h3 className="mt-2 border-b-0 pb-0 font-mono text-[18px] font-bold leading-7 text-[#e2ecf6] sm:text-[21px]">
             {activeItem.title}
           </h3>
@@ -182,7 +185,7 @@ export default function OpenClawAchievementsCarousel({ achievements }) {
           >
             <span className="shrink-0 font-mono text-[11px] text-[#7fe6da]">#{item.number}</span>
             <span className="min-w-0 flex-1 text-[12px] leading-5">{item.title.split(' · ')[1]}</span>
-            <span className="hidden shrink-0 font-mono text-[10px] text-[#6f839b] lg:inline">{getOpenClawAchievementCategory(item)}</span>
+            <span className="shrink-0 font-mono text-[10px] text-[#7fe6da]">{getOpenClawContributionLabel(item)}</span>
           </button>
         ))}
       </div>

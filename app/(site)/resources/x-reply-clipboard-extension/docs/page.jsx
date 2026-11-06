@@ -267,7 +267,7 @@ export default function XReplyClipboardDocsPage() {
 
         <article className="min-w-0 space-y-8">
           <Part id="part-1" number="一" title="入门与运行" />
-          <Section id="quick-start" index="一" title="快速开始" summary="先配置模型，再选择任务，最后启动排班" defaultOpen>
+          <Section id="quick-start" index="一" title="快速开始" summary="先配置模型，再选择任务，最后启动排班">
             <ol className="list-decimal space-y-3 pl-5">
               <li>在插件介绍页获取安装包，解压后通过 Chrome 扩展管理页加载。打开已登录的 X 页面，核对面板顶部的账号与版本。关掉面板后，点浏览器工具栏里的扩展图标重新打开。</li>
               <li>右上角齿轮进入设置中心，在「模型」中配置服务与提示词。密钥仅在本机配置，不要写进截图或分享材料。</li>
@@ -278,7 +278,7 @@ export default function XReplyClipboardDocsPage() {
             <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-05）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
           </Section>
 
-          <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面" defaultOpen>
+          <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">
             <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">当前系统结构图 · 本地 v4 源码</h3>
               <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 17 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
@@ -317,7 +317,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="states" index="三" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停全部」和「开始」之间切换" defaultOpen>
+          <Section id="states" index="三" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停全部」和「开始」之间切换">
             <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">排班启动与状态</h3>
             <p className="m-0 text-[13px] leading-6">
               排班台上方是各任务的状态点和一句提示。左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关执行页签不会关掉后台排班。单项启停进任务子页。

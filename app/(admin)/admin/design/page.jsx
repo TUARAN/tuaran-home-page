@@ -5,6 +5,7 @@ import { renderMarkdown } from '../../../../lib/research/markdown'
 import audit from '../../../../docs/context/ui-ux-audit-roadmap.md?raw'
 import language from '../../../../docs/specs/site-design-language.md?raw'
 import motion from '../../../../docs/specs/loading-motion-system.md?raw'
+import bookReader from '../../../../docs/specs/resource-book-reader.md?raw'
 import { countAuditTasks } from './designDocuments'
 
 export const metadata = {
@@ -17,12 +18,14 @@ const documents = [
   { id: 'audit', title: 'UI / 交互审计与改造清单', source: 'docs/context/ui-ux-audit-roadmap.md', markdown: audit, showProgress: true },
   { id: 'language', title: '站点设计语言', source: 'docs/specs/site-design-language.md', markdown: language },
   { id: 'motion', title: '加载与等待反馈规范', source: 'docs/specs/loading-motion-system.md', markdown: motion },
+  { id: 'book-reader', title: '资源书籍阅读模板', source: 'docs/specs/resource-book-reader.md', markdown: bookReader },
 ]
 
 const documentLinks = {
   'ui-ux-audit-roadmap.md': '/admin/design#audit',
   'site-design-language.md': '/admin/design#language',
   'loading-motion-system.md': '/admin/design#motion',
+  'resource-book-reader.md': '/admin/design#book-reader',
   'seo-geo-growth-roadmap.md': '/admin/seo#growth-roadmap',
 }
 
@@ -110,7 +113,7 @@ export default function AdminDesignPage() {
           <AdminSubnav label="设计文档导航" items={documents.map((document) => ({ id: document.id, label: document.title, href: `#${document.id}` }))} />
         </div>
         <p className="mb-5 text-sm leading-7 text-[var(--admin-muted)]">
-          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。三份设计文档直接展示，各章节可按需展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
+          先修手机长文目录、动态内容失败提示，以及后台概览和设计令牌。设计规范与审计文档直接展示，各章节可按需展开；修改文档后随部署同步。具体执行进入“规划与待办”，当前尚未自动同步任务。
         </p>
         <div className="space-y-5">{documents.map((document) => <DocumentSection key={document.id} document={document} />)}</div>
       </AdminPage>

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import BookIdentity from '../../components/book-reader/BookIdentity'
+import LibraryMark from '../../components/LibraryMark'
 import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER } from '../../../../lib/content/libraryCatalog.mjs'
 import styles from './bookShelf.module.css'
 
@@ -33,13 +33,13 @@ function BookCover({ book, index }) {
   )
 }
 
-function BookSection({ title, description, books, id }) {
+function BookSection({ title, description, books, id, number }) {
   if (!books.length) return null
   return (
     <section className={styles.collection} aria-labelledby={id}>
       <div className={styles.collectionHeading}>
-        <div><h2 id={id}>{title}</h2><p>{description}</p></div>
-        <span>{books.length} 本</span>
+        <div className={styles.collectionTitle}><span className={styles.sectionNumber}>{number}</span><div><h2 id={id}>{title}</h2><p>{description}</p></div></div>
+        <span className={styles.sectionCount}>{books.length} 本</span>
       </div>
       <div className={styles.grid}>
         {books.map((book, index) => (
@@ -74,10 +74,12 @@ export default function BookShelf() {
   return (
     <main className={styles.library}>
       <header className={styles.intro}>
-        <div>
-          <BookIdentity kind="馆藏目录" />
-          <h1>图书馆</h1>
-          <p className={styles.description}>我的出版图书、电子小册、指南手册和其他原创资源，与外部作者的原著、白皮书分区陈列。</p>
+        <div className={styles.introCopy}>
+          <div className={styles.masthead}>
+            <span className={styles.librarySeal}><LibraryMark size={25} stroke={1.5} aria-hidden="true" /></span>
+            <div><p className={styles.eyebrow}>阿燃典藏 <span aria-hidden="true">/</span> LIBRARY</p><h1>图书馆</h1></div>
+          </div>
+          <p className={styles.description}>出版图书、电子小册与在线读本。按创作归属陈列，每本书都标明作者或来源。</p>
         </div>
         <div className={styles.stats} aria-label="馆藏归属">
           <span><strong>{LIBRARY_COUNTS.self}</strong> 我的作品</span>
@@ -99,8 +101,8 @@ export default function BookShelf() {
       <p className={styles.resultCount} role="status">当前显示 {visibleBooks.length} 本</p>
       {visibleBooks.length ? (
         <>
-          <BookSection id="my-books" title="我的作品" description="出版社图书 · 电子小册 · 指南手册 · 其他原创资源" books={myBooks} />
-          <BookSection id="external-books" title="外部资源书" description="原作者或来源机构标在每本书下；本站提供阅读或资料入口。" books={externalBooks} />
+          <BookSection id="my-books" number="01" title="我的作品" description="出版社图书 · 电子小册 · 指南手册 · 其他原创资源" books={myBooks} />
+          <BookSection id="external-books" number="02" title="外部资源书" description="原作者或来源机构标在每本书下；本站提供阅读或资料入口。" books={externalBooks} />
         </>
       ) : <p className={styles.empty}>没有找到匹配的书。试试别的书名或分类。</p>}
     </main>

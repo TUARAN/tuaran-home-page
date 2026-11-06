@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import BookIdentity from '../../../components/book-reader/BookIdentity'
+import tableStyles from '../../../components/book-reader/bookDataTable.module.css'
 import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
@@ -192,8 +192,8 @@ function Part({ id, number, title }) {
 
 function PaceTable({ id, caption, headers, rows, note }) {
   return (
-    <div id={id} className="scroll-mt-24 overflow-x-auto rounded-xl border border-[var(--site-line)]">
-      <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
+    <div id={id} className={`scroll-mt-24 ${tableStyles.frame}`}>
+      <table data-table-style="custom" className={`${tableStyles.table} min-w-[520px]`}>
         <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">{caption}</caption>
         <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
           <tr>
@@ -244,7 +244,6 @@ export default function XReplyClipboardDocsPage() {
           <span aria-hidden="true">/</span>
           <span className="text-[var(--site-ink)]">文档中心</span>
         </div>
-                <BookIdentity kind="使用手册" />
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">文档中心</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
           从第一篇的安装与运行开始，依次阅读任务、配置、边界与维护。版本沿革和运营记录收在第四篇；也可以从左侧目录直达某一章、某一节。
@@ -324,8 +323,8 @@ export default function XReplyClipboardDocsPage() {
             <p className="m-0 text-[13px] leading-6">
               排班台上方是各任务的状态点和一句提示。左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关执行页签不会关掉后台排班。单项启停进任务子页。
             </p>
-            <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-              <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
+            <div className={tableStyles.frame}>
+              <table data-table-style="custom" className={`${tableStyles.table} min-w-[620px]`}>
                 <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">你看到的情况</th><th className="px-3 py-2">主区</th><th className="px-3 py-2">右上角</th><th className="px-3 py-2">你怎么做</th></tr></thead>
                 <tbody>
                   {FLOW_BUTTON_ROWS.map(([condition, label, kind, action]) => (
@@ -335,8 +334,8 @@ export default function XReplyClipboardDocsPage() {
               </table>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">单项任务按钮</h3>
-            <div className="overflow-x-auto rounded-xl border border-[var(--site-line)]">
-              <table className="w-full min-w-[620px] text-left text-[12px] leading-5">
+            <div className={tableStyles.frame}>
+              <table data-table-style="custom" className={`${tableStyles.table} min-w-[620px]`}>
                 <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]"><tr><th className="px-3 py-2">当前情况</th><th className="px-3 py-2">按钮显示</th><th className="px-3 py-2">点击结果</th></tr></thead>
                 <tbody>
                   {SINGLE_BUTTON_ROWS.map(([condition, label, action]) => (
@@ -470,8 +469,8 @@ export default function XReplyClipboardDocsPage() {
           </Section>
 
           <Section id="frequency" index="六" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
-            <div id="daily-volume" className="scroll-mt-24 overflow-x-auto rounded-xl border border-[var(--site-line)]">
-              <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
+            <div id="daily-volume" className={`scroll-mt-24 ${tableStyles.frame}`}>
+              <table data-table-style="custom" className={`${tableStyles.table} min-w-[520px]`}>
                 <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">一个账号全天排班、没有碰到 X 限制时，一天大约能做多少</caption>
                 <thead className="bg-[var(--site-panel)] text-[var(--site-faint)]">
                   <tr>
@@ -802,8 +801,8 @@ export default function XReplyClipboardDocsPage() {
             </ul>
 
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">指标对照（样本）</h3>
-            <div className="overflow-x-auto">
-              <table className="mt-2 w-full min-w-[32rem] border-collapse text-left text-[13px] leading-6">
+            <div className={tableStyles.frame}>
+              <table data-table-style="custom" className={`${tableStyles.table} ${tableStyles.comparison} min-w-[640px]`}>
                 <thead>
                   <tr className="border-b border-[var(--site-line)] text-[var(--site-faint)]">
                     <th className="py-2 pr-3 font-semibold">指标</th>

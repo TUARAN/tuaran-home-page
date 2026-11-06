@@ -43,7 +43,7 @@ function TopicLink({ lead, featured = false }) {
       className={`group flex h-full flex-col justify-between rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 no-underline transition-colors hover:border-[var(--site-line-strong)] hover:bg-[var(--site-panel-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] ${featured ? 'md:p-7' : ''}`}
     >
       <span>
-        <span className={`block font-semibold leading-snug text-[var(--site-ink)] ${featured ? 'font-serif text-[1.55rem] md:text-[1.9rem]' : 'text-[1.08rem]'}`}>
+        <span className={`block font-semibold leading-snug text-[var(--site-ink)] ${featured ? 'font-serif text-[1.3rem] md:text-[1.5rem]' : 'text-[1rem]'}`}>
           {lead.label}
         </span>
         <span className="mt-3 block text-[14px] leading-6 text-[var(--site-muted)]">{lead.note}</span>
@@ -74,11 +74,10 @@ export default function TopicHubView({ hub }) {
         })}
       </nav>
 
-      <header className="grid gap-6 border-b border-[var(--site-line)] py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-12 md:py-14">
+      <header className="grid gap-4 border-b border-[var(--site-line)] py-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-12 md:py-10">
         <div className="max-w-3xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--site-muted)]">主线专题 / {hub.kicker}</p>
-          <h1 className="mt-4 font-serif text-[2.7rem] font-semibold leading-tight text-[var(--site-ink)] md:text-[4rem]">{hub.title}</h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-8 text-[var(--site-muted)]">{hub.description}</p>
+          <h1 className="sr-only">{hub.title}</h1>
+          <p className="max-w-2xl text-[16px] leading-8 text-[var(--site-muted)]">{hub.description}</p>
         </div>
         <p className="whitespace-nowrap font-mono text-[12px] text-[var(--site-muted)]">{hub.leads.length} 个阅读入口</p>
       </header>
@@ -88,7 +87,7 @@ export default function TopicHubView({ hub }) {
           <section key={section.id} aria-labelledby={`${hub.slug}-${section.id}`} id={`${hub.slug}-${section.id}`}>
             <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
               <div className="flex items-baseline gap-3">
-                <h2 className="font-serif text-[1.65rem] font-semibold text-[var(--site-ink)] md:text-[1.9rem]">{section.title}</h2>
+                <h2 className="font-serif text-[1.4rem] font-semibold text-[var(--site-ink)] md:text-[1.6rem]">{section.title}</h2>
                 <span className="font-mono text-[12px] text-[var(--site-faint)]">{String(section.items.length).padStart(2, '0')}</span>
               </div>
               <p className="text-[13px] text-[var(--site-muted)]">{section.note}</p>

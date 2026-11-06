@@ -47,7 +47,7 @@ export default function DocsToc({ groups }) {
     const list = listRef.current
     if (!nav || !list) return undefined
 
-    const ids = groups.flatMap((group) => group.items.map((item) => item.id))
+    const ids = groups.flatMap((group) => [group.id, ...group.items.map((item) => item.id)])
     let frame = 0
 
     const syncToPage = () => {
@@ -85,36 +85,34 @@ export default function DocsToc({ groups }) {
       aria-label="文档目录"
       className="rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_82%,transparent)] p-4 shadow-[0_16px_50px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]"
     >
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--site-faint)]">分类目录</p>
+      <p className="font-serif text-[15px] font-semibold tracking-[0.16em] text-[var(--site-ink)]">目录</p>
+      <p className="mt-1 text-[11px] text-[var(--site-faint)]">四篇 · 十二章 · 按节查阅</p>
       <div
         ref={listRef}
-        className="mt-4 space-y-4 lg:max-h-[calc(100dvh-var(--site-header-height)-7rem)] lg:overflow-y-auto lg:[scrollbar-width:none]"
+        className="mt-4 max-h-72 space-y-5 overflow-y-auto lg:max-h-[calc(100dvh-var(--site-header-height)-9rem)] lg:[scrollbar-width:none]"
       >
         {groups.map((group) => (
           <div key={group.heading}>
-            <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--site-faint)]">{group.heading}</p>
-            <div className="space-y-0.5">
+            <a href={`#${group.id}`} data-toc-id={group.id} className="mb-2 block border-b border-[var(--site-line)] px-2 pb-2 font-serif text-[13px] font-semibold text-[var(--site-ink)] no-underline">{group.heading}</a>
+            <ol className="space-y-0.5">
               {group.items.map((item) => {
                 const depth = Number(item.depth) || 0
                 const active = item.id === activeId
-                const depthClass = depth === 1
-                  ? 'pl-4 text-[12.5px] font-medium text-[var(--site-ink)]'
-                  : depth >= 2
-                    ? 'ml-4 border-l border-[var(--site-line)] pl-3 text-[12px] text-[var(--site-muted)]'
-                    : 'text-[13px]'
+                const depthClass = depth >= 1
+                  ? 'ml-3 border-l border-[var(--site-line)] pl-3 text-[12px] text-[var(--site-muted)]'
+                  : 'font-medium text-[13px]'
                 return (
-                  <a
-                    key={item.id}
+                  <li key={item.id}><a
                     href={`#${item.id}`}
                     data-toc-id={item.id}
                     aria-current={active ? 'location' : undefined}
                     className={`block rounded-lg px-2 py-1.5 no-underline transition hover:bg-[color-mix(in_srgb,var(--site-green)_8%,var(--site-panel))] hover:text-[var(--site-ink)] ${depthClass} ${active ? 'bg-[color-mix(in_srgb,var(--site-green)_10%,var(--site-panel))] !text-[var(--site-ink)]' : 'text-[var(--site-muted)]'}`}
                   >
                     {item.label}
-                  </a>
+                  </a></li>
                 )
               })}
-            </div>
+            </ol>
           </div>
         ))}
       </div>

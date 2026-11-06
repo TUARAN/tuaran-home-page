@@ -105,7 +105,36 @@ const VERSION_ERAS = [
   },
 ]
 
-const TOC = [{'heading': '开始使用', 'items': [{'id': 'quick-start', 'label': '快速开始'}, {'id': 'flow', 'label': '运行与界面'}, {'id': 'task-window-plan', 'label': '面板截图'}, {'id': 'states', 'label': '状态和按钮'}]}, {'heading': '任务与配置', 'items': [{'id': 'tasks', 'label': '十七项任务'}, {'id': 'community-share', 'label': '社群分发', 'depth': 2}, {'id': 'comments', 'label': '评论管理'}, {'id': 'likes', 'label': '点赞管理'}, {'id': 'mutual-rules', 'label': '关注与取关'}, {'id': 'poster', 'label': '发帖、草稿与清理'}, {'id': 'prune-posts', 'label': '清理低质帖'}, {'id': 'prune-replies', 'label': '清理低质评论'}, {'id': 'schedule-order', 'label': '排序'}, {'id': 'frequency', 'label': '速度与排班设置'}, {'id': 'prompt-feedback', 'label': '提示词反馈台账'}]}, {'heading': '排查与维护', 'items': [{'id': 'risk', 'label': '异常恢复'}, {'id': 'rules', 'label': '平台边界'}, {'id': 'maintenance', 'label': '更新与数据'}]}, {'heading': '历史与观察', 'items': [{'id': 'history', 'label': '版本演进'}, {'id': 'releases', 'label': '周总结'}, {'id': 'ops-journal', 'label': '运营纪事'}]}]
+const TOC = [
+  { id: 'part-1', heading: '第一篇 · 入门与运行', items: [
+    { id: 'quick-start', label: '第一章 快速开始' },
+    { id: 'flow', label: '第二章 运行与任务窗口' },
+    { id: 'system-architecture', label: '系统结构', depth: 1 },
+    { id: 'task-window-plan', label: '面板与排班', depth: 1 },
+    { id: 'states', label: '第三章 状态和按钮' },
+  ] },
+  { id: 'part-2', heading: '第二篇 · 任务与配置', items: [
+    { id: 'tasks', label: '第四章 十七项任务规则' },
+    { id: 'comments', label: '评论管理', depth: 1 },
+    { id: 'community-share', label: '社群分发', depth: 1 },
+    { id: 'likes', label: '点赞管理', depth: 1 },
+    { id: 'mutual-rules', label: '关注管理', depth: 1 },
+    { id: 'poster', label: '发帖与清理', depth: 1 },
+    { id: 'schedule-order', label: '第五章 排班排序' },
+    { id: 'frequency', label: '第六章 频率与设置' },
+    { id: 'prompt-feedback', label: '提示词反馈', depth: 1 },
+  ] },
+  { id: 'part-3', heading: '第三篇 · 边界与维护', items: [
+    { id: 'risk', label: '第七章 风控与异常恢复' },
+    { id: 'rules', label: '第八章 平台边界' },
+    { id: 'maintenance', label: '第九章 更新与数据维护' },
+  ] },
+  { id: 'part-4', heading: '第四篇 · 历史与观察', items: [
+    { id: 'history', label: '第十章 版本演进与迁移' },
+    { id: 'releases', label: '第十一章 周总结' },
+    { id: 'ops-journal', label: '第十二章 运营纪事' },
+  ] },
+]
 
 const STATE_ROWS = [
   ['运行中', '当前任务正在扫描、生成或发送；详情显示最近更新时间。'],
@@ -139,22 +168,25 @@ const SINGLE_BUTTON_ROWS = [
   ['正在确认页内启动', '启动中 · 约 X · 请稍候', '子页按钮不可点，并显示确认剩余时间；手动任务会先尝试在执行页启动。仍未确认时自动重试，评论任务连续三次未确认会停止并显示最近原因。'],
 ]
 
-function Section({ id, index, title: sectionTitle, summary, children, defaultOpen = true }) {
+function Section({ id, index, title: sectionTitle, summary, children }) {
   return (
-    <details id={id} className="group scroll-mt-24 rounded-2xl border border-[var(--site-line)] bg-[color-mix(in_srgb,var(--site-panel-strong)_88%,transparent)] open:shadow-[0_14px_45px_color-mix(in_srgb,var(--site-shadow)_12%,transparent)]" open={defaultOpen || undefined}>
-      <summary className="flex cursor-pointer list-none items-start gap-3 px-5 py-4 marker:content-none md:px-6 md:py-5 [&::-webkit-details-marker]:hidden">
-        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] font-mono text-[11px] font-semibold text-[var(--site-faint)]">{index}</span>
-        <span className="min-w-0 flex-1">
-          <strong className="block text-[17px] font-semibold leading-7 text-[var(--site-ink)] md:text-[18px]">{sectionTitle}</strong>
-          <small className="mt-0.5 block text-[13px] leading-6 text-[var(--site-muted)]">{summary}</small>
-        </span>
-        <span className="mt-1 text-[var(--site-faint)] transition group-open:rotate-180" aria-hidden="true">▾</span>
-      </summary>
-      <div className="space-y-4 border-t border-[var(--site-line)] px-5 py-5 text-[14px] leading-7 text-[var(--site-muted)] md:px-6 md:pl-[4.5rem]">
+    <section id={id} className="scroll-mt-24 border-b border-[var(--site-line)] pb-10 pt-5 first:pt-0">
+      <header className="mb-6 flex items-start gap-4 border-b border-[var(--site-line)] pb-5">
+        <span className="mt-1 shrink-0 font-serif text-[12px] tracking-[0.14em] text-[var(--site-faint)]">第{index}章</span>
+        <div className="min-w-0 flex-1">
+          <h2 className="m-0 font-serif text-[25px] font-semibold leading-tight text-[var(--site-ink)] md:text-[30px]">{sectionTitle}</h2>
+          <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">{summary}</p>
+        </div>
+      </header>
+      <div className="space-y-5 text-[14px] leading-8 text-[var(--site-muted)] [&>p]:max-w-[72ch]">
         {children}
       </div>
-    </details>
+    </section>
   )
+}
+
+function Part({ id, number, title }) {
+  return <header id={id} className="scroll-mt-24 border-t-2 border-[var(--site-ink)] pb-2 pt-7"><p className="font-serif text-[12px] tracking-[0.24em] text-[var(--site-faint)]">第{number}篇</p><h2 className="mt-2 font-serif text-[28px] font-semibold text-[var(--site-ink)] md:text-[34px]">{title}</h2></header>
 }
 
 function PaceTable({ id, caption, headers, rows, note }) {
@@ -186,7 +218,7 @@ function PaceTable({ id, caption, headers, rows, note }) {
 
 function TaskBlock({ id, badge, title: blockTitle, summary, children }) {
   return (
-    <section id={id} className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-4">
+    <section id={id} className="scroll-mt-24 border-l-2 border-[var(--site-line-strong)] bg-[var(--site-panel)] px-4 py-4">
       <div className="mb-3 flex items-start gap-3">
         <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--site-line)] font-mono text-[10px] font-semibold text-[var(--site-faint)]">{badge}</span>
         <div>
@@ -213,7 +245,7 @@ export default function XReplyClipboardDocsPage() {
         </div>
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">文档中心</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
-          从安装配置到日常排班，按操作目标查找说明。任务规则、设置与异常恢复分别归类；旧版行为和运营观察单独归档。
+          从第一篇的安装与运行开始，依次阅读任务、配置、边界与维护。版本沿革和运营记录收在第四篇；也可以从左侧目录直达某一章、某一节。
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link href={RESOURCE_PATH} className="inline-flex items-center rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3.5 py-2 text-[12px] font-semibold text-[var(--site-ink)] no-underline transition hover:border-[var(--site-line-strong)]">
@@ -233,8 +265,9 @@ export default function XReplyClipboardDocsPage() {
           <DocsToc groups={TOC} />
         </aside>
 
-        <div className="min-w-0 space-y-3">
-          <Section id="quick-start" index="00" title="快速开始" summary="先配置模型，再选择任务，最后启动排班" defaultOpen>
+        <article className="min-w-0 space-y-8">
+          <Part id="part-1" number="一" title="入门与运行" />
+          <Section id="quick-start" index="一" title="快速开始" summary="先配置模型，再选择任务，最后启动排班" defaultOpen>
             <ol className="list-decimal space-y-3 pl-5">
               <li>在插件介绍页获取安装包，解压后通过 Chrome 扩展管理页加载。打开已登录的 X 页面，核对面板顶部的账号与版本。关掉面板后，点浏览器工具栏里的扩展图标重新打开。</li>
               <li>右上角齿轮进入设置中心，在「模型」中配置服务与提示词。密钥仅在本机配置，不要写进截图或分享材料。</li>
@@ -245,7 +278,7 @@ export default function XReplyClipboardDocsPage() {
             <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-05）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
           </Section>
 
-          <Section id="flow" index="01" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面" defaultOpen>
+          <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面" defaultOpen>
             <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">当前系统结构图 · 本地 v4 源码</h3>
               <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 17 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
@@ -284,7 +317,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="states" index="02" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停全部」和「开始」之间切换" defaultOpen>
+          <Section id="states" index="三" title="状态和按钮速查" summary="主区显示状态点和提示。排班台右上角在「暂停全部」和「开始」之间切换" defaultOpen>
             <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">排班启动与状态</h3>
             <p className="m-0 text-[13px] leading-6">
               排班台上方是各任务的状态点和一句提示。左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关执行页签不会关掉后台排班。单项启停进任务子页。
@@ -330,7 +363,8 @@ export default function XReplyClipboardDocsPage() {
             </p>
           </Section>
 
-          <Section id="tasks" index="03" title="十七项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 社群 · 清理">
+          <Part id="part-2" number="二" title="任务与配置" />
+          <Section id="tasks" index="四" title="十七项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 社群 · 清理">
             <div className="space-y-3">
               <TaskBlock id="comments" badge="评" title="评论管理" summary="评论首页 · 评论回复 · 评论大V">
                 <div id="reply-timeline" className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">
@@ -421,7 +455,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="schedule-order" index="04" title="排序" summary="空档出现时，谁先拿到共享页签">
+          <Section id="schedule-order" index="五" title="排序" summary="空档出现时，谁先拿到共享页签">
             <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">空档出现时，只在已经可以跑的任务里排先后。可以跑的条件：已参与排班，没有手动停止，自己的冷却和间隔已经到点，并且落在设定时段里。站长转发当天已经发过不再入队。精品发帖只在北京时间档位的 15 分钟内入队。点「立即开启」可以跳过普通等待；共享关注冷却和精品发帖档位不能靠手动跳过。</p>
             <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">可以跑的任务按下面四步排。前一步已经分出先后，就不再看后一步。</p>
             <ol className="list-decimal space-y-2 pl-5 text-[13px] leading-6 text-[var(--site-ink)]">
@@ -433,7 +467,7 @@ export default function XReplyClipboardDocsPage() {
             <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">排班台右上角「开始」开启整条队列：已到期的任务按上面的规则选，正在进行的评论计划占住页签直到本次计划做完并进入休息。进入任务子页点「立即开启当前任务」会安全停止当前操作，随后切换到手动选择的任务；启动确认中的旧任务也会让位。手动任务仍占用执行位或有有效启动请求时优先；进入冷却、启动重试等待或完成本轮并让出执行位后，其他已勾选且到期的任务可以运行。评论任务的风险冷却结束后可恢复有效的手动请求；已结束的手动任务不再锁住队列。手动停止这项任务后恢复自动排班；手动开启另一项会改以新任务为准。若要整条队列重新自动轮换，可先「暂停全部」，再点「启动已选任务」。共享关注冷却、风控和平台限制仍需遵守。</p>
           </Section>
 
-          <Section id="frequency" index="05" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
+          <Section id="frequency" index="六" title="频率与设置" summary="默认值、修改位置和一天大约能做多少">
             <div id="daily-volume" className="scroll-mt-24 overflow-x-auto rounded-xl border border-[var(--site-line)]">
               <table className="w-full min-w-[520px] border-collapse text-left text-[13px] leading-6">
                 <caption className="px-4 py-3 text-left text-[14px] font-semibold text-[var(--site-ink)]">一个账号全天排班、没有碰到 X 限制时，一天大约能做多少</caption>
@@ -593,7 +627,8 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="risk" index="06" title="风控与异常恢复" summary="10 → 20 → 30 分钟；只等待触发提示的任务">
+          <Part id="part-3" number="三" title="边界与维护" />
+          <Section id="risk" index="七" title="风控与异常恢复" summary="10 → 20 → 30 分钟；只等待触发提示的任务">
             <div className="space-y-5">
               <div>
                 <h3 className="text-[15px] font-semibold text-[var(--site-ink)]">疑似自动化提示</h3>
@@ -633,7 +668,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="rules" index="07" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
+          <Section id="rules" index="八" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
             <p>X 的公开自动化、账户限制和真实性规则适用于这些操作。扩展的频率挡位与倒计时只是本地调度参数，不代表 X 认可的安全阈值。</p>
             <p>公开的每日数量、账户状态和更短时间窗口是不同约束；发生限制时，应以 X 页面给出的验证或限制提示为准。</p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -643,7 +678,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="maintenance" index="08" title="更新与数据维护" summary="版本提示、自动维护、每日报告">
+          <Section id="maintenance" index="九" title="更新与数据维护" summary="版本提示、自动维护、每日报告">
             <ul className="list-disc space-y-2 pl-5">
               <li>在扩展管理页重新加载本地目录后，已打开的 X 标签需要刷新一次，页面才会换上新脚本。旧页面发现扩展上下文失效后会停掉每秒刷新，不再连续报 Extension context invalidated。关掉浮窗后，点浏览器工具栏里的扩展图标可以重新打开。</li>
               <li>标题旁“检查中 / 最新版 / 有新版本”比较当前加载的扩展与本地开发目录。“立即更新”会先停止运行中的任务，加载新版后只恢复原先在运行或冷却的任务；没有新版本时不会停任务。</li>
@@ -654,7 +689,8 @@ export default function XReplyClipboardDocsPage() {
             </ul>
           </Section>
 
-          <Section id="history" index="09" title="版本演进与迁移" summary="历史行为仅供版本对照，不作为当前操作指南">
+          <Part id="part-4" number="四" title="历史与观察" />
+          <Section id="history" index="十" title="版本演进与迁移" summary="历史行为仅供版本对照，不作为当前操作指南">
             <div id="version-path" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">来时路 · v0 → v4</h3>
@@ -719,7 +755,7 @@ export default function XReplyClipboardDocsPage() {
             </div>
           </Section>
 
-          <Section id="releases" index="10" title="周总结" summary="从首个有日期版本所在周起算；每周提炼重点，完整条目见仓库 README">
+          <Section id="releases" index="十一" title="周总结" summary="从首个有日期版本所在周起算；每周提炼重点，完整条目见仓库 README">
             <p className="m-0 text-[13px] leading-6">
               周次按北京时间周一到周日划分。第 1 周从 README 里第一条带日期的版本所在周开始；更早且未标注日期的版本归入「起步阶段」。
             </p>
@@ -751,7 +787,7 @@ export default function XReplyClipboardDocsPage() {
             </Link>
           </Section>
 
-          <Section id="ops-journal" index="11" title="运营纪事" summary="增长实验台账：阶段事实、指标对照、假设与自检；观察与推断分开">
+          <Section id="ops-journal" index="十二" title="运营纪事" summary="增长实验台账：阶段事实、指标对照、假设与自检；观察与推断分开">
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">阶段时间线（事实）</h3>
             <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
               <li>更早：互关 + 高频发帖；规则改成更看重原创后，手工日回约五六百条开始有起色。</li>
@@ -806,7 +842,7 @@ export default function XReplyClipboardDocsPage() {
               <li>下一窗口：看降量账号是否还停在五千以下，以及对照账号三十多 K 能否稳住。同时记回复可见性、面板与后台差，并对照评论首页 / 评论大V拆分。策略实验：大V评论 + 质量发帖 + 关注重建联动，不单押首页条数。清帖不限速：纯文字低于 100 且几乎无互动，或 100–399 且零互动；满 30 天起按 100+50×档。图文各档再高 100。窗口内不做定论。</li>
             </ul>
           </Section>
-        </div>
+        </article>
       </div>
     </PageContainer>
   )

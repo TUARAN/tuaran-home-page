@@ -9,6 +9,7 @@ import styles from './calendar.module.css'
 export const dynamic = 'force-static'
 
 const path = '/resources/big-interaction-whitepaper/calendar'
+const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const title = '大互动日历'
 const description = '按 Asia/Shanghai 选择日期，查看当天双向公开互动前十。统计公开回复、提及与引用，不含私信。'
 const days = loadDailyTopDays()
@@ -17,7 +18,7 @@ const jsonLd = {
   '@type': 'WebPage',
   name: `${title} · 大互动理论`,
   description,
-  url: `https://2aran.com${path}`,
+  url: canonicalUrl,
   inLanguage: 'zh-CN',
   isPartOf: {
     '@type': 'WebPage',
@@ -34,7 +35,7 @@ export const metadata = {
     type: 'website',
     title: `${title} · 大互动理论`,
     description,
-    url: `https://2aran.com${path}`,
+    url: canonicalUrl,
     locale: 'zh_CN',
   },
 }
@@ -49,6 +50,7 @@ export default function BigInteractionCalendarPage() {
         <h1>{title}</h1>
         <p className={styles.deck}>选择日期，查看该日与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号。</p>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。统计已排除 @{DAILY_TOP_SUBJECT}。</p>
+        <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
       </header>
       <InteractionCalendar days={days} initialToday={shanghaiDateKey()} />
     </PageContainer>

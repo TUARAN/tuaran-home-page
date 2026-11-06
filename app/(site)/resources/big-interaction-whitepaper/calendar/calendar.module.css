@@ -7,6 +7,9 @@
 .masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(34px, 5vw, 52px); font-weight: 700; line-height: 1.15; }
 .deck { max-width: 720px; margin: 12px 0 0; color: #203f2f; font-size: 16px; font-weight: 600; line-height: 1.75; }
 .metric { max-width: 720px; margin: 8px 0 0; color: #5d7364; font-size: 13px; line-height: 1.7; }
+.permalink { margin: 8px 0 0; color: #5d7364; font-size: 13px; line-height: 1.6; }
+.permalink a { color: #1d6840; font-weight: 700; overflow-wrap: anywhere; text-decoration: none; }
+.permalink a:hover { text-decoration: underline; }
 .layout { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 14px; align-items: start; }
 .picker, .board { border: 1px solid #c6dac7; border-radius: 16px; background: linear-gradient(160deg, #f3f8f0, #fbfcf8); }
 .picker { padding: 14px; }
@@ -70,7 +73,8 @@
 :global(.dark) .kicker, :global(.dark) .eyebrow { color: #b8d9b5; }
 :global(.dark) .masthead h1, :global(.dark) .boardHead h2, :global(.dark) .monthBar strong { color: #e8f1e2; }
 :global(.dark) .deck { color: #d7eed7; }
-:global(.dark) .metric, :global(.dark) .windowLine, :global(.dark) .board td span, :global(.dark) .board td.empty, :global(.dark) .recordedList span { color: #c0d1c2; }
+:global(.dark) .metric, :global(.dark) .permalink, :global(.dark) .windowLine, :global(.dark) .board td span, :global(.dark) .board td.empty, :global(.dark) .recordedList span { color: #c0d1c2; }
+:global(.dark) .permalink a { color: #b4e6bf; }
 :global(.dark) .picker, :global(.dark) .board { border-color: #3a5843; background: linear-gradient(160deg, #183d29, #14281d); }
 :global(.dark) .monthBar button, :global(.dark) .dateLabel input, :global(.dark) .recordedList button { border-color: #3a5843; background: #14281d; color: #d7f2d3; }
 :global(.dark) .grid button { color: #e3f0df; }

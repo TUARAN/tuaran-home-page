@@ -6646,37 +6646,48 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
 
 test('a followed-back account is kept when any name or bio fragment contains Chinese', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
-  const isNonChineseText = source.match(/  function isNonChineseText\(value\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileTextParts = source.match(/  function profileTextParts\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const profileNonChinese = source.match(/  function profileNonChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(isNonChineseText && profileNonChinese)
+  assert.ok(profileTextParts && profileHasChinese && profileNonChinese)
   const context = vm.createContext({
     textOf: (node) => node.textContent.trim(),
     FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
   })
-  vm.runInContext(`${isNonChineseText}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
+  vm.runInContext(`${profileTextParts}\n${profileHasChinese}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
   const row = (fragments) => ({ querySelectorAll: () => fragments.map((textContent) => ({ textContent })) })
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'gpt官方代充', 'https://example.com/very/long/english/link']), '@wangweiaigg'), false)
   assert.equal(context.check(row(['中文名', '@account', 'Follows you', 'English biography']), '@account'), false)
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you gpt官方代充', 'English biography']), '@wangweiaigg'), false)
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'English biography']), '@wangweiaigg'), true)
+  assert.equal(context.check(row(['Alice', '@english']), '@english'), true)
 })
 
-test('follow-back checks a Chinese name or bio before other visible fans', async () => {
+test('follow-back and target-follow require Chinese in the name or bio', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
-  const profileHasChinese = source.match(/  function profileHasChinese\(row\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileTextParts = source.match(/  function profileTextParts\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(profileHasChinese && runWithStorage)
+  assert.ok(profileTextParts && profileHasChinese && runWithStorage)
   const profileContext = vm.createContext({ textOf: (node) => node.textContent, FOLLOWS_YOU_RE: /(Follows you|关注了你)/i })
-  vm.runInContext(`${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
+  vm.runInContext(`${profileTextParts}\n${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
   const row = (...parts) => ({ querySelectorAll: () => parts.map((textContent) => ({ textContent })) })
   assert.equal(profileContext.hasChinese(row('Alice', '中文简介')), true)
   assert.equal(profileContext.hasChinese(row('中文姓名', 'English bio')), true)
   assert.equal(profileContext.hasChinese(row('Alice', 'English bio')), false)
+  const described = (name, bio) => ({
+    querySelector: (selector) => selector === '[data-testid="User-Name"]' ? { textContent: name }
+      : selector === '[data-testid="UserDescription"]' ? { textContent: bio } : null,
+    querySelectorAll: () => [{ textContent: '关注了你' }],
+  })
+  assert.equal(profileContext.hasChinese(described('Alice', '中文简介')), true)
+  assert.equal(profileContext.hasChinese(described('中文姓名', 'English bio')), true)
+  assert.equal(profileContext.hasChinese(described('Alice', 'English bio')), false)
 
   const picked = []
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0, seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
   const candidates = [
-    { handle: '@english', candidate: true, hasChineseProfile: false },
+    { handle: '@english', candidate: false, hasChineseProfile: false },
     { handle: '@chinese', candidate: true, hasChineseProfile: true },
   ]
   const context = vm.createContext({
@@ -6693,6 +6704,35 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   assert.equal(await context.runTest('followBack', () => {}), true)
   assert.deepEqual(picked, ['@chinese'])
+})
+
+test('visible follow candidates exclude profiles with no Chinese in either field', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const definition = source.match(/  function visibleRows\(mode\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const samples = [
+    { handle: '@english', chinese: false },
+    { handle: '@name_cn', chinese: true },
+    { handle: '@bio_cn', chinese: true },
+  ]
+  let activeMode = 'followBack'
+  const context = vm.createContext({
+    rows: () => samples,
+    findFollowingButton: () => null,
+    findFollowBackButton: () => activeMode === 'followBack' ? {} : null,
+    findPlainFollowButton: () => activeMode === 'targetFollow' ? {} : null,
+    findHandle: (row) => row.handle,
+    hasFollowsYou: () => true,
+    profileNonChinese: () => false,
+    profileHasChinese: (row) => row.chinese,
+    state: { unfollowEnglish: false },
+  })
+  vm.runInContext(`${definition}\nglobalThis.visible = visibleRows`, context)
+  for (const mode of ['followBack', 'targetFollow']) {
+    activeMode = mode
+    const candidates = context.visible(mode).filter((item) => item.candidate).map((item) => item.handle)
+    assert.deepEqual(candidates, ['@name_cn', '@bio_cn'])
+  }
 })
 
 test('automatic unfollow waits two seconds and rescans after reaching the bottom without applying the shared follow quota', async () => {
@@ -7571,7 +7611,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
-  assert.match(docsPage, /回关粉丝优先处理姓名或简介含汉字的账号/)
+  assert.match(docsPage, /回关粉丝只处理昵称或简介含汉字的账号/)
   assert.match(docsPage, /评论首页默认用下面的边界测试/)
   assert.match(docsPage, /评论大V · 每个账号/)
   assert.match(docsPage, /id="daily-volume"/)

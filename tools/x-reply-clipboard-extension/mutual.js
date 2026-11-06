@@ -602,30 +602,26 @@
     return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
   }
 
-  function isNonChineseText(value) {
-    const text = String(value || "").trim();
-    return /\p{L}/u.test(text) && !/\p{Script=Han}/u.test(text);
+  function profileTextParts(row, handle) {
+    const nameNode = row.querySelector?.('[data-testid="User-Name"]');
+    const bioNode = row.querySelector?.('[data-testid="UserDescription"]');
+    if (nameNode) return { name: textOf(nameNode), bio: bioNode ? textOf(bioNode) : "" };
+    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
+      .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
+      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
+      .filter(Boolean);
+    const candidates = profileTexts.filter((text) => !/^@[A-Za-z0-9_]{1,15}$/.test(text));
+    return { name: candidates[0] || "", bio: candidates.slice(1).join(" ") };
+  }
+
+  function profileHasChinese(row, handle) {
+    const { name, bio } = profileTextParts(row, handle);
+    return /\p{Script=Han}/u.test(name) || /\p{Script=Han}/u.test(bio);
   }
 
   function profileNonChinese(row, handle) {
-    const handleText = String(handle || "").replace(/^@/, "").toLowerCase();
-    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
-      .filter(Boolean);
-    if (profileTexts.some((text) => /\p{Script=Han}/u.test(text))) return false;
-    const candidates = profileTexts
-      .filter((text) => !/^@?[A-Za-z0-9_]{1,15}$/.test(text.replace(/^@/, "")));
-    const name = candidates.find((text) => !text.toLowerCase().includes(handleText));
-    const bio = candidates
-      .filter((text) => text !== name && !text.toLowerCase().includes(handleText))
-      .sort((left, right) => right.length - left.length)
-      .at(0) || "";
-    return Boolean(name && bio && isNonChineseText(name) && isNonChineseText(bio));
-  }
-
-  function profileHasChinese(row) {
-    return Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .some((node) => /\p{Script=Han}/u.test(textOf(node).replace(FOLLOWS_YOU_RE, "")));
+    const { name } = profileTextParts(row, handle);
+    return Boolean(name) && !profileHasChinese(row, handle);
   }
 
   function rows() {
@@ -649,12 +645,12 @@
       const handle = findHandle(row, followingButton || followBackButton || followButton);
       const followsYou = hasFollowsYou(row);
       const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
-      const hasChineseProfile = mode === "followBack" && profileHasChinese(row);
+      const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
       const candidate = mode === "unfollow"
         ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
         : mode === "followBack"
-          ? Boolean(handle && followBackButton && followsYou)
-          : Boolean(handle && followButton && !followBackButton && !followingButton);
+          ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
+          : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
       return { row, handle, followsYou, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
@@ -863,7 +859,6 @@
     let stalled = 0;
     let sourceIdleSince = 0;
     const observedSourceHandles = new Set();
-    let preferChinese = mode === "followBack";
     let stopReason = "";
     let listRetryAttempts = 0;
     let emptyListChecks = 0;
@@ -945,8 +940,7 @@
           state.skipped += 1;
         }
       }
-      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle)
-        && (!preferChinese || item.hasChineseProfile));
+      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle));
       if (candidate) {
         stalled = 0;
         sourceIdleSince = 0;
@@ -1031,13 +1025,6 @@
       if (stalled >= MAX_STALLED_SCROLLS || (mode === "targetFollow" && Date.now() - sourceIdleSince >= TARGET_SOURCE_IDLE_MS)) {
         stalled = 0;
         sourceIdleSince = 0;
-        if (preferChinese) {
-          preferChinese = false;
-          window.scrollTo({ top: 0, behavior: "auto" });
-          emit("含中文资料的粉丝已优先检查，继续检查其他粉丝");
-          await sleepActive(SCROLL_DELAY_MS);
-          continue;
-        }
         if (mode === "targetFollow") {
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
@@ -1058,7 +1045,6 @@
         if (state.stopping) break;
         state.cooldownUntil = 0;
         state.seenHandles.clear();
-        preferChinese = mode === "followBack";
         window.scrollTo({ top: 0, behavior: "auto" });
         emit("正在从列表顶部开始新一轮扫描");
         await sleepActive(SCROLL_DELAY_MS);

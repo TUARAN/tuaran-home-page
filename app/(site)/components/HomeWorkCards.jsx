@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { IconLibrary } from '@tabler/icons-react'
+import LibraryMark from './LibraryMark'
 
 import { getDownloadItemsByDate } from '../../../lib/site/downloadItems'
 import { getOpenClawContributionLabel, OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
@@ -27,13 +27,13 @@ export function HomeBookCards() {
           <p className="home-kicker hidden md:block">Books · {PUBLISHED_WORKS.length}</p>
           <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
-        <Link href="/resources/books" className="home-section-more inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" title="进入图书馆"><IconLibrary size={21} stroke={1.8} aria-hidden="true" /><span className="sr-only"><T zh="进入图书馆" en="Open library" /></span></Link>
+        <Link href="/resources/books" className="home-section-more inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" title="进入图书馆"><LibraryMark size={23} stroke={1.7} aria-hidden="true" /><span className="sr-only"><T zh="进入图书馆" en="Open library" /></span></Link>
       </div>
       <div className="home-work-card-list">
         {PUBLISHED_WORKS.map((book) => (
           <CardLink key={book.title} href={book.href} className="home-work-card home-book-card">
             <span className="home-book-cover">
-              <Image src={book.image} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 56px, 92px" className="object-cover" />
+              <Image src={book.image} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 56px, 92px" className="object-contain" />
             </span>
             <span className="home-work-copy">
               <span className="home-work-meta">{book.year} · {book.type}{book.publisher ? ` · ${book.publisher}` : ''} · {book.status}</span>

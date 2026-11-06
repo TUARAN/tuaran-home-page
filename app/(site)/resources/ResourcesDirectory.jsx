@@ -1,7 +1,7 @@
 'use client'
 
 import ShowcaseDirectory from '../components/ShowcaseDirectory'
-import { RESOURCE_BOOK_HREFS } from '../../../lib/content/resourceBooks.mjs'
+import { RESOURCE_BOOK_BY_HREF, RESOURCE_BOOK_HREFS } from '../../../lib/content/resourceBooks.mjs'
 
 const CATEGORIES = [
   { id: 'books', title: '书籍' },
@@ -51,6 +51,12 @@ function resourceCategory(item) {
   return 'reading'
 }
 
+function resourceCoverLabel(resource, category, categoryLabel) {
+  if (category !== 'books') return resource.tagLabel?.replace(/^资源库 · /, '') || categoryLabel
+  if (resource.href === '/resources/books') return '图书馆'
+  return RESOURCE_BOOK_BY_HREF.get(resource.href)?.ownership === 'self' ? '我的作品 · 书籍' : '外部资源书'
+}
+
 export default function ResourcesDirectory({ resources }) {
   const items = [
     { href: '/resources/books', title: '书籍馆藏', summary: '已出版图书、电子小册、原著、白皮书与手册，按书陈列。', date: '2026-11-06' },
@@ -67,7 +73,7 @@ export default function ResourcesDirectory({ resources }) {
       coverImageAlt: `${categoryLabel}分类视觉：${resource.title}`,
       coverImagePriority: index < 4,
       showStudioCoverImage: true,
-      coverLabel: category === 'books' ? '资源 · 书籍' : resource.tagLabel?.replace(/^资源库 · /, '') || categoryLabel,
+      coverLabel: resourceCoverLabel(resource, category, categoryLabel),
       summary: resource.summary || categoryLabel,
       meta: [resource.date, categoryLabel].filter(Boolean),
       footerLabel: resource.delivery === 'download' ? '可领取 / 下载' : '查看详情',

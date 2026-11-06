@@ -168,15 +168,15 @@ const SINGLE_BUTTON_ROWS = [
   ['正在确认页内启动', '启动中 · 约 X · 请稍候', '子页按钮不可点，并显示确认剩余时间；手动任务会先尝试在执行页启动。仍未确认时自动重试，评论任务连续三次未确认会停止并显示最近原因。'],
 ]
 
-function Section({ id, index, title: sectionTitle, summary, children, defaultOpen = true }) {
+function Section({ id, index, title: sectionTitle, summary, children }) {
   return (
     <section id={id} className="scroll-mt-24 border-b border-[var(--site-line)] pb-10 pt-5 first:pt-0">
       <header className="mb-6 flex items-start gap-4 border-b border-[var(--site-line)] pb-5">
         <span className="mt-1 shrink-0 font-serif text-[12px] tracking-[0.14em] text-[var(--site-faint)]">第{index}章</span>
-        <span className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <h2 className="m-0 font-serif text-[25px] font-semibold leading-tight text-[var(--site-ink)] md:text-[30px]">{sectionTitle}</h2>
           <p className="mt-2 text-[13px] leading-6 text-[var(--site-muted)]">{summary}</p>
-        </span>
+        </div>
       </header>
       <div className="space-y-5 text-[14px] leading-8 text-[var(--site-muted)] [&>p]:max-w-[72ch]">
         {children}

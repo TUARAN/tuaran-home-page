@@ -13,6 +13,12 @@ export const metadata = {
   alternates: { canonical: '/books/seedance-guide' },
   title: '《Seedance：电影级AI视频创作指南》｜涂阿燃（笔名：涂智研）、李谊林联合编著',
   description: book.description,
+  openGraph: {
+    url: 'https://2aran.com/books/seedance-guide',
+    title: '《Seedance：电影级AI视频创作指南》｜涂阿燃、李谊林联合编著',
+    description: book.description,
+    images: [book.image],
+  },
 }
 
 export default function SeedanceGuidePage() {

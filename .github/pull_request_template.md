@@ -19,3 +19,5 @@ Closes #
 ## 合并
 
 等站长说「合」后再 squash。助手不自行合并。
+
+若 Codex 实质参与编写，按 `AGENTS.md` 核对提交和最终 squash 说明中的 `Co-authored-by` 尾注。

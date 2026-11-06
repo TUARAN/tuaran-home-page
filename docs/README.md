@@ -19,6 +19,7 @@
 | ---------------------------------------------------------- | -------------- |
 | [site-design-language.md](specs/site-design-language.md)   | 颜色、排版、状态和交互的总纲 |
 | [loading-motion-system.md](specs/loading-motion-system.md) | 加载、等待和减少动态     |
+| [resource-book-reader.md](specs/resource-book-reader.md) | 资源书籍阅读结构、目录与组件 |
 
 ## runbooks
 

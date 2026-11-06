@@ -291,4 +291,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = require('nextra').default({})(nextConfig)

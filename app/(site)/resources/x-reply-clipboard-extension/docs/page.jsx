@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import BookIdentity from '../../../components/book-reader/BookIdentity'
 import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
@@ -243,6 +244,7 @@ export default function XReplyClipboardDocsPage() {
           <span aria-hidden="true">/</span>
           <span className="text-[var(--site-ink)]">文档中心</span>
         </div>
+                <BookIdentity kind="使用手册" />
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">文档中心</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
           从第一篇的安装与运行开始，依次阅读任务、配置、边界与维护。版本沿革和运营记录收在第四篇；也可以从左侧目录直达某一章、某一节。

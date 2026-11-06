@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import styles from './bookReader.module.css'
 import { pickBookSection } from './navigation.mjs'
 
@@ -29,10 +30,12 @@ function showActive(list, id) {
 }
 
 export default function BookToc({ groups, title = '目录', caption, className = '' }) {
+  const pathname = usePathname()
   const listRef = useRef(null)
   const manualUntil = useRef(0)
   const ids = useMemo(() => groups.flatMap((group) => [group.id, ...group.items.map((item) => item.id)]).filter(Boolean), [groups])
   const [activeId, setActiveId] = useState(ids[0] || '')
+  const activePage = groups.flatMap((group) => group.items).find((item) => item.href === pathname)?.href
 
   useEffect(() => {
     const list = listRef.current
@@ -41,7 +44,7 @@ export default function BookToc({ groups, title = '目录', caption, className =
     let previous = ''
     const sync = () => {
       frame = 0
-      const id = activeAt(ids)
+      const id = activePage || activeAt(ids)
       if (!id) return
       setActiveId(id)
       if (id !== previous && Date.now() >= manualUntil.current) showActive(list, id)
@@ -60,7 +63,7 @@ export default function BookToc({ groups, title = '目录', caption, className =
       window.removeEventListener('resize', schedule)
       window.removeEventListener('hashchange', schedule)
     }
-  }, [ids])
+  }, [ids, activePage])
 
   const holdManualScroll = () => { manualUntil.current = Date.now() + 1800 }
   return (
@@ -72,8 +75,8 @@ export default function BookToc({ groups, title = '目录', caption, className =
           <div key={group.id || group.heading || index} className={styles.tocGroup}>
             {group.id ? <a href={`#${group.id}`} data-book-toc-id={group.id} aria-current={activeId === group.id ? 'location' : undefined} className={styles.tocGroupLink}>{group.heading}</a> : <p className={styles.tocGroupLink}>{group.heading}</p>}
             <ol className={styles.tocItems}>
-              {group.items.map((item) => <li key={item.id}>
-                <a href={`#${item.id}`} data-book-toc-id={item.id} aria-current={activeId === item.id ? 'location' : undefined} className={`${styles.tocLink} ${item.depth ? styles.tocSubLink : ''}`}>{item.label}</a>
+              {group.items.map((item) => <li key={item.id || item.href}>
+                <a href={item.href || `#${item.id}`} data-book-toc-id={item.id || item.href} aria-current={activeId === (item.id || item.href) ? (item.href ? 'page' : 'location') : undefined} className={`${styles.tocLink} ${item.depth ? styles.tocSubLink : ''}`}>{item.label}</a>
               </li>)}
             </ol>
           </div>

@@ -50,10 +50,10 @@ export default function PublicationsPage() {
             </p>
           </div>
           <Link
-            href="/"
+            href="/resources/books"
             className="rounded-full border border-[#d1d3cb] bg-white/90 px-4 py-1.5 text-[12px] text-[#53554d] no-underline transition hover:border-[#b2b4a6] hover:text-[#252620] dark:border-[#2d3440] dark:bg-[#121821] dark:text-gray-300 dark:hover:border-[#3b4656] dark:hover:text-gray-100"
           >
-            返回首页
+            浏览书籍馆藏
           </Link>
         </div>
 

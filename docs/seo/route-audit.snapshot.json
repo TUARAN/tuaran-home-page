@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 244,
+    "routes": 245,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 115,
-    "indexable": 136,
-    "canonical": 154,
-    "openGraph": 88,
-    "jsonLd": 63,
+    "registeredStatic": 116,
+    "indexable": 137,
+    "canonical": 155,
+    "openGraph": 89,
+    "jsonLd": 64,
     "errors": 9,
     "warnings": 141
   },
@@ -2824,6 +2824,22 @@
     {
       "path": "/resources/big-interaction-whitepaper",
       "file": "app/(site)/resources/big-interaction-whitepaper/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/resources/big-interaction-whitepaper/calendar",
+      "file": "app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx",
       "kind": "static",
       "registered": true,
       "indexable": true,

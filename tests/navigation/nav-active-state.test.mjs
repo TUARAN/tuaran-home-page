@@ -19,7 +19,7 @@ test('content shortcuts select interactive works and resources without claiming 
   const interactive = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'interactive')
   const resources = SITE_CONTENT_SHORTCUTS.find((item) => item.key === 'resources')
   assert.equal(interactive.match('/rich-pages'), true)
-  for (const path of ['/resources/big-interaction-whitepaper', '/resources/big-interaction-whitepaper/roundtable']) {
+  for (const path of ['/resources/big-interaction-whitepaper', '/resources/big-interaction-whitepaper/roundtable', '/resources/big-interaction-whitepaper/calendar']) {
     assert.equal(interactive.match(path), true)
     assert.equal(resources.match(path, new URLSearchParams()), false)
   }

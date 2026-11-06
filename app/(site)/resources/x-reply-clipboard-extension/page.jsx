@@ -40,9 +40,14 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
+    title: '评论限制状态与排班让位',
+    description: '三项评论遇到 X 疑似自动化时显示真实冷却原因与剩余时间，受限期间让其他已到期任务继续排班。启动未确认会显示最近错误和重试时间。本地源码，尚未打包。',
+    current: true,
+  },
+  {
+    version: '4.9.42',
     title: '评论回复只扫描最近 24 小时',
     description: '到达更早的通知后停止下翻，刷新一次复核最新回复，再按原速度档安排下一次扫描。已回复记录继续去重。本地源码，尚未打包。',
-    current: true,
   },
   {
     version: '4.9.39',

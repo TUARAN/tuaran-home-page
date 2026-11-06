@@ -127,7 +127,7 @@
 @media (max-width: 440px) { .exhibit figcaption { min-height: 175px; } .flow { padding-inline: 5px; } .flow span { font-size: 10px; } .flow b { width: 31px; height: 31px; } .footer { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .exhibitionProgress span { transition: none; } }
 
-.entryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 1088px; margin: 0 auto 34px; }
+.entryGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 1088px; margin: 0 auto 34px; }
 .archiveTableWrap { max-width: 100%; overflow-x: auto; margin: 24px 0; }
 .archiveTable { width: 100%; min-width: 730px; border-collapse: collapse; font-size: 13px; line-height: 1.65; }
 .archiveTable th, .archiveTable td { border-bottom: 1px solid #b9cdb9; padding: 13px 10px; text-align: left; vertical-align: top; }
@@ -141,14 +141,14 @@
 .archiveTable img { display: block; width: 96px; max-height: 130px; object-fit: cover; border-radius: 5px; }
 :global(.dark) .archiveTable th { background: #193d29; color: #d7eed7; }
 :global(.dark) .archiveTable th, :global(.dark) .archiveTable td { border-color: #43644b; }
-.entryGrid .toolGuide { flex-direction: column; align-items: flex-start; gap: 20px; width: 100%; min-width: 0; margin: 0; padding: 26px; border-radius: 20px; background: linear-gradient(135deg, #edf5ea, #fafbf6); }
-.entryGrid .toolGuide h2 { font-size: clamp(20px, 2vw, 25px); letter-spacing: -.025em; }
+.entryGrid .toolGuide { flex-direction: column; align-items: flex-start; gap: 14px; width: 100%; min-width: 0; margin: 0; padding: 18px 16px; border-radius: 18px; background: linear-gradient(135deg, #edf5ea, #fafbf6); }
+.entryGrid .toolGuide h2 { font-size: clamp(18px, 1.6vw, 22px); letter-spacing: -.025em; }
 .entryGrid .toolGuideLink { margin-top: auto; padding: 0; min-height: 32px; border-radius: 4px; background: transparent; color: #1d6840; }
 .entryGrid .toolGuideLink:hover { background: transparent; color: #103c25; }
 .entryGrid .toolGuideLink span { margin-left: 8px; }
 :global(.dark) .entryGrid .toolGuide { background: linear-gradient(135deg, #183d29, #172b20); }
 :global(.dark) .entryGrid .toolGuideLink { background: transparent; color: #b4e6bf; }
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .entryGrid { grid-template-columns: 1fr; gap: 0; border: 1px solid #c6dac7; border-radius: 18px; overflow: hidden; }
   .entryGrid .toolGuide { padding: 20px; border: 0; border-radius: 0; gap: 12px; }
   .entryGrid .toolGuide + .toolGuide { border-top: 1px solid #c6dac7; }

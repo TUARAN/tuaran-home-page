@@ -159,6 +159,15 @@ export default function BigInteractionWhitepaperPage() {
           <Link href="/resources/big-interaction-whitepaper/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
         </aside>
 
+        <aside className={styles.toolGuide} aria-label="大互动日历入口">
+          <div>
+            <p className={styles.toolGuideEyebrow}>按日回看互动前十</p>
+            <h2>大互动日历</h2>
+            <p>选择日期，查看当天双向公开互动最多的十个账号。</p>
+          </div>
+          <Link href="/resources/big-interaction-whitepaper/calendar" className={styles.toolGuideLink}>打开日历 <span aria-hidden="true">→</span></Link>
+        </aside>
+
         </div>
 
         <div className={styles.readingLayout}>

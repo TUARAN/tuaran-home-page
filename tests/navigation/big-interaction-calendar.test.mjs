@@ -1,0 +1,114 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import test from 'node:test'
+
+import { loadDailyTopDays } from '../../lib/interaction/dailyTop/load.js'
+import {
+  DAILY_TOP_SAMPLE_DATE,
+  emptyStateCopy,
+  expectedWindow,
+  isIsoDate,
+  monthMatrix,
+  profileUrlFor,
+  resolveSelectedDate,
+  shanghaiDateKey,
+  validateDailyTopDay,
+} from '../../lib/interaction/dailyTop/model.js'
+
+const SAMPLE = [
+  ['VicentYip', '如是我闻', 29, '我回复 29'],
+  ['xiaqingfeng666', '夏清风（浇朋友）', 29, '我回复 29'],
+  ['AlanShao111', '邵艾伦Alan（薄肌版）', 23, '我回复 23'],
+  ['JMkernt', 'jimerrors', 22, '对方 1 · 我 21'],
+  ['DISONYYDS', 'Dison', 20, '我回复 20'],
+  ['fngmn134813', '梦泪', 19, '对方 6 · 我 13'],
+  ['daniel_w_zj', 'Kim_King（有评必回）', 18, '对方 9 · 我 9'],
+  ['ynggu2548245', '每日打卡', 16, '对方 8 · 我 8'],
+  ['DearYoung28', '我是你牛爷爷', 14, '对方 5 · 我 9'],
+  ['grok', 'Grok', 14, '我提及 14'],
+]
+
+test('sample day 2026-11-05 matches the shipped top 10', () => {
+  const days = loadDailyTopDays()
+  const day = days.find((entry) => entry.date === DAILY_TOP_SAMPLE_DATE)
+  assert.ok(day)
+  assert.equal(days.length, 1)
+  assert.deepEqual(day.window, expectedWindow('2026-11-05'))
+  assert.equal(day.opponents, 420)
+  assert.equal(day.events, 1386)
+  assert.equal(day.subject, 'tarsixseveneig1')
+  assert.deepEqual(
+    day.top.map((row) => [row.rank, row.handle, row.displayName, row.count, row.breakdown, row.profileUrl]),
+    SAMPLE.map(([handle, displayName, count, breakdown], index) => [
+      index + 1,
+      handle,
+      displayName,
+      count,
+      breakdown,
+      profileUrlFor(handle),
+    ]),
+  )
+  assert.equal(day.top.some((row) => row.handle.toLowerCase() === 'tarsixseveneig1'), false)
+})
+
+test('selected date stays on today when that day has no ranking', () => {
+  assert.equal(resolveSelectedDate(null, '2026-11-06'), '2026-11-06')
+  assert.equal(resolveSelectedDate('not-a-date', '2026-11-06'), '2026-11-06')
+  assert.equal(resolveSelectedDate('2026-02-31', '2026-11-06'), '2026-11-06')
+  assert.equal(resolveSelectedDate('2026-11-05', '2026-11-06'), '2026-11-05')
+  assert.equal(emptyStateCopy('2026-11-06', ['2026-11-05']), '这一天还没有收录互动前十。2026-11-05 已有样例，可改选这一天。')
+  assert.equal(emptyStateCopy('2026-11-05', ['2026-11-05']), '这一天还没有收录互动前十。')
+})
+
+test('Shanghai date key follows the Asia/Shanghai calendar date', () => {
+  assert.equal(shanghaiDateKey(new Date('2026-11-05T12:59:00Z')), '2026-11-05')
+  assert.equal(shanghaiDateKey(new Date('2026-11-05T16:00:00Z')), '2026-11-06')
+  assert.equal(isIsoDate('2026-11-05'), true)
+  const november = monthMatrix('2026-11')
+  assert.equal(november[0], null)
+  assert.equal(november[6], '2026-11-01')
+  assert.equal(november[35], '2026-11-30')
+  assert.equal(november.length % 7, 0)
+})
+
+test('validator rejects a self-account and a window that is not 21:00 to 21:00', () => {
+  const day = loadDailyTopDays()[0]
+  assert.throws(() => validateDailyTopDay({
+    ...day,
+    top: [{ ...day.top[0], handle: 'tarsixseveneig1', rank: 1 }],
+  }, '2026-11-05.json'), /本人账号/)
+  assert.throws(() => validateDailyTopDay({
+    ...day,
+    window: { start: '2026-11-05T00:00:00+08:00', end: '2026-11-05T21:00:00+08:00' },
+  }, '2026-11-05.json'), /window/)
+})
+
+test('whitepaper entry row links the calendar beside the roundtable', async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/whitepaper.module.css', import.meta.url), 'utf8'),
+  ])
+  const roundtable = page.indexOf('大互动 · 圆桌大会')
+  const calendar = page.indexOf('>大互动日历<')
+  assert.ok(roundtable > 0)
+  assert.ok(calendar > roundtable)
+  assert.match(page, /href="\/resources\/big-interaction-whitepaper\/calendar"/)
+  assert.match(css, /\.entryGrid \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
+})
+
+test('calendar page renders the five ranking columns and an empty state', async () => {
+  const [page, view] = await Promise.all([
+    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/InteractionCalendar.jsx', import.meta.url), 'utf8'),
+  ])
+  assert.match(page, /canonical: path/)
+  assert.match(page, /application\/ld\+json/)
+  assert.match(view, /排名/)
+  assert.match(view, /账号/)
+  assert.match(view, /互动次数/)
+  assert.match(view, /构成简述/)
+  assert.match(view, /主页链接/)
+  assert.match(view, /emptyStateCopy\(selected, availableDates\)/)
+  assert.match(view, /x\.com\/\{row\.handle\}/)
+  assert.doesNotMatch(view, /错误|加载失败/)
+})

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-05",
+  "timezone": "Asia/Shanghai",
+  "window": {
+    "start": "2026-11-04T21:00:00+08:00",
+    "end": "2026-11-05T21:00:00+08:00"
+  },
+  "metric": "bidirectional_public_interaction",
+  "metricLabel": "双向公开互动（回复/提及/引用），不含私信",
+  "subject": "tarsixseveneig1",
+  "excludedHandles": ["tarsixseveneig1"],
+  "opponents": 420,
+  "events": 1386,
+  "top": [
+    { "rank": 1, "handle": "VicentYip", "displayName": "如是我闻", "count": 29, "breakdown": "我回复 29" },
+    { "rank": 2, "handle": "xiaqingfeng666", "displayName": "夏清风（浇朋友）", "count": 29, "breakdown": "我回复 29" },
+    { "rank": 3, "handle": "AlanShao111", "displayName": "邵艾伦Alan（薄肌版）", "count": 23, "breakdown": "我回复 23" },
+    { "rank": 4, "handle": "JMkernt", "displayName": "jimerrors", "count": 22, "breakdown": "对方 1 · 我 21" },
+    { "rank": 5, "handle": "DISONYYDS", "displayName": "Dison", "count": 20, "breakdown": "我回复 20" },
+    { "rank": 6, "handle": "fngmn134813", "displayName": "梦泪", "count": 19, "breakdown": "对方 6 · 我 13" },
+    { "rank": 7, "handle": "daniel_w_zj", "displayName": "Kim_King（有评必回）", "count": 18, "breakdown": "对方 9 · 我 9" },
+    { "rank": 8, "handle": "ynggu2548245", "displayName": "每日打卡", "count": 16, "breakdown": "对方 8 · 我 8" },
+    { "rank": 9, "handle": "DearYoung28", "displayName": "我是你牛爷爷", "count": 14, "breakdown": "对方 5 · 我 9" },
+    { "rank": 10, "handle": "grok", "displayName": "Grok", "count": 14, "breakdown": "我提及 14" }
+  ]
+}

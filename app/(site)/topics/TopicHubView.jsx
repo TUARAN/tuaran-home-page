@@ -159,17 +159,8 @@ export default function TopicHubView({ hub }) {
     <PageContainer className="grid gap-8 pb-16 pt-6 md:pb-24 md:pt-10 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
       <AuthorityIndex current={hub.path} />
       <div className="min-w-0">
-
-      <header className="grid gap-6 border-b border-[var(--site-line)] py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-12 md:py-14">
-        <div className="max-w-3xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--site-muted)]">主线专题 / {hub.kicker}</p>
-          <h1 className="mt-4 font-serif text-[2.7rem] font-semibold leading-tight text-[var(--site-ink)] md:text-[4rem]">{hub.title}</h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-8 text-[var(--site-muted)]">{hub.description}</p>
-        </div>
-        <p className="whitespace-nowrap font-mono text-[12px] text-[var(--site-muted)]">{hub.leads.length} 个阅读入口</p>
-      </header>
-
-      <div className="space-y-14 pt-10 md:space-y-16 md:pt-14">
+      <h1 className="sr-only">{hub.title}</h1>
+      <div className="space-y-14 md:space-y-16">
         {sections.map((section) => (
           <section key={section.id} aria-labelledby={`${hub.slug}-${section.id}`} id={`${hub.slug}-${section.id}`}>
             <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">

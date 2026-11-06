@@ -1327,6 +1327,45 @@ async function getOpenTaskTabs() {
   return { ok: true, tabs };
 }
 
+async function taskTabRole(sender) {
+  const tabId = Number(sender?.tab?.id);
+  const plan = await readTaskSchedule();
+  const { tabs } = await getOpenTaskTabs();
+  const runtime = await readPluginRuntime({ prune: true });
+  let ownerTabId = Number(plan.workTabId) || 0;
+  let ownerMode = plan.current || "";
+  if (ownerTabId) {
+    try { await chrome.tabs.get(ownerTabId); }
+    catch (error) { ownerTabId = 0; ownerMode = ""; }
+  }
+  if (!ownerTabId) {
+    const active = Object.entries(runtime.tasks || {}).find(([, task]) => ["running", "paused", "starting"].includes(task?.phase));
+    if (active) {
+      ownerMode = active[0];
+      ownerTabId = Number(active[1]?.tabId) || 0;
+    }
+  }
+  const registeredMode = Object.entries(tabs).find(([, id]) => Number(id) === tabId)?.[0] || "";
+  if (!ownerTabId && registeredMode) {
+    ownerTabId = tabId;
+    ownerMode = registeredMode;
+  }
+  let ownerTitle = "";
+  if (ownerTabId && ownerTabId !== tabId) {
+    try { ownerTitle = String((await chrome.tabs.get(ownerTabId))?.title || "").slice(0, 80); }
+    catch (error) { /* The next storage update will clear a closed tab. */ }
+  }
+  return {
+    ok: true,
+    tabId,
+    owned: Number.isInteger(tabId) && tabId > 0 && (ownerTabId === tabId || Boolean(registeredMode && !plan.enabled)),
+    ownerTabId,
+    ownerMode,
+    ownerTitle,
+    ownerActive: Boolean(ownerTabId && (plan.enabled && plan.current || runtime.tasks?.[ownerMode]))
+  };
+}
+
 async function registerTaskTab(mode, tabId) {
   if (!Number.isInteger(tabId)) throw new Error("无法识别当前 X 页签");
   const selected = validTaskMode(mode);
@@ -1481,7 +1520,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   const destination = await launchTaskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
   const url = destination || `${pageOrigin(sender?.tab?.url)}/home?xrcAssistant=${encodeURIComponent(selected)}`;
   const createdWindow = await chrome.windows.create({
-    url,
+    url: "about:blank",
     focused: true,
     type: "normal"
   });
@@ -1493,6 +1532,8 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   if (!Number.isInteger(createdId)) throw new Error("没有成功创建任务窗口");
   tabs[selected] = createdId;
   await writeTaskTabs(tabs);
+  await rememberPendingLaunch(selected, url, start, createdId);
+  await chrome.tabs.update(createdId, { url });
   return { ok: true, mode: selected, tabId: createdId, reused: false };
 }
 
@@ -1517,7 +1558,7 @@ async function findReusableScheduledXTab(accountHandle = "") {
     if (!Number.isInteger(id) || id <= 0 || excluded.has(id)) continue;
     try {
       const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
-      if (!probe?.ok || !probe.scheduleEnabled) continue;
+      if (!probe?.ok || !probe.scheduleEnabled || !probe.owned) continue;
       const actualHandle = accountHandleFrom(probe.accountHandle).toLowerCase();
       if (expectedHandle && actualHandle !== expectedHandle) continue;
       return tab;
@@ -4005,6 +4046,17 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务窗口状态读取失败" }));
       return true;
     }
+    if (message?.type === "xrc-tab-role-get" || message?.type === "xrc-tab-owner-focus") {
+      taskTabRole(sender).then(async (role) => {
+        if (message.type === "xrc-tab-owner-focus") {
+          if (!role.ownerTabId || role.ownerTabId === role.tabId) return { ok: false, error: "当前没有其他执行页签" };
+          const tab = await chrome.tabs.update(role.ownerTabId, { active: true });
+          if (Number.isInteger(tab?.windowId)) await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        return role;
+      }).then(sendResponse).catch((error) => sendResponse({ ok: false, error: error?.message || "无法读取执行页签" }));
+      return true;
+    }
     if (message?.type === "xrc-schedule-config-get") {
       readTaskSchedule().then((schedule) => sendResponse({
         ok: true,
@@ -4235,6 +4287,7 @@ if (typeof module === "object" && module.exports) {
     consumePendingLaunch,
     registerTaskTab,
     getOpenTaskTabs,
+    taskTabRole,
     closeTaskTab,
     focusTaskTab,
     tryInPageTaskStart,

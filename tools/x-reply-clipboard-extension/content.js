@@ -353,6 +353,8 @@
 
   let pluginRuntime = { startedAt: null, tasks: {} };
   let taskSchedule = { enabled: false, items: {} };
+  let tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
+  let spectatorTab = true;
   let executionAlerts = [];
   const recentExecutionAlerts = (value) => Array.isArray(value)
     ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
@@ -759,6 +761,7 @@
   }
 
   async function onPruneToggle({ scheduledStart = false, requestedMode = pruneTaskMode() } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && requestedMode !== currentTaskKey()) {
       await stopScheduledWaitingTask(requestedMode, false);
       return;
@@ -870,6 +873,7 @@
   }
 
   async function onArticleToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("article", Boolean(articleState.running))) return;
     const controller = getArticleController();
     if (!controller) {
@@ -930,6 +934,7 @@
   }
 
   async function onSiteForwardToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("site-forward", Boolean(forwardState.running))) return;
     if (forwardState.running) {
       forwardState = { ...forwardState, stopping: true, status: "正在停止站长转发" };
@@ -1000,6 +1005,7 @@
   }
 
   async function onCommunityToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("community-share", Boolean(communityState.running))) return;
     const controller = getCommunityController();
     if (!controller) {
@@ -1036,6 +1042,7 @@
   }
 
   async function toggleLikes({ scheduledStart = false, requestedMode = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
     if (!scheduledStart && await stopScheduledWaitingTask(targetMode, Boolean(likeState.running) && currentTaskKey() === targetMode)) return;
     if (!scheduledStart && targetMode !== currentTaskKey()) return;
@@ -1605,6 +1612,10 @@
     return null;
   }
 
+  function shouldResumeInTab(role, pendingLaunch) {
+    return Boolean(pendingLaunch || role?.owned);
+  }
+
   async function consumePendingLaunch() {
     let pending = null;
     try {
@@ -1869,6 +1880,34 @@
     renderPanel();
   }
 
+  async function loadTabRole({ paint = true } = {}) {
+    try {
+      const role = await readRuntimeMessage("xrc-tab-role-get");
+      tabRole = role;
+      spectatorTab = !role.owned;
+    } catch (error) {
+      // An unknown tab must never resume a saved task just because another tab was running.
+      tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
+      spectatorTab = true;
+    }
+    if (paint) renderPanel();
+  }
+
+  async function keepSpectatorOnOwner() {
+    if (!spectatorTab) return false;
+    await loadTabRole({ paint: false });
+    if (!spectatorTab) return false;
+    if (Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId)) {
+      state.status = "任务已在另一个页签执行，请点击上方「跳转查看」";
+      renderPanel();
+      return true;
+    }
+    // An explicit user start may claim a tab when there is no live owner.
+    spectatorTab = false;
+    renderPanel();
+    return false;
+  }
+
   function taskGroupTarget(group, tabs = openTaskTabs, currentMode = currentTaskKey(), tasks = pluginRuntime.tasks) {
     const modes = TASK_GROUP_MODES[group] || [];
     const otherOpen = modes.filter((mode) => mode !== currentMode && Number.isInteger(Number(tabs?.[mode])) && Number(tabs[mode]) > 0);
@@ -1962,6 +2001,7 @@
   }
 
   async function setRuntimeTaskActive(mode, active, phase = "running") {
+    if (spectatorTab) return;
     try {
       const response = await readRuntimeMessage("xrc-runtime-task-state", {
         mode: validTaskKey(mode),
@@ -3596,6 +3636,7 @@
 
   async function onScheduleToggle() {
     if (flowStarting || flowStopping) return;
+    if (await keepSpectatorOnOwner()) return;
     const model = flowButtonModel();
     if (model.canStop) {
       await pauseAllTasks();
@@ -3605,6 +3646,7 @@
   }
 
   function syncCurrentTaskPhase() {
+    if (spectatorTab) return;
     const phase = currentTaskPhase();
     const key = currentTaskKey();
     if (!phase) return;
@@ -6961,6 +7003,7 @@
   }
 
   async function onPosterToggle({ scheduledStart = false, requestedMode = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const mode = requestedMode ? validTaskKey(requestedMode) : posterTaskKey();
     const kind = posterKindFromMode(mode);
     if (!scheduledStart && await stopScheduledWaitingTask(mode, Boolean(state.poster.running) && currentTaskKey() === mode)) return;
@@ -7050,6 +7093,7 @@
   }
 
   async function onMutualAction(mode, { scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask(mutualTaskKey(mode), Boolean(state.mutual?.running && state.mutual.mode === mode))) return;
     if (!mutualApi) {
       state.mutual = { ...state.mutual, status: "互关模块没有加载，请刷新扩展后重试", errors: (state.mutual?.errors || 0) + 1 };
@@ -7858,6 +7902,23 @@
     }
   }
 
+  function paintTabRoleBanner(panel) {
+    const banner = panel.querySelector("[data-xrc-tab-role]");
+    if (!banner) return;
+    banner.hidden = !spectatorTab;
+    if (!spectatorTab) return;
+    const summary = banner.querySelector("[data-xrc-tab-role-text]");
+    const jump = banner.querySelector("[data-xrc-tab-owner-jump]");
+    const otherTab = Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId);
+    const label = TASK_MODE_LABELS[tabRole.ownerMode] || "排班";
+    const ownerTitle = String(tabRole.ownerTitle || "").trim();
+    const tabName = ownerTitle.includes(label) ? ownerTitle.split(" · ").slice(0, 2).join(" · ") : label;
+    summary.textContent = otherTab
+      ? `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`
+      : "当前是人工打开的 X 页签，自动任务未在这里启动。";
+    jump.hidden = !otherTab;
+  }
+
   function paintExtensionPanel() {
     if (panelDismissed && !state.running) return;
     if (!looksLoggedIn()) {
@@ -7891,6 +7952,7 @@
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
         <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止当前任务、加载本地新版后恢复原任务">立即更新</button></div>
+        <div class="xrc-tab-role" data-xrc-tab-role role="status" hidden><span data-xrc-tab-role-text></span><button type="button" data-xrc-tab-owner-jump hidden>跳转查看</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-categories" aria-label="按任务类别统计">
             ${[["comment", "✎", "评论类"], ["like", "♥", "点赞类"], ["post", "▣", "发帖类"], ["follow", "↗", "关注类"], ["community", "◎", "社群类"], ["clean", "✧", "清理类"]].map(([category, icon, label]) => `<div class="xrc-today-category" data-category="${category}"><span class="xrc-today-category-name"><i aria-hidden="true">${icon}</i>${label}</span><b data-xrc-today-category="${category}">0</b></div>`).join("")}
@@ -8645,6 +8707,10 @@
         window.open(`${DOCS_BASE_URL}${hash}`, "_blank", "noopener,noreferrer");
       };
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
+      panel.querySelector("[data-xrc-tab-owner-jump]").addEventListener("click", async () => {
+        try { await readRuntimeMessage("xrc-tab-owner-focus"); }
+        catch (error) { await loadTabRole(); }
+      });
       panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
@@ -9649,7 +9715,7 @@
     const waitingUi = state.riskPaused || waitingForNextCycle || reconnecting || waitMs > 0
       || Boolean(replyWaitCopy()) || Boolean(posterWaitCopy(poster))
       || taskScheduleNotice(viewKey)?.status === "waiting";
-    panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || pruneState.stopping || articleState.stopping || communityState.stopping
+    panel.dataset.state = spectatorTab ? "idle" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || pruneState.stopping || articleState.stopping || communityState.stopping
       ? "stopping"
       : waitingUi
         ? "waiting"
@@ -9662,7 +9728,7 @@
               : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
-      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || articleState.stopping
+      stateLabel.textContent = spectatorTab ? "旁观" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || articleState.stopping
         || state.riskPaused || reconnecting || waitingForNextCycle || waitingUi
         ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
         : completed
@@ -9679,6 +9745,7 @@
     syncCurrentTaskPhase();
     paintFlowButton(panel);
     renderDevUpdateBanner(panel);
+    paintTabRoleBanner(panel);
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");
     if (brand) {
@@ -9732,6 +9799,7 @@
   }
 
   async function onToggle({ scheduledStart = false, requestedMode = "", kolLaunchHandle = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
     if (!scheduledStart && await stopScheduledWaitingTask(targetMode, Boolean(state.running || state.loopPromise) && currentTaskKey() === targetMode)) return;
     if (!scheduledStart && targetMode !== currentTaskKey()) return;
@@ -9851,6 +9919,7 @@
   }
 
   function applyTaskTitle() {
+    if (spectatorTab) return;
     const label = taskWindowLabel();
     const handle = String(currentAccountHandle() || rememberAccountHandle() || "").replace(/^@/u, "");
     const head = handle ? `@${handle} · ${label}` : label;
@@ -9873,7 +9942,9 @@
     await mergeLegacyAccountData();
     const requested = requestedLaunch();
     const pending = await consumePendingLaunch();
-    const launch = requested || pending;
+    await loadTabRole({ paint: false });
+    spectatorTab = !shouldResumeInTab(tabRole, pending);
+    const launch = spectatorTab ? null : requested || pending;
     const assignedMode = launch?.taskKey || sessionStorage.getItem("xrcAssignedTaskMode") || "timeline";
     await hydrateTaskSnapshot(assignedMode);
     const saved = readSaved(assignedMode);
@@ -9933,7 +10004,7 @@
     let launchedStart = Boolean(launch?.start);
     if (launch) {
       writeSaved({ running: false, total: state.total });
-      registerCurrentTaskTab(launch.taskKey);
+      await registerCurrentTaskTab(launch.taskKey);
       removeAssistantModeFromUrl();
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
@@ -9946,7 +10017,7 @@
     localDevUpdate = (await chrome.storage.local.get(DEV_UPDATE_KEY))?.[DEV_UPDATE_KEY] || null;
     await loadOpenTaskTabs();
     const bootTaskKey = currentTaskKey();
-    if (!launchedStart && !saved.running && !state.mutual?.running && !state.poster?.running
+    if (!spectatorTab && !launchedStart && !saved.running && !state.mutual?.running && !state.poster?.running
       && pluginRuntime.tasks?.[bootTaskKey]) {
       await setRuntimeTaskActive(bootTaskKey, false);
     }
@@ -9994,11 +10065,11 @@
     renderPanel();
     globalThis.XrcCommunityReceipt?.heartbeat(currentAccountHandle());
     watchSidebarDock();
-    if (isPosterMode() && await postApi?.resumeIfPending?.(updatePosterState, posterKindFromMode())) {
+    if (!spectatorTab && isPosterMode() && await postApi?.resumeIfPending?.(updatePosterState, posterKindFromMode())) {
       registerCurrentTaskTab(posterTaskKey());
       setRuntimeTaskActive(posterTaskKey(), true, currentTaskPhase() || "running");
     }
-    if (!launchedStart && await getArticleController()?.resumeIfPending?.(async (snapshot) => {
+    if (!spectatorTab && !launchedStart && await getArticleController()?.resumeIfPending?.(async (snapshot) => {
       articleState = snapshot || articleState;
       state.assistantMode = "article";
       const phase = snapshot?.stopping ? "stopping" : Number(snapshot?.nextAt) > Date.now() ? "paused" : "running";
@@ -10009,7 +10080,7 @@
     }
     postApi?.setPostKind?.(posterKindFromMode());
     postApi?.setSchedulePace?.(state.posterPace);
-    if (saved.running) {
+    if (!spectatorTab && saved.running) {
       begin({ resume: true });
     }
     if (launchedStart) {
@@ -10021,7 +10092,7 @@
         renderPanel();
       }
     }
-    else if (state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
+    else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
   }
@@ -10135,8 +10206,9 @@
         mode: currentTaskKey(),
         accountHandle: currentAccountHandle(),
         scheduleEnabled: Boolean(taskSchedule.enabled),
+        owned: !spectatorTab,
         // Keep occupancy alive while the shared tab is assigned but not looping yet.
-        phase: phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
+        phase: spectatorTab ? "" : phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
         detail: currentTaskDetail(),
         waitUntil: currentTaskWaitUntil()
       });
@@ -10221,6 +10293,7 @@
     if (!ensureExtensionContext()) return;
     if (areaName === "session" && changes.xrcTaskTabs) {
       openTaskTabs = changes.xrcTaskTabs.newValue || {};
+      void loadTabRole();
       renderPanel();
       return;
     }
@@ -10275,6 +10348,7 @@
       }
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
+    if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule) void loadTabRole();
   }
 
   try {

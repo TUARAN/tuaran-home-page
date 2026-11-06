@@ -314,6 +314,61 @@ test('task window state drops closed tabs before showing jump hints', async () =
   }
 })
 
+test('a manually opened X tab stays a spectator while the registered tab owns the schedule', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 12, items: {} },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 12, phase: 'running' } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 12 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: { async get(id) { return { id, url: 'https://x.com/home' } } },
+  }
+  try {
+    const spectator = await background.taskTabRole({ tab: { id: 34 } })
+    assert.equal(spectator.owned, false)
+    assert.equal(spectator.ownerTabId, 12)
+    assert.equal(spectator.ownerMode, 'timeline')
+    assert.equal(spectator.ownerActive, true)
+    const worker = await background.taskTabRole({ tab: { id: 12 } })
+    assert.equal(worker.owned, true)
+    local.xrcTaskSchedule.enabled = false
+    session.xrcTaskTabs.notifications = 41
+    const pluginOpened = await background.taskTabRole({ tab: { id: 41 } })
+    assert.equal(pluginOpened.owned, true)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function shouldResumeInTab\(role, pendingLaunch\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({})
+  vm.runInContext(`${definition}\nglobalThis.shouldResume = shouldResumeInTab`, context)
+  assert.equal(context.shouldResume({ owned: false }, null), false)
+  assert.equal(context.shouldResume({ owned: true }, null), true)
+  assert.equal(context.shouldResume({ owned: false }, { mode: 'timeline', start: true }), true)
+  const claim = source.match(/  async function keepSpectatorOnOwner\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(claim)
+  const guard = vm.createContext({
+    spectatorTab: true, tabRole: { ownerTabId: 12, tabId: 34 }, state: { status: '' },
+    loadTabRole: async () => {}, renderPanel: () => {},
+  })
+  vm.runInContext(`${claim}\nglobalThis.guardStart = keepSpectatorOnOwner`, guard)
+  assert.equal(await guard.guardStart(), true)
+  assert.equal(guard.spectatorTab, true)
+  assert.match(guard.state.status, /另一个页签/)
+  guard.tabRole.ownerTabId = 0
+  assert.equal(await guard.guardStart(), false)
+  assert.equal(guard.spectatorTab, false)
+  assert.match(source, /if \(!spectatorTab && saved\.running\)/)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled \|\| !probe\.owned\)/)
+})
+
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
@@ -1513,6 +1568,7 @@ test('starting the inspected reply targets that task while another task owns the
   const requested = []
   const context = vm.createContext({
     state: { running: false, loopPromise: null },
+    keepSpectatorOnOwner: async () => false,
     validTaskKey: (mode) => mode,
     currentTaskKey: () => 'likes-replies',
     stopScheduledWaitingTask: async (mode, localActive) => {
@@ -7590,11 +7646,13 @@ test('task windows are created once and reused without backgrounding another tas
     assert.equal(first.tabId, 77)
     assert.equal(second.reused, true)
     assert.equal(created, 1)
-    assert.deepEqual(createdUrls, ['https://x.com/notifications?xrcAssistant=notifications'])
-    assert.deepEqual(focusedTabs, [77])
+    assert.deepEqual(createdUrls, ['about:blank'])
+    assert.deepEqual(focusedTabs, [77, 77])
     assert.deepEqual(focusedWindows, [9])
     assert.equal(savedTabs.notifications, 77)
-    assert.deepEqual(tabUpdates[0], { active: true })
+    assert.deepEqual(tabUpdates[0], { url: 'https://x.com/notifications?xrcAssistant=notifications' })
+    assert.deepEqual(tabUpdates[1], { active: true })
+    assert.equal(sessionData['xrcPendingTab:77'].mode, 'notifications')
 
     const restarted = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } }, { start: true })
     assert.equal(restarted.reused, true)
@@ -8246,7 +8304,7 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
   }
 })
 
-test('a schedule with a lost tab reference adopts the active X tab for the same account', async () => {
+test('a schedule with a lost tab reference adopts a previously owned X tab', async () => {
   const previousChrome = globalThis.chrome
   const otherModes = ['kol', 'article', 'prune-posts', 'prune-replies', 'poster-x', 'timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
   const local = { xrcTaskSchedule: {
@@ -8266,7 +8324,7 @@ test('a schedule with a lost tab reference adopts the active X tab for the same 
       async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
       async sendMessage(id, message) {
         assert.equal(id, 11)
-        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', accountHandle: 'tuaran', scheduleEnabled: true }
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', accountHandle: 'tuaran', scheduleEnabled: true, owned: true }
         if (message.type === 'xrc-task-start') return { ok: true, phase: 'running' }
         throw new Error(`unexpected ${message.type}`)
       },
@@ -8292,6 +8350,7 @@ test('clicking a posting cooldown never marks the scheduled task as manually sto
   const actions = []
   const context = vm.createContext({
     state,
+    keepSpectatorOnOwner: async () => false,
     posterTaskKey: () => 'poster', posterKindFromMode: () => 'normal', currentTaskKey: () => 'poster', validTaskKey: () => '',
     stopScheduledWaitingTask: async () => false,
     postApi: { stop() { actions.push('stopped') } },

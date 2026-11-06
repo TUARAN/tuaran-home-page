@@ -40,9 +40,14 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
+    title: '社群发送定位与执行报警',
+    description: '群聊选中后多次查找 Send；限制、重试耗尽和发送结果未确认保存在本机报警记录中，不阻塞任务切换。本地源码，尚未打包。',
+    current: true,
+  },
+  {
+    version: '4.9.43',
     title: '评论限制状态与排班让位',
     description: '三项评论遇到 X 疑似自动化时显示真实冷却原因与剩余时间，受限期间让其他已到期任务继续排班。启动未确认会显示最近错误和重试时间。本地源码，尚未打包。',
-    current: true,
   },
   {
     version: '4.9.42',

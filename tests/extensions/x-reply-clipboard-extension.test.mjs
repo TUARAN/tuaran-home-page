@@ -8372,11 +8372,17 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // 关注目标未达成时，8.5 分的回关任务会先于三项 8 分评论任务。
-    assert.equal(activeMode, 'mutual-followBack')
+    // 精品发帖档位内先用 8.75 分；其他时间回关的 8.5 分先于评论。
+    const premiumSlotOpen = background.taskWindowOpen('poster-premium', { window: 'day' }, Date.now())
+      && [480, 570, 720, 900, 1140].some((slot) => {
+        const clock = new Date(Date.now() + 8 * 60 * 60000)
+        const minute = clock.getUTCHours() * 60 + clock.getUTCMinutes()
+        return minute >= slot && minute < slot + 15
+      })
+    assert.equal(activeMode, premiumSlotOpen ? 'poster-premium' : 'mutual-followBack')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /xrcAssistant=mutual-followBack/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => String(entry.options?.url || '').includes(`xrcAssistant=${activeMode}`)),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -9087,6 +9093,29 @@ test('comment tasks share one growing cooldown and clear it together on success'
     }
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('execution alerts persist locally, deduplicate repeats, and do not change the schedule', async () => {
+  const previousChrome = globalThis.chrome
+  const local = { xrcTaskSchedule: { enabled: true, current: 'likes-posts', items: {} } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: local[key] } },
+    async set(value) { Object.assign(local, value) },
+  } } }
+  try {
+    await Promise.all([
+      background.recordExecutionAlert({ task: 'community-share', kind: 'retry-exhausted', message: '找不到 Send', attempts: 24 }),
+      background.recordExecutionAlert({ task: 'community-share', kind: 'retry-exhausted', message: '找不到 Send', attempts: 24 }),
+      background.recordExecutionAlert({ task: 'timeline', kind: 'rate-limit', message: 'X 提示疑似自动化' }),
+    ])
+    const alerts = local[background.EXECUTION_ALERTS_KEY]
+    assert.equal(alerts.length, 2)
+    assert.equal(alerts.find((item) => item.task === 'community-share').count, 2)
+    assert.equal(alerts.find((item) => item.task === 'community-share').attempts, 24)
+    assert.equal(local.xrcTaskSchedule.current, 'likes-posts')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

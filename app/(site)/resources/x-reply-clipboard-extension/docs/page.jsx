@@ -325,6 +325,9 @@ export default function XReplyClipboardDocsPage() {
             <p className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_20%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
               顶部“详情”汇总 17 项任务；概览显示已排班总数及其中运行、等待、需处理的数量，再显示未排班数量。全流程暂停时，仍按任务配置统计已排班。界面只显示上述四类；“启动中 / 停止中”是短暂过渡。状态只反映扩展记录；X 页面是否完成动作，以页面反馈和已确认的统计为准。
             </p>
+            <p className="rounded-xl border border-[color-mix(in_srgb,#d97706_25%,var(--site-line))] bg-[color-mix(in_srgb,#f59e0b_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
+              排班台的「执行报警记录」保存在本机，记录 X 明确限制、社群发送失败或结果未确认，以及评论任务连续启动失败。最多保留最近 30 天的 80 条，短时间重复报警合并计数。报警只用于复核，不会暂停其他任务、延长原定等待或阻止排班切换。
+            </p>
           </Section>
 
           <Section id="tasks" index="03" title="十七项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 社群 · 清理">
@@ -371,8 +374,8 @@ export default function XReplyClipboardDocsPage() {
                 <ul className="list-disc space-y-2 pl-5">
                   <li id="community-share-rules" className="scroll-mt-24">社群分发默认不参与排班。在任务库勾选「社群类 · 社群分发」，或打开子页后点启动。它和其余任务共用同一个执行页签。当前规则如下。</li>
                   <li>来源：打开当前账号主页，等待帖子加载并继续向下寻找，跳过置顶和转发，选择最新的本人帖子。</li>
-                  <li>发送：点帖子操作栏书签右侧的分享按钮，选择「Send via Chat」。在分享窗口里依次多选所有可点击且显示人数的群聊，置灰群聊和个人账号跳过，然后只点一次 Send；没有群聊速度设置。</li>
-                  <li>确认：看到这次发送成功提示后，才把整条帖子标记为已分发，并把已选群聊计入成功，本轮立即结束。X 明确拒绝发送或没有成功提示时不写已分发标记，并提示手动核对。</li>
+                  <li>发送：点帖子操作栏书签右侧的分享按钮，选择「Send via Chat」。在分享窗口里依次多选所有可点击且显示人数的群聊，置灰群聊和个人账号跳过。选完后从群聊列表、同一弹窗底栏与聊天嵌入层寻找可点击的 Send，最多检查 24 次；找到后只点一次，没有群聊速度设置。</li>
+                  <li>确认：看到这次发送成功提示后，才把整条帖子标记为已分发，并把已选群聊计入成功，本轮立即结束。找不到 Send、X 明确拒绝发送或没有成功提示时不写已分发标记，记录执行报警并提示手动核对；报警记录不影响本轮让位和其他任务排班。</li>
                   <li>同一条帖子只分发一次。之后再次运行时，若最新帖子已有已分发标记，就直接跳过，不再打开分享窗口；参与排班时，本轮结束即让出执行页签。</li>
                 </ul>
               </TaskBlock>

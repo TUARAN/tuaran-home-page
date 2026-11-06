@@ -22,9 +22,10 @@ const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
 const TASK_SCHEDULE_KEY = "xrcTaskSchedule";
+const EXECUTION_ALERTS_KEY = "xrcExecutionAlertsV1";
 const TASK_SCHEDULE_ALARM = "xrc-task-schedule";
 const RESET_EPOCH_KEY = "xrcResetEpoch";
-const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport"]);
+const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
@@ -36,10 +37,36 @@ const RESERVED_X_PATHS = new Set([
 ]);
 const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
+let executionAlertWork = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
 const contextTabs = new Set();
 const activeReplyRequests = new Map();
+
+function recordExecutionAlert(input = {}) {
+  const work = executionAlertWork.then(async () => {
+    const task = validTaskMode(input.task);
+    const message = String(input.message || "").trim().slice(0, 240);
+    if (!task || !message || !chrome.storage?.local) return null;
+    const now = Date.now();
+    const kind = ["rate-limit", "retry-exhausted", "send-failed", "unconfirmed", "storage-failed"].includes(input.kind)
+      ? input.kind : "retry-exhausted";
+    const stored = (await chrome.storage.local.get(EXECUTION_ALERTS_KEY))?.[EXECUTION_ALERTS_KEY];
+    const alerts = Array.isArray(stored) ? stored.filter((entry) => now - Number(entry.occurredAt) < 30 * 86400000) : [];
+    const previous = alerts[0];
+    const entry = { id: `${now}-${Math.random().toString(36).slice(2, 8)}`, occurredAt: now, task, kind, message,
+      attempts: Math.max(0, Number(input.attempts) || 0), accountHandle: String(input.accountHandle || "").replace(/^@/u, "").slice(0, 15) };
+    if (previous && previous.task === task && previous.kind === kind && previous.message === message && now - previous.occurredAt < 5 * 60000) {
+      entry.id = previous.id;
+      entry.count = (Number(previous.count) || 1) + 1;
+      alerts.shift();
+    } else entry.count = 1;
+    await chrome.storage.local.set({ [EXECUTION_ALERTS_KEY]: [entry, ...alerts].slice(0, 80) });
+    return entry;
+  });
+  executionAlertWork = work.catch(() => {});
+  return work;
+}
 
 const REPLY_TIMELINE_PROMPT = [
   "你在 X 上随手回别人的帖子。只输出回复正文，不要解释。",
@@ -1723,6 +1750,10 @@ function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
     lastStartError: reason
   };
 }
+function alertOnExhaustedStart(mode, item, accountHandle = "") {
+  if (!item?.blocked || Number(item.recoveryAttempts) < REPLY_START_FAILURE_LIMIT) return;
+  recordExecutionAlert({ task: mode, kind: "retry-exhausted", message: item.reason, attempts: item.recoveryAttempts, accountHandle }).catch(() => {});
+}
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 /** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
 const STARTING_GRACE_MS = 90 * 1000;
@@ -1769,6 +1800,7 @@ async function failScheduledStart(mode, tabId, reason) {
     plan.startedAt = 0;
     plan.items[selected] = scheduledStartRetryItem(item, selected, `页内启动失败：${String(reason || "未知原因").slice(0, 110)}`, now);
     await saveTaskSchedule(plan);
+    alertOnExhaustedStart(selected, plan.items[selected], plan.accountHandle);
     await removeRuntimeTab(id);
     return { ok: true };
   });
@@ -2565,6 +2597,7 @@ async function runTaskSchedule() {
       plan.startedAt = 0;
       plan.items[current] = scheduledStartRetryItem(latestItem, current, "执行未确认，已保留当前页签并等待安全重试", now);
       await saveTaskSchedule(plan);
+      alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
       return runTaskSchedule();
     }
     if (startingTask && (Number(item.manualRequestedAt) > 0 || plan.manualFocusMode === current) && Number(plan.workTabId) > 0) {
@@ -2584,6 +2617,7 @@ async function runTaskSchedule() {
         plan.items[current] = scheduledStartRetryItem({ ...item, manualRequestedAt: 0 }, current,
           `启动失败：${String(error?.message || "页内未能启动").slice(0, 100)}`, now);
         await saveTaskSchedule(plan);
+        alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
         return runTaskSchedule();
       }
     }
@@ -2686,6 +2720,7 @@ async function runTaskSchedule() {
         ? scheduledStartRetryItem(item, mode, `页内启动失败：${reason}`, now)
         : { ...item, resumeAt: now + 5 * 60000, reason };
       await saveTaskSchedule(plan);
+      alertOnExhaustedStart(mode, plan.items[mode], plan.accountHandle);
     }
     break;
   }
@@ -2780,6 +2815,9 @@ async function noteScheduledAction(event) {
   }
   const savedItem = plan.items[mode] || item;
   await saveTaskSchedule(plan);
+  if (event.result === "limited") recordExecutionAlert({ task: mode, kind: "rate-limit", message: /^(?:risk-blocked|rate-limited)$/iu.test(String(savedItem.reason || ""))
+    ? "X 提示操作受限，已按任务规则等待或暂停" : String(savedItem.reason || event.errorCode || "X 操作受限"),
+    attempts: Number(savedItem.limitedStreak) || 1, accountHandle: plan.accountHandle }).catch(() => {});
   if (REPLY_TASKS.includes(mode) && event.result === "limited" && plan.enabled && REPLY_TASKS.includes(plan.current)) {
     const yieldMode = plan.current;
     const yieldReason = String(plan.items?.[yieldMode]?.reason || savedItem.reason || "评论受限，已让出页签");
@@ -4061,6 +4099,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "社群分发结束状态保存失败" }));
       return true;
     }
+    if (message?.type === "xrc-execution-alert") {
+      recordExecutionAlert(message.alert || {})
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "执行报警记录失败" }));
+      return true;
+    }
     if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat" || message?.type === "xrc-community-stats-sync") {
       const receipt = globalThis.XrcCommunityReceipt;
       if (!receipt) {
@@ -4167,6 +4211,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 if (typeof module === "object" && module.exports) {
   module.exports = {
     cleanReply,
+    recordExecutionAlert,
+    EXECUTION_ALERTS_KEY,
     cleanPost,
     parseAihotFeed,
     parseSourceRewrite,

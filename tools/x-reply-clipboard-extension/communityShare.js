@@ -155,10 +155,36 @@
   }
 
   function sendButtonNearDialog(dialog, doc) {
+    const sendIn = (scope) => {
+      const controls = Array.from(scope?.querySelectorAll?.('button, [role="button"], [data-testid*="send" i]') || []);
+      return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => {
+        if (!enabled(node, { ignoreAncestorOpacity: true }) || node.closest?.('#x-reply-clipboard-panel')) return false;
+        const aria = clean(node.getAttribute?.('aria-label'));
+        const label = textOf(node);
+        const testId = clean(node.getAttribute?.('data-testid'));
+        return [aria, label].some((value) => /^(?:Send|发送)(?:\s+post)?$/iu.test(value))
+          || /^(?:xchat)?send(?:Button|Message)?$/iu.test(testId);
+      }) || null;
+    };
     let scope = dialog;
-    for (let depth = 0; scope && scope !== doc?.body && depth < 12; depth++, scope = scope.parentElement || scope.getRootNode?.()?.host) {
-      const send = findAction(scope, /^(?:Send|发送)$/iu, { ignoreAncestorOpacity: true });
+    for (let depth = 0; scope && scope !== doc?.body && depth < 16; depth++, scope = scope.parentElement || scope.getRootNode?.()?.host) {
+      const send = sendIn(scope);
       if (send) return send;
+    }
+    // The group list and footer may be siblings in a portal outside the list's tree.
+    const roots = shareScopes(doc);
+    const sameSurface = (candidate) => candidate === dialog || candidate?.contains?.(dialog)
+      || candidate === dialog?.getRootNode?.() || candidate?.contains?.(dialog?.getRootNode?.()?.host);
+    for (const root of roots) {
+      if (root !== doc && sameSurface(root)) {
+        const send = sendIn(root);
+        if (send) return send;
+      }
+      for (const modal of root?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []) {
+        if (!sameSurface(modal) && !GROUP_RE.test(textOf(modal))) continue;
+        const send = sendIn(modal);
+        if (send) return send;
+      }
     }
     return null;
   }
@@ -206,7 +232,11 @@
     }
     async function wait(ms) { if (env.wait) await env.wait(ms); else await sleep(ms, win()); }
     function finish(message, limited = false) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = false; state.limited = limited; state.nextAt = 0; save(); }
-    function halt(message) { state.status = message; state.phase = 'done'; state.running = false; state.stopped = true; state.nextAt = 0; save(); }
+    function halt(message, kind = 'retry-exhausted', attempts = 0) {
+      // Alert persistence is observational: it must never hold the task slot.
+      try { Promise.resolve(env.reportAlert?.({ task: 'community-share', kind, message, attempts })).catch(() => {}); } catch (_) {}
+      state.status = message; state.phase = 'done'; state.running = false; state.stopped = true; state.nextAt = 0; save();
+    }
     async function run() {
       const handle = state.handle;
       if (!/^[A-Za-z0-9_]{1,15}$/u.test(handle)) { finish('无法确认当前账号，未发送'); return; }
@@ -254,7 +284,7 @@
       const selected = new Set();
       for (let step = 0; step < 300 && !stopping; step++) {
         const alertText = toast(doc());
-        if (LIMIT_RE.test(alertText)) { halt('X 提示操作受限，已停止发送'); return; }
+        if (LIMIT_RE.test(alertText)) { halt(`X 提示操作受限，已停止发送：${alertText.slice(0, 100)}`, 'rate-limit'); return; }
         const currentDialog = shareDialog(doc()) || dialog;
         const rows = groupRows(currentDialog);
         for (const row of rows) if (!state.seen.includes(row.id)) state.seen.push(row.id);
@@ -286,13 +316,14 @@
       if (!selected.size) { finish('最新帖子没有新的可点击群聊，本轮已结束'); return; }
       const beforeSend = toast(doc());
       let send = null;
-      for (let attempt = 0; attempt < 12 && !stopping; attempt++) {
+      for (let attempt = 0; attempt < 24 && !stopping; attempt++) {
         send = sendButtonNearDialog(shareDialog(doc()) || dialog, doc());
         if (send) break;
-        await wait(250);
+        if (attempt % 4 === 0) { state.status = `已选 ${selected.size} 个群聊，正在定位 Send（第 ${attempt + 1}/24 次）`; save(); }
+        await wait(350);
       }
       if (stopping) return;
-      if (!send) { halt(`已选 ${selected.size} 个群聊，但未找到 Send；请手动核对，未记录成功`); return; }
+      if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
       state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
       send.click();
       let result = '';
@@ -302,10 +333,10 @@
         if (result !== beforeSend && (SENT_RE.test(result) || SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) break;
       }
       if (stopping) return;
-      if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊；未记录成功，请检查 X 的提示`); return; }
-      if (!SENT_RE.test(result) || result === beforeSend) { halt(`已点 Send，但未看到成功提示；请手动核对，未记录成功`); return; }
+      if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊：${result.slice(0, 100)}；未记录成功`, LIMIT_RE.test(result) ? 'rate-limit' : 'send-failed'); return; }
+      if (!SENT_RE.test(result) || result === beforeSend) { halt(`已点 Send，但 20 次检查后未看到成功提示；请手动核对，未记录成功`, 'unconfirmed', 20); return; }
       try { await rememberBatch([...selected]); }
-      catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对'); return; }
+      catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对', 'storage-failed'); return; }
       for (const groupId of selected) {
         try { root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) }); } catch (_) {}
       }

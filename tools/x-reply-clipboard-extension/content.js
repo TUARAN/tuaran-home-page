@@ -53,6 +53,7 @@
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIdsV2";
   const LEGACY_NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+  const EXECUTION_ALERTS_KEY = "xrcExecutionAlertsV1";
   const DEV_UPDATE_KEY = "xrcLocalDevUpdate";
   const RESET_EPOCH_KEY = "xrcResetEpoch";
   const SESSION_RESET_EPOCH_KEY = "xrcResetEpochSeen";
@@ -352,6 +353,9 @@
 
   let pluginRuntime = { startedAt: null, tasks: {} };
   let taskSchedule = { enabled: false, items: {} };
+  let executionAlerts = [];
+  const recentExecutionAlerts = (value) => Array.isArray(value)
+    ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
   let scheduleLoaded = false;
   let scheduleLoadError = false;
   let lastScheduleReadAt = 0;
@@ -967,7 +971,9 @@
 
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
-      communityController = communityApi.createController({ document, window });
+      communityController = communityApi.createController({ document, window,
+        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); }
+      });
       communityController.subscribe((snapshot) => {
         const wasRunning = communityState.running;
         communityState = {
@@ -2862,6 +2868,34 @@
       }
     }
     paintScheduleBoard(desk);
+  }
+
+  function paintExecutionAlerts(panel) {
+    const count = panel?.querySelector('[data-xrc-execution-alert-count]');
+    const list = panel?.querySelector('[data-xrc-execution-alert-list]');
+    if (!count || !list) return;
+    count.textContent = `${executionAlerts.length} 条`;
+    const signature = executionAlerts.slice(0, 8).map((item) => `${item.id}:${item.count}`).join('|');
+    if (list.dataset.signature === signature) return;
+    list.dataset.signature = signature;
+    list.replaceChildren();
+    if (!executionAlerts.length) {
+      const empty = document.createElement('li');
+      empty.textContent = '暂无执行报警';
+      list.append(empty);
+      return;
+    }
+    for (const item of executionAlerts.slice(0, 8)) {
+      const row = document.createElement('li');
+      const heading = document.createElement('strong');
+      const when = Number(item.occurredAt) ? new Date(Number(item.occurredAt)).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '时间未知';
+      const kind = { 'rate-limit': 'X 限制', 'retry-exhausted': '重试耗尽', 'send-failed': '发送失败', unconfirmed: '结果未确认', 'storage-failed': '记录失败' }[item.kind] || '执行异常';
+      heading.textContent = `${kind} · ${TASK_MODE_LABELS[item.task] || item.task || '任务'}${item.accountHandle && item.accountHandle !== 'default' ? ` · @${item.accountHandle}` : ''} · ${when}${Number(item.count) > 1 ? ` · 重复 ${item.count} 次` : ''}`;
+      const detail = document.createElement('span');
+      detail.textContent = String(item.message || '执行失败');
+      row.append(heading, detail);
+      list.append(row);
+    }
   }
 
   function scheduleItemPulse(mode, preview, overviewTask) {
@@ -8101,6 +8135,11 @@
             <ul data-xrc-schedule-list></ul>
           </section>
           </section></div>
+          <details class="xrc-execution-alerts" data-xrc-execution-alerts>
+            <summary>执行报警记录 <small data-xrc-execution-alert-count>0 条</small></summary>
+            <p>只保存在本机。限制或重试耗尽会留痕；记录失败不影响排班切换。</p>
+            <ul data-xrc-execution-alert-list><li>暂无执行报警</li></ul>
+          </details>
         </div>
         <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
           <button type="button" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
@@ -9650,6 +9689,7 @@
     syncMonitorMenu(panel);
     syncReportPage(panel);
     syncHubPage(panel);
+    paintExecutionAlerts(panel);
     placePanel(panel);
   }
 
@@ -9898,6 +9938,11 @@
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
     await loadPluginRuntime();
+    try {
+      const storedAlerts = (await chrome.storage.local.get(EXECUTION_ALERTS_KEY))?.[EXECUTION_ALERTS_KEY];
+      executionAlerts = recentExecutionAlerts(storedAlerts);
+    }
+    catch (error) { executionAlerts = []; }
     localDevUpdate = (await chrome.storage.local.get(DEV_UPDATE_KEY))?.[DEV_UPDATE_KEY] || null;
     await loadOpenTaskTabs();
     const bootTaskKey = currentTaskKey();
@@ -10194,6 +10239,10 @@
         evaluatedAt: next.evaluatedAt || taskSchedule.evaluatedAt
       };
       void refreshScheduleView();
+    }
+    if (changes[EXECUTION_ALERTS_KEY]) {
+      executionAlerts = recentExecutionAlerts(changes[EXECUTION_ALERTS_KEY].newValue);
+      renderPanel();
     }
     if (changes[DEV_UPDATE_KEY]) {
       localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;

@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 245,
-    "redirects": 22,
+    "routes": 246,
+    "redirects": 23,
     "private": 63,
     "registeredStatic": 116,
     "indexable": 137,
-    "canonical": 155,
-    "openGraph": 89,
-    "jsonLd": 64,
+    "canonical": 156,
+    "openGraph": 90,
+    "jsonLd": 65,
     "errors": 9,
-    "warnings": 141
+    "warnings": 138
   },
   "routes": [
     {
@@ -2626,10 +2626,11 @@
     {
       "path": "/publications",
       "file": "app/(site)/publications/page.jsx",
-      "kind": "static",
-      "registered": true,
-      "indexable": true,
-      "sitemap": true,
+      "kind": "redirect",
+      "redirect": "/resources/books",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
       "signals": {
         "canonical": false,
         "canonicalValues": [],
@@ -2870,6 +2871,27 @@
         "jsonLd": true,
         "ogUrls": [
           "https://2aran.com/resources/big-interaction-whitepaper/roundtable"
+        ]
+      }
+    },
+    {
+      "path": "/resources/books",
+      "file": "app/(site)/resources/books/page.mdx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/resources/books"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/resources/books",
+          "https://2aran.com/resources/books"
         ]
       }
     },
@@ -4287,13 +4309,6 @@
       "message": "页面没有声明 canonical。"
     },
     {
-      "id": "canonical.missing:/publications",
-      "rule": "canonical.missing",
-      "route": "/publications",
-      "severity": "warning",
-      "message": "页面没有声明 canonical。"
-    },
-    {
       "id": "canonical.missing:/resources/cz-memoirs/[chapter]",
       "rule": "canonical.missing",
       "route": "/resources/cz-memoirs/[chapter]",
@@ -4500,13 +4515,6 @@
       "id": "jsonld.missing:/prompt-center",
       "rule": "jsonld.missing",
       "route": "/prompt-center",
-      "severity": "warning",
-      "message": "可索引页面缺少页面级 JSON-LD。"
-    },
-    {
-      "id": "jsonld.missing:/publications",
-      "rule": "jsonld.missing",
-      "route": "/publications",
       "severity": "warning",
       "message": "可索引页面缺少页面级 JSON-LD。"
     },
@@ -5046,13 +5054,6 @@
       "id": "og.missing:/prompt-center",
       "rule": "og.missing",
       "route": "/prompt-center",
-      "severity": "warning",
-      "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
-    },
-    {
-      "id": "og.missing:/publications",
-      "rule": "og.missing",
-      "route": "/publications",
       "severity": "warning",
       "message": "可索引页面只会继承全站 OG，缺少页面级 Open Graph。"
     },

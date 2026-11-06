@@ -10,7 +10,7 @@ import { STATIC_PAGE_REGISTRY } from '../lib/site/staticPageRegistry.mjs'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SNAPSHOT_PATH = path.join(ROOT, 'docs', 'seo', 'route-audit.snapshot.json')
 const CURRENT_PATH = path.join(ROOT, 'tmp', 'seo-route-audit.current.json')
-const PAGE_FILE_RE = /\/page\.(?:js|jsx|mjs)$/
+const PAGE_FILE_RE = /\/page\.(?:js|jsx|mjs|md|mdx)$/
 const ROUTE_GROUP_RE = /^\(.*\)$/
 
 async function walk(directory) {

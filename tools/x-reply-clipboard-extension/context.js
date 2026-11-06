@@ -66,16 +66,43 @@
     return [...handles];
   }
 
+  function articleAttribute(article, name) {
+    if (typeof article?.getAttribute !== "function") return null;
+    const value = article.getAttribute(name);
+    return value == null ? null : String(value);
+  }
+
+  // Missing "Replying to" text is not proof of an original post. The post is
+  // the conversation root only when its conversation id is its own status id
+  // and it has no parent status. A different conversation id or a parent id
+  // means this post is a reply even when the reply chrome did not render.
+  function rootIdentityFromArticle(article, id) {
+    const conversationId = articleAttribute(article, "data-xrc-conversation-id") || "";
+    const inReplyRaw = articleAttribute(article, "data-xrc-in-reply-to");
+    const inReplyTo = inReplyRaw ? inReplyRaw : "";
+    let proof = "";
+    if (!conversationId || !id) proof = "";
+    else if (inReplyTo || conversationId !== id) proof = "reply";
+    else proof = "original";
+    return { proof, conversationId, inReplyTo };
+  }
+
   function tweetFromArticle(article) {
     const href = statusHrefFromArticle(article);
+    const id = statusId(href);
     const textNode = article.querySelector?.('[data-testid="tweetText"]');
     const replyToHandles = replyToHandlesFromArticle(article);
+    const identity = rootIdentityFromArticle(article, id);
+    const proof = replyToHandles.length ? "reply" : identity.proof;
     return {
-      id: statusId(href),
+      id,
       authorHandle: handleFromHref(href),
       text: nodeText(textNode),
       replyToHandles,
-      isReply: replyToHandles.length > 0
+      isReply: proof === "reply",
+      originalProof: proof === "original",
+      conversationId: identity.conversationId,
+      inReplyTo: identity.inReplyTo
     };
   }
 
@@ -96,7 +123,31 @@
     };
   }
 
-  function findConversation(articles, replyId, ownHandle, replyAuthor = "") {
+  function ancestorsThrough(tweets, index) {
+    return tweets.slice(0, index + 1);
+  }
+
+  function conversationAligned(tweets, rootId) {
+    if (!rootId) return false;
+    return tweets.every((tweet) => !tweet.conversationId || tweet.conversationId === rootId);
+  }
+
+  function hasMissingParent(tweets) {
+    const ids = new Set(tweets.map((tweet) => tweet.id).filter(Boolean));
+    return tweets.some((tweet) => tweet.inReplyTo && !ids.has(tweet.inReplyTo));
+  }
+
+  function originalAuthorsBefore(tweets, index) {
+    const authors = [];
+    for (const tweet of tweets.slice(0, index)) {
+      const author = normalizeHandle(tweet.authorHandle);
+      if (tweet.originalProof !== true || !author) continue;
+      if (!authors.includes(author)) authors.push(author);
+    }
+    return authors;
+  }
+
+  function findConversation(articles, replyId, ownHandle, replyAuthor = "", pageStatusId = "") {
     const tweets = Array.from(articles)
       .filter((article) => !article.parentElement?.closest?.('[data-testid="tweet"]'))
       .map(tweetFromArticle);
@@ -106,40 +157,69 @@
     const author = normalizeHandle(replyAuthor);
     if (!reply.text || (author && reply.authorHandle !== author)) return null;
     const own = normalizeHandle(ownHandle);
+    const pageId = String(pageStatusId || "");
+    const pageAligned = !pageId || pageId === String(replyId);
     for (let i = index - 1; i >= 0; i -= 1) {
       if (tweets[i].authorHandle === own && tweets[i].text) {
         const rootPost = tweets[0] || null;
-        // Only a non-reply post can be the thread root. Our earlier comment under
-        // someone else's post is still a reply, even when it is the first tweet loaded.
-        const rootSettled = Boolean(rootPost?.authorHandle && rootPost.isReply !== true);
-        const ownThread = Boolean(rootSettled && rootPost.authorHandle === own);
+        const chain = ancestorsThrough(tweets, index);
+        const originalAuthors = originalAuthorsBefore(tweets, index);
+        const rootHandle = normalizeHandle(rootPost?.authorHandle);
+        const aligned = Boolean(rootPost?.id && conversationAligned(chain, rootPost.id) && !hasMissingParent(chain));
+        // The first loaded post is the root only with positive proof that it
+        // starts the conversation. A foreign original anywhere above the
+        // notification means this is not the active account's thread.
+        const rootSettled = Boolean(pageAligned && aligned && rootHandle
+          && rootPost.originalProof === true && rootPost.isReply !== true
+          && originalAuthors.every((handle) => handle === rootHandle));
+        const ownThread = Boolean(rootSettled && rootHandle === own
+          && originalAuthors.every((handle) => handle === own));
         // The root post is not a reply round. Count our earlier replies on the
         // ancestor path before the notification being considered.
         const ownReplyCount = tweets.slice(1, index).filter((tweet) => tweet.authorHandle === own).length;
-        const thread = tweets.slice(0, index + 1).map(({ id, authorHandle, text }) => ({ id, authorHandle, text }));
-        return { ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount, thread };
+        const thread = chain.map(({ id, authorHandle, text }) => ({ id, authorHandle, text }));
+        return {
+          ownPost: tweets[i], reply, rootPost, ownThread, rootSettled, ownReplyCount, thread, originalAuthors
+        };
       }
     }
     return null;
+  }
+
+  function foreignOriginalAuthor(conversation, ownHandle) {
+    const own = normalizeHandle(ownHandle);
+    return (conversation?.originalAuthors || []).some((handle) => {
+      const author = normalizeHandle(handle);
+      return author && author !== own;
+    });
   }
 
   // Continued dialogue requires the active session to own the root post.
   // An earlier reply of ours, a missing root, or another logged-in account does not.
   function replyLimitReached(conversation, ownHandle) {
     const own = normalizeHandle(ownHandle);
+    const root = conversation?.rootPost;
     return Boolean(own && conversation?.rootSettled === true
-      && conversation?.rootPost?.isReply !== true
-      && normalizeHandle(conversation?.rootPost?.authorHandle) === own
+      && root?.originalProof === true
+      && root?.isReply !== true
+      && !root?.inReplyTo
+      && (!root?.conversationId || !root?.id || root.conversationId === root.id)
+      && normalizeHandle(root?.authorHandle) === own
+      && !foreignOriginalAuthor(conversation, own)
       && Number(conversation?.ownReplyCount) >= MAX_OWN_REPLIES_PER_DIALOGUE);
   }
 
   function allowsContinuedDialogue(conversation, ownHandle) {
-    if (!conversation || conversation.rootSettled === false) return false;
+    if (!conversation || conversation.rootSettled !== true) return false;
     const own = normalizeHandle(ownHandle);
     const root = conversation.rootPost;
     const rootHandle = normalizeHandle(root?.authorHandle);
     if (!own || !rootHandle || rootHandle !== own) return false;
+    if (foreignOriginalAuthor(conversation, own)) return false;
+    if (root.originalProof !== true) return false;
     if (root.isReply === true) return false;
+    if (root.inReplyTo) return false;
+    if (root.conversationId && root.id && root.conversationId !== root.id) return false;
     if (Array.isArray(root.replyToHandles) && root.replyToHandles.length > 0) return false;
     if (replyLimitReached(conversation, ownHandle)) return false;
     return true;
@@ -156,10 +236,12 @@
         sendResponse({ ok: true, context: null });
         return false;
       }
+      try { root.document.dispatchEvent(new CustomEvent("xrc-thread-proof")); } catch (error) {}
       const articles = conversationTweetNodes(root.document);
       const observation = conversationObservation(articles, message.replyId, message.ownHandle);
-      const context = findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor);
-      if (!context && observation.targetSeen && !observation.earlierOwnSeen && !ancestorScrollAttempted) {
+      const pageStatusId = statusId(root.location?.pathname);
+      const context = findConversation(articles, message.replyId, message.ownHandle, message.replyAuthor, pageStatusId);
+      if (observation.targetSeen && context?.rootSettled !== true && !ancestorScrollAttempted) {
         ancestorScrollAttempted = true;
         try {
           if (root.document.scrollingElement) root.document.scrollingElement.scrollTop = 0;

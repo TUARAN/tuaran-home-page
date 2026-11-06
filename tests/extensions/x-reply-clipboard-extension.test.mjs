@@ -5447,17 +5447,30 @@ test('recognizes only notification tweets that reply to the signed-in account', 
   assert.equal(loop.isNotificationReplyText('Replying to @someone_else', 'tuaran'), false)
 })
 
+function proveOriginal(article, href) {
+  const id = String(href).match(/\/status\/(\d+)/u)?.[1] || ''
+  article.getAttribute = (name) => {
+    if (name === 'data-xrc-conversation-id') return id
+    if (name === 'data-xrc-in-reply-to') return ''
+    return null
+  }
+  return article
+}
+
 test('notification conversation uses the nearest earlier post by the signed-in account', () => {
-  const article = (href, text) => ({
-    parentElement: { closest() { return null } },
-    querySelector(selector) {
-      if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
-      if (selector === '[data-testid="tweetText"]') return { innerText: text }
-      return null
-    },
-  })
+  const article = (href, text, original = false) => {
+    const node = {
+      parentElement: { closest() { return null } },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: text }
+        return null
+      },
+    }
+    return original ? proveOriginal(node, href) : node
+  }
   const articles = [
-    article('/me/status/100', '我的原帖'),
+    article('/me/status/100', '我的原帖', true),
     article('/other/status/101', '别人的中间回复'),
     article('/me/status/102', '我补充的上下文'),
     article('/friend/status/103', '对方最新回复'),
@@ -5476,7 +5489,7 @@ test('notification conversation uses the nearest earlier post by the signed-in a
   assert.equal(context.findConversation([articles.at(-1)], '103', 'me', 'friend'), null)
 
   const foreign = [
-    article('/friend/status/200', '别人的原帖'),
+    article('/friend/status/200', '别人的原帖', true),
     article('/me/status/201', '我之前回过一句'),
     article('/friend/status/202', '对方又回了我'),
   ]
@@ -5490,16 +5503,20 @@ test('notification conversation uses the nearest earlier post by the signed-in a
 })
 
 test('notification dialogue stops after three replies by the signed-in account in one thread', () => {
-  const article = (handle, id, text) => ({
-    parentElement: { closest() { return null } },
-    querySelector(selector) {
-      if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return `/${handle}/status/${id}` } } } }
-      if (selector === '[data-testid="tweetText"]') return { innerText: text }
-      return null
-    },
-  })
+  const article = (handle, id, text, original = false) => {
+    const href = `/${handle}/status/${id}`
+    const node = {
+      parentElement: { closest() { return null } },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: text }
+        return null
+      },
+    }
+    return original ? proveOriginal(node, href) : node
+  }
   const thread = [
-    article('me', 100, '我的原帖'),
+    article('me', 100, '我的原帖', true),
     article('friend', 101, '第一次回复'), article('me', 102, '我的第一轮'),
     article('friend', 103, '第二次回复'), article('me', 104, '我的第二轮'),
     article('friend', 105, '第三次回复'), article('me', 106, '我的第三轮'),
@@ -5512,6 +5529,151 @@ test('notification dialogue stops after three replies by the signed-in account i
   assert.equal(fourth.ownReplyCount, 3)
   assert.equal(context.replyLimitReached(fourth, 'me'), true)
   assert.equal(context.allowsContinuedDialogue(fourth, 'me'), false)
+})
+
+test('a foreign thread does not continue when our reply is first and lacks reply chrome', () => {
+  const article = (href, text) => ({
+    parentElement: { closest() { return null } },
+    querySelector(selector) {
+      if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+      if (selector === '[data-testid="tweetText"]') return { innerText: text, textContent: text }
+      return null
+    },
+    querySelectorAll() { return [] },
+  })
+  const foreignTop = [
+    article('/me/status/201', '我之前回过一句'),
+    article('/friend/status/202', '对方又回了我'),
+  ]
+  const misplaced = context.findConversation(foreignTop, '202', 'me', 'friend', '202')
+  assert.equal(misplaced.rootPost.authorHandle, 'me')
+  assert.equal(misplaced.rootPost.isReply, false)
+  assert.equal(misplaced.rootPost.originalProof, false)
+  assert.equal(misplaced.rootSettled, false)
+  assert.equal(misplaced.ownThread, false)
+  assert.equal(context.allowsContinuedDialogue(misplaced, 'me'), false)
+
+  const markedReply = article('/me/status/201', '我之前回过一句')
+  markedReply.getAttribute = (name) => {
+    if (name === 'data-xrc-conversation-id') return '200'
+    if (name === 'data-xrc-in-reply-to') return '200'
+    return null
+  }
+  const identified = context.findConversation([
+    markedReply,
+    article('/friend/status/202', '对方又回了我'),
+  ], '202', 'me', 'friend', '202')
+  assert.equal(identified.rootPost.isReply, true)
+  assert.equal(identified.rootPost.conversationId, '200')
+  assert.equal(identified.rootSettled, false)
+  assert.equal(context.allowsContinuedDialogue(identified, 'me'), false)
+
+  const own = [
+    proveOriginal(article('/me/status/100', '我的原帖'), '/me/status/100'),
+    article('/friend/status/101', '第一次回复'),
+    article('/me/status/102', '我的第一轮'),
+    article('/friend/status/103', '第二次回复'),
+  ]
+  const continued = context.findConversation(own, '103', 'me', 'friend', '103')
+  assert.equal(continued.ownReplyCount, 1)
+  assert.equal(continued.rootPost.originalProof, true)
+  assert.equal(continued.rootSettled, true)
+  assert.equal(context.allowsContinuedDialogue(continued, 'me'), true)
+  assert.equal(context.findConversation(own, '103', 'me', 'friend', '999').rootSettled, false)
+
+  const capped = [
+    proveOriginal(article('/me/status/100', '我的原帖'), '/me/status/100'),
+    article('/friend/status/101', '第一次回复'), article('/me/status/102', '我的第一轮'),
+    article('/friend/status/103', '第二次回复'), article('/me/status/104', '我的第二轮'),
+    article('/friend/status/105', '第三次回复'), article('/me/status/106', '我的第三轮'),
+    article('/friend/status/107', '第四次回复'),
+  ]
+  const fourth = context.findConversation(capped, '107', 'me', 'friend', '107')
+  assert.equal(fourth.ownReplyCount, 3)
+  assert.equal(context.replyLimitReached(fourth, 'me'), true)
+  assert.equal(context.allowsContinuedDialogue(fourth, 'me'), false)
+
+  const gapReply = article('/friend/status/103', '对方回复')
+  gapReply.getAttribute = (name) => {
+    if (name === 'data-xrc-conversation-id') return '100'
+    if (name === 'data-xrc-in-reply-to') return '999'
+    return null
+  }
+  const gapped = context.findConversation([
+    proveOriginal(article('/me/status/100', '我的原帖'), '/me/status/100'),
+    gapReply,
+  ], '103', 'me', 'friend', '103')
+  assert.equal(gapped.rootSettled, false)
+  assert.equal(context.allowsContinuedDialogue(gapped, 'me'), false)
+})
+
+test('thread proof reads conversation identity from the post props and ignores a quoted post', () => {
+  const threadProof = require('../../tools/x-reply-clipboard-extension/threadProof.js')
+  function article(href, legacy) {
+    const attrs = {}
+    const fiber = {
+      memoizedProps: {
+        tweet: {
+          rest_id: legacy.id_str,
+          legacy,
+          quoted_status_result: {
+            legacy: { id_str: '50', full_text: '引用', conversation_id_str: '50', in_reply_to_status_id_str: null },
+          },
+        },
+      },
+      return: null,
+    }
+    return {
+      __reactFiber$test: fiber,
+      parentElement: { closest() { return null } },
+      getAttribute(name) { return Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : null },
+      setAttribute(name, value) { attrs[name] = String(value) },
+      removeAttribute(name) { delete attrs[name] },
+      querySelector(selector) {
+        if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
+        if (selector === '[data-testid="tweetText"]') return { innerText: legacy.full_text, textContent: legacy.full_text }
+        return null
+      },
+      querySelectorAll() { return [] },
+    }
+  }
+  const root = article('/me/status/100', {
+    id_str: '100', full_text: '我的原帖', conversation_id_str: '100', in_reply_to_status_id_str: null,
+  })
+  const mine = article('/me/status/201', {
+    id_str: '201', full_text: '我之前回过一句', conversation_id_str: '200', in_reply_to_status_id_str: '200',
+  })
+  const reply = article('/friend/status/202', {
+    id_str: '202', full_text: '对方又回了我', conversation_id_str: '200', in_reply_to_status_id_str: '201',
+  })
+  assert.equal(threadProof.annotateDocument({ querySelectorAll: () => [root, mine, reply] }), 3)
+  assert.equal(root.getAttribute('data-xrc-conversation-id'), '100')
+  assert.equal(root.getAttribute('data-xrc-in-reply-to'), '')
+  assert.equal(mine.getAttribute('data-xrc-in-reply-to'), '200')
+  const foreign = context.findConversation([mine, reply], '202', 'me', 'friend', '202')
+  assert.equal(foreign.rootPost.isReply, true)
+  assert.equal(foreign.rootSettled, false)
+  assert.equal(context.allowsContinuedDialogue(foreign, 'me'), false)
+  const direct = article('/friend/status/103', {
+    id_str: '103', full_text: '对方回复', conversation_id_str: '100', in_reply_to_status_id_str: '100',
+  })
+  assert.equal(threadProof.annotateArticle(direct), true)
+  const own = context.findConversation([root, direct], '103', 'me', 'friend', '103')
+  assert.equal(own.rootPost.originalProof, true)
+  assert.equal(own.ownReplyCount, 0)
+  assert.equal(context.allowsContinuedDialogue(own, 'me'), true)
+  const weak = article('/me/status/400', { id_str: '400', full_text: '只有会话编号', conversation_id_str: '400' })
+  const weakReply = article('/friend/status/401', {
+    id_str: '401', full_text: '回复', conversation_id_str: '400', in_reply_to_status_id_str: '400',
+  })
+  assert.equal(threadProof.annotateArticle(weak), true)
+  assert.equal(threadProof.annotateArticle(weakReply), true)
+  assert.equal(weak.getAttribute('data-xrc-conversation-id'), '400')
+  assert.equal(weak.getAttribute('data-xrc-in-reply-to'), null)
+  const matched = context.findConversation([weak, weakReply], '401', 'me', 'friend', '401')
+  assert.equal(matched.rootPost.originalProof, true)
+  assert.equal(matched.ownReplyCount, 0)
+  assert.equal(context.allowsContinuedDialogue(matched, 'me'), true)
 })
 
 test('conversation reader distinguishes a missing target from an unloaded parent', () => {
@@ -5548,9 +5710,9 @@ test('unreadable notification context is deferred without caching a permanent re
 })
 
 test('continued dialogue follows the active account root, not an earlier reply in someone else\'s thread', () => {
-  const article = (href, text, replyingTo = '') => {
+  const article = (href, text, replyingTo = '', original = false) => {
     const replyLine = replyingTo ? `Replying to @${replyingTo}` : ''
-    return {
+    const node = {
       parentElement: { closest() { return null } },
       querySelector(selector) {
         if (selector === 'a[href*="/status/"] time') return { closest() { return { getAttribute() { return href } } } }
@@ -5570,9 +5732,10 @@ test('continued dialogue follows the active account root, not an earlier reply i
         return []
       },
     }
+    return original ? proveOriginal(node, href) : node
   }
   const foreignThread = [
-    article('/stranger/status/200', '白裙子原帖'),
+    article('/stranger/status/200', '白裙子原帖', '', true),
     article('/tuaranx/status/201', '边界感这东西，说早了是清醒，说晚了是欠条。', 'stranger'),
     article('/nowxono/status/202', '担心你马上被抬走', 'tuaranx'),
   ]
@@ -5619,7 +5782,7 @@ test('continued dialogue follows the active account root, not an earlier reply i
   assert.equal(context.allowsContinuedDialogue(chinese, 'tuaranx'), false)
 
   const ownThread = [
-    article('/tuaranx/status/400', '我的原帖'),
+    article('/tuaranx/status/400', '我的原帖', '', true),
     article('/nowxono/status/401', '对方第一次回我', 'tuaranx'),
     article('/tuaranx/status/402', '我继续接', 'nowxono'),
     article('/nowxono/status/403', '对方又回了', 'tuaranx'),
@@ -5928,9 +6091,10 @@ test('notification context waits for a settled root and does not keep an unsettl
           context: {
             ownPost: { authorHandle: 'tuaranx', text: '我的原帖' },
             reply: { authorHandle: 'nowxono', text: '对方回复' },
-            rootPost: { authorHandle: 'tuaranx', text: '我的原帖', isReply: false, replyToHandles: [] },
+            rootPost: { authorHandle: 'tuaranx', text: '我的原帖', isReply: false, replyToHandles: [], originalProof: true, id: '100', conversationId: '100', inReplyTo: '' },
             ownThread: true,
             rootSettled: true,
+            originalAuthors: ['tuaranx'],
           },
         }
       },
@@ -7108,7 +7272,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.ok(manifest.host_permissions.includes('https://api.deepseek.com/*'))
   assert.ok(manifest.host_permissions.includes('https://api.b.ai/*'))
   assert.equal(manifest.content_scripts[0].world, 'MAIN')
-  assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js', 'vendor/x-article/main-world.js'])
+  assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
   assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'content.js', 'experiments.js'])

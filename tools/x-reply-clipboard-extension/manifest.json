@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "4.9.49",
+  "version": "4.9.51",
   "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",
@@ -46,6 +46,7 @@
         "https://twitter.com/*"
       ],
       "js": [
+        "threadProof.js",
         "draftFill.js",
         "vendor/x-article/main-world.js"
       ],
@@ -53,8 +54,13 @@
       "world": "MAIN"
     },
     {
-      "matches": ["https://2aran.com/articles/*"],
-      "js": ["vendor/x-article/format-core.js", "vendor/x-article/site-content.js"],
+      "matches": [
+        "https://2aran.com/articles/*"
+      ],
+      "js": [
+        "vendor/x-article/format-core.js",
+        "vendor/x-article/site-content.js"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -90,6 +96,7 @@
         "communityShare.js",
         "kolRoster.js",
         "extensionContext.js",
+        "bigInteractionArchive.js",
         "content.js",
         "experiments.js"
       ],

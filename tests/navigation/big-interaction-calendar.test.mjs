@@ -10,6 +10,7 @@ import {
   isIsoDate,
   monthMatrix,
   profileUrlFor,
+  latestRecordedDate,
   resolveSelectedDate,
   shanghaiDateKey,
   validateDailyTopDay,
@@ -51,13 +52,27 @@ test('sample day 2026-11-05 matches the shipped top 10', () => {
   assert.equal(day.top.some((row) => row.handle.toLowerCase() === 'tarsixseveneig1'), false)
 })
 
-test('selected date stays on today when that day has no ranking', () => {
+test('invalid query falls back to today when no day catalog is provided', () => {
   assert.equal(resolveSelectedDate(null, '2026-11-06'), '2026-11-06')
   assert.equal(resolveSelectedDate('not-a-date', '2026-11-06'), '2026-11-06')
   assert.equal(resolveSelectedDate('2026-02-31', '2026-11-06'), '2026-11-06')
   assert.equal(resolveSelectedDate('2026-11-05', '2026-11-06'), '2026-11-05')
   assert.equal(emptyStateCopy('2026-11-06', ['2026-11-05']), '这一天还没有收录互动前十。2026-11-05 已有样例，可改选这一天。')
   assert.equal(emptyStateCopy('2026-11-05', ['2026-11-05']), '这一天还没有收录互动前十。')
+})
+
+test('default day is today when that JSON exists, otherwise the latest day file', () => {
+  const shipped = loadDailyTopDays().map((day) => day.date)
+  assert.deepEqual(shipped, [DAILY_TOP_SAMPLE_DATE])
+  assert.equal(latestRecordedDate(shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-06', shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate(undefined, '2026-11-06', shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate('not-a-date', '2026-11-06', ['2026-11-01', '2026-11-05']), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-05', shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-06', ['2026-11-05', '2026-11-06']), '2026-11-06')
+  assert.equal(resolveSelectedDate(null, '2026-11-07', ['2026-11-05', '2026-11-06']), '2026-11-06')
+  assert.equal(resolveSelectedDate('2026-11-06', '2026-11-06', shipped), '2026-11-06')
+  assert.equal(resolveSelectedDate(null, '2026-11-06', []), '2026-11-06')
 })
 
 test('Shanghai date key follows the Asia/Shanghai calendar date', () => {
@@ -111,6 +126,9 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /构成简述/)
   assert.match(view, /主页链接/)
   assert.match(view, /emptyStateCopy\(selected, availableDates\)/)
+  assert.match(view, /resolveSelectedDate\(null, initialToday, availableDates\)/)
+  assert.match(view, /resolveSelectedDate\(query, liveToday, availableDates\)/)
+  assert.match(view, /function choose\(date\)/)
   assert.match(view, /x\.com\/\{row\.handle\}/)
   assert.doesNotMatch(view, /错误|加载失败/)
 })

@@ -22,18 +22,19 @@ function monthTitle(yearMonth) {
 export default function InteractionCalendar({ days, initialToday }) {
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days])
   const availableDates = useMemo(() => days.map((day) => day.date), [days])
+  const initialSelected = resolveSelectedDate(null, initialToday, availableDates)
   const [today, setToday] = useState(initialToday)
-  const [selected, setSelected] = useState(initialToday)
-  const [visibleMonth, setVisibleMonth] = useState(initialToday.slice(0, 7))
+  const [selected, setSelected] = useState(initialSelected)
+  const [visibleMonth, setVisibleMonth] = useState(initialSelected.slice(0, 7))
 
   useEffect(() => {
     const liveToday = shanghaiDateKey()
     const query = new URLSearchParams(window.location.search).get('date')
-    const next = resolveSelectedDate(query, liveToday)
+    const next = resolveSelectedDate(query, liveToday, availableDates)
     setToday(liveToday)
     setSelected(next)
     setVisibleMonth(next.slice(0, 7))
-  }, [])
+  }, [availableDates])
 
   function choose(date) {
     setSelected(date)

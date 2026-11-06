@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { getDownloadItemsByDate } from '../../../lib/site/downloadItems'
-import { OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
+import { getOpenClawContributionLabel, OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
 import { PUBLISHED_WORKS } from '../../../lib/site/publishedWorks'
 import { T } from './LocaleProvider'
 
@@ -67,7 +67,7 @@ export function HomeOpenClawCards() {
               </span>
             ) : null}
             <span className="home-work-copy">
-              <span className="home-work-meta">MERGED · PR #{pr.number}</span>
+              <span className="home-work-meta">{getOpenClawContributionLabel(pr)} · MERGED · PR #{pr.number}</span>
               <strong>{pr.title.split(' · ')[1] || pr.title}</strong>
               <small>{pr.summary}</small>
             </span>

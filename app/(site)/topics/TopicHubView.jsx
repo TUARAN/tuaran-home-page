@@ -53,6 +53,27 @@ function TopicLink({ lead, featured = false }) {
   )
 }
 
+function AuthorityIndex({ current }) {
+  return (
+    <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start" aria-label="主线目录">
+      <nav className="border-l border-[var(--site-line-strong)] pl-4" aria-label="主线目录">
+        <p className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-[var(--site-faint)]">主线目录</p>
+        <ol className="m-0 grid list-none gap-1 p-0">
+          {SITE_AUTHORITY_LINKS.map((item, index) => (
+            <li key={item.href}>
+              <Link href={item.href} aria-current={item.href === current ? 'page' : undefined}
+                className={`block rounded-md px-3 py-2 no-underline transition-colors ${item.href === current ? 'bg-[var(--site-panel)] text-[var(--site-ink)]' : 'text-[var(--site-muted)] hover:bg-[var(--site-panel)] hover:text-[var(--site-ink)]'}`}>
+                <span className="mr-2 font-mono text-[10px] opacity-60">{String(index + 1).padStart(2, '0')}</span>
+                <span className="text-[13px] font-semibold">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </aside>
+  )
+}
+
 function AgentReadingPath({ hub }) {
   const essays = hub.leads.filter((lead) => lead.group === 'essay')
   const further = hub.leads.filter((lead) => lead.group !== 'essay')
@@ -60,20 +81,9 @@ function AgentReadingPath({ hub }) {
 
   return (
     <div className="pb-16 md:pb-24">
-      <div className="border-b border-[var(--site-line)] py-6">
-        <PageContainer>
-          <nav aria-label="同主线" className="flex flex-wrap gap-2">
-            {SITE_AUTHORITY_LINKS.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={item.href === hub.path ? 'page' : undefined}
-                className={`rounded-full px-4 py-2 text-[13px] font-medium no-underline transition-colors ${item.href === hub.path ? 'bg-[var(--site-ink)] text-[var(--page-bg)]' : 'text-[var(--site-muted)] hover:bg-[var(--site-panel)] hover:text-[var(--site-ink)]'}`}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </PageContainer>
-      </div>
-
-      <PageContainer>
+      <PageContainer as="div" className="grid gap-8 pt-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
+        <AuthorityIndex current={hub.path} />
+        <div className="min-w-0">
         <header className="grid gap-8 py-12 md:grid-cols-[minmax(0,1fr)_minmax(230px,300px)] md:items-end md:gap-12 md:py-16">
           <div>
             <p className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--site-muted)]">主线阅读 · AI AGENTS</p>
@@ -135,6 +145,7 @@ function AgentReadingPath({ hub }) {
             </ul>
           </section>
         </main>
+        </div>
       </PageContainer>
     </div>
   )
@@ -145,22 +156,9 @@ export default function TopicHubView({ hub }) {
   const sections = hubSections(hub)
 
   return (
-    <PageContainer className="pb-16 pt-6 md:pb-24 md:pt-10">
-      <nav aria-label="同主线" className="flex flex-wrap gap-2 border-b border-[var(--site-line)] pb-6">
-        {SITE_AUTHORITY_LINKS.map((item) => {
-          const current = item.href === hub.path
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={current ? 'page' : undefined}
-              className={`rounded-full border px-4 py-2 text-[13px] font-medium no-underline transition-colors ${current ? 'border-[var(--site-ink)] bg-[var(--site-ink)] text-[var(--page-bg)]' : 'border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--site-ink)] hover:text-[var(--site-ink)]'}`}
-            >
-              {item.label}
-            </Link>
-          )
-        })}
-      </nav>
+    <PageContainer className="grid gap-8 pb-16 pt-6 md:pb-24 md:pt-10 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
+      <AuthorityIndex current={hub.path} />
+      <div className="min-w-0">
 
       <header className="grid gap-6 border-b border-[var(--site-line)] py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-12 md:py-14">
         <div className="max-w-3xl">
@@ -197,6 +195,7 @@ export default function TopicHubView({ hub }) {
         <Link href="/about" className="hover:text-[var(--site-ink)]">关于作者 ↗</Link>
         <Link href="/contact" className="hover:text-[var(--site-ink)]">联系 ↗</Link>
       </footer>
+      </div>
     </PageContainer>
   )
 }

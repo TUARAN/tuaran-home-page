@@ -1,6 +1,6 @@
 .page { padding-top: 28px; padding-bottom: 64px; color: #213a31; }
 .masthead { max-width: 1088px; margin: 8px auto 36px; }
-.kicker, .readingStat, .chapterNav { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.kicker { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .kicker { margin: 0 0 12px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
 .masthead h1 { margin: 0; color: #143628; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: clamp(40px, 6vw, 68px); font-weight: 700; line-height: 1.12; letter-spacing: .02em; }
 .deck { max-width: 680px; margin: 16px 0 0; color: #203f2f; font-size: 18px; font-weight: 600; line-height: 1.8; }
@@ -15,16 +15,7 @@
 .toolGuideLink:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 3px; }
 .sectionIndex { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .readingLayout { display: grid; grid-template-columns: 204px minmax(0, 1fr); align-items: start; gap: 28px; max-width: 1088px; margin: 0 auto; }
-.chapterNav { position: sticky; top: calc(var(--site-header-height, 64px) + 24px); max-height: calc(100dvh - var(--site-header-height, 64px) - 48px); overflow-y: auto; padding: 18px 12px; border: 1px solid #d8e2d5; border-top: 2px solid #356e4f; border-radius: 12px; background: #f4f8f0; }
-.chapterNavTitle { margin: 0 0 12px 8px; color: #2e6745; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
-.chapterNav ol { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
-.chapterNav a { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: start; gap: 5px; padding: 9px 8px; border-radius: 8px; color: #496d56; font-size: 12px; font-weight: 700; line-height: 1.5; text-decoration: none; }
-.chapterNav a:hover, .chapterNav a:focus-visible, .chapterNav a.chapterActive { background: #e5efdf; color: #145337; }
-.readingStat { margin: -4px 8px 10px; color: #2b6846; font-size: 11px; font-weight: 700; line-height: 1.5; }
-.navProgress { height: 3px; margin: 0 8px 12px; overflow: hidden; border-radius: 99px; background: #d5e4d2; }
-.navProgress span { display: block; height: 100%; background: #2f7a45; }
-.chapterNav a:focus-visible { outline: 2px solid #356e4f; outline-offset: 1px; }
-.chapterNav a span { color: #779b7d; font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
+.chapterNav { position: sticky; top: calc(var(--site-header-height, 64px) + 24px); align-self: start; }
 .paper { min-width: 0; max-width: 870px; }
 .section { scroll-margin-top: 90px; margin: 0 0 72px; padding-bottom: 64px; border-bottom: 1px solid #d8e2d5; }
 .sectionIndex { margin: 0 0 18px; color: #4c8b58; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
@@ -109,21 +100,17 @@
 :global(.dark) .toolGuide p:not(.toolGuideEyebrow) { color: #c0d1c2; }
 :global(.dark) .toolGuideLink { background: #34845a; }
 :global(.dark) .toolGuideLink:hover { background: #42a46c; }
-:global(.dark) .navProgress { background: #2c4634; }
-:global(.dark) .chapterNav { border-color: #3a5843; border-top-color: #80b783; background: #1a3325; }
-:global(.dark) .chapterNavTitle { color: #b8d9b5; }
 :global(.dark) .section, :global(.dark) .exhibition, :global(.dark) .footer, :global(.dark) .practiceList li { border-color: #3a5843; }
 :global(.dark) .section h1, :global(.dark) .section h2, :global(.dark) .section>h3, :global(.dark) .exhibitionHeader h2, :global(.dark) .section .lead { color: #e8f1e2; }
-:global(.dark) .chapterNav a, :global(.dark) .section>p:not(.sectionIndex), :global(.dark) .section li { color: #c0d1c2; }
-:global(.dark) .chapterNav a:hover, :global(.dark) .chapterNav a:focus-visible, :global(.dark) .chapterNav a.chapterActive { background: #294a34; color: #e8f1e2; }
+:global(.dark) .section>p:not(.sectionIndex), :global(.dark) .section li { color: #c0d1c2; }
 :global(.dark) .section blockquote, :global(.dark) .steps>div, :global(.dark) .chipRow > div, :global(.dark) .signpost > div, :global(.dark) .splitGrid > div, :global(.dark) .dimension, :global(.dark) .promptBox, :global(.dark) .exhibit { border-color: #3a5843; background: #1a3325; }
 :global(.dark) .section blockquote, :global(.dark) .steps h3, :global(.dark) .steps strong, :global(.dark) .chipRow strong, :global(.dark) .signpost span, :global(.dark) .splitGrid h3, :global(.dark) .splitGrid strong, :global(.dark) .dimension h3, :global(.dark) .dimension strong, :global(.dark) .practiceList strong, :global(.dark) .promptBox p, :global(.dark) .exhibit figcaption strong { color: #e3f0df; }
 :global(.dark) .steps p, :global(.dark) .dimension p, :global(.dark) .chipRow span, :global(.dark) .splitGrid span, :global(.dark) .exhibit figcaption p { color: #b6c9b8; }
 :global(.dark) .splitGrid li { border-color: #3a5843; }
 
-@media (max-width: 960px) { .readingLayout { display: block; } .chapterNav { position: static; max-width: 870px; max-height: none; margin: 0 auto 32px; padding: 14px 16px; } .chapterNav ol { display: flex; flex-wrap: wrap; gap: 0 12px; } .chapterNav a { display: inline-flex; align-items: baseline; gap: 7px; } .paper, .masthead { margin-left: auto; margin-right: auto; } .footer { max-width: 870px; margin-inline: auto; } }
+@media (max-width: 960px) { .readingLayout { display: block; } .chapterNav { position: static; max-width: 870px; margin: 0 auto 32px; } .paper, .masthead { margin-left: auto; margin-right: auto; } .footer { max-width: 870px; margin-inline: auto; } }
 @media (max-width: 900px) { .steps, .chipRow, .splitGrid { grid-template-columns: 1fr; } .steps>div { padding: 15px; } .signpost { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .page { padding-top: 14px; } .toolGuide { align-items: stretch; flex-direction: column; gap: 17px; padding: 19px; } .toolGuideLink { width: fit-content; max-width: 100%; white-space: normal; } .chapterNav { margin-bottom: 35px; } .chapterNav ol { gap: 0 16px; } .flow { grid-template-columns: 1fr; gap: 10px; padding: 16px 18px; } .flow>div { grid-template-columns: 36px minmax(0, 1fr); justify-items: start; align-items: center; text-align: left; } .flow>div:not(:last-child):after { content: none; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: min(88%, 410px); } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 700px) { .page { padding-top: 14px; } .toolGuide { align-items: stretch; flex-direction: column; gap: 17px; padding: 19px; } .toolGuideLink { width: fit-content; max-width: 100%; white-space: normal; } .chapterNav { margin-bottom: 35px; } .flow { grid-template-columns: 1fr; gap: 10px; padding: 16px 18px; } .flow>div { grid-template-columns: 36px minmax(0, 1fr); justify-items: start; align-items: center; text-align: left; } .flow>div:not(:last-child):after { content: none; } .section { margin-bottom: 48px; padding-bottom: 43px; } .exhibition { margin-bottom: 49px; padding-bottom: 43px; } .exhibitionHeader { display: block; } .exhibitionControls { justify-content: flex-end; margin-top: 14px; } .exhibit { flex-basis: min(88%, 410px); } .dimensionGrid { grid-template-columns: 1fr; } .dimension:first-child { grid-column: auto; } .practiceList li { grid-template-columns: 1fr; gap: 0; } }
 @media (max-width: 440px) { .exhibit figcaption { min-height: 175px; } .flow { padding-inline: 5px; } .flow span { font-size: 10px; } .flow b { width: 31px; height: 31px; } .footer { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .exhibitionProgress span { transition: none; } }
 

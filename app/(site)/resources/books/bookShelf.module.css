@@ -31,7 +31,7 @@
 .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .book { display: flex; min-width: 0; flex-direction: column; padding: 18px 17px 16px; border: 1px solid var(--site-line); border-radius: 12px; background: var(--site-panel-strong); transition: border-color .2s ease, transform .2s ease; }
 .book:hover { transform: translateY(-2px); border-color: var(--site-line-strong); }
-.coverLink { display: block; width: min(100%, 172px); margin: 0 auto; border-radius: 3px 9px 9px 3px; text-decoration: none; transition: transform .2s ease, filter .2s ease; }
+.coverLink { display: block; width: min(100%, 172px); margin: 0; border-radius: 3px 9px 9px 3px; text-decoration: none; transition: transform .2s ease, filter .2s ease; }
 .coverLink:hover { transform: translateY(-5px); filter: brightness(1.05); }
 .cover { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 3px 9px 9px 3px; box-shadow: 3px 7px 12px rgb(0 0 0 / 14%), 1px 1px 0 rgb(0 0 0 / 18%); background: #384a47; color: #f7edcf; }
 .cover::before { content: ''; position: absolute; z-index: 2; top: 0; bottom: 0; left: 10px; width: 1px; background: rgb(255 255 255 / 23%); }

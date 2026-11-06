@@ -69,6 +69,15 @@ test('finds Send in the picker footer when the list and footer are sibling conta
   assert.equal(sendButtonNearDialog(list, { body }), send)
 })
 
+test('finds Send in the active modal even when the picker is in a separate portal branch', () => {
+  const body = {}
+  const send = { innerText: 'Send', getAttribute: () => null, getClientRects: () => [1], closest: () => null }
+  const picker = { parentElement: body, querySelectorAll: () => [] }
+  const modal = { contains: (node) => node === picker, querySelectorAll: () => [send] }
+  const doc = { body, querySelectorAll: (selector) => selector.includes('role="dialog"') ? [modal] : [] }
+  assert.equal(sendButtonNearDialog(picker, doc), send)
+})
+
 test('finds clickable XChat group rows even when they have no legacy test IDs', () => {
   const row = (label, opacity) => ({
     innerText: label,
@@ -172,6 +181,7 @@ test('selects two groups before one Send and records none when X rejects the bat
   let postId = '456'
   let persistFails = false
   let savedLedger = {}
+  const alerts = []
   const body = {}
   const rows = ['First Group 825 people', 'Second Group 267 people'].map((label) => ({
     innerText: label,
@@ -228,6 +238,7 @@ test('selects two groups before one Send and records none when X rejects the bat
     random: () => 0,
     loadLedger: async () => ({ [LEDGER_KEY]: savedLedger }),
     saveLedger: async (value) => { if (persistFails) throw new Error('storage unavailable'); savedLedger = value },
+    reportAlert: (alert) => { alerts.push(alert) },
   })
 
   await controller.start({ handle: 'tuaran' })
@@ -251,6 +262,7 @@ test('selects two groups before one Send and records none when X rejects the bat
   assert.equal(controller.snapshot().shared, 0)
   assert.equal(Object.keys(savedLedger['789'] || {}).length, 0)
   assert.match(controller.snapshot().status, /未记录成功/)
+  assert.equal(alerts.at(-1)?.kind, 'send-failed')
 
   shouldFail = false
   await controller.start({ handle: 'tuaran' })
@@ -263,6 +275,40 @@ test('selects two groups before one Send and records none when X rejects the bat
   assert.equal(sends, 4)
   assert.equal(savedLedger['999'], undefined)
   assert.match(controller.snapshot().status, /无法保存已分发标记/)
+  assert.equal(alerts.at(-1)?.task, 'community-share')
+})
+
+test('missing Send retries, records an alert, and finishes without marking the post sent', async () => {
+  const alerts = []
+  let waits = 0
+  let selected = false
+  const body = {}
+  const row = { innerText: 'Group 5 people', click: () => { selected = true }, getAttribute: () => null,
+    getClientRects: () => [1], closest: () => null, contains: () => false }
+  const search = { placeholder: 'Search', matches: () => false }
+  const heading = { innerText: 'Share' }
+  const picker = { innerText: 'Share Search Group 5 people', parentElement: body, scrollTop: 0, clientHeight: 600,
+    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('input') ? [search]
+      : selector.includes('h1') ? [heading] : [] }
+  search.parentElement = picker
+  const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
+  const timeLink = { getAttribute: () => '/tuaran/status/999', querySelector: () => ({}), closest: () => article }
+  const doc = { body, querySelector: () => null,
+    querySelectorAll: (selector) => selector.includes('article[data-testid="tweet"]') ? [article]
+      : selector.includes('xchatEmbedShare') ? [{ shadowRoot: picker }] : [] }
+  const controller = createController({ document: doc,
+    window: { location: { pathname: '/tuaran' }, sessionStorage: { getItem: () => null, setItem: () => {} } },
+    wait: async () => { waits += 1 }, loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+    reportAlert: (alert) => { alerts.push(alert); return Promise.reject(new Error('alarm storage unavailable')) },
+  })
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(selected, true)
+  assert.equal(controller.snapshot().running, false)
+  assert.match(controller.snapshot().status, /24 次检查后仍未找到/)
+  assert.ok(waits >= 24)
+  assert.equal(alerts.length, 1)
+  assert.equal(alerts[0].kind, 'retry-exhausted')
+  assert.equal(alerts[0].attempts, 24)
 })
 
 test('a completed batch releases the scheduled task slot', async () => {
@@ -293,4 +339,14 @@ test('a completed batch releases the scheduled task slot', async () => {
   assert.equal(saved, true)
   assert.equal(inactive, true)
   assert.equal(ticked, true)
+  plan.current = 'community-share'
+  plan.startedAt = 456
+  saved = false
+  inactive = false
+  ticked = false
+  await context.completeCommunityShare({ tab: { id: 7 } }, '24 次检查后仍未找到 Send')
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(plan.current, '')
+  assert.equal(plan.items['community-share'].reason, '24 次检查后仍未找到 Send')
+  assert.equal(saved && inactive && ticked, true)
 })

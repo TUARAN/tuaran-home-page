@@ -53,6 +53,7 @@
   const NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIdsV2";
   const LEGACY_NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds";
   const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
+  const EXECUTION_ALERTS_KEY = "xrcExecutionAlertsV1";
   const DEV_UPDATE_KEY = "xrcLocalDevUpdate";
   const RESET_EPOCH_KEY = "xrcResetEpoch";
   const SESSION_RESET_EPOCH_KEY = "xrcResetEpochSeen";
@@ -352,6 +353,11 @@
 
   let pluginRuntime = { startedAt: null, tasks: {} };
   let taskSchedule = { enabled: false, items: {} };
+  let tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
+  let spectatorTab = true;
+  let executionAlerts = [];
+  const recentExecutionAlerts = (value) => Array.isArray(value)
+    ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
   let scheduleLoaded = false;
   let scheduleLoadError = false;
   let lastScheduleReadAt = 0;
@@ -755,6 +761,7 @@
   }
 
   async function onPruneToggle({ scheduledStart = false, requestedMode = pruneTaskMode() } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && requestedMode !== currentTaskKey()) {
       await stopScheduledWaitingTask(requestedMode, false);
       return;
@@ -866,6 +873,7 @@
   }
 
   async function onArticleToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("article", Boolean(articleState.running))) return;
     const controller = getArticleController();
     if (!controller) {
@@ -926,6 +934,7 @@
   }
 
   async function onSiteForwardToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("site-forward", Boolean(forwardState.running))) return;
     if (forwardState.running) {
       forwardState = { ...forwardState, stopping: true, status: "正在停止站长转发" };
@@ -967,7 +976,9 @@
 
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
-      communityController = communityApi.createController({ document, window });
+      communityController = communityApi.createController({ document, window,
+        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); }
+      });
       communityController.subscribe((snapshot) => {
         const wasRunning = communityState.running;
         communityState = {
@@ -994,6 +1005,7 @@
   }
 
   async function onCommunityToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask("community-share", Boolean(communityState.running))) return;
     const controller = getCommunityController();
     if (!controller) {
@@ -1030,6 +1042,7 @@
   }
 
   async function toggleLikes({ scheduledStart = false, requestedMode = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
     if (!scheduledStart && await stopScheduledWaitingTask(targetMode, Boolean(likeState.running) && currentTaskKey() === targetMode)) return;
     if (!scheduledStart && targetMode !== currentTaskKey()) return;
@@ -1599,6 +1612,10 @@
     return null;
   }
 
+  function shouldResumeInTab(role, pendingLaunch) {
+    return Boolean(pendingLaunch || role?.owned);
+  }
+
   async function consumePendingLaunch() {
     let pending = null;
     try {
@@ -1863,6 +1880,34 @@
     renderPanel();
   }
 
+  async function loadTabRole({ paint = true } = {}) {
+    try {
+      const role = await readRuntimeMessage("xrc-tab-role-get");
+      tabRole = role;
+      spectatorTab = !role.owned;
+    } catch (error) {
+      // An unknown tab must never resume a saved task just because another tab was running.
+      tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
+      spectatorTab = true;
+    }
+    if (paint) renderPanel();
+  }
+
+  async function keepSpectatorOnOwner() {
+    if (!spectatorTab) return false;
+    await loadTabRole({ paint: false });
+    if (!spectatorTab) return false;
+    if (Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId)) {
+      state.status = "任务已在另一个页签执行，请点击上方「跳转查看」";
+      renderPanel();
+      return true;
+    }
+    // An explicit user start may claim a tab when there is no live owner.
+    spectatorTab = false;
+    renderPanel();
+    return false;
+  }
+
   function taskGroupTarget(group, tabs = openTaskTabs, currentMode = currentTaskKey(), tasks = pluginRuntime.tasks) {
     const modes = TASK_GROUP_MODES[group] || [];
     const otherOpen = modes.filter((mode) => mode !== currentMode && Number.isInteger(Number(tabs?.[mode])) && Number(tabs[mode]) > 0);
@@ -1956,6 +2001,7 @@
   }
 
   async function setRuntimeTaskActive(mode, active, phase = "running") {
+    if (spectatorTab) return;
     try {
       const response = await readRuntimeMessage("xrc-runtime-task-state", {
         mode: validTaskKey(mode),
@@ -2214,6 +2260,17 @@
     return { counts, facing, tasks, text };
   }
 
+  function flowTaskDot(task, alerts, accountHandle) {
+    const account = String(accountHandle || "").replace(/^@/u, "").toLowerCase();
+    const alert = (alerts || []).find((entry) => entry.task === task.key
+      && (!entry.accountHandle || (account && String(entry.accountHandle).toLowerCase() === account)));
+    if (alert) return { state: "alert", title: `${task.label}：执行报警 · ${alert.message}` };
+    if (!task.inSchedule) return { state: "missing", title: `${task.label}：未排班` };
+    const state = task.status === "blocked" || task.status === "unknown" ? "needs"
+      : task.status === "missing" ? "waiting" : task.status;
+    return { state, title: `${task.label}：${userStateLabelForTask(task.status)}` };
+  }
+
   function liveScheduleOccupant(now = Date.now()) {
     const overview = flowTaskOverview(pluginRuntime, now);
     const running = overview.tasks.find((task) => task.status === "running")?.key || "";
@@ -2378,7 +2435,7 @@
     button.title = scheduled.title;
     button.dataset.xrcScheduledAction = scheduled.action;
     if (scheduled.busy) button.dataset.busy = "true";
-    if (scheduled.disabled || scheduled.busy || busy) button.disabled = true;
+    button.disabled = Boolean(scheduled.disabled || scheduled.busy || busy);
   }
 
   // When the schedule button already shows resumeAt, hide page-local risk countdown copy.
@@ -2693,10 +2750,12 @@
 
   function scheduleManualFocusDeferred(now = Date.now()) {
     const mode = taskSchedule.manualFocusMode;
-    if (!["timeline", "notifications", "kol"].includes(mode)) return false;
+    if (!mode) return false;
     const item = taskSchedule.items?.[mode] || {};
-    return Boolean(item.blocked || Number(item.resumeAt) > now
-      && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || "")));
+    const deferredReply = ["timeline", "notifications", "kol"].includes(mode) && Number(item.resumeAt) > 0
+      && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
+    return Boolean(item.blocked || item.manualStopped || Number(item.resumeAt) > now
+      || taskSchedule.current !== mode && Number(item.manualRequestedAt) <= 0 && !deferredReply);
   }
 
   // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.
@@ -2862,6 +2921,34 @@
       }
     }
     paintScheduleBoard(desk);
+  }
+
+  function paintExecutionAlerts(panel) {
+    const count = panel?.querySelector('[data-xrc-execution-alert-count]');
+    const list = panel?.querySelector('[data-xrc-execution-alert-list]');
+    if (!count || !list) return;
+    count.textContent = `${executionAlerts.length} 条`;
+    const signature = executionAlerts.slice(0, 8).map((item) => `${item.id}:${item.count}`).join('|');
+    if (list.dataset.signature === signature) return;
+    list.dataset.signature = signature;
+    list.replaceChildren();
+    if (!executionAlerts.length) {
+      const empty = document.createElement('li');
+      empty.textContent = '暂无执行报警';
+      list.append(empty);
+      return;
+    }
+    for (const item of executionAlerts.slice(0, 8)) {
+      const row = document.createElement('li');
+      const heading = document.createElement('strong');
+      const when = Number(item.occurredAt) ? new Date(Number(item.occurredAt)).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '时间未知';
+      const kind = { 'rate-limit': 'X 限制', 'retry-exhausted': '重试耗尽', 'send-failed': '发送失败', unconfirmed: '结果未确认', 'storage-failed': '记录失败' }[item.kind] || '执行异常';
+      heading.textContent = `${kind} · ${TASK_MODE_LABELS[item.task] || item.task || '任务'}${item.accountHandle && item.accountHandle !== 'default' ? ` · @${item.accountHandle}` : ''} · ${when}${Number(item.count) > 1 ? ` · 重复 ${item.count} 次` : ''}`;
+      const detail = document.createElement('span');
+      detail.textContent = String(item.message || '执行失败');
+      row.append(heading, detail);
+      list.append(row);
+    }
   }
 
   function scheduleItemPulse(mode, preview, overviewTask) {
@@ -3515,8 +3602,10 @@
       dots.replaceChildren(...FLOW_TASKS.map(() => document.createElement("i")));
     }
     dots?.querySelectorAll("i").forEach((dot, index) => {
-      dot.dataset.state = summary.tasks[index].status;
-      dot.title = `${summary.tasks[index].label}：${userStateLabelForTask(summary.tasks[index].status)}`;
+      const task = summary.tasks[index];
+      const indicator = flowTaskDot(task, executionAlerts, currentAccountHandle() || lastKnownAccountHandle);
+      dot.dataset.state = indicator.state;
+      dot.title = indicator.title;
     });
     if (hint) {
       if (Date.now() < modelSaveNoticeUntil) {
@@ -3562,6 +3651,7 @@
 
   async function onScheduleToggle() {
     if (flowStarting || flowStopping) return;
+    if (await keepSpectatorOnOwner()) return;
     const model = flowButtonModel();
     if (model.canStop) {
       await pauseAllTasks();
@@ -3571,6 +3661,7 @@
   }
 
   function syncCurrentTaskPhase() {
+    if (spectatorTab) return;
     const phase = currentTaskPhase();
     const key = currentTaskKey();
     if (!phase) return;
@@ -6909,6 +7000,30 @@
     renderPanel();
   }
 
+  async function exportUnfollowReview() {
+    let latest = state.mutual;
+    try { latest = await mutualApi?.loadUnfollowReview?.() || latest; }
+    catch (error) { if (!latest?.unfollowReview?.length) throw error; }
+    const entries = Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : [];
+    state.mutual = latest;
+    if (!entries.length) {
+      state.status = "待人工核对清单为空";
+      renderPanel();
+      return;
+    }
+    const account = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    const exportedAt = new Date().toISOString();
+    const json = JSON.stringify({ accountHandle: account, exportedAt, items: entries }, null, 2);
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `x-unfollow-review-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    state.status = `已导出 ${entries.length} 个待人工核对账号`;
+    renderPanel();
+  }
+
   function updatePosterState(next) {
     const wasRunning = Boolean(state.poster?.running);
     const previousPhase = currentTaskPhase();
@@ -6927,6 +7042,7 @@
   }
 
   async function onPosterToggle({ scheduledStart = false, requestedMode = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const mode = requestedMode ? validTaskKey(requestedMode) : posterTaskKey();
     const kind = posterKindFromMode(mode);
     if (!scheduledStart && await stopScheduledWaitingTask(mode, Boolean(state.poster.running) && currentTaskKey() === mode)) return;
@@ -7009,6 +7125,9 @@
       return;
     }
     if (result?.error) {
+      if (mode === "unfollow") {
+        sendExtensionMessage({ type: "xrc-mutual-scan-failed", reason: result.error, attempts: result.attempts }).catch(() => {});
+      }
       sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
       state.mutual = { ...state.mutual, status: result.error };
       renderPanel();
@@ -7016,6 +7135,7 @@
   }
 
   async function onMutualAction(mode, { scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     if (!scheduledStart && await stopScheduledWaitingTask(mutualTaskKey(mode), Boolean(state.mutual?.running && state.mutual.mode === mode))) return;
     if (!mutualApi) {
       state.mutual = { ...state.mutual, status: "互关模块没有加载，请刷新扩展后重试", errors: (state.mutual?.errors || 0) + 1 };
@@ -7824,9 +7944,26 @@
     }
   }
 
+  function paintTabRoleBanner(panel) {
+    const banner = panel.querySelector("[data-xrc-tab-role]");
+    if (!banner) return;
+    banner.hidden = !spectatorTab;
+    if (!spectatorTab) return;
+    const summary = banner.querySelector("[data-xrc-tab-role-text]");
+    const jump = banner.querySelector("[data-xrc-tab-owner-jump]");
+    const otherTab = Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId);
+    const label = TASK_MODE_LABELS[tabRole.ownerMode] || "排班";
+    const ownerTitle = String(tabRole.ownerTitle || "").trim();
+    const tabName = ownerTitle.includes(label) ? ownerTitle.split(" · ").slice(0, 2).join(" · ") : label;
+    summary.textContent = otherTab
+      ? `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`
+      : "当前是人工打开的 X 页签，自动任务未在这里启动。";
+    jump.hidden = !otherTab;
+  }
+
   function paintExtensionPanel() {
     if (panelDismissed && !state.running) return;
-    if (!looksLoggedIn()) {
+    if (!looksLoggedIn() && !(state.mutual?.unfollowReview?.length && !isLoginPage())) {
       document.getElementById(PANEL_ID)?.remove();
       return;
     }
@@ -7857,6 +7994,7 @@
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
         <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止当前任务、加载本地新版后恢复原任务">立即更新</button></div>
+        <div class="xrc-tab-role" data-xrc-tab-role role="status" hidden><span data-xrc-tab-role-text></span><button type="button" data-xrc-tab-owner-jump hidden>跳转查看</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
           <div class="xrc-today-categories" aria-label="按任务类别统计">
             ${[["comment", "✎", "评论类"], ["like", "♥", "点赞类"], ["post", "▣", "发帖类"], ["follow", "↗", "关注类"], ["community", "◎", "社群类"], ["clean", "✧", "清理类"]].map(([category, icon, label]) => `<div class="xrc-today-category" data-category="${category}"><span class="xrc-today-category-name"><i aria-hidden="true">${icon}</i>${label}</span><b data-xrc-today-category="${category}">0</b></div>`).join("")}
@@ -8101,6 +8239,11 @@
             <ul data-xrc-schedule-list></ul>
           </section>
           </section></div>
+          <details class="xrc-execution-alerts" data-xrc-execution-alerts>
+            <summary>执行报警记录 <small data-xrc-execution-alert-count>0 条</small></summary>
+            <p>只保存在本机。限制或重试耗尽会留痕；记录失败不影响排班切换。</p>
+            <ul data-xrc-execution-alert-list><li>暂无执行报警</li></ul>
+          </details>
         </div>
         <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
           <button type="button" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
@@ -8127,7 +8270,7 @@
                 </div>
                 <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
                 <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
-                <div class="xrc-unfollow-review"><strong>待人工核对清单</strong><div data-xrc-unfollow-review-list></div></div>
+                <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
@@ -8606,6 +8749,10 @@
         window.open(`${DOCS_BASE_URL}${hash}`, "_blank", "noopener,noreferrer");
       };
       panel.querySelector("[data-xrc-docs-open]").addEventListener("click", () => openDocs());
+      panel.querySelector("[data-xrc-tab-owner-jump]").addEventListener("click", async () => {
+        try { await readRuntimeMessage("xrc-tab-owner-focus"); }
+        catch (error) { await loadTabRole(); }
+      });
       panel.querySelectorAll("[data-xrc-docs-target]").forEach((button) => {
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
@@ -8803,6 +8950,12 @@
         await mutualApi?.removeUnfollowReview?.(button.dataset.xrcUnfollowReviewed);
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
+      });
+      panel.querySelector("[data-xrc-unfollow-export]")?.addEventListener("click", () => {
+        exportUnfollowReview().catch((error) => {
+          state.status = error?.message || "导出待核对清单失败";
+          renderPanel();
+        });
       });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));
@@ -9610,7 +9763,7 @@
     const waitingUi = state.riskPaused || waitingForNextCycle || reconnecting || waitMs > 0
       || Boolean(replyWaitCopy()) || Boolean(posterWaitCopy(poster))
       || taskScheduleNotice(viewKey)?.status === "waiting";
-    panel.dataset.state = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || pruneState.stopping || articleState.stopping || communityState.stopping
+    panel.dataset.state = spectatorTab ? "idle" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || pruneState.stopping || articleState.stopping || communityState.stopping
       ? "stopping"
       : waitingUi
         ? "waiting"
@@ -9623,7 +9776,7 @@
               : "idle";
     const stateLabel = panel.querySelector("[data-xrc-state-label]");
     if (stateLabel) {
-      stateLabel.textContent = state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || articleState.stopping
+      stateLabel.textContent = spectatorTab ? "旁观" : state.stopping || mutual?.stopping || poster?.stopping || likeState.stopping || articleState.stopping
         || state.riskPaused || reconnecting || waitingForNextCycle || waitingUi
         ? waitHeadline(USER_STATE_LABELS.waiting, waitMs)
         : completed
@@ -9640,6 +9793,7 @@
     syncCurrentTaskPhase();
     paintFlowButton(panel);
     renderDevUpdateBanner(panel);
+    paintTabRoleBanner(panel);
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");
     if (brand) {
@@ -9650,6 +9804,7 @@
     syncMonitorMenu(panel);
     syncReportPage(panel);
     syncHubPage(panel);
+    paintExecutionAlerts(panel);
     placePanel(panel);
   }
 
@@ -9692,6 +9847,7 @@
   }
 
   async function onToggle({ scheduledStart = false, requestedMode = "", kolLaunchHandle = "" } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
     if (!scheduledStart && await stopScheduledWaitingTask(targetMode, Boolean(state.running || state.loopPromise) && currentTaskKey() === targetMode)) return;
     if (!scheduledStart && targetMode !== currentTaskKey()) return;
@@ -9811,6 +9967,7 @@
   }
 
   function applyTaskTitle() {
+    if (spectatorTab) return;
     const label = taskWindowLabel();
     const handle = String(currentAccountHandle() || rememberAccountHandle() || "").replace(/^@/u, "");
     const head = handle ? `@${handle} · ${label}` : label;
@@ -9833,7 +9990,9 @@
     await mergeLegacyAccountData();
     const requested = requestedLaunch();
     const pending = await consumePendingLaunch();
-    const launch = requested || pending;
+    await loadTabRole({ paint: false });
+    spectatorTab = !shouldResumeInTab(tabRole, pending);
+    const launch = spectatorTab ? null : requested || pending;
     const assignedMode = launch?.taskKey || sessionStorage.getItem("xrcAssignedTaskMode") || "timeline";
     await hydrateTaskSnapshot(assignedMode);
     const saved = readSaved(assignedMode);
@@ -9893,15 +10052,20 @@
     let launchedStart = Boolean(launch?.start);
     if (launch) {
       writeSaved({ running: false, total: state.total });
-      registerCurrentTaskTab(launch.taskKey);
+      await registerCurrentTaskTab(launch.taskKey);
       removeAssistantModeFromUrl();
       if (launch.mutualMode && launch.start) await navigateLaunchedMutualList(launch.mutualMode, true);
     }
     await loadPluginRuntime();
+    try {
+      const storedAlerts = (await chrome.storage.local.get(EXECUTION_ALERTS_KEY))?.[EXECUTION_ALERTS_KEY];
+      executionAlerts = recentExecutionAlerts(storedAlerts);
+    }
+    catch (error) { executionAlerts = []; }
     localDevUpdate = (await chrome.storage.local.get(DEV_UPDATE_KEY))?.[DEV_UPDATE_KEY] || null;
     await loadOpenTaskTabs();
     const bootTaskKey = currentTaskKey();
-    if (!launchedStart && !saved.running && !state.mutual?.running && !state.poster?.running
+    if (!spectatorTab && !launchedStart && !saved.running && !state.mutual?.running && !state.poster?.running
       && pluginRuntime.tasks?.[bootTaskKey]) {
       await setRuntimeTaskActive(bootTaskKey, false);
     }
@@ -9949,11 +10113,11 @@
     renderPanel();
     globalThis.XrcCommunityReceipt?.heartbeat(currentAccountHandle());
     watchSidebarDock();
-    if (isPosterMode() && await postApi?.resumeIfPending?.(updatePosterState, posterKindFromMode())) {
+    if (!spectatorTab && isPosterMode() && await postApi?.resumeIfPending?.(updatePosterState, posterKindFromMode())) {
       registerCurrentTaskTab(posterTaskKey());
       setRuntimeTaskActive(posterTaskKey(), true, currentTaskPhase() || "running");
     }
-    if (!launchedStart && await getArticleController()?.resumeIfPending?.(async (snapshot) => {
+    if (!spectatorTab && !launchedStart && await getArticleController()?.resumeIfPending?.(async (snapshot) => {
       articleState = snapshot || articleState;
       state.assistantMode = "article";
       const phase = snapshot?.stopping ? "stopping" : Number(snapshot?.nextAt) > Date.now() ? "paused" : "running";
@@ -9964,7 +10128,7 @@
     }
     postApi?.setPostKind?.(posterKindFromMode());
     postApi?.setSchedulePace?.(state.posterPace);
-    if (saved.running) {
+    if (!spectatorTab && saved.running) {
       begin({ resume: true });
     }
     if (launchedStart) {
@@ -9976,7 +10140,7 @@
         renderPanel();
       }
     }
-    else if (state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
+    else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
   }
@@ -10090,8 +10254,9 @@
         mode: currentTaskKey(),
         accountHandle: currentAccountHandle(),
         scheduleEnabled: Boolean(taskSchedule.enabled),
+        owned: !spectatorTab,
         // Keep occupancy alive while the shared tab is assigned but not looping yet.
-        phase: phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
+        phase: spectatorTab ? "" : phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
         detail: currentTaskDetail(),
         waitUntil: currentTaskWaitUntil()
       });
@@ -10176,6 +10341,7 @@
     if (!ensureExtensionContext()) return;
     if (areaName === "session" && changes.xrcTaskTabs) {
       openTaskTabs = changes.xrcTaskTabs.newValue || {};
+      void loadTabRole();
       renderPanel();
       return;
     }
@@ -10194,6 +10360,10 @@
         evaluatedAt: next.evaluatedAt || taskSchedule.evaluatedAt
       };
       void refreshScheduleView();
+    }
+    if (changes[EXECUTION_ALERTS_KEY]) {
+      executionAlerts = recentExecutionAlerts(changes[EXECUTION_ALERTS_KEY].newValue);
+      renderPanel();
     }
     if (changes[DEV_UPDATE_KEY]) {
       localDevUpdate = changes[DEV_UPDATE_KEY].newValue || null;
@@ -10226,6 +10396,7 @@
       }
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
+    if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule) void loadTabRole();
   }
 
   try {

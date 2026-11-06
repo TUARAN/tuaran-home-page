@@ -314,6 +314,61 @@ test('task window state drops closed tabs before showing jump hints', async () =
   }
 })
 
+test('a manually opened X tab stays a spectator while the registered tab owns the schedule', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 12, items: {} },
+    xrcPluginRuntime: { tasks: { timeline: { tabId: 12, phase: 'running' } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { timeline: 12 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: { async get(id) { return { id, url: 'https://x.com/home' } } },
+  }
+  try {
+    const spectator = await background.taskTabRole({ tab: { id: 34 } })
+    assert.equal(spectator.owned, false)
+    assert.equal(spectator.ownerTabId, 12)
+    assert.equal(spectator.ownerMode, 'timeline')
+    assert.equal(spectator.ownerActive, true)
+    const worker = await background.taskTabRole({ tab: { id: 12 } })
+    assert.equal(worker.owned, true)
+    local.xrcTaskSchedule.enabled = false
+    session.xrcTaskTabs.notifications = 41
+    const pluginOpened = await background.taskTabRole({ tab: { id: 41 } })
+    assert.equal(pluginOpened.owned, true)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function shouldResumeInTab\(role, pendingLaunch\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({})
+  vm.runInContext(`${definition}\nglobalThis.shouldResume = shouldResumeInTab`, context)
+  assert.equal(context.shouldResume({ owned: false }, null), false)
+  assert.equal(context.shouldResume({ owned: true }, null), true)
+  assert.equal(context.shouldResume({ owned: false }, { mode: 'timeline', start: true }), true)
+  const claim = source.match(/  async function keepSpectatorOnOwner\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(claim)
+  const guard = vm.createContext({
+    spectatorTab: true, tabRole: { ownerTabId: 12, tabId: 34 }, state: { status: '' },
+    loadTabRole: async () => {}, renderPanel: () => {},
+  })
+  vm.runInContext(`${claim}\nglobalThis.guardStart = keepSpectatorOnOwner`, guard)
+  assert.equal(await guard.guardStart(), true)
+  assert.equal(guard.spectatorTab, true)
+  assert.match(guard.state.status, /另一个页签/)
+  guard.tabRole.ownerTabId = 0
+  assert.equal(await guard.guardStart(), false)
+  assert.equal(guard.spectatorTab, false)
+  assert.match(source, /if \(!spectatorTab && saved\.running\)/)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled \|\| !probe\.owned\)/)
+})
+
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
@@ -746,6 +801,27 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /if \(overview\) overview\.hidden = false/)
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
+})
+
+test('flow dots reserve red for current-account execution alerts and gray for unscheduled tasks', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const definition = source.match(/  function flowTaskDot\(task, alerts, accountHandle\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({ userStateLabelForTask: (status) => status })
+  vm.runInContext(`${definition}\nglobalThis.indicator = flowTaskDot`, context)
+  const missing = { key: 'timeline', label: '评论首页', status: 'missing', inSchedule: false }
+  const blocked = { key: 'notifications', label: '评论回复', status: 'blocked', inSchedule: true }
+  assert.equal(context.indicator(missing, [], 'me').state, 'missing')
+  assert.equal(context.indicator(blocked, [], 'me').state, 'needs')
+  assert.equal(context.indicator({ ...missing, inSchedule: true }, [], 'me').state, 'waiting')
+  const alert = { task: 'timeline', accountHandle: 'me', message: '重试耗尽' }
+  assert.equal(context.indicator(missing, [alert], 'me').state, 'alert')
+  assert.match(context.indicator(missing, [alert], 'me').title, /执行报警 · 重试耗尽/)
+  assert.equal(context.indicator(missing, [alert], 'another').state, 'missing')
+  assert.match(source, /flowTaskDot\(task, executionAlerts, currentAccountHandle\(\) \|\| lastKnownAccountHandle\)/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="missing"\] \{\s*background: #94a3b8;/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="alert"\] \{\s*background: #ef4444;/)
 })
 
 test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', async () => {
@@ -1513,6 +1589,7 @@ test('starting the inspected reply targets that task while another task owns the
   const requested = []
   const context = vm.createContext({
     state: { running: false, loopPromise: null },
+    keepSpectatorOnOwner: async () => false,
     validTaskKey: (mode) => mode,
     currentTaskKey: () => 'likes-replies',
     stopScheduledWaitingTask: async (mode, localActive) => {
@@ -1526,6 +1603,70 @@ test('starting the inspected reply targets that task while another task owns the
   assert.match(source, /else onToggle\(\{ requestedMode \}\)/)
   assert.match(source, /toggleLikes\(\{ requestedMode: viewTaskKey\(\) \}\)/)
   assert.match(source, /onPosterToggle\(\{ requestedMode: viewTaskKey\(\) \}\)/)
+})
+
+test('a stopped task start button remains clickable while another task is running', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function syncScheduledTaskButton\(button, mode, localActive\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    isTaskActionBusy: () => false,
+    scheduledTaskButtonState: () => ({ label: '已停止 · 立即开启当前任务', title: '启动', action: 'start' }),
+  })
+  vm.runInContext(`${definition}\nglobalThis.syncButton = syncScheduledTaskButton`, context)
+  const button = { disabled: true, dataset: {}, textContent: '', title: '' }
+  context.syncButton(button, 'mutual-unfollow', false)
+  assert.equal(button.disabled, false)
+  assert.equal(button.dataset.xrcScheduledAction, 'start')
+})
+
+test('failed manual Following scan releases the shared slot even when alert storage fails', async () => {
+  const source = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const start = source.indexOf('async function completeUnfollowScanFailure(sender, message) {')
+  const end = source.indexOf('async function removeRuntimeTab(', start)
+  assert.ok(start >= 0 && end > start)
+  const plan = { enabled: true, current: 'mutual-unfollow', manualFocusMode: 'mutual-unfollow',
+    workTabId: 7, startedAt: 1, accountHandle: 'tuaran', items: { 'mutual-unfollow': {} } }
+  let inactive = false
+  let ticks = 0
+  const context = vm.createContext({
+    readTaskSchedule: async () => plan, saveTaskSchedule: async () => {}, recordScheduleSegment: () => {},
+    updatePluginRuntime: async (message) => { inactive = message.mode === 'mutual-unfollow' && message.active === false },
+    recordExecutionAlert: async () => { throw new Error('storage offline') },
+    tickTaskSchedule: async () => { ticks += 1 },
+  })
+  vm.runInContext(`let scheduleWork = Promise.resolve();\n${source.slice(start, end)}`, context)
+  await context.completeUnfollowScanFailure({ tab: { id: 7 } }, { reason: 'X 列表重试耗尽', attempts: 3 })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(plan.current, '')
+  assert.equal(plan.manualFocusMode, '')
+  assert.ok(plan.items['mutual-unfollow'].resumeAt > Date.now())
+  assert.equal(inactive, true)
+  assert.equal(ticks, 1)
+})
+
+test('stopped manual unfollow candidates remain exportable as JSON', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function exportUnfollowReview\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  let exportedBlob
+  let download
+  const state = { mutual: { running: false }, status: '' }
+  const context = vm.createContext({
+    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'nonChinese', addedAt: 1 }] }) },
+    state, currentAccountHandle: () => 'tuaran', lastKnownAccountHandle: '', renderPanel: () => {},
+    URL: { createObjectURL(blob) { exportedBlob = blob; return 'blob:test' }, revokeObjectURL() {} },
+    Blob, Date,
+    document: { createElement() { return { click() { download = { href: this.href, name: this.download } } } } },
+    window: { setTimeout() {} },
+  })
+  vm.runInContext(`${definition}\nglobalThis.exportList = exportUnfollowReview`, context)
+  await context.exportList()
+  assert.match(download.name, /x-unfollow-review-tuaran-/)
+  const payload = JSON.parse(await exportedBlob.text())
+  assert.equal(payload.items[0].handle, 'saved1')
+  assert.match(state.status, /已导出 1 个/)
+  assert.match(source, /data-xrc-unfollow-export/)
 })
 
 test('a stopped reply subpage does not display or edit the running reply task state', async () => {
@@ -2094,7 +2235,7 @@ test('manual restart clears only the selected task stop and restriction flags', 
   }
 })
 
-test('a manually started task holds the queue through its own wait and releases on manual stop', async () => {
+test('a manually started task leads while ready, yields during its wait, and releases on manual stop', async () => {
   const originalChrome = globalThis.chrome
   const now = Date.now()
   let schedule = { enabled: false, current: '', items: {
@@ -2108,14 +2249,15 @@ test('a manually started task holds the queue through its own wait and releases 
     await background.markManualTaskStart('notifications')
     assert.equal(schedule.manualFocusMode, 'notifications')
     assert.equal(schedule.items.timeline.manualRequestedAt, 0)
-    const runningPlan = { ...schedule, enabled: true, items: { ...schedule.items, notifications: { resumeAt: 0 } } }
+    const runningPlan = { ...schedule, enabled: true, items: { ...schedule.items, notifications: { ...schedule.items.notifications, resumeAt: 0 } } }
     assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
     runningPlan.rules = { notifications: { enabled: false } }
     assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
     assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'notifications').status, 'ready')
     runningPlan.items.notifications.resumeAt = now + 60000
-    assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), [])
-    assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'timeline').status, 'held')
+    assert.ok(background.dueTaskModes(runningPlan, now).includes('timeline'))
+    assert.notEqual(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'timeline').status, 'held')
+    assert.equal(background.scheduledManualFocusMode(runningPlan, now + 60001), 'notifications')
     schedule = { ...runningPlan, enabled: false }
     await background.markManualTaskStop('notifications')
     assert.equal(schedule.manualFocusMode, '')
@@ -2123,6 +2265,24 @@ test('a manually started task holds the queue through its own wait and releases 
   } finally {
     globalThis.chrome = originalChrome
   }
+})
+
+test('a finished manual task no longer holds the queue or shows the manual-priority notice', async () => {
+  const now = Date.now()
+  const plan = { enabled: true, current: '', manualFocusMode: 'mutual-unfollow',
+    items: { 'mutual-unfollow': { resumeAt: now + 60000, reason: '扫描完成' } },
+    rules: { notifications: { enabled: true, window: 'all' } } }
+  assert.equal(background.scheduledManualFocusMode(plan, now), '')
+  assert.ok(background.dueTaskModes(plan, now).includes('notifications'))
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const deferred = source.match(/  function scheduleManualFocusDeferred\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const dispatch = source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(deferred && dispatch)
+  const context = vm.createContext({ taskSchedule: plan, TASK_MODE_LABELS: { notifications: '评论回复' },
+    formatCountdown: () => '1 分钟', joinScheduleFields: (entries) => entries.map((entry) => entry.join('：')).join(' · ') })
+  vm.runInContext(`${deferred}\n${dispatch}\nglobalThis.deferred = scheduleManualFocusDeferred; globalThis.note = formatDeskDispatchNote`, context)
+  assert.equal(context.deferred(now), true)
+  assert.doesNotMatch(context.note({ nextEntry: { mode: 'notifications' }, preview: {}, waitMs: 0 }), /手动任务优先/)
 })
 
 test('legacy like cooldowns based on old alerts are rechecked after update', async () => {
@@ -6526,37 +6686,48 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
 
 test('a followed-back account is kept when any name or bio fragment contains Chinese', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
-  const isNonChineseText = source.match(/  function isNonChineseText\(value\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileTextParts = source.match(/  function profileTextParts\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const profileNonChinese = source.match(/  function profileNonChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(isNonChineseText && profileNonChinese)
+  assert.ok(profileTextParts && profileHasChinese && profileNonChinese)
   const context = vm.createContext({
     textOf: (node) => node.textContent.trim(),
     FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
   })
-  vm.runInContext(`${isNonChineseText}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
+  vm.runInContext(`${profileTextParts}\n${profileHasChinese}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
   const row = (fragments) => ({ querySelectorAll: () => fragments.map((textContent) => ({ textContent })) })
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'gpt官方代充', 'https://example.com/very/long/english/link']), '@wangweiaigg'), false)
   assert.equal(context.check(row(['中文名', '@account', 'Follows you', 'English biography']), '@account'), false)
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you gpt官方代充', 'English biography']), '@wangweiaigg'), false)
   assert.equal(context.check(row(['wang wei', '@wangweiaigg', 'Follows you', 'English biography']), '@wangweiaigg'), true)
+  assert.equal(context.check(row(['Alice', '@english']), '@english'), true)
 })
 
-test('follow-back checks a Chinese name or bio before other visible fans', async () => {
+test('follow-back and target-follow require Chinese in the name or bio', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
-  const profileHasChinese = source.match(/  function profileHasChinese\(row\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileTextParts = source.match(/  function profileTextParts\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
+  const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(profileHasChinese && runWithStorage)
+  assert.ok(profileTextParts && profileHasChinese && runWithStorage)
   const profileContext = vm.createContext({ textOf: (node) => node.textContent, FOLLOWS_YOU_RE: /(Follows you|关注了你)/i })
-  vm.runInContext(`${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
+  vm.runInContext(`${profileTextParts}\n${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
   const row = (...parts) => ({ querySelectorAll: () => parts.map((textContent) => ({ textContent })) })
   assert.equal(profileContext.hasChinese(row('Alice', '中文简介')), true)
   assert.equal(profileContext.hasChinese(row('中文姓名', 'English bio')), true)
   assert.equal(profileContext.hasChinese(row('Alice', 'English bio')), false)
+  const described = (name, bio) => ({
+    querySelector: (selector) => selector === '[data-testid="User-Name"]' ? { textContent: name }
+      : selector === '[data-testid="UserDescription"]' ? { textContent: bio } : null,
+    querySelectorAll: () => [{ textContent: '关注了你' }],
+  })
+  assert.equal(profileContext.hasChinese(described('Alice', '中文简介')), true)
+  assert.equal(profileContext.hasChinese(described('中文姓名', 'English bio')), true)
+  assert.equal(profileContext.hasChinese(described('Alice', 'English bio')), false)
 
   const picked = []
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0, seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
   const candidates = [
-    { handle: '@english', candidate: true, hasChineseProfile: false },
+    { handle: '@english', candidate: false, hasChineseProfile: false },
     { handle: '@chinese', candidate: true, hasChineseProfile: true },
   ]
   const context = vm.createContext({
@@ -6573,6 +6744,35 @@ test('follow-back checks a Chinese name or bio before other visible fans', async
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   assert.equal(await context.runTest('followBack', () => {}), true)
   assert.deepEqual(picked, ['@chinese'])
+})
+
+test('visible follow candidates exclude profiles with no Chinese in either field', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const definition = source.match(/  function visibleRows\(mode\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const samples = [
+    { handle: '@english', chinese: false },
+    { handle: '@name_cn', chinese: true },
+    { handle: '@bio_cn', chinese: true },
+  ]
+  let activeMode = 'followBack'
+  const context = vm.createContext({
+    rows: () => samples,
+    findFollowingButton: () => null,
+    findFollowBackButton: () => activeMode === 'followBack' ? {} : null,
+    findPlainFollowButton: () => activeMode === 'targetFollow' ? {} : null,
+    findHandle: (row) => row.handle,
+    hasFollowsYou: () => true,
+    profileNonChinese: () => false,
+    profileHasChinese: (row) => row.chinese,
+    state: { unfollowEnglish: false },
+  })
+  vm.runInContext(`${definition}\nglobalThis.visible = visibleRows`, context)
+  for (const mode of ['followBack', 'targetFollow']) {
+    activeMode = mode
+    const candidates = context.visible(mode).filter((item) => item.candidate).map((item) => item.handle)
+    assert.deepEqual(candidates, ['@name_cn', '@bio_cn'])
+  }
 })
 
 test('automatic unfollow waits two seconds and rescans after reaching the bottom without applying the shared follow quota', async () => {
@@ -6636,6 +6836,7 @@ test('manual unfollow records each candidate once and finishes without clicking 
     loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
     rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => null, MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
     visibleRows: () => [{ handle: '@person1', candidate: true, followsYou: false },
       { handle: '@person2', candidate: true, followsYou: false }],
     addUnfollowReview: async (item) => { recorded.push(item.handle); state.unfollowReview.push({ handle: item.handle }) },
@@ -6649,6 +6850,56 @@ test('manual unfollow records each candidate once and finishes without clicking 
   assert.deepEqual(recorded, ['@person1', '@person2'])
   assert.equal(state.running, false)
   assert.equal(state.unfollowReview.length, 2)
+})
+
+test('manual unfollow retries an X error page three times, preserves candidates and then yields', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const review = [{ handle: 'saved1', reason: 'notFollowingBack', addedAt: 1 }]
+  const state = { running: false, stopping: false, mode: '', unfollowMode: 'manual', unfollowReview: review,
+    seenHandles: new Set(), skippedHandles: new Set(), skipped: 0, errors: 0, cooldownUntil: 0 }
+  let clicked = 0
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, listReady: () => true,
+    loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => ({ click() { clicked += 1 } }),
+    visibleRows: () => [], sleepActive: async () => {},
+    MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('unfollow', () => {})
+  assert.equal(clicked, 3)
+  assert.equal(result.attempts, 3)
+  assert.match(result.error, /已保存 1 个/)
+  assert.equal(state.running, false)
+  assert.deepEqual(state.unfollowReview, review)
+})
+
+test('manual unfollow ends an empty loading page instead of scrolling forever', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  const state = { running: false, stopping: false, mode: '', unfollowMode: 'manual', unfollowReview: [],
+    seenHandles: new Set(), skippedHandles: new Set(), skipped: 0, errors: 0, cooldownUntil: 0 }
+  let waits = 0
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, listReady: () => true,
+    loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => null, visibleRows: () => [],
+    scrollForward: () => { throw new Error('empty X page must not scroll') },
+    sleepActive: async () => { waits += 1 },
+    MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('unfollow', () => {})
+  assert.equal(waits, 11)
+  assert.match(result.error, /检查 12 次后结束/)
 })
 
 test('unfollow review defaults to manual mode and persists account-specific removals', async () => {
@@ -6669,6 +6920,10 @@ test('unfollow review defaults to manual mode and persists account-specific remo
     assert.equal((await mutual.loadUnfollowReview()).unfollowReview.length, 1)
     await mutual.removeUnfollowReview('person1')
     assert.deepEqual(saved['xrcUnfollowReview:default'], [])
+    saved.xrcAccountHandle = 'tuaran'
+    saved['xrcUnfollowReview:tuaran'] = [{ handle: 'saved2', reason: 'nonChinese', addedAt: 2 }]
+    const restored = await mutual.loadUnfollowReview()
+    assert.equal(restored.unfollowReview[0].handle, 'saved2')
   } finally {
     delete globalThis.chrome
     delete globalThis.document
@@ -6856,7 +7111,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -7396,7 +7651,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
-  assert.match(docsPage, /回关粉丝优先处理姓名或简介含汉字的账号/)
+  assert.match(docsPage, /回关粉丝只处理昵称或简介含汉字的账号/)
   assert.match(docsPage, /评论首页默认用下面的边界测试/)
   assert.match(docsPage, /评论大V · 每个账号/)
   assert.match(docsPage, /id="daily-volume"/)
@@ -7590,11 +7845,13 @@ test('task windows are created once and reused without backgrounding another tas
     assert.equal(first.tabId, 77)
     assert.equal(second.reused, true)
     assert.equal(created, 1)
-    assert.deepEqual(createdUrls, ['https://x.com/notifications?xrcAssistant=notifications'])
-    assert.deepEqual(focusedTabs, [77])
+    assert.deepEqual(createdUrls, ['about:blank'])
+    assert.deepEqual(focusedTabs, [77, 77])
     assert.deepEqual(focusedWindows, [9])
     assert.equal(savedTabs.notifications, 77)
-    assert.deepEqual(tabUpdates[0], { active: true })
+    assert.deepEqual(tabUpdates[0], { url: 'https://x.com/notifications?xrcAssistant=notifications' })
+    assert.deepEqual(tabUpdates[1], { active: true })
+    assert.equal(sessionData['xrcPendingTab:77'].mode, 'notifications')
 
     const restarted = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } }, { start: true })
     assert.equal(restarted.reused, true)
@@ -8246,7 +8503,7 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
   }
 })
 
-test('a schedule with a lost tab reference adopts the active X tab for the same account', async () => {
+test('a schedule with a lost tab reference adopts a previously owned X tab', async () => {
   const previousChrome = globalThis.chrome
   const otherModes = ['kol', 'article', 'prune-posts', 'prune-replies', 'poster-x', 'timeline', 'notifications', 'likes-posts', 'likes-replies', 'poster-premium', 'mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow']
   const local = { xrcTaskSchedule: {
@@ -8266,7 +8523,7 @@ test('a schedule with a lost tab reference adopts the active X tab for the same 
       async get(id) { if (id !== 11) throw new Error('closed'); return { id, windowId: 1, url: 'https://x.com/home' } },
       async sendMessage(id, message) {
         assert.equal(id, 11)
-        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', accountHandle: 'tuaran', scheduleEnabled: true }
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', accountHandle: 'tuaran', scheduleEnabled: true, owned: true }
         if (message.type === 'xrc-task-start') return { ok: true, phase: 'running' }
         throw new Error(`unexpected ${message.type}`)
       },
@@ -8292,6 +8549,7 @@ test('clicking a posting cooldown never marks the scheduled task as manually sto
   const actions = []
   const context = vm.createContext({
     state,
+    keepSpectatorOnOwner: async () => false,
     posterTaskKey: () => 'poster', posterKindFromMode: () => 'normal', currentTaskKey: () => 'poster', validTaskKey: () => '',
     stopScheduledWaitingTask: async () => false,
     postApi: { stop() { actions.push('stopped') } },
@@ -8372,11 +8630,17 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // 关注目标未达成时，8.5 分的回关任务会先于三项 8 分评论任务。
-    assert.equal(activeMode, 'mutual-followBack')
+    // 精品发帖档位内先用 8.75 分；其他时间回关的 8.5 分先于评论。
+    const premiumSlotOpen = background.taskWindowOpen('poster-premium', { window: 'day' }, Date.now())
+      && [480, 570, 720, 900, 1140].some((slot) => {
+        const clock = new Date(Date.now() + 8 * 60 * 60000)
+        const minute = clock.getUTCHours() * 60 + clock.getUTCMinutes()
+        return minute >= slot && minute < slot + 15
+      })
+    assert.equal(activeMode, premiumSlotOpen ? 'poster-premium' : 'mutual-followBack')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
-      || focused.some((entry) => /xrcAssistant=mutual-followBack/i.test(String(entry.options?.url || ''))),
+      || focused.some((entry) => String(entry.options?.url || '').includes(`xrcAssistant=${activeMode}`)),
     )
     local.xrcPluginRuntime = {
       tasks: Object.fromEntries(Object.entries(tabs).map(([mode, tabId]) => [mode, { tabId, phase: 'running' }])),
@@ -9015,7 +9279,7 @@ test('an immediate timeline start rejection records the reason and stops after t
       assert.equal(local.xrcTaskSchedule.current, '')
       assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, attempt)
       assert.match(local.xrcTaskSchedule.items.timeline.lastStartError, /模型设置读取失败/)
-      if (attempt < 3) local.xrcTaskSchedule.items.timeline.resumeAt = 0
+      if (attempt < 3) local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
     }
     assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
     assert.equal(local.xrcTaskSchedule.items.timeline.resumeAt, 0)
@@ -9087,6 +9351,29 @@ test('comment tasks share one growing cooldown and clear it together on success'
     }
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('execution alerts persist locally, deduplicate repeats, and do not change the schedule', async () => {
+  const previousChrome = globalThis.chrome
+  const local = { xrcTaskSchedule: { enabled: true, current: 'likes-posts', items: {} } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: local[key] } },
+    async set(value) { Object.assign(local, value) },
+  } } }
+  try {
+    await Promise.all([
+      background.recordExecutionAlert({ task: 'community-share', kind: 'retry-exhausted', message: '找不到 Send', attempts: 24 }),
+      background.recordExecutionAlert({ task: 'community-share', kind: 'retry-exhausted', message: '找不到 Send', attempts: 24 }),
+      background.recordExecutionAlert({ task: 'timeline', kind: 'rate-limit', message: 'X 提示疑似自动化' }),
+    ])
+    const alerts = local[background.EXECUTION_ALERTS_KEY]
+    assert.equal(alerts.length, 2)
+    assert.equal(alerts.find((item) => item.task === 'community-share').count, 2)
+    assert.equal(alerts.find((item) => item.task === 'community-share').attempts, 24)
+    assert.equal(local.xrcTaskSchedule.current, 'likes-posts')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

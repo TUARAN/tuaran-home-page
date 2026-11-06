@@ -22,9 +22,10 @@ const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 const TASK_TABS_KEY = "xrcTaskTabs";
 const PLUGIN_RUNTIME_KEY = "xrcPluginRuntime";
 const TASK_SCHEDULE_KEY = "xrcTaskSchedule";
+const EXECUTION_ALERTS_KEY = "xrcExecutionAlertsV1";
 const TASK_SCHEDULE_ALARM = "xrc-task-schedule";
 const RESET_EPOCH_KEY = "xrcResetEpoch";
-const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport"]);
+const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
@@ -36,10 +37,36 @@ const RESERVED_X_PATHS = new Set([
 ]);
 const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
+let executionAlertWork = Promise.resolve();
 let resetPromise = null;
 let manualUpdatePromise = null;
 const contextTabs = new Set();
 const activeReplyRequests = new Map();
+
+function recordExecutionAlert(input = {}) {
+  const work = executionAlertWork.then(async () => {
+    const task = validTaskMode(input.task);
+    const message = String(input.message || "").trim().slice(0, 240);
+    if (!task || !message || !chrome.storage?.local) return null;
+    const now = Date.now();
+    const kind = ["rate-limit", "retry-exhausted", "send-failed", "unconfirmed", "storage-failed"].includes(input.kind)
+      ? input.kind : "retry-exhausted";
+    const stored = (await chrome.storage.local.get(EXECUTION_ALERTS_KEY))?.[EXECUTION_ALERTS_KEY];
+    const alerts = Array.isArray(stored) ? stored.filter((entry) => now - Number(entry.occurredAt) < 30 * 86400000) : [];
+    const previous = alerts[0];
+    const entry = { id: `${now}-${Math.random().toString(36).slice(2, 8)}`, occurredAt: now, task, kind, message,
+      attempts: Math.max(0, Number(input.attempts) || 0), accountHandle: String(input.accountHandle || "").replace(/^@/u, "").slice(0, 15) };
+    if (previous && previous.task === task && previous.kind === kind && previous.message === message && now - previous.occurredAt < 5 * 60000) {
+      entry.id = previous.id;
+      entry.count = (Number(previous.count) || 1) + 1;
+      alerts.shift();
+    } else entry.count = 1;
+    await chrome.storage.local.set({ [EXECUTION_ALERTS_KEY]: [entry, ...alerts].slice(0, 80) });
+    return entry;
+  });
+  executionAlertWork = work.catch(() => {});
+  return work;
+}
 
 const REPLY_TIMELINE_PROMPT = [
   "你在 X 上随手回别人的帖子。只输出回复正文，不要解释。",
@@ -819,6 +846,40 @@ async function rememberArticleSource(sourceId) {
 }
 
 async function handleMessage(message, onProgress = () => {}, signal) {
+  if (message?.type === "xrc-ai-big-interaction-image") {
+    const url = new URL(String(message.url || ""));
+    if (url.protocol !== "https:" || url.hostname !== "pbs.twimg.com" || !url.pathname.startsWith("/media/")) throw new Error("图片地址无效");
+    const response = await fetch(url.href, { signal });
+    if (!response.ok) throw new Error(`图片下载失败（${response.status}）`);
+    const contentType = response.headers.get("content-type") || "";
+    if (!/^image\/(jpeg|png|webp|gif)/iu.test(contentType)) throw new Error("返回内容不是图片");
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length > 5 * 1024 * 1024) throw new Error("单张图片超过 5 MB");
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    return { ok: true, dataUrl: `data:${contentType.split(";")[0]};base64,${btoa(binary)}` };
+  }
+  if (message?.type === "xrc-ai-big-interaction-classify") {
+    const text = String(message.text || "").trim().slice(0, 3000);
+    if (!text) return { ok: true, belongs: false, topic: "", reason: "空帖" };
+    const { apiKey } = await readAiSettings();
+    if (!apiKey) throw new Error("请先在模型设置中保存 DeepSeek API Key");
+    const response = await fetch(DEEPSEEK_ENDPOINT, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: DEEPSEEK_MODEL, stream: false, thinking: { type: "disabled" }, max_tokens: 120,
+        messages: [
+          { role: "system", content: "判断这条作者原帖是否实质讨论“大互动理论”或“关注突破”（通过互动建立反馈、扩大交流、关注增长的实践与复盘）。纯泛泛互动、广告、转发别人的内容不收录。只输出 JSON：{\"belongs\":true/false,\"topic\":\"大互动理论/关注突破/两者/无\",\"reason\":\"简短理由\"}。" },
+          { role: "user", content: text }
+        ] })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || `模型请求失败（${response.status}）`);
+    const raw = String(data?.choices?.[0]?.message?.content || "");
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/u)?.[0] || "{}");
+    if (typeof parsed.belongs !== "boolean") throw new Error("模型没有返回有效分类");
+    return { ok: true, belongs: parsed.belongs, topic: String(parsed.topic || "无").slice(0, 20), reason: String(parsed.reason || "").slice(0, 100) };
+  }
   if (message?.type === "xrc-ai-mobileoffice-test") {
     const reply = await callMobileOffice("只回复：连接成功", String(message.token || "").trim(), signal);
     if (!reply.includes("连接成功")) throw new Error(`MobileOffice 已响应，但测试内容不符合预期：${reply.slice(0, 80)}`);
@@ -1300,6 +1361,45 @@ async function getOpenTaskTabs() {
   return { ok: true, tabs };
 }
 
+async function taskTabRole(sender) {
+  const tabId = Number(sender?.tab?.id);
+  const plan = await readTaskSchedule();
+  const { tabs } = await getOpenTaskTabs();
+  const runtime = await readPluginRuntime({ prune: true });
+  let ownerTabId = Number(plan.workTabId) || 0;
+  let ownerMode = plan.current || "";
+  if (ownerTabId) {
+    try { await chrome.tabs.get(ownerTabId); }
+    catch (error) { ownerTabId = 0; ownerMode = ""; }
+  }
+  if (!ownerTabId) {
+    const active = Object.entries(runtime.tasks || {}).find(([, task]) => ["running", "paused", "starting"].includes(task?.phase));
+    if (active) {
+      ownerMode = active[0];
+      ownerTabId = Number(active[1]?.tabId) || 0;
+    }
+  }
+  const registeredMode = Object.entries(tabs).find(([, id]) => Number(id) === tabId)?.[0] || "";
+  if (!ownerTabId && registeredMode) {
+    ownerTabId = tabId;
+    ownerMode = registeredMode;
+  }
+  let ownerTitle = "";
+  if (ownerTabId && ownerTabId !== tabId) {
+    try { ownerTitle = String((await chrome.tabs.get(ownerTabId))?.title || "").slice(0, 80); }
+    catch (error) { /* The next storage update will clear a closed tab. */ }
+  }
+  return {
+    ok: true,
+    tabId,
+    owned: Number.isInteger(tabId) && tabId > 0 && (ownerTabId === tabId || Boolean(registeredMode && !plan.enabled)),
+    ownerTabId,
+    ownerMode,
+    ownerTitle,
+    ownerActive: Boolean(ownerTabId && (plan.enabled && plan.current || runtime.tasks?.[ownerMode]))
+  };
+}
+
 async function registerTaskTab(mode, tabId) {
   if (!Number.isInteger(tabId)) throw new Error("无法识别当前 X 页签");
   const selected = validTaskMode(mode);
@@ -1454,7 +1554,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   const destination = await launchTaskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
   const url = destination || `${pageOrigin(sender?.tab?.url)}/home?xrcAssistant=${encodeURIComponent(selected)}`;
   const createdWindow = await chrome.windows.create({
-    url,
+    url: "about:blank",
     focused: true,
     type: "normal"
   });
@@ -1466,6 +1566,8 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   if (!Number.isInteger(createdId)) throw new Error("没有成功创建任务窗口");
   tabs[selected] = createdId;
   await writeTaskTabs(tabs);
+  await rememberPendingLaunch(selected, url, start, createdId);
+  await chrome.tabs.update(createdId, { url });
   return { ok: true, mode: selected, tabId: createdId, reused: false };
 }
 
@@ -1490,7 +1592,7 @@ async function findReusableScheduledXTab(accountHandle = "") {
     if (!Number.isInteger(id) || id <= 0 || excluded.has(id)) continue;
     try {
       const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
-      if (!probe?.ok || !probe.scheduleEnabled) continue;
+      if (!probe?.ok || !probe.scheduleEnabled || !probe.owned) continue;
       const actualHandle = accountHandleFrom(probe.accountHandle).toLowerCase();
       if (expectedHandle && actualHandle !== expectedHandle) continue;
       return tab;
@@ -1723,6 +1825,10 @@ function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
     lastStartError: reason
   };
 }
+function alertOnExhaustedStart(mode, item, accountHandle = "") {
+  if (!item?.blocked || Number(item.recoveryAttempts) < REPLY_START_FAILURE_LIMIT) return;
+  recordExecutionAlert({ task: mode, kind: "retry-exhausted", message: item.reason, attempts: item.recoveryAttempts, accountHandle }).catch(() => {});
+}
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 /** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
 const STARTING_GRACE_MS = 90 * 1000;
@@ -1769,6 +1875,7 @@ async function failScheduledStart(mode, tabId, reason) {
     plan.startedAt = 0;
     plan.items[selected] = scheduledStartRetryItem(item, selected, `页内启动失败：${String(reason || "未知原因").slice(0, 110)}`, now);
     await saveTaskSchedule(plan);
+    alertOnExhaustedStart(selected, plan.items[selected], plan.accountHandle);
     await removeRuntimeTab(id);
     return { ok: true };
   });
@@ -2010,12 +2117,20 @@ function dueTaskModes(plan, now = Date.now()) {
     .map(({ mode }) => mode);
 }
 
+function abandonedManualFocusMode(plan) {
+  const mode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
+  if (!mode) return "";
+  const item = plan.items?.[mode] || {};
+  const deferredReply = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > 0
+    && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
+  return item.blocked || item.manualStopped || plan.current !== mode && Number(item.manualRequestedAt) <= 0 && !deferredReply ? mode : "";
+}
+
 function scheduledManualFocusMode(plan, now = Date.now()) {
   const mode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
-  if (!REPLY_TASKS.includes(mode)) return mode;
+  if (!mode || abandonedManualFocusMode(plan)) return "";
   const item = plan.items?.[mode] || {};
-  const retryWait = /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
-  return item.blocked || retryWait && Number(item.resumeAt) > now ? "" : mode;
+  return Number(item.resumeAt) > now ? "" : mode;
 }
 
 function drawDueReplyTask(plan, due, random = Math.random) {
@@ -2432,7 +2547,7 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
 async function runTaskSchedule() {
   let plan = await readTaskSchedule();
   if (!plan.enabled) return plan;
-  if (plan.manualFocusMode && plan.items?.[plan.manualFocusMode]?.blocked) {
+  if (abandonedManualFocusMode(plan)) {
     plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
   }
@@ -2565,6 +2680,7 @@ async function runTaskSchedule() {
       plan.startedAt = 0;
       plan.items[current] = scheduledStartRetryItem(latestItem, current, "执行未确认，已保留当前页签并等待安全重试", now);
       await saveTaskSchedule(plan);
+      alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
       return runTaskSchedule();
     }
     if (startingTask && (Number(item.manualRequestedAt) > 0 || plan.manualFocusMode === current) && Number(plan.workTabId) > 0) {
@@ -2584,6 +2700,7 @@ async function runTaskSchedule() {
         plan.items[current] = scheduledStartRetryItem({ ...item, manualRequestedAt: 0 }, current,
           `启动失败：${String(error?.message || "页内未能启动").slice(0, 100)}`, now);
         await saveTaskSchedule(plan);
+        alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
         return runTaskSchedule();
       }
     }
@@ -2657,6 +2774,7 @@ async function runTaskSchedule() {
     recordScheduleSegment(plan, current, item.reason, Date.now());
     plan.current = "";
     plan.startedAt = 0;
+    if (abandonedManualFocusMode(plan)) plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
   }
   const activateNext = activateNextExecTab;
@@ -2686,6 +2804,7 @@ async function runTaskSchedule() {
         ? scheduledStartRetryItem(item, mode, `页内启动失败：${reason}`, now)
         : { ...item, resumeAt: now + 5 * 60000, reason };
       await saveTaskSchedule(plan);
+      alertOnExhaustedStart(mode, plan.items[mode], plan.accountHandle);
     }
     break;
   }
@@ -2780,6 +2899,9 @@ async function noteScheduledAction(event) {
   }
   const savedItem = plan.items[mode] || item;
   await saveTaskSchedule(plan);
+  if (event.result === "limited") recordExecutionAlert({ task: mode, kind: "rate-limit", message: /^(?:risk-blocked|rate-limited)$/iu.test(String(savedItem.reason || ""))
+    ? "X 提示操作受限，已按任务规则等待或暂停" : String(savedItem.reason || event.errorCode || "X 操作受限"),
+    attempts: Number(savedItem.limitedStreak) || 1, accountHandle: plan.accountHandle }).catch(() => {});
   if (REPLY_TASKS.includes(mode) && event.result === "limited" && plan.enabled && REPLY_TASKS.includes(plan.current)) {
     const yieldMode = plan.current;
     const yieldReason = String(plan.items?.[yieldMode]?.reason || savedItem.reason || "评论受限，已让出页签");
@@ -3488,6 +3610,40 @@ async function completeCommunityShare(sender, status) {
   return result;
 }
 
+async function completeUnfollowScanFailure(sender, message) {
+  const tabId = Number(sender?.tab?.id);
+  const reason = String(message?.reason || "Following 列表加载失败").slice(0, 160);
+  const attempts = Math.max(1, Number(message?.attempts) || 1);
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    const now = Date.now();
+    if (plan.current === "mutual-unfollow" && Number(plan.workTabId) === tabId) {
+      recordScheduleSegment(plan, "mutual-unfollow", reason, now);
+      plan.items["mutual-unfollow"] = {
+        ...(plan.items["mutual-unfollow"] || {}),
+        lastRunAt: now,
+        resumeAt: now + 15 * 60 * 1000,
+        manualRequestedAt: 0,
+        manualStopped: false,
+        reason
+      };
+      plan.current = "";
+      plan.startedAt = 0;
+    }
+    if (plan.manualFocusMode === "mutual-unfollow") plan.manualFocusMode = "";
+    await saveTaskSchedule(plan);
+    try { await updatePluginRuntime({ mode: "mutual-unfollow", active: false }, sender); }
+    catch (error) { /* The saved schedule still needs to release the slot. */ }
+    recordExecutionAlert({ task: "mutual-unfollow", kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
+      message: reason, attempts, accountHandle: plan.accountHandle }).catch(() => {});
+    return { ok: true };
+  });
+  scheduleWork = work.catch(() => {});
+  const result = await work;
+  tickTaskSchedule().catch(() => {});
+  return result;
+}
+
 async function removeRuntimeTab(tabId) {
   const runtime = await readPluginRuntime();
   let changed = false;
@@ -3967,6 +4123,17 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务窗口状态读取失败" }));
       return true;
     }
+    if (message?.type === "xrc-tab-role-get" || message?.type === "xrc-tab-owner-focus") {
+      taskTabRole(sender).then(async (role) => {
+        if (message.type === "xrc-tab-owner-focus") {
+          if (!role.ownerTabId || role.ownerTabId === role.tabId) return { ok: false, error: "当前没有其他执行页签" };
+          const tab = await chrome.tabs.update(role.ownerTabId, { active: true });
+          if (Number.isInteger(tab?.windowId)) await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        return role;
+      }).then(sendResponse).catch((error) => sendResponse({ ok: false, error: error?.message || "无法读取执行页签" }));
+      return true;
+    }
     if (message?.type === "xrc-schedule-config-get") {
       readTaskSchedule().then((schedule) => sendResponse({
         ok: true,
@@ -4059,6 +4226,18 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       completeCommunityShare(sender, message.status)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "社群分发结束状态保存失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-mutual-scan-failed") {
+      completeUnfollowScanFailure(sender, message)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "清理未回关失败状态写入失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-execution-alert") {
+      recordExecutionAlert(message.alert || {})
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "执行报警记录失败" }));
       return true;
     }
     if (message?.type === "xrc-community-event" || message?.type === "xrc-community-heartbeat" || message?.type === "xrc-community-stats-sync") {
@@ -4167,6 +4346,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 if (typeof module === "object" && module.exports) {
   module.exports = {
     cleanReply,
+    recordExecutionAlert,
+    EXECUTION_ALERTS_KEY,
     cleanPost,
     parseAihotFeed,
     parseSourceRewrite,
@@ -4189,6 +4370,7 @@ if (typeof module === "object" && module.exports) {
     consumePendingLaunch,
     registerTaskTab,
     getOpenTaskTabs,
+    taskTabRole,
     closeTaskTab,
     focusTaskTab,
     tryInPageTaskStart,

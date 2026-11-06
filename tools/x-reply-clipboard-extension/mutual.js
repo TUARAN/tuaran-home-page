@@ -18,6 +18,7 @@
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
+  let reviewAccountHandle = "";
   let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
@@ -25,6 +26,8 @@
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
+  const MANUAL_LIST_RETRY_LIMIT = 3;
+  const MANUAL_LIST_EMPTY_LIMIT = 12;
   const TARGET_SOURCE_IDLE_MS = 10 * 1000;
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
   const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
@@ -328,10 +331,17 @@
   function unfollowReviewStorageKey() {
     let account = "";
     try { account = currentAccountHandle(); } catch (error) { /* page may still be loading */ }
-    return `${UNFOLLOW_REVIEW_KEY}:${account || "default"}`;
+    if (account) reviewAccountHandle = account;
+    return `${UNFOLLOW_REVIEW_KEY}:${account || reviewAccountHandle || "default"}`;
   }
 
   async function loadUnfollowReview() {
+    let detectedAccount = "";
+    try { detectedAccount = currentAccountHandle(); } catch (error) { /* X error page may hide the account switcher. */ }
+    if (!detectedAccount) {
+      const fallback = (await followStorage().get("xrcAccountHandle"))?.xrcAccountHandle;
+      if (/^@?[A-Za-z0-9_]{1,15}$/u.test(String(fallback || ""))) reviewAccountHandle = String(fallback).replace(/^@/u, "");
+    }
     const key = unfollowReviewStorageKey();
     const stored = (await followStorage().get(["xrcUnfollowMode", key])) || {};
     state.unfollowMode = stored.xrcUnfollowMode === "auto" ? "auto" : "manual";
@@ -592,30 +602,26 @@
     return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
   }
 
-  function isNonChineseText(value) {
-    const text = String(value || "").trim();
-    return /\p{L}/u.test(text) && !/\p{Script=Han}/u.test(text);
+  function profileTextParts(row, handle) {
+    const nameNode = row.querySelector?.('[data-testid="User-Name"]');
+    const bioNode = row.querySelector?.('[data-testid="UserDescription"]');
+    if (nameNode) return { name: textOf(nameNode), bio: bioNode ? textOf(bioNode) : "" };
+    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
+      .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
+      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
+      .filter(Boolean);
+    const candidates = profileTexts.filter((text) => !/^@[A-Za-z0-9_]{1,15}$/.test(text));
+    return { name: candidates[0] || "", bio: candidates.slice(1).join(" ") };
+  }
+
+  function profileHasChinese(row, handle) {
+    const { name, bio } = profileTextParts(row, handle);
+    return /\p{Script=Han}/u.test(name) || /\p{Script=Han}/u.test(bio);
   }
 
   function profileNonChinese(row, handle) {
-    const handleText = String(handle || "").replace(/^@/, "").toLowerCase();
-    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
-      .filter(Boolean);
-    if (profileTexts.some((text) => /\p{Script=Han}/u.test(text))) return false;
-    const candidates = profileTexts
-      .filter((text) => !/^@?[A-Za-z0-9_]{1,15}$/.test(text.replace(/^@/, "")));
-    const name = candidates.find((text) => !text.toLowerCase().includes(handleText));
-    const bio = candidates
-      .filter((text) => text !== name && !text.toLowerCase().includes(handleText))
-      .sort((left, right) => right.length - left.length)
-      .at(0) || "";
-    return Boolean(name && bio && isNonChineseText(name) && isNonChineseText(bio));
-  }
-
-  function profileHasChinese(row) {
-    return Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .some((node) => /\p{Script=Han}/u.test(textOf(node).replace(FOLLOWS_YOU_RE, "")));
+    const { name } = profileTextParts(row, handle);
+    return Boolean(name) && !profileHasChinese(row, handle);
   }
 
   function rows() {
@@ -639,14 +645,24 @@
       const handle = findHandle(row, followingButton || followBackButton || followButton);
       const followsYou = hasFollowsYou(row);
       const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
-      const hasChineseProfile = mode === "followBack" && profileHasChinese(row);
+      const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
       const candidate = mode === "unfollow"
         ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
         : mode === "followBack"
-          ? Boolean(handle && followBackButton && followsYou)
-          : Boolean(handle && followButton && !followBackButton && !followingButton);
+          ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
+          : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
       return { row, handle, followsYou, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
+  }
+
+  function followingRetryButton() {
+    const main = document.querySelector('[data-testid="primaryColumn"]');
+    if (!main) return null;
+    return Array.from(main.querySelectorAll('button, [role="button"]')).find((button) => {
+      const label = buttonLabel(button);
+      return /^(?:Retry|重试)$/iu.test(label) && !button.disabled
+        && button.getAttribute?.("aria-disabled") !== "true";
+    }) || null;
   }
 
   function realClick(element) {
@@ -843,8 +859,9 @@
     let stalled = 0;
     let sourceIdleSince = 0;
     const observedSourceHandles = new Set();
-    let preferChinese = mode === "followBack";
     let stopReason = "";
+    let listRetryAttempts = 0;
+    let emptyListChecks = 0;
 
     followLoop: while (!state.stopping) {
       if (state.riskCooldownUntil > Date.now()) {
@@ -891,6 +908,31 @@
       }
       if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
+      if (manualUnfollow) {
+        const retry = followingRetryButton();
+        if (retry) {
+          if (listRetryAttempts >= MANUAL_LIST_RETRY_LIMIT) {
+            stopReason = `Following 列表仍显示 Retry，重试 ${listRetryAttempts} 次后结束；已保存 ${state.unfollowReview.length} 个待核对账号`;
+            break followLoop;
+          }
+          listRetryAttempts += 1;
+          emit(`X 列表加载失败，正在点击 Retry（${listRetryAttempts}/${MANUAL_LIST_RETRY_LIMIT}）；名单已保存`);
+          retry.click();
+          await sleepActive(1500);
+          continue;
+        }
+        emptyListChecks = items.length ? 0 : emptyListChecks + 1;
+        if (items.length) listRetryAttempts = 0;
+        if (!items.length) {
+          if (emptyListChecks >= MANUAL_LIST_EMPTY_LIMIT) {
+            stopReason = `Following 列表未恢复，检查 ${emptyListChecks} 次后结束；已保存 ${state.unfollowReview.length} 个待核对账号`;
+            break followLoop;
+          }
+          emit(`Following 列表暂未加载，正在等待（${emptyListChecks}/${MANUAL_LIST_EMPTY_LIMIT}）；名单已保存`);
+          await sleepActive(1200);
+          continue;
+        }
+      }
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
         if (skipped && !state.skippedHandles.has(item.handle)) {
@@ -898,8 +940,7 @@
           state.skipped += 1;
         }
       }
-      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle)
-        && (!preferChinese || item.hasChineseProfile));
+      const candidate = items.find((item) => item.candidate && !state.seenHandles.has(item.handle));
       if (candidate) {
         stalled = 0;
         sourceIdleSince = 0;
@@ -984,13 +1025,6 @@
       if (stalled >= MAX_STALLED_SCROLLS || (mode === "targetFollow" && Date.now() - sourceIdleSince >= TARGET_SOURCE_IDLE_MS)) {
         stalled = 0;
         sourceIdleSince = 0;
-        if (preferChinese) {
-          preferChinese = false;
-          window.scrollTo({ top: 0, behavior: "auto" });
-          emit("含中文资料的粉丝已优先检查，继续检查其他粉丝");
-          await sleepActive(SCROLL_DELAY_MS);
-          continue;
-        }
         if (mode === "targetFollow") {
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
@@ -1011,7 +1045,6 @@
         if (state.stopping) break;
         state.cooldownUntil = 0;
         state.seenHandles.clear();
-        preferChinese = mode === "followBack";
         window.scrollTo({ top: 0, behavior: "auto" });
         emit("正在从列表顶部开始新一轮扫描");
         await sleepActive(SCROLL_DELAY_MS);
@@ -1029,7 +1062,9 @@
         : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`));
     state.mode = "";
     emit();
-    return stopReason && !manualUnfollow ? { error: stopReason } : true;
+    return stopReason && (!manualUnfollow || !stopReason.startsWith("扫描完成"))
+      ? { error: stopReason, attempts: listRetryAttempts || emptyListChecks || 1 }
+      : true;
   }
 
   function stop() {

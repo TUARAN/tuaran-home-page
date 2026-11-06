@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 243,
+    "routes": 244,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 114,
-    "indexable": 135,
-    "canonical": 153,
-    "openGraph": 87,
-    "jsonLd": 62,
+    "registeredStatic": 115,
+    "indexable": 136,
+    "canonical": 154,
+    "openGraph": 88,
+    "jsonLd": 63,
     "errors": 9,
     "warnings": 141
   },
@@ -1595,6 +1595,26 @@
         "jsonLd": true,
         "ogUrls": [
           "https://2aran.com/books/programmer-growth-notes"
+        ]
+      }
+    },
+    {
+      "path": "/books/seedance-guide",
+      "file": "app/(site)/books/seedance-guide/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/books/seedance-guide"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/books/seedance-guide"
         ]
       }
     },

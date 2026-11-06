@@ -7,7 +7,7 @@ import MoreBooks from '../MoreBooks'
 import PageContainer from '../../components/PageContainer'
 import { PUBLISHED_WORKS } from '../../../../lib/site/publishedWorks'
 
-const book = PUBLISHED_WORKS[0]
+const book = PUBLISHED_WORKS.find((work) => work.href === '/books/llm-underlying-logic')
 const isbn = '9787522648842'
 
 export const dynamic = 'force-static'

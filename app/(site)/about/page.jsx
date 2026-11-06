@@ -572,7 +572,7 @@ export default function AboutPage() {
                   </div>
                   <h3 className="mt-3 border-b-0 pb-0 text-[18px] font-bold leading-7 text-[#e2ecf6]">{work.title}</h3>
                   <p className="mt-2 text-[13px] leading-6 text-[#9aabc0]">{work.description}</p>
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#5f7088]">作者 · 涂阿燃 TUARAN</p>
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[#5f7088]">作者 · {work.author || '涂阿燃 TUARAN'}{work.authorship ? ` · ${work.authorship}` : ''}</p>
                 </div>
               </article>
             ))}

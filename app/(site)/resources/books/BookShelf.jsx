@@ -18,7 +18,7 @@ function BookCover({ book, index }) {
   return (
     <span className={`${styles.cover} ${styles[`cover${index % 6}`]}`}>
       {book.cover ? (
-        <Image src={book.cover} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.coverImage} />
+        <Image src={book.cover} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={`${styles.coverImage} ${book.coverCrop ? styles.coverImageCrop : ''}`} />
       ) : (
         <span className={styles.fallbackCover} aria-hidden="true">
           <Image src={LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />

@@ -27,7 +27,7 @@ export function HomeBookCards() {
           <p className="home-kicker hidden md:block">Books · {PUBLISHED_WORKS.length}</p>
           <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
-        <Link href="/resources/books" className="home-section-more inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] px-2.5 no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" title="进入图书馆"><LibraryMark size={20} stroke={1.7} aria-hidden="true" /><span className="text-[11px] font-semibold"><T zh="图书馆" en="Library" /></span></Link>
+        <Link href="/resources/books" className="home-section-more inline-flex h-9 w-9 items-center justify-center no-underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="进入图书馆" title="进入图书馆"><LibraryMark size={25} stroke={1.5} aria-hidden="true" /></Link>
       </div>
       <div className="home-work-card-list">
         {PUBLISHED_WORKS.map((book) => (

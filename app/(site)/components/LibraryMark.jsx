@@ -1,5 +1,5 @@
-import { IconBuildingBank } from '@tabler/icons-react'
+import { IconBooks } from '@tabler/icons-react'
 
 export default function LibraryMark({ size = 24, stroke = 1.8, ...props }) {
-  return <IconBuildingBank size={size} stroke={stroke} {...props} />
+  return <IconBooks size={size} stroke={stroke} {...props} />
 }

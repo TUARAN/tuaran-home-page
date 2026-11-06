@@ -18,6 +18,7 @@
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
+  let reviewAccountHandle = "";
   let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
@@ -25,6 +26,8 @@
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
   const SCROLL_DELAY_MS = 450;
   const MAX_STALLED_SCROLLS = 4;
+  const MANUAL_LIST_RETRY_LIMIT = 3;
+  const MANUAL_LIST_EMPTY_LIMIT = 12;
   const TARGET_SOURCE_IDLE_MS = 10 * 1000;
   const FOLLOWING_RE = /^(Following|正在关注)$/i;
   const FOLLOW_BACK_RE = /^(Follow back|回关)$/i;
@@ -328,10 +331,17 @@
   function unfollowReviewStorageKey() {
     let account = "";
     try { account = currentAccountHandle(); } catch (error) { /* page may still be loading */ }
-    return `${UNFOLLOW_REVIEW_KEY}:${account || "default"}`;
+    if (account) reviewAccountHandle = account;
+    return `${UNFOLLOW_REVIEW_KEY}:${account || reviewAccountHandle || "default"}`;
   }
 
   async function loadUnfollowReview() {
+    let detectedAccount = "";
+    try { detectedAccount = currentAccountHandle(); } catch (error) { /* X error page may hide the account switcher. */ }
+    if (!detectedAccount) {
+      const fallback = (await followStorage().get("xrcAccountHandle"))?.xrcAccountHandle;
+      if (/^@?[A-Za-z0-9_]{1,15}$/u.test(String(fallback || ""))) reviewAccountHandle = String(fallback).replace(/^@/u, "");
+    }
     const key = unfollowReviewStorageKey();
     const stored = (await followStorage().get(["xrcUnfollowMode", key])) || {};
     state.unfollowMode = stored.xrcUnfollowMode === "auto" ? "auto" : "manual";
@@ -649,6 +659,16 @@
     }).filter((item) => item.handle);
   }
 
+  function followingRetryButton() {
+    const main = document.querySelector('[data-testid="primaryColumn"]');
+    if (!main) return null;
+    return Array.from(main.querySelectorAll('button, [role="button"]')).find((button) => {
+      const label = buttonLabel(button);
+      return /^(?:Retry|重试)$/iu.test(label) && !button.disabled
+        && button.getAttribute?.("aria-disabled") !== "true";
+    }) || null;
+  }
+
   function realClick(element) {
     element.scrollIntoView({ block: "center", inline: "nearest" });
     element.focus?.({ preventScroll: true });
@@ -845,6 +865,8 @@
     const observedSourceHandles = new Set();
     let preferChinese = mode === "followBack";
     let stopReason = "";
+    let listRetryAttempts = 0;
+    let emptyListChecks = 0;
 
     followLoop: while (!state.stopping) {
       if (state.riskCooldownUntil > Date.now()) {
@@ -891,6 +913,31 @@
       }
       if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
+      if (manualUnfollow) {
+        const retry = followingRetryButton();
+        if (retry) {
+          if (listRetryAttempts >= MANUAL_LIST_RETRY_LIMIT) {
+            stopReason = `Following 列表仍显示 Retry，重试 ${listRetryAttempts} 次后结束；已保存 ${state.unfollowReview.length} 个待核对账号`;
+            break followLoop;
+          }
+          listRetryAttempts += 1;
+          emit(`X 列表加载失败，正在点击 Retry（${listRetryAttempts}/${MANUAL_LIST_RETRY_LIMIT}）；名单已保存`);
+          retry.click();
+          await sleepActive(1500);
+          continue;
+        }
+        emptyListChecks = items.length ? 0 : emptyListChecks + 1;
+        if (items.length) listRetryAttempts = 0;
+        if (!items.length) {
+          if (emptyListChecks >= MANUAL_LIST_EMPTY_LIMIT) {
+            stopReason = `Following 列表未恢复，检查 ${emptyListChecks} 次后结束；已保存 ${state.unfollowReview.length} 个待核对账号`;
+            break followLoop;
+          }
+          emit(`Following 列表暂未加载，正在等待（${emptyListChecks}/${MANUAL_LIST_EMPTY_LIMIT}）；名单已保存`);
+          await sleepActive(1200);
+          continue;
+        }
+      }
       for (const item of items) {
         const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
         if (skipped && !state.skippedHandles.has(item.handle)) {
@@ -1029,7 +1076,9 @@
         : `完成：本次关注 ${state.targetFollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`));
     state.mode = "";
     emit();
-    return stopReason && !manualUnfollow ? { error: stopReason } : true;
+    return stopReason && (!manualUnfollow || !stopReason.startsWith("扫描完成"))
+      ? { error: stopReason, attempts: listRetryAttempts || emptyListChecks || 1 }
+      : true;
   }
 
   function stop() {

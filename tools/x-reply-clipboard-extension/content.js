@@ -2424,7 +2424,7 @@
     button.title = scheduled.title;
     button.dataset.xrcScheduledAction = scheduled.action;
     if (scheduled.busy) button.dataset.busy = "true";
-    if (scheduled.disabled || scheduled.busy || busy) button.disabled = true;
+    button.disabled = Boolean(scheduled.disabled || scheduled.busy || busy);
   }
 
   // When the schedule button already shows resumeAt, hide page-local risk countdown copy.
@@ -6985,6 +6985,30 @@
     renderPanel();
   }
 
+  async function exportUnfollowReview() {
+    let latest = state.mutual;
+    try { latest = await mutualApi?.loadUnfollowReview?.() || latest; }
+    catch (error) { if (!latest?.unfollowReview?.length) throw error; }
+    const entries = Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : [];
+    state.mutual = latest;
+    if (!entries.length) {
+      state.status = "待人工核对清单为空";
+      renderPanel();
+      return;
+    }
+    const account = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    const exportedAt = new Date().toISOString();
+    const json = JSON.stringify({ accountHandle: account, exportedAt, items: entries }, null, 2);
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `x-unfollow-review-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    state.status = `已导出 ${entries.length} 个待人工核对账号`;
+    renderPanel();
+  }
+
   function updatePosterState(next) {
     const wasRunning = Boolean(state.poster?.running);
     const previousPhase = currentTaskPhase();
@@ -7086,6 +7110,9 @@
       return;
     }
     if (result?.error) {
+      if (mode === "unfollow") {
+        sendExtensionMessage({ type: "xrc-mutual-scan-failed", reason: result.error, attempts: result.attempts }).catch(() => {});
+      }
       sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
       state.mutual = { ...state.mutual, status: result.error };
       renderPanel();
@@ -7921,7 +7948,7 @@
 
   function paintExtensionPanel() {
     if (panelDismissed && !state.running) return;
-    if (!looksLoggedIn()) {
+    if (!looksLoggedIn() && !(state.mutual?.unfollowReview?.length && !isLoginPage())) {
       document.getElementById(PANEL_ID)?.remove();
       return;
     }
@@ -8228,7 +8255,7 @@
                 </div>
                 <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
                 <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
-                <div class="xrc-unfollow-review"><strong>待人工核对清单</strong><div data-xrc-unfollow-review-list></div></div>
+                <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
@@ -8908,6 +8935,12 @@
         await mutualApi?.removeUnfollowReview?.(button.dataset.xrcUnfollowReviewed);
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
+      });
+      panel.querySelector("[data-xrc-unfollow-export]")?.addEventListener("click", () => {
+        exportUnfollowReview().catch((error) => {
+          state.status = error?.message || "导出待核对清单失败";
+          renderPanel();
+        });
       });
       panel.querySelectorAll("[data-xrc-mutual-tab]").forEach((button) => {
         button.addEventListener("click", () => selectMutualMode(button.dataset.xrcMutualTab));

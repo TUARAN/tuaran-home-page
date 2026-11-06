@@ -1584,6 +1584,70 @@ test('starting the inspected reply targets that task while another task owns the
   assert.match(source, /onPosterToggle\(\{ requestedMode: viewTaskKey\(\) \}\)/)
 })
 
+test('a stopped task start button remains clickable while another task is running', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function syncScheduledTaskButton\(button, mode, localActive\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({
+    isTaskActionBusy: () => false,
+    scheduledTaskButtonState: () => ({ label: '已停止 · 立即开启当前任务', title: '启动', action: 'start' }),
+  })
+  vm.runInContext(`${definition}\nglobalThis.syncButton = syncScheduledTaskButton`, context)
+  const button = { disabled: true, dataset: {}, textContent: '', title: '' }
+  context.syncButton(button, 'mutual-unfollow', false)
+  assert.equal(button.disabled, false)
+  assert.equal(button.dataset.xrcScheduledAction, 'start')
+})
+
+test('failed manual Following scan releases the shared slot even when alert storage fails', async () => {
+  const source = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const start = source.indexOf('async function completeUnfollowScanFailure(sender, message) {')
+  const end = source.indexOf('async function removeRuntimeTab(', start)
+  assert.ok(start >= 0 && end > start)
+  const plan = { enabled: true, current: 'mutual-unfollow', manualFocusMode: 'mutual-unfollow',
+    workTabId: 7, startedAt: 1, accountHandle: 'tuaran', items: { 'mutual-unfollow': {} } }
+  let inactive = false
+  let ticks = 0
+  const context = vm.createContext({
+    readTaskSchedule: async () => plan, saveTaskSchedule: async () => {}, recordScheduleSegment: () => {},
+    updatePluginRuntime: async (message) => { inactive = message.mode === 'mutual-unfollow' && message.active === false },
+    recordExecutionAlert: async () => { throw new Error('storage offline') },
+    tickTaskSchedule: async () => { ticks += 1 },
+  })
+  vm.runInContext(`let scheduleWork = Promise.resolve();\n${source.slice(start, end)}`, context)
+  await context.completeUnfollowScanFailure({ tab: { id: 7 } }, { reason: 'X 列表重试耗尽', attempts: 3 })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(plan.current, '')
+  assert.equal(plan.manualFocusMode, '')
+  assert.ok(plan.items['mutual-unfollow'].resumeAt > Date.now())
+  assert.equal(inactive, true)
+  assert.equal(ticks, 1)
+})
+
+test('stopped manual unfollow candidates remain exportable as JSON', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  async function exportUnfollowReview\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  let exportedBlob
+  let download
+  const state = { mutual: { running: false }, status: '' }
+  const context = vm.createContext({
+    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'nonChinese', addedAt: 1 }] }) },
+    state, currentAccountHandle: () => 'tuaran', lastKnownAccountHandle: '', renderPanel: () => {},
+    URL: { createObjectURL(blob) { exportedBlob = blob; return 'blob:test' }, revokeObjectURL() {} },
+    Blob, Date,
+    document: { createElement() { return { click() { download = { href: this.href, name: this.download } } } } },
+    window: { setTimeout() {} },
+  })
+  vm.runInContext(`${definition}\nglobalThis.exportList = exportUnfollowReview`, context)
+  await context.exportList()
+  assert.match(download.name, /x-unfollow-review-tuaran-/)
+  const payload = JSON.parse(await exportedBlob.text())
+  assert.equal(payload.items[0].handle, 'saved1')
+  assert.match(state.status, /已导出 1 个/)
+  assert.match(source, /data-xrc-unfollow-export/)
+})
+
 test('a stopped reply subpage does not display or edit the running reply task state', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /const showStatus = viewingLiveReply && \(state\.running/)
@@ -6692,6 +6756,7 @@ test('manual unfollow records each candidate once and finishes without clicking 
     loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
     rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => null, MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
     visibleRows: () => [{ handle: '@person1', candidate: true, followsYou: false },
       { handle: '@person2', candidate: true, followsYou: false }],
     addUnfollowReview: async (item) => { recorded.push(item.handle); state.unfollowReview.push({ handle: item.handle }) },
@@ -6705,6 +6770,56 @@ test('manual unfollow records each candidate once and finishes without clicking 
   assert.deepEqual(recorded, ['@person1', '@person2'])
   assert.equal(state.running, false)
   assert.equal(state.unfollowReview.length, 2)
+})
+
+test('manual unfollow retries an X error page three times, preserves candidates and then yields', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const review = [{ handle: 'saved1', reason: 'notFollowingBack', addedAt: 1 }]
+  const state = { running: false, stopping: false, mode: '', unfollowMode: 'manual', unfollowReview: review,
+    seenHandles: new Set(), skippedHandles: new Set(), skipped: 0, errors: 0, cooldownUntil: 0 }
+  let clicked = 0
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, listReady: () => true,
+    loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => ({ click() { clicked += 1 } }),
+    visibleRows: () => [], sleepActive: async () => {},
+    MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('unfollow', () => {})
+  assert.equal(clicked, 3)
+  assert.equal(result.attempts, 3)
+  assert.match(result.error, /已保存 1 个/)
+  assert.equal(state.running, false)
+  assert.deepEqual(state.unfollowReview, review)
+})
+
+test('manual unfollow ends an empty loading page instead of scrolling forever', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  const state = { running: false, stopping: false, mode: '', unfollowMode: 'manual', unfollowReview: [],
+    seenHandles: new Set(), skippedHandles: new Set(), skipped: 0, errors: 0, cooldownUntil: 0 }
+  let waits = 0
+  const context = vm.createContext({
+    state, isFollowingPage: () => true, listReady: () => true,
+    loadUnfollowReview: async () => {}, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode }, emit: () => {},
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    followingRetryButton: () => null, visibleRows: () => [],
+    scrollForward: () => { throw new Error('empty X page must not scroll') },
+    sleepActive: async () => { waits += 1 },
+    MANUAL_LIST_RETRY_LIMIT: 3, MANUAL_LIST_EMPTY_LIMIT: 12,
+    FOLLOW_DAILY_LIMIT: 400, FOLLOW_MAX_PER_RUN: 400,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('unfollow', () => {})
+  assert.equal(waits, 11)
+  assert.match(result.error, /检查 12 次后结束/)
 })
 
 test('unfollow review defaults to manual mode and persists account-specific removals', async () => {
@@ -6725,6 +6840,10 @@ test('unfollow review defaults to manual mode and persists account-specific remo
     assert.equal((await mutual.loadUnfollowReview()).unfollowReview.length, 1)
     await mutual.removeUnfollowReview('person1')
     assert.deepEqual(saved['xrcUnfollowReview:default'], [])
+    saved.xrcAccountHandle = 'tuaran'
+    saved['xrcUnfollowReview:tuaran'] = [{ handle: 'saved2', reason: 'nonChinese', addedAt: 2 }]
+    const restored = await mutual.loadUnfollowReview()
+    assert.equal(restored.unfollowReview[0].handle, 'saved2')
   } finally {
     delete globalThis.chrome
     delete globalThis.document

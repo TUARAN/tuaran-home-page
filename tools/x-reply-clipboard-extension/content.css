@@ -1977,6 +1977,8 @@
 #x-reply-clipboard-panel .xrc-unfollow-modes small { color: var(--xrc-muted); }
 #x-reply-clipboard-panel [data-xrc-unfollow-auto-options][hidden] { display: none; }
 #x-reply-clipboard-panel .xrc-unfollow-review { margin: 12px 0; display: grid; gap: 8px; }
+#x-reply-clipboard-panel .xrc-unfollow-review-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#x-reply-clipboard-panel .xrc-unfollow-review-head button { flex: 0 0 auto; border: 1px solid var(--xrc-line); border-radius: 8px; padding: 4px 8px; background: var(--xrc-soft); color: var(--xrc-text); font: inherit; font-size: 11px; cursor: pointer; }
 #x-reply-clipboard-panel [data-xrc-unfollow-review-list] { max-height: 220px; overflow-y: auto; border: 1px solid var(--xrc-line); border-radius: 10px; }
 #x-reply-clipboard-panel [data-xrc-unfollow-review-list]:empty { padding: 10px; }
 #x-reply-clipboard-panel .xrc-unfollow-review-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--xrc-line); }

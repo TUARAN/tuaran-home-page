@@ -3567,6 +3567,40 @@ async function completeCommunityShare(sender, status) {
   return result;
 }
 
+async function completeUnfollowScanFailure(sender, message) {
+  const tabId = Number(sender?.tab?.id);
+  const reason = String(message?.reason || "Following 列表加载失败").slice(0, 160);
+  const attempts = Math.max(1, Number(message?.attempts) || 1);
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    const now = Date.now();
+    if (plan.current === "mutual-unfollow" && Number(plan.workTabId) === tabId) {
+      recordScheduleSegment(plan, "mutual-unfollow", reason, now);
+      plan.items["mutual-unfollow"] = {
+        ...(plan.items["mutual-unfollow"] || {}),
+        lastRunAt: now,
+        resumeAt: now + 15 * 60 * 1000,
+        manualRequestedAt: 0,
+        manualStopped: false,
+        reason
+      };
+      plan.current = "";
+      plan.startedAt = 0;
+    }
+    if (plan.manualFocusMode === "mutual-unfollow") plan.manualFocusMode = "";
+    await saveTaskSchedule(plan);
+    try { await updatePluginRuntime({ mode: "mutual-unfollow", active: false }, sender); }
+    catch (error) { /* The saved schedule still needs to release the slot. */ }
+    recordExecutionAlert({ task: "mutual-unfollow", kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
+      message: reason, attempts, accountHandle: plan.accountHandle }).catch(() => {});
+    return { ok: true };
+  });
+  scheduleWork = work.catch(() => {});
+  const result = await work;
+  tickTaskSchedule().catch(() => {});
+  return result;
+}
+
 async function removeRuntimeTab(tabId) {
   const runtime = await readPluginRuntime();
   let changed = false;
@@ -4149,6 +4183,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       completeCommunityShare(sender, message.status)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "社群分发结束状态保存失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-mutual-scan-failed") {
+      completeUnfollowScanFailure(sender, message)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "清理未回关失败状态写入失败" }));
       return true;
     }
     if (message?.type === "xrc-execution-alert") {

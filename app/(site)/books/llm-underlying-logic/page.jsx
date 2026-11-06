@@ -47,7 +47,7 @@ export default function LlmUnderlyingLogicBookPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Book', name: book.title, author: { '@type': 'Person', name: '涂阿燃' }, publisher: { '@type': 'Organization', name: book.publisher }, image: `https://2aran.com${book.image}`, url: `https://2aran.com${book.href}` }).replace(/</g, '\u003c') }} />
       <nav aria-label="当前位置" className="mb-6 text-[13px] text-[#766f64] dark:text-gray-400">
         <Link href="/" className="hover:underline">首页</Link><span className="mx-2" aria-hidden="true">/</span>
-        <Link href="/publications" className="hover:underline">出版作品</Link><span className="mx-2" aria-hidden="true">/</span>
+        <Link href="/resources/books" className="hover:underline">图书馆</Link><span className="mx-2" aria-hidden="true">/</span>
         <span className="text-[#342d25] dark:text-gray-200">AI大模型的底层逻辑</span>
       </nav>
 

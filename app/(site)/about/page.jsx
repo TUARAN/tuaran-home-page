@@ -153,7 +153,7 @@ const aboutStructuredData = {
       datePublished: work.year,
       ...(work.type === '电子小册' ? { bookFormat: 'https://schema.org/EBook' } : {}),
       ...(work.image ? { image: `https://2aran.com${work.image}` } : {}),
-      url: 'https://2aran.com/publications',
+      url: `https://2aran.com${work.href}`,
     })),
     ...OPENCLAW_ACHIEVEMENTS.map((item) => ({
       '@type': 'SoftwareSourceCode',
@@ -583,10 +583,10 @@ export default function AboutPage() {
           </div>
 
           <Link
-            href="/publications"
+            href="/resources/books"
             className="mt-5 inline-flex items-center rounded-md border border-[#2d4d61] bg-[#102032] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#7fe6da] no-underline transition hover:border-[#34e0d0] hover:bg-[#13283d]"
           >
-            查看出版记录与进行中项目 →
+            进入图书馆 →
           </Link>
         </div>
       </section>

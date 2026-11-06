@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { IconLibrary } from '@tabler/icons-react'
 
 import { getDownloadItemsByDate } from '../../../lib/site/downloadItems'
 import { getOpenClawContributionLabel, OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
@@ -26,7 +27,7 @@ export function HomeBookCards() {
           <p className="home-kicker hidden md:block">Books · {PUBLISHED_WORKS.length}</p>
           <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
-        <Link href="/publications" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>
+        <Link href="/resources/books" className="home-section-more inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--site-line)] bg-[var(--site-panel)] no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" title="进入图书馆"><IconLibrary size={21} stroke={1.8} aria-hidden="true" /><span className="sr-only"><T zh="进入图书馆" en="Open library" /></span></Link>
       </div>
       <div className="home-work-card-list">
         {PUBLISHED_WORKS.map((book) => (

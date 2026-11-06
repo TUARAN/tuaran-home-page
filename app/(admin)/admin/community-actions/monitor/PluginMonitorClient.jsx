@@ -272,6 +272,7 @@ function LegacyPluginMonitorClient() {
 
   return <AdminPage title="插件监控" description={pageDescription} actions={<><AdminButton href="/admin/community-actions?tab=extension" size="sm">返回插件台</AdminButton><AdminButton onClick={() => refresh(true)} size="sm" variant="primary" disabled={loading}>刷新数据</AdminButton></>}>
     <PluginPicker selected={platform} />
+    {platform !== 'x' ? <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"><span>此插件及独立监控已归档。下方数据仅供历史查看；相关功能和新监控已合入 AI 分发大师。</span><AdminButton size="sm" href="/admin/community-actions/monitor?platform=ai-distributor">查看 AI 分发大师监控</AdminButton></div> : null}
     {error ? <p role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">读取失败：{error}。请刷新重试。</p> : null}
     {commandNote ? <p role="status" className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">{commandNote}</p> : null}
     {platform === 'x' && visibleData?.migrationRequired ? <p role="alert" className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">请先执行迁移 0115_x_extension_runtime.sql；动作回执仍可继续接收。</p> : null}

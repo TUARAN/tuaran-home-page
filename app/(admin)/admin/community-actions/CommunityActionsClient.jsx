@@ -58,14 +58,15 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'xhs-assistant',
     platform: 'xhs',
     label: '小红书高频互动助手',
-    summary: '推荐评论和笔记浇给。依赖本机已登录的小红书标签页。',
+    summary: '已归档。相关功能已合入 AI 分发大师；旧监控仅供查看历史数据。',
+    archived: true,
   },
   {
     id: 'juejin-assistant',
     platform: 'juejin',
     label: '掘金高频互动助手',
-    summary: '默认每天最多发布 3 条沸点、保存 3 篇文章草稿；可切换高频自动发布模式。开发测试中，在本机加载插件源码目录。',
-    sourcePath: 'tools/juejin-interaction-extension',
+    summary: '已归档。相关功能已合入 AI 分发大师；旧监控仅供查看历史数据。',
+    archived: true,
   },
 ])
 
@@ -262,7 +263,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
-        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师、X、小红书和掘金的设备状态、日期统计与回执统一在插件监控查看。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师和 X 的设备状态与回执在插件监控查看；已归档的小红书、掘金插件监控保留历史数据。</p>
         <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/monitor" variant="primary">插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
@@ -292,12 +293,13 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
             <li key={item.id} id={item.id} className="min-w-0 rounded-lg border border-[#e4e6dc] px-3 py-3 dark:border-[#263142]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="m-0 text-[13px] font-medium text-[#25261f] dark:text-gray-100">{item.label}</p>
-                <StatusPill size="sm" tone="neutral" icon={false}>{PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
+                <StatusPill size="sm" tone="neutral" icon={false}>{item.archived ? '已归档' : PLATFORM_LABEL[item.platform] || item.platform}</StatusPill>
               </div>
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {['x-assistant', 'syncblog-download'].includes(item.id) ? <ExtensionPackagePanel pluginId={item.id === 'x-assistant' ? 'x' : 'ai-distributor'} /> : (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {item.id !== 'article-distribution' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton> : null}
+                  {item.id !== 'article-distribution' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>{item.archived ? '查看历史监控' : '查看监控'}</AdminButton> : null}
+                  {item.archived ? <AdminButton size="sm" variant="ghost" href="/admin/community-actions/monitor?platform=ai-distributor">查看 AI 分发大师监控</AdminButton> : null}
                   {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>{item.id === 'article-distribution' ? '打开分发页面' : '插件下载页'}</AdminButton> : null}
                 </div>
               )}
@@ -332,8 +334,8 @@ function OverviewPanel({ onOpenMode }) {
           <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
           <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>
           <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
-          <li>小红书高频互动助手：推荐评论、笔记浇给</li>
-          <li>掘金高频互动助手：每日签到、沸点和文章；支持每日上限与高频两种模式</li>
+          <li>小红书高频互动助手：已归档，功能已合入 AI 分发大师</li>
+          <li>掘金高频互动助手：已归档，功能已合入 AI 分发大师</li>
         </ul>
       </Section>
 

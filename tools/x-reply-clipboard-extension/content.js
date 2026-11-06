@@ -2750,10 +2750,12 @@
 
   function scheduleManualFocusDeferred(now = Date.now()) {
     const mode = taskSchedule.manualFocusMode;
-    if (!["timeline", "notifications", "kol"].includes(mode)) return false;
+    if (!mode) return false;
     const item = taskSchedule.items?.[mode] || {};
-    return Boolean(item.blocked || Number(item.resumeAt) > now
-      && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || "")));
+    const deferredReply = ["timeline", "notifications", "kol"].includes(mode) && Number(item.resumeAt) > 0
+      && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
+    return Boolean(item.blocked || item.manualStopped || Number(item.resumeAt) > now
+      || taskSchedule.current !== mode && Number(item.manualRequestedAt) <= 0 && !deferredReply);
   }
 
   // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.

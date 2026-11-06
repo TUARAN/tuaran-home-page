@@ -2235,7 +2235,7 @@ test('manual restart clears only the selected task stop and restriction flags', 
   }
 })
 
-test('a manually started task holds the queue through its own wait and releases on manual stop', async () => {
+test('a manually started task leads while ready, yields during its wait, and releases on manual stop', async () => {
   const originalChrome = globalThis.chrome
   const now = Date.now()
   let schedule = { enabled: false, current: '', items: {
@@ -2249,14 +2249,15 @@ test('a manually started task holds the queue through its own wait and releases 
     await background.markManualTaskStart('notifications')
     assert.equal(schedule.manualFocusMode, 'notifications')
     assert.equal(schedule.items.timeline.manualRequestedAt, 0)
-    const runningPlan = { ...schedule, enabled: true, items: { ...schedule.items, notifications: { resumeAt: 0 } } }
+    const runningPlan = { ...schedule, enabled: true, items: { ...schedule.items, notifications: { ...schedule.items.notifications, resumeAt: 0 } } }
     assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
     runningPlan.rules = { notifications: { enabled: false } }
     assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), ['notifications'])
     assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'notifications').status, 'ready')
     runningPlan.items.notifications.resumeAt = now + 60000
-    assert.deepEqual(background.dueTaskModes(runningPlan, now).map(String), [])
-    assert.equal(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'timeline').status, 'held')
+    assert.ok(background.dueTaskModes(runningPlan, now).includes('timeline'))
+    assert.notEqual(background.scheduleTimeline(runningPlan, now).future.find((entry) => entry.mode === 'timeline').status, 'held')
+    assert.equal(background.scheduledManualFocusMode(runningPlan, now + 60001), 'notifications')
     schedule = { ...runningPlan, enabled: false }
     await background.markManualTaskStop('notifications')
     assert.equal(schedule.manualFocusMode, '')
@@ -2264,6 +2265,24 @@ test('a manually started task holds the queue through its own wait and releases 
   } finally {
     globalThis.chrome = originalChrome
   }
+})
+
+test('a finished manual task no longer holds the queue or shows the manual-priority notice', async () => {
+  const now = Date.now()
+  const plan = { enabled: true, current: '', manualFocusMode: 'mutual-unfollow',
+    items: { 'mutual-unfollow': { resumeAt: now + 60000, reason: '扫描完成' } },
+    rules: { notifications: { enabled: true, window: 'all' } } }
+  assert.equal(background.scheduledManualFocusMode(plan, now), '')
+  assert.ok(background.dueTaskModes(plan, now).includes('notifications'))
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const deferred = source.match(/  function scheduleManualFocusDeferred\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const dispatch = source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(deferred && dispatch)
+  const context = vm.createContext({ taskSchedule: plan, TASK_MODE_LABELS: { notifications: '评论回复' },
+    formatCountdown: () => '1 分钟', joinScheduleFields: (entries) => entries.map((entry) => entry.join('：')).join(' · ') })
+  vm.runInContext(`${deferred}\n${dispatch}\nglobalThis.deferred = scheduleManualFocusDeferred; globalThis.note = formatDeskDispatchNote`, context)
+  assert.equal(context.deferred(now), true)
+  assert.doesNotMatch(context.note({ nextEntry: { mode: 'notifications' }, preview: {}, waitMs: 0 }), /手动任务优先/)
 })
 
 test('legacy like cooldowns based on old alerts are rechecked after update', async () => {
@@ -9260,7 +9279,7 @@ test('an immediate timeline start rejection records the reason and stops after t
       assert.equal(local.xrcTaskSchedule.current, '')
       assert.equal(local.xrcTaskSchedule.items.timeline.recoveryAttempts, attempt)
       assert.match(local.xrcTaskSchedule.items.timeline.lastStartError, /模型设置读取失败/)
-      if (attempt < 3) local.xrcTaskSchedule.items.timeline.resumeAt = 0
+      if (attempt < 3) local.xrcTaskSchedule.items.timeline.resumeAt = Date.now() - 1
     }
     assert.equal(local.xrcTaskSchedule.items.timeline.blocked, true)
     assert.equal(local.xrcTaskSchedule.items.timeline.resumeAt, 0)

@@ -2083,12 +2083,20 @@ function dueTaskModes(plan, now = Date.now()) {
     .map(({ mode }) => mode);
 }
 
+function abandonedManualFocusMode(plan) {
+  const mode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
+  if (!mode) return "";
+  const item = plan.items?.[mode] || {};
+  const deferredReply = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > 0
+    && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
+  return item.blocked || item.manualStopped || plan.current !== mode && Number(item.manualRequestedAt) <= 0 && !deferredReply ? mode : "";
+}
+
 function scheduledManualFocusMode(plan, now = Date.now()) {
   const mode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
-  if (!REPLY_TASKS.includes(mode)) return mode;
+  if (!mode || abandonedManualFocusMode(plan)) return "";
   const item = plan.items?.[mode] || {};
-  const retryWait = /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
-  return item.blocked || retryWait && Number(item.resumeAt) > now ? "" : mode;
+  return Number(item.resumeAt) > now ? "" : mode;
 }
 
 function drawDueReplyTask(plan, due, random = Math.random) {
@@ -2505,7 +2513,7 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
 async function runTaskSchedule() {
   let plan = await readTaskSchedule();
   if (!plan.enabled) return plan;
-  if (plan.manualFocusMode && plan.items?.[plan.manualFocusMode]?.blocked) {
+  if (abandonedManualFocusMode(plan)) {
     plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
   }
@@ -2732,6 +2740,7 @@ async function runTaskSchedule() {
     recordScheduleSegment(plan, current, item.reason, Date.now());
     plan.current = "";
     plan.startedAt = 0;
+    if (abandonedManualFocusMode(plan)) plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
   }
   const activateNext = activateNextExecTab;

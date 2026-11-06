@@ -846,6 +846,40 @@ async function rememberArticleSource(sourceId) {
 }
 
 async function handleMessage(message, onProgress = () => {}, signal) {
+  if (message?.type === "xrc-ai-big-interaction-image") {
+    const url = new URL(String(message.url || ""));
+    if (url.protocol !== "https:" || url.hostname !== "pbs.twimg.com" || !url.pathname.startsWith("/media/")) throw new Error("图片地址无效");
+    const response = await fetch(url.href, { signal });
+    if (!response.ok) throw new Error(`图片下载失败（${response.status}）`);
+    const contentType = response.headers.get("content-type") || "";
+    if (!/^image\/(jpeg|png|webp|gif)/iu.test(contentType)) throw new Error("返回内容不是图片");
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length > 5 * 1024 * 1024) throw new Error("单张图片超过 5 MB");
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    return { ok: true, dataUrl: `data:${contentType.split(";")[0]};base64,${btoa(binary)}` };
+  }
+  if (message?.type === "xrc-ai-big-interaction-classify") {
+    const text = String(message.text || "").trim().slice(0, 3000);
+    if (!text) return { ok: true, belongs: false, topic: "", reason: "空帖" };
+    const { apiKey } = await readAiSettings();
+    if (!apiKey) throw new Error("请先在模型设置中保存 DeepSeek API Key");
+    const response = await fetch(DEEPSEEK_ENDPOINT, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: DEEPSEEK_MODEL, stream: false, thinking: { type: "disabled" }, max_tokens: 120,
+        messages: [
+          { role: "system", content: "判断这条作者原帖是否实质讨论“大互动理论”或“关注突破”（通过互动建立反馈、扩大交流、关注增长的实践与复盘）。纯泛泛互动、广告、转发别人的内容不收录。只输出 JSON：{\"belongs\":true/false,\"topic\":\"大互动理论/关注突破/两者/无\",\"reason\":\"简短理由\"}。" },
+          { role: "user", content: text }
+        ] })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || `模型请求失败（${response.status}）`);
+    const raw = String(data?.choices?.[0]?.message?.content || "");
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/u)?.[0] || "{}");
+    if (typeof parsed.belongs !== "boolean") throw new Error("模型没有返回有效分类");
+    return { ok: true, belongs: parsed.belongs, topic: String(parsed.topic || "无").slice(0, 20), reason: String(parsed.reason || "").slice(0, 100) };
+  }
   if (message?.type === "xrc-ai-mobileoffice-test") {
     const reply = await callMobileOffice("只回复：连接成功", String(message.token || "").trim(), signal);
     if (!reply.includes("连接成功")) throw new Error(`MobileOffice 已响应，但测试内容不符合预期：${reply.slice(0, 80)}`);

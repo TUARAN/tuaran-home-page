@@ -53,8 +53,13 @@
       "world": "MAIN"
     },
     {
-      "matches": ["https://2aran.com/articles/*"],
-      "js": ["vendor/x-article/format-core.js", "vendor/x-article/site-content.js"],
+      "matches": [
+        "https://2aran.com/articles/*"
+      ],
+      "js": [
+        "vendor/x-article/format-core.js",
+        "vendor/x-article/site-content.js"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -90,6 +95,7 @@
         "communityShare.js",
         "kolRoster.js",
         "extensionContext.js",
+        "bigInteractionArchive.js",
         "content.js",
         "experiments.js"
       ],

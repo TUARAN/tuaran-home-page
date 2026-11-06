@@ -4467,6 +4467,11 @@
 }
 
 .xrc-experiments{margin:12px;padding:12px;border:1px solid #b49ae4;border-radius:12px;background:#f5f0ff;color:#302047;font-size:12px;line-height:1.6}.xrc-experiments summary{cursor:pointer;font-weight:700}.xrc-experiments p{margin:8px 0;white-space:normal}.xrc-experiments button{border:1px solid #b49ae4;border-radius:8px;padding:6px 10px;margin:4px 6px 4px 0;background:#fff;color:#302047;cursor:pointer}
+.xrc-experiments > summary{margin-bottom:12px}
+.xrc-experiments > [data-xrc-people-capture],.xrc-experiments > [data-xrc-big-interaction]{box-sizing:border-box;width:100%;margin:12px 0 0;padding:12px;border:1px solid #b49ae4;border-radius:10px;background:rgba(255,255,255,.58)}
+.xrc-experiments > [data-xrc-people-capture] h3,.xrc-experiments > [data-xrc-big-interaction] h3{margin:0 0 8px;font-size:15px;line-height:1.4}
+.xrc-experiments > [data-xrc-people-capture] button,.xrc-experiments > [data-xrc-big-interaction] button{font:inherit}
+
 
 #x-reply-clipboard-panel [data-xrc-task-empty] { padding: 12px; color: var(--xrc-muted); font-size: 12px; }
 #x-reply-clipboard-panel .xrc-schedule-item[hidden],

@@ -23,7 +23,9 @@ test('route filenames normalize app groups without losing dynamic segments', () 
   assert.equal(routeFromPageFile('/repo/.public-pages-build-excluded/app-admin-group/admin/seo/page.jsx', root), '/admin/seo')
 })
 
-test('SEO auditor includes Nextra MDX pages in its route inventory', async () => {
+// Admin Pages temporarily removes public routes before prebuild; this route
+// inventory assertion belongs to the public build, like the other route tests.
+test('SEO auditor includes Nextra MDX pages in its route inventory', { skip: process.env.ADMIN_PAGES_BUILD === '1' }, async () => {
   const snapshot = await buildRouteSeoSnapshot()
   assert.ok(snapshot.routes.some((route) => route.path === '/resources/books' && route.file.endsWith('/page.mdx')))
   assert.ok(!snapshot.issues.some((issue) => issue.id === 'registry.orphan:/resources/books'))

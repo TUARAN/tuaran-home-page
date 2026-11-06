@@ -19,7 +19,6 @@ import {
   IconFeather,
   IconFileText,
   IconHeartHandshake,
-  IconLibrary,
   IconMessages,
   IconNews,
   IconPointer,
@@ -31,6 +30,7 @@ import {
 } from '@tabler/icons-react'
 
 import DaysSince from './components/DaysSince'
+import LibraryMark from './components/LibraryMark'
 import HomeSpacexEgg from './components/HomeSpacexEgg'
 import { HomeHeroGoal } from './components/HomeHeroGoal'
 import { HomeBookCards, HomeDownloadCards, HomeOpenClawCards } from './components/HomeWorkCards'
@@ -82,7 +82,7 @@ const HOME_EXPLORE_GROUPS = [
       { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconTools },
       { id: 'cloud', href: '/topics/frontend-cloud', title: '前端与云', titleEn: 'Frontend and cloud', desc: 'Next.js、Cloudflare 与站点工程', descEn: 'Next.js, Cloudflare and site engineering', icon: IconCloud },
       { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconNews },
-      { id: 'books', href: '/resources/books', title: '图书馆', titleEn: 'Library', desc: '已出版图书与站内可读资源', descEn: 'Published and online books', icon: IconLibrary },
+      { id: 'books', href: '/resources/books', title: '图书馆', titleEn: 'Library', desc: '已出版图书与站内可读资源', descEn: 'Published and online books', icon: LibraryMark },
     ],
   },
   {

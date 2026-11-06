@@ -1714,6 +1714,7 @@ function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
   const blocked = REPLY_TASKS.includes(mode) && attempts >= REPLY_START_FAILURE_LIMIT;
   return {
     ...item,
+    manualRequestedAt: 0,
     recoveryAttempts: attempts,
     reloadAttempts: 0,
     resumeAt: blocked ? 0 : now + RESIDENT_RETRY_DELAYS_MS[Math.min(attempts - 1, 3)],
@@ -1964,13 +1965,15 @@ function taskGapReadyAt(item, rule, now = Date.now()) {
 
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
-  const manualFocusMode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
+  const manualFocusMode = scheduledManualFocusMode(plan, now);
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
     .filter(({ mode, item, rule }) => {
       if (manualFocusMode && mode !== manualFocusMode) return false;
       const gapUntil = taskGapReadyAt(item, rule, now);
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
-      const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode);
+      const replyRiskWait = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > now
+        && /疑似自动化|限制冷却/u.test(String(item.reason || ""));
+      const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode) && !replyRiskWait;
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
       const forwardedToday = mode === "site-forward" && (item.successDate === shanghaiDateKey(now) || item.uncertainDate === shanghaiDateKey(now));
       return (rule.enabled || manualFocusMode === mode) && !item.blocked && !manualStopped && !forwardedToday
@@ -2005,6 +2008,14 @@ function dueTaskModes(plan, now = Date.now()) {
       return a.index - b.index;
     })
     .map(({ mode }) => mode);
+}
+
+function scheduledManualFocusMode(plan, now = Date.now()) {
+  const mode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
+  if (!REPLY_TASKS.includes(mode)) return mode;
+  const item = plan.items?.[mode] || {};
+  const retryWait = /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || ""));
+  return item.blocked || retryWait && Number(item.resumeAt) > now ? "" : mode;
 }
 
 function drawDueReplyTask(plan, due, random = Math.random) {
@@ -2073,7 +2084,7 @@ function healStaleManualStops(plan) {
 function scheduleTimeline(plan, now = Date.now()) {
   const due = plan.enabled ? dueTaskModes(plan, now).filter((mode) => mode !== plan.current) : [];
   const rules = normalizedTaskRules(plan.rules);
-  const manualFocusMode = QUEUED_TASKS.includes(plan.manualFocusMode) ? plan.manualFocusMode : "";
+  const manualFocusMode = scheduledManualFocusMode(plan, now);
   const future = QUEUED_TASKS.filter((mode) => mode !== plan.current).map((mode, index) => {
     const item = plan.items?.[mode] || {};
     const rule = rules[mode];
@@ -2294,6 +2305,7 @@ function applySharedReplyRisk(plan, { streak, resumeAt, reason }) {
     plan.items[mode] = {
       ...prior,
       blocked: false,
+      manualRequestedAt: 0,
       recoveryAttempts: 0,
       limitedStreak: nextStreak,
       resumeAt: nextResumeAt,
@@ -2420,6 +2432,10 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
 async function runTaskSchedule() {
   let plan = await readTaskSchedule();
   if (!plan.enabled) return plan;
+  if (plan.manualFocusMode && plan.items?.[plan.manualFocusMode]?.blocked) {
+    plan.manualFocusMode = "";
+    await saveTaskSchedule(plan);
+  }
   const observedHandle = await savedAccountHandle();
   if (plan.accountHandle && observedHandle && plan.accountHandle !== observedHandle) {
     plan.enabled = false;
@@ -2448,6 +2464,17 @@ async function runTaskSchedule() {
       task = runtime.tasks?.[current];
     }
     const item = plan.items[current] || {};
+    if (REPLY_TASKS.includes(current) && Number(item.resumeAt) > now && /疑似自动化/u.test(String(item.reason || ""))) {
+      const reason = String(item.reason);
+      if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
+        plan = await readTaskSchedule();
+        recordScheduleSegment(plan, current, reason, now);
+        plan.current = "";
+        plan.startedAt = 0;
+        await saveTaskSchedule(plan);
+        return runTaskSchedule();
+      }
+    }
     const waitUntil = Number(task?.waitUntil) || 0;
     const sliceMs = sliceMsForMode(current, plan);
     // Replies and likes report a paused phase at the end of their full run plan.
@@ -3567,19 +3594,28 @@ async function markManualTaskStart(mode) {
     }
   }
   if (REPLY_TASKS.includes(mode)) {
-    clearSharedReplyRisk(plan);
+    const riskUntil = Math.max(0, ...REPLY_TASKS.map((replyMode) => {
+      const item = plan.items?.[replyMode] || {};
+      return /疑似自动化|限制冷却/u.test(String(item.reason || "")) ? Number(item.resumeAt) || 0 : 0;
+    }));
+    const riskActive = riskUntil > Date.now();
+    const riskReason = REPLY_TASKS.map((replyMode) => plan.items?.[replyMode])
+      .find((item) => Number(item?.resumeAt) === riskUntil && /疑似自动化|限制冷却/u.test(String(item?.reason || "")))?.reason
+      || "X 限制冷却，到期后自动重试（评论三项共用）";
+    if (!riskActive) clearSharedReplyRisk(plan);
     for (const replyMode of REPLY_TASKS) {
       const prior = plan.items[replyMode] || {};
       plan.items[replyMode] = {
         ...prior,
         manualStopped: replyMode === mode ? false : Boolean(prior.manualStopped),
         blocked: false,
-        limitedStreak: 0,
+        limitedStreak: riskActive ? Number(prior.limitedStreak) || 0 : 0,
         recoveryAttempts: replyMode === mode ? 0 : Number(prior.recoveryAttempts) || 0,
         reloadAttempts: replyMode === mode ? 0 : Number(prior.reloadAttempts) || 0,
-        resumeAt: 0,
-        manualRequestedAt: replyMode === mode ? Date.now() : 0,
-        reason: replyMode === mode ? "已请求优先启动" : prior.manualStopped ? (prior.reason || "已手动停止") : ""
+        resumeAt: riskActive && (replyMode === mode || !prior.manualStopped) ? riskUntil : 0,
+        manualRequestedAt: replyMode === mode && !riskActive ? Date.now() : 0,
+        reason: riskActive && (replyMode === mode || !prior.manualStopped) ? riskReason
+          : replyMode === mode ? "已请求优先启动" : prior.manualStopped ? (prior.reason || "已手动停止") : ""
       };
     }
   } else {
@@ -4159,6 +4195,7 @@ if (typeof module === "object" && module.exports) {
     openAllTasks,
     readTaskSchedule,
     dueTaskModes,
+    scheduledManualFocusMode,
     drawDueReplyTask,
     taskWindowOpen,
     recordScheduleSegment,

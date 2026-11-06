@@ -822,6 +822,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
   const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const focusDeferred = source.match(/  function scheduleManualFocusDeferred\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const readiness = source.match(/  function scheduleReadinessAt\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePreview = source.match(/  function schedulePreview\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
@@ -1068,7 +1069,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       },
     },
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${focusDeferred}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
   // USER_STATE_HELPERS stubs soonestWaitMs to 0; desk countdown needs a real wait.
   context.soonestWaitMs = () => 451000
   assert.equal(context.countLabel('timeline', 12), '12 条回复')
@@ -1733,8 +1734,14 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   context.taskSchedule.items.notifications = { reason: 'X 提示疑似自动化，第 2 次冷却后自动重试', resumeAt: now + 60000 }
   const limited = context.waitInfo('notifications', now)
   assert.equal(limited.label, 'X 限制冷却')
-  assert.equal(limited.detail, '到期自动重试')
+  assert.equal(limited.detail, 'X 提示疑似自动化，第 2 次冷却后自动重试')
   assert.equal(limited.remaining, 60000)
+  context.taskSchedule.items.timeline = { reason: 'X 提示疑似自动化，评论三项共用冷却', resumeAt: now + 10 * 60000 }
+  context.pluginRuntime.tasks.timeline = { phase: 'starting', detail: '正在装载执行页' }
+  context.taskSchedule.startedAt = now - 30000
+  assert.equal(context.waitInfo('timeline', now).kind, 'cooldown')
+  assert.equal(context.waitInfo('timeline', now).remaining, 10 * 60000)
+  context.taskSchedule.items.timeline = {}
   context.taskSchedule.timeline.future = [{ mode: 'poster-premium', readyAt: now + 3600000 }]
   assert.equal(context.waitInfo('poster-premium', now).label, '等待精品档位')
   context.pluginRuntime.tasks.timeline = { phase: 'starting' }
@@ -1771,6 +1778,24 @@ test('timeline startup copy names the current step and explains the recovery cou
   assert.match(copy, /上次未确认：执行页未确认；第 2 次尝试/)
   assert.match(copy, /当前步骤：正在装载执行页/)
   assert.match(copy, /1 分钟后检查执行页并尝试恢复/)
+})
+
+test('comment status shows the real restriction deadline before startup confirmation', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const waitInfo = source.match(/  function scheduledWaitInfo\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const startupCopy = source.match(/  function confirmingStartCopy\(mode, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(waitInfo && startupCopy)
+  const now = Date.now()
+  const context = vm.createContext({
+    taskSchedule: { enabled: true, current: 'timeline', startedAt: now - 30000,
+      items: { timeline: { reason: 'X 提示疑似自动化，评论三项共用冷却', resumeAt: now + 10 * 60000 } }, timeline: { future: [] } },
+    pluginRuntime: { tasks: { timeline: { phase: 'starting', detail: '正在装载执行页' } } },
+    FLOW_STALE_MS: 90000,
+    formatCountdown: () => '10 分钟',
+  })
+  vm.runInContext(`${waitInfo}\n${startupCopy}\nglobalThis.copy = confirmingStartCopy`, context)
+  assert.match(context.copy('timeline', now), /X 提示疑似自动化.*剩余 10 分钟.*其他可运行任务继续排班/)
+  assert.doesNotMatch(context.copy('timeline', now), /正在装载执行页|90/)
 })
 
 test('schedule card notes separate concise status from scheduling parameters', async () => {
@@ -2650,6 +2675,7 @@ test('KOL profile pages can start in place and repeated reply startup failures s
   assert.equal(item.blocked, true)
   assert.equal(item.resumeAt, 0)
   assert.match(item.reason, /已停止自动重试/)
+  assert.equal(item.manualRequestedAt, 0)
   let timeline = {}
   for (let i = 0; i < 3; i += 1) timeline = retries.retry(timeline, 'timeline', '页内未确认', 1000)
   assert.equal(timeline.blocked, true)
@@ -6242,6 +6268,7 @@ test('notification replies remain eligible without a like button', async () => {
     closest: () => null,
     querySelector(selector) {
       if (selector === 'a[href*="/status/"] time') return time
+      if (selector === 'time[datetime]') return time
       if (selector === '[data-testid="reply"]') return replyButton
       return null
     },
@@ -6294,8 +6321,8 @@ test('notification replies target the comment, not the parent post shown above i
   assert.ok(definition && helpers)
   const parentLink = { getAttribute: () => '/author/status/111' }
   const commentLink = { getAttribute: () => '/reader/status/222' }
-  const parentTime = { closest: (selector) => selector === 'a' ? parentLink : null, getAttribute: () => '' }
-  const commentTime = { closest: (selector) => selector === 'a' ? commentLink : null, getAttribute: () => '' }
+  const parentTime = { closest: (selector) => selector === 'a' ? parentLink : null, getAttribute: () => new Date().toISOString() }
+  const commentTime = { closest: (selector) => selector === 'a' ? commentLink : null, getAttribute: () => new Date().toISOString() }
   const parentButton = { textContent: '9' }
   const commentButton = { textContent: '' }
   const commentBlock = {
@@ -6309,6 +6336,7 @@ test('notification replies target the comment, not the parent post shown above i
     getBoundingClientRect: () => ({ top: 0 }),
     querySelectorAll(selector) {
       if (selector === 'a[href*="/status/"] time') return [parentTime, commentTime]
+      if (selector === 'time[datetime]') return [parentTime, commentTime]
       if (selector === '[data-testid="reply"]') return [parentButton, commentButton]
       if (selector === '[data-testid="tweetText"]') return [{}, {}]
       return []
@@ -6354,6 +6382,7 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
         getAttribute: () => new Date().toISOString(),
         closest: () => ({ getAttribute: () => `/${handle}/status/${id}` }),
       }
+      if (selector === 'time[datetime]') return { getAttribute: () => new Date().toISOString() }
       if (selector === '[data-testid="reply"]') return {}
       return null
     },
@@ -6382,14 +6411,16 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   const replyTargetHelpers = source.match(/  function outsideNestedTweet\(article, node\) \{[\s\S]*?\n  function ownTweetText\(article\) \{[\s\S]*?\n  \}/)?.[0]
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(replyTargetHelpers && definition)
+  let ageHours = 3
   const article = {
     textContent: 'Replying to @tuaranx 已有旧回复',
     closest: () => null,
     querySelector(selector) {
       if (selector === 'a[href*="/status/"] time') return {
-        getAttribute: () => new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        getAttribute: () => new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString(),
         closest: () => ({ getAttribute: () => '/reader/status/123456789' }),
       }
+      if (selector === 'time[datetime]') return { getAttribute: () => new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString() }
       if (selector === '[data-testid="reply"]') return {}
       return null
     },
@@ -6404,6 +6435,44 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   })
   vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
+  ageHours = 25
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
+})
+
+test('notification scan accepts the last 24 hours and excludes older or unknown timestamps', () => {
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  assert.equal(loop.notificationWithinWindow(now - 23 * 60 * 60 * 1000, now), true)
+  assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000, now), true)
+  assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000 - 1, now), false)
+  assert.equal(loop.notificationWithinWindow(0, now), false)
+})
+
+test('notification scan stops at the old boundary, refreshes once, then schedules the next cycle', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
+  assert.ok(boundary && finish)
+  const now = Date.parse('2026-11-05T12:00:00+08:00')
+  let ageHours = 25
+  const article = { closest: () => null }
+  const events = []
+  const context = vm.createContext({
+    state: { assistantMode: 'notifications', notificationBoundaryRefreshed: false, total: 2 },
+    document: { querySelector: () => ({ querySelectorAll: () => [article] }) },
+    PANEL_ID: 'x-reply-clipboard-panel', isNestedTweet: () => false,
+    listOwn: () => [{ getAttribute: () => new Date(now - ageHours * 60 * 60 * 1000).toISOString() }],
+    loopApi: loop,
+    writeSaved: () => events.push('saved'),
+    reloadAndResume: async () => { events.push('refreshed'); return true },
+    finishCycleAndScheduleNext: async () => { events.push('scheduled'); return 'scheduled' },
+  })
+  vm.runInContext(`${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
+  assert.equal(context.atBoundary(now), true)
+  ageHours = 23
+  assert.equal(context.atBoundary(now), false)
+  assert.equal(await context.finish(), 'reload')
+  assert.equal(await context.finish(), 'scheduled')
+  assert.deepEqual(events, ['saved', 'refreshed', 'scheduled'])
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {
@@ -9018,6 +9087,33 @@ test('comment tasks share one growing cooldown and clear it together on success'
     }
   } finally {
     delete globalThis.chrome
+  }
+})
+
+test('manual comment focus retains shared risk cooling and lets another ready task run', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  let schedule = { enabled: false, current: '', replyRiskVersion: 2, manualFocusMode: 'timeline', items: {
+    timeline: { manualRequestedAt: now - 1000, limitedStreak: 1, resumeAt: now + 10 * 60000, reason: 'X 提示疑似自动化，评论三项共用冷却' },
+    notifications: { limitedStreak: 1, resumeAt: now + 10 * 60000, reason: 'X 提示疑似自动化，评论三项共用冷却' },
+    kol: { limitedStreak: 1, resumeAt: now + 10 * 60000, reason: 'X 提示疑似自动化，评论三项共用冷却' },
+    'likes-posts': {},
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: key === 'xrcTaskSchedule' ? schedule : undefined } },
+    async set(value) { if (value.xrcTaskSchedule) schedule = value.xrcTaskSchedule },
+  } }, alarms: { async create() {} } }
+  try {
+    await background.markManualTaskStart('timeline')
+    assert.equal(schedule.items.timeline.resumeAt, now + 10 * 60000)
+    assert.equal(schedule.items.timeline.manualRequestedAt, 0)
+    assert.match(schedule.items.timeline.reason, /疑似自动化/)
+    assert.equal(background.scheduledManualFocusMode(schedule, now), '')
+    assert.ok(background.dueTaskModes({ ...schedule, enabled: true }, now).includes('likes-posts'))
+    assert.ok(!background.dueTaskModes({ ...schedule, enabled: true }, now).includes('timeline'))
+    assert.equal(background.scheduledManualFocusMode(schedule, now + 10 * 60000 + 1), 'timeline')
+  } finally {
+    globalThis.chrome = previousChrome
   }
 })
 

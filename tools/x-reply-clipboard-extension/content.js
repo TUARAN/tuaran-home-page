@@ -286,6 +286,7 @@
     stopping: false,
     pageCount: 0,
     notificationCheckedIds: new Set(),
+    notificationBoundaryRefreshed: false,
     completedRounds: 0,
     kolVisitedHandles: [],
     kolVisitOrder: [],
@@ -2560,6 +2561,8 @@
     else if (wait?.kind === "queue" || /^(已到期|排队中)$/u.test(status)) status = "等待安排";
     else if (status === "本次已完成") status = "等待下次排班";
     if (!status) status = task.rule?.enabled === false ? "可添加到排班" : "等待安排";
+    const reason = String(task.reason || wait?.detail || "").trim();
+    if (reason && (wait?.kind === "cooldown" || /启动失败|执行未确认|启动未确认/u.test(reason))) status += ` · 原因：${reason}`;
     if (Number(wait?.remaining) > 0) status += ` · 剩余 ${formatClock(wait.remaining)}`;
     const priority = schedulePriorityFor(task.mode, task.rule);
     const params = `优先级 ${priority} · ${scheduleWindowLabel(task.rule?.window)}`;
@@ -2576,7 +2579,7 @@
   }
 
   function formatDeskDispatchNote({ nextEntry, preview, waitMs }) {
-    if (taskSchedule.manualFocusMode) return "手动任务优先；其他任务暂停轮换，手动停止该任务后恢复";
+    if (taskSchedule.manualFocusMode && !scheduleManualFocusDeferred()) return "手动任务优先；其他任务暂停轮换，手动停止该任务后恢复";
     const eta = waitMs > 0 ? `约 ${formatCountdown(waitMs)}` : "";
     const nextLabel = nextEntry
       ? (TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode)
@@ -2584,7 +2587,8 @@
     if (!nextEntry && !nextLabel) {
       return joinScheduleFields([
         ["剩余", eta],
-        ["说明", eta ? "自动切换下一任务" : "暂无到期任务，到期后会自动切换"]
+        ["说明", eta ? "当前没有可运行任务；各任务卡片显示冷却、时段或失败原因，到期后重新排班"
+          : "当前没有可运行任务；查看任务卡片确认是否未勾选、已停止或启动失败"]
       ]);
     }
     return joinScheduleFields([
@@ -2606,7 +2610,11 @@
     const liveUntil = current && liveFresh && !["idle", "stopped"].includes(live.phase) ? Number(live.waitUntil) || 0 : 0;
     const until = Math.max(Number(queued.resumeAt) || 0, liveUntil, Number(future?.readyAt) || 0);
     const remaining = Math.max(0, until - now);
-    const reason = String((current && live.detail) || queued.reason || live.detail || future?.reason || "").trim();
+    const queuedReason = String(queued.reason || "").trim();
+    const reason = String((current && live.detail) || queuedReason || live.detail || future?.reason || "").trim();
+    if (Number(queued.resumeAt) > now && /疑似自动化|限制冷却/u.test(queuedReason)) {
+      return { kind: "cooldown", label: "X 限制冷却", detail: queuedReason, remaining: Number(queued.resumeAt) - now };
+    }
     if (current && !remaining && live.phase === "running" && liveFresh) {
       return { kind: "running", label: "正在运行", detail: reason || "正在执行当前任务", remaining: 0 };
     }
@@ -2622,7 +2630,7 @@
       const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
       return { kind: "starting", label: "正在启动", detail: "等待执行页回报启动结果", remaining: confirmLeft };
     }
-    if (taskSchedule.manualFocusMode && mode !== taskSchedule.manualFocusMode) {
+    if (taskSchedule.manualFocusMode && !scheduleManualFocusDeferred(now) && mode !== taskSchedule.manualFocusMode) {
       const focusLabel = TASK_MODE_LABELS[taskSchedule.manualFocusMode] || "手动任务";
       return { kind: "queue", label: "等待手动任务", detail: `手动开启的「${focusLabel}」正在优先运行`, remaining: 0 };
     }
@@ -2662,16 +2670,33 @@
   }
 
   function confirmingStartCopy(mode, now = Date.now()) {
-    if (!taskSchedule.enabled || taskSchedule.current !== mode) return "";
+    if (!taskSchedule.enabled) return "";
     const wait = scheduledWaitInfo(mode, now);
+    const queued = taskSchedule.items?.[mode] || {};
+    if (queued.blocked && queued.reason) return queued.reason;
+    if (wait?.kind === "cooldown" && ["timeline", "notifications", "kol"].includes(mode)) {
+      return `${wait.detail}；剩余 ${formatCountdown(wait.remaining)}。其他可运行任务继续排班。`;
+    }
+    if (taskSchedule.current !== mode) {
+      const error = String(queued.lastStartError || "").trim();
+      return error && Number(queued.resumeAt) > now
+        ? `上次启动未确认：${error}；${formatCountdown(Number(queued.resumeAt) - now)}后重试。其他可运行任务继续排班。` : "";
+    }
     if (wait?.kind !== "starting") return "";
     const eta = wait.remaining > 0 ? `约 ${formatCountdown(wait.remaining)}` : "";
-    const queued = taskSchedule.items?.[mode] || {};
     const previousError = String(queued.lastStartError || "").trim();
     const stage = wait.detail || "等待执行页回报启动结果";
     const attempt = Number(queued.recoveryAttempts) || 0;
     const retry = previousError ? `上次未确认：${previousError}；第 ${attempt + 1} 次尝试。` : "";
     return `${retry}当前步骤：${stage}。${eta ? `若仍未收到页内回报，${eta}后检查执行页并尝试恢复。` : "正在检查执行页是否已启动。"}`;
+  }
+
+  function scheduleManualFocusDeferred(now = Date.now()) {
+    const mode = taskSchedule.manualFocusMode;
+    if (!["timeline", "notifications", "kol"].includes(mode)) return false;
+    const item = taskSchedule.items?.[mode] || {};
+    return Boolean(item.blocked || Number(item.resumeAt) > now
+      && /疑似自动化|启动失败|执行未确认|启动未确认|页内未能启动/u.test(String(item.reason || "")));
   }
 
   // Desk queue sorts by who becomes ready first; stopped / disabled sink to the end.
@@ -2916,13 +2941,14 @@
     const preview = schedulePreview();
     const nextEntry = taskSchedule.timeline?.future?.find((entry) => ["ready", "scheduled"].includes(entry.status));
     const currentActions = Number(taskSchedule.items?.[preview.current]?.sliceActions) || 0;
+    const focusDeferred = scheduleManualFocusDeferred();
     current.textContent = taskSchedule.enabled
-      ? `${taskSchedule.manualFocusMode ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || taskSchedule.manualFocusMode] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${!taskSchedule.manualFocusMode && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
+      ? `${taskSchedule.manualFocusMode && !focusDeferred ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || (focusDeferred ? "" : taskSchedule.manualFocusMode)] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${(!taskSchedule.manualFocusMode || focusDeferred) && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
       : "排班已暂停";
     const readyComments = (taskSchedule.timeline?.future || []).filter((entry) => ["timeline", "notifications", "kol"].includes(entry.mode) && entry.status === "ready");
-    const commentLottery = !taskSchedule.manualFocusMode && ["timeline", "notifications", "kol"].includes(nextEntry?.mode)
+    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(nextEntry?.mode)
       && readyComments.filter((entry) => Number(taskSchedule.rules?.[entry.mode]?.priority) === Number(taskSchedule.rules?.[nextEntry.mode]?.priority)).length > 1;
-    next.textContent = taskSchedule.manualFocusMode ? "其他任务等待手动任务结束" : commentLottery
+    next.textContent = taskSchedule.manualFocusMode && !focusDeferred ? "其他任务等待手动任务结束" : commentLottery
       ? "评论任务等概率抽选 · 当前结束后"
       : nextEntry
       ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
@@ -3000,7 +3026,8 @@
     const lotteryModes = ["timeline", "notifications", "kol"].filter((mode) => mode !== nowMode
       && dueModes.includes(mode)
       && Number(byMode.get(mode)?.rule?.priority) === Number(firstReady?.rule?.priority));
-    const commentLottery = !taskSchedule.manualFocusMode && ["timeline", "notifications", "kol"].includes(firstReady?.mode) && lotteryModes.length > 1;
+    const focusDeferred = scheduleManualFocusDeferred(readinessNow);
+    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(firstReady?.mode) && lotteryModes.length > 1;
     const nextMode = commentLottery ? "" : firstReady?.mode || "";
     const candidateModes = waitingQueue
       .map((task) => task.mode)
@@ -3098,14 +3125,14 @@
       const status = row.querySelector(".xrc-schedule-item-status");
       if (label) {
         const category = categoryByMode[task.mode];
-        const signature = `${phase}|${pulse}|${task.label}|${category?.[0] || ""}|${taskSchedule.manualFocusMode || ""}`;
+        const signature = `${phase}|${pulse}|${task.label}|${category?.[0] || ""}|${focusDeferred ? "" : taskSchedule.manualFocusMode || ""}`;
         if (label.dataset.xrcLabelSignature !== signature) {
           label.replaceChildren();
           if (phase) {
             const tag = document.createElement("span");
             tag.className = "xrc-desk-phase-tag";
             tag.textContent = phase === "now" ? (pulse === "running" ? "当前正在执行" : pulse === "stopped" ? "当前已暂停" : "当前等待中")
-              : taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode ? "等待手动任务" : phase === "next" ? "下一任务"
+              : taskSchedule.manualFocusMode && !focusDeferred && task.mode !== taskSchedule.manualFocusMode ? "等待手动任务" : phase === "next" ? "下一任务"
               : commentLottery && lotteryModes.includes(task.mode) ? "等概率候选" : "候选任务";
             label.append(tag);
           }
@@ -3152,7 +3179,7 @@
       if (note) {
         if (!enabled) note.textContent = "未勾选，不参与自动排班；仍可查看子页手动启停";
         else {
-          const wait = taskSchedule.manualFocusMode && task.mode !== taskSchedule.manualFocusMode
+          const wait = taskSchedule.manualFocusMode && !focusDeferred && task.mode !== taskSchedule.manualFocusMode
             ? scheduledWaitInfo(task.mode) : pulse === "waiting" ? scheduledWaitInfo(task.mode) : null;
           note.textContent = formatScheduleCardNote(task, wait);
         }
@@ -4601,6 +4628,7 @@
       pageCount: 0,
       completedRounds: 0,
       kolVisitedHandles: [],
+      notificationBoundaryRefreshed: false,
       kolVisitOrder: [],
       kolCycleRetired: false,
       startedAt: null,
@@ -4664,6 +4692,7 @@
         total: Number(parsed.total) || 0,
         pageCount: Number(parsed.pageCount) || 0,
         completedRounds: Number(parsed.completedRounds) || 0,
+        notificationBoundaryRefreshed: Boolean(parsed.notificationBoundaryRefreshed),
         startedAt: Number(parsed.startedAt) > 0 ? Number(parsed.startedAt) : null,
         cycleCount: Math.max(0, Number(parsed.cycleCount) || 0),
         nextCycleAt: validAssistantMode(parsed.assistantMode) === "notifications"
@@ -4714,6 +4743,7 @@
         total: Number(value.total) || 0,
         pageCount: Number(value.pageCount ?? state.pageCount) || 0,
         completedRounds: Number(value.completedRounds ?? state.completedRounds) || 0,
+        notificationBoundaryRefreshed: Boolean(value.notificationBoundaryRefreshed ?? state.notificationBoundaryRefreshed),
         startedAt: Number(value.startedAt ?? state.startedAt) || null,
         cycleCount: Math.max(0, Number(value.cycleCount ?? state.cycleCount) || 0),
         nextCycleAt: Math.max(0, Number(value.nextCycleAt ?? state.nextCycleAt) || 0),
@@ -4775,6 +4805,7 @@
         pageCount: 0,
         completedRounds: 0,
         startedAt: null,
+        notificationBoundaryRefreshed: false,
         cycleCount: 0,
         nextCycleAt: 0,
         notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
@@ -4919,6 +4950,7 @@
   function resetCycleProgress() {
     state.pageCount = 0;
     state.notificationCheckedIds.clear();
+    state.notificationBoundaryRefreshed = false;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];
@@ -5468,6 +5500,7 @@
       })
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
+        loopApi.notificationWithinWindow(tweet.timestamp) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
         !loopApi.hasVisibleReplyCount(tweet.replyButton)
@@ -5476,6 +5509,27 @@
     if (!kolMode) return tweets;
     const todayTweets = tweets.filter((tweet) => tweet.timestamp && shanghaiDayKey(tweet.timestamp) === todayKey);
     return todayTweets.length ? todayTweets : tweets;
+  }
+
+  function notificationFeedReachedOldBoundary(now = Date.now()) {
+    if (state.assistantMode !== "notifications") return false;
+    const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+    return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
+      .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`) && !isNestedTweet(article))
+      .some((article) => {
+        const timeNode = listOwn(article, "time[datetime]")[0];
+        const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute?.("datetime"));
+        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now);
+      });
+  }
+
+  async function finishNotificationScan(reason = "最近 24 小时的通知已扫完") {
+    if (!state.notificationBoundaryRefreshed) {
+      state.notificationBoundaryRefreshed = true;
+      writeSaved({ running: true, total: state.total });
+      return await reloadAndResume(`${reason}，刷新后复核最新回复`) ? "reload" : "stopped";
+    }
+    return finishCycleAndScheduleNext(`已复核最近 24 小时的回复，本次确认 ${state.total} 条`);
   }
 
   async function collectDailyKolFromHome(tweets, now = Date.now()) {
@@ -6279,7 +6333,7 @@
     if (state.stopping) return "stopped";
 
     let ready = await waitUntil(
-      () => collectTweets().length > 0,
+      () => collectTweets().length > 0 || notificationFeedReachedOldBoundary(),
       15000
     );
     if (state.stopping) return "stopped";
@@ -6287,7 +6341,7 @@
       const closed = await closeReplyComposer();
       if (closed) {
         ready = await waitUntil(
-          () => collectTweets().length > 0,
+          () => collectTweets().length > 0 || notificationFeedReachedOldBoundary(),
           8000
         );
       }
@@ -6310,7 +6364,7 @@
         return reconnectAndResume("暂时无法识别当前登录账号，为避免回复自己，本轮已暂停");
       }
       if (state.assistantMode === "notifications") {
-        return finishCycleAndScheduleNext("通知页没有待处理回复，本次扫描结束");
+        return finishNotificationScan(notificationFeedReachedOldBoundary() ? "已到 24 小时前的通知" : "通知页没有待处理回复");
       }
       if (state.assistantMode === "kol") {
         return rotateKolProfileAndResume("这个主页暂时没有可评论的帖子，换一个大V继续");
@@ -6400,14 +6454,20 @@
         return reconnectAndResume(state.status, { inPlace: true });
       }
       if (!next) {
+        if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
+          return finishNotificationScan("已到 24 小时前的通知");
+        }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
         await sleepActive(SCROLL_WAIT_MS);
         const after = tweetSignature(collectTweets());
+        if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
+          return finishNotificationScan("已到 24 小时前的通知");
+        }
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
           if (state.assistantMode === "notifications") {
-            return finishCycleAndScheduleNext(`通知页没有更多待处理回复，本次完成 ${state.total} 条`);
+            return finishNotificationScan("通知页没有更多待处理回复");
           }
           if (state.assistantMode === "kol") {
             return rotateKolProfileAndResume(`@${currentKolHandleFromPath() || "大V"} 主页已扫完，换下一个继续`);
@@ -9684,6 +9744,7 @@
     }
     state.pageCount = 0;
     state.notificationCheckedIds.clear();
+    state.notificationBoundaryRefreshed = false;
     state.completedRounds = 0;
     state.kolVisitedHandles = [];
     state.kolVisitOrder = [];
@@ -9783,6 +9844,7 @@
     state.startedAt = saved.startedAt;
     state.cycleCount = saved.cycleCount;
     state.nextCycleAt = saved.nextCycleAt;
+    state.notificationBoundaryRefreshed = saved.notificationBoundaryRefreshed;
     state.nextRoundAt = saved.nextRoundAt;
     state.reconnectAt = saved.reconnectAt;
     state.reconnectReason = saved.reconnectReason;

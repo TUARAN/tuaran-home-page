@@ -189,6 +189,10 @@
     return Number.isFinite(timestamp) ? timestamp : 0;
   }
 
+  function notificationWithinWindow(timestamp, now = Date.now(), windowMs = 24 * 60 * 60 * 1000) {
+    return Number(timestamp) > 0 && Number(timestamp) >= now - windowMs;
+  }
+
   function nextTweet(tweets, processedIds) {
     const sorted = [...tweets].sort((a, b) => a.top - b.top);
     return sorted.find((tweet) => tweet.id && tweet.replyButton && !processedIds.has(tweet.id)) || null;
@@ -463,6 +467,7 @@
     hasVisibleReplyCount,
     isReplyRestrictedText,
     timestampFromDatetime,
+    notificationWithinWindow,
     nextTweet,
     shouldReload,
     batchTransition,

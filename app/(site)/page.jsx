@@ -19,6 +19,7 @@ import {
   IconFeather,
   IconFileText,
   IconHeartHandshake,
+  IconLibrary,
   IconMessages,
   IconNews,
   IconPointer,
@@ -81,7 +82,7 @@ const HOME_EXPLORE_GROUPS = [
       { id: 'practice', href: '/articles?group=practice', title: '工程实践', titleEn: 'Engineering practice', desc: '案例、实作与指南', descEn: 'Cases, build logs and guides', icon: IconTools },
       { id: 'cloud', href: '/topics/frontend-cloud', title: '前端与云', titleEn: 'Frontend and cloud', desc: 'Next.js、Cloudflare 与站点工程', descEn: 'Next.js, Cloudflare and site engineering', icon: IconCloud },
       { id: 'subscribe', href: '/frontend-weekly', title: '前端周看', titleEn: 'Frontend Weekly', desc: '前端与 AI 工程情报', descEn: 'Frontend and AI engineering briefings', icon: IconNews },
-      { id: 'books', href: '/publications', title: '著作', titleEn: 'Books', desc: '已出版图书与电子小册', descEn: 'Published books and guides', icon: IconFileText },
+      { id: 'books', href: '/resources/books', title: '图书馆', titleEn: 'Library', desc: '已出版图书与站内可读资源', descEn: 'Published and online books', icon: IconLibrary },
     ],
   },
   {
@@ -730,7 +731,7 @@ function ClassicHomePage({ featuredPicks }) {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { href: '/publications', label: '出版', labelEn: 'Books' },
+                    { href: '/resources/books', label: '图书馆', labelEn: 'Library' },
                     { href: '/about', label: '站长', labelEn: 'Owner' },
                     { href: '/works', label: '产品', labelEn: 'Products' },
                   ].map((card) => (

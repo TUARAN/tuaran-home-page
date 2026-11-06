@@ -1,8 +1,10 @@
 'use client'
 
 import ShowcaseDirectory from '../components/ShowcaseDirectory'
+import { RESOURCE_BOOK_HREFS } from '../../../lib/content/resourceBooks.mjs'
 
 const CATEGORIES = [
+  { id: 'books', title: '书籍' },
   { id: 'reading', title: '资料与原文' },
   { id: 'learning', title: '学习与开发' },
   { id: 'media', title: '视觉与影音' },
@@ -10,6 +12,7 @@ const CATEGORIES = [
 ]
 
 const VISUALS = {
+  books: { eyebrow: 'BOOKS', icon: 'books', image: '/images/directory-covers/resources/reading.webp', cover: 'from-[#e8e0d0] via-[#f4efe3] to-[#dbd0ba] text-[#69543a] dark:from-[#383126] dark:via-[#2b2924] dark:to-[#453a2b] dark:text-[#eddbb6]' },
   reading: { eyebrow: 'READ', icon: 'books', image: '/images/directory-covers/resources/reading.webp', cover: 'from-[#e8e0d0] via-[#f4efe3] to-[#dbd0ba] text-[#69543a] dark:from-[#383126] dark:via-[#2b2924] dark:to-[#453a2b] dark:text-[#eddbb6]' },
   learning: { eyebrow: 'LEARN', icon: 'brain', image: '/images/directory-covers/resources/learning.webp', cover: 'from-[#dbe8ed] via-[#eef4f4] to-[#cbdfe4] text-[#386677] dark:from-[#1b3540] dark:via-[#1a2b35] dark:to-[#294754] dark:text-[#bfdee8]' },
   media: { eyebrow: 'EXPLORE', icon: 'sparkles', image: '/images/directory-covers/resources/media.webp', cover: 'from-[#eaddf2] via-[#f4ecf6] to-[#ddcfeb] text-[#705780] dark:from-[#34263e] dark:via-[#2b2537] dark:to-[#493450] dark:text-[#e4ceef]' },
@@ -41,6 +44,7 @@ const CONFIG = {
 function resourceCategory(item) {
   const href = item.href || ''
   const type = item.resourceType || ''
+  if (href === '/resources/books' || RESOURCE_BOOK_HREFS.has(href)) return 'books'
   if (/^\/(bookmarks|frontend-weekly)/.test(href) || href === '/resources/rss' || ['rss', 'twitter', 'youtube'].includes(type)) return 'collections'
   if (['film-media', 'ai-music', 'visual-assets'].includes(type) || /(nano-banana-gallery|wallpapers|niu-lai-movie|ai-music)/.test(href)) return 'media'
   if (type === 'ai-dev' || /\/(ai-learning-library|edge-agent-development|codex-learning-resource-map-yichen)$/.test(href)) return 'learning'
@@ -48,7 +52,10 @@ function resourceCategory(item) {
 }
 
 export default function ResourcesDirectory({ resources }) {
-  const items = resources.map((resource, index) => {
+  const items = [
+    { href: '/resources/books', title: '书籍馆藏', summary: '已出版图书、电子小册、原著、白皮书与手册，按书陈列。', date: '2026-11-06' },
+    ...resources,
+  ].map((resource, index) => {
     const category = resourceCategory(resource)
     const categoryLabel = CATEGORIES.find((entry) => entry.id === category).title
     return {
@@ -60,7 +67,7 @@ export default function ResourcesDirectory({ resources }) {
       coverImageAlt: `${categoryLabel}分类视觉：${resource.title}`,
       coverImagePriority: index < 4,
       showStudioCoverImage: true,
-      coverLabel: resource.tagLabel?.replace(/^资源库 · /, '') || categoryLabel,
+      coverLabel: category === 'books' ? '资源 · 书籍' : resource.tagLabel?.replace(/^资源库 · /, '') || categoryLabel,
       summary: resource.summary || categoryLabel,
       meta: [resource.date, categoryLabel].filter(Boolean),
       footerLabel: resource.delivery === 'download' ? '可领取 / 下载' : '查看详情',

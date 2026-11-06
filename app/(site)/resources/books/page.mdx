@@ -1,0 +1,23 @@
+import BookShelf from './BookShelf'
+
+export const metadata = {
+  title: '书籍馆藏',
+  description: '陈列已出版图书、电子小册和站内可读的原著、白皮书与使用手册。',
+  alternates: { canonical: '/resources/books' },
+  openGraph: {
+    title: '书籍馆藏',
+    description: '已出版图书、电子小册与站内可读资源。',
+    url: 'https://2aran.com/resources/books',
+    type: 'website',
+  },
+}
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: '书籍馆藏',
+  url: 'https://2aran.com/resources/books',
+  inLanguage: 'zh-CN',
+}) }} />
+
+<BookShelf />

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import BookIdentity from '../../components/book-reader/BookIdentity'
 
 import ArticleActionsDropdown from '../../components/ArticleActionsDropdown'
 import ArticleFooterCta from '../../components/ArticleFooterCta'
@@ -143,6 +144,9 @@ export default function JianguoFanglyePage() {
         <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
 
         <header className="overflow-hidden rounded-3xl border border-[#d9ded9] bg-[linear-gradient(145deg,#f7f8f5_0%,#f3f0ea_55%,#eef2f4_100%)] p-6 dark:border-gray-800 dark:bg-[linear-gradient(145deg,#151815_0%,#1b1c17_55%,#15181d_100%)] md:p-9">
+          <BookIdentity kind="历史原著" />
+          <div className="mt-5" aria-hidden="true" />
+
           <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] text-[#6f786f] dark:text-gray-400">
             <Link href="/articles?group=resource" className="hover:text-[#26352d] dark:hover:text-white">
               资源库
@@ -237,7 +241,7 @@ export default function JianguoFanglyePage() {
             </a>
           </p>
           {article.html ? (
-            <ResourceLongformReader toc={toc} html={article.html} />
+            <ResourceLongformReader toc={toc} html={article.html} book />
           ) : (
             <p className="rounded-xl border border-dashed border-[#ccc] bg-[#fafaf8] p-6 text-sm dark:border-[#3a3a32] dark:bg-[#121410]">
               正文暂未就绪。可先阅读

@@ -120,6 +120,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/publications',
+        destination: '/resources/books',
+        permanent: true,
+      },
+      {
         source: '/site',
         destination: '/help#about-site',
         permanent: true,
@@ -291,4 +296,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = require('nextra').default({})(nextConfig)

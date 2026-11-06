@@ -25,7 +25,7 @@ export default function SeedanceGuidePage() {
   return (
     <PageContainer className="pb-12 pt-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Book', name: book.title, author: [{ '@type': 'Person', name: '涂阿燃', alternateName: '涂智研' }, { '@type': 'Person', name: '李谊林' }], url: `https://2aran.com${book.href}` }).replace(/</g, '\u003c') }} />
-      <nav aria-label="当前位置" className="mb-6 text-sm text-gray-500"><Link href="/publications" className="hover:underline">出版作品</Link> / Seedance</nav>
+      <nav aria-label="当前位置" className="mb-6 text-sm text-gray-500"><Link href="/resources/books" className="hover:underline">图书馆</Link> / Seedance</nav>
       <section className="grid gap-8 rounded-3xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-900 md:grid-cols-[minmax(0,1fr)_260px] md:p-10">
         <div>
           <p className="mb-3 text-sm text-slate-500">{book.year} · {book.type} · {book.status}</p>

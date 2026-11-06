@@ -4,7 +4,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 import { STATIC_PAGE_REGISTRY, listStaticPageSitemapEntries } from '../../lib/site/staticPageRegistry.mjs'
-import { inspectRoute, routeFromPageFile } from '../../scripts/audit-route-seo.mjs'
+import { buildRouteSeoSnapshot, inspectRoute, routeFromPageFile } from '../../scripts/audit-route-seo.mjs'
 
 function walk(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -19,7 +19,14 @@ test('route filenames normalize app groups without losing dynamic segments', () 
   assert.equal(routeFromPageFile('/repo/app/(site)/about/resume/page.jsx', root), '/about/resume')
   assert.equal(routeFromPageFile('/repo/app/(site)/articles/[slug]/page.jsx', root), '/articles/[slug]')
   assert.equal(routeFromPageFile('/repo/app/(site)/page.jsx', root), '/')
+  assert.equal(routeFromPageFile('/repo/app/(site)/resources/books/page.mdx', root), '/resources/books')
   assert.equal(routeFromPageFile('/repo/.public-pages-build-excluded/app-admin-group/admin/seo/page.jsx', root), '/admin/seo')
+})
+
+test('SEO auditor includes Nextra MDX pages in its route inventory', async () => {
+  const snapshot = await buildRouteSeoSnapshot()
+  assert.ok(snapshot.routes.some((route) => route.path === '/resources/books' && route.file.endsWith('/page.mdx')))
+  assert.ok(!snapshot.issues.some((issue) => issue.id === 'registry.orphan:/resources/books'))
 })
 
 test('static registry has unique canonicals and keeps noindex routes out of sitemap', () => {

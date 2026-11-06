@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import BookIdentity from '../../../components/book-reader/BookIdentity'
+import BookToc from '../../../components/book-reader/BookToc'
 import { useEffect, useRef, useState } from 'react'
 
 import { CZ_MEMOIR_BASE_PATH, czMemoirChapterPath } from '../../../../../lib/page-data/czMemoirs'
@@ -42,6 +44,11 @@ export default function CzMemoirReader({ chapter, groups, outline, previous, nex
     }
   }, [chapter.slug])
 
+  const tocGroups = groups.map((group) => ({
+    heading: group.period,
+    items: group.chapters.map(([title, slug]) => ({ href: czMemoirChapterPath(slug), label: title })),
+  }))
+
   const chapterPosition = groups
     .flatMap((group) => group.chapters)
     .findIndex(([, slug]) => slug === chapter.slug) + 1
@@ -55,18 +62,7 @@ export default function CzMemoirReader({ chapter, groups, outline, previous, nex
       <div className={styles.mobileBar}>
         <details>
           <summary>第 {chapterPosition} / 28 篇 · {chapter.title}</summary>
-          <nav aria-label="移动端章节目录">
-            {groups.map((group) => (
-              <div key={group.id}>
-                <strong>{group.period}</strong>
-                {group.chapters.map(([title, slug]) => (
-                  <Link key={slug} href={czMemoirChapterPath(slug)} aria-current={slug === chapter.slug ? 'page' : undefined}>
-                    {title}
-                  </Link>
-                ))}
-              </div>
-            ))}
-          </nav>
+          <BookToc groups={tocGroups} title="全书目录" caption="资源 · 书籍" />
         </details>
       </div>
 
@@ -76,21 +72,11 @@ export default function CzMemoirReader({ chapter, groups, outline, previous, nex
             <span>赵长鹏自传</span>
             <strong>币安人生</strong>
           </Link>
-          <nav aria-label="全书章节">
-            {groups.map((group) => (
-              <section key={group.id}>
-                <p>{group.period}</p>
-                {group.chapters.map(([title, slug]) => (
-                  <Link key={slug} href={czMemoirChapterPath(slug)} aria-current={slug === chapter.slug ? 'page' : undefined}>
-                    {title}
-                  </Link>
-                ))}
-              </section>
-            ))}
-          </nav>
+          <BookToc groups={tocGroups} title="全书目录" caption="资源 · 书籍" />
         </aside>
 
         <main className={styles.mainColumn}>
+          <BookIdentity kind="逐章阅读" compact />
           <header className={styles.readerHeader}>
             <div>
               <Link href={CZ_MEMOIR_BASE_PATH}>《币安人生》</Link>

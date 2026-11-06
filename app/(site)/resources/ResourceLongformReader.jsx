@@ -1,5 +1,7 @@
 'use client'
 
+import BookToc from '../components/book-reader/BookToc'
+
 function TocList({ items, className = '' }) {
   if (!items?.length) return null
   return (
@@ -28,7 +30,7 @@ function TocList({ items, className = '' }) {
   )
 }
 
-export default function ResourceLongformReader({ toc, html }) {
+export default function ResourceLongformReader({ toc, html, book = false }) {
   const safeToc = toc || []
   const groupedToc = []
   let current = null
@@ -45,6 +47,20 @@ export default function ResourceLongformReader({ toc, html }) {
   const hasToc = groupedToc.length > 0
   const volumeItems = groupedToc.map((group) => group.heading)
   const sectionItems = groupedToc.flatMap((group) => group.sections)
+
+  if (book) {
+    const groups = groupedToc.map((group) => ({
+      id: group.heading.id,
+      heading: group.heading.text,
+      items: group.sections.map((section) => ({ id: section.id, label: section.text, depth: 1 })),
+    }))
+    return (
+      <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+        {groups.length ? <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start"><BookToc groups={groups} title="章节目录" caption="资源 · 书籍" /></aside> : null}
+        <article className="prose-tuaran prose-resource-longform min-w-0" dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">

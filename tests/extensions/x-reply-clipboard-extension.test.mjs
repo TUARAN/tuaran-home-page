@@ -803,6 +803,27 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
 })
 
+test('flow dots reserve red for current-account execution alerts and gray for unscheduled tasks', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const definition = source.match(/  function flowTaskDot\(task, alerts, accountHandle\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const context = vm.createContext({ userStateLabelForTask: (status) => status })
+  vm.runInContext(`${definition}\nglobalThis.indicator = flowTaskDot`, context)
+  const missing = { key: 'timeline', label: '评论首页', status: 'missing', inSchedule: false }
+  const blocked = { key: 'notifications', label: '评论回复', status: 'blocked', inSchedule: true }
+  assert.equal(context.indicator(missing, [], 'me').state, 'missing')
+  assert.equal(context.indicator(blocked, [], 'me').state, 'needs')
+  assert.equal(context.indicator({ ...missing, inSchedule: true }, [], 'me').state, 'waiting')
+  const alert = { task: 'timeline', accountHandle: 'me', message: '重试耗尽' }
+  assert.equal(context.indicator(missing, [alert], 'me').state, 'alert')
+  assert.match(context.indicator(missing, [alert], 'me').title, /执行报警 · 重试耗尽/)
+  assert.equal(context.indicator(missing, [alert], 'another').state, 'missing')
+  assert.match(source, /flowTaskDot\(task, executionAlerts, currentAccountHandle\(\) \|\| lastKnownAccountHandle\)/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="missing"\] \{\s*background: #94a3b8;/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="alert"\] \{\s*background: #ef4444;/)
+})
+
 test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]

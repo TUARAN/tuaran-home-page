@@ -2260,6 +2260,17 @@
     return { counts, facing, tasks, text };
   }
 
+  function flowTaskDot(task, alerts, accountHandle) {
+    const account = String(accountHandle || "").replace(/^@/u, "").toLowerCase();
+    const alert = (alerts || []).find((entry) => entry.task === task.key
+      && (!entry.accountHandle || (account && String(entry.accountHandle).toLowerCase() === account)));
+    if (alert) return { state: "alert", title: `${task.label}：执行报警 · ${alert.message}` };
+    if (!task.inSchedule) return { state: "missing", title: `${task.label}：未排班` };
+    const state = task.status === "blocked" || task.status === "unknown" ? "needs"
+      : task.status === "missing" ? "waiting" : task.status;
+    return { state, title: `${task.label}：${userStateLabelForTask(task.status)}` };
+  }
+
   function liveScheduleOccupant(now = Date.now()) {
     const overview = flowTaskOverview(pluginRuntime, now);
     const running = overview.tasks.find((task) => task.status === "running")?.key || "";
@@ -3589,8 +3600,10 @@
       dots.replaceChildren(...FLOW_TASKS.map(() => document.createElement("i")));
     }
     dots?.querySelectorAll("i").forEach((dot, index) => {
-      dot.dataset.state = summary.tasks[index].status;
-      dot.title = `${summary.tasks[index].label}：${userStateLabelForTask(summary.tasks[index].status)}`;
+      const task = summary.tasks[index];
+      const indicator = flowTaskDot(task, executionAlerts, currentAccountHandle() || lastKnownAccountHandle);
+      dot.dataset.state = indicator.state;
+      dot.title = indicator.title;
     });
     if (hint) {
       if (Date.now() < modelSaveNoticeUntil) {

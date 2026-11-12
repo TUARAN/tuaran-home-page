@@ -8,6 +8,18 @@ import { avatarAbsoluteUrl } from '../../../lib/auth/avatar'
 import { getPublishedArticlePostBySlug } from '../../../lib/article/articlePosts'
 import { isMarkdownDocument } from '../../../lib/article/articleDocument.mjs'
 import { diaryContentFromMarkdown } from '../../../lib/article/legacyArticleMigration.mjs'
+import {
+  DIARY_SERIES_COUPLET,
+  DIARY_SERIES_NOTE,
+  DIARY_SERIES_STARTED_ON,
+  DIARY_SLUG,
+  buildDiaryTimelineEntries,
+  findDiaryArticle,
+  formatDiarySpan,
+  formatDiaryTocDate,
+  latestDiaryDate,
+  selectDiarySeries,
+} from '../../../lib/diary/diarySeries.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -15,7 +27,6 @@ export const dynamic = 'force-dynamic'
 const SITE_URL = 'https://2aran.com'
 const AVATAR_URL = avatarAbsoluteUrl(SITE_URL)
 const SITE_TITLE = '涂阿燃（tuaran）的网络日志'
-const DIARY_SLUG = 'diary-self-reflection'
 const numberFormatter = new Intl.NumberFormat('zh-CN')
 
 function toIsoDate(dateString) {
@@ -42,14 +53,6 @@ function parseMarkdownBlockquote(text) {
   return match[1]
 }
 
-function normalizeDiaryLabel(label) {
-  if (typeof label !== 'string') return ''
-  const trimmed = label.trim()
-  if (!trimmed) return ''
-  if (/^感悟\s*\d+$/i.test(trimmed)) return ''
-  return trimmed
-}
-
 function formatNumber(value) {
   return numberFormatter.format(value)
 }
@@ -60,83 +63,20 @@ function formatDate(value) {
   return `${year}.${month}.${day}`
 }
 
-function getMonthDay(value) {
-  if (!value) return ''
-  const [, month, day] = value.split('-')
-  return `${month}/${day}`
-}
-
-function isDateString(value) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
-}
-
-function isDateObject(value) {
-  return value && typeof value === 'object' && value.date
-}
-
-function buildDiaryEntries(content) {
-  const entries = []
-  let current = null
-
-  content.forEach((paragraph, idx) => {
-    if (isDateString(paragraph) || isDateObject(paragraph)) {
-      const date = isDateObject(paragraph) ? paragraph.date : paragraph.trim()
-      const label = isDateObject(paragraph) ? normalizeDiaryLabel(paragraph.label) : ''
-
-      current = {
-        id: `diary-${date}-${idx}`,
-        kind: 'diary',
-        date,
-        label: label || date,
-        category: isDateObject(paragraph) ? paragraph.category || '日记' : '日记',
-        blocks: [],
-        index: idx,
-      }
-      entries.push(current)
-      return
-    }
-
-    if (!current) {
-      current = {
-        id: `diary-untitled-${idx}`,
-        kind: 'diary',
-        date: '',
-        label: '浮生日记',
-        category: '日记',
-        blocks: [],
-        index: idx,
-      }
-      entries.push(current)
-    }
-
-    current.blocks.push(paragraph)
-  })
-
-  return entries
-}
-
 async function readDiary() {
+  const archived = findDiaryArticle(articles)
   const post = await getPublishedArticlePostBySlug(DIARY_SLUG)
-  if (post) {
-    const markdown = isMarkdownDocument(post.content) ? post.content.markdown : post.contentText
-    return {
-      slug: post.slug,
-      title: post.title,
-      summary: post.summary,
-      cover: post.coverUrl,
-      date: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 10) : '',
-      content: diaryContentFromMarkdown(markdown),
-    }
+  if (!post) return selectDiarySeries(archived, null)
+  const markdown = isMarkdownDocument(post.content) ? post.content.markdown : post.contentText
+  const published = {
+    slug: post.slug,
+    title: post.title,
+    summary: post.summary,
+    cover: post.coverUrl,
+    date: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 10) : '',
+    content: diaryContentFromMarkdown(markdown),
   }
-  return articles.find((item) => item.slug === DIARY_SLUG)
-}
-
-function buildDiaryTimelineEntries(diary) {
-  return buildDiaryEntries(diary.content).sort((a, b) => {
-    const byDate = (b.date || '').localeCompare(a.date || '')
-    if (byDate !== 0) return byDate
-    return a.index - b.index
-  })
+  return selectDiarySeries(archived, published)
 }
 
 function buildYearSummaryEntries() {
@@ -229,7 +169,7 @@ function TocGroup({ title, groups, baseIdPrefix = 'year' }) {
                     href={`#${item.id}`}
                     className="block truncate text-[#444] opacity-90 hover:opacity-100 hover:text-[#7a5a1f] dark:text-gray-200 dark:hover:text-[#d7a85c]"
                   >
-                    <span className="font-mono text-xs text-[#999] dark:text-gray-500">{getMonthDay(item.date)}</span>{' '}
+                    <span className="font-mono text-xs text-[#999] dark:text-gray-500">{formatDiaryTocDate(item)}</span>{' '}
                     {item.label}
                   </a>
                 </li>
@@ -356,7 +296,8 @@ export async function generateMetadata() {
       siteName: SITE_TITLE,
       locale: 'zh_CN',
       type: 'article',
-      publishedTime: toIsoDate(diary.date) || undefined,
+      publishedTime: toIsoDate(DIARY_SERIES_STARTED_ON) || undefined,
+      modifiedTime: toIsoDate(latestDiaryDate(diary)) || undefined,
       images: diary.cover
         ? [{ url: diary.cover, alt: `${diary.title} 封面` }]
         : [{ url: AVATAR_URL, width: 512, height: 512, alt: '涂阿燃头像' }],
@@ -388,8 +329,8 @@ export default async function DiaryPage() {
     headline: diary.title,
     description: diary.summary,
     image: diary.cover ? [diary.cover] : undefined,
-    datePublished: toIsoDate(diary.date) || undefined,
-    dateModified: toIsoDate(diary.date) || undefined,
+    datePublished: toIsoDate(DIARY_SERIES_STARTED_ON) || undefined,
+    dateModified: toIsoDate(latestDiaryDate(diary)) || toIsoDate(DIARY_SERIES_STARTED_ON) || undefined,
     author: {
       '@type': 'Person',
       name: '涂阿燃',
@@ -408,25 +349,23 @@ export default async function DiaryPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="diary-page mx-auto max-w-4xl px-4 py-8">
       <Script id="diary-jsonld" type="application/ld+json" strategy="beforeInteractive">
         {JSON.stringify(articleStructuredData)}
       </Script>
 
-      <header className="mb-8 border-b border-[#eee] dark:border-gray-800 pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl text-[#444] dark:text-gray-200 leading-snug">{diary.title}</h1>
-            <p className="text-sm text-[#666] dark:text-gray-300 mt-3 leading-relaxed">{diary.summary}</p>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#666] dark:text-gray-300">
-              <Link href="/articles" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                返回列表
-              </Link>
-              <a href="#year-summary" className="opacity-80 hover:opacity-100 underline underline-offset-4">
-                年中年终总结
-              </a>
-            </div>
-          </div>
+      <header className="diary-sheet diary-page-header">
+        <p className="diary-sheet-kicker">从 {DIARY_SERIES_STARTED_ON} 起</p>
+        <h1 className="diary-sheet-title">{diary.title}</h1>
+        <p className="diary-sheet-note">{DIARY_SERIES_NOTE}</p>
+        <p className="diary-sheet-couplet">
+          {typeof diary.summary === 'string' && diary.summary.includes(DIARY_SERIES_NOTE)
+            ? DIARY_SERIES_COUPLET
+            : diary.summary}
+        </p>
+        <div className="diary-sheet-links">
+          <Link href="/articles">返回列表</Link>
+          <a href="#year-summary">年中年终总结</a>
         </div>
       </header>
 
@@ -448,9 +387,9 @@ export default async function DiaryPage() {
           </>
         ) : null}
 
-        <main className="flex-1 min-w-0">
+        <main className="diary-sheet diary-page-sheet min-w-0 flex-1">
           {diary.cover ? (
-            <div className="mb-8 max-w-3xl mx-auto">
+            <div className="diary-pasted-photo">
               <Image
                 src={diary.cover}
                 alt={`${diary.title} 封面`}
@@ -458,7 +397,7 @@ export default async function DiaryPage() {
                 height={533}
                 sizes="(max-width: 768px) 100vw, 768px"
                 unoptimized
-                className="w-full h-auto border border-[#eee] dark:border-gray-800 bg-white dark:bg-gray-900"
+                className="h-auto w-full bg-white dark:bg-[#1c1915]"
               />
             </div>
           ) : null}
@@ -490,7 +429,7 @@ export default async function DiaryPage() {
                         </h3>
                         <span className="text-[#999] dark:text-gray-500" aria-hidden="true">·</span>
                         <time className="text-base text-[#999] dark:text-gray-400" dateTime={entry.date}>
-                          {entry.date}
+                          {formatDiarySpan(entry)}
                         </time>
                         {entry.category ? (
                           <span className="rounded-full border border-[#e4ded3] px-2 py-0.5 text-xs text-[#7a5a1f] dark:border-[#3a4038] dark:text-[#d7a85c]">

@@ -52,6 +52,9 @@ import HomeOpinionSignals from './components/HomeOpinionSignals'
 import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
+import HomeDiarySeries from './components/HomeDiarySeries'
+import { articles } from './articles/articlesData'
+import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -767,7 +770,7 @@ function ClassicHomePage({ featuredPicks }) {
   )
 }
 
-function PolishedHomePage({ featuredPicks, inspirations }) {
+function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
   return (
     <main className="home-polished-root home-page">
       <script
@@ -781,6 +784,9 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
       <HomeMasonry>
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
+        </div>
+        <div className="home-masonry-item">
+          <HomeDiarySeries preview={diaryPreview} />
         </div>
         <div className="home-masonry-item"><HomeBookCards /></div>
         <div className="home-masonry-item">
@@ -842,10 +848,11 @@ function PolishedHomePage({ featuredPicks, inspirations }) {
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
   const inspirations = getLatestFeedItems(8)
+  const diaryPreview = previewFromDiary(findDiaryArticle(articles))
 
   return (
     <SitePresenceProvider>
-      <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} />
+      <PolishedHomePage featuredPicks={featuredPicks} inspirations={inspirations} diaryPreview={diaryPreview} />
     </SitePresenceProvider>
   )
 }

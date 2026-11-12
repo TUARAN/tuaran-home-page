@@ -69,6 +69,33 @@ async function readDiary() {
   return selectDiarySeries(archived, published)
 }
 
+function splitIsoDate(value) {
+  const [year, month, day] = String(value || '').split('-')
+  return { year, month, day }
+}
+
+function DiaryDateMark({ entry }) {
+  const end = splitIsoDate(entry.date)
+  const start = entry.dateStart && entry.dateStart !== entry.date ? splitIsoDate(entry.dateStart) : null
+  if (!end.month || !end.day) return formatDiarySpan(entry) || entry.label
+  return (
+    <span className="block pl-14 leading-none">
+      <span className="block text-[11px] font-medium tracking-[0.18em] text-neutral-400">{end.year}</span>
+      {start ? (
+        <span className="mt-1 flex items-baseline gap-1 text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
+          <span>{start.month}/{start.day}</span>
+          <span className="text-xs font-medium text-neutral-400">～</span>
+          <span>{end.month}/{end.day}</span>
+        </span>
+      ) : (
+        <span className="mt-1 block text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
+          {end.month}/{end.day}
+        </span>
+      )}
+    </span>
+  )
+}
+
 function renderInlineBold(text) {
   if (typeof text !== 'string' || (!text.includes('**') && !text.includes(']('))) return text
 
@@ -227,6 +254,7 @@ export default async function DiaryPage() {
   const timelineData = diaryEntries.map((entry) => ({
     id: entry.id,
     title: formatDiarySpan(entry) || entry.label,
+    label: <DiaryDateMark entry={entry} />,
     content: (
       <article
         id={entry.id}
@@ -258,7 +286,9 @@ export default async function DiaryPage() {
       <Timeline
         data={timelineData}
         title={diary.title}
-        labelClassName="hidden max-w-[12rem] text-base font-bold leading-tight text-neutral-500 dark:text-neutral-500 md:block md:pl-20 md:text-2xl"
+        rowClassName="flex items-start justify-start gap-3 pt-8"
+        railClassName="sticky top-24 z-40 w-max shrink-0 self-start"
+        labelClassName="hidden md:block"
         description={(
           <div className="space-y-1">
             <p>从 {DIARY_SERIES_STARTED_ON} 起 · {diaryEntries.length} 条</p>

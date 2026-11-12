@@ -11,7 +11,7 @@ export const dynamic = 'force-static'
 
 export const metadata = {
   alternates: { canonical: '/books/seedance-guide' },
-  title: '《Seedance：电影级AI视频创作指南》｜涂阿燃（笔名：涂智研）、李谊林联合编著',
+  title: '《Seedance：电影级AI视频创作指南》｜涂阿燃（笔名：涂智岩）、李谊林联合编著',
   description: book.description,
   openGraph: {
     url: 'https://2aran.com/books/seedance-guide',
@@ -24,7 +24,7 @@ export const metadata = {
 export default function SeedanceGuidePage() {
   return (
     <PageContainer className="pb-12 pt-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Book', name: book.title, author: [{ '@type': 'Person', name: '涂阿燃', alternateName: '涂智研' }, { '@type': 'Person', name: '李谊林' }], url: `https://2aran.com${book.href}` }).replace(/</g, '\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Book', name: book.title, author: [{ '@type': 'Person', name: '涂阿燃', alternateName: '涂智岩' }, { '@type': 'Person', name: '李谊林' }], url: `https://2aran.com${book.href}` }).replace(/</g, '\u003c') }} />
       <nav aria-label="当前位置" className="mb-6 text-sm text-gray-500"><Link href="/resources/books" className="hover:underline">图书馆</Link> / Seedance</nav>
       <section className="grid gap-8 rounded-3xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-900 md:grid-cols-[minmax(0,1fr)_260px] md:p-10">
         <div>

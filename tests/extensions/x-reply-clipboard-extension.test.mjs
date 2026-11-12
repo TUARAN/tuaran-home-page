@@ -10531,6 +10531,33 @@ test('unfollow candidates skip uncertain rows and keep followers unless non-Chin
   assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@fan', '@quiet'])
 })
 
+test('weekly cleanup copy stays on unfollow and prune keeps pace intervals', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const paceTableHtml = source.match(/  function paceTableHtml\(\{ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false \}\) \{[\s\S]*?\n  \}/)?.[0]
+  const cleanupPaceTableHtml = source.match(/  function cleanupPaceTableHtml\(\{ weekly = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(paceTableHtml && cleanupPaceTableHtml)
+  const context = vm.createContext({})
+  vm.runInContext(`${paceTableHtml}\n${cleanupPaceTableHtml}\nglobalThis.table = cleanupPaceTableHtml`, context)
+  const unfollow = context.table({ weekly: true })
+  const prune = context.table()
+  assert.match(unfollow, /约 7 天/)
+  assert.doesNotMatch(unfollow, /240 分钟/)
+  for (const minutes of ['240 分钟', '120 分钟', '60 分钟', '30 分钟']) assert.match(prune, new RegExp(minutes))
+  assert.doesNotMatch(prune, /约 7 天/)
+  const unfollowCard = source.slice(source.indexOf('data-xrc-mutual-card="unfollow"'), source.indexOf('data-xrc-mutual-card="followBack"'))
+  const pruneCard = source.slice(source.indexOf('aria-label="清理历史内容"'), source.indexOf('data-xrc-prune-post-schedule'))
+  assert.match(unfollowCard, /cleanupPaceTableHtml\(\{ weekly: true \}\)/)
+  assert.match(pruneCard, /\$\{cleanupPaceTableHtml\(\)\}/)
+  assert.doesNotMatch(pruneCard, /weekly:\s*true|约 7 天/)
+  const defaults = background.normalizedTaskRules({})
+  assert.equal(defaults['prune-posts'].minGapMs, 240 * 60000)
+  assert.equal(defaults['prune-replies'].minGapMs, 240 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-posts': { pace: 'medium' } })['prune-posts'].minGapMs, 120 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-replies': { pace: 'fast' } })['prune-replies'].minGapMs, 60 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-replies': { pace: 'turbo' } })['prune-replies'].minGapMs, 30 * 60000)
+  assert.equal(defaults['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+})
+
 test('saved unfollowEnglish stays off until an explicit choice after the new default version', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /unfollowEnglishDefaultVersion: 2/)

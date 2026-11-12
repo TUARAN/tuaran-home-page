@@ -4187,10 +4187,10 @@
     });
   }
 
-  function cleanupPaceTableHtml() {
+  function cleanupPaceTableHtml({ weekly = false } = {}) {
     return paceTableHtml({ label: "清理速度", attr: "data-xrc-cleanup-pace", defaultId: "slow",
-      profiles: [{id:"slow",label:"慢",count:15},{id:"medium",label:"中",count:30},{id:"fast",label:"快",count:45},{id:"turbo",label:"超快",count:60}],
-      columns: [{label:"每次最多",value:p=>`${p.count} 项`},{label:"下次间隔",value:()=>"约 7 天"}] });
+      profiles: [{id:"slow",label:"慢",count:15,minutes:240},{id:"medium",label:"中",count:30,minutes:120},{id:"fast",label:"快",count:45,minutes:60},{id:"turbo",label:"超快",count:60,minutes:30}],
+      columns: [{label:"每次最多",value:(profile)=>`${profile.count} 项`},{label:"下次间隔",value:(profile)=> weekly ? "约 7 天" : `${profile.minutes} 分钟`}] });
   }
 
   function pruneRulesTableHtml() {
@@ -8268,7 +8268,7 @@
                   <label><input type="radio" name="xrc-unfollow-mode" value="manual" data-xrc-unfollow-mode><span><strong>手动模式（默认）</strong><small>扫描并记录候选，由你打开资料页取关</small></span></label>
                   <label><input type="radio" name="xrc-unfollow-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
                 </div>
-                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
+                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml({ weekly: true })}</div>
                 <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong><small>默认关闭。认不出「关注了你」时跳过，不把粉丝当成未回关</small></span><input type="checkbox" data-xrc-unfollow-english></label>
                 <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">

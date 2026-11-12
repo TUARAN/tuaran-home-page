@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 import {
   CODEX_RESET_PATH,
@@ -54,13 +55,14 @@ export default function HomeCodexResetCard() {
 
   return (
     <section className="home-section home-codex-reset-panel" aria-label="Codex reset">
-      <div className="home-codex-reset-panel-head">
+      <div className="home-codex-reset-panel-head home-heading-with-couplet">
         <div>
           <p className="home-kicker">Codex Reset</p>
           <h2 className="home-section-title">
             <T zh="重置日历" en="Reset calendar" />
           </h2>
         </div>
+        <HomeSectionCouplet section="resetCalendar" />
         <Link href={CODEX_RESET_PATH} className="home-section-more no-underline">
           <T zh="详情" en="Details" /> <span aria-hidden="true">→</span>
         </Link>

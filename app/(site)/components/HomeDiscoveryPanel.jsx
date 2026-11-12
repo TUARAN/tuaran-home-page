@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 
 function DiscoveryLink({ item, tone }) {
@@ -51,11 +52,12 @@ function DiscoveryLink({ item, tone }) {
 export default function HomeDiscoveryPanel({ groups }) {
   return (
     <section id="start-here" className="home-section home-discovery-panel scroll-mt-24" aria-labelledby="home-discovery-title">
-      <div className="home-section-heading compact">
+      <div className="home-section-heading compact home-heading-with-couplet">
         <div>
           <p className="home-kicker">Explore</p>
           <h2 id="home-discovery-title" className="home-section-title"><T zh="探索" en="Explore" /></h2>
         </div>
+        <HomeSectionCouplet section="explore" />
       </div>
       <nav className="home-explore-groups" aria-label="站点内容与服务入口">
         {groups.map((group) => group.collapsed ? (

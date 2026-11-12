@@ -1014,8 +1014,11 @@ let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
 
 async function readTargetFollowHandles() {
   try {
-    const stored = await chrome.storage.local.get(TARGET_FOLLOW_HANDLES_KEY);
-    targetFollowHandlesCache = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+    const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool"]);
+    const live = stored?.xrcTargetFollowLive?.current;
+    const batch = stored?.xrcTargetFollowPool?.batch;
+    const picked = Array.isArray(live) && live.length ? live : Array.isArray(batch) && batch.length ? batch : stored?.[TARGET_FOLLOW_HANDLES_KEY];
+    targetFollowHandlesCache = normalizeTargetFollowHandles(picked);
     return targetFollowHandlesCache;
   } catch (error) {
     targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];

@@ -7348,10 +7348,9 @@
   }
 
   function targetFollowRosterStatus(seeds, current) {
-    const extras = current.filter((handle) => !seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
-    if (!extras.length) return `当前正在用起始种子 ${current.length} 个。新关注的账号会加进上面这份名单，不会改掉下面的起始种子。`;
-    const preview = extras.slice(0, 8).map((handle) => `@${handle}`).join(" ");
-    return `当前正在用 ${current.length} 个，本轮已扩展 ${extras.length} 个：${preview}${extras.length > 8 ? "…" : ""}。起始种子只在你修改后保存。`;
+    const same = current.length === seeds.length && current.every((handle) => seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
+    if (!current.length || same) return "还没有换批。扫到粉丝列表后，下一批源头会换成列表里的新人，不再固定重复这五个。";
+    return `本批源头已换成 ${current.length} 个：${current.map((handle) => `@${handle}`).join(" ")}。每次任务自动更换，不再固定重复上一批。`;
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7369,17 +7368,13 @@
     } catch (error) {
       seeds = [...DEFAULT_TARGET_FOLLOW_HANDLES];
     }
-    let roster = null;
-    try { roster = mutualApi?.currentTargetRoster?.() || null; } catch (error) { roster = null; }
-    if (!roster?.queue?.length) {
-      try {
-        const stored = await chrome.storage.local.get("xrcTargetFollowLive");
-        const live = stored?.xrcTargetFollowLive;
-        if (live && mutualApi?.visibleTargetRoster) roster = mutualApi.visibleTargetRoster(seeds, live);
-        else if (live) roster = { seeds, queue: Array.isArray(live.queue) ? live.queue : [], current: Array.isArray(live.current) ? live.current : seeds };
-      } catch (error) {}
-    }
-    const current = roster?.current?.length ? roster.current : seeds;
+    let current = [];
+    try {
+      const stored = await chrome.storage.local.get("xrcTargetFollowLive");
+      const live = stored?.xrcTargetFollowLive?.current;
+      if (Array.isArray(live) && live.length) current = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
+    } catch (error) {}
+    if (!current.length) current = seeds;
     if (field && document.activeElement !== field) field.value = seeds.map((handle) => `@${handle}`).join("\n");
     if (currentField) currentField.value = current.map((handle) => `@${handle}`).join("\n");
     if (status) status.textContent = targetFollowRosterStatus(seeds, current);
@@ -7406,13 +7401,15 @@
   function kolRosterStatusText(decision, visitOrder = []) {
     const order = Array.isArray(visitOrder) ? visitOrder.filter(Boolean) : [];
     const orderNote = order.length ? `本轮访问顺序：${order.map((handle) => `@${String(handle).replace(/^@/u, "")}`).join(" ")}。` : "";
-    if (!decision) return `当前名单会随轮次更新。${orderNote}`;
-    if (decision.custom) return `自定义已锁定，不再按首页或内置组自动换。当前 ${decision.handles.length} 个，每一轮只打乱顺序。${orderNote}`;
-    if (decision.source === "daily") return `当前正在用今日首页活跃账号 ${decision.handles.length} 个（${decision.day}）。下一天会再更新。${orderNote}`;
-    const poolCount = kolRoster?.KOL_POOLS?.length || 2;
-    const index = Number(decision.poolIndex);
-    const poolLabel = index >= 0 ? `第 ${index + 1}/${poolCount} 组` : "内置组";
-    return `今日首页活跃不足，当前回退${poolLabel}，每 7 天换一组。${orderNote}`;
+    const batch = decision?.meta?.taskBatch?.handles || [];
+    if (!decision) return `每次任务自动换成一批新账号。${orderNote}`;
+    if (decision.custom && !batch.length) return `已保存自定义名单 ${decision.handles.length} 个。下次任务会从这份名单里换一批，不会清掉这些账号。${orderNote}`;
+    if (decision.custom && batch.length >= decision.handles.length) {
+      return `自定义名单共 ${decision.handles.length} 个，已全部保留，没有被清掉。账号不够换成另一批完全不同的人。${orderNote}`;
+    }
+    if (decision.custom) return `自定义名单已保留。本批已换成其中 ${batch.length || decision.handles.length} 个，与上一批不重复。${orderNote}`;
+    if (batch.length) return `本批已换成 ${batch.length} 个新账号，与上一批不重复。${orderNote}`;
+    return `下一次任务会换成另一批账号。${orderNote}`;
   }
 
   async function loadKolRoster() {
@@ -7502,7 +7499,8 @@
         // Fall through and draw a new order.
       }
     }
-    const handles = await loadKolHandles();
+    const rotated = await rotateKolTaskBatch();
+    const handles = rotated.handles.length ? rotated.handles : await loadKolHandles();
     const order = kolRoster.shuffleHandles(handles, Math.random);
     const keepVisited = !state.kolCycleRetired && state.kolVisitedHandles.length > 0;
     state.kolVisitOrder = order;
@@ -7517,14 +7515,48 @@
     return order;
   }
 
+  async function rotateKolTaskBatch(random = Math.random) {
+    const now = Date.now();
+    const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY, kolRoster.KOL_DISCOVERY_KEY]);
+    const decision = kolRoster.resolveKolRoster({
+      storedHandles: stored?.[KOL_HANDLES_KEY],
+      meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+      discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
+      account: taskSnapshotAccount,
+      now
+    });
+    const fresh = decision.meta?.taskBatch?.handles?.length && now - Number(decision.meta.taskBatch.at) < 120000
+      ? decision.meta.taskBatch
+      : null;
+    if (fresh?.handles?.length) return { handles: fresh.handles, reused: Boolean(fresh.reused) };
+    const pool = kolRoster.taskCandidatePool({
+      custom: decision.custom,
+      customHandles: decision.handles,
+      discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
+      account: taskSnapshotAccount
+    });
+    const selected = kolRoster.selectTaskBatch(pool, decision.meta?.taskBatch?.handles || [], kolRoster.KOL_DAILY_SIZE, random);
+    const meta = {
+      ...decision.meta,
+      custom: decision.custom,
+      taskBatch: { handles: selected.handles, previous: decision.meta?.taskBatch?.handles || [], at: now, reused: selected.reused }
+    };
+    try {
+      await chrome.storage.local.set({ [kolRoster.KOL_ROSTER_KEY]: meta });
+    } catch (error) {}
+    return selected;
+  }
+
   async function syncKolHandlesField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-kol-handles]");
     const status = panel?.querySelector("[data-xrc-kol-status]");
     if (!field || document.activeElement === field) return;
     const decision = await loadKolRoster();
-    field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
+    const batch = decision.meta?.taskBatch?.handles;
+    const shown = Array.isArray(batch) && batch.length ? batch : decision.handles;
+    field.value = shown.map((handle) => `@${handle}`).join("\n");
     const order = Array.isArray(state.kolVisitOrder) ? state.kolVisitOrder : [];
-    const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(decision.handles);
+    const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(shown);
     if (status) status.textContent = kolRosterStatusText(decision, sameRound ? order : []);
   }
 
@@ -7571,9 +7603,9 @@
 
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>当前正在用的名单</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="当前正在用的关注候选名单"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">当前正在用起始种子。新关注的账号会加进这份名单。</small></label><label class="xrc-schedule-card-list"><span>起始种子</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note">只在你修改后保存。自动扩源写进上面的当前名单，不会覆盖这里。</small></label>`
+      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务自动换成一批新的源头账号，不再固定重复同一批。</small></label>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>当前正在用的评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">当前名单会随轮次更新：今日首页活跃、不足时回退内置组，或自定义已锁定不再自动换。</small></label>`
+        ? `<label class="xrc-schedule-card-list"><span>本批评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">每次任务自动换成一批新账号。自定义名单会保留，只从里面换批。</small></label>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "优先级、时段与名单")}
@@ -8324,7 +8356,7 @@
               ${taskScheduleConfigMarkup("mutual-followBack", "回关粉丝")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>起始名单只是种子，扫完后扩展到新关注账号的粉丝列表</small></span></div>
+              <div><b>03</b><span><strong>关注候选</strong><small>每次任务换成一批新的源头账号</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>

@@ -127,6 +127,32 @@
     return KOL_POOLS.some((pool) => sameHandleSet(parsed, pool));
   }
 
+  function discoveryHandles(discovery, account) {
+    const row = discovery?.byAccount?.[cycleAccountKey(account)];
+    if (!row) return [];
+    return Object.values(row.candidates || {})
+      .filter((item) => parseKolHandles([item?.handle]).length === 1)
+      .sort((left, right) => (Number(right?.score) || 0) - (Number(left?.score) || 0) || String(left?.handle).localeCompare(String(right?.handle)))
+      .map((item) => parseKolHandles([item.handle])[0]);
+  }
+
+  function taskCandidatePool({ custom = false, customHandles = [], discovery, account = "" } = {}) {
+    if (custom) return parseKolHandles(customHandles);
+    const discovered = discoveryHandles(discovery, account);
+    const seen = new Set(discovered.map((handle) => handle.toLowerCase()));
+    return [...discovered, ...KOL_CATALOG.filter((handle) => !seen.has(handle.toLowerCase()))];
+  }
+
+  function selectTaskBatch(candidates, previous, size = KOL_DAILY_SIZE, random = Math.random) {
+    const pool = parseKolHandles(candidates);
+    const avoid = new Set(parseKolHandles(previous).map((handle) => handle.toLowerCase()));
+    const fresh = pool.filter((handle) => !avoid.has(handle.toLowerCase()));
+    const reused = fresh.length < Math.min(size, pool.length);
+    const ordered = fresh.length ? [...fresh, ...pool.filter((handle) => avoid.has(handle.toLowerCase()))] : pool.slice();
+    const shuffled = shuffleHandles(ordered, random);
+    return { handles: shuffled.slice(0, Math.min(size, shuffled.length)), reused, changed: !sameHandleSet(shuffled.slice(0, Math.min(size, shuffled.length)), previous) };
+  }
+
   function resolveKolRoster({ storedHandles, meta, discovery, account = "", now = Date.now() } = {}) {
     const parsed = parseKolHandles(storedHandles);
     const epoch = poolEpoch(now);
@@ -240,6 +266,9 @@
     poolIndex,
     poolHandles,
     isBuiltInHandleSet,
+    discoveryHandles,
+    taskCandidatePool,
+    selectTaskBatch,
     resolveKolRoster,
     shuffleHandles,
     nextUnvisitedHandle,

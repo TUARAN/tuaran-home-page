@@ -10415,18 +10415,34 @@ test('target-follow seeds expand to accounts followed in this run and skip self,
   assert.equal(background.TARGET_FOLLOW_MIN_GAP_MS, 5 * 60 * 1000)
 })
 
-test('the visible target-follow roster adds expansions without replacing edited seeds', () => {
+test('each target-follow task can switch to a new batch without following the seed accounts first', () => {
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  const expanded = mutual.visibleTargetRoster(seeds, { queue: ['NewPerson', 'crazypig9y'], refreshAfter: 0 })
-  assert.deepEqual(expanded.seeds, seeds)
-  assert.deepEqual(expanded.queue, ['NewPerson'])
-  assert.deepEqual(expanded.current, [...seeds, 'NewPerson'])
-  const edited = mutual.visibleTargetRoster(['only_seed'], { queue: ['NewPerson'], refreshAfter: 0 })
-  assert.deepEqual(edited.seeds, ['only_seed'])
-  assert.deepEqual(edited.current, ['only_seed', 'NewPerson'])
-  const expired = mutual.visibleTargetRoster(seeds, { queue: ['NewPerson'], refreshAfter: Date.now() - 1000 })
-  assert.deepEqual(expired.current, seeds)
-  assert.deepEqual(expired.queue, [])
+  const seen = mutual.rememberPoolHandles({ handles: seeds.map((handle) => ({ handle, seenAt: 0, usedAt: 1 })), lastBatch: seeds, batch: seeds },
+    ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'], 10)
+  const next = mutual.selectTargetBatch({ ...seen, lastBatch: seeds }, { size: 5 })
+  assert.equal(next.changed, true)
+  assert.deepEqual(next.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  assert.ok(next.handles.every((handle) => !seeds.includes(handle)))
+  const first = mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5 })
+  assert.ok(first.handles.every((handle) => seeds.includes(handle)))
+})
+
+test('each KOL task batch avoids the previous batch and keeps a custom list intact', () => {
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const steady = () => 0.999
+  const catalog = kol.KOL_CATALOG.slice()
+  const first = kol.selectTaskBatch(catalog, [], 5, steady)
+  assert.deepEqual(first.handles, catalog.slice(0, 5))
+  const second = kol.selectTaskBatch(catalog, first.handles, 5, steady)
+  assert.deepEqual(second.handles, catalog.slice(5, 10))
+  assert.equal(second.reused, false)
+  const custom = ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h']
+  const customFirst = kol.selectTaskBatch(custom, [], 5, steady)
+  const customSecond = kol.selectTaskBatch(custom, customFirst.handles, 5, steady)
+  assert.ok(customSecond.handles.every((handle) => !customFirst.handles.includes(handle) || customSecond.reused))
+  assert.deepEqual(custom, ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h'])
+  const pool = kol.taskCandidatePool({ custom: true, customHandles: custom })
+  assert.deepEqual(pool, custom)
 })
 
 test('the panel shows the live target-follow list and a visible KOL roster status', async () => {
@@ -10437,21 +10453,19 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
   vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.match(context.followStatus(seeds, [...seeds, 'NewPerson']), /当前正在用 6 个，本轮已扩展 1 个：@NewPerson/)
-  assert.match(context.followStatus(seeds, seeds), /当前正在用起始种子 5 个/)
-  assert.match(context.kolStatus({ custom: false, source: 'daily', handles: ['a', 'b', 'c', 'd', 'e'], day: '2026-11-12' }), /今日首页活跃账号 5 个/)
-  assert.match(context.kolStatus({ custom: false, source: 'fallback', handles: ['x'], poolIndex: 1 }), /回退第 2\/2 组/)
-  assert.match(context.kolStatus({ custom: true, handles: ['mine'], source: 'custom' }, ['mine']), /自定义已锁定，不再按首页或内置组自动换/)
-  assert.match(context.kolStatus({ custom: true, handles: ['mine'], source: 'custom' }, ['mine']), /本轮访问顺序：@mine/)
-  assert.match(source, /当前正在用的名单/)
+  assert.match(context.followStatus(seeds, seeds), /还没有换批/)
+  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /本批源头已换成 5 个：@fresh_a/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f'], meta: { taskBatch: { handles: ['mine_f'] } } }), /自定义名单已保留/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine'], meta: { taskBatch: { handles: ['mine'] } } }, ['mine']), /没有被清掉/)
+  assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /本批已换成 1 个新账号/)
+  assert.match(source, /本批源头/)
   assert.match(source, /data-xrc-target-follow-current/)
-  assert.match(source, /readonly/)
-  assert.match(source, /当前正在用的评论大V/)
-  assert.doesNotMatch(source, /<span>评论大V名单<\/span>/)
-  assert.match(source, /自定义已锁定不再自动换/)
+  assert.match(source, /每次任务换成一批新的源头账号/)
+  assert.match(source, /本批评论大V/)
+  assert.doesNotMatch(source, /<span>起始种子<\/span>/)
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
-  assert.match(readme, /当前正在用、会随本轮新关注账号增加的名单/)
-  assert.match(readme, /自定义已锁定不再自动换/)
+  assert.match(readme, /每次任务打开的源头账号换成一批新的人/)
+  assert.match(readme, /每次任务从当天首页活跃账号和内置账号里换一批/)
 })
 
 test('exhausted target-follow does not rescan the same list after 30 minutes', async () => {
@@ -10601,7 +10615,7 @@ test('saved unfollowEnglish stays off until an explicit choice after the new def
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /unfollowEnglishDefaultVersion: 2/)
   assert.match(source, /Number\(parsed\.unfollowEnglishDefaultVersion \|\| 0\) >= 2 \? Boolean\(parsed\.unfollowEnglish\) : false/)
-  assert.match(source, /起始名单只是种子/)
+  assert.match(source, /每次任务换成一批新的源头账号/)
   assert.match(source, /约每 3 到 4 天/)
   assert.match(source, /认不出「关注了你」时跳过/)
   assert.equal(mutual.snapshot().unfollowEnglish, false)

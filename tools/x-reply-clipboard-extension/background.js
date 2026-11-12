@@ -4038,6 +4038,32 @@ async function reopenExtensionPanel(tab, deps = {}) {
   }
 }
 
+async function readDailyTopTransport(target, fetchImpl = globalThis.fetch) {
+  let url;
+  try {
+    url = new URL(String(target || ""));
+  } catch (error) {
+    return { ok: false, error: "请求地址无效" };
+  }
+  if (url.origin !== "https://2aran.com" || url.pathname !== "/api/interaction/daily-top") {
+    return { ok: false, error: "请求地址无效" };
+  }
+  const dates = url.searchParams.getAll("date");
+  if ([...url.searchParams.keys()].some((key) => key !== "date") || dates.length > 1) {
+    return { ok: false, error: "请求地址无效" };
+  }
+  if (dates.length === 1 && !/^\d{4}-\d{2}-\d{2}$/u.test(dates[0])) {
+    return { ok: false, error: "请求地址无效" };
+  }
+  try {
+    const response = await fetchImpl(url.href, { method: "GET", headers: { Accept: "application/json" } });
+    const body = typeof response?.text === "function" ? await response.text() : "";
+    return { ok: true, status: Number(response?.status) || 0, body: String(body || "").slice(0, 20000) };
+  } catch (error) {
+    return { ok: false, offline: true, error: "暂时连不上 2aran.com，请稍后重试" };
+  }
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.action?.onClicked?.addListener((tab) => {
     reopenExtensionPanel(tab).catch(() => {});
@@ -4329,6 +4355,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "读取限制记录失败" }));
       return true;
     }
+    if (message?.type === "xrc-interaction-daily-top") {
+      readDailyTopTransport(message.url)
+        .then(sendResponse)
+        .catch(() => sendResponse({ ok: false, offline: true, error: "暂时连不上 2aran.com，请稍后重试" }));
+      return true;
+    }
     if (message?.type === "xrc-ai-cancel") {
       const key = `${sender?.tab?.id}:${String(message.requestId || "")}`;
       activeReplyRequests.get(key)?.abort();
@@ -4513,6 +4545,7 @@ if (typeof module === "object" && module.exports) {
     isLegacyBuiltInReplyCommentPrompt,
     NEWS_REWRITE_SYSTEM_PROMPT,
     DEEPSEEK_MODEL,
-    REQUEST_TIMEOUT_MS
+    REQUEST_TIMEOUT_MS,
+    readDailyTopTransport
   };
 }

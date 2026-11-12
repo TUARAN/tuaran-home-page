@@ -1089,7 +1089,7 @@
     return homePath() && Boolean(findInlineComposer());
   }
 
-  function requestDraftFill(text, { clear = false } = {}) {
+  function requestDraftFill(text, { clear = false, scope = "post", forceDraft = false } = {}) {
     const requestId = `post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     return new Promise((resolve) => {
       let settled = false;
@@ -1104,9 +1104,57 @@
         finish(event.data.result || { ok: false, reason: "compose-failed" });
       }
       window.addEventListener("message", onMessage);
-      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text, clear, forceDraft: false, scope: "post" }, "*");
+      window.postMessage({ channel: DRAFT_CHANNEL, direction: "request", requestId, text, clear, forceDraft, scope }, "*");
       wait(3500).then(() => finish({ ok: false, reason: "compose-timeout" }));
     });
+  }
+
+  function isReplyDialog(dialog) {
+    if (!dialog) return false;
+    const button = dialog.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
+    const label = textOf(button);
+    if (/^(?:Reply|回复)$/iu.test(label)) return true;
+    return /Replying to|正在回复|Tweet your reply|发布你的回复/iu.test(textOf(dialog).slice(0, 240));
+  }
+
+  function findComposeDialog() {
+    return Array.from(document.querySelectorAll('[role="dialog"]')).find((dialog) => {
+      if (isReplyDialog(dialog)) return false;
+      const editor = dialog.querySelector(POST_EDITOR_SELECTOR);
+      return visible(editor) && !editor.closest("article");
+    }) || null;
+  }
+
+  function replyDialogOpen() {
+    return Array.from(document.querySelectorAll('[role="dialog"]')).some((dialog) => isReplyDialog(dialog) && dialog.querySelector(POST_EDITOR_SELECTOR));
+  }
+
+  // 互动数据盘点只把文案写入发帖框。这里不点击发送按钮。
+  async function fillPostDraft(text) {
+    const phrase = String(text || "").replace(/\u200b/g, "").trim();
+    if (!phrase) return { ok: false, sent: false, reason: "empty" };
+    if (state.running || state.loopPromise) return { ok: false, sent: false, reason: "poster-running" };
+    if (replyDialogOpen()) return { ok: false, sent: false, reason: "reply-dialog-open" };
+    let inline = findInlineComposer();
+    if (!inline) {
+      const opener = document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
+      if (!opener && !findComposeDialog()) return { ok: false, sent: false, reason: "no-composer" };
+      if (opener && !findComposeDialog()) opener.click();
+      const opened = await waitUntil(() => Boolean(findInlineComposer() || findComposeDialog()), 8000);
+      if (!opened) return { ok: false, sent: false, reason: "no-composer" };
+      inline = findInlineComposer();
+    }
+    const dialog = inline ? null : findComposeDialog();
+    const editor = inline?.editor || dialog?.querySelector(POST_EDITOR_SELECTOR);
+    if (!editor) return { ok: false, sent: false, reason: "no-composer" };
+    const existing = editorText(editor);
+    if (existing && existing !== phrase) return { ok: false, sent: false, reason: "composer-not-empty" };
+    if (existing === phrase) return { ok: true, sent: false, reason: "already-filled", seen: existing };
+    const filled = await requestDraftFill(phrase, { scope: inline ? "post" : "compose" });
+    const live = findInlineComposer()?.editor || findComposeDialog()?.querySelector(POST_EDITOR_SELECTOR) || editor;
+    const seen = editorText(live);
+    const ok = Boolean(filled?.ok) && seen === phrase;
+    return { ok, sent: false, reason: ok ? "" : (filled?.reason || "compose-failed"), seen };
   }
 
   function successNoticeNodes() {
@@ -1619,6 +1667,7 @@
   const api = {
     snapshot,
     publishPost,
+    fillPostDraft,
     start,
     persistForSuspend: savePublishList,
     startNow,

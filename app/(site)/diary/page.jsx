@@ -75,23 +75,14 @@ function splitIsoDate(value) {
 }
 
 function DiaryDateMark({ entry }) {
-  const end = splitIsoDate(entry.date)
-  const start = entry.dateStart && entry.dateStart !== entry.date ? splitIsoDate(entry.dateStart) : null
-  if (!end.month || !end.day) return formatDiarySpan(entry) || entry.label
+  const written = splitIsoDate(entry.date)
+  if (!written.month || !written.day) return entry.label
   return (
-    <span className="block pl-14 leading-none">
-      <span className="block text-[11px] font-medium tracking-[0.18em] text-neutral-400">{end.year}</span>
-      {start ? (
-        <span className="mt-1 flex items-baseline gap-1 text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
-          <span>{start.month}/{start.day}</span>
-          <span className="text-xs font-medium text-neutral-400">～</span>
-          <span>{end.month}/{end.day}</span>
-        </span>
-      ) : (
-        <span className="mt-1 block text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
-          {end.month}/{end.day}
-        </span>
-      )}
+    <span className="block pl-12 text-left leading-none">
+      <span className="block text-left text-[11px] font-medium text-neutral-400">{written.year}</span>
+      <span className="mt-1 block text-left text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
+        {written.month}/{written.day}
+      </span>
     </span>
   )
 }
@@ -258,7 +249,7 @@ export default async function DiaryPage() {
     content: (
       <article
         id={entry.id}
-        className="scroll-mt-28 rounded-lg border border-neutral-200 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+        className="scroll-mt-28 rounded-lg border border-neutral-200 bg-neutral-50 p-5 text-left dark:border-neutral-800 dark:bg-neutral-900"
       >
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
           {entry.category ? (
@@ -287,7 +278,7 @@ export default async function DiaryPage() {
         data={timelineData}
         title={diary.title}
         rowClassName="flex items-start justify-start gap-3 pt-8"
-        railClassName="sticky top-24 z-40 w-max shrink-0 self-start"
+        railClassName="sticky top-24 z-40 w-32 shrink-0 self-start text-left"
         labelClassName="hidden md:block"
         description={(
           <div className="space-y-1">

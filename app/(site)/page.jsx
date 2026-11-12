@@ -53,6 +53,7 @@ import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
 import HomeDiarySeries from './components/HomeDiarySeries'
+import HomeYearSummaryCard from './components/HomeYearSummaryCard'
 import { articles } from './articles/articlesData'
 import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
 
@@ -787,6 +788,9 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
         </div>
         <div className="home-masonry-item">
           <HomeDiarySeries preview={diaryPreview} />
+        </div>
+        <div className="home-masonry-item">
+          <HomeYearSummaryCard />
         </div>
         <div className="home-masonry-item"><HomeBookCards /></div>
         <div className="home-masonry-item">

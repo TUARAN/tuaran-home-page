@@ -1001,7 +1001,7 @@ function normalizeTargetFollowHandles(value) {
     .map((item) => String(item || "").trim().replace(/^@/u, ""))
     .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
       && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-  return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+  return list;
 }
 
 function normalizeKolHandles(value, now = Date.now()) {
@@ -1022,12 +1022,12 @@ let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
 async function readTargetFollowHandles() {
   try {
     const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool"]);
-    const live = stored?.xrcTargetFollowLive?.current;
-    const batch = stored?.xrcTargetFollowPool?.batch;
+    const withoutSeeds = (list) => (Array.isArray(list) ? list : []).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
+    const live = withoutSeeds(stored?.xrcTargetFollowLive?.current);
+    const batch = withoutSeeds(stored?.xrcTargetFollowPool?.batch);
     const alternate = (kolRoster?.KOL_CATALOG || []).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
-    const storedList = Array.isArray(stored?.[TARGET_FOLLOW_HANDLES_KEY]) ? stored[TARGET_FOLLOW_HANDLES_KEY] : [];
-    const storedWithoutSeeds = storedList.filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
-    const picked = Array.isArray(live) && live.length ? live : Array.isArray(batch) && batch.length ? batch : storedWithoutSeeds.length ? storedWithoutSeeds : alternate.slice().sort((left, right) => left.localeCompare(right)).slice(0, 5);
+    const storedWithoutSeeds = withoutSeeds(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+    const picked = live.length ? live : batch.length ? batch : storedWithoutSeeds.length ? storedWithoutSeeds : alternate.slice().sort((left, right) => left.localeCompare(right)).slice(0, 5);
     targetFollowHandlesCache = normalizeTargetFollowHandles(picked).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
     return targetFollowHandlesCache;
   } catch (error) {

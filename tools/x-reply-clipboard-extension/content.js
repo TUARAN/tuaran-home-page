@@ -7344,13 +7344,13 @@
       .map((item) => String(item || "").trim().replace(/^@/u, ""))
       .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
         && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    return list;
   }
 
   function targetFollowRosterStatus(seeds, current) {
     const same = current.length === seeds.length && current.every((handle) => seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
-    if (!current.length || same) return "本批不会使用固定的起始五个账号。";
-    return `本批源头已换成 ${current.length} 个：${current.map((handle) => `@${handle}`).join(" ")}。每次任务自动更换，不再固定重复上一批。`;
+    if (!current.length || same) return "本批源头不使用固定的起始五个账号。";
+    return `本批源头已换成 ${current.length} 个新人：${current.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换，不先打开起始五个账号的粉丝列表。`;
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7499,8 +7499,12 @@
         // Fall through and draw a new order.
       }
     }
-    const rotated = await rotateKolTaskBatch();
-    const handles = rotated.handles.length ? rotated.handles : await loadKolHandles();
+    const decision = await loadKolRoster();
+    const existing = Array.isArray(decision.meta?.taskBatch?.handles) ? decision.meta.taskBatch.handles : [];
+    const finishedThisBatch = state.kolCycleRetired && existing.length
+      && kolRoster.rosterKey(existing) === kolRoster.rosterKey(state.kolVisitOrder || []);
+    const rotated = existing.length && !finishedThisBatch ? { handles: existing } : await rotateKolTaskBatch();
+    const handles = rotated.handles || [];
     const order = kolRoster.shuffleHandles(handles, Math.random);
     const keepVisited = !state.kolCycleRetired && state.kolVisitedHandles.length > 0;
     state.kolVisitOrder = order;
@@ -7531,7 +7535,10 @@
       discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
       account: taskSnapshotAccount
     });
-    const selected = kolRoster.selectTaskBatch(pool, decision.meta?.taskBatch?.handles || [], kolRoster.KOL_DAILY_SIZE, random);
+    const selected = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta, {
+      custom: decision.custom,
+      builtin: decision.custom ? [] : kolRoster.poolHandles(kolRoster.poolIndex(now))
+    }), kolRoster.KOL_DAILY_SIZE, random);
     const meta = {
       ...decision.meta,
       custom: decision.custom,
@@ -7547,9 +7554,19 @@
     const field = panel?.querySelector("[data-xrc-kol-handles]");
     const status = panel?.querySelector("[data-xrc-kol-status]");
     if (!field || document.activeElement === field) return;
-    const decision = await loadKolRoster();
-    const batch = decision.meta?.taskBatch?.handles;
-    const shown = Array.isArray(batch) && batch.length ? batch : decision.handles;
+    let decision = await loadKolRoster();
+    let activeOrder = [];
+    try {
+      const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+      const resumed = kolRoster.resumeActiveKolCycle(kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount));
+      activeOrder = resumed?.order || [];
+    } catch (error) { activeOrder = []; }
+    if (!decision.meta?.taskBatch?.handles?.length && !activeOrder.length) {
+      await rotateKolTaskBatch(() => 0.999);
+      decision = await loadKolRoster();
+    }
+    const shown = kolRoster.displayedTaskHandles(decision, activeOrder);
+    if (!shown.length) return;
     field.value = shown.map((handle) => `@${handle}`).join("\n");
     const order = Array.isArray(state.kolVisitOrder) ? state.kolVisitOrder : [];
     const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(shown);
@@ -7597,11 +7614,23 @@
     return `<div class="xrc-task-section-head"><strong>${title}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
   }
 
+  function initialTargetFollowPreview() {
+    const selected = mutualApi?.selectTargetBatch?.({ handles: [], lastBatch: [], batch: [] }, { size: 5 });
+    return (selected?.handles || []).map((handle) => `@${handle}`).join("\n");
+  }
+
+  function initialKolPreview() {
+    if (!kolRoster?.selectTaskBatch) return "";
+    const builtin = kolRoster.poolHandles(kolRoster.poolIndex(Date.now()));
+    const selected = kolRoster.selectTaskBatch(kolRoster.KOL_CATALOG, builtin, kolRoster.KOL_DAILY_SIZE, () => 0.999);
+    return (selected.handles || []).map((handle) => `@${handle}`).join("\n");
+  }
+
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务换一批。扫到的新人记入下一批，同一次任务里不会反复跳转。</small></label>`
+      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头">${initialTargetFollowPreview()}</textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务直接换成五个新人。打开面板就能看到这一批；同一次任务里不会反复跳转。</small></label>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>本批评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">每次任务自动换成一批新账号。自定义名单会保留，只从里面换批。</small></label>`
+        ? `<label class="xrc-schedule-card-list"><span>本批评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false">${initialKolPreview()}</textarea><small class="xrc-config-note" data-xrc-kol-status role="status">每次任务直接换成五个新人。自定义名单会保留，只从里面换批。</small></label>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "优先级、时段与名单")}
@@ -8352,7 +8381,7 @@
               ${taskScheduleConfigMarkup("mutual-followBack", "回关粉丝")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>每次任务换成一批新的源头账号</small></span></div>
+              <div><b>03</b><span><strong>关注候选</strong><small>每次任务直接换成五个新人</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>

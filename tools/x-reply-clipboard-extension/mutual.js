@@ -194,7 +194,7 @@
       .map((item) => String(item || "").trim().replace(/^@/u, ""))
       .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
         && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    return list;
   }
 
   async function loadTargetFollowHandles() {
@@ -202,7 +202,7 @@
       const stored = await followStorage().get(TARGET_FOLLOW_HANDLES_KEY);
       TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
     } catch (error) {
-      TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+      TARGET_FOLLOW_HANDLES = [];
     }
     return TARGET_FOLLOW_HANDLES;
   }

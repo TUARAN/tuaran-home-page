@@ -96,17 +96,16 @@ export default function TopicHubView({ hub }) {
   const sections = hubSections(hub)
 
   return (
-    <PageContainer className="grid gap-8 py-8 md:py-10 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
+    <PageContainer className="grid gap-8 py-6 md:py-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
       <AuthorityIndex current={hub.path} />
       <div className="min-w-0">
-        <header className="mb-8 border-b border-[var(--site-line)] pb-6">
+        <header className="mb-6 border-b border-[var(--site-line)] pb-4">
           <p className="text-[13px] text-[var(--site-faint)]">主线</p>
           <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
             <h1 className="font-serif text-2xl font-semibold tracking-wide text-[var(--site-ink)] md:text-3xl">{hub.title}</h1>
             <p className="font-mono text-[12px] text-[var(--site-faint)]">{hub.leads.length} 条</p>
           </div>
           <p className="mt-3 max-w-3xl text-[15px] leading-7 text-[var(--site-muted)]">{hub.description}</p>
-          <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[var(--site-ink)]">{hub.standing}</p>
         </header>
 
         <div className="space-y-10">

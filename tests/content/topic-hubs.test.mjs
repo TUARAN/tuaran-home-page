@@ -41,15 +41,25 @@ async function pageRoutes() {
 
 const routes = await pageRoutes()
 
-test('topic hubs share one directory layout and show standing', () => {
-  assert.match(viewSource, /\{hub\.standing\}/)
+test('topic hubs share one directory layout and keep the lead without standing', () => {
   assert.match(viewSource, /\{hub\.description\}/)
+  assert.doesNotMatch(viewSource, /hub\.standing/)
   assert.match(viewSource, /text-2xl/)
   assert.match(viewSource, /md:text-3xl/)
-  assert.match(viewSource, /py-8 md:py-10/)
+  assert.match(viewSource, /py-6 md:py-8/)
+  assert.doesNotMatch(viewSource, /py-8 md:py-10/)
   assert.match(viewSource, /主线目录/)
   assert.match(viewSource, /section\.items\.map/)
   assert.doesNotMatch(viewSource, /AgentReadingPath|CURATED READING PATH|EXPLORE FURTHER|clamp\(3rem/)
+  for (const sentence of [
+    'OpenClaw 改动已合并进主分支，书目在著作。',
+    '这台站点跑在 Next.js 与 Cloudflare 上。',
+    '已出版图书、电子小册和站内可读资源，目录在图书馆。',
+    '贡献记录只收已经合并进 OpenClaw 主分支的改动。',
+    '作者、选题、核对、更正和 AI 协助。',
+  ]) {
+    assert.equal(viewSource.includes(sentence), false, sentence)
+  }
   assert.equal(TOPIC_HUB_LIST.length, 5)
 })
 

@@ -10320,14 +10320,14 @@ body:has(.x-mutual-page) footer a:hover {
 }
 
 .diary-entry-source-note {
-  margin: 0.85rem 0 0;
+  margin: 1rem 0 0;
   font-size: 0.75rem;
   line-height: 1.5;
-  color: #8a7460;
+  color: #737373;
 }
 
 .dark .diary-entry-source-note {
-  color: #cbb59a;
+  color: #a3a3a3;
 }
 
 .diary-page {

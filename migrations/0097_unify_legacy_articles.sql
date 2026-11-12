@@ -555,7 +555,7 @@ FROM payload
 WHERE 1
 ON CONFLICT(slug) DO NOTHING;
 
-WITH payload(markdown) AS (VALUES ('## 2026-11-06～2026-11-12｜异世界的冲击｜生活与家庭
+WITH payload(markdown) AS (VALUES ('## 2026-11-06～2026-11-12｜异世界的冲击｜生活与家庭｜站长口述，Bots 整理
 
 短短大约五天，产生了一次「异世界的冲击」。这里的「异」是异同的异。
 
@@ -828,7 +828,7 @@ INSERT INTO article_posts (
 )
 SELECT
   'legacy-diary-self-reflection', 'diary-self-reflection', '浮生日记（连载中）📓',
-  '从 2026-01-05 起。记录主要是站长口述，由机器人整理后公开。人生碌碌，竞短论长，却不道枯荣有数，得失难量。', 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
+  '从 2026-01-05 起。人生碌碌，竞短论长，却不道枯荣有数，得失难量。', 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
   json_object('type', 'markdown', 'markdown', markdown), markdown,
   '[]', 'published', 1,
   1767571200000, 1767571200000, 1767571200000

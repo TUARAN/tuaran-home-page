@@ -10,15 +10,16 @@ import { isMarkdownDocument } from '../../../lib/article/articleDocument.mjs'
 import { diaryContentFromMarkdown } from '../../../lib/article/legacyArticleMigration.mjs'
 import {
   DIARY_SERIES_COUPLET,
-  DIARY_SERIES_NOTE,
   DIARY_SERIES_STARTED_ON,
   DIARY_SLUG,
   buildDiaryTimelineEntries,
+  diaryDescription,
   findDiaryArticle,
   formatDiarySpan,
   formatDiaryTocDate,
   latestDiaryDate,
   selectDiarySeries,
+  withArchivedSourceNotes,
 } from '../../../lib/diary/diarySeries.mjs'
 
 export const runtime = 'edge'
@@ -217,7 +218,7 @@ export async function generateMetadata() {
 
   return {
     title: diary.title,
-    description: diary.summary,
+    description: diaryDescription(diary.summary),
     alternates: {
       canonical: '/diary',
     },
@@ -232,7 +233,7 @@ export async function generateMetadata() {
     },
     openGraph: {
       title: diary.title,
-      description: diary.summary,
+      description: diaryDescription(diary.summary),
       url: `${SITE_URL}/diary`,
       siteName: SITE_TITLE,
       locale: 'zh_CN',
@@ -246,7 +247,7 @@ export async function generateMetadata() {
     twitter: {
       card: 'summary_large_image',
       title: diary.title,
-      description: diary.summary,
+      description: diaryDescription(diary.summary),
       images: [diary.cover || AVATAR_URL],
     },
   }
@@ -259,14 +260,14 @@ export default async function DiaryPage() {
     notFound()
   }
 
-  const diaryEntries = buildDiaryTimelineEntries(diary)
+  const diaryEntries = withArchivedSourceNotes(buildDiaryTimelineEntries(diary), findDiaryArticle(articles))
   const diaryGroups = groupTimelineByYear(diaryEntries)
 
   const articleStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: diary.title,
-    description: diary.summary,
+    description: diaryDescription(diary.summary),
     image: diary.cover ? [diary.cover] : undefined,
     datePublished: toIsoDate(DIARY_SERIES_STARTED_ON) || undefined,
     dateModified: toIsoDate(latestDiaryDate(diary)) || toIsoDate(DIARY_SERIES_STARTED_ON) || undefined,
@@ -296,12 +297,7 @@ export default async function DiaryPage() {
       <header className="diary-sheet diary-page-header">
         <p className="diary-sheet-kicker">从 {DIARY_SERIES_STARTED_ON} 起</p>
         <h1 className="diary-sheet-title">{diary.title}</h1>
-        <p className="diary-sheet-note">{DIARY_SERIES_NOTE}</p>
-        <p className="diary-sheet-couplet">
-          {typeof diary.summary === 'string' && diary.summary.includes(DIARY_SERIES_NOTE)
-            ? DIARY_SERIES_COUPLET
-            : diary.summary}
-        </p>
+        <p className="diary-sheet-couplet">{DIARY_SERIES_COUPLET}</p>
         <div className="diary-sheet-links">
           <Link href="/articles">返回列表</Link>
           <Link href="/articles/year-summary">年中年终总结</Link>
@@ -380,6 +376,7 @@ export default async function DiaryPage() {
                       <div className="prose-tuaran">
                         <DiaryBlocks blocks={entry.blocks} diary={diary} />
                       </div>
+                      {entry.sourceNote ? <p className="diary-entry-source-note">{entry.sourceNote}</p> : null}
                     </article>
                   ))}
                 </div>

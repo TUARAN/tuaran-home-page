@@ -831,7 +831,7 @@ SELECT
   '从 2026-01-05 起。记录主要是站长口述，由机器人整理后公开。人生碌碌，竞短论长，却不道枯荣有数，得失难量。', 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
   json_object('type', 'markdown', 'markdown', markdown), markdown,
   '[]', 'published', 1,
-  1778457600000, 1778457600000, 1778457600000
+  1767571200000, 1767571200000, 1767571200000
 FROM payload
 WHERE 1
 ON CONFLICT(slug) DO NOTHING;

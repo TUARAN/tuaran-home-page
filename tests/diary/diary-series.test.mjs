@@ -46,6 +46,7 @@ test('浮生日记 starts on the earliest timeline entry and keeps that framing'
   const article = diaryArticle()
   const founder = article.content.find((block) => block?.label === '工程型创作者')
   assert.equal(earliestDiaryDate(article), DIARY_SERIES_STARTED_ON)
+  assert.equal(article.date, DIARY_SERIES_STARTED_ON)
   assert.equal(founder.date, '2026-01-05')
   assert.match(article.summary, /^从 2026-01-05 起/)
   assert.match(article.summary, new RegExp(DIARY_SERIES_NOTE))

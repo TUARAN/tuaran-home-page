@@ -36,23 +36,6 @@ function hubSections(hub) {
   })).filter((group) => group.items.length)
 }
 
-function TopicLink({ lead, featured = false }) {
-  return (
-    <Link
-      href={lead.href}
-      className={`group flex h-full flex-col justify-between rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-5 no-underline transition-colors hover:border-[var(--site-line-strong)] hover:bg-[var(--site-panel-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] ${featured ? 'md:p-7' : ''}`}
-    >
-      <span>
-        <span className={`block font-semibold leading-snug text-[var(--site-ink)] ${featured ? 'font-serif text-[1.55rem] md:text-[1.9rem]' : 'text-[1.08rem]'}`}>
-          {lead.label}
-        </span>
-        <span className="mt-3 block text-[14px] leading-6 text-[var(--site-muted)]">{lead.note}</span>
-      </span>
-      <span aria-hidden="true" className="mt-6 self-end text-xl text-[var(--site-muted)] transition-transform group-hover:translate-x-1">↗</span>
-    </Link>
-  )
-}
-
 function AuthorityIndex({ current }) {
   return (
     <aside className="lg:sticky lg:top-[calc(var(--site-header-height)+1.5rem)] lg:self-start" aria-label="主线目录">
@@ -74,118 +57,81 @@ function AuthorityIndex({ current }) {
   )
 }
 
-function AgentReadingPath({ hub }) {
-  const essays = hub.leads.filter((lead) => lead.group === 'essay')
-  const further = hub.leads.filter((lead) => lead.group !== 'essay')
-  const first = essays[0]
-
+function TopicLead({ lead, groupTitle }) {
   return (
-    <div className="pb-16 md:pb-24">
-      <PageContainer as="div" className="grid gap-8 pt-8 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
-        <AuthorityIndex current={hub.path} />
-        <div className="min-w-0">
-        <header className="grid gap-8 py-12 md:grid-cols-[minmax(0,1fr)_minmax(230px,300px)] md:items-end md:gap-12 md:py-16">
-          <div>
-            <p className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--site-muted)]">主线阅读 · AI AGENTS</p>
-            <h1 className="mt-5 font-serif text-[clamp(3rem,7vw,5.5rem)] font-semibold leading-[1.08] tracking-tight text-[var(--site-ink)]">{hub.title}</h1>
-            <p className="mt-6 max-w-2xl text-[16px] leading-8 text-[var(--site-muted)] md:text-[18px]">{hub.description}</p>
-          </div>
-          <div className="border-l-2 border-[var(--site-ink)] pl-5 text-[14px] leading-7 text-[var(--site-muted)]">
-            <p className="font-semibold text-[var(--site-ink)]">建议从记忆机制开始</p>
-            <p>再看判断结构、开源协作和具体修复。四篇文章组成一条由方法走向实践的阅读路径。</p>
-          </div>
-        </header>
-
-        <main>
-          <section aria-labelledby="agent-reading-heading" className="rounded-[1.75rem] border border-[var(--site-line)] bg-[var(--site-panel)] p-5 sm:p-7 md:p-10">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--site-line)] pb-7">
-              <div>
-                <p className="font-mono text-[11px] tracking-[0.18em] text-[var(--site-muted)]">CURATED READING PATH</p>
-                <h2 id="agent-reading-heading" className="mt-2 font-serif text-[1.9rem] font-semibold text-[var(--site-ink)] md:text-[2.4rem]">主线阅读推荐</h2>
-              </div>
-              <span className="rounded-full border border-[var(--site-line)] px-4 py-2 font-mono text-[12px] text-[var(--site-muted)]">{essays.length} 篇 · 按顺序阅读</span>
-            </div>
-
-            <div className="grid gap-5 pt-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-8">
-              <Link href={first.href} className="group flex min-h-[300px] flex-col justify-between rounded-2xl bg-[var(--site-ink)] p-7 text-[var(--page-bg)] no-underline transition-transform hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] md:p-9">
-                <span className="font-mono text-[12px] tracking-[0.16em] opacity-70">01 / 从这里开始</span>
-                <span>
-                  <span className="block font-serif text-[1.9rem] font-semibold leading-tight md:text-[2.4rem]">{first.label}</span>
-                  <span className="mt-4 block text-[14px] leading-7 opacity-75">{first.note}。先理解智能体怎样保存、检索和使用信息。</span>
-                </span>
-                <span className="flex items-center justify-between border-t border-current/20 pt-5 text-[13px] font-semibold">开始阅读 <span aria-hidden="true" className="text-xl transition-transform group-hover:translate-x-1">↗</span></span>
-              </Link>
-              <ol className="divide-y divide-[var(--site-line)]">
-                {essays.slice(1).map((lead, index) => (
-                  <li key={lead.href}>
-                    <Link href={lead.href} className="group flex items-start gap-5 py-5 no-underline first:pt-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)]">
-                      <span className="pt-1 font-mono text-[13px] text-[var(--site-muted)]">{String(index + 2).padStart(2, '0')}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-serif text-[1.3rem] font-semibold leading-snug text-[var(--site-ink)] group-hover:underline">{lead.label}</span>
-                        <span className="mt-2 block text-[13px] leading-6 text-[var(--site-muted)]">{lead.note}</span>
-                      </span>
-                      <span aria-hidden="true" className="text-lg text-[var(--site-muted)] transition-transform group-hover:translate-x-1">↗</span>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-
-          <section aria-labelledby="agent-further-heading" className="pt-14 md:pt-20">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="font-mono text-[11px] tracking-[0.18em] text-[var(--site-muted)]">EXPLORE FURTHER</p>
-                <h2 id="agent-further-heading" className="mt-2 font-serif text-[1.8rem] font-semibold text-[var(--site-ink)]">继续探索</h2>
-              </div>
-              <p className="text-[13px] text-[var(--site-muted)]">贡献记录、著作与完整目录</p>
-            </div>
-            <ul className="grid gap-3 md:grid-cols-3">
-              {further.map((lead) => <li key={lead.href}><TopicLink lead={lead} /></li>)}
-            </ul>
-          </section>
-        </main>
+    <Link
+      href={lead.href}
+      className="group block border-b border-[var(--site-line)] bg-transparent no-underline transition-colors last:border-b-0 hover:bg-white/80 hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--site-ink)] dark:hover:bg-[#151d27]"
+    >
+      <div className="px-[0.9rem] py-[0.7rem] md:px-5 md:py-4">
+        <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="shrink-0 text-sm text-[var(--site-faint)]">▪</span>
+          {lead.date ? (
+            <span className="shrink-0 whitespace-nowrap text-xs text-[var(--site-faint)] dark:text-gray-400">{lead.date}</span>
+          ) : null}
+          {lead.section ? (
+            <span className="inline-flex rounded-full border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
+              {lead.section}
+            </span>
+          ) : null}
+          <span className="inline-flex rounded-full border border-[#d8d5ce] bg-transparent px-2 py-[2px] text-[11px] text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]">
+            {groupTitle}
+          </span>
         </div>
-      </PageContainer>
-    </div>
+        <h3 className="text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:ml-5 md:text-[17px] md:leading-7">
+          {lead.label}
+        </h3>
+        {lead.note ? (
+          <p className="mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed">
+            {lead.note}
+          </p>
+        ) : null}
+        <p className="mt-1 text-[11px] text-[var(--site-faint)] md:ml-5 md:mt-2 md:text-[13px]">打开 →</p>
+      </div>
+    </Link>
   )
 }
 
 export default function TopicHubView({ hub }) {
-  if (hub.slug === 'ai-agents') return <AgentReadingPath hub={hub} />
   const sections = hubSections(hub)
 
   return (
-    <PageContainer className="grid gap-8 pb-16 pt-6 md:pb-24 md:pt-10 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
+    <PageContainer className="grid gap-8 py-8 md:py-10 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-10">
       <AuthorityIndex current={hub.path} />
       <div className="min-w-0">
-      <h1 className="sr-only">{hub.title}</h1>
-      <div className="space-y-14 md:space-y-16">
-        {sections.map((section) => (
-          <section key={section.id} aria-labelledby={`${hub.slug}-${section.id}`} id={`${hub.slug}-${section.id}`}>
-            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-              <div className="flex items-baseline gap-3">
-                <h2 className="font-serif text-[1.65rem] font-semibold text-[var(--site-ink)] md:text-[1.9rem]">{section.title}</h2>
-                <span className="font-mono text-[12px] text-[var(--site-faint)]">{String(section.items.length).padStart(2, '0')}</span>
-              </div>
-              <p className="text-[13px] text-[var(--site-muted)]">{section.note}</p>
-            </div>
-            <ul className={`grid gap-3 md:gap-4 ${section.id === 'essay' ? 'md:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-              {section.items.map((lead, index) => (
-                <li key={lead.href} className={section.id === 'essay' && index === 0 ? 'md:col-span-2' : ''}>
-                  <TopicLink lead={lead} featured={section.id === 'essay' && index === 0} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+        <header className="mb-8 border-b border-[var(--site-line)] pb-6">
+          <p className="text-[13px] text-[var(--site-faint)]">主线</p>
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
+            <h1 className="font-serif text-2xl font-semibold tracking-wide text-[var(--site-ink)] md:text-3xl">{hub.title}</h1>
+            <p className="font-mono text-[12px] text-[var(--site-faint)]">{hub.leads.length} 条</p>
+          </div>
+          <p className="mt-3 max-w-3xl text-[15px] leading-7 text-[var(--site-muted)]">{hub.description}</p>
+          <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[var(--site-ink)]">{hub.standing}</p>
+        </header>
 
-      <footer className="mt-16 flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--site-line)] pt-6 text-[13px] text-[var(--site-muted)]">
-        <Link href="/articles" className="hover:text-[var(--site-ink)]">浏览全部内容 ↗</Link>
-        <Link href="/about" className="hover:text-[var(--site-ink)]">关于作者 ↗</Link>
-        <Link href="/contact" className="hover:text-[var(--site-ink)]">联系 ↗</Link>
-      </footer>
+        <div className="space-y-10">
+          {sections.map((section) => (
+            <section key={section.id} aria-labelledby={`${hub.slug}-${section.id}-title`} id={`${hub.slug}-${section.id}`}>
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-[var(--site-line)] pb-2">
+                <h2 id={`${hub.slug}-${section.id}-title`} className="text-[17px] font-bold text-[var(--site-ink)]">{section.title}</h2>
+                <p className="text-[12px] text-[var(--site-faint)]">{section.note} · {section.items.length} 条</p>
+              </div>
+              <ul className="m-0 list-none p-0">
+                {section.items.map((lead) => (
+                  <li key={lead.href}>
+                    <TopicLead lead={lead} groupTitle={section.title} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+
+        <footer className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--site-line)] pt-6 text-[13px] text-[var(--site-muted)]">
+          <Link href="/articles" className="hover:text-[var(--site-ink)]">浏览全部内容 ↗</Link>
+          <Link href="/about" className="hover:text-[var(--site-ink)]">关于作者 ↗</Link>
+          <Link href="/contact" className="hover:text-[var(--site-ink)]">联系 ↗</Link>
+        </footer>
       </div>
     </PageContainer>
   )

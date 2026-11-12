@@ -134,7 +134,6 @@ export default function HomeOpinionSignals() {
           </Link>
         </div>
         <div className="home-primary-heading-copy">
-          <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
           <HomeSectionCouplet section="opinion" />
         </div>
       </div>
@@ -143,7 +142,6 @@ export default function HomeOpinionSignals() {
         {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
       </div>
       <div className="mb-3 md:hidden">
-        <p className="text-sm leading-6 text-[var(--site-muted)]"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
         <HomeSectionCouplet section="opinion" />
       </div>
       <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">

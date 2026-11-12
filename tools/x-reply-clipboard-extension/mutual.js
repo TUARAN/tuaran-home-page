@@ -15,6 +15,9 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
+  const FOLLOW_BACK_LIST_GAP_MS = 84 * 60 * 60 * 1000;
+  const TARGET_SEED_REFRESH_MS = 6 * 60 * 60 * 1000;
+  const TARGET_EXPANSION_LIMIT = 30;
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
@@ -57,7 +60,7 @@
     followPace: "medium",
     targetFollowPace: "medium",
     followBackScheduled: false,
-    unfollowEnglish: true,
+    unfollowEnglish: false,
     unfollowMode: "manual",
     unfollowReview: [],
     seenHandles: new Set(),
@@ -210,26 +213,127 @@
     return TARGET_FOLLOW_HANDLES;
   }
 
+  function cleanHandle(value) {
+    const handle = String(value || "").trim().replace(/^@/u, "");
+    return /^[A-Za-z0-9_]{1,15}$/u.test(handle) ? handle : "";
+  }
+
+  function sameHandle(left, right) {
+    const a = cleanHandle(left).toLowerCase();
+    const b = cleanHandle(right).toLowerCase();
+    return Boolean(a) && a === b;
+  }
+
+  function targetScanKey() {
+    return `xrcTargetFollowScan:${currentAccountHandle() || "default"}`;
+  }
+
+  function emptyTargetScan() {
+    return { at: 0, visited: [], queue: [], refreshAfter: 0 };
+  }
+
+  function readTargetScan() {
+    let saved = {};
+    try { saved = JSON.parse(sessionStorage.getItem(targetScanKey()) || "{}"); } catch (error) { saved = {}; }
+    const refreshAfter = Number(saved.refreshAfter) || 0;
+    if (refreshAfter && Date.now() >= refreshAfter) return emptyTargetScan();
+    return {
+      at: Number(saved.at) || 0,
+      visited: Array.isArray(saved.visited) ? saved.visited.map(cleanHandle).filter(Boolean) : [],
+      queue: Array.isArray(saved.queue) ? saved.queue.map(cleanHandle).filter(Boolean) : [],
+      refreshAfter
+    };
+  }
+
+  function writeTargetScan(scan) {
+    try {
+      sessionStorage.setItem(targetScanKey(), JSON.stringify({
+        at: Date.now(),
+        visited: scan.visited || [],
+        queue: scan.queue || [],
+        refreshAfter: Number(scan.refreshAfter) || 0
+      }));
+    } catch (error) {}
+  }
+
+  function expansionSources(scan, seeds = TARGET_FOLLOW_HANDLES) {
+    const seen = new Set();
+    const list = [];
+    for (const handle of [...seeds, ...(scan?.queue || [])]) {
+      const cleaned = cleanHandle(handle);
+      const key = cleaned.toLowerCase();
+      if (!cleaned || seen.has(key)) continue;
+      seen.add(key);
+      list.push(cleaned);
+    }
+    return list;
+  }
+
+  function expansionCount(scan, seeds = TARGET_FOLLOW_HANDLES) {
+    const seedKeys = new Set(seeds.map((handle) => cleanHandle(handle).toLowerCase()).filter(Boolean));
+    const keys = new Set();
+    for (const handle of [...(scan?.visited || []), ...(scan?.queue || [])]) {
+      const key = cleanHandle(handle).toLowerCase();
+      if (key && !seedKeys.has(key)) keys.add(key);
+    }
+    return keys.size;
+  }
+
+  function queueFollowedSource(handle, scan, { self = "", seeds = TARGET_FOLLOW_HANDLES, limit = TARGET_EXPANSION_LIMIT } = {}) {
+    const cleaned = cleanHandle(handle);
+    const next = {
+      visited: [...(scan?.visited || [])],
+      queue: [...(scan?.queue || [])],
+      refreshAfter: Number(scan?.refreshAfter) || 0
+    };
+    if (!cleaned || (self && sameHandle(cleaned, self))) return { scan: next, added: false };
+    if ([...seeds, ...next.visited, ...next.queue].some((item) => sameHandle(item, cleaned))) return { scan: next, added: false };
+    if (expansionCount(next, seeds) >= limit) return { scan: next, added: false };
+    next.queue.push(cleaned);
+    next.refreshAfter = 0;
+    return { scan: next, added: true };
+  }
+
+  function rememberFollowedSource(handle) {
+    let self = "";
+    try { self = currentAccountHandle(); } catch (error) { self = ""; }
+    const scan = readTargetScan();
+    const queued = queueFollowedSource(handle, scan, { self, seeds: TARGET_FOLLOW_HANDLES });
+    if (queued.added) writeTargetScan(queued.scan);
+    return queued.added;
+  }
+
+  function knownTargetSources() {
+    const scan = readTargetScan();
+    const known = expansionSources(scan);
+    for (const handle of scan.visited || []) {
+      if (handle && !known.some((item) => sameHandle(item, handle))) known.push(handle);
+    }
+    return known;
+  }
+
   function targetFollowHandleFromPath(pathname = pagePath()) {
     const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
     if (!match) return "";
-    return TARGET_FOLLOW_HANDLES.find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
+    return knownTargetSources().find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
   }
 
   function nextTargetFollowSource(handles, current, visited = []) {
-    const checked = new Set([...visited, current].map(handle => String(handle).toLowerCase()));
+    const checked = new Set([...visited, current].map(handle => String(handle || "").toLowerCase()).filter(Boolean));
     return handles.find(handle => !checked.has(String(handle).toLowerCase())) || "";
   }
 
   function advanceTargetFollowSource() {
-    const key = `xrcTargetFollowScan:${currentAccountHandle() || "default"}`;
-    let saved = {};
-    try { saved = JSON.parse(sessionStorage.getItem(key) || "{}"); } catch {}
-    const visited = Date.now() - Number(saved.at || 0) < RESCAN_INTERVAL_MS && Array.isArray(saved.visited) ? saved.visited : [];
+    const scan = readTargetScan();
     const current = targetFollowHandleFromPath();
-    const next = nextTargetFollowSource(TARGET_FOLLOW_HANDLES, current, visited);
-    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), visited: next ? [...new Set([...visited, current])] : [] }));
-    return next;
+    const next = nextTargetFollowSource(expansionSources(scan), current, scan.visited);
+    if (next) {
+      const visited = [...new Set([...scan.visited, cleanHandle(current)].filter(Boolean))];
+      writeTargetScan({ ...scan, visited, refreshAfter: 0 });
+      return next;
+    }
+    if (!scan.refreshAfter) writeTargetScan({ ...scan, refreshAfter: Date.now() + TARGET_SEED_REFRESH_MS });
+    return "";
   }
 
   function pickTargetFollowHandle() {
@@ -599,8 +703,19 @@
     return textOf(row).match(USER_HANDLE_RE)?.[0] || "";
   }
 
+  function followsYouStatus(row) {
+    if (!row || typeof row.querySelector !== "function") return "unknown";
+    const text = textOf(row);
+    if (row.querySelector('[data-testid="userFollowIndicator"]') || FOLLOWS_YOU_RE.test(text)) return "yes";
+    if (row.getAttribute?.("aria-busy") === "true") return "unknown";
+    const userCell = row.getAttribute?.("data-testid") === "UserCell" || row.querySelector('[data-testid="UserCell"]');
+    const name = textOf(row.querySelector('[data-testid="User-Name"]'));
+    if (!userCell || !name) return "unknown";
+    return "no";
+  }
+
   function hasFollowsYou(row) {
-    return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
+    return followsYouStatus(row) === "yes";
   }
 
   function profileTextParts(row, handle) {
@@ -644,15 +759,17 @@
       const followBackButton = findFollowBackButton(row);
       const followButton = findPlainFollowButton(row);
       const handle = findHandle(row, followingButton || followBackButton || followButton);
-      const followsYou = hasFollowsYou(row);
-      const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
+      const followsStatus = followsYouStatus(row);
+      const followsYou = followsStatus === "yes";
+      const followsYouKnown = followsStatus !== "unknown";
+      const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && followsYou && profileNonChinese(row, handle);
       const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
       const candidate = mode === "unfollow"
-        ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
+        ? Boolean(handle && followingButton && followsYouKnown && (!followsYou || nonChineseProfile))
         : mode === "followBack"
           ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
           : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
-      return { row, handle, followsYou, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
+      return { row, handle, followsYou, followsYouKnown, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 
@@ -767,6 +884,7 @@
     if (changed !== "done") return false;
     state.targetFollowed += 1;
     await recordSharedFollow();
+    rememberFollowedSource(item.handle);
     reportMutualAction("targetFollow", item.handle, "success");
     return true;
   }
@@ -1033,6 +1151,27 @@
             emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
             return { navigate: `/${nextSource}/followers` };
           }
+          const refreshAfter = readTargetScan().refreshAfter || Date.now() + TARGET_SEED_REFRESH_MS;
+          state.cooldownUntil = refreshAfter;
+          while (!state.stopping && Date.now() < state.cooldownUntil) {
+            emit(`起始名单已检查，暂无新的粉丝来源，${formatClock(state.cooldownUntil - Date.now())} 后再看`);
+            await sleepActive(Math.min(1000, Math.max(1, state.cooldownUntil - Date.now())));
+          }
+          if (state.stopping) break;
+          state.cooldownUntil = 0;
+          try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
+          const first = (TARGET_FOLLOW_HANDLES[0] || "");
+          if (first) {
+            state.running = false;
+            emit(`起始名单冷却结束，回到 @${first} 的粉丝列表`);
+            return { navigate: `/${first}/followers` };
+          }
+          stopReason = "起始名单已检查，暂无新的粉丝来源";
+          break;
+        }
+        if (mode === "followBack") {
+          stopReason = "粉丝列表已检查，等待下次回关";
+          break;
         }
         if (manualUnfollow) {
           stopReason = `扫描完成：待人工核对 ${state.unfollowReview.length} 个账号`;
@@ -1113,6 +1252,11 @@
     normalizeTargetFollowHandles,
     targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
     nextTargetFollowSource,
+    expansionSources,
+    expansionCount,
+    queueFollowedSource,
+    followsYouStatus,
+    hasFollowsYou,
     createFollowBackPlan,
     followRoundGapSeconds,
     followBatchCooldownMs,
@@ -1126,6 +1270,9 @@
       FOLLOW_DAILY_LIMIT,
       RATE_LIMIT_COOLDOWN_MS,
       RESCAN_INTERVAL_MS,
+      FOLLOW_BACK_LIST_GAP_MS,
+      TARGET_SEED_REFRESH_MS,
+      TARGET_EXPANSION_LIMIT,
       TARGET_SOURCE_IDLE_MS,
       DEFAULT_TARGET_FOLLOW_HANDLES,
       get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }

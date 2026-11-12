@@ -1796,7 +1796,8 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-const FOLLOW_BACK_MIN_GAP_MS = 5 * 60 * 1000;
+// About twice a week. 回关粉丝 uses this scheduler gap; 关注候选 keeps the short session gap.
+const FOLLOW_BACK_MIN_GAP_MS = 84 * 60 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
 const FOLLOW_PRIORITY_BOOST = 8.5;
 const PREMIUM_PRIORITY_BOOST = 8.75;
@@ -1991,7 +1992,8 @@ function defaultTaskRules() {
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
-      : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? followSessionGapMs("medium")
+      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+      : mode === "mutual-targetFollow" ? followSessionGapMs("medium")
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
       : 0
   }]));
@@ -2014,9 +2016,12 @@ function normalizedTaskRules(value) {
       priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
-      // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? cleanupMinGapMs(pace)
-        : mode === "mutual-followBack" || mode === "mutual-targetFollow" ? followSessionGapMs(pace)
+      // Unfollow stays on the weekly constant. Pace segments apply to post/reply cleanup only.
+      // Follow-back uses the 3.5-day gap; target-follow keeps the short session gap.
+      minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
+        : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
+        : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+        : mode === "mutual-targetFollow" ? followSessionGapMs(pace)
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
         : mode === "community-share"
@@ -2076,12 +2081,12 @@ function effectiveSchedulePriority(plan, mode, now = Date.now(), rule = null) {
   const resolved = rule || normalizedTaskRules(plan?.rules)?.[mode] || { priority: defaultTaskPriority(mode) };
   const base = Number(resolved.priority) || defaultTaskPriority(mode);
   if (mode === "poster-premium") return Math.max(base, PREMIUM_PRIORITY_BOOST);
-  // Reserve an eligible follow batch while below the daily goal. Both follow
-  // tasks still honor the shared cooldown and min-gap before the boost applies.
-  if (SHARED_FOLLOW_MODES.includes(mode)
+  // Keep the daily-goal boost for 关注候选 only. 回关粉丝 no longer cuts in
+  // every few minutes while the shared count is under 300.
+  if (mode === "mutual-targetFollow"
     && Number.isFinite(Number(plan?.sharedFollowTodayCount))
     && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
-    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= FOLLOW_BACK_MIN_GAP_MS) {
+    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= TARGET_FOLLOW_MIN_GAP_MS) {
     return Math.max(base, FOLLOW_PRIORITY_BOOST);
   }
   return base;
@@ -2238,13 +2243,20 @@ async function readTaskSchedule() {
   plan.rules = normalizedTaskRules(plan.rules);
   let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy || storedPruneGapIsLegacy;
   if (plan.cleanupPaceVersion !== 1) {
-    for (const mode of ["mutual-unfollow", "prune-posts", "prune-replies"]) {
+    for (const mode of ["prune-posts", "prune-replies"]) {
       plan.rules[mode] = { ...plan.rules[mode], pace: "slow", minGapMs: cleanupMinGapMs("slow") };
       const item = plan.items[mode];
       if (item && /每周|下次排班/u.test(item.reason || "") && !item.manualStopped && !item.blocked) {
         item.resumeAt = Math.min(Number(item.resumeAt) || 0, Date.now() + cleanupMinGapMs("slow"));
         item.reason = "清理按慢档分段，等待下次排班";
       }
+    }
+    if (plan.rules["mutual-unfollow"]) {
+      plan.rules["mutual-unfollow"] = {
+        ...plan.rules["mutual-unfollow"],
+        pace: "slow",
+        minGapMs: UNFOLLOW_MIN_GAP_MS
+      };
     }
     plan.cleanupPaceVersion = 1;
     scheduleMigrated = true;
@@ -2339,7 +2351,7 @@ async function readTaskSchedule() {
       plan.items[mode] = {
         ...item,
         blocked: oldBlockedRisk ? false : item.blocked,
-        resumeAt: oldBlockedRisk ? Date.now() + FOLLOW_BACK_MIN_GAP_MS : oldCadenceWait ? 0 : item.resumeAt,
+        resumeAt: oldBlockedRisk ? Date.now() + TARGET_FOLLOW_MIN_GAP_MS : oldCadenceWait ? 0 : item.resumeAt,
         lastRunAt: oldCadenceWait ? 0 : item.lastRunAt,
         reason: oldBlockedRisk ? "关注受限，按共享冷却重新排班" : oldCadenceWait ? "按共享关注冷却重新排班" : reason
       };
@@ -2370,6 +2382,42 @@ async function readTaskSchedule() {
       }
     }
     plan.followSessionVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.followBackWeeklyGapVersion !== 1) {
+    if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    const item = plan.items?.["mutual-followBack"];
+    if (item && !item.manualStopped && !item.blocked) {
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const batchRest = /每确认|共享关注冷却|关注满 100|本批已完成/u.test(reason);
+      const resumeAt = Number(item.resumeAt) || 0;
+      if (!risk && !batchRest && resumeAt > Date.now() && resumeAt < Date.now() + FOLLOW_BACK_MIN_GAP_MS) {
+        item.resumeAt = (Number(item.lastRunAt) || Date.now()) + FOLLOW_BACK_MIN_GAP_MS;
+        item.reason = "回关粉丝按每周间隔等待下次排班";
+      }
+    }
+    plan.followBackWeeklyGapVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.unfollowWeeklyGapVersion !== 1) {
+    if (plan.rules["mutual-unfollow"]) {
+      plan.rules["mutual-unfollow"] = {
+        ...plan.rules["mutual-unfollow"],
+        minGapMs: UNFOLLOW_MIN_GAP_MS
+      };
+    }
+    const item = plan.items?.["mutual-unfollow"];
+    if (item && !item.manualStopped && !item.blocked) {
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const weeklyAt = (Number(item.lastRunAt) || Date.now()) + UNFOLLOW_MIN_GAP_MS;
+      if (!risk && Number(item.resumeAt) > 0 && Number(item.resumeAt) < weeklyAt) {
+        item.resumeAt = weeklyAt;
+        item.reason = "等待每周清理";
+      }
+    }
+    plan.unfollowWeeklyGapVersion = 1;
     scheduleMigrated = true;
   }
   if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
@@ -2744,11 +2792,18 @@ async function runTaskSchedule() {
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
     const sharedFollow = current === "mutual-followBack" || current === "mutual-targetFollow";
-    const computedResumeAt = Math.max(baseResumeAt, minGapMs ? now + minGapMs : 0);
+    // 回关's weekly gap is enforced by lastRunAt, not by stretching this yield.
+    // A stored multi-day resume must not be copied onto 关注候选.
+    const scheduleGapFloor = current === "mutual-followBack" ? 0 : (minGapMs ? now + minGapMs : 0);
+    const computedResumeAt = Math.max(baseResumeAt, scheduleGapFloor);
     const heldResumeAt = current === "article" ? Number(item.resumeAt) || 0 : 0;
+    const previousResume = Number(item.resumeAt) || 0;
+    const carryResume = sharedFollow && !(current === "mutual-followBack" && previousResume - now >= 12 * 60 * 60 * 1000)
+      ? previousResume
+      : 0;
     const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
     item.retryKind = shortPruneRetry ? "prune-search-load" : "";
-    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, sharedFollow ? Number(item.resumeAt) || 0 : 0);
+    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume);
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -2767,19 +2822,19 @@ async function runTaskSchedule() {
             : windowClosed
               ? "夜间回关时段已结束，等待下一晚"
             : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
-              ? (current === "mutual-unfollow" ? "清理未回关按速度档等待下次排班" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
+              ? (current === "mutual-unfollow" ? "等待每周清理" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
             : runFinished
               ? "本次已结束，等待下次排班"
             : ["prune-posts", "prune-replies"].includes(current) && minGapMs
               ? `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`
             : current === "mutual-unfollow" && minGapMs
-              ? "清理未回关按速度档等待下次排班"
+              ? "等待每周清理"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选等待下次扫描或共享关注冷却"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
               : current === "mutual-followBack" && minGapMs
-                ? "回关批次结束，等待共享冷却后继续"
+                ? "回关粉丝按每周间隔等待下次排班"
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";

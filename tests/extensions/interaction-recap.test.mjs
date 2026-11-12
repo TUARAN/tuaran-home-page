@@ -418,11 +418,11 @@ test('manifest declares 2aran.com and loads the recap outside the daily task lis
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '4.9.53')
+  assert.equal(manifest.version, '4.9.54')
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(scripts.indexOf('poster.js') < scripts.indexOf('interactionRecap.js'))
   assert.ok(scripts.indexOf('interactionRecap.js') < scripts.indexOf('content.js'))
   assert.ok(scripts.indexOf('interactionRecap.js') < scripts.indexOf('experiments.js'))
-  assert.match(readme, /v4\.9\.53（2026-11-12，本地测试）/)
+  assert.match(readme, /v4\.9\.54（2026-11-12，本地测试）/)
   assert.match(readme, /不会自动发出/)
 })

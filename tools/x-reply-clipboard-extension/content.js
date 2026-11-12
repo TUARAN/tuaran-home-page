@@ -318,7 +318,7 @@
     panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
-    unfollowEnglish: true,
+    unfollowEnglish: false,
     replyMode: "ai",
     grokInviteTimeline: false,
     grokInviteNotifications: false,
@@ -1151,7 +1151,7 @@
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "mutual-unfollow") return "默认手动模式：扫描后保存待取关清单，由你逐个核对并取关";
-    if (mode === "mutual-followBack") return "回关与关注候选确认满 100 个才让出页签；之后慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟";
+    if (mode === "mutual-followBack") return "约每 3 到 4 天排一次。自己的粉丝列表扫完后等到下一轮，不再隔几分钟重扫";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -4189,8 +4189,8 @@
 
   function cleanupPaceTableHtml() {
     return paceTableHtml({ label: "清理速度", attr: "data-xrc-cleanup-pace", defaultId: "slow",
-      profiles: [{id:"slow",label:"慢",count:15,hours:4},{id:"medium",label:"中",count:30,hours:2},{id:"fast",label:"快",count:45,hours:1},{id:"turbo",label:"超快",count:60,hours:0.5}],
-      columns: [{label:"每次最多",value:p=>`${p.count} 项`},{label:"下次间隔",value:p=>`${p.hours * 60} 分钟`}] });
+      profiles: [{id:"slow",label:"慢",count:15},{id:"medium",label:"中",count:30},{id:"fast",label:"快",count:45},{id:"turbo",label:"超快",count:60}],
+      columns: [{label:"每次最多",value:p=>`${p.count} 项`},{label:"下次间隔",value:()=>"约 7 天"}] });
   }
 
   function pruneRulesTableHtml() {
@@ -4742,7 +4742,7 @@
       panelView: "normal",
       assistantMode: "timeline",
       mutualMode: "unfollow",
-      unfollowEnglish: true,
+      unfollowEnglish: false,
       replyMode: "ai",
       pendingReply: "",
       pendingTweetId: "",
@@ -4811,7 +4811,7 @@
         panelView: validPanelView(parsed.panelView),
         assistantMode: validAssistantMode(parsed.assistantMode),
         mutualMode: validMutualMode(parsed.mutualMode),
-        unfollowEnglish: Number(parsed.unfollowEnglishDefaultVersion || 0) >= 1 ? Boolean(parsed.unfollowEnglish) : true,
+        unfollowEnglish: Number(parsed.unfollowEnglishDefaultVersion || 0) >= 2 ? Boolean(parsed.unfollowEnglish) : false,
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
@@ -4858,7 +4858,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
-        unfollowEnglishDefaultVersion: 1,
+        unfollowEnglishDefaultVersion: 2,
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
@@ -4911,7 +4911,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
-        unfollowEnglishDefaultVersion: 1,
+        unfollowEnglishDefaultVersion: 2,
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
@@ -7541,7 +7541,7 @@
 
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>关注候选名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存</small></label>`
+      ? `<label class="xrc-schedule-card-list"><span>关注候选起始名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">起始种子，修改后自动保存。扫完后继续打开本轮新关注账号的粉丝列表，不再隔半小时重扫这批账号。</small></label>`
       : mode === "kol"
         ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="每天从首页当天中文高互动原创帖选 5 个账号；不足时使用内置组。增删账号后固定自定义名单。每一轮打乱访问顺序，进行中的一轮走完已抽出的顺序。">修改后自动保存</small></label>`
         : "";
@@ -8269,7 +8269,7 @@
                   <label><input type="radio" name="xrc-unfollow-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
                 </div>
                 <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
-                <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
+                <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong><small>默认关闭。认不出「关注了你」时跳过，不把粉丝当成未回关</small></span><input type="checkbox" data-xrc-unfollow-english></label>
                 <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
@@ -8280,7 +8280,7 @@
               ${taskScheduleConfigMarkup("mutual-unfollow", "清理未回关")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
-              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页</small></span></div>
+              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每 3 到 4 天</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-follow-pace>${followPaceTableHtml()}</div>
@@ -8294,7 +8294,7 @@
               ${taskScheduleConfigMarkup("mutual-followBack", "回关粉丝")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>从可配置名单随机打开 Followers</small></span></div>
+              <div><b>03</b><span><strong>关注候选</strong><small>起始名单只是种子，扫完后扩展到新关注账号的粉丝列表</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>
@@ -10297,7 +10297,7 @@
               });
             const key = taskStateKey(mode);
             const saved = { ...readSaved(mode), running: false, phraseStore: PHRASE_STORE,
-              notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION, unfollowEnglishDefaultVersion: 1 };
+              notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION, unfollowEnglishDefaultVersion: 2 };
             await taskSnapshotWrite.catch(() => {});
             await chrome.storage.local.set({ [key]: saved });
             sessionStorage.setItem(key, JSON.stringify(saved));
@@ -10318,7 +10318,7 @@
         const saved = { ...snapshot, running: false, assistantMode: state.assistantMode, mutualMode: state.mutualMode,
           pendingReply: state.pendingReply, pendingTweetId: state.pendingTweetId, pendingGrokInvite: state.pendingGrokInvite,
           phraseStore: PHRASE_STORE, notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
-          unfollowEnglishDefaultVersion: 1 };
+          unfollowEnglishDefaultVersion: 2 };
         const key = taskStateKey(mode);
         await taskSnapshotWrite.catch(() => {});
         await chrome.storage.local.set({ [key]: saved });

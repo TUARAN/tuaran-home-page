@@ -786,12 +786,6 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
         </div>
-        <div className="home-masonry-item">
-          <HomeDiarySeries preview={diaryPreview} />
-        </div>
-        <div className="home-masonry-item">
-          <HomeYearSummaryCard />
-        </div>
         <div className="home-masonry-item"><HomeBookCards /></div>
         <div className="home-masonry-item">
           <HomeOpinionPanel />
@@ -803,6 +797,12 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
           <HomeInspirations items={inspirations} />
         </div>
         <div className="home-masonry-item"><HomeOpenClawCards /></div>
+        <div className="home-masonry-item">
+          <HomeDiarySeries preview={diaryPreview} />
+        </div>
+        <div className="home-masonry-item">
+          <HomeYearSummaryCard />
+        </div>
 
         <aside className="home-masonry-item home-side-stack hidden lg:block">
           <ProfileCard />

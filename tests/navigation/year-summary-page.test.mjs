@@ -61,6 +61,19 @@ test('the year-summary subpage uses the Aceternity timeline beam and palette', (
 test('homepage year-summary block stays on the existing homepage palette', () => {
   assert.match(home, /<HomeYearSummaryCard \/>/)
   assert.match(home, /<HomeDiarySeries preview=\{diaryPreview\} \/>/)
+  const homeOrder = [
+    'HomePrimaryColumnsClient',
+    'HomeBookCards',
+    'HomeOpinionPanel',
+    'HomeRuanYifengFeed',
+    'HomeInspirations',
+    'HomeOpenClawCards',
+    'HomeDiarySeries',
+    'HomeYearSummaryCard',
+    'ProfileCard',
+  ].map((name) => home.indexOf(`<${name}`))
+  assert.ok(homeOrder.every((index) => index >= 0))
+  assert.deepEqual(homeOrder, [...homeOrder].sort((a, b) => a - b))
   assert.match(homeCard, /href="\/articles\/year-summary"/)
   assert.match(homeCard, /className="home-work-stack"/)
   assert.match(homeCard, /className="home-section-title"/)

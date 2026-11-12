@@ -54,6 +54,7 @@ import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
 import HomeDiarySeries from './components/HomeDiarySeries'
 import HomeYearSummaryCard from './components/HomeYearSummaryCard'
+import HomeSectionCouplet from './components/HomeSectionCouplet'
 import { articles } from './articles/articlesData'
 import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
 
@@ -463,6 +464,7 @@ function BuilderPanel() {
             <T zh="履历 →" en="About →" />
           </Link>
         </div>
+        <HomeSectionCouplet section="platforms" />
         <div className="home-social-grid">
           <div className="home-social-priority-grid">
             {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
@@ -489,11 +491,12 @@ function ProfileCard() {
             className="home-profile-spacex-mark"
           />
         </div>
-        <div className="home-profile-heading">
+        <div className="home-profile-heading home-heading-with-couplet">
           <div>
             <p className="home-kicker">03 · About</p>
             <h2 className="home-section-title"><T zh="站长" en="Site owner" /></h2>
           </div>
+          <HomeSectionCouplet section="profile" />
           <Link href="/about" className="home-section-more no-underline">
             <T zh="更多" en="More" /> <span aria-hidden="true">→</span>
           </Link>
@@ -831,6 +834,7 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
                   en={<>For collaboration and product talk, add <span className="font-mono">{WECHAT_CONTACT.value}</span> on WeChat.</>}
                 />
               </p>
+              <HomeSectionCouplet section="contact" />
               <ContactDialogButton className="mt-3 inline-flex min-h-10 items-center rounded-full border border-[var(--site-line)] bg-white/80 px-3 text-[12px] font-semibold text-[var(--site-ink)] dark:border-[#303947] dark:bg-[#151c25] dark:text-gray-100">
                 <T zh="全部渠道" en="All channels" />
               </ContactDialogButton>

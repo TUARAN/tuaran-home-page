@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { selectHomeOpinionPosts } from '../../../lib/home/homeOpinionSignals'
 import { getSentimentBucket } from '../../../lib/publicOpinion/publicOpinionData'
 import { Skeleton } from '../../components/loading/LoadingPrimitives'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 
 const STANCES = {
@@ -132,13 +133,19 @@ export default function HomeOpinionSignals() {
             <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
           </Link>
         </div>
-        <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
+        <div className="home-primary-heading-copy">
+          <p className="home-section-description"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
+          <HomeSectionCouplet section="opinion" />
+        </div>
       </div>
       <div className="home-opinion-mobile-heading md:hidden">
         <p className="h5-feed-label"><T zh="热点观察" en="Trending topics" /></p>
         {showCollectionStatus ? <CollectionStatus updated={updated} /> : null}
       </div>
-      <p className="mb-3 text-sm leading-6 text-[var(--site-muted)] md:hidden"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
+      <div className="mb-3 md:hidden">
+        <p className="text-sm leading-6 text-[var(--site-muted)]"><T zh="热点事件、公开讨论与观点变化" en="Current events, public discussion, and shifting views" /></p>
+        <HomeSectionCouplet section="opinion" />
+      </div>
       <div className="home-section-tabs home-opinion-topic-tabs" role="group" aria-label="舆情话题">
         {topics.map((topic) => (
           <button key={topic.id} type="button" className={`home-tab-link ${activeTopic === topic.id ? 'is-active' : ''}`} aria-label={topic.title} title={topic.title} aria-pressed={activeTopic === topic.id} onClick={() => setActiveTopic(topic.id)}>{topic.homeTitle || topic.title}</button>

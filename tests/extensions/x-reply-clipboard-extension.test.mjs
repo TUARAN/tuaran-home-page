@@ -6848,6 +6848,26 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.constants.RATE_LIMIT_COOLDOWN_MS, 30 * 60 * 1000)
 })
 
+test('follow-back buttons accept Chinese aria-labels with @handle', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const isFollowBackButton = source.match(/  function isFollowBackButton\(button\) \{[\s\S]*?\n  \}/)?.[0]
+  const isPlainFollowButton = source.match(/  function isPlainFollowButton\(button\) \{[\s\S]*?\n  \}/)?.[0]
+  const isFollowingButton = source.match(/  function isFollowingButton\(button\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(isFollowBackButton && isPlainFollowButton && isFollowingButton)
+  const context = vm.createContext({
+    buttonLabel: (button) => String(button?.['aria-label'] || button?.label || '').trim(),
+    FOLLOW_BACK_RE: /^(Follow back|回关)$/i,
+    FOLLOWING_RE: /^(Following|正在关注)$/i,
+    FOLLOW_RE: /^(Follow|关注)$/i,
+  })
+  vm.runInContext(`${isFollowingButton}\n${isFollowBackButton}\n${isPlainFollowButton}\nglobalThis.check = isFollowBackButton`, context)
+  assert.equal(context.check({ 'aria-label': '回关' }), true)
+  assert.equal(context.check({ 'aria-label': '回关 @tuaran' }), true)
+  assert.equal(context.check({ 'aria-label': 'Follow back @tuaran' }), true)
+  assert.equal(context.check({ 'aria-label': '关注 @tuaran' }), false)
+  assert.equal(context.check({ 'aria-label': '正在关注 @tuaran' }), false)
+})
+
 test('a followed-back account is kept when any name or bio fragment contains Chinese', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const profileTextParts = source.match(/  function profileTextParts\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
@@ -7275,7 +7295,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -8559,6 +8579,69 @@ test('X follow restrictions pause both follow modes without a 24-hour or permane
   } finally {
     globalThis.chrome = previousChrome
   }
+})
+
+test('follow rate limits release the shared schedule slot immediately', async () => {
+  const previousChrome = globalThis.chrome
+  const suspended = []
+  const stored = {
+    xrcTaskSchedule: {
+      enabled: true, current: 'mutual-followBack', startedAt: Date.now() - 60000, items: {},
+      strategyVersion: 4,
+      priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+      priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
+      followBackNightVersion: 1, sharedFollowCadenceVersion: 1,
+      likeDetectionVersion: 2, replyRiskVersion: 2,
+      rules: background.defaultTaskRules(),
+    },
+    xrcPluginRuntime: { tasks: { 'mutual-followBack': { phase: 'running', tabId: 11 } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'mutual-followBack': 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(key) { return { [key]: stored[key] } },
+        async set(value) { Object.assign(stored, value) },
+      },
+      session: {
+        async get(key) { return { [key]: session[key] } },
+        async set(value) { Object.assign(session, value) },
+      },
+    },
+    tabs: {
+      async get(id) { return { id, url: 'https://x.com/tuaran/followers' } },
+      async sendMessage(id, message) {
+        suspended.push({ id, message })
+        return { ok: true }
+      },
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.noteScheduledAction({ task: 'mutual-follow-back', result: 'limited', errorCode: 'risk-blocked' })
+    assert.equal(stored.xrcTaskSchedule.current, '')
+    assert.ok(stored.xrcTaskSchedule.items['mutual-followBack'].resumeAt > Date.now())
+    assert.ok(stored.xrcTaskSchedule.items['mutual-targetFollow'].resumeAt > Date.now())
+    assert.ok(suspended.some(({ message }) => message.type === 'xrc-task-suspend' || message.type === 'xrc-flow-stop'))
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('effective follow boost is shared by ranking and preemption score', () => {
+  const now = Date.parse('2026-11-12T12:00:00+08:00')
+  const plan = {
+    sharedFollowTodayCount: 40,
+    rules: background.defaultTaskRules(),
+    items: {
+      'mutual-followBack': { lastRunAt: now - 10 * 60000 },
+      'likes-posts': { lastRunAt: now - 10 * 60000 },
+    },
+  }
+  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now), background.FOLLOW_PRIORITY_BOOST)
+  assert.equal(background.effectiveSchedulePriority(plan, 'likes-posts', now), 6)
+  assert.ok(background.effectiveSchedulePriority(plan, 'mutual-followBack', now)
+    > background.effectiveSchedulePriority(plan, 'timeline', now))
 })
 
 test('existing follow tasks leave the old next-night and weekly waits', async () => {
@@ -10108,6 +10191,7 @@ test('existing comment defaults converge to 8 without changing other custom scor
     assert.equal(plan.rules.kol.priority, 6)
     assert.equal(plan.commentPrioritySwapVersion, 1)
     assert.equal(plan.commentEqualPriorityVersion, 1)
+    assert.equal(plan.timelineEqualPriorityVersion, 1)
     const again = await background.readTaskSchedule()
     assert.equal(again.rules.notifications.priority, 8)
     assert.equal(again.rules.timeline.priority, 8)
@@ -10115,6 +10199,33 @@ test('existing comment defaults converge to 8 without changing other custom scor
       notifications: { lastRunAt: Date.now() - 60_000 },
     } })
     assert.ok(rotated.indexOf('timeline') < rotated.indexOf('notifications'))
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('leftover timeline priority 9 migrates to 8 after comment equal-priority versions', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', items: {},
+    priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+    priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
+    notificationsPriorityVersion: 1, followPriorityVersion: 1, followBackNightVersion: 1,
+    commentPrioritySwapVersion: 1, commentEqualPriorityVersion: 1,
+    rules: { notifications: { priority: 8 }, timeline: { priority: 9 }, kol: { priority: 8 } },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.rules.timeline.priority, 8)
+    assert.equal(plan.timelineEqualPriorityVersion, 1)
+    assert.ok(
+      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-followBack', Date.now())
+      > plan.rules.timeline.priority
+    )
   } finally {
     globalThis.chrome = previousChrome
   }

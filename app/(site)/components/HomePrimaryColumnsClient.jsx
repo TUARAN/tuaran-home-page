@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import HomeFeaturedReadingClient from './HomeFeaturedReadingClient'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 
 function FeedThumbnail({ src }) {
@@ -41,11 +42,12 @@ export function HomeInspirations({ items, instance = 'desktop' }) {
 
   return (
     <section id={sectionId} className="home-section home-inspirations scroll-mt-24">
-      <div className="home-inspiration-heading">
+      <div className="home-inspiration-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker">Sparks</p>
           <h2 className="home-section-title"><T zh="灵感" en="Inspiration" /></h2>
         </div>
+        <HomeSectionCouplet section="inspirations" />
         <Link href="/feed" className="home-section-more no-underline">
           <T zh="查看全部" en="View all" /> <span aria-hidden="true">→</span>
         </Link>

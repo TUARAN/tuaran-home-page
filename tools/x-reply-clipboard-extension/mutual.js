@@ -565,7 +565,8 @@
 
   function isFollowBackButton(button) {
     const label = buttonLabel(button);
-    return Boolean(label) && (FOLLOW_BACK_RE.test(label) || /^Follow back\s+@/i.test(label));
+    // Chinese X often uses aria-label "回关 @handle", not the bare word 回关.
+    return Boolean(label) && (FOLLOW_BACK_RE.test(label) || /^Follow back\s+@/i.test(label) || /^回关\s+@/u.test(label));
   }
 
   function isPlainFollowButton(button) {

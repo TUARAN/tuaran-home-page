@@ -41,6 +41,19 @@
       return Array.from(document.querySelectorAll(REPLY_EDITOR_SELECTOR))
         .find((editor) => !editor.closest('[role="dialog"]') && !editor.closest("article") && visibleEditor(editor)) || null;
     }
+    if (scope === "compose") {
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+      for (const dialog of dialogs) {
+        const button = dialog.querySelector('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
+        const label = String(button?.innerText || button?.textContent || "").replace(/\s+/gu, " ").trim();
+        const preview = String(dialog.innerText || dialog.textContent || "").slice(0, 240);
+        if (/^(?:Reply|回复)$/iu.test(label)) continue;
+        if (/Replying to|正在回复|Tweet your reply|发布你的回复/iu.test(preview)) continue;
+        const editor = visibleEditor(dialog.querySelector(REPLY_EDITOR_SELECTOR));
+        if (editor && !editor.closest("article")) return editor;
+      }
+      return null;
+    }
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
       const editor = visibleEditor(dialog.querySelector(REPLY_EDITOR_SELECTOR));
@@ -87,7 +100,7 @@
 
   function comparableDraftText(editor, scope) {
     const text = visibleDraftText(editor);
-    if (scope !== "post") return text;
+    if (scope !== "post" && scope !== "compose") return text;
     return text
       .replace(/\r/gu, "")
       .split(/\n+/u)
@@ -245,7 +258,7 @@
     }
 
     let visible = comparableDraftText(editor, options.scope);
-    if (options.scope === "post") {
+    if (options.scope === "post" || options.scope === "compose") {
       if (visible === phrase) return { ok: true, via: "existing" };
       if (visible) return { ok: false, reason: "compose-mismatch", seen: visible };
 
@@ -255,7 +268,7 @@
       // makes X duplicate the final paragraph inside the first block.
       insertWithCommand(editor, " ");
       await sleep(80);
-      let liveEditor = replyEditor("post") || editor;
+      let liveEditor = replyEditor(options.scope) || editor;
       const node = findDraftNode(liveEditor);
       if (node && characterSample(node)) {
         let nextState = null;
@@ -266,8 +279,8 @@
         }
         const seen = readDraftText({ props: { editorState: nextState } });
         await sleep(120);
-        liveEditor = replyEditor("post") || liveEditor;
-        const rendered = comparableDraftText(liveEditor, "post");
+        liveEditor = replyEditor(options.scope) || liveEditor;
+        const rendered = comparableDraftText(liveEditor, options.scope);
         return seen === phrase && rendered === phrase
           ? { ok: true, via: "draft-blocks" }
           : { ok: false, reason: "compose-failed", seen: rendered || seen };
@@ -277,8 +290,8 @@
       // browser command, with the temporary character selected and replaced.
       insertWithCommand(liveEditor, phrase);
       await sleep(100);
-      liveEditor = replyEditor("post") || liveEditor;
-      visible = comparableDraftText(liveEditor, "post");
+      liveEditor = replyEditor(options.scope) || liveEditor;
+      visible = comparableDraftText(liveEditor, options.scope);
       return visible === phrase
         ? { ok: true, via: "command-fallback" }
         : { ok: false, reason: "compose-failed", seen: visible };

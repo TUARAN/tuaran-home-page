@@ -20,6 +20,7 @@
   const TARGET_EXPANSION_LIMIT = 30;
   const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
+  const TARGET_FOLLOW_LIVE_KEY = "xrcTargetFollowLive";
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let reviewAccountHandle = "";
   let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
@@ -236,7 +237,11 @@
     let saved = {};
     try { saved = JSON.parse(sessionStorage.getItem(targetScanKey()) || "{}"); } catch (error) { saved = {}; }
     const refreshAfter = Number(saved.refreshAfter) || 0;
-    if (refreshAfter && Date.now() >= refreshAfter) return emptyTargetScan();
+    if (refreshAfter && Date.now() >= refreshAfter) {
+      try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
+      publishTargetRoster(emptyTargetScan());
+      return emptyTargetScan();
+    }
     return {
       at: Number(saved.at) || 0,
       visited: Array.isArray(saved.visited) ? saved.visited.map(cleanHandle).filter(Boolean) : [],
@@ -254,6 +259,49 @@
         refreshAfter: Number(scan.refreshAfter) || 0
       }));
     } catch (error) {}
+  }
+
+  function visibleTargetRoster(seeds, scan) {
+    const seedList = [];
+    const seen = new Set();
+    for (const handle of (Array.isArray(seeds) ? seeds : TARGET_FOLLOW_HANDLES)) {
+      const cleaned = cleanHandle(handle);
+      const key = cleaned.toLowerCase();
+      if (!cleaned || seen.has(key)) continue;
+      seen.add(key);
+      seedList.push(cleaned);
+    }
+    const refreshAfter = Number(scan?.refreshAfter) || 0;
+    const expired = Boolean(refreshAfter) && Date.now() >= refreshAfter;
+    const queue = [];
+    if (!expired) {
+      for (const handle of scan?.queue || []) {
+        const cleaned = cleanHandle(handle);
+        const key = cleaned.toLowerCase();
+        if (!cleaned || seen.has(key)) continue;
+        seen.add(key);
+        queue.push(cleaned);
+      }
+    }
+    return { seeds: seedList, queue, current: [...seedList, ...queue] };
+  }
+
+  function publishTargetRoster(scan) {
+    const roster = visibleTargetRoster(TARGET_FOLLOW_HANDLES, scan);
+    const payload = { ...roster, refreshAfter: Number(scan?.refreshAfter) || 0, at: Date.now() };
+    try {
+      const write = globalThis.chrome?.storage?.local?.set?.({ [TARGET_FOLLOW_LIVE_KEY]: payload });
+      if (write && typeof write.catch === "function") write.catch(() => {});
+    } catch (error) {}
+    return payload;
+  }
+
+  function currentTargetRoster() {
+    return visibleTargetRoster(TARGET_FOLLOW_HANDLES, readTargetScan());
+  }
+
+  function republishTargetRoster() {
+    return publishTargetRoster(readTargetScan());
   }
 
   function expansionSources(scan, seeds = TARGET_FOLLOW_HANDLES) {
@@ -299,7 +347,10 @@
     try { self = currentAccountHandle(); } catch (error) { self = ""; }
     const scan = readTargetScan();
     const queued = queueFollowedSource(handle, scan, { self, seeds: TARGET_FOLLOW_HANDLES });
-    if (queued.added) writeTargetScan(queued.scan);
+    if (queued.added) {
+      writeTargetScan(queued.scan);
+      publishTargetRoster(queued.scan);
+    }
     return queued.added;
   }
 
@@ -329,10 +380,16 @@
     const next = nextTargetFollowSource(expansionSources(scan), current, scan.visited);
     if (next) {
       const visited = [...new Set([...scan.visited, cleanHandle(current)].filter(Boolean))];
-      writeTargetScan({ ...scan, visited, refreshAfter: 0 });
+      const nextScan = { ...scan, visited, refreshAfter: 0 };
+      writeTargetScan(nextScan);
+      publishTargetRoster(nextScan);
       return next;
     }
-    if (!scan.refreshAfter) writeTargetScan({ ...scan, refreshAfter: Date.now() + TARGET_SEED_REFRESH_MS });
+    if (!scan.refreshAfter) {
+      const waiting = { ...scan, refreshAfter: Date.now() + TARGET_SEED_REFRESH_MS };
+      writeTargetScan(waiting);
+      publishTargetRoster(waiting);
+    }
     return "";
   }
 
@@ -1252,6 +1309,9 @@
     normalizeTargetFollowHandles,
     targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
     nextTargetFollowSource,
+    visibleTargetRoster,
+    currentTargetRoster,
+    republishTargetRoster,
     expansionSources,
     expansionCount,
     queueFollowedSource,
@@ -1275,6 +1335,7 @@
       TARGET_EXPANSION_LIMIT,
       TARGET_SOURCE_IDLE_MS,
       DEFAULT_TARGET_FOLLOW_HANDLES,
+      TARGET_FOLLOW_LIVE_KEY,
       get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }
     }
   };

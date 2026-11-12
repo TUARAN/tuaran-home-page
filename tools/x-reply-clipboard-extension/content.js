@@ -7347,42 +7347,72 @@
     return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
   }
 
+  function targetFollowRosterStatus(seeds, current) {
+    const extras = current.filter((handle) => !seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
+    if (!extras.length) return `当前正在用起始种子 ${current.length} 个。新关注的账号会加进上面这份名单，不会改掉下面的起始种子。`;
+    const preview = extras.slice(0, 8).map((handle) => `@${handle}`).join(" ");
+    return `当前正在用 ${current.length} 个，本轮已扩展 ${extras.length} 个：${preview}${extras.length > 8 ? "…" : ""}。起始种子只在你修改后保存。`;
+  }
+
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-target-follow-handles]");
-    if (!field || document.activeElement === field) return;
-    let handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    const currentField = panel?.querySelector("[data-xrc-target-follow-current]");
+    const status = panel?.querySelector("[data-xrc-target-follow-status]");
+    if (!field && !currentField) return;
+    let seeds = [...DEFAULT_TARGET_FOLLOW_HANDLES];
     try {
-      if (mutualApi?.loadTargetFollowHandles) handles = await mutualApi.loadTargetFollowHandles();
+      if (mutualApi?.loadTargetFollowHandles) seeds = await mutualApi.loadTargetFollowHandles();
       else {
         const stored = await chrome.storage.local.get("xrcTargetFollowHandles");
-        handles = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
+        seeds = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
       }
     } catch (error) {
-      handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+      seeds = [...DEFAULT_TARGET_FOLLOW_HANDLES];
     }
-    field.value = handles.map((handle) => `@${handle}`).join("\n");
+    let roster = null;
+    try { roster = mutualApi?.currentTargetRoster?.() || null; } catch (error) { roster = null; }
+    if (!roster?.queue?.length) {
+      try {
+        const stored = await chrome.storage.local.get("xrcTargetFollowLive");
+        const live = stored?.xrcTargetFollowLive;
+        if (live && mutualApi?.visibleTargetRoster) roster = mutualApi.visibleTargetRoster(seeds, live);
+        else if (live) roster = { seeds, queue: Array.isArray(live.queue) ? live.queue : [], current: Array.isArray(live.current) ? live.current : seeds };
+      } catch (error) {}
+    }
+    const current = roster?.current?.length ? roster.current : seeds;
+    if (field && document.activeElement !== field) field.value = seeds.map((handle) => `@${handle}`).join("\n");
+    if (currentField) currentField.value = current.map((handle) => `@${handle}`).join("\n");
+    if (status) status.textContent = targetFollowRosterStatus(seeds, current);
   }
 
   async function saveTargetFollowHandlesFromField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-target-follow-handles]");
+    const currentField = panel?.querySelector("[data-xrc-target-follow-current]");
     const status = panel?.querySelector("[data-xrc-target-follow-status]");
     if (!field) return;
     const handles = normalizeTargetFollowHandlesText(field.value);
     try {
       if (mutualApi?.saveTargetFollowHandles) await mutualApi.saveTargetFollowHandles(handles);
       await chrome.storage.local.set({ xrcTargetFollowHandles: handles });
+      const roster = mutualApi?.republishTargetRoster?.() || { current: handles };
       field.value = handles.map((handle) => `@${handle}`).join("\n");
-      if (status) status.textContent = `已保存 ${handles.length} 个候选账号`;
+      if (currentField) currentField.value = (roster.current || handles).map((handle) => `@${handle}`).join("\n");
+      if (status) status.textContent = `已保存起始种子 ${handles.length} 个。${targetFollowRosterStatus(handles, roster.current || handles)}`;
     } catch (error) {
       if (status) status.textContent = error?.message || "候选名单保存失败";
     }
   }
 
-  function kolRosterStatusText(decision) {
-    if (!decision) return "修改后自动保存";
-    if (decision.custom) return `自定义 ${decision.handles.length} 个账号，每一轮打乱顺序`;
-    if (decision.source === "daily") return `今日首页活跃账号 ${decision.handles.length} 个 · ${decision.day}`;
-    return `今日候选不足，回退内置第 ${decision.poolIndex + 1}/${kolRoster.KOL_POOLS.length} 组`;
+  function kolRosterStatusText(decision, visitOrder = []) {
+    const order = Array.isArray(visitOrder) ? visitOrder.filter(Boolean) : [];
+    const orderNote = order.length ? `本轮访问顺序：${order.map((handle) => `@${String(handle).replace(/^@/u, "")}`).join(" ")}。` : "";
+    if (!decision) return `当前名单会随轮次更新。${orderNote}`;
+    if (decision.custom) return `自定义已锁定，不再按首页或内置组自动换。当前 ${decision.handles.length} 个，每一轮只打乱顺序。${orderNote}`;
+    if (decision.source === "daily") return `当前正在用今日首页活跃账号 ${decision.handles.length} 个（${decision.day}）。下一天会再更新。${orderNote}`;
+    const poolCount = kolRoster?.KOL_POOLS?.length || 2;
+    const index = Number(decision.poolIndex);
+    const poolLabel = index >= 0 ? `第 ${index + 1}/${poolCount} 组` : "内置组";
+    return `今日首页活跃不足，当前回退${poolLabel}，每 7 天换一组。${orderNote}`;
   }
 
   async function loadKolRoster() {
@@ -7493,7 +7523,9 @@
     if (!field || document.activeElement === field) return;
     const decision = await loadKolRoster();
     field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
-    if (status) status.textContent = kolRosterStatusText(decision);
+    const order = Array.isArray(state.kolVisitOrder) ? state.kolVisitOrder : [];
+    const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(decision.handles);
+    if (status) status.textContent = kolRosterStatusText(decision, sameRound ? order : []);
   }
 
   async function saveKolHandlesFromField(panel = document.getElementById(PANEL_ID)) {
@@ -7507,9 +7539,7 @@
         [kolRoster.KOL_ROSTER_KEY]: decision.meta
       });
       field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
-      if (status) status.textContent = decision.custom
-        ? `已固定 ${decision.handles.length} 个账号，每一轮打乱顺序`
-        : `已使用${kolRosterStatusText(decision)}`;
+      if (status) status.textContent = `已保存。${kolRosterStatusText(decision)}`;
     } catch (error) {
       if (status) status.textContent = error?.message || "大V名单保存失败";
     }
@@ -7541,9 +7571,9 @@
 
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>关注候选起始名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">起始种子，修改后自动保存。扫完后继续打开本轮新关注账号的粉丝列表，不再隔半小时重扫这批账号。</small></label>`
+      ? `<label class="xrc-schedule-card-list"><span>当前正在用的名单</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="当前正在用的关注候选名单"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">当前正在用起始种子。新关注的账号会加进这份名单。</small></label><label class="xrc-schedule-card-list"><span>起始种子</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note">只在你修改后保存。自动扩源写进上面的当前名单，不会覆盖这里。</small></label>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="每天从首页当天中文高互动原创帖选 5 个账号；不足时使用内置组。增删账号后固定自定义名单。每一轮打乱访问顺序，进行中的一轮走完已抽出的顺序。">修改后自动保存</small></label>`
+        ? `<label class="xrc-schedule-card-list"><span>当前正在用的评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">当前名单会随轮次更新：今日首页活跃、不足时回退内置组，或自定义已锁定不再自动换。</small></label>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "优先级、时段与名单")}

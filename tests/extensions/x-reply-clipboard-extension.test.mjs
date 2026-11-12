@@ -10415,6 +10415,45 @@ test('target-follow seeds expand to accounts followed in this run and skip self,
   assert.equal(background.TARGET_FOLLOW_MIN_GAP_MS, 5 * 60 * 1000)
 })
 
+test('the visible target-follow roster adds expansions without replacing edited seeds', () => {
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  const expanded = mutual.visibleTargetRoster(seeds, { queue: ['NewPerson', 'crazypig9y'], refreshAfter: 0 })
+  assert.deepEqual(expanded.seeds, seeds)
+  assert.deepEqual(expanded.queue, ['NewPerson'])
+  assert.deepEqual(expanded.current, [...seeds, 'NewPerson'])
+  const edited = mutual.visibleTargetRoster(['only_seed'], { queue: ['NewPerson'], refreshAfter: 0 })
+  assert.deepEqual(edited.seeds, ['only_seed'])
+  assert.deepEqual(edited.current, ['only_seed', 'NewPerson'])
+  const expired = mutual.visibleTargetRoster(seeds, { queue: ['NewPerson'], refreshAfter: Date.now() - 1000 })
+  assert.deepEqual(expired.current, seeds)
+  assert.deepEqual(expired.queue, [])
+})
+
+test('the panel shows the live target-follow list and a visible KOL roster status', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const statusText = source.match(/  function kolRosterStatusText\(decision, visitOrder = \[\]\) \{[\s\S]*?\n  \}/)?.[0]
+  const rosterStatus = source.match(/  function targetFollowRosterStatus\(seeds, current\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(statusText && rosterStatus)
+  const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
+  vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  assert.match(context.followStatus(seeds, [...seeds, 'NewPerson']), /当前正在用 6 个，本轮已扩展 1 个：@NewPerson/)
+  assert.match(context.followStatus(seeds, seeds), /当前正在用起始种子 5 个/)
+  assert.match(context.kolStatus({ custom: false, source: 'daily', handles: ['a', 'b', 'c', 'd', 'e'], day: '2026-11-12' }), /今日首页活跃账号 5 个/)
+  assert.match(context.kolStatus({ custom: false, source: 'fallback', handles: ['x'], poolIndex: 1 }), /回退第 2\/2 组/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine'], source: 'custom' }, ['mine']), /自定义已锁定，不再按首页或内置组自动换/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine'], source: 'custom' }, ['mine']), /本轮访问顺序：@mine/)
+  assert.match(source, /当前正在用的名单/)
+  assert.match(source, /data-xrc-target-follow-current/)
+  assert.match(source, /readonly/)
+  assert.match(source, /当前正在用的评论大V/)
+  assert.doesNotMatch(source, /<span>评论大V名单<\/span>/)
+  assert.match(source, /自定义已锁定不再自动换/)
+  const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
+  assert.match(readme, /当前正在用、会随本轮新关注账号增加的名单/)
+  assert.match(readme, /自定义已锁定不再自动换/)
+})
+
 test('exhausted target-follow does not rescan the same list after 30 minutes', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]

@@ -1798,6 +1798,8 @@ const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_MIN_GAP_MS = 5 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
+const FOLLOW_PRIORITY_BOOST = 8.5;
+const PREMIUM_PRIORITY_BOOST = 8.75;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
 const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
@@ -2070,6 +2072,21 @@ function taskGapReadyAt(item, rule, now = Date.now()) {
   return lastRunAt + gap;
 }
 
+function effectiveSchedulePriority(plan, mode, now = Date.now(), rule = null) {
+  const resolved = rule || normalizedTaskRules(plan?.rules)?.[mode] || { priority: defaultTaskPriority(mode) };
+  const base = Number(resolved.priority) || defaultTaskPriority(mode);
+  if (mode === "poster-premium") return Math.max(base, PREMIUM_PRIORITY_BOOST);
+  // Reserve an eligible follow batch while below the daily goal. Both follow
+  // tasks still honor the shared cooldown and min-gap before the boost applies.
+  if (SHARED_FOLLOW_MODES.includes(mode)
+    && Number.isFinite(Number(plan?.sharedFollowTodayCount))
+    && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
+    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= FOLLOW_BACK_MIN_GAP_MS) {
+    return Math.max(base, FOLLOW_PRIORITY_BOOST);
+  }
+  return base;
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   const manualFocusMode = scheduledManualFocusMode(plan, now);
@@ -2092,17 +2109,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
-      // Reserve an eligible follow batch while below the daily goal; comments
-      // remain ahead, and both follow tasks still honor the shared cooldown.
-      const priority = (entry) => {
-        if (entry.mode === "poster-premium") return Math.max(entry.rule.priority, 8.75);
-        return SHARED_FOLLOW_MODES.includes(entry.mode)
-          && Number.isFinite(Number(plan.sharedFollowTodayCount))
-          && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
-          && now - Number(entry.item.lastRunAt || 0) >= FOLLOW_BACK_MIN_GAP_MS
-            ? Math.max(entry.rule.priority, 8.5) : entry.rule.priority;
-      };
-      if (priority(b) !== priority(a)) return priority(b) - priority(a);
+      const priorityA = effectiveSchedulePriority(plan, a.mode, now, a.rule);
+      const priorityB = effectiveSchedulePriority(plan, b.mode, now, b.rule);
+      if (priorityB !== priorityA) return priorityB - priorityA;
       // Same score means both should run. A task that has not run yet goes
       // first; otherwise the longer wait goes first. List order only breaks an exact tie.
       const waitedMs = (entry) => {
@@ -2287,6 +2296,13 @@ async function readTaskSchedule() {
   if (plan.commentEqualPriorityVersion !== 1) {
     if (Number(plan.rules.notifications.priority) === 9) plan.rules.notifications.priority = 8;
     plan.commentEqualPriorityVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.timelineEqualPriorityVersion !== 1) {
+    // Old default / admin monitor leftover kept timeline at 9, which beats the
+    // follow daily-goal boost (8.5) and starves 回关 / 关注候选.
+    if (Number(plan.rules.timeline.priority) === 9) plan.rules.timeline.priority = 8;
+    plan.timelineEqualPriorityVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.notificationPaceDefaultVersion !== 2) {
@@ -2605,8 +2621,13 @@ async function runTaskSchedule() {
     const completeRunOccupancy = unlimitedOccupancy || ["timeline", "notifications", "kol"].includes(current);
     const dueNow = dueTaskModes(plan, now);
     const requestedMode = dueNow[0];
-    const currentPriority = Number(normalizedTaskRules(plan.rules)[current]?.priority) || 0;
-    const requestedPriority = Number(normalizedTaskRules(plan.rules)[requestedMode]?.priority) || 0;
+    const scheduleRules = normalizedTaskRules(plan.rules);
+    // Use the same boosted score as dueTaskModes so a follow batch below the
+    // daily goal can reclaim the tab from likes/posts, not only win an empty slot.
+    const currentPriority = effectiveSchedulePriority(plan, current, now, scheduleRules[current]);
+    const requestedPriority = requestedMode
+      ? effectiveSchedulePriority(plan, requestedMode, now, scheduleRules[requestedMode])
+      : 0;
     // A follow session keeps the tab until the page pauses at 100 confirms, or X limits it.
     // Comments and likes cannot cut in mid-session. A due premium post still can.
     const followSessionActive = (current === "mutual-followBack" || current === "mutual-targetFollow") && task?.phase === "running";
@@ -2927,6 +2948,25 @@ async function noteScheduledAction(event) {
       latest.current = "";
       latest.startedAt = 0;
       latest.items[mode] = { ...(latest.items[mode] || {}), ...savedItem };
+      await saveTaskSchedule(latest);
+      await tickTaskSchedule();
+    }
+    return;
+  }
+  if (SHARED_FOLLOW_MODES.includes(mode) && event.result === "limited" && plan.enabled && SHARED_FOLLOW_MODES.includes(plan.current)) {
+    const yieldMode = plan.current;
+    const yieldReason = String(plan.items?.[yieldMode]?.reason || savedItem.reason || "关注受限，已让出页签");
+    if (await suspendScheduledTask(yieldMode, yieldReason, { keepTab: true, releaseOnFailure: true })) {
+      const latest = await readTaskSchedule();
+      recordScheduleSegment(latest, yieldMode, yieldReason);
+      latest.current = "";
+      latest.startedAt = 0;
+      applySharedFollowWait(
+        latest,
+        Number(plan.items?.[mode]?.resumeAt) || Date.now() + 30 * 60000,
+        yieldReason,
+        Number(plan.items?.[mode]?.limitedStreak) || 1
+      );
       await saveTaskSchedule(latest);
       await tickTaskSchedule();
     }
@@ -4416,9 +4456,12 @@ if (typeof module === "object" && module.exports) {
     UNFOLLOW_SLICE_MS,
     FOLLOW_BACK_MIN_GAP_MS,
     FOLLOW_BACK_SLICE_MS,
+    FOLLOW_PRIORITY_BOOST,
+    PREMIUM_PRIORITY_BOOST,
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
     defaultTaskPriority,
+    effectiveSchedulePriority,
     shouldShareFollowWait,
     DEFAULT_TARGET_FOLLOW_HANDLES,
     normalizeTargetFollowHandles,

@@ -56,6 +56,16 @@ test('the year-summary subpage uses the Aceternity timeline beam and palette', (
   assert.match(timeline, /dark:bg-neutral-950/)
   assert.match(page, /from '\.\.\/\.\.\/components\/aceternity\/timeline'/)
   assert.doesNotMatch(page, /magic-ui|react-chrono|react-vertical-timeline/)
+  assert.doesNotMatch(page, /rowClassName|railClassName|labelClassName/)
+  assert.match(timeline, /flex flex-col justify-start gap-3 pt-8 md:flex-row md:gap-10 md:pt-16/)
+  assert.match(timeline, /lg:max-w-sm/)
+  assert.match(timeline, /md:pl-20 md:text-5xl/)
+  assert.match(timeline, /relative w-full px-4 md:pl-4/)
+  assert.doesNotMatch(timeline, /pl-20 pr-4/)
+  assert.match(timeline, /max-w-5xl px-4 py-8 md:px-8 md:py-10/)
+  assert.match(timeline, /text-2xl text-black dark:text-white md:text-3xl/)
+  assert.doesNotMatch(home, /aceternity\/timeline/)
+  assert.doesNotMatch(homeCard, /aceternity\/timeline/)
 })
 
 test('homepage year-summary block stays on the existing homepage palette', () => {

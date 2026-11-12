@@ -78,7 +78,7 @@ function DiaryDateMark({ entry }) {
   const written = splitIsoDate(entry.date)
   if (!written.month || !written.day) return entry.label
   return (
-    <span className="block pl-12 text-left leading-none">
+    <span className="block text-left leading-none md:pl-12">
       <span className="block text-left text-[11px] font-medium text-neutral-400">{written.year}</span>
       <span className="mt-1 block text-left text-lg font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
         {written.month}/{written.day}
@@ -277,9 +277,9 @@ export default async function DiaryPage() {
       <Timeline
         data={timelineData}
         title={diary.title}
-        rowClassName="flex items-start justify-start gap-3 pt-8"
-        railClassName="sticky top-24 z-40 w-32 shrink-0 self-start text-left"
-        labelClassName="hidden md:block"
+        rowClassName="flex flex-col items-stretch justify-start gap-3 pt-8 md:flex-row md:items-start"
+        railClassName="relative z-40 w-full self-start px-4 text-left md:sticky md:top-24 md:w-32 md:shrink-0 md:px-0"
+        labelClassName="block"
         description={(
           <div className="space-y-1">
             <p>从 {DIARY_SERIES_STARTED_ON} 起 · {diaryEntries.length} 条</p>

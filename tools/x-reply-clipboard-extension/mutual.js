@@ -433,7 +433,41 @@
     if (!targetPool) targetPool = normalizeTargetPool(null);
     const selected = selectTargetBatch({ ...targetPool, lastBatch: TARGET_FOLLOW_HANDLES }, { size: TARGET_BATCH_SIZE });
     if (!selected.changed || sameHandleSet(selected.handles, TARGET_FOLLOW_HANDLES)) return "";
-    return applyTargetBatch(selected.handles);
+    const first = applyTargetBatch(selected.handles);
+    writeTargetTask({ locked: true, batch: TARGET_FOLLOW_HANDLES.slice(), next: [] });
+    return first;
+  }
+
+  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
+    if (!seenRows) return false;
+    return stalled >= stalledLimit || idleMs >= idleLimit;
+  }
+
+  function followerHandleFromPath(pathname = pagePath()) {
+    const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
+    return match ? cleanHandle(match[1]) : "";
+  }
+
+  function readTargetNavGuard() {
+    try { return JSON.parse(sessionStorage.getItem("xrcTargetFollowNav") || "null"); } catch (error) { return null; }
+  }
+
+  function writeTargetNavGuard(guard) {
+    try {
+      if (!guard) sessionStorage.removeItem("xrcTargetFollowNav");
+      else sessionStorage.setItem("xrcTargetFollowNav", JSON.stringify(guard));
+    } catch (error) {}
+  }
+
+  function targetFollowOpenDecision({ pathHandle = "", batch = [], guard = null } = {}) {
+    const cleaned = cleanHandle(pathHandle);
+    const locked = (Array.isArray(batch) ? batch : []).map(cleanHandle).filter((handle) => handle && !isSeedHandle(handle));
+    if (cleaned && locked.some((handle) => sameHandle(handle, cleaned))) return { navigate: "", guard: null };
+    const destination = locked[0] ? `/${locked[0]}/followers` : "";
+    if (!destination || (guard && guard.to === destination)) {
+      return { navigate: "", guard: destination ? { to: destination, stopped: true } : null, error: "当前页不在本批源头里，已停在此页，避免来回跳转" };
+    }
+    return { navigate: destination, guard: { to: destination, stopped: false }, error: "请打开本批源头的粉丝列表" };
   }
 
   function visibleTargetRoster(seeds, scan) {
@@ -539,9 +573,9 @@
   }
 
   function targetFollowHandleFromPath(pathname = pagePath()) {
-    const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
-    if (!match) return "";
-    return knownTargetSources().find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
+    const handle = followerHandleFromPath(pathname);
+    if (!handle) return "";
+    return knownTargetSources().find((item) => item.toLowerCase() === handle.toLowerCase()) || "";
   }
 
   function nextTargetFollowSource(handles, current, visited = []) {
@@ -1193,10 +1227,16 @@
       await loadTargetFollowHandles();
       if (typeof beginTargetTask === "function") await beginTargetTask();
     }
+    if (mode === "targetFollow" && targetFollowHandleFromPath()) writeTargetNavGuard(null);
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
-      const destination = targetPath(mode);
-      if (!destination) return { error: "本批还没有可打开的新源头" };
-      return { navigate: destination, error: "请打开本批源头的粉丝列表" };
+      const decision = targetFollowOpenDecision({
+        pathHandle: followerHandleFromPath(),
+        batch: TARGET_FOLLOW_HANDLES,
+        guard: readTargetNavGuard()
+      });
+      writeTargetNavGuard(decision.guard);
+      if (decision.navigate) return { navigate: decision.navigate, error: decision.error };
+      return { error: decision.error || "当前页不在本批源头里，已停在此页，避免来回跳转" };
     }
     const independentCleanup = mode === "unfollow";
     if (independentCleanup) await loadUnfollowReview();
@@ -1374,6 +1414,14 @@
       }
 
       emit("当前屏没有可处理账号，继续向下查找");
+      const seenFollowerRows = observedSourceHandles.size > 0 || items.length > 0;
+      if (mode === "targetFollow" && !seenFollowerRows) {
+        stalled = 0;
+        sourceIdleSince = 0;
+        emit("粉丝列表还没刷出来，继续等待，先不换人");
+        await scrollForward(items.map((item) => item.handle).join("|"), mode);
+        continue;
+      }
       if (mode === "targetFollow" && !sourceIdleSince) sourceIdleSince = Date.now();
       const signature = items.map((item) => item.handle).join("|");
       const result = await scrollForward(signature, mode);
@@ -1384,11 +1432,13 @@
         if (newHandles.length) sourceIdleSince = Date.now();
       }
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
-      if (stalled >= MAX_STALLED_SCROLLS || (mode === "targetFollow" && Date.now() - sourceIdleSince >= TARGET_SOURCE_IDLE_MS)) {
+      const idleMs = sourceIdleSince ? Date.now() - sourceIdleSince : 0;
+      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs });
+      if ((mode !== "targetFollow" && stalled >= MAX_STALLED_SCROLLS) || sourceReadyToAdvance) {
         stalled = 0;
         sourceIdleSince = 0;
         if (mode === "targetFollow") {
-          const nextSource = advanceTargetFollowSource() || (typeof rotateTargetBatchNow === "function" ? rotateTargetBatchNow() : "");
+          const nextSource = advanceTargetFollowSource();
           if (nextSource) {
             state.running = false;
             emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
@@ -1497,6 +1547,8 @@
     targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
     nextTargetFollowSource,
     visibleTargetRoster,
+    targetSourceMayAdvance,
+    targetFollowOpenDecision,
     selectTargetBatch,
     planTargetTaskBatch,
     rememberPoolHandles,

@@ -10319,6 +10319,7 @@ test('target-follow changes source after ten seconds without new rows even above
     state, Date: { now: () => clock },
     isFollowingPage: () => false, isFollowersPage: () => true,
     targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
     listReady: () => true, loadSharedFollowRate: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => {}, waitForSharedCooldown: async () => true,
@@ -10329,11 +10330,70 @@ test('target-follow changes source after ten seconds without new rows even above
       return { progressed: false, atBottom: false, items: rows }
     },
     advanceTargetFollowSource: () => 'beta',
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   assert.equal((await context.runTest('targetFollow', () => {})).navigate, '/beta/followers')
   assert.equal(scrolls, 11)
+})
+
+test('target-follow does not advance while the follower list has not loaded', () => {
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, idleMs: 10000 }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 99, idleMs: 60000 }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0 }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000 }), true)
+})
+
+test('an unloaded follower list does not navigate to the next source', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  assert.match(runWithStorage, /粉丝列表还没刷出来/)
+  assert.doesNotMatch(runWithStorage, /rotateTargetBatchNow/)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
+  let clock = 1000
+  let advances = 0
+  const context = vm.createContext({
+    state, Date: { now: () => clock },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [],
+    scrollForward: async () => {
+      clock += 20000
+      state.stopping = true
+      return { progressed: false, atBottom: true, items: [] }
+    },
+    advanceTargetFollowSource: () => { advances += 1; return 'beta' },
+    rotateTargetBatchNow: () => { advances += 1; return 'gamma' },
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+    SCROLL_DELAY_MS: 1,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('targetFollow', () => {})
+  assert.equal(advances, 0)
+  assert.equal(result?.navigate, undefined)
+})
+
+test('a followers page outside the locked batch does not keep navigating', () => {
+  const batch = ['alpha', 'beta', 'gamma', 'delta', 'epsilon']
+  const first = mutual.targetFollowOpenDecision({ pathHandle: 'other', batch, guard: null })
+  assert.equal(first.navigate, '/alpha/followers')
+  const again = mutual.targetFollowOpenDecision({ pathHandle: 'other', batch, guard: first.guard })
+  assert.equal(again.navigate, '')
+  assert.equal(again.guard.stopped, true)
+  const staying = mutual.targetFollowOpenDecision({ pathHandle: 'beta', batch, guard: first.guard })
+  assert.equal(staying.navigate, '')
+  assert.equal(staying.guard, null)
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  assert.equal(mutual.targetFollowOpenDecision({ pathHandle: 'crazypig9y', batch: seeds, guard: null }).navigate, '')
 })
 
 test('source rescan waits do not pause the other follow task', () => {
@@ -10526,14 +10586,16 @@ test('exhausted target-follow does not rescan the same list after 30 minutes', a
     state, Date: { now: () => clock },
     isFollowingPage: () => false, isFollowersPage: () => true,
     targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
     listReady: () => true, loadSharedFollowRate: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => { if (state.cooldownUntil) seenCooldown.push(state.cooldownUntil - clock) },
     waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false,
-    visibleRows: () => [],
-    scrollForward: async () => ({ progressed: false, atBottom: true, items: [] }),
+    visibleRows: () => [{ handle: 'seen', candidate: false }],
+    scrollForward: async () => ({ progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }),
     advanceTargetFollowSource: () => '',
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     readTargetScan: () => ({ refreshAfter: clock + mutual.constants.TARGET_SEED_REFRESH_MS }),
     formatClock: () => '06:00:00',
     sleepActive: async () => { state.stopping = true },

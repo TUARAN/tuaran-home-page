@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-11",
+  "timezone": "Asia/Shanghai",
+  "window": {
+    "start": "2026-11-10T21:00:00+08:00",
+    "end": "2026-11-11T21:00:00+08:00"
+  },
+  "metric": "bidirectional_public_interaction",
+  "metricLabel": "双向公开互动（回复/提及/引用），不含私信",
+  "subject": "tarsixseveneig1",
+  "excludedHandles": ["tarsixseveneig1"],
+  "opponents": 304,
+  "events": 749,
+  "top": [
+    { "rank": 1, "handle": "grok", "displayName": "Grok", "count": 33, "breakdown": "对方回复 2 · 我回复 1 · 我提及 30" },
+    { "rank": 2, "handle": "weiyux2021", "displayName": "动物园园长", "count": 27, "breakdown": "我回复 27" },
+    { "rank": 3, "handle": "HotmailfromSH", "displayName": "Dr.Wang", "count": 24, "breakdown": "我回复 24" },
+    { "rank": 4, "handle": "huoshan007", "displayName": "火山哥🕊️", "count": 24, "breakdown": "我回复 24" },
+    { "rank": 5, "handle": "thankUcrypto", "displayName": "allincrypto 熬鹰资本 🇨🇳", "count": 24, "breakdown": "我回复 24" },
+    { "rank": 6, "handle": "xupaopaogm", "displayName": "徐跑跑", "count": 24, "breakdown": "我回复 24" },
+    { "rank": 7, "handle": "uunvx91396249", "displayName": "Spring", "count": 13, "breakdown": "对方回复 6 · 我回复 7" },
+    { "rank": 8, "handle": "ynggu2548245", "displayName": "每日打卡", "count": 8, "breakdown": "对方回复 2 · 我回复 6" },
+    { "rank": 9, "handle": "zhiliaoX", "displayName": "灰灰", "count": 8, "breakdown": "对方回复 4 · 我回复 4" },
+    { "rank": 10, "handle": "DaFuXiao", "displayName": "萧大富", "count": 7, "breakdown": "对方回复 3 · 我回复 4" }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-10",
+  "timezone": "Asia/Shanghai",
+  "window": {
+    "start": "2026-11-09T21:00:00+08:00",
+    "end": "2026-11-10T21:00:00+08:00"
+  },
+  "metric": "bidirectional_public_interaction",
+  "metricLabel": "双向公开互动（回复/提及/引用），不含私信",
+  "subject": "tarsixseveneig1",
+  "excludedHandles": ["tarsixseveneig1"],
+  "opponents": 337,
+  "events": 786,
+  "top": [
+    { "rank": 1, "handle": "HotmailfromSH", "displayName": "Dr.Wang", "count": 15, "breakdown": "我回复 15" },
+    { "rank": 2, "handle": "huoshan007", "displayName": "火山哥🕊️", "count": 15, "breakdown": "我回复 15" },
+    { "rank": 3, "handle": "thankUcrypto", "displayName": "allincrypto 熬鹰资本 🇨🇳", "count": 15, "breakdown": "我回复 15" },
+    { "rank": 4, "handle": "weiyux2021", "displayName": "动物园园长", "count": 15, "breakdown": "我回复 15" },
+    { "rank": 5, "handle": "xupaopaogm", "displayName": "徐跑跑", "count": 15, "breakdown": "我回复 15" },
+    { "rank": 6, "handle": "fngmn134813", "displayName": "梦泪", "count": 14, "breakdown": "对方回复 6 · 我回复 8" },
+    { "rank": 7, "handle": "hao911519", "displayName": "hao dong", "count": 14, "breakdown": "对方回复 7 · 我回复 7" },
+    { "rank": 8, "handle": "kinnacheung", "displayName": "kinnacheung", "count": 12, "breakdown": "对方回复 6 · 我回复 6" },
+    { "rank": 9, "handle": "XueJieYaa", "displayName": "你隔壁的学姐呀", "count": 8, "breakdown": "对方回复 1 · 我回复 7" },
+    { "rank": 10, "handle": "979293861Chen", "displayName": "大唐饰家+WEB3", "count": 7, "breakdown": "对方回复 4 · 我回复 3" }
+  ]
+}

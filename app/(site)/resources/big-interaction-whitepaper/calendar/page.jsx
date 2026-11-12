@@ -1,18 +1,25 @@
 import Link from 'next/link'
+import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
-import { loadDailyTopDays } from '../../../../../lib/interaction/dailyTop/load.js'
+import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
 import PageContainer from '../../../components/PageContainer'
 import InteractionCalendar from './InteractionCalendar'
 import styles from './calendar.module.css'
 
-export const dynamic = 'force-static'
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+function contentFeed() {
+  // next build / next dev 在 Node 里调用会抛错。线上 Edge 才有 CONTENT_FEED。
+  if (globalThis.process?.release?.name === 'node') return null
+  return getOptionalRequestContext()?.env?.CONTENT_FEED || null
+}
 
 const path = '/resources/big-interaction-whitepaper/calendar'
 const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const title = '大互动日历'
 const description = '按 Asia/Shanghai 选择日期，查看当天双向公开互动前十。统计公开回复、提及与引用，不含私信。'
-const days = loadDailyTopDays()
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -40,7 +47,8 @@ export const metadata = {
   },
 }
 
-export default function BigInteractionCalendarPage() {
+export default async function BigInteractionCalendarPage() {
+  const days = await loadCombinedDailyTopDays(contentFeed())
   return (
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />

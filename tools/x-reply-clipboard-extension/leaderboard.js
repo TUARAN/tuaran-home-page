@@ -12,6 +12,7 @@
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
   ]);
+  const RETIRED_HANDLES = new Set(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "chill_alpha"]);
 
   function cleanHandle(value) {
     const handle = String(value || "").trim().replace(/^@/u, "");
@@ -38,8 +39,17 @@
     return found;
   }
 
+  function isRetiredHandle(value) {
+    const handle = cleanHandle(value).toLowerCase();
+    return Boolean(handle) && RETIRED_HANDLES.has(handle);
+  }
+
+  function withoutRetired(handles) {
+    return parseLeaderboardHandles(handles).filter((handle) => !isRetiredHandle(handle));
+  }
+
   function selectBatch(handles, previous = [], size = 5) {
-    const pool = parseLeaderboardHandles(handles);
+    const pool = withoutRetired(handles);
     const prevList = parseLeaderboardHandles(previous);
     const avoid = new Set(prevList.map((handle) => handle.toLowerCase()));
     const limit = Math.max(0, Number(size) || 0);
@@ -102,9 +112,9 @@
           await storage.set({ [CACHE_KEY]: { handles: fetched, at: now, boards: BOARDS.map((board) => board.id) } });
         } catch (error) {}
       }
-      return fetched;
+      return withoutRetired(fetched);
     }
-    return cached ? cached.handles.slice() : [];
+    return cached ? withoutRetired(cached.handles) : [];
   }
 
   const api = {
@@ -112,6 +122,8 @@
     CACHE_MS,
     BOARDS,
     parseLeaderboardHandles,
+    isRetiredHandle,
+    withoutRetired,
     selectBatch,
     loadHandles
   };

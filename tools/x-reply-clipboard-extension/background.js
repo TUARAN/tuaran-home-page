@@ -1043,8 +1043,9 @@ let kolHandlesCache = [];
 async function readTargetFollowHandles() {
   try {
     const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool", leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]);
-    const live = normalizeTargetFollowHandles(stored?.xrcTargetFollowLive?.current);
-    const batch = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.batch);
+    const dropRetired = (value) => leaderboard?.withoutRetired ? leaderboard.withoutRetired(value) : normalizeTargetFollowHandles(value);
+    const live = dropRetired(stored?.xrcTargetFollowLive?.current);
+    const batch = dropRetired(stored?.xrcTargetFollowPool?.batch);
     const board = leaderboard?.parseLeaderboardHandles?.(stored?.[leaderboard.CACHE_KEY]?.handles) || [];
     const previous = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.lastBatch);
     const rotated = leaderboard?.selectBatch ? leaderboard.selectBatch(board, previous, 5).handles : [];

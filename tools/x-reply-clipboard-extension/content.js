@@ -7386,8 +7386,12 @@
   }
 
   function targetFollowRosterStatus(seeds, current) {
-    if (!current.length) return "正在从榜单拉取五个新人。没有拉到之前，不显示固定名单，也不打开固定账号的粉丝列表。";
-    return `本批源头已换成 ${current.length} 个新人：${current.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换。粉丝列表出来并且关注成功后才换下一个；遇到 Retry 可以换。`;
+    const retired = new Set(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "chill_alpha"]);
+    const usable = (Array.isArray(current) ? current : [])
+      .map((handle) => String(handle || "").replace(/^@/u, ""))
+      .filter((handle) => handle && !retired.has(handle.toLowerCase()));
+    if (!usable.length) return "正在从榜单拉取五个新人。没有拉到之前，不显示固定名单，也不打开固定账号的粉丝列表。";
+    return `本批源头已换成 ${usable.length} 个新人：${usable.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换。粉丝列表出来后才换人。这一页还有可关注的人就先关注；人都关注过了就换下一个。遇到 Retry 可以换。`;
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7409,7 +7413,13 @@
     try {
       const stored = await chrome.storage.local.get("xrcTargetFollowLive");
       const live = stored?.xrcTargetFollowLive?.current;
-      if (Array.isArray(live) && live.length) current = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
+      if (Array.isArray(live) && live.length) {
+        const raw = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
+        current = globalThis.XrcLeaderboard?.withoutRetired ? globalThis.XrcLeaderboard.withoutRetired(raw) : raw.filter((handle) => !["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "chill_alpha"].includes(handle.toLowerCase()));
+        if (!current.length) {
+          try { sessionStorage.removeItem("xrcTargetFollowTask"); } catch (error) {}
+        }
+      }
     } catch (error) {}
     if (!current.length && mutualApi?.selectTargetBatch) {
       const board = globalThis.XrcLeaderboard?.loadHandles ? await globalThis.XrcLeaderboard.loadHandles() : [];

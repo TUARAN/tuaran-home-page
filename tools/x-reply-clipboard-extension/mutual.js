@@ -200,7 +200,7 @@
   async function loadTargetFollowHandles() {
     try {
       const stored = await followStorage().get(TARGET_FOLLOW_HANDLES_KEY);
-      TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+      TARGET_FOLLOW_HANDLES = withoutRetiredTargets(normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]));
     } catch (error) {
       TARGET_FOLLOW_HANDLES = [];
     }
@@ -317,9 +317,17 @@
     try { sessionStorage.setItem("xrcTargetFollowTask", JSON.stringify(task)); } catch (error) {}
   }
 
+  function withoutRetiredTargets(handles) {
+    if (leaderboard?.withoutRetired) return leaderboard.withoutRetired(handles);
+    return (Array.isArray(handles) ? handles : []).map(cleanHandle).filter(Boolean);
+  }
+
   function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE, sources = []) {
     const locked = task?.locked && Array.isArray(task.batch) && task.batch.length;
-    if (locked) return { handles: task.batch.map(cleanHandle).filter(Boolean), changed: false };
+    if (locked) {
+      const handles = withoutRetiredTargets(task.batch);
+      if (handles.length) return { handles, changed: false };
+    }
     return selectTargetBatch(pool, { size, sources });
   }
 
@@ -419,10 +427,13 @@
     return first;
   }
 
-  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, followed = false, retry = false, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
+  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, followed = false, retry = false, followable = null, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
     if (retry) return true;
-    if (!seenRows || !followed) return false;
-    return stalled >= stalledLimit || idleMs >= idleLimit;
+    if (!seenRows) return false;
+    const settled = stalled >= stalledLimit || idleMs >= idleLimit;
+    if (!settled) return false;
+    if (followed) return true;
+    return followable === false;
   }
 
   function followerHandleFromPath(pathname = pagePath()) {
@@ -1207,17 +1218,23 @@
     if (mode === "targetFollow") {
       await loadTargetFollowHandles();
       if (typeof beginTargetTask === "function") await beginTargetTask();
-    }
-    if (mode === "targetFollow" && targetFollowHandleFromPath()) writeTargetNavGuard(null);
-    if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
-      const decision = targetFollowOpenDecision({
-        pathHandle: followerHandleFromPath(),
-        batch: TARGET_FOLLOW_HANDLES,
-        guard: readTargetNavGuard()
-      });
-      writeTargetNavGuard(decision.guard);
-      if (decision.navigate) return { navigate: decision.navigate, error: decision.error };
-      return { error: decision.error || "当前页不在本批源头里，已停在此页，避免来回跳转" };
+      const pathHandle = typeof targetFollowHandleFromPath === "function" ? targetFollowHandleFromPath() : "";
+      const batch = typeof TARGET_FOLLOW_HANDLES !== "undefined" && Array.isArray(TARGET_FOLLOW_HANDLES) ? TARGET_FOLLOW_HANDLES : null;
+      const normalizedHandle = (value) => String(value || "").trim().replace(/^@/u, "").toLowerCase();
+      const onBatch = batch
+        ? Boolean(pathHandle && batch.some((handle) => normalizedHandle(handle) === normalizedHandle(pathHandle)))
+        : Boolean(pathHandle);
+      if (!onBatch) {
+        const decision = targetFollowOpenDecision({
+          pathHandle,
+          batch: batch || [],
+          guard: readTargetNavGuard()
+        });
+        writeTargetNavGuard(decision.guard);
+        if (decision.navigate) return { navigate: decision.navigate, error: decision.error };
+        return { error: decision.error || "当前页不在本批源头里，已停在此页，避免来回跳转" };
+      }
+      writeTargetNavGuard(null);
     }
     const independentCleanup = mode === "unfollow";
     if (independentCleanup) await loadUnfollowReview();
@@ -1427,7 +1444,8 @@
       }
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
       const idleMs = sourceIdleSince ? Date.now() - sourceIdleSince : 0;
-      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs, followed: sourceFollowed });
+      const followable = items.some((item) => item.candidate && !state.seenHandles.has(item.handle));
+      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs, followed: sourceFollowed, followable });
       if ((mode !== "targetFollow" && stalled >= MAX_STALLED_SCROLLS) || sourceReadyToAdvance) {
         stalled = 0;
         sourceIdleSince = 0;
@@ -1435,7 +1453,9 @@
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
             state.running = false;
-            emit(`这一页已经关注成功，转到 @${nextSource} 的粉丝列表`);
+            emit(sourceFollowed
+              ? `这一页能关注的人已经关注过，转到 @${nextSource} 的粉丝列表`
+              : `这一页没有还能关注的人，转到 @${nextSource} 的粉丝列表`);
             return { navigate: `/${nextSource}/followers` };
           }
           if (typeof finishTargetTask === "function") finishTargetTask();

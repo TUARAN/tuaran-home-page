@@ -41,7 +41,7 @@ const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
     title: '回关按周，名单从榜单换人',
-    description: '回关粉丝约每周一次。关注候选和评论大V每次任务从 X榜单换成五个新人，不使用固定名单。粉丝列表出来并且关注成功后才换人；遇到 Retry 可以换。本地源码，尚未打包。',
+    description: '回关粉丝约每周一次。关注候选和评论大V每次任务从 X榜单换成五个新人，不使用固定名单。粉丝列表出来后，没有可关注的人就换下一个；遇到 Retry 可以换。本地源码，尚未打包。',
     current: true,
   },
   {

@@ -10300,7 +10300,7 @@ test('target-follow scans other configured sources before rescanning an exhauste
   assert.equal(mutual.nextTargetFollowSource(['Alpha'], 'alpha', []), '')
 })
 
-test('target-follow stays on the page until a follow succeeds, and retry can switch', async () => {
+test('target-follow leaves a loaded list when nobody remains to follow', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(runWithStorage)
@@ -10328,13 +10328,15 @@ test('target-follow stays on the page until a follow succeeds, and retry can swi
     FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
-  const stayed = await context.runTest('targetFollow', () => {})
-  assert.equal(stayed?.navigate, undefined)
-  assert.equal(advances, 0)
+  const moved = await context.runTest('targetFollow', () => {})
+  assert.equal(moved.navigate, '/beta/followers')
+  assert.equal(advances, 1)
   state.stopping = false
   state.running = false
   scrolls = 0
+  advances = 0
   context.followingRetryButton = () => ({})
+  context.visibleRows = () => []
   const switched = await context.runTest('targetFollow', () => {})
   assert.equal(switched.navigate, '/beta/followers')
   assert.equal(advances, 1)
@@ -10344,6 +10346,9 @@ test('target-follow does not advance while the follower list has not loaded', ()
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, idleMs: 10000 }), false)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 99, idleMs: 60000 }), false)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: false }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: false, followable: false }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000, followable: false }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, followable: false }), false)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: true }), true)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000, followed: true }), true)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, retry: true }), true)
@@ -10505,6 +10510,9 @@ test('each target-follow task can switch to a new batch without following the se
   assert.deepEqual(continued.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
   const nextTask = mutual.planTargetTaskBatch({ ...seen, lastBatch: seeds }, { locked: false }, 5, board)
   assert.deepEqual(nextTask.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  const retiredLock = mutual.planTargetTaskBatch({}, { locked: true, batch: seeds }, 5, board)
+  assert.deepEqual(retiredLock.handles, board.slice(0, 5))
+  assert.deepEqual(require('../../tools/x-reply-clipboard-extension/leaderboard.js').withoutRetired(seeds), [])
   const leaderboard = require('../../tools/x-reply-clipboard-extension/leaderboard.js')
   assert.deepEqual(leaderboard.parseLeaderboardHandles('快来寒季吧@AvelyraX7点击查看详情 https://x.com/home @disonyyds'), ['AvelyraX7', 'disonyyds'])
   assert.deepEqual(leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], ['one', 'two', 'three', 'four', 'five'], 5).handles, ['six', 'seven'])
@@ -10557,8 +10565,9 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
   vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.match(context.followStatus(seeds, seeds), /本批源头已换成 5 个新人/)
+  assert.match(context.followStatus(seeds, seeds), /不显示固定名单/)
   assert.match(context.followStatus(seeds, []), /不显示固定名单/)
+  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /人都关注过了就换下一个/)
   assert.doesNotMatch(source, /还没有换批/)
   assert.doesNotMatch(source, /本批源头可能还是/)
   assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /本批源头已换成 5 个新人：@fresh_a/)

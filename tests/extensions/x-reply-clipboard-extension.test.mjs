@@ -314,6 +314,39 @@ test('task window state drops closed tabs before showing jump hints', async () =
   }
 })
 
+test('the only remaining X tab becomes the schedule tab', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: '', workTabId: 99, items: {} },
+    xrcPluginRuntime: { tasks: {}, flow: {} },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(key) { return { [key]: local[key] } },
+        async set(value) { Object.assign(local, value) },
+      },
+      session: { async get() { return { xrcTaskTabs: {} } }, async set() {} },
+    },
+    tabs: {
+      async get(id) { if (id === 99) throw new Error('No tab'); return { id } },
+      async query() { return [{ id: 7, url: 'https://x.com/home' }] },
+    },
+  }
+  try {
+    const only = await background.taskTabRole({ tab: { id: 7 } })
+    assert.equal(only.owned, true)
+    assert.equal(only.ownerTabId, 7)
+    assert.equal(local.xrcTaskSchedule.workTabId, 7)
+    globalThis.chrome.tabs.query = async () => [{ id: 7, url: 'https://x.com/home' }, { id: 8, url: 'https://x.com/explore' }]
+    local.xrcTaskSchedule.workTabId = 0
+    const oneOfMany = await background.taskTabRole({ tab: { id: 7 } })
+    assert.equal(oneOfMany.owned, false)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a manually opened X tab stays a spectator while the registered tab owns the schedule', async () => {
   const previousChrome = globalThis.chrome
   const local = {
@@ -366,7 +399,8 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
   assert.equal(guard.spectatorTab, false)
   assert.match(source, /if \(!spectatorTab && saved\.running\)/)
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled \|\| !probe\.owned\)/)
+  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled\) continue/)
+  assert.match(backgroundSource, /waiting\.length === 1 \? waiting\[0\] : null/)
 })
 
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {

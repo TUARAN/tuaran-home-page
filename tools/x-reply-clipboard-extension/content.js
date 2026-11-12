@@ -3865,7 +3865,9 @@
       ? validDeepSeekApiKey(String(settings?.apiKey || "").trim())
       : provider === "bai"
         ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
-        : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+        : provider === "nas"
+          ? settings?.nasSecretAvailable === true && stored.length === 0
+          : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
     const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
     return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
   }
@@ -3917,6 +3919,8 @@
         replyProvidersDisabled: value.replyProvidersDisabled || null
       });
       let settings = await readSettings();
+      const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
       const seenStamp = settingsStamp(settings);
       const savedValue = String(settings.apiKey || "").trim();
       let apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
@@ -3931,6 +3935,7 @@
           apiKey = validDeepSeekApiKey(latestValue) ? latestValue : "";
         }
       }
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
       const resolvedProviders = resolveReplyProviders(settings);
       if (resolvedProviders.persist) {
         if (readId !== aiSettingsReadId) return;
@@ -3938,16 +3943,19 @@
         if (settingsStamp(latest) === settingsStamp(settings)) {
           settings = {
             ...latest,
+            ...(nasSecretAvailable ? { nasSecretAvailable: true } : {}),
             replyProviders: resolvedProviders.providers,
             replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
           };
-          await chrome.storage.local.set({ xrcAiSettings: settings });
+          const storedSettings = { ...settings };
+          delete storedSettings.nasSecretAvailable;
+          await chrome.storage.local.set({ xrcAiSettings: storedSettings });
         } else {
           settings = latest;
         }
       }
-      const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
       if (readId !== aiSettingsReadId) return;
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
       const settledProviders = resolveReplyProviders(settings);
       const settledValue = String(settings.apiKey || "").trim();
       apiKey = validDeepSeekApiKey(settledValue) ? settledValue : "";
@@ -8083,12 +8091,14 @@
     const summary = banner.querySelector("[data-xrc-tab-role-text]");
     const jump = banner.querySelector("[data-xrc-tab-owner-jump]");
     const otherTab = Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId);
+    if (!otherTab) {
+      banner.hidden = true;
+      return;
+    }
     const label = TASK_MODE_LABELS[tabRole.ownerMode] || "排班";
     const ownerTitle = String(tabRole.ownerTitle || "").trim();
     const tabName = ownerTitle.includes(label) ? ownerTitle.split(" · ").slice(0, 2).join(" · ") : label;
-    summary.textContent = otherTab
-      ? `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`
-      : "当前是人工打开的 X 页签，自动任务未在这里启动。";
+    summary.textContent = `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`;
     jump.hidden = !otherTab;
   }
 

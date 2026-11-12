@@ -65,6 +65,8 @@ test('saved credentials repair an old empty selection, while a new explicit opt-
   assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersDisabled: ['deepseek'] }).providers), [])
   assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProviders: ['deepseek'], replyProvidersDisabled: ['deepseek'] }).providers), [])
   assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: [] }).providers), ['bai'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [] }).providers), ['nas'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [], replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
 test('background model selection agrees with the panel for saved keys and opt-outs', async () => {
@@ -78,6 +80,8 @@ test('background model selection agrees with the panel for saved keys and opt-ou
   const legacy = { apiKey: 'sk-12345678', replyProviders: [], replyProvidersManual: true }
   assert.deepEqual(Array.from(context.resolveReplyProviders(legacy).providers), ['deepseek'])
   assert.deepEqual(Array.from(context.resolveReplyProviders({ ...legacy, replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [] }).providers), ['nas'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [], replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
 for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['bai', '[data-xrc-config-bai-key]']]) {
@@ -137,7 +141,7 @@ test('the home prompt waits until saved keys and receipt settings finish loading
   finishReceipt('saved-receipt-secret')
   await loading
   assert.equal(state.aiSettingsStatus, 'ready')
-  assert.deepEqual(Array.from(state.replyProviders), ['deepseek'])
+  assert.deepEqual(Array.from(state.replyProviders), ['deepseek', 'nas'])
   assert.equal(state.aiKeySaved, true)
   assert.equal(state.nasSecretAvailable, true)
 })

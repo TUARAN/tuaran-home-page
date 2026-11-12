@@ -217,7 +217,9 @@ function resolveReplyProviders(settings) {
     ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
     : provider === "bai"
       ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
-      : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+      : provider === "nas"
+        ? settings?.nasSecretAvailable === true && stored.length === 0
+        : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
   const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
   return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
 }
@@ -247,6 +249,8 @@ function aiSettingsStamp(value = {}) {
 
 async function readAiSettings() {
   let settings = await readStoredAiSettings();
+  const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+  if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
   const seen = settings;
   const resolved = resolveReplyProviders(settings);
   if (resolved.persist && typeof chrome.storage?.local?.set === "function") {
@@ -254,10 +258,13 @@ async function readAiSettings() {
     if (aiSettingsStamp(latest) === aiSettingsStamp(seen)) {
       settings = {
         ...latest,
+        ...(nasSecretAvailable ? { nasSecretAvailable: true } : {}),
         replyProviders: resolved.providers,
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
       };
-      await chrome.storage.local.set({ [AI_SETTINGS_KEY]: settings });
+      const storedSettings = { ...settings };
+      delete storedSettings.nasSecretAvailable;
+      await chrome.storage.local.set({ [AI_SETTINGS_KEY]: storedSettings });
     } else {
       settings = latest;
     }
@@ -1428,6 +1435,23 @@ async function taskTabRole(sender) {
     ownerTabId = tabId;
     ownerMode = registeredMode;
   }
+  if (!ownerTabId && chrome.tabs?.query) {
+    let openX = [];
+    try {
+      openX = await chrome.tabs.query({ url: ["https://x.com/*", "https://twitter.com/*"] }) || [];
+    } catch (error) {
+      openX = [];
+    }
+    const live = openX.filter((tab) => Number.isInteger(tab?.id) && tab.id > 0);
+    if (live.length === 1 && live[0].id === tabId) {
+      ownerTabId = tabId;
+      ownerMode = ownerMode || registeredMode || plan.current || "";
+      if (plan.enabled && Number(plan.workTabId) !== tabId) {
+        plan.workTabId = tabId;
+        await saveTaskSchedule(plan);
+      }
+    }
+  }
   let ownerTitle = "";
   if (ownerTabId && ownerTabId !== tabId) {
     try { ownerTitle = String((await chrome.tabs.get(ownerTabId))?.title || "").slice(0, 80); }
@@ -1631,20 +1655,22 @@ async function findReusableScheduledXTab(accountHandle = "") {
   }
   const expectedHandle = accountHandleFrom(accountHandle).toLowerCase();
   const excluded = new Set((await readTaskSchedule()).detachedReplyTabIds || []);
+  const waiting = [];
   for (const tab of candidates || []) {
     const id = Number(tab?.id);
     if (!Number.isInteger(id) || id <= 0 || excluded.has(id)) continue;
     try {
       const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
-      if (!probe?.ok || !probe.scheduleEnabled || !probe.owned) continue;
+      if (!probe?.ok || !probe.scheduleEnabled) continue;
       const actualHandle = accountHandleFrom(probe.accountHandle).toLowerCase();
       if (expectedHandle && actualHandle !== expectedHandle) continue;
-      return tab;
+      if (probe.owned) return tab;
+      waiting.push(tab);
     } catch (error) {
       // This X tab has not loaded the extension or belongs to another profile.
     }
   }
-  return null;
+  return waiting.length === 1 ? waiting[0] : null;
 }
 
 async function tryInPageTaskStart(tabId, mode, accountHandle = "") {

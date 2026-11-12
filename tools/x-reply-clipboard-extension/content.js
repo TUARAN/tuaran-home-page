@@ -7349,7 +7349,7 @@
 
   function targetFollowRosterStatus(seeds, current) {
     const same = current.length === seeds.length && current.every((handle) => seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
-    if (!current.length || same) return "还没有换批。扫到粉丝列表后，下一批源头会换成列表里的新人，不再固定重复这五个。";
+    if (!current.length || same) return "本批不会使用固定的起始五个账号。";
     return `本批源头已换成 ${current.length} 个：${current.map((handle) => `@${handle}`).join(" ")}。每次任务自动更换，不再固定重复上一批。`;
   }
 
@@ -7374,7 +7374,9 @@
       const live = stored?.xrcTargetFollowLive?.current;
       if (Array.isArray(live) && live.length) current = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
     } catch (error) {}
-    if (!current.length) current = seeds;
+    const usingSeeds = !current.length || current.every((handle) => seeds.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
+    if (usingSeeds && mutualApi?.selectTargetBatch) current = mutualApi.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }).handles || [];
+    if (!current.length) current = [];
     if (field && document.activeElement !== field) field.value = seeds.map((handle) => `@${handle}`).join("\n");
     if (currentField) currentField.value = current.map((handle) => `@${handle}`).join("\n");
     if (status) status.textContent = targetFollowRosterStatus(seeds, current);

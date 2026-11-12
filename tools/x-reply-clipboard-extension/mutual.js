@@ -26,7 +26,7 @@
   let targetPool = null;
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let reviewAccountHandle = "";
-  let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+  let TARGET_FOLLOW_HANDLES = [];
   const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
@@ -264,6 +264,18 @@
     } catch (error) {}
   }
 
+  function isSeedHandle(handle) {
+    return DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => sameHandle(seed, handle));
+  }
+
+  function alternateSourceHandles() {
+    let catalog = globalThis.XrcKolRoster?.KOL_CATALOG;
+    if (!catalog && typeof require === "function") {
+      try { catalog = require("./kolRoster.js").KOL_CATALOG; } catch (error) { catalog = []; }
+    }
+    return (catalog || []).map(cleanHandle).filter((handle) => handle && !isSeedHandle(handle));
+  }
+
   function normalizeTargetPool(value) {
     const incoming = Array.isArray(value?.handles) ? value.handles : [];
     const handles = [];
@@ -271,12 +283,11 @@
     const add = (item, seenAt = 0) => {
       const handle = cleanHandle(typeof item === "string" ? item : item?.handle);
       const key = handle.toLowerCase();
-      if (!handle || seen.has(key)) return;
+      if (!handle || seen.has(key) || isSeedHandle(handle)) return;
       seen.add(key);
       handles.push({ handle, seenAt: Number(item?.seenAt) || seenAt, usedAt: Number(item?.usedAt) || 0 });
     };
     incoming.forEach((item) => add(item));
-    DEFAULT_TARGET_FOLLOW_HANDLES.forEach((handle) => add(handle, 0));
     return {
       handles,
       lastBatch: (Array.isArray(value?.lastBatch) ? value.lastBatch : []).map(cleanHandle).filter(Boolean),
@@ -291,11 +302,16 @@
     return a.length === b.length && a.every((handle, index) => handle === b[index]);
   }
 
-  function selectTargetBatch(pool, { size = TARGET_BATCH_SIZE } = {}) {
+  function selectTargetBatch(pool, { size = TARGET_BATCH_SIZE, sources = null } = {}) {
     const normalized = normalizeTargetPool(pool);
+    for (const handle of (sources || alternateSourceHandles())) {
+      if (!handle || isSeedHandle(handle) || normalized.handles.some((item) => sameHandle(item.handle, handle))) continue;
+      normalized.handles.push({ handle, seenAt: 0, usedAt: 0 });
+    }
     const avoid = new Set(normalized.lastBatch.map((handle) => handle.toLowerCase()));
-    const fresh = normalized.handles.filter((item) => !avoid.has(item.handle.toLowerCase()));
-    const ranked = (fresh.length ? fresh : normalized.handles).slice().sort((left, right) =>
+    const candidates = normalized.handles.filter((item) => !isSeedHandle(item.handle));
+    const fresh = candidates.filter((item) => !avoid.has(item.handle.toLowerCase()));
+    const ranked = (fresh.length ? fresh : candidates).slice().sort((left, right) =>
       (right.seenAt - left.seenAt) || (left.usedAt - right.usedAt) || left.handle.localeCompare(right.handle));
     const handles = ranked.slice(0, Math.min(size, ranked.length)).map((item) => item.handle);
     return { handles, changed: handles.length > 0 && !sameHandleSet(handles, normalized.lastBatch), reused: fresh.length < Math.min(size, normalized.handles.length) };
@@ -376,11 +392,14 @@
     const saved = readTargetTask();
     const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE);
     if (planned.changed === false && saved?.locked) {
-      TARGET_FOLLOW_HANDLES = planned.handles;
-      publishTargetBatch(planned.handles, saved.next || []);
-      return planned.handles;
+      const locked = planned.handles.filter((handle) => !isSeedHandle(handle));
+      if (locked.length) {
+        TARGET_FOLLOW_HANDLES = locked;
+        publishTargetBatch(locked, saved.next || []);
+        return locked;
+      }
     }
-    const handles = planned.handles.length ? planned.handles : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    const handles = planned.handles.filter((handle) => !isSeedHandle(handle));
     applyTargetBatch(handles);
     writeTargetTask({ locked: true, batch: handles, next: [] });
     try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
@@ -550,7 +569,9 @@
   }
 
   function pickTargetFollowHandle() {
-    const handles = TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : DEFAULT_TARGET_FOLLOW_HANDLES;
+    const handles = (TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : selectTargetBatch(targetPool || {}, { size: TARGET_BATCH_SIZE }).handles)
+      .filter((handle) => !isSeedHandle(handle));
+    if (!handles.length) return "";
     return handles[Math.floor(Math.random() * handles.length)];
   }
 
@@ -562,7 +583,10 @@
   }
 
   function targetPath(mode) {
-    if (mode === "targetFollow") return `/${targetFollowHandleFromPath() || pickTargetFollowHandle()}/followers`;
+    if (mode === "targetFollow") {
+      const handle = targetFollowHandleFromPath() || pickTargetFollowHandle();
+      return handle && !isSeedHandle(handle) ? `/${handle}/followers` : "";
+    }
     const handle = currentAccountHandle();
     if (!handle) return "";
     if (mode === "unfollow") return `/${handle}/following`;
@@ -1170,7 +1194,9 @@
       if (typeof beginTargetTask === "function") await beginTargetTask();
     }
     if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
-      return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
+      const destination = targetPath(mode);
+      if (!destination) return { error: "本批还没有可打开的新源头" };
+      return { navigate: destination, error: "请打开本批源头的粉丝列表" };
     }
     const independentCleanup = mode === "unfollow";
     if (independentCleanup) await loadUnfollowReview();

@@ -1009,7 +1009,14 @@ function normalizeKolHandles(value, now = Date.now()) {
   return parsed.length ? parsed : kolRoster.poolHandles(kolRoster.poolIndex(now));
 }
 
-let targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+function initialTargetFollowBatch() {
+  return (kolRoster?.KOL_CATALOG || [])
+    .map((handle) => String(handle))
+    .filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === handle.toLowerCase()))
+    .sort((left, right) => left.localeCompare(right))
+    .slice(0, 5);
+}
+let targetFollowHandlesCache = initialTargetFollowBatch();
 let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
 
 async function readTargetFollowHandles() {
@@ -1017,11 +1024,14 @@ async function readTargetFollowHandles() {
     const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool"]);
     const live = stored?.xrcTargetFollowLive?.current;
     const batch = stored?.xrcTargetFollowPool?.batch;
-    const picked = Array.isArray(live) && live.length ? live : Array.isArray(batch) && batch.length ? batch : stored?.[TARGET_FOLLOW_HANDLES_KEY];
-    targetFollowHandlesCache = normalizeTargetFollowHandles(picked);
+    const alternate = (kolRoster?.KOL_CATALOG || []).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
+    const storedList = Array.isArray(stored?.[TARGET_FOLLOW_HANDLES_KEY]) ? stored[TARGET_FOLLOW_HANDLES_KEY] : [];
+    const storedWithoutSeeds = storedList.filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
+    const picked = Array.isArray(live) && live.length ? live : Array.isArray(batch) && batch.length ? batch : storedWithoutSeeds.length ? storedWithoutSeeds : alternate.slice().sort((left, right) => left.localeCompare(right)).slice(0, 5);
+    targetFollowHandlesCache = normalizeTargetFollowHandles(picked).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
     return targetFollowHandlesCache;
   } catch (error) {
-    targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    targetFollowHandlesCache = initialTargetFollowBatch();
     return targetFollowHandlesCache;
   }
 }

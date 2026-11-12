@@ -7485,13 +7485,11 @@
     if (!state.kolCycleRetired) {
       try {
         const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
-        const record = kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount);
-        const handles = await loadKolHandles();
-        const plan = kolRoster.navigationOrder(record, handles, Math.random);
-        if (plan.reused) {
-          state.kolVisitOrder = plan.order.slice();
-          if (!state.kolVisitedHandles.length) state.kolVisitedHandles = plan.visited.slice();
-          state.kolCycleCreatedAt = Number(record?.createdAt) || plan.createdAt;
+        const resumed = kolRoster.resumeActiveKolCycle(kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount));
+        if (resumed) {
+          state.kolVisitOrder = resumed.order.slice();
+          if (!state.kolVisitedHandles.length) state.kolVisitedHandles = resumed.visited.slice();
+          state.kolCycleCreatedAt = resumed.createdAt || Date.now();
           state.kolCycleRetired = false;
           return state.kolVisitOrder;
         }
@@ -7525,10 +7523,6 @@
       account: taskSnapshotAccount,
       now
     });
-    const fresh = decision.meta?.taskBatch?.handles?.length && now - Number(decision.meta.taskBatch.at) < 120000
-      ? decision.meta.taskBatch
-      : null;
-    if (fresh?.handles?.length) return { handles: fresh.handles, reused: Boolean(fresh.reused) };
     const pool = kolRoster.taskCandidatePool({
       custom: decision.custom,
       customHandles: decision.handles,
@@ -7603,7 +7597,7 @@
 
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务自动换成一批新的源头账号，不再固定重复同一批。</small></label>`
+      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务换一批。扫到的新人记入下一批，同一次任务里不会反复跳转。</small></label>`
       : mode === "kol"
         ? `<label class="xrc-schedule-card-list"><span>本批评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status">每次任务自动换成一批新账号。自定义名单会保留，只从里面换批。</small></label>`
         : "";

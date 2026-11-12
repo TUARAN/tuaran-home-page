@@ -10425,9 +10425,14 @@ test('each target-follow task can switch to a new batch without following the se
   assert.ok(next.handles.every((handle) => !seeds.includes(handle)))
   const first = mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5 })
   assert.ok(first.handles.every((handle) => seeds.includes(handle)))
+  const continued = mutual.planTargetTaskBatch(seen, { locked: true, batch: seeds })
+  assert.equal(continued.changed, false)
+  assert.deepEqual(continued.handles, seeds)
+  const nextTask = mutual.planTargetTaskBatch({ ...seen, lastBatch: seeds }, { locked: false })
+  assert.deepEqual(nextTask.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
 })
 
-test('each KOL task batch avoids the previous batch and keeps a custom list intact', () => {
+test('each KOL task batch avoids the previous batch and keeps a custom list intact', async () => {
   const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
   const steady = () => 0.999
   const catalog = kol.KOL_CATALOG.slice()
@@ -10443,6 +10448,17 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
   assert.deepEqual(custom, ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h'])
   const pool = kol.taskCandidatePool({ custom: true, customHandles: custom })
   assert.deepEqual(pool, custom)
+  const resumed = kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha'], createdAt: 5 })
+  assert.deepEqual(resumed.order, ['alpha', 'beta'])
+  assert.deepEqual(resumed.visited, ['alpha'])
+  assert.equal(kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha', 'beta'] }), null)
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const ensure = content.slice(content.indexOf('async function ensureKolVisitOrder'), content.indexOf('async function rotateKolTaskBatch'))
+  assert.ok(ensure.indexOf('resumeActiveKolCycle') < ensure.indexOf('rotateKolTaskBatch'))
+  const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const seenFn = mutualSource.slice(mutualSource.indexOf('function noteSeenTargetSources'), mutualSource.indexOf('function rotateTargetBatchNow'))
+  assert.equal(seenFn.includes('return { navigate'), false)
+  assert.match(seenFn, /return "";/)
 })
 
 test('the panel shows the live target-follow list and a visible KOL roster status', async () => {

@@ -313,9 +313,24 @@
     return next;
   }
 
-  function publishTargetBatch(handles) {
+  function readTargetTask() {
+    try { return JSON.parse(sessionStorage.getItem("xrcTargetFollowTask") || "null"); } catch (error) { return null; }
+  }
+
+  function writeTargetTask(task) {
+    try { sessionStorage.setItem("xrcTargetFollowTask", JSON.stringify(task)); } catch (error) {}
+  }
+
+  function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE) {
+    const locked = task?.locked && Array.isArray(task.batch) && task.batch.length;
+    if (locked) return { handles: task.batch.map(cleanHandle).filter(Boolean), changed: false };
+    return selectTargetBatch(pool, { size });
+  }
+
+  function publishTargetBatch(handles, upcoming = []) {
     const current = (handles || []).map(cleanHandle).filter(Boolean);
-    const payload = { seeds: current, queue: [], current, refreshAfter: 0, at: Date.now(), batch: true };
+    const next = (upcoming || []).map(cleanHandle).filter((handle) => handle && !current.some((item) => sameHandle(item, handle)));
+    const payload = { seeds: current, queue: next, current, next, refreshAfter: 0, at: Date.now(), batch: true };
     try {
       const write = globalThis.chrome?.storage?.local?.set?.({ [TARGET_FOLLOW_LIVE_KEY]: payload });
       if (write && typeof write.catch === "function") write.catch(() => {});
@@ -358,10 +373,23 @@
 
   async function beginTargetTask() {
     await loadTargetPool();
-    const selected = selectTargetBatch(targetPool, { size: TARGET_BATCH_SIZE });
-    applyTargetBatch(selected.handles.length ? selected.handles : [...DEFAULT_TARGET_FOLLOW_HANDLES]);
+    const saved = readTargetTask();
+    const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE);
+    if (planned.changed === false && saved?.locked) {
+      TARGET_FOLLOW_HANDLES = planned.handles;
+      publishTargetBatch(planned.handles, saved.next || []);
+      return planned.handles;
+    }
+    const handles = planned.handles.length ? planned.handles : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    applyTargetBatch(handles);
+    writeTargetTask({ locked: true, batch: handles, next: [] });
     try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
-    return TARGET_FOLLOW_HANDLES.slice();
+    return handles;
+  }
+
+  function finishTargetTask() {
+    const saved = readTargetTask();
+    if (saved) writeTargetTask({ ...saved, locked: false });
   }
 
   function noteSeenTargetSources(handles) {
@@ -373,14 +401,13 @@
       && !sameHandle(handle, self) && !sameHandle(handle, source));
     if (!cleaned.length) return "";
     targetPool = rememberPoolHandles(targetPool, cleaned, Date.now());
-    const stillSeeds = TARGET_FOLLOW_HANDLES.length > 0
-      && TARGET_FOLLOW_HANDLES.every((handle) => DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => sameHandle(seed, handle)));
     persistTargetPool();
-    if (!stillSeeds) return "";
-    const selected = selectTargetBatch({ ...targetPool, lastBatch: TARGET_FOLLOW_HANDLES }, { size: TARGET_BATCH_SIZE });
-    const fresh = selected.handles.filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => sameHandle(seed, handle)));
-    if (!fresh.length) return "";
-    return applyTargetBatch(fresh.slice(0, TARGET_BATCH_SIZE));
+    const preview = selectTargetBatch({ ...targetPool, lastBatch: TARGET_FOLLOW_HANDLES }, { size: TARGET_BATCH_SIZE });
+    const upcoming = preview.handles.filter((handle) => !TARGET_FOLLOW_HANDLES.some((current) => sameHandle(current, handle)));
+    publishTargetBatch(TARGET_FOLLOW_HANDLES, upcoming);
+    const saved = readTargetTask();
+    if (saved?.locked) writeTargetTask({ ...saved, next: upcoming });
+    return "";
   }
 
   function rotateTargetBatchNow() {
@@ -1216,14 +1243,7 @@
       }
       if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
-      if (mode === "targetFollow" && typeof noteSeenTargetSources === "function") {
-        const switched = noteSeenTargetSources(items.map((item) => item.handle));
-        if (switched && !sameHandle(switched, targetFollowHandleFromPath())) {
-          state.running = false;
-          emit(`本批源头已换成 @${switched} 等新人`);
-          return { navigate: `/${switched}/followers` };
-        }
-      }
+      if (mode === "targetFollow" && typeof noteSeenTargetSources === "function") noteSeenTargetSources(items.map((item) => item.handle));
       if (manualUnfollow) {
         const retry = followingRetryButton();
         if (retry) {
@@ -1348,6 +1368,7 @@
             emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
             return { navigate: `/${nextSource}/followers` };
           }
+          if (typeof finishTargetTask === "function") finishTargetTask();
           const refreshAfter = readTargetScan().refreshAfter || Date.now() + TARGET_SEED_REFRESH_MS;
           state.cooldownUntil = refreshAfter;
           while (!state.stopping && Date.now() < state.cooldownUntil) {
@@ -1451,6 +1472,7 @@
     nextTargetFollowSource,
     visibleTargetRoster,
     selectTargetBatch,
+    planTargetTaskBatch,
     rememberPoolHandles,
     normalizeTargetPool,
     currentTargetRoster,

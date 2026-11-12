@@ -198,6 +198,13 @@
     return parseKolHandles(order).find((handle) => !seen.has(handle.toLowerCase())) || "";
   }
 
+  function resumeActiveKolCycle(record) {
+    const order = parseKolHandles(record?.order);
+    const visited = parseKolHandles(record?.visited);
+    if (!record?.active || !order.length || !nextUnvisitedHandle(order, visited)) return null;
+    return { order, visited, createdAt: Number(record.createdAt) || 0 };
+  }
+
   function navigationOrder(cycle, handles, random = Math.random) {
     const active = parseKolHandles(handles);
     const roster = active.length ? active : poolHandles(poolIndex());
@@ -272,6 +279,7 @@
     resolveKolRoster,
     shuffleHandles,
     nextUnvisitedHandle,
+    resumeActiveKolCycle,
     navigationOrder,
     cycleAccountKey,
     readCycleRecord,

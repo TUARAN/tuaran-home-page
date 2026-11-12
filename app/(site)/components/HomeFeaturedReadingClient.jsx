@@ -294,7 +294,6 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
           ) : null}
         </div>
         <div className="home-primary-heading-copy">
-          <p className="home-section-description"><T zh="AI 智能体、前端工程、开源实践与著作" en="AI agents, frontend engineering, open source, and books" /></p>
           <HomeSectionCouplet section="articles" />
         </div>
       </div>

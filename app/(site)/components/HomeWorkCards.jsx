@@ -5,6 +5,7 @@ import LibraryMark from './LibraryMark'
 import { getDownloadItemsByDate } from '../../../lib/site/downloadItems'
 import { getOpenClawContributionLabel, OPENCLAW_ACHIEVEMENTS, OPENCLAW_ACHIEVEMENT_COUNT } from '../../../lib/site/openClawAchievements'
 import { PUBLISHED_WORKS } from '../../../lib/site/publishedWorks'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 
 const DOWNLOAD_KIND = {
@@ -22,11 +23,12 @@ function CardLink({ href, children, className }) {
 export function HomeBookCards() {
   return (
     <section className="home-work-stack home-book-stack" aria-labelledby="home-books-title">
-      <div className="home-work-heading">
+      <div className="home-work-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker hidden md:block">Books · {PUBLISHED_WORKS.length}</p>
           <h2 id="home-books-title" className="home-section-title"><T zh="站长著作" en="Published books" /></h2>
         </div>
+        <HomeSectionCouplet section="books" />
         <Link href="/resources/books" className="home-section-more inline-flex h-9 w-9 items-center justify-center no-underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="进入图书馆" title="进入图书馆"><LibraryMark size={25} stroke={1.5} aria-hidden="true" /></Link>
       </div>
       <div className="home-work-card-list">
@@ -52,11 +54,12 @@ export function HomeOpenClawCards() {
   const featured = OPENCLAW_ACHIEVEMENTS.slice(0, 3)
   return (
     <section className="home-work-stack" aria-labelledby="home-openclaw-title">
-      <div className="home-work-heading">
+      <div className="home-work-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker">OpenClaw · {OPENCLAW_ACHIEVEMENT_COUNT} merged</p>
           <h2 id="home-openclaw-title" className="home-section-title"><T zh="开源贡献" en="Open source" /></h2>
         </div>
+        <HomeSectionCouplet section="openSource" />
         <Link href="/about#openclaw-contributions" className="home-section-more no-underline"><T zh="全部 PR" en="All PRs" /> →</Link>
       </div>
       <div className="home-work-card-list">
@@ -84,11 +87,12 @@ export function HomeDownloadCards() {
   const items = getDownloadItemsByDate()
   return (
     <section className="home-download-section" aria-labelledby="home-downloads-title">
-      <div className="home-work-heading">
+      <div className="home-work-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker">Downloads · {items.length}</p>
           <h2 id="home-downloads-title" className="home-section-title"><T zh="客户端下载" en="Downloads" /></h2>
         </div>
+        <HomeSectionCouplet section="downloads" />
         <Link href="/tools#downloads" className="home-section-more no-underline"><T zh="查看全部" en="View all" /> →</Link>
       </div>
       <div className="home-download-grid">

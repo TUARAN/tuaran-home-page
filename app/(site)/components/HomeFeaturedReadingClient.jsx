@@ -28,6 +28,7 @@ import {
 } from '../../../lib/home/homeRecommendationEngine'
 import { HOME_OBSERVATION_ENTRY_LINKS } from '../../../lib/home/homeAuthority'
 import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
 
@@ -292,10 +293,16 @@ export default function HomeFeaturedReadingClient({ catalog: initialCatalog = []
             </button>
           ) : null}
         </div>
-        <p className="home-section-description"><T zh="AI 智能体、前端工程、开源实践与著作" en="AI agents, frontend engineering, open source, and books" /></p>
+        <div className="home-primary-heading-copy">
+          <p className="home-section-description"><T zh="AI 智能体、前端工程、开源实践与著作" en="AI agents, frontend engineering, open source, and books" /></p>
+          <HomeSectionCouplet section="articles" />
+        </div>
       </div>
       <div className="home-article-scopes">
         <h2 className="h5-feed-label md:hidden"><T zh="文章精选" en="Selected articles" /></h2>
+        <div className="md:hidden">
+          <HomeSectionCouplet section="articles" />
+        </div>
         <nav className="home-section-tabs" role="tablist" aria-label="首页文章范围">
           {HOME_ARTICLE_SCOPE_KEYS.map((key) => {
             const active = scope === key

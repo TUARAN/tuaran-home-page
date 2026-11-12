@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { interleaveRssPicks, normalizeAiHotItems, normalizeRuanYifengEntries } from '../../../lib/home/homeRssPicks.mjs'
+import HomeSectionCouplet from './HomeSectionCouplet'
 import { T } from './LocaleProvider'
 
 const TABS = [
@@ -62,11 +63,12 @@ export default function HomeRuanYifengFeed() {
 
   return (
     <section className="home-section home-opinion-panel min-w-0" aria-labelledby="home-rss-picks-title">
-      <div className="home-inspiration-heading">
+      <div className="home-inspiration-heading home-heading-with-couplet">
         <div>
           <p className="home-kicker">RSS · Reading</p>
           <h2 id="home-rss-picks-title" className="home-section-title"><T zh="RSS 精选" en="RSS picks" /></h2>
         </div>
+        <HomeSectionCouplet section="rss" />
         <Link href="/resources/rss" className="home-section-more no-underline">
           <T zh="订阅" en="Subscribe" /> <span aria-hidden="true">→</span>
         </Link>

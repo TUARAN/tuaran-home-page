@@ -40,7 +40,7 @@ const EXPECTED = {
   rss: '博观约取，他山攻玉，却不道开卷有益，择善而从。',
   inspirations: '灵光偶得，触处生春，却不道吉光片羽，亦可成篇。',
   openSource: '一技之长，公之于众，却不道修修补补，亦是修行。',
-  profile: '日复一日，岁不我与，却不道二十年事，只此一件。',
+  profile: '日复一日，岁不我与，却不道三十年事，只此一件。',
   resetCalendar: '寒来暑往，周而复始，却不道时辰一到，再起新程。',
   platforms: '言路多门，各有听者，却不道同声相应，自有同气。',
   explore: '径路纷然，门庭自开，却不道一站虽小，天地颇宽。',
@@ -127,7 +127,8 @@ test('each homepage section renders its line under the existing title', () => {
   assert.equal(featured.slice(featured.indexOf('更多观察')).includes('HomeSectionCouplet'), false)
   assert.match(featured, /md:hidden">\s*<HomeSectionCouplet section="articles" \/>/)
   assert.match(opinion, /className="mb-3 md:hidden"/)
-  assert.match(opinion, /md:hidden">\s*<p className="text-sm leading-6 text-\[var\(--site-muted\)\]">/)
+  assert.match(opinion, /md:hidden">\s*<HomeSectionCouplet section="opinion" \/>/)
+  assert.equal(opinion.includes('text-sm leading-6 text-[var(--site-muted)]'), false)
 })
 
 test('existing captions, kicker, wechat id, and owner line stay in place', () => {
@@ -137,8 +138,11 @@ test('existing captions, kicker, wechat id, and owner line stay in place', () =>
   const page = sources['app/(site)/page.jsx']
   const couplet = sources['app/(site)/components/HomeSectionCouplet.jsx']
 
-  assert.match(featured, /AI 智能体、前端工程、开源实践与著作/)
-  assert.match(opinion, /热点事件、公开讨论与观点变化/)
+  assert.equal(featured.includes('AI 智能体、前端工程、开源实践与著作'), false)
+  assert.equal(featured.includes('home-section-description'), false)
+  assert.equal(opinion.includes('热点事件、公开讨论与观点变化'), false)
+  assert.equal(opinion.includes('home-section-description'), false)
+  assert.match(sources['lib/site/siteNav.js'], /desc: 'AI 智能体、前端工程、开源与著作'/)
   assert.match(works, /OpenClaw · \{OPENCLAW_ACHIEVEMENT_COUNT\} merged/)
   assert.match(page, /输入决定输出，输出暴露输入/)
   assert.match(page, /项目合作、产品交流，加微信/)

@@ -27,6 +27,10 @@ R2_PUBLIC_BASE = "https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev"
 WC_DATA_SOURCE = "openfootball"
 # 舆情采集端点鉴权使用 PUBLIC_OPINION_COLLECT_SECRET。
 # 该值必须作为 Cloudflare Secret 配置，不要写入本文件。
+# 每日互动前十入库使用 DAILY_TOP_INGEST_SECRET（请求头 x-daily-top-secret，
+# 或 Authorization: Bearer）。只作为 Cloudflare Pages Secret 配置在 Production
+# 与 Preview，不要写入本文件，也不要复用其他 Secret。对象写入 CONTENT_FEED
+# 的 interaction/daily-top/YYYY-MM-DD.json。
 # 周总结端点优先使用 WEEKLY_SUMMARY_SECRET；未配置时兼容复用
 # PUBLIC_OPINION_COLLECT_SECRET，避免现有定时任务环境需要重复配置。
 # Mac → NAS Qwen 本地调用同步使用 LOCAL_LLM_SYNC_SECRET；

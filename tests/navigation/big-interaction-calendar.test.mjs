@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
+import { gitDailyTopDays } from '../../lib/interaction/dailyTop/gitCatalog.js'
 import { loadDailyTopDays } from '../../lib/interaction/dailyTop/load.js'
+import { loadCombinedDailyTopDays, mergeDailyTopDays } from '../../lib/interaction/dailyTop/store.js'
 import {
   DAILY_TOP_SAMPLE_DATE,
   emptyStateCopy,
@@ -33,7 +35,8 @@ test('sample day 2026-11-05 matches the shipped top 10', () => {
   const days = loadDailyTopDays()
   const day = days.find((entry) => entry.date === DAILY_TOP_SAMPLE_DATE)
   assert.ok(day)
-  assert.equal(days.length, 1)
+  assert.deepEqual(days.map((entry) => entry.date), ['2026-11-05', '2026-11-10', '2026-11-11'])
+  assert.deepEqual(gitDailyTopDays(), days)
   assert.deepEqual(day.window, expectedWindow('2026-11-05'))
   assert.equal(day.opponents, 420)
   assert.equal(day.events, 1386)
@@ -63,10 +66,12 @@ test('invalid query falls back to today when no day catalog is provided', () => 
 
 test('default day is today when that JSON exists, otherwise the latest day file', () => {
   const shipped = loadDailyTopDays().map((day) => day.date)
-  assert.deepEqual(shipped, [DAILY_TOP_SAMPLE_DATE])
-  assert.equal(latestRecordedDate(shipped), '2026-11-05')
-  assert.equal(resolveSelectedDate(null, '2026-11-06', shipped), '2026-11-05')
-  assert.equal(resolveSelectedDate(undefined, '2026-11-06', shipped), '2026-11-05')
+  assert.deepEqual(shipped, ['2026-11-05', '2026-11-10', '2026-11-11'])
+  assert.equal(latestRecordedDate(shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(null, '2026-11-06', shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(undefined, '2026-11-12', shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(null, '2026-11-10', shipped), '2026-11-10')
+  assert.equal(resolveSelectedDate(null, '2026-11-11', shipped), '2026-11-11')
   assert.equal(resolveSelectedDate('not-a-date', '2026-11-06', ['2026-11-01', '2026-11-05']), '2026-11-05')
   assert.equal(resolveSelectedDate(null, '2026-11-05', shipped), '2026-11-05')
   assert.equal(resolveSelectedDate(null, '2026-11-06', ['2026-11-05', '2026-11-06']), '2026-11-06')
@@ -131,4 +136,38 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /function choose\(date\)/)
   assert.match(view, /x\.com\/\{row\.handle\}/)
   assert.doesNotMatch(view, /错误|加载失败/)
+  assert.match(page, /loadCombinedDailyTopDays/)
+  assert.match(page, /runtime = 'edge'/)
+  assert.match(page, /dynamic = 'force-dynamic'/)
+  assert.doesNotMatch(page, /dailyTop\/load/)
+})
+
+test('calendar day list lets a live record replace the same git date', async () => {
+  const gitDays = loadDailyTopDays()
+  const live = { ...gitDays[0], events: 9, opponents: 3 }
+  const merged = mergeDailyTopDays(gitDays, [live])
+  assert.equal(merged.find((day) => day.date === '2026-11-05').events, 9)
+  assert.equal(merged.find((day) => day.date === '2026-11-11').events, 749)
+  assert.deepEqual(merged.map((day) => day.date), ['2026-11-05', '2026-11-10', '2026-11-11'])
+
+  const objects = new Map()
+  const bucket = {
+    async get(key) {
+      const text = objects.get(key)
+      return text == null ? null : { text: async () => text }
+    },
+    async put() {},
+    async list() {
+      return { objects: [...objects.keys()].map((key) => ({ key })), truncated: false }
+    },
+  }
+  objects.set('interaction/daily-top/2026-11-12.json', JSON.stringify({
+    ...gitDays[2],
+    date: '2026-11-12',
+    window: expectedWindow('2026-11-12'),
+    top: gitDays[2].top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown })),
+  }))
+  const combined = await loadCombinedDailyTopDays(bucket)
+  assert.deepEqual(combined.map((day) => day.date), ['2026-11-05', '2026-11-10', '2026-11-11', '2026-11-12'])
+  assert.equal(combined.at(-1).top[0].profileUrl, profileUrlFor('grok'))
 })

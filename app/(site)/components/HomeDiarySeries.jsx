@@ -44,6 +44,7 @@ export default function HomeDiarySeries({ preview }) {
               </span>
               <strong>{entry.label}</strong>
               {entry.lead ? <small>{entry.lead}</small> : null}
+              {entry.detail ? <small>{entry.detail}</small> : null}
               {entry.closing ? <small>{entry.closing}</small> : null}
               {entry.sourceNote ? <span className="home-entry-source-note">{entry.sourceNote}</span> : null}
             </span>

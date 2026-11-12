@@ -128,6 +128,7 @@ test('homepage and diary page share the series module and the public title', asy
   assert.match(diary, /diary-entry-source-note/)
   assert.match(diary, /from '..\/components\/aceternity\/timeline'/)
   assert.match(diary, /<Timeline/)
-  assert.doesNotMatch(diary, /diary-sheet/)
+  assert.match(diary, /formatDiarySpan\(entry\)/)
+  assert.doesNotMatch(diary, /title: group\.year|src=\{diary\.cover\}|diary-sheet/)
   assert.doesNotMatch(`${home}\n${diary}\n${section}`, /站长字数/)
 })

@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform } from 'motion/react'
 // Adapted to JSX for this site, with a title and description so the page can carry its own copy.
 // The Aceternity License allows this personal site as an end product. It is not MIT.
 
-export function Timeline({ data, title, description }) {
+export function Timeline({ data, title, description, labelClassName }) {
   const ref = useRef(null)
   const containerRef = useRef(null)
   const [height, setHeight] = useState(0)
@@ -35,32 +35,32 @@ export function Timeline({ data, title, description }) {
       className="w-full bg-white font-sans dark:bg-neutral-950 md:px-10"
       ref={containerRef}
     >
-      <div className="mx-auto max-w-7xl px-4 py-20 md:px-8 lg:px-10">
-        <h1 className="mb-4 max-w-4xl text-lg text-black dark:text-white md:text-4xl">
+      <div className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-10">
+        <h1 className="mb-2 max-w-3xl text-2xl text-black dark:text-white md:text-3xl">
           {title}
         </h1>
-        <div className="max-w-3xl text-sm text-neutral-700 dark:text-neutral-300 md:text-base">
+        <div className="max-w-2xl space-y-1 text-sm leading-6 text-neutral-700 dark:text-neutral-300">
           {description}
         </div>
       </div>
 
-      <div ref={ref} className="relative mx-auto max-w-7xl pb-20">
+      <div ref={ref} className="relative mx-auto max-w-5xl pb-12">
         {data.map((item) => (
           <div
-            key={item.title}
-            className="flex justify-start pt-10 md:gap-10 md:pt-40"
+            key={item.id || item.title}
+            className="flex justify-start pt-8 md:gap-10 md:pt-16"
           >
-            <div className="sticky top-40 z-40 flex max-w-xs flex-col items-center self-start md:w-full md:flex-row lg:max-w-sm">
+            <div className="sticky top-24 z-40 flex max-w-xs flex-col items-center self-start md:w-full md:flex-row lg:max-w-sm">
               <div className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-black md:left-3">
                 <div className="h-4 w-4 rounded-full border border-neutral-300 bg-neutral-200 p-2 dark:border-neutral-700 dark:bg-neutral-800" />
               </div>
-              <h2 className="hidden text-xl font-bold text-neutral-500 dark:text-neutral-500 md:block md:pl-20 md:text-5xl">
+              <h2 className={labelClassName || 'hidden text-xl font-bold text-neutral-500 dark:text-neutral-500 md:block md:pl-20 md:text-5xl'}>
                 {item.title}
               </h2>
             </div>
 
             <div className="relative w-full pl-20 pr-4 md:pl-4">
-              <h2 className="mb-4 block text-left text-2xl font-bold text-neutral-500 dark:text-neutral-500 md:hidden">
+              <h2 className="mb-3 block text-left text-xl font-bold text-neutral-500 dark:text-neutral-500 md:hidden">
                 {item.title}
               </h2>
               {item.content}

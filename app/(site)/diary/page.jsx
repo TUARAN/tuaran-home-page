@@ -69,16 +69,6 @@ async function readDiary() {
   return selectDiarySeries(archived, published)
 }
 
-function groupTimelineByYear(entries) {
-  const grouped = new Map()
-  entries.forEach((entry) => {
-    const year = entry.date ? entry.date.slice(0, 4) : '未归档'
-    if (!grouped.has(year)) grouped.set(year, [])
-    grouped.get(year).push(entry)
-  })
-  return Array.from(grouped.entries()).map(([year, items]) => ({ year, items }))
-}
-
 function renderInlineBold(text) {
   if (typeof text !== 'string' || (!text.includes('**') && !text.includes(']('))) return text
 
@@ -208,7 +198,6 @@ export default async function DiaryPage() {
   }
 
   const diaryEntries = withArchivedSourceNotes(buildDiaryTimelineEntries(diary), findDiaryArticle(articles))
-  const diaryGroups = groupTimelineByYear(diaryEntries)
 
   const articleStructuredData = {
     '@context': 'https://schema.org',
@@ -235,34 +224,29 @@ export default async function DiaryPage() {
     },
   }
 
-  const timelineData = diaryGroups.map((group) => ({
-    title: group.year,
+  const timelineData = diaryEntries.map((entry) => ({
+    id: entry.id,
+    title: formatDiarySpan(entry) || entry.label,
     content: (
-      <div className="space-y-4">
-        {group.items.map((entry) => (
-          <article
-            key={entry.id}
-            id={entry.id}
-            className="scroll-mt-28 rounded-lg border border-neutral-200 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
-          >
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              <time dateTime={entry.date}>{formatDiarySpan(entry)}</time>
-              {entry.category ? (
-                <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-200">
-                  {entry.category}
-                </span>
-              ) : null}
-            </div>
-            <h3 className="mt-3 text-xl font-semibold leading-snug text-neutral-900 dark:text-neutral-50">
-              {entry.label}
-            </h3>
-            <div className="mt-4 space-y-3 text-sm leading-7 text-neutral-700 dark:text-neutral-300">
-              <DiaryBlocks blocks={entry.blocks} diary={diary} />
-            </div>
-            {entry.sourceNote ? <p className="diary-entry-source-note">{entry.sourceNote}</p> : null}
-          </article>
-        ))}
-      </div>
+      <article
+        id={entry.id}
+        className="scroll-mt-28 rounded-lg border border-neutral-200 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+          {entry.category ? (
+            <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-200">
+              {entry.category}
+            </span>
+          ) : null}
+        </div>
+        <h3 className="mt-3 text-xl font-semibold leading-snug text-neutral-900 dark:text-neutral-50">
+          {entry.label}
+        </h3>
+        <div className="mt-4 space-y-3 text-sm leading-7 text-neutral-700 dark:text-neutral-300">
+          <DiaryBlocks blocks={entry.blocks} diary={diary} />
+        </div>
+        {entry.sourceNote ? <p className="diary-entry-source-note">{entry.sourceNote}</p> : null}
+      </article>
     ),
   }))
 
@@ -274,12 +258,12 @@ export default async function DiaryPage() {
       <Timeline
         data={timelineData}
         title={diary.title}
+        labelClassName="hidden max-w-[12rem] text-base font-bold leading-tight text-neutral-500 dark:text-neutral-500 md:block md:pl-20 md:text-2xl"
         description={(
-          <div className="space-y-3">
-            <p>从 {DIARY_SERIES_STARTED_ON} 起</p>
+          <div className="space-y-1">
+            <p>从 {DIARY_SERIES_STARTED_ON} 起 · {diaryEntries.length} 条</p>
             <p>{DIARY_SERIES_COUPLET}</p>
-            <p>{diaryEntries.length} 条</p>
-            <p className="flex flex-wrap gap-x-4 gap-y-2">
+            <p className="flex flex-wrap gap-x-4 gap-y-1">
               <Link href="/articles" className="font-semibold text-neutral-900 underline-offset-4 hover:text-purple-700 hover:underline dark:text-neutral-100 dark:hover:text-blue-300">
                 返回列表
               </Link>
@@ -292,17 +276,6 @@ export default async function DiaryPage() {
                 {YEAR_SUMMARY_COLUMN.title}
               </Link>
             </p>
-            {diary.cover ? (
-              <Image
-                src={diary.cover}
-                alt={`${diary.title} 封面`}
-                width={800}
-                height={533}
-                sizes="(max-width: 768px) 100vw, 768px"
-                unoptimized
-                className="mt-2 h-auto w-full rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
-              />
-            ) : null}
           </div>
         )}
       />

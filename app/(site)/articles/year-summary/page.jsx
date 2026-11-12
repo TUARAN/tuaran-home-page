@@ -142,7 +142,7 @@ export default function YearSummaryPage() {
         data={data}
         title={YEAR_SUMMARY_COLUMN.title}
         description={(
-          <div className="space-y-3">
+          <div className="space-y-1">
             <p>{YEAR_SUMMARY_COLUMN.subtitle}</p>
             <p>
               {formatNumber(stats.articles)} 篇

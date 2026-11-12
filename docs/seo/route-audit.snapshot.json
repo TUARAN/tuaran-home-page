@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "summary": {
     "routes": 246,
-    "redirects": 23,
+    "redirects": 22,
     "private": 63,
-    "registeredStatic": 116,
-    "indexable": 137,
-    "canonical": 156,
-    "openGraph": 90,
-    "jsonLd": 65,
+    "registeredStatic": 117,
+    "indexable": 138,
+    "canonical": 157,
+    "openGraph": 91,
+    "jsonLd": 66,
     "errors": 9,
     "warnings": 138
   },
@@ -1416,18 +1416,21 @@
     {
       "path": "/articles/year-summary",
       "file": "app/(site)/articles/year-summary/page.jsx",
-      "kind": "redirect",
-      "redirect": "/diary#year-summary",
-      "registered": false,
-      "indexable": false,
-      "sitemap": false,
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
       "signals": {
-        "canonical": false,
-        "canonicalValues": [],
-        "noindex": "inherited",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
+        "canonical": true,
+        "canonicalValues": [
+          "/articles/year-summary"
+        ],
+        "noindex": "index",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "https://2aran.com/articles/year-summary"
+        ]
       }
     },
     {

@@ -555,7 +555,7 @@ FROM payload
 WHERE 1
 ON CONFLICT(slug) DO NOTHING;
 
-WITH payload(markdown) AS (VALUES ('## 2026-11-06～2026-11-12｜异世界的冲击｜生活与家庭
+WITH payload(markdown) AS (VALUES ('## 2026-11-06～2026-11-12｜异世界的冲击｜生活与家庭｜站长口述，Bots 整理
 
 短短大约五天，产生了一次「异世界的冲击」。这里的「异」是异同的异。
 
@@ -565,7 +565,7 @@ WITH payload(markdown) AS (VALUES ('## 2026-11-06～2026-11-12｜异世界的冲
 
 2026-11-09，周一。中午十二点多从医院出发坐高铁，晚上大约六点多到家。
 
-2026-11-10，周二。带妻子去复诊，岳父一同前往，还去看了广州塔。小孩「小猫利」没带娃娃，哭得比较多，在外面也没睡好。
+2026-11-10，周二。带妻子去复诊，岳父一同前往，还去看了广州塔。小茉莉没带波西，哭得比较多，在外面也没睡好。
 
 2026-11-11，周三。一家人去深圳找小舅子。
 
@@ -828,7 +828,7 @@ INSERT INTO article_posts (
 )
 SELECT
   'legacy-diary-self-reflection', 'diary-self-reflection', '浮生日记（连载中）📓',
-  '从 2026-01-05 起。记录主要是站长口述，由机器人整理后公开。人生碌碌，竞短论长，却不道枯荣有数，得失难量。', 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
+  '从 2026-01-05 起。人生碌碌，竞短论长，却不道枯荣有数，得失难量。', 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=800&q=60',
   json_object('type', 'markdown', 'markdown', markdown), markdown,
   '[]', 'published', 1,
   1767571200000, 1767571200000, 1767571200000

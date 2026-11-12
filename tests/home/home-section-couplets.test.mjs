@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { DIARY_SERIES_COUPLET, DIARY_SERIES_NOTE } from '../../lib/diary/diarySeries.mjs'
+import { DIARY_SERIES_COUPLET } from '../../lib/diary/diarySeries.mjs'
 import { HOME_SECTION_COUPLETS } from '../../lib/home/homeSectionCouplets.mjs'
 
 const root = new URL('../../', import.meta.url)
@@ -78,7 +78,6 @@ test('homepage section lines use the confirmed wording once', () => {
 
 test('diary couplet stays the existing line and is not added again', () => {
   assert.equal(DIARY_SERIES_COUPLET, '人生碌碌，竞短论长，却不道枯荣有数，得失难量。')
-  assert.equal(DIARY_SERIES_NOTE, '记录主要是站长口述，由机器人整理后公开。')
   assert.deepEqual(
     sourceFiles.filter((file) => sources[file].includes(DIARY_SERIES_COUPLET)).sort(),
     [
@@ -88,11 +87,16 @@ test('diary couplet stays the existing line and is not added again', () => {
     ],
   )
   assert.equal(countText('人生碇碇'), 0)
-  assert.equal((sources['app/(site)/components/HomeDiarySeries.jsx'].match(/diary-sheet-couplet/g) || []).length, 1)
-  assert.match(sources['app/(site)/components/HomeDiarySeries.jsx'], /\{preview\.couplet\}/)
-  assert.match(sources['app/(site)/components/HomeDiarySeries.jsx'], /\{preview\.note\}/)
+  const diaryCard = sources['app/(site)/components/HomeDiarySeries.jsx']
+  const diaryPage = sources['app/(site)/diary/page.jsx']
+  assert.equal((diaryCard.match(/\{preview\.couplet\}/g) || []).length, 1)
+  assert.match(diaryCard, /<p className="home-section-description">\{preview\.couplet\}<\/p>/)
+  assert.equal(diaryCard.includes('diary-sheet-couplet'), false)
+  assert.equal(diaryCard.includes('{preview.note}'), false)
+  assert.equal(diaryCard.includes('HomeSectionCouplet'), false)
   assert.equal(sources['app/(site)/page.jsx'].includes('HomeSectionCouplet section="diary"'), false)
-  assert.equal(sources['app/(site)/diary/page.jsx'].includes('HomeSectionCouplet'), false)
+  assert.equal((diaryPage.match(/\{DIARY_SERIES_COUPLET\}/g) || []).length, 1)
+  assert.equal(diaryPage.includes('HomeSectionCouplet'), false)
 })
 
 test('each homepage section renders its line under the existing title', () => {
@@ -140,7 +144,6 @@ test('existing captions, kicker, wechat id, and owner line stay in place', () =>
   assert.match(page, /项目合作、产品交流，加微信/)
   assert.match(page, /主要平台 · \$\{SOCIAL_MEDIA_TOTALS\.followers\} 关注/)
   assert.match(sources['lib/site/contactChannels.js'], /value: 'atar24'/)
-  assert.equal(page.includes('年中年终'), false)
   assert.equal(couplet.includes('<T'), false)
   assert.equal(couplet.includes('diary-sheet-couplet'), false)
   assert.match(couplet, /lang="zh-CN"/)

@@ -10266,14 +10266,6 @@ body:has(.x-mutual-page) footer a:hover {
   padding: 1.15rem 1.15rem 1.15rem 1.85rem;
 }
 
-.home-diary {
-  padding: 1.15rem 1.15rem 1rem 1.85rem;
-}
-
-.home-diary .diary-sheet-header {
-  padding: 0;
-}
-
 .diary-sheet-kicker {
   margin: 0 0 0.35rem;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
@@ -10357,72 +10349,23 @@ body:has(.x-mutual-page) footer a:hover {
   margin-top: 0.85rem;
 }
 
-.home-diary-list {
-  list-style: none;
-  margin: 0.85rem 0 0;
-  padding: 0;
-}
-
-.home-diary-entry + .home-diary-entry {
-  margin-top: 0.45rem;
-}
-
-.home-diary-entry a {
+.home-entry-source-note {
   display: block;
-  padding: 0.45rem 0.15rem 0.55rem;
-  color: inherit;
-  text-decoration: none;
+  margin-top: 0.35rem;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--site-faint);
 }
 
-.home-diary-entry.is-latest a {
-  margin-top: 0.15rem;
-  padding: 0.7rem 0.75rem 0.8rem;
-  border: 1px solid rgba(138, 96, 48, 0.22);
-  border-radius: 12px;
-  background: rgba(255, 252, 246, 0.72);
+.diary-entry-source-note {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #737373;
 }
 
-.dark .home-diary-entry.is-latest a {
-  border-color: rgba(214, 176, 122, 0.22);
-  background: rgba(255, 236, 210, 0.05);
-}
-
-.home-diary-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 0.7rem;
-  margin-bottom: 0.15rem;
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  color: #8a6744;
-}
-
-.dark .home-diary-meta {
-  color: #d7b48a;
-}
-
-.home-diary-entry strong {
-  display: block;
-  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
-  font-size: 1.02rem;
-  font-weight: 650;
-  line-height: 1.4;
-}
-
-.home-diary-entry p {
-  margin: 0.28rem 0 0;
-  font-size: 0.84rem;
-  line-height: 1.65;
-  color: #4e463c;
-}
-
-.dark .home-diary-entry p {
-  color: #ddd2c2;
-}
-
-.home-diary-closing {
-  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+.dark .diary-entry-source-note {
+  color: #a3a3a3;
 }
 
 .diary-page {

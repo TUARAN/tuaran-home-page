@@ -53,6 +53,7 @@ import HomeRuanYifengFeed from './components/HomeRuanYifengFeed'
 import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
 import HomeDiarySeries from './components/HomeDiarySeries'
+import HomeYearSummaryCard from './components/HomeYearSummaryCard'
 import HomeSectionCouplet from './components/HomeSectionCouplet'
 import { articles } from './articles/articlesData'
 import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
@@ -788,9 +789,6 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
         <div className="home-masonry-item">
           <HomePrimaryColumnsClient catalog={featuredPicks} />
         </div>
-        <div className="home-masonry-item">
-          <HomeDiarySeries preview={diaryPreview} />
-        </div>
         <div className="home-masonry-item"><HomeBookCards /></div>
         <div className="home-masonry-item">
           <HomeOpinionPanel />
@@ -802,6 +800,12 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
           <HomeInspirations items={inspirations} />
         </div>
         <div className="home-masonry-item"><HomeOpenClawCards /></div>
+        <div className="home-masonry-item">
+          <HomeDiarySeries preview={diaryPreview} />
+        </div>
+        <div className="home-masonry-item">
+          <HomeYearSummaryCard />
+        </div>
 
         <aside className="home-masonry-item home-side-stack hidden lg:block">
           <ProfileCard />

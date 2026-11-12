@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 import { diaryContentFromMarkdown, legacyArticleToMarkdown } from '../../lib/article/legacyArticleMigration.mjs'
 import {
-  DIARY_SERIES_NOTE,
+  DIARY_ORAL_SOURCE_NOTE,
   DIARY_SERIES_STARTED_ON,
   DIARY_SERIES_TITLE,
   earliestDiaryDate,
@@ -49,7 +49,7 @@ test('浮生日记 starts on the earliest timeline entry and keeps that framing'
   assert.equal(article.date, DIARY_SERIES_STARTED_ON)
   assert.equal(founder.date, '2026-01-05')
   assert.match(article.summary, /^从 2026-01-05 起/)
-  assert.match(article.summary, new RegExp(DIARY_SERIES_NOTE))
+  assert.doesNotMatch(article.summary, /口述|机器人整理/)
   assert.doesNotMatch(article.summary, /2026-05-11/)
   assert.equal(DIARY_SERIES_TITLE, '浮生日记')
 })
@@ -59,11 +59,14 @@ test('异世界的冲击 keeps the oral account and stays within the public draf
   const text = blocks.join('\n')
   assert.equal(heading.dateStart, '2026-11-06')
   assert.equal(heading.date, '2026-11-12')
+  assert.equal(heading.sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  const marked = diaryArticle().content.filter((block) => block?.sourceNote)
+  assert.deepEqual(marked.map((block) => block.label), ['异世界的冲击'])
   assert.match(text, /异世界的冲击/)
   assert.match(text, /这里的「异」是异同的异/)
   assert.match(text, /腿部手术已经住院/)
-  assert.match(text, /带妻子去复诊/)
-  assert.match(text, /小猫利/)
+  assert.match(text, /带妻子去复诊，岳父一同前往，还去看了广州塔。小茉莉没带波西，哭得比较多/)
+  assert.doesNotMatch(text, /小猫利|没带娃娃/)
   assert.match(text, /不知道对生活有什么改善，只是有感受/)
   assert.doesNotMatch(text, /notion|诊断|癌症|肿瘤|化疗|病历|手术史/i)
   assert.deepEqual(
@@ -79,6 +82,10 @@ test('homepage preview uses the same series and leads with the latest record', (
   assert.equal(preview.entries[0].label, '异世界的冲击')
   assert.equal(preview.entries[0].span, '2026-11-06～2026-11-12')
   assert.match(preview.entries[0].closing, /只是有感受/)
+  assert.match(preview.entries[0].detail, /小茉莉没带波西/)
+  assert.doesNotMatch(preview.entries[0].detail, /小猫利|没带娃娃/)
+  assert.equal(preview.entries[0].sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  assert.ok(preview.entries.slice(1).every((entry) => !entry.sourceNote))
   assert.equal(preview.entries[0].href, `/diary#${preview.entries[0].id}`)
   assert.ok(preview.entries.length >= 2)
   assert.ok(preview.entries[1].date < preview.entries[0].date)
@@ -114,5 +121,20 @@ test('homepage and diary page share the series module and the public title', asy
   assert.match(diary, /publishedTime: toIsoDate\(DIARY_SERIES_STARTED_ON\)/)
   assert.match(diary, /datePublished: toIsoDate\(DIARY_SERIES_STARTED_ON\)/)
   assert.match(section, /\{preview\.title\}/)
+  assert.match(section, /className="home-work-stack"/)
+  assert.match(section, /className="home-section-title"/)
+  assert.doesNotMatch(section, /diary-sheet|These entries are mostly the site owner's spoken accounts/)
+  assert.doesNotMatch(diary, /DIARY_SERIES_NOTE|记录主要是站长口述，由机器人整理后公开/)
+  assert.match(diary, /diary-entry-source-note/)
+  assert.match(diary, /from '..\/components\/aceternity\/timeline'/)
+  assert.match(diary, /<Timeline/)
+  assert.match(diary, /<DiaryDateMark entry=\{entry\} \/>/)
+  assert.match(diary, /railClassName="sticky top-24 z-40 w-32 shrink-0 self-start text-left"/)
+  assert.match(diary, /splitIsoDate\(entry\.date\)/)
+  assert.match(diary, /text-left text-lg font-semibold/)
+  assert.match(diary, /text-left text-\[11px\]/)
+  assert.doesNotMatch(diary, /dateStart|～/)
+  assert.doesNotMatch(diary, /title: group\.year/)
+  assert.doesNotMatch(diary, /title: group\.year|src=\{diary\.cover\}|diary-sheet/)
   assert.doesNotMatch(`${home}\n${diary}\n${section}`, /站长字数/)
 })

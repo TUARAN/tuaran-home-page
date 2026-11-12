@@ -136,11 +136,9 @@
       .map((item) => parseKolHandles([item.handle])[0]);
   }
 
-  function taskCandidatePool({ custom = false, customHandles = [], discovery, account = "" } = {}) {
+  function taskCandidatePool({ custom = false, customHandles = [], boardHandles = [] } = {}) {
     if (custom) return parseKolHandles(customHandles);
-    const discovered = discoveryHandles(discovery, account);
-    const seen = new Set(discovered.map((handle) => handle.toLowerCase()));
-    return [...discovered, ...KOL_CATALOG.filter((handle) => !seen.has(handle.toLowerCase()))];
+    return parseKolHandles(boardHandles);
   }
 
   function selectTaskBatch(candidates, previous, size = KOL_DAILY_SIZE, random = Math.random) {
@@ -156,28 +154,18 @@
   function resolveKolRoster({ storedHandles, meta, discovery, account = "", now = Date.now() } = {}) {
     const parsed = parseKolHandles(storedHandles);
     const epoch = poolEpoch(now);
-    const index = poolIndex(now);
-    const pool = poolHandles(index);
     const explicit = meta && typeof meta.custom === "boolean" ? meta.custom : null;
     const custom = explicit === true ? parsed.length > 0 : explicit === false ? false : !isBuiltInHandleSet(parsed);
-    const accountKey = cycleAccountKey(account);
-    const day = beijingDayKey(now);
-    const priorDaily = meta?.dailyByAccount?.[accountKey];
-    const frozen = priorDaily?.day === day && parseKolHandles(priorDaily.handles).length === KOL_DAILY_SIZE
-      ? parseKolHandles(priorDaily.handles) : [];
-    const discovered = custom ? [] : frozen.length ? frozen
-      : dailyHandles(discovery, account, now, priorDaily?.handles || []);
-    const handles = custom ? parsed.slice() : discovered.length ? discovered : pool.slice();
-    const source = custom ? "custom" : discovered.length ? "daily" : "fallback";
+    const handles = custom ? parsed.slice() : [];
+    const source = custom ? "custom" : "leaderboard";
     const dailyByAccount = { ...(meta?.dailyByAccount || {}) };
-    if (source === "daily") dailyByAccount[accountKey] = { day, handles: discovered.slice() };
     const nextMeta = { custom, poolEpoch: custom && meta?.poolEpoch != null ? Number(meta.poolEpoch) : epoch,
-      poolIndex: custom || discovered.length ? -1 : index, dailyByAccount };
+      poolIndex: -1, dailyByAccount };
     if (meta?.taskBatch) nextMeta.taskBatch = meta.taskBatch;
     const persist = !sameHandleSet(parsed, handles) || explicit !== custom
       || meta?.poolEpoch !== nextMeta.poolEpoch || meta?.poolIndex !== nextMeta.poolIndex
       || JSON.stringify(meta?.dailyByAccount || {}) !== JSON.stringify(dailyByAccount);
-    return { handles, custom, source, day, poolIndex: nextMeta.poolIndex, epoch, meta: nextMeta, persist };
+    return { handles, custom, source, day: beijingDayKey(now), poolIndex: nextMeta.poolIndex, epoch, meta: nextMeta, persist };
   }
 
   function shuffleHandles(handles, random = Math.random) {
@@ -199,10 +187,8 @@
     return parseKolHandles(order).find((handle) => !seen.has(handle.toLowerCase())) || "";
   }
 
-  function taskBatchAvoid(meta, { custom = false, builtin = [] } = {}) {
-    const previous = parseKolHandles(meta?.taskBatch?.handles);
-    if (previous.length || custom) return previous;
-    return parseKolHandles(builtin);
+  function taskBatchAvoid(meta) {
+    return parseKolHandles(meta?.taskBatch?.handles);
   }
 
   function displayedTaskHandles(decision, activeOrder) {
@@ -222,7 +208,7 @@
 
   function navigationOrder(cycle, handles, random = Math.random) {
     const active = parseKolHandles(handles);
-    const roster = active.length ? active : poolHandles(poolIndex());
+    const roster = active;
     const order = parseKolHandles(cycle?.order);
     const visited = parseKolHandles(cycle?.visited);
     if (cycle?.active && order.length && rosterKey(order) === rosterKey(roster) && nextUnvisitedHandle(order, visited)) {

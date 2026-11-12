@@ -1,7 +1,8 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
+if (typeof importScripts === "function") importScripts("leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
 
+const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
 const kolRoster = globalThis.XrcKolRoster || (typeof require === "function" ? require("./kolRoster.js") : null);
 
 const replyHistory = globalThis.XrcReplyHistory?.createReplyHistory(globalThis.chrome?.storage?.local, globalThis.indexedDB);
@@ -28,9 +29,8 @@ const RESET_EPOCH_KEY = "xrcResetEpoch";
 const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
-const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
 const KOL_HANDLES_KEY = kolRoster.KOL_HANDLES_KEY;
-const DEFAULT_KOL_HANDLES = kolRoster.KOL_CATALOG;
+const DEFAULT_KOL_HANDLES = Object.freeze([]);
 const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
@@ -222,18 +222,47 @@ function resolveReplyProviders(settings) {
   return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
 }
 
+async function readStoredAiSettings() {
+  const readOnce = async () => {
+    const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
+    return stored?.[AI_SETTINGS_KEY] || {};
+  };
+  try {
+    return await readOnce();
+  } catch (error) {
+    return readOnce();
+  }
+}
+
+function aiSettingsStamp(value = {}) {
+  return JSON.stringify({
+    apiKey: value.apiKey || "",
+    baiApiKey: value.baiApiKey || "",
+    mobileOfficeToken: value.mobileOfficeToken || "",
+    mobileOfficeVerified: value.mobileOfficeVerified === true,
+    replyProviders: value.replyProviders || null,
+    replyProvidersDisabled: value.replyProvidersDisabled || null
+  });
+}
+
 async function readAiSettings() {
-  const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
-  let settings = stored?.[AI_SETTINGS_KEY] || {};
+  let settings = await readStoredAiSettings();
+  const seen = settings;
   const resolved = resolveReplyProviders(settings);
   if (resolved.persist && typeof chrome.storage?.local?.set === "function") {
-    settings = {
-      ...settings,
-      replyProviders: resolved.providers,
-      replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
-    };
-    await chrome.storage.local.set({ [AI_SETTINGS_KEY]: settings });
+    const latest = await readStoredAiSettings();
+    if (aiSettingsStamp(latest) === aiSettingsStamp(seen)) {
+      settings = {
+        ...latest,
+        replyProviders: resolved.providers,
+        replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+      };
+      await chrome.storage.local.set({ [AI_SETTINGS_KEY]: settings });
+    } else {
+      settings = latest;
+    }
   }
+  const providers = resolveReplyProviders(settings).providers;
   const apiKey = String(settings.apiKey || "").trim();
   const prompts = resolvePromptBundle(settings);
   return {
@@ -241,7 +270,7 @@ async function readAiSettings() {
     baiApiKey: /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "",
     mobileOfficeToken: String(settings.mobileOfficeToken || "").trim(),
     mobileOfficeVerified: settings.mobileOfficeVerified === true,
-    replyProviders: resolved.providers,
+    replyProviders: providers,
     ...prompts,
     replyPrompt: prompts.replyTimelinePrompt,
     postPrompt: prompts.postNormalPrompt
@@ -1004,34 +1033,26 @@ function normalizeTargetFollowHandles(value) {
   return list;
 }
 
-function normalizeKolHandles(value, now = Date.now()) {
-  const parsed = kolRoster.parseKolHandles(value);
-  return parsed.length ? parsed : kolRoster.poolHandles(kolRoster.poolIndex(now));
+function normalizeKolHandles(value) {
+  return kolRoster.parseKolHandles(value);
 }
 
-function initialTargetFollowBatch() {
-  return (kolRoster?.KOL_CATALOG || [])
-    .map((handle) => String(handle))
-    .filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === handle.toLowerCase()))
-    .sort((left, right) => left.localeCompare(right))
-    .slice(0, 5);
-}
-let targetFollowHandlesCache = initialTargetFollowBatch();
-let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
+let targetFollowHandlesCache = [];
+let kolHandlesCache = [];
 
 async function readTargetFollowHandles() {
   try {
-    const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool"]);
-    const withoutSeeds = (list) => (Array.isArray(list) ? list : []).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
-    const live = withoutSeeds(stored?.xrcTargetFollowLive?.current);
-    const batch = withoutSeeds(stored?.xrcTargetFollowPool?.batch);
-    const alternate = (kolRoster?.KOL_CATALOG || []).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
-    const storedWithoutSeeds = withoutSeeds(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
-    const picked = live.length ? live : batch.length ? batch : storedWithoutSeeds.length ? storedWithoutSeeds : alternate.slice().sort((left, right) => left.localeCompare(right)).slice(0, 5);
-    targetFollowHandlesCache = normalizeTargetFollowHandles(picked).filter((handle) => !DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
+    const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool", leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]);
+    const live = normalizeTargetFollowHandles(stored?.xrcTargetFollowLive?.current);
+    const batch = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.batch);
+    const board = leaderboard?.parseLeaderboardHandles?.(stored?.[leaderboard.CACHE_KEY]?.handles) || [];
+    const previous = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.lastBatch);
+    const rotated = leaderboard?.selectBatch ? leaderboard.selectBatch(board, previous, 5).handles : [];
+    const picked = live.length ? live : batch.length ? batch : rotated;
+    targetFollowHandlesCache = normalizeTargetFollowHandles(picked);
     return targetFollowHandlesCache;
   } catch (error) {
-    targetFollowHandlesCache = initialTargetFollowBatch();
+    targetFollowHandlesCache = [];
     return targetFollowHandlesCache;
   }
 }
@@ -1063,8 +1084,15 @@ async function readKolHandles(now = Date.now(), accountHandle = "") {
       account,
       now
     });
-    kolHandlesCache = decision.handles;
-    if (decision.persist) {
+    const taskBatch = kolRoster.parseKolHandles(decision.meta?.taskBatch?.handles);
+    if (decision.custom) kolHandlesCache = decision.handles;
+    else if (taskBatch.length) kolHandlesCache = taskBatch;
+    else {
+      const boardStored = await chrome.storage.local.get(leaderboard?.CACHE_KEY || "xrcLeaderboardCache");
+      const board = leaderboard?.parseLeaderboardHandles?.(boardStored?.[leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]?.handles) || [];
+      kolHandlesCache = kolRoster.selectTaskBatch(board, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, () => 0).handles;
+    }
+    if (decision.persist && decision.custom) {
       try {
         await chrome.storage.local.set({
           [KOL_HANDLES_KEY]: decision.handles,
@@ -1076,7 +1104,7 @@ async function readKolHandles(now = Date.now(), accountHandle = "") {
     }
     return kolHandlesCache;
   } catch (error) {
-    kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex(now));
+    kolHandlesCache = [];
     return kolHandlesCache;
   }
 }
@@ -1191,19 +1219,21 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   if (selected === "mutual-followBack") return handle ? `/${handle}/followers` : "";
   if (selected === "mutual-targetFollow") {
     const handles = normalizeTargetFollowHandles(targetFollowHandles || targetFollowHandlesCache);
+    if (!handles.length) return "";
     const match = current.match(/^\/([^/]+)\/followers$/iu);
     if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
     const picked = handles[Math.floor(Math.random() * handles.length)];
-    return `/${picked}/followers`;
+    return picked ? `/${picked}/followers` : "";
   }
   if (selected === "kol") {
     const handles = normalizeKolHandles(kolHandles || kolHandlesCache);
+    if (!handles.length) return "";
     const order = kolRoster.parseKolHandles(kolVisitOrder).filter((handle) =>
       handles.some((item) => item.toLowerCase() === handle.toLowerCase()));
     const match = current.match(/^\/([^/]+)$/iu);
     if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
     const picked = kolRoster.nextUnvisitedHandle(order, kolVisitedHandles) || order[0] || handles[0];
-    return `/${picked}`;
+    return picked ? `/${picked}` : "";
   }
   if (selected === "community-share") return handle ? `/${handle}` : "/home";
   if (selected === "poster" || selected === "poster-premium" || ["poster-x", "poster-xhs"].includes(selected)) return "/home";
@@ -1809,8 +1839,8 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-// About twice a week. 回关粉丝 uses this scheduler gap; 关注候选 keeps the short session gap.
-const FOLLOW_BACK_MIN_GAP_MS = 84 * 60 * 60 * 1000;
+// Once a week, same cadence as 清理未回关. 关注候选 keeps the short session gap.
+const FOLLOW_BACK_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
 const FOLLOW_PRIORITY_BOOST = 8.5;
 const PREMIUM_PRIORITY_BOOST = 8.75;
@@ -2030,7 +2060,7 @@ function normalizedTaskRules(value) {
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Unfollow stays on the weekly constant. Pace segments apply to post/reply cleanup only.
-      // Follow-back uses the 3.5-day gap; target-follow keeps the short session gap.
+      // Follow-back uses the weekly gap; target-follow keeps the short session gap.
       minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
         : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
         : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
@@ -2397,7 +2427,7 @@ async function readTaskSchedule() {
     plan.followSessionVersion = 1;
     scheduleMigrated = true;
   }
-  if (plan.followBackWeeklyGapVersion !== 1) {
+  if ((plan.followBackWeeklyGapVersion || 0) < 2) {
     if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
     const item = plan.items?.["mutual-followBack"];
     if (item && !item.manualStopped && !item.blocked) {
@@ -2410,7 +2440,7 @@ async function readTaskSchedule() {
         item.reason = "回关粉丝按每周间隔等待下次排班";
       }
     }
-    plan.followBackWeeklyGapVersion = 1;
+    plan.followBackWeeklyGapVersion = 2;
     scheduleMigrated = true;
   }
   if (plan.unfollowWeeklyGapVersion !== 1) {
@@ -4563,7 +4593,6 @@ if (typeof module === "object" && module.exports) {
     defaultTaskPriority,
     effectiveSchedulePriority,
     shouldShareFollowWait,
-    DEFAULT_TARGET_FOLLOW_HANDLES,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,
     writeTargetFollowHandles,

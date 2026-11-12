@@ -372,7 +372,7 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -5244,13 +5244,14 @@ test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing da
   assert.deepEqual(exhausted.visited, [])
   const weekOne = kol.resolveKolRoster({ storedHandles: kol.KOL_CATALOG, meta: null, now: day0 })
   assert.equal(weekOne.custom, false)
-  assert.deepEqual(weekOne.handles, kol.poolHandles(0))
+  assert.equal(weekOne.source, 'leaderboard')
+  assert.deepEqual(weekOne.handles, [])
   const weekTwo = kol.resolveKolRoster({ storedHandles: weekOne.handles, meta: weekOne.meta, now: day7 })
-  assert.deepEqual(weekTwo.handles, kol.poolHandles(1))
-  assert.equal(weekTwo.persist, true)
+  assert.deepEqual(weekTwo.handles, [])
+  assert.equal(weekTwo.source, 'leaderboard')
   const empty = kol.resolveKolRoster({ storedHandles: '', meta: null, now: day7 })
   assert.equal(empty.custom, false)
-  assert.deepEqual(empty.handles, kol.poolHandles(1))
+  assert.deepEqual(empty.handles, [])
   const custom = kol.resolveKolRoster({ storedHandles: ['alpha_one', 'beta_two'], meta: null, now: day0 })
   assert.equal(custom.custom, true)
   assert.deepEqual(custom.handles, ['alpha_one', 'beta_two'])
@@ -5260,7 +5261,8 @@ test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing da
   assert.equal(customLater.persist, false)
   const pinnedPool = kol.resolveKolRoster({ storedHandles: kol.poolHandles(1), meta: null, now: day0 })
   assert.equal(pinnedPool.custom, false)
-  assert.deepEqual(pinnedPool.handles, kol.poolHandles(0))
+  assert.equal(pinnedPool.source, 'leaderboard')
+  assert.deepEqual(pinnedPool.handles, [])
   const first = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
   const second = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
   assert.equal(first, 'https://x.com/alpha')
@@ -5298,24 +5300,16 @@ test('daily KOL roster uses qualified home authors, stays fixed today, and falls
   assert.equal(kol.qualifyingDailyPost(post('english', 400, 20, 'English only'), today), null)
   assert.equal(kol.qualifyingDailyPost({ ...post('repeat', 400), repost: true }, today), null)
   const sparse = kol.collectDailyCandidates(null, 'myaccount', posts.slice(0, 4), today)
-  assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'fallback')
+  assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'leaderboard')
+  assert.deepEqual(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).handles, [])
   const collected = kol.collectDailyCandidates(sparse, 'myaccount', posts.slice(4), today)
-  const daily = kol.resolveKolRoster({ discovery: collected, account: 'myaccount', now: today })
-  assert.equal(daily.source, 'daily')
-  assert.equal(daily.handles.length, 5)
-  assert.deepEqual(daily.handles, ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
+  assert.deepEqual(kol.dailyHandles(collected, 'myaccount', today), ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
   const extra = kol.collectDailyCandidates(collected, 'myaccount', [post('newstar', 2000)], today)
-  const frozen = kol.resolveKolRoster({ storedHandles: daily.handles, meta: daily.meta,
-    discovery: extra, account: 'myaccount', now: today })
-  assert.deepEqual(frozen.handles, daily.handles)
   const tomorrowPosts = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'newstar']
     .map((handle, index) => post(handle, 500 - index * 20, 15, '明天的中文原创内容', tomorrow))
   const nextDiscovery = kol.collectDailyCandidates(extra, 'myaccount', tomorrowPosts, tomorrow)
-  const nextDay = kol.resolveKolRoster({ storedHandles: frozen.handles, meta: frozen.meta,
-    discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
-  assert.equal(nextDay.source, 'daily')
-  assert.notDeepEqual(nextDay.handles, daily.handles)
-  assert.equal(nextDay.handles[0], 'newstar')
+  assert.equal(kol.dailyHandles(nextDiscovery, 'myaccount', tomorrow, ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])[0], 'newstar')
+  assert.equal(kol.resolveKolRoster({ discovery: nextDiscovery, account: 'myaccount', now: tomorrow }).source, 'leaderboard')
   const custom = kol.resolveKolRoster({ storedHandles: ['my_one', 'my_two'], meta: null,
     discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
   assert.equal(custom.source, 'custom')
@@ -5356,9 +5350,10 @@ test('background KOL launch reads the current account daily roster from extensio
     async set(value) { Object.assign(local, value) },
   } } }
   try {
+    local[kol.KOL_ROSTER_KEY] = { custom: false, taskBatch: { handles: ['board_a', 'board_b', 'board_c', 'board_d', 'board_e'] } }
     const handles = await background.readKolHandles(now, 'myaccount')
-    assert.deepEqual(handles, ['authora', 'authorb', 'authorc', 'authord', 'authore'])
-    assert.equal(local[kol.KOL_ROSTER_KEY].dailyByAccount.myaccount.day, kol.beijingDayKey(now))
+    assert.deepEqual(handles, ['board_a', 'board_b', 'board_c', 'board_d', 'board_e'])
+    assert.deepEqual(kol.dailyHandles(local[kol.KOL_DISCOVERY_KEY], 'myaccount', now), ['authora', 'authorb', 'authorc', 'authord', 'authore'])
   } finally {
     globalThis.chrome = originalChrome
   }
@@ -6830,9 +6825,8 @@ test('old notification cooldown is cleared once after the scan fix', async () =>
 })
 
 test('recognizes the list routes used by the integrated mutual helper', () => {
-  assert.deepEqual(mutual.constants.DEFAULT_TARGET_FOLLOW_HANDLES, ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha'])
+  assert.equal(mutual.targetPath('targetFollow'), '')
   assert.equal(['/crazypig9y/followers', '/jianlvup/followers', '/jianlvya/followers', '/kyotom08/followers', '/Chill_Alpha/followers'].includes(mutual.targetPath('targetFollow')), false)
-  assert.match(mutual.targetPath('targetFollow'), /^\/[A-Za-z0-9_]+\/followers$/)
   assert.equal(mutual.isFollowingPath('/tuaran/following'), true)
   assert.equal(mutual.isFollowingPath('/tuaran/followers'), false)
   assert.equal(mutual.isFollowersPath('/tuaran/followers'), true)
@@ -7297,7 +7291,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -7940,15 +7934,15 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.taskPageUrl('poster', 'https://x.com/wangchangfu88', { start: true }), 'https://x.com/home')
   assert.equal(background.taskPageUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications')
   assert.equal(background.taskPageUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following')
-  assert.doesNotMatch(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), /\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers/)
-  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), /^https:\/\/twitter.com\/[A-Za-z0-9_]+\/followers\?xrcAssistant=mutual-targetFollow$/)
+  assert.equal(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=mutual-targetFollow')
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home', { targetFollowHandles: ['board_a', 'board_b'] }), /^https:\/\/twitter.com\/board_[ab]\/followers\?xrcAssistant=mutual-targetFollow$/)
   assert.equal(background.taskTabUrl('timeline', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=timeline&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: '@Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-followBack', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/followers?xrcAssistant=mutual-followBack&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow')
   assert.doesNotMatch(background.taskTabUrl('poster', 'https://x.com/home'), /xrcStart=1/)
-  assert.doesNotMatch(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), /\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers/)
-  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), /^https:\/\/x\.com\/[A-Za-z0-9_]+\/followers\?xrcAssistant=mutual-targetFollow&xrcStart=1$/)
+  assert.equal(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=mutual-targetFollow&xrcStart=1')
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true, targetFollowHandles: ['board_c'] }), /^https:\/\/x\.com\/board_c\/followers\?xrcAssistant=mutual-targetFollow&xrcStart=1$/)
   assert.match(backgroundText, /xrc-flow-start/)
   assert.match(backgroundText, /xrc-flow-pause/)
   assert.match(backgroundText, /phase: "starting"/)
@@ -8252,7 +8246,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
   recent.items['mutual-followBack'].lastRunAt = now - 6 * 60000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
-  recent.items['mutual-followBack'].lastRunAt = now - 4 * 24 * 60 * 60 * 1000
+  recent.items['mutual-followBack'].lastRunAt = now - 8 * 24 * 60 * 60 * 1000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
   assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T13:00:00+08:00')).includes('mutual-followBack'), true)
   assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T05:00:00+08:00')).includes('mutual-followBack'), true)
@@ -8266,7 +8260,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   const dawnStart = Date.parse('2026-10-29T05:00:00+08:00')
   const nextDawn = Date.parse('2026-10-30T05:00:00+08:00')
   const afterDawnSession = { enabledAt: dawnStart, rules: {}, items: { 'mutual-followBack': {
-    lastRunAt: dawnStart - 5 * 24 * 60 * 60 * 1000, followBackSessionUntil: background.followBackNightEndsAt(dawnStart), resumeAt: nextDawn,
+    lastRunAt: dawnStart - 8 * 24 * 60 * 60 * 1000, followBackSessionUntil: background.followBackNightEndsAt(dawnStart), resumeAt: nextDawn,
   } } }
   assert.equal(background.dueTaskModes(afterDawnSession, Date.parse('2026-10-29T23:00:00+08:00')).includes('mutual-followBack'), false)
   assert.equal(background.dueTaskModes(afterDawnSession, nextDawn).includes('mutual-followBack'), true)
@@ -10306,17 +10300,17 @@ test('target-follow scans other configured sources before rescanning an exhauste
   assert.equal(mutual.nextTargetFollowSource(['Alpha'], 'alpha', []), '')
 })
 
-test('target-follow changes source after ten seconds without new rows even above page bottom', async () => {
+test('target-follow stays on the page until a follow succeeds, and retry can switch', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(runWithStorage)
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
     seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
   const rows = [{ handle: '@seen', candidate: false }]
-  let clock = 1000
   let scrolls = 0
+  let advances = 0
   const context = vm.createContext({
-    state, Date: { now: () => clock },
+    state, Date: { now: () => 1000 },
     isFollowingPage: () => false, isFollowersPage: () => true,
     targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
     writeTargetNavGuard: () => {},
@@ -10326,23 +10320,33 @@ test('target-follow changes source after ten seconds without new rows even above
     rateLimitVisible: () => false, automationWarningVisible: () => false,
     visibleRows: () => rows, scrollForward: async () => {
       scrolls += 1
-      clock += 1000
-      return { progressed: false, atBottom: false, items: rows }
+      if (scrolls > 3) state.stopping = true
+      return { progressed: false, atBottom: true, items: rows }
     },
-    advanceTargetFollowSource: () => 'beta',
+    advanceTargetFollowSource: () => { advances += 1; return 'beta' },
     targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
-  assert.equal((await context.runTest('targetFollow', () => {})).navigate, '/beta/followers')
-  assert.equal(scrolls, 11)
+  const stayed = await context.runTest('targetFollow', () => {})
+  assert.equal(stayed?.navigate, undefined)
+  assert.equal(advances, 0)
+  state.stopping = false
+  state.running = false
+  scrolls = 0
+  context.followingRetryButton = () => ({})
+  const switched = await context.runTest('targetFollow', () => {})
+  assert.equal(switched.navigate, '/beta/followers')
+  assert.equal(advances, 1)
 })
 
 test('target-follow does not advance while the follower list has not loaded', () => {
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, idleMs: 10000 }), false)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 99, idleMs: 60000 }), false)
-  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0 }), true)
-  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000 }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: false }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: true }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000, followed: true }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, retry: true }), true)
 })
 
 test('an unloaded follower list does not navigate to the next source', async () => {
@@ -10431,7 +10435,7 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.followBackWeeklyGapVersion, 1)
+    assert.equal(plan.followBackWeeklyGapVersion, 2)
     assert.equal(plan.unfollowWeeklyGapVersion, 1)
     assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
@@ -10451,16 +10455,16 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
 })
 
 test('target-follow seeds expand to accounts followed in this run and skip self, visited, and overflow', () => {
-  const seeds = [...mutual.constants.DEFAULT_TARGET_FOLLOW_HANDLES]
+  const seeds = ['alphaone', 'betatwo', 'gammathree', 'deltafour', 'epsilonfive']
   const visited = [...seeds]
   let scan = { visited, queue: [], refreshAfter: 0 }
-  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(scan, seeds), 'Chill_Alpha', visited), '')
+  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(scan, seeds), 'epsilonfive', visited), '')
   assert.equal(mutual.queueFollowedSource('tuaran', scan, { self: 'tuaran', seeds }).added, false)
-  assert.equal(mutual.queueFollowedSource('crazypig9y', scan, { self: 'tuaran', seeds }).added, false)
-  assert.equal(mutual.queueFollowedSource('@Chill_Alpha', scan, { self: 'tuaran', seeds }).added, false)
+  assert.equal(mutual.queueFollowedSource('alphaone', scan, { self: 'tuaran', seeds }).added, false)
+  assert.equal(mutual.queueFollowedSource('@epsilonfive', scan, { self: 'tuaran', seeds }).added, false)
   const first = mutual.queueFollowedSource('@NewPerson', scan, { self: 'tuaran', seeds })
   assert.equal(first.added, true)
-  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(first.scan, seeds), 'Chill_Alpha', visited), 'NewPerson')
+  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(first.scan, seeds), 'epsilonfive', visited), 'NewPerson')
   assert.equal(mutual.queueFollowedSource('NewPerson', first.scan, { self: 'tuaran', seeds }).added, false)
   const revisited = { visited: [...visited, 'NewPerson'], queue: ['NewPerson'], refreshAfter: 0 }
   assert.equal(mutual.queueFollowedSource('NewPerson', revisited, { self: 'tuaran', seeds }).added, false)
@@ -10474,7 +10478,7 @@ test('target-follow seeds expand to accounts followed in this run and skip self,
   assert.equal(mutual.expansionCount(full, seeds), mutual.constants.TARGET_EXPANSION_LIMIT)
   assert.ok(mutual.constants.TARGET_SEED_REFRESH_MS > mutual.constants.RESCAN_INTERVAL_MS)
   assert.equal(mutual.constants.FOLLOW_BACK_LIST_GAP_MS, background.FOLLOW_BACK_MIN_GAP_MS)
-  assert.equal(background.FOLLOW_BACK_MIN_GAP_MS, 84 * 60 * 60 * 1000)
+  assert.equal(background.FOLLOW_BACK_MIN_GAP_MS, 7 * 24 * 60 * 60 * 1000)
   assert.equal(background.TARGET_FOLLOW_MIN_GAP_MS, 5 * 60 * 1000)
 })
 
@@ -10482,13 +10486,15 @@ test('each target-follow task can switch to a new batch without following the se
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
   const seen = mutual.rememberPoolHandles({ handles: seeds.map((handle) => ({ handle, seenAt: 0, usedAt: 1 })), lastBatch: seeds, batch: seeds },
     ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'], 10)
-  const next = mutual.selectTargetBatch({ ...seen, lastBatch: seeds }, { size: 5 })
+  const board = ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e', 'fresh_f', 'fresh_g', 'fresh_h', 'fresh_i', 'fresh_j']
+  const next = mutual.selectTargetBatch({ ...seen, lastBatch: seeds }, { size: 5, sources: board })
   assert.equal(next.changed, true)
   assert.deepEqual(next.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
   assert.ok(next.handles.every((handle) => !seeds.includes(handle)))
-  const first = mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5 })
+  const first = mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5, sources: board })
   assert.equal(first.handles.length, 5)
   assert.ok(first.handles.every((handle) => !seeds.includes(handle)))
+  assert.deepEqual(mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5 }).handles, [])
   assert.deepEqual(mutual.normalizeTargetFollowHandles(''), [])
   assert.deepEqual(background.normalizeTargetFollowHandles(''), [])
   const locked = mutual.planTargetTaskBatch({ handles: [], lastBatch: [], batch: [] }, { locked: true, batch: first.handles })
@@ -10497,27 +10503,29 @@ test('each target-follow task can switch to a new batch without following the se
   const continued = mutual.planTargetTaskBatch(seen, { locked: true, batch: ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'] })
   assert.equal(continued.changed, false)
   assert.deepEqual(continued.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
-  const nextTask = mutual.planTargetTaskBatch({ ...seen, lastBatch: seeds }, { locked: false })
+  const nextTask = mutual.planTargetTaskBatch({ ...seen, lastBatch: seeds }, { locked: false }, 5, board)
   assert.deepEqual(nextTask.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  const leaderboard = require('../../tools/x-reply-clipboard-extension/leaderboard.js')
+  assert.deepEqual(leaderboard.parseLeaderboardHandles('快来寒季吧@AvelyraX7点击查看详情 https://x.com/home @disonyyds'), ['AvelyraX7', 'disonyyds'])
+  assert.deepEqual(leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], ['one', 'two', 'three', 'four', 'five'], 5).handles, ['six', 'seven'])
 })
 
 test('each KOL task batch avoids the previous batch and keeps a custom list intact', async () => {
   const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
   const steady = () => 0.999
-  const catalog = kol.KOL_CATALOG.slice()
+  const catalog = ['one_a', 'two_b', 'three_c', 'four_d', 'five_e', 'six_f', 'seven_g', 'eight_h', 'nine_i', 'ten_j']
   const first = kol.selectTaskBatch(catalog, [], 5, steady)
   assert.deepEqual(first.handles, catalog.slice(0, 5))
   const second = kol.selectTaskBatch(catalog, first.handles, 5, steady)
   assert.deepEqual(second.handles, catalog.slice(5, 10))
-  const builtin = kol.poolHandles(kol.poolIndex(Date.now()))
-  const avoid = kol.taskBatchAvoid({}, { custom: false, builtin })
-  assert.deepEqual(avoid, builtin)
-  const opened = kol.selectTaskBatch(catalog, avoid, 5, steady)
+  const avoid = kol.taskBatchAvoid({})
+  assert.deepEqual(avoid, [])
+  const opened = kol.selectTaskBatch(catalog, first.handles, 5, steady)
   assert.equal(opened.handles.length, 5)
-  assert.ok(opened.handles.every((handle) => !builtin.includes(handle)))
-  assert.deepEqual(kol.displayedTaskHandles({ handles: builtin, meta: {} }, []), [])
-  assert.deepEqual(kol.displayedTaskHandles({ handles: builtin, meta: { taskBatch: { handles: opened.handles } } }, []), opened.handles)
-  assert.deepEqual(kol.taskBatchAvoid({ taskBatch: { handles: ['kept_one'] } }, { custom: true, builtin }), ['kept_one'])
+  assert.ok(opened.handles.every((handle) => !first.handles.includes(handle)))
+  assert.deepEqual(kol.displayedTaskHandles({ handles: catalog, meta: {} }, []), [])
+  assert.deepEqual(kol.displayedTaskHandles({ handles: catalog, meta: { taskBatch: { handles: opened.handles } } }, []), opened.handles)
+  assert.deepEqual(kol.taskBatchAvoid({ taskBatch: { handles: ['kept_one'] } }), ['kept_one'])
   assert.equal(second.reused, false)
   const custom = ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h']
   const customFirst = kol.selectTaskBatch(custom, [], 5, steady)
@@ -10526,6 +10534,8 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
   assert.deepEqual(custom, ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h'])
   const pool = kol.taskCandidatePool({ custom: true, customHandles: custom })
   assert.deepEqual(pool, custom)
+  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: ['board_a', 'board_b'] }), ['board_a', 'board_b'])
+  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: [] }), [])
   const resumed = kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha'], createdAt: 5 })
   assert.deepEqual(resumed.order, ['alpha', 'beta'])
   assert.deepEqual(resumed.visited, ['alpha'])
@@ -10547,8 +10557,8 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
   vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.match(context.followStatus(seeds, seeds), /不使用固定的起始五个账号/)
-  assert.match(context.followStatus(seeds, []), /不使用固定的起始五个账号/)
+  assert.match(context.followStatus(seeds, seeds), /本批源头已换成 5 个新人/)
+  assert.match(context.followStatus(seeds, []), /不显示固定名单/)
   assert.doesNotMatch(source, /还没有换批/)
   assert.doesNotMatch(source, /本批源头可能还是/)
   assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /本批源头已换成 5 个新人：@fresh_a/)
@@ -10569,8 +10579,8 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   assert.doesNotMatch(ensure, /loadKolHandles\(/)
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   assert.match(readme, /每次任务直接换成五个新人/)
-  assert.match(readme, /空池不会退回那五个/)
-  assert.match(readme, /没有本批记录时不会先显示当天名单或内置组/)
+  assert.match(readme, /不写默认名单/)
+  assert.match(readme, /约每周一次/)
 })
 
 test('exhausted target-follow does not rescan the same list after 30 minutes', async () => {
@@ -10593,7 +10603,10 @@ test('exhausted target-follow does not rescan the same list after 30 minutes', a
     waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false,
     visibleRows: () => [{ handle: 'seen', candidate: false }],
-    scrollForward: async () => ({ progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }),
+    scrollForward: async () => {
+      state.stopping = true
+      return { progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }
+    },
     advanceTargetFollowSource: () => '',
     targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     readTargetScan: () => ({ refreshAfter: clock + mutual.constants.TARGET_SEED_REFRESH_MS }),
@@ -10609,8 +10622,7 @@ test('exhausted target-follow does not rescan the same list after 30 minutes', a
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
   const result = await context.runTest('targetFollow', () => {})
   assert.equal(scrollsToTop, 0)
-  assert.ok(seenCooldown.some((gap) => gap >= mutual.constants.TARGET_SEED_REFRESH_MS - 1000))
-  assert.ok(!seenCooldown.some((gap) => gap > 0 && gap <= 30 * 60 * 1000))
+  assert.equal(seenCooldown.length, 0)
   assert.notEqual(result?.navigate, '/alpha/followers')
 })
 
@@ -10723,7 +10735,7 @@ test('saved unfollowEnglish stays off until an explicit choice after the new def
   assert.match(source, /unfollowEnglishDefaultVersion: 2/)
   assert.match(source, /Number\(parsed\.unfollowEnglishDefaultVersion \|\| 0\) >= 2 \? Boolean\(parsed\.unfollowEnglish\) : false/)
   assert.match(source, /每次任务直接换成五个新人/)
-  assert.match(source, /约每 3 到 4 天/)
+  assert.match(source, /约每周一次/)
   assert.match(source, /认不出「关注了你」时跳过/)
   assert.equal(mutual.snapshot().unfollowEnglish, false)
   const definition = source.match(/  function readSaved\(mode = currentTaskKey\(\)\) \{[\s\S]*?\n  \}/)?.[0]

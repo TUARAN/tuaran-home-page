@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '社群发送定位与执行报警',
-    description: '群聊选中后多次查找 Send；限制、重试耗尽和发送结果未确认保存在本机报警记录中，不阻塞任务切换。本地源码，尚未打包。',
+    title: '回关按周，名单从榜单换人',
+    description: '回关粉丝约每周一次。关注候选和评论大V每次任务从 X榜单换成五个新人，不使用固定名单。粉丝列表出来并且关注成功后才换人；遇到 Retry 可以换。本地源码，尚未打包。',
     current: true,
   },
   {

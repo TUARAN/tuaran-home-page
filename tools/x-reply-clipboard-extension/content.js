@@ -1151,7 +1151,7 @@
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "mutual-unfollow") return "默认手动模式：扫描后保存待取关清单，由你逐个核对并取关";
-    if (mode === "mutual-followBack") return "约每 3 到 4 天排一次。自己的粉丝列表扫完后等到下一轮，不再隔几分钟重扫";
+    if (mode === "mutual-followBack") return "约每周一次。自己的粉丝列表扫完后等到下一轮，不再隔几分钟重扫";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -2138,7 +2138,6 @@
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
   ]);
-  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const RESERVED_X_PATHS = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
@@ -3901,26 +3900,57 @@
       return;
     }
     try {
-      const stored = await chrome.storage.local.get("xrcAiSettings");
-      let settings = stored?.xrcAiSettings || {};
+      const readSettings = async () => {
+        try {
+          return (await chrome.storage.local.get("xrcAiSettings"))?.xrcAiSettings || {};
+        } catch (error) {
+          await sleep(250);
+          return (await chrome.storage.local.get("xrcAiSettings"))?.xrcAiSettings || {};
+        }
+      };
+      const settingsStamp = (value = {}) => JSON.stringify({
+        apiKey: value.apiKey || "",
+        baiApiKey: value.baiApiKey || "",
+        mobileOfficeToken: value.mobileOfficeToken || "",
+        mobileOfficeVerified: value.mobileOfficeVerified === true,
+        replyProviders: value.replyProviders || null,
+        replyProvidersDisabled: value.replyProvidersDisabled || null
+      });
+      let settings = await readSettings();
+      const seenStamp = settingsStamp(settings);
       const savedValue = String(settings.apiKey || "").trim();
-      const apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
+      let apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
       if (savedValue && !apiKey) {
-        settings = { ...settings, apiKey: "" };
-        await chrome.storage.local.set({ xrcAiSettings: settings });
+        const latest = await readSettings();
+        if (settingsStamp(latest) === seenStamp) {
+          settings = { ...latest, apiKey: "" };
+          await chrome.storage.local.set({ xrcAiSettings: settings });
+        } else {
+          settings = latest;
+          const latestValue = String(latest.apiKey || "").trim();
+          apiKey = validDeepSeekApiKey(latestValue) ? latestValue : "";
+        }
       }
       const resolvedProviders = resolveReplyProviders(settings);
       if (resolvedProviders.persist) {
         if (readId !== aiSettingsReadId) return;
-        settings = {
-          ...settings,
-          replyProviders: resolvedProviders.providers,
-          replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
-        };
-        await chrome.storage.local.set({ xrcAiSettings: settings });
+        const latest = await readSettings();
+        if (settingsStamp(latest) === settingsStamp(settings)) {
+          settings = {
+            ...latest,
+            replyProviders: resolvedProviders.providers,
+            replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+          };
+          await chrome.storage.local.set({ xrcAiSettings: settings });
+        } else {
+          settings = latest;
+        }
       }
       const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
       if (readId !== aiSettingsReadId) return;
+      const settledProviders = resolveReplyProviders(settings);
+      const settledValue = String(settings.apiKey || "").trim();
+      apiKey = validDeepSeekApiKey(settledValue) ? settledValue : "";
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.grokInviteTimeline = settings.grokInviteTimeline === true;
       state.grokInviteNotifications = settings.grokInviteNotifications === true;
@@ -3928,7 +3958,7 @@
       state.baiKey = /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "";
       state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
       state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
-      state.replyProviders = resolvedProviders.providers;
+      state.replyProviders = settledProviders.providers;
       state.replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
       state.nasSecretAvailable = nasSecretAvailable;
       state.aiKeySaved = Boolean(apiKey);
@@ -3964,6 +3994,14 @@
       state.aiSettingsStatus = "ready";
     } catch (error) {
       if (readId !== aiSettingsReadId) return;
+      const stillCallable = state.aiKeySaved
+        || (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+        || (state.replyProviders.includes("nas") && state.nasSecretAvailable)
+        || Boolean(state.baiKey);
+      if (stillCallable) {
+        state.aiSettingsStatus = "ready";
+        return;
+      }
       state.aiStatus = "读取 AI 配置失败";
       state.aiSettingsStatus = "error";
     }
@@ -7348,9 +7386,8 @@
   }
 
   function targetFollowRosterStatus(seeds, current) {
-    const same = current.length === seeds.length && current.every((handle) => seeds.some((seed) => seed.toLowerCase() === handle.toLowerCase()));
-    if (!current.length || same) return "本批源头不使用固定的起始五个账号。";
-    return `本批源头已换成 ${current.length} 个新人：${current.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换，不先打开起始五个账号的粉丝列表。`;
+    if (!current.length) return "正在从榜单拉取五个新人。没有拉到之前，不显示固定名单，也不打开固定账号的粉丝列表。";
+    return `本批源头已换成 ${current.length} 个新人：${current.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换。粉丝列表出来并且关注成功后才换下一个；遇到 Retry 可以换。`;
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7358,7 +7395,7 @@
     const currentField = panel?.querySelector("[data-xrc-target-follow-current]");
     const status = panel?.querySelector("[data-xrc-target-follow-status]");
     if (!field && !currentField) return;
-    let seeds = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    let seeds = [];
     try {
       if (mutualApi?.loadTargetFollowHandles) seeds = await mutualApi.loadTargetFollowHandles();
       else {
@@ -7366,7 +7403,7 @@
         seeds = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
       }
     } catch (error) {
-      seeds = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+      seeds = [];
     }
     let current = [];
     try {
@@ -7374,9 +7411,10 @@
       const live = stored?.xrcTargetFollowLive?.current;
       if (Array.isArray(live) && live.length) current = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
     } catch (error) {}
-    const usingSeeds = !current.length || current.every((handle) => seeds.some((seed) => seed.toLowerCase() === String(handle).toLowerCase()));
-    if (usingSeeds && mutualApi?.selectTargetBatch) current = mutualApi.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }).handles || [];
-    if (!current.length) current = [];
+    if (!current.length && mutualApi?.selectTargetBatch) {
+      const board = globalThis.XrcLeaderboard?.loadHandles ? await globalThis.XrcLeaderboard.loadHandles() : [];
+      current = mutualApi.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5, sources: board }).handles || [];
+    }
     if (field && document.activeElement !== field) field.value = seeds.map((handle) => `@${handle}`).join("\n");
     if (currentField) currentField.value = current.map((handle) => `@${handle}`).join("\n");
     if (status) status.textContent = targetFollowRosterStatus(seeds, current);
@@ -7529,16 +7567,13 @@
       account: taskSnapshotAccount,
       now
     });
+    const board = decision.custom || !globalThis.XrcLeaderboard?.loadHandles ? [] : await globalThis.XrcLeaderboard.loadHandles();
     const pool = kolRoster.taskCandidatePool({
       custom: decision.custom,
       customHandles: decision.handles,
-      discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
-      account: taskSnapshotAccount
+      boardHandles: board
     });
-    const selected = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta, {
-      custom: decision.custom,
-      builtin: decision.custom ? [] : kolRoster.poolHandles(kolRoster.poolIndex(now))
-    }), kolRoster.KOL_DAILY_SIZE, random);
+    const selected = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, random);
     const meta = {
       ...decision.meta,
       custom: decision.custom,
@@ -7566,7 +7601,10 @@
       decision = await loadKolRoster();
     }
     const shown = kolRoster.displayedTaskHandles(decision, activeOrder);
-    if (!shown.length) return;
+    if (!shown.length) {
+      if (status) status.textContent = "正在从榜单拉取五个新人。没有拉到之前，不先显示固定名单。";
+      return;
+    }
     field.value = shown.map((handle) => `@${handle}`).join("\n");
     const order = Array.isArray(state.kolVisitOrder) ? state.kolVisitOrder : [];
     const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(shown);
@@ -7615,15 +7653,11 @@
   }
 
   function initialTargetFollowPreview() {
-    const selected = mutualApi?.selectTargetBatch?.({ handles: [], lastBatch: [], batch: [] }, { size: 5 });
-    return (selected?.handles || []).map((handle) => `@${handle}`).join("\n");
+    return "";
   }
 
   function initialKolPreview() {
-    if (!kolRoster?.selectTaskBatch) return "";
-    const builtin = kolRoster.poolHandles(kolRoster.poolIndex(Date.now()));
-    const selected = kolRoster.selectTaskBatch(kolRoster.KOL_CATALOG, builtin, kolRoster.KOL_DAILY_SIZE, () => 0.999);
-    return (selected.handles || []).map((handle) => `@${handle}`).join("\n");
+    return "";
   }
 
   function taskScheduleConfigMarkup(mode, label) {
@@ -8367,7 +8401,7 @@
               ${taskScheduleConfigMarkup("mutual-unfollow", "清理未回关")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
-              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每 3 到 4 天</small></span></div>
+              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每周一次</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-follow-pace>${followPaceTableHtml()}</div>

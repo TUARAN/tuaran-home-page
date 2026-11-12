@@ -15,10 +15,10 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
-  const FOLLOW_BACK_LIST_GAP_MS = 84 * 60 * 60 * 1000;
+  const FOLLOW_BACK_LIST_GAP_MS = 7 * 24 * 60 * 60 * 1000;
   const TARGET_SEED_REFRESH_MS = 6 * 60 * 60 * 1000;
   const TARGET_EXPANSION_LIMIT = 30;
-  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
+  const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
   const TARGET_FOLLOW_LIVE_KEY = "xrcTargetFollowLive";
   const TARGET_FOLLOW_POOL_KEY = "xrcTargetFollowPool";
@@ -264,18 +264,6 @@
     } catch (error) {}
   }
 
-  function isSeedHandle(handle) {
-    return DEFAULT_TARGET_FOLLOW_HANDLES.some((seed) => sameHandle(seed, handle));
-  }
-
-  function alternateSourceHandles() {
-    let catalog = globalThis.XrcKolRoster?.KOL_CATALOG;
-    if (!catalog && typeof require === "function") {
-      try { catalog = require("./kolRoster.js").KOL_CATALOG; } catch (error) { catalog = []; }
-    }
-    return (catalog || []).map(cleanHandle).filter((handle) => handle && !isSeedHandle(handle));
-  }
-
   function normalizeTargetPool(value) {
     const incoming = Array.isArray(value?.handles) ? value.handles : [];
     const handles = [];
@@ -283,7 +271,7 @@
     const add = (item, seenAt = 0) => {
       const handle = cleanHandle(typeof item === "string" ? item : item?.handle);
       const key = handle.toLowerCase();
-      if (!handle || seen.has(key) || isSeedHandle(handle)) return;
+      if (!handle || seen.has(key)) return;
       seen.add(key);
       handles.push({ handle, seenAt: Number(item?.seenAt) || seenAt, usedAt: Number(item?.usedAt) || 0 });
     };
@@ -302,19 +290,11 @@
     return a.length === b.length && a.every((handle, index) => handle === b[index]);
   }
 
-  function selectTargetBatch(pool, { size = TARGET_BATCH_SIZE, sources = null } = {}) {
+  function selectTargetBatch(pool, { size = TARGET_BATCH_SIZE, sources = [] } = {}) {
     const normalized = normalizeTargetPool(pool);
-    for (const handle of (sources || alternateSourceHandles())) {
-      if (!handle || isSeedHandle(handle) || normalized.handles.some((item) => sameHandle(item.handle, handle))) continue;
-      normalized.handles.push({ handle, seenAt: 0, usedAt: 0 });
-    }
-    const avoid = new Set(normalized.lastBatch.map((handle) => handle.toLowerCase()));
-    const candidates = normalized.handles.filter((item) => !isSeedHandle(item.handle));
-    const fresh = candidates.filter((item) => !avoid.has(item.handle.toLowerCase()));
-    const ranked = (fresh.length ? fresh : candidates).slice().sort((left, right) =>
-      (right.seenAt - left.seenAt) || (left.usedAt - right.usedAt) || left.handle.localeCompare(right.handle));
-    const handles = ranked.slice(0, Math.min(size, ranked.length)).map((item) => item.handle);
-    return { handles, changed: handles.length > 0 && !sameHandleSet(handles, normalized.lastBatch), reused: fresh.length < Math.min(size, normalized.handles.length) };
+    const board = (Array.isArray(sources) ? sources : []).map(cleanHandle).filter(Boolean);
+    if (leaderboard?.selectBatch) return leaderboard.selectBatch(board, normalized.lastBatch, size);
+    return { handles: [], changed: false, reused: false };
   }
 
   function rememberPoolHandles(pool, handles, now = Date.now()) {
@@ -337,10 +317,10 @@
     try { sessionStorage.setItem("xrcTargetFollowTask", JSON.stringify(task)); } catch (error) {}
   }
 
-  function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE) {
+  function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE, sources = []) {
     const locked = task?.locked && Array.isArray(task.batch) && task.batch.length;
     if (locked) return { handles: task.batch.map(cleanHandle).filter(Boolean), changed: false };
-    return selectTargetBatch(pool, { size });
+    return selectTargetBatch(pool, { size, sources });
   }
 
   function publishTargetBatch(handles, upcoming = []) {
@@ -390,16 +370,17 @@
   async function beginTargetTask() {
     await loadTargetPool();
     const saved = readTargetTask();
-    const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE);
+    const board = leaderboard?.loadHandles ? await leaderboard.loadHandles() : [];
+    const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
     if (planned.changed === false && saved?.locked) {
-      const locked = planned.handles.filter((handle) => !isSeedHandle(handle));
+      const locked = planned.handles.map(cleanHandle).filter(Boolean);
       if (locked.length) {
         TARGET_FOLLOW_HANDLES = locked;
         publishTargetBatch(locked, saved.next || []);
         return locked;
       }
     }
-    const handles = planned.handles.filter((handle) => !isSeedHandle(handle));
+    const handles = planned.handles.map(cleanHandle).filter(Boolean);
     applyTargetBatch(handles);
     writeTargetTask({ locked: true, batch: handles, next: [] });
     try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
@@ -438,8 +419,9 @@
     return first;
   }
 
-  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
-    if (!seenRows) return false;
+  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, followed = false, retry = false, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
+    if (retry) return true;
+    if (!seenRows || !followed) return false;
     return stalled >= stalledLimit || idleMs >= idleLimit;
   }
 
@@ -461,7 +443,7 @@
 
   function targetFollowOpenDecision({ pathHandle = "", batch = [], guard = null } = {}) {
     const cleaned = cleanHandle(pathHandle);
-    const locked = (Array.isArray(batch) ? batch : []).map(cleanHandle).filter((handle) => handle && !isSeedHandle(handle));
+    const locked = (Array.isArray(batch) ? batch : []).map(cleanHandle).filter(Boolean);
     if (cleaned && locked.some((handle) => sameHandle(handle, cleaned))) return { navigate: "", guard: null };
     const destination = locked[0] ? `/${locked[0]}/followers` : "";
     if (!destination || (guard && guard.to === destination)) {
@@ -603,8 +585,7 @@
   }
 
   function pickTargetFollowHandle() {
-    const handles = (TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : selectTargetBatch(targetPool || {}, { size: TARGET_BATCH_SIZE }).handles)
-      .filter((handle) => !isSeedHandle(handle));
+    const handles = TARGET_FOLLOW_HANDLES.map(cleanHandle).filter(Boolean);
     if (!handles.length) return "";
     return handles[Math.floor(Math.random() * handles.length)];
   }
@@ -619,7 +600,7 @@
   function targetPath(mode) {
     if (mode === "targetFollow") {
       const handle = targetFollowHandleFromPath() || pickTargetFollowHandle();
-      return handle && !isSeedHandle(handle) ? `/${handle}/followers` : "";
+      return handle ? `/${handle}/followers` : "";
     }
     const handle = currentAccountHandle();
     if (!handle) return "";
@@ -1259,6 +1240,7 @@
     }
     let stalled = 0;
     let sourceIdleSince = 0;
+    let sourceFollowed = false;
     const observedSourceHandles = new Set();
     let stopReason = "";
     let listRetryAttempts = 0;
@@ -1378,6 +1360,7 @@
           if (!(await waitForPlatformRateLimit())) break;
           continue;
         }
+        if (ok === true && mode === "targetFollow") sourceFollowed = true;
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
@@ -1415,6 +1398,17 @@
 
       emit("当前屏没有可处理账号，继续向下查找");
       const seenFollowerRows = observedSourceHandles.size > 0 || items.length > 0;
+      const retryVisible = mode === "targetFollow" && typeof followingRetryButton === "function" && Boolean(followingRetryButton());
+      if (retryVisible) {
+        const nextSource = advanceTargetFollowSource();
+        if (nextSource) {
+          state.running = false;
+          emit(`粉丝列表显示 Retry，转到 @${nextSource} 的粉丝列表`);
+          return { navigate: `/${nextSource}/followers` };
+        }
+        stopReason = "粉丝列表显示 Retry，本批没有下一个可换的人";
+        break;
+      }
       if (mode === "targetFollow" && !seenFollowerRows) {
         stalled = 0;
         sourceIdleSince = 0;
@@ -1433,7 +1427,7 @@
       }
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
       const idleMs = sourceIdleSince ? Date.now() - sourceIdleSince : 0;
-      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs });
+      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs, followed: sourceFollowed });
       if ((mode !== "targetFollow" && stalled >= MAX_STALLED_SCROLLS) || sourceReadyToAdvance) {
         stalled = 0;
         sourceIdleSince = 0;
@@ -1441,7 +1435,7 @@
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
             state.running = false;
-            emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
+            emit(`这一页已经关注成功，转到 @${nextSource} 的粉丝列表`);
             return { navigate: `/${nextSource}/followers` };
           }
           if (typeof finishTargetTask === "function") finishTargetTask();
@@ -1577,7 +1571,6 @@
       TARGET_SEED_REFRESH_MS,
       TARGET_EXPANSION_LIMIT,
       TARGET_SOURCE_IDLE_MS,
-      DEFAULT_TARGET_FOLLOW_HANDLES,
       TARGET_FOLLOW_LIVE_KEY,
       get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }
     }

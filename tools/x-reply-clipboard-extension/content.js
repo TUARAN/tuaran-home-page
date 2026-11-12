@@ -2559,7 +2559,7 @@
   }
 
     const DEFAULT_SCHEDULE_PRIORITY = Object.freeze({
-    notifications: 8, timeline: 9, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
+    notifications: 8, timeline: 8, kol: 8, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
     "likes-posts": 6, "likes-replies": 6, "mutual-followBack": 7,
     "mutual-targetFollow": 7, "mutual-unfollow": 3
   });

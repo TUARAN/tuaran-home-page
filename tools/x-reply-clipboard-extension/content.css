@@ -1227,20 +1227,31 @@
 #x-reply-clipboard-panel .xrc-task-subnav {
   display: none;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin: 0;
   padding: 8px 14px 8px;
   border-bottom: 1px solid var(--xrc-line);
   background: transparent;
 }
-#x-reply-clipboard-panel .xrc-task-live {
-  flex: 1 0 100%;
-  margin: 2px 0 0;
+#x-reply-clipboard-panel .xrc-task-live-row {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 4px 2px 0;
+}
+#x-reply-clipboard-panel[data-desk="task"] .xrc-task-live-row:not([hidden]) {
+  display: flex;
+}
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   color: var(--xrc-text);
   font-size: 12px;
   font-weight: 750;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-task-subnav:not([hidden]) { display: flex; }
 #x-reply-clipboard-panel .xrc-task-subnav button {
@@ -1265,21 +1276,27 @@
   background: transparent;
   outline: none;
 }
-#x-reply-clipboard-panel .xrc-task-subnav .xrc-task-manual-pause {
-  margin-left: auto;
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
+  flex: none;
+  margin: 0;
   padding: 5px 9px;
   border: 1px solid color-mix(in srgb, #c64a4a 42%, var(--xrc-line));
   border-radius: 8px;
+  background: #fff;
   color: #a62f36;
   font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
   white-space: nowrap;
+  cursor: pointer;
 }
-#x-reply-clipboard-panel .xrc-task-subnav .xrc-task-manual-pause:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-subnav .xrc-task-manual-pause:focus-visible:not(:disabled) {
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
   color: #8f2028;
   background: #fff3f3;
+  outline: none;
 }
-#x-reply-clipboard-panel .xrc-task-subnav .xrc-task-manual-pause:disabled {
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:disabled {
   opacity: 0.55;
   cursor: default;
 }

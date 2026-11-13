@@ -8572,6 +8572,10 @@
             <div class="xrc-flow-status" data-xrc-flow-start role="status" data-role="status">
               <span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span>
             </div>
+            <div class="xrc-task-live-row" data-xrc-task-live-row hidden>
+              <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
+              <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
+            </div>
             <div class="xrc-flow-meta">
               <p class="xrc-flow-hint" data-xrc-flow-hint hidden></p>
             </div>
@@ -8629,8 +8633,6 @@
             <strong data-xrc-task-subnav-label>任务子页</strong>
             <button type="button" class="xrc-task-docs-link" data-xrc-task-docs data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看任务说明" title="查看任务说明"><svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true" focusable="false"><circle cx="8" cy="4.2" r="1.15" fill="currentColor"/><path d="M8 7.15v5.15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
           </span>
-          <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
-          <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
         </div>
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
@@ -10171,14 +10173,16 @@
         docsLink.setAttribute("aria-label", docs[1]);
         docsLink.title = docs[1];
       }
-      const pauseButton = subnav.querySelector("[data-xrc-task-manual-pause]");
-      if (pauseButton) {
-        const paused = Boolean(taskSchedule.items?.[viewKey]?.manualStopped);
-        const busy = isTaskActionBusy(viewKey);
-        pauseButton.disabled = paused || busy;
-        pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停当前任务";
-        pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[viewKey] || "当前任务"}`;
-      }
+    }
+    const liveRow = panel.querySelector("[data-xrc-task-live-row]");
+    if (liveRow) liveRow.hidden = deskHome;
+    const pauseButton = panel.querySelector("[data-xrc-task-manual-pause]");
+    if (pauseButton) {
+      const paused = Boolean(taskSchedule.items?.[viewKey]?.manualStopped);
+      const busy = isTaskActionBusy(viewKey);
+      pauseButton.disabled = paused || busy;
+      pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停当前任务";
+      pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[viewKey] || "当前任务"}`;
     }
     syncAllTaskScheduleConfigs(panel);
     renderTodaySummary(panel);

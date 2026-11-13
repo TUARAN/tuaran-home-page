@@ -4591,6 +4591,7 @@ if (typeof module === "object" && module.exports) {
     callDeepSeek,
     handleMessage,
     fetchConfiguredModel,
+    TASK_MODES,
     validTaskMode,
     taskTabUrl,
     taskPageUrl,

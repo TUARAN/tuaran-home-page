@@ -10,6 +10,7 @@ import DocsHashNavigation from './DocsHashNavigation'
 import DocsToc from './DocsToc'
 import PostWaveTimeline from './PostWaveTimeline'
 import PromptVoteLedger from './PromptVoteLedger'
+import TaskShelf from './TaskShelf'
 import TaskWindowPlan from './TaskWindowPlan'
 
 export const dynamic = 'force-static'
@@ -116,6 +117,7 @@ const TOC = [
   ] },
   { id: 'part-2', heading: '第二篇 · 任务与配置', items: [
     { id: 'tasks', label: '第四章 十八项任务规则' },
+    { id: 'task-shelf', label: '任务货架', depth: 1 },
     { id: 'comments', label: '评论管理', depth: 1 },
     { id: 'community-share', label: '社群分发', depth: 1 },
     { id: 'likes', label: '点赞管理', depth: 1 },
@@ -272,35 +274,35 @@ export default function XReplyClipboardDocsPage() {
             <ol className="list-decimal space-y-3 pl-5">
               <li>在插件介绍页获取安装包，解压后通过 Chrome 扩展管理页加载。打开已登录的 X 页面，核对面板顶部的账号与版本。关掉面板后，点浏览器工具栏里的扩展图标重新打开。</li>
               <li>右上角齿轮进入设置中心，在「模型」中配置服务与提示词。密钥仅在本机配置，不要写进截图或分享材料。</li>
-              <li>在排班台勾选需要的任务，用「查看」进入子页设置速度并启停。首次使用先选少量任务，核对运行结果后再增加。</li>
+              <li>在排班台勾选需要的任务，用「查看」进入子页设置速度并启停。队列怎么轮换写在下面的任务货架，不写在每个任务底部。首次使用先选少量任务，核对运行结果后再增加。</li>
               <li>点右上角「开始」启动排班。「全自动排班」负责勾选全部任务；单项暂停在任务子页，全停用「暂停全部」。</li>
-              <li>等待倒计时结束表示具备候选资格，仍需等待共享页签与优先级安排。普通等待可通过「立即开启」请求启动；共享关注冷却、风控与每日额度继续生效。</li>
+              <li>能运行的任务按队列轮到就跑一次，然后回到队尾。还没到时间的先跳过。普通等待可通过「立即开启」排到队首；共享关注冷却、风控与每日额度继续生效。</li>
             </ol>
-            <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-05）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
+            <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-13）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
           </Section>
 
           <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">
             <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">当前系统结构图 · 本地 v4 源码</h3>
-              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 17 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
+              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 18 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
               <figure className="m-0">
                 <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
                   <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 高频互动助手的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
                 </a>
                 <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据当前本地 v4 源码梳理的组件与数据流。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
               </figure>
-              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 2 项、发帖 6 项、社群 1 项、清理 3 项，共 17 项。它们按排班顺序占用执行页签，不会同时在这一页签执行。</p>
+              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 4 项、发帖 6 项、社群 1 项、清理 2 项，共 18 项。关注里包含回关、关注候选、清理未回关和清理非简中。它们按队列占用执行页签，不会同时在这一页签执行。</p>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
             <p className="text-[var(--site-ink)]">后台按队列安排十八项任务。能运行的就上，跑完一次回到队尾。没有可运行任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
             <ul className="list-disc space-y-2 pl-5">
               <li>评论首页、评论回复、评论大V、点赞帖子、点赞评论、清理未回关、清理非简中、回关粉丝、纯文字帖、精品发帖、X主题发帖、普通发文和站长转发进入同一队列。能运行的按队列上，跑完一次回到队尾。任务切换前会等当前操作结束并保存状态；冷却和手动停止优先于排班。</li>
-              <li>卡片左侧勾选是否参与自动排班；清理未回关、清理非简中、清理低质帖、清理低质评论、X主题发帖、小红书发帖和站长转发默认不勾选，需要时手动加入，已保存的个人选择继续生效。X主题发帖卡片标注「调试中」。右侧「查看」打开任务子页。子页先速度表与启停，排班说明和名单靠后。不新开或切换浏览器页签。整卡不再一点就进子页。</li>
+              <li>卡片左侧勾选是否参与自动排班；清理未回关、清理非简中、清理低质帖、清理低质评论、X主题发帖、小红书发帖和站长转发默认不勾选，需要时手动加入，已保存的个人选择继续生效。X主题发帖卡片标注「调试中」。右侧「查看」打开任务子页。子页放速度表、启停，以及这项自己的一句操作说明。队列规则写在任务货架，不在每个任务底下重复。不新开或切换浏览器页签。整卡不再一点就进子页。</li>
               <li>排班台左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关页签不会关掉后台排班。风控等待不会暂停其他任务。</li>
               <li>详情和十八项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。每个任务子页顶部都有「暂停当前任务」，只手动暂停这一项；重新开启使用该页的启动按钮。评论首页、评论回复、评论大V遇到疑似自动化提示时，优先显示实际原因和共享冷却剩余时间；启动确认的约 90 秒只用于判断执行页是否回报，不代表限制已解除。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
               <li>排班台标注「当前任务 / 下一任务 / 候选任务」。绿边表示运行，黄边表示等待，红边表示已停止或需处理。未参与的任务降饱和并排在后面；「查看」只进入详情，不改变排班。</li>
               <li>能运行的任务按队列轮到就跑。自己的冷却和间隔没到就先跳过。评论完成本次后让位；纯文字帖和 X主题发帖每次只发 1 条，随后等待下一周期。具体数值见「速度与排班设置」。</li>
-              <li>关注候选和回关粉丝一次任务都是 5、10 或 15 人，默认 15 人，满了就交回队列。一次 15 人，X 会提示超过限制。回关约每周一次。清理未回关和清理非简中分开排班，都约每周一次。清理类遇 X 受限或手动暂停后停止；下次时间与异常原因以卡片为准。</li>
+              <li>关注候选和回关粉丝一次任务都是 5、10 或 15 人，默认 15 人，满了就交回队列。一次 15 人，X 会提示超过限制。页面出现「抱歉，你受到速度限制。请稍等片刻，然后再试一次。」时，这次关注或回关结束。回关约每周一次。清理未回关只处理没回关的人。清理非简中单独处理没有简体字的资料。两项都约每周一次，默认不进队列。</li>
               <li>一次任务包含若干轮；评论首页按成功回复数推进每轮，评论回复按已检查的不同通知数推进每轮，并单独显示成功回复数。没有足够可回复通知时，本次扫描结束，不等待凑满成功数。点赞帖子与点赞评论每轮设置要完成的点赞个数。排班历史按实际成功数计数。</li>
               <li>单项冷却时先持久化恢复时间，再让执行页签轮给其他已勾选且到期的任务。评论三项共用疑似自动化冷却，按 10、20、30 分钟递增；冷却中手动点启动也不能清除截止时间。评论任务启动未确认时显示最近原因与重试时间，连续 3 次启动失败后停止该项自动重试。若没有其他可运行项，排班显示各项等待原因。手动停止会取消对应任务的自动重试。</li>
               <li>回复和发帖的普通排程可点“立即开始”；疑似自动化冷却期间，该按钮用于停止任务，不能跳过风控等待。</li>
@@ -357,7 +359,7 @@ export default function XReplyClipboardDocsPage() {
               等待中的任务会说明正在等什么：前一项任务完成、下一次运行时间、X 限制冷却或固定发帖档位。有截止时间时显示剩余倒计时；排班卡、详情和任务子页使用同一份后台状态。等待动效仅用于提示状态，系统开启“减少动态效果”后不播放。
             </p>
             <p className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_20%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
-              顶部“详情”汇总 17 项任务；概览显示已排班总数及其中运行、等待、需处理的数量，再显示未排班数量。全流程暂停时，仍按任务配置统计已排班。界面只显示上述四类；“启动中 / 停止中”是短暂过渡。状态只反映扩展记录；X 页面是否完成动作，以页面反馈和已确认的统计为准。
+              顶部“详情”汇总 18 项任务；概览显示已排班总数及其中运行、等待、需处理的数量，再显示未排班数量。全流程暂停时，仍按任务配置统计已排班。界面只显示上述四类；“启动中 / 停止中”是短暂过渡。状态只反映扩展记录；X 页面是否完成动作，以页面反馈和已确认的统计为准。
             </p>
             <p className="rounded-xl border border-[color-mix(in_srgb,#d97706_25%,var(--site-line))] bg-[color-mix(in_srgb,#f59e0b_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
               排班台的「执行报警记录」保存在本机，记录 X 明确限制、社群发送失败或结果未确认，以及评论任务连续启动失败。最多保留最近 30 天的 80 条，短时间重复报警合并计数。顶部圆点中，未排班为灰色、运行中为绿色、等待中为黄色、需处理为橙色；当前账号的任务有执行报警时才显示红色，悬停可看原因。报警只用于复核，不会暂停其他任务、延长原定等待或阻止排班切换。
@@ -366,6 +368,12 @@ export default function XReplyClipboardDocsPage() {
 
           <Part id="part-2" number="二" title="任务与配置" />
           <Section id="tasks" index="四" title="十八项任务规则" summary="评论 · 点赞 · 关注 · 发帖与草稿 · 社群 · 清理">
+            <div id="task-shelf" className="scroll-mt-24 space-y-3">
+              <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">任务货架</h3>
+              <p>能运行的任务按队列上，跑完一次回到队尾。还没到时间的先跳过，跳过时不挪位置。这句只写在这里，任务页底部不再重复。</p>
+              <p>十八项现在都在架上。下架只改这份货架记录：任务还在完整扩展里，只是不能被选进新的派生清单。派生清单不是第二份源码。它记下选中的任务、这些任务要用的脚本，以及共用的队列、页面和回执。以后要做子插件，就按这份清单装配，不把排班和执行页签再复制一遍。</p>
+              <TaskShelf />
+            </div>
             <div className="space-y-3">
               <TaskBlock id="comments" badge="评" title="评论管理" summary="评论首页 · 评论回复 · 评论大V">
                 <div id="reply-timeline" className="scroll-mt-24 rounded-xl border border-[var(--site-line)] bg-[var(--site-panel-strong)] p-4">

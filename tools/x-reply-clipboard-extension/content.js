@@ -7781,8 +7781,8 @@
       : mode === "kol"
         ? `<p class="xrc-config-note" data-xrc-kol-status role="status">${kolRosterStatusText()}</p>`
         : "";
-    return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
-      ${taskSectionHead("排班", "跑完一次回到队尾")}
+    if (!listField) return "";
+    return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}说明">
       ${listField}
     </section>`;
   }

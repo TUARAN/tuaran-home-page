@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '评论回复按时间收口',
-    description: '默认只回复最近 2 小时内的评论。可选 1、4、8、24 小时。刷到窗口外就结束。本地源码，尚未打包。',
+    title: '关注候选一次 15 人',
+    description: '一次任务默认关注 15 人，也可以选 5 人或 10 人。满了就结束。本地源码，尚未打包。',
     current: true,
   },
   {

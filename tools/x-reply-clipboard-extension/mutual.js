@@ -3,7 +3,7 @@
 
   const FOLLOW_ACTION_DELAY_MS = 2000;
   const FOLLOW_BATCH_SIZE = 100;
-  // 两项关注任务共用一条节奏：确认满 100 个才休息并让出页签。休息跟速度档，不再固定 30 分钟。
+  // 回关仍确认满 100 个才休息。关注候选一次任务只关注 5、10 或 15 人，默认 15。
   const FOLLOW_ROUND_GAP_SECONDS = Object.freeze({
     slow: 10 * 60,
     medium: 5 * 60,
@@ -666,6 +666,12 @@
     return followRoundGapSeconds(pace) * 1000;
   }
 
+  function targetFollowQuota(pace) {
+    if (pace === "slow") return 5;
+    if (pace === "medium") return 10;
+    return 15;
+  }
+
   function formatFollowGapLabel(ms) {
     const minutes = Math.round(Number(ms) / 60000);
     if (minutes >= 1) return `${minutes} 分钟`;
@@ -1326,7 +1332,7 @@
     const manualUnfollow = independentCleanup && state.unfollowMode === "manual";
     const cleanupLimit = ({ slow: 15, medium: 30, fast: 45, turbo: 60 })[state.followPace] || 15;
     let cleanupAttempts = 0;
-    await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
+    await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" && mode !== "targetFollow" });
     await reset(mode, onUpdate);
     if (!independentCleanup && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
@@ -1454,8 +1460,10 @@
         }
         if (ok === "rate-limited" || rateLimitVisible()) {
           reportMutualAction(mode, candidate.handle, "limited", "rate-limited");
-          if (mode === "unfollow") {
-            stopReason = "X 提示操作受限，本次先停下。";
+          if (mode === "unfollow" || mode === "targetFollow") {
+            stopReason = mode === "targetFollow"
+              ? `已关注 ${state.targetFollowed} 人，X 提示超过限制，本次结束`
+              : "X 提示操作受限，本次先停下。";
             break followLoop;
           }
           state.seenHandles.delete(candidate.handle);
@@ -1463,6 +1471,11 @@
           continue;
         }
         if (ok === true && mode === "targetFollow") sourceFollowed = true;
+        const targetQuota = state.targetFollowPace === "slow" ? 5 : state.targetFollowPace === "medium" ? 10 : 15;
+        if (mode === "targetFollow" && ok === true && state.targetFollowed >= targetQuota) {
+          stopReason = `本次已关注 ${state.targetFollowed} 人`;
+          break followLoop;
+        }
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
@@ -1487,7 +1500,7 @@
           }
           continue;
         }
-        if (!independentCleanup && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        if (!independentCleanup && mode !== "targetFollow" && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + followBatchCooldownMs(state.targetFollowPace || state.followPace);
           await persistSharedFollowRate();
@@ -1662,6 +1675,7 @@
     createFollowBackPlan,
     followRoundGapSeconds,
     followBatchCooldownMs,
+    targetFollowQuota,
     nextFollowBackNightStart,
     constants: {
       FOLLOW_ACTION_DELAY_MS,

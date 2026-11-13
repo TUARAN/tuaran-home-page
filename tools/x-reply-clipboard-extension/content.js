@@ -1117,14 +1117,13 @@
   }
 
   function currentTargetFollowPace() {
-    const pace = taskSchedule.rules?.["mutual-targetFollow"]?.pace || currentFollowPace();
-    return ["slow", "medium", "fast", "turbo"].includes(pace) ? pace : "medium";
+    const pace = taskSchedule.rules?.["mutual-targetFollow"]?.pace;
+    return ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
   }
 
   async function selectTargetFollowPace(pace) {
     if ((state.mutual?.running || state.mutual?.stopping) && state.mutual?.mode === "targetFollow") return;
-    const profile = loopApi?.scheduleProfile?.(pace === "boundary" ? "medium" : pace);
-    const selected = ["slow", "medium", "fast", "turbo"].includes(profile?.id) ? profile.id : "medium";
+    const selected = ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
     const rules = {
       ...(taskSchedule.rules || {}),
       "mutual-targetFollow": { ...(taskSchedule.rules?.["mutual-targetFollow"] || {}), pace: selected }
@@ -4192,8 +4191,8 @@
     return boundary ? [...profiles, boundary] : profiles;
   }
 
-  function paceTableHtml({ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false }) {
-    const head = `<span class="xrc-pace-pick" role="columnheader"></span>${["速度", ...columns.map((column) => column.label)]
+  function paceTableHtml({ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false, nameHeader = "速度" }) {
+    const head = `<span class="xrc-pace-pick" role="columnheader"></span>${[nameHeader, ...columns.map((column) => column.label)]
       .map((text) => `<span role="columnheader">${text}</span>`).join("")}`;
     const rows = profiles.map((profile) => {
       const name = profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
@@ -4252,6 +4251,23 @@
   function followRoundGapMinutes(pace) {
     const seconds = mutualApi?.followRoundGapSeconds?.(pace) || 5 * 60;
     return Math.max(1, Math.round(seconds / 60));
+  }
+
+  function targetFollowPaceTableHtml() {
+    return paceTableHtml({
+      label: "本次人数",
+      attr: "data-xrc-target-follow-pace-label",
+      nameHeader: "人数",
+      profiles: [
+        { id: "slow", label: "5 人", count: 5 },
+        { id: "medium", label: "10 人", count: 10 },
+        { id: "fast", label: "15 人", count: 15 }
+      ],
+      defaultId: "fast",
+      columns: [
+        { label: "一次任务", value: (profile) => `关注 ${profile.count} 人后结束` }
+      ]
+    });
   }
 
   function followPaceTableHtml({ label = "回关速度", attr = "data-xrc-follow-pace-label", unlimitedKey = "" } = {}) {
@@ -7307,7 +7323,7 @@
     mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
     sessionStorage.setItem(MUTUAL_ACTIVE_KEY, mode);
     const runPromise = mutualApi.run(mode, updateMutualState, {
-      pace: mode === "followBack" ? currentFollowPace() : taskSchedule.rules?.[mutualTaskKey(mode)]?.pace,
+      pace: mode === "followBack" ? currentFollowPace() : mode === "targetFollow" ? currentTargetFollowPace() : taskSchedule.rules?.[mutualTaskKey(mode)]?.pace,
       unlimited: false,
       scheduled: scheduledStart
     });
@@ -8571,10 +8587,11 @@
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
               <div><b>03</b><span><strong>关注候选</strong><small>每次任务直接换成五个新人</small></span></div>
               <div class="xrc-task-section">
-                ${taskSectionHead("运行", "速度与启停")}
-                <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>
+                ${taskSectionHead("运行", "人数与启停")}
+                <div data-xrc-target-follow-pace>${targetFollowPaceTableHtml()}</div>
+                <p class="xrc-config-note">一次关注 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。</p>
                 <div class="xrc-flow-end">
-                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日关注 0/300 目标（上限 400）· 本批 0/100</div>
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0/15 · 今日关注 0/300 目标（上限 400）</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
                   <button class="xrc-inline-start" type="button" data-xrc-mutual-action="targetFollow">已停止 · 点击启动</button>
                 </div>
@@ -9807,7 +9824,7 @@
           ? `待人工核对 ${(mutual.unfollowReview || []).length} 个 · 扫描跳过 ${mutual.skipped} 个`
           : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
         followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus}`,
-        targetFollow: `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
+        targetFollow: `本次关注 ${mutual.targetFollowed}/${mutualApi?.targetFollowQuota?.(currentTargetFollowPace()) || 15} · 今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400） · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
       };
       for (const [mode, text] of Object.entries(stats)) {
         const node = panel.querySelector(`[data-xrc-mutual-stats="${mode}"]`);

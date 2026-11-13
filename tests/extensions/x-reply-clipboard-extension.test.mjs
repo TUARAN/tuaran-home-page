@@ -6880,6 +6880,10 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.isFollowersPath('/home'), false)
   assert.equal(mutual.constants.FOLLOW_ACTION_DELAY_MS, 2000)
   assert.equal(mutual.constants.FOLLOW_BATCH_SIZE, 100)
+  assert.equal(mutual.targetFollowQuota('slow'), 5)
+  assert.equal(mutual.targetFollowQuota('medium'), 10)
+  assert.equal(mutual.targetFollowQuota('fast'), 15)
+  assert.equal(mutual.targetFollowQuota('turbo'), 15)
   assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 5 * 60 * 1000)
   assert.deepEqual(mutual.constants.FOLLOW_ROUND_GAP_SECONDS, { slow: 10 * 60, medium: 5 * 60, fast: 3 * 60, turbo: 2 * 60 })
   assert.equal(mutual.followBatchCooldownMs('slow'), 10 * 60 * 1000)
@@ -7641,6 +7645,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-mutual-action="unfollow"/)
   assert.match(content, /data-xrc-mutual-action="followBack"/)
   assert.match(content, /data-xrc-mutual-action="targetFollow"/)
+  assert.match(content, /一次关注 15 人，X 会提示超过限制/)
+  assert.match(content, /关注 \$\{profile\.count\} 人后结束/)
   assert.match(content, /data-xrc-mutual-tab="unfollow"/)
   assert.match(content, /data-xrc-mutual-tab="followBack"/)
   assert.match(content, /data-xrc-mutual-tab="targetFollow"/)
@@ -10619,6 +10625,8 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.equal(plan.unfollowWeeklyGapVersion, 1)
     assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-targetFollow'].pace, 'fast')
+    assert.equal(plan.targetFollowCountVersion, 1)
     assert.equal(plan.rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
     assert.ok(plan.items['mutual-followBack'].resumeAt >= now + background.FOLLOW_BACK_MIN_GAP_MS - 120000)
     assert.equal(plan.items['mutual-targetFollow'].resumeAt, now + 5 * 60 * 1000)
@@ -10889,7 +10897,7 @@ test('unfollow candidates skip uncertain rows and keep followers unless non-Chin
 
 test('weekly cleanup copy stays on unfollow and prune keeps pace intervals', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const paceTableHtml = source.match(/  function paceTableHtml\(\{ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false \}\) \{[\s\S]*?\n  \}/)?.[0]
+  const paceTableHtml = source.match(/  function paceTableHtml\(\{[\s\S]*?\n  \}/)?.[0]
   const cleanupPaceTableHtml = source.match(/  function cleanupPaceTableHtml\(\{ weekly = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(paceTableHtml && cleanupPaceTableHtml)
   const context = vm.createContext({})

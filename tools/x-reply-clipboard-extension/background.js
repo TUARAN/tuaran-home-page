@@ -2056,6 +2056,7 @@ function defaultTaskRules() {
     enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+      : mode === "mutual-targetFollow" ? "fast"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2093,7 +2094,7 @@ function normalizedTaskRules(value) {
       minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
         : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
         : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
-        : mode === "mutual-targetFollow" ? followSessionGapMs(pace)
+        : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
         : mode === "community-share"
@@ -2480,6 +2481,13 @@ async function readTaskSchedule() {
       }
     }
     plan.followBackWeeklyGapVersion = 2;
+    scheduleMigrated = true;
+  }
+  if ((plan.targetFollowCountVersion || 0) < 1) {
+    const pace = plan.rules?.["mutual-targetFollow"]?.pace;
+    if (plan.rules?.["mutual-targetFollow"] && pace !== "slow") plan.rules["mutual-targetFollow"].pace = "fast";
+    if (plan.rules?.["mutual-targetFollow"]) plan.rules["mutual-targetFollow"].minGapMs = TARGET_FOLLOW_MIN_GAP_MS;
+    plan.targetFollowCountVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.unfollowWeeklyGapVersion !== 1) {

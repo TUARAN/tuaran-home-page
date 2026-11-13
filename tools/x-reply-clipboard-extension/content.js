@@ -5983,6 +5983,66 @@
     return { dialog: scope, textbox, submit };
   }
 
+  function outsidePanel(node) {
+    return Boolean(node) && !node.closest?.(`#${PANEL_ID}`);
+  }
+
+  function visibleComposerNode(node) {
+    if (!node) return false;
+    if (typeof node.getBoundingClientRect !== "function") return true;
+    const rect = node.getBoundingClientRect();
+    return rect.width >= 8 && rect.height >= 8;
+  }
+
+  function replySubmitIn(scope) {
+    const tested = scope?.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
+    if (tested) return tested;
+    return Array.from(scope?.querySelectorAll?.("button, [role='button']") || [])
+      .find((button) => /^(?:Reply|回复)$/iu.test(String(button.innerText || button.textContent || "").replace(/\s+/gu, " ").trim())) || null;
+  }
+
+  function replySurface(node) {
+    let current = node;
+    for (let depth = 0; current && depth < 8; depth += 1) {
+      if (current === document.body || current === document.documentElement) break;
+      const text = String(current.innerText || "");
+      if (text.length < 2500 && /Replying to|正在回复|Post your reply|发布你的回复|Tweet your reply|写回复/iu.test(text)) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function findVisibleReplyComposer() {
+    const selectors = [
+      '[data-testid^="tweetTextarea_"]',
+      '[contenteditable="true"][role="textbox"]',
+      '[contenteditable="plaintext-only"][role="textbox"]',
+      '[contenteditable="true"]',
+      '[contenteditable="plaintext-only"]',
+      '[role="textbox"]'
+    ];
+    const seen = new Set();
+    for (const selector of selectors) {
+      for (const node of document.querySelectorAll(selector)) {
+        if (seen.has(node) || !outsidePanel(node)) continue;
+        seen.add(node);
+        const editable = node.getAttribute?.("contenteditable");
+        const textbox = editable === "true" || editable === "plaintext-only" || node.getAttribute?.("role") === "textbox"
+          ? node
+          : node.querySelector?.('[contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"]');
+        if (!textbox || !outsidePanel(textbox) || !visibleComposerNode(textbox)) continue;
+        const label = `${textbox.getAttribute?.("aria-label") || ""} ${textbox.getAttribute?.("data-placeholder") || ""}`;
+        const surface = /Post your reply|发布你的回复|Tweet your reply|Post text|帖子文本|写回复/iu.test(label)
+          ? textbox.parentElement
+          : replySurface(textbox);
+        if (!surface) continue;
+        const dialog = textbox.closest?.("[role='dialog'], [aria-modal='true']") || null;
+        return { dialog, textbox, submit: replySubmitIn(dialog || surface) };
+      }
+    }
+    return null;
+  }
+
   function findDialogComposer() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
@@ -5992,11 +6052,14 @@
     }
     const layers = document.querySelector?.("#layers");
     const layered = layers && !layers.closest?.(`#${PANEL_ID}`) ? replyTextboxWithin(layers) : null;
-    if (!layered) return null;
-    const shell = layered.closest?.("[role='dialog'], [aria-modal='true'], [data-testid='sheetDialog']") || layered.parentElement;
-    if (!shell) return null;
-    const submit = shell.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || null;
-    return { dialog: shell, textbox: layered, submit };
+    if (layered) {
+      const shell = layered.closest?.("[role='dialog'], [aria-modal='true'], [data-testid='sheetDialog']") || layered.parentElement;
+      if (shell) {
+        const submit = shell.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || replySubmitIn(shell);
+        return { dialog: shell, textbox: layered, submit };
+      }
+    }
+    return findVisibleReplyComposer();
   }
 
   function findReplyRestrictionDialog() {

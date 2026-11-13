@@ -6746,6 +6746,46 @@ test('an open reply sheet counts when the editable node sits inside the textarea
   assert.equal(found.submit, replyButton)
 })
 
+test('a visible Post your reply box counts even when it is not inside a dialog', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const start = source.indexOf('  function replyTextboxWithin(root) {')
+  const end = source.indexOf('  function findReplyRestrictionDialog() {')
+  const helpers = start >= 0 && end > start ? source.slice(start, end) : ''
+  assert.ok(helpers.includes('function findVisibleReplyComposer'))
+  const button = { innerText: 'Reply', textContent: 'Reply' }
+  const textbox = {
+    parentElement: null,
+    closest: () => null,
+    getAttribute: (name) => name === 'contenteditable' ? 'true' : name === 'role' ? 'textbox' : '',
+    getBoundingClientRect: () => ({ width: 240, height: 48 }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  const surface = {
+    innerText: 'Replying to @EraGroupVietnam\nPost your reply',
+    parentElement: null,
+    closest: () => null,
+    querySelector: () => null,
+    querySelectorAll: (selector) => String(selector).includes('button') ? [button] : [],
+  }
+  textbox.parentElement = surface
+  const context = vm.createContext({
+    document: {
+      body: { parentElement: null },
+      documentElement: null,
+      querySelectorAll: (selector) => String(selector).includes('contenteditable="true"][role="textbox"]') ? [textbox] : [],
+      querySelector: () => null,
+    },
+    PANEL_ID: 'x-reply-clipboard-panel',
+    REPLY_EDITOR_SELECTOR: '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]',
+  })
+  vm.runInContext(`${helpers}\nglobalThis.find = findDialogComposer`, context)
+  const found = context.find()
+  assert.equal(found.textbox, textbox)
+  assert.equal(found.dialog, null)
+  assert.equal(found.submit, button)
+})
+
 test('notification replies target the comment, not the parent post shown above it', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]

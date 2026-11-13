@@ -59,7 +59,22 @@
       const editor = visibleEditor(dialog.querySelector(REPLY_EDITOR_SELECTOR));
       if (editor) return editor;
     }
-    return visibleEditor(document.querySelector(REPLY_EDITOR_SELECTOR));
+    const strict = visibleEditor(document.querySelector(REPLY_EDITOR_SELECTOR));
+    if (strict) return strict;
+    const candidates = document.querySelectorAll('[contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"]');
+    for (const editor of candidates) {
+      if (!visibleEditor(editor)) continue;
+      let current = editor;
+      for (let depth = 0; current && depth < 8; depth += 1) {
+        if (current === document.body || current === document.documentElement) break;
+        const text = String(current.innerText || "");
+        if (text.length < 2500 && /Replying to|正在回复|Post your reply|发布你的回复|Tweet your reply|写回复/iu.test(text)) {
+          return editor;
+        }
+        current = current.parentElement;
+      }
+    }
+    return null;
   }
 
   function fiberDraft(element) {

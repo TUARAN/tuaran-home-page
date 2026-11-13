@@ -240,7 +240,7 @@ export default function PostWaveTimeline() {
             <div key={window.label} className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-2.5">
               <p className="font-semibold text-[var(--site-ink)]">{window.label}</p>
               <p className="mt-0.5 font-mono text-[11px] text-[var(--site-faint)]">{window.range}</p>
-              <p className="mt-1">高峰窗口内等待系数约 0.55：默认「中」挡基础 25～35 分钟，实际大约 14～19 分钟一帖。</p>
+              <p className="mt-1">高峰窗口内等待系数约 0.55，乘在所选速度档的间隔上。默认慢档基础 45～70 分钟，高峰里大约 25～39 分钟一帖。</p>
             </div>
           ))}
         </div>

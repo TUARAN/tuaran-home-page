@@ -2407,14 +2407,14 @@
           action: "start"
         };
       }
+      const restarts = Number(queued.reloadAttempts) || 0;
+      const restartLabel = `已重启 ${restarts} 次`;
       const eta = wait.remaining > 0 ? `约 ${formatCountdown(wait.remaining)}` : "";
       return {
         label: eta
-          ? formatUserStateAction(USER_STATE_LABELS.starting, `${eta} · 请稍候`)
-          : formatUserStateAction(USER_STATE_LABELS.starting, "请稍候"),
-        title: eta
-          ? `正在确认页内任务启动，${eta}内未确认会自动重试。`
-          : "正在确认页内任务启动，超时后会自动重试。",
+          ? formatUserStateAction(USER_STATE_LABELS.starting, `${restartLabel} · ${eta}`)
+          : formatUserStateAction(USER_STATE_LABELS.starting, restartLabel),
+        title: `${restartLabel}。执行页没有回报时会重新装载，满 3 次后跳过这项任务。`,
         action: "none",
         disabled: true,
         busy: true
@@ -2773,11 +2773,9 @@
     }
     if (wait?.kind !== "starting") return "";
     const eta = wait.remaining > 0 ? `约 ${formatCountdown(wait.remaining)}` : "";
-    const previousError = String(queued.lastStartError || "").trim();
+    const restarts = Number(queued.reloadAttempts) || 0;
     const stage = wait.detail || "等待执行页回报启动结果";
-    const attempt = Number(queued.recoveryAttempts) || 0;
-    const retry = previousError ? `上次未确认：${previousError}；第 ${attempt + 1} 次尝试。` : "";
-    return `${retry}当前步骤：${stage}。${eta ? `若仍未收到页内回报，${eta}后检查执行页并尝试恢复。` : "正在检查执行页是否已启动。"}`;
+    return `已重启 ${restarts} 次。当前步骤：${stage}。${eta ? `若仍未收到页内回报，${eta}后再次检查。` : "正在检查执行页是否已启动。"}重启满 3 次后跳过这项任务。`;
   }
 
   function scheduleManualFocusDeferred(now = Date.now()) {

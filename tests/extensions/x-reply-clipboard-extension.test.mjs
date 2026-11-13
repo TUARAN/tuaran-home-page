@@ -1553,13 +1553,15 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.taskSchedule.startedAt = now - 30000
   context.pluginRuntime.tasks = { notifications: { phase: 'starting', updatedAt: now } }
   const starting = context.control('notifications', false, now)
-  assert.equal(starting.label, '启动中 · 约 1 分 0 秒 · 请稍候')
+  assert.equal(starting.label, '启动中 · 已重启 0 次 · 约 1 分 0 秒')
   assert.equal(starting.action, 'none')
   assert.equal(starting.disabled, true)
   assert.equal(starting.busy, true)
-  assert.match(starting.title, /正在确认页内任务启动/)
+  assert.match(starting.title, /满 3 次后跳过这项任务/)
+  context.taskSchedule.items.notifications = { reloadAttempts: 2 }
+  assert.equal(context.control('notifications', false, now).label, '启动中 · 已重启 2 次 · 约 1 分 0 秒')
   context.taskSchedule.startedAt = 0
-  assert.equal(context.control('notifications', false, now).label, '启动中 · 请稍候')
+  assert.equal(context.control('notifications', false, now).label, '启动中 · 已重启 2 次')
 })
 
 test('single task click refreshes background schedule before acting on a stale start label', async () => {
@@ -1949,16 +1951,17 @@ test('timeline startup copy names the current step and explains the recovery cou
   const now = Date.now()
   const context = vm.createContext({
     taskSchedule: { enabled: true, current: 'timeline', startedAt: now - 30000,
-      items: { timeline: { recoveryAttempts: 1, lastStartError: '执行页未确认' } }, timeline: { future: [] } },
+      items: { timeline: { recoveryAttempts: 1, reloadAttempts: 1, lastStartError: '执行页未确认' } }, timeline: { future: [] } },
     pluginRuntime: { tasks: { timeline: { phase: 'starting', detail: '正在装载执行页' } } },
     FLOW_STALE_MS: 90000,
     formatCountdown: () => '1 分钟',
   })
   vm.runInContext(`${waitInfo}\n${startupCopy}\nglobalThis.copy = confirmingStartCopy`, context)
   const copy = context.copy('timeline', now)
-  assert.match(copy, /上次未确认：执行页未确认；第 2 次尝试/)
+  assert.match(copy, /已重启 1 次/)
   assert.match(copy, /当前步骤：正在装载执行页/)
-  assert.match(copy, /1 分钟后检查执行页并尝试恢复/)
+  assert.match(copy, /1 分钟后再次检查/)
+  assert.match(copy, /重启满 3 次后跳过这项任务/)
 })
 
 test('comment status shows the real restriction deadline before startup confirmation', async () => {
@@ -9686,7 +9689,55 @@ test('a never-started shared tab is reloaded in place after the boot grace', asy
     assert.equal(local.xrcTaskSchedule.current, 'timeline')
     assert.ok(session['xrcPendingTab:11']?.start)
     assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.autoDiscardable === false && entry.active !== true))
+    assert.match(local.xrcTaskSchedule.items.timeline.reason, /已重启 1 次/)
     assert.match(local.xrcTaskSchedule.items.timeline.reason, /同一页签重新装载/)
+    assert.equal(local.xrcTaskSchedule.items.timeline.reloadAttempts, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('three unconfirmed reloads skip the task instead of starting the countdown again', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'notifications', workTabId: 11, startedAt: now - 95_000,
+      items: {
+        notifications: { reloadAttempts: 3, lastStartError: '执行页没有回报启动结果' },
+        timeline: { blocked: true }, kol: { blocked: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-followBack': { blocked: true }, 'mutual-targetFollow': { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 11, phase: 'starting', updatedAt: now - 95_000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'notifications', phase: 'starting' }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(local.xrcTaskSchedule.items.notifications.blocked, true)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 3)
+    assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 3 次，已跳过这项任务/)
   } finally {
     globalThis.chrome = previousChrome
   }

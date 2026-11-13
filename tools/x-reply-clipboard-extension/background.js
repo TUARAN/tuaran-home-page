@@ -35,7 +35,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let executionAlertWork = Promise.resolve();
 let resetPromise = null;
@@ -1221,7 +1221,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   const handle = accountHandleFrom(accountHandle);
   const current = pathnameOf(currentUrl);
   if (selected === "notifications") return "/notifications";
-  if (selected === "mutual-unfollow") return handle ? `/${handle}/following` : "";
+  if (selected === "mutual-unfollow" || selected === "mutual-unfollowNonSc") return handle ? `/${handle}/following` : "";
   if (selected === "prune-posts" || selected === "prune-replies") {
     if (current === "/search") return "/search";
     return handle ? `/${handle}` : "";
@@ -1497,6 +1497,7 @@ const TASK_TITLE_LABELS = {
   "prune-posts": "清理低质帖",
   "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
+  "mutual-unfollowNonSc": "清理非简中",
   "mutual-followBack": "回关粉丝",
   "mutual-targetFollow": "关注候选"
 };
@@ -1830,7 +1831,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1982,7 +1983,7 @@ function sliceMsForMode(mode, plan) {
   if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
   if (mode === "mutual-targetFollow") return Math.max(base, TARGET_FOLLOW_SLICE_MS);
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
-  if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
+  if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return Math.max(base, UNFOLLOW_SLICE_MS);
   if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   if (mode === "site-forward") return Math.max(base, SITE_FORWARD_SLICE_MS);
@@ -2004,7 +2005,7 @@ async function readTaskUnlimitedMap() {
 
 function taskUnlimitedEnabled(mode, map = {}) {
   if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return false;
-  if (["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode)) return false;
+  if (["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode)) return false;
   if (mode === "mutual-followBack" || mode === "mutual-targetFollow") return false;
   return map?.[mode] === true;
 }
@@ -2022,7 +2023,7 @@ function defaultTaskPriority(mode) {
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
   if (mode === "mutual-targetFollow") return 7;
-  if (mode === "mutual-unfollow") return 3;
+  if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return 3;
   if (mode === "prune-posts" || mode === "prune-replies") return 2;
   return 1;
 }
@@ -2053,10 +2054,10 @@ function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, tur
 
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
+    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
-    pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
-      : mode === "mutual-targetFollow" ? "fast"
+    pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+      : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2064,7 +2065,7 @@ function defaultTaskRules() {
       : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
-      : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
+      : mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
       : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? followSessionGapMs("medium")
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
@@ -2091,7 +2092,7 @@ function normalizedTaskRules(value) {
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Unfollow stays on the weekly constant. Pace segments apply to post/reply cleanup only.
       // Follow-back uses the weekly gap; target-follow keeps the short session gap.
-      minGapMs: mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
+      minGapMs: mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
         : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
         : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
         : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
@@ -2486,6 +2487,13 @@ async function readTaskSchedule() {
     if (plan.rules?.["mutual-targetFollow"] && pace !== "slow") plan.rules["mutual-targetFollow"].pace = "fast";
     if (plan.rules?.["mutual-targetFollow"]) plan.rules["mutual-targetFollow"].minGapMs = TARGET_FOLLOW_MIN_GAP_MS;
     plan.targetFollowCountVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.followBackCountVersion || 0) < 1) {
+    const pace = plan.rules?.["mutual-followBack"]?.pace;
+    if (plan.rules?.["mutual-followBack"] && pace !== "slow") plan.rules["mutual-followBack"].pace = "fast";
+    if (plan.rules?.["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    plan.followBackCountVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.unfollowWeeklyGapVersion !== 1) {
@@ -2913,12 +2921,14 @@ async function runTaskSchedule() {
               ? "更高优先级任务到期，安全轮换"
             : manualDue
               ? "另一项任务已请求优先启动，安全轮换"
-            : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
-              ? (current === "mutual-unfollow" ? "等待每周清理" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
+            : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(current))
+              ? (current === "mutual-unfollowNonSc" ? "等待每周清理非简中" : current === "mutual-unfollow" ? "等待每周清理" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
             : runFinished
               ? "本次已结束，等待下次排班"
             : ["prune-posts", "prune-replies"].includes(current) && minGapMs
               ? `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`
+            : current === "mutual-unfollowNonSc" && minGapMs
+              ? "等待每周清理非简中"
             : current === "mutual-unfollow" && minGapMs
               ? "等待每周清理"
               : current === "mutual-targetFollow" && minGapMs
@@ -2988,7 +2998,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-unfollow-non-sc": "mutual-unfollowNonSc", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
 const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
 
 function shouldShareFollowWait(reason) {
@@ -3367,7 +3377,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 const RUNTIME_REPORT_MODES = Object.freeze([
   "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share",
   "likes-posts", "likes-replies",
-  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
+  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc",
   "prune-posts", "prune-replies"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
@@ -3804,10 +3814,11 @@ async function completeUnfollowScanFailure(sender, message) {
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
     const now = Date.now();
-    if (plan.current === "mutual-unfollow" && Number(plan.workTabId) === tabId) {
-      recordScheduleSegment(plan, "mutual-unfollow", reason, now);
-      plan.items["mutual-unfollow"] = {
-        ...(plan.items["mutual-unfollow"] || {}),
+    const failedMode = plan.current === "mutual-unfollowNonSc" ? "mutual-unfollowNonSc" : "mutual-unfollow";
+    if ((plan.current === "mutual-unfollow" || plan.current === "mutual-unfollowNonSc") && Number(plan.workTabId) === tabId) {
+      recordScheduleSegment(plan, failedMode, reason, now);
+      plan.items[failedMode] = {
+        ...(plan.items[failedMode] || {}),
         lastRunAt: now,
         resumeAt: now + 15 * 60 * 1000,
         manualRequestedAt: 0,
@@ -3817,11 +3828,11 @@ async function completeUnfollowScanFailure(sender, message) {
       plan.current = "";
       plan.startedAt = 0;
     }
-    if (plan.manualFocusMode === "mutual-unfollow") plan.manualFocusMode = "";
+    if (plan.manualFocusMode === "mutual-unfollow" || plan.manualFocusMode === "mutual-unfollowNonSc") plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
-    try { await updatePluginRuntime({ mode: "mutual-unfollow", active: false }, sender); }
+    try { await updatePluginRuntime({ mode: failedMode, active: false }, sender); }
     catch (error) { /* The saved schedule still needs to release the slot. */ }
-    recordExecutionAlert({ task: "mutual-unfollow", kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
+    recordExecutionAlert({ task: failedMode, kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
       message: reason, attempts, accountHandle: plan.accountHandle }).catch(() => {});
     return { ok: true };
   });

@@ -1681,13 +1681,13 @@ test('failed manual Following scan releases the shared slot even when alert stor
 
 test('stopped manual unfollow candidates remain exportable as JSON', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const definition = source.match(/  async function exportUnfollowReview\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  async function exportUnfollowReview\([\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   let exportedBlob
   let download
   const state = { mutual: { running: false }, status: '' }
   const context = vm.createContext({
-    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'nonChinese', addedAt: 1 }] }) },
+    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'notFollowingBack', addedAt: 1 }] }) },
     state, currentAccountHandle: () => 'tuaran', lastKnownAccountHandle: '', renderPanel: () => {},
     URL: { createObjectURL(blob) { exportedBlob = blob; return 'blob:test' }, revokeObjectURL() {} },
     Blob, Date,
@@ -2205,7 +2205,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 10)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 11)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -6884,6 +6884,13 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.targetFollowQuota('medium'), 10)
   assert.equal(mutual.targetFollowQuota('fast'), 15)
   assert.equal(mutual.targetFollowQuota('turbo'), 15)
+  assert.equal(mutual.followBackQuota('slow'), 5)
+  assert.equal(mutual.followBackQuota('fast'), 15)
+  assert.equal(mutual.textIsNonSimplified('中国'), false)
+  assert.equal(mutual.textIsNonSimplified('中國'), true)
+  assert.equal(mutual.textIsNonSimplified('Hello'), true)
+  assert.equal(mutual.textIsNonSimplified('你好'), false)
+  assert.equal(mutual.textIsNonSimplified('こんにちは'), true)
   assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 5 * 60 * 1000)
   assert.deepEqual(mutual.constants.FOLLOW_ROUND_GAP_SECONDS, { slow: 10 * 60, medium: 5 * 60, fast: 3 * 60, turbo: 2 * 60 })
   assert.equal(mutual.followBatchCooldownMs('slow'), 10 * 60 * 1000)
@@ -7618,7 +7625,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /rootSettled: false/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十七项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十八项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -7931,7 +7938,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /只关页签不会关掉后台排班|只关执行页签不会关掉后台排班/)
   assert.match(docsPage, /右上角在「暂停全部」和「开始」之间切换/)
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
-  assert.match(docsPage, /每确认 100 个[\s\S]*慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟/)
+  assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
   assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
@@ -10628,6 +10635,10 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.equal(plan.rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-targetFollow'].pace, 'fast')
     assert.equal(plan.targetFollowCountVersion, 1)
+    assert.equal(plan.followBackCountVersion, 1)
+    assert.equal(plan.rules['mutual-followBack'].pace, 'fast')
+    assert.equal(plan.rules['mutual-unfollowNonSc'].enabled, false)
+    assert.equal(plan.rules['mutual-unfollowNonSc'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
     assert.ok(plan.items['mutual-followBack'].resumeAt >= now + background.FOLLOW_BACK_MIN_GAP_MS - 120000)
     assert.equal(plan.items['mutual-targetFollow'].resumeAt, now + 5 * 60 * 1000)
@@ -10870,14 +10881,14 @@ test('uncertain follows-you rows are skipped instead of queued as not following 
   assert.equal(mutual.hasFollowsYou(userCell({ name: '张三' })), false)
 })
 
-test('unfollow candidates skip uncertain rows and keep followers unless non-Chinese cleanup is explicitly on', async () => {
+test('unfollow candidates skip uncertain rows and leave followers to the separate non-simplified task', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const definition = source.match(/  function visibleRows\(mode\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   const samples = [
-    { handle: '@unknown', status: 'unknown', nonChinese: false },
-    { handle: '@fan', status: 'yes', nonChinese: true },
-    { handle: '@quiet', status: 'no', nonChinese: false },
+    { handle: '@unknown', status: 'unknown', nonSimplified: false },
+    { handle: '@fan', status: 'yes', nonSimplified: true },
+    { handle: '@quiet', status: 'no', nonSimplified: false },
   ]
   const context = vm.createContext({
     rows: () => samples,
@@ -10886,14 +10897,15 @@ test('unfollow candidates skip uncertain rows and keep followers unless non-Chin
     findPlainFollowButton: () => null,
     findHandle: (row) => row.handle,
     followsYouStatus: (row) => row.status,
-    profileNonChinese: (row) => row.nonChinese,
+    profileIsNonSimplified: (row) => row.nonSimplified,
     profileHasChinese: () => false,
     state: { unfollowEnglish: false },
   })
   vm.runInContext(`${definition}\nglobalThis.visible = visibleRows`, context)
   assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@quiet'])
   context.state.unfollowEnglish = true
-  assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@fan', '@quiet'])
+  assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@quiet'])
+  assert.deepEqual(context.visible('unfollowNonSc').filter((item) => item.candidate).map((item) => item.handle), ['@fan'])
 })
 
 test('weekly cleanup copy stays on unfollow and prune keeps pace intervals', async () => {

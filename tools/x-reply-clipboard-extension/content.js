@@ -22,7 +22,7 @@
   const TASK_MODE_LABELS = {
     timeline: "评论首页", notifications: "评论回复", kol: "评论大V",
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
-    "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
+    "mutual-unfollow": "清理未回关", "mutual-unfollowNonSc": "清理非简中", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "纯文字帖", "poster-premium": "精品发帖", "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
     article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发",
     "prune-posts": "清理低质帖", "prune-replies": "清理低质评论"
@@ -34,6 +34,7 @@
     "likes-posts": ["xrc-docs-likes-posts", "查看点赞帖子说明"],
     "likes-replies": ["xrc-docs-likes-replies", "查看点赞评论说明"],
     "mutual-unfollow": ["xrc-docs-mutual-unfollow", "查看清理未回关说明"],
+    "mutual-unfollowNonSc": ["xrc-docs-mutual-unfollow-non-sc", "查看清理非简中说明"],
     "mutual-followBack": ["xrc-docs-mutual-followback", "查看回关粉丝说明"],
     "mutual-targetFollow": ["xrc-docs-mutual-target", "查看关注候选说明"],
     poster: ["xrc-docs-poster-normal", "查看纯文字帖说明"],
@@ -253,6 +254,7 @@
     "xrc-docs-likes-replies": "likes-replies",
     "xrc-docs-mutual-rules": "mutual-rules",
     "xrc-docs-mutual-unfollow": "mutual-unfollow",
+    "xrc-docs-mutual-unfollow-non-sc": "mutual-unfollow-non-sc",
     "xrc-docs-mutual-followback": "mutual-followback",
     "xrc-docs-mutual-target": "mutual-target",
     "xrc-docs-poster": "poster",
@@ -275,7 +277,7 @@
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications", "kol"],
     likes: ["likes-posts", "likes-replies"],
-    mutual: ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"],
+    mutual: ["mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"],
     poster: ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies"],
     community: ["community-share"]
   };
@@ -1091,14 +1093,13 @@
   }
 
   function currentFollowPace() {
-    const pace = taskSchedule.rules?.["mutual-followBack"]?.pace || "medium";
-    return ["slow", "medium", "fast", "turbo"].includes(pace) ? pace : "medium";
+    const pace = taskSchedule.rules?.["mutual-followBack"]?.pace;
+    return ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
   }
 
   async function selectFollowPace(pace) {
     if ((state.mutual?.running || state.mutual?.stopping) && state.mutual?.mode === "followBack") return;
-    const profile = loopApi?.scheduleProfile?.(pace === "boundary" ? "medium" : pace);
-    const selected = ["slow", "medium", "fast", "turbo"].includes(profile?.id) ? profile.id : "medium";
+    const selected = ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
     const rules = {
       ...(taskSchedule.rules || {}),
       "mutual-followBack": { ...(taskSchedule.rules?.["mutual-followBack"] || {}), pace: selected }
@@ -1142,15 +1143,16 @@
   }
 
   function isTaskUnlimited(mode = viewTaskKey()) {
-    if (isPruneMode(mode) || mode === "mutual-unfollow") return false;
+    if (isPruneMode(mode) || mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return false;
     return Boolean(UNLIMITED_TASK_KEYS.has(mode) && taskUnlimitedMap[mode]);
   }
 
   function unlimitedHint(mode) {
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
-    if (mode === "mutual-unfollow") return "默认手动模式：扫描后保存待取关清单，由你逐个核对并取关";
-    if (mode === "mutual-followBack") return "约每周一次。自己的粉丝列表扫完后等到下一轮，不再隔几分钟重扫";
+    if (mode === "mutual-unfollow") return "默认手动模式：只记录没有回关的人，由你逐个核对并取关";
+    if (mode === "mutual-unfollowNonSc") return "默认手动模式：只记录名字或简介没有简体字的账号";
+    if (mode === "mutual-followBack") return "约每周一次。一次回关 5、10 或 15 人，默认 15 人，满了就交回队列";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -1335,7 +1337,7 @@
     ["poster", "纯文字帖", "post"], ["poster-premium", "精品发帖", "post"], ["poster-x", "X主题发帖", "post"], ["poster-xhs", "小红书发帖", "post"], ["article", "普通发文", "post", "articleDrafts"], ["site-forward", "站长转发", "post", "siteForwards"],
     ["community-share", "社群分发", "community", "communityShares"],
     ["mutual-followBack", "回关粉丝", "follow", "followBacks"], ["mutual-targetFollow", "关注候选", "follow", "follows"],
-    ["mutual-unfollow", "清理未回关", "clean", "unfollows"], ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
+    ["mutual-unfollow", "清理未回关", "clean", "unfollows"], ["mutual-unfollowNonSc", "清理非简中", "clean", "unfollows"], ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
   ];
   const metricDataName = (metric) => metric.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   const MUTUAL_ACTIVE_KEY = "xrcMutualActiveMode";
@@ -1548,7 +1550,7 @@
 
   function validTaskKey(value) {
     if (value === "mutual") return "mutual-unfollow";
-    if (value === "mutual-unfollow" || value === "mutual-followBack" || value === "mutual-targetFollow") return value;
+    if (value === "mutual-unfollow" || value === "mutual-unfollowNonSc" || value === "mutual-followBack" || value === "mutual-targetFollow") return value;
     return validAssistantMode(value);
   }
 
@@ -1597,7 +1599,7 @@
 
   function launchFromMode(mode, start) {
     if (mode === "likes") mode = "likes-posts";
-    if (mode === "mutual-unfollow" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
+    if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
       return { assistantMode: "mutual", mutualMode: mode.slice("mutual-".length), taskKey: mode, start: Boolean(start) };
     }
     if (ASSISTANT_MODES.has(mode)) return { assistantMode: mode, mutualMode: "", taskKey: mode, start: Boolean(start) };
@@ -2139,7 +2141,7 @@
     ["notifications", "评论回复"], ["timeline", "评论首页"], ["kol", "评论大V"],
     ["poster-premium", "精品发帖"], ["poster", "纯文字帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理低质评论"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
-    ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
+    ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"], ["mutual-unfollowNonSc", "清理非简中"]
   ]);
   const RESERVED_X_PATHS = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
@@ -2563,7 +2565,7 @@
     const DEFAULT_SCHEDULE_PRIORITY = Object.freeze({
     notifications: 8, timeline: 8, kol: 8, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
     "likes-posts": 6, "likes-replies": 6, "mutual-followBack": 7,
-    "mutual-targetFollow": 7, "mutual-unfollow": 3
+    "mutual-targetFollow": 7, "mutual-unfollow": 3, "mutual-unfollowNonSc": 3
   });
 
   function schedulePriorityFor(mode, rule) {
@@ -2707,7 +2709,7 @@
     if (remaining && mode === "poster-premium") {
       return { kind: "time-slot", label: "等待精品档位", detail: "到固定发帖时间后继续", remaining };
     }
-    if (remaining && (mode === "mutual-unfollow" || mode === "prune-posts" || mode === "prune-replies")) {
+    if (remaining && (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" || mode === "prune-posts" || mode === "prune-replies")) {
       return { kind: "time-slot", label: "等待每周清理", detail: "到期后自动加入排班", remaining };
     }
     if (remaining) {
@@ -2978,7 +2980,7 @@
       : 30;
     const currentSliceMs = ["timeline", "notifications", "kol"].includes(current) ? 0
       : ["likes-posts", "likes-replies"].includes(current) ? Math.max(sliceSeconds * 1000, 3 * 60 * 1000)
-      : ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"].includes(current)
+      : ["mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"].includes(current)
       ? Math.max(sliceSeconds * 1000, 10 * 60 * 1000)
       : sliceSeconds * 1000;
     const switchAt = current && currentSliceMs && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + currentSliceMs : 0;
@@ -3064,6 +3066,7 @@
       "mutual-followBack": ["follow", "关注类", "↗"],
       "mutual-targetFollow": ["follow", "关注类", "↗"],
       "mutual-unfollow": ["clean", "清理类", "✧"],
+      "mutual-unfollowNonSc": ["clean", "清理类", "✧"],
       "prune-posts": ["clean", "清理类", "✧"],
       "prune-replies": ["clean", "清理类", "✧"]
     };
@@ -3828,7 +3831,7 @@
   }
 
   function validMutualMode(value) {
-    if (value === "followBack" || value === "targetFollow") return value;
+    if (value === "followBack" || value === "targetFollow" || value === "unfollowNonSc") return value;
     return "unfollow";
   }
 
@@ -4262,18 +4265,19 @@
     });
   }
 
-  function followPaceTableHtml({ label = "回关速度", attr = "data-xrc-follow-pace-label", unlimitedKey = "" } = {}) {
+  function followPaceTableHtml({ label = "本次人数", attr = "data-xrc-follow-pace-label" } = {}) {
     return paceTableHtml({
       label,
       attr,
-      profiles: orderedPaceProfiles(false),
-      defaultId: "medium",
-      unlimitedKey,
-      unlimitedFixed: true,
+      nameHeader: "人数",
+      profiles: [
+        { id: "slow", label: "5 人", count: 5 },
+        { id: "medium", label: "10 人", count: 10 },
+        { id: "fast", label: "15 人", count: 15 }
+      ],
+      defaultId: "fast",
       columns: [
-        { label: "进度段轮数", value: (profile) => paceSpan(profile.minRoundsPerRun, profile.maxRoundsPerRun, "轮") },
-        { label: "一轮人数", value: () => "100" },
-        { label: "满 100 人后休息", value: (profile) => `${followRoundGapMinutes(profile.id)} 分钟` }
+        { label: "一次任务", value: (profile) => `回关 ${profile.count} 人后结束` }
       ]
     });
   }
@@ -7159,11 +7163,12 @@
     renderPanel();
   }
 
-  async function exportUnfollowReview() {
+  async function exportUnfollowReview(kind = "notFollowingBack") {
     let latest = state.mutual;
     try { latest = await mutualApi?.loadUnfollowReview?.() || latest; }
     catch (error) { if (!latest?.unfollowReview?.length) throw error; }
-    const entries = Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : [];
+    const kinds = kind === "nonSimplified" ? ["nonSimplified", "nonChinese"] : ["notFollowingBack"];
+    const entries = (Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : []).filter((item) => kinds.includes(item.reason));
     state.mutual = latest;
     if (!entries.length) {
       state.status = "待人工核对清单为空";
@@ -7176,7 +7181,8 @@
     const url = URL.createObjectURL(new Blob([json], { type: "application/json;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `x-unfollow-review-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
+    const fileKind = kind === "nonSimplified" ? "x-unfollow-non-sc-review" : "x-unfollow-review";
+    link.download = `${fileKind}-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     state.status = `已导出 ${entries.length} 个待人工核对账号`;
@@ -7284,7 +7290,7 @@
       return;
     }
     if (result?.error) {
-      if (mode === "unfollow") {
+      if (mode === "unfollow" || mode === "unfollowNonSc") {
         sendExtensionMessage({ type: "xrc-mutual-scan-failed", reason: result.error, attempts: result.attempts }).catch(() => {});
       }
       sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
@@ -7805,14 +7811,14 @@
       : ["likes-posts", "likes-replies"].includes(mode) ? 6
       : mode === "mutual-followBack" ? 7
       : mode === "mutual-targetFollow" ? 7
-      : mode === "mutual-unfollow" ? 3
+      : mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? 3
       : isPruneMode(mode) ? 2
       : 1;
   }
 
   function scheduleRuleEnabled(mode, rule) {
     if (typeof rule?.enabled === "boolean") return rule.enabled;
-    return !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode);
+    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode);
   }
 
   function syncScheduleCardRuleControls(row, mode) {
@@ -8473,7 +8479,7 @@
             </div>
           </div>
           <div class="xrc-schedule-strip" data-xrc-schedule-strip role="status"><div class="xrc-timeline-summary"><p><b>当前任务</b><span data-xrc-timeline-current>正在读取排班状态…</span></p><p><b>下一任务</b><span data-xrc-timeline-next>等待任务到期</span></p></div><button type="button" data-xrc-desk-home>排班</button></div>
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="十七项任务由后台排班，共用一个执行页签；点分组查看子页">
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="十八项任务由后台排班，共用一个执行页签；点分组查看子页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
@@ -8530,12 +8536,13 @@
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>03</b><span>关注候选</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollowNonSc"><b>02</b><span>清理非简中</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>03</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>04</b><span>关注候选</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
-              <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
+              <div><b>01</b><span><strong>清理未回关</strong><small>只清理没有回关的人。认不出「关注了你」时跳过</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "启停与选项")}
                 <div class="xrc-unfollow-modes" role="group" aria-label="取关模式">
@@ -8543,7 +8550,6 @@
                   <label><input type="radio" name="xrc-unfollow-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
                 </div>
                 <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml({ weekly: true })}</div>
-                <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong><small>默认关闭。认不出「关注了你」时跳过，不把粉丝当成未回关</small></span><input type="checkbox" data-xrc-unfollow-english></label>
                 <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
@@ -8553,11 +8559,31 @@
               </div>
               ${taskScheduleConfigMarkup("mutual-unfollow", "清理未回关")}
             </section>
+            <section class="xrc-mutual-card" data-xrc-mutual-card="unfollowNonSc">
+              <div><b>02</b><span><strong>清理非简中</strong><small>名字或简介没有简体字。英文、日文、繁体都算。约每周一次</small></span></div>
+              <div class="xrc-task-section">
+                ${taskSectionHead("运行", "启停与选项")}
+                <div class="xrc-unfollow-modes" role="group" aria-label="取关模式">
+                  <label><input type="radio" name="xrc-unfollow-nonsc-mode" value="manual" data-xrc-unfollow-mode><span><strong>手动模式（默认）</strong><small>扫描并记录候选，由你打开资料页取关</small></span></label>
+                  <label><input type="radio" name="xrc-unfollow-nonsc-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
+                </div>
+                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml({ weekly: true })}</div>
+                <p class="xrc-pace-note">认不出名字时跳过。只有简体字，或汉字分不清简繁时留下。</p>
+                <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-nonsc-export>导出 JSON</button></div><div data-xrc-unfollow-nonsc-review-list></div></div>
+                <div class="xrc-flow-end">
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollowNonSc">正在读取待取关清单</div>
+                  <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
+                  <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollowNonSc">已停止 · 点击启动</button>
+                </div>
+              </div>
+              ${taskScheduleConfigMarkup("mutual-unfollowNonSc", "清理非简中")}
+            </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
-              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每周一次</small></span></div>
+              <div><b>03</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每周一次</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-follow-pace>${followPaceTableHtml()}</div>
+                <p class="xrc-config-note">一次回关 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。约每周一次。</p>
                 <p class="xrc-pace-now" data-xrc-follow-now>当前尚未开始</p>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack" hidden>本次回关 0</div>
@@ -8568,7 +8594,7 @@
               ${taskScheduleConfigMarkup("mutual-followBack", "回关粉丝")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>每次任务直接换成五个新人</small></span></div>
+              <div><b>04</b><span><strong>关注候选</strong><small>每次任务直接换成五个新人</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "人数与启停")}
                 <div data-xrc-target-follow-pace>${targetFollowPaceTableHtml()}</div>
@@ -9176,8 +9202,8 @@
       });
       panel.querySelectorAll("[data-xrc-cleanup-pace]").forEach(button => button.addEventListener("click", async () => {
         const mode = viewTaskKey();
-        if (!["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode)) return;
-        if ((isPruneMode(mode) && pruneState.running) || (mode === "mutual-unfollow" && state.mutual?.running)) return;
+        if (!["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode)) return;
+        if ((isPruneMode(mode) && pruneState.running) || ((mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") && state.mutual?.running)) return;
         taskSchedule.rules[mode] = { ...taskSchedule.rules[mode], pace: button.dataset.xrcCleanupPace };
         const saved = await sendExtensionMessage({ type: "xrc-schedule-config-set", rules: taskSchedule.rules });
         taskSchedule = { ...taskSchedule, rules: saved.rules || taskSchedule.rules };
@@ -9215,7 +9241,7 @@
           const riskCooling = cooling && Number(state.mutual?.riskCooldownUntil) > Date.now();
           const dailyFull = mode === "followBack" && Number(state.mutual?.sharedDailyFollowed) >= 400;
           if (riskCooling) onMutualAction(mode);
-          else if (cooling && !dailyFull && mode === "unfollow") mutualApi?.startNow?.();
+          else if (cooling && !dailyFull && (mode === "unfollow" || mode === "unfollowNonSc")) mutualApi?.startNow?.();
           else if (cooling && dailyFull) onMutualAction(mode);
           else onMutualAction(mode);
         });
@@ -9232,15 +9258,21 @@
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
       }));
-      panel.querySelector("[data-xrc-unfollow-review-list]")?.addEventListener("click", async (event) => {
+      panel.querySelectorAll("[data-xrc-unfollow-review-list], [data-xrc-unfollow-nonsc-review-list]").forEach((list) => list.addEventListener("click", async (event) => {
         const button = event.target.closest?.("[data-xrc-unfollow-reviewed]");
         if (!button) return;
         await mutualApi?.removeUnfollowReview?.(button.dataset.xrcUnfollowReviewed);
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
-      });
+      }));
       panel.querySelector("[data-xrc-unfollow-export]")?.addEventListener("click", () => {
-        exportUnfollowReview().catch((error) => {
+        exportUnfollowReview("notFollowingBack").catch((error) => {
+          state.status = error?.message || "导出待核对清单失败";
+          renderPanel();
+        });
+      });
+      panel.querySelector("[data-xrc-unfollow-nonsc-export]")?.addEventListener("click", () => {
+        exportUnfollowReview("nonSimplified").catch((error) => {
           state.status = error?.message || "导出待核对清单失败";
           renderPanel();
         });
@@ -9752,20 +9784,22 @@
     panel.querySelectorAll("[data-xrc-mutual-card]").forEach((card) => {
       card.classList.toggle("is-selected", mutualTaskKey(card.dataset.xrcMutualCard) === viewTaskKey());
     });
-    const unfollowEnglish = panel.querySelector("[data-xrc-unfollow-english]");
-    if (unfollowEnglish) unfollowEnglish.checked = Boolean(state.unfollowEnglish);
     const unfollowMode = mutual?.unfollowMode === "auto" ? "auto" : "manual";
     panel.querySelectorAll("[data-xrc-unfollow-mode]").forEach((input) => {
       input.checked = input.value === unfollowMode;
-      input.disabled = Boolean(mutual?.running && mutual.mode === "unfollow");
+      input.disabled = Boolean(mutual?.running && (mutual.mode === "unfollow" || mutual.mode === "unfollowNonSc"));
     });
-    const autoOptions = panel.querySelector("[data-xrc-unfollow-auto-options]");
-    if (autoOptions) autoOptions.hidden = unfollowMode !== "auto";
-    const reviewList = panel.querySelector("[data-xrc-unfollow-review-list]");
-    if (reviewList) {
-      reviewList.replaceChildren();
-      const entries = Array.isArray(mutual?.unfollowReview) ? mutual.unfollowReview : [];
-      if (!entries.length) reviewList.textContent = "暂无候选。启动扫描后会保存到这里。";
+    panel.querySelectorAll("[data-xrc-unfollow-auto-options]").forEach((node) => {
+      node.hidden = unfollowMode !== "auto";
+    });
+    const reviewEntries = Array.isArray(mutual?.unfollowReview) ? mutual.unfollowReview : [];
+    const fillReviewList = (list, entries) => {
+      if (!list) return;
+      list.replaceChildren();
+      if (!entries.length) {
+        list.textContent = "暂无候选。启动扫描后会保存到这里。";
+        return;
+      }
       for (const item of entries) {
         const row = document.createElement("div");
         row.className = "xrc-unfollow-review-row";
@@ -9775,38 +9809,34 @@
         link.rel = "noopener noreferrer";
         link.textContent = `@${item.handle}`;
         const reason = document.createElement("span");
-        reason.textContent = item.reason === "nonChinese" ? "非中文资料" : "未回关";
+        reason.textContent = item.reason === "nonSimplified" || item.reason === "nonChinese" ? "非简中" : "未回关";
         const done = document.createElement("button");
         done.type = "button";
         done.dataset.xrcUnfollowReviewed = item.handle;
         done.textContent = "已处理";
         row.append(link, reason, done);
-        reviewList.append(row);
+        list.append(row);
       }
-    }
+    };
+    fillReviewList(panel.querySelector("[data-xrc-unfollow-review-list]"), reviewEntries.filter((item) => item.reason !== "nonSimplified" && item.reason !== "nonChinese"));
+    fillReviewList(panel.querySelector("[data-xrc-unfollow-nonsc-review-list]"), reviewEntries.filter((item) => item.reason === "nonSimplified" || item.reason === "nonChinese"));
     if (mutual) {
-      const followBatchSize = mutualApi?.constants?.FOLLOW_BATCH_SIZE || 100;
-      const sharedFollowStatus = `今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）· 本批 ${mutual.sharedBatchProgress || 0}/${followBatchSize}`;
-      const followPlan = mutual.followPlan;
-      const followRounds = followPlan?.rounds || 0;
-      const followSize = followPlan?.roundSize || followBatchSize;
-      const followRoundNo = followRounds ? Math.min((followPlan.completedRounds || 0) + 1, followRounds) : 0;
-      const followFinished = Boolean(followPlan && (followPlan.completedRounds || 0) >= followRounds && !(mutual.running && mutual.mode === "followBack"));
-      const followActive = Boolean(followPlan && ((mutual.running && mutual.mode === "followBack") || followPlan.completedRounds || followPlan.roundCount));
       const followNow = panel.querySelector("[data-xrc-follow-now]");
       if (followNow) {
         const followConfirming = confirmingStartCopy("mutual-followBack");
-        followNow.textContent = followConfirming || (!followActive
-          ? "当前尚未开始"
-          : followFinished
-            ? pacePositionLine(followRounds, followRounds, followSize, followSize, "个")
-            : pacePositionLine(followRoundNo || 1, followRounds, followPlan.roundCount || 0, followSize, "个"));
+        const followQuota = mutualApi?.followBackQuota?.(currentFollowPace()) || 15;
+        followNow.textContent = followConfirming || `本次回关 ${mutual.followedBack || 0}/${followQuota} 人，约每周一次`;
       }
+      const notBackCount = (mutual.unfollowReview || []).filter((item) => item.reason !== "nonSimplified" && item.reason !== "nonChinese").length;
+      const nonScCount = (mutual.unfollowReview || []).filter((item) => item.reason === "nonSimplified" || item.reason === "nonChinese").length;
       const stats = {
         unfollow: unfollowMode === "manual"
-          ? `待人工核对 ${(mutual.unfollowReview || []).length} 个 · 扫描跳过 ${mutual.skipped} 个`
+          ? `待人工核对 ${notBackCount} 个 · 扫描跳过 ${mutual.skipped} 个`
           : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
-        followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus}`,
+        unfollowNonSc: unfollowMode === "manual"
+          ? `待人工核对 ${nonScCount} 个 · 约每周一次`
+          : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 异常 ${mutual.errors}`,
+        followBack: `本次回关 ${mutual.followedBack}/${mutualApi?.followBackQuota?.(currentFollowPace()) || 15} · 今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）`,
         targetFollow: `本次关注 ${mutual.targetFollowed}/${mutualApi?.targetFollowQuota?.(currentTargetFollowPace()) || 15} · 今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400） · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
       };
       for (const [mode, text] of Object.entries(stats)) {
@@ -9863,7 +9893,7 @@
         label.disabled = targetFollowPaceLocked;
       });
       if (state.assistantMode === "mutual") {
-        const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
+        const mutualCount = mutual.mode === "unfollow" || mutual.mode === "unfollowNonSc" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
         panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `关注管理 · 已完成 ${mutualCount}` : "关注管理 · 待命";
       }
     }

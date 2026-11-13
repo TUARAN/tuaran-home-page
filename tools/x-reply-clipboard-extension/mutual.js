@@ -161,9 +161,15 @@
     return href.match(PROFILE_PATH_RE)?.[1] || "";
   }
 
+  function cleanupMode(mode) {
+    return mode === "unfollow" || mode === "unfollowNonSc";
+  }
+
   function reportMutualAction(mode, handle, result, errorCode) {
     const task = mode === "unfollow"
       ? "mutual-unfollow"
+      : mode === "unfollowNonSc"
+        ? "mutual-unfollow-non-sc"
       : mode === "followBack"
         ? "mutual-follow-back"
         : mode === "targetFollow"
@@ -607,7 +613,7 @@
   }
 
   function listReady(mode) {
-    if (mode === "unfollow") return isFollowingPage();
+    if (cleanupMode(mode)) return isFollowingPage();
     if (mode === "followBack") return isFollowersPage() && !targetFollowHandleFromPath();
     if (mode === "targetFollow") {
       const handle = followerHandleFromPath();
@@ -626,7 +632,7 @@
     }
     const handle = currentAccountHandle();
     if (!handle) return "";
-    if (mode === "unfollow") return `/${handle}/following`;
+    if (cleanupMode(mode)) return `/${handle}/following`;
     if (mode === "followBack") return `/${handle}/followers`;
     return "";
   }
@@ -670,6 +676,10 @@
     if (pace === "slow") return 5;
     if (pace === "medium") return 10;
     return 15;
+  }
+
+  function followBackQuota(pace) {
+    return targetFollowQuota(pace);
   }
 
   function formatFollowGapLabel(ms) {
@@ -731,13 +741,13 @@
     state.unfollowMode = stored.xrcUnfollowMode === "auto" ? "auto" : "manual";
     state.unfollowReview = (Array.isArray(stored[key]) ? stored[key] : [])
       .filter((item) => /^@?[A-Za-z0-9_]{1,15}$/u.test(String(item?.handle || "")))
-      .map((item) => ({ handle: String(item.handle).replace(/^@/u, ""), reason: item.reason === "nonChinese" ? "nonChinese" : "notFollowingBack", addedAt: Number(item.addedAt) || Date.now() }));
+      .map((item) => ({ handle: String(item.handle).replace(/^@/u, ""), reason: item.reason === "nonChinese" || item.reason === "nonSimplified" ? item.reason : "notFollowingBack", addedAt: Number(item.addedAt) || Date.now() }));
     emit();
     return snapshot();
   }
 
   async function setUnfollowMode(mode) {
-    if (state.running && state.mode === "unfollow") return state.unfollowMode;
+    if (state.running && cleanupMode(state.mode)) return state.unfollowMode;
     state.unfollowMode = mode === "auto" ? "auto" : "manual";
     await followStorage().set({ xrcUnfollowMode: state.unfollowMode });
     emit();
@@ -749,7 +759,7 @@
     if (state.unfollowReview.some((entry) => entry.handle.toLowerCase() === handle.toLowerCase())) return false;
     const next = [...state.unfollowReview, {
       handle,
-      reason: item.followsYou ? "nonChinese" : "notFollowingBack",
+      reason: item.reason === "nonSimplified" || item.reason === "nonChinese" ? item.reason : "notFollowingBack",
       addedAt: Date.now()
     }];
     await followStorage().set({ [unfollowReviewStorageKey()]: next });
@@ -1061,6 +1071,22 @@
     return Boolean(name) && !profileHasChinese(row, handle);
   }
 
+  const SIMPLIFIED_MARK = /[国东这对时会学说话们过还进发长无门车书从众电马鱼鸟龙龟爱观体达价场广应边远连选运艺药医农杂鸡页风飞请让议论认识记许设证评词译试诗谁课调谈谢贝货责质贵费贺资赚赛赵趋转轮轻较载辆办汉测济灯独获献现画当疗监盘码础礼种积稳穷竞笔节签类经级练组终绍结绕绘给络绝统丝绿网续义习联声职与兴举旧万叶盖处号卫补装制复见规视览计讨护丰买赏赔贤卖账赌赖购赠赶军软输违适迟迁遗邮乡郑酱释针钱错链镜闪闭间阅队阳阴阵阶际随险隐难离雾灵顶项顺须预领头题额养馆验惊龄齿齐党麦个实点线开关尔来两气湾]/u;
+  const TRADITIONAL_MARK = /[國東這對時會學說話們過還進發髮長無門車書從眾電馬魚鳥龍龜愛觀體達價場廣應邊遠連選運藝藥醫農雜雞頁風飛請讓議論認識記許設證評詞譯試詩誰課調談謝貝貨責質貴費賀資賺賽趙趨轉輪輕較載輛辦漢測濟燈獨獲獻現畫當療監盤碼礎禮種積穩窮競筆節簽類經級練組終紹結繞繪給絡絕統絲綠網續義習聯聲職與興舉舊萬葉蓋處號衛補裝製復見規視覽計討護豐買賞賠賢賣賬賭賴購贈趕軍軟輸違適遲遷遺郵鄉鄭醬釋針錢錯鏈鏡閃閉間閱隊陽陰陣階際隨險隱難離霧靈頂項順須預領頭題額養館驗驚齡齒齊黨麥個實點線開關爾來兩氣灣臺裡後]/u;
+
+  function textIsNonSimplified(text) {
+    const value = String(text || "");
+    if (SIMPLIFIED_MARK.test(value)) return false;
+    if (/[\u3040-\u30ff\u31f0-\u31ff]/u.test(value) || TRADITIONAL_MARK.test(value)) return true;
+    return !/\p{Script=Han}/u.test(value);
+  }
+
+  function profileIsNonSimplified(row, handle) {
+    const { name, bio } = profileTextParts(row, handle);
+    if (!name) return false;
+    return textIsNonSimplified(`${name} ${bio}`);
+  }
+
   function cardForActionButton(button) {
     let card = button;
     let node = button;
@@ -1110,14 +1136,16 @@
       const followsStatus = followsYouStatus(row);
       const followsYou = followsStatus === "yes";
       const followsYouKnown = followsStatus !== "unknown";
-      const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && followsYou && profileNonChinese(row, handle);
+      const nonSimplifiedProfile = mode === "unfollowNonSc" && profileIsNonSimplified(row, handle);
       const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
       const candidate = mode === "unfollow"
-        ? Boolean(handle && followingButton && followsYouKnown && (!followsYou || nonChineseProfile))
+        ? Boolean(handle && followingButton && followsYouKnown && !followsYou)
+        : mode === "unfollowNonSc"
+          ? Boolean(handle && followingButton && nonSimplifiedProfile)
         : mode === "followBack"
           ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
           : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
-      return { row, handle, followsYou, followsYouKnown, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
+      return { row, handle, followsYou, followsYouKnown, nonSimplifiedProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 
@@ -1297,8 +1325,9 @@
   }
 
   async function runWithStorage(mode, onUpdate, options = {}) {
+    const cleaning = mode === "unfollow" || mode === "unfollowNonSc";
     if (state.running) return false;
-    if (mode === "unfollow" && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
+    if (cleaning && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
     if (mode === "followBack" && !isFollowersPage()) return { navigate: targetPath(mode), error: "请打开自己的 Followers 页面" };
     if (mode === "targetFollow") {
       const openHandle = typeof followerHandleFromPath === "function" ? followerHandleFromPath() : "";
@@ -1327,16 +1356,17 @@
       }
       writeTargetNavGuard(null);
     }
-    const independentCleanup = mode === "unfollow";
+    const independentCleanup = cleaning;
     if (independentCleanup) await loadUnfollowReview();
     const manualUnfollow = independentCleanup && state.unfollowMode === "manual";
     const cleanupLimit = ({ slow: 15, medium: 30, fast: 45, turbo: 60 })[state.followPace] || 15;
     let cleanupAttempts = 0;
     await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" && mode !== "targetFollow" });
     await reset(mode, onUpdate);
-    if (!independentCleanup && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
       ? manualUnfollow ? "正在扫描 Following 列表，记录待取关账号" : "开始自动清理未回关账号"
+      : mode === "unfollowNonSc"
+        ? manualUnfollow ? "正在扫描 Following 列表，记录非简中账号" : "开始自动清理非简中账号"
       : mode === "followBack"
         ? "开始回关粉丝"
         : "开始关注候选");
@@ -1373,7 +1403,7 @@
         stopReason = "已离开当前关注名单，任务已停止；回到对应列表后可重新启动";
         break;
       }
-      if (mode === "unfollow" && (rateLimitVisible() || automationWarningVisible())) {
+      if (cleaning && (rateLimitVisible() || automationWarningVisible())) {
         stopReason = automationWarningVisible() && !rateLimitVisible()
           ? "X 提示疑似自动化，本次先停下。"
           : "X 提示操作受限，本次先停下。";
@@ -1397,7 +1427,7 @@
         if (!(await waitForPlatformRateLimit())) break;
         continue;
       }
-      if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
+      if (cleaning && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
       if (mode === "targetFollow" && typeof noteSeenTargetSources === "function") noteSeenTargetSources(items.map((item) => item.handle));
       if (manualUnfollow) {
@@ -1426,7 +1456,7 @@
         }
       }
       for (const item of items) {
-        const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
+        const skipped = cleaning ? Boolean(item.followsYou) && mode === "unfollow" : !item.candidate;
         if (skipped && !state.skippedHandles.has(item.handle)) {
           state.skippedHandles.add(item.handle);
           state.skipped += 1;
@@ -1437,18 +1467,18 @@
         stalled = 0;
         sourceIdleSince = 0;
         state.seenHandles.add(candidate.handle);
-        if (mode === "unfollow" && manualUnfollow) {
-          await addUnfollowReview(candidate);
+        if (cleaning && manualUnfollow) {
+          await addUnfollowReview({ ...candidate, reason: mode === "unfollowNonSc" ? "nonSimplified" : "notFollowingBack" });
           continue;
         }
-        if (mode === "unfollow") cleanupAttempts += 1;
-        const ok = mode === "unfollow"
+        if (cleaning) cleanupAttempts += 1;
+        const ok = cleaning
           ? await actUnfollow(candidate)
           : mode === "followBack"
             ? await actFollowBack(candidate)
             : await actTargetFollow(candidate);
         if (automationWarningVisible()) {
-          if (mode === "unfollow") {
+          if (cleaning) {
             stopReason = "X 提示疑似自动化，本次先停下。";
             break followLoop;
           }
@@ -1460,9 +1490,11 @@
         }
         if (ok === "rate-limited" || rateLimitVisible()) {
           reportMutualAction(mode, candidate.handle, "limited", "rate-limited");
-          if (mode === "unfollow" || mode === "targetFollow") {
+          if (cleaning || mode === "targetFollow" || mode === "followBack") {
             stopReason = mode === "targetFollow"
               ? `已关注 ${state.targetFollowed} 人，X 提示超过限制，本次结束`
+              : mode === "followBack"
+                ? `已回关 ${state.followedBack} 人，X 提示超过限制，本次结束`
               : "X 提示操作受限，本次先停下。";
             break followLoop;
           }
@@ -1476,31 +1508,16 @@
           stopReason = `本次已关注 ${state.targetFollowed} 人`;
           break followLoop;
         }
+        const followBackQuota = state.followPace === "slow" ? 5 : state.followPace === "medium" ? 10 : 15;
+        if (mode === "followBack" && ok === true && state.followedBack >= followBackQuota) {
+          stopReason = `本次已回关 ${state.followedBack} 人`;
+          break followLoop;
+        }
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
         if (!independentCleanup && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) continue;
-        if (mode === "followBack" && state.followPlan && ok) {
-          state.followPlan.roundCount += 1;
-          if (state.followPlan.roundCount >= FOLLOW_BATCH_SIZE) {
-            state.followPlan.completedRounds += 1;
-            state.followPlan.roundCount = 0;
-            if (state.followPlan.completedRounds >= state.followPlan.rounds) {
-              const finishedRounds = state.followPlan.rounds;
-              state.followPlan = createFollowBackPlan(state.followPace || "medium");
-              emit(`本次 ${finishedRounds} 轮已完成，稍后继续回关`);
-            }
-            state.sharedBatchProgress = 0;
-            state.cooldownUntil = Date.now() + followBatchCooldownMs(state.followPace);
-            await persistSharedFollowRate();
-            if (!(await waitForSharedCooldown())) break;
-          } else {
-            await persistSharedFollowRate();
-            await sleepActive(FOLLOW_ACTION_DELAY_MS);
-          }
-          continue;
-        }
-        if (!independentCleanup && mode !== "targetFollow" && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        if (!independentCleanup && mode !== "targetFollow" && mode !== "followBack" && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + followBatchCooldownMs(state.targetFollowPace || state.followPace);
           await persistSharedFollowRate();
@@ -1601,7 +1618,7 @@
     state.stopping = false;
     state.cooldownUntil = 0;
     state.riskCooldownUntil = 0;
-    emit(stopReason || (state.mode === "unfollow"
+    emit(stopReason || (state.mode === "unfollow" || state.mode === "unfollowNonSc"
       ? `完成：取消 ${state.unfollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
       : state.mode === "followBack"
         ? `完成：本次回关 ${state.followedBack} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
@@ -1676,6 +1693,8 @@
     followRoundGapSeconds,
     followBatchCooldownMs,
     targetFollowQuota,
+    followBackQuota,
+    textIsNonSimplified,
     nextFollowBackNightStart,
     constants: {
       FOLLOW_ACTION_DELAY_MS,

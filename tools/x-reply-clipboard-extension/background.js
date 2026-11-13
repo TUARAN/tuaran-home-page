@@ -209,19 +209,21 @@ function resolvePromptBundle(settings = {}) {
 
 function resolveReplyProviders(settings) {
   const hasList = Array.isArray(settings?.replyProviders);
-  const stored = hasList
-    ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
-    : [...DEFAULT_REPLY_PROVIDERS];
+  const explicit = settings?.replyProvidersManual === true;
+  const autoNasOnly = hasList && !explicit && settings.replyProviders.length === 1 && settings.replyProviders[0] === "nas";
+  const stored = !hasList || autoNasOnly
+    ? []
+    : REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider));
   const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
   const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
     ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
     : provider === "bai"
       ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
       : provider === "nas"
-        ? settings?.nasSecretAvailable === true && stored.length === 0
-        : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-  const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
-  return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
+        ? settings?.nasSecretAvailable === true
+        : provider === "mobileoffice" && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+  const providers = REPLY_PROVIDER_ORDER.filter((provider) => stored.includes(provider) && configured.includes(provider) && !disabled.includes(provider));
+  return { providers, persist: autoNasOnly };
 }
 
 async function readStoredAiSettings() {

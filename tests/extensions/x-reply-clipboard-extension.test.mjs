@@ -4682,7 +4682,7 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
   const originalFetch = globalThis.fetch
   let storedPostPrompt = '自定义发推提示词：说清楚事实，像平时聊天。'
   let requestBody
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', postPrompt: storedPostPrompt } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'], postPrompt: storedPostPrompt } } } } } }
   globalThis.fetch = async (_url, options) => {
     requestBody = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"新工具上线","post":"新工具刚上线，大家都在讨论名字。"}' } }] } } }
@@ -4749,7 +4749,7 @@ test('post opening draw always chooses one of sixteen hooks', async () => {
   const originalChrome = globalThis.chrome
   const originalFetch = globalThis.fetch
   let requestBody
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     requestBody = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"配置说明","post":"别把配置表当成安全说明。"}' } }] } } }
@@ -6188,7 +6188,7 @@ test('notification context waits for a settled root and does not keep an unsettl
 test('DeepSeek receives both sides of a notification conversation', async () => {
   let request = null
   const originalFetch = globalThis.fetch
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '谢谢补充，我的意思是这个范围。' } }] } } }
@@ -6249,7 +6249,7 @@ test('selected Grok reply prompt asks for a specific second perspective', async 
   const originalFetch = globalThis.fetch
   let request = null
   let modelText = '这个处理确实太急了。@grok 还有哪条公开依据能支持另一种判断？'
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: modelText } }] } } }
@@ -6456,7 +6456,7 @@ test('saved reply keys enable DeepSeek and B.AI unless all models were explicitl
   const originalFetch = globalThis.fetch
   const requests = []
   const progress = []
-  let settings = { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' }
+  let settings = { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyProviders: ['deepseek', 'bai'], replyProvidersManual: true }
   globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings } } } } }
   globalThis.fetch = async (url) => {
     requests.push(url)
@@ -6515,7 +6515,7 @@ test('selected reply providers skip disabled models and do not require a DeepSee
   const originalFetch = globalThis.fetch
   const originalReceipt = globalThis.XrcCommunityReceipt
   const requests = []
-  const settings = { replyProviders: ['nas'], baiApiKey: 'sk-bai-test-key' }
+  const settings = { replyProviders: ['nas'], replyProvidersManual: true, baiApiKey: 'sk-bai-test-key' }
   globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings, xrcAccountHandle: 'Tuaran' } } } } }
   globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
   globalThis.fetch = async (url) => {
@@ -10317,7 +10317,7 @@ test('notification replies accept emoji-only responses and apply brevity to save
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
   let request
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyCommentPrompt: '已有自定义回复提示词' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyProviders: ['deepseek'], replyCommentPrompt: '已有自定义回复提示词' } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '😂👍' } }] } } }
@@ -10341,7 +10341,7 @@ test('notification model receives the root post and every earlier turn in order'
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
   let request
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '接上了😂' } }] } } }

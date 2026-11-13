@@ -55,20 +55,28 @@ test('a new install starts with no reply provider selected and uses a general se
   }
   assert.match(content, /尚未启用回复模型 · 点击前往模型设置/)
   assert.doesNotMatch(content, /尚未配置 DeepSeek API Key · 点击前往模型设置/)
+  const model = content.slice(content.indexOf('data-xrc-config-section="model"'))
+  const deepseekBox = model.indexOf('data-xrc-reply-provider="deepseek"')
+  const deepseekKey = model.indexOf('data-xrc-config-key')
+  const nasBox = model.indexOf('data-xrc-reply-provider="nas"')
+  const nasKey = model.indexOf('data-xrc-nas-secret')
+  const baiBox = model.indexOf('data-xrc-reply-provider="bai"')
+  const baiKey = model.indexOf('data-xrc-config-bai-key')
+  assert.ok(deepseekBox < deepseekKey && deepseekKey < nasBox)
+  assert.ok(nasBox < nasKey && nasKey < baiBox && baiBox < baiKey)
 })
 
-test('saved credentials repair an old empty selection, while a new explicit opt-out remains off', async () => {
+test('a saved check and key are used, while a key or receipt alone does not turn a model on', async () => {
   const { resolveReplyProviders } = modelFunctions(await contentPromise)
   assert.deepEqual(Array.from(resolveReplyProviders({}).providers), [])
-  const oldSettings = { apiKey: 'sk-12345678', replyProviders: [] }
-  assert.deepEqual(Array.from(resolveReplyProviders(oldSettings).providers), ['deepseek'])
-  assert.equal(resolveReplyProviders(oldSettings).persist, true)
-  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersManual: true }).providers), ['deepseek'])
-  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProvidersDisabled: ['deepseek'] }).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ ...oldSettings, replyProviders: ['deepseek'], replyProvidersDisabled: ['deepseek'] }).providers), [])
-  assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: [] }).providers), ['bai'])
-  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [] }).providers), ['nas'])
-  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [], replyProvidersDisabled: ['nas'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: [] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }).providers), ['deepseek'])
+  assert.equal(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }).persist, false)
+  assert.deepEqual(Array.from(resolveReplyProviders({ apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true, replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ baiApiKey: 'sk-abcdefgh', replyProviders: ['bai'], replyProvidersManual: true }).providers), ['bai'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), [])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true }).providers), ['nas'])
+  assert.deepEqual(Array.from(resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true, replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
 test('background model selection agrees with the panel for saved keys and opt-outs', async () => {
@@ -79,11 +87,12 @@ test('background model selection agrees with the panel for saved keys and opt-ou
   const context = { REPLY_PROVIDER_ORDER: ['mobileoffice', 'deepseek', 'nas', 'bai'], DEFAULT_REPLY_PROVIDERS: [] }
   vm.createContext(context)
   vm.runInContext(source.slice(start, end), context)
-  const legacy = { apiKey: 'sk-12345678', replyProviders: [], replyProvidersManual: true }
-  assert.deepEqual(Array.from(context.resolveReplyProviders(legacy).providers), ['deepseek'])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ ...legacy, replyProvidersDisabled: ['deepseek'] }).providers), [])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [] }).providers), ['nas'])
-  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: [], replyProvidersDisabled: ['nas'] }).providers), [])
+  const saved = { apiKey: 'sk-12345678', replyProviders: ['deepseek'], replyProvidersManual: true }
+  assert.deepEqual(Array.from(context.resolveReplyProviders(saved).providers), ['deepseek'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ ...saved, replyProvidersDisabled: ['deepseek'] }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'] }).providers), [])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true }).providers), ['nas'])
+  assert.deepEqual(Array.from(context.resolveReplyProviders({ nasSecretAvailable: true, replyProviders: ['nas'], replyProvidersManual: true, replyProvidersDisabled: ['nas'] }).providers), [])
 })
 
 for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['bai', '[data-xrc-config-bai-key]']]) {
@@ -110,12 +119,15 @@ for (const [provider, keySelector] of [['deepseek', '[data-xrc-config-key]'], ['
     } }
 
     assert.equal(await saveSingleApiKey(panel, provider), true)
+    assert.deepEqual(Array.from(settings.replyProviders), [])
+    checkbox.checked = true
+    assert.equal(await saveSingleApiKey(panel, provider), true)
     assert.deepEqual(Array.from(settings.replyProviders), [provider])
     assert.deepEqual(Array.from(state.replyProviders), [provider])
     assert.equal(settings.replyProvidersManual, true)
     assert.deepEqual(Array.from(settings.replyProvidersDisabled), [])
     assert.equal(checkbox.checked, true)
-    assert.equal(renders, 1)
+    assert.equal(renders, 2)
   })
 }
 
@@ -143,7 +155,7 @@ test('the home prompt waits until saved keys and receipt settings finish loading
   finishReceipt('saved-receipt-secret')
   await loading
   assert.equal(state.aiSettingsStatus, 'ready')
-  assert.deepEqual(Array.from(state.replyProviders), ['deepseek', 'nas'])
+  assert.deepEqual(Array.from(state.replyProviders), [])
   assert.equal(state.aiKeySaved, true)
   assert.equal(state.nasSecretAvailable, true)
 })

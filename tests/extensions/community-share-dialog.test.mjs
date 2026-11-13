@@ -5,7 +5,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 
 const require = createRequire(import.meta.url)
-const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, findChatShareAction, sendButtonNearDialog, createController, isSendConfirmed, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, findChatShareAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
 test('recognizes the visible group picker by Search, group rows and Send even without a Share heading', async () => {
   const body = {}
@@ -462,14 +462,7 @@ test('share that opens the group picker selects groups and clicks Send without a
   assert.match(controller.snapshot().status, /最新帖子已标记为已分发，本轮完成/)
 })
 
-test('Post shared individually is a confirmed community send', () => {
-  assert.equal(isSendConfirmed('Post shared individually'), true)
-  assert.equal(isSendConfirmed('Messages sent'), true)
-  assert.equal(isSendConfirmed('Message sent'), true)
-  assert.equal(isSendConfirmed('Could not send message'), false)
-})
-
-test('Post shared individually after Send separately counts each selected group for the current account', async () => {
+test('any new notice after Send separately counts each selected group for the current account', async () => {
   let sent = false
   const reported = []
   const article = { parentElement: null, querySelector: (selector) => String(selector).includes('share') ? shareButton : null, querySelectorAll: (selector) => String(selector).includes('/status/') ? [timeLink] : [] }
@@ -492,7 +485,7 @@ test('Post shared individually after Send separately counts each selected group 
     querySelectorAll: (selector) => {
       if (selector.includes('cellInnerDiv')) return [row]
       if (selector.includes('input')) return [search]
-      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Post shared individually' }] : []
+      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Handed to the chats' }] : []
       if (selector.includes('button')) return [send]
       return []
     },
@@ -523,6 +516,93 @@ test('Post shared individually after Send separately counts each selected group 
   assert.equal(sent, true)
   assert.equal(controller.snapshot().shared, 1)
   assert.deepEqual(reported, [{ task: 'community-share', result: 'success', targetId: '987:bluev mutual follow group' }])
+})
+
+test('closing the picker after send counts without a success sentence', async () => {
+  let open = true
+  const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
+  const timeLink = { getAttribute: () => '/tuaran/status/321', querySelector: () => ({}), closest: () => article }
+  const row = clickable('BlueV Mutual Follow Group 825 people', { click: () => {} })
+  const send = clickable('Send separately', { click: () => { open = false } })
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search BlueV Mutual Follow Group 825 people',
+    closest: () => null,
+    getAttribute: () => null,
+    parentElement: null,
+    scrollTop: 0,
+    clientHeight: 600,
+    querySelectorAll: (selector) => {
+      if (selector.includes('cellInnerDiv')) return open ? [row] : []
+      if (selector.includes('input')) return open ? [search] : []
+      if (selector.includes('button')) return open ? [send] : []
+      return []
+    },
+  }
+  search.parentElement = picker
+  send.parentElement = picker
+  const embed = { getAttribute: (name) => name === 'data-testid' ? 'xchatEmbedShare' : null, shadowRoot: picker }
+  picker.host = embed
+  const doc = {
+    body: {},
+    querySelector: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('article[data-testid="tweet"]')) return [article]
+      if (selector.includes('xchatEmbedShare')) return open ? [embed] : []
+      return []
+    },
+  }
+  const controller = createController({
+    document: doc,
+    window: { location: { pathname: '/tuaran' }, sessionStorage: { getItem: () => null, setItem: () => {} } },
+    wait: async () => {},
+    loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+    saveLedger: async () => {},
+  })
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(open, false)
+  assert.equal(controller.snapshot().shared, 1)
+})
+
+test('an open picker with no new notice does not count the send', async () => {
+  const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
+  const timeLink = { getAttribute: () => '/tuaran/status/654', querySelector: () => ({}), closest: () => article }
+  const row = clickable('BlueV Mutual Follow Group 825 people', { click: () => {} })
+  const send = clickable('Send separately', { click: () => {} })
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search BlueV Mutual Follow Group 825 people',
+    closest: () => null,
+    getAttribute: () => null,
+    parentElement: null,
+    scrollTop: 0,
+    clientHeight: 600,
+    querySelectorAll: (selector) => {
+      if (selector.includes('cellInnerDiv')) return [row]
+      if (selector.includes('input')) return [search]
+      if (selector.includes('button')) return [send]
+      return []
+    },
+  }
+  search.parentElement = picker
+  send.parentElement = picker
+  const embed = { getAttribute: (name) => name === 'data-testid' ? 'xchatEmbedShare' : null, shadowRoot: picker }
+  picker.host = embed
+  const doc = {
+    body: {},
+    querySelector: () => null,
+    querySelectorAll: (selector) => selector.includes('article[data-testid="tweet"]') ? [article] : selector.includes('xchatEmbedShare') ? [embed] : [],
+  }
+  const controller = createController({
+    document: doc,
+    window: { location: { pathname: '/tuaran' }, sessionStorage: { getItem: () => null, setItem: () => {} } },
+    wait: async () => {},
+    loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+    saveLedger: async () => {},
+  })
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(controller.snapshot().shared, 0)
+  assert.match(controller.snapshot().status, /选择窗仍在且没有新的发送结果/)
 })
 
 test('renamed share menu opens the picker and then sends once', async () => {

@@ -4,8 +4,6 @@
   const SESSION_KEY = "xrcGroupChatShareRunV4";
   const LEDGER_KEY = "xrcGroupChatShareLedgerV2";
   const LIMIT_RE = /automated|not allowed|try again later|rate limit|操作过于频繁|暂时无法|请求似乎可能是自动化/iu;
-  const SENT_RE = /(?:posts?|messages?) (?:was |were )?sent|sent successfully|sent separately|shared individually|消息已发送|帖子已发送|已发送给|已分别发送|已分别分享|已单独分享/iu;
-  function isSendConfirmed(text) { return SENT_RE.test(clean(text)); }
   const SEND_FAILED_RE = /could not send message|failed to send|unable to send|消息发送失败|无法发送消息/iu;
   const GROUP_RE = /(?:\d[\d,]*\s*(?:people|members|人)|\d[\d,.]*\s*[万千]?人)/iu;
   const PRIVATE_RE = /@[A-Za-z0-9_]{1,15}\b/u;
@@ -367,14 +365,20 @@
       state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
       send.click();
       let result = '';
+      let closedPolls = 0;
+      let outcome = '';
       for (let attempt = 0; attempt < 20 && !stopping; attempt++) {
         await wait(300);
         result = toast(doc());
-        if (result !== beforeSend && (isSendConfirmed(result) || SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) break;
+        const changed = result && result !== beforeSend;
+        if (changed && (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) { outcome = 'failed'; break; }
+        if (changed) { outcome = 'sent'; break; }
+        if (shareDialog(doc())) closedPolls = 0;
+        else if ((closedPolls += 1) >= 2) { outcome = 'sent'; break; }
       }
       if (stopping) return;
-      if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊：${result.slice(0, 100)}；未记录成功`, LIMIT_RE.test(result) ? 'rate-limit' : 'send-failed'); return; }
-      if (!isSendConfirmed(result) || result === beforeSend) { halt(`已点 Send，但 20 次检查后未看到成功提示；请手动核对，未记录成功`, 'unconfirmed', 20); return; }
+      if (outcome === 'failed') { halt(`X 未能发送到已选的 ${selected.size} 个群聊：${result.slice(0, 100)}；未记录成功`, LIMIT_RE.test(result) ? 'rate-limit' : 'send-failed'); return; }
+      if (outcome !== 'sent') { halt(`已点发送，选择窗仍在且没有新的发送结果；请手动核对，未记录成功`, 'unconfirmed', 20); return; }
       try { await rememberBatch([...selected]); }
       catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对', 'storage-failed'); return; }
       for (const groupId of selected) {
@@ -403,7 +407,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, isSendControl, isSendConfirmed, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, isSendControl, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

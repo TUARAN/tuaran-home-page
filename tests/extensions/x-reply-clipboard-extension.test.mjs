@@ -2814,6 +2814,9 @@ test('main flow keeps only the start and details controls', async () => {
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
+  assert.match(source, /live\.dataset\.live/)
+  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*justify-content: center;/)
+  assert.match(css, /@keyframes xrc-live-pulse/)
 })
 
 test('subpage pause marks only its task and stops the active task', async () => {

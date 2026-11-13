@@ -3071,6 +3071,12 @@
       currentMode,
       starting
     });
+    live.dataset.live = !scheduleLoaded ? "loading"
+      : !taskSchedule.enabled ? "paused"
+        : runningMode ? "running"
+          : currentMode && starting ? "starting"
+            : currentMode ? "occupied"
+              : "idle";
   }
 
   function paintScheduleStrip(panel = document.getElementById(PANEL_ID)) {

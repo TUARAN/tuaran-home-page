@@ -1328,6 +1328,29 @@
   background: transparent;
   outline: none;
 }
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:hover,
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible {
+  color: var(--xrc-accent);
+  background: #fff;
+  outline: none;
+}
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
   position: absolute;
   right: 6px;
@@ -1365,17 +1388,9 @@
   gap: 6px;
   position: relative;
   min-width: 0;
-  padding-left: 10px;
 }
 #x-reply-clipboard-panel .xrc-task-subnav-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 1px;
-  height: 10px;
-  margin-top: -5px;
-  background: var(--xrc-line);
+  content: none;
 }
 #x-reply-clipboard-panel .xrc-task-subnav strong {
   color: var(--xrc-muted);

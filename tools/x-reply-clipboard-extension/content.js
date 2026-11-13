@@ -8579,6 +8579,7 @@
               <span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span>
             </div>
             <div class="xrc-task-live-row" data-xrc-task-live-row hidden>
+              <button type="button" class="xrc-task-back" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
               <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
               <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
             </div>
@@ -8634,7 +8635,6 @@
           </details>
         </div>
         <div class="xrc-task-subnav" data-xrc-task-subnav hidden>
-          <button type="button" data-xrc-desk-back aria-label="返回排班台">← 返回排班台</button>
           <span class="xrc-task-subnav-title">
             <strong data-xrc-task-subnav-label>任务子页</strong>
             <button type="button" class="xrc-task-docs-link" data-xrc-task-docs data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看任务说明" title="查看任务说明"><svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true" focusable="false"><circle cx="8" cy="4.2" r="1.15" fill="currentColor"/><path d="M8 7.15v5.15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>

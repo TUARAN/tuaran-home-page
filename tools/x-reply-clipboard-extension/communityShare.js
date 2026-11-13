@@ -113,6 +113,14 @@
   }
 
   const CHAT_SHARE_PREFIX = /^(?:send via chat|send via direct message|send in chat|send as direct message|send a direct message|通过聊天发送|通过私信发送|发送到会话|发送私信|分享到聊天|通过聊天分享)(?:\s|$|[，,。.!！])/iu;
+  const SEND_BUTTON_RE = /^(?:send(?:\s+(?:post|message|separately|separate))?|发送(?:\s*(?:消息|帖子))?|分别发送|单独发送)$/iu;
+  function isSendControl(node) {
+    if (!node) return false;
+    const aria = clean(node.getAttribute?.('aria-label'));
+    const label = clean(String(node.innerText || node.textContent || '').split('\n')[0]);
+    const testId = clean(node.getAttribute?.('data-testid'));
+    return SEND_BUTTON_RE.test(aria) || SEND_BUTTON_RE.test(label) || /send(?:button|message)?$/iu.test(testId);
+  }
   function chatShareLabel(node) {
     const aria = clean(node?.getAttribute?.('aria-label'));
     const raw = String(node?.innerText || node?.textContent || '');
@@ -154,8 +162,7 @@
         .some((item) => /^(?:share|分享|send via chat|send via direct message|send in chat|通过聊天发送|通过私信发送)$/iu.test(textOf(item)));
       const hasSearch = searchInputs(node).length > 0;
       const hasGroups = GROUP_RE.test(textOf(node));
-      const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || [])
-        .some((button) => /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(button.getAttribute?.('aria-label'))) || /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(String(button.innerText || button.textContent || '').split('\n')[0])));
+      const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || []).some(isSendControl);
       const onCompose = /\/messages\/compose(?:\/|$)/u.test(doc?.defaultView?.location?.pathname || doc?.location?.pathname || '');
       if (!(hasSearch && hasGroups)) return false;
       if (heading || hasSend || onCompose) return true;
@@ -192,14 +199,7 @@
   function sendButtonNearDialog(dialog, doc) {
     const sendIn = (scope) => {
       const controls = Array.from(scope?.querySelectorAll?.('button, [role="button"], [data-testid*="send" i]') || []);
-      return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => {
-        if (!enabled(node, { ignoreAncestorOpacity: true }) || node.closest?.('#x-reply-clipboard-panel')) return false;
-        const aria = clean(node.getAttribute?.('aria-label'));
-        const label = clean(String(node.innerText || node.textContent || '').split('\n')[0]);
-        const testId = clean(node.getAttribute?.('data-testid'));
-        const sendName = /^(?:send|发送)(?:\s+(?:post|message|消息))?$/iu;
-        return sendName.test(aria) || sendName.test(label) || /send(?:button|message)?$/iu.test(testId);
-      }) || null;
+      return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => enabled(node, { ignoreAncestorOpacity: true }) && !node.closest?.('#x-reply-clipboard-panel') && isSendControl(node)) || null;
     };
     let scope = dialog;
     for (let depth = 0; scope && scope !== doc?.body && depth < 16; depth++, scope = scope.parentElement || scope.getRootNode?.()?.host) {
@@ -362,7 +362,7 @@
         await wait(350);
       }
       if (stopping) return;
-      if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
+      if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send 或 Send separately；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
       state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
       send.click();
       let result = '';
@@ -398,7 +398,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, isSendControl, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

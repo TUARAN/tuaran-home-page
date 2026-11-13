@@ -61,6 +61,15 @@ test('finds the compose picker from an accessible Search input before Send becom
   assert.equal(shareDialog(doc), picker)
 })
 
+test('treats Send separately as the one send click after multiple chats are selected', () => {
+  const body = {}
+  const send = { innerText: 'Send separately', getAttribute: () => null, getClientRects: () => [1], closest: () => null }
+  const wrapper = { parentElement: body, querySelectorAll: () => [send] }
+  const list = { parentElement: wrapper, querySelectorAll: () => [] }
+  assert.equal(sendButtonNearDialog(list, { body }), send)
+  assert.equal(sendButtonNearDialog(list, { body, querySelectorAll: () => [] }), send)
+})
+
 test('finds Send in the picker footer when the list and footer are sibling containers', () => {
   const body = {}
   const send = { innerText: 'Send', getAttribute: () => null, getClientRects: () => [1], closest: () => null }

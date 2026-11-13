@@ -8723,7 +8723,7 @@
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖发送到可用群聊")}
-              <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；发送结果确认后本轮结束。</p>
+              <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；多选后页面显示 Send separately 时，同样只点这一次。发送结果确认后本轮结束。</p>
               <p class="xrc-pace-now" data-xrc-community-now>当前尚未开始</p>
               <div class="xrc-flow-end">
                 <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>

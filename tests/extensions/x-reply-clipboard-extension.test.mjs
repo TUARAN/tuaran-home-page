@@ -11324,7 +11324,7 @@ test('group chat sharing has one batch Send and no speed picker', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const docs = await readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8')
   assert.doesNotMatch(content, /communityPaceTableHtml\(\)|data-xrc-community-pace/)
-  assert.match(content, /选中所有可点击的群聊后，只点一次 Send/)
+  assert.match(content, /选中所有可点击的群聊后，只点一次 Send；多选后页面显示 Send separately 时，同样只点这一次/)
   assert.match(docs, /书签右侧的分享按钮/)
   assert.match(docs, /没有群聊速度设置/)
 })

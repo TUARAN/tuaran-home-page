@@ -27,7 +27,7 @@
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let reviewAccountHandle = "";
   let TARGET_FOLLOW_HANDLES = [];
-  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
+  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a (?:few )?moments?(?:,|\s)+(?:and|then) try again|受到(?:速率|速度)限制|操作过于频繁|操作太频繁|请稍等片刻(?:[，,\s]*然后)?再试)/iu;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
@@ -875,9 +875,17 @@
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
+  function isRateLimitText(text) {
+    return RATE_LIMIT_RE.test(String(text || ""));
+  }
+
   function rateLimitNodes() {
-    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
-      .filter((node) => RATE_LIMIT_RE.test(textOf(node)));
+    const matched = Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .filter((node) => !node.closest?.("#x-reply-clipboard-panel") && isRateLimitText(textOf(node)));
+    if (matched.length) return matched;
+    const layers = document.querySelector("#layers");
+    if (layers && isRateLimitText(textOf(layers))) return [layers];
+    return [];
   }
 
   function rateLimitVisible() {
@@ -1424,6 +1432,14 @@
       }
       if (!independentCleanup && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
+        if (mode === "targetFollow" || mode === "followBack" || cleaning) {
+          stopReason = mode === "targetFollow"
+            ? `已关注 ${state.targetFollowed} 人，X 提示超过限制，本次结束`
+            : mode === "followBack"
+              ? `已回关 ${state.followedBack} 人，X 提示超过限制，本次结束`
+              : "X 提示操作受限，本次先停下。";
+          break;
+        }
         if (!(await waitForPlatformRateLimit())) break;
         continue;
       }
@@ -1695,6 +1711,7 @@
     targetFollowQuota,
     followBackQuota,
     textIsNonSimplified,
+    isRateLimitText,
     nextFollowBackNightStart,
     constants: {
       FOLLOW_ACTION_DELAY_MS,

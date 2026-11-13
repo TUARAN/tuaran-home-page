@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '回关按人数，清理拆开',
-    description: '回关一次 5、10 或 15 人，默认 15 人，约每周一次。清理未回关只处理没回关的人。清理非简中单独一项，默认不进排班。本地源码，尚未打包。',
+    title: '认出中文速度限制',
+    description: '「抱歉，你受到速度限制。请稍等片刻，然后再试一次。」会结束本次关注或回关，并把页签交回队列。本地源码，尚未打包。',
     current: true,
   },
   {

@@ -2813,9 +2813,12 @@
   min-width: 0;
 }
 
-#x-reply-clipboard-panel [data-xrc-reply-pace-kol] { display: none; }
+#x-reply-clipboard-panel [data-xrc-reply-pace-kol],
+#x-reply-clipboard-panel [data-xrc-reply-pace-notifications] { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="kol"] [data-xrc-reply-pace-standard] { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="kol"] [data-xrc-reply-pace-kol] { display: block; }
+#x-reply-clipboard-panel[data-assistant-mode="notifications"] [data-xrc-reply-pace-standard] { display: none; }
+#x-reply-clipboard-panel[data-assistant-mode="notifications"] [data-xrc-reply-pace-notifications] { display: block; }
 #x-reply-clipboard-panel .xrc-round-pace .xrc-pace-options {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }

@@ -189,6 +189,19 @@
     return Number.isFinite(timestamp) ? timestamp : 0;
   }
 
+  const NOTIFICATION_WINDOWS = Object.freeze([
+    Object.freeze({ id: "slow", label: "1 小时", hours: 1 }),
+    Object.freeze({ id: "medium", label: "2 小时", hours: 2 }),
+    Object.freeze({ id: "fast", label: "4 小时", hours: 4 }),
+    Object.freeze({ id: "turbo", label: "8 小时", hours: 8 }),
+    Object.freeze({ id: "boundary", label: "24 小时", hours: 24 })
+  ]);
+
+  function notificationWindowMs(pace = "medium") {
+    const selected = NOTIFICATION_WINDOWS.find((item) => item.id === pace) || NOTIFICATION_WINDOWS[1];
+    return selected.hours * 60 * 60 * 1000;
+  }
+
   function notificationWithinWindow(timestamp, now = Date.now(), windowMs = 24 * 60 * 60 * 1000) {
     return Number(timestamp) > 0 && Number(timestamp) >= now - windowMs;
   }
@@ -467,6 +480,8 @@
     hasVisibleReplyCount,
     isReplyRestrictedText,
     timestampFromDatetime,
+    NOTIFICATION_WINDOWS,
+    notificationWindowMs,
     notificationWithinWindow,
     nextTweet,
     shouldReload,

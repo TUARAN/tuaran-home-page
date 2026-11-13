@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '整张卡片上的中文都算',
-    description: '关注候选把名字和简介放在一起看。有汉字并且按钮是 Follow，就点。本地源码，尚未打包。',
+    title: '评论回复按时间收口',
+    description: '默认只回复最近 2 小时内的评论。可选 1、4、8、24 小时。刷到窗口外就结束。本地源码，尚未打包。',
     current: true,
   },
   {

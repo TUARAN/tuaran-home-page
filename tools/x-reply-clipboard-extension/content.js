@@ -4197,7 +4197,7 @@
       .map((text) => `<span role="columnheader">${text}</span>`).join("")}`;
     const rows = profiles.map((profile) => {
       const name = profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
-      const title = profile.id === "boundary" ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
+      const title = profile.id === "boundary" && !profile.hours ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
       const cells = columns.map((column) => `<span>${column.value(profile)}</span>`).join("");
       return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span><span data-xrc-pace-name>${name}</span>${cells}</button>`;
     }).join("");
@@ -4311,8 +4311,26 @@
   }
 
   function replyPaceName(profile, mode) {
-    const defaultId = mode === "notifications" ? "medium" : mode === "kol" ? "slow" : "boundary";
+    if (mode === "notifications") {
+      const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === profile.id);
+      const label = selected?.label || profile.label;
+      return profile.id === "medium" ? `${label}（默认）` : label;
+    }
+    const defaultId = mode === "kol" ? "slow" : "boundary";
     return profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
+  }
+
+  function notificationPaceTableHtml() {
+    const windows = loopApi.NOTIFICATION_WINDOWS || [];
+    return paceTableHtml({
+      label: "评论回复时间",
+      attr: "data-xrc-pace-label",
+      profiles: windows,
+      defaultId: "medium",
+      columns: [
+        { label: "处理范围", value: (profile) => `只回复这 ${profile.hours} 小时内的评论` }
+      ]
+    });
   }
 
   function kolPaceTableHtml() {
@@ -5709,7 +5727,7 @@
       })
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
-        loopApi.notificationWithinWindow(tweet.timestamp) &&
+        loopApi.notificationWithinWindow(tweet.timestamp, Date.now(), loopApi.notificationWindowMs(state.schedulePace)) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
         !loopApi.hasVisibleReplyCount(tweet.replyButton)
@@ -5720,25 +5738,37 @@
     return todayTweets.length ? todayTweets : tweets;
   }
 
+  function notificationWindowLabel() {
+    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === (state.schedulePace || "medium"));
+    return selected?.label || "2 小时";
+  }
+
   function notificationFeedReachedOldBoundary(now = Date.now()) {
     if (state.assistantMode !== "notifications") return false;
+    const windowMs = loopApi.notificationWindowMs(state.schedulePace);
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`) && !isNestedTweet(article))
       .some((article) => {
-        const timeNode = listOwn(article, "time[datetime]")[0];
+        const replyButton = typeof replyButtonForArticle === "function" ? replyButtonForArticle(article) : null;
+        const timeLink = typeof statusLinkForReply === "function" ? statusLinkForReply(article, replyButton) : null;
+        const timeNode = timeLink?.querySelector?.("time") || listOwn(article, "time[datetime]")[0];
         const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute?.("datetime"));
-        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now);
+        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now, windowMs);
       });
   }
 
-  async function finishNotificationScan(reason = "最近 24 小时的通知已扫完") {
+  async function finishNotificationScan(reason = "所选时间内的通知已扫完") {
     if (!state.notificationBoundaryRefreshed) {
       state.notificationBoundaryRefreshed = true;
       writeSaved({ running: true, total: state.total });
       return await reloadAndResume(`${reason}，刷新后复核最新回复`) ? "reload" : "stopped";
     }
-    return finishCycleAndScheduleNext(`已复核最近 24 小时的回复，本次确认 ${state.total} 条`);
+    state.running = false;
+    state.nextCycleAt = 0;
+    state.status = `已看完最近 ${notificationWindowLabel()} 的回复，本次确认 ${state.total} 条`;
+    if (typeof renderPanel === "function") renderPanel();
+    return "stopped";
   }
 
   async function collectDailyKolFromHome(tweets, now = Date.now()) {
@@ -6504,6 +6534,7 @@
       }
       if (deadlineChanged) writeSaved({ running: true, total: state.total });
     }
+    if (state.assistantMode === "notifications") state.nextCycleAt = 0;
     if (state.nextCycleAt > 0) {
       const readyForNextCycle = await waitForDeadline(
         state.nextCycleAt,
@@ -6573,7 +6604,7 @@
         return reconnectAndResume("暂时无法识别当前登录账号，为避免回复自己，本轮已暂停");
       }
       if (state.assistantMode === "notifications") {
-        return finishNotificationScan(notificationFeedReachedOldBoundary() ? "已到 24 小时前的通知" : "通知页没有待处理回复");
+        return finishNotificationScan(notificationFeedReachedOldBoundary() ? `已到 ${notificationWindowLabel()} 前的通知` : "通知页没有待处理回复");
       }
       if (state.assistantMode === "kol") {
         return rotateKolProfileAndResume("这个主页暂时没有可评论的帖子，换一个大V继续");
@@ -6664,14 +6695,14 @@
       }
       if (!next) {
         if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
-          return finishNotificationScan("已到 24 小时前的通知");
+          return finishNotificationScan(`已到 ${notificationWindowLabel()} 前的通知`);
         }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
         await sleepActive(SCROLL_WAIT_MS);
         const after = tweetSignature(collectTweets());
         if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
-          return finishNotificationScan("已到 24 小时前的通知");
+          return finishNotificationScan(`已到 ${notificationWindowLabel()} 前的通知`);
         }
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
@@ -7022,6 +7053,8 @@
         writeSaved({ running: true, total: state.total });
         state.status = state.assistantMode === "kol"
           ? `已回复：${phrase}。@${currentKolHandleFromPath() || "大V"} ${state.pageCount}/${currentRoundTarget()} 条`
+          : state.assistantMode === "notifications"
+            ? `已回复：${phrase}。最近 ${notificationWindowLabel()} 内已成功 ${state.total} 条`
           : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${currentRoundTarget()}`;
         renderPanel();
         if (result === "sent-composer-open" && !await closeReplyComposer({ confirmedSent: true })) {
@@ -8700,6 +8733,7 @@
                 ${taskSectionHead("运行", "速度与启停")}
                 <div class="xrc-round-pace" aria-label="回复速度">
                   <div data-xrc-reply-pace-standard>${interactionPaceTableHtml("data-xrc-pace-label", "回复速度")}</div>
+                  <div data-xrc-reply-pace-notifications>${notificationPaceTableHtml()}</div>
                   <div data-xrc-reply-pace-kol>${kolPaceTableHtml()}</div>
                   <p class="xrc-pace-now"><span data-xrc-pace-now>当前尚未开始</span><button class="xrc-boundary-info" type="button" data-xrc-boundary-info aria-label="异常监控" title="异常监控"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.2h2.4l1.5-3.4 2.3 6.6 1.5-3.2h5.3"/></svg></button></p>
                   <p class="xrc-pace-browse">评论前会在这条帖子上随机停留 1、3、5 或 8 秒，再回复。</p>
@@ -9448,8 +9482,10 @@
       const paceNow = panel.querySelector("[data-xrc-pace-now]");
       const browseNote = panel.querySelector(".xrc-reply-body .xrc-pace-browse");
       if (browseNote) browseNote.hidden = replyViewKey !== "timeline";
+      const boundaryInfo = panel.querySelector("[data-xrc-boundary-info]");
+      if (boundaryInfo) boundaryInfo.hidden = replyViewKey === "notifications";
       const replyProgress = replyViewKey === "notifications" && viewingLiveReply
-        ? `当前任务共 ${plannedRounds} 轮，现在第 ${shownRound} 轮；本轮已检查 ${state.pageCount}/${roundSize} 条，成功回复 ${state.total} 条`
+        ? `正在处理最近 ${notificationWindowLabel()} 的回复，已成功 ${state.total} 条`
         : pacePositionLine(shownRound, plannedRounds, state.pageCount, roundSize, "条");
       if (paceNow) {
         const replyConfirming = confirmingStartCopy(replyViewKey);
@@ -10084,7 +10120,7 @@
     state.status = resume
       ? "刷新完成，从顶部继续"
       : state.assistantMode === "notifications"
-        ? "从通知页顶部开始，按本次轮次处理尚未互动的回复"
+        ? `从通知页顶部开始，只回复最近 ${notificationWindowLabel()} 内还没回过的评论`
         : state.assistantMode === "kol"
           ? `打开大V主页，每个账号评论 ${currentRoundTarget()} 条后换下一个`
           : "从首页推荐顶部开始，向下评论";

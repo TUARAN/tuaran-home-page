@@ -2930,7 +2930,7 @@ test('notification rounds advance once per inspected notification even when no r
   assert.equal(saved.length, 2)
   assert.match(source, /if \(state\.assistantMode !== "notifications"\) state\.pageCount \+= 1/)
   assert.match(source, /reloadDecision\.reason === "stalled" && state\.assistantMode === "timeline"/)
-  assert.match(source, /本轮已检查 \$\{state\.pageCount\}\/\$\{roundSize\} 条，成功回复 \$\{state\.total\} 条/)
+  assert.match(source, /正在处理最近 \$\{notificationWindowLabel\(\)\} 的回复，已成功 \$\{state\.total\} 条/)
 })
 
 test('settings expose four editable prompt fields without a clickbait preset', async () => {
@@ -5178,12 +5178,12 @@ test('reply pace rows label the default for the current reply task', async () =>
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function replyPaceName\(profile, mode\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(helper)
-  const sandbox = vm.createContext({})
+  const sandbox = vm.createContext({ loopApi: loop })
   vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
-  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '中（默认）')
+  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时（默认）')
   assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
   assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
-  assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '超快')
+  assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '8 小时')
   assert.match(source, /<span data-xrc-pace-name>\$\{name\}<\/span>/)
   assert.match(source, /name\.textContent = replyPaceName\(loopApi\.scheduleProfile\(label\.dataset\.xrcPaceLabel\), replyViewKey\)/)
 })
@@ -6759,7 +6759,7 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['125'])
 })
 
-test('notification candidates are not cut off by a two-hour timestamp', async () => {
+test('notification candidates stay inside the selected time window', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const replyTargetHelpers = source.match(/  function outsideNestedTweet\(article, node\) \{[\s\S]*?\n  function ownTweetText\(article\) \{[\s\S]*?\n  \}/)?.[0]
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
@@ -6781,12 +6781,18 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   }
   const main = { querySelectorAll: () => [article] }
   const context = vm.createContext({
-    state: { assistantMode: 'notifications' },
+    state: { assistantMode: 'notifications', schedulePace: 'medium' },
     document: { querySelector: () => main, body: main }, window: { location: { origin: 'https://x.com' }, scrollY: 0 }, PANEL_ID: 'x-reply-clipboard-panel',
     currentAccountHandle: () => 'tuaranx', isNotificationPath: () => true, isNestedTweet: () => false,
     isPromoted: () => false, textOf: (node) => node?.textContent || '', loopApi: loop, URL,
   })
   vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
+  ageHours = 1
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
+  ageHours = 3
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
+  context.state.schedulePace = 'boundary'
+  ageHours = 20
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
   ageHours = 25
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
@@ -6798,19 +6804,24 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
   assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000, now), true)
   assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000 - 1, now), false)
   assert.equal(loop.notificationWithinWindow(0, now), false)
+  assert.equal(loop.notificationWindowMs('medium'), 2 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs('boundary'), 24 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWithinWindow(now - 3 * 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), false)
+  assert.equal(loop.notificationWithinWindow(now - 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), true)
 })
 
-test('notification scan stops at the old boundary, refreshes once, then schedules the next cycle', async () => {
+test('notification scan stops at the time window, refreshes once, then returns the tab', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const label = source.match(/  function notificationWindowLabel\(\) \{[\s\S]*?\n  \}/)?.[0]
   const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
-  assert.ok(boundary && finish)
+  assert.ok(label && boundary && finish)
   const now = Date.parse('2026-11-05T12:00:00+08:00')
   let ageHours = 25
   const article = { closest: () => null }
   const events = []
   const context = vm.createContext({
-    state: { assistantMode: 'notifications', notificationBoundaryRefreshed: false, total: 2 },
+    state: { assistantMode: 'notifications', schedulePace: 'medium', notificationBoundaryRefreshed: false, total: 2, running: true },
     document: { querySelector: () => ({ querySelectorAll: () => [article] }) },
     PANEL_ID: 'x-reply-clipboard-panel', isNestedTweet: () => false,
     listOwn: () => [{ getAttribute: () => new Date(now - ageHours * 60 * 60 * 1000).toISOString() }],
@@ -6819,13 +6830,14 @@ test('notification scan stops at the old boundary, refreshes once, then schedule
     reloadAndResume: async () => { events.push('refreshed'); return true },
     finishCycleAndScheduleNext: async () => { events.push('scheduled'); return 'scheduled' },
   })
-  vm.runInContext(`${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
+  vm.runInContext(`${label}\n${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
   assert.equal(context.atBoundary(now), true)
-  ageHours = 23
+  ageHours = 1
   assert.equal(context.atBoundary(now), false)
   assert.equal(await context.finish(), 'reload')
-  assert.equal(await context.finish(), 'scheduled')
-  assert.deepEqual(events, ['saved', 'refreshed', 'scheduled'])
+  assert.equal(await context.finish(), 'stopped')
+  assert.equal(context.state.running, false)
+  assert.deepEqual(events, ['saved', 'refreshed'])
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {

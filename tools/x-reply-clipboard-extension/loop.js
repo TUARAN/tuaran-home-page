@@ -197,8 +197,11 @@
     Object.freeze({ id: "boundary", label: "24 小时", hours: 24 })
   ]);
 
-  function notificationWindowMs(pace = "medium") {
-    const selected = NOTIFICATION_WINDOWS.find((item) => item.id === pace) || NOTIFICATION_WINDOWS[1];
+  const DEFAULT_NOTIFICATION_WINDOW = "fast";
+
+  function notificationWindowMs(pace = DEFAULT_NOTIFICATION_WINDOW) {
+    const selected = NOTIFICATION_WINDOWS.find((item) => item.id === pace)
+      || NOTIFICATION_WINDOWS.find((item) => item.id === DEFAULT_NOTIFICATION_WINDOW);
     return selected.hours * 60 * 60 * 1000;
   }
 
@@ -481,6 +484,7 @@
     isReplyRestrictedText,
     timestampFromDatetime,
     NOTIFICATION_WINDOWS,
+    DEFAULT_NOTIFICATION_WINDOW,
     notificationWindowMs,
     notificationWithinWindow,
     nextTweet,

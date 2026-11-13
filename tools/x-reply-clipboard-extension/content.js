@@ -1747,8 +1747,16 @@
     return Number.isInteger(level) ? Math.min(3, Math.max(0, level)) : 1;
   }
 
+  function replyCadencePace() {
+    // The notification row picks a lookback window. Reply spacing stays on 中.
+    return state.assistantMode === "notifications" ? "medium" : state.schedulePace;
+  }
+
   function ensureRunPlan() {
-    state.runPlan = normalizeRunPlan(state.runPlan) || loopApi.createRunPlan(Math.random, state.schedulePace, boundaryPlanKey());
+    const pace = replyCadencePace();
+    const phase = state.assistantMode === "notifications" ? 1 : boundaryPlanKey();
+    const normalized = normalizeRunPlan(state.runPlan, pace);
+    state.runPlan = normalized?.pace === pace ? normalized : loopApi.createRunPlan(Math.random, pace, phase);
     return state.runPlan;
   }
 
@@ -1776,22 +1784,29 @@
     if (viewingLiveTask && (state.stopping || (state.loopPromise && !state.running))) return;
     const selected = mode === "kol" && pace === "boundary" ? "slow" : pace;
     const profile = loopApi.scheduleProfile(selected);
+    const windowLabel = mode === "notifications"
+      ? (loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === profile.id)?.label || profile.label)
+      : profile.label;
     const changingLiveRun = viewingLiveTask && state.running && profile.id !== state.schedulePace;
     if (profile.id === (viewingLiveTask ? state.schedulePace : taskSchedule.rules?.[mode]?.pace)) return;
     if (changingLiveRun && !(await pluginConfirm(
-      `正在运行「${TASK_MODE_LABELS[mode] || "评论任务"}」。确定切换到「${profile.label}」档吗？当前正在处理的这一条会完成，之后按新速度继续；已有风控冷却不会跳过。`
+      mode === "notifications"
+        ? `正在运行「评论回复」。确定改为只看最近 ${windowLabel} 的评论吗？当前这一条会完成，之后按新时间继续。`
+        : `正在运行「${TASK_MODE_LABELS[mode] || "评论任务"}」。确定切换到「${profile.label}」档吗？当前正在处理的这一条会完成，之后按新速度继续；已有风控冷却不会跳过。`
     ))) return;
     if (viewingLiveTask) {
-      applySchedulePace(profile.id, { replaceIdlePlan: true });
+      applySchedulePace(profile.id, { replaceIdlePlan: mode !== "notifications" });
       if (changingLiveRun) {
-        if (mode !== "kol") {
+        if (mode !== "kol" && mode !== "notifications") {
           state.runPlan = loopApi.createRunPlan(Math.random, profile.id, boundaryPlanKey());
           state.completedRounds = Math.min(state.completedRounds, state.runPlan.rounds - 1);
         }
         state.replyPaceBaseline = profile.id;
         state.boundaryErrorsAtStart = state.errors;
         state.boundarySuccessAtStart = state.total;
-        state.status = `已切换为${profile.label}档；当前操作完成后按新速度继续`;
+        state.status = mode === "notifications"
+          ? `已改为只看最近 ${windowLabel} 的评论`
+          : `已切换为${profile.label}档；当前操作完成后按新速度继续`;
       }
       writeSaved({ running: state.running, total: state.total });
     }
@@ -1802,7 +1817,7 @@
     taskSchedule = { ...taskSchedule, rules };
     renderPanel();
     try {
-      if (viewingLiveTask) await persistSchedulePace();
+      if (viewingLiveTask && mode !== "notifications") await persistSchedulePace();
       const saved = await sendExtensionMessage({
         type: "xrc-schedule-config-set",
         rules,
@@ -2694,7 +2709,15 @@
       const stage = String(live.detail || queued.reason || "等待执行页回报启动结果").trim();
       return { kind: "starting", label: "正在启动", detail: stage, remaining: confirmLeft };
     }
-    if (current && !remaining && live.phase !== "paused") {
+    if (current && ["stopped", "idle"].includes(live.phase)) {
+      return {
+        kind: "next-run",
+        label: "本次已完成",
+        detail: String(live.detail || queued.reason || "本轮已结束").trim() || "本轮已结束",
+        remaining: 0
+      };
+    }
+    if (current && !remaining && !["paused", "stopped", "idle"].includes(live.phase)) {
       const slotStarted = Number(taskSchedule.startedAt) || 0;
       const confirmLeft = slotStarted > 0 ? Math.max(0, slotStarted + 90 * 1000 - now) : 0;
       return { kind: "starting", label: "正在启动", detail: "等待执行页回报启动结果", remaining: confirmLeft };
@@ -4339,7 +4362,7 @@
     if (mode === "notifications") {
       const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === profile.id);
       const label = selected?.label || profile.label;
-      return profile.id === "medium" ? `${label}（默认）` : label;
+      return profile.id === "fast" ? `${label}（默认）` : label;
     }
     const defaultId = mode === "kol" ? "slow" : "boundary";
     return profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
@@ -4351,7 +4374,7 @@
       label: "评论回复时间",
       attr: "data-xrc-pace-label",
       profiles: windows,
-      defaultId: "medium",
+      defaultId: "fast",
       columns: [
         { label: "处理范围", value: (profile) => `只回复这 ${profile.hours} 小时内的评论` }
       ]
@@ -5214,7 +5237,7 @@
     state.nextRoundAt = 0;
     state.reconnectAt = 0;
     state.reconnectReason = "";
-    state.runPlan = loopApi.createRunPlan(Math.random, state.schedulePace, state.boundaryLevel);
+    state.runPlan = loopApi.createRunPlan(Math.random, replyCadencePace(), state.assistantMode === "notifications" ? 1 : state.boundaryLevel);
     state.nextReplyDelaySeconds = 0;
     state.pendingReply = "";
     state.pendingTweetId = "";
@@ -5764,8 +5787,8 @@
   }
 
   function notificationWindowLabel() {
-    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === (state.schedulePace || "medium"));
-    return selected?.label || "2 小时";
+    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === (state.schedulePace || "fast"));
+    return selected?.label || "4 小时";
   }
 
   function notificationFeedReachedOldBoundary(now = Date.now()) {
@@ -5784,7 +5807,11 @@
   }
 
   async function finishNotificationScan(reason = "所选时间内的通知已扫完") {
-    if (!state.notificationBoundaryRefreshed) {
+    const alreadyAtBoundary = typeof notificationFeedReachedOldBoundary === "function" && notificationFeedReachedOldBoundary();
+    const untouched = (Number(state.total) || 0) === 0 && (Number(state.pageCount) || 0) === 0;
+    // A short window often already shows older notices on the first screen.
+    // Reloading then drops the start report and the desk stays on 启动中.
+    if (!state.notificationBoundaryRefreshed && !(untouched && alreadyAtBoundary)) {
       state.notificationBoundaryRefreshed = true;
       writeSaved({ running: true, total: state.total });
       return await reloadAndResume(`${reason}，刷新后复核最新回复`) ? "reload" : "stopped";
@@ -6545,7 +6572,7 @@
       window.location.assign("/notifications");
       return "reload";
     }
-    if (state.schedulePace === "boundary") {
+    if (state.assistantMode !== "notifications" && state.schedulePace === "boundary") {
       const boundary = loopApi.effectiveScheduleProfile(state.schedulePace, state.boundaryLevel);
       const maxWait = boundary.maxCycleDelayMinutes * 60 * 1000;
       let deadlineChanged = false;
@@ -6661,7 +6688,7 @@
           succeeded: state.pageCount
         });
 
-        if (reloadDecision.reload && reloadDecision.reason === "batch" && state.assistantMode !== "kol") {
+        if (reloadDecision.reload && reloadDecision.reason === "batch" && state.assistantMode !== "kol" && state.assistantMode !== "notifications") {
           const transition = loopApi.batchTransition({
             pageCount: state.pageCount,
             completedRounds: state.completedRounds,
@@ -7091,7 +7118,7 @@
             ? Math.max(2, Math.min(MIN_REPLY_GAP_SECONDS, 3))
             : Math.max(
               MIN_REPLY_GAP_SECONDS,
-              loopApi.randomReplyDelaySeconds(Math.random, state.schedulePace, state.boundaryLevel)
+              loopApi.randomReplyDelaySeconds(Math.random, replyCadencePace(), state.assistantMode === "notifications" ? 1 : state.boundaryLevel)
             );
           writeSaved({ running: true, total: state.total });
           await waitRateLimit(
@@ -10262,7 +10289,7 @@
     state.reconnectReason = "";
     riskRoundRequested = false;
     riskRoundAdvancing = false;
-    state.runPlan = loopApi.createRunPlan(Math.random, state.schedulePace, state.boundaryLevel);
+    state.runPlan = loopApi.createRunPlan(Math.random, replyCadencePace(), state.assistantMode === "notifications" ? 1 : state.boundaryLevel);
     state.boundaryErrorsAtStart = state.errors;
     state.boundarySuccessAtStart = 0;
     state.nextReplyDelaySeconds = 0;
@@ -10490,7 +10517,7 @@
         || launch?.assistantMode === "prune-replies"
       ));
     if (!skipModelWait) await settingsReady;
-    if (!spectatorTab && saved.running) {
+    if (!spectatorTab && saved.running && !launchedStart) {
       begin({ resume: true });
     }
     if (launchedStart) {

@@ -92,7 +92,10 @@
     if (typeof fetchImpl === "function") {
       for (const board of BOARDS) {
         try {
-          const response = await fetchImpl(board.url, { credentials: "omit", cache: "no-store" });
+          const response = await Promise.race([
+            fetchImpl(board.url, { credentials: "omit", cache: "no-store" }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("leaderboard-timeout")), 4000))
+          ]);
           if (!response?.ok) continue;
           const text = await response.text();
           for (const handle of parseLeaderboardHandles(text)) {

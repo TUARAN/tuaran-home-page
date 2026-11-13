@@ -3918,8 +3918,41 @@
         replyProviders: value.replyProviders || null,
         replyProvidersDisabled: value.replyProvidersDisabled || null
       });
-      let settings = await readSettings();
-      const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+      const SETTINGS_READ_MS = 2500;
+      const settingsUnread = { unread: true };
+      const settleWithin = (promise, fallback) => new Promise((resolve) => {
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(fallback);
+        }, SETTINGS_READ_MS);
+        Promise.resolve(promise).then((value) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        }, () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        });
+      });
+      let settings = await settleWithin(readSettings(), settingsUnread);
+      if (settings === settingsUnread) {
+        if (readId !== aiSettingsReadId) return;
+        const stillCallable = state.aiKeySaved
+          || (Array.isArray(state.replyProviders) && state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+          || (Array.isArray(state.replyProviders) && state.replyProviders.includes("nas") && state.nasSecretAvailable)
+          || Boolean(state.baiKey);
+        state.aiSettingsStatus = stillCallable ? "ready" : "deferred";
+        return;
+      }
+      const nasSecretAvailable = Boolean(await settleWithin(
+        globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => "") || "",
+        ""
+      ));
       if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
       const seenStamp = settingsStamp(settings);
       const savedValue = String(settings.apiKey || "").trim();
@@ -4420,10 +4453,22 @@
 
   async function saveConfigForm(panel) {
     const status = panel.querySelector("[data-xrc-config-status]");
-    const key = String(state.aiKey || "").trim();
-    const baiKey = String(state.baiKey || "").trim();
-    const mobileOfficeToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
-    const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
+    if (!globalThis.chrome?.storage?.local) {
+      status.textContent = "当前环境无法保存扩展配置";
+      return false;
+    }
+    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
+    const settings = stored?.xrcAiSettings || {};
+    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
+    const typedKey = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
+    const typedBai = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
+    const typedToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
+    const formReady = state.aiSettingsStatus === "ready";
+    const key = typedKey || String(state.aiKey || settings.apiKey || "").trim();
+    const baiKey = typedBai || String(state.baiKey || settings.baiApiKey || "").trim();
+    const mobileOfficeToken = typedToken || String(state.mobileOfficeToken || settings.mobileOfficeToken || "").trim();
+    const formProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
+    const replyProviders = formReady ? formProviders : (Array.isArray(settings.replyProviders) ? settings.replyProviders : formProviders);
     const replyTimelinePrompt = String(panel.querySelector("[data-xrc-reply-timeline-prompt]")?.value || "").trim();
     const replyCommentPrompt = String(panel.querySelector("[data-xrc-reply-comment-prompt]")?.value || "").trim();
     const postNormalPrompt = String(panel.querySelector("[data-xrc-post-normal-prompt]")?.value || "").trim();
@@ -4458,13 +4503,6 @@
       status.textContent = postPaces.error;
       return false;
     }
-    if (!globalThis.chrome?.storage?.local) {
-      status.textContent = "当前环境无法保存扩展配置";
-      return false;
-    }
-    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
-    const settings = stored?.xrcAiSettings || {};
-    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
     const storedReplyTimeline = replyTimelinePrompt === DEFAULT_REPLY_TIMELINE_PROMPT ? "" : replyTimelinePrompt;
     const storedReplyComment = replyCommentPrompt === DEFAULT_REPLY_COMMENT_PROMPT ? "" : replyCommentPrompt;
     const storedPostNormal = postNormalPrompt === DEFAULT_POST_NORMAL_PROMPT ? "" : postNormalPrompt;
@@ -4476,10 +4514,12 @@
         apiKey: key,
         baiApiKey: baiKey,
         mobileOfficeToken,
-        mobileOfficeVerified: mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true,
+        mobileOfficeVerified: formReady
+          ? mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true
+          : settings.mobileOfficeVerified === true,
         replyProviders,
-        replyProvidersManual: true,
-        replyProvidersDisabled: state.replyProvidersDisabled || [],
+        replyProvidersManual: formReady ? true : settings.replyProvidersManual === true,
+        replyProvidersDisabled: formReady ? (state.replyProvidersDisabled || []) : (Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : (state.replyProvidersDisabled || [])),
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
         grokInviteTimeline: state.grokInviteTimeline === true,
@@ -7393,13 +7433,8 @@
     return list;
   }
 
-  function targetFollowRosterStatus(seeds, current) {
-    const retired = new Set(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "chill_alpha"]);
-    const usable = (Array.isArray(current) ? current : [])
-      .map((handle) => String(handle || "").replace(/^@/u, ""))
-      .filter((handle) => handle && !retired.has(handle.toLowerCase()));
-    if (!usable.length) return "正在从榜单拉取五个新人。没有拉到之前，不显示固定名单，也不打开固定账号的粉丝列表。";
-    return `本批源头已换成 ${usable.length} 个新人：${usable.map((handle) => `@${handle}`).join(" ")}。每次任务直接更换。粉丝列表出来后才换人。这一页还有可关注的人就先关注；人都关注过了就换下一个。遇到 Retry 可以换。`;
+  function targetFollowRosterStatus() {
+    return "每次任务直接换成五个新人；这一页还有可关注的人就先关注，人都关注过了就换下一个。";
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7456,18 +7491,9 @@
     }
   }
 
-  function kolRosterStatusText(decision, visitOrder = []) {
-    const order = Array.isArray(visitOrder) ? visitOrder.filter(Boolean) : [];
-    const orderNote = order.length ? `本轮访问顺序：${order.map((handle) => `@${String(handle).replace(/^@/u, "")}`).join(" ")}。` : "";
-    const batch = decision?.meta?.taskBatch?.handles || [];
-    if (!decision) return `每次任务自动换成一批新账号。${orderNote}`;
-    if (decision.custom && !batch.length) return `已保存自定义名单 ${decision.handles.length} 个。下次任务会从这份名单里换一批，不会清掉这些账号。${orderNote}`;
-    if (decision.custom && batch.length >= decision.handles.length) {
-      return `自定义名单共 ${decision.handles.length} 个，已全部保留，没有被清掉。账号不够换成另一批完全不同的人。${orderNote}`;
-    }
-    if (decision.custom) return `自定义名单已保留。本批已换成其中 ${batch.length || decision.handles.length} 个，与上一批不重复。${orderNote}`;
-    if (batch.length) return `本批已换成 ${batch.length} 个新账号，与上一批不重复。${orderNote}`;
-    return `下一次任务会换成另一批账号。${orderNote}`;
+  function kolRosterStatusText(decision) {
+    if (decision?.custom) return "自定义名单会保留，每次只从里面换五个，不会清掉。";
+    return "每次任务直接换成五个新人；保存过自定义名单时只从里面换，不会清掉。";
   }
 
   async function loadKolRoster() {
@@ -7670,22 +7696,14 @@
     return `<div class="xrc-task-section-head"><strong>${title}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
   }
 
-  function initialTargetFollowPreview() {
-    return "";
-  }
-
-  function initialKolPreview() {
-    return "";
-  }
-
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>本批源头</span><textarea data-xrc-target-follow-current rows="5" readonly spellcheck="false" aria-label="本批关注候选源头">${initialTargetFollowPreview()}</textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">每次任务直接换成五个新人。打开面板就能看到这一批；同一次任务里不会反复跳转。</small></label>`
+      ? `<p class="xrc-config-note" data-xrc-target-follow-status role="status">${targetFollowRosterStatus()}</p>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>本批评论大V</span><textarea data-xrc-kol-handles rows="4" spellcheck="false">${initialKolPreview()}</textarea><small class="xrc-config-note" data-xrc-kol-status role="status">每次任务直接换成五个新人。自定义名单会保留，只从里面换批。</small></label>`
+        ? `<p class="xrc-config-note" data-xrc-kol-status role="status">${kolRosterStatusText()}</p>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
-      ${taskSectionHead("排班", "优先级、时段与名单")}
+      ${taskSectionHead("排班", "优先级与时段")}
       <div class="xrc-schedule-rule-controls">
         <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${schedulePriorityOptionsMarkup()}</select></label>
         <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
@@ -8081,6 +8099,47 @@
     } catch (error) {
       if (!noteExtensionContextFailure(error)) throw error;
     }
+  }
+
+  function echoSavedModelSettings(panel) {
+    if (!panel || state.aiSettingsStatus !== "ready") return;
+    const write = (selector, value) => {
+      const input = panel.querySelector(selector);
+      if (!input || document.activeElement === input) return;
+      const next = value || "";
+      const echoed = input.dataset.xrcEchoValue;
+      if (echoed != null && input.value !== echoed) return;
+      if (echoed == null && input.value && input.value !== next) {
+        input.dataset.xrcEchoValue = input.value;
+        return;
+      }
+      input.value = next;
+      input.dataset.xrcEchoValue = next;
+    };
+    write("[data-xrc-config-key]", state.aiKey);
+    write("[data-xrc-config-bai-key]", state.baiKey);
+    write("[data-xrc-mobileoffice-token]", state.mobileOfficeToken);
+    write("[data-xrc-reply-timeline-prompt]", state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT);
+    write("[data-xrc-reply-comment-prompt]", state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT);
+    write("[data-xrc-post-normal-prompt]", state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT);
+    write("[data-xrc-post-premium-prompt]", state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT);
+    write("[data-xrc-post-x-prompt]", state.postXPrompt || DEFAULT_POST_X_PROMPT);
+    panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
+      if (document.activeElement === input) return;
+      input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
+    });
+    const selected = state.replyProviders.includes("mobileoffice");
+    const mobileOffice = panel.querySelector("[data-xrc-mobileoffice-connection]");
+    const mobileOfficeNote = panel.querySelector("[data-xrc-mobileoffice-note]");
+    if (mobileOffice) mobileOffice.hidden = !selected;
+    if (mobileOfficeNote) mobileOfficeNote.hidden = !selected;
+    const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
+    if (mobileOfficeStatus && /^(?:|尚未测试|已测试通过)$/u.test(mobileOfficeStatus.textContent || "")) {
+      mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
+      mobileOfficeStatus.dataset.result = state.mobileOfficeVerified ? "success" : "idle";
+    }
+    const hint = panel.querySelector("[data-xrc-config-key-hint]");
+    if (hint) hint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
   }
 
   function paintTabRoleBanner(panel) {
@@ -8827,6 +8886,24 @@
       panel.querySelector("[data-xrc-config-key]").value = state.aiKey || "";
       panel.querySelector("[data-xrc-config-bai-key]").value = state.baiKey || "";
       panel.querySelector("[data-xrc-mobileoffice-token]").value = state.mobileOfficeToken || "";
+      panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
+      panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
+      panel.querySelector("[data-xrc-post-normal-prompt]").value = state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT;
+      panel.querySelector("[data-xrc-post-premium-prompt]").value = state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT;
+      panel.querySelector("[data-xrc-post-x-prompt]").value = state.postXPrompt || DEFAULT_POST_X_PROMPT;
+      [
+        "[data-xrc-config-key]",
+        "[data-xrc-config-bai-key]",
+        "[data-xrc-mobileoffice-token]",
+        "[data-xrc-reply-timeline-prompt]",
+        "[data-xrc-reply-comment-prompt]",
+        "[data-xrc-post-normal-prompt]",
+        "[data-xrc-post-premium-prompt]",
+        "[data-xrc-post-x-prompt]"
+      ].forEach((selector) => {
+        const input = panel.querySelector(selector);
+        if (input) input.dataset.xrcEchoValue = input.value;
+      });
       panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
         input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
       });
@@ -8870,11 +8947,6 @@
         status.textContent = "连接码已修改，请重新测试";
         status.dataset.result = "idle";
       });
-      panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
-      panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
-      panel.querySelector("[data-xrc-post-normal-prompt]").value = state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT;
-      panel.querySelector("[data-xrc-post-premium-prompt]").value = state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT;
-      panel.querySelector("[data-xrc-post-x-prompt]").value = state.postXPrompt || DEFAULT_POST_X_PROMPT;
       panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-key]");
         const revealed = input.classList.toggle("is-revealed");
@@ -9212,6 +9284,7 @@
             if (input.checked) disabled.delete(input.dataset.xrcReplyProvider);
             else disabled.add(input.dataset.xrcReplyProvider);
             state.replyProvidersDisabled = REPLY_PROVIDER_ORDER.filter((provider) => disabled.has(provider));
+            state.replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
           }
           if (input.matches('[data-xrc-reply-provider="mobileoffice"]')) syncMobileOfficeSettings();
           scheduleConfigSave(panel, true);
@@ -9303,6 +9376,7 @@
     }
 
     syncToolboxMenu(panel);
+    echoSavedModelSettings(panel);
 
     const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
@@ -10210,7 +10284,21 @@
       && pluginRuntime.tasks?.[bootTaskKey]) {
       await setRuntimeTaskActive(bootTaskKey, false);
     }
-    await loadAiSettings();
+    const settingsReady = loadAiSettings();
+    void settingsReady.then(() => {
+      if (state.aiSettingsStatus === "ready" || state.aiSettingsStatus === "deferred") renderPanel();
+    });
+    const followLaunch = Boolean(launchedStart && launch?.assistantMode === "mutual");
+    if (followLaunch) {
+      try {
+        await startLaunchedTask(launch);
+      } catch (error) {
+        state.status = error?.message || "任务未能启动";
+        await sendExtensionMessage({ type: "xrc-task-start-failed", mode: launch.taskKey, reason: state.status }).catch(() => {});
+        renderPanel();
+      }
+      launchedStart = false;
+    }
     await loadSchedulePace();
     await loadPosterPace();
     await loadPaceSettings();
@@ -10269,6 +10357,14 @@
     }
     postApi?.setPostKind?.(posterKindFromMode());
     postApi?.setSchedulePace?.(state.posterPace);
+    const skipModelWait = followLaunch
+      || state.assistantMode === "mutual"
+      || (launchedStart && (
+        String(launch?.assistantMode || "").startsWith("likes-")
+        || launch?.assistantMode === "prune-posts"
+        || launch?.assistantMode === "prune-replies"
+      ));
+    if (!skipModelWait) await settingsReady;
     if (!spectatorTab && saved.running) {
       begin({ resume: true });
     }

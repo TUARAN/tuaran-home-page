@@ -35,6 +35,8 @@ function modelLoader(source, values = {}) {
     REPLY_PROVIDERS_DEFAULT_VERSION: 2,
     validDeepSeekApiKey: (value) => /^sk-\S{8,}$/u.test(value),
     validReplyMode: (value) => value,
+    setTimeout,
+    clearTimeout,
     ...values,
   }
   vm.createContext(context)
@@ -144,4 +146,29 @@ test('the home prompt waits until saved keys and receipt settings finish loading
   assert.deepEqual(Array.from(state.replyProviders), ['deepseek', 'nas'])
   assert.equal(state.aiKeySaved, true)
   assert.equal(state.nasSecretAvailable, true)
+})
+
+test('model settings stop waiting when storage does not answer', async () => {
+  const chrome = { storage: { local: {
+    get: () => new Promise(() => {}),
+    set: async () => {},
+  } } }
+  const state = {
+    replyMode: 'ai',
+    aiSettingsStatus: 'loading',
+    replyProviders: [],
+    aiKeySaved: false,
+    mobileOfficeVerified: false,
+    nasSecretAvailable: false,
+    baiKey: '',
+  }
+  const { loadAiSettings } = modelLoader(await contentPromise, {
+    chrome,
+    globalThis: { chrome },
+    state,
+  })
+  const started = Date.now()
+  await loadAiSettings()
+  assert.ok(Date.now() - started < 4000)
+  assert.equal(state.aiSettingsStatus, 'deferred')
 })

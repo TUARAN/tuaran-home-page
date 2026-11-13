@@ -8557,6 +8557,49 @@ test('a running follow session is not preempted by comments before it pauses', a
   }
 })
 
+test('an open follow list is not handed to KOL when the page has not confirmed', async () => {
+  const previousChrome = globalThis.chrome
+  const previousDateNow = Date.now
+  const now = Date.parse('2026-10-28T15:20:00+08:00')
+  Date.now = () => now
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'mutual-targetFollow', workTabId: 11,
+      startedAt: now - 91 * 1000, priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+      priorityScoreVersion: background.PRIORITY_SCORE_VERSION, followPriorityVersion: 1,
+      likeDetectionVersion: 2, replyRiskVersion: 2, followSessionVersion: 1,
+      sharedFollowCadenceVersion: 1, followBackNightVersion: 1, followBackAllDayVersion: 1,
+      rules: background.defaultTaskRules(),
+      items: { 'mutual-targetFollow': { resumeAt: 0 } },
+    },
+    xrcPluginRuntime: { tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'starting', waitUntil: 0, updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'mutual-targetFollow': 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id === 11) return { id, url: 'https://x.com/aduxiang/followers' }; throw new Error('missing') },
+      async sendMessage() { return { ok: false, error: '模型设置还没读完' } },
+      async update(id, update) { updates.push(update); return { id } },
+      async remove() {},
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(updates.some((update) => update.url), false)
+    assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /不换去评论/)
+  } finally {
+    globalThis.chrome = previousChrome
+    Date.now = previousDateNow
+  }
+})
+
 test('follow tasks get a free slot ahead of likes while below the shared daily goal', () => {
   assert.equal(background.taskUnlimitedEnabled('mutual-followBack', { 'mutual-followBack': true }), false)
   const now = Date.parse('2026-10-28T23:00:00+08:00')
@@ -10593,27 +10636,27 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
 
 test('the panel shows the live target-follow list and a visible KOL roster status', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const statusText = source.match(/  function kolRosterStatusText\(decision, visitOrder = \[\]\) \{[\s\S]*?\n  \}/)?.[0]
-  const rosterStatus = source.match(/  function targetFollowRosterStatus\(seeds, current\) \{[\s\S]*?\n  \}/)?.[0]
+  const statusText = source.match(/  function kolRosterStatusText\(decision\) \{[\s\S]*?\n  \}/)?.[0]
+  const rosterStatus = source.match(/  function targetFollowRosterStatus\(\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(statusText && rosterStatus)
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
   vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.match(context.followStatus(seeds, seeds), /不显示固定名单/)
-  assert.match(context.followStatus(seeds, []), /不显示固定名单/)
+  assert.match(context.followStatus(seeds, seeds), /这一页还有可关注的人就先关注/)
+  assert.match(context.followStatus(seeds, []), /人都关注过了就换下一个/)
   assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /人都关注过了就换下一个/)
+  assert.doesNotMatch(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /@fresh_a|crazypig9y/)
   assert.doesNotMatch(source, /还没有换批/)
   assert.doesNotMatch(source, /本批源头可能还是/)
-  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /本批源头已换成 5 个新人：@fresh_a/)
-  assert.match(context.kolStatus({ custom: true, handles: ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f'], meta: { taskBatch: { handles: ['mine_f'] } } }), /自定义名单已保留/)
-  assert.match(context.kolStatus({ custom: true, handles: ['mine'], meta: { taskBatch: { handles: ['mine'] } } }, ['mine']), /没有被清掉/)
-  assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /本批已换成 1 个新账号/)
-  assert.match(source, /本批源头/)
-  assert.match(source, /data-xrc-target-follow-current/)
+  assert.doesNotMatch(source, /<textarea data-xrc-target-follow-current/)
+  assert.doesNotMatch(source, /<textarea data-xrc-kol-handles/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f'], meta: { taskBatch: { handles: ['mine_f'] } } }), /不会清掉/)
+  assert.doesNotMatch(context.kolStatus({ custom: true, handles: ['mine'], meta: { taskBatch: { handles: ['mine'] } } }, ['mine']), /@mine/)
+  assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /五个新人/)
+  assert.doesNotMatch(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /@fresh_a/)
+  assert.match(source, /data-xrc-target-follow-status/)
   assert.match(source, /每次任务直接换成五个新人/)
-  assert.match(source, /\$\{initialTargetFollowPreview\(\)\}/)
-  assert.match(source, /\$\{initialKolPreview\(\)\}/)
-  assert.match(source, /本批评论大V/)
+  assert.match(source, /echoSavedModelSettings\(panel\)/)
   assert.doesNotMatch(source, /<span>起始种子<\/span>/)
   const sync = source.slice(source.indexOf('async function syncKolHandlesField'), source.indexOf('async function saveKolHandlesFromField'))
   assert.match(sync, /displayedTaskHandles/)

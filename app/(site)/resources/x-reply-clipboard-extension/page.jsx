@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '回关按周，名单从榜单换人',
-    description: '回关粉丝约每周一次。关注候选和评论大V每次任务从 X榜单换成五个新人，不使用固定名单。粉丝列表出来后，没有可关注的人就换下一个；遇到 Retry 可以换。本地源码，尚未打包。',
+    title: '关注不等模型，名单不列账号',
+    description: '关注候选和评论大V不再列出五个账号，只说明每次直接换五个新人。关注候选不等待模型设置；已保存的密钥会回到模型设置。本地源码，尚未打包。',
     current: true,
   },
   {

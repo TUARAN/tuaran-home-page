@@ -378,7 +378,12 @@
   async function beginTargetTask() {
     await loadTargetPool();
     const saved = readTargetTask();
-    const board = leaderboard?.loadHandles ? await leaderboard.loadHandles() : [];
+    const board = leaderboard?.loadHandles
+      ? await Promise.race([
+        leaderboard.loadHandles(),
+        new Promise((resolve) => setTimeout(() => resolve([]), 4000))
+      ])
+      : [];
     const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
     if (planned.changed === false && saved?.locked) {
       const locked = planned.handles.map(cleanHandle).filter(Boolean);
@@ -766,8 +771,12 @@
     const today = localDayKey();
     let result;
     try {
-      result = await followStorage().get(FOLLOW_RATE_STORAGE_KEY);
+      result = await Promise.race([
+        followStorage().get(FOLLOW_RATE_STORAGE_KEY),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("follow-rate-timeout")), 2000))
+      ]);
     } catch (error) {
+      if (String(error?.message || error) === "follow-rate-timeout") return state.sharedDailyFollowed || 0;
       throw followStorageError(error);
     }
     const saved = result?.[FOLLOW_RATE_STORAGE_KEY] || null;
@@ -1221,10 +1230,11 @@
       const pathHandle = typeof targetFollowHandleFromPath === "function" ? targetFollowHandleFromPath() : "";
       const batch = typeof TARGET_FOLLOW_HANDLES !== "undefined" && Array.isArray(TARGET_FOLLOW_HANDLES) ? TARGET_FOLLOW_HANDLES : null;
       const normalizedHandle = (value) => String(value || "").trim().replace(/^@/u, "").toLowerCase();
-      const onBatch = batch
+      const batchKnown = Array.isArray(batch) && batch.length > 0;
+      const onBatch = batchKnown
         ? Boolean(pathHandle && batch.some((handle) => normalizedHandle(handle) === normalizedHandle(pathHandle)))
         : Boolean(pathHandle);
-      if (!onBatch) {
+      if (batchKnown && !onBatch) {
         const decision = targetFollowOpenDecision({
           pathHandle,
           batch: batch || [],

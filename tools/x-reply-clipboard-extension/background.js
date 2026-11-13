@@ -2780,13 +2780,32 @@ async function runTaskSchedule() {
           const live = await chrome.tabs.get(workTabId);
           // Automatic recovery must never steal focus from another profile.
           try { await chrome.tabs.update(workTabId, { autoDiscardable: false }); } catch (error) {}
-          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" })) {
-            const started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
+          const livePath = pathnameOf(live.url || "");
+          const followListOpen = (current === "mutual-targetFollow" || current === "mutual-followBack")
+            && /\/followers$/iu.test(livePath);
+          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen) {
+            let started = null;
+            try {
+              started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
+            } catch (error) {
+              started = null;
+            }
             if (started) {
               plan.startedAt = now;
               plan.items[current] = { ...item, resumeAt: 0, reason: "", lastStartError: "", recoveryAttempts: 0, reloadAttempts: 0 };
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
+              return plan;
+            }
+            if (current === "mutual-targetFollow" || current === "mutual-followBack") {
+              plan.startedAt = now;
+              plan.items[current] = {
+                ...item,
+                resumeAt: 0,
+                reloadAttempts: 0,
+                reason: "关注名单已经打开，继续点关注，不换去评论"
+              };
+              await saveTaskSchedule(plan);
               return plan;
             }
           }

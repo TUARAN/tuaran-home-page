@@ -979,7 +979,8 @@
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
       communityController = communityApi.createController({ document, window,
-        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); }
+        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); },
+        reportSuccess: (event) => reportCommunityAction({ ...event, accountHandle: currentAccountHandle() || lastKnownAccountHandle })
       });
       communityController.subscribe((snapshot) => {
         const wasRunning = communityState.running;

@@ -4,7 +4,7 @@
   const SESSION_KEY = "xrcGroupChatShareRunV4";
   const LEDGER_KEY = "xrcGroupChatShareLedgerV2";
   const LIMIT_RE = /automated|not allowed|try again later|rate limit|操作过于频繁|暂时无法|请求似乎可能是自动化/iu;
-  const SENT_RE = /(?:post|message) (?:was )?sent|sent successfully|消息已发送|帖子已发送|已发送给/iu;
+  const SENT_RE = /(?:posts?|messages?) (?:was |were )?sent|sent successfully|sent separately|消息已发送|帖子已发送|已发送给|已分别发送/iu;
   const SEND_FAILED_RE = /could not send message|failed to send|unable to send|消息发送失败|无法发送消息/iu;
   const GROUP_RE = /(?:\d[\d,]*\s*(?:people|members|人)|\d[\d,.]*\s*[万千]?人)/iu;
   const PRIVATE_RE = /@[A-Za-z0-9_]{1,15}\b/u;
@@ -377,7 +377,11 @@
       try { await rememberBatch([...selected]); }
       catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对', 'storage-failed'); return; }
       for (const groupId of selected) {
-        try { root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) }); } catch (_) {}
+        const targetId = `${state.sourceId}:${groupId}`.slice(0, 80);
+        try {
+          if (env.reportSuccess) env.reportSuccess({ task: 'community-share', result: 'success', targetId });
+          else root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId });
+        } catch (_) {}
       }
       state.shared = selected.size;
       finish(`已确认一次发送到 ${selected.size} 个群聊；最新帖子已标记为已分发，本轮完成`);

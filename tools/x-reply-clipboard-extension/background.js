@@ -2110,11 +2110,9 @@ function normalizedTaskRules(value) {
 }
 
 function taskWindowOpen(mode, rule, now) {
+  void rule;
   const shanghai = new Date(now + 8 * 60 * 60000);
   const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
-  if (rule.window === "day" && (minutes < 480 || minutes >= 1200)) return false;
-  if (rule.window === "peak" && !((minutes >= 480 && minutes < 600) || (minutes >= 1080 && minutes < 1200))) return false;
-  if (rule.window === "overnight" && minutes < FOLLOW_BACK_NIGHT_START_MINUTE && minutes >= FOLLOW_BACK_NIGHT_END_MINUTE) return false;
   if (mode === "poster-premium" && ![480, 570, 720, 900, 1140].some((slot) => minutes >= slot && minutes < slot + 15)) return false;
   if (mode === "site-forward" && minutes < 14 * 60) return false;
   return true;
@@ -2766,7 +2764,6 @@ async function runTaskSchedule() {
     // A person explicitly chose "立即开启" after confirming the current task
     // would stop. Do not let a comment task's full-run occupancy swallow it.
     const manualDue = requestedMode && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
-    const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled && plan.manualFocusMode !== current;
     const haltedCurrent = Boolean(item.blocked || (item.manualStopped && !isScheduleWaitReason(item.reason)));
     const occupancyAge = now - Number(plan.startedAt || now);
@@ -2884,7 +2881,7 @@ async function runTaskSchedule() {
       await saveTaskSchedule(plan);
       return plan;
     }
-    if (!waiting && !timedOut && !runFinished && !actionDone && !higherPriorityDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
+    if (!waiting && !timedOut && !runFinished && !actionDone && !higherPriorityDue && !manualDue && !disabledCurrent && !haltedCurrent) return plan;
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
@@ -2916,8 +2913,6 @@ async function runTaskSchedule() {
               ? "更高优先级任务到期，安全轮换"
             : manualDue
               ? "另一项任务已请求优先启动，安全轮换"
-            : windowClosed
-              ? "夜间回关时段已结束，等待下一晚"
             : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
               ? (current === "mutual-unfollow" ? "等待每周清理" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
             : runFinished
@@ -3554,14 +3549,13 @@ async function applyRemoteScheduleConfig(raw) {
       if (!next.enabled && plan.enabled && plan.current === mode) skipped.push(TASK_TITLE_LABELS[mode] || mode);
       else rules[mode].enabled = next.enabled;
     }
-    if (["all", "day", "peak", "overnight"].includes(next.window)) rules[mode].window = next.window;
     const priority = Number(next.priority);
     if (Number.isInteger(priority) && priority >= 1 && priority <= MAX_TASK_PRIORITY) rules[mode].priority = priority;
   }
   plan.rules = normalizedTaskRules(rules);
   await saveTaskSchedule(plan);
   if (plan.enabled) await tickTaskSchedule();
-  return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班与时段";
+  return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班";
 }
 
 function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {

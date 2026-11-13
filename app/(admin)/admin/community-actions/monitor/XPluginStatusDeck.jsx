@@ -5,8 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   X_DEFAULT_TASK_PRIORITY,
   X_RUNTIME_MODE_LABELS,
-  X_SCHEDULE_WINDOWS,
-  defaultXTaskWindow,
 } from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, StatusPill } from '../../../components/ui'
 import styles from './xMonitorDesk.module.css'
@@ -27,7 +25,7 @@ const COMMAND_LABEL = {
   'task-start': '启动任务',
   'task-stop': '停止任务',
   'ext-update': '远程更新插件',
-  'schedule-set': '排班与时段',
+  'schedule-set': '排班',
 }
 const COMMAND_STATUS = {
   pending: ['排队中', 'warning'],
@@ -171,17 +169,6 @@ function facingSummary(facing) {
     facing.stopped ? `${facing.stopped} 项已停止` : '',
   ].filter(Boolean)
   return parts.join(' · ') || '全部已停止'
-}
-
-function WindowSelect({ label, value, disabled, onChange }) {
-  return (
-    <label className={styles.window}>
-      <span>时段</span>
-      <select aria-label={`${label}时段`} disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)}>
-        {X_SCHEDULE_WINDOWS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-      </select>
-    </label>
-  )
 }
 
 function JoinBox({ label, checked, disabled, onChange }) {
@@ -350,9 +337,6 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
       ) : null,
       action: (
         <>
-          {configured ? (
-            <WindowSelect label={task.label || MODE_LABEL[task.mode] || task.mode} value={rule?.window || defaultXTaskWindow(task.mode)} disabled={controlsBusy} onChange={(windowId) => saveRules(task.mode, { window: windowId })} />
-          ) : null}
           <TaskControl task={task} deviceId={device.id} canControl={canControl} busyKey={busyKey} flowBusy={flowBusy} send={send} />
         </>
       ),
@@ -437,7 +421,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
               </span>
               <p className={styles.hint}>{facingSummary(facing)}</p>
             </div>
-            {libraryOpen && configured ? <p className={styles.feedback}>勾选加入排班，或取消勾选移出。时段写入这台插件的本机排班。</p> : null}
+            {libraryOpen && configured ? <p className={styles.feedback}>勾选加入排班，或取消勾选移出。</p> : null}
             <div className={libraryOpen && configured ? styles.workspace : undefined}>
               {libraryOpen && configured ? (
                 <section className={styles.library} aria-label="任务库">
@@ -528,7 +512,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
             </ul>
               </section>
             </div>
-            <p className={styles.note}>{configured ? '增减任务和时段随下次心跳写入插件本机（通常 1 分钟内），插件面板会一起更新。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</p>
+            <p className={styles.note}>{configured ? '增减任务随下次心跳写入插件本机（通常 1 分钟内），插件面板会一起更新。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</p>
           </div>
         ) : (
           <p className="m-0 text-[#697268] dark:text-gray-400">插件尚未上报任务状态；请更新到支持远程操控的版本并配置回执密钥。</p>

@@ -2577,10 +2577,6 @@
     return `${rank}分`;
   }
 
-  function scheduleWindowLabel(window) {
-    return ({ all: "全天", day: "08–20", peak: "08–10 / 18–20", overnight: "22–06" })[window] || "全天";
-  }
-
   function schedulePaceLabel(minGapMs) {
     const gap = Number(minGapMs) || 0;
     if (gap >= 7 * 24 * 60 * 60 * 1000) return "约每周一次";
@@ -2624,8 +2620,7 @@
     if (reason && (wait?.kind === "cooldown" || /启动失败|执行未确认|启动未确认/u.test(reason))) status += ` · 原因：${reason}`;
     if (Number(wait?.remaining) > 0) status += ` · 剩余 ${formatClock(wait.remaining)}`;
     const priority = schedulePriorityFor(task.mode, task.rule);
-    const params = `优先级 ${priority} · ${scheduleWindowLabel(task.rule?.window)}`;
-    return `${status}\n${params}`;
+    return `${status}\n优先级 ${priority}`;
   }
 
   function formatDeskPastNote(latest) {
@@ -2646,7 +2641,7 @@
     if (!nextEntry && !nextLabel) {
       return joinScheduleFields([
         ["剩余", eta],
-        ["说明", eta ? "当前没有可运行任务；各任务卡片显示冷却、时段或失败原因，到期后重新排班"
+        ["说明", eta ? "当前没有可运行任务；各任务卡片显示冷却或失败原因，到期后重新排班"
           : "当前没有可运行任务；查看任务卡片确认是否未勾选、已停止或启动失败"]
       ]);
     }
@@ -2711,9 +2706,6 @@
     }
     if (remaining && mode === "poster-premium") {
       return { kind: "time-slot", label: "等待精品档位", detail: "到固定发帖时间后继续", remaining };
-    }
-    if (remaining && mode === "mutual-followBack" && taskSchedule.rules?.[mode]?.window === "overnight") {
-      return { kind: "time-slot", label: "等待夜间回关", detail: "到夜间时段后继续", remaining };
     }
     if (remaining && (mode === "mutual-unfollow" || mode === "prune-posts" || mode === "prune-replies")) {
       return { kind: "time-slot", label: "等待每周清理", detail: "到期后自动加入排班", remaining };
@@ -7785,9 +7777,6 @@
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
       ${taskSectionHead("排班", "跑完一次回到队尾")}
-      <div class="xrc-schedule-rule-controls">
-        <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
-      </div>
       ${listField}
     </section>`;
   }
@@ -7831,12 +7820,8 @@
     const rule = taskSchedule.rules?.[mode] || {};
     const enabled = row.querySelector("[data-xrc-schedule-enabled]");
     const priority = row.querySelector("[data-xrc-schedule-priority]");
-    const windowSelect = row.querySelector("[data-xrc-schedule-window]");
     if (enabled && document.activeElement !== enabled) enabled.checked = scheduleRuleEnabled(mode, rule);
     if (priority && document.activeElement !== priority) priority.value = String(rule.priority || defaultSchedulePriority(mode));
-    if (windowSelect && document.activeElement !== windowSelect) {
-      windowSelect.value = rule.window || (mode === "poster-premium" ? "day" : "all");
-    }
   }
 
   function ensureScheduleRuleDefaults(mode, rule = {}) {
@@ -7860,8 +7845,6 @@
       if (enabled) next.enabled = Boolean(enabled.checked);
       const priority = row.querySelector("[data-xrc-schedule-priority]");
       if (priority) next.priority = Number(priority.value) || defaultSchedulePriority(mode);
-      const windowSelect = row.querySelector("[data-xrc-schedule-window]");
-      if (windowSelect) next.window = windowSelect.value || "all";
       rules[mode] = next;
     });
     try {
@@ -9123,7 +9106,7 @@
       });
       panel.addEventListener("change", (event) => {
         const target = event.target;
-        if (target?.matches?.("[data-xrc-schedule-enabled], [data-xrc-schedule-priority], [data-xrc-schedule-window]")) {
+        if (target?.matches?.("[data-xrc-schedule-enabled], [data-xrc-schedule-priority]")) {
           void collectAndSaveScheduleRules(panel);
           return;
         }

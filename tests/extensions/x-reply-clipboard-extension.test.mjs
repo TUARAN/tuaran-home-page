@@ -2002,26 +2002,26 @@ test('schedule card notes separate concise status from scheduling parameters', a
   const task = { reason: '', rule: { priority: 9, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9 · 全天'
+    'X 限制冷却 · 剩余 01:00\n优先级 9'
   )
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '风控等待中', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9 · 全天'
+    'X 限制冷却 · 剩余 01:00\n优先级 9'
   )
   assert.equal(
     context.format({ ...task, rule: { priority: 5, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
-    '等待「评论帖子」完成\n优先级 5 · 全天'
+    '等待「评论帖子」完成\n优先级 5'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9 · 全天'
+    '等待下次排班 · 剩余 01:00\n优先级 9'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9 · 全天'
+    '等待下次排班 · 剩余 01:00\n优先级 9'
   )
-  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置\n优先级 9 · 全天')
-  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班\n优先级 9 · 全天')
+  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置\n优先级 9')
+  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班\n优先级 9')
   assert.equal(
     context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
     '起止：10/29 08:59–10/29 08:59｜完成：0 条帖子｜说明：风控等待中'
@@ -7779,7 +7779,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
   assert.doesNotMatch(content, /data-xrc-desk-home>排班台/)
   assert.doesNotMatch(content, /data-xrc-config-open="pace"/)
-  assert.match(content, /xrc-schedule-rule-controls/)
+  assert.match(content, /跑完一次回到队尾/)
+  assert.doesNotMatch(content, /data-xrc-schedule-window/)
   assert.doesNotMatch(content, /xrc-schedule-card-config-go/)
   assert.doesNotMatch(content, /data-xrc-schedule-config-open/)
   assert.match(content, /data-xrc-task-schedule-config/)
@@ -8192,7 +8193,7 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
-  assert.ok(!background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
+  assert.ok(background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, night).includes('poster-premium'))
   const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { notifications: { priority: 8 }, timeline: { priority: 8 }, 'likes-replies': { priority: 5, minGapMs: 0 } }, items: {
     timeline: { lastRunAt: afternoon - 60000 },

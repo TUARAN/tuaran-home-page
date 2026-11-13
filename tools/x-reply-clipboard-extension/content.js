@@ -6504,7 +6504,7 @@
     state.status = message || `换到 @${nextHandle} 继续评论`;
     renderPanel();
     writeSaved({ running: true, total: state.total });
-    const destination = `${window.location.origin}/${nextHandle}?xrcAssistant=kol&xrcStart=1`;
+    const destination = `${window.location.origin}/${nextHandle}?xrcAssistant=kol`;
     window.location.assign(destination);
     return "reload";
   }
@@ -6519,7 +6519,7 @@
     state.status = `按本轮顺序打开 @${nextHandle}`;
     renderPanel();
     writeSaved({ running: true, total: state.total });
-    window.location.assign(`${window.location.origin}/${nextHandle}?xrcAssistant=kol&xrcStart=1`);
+    window.location.assign(`${window.location.origin}/${nextHandle}?xrcAssistant=kol`);
     return "reload";
   }
 
@@ -7724,6 +7724,21 @@
       const first = kolRoster.nextUnvisitedHandle(record.order, []);
       if (!first || first.toLowerCase() !== current.toLowerCase()) return null;
       return record;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function readActiveKolNavigation(launchHandle) {
+    const current = String(launchHandle || "").replace(/^@/u, "");
+    if (!current) return null;
+    try {
+      const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+      const resumed = kolRoster.resumeActiveKolCycle(kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount));
+      if (!resumed) return null;
+      const next = kolRoster.nextUnvisitedHandle(resumed.order, resumed.visited);
+      if (!next || next.toLowerCase() !== current.toLowerCase()) return null;
+      return resumed;
     } catch (error) {
       return null;
     }
@@ -10343,9 +10358,12 @@
     state.kolVisitOrder = [];
     state.kolCycleRetired = true;
     state.kolCycleCreatedAt = 0;
-    const freshCycle = await readFreshKolNavigationOrder(kolLaunchHandle);
+    const freshCycle = await readFreshKolNavigationOrder(kolLaunchHandle)
+      || await readActiveKolNavigation(kolLaunchHandle);
     if (freshCycle) {
       state.kolVisitOrder = freshCycle.order.slice();
+      state.kolVisitedHandles = Array.isArray(freshCycle.visited) ? freshCycle.visited.slice() : [];
+      state.completedRounds = state.kolVisitedHandles.length;
       state.kolCycleRetired = false;
       state.kolCycleCreatedAt = Number(freshCycle.createdAt) || Date.now();
     }

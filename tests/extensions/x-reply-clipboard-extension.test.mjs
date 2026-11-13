@@ -5266,12 +5266,16 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   })
   vm.runInContext(`${definition}\nglobalThis.rotate = rotateKolProfileAndResume`, context)
   assert.equal(await context.rotate(), 'reload')
-  assert.equal(destinations[0], 'https://x.com/c?xrcAssistant=kol&xrcStart=1')
+  assert.equal(destinations[0], 'https://x.com/c?xrcAssistant=kol')
   assert.equal(state.pageCount, 0)
   current = 'c'
   state.pageCount = 5
   assert.equal(await context.rotate(), 'reload')
-  assert.equal(destinations[1], 'https://x.com/b?xrcAssistant=kol&xrcStart=1')
+  assert.equal(destinations[1], 'https://x.com/b?xrcAssistant=kol')
+  assert.doesNotMatch(definition, /xrcStart=1/)
+  const align = source.match(/async function alignKolProfileToVisitOrder\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(align)
+  assert.doesNotMatch(align, /xrcStart=1/)
   current = 'b'
   state.pageCount = 7
   assert.equal(await context.rotate(), 'complete')

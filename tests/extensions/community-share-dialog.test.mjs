@@ -5,7 +5,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 
 const require = createRequire(import.meta.url)
-const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, findChatShareAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
 test('recognizes the visible group picker by Search, group rows and Send even without a Share heading', async () => {
   const body = {}
@@ -349,4 +349,167 @@ test('a completed batch releases the scheduled task slot', async () => {
   assert.equal(plan.current, '')
   assert.equal(plan.items['community-share'].reason, '24 次检查后仍未找到 Send')
   assert.equal(saved && inactive && ticked, true)
+})
+
+function clickable(label, extras = {}) {
+  return {
+    innerText: label,
+    getAttribute: (name) => extras.attrs?.[name] ?? null,
+    getClientRects: () => [1],
+    closest: (selector) => {
+      const query = String(selector)
+      if (query.includes('aria-disabled') || query.includes('inert') || query.includes('x-reply')) return null
+      return extras.closest?.(query) || null
+    },
+    contains: () => false,
+    ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '1', pointerEvents: 'auto', visibility: 'visible', display: 'block' }) } },
+    ...extras,
+  }
+}
+
+test('chat share menu accepts the current label and a subtitle under Send via Chat', () => {
+  const direct = clickable('Send via Direct Message', { attrs: { role: 'menuitem' } })
+  const subtitled = clickable('Send via Chat\nSend this post to a group', { attrs: { role: 'menuitem' } })
+  const chinese = clickable('通过私信发送', { attrs: { role: 'menuitem' } })
+  const copy = clickable('Copy link', { attrs: { role: 'menuitem' } })
+  const doc = { querySelectorAll: () => [copy, direct, subtitled, chinese] }
+  assert.equal(findChatShareAction(doc), direct)
+  assert.equal(findChatShareAction({ querySelectorAll: () => [copy, subtitled] }), subtitled)
+  assert.equal(findChatShareAction({ querySelectorAll: () => [copy, chinese] }), chinese)
+  assert.equal(findChatShareAction({ querySelectorAll: () => [copy] }), null)
+})
+
+test('recognizes an open group picker before Send is rendered', () => {
+  const row = clickable('BlueV Mutual Follow Group 825 people')
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search BlueV Mutual Follow Group 825 people',
+    closest: () => null,
+    getAttribute: () => null,
+    querySelectorAll: (selector) => selector.includes('cellInnerDiv') ? [row] : selector.includes('input') ? [search] : [],
+  }
+  search.parentElement = picker
+  const embed = { getAttribute: (name) => name === 'data-testid' ? 'xchatEmbedShare' : null, shadowRoot: picker }
+  picker.host = embed
+  const doc = { querySelectorAll: (selector) => selector.includes('xchatEmbedShare') ? [embed] : [] }
+  assert.equal(shareDialog(doc), picker)
+})
+
+test('share that opens the group picker selects groups and clicks Send without a Send via Chat item', async () => {
+  let opened = false
+  let selected = false
+  let sent = false
+  const article = { parentElement: null, querySelector: (selector) => String(selector).includes('share') ? shareButton : null, querySelectorAll: (selector) => String(selector).includes('/status/') ? [timeLink] : [] }
+  const timeLink = { getAttribute: () => '/tuaran/status/321', querySelector: () => ({}), closest: () => article }
+  const shareButton = clickable('Share', {
+    attrs: { 'aria-label': 'Share', 'data-testid': 'share' },
+    click: () => { opened = true },
+    closest: (query) => query.includes('button') ? shareButton : query.includes('article') ? article : null,
+  })
+  const row = clickable('BlueV Mutual Follow Group 825 people', { click: () => { selected = true; sendReady = true } })
+  let sendReady = false
+  const send = clickable('Send', { click: () => { sent = true } })
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search BlueV Mutual Follow Group 825 people',
+    closest: () => null,
+    getAttribute: () => null,
+    parentElement: null,
+    scrollTop: 0,
+    clientHeight: 600,
+    querySelectorAll: (selector) => {
+      if (selector.includes('cellInnerDiv')) return [row]
+      if (selector.includes('input')) return [search]
+      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Message sent' }] : []
+      if (selector.includes('button')) return sendReady ? [send] : []
+      return []
+    },
+  }
+  search.parentElement = picker
+  send.parentElement = picker
+  const embed = { getAttribute: (name) => name === 'data-testid' ? 'xchatEmbedShare' : null, shadowRoot: picker }
+  picker.host = embed
+  const doc = {
+    body: {},
+    querySelector: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('article[data-testid="tweet"]')) return [article]
+      if (selector.includes('xchatEmbedShare')) return opened ? [embed] : []
+      if (selector.includes('button') || selector.includes('menuitem')) return [shareButton]
+      return []
+    },
+  }
+  const controller = createController({
+    document: doc,
+    window: { location: { pathname: '/tuaran' }, sessionStorage: { getItem: () => null, setItem: () => {} } },
+    wait: async () => {},
+    loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+    saveLedger: async () => {},
+  })
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(selected, true)
+  assert.equal(sent, true)
+  assert.equal(controller.snapshot().shared, 1)
+  assert.match(controller.snapshot().status, /最新帖子已标记为已分发，本轮完成/)
+})
+
+test('renamed share menu opens the picker and then sends once', async () => {
+  let phase = 'closed'
+  let selected = false
+  let sent = false
+  const article = { parentElement: null, querySelector: (selector) => String(selector).includes('share') ? shareButton : null, querySelectorAll: (selector) => String(selector).includes('/status/') ? [timeLink] : [] }
+  const timeLink = { getAttribute: () => '/tuaran/status/654', querySelector: () => ({}), closest: () => article }
+  const shareButton = clickable('Share', {
+    attrs: { 'aria-label': 'Share' },
+    click: () => { phase = 'menu' },
+    closest: (query) => query.includes('button') ? shareButton : query.includes('article') ? article : null,
+  })
+  const menu = clickable('Send via Direct Message', {
+    attrs: { role: 'menuitem' },
+    click: () => { phase = 'picker' },
+  })
+  const row = clickable('Creator Circle 267 people', { click: () => { selected = true } })
+  const send = clickable('Send message', { attrs: { 'data-testid': 'dmComposerSendButton' }, click: () => { sent = true } })
+  const search = { placeholder: 'Search', matches: () => false }
+  const picker = {
+    innerText: 'Search Creator Circle 267 people Send message',
+    closest: () => null,
+    getAttribute: () => null,
+    parentElement: null,
+    scrollTop: 0,
+    clientHeight: 600,
+    querySelectorAll: (selector) => {
+      if (selector.includes('cellInnerDiv')) return [row]
+      if (selector.includes('input')) return [search]
+      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Message sent' }] : []
+      if (selector.includes('button')) return [send]
+      return []
+    },
+  }
+  search.parentElement = picker
+  send.parentElement = picker
+  const embed = { getAttribute: (name) => name === 'data-testid' ? 'xchatEmbedShare' : null, shadowRoot: picker }
+  picker.host = embed
+  const doc = {
+    body: {},
+    querySelector: () => null,
+    querySelectorAll: (selector) => {
+      if (selector.includes('article[data-testid="tweet"]')) return [article]
+      if (selector.includes('xchatEmbedShare')) return phase === 'picker' ? [embed] : []
+      if (selector.includes('menuitem') || selector.includes('button')) return phase === 'menu' ? [menu] : [shareButton]
+      return []
+    },
+  }
+  const controller = createController({
+    document: doc,
+    window: { location: { pathname: '/tuaran' }, sessionStorage: { getItem: () => null, setItem: () => {} } },
+    wait: async () => {},
+    loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+    saveLedger: async () => {},
+  })
+  await controller.start({ handle: 'tuaran' })
+  assert.equal(phase, 'picker')
+  assert.equal(selected, true)
+  assert.equal(sent, true)
+  assert.equal(controller.snapshot().shared, 1)
 })

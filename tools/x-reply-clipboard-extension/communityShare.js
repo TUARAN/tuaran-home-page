@@ -112,19 +112,54 @@
     return scopes;
   }
 
+  const CHAT_SHARE_PREFIX = /^(?:send via chat|send via direct message|send in chat|send as direct message|send a direct message|通过聊天发送|通过私信发送|发送到会话|发送私信|分享到聊天|通过聊天分享)(?:\s|$|[，,。.!！])/iu;
+  function chatShareLabel(node) {
+    const aria = clean(node?.getAttribute?.('aria-label'));
+    const raw = String(node?.innerText || node?.textContent || '');
+    return { aria, firstLine: clean(raw.split('\n')[0]), text: clean(raw) };
+  }
+  function isChatShareAction(node) {
+    if (!node || node.closest?.('#x-reply-clipboard-panel') || !enabled(node, { ignoreAncestorOpacity: true })) return false;
+    const href = String(node.getAttribute?.('href') || '');
+    const inMenu = node.getAttribute?.('role') === 'menuitem' || Boolean(node.closest?.('[role="menu"], [data-testid="Dropdown"]'));
+    if (inMenu && /\/messages\/compose(?:\/|\?|$)/u.test(href)) return true;
+    const { aria, firstLine, text } = chatShareLabel(node);
+    return [aria, firstLine, text.length <= 160 ? text : ''].some((value) => value && CHAT_SHARE_PREFIX.test(value));
+  }
+  function findChatShareAction(doc) {
+    const seen = new Set();
+    const nodes = [];
+    for (const scope of shareScopes(doc)) {
+      for (const node of scope.querySelectorAll?.('button, [role="button"], [role="menuitem"], a[href*="/messages/compose"]') || []) {
+        if (seen.has(node)) continue;
+        seen.add(node);
+        nodes.push(node);
+      }
+    }
+    const matches = nodes.filter(isChatShareAction);
+    return matches.find((node) => !matches.some((other) => other !== node && node.contains?.(other))) || null;
+  }
+  function inChatShareSurface(node) {
+    const testId = clean(node?.getAttribute?.('data-testid') || node?.host?.getAttribute?.('data-testid'));
+    if (testId === 'xchatEmbedShare' || testId === 'sheetDialog') return true;
+    return node?.getAttribute?.('role') === 'dialog' || node?.getAttribute?.('aria-modal') === 'true';
+  }
+
   function shareDialog(doc) {
     const searchInputs = (node) => Array.from(node?.querySelectorAll?.('input, [role="searchbox"]') || []).filter((input) =>
       /search|搜索/iu.test(clean(input.getAttribute?.('placeholder') || input.placeholder || input.getAttribute?.('aria-label') || '')));
     const isShare = (node) => {
       if (!node || node.closest?.('#x-reply-clipboard-panel')) return false;
       const heading = Array.from(node.querySelectorAll?.('h1, h2, [role="heading"]') || [])
-        .some((item) => /^(?:Share|分享)$/iu.test(textOf(item)));
+        .some((item) => /^(?:share|分享|send via chat|send via direct message|send in chat|通过聊天发送|通过私信发送)$/iu.test(textOf(item)));
       const hasSearch = searchInputs(node).length > 0;
       const hasGroups = GROUP_RE.test(textOf(node));
       const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || [])
-        .some((button) => /^(?:Send|发送)$/iu.test(clean(button.getAttribute?.('aria-label'))) || /^(?:Send|发送)$/iu.test(textOf(button)));
+        .some((button) => /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(button.getAttribute?.('aria-label'))) || /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(String(button.innerText || button.textContent || '').split('\n')[0])));
       const onCompose = /\/messages\/compose(?:\/|$)/u.test(doc?.defaultView?.location?.pathname || doc?.location?.pathname || '');
-      return hasSearch && hasGroups && (heading || hasSend || onCompose);
+      if (!(hasSearch && hasGroups)) return false;
+      if (heading || hasSend || onCompose) return true;
+      return inChatShareSurface(node) && groupRows(node).length > 0;
     };
     for (const scope of shareScopes(doc)) {
       const dialogs = Array.from(scope?.querySelectorAll?.('[role="dialog"], [aria-modal="true"], [data-testid="sheetDialog"]') || []);
@@ -134,7 +169,7 @@
       const landmarks = Array.from(scope?.querySelectorAll?.('h1, h2, [role="heading"], input, [role="searchbox"]') || []);
       for (const landmark of landmarks) {
         if (landmark.matches?.('h1, h2, [role="heading"]')) {
-          if (!/^(?:Share|分享)$/iu.test(textOf(landmark))) continue;
+          if (!/^(?:share|分享|send via chat|send via direct message|send in chat|通过聊天发送|通过私信发送)$/iu.test(textOf(landmark))) continue;
         } else if (!/search|搜索/iu.test(clean(landmark.getAttribute?.('placeholder') || landmark.placeholder || landmark.getAttribute?.('aria-label') || ''))) continue;
         let parent = landmark.parentElement;
         for (let depth = 0; parent && parent !== doc.body && depth < 24; depth++, parent = parent.parentElement || parent.getRootNode?.()?.host) {
@@ -160,10 +195,10 @@
       return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => {
         if (!enabled(node, { ignoreAncestorOpacity: true }) || node.closest?.('#x-reply-clipboard-panel')) return false;
         const aria = clean(node.getAttribute?.('aria-label'));
-        const label = textOf(node);
+        const label = clean(String(node.innerText || node.textContent || '').split('\n')[0]);
         const testId = clean(node.getAttribute?.('data-testid'));
-        return [aria, label].some((value) => /^(?:Send|发送)(?:\s+post)?$/iu.test(value))
-          || /^(?:xchat)?send(?:Button|Message)?$/iu.test(testId);
+        const sendName = /^(?:send|发送)(?:\s+(?:post|message|消息))?$/iu;
+        return sendName.test(aria) || sendName.test(label) || /send(?:button|message)?$/iu.test(testId);
       }) || null;
     };
     let scope = dialog;
@@ -270,16 +305,20 @@
         share.click(); await wait(350);
         let menu = null;
         for (let attempt = 0; attempt < 8 && !stopping; attempt++) {
-          menu = findAction(doc(), /^(?:Send via Chat|通过聊天发送|发送到会话)$/iu);
+          dialog = shareDialog(doc());
+          if (dialog) break;
+          menu = findChatShareAction(doc());
           if (menu) break;
           await wait(300);
         }
         if (stopping) return;
-        if (!menu) { halt('分享菜单中没有“Send via Chat”，已停止'); return; }
-        menu.click(); await wait(500);
-        dialog = await waitForShareDialog(doc(), wait, () => stopping);
-        if (stopping) return;
-        if (!dialog) { halt('多次检查仍未识别群聊选择窗口，已停止'); return; }
+        if (!dialog) {
+          if (!menu) { halt('分享菜单中没有“Send via Chat”，已停止'); return; }
+          menu.click(); await wait(500);
+          dialog = await waitForShareDialog(doc(), wait, () => stopping);
+          if (stopping) return;
+          if (!dialog) { halt('多次检查仍未识别群聊选择窗口，已停止'); return; }
+        }
       }
       const selected = new Set();
       for (let step = 0; step < 300 && !stopping; step++) {
@@ -359,7 +398,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

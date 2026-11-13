@@ -6705,6 +6705,47 @@ test('notification reply still sends when the dialog has not quoted a status lin
   assert.equal(context.dialogConflictsWithTweet(parentDialog, { id: '222' }), true)
 })
 
+test('an open reply sheet counts when the editable node sits inside the textarea host', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const start = source.indexOf('  function replyTextboxWithin(root) {')
+  const end = source.indexOf('  function findReplyRestrictionDialog() {')
+  const helpers = start >= 0 && end > start ? source.slice(start, end) : ''
+  assert.ok(helpers.includes('function findDialogComposer'))
+  const editor = {
+    closest: () => null,
+    getAttribute: (name) => name === 'contenteditable' ? 'true' : name === 'role' ? 'textbox' : null,
+  }
+  const host = {
+    closest: () => null,
+    getAttribute: (name) => name === 'data-testid' ? 'tweetTextarea_0' : null,
+    querySelector: (selector) => String(selector).includes('contenteditable') ? editor : null,
+  }
+  const replyButton = { id: 'reply' }
+  const dialog = {
+    closest: () => null,
+    querySelector: (selector) => {
+      const text = String(selector)
+      if (text.includes('contenteditable="true"][role="textbox"]')) return null
+      if (text.includes('tweetTextarea_')) return host
+      if (text.includes('tweetButton')) return replyButton
+      return null
+    },
+  }
+  const context = vm.createContext({
+    document: {
+      querySelectorAll: (selector) => selector === '[role="dialog"]' ? [dialog] : [],
+      querySelector: () => null,
+    },
+    PANEL_ID: 'x-reply-clipboard-panel',
+    REPLY_EDITOR_SELECTOR: '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]',
+  })
+  vm.runInContext(`${helpers}\nglobalThis.find = findDialogComposer`, context)
+  const found = context.find()
+  assert.equal(found.textbox, editor)
+  assert.equal(found.dialog, dialog)
+  assert.equal(found.submit, replyButton)
+})
+
 test('notification replies target the comment, not the parent post shown above it', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]

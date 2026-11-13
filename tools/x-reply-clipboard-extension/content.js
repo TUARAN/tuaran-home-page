@@ -5964,16 +5964,39 @@
     return ids.length > 0 && !ids.includes(id);
   }
 
+  function replyTextboxWithin(root) {
+    if (!root || typeof root.querySelector !== "function") return null;
+    const exact = root.querySelector(REPLY_EDITOR_SELECTOR);
+    if (exact && !exact.closest?.(`#${PANEL_ID}`)) return exact;
+    const host = root.querySelector('[data-testid^="tweetTextarea_"]');
+    if (!host || host.closest?.(`#${PANEL_ID}`)) return null;
+    const inner = typeof host.querySelector === "function" ? host.querySelector('[contenteditable="true"]') : null;
+    if (inner && !inner.closest?.(`#${PANEL_ID}`)) return inner;
+    if (host.getAttribute?.("contenteditable") === "true" || host.getAttribute?.("role") === "textbox") return host;
+    return null;
+  }
+
+  function composerInScope(scope) {
+    const textbox = replyTextboxWithin(scope);
+    if (!textbox) return null;
+    const submit = scope.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || null;
+    return { dialog: scope, textbox, submit };
+  }
+
   function findDialogComposer() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
-      if (dialog.closest(`#${PANEL_ID}`)) continue;
-      const textbox = dialog.querySelector(REPLY_EDITOR_SELECTOR);
-      if (!textbox) continue;
-      const submit = dialog.querySelector('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
-      return { dialog, textbox, submit };
+      if (dialog.closest?.(`#${PANEL_ID}`)) continue;
+      const found = composerInScope(dialog);
+      if (found) return found;
     }
-    return null;
+    const layers = document.querySelector?.("#layers");
+    const layered = layers && !layers.closest?.(`#${PANEL_ID}`) ? replyTextboxWithin(layers) : null;
+    if (!layered) return null;
+    const shell = layered.closest?.("[role='dialog'], [aria-modal='true'], [data-testid='sheetDialog']") || layered.parentElement;
+    if (!shell) return null;
+    const submit = shell.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || null;
+    return { dialog: shell, textbox: layered, submit };
   }
 
   function findReplyRestrictionDialog() {
@@ -5995,7 +6018,7 @@
     const dialogComposer = findDialogComposer();
     if (dialogComposer) return dialogComposer;
     if (!article) return null;
-    const textbox = article.querySelector(REPLY_EDITOR_SELECTOR);
+    const textbox = replyTextboxWithin(article);
     if (!textbox) return null;
     if (hadInline && loopApi.composerText(textbox)) return null;
     const submit = article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
@@ -6234,7 +6257,7 @@
   async function openComposer(tweet) {
     const existingDialog = findDialogComposer();
     if (existingDialog && !loopApi.composerText(existingDialog.textbox)) return existingDialog;
-    const inline = tweet.article?.querySelector(REPLY_EDITOR_SELECTOR);
+    const inline = replyTextboxWithin(tweet.article);
     if (inline && !loopApi.composerText(inline)) {
       const submit = tweet.article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
       return { dialog: null, textbox: inline, submit };
@@ -6422,9 +6445,9 @@
     if (browse) return browse;
     if (state.stopping || !state.running || riskRoundPending()) return "stopped";
     if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
-    state.status = `正在评论：${outgoing}`;
-    renderPanel();
     if (!composer) {
+      state.status = "正在打开评论框…";
+      renderPanel();
       composer = await openComposer(tweet);
       if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
       if (state.assistantMode === "notifications" && composer.dialog && dialogConflictsWithTweet(composer.dialog, tweet)) {
@@ -6432,6 +6455,8 @@
         return "wrong-target";
       }
     }
+    state.status = `正在评论：${outgoing}`;
+    renderPanel();
 
     const result = await publishReply(composer, outgoing);
     if (

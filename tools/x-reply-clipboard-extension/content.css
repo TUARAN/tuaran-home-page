@@ -1227,11 +1227,20 @@
 #x-reply-clipboard-panel .xrc-task-subnav {
   display: none;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin: 0;
   padding: 8px 14px 8px;
   border-bottom: 1px solid var(--xrc-line);
   background: transparent;
+}
+#x-reply-clipboard-panel .xrc-task-live {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  color: var(--xrc-text);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
 }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-task-subnav:not([hidden]) { display: flex; }
 #x-reply-clipboard-panel .xrc-task-subnav button {

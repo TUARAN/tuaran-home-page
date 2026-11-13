@@ -9896,6 +9896,88 @@ test('a finished notification scan reports stopped instead of staying on 启动�
   }
 })
 
+test('a follow page that already hit the rate limit skips instead of restarting', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, priorityOrderVersion: 3, priorityScoreVersion: 4,
+      current: 'mutual-targetFollow', workTabId: 11, startedAt: now - 20_000,
+      items: {
+        'mutual-targetFollow': { reloadAttempts: 1, lastStartError: '执行页没有回报启动结果' },
+        notifications: { blocked: true }, timeline: { blocked: true }, kol: { blocked: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-followBack': { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'starting', updatedAt: now, detail: '已关注 1 人，X 提示超过限制，本次结束' } },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/someone/followers' } },
+      async sendMessage() {
+        return { ok: true, mode: 'mutual-targetFollow', phase: '', idle: true, detail: '已关注 1 人，X 提示超过限制，本次结束' }
+      },
+      async update(id, info) { updates.push(info || {}); return { id } },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.items['mutual-targetFollow'].reloadAttempts, 0)
+    assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /超过限制，本次结束/)
+    assert.ok(local.xrcTaskSchedule.items['mutual-targetFollow'].resumeAt >= now + 20 * 60 * 1000)
+    assert.ok(local.xrcTaskSchedule.items['mutual-followBack'].resumeAt >= now + 20 * 60 * 1000)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a follow start reload uses the same three-restart skip as the other tasks', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, priorityOrderVersion: 3, priorityScoreVersion: 4,
+      current: 'mutual-targetFollow', workTabId: 11, startedAt: now - 5_000,
+      items: { 'mutual-targetFollow': { reloadAttempts: 0 } },
+    },
+    xrcPluginRuntime: {
+      tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'running', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+  }
+  try {
+    const counted = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
+    assert.equal(counted.reloadAttempts, 1)
+    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    local.xrcTaskSchedule.items['mutual-targetFollow'].reloadAttempts = 3
+    local.xrcPluginRuntime.tasks['mutual-targetFollow'].phase = 'starting'
+    const skipped = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
+    assert.equal(skipped.skipped, true)
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /已重启 3 次，已跳过这项任务/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a manually selected timeline task retries in-page during startup instead of waiting for the 90-second guard', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()

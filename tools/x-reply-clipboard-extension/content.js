@@ -2041,7 +2041,7 @@
         mode: validTaskKey(mode),
         active: Boolean(active),
         phase: active ? phase : "stopped",
-        detail: active ? currentTaskDetail() : "",
+        detail: currentTaskDetail(),
         waitUntil: active ? currentTaskWaitUntil() : 0
       });
       pluginRuntime = response.runtime || pluginRuntime;
@@ -6518,8 +6518,8 @@
   }
 
   async function noteUnconfirmedPageReload() {
-    const mode = validTaskKey(state.assistantMode);
-    if (!["timeline", "notifications", "kol"].includes(mode)) return { ok: true, ignored: true };
+    const mode = currentTaskKey();
+    if (!mode) return { ok: true, ignored: true };
     try {
       return await sendExtensionMessage({ type: "xrc-start-reload", mode });
     } catch (error) {

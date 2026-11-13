@@ -1898,9 +1898,38 @@ function restartAlreadyCounted(item) {
   return Number(item?.reloadAttempts) > 0 || String(item?.lastStartError || "").trim().length > 0;
 }
 
+function terminalRunReason(text) {
+  return /超过限制，本次结束|操作受限，本次先停下|疑似自动化，本次先停下|本次已关注|本次已回关|本批已看完|粉丝列表已检查/u.test(String(text || ""));
+}
+
+function limitRunReason(text) {
+  return /超过限制|操作受限|疑似自动化/u.test(String(text || ""));
+}
+
+async function finishTerminalTask(plan, mode, detail, now = Date.now()) {
+  const reason = String(detail || "").slice(0, 160);
+  if (!plan || !terminalRunReason(reason)) return null;
+  recordScheduleSegment(plan, mode, reason, now);
+  plan.current = "";
+  plan.startedAt = 0;
+  const item = plan.items?.[mode] || {};
+  if (SHARED_FOLLOW_MODES.includes(mode) && limitRunReason(reason)) {
+    applySharedFollowWait(plan, now + 30 * 60 * 1000, reason, Math.max(1, Number(item.limitedStreak) || 1));
+    for (const followMode of SHARED_FOLLOW_MODES) {
+      const follow = plan.items[followMode] || {};
+      plan.items[followMode] = { ...follow, reloadAttempts: 0, lastStartError: "" };
+    }
+  } else {
+    const gap = Number(normalizedTaskRules(plan.rules)[mode]?.minGapMs) || 60 * 1000;
+    plan.items[mode] = { ...item, resumeAt: now + gap, reloadAttempts: 0, lastStartError: "", reason };
+  }
+  await saveTaskSchedule(plan);
+  return plan;
+}
+
 // A later navigation of a start that never left 启动中 counts. The first open stays at 0.
 async function countUnconfirmedRestart(plan, mode, accountHandle = "") {
-  if (!plan || !REPLY_TASKS.includes(mode)) return { ok: true, ignored: true };
+  if (!plan || !FLOW_TASKS.includes(mode)) return { ok: true, ignored: true };
   const item = plan.items?.[mode] || {};
   if (!restartAlreadyCounted(item)) return { ok: true, ignored: true };
   const restarts = Number(item.reloadAttempts) || 0;
@@ -1956,7 +1985,7 @@ function alertOnExhaustedStart(mode, item, accountHandle = "") {
 // the scheduler has not yet marked the attempt as a failed start.
 async function noteUnconfirmedReload(mode, tabId) {
   const selected = validTaskMode(mode);
-  if (!REPLY_TASKS.includes(selected)) return { ok: true, ignored: true };
+  if (!FLOW_TASKS.includes(selected)) return { ok: true, ignored: true };
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
     if (!plan.enabled || plan.current !== selected) return { ok: true, ignored: true };
@@ -2038,9 +2067,28 @@ async function seedRuntimeOccupancy(mode, tabId, phase = "starting", detail = ""
   return runtimeMutation;
 }
 
+async function skipFinishedTask(mode, detail) {
+  const selected = validTaskMode(mode);
+  const reason = String(detail || "").slice(0, 160);
+  if (!selected || !terminalRunReason(reason)) return { ok: false };
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    if (!plan.enabled || plan.current !== selected) return { ok: false };
+    const finished = await finishTerminalTask(plan, selected, reason, Date.now());
+    return finished ? { ok: true, skipped: true } : { ok: false };
+  });
+  scheduleWork = work.catch(() => {});
+  return work;
+}
+
 async function failScheduledStart(mode, tabId, reason) {
   const selected = validTaskMode(mode);
   const id = Number(tabId);
+  if (terminalRunReason(reason)) {
+    const skipped = await skipFinishedTask(selected, reason);
+    if (skipped?.ok) await tickTaskSchedule();
+    return skipped?.ok ? skipped : { ok: false };
+  }
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
     if (!plan.enabled || plan.current !== selected || Number(plan.workTabId) !== id) return { ok: false };
@@ -2868,6 +2916,7 @@ async function runTaskSchedule() {
       task = runtime.tasks?.[current];
     }
     const item = plan.items[current] || {};
+    if (await finishTerminalTask(plan, current, task?.detail, now)) return runTaskSchedule();
     if (REPLY_TASKS.includes(current) && Number(item.resumeAt) > now && /疑似自动化/u.test(String(item.reason || ""))) {
       const reason = String(item.reason);
       if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
@@ -2945,6 +2994,7 @@ async function runTaskSchedule() {
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
               return plan;
             }
+            if (pageStartError && await finishTerminalTask(plan, current, pageStartError, now)) return runTaskSchedule();
             // A reply page that answered and refused to start must keep that reason.
             // Reloading here only restarts the 90-second countdown and hides the cause.
             if (pageStartError && REPLY_TASKS.includes(current)) {
@@ -2956,12 +3006,12 @@ async function runTaskSchedule() {
               alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
               return runTaskSchedule();
             }
-            if (current === "mutual-targetFollow" || current === "mutual-followBack") {
-              plan.startedAt = now;
+            // An open follow list stays on this tab. Do not refresh the confirmation
+            // clock or clear the shared restart count; three real reloads still skip.
+            if (followListOpen && (Number(item.reloadAttempts) || 0) < 3) {
               plan.items[current] = {
                 ...item,
                 resumeAt: 0,
-                reloadAttempts: 0,
                 reason: "关注名单已经打开，继续点关注，不换去评论"
               };
               await saveTaskSchedule(plan);
@@ -3507,7 +3557,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       if (!reported || reported === "idle") {
         // A finished notification scan reports no loop phase and the 已看完 sentence.
         // Keeping 启动中 made that sentence look like a start that never counted.
-        if (/已看完最近/u.test(String(reply.detail || ""))) {
+        if (/已看完最近/u.test(String(reply.detail || "")) || terminalRunReason(reply.detail)) {
           tasks[mode] = {
             ...task,
             phase: "stopped",
@@ -4652,7 +4702,11 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       updatePluginRuntime(message, sender)
         .then((result) => {
           sendResponse(result);
-          if (message.active && message.phase === "paused") tickTaskSchedule().catch(() => {});
+          if (!message.active && terminalRunReason(message.detail)) {
+            skipFinishedTask(message.mode, message.detail)
+              .then((skipped) => { if (skipped?.ok) return tickTaskSchedule(); })
+              .catch(() => {});
+          } else if (message.active && message.phase === "paused") tickTaskSchedule().catch(() => {});
         })
         .catch((error) => sendResponse({ ok: false, error: error?.message || "运行状态保存失败" }));
       return true;

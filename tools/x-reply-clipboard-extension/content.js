@@ -5801,7 +5801,9 @@
       })
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
-        loopApi.notificationWithinWindow(tweet.timestamp, Date.now(), loopApi.notificationWindowMs(state.schedulePace)) &&
+        loopApi.notificationWithinWindow(tweet.timestamp, Date.now(), loopApi.notificationWindowMs(
+          typeof notificationWindowPace === "function" ? notificationWindowPace() : (state.schedulePace || "fast")
+        )) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
         !loopApi.hasVisibleReplyCount(tweet.replyButton)
@@ -5812,14 +5814,22 @@
     return todayTweets.length ? todayTweets : tweets;
   }
 
+  function notificationWindowPace() {
+    const rulePace = taskSchedule.rules?.notifications?.pace;
+    const candidate = loopApi.NOTIFICATION_WINDOWS?.some((item) => item.id === rulePace)
+      ? rulePace
+      : (state.schedulePace || "fast");
+    return loopApi.NOTIFICATION_WINDOWS?.some((item) => item.id === candidate) ? candidate : "fast";
+  }
+
   function notificationWindowLabel() {
-    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === (state.schedulePace || "fast"));
+    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === notificationWindowPace());
     return selected?.label || "4 小时";
   }
 
   function notificationFeedReachedOldBoundary(now = Date.now()) {
     if (state.assistantMode !== "notifications") return false;
-    const windowMs = loopApi.notificationWindowMs(state.schedulePace);
+    const windowMs = loopApi.notificationWindowMs(notificationWindowPace());
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`) && !isNestedTweet(article))
@@ -6507,6 +6517,30 @@
     return "reload";
   }
 
+  async function noteUnconfirmedPageReload() {
+    const mode = validTaskKey(state.assistantMode);
+    if (!["timeline", "notifications", "kol"].includes(mode)) return { ok: true, ignored: true };
+    try {
+      return await sendExtensionMessage({ type: "xrc-start-reload", mode });
+    } catch (error) {
+      return { ok: false };
+    }
+  }
+
+  async function commitPageReload() {
+    const noted = await noteUnconfirmedPageReload();
+    if (noted?.skipped) {
+      state.running = false;
+      state.stopping = false;
+      state.status = String(noted.reason || "已重启 3 次，已跳过这项任务");
+      writeSaved({ running: false, total: state.total });
+      if (typeof renderPanel === "function") renderPanel();
+      return false;
+    }
+    window.location.reload();
+    return true;
+  }
+
   async function reloadAndResume(message) {
     let draftReported = false;
     for (let attempt = 0; state.running && !state.stopping && attempt < 5; attempt += 1) {
@@ -6522,8 +6556,7 @@
         state.status = message;
         renderPanel();
         await sleep(400);
-        window.location.reload();
-        return true;
+        return await commitPageReload();
       }
       if (!draftReported) {
         draftReported = true;
@@ -6541,8 +6574,7 @@
       writeSaved({ running: true, total: state.total });
       state.status = message || "重新载入页面以清除残留回复框";
       renderPanel();
-      window.location.reload();
-      return true;
+      return await commitPageReload();
     }
     return false;
   }
@@ -10210,6 +10242,7 @@
     }
     state.running = true;
     state.stopping = false;
+    if (state.assistantMode === "notifications") applySchedulePace(notificationWindowPace(), { replaceIdlePlan: false });
     state.replyPaceBaseline = state.schedulePace;
     registerCurrentTaskTab();
     setRuntimeTaskActive(state.assistantMode, true, currentTaskPhase() || "running");

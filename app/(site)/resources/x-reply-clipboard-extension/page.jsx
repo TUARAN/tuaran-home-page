@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '勾选并保存后模型才生效',
-    description: '每个模型的密钥放在自己的勾选下面。勾选、填写并保存后才使用。没有亲手保存、却只勾着 NAS 的状态会被清掉。本地源码，尚未打包。',
+    title: '关注候选直接点关注',
+    description: '关注候选不读模型设置。粉丝列表上已经有可关注的人就直接点关注。本地源码，尚未打包。',
     current: true,
   },
   {

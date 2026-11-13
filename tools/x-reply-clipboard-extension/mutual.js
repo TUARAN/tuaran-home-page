@@ -609,7 +609,13 @@
   function listReady(mode) {
     if (mode === "unfollow") return isFollowingPage();
     if (mode === "followBack") return isFollowersPage() && !targetFollowHandleFromPath();
-    if (mode === "targetFollow") return Boolean(targetFollowHandleFromPath());
+    if (mode === "targetFollow") {
+      const handle = followerHandleFromPath();
+      if (!handle) return false;
+      let self = "";
+      try { self = currentAccountHandle(); } catch (error) { self = ""; }
+      return !sameHandle(handle, self);
+    }
     return false;
   }
 
@@ -1225,16 +1231,21 @@
     if (mode === "unfollow" && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
     if (mode === "followBack" && !isFollowersPage()) return { navigate: targetPath(mode), error: "请打开自己的 Followers 页面" };
     if (mode === "targetFollow") {
+      const openHandle = typeof followerHandleFromPath === "function" ? followerHandleFromPath() : "";
+      const openRows = typeof visibleRows === "function" ? visibleRows(mode) : [];
+      const followableNow = Boolean(openHandle) && openRows.some((item) => item?.candidate);
+      if (!followableNow) {
       await loadTargetFollowHandles();
       if (typeof beginTargetTask === "function") await beginTargetTask();
-      const pathHandle = typeof targetFollowHandleFromPath === "function" ? targetFollowHandleFromPath() : "";
+      }
+      const pathHandle = typeof targetFollowHandleFromPath === "function" ? targetFollowHandleFromPath() : openHandle;
       const batch = typeof TARGET_FOLLOW_HANDLES !== "undefined" && Array.isArray(TARGET_FOLLOW_HANDLES) ? TARGET_FOLLOW_HANDLES : null;
       const normalizedHandle = (value) => String(value || "").trim().replace(/^@/u, "").toLowerCase();
       const batchKnown = Array.isArray(batch) && batch.length > 0;
       const onBatch = batchKnown
         ? Boolean(pathHandle && batch.some((handle) => normalizedHandle(handle) === normalizedHandle(pathHandle)))
         : Boolean(pathHandle);
-      if (batchKnown && !onBatch) {
+      if (!followableNow && batchKnown && !onBatch) {
         const decision = targetFollowOpenDecision({
           pathHandle,
           batch: batch || [],

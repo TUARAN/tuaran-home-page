@@ -1588,6 +1588,10 @@
     return assistantModeForTask(viewTaskKey());
   }
 
+  function taskUsesModel(key) {
+    return ["timeline", "notifications", "kol", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(key);
+  }
+
   function scheduleDashboardActive() {
     return taskSchedule.enabled || Number(taskSchedule.strategyVersion) >= 4;
   }
@@ -3769,12 +3773,6 @@
     const model = flowButtonModel();
     if (model.action !== "start") return;
     if (await flushConfigSave() === false) return;
-    await loadAiSettings();
-    if (!state.aiKeySaved && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) {
-      state.status = "全流程包含定时发帖，请先配置 DeepSeek 或测试 MobileOffice";
-      openModelSettingsForKey(document.getElementById(PANEL_ID));
-      return;
-    }
     flowStarting = true;
     paintFlowButton();
     try {
@@ -3898,7 +3896,13 @@
   async function loadAiSettings() {
     const readId = ++aiSettingsReadId;
     state.aiSettingsStatus = "loading";
+    const failSafe = setTimeout(() => {
+      if (readId !== aiSettingsReadId || state.aiSettingsStatus !== "loading") return;
+      state.aiSettingsStatus = "deferred";
+      try { renderPanel(); } catch (error) { /* panel may not exist yet */ }
+    }, 2500);
     if (!globalThis.chrome?.storage?.local) {
+      clearTimeout(failSafe);
       state.aiSettingsStatus = "error";
       state.aiStatus = "当前环境无法读取模型设置";
       return;
@@ -4047,6 +4051,8 @@
       }
       state.aiStatus = "读取 AI 配置失败";
       state.aiSettingsStatus = "error";
+    } finally {
+      if (readId !== aiSettingsReadId || state.aiSettingsStatus !== "loading") clearTimeout(failSafe);
     }
   }
 
@@ -9477,6 +9483,9 @@
       const globalBar = panel.querySelector("[data-xrc-global-bar]");
       if (start) start.dataset.needsKey = "false";
       if (globalBar) {
+        if (!taskUsesModel(viewTaskKey())) {
+          globalBar.hidden = true;
+        } else {
         const loading = state.aiSettingsStatus === "loading";
         const failed = state.aiSettingsStatus === "error";
         const hasReplyModel = (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
@@ -9492,6 +9501,7 @@
           ? "已启用的回复模型尚未配置 · 点击前往模型设置 →"
           : "尚未启用回复模型 · 点击前往模型设置 →";
         globalBar.querySelector("[data-xrc-key-retry]").hidden = !failed;
+        }
       }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode

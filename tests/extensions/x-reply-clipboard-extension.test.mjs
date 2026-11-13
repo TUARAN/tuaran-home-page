@@ -10419,6 +10419,41 @@ test('target-follow leaves a loaded list when nobody remains to follow', async (
   assert.equal(advances, 1)
 })
 
+test('an open followers page clicks follow without waiting on a model or a new batch', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  assert.match(content, /function taskUsesModel\(key\)/)
+  assert.match(content, /if \(!taskUsesModel\(viewTaskKey\(\)\)\) \{\s*globalBar\.hidden = true/)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0, targetFollowed: 0 }
+  let clicked = false
+  let boardWaited = false
+  const context = vm.createContext({
+    state, Date: { now: () => 1000 },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    followerHandleFromPath: () => 'mierer001',
+    targetFollowHandleFromPath: () => '',
+    loadTargetFollowHandles: async () => { boardWaited = true },
+    beginTargetTask: () => new Promise(() => { boardWaited = true }),
+    TARGET_FOLLOW_HANDLES: ['someoneelse'],
+    writeTargetNavGuard: () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [{ handle: 'jhetha', candidate: true, followButton: {} }],
+    actTargetFollow: async () => { clicked = true; state.stopping = true; return true },
+    noteSeenTargetSources: () => {},
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  await context.runTest('targetFollow', () => {})
+  assert.equal(clicked, true)
+  assert.equal(boardWaited, false)
+})
+
 test('target-follow does not advance while the follower list has not loaded', () => {
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, idleMs: 10000 }), false)
   assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 99, idleMs: 60000 }), false)

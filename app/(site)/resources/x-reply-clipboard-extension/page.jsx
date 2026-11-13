@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '中文简介也算可关注',
-    description: '回关和关注候选看同一张卡片。名字或简介里有汉字就点关注。本地源码，尚未打包。',
+    title: '整张卡片上的中文都算',
+    description: '关注候选把名字和简介放在一起看。有汉字并且按钮是 Follow，就点。本地源码，尚未打包。',
     current: true,
   },
   {

@@ -951,9 +951,23 @@
     return Boolean(label) && (FOLLOW_BACK_RE.test(label) || /^Follow back\s+@/i.test(label) || /^回关\s+@/u.test(label));
   }
 
+  function followControlKind(button) {
+    const aria = String(button?.getAttribute?.("aria-label") || "").trim();
+    const lines = String(button?.innerText || button?.textContent || "").split(/\n/u).map((line) => line.trim()).filter(Boolean);
+    const visible = lines.join(" ");
+    const last = lines[lines.length - 1] || "";
+    const back = FOLLOW_BACK_RE.test(aria) || FOLLOW_BACK_RE.test(visible) || FOLLOW_BACK_RE.test(last) || /^Follow back\s+@/i.test(aria) || /^回关\s+@/u.test(aria);
+    if (back) return "back";
+    const following = FOLLOWING_RE.test(aria) || FOLLOWING_RE.test(last) || /^Following\s+@/i.test(aria) || /^正在关注\s+@/.test(aria);
+    if (following) return "following";
+    const follow = FOLLOW_RE.test(aria) || /^Follow\s+@/i.test(aria) || /^关注\s+@/.test(aria) || FOLLOW_RE.test(visible) || FOLLOW_RE.test(last);
+    return follow ? "follow" : "";
+  }
+
   function isPlainFollowButton(button) {
-    const label = buttonLabel(button);
-    return Boolean(label) && !isFollowBackButton(button) && !isFollowingButton(button) && (FOLLOW_RE.test(label) || /^Follow\s+@/i.test(label) || /^关注\s+@/.test(label));
+    if (followControlKind(button) !== "follow") return false;
+    const nested = Array.from(button?.querySelectorAll?.("button, [role='button']") || []);
+    return !nested.some((child) => child !== button && followControlKind(child) === "follow");
   }
 
   function findFollowingButton(row) {
@@ -997,39 +1011,36 @@
   }
 
   function profileTextParts(row, handle) {
-    const userCell = row?.closest?.('[data-testid="UserCell"]');
-    const scope = userCell || row;
     const read = (card) => {
       const nameNode = card?.querySelector?.('[data-testid="User-Name"]') || card?.querySelector?.('[data-testid="UserName"]');
       const bioNode = card?.querySelector?.('[data-testid="UserDescription"]');
       const described = bioNode ? textOf(bioNode) : "";
       const nodes = Array.from(card?.querySelectorAll?.('[dir="ltr"], [dir="auto"]') || [])
-        .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
         .filter((node) => !nameNode?.contains?.(node));
       const leaves = nodes.filter((node) => !nodes.some((other) => other !== node && node.contains?.(other)));
       const fragments = leaves
         .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
         .filter((text) => text && !/^@[A-Za-z0-9_]{1,15}$/u.test(text));
       const name = nameNode ? textOf(nameNode) : (fragments[0] || "");
-      let bio = described || (nameNode ? fragments.join(" ") : fragments.slice(1).join(" "));
-      if (!bio && nameNode) {
-        const labels = Array.from(card?.querySelectorAll?.('button, [role="button"]') || []).map((node) => buttonLabel(node)).filter(Boolean);
-        let rest = textOf(card).replace(textOf(nameNode), " ").replace(FOLLOWS_YOU_RE, " ");
-        for (const label of labels) {
-          rest = rest.split(label).join(" ");
-          const word = String(label).split(/\s+/u)[0];
-          if (word) rest = rest.split(word).join(" ");
-        }
-        bio = rest.replace(/@[A-Za-z0-9_]{1,15}/gu, " ").trim();
+      const labels = Array.from(card?.querySelectorAll?.('button, [role="button"]') || [])
+        .map((node) => buttonLabel(node))
+        .filter((label) => /^(?:Follow(?:\s+back)?|Following|关注|回关|正在关注)(?:\s+@\S+)?$/iu.test(label));
+      let rest = textOf(card).replace(FOLLOWS_YOU_RE, " ");
+      for (const label of labels) {
+        rest = rest.split(label).join(" ");
+        const verb = String(label).split(/\s+/u)[0];
+        if (/^(?:Follow|Following|关注|回关|正在关注)$/iu.test(verb)) rest = rest.split(verb).join(" ");
       }
+      rest = rest.replace(/@[A-Za-z0-9_]{1,15}/gu, " ").trim();
+      const bio = [described, nameNode ? fragments.join(" ") : fragments.slice(1).join(" "), rest].filter(Boolean).join(" ");
       return { name, bio };
     };
-    const own = read(scope);
-    if (own.bio || /\p{Script=Han}/u.test(own.name)) return own;
+    const own = read(row);
+    if (/\p{Script=Han}/u.test(own.name) || /\p{Script=Han}/u.test(own.bio)) return own;
     const parent = row?.closest?.('[data-testid="cellInnerDiv"]');
-    if (parent && parent !== scope) {
+    if (parent && parent !== row) {
       const card = read(parent);
-      if (card.bio || card.name) return card;
+      if (/\p{Script=Han}/u.test(card.name) || /\p{Script=Han}/u.test(card.bio)) return card;
     }
     return own;
   }
@@ -1044,8 +1055,35 @@
     return Boolean(name) && !profileHasChinese(row, handle);
   }
 
+  function cardForActionButton(button) {
+    let card = button;
+    let node = button;
+    while (node?.parentElement) {
+      const parent = node.parentElement;
+      if (parent === document.body || parent === document.documentElement) break;
+      if (parent.getAttribute?.("data-testid") === "primaryColumn") break;
+      const controls = actions(parent).filter((item) => isPlainFollowButton(item) || isFollowBackButton(item) || isFollowingButton(item));
+      if (controls.length > 1) break;
+      card = parent;
+      node = parent;
+    }
+    return card;
+  }
+
   function rows() {
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+    const cards = [];
+    const seen = new Set();
+    for (const button of actions(main)) {
+      if (!isPlainFollowButton(button) && !isFollowBackButton(button) && !isFollowingButton(button)) continue;
+      const card = cardForActionButton(button);
+      if (!card || seen.has(card)) continue;
+      const rect = card.getBoundingClientRect?.() || { top: 0, bottom: 1, width: 1, height: 1 };
+      if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.height < 8) continue;
+      seen.add(card);
+      cards.push(card);
+    }
+    if (cards.length) return cards;
     const candidates = [
       ...main.querySelectorAll('[data-testid="UserCell"]'),
       ...main.querySelectorAll('article[role="article"]'),

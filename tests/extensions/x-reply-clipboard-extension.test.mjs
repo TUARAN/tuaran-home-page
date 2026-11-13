@@ -6904,7 +6904,8 @@ test('a followed-back account is kept when any name or bio fragment contains Chi
   const profileNonChinese = source.match(/  function profileNonChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(profileTextParts && profileHasChinese && profileNonChinese)
   const context = vm.createContext({
-    textOf: (node) => node.textContent.trim(),
+    textOf: (node) => String(node?.textContent || "").trim(),
+    buttonLabel: (button) => String(button?.getAttribute?.("aria-label") || button?.textContent || "").trim(),
     FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
   })
   vm.runInContext(`${profileTextParts}\n${profileHasChinese}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
@@ -6968,6 +6969,26 @@ test('follow-back and target-follow require Chinese in the name or bio', async (
     },
   }
   assert.equal(profileContext.hasChinese(englishOnly), false)
+  const followersRow = {
+    textContent: 'Dora @DoraLizi 读书，看人性与社会；投资，看生意与价值。 Follow',
+    closest() { return null },
+    querySelector() { return null },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', innerText: 'Follow', getAttribute: () => 'Follow @DoraLizi' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(followersRow), true)
+  const englishRow = {
+    textContent: 'Dean @DeanWeberByy AI video engineer building reliable media workflows. Follow',
+    closest() { return null },
+    querySelector() { return null },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', innerText: 'Follow', getAttribute: () => 'Follow @DeanWeberByy' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(englishRow), false)
 
   const picked = []
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0, seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }

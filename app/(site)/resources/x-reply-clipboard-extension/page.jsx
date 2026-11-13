@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '清理和发帖默认不排班',
-    description: '清理类和发帖类默认不进排班。任务卡片只显示是否排班、是否在跑，不再显示优先级。本地源码，尚未打包。',
+    title: '关注候选不再空等数小时',
+    description: '这一批五个源头看完就交回队列，下次排班再换五个新人。已经记下的数小时倒计时会收回。本地源码，尚未打包。',
     current: true,
   },
   {

@@ -1590,22 +1590,9 @@
             return { navigate: `/${nextSource}/followers` };
           }
           if (typeof finishTargetTask === "function") finishTargetTask();
-          const refreshAfter = readTargetScan().refreshAfter || Date.now() + TARGET_SEED_REFRESH_MS;
-          state.cooldownUntil = refreshAfter;
-          while (!state.stopping && Date.now() < state.cooldownUntil) {
-            emit(`起始名单已检查，暂无新的粉丝来源，${formatClock(state.cooldownUntil - Date.now())} 后再看`);
-            await sleepActive(Math.min(1000, Math.max(1, state.cooldownUntil - Date.now())));
-          }
-          if (state.stopping) break;
           state.cooldownUntil = 0;
           try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
-          const first = (TARGET_FOLLOW_HANDLES[0] || "");
-          if (first) {
-            state.running = false;
-            emit(`起始名单冷却结束，回到 @${first} 的粉丝列表`);
-            return { navigate: `/${first}/followers` };
-          }
-          stopReason = "起始名单已检查，暂无新的粉丝来源";
+          stopReason = "本批已看完，交回队列后再换五个新人";
           break;
         }
         if (mode === "followBack") {

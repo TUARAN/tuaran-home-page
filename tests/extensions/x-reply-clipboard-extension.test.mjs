@@ -10668,6 +10668,12 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now + 10 * 60 * 1000), 7)
     const again = await background.readTaskSchedule()
     assert.equal(again.items['mutual-followBack'].resumeAt, plan.items['mutual-followBack'].resumeAt)
+    plan.targetFollowTurnVersion = 0
+    plan.items['mutual-targetFollow'].resumeAt = now + 6 * 60 * 60 * 1000
+    plan.items['mutual-targetFollow'].reason = '起始名单已检查，暂无新的粉丝来源'
+    const shortened = await background.readTaskSchedule()
+    assert.ok(shortened.items['mutual-targetFollow'].resumeAt <= Date.now())
+    assert.match(shortened.items['mutual-targetFollow'].reason, /换五个新人/)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10826,10 +10832,7 @@ test('exhausted target-follow does not rescan the same list after 30 minutes', a
     waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false,
     visibleRows: () => [{ handle: 'seen', candidate: false }],
-    scrollForward: async () => {
-      state.stopping = true
-      return { progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }
-    },
+    scrollForward: async () => ({ progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }),
     advanceTargetFollowSource: () => '',
     targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     readTargetScan: () => ({ refreshAfter: clock + mutual.constants.TARGET_SEED_REFRESH_MS }),
@@ -10846,6 +10849,8 @@ test('exhausted target-follow does not rescan the same list after 30 minutes', a
   const result = await context.runTest('targetFollow', () => {})
   assert.equal(scrollsToTop, 0)
   assert.equal(seenCooldown.length, 0)
+  assert.equal(state.cooldownUntil, 0)
+  assert.match(result?.error || '', /交回队列后再换五个新人/)
   assert.notEqual(result?.navigate, '/alpha/followers')
 })
 

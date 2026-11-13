@@ -2503,6 +2503,17 @@ async function readTaskSchedule() {
     plan.cautiousQueueVersion = 1;
     scheduleMigrated = true;
   }
+  if ((plan.targetFollowTurnVersion || 0) < 1) {
+    const item = plan.items?.["mutual-targetFollow"];
+    const remain = Number(item?.resumeAt) - Date.now();
+    const dailyCap = /额度已用完/.test(String(item?.reason || ""));
+    if (item && !item.manualStopped && !item.blocked && !dailyCap && remain > TARGET_FOLLOW_MIN_GAP_MS) {
+      item.resumeAt = Date.now();
+      item.reason = "本批已看完，下次排班再换五个新人";
+    }
+    plan.targetFollowTurnVersion = 1;
+    scheduleMigrated = true;
+  }
   if (plan.unfollowWeeklyGapVersion !== 1) {
     if (plan.rules["mutual-unfollow"]) {
       plan.rules["mutual-unfollow"] = {
@@ -2913,6 +2924,9 @@ async function runTaskSchedule() {
     const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
     item.retryKind = shortPruneRetry ? "prune-search-load" : "";
     item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume);
+    const targetDailyCap = current === "mutual-targetFollow" && /额度已用完/.test(`${task?.detail || ""} ${item.reason || ""}`);
+    const targetTurnCapped = current === "mutual-targetFollow" && !targetDailyCap && item.resumeAt > now + TARGET_FOLLOW_MIN_GAP_MS;
+    if (targetTurnCapped) item.resumeAt = now + TARGET_FOLLOW_MIN_GAP_MS;
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -2938,6 +2952,8 @@ async function runTaskSchedule() {
               ? "等待每周清理非简中"
             : current === "mutual-unfollow" && minGapMs
               ? "等待每周清理"
+              : current === "mutual-targetFollow" && targetTurnCapped
+                ? "本批已看完，下次排班再换五个新人"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选等待下次扫描或共享关注冷却"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs

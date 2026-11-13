@@ -5,7 +5,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 
 const require = createRequire(import.meta.url)
-const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, findChatShareAction, sendButtonNearDialog, createController, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
+const { shareScopes, shareDialog, groupRows, waitForShareDialog, findAction, findChatShareAction, sendButtonNearDialog, createController, isSendConfirmed, LEDGER_KEY } = require('../../tools/x-reply-clipboard-extension/communityShare.js')
 
 test('recognizes the visible group picker by Search, group rows and Send even without a Share heading', async () => {
   const body = {}
@@ -462,7 +462,14 @@ test('share that opens the group picker selects groups and clicks Send without a
   assert.match(controller.snapshot().status, /最新帖子已标记为已分发，本轮完成/)
 })
 
-test('Messages sent after Send separately counts each selected group for the current account', async () => {
+test('Post shared individually is a confirmed community send', () => {
+  assert.equal(isSendConfirmed('Post shared individually'), true)
+  assert.equal(isSendConfirmed('Messages sent'), true)
+  assert.equal(isSendConfirmed('Message sent'), true)
+  assert.equal(isSendConfirmed('Could not send message'), false)
+})
+
+test('Post shared individually after Send separately counts each selected group for the current account', async () => {
   let sent = false
   const reported = []
   const article = { parentElement: null, querySelector: (selector) => String(selector).includes('share') ? shareButton : null, querySelectorAll: (selector) => String(selector).includes('/status/') ? [timeLink] : [] }
@@ -485,7 +492,7 @@ test('Messages sent after Send separately counts each selected group for the cur
     querySelectorAll: (selector) => {
       if (selector.includes('cellInnerDiv')) return [row]
       if (selector.includes('input')) return [search]
-      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Messages sent' }] : []
+      if (selector.includes('data-testid="toast"') || selector.includes('role="alert"') || selector.includes('role="status"')) return sent ? [{ innerText: 'Post shared individually' }] : []
       if (selector.includes('button')) return [send]
       return []
     },

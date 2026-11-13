@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '关注候选直接点关注',
-    description: '关注候选不读模型设置。粉丝列表上已经有可关注的人就直接点关注。本地源码，尚未打包。',
+    title: '任务按队列轮流跑',
+    description: '不再按优先级插队。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。本地源码，尚未打包。',
     current: true,
   },
   {

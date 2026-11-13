@@ -1872,6 +1872,7 @@ const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 const FOLLOW_BACK_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
 const FOLLOW_PRIORITY_BOOST = 8.5;
+const COMMENT_TURN_MS = 10 * 60 * 1000;
 const PREMIUM_PRIORITY_BOOST = 8.75;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
@@ -1974,9 +1975,8 @@ function migrateSliceSeconds(plan) {
 
 function sliceMsForMode(mode, plan) {
   const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
-  // Reply tasks own the shared tab until their in-page run plan finishes.
-  // The long cap is only a recovery guard for a loop that never reports completion.
-  if (["timeline", "notifications", "kol"].includes(mode)) return 8 * 60 * 60 * 1000;
+  // One comment turn, then the task goes to the back of the queue.
+  if (["timeline", "notifications", "kol"].includes(mode)) return COMMENT_TURN_MS;
   // Likes only take a short burst, then yield so replies/posts can reclaim the tab.
   if (["likes-posts", "likes-replies"].includes(mode)) return Math.max(base, LIKE_SLICE_MS);
   if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
@@ -2164,9 +2164,29 @@ function effectiveSchedulePriority(plan, mode, now = Date.now(), rule = null) {
   return base;
 }
 
+function initialScheduleQueue() {
+  return [...QUEUED_TASKS].sort((a, b) => defaultTaskPriority(b) - defaultTaskPriority(a)
+    || QUEUED_TASKS.indexOf(a) - QUEUED_TASKS.indexOf(b));
+}
+
+function scheduleQueue(plan) {
+  const stored = Array.isArray(plan?.queue) ? plan.queue.filter((mode, index, list) => QUEUED_TASKS.includes(mode) && list.indexOf(mode) === index) : [];
+  const seen = new Set(stored);
+  return [...stored, ...initialScheduleQueue().filter((mode) => !seen.has(mode))];
+}
+
+function rotateScheduleQueue(plan, mode) {
+  if (!QUEUED_TASKS.includes(mode)) return scheduleQueue(plan);
+  const queue = scheduleQueue(plan).filter((item) => item !== mode);
+  queue.push(mode);
+  plan.queue = queue;
+  return queue;
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   const manualFocusMode = scheduledManualFocusMode(plan, now);
+  const queue = scheduleQueue(plan);
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
     .filter(({ mode, item, rule }) => {
       if (manualFocusMode && mode !== manualFocusMode) return false;
@@ -2186,19 +2206,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
-      const priorityA = effectiveSchedulePriority(plan, a.mode, now, a.rule);
-      const priorityB = effectiveSchedulePriority(plan, b.mode, now, b.rule);
-      if (priorityB !== priorityA) return priorityB - priorityA;
-      // Same score means both should run. A task that has not run yet goes
-      // first; otherwise the longer wait goes first. List order only breaks an exact tie.
-      const waitedMs = (entry) => {
-        const lastRunAt = Number(entry.item.lastRunAt) || 0;
-        if (!lastRunAt) return Number.POSITIVE_INFINITY;
-        return Math.max(0, now - lastRunAt);
-      };
-      const waitDiff = waitedMs(b) - waitedMs(a);
-      if (waitDiff) return waitDiff;
-      return a.index - b.index;
+      const queueA = queue.indexOf(a.mode);
+      const queueB = queue.indexOf(b.mode);
+      return (queueA < 0 ? a.index : queueA) - (queueB < 0 ? b.index : queueB);
     })
     .map(({ mode }) => mode);
 }
@@ -2492,6 +2502,10 @@ async function readTaskSchedule() {
     plan.unfollowWeeklyGapVersion = 1;
     scheduleMigrated = true;
   }
+  if (!Array.isArray(plan.queue) || plan.queue.length !== QUEUED_TASKS.length || plan.queue.some((mode) => !QUEUED_TASKS.includes(mode))) {
+    plan.queue = scheduleQueue(plan);
+    scheduleMigrated = true;
+  }
   if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
   plan.sliceSeconds = migrateSliceSeconds(plan);
   delete plan.sliceMinutes;
@@ -2737,26 +2751,10 @@ async function runTaskSchedule() {
     // explicit manual start of another task. Due tasks stay queued instead of preempting.
     const unlimitedOccupancy = await isTaskUnlimitedMode(current);
     const timedOut = !unlimitedOccupancy && now - Number(plan.startedAt || now) >= sliceMs;
-    // Reply tasks and unlimited tasks keep the tab until their run finishes.
-    const completeRunOccupancy = unlimitedOccupancy || ["timeline", "notifications", "kol"].includes(current);
     const dueNow = dueTaskModes(plan, now);
     const requestedMode = dueNow[0];
-    const scheduleRules = normalizedTaskRules(plan.rules);
-    // Use the same boosted score as dueTaskModes so a follow batch below the
-    // daily goal can reclaim the tab from likes/posts, not only win an empty slot.
-    const currentPriority = effectiveSchedulePriority(plan, current, now, scheduleRules[current]);
-    const requestedPriority = requestedMode
-      ? effectiveSchedulePriority(plan, requestedMode, now, scheduleRules[requestedMode])
-      : 0;
-    // A follow session keeps the tab until the page pauses at 100 confirms, or X limits it.
-    // Comments and likes cannot cut in mid-session. A due premium post still can.
-    const followSessionActive = (current === "mutual-followBack" || current === "mutual-targetFollow") && task?.phase === "running";
-    const higherPriorityDue = !completeRunOccupancy
-      && requestedMode
-      && requestedMode !== current
-      && requestedPriority > currentPriority
-      && !(followSessionActive && requestedMode !== "poster-premium");
-    const premiumDue = higherPriorityDue && requestedMode === "poster-premium";
+    const higherPriorityDue = false;
+    const premiumDue = false;
     // A person explicitly chose "立即开启" after confirming the current task
     // would stop. Do not let a comment task's full-run occupancy swallow it.
     const manualDue = requestedMode && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
@@ -2932,6 +2930,7 @@ async function runTaskSchedule() {
     // Yield / gap wait must re-enter the queue; never leave a stale manualStopped red card.
     if (!haltedCurrent) item.manualStopped = false;
     item.lastRunAt = now;
+    rotateScheduleQueue(plan, current);
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
     if (sharedFollow && waiting && shouldShareFollowWait(item.reason)) applySharedFollowWait(plan, item.resumeAt, item.reason);
@@ -2947,7 +2946,7 @@ async function runTaskSchedule() {
   const activateNext = activateNextExecTab;
   activateNextExecTab = false;
   plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
-  for (const mode of drawDueReplyTask(plan, dueTaskModes(plan, now))) {
+  for (const mode of dueTaskModes(plan, now)) {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
@@ -4635,11 +4634,14 @@ if (typeof module === "object" && module.exports) {
     FOLLOW_BACK_MIN_GAP_MS,
     FOLLOW_BACK_SLICE_MS,
     FOLLOW_PRIORITY_BOOST,
+    COMMENT_TURN_MS,
     PREMIUM_PRIORITY_BOOST,
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
     defaultTaskPriority,
     effectiveSchedulePriority,
+    scheduleQueue,
+    rotateScheduleQueue,
     shouldShareFollowWait,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,

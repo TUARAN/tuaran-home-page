@@ -3980,7 +3980,7 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
   try {
     await background.runTaskSchedule()
     assert.equal(tabs.has(firstId), true)
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
     assert.notEqual(local.xrcTaskSchedule.workTabId, firstId)
     assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [firstId])
@@ -7834,7 +7834,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /不去别人帖子的评论区反复对话/)
   assert.match(docsPage, /换账号后按新账号重新判断/)
   assert.match(docsPage, /短、友好、自然/)
-  assert.match(docsPage, /默认优先级 8 分；与评论首页、评论大V同分且同时可运行时等概率抽选/)
+  assert.match(docsPage, /排班按队列轮流：评论三项先排在前面，轮到就跑大约 10 分钟，然后回到队尾/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
@@ -8115,9 +8115,9 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     'mutual-unfollow': { enabled: true, window: 'peak' },
   }, items: { notifications: { resumeAt: morning + 3600000 } } }
   const morningDue = background.dueTaskModes(plan, morning)
-  assert.equal(morningDue[0], 'poster-premium')
-  assert.ok(morningDue.indexOf('poster-premium') < morningDue.indexOf('timeline'))
+  assert.equal(morningDue[0], 'timeline')
   assert.ok(!morningDue.includes('notifications'))
+  assert.ok(morningDue.indexOf('kol') < morningDue.indexOf('poster-premium'))
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
@@ -8137,10 +8137,10 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     },
   }
   const rotated = background.dueTaskModes(sameScore, afternoon)
-  assert.ok(rotated.indexOf('kol') < rotated.indexOf('notifications'))
+  assert.ok(rotated.indexOf('notifications') < rotated.indexOf('kol'))
   sameScore.items.kol.lastRunAt = 0
   const kolNeverRan = background.dueTaskModes(sameScore, afternoon)
-  assert.ok(kolNeverRan.indexOf('kol') < kolNeverRan.indexOf('notifications'))
+  assert.ok(kolNeverRan.indexOf('notifications') < kolNeverRan.indexOf('kol'))
   sameScore.items.notifications.lastRunAt = afternoon - 5 * 60 * 60000
   sameScore.items.kol.lastRunAt = afternoon - 5 * 60 * 60000
   const exactTie = background.dueTaskModes(sameScore, afternoon)
@@ -8154,7 +8154,11 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
       kol: { lastRunAt: afternoon - 180_000 },
     },
   }, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
-  assert.deepEqual(threeComments, ['kol', 'timeline', 'notifications'])
+  assert.deepEqual(threeComments, ['notifications', 'timeline', 'kol'])
+  const queued = { queue: background.scheduleQueue({}), items: {} }
+  background.rotateScheduleQueue(queued, 'notifications')
+  assert.equal(queued.queue.at(-1), 'notifications')
+  assert.equal(background.dueTaskModes(queued, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))[0], 'timeline')
 })
 
 test('three due comment tasks have equal launch odds without overriding manual starts or cooldowns', () => {
@@ -8194,7 +8198,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(background.taskUnlimitedEnabled('prune-posts', { 'prune-posts': false }), false)
   assert.equal(background.taskUnlimitedEnabled('timeline', {}), false)
   assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
-  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 8 * 60 * 60 * 1000)
+  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), background.COMMENT_TURN_MS)
   assert.equal(background.sliceMsForMode('likes-posts', { sliceSeconds: 30 }), background.LIKE_SLICE_MS)
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
@@ -8608,8 +8612,8 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
     'mutual-targetFollow': { lastRunAt: now - 31 * 60000 },
   } }
   const due = background.dueTaskModes(plan, now)
-  assert.ok(due.indexOf('mutual-targetFollow') < due.indexOf('notifications'))
-  assert.ok(due.indexOf('mutual-targetFollow') < due.indexOf('timeline'))
+  assert.ok(due.indexOf('notifications') < due.indexOf('mutual-targetFollow'))
+  assert.ok(due.indexOf('timeline') < due.indexOf('mutual-targetFollow'))
   assert.ok(due.indexOf('mutual-targetFollow') < due.indexOf('likes-posts'))
   assert.equal(due.includes('mutual-followBack'), false)
   const premiumNow = Date.parse('2026-10-29T09:35:00+08:00')
@@ -8960,14 +8964,8 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // 精品发帖档位内先用 8.75 分；其他时间关注候选的 8.5 分先于评论。回关不再插队。
-    const premiumSlotOpen = background.taskWindowOpen('poster-premium', { window: 'day' }, Date.now())
-      && [480, 570, 720, 900, 1140].some((slot) => {
-        const clock = new Date(Date.now() + 8 * 60 * 60000)
-        const minute = clock.getUTCHours() * 60 + clock.getUTCMinutes()
-        return minute >= slot && minute < slot + 15
-      })
-    assert.equal(activeMode, premiumSlotOpen ? 'poster-premium' : 'mutual-targetFollow')
+    // 开局队列里评论回复排在最前，不再因为关注未满 300 或精品档位插到评论前面。
+    assert.equal(activeMode, 'notifications')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
       || focused.some((entry) => String(entry.options?.url || '').includes(`xrcAssistant=${activeMode}`)),
@@ -9104,11 +9102,11 @@ test('a waiting comment saves its deadline before the shared tab switches tasks'
   }
   try {
     await background.runTaskSchedule()
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > Date.now())
     assert.ok(order.includes('navigated'))
     assert.equal(tabs.has(firstId), true)
-    assert.equal(session.xrcTaskTabs['mutual-targetFollow'], firstId)
+    assert.equal(session.xrcTaskTabs.kol, firstId)
   } finally {
     delete globalThis.chrome
   }
@@ -9163,7 +9161,7 @@ test('one confirmed comment keeps the tab until the full run enters its next-cyc
     probePhase = 'paused'
     await background.runTaskSchedule()
     assert.ok(suspended.some((reason) => /本次计划已完成|等待冷却/.test(reason)))
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt >= now + 60000)
   } finally {
     globalThis.Date = RealDate
@@ -10276,7 +10274,7 @@ test('existing comment defaults converge to 8 without changing other custom scor
     const rotated = background.dueTaskModes({ ...plan, enabled: true, items: {
       notifications: { lastRunAt: Date.now() - 60_000 },
     } })
-    assert.ok(rotated.indexOf('timeline') < rotated.indexOf('notifications'))
+    assert.ok(rotated.indexOf('notifications') < rotated.indexOf('timeline'))
   } finally {
     globalThis.chrome = previousChrome
   }

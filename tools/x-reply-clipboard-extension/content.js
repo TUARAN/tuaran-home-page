@@ -2393,7 +2393,7 @@
     const resumeAt = Math.max(Number(queued.resumeAt) || 0, Number(taskSchedule.timeline?.future?.find(entry => entry.mode === mode && ["ready", "scheduled"].includes(entry.status))?.readyAt) || 0);
     const remaining = resumeAt > now ? resumeAt - now : 0;
     const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
-    const waitReason = !remaining && taskSchedule.enabled ? "等待后台按优先级安排" : String(queued.reason || "").trim() || "后台排队中";
+    const waitReason = !remaining && taskSchedule.enabled ? "等待队列轮到" : String(queued.reason || "").trim() || "后台排队中";
     if (!taskSchedule.enabled) {
       return {
         label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
@@ -2696,7 +2696,7 @@
     }
     if (!remaining && (future?.status === "ready" || until > 0 && until <= now)) {
       const currentLabel = FLOW_TASKS.find(([key]) => key === taskSchedule.current)?.[1];
-      return { kind: "queue", label: "已到期", detail: currentLabel ? "等待当前任务让位后按优先级安排" : "等待后台按优先级启动", waitingFor: currentLabel || "", remaining: 0 };
+      return { kind: "queue", label: "已到期", detail: currentLabel ? "等待当前任务跑完，再按队列继续" : "等待队列轮到", waitingFor: currentLabel || "", remaining: 0 };
     }
     if (/疑似自动化|账号受限|操作受限|次数受限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
       return { kind: "cooldown", label: "X 限制冷却", detail: "到期自动重试", remaining };
@@ -3035,12 +3035,7 @@
     current.textContent = taskSchedule.enabled
       ? `${taskSchedule.manualFocusMode && !focusDeferred ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || (focusDeferred ? "" : taskSchedule.manualFocusMode)] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${(!taskSchedule.manualFocusMode || focusDeferred) && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
       : "排班已暂停";
-    const readyComments = (taskSchedule.timeline?.future || []).filter((entry) => ["timeline", "notifications", "kol"].includes(entry.mode) && entry.status === "ready");
-    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(nextEntry?.mode)
-      && readyComments.filter((entry) => Number(taskSchedule.rules?.[entry.mode]?.priority) === Number(taskSchedule.rules?.[nextEntry.mode]?.priority)).length > 1;
-    next.textContent = taskSchedule.manualFocusMode && !focusDeferred ? "其他任务等待手动任务结束" : commentLottery
-      ? "评论任务等概率抽选 · 当前结束后"
-      : nextEntry
+    next.textContent = taskSchedule.manualFocusMode && !focusDeferred ? "其他任务等待手动任务结束" : nextEntry
       ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
       : "等待任务到期";
   }
@@ -3104,21 +3099,22 @@
         if (aOff !== bOff) return aOff - bOff;
         const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
         if (readyDiff) return readyDiff;
-        const priorityA = Math.max(1, Math.min(10, Number(a.rule.priority) || 1));
-        const priorityB = Math.max(1, Math.min(10, Number(b.rule.priority) || 1));
-        return priorityB - priorityA || String(a.mode).localeCompare(String(b.mode));
+        const queue = Array.isArray(taskSchedule.queue) ? taskSchedule.queue : [];
+        const queueAt = (mode) => {
+          const index = queue.indexOf(mode);
+          return index < 0 ? 1000 : index;
+        };
+        return readyDiff || queueAt(a.mode) - queueAt(b.mode);
       });
     const nowTask = nowMode ? byMode.get(nowMode) : null;
     // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
     const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
     const firstReady = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
       && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY);
-    const lotteryModes = ["timeline", "notifications", "kol"].filter((mode) => mode !== nowMode
-      && dueModes.includes(mode)
-      && Number(byMode.get(mode)?.rule?.priority) === Number(firstReady?.rule?.priority));
+    const nextMode = firstReady?.mode || "";
+    const commentLottery = false;
+    const lotteryModes = [];
     const focusDeferred = scheduleManualFocusDeferred(readinessNow);
-    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(firstReady?.mode) && lotteryModes.length > 1;
-    const nextMode = commentLottery ? "" : firstReady?.mode || "";
     const candidateModes = waitingQueue
       .map((task) => task.mode)
       .filter((mode) => mode && mode !== nextMode && scheduleRuleEnabled(mode, byMode.get(mode)?.rule));
@@ -7739,9 +7735,8 @@
         ? `<p class="xrc-config-note" data-xrc-kol-status role="status">${kolRosterStatusText()}</p>`
         : "";
     return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
-      ${taskSectionHead("排班", "优先级与时段")}
+      ${taskSectionHead("排班", "跑完一次回到队尾")}
       <div class="xrc-schedule-rule-controls">
-        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${schedulePriorityOptionsMarkup()}</select></label>
         <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
       </div>
       ${listField}
@@ -9045,7 +9040,7 @@
         draggingMode = row.dataset.mode;
         event.dataTransfer.setData("text/plain", draggingMode);
         event.dataTransfer.effectAllowed = "move";
-        feedback("拖到右侧加入排班，拖回左侧移出；执行顺序由优先级与冷却决定。");
+        feedback("拖到右侧加入排班，拖回左侧移出。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。");
       });
       desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => {
         zone.addEventListener("dragover", (event) => { if (!draggingMode) return; event.preventDefault(); zone.classList.add("is-drag-over"); });

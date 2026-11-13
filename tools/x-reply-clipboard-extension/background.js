@@ -2801,7 +2801,10 @@ async function runTaskSchedule() {
     // Do not treat "busy for one slice" as a dead tab that must be closed.
     const unresponsiveMissing = missingTask && occupancyAge >= STARTING_GRACE_MS;
     const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
-    const unresponsiveStarting = startingTask && occupancyAge >= STARTING_GRACE_MS;
+    const pageIdle = Boolean(task?.pageIdle);
+    // An open execution page that is not looping should start now.
+    // The 90-second grace is only for a tab whose content script has not answered yet.
+    const unresponsiveStarting = startingTask && (pageIdle || occupancyAge >= STARTING_GRACE_MS);
     const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
       && !item.blocked && !item.manualStopped && !manualDue;
     if (unresponsive) {
@@ -3366,7 +3369,14 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       // while the single shared tab was still booting or between loops.
       if (!reported || reported === "idle") {
         if (task.phase === "starting") {
-          tasks[mode] = { ...task, phase: "starting", updatedAt: now };
+          // A live page with no loop is idle. Keep the slot, but let the scheduler start it now.
+          tasks[mode] = {
+            ...task,
+            phase: "starting",
+            pageIdle: Boolean(reply.idle),
+            detail: String(reply.detail || (reply.idle ? "" : task.detail) || "").slice(0, 160),
+            updatedAt: now
+          };
           return;
         }
         if (task.phase === "unknown") {
@@ -3389,6 +3399,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
         updatedAt: now
       };
       delete next.unknownSince;
+      delete next.pageIdle;
       tasks[mode] = next;
     } else if (task.phase === "starting") {
       // Content script may not be injectable yet during navigation; keep boot occupancy.
@@ -4319,6 +4330,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       rememberPendingLaunch(message.mode, message.path, message.start, sender?.tab?.id)
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务跳转记录失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-task-page-idle") {
+      tickTaskSchedule()
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "执行页空闲后未能启动" }));
       return true;
     }
     if (message?.type === "xrc-task-start-failed") {

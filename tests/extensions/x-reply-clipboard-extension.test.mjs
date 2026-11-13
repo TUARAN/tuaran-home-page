@@ -9818,6 +9818,58 @@ test('redispatching an unconfirmed reply keeps the previous failure count', asyn
   }
 })
 
+test('an open idle notifications page starts comment replies without waiting out the boot grace', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 5000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { notifications: 77 } }
+  const starts = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') {
+          return { ok: true, mode: 'notifications', phase: '', idle: true, detail: '执行页已打开，回复循环还没开始' }
+        }
+        if (message.type === 'xrc-task-start') {
+          starts.push(message.mode)
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['notifications'])
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
+    assert.equal(local.xrcTaskSchedule.items.notifications.recoveryAttempts, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a briefly unresponsive likes task holds the shared tab without reloading', async () => {
   const previousChrome = globalThis.chrome
   const local = {

@@ -1862,6 +1862,19 @@
     }
   }
 
+  let scheduledReplyWakeToken = 0;
+  function maybeRequestScheduledReplyStart() {
+    if (spectatorTab || !taskSchedule.enabled) return;
+    const mode = validTaskKey(taskSchedule.current);
+    if (!["timeline", "notifications", "kol"].includes(mode)) return;
+    if (state.running || state.loopPromise || anyLocalTaskRunning()) return;
+    if (!pathReadyForTask(mode)) return;
+    const token = Number(taskSchedule.startedAt) || 0;
+    if (!token || token === scheduledReplyWakeToken) return;
+    scheduledReplyWakeToken = token;
+    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {});
+  }
+
   function refreshScheduleView() {
     if (!ensureExtensionContext()) return Promise.resolve();
     if (scheduleRefreshPromise) return scheduleRefreshPromise;
@@ -10491,6 +10504,7 @@
     else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
+    maybeRequestScheduledReplyStart();
   }
 
   function startPanelBoot() {
@@ -10596,16 +10610,18 @@
     }
     if (message?.type === "xrc-task-state-probe") {
       const phase = currentTaskPhase();
-      const assigned = sessionStorage.getItem("xrcAssignedTaskMode") || "";
+      const idle = !spectatorTab && !phase;
       sendResponse({
         ok: true,
         mode: currentTaskKey(),
         accountHandle: currentAccountHandle(),
         scheduleEnabled: Boolean(taskSchedule.enabled),
         owned: !spectatorTab,
-        // Keep occupancy alive while the shared tab is assigned but not looping yet.
-        phase: spectatorTab ? "" : phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
-        detail: currentTaskDetail(),
+        // An assigned tab that is not looping is idle, not booting. Reporting
+        // "starting" here made the scheduler wait out the whole confirmation window.
+        phase: spectatorTab ? "" : phase,
+        idle,
+        detail: currentTaskDetail() || (idle ? "执行页已打开，回复循环还没开始" : ""),
         waitUntil: currentTaskWaitUntil()
       });
       return false;
@@ -10745,6 +10761,7 @@
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule) void loadTabRole();
+    if (changes.xrcTaskSchedule) maybeRequestScheduledReplyStart();
   }
 
   try {

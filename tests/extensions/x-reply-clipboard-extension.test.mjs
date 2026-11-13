@@ -6922,7 +6922,11 @@ test('follow-back and target-follow require Chinese in the name or bio', async (
   const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(profileTextParts && profileHasChinese && runWithStorage)
-  const profileContext = vm.createContext({ textOf: (node) => node.textContent, FOLLOWS_YOU_RE: /(Follows you|关注了你)/i })
+  const profileContext = vm.createContext({
+    textOf: (node) => node.textContent || "",
+    FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
+    buttonLabel: (button) => (button?.getAttribute?.("aria-label") || button?.textContent || "").trim(),
+  })
   vm.runInContext(`${profileTextParts}\n${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
   const row = (...parts) => ({ querySelectorAll: () => parts.map((textContent) => ({ textContent })) })
   assert.equal(profileContext.hasChinese(row('Alice', '中文简介')), true)
@@ -6936,6 +6940,34 @@ test('follow-back and target-follow require Chinese in the name or bio', async (
   assert.equal(profileContext.hasChinese(described('Alice', '中文简介')), true)
   assert.equal(profileContext.hasChinese(described('中文姓名', 'English bio')), true)
   assert.equal(profileContext.hasChinese(described('Alice', 'English bio')), false)
+  const latinName = { textContent: '333lbn@333lbn', contains() { return false } }
+  const chineseBio = { textContent: '不必在意我发了什么，只是为了博取流量', contains() { return false } }
+  const visibleBio = {
+    closest() { return null },
+    querySelector(selector) {
+      if (selector === '[data-testid="User-Name"]' || selector === '[data-testid="UserName"]') return latinName
+      return null
+    },
+    querySelectorAll(selector) {
+      if (selector === '[dir="ltr"], [dir="auto"]') return [chineseBio]
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', getAttribute: () => 'Follow @333lbn' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(visibleBio), true)
+  const englishOnly = {
+    textContent: 'Alice @english 关注',
+    closest() { return null },
+    querySelector(selector) {
+      if (selector === '[data-testid="User-Name"]' || selector === '[data-testid="UserName"]') return { textContent: 'Alice@english', contains() { return false } }
+      return null
+    },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: '关注', getAttribute: () => '关注 @english' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(englishOnly), false)
 
   const picked = []
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0, seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }

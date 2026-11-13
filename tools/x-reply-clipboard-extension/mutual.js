@@ -997,15 +997,41 @@
   }
 
   function profileTextParts(row, handle) {
-    const nameNode = row.querySelector?.('[data-testid="User-Name"]');
-    const bioNode = row.querySelector?.('[data-testid="UserDescription"]');
-    if (nameNode) return { name: textOf(nameNode), bio: bioNode ? textOf(bioNode) : "" };
-    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
-      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
-      .filter(Boolean);
-    const candidates = profileTexts.filter((text) => !/^@[A-Za-z0-9_]{1,15}$/.test(text));
-    return { name: candidates[0] || "", bio: candidates.slice(1).join(" ") };
+    const userCell = row?.closest?.('[data-testid="UserCell"]');
+    const scope = userCell || row;
+    const read = (card) => {
+      const nameNode = card?.querySelector?.('[data-testid="User-Name"]') || card?.querySelector?.('[data-testid="UserName"]');
+      const bioNode = card?.querySelector?.('[data-testid="UserDescription"]');
+      const described = bioNode ? textOf(bioNode) : "";
+      const nodes = Array.from(card?.querySelectorAll?.('[dir="ltr"], [dir="auto"]') || [])
+        .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
+        .filter((node) => !nameNode?.contains?.(node));
+      const leaves = nodes.filter((node) => !nodes.some((other) => other !== node && node.contains?.(other)));
+      const fragments = leaves
+        .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
+        .filter((text) => text && !/^@[A-Za-z0-9_]{1,15}$/u.test(text));
+      const name = nameNode ? textOf(nameNode) : (fragments[0] || "");
+      let bio = described || (nameNode ? fragments.join(" ") : fragments.slice(1).join(" "));
+      if (!bio && nameNode) {
+        const labels = Array.from(card?.querySelectorAll?.('button, [role="button"]') || []).map((node) => buttonLabel(node)).filter(Boolean);
+        let rest = textOf(card).replace(textOf(nameNode), " ").replace(FOLLOWS_YOU_RE, " ");
+        for (const label of labels) {
+          rest = rest.split(label).join(" ");
+          const word = String(label).split(/\s+/u)[0];
+          if (word) rest = rest.split(word).join(" ");
+        }
+        bio = rest.replace(/@[A-Za-z0-9_]{1,15}/gu, " ").trim();
+      }
+      return { name, bio };
+    };
+    const own = read(scope);
+    if (own.bio || /\p{Script=Han}/u.test(own.name)) return own;
+    const parent = row?.closest?.('[data-testid="cellInnerDiv"]');
+    if (parent && parent !== scope) {
+      const card = read(parent);
+      if (card.bio || card.name) return card;
+    }
+    return own;
   }
 
   function profileHasChinese(row, handle) {

@@ -2621,8 +2621,7 @@
     const reason = String(task.reason || wait?.detail || "").trim();
     if (reason && (wait?.kind === "cooldown" || /启动失败|执行未确认|启动未确认/u.test(reason))) status += ` · 原因：${reason}`;
     if (Number(wait?.remaining) > 0) status += ` · 剩余 ${formatClock(wait.remaining)}`;
-    const priority = schedulePriorityFor(task.mode, task.rule);
-    return `${status}\n优先级 ${priority}`;
+    return status;
   }
 
   function formatDeskPastNote(latest) {
@@ -7818,7 +7817,7 @@
 
   function scheduleRuleEnabled(mode, rule) {
     if (typeof rule?.enabled === "boolean") return rule.enabled;
-    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode);
+    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode);
   }
 
   function syncScheduleCardRuleControls(row, mode) {

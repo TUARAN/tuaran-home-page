@@ -40,8 +40,8 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '队列说明收进文档货架',
-    description: '任务页不再重复「跑完一次回到队尾」。文档中心用任务货架挑选在架任务，并下载派生清单。本地源码，尚未打包。',
+    title: '清理和发帖默认不排班',
+    description: '清理类和发帖类默认不进排班。任务卡片只显示是否排班、是否在跑，不再显示优先级。本地源码，尚未打包。',
     current: true,
   },
   {

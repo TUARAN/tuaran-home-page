@@ -1987,7 +1987,7 @@ test('schedule card notes separate concise status from scheduling parameters', a
     source.match(/  function formatDeskPastNote\(latest\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
-  assert.match(helpers, /优先级/)
+  assert.doesNotMatch(helpers.match(/function formatScheduleCardNote[\s\S]*?\n  \}/)?.[0] || '', /优先级/)
   assert.match(helpers, /function formatDeskPastNote/)
   assert.match(helpers, /function formatDeskDispatchNote/)
   const context = vm.createContext({
@@ -2002,26 +2002,26 @@ test('schedule card notes separate concise status from scheduling parameters', a
   const task = { reason: '', rule: { priority: 9, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9'
+    'X 限制冷却 · 剩余 01:00'
   )
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '风控等待中', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9'
+    'X 限制冷却 · 剩余 01:00'
   )
   assert.equal(
     context.format({ ...task, rule: { priority: 5, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
-    '等待「评论帖子」完成\n优先级 5'
+    '等待「评论帖子」完成'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9'
+    '等待下次排班 · 剩余 01:00'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9'
+    '等待下次排班 · 剩余 01:00'
   )
-  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置\n优先级 9')
-  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班\n优先级 9')
+  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置')
+  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班')
   assert.equal(
     context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
     '起止：10/29 08:59–10/29 08:59｜完成：0 条帖子｜说明：风控等待中'
@@ -7947,7 +7947,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
-  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
+  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*回到队列/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
   assert.match(docsPage, /回关粉丝只处理昵称或简介含汉字的账号/)
@@ -8197,6 +8197,7 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   const night = Date.parse('2026-10-28T21:00:00+08:00')
   const plan = { enabledAt: morning - 60000, rules: {
     'likes-posts': { enabled: false },
+    'poster-premium': { enabled: true },
     'mutual-unfollow': { enabled: true, window: 'peak' },
   }, items: { notifications: { resumeAt: morning + 3600000 } } }
   const morningDue = background.dueTaskModes(plan, morning)
@@ -8345,7 +8346,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -8360,7 +8361,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'notifications', 'timeline', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
+    'notifications', 'timeline', 'kol', 'mutual-followBack', 'mutual-targetFollow',
     'likes-posts', 'likes-replies',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
@@ -8389,13 +8390,13 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.dueTaskModes(afterDawnSession, nextDawn).includes('mutual-followBack'), true)
 })
 
-test('cleanup and X-themed post checkboxes start unchecked unless saved choices enable them', async () => {
+test('cleanup and posting checkboxes start unchecked unless saved choices enable them', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function scheduleRuleEnabled\(mode, rule\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)
@@ -8857,7 +8858,7 @@ test('schedule desk records finished shifts and estimates the next ready task', 
       notifications: { resumeAt: now + 30 * 60000, reason: '冷却中' },
       poster: { manualStopped: true },
     },
-    rules: {},
+    rules: { poster: { enabled: true } },
   }
   background.recordScheduleSegment(plan, 'timeline', '本轮占用结束', now)
   assert.equal(plan.history.length, 1)
@@ -8886,6 +8887,8 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, current: '', workTabId: 11, startedAt: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    cautiousQueueVersion: 1,
+    rules: { poster: { enabled: true } },
     items: { poster: { resumeAt: now + 60000 }, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
   }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
   const session = { xrcTaskTabs: {} }
@@ -8928,6 +8931,8 @@ test('a schedule with a lost tab reference adopts a previously owned X tab', asy
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: '', workTabId: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    cautiousQueueVersion: 1,
+    rules: { poster: { enabled: true } },
     items: { poster: {}, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
   }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
   const session = { xrcTaskTabs: {} }
@@ -10622,6 +10627,9 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
       'mutual-followBack': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
       'mutual-targetFollow': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
       'mutual-unfollow': { minGapMs: 240 * 60 * 1000, pace: 'slow', priority: 3, window: 'all', enabled: true },
+      poster: { minGapMs: 0, pace: 'slow', priority: 7, window: 'all', enabled: true },
+      'poster-premium': { minGapMs: 0, pace: 'medium', priority: 8, window: 'day', enabled: true },
+      article: { minGapMs: 50 * 60000, pace: 'slow', priority: 7, window: 'all', enabled: true },
     },
     items: {
       'mutual-followBack': { resumeAt: now + 5 * 60 * 1000, lastRunAt: now - 60 * 1000, reason: '回关批次结束，等待共享冷却后继续' },
@@ -10643,6 +10651,11 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.equal(plan.targetFollowCountVersion, 1)
     assert.equal(plan.followBackCountVersion, 1)
     assert.equal(plan.rules['mutual-followBack'].pace, 'fast')
+    assert.equal(plan.cautiousQueueVersion, 1)
+    assert.equal(plan.rules.poster.enabled, false)
+    assert.equal(plan.rules['poster-premium'].enabled, false)
+    assert.equal(plan.rules.article.enabled, false)
+    assert.equal(plan.rules['mutual-unfollow'].enabled, true)
     assert.equal(plan.rules['mutual-unfollowNonSc'].enabled, false)
     assert.equal(plan.rules['mutual-unfollowNonSc'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)

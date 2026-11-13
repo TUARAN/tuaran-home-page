@@ -2054,7 +2054,7 @@ function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, tur
 
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
+    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
       : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
@@ -2494,6 +2494,13 @@ async function readTaskSchedule() {
     if (plan.rules?.["mutual-followBack"] && pace !== "slow") plan.rules["mutual-followBack"].pace = "fast";
     if (plan.rules?.["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
     plan.followBackCountVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.cautiousQueueVersion || 0) < 1) {
+    for (const mode of ["poster", "poster-premium", "article"]) {
+      if (plan.rules?.[mode]) plan.rules[mode].enabled = false;
+    }
+    plan.cautiousQueueVersion = 1;
     scheduleMigrated = true;
   }
   if (plan.unfollowWeeklyGapVersion !== 1) {

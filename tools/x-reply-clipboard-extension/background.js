@@ -2816,10 +2816,12 @@ async function runTaskSchedule() {
             && /\/followers$/iu.test(livePath);
           if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen) {
             let started = null;
+            let pageStartError = "";
             try {
               started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
             } catch (error) {
               started = null;
+              if (error?.remoteStartRejected) pageStartError = String(error?.message || "页内未能启动").slice(0, 110);
             }
             if (started) {
               plan.startedAt = now;
@@ -2827,6 +2829,17 @@ async function runTaskSchedule() {
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
               return plan;
+            }
+            // A reply page that answered and refused to start must keep that reason.
+            // Reloading here only restarts the 90-second countdown and hides the cause.
+            if (pageStartError && REPLY_TASKS.includes(current)) {
+              recordScheduleSegment(plan, current, "页内启动失败", now);
+              plan.current = "";
+              plan.startedAt = 0;
+              plan.items[current] = scheduledStartRetryItem(item, current, `页内启动失败：${pageStartError}`, now);
+              await saveTaskSchedule(plan);
+              alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
+              return runTaskSchedule();
             }
             if (current === "mutual-targetFollow" || current === "mutual-followBack") {
               plan.startedAt = now;
@@ -2851,7 +2864,8 @@ async function runTaskSchedule() {
                 ...item,
                 resumeAt: now + 60000,
                 reloadAttempts: reloads + 1,
-                reason: "执行页未确认，已在同一页签重新装载"
+                reason: "执行页未确认，已在同一页签重新装载",
+                lastStartError: item.lastStartError || "执行页没有回报启动结果"
               };
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, "starting", "同一页签重新装载中");
@@ -2986,7 +3000,9 @@ async function runTaskSchedule() {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
-    plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, recoveryAttempts: 0, sliceActions: 0 };
+    // Leave recoveryAttempts and lastStartError in place until the page confirms.
+    // Zeroing them on dispatch made every unconfirmed reply look like a first try.
+    plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, sliceActions: 0 };
     await saveTaskSchedule(plan);
     try {
       await focusScheduledTask(mode, null, {

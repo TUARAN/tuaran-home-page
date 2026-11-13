@@ -9706,6 +9706,118 @@ test('an immediate timeline start rejection records the reason and stops after t
   }
 })
 
+test('a reply page that refuses to start keeps the failure count and stops after three attempts', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', manualFocusMode: 'notifications', workTabId: 77,
+      startedAt: Date.now() - 95_000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: { manualRequestedAt: Date.now() } },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', updatedAt: Date.now() - 95_000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { notifications: 77 } }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-start') return { ok: false, error: '没有可用的回复模型' }
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'notifications', phase: 'starting' }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const schedule = local.xrcTaskSchedule
+      schedule.current = 'notifications'
+      schedule.startedAt = Date.now() - 95_000
+      schedule.workTabId = 77
+      schedule.items.notifications.resumeAt = Date.now() - 1
+      local.xrcPluginRuntime.tasks.notifications = { tabId: 77, phase: 'starting', updatedAt: Date.now() - 95_000 }
+      updates.length = 0
+      await background.runTaskSchedule()
+      const item = local.xrcTaskSchedule.items.notifications
+      assert.equal(local.xrcTaskSchedule.current, '')
+      assert.equal(item.recoveryAttempts, attempt)
+      assert.match(item.lastStartError, /没有可用的回复模型/)
+      assert.equal(updates.some((entry) => entry.url), false)
+      if (attempt < 3) assert.equal(item.blocked, false)
+    }
+    const stopped = local.xrcTaskSchedule.items.notifications
+    assert.equal(stopped.blocked, true)
+    assert.equal(stopped.resumeAt, 0)
+    assert.match(stopped.reason, /连续 3 次启动未确认/)
+    assert.match(stopped.reason, /没有可用的回复模型/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('redispatching an unconfirmed reply keeps the previous failure count', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: '', manualFocusMode: 'notifications', workTabId: 77,
+      items: {
+        notifications: {
+          manualRequestedAt: Date.now(),
+          recoveryAttempts: 1,
+          lastStartError: '页内启动失败：没有可用的回复模型',
+          resumeAt: Date.now() - 1,
+        },
+      },
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+    },
+    xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { notifications: 77 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-start') return null
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'notifications', phase: '' }
+        return null
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    const item = local.xrcTaskSchedule.items.notifications
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(item.recoveryAttempts, 1)
+    assert.match(item.lastStartError, /没有可用的回复模型/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a briefly unresponsive likes task holds the shared tab without reloading', async () => {
   const previousChrome = globalThis.chrome
   const local = {

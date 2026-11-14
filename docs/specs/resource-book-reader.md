@@ -19,7 +19,7 @@
 - `lib/content/resourceBooks.mjs` 为每本站内可读书声明 `ownership`；`lib/content/libraryCatalog.mjs` 合并出版作品和阅读资源，统一生成归属、类型与署名。外部作品的文字封面不得使用 `TUARAN · 原创作品`；作者、共同作者、出版社与来源机构分别标注，不混为本站作者。
 - 页头以标题和简短范围说明为主，数量只作紧凑辅助信息。不要用跨整屏的空白面板挤走第一排书卡。
 - 首页「站长著作」的图书馆图标直达馆藏；旧 `/publications` 永久跳转到馆藏，站内导航和书籍详情的返回链接使用新路径。SEO 注册表只收录馆藏地址。
-- 有正式封面的作品展示原封面，以固定 3:4 书卡框架陈列；不可把宣传海报当书封。缺少独立封面的全文使用统一生成的馆藏底图 `public/images/books/aran-collection-cover.jpg`，在页面上叠加准确书名、作者或来源，并显示「阿燃典藏」徽标。标明 `coverTone: 'yellow'` 的黄皮书改用 `public/images/books/aran-yellow-cover.jpg`，书名用深褐色。标明 `coverTone: 'green'` 的绿皮书改用 `public/images/books/aran-green-cover.jpg`，书名用浅色。黄皮书和绿皮书不显示「阿燃典藏」。黄皮书和绿皮书的正文页用 `ManualPaper` 铺上对应纸色，阅读页不随站点深色主题反色。徽标表示本站收藏与编目，不表示外部作品归站长创作。每张书卡必须给出明确的“查看作品详情”或“在线阅读”动作。
+- 有正式封面的作品展示原封面，以固定 3:4 书卡框架陈列；不可把宣传海报当书封。缺少独立封面的全文使用统一生成的馆藏底图 `public/images/books/aran-collection-cover.jpg`，在页面上叠加准确书名、作者或来源，并显示「阿燃典藏」徽标。标明 `coverTone: 'yellow'` 的黄皮书改用 `public/images/books/aran-yellow-cover.jpg`，书名用深褐色。标明 `coverTone: 'green'` 的绿皮书改用 `public/images/books/aran-green-cover.jpg`，书名用浅色。黄皮书和绿皮书不显示「阿燃典藏」。黄皮书和绿皮书的正文页用 `ManualPaper` 铺浅色纸面，系列色只用于封面布料、书脊、页首短线和目录当前位置。阅读页不随站点深色主题反色。徽标表示本站收藏与编目，不表示外部作品归站长创作。每张书卡必须给出明确的“查看作品详情”或“在线阅读”动作。
 - 全文阅读页在标题之前提供到 `/resources/books` 的路径；共用 `BookIdentity` 以普通面包屑呈现，已有更具体面包屑的页面保留原导航，避免双重入口。具体类型（原著、白皮书、实践读本、逐章阅读）作为末级文字，不使用浮起的徽章样式。
 - `app/(site)/components/book-reader/BookToc.jsx` 是书籍目录唯一的交互组件。按 `groups: [{ id?, heading, items: [{ id, label, depth? }] }]` 提供数据；没有篇级锚点时可省略 `group.id`。
 - 逐章路由的目录项可使用 `href`，选中状态由当前路径决定；同页章节继续用 `id` 与锚点定位。

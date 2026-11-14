@@ -37,7 +37,7 @@
 .coverImageCrop { object-fit: cover; }
 .fallbackCover { position: relative; display: flex; height: 100%; flex-direction: column; padding: 20px 19px 22px; color: #f4e6c4; }
 .collectionCoverImage { object-fit: cover; }
-.collectionBadge, .coverType, .coverTitle, .coverRule, .coverSource { position: relative; z-index: 1; }
+.collectionBadge, .coverType, .coverSeries, .coverTitle, .coverRule, .coverSource { position: relative; z-index: 1; }
 .collectionBadge { align-self: center; padding: 3px 7px; color: #f6e2a9; font: 700 10px/1.25 'Noto Serif SC', serif; letter-spacing: .14em; white-space: nowrap; }
 .coverType { margin-top: 16px; font: 9px/1.5 ui-monospace, monospace; letter-spacing: .14em; }
 .coverTitle { margin: auto 0; font: 700 clamp(15px, 1.7vw, 24px)/1.4 Georgia, 'Noto Serif SC', serif; overflow-wrap: anywhere; text-shadow: 0 1px 3px rgb(0 0 0 / 50%); }
@@ -49,14 +49,20 @@
 .cover3 { background: #48486a; color: #eee8db; }
 .cover4 { background: #5d3c42; color: #f4e7cd; }
 .cover5 { background: #4b604d; color: #f3edd8; }
-.coverYellow { background: #e2b23a; color: #4a2c12; }
+.coverYellow { background: #c4a04a; color: #4a2c12; }
 .coverYellow .fallbackCover { color: #4a2c12; }
 .coverYellow .collectionBadge { color: #5c3814; }
-.coverYellow .coverTitle { color: #3d2610; text-shadow: none; }
-.coverGreen { background: #1f6b3a; color: #f4faee; }
-.coverGreen .fallbackCover { color: #f4faee; }
-.coverGreen .collectionBadge { color: #e5f6d8; }
-.coverGreen .coverTitle { color: #f7fbf3; text-shadow: 0 1px 2px rgb(0 0 0 / 35%); }
+.coverYellow .coverTitle,
+.coverGreen .coverTitle { width: 78%; align-self: center; text-align: center; font-weight: 600; letter-spacing: .02em; line-height: 1.35; text-shadow: none; }
+.coverYellow .coverRule,
+.coverGreen .coverRule { width: 28%; align-self: center; opacity: .55; }
+.coverYellow .coverSource,
+.coverGreen .coverSource { width: 78%; align-self: center; text-align: center; }
+.coverSeries { align-self: center; margin-top: 16%; font: 600 11px/1 Georgia, 'Noto Serif SC', serif; letter-spacing: .46em; text-indent: .46em; }
+.coverYellow .coverTitle { color: #3d2610; }
+.coverGreen { background: #14382a; color: #f4f7f1; }
+.coverGreen .fallbackCover { color: #f4f7f1; }
+.coverGreen .coverTitle { color: #f7fbf3; }
 .bookInfo { display: flex; flex: 1; flex-direction: column; padding-top: 14px; }
 .bookKind { color: var(--site-faint); font: 10px/1.5 ui-monospace, monospace; letter-spacing: .04em; }
 .mineKind { color: #7c5939; }

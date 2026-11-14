@@ -2781,6 +2781,23 @@ test('background reset clears task state while retaining API credentials and log
   }
 })
 
+test('task detail names the task that is actually running', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const copy = source.match(/  function occupantStatusCopy\(\{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(copy)
+  assert.match(source, /paintTaskOccupant\(panel\)/)
+  const context = vm.createContext({
+    TASK_MODE_LABELS: { timeline: '评论首页', notifications: '评论回复' },
+  })
+  vm.runInContext(`${copy}\nglobalThis.copy = occupantStatusCopy`, context)
+  assert.equal(context.copy({ loaded: false }), '正在运行：读取中')
+  assert.equal(context.copy({ enabled: false }), '正在运行：排班已暂停')
+  assert.equal(context.copy({}), '当前没有任务在执行')
+  assert.equal(context.copy({ runningMode: 'timeline', currentMode: 'notifications' }), '正在运行：评论首页')
+  assert.equal(context.copy({ currentMode: 'notifications', starting: true }), '正在启动：评论回复')
+  assert.equal(context.copy({ currentMode: 'notifications' }), '当前占用：评论回复')
+})
+
 test('main flow keeps only the start and details controls', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   assert.match(source, /data-xrc-flow-start/)
@@ -2789,6 +2806,7 @@ test('main flow keeps only the start and details controls', async () => {
   assert.doesNotMatch(source, /xrc-desk-legend/)
   assert.match(source, /data-xrc-task-subnav-label>任务子页<\/strong>\s*<button type="button" class="xrc-task-docs-link" data-xrc-task-docs/)
   assert.match(source, /data-xrc-task-manual-pause>暂停当前任务<\/button>/)
+  assert.match(source, /data-xrc-task-live>正在运行：读取中<\/p>/)
   assert.match(source, /type: "xrc-task-manual-stop", mode, stopTab: true/)
   assert.doesNotMatch(source, /xrc-task-docs-row/)
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)

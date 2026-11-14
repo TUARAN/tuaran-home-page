@@ -3046,6 +3046,33 @@
     return { current, next, switchAt, pending };
   }
 
+  function occupantStatusCopy({ loaded = true, enabled = true, runningMode = "", currentMode = "", starting = false } = {}) {
+    if (!loaded) return "正在运行：读取中";
+    if (!enabled) return "正在运行：排班已暂停";
+    const mode = runningMode || currentMode;
+    if (!mode) return "当前没有任务在执行";
+    const label = TASK_MODE_LABELS[mode] || mode;
+    if (runningMode) return `正在运行：${label}`;
+    if (starting) return `正在启动：${label}`;
+    return `当前占用：${label}`;
+  }
+
+  function paintTaskOccupant(panel = document.getElementById(PANEL_ID)) {
+    const live = panel?.querySelector("[data-xrc-task-live]");
+    if (!live) return;
+    const overview = flowTaskOverview(pluginRuntime);
+    const runningMode = overview.tasks.find((task) => task.status === "running")?.key || "";
+    const currentMode = validTaskKey(taskSchedule.current);
+    const starting = Boolean(currentMode) && scheduledWaitInfo(currentMode).kind === "starting";
+    live.textContent = occupantStatusCopy({
+      loaded: scheduleLoaded,
+      enabled: Boolean(taskSchedule.enabled),
+      runningMode,
+      currentMode,
+      starting
+    });
+  }
+
   function paintScheduleStrip(panel = document.getElementById(PANEL_ID)) {
     const strip = panel?.querySelector("[data-xrc-schedule-strip]");
     if (!strip) return;
@@ -3659,6 +3686,7 @@
     paintScheduleToggle(panel, model, busy);
     paintFlowDetails(panel);
     paintScheduleStrip(panel);
+    paintTaskOccupant(panel);
     paintScheduleDesk(panel);
   }
 
@@ -8570,6 +8598,7 @@
             <button type="button" class="xrc-task-docs-link" data-xrc-task-docs data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看任务说明" title="查看任务说明"><svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true" focusable="false"><circle cx="8" cy="4.2" r="1.15" fill="currentColor"/><path d="M8 7.15v5.15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
           </span>
           <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
+          <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
         </div>
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">

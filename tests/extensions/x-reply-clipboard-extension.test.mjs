@@ -397,7 +397,7 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
   guard.tabRole.ownerTabId = 0
   assert.equal(await guard.guardStart(), false)
   assert.equal(guard.spectatorTab, false)
-  assert.match(source, /if \(!spectatorTab && saved\.running\)/)
+  assert.match(source, /if \(!spectatorTab && saved\.running && !launchedStart\)/)
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled\) continue/)
   assert.match(backgroundSource, /waiting\.length === 1 \? waiting\[0\] : null/)
@@ -1553,13 +1553,15 @@ test('all seven scheduled task buttons use the same waiting state as the flow de
   context.taskSchedule.startedAt = now - 30000
   context.pluginRuntime.tasks = { notifications: { phase: 'starting', updatedAt: now } }
   const starting = context.control('notifications', false, now)
-  assert.equal(starting.label, '启动中 · 约 1 分 0 秒 · 请稍候')
+  assert.equal(starting.label, '启动中 · 已重启 0 次 · 约 1 分 0 秒')
   assert.equal(starting.action, 'none')
   assert.equal(starting.disabled, true)
   assert.equal(starting.busy, true)
-  assert.match(starting.title, /正在确认页内任务启动/)
+  assert.match(starting.title, /满 3 次后跳过这项任务/)
+  context.taskSchedule.items.notifications = { reloadAttempts: 2 }
+  assert.equal(context.control('notifications', false, now).label, '启动中 · 已重启 2 次 · 约 1 分 0 秒')
   context.taskSchedule.startedAt = 0
-  assert.equal(context.control('notifications', false, now).label, '启动中 · 请稍候')
+  assert.equal(context.control('notifications', false, now).label, '启动中 · 已重启 2 次')
 })
 
 test('single task click refreshes background schedule before acting on a stale start label', async () => {
@@ -1898,6 +1900,7 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   assert.ok(definition)
   const now = Date.now()
   const context = vm.createContext({
+    FLOW_STALE_MS: 90 * 1000,
     FLOW_TASKS: [['timeline', '评论帖子'], ['notifications', '回复评论'], ['poster-premium', '精品发帖']],
     taskSchedule: { current: 'timeline', items: {}, timeline: { future: [] } },
     pluginRuntime: { tasks: { timeline: { phase: 'running' } } },
@@ -1925,6 +1928,11 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   assert.equal(starting.kind, 'starting')
   assert.equal(starting.label, '正在启动')
   assert.equal(starting.detail, '等待执行页回报启动结果')
+  context.pluginRuntime.tasks.timeline = { phase: 'stopped', detail: '已看完最近 4 小时的回复，本次确认 0 条', updatedAt: now }
+  const finished = context.waitInfo('timeline', now)
+  assert.equal(finished.kind, 'next-run')
+  assert.equal(finished.label, '本次已完成')
+  assert.match(finished.detail, /4 小时/)
   assert.equal(starting.remaining, 60000)
   context.pluginRuntime.tasks.timeline.detail = '正在装载执行页'
   context.taskSchedule.items.timeline = { resumeAt: now + 20000 }
@@ -1943,16 +1951,17 @@ test('timeline startup copy names the current step and explains the recovery cou
   const now = Date.now()
   const context = vm.createContext({
     taskSchedule: { enabled: true, current: 'timeline', startedAt: now - 30000,
-      items: { timeline: { recoveryAttempts: 1, lastStartError: '执行页未确认' } }, timeline: { future: [] } },
+      items: { timeline: { recoveryAttempts: 1, reloadAttempts: 1, lastStartError: '执行页未确认' } }, timeline: { future: [] } },
     pluginRuntime: { tasks: { timeline: { phase: 'starting', detail: '正在装载执行页' } } },
     FLOW_STALE_MS: 90000,
     formatCountdown: () => '1 分钟',
   })
   vm.runInContext(`${waitInfo}\n${startupCopy}\nglobalThis.copy = confirmingStartCopy`, context)
   const copy = context.copy('timeline', now)
-  assert.match(copy, /上次未确认：执行页未确认；第 2 次尝试/)
+  assert.match(copy, /已重启 1 次/)
   assert.match(copy, /当前步骤：正在装载执行页/)
-  assert.match(copy, /1 分钟后检查执行页并尝试恢复/)
+  assert.match(copy, /1 分钟后再次检查/)
+  assert.match(copy, /重启满 3 次后跳过这项任务/)
 })
 
 test('comment status shows the real restriction deadline before startup confirmation', async () => {
@@ -5180,7 +5189,8 @@ test('reply pace rows label the default for the current reply task', async () =>
   assert.ok(helper)
   const sandbox = vm.createContext({ loopApi: loop })
   vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
-  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时（默认）')
+  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时')
+  assert.equal(sandbox.nameFor({ id: 'fast', label: '快' }, 'notifications'), '4 小时（默认）')
   assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
   assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
   assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '8 小时')
@@ -6805,6 +6815,8 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
   assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000 - 1, now), false)
   assert.equal(loop.notificationWithinWindow(0, now), false)
   assert.equal(loop.notificationWindowMs('medium'), 2 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs('fast'), 4 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs(), 4 * 60 * 60 * 1000)
   assert.equal(loop.notificationWindowMs('boundary'), 24 * 60 * 60 * 1000)
   assert.equal(loop.notificationWithinWindow(now - 3 * 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), false)
   assert.equal(loop.notificationWithinWindow(now - 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), true)
@@ -6816,6 +6828,8 @@ test('notification scan stops at the time window, refreshes once, then returns t
   const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
   assert.ok(label && boundary && finish)
+  assert.match(source, /saved\.running && !launchedStart/)
+  assert.match(source, /untouched && alreadyAtBoundary/)
   const now = Date.parse('2026-11-05T12:00:00+08:00')
   let ageHours = 25
   const article = { closest: () => null }
@@ -6836,6 +6850,14 @@ test('notification scan stops at the time window, refreshes once, then returns t
   assert.equal(context.atBoundary(now), false)
   assert.equal(await context.finish(), 'reload')
   assert.equal(await context.finish(), 'stopped')
+  assert.equal(context.state.running, false)
+  assert.deepEqual(events, ['saved', 'refreshed'])
+  context.state.total = 0
+  context.state.pageCount = 0
+  context.state.notificationBoundaryRefreshed = false
+  context.state.running = true
+  ageHours = 25
+  assert.equal(await context.finish('已到窗口外'), 'stopped')
   assert.equal(context.state.running, false)
   assert.deepEqual(events, ['saved', 'refreshed'])
 })
@@ -7685,7 +7707,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-mode="template"/)
   assert.match(content, /aria-selected/)
   assert.doesNotMatch(content, /data-xrc-runtime/)
-  assert.match(content, /randomReplyDelaySeconds\(Math\.random, state\.schedulePace(?:, state\.boundaryLevel)?\)/)
+  assert.match(content, /randomReplyDelaySeconds\(Math\.random, replyCadencePace\(\), state\.assistantMode === "notifications" \? 1 : state\.boundaryLevel\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
   assert.match(content, /每条间隔/)
   assert.match(content, /data-xrc-wait/)
@@ -8351,7 +8373,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
   assert.equal(rules.timeline.pace, 'boundary')
-  assert.equal(rules.notifications.pace, 'medium')
+  assert.equal(rules.notifications.pace, 'fast')
   assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
@@ -8437,8 +8459,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.commentEqualPriorityVersion, 1)
-    assert.equal(plan.rules.notifications.pace, 'medium')
-    assert.equal(plan.notificationPaceDefaultVersion, 2)
+    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.notificationPaceDefaultVersion, 3)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -8463,7 +8485,7 @@ test('existing schedule receives the daily follow-back cadence and new default w
   }
 })
 
-test('previous turbo default for notification replies returns to medium once', async () => {
+test('previous notification defaults settle on the 4 hour window once', async () => {
   const previousChrome = globalThis.chrome
   const stored = { xrcTaskSchedule: {
     enabled: false, current: '', items: {},
@@ -8476,9 +8498,49 @@ test('previous turbo default for notification replies returns to medium once', a
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.pace, 'medium')
-    assert.equal(plan.notificationPaceDefaultVersion, 2)
-    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'medium')
+    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.notificationPaceDefaultVersion, 3)
+    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'fast')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('saved notification windows stay put after the 4 hour default migration', async () => {
+  const previousChrome = globalThis.chrome
+  async function readStored(schedule) {
+    const stored = { xrcTaskSchedule: schedule }
+    let writes = 0
+    globalThis.chrome = { storage: { local: {
+      async get(key) { return { [key]: stored[key] } },
+      async set(value) { Object.assign(stored, value); writes += 1 },
+    } } }
+    const plan = await background.readTaskSchedule()
+    const settled = writes
+    await background.readTaskSchedule()
+    return { plan, extraWrites: writes - settled }
+  }
+  try {
+    const settledVersions = { priorityOrderVersion: 3, priorityScoreVersion: 4 }
+    const kept = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 3,
+      rules: { notifications: { pace: 'slow' } },
+    })
+    assert.equal(kept.plan.rules.notifications.pace, 'slow')
+    assert.equal(kept.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(kept.extraWrites, 0)
+
+    const chosenEight = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 2,
+      rules: { notifications: { pace: 'turbo' } },
+    })
+    assert.equal(chosenEight.plan.rules.notifications.pace, 'turbo')
+    assert.equal(chosenEight.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(chosenEight.extraWrites, 0)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8510,7 +8572,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
-    assert.equal(plan.rules.notifications.pace, 'medium')
+    assert.equal(plan.rules.notifications.pace, 'fast')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
@@ -9627,7 +9689,55 @@ test('a never-started shared tab is reloaded in place after the boot grace', asy
     assert.equal(local.xrcTaskSchedule.current, 'timeline')
     assert.ok(session['xrcPendingTab:11']?.start)
     assert.ok(updates.some((entry) => /xrcStart=1/.test(entry.url || '') && entry.autoDiscardable === false && entry.active !== true))
+    assert.match(local.xrcTaskSchedule.items.timeline.reason, /已重启 1 次/)
     assert.match(local.xrcTaskSchedule.items.timeline.reason, /同一页签重新装载/)
+    assert.equal(local.xrcTaskSchedule.items.timeline.reloadAttempts, 1)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('three unconfirmed reloads skip the task instead of starting the countdown again', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'notifications', workTabId: 11, startedAt: now - 95_000,
+      items: {
+        notifications: { reloadAttempts: 3, lastStartError: '执行页没有回报启动结果' },
+        timeline: { blocked: true }, kol: { blocked: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-followBack': { blocked: true }, 'mutual-targetFollow': { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 11, phase: 'starting', updatedAt: now - 95_000 } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'notifications', phase: 'starting' }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(local.xrcTaskSchedule.items.notifications.blocked, true)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 3)
+    assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 3 次，已跳过这项任务/)
   } finally {
     globalThis.chrome = previousChrome
   }

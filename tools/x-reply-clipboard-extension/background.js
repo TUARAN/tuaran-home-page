@@ -2058,6 +2058,7 @@ function defaultTaskRules() {
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
       : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
+      : mode === "notifications" ? "fast"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2399,9 +2400,16 @@ async function readTaskSchedule() {
     plan.timelineEqualPriorityVersion = 1;
     scheduleMigrated = true;
   }
-  if (plan.notificationPaceDefaultVersion !== 2) {
+  if ((plan.notificationPaceDefaultVersion || 0) < 2) {
     if (plan.rules.notifications.pace === "turbo") plan.rules.notifications.pace = "medium";
     plan.notificationPaceDefaultVersion = 2;
+    scheduleMigrated = true;
+  }
+  if ((plan.notificationPaceDefaultVersion || 0) < 3) {
+    // The previous default window was 2 hours. Move that default to 4 hours.
+    // A saved 1, 8, or 24 hour choice stays.
+    if (plan.rules.notifications.pace === "medium") plan.rules.notifications.pace = "fast";
+    plan.notificationPaceDefaultVersion = 3;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {
@@ -2856,24 +2864,41 @@ async function runTaskSchedule() {
               return plan;
             }
           }
+          const restarts = Number(item.reloadAttempts) || 0;
+          if (restarts >= 3) {
+            recordScheduleSegment(plan, current, "已重启 3 次，跳过这项任务", now);
+            plan.current = "";
+            plan.startedAt = 0;
+            plan.items[current] = {
+              ...item,
+              manualRequestedAt: 0,
+              reloadAttempts: restarts,
+              recoveryAttempts: Math.max(Number(item.recoveryAttempts) || 0, REPLY_START_FAILURE_LIMIT),
+              resumeAt: 0,
+              blocked: true,
+              reason: `已重启 ${restarts} 次，已跳过这项任务`,
+              lastStartError: item.lastStartError || "执行页没有回报启动结果"
+            };
+            await saveTaskSchedule(plan);
+            alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
+            return runTaskSchedule();
+          }
           const destination = await launchTaskTabUrl(current, live.url || "", { start: true, accountHandle: plan.accountHandle || "", currentUrl: live.url || "", pruneSearchStart: current === "prune-posts" && await readPruneSearchStart() });
           if (destination) {
-            const reloads = Number(item.reloadAttempts) || 0;
-            if (reloads < 2) {
-              await rememberPendingLaunch(current, destination, true, workTabId);
-              await chrome.tabs.update(workTabId, { url: destination, autoDiscardable: false });
-              plan.startedAt = now;
-              plan.items[current] = {
-                ...item,
-                resumeAt: now + 60000,
-                reloadAttempts: reloads + 1,
-                reason: "执行页未确认，已在同一页签重新装载",
-                lastStartError: item.lastStartError || "执行页没有回报启动结果"
-              };
-              await saveTaskSchedule(plan);
-              await seedRuntimeOccupancy(current, workTabId, "starting", "同一页签重新装载中");
-              return plan;
-            }
+            const nextRestart = restarts + 1;
+            await rememberPendingLaunch(current, destination, true, workTabId);
+            await chrome.tabs.update(workTabId, { url: destination, autoDiscardable: false });
+            plan.startedAt = now;
+            plan.items[current] = {
+              ...item,
+              resumeAt: now + 60000,
+              reloadAttempts: nextRestart,
+              reason: `已重启 ${nextRestart} 次，已在同一页签重新装载`,
+              lastStartError: item.lastStartError || "执行页没有回报启动结果"
+            };
+            await saveTaskSchedule(plan);
+            await seedRuntimeOccupancy(current, workTabId, "starting", "等待执行页回报启动结果");
+            return plan;
           }
         } catch (error) {
           // Fall through to yield the slot while keeping the shared tab.

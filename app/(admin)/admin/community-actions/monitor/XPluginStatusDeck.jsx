@@ -12,6 +12,7 @@ import styles from './xMonitorDesk.module.css'
 const MODE_LABEL = X_RUNTIME_MODE_LABELS
 const TASK_PHASE = {
   running: ['运行中', 'info'],
+  starting: ['正在启动', 'warning'],
   waiting: ['等待中', 'warning'],
   paused: ['等待中', 'warning'],
   stopping: ['等待中', 'warning'],
@@ -78,7 +79,7 @@ function manualStop(task) {
 
 function dotState(task) {
   if (task?.phase === 'running') return 'running'
-  if (task?.phase === 'waiting' || task?.phase === 'paused' || task?.phase === 'stopping') return 'waiting'
+  if (task?.phase === 'starting' || task?.phase === 'waiting' || task?.phase === 'paused' || task?.phase === 'stopping') return 'waiting'
   if (task?.phase === 'unknown' || task?.phase === 'blocked' || manualStop(task)) return 'unknown'
   return 'missing'
 }
@@ -86,6 +87,7 @@ function dotState(task) {
 function cardPulse(task) {
   if (!task) return ''
   if (task.phase === 'running') return 'running'
+  if (task.phase === 'starting') return 'waiting'
   if (task.phase === 'unknown' || task.phase === 'blocked' || manualStop(task)) return 'stopped'
   if (optedOut(task) || task.phase === 'idle') return ''
   if (task.phase === 'waiting' || task.phase === 'paused' || task.phase === 'stopping') return 'waiting'
@@ -99,7 +101,7 @@ function statusText(task) {
 }
 
 function taskRank(task) {
-  if (task.phase === 'waiting' || task.phase === 'paused' || task.phase === 'stopping') return 0
+  if (task.phase === 'starting' || task.phase === 'waiting' || task.phase === 'paused' || task.phase === 'stopping') return 0
   if (task.phase === 'unknown' || task.phase === 'blocked' || manualStop(task)) return 1
   return 2
 }

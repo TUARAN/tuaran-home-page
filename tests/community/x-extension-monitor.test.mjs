@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
-import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, presentXTaskFace, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
+import { describeXPluginSituation } from '../../lib/community/xExtensionMonitorShared.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -40,6 +41,50 @@ test('X task snapshot validates phases and does not accept arbitrary task names'
   assert.equal(runtime.schedule.facing.running, 1)
   const report = normalizeCommunityActionReport({ deviceId: 'device-x-monitor', platform: 'x', runtime: { phase: 'paused', tasks: [] } }, NOW)
   assert.equal(report.runtime.phase, 'paused')
+})
+
+test('starting stays on the task and counts as waiting for the group', () => {
+  const runtime = normalizeXRuntime({
+    phase: 'running',
+    tasks: [{ mode: 'timeline', phase: 'starting', detail: '排班已占用共享页签', waitUntil: NOW + 48000 }],
+  }, NOW)
+  assert.equal(runtime.tasks[0].phase, 'starting')
+  assert.equal(runtime.tasks[0].detail, '排班已占用共享页签')
+  assert.equal(presentXTaskFace('starting').key, 'waiting')
+  assert.equal(presentXTaskFace('starting').label, '正在启动')
+  const groups = presentXRuntimeGroups(runtime.tasks)
+  assert.equal(groups[0].phase, 'waiting')
+  assert.equal(groups[0].tasks.find((task) => task.mode === 'timeline').phase, 'starting')
+})
+
+test('status sentence names the current task, cooldown, and items that need attention', () => {
+  const now = NOW
+  const sentence = describeXPluginSituation({
+    accountHandle: 'tuaranx',
+    online: true,
+    telemetry: true,
+    schedule: {
+      enabled: true,
+      current: 'timeline',
+      next: { mode: 'likes-replies', label: '点赞评论', readyAt: now + 175000 },
+    },
+    groups: [{
+      tasks: [
+        { mode: 'timeline', phase: 'starting', label: '评论首页', detail: '排班已占用共享页签', waitUntil: now + 48000 },
+        { mode: 'notifications', phase: 'paused', label: '评论回复', detail: 'X 提示疑似自动化，第 1 次冷却后自动重试（评论三项共用）', waitUntil: now + 537000 },
+        { mode: 'kol', phase: 'paused', label: '评论大V', detail: 'X 提示疑似自动化，第 1 次冷却后自动重试（评论三项共用）', waitUntil: now + 537000 },
+        { mode: 'mutual-targetFollow', phase: 'unknown', label: '关注候选', detail: '已重启 3 次，已跳过这项任务' },
+      ],
+    }],
+  }, now)
+  assert.match(sentence, /^@tuaranx：评论首页正在启动，排班已占用共享页签，剩余约 48 秒；/)
+  assert.match(sentence, /评论回复、评论大V在限制冷却，原因是X 提示疑似自动化/)
+  assert.match(sentence, /剩余约 8 分 57 秒/)
+  assert.match(sentence, /1 项需处理，其中关注候选是已重启 3 次，已跳过这项任务/)
+  assert.match(sentence, /下一项是点赞评论，约 2 分 55 秒后开始。$/)
+  assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: false, lastSeenAt: now }, now), `@tuaranx已离线，最近心跳是 ${new Date(now).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}，现在看不到任务状态。`)
+  assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: true, telemetry: false }, now), '@tuaranx有心跳，还没有上报任务状态。')
+  assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: true, telemetry: true, schedule: { enabled: false }, groups: [] }, now), '@tuaranx：排班已暂停。')
 })
 
 test('runtime groups follow schedule priority order with idle fill-ins', () => {

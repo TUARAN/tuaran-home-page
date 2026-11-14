@@ -27,7 +27,7 @@
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let reviewAccountHandle = "";
   let TARGET_FOLLOW_HANDLES = [];
-  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a (?:few )?moments?(?:,|\s)+(?:and|then) try again|受到(?:速率|速度)限制|操作过于频繁|操作太频繁|请稍等片刻(?:[，,\s]*然后)?再试)/iu;
+  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a (?:few )?moments?(?:,|\s)+(?:and|then) try again|unable to follow more people|can(?:not|['’]t) follow more|受到(?:速率|速度)限制|操作过于频繁|操作太频繁|请稍等片刻(?:[，,\s]*然后)?再试|无法关注更多|不能再关注|これ以上.{0,16}フォローできません)/iu;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
@@ -1238,17 +1238,26 @@
     return true;
   }
 
+  async function settleFollowResult(item, changed, pendingButton) {
+    if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
+    if (changed !== "done") return false;
+    await sleep(500);
+    if (rateLimitVisible()) return "rate-limited";
+    if (item.row.isConnected && pendingButton(item.row) && !findFollowingButton(item.row)) return false;
+    return true;
+  }
+
   async function actFollowBack(item) {
     if (rateLimitVisible()) return "rate-limited";
     emit(`正在回关 ${item.handle}`);
     realClick(item.followBackButton);
     const changed = await waitUntil(() => {
-      if (findFollowingButton(item.row) || !findFollowBackButton(item.row) || !item.row.isConnected) return "done";
       if (rateLimitVisible()) return "rate-limited";
+      if (findFollowingButton(item.row) || !findFollowBackButton(item.row) || !item.row.isConnected) return "done";
       return null;
     }, 6000);
-    if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
-    if (changed !== "done") return false;
+    const settled = await settleFollowResult(item, changed, findFollowBackButton);
+    if (settled !== true) return settled;
     state.followedBack += 1;
     await recordSharedFollow();
     reportMutualAction("followBack", item.handle, "success");
@@ -1260,12 +1269,12 @@
     emit(`正在关注 ${item.handle}`);
     realClick(item.followButton);
     const changed = await waitUntil(() => {
-      if (findFollowingButton(item.row) || !findPlainFollowButton(item.row) || !item.row.isConnected) return "done";
       if (rateLimitVisible()) return "rate-limited";
+      if (findFollowingButton(item.row) || !findPlainFollowButton(item.row) || !item.row.isConnected) return "done";
       return null;
     }, 6000);
-    if (changed === "rate-limited" || rateLimitVisible()) return "rate-limited";
-    if (changed !== "done") return false;
+    const settled = await settleFollowResult(item, changed, findPlainFollowButton);
+    if (settled !== true) return settled;
     state.targetFollowed += 1;
     await recordSharedFollow();
     rememberFollowedSource(item.handle);

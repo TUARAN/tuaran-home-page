@@ -391,9 +391,10 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
     loadTabRole: async () => {}, renderPanel: () => {},
   })
   vm.runInContext(`${claim}\nglobalThis.guardStart = keepSpectatorOnOwner`, guard)
-  assert.equal(await guard.guardStart(), true)
-  assert.equal(guard.spectatorTab, true)
-  assert.match(guard.state.status, /另一个页签/)
+  assert.equal(await guard.guardStart(), false)
+  assert.equal(guard.spectatorTab, false)
+  assert.doesNotMatch(guard.state.status, /另一个页签/)
+  guard.spectatorTab = true
   guard.tabRole.ownerTabId = 0
   assert.equal(await guard.guardStart(), false)
   assert.equal(guard.spectatorTab, false)
@@ -401,6 +402,8 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled\) continue/)
   assert.match(backgroundSource, /waiting\.length === 1 \? waiting\[0\] : null/)
+  assert.match(backgroundSource, /manualStartTabId/)
+  assert.match(backgroundSource, /preferSenderTab/)
 })
 
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
@@ -2214,6 +2217,17 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
+  context.taskSchedule.accountHandle = 'alpha'
+  context.currentAccountHandle = () => 'beta'
+  const foreign = context.notice('timeline')
+  assert.equal(foreign.status, 'stopped')
+  assert.doesNotMatch(foreign.detail, /连续受限|已重启/)
+  assert.match(foreign.detail, /另一个账号/)
+  context.currentAccountHandle = () => 'alpha'
+  context.taskSchedule.items.timeline.reason = '已重启 3 次，已跳过这项任务'
+  const restart = context.notice('timeline')
+  assert.match(restart.title, /启动未确认/)
+  assert.doesNotMatch(restart.title, /连续受限/)
   assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 11)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
@@ -2739,7 +2753,7 @@ test('cumulative report counts use one decimal only when needed and keep exact d
 
 test('background reset clears task state while retaining API credentials and logs', async () => {
   const saved = {
-    xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyPrompt: 'old custom prompt' },
+    xrcAiSettings: { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', mobileOfficeToken: 'office-token', replyPrompt: 'old custom prompt' },
     xrcCommunityReport: { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] },
     xrcDailyReports: [{ date: '2026-10-15', counts: { comments: 3 } }],
     xrcLimitObservations: [{ id: 'limit-event', result: 'limited' }],
@@ -2750,12 +2764,19 @@ test('background reset clears task state while retaining API credentials and log
   }
   const prepared = []
   const reloaded = []
+  const session = { xrcTaskTabs: { timeline: 11 }, 'xrcPendingTab:11': { mode: 'timeline' }, xrcOther: { keep: true } }
   globalThis.chrome = {
-    storage: { local: {
-      async get(keys) { return keys === null ? { ...saved } : Object.fromEntries(keys.map((key) => [key, saved[key]])) },
-      async remove(keys) { for (const key of keys) delete saved[key] },
-      async set(value) { Object.assign(saved, value) },
-    } },
+    storage: {
+      local: {
+        async get(keys) { return keys === null ? { ...saved } : Object.fromEntries(keys.map((key) => [key, saved[key]])) },
+        async remove(keys) { for (const key of keys) delete saved[key] },
+        async set(value) { Object.assign(saved, value) },
+      },
+      session: {
+        async get() { return { ...session } },
+        async remove(keys) { for (const key of keys) delete session[key] },
+      },
+    },
     tabs: {
       async query() { return [{ id: 11 }, { id: 22 }] },
       async sendMessage(tabId, message) { prepared.push([tabId, message.type]); return { ok: true } },
@@ -2767,7 +2788,7 @@ test('background reset clears task state while retaining API credentials and log
     assert.equal(result.ok, true)
     assert.deepEqual(prepared, [[11, 'xrc-reset-prepare'], [22, 'xrc-reset-prepare']])
     assert.deepEqual(reloaded, [22])
-    assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' })
+    assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', mobileOfficeToken: 'office-token', replyPrompt: 'old custom prompt' })
     assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] })
     assert.deepEqual(saved.xrcDailyReports, [{ date: '2026-10-15', counts: { comments: 3 } }])
     assert.deepEqual(saved.xrcLimitObservations, [{ id: 'limit-event', result: 'limited' }])
@@ -2776,6 +2797,9 @@ test('background reset clears task state while retaining API credentials and log
     assert.equal(saved.xrcPosterPublishList, undefined)
     assert.equal(saved.xrcPosterHistoryV2, undefined)
     assert.equal(saved['xrcAutoLikeSeen:test:posts'], undefined)
+    assert.equal(session.xrcTaskTabs, undefined)
+    assert.equal(session['xrcPendingTab:11'], undefined)
+    assert.deepEqual(session.xrcOther, { keep: true })
   } finally {
     delete globalThis.chrome
   }
@@ -2812,6 +2836,8 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /type: "xrc-task-manual-stop", mode, stopTab: true/)
   assert.doesNotMatch(source, /xrc-task-docs-row/)
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)
+  assert.match(source, /data-xrc-header-reset/)
+  assert.match(source, /重置本机任务记录？/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
   assert.match(source, /live\.dataset\.live/)
@@ -2857,7 +2883,7 @@ test('subpage pause marks only its task and stops the active task', async () => 
 
 test('restarting one reply subpage leaves other manually paused replies paused', async () => {
   const source = await readFile(new URL('background.js', extensionDir), 'utf8')
-  const definition = source.match(/async function markManualTaskStart\(mode\) \{[\s\S]*?\n\}/)?.[0]
+  const definition = source.match(/async function markManualTaskStart\(mode, sender\) \{[\s\S]*?\n\}/)?.[0]
   assert.ok(definition)
   const plan = { enabled: false, current: '', items: {
     timeline: { manualStopped: true, reason: '已手动停止' },
@@ -3669,6 +3695,19 @@ test('manual reply start is available for waits and stopped tasks, but not while
   assert.equal(eligible(), false)
 })
 
+test('a saved script exception is not restored as a reconnect', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function isScriptFailureReason\(reason\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper)
+  const context = vm.createContext({})
+  vm.runInContext(`${helper}\nglobalThis.fail = isScriptFailureReason`, context)
+  assert.equal(context.fail("Cannot read properties of null (reading 'querySelector')"), true)
+  assert.equal(context.fail('页面暂时不可用'), false)
+  assert.match(source, /scriptFailure \? false : Boolean\(parsed\.running\)/)
+  assert.match(source, /isScriptFailureReason\(message\)/)
+  assert.match(source, /discardedScriptFailure/)
+})
+
 test('manual reply start clears a reconnect countdown and wakes its waiting loop', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function canStartReplyNow\([\s\S]*?\n  \}/)?.[0]
@@ -3880,8 +3919,9 @@ test('a restricted reply waits for its deadline then resumes the same task', asy
 test('reply handoff clears a managed composer before navigation and keeps an idle user draft in place', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const prepare = source.match(/  async function prepareReplyForTabSwitch\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const attachment = source.match(/  function composerCarriesAttachment\(open\) \{[\s\S]*?\n  \}/)?.[0]
   const reload = source.match(/  async function reloadManagedReplyDraft\(message\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(prepare && reload)
+  assert.ok(prepare && attachment && reload)
   let draft = '扩展生成但未发送'
   let closes = 0
   let reloads = 0
@@ -3900,7 +3940,7 @@ test('reply handoff clears a managed composer before navigation and keeps an idl
     loopApi: { composerText: () => draft }, isManagedDraft: () => true,
     writeSaved() {}, renderPanel() {}, window: { location: { reload() { reloads += 1 } } },
   })
-  vm.runInContext(`let replyComposerCleanup = null;\n${prepare}\n${reload}\nglobalThis.prepare = prepareReplyForTabSwitch; globalThis.reload = reloadManagedReplyDraft`, context)
+  vm.runInContext(`let replyComposerCleanup = null;\n${attachment}\n${prepare}\n${reload}\nglobalThis.prepare = prepareReplyForTabSwitch; globalThis.reload = reloadManagedReplyDraft`, context)
   assert.equal(await context.prepare(), false)
   assert.equal(await context.reload('等待安全重试'), false)
   assert.equal(reloads, 0)
@@ -3912,6 +3952,37 @@ test('reply handoff clears a managed composer before navigation and keeps an idl
   allowClose = false
   state.running = false
   assert.equal(await context.prepare(), false)
+})
+
+test('closing an inline reply box does not query a missing dialog', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const helper = source.match(/  function composerCarriesAttachment\(open\) \{[\s\S]*?\n  \}/)?.[0]
+  const close = source.match(/  async function closeReplyComposer\(\{ confirmedSent = false, forceClear = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(helper && close)
+  assert.doesNotMatch(close, /open\.dialog\.querySelector/)
+  const textbox = { parentElement: { querySelector: () => null }, dispatchEvent() {} }
+  let lookups = 0
+  const context = vm.createContext({
+    state: { running: true },
+    findDialogComposer() {
+      lookups += 1
+      return lookups === 1 ? { dialog: null, textbox } : null
+    },
+    loopApi: { composerText: () => '' },
+    isManagedDraft: () => true,
+    automationOwnsReplyDraft: () => true,
+    async requestDraftClear() {},
+    async sleep() {},
+    async fillComposer() { return '' },
+    realClick() {},
+    async waitUntil(predicate) { return predicate() },
+    document: { dispatchEvent() {}, querySelector: () => null },
+    KeyboardEvent: class KeyboardEvent {},
+  })
+  vm.runInContext(`${helper}\n${close}\nglobalThis.closeReply = closeReplyComposer\nglobalThis.carries = composerCarriesAttachment`, context)
+  assert.equal(await context.closeReply(), true)
+  assert.equal(context.carries({ dialog: null, textbox: { parentElement: { querySelector: () => ({ id: 'media' }) } } }), true)
+  assert.equal(context.carries({ dialog: null, textbox: { parentElement: null } }), false)
 })
 
 test('a blocked reply composer releases the schedule slot without discarding a user draft', async () => {
@@ -6786,6 +6857,67 @@ test('a visible Post your reply box counts even when it is not inside a dialog',
   assert.equal(found.submit, button)
 })
 
+test('the home What\'s happening box is not a timeline reply composer', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const start = source.indexOf('  function replyTextboxWithin(root) {')
+  const end = source.indexOf('  function findReplyRestrictionDialog() {')
+  const helpers = start >= 0 && end > start ? source.slice(start, end) : ''
+  assert.ok(helpers.includes('function isStandingHomeComposer'))
+  const postButton = { innerText: 'Post', textContent: 'Post' }
+  const home = {
+    parentElement: null,
+    closest: () => null,
+    getAttribute: (name) => name === 'aria-label' ? 'Post text' : name === 'contenteditable' ? 'true' : name === 'role' ? 'textbox' : '',
+    getBoundingClientRect: () => ({ width: 480, height: 64 }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  home.parentElement = {
+    innerText: "What's happening?",
+    parentElement: null,
+    closest: () => null,
+    querySelector: () => postButton,
+    querySelectorAll: (selector) => String(selector).includes('button') ? [postButton] : [],
+  }
+  const replyButton = { innerText: 'Reply', textContent: 'Reply' }
+  const reply = {
+    parentElement: null,
+    closest: () => null,
+    getAttribute: (name) => name === 'contenteditable' ? 'true' : name === 'role' ? 'textbox' : '',
+    getBoundingClientRect: () => ({ width: 240, height: 48 }),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  const surface = {
+    innerText: 'Replying to @someone\nPost your reply',
+    parentElement: null,
+    closest: () => null,
+    querySelector: () => null,
+    querySelectorAll: (selector) => String(selector).includes('button') ? [replyButton] : [],
+  }
+  reply.parentElement = surface
+  const nodes = [home, reply]
+  const context = vm.createContext({
+    document: {
+      body: { parentElement: null },
+      documentElement: null,
+      querySelectorAll: (selector) => String(selector).includes('contenteditable="true"][role="textbox"]') ? nodes : [],
+      querySelector: () => null,
+    },
+    PANEL_ID: 'x-reply-clipboard-panel',
+    REPLY_EDITOR_SELECTOR: '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]',
+  })
+  vm.runInContext(`${helpers}\nglobalThis.find = findDialogComposer\nglobalThis.home = isStandingHomeComposer`, context)
+  assert.equal(context.home(home), true)
+  assert.equal(context.home(reply), false)
+  const found = context.find()
+  assert.equal(found.textbox, reply)
+  assert.equal(found.submit, replyButton)
+  nodes.splice(1, 1)
+  assert.equal(context.find(), null)
+  assert.match(source, /assistantMode === "notifications" && openDialog && \(!sameTweet \|\| foreignText\)/)
+})
+
 test('notification replies target the comment, not the parent post shown above it', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
@@ -7035,6 +7167,9 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.isRateLimitText('抱歉，你受到速度限制。请稍等片刻，然后再试一次。'), true)
   assert.equal(mutual.isRateLimitText('受到速率限制。请稍等片刻后再试。'), true)
   assert.equal(mutual.isRateLimitText('Sorry, you are rate limited. Please wait a moment and try again.'), true)
+  assert.equal(mutual.isRateLimitText('You are unable to follow more people at this time.'), true)
+  assert.equal(mutual.isRateLimitText('目前无法关注更多用户'), true)
+  assert.equal(mutual.isRateLimitText('現時点ではこれ以上のユーザーをフォローできません'), true)
   assert.equal(mutual.isRateLimitText('关注'), false)
   assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 5 * 60 * 1000)
   assert.deepEqual(mutual.constants.FOLLOW_ROUND_GAP_SECONDS, { slow: 10 * 60, medium: 5 * 60, fast: 3 * 60, turbo: 2 * 60 })
@@ -7744,6 +7879,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(css, /\.xrc-flow-start\[data-busy="true"\] \[data-xrc-flow-label\]::before/)
   assert.match(css, /data-assistant-mode="likes-posts"[\s\S]*--xrc-workspace: #e14276/)
   assert.match(css, /\.xrc-inline-start \{[\s\S]*background: linear-gradient\(135deg, var\(--xrc-workspace\)/)
+  assert.match(css, /\.xrc-flow-end,[\s\S]*\.xrc-flow-end\.xrc-start \{[\s\S]*flex-direction: column/)
+  assert.match(css, /\.xrc-pace-table-brief \.xrc-pace-table-row \{[\s\S]*grid-template-columns: 28px minmax\(0, 1fr\)/)
+  assert.match(css, /data-xrc-dock="sidebar"\]:not\(\[data-view="collapsed"\]\)[\s\S]*width: 100%/)
+  assert.match(content, /xrc-pace-table-brief/)
+  assert.match(content, /<b data-xrc-pace-name>\$\{name\}<\/b><small>/)
   assert.match(css, /\.xrc-flow-start\[data-flow="paused"\],[\s\S]*\.xrc-flow-start\[data-flow="stopped"\]/)
   assert.doesNotMatch(content, /NOTIFICATION_CYCLE_DELAY_MS/)
   assert.match(content, /RECONNECT_INITIAL_MS = 2000/)
@@ -9986,6 +10126,49 @@ test('a finished notification scan reports stopped instead of staying on 启动�
   }
 })
 
+test('a running task with no new action or error for three minutes reloads the same tab', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, priorityOrderVersion: 3, priorityScoreVersion: 4,
+      current: 'timeline', workTabId: 11, startedAt: now - 4 * 60 * 1000,
+      items: { timeline: { reloadAttempts: 0 } },
+    },
+    xrcPluginRuntime: {
+      tasks: {
+        timeline: {
+          tabId: 11, phase: 'running', detail: '正在评论', waitUntil: 0,
+          progressAt: now - background.STALL_RELOAD_MS - 1000, updatedAt: now - background.STALL_RELOAD_MS - 1000,
+        },
+      },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage() { return { ok: true, mode: 'timeline', phase: 'running', detail: '正在评论', waitUntil: 0 } },
+      async update(id, info) { updates.push(info || {}); return { id } },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => typeof entry.url === 'string' && entry.url.includes('x.com')), true)
+    assert.equal(local.xrcTaskSchedule.items.timeline.reloadAttempts, 1)
+    assert.match(local.xrcTaskSchedule.items.timeline.reason, /长时间没有动作或报错/)
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a follow page that already hit the rate limit skips instead of restarting', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
@@ -10063,6 +10246,59 @@ test('a follow start reload uses the same three-restart skip as the other tasks'
     assert.equal(skipped.skipped, true)
     assert.equal(local.xrcTaskSchedule.current, '')
     assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /已重启 3 次，已跳过这项任务/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a reload on another account does not count toward this account restart skip', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, priorityOrderVersion: 3, priorityScoreVersion: 4,
+      restartAccountVersion: 1,
+      accountHandle: 'alpha', current: 'mutual-targetFollow', workTabId: 11, startedAt: now - 5_000,
+      items: { 'mutual-targetFollow': { reloadAttempts: 2, lastStartError: '执行页没有回报启动结果' } },
+    },
+    xrcPluginRuntime: {
+      tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+  }
+  try {
+    const ignored = await background.noteUnconfirmedReload('mutual-targetFollow', 11, 'beta')
+    assert.equal(ignored.ignored, true)
+    assert.equal(local.xrcTaskSchedule.items['mutual-targetFollow'].reloadAttempts, 2)
+    assert.equal(local.xrcTaskSchedule.items['mutual-targetFollow'].blocked, undefined)
+    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('an existing restart skip from another account is cleared once and does not stay blocked', async () => {
+  const previousChrome = globalThis.chrome
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', accountHandle: 'beta', restartAccountVersion: 0,
+    items: { 'mutual-targetFollow': { blocked: true, reloadAttempts: 3, reason: '已重启 3 次，已跳过这项任务' } },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.restartAccountVersion, 1)
+    assert.equal(plan.items['mutual-targetFollow'].blocked, false)
+    assert.equal(plan.items['mutual-targetFollow'].reloadAttempts, 0)
+    assert.equal(plan.items['mutual-targetFollow'].reason, '')
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -11384,9 +11620,10 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
   vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
   const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
-  assert.match(context.followStatus(seeds, seeds), /这一页还有可关注的人就先关注/)
-  assert.match(context.followStatus(seeds, []), /人都关注过了就换下一个/)
-  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /人都关注过了就换下一个/)
+  assert.equal(context.followStatus(seeds, seeds), '')
+  assert.equal(context.followStatus(seeds, []), '')
+  assert.equal(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), '')
+  assert.doesNotMatch(source, /每次任务直接换成五个新人；这一页还有可关注的人就先关注，人都关注过了就换下一个。/)
   assert.doesNotMatch(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /@fresh_a|crazypig9y/)
   assert.doesNotMatch(source, /还没有换批/)
   assert.doesNotMatch(source, /本批源头可能还是/)

@@ -1731,7 +1731,7 @@ async function createSharedExecTab(destination, sender, activate, { mode = "", s
   return opened;
 }
 
-async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate } = {}) {
+async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate, preferSenderTab = false } = {}) {
   if (validTaskMode(mode) === "mutual-targetFollow") await readTargetFollowHandles();
   if (validTaskMode(mode) === "kol") await readKolHandles();
   const pruneSearchStart = validTaskMode(mode) === "prune-posts" && await readPruneSearchStart();
@@ -1740,7 +1740,34 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   const tabs = await readTaskTabs();
   let tabId = Number(plan.workTabId);
   let tab = null;
-  if (Number.isInteger(tabId)) {
+  const requestedId = Number(sender?.tab?.id);
+  if (preferSenderTab && Number.isInteger(requestedId) && requestedId > 0) {
+    try { tab = await chrome.tabs.get(requestedId); } catch (error) { tab = null; }
+    if (tab) {
+      const oldId = Number(plan.workTabId);
+      if (oldId && oldId !== requestedId) {
+        const owner = Object.entries(tabs).find(([, savedId]) => Number(savedId) === oldId)?.[0]
+          || (plan.current && oldId === Number(plan.workTabId) ? plan.current : "");
+        if (owner && owner !== mode) {
+          if (Number(tabs[owner]) !== oldId) await registerTaskTab(owner, oldId);
+          if (!await suspendScheduledTask(owner, "手动启动改在当前页签执行", { keepTab: true, releaseOnFailure: true })) {
+            throw new Error("当前任务尚未安全结束，稍后再切换");
+          }
+          plan = await readTaskSchedule();
+        }
+        if (Number(plan.workTabId) === oldId) {
+          plan.workTabId = 0;
+          await saveTaskSchedule(plan);
+        }
+      }
+      tabId = requestedId;
+      if (Number(plan.manualStartTabId) > 0) {
+        plan.manualStartTabId = 0;
+        await saveTaskSchedule(plan);
+      }
+    }
+  }
+  if (!tab && Number.isInteger(tabId)) {
     try { tab = await chrome.tabs.get(tabId); } catch (error) { tabId = 0; }
   }
   if (!tab && Number.isInteger(Number(sender?.tab?.id))) {
@@ -1928,8 +1955,38 @@ async function finishTerminalTask(plan, mode, detail, now = Date.now()) {
 }
 
 // A later navigation of a start that never left 启动中 counts. The first open stays at 0.
+function sameAccount(left, right) {
+  const a = accountHandleFrom(left).toLowerCase();
+  const b = accountHandleFrom(right).toLowerCase();
+  return !a || !b || a === b;
+}
+
+// Restart counts and X cooldowns belong to the account that produced them.
+function releaseAccountRuntime(plan) {
+  for (const mode of FLOW_TASKS) {
+    const item = plan.items?.[mode];
+    if (!item) continue;
+    plan.items[mode] = {
+      ...item,
+      blocked: false,
+      blockedAccount: "",
+      limitedStreak: 0,
+      recoveryAttempts: 0,
+      reloadAttempts: 0,
+      lastStartError: "",
+      manualRequestedAt: 0,
+      resumeAt: 0,
+      reason: item.manualStopped ? "已手动停止" : ""
+    };
+  }
+  plan.current = "";
+  plan.startedAt = 0;
+  plan.manualFocusMode = "";
+}
+
 async function countUnconfirmedRestart(plan, mode, accountHandle = "") {
   if (!plan || !FLOW_TASKS.includes(mode)) return { ok: true, ignored: true };
+  if (!sameAccount(plan.accountHandle, accountHandle)) return { ok: true, ignored: true };
   const item = plan.items?.[mode] || {};
   if (!restartAlreadyCounted(item)) return { ok: true, ignored: true };
   const restarts = Number(item.reloadAttempts) || 0;
@@ -1943,6 +2000,7 @@ async function countUnconfirmedRestart(plan, mode, accountHandle = "") {
       recoveryAttempts: Math.max(Number(item.recoveryAttempts) || 0, REPLY_START_FAILURE_LIMIT),
       resumeAt: 0,
       blocked: true,
+      blockedAccount: accountHandleFrom(plan.accountHandle),
       reason: `已重启 ${restarts} 次，已跳过这项任务`,
       lastStartError: item.lastStartError || "执行页没有回报启动结果"
     };
@@ -1983,12 +2041,13 @@ function alertOnExhaustedStart(mode, item, accountHandle = "") {
 
 // The page reloaded itself during start confirmation. Count that refresh even when
 // the scheduler has not yet marked the attempt as a failed start.
-async function noteUnconfirmedReload(mode, tabId) {
+async function noteUnconfirmedReload(mode, tabId, accountHandle = "") {
   const selected = validTaskMode(mode);
   if (!FLOW_TASKS.includes(selected)) return { ok: true, ignored: true };
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
     if (!plan.enabled || plan.current !== selected) return { ok: true, ignored: true };
+    if (!sameAccount(plan.accountHandle, accountHandle)) return { ok: true, ignored: true };
     if (Number(tabId) > 0 && Number(plan.workTabId) > 0 && Number(plan.workTabId) !== Number(tabId)) {
       return { ok: true, ignored: true };
     }
@@ -2009,6 +2068,7 @@ async function noteUnconfirmedReload(mode, tabId) {
         recoveryAttempts: Math.max(Number(item.recoveryAttempts) || 0, REPLY_START_FAILURE_LIMIT),
         resumeAt: 0,
         blocked: true,
+        blockedAccount: accountHandleFrom(plan.accountHandle),
         reason: `已重启 ${restarts} 次，已跳过这项任务`,
         lastStartError: item.lastStartError || "执行页没有回报启动结果"
       };
@@ -2039,6 +2099,8 @@ const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
 const STARTING_GRACE_MS = 90 * 1000;
 /** Probe can time out while the page is busy; require sustained unknown before recovery. */
 const UNKNOWN_GRACE_MS = 90 * 1000;
+/** A running task with no new action, status, or error for this long is refreshed in place. */
+const STALL_RELOAD_MS = 3 * 60 * 1000;
 const TASK_SLICE_ALARM = "xrc-task-slice";
 let scheduleWork = Promise.resolve();
 let activateNextExecTab = false;
@@ -2689,6 +2751,24 @@ async function readTaskSchedule() {
     plan.unfollowWeeklyGapVersion = 1;
     scheduleMigrated = true;
   }
+  if ((plan.restartAccountVersion || 0) < 1) {
+    for (const mode of FLOW_TASKS) {
+      const item = plan.items?.[mode];
+      if (!item?.blocked || !/已重启\s*\d+\s*次|已跳过这项任务/u.test(String(item.reason || ""))) continue;
+      plan.items[mode] = {
+        ...item,
+        blocked: false,
+        blockedAccount: "",
+        reloadAttempts: 0,
+        recoveryAttempts: 0,
+        lastStartError: "",
+        resumeAt: 0,
+        reason: item.manualStopped ? "已手动停止" : ""
+      };
+    }
+    plan.restartAccountVersion = 1;
+    scheduleMigrated = true;
+  }
   if (!Array.isArray(plan.queue) || plan.queue.length !== QUEUED_TASKS.length || plan.queue.some((mode) => !QUEUED_TASKS.includes(mode))) {
     plan.queue = scheduleQueue(plan);
     scheduleMigrated = true;
@@ -2890,6 +2970,7 @@ async function runTaskSchedule() {
   }
   const observedHandle = await savedAccountHandle();
   if (plan.accountHandle && observedHandle && plan.accountHandle !== observedHandle) {
+    releaseAccountRuntime(plan);
     plan.enabled = false;
     plan.reason = "X 账号已切换，请确认后重新启动排班";
     await saveTaskSchedule(plan);
@@ -2961,9 +3042,14 @@ async function runTaskSchedule() {
     // An open execution page that is not looping should start now.
     // The 90-second grace is only for a tab whose content script has not answered yet.
     const unresponsiveStarting = startingTask && (pageIdle || occupancyAge >= STARTING_GRACE_MS);
+    const progressAt = Number(task?.progressAt) || now;
+    const stalled = task?.phase === "running"
+      && !(Number(task.waitUntil) > now)
+      && now - progressAt >= STALL_RELOAD_MS
+      && !item.blocked && !item.manualStopped && !manualDue;
     const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
       && !item.blocked && !item.manualStopped && !manualDue;
-    if (unresponsive) {
+    if (unresponsive || stalled) {
       const workTabId = Number(plan.workTabId);
       // A counted reload sets resumeAt a minute ahead so the page can boot.
       // pageIdle during that boot must not wipe the count or yield the slot.
@@ -2976,7 +3062,7 @@ async function runTaskSchedule() {
           const livePath = pathnameOf(live.url || "");
           const followListOpen = (current === "mutual-targetFollow" || current === "mutual-followBack")
             && /\/followers$/iu.test(livePath);
-          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen) {
+          if (!stalled && (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen)) {
             let started = null;
             let pageStartError = "";
             try {
@@ -3008,7 +3094,7 @@ async function runTaskSchedule() {
             }
             // An open follow list stays on this tab. Do not refresh the confirmation
             // clock or clear the shared restart count; three real reloads still skip.
-            if (followListOpen && (Number(item.reloadAttempts) || 0) < 3) {
+            if (!unknownTask && followListOpen && (Number(item.reloadAttempts) || 0) < 3) {
               plan.items[current] = {
                 ...item,
                 resumeAt: 0,
@@ -3031,6 +3117,7 @@ async function runTaskSchedule() {
               recoveryAttempts: Math.max(Number(item.recoveryAttempts) || 0, REPLY_START_FAILURE_LIMIT),
               resumeAt: 0,
               blocked: true,
+              blockedAccount: accountHandleFrom(plan.accountHandle),
               reason: `已重启 ${restarts} 次，已跳过这项任务`,
               lastStartError: item.lastStartError || "执行页没有回报启动结果"
             };
@@ -3048,8 +3135,10 @@ async function runTaskSchedule() {
               ...item,
               resumeAt: now + 60000,
               reloadAttempts: nextRestart,
-              reason: `已重启 ${nextRestart} 次，已在同一页签重新装载`,
-              lastStartError: item.lastStartError || "执行页没有回报启动结果"
+              reason: stalled
+                ? `长时间没有动作或报错，已刷新（${nextRestart}/3）`
+                : `已重启 ${nextRestart} 次，已在同一页签重新装载`,
+              lastStartError: stalled ? "长时间没有动作或报错" : (item.lastStartError || "执行页没有回报启动结果")
             };
             await saveTaskSchedule(plan);
             await seedRuntimeOccupancy(current, workTabId, "starting", "等待执行页回报启动结果");
@@ -3194,11 +3283,14 @@ async function runTaskSchedule() {
     plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, sliceActions: 0 };
     await saveTaskSchedule(plan);
       try {
-      const focused = await focusScheduledTask(mode, null, {
+      const manualTabId = plan.manualFocusMode === mode ? Number(plan.manualStartTabId) : 0;
+      const manualSender = Number.isInteger(manualTabId) && manualTabId > 0 ? { tab: { id: manualTabId } } : null;
+      const focused = await focusScheduledTask(mode, manualSender, {
         start: true,
         accountHandle: plan.accountHandle || "",
         // After an unresponsive close, bring the new execution tab forward so pending launch can bind.
-        activate: activateNext || undefined
+        activate: activateNext || undefined,
+        preferSenderTab: Boolean(manualSender)
       });
       if (focused?.skipped) return readTaskSchedule();
       if (plan.manualFocusMode === mode) {
@@ -3391,8 +3483,9 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "", { tick 
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
   const plan = await readTaskSchedule();
-  if (plan.accountHandle && handle && plan.accountHandle !== handle && plan.enabled) {
-    throw new Error("当前 X 账号与排班账号不一致，请先暂停全流程并确认账号");
+  if (plan.accountHandle && handle && plan.accountHandle !== handle) {
+    if (plan.enabled) throw new Error("当前 X 账号与排班账号不一致，请先暂停全流程并确认账号");
+    releaseAccountRuntime(plan);
   }
   plan.enabled = false;
   plan.manualFocusMode = "";
@@ -3590,12 +3683,19 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
         delete tasks[mode];
         return;
       }
+      const detail = String(reply.detail || "").slice(0, 160);
+      const waitUntil = Number(reply.waitUntil) || 0;
+      const progressChanged = !Number(task.progressAt)
+        || detail !== String(task.detail || "")
+        || reported !== String(task.phase || "")
+        || waitUntil !== (Number(task.waitUntil) || 0);
       const next = {
         ...task,
         phase: reported,
-        detail: String(reply.detail || "").slice(0, 160),
-        waitUntil: Number(reply.waitUntil) || 0,
-        updatedAt: now
+        detail,
+        waitUntil,
+        updatedAt: now,
+        progressAt: progressChanged ? now : Number(task.progressAt)
       };
       delete next.unknownSince;
       delete next.pageIdle;
@@ -4187,10 +4287,12 @@ async function markManualTaskStop(mode, stopTab = false) {
   return { ok: true };
 }
 
-async function markManualTaskStart(mode) {
+async function markManualTaskStart(mode, sender) {
   if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
   const plan = await readTaskSchedule();
   plan.manualFocusMode = mode;
+  const requestedId = Number(sender?.tab?.id);
+  plan.manualStartTabId = Number.isInteger(requestedId) && requestedId > 0 ? requestedId : 0;
   for (const otherMode of FLOW_TASKS) {
     if (otherMode !== mode && Number(plan.items?.[otherMode]?.manualRequestedAt) > 0) {
       plan.items[otherMode] = { ...plan.items[otherMode], manualRequestedAt: 0 };
@@ -4251,15 +4353,16 @@ async function resetExtensionState(sender) {
       chrome.tabs.sendMessage(tab.id, { type: "xrc-reset-prepare" })
     ));
     const saved = await storage.get(null);
-    const apiKey = String(saved?.[AI_SETTINGS_KEY]?.apiKey || "").trim();
-    const baiApiKey = String(saved?.[AI_SETTINGS_KEY]?.baiApiKey || "").trim();
     const epoch = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const keysToRemove = Object.keys(saved || {}).filter((key) => key !== AI_SETTINGS_KEY && !RESET_LOG_KEYS.has(key));
     if (keysToRemove.length) await storage.remove(keysToRemove);
-    await storage.set({
-      [RESET_EPOCH_KEY]: epoch,
-      [AI_SETTINGS_KEY]: { ...(apiKey ? { apiKey } : {}), ...(baiApiKey ? { baiApiKey } : {}) }
-    });
+    await storage.set({ [RESET_EPOCH_KEY]: epoch });
+    const session = chrome.storage?.session;
+    if (session?.get && session?.remove) {
+      const stored = await session.get(null);
+      const sessionKeys = Object.keys(stored || {}).filter((key) => key === TASK_TABS_KEY || key.startsWith("xrcPendingTab:"));
+      if (sessionKeys.length) await session.remove(sessionKeys);
+    }
     await Promise.allSettled(tabs.filter((tab) => Number.isInteger(tab.id) && tab.id !== sender?.tab?.id)
       .map((tab) => chrome.tabs.reload(tab.id)));
     return { ok: true, tabs: tabs.length };
@@ -4538,7 +4641,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-start-reload") {
-      noteUnconfirmedReload(message.mode, sender?.tab?.id)
+      noteUnconfirmedReload(message.mode, sender?.tab?.id, message.accountHandle)
         .then((result) => sendResponse({ ok: true, ...(result || {}) }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "重启次数没有写入" }));
       return true;
@@ -4663,7 +4766,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-task-manual-start") {
-      markManualTaskStart(validTaskMode(message.mode))
+      markManualTaskStart(validTaskMode(message.mode), sender)
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务启动状态没有保存" }));
       return true;
@@ -4936,6 +5039,7 @@ if (typeof module === "object" && module.exports) {
     followBackNightEndsAt,
     STARTING_GRACE_MS,
     UNKNOWN_GRACE_MS,
+    STALL_RELOAD_MS,
     sliceMsForMode,
     isTaskUnlimitedMode,
     taskUnlimitedEnabled,

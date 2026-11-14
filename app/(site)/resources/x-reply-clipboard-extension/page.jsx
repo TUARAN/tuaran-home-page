@@ -40,9 +40,24 @@ const shareText = 'X高频互动助手：在本地面板查看评论、点赞、
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '关注候选不再空等数小时',
-    description: '这一批五个源头看完就交回队列，下次排班再换五个新人。已经记下的数小时倒计时会收回。本地源码，尚未打包。',
+    title: '长时间没动静就刷新当前页',
+    description: '任务在跑，但连续 3 分钟没有新的动作、状态或报错，就在当前页签刷新并继续原任务。页面不回答时大约 90 秒也会刷新。本地源码，尚未打包。',
     current: true,
+  },
+  {
+    version: '4.9.99',
+    title: '关注上限不再记成已完成',
+    description: '页面出现 “You are unable to follow more people at this time” 时，这次关注不计入成功，关注候选和回关停下。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.98',
+    title: '右上角重置本机任务记录',
+    description: '确认后清掉排班、进度和重连状态。模型密钥、提示词、回执密钥、每日统计和限制观察留下。正在跑的任务会停。本地源码，尚未打包。',
+  },
+  {
+    version: '4.9.97',
+    title: '手动开启就在当前页签执行',
+    description: '在哪一页点「立即开启当前任务」，关注候选就在这一页跑，不再另外新开页签。本地源码，尚未打包。',
   },
   {
     version: '4.9.43',

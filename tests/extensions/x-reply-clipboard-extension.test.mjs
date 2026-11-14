@@ -2805,8 +2805,10 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-schedule-desk/)
   assert.doesNotMatch(source, /xrc-desk-legend/)
   assert.match(source, /data-xrc-task-subnav-label>任务子页<\/strong>\s*<button type="button" class="xrc-task-docs-link" data-xrc-task-docs/)
-  assert.match(source, /data-xrc-task-manual-pause>暂停当前任务<\/button>/)
-  assert.match(source, /data-xrc-task-live>正在运行：读取中<\/p>/)
+  assert.match(source, /data-xrc-flow-dots[\s\S]{0,500}data-xrc-task-live-row[\s\S]{0,240}data-xrc-task-live>正在运行：读取中<\/p>\s*<button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务<\/button>/)
+  const subnav = source.match(/<div class="xrc-task-subnav"[\s\S]*?<\/div>/)?.[0]
+  assert.ok(subnav)
+  assert.doesNotMatch(subnav, /data-xrc-task-manual-pause|data-xrc-task-live/)
   assert.match(source, /type: "xrc-task-manual-stop", mode, stopTab: true/)
   assert.doesNotMatch(source, /xrc-task-docs-row/)
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)

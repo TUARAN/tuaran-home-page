@@ -979,7 +979,8 @@
   function getCommunityController() {
     if (!communityController && communityApi?.createController) {
       communityController = communityApi.createController({ document, window,
-        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); }
+        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); },
+        reportSuccess: (event) => reportCommunityAction({ ...event, accountHandle: currentAccountHandle() || lastKnownAccountHandle })
       });
       communityController.subscribe((snapshot) => {
         const wasRunning = communityState.running;
@@ -1860,6 +1861,19 @@
       scheduleLoadError = true;
       lastScheduleReadAt = Date.now();
     }
+  }
+
+  let scheduledReplyWakeToken = 0;
+  function maybeRequestScheduledReplyStart() {
+    if (spectatorTab || !taskSchedule.enabled) return;
+    const mode = validTaskKey(taskSchedule.current);
+    if (!["timeline", "notifications", "kol"].includes(mode)) return;
+    if (state.running || state.loopPromise || anyLocalTaskRunning()) return;
+    if (!pathReadyForTask(mode)) return;
+    const token = Number(taskSchedule.startedAt) || 0;
+    if (!token || token === scheduledReplyWakeToken) return;
+    scheduledReplyWakeToken = token;
+    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {});
   }
 
   function refreshScheduleView() {
@@ -8710,7 +8724,7 @@
           <section class="xrc-post-flow" aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖发送到可用群聊")}
-              <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；发送结果确认后本轮结束。</p>
+              <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；多选后页面显示 Send separately 时，同样只点这一次。选择窗关闭或出现新提示，且没有失败提示，就记成功。</p>
               <p class="xrc-pace-now" data-xrc-community-now>当前尚未开始</p>
               <div class="xrc-flow-end">
                 <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
@@ -10491,6 +10505,7 @@
     else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
+    maybeRequestScheduledReplyStart();
   }
 
   function startPanelBoot() {
@@ -10596,16 +10611,18 @@
     }
     if (message?.type === "xrc-task-state-probe") {
       const phase = currentTaskPhase();
-      const assigned = sessionStorage.getItem("xrcAssignedTaskMode") || "";
+      const idle = !spectatorTab && !phase;
       sendResponse({
         ok: true,
         mode: currentTaskKey(),
         accountHandle: currentAccountHandle(),
         scheduleEnabled: Boolean(taskSchedule.enabled),
         owned: !spectatorTab,
-        // Keep occupancy alive while the shared tab is assigned but not looping yet.
-        phase: spectatorTab ? "" : phase || (assigned && assigned === currentTaskKey() ? "starting" : ""),
-        detail: currentTaskDetail(),
+        // An assigned tab that is not looping is idle, not booting. Reporting
+        // "starting" here made the scheduler wait out the whole confirmation window.
+        phase: spectatorTab ? "" : phase,
+        idle,
+        detail: currentTaskDetail() || (idle ? "执行页已打开，回复循环还没开始" : ""),
         waitUntil: currentTaskWaitUntil()
       });
       return false;
@@ -10745,6 +10762,7 @@
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule) void loadTabRole();
+    if (changes.xrcTaskSchedule) maybeRequestScheduledReplyStart();
   }
 
   try {

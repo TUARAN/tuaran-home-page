@@ -2801,7 +2801,10 @@ async function runTaskSchedule() {
     // Do not treat "busy for one slice" as a dead tab that must be closed.
     const unresponsiveMissing = missingTask && occupancyAge >= STARTING_GRACE_MS;
     const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
-    const unresponsiveStarting = startingTask && occupancyAge >= STARTING_GRACE_MS;
+    const pageIdle = Boolean(task?.pageIdle);
+    // An open execution page that is not looping should start now.
+    // The 90-second grace is only for a tab whose content script has not answered yet.
+    const unresponsiveStarting = startingTask && (pageIdle || occupancyAge >= STARTING_GRACE_MS);
     const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
       && !item.blocked && !item.manualStopped && !manualDue;
     if (unresponsive) {
@@ -2816,10 +2819,12 @@ async function runTaskSchedule() {
             && /\/followers$/iu.test(livePath);
           if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen) {
             let started = null;
+            let pageStartError = "";
             try {
               started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
             } catch (error) {
               started = null;
+              if (error?.remoteStartRejected) pageStartError = String(error?.message || "页内未能启动").slice(0, 110);
             }
             if (started) {
               plan.startedAt = now;
@@ -2827,6 +2832,17 @@ async function runTaskSchedule() {
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
               return plan;
+            }
+            // A reply page that answered and refused to start must keep that reason.
+            // Reloading here only restarts the 90-second countdown and hides the cause.
+            if (pageStartError && REPLY_TASKS.includes(current)) {
+              recordScheduleSegment(plan, current, "页内启动失败", now);
+              plan.current = "";
+              plan.startedAt = 0;
+              plan.items[current] = scheduledStartRetryItem(item, current, `页内启动失败：${pageStartError}`, now);
+              await saveTaskSchedule(plan);
+              alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
+              return runTaskSchedule();
             }
             if (current === "mutual-targetFollow" || current === "mutual-followBack") {
               plan.startedAt = now;
@@ -2851,7 +2867,8 @@ async function runTaskSchedule() {
                 ...item,
                 resumeAt: now + 60000,
                 reloadAttempts: reloads + 1,
-                reason: "执行页未确认，已在同一页签重新装载"
+                reason: "执行页未确认，已在同一页签重新装载",
+                lastStartError: item.lastStartError || "执行页没有回报启动结果"
               };
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, "starting", "同一页签重新装载中");
@@ -2986,7 +3003,9 @@ async function runTaskSchedule() {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
-    plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, recoveryAttempts: 0, sliceActions: 0 };
+    // Leave recoveryAttempts and lastStartError in place until the page confirms.
+    // Zeroing them on dispatch made every unconfirmed reply look like a first try.
+    plan.items[mode] = { ...item, reason: "", retryKind: "", manualRequestedAt: 0, sliceActions: 0 };
     await saveTaskSchedule(plan);
     try {
       await focusScheduledTask(mode, null, {
@@ -3350,7 +3369,14 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       // while the single shared tab was still booting or between loops.
       if (!reported || reported === "idle") {
         if (task.phase === "starting") {
-          tasks[mode] = { ...task, phase: "starting", updatedAt: now };
+          // A live page with no loop is idle. Keep the slot, but let the scheduler start it now.
+          tasks[mode] = {
+            ...task,
+            phase: "starting",
+            pageIdle: Boolean(reply.idle),
+            detail: String(reply.detail || (reply.idle ? "" : task.detail) || "").slice(0, 160),
+            updatedAt: now
+          };
           return;
         }
         if (task.phase === "unknown") {
@@ -3373,6 +3399,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
         updatedAt: now
       };
       delete next.unknownSince;
+      delete next.pageIdle;
       tasks[mode] = next;
     } else if (task.phase === "starting") {
       // Content script may not be injectable yet during navigation; keep boot occupancy.
@@ -4303,6 +4330,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       rememberPendingLaunch(message.mode, message.path, message.start, sender?.tab?.id)
         .then(() => sendResponse({ ok: true }))
         .catch((error) => sendResponse({ ok: false, error: error?.message || "任务跳转记录失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-task-page-idle") {
+      tickTaskSchedule()
+        .then(() => sendResponse({ ok: true }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "执行页空闲后未能启动" }));
       return true;
     }
     if (message?.type === "xrc-task-start-failed") {

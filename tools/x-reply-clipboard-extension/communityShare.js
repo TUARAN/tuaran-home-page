@@ -4,7 +4,6 @@
   const SESSION_KEY = "xrcGroupChatShareRunV4";
   const LEDGER_KEY = "xrcGroupChatShareLedgerV2";
   const LIMIT_RE = /automated|not allowed|try again later|rate limit|操作过于频繁|暂时无法|请求似乎可能是自动化/iu;
-  const SENT_RE = /(?:post|message) (?:was )?sent|sent successfully|消息已发送|帖子已发送|已发送给/iu;
   const SEND_FAILED_RE = /could not send message|failed to send|unable to send|消息发送失败|无法发送消息/iu;
   const GROUP_RE = /(?:\d[\d,]*\s*(?:people|members|人)|\d[\d,.]*\s*[万千]?人)/iu;
   const PRIVATE_RE = /@[A-Za-z0-9_]{1,15}\b/u;
@@ -113,6 +112,14 @@
   }
 
   const CHAT_SHARE_PREFIX = /^(?:send via chat|send via direct message|send in chat|send as direct message|send a direct message|通过聊天发送|通过私信发送|发送到会话|发送私信|分享到聊天|通过聊天分享)(?:\s|$|[，,。.!！])/iu;
+  const SEND_BUTTON_RE = /^(?:send(?:\s+(?:post|message|separately|separate))?|发送(?:\s*(?:消息|帖子))?|分别发送|单独发送)$/iu;
+  function isSendControl(node) {
+    if (!node) return false;
+    const aria = clean(node.getAttribute?.('aria-label'));
+    const label = clean(String(node.innerText || node.textContent || '').split('\n')[0]);
+    const testId = clean(node.getAttribute?.('data-testid'));
+    return SEND_BUTTON_RE.test(aria) || SEND_BUTTON_RE.test(label) || /send(?:button|message)?$/iu.test(testId);
+  }
   function chatShareLabel(node) {
     const aria = clean(node?.getAttribute?.('aria-label'));
     const raw = String(node?.innerText || node?.textContent || '');
@@ -154,8 +161,7 @@
         .some((item) => /^(?:share|分享|send via chat|send via direct message|send in chat|通过聊天发送|通过私信发送)$/iu.test(textOf(item)));
       const hasSearch = searchInputs(node).length > 0;
       const hasGroups = GROUP_RE.test(textOf(node));
-      const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || [])
-        .some((button) => /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(button.getAttribute?.('aria-label'))) || /^(?:Send|发送)(?:\s+(?:post|message|消息))?$/iu.test(clean(String(button.innerText || button.textContent || '').split('\n')[0])));
+      const hasSend = Array.from(node.querySelectorAll?.('button, [role="button"]') || []).some(isSendControl);
       const onCompose = /\/messages\/compose(?:\/|$)/u.test(doc?.defaultView?.location?.pathname || doc?.location?.pathname || '');
       if (!(hasSearch && hasGroups)) return false;
       if (heading || hasSend || onCompose) return true;
@@ -192,14 +198,7 @@
   function sendButtonNearDialog(dialog, doc) {
     const sendIn = (scope) => {
       const controls = Array.from(scope?.querySelectorAll?.('button, [role="button"], [data-testid*="send" i]') || []);
-      return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => {
-        if (!enabled(node, { ignoreAncestorOpacity: true }) || node.closest?.('#x-reply-clipboard-panel')) return false;
-        const aria = clean(node.getAttribute?.('aria-label'));
-        const label = clean(String(node.innerText || node.textContent || '').split('\n')[0]);
-        const testId = clean(node.getAttribute?.('data-testid'));
-        const sendName = /^(?:send|发送)(?:\s+(?:post|message|消息))?$/iu;
-        return sendName.test(aria) || sendName.test(label) || /send(?:button|message)?$/iu.test(testId);
-      }) || null;
+      return controls.map((node) => node.closest?.('button, [role="button"]') || node).find((node) => enabled(node, { ignoreAncestorOpacity: true }) && !node.closest?.('#x-reply-clipboard-panel') && isSendControl(node)) || null;
     };
     let scope = dialog;
     for (let depth = 0; scope && scope !== doc?.body && depth < 16; depth++, scope = scope.parentElement || scope.getRootNode?.()?.host) {
@@ -362,22 +361,32 @@
         await wait(350);
       }
       if (stopping) return;
-      if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
+      if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send 或 Send separately；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
       state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
       send.click();
       let result = '';
+      let closedPolls = 0;
+      let outcome = '';
       for (let attempt = 0; attempt < 20 && !stopping; attempt++) {
         await wait(300);
         result = toast(doc());
-        if (result !== beforeSend && (SENT_RE.test(result) || SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) break;
+        const changed = result && result !== beforeSend;
+        if (changed && (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result))) { outcome = 'failed'; break; }
+        if (changed) { outcome = 'sent'; break; }
+        if (shareDialog(doc())) closedPolls = 0;
+        else if ((closedPolls += 1) >= 2) { outcome = 'sent'; break; }
       }
       if (stopping) return;
-      if (SEND_FAILED_RE.test(result) || LIMIT_RE.test(result)) { halt(`X 未能发送到已选的 ${selected.size} 个群聊：${result.slice(0, 100)}；未记录成功`, LIMIT_RE.test(result) ? 'rate-limit' : 'send-failed'); return; }
-      if (!SENT_RE.test(result) || result === beforeSend) { halt(`已点 Send，但 20 次检查后未看到成功提示；请手动核对，未记录成功`, 'unconfirmed', 20); return; }
+      if (outcome === 'failed') { halt(`X 未能发送到已选的 ${selected.size} 个群聊：${result.slice(0, 100)}；未记录成功`, LIMIT_RE.test(result) ? 'rate-limit' : 'send-failed'); return; }
+      if (outcome !== 'sent') { halt(`已点发送，选择窗仍在且没有新的发送结果；请手动核对，未记录成功`, 'unconfirmed', 20); return; }
       try { await rememberBatch([...selected]); }
       catch (_) { halt('X 已提示发送成功，但无法保存已分发标记；请勿重复启动，先人工核对', 'storage-failed'); return; }
       for (const groupId of selected) {
-        try { root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId: `${state.sourceId}:${groupId}`.slice(0, 80) }); } catch (_) {}
+        const targetId = `${state.sourceId}:${groupId}`.slice(0, 80);
+        try {
+          if (env.reportSuccess) env.reportSuccess({ task: 'community-share', result: 'success', targetId });
+          else root.XrcCommunityReceipt?.report?.({ task: 'community-share', result: 'success', targetId });
+        } catch (_) {}
       }
       state.shared = selected.size;
       finish(`已确认一次发送到 ${selected.size} 个群聊；最新帖子已标记为已分发，本轮完成`);
@@ -398,7 +407,7 @@
     return { start, stop, snapshot, subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); } };
   }
 
-  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, SESSION_KEY, LEDGER_KEY };
+  const api = { createController, latestOwnPost, waitForLatestPost, profilePosts, groupRows, enabled, findAction, findChatShareAction, findPostShareButton, shareScopes, shareDialog, waitForShareDialog, sendButtonNearDialog, isSendControl, SESSION_KEY, LEDGER_KEY };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.XrcCommunityShare = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

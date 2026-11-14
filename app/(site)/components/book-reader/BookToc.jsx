@@ -67,7 +67,7 @@ export default function BookToc({ groups, title = '目录', caption, className =
 
   const holdManualScroll = () => { manualUntil.current = Date.now() + 1800 }
   return (
-    <nav aria-label={title} className={`${styles.toc} ${className}`}>
+    <nav aria-label={title} data-book-toc="" className={`${styles.toc} ${className}`}>
       <p className={styles.tocTitle}>{title}</p>
       {caption ? <p className={styles.tocCaption}>{caption}</p> : null}
       <div ref={listRef} className={styles.tocList} onWheel={holdManualScroll} onTouchMove={holdManualScroll} onPointerDown={holdManualScroll}>

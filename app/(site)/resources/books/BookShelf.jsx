@@ -26,7 +26,7 @@ function BookCover({ book, index }) {
       ) : (
         <span className={styles.fallbackCover} aria-hidden="true">
           <Image src={TONE_COVER[tone] || LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />
-          <span className={styles.collectionBadge}>阿燃典藏</span>
+          {tone ? null : <span className={styles.collectionBadge}>阿燃典藏</span>}
           <span className={styles.coverType}>{book.ownership === 'self' ? '原创作品' : '外部资源书'}</span>
           <span className={styles.coverTitle}>{book.title}</span>
           <span className={styles.coverRule} />

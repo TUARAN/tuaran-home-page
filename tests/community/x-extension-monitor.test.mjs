@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
 import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, presentXTaskFace, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
-import { describeXPluginSituation } from '../../lib/community/xExtensionMonitorShared.js'
+import { describeXPluginSituation, selectXPluginSituationDevices } from '../../lib/community/xExtensionMonitorShared.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -85,6 +85,15 @@ test('status sentence names the current task, cooldown, and items that need atte
   assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: false, lastSeenAt: now }, now), `@tuaranx已离线，最近心跳是 ${new Date(now).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })}，现在看不到任务状态。`)
   assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: true, telemetry: false }, now), '@tuaranx有心跳，还没有上报任务状态。')
   assert.equal(describeXPluginSituation({ accountHandle: 'tuaranx', online: true, telemetry: true, schedule: { enabled: false }, groups: [] }, now), '@tuaranx：排班已暂停。')
+})
+
+test('status sentence keeps the live install and drops an older offline install of the same account', () => {
+  const picked = selectXPluginSituationDevices([
+    { id: 'old', accountHandle: 'tarsixseveneig1', online: false, lastSeenAt: Date.parse('2026-11-04T07:08:07Z') },
+    { id: 'live', accountHandle: '@tarsixseveneig1', online: true, lastSeenAt: Date.parse('2026-11-14T06:30:00Z') },
+    { id: 'other-old', accountHandle: 'tuaranx', online: false, lastSeenAt: Date.parse('2026-11-01T00:00:00Z') },
+  ])
+  assert.deepEqual(picked.map((device) => device.id), ['live', 'other-old'])
 })
 
 test('runtime groups follow schedule priority order with idle fill-ins', () => {

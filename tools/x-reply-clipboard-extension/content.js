@@ -5964,16 +5964,102 @@
     return ids.length > 0 && !ids.includes(id);
   }
 
+  function replyTextboxWithin(root) {
+    if (!root || typeof root.querySelector !== "function") return null;
+    const exact = root.querySelector(REPLY_EDITOR_SELECTOR);
+    if (exact && !exact.closest?.(`#${PANEL_ID}`)) return exact;
+    const host = root.querySelector('[data-testid^="tweetTextarea_"]');
+    if (!host || host.closest?.(`#${PANEL_ID}`)) return null;
+    const inner = typeof host.querySelector === "function" ? host.querySelector('[contenteditable="true"]') : null;
+    if (inner && !inner.closest?.(`#${PANEL_ID}`)) return inner;
+    if (host.getAttribute?.("contenteditable") === "true" || host.getAttribute?.("role") === "textbox") return host;
+    return null;
+  }
+
+  function composerInScope(scope) {
+    const textbox = replyTextboxWithin(scope);
+    if (!textbox) return null;
+    const submit = scope.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || null;
+    return { dialog: scope, textbox, submit };
+  }
+
+  function outsidePanel(node) {
+    return Boolean(node) && !node.closest?.(`#${PANEL_ID}`);
+  }
+
+  function visibleComposerNode(node) {
+    if (!node) return false;
+    if (typeof node.getBoundingClientRect !== "function") return true;
+    const rect = node.getBoundingClientRect();
+    return rect.width >= 8 && rect.height >= 8;
+  }
+
+  function replySubmitIn(scope) {
+    const tested = scope?.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
+    if (tested) return tested;
+    return Array.from(scope?.querySelectorAll?.("button, [role='button']") || [])
+      .find((button) => /^(?:Reply|回复)$/iu.test(String(button.innerText || button.textContent || "").replace(/\s+/gu, " ").trim())) || null;
+  }
+
+  function replySurface(node) {
+    let current = node;
+    for (let depth = 0; current && depth < 8; depth += 1) {
+      if (current === document.body || current === document.documentElement) break;
+      const text = String(current.innerText || "");
+      if (text.length < 2500 && /Replying to|正在回复|Post your reply|发布你的回复|Tweet your reply|写回复/iu.test(text)) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function findVisibleReplyComposer() {
+    const selectors = [
+      '[data-testid^="tweetTextarea_"]',
+      '[contenteditable="true"][role="textbox"]',
+      '[contenteditable="plaintext-only"][role="textbox"]',
+      '[contenteditable="true"]',
+      '[contenteditable="plaintext-only"]',
+      '[role="textbox"]'
+    ];
+    const seen = new Set();
+    for (const selector of selectors) {
+      for (const node of document.querySelectorAll(selector)) {
+        if (seen.has(node) || !outsidePanel(node)) continue;
+        seen.add(node);
+        const editable = node.getAttribute?.("contenteditable");
+        const textbox = editable === "true" || editable === "plaintext-only" || node.getAttribute?.("role") === "textbox"
+          ? node
+          : node.querySelector?.('[contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"]');
+        if (!textbox || !outsidePanel(textbox) || !visibleComposerNode(textbox)) continue;
+        const label = `${textbox.getAttribute?.("aria-label") || ""} ${textbox.getAttribute?.("data-placeholder") || ""}`;
+        const surface = /Post your reply|发布你的回复|Tweet your reply|Post text|帖子文本|写回复/iu.test(label)
+          ? textbox.parentElement
+          : replySurface(textbox);
+        if (!surface) continue;
+        const dialog = textbox.closest?.("[role='dialog'], [aria-modal='true']") || null;
+        return { dialog, textbox, submit: replySubmitIn(dialog || surface) };
+      }
+    }
+    return null;
+  }
+
   function findDialogComposer() {
     const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
     for (const dialog of dialogs) {
-      if (dialog.closest(`#${PANEL_ID}`)) continue;
-      const textbox = dialog.querySelector(REPLY_EDITOR_SELECTOR);
-      if (!textbox) continue;
-      const submit = dialog.querySelector('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
-      return { dialog, textbox, submit };
+      if (dialog.closest?.(`#${PANEL_ID}`)) continue;
+      const found = composerInScope(dialog);
+      if (found) return found;
     }
-    return null;
+    const layers = document.querySelector?.("#layers");
+    const layered = layers && !layers.closest?.(`#${PANEL_ID}`) ? replyTextboxWithin(layers) : null;
+    if (layered) {
+      const shell = layered.closest?.("[role='dialog'], [aria-modal='true'], [data-testid='sheetDialog']") || layered.parentElement;
+      if (shell) {
+        const submit = shell.querySelector?.('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]') || replySubmitIn(shell);
+        return { dialog: shell, textbox: layered, submit };
+      }
+    }
+    return findVisibleReplyComposer();
   }
 
   function findReplyRestrictionDialog() {
@@ -5995,7 +6081,7 @@
     const dialogComposer = findDialogComposer();
     if (dialogComposer) return dialogComposer;
     if (!article) return null;
-    const textbox = article.querySelector(REPLY_EDITOR_SELECTOR);
+    const textbox = replyTextboxWithin(article);
     if (!textbox) return null;
     if (hadInline && loopApi.composerText(textbox)) return null;
     const submit = article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
@@ -6234,7 +6320,7 @@
   async function openComposer(tweet) {
     const existingDialog = findDialogComposer();
     if (existingDialog && !loopApi.composerText(existingDialog.textbox)) return existingDialog;
-    const inline = tweet.article?.querySelector(REPLY_EDITOR_SELECTOR);
+    const inline = replyTextboxWithin(tweet.article);
     if (inline && !loopApi.composerText(inline)) {
       const submit = tweet.article.querySelector('[data-testid="tweetButtonInline"], [data-testid="tweetButton"]');
       return { dialog: null, textbox: inline, submit };
@@ -6422,9 +6508,9 @@
     if (browse) return browse;
     if (state.stopping || !state.running || riskRoundPending()) return "stopped";
     if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
-    state.status = `正在评论：${outgoing}`;
-    renderPanel();
     if (!composer) {
+      state.status = "正在打开评论框…";
+      renderPanel();
       composer = await openComposer(tweet);
       if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
       if (state.assistantMode === "notifications" && composer.dialog && dialogConflictsWithTweet(composer.dialog, tweet)) {
@@ -6432,6 +6518,8 @@
         return "wrong-target";
       }
     }
+    state.status = `正在评论：${outgoing}`;
+    renderPanel();
 
     const result = await publishReply(composer, outgoing);
     if (

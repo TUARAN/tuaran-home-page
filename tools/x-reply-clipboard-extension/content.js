@@ -1329,6 +1329,7 @@
   let reportOpen = false;
   let hubOpen = false;
   let resettingState = false;
+  let resetEpoch = 0;
   let dailyReports = [];
   let dailyUploadSchedule = null;
   const REPORT_METRICS = ["comments", "timelineComments", "notificationComments", "kolComments", "likes", "follows", "unfollows", "followBacks", "posts", "prunes", "replyPrunes", "articleDrafts", "siteForwards", "communityShares"];
@@ -1931,12 +1932,8 @@
     if (!spectatorTab) return false;
     await loadTabRole({ paint: false });
     if (!spectatorTab) return false;
-    if (Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId)) {
-      state.status = "任务已在另一个页签执行，请点击上方「跳转查看」";
-      renderPanel();
-      return true;
-    }
-    // An explicit user start may claim a tab when there is no live owner.
+    // A click on this page starts the task here, the same way 评论首页 does.
+    // The other execution tab is suspended in place instead of opening a new tab.
     spectatorTab = false;
     renderPanel();
     return false;
@@ -2240,11 +2237,18 @@
 
   function flowTaskOverview(runtime, now = Date.now()) {
     const counts = { running: 0, waiting: 0, missing: 0, stopping: 0, unknown: 0, blocked: 0 };
+    const scheduledHandle = String(taskSchedule.accountHandle || "").replace(/^@/u, "").toLowerCase();
+    const viewedHandle = typeof currentAccountHandle === "function"
+      ? String(currentAccountHandle() || "").replace(/^@/u, "").toLowerCase()
+      : "";
+    const foreignSchedule = Boolean(scheduledHandle && viewedHandle && scheduledHandle !== viewedHandle);
     const tasks = FLOW_TASKS.map(([key, label]) => {
       const task = runtime?.tasks?.[key];
       const scheduled = taskSchedule.items?.[key] || {};
       const updatedAt = Number(task?.updatedAt) || 0;
       const fresh = updatedAt > 0 && now - updatedAt <= FLOW_STALE_MS;
+      const blockOwner = String(scheduled.blockedAccount || "").replace(/^@/u, "").toLowerCase();
+      const foreignBlock = Boolean(blockOwner && (viewedHandle || scheduledHandle) && blockOwner !== (viewedHandle || scheduledHandle));
       let status = "missing";
       if (fresh && task.phase === "running") {
         status = "running";
@@ -2252,7 +2256,7 @@
         status = "missing";
       } else if (task?.phase === "stopping") {
         status = "stopping";
-      } else if (scheduled.blocked) {
+      } else if (scheduled.blocked && !foreignSchedule && !foreignBlock) {
         status = "blocked";
       } else if (taskSchedule.rules?.[key]?.enabled === false) {
         status = "missing";
@@ -2315,7 +2319,7 @@
   }
 
   let pluginConfirmPending = false;
-  function pluginConfirm(message, title = "确认操作") {
+  function pluginConfirm(message, title = "确认操作", okLabel = "确认") {
     if (pluginConfirmPending) return Promise.resolve(false);
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return Promise.resolve(false);
@@ -2326,6 +2330,7 @@
     overlay.innerHTML = `<div class="xrc-confirm-card" role="dialog" aria-modal="true" aria-labelledby="xrc-action-confirm-title"><strong id="xrc-action-confirm-title"></strong><p></p><div class="xrc-confirm-actions"><button type="button" data-cancel>取消</button><button type="button" class="xrc-confirm-primary" data-ok>确认</button></div></div>`;
     overlay.querySelector("strong").textContent = title;
     overlay.querySelector("p").textContent = message;
+    overlay.querySelector("[data-ok]").textContent = okLabel;
     panel.append(overlay);
     return new Promise((resolve) => {
       const finish = (value) => { overlay.remove(); pluginConfirmPending = false; previous?.focus?.(); resolve(value); };
@@ -2808,14 +2813,29 @@
   }
 
   function taskScheduleNotice(mode, now = Date.now()) {
+    const scheduledHandle = String(taskSchedule.accountHandle || "").replace(/^@/u, "");
+    const viewedHandle = typeof currentAccountHandle === "function"
+      ? String(currentAccountHandle() || "").replace(/^@/u, "") : "";
+    if (scheduledHandle && viewedHandle && scheduledHandle.toLowerCase() !== viewedHandle.toLowerCase()) {
+      return {
+        status: "stopped",
+        title: USER_STATE_LABELS.stopped,
+        detail: `排班记在 @${scheduledHandle}。当前登录的是另一个账号，不沿用那边的受限和重启次数。`
+      };
+    }
     const task = flowTaskOverview(pluginRuntime, now).tasks.find((item) => item.key === mode);
     const queued = taskSchedule.items?.[mode] || {};
     const isCurrent = Boolean(taskSchedule.enabled && taskSchedule.current === mode);
-    if (task?.status === "blocked") return {
-      status: "blocked",
-      title: formatUserStateAction(USER_STATE_LABELS.needs, "连续受限"),
-      detail: `已停止自动重试。原因：${readableTaskLimitReason(queued.reason)}。下方进度仅属于当前窗口；检查账号后可用单项按钮重新启动。`
-    };
+    if (task?.status === "blocked") {
+      const restartSkip = /已重启\s*\d+\s*次|已跳过这项任务/u.test(String(queued.reason || ""));
+      return {
+        status: "blocked",
+        title: formatUserStateAction(USER_STATE_LABELS.needs, restartSkip ? "启动未确认" : "连续受限"),
+        detail: restartSkip
+          ? `已停止自动重试。原因：${String(queued.reason || "执行页没有回报启动结果")}。这是启动没有确认，不是 X 限制。检查页面后可重新启动。`
+          : `已停止自动重试。原因：${readableTaskLimitReason(queued.reason)}。下方进度仅属于当前窗口；检查账号后可用单项按钮重新启动。`
+      };
+    }
     if (queued.manualStopped && task?.status === "missing") {
       return { status: "stopped", title: USER_STATE_LABELS.stopped, detail: "点击单项按钮可重新启动这一项任务。" };
     }
@@ -3797,6 +3817,35 @@
     } catch (error) { /* The task will still start without saved session state. */ }
   }
 
+  async function resetLocalTaskRecords() {
+    const confirmed = await pluginConfirm(
+      "模型密钥、提示词和回执密钥会留下。排班、任务进度和重连状态会清空，正在跑的任务会停。不能撤销。",
+      "重置本机任务记录？",
+      "确认重置"
+    );
+    if (!confirmed) return;
+    resetEpoch += 1;
+    resettingState = true;
+    try {
+      const result = await sendExtensionMessage({ type: "xrc-reset-state" });
+      if (!result?.ok) throw new Error(result?.error || "重置没有完成");
+      clearTaskSession();
+      pluginRuntime = { startedAt: null, tasks: {} };
+      taskSchedule = { enabled: false, items: {} };
+      state.running = false;
+      state.loopPromise = null;
+      state.reconnectAt = 0;
+      state.reconnectReason = "";
+      state.status = "已重置。模型配置仍在。刷新后从默认排班重新开始。";
+      renderPanel();
+    } catch (error) {
+      state.status = error?.message || "重置没有完成";
+      renderPanel();
+    } finally {
+      resettingState = false;
+    }
+  }
+
   function prepareStateReset() {
     resettingState = true;
     window.clearTimeout(configSaveTimer);
@@ -4255,20 +4304,26 @@
   }
 
   function paceTableHtml({ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false, nameHeader = "速度" }) {
-    const head = `<span class="xrc-pace-pick" role="columnheader"></span>${[nameHeader, ...columns.map((column) => column.label)]
-      .map((text) => `<span role="columnheader">${text}</span>`).join("")}`;
+    const brief = columns.length === 1 && !unlimitedKey;
+    const head = brief
+      ? `<span class="xrc-pace-pick" role="columnheader"></span><span role="columnheader">${columns[0].label}</span>`
+      : `<span class="xrc-pace-pick" role="columnheader"></span>${[nameHeader, ...columns.map((column) => column.label)]
+        .map((text) => `<span role="columnheader">${text}</span>`).join("")}`;
     const rows = profiles.map((profile) => {
       const name = profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
       const title = profile.id === "boundary" && !profile.hours ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
-      const cells = columns.map((column) => `<span>${column.value(profile)}</span>`).join("");
-      return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span><span data-xrc-pace-name>${name}</span>${cells}</button>`;
+      const cells = brief
+        ? `<span class="xrc-pace-brief"><b data-xrc-pace-name>${name}</b><small>${columns[0].value(profile)}</small></span>`
+        : `<span data-xrc-pace-name>${name}</span>${columns.map((column) => `<span>${column.value(profile)}</span>`).join("")}`;
+      return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span>${cells}</button>`;
     }).join("");
     const noteSpan = Math.max(1, columns.length);
     const unlimitedAttr = unlimitedFixed && unlimitedKey ? ` data-xrc-unlimited-fixed="${unlimitedKey}"` : "";
     const unlimitedRow = unlimitedKey
       ? `<label class="xrc-pace-table-row xrc-pace-unlimited"><span class="xrc-pace-pick"><input type="checkbox" data-xrc-unlimited="${unlimitedKey}"${unlimitedAttr}></span><span>不限速</span><span class="xrc-pace-unlimited-note" style="grid-column:3 / span ${noteSpan}">${unlimitedHint(unlimitedKey)}</span></label>`
       : "";
-    return `<div class="xrc-pace-table${extraClass ? ` ${extraClass}` : ""}" role="radiogroup" aria-label="${label}" style="--xrc-pace-cols:${columns.length + 1}"><div class="xrc-pace-table-head" role="row">${head}</div>${rows}${unlimitedRow}</div>`;
+    const tableClass = `xrc-pace-table${brief ? " xrc-pace-table-brief" : ""}${extraClass ? ` ${extraClass}` : ""}`;
+    return `<div class="${tableClass}" role="radiogroup" aria-label="${label}" style="--xrc-pace-cols:${brief ? 1 : columns.length + 1}"><div class="xrc-pace-table-head" role="row">${head}</div>${rows}${unlimitedRow}</div>`;
   }
 
   function replyPaceInput(profile, field) {
@@ -4928,6 +4983,10 @@
     sendExtensionMessage({ type: "xrc-ai-cancel", requestId }).catch(() => {});
   }
 
+  function isScriptFailureReason(reason) {
+    return /(?:Cannot read properties|is not a function|is not defined|querySelector|TypeError|ReferenceError)/i.test(String(reason || ""));
+  }
+
   function savedDefaults() {
     return {
       running: false,
@@ -4990,12 +5049,14 @@
         return savedDefaults();
       }
       const phraseIndex = Number(parsed.phraseIndex);
+      const scriptFailure = isScriptFailureReason(parsed.reconnectReason);
+      if (scriptFailure) state.discardedScriptFailure = true;
       const schedulePace = loopApi.scheduleProfile(parsed.schedulePace).id;
       const boundaryLevel = parsed.boundaryLevel == null
         ? 1
         : Math.min(3, Math.max(0, Number(parsed.boundaryLevel) || 0));
       return {
-        running: Boolean(parsed.running),
+        running: scriptFailure ? false : Boolean(parsed.running),
         total: Number(parsed.total) || 0,
         pageCount: Number(parsed.pageCount) || 0,
         completedRounds: Number(parsed.completedRounds) || 0,
@@ -5006,8 +5067,8 @@
           && Number(parsed.notificationCyclePolicyVersion) !== NOTIFICATION_CYCLE_POLICY_VERSION
           ? 0 : Math.max(0, Number(parsed.nextCycleAt) || 0),
         nextRoundAt: Math.max(0, Number(parsed.nextRoundAt) || 0),
-        reconnectAt: Math.max(0, Number(parsed.reconnectAt) || 0),
-        reconnectReason: String(parsed.reconnectReason || "").trim(),
+        reconnectAt: scriptFailure ? 0 : Math.max(0, Number(parsed.reconnectAt) || 0),
+        reconnectReason: scriptFailure ? "" : String(parsed.reconnectReason || "").trim(),
         riskCooldownUntil: Math.max(0, Number(parsed.riskCooldownUntil) || 0),
         riskRetries: Math.max(0, Number(parsed.riskRetries) || 0),
         roundIntervalSeconds: clampInterval(parsed.roundIntervalSeconds, DEFAULT_ROUND_INTERVAL_SECONDS, MIN_ROUND_INTERVAL_SECONDS, MAX_ROUND_INTERVAL_SECONDS),
@@ -5043,6 +5104,7 @@
   }
 
   function writeSaved(value) {
+    if (resettingState) return;
     sessionStorage.setItem(
       taskStateKey(),
       JSON.stringify({
@@ -5088,12 +5150,14 @@
   }
 
   function persistTaskSnapshot() {
+    if (resettingState) return;
+    const epoch = resetEpoch;
     const key = taskStateKey();
     let snapshot;
     try { snapshot = JSON.parse(sessionStorage.getItem(key) || "null"); } catch (error) { return; }
     if (!snapshot || !ensureExtensionContext()) return;
     taskSnapshotWrite = taskSnapshotWrite.catch(() => {}).then(() => {
-      if (!extensionContextAlive()) return null;
+      if (epoch !== resetEpoch || resettingState || !extensionContextAlive()) return null;
       try {
         return chrome.storage.local.set({ [key]: snapshot });
       } catch (error) {
@@ -5379,10 +5443,16 @@
       .some((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
   }
 
+  function composerCarriesAttachment(open) {
+    const selector = '[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]';
+    return [open?.dialog, open?.textbox?.parentElement].some((scope) =>
+      typeof scope?.querySelector === "function" && scope.querySelector(selector));
+  }
+
   async function closeReplyComposer({ confirmedSent = false, forceClear = false } = {}) {
     const open = findDialogComposer();
     if (!open) return true;
-    if (open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
+    if (composerCarriesAttachment(open)) return false;
     const draft = loopApi.composerText(open.textbox);
     // During scheduled/manual reply runs, leftover plugin drafts must be wiped instead of hanging.
     // Preserve only when the operator is idle and the text is clearly not ours.
@@ -5440,8 +5510,7 @@
 
   async function reloadManagedReplyDraft(message) {
     const open = findDialogComposer();
-    if (!open || !isManagedDraft(loopApi.composerText(open.textbox))
-      || open.dialog.querySelector('[data-testid="attachments"], [data-testid="mediaAttachment"], [data-testid="pollComposer"]')) return false;
+    if (!open || !isManagedDraft(loopApi.composerText(open.textbox)) || composerCarriesAttachment(open)) return false;
     if (!await prepareReplyForTabSwitch()) return false;
     state.status = message;
     writeSaved({ running: true, total: state.total });
@@ -6012,6 +6081,15 @@
     return null;
   }
 
+  function isStandingHomeComposer(textbox) {
+    if (!textbox || textbox.closest?.("article, [role='dialog'], [aria-modal='true']")) return false;
+    const label = `${textbox.getAttribute?.("aria-label") || ""} ${textbox.getAttribute?.("data-placeholder") || ""} ${textbox.getAttribute?.("placeholder") || ""}`;
+    if (/Post your reply|发布你的回复|Tweet your reply|Replying to|正在回复|写回复/iu.test(label)) return false;
+    const around = String(textbox.parentElement?.innerText || "").slice(0, 180);
+    if (/Replying to|正在回复|Post your reply|发布你的回复/iu.test(around)) return false;
+    return /Post text|帖子文本|What.?s happening|有什么新鲜事/iu.test(`${label} ${around}`);
+  }
+
   function findVisibleReplyComposer() {
     const selectors = [
       '[data-testid^="tweetTextarea_"]',
@@ -6030,7 +6108,7 @@
         const textbox = editable === "true" || editable === "plaintext-only" || node.getAttribute?.("role") === "textbox"
           ? node
           : node.querySelector?.('[contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"]');
-        if (!textbox || !outsidePanel(textbox) || !visibleComposerNode(textbox)) continue;
+        if (!textbox || !outsidePanel(textbox) || !visibleComposerNode(textbox) || isStandingHomeComposer(textbox)) continue;
         const label = `${textbox.getAttribute?.("aria-label") || ""} ${textbox.getAttribute?.("data-placeholder") || ""}`;
         const surface = /Post your reply|发布你的回复|Tweet your reply|Post text|帖子文本|写回复/iu.test(label)
           ? textbox.parentElement
@@ -6615,7 +6693,11 @@
     const mode = currentTaskKey();
     if (!mode) return { ok: true, ignored: true };
     try {
-      return await sendExtensionMessage({ type: "xrc-start-reload", mode });
+      return await sendExtensionMessage({
+        type: "xrc-start-reload",
+        mode,
+        accountHandle: currentAccountHandle() || lastKnownAccountHandle
+      });
     } catch (error) {
       return { ok: false };
     }
@@ -6994,7 +7076,8 @@
         const foreignText = Boolean(openText)
           && loopApi.normalizePhraseText(openText) !== loopApi.normalizePhraseText(state.pendingReply)
           && !loopApi.isRecoverableGrokDuplicate(openText, state.pendingReply);
-        if (openDialog && (!sameTweet || foreignText)) {
+        // 对不上当前帖子再关闭，只用于评论回复的弹窗。评论首页顶部的发帖框不参与这步。
+        if (state.assistantMode === "notifications" && openDialog && (!sameTweet || foreignText)) {
           const closed = await closeReplyComposer();
           if (!closed) {
             if (await reloadManagedReplyDraft("重复的 Grok 草稿暂时无法清空，重新载入后继续重试")) return "reload";
@@ -7705,7 +7788,7 @@
   }
 
   function targetFollowRosterStatus() {
-    return "每次任务直接换成五个新人；这一页还有可关注的人就先关注，人都关注过了就换下一个。";
+    return "";
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
@@ -7983,9 +8066,7 @@
   }
 
   function taskScheduleConfigMarkup(mode, label) {
-    const listField = mode === "mutual-targetFollow"
-      ? `<p class="xrc-config-note" data-xrc-target-follow-status role="status">${targetFollowRosterStatus()}</p>`
-      : mode === "kol"
+    const listField = mode === "kol"
         ? `<p class="xrc-config-note" data-xrc-kol-status role="status">${kolRosterStatusText()}</p>`
         : "";
     if (!listField) return "";
@@ -8460,7 +8541,8 @@
               <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" aria-expanded="false" title="打开日历统计"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg></button>
               <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板。点工具栏里的扩展图标可以重新打开"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
             </div>
-            <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
+              <button type="button" class="xrc-header-reset" data-xrc-header-reset title="清空本机任务记录，保留模型配置">重置</button>
+              <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
           </div>
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
@@ -9026,6 +9108,7 @@
           renderPanel();
         }
       });
+      panel.querySelector("[data-xrc-header-reset]")?.addEventListener("click", () => { void resetLocalTaskRecords(); });
       panel.querySelector("[data-xrc-hub-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
@@ -10369,7 +10452,19 @@
           : "从首页推荐顶部开始，向下评论";
     renderPanel();
     state.loopPromise = runLoop({ resume })
-      .catch((error) => reconnectAndResume(error?.message || "任务运行异常"))
+      .catch((error) => {
+        const message = String(error?.message || "");
+        if (isScriptFailureReason(message)) {
+          state.reconnectAt = 0;
+          state.reconnectReason = "";
+          state.running = false;
+          state.status = "页面结构和预期不一致，已停下重连。刷新后按当前账号重新开始。";
+          writeSaved({ running: false, total: state.total });
+          renderPanel();
+          return "stopped";
+        }
+        return reconnectAndResume(message || "任务运行异常");
+      })
       .then((result) => {
         state.loopPromise = null;
         if (result === "reload") return;
@@ -10693,6 +10788,14 @@
         || launch?.assistantMode === "prune-replies"
       ));
     if (!skipModelWait) await settingsReady;
+    if (state.discardedScriptFailure) {
+      state.discardedScriptFailure = false;
+      state.reconnectAt = 0;
+      state.reconnectReason = "";
+      state.status = "已清掉上次页面脚本报错留下的重连记录，按当前账号重新开始。";
+      writeSaved({ running: false, total: state.total });
+      renderPanel();
+    }
     if (!spectatorTab && saved.running && !launchedStart) {
       begin({ resume: true });
     }

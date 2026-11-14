@@ -15,11 +15,11 @@ export default function SyncblogDocsPage() {
   return (
     <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
       <DocsHashNavigation />
-      <nav aria-label="面包屑" className="flex gap-2 text-xs text-[var(--site-muted)]"><Link href="/tools">工具库</Link><span>/</span><Link href="/tools/syncblog-publisher">AI 分发大师</Link><span>/ 文档中心</span></nav>
+      <nav aria-label="面包屑" className="flex gap-2 text-xs text-[var(--site-muted)]"><Link href="/tools">工具库</Link><span>/</span><Link href="/tools/syncblog-publisher">AI 分发大师</Link><span>/ 黄皮书</span></nav>
       <header className="mb-8 mt-5 max-w-3xl">
         <p className="font-mono text-xs text-[var(--site-faint)]">AI 分发大师 · v{docs.version} · 更新于 {docs.updated}</p>
         <BookIdentity kind="使用手册" />
-        <h1 className="mt-3 text-3xl font-semibold text-[var(--site-ink)]">文档中心</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-[var(--site-ink)]">黄皮书</h1>
         <p className="mt-3 leading-7 text-[var(--site-muted)]">{docs.description}</p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm"><Link href="/tools/syncblog-publisher" className="rounded-full border border-[var(--site-line)] px-4 py-2">返回插件介绍</Link><a href="#quick-start" className="rounded-full border border-[var(--site-line)] px-4 py-2">快速开始</a><a href="#xiaohongshu-manager" className="rounded-full border border-[var(--site-line)] px-4 py-2">笔记管理规则</a></div>
       </header>

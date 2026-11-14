@@ -37,7 +37,7 @@ export default function SyncblogPublisherPage() {
           <a href="https://syncblog.2aran.com/" className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-slate-950">打开创作台 ↗</a>
           <ExtensionDownloadButton href="/api/resources/syncblog-download" title="AI 分发大师" credentialLabel="人员码 / 站长总密钥" buttonLabel="VIP 下载 · 输入人员码" downloadHint={`联系站长微信 ${WECHAT_CONTACT.value} 获取人员码。安装包已打包并内置凭证，安装后自动读取，首次心跳绑定设备。`} />
           <SharePageButton title="AI 分发大师" text="整理内容、适配平台，核对草稿后发布。" url="https://2aran.com/tools/syncblog-publisher" />
-          <Link href="/tools/syncblog-publisher/docs" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">文档中心</Link>
+          <Link href="/tools/syncblog-publisher/docs" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">黄皮书</Link>
           <a href="#install" className="rounded-xl border border-slate-600 px-5 py-3 text-sm">安装与使用</a>
         </div>
         <p className="mt-5 text-xs leading-6 text-slate-400">VIP 安装包已打包；联系站长微信 {WECHAT_CONTACT.value} 获取人员码，站长可使用总密钥领取。支持 Chrome / Edge 116+。</p>

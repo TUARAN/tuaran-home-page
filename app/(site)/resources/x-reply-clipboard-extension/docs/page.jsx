@@ -23,7 +23,7 @@ const RESOURCE_PATH = `/resources/${RESOURCE_SLUG}`
 const DOCS_URL = `https://2aran.com${DOCS_PATH}`
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || '待核对'
 
-const title = 'X高频互动助手文档中心'
+const title = 'X 高频互动助手黄皮书'
 const description =
   'X 高频互动助手使用手册：快速开始、十八项任务、排班设置、异常恢复、数据维护与版本记录。'
 
@@ -245,9 +245,9 @@ export default function XReplyClipboardDocsPage() {
           <span aria-hidden="true">/</span>
           <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X高频互动助手</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[var(--site-ink)]">文档中心</span>
+          <span className="text-[var(--site-ink)]">黄皮书</span>
         </div>
-        <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">文档中心</h1>
+        <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">黄皮书</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
           从第一篇的安装与运行开始，依次阅读任务、配置、边界与维护。版本沿革和运营记录收在第四篇；也可以从左侧目录直达某一章、某一节。
         </p>

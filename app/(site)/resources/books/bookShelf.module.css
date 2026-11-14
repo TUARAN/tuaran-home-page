@@ -49,6 +49,10 @@
 .cover3 { background: #48486a; color: #eee8db; }
 .cover4 { background: #5d3c42; color: #f4e7cd; }
 .cover5 { background: #4b604d; color: #f3edd8; }
+.coverYellow { background: #e2b23a; color: #4a2c12; }
+.coverYellow .fallbackCover { color: #4a2c12; }
+.coverYellow .collectionBadge { color: #5c3814; }
+.coverYellow .coverTitle { color: #3d2610; text-shadow: none; }
 .bookInfo { display: flex; flex: 1; flex-direction: column; padding-top: 14px; }
 .bookKind { color: var(--site-faint); font: 10px/1.5 ui-monospace, monospace; letter-spacing: .04em; }
 .mineKind { color: #7c5939; }

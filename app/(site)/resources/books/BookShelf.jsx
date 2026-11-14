@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import LibraryMark from '../../components/LibraryMark'
-import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER, LIBRARY_YELLOW_COVER } from '../../../../lib/content/libraryCatalog.mjs'
+import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER, LIBRARY_GREEN_COVER, LIBRARY_YELLOW_COVER } from '../../../../lib/content/libraryCatalog.mjs'
 import styles from './bookShelf.module.css'
 
 const FILTERS = [
@@ -14,15 +14,18 @@ const FILTERS = [
   { id: 'external', label: '外部资源书' },
 ]
 
+const TONE_COVER = { yellow: LIBRARY_YELLOW_COVER, green: LIBRARY_GREEN_COVER }
+const TONE_CLASS = { yellow: 'coverYellow', green: 'coverGreen' }
+
 function BookCover({ book, index }) {
-  const yellow = book.coverTone === 'yellow'
+  const tone = TONE_COVER[book.coverTone] ? book.coverTone : ''
   return (
-    <span className={`${styles.cover} ${yellow ? styles.coverYellow : styles[`cover${index % 6}`]}`}>
+    <span className={`${styles.cover} ${tone ? styles[TONE_CLASS[tone]] : styles[`cover${index % 6}`]}`}>
       {book.cover ? (
         <Image src={book.cover} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={`${styles.coverImage} ${book.coverCrop ? styles.coverImageCrop : ''}`} />
       ) : (
         <span className={styles.fallbackCover} aria-hidden="true">
-          <Image src={yellow ? LIBRARY_YELLOW_COVER : LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />
+          <Image src={TONE_COVER[tone] || LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />
           <span className={styles.collectionBadge}>阿燃典藏</span>
           <span className={styles.coverType}>{book.ownership === 'self' ? '原创作品' : '外部资源书'}</span>
           <span className={styles.coverTitle}>{book.title}</span>

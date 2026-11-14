@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import { X_EXTENSION_LATEST_VERSION } from '../../../../../lib/community/xExtensionVersion'
 import { getResourceDelivery } from '../../../../../lib/content/resourceCatalog'
+import ManualPaper from '../../../components/book-reader/ManualPaper'
 import PageContainer from '../../../components/PageContainer'
 import DocsHashNavigation from './DocsHashNavigation'
 import DocsToc from './DocsToc'
@@ -237,6 +238,7 @@ function TaskBlock({ id, badge, title: blockTitle, summary, children }) {
 
 export default function XReplyClipboardDocsPage() {
   return (
+    <ManualPaper tone="yellow">
     <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
       <DocsHashNavigation />
       <div className="mb-8 max-w-3xl">
@@ -862,5 +864,6 @@ export default function XReplyClipboardDocsPage() {
         </article>
       </div>
     </PageContainer>
+    </ManualPaper>
   )
 }

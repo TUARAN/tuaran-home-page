@@ -6842,18 +6842,21 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
 
 test('notification scan stops at the time window, refreshes once, then returns the tab', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const pace = source.match(/  function notificationWindowPace\(\) \{[\s\S]*?\n  \}/)?.[0]
   const label = source.match(/  function notificationWindowLabel\(\) \{[\s\S]*?\n  \}/)?.[0]
   const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
-  assert.ok(label && boundary && finish)
+  assert.ok(pace && label && boundary && finish)
   assert.match(source, /saved\.running && !launchedStart/)
   assert.match(source, /untouched && alreadyAtBoundary/)
+  assert.match(source, /xrc-start-reload/)
   const now = Date.parse('2026-11-05T12:00:00+08:00')
   let ageHours = 25
   const article = { closest: () => null }
   const events = []
   const context = vm.createContext({
     state: { assistantMode: 'notifications', schedulePace: 'medium', notificationBoundaryRefreshed: false, total: 2, running: true },
+    taskSchedule: { rules: {} },
     document: { querySelector: () => ({ querySelectorAll: () => [article] }) },
     PANEL_ID: 'x-reply-clipboard-panel', isNestedTweet: () => false,
     listOwn: () => [{ getAttribute: () => new Date(now - ageHours * 60 * 60 * 1000).toISOString() }],
@@ -6862,7 +6865,7 @@ test('notification scan stops at the time window, refreshes once, then returns t
     reloadAndResume: async () => { events.push('refreshed'); return true },
     finishCycleAndScheduleNext: async () => { events.push('scheduled'); return 'scheduled' },
   })
-  vm.runInContext(`${label}\n${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
+  vm.runInContext(`${pace}\n${label}\n${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan\nglobalThis.label = notificationWindowLabel`, context)
   assert.equal(context.atBoundary(now), true)
   ageHours = 1
   assert.equal(context.atBoundary(now), false)
@@ -6878,6 +6881,13 @@ test('notification scan stops at the time window, refreshes once, then returns t
   assert.equal(await context.finish('已到窗口外'), 'stopped')
   assert.equal(context.state.running, false)
   assert.deepEqual(events, ['saved', 'refreshed'])
+  context.taskSchedule.rules = { notifications: { pace: 'fast' } }
+  context.state.schedulePace = 'slow'
+  ageHours = 2
+  assert.equal(context.atBoundary(now), false)
+  ageHours = 5
+  assert.equal(context.atBoundary(now), true)
+  assert.equal(context.label(), '4 小时')
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {
@@ -9756,6 +9766,129 @@ test('three unconfirmed reloads skip the task instead of starting the countdown 
     assert.equal(local.xrcTaskSchedule.items.notifications.blocked, true)
     assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 3)
     assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 3 次，已跳过这项任务/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a counted reload keeps its count while the page is idle during the boot hold', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'notifications', workTabId: 11,
+      startedAt: now - 5_000,
+      items: {
+        notifications: { reloadAttempts: 1, resumeAt: now + 50_000, reason: '已重启 1 次，已在同一页签重新装载', lastStartError: '执行页没有回报启动结果' },
+        timeline: { blocked: true }, kol: { blocked: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-followBack': { blocked: true }, 'mutual-targetFollow': { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 11, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'notifications', phase: '', idle: true, detail: '执行页已打开，回复循环还没开始' }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 1)
+    assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 1 次/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a page reload during start confirmation increments the restart count', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'notifications', workTabId: 11, startedAt: now - 12_000,
+      items: {
+        notifications: { reloadAttempts: 0 },
+        timeline: { blocked: true }, kol: { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 11, phase: 'running', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: { async get() { return { id: 11 } }, async update() {} },
+  }
+  try {
+    const noted = await background.noteUnconfirmedReload('notifications', 11)
+    assert.equal(noted.reloadAttempts, 1)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 1)
+    assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 1 次/)
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'starting')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a finished notification scan reports stopped instead of staying on 启动中', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'notifications', workTabId: 11, startedAt: now - 20_000,
+      items: {
+        notifications: { reloadAttempts: 1, lastStartError: '执行页没有回报启动结果' },
+        timeline: { blocked: true }, kol: { blocked: true },
+        'likes-posts': { blocked: true }, 'likes-replies': { blocked: true },
+        'mutual-followBack': { blocked: true }, 'mutual-targetFollow': { blocked: true },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 11, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage() {
+        return { ok: true, mode: 'notifications', phase: '', idle: true, detail: '已看完最近 4 小时 的回复，本次确认 1 条' }
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, '')
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 0)
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'stopped')
+    assert.match(local.xrcPluginRuntime.tasks.notifications.detail, /已看完最近 4 小时/)
   } finally {
     globalThis.chrome = previousChrome
   }

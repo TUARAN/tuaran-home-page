@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import LibraryMark from '../../components/LibraryMark'
-import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER } from '../../../../lib/content/libraryCatalog.mjs'
+import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER, LIBRARY_YELLOW_COVER } from '../../../../lib/content/libraryCatalog.mjs'
 import styles from './bookShelf.module.css'
 
 const FILTERS = [
@@ -15,13 +15,14 @@ const FILTERS = [
 ]
 
 function BookCover({ book, index }) {
+  const yellow = book.coverTone === 'yellow'
   return (
-    <span className={`${styles.cover} ${styles[`cover${index % 6}`]}`}>
+    <span className={`${styles.cover} ${yellow ? styles.coverYellow : styles[`cover${index % 6}`]}`}>
       {book.cover ? (
         <Image src={book.cover} alt={`${book.title}封面`} fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={`${styles.coverImage} ${book.coverCrop ? styles.coverImageCrop : ''}`} />
       ) : (
         <span className={styles.fallbackCover} aria-hidden="true">
-          <Image src={LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />
+          <Image src={yellow ? LIBRARY_YELLOW_COVER : LIBRARY_COLLECTION_COVER} alt="" fill sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 190px" className={styles.collectionCoverImage} />
           <span className={styles.collectionBadge}>阿燃典藏</span>
           <span className={styles.coverType}>{book.ownership === 'self' ? '原创作品' : '外部资源书'}</span>
           <span className={styles.coverTitle}>{book.title}</span>

@@ -360,20 +360,11 @@ export default function AboutPage() {
               ))}
             </ul>
 
-            <div id="wechat" className="mt-5 scroll-mt-24 rounded-xl border border-[#2d4d61] bg-[#102032]/80 p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#5cd6c8]">WeChat</p>
-              <p className="mt-1 text-[14px] leading-6 text-[#d5e4f2]">
-                项目合作、产品交流、内容更正，加微信 <span className="font-mono text-[#7fe6da]">{wechat.value}</span>。
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <WeChatContact tone="dark" />
-                <ContactDialogButton className="inline-flex min-h-10 items-center rounded-full border border-[#2d4d61] bg-[#102032] px-3 font-mono text-[11px] text-[#7fe6da]">
-                  全部渠道
-                </ContactDialogButton>
-                <Link href="/editorial" className="font-mono text-[11px] text-[#8ea3bb] no-underline hover:text-[#7fe6da]">
-                  内容说明 →
-                </Link>
-              </div>
+            <div id="wechat" className="mt-5 flex scroll-mt-24 flex-wrap items-center gap-3">
+              <WeChatContact tone="dark" />
+              <ContactDialogButton className="inline-flex min-h-10 items-center rounded-full border border-[#2d4d61] bg-[#102032] px-3 font-mono text-[11px] text-[#7fe6da]">
+                全部渠道
+              </ContactDialogButton>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-1.5">

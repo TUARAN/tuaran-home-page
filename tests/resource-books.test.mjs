@@ -64,4 +64,6 @@ test('黄皮书和绿皮书正文页使用对应纸色', () => {
   assert.match(read('app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx'), /ManualPaper tone="green"/)
   assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-paper: #f6e3a8/)
   assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-paper: #d7ebc8/)
+  const shelf = read('app/(site)/resources/books/BookShelf.jsx')
+  assert.match(shelf, /tone \? null : <span className=\{styles\.collectionBadge\}>阿燃典藏<\/span>/)
 })

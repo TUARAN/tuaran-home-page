@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { describeXPluginSituation, X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMonitorShared'
+import { describeXPluginSituation, selectXPluginSituationDevices, X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
@@ -288,12 +288,12 @@ function LegacyPluginMonitorClient() {
               {(!visibleData
                 ? [{ id: 'loading', line: '正在读取这个账号的插件状态。' }]
                 : devices.length
-                  ? devices.map((device) => ({ id: device.id, line: describeXPluginSituation(device, visibleData.now || Date.now()) }))
+                  ? selectXPluginSituationDevices(devices).map((device) => ({ id: device.id, line: describeXPluginSituation(device, visibleData.now || Date.now()) }))
                   : [{ id: 'empty', line: account && account !== '__all__' ? `@${account}还没有上报过插件实例，现在看不到任务状态。` : '还没有上报过插件实例，现在看不到任务状态。' }]
               ).map((item) => (
                 <p key={item.id} className="m-0 text-[15px] font-medium leading-7 text-[#0f1419] dark:text-gray-100">{item.line}</p>
               ))}
-              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">这句话来自最近一次心跳，不是本机插件面板的实时画面。</p>
+              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">同一账号只看最近还在上报的那一台。更早的安装记录不写进这句话。</p>
             </div>
           ) : null}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>

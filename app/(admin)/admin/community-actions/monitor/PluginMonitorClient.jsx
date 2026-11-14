@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMonitorShared'
+import { describeXPluginSituation, X_RUNTIME_MODE_LABELS } from '../../../../../lib/community/xExtensionMonitorShared'
 import { AdminButton, AdminPage, AdminPagination, EmptyState, Section, StatusPill } from '../../../components/ui'
 import PluginMonitorTrend from './PluginMonitorTrend'
 import XPluginStatusDeck from './XPluginStatusDeck'
@@ -64,6 +64,7 @@ function LegacyPluginMonitorClient() {
   const [reportOffset, setReportOffset] = useState(0)
   const [showAllTasks, setShowAllTasks] = useState(false)
   const [showOlderDevices, setShowOlderDevices] = useState(false)
+  const [situationOpen, setSituationOpen] = useState(false)
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [commandNote, setCommandNote] = useState('')
@@ -280,11 +281,24 @@ function LegacyPluginMonitorClient() {
 
     {platform === 'x' ? (
       <>
-        <Section title="状态监控" description={`对齐本地十三项排班（含评论首页 / 评论回复 / 评论大V / 普通发文）：优先级 1～10 分，分值越大越重要。约 10 秒刷新；版本与更新状态由本地实例上报，可下发本地立即更新。`} actions={<span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span>}>
+        <Section title="状态监控" description="点「现在什么情况」，用最新心跳说清这个账号正在跑什么、在冷却，还是有任务需处理。约 10 秒刷新。" actions={<><AdminButton size="sm" variant="primary" onClick={() => setSituationOpen(true)} disabled={!visibleData && loading}>现在什么情况</AdminButton><span className="text-[12px] text-[#7a8479] dark:text-gray-400">更新于 {time(visibleData?.now)}</span></>}>
           {accountSwitcher}
+          {situationOpen ? (
+            <div role="status" className="mb-4 rounded-2xl border border-[#d7e3f4] bg-white px-4 py-3 dark:border-[#263142] dark:bg-[#0d141c]">
+              {(!visibleData
+                ? [{ id: 'loading', line: '正在读取这个账号的插件状态。' }]
+                : devices.length
+                  ? devices.map((device) => ({ id: device.id, line: describeXPluginSituation(device, visibleData.now || Date.now()) }))
+                  : [{ id: 'empty', line: account && account !== '__all__' ? `@${account}还没有上报过插件实例，现在看不到任务状态。` : '还没有上报过插件实例，现在看不到任务状态。' }]
+              ).map((item) => (
+                <p key={item.id} className="m-0 text-[15px] font-medium leading-7 text-[#0f1419] dark:text-gray-100">{item.line}</p>
+              ))}
+              <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">这句话来自最近一次心跳，不是本机插件面板的实时画面。</p>
+            </div>
+          ) : null}
           <dl className={`-mx-4 grid grid-cols-2 divide-x divide-[#e5e9e2] border-b border-[#e5e9e2] dark:divide-[#263142] dark:border-[#263142] sm:grid-cols-4 md:-mx-5 ${accountTabs.length > 1 ? '' : '-mt-4'}`}>
             <Metric label="在线实例" value={loading && !visibleData ? '—' : online} detail="5 分钟内有心跳" />
-            <Metric label="运行中" value={loading && !visibleData ? '—' : running} detail="排班或任务声明运行中" tone="success" />
+            <Metric label="运行中" value={loading && !visibleData ? '—' : running} detail="有任务正在执行" tone="success" />
             <Metric label="可更新" value={loading && !visibleData ? '—' : updateable} detail={`对照站点 v${latestVersion || '—'}`} tone={updateable ? 'warning' : 'default'} />
             <Metric label="较早记录" value={loading && !visibleData ? '—' : olderDevices.length} detail="默认收起，可按需展开" />
           </dl>

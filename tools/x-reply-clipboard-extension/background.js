@@ -3845,7 +3845,7 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const next = timeline.future?.find((entry) => ["ready", "scheduled"].includes(entry.status)) || null;
   const facing = tasks.reduce((counts, task) => {
     if (task.phase === "running") counts.running += 1;
-    else if (task.phase === "paused" || task.phase === "stopping") counts.waiting += 1;
+    else if (task.phase === "paused" || task.phase === "stopping" || task.phase === "starting") counts.waiting += 1;
     else if (task.phase === "unknown") counts.needs += 1;
     else counts.stopped += 1;
     return counts;

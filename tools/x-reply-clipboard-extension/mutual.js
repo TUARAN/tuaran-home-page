@@ -3,7 +3,7 @@
 
   const FOLLOW_ACTION_DELAY_MS = 2000;
   const FOLLOW_BATCH_SIZE = 100;
-  // 两项关注任务共用一条节奏：确认满 100 个才休息并让出页签。休息跟速度档，不再固定 30 分钟。
+  // 回关仍确认满 100 个才休息。关注候选一次任务只关注 5、10 或 15 人，默认 15。
   const FOLLOW_ROUND_GAP_SECONDS = Object.freeze({
     slow: 10 * 60,
     medium: 5 * 60,
@@ -15,12 +15,19 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
-  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
+  const FOLLOW_BACK_LIST_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+  const TARGET_SEED_REFRESH_MS = 6 * 60 * 60 * 1000;
+  const TARGET_EXPANSION_LIMIT = 30;
+  const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
   const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
+  const TARGET_FOLLOW_LIVE_KEY = "xrcTargetFollowLive";
+  const TARGET_FOLLOW_POOL_KEY = "xrcTargetFollowPool";
+  const TARGET_BATCH_SIZE = 5;
+  let targetPool = null;
   const UNFOLLOW_REVIEW_KEY = "xrcUnfollowReview";
   let reviewAccountHandle = "";
-  let TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
-  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a few moments then try again|受到速率限制|操作过于频繁|操作太频繁|请稍等片刻后再试)/i;
+  let TARGET_FOLLOW_HANDLES = [];
+  const RATE_LIMIT_RE = /(?:sorry,\s*you are rate limited|rate limit exceeded|we limit how often|please wait a (?:few )?moments?(?:,|\s)+(?:and|then) try again|受到(?:速率|速度)限制|操作过于频繁|操作太频繁|请稍等片刻(?:[，,\s]*然后)?再试)/iu;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
   // Keep the original key so existing target-follow totals migrate into the shared quota.
   const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
@@ -57,7 +64,7 @@
     followPace: "medium",
     targetFollowPace: "medium",
     followBackScheduled: false,
-    unfollowEnglish: true,
+    unfollowEnglish: false,
     unfollowMode: "manual",
     unfollowReview: [],
     seenHandles: new Set(),
@@ -154,9 +161,15 @@
     return href.match(PROFILE_PATH_RE)?.[1] || "";
   }
 
+  function cleanupMode(mode) {
+    return mode === "unfollow" || mode === "unfollowNonSc";
+  }
+
   function reportMutualAction(mode, handle, result, errorCode) {
     const task = mode === "unfollow"
       ? "mutual-unfollow"
+      : mode === "unfollowNonSc"
+        ? "mutual-unfollow-non-sc"
       : mode === "followBack"
         ? "mutual-follow-back"
         : mode === "targetFollow"
@@ -187,15 +200,15 @@
       .map((item) => String(item || "").trim().replace(/^@/u, ""))
       .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
         && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    return list;
   }
 
   async function loadTargetFollowHandles() {
     try {
       const stored = await followStorage().get(TARGET_FOLLOW_HANDLES_KEY);
-      TARGET_FOLLOW_HANDLES = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+      TARGET_FOLLOW_HANDLES = withoutRetiredTargets(normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]));
     } catch (error) {
-      TARGET_FOLLOW_HANDLES = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+      TARGET_FOLLOW_HANDLES = [];
     }
     return TARGET_FOLLOW_HANDLES;
   }
@@ -210,45 +223,416 @@
     return TARGET_FOLLOW_HANDLES;
   }
 
-  function targetFollowHandleFromPath(pathname = pagePath()) {
+  function cleanHandle(value) {
+    const handle = String(value || "").trim().replace(/^@/u, "");
+    return /^[A-Za-z0-9_]{1,15}$/u.test(handle) ? handle : "";
+  }
+
+  function sameHandle(left, right) {
+    const a = cleanHandle(left).toLowerCase();
+    const b = cleanHandle(right).toLowerCase();
+    return Boolean(a) && a === b;
+  }
+
+  function targetScanKey() {
+    return `xrcTargetFollowScan:${currentAccountHandle() || "default"}`;
+  }
+
+  function emptyTargetScan() {
+    return { at: 0, visited: [], queue: [], refreshAfter: 0 };
+  }
+
+  function readTargetScan() {
+    let saved = {};
+    try { saved = JSON.parse(sessionStorage.getItem(targetScanKey()) || "{}"); } catch (error) { saved = {}; }
+    const refreshAfter = Number(saved.refreshAfter) || 0;
+    if (refreshAfter && Date.now() >= refreshAfter) {
+      try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
+      publishTargetRoster(emptyTargetScan());
+      return emptyTargetScan();
+    }
+    return {
+      at: Number(saved.at) || 0,
+      visited: Array.isArray(saved.visited) ? saved.visited.map(cleanHandle).filter(Boolean) : [],
+      queue: Array.isArray(saved.queue) ? saved.queue.map(cleanHandle).filter(Boolean) : [],
+      refreshAfter
+    };
+  }
+
+  function writeTargetScan(scan) {
+    try {
+      sessionStorage.setItem(targetScanKey(), JSON.stringify({
+        at: Date.now(),
+        visited: scan.visited || [],
+        queue: scan.queue || [],
+        refreshAfter: Number(scan.refreshAfter) || 0
+      }));
+    } catch (error) {}
+  }
+
+  function normalizeTargetPool(value) {
+    const incoming = Array.isArray(value?.handles) ? value.handles : [];
+    const handles = [];
+    const seen = new Set();
+    const add = (item, seenAt = 0) => {
+      const handle = cleanHandle(typeof item === "string" ? item : item?.handle);
+      const key = handle.toLowerCase();
+      if (!handle || seen.has(key)) return;
+      seen.add(key);
+      handles.push({ handle, seenAt: Number(item?.seenAt) || seenAt, usedAt: Number(item?.usedAt) || 0 });
+    };
+    incoming.forEach((item) => add(item));
+    return {
+      handles,
+      lastBatch: (Array.isArray(value?.lastBatch) ? value.lastBatch : []).map(cleanHandle).filter(Boolean),
+      batch: (Array.isArray(value?.batch) ? value.batch : []).map(cleanHandle).filter(Boolean)
+    };
+  }
+
+  function sameHandleSet(left, right) {
+    const normalize = (handles) => handles.map((handle) => cleanHandle(handle).toLowerCase()).filter(Boolean).sort();
+    const a = normalize(left);
+    const b = normalize(right);
+    return a.length === b.length && a.every((handle, index) => handle === b[index]);
+  }
+
+  function selectTargetBatch(pool, { size = TARGET_BATCH_SIZE, sources = [] } = {}) {
+    const normalized = normalizeTargetPool(pool);
+    const board = (Array.isArray(sources) ? sources : []).map(cleanHandle).filter(Boolean);
+    if (leaderboard?.selectBatch) return leaderboard.selectBatch(board, normalized.lastBatch, size);
+    return { handles: [], changed: false, reused: false };
+  }
+
+  function rememberPoolHandles(pool, handles, now = Date.now()) {
+    const next = normalizeTargetPool(pool);
+    for (const value of handles || []) {
+      const cleaned = cleanHandle(value);
+      if (!cleaned) continue;
+      const existing = next.handles.find((item) => item.handle.toLowerCase() === cleaned.toLowerCase());
+      if (existing) existing.seenAt = Math.max(existing.seenAt, now);
+      else next.handles.push({ handle: cleaned, seenAt: now, usedAt: 0 });
+    }
+    return next;
+  }
+
+  function readTargetTask() {
+    try { return JSON.parse(sessionStorage.getItem("xrcTargetFollowTask") || "null"); } catch (error) { return null; }
+  }
+
+  function writeTargetTask(task) {
+    try { sessionStorage.setItem("xrcTargetFollowTask", JSON.stringify(task)); } catch (error) {}
+  }
+
+  function withoutRetiredTargets(handles) {
+    if (leaderboard?.withoutRetired) return leaderboard.withoutRetired(handles);
+    return (Array.isArray(handles) ? handles : []).map(cleanHandle).filter(Boolean);
+  }
+
+  function planTargetTaskBatch(pool, task, size = TARGET_BATCH_SIZE, sources = []) {
+    const locked = task?.locked && Array.isArray(task.batch) && task.batch.length;
+    if (locked) {
+      const handles = withoutRetiredTargets(task.batch);
+      if (handles.length) return { handles, changed: false };
+    }
+    return selectTargetBatch(pool, { size, sources });
+  }
+
+  function publishTargetBatch(handles, upcoming = []) {
+    const current = (handles || []).map(cleanHandle).filter(Boolean);
+    const next = (upcoming || []).map(cleanHandle).filter((handle) => handle && !current.some((item) => sameHandle(item, handle)));
+    const payload = { seeds: current, queue: next, current, next, refreshAfter: 0, at: Date.now(), batch: true };
+    try {
+      const write = globalThis.chrome?.storage?.local?.set?.({ [TARGET_FOLLOW_LIVE_KEY]: payload });
+      if (write && typeof write.catch === "function") write.catch(() => {});
+    } catch (error) {}
+    return payload;
+  }
+
+  async function loadTargetPool() {
+    try {
+      const stored = await followStorage().get(TARGET_FOLLOW_POOL_KEY);
+      targetPool = normalizeTargetPool(stored?.[TARGET_FOLLOW_POOL_KEY]);
+    } catch (error) {
+      targetPool = normalizeTargetPool(null);
+    }
+    return targetPool;
+  }
+
+  function persistTargetPool() {
+    try {
+      const write = globalThis.chrome?.storage?.local?.set?.({ [TARGET_FOLLOW_POOL_KEY]: targetPool });
+      if (write && typeof write.catch === "function") write.catch(() => {});
+    } catch (error) {}
+  }
+
+  function applyTargetBatch(handles) {
+    const current = handles.map(cleanHandle).filter(Boolean);
+    if (!current.length) return "";
+    TARGET_FOLLOW_HANDLES = current;
+    targetPool = normalizeTargetPool(targetPool);
+    targetPool.batch = current.slice();
+    targetPool.lastBatch = current.slice();
+    current.forEach((handle) => {
+      const item = targetPool.handles.find((entry) => entry.handle.toLowerCase() === handle.toLowerCase());
+      if (item) item.usedAt = Date.now();
+    });
+    persistTargetPool();
+    publishTargetBatch(current);
+    return current[0];
+  }
+
+  async function beginTargetTask() {
+    await loadTargetPool();
+    const saved = readTargetTask();
+    const board = leaderboard?.loadHandles
+      ? await Promise.race([
+        leaderboard.loadHandles(),
+        new Promise((resolve) => setTimeout(() => resolve([]), 4000))
+      ])
+      : [];
+    const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
+    if (planned.changed === false && saved?.locked) {
+      const locked = planned.handles.map(cleanHandle).filter(Boolean);
+      if (locked.length) {
+        TARGET_FOLLOW_HANDLES = locked;
+        publishTargetBatch(locked, saved.next || []);
+        return locked;
+      }
+    }
+    const handles = planned.handles.map(cleanHandle).filter(Boolean);
+    applyTargetBatch(handles);
+    writeTargetTask({ locked: true, batch: handles, next: [] });
+    try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
+    return handles;
+  }
+
+  function finishTargetTask() {
+    const saved = readTargetTask();
+    if (saved) writeTargetTask({ ...saved, locked: false });
+  }
+
+  function noteSeenTargetSources(handles) {
+    if (!targetPool) targetPool = normalizeTargetPool(null);
+    let self = "";
+    try { self = currentAccountHandle(); } catch (error) { self = ""; }
+    const source = targetFollowHandleFromPath();
+    const cleaned = (handles || []).map(cleanHandle).filter((handle) => handle
+      && !sameHandle(handle, self) && !sameHandle(handle, source));
+    if (!cleaned.length) return "";
+    targetPool = rememberPoolHandles(targetPool, cleaned, Date.now());
+    persistTargetPool();
+    const preview = selectTargetBatch({ ...targetPool, lastBatch: TARGET_FOLLOW_HANDLES }, { size: TARGET_BATCH_SIZE });
+    const upcoming = preview.handles.filter((handle) => !TARGET_FOLLOW_HANDLES.some((current) => sameHandle(current, handle)));
+    publishTargetBatch(TARGET_FOLLOW_HANDLES, upcoming);
+    const saved = readTargetTask();
+    if (saved?.locked) writeTargetTask({ ...saved, next: upcoming });
+    return "";
+  }
+
+  function rotateTargetBatchNow() {
+    if (!targetPool) targetPool = normalizeTargetPool(null);
+    const selected = selectTargetBatch({ ...targetPool, lastBatch: TARGET_FOLLOW_HANDLES }, { size: TARGET_BATCH_SIZE });
+    if (!selected.changed || sameHandleSet(selected.handles, TARGET_FOLLOW_HANDLES)) return "";
+    const first = applyTargetBatch(selected.handles);
+    writeTargetTask({ locked: true, batch: TARGET_FOLLOW_HANDLES.slice(), next: [] });
+    return first;
+  }
+
+  function targetSourceMayAdvance({ seenRows = false, stalled = 0, idleMs = 0, followed = false, retry = false, followable = null, stalledLimit = MAX_STALLED_SCROLLS, idleLimit = TARGET_SOURCE_IDLE_MS } = {}) {
+    if (retry) return true;
+    if (!seenRows) return false;
+    const settled = stalled >= stalledLimit || idleMs >= idleLimit;
+    if (!settled) return false;
+    if (followed) return true;
+    return followable === false;
+  }
+
+  function followerHandleFromPath(pathname = pagePath()) {
     const match = String(pathname || "").match(/^\/([^/]+)\/followers$/i);
-    if (!match) return "";
-    return TARGET_FOLLOW_HANDLES.find((handle) => handle.toLowerCase() === match[1].toLowerCase()) || "";
+    return match ? cleanHandle(match[1]) : "";
+  }
+
+  function readTargetNavGuard() {
+    try { return JSON.parse(sessionStorage.getItem("xrcTargetFollowNav") || "null"); } catch (error) { return null; }
+  }
+
+  function writeTargetNavGuard(guard) {
+    try {
+      if (!guard) sessionStorage.removeItem("xrcTargetFollowNav");
+      else sessionStorage.setItem("xrcTargetFollowNav", JSON.stringify(guard));
+    } catch (error) {}
+  }
+
+  function targetFollowOpenDecision({ pathHandle = "", batch = [], guard = null } = {}) {
+    const cleaned = cleanHandle(pathHandle);
+    const locked = (Array.isArray(batch) ? batch : []).map(cleanHandle).filter(Boolean);
+    if (cleaned && locked.some((handle) => sameHandle(handle, cleaned))) return { navigate: "", guard: null };
+    const destination = locked[0] ? `/${locked[0]}/followers` : "";
+    if (!destination || (guard && guard.to === destination)) {
+      return { navigate: "", guard: destination ? { to: destination, stopped: true } : null, error: "当前页不在本批源头里，已停在此页，避免来回跳转" };
+    }
+    return { navigate: destination, guard: { to: destination, stopped: false }, error: "请打开本批源头的粉丝列表" };
+  }
+
+  function visibleTargetRoster(seeds, scan) {
+    const seedList = [];
+    const seen = new Set();
+    for (const handle of (Array.isArray(seeds) ? seeds : TARGET_FOLLOW_HANDLES)) {
+      const cleaned = cleanHandle(handle);
+      const key = cleaned.toLowerCase();
+      if (!cleaned || seen.has(key)) continue;
+      seen.add(key);
+      seedList.push(cleaned);
+    }
+    const refreshAfter = Number(scan?.refreshAfter) || 0;
+    const expired = Boolean(refreshAfter) && Date.now() >= refreshAfter;
+    const queue = [];
+    if (!expired) {
+      for (const handle of scan?.queue || []) {
+        const cleaned = cleanHandle(handle);
+        const key = cleaned.toLowerCase();
+        if (!cleaned || seen.has(key)) continue;
+        seen.add(key);
+        queue.push(cleaned);
+      }
+    }
+    return { seeds: seedList, queue, current: [...seedList, ...queue] };
+  }
+
+  function publishTargetRoster(scan) {
+    const roster = visibleTargetRoster(TARGET_FOLLOW_HANDLES, scan);
+    const payload = { ...roster, refreshAfter: Number(scan?.refreshAfter) || 0, at: Date.now() };
+    try {
+      const write = globalThis.chrome?.storage?.local?.set?.({ [TARGET_FOLLOW_LIVE_KEY]: payload });
+      if (write && typeof write.catch === "function") write.catch(() => {});
+    } catch (error) {}
+    return payload;
+  }
+
+  function currentTargetRoster() {
+    return visibleTargetRoster(TARGET_FOLLOW_HANDLES, readTargetScan());
+  }
+
+  function republishTargetRoster() {
+    return publishTargetRoster(readTargetScan());
+  }
+
+  function expansionSources(scan, seeds = TARGET_FOLLOW_HANDLES) {
+    const seen = new Set();
+    const list = [];
+    for (const handle of [...seeds, ...(scan?.queue || [])]) {
+      const cleaned = cleanHandle(handle);
+      const key = cleaned.toLowerCase();
+      if (!cleaned || seen.has(key)) continue;
+      seen.add(key);
+      list.push(cleaned);
+    }
+    return list;
+  }
+
+  function expansionCount(scan, seeds = TARGET_FOLLOW_HANDLES) {
+    const seedKeys = new Set(seeds.map((handle) => cleanHandle(handle).toLowerCase()).filter(Boolean));
+    const keys = new Set();
+    for (const handle of [...(scan?.visited || []), ...(scan?.queue || [])]) {
+      const key = cleanHandle(handle).toLowerCase();
+      if (key && !seedKeys.has(key)) keys.add(key);
+    }
+    return keys.size;
+  }
+
+  function queueFollowedSource(handle, scan, { self = "", seeds = TARGET_FOLLOW_HANDLES, limit = TARGET_EXPANSION_LIMIT } = {}) {
+    const cleaned = cleanHandle(handle);
+    const next = {
+      visited: [...(scan?.visited || [])],
+      queue: [...(scan?.queue || [])],
+      refreshAfter: Number(scan?.refreshAfter) || 0
+    };
+    if (!cleaned || (self && sameHandle(cleaned, self))) return { scan: next, added: false };
+    if ([...seeds, ...next.visited, ...next.queue].some((item) => sameHandle(item, cleaned))) return { scan: next, added: false };
+    if (expansionCount(next, seeds) >= limit) return { scan: next, added: false };
+    next.queue.push(cleaned);
+    next.refreshAfter = 0;
+    return { scan: next, added: true };
+  }
+
+  function rememberFollowedSource(handle) {
+    let self = "";
+    try { self = currentAccountHandle(); } catch (error) { self = ""; }
+    const scan = readTargetScan();
+    const queued = queueFollowedSource(handle, scan, { self, seeds: TARGET_FOLLOW_HANDLES });
+    if (queued.added) {
+      writeTargetScan(queued.scan);
+      publishTargetRoster(queued.scan);
+    }
+    return queued.added;
+  }
+
+  function knownTargetSources() {
+    const scan = readTargetScan();
+    const known = expansionSources(scan);
+    for (const handle of scan.visited || []) {
+      if (handle && !known.some((item) => sameHandle(item, handle))) known.push(handle);
+    }
+    return known;
+  }
+
+  function targetFollowHandleFromPath(pathname = pagePath()) {
+    const handle = followerHandleFromPath(pathname);
+    if (!handle) return "";
+    return knownTargetSources().find((item) => item.toLowerCase() === handle.toLowerCase()) || "";
   }
 
   function nextTargetFollowSource(handles, current, visited = []) {
-    const checked = new Set([...visited, current].map(handle => String(handle).toLowerCase()));
+    const checked = new Set([...visited, current].map(handle => String(handle || "").toLowerCase()).filter(Boolean));
     return handles.find(handle => !checked.has(String(handle).toLowerCase())) || "";
   }
 
   function advanceTargetFollowSource() {
-    const key = `xrcTargetFollowScan:${currentAccountHandle() || "default"}`;
-    let saved = {};
-    try { saved = JSON.parse(sessionStorage.getItem(key) || "{}"); } catch {}
-    const visited = Date.now() - Number(saved.at || 0) < RESCAN_INTERVAL_MS && Array.isArray(saved.visited) ? saved.visited : [];
+    const scan = readTargetScan();
     const current = targetFollowHandleFromPath();
-    const next = nextTargetFollowSource(TARGET_FOLLOW_HANDLES, current, visited);
-    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), visited: next ? [...new Set([...visited, current])] : [] }));
-    return next;
+    const next = nextTargetFollowSource(expansionSources(scan), current, scan.visited);
+    if (next) {
+      const visited = [...new Set([...scan.visited, cleanHandle(current)].filter(Boolean))];
+      const nextScan = { ...scan, visited, refreshAfter: 0 };
+      writeTargetScan(nextScan);
+      publishTargetRoster(nextScan);
+      return next;
+    }
+    if (!scan.refreshAfter) {
+      const waiting = { ...scan, refreshAfter: Date.now() + TARGET_SEED_REFRESH_MS };
+      writeTargetScan(waiting);
+      publishTargetRoster(waiting);
+    }
+    return "";
   }
 
   function pickTargetFollowHandle() {
-    const handles = TARGET_FOLLOW_HANDLES.length ? TARGET_FOLLOW_HANDLES : DEFAULT_TARGET_FOLLOW_HANDLES;
+    const handles = TARGET_FOLLOW_HANDLES.map(cleanHandle).filter(Boolean);
+    if (!handles.length) return "";
     return handles[Math.floor(Math.random() * handles.length)];
   }
 
   function listReady(mode) {
-    if (mode === "unfollow") return isFollowingPage();
+    if (cleanupMode(mode)) return isFollowingPage();
     if (mode === "followBack") return isFollowersPage() && !targetFollowHandleFromPath();
-    if (mode === "targetFollow") return Boolean(targetFollowHandleFromPath());
+    if (mode === "targetFollow") {
+      const handle = followerHandleFromPath();
+      if (!handle) return false;
+      let self = "";
+      try { self = currentAccountHandle(); } catch (error) { self = ""; }
+      return !sameHandle(handle, self);
+    }
     return false;
   }
 
   function targetPath(mode) {
-    if (mode === "targetFollow") return `/${targetFollowHandleFromPath() || pickTargetFollowHandle()}/followers`;
+    if (mode === "targetFollow") {
+      const handle = targetFollowHandleFromPath() || pickTargetFollowHandle();
+      return handle ? `/${handle}/followers` : "";
+    }
     const handle = currentAccountHandle();
     if (!handle) return "";
-    if (mode === "unfollow") return `/${handle}/following`;
+    if (cleanupMode(mode)) return `/${handle}/following`;
     if (mode === "followBack") return `/${handle}/followers`;
     return "";
   }
@@ -286,6 +670,16 @@
 
   function followBatchCooldownMs(pace) {
     return followRoundGapSeconds(pace) * 1000;
+  }
+
+  function targetFollowQuota(pace) {
+    if (pace === "slow") return 5;
+    if (pace === "medium") return 10;
+    return 15;
+  }
+
+  function followBackQuota(pace) {
+    return targetFollowQuota(pace);
   }
 
   function formatFollowGapLabel(ms) {
@@ -347,13 +741,13 @@
     state.unfollowMode = stored.xrcUnfollowMode === "auto" ? "auto" : "manual";
     state.unfollowReview = (Array.isArray(stored[key]) ? stored[key] : [])
       .filter((item) => /^@?[A-Za-z0-9_]{1,15}$/u.test(String(item?.handle || "")))
-      .map((item) => ({ handle: String(item.handle).replace(/^@/u, ""), reason: item.reason === "nonChinese" ? "nonChinese" : "notFollowingBack", addedAt: Number(item.addedAt) || Date.now() }));
+      .map((item) => ({ handle: String(item.handle).replace(/^@/u, ""), reason: item.reason === "nonChinese" || item.reason === "nonSimplified" ? item.reason : "notFollowingBack", addedAt: Number(item.addedAt) || Date.now() }));
     emit();
     return snapshot();
   }
 
   async function setUnfollowMode(mode) {
-    if (state.running && state.mode === "unfollow") return state.unfollowMode;
+    if (state.running && cleanupMode(state.mode)) return state.unfollowMode;
     state.unfollowMode = mode === "auto" ? "auto" : "manual";
     await followStorage().set({ xrcUnfollowMode: state.unfollowMode });
     emit();
@@ -365,7 +759,7 @@
     if (state.unfollowReview.some((entry) => entry.handle.toLowerCase() === handle.toLowerCase())) return false;
     const next = [...state.unfollowReview, {
       handle,
-      reason: item.followsYou ? "nonChinese" : "notFollowingBack",
+      reason: item.reason === "nonSimplified" || item.reason === "nonChinese" ? item.reason : "notFollowingBack",
       addedAt: Date.now()
     }];
     await followStorage().set({ [unfollowReviewStorageKey()]: next });
@@ -399,8 +793,12 @@
     const today = localDayKey();
     let result;
     try {
-      result = await followStorage().get(FOLLOW_RATE_STORAGE_KEY);
+      result = await Promise.race([
+        followStorage().get(FOLLOW_RATE_STORAGE_KEY),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("follow-rate-timeout")), 2000))
+      ]);
     } catch (error) {
+      if (String(error?.message || error) === "follow-rate-timeout") return state.sharedDailyFollowed || 0;
       throw followStorageError(error);
     }
     const saved = result?.[FOLLOW_RATE_STORAGE_KEY] || null;
@@ -477,9 +875,17 @@
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
+  function isRateLimitText(text) {
+    return RATE_LIMIT_RE.test(String(text || ""));
+  }
+
   function rateLimitNodes() {
-    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
-      .filter((node) => RATE_LIMIT_RE.test(textOf(node)));
+    const matched = Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"]'))
+      .filter((node) => !node.closest?.("#x-reply-clipboard-panel") && isRateLimitText(textOf(node)));
+    if (matched.length) return matched;
+    const layers = document.querySelector("#layers");
+    if (layers && isRateLimitText(textOf(layers))) return [layers];
+    return [];
   }
 
   function rateLimitVisible() {
@@ -569,9 +975,23 @@
     return Boolean(label) && (FOLLOW_BACK_RE.test(label) || /^Follow back\s+@/i.test(label) || /^回关\s+@/u.test(label));
   }
 
+  function followControlKind(button) {
+    const aria = String(button?.getAttribute?.("aria-label") || "").trim();
+    const lines = String(button?.innerText || button?.textContent || "").split(/\n/u).map((line) => line.trim()).filter(Boolean);
+    const visible = lines.join(" ");
+    const last = lines[lines.length - 1] || "";
+    const back = FOLLOW_BACK_RE.test(aria) || FOLLOW_BACK_RE.test(visible) || FOLLOW_BACK_RE.test(last) || /^Follow back\s+@/i.test(aria) || /^回关\s+@/u.test(aria);
+    if (back) return "back";
+    const following = FOLLOWING_RE.test(aria) || FOLLOWING_RE.test(last) || /^Following\s+@/i.test(aria) || /^正在关注\s+@/.test(aria);
+    if (following) return "following";
+    const follow = FOLLOW_RE.test(aria) || /^Follow\s+@/i.test(aria) || /^关注\s+@/.test(aria) || FOLLOW_RE.test(visible) || FOLLOW_RE.test(last);
+    return follow ? "follow" : "";
+  }
+
   function isPlainFollowButton(button) {
-    const label = buttonLabel(button);
-    return Boolean(label) && !isFollowBackButton(button) && !isFollowingButton(button) && (FOLLOW_RE.test(label) || /^Follow\s+@/i.test(label) || /^关注\s+@/.test(label));
+    if (followControlKind(button) !== "follow") return false;
+    const nested = Array.from(button?.querySelectorAll?.("button, [role='button']") || []);
+    return !nested.some((child) => child !== button && followControlKind(child) === "follow");
   }
 
   function findFollowingButton(row) {
@@ -599,20 +1019,54 @@
     return textOf(row).match(USER_HANDLE_RE)?.[0] || "";
   }
 
+  function followsYouStatus(row) {
+    if (!row || typeof row.querySelector !== "function") return "unknown";
+    const text = textOf(row);
+    if (row.querySelector('[data-testid="userFollowIndicator"]') || FOLLOWS_YOU_RE.test(text)) return "yes";
+    if (row.getAttribute?.("aria-busy") === "true") return "unknown";
+    const userCell = row.getAttribute?.("data-testid") === "UserCell" || row.querySelector('[data-testid="UserCell"]');
+    const name = textOf(row.querySelector('[data-testid="User-Name"]'));
+    if (!userCell || !name) return "unknown";
+    return "no";
+  }
+
   function hasFollowsYou(row) {
-    return Boolean(row.querySelector('[data-testid="userFollowIndicator"]')) || FOLLOWS_YOU_RE.test(textOf(row));
+    return followsYouStatus(row) === "yes";
   }
 
   function profileTextParts(row, handle) {
-    const nameNode = row.querySelector?.('[data-testid="User-Name"]');
-    const bioNode = row.querySelector?.('[data-testid="UserDescription"]');
-    if (nameNode) return { name: textOf(nameNode), bio: bioNode ? textOf(bioNode) : "" };
-    const profileTexts = Array.from(row.querySelectorAll('[dir="ltr"], [dir="auto"]'))
-      .filter((node) => !node.closest?.('button, [role="button"], [data-testid="userFollowIndicator"]'))
-      .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
-      .filter(Boolean);
-    const candidates = profileTexts.filter((text) => !/^@[A-Za-z0-9_]{1,15}$/.test(text));
-    return { name: candidates[0] || "", bio: candidates.slice(1).join(" ") };
+    const read = (card) => {
+      const nameNode = card?.querySelector?.('[data-testid="User-Name"]') || card?.querySelector?.('[data-testid="UserName"]');
+      const bioNode = card?.querySelector?.('[data-testid="UserDescription"]');
+      const described = bioNode ? textOf(bioNode) : "";
+      const nodes = Array.from(card?.querySelectorAll?.('[dir="ltr"], [dir="auto"]') || [])
+        .filter((node) => !nameNode?.contains?.(node));
+      const leaves = nodes.filter((node) => !nodes.some((other) => other !== node && node.contains?.(other)));
+      const fragments = leaves
+        .map((node) => textOf(node).replace(FOLLOWS_YOU_RE, "").trim())
+        .filter((text) => text && !/^@[A-Za-z0-9_]{1,15}$/u.test(text));
+      const name = nameNode ? textOf(nameNode) : (fragments[0] || "");
+      const labels = Array.from(card?.querySelectorAll?.('button, [role="button"]') || [])
+        .map((node) => buttonLabel(node))
+        .filter((label) => /^(?:Follow(?:\s+back)?|Following|关注|回关|正在关注)(?:\s+@\S+)?$/iu.test(label));
+      let rest = textOf(card).replace(FOLLOWS_YOU_RE, " ");
+      for (const label of labels) {
+        rest = rest.split(label).join(" ");
+        const verb = String(label).split(/\s+/u)[0];
+        if (/^(?:Follow|Following|关注|回关|正在关注)$/iu.test(verb)) rest = rest.split(verb).join(" ");
+      }
+      rest = rest.replace(/@[A-Za-z0-9_]{1,15}/gu, " ").trim();
+      const bio = [described, nameNode ? fragments.join(" ") : fragments.slice(1).join(" "), rest].filter(Boolean).join(" ");
+      return { name, bio };
+    };
+    const own = read(row);
+    if (/\p{Script=Han}/u.test(own.name) || /\p{Script=Han}/u.test(own.bio)) return own;
+    const parent = row?.closest?.('[data-testid="cellInnerDiv"]');
+    if (parent && parent !== row) {
+      const card = read(parent);
+      if (/\p{Script=Han}/u.test(card.name) || /\p{Script=Han}/u.test(card.bio)) return card;
+    }
+    return own;
   }
 
   function profileHasChinese(row, handle) {
@@ -625,8 +1079,51 @@
     return Boolean(name) && !profileHasChinese(row, handle);
   }
 
+  const SIMPLIFIED_MARK = /[国东这对时会学说话们过还进发长无门车书从众电马鱼鸟龙龟爱观体达价场广应边远连选运艺药医农杂鸡页风飞请让议论认识记许设证评词译试诗谁课调谈谢贝货责质贵费贺资赚赛赵趋转轮轻较载辆办汉测济灯独获献现画当疗监盘码础礼种积稳穷竞笔节签类经级练组终绍结绕绘给络绝统丝绿网续义习联声职与兴举旧万叶盖处号卫补装制复见规视览计讨护丰买赏赔贤卖账赌赖购赠赶军软输违适迟迁遗邮乡郑酱释针钱错链镜闪闭间阅队阳阴阵阶际随险隐难离雾灵顶项顺须预领头题额养馆验惊龄齿齐党麦个实点线开关尔来两气湾]/u;
+  const TRADITIONAL_MARK = /[國東這對時會學說話們過還進發髮長無門車書從眾電馬魚鳥龍龜愛觀體達價場廣應邊遠連選運藝藥醫農雜雞頁風飛請讓議論認識記許設證評詞譯試詩誰課調談謝貝貨責質貴費賀資賺賽趙趨轉輪輕較載輛辦漢測濟燈獨獲獻現畫當療監盤碼礎禮種積穩窮競筆節簽類經級練組終紹結繞繪給絡絕統絲綠網續義習聯聲職與興舉舊萬葉蓋處號衛補裝製復見規視覽計討護豐買賞賠賢賣賬賭賴購贈趕軍軟輸違適遲遷遺郵鄉鄭醬釋針錢錯鏈鏡閃閉間閱隊陽陰陣階際隨險隱難離霧靈頂項順須預領頭題額養館驗驚齡齒齊黨麥個實點線開關爾來兩氣灣臺裡後]/u;
+
+  function textIsNonSimplified(text) {
+    const value = String(text || "");
+    if (SIMPLIFIED_MARK.test(value)) return false;
+    if (/[\u3040-\u30ff\u31f0-\u31ff]/u.test(value) || TRADITIONAL_MARK.test(value)) return true;
+    return !/\p{Script=Han}/u.test(value);
+  }
+
+  function profileIsNonSimplified(row, handle) {
+    const { name, bio } = profileTextParts(row, handle);
+    if (!name) return false;
+    return textIsNonSimplified(`${name} ${bio}`);
+  }
+
+  function cardForActionButton(button) {
+    let card = button;
+    let node = button;
+    while (node?.parentElement) {
+      const parent = node.parentElement;
+      if (parent === document.body || parent === document.documentElement) break;
+      if (parent.getAttribute?.("data-testid") === "primaryColumn") break;
+      const controls = actions(parent).filter((item) => isPlainFollowButton(item) || isFollowBackButton(item) || isFollowingButton(item));
+      if (controls.length > 1) break;
+      card = parent;
+      node = parent;
+    }
+    return card;
+  }
+
   function rows() {
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+    const cards = [];
+    const seen = new Set();
+    for (const button of actions(main)) {
+      if (!isPlainFollowButton(button) && !isFollowBackButton(button) && !isFollowingButton(button)) continue;
+      const card = cardForActionButton(button);
+      if (!card || seen.has(card)) continue;
+      const rect = card.getBoundingClientRect?.() || { top: 0, bottom: 1, width: 1, height: 1 };
+      if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.height < 8) continue;
+      seen.add(card);
+      cards.push(card);
+    }
+    if (cards.length) return cards;
     const candidates = [
       ...main.querySelectorAll('[data-testid="UserCell"]'),
       ...main.querySelectorAll('article[role="article"]'),
@@ -644,15 +1141,19 @@
       const followBackButton = findFollowBackButton(row);
       const followButton = findPlainFollowButton(row);
       const handle = findHandle(row, followingButton || followBackButton || followButton);
-      const followsYou = hasFollowsYou(row);
-      const nonChineseProfile = mode === "unfollow" && state.unfollowEnglish && profileNonChinese(row, handle);
+      const followsStatus = followsYouStatus(row);
+      const followsYou = followsStatus === "yes";
+      const followsYouKnown = followsStatus !== "unknown";
+      const nonSimplifiedProfile = mode === "unfollowNonSc" && profileIsNonSimplified(row, handle);
       const hasChineseProfile = (mode === "followBack" || mode === "targetFollow") && profileHasChinese(row, handle);
       const candidate = mode === "unfollow"
-        ? Boolean(handle && followingButton && (!followsYou || nonChineseProfile))
+        ? Boolean(handle && followingButton && followsYouKnown && !followsYou)
+        : mode === "unfollowNonSc"
+          ? Boolean(handle && followingButton && nonSimplifiedProfile)
         : mode === "followBack"
           ? Boolean(handle && followBackButton && followsYou && hasChineseProfile)
           : Boolean(handle && followButton && !followBackButton && !followingButton && hasChineseProfile);
-      return { row, handle, followsYou, nonChineseProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
+      return { row, handle, followsYou, followsYouKnown, nonSimplifiedProfile, hasChineseProfile, followingButton, followBackButton, followButton, candidate };
     }).filter((item) => item.handle);
   }
 
@@ -767,6 +1268,7 @@
     if (changed !== "done") return false;
     state.targetFollowed += 1;
     await recordSharedFollow();
+    rememberFollowedSource(item.handle);
     reportMutualAction("targetFollow", item.handle, "success");
     return true;
   }
@@ -831,23 +1333,48 @@
   }
 
   async function runWithStorage(mode, onUpdate, options = {}) {
+    const cleaning = mode === "unfollow" || mode === "unfollowNonSc";
     if (state.running) return false;
-    if (mode === "unfollow" && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
+    if (cleaning && !isFollowingPage()) return { navigate: targetPath(mode), error: "请打开自己的 Following 页面" };
     if (mode === "followBack" && !isFollowersPage()) return { navigate: targetPath(mode), error: "请打开自己的 Followers 页面" };
-    if (mode === "targetFollow") await loadTargetFollowHandles();
-    if (mode === "targetFollow" && !targetFollowHandleFromPath()) {
-      return { navigate: targetPath(mode), error: "请打开随机抽中的 Followers 页面" };
+    if (mode === "targetFollow") {
+      const openHandle = typeof followerHandleFromPath === "function" ? followerHandleFromPath() : "";
+      const openRows = typeof visibleRows === "function" ? visibleRows(mode) : [];
+      const followableNow = Boolean(openHandle) && openRows.some((item) => item?.candidate);
+      if (!followableNow) {
+      await loadTargetFollowHandles();
+      if (typeof beginTargetTask === "function") await beginTargetTask();
+      }
+      const pathHandle = typeof targetFollowHandleFromPath === "function" ? targetFollowHandleFromPath() : openHandle;
+      const batch = typeof TARGET_FOLLOW_HANDLES !== "undefined" && Array.isArray(TARGET_FOLLOW_HANDLES) ? TARGET_FOLLOW_HANDLES : null;
+      const normalizedHandle = (value) => String(value || "").trim().replace(/^@/u, "").toLowerCase();
+      const batchKnown = Array.isArray(batch) && batch.length > 0;
+      const onBatch = batchKnown
+        ? Boolean(pathHandle && batch.some((handle) => normalizedHandle(handle) === normalizedHandle(pathHandle)))
+        : Boolean(pathHandle);
+      if (!followableNow && batchKnown && !onBatch) {
+        const decision = targetFollowOpenDecision({
+          pathHandle,
+          batch: batch || [],
+          guard: readTargetNavGuard()
+        });
+        writeTargetNavGuard(decision.guard);
+        if (decision.navigate) return { navigate: decision.navigate, error: decision.error };
+        return { error: decision.error || "当前页不在本批源头里，已停在此页，避免来回跳转" };
+      }
+      writeTargetNavGuard(null);
     }
-    const independentCleanup = mode === "unfollow";
+    const independentCleanup = cleaning;
     if (independentCleanup) await loadUnfollowReview();
     const manualUnfollow = independentCleanup && state.unfollowMode === "manual";
     const cleanupLimit = ({ slow: 15, medium: 30, fast: 45, turbo: 60 })[state.followPace] || 15;
     let cleanupAttempts = 0;
-    await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" });
+    await loadSharedFollowRate({ applyBatchCooldown: mode !== "followBack" && mode !== "targetFollow" });
     await reset(mode, onUpdate);
-    if (!independentCleanup && mode === "followBack" && typeof prepareFollowBackSession === "function") await prepareFollowBackSession();
     emit(mode === "unfollow"
       ? manualUnfollow ? "正在扫描 Following 列表，记录待取关账号" : "开始自动清理未回关账号"
+      : mode === "unfollowNonSc"
+        ? manualUnfollow ? "正在扫描 Following 列表，记录非简中账号" : "开始自动清理非简中账号"
       : mode === "followBack"
         ? "开始回关粉丝"
         : "开始关注候选");
@@ -859,6 +1386,7 @@
     }
     let stalled = 0;
     let sourceIdleSince = 0;
+    let sourceFollowed = false;
     const observedSourceHandles = new Set();
     let stopReason = "";
     let listRetryAttempts = 0;
@@ -883,7 +1411,7 @@
         stopReason = "已离开当前关注名单，任务已停止；回到对应列表后可重新启动";
         break;
       }
-      if (mode === "unfollow" && (rateLimitVisible() || automationWarningVisible())) {
+      if (cleaning && (rateLimitVisible() || automationWarningVisible())) {
         stopReason = automationWarningVisible() && !rateLimitVisible()
           ? "X 提示疑似自动化，本次先停下。"
           : "X 提示操作受限，本次先停下。";
@@ -904,11 +1432,20 @@
       }
       if (!independentCleanup && !(await waitForSharedCooldown())) break;
       if (rateLimitVisible()) {
+        if (mode === "targetFollow" || mode === "followBack" || cleaning) {
+          stopReason = mode === "targetFollow"
+            ? `已关注 ${state.targetFollowed} 人，X 提示超过限制，本次结束`
+            : mode === "followBack"
+              ? `已回关 ${state.followedBack} 人，X 提示超过限制，本次结束`
+              : "X 提示操作受限，本次先停下。";
+          break;
+        }
         if (!(await waitForPlatformRateLimit())) break;
         continue;
       }
-      if (mode === "unfollow" && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
+      if (cleaning && !manualUnfollow && cleanupAttempts >= cleanupLimit) { stopReason = "本次清理已完成，等待下次排班"; break; }
       const items = visibleRows(mode);
+      if (mode === "targetFollow" && typeof noteSeenTargetSources === "function") noteSeenTargetSources(items.map((item) => item.handle));
       if (manualUnfollow) {
         const retry = followingRetryButton();
         if (retry) {
@@ -935,7 +1472,7 @@
         }
       }
       for (const item of items) {
-        const skipped = mode === "unfollow" ? item.followsYou : !item.candidate;
+        const skipped = cleaning ? Boolean(item.followsYou) && mode === "unfollow" : !item.candidate;
         if (skipped && !state.skippedHandles.has(item.handle)) {
           state.skippedHandles.add(item.handle);
           state.skipped += 1;
@@ -946,18 +1483,18 @@
         stalled = 0;
         sourceIdleSince = 0;
         state.seenHandles.add(candidate.handle);
-        if (mode === "unfollow" && manualUnfollow) {
-          await addUnfollowReview(candidate);
+        if (cleaning && manualUnfollow) {
+          await addUnfollowReview({ ...candidate, reason: mode === "unfollowNonSc" ? "nonSimplified" : "notFollowingBack" });
           continue;
         }
-        if (mode === "unfollow") cleanupAttempts += 1;
-        const ok = mode === "unfollow"
+        if (cleaning) cleanupAttempts += 1;
+        const ok = cleaning
           ? await actUnfollow(candidate)
           : mode === "followBack"
             ? await actFollowBack(candidate)
             : await actTargetFollow(candidate);
         if (automationWarningVisible()) {
-          if (mode === "unfollow") {
+          if (cleaning) {
             stopReason = "X 提示疑似自动化，本次先停下。";
             break followLoop;
           }
@@ -969,39 +1506,34 @@
         }
         if (ok === "rate-limited" || rateLimitVisible()) {
           reportMutualAction(mode, candidate.handle, "limited", "rate-limited");
-          if (mode === "unfollow") {
-            stopReason = "X 提示操作受限，本次先停下。";
+          if (cleaning || mode === "targetFollow" || mode === "followBack") {
+            stopReason = mode === "targetFollow"
+              ? `已关注 ${state.targetFollowed} 人，X 提示超过限制，本次结束`
+              : mode === "followBack"
+                ? `已回关 ${state.followedBack} 人，X 提示超过限制，本次结束`
+              : "X 提示操作受限，本次先停下。";
             break followLoop;
           }
           state.seenHandles.delete(candidate.handle);
           if (!(await waitForPlatformRateLimit())) break;
           continue;
         }
+        if (ok === true && mode === "targetFollow") sourceFollowed = true;
+        const targetQuota = state.targetFollowPace === "slow" ? 5 : state.targetFollowPace === "medium" ? 10 : 15;
+        if (mode === "targetFollow" && ok === true && state.targetFollowed >= targetQuota) {
+          stopReason = `本次已关注 ${state.targetFollowed} 人`;
+          break followLoop;
+        }
+        const followBackQuota = state.followPace === "slow" ? 5 : state.followPace === "medium" ? 10 : 15;
+        if (mode === "followBack" && ok === true && state.followedBack >= followBackQuota) {
+          stopReason = `本次已回关 ${state.followedBack} 人`;
+          break followLoop;
+        }
         if (!ok) state.errors += 1;
         emit(ok ? `已完成 ${candidate.handle}` : `${candidate.handle} 的操作没有确认成功`);
         if (state.stopping) break;
         if (!independentCleanup && state.sharedDailyFollowed >= FOLLOW_DAILY_LIMIT) continue;
-        if (mode === "followBack" && state.followPlan && ok) {
-          state.followPlan.roundCount += 1;
-          if (state.followPlan.roundCount >= FOLLOW_BATCH_SIZE) {
-            state.followPlan.completedRounds += 1;
-            state.followPlan.roundCount = 0;
-            if (state.followPlan.completedRounds >= state.followPlan.rounds) {
-              const finishedRounds = state.followPlan.rounds;
-              state.followPlan = createFollowBackPlan(state.followPace || "medium");
-              emit(`本次 ${finishedRounds} 轮已完成，稍后继续回关`);
-            }
-            state.sharedBatchProgress = 0;
-            state.cooldownUntil = Date.now() + followBatchCooldownMs(state.followPace);
-            await persistSharedFollowRate();
-            if (!(await waitForSharedCooldown())) break;
-          } else {
-            await persistSharedFollowRate();
-            await sleepActive(FOLLOW_ACTION_DELAY_MS);
-          }
-          continue;
-        }
-        if (!independentCleanup && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
+        if (!independentCleanup && mode !== "targetFollow" && mode !== "followBack" && state.sharedBatchProgress >= FOLLOW_BATCH_SIZE) {
           state.sharedBatchProgress = 0;
           state.cooldownUntil = Date.now() + followBatchCooldownMs(state.targetFollowPace || state.followPace);
           await persistSharedFollowRate();
@@ -1013,6 +1545,25 @@
       }
 
       emit("当前屏没有可处理账号，继续向下查找");
+      const seenFollowerRows = observedSourceHandles.size > 0 || items.length > 0;
+      const retryVisible = mode === "targetFollow" && typeof followingRetryButton === "function" && Boolean(followingRetryButton());
+      if (retryVisible) {
+        const nextSource = advanceTargetFollowSource();
+        if (nextSource) {
+          state.running = false;
+          emit(`粉丝列表显示 Retry，转到 @${nextSource} 的粉丝列表`);
+          return { navigate: `/${nextSource}/followers` };
+        }
+        stopReason = "粉丝列表显示 Retry，本批没有下一个可换的人";
+        break;
+      }
+      if (mode === "targetFollow" && !seenFollowerRows) {
+        stalled = 0;
+        sourceIdleSince = 0;
+        emit("粉丝列表还没刷出来，继续等待，先不换人");
+        await scrollForward(items.map((item) => item.handle).join("|"), mode);
+        continue;
+      }
       if (mode === "targetFollow" && !sourceIdleSince) sourceIdleSince = Date.now();
       const signature = items.map((item) => item.handle).join("|");
       const result = await scrollForward(signature, mode);
@@ -1023,16 +1574,30 @@
         if (newHandles.length) sourceIdleSince = Date.now();
       }
       stalled = result.progressed || !result.atBottom ? 0 : stalled + 1;
-      if (stalled >= MAX_STALLED_SCROLLS || (mode === "targetFollow" && Date.now() - sourceIdleSince >= TARGET_SOURCE_IDLE_MS)) {
+      const idleMs = sourceIdleSince ? Date.now() - sourceIdleSince : 0;
+      const followable = items.some((item) => item.candidate && !state.seenHandles.has(item.handle));
+      const sourceReadyToAdvance = mode === "targetFollow" && targetSourceMayAdvance({ seenRows: seenFollowerRows, stalled, idleMs, followed: sourceFollowed, followable });
+      if ((mode !== "targetFollow" && stalled >= MAX_STALLED_SCROLLS) || sourceReadyToAdvance) {
         stalled = 0;
         sourceIdleSince = 0;
         if (mode === "targetFollow") {
           const nextSource = advanceTargetFollowSource();
           if (nextSource) {
             state.running = false;
-            emit(`当前来源已检查，转到 @${nextSource} 的粉丝列表；共享关注冷却继续生效`);
+            emit(sourceFollowed
+              ? `这一页能关注的人已经关注过，转到 @${nextSource} 的粉丝列表`
+              : `这一页没有还能关注的人，转到 @${nextSource} 的粉丝列表`);
             return { navigate: `/${nextSource}/followers` };
           }
+          if (typeof finishTargetTask === "function") finishTargetTask();
+          state.cooldownUntil = 0;
+          try { sessionStorage.removeItem(targetScanKey()); } catch (error) {}
+          stopReason = "本批已看完，交回队列后再换五个新人";
+          break;
+        }
+        if (mode === "followBack") {
+          stopReason = "粉丝列表已检查，等待下次回关";
+          break;
         }
         if (manualUnfollow) {
           stopReason = `扫描完成：待人工核对 ${state.unfollowReview.length} 个账号`;
@@ -1056,7 +1621,7 @@
     state.stopping = false;
     state.cooldownUntil = 0;
     state.riskCooldownUntil = 0;
-    emit(stopReason || (state.mode === "unfollow"
+    emit(stopReason || (state.mode === "unfollow" || state.mode === "unfollowNonSc"
       ? `完成：取消 ${state.unfollowed} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
       : state.mode === "followBack"
         ? `完成：本次回关 ${state.followedBack} 个，共享今日 ${state.sharedDailyFollowed}/${FOLLOW_DAILY_LIMIT}`
@@ -1113,9 +1678,27 @@
     normalizeTargetFollowHandles,
     targetFollowHandles: () => [...TARGET_FOLLOW_HANDLES],
     nextTargetFollowSource,
+    visibleTargetRoster,
+    targetSourceMayAdvance,
+    targetFollowOpenDecision,
+    selectTargetBatch,
+    planTargetTaskBatch,
+    rememberPoolHandles,
+    normalizeTargetPool,
+    currentTargetRoster,
+    republishTargetRoster,
+    expansionSources,
+    expansionCount,
+    queueFollowedSource,
+    followsYouStatus,
+    hasFollowsYou,
     createFollowBackPlan,
     followRoundGapSeconds,
     followBatchCooldownMs,
+    targetFollowQuota,
+    followBackQuota,
+    textIsNonSimplified,
+    isRateLimitText,
     nextFollowBackNightStart,
     constants: {
       FOLLOW_ACTION_DELAY_MS,
@@ -1126,8 +1709,11 @@
       FOLLOW_DAILY_LIMIT,
       RATE_LIMIT_COOLDOWN_MS,
       RESCAN_INTERVAL_MS,
+      FOLLOW_BACK_LIST_GAP_MS,
+      TARGET_SEED_REFRESH_MS,
+      TARGET_EXPANSION_LIMIT,
       TARGET_SOURCE_IDLE_MS,
-      DEFAULT_TARGET_FOLLOW_HANDLES,
+      TARGET_FOLLOW_LIVE_KEY,
       get TARGET_FOLLOW_HANDLES() { return [...TARGET_FOLLOW_HANDLES]; }
     }
   };

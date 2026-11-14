@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 const SHOTS = [
   { id: 'schedule-desk', step: '01', label: '排班台', src: '/images/x-reply-clipboard-extension/panel-v4.3.24-schedule.webp', width: 720, height: 1450, title: '排班台与等待原因', caption: 'v4.3.24 · 2026-11-02 实拍。顶部分类统计、任务明细、当前与候选任务；冷却原因和排班状态分开显示。截图中的勾选和速度是示例账号设置。' },
-  { id: 'task-rounds', step: '02', label: '任务详情', src: '/images/x-reply-clipboard-extension/panel-v4.3.24-task.webp', width: 720, height: 1520, title: '评论首页任务详情', caption: 'v4.3.24 · 2026-11-02 实拍。返回排班台、暂停当前任务、速度表、边界测试与不限速选项；底部排班配置包含优先级和时段。截图所选超快档不代表默认档。' },
+  { id: 'task-rounds', step: '02', label: '任务详情', src: '/images/x-reply-clipboard-extension/panel-v4.3.24-task.webp', width: 720, height: 1520, title: '评论首页任务详情', caption: 'v4.3.24 · 2026-11-02 实拍。返回排班台、暂停当前任务、速度表、边界测试与不限速选项。截图底部的优先级和时段已经从当前任务页去掉。截图所选超快档不代表默认档。' },
 ]
 
 function PhoneFrame({ shot, active }) {

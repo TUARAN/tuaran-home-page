@@ -63,7 +63,7 @@ test('runtime groups follow schedule priority order with idle fill-ins', () => {
   assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['community-share'])
   assert.equal(groups[2].tasks[0].priority, 7)
   assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
-  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow'])
+  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow', 'mutual-unfollowNonSc'])
   assert.equal(groups[4].tasks[2].detail, '风控等待中')
   assert.equal(groups[4].tasks[2].waitUntil, NOW + 600000)
   assert.equal(groups[4].tasks[2].priority, 3)

@@ -11,7 +11,7 @@ import PluginPicker from './PluginPicker'
 
 const MODE_LABEL = X_RUNTIME_MODE_LABELS
 const PHASE = { running: ['运行中', 'info'], paused: ['等待中', 'warning'], stopping: ['等待中', 'warning'], idle: ['已停止', 'neutral'], online: ['有心跳', 'info'], unknown: ['需处理', 'warning'], offline: ['离线', 'danger'] }
-const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件', 'schedule-set': '排班与时段' }
+const COMMAND_LABEL = { 'flow-start': '全流程启动', 'flow-pause': '暂停全部', 'task-start': '启动任务', 'task-stop': '停止任务', 'ext-update': '远程更新插件', 'schedule-set': '排班' }
 const RESULT = { success: ['成功', 'success'], failed: ['失败', 'danger'], skipped: ['跳过', 'neutral'], limited: ['受限', 'warning'] }
 const PLATFORMS = [{ id: 'x', label: 'X' }, { id: 'xhs', label: '小红书' }, { id: 'juejin', label: '掘金' }]
 const DEFAULT_X_ACCOUNT = 'tarsixseveneig1'
@@ -126,7 +126,7 @@ function LegacyPluginMonitorClient() {
       if (!response.ok) {
         throw new Error(payload?.error === 'MIGRATION_REQUIRED' ? '请先执行迁移 0120_x_extension_commands.sql' : payload?.error || `指令下发失败（HTTP ${response.status}）`)
       }
-      if (command === 'schedule-set') setCommandNote('排班与时段已排队，等待插件写入本机')
+      if (command === 'schedule-set') setCommandNote('排班已排队，等待插件写入本机')
       else if (command !== 'ext-update') setCommandNote(`${COMMAND_LABEL[command] || command}${mode ? ` · ${MODE_LABEL[mode] || mode}` : ''} 已排队，等待插件心跳执行`)
       void refresh(false, true)
       return { ...payload, ok: true }

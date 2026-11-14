@@ -1,7 +1,8 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
+if (typeof importScripts === "function") importScripts("leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js");
 
+const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
 const kolRoster = globalThis.XrcKolRoster || (typeof require === "function" ? require("./kolRoster.js") : null);
 
 const replyHistory = globalThis.XrcReplyHistory?.createReplyHistory(globalThis.chrome?.storage?.local, globalThis.indexedDB);
@@ -28,14 +29,13 @@ const RESET_EPOCH_KEY = "xrcResetEpoch";
 const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
-const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
 const KOL_HANDLES_KEY = kolRoster.KOL_HANDLES_KEY;
-const DEFAULT_KOL_HANDLES = kolRoster.KOL_CATALOG;
+const DEFAULT_KOL_HANDLES = Object.freeze([]);
 const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let executionAlertWork = Promise.resolve();
 let resetPromise = null;
@@ -209,31 +209,69 @@ function resolvePromptBundle(settings = {}) {
 
 function resolveReplyProviders(settings) {
   const hasList = Array.isArray(settings?.replyProviders);
-  const stored = hasList
-    ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
-    : [...DEFAULT_REPLY_PROVIDERS];
+  const explicit = settings?.replyProvidersManual === true;
+  const autoNasOnly = hasList && !explicit && settings.replyProviders.length === 1 && settings.replyProviders[0] === "nas";
+  const stored = !hasList || autoNasOnly
+    ? []
+    : REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider));
   const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
   const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
     ? /^sk-\S{8,}$/u.test(String(settings?.apiKey || "").trim())
     : provider === "bai"
       ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
-      : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-  const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
-  return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
+      : provider === "nas"
+        ? settings?.nasSecretAvailable === true
+        : provider === "mobileoffice" && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+  const providers = REPLY_PROVIDER_ORDER.filter((provider) => stored.includes(provider) && configured.includes(provider) && !disabled.includes(provider));
+  return { providers, persist: autoNasOnly };
+}
+
+async function readStoredAiSettings() {
+  const readOnce = async () => {
+    const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
+    return stored?.[AI_SETTINGS_KEY] || {};
+  };
+  try {
+    return await readOnce();
+  } catch (error) {
+    return readOnce();
+  }
+}
+
+function aiSettingsStamp(value = {}) {
+  return JSON.stringify({
+    apiKey: value.apiKey || "",
+    baiApiKey: value.baiApiKey || "",
+    mobileOfficeToken: value.mobileOfficeToken || "",
+    mobileOfficeVerified: value.mobileOfficeVerified === true,
+    replyProviders: value.replyProviders || null,
+    replyProvidersDisabled: value.replyProvidersDisabled || null
+  });
 }
 
 async function readAiSettings() {
-  const stored = await chrome.storage.local.get(AI_SETTINGS_KEY);
-  let settings = stored?.[AI_SETTINGS_KEY] || {};
+  let settings = await readStoredAiSettings();
+  const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
+  if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
+  const seen = settings;
   const resolved = resolveReplyProviders(settings);
   if (resolved.persist && typeof chrome.storage?.local?.set === "function") {
-    settings = {
-      ...settings,
-      replyProviders: resolved.providers,
-      replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
-    };
-    await chrome.storage.local.set({ [AI_SETTINGS_KEY]: settings });
+    const latest = await readStoredAiSettings();
+    if (aiSettingsStamp(latest) === aiSettingsStamp(seen)) {
+      settings = {
+        ...latest,
+        ...(nasSecretAvailable ? { nasSecretAvailable: true } : {}),
+        replyProviders: resolved.providers,
+        replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+      };
+      const storedSettings = { ...settings };
+      delete storedSettings.nasSecretAvailable;
+      await chrome.storage.local.set({ [AI_SETTINGS_KEY]: storedSettings });
+    } else {
+      settings = latest;
+    }
   }
+  const providers = resolveReplyProviders(settings).providers;
   const apiKey = String(settings.apiKey || "").trim();
   const prompts = resolvePromptBundle(settings);
   return {
@@ -241,7 +279,7 @@ async function readAiSettings() {
     baiApiKey: /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "",
     mobileOfficeToken: String(settings.mobileOfficeToken || "").trim(),
     mobileOfficeVerified: settings.mobileOfficeVerified === true,
-    replyProviders: resolved.providers,
+    replyProviders: providers,
     ...prompts,
     replyPrompt: prompts.replyTimelinePrompt,
     postPrompt: prompts.postNormalPrompt
@@ -1001,24 +1039,30 @@ function normalizeTargetFollowHandles(value) {
     .map((item) => String(item || "").trim().replace(/^@/u, ""))
     .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
       && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-  return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+  return list;
 }
 
-function normalizeKolHandles(value, now = Date.now()) {
-  const parsed = kolRoster.parseKolHandles(value);
-  return parsed.length ? parsed : kolRoster.poolHandles(kolRoster.poolIndex(now));
+function normalizeKolHandles(value) {
+  return kolRoster.parseKolHandles(value);
 }
 
-let targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
-let kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex());
+let targetFollowHandlesCache = [];
+let kolHandlesCache = [];
 
 async function readTargetFollowHandles() {
   try {
-    const stored = await chrome.storage.local.get(TARGET_FOLLOW_HANDLES_KEY);
-    targetFollowHandlesCache = normalizeTargetFollowHandles(stored?.[TARGET_FOLLOW_HANDLES_KEY]);
+    const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool", leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]);
+    const dropRetired = (value) => leaderboard?.withoutRetired ? leaderboard.withoutRetired(value) : normalizeTargetFollowHandles(value);
+    const live = dropRetired(stored?.xrcTargetFollowLive?.current);
+    const batch = dropRetired(stored?.xrcTargetFollowPool?.batch);
+    const board = leaderboard?.parseLeaderboardHandles?.(stored?.[leaderboard.CACHE_KEY]?.handles) || [];
+    const previous = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.lastBatch);
+    const rotated = leaderboard?.selectBatch ? leaderboard.selectBatch(board, previous, 5).handles : [];
+    const picked = live.length ? live : batch.length ? batch : rotated;
+    targetFollowHandlesCache = normalizeTargetFollowHandles(picked);
     return targetFollowHandlesCache;
   } catch (error) {
-    targetFollowHandlesCache = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    targetFollowHandlesCache = [];
     return targetFollowHandlesCache;
   }
 }
@@ -1050,8 +1094,15 @@ async function readKolHandles(now = Date.now(), accountHandle = "") {
       account,
       now
     });
-    kolHandlesCache = decision.handles;
-    if (decision.persist) {
+    const taskBatch = kolRoster.parseKolHandles(decision.meta?.taskBatch?.handles);
+    if (decision.custom) kolHandlesCache = decision.handles;
+    else if (taskBatch.length) kolHandlesCache = taskBatch;
+    else {
+      const boardStored = await chrome.storage.local.get(leaderboard?.CACHE_KEY || "xrcLeaderboardCache");
+      const board = leaderboard?.parseLeaderboardHandles?.(boardStored?.[leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]?.handles) || [];
+      kolHandlesCache = kolRoster.selectTaskBatch(board, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, () => 0).handles;
+    }
+    if (decision.persist && decision.custom) {
       try {
         await chrome.storage.local.set({
           [KOL_HANDLES_KEY]: decision.handles,
@@ -1063,7 +1114,7 @@ async function readKolHandles(now = Date.now(), accountHandle = "") {
     }
     return kolHandlesCache;
   } catch (error) {
-    kolHandlesCache = kolRoster.poolHandles(kolRoster.poolIndex(now));
+    kolHandlesCache = [];
     return kolHandlesCache;
   }
 }
@@ -1170,7 +1221,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   const handle = accountHandleFrom(accountHandle);
   const current = pathnameOf(currentUrl);
   if (selected === "notifications") return "/notifications";
-  if (selected === "mutual-unfollow") return handle ? `/${handle}/following` : "";
+  if (selected === "mutual-unfollow" || selected === "mutual-unfollowNonSc") return handle ? `/${handle}/following` : "";
   if (selected === "prune-posts" || selected === "prune-replies") {
     if (current === "/search") return "/search";
     return handle ? `/${handle}` : "";
@@ -1178,19 +1229,21 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
   if (selected === "mutual-followBack") return handle ? `/${handle}/followers` : "";
   if (selected === "mutual-targetFollow") {
     const handles = normalizeTargetFollowHandles(targetFollowHandles || targetFollowHandlesCache);
+    if (!handles.length) return "";
     const match = current.match(/^\/([^/]+)\/followers$/iu);
     if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
     const picked = handles[Math.floor(Math.random() * handles.length)];
-    return `/${picked}/followers`;
+    return picked ? `/${picked}/followers` : "";
   }
   if (selected === "kol") {
     const handles = normalizeKolHandles(kolHandles || kolHandlesCache);
+    if (!handles.length) return "";
     const order = kolRoster.parseKolHandles(kolVisitOrder).filter((handle) =>
       handles.some((item) => item.toLowerCase() === handle.toLowerCase()));
     const match = current.match(/^\/([^/]+)$/iu);
     if (match && handles.some((item) => item.toLowerCase() === match[1].toLowerCase())) return current;
     const picked = kolRoster.nextUnvisitedHandle(order, kolVisitedHandles) || order[0] || handles[0];
-    return `/${picked}`;
+    return picked ? `/${picked}` : "";
   }
   if (selected === "community-share") return handle ? `/${handle}` : "/home";
   if (selected === "poster" || selected === "poster-premium" || ["poster-x", "poster-xhs"].includes(selected)) return "/home";
@@ -1384,6 +1437,23 @@ async function taskTabRole(sender) {
     ownerTabId = tabId;
     ownerMode = registeredMode;
   }
+  if (!ownerTabId && chrome.tabs?.query) {
+    let openX = [];
+    try {
+      openX = await chrome.tabs.query({ url: ["https://x.com/*", "https://twitter.com/*"] }) || [];
+    } catch (error) {
+      openX = [];
+    }
+    const live = openX.filter((tab) => Number.isInteger(tab?.id) && tab.id > 0);
+    if (live.length === 1 && live[0].id === tabId) {
+      ownerTabId = tabId;
+      ownerMode = ownerMode || registeredMode || plan.current || "";
+      if (plan.enabled && Number(plan.workTabId) !== tabId) {
+        plan.workTabId = tabId;
+        await saveTaskSchedule(plan);
+      }
+    }
+  }
   let ownerTitle = "";
   if (ownerTabId && ownerTabId !== tabId) {
     try { ownerTitle = String((await chrome.tabs.get(ownerTabId))?.title || "").slice(0, 80); }
@@ -1427,6 +1497,7 @@ const TASK_TITLE_LABELS = {
   "prune-posts": "清理低质帖",
   "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
+  "mutual-unfollowNonSc": "清理非简中",
   "mutual-followBack": "回关粉丝",
   "mutual-targetFollow": "关注候选"
 };
@@ -1587,20 +1658,22 @@ async function findReusableScheduledXTab(accountHandle = "") {
   }
   const expectedHandle = accountHandleFrom(accountHandle).toLowerCase();
   const excluded = new Set((await readTaskSchedule()).detachedReplyTabIds || []);
+  const waiting = [];
   for (const tab of candidates || []) {
     const id = Number(tab?.id);
     if (!Number.isInteger(id) || id <= 0 || excluded.has(id)) continue;
     try {
       const probe = await chrome.tabs.sendMessage(id, { type: "xrc-task-state-probe" });
-      if (!probe?.ok || !probe.scheduleEnabled || !probe.owned) continue;
+      if (!probe?.ok || !probe.scheduleEnabled) continue;
       const actualHandle = accountHandleFrom(probe.accountHandle).toLowerCase();
       if (expectedHandle && actualHandle !== expectedHandle) continue;
-      return tab;
+      if (probe.owned) return tab;
+      waiting.push(tab);
     } catch (error) {
       // This X tab has not loaded the extension or belongs to another profile.
     }
   }
-  return null;
+  return waiting.length === 1 ? waiting[0] : null;
 }
 
 async function tryInPageTaskStart(tabId, mode, accountHandle = "") {
@@ -1758,7 +1831,7 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
@@ -1796,9 +1869,11 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-const FOLLOW_BACK_MIN_GAP_MS = 5 * 60 * 1000;
+// Once a week, same cadence as 清理未回关. 关注候选 keeps the short session gap.
+const FOLLOW_BACK_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
 const FOLLOW_PRIORITY_BOOST = 8.5;
+const COMMENT_TURN_MS = 10 * 60 * 1000;
 const PREMIUM_PRIORITY_BOOST = 8.75;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
@@ -1901,15 +1976,14 @@ function migrateSliceSeconds(plan) {
 
 function sliceMsForMode(mode, plan) {
   const base = normalizedSliceSeconds(plan?.sliceSeconds) * 1000;
-  // Reply tasks own the shared tab until their in-page run plan finishes.
-  // The long cap is only a recovery guard for a loop that never reports completion.
-  if (["timeline", "notifications", "kol"].includes(mode)) return 8 * 60 * 60 * 1000;
+  // One comment turn, then the task goes to the back of the queue.
+  if (["timeline", "notifications", "kol"].includes(mode)) return COMMENT_TURN_MS;
   // Likes only take a short burst, then yield so replies/posts can reclaim the tab.
   if (["likes-posts", "likes-replies"].includes(mode)) return Math.max(base, LIKE_SLICE_MS);
   if (mode === "mutual-followBack") return Math.max(base, FOLLOW_BACK_SLICE_MS);
   if (mode === "mutual-targetFollow") return Math.max(base, TARGET_FOLLOW_SLICE_MS);
   // Weekly unfollow / target-follow passes need longer occupancy than short reply/like slices.
-  if (mode === "mutual-unfollow") return Math.max(base, UNFOLLOW_SLICE_MS);
+  if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return Math.max(base, UNFOLLOW_SLICE_MS);
   if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   if (mode === "site-forward") return Math.max(base, SITE_FORWARD_SLICE_MS);
@@ -1931,7 +2005,7 @@ async function readTaskUnlimitedMap() {
 
 function taskUnlimitedEnabled(mode, map = {}) {
   if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return false;
-  if (["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode)) return false;
+  if (["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode)) return false;
   if (mode === "mutual-followBack" || mode === "mutual-targetFollow") return false;
   return map?.[mode] === true;
 }
@@ -1949,7 +2023,7 @@ function defaultTaskPriority(mode) {
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
   if (mode === "mutual-targetFollow") return 7;
-  if (mode === "mutual-unfollow") return 3;
+  if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return 3;
   if (mode === "prune-posts" || mode === "prune-replies") return 2;
   return 1;
 }
@@ -1980,9 +2054,10 @@ function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, tur
 
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode),
+    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode),
     priority: defaultTaskPriority(mode),
-    pace: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+    pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
+      : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -1990,8 +2065,9 @@ function defaultTaskRules() {
       : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
-      : mode === "mutual-unfollow" ? UNFOLLOW_MIN_GAP_MS
-      : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? followSessionGapMs("medium")
+      : mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
+      : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+      : mode === "mutual-targetFollow" ? followSessionGapMs("medium")
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
       : 0
   }]));
@@ -2014,9 +2090,12 @@ function normalizedTaskRules(value) {
       priority: Math.max(1, Math.min(MAX_TASK_PRIORITY, Number(rule.priority) || defaults[mode].priority)),
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
-      // Keep unfollow weekly by default; allow tests/overrides in the 1h–30d range.
-      minGapMs: ["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode) ? cleanupMinGapMs(pace)
-        : mode === "mutual-followBack" || mode === "mutual-targetFollow" ? followSessionGapMs(pace)
+      // Unfollow stays on the weekly constant. Pace segments apply to post/reply cleanup only.
+      // Follow-back uses the weekly gap; target-follow keeps the short session gap.
+      minGapMs: mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
+        : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
+        : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
+        : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
         : mode === "community-share"
@@ -2032,11 +2111,9 @@ function normalizedTaskRules(value) {
 }
 
 function taskWindowOpen(mode, rule, now) {
+  void rule;
   const shanghai = new Date(now + 8 * 60 * 60000);
   const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
-  if (rule.window === "day" && (minutes < 480 || minutes >= 1200)) return false;
-  if (rule.window === "peak" && !((minutes >= 480 && minutes < 600) || (minutes >= 1080 && minutes < 1200))) return false;
-  if (rule.window === "overnight" && minutes < FOLLOW_BACK_NIGHT_START_MINUTE && minutes >= FOLLOW_BACK_NIGHT_END_MINUTE) return false;
   if (mode === "poster-premium" && ![480, 570, 720, 900, 1140].some((slot) => minutes >= slot && minutes < slot + 15)) return false;
   if (mode === "site-forward" && minutes < 14 * 60) return false;
   return true;
@@ -2076,20 +2153,40 @@ function effectiveSchedulePriority(plan, mode, now = Date.now(), rule = null) {
   const resolved = rule || normalizedTaskRules(plan?.rules)?.[mode] || { priority: defaultTaskPriority(mode) };
   const base = Number(resolved.priority) || defaultTaskPriority(mode);
   if (mode === "poster-premium") return Math.max(base, PREMIUM_PRIORITY_BOOST);
-  // Reserve an eligible follow batch while below the daily goal. Both follow
-  // tasks still honor the shared cooldown and min-gap before the boost applies.
-  if (SHARED_FOLLOW_MODES.includes(mode)
+  // Keep the daily-goal boost for 关注候选 only. 回关粉丝 no longer cuts in
+  // every few minutes while the shared count is under 300.
+  if (mode === "mutual-targetFollow"
     && Number.isFinite(Number(plan?.sharedFollowTodayCount))
     && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
-    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= FOLLOW_BACK_MIN_GAP_MS) {
+    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= TARGET_FOLLOW_MIN_GAP_MS) {
     return Math.max(base, FOLLOW_PRIORITY_BOOST);
   }
   return base;
 }
 
+function initialScheduleQueue() {
+  return [...QUEUED_TASKS].sort((a, b) => defaultTaskPriority(b) - defaultTaskPriority(a)
+    || QUEUED_TASKS.indexOf(a) - QUEUED_TASKS.indexOf(b));
+}
+
+function scheduleQueue(plan) {
+  const stored = Array.isArray(plan?.queue) ? plan.queue.filter((mode, index, list) => QUEUED_TASKS.includes(mode) && list.indexOf(mode) === index) : [];
+  const seen = new Set(stored);
+  return [...stored, ...initialScheduleQueue().filter((mode) => !seen.has(mode))];
+}
+
+function rotateScheduleQueue(plan, mode) {
+  if (!QUEUED_TASKS.includes(mode)) return scheduleQueue(plan);
+  const queue = scheduleQueue(plan).filter((item) => item !== mode);
+  queue.push(mode);
+  plan.queue = queue;
+  return queue;
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   const manualFocusMode = scheduledManualFocusMode(plan, now);
+  const queue = scheduleQueue(plan);
   return QUEUED_TASKS.map((mode, index) => ({ mode, index, item: plan.items?.[mode] || {}, rule: rules[mode] }))
     .filter(({ mode, item, rule }) => {
       if (manualFocusMode && mode !== manualFocusMode) return false;
@@ -2109,19 +2206,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
-      const priorityA = effectiveSchedulePriority(plan, a.mode, now, a.rule);
-      const priorityB = effectiveSchedulePriority(plan, b.mode, now, b.rule);
-      if (priorityB !== priorityA) return priorityB - priorityA;
-      // Same score means both should run. A task that has not run yet goes
-      // first; otherwise the longer wait goes first. List order only breaks an exact tie.
-      const waitedMs = (entry) => {
-        const lastRunAt = Number(entry.item.lastRunAt) || 0;
-        if (!lastRunAt) return Number.POSITIVE_INFINITY;
-        return Math.max(0, now - lastRunAt);
-      };
-      const waitDiff = waitedMs(b) - waitedMs(a);
-      if (waitDiff) return waitDiff;
-      return a.index - b.index;
+      const queueA = queue.indexOf(a.mode);
+      const queueB = queue.indexOf(b.mode);
+      return (queueA < 0 ? a.index : queueA) - (queueB < 0 ? b.index : queueB);
     })
     .map(({ mode }) => mode);
 }
@@ -2238,13 +2325,20 @@ async function readTaskSchedule() {
   plan.rules = normalizedTaskRules(plan.rules);
   let scheduleMigrated = healStaleManualStops(plan) || storedLikeGapIsLegacy || storedPruneGapIsLegacy;
   if (plan.cleanupPaceVersion !== 1) {
-    for (const mode of ["mutual-unfollow", "prune-posts", "prune-replies"]) {
+    for (const mode of ["prune-posts", "prune-replies"]) {
       plan.rules[mode] = { ...plan.rules[mode], pace: "slow", minGapMs: cleanupMinGapMs("slow") };
       const item = plan.items[mode];
       if (item && /每周|下次排班/u.test(item.reason || "") && !item.manualStopped && !item.blocked) {
         item.resumeAt = Math.min(Number(item.resumeAt) || 0, Date.now() + cleanupMinGapMs("slow"));
         item.reason = "清理按慢档分段，等待下次排班";
       }
+    }
+    if (plan.rules["mutual-unfollow"]) {
+      plan.rules["mutual-unfollow"] = {
+        ...plan.rules["mutual-unfollow"],
+        pace: "slow",
+        minGapMs: UNFOLLOW_MIN_GAP_MS
+      };
     }
     plan.cleanupPaceVersion = 1;
     scheduleMigrated = true;
@@ -2339,7 +2433,7 @@ async function readTaskSchedule() {
       plan.items[mode] = {
         ...item,
         blocked: oldBlockedRisk ? false : item.blocked,
-        resumeAt: oldBlockedRisk ? Date.now() + FOLLOW_BACK_MIN_GAP_MS : oldCadenceWait ? 0 : item.resumeAt,
+        resumeAt: oldBlockedRisk ? Date.now() + TARGET_FOLLOW_MIN_GAP_MS : oldCadenceWait ? 0 : item.resumeAt,
         lastRunAt: oldCadenceWait ? 0 : item.lastRunAt,
         reason: oldBlockedRisk ? "关注受限，按共享冷却重新排班" : oldCadenceWait ? "按共享关注冷却重新排班" : reason
       };
@@ -2370,6 +2464,78 @@ async function readTaskSchedule() {
       }
     }
     plan.followSessionVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.followBackWeeklyGapVersion || 0) < 2) {
+    if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    const item = plan.items?.["mutual-followBack"];
+    if (item && !item.manualStopped && !item.blocked) {
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const batchRest = /每确认|共享关注冷却|关注满 100|本批已完成/u.test(reason);
+      const resumeAt = Number(item.resumeAt) || 0;
+      if (!risk && !batchRest && resumeAt > Date.now() && resumeAt < Date.now() + FOLLOW_BACK_MIN_GAP_MS) {
+        item.resumeAt = (Number(item.lastRunAt) || Date.now()) + FOLLOW_BACK_MIN_GAP_MS;
+        item.reason = "回关粉丝按每周间隔等待下次排班";
+      }
+    }
+    plan.followBackWeeklyGapVersion = 2;
+    scheduleMigrated = true;
+  }
+  if ((plan.targetFollowCountVersion || 0) < 1) {
+    const pace = plan.rules?.["mutual-targetFollow"]?.pace;
+    if (plan.rules?.["mutual-targetFollow"] && pace !== "slow") plan.rules["mutual-targetFollow"].pace = "fast";
+    if (plan.rules?.["mutual-targetFollow"]) plan.rules["mutual-targetFollow"].minGapMs = TARGET_FOLLOW_MIN_GAP_MS;
+    plan.targetFollowCountVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.followBackCountVersion || 0) < 1) {
+    const pace = plan.rules?.["mutual-followBack"]?.pace;
+    if (plan.rules?.["mutual-followBack"] && pace !== "slow") plan.rules["mutual-followBack"].pace = "fast";
+    if (plan.rules?.["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    plan.followBackCountVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.cautiousQueueVersion || 0) < 1) {
+    for (const mode of ["poster", "poster-premium", "article"]) {
+      if (plan.rules?.[mode]) plan.rules[mode].enabled = false;
+    }
+    plan.cautiousQueueVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.targetFollowTurnVersion || 0) < 1) {
+    const item = plan.items?.["mutual-targetFollow"];
+    const remain = Number(item?.resumeAt) - Date.now();
+    const dailyCap = /额度已用完/.test(String(item?.reason || ""));
+    if (item && !item.manualStopped && !item.blocked && !dailyCap && remain > TARGET_FOLLOW_MIN_GAP_MS) {
+      item.resumeAt = Date.now();
+      item.reason = "本批已看完，下次排班再换五个新人";
+    }
+    plan.targetFollowTurnVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (plan.unfollowWeeklyGapVersion !== 1) {
+    if (plan.rules["mutual-unfollow"]) {
+      plan.rules["mutual-unfollow"] = {
+        ...plan.rules["mutual-unfollow"],
+        minGapMs: UNFOLLOW_MIN_GAP_MS
+      };
+    }
+    const item = plan.items?.["mutual-unfollow"];
+    if (item && !item.manualStopped && !item.blocked) {
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const weeklyAt = (Number(item.lastRunAt) || Date.now()) + UNFOLLOW_MIN_GAP_MS;
+      if (!risk && Number(item.resumeAt) > 0 && Number(item.resumeAt) < weeklyAt) {
+        item.resumeAt = weeklyAt;
+        item.reason = "等待每周清理";
+      }
+    }
+    plan.unfollowWeeklyGapVersion = 1;
+    scheduleMigrated = true;
+  }
+  if (!Array.isArray(plan.queue) || plan.queue.length !== QUEUED_TASKS.length || plan.queue.some((mode) => !QUEUED_TASKS.includes(mode))) {
+    plan.queue = scheduleQueue(plan);
     scheduleMigrated = true;
   }
   if (scheduleMigrated) await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
@@ -2617,30 +2783,13 @@ async function runTaskSchedule() {
     // explicit manual start of another task. Due tasks stay queued instead of preempting.
     const unlimitedOccupancy = await isTaskUnlimitedMode(current);
     const timedOut = !unlimitedOccupancy && now - Number(plan.startedAt || now) >= sliceMs;
-    // Reply tasks and unlimited tasks keep the tab until their run finishes.
-    const completeRunOccupancy = unlimitedOccupancy || ["timeline", "notifications", "kol"].includes(current);
     const dueNow = dueTaskModes(plan, now);
     const requestedMode = dueNow[0];
-    const scheduleRules = normalizedTaskRules(plan.rules);
-    // Use the same boosted score as dueTaskModes so a follow batch below the
-    // daily goal can reclaim the tab from likes/posts, not only win an empty slot.
-    const currentPriority = effectiveSchedulePriority(plan, current, now, scheduleRules[current]);
-    const requestedPriority = requestedMode
-      ? effectiveSchedulePriority(plan, requestedMode, now, scheduleRules[requestedMode])
-      : 0;
-    // A follow session keeps the tab until the page pauses at 100 confirms, or X limits it.
-    // Comments and likes cannot cut in mid-session. A due premium post still can.
-    const followSessionActive = (current === "mutual-followBack" || current === "mutual-targetFollow") && task?.phase === "running";
-    const higherPriorityDue = !completeRunOccupancy
-      && requestedMode
-      && requestedMode !== current
-      && requestedPriority > currentPriority
-      && !(followSessionActive && requestedMode !== "poster-premium");
-    const premiumDue = higherPriorityDue && requestedMode === "poster-premium";
+    const higherPriorityDue = false;
+    const premiumDue = false;
     // A person explicitly chose "立即开启" after confirming the current task
     // would stop. Do not let a comment task's full-run occupancy swallow it.
     const manualDue = requestedMode && requestedMode !== current && Number(plan.items?.[requestedMode]?.manualRequestedAt) > 0;
-    const windowClosed = current === "mutual-followBack" && !taskWindowOpen(current, normalizedTaskRules(plan.rules)[current], now);
     const disabledCurrent = !plan.rules?.[current]?.enabled && plan.manualFocusMode !== current;
     const haltedCurrent = Boolean(item.blocked || (item.manualStopped && !isScheduleWaitReason(item.reason)));
     const occupancyAge = now - Number(plan.startedAt || now);
@@ -2662,13 +2811,32 @@ async function runTaskSchedule() {
           const live = await chrome.tabs.get(workTabId);
           // Automatic recovery must never steal focus from another profile.
           try { await chrome.tabs.update(workTabId, { autoDiscardable: false }); } catch (error) {}
-          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" })) {
-            const started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
+          const livePath = pathnameOf(live.url || "");
+          const followListOpen = (current === "mutual-targetFollow" || current === "mutual-followBack")
+            && /\/followers$/iu.test(livePath);
+          if (onTaskPath(current, live.url || "", { accountHandle: plan.accountHandle || "", currentUrl: live.url || "" }) || followListOpen) {
+            let started = null;
+            try {
+              started = await tryInPageTaskStart(workTabId, current, plan.accountHandle || "");
+            } catch (error) {
+              started = null;
+            }
             if (started) {
               plan.startedAt = now;
               plan.items[current] = { ...item, resumeAt: 0, reason: "", lastStartError: "", recoveryAttempts: 0, reloadAttempts: 0 };
               await saveTaskSchedule(plan);
               await seedRuntimeOccupancy(current, workTabId, started.phase || "running", "页内恢复已确认");
+              return plan;
+            }
+            if (current === "mutual-targetFollow" || current === "mutual-followBack") {
+              plan.startedAt = now;
+              plan.items[current] = {
+                ...item,
+                resumeAt: 0,
+                reloadAttempts: 0,
+                reason: "关注名单已经打开，继续点关注，不换去评论"
+              };
+              await saveTaskSchedule(plan);
               return plan;
             }
           }
@@ -2739,16 +2907,26 @@ async function runTaskSchedule() {
       await saveTaskSchedule(plan);
       return plan;
     }
-    if (!waiting && !timedOut && !runFinished && !actionDone && !higherPriorityDue && !manualDue && !windowClosed && !disabledCurrent && !haltedCurrent) return plan;
+    if (!waiting && !timedOut && !runFinished && !actionDone && !higherPriorityDue && !manualDue && !disabledCurrent && !haltedCurrent) return plan;
     const currentRule = normalizedTaskRules(plan.rules)[current] || {};
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
     const sharedFollow = current === "mutual-followBack" || current === "mutual-targetFollow";
-    const computedResumeAt = Math.max(baseResumeAt, minGapMs ? now + minGapMs : 0);
+    // 回关's weekly gap is enforced by lastRunAt, not by stretching this yield.
+    // A stored multi-day resume must not be copied onto 关注候选.
+    const scheduleGapFloor = current === "mutual-followBack" ? 0 : (minGapMs ? now + minGapMs : 0);
+    const computedResumeAt = Math.max(baseResumeAt, scheduleGapFloor);
     const heldResumeAt = current === "article" ? Number(item.resumeAt) || 0 : 0;
+    const previousResume = Number(item.resumeAt) || 0;
+    const carryResume = sharedFollow && !(current === "mutual-followBack" && previousResume - now >= 12 * 60 * 60 * 1000)
+      ? previousResume
+      : 0;
     const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
     item.retryKind = shortPruneRetry ? "prune-search-load" : "";
-    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, sharedFollow ? Number(item.resumeAt) || 0 : 0);
+    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume);
+    const targetDailyCap = current === "mutual-targetFollow" && /额度已用完/.test(`${task?.detail || ""} ${item.reason || ""}`);
+    const targetTurnCapped = current === "mutual-targetFollow" && !targetDailyCap && item.resumeAt > now + TARGET_FOLLOW_MIN_GAP_MS;
+    if (targetTurnCapped) item.resumeAt = now + TARGET_FOLLOW_MIN_GAP_MS;
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -2764,28 +2942,31 @@ async function runTaskSchedule() {
               ? "更高优先级任务到期，安全轮换"
             : manualDue
               ? "另一项任务已请求优先启动，安全轮换"
-            : windowClosed
-              ? "夜间回关时段已结束，等待下一晚"
-            : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow"].includes(current))
-              ? (current === "mutual-unfollow" ? "清理未回关按速度档等待下次排班" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
+            : runFinished && (["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(current))
+              ? (current === "mutual-unfollowNonSc" ? "等待每周清理非简中" : current === "mutual-unfollow" ? "等待每周清理" : `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`)
             : runFinished
               ? "本次已结束，等待下次排班"
             : ["prune-posts", "prune-replies"].includes(current) && minGapMs
               ? `${TASK_TITLE_LABELS[current]}按速度档等待下次排班`
+            : current === "mutual-unfollowNonSc" && minGapMs
+              ? "等待每周清理非简中"
             : current === "mutual-unfollow" && minGapMs
-              ? "清理未回关按速度档等待下次排班"
+              ? "等待每周清理"
+              : current === "mutual-targetFollow" && targetTurnCapped
+                ? "本批已看完，下次排班再换五个新人"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选等待下次扫描或共享关注冷却"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
               : current === "mutual-followBack" && minGapMs
-                ? "回关批次结束，等待共享冷却后继续"
+                ? "回关粉丝按每周间隔等待下次排班"
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";
     // Yield / gap wait must re-enter the queue; never leave a stale manualStopped red card.
     if (!haltedCurrent) item.manualStopped = false;
     item.lastRunAt = now;
+    rotateScheduleQueue(plan, current);
     // Save the deadline before asking the content script to stop and before closing its window.
     plan.items[current] = item;
     if (sharedFollow && waiting && shouldShareFollowWait(item.reason)) applySharedFollowWait(plan, item.resumeAt, item.reason);
@@ -2801,7 +2982,7 @@ async function runTaskSchedule() {
   const activateNext = activateNextExecTab;
   activateNextExecTab = false;
   plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
-  for (const mode of drawDueReplyTask(plan, dueTaskModes(plan, now))) {
+  for (const mode of dueTaskModes(plan, now)) {
     const item = plan.items[mode] || {};
     plan.current = mode;
     plan.startedAt = now;
@@ -2840,7 +3021,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-unfollow-non-sc": "mutual-unfollowNonSc", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
 const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
 
 function shouldShareFollowWait(reason) {
@@ -3219,7 +3400,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
 const RUNTIME_REPORT_MODES = Object.freeze([
   "notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share",
   "likes-posts", "likes-replies",
-  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow",
+  "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc",
   "prune-posts", "prune-replies"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
@@ -3401,14 +3582,13 @@ async function applyRemoteScheduleConfig(raw) {
       if (!next.enabled && plan.enabled && plan.current === mode) skipped.push(TASK_TITLE_LABELS[mode] || mode);
       else rules[mode].enabled = next.enabled;
     }
-    if (["all", "day", "peak", "overnight"].includes(next.window)) rules[mode].window = next.window;
     const priority = Number(next.priority);
     if (Number.isInteger(priority) && priority >= 1 && priority <= MAX_TASK_PRIORITY) rules[mode].priority = priority;
   }
   plan.rules = normalizedTaskRules(rules);
   await saveTaskSchedule(plan);
   if (plan.enabled) await tickTaskSchedule();
-  return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班与时段";
+  return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班";
 }
 
 function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
@@ -3657,10 +3837,11 @@ async function completeUnfollowScanFailure(sender, message) {
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
     const now = Date.now();
-    if (plan.current === "mutual-unfollow" && Number(plan.workTabId) === tabId) {
-      recordScheduleSegment(plan, "mutual-unfollow", reason, now);
-      plan.items["mutual-unfollow"] = {
-        ...(plan.items["mutual-unfollow"] || {}),
+    const failedMode = plan.current === "mutual-unfollowNonSc" ? "mutual-unfollowNonSc" : "mutual-unfollow";
+    if ((plan.current === "mutual-unfollow" || plan.current === "mutual-unfollowNonSc") && Number(plan.workTabId) === tabId) {
+      recordScheduleSegment(plan, failedMode, reason, now);
+      plan.items[failedMode] = {
+        ...(plan.items[failedMode] || {}),
         lastRunAt: now,
         resumeAt: now + 15 * 60 * 1000,
         manualRequestedAt: 0,
@@ -3670,11 +3851,11 @@ async function completeUnfollowScanFailure(sender, message) {
       plan.current = "";
       plan.startedAt = 0;
     }
-    if (plan.manualFocusMode === "mutual-unfollow") plan.manualFocusMode = "";
+    if (plan.manualFocusMode === "mutual-unfollow" || plan.manualFocusMode === "mutual-unfollowNonSc") plan.manualFocusMode = "";
     await saveTaskSchedule(plan);
-    try { await updatePluginRuntime({ mode: "mutual-unfollow", active: false }, sender); }
+    try { await updatePluginRuntime({ mode: failedMode, active: false }, sender); }
     catch (error) { /* The saved schedule still needs to release the slot. */ }
-    recordExecutionAlert({ task: "mutual-unfollow", kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
+    recordExecutionAlert({ task: failedMode, kind: /受限|自动化|rate limit/iu.test(reason) ? "rate-limit" : "retry-exhausted",
       message: reason, attempts, accountHandle: plan.accountHandle }).catch(() => {});
     return { ok: true };
   });
@@ -4433,6 +4614,7 @@ if (typeof module === "object" && module.exports) {
     callDeepSeek,
     handleMessage,
     fetchConfiguredModel,
+    TASK_MODES,
     validTaskMode,
     taskTabUrl,
     taskPageUrl,
@@ -4489,13 +4671,15 @@ if (typeof module === "object" && module.exports) {
     FOLLOW_BACK_MIN_GAP_MS,
     FOLLOW_BACK_SLICE_MS,
     FOLLOW_PRIORITY_BOOST,
+    COMMENT_TURN_MS,
     PREMIUM_PRIORITY_BOOST,
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
     defaultTaskPriority,
     effectiveSchedulePriority,
+    scheduleQueue,
+    rotateScheduleQueue,
     shouldShareFollowWait,
-    DEFAULT_TARGET_FOLLOW_HANDLES,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,
     writeTargetFollowHandles,

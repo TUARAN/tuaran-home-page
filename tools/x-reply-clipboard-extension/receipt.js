@@ -47,7 +47,7 @@
     "notification-reply": "notificationComments",
     "kol-reply": "kolComments",
     "post-like": "likes", "reply-like": "likes",
-    "mutual-target-follow": "follows", "mutual-unfollow": "unfollows",
+    "mutual-target-follow": "follows", "mutual-unfollow": "unfollows", "mutual-unfollow-non-sc": "unfollows",
     "mutual-follow-back": "followBacks", "tweet-post": "posts",
     "post-prune": "prunes", "reply-prune": "replyPrunes", "article-draft": "articleDrafts",
     "site-forward": "siteForwards",
@@ -57,7 +57,7 @@
     "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol",
     "post-like": "likes-posts", "reply-like": "likes-replies",
     "mutual-target-follow": "mutual-targetFollow", "mutual-follow-back": "mutual-followBack",
-    "mutual-unfollow": "mutual-unfollow", "post-prune": "prune-posts", "reply-prune": "prune-replies",
+    "mutual-unfollow": "mutual-unfollow", "mutual-unfollow-non-sc": "mutual-unfollowNonSc", "post-prune": "prune-posts", "reply-prune": "prune-replies",
     "article-draft": "article", "site-forward": "site-forward",
     "community-share": "community-share"
   });

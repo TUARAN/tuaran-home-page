@@ -314,6 +314,39 @@ test('task window state drops closed tabs before showing jump hints', async () =
   }
 })
 
+test('the only remaining X tab becomes the schedule tab', async () => {
+  const previousChrome = globalThis.chrome
+  const local = {
+    xrcTaskSchedule: { enabled: true, strategyVersion: 4, current: '', workTabId: 99, items: {} },
+    xrcPluginRuntime: { tasks: {}, flow: {} },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(key) { return { [key]: local[key] } },
+        async set(value) { Object.assign(local, value) },
+      },
+      session: { async get() { return { xrcTaskTabs: {} } }, async set() {} },
+    },
+    tabs: {
+      async get(id) { if (id === 99) throw new Error('No tab'); return { id } },
+      async query() { return [{ id: 7, url: 'https://x.com/home' }] },
+    },
+  }
+  try {
+    const only = await background.taskTabRole({ tab: { id: 7 } })
+    assert.equal(only.owned, true)
+    assert.equal(only.ownerTabId, 7)
+    assert.equal(local.xrcTaskSchedule.workTabId, 7)
+    globalThis.chrome.tabs.query = async () => [{ id: 7, url: 'https://x.com/home' }, { id: 8, url: 'https://x.com/explore' }]
+    local.xrcTaskSchedule.workTabId = 0
+    const oneOfMany = await background.taskTabRole({ tab: { id: 7 } })
+    assert.equal(oneOfMany.owned, false)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('a manually opened X tab stays a spectator while the registered tab owns the schedule', async () => {
   const previousChrome = globalThis.chrome
   const local = {
@@ -366,13 +399,14 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
   assert.equal(guard.spectatorTab, false)
   assert.match(source, /if \(!spectatorTab && saved\.running\)/)
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled \|\| !probe\.owned\)/)
+  assert.match(backgroundSource, /if \(!probe\?\.ok \|\| !probe\.scheduleEnabled\) continue/)
+  assert.match(backgroundSource, /waiting\.length === 1 \? waiting\[0\] : null/)
 })
 
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -1647,13 +1681,13 @@ test('failed manual Following scan releases the shared slot even when alert stor
 
 test('stopped manual unfollow candidates remain exportable as JSON', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const definition = source.match(/  async function exportUnfollowReview\(\) \{[\s\S]*?\n  \}/)?.[0]
+  const definition = source.match(/  async function exportUnfollowReview\([\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
   let exportedBlob
   let download
   const state = { mutual: { running: false }, status: '' }
   const context = vm.createContext({
-    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'nonChinese', addedAt: 1 }] }) },
+    mutualApi: { loadUnfollowReview: async () => ({ running: false, unfollowReview: [{ handle: 'saved1', reason: 'notFollowingBack', addedAt: 1 }] }) },
     state, currentAccountHandle: () => 'tuaran', lastKnownAccountHandle: '', renderPanel: () => {},
     URL: { createObjectURL(blob) { exportedBlob = blob; return 'blob:test' }, revokeObjectURL() {} },
     Blob, Date,
@@ -1953,7 +1987,7 @@ test('schedule card notes separate concise status from scheduling parameters', a
     source.match(/  function formatDeskPastNote\(latest\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function formatDeskDispatchNote\(\{ nextEntry, preview, waitMs \}\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
-  assert.match(helpers, /优先级/)
+  assert.doesNotMatch(helpers.match(/function formatScheduleCardNote[\s\S]*?\n  \}/)?.[0] || '', /优先级/)
   assert.match(helpers, /function formatDeskPastNote/)
   assert.match(helpers, /function formatDeskDispatchNote/)
   const context = vm.createContext({
@@ -1968,26 +2002,26 @@ test('schedule card notes separate concise status from scheduling parameters', a
   const task = { reason: '', rule: { priority: 9, window: 'all', minGapMs: 0 } }
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '到期自动重试', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9 · 全天'
+    'X 限制冷却 · 剩余 01:00'
   )
   assert.equal(
     context.format(task, { label: 'X 限制冷却', detail: '风控等待中', remaining: 60000 }),
-    'X 限制冷却 · 剩余 01:00\n优先级 9 · 全天'
+    'X 限制冷却 · 剩余 01:00'
   )
   assert.equal(
     context.format({ ...task, rule: { priority: 5, window: 'all', minGapMs: 0 } }, { label: '排队中', waitingFor: '评论帖子', detail: '当前项结束后自动轮到', remaining: 0 }),
-    '等待「评论帖子」完成\n优先级 5 · 全天'
+    '等待「评论帖子」完成'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9 · 全天'
+    '等待下次排班 · 剩余 01:00'
   )
   assert.equal(
     context.format(task, { label: '本次已完成', detail: '本次 5 轮已完成，等待下次排班', remaining: 60000 }),
-    '等待下次排班 · 剩余 01:00\n优先级 9 · 全天'
+    '等待下次排班 · 剩余 01:00'
   )
-  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置\n优先级 9 · 全天')
-  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班\n优先级 9 · 全天')
+  assert.equal(context.format({ ...task, reason: '名单为空，请先配置' }, null), '名单为空，请先配置')
+  assert.equal(context.format({ ...task, rule: { ...task.rule, enabled: false } }, null), '可添加到排班')
   assert.equal(
     context.pastNote({ mode: 'poster', startedAt: 1, endedAt: 1, actions: 0, reason: '风控等待中' }),
     '起止：10/29 08:59–10/29 08:59｜完成：0 条帖子｜说明：风控等待中'
@@ -2171,7 +2205,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   assert.equal(element.dataset.state, 'blocked')
   assert.match(title.textContent, /需处理/)
   assert.match(detail.textContent, /疑似自动化或账号受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 10)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 11)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -2896,7 +2930,7 @@ test('notification rounds advance once per inspected notification even when no r
   assert.equal(saved.length, 2)
   assert.match(source, /if \(state\.assistantMode !== "notifications"\) state\.pageCount \+= 1/)
   assert.match(source, /reloadDecision\.reason === "stalled" && state\.assistantMode === "timeline"/)
-  assert.match(source, /本轮已检查 \$\{state\.pageCount\}\/\$\{roundSize\} 条，成功回复 \$\{state\.total\} 条/)
+  assert.match(source, /正在处理最近 \$\{notificationWindowLabel\(\)\} 的回复，已成功 \$\{state\.total\} 条/)
 })
 
 test('settings expose four editable prompt fields without a clickbait preset', async () => {
@@ -3946,7 +3980,7 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
   try {
     await background.runTaskSchedule()
     assert.equal(tabs.has(firstId), true)
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-followBack')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
     assert.notEqual(local.xrcTaskSchedule.workTabId, firstId)
     assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [firstId])
@@ -4648,7 +4682,7 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
   const originalFetch = globalThis.fetch
   let storedPostPrompt = '自定义发推提示词：说清楚事实，像平时聊天。'
   let requestBody
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', postPrompt: storedPostPrompt } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'], postPrompt: storedPostPrompt } } } } } }
   globalThis.fetch = async (_url, options) => {
     requestBody = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"新工具上线","post":"新工具刚上线，大家都在讨论名字。"}' } }] } } }
@@ -4715,7 +4749,7 @@ test('post opening draw always chooses one of sixteen hooks', async () => {
   const originalChrome = globalThis.chrome
   const originalFetch = globalThis.fetch
   let requestBody
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     requestBody = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '{"skip":false,"topic":"配置说明","post":"别把配置表当成安全说明。"}' } }] } } }
@@ -5144,12 +5178,12 @@ test('reply pace rows label the default for the current reply task', async () =>
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function replyPaceName\(profile, mode\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(helper)
-  const sandbox = vm.createContext({})
+  const sandbox = vm.createContext({ loopApi: loop })
   vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
-  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '中（默认）')
+  assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时（默认）')
   assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
   assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
-  assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '超快')
+  assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '8 小时')
   assert.match(source, /<span data-xrc-pace-name>\$\{name\}<\/span>/)
   assert.match(source, /name\.textContent = replyPaceName\(loopApi\.scheduleProfile\(label\.dataset\.xrcPaceLabel\), replyViewKey\)/)
 })
@@ -5244,13 +5278,14 @@ test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing da
   assert.deepEqual(exhausted.visited, [])
   const weekOne = kol.resolveKolRoster({ storedHandles: kol.KOL_CATALOG, meta: null, now: day0 })
   assert.equal(weekOne.custom, false)
-  assert.deepEqual(weekOne.handles, kol.poolHandles(0))
+  assert.equal(weekOne.source, 'leaderboard')
+  assert.deepEqual(weekOne.handles, [])
   const weekTwo = kol.resolveKolRoster({ storedHandles: weekOne.handles, meta: weekOne.meta, now: day7 })
-  assert.deepEqual(weekTwo.handles, kol.poolHandles(1))
-  assert.equal(weekTwo.persist, true)
+  assert.deepEqual(weekTwo.handles, [])
+  assert.equal(weekTwo.source, 'leaderboard')
   const empty = kol.resolveKolRoster({ storedHandles: '', meta: null, now: day7 })
   assert.equal(empty.custom, false)
-  assert.deepEqual(empty.handles, kol.poolHandles(1))
+  assert.deepEqual(empty.handles, [])
   const custom = kol.resolveKolRoster({ storedHandles: ['alpha_one', 'beta_two'], meta: null, now: day0 })
   assert.equal(custom.custom, true)
   assert.deepEqual(custom.handles, ['alpha_one', 'beta_two'])
@@ -5260,7 +5295,8 @@ test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing da
   assert.equal(customLater.persist, false)
   const pinnedPool = kol.resolveKolRoster({ storedHandles: kol.poolHandles(1), meta: null, now: day0 })
   assert.equal(pinnedPool.custom, false)
-  assert.deepEqual(pinnedPool.handles, kol.poolHandles(0))
+  assert.equal(pinnedPool.source, 'leaderboard')
+  assert.deepEqual(pinnedPool.handles, [])
   const first = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
   const second = background.taskPageUrl('kol', 'https://x.com/home', { kolHandles: ['alpha', 'beta', 'gamma'] })
   assert.equal(first, 'https://x.com/alpha')
@@ -5298,24 +5334,16 @@ test('daily KOL roster uses qualified home authors, stays fixed today, and falls
   assert.equal(kol.qualifyingDailyPost(post('english', 400, 20, 'English only'), today), null)
   assert.equal(kol.qualifyingDailyPost({ ...post('repeat', 400), repost: true }, today), null)
   const sparse = kol.collectDailyCandidates(null, 'myaccount', posts.slice(0, 4), today)
-  assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'fallback')
+  assert.equal(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).source, 'leaderboard')
+  assert.deepEqual(kol.resolveKolRoster({ discovery: sparse, account: 'myaccount', now: today }).handles, [])
   const collected = kol.collectDailyCandidates(sparse, 'myaccount', posts.slice(4), today)
-  const daily = kol.resolveKolRoster({ discovery: collected, account: 'myaccount', now: today })
-  assert.equal(daily.source, 'daily')
-  assert.equal(daily.handles.length, 5)
-  assert.deepEqual(daily.handles, ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
+  assert.deepEqual(kol.dailyHandles(collected, 'myaccount', today), ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])
   const extra = kol.collectDailyCandidates(collected, 'myaccount', [post('newstar', 2000)], today)
-  const frozen = kol.resolveKolRoster({ storedHandles: daily.handles, meta: daily.meta,
-    discovery: extra, account: 'myaccount', now: today })
-  assert.deepEqual(frozen.handles, daily.handles)
   const tomorrowPosts = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'newstar']
     .map((handle, index) => post(handle, 500 - index * 20, 15, '明天的中文原创内容', tomorrow))
   const nextDiscovery = kol.collectDailyCandidates(extra, 'myaccount', tomorrowPosts, tomorrow)
-  const nextDay = kol.resolveKolRoster({ storedHandles: frozen.handles, meta: frozen.meta,
-    discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
-  assert.equal(nextDay.source, 'daily')
-  assert.notDeepEqual(nextDay.handles, daily.handles)
-  assert.equal(nextDay.handles[0], 'newstar')
+  assert.equal(kol.dailyHandles(nextDiscovery, 'myaccount', tomorrow, ['alpha', 'beta', 'gamma', 'delta', 'epsilon'])[0], 'newstar')
+  assert.equal(kol.resolveKolRoster({ discovery: nextDiscovery, account: 'myaccount', now: tomorrow }).source, 'leaderboard')
   const custom = kol.resolveKolRoster({ storedHandles: ['my_one', 'my_two'], meta: null,
     discovery: nextDiscovery, account: 'myaccount', now: tomorrow })
   assert.equal(custom.source, 'custom')
@@ -5356,9 +5384,10 @@ test('background KOL launch reads the current account daily roster from extensio
     async set(value) { Object.assign(local, value) },
   } } }
   try {
+    local[kol.KOL_ROSTER_KEY] = { custom: false, taskBatch: { handles: ['board_a', 'board_b', 'board_c', 'board_d', 'board_e'] } }
     const handles = await background.readKolHandles(now, 'myaccount')
-    assert.deepEqual(handles, ['authora', 'authorb', 'authorc', 'authord', 'authore'])
-    assert.equal(local[kol.KOL_ROSTER_KEY].dailyByAccount.myaccount.day, kol.beijingDayKey(now))
+    assert.deepEqual(handles, ['board_a', 'board_b', 'board_c', 'board_d', 'board_e'])
+    assert.deepEqual(kol.dailyHandles(local[kol.KOL_DISCOVERY_KEY], 'myaccount', now), ['authora', 'authorb', 'authorc', 'authord', 'authore'])
   } finally {
     globalThis.chrome = originalChrome
   }
@@ -6159,7 +6188,7 @@ test('notification context waits for a settled root and does not keep an unsettl
 test('DeepSeek receives both sides of a notification conversation', async () => {
   let request = null
   const originalFetch = globalThis.fetch
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '谢谢补充，我的意思是这个范围。' } }] } } }
@@ -6220,7 +6249,7 @@ test('selected Grok reply prompt asks for a specific second perspective', async 
   const originalFetch = globalThis.fetch
   let request = null
   let modelText = '这个处理确实太急了。@grok 还有哪条公开依据能支持另一种判断？'
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-12345678', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: modelText } }] } } }
@@ -6427,7 +6456,7 @@ test('saved reply keys enable DeepSeek and B.AI unless all models were explicitl
   const originalFetch = globalThis.fetch
   const requests = []
   const progress = []
-  let settings = { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key' }
+  let settings = { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', replyProviders: ['deepseek', 'bai'], replyProvidersManual: true }
   globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings } } } } }
   globalThis.fetch = async (url) => {
     requests.push(url)
@@ -6486,7 +6515,7 @@ test('selected reply providers skip disabled models and do not require a DeepSee
   const originalFetch = globalThis.fetch
   const originalReceipt = globalThis.XrcCommunityReceipt
   const requests = []
-  const settings = { replyProviders: ['nas'], baiApiKey: 'sk-bai-test-key' }
+  const settings = { replyProviders: ['nas'], replyProvidersManual: true, baiApiKey: 'sk-bai-test-key' }
   globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: settings, xrcAccountHandle: 'Tuaran' } } } } }
   globalThis.XrcCommunityReceipt = { async readSecret() { return 'test-secret' } }
   globalThis.fetch = async (url) => {
@@ -6730,7 +6759,7 @@ test('Grok reply notifications are skipped while ordinary replies mentioning Gro
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['125'])
 })
 
-test('notification candidates are not cut off by a two-hour timestamp', async () => {
+test('notification candidates stay inside the selected time window', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const replyTargetHelpers = source.match(/  function outsideNestedTweet\(article, node\) \{[\s\S]*?\n  function ownTweetText\(article\) \{[\s\S]*?\n  \}/)?.[0]
   const definition = source.match(/  function collectTweets\(\) \{[\s\S]*?\n  \}/)?.[0]
@@ -6752,12 +6781,18 @@ test('notification candidates are not cut off by a two-hour timestamp', async ()
   }
   const main = { querySelectorAll: () => [article] }
   const context = vm.createContext({
-    state: { assistantMode: 'notifications' },
+    state: { assistantMode: 'notifications', schedulePace: 'medium' },
     document: { querySelector: () => main, body: main }, window: { location: { origin: 'https://x.com' }, scrollY: 0 }, PANEL_ID: 'x-reply-clipboard-panel',
     currentAccountHandle: () => 'tuaranx', isNotificationPath: () => true, isNestedTweet: () => false,
     isPromoted: () => false, textOf: (node) => node?.textContent || '', loopApi: loop, URL,
   })
   vm.runInContext(`${source.match(/  function shanghaiDayKey\([\s\S]*?\n  \}/)[0]}\n${replyTargetHelpers}\n${definition}\nglobalThis.collect = collectTweets`, context)
+  ageHours = 1
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
+  ageHours = 3
+  assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
+  context.state.schedulePace = 'boundary'
+  ageHours = 20
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), ['123456789'])
   ageHours = 25
   assert.deepEqual(Array.from(context.collect(), (tweet) => tweet.id), [])
@@ -6769,19 +6804,24 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
   assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000, now), true)
   assert.equal(loop.notificationWithinWindow(now - 24 * 60 * 60 * 1000 - 1, now), false)
   assert.equal(loop.notificationWithinWindow(0, now), false)
+  assert.equal(loop.notificationWindowMs('medium'), 2 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs('boundary'), 24 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWithinWindow(now - 3 * 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), false)
+  assert.equal(loop.notificationWithinWindow(now - 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), true)
 })
 
-test('notification scan stops at the old boundary, refreshes once, then schedules the next cycle', async () => {
+test('notification scan stops at the time window, refreshes once, then returns the tab', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const label = source.match(/  function notificationWindowLabel\(\) \{[\s\S]*?\n  \}/)?.[0]
   const boundary = source.match(/  function notificationFeedReachedOldBoundary\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const finish = source.match(/  async function finishNotificationScan\(reason = [\s\S]*?\n  \}/)?.[0]
-  assert.ok(boundary && finish)
+  assert.ok(label && boundary && finish)
   const now = Date.parse('2026-11-05T12:00:00+08:00')
   let ageHours = 25
   const article = { closest: () => null }
   const events = []
   const context = vm.createContext({
-    state: { assistantMode: 'notifications', notificationBoundaryRefreshed: false, total: 2 },
+    state: { assistantMode: 'notifications', schedulePace: 'medium', notificationBoundaryRefreshed: false, total: 2, running: true },
     document: { querySelector: () => ({ querySelectorAll: () => [article] }) },
     PANEL_ID: 'x-reply-clipboard-panel', isNestedTweet: () => false,
     listOwn: () => [{ getAttribute: () => new Date(now - ageHours * 60 * 60 * 1000).toISOString() }],
@@ -6790,13 +6830,14 @@ test('notification scan stops at the old boundary, refreshes once, then schedule
     reloadAndResume: async () => { events.push('refreshed'); return true },
     finishCycleAndScheduleNext: async () => { events.push('scheduled'); return 'scheduled' },
   })
-  vm.runInContext(`${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
+  vm.runInContext(`${label}\n${boundary}\n${finish}\nglobalThis.atBoundary = notificationFeedReachedOldBoundary\nglobalThis.finish = finishNotificationScan`, context)
   assert.equal(context.atBoundary(now), true)
-  ageHours = 23
+  ageHours = 1
   assert.equal(context.atBoundary(now), false)
   assert.equal(await context.finish(), 'reload')
-  assert.equal(await context.finish(), 'scheduled')
-  assert.deepEqual(events, ['saved', 'refreshed', 'scheduled'])
+  assert.equal(await context.finish(), 'stopped')
+  assert.equal(context.state.running, false)
+  assert.deepEqual(events, ['saved', 'refreshed'])
 })
 
 test('old notification cooldown is cleared once after the scan fix', async () => {
@@ -6830,8 +6871,8 @@ test('old notification cooldown is cleared once after the scan fix', async () =>
 })
 
 test('recognizes the list routes used by the integrated mutual helper', () => {
-  assert.ok(['/crazypig9y/followers', '/jianlvup/followers', '/jianlvya/followers', '/kyotom08/followers', '/Chill_Alpha/followers'].includes(mutual.targetPath('targetFollow')))
-  assert.deepEqual(mutual.constants.TARGET_FOLLOW_HANDLES, ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha'])
+  assert.equal(mutual.targetPath('targetFollow'), '')
+  assert.equal(['/crazypig9y/followers', '/jianlvup/followers', '/jianlvya/followers', '/kyotom08/followers', '/Chill_Alpha/followers'].includes(mutual.targetPath('targetFollow')), false)
   assert.equal(mutual.isFollowingPath('/tuaran/following'), true)
   assert.equal(mutual.isFollowingPath('/tuaran/followers'), false)
   assert.equal(mutual.isFollowersPath('/tuaran/followers'), true)
@@ -6839,6 +6880,21 @@ test('recognizes the list routes used by the integrated mutual helper', () => {
   assert.equal(mutual.isFollowersPath('/home'), false)
   assert.equal(mutual.constants.FOLLOW_ACTION_DELAY_MS, 2000)
   assert.equal(mutual.constants.FOLLOW_BATCH_SIZE, 100)
+  assert.equal(mutual.targetFollowQuota('slow'), 5)
+  assert.equal(mutual.targetFollowQuota('medium'), 10)
+  assert.equal(mutual.targetFollowQuota('fast'), 15)
+  assert.equal(mutual.targetFollowQuota('turbo'), 15)
+  assert.equal(mutual.followBackQuota('slow'), 5)
+  assert.equal(mutual.followBackQuota('fast'), 15)
+  assert.equal(mutual.textIsNonSimplified('中国'), false)
+  assert.equal(mutual.textIsNonSimplified('中國'), true)
+  assert.equal(mutual.textIsNonSimplified('Hello'), true)
+  assert.equal(mutual.textIsNonSimplified('你好'), false)
+  assert.equal(mutual.textIsNonSimplified('こんにちは'), true)
+  assert.equal(mutual.isRateLimitText('抱歉，你受到速度限制。请稍等片刻，然后再试一次。'), true)
+  assert.equal(mutual.isRateLimitText('受到速率限制。请稍等片刻后再试。'), true)
+  assert.equal(mutual.isRateLimitText('Sorry, you are rate limited. Please wait a moment and try again.'), true)
+  assert.equal(mutual.isRateLimitText('关注'), false)
   assert.equal(mutual.constants.FOLLOW_BATCH_COOLDOWN_MS, 5 * 60 * 1000)
   assert.deepEqual(mutual.constants.FOLLOW_ROUND_GAP_SECONDS, { slow: 10 * 60, medium: 5 * 60, fast: 3 * 60, turbo: 2 * 60 })
   assert.equal(mutual.followBatchCooldownMs('slow'), 10 * 60 * 1000)
@@ -6875,7 +6931,8 @@ test('a followed-back account is kept when any name or bio fragment contains Chi
   const profileNonChinese = source.match(/  function profileNonChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(profileTextParts && profileHasChinese && profileNonChinese)
   const context = vm.createContext({
-    textOf: (node) => node.textContent.trim(),
+    textOf: (node) => String(node?.textContent || "").trim(),
+    buttonLabel: (button) => String(button?.getAttribute?.("aria-label") || button?.textContent || "").trim(),
     FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
   })
   vm.runInContext(`${profileTextParts}\n${profileHasChinese}\n${profileNonChinese}\nglobalThis.check = profileNonChinese`, context)
@@ -6893,7 +6950,11 @@ test('follow-back and target-follow require Chinese in the name or bio', async (
   const profileHasChinese = source.match(/  function profileHasChinese\(row, handle\) \{[\s\S]*?\n  \}/)?.[0]
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(profileTextParts && profileHasChinese && runWithStorage)
-  const profileContext = vm.createContext({ textOf: (node) => node.textContent, FOLLOWS_YOU_RE: /(Follows you|关注了你)/i })
+  const profileContext = vm.createContext({
+    textOf: (node) => node.textContent || "",
+    FOLLOWS_YOU_RE: /(Follows you|关注了你)/i,
+    buttonLabel: (button) => (button?.getAttribute?.("aria-label") || button?.textContent || "").trim(),
+  })
   vm.runInContext(`${profileTextParts}\n${profileHasChinese}\nglobalThis.hasChinese = profileHasChinese`, profileContext)
   const row = (...parts) => ({ querySelectorAll: () => parts.map((textContent) => ({ textContent })) })
   assert.equal(profileContext.hasChinese(row('Alice', '中文简介')), true)
@@ -6907,6 +6968,54 @@ test('follow-back and target-follow require Chinese in the name or bio', async (
   assert.equal(profileContext.hasChinese(described('Alice', '中文简介')), true)
   assert.equal(profileContext.hasChinese(described('中文姓名', 'English bio')), true)
   assert.equal(profileContext.hasChinese(described('Alice', 'English bio')), false)
+  const latinName = { textContent: '333lbn@333lbn', contains() { return false } }
+  const chineseBio = { textContent: '不必在意我发了什么，只是为了博取流量', contains() { return false } }
+  const visibleBio = {
+    closest() { return null },
+    querySelector(selector) {
+      if (selector === '[data-testid="User-Name"]' || selector === '[data-testid="UserName"]') return latinName
+      return null
+    },
+    querySelectorAll(selector) {
+      if (selector === '[dir="ltr"], [dir="auto"]') return [chineseBio]
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', getAttribute: () => 'Follow @333lbn' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(visibleBio), true)
+  const englishOnly = {
+    textContent: 'Alice @english 关注',
+    closest() { return null },
+    querySelector(selector) {
+      if (selector === '[data-testid="User-Name"]' || selector === '[data-testid="UserName"]') return { textContent: 'Alice@english', contains() { return false } }
+      return null
+    },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: '关注', getAttribute: () => '关注 @english' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(englishOnly), false)
+  const followersRow = {
+    textContent: 'Dora @DoraLizi 读书，看人性与社会；投资，看生意与价值。 Follow',
+    closest() { return null },
+    querySelector() { return null },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', innerText: 'Follow', getAttribute: () => 'Follow @DoraLizi' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(followersRow), true)
+  const englishRow = {
+    textContent: 'Dean @DeanWeberByy AI video engineer building reliable media workflows. Follow',
+    closest() { return null },
+    querySelector() { return null },
+    querySelectorAll(selector) {
+      if (String(selector).includes('button')) return [{ textContent: 'Follow', innerText: 'Follow', getAttribute: () => 'Follow @DeanWeberByy' }]
+      return []
+    },
+  }
+  assert.equal(profileContext.hasChinese(englishRow), false)
 
   const picked = []
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0, seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
@@ -6947,6 +7056,7 @@ test('visible follow candidates exclude profiles with no Chinese in either field
     findPlainFollowButton: () => activeMode === 'targetFollow' ? {} : null,
     findHandle: (row) => row.handle,
     hasFollowsYou: () => true,
+    followsYouStatus: () => 'yes',
     profileNonChinese: () => false,
     profileHasChinese: (row) => row.chinese,
     state: { unfollowEnglish: false },
@@ -7295,7 +7405,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -7519,7 +7629,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /rootSettled: false/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十七项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十八项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -7546,6 +7656,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-mutual-action="unfollow"/)
   assert.match(content, /data-xrc-mutual-action="followBack"/)
   assert.match(content, /data-xrc-mutual-action="targetFollow"/)
+  assert.match(content, /一次关注 15 人，X 会提示超过限制/)
+  assert.match(content, /关注 \$\{profile\.count\} 人后结束/)
   assert.match(content, /data-xrc-mutual-tab="unfollow"/)
   assert.match(content, /data-xrc-mutual-tab="followBack"/)
   assert.match(content, /data-xrc-mutual-tab="targetFollow"/)
@@ -7678,7 +7790,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
   assert.doesNotMatch(content, /data-xrc-desk-home>排班台/)
   assert.doesNotMatch(content, /data-xrc-config-open="pace"/)
-  assert.match(content, /xrc-schedule-rule-controls/)
+  assert.doesNotMatch(content, /跑完一次回到队尾/)
+  assert.doesNotMatch(content, /data-xrc-schedule-window/)
   assert.doesNotMatch(content, /xrc-schedule-card-config-go/)
   assert.doesNotMatch(content, /data-xrc-schedule-config-open/)
   assert.match(content, /data-xrc-task-schedule-config/)
@@ -7761,6 +7874,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.doesNotMatch(content, /data-xrc-docs-close/)
   assert.match(resourcePage, /href=\{`\/resources\/\$\{RESOURCE_SLUG\}\/docs`\}/)
   assert.match(docsPage, /id="flow"/)
+  assert.match(docsPage, /跑完一次回到队尾/)
+  assert.match(docsPage, /TaskShelf/)
   assert.match(docsPage, /id="states"/)
   assert.match(docsPage, /id="risk"/)
   assert.match(docsPage, /id="tasks"/)
@@ -7804,12 +7919,12 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /不去别人帖子的评论区反复对话/)
   assert.match(docsPage, /换账号后按新账号重新判断/)
   assert.match(docsPage, /短、友好、自然/)
-  assert.match(docsPage, /默认优先级 8 分；与评论首页、评论大V同分且同时可运行时等概率抽选/)
+  assert.match(docsPage, /排班按队列轮流：评论三项先排在前面，轮到就跑大约 10 分钟，然后回到队尾/)
   assert.match(docsPage, /PromptVoteLedger/)
   assert.match(docsPage, /卡片左侧勾选是否参与自动排班/)
   assert.match(docsPage, /整卡不再一点就进子页/)
   assert.match(docsPage, /右侧「查看」打开任务子页/)
-  assert.match(docsPage, /子页先速度表与启停/)
+  assert.match(docsPage, /子页放速度表、启停，以及这项自己的一句操作说明/)
   assert.doesNotMatch(docsPage, /右上角「配置」/)
   assert.doesNotMatch(docsPage, /「进入」/)
   assert.doesNotMatch(docsPage, /展开配置|卡片展开区/)
@@ -7829,10 +7944,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /只关页签不会关掉后台排班|只关执行页签不会关掉后台排班/)
   assert.match(docsPage, /右上角在「暂停全部」和「开始」之间切换/)
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
-  assert.match(docsPage, /每确认 100 个[\s\S]*慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟/)
+  assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
-  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*按优先级重新排队/)
+  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*回到队列/)
   assert.match(docsPage, /关注名单提示普通限速：先等 15 分钟/)
   assert.match(docsPage, /扫到列表底部后等 30 分钟再扫描/)
   assert.match(docsPage, /回关粉丝只处理昵称或简介含汉字的账号/)
@@ -7938,13 +8053,15 @@ test('DeepSeek background worker keeps AI replies short and non-thinking', async
   assert.equal(background.taskPageUrl('poster', 'https://x.com/wangchangfu88', { start: true }), 'https://x.com/home')
   assert.equal(background.taskPageUrl('notifications', 'https://x.com/home'), 'https://x.com/notifications')
   assert.equal(background.taskPageUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following')
-  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), /^https:\/\/twitter.com\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers\?xrcAssistant=mutual-targetFollow$/)
+  assert.equal(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home'), 'https://twitter.com/home?xrcAssistant=mutual-targetFollow')
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://twitter.com/home', { targetFollowHandles: ['board_a', 'board_b'] }), /^https:\/\/twitter.com\/board_[ab]\/followers\?xrcAssistant=mutual-targetFollow$/)
   assert.equal(background.taskTabUrl('timeline', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=timeline&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { start: true, accountHandle: '@Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-followBack', 'https://x.com/home', { start: true, accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/followers?xrcAssistant=mutual-followBack&xrcStart=1')
   assert.equal(background.taskTabUrl('mutual-unfollow', 'https://x.com/home', { accountHandle: 'Tuaran' }), 'https://x.com/Tuaran/following?xrcAssistant=mutual-unfollow')
   assert.doesNotMatch(background.taskTabUrl('poster', 'https://x.com/home'), /xrcStart=1/)
-  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), /^https:\/\/x\.com\/(?:crazypig9y|jianlvup|jianlvya|kyotom08|Chill_Alpha)\/followers\?xrcAssistant=mutual-targetFollow&xrcStart=1$/)
+  assert.equal(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true }), 'https://x.com/home?xrcAssistant=mutual-targetFollow&xrcStart=1')
+  assert.match(background.taskTabUrl('mutual-targetFollow', 'https://x.com/home', { start: true, targetFollowHandles: ['board_c'] }), /^https:\/\/x\.com\/board_c\/followers\?xrcAssistant=mutual-targetFollow&xrcStart=1$/)
   assert.match(backgroundText, /xrc-flow-start/)
   assert.match(backgroundText, /xrc-flow-pause/)
   assert.match(backgroundText, /phase: "starting"/)
@@ -8080,16 +8197,17 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   const night = Date.parse('2026-10-28T21:00:00+08:00')
   const plan = { enabledAt: morning - 60000, rules: {
     'likes-posts': { enabled: false },
+    'poster-premium': { enabled: true },
     'mutual-unfollow': { enabled: true, window: 'peak' },
   }, items: { notifications: { resumeAt: morning + 3600000 } } }
   const morningDue = background.dueTaskModes(plan, morning)
-  assert.equal(morningDue[0], 'poster-premium')
-  assert.ok(morningDue.indexOf('poster-premium') < morningDue.indexOf('timeline'))
+  assert.equal(morningDue[0], 'timeline')
   assert.ok(!morningDue.includes('notifications'))
+  assert.ok(morningDue.indexOf('kol') < morningDue.indexOf('poster-premium'))
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
-  assert.ok(!background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
+  assert.ok(background.dueTaskModes(plan, afternoon).includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, night).includes('poster-premium'))
   const fairPlan = { enabledAt: afternoon - 60 * 60000, rules: { notifications: { priority: 8 }, timeline: { priority: 8 }, 'likes-replies': { priority: 5, minGapMs: 0 } }, items: {
     timeline: { lastRunAt: afternoon - 60000 },
@@ -8105,10 +8223,10 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
     },
   }
   const rotated = background.dueTaskModes(sameScore, afternoon)
-  assert.ok(rotated.indexOf('kol') < rotated.indexOf('notifications'))
+  assert.ok(rotated.indexOf('notifications') < rotated.indexOf('kol'))
   sameScore.items.kol.lastRunAt = 0
   const kolNeverRan = background.dueTaskModes(sameScore, afternoon)
-  assert.ok(kolNeverRan.indexOf('kol') < kolNeverRan.indexOf('notifications'))
+  assert.ok(kolNeverRan.indexOf('notifications') < kolNeverRan.indexOf('kol'))
   sameScore.items.notifications.lastRunAt = afternoon - 5 * 60 * 60000
   sameScore.items.kol.lastRunAt = afternoon - 5 * 60 * 60000
   const exactTie = background.dueTaskModes(sameScore, afternoon)
@@ -8122,7 +8240,11 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
       kol: { lastRunAt: afternoon - 180_000 },
     },
   }, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
-  assert.deepEqual(threeComments, ['kol', 'timeline', 'notifications'])
+  assert.deepEqual(threeComments, ['notifications', 'timeline', 'kol'])
+  const queued = { queue: background.scheduleQueue({}), items: {} }
+  background.rotateScheduleQueue(queued, 'notifications')
+  assert.equal(queued.queue.at(-1), 'notifications')
+  assert.equal(background.dueTaskModes(queued, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))[0], 'timeline')
 })
 
 test('three due comment tasks have equal launch odds without overriding manual starts or cooldowns', () => {
@@ -8153,7 +8275,7 @@ test('three due comment tasks have equal launch odds without overriding manual s
 test('cleanup defaults to bounded slow segments and keeps a longer occupancy pass', () => {
   const now = Date.parse('2026-10-28T10:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  assert.equal(rules['mutual-unfollow'].minGapMs, 240 * 60000)
+  assert.equal(rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
   assert.equal(rules['prune-posts'].minGapMs, 240 * 60000)
   assert.equal(background.PRUNE_MIN_GAP_MS, 7 * 24 * 60 * 60 * 1000)
   assert.equal(background.normalizedTaskRules({ 'prune-posts': { minGapMs: background.LEGACY_PRUNE_GAP_MS } })['prune-posts'].minGapMs, 240 * 60000)
@@ -8162,7 +8284,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   assert.equal(background.taskUnlimitedEnabled('prune-posts', { 'prune-posts': false }), false)
   assert.equal(background.taskUnlimitedEnabled('timeline', {}), false)
   assert.equal(background.sliceMsForMode('mutual-unfollow', { sliceSeconds: 30 }), background.UNFOLLOW_SLICE_MS)
-  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), 8 * 60 * 60 * 1000)
+  assert.equal(background.sliceMsForMode('timeline', { sliceSeconds: 30 }), background.COMMENT_TURN_MS)
   assert.equal(background.sliceMsForMode('likes-posts', { sliceSeconds: 30 }), background.LIKE_SLICE_MS)
   assert.equal(rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   assert.equal(rules['likes-posts'].pace, 'slow')
@@ -8198,7 +8320,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 
   const recent = {
     enabledAt: now - 60000,
-    rules: {},
+    rules: { 'mutual-unfollow': { enabled: true } },
     items: { 'mutual-unfollow': { lastRunAt: now - 2 * 24 * 60 * 60 * 1000 } },
   }
   assert.ok(!background.dueTaskModes(recent, now).includes('mutual-unfollow'))
@@ -8213,18 +8335,18 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
   const timeline = background.scheduleTimeline({
     enabled: true,
     current: 'timeline',
-    items: { 'mutual-unfollow': { lastRunAt: now - 2 * 60 * 60 * 1000, reason: '清理按速度档等待下次排班' } },
+    items: { 'mutual-unfollow': { lastRunAt: now - 2 * 60 * 60 * 1000, reason: '等待每周清理' } },
     rules: { 'mutual-unfollow': { enabled: true } },
   }, now)
   const unfollow = timeline.future.find((entry) => entry.mode === 'mutual-unfollow')
   assert.equal(unfollow.status, 'scheduled')
-  assert.ok(unfollow.readyAt >= now + 2 * 60 * 60 * 1000)
+  assert.ok(unfollow.readyAt >= now + 6 * 24 * 60 * 60 * 1000)
 })
 
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -8239,16 +8361,16 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(background.sliceMsForMode('mutual-targetFollow', { sliceSeconds: 30 }), background.TARGET_FOLLOW_SLICE_MS)
   assert.deepEqual(background.normalizeTargetFollowHandles('@Foo\n@bar ,foo'), ['Foo', 'bar'])
   assert.deepEqual(background.dueTaskModes({ enabledAt: now - 60000, rules: {}, items: {} }, now), [
-    'notifications', 'timeline', 'kol', 'poster', 'article', 'mutual-followBack', 'mutual-targetFollow',
+    'notifications', 'timeline', 'kol', 'mutual-followBack', 'mutual-targetFollow',
     'likes-posts', 'likes-replies',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
-  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
   recent.items['mutual-followBack'].lastRunAt = now - 2 * 60000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
   recent.items['mutual-followBack'].lastRunAt = now - 6 * 60000
-  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
-  recent.items['mutual-followBack'].lastRunAt = now - 25 * 60 * 60 * 1000
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
+  recent.items['mutual-followBack'].lastRunAt = now - 8 * 24 * 60 * 60 * 1000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
   assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T13:00:00+08:00')).includes('mutual-followBack'), true)
   assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T05:00:00+08:00')).includes('mutual-followBack'), true)
@@ -8256,25 +8378,25 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     lastRunAt: now, followBackSessionUntil: background.followBackNightEndsAt(now), resumeAt: now + 30 * 60000,
   } } }
   assert.equal(background.dueTaskModes(nightSession, now + 20 * 60000).includes('mutual-followBack'), false)
-  assert.equal(background.dueTaskModes(nightSession, now + 31 * 60000).includes('mutual-followBack'), true)
+  assert.equal(background.dueTaskModes(nightSession, now + 31 * 60000).includes('mutual-followBack'), false)
   assert.equal(background.followBackNightEndsAt(now), Date.parse('2026-10-29T06:00:00+08:00'))
   assert.equal(background.followBackNightEndsAt(Date.parse('2026-10-29T05:00:00+08:00')), Date.parse('2026-10-29T06:00:00+08:00'))
   const dawnStart = Date.parse('2026-10-29T05:00:00+08:00')
   const nextDawn = Date.parse('2026-10-30T05:00:00+08:00')
   const afterDawnSession = { enabledAt: dawnStart, rules: {}, items: { 'mutual-followBack': {
-    lastRunAt: dawnStart, followBackSessionUntil: background.followBackNightEndsAt(dawnStart), resumeAt: nextDawn,
+    lastRunAt: dawnStart - 8 * 24 * 60 * 60 * 1000, followBackSessionUntil: background.followBackNightEndsAt(dawnStart), resumeAt: nextDawn,
   } } }
   assert.equal(background.dueTaskModes(afterDawnSession, Date.parse('2026-10-29T23:00:00+08:00')).includes('mutual-followBack'), false)
   assert.equal(background.dueTaskModes(afterDawnSession, nextDawn).includes('mutual-followBack'), true)
 })
 
-test('cleanup and X-themed post checkboxes start unchecked unless saved choices enable them', async () => {
+test('cleanup and posting checkboxes start unchecked unless saved choices enable them', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const helper = source.match(/  function scheduleRuleEnabled\(mode, rule\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'prune-posts', 'prune-replies', 'poster-x', 'poster-xhs', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)
@@ -8478,7 +8600,8 @@ test('follow-back and target-follow share the pace rest after 100 confirms', asy
     assert.equal(local.xrcTaskSchedule.items['mutual-targetFollow'].resumeAt, now + 5 * 60000)
     assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].manualRequestedAt, 0)
     assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].followBackSessionUntil, undefined)
-    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-followBack'), true)
+    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-followBack'), false)
+    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-targetFollow'), true)
   } finally {
     globalThis.chrome = previousChrome
     Date.now = previousDateNow
@@ -8524,6 +8647,49 @@ test('a running follow session is not preempted by comments before it pauses', a
   }
 })
 
+test('an open follow list is not handed to KOL when the page has not confirmed', async () => {
+  const previousChrome = globalThis.chrome
+  const previousDateNow = Date.now
+  const now = Date.parse('2026-10-28T15:20:00+08:00')
+  Date.now = () => now
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'mutual-targetFollow', workTabId: 11,
+      startedAt: now - 91 * 1000, priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+      priorityScoreVersion: background.PRIORITY_SCORE_VERSION, followPriorityVersion: 1,
+      likeDetectionVersion: 2, replyRiskVersion: 2, followSessionVersion: 1,
+      sharedFollowCadenceVersion: 1, followBackNightVersion: 1, followBackAllDayVersion: 1,
+      rules: background.defaultTaskRules(),
+      items: { 'mutual-targetFollow': { resumeAt: 0 } },
+    },
+    xrcPluginRuntime: { tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'starting', waitUntil: 0, updatedAt: now } }, flow: { phase: 'running' } },
+  }
+  const session = { xrcTaskTabs: { 'mutual-targetFollow': 11 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get(id) { if (id === 11) return { id, url: 'https://x.com/aduxiang/followers' }; throw new Error('missing') },
+      async sendMessage() { return { ok: false, error: '模型设置还没读完' } },
+      async update(id, update) { updates.push(update); return { id } },
+      async remove() {},
+    },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(updates.some((update) => update.url), false)
+    assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /不换去评论/)
+  } finally {
+    globalThis.chrome = previousChrome
+    Date.now = previousDateNow
+  }
+})
+
 test('follow tasks get a free slot ahead of likes while below the shared daily goal', () => {
   assert.equal(background.taskUnlimitedEnabled('mutual-followBack', { 'mutual-followBack': true }), false)
   const now = Date.parse('2026-10-28T23:00:00+08:00')
@@ -8532,23 +8698,22 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
     'mutual-targetFollow': { lastRunAt: now - 31 * 60000 },
   } }
   const due = background.dueTaskModes(plan, now)
-  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('notifications'))
-  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('timeline'))
-  assert.ok(due.indexOf('mutual-followBack') < due.indexOf('likes-posts'))
+  assert.ok(due.indexOf('notifications') < due.indexOf('mutual-targetFollow'))
+  assert.ok(due.indexOf('timeline') < due.indexOf('mutual-targetFollow'))
+  assert.ok(due.indexOf('mutual-targetFollow') < due.indexOf('likes-posts'))
+  assert.equal(due.includes('mutual-followBack'), false)
   const premiumNow = Date.parse('2026-10-29T09:35:00+08:00')
-  const premiumPlan = { ...plan, rules: { 'mutual-followBack': { window: 'all' } } }
+  const premiumPlan = { ...plan, rules: { 'mutual-targetFollow': { window: 'all' } } }
   const premiumDue = background.dueTaskModes(premiumPlan, premiumNow)
-  assert.ok(premiumDue.indexOf('poster-premium') < premiumDue.indexOf('mutual-followBack'))
+  assert.ok(premiumDue.indexOf('poster-premium') < premiumDue.indexOf('mutual-targetFollow'))
   plan.sharedFollowTodayCount = 300
-  assert.ok(background.dueTaskModes(plan, now).indexOf('mutual-followBack') < background.dueTaskModes(plan, now).indexOf('likes-posts'))
+  assert.ok(background.dueTaskModes(plan, now).indexOf('mutual-targetFollow') > background.dueTaskModes(plan, now).indexOf('notifications'))
   for (const mode of ['timeline', 'notifications', 'kol']) plan.items[mode] = { resumeAt: now + 10 * 60000 }
   const cooling = background.dueTaskModes(plan, now)
   assert.ok(!cooling.includes('timeline') && !cooling.includes('notifications') && !cooling.includes('kol'))
-  for (const mode of ['mutual-followBack', 'mutual-targetFollow']) {
-    assert.ok(cooling.includes(mode))
-    assert.ok(cooling.indexOf(mode) < cooling.indexOf('likes-posts'))
-    assert.ok(cooling.indexOf(mode) < cooling.indexOf('likes-replies'))
-  }
+  assert.ok(cooling.includes('mutual-targetFollow'))
+  assert.ok(cooling.indexOf('mutual-targetFollow') < cooling.indexOf('likes-posts'))
+  assert.ok(!cooling.includes('mutual-followBack'))
 })
 
 test('X follow restrictions pause both follow modes without a 24-hour or permanent block', async () => {
@@ -8638,10 +8803,13 @@ test('effective follow boost is shared by ranking and preemption score', () => {
       'likes-posts': { lastRunAt: now - 10 * 60000 },
     },
   }
-  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now), background.FOLLOW_PRIORITY_BOOST)
+  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now), 7)
+  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now), background.FOLLOW_PRIORITY_BOOST)
   assert.equal(background.effectiveSchedulePriority(plan, 'likes-posts', now), 6)
-  assert.ok(background.effectiveSchedulePriority(plan, 'mutual-followBack', now)
+  assert.ok(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now)
     > background.effectiveSchedulePriority(plan, 'timeline', now))
+  plan.sharedFollowTodayCount = 300
+  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now), 7)
 })
 
 test('existing follow tasks leave the old next-night and weekly waits', async () => {
@@ -8690,7 +8858,7 @@ test('schedule desk records finished shifts and estimates the next ready task', 
       notifications: { resumeAt: now + 30 * 60000, reason: '冷却中' },
       poster: { manualStopped: true },
     },
-    rules: {},
+    rules: { poster: { enabled: true } },
   }
   background.recordScheduleSegment(plan, 'timeline', '本轮占用结束', now)
   assert.equal(plan.history.length, 1)
@@ -8719,6 +8887,8 @@ test('a waiting schedule keeps its shared tab and reuses it when the next task i
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, current: '', workTabId: 11, startedAt: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    cautiousQueueVersion: 1,
+    rules: { poster: { enabled: true } },
     items: { poster: { resumeAt: now + 60000 }, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
   }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
   const session = { xrcTaskTabs: {} }
@@ -8761,6 +8931,8 @@ test('a schedule with a lost tab reference adopts a previously owned X tab', asy
   const local = { xrcTaskSchedule: {
     enabled: true, strategyVersion: 4, accountHandle: 'tuaran', current: '', workTabId: 0,
     priorityOrderVersion: 1, followBackNightVersion: 1, likeDetectionVersion: 2, replyRiskVersion: 1,
+    cautiousQueueVersion: 1,
+    rules: { poster: { enabled: true } },
     items: { poster: {}, ...Object.fromEntries(otherModes.map((mode) => [mode, { manualStopped: true }])) },
   }, xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } } }
   const session = { xrcTaskTabs: {} }
@@ -8882,14 +9054,8 @@ test('full flow starts one shared execution tab and keeps all eight tasks in one
     const tabs = session.xrcTaskTabs
     const activeMode = local.xrcTaskSchedule.current
     assert.ok(activeMode)
-    // 精品发帖档位内先用 8.75 分；其他时间回关的 8.5 分先于评论。
-    const premiumSlotOpen = background.taskWindowOpen('poster-premium', { window: 'day' }, Date.now())
-      && [480, 570, 720, 900, 1140].some((slot) => {
-        const clock = new Date(Date.now() + 8 * 60 * 60000)
-        const minute = clock.getUTCHours() * 60 + clock.getUTCMinutes()
-        return minute >= slot && minute < slot + 15
-      })
-    assert.equal(activeMode, premiumSlotOpen ? 'poster-premium' : 'mutual-followBack')
+    // 开局队列里评论回复排在最前，不再因为关注未满 300 或精品档位插到评论前面。
+    assert.equal(activeMode, 'notifications')
     assert.ok(
       stopped.some(({ message }) => message.type === 'xrc-task-start' && message.mode === activeMode)
       || focused.some((entry) => String(entry.options?.url || '').includes(`xrcAssistant=${activeMode}`)),
@@ -9026,11 +9192,11 @@ test('a waiting comment saves its deadline before the shared tab switches tasks'
   }
   try {
     await background.runTaskSchedule()
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-followBack')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > Date.now())
     assert.ok(order.includes('navigated'))
     assert.equal(tabs.has(firstId), true)
-    assert.equal(session.xrcTaskTabs['mutual-followBack'], firstId)
+    assert.equal(session.xrcTaskTabs.kol, firstId)
   } finally {
     delete globalThis.chrome
   }
@@ -9085,7 +9251,7 @@ test('one confirmed comment keeps the tab until the full run enters its next-cyc
     probePhase = 'paused'
     await background.runTaskSchedule()
     assert.ok(suspended.some((reason) => /本次计划已完成|等待冷却/.test(reason)))
-    assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
+    assert.equal(local.xrcTaskSchedule.current, 'kol')
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt >= now + 60000)
   } finally {
     globalThis.Date = RealDate
@@ -10198,7 +10364,7 @@ test('existing comment defaults converge to 8 without changing other custom scor
     const rotated = background.dueTaskModes({ ...plan, enabled: true, items: {
       notifications: { lastRunAt: Date.now() - 60_000 },
     } })
-    assert.ok(rotated.indexOf('timeline') < rotated.indexOf('notifications'))
+    assert.ok(rotated.indexOf('notifications') < rotated.indexOf('timeline'))
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10223,8 +10389,12 @@ test('leftover timeline priority 9 migrates to 8 after comment equal-priority ve
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.timelineEqualPriorityVersion, 1)
     assert.ok(
-      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-followBack', Date.now())
+      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-targetFollow', Date.now())
       > plan.rules.timeline.priority
+    )
+    assert.ok(
+      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-followBack', Date.now())
+      < plan.rules.timeline.priority
     )
   } finally {
     globalThis.chrome = previousChrome
@@ -10235,7 +10405,7 @@ test('notification replies accept emoji-only responses and apply brevity to save
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
   let request
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyCommentPrompt: '已有自定义回复提示词' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyProviders: ['deepseek'], replyCommentPrompt: '已有自定义回复提示词' } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '😂👍' } }] } } }
@@ -10259,7 +10429,7 @@ test('notification model receives the root post and every earlier turn in order'
   const previousChrome = globalThis.chrome
   const previousFetch = globalThis.fetch
   let request
-  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key' } } } } } }
+  globalThis.chrome = { storage: { local: { async get() { return { xrcAiSettings: { apiKey: 'sk-test-key', replyProviders: ['deepseek'] } } } } } }
   globalThis.fetch = async (_url, options) => {
     request = JSON.parse(options.body)
     return { ok: true, async json() { return { choices: [{ message: { content: '接上了😂' } }] } } }
@@ -10295,40 +10465,537 @@ test('target-follow scans other configured sources before rescanning an exhauste
   assert.equal(mutual.nextTargetFollowSource(['Alpha'], 'alpha', []), '')
 })
 
-test('target-follow changes source after ten seconds without new rows even above page bottom', async () => {
+test('target-follow leaves a loaded list when nobody remains to follow', async () => {
   const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
   const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(runWithStorage)
   const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
     seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
   const rows = [{ handle: '@seen', candidate: false }]
-  let clock = 1000
   let scrolls = 0
+  let advances = 0
   const context = vm.createContext({
-    state, Date: { now: () => clock },
+    state, Date: { now: () => 1000 },
     isFollowingPage: () => false, isFollowersPage: () => true,
     targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
     listReady: () => true, loadSharedFollowRate: async () => {},
     reset: (mode) => { state.running = true; state.mode = mode },
     emit: () => {}, waitForSharedCooldown: async () => true,
     rateLimitVisible: () => false, automationWarningVisible: () => false,
     visibleRows: () => rows, scrollForward: async () => {
       scrolls += 1
-      clock += 1000
-      return { progressed: false, atBottom: false, items: rows }
+      if (scrolls > 3) state.stopping = true
+      return { progressed: false, atBottom: true, items: rows }
     },
-    advanceTargetFollowSource: () => 'beta',
+    advanceTargetFollowSource: () => { advances += 1; return 'beta' },
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
     FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
   })
   vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
-  assert.equal((await context.runTest('targetFollow', () => {})).navigate, '/beta/followers')
-  assert.equal(scrolls, 11)
+  const moved = await context.runTest('targetFollow', () => {})
+  assert.equal(moved.navigate, '/beta/followers')
+  assert.equal(advances, 1)
+  state.stopping = false
+  state.running = false
+  scrolls = 0
+  advances = 0
+  context.followingRetryButton = () => ({})
+  context.visibleRows = () => []
+  const switched = await context.runTest('targetFollow', () => {})
+  assert.equal(switched.navigate, '/beta/followers')
+  assert.equal(advances, 1)
+})
+
+test('an open followers page clicks follow without waiting on a model or a new batch', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  assert.match(content, /function taskUsesModel\(key\)/)
+  assert.match(content, /if \(!taskUsesModel\(viewTaskKey\(\)\)\) \{\s*globalBar\.hidden = true/)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0, targetFollowed: 0 }
+  let clicked = false
+  let boardWaited = false
+  const context = vm.createContext({
+    state, Date: { now: () => 1000 },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    followerHandleFromPath: () => 'mierer001',
+    targetFollowHandleFromPath: () => '',
+    loadTargetFollowHandles: async () => { boardWaited = true },
+    beginTargetTask: () => new Promise(() => { boardWaited = true }),
+    TARGET_FOLLOW_HANDLES: ['someoneelse'],
+    writeTargetNavGuard: () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [{ handle: 'jhetha', candidate: true, followButton: {} }],
+    actTargetFollow: async () => { clicked = true; state.stopping = true; return true },
+    noteSeenTargetSources: () => {},
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  await context.runTest('targetFollow', () => {})
+  assert.equal(clicked, true)
+  assert.equal(boardWaited, false)
+})
+
+test('target-follow does not advance while the follower list has not loaded', () => {
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, idleMs: 10000 }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 99, idleMs: 60000 }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: false }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: false, followable: false }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000, followable: false }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, stalled: 4, followable: false }), false)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 4, idleMs: 0, followed: true }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: true, stalled: 0, idleMs: 10000, followed: true }), true)
+  assert.equal(mutual.targetSourceMayAdvance({ seenRows: false, retry: true }), true)
+})
+
+test('an unloaded follower list does not navigate to the next source', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  assert.match(runWithStorage, /粉丝列表还没刷出来/)
+  assert.doesNotMatch(runWithStorage, /rotateTargetBatchNow/)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0 }
+  let clock = 1000
+  let advances = 0
+  const context = vm.createContext({
+    state, Date: { now: () => clock },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [],
+    scrollForward: async () => {
+      clock += 20000
+      state.stopping = true
+      return { progressed: false, atBottom: true, items: [] }
+    },
+    advanceTargetFollowSource: () => { advances += 1; return 'beta' },
+    rotateTargetBatchNow: () => { advances += 1; return 'gamma' },
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+    SCROLL_DELAY_MS: 1,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('targetFollow', () => {})
+  assert.equal(advances, 0)
+  assert.equal(result?.navigate, undefined)
+})
+
+test('a followers page outside the locked batch does not keep navigating', () => {
+  const batch = ['alpha', 'beta', 'gamma', 'delta', 'epsilon']
+  const first = mutual.targetFollowOpenDecision({ pathHandle: 'other', batch, guard: null })
+  assert.equal(first.navigate, '/alpha/followers')
+  const again = mutual.targetFollowOpenDecision({ pathHandle: 'other', batch, guard: first.guard })
+  assert.equal(again.navigate, '')
+  assert.equal(again.guard.stopped, true)
+  const staying = mutual.targetFollowOpenDecision({ pathHandle: 'beta', batch, guard: first.guard })
+  assert.equal(staying.navigate, '')
+  assert.equal(staying.guard, null)
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  assert.equal(mutual.targetFollowOpenDecision({ pathHandle: 'crazypig9y', batch: seeds, guard: null }).navigate, '')
 })
 
 test('source rescan waits do not pause the other follow task', () => {
   assert.equal(background.shouldShareFollowWait('本轮名单已检查，30:00 后重新扫描'), false)
+  assert.equal(background.shouldShareFollowWait('起始名单已检查，暂无新的粉丝来源，05:00:00 后再看'), false)
   assert.equal(background.shouldShareFollowWait('每确认 100 个后共享暂停 5 分钟'), true)
   assert.equal(background.shouldShareFollowWait('X 关注受限，回关与关注候选共用冷却 30 分钟'), true)
+})
+
+test('follow-back weekly gap migrates a short cadence wait and leaves target-follow on the session gap', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const stored = { xrcTaskSchedule: {
+    enabled: false, current: '', strategyVersion: 4,
+    priorityOrderVersion: background.PRIORITY_ORDER_VERSION,
+    priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
+    followBackNightVersion: 1, followBackAllDayVersion: 1,
+    sharedFollowCadenceVersion: 1, followSessionVersion: 1,
+    cleanupPaceVersion: 1,
+    likeDetectionVersion: 2, replyRiskVersion: 2,
+    rules: {
+      'mutual-followBack': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
+      'mutual-targetFollow': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
+      'mutual-unfollow': { minGapMs: 240 * 60 * 1000, pace: 'slow', priority: 3, window: 'all', enabled: true },
+      poster: { minGapMs: 0, pace: 'slow', priority: 7, window: 'all', enabled: true },
+      'poster-premium': { minGapMs: 0, pace: 'medium', priority: 8, window: 'day', enabled: true },
+      article: { minGapMs: 50 * 60000, pace: 'slow', priority: 7, window: 'all', enabled: true },
+    },
+    items: {
+      'mutual-followBack': { resumeAt: now + 5 * 60 * 1000, lastRunAt: now - 60 * 1000, reason: '回关批次结束，等待共享冷却后继续' },
+      'mutual-targetFollow': { resumeAt: now + 5 * 60 * 1000, lastRunAt: now - 10 * 60 * 1000, reason: '关注候选等待下次扫描或共享关注冷却' },
+      'mutual-unfollow': { resumeAt: now + 4 * 60 * 60 * 1000, lastRunAt: now - 60 * 60 * 1000, reason: '清理未回关按速度档等待下次排班' },
+    },
+  } }
+  globalThis.chrome = { storage: { local: {
+    async get(key) { return { [key]: stored[key] } },
+    async set(value) { Object.assign(stored, value) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.followBackWeeklyGapVersion, 2)
+    assert.equal(plan.unfollowWeeklyGapVersion, 1)
+    assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-targetFollow'].pace, 'fast')
+    assert.equal(plan.targetFollowCountVersion, 1)
+    assert.equal(plan.followBackCountVersion, 1)
+    assert.equal(plan.rules['mutual-followBack'].pace, 'fast')
+    assert.equal(plan.cautiousQueueVersion, 1)
+    assert.equal(plan.rules.poster.enabled, false)
+    assert.equal(plan.rules['poster-premium'].enabled, false)
+    assert.equal(plan.rules.article.enabled, false)
+    assert.equal(plan.rules['mutual-unfollow'].enabled, true)
+    assert.equal(plan.rules['mutual-unfollowNonSc'].enabled, false)
+    assert.equal(plan.rules['mutual-unfollowNonSc'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+    assert.ok(plan.items['mutual-followBack'].resumeAt >= now + background.FOLLOW_BACK_MIN_GAP_MS - 120000)
+    assert.equal(plan.items['mutual-targetFollow'].resumeAt, now + 5 * 60 * 1000)
+    assert.ok(plan.items['mutual-unfollow'].resumeAt >= now + background.UNFOLLOW_MIN_GAP_MS - 2 * 60 * 60 * 1000)
+    assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), false)
+    plan.sharedFollowTodayCount = 10
+    assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now + 10 * 60 * 1000), background.FOLLOW_PRIORITY_BOOST)
+    assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now + 10 * 60 * 1000), 7)
+    const again = await background.readTaskSchedule()
+    assert.equal(again.items['mutual-followBack'].resumeAt, plan.items['mutual-followBack'].resumeAt)
+    plan.targetFollowTurnVersion = 0
+    plan.items['mutual-targetFollow'].resumeAt = now + 6 * 60 * 60 * 1000
+    plan.items['mutual-targetFollow'].reason = '起始名单已检查，暂无新的粉丝来源'
+    const shortened = await background.readTaskSchedule()
+    assert.ok(shortened.items['mutual-targetFollow'].resumeAt <= Date.now())
+    assert.match(shortened.items['mutual-targetFollow'].reason, /换五个新人/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('target-follow seeds expand to accounts followed in this run and skip self, visited, and overflow', () => {
+  const seeds = ['alphaone', 'betatwo', 'gammathree', 'deltafour', 'epsilonfive']
+  const visited = [...seeds]
+  let scan = { visited, queue: [], refreshAfter: 0 }
+  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(scan, seeds), 'epsilonfive', visited), '')
+  assert.equal(mutual.queueFollowedSource('tuaran', scan, { self: 'tuaran', seeds }).added, false)
+  assert.equal(mutual.queueFollowedSource('alphaone', scan, { self: 'tuaran', seeds }).added, false)
+  assert.equal(mutual.queueFollowedSource('@epsilonfive', scan, { self: 'tuaran', seeds }).added, false)
+  const first = mutual.queueFollowedSource('@NewPerson', scan, { self: 'tuaran', seeds })
+  assert.equal(first.added, true)
+  assert.equal(mutual.nextTargetFollowSource(mutual.expansionSources(first.scan, seeds), 'epsilonfive', visited), 'NewPerson')
+  assert.equal(mutual.queueFollowedSource('NewPerson', first.scan, { self: 'tuaran', seeds }).added, false)
+  const revisited = { visited: [...visited, 'NewPerson'], queue: ['NewPerson'], refreshAfter: 0 }
+  assert.equal(mutual.queueFollowedSource('NewPerson', revisited, { self: 'tuaran', seeds }).added, false)
+  let full = { visited: [], queue: [] }
+  for (let index = 0; index < mutual.constants.TARGET_EXPANSION_LIMIT; index += 1) {
+    const queued = mutual.queueFollowedSource(`user${index}x`, full, { self: 'tuaran', seeds })
+    assert.equal(queued.added, true)
+    full = queued.scan
+  }
+  assert.equal(mutual.queueFollowedSource('overflowuser', full, { self: 'tuaran', seeds }).added, false)
+  assert.equal(mutual.expansionCount(full, seeds), mutual.constants.TARGET_EXPANSION_LIMIT)
+  assert.ok(mutual.constants.TARGET_SEED_REFRESH_MS > mutual.constants.RESCAN_INTERVAL_MS)
+  assert.equal(mutual.constants.FOLLOW_BACK_LIST_GAP_MS, background.FOLLOW_BACK_MIN_GAP_MS)
+  assert.equal(background.FOLLOW_BACK_MIN_GAP_MS, 7 * 24 * 60 * 60 * 1000)
+  assert.equal(background.TARGET_FOLLOW_MIN_GAP_MS, 5 * 60 * 1000)
+})
+
+test('each target-follow task can switch to a new batch without following the seed accounts first', () => {
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  const seen = mutual.rememberPoolHandles({ handles: seeds.map((handle) => ({ handle, seenAt: 0, usedAt: 1 })), lastBatch: seeds, batch: seeds },
+    ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'], 10)
+  const board = ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e', 'fresh_f', 'fresh_g', 'fresh_h', 'fresh_i', 'fresh_j']
+  const next = mutual.selectTargetBatch({ ...seen, lastBatch: seeds }, { size: 5, sources: board })
+  assert.equal(next.changed, true)
+  assert.deepEqual(next.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  assert.ok(next.handles.every((handle) => !seeds.includes(handle)))
+  const first = mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5, sources: board })
+  assert.equal(first.handles.length, 5)
+  assert.ok(first.handles.every((handle) => !seeds.includes(handle)))
+  assert.deepEqual(mutual.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5 }).handles, [])
+  assert.deepEqual(mutual.normalizeTargetFollowHandles(''), [])
+  assert.deepEqual(background.normalizeTargetFollowHandles(''), [])
+  const locked = mutual.planTargetTaskBatch({ handles: [], lastBatch: [], batch: [] }, { locked: true, batch: first.handles })
+  assert.equal(locked.changed, false)
+  assert.deepEqual(locked.handles, first.handles)
+  const continued = mutual.planTargetTaskBatch(seen, { locked: true, batch: ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'] })
+  assert.equal(continued.changed, false)
+  assert.deepEqual(continued.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  const nextTask = mutual.planTargetTaskBatch({ ...seen, lastBatch: seeds }, { locked: false }, 5, board)
+  assert.deepEqual(nextTask.handles, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e'])
+  const retiredLock = mutual.planTargetTaskBatch({}, { locked: true, batch: seeds }, 5, board)
+  assert.deepEqual(retiredLock.handles, board.slice(0, 5))
+  assert.deepEqual(require('../../tools/x-reply-clipboard-extension/leaderboard.js').withoutRetired(seeds), [])
+  const leaderboard = require('../../tools/x-reply-clipboard-extension/leaderboard.js')
+  assert.deepEqual(leaderboard.parseLeaderboardHandles('快来寒季吧@AvelyraX7点击查看详情 https://x.com/home @disonyyds'), ['AvelyraX7', 'disonyyds'])
+  assert.deepEqual(leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], ['one', 'two', 'three', 'four', 'five'], 5).handles, ['six', 'seven'])
+})
+
+test('each KOL task batch avoids the previous batch and keeps a custom list intact', async () => {
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  const steady = () => 0.999
+  const catalog = ['one_a', 'two_b', 'three_c', 'four_d', 'five_e', 'six_f', 'seven_g', 'eight_h', 'nine_i', 'ten_j']
+  const first = kol.selectTaskBatch(catalog, [], 5, steady)
+  assert.deepEqual(first.handles, catalog.slice(0, 5))
+  const second = kol.selectTaskBatch(catalog, first.handles, 5, steady)
+  assert.deepEqual(second.handles, catalog.slice(5, 10))
+  const avoid = kol.taskBatchAvoid({})
+  assert.deepEqual(avoid, [])
+  const opened = kol.selectTaskBatch(catalog, first.handles, 5, steady)
+  assert.equal(opened.handles.length, 5)
+  assert.ok(opened.handles.every((handle) => !first.handles.includes(handle)))
+  assert.deepEqual(kol.displayedTaskHandles({ handles: catalog, meta: {} }, []), [])
+  assert.deepEqual(kol.displayedTaskHandles({ handles: catalog, meta: { taskBatch: { handles: opened.handles } } }, []), opened.handles)
+  assert.deepEqual(kol.taskBatchAvoid({ taskBatch: { handles: ['kept_one'] } }), ['kept_one'])
+  assert.equal(second.reused, false)
+  const custom = ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h']
+  const customFirst = kol.selectTaskBatch(custom, [], 5, steady)
+  const customSecond = kol.selectTaskBatch(custom, customFirst.handles, 5, steady)
+  assert.ok(customSecond.handles.every((handle) => !customFirst.handles.includes(handle) || customSecond.reused))
+  assert.deepEqual(custom, ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f', 'mine_g', 'mine_h'])
+  const pool = kol.taskCandidatePool({ custom: true, customHandles: custom })
+  assert.deepEqual(pool, custom)
+  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: ['board_a', 'board_b'] }), ['board_a', 'board_b'])
+  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: [] }), [])
+  const resumed = kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha'], createdAt: 5 })
+  assert.deepEqual(resumed.order, ['alpha', 'beta'])
+  assert.deepEqual(resumed.visited, ['alpha'])
+  assert.equal(kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha', 'beta'] }), null)
+  const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const ensure = content.slice(content.indexOf('async function ensureKolVisitOrder'), content.indexOf('async function rotateKolTaskBatch'))
+  assert.ok(ensure.indexOf('resumeActiveKolCycle') < ensure.indexOf('rotateKolTaskBatch'))
+  const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const seenFn = mutualSource.slice(mutualSource.indexOf('function noteSeenTargetSources'), mutualSource.indexOf('function rotateTargetBatchNow'))
+  assert.equal(seenFn.includes('return { navigate'), false)
+  assert.match(seenFn, /return "";/)
+})
+
+test('the panel shows the live target-follow list and a visible KOL roster status', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const statusText = source.match(/  function kolRosterStatusText\(decision\) \{[\s\S]*?\n  \}/)?.[0]
+  const rosterStatus = source.match(/  function targetFollowRosterStatus\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(statusText && rosterStatus)
+  const context = vm.createContext({ kolRoster: { KOL_POOLS: [[], []] } })
+  vm.runInContext(`${statusText}\n${rosterStatus}\nglobalThis.kolStatus = kolRosterStatusText\nglobalThis.followStatus = targetFollowRosterStatus`, context)
+  const seeds = ['crazypig9y', 'jianlvup', 'jianlvya', 'kyotom08', 'Chill_Alpha']
+  assert.match(context.followStatus(seeds, seeds), /这一页还有可关注的人就先关注/)
+  assert.match(context.followStatus(seeds, []), /人都关注过了就换下一个/)
+  assert.match(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /人都关注过了就换下一个/)
+  assert.doesNotMatch(context.followStatus(seeds, ['fresh_a', 'fresh_b', 'fresh_c', 'fresh_d', 'fresh_e']), /@fresh_a|crazypig9y/)
+  assert.doesNotMatch(source, /还没有换批/)
+  assert.doesNotMatch(source, /本批源头可能还是/)
+  assert.doesNotMatch(source, /<textarea data-xrc-target-follow-current/)
+  assert.doesNotMatch(source, /<textarea data-xrc-kol-handles/)
+  assert.match(context.kolStatus({ custom: true, handles: ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f'], meta: { taskBatch: { handles: ['mine_f'] } } }), /不会清掉/)
+  assert.doesNotMatch(context.kolStatus({ custom: true, handles: ['mine'], meta: { taskBatch: { handles: ['mine'] } } }, ['mine']), /@mine/)
+  assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /五个新人/)
+  assert.doesNotMatch(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /@fresh_a/)
+  assert.match(source, /data-xrc-target-follow-status/)
+  assert.match(source, /每次任务直接换成五个新人/)
+  assert.match(source, /echoSavedModelSettings\(panel\)/)
+  assert.doesNotMatch(source, /<span>起始种子<\/span>/)
+  const sync = source.slice(source.indexOf('async function syncKolHandlesField'), source.indexOf('async function saveKolHandlesFromField'))
+  assert.match(sync, /displayedTaskHandles/)
+  assert.doesNotMatch(sync, /decision\.handles/)
+  const ensure = source.slice(source.indexOf('async function ensureKolVisitOrder'), source.indexOf('async function rotateKolTaskBatch'))
+  assert.doesNotMatch(ensure, /loadKolHandles\(/)
+  const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
+  assert.match(readme, /每次任务直接换成五个新人/)
+  assert.match(readme, /不写默认名单/)
+  assert.match(readme, /约每周一次/)
+})
+
+test('exhausted target-follow does not rescan the same list after 30 minutes', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0, cooldownUntil: 0 }
+  let clock = 1_000
+  let scrollsToTop = 0
+  const seenCooldown = []
+  const context = vm.createContext({
+    state, Date: { now: () => clock },
+    isFollowingPage: () => false, isFollowersPage: () => true,
+    targetFollowHandleFromPath: () => 'alpha', loadTargetFollowHandles: async () => {},
+    writeTargetNavGuard: () => {},
+    listReady: () => true, loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => { if (state.cooldownUntil) seenCooldown.push(state.cooldownUntil - clock) },
+    waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [{ handle: 'seen', candidate: false }],
+    scrollForward: async () => ({ progressed: false, atBottom: true, items: [{ handle: 'seen', candidate: false }] }),
+    advanceTargetFollowSource: () => '',
+    targetSourceMayAdvance: mutual.targetSourceMayAdvance,
+    readTargetScan: () => ({ refreshAfter: clock + mutual.constants.TARGET_SEED_REFRESH_MS }),
+    formatClock: () => '06:00:00',
+    sleepActive: async () => { state.stopping = true },
+    window: { scrollTo: () => { scrollsToTop += 1 } },
+    sessionStorage: { removeItem() {} },
+    TARGET_FOLLOW_HANDLES: ['alpha'],
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, TARGET_SOURCE_IDLE_MS: 10000,
+    TARGET_SEED_REFRESH_MS: mutual.constants.TARGET_SEED_REFRESH_MS,
+    RESCAN_INTERVAL_MS: 30 * 60 * 1000,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('targetFollow', () => {})
+  assert.equal(scrollsToTop, 0)
+  assert.equal(seenCooldown.length, 0)
+  assert.equal(state.cooldownUntil, 0)
+  assert.match(result?.error || '', /交回队列后再换五个新人/)
+  assert.notEqual(result?.navigate, '/alpha/followers')
+})
+
+test('exhausted follow-back does not idle-rescan its own followers list', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const runWithStorage = source.match(/  async function runWithStorage\(mode, onUpdate, options = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(runWithStorage)
+  const state = { running: false, stopping: false, mode: '', sharedDailyFollowed: 0,
+    seenHandles: new Set(), skippedHandles: new Set(), errors: 0, cooldownUntil: 0 }
+  let scrollsToTop = 0
+  const waits = []
+  const context = vm.createContext({
+    state,
+    isFollowingPage: () => false, isFollowersPage: () => true, listReady: () => true,
+    targetFollowHandleFromPath: () => '', loadSharedFollowRate: async () => {},
+    reset: (mode) => { state.running = true; state.mode = mode },
+    emit: () => {}, waitForSharedCooldown: async () => true,
+    rateLimitVisible: () => false, automationWarningVisible: () => false,
+    visibleRows: () => [],
+    scrollForward: async () => ({ progressed: false, atBottom: true, items: [] }),
+    sleepActive: async (ms) => { waits.push(ms) },
+    window: { scrollTo: () => { scrollsToTop += 1 } },
+    FOLLOW_DAILY_LIMIT: 400, MAX_STALLED_SCROLLS: 4, RESCAN_INTERVAL_MS: 30 * 60 * 1000,
+    SCROLL_DELAY_MS: 450,
+  })
+  vm.runInContext(`${runWithStorage}\nglobalThis.runTest = runWithStorage`, context)
+  const result = await context.runTest('followBack', () => {})
+  assert.match(result.error, /粉丝列表已检查，等待下次回关/)
+  assert.equal(scrollsToTop, 0)
+  assert.ok(!waits.includes(30 * 60 * 1000))
+  assert.equal(state.running, false)
+})
+
+test('uncertain follows-you rows are skipped instead of queued as not following back', () => {
+  const userCell = ({ name = '张三', follows = '', busy = false, testId = 'UserCell' } = {}) => ({
+    getAttribute: (key) => (key === 'data-testid' ? testId : key === 'aria-busy' && busy ? 'true' : null),
+    querySelector: (selector) => {
+      if (selector === '[data-testid="userFollowIndicator"]') return follows === 'badge' ? { textContent: 'Follows you' } : null
+      if (selector === '[data-testid="User-Name"]') return name ? { textContent: name } : null
+      if (selector === '[data-testid="UserCell"]') return testId === 'UserCell' ? {} : null
+      return null
+    },
+    innerText: `${name} ${follows === 'text' ? '关注了你' : ''}`.trim(),
+  })
+  assert.equal(mutual.followsYouStatus(userCell({ follows: 'badge' })), 'yes')
+  assert.equal(mutual.followsYouStatus(userCell({ follows: 'text' })), 'yes')
+  assert.equal(mutual.followsYouStatus(userCell({ name: '张三' })), 'no')
+  assert.equal(mutual.followsYouStatus(userCell({ name: '' })), 'unknown')
+  assert.equal(mutual.followsYouStatus(userCell({ busy: true, name: '' })), 'unknown')
+  assert.equal(mutual.followsYouStatus(userCell({ testId: 'cellInnerDiv', name: '张三' })), 'unknown')
+  assert.equal(mutual.hasFollowsYou(userCell({ follows: 'text' })), true)
+  assert.equal(mutual.hasFollowsYou(userCell({ name: '张三' })), false)
+})
+
+test('unfollow candidates skip uncertain rows and leave followers to the separate non-simplified task', async () => {
+  const source = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  const definition = source.match(/  function visibleRows\(mode\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const samples = [
+    { handle: '@unknown', status: 'unknown', nonSimplified: false },
+    { handle: '@fan', status: 'yes', nonSimplified: true },
+    { handle: '@quiet', status: 'no', nonSimplified: false },
+  ]
+  const context = vm.createContext({
+    rows: () => samples,
+    findFollowingButton: () => ({}),
+    findFollowBackButton: () => null,
+    findPlainFollowButton: () => null,
+    findHandle: (row) => row.handle,
+    followsYouStatus: (row) => row.status,
+    profileIsNonSimplified: (row) => row.nonSimplified,
+    profileHasChinese: () => false,
+    state: { unfollowEnglish: false },
+  })
+  vm.runInContext(`${definition}\nglobalThis.visible = visibleRows`, context)
+  assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@quiet'])
+  context.state.unfollowEnglish = true
+  assert.deepEqual(context.visible('unfollow').filter((item) => item.candidate).map((item) => item.handle), ['@quiet'])
+  assert.deepEqual(context.visible('unfollowNonSc').filter((item) => item.candidate).map((item) => item.handle), ['@fan'])
+})
+
+test('weekly cleanup copy stays on unfollow and prune keeps pace intervals', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const paceTableHtml = source.match(/  function paceTableHtml\(\{[\s\S]*?\n  \}/)?.[0]
+  const cleanupPaceTableHtml = source.match(/  function cleanupPaceTableHtml\(\{ weekly = false \} = \{\}\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(paceTableHtml && cleanupPaceTableHtml)
+  const context = vm.createContext({})
+  vm.runInContext(`${paceTableHtml}\n${cleanupPaceTableHtml}\nglobalThis.table = cleanupPaceTableHtml`, context)
+  const unfollow = context.table({ weekly: true })
+  const prune = context.table()
+  assert.match(unfollow, /约 7 天/)
+  assert.doesNotMatch(unfollow, /240 分钟/)
+  for (const minutes of ['240 分钟', '120 分钟', '60 分钟', '30 分钟']) assert.match(prune, new RegExp(minutes))
+  assert.doesNotMatch(prune, /约 7 天/)
+  const unfollowCard = source.slice(source.indexOf('data-xrc-mutual-card="unfollow"'), source.indexOf('data-xrc-mutual-card="followBack"'))
+  const pruneCard = source.slice(source.indexOf('aria-label="清理历史内容"'), source.indexOf('data-xrc-prune-post-schedule'))
+  assert.match(unfollowCard, /cleanupPaceTableHtml\(\{ weekly: true \}\)/)
+  assert.match(pruneCard, /\$\{cleanupPaceTableHtml\(\)\}/)
+  assert.doesNotMatch(pruneCard, /weekly:\s*true|约 7 天/)
+  const defaults = background.normalizedTaskRules({})
+  assert.equal(defaults['prune-posts'].minGapMs, 240 * 60000)
+  assert.equal(defaults['prune-replies'].minGapMs, 240 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-posts': { pace: 'medium' } })['prune-posts'].minGapMs, 120 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-replies': { pace: 'fast' } })['prune-replies'].minGapMs, 60 * 60000)
+  assert.equal(background.normalizedTaskRules({ 'prune-replies': { pace: 'turbo' } })['prune-replies'].minGapMs, 30 * 60000)
+  assert.equal(defaults['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
+})
+
+test('saved unfollowEnglish stays off until an explicit choice after the new default version', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  assert.match(source, /unfollowEnglishDefaultVersion: 2/)
+  assert.match(source, /Number\(parsed\.unfollowEnglishDefaultVersion \|\| 0\) >= 2 \? Boolean\(parsed\.unfollowEnglish\) : false/)
+  assert.match(source, /每次任务直接换成五个新人/)
+  assert.match(source, /约每周一次/)
+  assert.match(source, /认不出「关注了你」时跳过/)
+  assert.equal(mutual.snapshot().unfollowEnglish, false)
+  const definition = source.match(/  function readSaved\(mode = currentTaskKey\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  const saved = { phraseStore: 'test', assistantMode: 'mutual', mutualMode: 'unfollow', unfollowEnglish: true, unfollowEnglishDefaultVersion: 1 }
+  const context = vm.createContext({
+    sessionStorage: { getItem: () => JSON.stringify(saved) },
+    STORAGE_KEY: 'test-storage',
+    taskStateKey: () => 'test-task-storage',
+    savedDefaults: () => ({ unfollowEnglish: false }),
+    PHRASE_STORE: 'test',
+    NOTIFICATION_CYCLE_POLICY_VERSION: 2,
+    loopApi: { scheduleProfile: () => ({ id: 'medium' }), DEFAULT_SCHEDULE_PACE: 'medium' },
+    clampInterval: (value) => value || 60,
+    DEFAULT_ROUND_INTERVAL_SECONDS: 60,
+    MIN_ROUND_INTERVAL_SECONDS: 1,
+    MAX_ROUND_INTERVAL_SECONDS: 300,
+    normalizeRunPlan: () => null,
+    validPanelView: (value) => value || 'normal',
+    validAssistantMode: (value) => value || 'mutual',
+    validMutualMode: (value) => value || 'unfollow',
+    validReplyMode: (value) => value || 'ai',
+    RUN_SIZE: 100,
+  })
+  vm.runInContext(`${definition.replace(/return savedDefaults\(\);\n    \}/gu, 'throw error;\n    }')}\nglobalThis.read = readSaved`, context)
+  assert.equal(context.read('mutual-unfollow').unfollowEnglish, false)
+  saved.unfollowEnglishDefaultVersion = 2
+  saved.unfollowEnglish = true
+  assert.equal(context.read('mutual-unfollow').unfollowEnglish, true)
+  saved.unfollowEnglish = false
+  assert.equal(context.read('mutual-unfollow').unfollowEnglish, false)
 })
 
 test('manual follow requests skip ordinary scan spacing but retain explicit cooldown deadlines', () => {

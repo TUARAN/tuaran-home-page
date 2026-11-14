@@ -22,7 +22,7 @@
   const TASK_MODE_LABELS = {
     timeline: "评论首页", notifications: "评论回复", kol: "评论大V",
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
-    "mutual-unfollow": "清理未回关", "mutual-followBack": "回关粉丝",
+    "mutual-unfollow": "清理未回关", "mutual-unfollowNonSc": "清理非简中", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "纯文字帖", "poster-premium": "精品发帖", "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
     article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发",
     "prune-posts": "清理低质帖", "prune-replies": "清理低质评论"
@@ -34,6 +34,7 @@
     "likes-posts": ["xrc-docs-likes-posts", "查看点赞帖子说明"],
     "likes-replies": ["xrc-docs-likes-replies", "查看点赞评论说明"],
     "mutual-unfollow": ["xrc-docs-mutual-unfollow", "查看清理未回关说明"],
+    "mutual-unfollowNonSc": ["xrc-docs-mutual-unfollow-non-sc", "查看清理非简中说明"],
     "mutual-followBack": ["xrc-docs-mutual-followback", "查看回关粉丝说明"],
     "mutual-targetFollow": ["xrc-docs-mutual-target", "查看关注候选说明"],
     poster: ["xrc-docs-poster-normal", "查看纯文字帖说明"],
@@ -253,6 +254,7 @@
     "xrc-docs-likes-replies": "likes-replies",
     "xrc-docs-mutual-rules": "mutual-rules",
     "xrc-docs-mutual-unfollow": "mutual-unfollow",
+    "xrc-docs-mutual-unfollow-non-sc": "mutual-unfollow-non-sc",
     "xrc-docs-mutual-followback": "mutual-followback",
     "xrc-docs-mutual-target": "mutual-target",
     "xrc-docs-poster": "poster",
@@ -275,7 +277,7 @@
   const TASK_GROUP_MODES = {
     reply: ["timeline", "notifications", "kol"],
     likes: ["likes-posts", "likes-replies"],
-    mutual: ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"],
+    mutual: ["mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"],
     poster: ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "prune-posts", "prune-replies"],
     community: ["community-share"]
   };
@@ -318,7 +320,7 @@
     panelPlacement: "float",
     assistantMode: "timeline",
     mutualMode: "unfollow",
-    unfollowEnglish: true,
+    unfollowEnglish: false,
     replyMode: "ai",
     grokInviteTimeline: false,
     grokInviteNotifications: false,
@@ -1091,14 +1093,13 @@
   }
 
   function currentFollowPace() {
-    const pace = taskSchedule.rules?.["mutual-followBack"]?.pace || "medium";
-    return ["slow", "medium", "fast", "turbo"].includes(pace) ? pace : "medium";
+    const pace = taskSchedule.rules?.["mutual-followBack"]?.pace;
+    return ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
   }
 
   async function selectFollowPace(pace) {
     if ((state.mutual?.running || state.mutual?.stopping) && state.mutual?.mode === "followBack") return;
-    const profile = loopApi?.scheduleProfile?.(pace === "boundary" ? "medium" : pace);
-    const selected = ["slow", "medium", "fast", "turbo"].includes(profile?.id) ? profile.id : "medium";
+    const selected = ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
     const rules = {
       ...(taskSchedule.rules || {}),
       "mutual-followBack": { ...(taskSchedule.rules?.["mutual-followBack"] || {}), pace: selected }
@@ -1117,14 +1118,13 @@
   }
 
   function currentTargetFollowPace() {
-    const pace = taskSchedule.rules?.["mutual-targetFollow"]?.pace || currentFollowPace();
-    return ["slow", "medium", "fast", "turbo"].includes(pace) ? pace : "medium";
+    const pace = taskSchedule.rules?.["mutual-targetFollow"]?.pace;
+    return ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
   }
 
   async function selectTargetFollowPace(pace) {
     if ((state.mutual?.running || state.mutual?.stopping) && state.mutual?.mode === "targetFollow") return;
-    const profile = loopApi?.scheduleProfile?.(pace === "boundary" ? "medium" : pace);
-    const selected = ["slow", "medium", "fast", "turbo"].includes(profile?.id) ? profile.id : "medium";
+    const selected = ["slow", "medium", "fast"].includes(pace) ? pace : "fast";
     const rules = {
       ...(taskSchedule.rules || {}),
       "mutual-targetFollow": { ...(taskSchedule.rules?.["mutual-targetFollow"] || {}), pace: selected }
@@ -1143,15 +1143,16 @@
   }
 
   function isTaskUnlimited(mode = viewTaskKey()) {
-    if (isPruneMode(mode) || mode === "mutual-unfollow") return false;
+    if (isPruneMode(mode) || mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") return false;
     return Boolean(UNLIMITED_TASK_KEYS.has(mode) && taskUnlimitedMap[mode]);
   }
 
   function unlimitedHint(mode) {
     if (mode === "prune-posts") return "默认连续扫删，按天数和阅读分层删除；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
-    if (mode === "mutual-unfollow") return "默认手动模式：扫描后保存待取关清单，由你逐个核对并取关";
-    if (mode === "mutual-followBack") return "回关与关注候选确认满 100 个才让出页签；之后慢 10 分钟、中 5 分钟、快 3 分钟、超快 2 分钟";
+    if (mode === "mutual-unfollow") return "默认手动模式：只记录没有回关的人，由你逐个核对并取关";
+    if (mode === "mutual-unfollowNonSc") return "默认手动模式：只记录名字或简介没有简体字的账号";
+    if (mode === "mutual-followBack") return "约每周一次。一次回关 5、10 或 15 人，默认 15 人，满了就交回队列";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -1336,7 +1337,7 @@
     ["poster", "纯文字帖", "post"], ["poster-premium", "精品发帖", "post"], ["poster-x", "X主题发帖", "post"], ["poster-xhs", "小红书发帖", "post"], ["article", "普通发文", "post", "articleDrafts"], ["site-forward", "站长转发", "post", "siteForwards"],
     ["community-share", "社群分发", "community", "communityShares"],
     ["mutual-followBack", "回关粉丝", "follow", "followBacks"], ["mutual-targetFollow", "关注候选", "follow", "follows"],
-    ["mutual-unfollow", "清理未回关", "clean", "unfollows"], ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
+    ["mutual-unfollow", "清理未回关", "clean", "unfollows"], ["mutual-unfollowNonSc", "清理非简中", "clean", "unfollows"], ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
   ];
   const metricDataName = (metric) => metric.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   const MUTUAL_ACTIVE_KEY = "xrcMutualActiveMode";
@@ -1549,7 +1550,7 @@
 
   function validTaskKey(value) {
     if (value === "mutual") return "mutual-unfollow";
-    if (value === "mutual-unfollow" || value === "mutual-followBack" || value === "mutual-targetFollow") return value;
+    if (value === "mutual-unfollow" || value === "mutual-unfollowNonSc" || value === "mutual-followBack" || value === "mutual-targetFollow") return value;
     return validAssistantMode(value);
   }
 
@@ -1588,13 +1589,17 @@
     return assistantModeForTask(viewTaskKey());
   }
 
+  function taskUsesModel(key) {
+    return ["timeline", "notifications", "kol", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(key);
+  }
+
   function scheduleDashboardActive() {
     return taskSchedule.enabled || Number(taskSchedule.strategyVersion) >= 4;
   }
 
   function launchFromMode(mode, start) {
     if (mode === "likes") mode = "likes-posts";
-    if (mode === "mutual-unfollow" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
+    if (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" || mode === "mutual-followBack" || mode === "mutual-targetFollow") {
       return { assistantMode: "mutual", mutualMode: mode.slice("mutual-".length), taskKey: mode, start: Boolean(start) };
     }
     if (ASSISTANT_MODES.has(mode)) return { assistantMode: mode, mutualMode: "", taskKey: mode, start: Boolean(start) };
@@ -2136,9 +2141,8 @@
     ["notifications", "评论回复"], ["timeline", "评论首页"], ["kol", "评论大V"],
     ["poster-premium", "精品发帖"], ["poster", "纯文字帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理低质评论"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
-    ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"]
+    ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"], ["mutual-unfollowNonSc", "清理非简中"]
   ]);
-  const DEFAULT_TARGET_FOLLOW_HANDLES = Object.freeze(["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "Chill_Alpha"]);
   const RESERVED_X_PATHS = new Set([
     "home", "i", "explore", "notifications", "messages", "settings", "compose",
     "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
@@ -2390,7 +2394,7 @@
     const resumeAt = Math.max(Number(queued.resumeAt) || 0, Number(taskSchedule.timeline?.future?.find(entry => entry.mode === mode && ["ready", "scheduled"].includes(entry.status))?.readyAt) || 0);
     const remaining = resumeAt > now ? resumeAt - now : 0;
     const eta = remaining > 0 ? `约 ${formatCountdown(remaining)}` : "";
-    const waitReason = !remaining && taskSchedule.enabled ? "等待后台按优先级安排" : String(queued.reason || "").trim() || "后台排队中";
+    const waitReason = !remaining && taskSchedule.enabled ? "等待队列轮到" : String(queued.reason || "").trim() || "后台排队中";
     if (!taskSchedule.enabled) {
       return {
         label: formatUserStateAction(USER_STATE_LABELS.waiting, "点击查看"),
@@ -2561,7 +2565,7 @@
     const DEFAULT_SCHEDULE_PRIORITY = Object.freeze({
     notifications: 8, timeline: 8, kol: 8, "poster-premium": 8, poster: 7, "poster-x": 7, article: 7,
     "likes-posts": 6, "likes-replies": 6, "mutual-followBack": 7,
-    "mutual-targetFollow": 7, "mutual-unfollow": 3
+    "mutual-targetFollow": 7, "mutual-unfollow": 3, "mutual-unfollowNonSc": 3
   });
 
   function schedulePriorityFor(mode, rule) {
@@ -2573,10 +2577,6 @@
   function schedulePriorityLabel(priority) {
     const rank = Math.max(1, Math.min(10, Number(priority) || 1));
     return `${rank}分`;
-  }
-
-  function scheduleWindowLabel(window) {
-    return ({ all: "全天", day: "08–20", peak: "08–10 / 18–20", overnight: "22–06" })[window] || "全天";
   }
 
   function schedulePaceLabel(minGapMs) {
@@ -2621,9 +2621,7 @@
     const reason = String(task.reason || wait?.detail || "").trim();
     if (reason && (wait?.kind === "cooldown" || /启动失败|执行未确认|启动未确认/u.test(reason))) status += ` · 原因：${reason}`;
     if (Number(wait?.remaining) > 0) status += ` · 剩余 ${formatClock(wait.remaining)}`;
-    const priority = schedulePriorityFor(task.mode, task.rule);
-    const params = `优先级 ${priority} · ${scheduleWindowLabel(task.rule?.window)}`;
-    return `${status}\n${params}`;
+    return status;
   }
 
   function formatDeskPastNote(latest) {
@@ -2644,7 +2642,7 @@
     if (!nextEntry && !nextLabel) {
       return joinScheduleFields([
         ["剩余", eta],
-        ["说明", eta ? "当前没有可运行任务；各任务卡片显示冷却、时段或失败原因，到期后重新排班"
+        ["说明", eta ? "当前没有可运行任务；各任务卡片显示冷却或失败原因，到期后重新排班"
           : "当前没有可运行任务；查看任务卡片确认是否未勾选、已停止或启动失败"]
       ]);
     }
@@ -2693,7 +2691,7 @@
     }
     if (!remaining && (future?.status === "ready" || until > 0 && until <= now)) {
       const currentLabel = FLOW_TASKS.find(([key]) => key === taskSchedule.current)?.[1];
-      return { kind: "queue", label: "已到期", detail: currentLabel ? "等待当前任务让位后按优先级安排" : "等待后台按优先级启动", waitingFor: currentLabel || "", remaining: 0 };
+      return { kind: "queue", label: "已到期", detail: currentLabel ? "等待当前任务跑完，再按队列继续" : "等待队列轮到", waitingFor: currentLabel || "", remaining: 0 };
     }
     if (/疑似自动化|账号受限|操作受限|次数受限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
       return { kind: "cooldown", label: "X 限制冷却", detail: "到期自动重试", remaining };
@@ -2710,10 +2708,7 @@
     if (remaining && mode === "poster-premium") {
       return { kind: "time-slot", label: "等待精品档位", detail: "到固定发帖时间后继续", remaining };
     }
-    if (remaining && mode === "mutual-followBack" && taskSchedule.rules?.[mode]?.window === "overnight") {
-      return { kind: "time-slot", label: "等待夜间回关", detail: "到夜间时段后继续", remaining };
-    }
-    if (remaining && (mode === "mutual-unfollow" || mode === "prune-posts" || mode === "prune-replies")) {
+    if (remaining && (mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" || mode === "prune-posts" || mode === "prune-replies")) {
       return { kind: "time-slot", label: "等待每周清理", detail: "到期后自动加入排班", remaining };
     }
     if (remaining) {
@@ -2984,7 +2979,7 @@
       : 30;
     const currentSliceMs = ["timeline", "notifications", "kol"].includes(current) ? 0
       : ["likes-posts", "likes-replies"].includes(current) ? Math.max(sliceSeconds * 1000, 3 * 60 * 1000)
-      : ["mutual-unfollow", "mutual-followBack", "mutual-targetFollow"].includes(current)
+      : ["mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"].includes(current)
       ? Math.max(sliceSeconds * 1000, 10 * 60 * 1000)
       : sliceSeconds * 1000;
     const switchAt = current && currentSliceMs && Number(taskSchedule.startedAt) > 0 ? Number(taskSchedule.startedAt) + currentSliceMs : 0;
@@ -3032,12 +3027,7 @@
     current.textContent = taskSchedule.enabled
       ? `${taskSchedule.manualFocusMode && !focusDeferred ? "手动优先 · " : ""}${TASK_MODE_LABELS[preview.current || (focusDeferred ? "" : taskSchedule.manualFocusMode)] || "空闲"}${preview.current ? ` · 本次已确认 ${taskActionCount(preview.current, currentActions)}` : ""}${(!taskSchedule.manualFocusMode || focusDeferred) && preview.switchAt > Date.now() ? ` · 预计最长占用剩余 ${formatCountdown(preview.switchAt - Date.now())}` : ""}`
       : "排班已暂停";
-    const readyComments = (taskSchedule.timeline?.future || []).filter((entry) => ["timeline", "notifications", "kol"].includes(entry.mode) && entry.status === "ready");
-    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(nextEntry?.mode)
-      && readyComments.filter((entry) => Number(taskSchedule.rules?.[entry.mode]?.priority) === Number(taskSchedule.rules?.[nextEntry.mode]?.priority)).length > 1;
-    next.textContent = taskSchedule.manualFocusMode && !focusDeferred ? "其他任务等待手动任务结束" : commentLottery
-      ? "评论任务等概率抽选 · 当前结束后"
-      : nextEntry
+    next.textContent = taskSchedule.manualFocusMode && !focusDeferred ? "其他任务等待手动任务结束" : nextEntry
       ? `${TASK_MODE_LABELS[nextEntry.mode] || nextEntry.mode} · ${nextEntry.status === "ready" ? "预计当前结束后" : `预计 ${formatScheduleTime(nextEntry.readyAt)}`}`
       : "等待任务到期";
   }
@@ -3075,6 +3065,7 @@
       "mutual-followBack": ["follow", "关注类", "↗"],
       "mutual-targetFollow": ["follow", "关注类", "↗"],
       "mutual-unfollow": ["clean", "清理类", "✧"],
+      "mutual-unfollowNonSc": ["clean", "清理类", "✧"],
       "prune-posts": ["clean", "清理类", "✧"],
       "prune-replies": ["clean", "清理类", "✧"]
     };
@@ -3101,21 +3092,22 @@
         if (aOff !== bOff) return aOff - bOff;
         const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
         if (readyDiff) return readyDiff;
-        const priorityA = Math.max(1, Math.min(10, Number(a.rule.priority) || 1));
-        const priorityB = Math.max(1, Math.min(10, Number(b.rule.priority) || 1));
-        return priorityB - priorityA || String(a.mode).localeCompare(String(b.mode));
+        const queue = Array.isArray(taskSchedule.queue) ? taskSchedule.queue : [];
+        const queueAt = (mode) => {
+          const index = queue.indexOf(mode);
+          return index < 0 ? 1000 : index;
+        };
+        return readyDiff || queueAt(a.mode) - queueAt(b.mode);
       });
     const nowTask = nowMode ? byMode.get(nowMode) : null;
     // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
     const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
     const firstReady = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
       && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY);
-    const lotteryModes = ["timeline", "notifications", "kol"].filter((mode) => mode !== nowMode
-      && dueModes.includes(mode)
-      && Number(byMode.get(mode)?.rule?.priority) === Number(firstReady?.rule?.priority));
+    const nextMode = firstReady?.mode || "";
+    const commentLottery = false;
+    const lotteryModes = [];
     const focusDeferred = scheduleManualFocusDeferred(readinessNow);
-    const commentLottery = (!taskSchedule.manualFocusMode || focusDeferred) && ["timeline", "notifications", "kol"].includes(firstReady?.mode) && lotteryModes.length > 1;
-    const nextMode = commentLottery ? "" : firstReady?.mode || "";
     const candidateModes = waitingQueue
       .map((task) => task.mode)
       .filter((mode) => mode && mode !== nextMode && scheduleRuleEnabled(mode, byMode.get(mode)?.rule));
@@ -3770,12 +3762,6 @@
     const model = flowButtonModel();
     if (model.action !== "start") return;
     if (await flushConfigSave() === false) return;
-    await loadAiSettings();
-    if (!state.aiKeySaved && !(state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)) {
-      state.status = "全流程包含定时发帖，请先配置 DeepSeek 或测试 MobileOffice";
-      openModelSettingsForKey(document.getElementById(PANEL_ID));
-      return;
-    }
     flowStarting = true;
     paintFlowButton();
     try {
@@ -3844,7 +3830,7 @@
   }
 
   function validMutualMode(value) {
-    if (value === "followBack" || value === "targetFollow") return value;
+    if (value === "followBack" || value === "targetFollow" || value === "unfollowNonSc") return value;
     return "unfollow";
   }
 
@@ -3858,17 +3844,21 @@
 
   function resolveReplyProviders(settings) {
     const hasList = Array.isArray(settings?.replyProviders);
-    const stored = hasList
-      ? REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider))
-      : [...DEFAULT_REPLY_PROVIDERS];
+    const explicit = settings?.replyProvidersManual === true;
+    const autoNasOnly = hasList && !explicit && settings.replyProviders.length === 1 && settings.replyProviders[0] === "nas";
+    const stored = !hasList || autoNasOnly
+      ? []
+      : REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider));
     const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
     const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
       ? validDeepSeekApiKey(String(settings?.apiKey || "").trim())
       : provider === "bai"
         ? /^sk-\S{8,}$/u.test(String(settings?.baiApiKey || "").trim())
-        : provider === "mobileoffice" && settings?.mobileOfficeVerified === true && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-    const providers = REPLY_PROVIDER_ORDER.filter((provider) => !disabled.includes(provider) && (stored.includes(provider) || configured.includes(provider)));
-    return { providers, persist: !hasList ? providers.length > 0 : providers.some((provider) => !stored.includes(provider)) || stored.some((provider) => !providers.includes(provider)) };
+        : provider === "nas"
+          ? settings?.nasSecretAvailable === true
+          : provider === "mobileoffice" && Boolean(String(settings?.mobileOfficeToken || "").trim()));
+    const providers = REPLY_PROVIDER_ORDER.filter((provider) => stored.includes(provider) && configured.includes(provider) && !disabled.includes(provider));
+    return { providers, persist: autoNasOnly };
   }
 
   function showModelSaveNotice(message) {
@@ -3895,32 +3885,108 @@
   async function loadAiSettings() {
     const readId = ++aiSettingsReadId;
     state.aiSettingsStatus = "loading";
+    const failSafe = setTimeout(() => {
+      if (readId !== aiSettingsReadId || state.aiSettingsStatus !== "loading") return;
+      state.aiSettingsStatus = "deferred";
+      try { renderPanel(); } catch (error) { /* panel may not exist yet */ }
+    }, 2500);
     if (!globalThis.chrome?.storage?.local) {
+      clearTimeout(failSafe);
       state.aiSettingsStatus = "error";
       state.aiStatus = "当前环境无法读取模型设置";
       return;
     }
     try {
-      const stored = await chrome.storage.local.get("xrcAiSettings");
-      let settings = stored?.xrcAiSettings || {};
-      const savedValue = String(settings.apiKey || "").trim();
-      const apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
-      if (savedValue && !apiKey) {
-        settings = { ...settings, apiKey: "" };
-        await chrome.storage.local.set({ xrcAiSettings: settings });
+      const readSettings = async () => {
+        try {
+          return (await chrome.storage.local.get("xrcAiSettings"))?.xrcAiSettings || {};
+        } catch (error) {
+          await sleep(250);
+          return (await chrome.storage.local.get("xrcAiSettings"))?.xrcAiSettings || {};
+        }
+      };
+      const settingsStamp = (value = {}) => JSON.stringify({
+        apiKey: value.apiKey || "",
+        baiApiKey: value.baiApiKey || "",
+        mobileOfficeToken: value.mobileOfficeToken || "",
+        mobileOfficeVerified: value.mobileOfficeVerified === true,
+        replyProviders: value.replyProviders || null,
+        replyProvidersDisabled: value.replyProvidersDisabled || null
+      });
+      const SETTINGS_READ_MS = 2500;
+      const settingsUnread = { unread: true };
+      const settleWithin = (promise, fallback) => new Promise((resolve) => {
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(fallback);
+        }, SETTINGS_READ_MS);
+        Promise.resolve(promise).then((value) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        }, () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        });
+      });
+      let settings = await settleWithin(readSettings(), settingsUnread);
+      if (settings === settingsUnread) {
+        if (readId !== aiSettingsReadId) return;
+        const stillCallable = state.aiKeySaved
+          || (Array.isArray(state.replyProviders) && state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+          || (Array.isArray(state.replyProviders) && state.replyProviders.includes("nas") && state.nasSecretAvailable)
+          || Boolean(state.baiKey);
+        state.aiSettingsStatus = stillCallable ? "ready" : "deferred";
+        return;
       }
+      const nasSecretAvailable = Boolean(await settleWithin(
+        globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => "") || "",
+        ""
+      ));
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
+      const seenStamp = settingsStamp(settings);
+      const savedValue = String(settings.apiKey || "").trim();
+      let apiKey = validDeepSeekApiKey(savedValue) ? savedValue : "";
+      if (savedValue && !apiKey) {
+        const latest = await readSettings();
+        if (settingsStamp(latest) === seenStamp) {
+          settings = { ...latest, apiKey: "" };
+          await chrome.storage.local.set({ xrcAiSettings: settings });
+        } else {
+          settings = latest;
+          const latestValue = String(latest.apiKey || "").trim();
+          apiKey = validDeepSeekApiKey(latestValue) ? latestValue : "";
+        }
+      }
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
       const resolvedProviders = resolveReplyProviders(settings);
       if (resolvedProviders.persist) {
         if (readId !== aiSettingsReadId) return;
-        settings = {
-          ...settings,
-          replyProviders: resolvedProviders.providers,
-          replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
-        };
-        await chrome.storage.local.set({ xrcAiSettings: settings });
+        const latest = await readSettings();
+        if (settingsStamp(latest) === settingsStamp(settings)) {
+          settings = {
+            ...latest,
+            ...(nasSecretAvailable ? { nasSecretAvailable: true } : {}),
+            replyProviders: resolvedProviders.providers,
+            replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION
+          };
+          const storedSettings = { ...settings };
+          delete storedSettings.nasSecretAvailable;
+          await chrome.storage.local.set({ xrcAiSettings: storedSettings });
+        } else {
+          settings = latest;
+        }
       }
-      const nasSecretAvailable = Boolean(await globalThis.XrcCommunityReceipt?.readSecret?.().catch(() => ""));
       if (readId !== aiSettingsReadId) return;
+      if (nasSecretAvailable) settings = { ...settings, nasSecretAvailable: true };
+      const settledProviders = resolveReplyProviders(settings);
+      const settledValue = String(settings.apiKey || "").trim();
+      apiKey = validDeepSeekApiKey(settledValue) ? settledValue : "";
       state.replyMode = validReplyMode(settings.replyMode || state.replyMode);
       state.grokInviteTimeline = settings.grokInviteTimeline === true;
       state.grokInviteNotifications = settings.grokInviteNotifications === true;
@@ -3928,7 +3994,7 @@
       state.baiKey = /^sk-\S{8,}$/u.test(String(settings.baiApiKey || "").trim()) ? String(settings.baiApiKey).trim() : "";
       state.mobileOfficeToken = String(settings.mobileOfficeToken || "").trim();
       state.mobileOfficeVerified = settings.mobileOfficeVerified === true;
-      state.replyProviders = resolvedProviders.providers;
+      state.replyProviders = settledProviders.providers;
       state.replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
       state.nasSecretAvailable = nasSecretAvailable;
       state.aiKeySaved = Boolean(apiKey);
@@ -3964,8 +4030,18 @@
       state.aiSettingsStatus = "ready";
     } catch (error) {
       if (readId !== aiSettingsReadId) return;
+      const stillCallable = state.aiKeySaved
+        || (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
+        || (state.replyProviders.includes("nas") && state.nasSecretAvailable)
+        || Boolean(state.baiKey);
+      if (stillCallable) {
+        state.aiSettingsStatus = "ready";
+        return;
+      }
       state.aiStatus = "读取 AI 配置失败";
       state.aiSettingsStatus = "error";
+    } finally {
+      if (readId !== aiSettingsReadId || state.aiSettingsStatus !== "loading") clearTimeout(failSafe);
     }
   }
 
@@ -4109,12 +4185,12 @@
     return boundary ? [...profiles, boundary] : profiles;
   }
 
-  function paceTableHtml({ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false }) {
-    const head = `<span class="xrc-pace-pick" role="columnheader"></span>${["速度", ...columns.map((column) => column.label)]
+  function paceTableHtml({ label, attr, profiles, columns, defaultId = "", extraClass = "", unlimitedKey = "", unlimitedFixed = false, nameHeader = "速度" }) {
+    const head = `<span class="xrc-pace-pick" role="columnheader"></span>${[nameHeader, ...columns.map((column) => column.label)]
       .map((text) => `<span role="columnheader">${text}</span>`).join("")}`;
     const rows = profiles.map((profile) => {
       const name = profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
-      const title = profile.id === "boundary" ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
+      const title = profile.id === "boundary" && !profile.hours ? ' title="从起步档开始，稳定后升档，受限后降档"' : "";
       const cells = columns.map((column) => `<span>${column.value(profile)}</span>`).join("");
       return `<button type="button" class="xrc-pace-table-row" role="radio" ${attr}="${profile.id}" aria-checked="false" aria-pressed="false"${title}><span class="xrc-pace-pick"><i class="xrc-pace-radio" aria-hidden="true"></i></span><span data-xrc-pace-name>${name}</span>${cells}</button>`;
     }).join("");
@@ -4171,26 +4247,44 @@
     return Math.max(1, Math.round(seconds / 60));
   }
 
-  function followPaceTableHtml({ label = "回关速度", attr = "data-xrc-follow-pace-label", unlimitedKey = "" } = {}) {
+  function targetFollowPaceTableHtml() {
     return paceTableHtml({
-      label,
-      attr,
-      profiles: orderedPaceProfiles(false),
-      defaultId: "medium",
-      unlimitedKey,
-      unlimitedFixed: true,
+      label: "本次人数",
+      attr: "data-xrc-target-follow-pace-label",
+      nameHeader: "人数",
+      profiles: [
+        { id: "slow", label: "5 人", count: 5 },
+        { id: "medium", label: "10 人", count: 10 },
+        { id: "fast", label: "15 人", count: 15 }
+      ],
+      defaultId: "fast",
       columns: [
-        { label: "进度段轮数", value: (profile) => paceSpan(profile.minRoundsPerRun, profile.maxRoundsPerRun, "轮") },
-        { label: "一轮人数", value: () => "100" },
-        { label: "满 100 人后休息", value: (profile) => `${followRoundGapMinutes(profile.id)} 分钟` }
+        { label: "一次任务", value: (profile) => `关注 ${profile.count} 人后结束` }
       ]
     });
   }
 
-  function cleanupPaceTableHtml() {
+  function followPaceTableHtml({ label = "本次人数", attr = "data-xrc-follow-pace-label" } = {}) {
+    return paceTableHtml({
+      label,
+      attr,
+      nameHeader: "人数",
+      profiles: [
+        { id: "slow", label: "5 人", count: 5 },
+        { id: "medium", label: "10 人", count: 10 },
+        { id: "fast", label: "15 人", count: 15 }
+      ],
+      defaultId: "fast",
+      columns: [
+        { label: "一次任务", value: (profile) => `回关 ${profile.count} 人后结束` }
+      ]
+    });
+  }
+
+  function cleanupPaceTableHtml({ weekly = false } = {}) {
     return paceTableHtml({ label: "清理速度", attr: "data-xrc-cleanup-pace", defaultId: "slow",
-      profiles: [{id:"slow",label:"慢",count:15,hours:4},{id:"medium",label:"中",count:30,hours:2},{id:"fast",label:"快",count:45,hours:1},{id:"turbo",label:"超快",count:60,hours:0.5}],
-      columns: [{label:"每次最多",value:p=>`${p.count} 项`},{label:"下次间隔",value:p=>`${p.hours * 60} 分钟`}] });
+      profiles: [{id:"slow",label:"慢",count:15,minutes:240},{id:"medium",label:"中",count:30,minutes:120},{id:"fast",label:"快",count:45,minutes:60},{id:"turbo",label:"超快",count:60,minutes:30}],
+      columns: [{label:"每次最多",value:(profile)=>`${profile.count} 项`},{label:"下次间隔",value:(profile)=> weekly ? "约 7 天" : `${profile.minutes} 分钟`}] });
   }
 
   function pruneRulesTableHtml() {
@@ -4228,8 +4322,26 @@
   }
 
   function replyPaceName(profile, mode) {
-    const defaultId = mode === "notifications" ? "medium" : mode === "kol" ? "slow" : "boundary";
+    if (mode === "notifications") {
+      const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === profile.id);
+      const label = selected?.label || profile.label;
+      return profile.id === "medium" ? `${label}（默认）` : label;
+    }
+    const defaultId = mode === "kol" ? "slow" : "boundary";
     return profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
+  }
+
+  function notificationPaceTableHtml() {
+    const windows = loopApi.NOTIFICATION_WINDOWS || [];
+    return paceTableHtml({
+      label: "评论回复时间",
+      attr: "data-xrc-pace-label",
+      profiles: windows,
+      defaultId: "medium",
+      columns: [
+        { label: "处理范围", value: (profile) => `只回复这 ${profile.hours} 小时内的评论` }
+      ]
+    });
   }
 
   function kolPaceTableHtml() {
@@ -4332,52 +4444,92 @@
 
   async function saveSingleApiKey(panel, which) {
     const status = panel.querySelector("[data-xrc-config-status]");
-    const isBai = which === "bai";
-    const input = panel.querySelector(isBai ? "[data-xrc-config-bai-key]" : "[data-xrc-config-key]");
-    const value = String(input?.value || "").trim();
-    if (isBai && value && !/^sk-\S{8,}$/u.test(value)) {
-      if (status) status.textContent = "请输入有效的 B.AI API Key";
+    const checkbox = panel.querySelector(`[data-xrc-reply-provider="${which}"]`);
+    const checked = Boolean(checkbox?.checked);
+    const value = String((which === "bai"
+      ? panel.querySelector("[data-xrc-config-bai-key]")?.value
+      : which === "mobileoffice"
+        ? panel.querySelector("[data-xrc-mobileoffice-token]")?.value
+        : which === "nas"
+          ? panel.querySelector("[data-xrc-nas-secret]")?.value
+          : panel.querySelector("[data-xrc-config-key]")?.value) || "").trim();
+    if (checked && which === "deepseek" && !validDeepSeekApiKey(value)) {
+      if (status) status.textContent = "勾选 DeepSeek 后，先填写 sk- 密钥再保存";
       return false;
     }
-    if (!isBai && value && !validDeepSeekApiKey(value)) {
+    if (checked && which === "bai" && !/^sk-\S{8,}$/u.test(value)) {
+      if (status) status.textContent = "勾选 B.AI 后，先填写 sk- 密钥再保存";
+      return false;
+    }
+    if (checked && which === "nas" && !value) {
+      if (status) status.textContent = "勾选 NAS 后，先填写回执密钥再保存";
+      return false;
+    }
+    if (checked && which === "mobileoffice" && (!value || state.mobileOfficeVerified !== true || value !== String(state.mobileOfficeToken || "").trim())) {
+      if (status) status.textContent = "勾选 MobileOffice 后，先填写连接码并测试通过，再保存";
+      return false;
+    }
+    if (which === "deepseek" && value && !validDeepSeekApiKey(value)) {
       if (status) status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
+      return false;
+    }
+    if (which === "bai" && value && !/^sk-\S{8,}$/u.test(value)) {
+      if (status) status.textContent = "请输入有效的 B.AI API Key";
       return false;
     }
     if (!globalThis.chrome?.storage?.local) {
       if (status) status.textContent = "当前环境无法保存扩展配置";
       return false;
     }
+    if (which === "nas") {
+      await globalThis.XrcCommunityReceipt?.saveSecret?.(value);
+      state.nasSecretAvailable = Boolean(value);
+    }
     const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
-    const selected = new Set(resolveReplyProviders(settings).providers);
+    const selected = new Set(settings.replyProvidersManual === true && Array.isArray(settings.replyProviders) ? settings.replyProviders : []);
+    const enabled = checked && Boolean(value) && (which !== "mobileoffice" || state.mobileOfficeVerified === true);
+    if (enabled) selected.add(which);
+    else selected.delete(which);
     const replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled)
       ? settings.replyProvidersDisabled.filter((provider) => provider !== which)
       : [];
-    if (value) selected.add(which);
-    else selected.delete(which);
     const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => selected.has(provider));
     await chrome.storage.local.set({
       xrcAiSettings: {
         ...settings,
-        ...(isBai ? { baiApiKey: value } : { apiKey: value }),
+        ...(which === "bai" ? { baiApiKey: value } : which === "deepseek" ? { apiKey: value } : which === "mobileoffice" ? { mobileOfficeToken: value, mobileOfficeVerified: value === state.mobileOfficeToken && state.mobileOfficeVerified === true } : {}),
         replyProviders,
         replyProvidersManual: true,
         replyProvidersDisabled
       }
     });
     await loadAiSettings();
-    const providerInput = panel.querySelector(`[data-xrc-reply-provider="${which}"]`);
-    if (providerInput) providerInput.checked = state.replyProviders.includes(which);
+    if (checkbox) {
+      if (checkbox.dataset) delete checkbox.dataset.xrcProviderDraft;
+      checkbox.checked = state.replyProviders.includes(which);
+    }
     renderPanel();
     return true;
   }
 
   async function saveConfigForm(panel) {
     const status = panel.querySelector("[data-xrc-config-status]");
-    const key = String(state.aiKey || "").trim();
-    const baiKey = String(state.baiKey || "").trim();
-    const mobileOfficeToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
-    const replyProviders = REPLY_PROVIDER_ORDER.filter((provider) => panel.querySelector(`[data-xrc-reply-provider="${provider}"]`)?.checked);
+    if (!globalThis.chrome?.storage?.local) {
+      status.textContent = "当前环境无法保存扩展配置";
+      return false;
+    }
+    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
+    const settings = stored?.xrcAiSettings || {};
+    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
+    const typedKey = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
+    const typedBai = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
+    const typedToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
+    const formReady = state.aiSettingsStatus === "ready";
+    const key = typedKey || String(state.aiKey || settings.apiKey || "").trim();
+    const baiKey = typedBai || String(state.baiKey || settings.baiApiKey || "").trim();
+    const mobileOfficeToken = typedToken || String(state.mobileOfficeToken || settings.mobileOfficeToken || "").trim();
+    const replyProviders = Array.isArray(settings.replyProviders) ? settings.replyProviders : [];
     const replyTimelinePrompt = String(panel.querySelector("[data-xrc-reply-timeline-prompt]")?.value || "").trim();
     const replyCommentPrompt = String(panel.querySelector("[data-xrc-reply-comment-prompt]")?.value || "").trim();
     const postNormalPrompt = String(panel.querySelector("[data-xrc-post-normal-prompt]")?.value || "").trim();
@@ -4412,13 +4564,6 @@
       status.textContent = postPaces.error;
       return false;
     }
-    if (!globalThis.chrome?.storage?.local) {
-      status.textContent = "当前环境无法保存扩展配置";
-      return false;
-    }
-    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
-    const settings = stored?.xrcAiSettings || {};
-    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
     const storedReplyTimeline = replyTimelinePrompt === DEFAULT_REPLY_TIMELINE_PROMPT ? "" : replyTimelinePrompt;
     const storedReplyComment = replyCommentPrompt === DEFAULT_REPLY_COMMENT_PROMPT ? "" : replyCommentPrompt;
     const storedPostNormal = postNormalPrompt === DEFAULT_POST_NORMAL_PROMPT ? "" : postNormalPrompt;
@@ -4430,10 +4575,12 @@
         apiKey: key,
         baiApiKey: baiKey,
         mobileOfficeToken,
-        mobileOfficeVerified: mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true,
+        mobileOfficeVerified: formReady
+          ? mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true
+          : settings.mobileOfficeVerified === true,
         replyProviders,
-        replyProvidersManual: true,
-        replyProvidersDisabled: state.replyProvidersDisabled || [],
+        replyProvidersManual: settings.replyProvidersManual === true,
+        replyProvidersDisabled: Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [],
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
         grokInviteTimeline: state.grokInviteTimeline === true,
@@ -4742,7 +4889,7 @@
       panelView: "normal",
       assistantMode: "timeline",
       mutualMode: "unfollow",
-      unfollowEnglish: true,
+      unfollowEnglish: false,
       replyMode: "ai",
       pendingReply: "",
       pendingTweetId: "",
@@ -4811,7 +4958,7 @@
         panelView: validPanelView(parsed.panelView),
         assistantMode: validAssistantMode(parsed.assistantMode),
         mutualMode: validMutualMode(parsed.mutualMode),
-        unfollowEnglish: Number(parsed.unfollowEnglishDefaultVersion || 0) >= 1 ? Boolean(parsed.unfollowEnglish) : true,
+        unfollowEnglish: Number(parsed.unfollowEnglishDefaultVersion || 0) >= 2 ? Boolean(parsed.unfollowEnglish) : false,
         replyMode: validReplyMode(parsed.replyMode),
         pendingReply: String(parsed.pendingReply || ""),
         pendingTweetId: String(parsed.pendingTweetId || ""),
@@ -4858,7 +5005,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
-        unfollowEnglishDefaultVersion: 1,
+        unfollowEnglishDefaultVersion: 2,
         replyMode: state.replyMode,
         pendingReply: state.pendingReply,
         pendingTweetId: state.pendingTweetId,
@@ -4911,7 +5058,7 @@
         assistantMode: state.assistantMode,
         mutualMode: state.mutualMode,
         unfollowEnglish: state.unfollowEnglish,
-        unfollowEnglishDefaultVersion: 1,
+        unfollowEnglishDefaultVersion: 2,
         replyMode: state.replyMode,
         pendingReply: "",
         pendingTweetId: "",
@@ -5591,7 +5738,7 @@
       })
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
-        loopApi.notificationWithinWindow(tweet.timestamp) &&
+        loopApi.notificationWithinWindow(tweet.timestamp, Date.now(), loopApi.notificationWindowMs(state.schedulePace)) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
         !loopApi.hasVisibleReplyCount(tweet.replyButton)
@@ -5602,25 +5749,37 @@
     return todayTweets.length ? todayTweets : tweets;
   }
 
+  function notificationWindowLabel() {
+    const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === (state.schedulePace || "medium"));
+    return selected?.label || "2 小时";
+  }
+
   function notificationFeedReachedOldBoundary(now = Date.now()) {
     if (state.assistantMode !== "notifications") return false;
+    const windowMs = loopApi.notificationWindowMs(state.schedulePace);
     const main = document.querySelector('[data-testid="primaryColumn"]') || document.body;
     return Array.from(main.querySelectorAll('article[data-testid="tweet"]'))
       .filter((article) => !article.closest('[role="dialog"]') && !article.closest(`#${PANEL_ID}`) && !isNestedTweet(article))
       .some((article) => {
-        const timeNode = listOwn(article, "time[datetime]")[0];
+        const replyButton = typeof replyButtonForArticle === "function" ? replyButtonForArticle(article) : null;
+        const timeLink = typeof statusLinkForReply === "function" ? statusLinkForReply(article, replyButton) : null;
+        const timeNode = timeLink?.querySelector?.("time") || listOwn(article, "time[datetime]")[0];
         const timestamp = loopApi.timestampFromDatetime(timeNode?.getAttribute?.("datetime"));
-        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now);
+        return timestamp > 0 && !loopApi.notificationWithinWindow(timestamp, now, windowMs);
       });
   }
 
-  async function finishNotificationScan(reason = "最近 24 小时的通知已扫完") {
+  async function finishNotificationScan(reason = "所选时间内的通知已扫完") {
     if (!state.notificationBoundaryRefreshed) {
       state.notificationBoundaryRefreshed = true;
       writeSaved({ running: true, total: state.total });
       return await reloadAndResume(`${reason}，刷新后复核最新回复`) ? "reload" : "stopped";
     }
-    return finishCycleAndScheduleNext(`已复核最近 24 小时的回复，本次确认 ${state.total} 条`);
+    state.running = false;
+    state.nextCycleAt = 0;
+    state.status = `已看完最近 ${notificationWindowLabel()} 的回复，本次确认 ${state.total} 条`;
+    if (typeof renderPanel === "function") renderPanel();
+    return "stopped";
   }
 
   async function collectDailyKolFromHome(tweets, now = Date.now()) {
@@ -6386,6 +6545,7 @@
       }
       if (deadlineChanged) writeSaved({ running: true, total: state.total });
     }
+    if (state.assistantMode === "notifications") state.nextCycleAt = 0;
     if (state.nextCycleAt > 0) {
       const readyForNextCycle = await waitForDeadline(
         state.nextCycleAt,
@@ -6455,7 +6615,7 @@
         return reconnectAndResume("暂时无法识别当前登录账号，为避免回复自己，本轮已暂停");
       }
       if (state.assistantMode === "notifications") {
-        return finishNotificationScan(notificationFeedReachedOldBoundary() ? "已到 24 小时前的通知" : "通知页没有待处理回复");
+        return finishNotificationScan(notificationFeedReachedOldBoundary() ? `已到 ${notificationWindowLabel()} 前的通知` : "通知页没有待处理回复");
       }
       if (state.assistantMode === "kol") {
         return rotateKolProfileAndResume("这个主页暂时没有可评论的帖子，换一个大V继续");
@@ -6546,14 +6706,14 @@
       }
       if (!next) {
         if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
-          return finishNotificationScan("已到 24 小时前的通知");
+          return finishNotificationScan(`已到 ${notificationWindowLabel()} 前的通知`);
         }
         const before = tweetSignature(tweets);
         scrollTimelineBy(Math.round(window.innerHeight * 0.85));
         await sleepActive(SCROLL_WAIT_MS);
         const after = tweetSignature(collectTweets());
         if (state.assistantMode === "notifications" && notificationFeedReachedOldBoundary()) {
-          return finishNotificationScan("已到 24 小时前的通知");
+          return finishNotificationScan(`已到 ${notificationWindowLabel()} 前的通知`);
         }
         stalled = after === before ? stalled + 1 : 0;
         if (stalled >= STALL_LIMIT) {
@@ -6904,6 +7064,8 @@
         writeSaved({ running: true, total: state.total });
         state.status = state.assistantMode === "kol"
           ? `已回复：${phrase}。@${currentKolHandleFromPath() || "大V"} ${state.pageCount}/${currentRoundTarget()} 条`
+          : state.assistantMode === "notifications"
+            ? `已回复：${phrase}。最近 ${notificationWindowLabel()} 内已成功 ${state.total} 条`
           : `已回复：${phrase}。第 ${state.completedRounds + 1} 轮 ${state.pageCount}/${currentRoundTarget()}`;
         renderPanel();
         if (result === "sent-composer-open" && !await closeReplyComposer({ confirmedSent: true })) {
@@ -7000,11 +7162,12 @@
     renderPanel();
   }
 
-  async function exportUnfollowReview() {
+  async function exportUnfollowReview(kind = "notFollowingBack") {
     let latest = state.mutual;
     try { latest = await mutualApi?.loadUnfollowReview?.() || latest; }
     catch (error) { if (!latest?.unfollowReview?.length) throw error; }
-    const entries = Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : [];
+    const kinds = kind === "nonSimplified" ? ["nonSimplified", "nonChinese"] : ["notFollowingBack"];
+    const entries = (Array.isArray(latest?.unfollowReview) ? latest.unfollowReview : []).filter((item) => kinds.includes(item.reason));
     state.mutual = latest;
     if (!entries.length) {
       state.status = "待人工核对清单为空";
@@ -7017,7 +7180,8 @@
     const url = URL.createObjectURL(new Blob([json], { type: "application/json;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `x-unfollow-review-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
+    const fileKind = kind === "nonSimplified" ? "x-unfollow-non-sc-review" : "x-unfollow-review";
+    link.download = `${fileKind}-${account || "account"}-${exportedAt.slice(0, 10)}.json`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     state.status = `已导出 ${entries.length} 个待人工核对账号`;
@@ -7125,7 +7289,7 @@
       return;
     }
     if (result?.error) {
-      if (mode === "unfollow") {
+      if (mode === "unfollow" || mode === "unfollowNonSc") {
         sendExtensionMessage({ type: "xrc-mutual-scan-failed", reason: result.error, attempts: result.attempts }).catch(() => {});
       }
       sessionStorage.removeItem(MUTUAL_ACTIVE_KEY);
@@ -7156,7 +7320,7 @@
     mutualApi.setUnfollowEnglishEnabled?.(state.unfollowEnglish);
     sessionStorage.setItem(MUTUAL_ACTIVE_KEY, mode);
     const runPromise = mutualApi.run(mode, updateMutualState, {
-      pace: mode === "followBack" ? currentFollowPace() : taskSchedule.rules?.[mutualTaskKey(mode)]?.pace,
+      pace: mode === "followBack" ? currentFollowPace() : mode === "targetFollow" ? currentTargetFollowPace() : taskSchedule.rules?.[mutualTaskKey(mode)]?.pace,
       unlimited: false,
       scheduled: scheduledStart
     });
@@ -7344,45 +7508,70 @@
       .map((item) => String(item || "").trim().replace(/^@/u, ""))
       .filter((handle, index, all) => /^[A-Za-z0-9_]{1,15}$/u.test(handle)
         && all.findIndex((entry) => entry.toLowerCase() === handle.toLowerCase()) === index);
-    return list.length ? list : [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    return list;
+  }
+
+  function targetFollowRosterStatus() {
+    return "每次任务直接换成五个新人；这一页还有可关注的人就先关注，人都关注过了就换下一个。";
   }
 
   async function syncTargetFollowHandlesField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-target-follow-handles]");
-    if (!field || document.activeElement === field) return;
-    let handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+    const currentField = panel?.querySelector("[data-xrc-target-follow-current]");
+    const status = panel?.querySelector("[data-xrc-target-follow-status]");
+    if (!field && !currentField) return;
+    let seeds = [];
     try {
-      if (mutualApi?.loadTargetFollowHandles) handles = await mutualApi.loadTargetFollowHandles();
+      if (mutualApi?.loadTargetFollowHandles) seeds = await mutualApi.loadTargetFollowHandles();
       else {
         const stored = await chrome.storage.local.get("xrcTargetFollowHandles");
-        handles = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
+        seeds = normalizeTargetFollowHandlesText(stored?.xrcTargetFollowHandles);
       }
     } catch (error) {
-      handles = [...DEFAULT_TARGET_FOLLOW_HANDLES];
+      seeds = [];
     }
-    field.value = handles.map((handle) => `@${handle}`).join("\n");
+    let current = [];
+    try {
+      const stored = await chrome.storage.local.get("xrcTargetFollowLive");
+      const live = stored?.xrcTargetFollowLive?.current;
+      if (Array.isArray(live) && live.length) {
+        const raw = live.map((handle) => String(handle).replace(/^@/u, "")).filter(Boolean);
+        current = globalThis.XrcLeaderboard?.withoutRetired ? globalThis.XrcLeaderboard.withoutRetired(raw) : raw.filter((handle) => !["crazypig9y", "jianlvup", "jianlvya", "kyotom08", "chill_alpha"].includes(handle.toLowerCase()));
+        if (!current.length) {
+          try { sessionStorage.removeItem("xrcTargetFollowTask"); } catch (error) {}
+        }
+      }
+    } catch (error) {}
+    if (!current.length && mutualApi?.selectTargetBatch) {
+      const board = globalThis.XrcLeaderboard?.loadHandles ? await globalThis.XrcLeaderboard.loadHandles() : [];
+      current = mutualApi.selectTargetBatch({ handles: [], lastBatch: [], batch: [] }, { size: 5, sources: board }).handles || [];
+    }
+    if (field && document.activeElement !== field) field.value = seeds.map((handle) => `@${handle}`).join("\n");
+    if (currentField) currentField.value = current.map((handle) => `@${handle}`).join("\n");
+    if (status) status.textContent = targetFollowRosterStatus(seeds, current);
   }
 
   async function saveTargetFollowHandlesFromField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-target-follow-handles]");
+    const currentField = panel?.querySelector("[data-xrc-target-follow-current]");
     const status = panel?.querySelector("[data-xrc-target-follow-status]");
     if (!field) return;
     const handles = normalizeTargetFollowHandlesText(field.value);
     try {
       if (mutualApi?.saveTargetFollowHandles) await mutualApi.saveTargetFollowHandles(handles);
       await chrome.storage.local.set({ xrcTargetFollowHandles: handles });
+      const roster = mutualApi?.republishTargetRoster?.() || { current: handles };
       field.value = handles.map((handle) => `@${handle}`).join("\n");
-      if (status) status.textContent = `已保存 ${handles.length} 个候选账号`;
+      if (currentField) currentField.value = (roster.current || handles).map((handle) => `@${handle}`).join("\n");
+      if (status) status.textContent = `已保存起始种子 ${handles.length} 个。${targetFollowRosterStatus(handles, roster.current || handles)}`;
     } catch (error) {
       if (status) status.textContent = error?.message || "候选名单保存失败";
     }
   }
 
   function kolRosterStatusText(decision) {
-    if (!decision) return "修改后自动保存";
-    if (decision.custom) return `自定义 ${decision.handles.length} 个账号，每一轮打乱顺序`;
-    if (decision.source === "daily") return `今日首页活跃账号 ${decision.handles.length} 个 · ${decision.day}`;
-    return `今日候选不足，回退内置第 ${decision.poolIndex + 1}/${kolRoster.KOL_POOLS.length} 组`;
+    if (decision?.custom) return "自定义名单会保留，每次只从里面换五个，不会清掉。";
+    return "每次任务直接换成五个新人；保存过自定义名单时只从里面换，不会清掉。";
   }
 
   async function loadKolRoster() {
@@ -7458,13 +7647,11 @@
     if (!state.kolCycleRetired) {
       try {
         const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
-        const record = kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount);
-        const handles = await loadKolHandles();
-        const plan = kolRoster.navigationOrder(record, handles, Math.random);
-        if (plan.reused) {
-          state.kolVisitOrder = plan.order.slice();
-          if (!state.kolVisitedHandles.length) state.kolVisitedHandles = plan.visited.slice();
-          state.kolCycleCreatedAt = Number(record?.createdAt) || plan.createdAt;
+        const resumed = kolRoster.resumeActiveKolCycle(kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount));
+        if (resumed) {
+          state.kolVisitOrder = resumed.order.slice();
+          if (!state.kolVisitedHandles.length) state.kolVisitedHandles = resumed.visited.slice();
+          state.kolCycleCreatedAt = resumed.createdAt || Date.now();
           state.kolCycleRetired = false;
           return state.kolVisitOrder;
         }
@@ -7472,7 +7659,12 @@
         // Fall through and draw a new order.
       }
     }
-    const handles = await loadKolHandles();
+    const decision = await loadKolRoster();
+    const existing = Array.isArray(decision.meta?.taskBatch?.handles) ? decision.meta.taskBatch.handles : [];
+    const finishedThisBatch = state.kolCycleRetired && existing.length
+      && kolRoster.rosterKey(existing) === kolRoster.rosterKey(state.kolVisitOrder || []);
+    const rotated = existing.length && !finishedThisBatch ? { handles: existing } : await rotateKolTaskBatch();
+    const handles = rotated.handles || [];
     const order = kolRoster.shuffleHandles(handles, Math.random);
     const keepVisited = !state.kolCycleRetired && state.kolVisitedHandles.length > 0;
     state.kolVisitOrder = order;
@@ -7487,13 +7679,58 @@
     return order;
   }
 
+  async function rotateKolTaskBatch(random = Math.random) {
+    const now = Date.now();
+    const stored = await chrome.storage.local.get([KOL_HANDLES_KEY, kolRoster.KOL_ROSTER_KEY, kolRoster.KOL_DISCOVERY_KEY]);
+    const decision = kolRoster.resolveKolRoster({
+      storedHandles: stored?.[KOL_HANDLES_KEY],
+      meta: stored?.[kolRoster.KOL_ROSTER_KEY],
+      discovery: stored?.[kolRoster.KOL_DISCOVERY_KEY],
+      account: taskSnapshotAccount,
+      now
+    });
+    const board = decision.custom || !globalThis.XrcLeaderboard?.loadHandles ? [] : await globalThis.XrcLeaderboard.loadHandles();
+    const pool = kolRoster.taskCandidatePool({
+      custom: decision.custom,
+      customHandles: decision.handles,
+      boardHandles: board
+    });
+    const selected = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, random);
+    const meta = {
+      ...decision.meta,
+      custom: decision.custom,
+      taskBatch: { handles: selected.handles, previous: decision.meta?.taskBatch?.handles || [], at: now, reused: selected.reused }
+    };
+    try {
+      await chrome.storage.local.set({ [kolRoster.KOL_ROSTER_KEY]: meta });
+    } catch (error) {}
+    return selected;
+  }
+
   async function syncKolHandlesField(panel = document.getElementById(PANEL_ID)) {
     const field = panel?.querySelector("[data-xrc-kol-handles]");
     const status = panel?.querySelector("[data-xrc-kol-status]");
     if (!field || document.activeElement === field) return;
-    const decision = await loadKolRoster();
-    field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
-    if (status) status.textContent = kolRosterStatusText(decision);
+    let decision = await loadKolRoster();
+    let activeOrder = [];
+    try {
+      const stored = await chrome.storage.local.get(kolRoster.KOL_CYCLE_KEY);
+      const resumed = kolRoster.resumeActiveKolCycle(kolRoster.readCycleRecord(stored?.[kolRoster.KOL_CYCLE_KEY], taskSnapshotAccount));
+      activeOrder = resumed?.order || [];
+    } catch (error) { activeOrder = []; }
+    if (!decision.meta?.taskBatch?.handles?.length && !activeOrder.length) {
+      await rotateKolTaskBatch(() => 0.999);
+      decision = await loadKolRoster();
+    }
+    const shown = kolRoster.displayedTaskHandles(decision, activeOrder);
+    if (!shown.length) {
+      if (status) status.textContent = "正在从榜单拉取五个新人。没有拉到之前，不先显示固定名单。";
+      return;
+    }
+    field.value = shown.map((handle) => `@${handle}`).join("\n");
+    const order = Array.isArray(state.kolVisitOrder) ? state.kolVisitOrder : [];
+    const sameRound = order.length && kolRoster.rosterKey(order) === kolRoster.rosterKey(shown);
+    if (status) status.textContent = kolRosterStatusText(decision, sameRound ? order : []);
   }
 
   async function saveKolHandlesFromField(panel = document.getElementById(PANEL_ID)) {
@@ -7507,9 +7744,7 @@
         [kolRoster.KOL_ROSTER_KEY]: decision.meta
       });
       field.value = decision.handles.map((handle) => `@${handle}`).join("\n");
-      if (status) status.textContent = decision.custom
-        ? `已固定 ${decision.handles.length} 个账号，每一轮打乱顺序`
-        : `已使用${kolRosterStatusText(decision)}`;
+      if (status) status.textContent = `已保存。${kolRosterStatusText(decision)}`;
     } catch (error) {
       if (status) status.textContent = error?.message || "大V名单保存失败";
     }
@@ -7541,16 +7776,12 @@
 
   function taskScheduleConfigMarkup(mode, label) {
     const listField = mode === "mutual-targetFollow"
-      ? `<label class="xrc-schedule-card-list"><span>关注候选名单</span><textarea data-xrc-target-follow-handles rows="4" spellcheck="false" placeholder="@crazypig9y&#10;@jianlvup"></textarea><small class="xrc-config-note" data-xrc-target-follow-status role="status">修改后自动保存</small></label>`
+      ? `<p class="xrc-config-note" data-xrc-target-follow-status role="status">${targetFollowRosterStatus()}</p>`
       : mode === "kol"
-        ? `<label class="xrc-schedule-card-list"><span>评论大V名单</span><textarea data-xrc-kol-handles rows="4" spellcheck="false" placeholder="@xupaopaogm&#10;@thankucrypto"></textarea><small class="xrc-config-note" data-xrc-kol-status role="status" title="每天从首页当天中文高互动原创帖选 5 个账号；不足时使用内置组。增删账号后固定自定义名单。每一轮打乱访问顺序，进行中的一轮走完已抽出的顺序。">修改后自动保存</small></label>`
+        ? `<p class="xrc-config-note" data-xrc-kol-status role="status">${kolRosterStatusText()}</p>`
         : "";
-    return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}排班配置">
-      ${taskSectionHead("排班", "优先级、时段与名单")}
-      <div class="xrc-schedule-rule-controls">
-        <label>优先级 <select data-xrc-schedule-priority aria-label="${label}优先级">${schedulePriorityOptionsMarkup()}</select></label>
-        <label>时段 <select data-xrc-schedule-window aria-label="${label}可运行时段"><option value="all">全天</option><option value="day">08–20</option><option value="peak">08–10 / 18–20</option><option value="overnight">22–06</option></select></label>
-      </div>
+    if (!listField) return "";
+    return `<section class="xrc-task-schedule-config" data-xrc-task-schedule-config="${mode}" data-xrc-schedule-rule="${mode}" aria-label="${label}说明">
       ${listField}
     </section>`;
   }
@@ -7579,14 +7810,14 @@
       : ["likes-posts", "likes-replies"].includes(mode) ? 6
       : mode === "mutual-followBack" ? 7
       : mode === "mutual-targetFollow" ? 7
-      : mode === "mutual-unfollow" ? 3
+      : mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? 3
       : isPruneMode(mode) ? 2
       : 1;
   }
 
   function scheduleRuleEnabled(mode, rule) {
     if (typeof rule?.enabled === "boolean") return rule.enabled;
-    return !["mutual-unfollow", "prune-posts", "prune-replies", "poster-x", "poster-xhs", "site-forward", "community-share"].includes(mode);
+    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode);
   }
 
   function syncScheduleCardRuleControls(row, mode) {
@@ -7594,12 +7825,8 @@
     const rule = taskSchedule.rules?.[mode] || {};
     const enabled = row.querySelector("[data-xrc-schedule-enabled]");
     const priority = row.querySelector("[data-xrc-schedule-priority]");
-    const windowSelect = row.querySelector("[data-xrc-schedule-window]");
     if (enabled && document.activeElement !== enabled) enabled.checked = scheduleRuleEnabled(mode, rule);
     if (priority && document.activeElement !== priority) priority.value = String(rule.priority || defaultSchedulePriority(mode));
-    if (windowSelect && document.activeElement !== windowSelect) {
-      windowSelect.value = rule.window || (mode === "poster-premium" ? "day" : "all");
-    }
   }
 
   function ensureScheduleRuleDefaults(mode, rule = {}) {
@@ -7623,8 +7850,6 @@
       if (enabled) next.enabled = Boolean(enabled.checked);
       const priority = row.querySelector("[data-xrc-schedule-priority]");
       if (priority) next.priority = Number(priority.value) || defaultSchedulePriority(mode);
-      const windowSelect = row.querySelector("[data-xrc-schedule-window]");
-      if (windowSelect) next.window = windowSelect.value || "all";
       rules[mode] = next;
     });
     try {
@@ -7944,6 +8169,42 @@
     }
   }
 
+  function echoSavedModelSettings(panel) {
+    if (!panel || state.aiSettingsStatus !== "ready") return;
+    const write = (selector, value) => {
+      const input = panel.querySelector(selector);
+      if (!input || document.activeElement === input) return;
+      const next = value || "";
+      const echoed = input.dataset.xrcEchoValue;
+      if (echoed != null && input.value !== echoed) return;
+      if (echoed == null && input.value && input.value !== next) {
+        input.dataset.xrcEchoValue = input.value;
+        return;
+      }
+      input.value = next;
+      input.dataset.xrcEchoValue = next;
+    };
+    write("[data-xrc-config-key]", state.aiKey);
+    write("[data-xrc-config-bai-key]", state.baiKey);
+    write("[data-xrc-mobileoffice-token]", state.mobileOfficeToken);
+    write("[data-xrc-reply-timeline-prompt]", state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT);
+    write("[data-xrc-reply-comment-prompt]", state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT);
+    write("[data-xrc-post-normal-prompt]", state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT);
+    write("[data-xrc-post-premium-prompt]", state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT);
+    write("[data-xrc-post-x-prompt]", state.postXPrompt || DEFAULT_POST_X_PROMPT);
+    panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
+      if (document.activeElement === input || input.dataset.xrcProviderDraft === "1") return;
+      input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
+    });
+    const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
+    if (mobileOfficeStatus && /^(?:|尚未测试|已测试通过)$/u.test(mobileOfficeStatus.textContent || "")) {
+      mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
+      mobileOfficeStatus.dataset.result = state.mobileOfficeVerified ? "success" : "idle";
+    }
+    const hint = panel.querySelector("[data-xrc-config-key-hint]");
+    if (hint) hint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
+  }
+
   function paintTabRoleBanner(panel) {
     const banner = panel.querySelector("[data-xrc-tab-role]");
     if (!banner) return;
@@ -7952,12 +8213,14 @@
     const summary = banner.querySelector("[data-xrc-tab-role-text]");
     const jump = banner.querySelector("[data-xrc-tab-owner-jump]");
     const otherTab = Number(tabRole.ownerTabId) > 0 && Number(tabRole.ownerTabId) !== Number(tabRole.tabId);
+    if (!otherTab) {
+      banner.hidden = true;
+      return;
+    }
     const label = TASK_MODE_LABELS[tabRole.ownerMode] || "排班";
     const ownerTitle = String(tabRole.ownerTitle || "").trim();
     const tabName = ownerTitle.includes(label) ? ownerTitle.split(" · ").slice(0, 2).join(" · ") : label;
-    summary.textContent = otherTab
-      ? `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`
-      : "当前是人工打开的 X 页签，自动任务未在这里启动。";
+    summary.textContent = `「${tabName}」页签${tabRole.ownerActive ? "正在执行" : "已负责排班"}；当前页签只查看。`;
     jump.hidden = !otherTab;
   }
 
@@ -8100,39 +8363,55 @@
               </label>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
-              <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>勾选的模型共存，按下列顺序尝试</small></span></div>
+              <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>勾选、填写密钥并保存后才生效</small></span></div>
               <div class="xrc-provider-list" role="group" aria-label="启用的回复模型">
-                <label class="xrc-config-row"><span><strong>1 · MobileOffice 本地桥接</strong><small>测试通过后优先使用</small></span><input type="checkbox" data-xrc-reply-provider="mobileoffice"></label>
-                <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek"></label>
-                <label class="xrc-config-row"><span><strong>3 · NAS</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas"></label>
-                <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai"></label>
-              </div>
-              <div class="xrc-mobileoffice-connection" data-xrc-mobileoffice-connection hidden>
-                <label class="xrc-field"><span>MobileOffice 本地连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
-                <div class="xrc-mobileoffice-test-row">
-                  <button class="xrc-mobileoffice-test" type="button" data-xrc-mobileoffice-test>测试连接</button>
-                  <span class="xrc-mobileoffice-status" data-xrc-mobileoffice-status role="status"></span>
+                <div class="xrc-provider">
+                  <label class="xrc-config-row"><span><strong>1 · MobileOffice 本地桥接</strong><small>测试通过并保存后优先使用</small></span><input type="checkbox" data-xrc-reply-provider="mobileoffice"></label>
+                  <div class="xrc-provider-key" data-xrc-mobileoffice-connection>
+                    <label class="xrc-field"><span>连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
+                    <div class="xrc-mobileoffice-test-row">
+                      <button class="xrc-mobileoffice-test" type="button" data-xrc-mobileoffice-test>测试连接</button>
+                      <span class="xrc-mobileoffice-status" data-xrc-mobileoffice-status role="status"></span>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="mobileoffice">保存</button>
+                    </div>
+                    <p class="xrc-config-note" data-xrc-mobileoffice-note>勾选、测试通过、再点保存，才会使用。连接码只保存在当前浏览器扩展里。</p>
+                  </div>
+                </div>
+                <div class="xrc-provider">
+                  <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek"></label>
+                  <label class="xrc-field xrc-provider-key">
+                    <span>DeepSeek API Key <small data-xrc-config-key-hint>尚未配置</small></span>
+                    <span class="xrc-key-line">
+                      <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
+                      <button type="button" data-xrc-config-key-reveal>显示</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="deepseek">保存</button>
+                    </span>
+                  </label>
+                </div>
+                <div class="xrc-provider">
+                  <label class="xrc-config-row"><span><strong>3 · NAS</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas"></label>
+                  <label class="xrc-field xrc-provider-key">
+                    <span>社区回执密钥</span>
+                    <span class="xrc-key-line">
+                      <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="从社区动作页复制" data-xrc-secret-input data-xrc-nas-secret>
+                      <button type="button" data-xrc-nas-secret-reveal>显示</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="nas">保存</button>
+                    </span>
+                  </label>
+                </div>
+                <div class="xrc-provider">
+                  <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai"></label>
+                  <label class="xrc-field xrc-provider-key">
+                    <span>B.AI API Key</span>
+                    <span class="xrc-key-line">
+                      <input type="text" name="xrc-bai-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 B.AI 的 sk-..." data-xrc-secret-input data-xrc-config-bai-key>
+                      <button type="button" data-xrc-config-bai-key-reveal>显示</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="bai">保存</button>
+                    </span>
+                  </label>
                 </div>
               </div>
-              <p class="xrc-config-note" data-xrc-mobileoffice-note hidden>连接码只保存在当前浏览器扩展里。连接码变化需重新测试；连接不可用时继续尝试后续勾选的模型。</p>
-              <div class="xrc-docs-title"><b>02</b><span><strong>服务密钥</strong><small data-xrc-config-key-hint>DeepSeek 尚未配置</small></span></div>
-              <label class="xrc-field">
-                <span>DeepSeek API Key</span>
-                <span class="xrc-key-line">
-                  <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
-                  <button type="button" data-xrc-config-key-reveal>显示</button>
-                  <button type="button" class="xrc-key-save" data-xrc-key-save="deepseek">保存</button>
-                </span>
-              </label>
-              <label class="xrc-field">
-                <span>B.AI API Key · 最后回退（按用量计费）</span>
-                <span class="xrc-key-line">
-                  <input type="text" name="xrc-bai-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 B.AI 的 sk-..." data-xrc-secret-input data-xrc-config-bai-key>
-                  <button type="button" data-xrc-config-bai-key-reveal>显示</button>
-                  <button type="button" class="xrc-key-save" data-xrc-key-save="bai">保存</button>
-                </span>
-              </label>
-              <p class="xrc-config-note">点旁边的保存，只写入这一条密钥，然后回到首页。NAS 使用社区回执密钥；B.AI 按用量计费，余额不足时无法使用。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
+              <p class="xrc-config-note">每一项都要勾选、填写密钥，再点该项的保存，勾选才生效。只保存密钥、没有勾选，不会使用。NAS 与下方社区回执用同一条密钥。B.AI 按用量计费。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
               <div class="xrc-docs-title"><b>03</b><span><strong>提示词</strong><small>评论首页 / 评论回复 / 纯文字帖 / 精品发帖 / X主题发帖 分开配置</small></span></div>
@@ -8199,7 +8478,7 @@
             </div>
           </div>
           <div class="xrc-schedule-strip" data-xrc-schedule-strip role="status"><div class="xrc-timeline-summary"><p><b>当前任务</b><span data-xrc-timeline-current>正在读取排班状态…</span></p><p><b>下一任务</b><span data-xrc-timeline-next>等待任务到期</span></p></div><button type="button" data-xrc-desk-home>排班</button></div>
-          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="十七项任务由后台排班，共用一个执行页签；点分组查看子页">
+          <div class="xrc-assistant-tabs" role="tablist" aria-label="功能导航" title="十八项任务由后台排班，共用一个执行页签；点分组查看子页">
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="reply"><button type="button" role="tab" data-xrc-assistant="reply"><span>评论管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="likes"><button type="button" role="tab" data-xrc-assistant="likes"><span>点赞管理</span></button></div>
             <div class="xrc-assistant-slot" data-xrc-assistant-slot="mutual"><button type="button" role="tab" data-xrc-assistant="mutual"><span>关注管理</span></button></div>
@@ -8256,20 +8535,20 @@
         <div class="xrc-body xrc-mutual-body">
           <div class="xrc-mutual-tabs" role="tablist" aria-label="互关功能">
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollow"><b>01</b><span>清理未回关</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>02</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>03</b><span>关注候选</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="unfollowNonSc"><b>02</b><span>清理非简中</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="followBack"><b>03</b><span>回关粉丝</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-mutual-tab="targetFollow"><b>04</b><span>关注候选</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           </div>
           <div class="xrc-mutual-actions">
             <section class="xrc-mutual-card" data-xrc-mutual-card="unfollow">
-              <div><b>01</b><span><strong>清理未回关</strong><small>自己的 Following 页</small></span></div>
+              <div><b>01</b><span><strong>清理未回关</strong><small>只清理没有回关的人。认不出「关注了你」时跳过</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "启停与选项")}
                 <div class="xrc-unfollow-modes" role="group" aria-label="取关模式">
                   <label><input type="radio" name="xrc-unfollow-mode" value="manual" data-xrc-unfollow-mode><span><strong>手动模式（默认）</strong><small>扫描并记录候选，由你打开资料页取关</small></span></label>
                   <label><input type="radio" name="xrc-unfollow-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
                 </div>
-                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml()}</div>
-                <label class="xrc-config-row xrc-mutual-option"><span><strong>非中文资料也清理</strong></span><input type="checkbox" data-xrc-unfollow-english></label>
+                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml({ weekly: true })}</div>
                 <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-export>导出 JSON</button></div><div data-xrc-unfollow-review-list></div></div>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollow">正在读取待取关清单</div>
@@ -8279,11 +8558,31 @@
               </div>
               ${taskScheduleConfigMarkup("mutual-unfollow", "清理未回关")}
             </section>
+            <section class="xrc-mutual-card" data-xrc-mutual-card="unfollowNonSc">
+              <div><b>02</b><span><strong>清理非简中</strong><small>名字或简介没有简体字。英文、日文、繁体都算。约每周一次</small></span></div>
+              <div class="xrc-task-section">
+                ${taskSectionHead("运行", "启停与选项")}
+                <div class="xrc-unfollow-modes" role="group" aria-label="取关模式">
+                  <label><input type="radio" name="xrc-unfollow-nonsc-mode" value="manual" data-xrc-unfollow-mode><span><strong>手动模式（默认）</strong><small>扫描并记录候选，由你打开资料页取关</small></span></label>
+                  <label><input type="radio" name="xrc-unfollow-nonsc-mode" value="auto" data-xrc-unfollow-mode><span><strong>自动模式</strong><small>按速度档自动取关</small></span></label>
+                </div>
+                <div data-xrc-unfollow-auto-options>${cleanupPaceTableHtml({ weekly: true })}</div>
+                <p class="xrc-pace-note">认不出名字时跳过。只有简体字，或汉字分不清简繁时留下。</p>
+                <div class="xrc-unfollow-review"><div class="xrc-unfollow-review-head"><strong>待人工核对清单</strong><button type="button" data-xrc-unfollow-nonsc-export>导出 JSON</button></div><div data-xrc-unfollow-nonsc-review-list></div></div>
+                <div class="xrc-flow-end">
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="unfollowNonSc">正在读取待取关清单</div>
+                  <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
+                  <button class="xrc-inline-start" type="button" data-xrc-mutual-action="unfollowNonSc">已停止 · 点击启动</button>
+                </div>
+              </div>
+              ${taskScheduleConfigMarkup("mutual-unfollowNonSc", "清理非简中")}
+            </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
-              <div><b>02</b><span><strong>回关粉丝</strong><small>自己的 Followers 页</small></span></div>
+              <div><b>03</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每周一次</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-follow-pace>${followPaceTableHtml()}</div>
+                <p class="xrc-config-note">一次回关 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。约每周一次。</p>
                 <p class="xrc-pace-now" data-xrc-follow-now>当前尚未开始</p>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack" hidden>本次回关 0</div>
@@ -8294,12 +8593,13 @@
               ${taskScheduleConfigMarkup("mutual-followBack", "回关粉丝")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="targetFollow">
-              <div><b>03</b><span><strong>关注候选</strong><small>从可配置名单随机打开 Followers</small></span></div>
+              <div><b>04</b><span><strong>关注候选</strong><small>每次任务直接换成五个新人</small></span></div>
               <div class="xrc-task-section">
-                ${taskSectionHead("运行", "速度与启停")}
-                <div data-xrc-target-follow-pace>${followPaceTableHtml({ label: "关注速度", attr: "data-xrc-target-follow-pace-label", unlimitedKey: "" })}</div>
+                ${taskSectionHead("运行", "人数与启停")}
+                <div data-xrc-target-follow-pace>${targetFollowPaceTableHtml()}</div>
+                <p class="xrc-config-note">一次关注 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。</p>
                 <div class="xrc-flow-end">
-                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0 · 今日关注 0/300 目标（上限 400）· 本批 0/100</div>
+                  <div class="xrc-mutual-stats" data-xrc-mutual-stats="targetFollow">本次关注 0/15 · 今日关注 0/300 目标（上限 400）</div>
                   <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
                   <button class="xrc-inline-start" type="button" data-xrc-mutual-action="targetFollow">已停止 · 点击启动</button>
                 </div>
@@ -8458,6 +8758,7 @@
                 ${taskSectionHead("运行", "速度与启停")}
                 <div class="xrc-round-pace" aria-label="回复速度">
                   <div data-xrc-reply-pace-standard>${interactionPaceTableHtml("data-xrc-pace-label", "回复速度")}</div>
+                  <div data-xrc-reply-pace-notifications>${notificationPaceTableHtml()}</div>
                   <div data-xrc-reply-pace-kol>${kolPaceTableHtml()}</div>
                   <p class="xrc-pace-now"><span data-xrc-pace-now>当前尚未开始</span><button class="xrc-boundary-info" type="button" data-xrc-boundary-info aria-label="异常监控" title="异常监控"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8.2h2.4l1.5-3.4 2.3 6.6 1.5-3.2h5.3"/></svg></button></p>
                   <p class="xrc-pace-browse">评论前会在这条帖子上随机停留 1、3、5 或 8 秒，再回复。</p>
@@ -8686,15 +8987,27 @@
       panel.querySelector("[data-xrc-config-key]").value = state.aiKey || "";
       panel.querySelector("[data-xrc-config-bai-key]").value = state.baiKey || "";
       panel.querySelector("[data-xrc-mobileoffice-token]").value = state.mobileOfficeToken || "";
+      panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
+      panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
+      panel.querySelector("[data-xrc-post-normal-prompt]").value = state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT;
+      panel.querySelector("[data-xrc-post-premium-prompt]").value = state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT;
+      panel.querySelector("[data-xrc-post-x-prompt]").value = state.postXPrompt || DEFAULT_POST_X_PROMPT;
+      [
+        "[data-xrc-config-key]",
+        "[data-xrc-config-bai-key]",
+        "[data-xrc-mobileoffice-token]",
+        "[data-xrc-reply-timeline-prompt]",
+        "[data-xrc-reply-comment-prompt]",
+        "[data-xrc-post-normal-prompt]",
+        "[data-xrc-post-premium-prompt]",
+        "[data-xrc-post-x-prompt]"
+      ].forEach((selector) => {
+        const input = panel.querySelector(selector);
+        if (input) input.dataset.xrcEchoValue = input.value;
+      });
       panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
         input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
       });
-      const syncMobileOfficeSettings = () => {
-        const selected = panel.querySelector('[data-xrc-reply-provider="mobileoffice"]')?.checked;
-        panel.querySelector('[data-xrc-mobileoffice-connection]').hidden = !selected;
-        panel.querySelector('[data-xrc-mobileoffice-note]').hidden = !selected;
-      };
-      syncMobileOfficeSettings();
       const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
       mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
       mobileOfficeStatus.dataset.result = state.mobileOfficeVerified ? "success" : "idle";
@@ -8729,11 +9042,6 @@
         status.textContent = "连接码已修改，请重新测试";
         status.dataset.result = "idle";
       });
-      panel.querySelector("[data-xrc-reply-timeline-prompt]").value = state.replyTimelinePrompt || DEFAULT_REPLY_TIMELINE_PROMPT;
-      panel.querySelector("[data-xrc-reply-comment-prompt]").value = state.replyCommentPrompt || DEFAULT_REPLY_COMMENT_PROMPT;
-      panel.querySelector("[data-xrc-post-normal-prompt]").value = state.postNormalPrompt || DEFAULT_POST_NORMAL_PROMPT;
-      panel.querySelector("[data-xrc-post-premium-prompt]").value = state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT;
-      panel.querySelector("[data-xrc-post-x-prompt]").value = state.postXPrompt || DEFAULT_POST_X_PROMPT;
       panel.querySelector("[data-xrc-config-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-key]");
         const revealed = input.classList.toggle("is-revealed");
@@ -8741,6 +9049,11 @@
       });
       panel.querySelector("[data-xrc-config-bai-key-reveal]").addEventListener("click", (event) => {
         const input = panel.querySelector("[data-xrc-config-bai-key]");
+        const revealed = input.classList.toggle("is-revealed");
+        event.currentTarget.textContent = revealed ? "隐藏" : "显示";
+      });
+      panel.querySelector("[data-xrc-nas-secret-reveal]")?.addEventListener("click", (event) => {
+        const input = panel.querySelector("[data-xrc-nas-secret]");
         const revealed = input.classList.toggle("is-revealed");
         event.currentTarget.textContent = revealed ? "隐藏" : "显示";
       });
@@ -8786,7 +9099,7 @@
         draggingMode = row.dataset.mode;
         event.dataTransfer.setData("text/plain", draggingMode);
         event.dataTransfer.effectAllowed = "move";
-        feedback("拖到右侧加入排班，拖回左侧移出；执行顺序由优先级与冷却决定。");
+        feedback("拖到右侧加入排班，拖回左侧移出。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。");
       });
       desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => {
         zone.addEventListener("dragover", (event) => { if (!draggingMode) return; event.preventDefault(); zone.classList.add("is-drag-over"); });
@@ -8818,7 +9131,7 @@
       });
       panel.addEventListener("change", (event) => {
         const target = event.target;
-        if (target?.matches?.("[data-xrc-schedule-enabled], [data-xrc-schedule-priority], [data-xrc-schedule-window]")) {
+        if (target?.matches?.("[data-xrc-schedule-enabled], [data-xrc-schedule-priority]")) {
           void collectAndSaveScheduleRules(panel);
           return;
         }
@@ -8888,8 +9201,8 @@
       });
       panel.querySelectorAll("[data-xrc-cleanup-pace]").forEach(button => button.addEventListener("click", async () => {
         const mode = viewTaskKey();
-        if (!["prune-posts", "prune-replies", "mutual-unfollow"].includes(mode)) return;
-        if ((isPruneMode(mode) && pruneState.running) || (mode === "mutual-unfollow" && state.mutual?.running)) return;
+        if (!["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode)) return;
+        if ((isPruneMode(mode) && pruneState.running) || ((mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc") && state.mutual?.running)) return;
         taskSchedule.rules[mode] = { ...taskSchedule.rules[mode], pace: button.dataset.xrcCleanupPace };
         const saved = await sendExtensionMessage({ type: "xrc-schedule-config-set", rules: taskSchedule.rules });
         taskSchedule = { ...taskSchedule, rules: saved.rules || taskSchedule.rules };
@@ -8927,7 +9240,7 @@
           const riskCooling = cooling && Number(state.mutual?.riskCooldownUntil) > Date.now();
           const dailyFull = mode === "followBack" && Number(state.mutual?.sharedDailyFollowed) >= 400;
           if (riskCooling) onMutualAction(mode);
-          else if (cooling && !dailyFull && mode === "unfollow") mutualApi?.startNow?.();
+          else if (cooling && !dailyFull && (mode === "unfollow" || mode === "unfollowNonSc")) mutualApi?.startNow?.();
           else if (cooling && dailyFull) onMutualAction(mode);
           else onMutualAction(mode);
         });
@@ -8944,15 +9257,21 @@
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
       }));
-      panel.querySelector("[data-xrc-unfollow-review-list]")?.addEventListener("click", async (event) => {
+      panel.querySelectorAll("[data-xrc-unfollow-review-list], [data-xrc-unfollow-nonsc-review-list]").forEach((list) => list.addEventListener("click", async (event) => {
         const button = event.target.closest?.("[data-xrc-unfollow-reviewed]");
         if (!button) return;
         await mutualApi?.removeUnfollowReview?.(button.dataset.xrcUnfollowReviewed);
         state.mutual = mutualApi?.snapshot?.() || state.mutual;
         renderPanel();
-      });
+      }));
       panel.querySelector("[data-xrc-unfollow-export]")?.addEventListener("click", () => {
-        exportUnfollowReview().catch((error) => {
+        exportUnfollowReview("notFollowingBack").catch((error) => {
+          state.status = error?.message || "导出待核对清单失败";
+          renderPanel();
+        });
+      });
+      panel.querySelector("[data-xrc-unfollow-nonsc-export]")?.addEventListener("click", () => {
+        exportUnfollowReview("nonSimplified").catch((error) => {
           state.status = error?.message || "导出待核对清单失败";
           renderPanel();
         });
@@ -9067,12 +9386,9 @@
         });
         input.addEventListener("change", () => {
           if (input.matches("[data-xrc-reply-provider]")) {
-            const disabled = new Set(state.replyProvidersDisabled || []);
-            if (input.checked) disabled.delete(input.dataset.xrcReplyProvider);
-            else disabled.add(input.dataset.xrcReplyProvider);
-            state.replyProvidersDisabled = REPLY_PROVIDER_ORDER.filter((provider) => disabled.has(provider));
+            input.dataset.xrcProviderDraft = "1";
+            return;
           }
-          if (input.matches('[data-xrc-reply-provider="mobileoffice"]')) syncMobileOfficeSettings();
           scheduleConfigSave(panel, true);
         });
       });
@@ -9082,7 +9398,7 @@
           button.disabled = true;
           window.clearTimeout(configSaveTimer);
           configSaveTimer = 0;
-          const which = button.dataset.xrcKeySave === "bai" ? "bai" : "deepseek";
+          const which = button.dataset.xrcKeySave || "deepseek";
           try {
             await configSavePromise.catch(() => false);
             const saved = await saveSingleApiKey(panel, which);
@@ -9090,9 +9406,9 @@
               panel.querySelector("[data-xrc-config-status]")?.scrollIntoView?.({ block: "nearest" });
               return;
             }
-            const label = which === "bai" ? "B.AI" : "DeepSeek";
-            const value = which === "bai" ? state.baiKey : state.aiKey;
-            returnHomeAfterModelSave(value ? `${label} 密钥已保存` : `${label} 密钥已清除`);
+            const label = { bai: "B.AI", nas: "NAS", mobileoffice: "MobileOffice" }[which] || "DeepSeek";
+            const enabled = state.replyProviders.includes(which);
+            returnHomeAfterModelSave(enabled ? `${label} 已勾选并保存` : `${label} 密钥已保存，尚未勾选，不会使用`);
           } catch (error) {
             const status = panel.querySelector("[data-xrc-config-status]");
             if (status) status.textContent = error?.message || "保存失败，请重试";
@@ -9156,12 +9472,18 @@
         }
       });
       globalThis.XrcCommunityReceipt?.readSecret?.().then((secret) => {
-        const input = panel.querySelector("[data-xrc-community-secret]");
-        if (input && document.activeElement !== input) input.value = secret || "";
+        for (const selector of ["[data-xrc-community-secret]", "[data-xrc-nas-secret]"]) {
+          const input = panel.querySelector(selector);
+          if (input && document.activeElement !== input) {
+            input.value = secret || "";
+            input.dataset.xrcEchoValue = input.value;
+          }
+        }
       }).catch(() => {});
     }
 
     syncToolboxMenu(panel);
+    echoSavedModelSettings(panel);
 
     const status = panel.querySelector("[data-xrc-status-text]");
     const stats = panel.querySelector(".xrc-reply-body .xrc-stats");
@@ -9191,8 +9513,10 @@
       const paceNow = panel.querySelector("[data-xrc-pace-now]");
       const browseNote = panel.querySelector(".xrc-reply-body .xrc-pace-browse");
       if (browseNote) browseNote.hidden = replyViewKey !== "timeline";
+      const boundaryInfo = panel.querySelector("[data-xrc-boundary-info]");
+      if (boundaryInfo) boundaryInfo.hidden = replyViewKey === "notifications";
       const replyProgress = replyViewKey === "notifications" && viewingLiveReply
-        ? `当前任务共 ${plannedRounds} 轮，现在第 ${shownRound} 轮；本轮已检查 ${state.pageCount}/${roundSize} 条，成功回复 ${state.total} 条`
+        ? `正在处理最近 ${notificationWindowLabel()} 的回复，已成功 ${state.total} 条`
         : pacePositionLine(shownRound, plannedRounds, state.pageCount, roundSize, "条");
       if (paceNow) {
         const replyConfirming = confirmingStartCopy(replyViewKey);
@@ -9221,6 +9545,9 @@
       const globalBar = panel.querySelector("[data-xrc-global-bar]");
       if (start) start.dataset.needsKey = "false";
       if (globalBar) {
+        if (!taskUsesModel(viewTaskKey())) {
+          globalBar.hidden = true;
+        } else {
         const loading = state.aiSettingsStatus === "loading";
         const failed = state.aiSettingsStatus === "error";
         const hasReplyModel = (state.replyProviders.includes("mobileoffice") && state.mobileOfficeVerified)
@@ -9236,6 +9563,7 @@
           ? "已启用的回复模型尚未配置 · 点击前往模型设置 →"
           : "尚未启用回复模型 · 点击前往模型设置 →";
         globalBar.querySelector("[data-xrc-key-retry]").hidden = !failed;
+        }
       }
       panel.querySelectorAll("[data-xrc-assistant]").forEach((button) => {
         const selected = button.dataset.xrcAssistant === state.assistantMode
@@ -9455,20 +9783,22 @@
     panel.querySelectorAll("[data-xrc-mutual-card]").forEach((card) => {
       card.classList.toggle("is-selected", mutualTaskKey(card.dataset.xrcMutualCard) === viewTaskKey());
     });
-    const unfollowEnglish = panel.querySelector("[data-xrc-unfollow-english]");
-    if (unfollowEnglish) unfollowEnglish.checked = Boolean(state.unfollowEnglish);
     const unfollowMode = mutual?.unfollowMode === "auto" ? "auto" : "manual";
     panel.querySelectorAll("[data-xrc-unfollow-mode]").forEach((input) => {
       input.checked = input.value === unfollowMode;
-      input.disabled = Boolean(mutual?.running && mutual.mode === "unfollow");
+      input.disabled = Boolean(mutual?.running && (mutual.mode === "unfollow" || mutual.mode === "unfollowNonSc"));
     });
-    const autoOptions = panel.querySelector("[data-xrc-unfollow-auto-options]");
-    if (autoOptions) autoOptions.hidden = unfollowMode !== "auto";
-    const reviewList = panel.querySelector("[data-xrc-unfollow-review-list]");
-    if (reviewList) {
-      reviewList.replaceChildren();
-      const entries = Array.isArray(mutual?.unfollowReview) ? mutual.unfollowReview : [];
-      if (!entries.length) reviewList.textContent = "暂无候选。启动扫描后会保存到这里。";
+    panel.querySelectorAll("[data-xrc-unfollow-auto-options]").forEach((node) => {
+      node.hidden = unfollowMode !== "auto";
+    });
+    const reviewEntries = Array.isArray(mutual?.unfollowReview) ? mutual.unfollowReview : [];
+    const fillReviewList = (list, entries) => {
+      if (!list) return;
+      list.replaceChildren();
+      if (!entries.length) {
+        list.textContent = "暂无候选。启动扫描后会保存到这里。";
+        return;
+      }
       for (const item of entries) {
         const row = document.createElement("div");
         row.className = "xrc-unfollow-review-row";
@@ -9478,39 +9808,35 @@
         link.rel = "noopener noreferrer";
         link.textContent = `@${item.handle}`;
         const reason = document.createElement("span");
-        reason.textContent = item.reason === "nonChinese" ? "非中文资料" : "未回关";
+        reason.textContent = item.reason === "nonSimplified" || item.reason === "nonChinese" ? "非简中" : "未回关";
         const done = document.createElement("button");
         done.type = "button";
         done.dataset.xrcUnfollowReviewed = item.handle;
         done.textContent = "已处理";
         row.append(link, reason, done);
-        reviewList.append(row);
+        list.append(row);
       }
-    }
+    };
+    fillReviewList(panel.querySelector("[data-xrc-unfollow-review-list]"), reviewEntries.filter((item) => item.reason !== "nonSimplified" && item.reason !== "nonChinese"));
+    fillReviewList(panel.querySelector("[data-xrc-unfollow-nonsc-review-list]"), reviewEntries.filter((item) => item.reason === "nonSimplified" || item.reason === "nonChinese"));
     if (mutual) {
-      const followBatchSize = mutualApi?.constants?.FOLLOW_BATCH_SIZE || 100;
-      const sharedFollowStatus = `今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）· 本批 ${mutual.sharedBatchProgress || 0}/${followBatchSize}`;
-      const followPlan = mutual.followPlan;
-      const followRounds = followPlan?.rounds || 0;
-      const followSize = followPlan?.roundSize || followBatchSize;
-      const followRoundNo = followRounds ? Math.min((followPlan.completedRounds || 0) + 1, followRounds) : 0;
-      const followFinished = Boolean(followPlan && (followPlan.completedRounds || 0) >= followRounds && !(mutual.running && mutual.mode === "followBack"));
-      const followActive = Boolean(followPlan && ((mutual.running && mutual.mode === "followBack") || followPlan.completedRounds || followPlan.roundCount));
       const followNow = panel.querySelector("[data-xrc-follow-now]");
       if (followNow) {
         const followConfirming = confirmingStartCopy("mutual-followBack");
-        followNow.textContent = followConfirming || (!followActive
-          ? "当前尚未开始"
-          : followFinished
-            ? pacePositionLine(followRounds, followRounds, followSize, followSize, "个")
-            : pacePositionLine(followRoundNo || 1, followRounds, followPlan.roundCount || 0, followSize, "个"));
+        const followQuota = mutualApi?.followBackQuota?.(currentFollowPace()) || 15;
+        followNow.textContent = followConfirming || `本次回关 ${mutual.followedBack || 0}/${followQuota} 人，约每周一次`;
       }
+      const notBackCount = (mutual.unfollowReview || []).filter((item) => item.reason !== "nonSimplified" && item.reason !== "nonChinese").length;
+      const nonScCount = (mutual.unfollowReview || []).filter((item) => item.reason === "nonSimplified" || item.reason === "nonChinese").length;
       const stats = {
         unfollow: unfollowMode === "manual"
-          ? `待人工核对 ${(mutual.unfollowReview || []).length} 个 · 扫描跳过 ${mutual.skipped} 个`
+          ? `待人工核对 ${notBackCount} 个 · 扫描跳过 ${mutual.skipped} 个`
           : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 跳过互关 ${mutual.skipped} · 异常 ${mutual.errors}`,
-        followBack: `本次回关 ${mutual.followedBack} · ${sharedFollowStatus}`,
-        targetFollow: `本次关注 ${mutual.targetFollowed} · ${sharedFollowStatus} · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
+        unfollowNonSc: unfollowMode === "manual"
+          ? `待人工核对 ${nonScCount} 个 · 约每周一次`
+          : `已取消 ${mutual.unfollowed} · 每次间隔 2 秒 · 异常 ${mutual.errors}`,
+        followBack: `本次回关 ${mutual.followedBack}/${mutualApi?.followBackQuota?.(currentFollowPace()) || 15} · 今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400）`,
+        targetFollow: `本次关注 ${mutual.targetFollowed}/${mutualApi?.targetFollowQuota?.(currentTargetFollowPace()) || 15} · 今日关注 ${mutual.sharedDailyFollowed || 0}/300 目标（上限 400） · 跳过 ${mutual.skipped} · 异常 ${mutual.errors}`
       };
       for (const [mode, text] of Object.entries(stats)) {
         const node = panel.querySelector(`[data-xrc-mutual-stats="${mode}"]`);
@@ -9566,7 +9892,7 @@
         label.disabled = targetFollowPaceLocked;
       });
       if (state.assistantMode === "mutual") {
-        const mutualCount = mutual.mode === "unfollow" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
+        const mutualCount = mutual.mode === "unfollow" || mutual.mode === "unfollowNonSc" ? mutual.unfollowed : mutual.mode === "followBack" ? mutual.followedBack : mutual.targetFollowed;
         panel.querySelector("[data-xrc-mini-progress]").textContent = mutual.running ? `关注管理 · 已完成 ${mutualCount}` : "关注管理 · 待命";
       }
     }
@@ -9823,7 +10149,7 @@
     state.status = resume
       ? "刷新完成，从顶部继续"
       : state.assistantMode === "notifications"
-        ? "从通知页顶部开始，按本次轮次处理尚未互动的回复"
+        ? `从通知页顶部开始，只回复最近 ${notificationWindowLabel()} 内还没回过的评论`
         : state.assistantMode === "kol"
           ? `打开大V主页，每个账号评论 ${currentRoundTarget()} 条后换下一个`
           : "从首页推荐顶部开始，向下评论";
@@ -10069,7 +10395,21 @@
       && pluginRuntime.tasks?.[bootTaskKey]) {
       await setRuntimeTaskActive(bootTaskKey, false);
     }
-    await loadAiSettings();
+    const settingsReady = loadAiSettings();
+    void settingsReady.then(() => {
+      if (state.aiSettingsStatus === "ready" || state.aiSettingsStatus === "deferred") renderPanel();
+    });
+    const followLaunch = Boolean(launchedStart && launch?.assistantMode === "mutual");
+    if (followLaunch) {
+      try {
+        await startLaunchedTask(launch);
+      } catch (error) {
+        state.status = error?.message || "任务未能启动";
+        await sendExtensionMessage({ type: "xrc-task-start-failed", mode: launch.taskKey, reason: state.status }).catch(() => {});
+        renderPanel();
+      }
+      launchedStart = false;
+    }
     await loadSchedulePace();
     await loadPosterPace();
     await loadPaceSettings();
@@ -10128,6 +10468,14 @@
     }
     postApi?.setPostKind?.(posterKindFromMode());
     postApi?.setSchedulePace?.(state.posterPace);
+    const skipModelWait = followLaunch
+      || state.assistantMode === "mutual"
+      || (launchedStart && (
+        String(launch?.assistantMode || "").startsWith("likes-")
+        || launch?.assistantMode === "prune-posts"
+        || launch?.assistantMode === "prune-replies"
+      ));
+    if (!skipModelWait) await settingsReady;
     if (!spectatorTab && saved.running) {
       begin({ resume: true });
     }
@@ -10297,7 +10645,7 @@
               });
             const key = taskStateKey(mode);
             const saved = { ...readSaved(mode), running: false, phraseStore: PHRASE_STORE,
-              notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION, unfollowEnglishDefaultVersion: 1 };
+              notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION, unfollowEnglishDefaultVersion: 2 };
             await taskSnapshotWrite.catch(() => {});
             await chrome.storage.local.set({ [key]: saved });
             sessionStorage.setItem(key, JSON.stringify(saved));
@@ -10318,7 +10666,7 @@
         const saved = { ...snapshot, running: false, assistantMode: state.assistantMode, mutualMode: state.mutualMode,
           pendingReply: state.pendingReply, pendingTweetId: state.pendingTweetId, pendingGrokInvite: state.pendingGrokInvite,
           phraseStore: PHRASE_STORE, notificationCyclePolicyVersion: NOTIFICATION_CYCLE_POLICY_VERSION,
-          unfollowEnglishDefaultVersion: 1 };
+          unfollowEnglishDefaultVersion: 2 };
         const key = taskStateKey(mode);
         await taskSnapshotWrite.catch(() => {});
         await chrome.storage.local.set({ [key]: saved });

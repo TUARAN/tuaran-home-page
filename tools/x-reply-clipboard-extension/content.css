@@ -629,11 +629,21 @@
   gap: 8px;
 }
 
-#x-reply-clipboard-panel .xrc-provider-list .xrc-config-row {
+#x-reply-clipboard-panel .xrc-provider {
+  display: grid;
+  gap: 8px;
   padding: 9px 11px;
   border: 1px solid var(--xrc-line);
   border-radius: 10px;
   background: var(--xrc-soft);
+}
+
+#x-reply-clipboard-panel .xrc-provider .xrc-config-row,
+#x-reply-clipboard-panel .xrc-provider .xrc-provider-key,
+#x-reply-clipboard-panel .xrc-provider .xrc-mobileoffice-connection {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 #x-reply-clipboard-panel .xrc-provider-list .xrc-config-row.is-inactive {
@@ -645,10 +655,6 @@
   display: grid;
   gap: 9px;
   min-width: 0;
-  padding: 10px 11px;
-  border: 1px solid var(--xrc-line);
-  border-radius: 10px;
-  background: var(--xrc-soft);
 }
 
 #x-reply-clipboard-panel .xrc-mobileoffice-test-row {
@@ -2807,9 +2813,12 @@
   min-width: 0;
 }
 
-#x-reply-clipboard-panel [data-xrc-reply-pace-kol] { display: none; }
+#x-reply-clipboard-panel [data-xrc-reply-pace-kol],
+#x-reply-clipboard-panel [data-xrc-reply-pace-notifications] { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="kol"] [data-xrc-reply-pace-standard] { display: none; }
 #x-reply-clipboard-panel[data-assistant-mode="kol"] [data-xrc-reply-pace-kol] { display: block; }
+#x-reply-clipboard-panel[data-assistant-mode="notifications"] [data-xrc-reply-pace-standard] { display: none; }
+#x-reply-clipboard-panel[data-assistant-mode="notifications"] [data-xrc-reply-pace-notifications] { display: block; }
 #x-reply-clipboard-panel .xrc-round-pace .xrc-pace-options {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }

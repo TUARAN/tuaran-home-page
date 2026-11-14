@@ -53,6 +53,10 @@
 .coverYellow .fallbackCover { color: #4a2c12; }
 .coverYellow .collectionBadge { color: #5c3814; }
 .coverYellow .coverTitle { color: #3d2610; text-shadow: none; }
+.coverGreen { background: #1f6b3a; color: #f4faee; }
+.coverGreen .fallbackCover { color: #f4faee; }
+.coverGreen .collectionBadge { color: #e5f6d8; }
+.coverGreen .coverTitle { color: #f7fbf3; text-shadow: 0 1px 2px rgb(0 0 0 / 35%); }
 .bookInfo { display: flex; flex: 1; flex-direction: column; padding-top: 14px; }
 .bookKind { color: var(--site-faint); font: 10px/1.5 ui-monospace, monospace; letter-spacing: .04em; }
 .mineKind { color: #7c5939; }

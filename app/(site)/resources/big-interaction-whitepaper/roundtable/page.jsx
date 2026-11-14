@@ -13,9 +13,9 @@ export default function RoundtablePage() {
   const updated = new Date(snapshot.updatedAt || snapshot.capturedAt).toISOString().replace('T', ' ').slice(0, 16)
   return <main className={styles.page}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-    <Link className={styles.back} href="/resources/big-interaction-whitepaper">← 大互动理论</Link>
+    <Link className={styles.back} href="/resources/big-interaction-whitepaper">← 绿皮书</Link>
     <header className={styles.header}>
-      <p className={styles.eyebrow}>THE BIG INTERACTION ASSEMBLY</p>
+      <p className={styles.eyebrow}>绿皮书 · 圆桌大会</p>
       <h1>大互动理论，开会了。</h1>
       <p>一张圆桌，许多视角。会议主题：<strong>大互动理论</strong></p>
       <div className={styles.stats}><span>{snapshot.count.toLocaleString('en-US')} 位伙伴</span></div>

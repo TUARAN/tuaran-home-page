@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 
 import { RESOURCE_BOOKS, RESOURCE_BOOK_HREFS } from '../lib/content/resourceBooks.mjs'
-import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER, LIBRARY_YELLOW_COVER } from '../lib/content/libraryCatalog.mjs'
+import { LIBRARY_BOOKS, LIBRARY_COUNTS, LIBRARY_COLLECTION_COVER, LIBRARY_GREEN_COVER, LIBRARY_YELLOW_COVER } from '../lib/content/libraryCatalog.mjs'
 import { PUBLISHED_WORKS } from '../lib/site/publishedWorks.js'
 
 test('书架目录的每本书都有唯一且可打开的站内页面', () => {
@@ -44,11 +44,24 @@ test('馆藏同时收录出版作品和在线书，封面路径可用', () => {
   assert.ok(RESOURCE_BOOKS.length > 0)
   assert.ok(existsSync(join(process.cwd(), 'public', LIBRARY_COLLECTION_COVER.slice(1))), '阿燃典藏统一封面不存在')
   assert.ok(existsSync(join(process.cwd(), 'public', LIBRARY_YELLOW_COVER.slice(1))), '黄皮书封面不存在')
+  assert.ok(existsSync(join(process.cwd(), 'public', LIBRARY_GREEN_COVER.slice(1))), '绿皮书封面不存在')
+  const toneCover = { yellow: LIBRARY_YELLOW_COVER, green: LIBRARY_GREEN_COVER }
   for (const book of LIBRARY_BOOKS) {
-    const cover = book.cover || (book.coverTone === 'yellow' ? LIBRARY_YELLOW_COVER : LIBRARY_COLLECTION_COVER)
+    const cover = book.cover || toneCover[book.coverTone] || LIBRARY_COLLECTION_COVER
     assert.ok(existsSync(join(process.cwd(), 'public', cover.slice(1))), `${book.href} 封面不存在`)
   }
   const yellowBooks = LIBRARY_BOOKS.filter((book) => book.coverTone === 'yellow').map((book) => book.title)
   assert.deepEqual(yellowBooks, ['X 高频互动助手黄皮书', 'AI 分发大师黄皮书'])
+  assert.equal(LIBRARY_BOOKS.find((book) => book.href === '/resources/big-interaction-whitepaper')?.title, '大互动理论绿皮书')
   assert.equal(LIBRARY_BOOKS.find((book) => book.href === '/resources/big-interaction-whitepaper')?.cover, undefined, '宣传海报不能冒充封面')
+})
+
+test('黄皮书和绿皮书正文页使用对应纸色', () => {
+  const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+  assert.match(read('app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx'), /ManualPaper tone="yellow"/)
+  assert.match(read('app/(site)/tools/syncblog-publisher/docs/page.jsx'), /ManualPaper tone="yellow"/)
+  assert.match(read('app/(site)/resources/big-interaction-whitepaper/page.jsx'), /ManualPaper tone="green"/)
+  assert.match(read('app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx'), /ManualPaper tone="green"/)
+  assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-paper: #f6e3a8/)
+  assert.match(read('app/(site)/components/book-reader/manualPaper.module.css'), /--manual-paper: #d7ebc8/)
 })

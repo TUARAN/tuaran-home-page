@@ -68,22 +68,6 @@
 .board td span { display: block; color: #425f4b; font-weight: 600; }
 .board td.empty { padding: 28px 8px; color: #425f4b; font-size: 14px; line-height: 1.7; }
 
-:global(.dark) .page { color: #d7eed7; }
-:global(.dark) .back { color: #b4e6bf; }
-:global(.dark) .kicker, :global(.dark) .eyebrow { color: #b8d9b5; }
-:global(.dark) .masthead h1, :global(.dark) .boardHead h2, :global(.dark) .monthBar strong { color: #e8f1e2; }
-:global(.dark) .deck { color: #d7eed7; }
-:global(.dark) .metric, :global(.dark) .permalink, :global(.dark) .windowLine, :global(.dark) .board td span, :global(.dark) .board td.empty, :global(.dark) .recordedList span { color: #c0d1c2; }
-:global(.dark) .permalink a { color: #b4e6bf; }
-:global(.dark) .picker, :global(.dark) .board { border-color: #3a5843; background: linear-gradient(160deg, #183d29, #14281d); }
-:global(.dark) .monthBar button, :global(.dark) .dateLabel input, :global(.dark) .recordedList button { border-color: #3a5843; background: #14281d; color: #d7f2d3; }
-:global(.dark) .grid button { color: #e3f0df; }
-:global(.dark) .grid button:hover, :global(.dark) .monthBar button:hover, :global(.dark) .recordedList button:hover { background: #234833; }
-:global(.dark) .board th, :global(.dark) .board td { border-color: #3a5843; }
-:global(.dark) .board th { color: #d7eed7; }
-:global(.dark) .board td a { color: #b4e6bf; }
-:global(.dark) .grid button.selected, :global(.dark) .recordedList button[aria-pressed="true"] { background: #34845a; color: #fff; }
-
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .picker { max-width: 420px; }

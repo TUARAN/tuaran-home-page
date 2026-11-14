@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import BookIdentity from '../../components/book-reader/BookIdentity'
+import ManualPaper from '../../components/book-reader/ManualPaper'
 import { archiveImageView, archiveShanghaiDate } from '../../../../lib/interaction/archiveImage'
 import archive from '../../../../lib/interaction/bigInteractionArchive.json'
 
@@ -17,6 +18,7 @@ const path = '/resources/big-interaction-whitepaper'
 const url = `https://2aran.com${path}`
 const shareUrl = 'https://2aran.com/x'
 const title = '大互动理论'
+const bookTitle = '大互动理论绿皮书'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
 const updated = '2026-11-05'
@@ -38,12 +40,12 @@ function ArchivePostImages({ images }) {
 }
 
 export const metadata = {
-  title: `${title}｜互动、反馈与边界`,
+  title: `${bookTitle}｜互动、反馈与边界`,
   description,
   keywords: ['大互动理论', '真实互动', '反馈', '互动质量', '自我成长', '社交关系'],
   alternates: { canonical: path },
-  openGraph: { type: 'article', title, description, url, locale: 'zh_CN', images: ['/resources/big-interaction-whitepaper/03.jpg'] },
-  twitter: { card: 'summary_large_image', title, description },
+  openGraph: { type: 'article', title: bookTitle, description, url, locale: 'zh_CN', images: ['/resources/big-interaction-whitepaper/03.jpg'] },
+  twitter: { card: 'summary_large_image', title: bookTitle, description },
 }
 
 const chapters = [
@@ -112,7 +114,7 @@ const plates = [
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CreativeWork',
-  name: title,
+  name: bookTitle,
   description,
   url,
   inLanguage: 'zh-CN',
@@ -129,14 +131,14 @@ const jsonLd = {
 
 export default function BigInteractionWhitepaperPage() {
   return (
-    <>
+    <ManualPaper tone="green">
       <PageContainer width="standard" className={styles.page}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
         <header className={styles.masthead}>
-          <BookIdentity kind="实践读本" />
+          <BookIdentity kind="绿皮书" />
 
-          <p className={styles.kicker}>BIG INTERACTION · 实践读本</p>
+          <p className={styles.kicker}>绿皮书 · 实践读本</p>
           <h1>{title}</h1>
           <p className={styles.deck}>从好好照顾自己，到在互动中认识自己、拓展还能退出的边界。</p>
           <p className={styles.metaLine}>
@@ -332,14 +334,14 @@ export default function BigInteractionWhitepaperPage() {
         </div>
 
         <footer className={styles.footer}>
-          <span>大互动理论 · TUARAN · {published.slice(0, 4)} 年 10 月</span>
+          <span>绿皮书 · TUARAN · {published.slice(0, 4)} 年 10 月</span>
           <div className={styles.footerActions}>
             <a href="#foreword">返回序言 ↑</a>
-            <SharePageButton title={title} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享本书" />
+            <SharePageButton title={bookTitle} text={description} url={shareUrl} exactUrl shorten={false} size="md" idleLabel="分享本书" />
           </div>
         </footer>
       </PageContainer>
       <ContentEngagement contentKey="resource:big-interaction-whitepaper" width="standard" />
-    </>
+    </ManualPaper>
   )
 }

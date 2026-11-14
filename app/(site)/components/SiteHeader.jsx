@@ -53,7 +53,7 @@ const NAV_GROUPS = [
 
 const HEADER_RECOMMENDATIONS = [
   { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', tone: 'book', kind: 'page' },
-  { href: '/x', label: '大互动理论', labelEn: 'Big Interaction Theory', tone: 'green', kind: 'resource' },
+  { href: '/x', label: '大互动理论绿皮书', labelEn: 'Big Interaction Green Book', tone: 'green', kind: 'resource' },
 ]
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))

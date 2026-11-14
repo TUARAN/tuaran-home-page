@@ -19,7 +19,7 @@
 - `lib/content/resourceBooks.mjs` 为每本站内可读书声明 `ownership`；`lib/content/libraryCatalog.mjs` 合并出版作品和阅读资源，统一生成归属、类型与署名。外部作品的文字封面不得使用 `TUARAN · 原创作品`；作者、共同作者、出版社与来源机构分别标注，不混为本站作者。
 - 页头以标题和简短范围说明为主，数量只作紧凑辅助信息。不要用跨整屏的空白面板挤走第一排书卡。
 - 首页「站长著作」的图书馆图标直达馆藏；旧 `/publications` 永久跳转到馆藏，站内导航和书籍详情的返回链接使用新路径。SEO 注册表只收录馆藏地址。
-- 有正式封面的作品展示原封面，以固定 3:4 书卡框架陈列；不可把宣传海报当书封。缺少独立封面的全文使用统一生成的馆藏底图 `public/images/books/aran-collection-cover.jpg`，在页面上叠加准确书名、作者或来源，并显示「阿燃典藏」徽标。标明 `coverTone: 'yellow'` 的黄皮书改用 `public/images/books/aran-yellow-cover.jpg`，书名用深褐色。徽标表示本站收藏与编目，不表示外部作品归站长创作。每张书卡必须给出明确的“查看作品详情”或“在线阅读”动作。
+- 有正式封面的作品展示原封面，以固定 3:4 书卡框架陈列；不可把宣传海报当书封。缺少独立封面的全文使用统一生成的馆藏底图 `public/images/books/aran-collection-cover.jpg`，在页面上叠加准确书名、作者或来源，并显示「阿燃典藏」徽标。标明 `coverTone: 'yellow'` 的黄皮书改用 `public/images/books/aran-yellow-cover.jpg`，书名用深褐色。标明 `coverTone: 'green'` 的绿皮书改用 `public/images/books/aran-green-cover.jpg`，书名用浅色。黄皮书和绿皮书的正文页用 `ManualPaper` 铺上对应纸色，阅读页不随站点深色主题反色。徽标表示本站收藏与编目，不表示外部作品归站长创作。每张书卡必须给出明确的“查看作品详情”或“在线阅读”动作。
 - 全文阅读页在标题之前提供到 `/resources/books` 的路径；共用 `BookIdentity` 以普通面包屑呈现，已有更具体面包屑的页面保留原导航，避免双重入口。具体类型（原著、白皮书、实践读本、逐章阅读）作为末级文字，不使用浮起的徽章样式。
 - `app/(site)/components/book-reader/BookToc.jsx` 是书籍目录唯一的交互组件。按 `groups: [{ id?, heading, items: [{ id, label, depth? }] }]` 提供数据；没有篇级锚点时可省略 `group.id`。
 - 逐章路由的目录项可使用 `href`，选中状态由当前路径决定；同页章节继续用 `id` 与锚点定位。
@@ -41,4 +41,4 @@
 - 现有全文有 Markdown、预生成 HTML、逐章连载与 JSX 专题四种来源。它们保留原 URL、锚点和来源处理，外层统一使用 `BookIdentity`、`BookToc` 与书架归类；不得仅为改主题而重写原文或丢失脚注、翻页、互动功能。
 - Nextra 版本与 Next.js 兼容性以 `package.json`、锁文件和构建结果为准。Docusaurus 的 GitHub Star 更多，但需要独立站点；选 Nextra 是为了让书籍继续处于本站同一导航和登录环境。
 
-当前采用共用标识的阅读页：X 高频互动助手黄皮书、AI 分发大师黄皮书、《大互动理论》、《币安人生》、《建国方略》、以太坊白皮书和两份 WorkBuddy 白皮书。两本黄皮书使用黄色馆藏封面。书籍专用章节目录由 `BookToc` 统一控制。
+当前采用共用标识的阅读页：X 高频互动助手黄皮书、AI 分发大师黄皮书、大互动理论绿皮书、《币安人生》、《建国方略》、以太坊白皮书和两份 WorkBuddy 白皮书。两本黄皮书使用黄纸封面和黄纸正文，大互动理论使用绿纸封面和绿纸正文。书籍专用章节目录由 `BookToc` 统一控制。

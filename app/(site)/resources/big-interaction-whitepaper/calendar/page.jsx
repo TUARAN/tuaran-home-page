@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
+import { getD1 } from '../../../../../lib/db/d1.js'
+import { loadOwnActivityDays } from '../../../../../lib/interaction/dailyTop/ownActivity.js'
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
 import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
 import ManualPaper from '../../../components/book-reader/ManualPaper'
@@ -11,16 +13,23 @@ import styles from './calendar.module.css'
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-function contentFeed() {
-  // next build / next dev 在 Node 里调用会抛错。线上 Edge 才有 CONTENT_FEED。
-  if (globalThis.process?.release?.name === 'node') return null
-  return getOptionalRequestContext()?.env?.CONTENT_FEED || null
+function edgeBindings() {
+  // next build / next dev 在 Node 里调用会抛错。线上 Edge 才有 CONTENT_FEED 和 D1。
+  if (globalThis.process?.release?.name === 'node') return { bucket: null, db: null }
+  const env = getOptionalRequestContext()?.env
+  let db = null
+  try {
+    db = env?.DB || getD1()
+  } catch {
+    db = null
+  }
+  return { bucket: env?.CONTENT_FEED || null, db }
 }
 
 const path = '/resources/big-interaction-whitepaper/calendar'
 const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const title = '大互动日历'
-const description = '按 Asia/Shanghai 选择日期，查看当天双向公开互动前十。统计公开回复、提及与引用，不含私信。'
+const description = '按 Asia/Shanghai 选择日期。格子上的日期是收录日，内容是前一自然日：与他人的互动前十，以及本账号各任务完成次数。'
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -49,7 +58,15 @@ export const metadata = {
 }
 
 export default async function BigInteractionCalendarPage() {
-  const days = await loadCombinedDailyTopDays(contentFeed())
+  const today = shanghaiDateKey()
+  const { bucket, db } = edgeBindings()
+  const days = await loadCombinedDailyTopDays(bucket)
+  let activities = []
+  try {
+    activities = await loadOwnActivityDays(db, { today })
+  } catch {
+    activities = []
+  }
   return (
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
@@ -58,11 +75,11 @@ export default async function BigInteractionCalendarPage() {
       <header className={styles.masthead}>
         <p className={styles.kicker}>绿皮书 · 每日前十</p>
         <h1>{title}</h1>
-        <p className={styles.deck}>选择日期，查看该日与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号。</p>
-        <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。统计已排除 @{DAILY_TOP_SUBJECT}。</p>
+        <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及这一天本账号各任务完成了多少次。10 日的格子放的是 9 日。</p>
+        <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数来自后台自动同步的日报，只计本账号确认完成的动作。</p>
         <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
       </header>
-      <InteractionCalendar days={days} initialToday={shanghaiDateKey()} />
+      <InteractionCalendar days={days} activities={activities} initialToday={today} />
     </PageContainer>
     </ManualPaper>
   )

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import {
+  DAILY_TOP_SUBJECT,
   emptyStateCopy,
   formatWindowLabel,
   monthMatrix,
@@ -19,9 +20,14 @@ function monthTitle(yearMonth) {
   return `${year}年${Number(month)}月`
 }
 
-export default function InteractionCalendar({ days, initialToday }) {
+export default function InteractionCalendar({ days, activities = [], initialToday }) {
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days])
-  const availableDates = useMemo(() => days.map((day) => day.date), [days])
+  const activityByDate = useMemo(() => new Map(activities.map((day) => [day.date, day])), [activities])
+  const topDates = useMemo(() => days.map((day) => day.date), [days])
+  const availableDates = useMemo(
+    () => [...new Set([...topDates, ...activities.map((day) => day.date)])].sort(),
+    [topDates, activities],
+  )
   const initialSelected = resolveSelectedDate(null, initialToday, availableDates)
   const [today, setToday] = useState(initialToday)
   const [selected, setSelected] = useState(initialSelected)
@@ -45,6 +51,7 @@ export default function InteractionCalendar({ days, initialToday }) {
   }
 
   const day = byDate.get(selected) || null
+  const activity = activityByDate.get(selected) || null
   const cells = monthMatrix(visibleMonth)
 
   return (
@@ -70,12 +77,12 @@ export default function InteractionCalendar({ days, initialToday }) {
               className={[
                 date === selected ? styles.selected : '',
                 date === today ? styles.today : '',
-                byDate.has(date) ? styles.recorded : '',
+                byDate.has(date) || activityByDate.has(date) ? styles.recorded : '',
               ].filter(Boolean).join(' ')}
               onClick={() => choose(date)}
             >
               {Number(date.slice(-2))}
-              {byDate.has(date) ? <i /> : null}
+              {byDate.has(date) || activityByDate.has(date) ? <i /> : null}
             </button>
           ) : <span key={`empty-${index}`} />)}
         </div>
@@ -89,10 +96,10 @@ export default function InteractionCalendar({ days, initialToday }) {
             }}
           />
         </label>
-        {availableDates.length > 0 && (
+        {topDates.length > 0 && (
           <div className={styles.recordedList}>
             <span>已收录</span>
-            {availableDates.map((date) => (
+            {topDates.map((date) => (
               <button key={date} type="button" aria-pressed={date === selected} onClick={() => choose(date)}>{date}</button>
             ))}
           </div>
@@ -111,6 +118,24 @@ export default function InteractionCalendar({ days, initialToday }) {
             <p className={styles.windowLine}>每天 09:00（Asia/Shanghai）收录前一自然日 00:00 至当日 00:00，记在当天。</p>
           )}
         </header>
+        <section className={styles.ownActivity} aria-label="本账号互动次数">
+          <p className={styles.eyebrow}>本账号互动</p>
+          {activity ? (
+            <>
+              <p className={styles.windowLine}>统计日 {activity.sourceDate} · @{activity.accountHandle} 完成的次数，与这一格的互动前十同一天。</p>
+              <div className={styles.ownGrid}>
+                {activity.metrics.map((metric) => (
+                  <div key={metric.key} className={styles.ownMetric}>
+                    <span>{metric.label}</span>
+                    <strong>{metric.count}</strong>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className={styles.windowLine}>这一天还没有同步 @{DAILY_TOP_SUBJECT} 的任务次数。次数来自后台日报，记在次日。</p>
+          )}
+        </section>
         <div className={styles.tableWrap}>
           <table>
             <caption className="sr-only">{selected} 互动前十</caption>
@@ -137,7 +162,7 @@ export default function InteractionCalendar({ days, initialToday }) {
                 </tr>
               )) : (
                 <tr>
-                  <td className={styles.empty} colSpan={5}>{emptyStateCopy(selected, availableDates)}</td>
+                  <td className={styles.empty} colSpan={5}>{emptyStateCopy(selected, topDates)}</td>
                 </tr>
               )}
             </tbody>

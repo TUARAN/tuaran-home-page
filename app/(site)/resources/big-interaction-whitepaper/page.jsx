@@ -168,7 +168,7 @@ export default function BigInteractionWhitepaperPage() {
           <div>
             <p className={styles.toolGuideEyebrow}>按日回看互动前十</p>
             <h2>大互动日历</h2>
-            <p>选择日期，查看当天双向公开互动最多的十个账号。</p>
+            <p>选择日期，查看前一天双向公开互动最多的十个账号。当天 09:00 收录。</p>
           </div>
           <Link href="/resources/big-interaction-whitepaper/calendar" className={styles.toolGuideLink}>打开日历 <span aria-hidden="true">→</span></Link>
         </aside>

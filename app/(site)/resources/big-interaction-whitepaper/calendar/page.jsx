@@ -20,7 +20,7 @@ function contentFeed() {
 const path = '/resources/big-interaction-whitepaper/calendar'
 const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const title = '大互动日历'
-const description = '按 Asia/Shanghai 选择日期，查看当天双向公开互动前十。统计公开回复、提及与引用，不含私信。'
+const description = '按 Asia/Shanghai 选择日期，查看前一自然日的双向公开互动前十。每天 09:00 收录，记在当天。统计公开回复、提及与引用，不含私信。'
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -58,7 +58,7 @@ export default async function BigInteractionCalendarPage() {
       <header className={styles.masthead}>
         <p className={styles.kicker}>绿皮书 · 每日前十</p>
         <h1>{title}</h1>
-        <p className={styles.deck}>选择日期，查看该日与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号。</p>
+        <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号。每天 09:00 收录，10 日的格子放的是 9 日。</p>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。统计已排除 @{DAILY_TOP_SUBJECT}。</p>
         <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
       </header>

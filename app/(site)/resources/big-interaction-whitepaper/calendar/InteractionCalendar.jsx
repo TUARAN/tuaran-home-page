@@ -108,7 +108,7 @@ export default function InteractionCalendar({ days, initialToday }) {
               窗口 {formatWindowLabel(day.window)}（Asia/Shanghai） · 对手 {day.opponents} · 事件 {day.events}
             </p>
           ) : (
-            <p className={styles.windowLine}>窗口为前一日 21:00 至当日 21:00（Asia/Shanghai）。</p>
+            <p className={styles.windowLine}>每天 09:00（Asia/Shanghai）收录前一自然日 00:00 至当日 00:00，记在当天。</p>
           )}
         </header>
         <div className={styles.tableWrap}>

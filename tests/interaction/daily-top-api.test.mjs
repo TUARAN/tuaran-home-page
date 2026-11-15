@@ -16,7 +16,7 @@ import {
   handleDailyTopPost,
 } from '../../lib/interaction/dailyTop/http.js'
 import { gitDailyTopDays } from '../../lib/interaction/dailyTop/gitCatalog.js'
-import { expectedWindow, profileUrlFor } from '../../lib/interaction/dailyTop/model.js'
+import { expectedWindow, legacyPublicationWindow, profileUrlFor } from '../../lib/interaction/dailyTop/model.js'
 import { INTEGRATION_WEBHOOKS } from '../../lib/site/integrationCatalog.js'
 
 const SECRET = 'test-daily-top-secret'
@@ -64,15 +64,16 @@ function envWith(bucket, secret = SECRET) {
   return { [DAILY_TOP_INGEST_SECRET_ENV]: secret, CONTENT_FEED: bucket }
 }
 
-test('backfill days 2026-11-10 and 2026-11-11 match the published top ten', () => {
+test('published mornings 2026-11-11 and 2026-11-12 keep the measured top ten', () => {
   const days = gitDailyTopDays()
-  const nov10 = days.find((day) => day.date === '2026-11-10')
-  const nov11 = days.find((day) => day.date === '2026-11-11')
+  const nov10 = days.find((day) => day.date === '2026-11-11')
+  const nov11 = days.find((day) => day.date === '2026-11-12')
   assert.equal(nov10.top[1].displayName, '火山哥🕊️')
   assert.equal(nov10.top[2].displayName, 'allincrypto 熬鹰资本 🇨🇳')
   assert.equal(nov10.events, 786)
   assert.equal(nov10.opponents, 337)
-  assert.deepEqual(nov10.window, expectedWindow('2026-11-10'))
+  assert.deepEqual(nov10.window, legacyPublicationWindow('2026-11-11'))
+  assert.deepEqual(nov11.window, legacyPublicationWindow('2026-11-12'))
   assert.deepEqual(nov10.top.map((row) => [row.handle, row.count, row.breakdown, row.profileUrl]), [
     ['HotmailfromSH', 15, '我回复 15', profileUrlFor('HotmailfromSH')],
     ['huoshan007', 15, '我回复 15', profileUrlFor('huoshan007')],
@@ -99,7 +100,7 @@ test('GET returns the calendar default day, a requested day, and 404 for a missi
   const latest = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top'), {}, NOW)
   assert.equal(latest.status, 200)
   const latestBody = await latest.json()
-  assert.equal(latestBody.date, '2026-11-11')
+  assert.equal(latestBody.date, '2026-11-12')
   assert.equal(latestBody.calendarUrl, 'https://2aran.com/resources/big-interaction-whitepaper/calendar')
   assert.equal(latestBody.top[0].profileUrl, 'https://x.com/grok')
   assert.match(latestBody.thankYouText, /谢谢 @grok @weiyux2021 /)
@@ -108,12 +109,12 @@ test('GET returns the calendar default day, a requested day, and 404 for a missi
   const today = await handleDailyTopGet(
     new Request('https://2aran.com/api/interaction/daily-top'),
     {},
-    new Date('2026-11-10T04:00:00Z'),
+    new Date('2026-11-12T01:00:00Z'),
   )
-  assert.equal((await today.json()).date, '2026-11-10')
+  assert.equal((await today.json()).date, '2026-11-12')
 
-  const byDate = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-10'), {}, NOW)
-  assert.equal((await byDate.json()).date, '2026-11-10')
+  const byDate = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-11'), {}, NOW)
+  assert.equal((await byDate.json()).date, '2026-11-11')
 
   const missing = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-09'), {}, NOW)
   assert.equal(missing.status, 404)
@@ -192,8 +193,9 @@ test('POST rejects a missing or wrong secret and does not store the secret', asy
 test('an authenticated POST is readable immediately by GET and the calendar source', async () => {
   const bucket = memoryBucket({ paginate: true })
   const gitNov11 = gitDailyTopDays().find((day) => day.date === '2026-11-11')
+  const gitNov12 = gitDailyTopDays().find((day) => day.date === '2026-11-12')
   const corrected = retarget(gitNov11, '2026-11-11', { events: 750, opponents: 305 })
-  const fresh = retarget(gitNov11, '2026-11-12', { events: 4, opponents: 2 })
+  const fresh = retarget(gitNov12, '2026-11-13', { events: 4, opponents: 2 })
   const headerPost = await handleDailyTopPost(new Request('https://2aran.com/api/interaction/daily-top', {
     method: 'POST',
     headers: { 'content-type': 'application/json', [DAILY_TOP_INGEST_HEADER]: SECRET },
@@ -208,27 +210,31 @@ test('an authenticated POST is readable immediately by GET and the calendar sour
     body: JSON.stringify({ day: fresh }),
   }), envWith(bucket))
   assert.equal(bearerPost.status, 200)
-  assert.equal(bucket.objects.has(dailyTopObjectKey('2026-11-12')), true)
+  assert.equal(bucket.objects.has(dailyTopObjectKey('2026-11-13')), true)
 
   const env = envWith(bucket)
   const correctedGet = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top?date=2026-11-11'), env, NOW)
   assert.equal((await correctedGet.json()).events, 750)
-  const freshGet = await handleDailyTopGet(new Request('https://2aran.com/api/interaction/daily-top'), env, NOW)
+  const freshGet = await handleDailyTopGet(
+    new Request('https://2aran.com/api/interaction/daily-top'),
+    env,
+    new Date('2026-11-13T04:00:00Z'),
+  )
   const freshBody = await freshGet.json()
-  assert.equal(freshBody.date, '2026-11-12')
+  assert.equal(freshBody.date, '2026-11-13')
   assert.equal(freshBody.events, 4)
   assert.equal(freshBody.top[0].profileUrl, 'https://x.com/grok')
   assert.match(freshBody.thankYouText, /往期可以来大互动日历翻翻：https:\/\/2aran\.com\/resources\/big-interaction-whitepaper\/calendar/)
 
   const combined = await loadCombinedDailyTopDays(bucket)
   assert.equal(combined.find((day) => day.date === '2026-11-11').events, 750)
-  assert.equal(combined.find((day) => day.date === '2026-11-05').events, 1386)
-  assert.equal(combined.at(-1).date, '2026-11-12')
+  assert.equal(combined.find((day) => day.date === '2026-11-06').events, 1386)
+  assert.equal(combined.at(-1).date, '2026-11-13')
 
-  bucket.objects.set('interaction/daily-top/2026-11-10.json', '{')
+  bucket.objects.set('interaction/daily-top/2026-11-06.json', '{')
   bucket.objects.set('interaction/daily-top/not-a-day.json', JSON.stringify(fresh))
   const skipped = await loadCombinedDailyTopDays(bucket)
-  assert.equal(skipped.find((day) => day.date === '2026-11-10').events, 786)
+  assert.equal(skipped.find((day) => day.date === '2026-11-06').events, 1386)
   assert.equal(skipped.some((day) => day.date === 'not-a-day'), false)
 })
 

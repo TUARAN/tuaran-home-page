@@ -2993,7 +2993,10 @@ async function runTaskSchedule() {
     // Single shared tab: schedule occupancy must not depend on content having reported yet.
     if (!task && Number(plan.workTabId) > 0) {
       await seedRuntimeOccupancy(current, plan.workTabId, "starting", "排班已占用共享页签");
-      runtime = await readPluginRuntime();
+      // The row may have been dropped by an earlier probe. Ask the page again
+      // before deciding it is still booting, so an idle notifications tab starts now.
+      runtime = await verifyTaskRuntime(await readPluginRuntime(), now);
+      if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
       task = runtime.tasks?.[current];
     }
     const item = plan.items[current] || {};
@@ -3039,9 +3042,22 @@ async function runTaskSchedule() {
     const unresponsiveMissing = missingTask && occupancyAge >= STARTING_GRACE_MS;
     const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
     const pageIdle = Boolean(task?.pageIdle);
-    // An open execution page that is not looping should start now.
-    // The 90-second grace is only for a tab whose content script has not answered yet.
-    const unresponsiveStarting = startingTask && (pageIdle || occupancyAge >= STARTING_GRACE_MS);
+    // A page that has finished booting and is already on this task's URL can
+    // take the start now. The 90-second grace is only for a tab that has not
+    // answered, or that is still navigating onto the task path.
+    let settledOnPath = false;
+    if (startingTask && !task?.booting && Number(plan.workTabId) > 0) {
+      try {
+        const liveTab = await chrome.tabs.get(Number(plan.workTabId));
+        settledOnPath = onTaskPath(current, liveTab.url || "", {
+          accountHandle: plan.accountHandle || "",
+          currentUrl: liveTab.url || ""
+        });
+      } catch (error) {
+        settledOnPath = false;
+      }
+    }
+    const unresponsiveStarting = startingTask && (pageIdle || settledOnPath || occupancyAge >= STARTING_GRACE_MS);
     const progressAt = Number(task?.progressAt) || now;
     const stalled = task?.phase === "running"
       && !(Number(task.waitUntil) > now)
@@ -3105,6 +3121,9 @@ async function runTaskSchedule() {
             }
           }
           if (bootHold) return plan;
+          // Inside the confirmation window, a page that has not refused the start
+          // is still loading. Reloading here only restarts the countdown.
+          if (!stalled && occupancyAge < STARTING_GRACE_MS) return plan;
           const restarts = Number(item.reloadAttempts) || 0;
           if (restarts >= 3) {
             recordScheduleSegment(plan, current, "已重启 3 次，跳过这项任务", now);
@@ -3639,7 +3658,28 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       clearTimeout(timer);
     }
     if (reply?.ok) {
+      if (reply.booting) {
+        // The listener is up, but assistantMode is still the default. Reporting
+        // that default as a handoff deleted the start and left the panel waiting.
+        if (task.phase === "starting") {
+          const booting = { ...task, phase: "starting", booting: true, updatedAt: now };
+          delete booting.pageIdle;
+          tasks[mode] = booting;
+        }
+        return;
+      }
       if (reply.mode !== mode) {
+        const reported = String(reply.phase || "");
+        const otherLive = ["running", "paused", "stopping"].includes(reported);
+        if (!otherLive && task.phase === "starting") {
+          // The page has not adopted this task yet. Keep the slot so the next
+          // tick can start it once the tab is already on the task URL.
+          const pending = { ...task, phase: "starting", updatedAt: now };
+          delete pending.booting;
+          delete pending.pageIdle;
+          tasks[mode] = pending;
+          return;
+        }
         // Content already handed off to another task on this shared tab.
         delete tasks[mode];
         return;
@@ -3662,13 +3702,15 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
         }
         if (task.phase === "starting") {
           // A live page with no loop is idle. Keep the slot, but let the scheduler start it now.
-          tasks[mode] = {
+          const idleTask = {
             ...task,
             phase: "starting",
             pageIdle: Boolean(reply.idle),
             detail: String(reply.detail || (reply.idle ? "" : task.detail) || "").slice(0, 160),
             updatedAt: now
           };
+          delete idleTask.booting;
+          tasks[mode] = idleTask;
           return;
         }
         if (task.phase === "unknown") {
@@ -3699,6 +3741,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       };
       delete next.unknownSince;
       delete next.pageIdle;
+      delete next.booting;
       tasks[mode] = next;
     } else if (task.phase === "starting") {
       // Content script may not be injectable yet during navigation; keep boot occupancy.

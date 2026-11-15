@@ -2843,7 +2843,8 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /live\.dataset\.live/)
   assert.match(css, /\.xrc-task-live-row\s*\{[^}]*justify-content: center;/)
   assert.match(css, /@keyframes xrc-live-pulse/)
-  assert.match(css, /\.xrc-task-live-row \.xrc-task-manual-pause\s*\{[^}]*border: 0;[^}]*background: transparent;/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-back,\s*[\s\S]*?\.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
+  assert.doesNotMatch(css, /\.xrc-task-manual-pause:hover[\s\S]{0,180}text-decoration: underline/)
 })
 
 test('subpage pause marks only its task and stops the active task', async () => {

@@ -1246,29 +1246,34 @@
   position: relative;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   min-width: 0;
-  min-height: 32px;
+  min-height: 40px;
   margin: 8px 2px 2px;
-  padding: 5px 108px;
+  padding: 4px;
   border: 1px solid var(--xrc-line);
-  border-radius: 999px;
-  background: var(--xrc-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
 }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-task-live-row:not([hidden]) {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  min-width: 0;
   max-width: 100%;
   margin: 0;
+  overflow: hidden;
   color: var(--xrc-text);
   font-size: 13px;
   font-weight: 750;
   line-height: 1.2;
   text-align: center;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live::before {
@@ -1280,18 +1285,16 @@
   background: var(--xrc-muted);
 }
 #x-reply-clipboard-panel .xrc-task-live-row:has(.xrc-task-live[data-live="running"]) {
-  border-color: rgba(22, 163, 74, 0.28);
-  background: rgba(22, 163, 74, 0.08);
-  animation: xrc-live-breathe 2.4s ease-in-out infinite;
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(22, 163, 74, 0.05);
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live[data-live="running"]::before {
   background: #16a34a;
   animation: xrc-live-pulse 1.6s ease-in-out infinite;
 }
 #x-reply-clipboard-panel .xrc-task-live-row:has(.xrc-task-live[data-live="starting"]) {
-  border-color: rgba(217, 119, 6, 0.32);
-  background: rgba(245, 158, 11, 0.12);
-  animation: xrc-live-breathe 1.8s ease-in-out infinite;
+  border-color: rgba(217, 119, 6, 0.22);
+  background: rgba(245, 158, 11, 0.06);
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live[data-live="starting"]::before {
   background: #d97706;
@@ -1307,10 +1310,6 @@
 @keyframes xrc-live-pulse {
   0%, 100% { transform: scale(0.85); opacity: 0.45; box-shadow: 0 0 0 0 transparent; }
   50% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 4px rgba(15, 20, 25, 0.06); }
-}
-@keyframes xrc-live-breathe {
-  0%, 100% { filter: saturate(0.9); }
-  50% { filter: saturate(1.15); }
 }
 #x-reply-clipboard-panel[data-desk="task"] .xrc-task-subnav:not([hidden]) { display: flex; }
 #x-reply-clipboard-panel .xrc-task-subnav button {
@@ -1335,58 +1334,43 @@
   background: transparent;
   outline: none;
 }
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back {
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back,
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
   margin: 0;
-  padding: 5px 8px;
+  padding: 0 10px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--xrc-muted);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.2;
+  font: 650 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   white-space: nowrap;
+  text-decoration: none;
   cursor: pointer;
 }
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back { color: var(--xrc-text); }
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #9f2d34; }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:hover,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible {
-  color: var(--xrc-accent);
-  background: #fff;
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible,
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
+#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
+  background: rgba(15, 20, 25, 0.05);
+  text-decoration: none;
   outline: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  flex: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #a62f36;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-  cursor: pointer;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-  color: #8f2028;
-  background: transparent;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  outline: none;
+  background: rgba(159, 45, 52, 0.08);
+  color: #8a242b;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: default;
+  background: transparent;
+  text-decoration: none;
 }
 #x-reply-clipboard-panel .xrc-task-subnav::before {
   content: none;
@@ -4507,6 +4491,15 @@
   #x-reply-clipboard-panel .xrc-docs-toc summary,
   #x-reply-clipboard-panel .xrc-docs-toc-menu { background: #101418; }
   #x-reply-clipboard-panel .xrc-header-actions { background: rgba(15, 20, 25, 0.72); }
+  #x-reply-clipboard-panel .xrc-task-live-row { background: rgba(255, 255, 255, 0.04); }
+  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #ff9aa2; }
+  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:hover,
+  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible { background: rgba(255, 255, 255, 0.06); }
+  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
+  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
+    background: rgba(255, 154, 162, 0.12);
+    color: #ffb4ba;
+  }
   #x-reply-clipboard-panel .xrc-workspace-nav { background: transparent; }
   #x-reply-clipboard-panel .xrc-key-guide { background: var(--xrc-soft); }
   #x-reply-clipboard-panel .xrc-assistant-tabs [data-xrc-assistant-slot="reply"] { --xrc-tab-color: #73c3f6; --xrc-tab-tint: rgba(29, 155, 240, 0.16); }

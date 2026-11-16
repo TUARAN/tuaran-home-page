@@ -2788,6 +2788,10 @@ test('background reset clears task state while retaining API credentials and log
     assert.equal(result.ok, true)
     assert.deepEqual(prepared, [[11, 'xrc-reset-prepare'], [22, 'xrc-reset-prepare']])
     assert.deepEqual(reloaded, [22])
+    const resetContent = await readFile(new URL('content.js', extensionDir), 'utf8')
+    assert.match(resetContent, /已重置。模型配置仍在。刷新后从默认排班重新开始。[\s\S]{0,240}location\.reload\(\)/)
+    assert.match(resetContent, /xrcAssistant=notifications&xrcStart=1/)
+    assert.match(resetContent, /booting: true/)
     assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', mobileOfficeToken: 'office-token', replyPrompt: 'old custom prompt' })
     assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] })
     assert.deepEqual(saved.xrcDailyReports, [{ date: '2026-10-15', counts: { comments: 3 } }])
@@ -2843,7 +2847,8 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /live\.dataset\.live/)
   assert.match(css, /\.xrc-task-live-row\s*\{[^}]*justify-content: center;/)
   assert.match(css, /@keyframes xrc-live-pulse/)
-  assert.match(css, /\.xrc-task-live-row \.xrc-task-manual-pause\s*\{[^}]*border: 0;[^}]*background: transparent;/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-back,\s*[\s\S]*?\.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
+  assert.doesNotMatch(css, /\.xrc-task-manual-pause:hover[\s\S]{0,180}text-decoration: underline/)
 })
 
 test('subpage pause marks only its task and stops the active task', async () => {
@@ -5307,7 +5312,8 @@ test('reply pace rows label the default for the current reply task', async () =>
   const sandbox = vm.createContext({ loopApi: loop })
   vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
   assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时')
-  assert.equal(sandbox.nameFor({ id: 'fast', label: '快' }, 'notifications'), '4 小时（默认）')
+  assert.equal(sandbox.nameFor({ id: 'fast', label: '快' }, 'notifications'), '4 小时')
+  assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'notifications'), '24 小时（默认）')
   assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
   assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
   assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '8 小时')
@@ -7079,7 +7085,7 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
   assert.equal(loop.notificationWithinWindow(0, now), false)
   assert.equal(loop.notificationWindowMs('medium'), 2 * 60 * 60 * 1000)
   assert.equal(loop.notificationWindowMs('fast'), 4 * 60 * 60 * 1000)
-  assert.equal(loop.notificationWindowMs(), 4 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs(), 24 * 60 * 60 * 1000)
   assert.equal(loop.notificationWindowMs('boundary'), 24 * 60 * 60 * 1000)
   assert.equal(loop.notificationWithinWindow(now - 3 * 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), false)
   assert.equal(loop.notificationWithinWindow(now - 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), true)
@@ -7873,9 +7879,21 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   const header = content.match(/<div class="xrc-header">([\s\S]*?)<span class="xrc-mini-progress"/)?.[1] || ''
   assert.ok(header.includes('class="xrc-quick-actions"'))
   assert.ok(header.indexOf('class="xrc-quick-actions"') < header.indexOf('data-xrc-hub-open'))
-  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-report-open', 'class="xrc-close"']) {
+  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-report-open', 'class="xrc-close"', 'data-xrc-header-reset', 'data-xrc-hub-open']) {
     assert.ok(quickActions.includes(action), `${action} should remain visible outside the menu`)
   }
+  const headerOrder = ['data-xrc-docs-open', 'data-xrc-report-open', 'data-xrc-header-reset', 'data-xrc-hub-open', 'data-xrc-collapse', 'class="xrc-close"']
+  headerOrder.reduce((previous, action) => {
+    const index = quickActions.indexOf(action)
+    assert.ok(index > previous, `${action} should follow the previous header control`)
+    return index
+  }, -1)
+  assert.match(quickActions, /data-xrc-header-reset[\s\S]*<svg/)
+  assert.match(quickActions, /aria-label="停止插件"/)
+  assert.match(content, /停止插件？/)
+  assert.match(content, /function expandCollapsedPanel/)
+  assert.match(todayCss, /\[data-view="collapsed"\][\s\S]*width: 40px/)
+  assert.match(todayCss, /\[data-view="collapsed"\] \.xrc-header-actions[\s\S]*display: none/)
   assert.match(content, /data-xrc-monitor-open aria-expanded="false">异常监控/)
   assert.match(content, /data-xrc-report-page hidden aria-label="每日报告"/)
   assert.match(content, /data-xrc-monitor-current/)
@@ -8252,7 +8270,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
-  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*回到队列/)
+  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*到期后先执行评论回复，直到有一条评论成功再按原队列轮换/)
   assert.match(docsPage, /回关和关注候选看到速度限制，或页面已经写出超过限制、本次结束时，这次任务结束，两项一起进入 30 分钟共享冷却/)
   assert.match(docsPage, /开局顺序固定：评论回复、评论首页、评论大V、精品发帖/)
   assert.doesNotMatch(docsPage, /比较有效分/)
@@ -8575,6 +8593,139 @@ test('due comment tasks keep queue order while manual starts and cooldowns apply
   assert.deepEqual(coolingDue.filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode)), ['notifications', 'timeline'])
 })
 
+test('a comment restriction runs notifications ahead of timeline and kol', () => {
+  const now = Date.parse('2026-10-28T13:00:00+08:00')
+  const reason = 'X 提示疑似自动化，第 1 次冷却后自动重试（评论三项共用）'
+  const queued = { queue: background.scheduleQueue({}), items: {} }
+  background.rotateScheduleQueue(queued, 'notifications')
+  const restricted = {
+    enabled: true,
+    queue: queued.queue,
+    items: {
+      notifications: { limitedStreak: 1, reason },
+      timeline: { limitedStreak: 1, reason },
+      kol: { limitedStreak: 1, reason },
+    },
+  }
+  const commentDue = background.dueTaskModes(restricted, now).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
+  assert.equal(commentDue[0], 'notifications')
+  const desk = background.scheduleTimeline({ ...restricted, current: 'timeline' }, now)
+  assert.equal(desk.future.find((entry) => entry.status === 'ready')?.mode, 'notifications')
+
+  const manualTimeline = {
+    ...restricted,
+    items: { ...restricted.items, timeline: { ...restricted.items.timeline, manualRequestedAt: now } },
+  }
+  assert.equal(background.dueTaskModes(manualTimeline, now)[0], 'timeline')
+
+  const notificationsOff = {
+    ...restricted,
+    rules: { notifications: { enabled: false } },
+  }
+  assert.equal(background.dueTaskModes(notificationsOff, now).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))[0], 'timeline')
+
+  const stillCooling = {
+    ...restricted,
+    items: Object.fromEntries(['notifications', 'timeline', 'kol'].map((mode) => [mode, {
+      limitedStreak: 1, reason, resumeAt: now + 10 * 60 * 1000,
+    }])),
+  }
+  assert.equal(background.dueTaskModes(stillCooling, now).some((mode) => ['timeline', 'notifications', 'kol'].includes(mode)), false)
+})
+
+test('a restricted timeline start hands the shared tab to notifications', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const reason = 'X 提示疑似自动化，第 1 次冷却后自动重试（评论三项共用）'
+  const queued = { queue: background.scheduleQueue({}), items: {} }
+  background.rotateScheduleQueue(queued, 'notifications')
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 77, startedAt: now - 5000,
+      replyRiskVersion: 2, queue: queued.queue,
+      items: {
+        notifications: { limitedStreak: 1, reason },
+        timeline: { limitedStreak: 1, reason },
+        kol: { limitedStreak: 1, reason },
+      },
+    },
+    xrcPluginRuntime: {
+      tasks: { timeline: { tabId: 77, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { timeline: 77 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-suspend') return { ok: true }
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: 'starting' }
+        return { ok: true }
+      },
+      async update(_id, update) { updates.push(update); return { id: 77 } },
+      async remove() {},
+    },
+    windows: { async update() {} },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.ok(updates.some((update) => String(update.url || '').includes('/notifications')))
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('an unrestricted timeline start keeps the shared tab', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const queued = { queue: background.scheduleQueue({}), items: {} }
+  background.rotateScheduleQueue(queued, 'notifications')
+  const updates = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 77, startedAt: now - 5000,
+      replyRiskVersion: 2, queue: queued.queue,
+      items: { timeline: {}, notifications: {}, kol: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { timeline: { tabId: 77, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const session = { xrcTaskTabs: { timeline: 77 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: 'starting' }
+        return null
+      },
+      async update(_id, update) { updates.push(update); return { id: 77 } },
+    },
+    windows: { async update() {} },
+    alarms: { async create() {}, async clear() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    assert.equal(updates.some((update) => String(update.url || '').includes('/notifications')), false)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
 test('cleanup defaults to bounded slow segments and keeps a longer occupancy pass', () => {
   const now = Date.parse('2026-10-28T10:00:00+08:00')
   const rules = background.normalizedTaskRules({})
@@ -8654,7 +8805,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
   assert.equal(rules.timeline.pace, 'boundary')
-  assert.equal(rules.notifications.pace, 'fast')
+  assert.equal(rules.notifications.pace, 'boundary')
   assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
@@ -8740,8 +8891,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.commentEqualPriorityVersion, 1)
-    assert.equal(plan.rules.notifications.pace, 'fast')
-    assert.equal(plan.notificationPaceDefaultVersion, 3)
+    assert.equal(plan.rules.notifications.pace, 'boundary')
+    assert.equal(plan.notificationPaceDefaultVersion, 4)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -8779,9 +8930,9 @@ test('previous notification defaults settle on the 4 hour window once', async ()
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.pace, 'fast')
-    assert.equal(plan.notificationPaceDefaultVersion, 3)
-    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
+    assert.equal(plan.notificationPaceDefaultVersion, 4)
+    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'boundary')
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8810,7 +8961,7 @@ test('saved notification windows stay put after the 4 hour default migration', a
       rules: { notifications: { pace: 'slow' } },
     })
     assert.equal(kept.plan.rules.notifications.pace, 'slow')
-    assert.equal(kept.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(kept.plan.notificationPaceDefaultVersion, 4)
     assert.equal(kept.extraWrites, 0)
 
     const chosenEight = await readStored({
@@ -8820,8 +8971,36 @@ test('saved notification windows stay put after the 4 hour default migration', a
       rules: { notifications: { pace: 'turbo' } },
     })
     assert.equal(chosenEight.plan.rules.notifications.pace, 'turbo')
-    assert.equal(chosenEight.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(chosenEight.plan.notificationPaceDefaultVersion, 4)
     assert.equal(chosenEight.extraWrites, 0)
+
+    const movedDefault = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 3,
+      rules: { notifications: { pace: 'fast' } },
+    })
+    assert.equal(movedDefault.plan.rules.notifications.pace, 'boundary')
+    assert.equal(movedDefault.plan.notificationPaceDefaultVersion, 4)
+    assert.equal(movedDefault.extraWrites, 0)
+
+    const chosenTwo = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 3,
+      rules: { notifications: { pace: 'medium' } },
+    })
+    assert.equal(chosenTwo.plan.rules.notifications.pace, 'medium')
+    assert.equal(chosenTwo.extraWrites, 0)
+
+    const chosenFourAfter = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 4,
+      rules: { notifications: { pace: 'fast' } },
+    })
+    assert.equal(chosenFourAfter.plan.rules.notifications.pace, 'fast')
+    assert.equal(chosenFourAfter.extraWrites, 0)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8853,7 +9032,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
-    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
@@ -8877,7 +9056,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 7)
-    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   } finally {
@@ -10557,6 +10736,150 @@ test('an open idle notifications page starts comment replies without waiting out
     assert.equal(local.xrcTaskSchedule.current, 'notifications')
     assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
     assert.equal(local.xrcTaskSchedule.items.notifications.recoveryAttempts, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a booting notifications page keeps the start instead of dropping it', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 5000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', detail: '正在装载执行页', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, booting: true }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'starting')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.booting, true)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts || 0, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a default timeline probe does not drop a notifications start on the notifications page', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 5000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const starts = []
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', idle: false }
+        if (message.type === 'xrc-task-start') {
+          starts.push(message.mode)
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['notifications'])
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts || 0, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a dropped notifications runtime row still starts an idle notifications page', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 8000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } },
+  }
+  const starts = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') {
+          return { ok: true, mode: 'notifications', phase: '', idle: true, detail: '执行页已打开，回复循环还没开始' }
+        }
+        if (message.type === 'xrc-task-start') {
+          starts.push(message.mode)
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['notifications'])
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
   } finally {
     globalThis.chrome = previousChrome
   }

@@ -197,7 +197,7 @@
     Object.freeze({ id: "boundary", label: "24 小时", hours: 24 })
   ]);
 
-  const DEFAULT_NOTIFICATION_WINDOW = "fast";
+  const DEFAULT_NOTIFICATION_WINDOW = "boundary";
 
   function notificationWindowMs(pace = DEFAULT_NOTIFICATION_WINDOW) {
     const selected = NOTIFICATION_WINDOWS.find((item) => item.id === pace)

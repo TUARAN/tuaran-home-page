@@ -137,6 +137,7 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /构成简述/)
   assert.match(view, /主页链接/)
   assert.match(view, /emptyStateCopy\(selected, topDates\)/)
+  assert.match(view, /availableDates\.map\(\(date\)/)
   assert.match(view, /本账号互动/)
   assert.match(view, /activityByDate/)
   assert.match(page, /loadOwnActivityDays/)

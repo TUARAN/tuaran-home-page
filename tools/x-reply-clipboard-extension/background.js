@@ -1956,9 +1956,7 @@ const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
 // Once a week, same cadence as 清理未回关. 关注候选 keeps the short session gap.
 const FOLLOW_BACK_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const FOLLOW_DAILY_TARGET = 300;
-const FOLLOW_PRIORITY_BOOST = 8.5;
 const COMMENT_TURN_MS = 10 * 60 * 1000;
-const PREMIUM_PRIORITY_BOOST = 8.75;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
 const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
@@ -2410,21 +2408,6 @@ function taskGapReadyAt(item, rule, now = Date.now()) {
   return lastRunAt + gap;
 }
 
-function effectiveSchedulePriority(plan, mode, now = Date.now(), rule = null) {
-  const resolved = rule || normalizedTaskRules(plan?.rules)?.[mode] || { priority: defaultTaskPriority(mode) };
-  const base = Number(resolved.priority) || defaultTaskPriority(mode);
-  if (mode === "poster-premium") return Math.max(base, PREMIUM_PRIORITY_BOOST);
-  // Keep the daily-goal boost for 关注候选 only. 回关粉丝 no longer cuts in
-  // every few minutes while the shared count is under 300.
-  if (mode === "mutual-targetFollow"
-    && Number.isFinite(Number(plan?.sharedFollowTodayCount))
-    && Number(plan.sharedFollowTodayCount) < FOLLOW_DAILY_TARGET
-    && now - Number(plan?.items?.[mode]?.lastRunAt || 0) >= TARGET_FOLLOW_MIN_GAP_MS) {
-    return Math.max(base, FOLLOW_PRIORITY_BOOST);
-  }
-  return base;
-}
-
 function initialScheduleQueue() {
   return [...QUEUED_TASKS].sort((a, b) => defaultTaskPriority(b) - defaultTaskPriority(a)
     || QUEUED_TASKS.indexOf(a) - QUEUED_TASKS.indexOf(b));
@@ -2488,19 +2471,6 @@ function scheduledManualFocusMode(plan, now = Date.now()) {
   if (!mode || abandonedManualFocusMode(plan)) return "";
   const item = plan.items?.[mode] || {};
   return Number(item.resumeAt) > now ? "" : mode;
-}
-
-function drawDueReplyTask(plan, due, random = Math.random) {
-  const first = due[0];
-  if (!REPLY_TASKS.includes(first) || Number(plan.items?.[first]?.manualRequestedAt) > 0) return due;
-  const rules = normalizedTaskRules(plan.rules);
-  const candidates = due.filter((mode) => REPLY_TASKS.includes(mode)
-    && rules[mode].priority === rules[first].priority
-    && !(Number(plan.items?.[mode]?.manualRequestedAt) > 0));
-  if (candidates.length < 2) return due;
-  const draw = Math.min(1 - Number.EPSILON, Math.max(0, Number(random()) || 0));
-  const chosen = candidates[Math.floor(draw * candidates.length)];
-  return [chosen, ...due.filter((mode) => mode !== chosen)];
 }
 
 async function readSharedFollowTodayCount(now = Date.now()) {
@@ -5031,7 +5001,6 @@ if (typeof module === "object" && module.exports) {
     readTaskSchedule,
     dueTaskModes,
     scheduledManualFocusMode,
-    drawDueReplyTask,
     taskWindowOpen,
     recordScheduleSegment,
     scheduleTimeline,
@@ -5070,13 +5039,10 @@ if (typeof module === "object" && module.exports) {
     UNFOLLOW_SLICE_MS,
     FOLLOW_BACK_MIN_GAP_MS,
     FOLLOW_BACK_SLICE_MS,
-    FOLLOW_PRIORITY_BOOST,
     COMMENT_TURN_MS,
-    PREMIUM_PRIORITY_BOOST,
     TARGET_FOLLOW_MIN_GAP_MS,
     TARGET_FOLLOW_SLICE_MS,
     defaultTaskPriority,
-    effectiveSchedulePriority,
     scheduleQueue,
     rotateScheduleQueue,
     shouldShareFollowWait,

@@ -15,7 +15,7 @@
 .picker { padding: 14px; }
 .monthBar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-bottom: 10px; }
 .monthBar strong { color: #173d2a; font-size: 15px; text-align: center; }
-.monthBar button, .dateLabel input, .recordedList button {
+.monthBar button, .dateLabel input {
   border: 1px solid #b7d0bb;
   border-radius: 8px;
   background: #fff;
@@ -26,8 +26,8 @@
 .monthBar button { justify-self: stretch; min-height: 32px; padding: 0 8px; cursor: pointer; }
 .monthBar button:first-child { justify-self: start; }
 .monthBar button:last-child { justify-self: end; }
-.monthBar button:hover, .recordedList button:hover { background: #e7f3e6; }
-.monthBar button:focus-visible, .grid button:focus-visible, .dateLabel input:focus-visible, .recordedList button:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 2px; }
+.monthBar button:hover { background: #e7f3e6; }
+.monthBar button:focus-visible, .grid button:focus-visible, .dateLabel input:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 2px; }
 .weekdays, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .weekdays { margin-bottom: 4px; color: #6d8574; font-size: 11px; font-weight: 800; text-align: center; }
 .grid { min-height: 196px; }
@@ -50,10 +50,6 @@
 .grid button.selected i { background: #d7f2d3; }
 .dateLabel { display: grid; gap: 6px; margin-top: 12px; color: #425f4b; font-size: 12px; font-weight: 700; }
 .dateLabel input { min-height: 36px; padding: 0 10px; color: #173d2a; font-weight: 600; }
-.recordedList { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
-.recordedList span { color: #5d7364; font-size: 12px; font-weight: 700; }
-.recordedList button { min-height: 28px; padding: 0 8px; cursor: pointer; }
-.recordedList button[aria-pressed="true"] { border-color: #1d6840; background: #1d6840; color: #fff; }
 .board { min-width: 0; padding: 16px 16px 8px; }
 .eyebrow { margin: 0; color: #2b784b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
 .boardHead h2 { margin: 4px 0 6px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 28px; line-height: 1.2; }

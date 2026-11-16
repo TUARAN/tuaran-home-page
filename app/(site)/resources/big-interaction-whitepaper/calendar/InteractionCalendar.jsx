@@ -96,14 +96,6 @@ export default function InteractionCalendar({ days, activities = [], initialToda
             }}
           />
         </label>
-        {availableDates.length > 0 && (
-          <div className={styles.recordedList}>
-            <span>已收录</span>
-            {availableDates.map((date) => (
-              <button key={date} type="button" aria-pressed={date === selected} onClick={() => choose(date)}>{date}</button>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className={styles.board} aria-live="polite">

@@ -29,7 +29,7 @@ function edgeBindings() {
 const path = '/resources/big-interaction-whitepaper/calendar'
 const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const title = '大互动日历'
-const description = '按 Asia/Shanghai 选择日期。格子上的日期是收录日，内容是前一自然日：与他人的互动前十，以及本账号各任务完成次数。'
+const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十，以及本账号各任务完成次数。'
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
@@ -75,8 +75,8 @@ export default async function BigInteractionCalendarPage() {
       <header className={styles.masthead}>
         <p className={styles.kicker}>绿皮书 · 每日前十</p>
         <h1>{title}</h1>
-        <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及这一天本账号各任务完成了多少次。10 日的格子放的是 9 日。</p>
-        <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数来自后台自动同步的日报，只计本账号确认完成的动作。</p>
+        <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及本账号各任务完成了多少次。</p>
+        <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>
         <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
       </header>
       <InteractionCalendar days={days} activities={activities} initialToday={today} />

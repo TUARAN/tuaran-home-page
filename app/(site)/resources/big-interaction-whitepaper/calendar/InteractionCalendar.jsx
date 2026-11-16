@@ -96,10 +96,10 @@ export default function InteractionCalendar({ days, activities = [], initialToda
             }}
           />
         </label>
-        {topDates.length > 0 && (
+        {availableDates.length > 0 && (
           <div className={styles.recordedList}>
             <span>已收录</span>
-            {topDates.map((date) => (
+            {availableDates.map((date) => (
               <button key={date} type="button" aria-pressed={date === selected} onClick={() => choose(date)}>{date}</button>
             ))}
           </div>
@@ -115,14 +115,14 @@ export default function InteractionCalendar({ days, activities = [], initialToda
               窗口 {formatWindowLabel(day.window)}（Asia/Shanghai） · 对手 {day.opponents} · 事件 {day.events}
             </p>
           ) : (
-            <p className={styles.windowLine}>每天 09:00（Asia/Shanghai）收录前一自然日 00:00 至当日 00:00，记在当天。</p>
+            <p className={styles.windowLine}>前一自然日 00:00 至当日 00:00（Asia/Shanghai）。</p>
           )}
         </header>
         <section className={styles.ownActivity} aria-label="本账号互动次数">
           <p className={styles.eyebrow}>本账号互动</p>
           {activity ? (
             <>
-              <p className={styles.windowLine}>统计日 {activity.sourceDate} · @{activity.accountHandle} 完成的次数，与这一格的互动前十同一天。</p>
+              <p className={styles.windowLine}>{activity.sourceDate} · @{activity.accountHandle}</p>
               <div className={styles.ownGrid}>
                 {activity.metrics.map((metric) => (
                   <div key={metric.key} className={styles.ownMetric}>
@@ -133,7 +133,7 @@ export default function InteractionCalendar({ days, activities = [], initialToda
               </div>
             </>
           ) : (
-            <p className={styles.windowLine}>这一天还没有同步 @{DAILY_TOP_SUBJECT} 的任务次数。次数来自后台日报，记在次日。</p>
+            <p className={styles.windowLine}>这一天还没有 @{DAILY_TOP_SUBJECT} 的任务次数。</p>
           )}
         </section>
         <div className={styles.tableWrap}>

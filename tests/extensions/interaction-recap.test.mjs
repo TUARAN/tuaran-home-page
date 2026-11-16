@@ -11,7 +11,7 @@ const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.
 const CALENDAR_URL = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
 const SAMPLE_TEXT = '感谢过去一天的互动，谢谢 @VicentYip @xiaqingfeng666 @AlanShao111 @JMkernt @DISONYYDS @fngmn134813 @daniel_w_zj @ynggu2548245 @DearYoung28 @grok 愿意一起聊天。往期可以来大互动日历翻翻：https://2aran.com/resources/big-interaction-whitepaper/calendar'
 
-const sampleDay = JSON.parse(await readFile(new URL('../../lib/interaction/dailyTop/days/2026-11-06.json', import.meta.url), 'utf8'))
+const sampleDay = JSON.parse(await readFile(new URL('../../lib/interaction/dailyTop/days/2026-11-05.json', import.meta.url), 'utf8'))
 
 function jsonResponse(status, body) {
   return {
@@ -80,7 +80,7 @@ test('daily top client reads the latest day, a chosen day, a 404, and an offline
   assert.equal(latest.sent, false)
   assert.equal(latest.source, 'local')
   assert.equal(latest.text, SAMPLE_TEXT)
-  assert.equal(latest.day.date, '2026-11-06')
+  assert.equal(latest.day.date, '2026-11-05')
 
   seen.length = 0
   const dated = await recap.fetchDailyTop('2026-11-05', async (url) => {

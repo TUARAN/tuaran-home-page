@@ -36,9 +36,9 @@ test('sample day 2026-11-05 matches the shipped top 10', () => {
   const days = loadDailyTopDays()
   const day = days.find((entry) => entry.date === DAILY_TOP_SAMPLE_DATE)
   assert.ok(day)
-  assert.deepEqual(days.map((entry) => entry.date), ['2026-11-06', '2026-11-11', '2026-11-12'])
+  assert.deepEqual(days.map((entry) => entry.date), ['2026-11-05', '2026-11-10', '2026-11-11'])
   assert.deepEqual(gitDailyTopDays(), days)
-  assert.deepEqual(day.window, legacyPublicationWindow('2026-11-06'))
+  assert.deepEqual(day.window, legacyPublicationWindow('2026-11-05'))
   assert.equal(day.opponents, 420)
   assert.equal(day.events, 1386)
   assert.equal(day.subject, 'tarsixseveneig1')
@@ -57,28 +57,28 @@ test('sample day 2026-11-05 matches the shipped top 10', () => {
 })
 
 test('invalid query falls back to today when no day catalog is provided', () => {
-  assert.equal(resolveSelectedDate(null, '2026-11-06'), '2026-11-06')
-  assert.equal(resolveSelectedDate('not-a-date', '2026-11-06'), '2026-11-06')
-  assert.equal(resolveSelectedDate('2026-02-31', '2026-11-06'), '2026-11-06')
-  assert.equal(resolveSelectedDate('2026-11-05', '2026-11-06'), '2026-11-05')
-  assert.equal(emptyStateCopy('2026-11-07', ['2026-11-06']), '这一天还没有收录互动前十。2026-11-06 已有样例，可改选这一天。')
-  assert.equal(emptyStateCopy('2026-11-06', ['2026-11-06']), '这一天还没有收录互动前十。')
+  assert.equal(resolveSelectedDate(null, '2026-11-05'), '2026-11-05')
+  assert.equal(resolveSelectedDate('not-a-date', '2026-11-05'), '2026-11-05')
+  assert.equal(resolveSelectedDate('2026-02-31', '2026-11-05'), '2026-11-05')
+  assert.equal(resolveSelectedDate('2026-11-04', '2026-11-05'), '2026-11-04')
+  assert.equal(emptyStateCopy('2026-11-07', ['2026-11-05']), '这一天还没有收录互动前十。2026-11-05 已有样例，可改选这一天。')
+  assert.equal(emptyStateCopy('2026-11-05', ['2026-11-05']), '这一天还没有收录互动前十。')
 })
 
 test('default day is today when that JSON exists, otherwise the latest day file', () => {
   const shipped = loadDailyTopDays().map((day) => day.date)
-  assert.deepEqual(shipped, ['2026-11-06', '2026-11-11', '2026-11-12'])
-  assert.equal(latestRecordedDate(shipped), '2026-11-12')
-  assert.equal(resolveSelectedDate(null, '2026-11-07', shipped), '2026-11-12')
-  assert.equal(resolveSelectedDate(undefined, '2026-11-13', shipped), '2026-11-12')
+  assert.deepEqual(shipped, ['2026-11-05', '2026-11-10', '2026-11-11'])
+  assert.equal(latestRecordedDate(shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(null, '2026-11-07', shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(undefined, '2026-11-13', shipped), '2026-11-11')
+  assert.equal(resolveSelectedDate(null, '2026-11-10', shipped), '2026-11-10')
   assert.equal(resolveSelectedDate(null, '2026-11-11', shipped), '2026-11-11')
-  assert.equal(resolveSelectedDate(null, '2026-11-12', shipped), '2026-11-12')
-  assert.equal(resolveSelectedDate('not-a-date', '2026-11-07', ['2026-11-01', '2026-11-06']), '2026-11-06')
-  assert.equal(resolveSelectedDate(null, '2026-11-06', shipped), '2026-11-06')
-  assert.equal(resolveSelectedDate(null, '2026-11-06', ['2026-11-05', '2026-11-06']), '2026-11-06')
-  assert.equal(resolveSelectedDate(null, '2026-11-07', ['2026-11-05', '2026-11-06']), '2026-11-06')
-  assert.equal(resolveSelectedDate('2026-11-06', '2026-11-06', shipped), '2026-11-06')
-  assert.equal(resolveSelectedDate(null, '2026-11-06', []), '2026-11-06')
+  assert.equal(resolveSelectedDate('not-a-date', '2026-11-07', ['2026-11-01', '2026-11-05']), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-05', shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-05', ['2026-11-04', '2026-11-05']), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-07', ['2026-11-04', '2026-11-05']), '2026-11-05')
+  assert.equal(resolveSelectedDate('2026-11-05', '2026-11-05', shipped), '2026-11-05')
+  assert.equal(resolveSelectedDate(null, '2026-11-05', []), '2026-11-05')
 })
 
 test('Shanghai date key follows the Asia/Shanghai calendar date', () => {
@@ -97,16 +97,16 @@ test('validator rejects a self-account and a window outside the publication day'
   assert.throws(() => validateDailyTopDay({
     ...day,
     top: [{ ...day.top[0], handle: 'tarsixseveneig1', rank: 1 }],
-  }, '2026-11-06.json'), /本人账号/)
+  }, '2026-11-05.json'), /本人账号/)
   assert.throws(() => validateDailyTopDay({
     ...day,
-    window: { start: '2026-11-05T00:00:00+08:00', end: '2026-11-05T21:00:00+08:00' },
-  }, '2026-11-06.json'), /window/)
+    window: { start: '2026-11-04T00:00:00+08:00', end: '2026-11-04T21:00:00+08:00' },
+  }, '2026-11-05.json'), /window/)
   assert.deepEqual(validateDailyTopDay({
     ...day,
-    window: expectedWindow('2026-11-06'),
+    window: expectedWindow('2026-11-05'),
     top: day.top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown })),
-  }, '2026-11-06.json').window, expectedWindow('2026-11-06'))
+  }, '2026-11-05.json').window, expectedWindow('2026-11-05'))
 })
 
 test('whitepaper entry row links the calendar beside the roundtable', async () => {
@@ -156,9 +156,9 @@ test('calendar day list lets a live record replace the same git date', async () 
   const gitDays = loadDailyTopDays()
   const live = { ...gitDays[0], events: 9, opponents: 3 }
   const merged = mergeDailyTopDays(gitDays, [live])
-  assert.equal(merged.find((day) => day.date === '2026-11-06').events, 9)
-  assert.equal(merged.find((day) => day.date === '2026-11-12').events, 749)
-  assert.deepEqual(merged.map((day) => day.date), ['2026-11-06', '2026-11-11', '2026-11-12'])
+  assert.equal(merged.find((day) => day.date === '2026-11-05').events, 9)
+  assert.equal(merged.find((day) => day.date === '2026-11-11').events, 749)
+  assert.deepEqual(merged.map((day) => day.date), ['2026-11-05', '2026-11-10', '2026-11-11'])
 
   const objects = new Map()
   const bucket = {
@@ -178,7 +178,7 @@ test('calendar day list lets a live record replace the same git date', async () 
     top: gitDays[2].top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown })),
   }))
   const combined = await loadCombinedDailyTopDays(bucket)
-  assert.deepEqual(combined.map((day) => day.date), ['2026-11-06', '2026-11-11', '2026-11-12', '2026-11-13'])
+  assert.deepEqual(combined.map((day) => day.date), ['2026-11-05', '2026-11-10', '2026-11-11', '2026-11-13'])
   assert.equal(combined.at(-1).top[0].profileUrl, profileUrlFor('grok'))
   assert.deepEqual(combined.at(-1).window, expectedWindow('2026-11-13'))
 })

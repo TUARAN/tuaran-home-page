@@ -92,6 +92,7 @@
   "普通帖第一行必须用一个抓人的口语开头，随后空一行，紧接具体事件和观点。可参考：我真的很好奇、说个暴论、卧槽卧槽卧槽、讲真、说句难听的、我有点想不通、这事真离谱、等等，这就有意思了、我突然意识到一件事、我越想越不对劲、这回我站这一边、我是真没想到、先说结论、别急，先看这件事、说实话我不服、这点太关键了。按话题选自然的一句，不要空喊情绪，也不要编造亲历。",
     "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
     "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
+    "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
     "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
     "不写币、代币、合约、$。"
   ].join("\n");
@@ -101,6 +102,7 @@
     "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
     "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
     "整条有明确立场，不必两边讨好；禁止假对比套话和自我指涉写作过程。",
+    "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
     "不写币、代币、合约、$。"
   ].join("\n");
   const DEFAULT_POST_X_PROMPT = [
@@ -109,6 +111,7 @@
     "只写两行，发出去时两行都在文字卡片里居中。每行一个完整短句，大约 8～16 个字，两行之间空一行。不要第三行。",
     "只写已经公开的产品和使用方式。不编造财报、发射次数、销量和未宣布的能力。",
     "不要用「说个暴论」「我真心觉得」「卧槽」当开头。禁止假对比和自我指涉写作过程。",
+    "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
     "不写币、代币、合约、$。"
   ].join("\n");
   const DEFAULT_REPLY_PROMPT = DEFAULT_REPLY_TIMELINE_PROMPT;
@@ -8366,89 +8369,6 @@
     button.textContent = updateActionPending ? "正在处理…" : phase === "failed" ? "重试并恢复" : "立即更新";
   }
 
-  const sentPosts = { kind: "", at: 0, count: -1, items: [], votes: {} };
-
-  function sentPostKind() {
-    const mode = viewAssistantMode();
-    if (mode === "poster-premium") return "premium";
-    if (mode === "poster-xhs") return "xhs";
-    if (mode === "poster-x") return "x";
-    return "normal";
-  }
-
-  function paintSentPosts() {
-    const list = document.getElementById(PANEL_ID)?.querySelector?.("[data-xrc-sent-list]");
-    if (!list) return;
-    list.replaceChildren();
-    if (!sentPosts.items.length) {
-      const empty = document.createElement("p");
-      empty.className = "xrc-sent-empty";
-      empty.textContent = "发出去之后会出现在这里。";
-      list.append(empty);
-      return;
-    }
-    for (const item of sentPosts.items) {
-      const row = document.createElement("article");
-      row.className = "xrc-sent-row";
-      const copy = document.createElement("p");
-      copy.textContent = String(item.text || "").replace(/\s+/g, " ").trim();
-      const actions = document.createElement("div");
-      actions.className = "xrc-sent-actions";
-      const selected = sentPosts.votes?.[item.sourceId]?.kind;
-      for (const [value, label] of [["good", "赞"], ["bad", "踩"]]) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.xrcPromptVote = value;
-        button.dataset.sourceId = String(item.sourceId || "");
-        button.textContent = label;
-        button.setAttribute("aria-pressed", selected === value ? "true" : "false");
-        actions.append(button);
-      }
-      row.append(copy, actions);
-      list.append(row);
-    }
-  }
-
-  async function syncSentPosts(force = false) {
-    if (!document.getElementById(PANEL_ID)?.querySelector?.("[data-xrc-sent-list]") || !isPosterMode(viewAssistantMode())) return;
-    const kind = sentPostKind();
-    const count = Number(postApi?.snapshot?.()?.count) || 0
-    if (!force && sentPosts.kind === kind && sentPosts.count === count && Date.now() - sentPosts.at < 15000) {
-      paintSentPosts();
-      return;
-    }
-    try {
-      await postApi?.loadHistory?.();
-      const stored = await chrome.storage?.local?.get?.("xrcPromptVoteState");
-      sentPosts.items = postApi?.listPublished?.(kind, 8) || [];
-      sentPosts.votes = stored?.xrcPromptVoteState || {};
-      sentPosts.kind = kind;
-      sentPosts.count = count;
-      sentPosts.at = Date.now();
-    } catch (error) {
-      sentPosts.items = sentPosts.items || [];
-    }
-    paintSentPosts();
-  }
-
-  async function voteSentPost(sourceId, kind) {
-    const item = sentPosts.items.find((row) => row.sourceId === sourceId);
-    if (!item || (kind !== "good" && kind !== "bad")) return;
-    const promptKey = sentPosts.kind === "premium" ? "postPremiumPrompt" : sentPosts.kind === "x" ? "postXPrompt" : "postNormalPrompt";
-    sentPosts.votes[sourceId] = { kind, at: Date.now() };
-    paintSentPosts();
-    await globalThis.XrcCommunityReceipt?.queuePromptVote?.({
-      sourceId,
-      promptKey,
-      kind,
-      content: item.text,
-      topic: item.topic || "",
-      sourceLabel: item.sourceLabel || "",
-      sourceUrl: item.sourceUrl || "",
-      accountHandle: currentAccountHandle()
-    });
-  }
-
   function renderPanel() {
     if (!ensureExtensionContext()) return;
     try {
@@ -8710,7 +8630,7 @@
               <label class="xrc-field"><span>纯文字帖</span><textarea data-xrc-post-normal-prompt rows="5"></textarea></label>
               <label class="xrc-field"><span>精品发帖</span><textarea data-xrc-post-premium-prompt rows="5"></textarea></label>
               <label class="xrc-field"><span>X主题发帖</span><textarea data-xrc-post-x-prompt rows="5"></textarea></label>
-              <p class="xrc-config-note">改完自动保存。已发帖的赞和踩、默认提示的修改记录，都在文档中心「提示词反馈台账」。</p>
+              <p class="xrc-config-note">改完自动保存。已发帖的赞和踩，以及不要说的话，标在 X 页面上这条帖子下面。默认提示的修改记录在文档中心「提示词反馈台账」。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="pace">
               <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>边界测试与慢、中、快、超快各自的数字</small></span></div>
@@ -8958,9 +8878,8 @@
             </section>
           </div>
           <div class="xrc-status" role="status" data-xrc-post-status hidden></div>
-          <section class="xrc-sent-posts" data-xrc-sent-posts aria-label="已发出的帖子">
-            <div class="xrc-sent-head"><strong>已发出</strong><small>赞和踩记到文档中心，不改默认提示。</small></div>
-            <div data-xrc-sent-list></div>
+          <section class="xrc-sent-posts" data-xrc-sent-posts aria-label="帖子上的赞踩">
+            <p class="xrc-sent-empty">赞、踩和不要说的话，直接标在 X 页面上这条帖子下面。记下的说法，下一次发帖会避开。</p>
           </section>
         </div>
         <div class="xrc-body xrc-article-body">
@@ -9521,12 +9440,6 @@
           void requestTaskUnlimited(key, false);
         });
       });
-      panel.addEventListener("click", (event) => {
-        const button = event.target.closest?.("[data-xrc-prompt-vote]");
-        if (!button) return;
-        event.preventDefault();
-        voteSentPost(button.dataset.sourceId, button.dataset.xrcPromptVote);
-      });
       panel.querySelectorAll("[data-xrc-mutual-action]").forEach((button) => {
         button.addEventListener("click", () => {
           const mode = button.dataset.xrcMutualAction;
@@ -9954,7 +9867,7 @@
       const premiumMode = viewAssistantMode() === "poster-premium";
       const xThemeMode = ["poster-x", "poster-xhs"].includes(viewAssistantMode());
       const sentSection = panel.querySelector("[data-xrc-sent-posts]");
-      if (sentSection) sentSection.hidden = xThemeMode;
+      if (sentSection) sentSection.hidden = viewAssistantMode() === "poster-xhs" || String(viewAssistantMode()).startsWith("prune");
       const postSchedule = postApi?.formatPostSchedule?.(state.posterPace) || { id: "slow", label: "慢", interval: "每次任务 1 条" };
       const postProfile = postApi?.postScheduleProfile?.(state.posterPace) || postApi?.POST_SCHEDULE_PROFILES?.find((item) => item.id === postSchedule.id);
       const premiumSlots = postApi?.PREMIUM_SLOT_TIMES || ["08:00", "09:30", "12:00", "15:00", "19:00"];
@@ -10011,7 +9924,6 @@
         panel.querySelector("[data-xrc-mini-progress]").textContent = postWait
           ? postWait
           : poster.running ? `${label} · ${poster.count || 0} 条` : `${label} · 待命`;
-        syncSentPosts();
       }
     }
     panel.querySelectorAll("[data-xrc-post-tab]").forEach((button) => {

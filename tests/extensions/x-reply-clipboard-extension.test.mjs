@@ -4758,6 +4758,16 @@ test('hot-topic parsers require current site data and keep stable source IDs', (
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [event] })[0].sourcePageUrl, 'https://2aran.com/public-opinion')
   assert.equal(background.parseOpinionHot({ source: 'd1', meta: { hasData: true, isStale: false }, events: [{ ...event, latestAt: '2020-01-01T00:00:00Z' }] }).length, 0)
   assert.match(background.POST_SYSTEM_PROMPT, /说个暴论/)
+  assert.match(background.POST_SYSTEM_PROMPT, /这话我认/)
+  assert.match(background.POST_SYSTEM_PROMPT, /我觉得是有一定道理的/)
+  assert.match(background.POST_SYSTEM_PROMPT, /该说不说/)
+  assert.match(background.POST_PREMIUM_PROMPT, /这话我认/)
+  assert.match(background.POST_X_PROMPT, /这话我认/)
+  assert.equal(
+    background.formatPhraseAvoidance([{ avoid: '这话我认', say: '我觉得是有一定道理的' }]),
+    '站长点名不要说的话，写帖时直接避开：\n- 不要写「这话我认」。改为「我觉得是有一定道理的」。'
+  )
+  assert.match(background.formatPhraseAvoidance([]), /该说不说，其实……也有道理/)
   assert.match(background.POST_SYSTEM_PROMPT, /整条只站一边/)
   assert.match(background.POST_SYSTEM_PROMPT, /不是…而是…/)
   assert.match(background.POST_SYSTEM_PROMPT, /不写币、代币、合约/)
@@ -4794,6 +4804,7 @@ test('scheduled hot-topic rewrite uses the visible post prompt and migrates the 
   try {
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
     assert.match(requestBody.messages[0].content, /自定义发推提示词：说清楚事实/)
+    assert.match(requestBody.messages[0].content, /不要写「这话我认」/)
     assert.match(requestBody.messages[0].content, /本接口仅用 JSON 包装结果/)
     storedPostPrompt = '从素材里抓一件具体的事，用口语短句写。3 到 5 行，总共 35 到 75 个字'
     await background.rewriteNewsPost({ title: '一个关于新工具使用方式的公开讨论' })
@@ -4872,6 +4883,17 @@ test('post opening draw always chooses one of sixteen hooks', async () => {
     globalThis.chrome = originalChrome
     globalThis.fetch = originalFetch
   }
+})
+
+test('published posts on the X page match by text and keep their prompt key', () => {
+  const marks = require('../../tools/x-reply-clipboard-extension/postPageMarks.js')
+  const published = [{ sourceId: 'a', text: '说个暴论，\n\n这件事就该停。', postKind: 'premium', at: 1 }]
+  assert.equal(marks.matchPublishedPost('说个暴论， 这件事就该停。', published).sourceId, 'a')
+  assert.equal(marks.matchPublishedPost('另一条完全不同的帖子内容。', published), null)
+  assert.equal(marks.matchPublishedPost('太短', published), null)
+  assert.equal(marks.promptKeyForPublished(published[0]), 'postPremiumPrompt')
+  assert.equal(marks.promptKeyForPublished({ source: 'xtheme' }), 'postXPrompt')
+  assert.equal(marks.promptKeyForPublished({ postKind: 'normal' }), 'postNormalPrompt')
 })
 
 test('a completed hot-topic rewrite is queued without a style retry', async () => {
@@ -7681,7 +7703,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))

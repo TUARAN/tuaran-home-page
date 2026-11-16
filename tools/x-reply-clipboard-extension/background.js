@@ -109,6 +109,7 @@ const POST_NORMAL_PROMPT = [
   "普通帖第一行必须用一个抓人的口语开头，随后空一行，紧接具体事件和观点。可参考：我真的很好奇、说个暴论、卧槽卧槽卧槽、讲真、说句难听的、我有点想不通、这事真离谱、等等，这就有意思了、我突然意识到一件事、我越想越不对劲、这回我站这一边、我是真没想到、先说结论、别急，先看这件事、说实话我不服、这点太关键了。按话题选自然的一句，不要空喊情绪，也不要编造亲历。",
   "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
   "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
+  "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
   "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
   "不写币、代币、合约、$。"
 ].join("\n");
@@ -119,6 +120,7 @@ const POST_PREMIUM_PROMPT = [
   "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
   "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
   "整条有明确立场，不必两边讨好；禁止假对比套话和自我指涉写作过程。",
+  "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
   "不写币、代币、合约、$。"
 ].join("\n");
 
@@ -128,8 +130,55 @@ const POST_X_PROMPT = [
   "只写两行，发出去时两行都在文字卡片里居中。每行一个完整短句，大约 8～16 个字，两行之间空一行。不要第三行。",
   "只写已经公开的产品和使用方式。不编造财报、发射次数、销量和未宣布的能力。",
   "不要用「说个暴论」「我真心觉得」「卧槽」当开头。禁止假对比和自我指涉写作过程。",
+  "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
   "不写币、代币、合约、$。"
 ].join("\n");
+
+const PHRASE_AVOID_KEY = "xrcPhraseAvoidance";
+const PHRASE_AVOID_SEED = Object.freeze([
+  {
+    avoid: "这话我认",
+    say: "……，我觉得是有一定道理的；或：该说不说，其实……也有道理"
+  }
+]);
+
+function cleanPhraseField(value, max) {
+  return String(value || "").replace(/[\u0000-\u001f]/g, "").replace(/\s+/gu, " ").trim().slice(0, max);
+}
+
+function mergePhraseAvoidance(raw) {
+  const incoming = Array.isArray(raw) ? raw : [];
+  const byAvoid = new Map();
+  for (const item of PHRASE_AVOID_SEED) byAvoid.set(item.avoid, { avoid: item.avoid, say: item.say });
+  for (const item of incoming) {
+    const avoid = cleanPhraseField(item?.avoid, 40);
+    const say = cleanPhraseField(item?.say, 160);
+    if (!avoid || !say) continue;
+    byAvoid.set(avoid, { avoid, say });
+  }
+  return [...byAvoid.values()].slice(0, 40);
+}
+
+function formatPhraseRule(rule) {
+  const parts = String(rule?.say || "").split("或：").map((part) => part.trim()).filter(Boolean);
+  const say = parts.map((part) => `「${part.replace(/[；。]+$/u, "")}」`).join("，或");
+  return `不要写「${rule.avoid}」。改为${say}。`;
+}
+
+function formatPhraseAvoidance(raw) {
+  const lines = mergePhraseAvoidance(raw).map((rule) => `- ${formatPhraseRule(rule)}`);
+  if (!lines.length) return "";
+  return `站长点名不要说的话，写帖时直接避开：\n${lines.join("\n")}`;
+}
+
+async function readPhraseAvoidance() {
+  try {
+    const stored = await chrome.storage?.local?.get?.(PHRASE_AVOID_KEY);
+    return mergePhraseAvoidance(stored?.[PHRASE_AVOID_KEY]);
+  } catch (error) {
+    return mergePhraseAvoidance(null);
+  }
+}
 
 const POST_SYSTEM_PROMPT = POST_NORMAL_PROMPT;
 const CLICKBAIT_POST_PROMPT = POST_NORMAL_PROMPT;
@@ -704,6 +753,7 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
   const premium = postKind === "premium";
   const xTheme = postKind === "x";
   const postPrompt = xTheme ? postXPrompt : premium ? postPremiumPrompt : postNormalPrompt;
+  const avoidance = formatPhraseAvoidance(await readPhraseAvoidance());
   const openingPrefix = premium || xTheme ? "" : choosePostOpening(openingDraw);
   const openingDirective = postKind === "xhs" ? "写成适合小红书图文的 Markdown：一个简短一级标题、2～4 个小节，每节只讲一个具体要点；清晰分段，适度强调关键词，不编造亲历。正文 200～450 字，不附绘图指令。" : openingPrefix
     ? `本次随机开头：正文第一行写“${openingPrefix}”，随后空一行，再写具体事件和看法；不要随后补对立面。`
@@ -728,7 +778,7 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: `${postPrompt}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}\n\n${openingDirective}\n\n${lengthDirective}${source === "evergreen" ? "\n\n这是常用民生观点池的取材：它不是一条待核实的新闻。请从给出的领域和观点出发，直接写一条可发布的原创短帖；不要因为没有新闻时间、人物或链接而返回 skip。可以结合普通人的生活选择展开，但不要虚构具体数字、事件或当事人。" : ""}${source === "xtheme" ? "\n\n这是 X 主题卡片的取材：它不是一条待核实的新闻。请只围绕给出的公司或产品写判断，不要因为没有新闻时间或链接而返回 skip。不要改写成与这些公司无关的社会新闻。" : ""}` },
+          { role: "system", content: `${postPrompt}\n\n${avoidance}\n\n${NEWS_REWRITE_SYSTEM_PROMPT}\n\n${openingDirective}\n\n${lengthDirective}${source === "evergreen" ? "\n\n这是常用民生观点池的取材：它不是一条待核实的新闻。请从给出的领域和观点出发，直接写一条可发布的原创短帖；不要因为没有新闻时间、人物或链接而返回 skip。可以结合普通人的生活选择展开，但不要虚构具体数字、事件或当事人。" : ""}${source === "xtheme" ? "\n\n这是 X 主题卡片的取材：它不是一条待核实的新闻。请只围绕给出的公司或产品写判断，不要因为没有新闻时间或链接而返回 skip。不要改写成与这些公司无关的社会新闻。" : ""}` },
           { role: "user", content: `来源：${String(source).slice(0, 30)}\n标题：${String(title).slice(0, 180)}\n摘要：${String(summary).slice(0, 320)}\n近期已用主题：${Array.isArray(recentTopics) ? recentTopics.slice(-30).join("；").slice(0, 1200) : ""}\n近期已用开头：${Array.isArray(recentOpenings) ? recentOpenings.slice(-8).join("；").slice(0, 500) : ""}\n近期已用结尾：${Array.isArray(recentEndings) ? recentEndings.slice(-8).join("；").slice(0, 500) : ""}${avoidPost ? `\n上一稿因“${String(avoidReason).slice(0, 40)}”被退回：${String(avoidPost).slice(0, 180)}。请换个具体切口和开头结尾，从头重写。` : ""}` }
         ],
         thinking: { type: "disabled" },
@@ -788,6 +838,7 @@ async function generateTopicalPost({ contextText, lastPost, postKind = "normal" 
   const context = String(contextText || "").trim().slice(0, 6000);
   if (!context) throw new Error("没有读取到可用的话题素材");
   const postPrompt = postKind === "x" ? postXPrompt : postKind === "premium" ? postPremiumPrompt : postNormalPrompt;
+  const avoidance = formatPhraseAvoidance(await readPhraseAvoidance());
   const steer = Math.random() < 0.25
     ? "这次用一两句白话带到 AI 或 Web3，仍然短。不要写币，不要出现 $。"
     : "这次不要写 AI、Web3 或加密货币。不要出现 $。就顺着素材里的一件具体事。";
@@ -803,7 +854,7 @@ async function generateTopicalPost({ contextText, lastPost, postKind = "normal" 
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: `${postPrompt}\n\n正文直接写素材中的具体事件与一边的看法；不要正反对照。不用‘不是……而是……’等假对比，不用‘本文’‘这条推文’介绍写作过程。不要补行业总结或素材没有提到的后续人事变化；别硬加空赞。` },
+          { role: "system", content: `${postPrompt}\n\n${avoidance}\n\n正文直接写素材中的具体事件与一边的看法；不要正反对照。不用‘不是……而是……’等假对比，不用‘本文’‘这条推文’介绍写作过程。不要补行业总结或素材没有提到的后续人事变化；别硬加空赞。` },
           {
             role: "user",
             content: `当前可见话题素材：\n${context}\n\n上一条已发布内容（避免重复）：\n${String(lastPost || "无").slice(0, 500)}\n\n${steer}`
@@ -4956,6 +5007,10 @@ if (typeof module === "object" && module.exports) {
     applyPostOpening,
     collectNewsSources,
     rewriteNewsPost,
+    PHRASE_AVOID_KEY,
+    PHRASE_AVOID_SEED,
+    mergePhraseAvoidance,
+    formatPhraseAvoidance,
     callDeepSeek,
     handleMessage,
     fetchConfiguredModel,
@@ -5070,6 +5125,7 @@ if (typeof module === "object" && module.exports) {
     POST_SYSTEM_PROMPT,
     POST_NORMAL_PROMPT,
     POST_PREMIUM_PROMPT,
+    POST_X_PROMPT,
     CLICKBAIT_POST_PROMPT,
     resolvePromptBundle,
     isLegacyBuiltInPostPrompt,

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Interaction Assistant",
-  "version": "4.10.0",
+  "version": "4.11.0",
   "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
   "icons": {
     "16": "icons/icon16.png",
@@ -99,6 +99,7 @@
         "extensionContext.js",
         "bigInteractionArchive.js",
         "interactionRecap.js",
+        "postPageMarks.js",
         "content.js",
         "experiments.js"
       ],
@@ -112,7 +113,8 @@
     {
       "resources": [
         "debugDrafts.html",
-        "debugDrafts.js"
+        "debugDrafts.js",
+        "dictateBridge.js"
       ],
       "matches": [
         "https://x.com/*",

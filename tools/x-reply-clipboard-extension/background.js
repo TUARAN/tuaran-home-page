@@ -2267,7 +2267,7 @@ function defaultTaskRules() {
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
       : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
-      : mode === "notifications" ? "fast"
+      : mode === "notifications" ? "boundary"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2635,6 +2635,14 @@ async function readTaskSchedule() {
     // A saved 1, 8, or 24 hour choice stays.
     if (plan.rules.notifications.pace === "medium") plan.rules.notifications.pace = "fast";
     plan.notificationPaceDefaultVersion = 3;
+    scheduleMigrated = true;
+  }
+  if ((plan.notificationPaceDefaultVersion || 0) < 4) {
+    // The previous default window was 4 hours. Move that default to 24 hours.
+    // A saved 1, 2, or 8 hour choice stays. An already chosen 24 hour window stays.
+    // After this runs once, picking 4 hours again is left alone.
+    if (plan.rules.notifications.pace === "fast") plan.rules.notifications.pace = "boundary";
+    plan.notificationPaceDefaultVersion = 4;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {

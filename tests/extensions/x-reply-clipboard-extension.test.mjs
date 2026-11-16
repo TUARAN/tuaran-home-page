@@ -5290,7 +5290,8 @@ test('reply pace rows label the default for the current reply task', async () =>
   const sandbox = vm.createContext({ loopApi: loop })
   vm.runInContext(`${helper}\nglobalThis.nameFor = replyPaceName`, sandbox)
   assert.equal(sandbox.nameFor({ id: 'medium', label: '中' }, 'notifications'), '2 小时')
-  assert.equal(sandbox.nameFor({ id: 'fast', label: '快' }, 'notifications'), '4 小时（默认）')
+  assert.equal(sandbox.nameFor({ id: 'fast', label: '快' }, 'notifications'), '4 小时')
+  assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'notifications'), '24 小时（默认）')
   assert.equal(sandbox.nameFor({ id: 'boundary', label: '边界测试' }, 'timeline'), '边界测试（默认）')
   assert.equal(sandbox.nameFor({ id: 'slow', label: '慢' }, 'kol'), '慢（默认）')
   assert.equal(sandbox.nameFor({ id: 'turbo', label: '超快' }, 'notifications'), '8 小时')
@@ -7062,7 +7063,7 @@ test('notification scan accepts the last 24 hours and excludes older or unknown 
   assert.equal(loop.notificationWithinWindow(0, now), false)
   assert.equal(loop.notificationWindowMs('medium'), 2 * 60 * 60 * 1000)
   assert.equal(loop.notificationWindowMs('fast'), 4 * 60 * 60 * 1000)
-  assert.equal(loop.notificationWindowMs(), 4 * 60 * 60 * 1000)
+  assert.equal(loop.notificationWindowMs(), 24 * 60 * 60 * 1000)
   assert.equal(loop.notificationWindowMs('boundary'), 24 * 60 * 60 * 1000)
   assert.equal(loop.notificationWithinWindow(now - 3 * 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), false)
   assert.equal(loop.notificationWithinWindow(now - 60 * 60 * 1000, now, loop.notificationWindowMs('medium')), true)
@@ -8781,7 +8782,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
   assert.equal(rules.timeline.pace, 'boundary')
-  assert.equal(rules.notifications.pace, 'fast')
+  assert.equal(rules.notifications.pace, 'boundary')
   assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
@@ -8867,8 +8868,8 @@ test('existing schedule receives the daily follow-back cadence and new default w
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
     assert.equal(plan.commentEqualPriorityVersion, 1)
-    assert.equal(plan.rules.notifications.pace, 'fast')
-    assert.equal(plan.notificationPaceDefaultVersion, 3)
+    assert.equal(plan.rules.notifications.pace, 'boundary')
+    assert.equal(plan.notificationPaceDefaultVersion, 4)
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['poster-premium'].priority, 8)
     assert.equal(plan.rules.poster.priority, 7)
@@ -8906,9 +8907,9 @@ test('previous notification defaults settle on the 4 hour window once', async ()
   } } }
   try {
     const plan = await background.readTaskSchedule()
-    assert.equal(plan.rules.notifications.pace, 'fast')
-    assert.equal(plan.notificationPaceDefaultVersion, 3)
-    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
+    assert.equal(plan.notificationPaceDefaultVersion, 4)
+    assert.equal((await background.readTaskSchedule()).rules.notifications.pace, 'boundary')
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8937,7 +8938,7 @@ test('saved notification windows stay put after the 4 hour default migration', a
       rules: { notifications: { pace: 'slow' } },
     })
     assert.equal(kept.plan.rules.notifications.pace, 'slow')
-    assert.equal(kept.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(kept.plan.notificationPaceDefaultVersion, 4)
     assert.equal(kept.extraWrites, 0)
 
     const chosenEight = await readStored({
@@ -8947,8 +8948,36 @@ test('saved notification windows stay put after the 4 hour default migration', a
       rules: { notifications: { pace: 'turbo' } },
     })
     assert.equal(chosenEight.plan.rules.notifications.pace, 'turbo')
-    assert.equal(chosenEight.plan.notificationPaceDefaultVersion, 3)
+    assert.equal(chosenEight.plan.notificationPaceDefaultVersion, 4)
     assert.equal(chosenEight.extraWrites, 0)
+
+    const movedDefault = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 3,
+      rules: { notifications: { pace: 'fast' } },
+    })
+    assert.equal(movedDefault.plan.rules.notifications.pace, 'boundary')
+    assert.equal(movedDefault.plan.notificationPaceDefaultVersion, 4)
+    assert.equal(movedDefault.extraWrites, 0)
+
+    const chosenTwo = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 3,
+      rules: { notifications: { pace: 'medium' } },
+    })
+    assert.equal(chosenTwo.plan.rules.notifications.pace, 'medium')
+    assert.equal(chosenTwo.extraWrites, 0)
+
+    const chosenFourAfter = await readStored({
+      enabled: false, current: '', items: {},
+      ...settledVersions,
+      notificationPaceDefaultVersion: 4,
+      rules: { notifications: { pace: 'fast' } },
+    })
+    assert.equal(chosenFourAfter.plan.rules.notifications.pace, 'fast')
+    assert.equal(chosenFourAfter.extraWrites, 0)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -8980,7 +9009,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 8)
-    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['mutual-unfollow'].priority, 3)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
@@ -9004,7 +9033,7 @@ test('untouched default scores move up one point and a hand-edited score stays',
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.notifications.priority, 7)
-    assert.equal(plan.rules.notifications.pace, 'fast')
+    assert.equal(plan.rules.notifications.pace, 'boundary')
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.rules['likes-posts'].minGapMs, background.LIKE_MIN_GAP_MS)
   } finally {

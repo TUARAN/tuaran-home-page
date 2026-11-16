@@ -2390,7 +2390,7 @@ test('background status reports resident recovery as waiting but manual stops as
     readSharedFollowTodayCount: async () => 0,
     RUNTIME_REPORT_STALE_MS: 90_000,
     MAX_TASK_PRIORITY: 10,
-    SCHEDULE_PRIORITY_HINT: '优先级 1～10 分，分值越大越重要',
+    SCHEDULE_PRIORITY_HINT: '按队列轮转；旧优先级分数不影响排班',
     RESIDENT_TASKS: ['timeline', 'notifications'],
     QUEUED_TASKS: ['poster'],
     TASK_TITLE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子', poster: '纯文字帖' },
@@ -7164,6 +7164,8 @@ test('old notification cooldown is cleared once after the scan fix', async () =>
     validMutualMode: (value) => value || 'unfollow',
     validReplyMode: (value) => value || 'ai',
     RUN_SIZE: 100,
+    isScriptFailureReason: () => false,
+    state: {},
   })
   vm.runInContext(`${definition.replace(/return savedDefaults\(\);\n    \}/gu, 'throw error;\n    }')}\nglobalThis.read = readSaved`, context)
   assert.equal(context.read('notifications').nextCycleAt, 0)
@@ -7699,7 +7701,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
   assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
   assert.match(content, /\$\{score\}分/)
-  assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要"/)
+  assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "按队列轮转；旧优先级分数不影响排班"/)
   assert.match(backgroundSource, /MAX_TASK_PRIORITY = 10/)
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
@@ -8569,7 +8571,7 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   assert.equal(background.dueTaskModes(queued, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))[0], 'timeline')
 })
 
-test('three due comment tasks have equal launch odds without overriding manual starts or cooldowns', () => {
+test('due comment tasks keep queue order while manual starts and cooldowns apply', () => {
   const now = Date.parse('2026-10-28T13:00:00+08:00')
   const plan = {
     enabledAt: now - 6 * 60 * 60000,
@@ -8581,17 +8583,14 @@ test('three due comment tasks have equal launch odds without overriding manual s
     },
   }
   const due = background.dueTaskModes(plan, now)
-  const picks = [0, 1 / 3, 2 / 3].map((value) => background.drawDueReplyTask(plan, due, () => value)[0])
-  assert.equal(new Set(picks).size, 3)
-  assert.deepEqual(picks.sort(), ['kol', 'notifications', 'timeline'])
-  assert.equal(background.drawDueReplyTask(plan, due, () => 0.999999)[0], due.filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode)).at(-1))
+  assert.deepEqual(due.filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode)), ['notifications', 'timeline', 'kol'])
 
   const manual = { ...plan, items: { ...plan.items, notifications: { manualRequestedAt: now } } }
-  assert.equal(background.drawDueReplyTask(manual, background.dueTaskModes(manual, now), () => 0.99)[0], 'notifications')
+  assert.equal(background.dueTaskModes(manual, now)[0], 'notifications')
   const cooling = { ...plan, items: { ...plan.items, kol: { resumeAt: now + 60_000 } } }
   const coolingDue = background.dueTaskModes(cooling, now)
   assert.ok(!coolingDue.includes('kol'))
-  assert.equal(new Set([0, 0.99].map((value) => background.drawDueReplyTask(cooling, coolingDue, () => value)[0])).size, 2)
+  assert.deepEqual(coolingDue.filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode)), ['notifications', 'timeline'])
 })
 
 test('a comment restriction runs notifications ahead of timeline and kol', () => {
@@ -8610,7 +8609,6 @@ test('a comment restriction runs notifications ahead of timeline and kol', () =>
   }
   const commentDue = background.dueTaskModes(restricted, now).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))
   assert.equal(commentDue[0], 'notifications')
-  assert.equal(background.drawDueReplyTask(restricted, background.dueTaskModes(restricted, now), () => 0.99)[0], 'notifications')
   const desk = background.scheduleTimeline({ ...restricted, current: 'timeline' }, now)
   assert.equal(desk.future.find((entry) => entry.status === 'ready')?.mode, 'notifications')
 
@@ -9317,7 +9315,7 @@ test('follow rate limits release the shared schedule slot immediately', async ()
   }
 })
 
-test('effective follow boost is shared by ranking and preemption score', () => {
+test('stored priority does not override the queue or follow cooldown', () => {
   const now = Date.parse('2026-11-12T12:00:00+08:00')
   const plan = {
     sharedFollowTodayCount: 40,
@@ -9327,13 +9325,13 @@ test('effective follow boost is shared by ranking and preemption score', () => {
       'likes-posts': { lastRunAt: now - 10 * 60000 },
     },
   }
-  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now), 7)
-  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now), background.FOLLOW_PRIORITY_BOOST)
-  assert.equal(background.effectiveSchedulePriority(plan, 'likes-posts', now), 6)
-  assert.ok(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now)
-    > background.effectiveSchedulePriority(plan, 'timeline', now))
+  plan.rules['mutual-targetFollow'].priority = 10
+  plan.rules.timeline.priority = 1
+  const due = background.dueTaskModes(plan, now)
+  assert.ok(due.indexOf('timeline') < due.indexOf('mutual-targetFollow'))
+  assert.ok(!due.includes('mutual-followBack'))
   plan.sharedFollowTodayCount = 300
-  assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now), 7)
+  assert.deepEqual(background.dueTaskModes(plan, now), due)
 })
 
 test('existing follow tasks leave the old next-night and weekly waits', async () => {
@@ -11569,14 +11567,6 @@ test('leftover timeline priority 9 migrates to 8 after comment equal-priority ve
     const plan = await background.readTaskSchedule()
     assert.equal(plan.rules.timeline.priority, 8)
     assert.equal(plan.timelineEqualPriorityVersion, 1)
-    assert.ok(
-      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-targetFollow', Date.now())
-      > plan.rules.timeline.priority
-    )
-    assert.ok(
-      background.effectiveSchedulePriority({ ...plan, sharedFollowTodayCount: 10 }, 'mutual-followBack', Date.now())
-      < plan.rules.timeline.priority
-    )
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -11845,8 +11835,7 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.ok(plan.items['mutual-unfollow'].resumeAt >= now + background.UNFOLLOW_MIN_GAP_MS - 2 * 60 * 60 * 1000)
     assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), false)
     plan.sharedFollowTodayCount = 10
-    assert.equal(background.effectiveSchedulePriority(plan, 'mutual-targetFollow', now + 10 * 60 * 1000), background.FOLLOW_PRIORITY_BOOST)
-    assert.equal(background.effectiveSchedulePriority(plan, 'mutual-followBack', now + 10 * 60 * 1000), 7)
+    assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), false)
     const again = await background.readTaskSchedule()
     assert.equal(again.items['mutual-followBack'].resumeAt, plan.items['mutual-followBack'].resumeAt)
     plan.targetFollowTurnVersion = 0
@@ -12170,6 +12159,8 @@ test('saved unfollowEnglish stays off until an explicit choice after the new def
     validMutualMode: (value) => value || 'unfollow',
     validReplyMode: (value) => value || 'ai',
     RUN_SIZE: 100,
+    isScriptFailureReason: () => false,
+    state: {},
   })
   vm.runInContext(`${definition.replace(/return savedDefaults\(\);\n    \}/gu, 'throw error;\n    }')}\nglobalThis.read = readSaved`, context)
   assert.equal(context.read('mutual-unfollow').unfollowEnglish, false)

@@ -135,7 +135,7 @@ function buildDesk(groups, schedule) {
     })
   }
   const rest = [...byMode.values()].filter((task) => task.mode !== nowMode && task.mode !== nextMode)
-  rest.sort((a, b) => taskRank(a) - taskRank(b) || b.priority - a.priority || String(a.label).localeCompare(String(b.label), 'zh'))
+  rest.sort((a, b) => taskRank(a) - taskRank(b) || String(a.label).localeCompare(String(b.label), 'zh'))
   return {
     ordered: tasks,
     nowTask: nowMode ? byMode.get(nowMode) : null,

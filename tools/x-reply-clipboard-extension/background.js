@@ -3781,7 +3781,7 @@ const RUNTIME_REPORT_MODES = Object.freeze([
   "prune-posts", "prune-replies"
 ]);
 const RUNTIME_REPORT_STALE_MS = 90 * 1000;
-const SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要";
+const SCHEDULE_PRIORITY_HINT = "按队列轮转；旧优先级分数不影响排班";
 
 globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
   const runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }));
@@ -3959,8 +3959,7 @@ async function applyRemoteScheduleConfig(raw) {
       if (!next.enabled && plan.enabled && plan.current === mode) skipped.push(TASK_TITLE_LABELS[mode] || mode);
       else rules[mode].enabled = next.enabled;
     }
-    const priority = Number(next.priority);
-    if (Number.isInteger(priority) && priority >= 1 && priority <= MAX_TASK_PRIORITY) rules[mode].priority = priority;
+    // Keep stored legacy priority values for compatibility; remote edits no longer change them.
   }
   plan.rules = normalizedTaskRules(rules);
   await saveTaskSchedule(plan);

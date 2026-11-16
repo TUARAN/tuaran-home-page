@@ -6300,7 +6300,7 @@
     if (!["timeline", "notifications", "kol"].includes(state.assistantMode)) return "ignored";
     // Schedule owns the shared reply-risk cooldown; yield so priority picks the next task after it lifts.
     if (taskSchedule.enabled) {
-      state.status = `${summary}；评论首页 / 回复 / 大V 共用冷却，到期后按优先级继续`;
+      state.status = `${summary}；评论首页 / 回复 / 大V 共用冷却，到期后按队列继续`;
       renderPanel();
       riskRoundRequested = false;
       riskRoundAdvancing = false;
@@ -8506,7 +8506,7 @@
           </div>
           <div class="xrc-docs-content">
             <section class="xrc-docs-section xrc-monitor-current">
-              <div class="xrc-docs-title"><b>NOW</b><span><strong data-xrc-monitor-current>当前任务 · 0 次异常/重试</strong><small>仅统计当前 X 窗口；其他任务各自在专用窗口运行</small></span></div>
+              <div class="xrc-docs-title"><b>NOW</b><span><strong data-xrc-monitor-current>当前任务 · 0 次异常/重试</strong><small>仅统计当前 X 窗口；排班任务共用一个执行页签</small></span></div>
               <p data-xrc-monitor-detail>待命</p>
             </section>
             <section class="xrc-docs-section xrc-limit-monitor">

@@ -2390,7 +2390,7 @@ test('background status reports resident recovery as waiting but manual stops as
     readSharedFollowTodayCount: async () => 0,
     RUNTIME_REPORT_STALE_MS: 90_000,
     MAX_TASK_PRIORITY: 10,
-    SCHEDULE_PRIORITY_HINT: '优先级 1～10 分，分值越大越重要',
+    SCHEDULE_PRIORITY_HINT: '按队列轮转；旧优先级分数不影响排班',
     RESIDENT_TASKS: ['timeline', 'notifications'],
     QUEUED_TASKS: ['poster'],
     TASK_TITLE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子', poster: '纯文字帖' },
@@ -7158,6 +7158,8 @@ test('old notification cooldown is cleared once after the scan fix', async () =>
     validMutualMode: (value) => value || 'unfollow',
     validReplyMode: (value) => value || 'ai',
     RUN_SIZE: 100,
+    isScriptFailureReason: () => false,
+    state: {},
   })
   vm.runInContext(`${definition.replace(/return savedDefaults\(\);\n    \}/gu, 'throw error;\n    }')}\nglobalThis.read = readSaved`, context)
   assert.equal(context.read('notifications').nextCycleAt, 0)
@@ -7693,7 +7695,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
   assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
   assert.match(content, /\$\{score\}分/)
-  assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "优先级 1～10 分，分值越大越重要"/)
+  assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "按队列轮转；旧优先级分数不影响排班"/)
   assert.match(backgroundSource, /MAX_TASK_PRIORITY = 10/)
   assert.ok(manifest.host_permissions.includes('https://x.com/*'))
   assert.ok(manifest.host_permissions.includes('https://twitter.com/*'))
@@ -11846,6 +11848,8 @@ test('saved unfollowEnglish stays off until an explicit choice after the new def
     validMutualMode: (value) => value || 'unfollow',
     validReplyMode: (value) => value || 'ai',
     RUN_SIZE: 100,
+    isScriptFailureReason: () => false,
+    state: {},
   })
   vm.runInContext(`${definition.replace(/return savedDefaults\(\);\n    \}/gu, 'throw error;\n    }')}\nglobalThis.read = readSaved`, context)
   assert.equal(context.read('mutual-unfollow').unfollowEnglish, false)

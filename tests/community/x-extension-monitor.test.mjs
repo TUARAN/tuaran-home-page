@@ -187,7 +187,7 @@ test('schedule config keeps task membership and windows, and queues a local writ
       },
     },
   })
-  assert.deepEqual(normalized.payload.rules.timeline, { enabled: false, window: 'peak', priority: 9 })
+  assert.deepEqual(normalized.payload.rules.timeline, { enabled: false, window: 'peak' })
   assert.equal(normalized.payload.rules.poster, undefined)
   assert.equal(normalized.payload.rules.nope, undefined)
   const modes = ['timeline', 'notifications', 'kol', 'poster-premium', 'poster', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'likes-posts', 'likes-replies', 'mutual-followBack', 'prune-posts']
@@ -227,7 +227,7 @@ test('schedule config keeps task membership and windows, and queues a local writ
   const queued = await enqueueXRemoteCommand(db, { deviceId: 'device-x-monitor', command: 'schedule-set', payload: normalized.payload }, NOW)
   assert.equal(queued.ok, true)
   assert.equal(queued.command, 'schedule-set')
-  assert.deepEqual(JSON.parse(rows[0][2]).rules.timeline, { enabled: false, window: 'peak', priority: 9 })
+  assert.deepEqual(JSON.parse(rows[0][2]).rules.timeline, { enabled: false, window: 'peak' })
 })
 
 test('ext-update remote command normalizes and enqueues without a mode', async () => {

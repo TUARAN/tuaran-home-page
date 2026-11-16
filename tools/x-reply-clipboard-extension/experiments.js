@@ -89,19 +89,39 @@
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
     say(`已导出 ${saved.people.length} 人的 JSON，包含原头像链接；图片文件未打包`);
   }
+  const sectionTitle = '<div class="xrc-docs-title"><b>03</b><span><strong>运营辅助功能</strong><small>采集、归档与盘点</small></span></div>';
+  const captureMarkup = '<h3>认证粉丝与名录采集 · 测试版</h3><p>在关注 / 全部粉丝 / 认证粉丝页读取账号、昵称、原头像链接。每轮保存在此浏览器本机，刷新后可继续；不同账号和名单分别保存。</p><p>采集会滚动当前页面，请先暂停排班并保持此页在前台。不会执行关注、点赞或发帖。</p><div><button type="button" data-capture-start>开始 / 继续采集</button><button type="button" data-capture-export>导出本机 JSON</button></div><p role="status" aria-live="polite" data-capture-status>等待开始。头像保存为原图链接，导出不包含图片文件。</p>';
   function mount() {
-    const hub = document.querySelector('[data-xrc-hub]');
-    const content = hub?.querySelector('.xrc-docs-content');
+    const content = document.querySelector('#x-reply-clipboard-panel [data-xrc-hub] .xrc-docs-content');
     if (!content) return;
-    const existing = document.querySelector('[data-xrc-experiments]');
-    if (existing) { if (existing.parentElement !== content) content.appendChild(existing); return; }
-    box = document.createElement('details'); box.dataset.xrcExperiments = '';
-    box.className = 'xrc-experiments';
-    box.innerHTML = '<summary>运营辅助功能</summary><section data-xrc-people-capture><h3>认证粉丝与名录采集 · 测试版</h3><p>在关注 / 全部粉丝 / 认证粉丝页读取账号、昵称、原头像链接。每轮保存在此浏览器本机，刷新后可继续；不同账号和名单分别保存。</p><p>采集会滚动当前页面，请先暂停排班并保持此页在前台。不会执行关注、点赞或发帖。</p><div><button type="button" data-capture-start>开始 / 继续采集</button><button type="button" data-capture-export>导出本机 JSON</button></div><p role="status" aria-live="polite" data-capture-status>等待开始。头像保存为原图链接，导出不包含图片文件。</p></section>';
+    box = content.querySelector('[data-xrc-experiments]');
+    if (!box) {
+      box = document.createElement('section');
+      box.className = 'xrc-docs-section';
+      box.dataset.xrcExperiments = '';
+      box.innerHTML = sectionTitle;
+      content.appendChild(box);
+    } else if (box.tagName !== 'SECTION' || !box.querySelector('.xrc-docs-title')) {
+      const next = document.createElement('section');
+      next.className = 'xrc-docs-section';
+      next.dataset.xrcExperiments = '';
+      next.innerHTML = sectionTitle;
+      for (const child of [...box.children]) {
+        if (child.tagName === 'SUMMARY') continue;
+        next.appendChild(child);
+      }
+      box.replaceWith(next);
+      box = next;
+    }
+    if (!box.querySelector('[data-xrc-people-capture]')) {
+      const card = document.createElement('section');
+      card.dataset.xrcPeopleCapture = '';
+      card.innerHTML = captureMarkup;
+      box.appendChild(card);
+      card.querySelector('[data-capture-start]').addEventListener('click', start);
+      card.querySelector('[data-capture-export]').addEventListener('click', () => exportData().catch(e => say(`导出失败：${e.message}`)));
+    }
     status = box.querySelector('[data-capture-status]');
-    box.querySelector('[data-capture-start]').addEventListener('click', start);
-    box.querySelector('[data-capture-export]').addEventListener('click', () => exportData().catch(e => say(`导出失败：${e.message}`)));
-    content.appendChild(box);
   }
   setInterval(mount, 1500); mount();
 })(typeof globalThis !== 'undefined' ? globalThis : this);

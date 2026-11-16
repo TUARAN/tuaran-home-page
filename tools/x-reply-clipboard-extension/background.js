@@ -26,7 +26,7 @@ const TASK_SCHEDULE_KEY = "xrcTaskSchedule";
 const EXECUTION_ALERTS_KEY = "xrcExecutionAlertsV1";
 const TASK_SCHEDULE_ALARM = "xrc-task-schedule";
 const RESET_EPOCH_KEY = "xrcResetEpoch";
-const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
+const RESET_LOG_KEYS = new Set(["xrcDailyReports", "xrcCommentDailyCap", "xrcPostDailyCap", "xrcCommunityDailyCap", "xrcLimitObservations", "xrcLimitHypotheses", "xrcCommunityReport", EXECUTION_ALERTS_KEY]);
 const ACCOUNT_HANDLE_KEY = "xrcAccountHandle";
 const TARGET_FOLLOW_HANDLES_KEY = "xrcTargetFollowHandles";
 const KOL_HANDLES_KEY = kolRoster.KOL_HANDLES_KEY;
@@ -116,6 +116,7 @@ const POST_NORMAL_PROMPT = [
 
 const POST_PREMIUM_PROMPT = [
   "依据热点标题和摘要，写一条偏「观点精剖」的 X 中文短帖。只输出正文。",
+  "发出去时做成文字卡片：第一段是卡片标题，后面是卡片正文。",
   "目标：选一个切口，把判断说透一点——为什么成立、卡在哪、和常见说法差在哪。可大胆、可反常识，但必须贴素材里的具体事，不编事实。",
   "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
   "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
@@ -767,8 +768,8 @@ async function rewriteNewsPost({ title, summary = "", source = "", recentTopics 
     : lengthMode === "compact"
     ? "本次篇幅优先于默认篇幅：开头之后只写约 35～60 个中文字符，分成 2～3 个短行，每行之间留一个空行。尽快交代具体人或事，只把一边的看法说清楚；不要正反对照，更不要补凑字数的总结。不添加标题。"
     : premium
-      ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。"
-      : "本次篇幅：沿用纯文字帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
+      ? "本次篇幅：约 60～120 个中文字符，写成 2～4 个短段，段间留一个空行。第一段是文字卡片标题，后面是卡片正文。"
+      : "本次篇幅：沿用热点发帖提示词原有的字数。正文按意思分成 2～4 个短段，每段 1～2 句，尽量不超过 50 字；段间必须留一个空行。开头后的正文也必须继续分段，不要挤成一个长段。";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 300000);
   try {
@@ -1539,8 +1540,8 @@ const TASK_TITLE_LABELS = {
   notifications: "评论回复",
   "likes-posts": "点赞帖子",
   "likes-replies": "点赞评论",
-  poster: "纯文字帖",
-  "poster-premium": "精品发帖",
+  poster: "热点发帖",
+  "poster-premium": "卡片发帖",
   "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
   article: "普通发文",
   "site-forward": "站长转发",
@@ -1917,6 +1918,8 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
 
 const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
+const POST_TASKS = ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"];
+const COMMUNITY_TASKS = ["community-share"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
@@ -1980,6 +1983,25 @@ function terminalRunReason(text) {
 
 function limitRunReason(text) {
   return /超过限制|操作受限|疑似自动化/u.test(String(text || ""));
+}
+
+function systemLimitText(...parts) {
+  for (const part of parts) {
+    const text = String(part || "").trim();
+    if (!text || /已重启\s*\d+\s*次/u.test(text)) continue;
+    if (/疑似自动化|超过限制|操作受限|次数受限|系统超限|rate-limited|risk-blocked|automation-restricted/iu.test(text)) {
+      return readableLimitCode(text).slice(0, 120);
+    }
+  }
+  return "";
+}
+
+function restartSkipCopy(item, restarts) {
+  const limit = systemLimitText(item?.lastStartError, item?.reason);
+  if (limit) return `系统超限。${limit}`.slice(0, 160);
+  const cause = String(item?.lastStartError || "").trim();
+  const plain = cause && !/已重启\s*\d+\s*次/u.test(cause) ? cause : "执行页没有回报启动结果";
+  return `已重启 ${restarts} 次，已跳过这项任务。原因：${plain}`.slice(0, 160);
 }
 
 async function finishTerminalTask(plan, mode, detail, now = Date.now()) {
@@ -2050,7 +2072,7 @@ async function countUnconfirmedRestart(plan, mode, accountHandle = "") {
       resumeAt: 0,
       blocked: true,
       blockedAccount: accountHandleFrom(plan.accountHandle),
-      reason: `已重启 ${restarts} 次，已跳过这项任务`,
+      reason: restartSkipCopy(item, restarts),
       lastStartError: item.lastStartError || "执行页没有回报启动结果"
     };
     await saveTaskSchedule(plan);
@@ -2085,7 +2107,15 @@ function scheduledStartRetryItem(item, mode, reason, now = Date.now()) {
 }
 function alertOnExhaustedStart(mode, item, accountHandle = "") {
   if (!item?.blocked || Number(item.recoveryAttempts) < REPLY_START_FAILURE_LIMIT) return;
-  recordExecutionAlert({ task: mode, kind: "retry-exhausted", message: item.reason, attempts: item.recoveryAttempts, accountHandle }).catch(() => {});
+  const message = String(item.reason || "");
+  const limit = /^系统超限/u.test(message) || Boolean(systemLimitText(message, item.lastStartError));
+  recordExecutionAlert({
+    task: mode,
+    kind: limit ? "rate-limit" : "retry-exhausted",
+    message,
+    attempts: item.recoveryAttempts,
+    accountHandle
+  }).catch(() => {});
 }
 
 // The page reloaded itself during start confirmation. Count that refresh even when
@@ -2118,7 +2148,7 @@ async function noteUnconfirmedReload(mode, tabId, accountHandle = "") {
         resumeAt: 0,
         blocked: true,
         blockedAccount: accountHandleFrom(plan.accountHandle),
-        reason: `已重启 ${restarts} 次，已跳过这项任务`,
+        reason: restartSkipCopy(item, restarts),
         lastStartError: item.lastStartError || "执行页没有回报启动结果"
       };
       await saveTaskSchedule(plan);
@@ -2143,7 +2173,87 @@ async function noteUnconfirmedReload(mode, tabId, accountHandle = "") {
   scheduleWork = work.catch(() => {});
   return work;
 }
+
+function sameDocumentUrl(left, right) {
+  try {
+    const base = new URL(left);
+    const next = new URL(right, base);
+    base.hash = "";
+    next.hash = "";
+    return base.toString() === next.toString();
+  } catch (error) {
+    return false;
+  }
+}
+
+// A person asked to reload the occupied tab. Continue the same task, and do not
+// spend one of the three automatic reloads that skip the task.
+async function refreshOccupiedTaskPage(mode, tabId) {
+  const selected = validTaskMode(mode);
+  const id = Number(tabId);
+  if (!selected || !Number.isInteger(id) || id <= 0) return { ok: false, error: "没有可刷新的任务页面" };
+  const work = scheduleWork.then(async () => {
+    const plan = await readTaskSchedule();
+    if (!plan.enabled || plan.current !== selected) return { ok: false, error: "当前没有这项任务在执行" };
+    const item = plan.items?.[selected] || {};
+    if (item.blocked || item.manualStopped) return { ok: false, error: "这项任务已经停下，不能刷新继续" };
+    const workTabId = Number(plan.workTabId);
+    if (workTabId > 0 && workTabId !== id) return { ok: false, error: "请在正在执行的页签刷新" };
+    let live;
+    try {
+      live = await chrome.tabs.get(id);
+    } catch (error) {
+      return { ok: false, error: "执行页签已经关闭" };
+    }
+    const destination = await launchTaskTabUrl(selected, live.url || "", {
+      start: true,
+      accountHandle: plan.accountHandle || "",
+      currentUrl: live.url || "",
+      pruneSearchStart: selected === "prune-posts" && await readPruneSearchStart()
+    });
+    if (!destination) return { ok: false, error: "没有可刷新的任务页面" };
+    await rememberPendingLaunch(selected, destination, true, id);
+    if (sameDocumentUrl(live.url || "", destination)) {
+      if (chrome.tabs.reload) await chrome.tabs.reload(id);
+    } else {
+      await chrome.tabs.update(id, { url: destination, autoDiscardable: false });
+    }
+    const now = Date.now();
+    plan.startedAt = now;
+    plan.workTabId = id;
+    plan.items[selected] = {
+      ...item,
+      resumeAt: now + 60000,
+      reason: "已手动刷新页面，继续当前任务",
+      lastStartError: ""
+    };
+    await saveTaskSchedule(plan);
+    await seedRuntimeOccupancy(selected, id, "starting", "等待执行页回报启动结果");
+    return { ok: true };
+  });
+  scheduleWork = work.catch(() => {});
+  return work;
+}
 const REPLY_RISK_COOLDOWN_MS = 10 * 60 * 1000;
+function replyRiskCooldownMs(streak) {
+  return Math.min(8, 2 ** (Math.max(1, Math.floor(Number(streak) || 1)) - 1)) * 60 * 60 * 1000;
+}
+const POST_RISK_COOLDOWN_CAP_MS = 60 * 60 * 1000;
+
+function postRiskDelayMs(streak) {
+  return Math.min(POST_RISK_COOLDOWN_CAP_MS, Math.max(1, Number(streak) || 1) * REPLY_RISK_COOLDOWN_MS);
+}
+
+function postRiskReason(streak) {
+  return `X 提示疑似自动化，第 ${Math.max(1, Number(streak) || 1)} 次冷却后自动重试`;
+}
+
+function readableLimitCode(reason) {
+  const value = String(reason || "").trim();
+  if (value === "risk-blocked" || value === "automation-restricted") return "X 提示疑似自动化或账号受限";
+  if (value === "rate-limited") return "X 提示操作次数受限";
+  return value;
+}
 /** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
 const STARTING_GRACE_MS = 90 * 1000;
 /** Probe can time out while the page is busy; require sustained unknown before recovery. */
@@ -2310,6 +2420,24 @@ function likeMinGapMs(pace) {
 
 function cleanupMinGapMs(pace) { return ({ slow: 240, medium: 120, fast: 60, turbo: 30 }[pace] || 240) * 60000; }
 
+const CARD_DAILY_QUOTAS = Object.freeze([1, 3, 5, 10]);
+const DEFAULT_CARD_DAILY_QUOTA = 3;
+const CARD_SLOT_MINUTES = Object.freeze({
+  1: Object.freeze([12 * 60]),
+  3: Object.freeze([8 * 60, 14 * 60, 20 * 60]),
+  5: Object.freeze([8 * 60, 11 * 60, 14 * 60, 17 * 60, 20 * 60]),
+  10: Object.freeze([8 * 60, 9 * 60 + 30, 11 * 60, 12 * 60 + 30, 14 * 60, 15 * 60 + 30, 17 * 60, 18 * 60 + 30, 20 * 60, 21 * 60 + 30])
+});
+
+function normalizeCardDailyQuota(value) {
+  const quota = Number(value);
+  return CARD_DAILY_QUOTAS.includes(quota) ? quota : DEFAULT_CARD_DAILY_QUOTA;
+}
+
+function cardSlotMinutes(quota) {
+  return CARD_SLOT_MINUTES[normalizeCardDailyQuota(quota)];
+}
+
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
     enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode),
@@ -2328,7 +2456,8 @@ function defaultTaskRules() {
       : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
       : mode === "mutual-targetFollow" ? followSessionGapMs("medium")
       : ["likes-posts", "likes-replies"].includes(mode) ? LIKE_MIN_GAP_MS
-      : 0
+      : 0,
+    ...(mode === "poster-premium" ? { dailyQuota: DEFAULT_CARD_DAILY_QUOTA } : {})
   }]));
 }
 
@@ -2365,15 +2494,15 @@ function normalizedTaskRules(value) {
           ? fallbackGap
           : Math.max(0, Math.min(30 * 24 * 60 * 60 * 1000, Math.floor(requestedGap)))
     };
+    if (mode === "poster-premium") defaults[mode].dailyQuota = normalizeCardDailyQuota(rule.dailyQuota);
   }
   return defaults;
 }
 
 function taskWindowOpen(mode, rule, now) {
-  void rule;
   const shanghai = new Date(now + 8 * 60 * 60000);
   const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
-  if (mode === "poster-premium" && ![480, 570, 720, 900, 1140].some((slot) => minutes >= slot && minutes < slot + 15)) return false;
+  if (mode === "poster-premium" && !cardSlotMinutes(rule?.dailyQuota).some((slot) => minutes >= slot && minutes < slot + 15)) return false;
   if (mode === "site-forward" && minutes < 14 * 60) return false;
   return true;
 }
@@ -2448,7 +2577,15 @@ function dueTaskModes(plan, now = Date.now()) {
       const manuallyRequested = Number(item.manualRequestedAt) > 0 && mode !== "poster-premium";
       const replyRiskWait = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > now
         && /疑似自动化|限制冷却/u.test(String(item.reason || ""));
-      const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode) && !replyRiskWait;
+      const commentCapWait = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > now
+        && /今日评论已到|今日评论额度暂时读不到/u.test(String(item.reason || ""));
+      const postCapWait = POST_TASKS.includes(mode) && Number(item.resumeAt) > now
+        && /今日发帖已到|今日发帖额度暂时读不到/u.test(String(item.reason || ""));
+      const postRiskWait = POST_TASKS.includes(mode) && Number(item.resumeAt) > now
+        && /疑似自动化|冷却后自动重试/u.test(String(item.reason || ""));
+      const communityCapWait = COMMUNITY_TASKS.includes(mode) && Number(item.resumeAt) > now
+        && /今日社群已到|今日社群额度暂时读不到/u.test(String(item.reason || ""));
+      const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode) && !replyRiskWait && !commentCapWait && !postCapWait && !postRiskWait && !communityCapWait;
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
       const forwardedToday = mode === "site-forward" && (item.successDate === shanghaiDateKey(now) || item.uncertainDate === shanghaiDateKey(now));
       return (rule.enabled || manualFocusMode === mode) && !item.blocked && !manualStopped && !forwardedToday
@@ -2522,7 +2659,7 @@ function nextTaskWindowAt(mode, rule, earliest) {
 function isScheduleWaitReason(reason) {
   const text = String(reason || "").trim();
   if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
-  return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待每周|点赞短轮/u.test(text);
+    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待卡片|等待每周|点赞短轮|今日评论已到|今日评论额度暂时读不到|今日发帖已到|今日发帖额度暂时读不到|今日社群已到|今日社群额度暂时读不到/u.test(text);
 }
 
 function healStaleManualStops(plan) {
@@ -2835,7 +2972,7 @@ async function readTaskSchedule() {
         plan.items[mode] = {
           ...item,
           blocked: false,
-          resumeAt: item.manualStopped ? 0 : Date.now() + streak * REPLY_RISK_COOLDOWN_MS,
+          resumeAt: item.manualStopped ? 0 : Date.now() + replyRiskCooldownMs(streak),
           reason: item.manualStopped ? "已手动停止" : `X 提示疑似自动化，第 ${streak} 次冷却后自动重试`
         };
       }
@@ -2850,17 +2987,34 @@ async function readTaskSchedule() {
         streak: Math.max(1, sharedStreak),
         resumeAt: sharedResumeAt > Date.now()
           ? sharedResumeAt
-          : Date.now() + Math.max(1, sharedStreak) * REPLY_RISK_COOLDOWN_MS,
+          : Date.now() + replyRiskCooldownMs(sharedStreak),
         reason: sharedReason || `X 提示疑似自动化，第 ${Math.max(1, sharedStreak)} 次冷却后自动重试（评论三项共用）`
       });
     }
     plan.replyRiskVersion = 2;
     await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
   }
+  if ((plan.postRiskVersion || 0) < 1) {
+    for (const mode of POST_TASKS) {
+      const item = plan.items?.[mode];
+      if (!item?.blocked) continue;
+      const reason = String(item.reason || "");
+      if (!/risk-blocked|rate-limited|automation-restricted|受限|疑似自动化/u.test(reason)) continue;
+      const streak = Math.max(1, Number(item.limitedStreak) || 1);
+      plan.items[mode] = {
+        ...item,
+        blocked: false,
+        resumeAt: item.manualStopped ? 0 : Date.now() + postRiskDelayMs(streak),
+        reason: item.manualStopped ? "已手动停止" : postRiskReason(streak)
+      };
+    }
+    plan.postRiskVersion = 1;
+    await chrome.storage.local.set({ [TASK_SCHEDULE_KEY]: plan });
+  }
   return plan;
 }
 
-function applySharedReplyRisk(plan, { streak, resumeAt, reason }) {
+function applySharedReplyRisk(plan, { streak, resumeAt, reason, provisional = false }) {
   const nextStreak = Math.max(0, Number(streak) || 0);
   const nextResumeAt = Math.max(0, Number(resumeAt) || 0);
   const nextReason = String(reason || "").slice(0, 160);
@@ -2882,6 +3036,7 @@ function applySharedReplyRisk(plan, { streak, resumeAt, reason }) {
       manualRequestedAt: 0,
       recoveryAttempts: 0,
       limitedStreak: nextStreak,
+      provisionalRisk: provisional,
       resumeAt: nextResumeAt,
       reason: nextReason
     };
@@ -2896,6 +3051,7 @@ function clearSharedReplyRisk(plan, { keepReason = "" } = {}) {
       ...prior,
       blocked: false,
       limitedStreak: 0,
+      provisionalRisk: false,
       resumeAt: prior.manualStopped ? 0 : 0,
       reason: prior.manualStopped ? (prior.reason || "已手动停止") : keepReason
     };
@@ -2978,9 +3134,18 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
       new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error("执行页停止超时")), 8000); })
     ]);
   } catch (error) {
-    if (!releaseOnFailure || !REPLY_TASKS.includes(mode)) return false;
-    await releaseBlockedReplyTab(tabId);
-    return true;
+    if (!releaseOnFailure) return false;
+    if (REPLY_TASKS.includes(mode)) {
+      await releaseBlockedReplyTab(tabId);
+      return true;
+    }
+    if (POST_TASKS.includes(mode)) {
+      delete tabs[mode];
+      await writeTaskTabs(tabs);
+      await removeRuntimeTab(tabId);
+      return true;
+    }
+    return false;
   } finally {
     clearTimeout(timeout);
   }
@@ -2989,6 +3154,12 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
       // A reply window that cannot confirm its stop must release the slot.
       // Keep the page and its contents intact; never navigate it into a native prompt.
       await releaseBlockedReplyTab(tabId);
+      return true;
+    }
+    if (releaseOnFailure && POST_TASKS.includes(mode)) {
+      delete tabs[mode];
+      await writeTaskTabs(tabs);
+      await removeRuntimeTab(tabId);
       return true;
     }
     return false;
@@ -3001,6 +3172,101 @@ async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFa
   }
   const result = await abandonScheduledTab(tabId);
   return result.closed || result.abandoned;
+}
+
+function commentDailyCapReason(budget) {
+  if (!budget?.reached || budget.uncertain) return "";
+  return `今日评论已到 ${budget.count}/${budget.cap}，明天继续`;
+}
+
+function postDailyCapReason(budget) {
+  if (!budget?.reached || budget.uncertain) return "";
+  return `今日发帖已到 ${budget.count}/${budget.cap}，明天继续`;
+}
+
+function stampNamedDailyCap(plan, modes, reason, resumeAt) {
+  if (!reason) return false;
+  for (const mode of modes) {
+    const item = plan.items?.[mode] || {};
+    plan.items[mode] = {
+      ...item,
+      blocked: false,
+      manualRequestedAt: 0,
+      resumeAt: Math.max(Number(item.resumeAt) || 0, resumeAt),
+      reason: item.manualStopped ? String(item.reason || "已手动停止") : reason
+    };
+  }
+  return true;
+}
+
+function stampCommentDailyCap(plan, budget) {
+  return stampNamedDailyCap(plan, REPLY_TASKS, commentDailyCapReason(budget), Number(budget?.resumeAt) || 0);
+}
+
+function stampPostDailyCap(plan, budget) {
+  return stampNamedDailyCap(plan, POST_TASKS, postDailyCapReason(budget), Number(budget?.resumeAt) || 0);
+}
+
+function communityDailyCapReason(budget) {
+  if (!budget?.reached || budget.uncertain) return "";
+  return `今日社群已到 ${budget.count}/${budget.cap}，明天继续`;
+}
+
+function stampCommunityDailyCap(plan, budget) {
+  return stampNamedDailyCap(plan, COMMUNITY_TASKS, communityDailyCapReason(budget), Number(budget?.resumeAt) || 0);
+}
+
+async function enforceNamedDailyCap(plan, now, { modes, readBudget, stamp, reasonFor }) {
+  const handle = accountHandleFrom(plan?.accountHandle) || await savedAccountHandle();
+  if (!handle || typeof readBudget !== "function") return { plan, released: false };
+  let budget = null;
+  try { budget = await readBudget(handle, now); }
+  catch (error) { return { plan, released: false }; }
+  if (!stamp(plan, budget)) return { plan, released: false };
+  const reason = reasonFor(budget);
+  await saveTaskSchedule(plan);
+  if (!modes.includes(plan.current)) return { plan, released: false };
+  const current = plan.current;
+  const released = await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true });
+  plan = await readTaskSchedule();
+  stamp(plan, budget);
+  if (released) {
+    recordScheduleSegment(plan, current, reason, now);
+    plan.current = "";
+    plan.startedAt = 0;
+  }
+  await saveTaskSchedule(plan);
+  return { plan, released: Boolean(released) };
+}
+
+async function enforceCommentDailyCap(plan, now = Date.now()) {
+  const readBudget = globalThis.XrcCommunityReceipt?.commentDailyBudget;
+  return enforceNamedDailyCap(plan, now, {
+    modes: REPLY_TASKS,
+    readBudget: typeof readBudget === "function" ? readBudget.bind(globalThis.XrcCommunityReceipt) : null,
+    stamp: stampCommentDailyCap,
+    reasonFor: commentDailyCapReason
+  });
+}
+
+async function enforcePostDailyCap(plan, now = Date.now()) {
+  const readBudget = globalThis.XrcCommunityReceipt?.postDailyBudget;
+  return enforceNamedDailyCap(plan, now, {
+    modes: POST_TASKS,
+    readBudget: typeof readBudget === "function" ? readBudget.bind(globalThis.XrcCommunityReceipt) : null,
+    stamp: stampPostDailyCap,
+    reasonFor: postDailyCapReason
+  });
+}
+
+async function enforceCommunityDailyCap(plan, now = Date.now()) {
+  const readBudget = globalThis.XrcCommunityReceipt?.communityDailyBudget;
+  return enforceNamedDailyCap(plan, now, {
+    modes: COMMUNITY_TASKS,
+    readBudget: typeof readBudget === "function" ? readBudget.bind(globalThis.XrcCommunityReceipt) : null,
+    stamp: stampCommunityDailyCap,
+    reasonFor: communityDailyCapReason
+  });
 }
 
 async function runTaskSchedule() {
@@ -3024,6 +3290,15 @@ async function runTaskSchedule() {
     return runTaskSchedule();
   }
   const now = Date.now();
+  const commentHold = await enforceCommentDailyCap(plan, now);
+  if (commentHold.released) return runTaskSchedule();
+  plan = commentHold.plan;
+  const postHold = await enforcePostDailyCap(plan, now);
+  if (postHold.released) return runTaskSchedule();
+  plan = postHold.plan;
+  const communityHold = await enforceCommunityDailyCap(plan, now);
+  if (communityHold.released) return runTaskSchedule();
+  plan = communityHold.plan;
   plan.sharedFollowTodayCount = await readSharedFollowTodayCount(now);
   let runtime = await verifyTaskRuntime(await readPluginRuntime({ prune: true }), now);
   // Persist probe outcomes so unknownSince / starting survive across alarm ticks.
@@ -3043,8 +3318,22 @@ async function runTaskSchedule() {
     }
     const item = plan.items[current] || {};
     if (await finishTerminalTask(plan, current, task?.detail, now)) return runTaskSchedule();
-    if (REPLY_TASKS.includes(current) && Number(item.resumeAt) > now && /疑似自动化/u.test(String(item.reason || ""))) {
-      const reason = String(item.reason);
+    const observedReplyRiskUntil = REPLY_TASKS.includes(current)
+      && /疑似自动化|X 限制冷却|风控等待中/u.test(String(task?.detail || ""))
+      ? Number(task?.waitUntil) || 0 : 0;
+    if (observedReplyRiskUntil > now && (Number(item.resumeAt) || 0) < observedReplyRiskUntil) {
+      const streak = Math.max(1, Number(item.limitedStreak) || 0);
+      applySharedReplyRisk(plan, {
+        streak,
+        resumeAt: observedReplyRiskUntil,
+        provisional: true,
+        reason: `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`
+      });
+      await saveTaskSchedule(plan);
+    }
+    const coolingItem = plan.items[current] || item;
+    if ((REPLY_TASKS.includes(current) || POST_TASKS.includes(current)) && Number(coolingItem.resumeAt) > now && /疑似自动化|冷却后自动重试/u.test(String(coolingItem.reason || ""))) {
+      const reason = String(coolingItem.reason);
       if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
         plan = await readTaskSchedule();
         recordScheduleSegment(plan, current, reason, now);
@@ -3125,6 +3414,25 @@ async function runTaskSchedule() {
     const unresponsive = (unresponsiveMissing || unresponsiveUnknown || unresponsiveStarting)
       && !item.blocked && !item.manualStopped && !manualDue;
     if (unresponsive || stalled) {
+      const liveLimit = systemLimitText(task?.detail);
+      if (liveLimit) {
+        recordScheduleSegment(plan, current, "系统超限", now);
+        plan.current = "";
+        plan.startedAt = 0;
+        plan.items[current] = {
+          ...item,
+          manualRequestedAt: 0,
+          recoveryAttempts: Math.max(Number(item.recoveryAttempts) || 0, REPLY_START_FAILURE_LIMIT),
+          resumeAt: 0,
+          blocked: true,
+          blockedAccount: accountHandleFrom(plan.accountHandle),
+          reason: `系统超限。${liveLimit}`.slice(0, 160),
+          lastStartError: liveLimit
+        };
+        await saveTaskSchedule(plan);
+        alertOnExhaustedStart(current, plan.items[current], plan.accountHandle);
+        return runTaskSchedule();
+      }
       const workTabId = Number(plan.workTabId);
       // A counted reload sets resumeAt a minute ahead so the page can boot.
       // pageIdle during that boot must not wipe the count or yield the slot.
@@ -3196,7 +3504,7 @@ async function runTaskSchedule() {
               resumeAt: 0,
               blocked: true,
               blockedAccount: accountHandleFrom(plan.accountHandle),
-              reason: `已重启 ${restarts} 次，已跳过这项任务`,
+              reason: restartSkipCopy(item, restarts),
               lastStartError: item.lastStartError || "执行页没有回报启动结果"
             };
             await saveTaskSchedule(plan);
@@ -3289,21 +3597,30 @@ async function runTaskSchedule() {
       : 0;
     const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
     item.retryKind = shortPruneRetry ? "prune-search-load" : "";
-    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume);
+    const dailyCapPattern = /今日评论已到|今日评论额度暂时读不到|今日发帖已到|今日发帖额度暂时读不到|今日社群已到|今日社群额度暂时读不到/u;
+    const dailyCapFloor = (REPLY_TASKS.includes(current) || POST_TASKS.includes(current) || COMMUNITY_TASKS.includes(current))
+      && dailyCapPattern.test(`${item.reason || ""} ${task?.detail || ""}`)
+      ? Math.max(Number(item.resumeAt) || 0, Number(task?.waitUntil) || 0)
+      : 0;
+    item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume, dailyCapFloor);
     const targetDailyCap = current === "mutual-targetFollow" && /额度已用完/.test(`${task?.detail || ""} ${item.reason || ""}`);
     const targetTurnCapped = current === "mutual-targetFollow" && !targetDailyCap && item.resumeAt > now + TARGET_FOLLOW_MIN_GAP_MS;
     if (targetTurnCapped) item.resumeAt = now + TARGET_FOLLOW_MIN_GAP_MS;
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
-    item.reason = waiting
+    item.reason = dailyCapFloor && !waiting
+      ? (dailyCapPattern.test(String(item.reason || ""))
+        ? String(item.reason)
+        : String(task?.detail || "今日额度已到，明天继续")).slice(0, 160)
+      : waiting
       ? String(task.detail || "等待冷却").slice(0, 160)
       : haltedCurrent
         ? String(item.reason || "任务已停止")
         : disabledCurrent
           ? "已从排班中停用"
           : premiumDue
-            ? "精品发帖档位到期，安全轮换"
+            ? "卡片发帖档位到期，安全轮换"
             : higherPriorityDue
               ? "更高优先级任务到期，安全轮换"
             : manualDue
@@ -3429,7 +3746,14 @@ async function noteScheduledAction(event) {
     if (mode === "article" || mode === "site-forward") item.resumeAt = Math.max(Number(item.resumeAt) || 0, Number(event.resumeAt) || 0);
     if (mode === "site-forward" && event.successDate) item.successDate = String(event.successDate);
     item.lastActionAt = Date.now();
+    const priorReason = String(item.reason || "");
     item.limitedStreak = 0;
+    if (POST_TASKS.includes(mode) && /疑似自动化|冷却后自动重试/u.test(priorReason)) {
+      item.blocked = false;
+      item.reason = "";
+      if (mode === "article" || mode === "site-forward") item.resumeAt = Number(event.resumeAt) || 0;
+      else item.resumeAt = 0;
+    }
     plan.items[mode] = item;
     if (REPLY_TASKS.includes(mode)) {
       // One successful reply means the account-level comment limit lifted for all three.
@@ -3449,14 +3773,25 @@ async function noteScheduledAction(event) {
     }
   } else {
     if (REPLY_TASKS.includes(mode)) {
-      const streak = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) || 0)) + 1;
-      const resumeAt = Date.now() + streak * REPLY_RISK_COOLDOWN_MS;
+      const priorStreak = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.limitedStreak) || 0));
+      const priorDeadline = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.resumeAt) || 0));
+      const provisional = REPLY_TASKS.some((replyMode) => plan.items?.[replyMode]?.provisionalRisk);
+      const streak = provisional && priorDeadline > Date.now() ? Math.max(1, priorStreak) : priorStreak + 1;
+      const resumeAt = Math.max(priorDeadline, Date.now() + replyRiskCooldownMs(streak));
       const reason = `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`;
       applySharedReplyRisk(plan, { streak, resumeAt, reason });
     } else if (SHARED_FOLLOW_MODES.includes(mode)) {
       const streak = Math.max(0, ...SHARED_FOLLOW_MODES.map((followMode) => Number(plan.items?.[followMode]?.limitedStreak) || 0)) + 1;
       const delay = event.errorCode === "risk-blocked" ? Math.min(60, streak * 10) * 60000 : 30 * 60000;
       applySharedFollowWait(plan, Date.now() + delay, `X 关注受限，回关与关注候选共用冷却 ${Math.ceil(delay / 60000)} 分钟`, streak);
+    } else if (POST_TASKS.includes(mode)) {
+      const streak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
+      item.limitedStreak = streak;
+      item.blocked = false;
+      item.lastRunAt = Date.now();
+      item.resumeAt = Date.now() + postRiskDelayMs(streak);
+      item.reason = postRiskReason(streak);
+      plan.items[mode] = item;
     } else {
       item.limitedStreak = Math.max(0, Number(item.limitedStreak) || 0) + 1;
       if (["likes-posts", "likes-replies"].includes(mode)) {
@@ -3505,6 +3840,19 @@ async function noteScheduledAction(event) {
       latest.current = "";
       latest.startedAt = 0;
       latest.items[mode] = { ...(latest.items[mode] || {}), ...savedItem };
+      await saveTaskSchedule(latest);
+      await tickTaskSchedule();
+    }
+    return;
+  }
+  if (POST_TASKS.includes(mode) && event.result === "limited" && plan.enabled && plan.current === mode) {
+    const yieldReason = String(plan.items?.[mode]?.reason || savedItem.reason || "发帖受限，已让出页签");
+    if (await suspendScheduledTask(mode, yieldReason, { keepTab: true, releaseOnFailure: true })) {
+      const latest = await readTaskSchedule();
+      recordScheduleSegment(latest, mode, yieldReason);
+      latest.current = "";
+      latest.startedAt = 0;
+      latest.items[mode] = { ...(latest.items[mode] || {}), ...savedItem, blocked: false };
       await saveTaskSchedule(latest);
       await tickTaskSchedule();
     }
@@ -3875,20 +4223,28 @@ globalThis.XrcCommunityReceipt?.setRuntimeProvider(async () => {
         phase: "unknown",
         startedAt: 0,
         updatedAt: updatedAt || now,
-        detail: `连续受限，等待人工检查：${queuedReason}`.slice(0, 160),
+        detail: `连续受限，等待人工检查：${readableLimitCode(queuedReason)}`.slice(0, 160),
         waitUntil: 0
       }, mode);
     }
 
     if (schedule.enabled && schedule.current === mode) {
       const livePhase = fresh && ["running", "paused", "stopping"].includes(task?.phase) ? task.phase : "starting";
+      const slotStarted = Number(schedule.startedAt) || 0;
+      const confirmUntil = slotStarted > 0 ? slotStarted + STARTING_GRACE_MS : 0;
+      let detail = String(task?.detail || "当前轮班占用中").slice(0, 160);
+      let waitUntil = Number(task?.waitUntil) || 0;
+      if (livePhase === "starting") {
+        if (confirmUntil > now) waitUntil = confirmUntil;
+        else if (/排班已占用共享页签|正在装载执行页|正在创建执行页/u.test(detail)) detail = "确认时间已过，正在同一页签重试";
+      }
       return withPriority({
         mode,
         phase: livePhase,
-        startedAt: Number(task?.startedAt) || Number(schedule.startedAt) || 0,
+        startedAt: Number(task?.startedAt) || slotStarted,
         updatedAt: updatedAt || now,
-        detail: String(task?.detail || "当前轮班占用中").slice(0, 160),
-        waitUntil: Number(task?.waitUntil) || 0
+        detail,
+        waitUntil
       }, mode);
     }
 
@@ -4236,11 +4592,21 @@ async function completeCommunityShare(sender, status) {
     if (plan.enabled && plan.current === "community-share" && Number(plan.workTabId) === tabId) {
       const now = Date.now();
       const reason = String(status || "社群分发本轮已结束").slice(0, 160);
+      let resumeAt = now + COMMUNITY_SHARE_RETRY_MS;
+      if (/今日社群已到/u.test(reason) && typeof globalThis.XrcCommunityReceipt?.communityDailyBudget === "function") {
+        try {
+          const handle = (typeof accountHandleFrom === "function" ? accountHandleFrom(plan.accountHandle) : "") || (typeof savedAccountHandle === "function" ? await savedAccountHandle() : "");
+          const budget = handle ? await globalThis.XrcCommunityReceipt.communityDailyBudget(handle, now) : null;
+          if (budget?.reached && !budget.uncertain && Number(budget.resumeAt) > resumeAt) resumeAt = Number(budget.resumeAt);
+        } catch (error) {
+          resumeAt = now + COMMUNITY_SHARE_RETRY_MS;
+        }
+      }
       recordScheduleSegment(plan, "community-share", reason, now);
       plan.items["community-share"] = {
         ...(plan.items["community-share"] || {}),
         lastRunAt: now,
-        resumeAt: now + COMMUNITY_SHARE_RETRY_MS,
+        resumeAt,
         manualStopped: false,
         reason
       };
@@ -4408,6 +4774,23 @@ async function markManualTaskStart(mode, sender) {
     const riskReason = REPLY_TASKS.map((replyMode) => plan.items?.[replyMode])
       .find((item) => Number(item?.resumeAt) === riskUntil && /疑似自动化|限制冷却/u.test(String(item?.reason || "")))?.reason
       || "X 限制冷却，到期后自动重试（评论三项共用）";
+    let capBudget = null;
+    try {
+      const resolveHandle = typeof accountHandleFrom === "function" ? accountHandleFrom : () => "";
+      const savedHandle = typeof savedAccountHandle === "function" ? await savedAccountHandle() : "";
+      const capHandle = resolveHandle(plan.accountHandle) || savedHandle;
+      if (capHandle && typeof globalThis.XrcCommunityReceipt?.commentDailyBudget === "function") {
+        capBudget = await globalThis.XrcCommunityReceipt.commentDailyBudget(capHandle);
+      }
+    } catch (error) {
+      capBudget = null;
+    }
+    const capActive = Boolean(capBudget?.reached && !capBudget.uncertain && typeof commentDailyCapReason === "function");
+    const capUntil = capActive ? Number(capBudget.resumeAt) || 0 : 0;
+    const capReason = capActive ? commentDailyCapReason(capBudget) : "";
+    const holdUntil = Math.max(riskActive ? riskUntil : 0, capUntil);
+    const holdActive = holdUntil > Date.now();
+    const holdReason = capActive && capUntil >= (riskActive ? riskUntil : 0) ? capReason : riskReason;
     if (!riskActive) clearSharedReplyRisk(plan);
     for (const replyMode of REPLY_TASKS) {
       const prior = plan.items[replyMode] || {};
@@ -4418,11 +4801,83 @@ async function markManualTaskStart(mode, sender) {
         limitedStreak: riskActive ? Number(prior.limitedStreak) || 0 : 0,
         recoveryAttempts: replyMode === mode ? 0 : Number(prior.recoveryAttempts) || 0,
         reloadAttempts: replyMode === mode ? 0 : Number(prior.reloadAttempts) || 0,
-        resumeAt: riskActive && (replyMode === mode || !prior.manualStopped) ? riskUntil : 0,
-        manualRequestedAt: replyMode === mode && !riskActive ? Date.now() : 0,
-        reason: riskActive && (replyMode === mode || !prior.manualStopped) ? riskReason
+        resumeAt: holdActive && (replyMode === mode || !prior.manualStopped) ? holdUntil : 0,
+        manualRequestedAt: replyMode === mode && !holdActive ? Date.now() : 0,
+        reason: holdActive && (replyMode === mode || !prior.manualStopped) ? holdReason
           : replyMode === mode ? "已请求优先启动" : prior.manualStopped ? (prior.reason || "已手动停止") : ""
       };
+    }
+  } else if (typeof POST_TASKS !== "undefined" && POST_TASKS.includes(mode)) {
+    let capBudget = null;
+    try {
+      const resolveHandle = typeof accountHandleFrom === "function" ? accountHandleFrom : () => "";
+      const savedHandle = typeof savedAccountHandle === "function" ? await savedAccountHandle() : "";
+      const capHandle = resolveHandle(plan.accountHandle) || savedHandle;
+      if (capHandle && typeof globalThis.XrcCommunityReceipt?.postDailyBudget === "function") {
+        capBudget = await globalThis.XrcCommunityReceipt.postDailyBudget(capHandle);
+      }
+    } catch (error) {
+      capBudget = null;
+    }
+    const capActive = Boolean(capBudget?.reached && !capBudget.uncertain && typeof postDailyCapReason === "function");
+    const capUntil = capActive ? Number(capBudget.resumeAt) || 0 : 0;
+    const capReason = capActive ? postDailyCapReason(capBudget) : "";
+    const holdActive = capUntil > Date.now();
+    if (holdActive) {
+      for (const postMode of POST_TASKS) {
+        const prior = plan.items[postMode] || {};
+        plan.items[postMode] = {
+          ...prior,
+          manualStopped: postMode === mode ? false : Boolean(prior.manualStopped),
+          blocked: false,
+          limitedStreak: 0,
+          recoveryAttempts: postMode === mode ? 0 : Number(prior.recoveryAttempts) || 0,
+          reloadAttempts: postMode === mode ? 0 : Number(prior.reloadAttempts) || 0,
+          resumeAt: postMode === mode || !prior.manualStopped ? capUntil : Number(prior.resumeAt) || 0,
+          manualRequestedAt: 0,
+          reason: postMode === mode || !prior.manualStopped ? capReason : (prior.reason || "已手动停止")
+        };
+      }
+    } else {
+      const item = plan.items[mode] || {};
+      plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, recoveryAttempts: 0, reloadAttempts: 0, resumeAt: 0,
+        manualRequestedAt: Date.now(), reason: "已请求优先启动" };
+    }
+  } else if (typeof COMMUNITY_TASKS !== "undefined" && COMMUNITY_TASKS.includes(mode)) {
+    let capBudget = null;
+    try {
+      const resolveHandle = typeof accountHandleFrom === "function" ? accountHandleFrom : () => "";
+      const savedHandle = typeof savedAccountHandle === "function" ? await savedAccountHandle() : "";
+      const capHandle = resolveHandle(plan.accountHandle) || savedHandle;
+      if (capHandle && typeof globalThis.XrcCommunityReceipt?.communityDailyBudget === "function") {
+        capBudget = await globalThis.XrcCommunityReceipt.communityDailyBudget(capHandle);
+      }
+    } catch (error) {
+      capBudget = null;
+    }
+    const capActive = Boolean(capBudget?.reached && !capBudget.uncertain && typeof communityDailyCapReason === "function");
+    const capUntil = capActive ? Number(capBudget.resumeAt) || 0 : 0;
+    const capReason = capActive ? communityDailyCapReason(capBudget) : "";
+    const holdActive = capUntil > Date.now();
+    if (holdActive) {
+      for (const communityMode of COMMUNITY_TASKS) {
+        const prior = plan.items[communityMode] || {};
+        plan.items[communityMode] = {
+          ...prior,
+          manualStopped: communityMode === mode ? false : Boolean(prior.manualStopped),
+          blocked: false,
+          limitedStreak: 0,
+          recoveryAttempts: communityMode === mode ? 0 : Number(prior.recoveryAttempts) || 0,
+          reloadAttempts: communityMode === mode ? 0 : Number(prior.reloadAttempts) || 0,
+          resumeAt: communityMode === mode || !prior.manualStopped ? capUntil : Number(prior.resumeAt) || 0,
+          manualRequestedAt: 0,
+          reason: communityMode === mode || !prior.manualStopped ? capReason : (prior.reason || "已手动停止")
+        };
+      }
+    } else {
+      const item = plan.items[mode] || {};
+      plan.items[mode] = { ...item, manualStopped: false, blocked: false, limitedStreak: 0, recoveryAttempts: 0, reloadAttempts: 0, resumeAt: 0,
+        manualRequestedAt: Date.now(), reason: "已请求优先启动" };
     }
   } else {
     const item = plan.items[mode] || {};
@@ -4747,6 +5202,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "重启次数没有写入" }));
       return true;
     }
+    if (message?.type === "xrc-task-page-refresh") {
+      refreshOccupiedTaskPage(message.mode, sender?.tab?.id)
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "刷新页面失败" }));
+      return true;
+    }
     if (message?.type === "xrc-task-start-failed") {
       failScheduledStart(message.mode, sender?.tab?.id, message.reason)
         .then(sendResponse)
@@ -4891,7 +5352,9 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-runtime-get") {
-      Promise.all([readPluginRuntime({ prune: true }).then(verifyTaskRuntime), readTaskSchedule(), readSharedFollowTodayCount()])
+      // Paint reads the stored snapshot. Probing here downgrades a busy running
+      // task to unknown on an 800ms timeout, and the desk then flashes 正在启动.
+      Promise.all([readPluginRuntime({ prune: true }), readTaskSchedule(), readSharedFollowTodayCount()])
         .then(([runtime, schedule, followCount]) => {
           const viewSchedule = { ...schedule, sharedFollowTodayCount: followCount };
           sendResponse({ ok: true, runtime, schedule: {
@@ -4948,6 +5411,42 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       pending
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "回执上传失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-comment-daily-budget") {
+      const receipt = globalThis.XrcCommunityReceipt;
+      if (typeof receipt?.commentDailyBudget !== "function") {
+        sendResponse({ ok: false, error: "评论额度模块没有加载" });
+        return true;
+      }
+      Promise.resolve(accountHandleFrom(message.accountHandle) || savedAccountHandle())
+        .then((handle) => receipt.commentDailyBudget(handle))
+        .then((budget) => sendResponse({ ok: true, budget }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "评论额度读取失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-post-daily-budget") {
+      const receipt = globalThis.XrcCommunityReceipt;
+      if (typeof receipt?.postDailyBudget !== "function") {
+        sendResponse({ ok: false, error: "发帖额度模块没有加载" });
+        return true;
+      }
+      Promise.resolve(accountHandleFrom(message.accountHandle) || savedAccountHandle())
+        .then((handle) => receipt.postDailyBudget(handle))
+        .then((budget) => sendResponse({ ok: true, budget }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "发帖额度读取失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-community-daily-budget") {
+      const receipt = globalThis.XrcCommunityReceipt;
+      if (typeof receipt?.communityDailyBudget !== "function") {
+        sendResponse({ ok: false, error: "社群额度模块没有加载" });
+        return true;
+      }
+      Promise.resolve(accountHandleFrom(message.accountHandle) || savedAccountHandle())
+        .then((handle) => receipt.communityDailyBudget(handle))
+        .then((budget) => sendResponse({ ok: true, budget }))
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "社群额度读取失败" }));
       return true;
     }
     if (["xrc-daily-get", "xrc-daily-upload", "xrc-daily-pull", "xrc-daily-upload-pending", "xrc-daily-schedule-get"].includes(message?.type)) {
@@ -5083,6 +5582,8 @@ if (typeof module === "object" && module.exports) {
     dueTaskModes,
     scheduledManualFocusMode,
     taskWindowOpen,
+    normalizeCardDailyQuota,
+    DEFAULT_CARD_DAILY_QUOTA,
     recordScheduleSegment,
     scheduleTimeline,
     markManualTaskStart,
@@ -5090,6 +5591,7 @@ if (typeof module === "object" && module.exports) {
     suspendScheduledTask,
     runTaskSchedule,
     noteUnconfirmedReload,
+    refreshOccupiedTaskPage,
     failScheduledStart,
     noteScheduledAction,
     normalizedSliceSeconds,

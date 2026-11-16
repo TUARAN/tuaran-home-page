@@ -30,7 +30,7 @@ const USER_STATE_HELPERS = `
   function isScheduleWaitReason(reason) {
     const text = String(reason || "").trim();
     if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
-    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待每周|点赞短轮/u.test(text);
+    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待卡片|等待每周|点赞短轮/u.test(text);
   }
   function formatUserStateAction(stateLabel, actionLabel) { return \`\${stateLabel} · \${actionLabel}\`; }
   function formatFlowPrompt(nowLabel, nextLabel, actionLabel) {
@@ -95,12 +95,19 @@ test('scheduled post formats favor compact text and keep blank lines', async () 
   assert.deepEqual(poster.choosePostFormat(() => 0.8), { mediaMode: 'text', lengthMode: 'compact' })
   assert.deepEqual(poster.choosePostFormat(() => 0.9), { mediaMode: 'text', lengthMode: 'regular' })
   assert.deepEqual(poster.choosePostFormat(() => 0.49, 0, 'premium'), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
-  assert.deepEqual(poster.choosePostFormat(() => 0.5, 0, 'premium'), { mediaMode: 'text', lengthMode: 'regular' })
+  assert.deepEqual(poster.choosePostFormat(() => 0.5, 0, 'premium'), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'paper', lengthMode: 'regular' })
+  assert.equal(poster.withPostFormat({ text: '第一段标题。\n\n后面一句。', mediaMode: 'text' }, 'premium').mediaMode, 'image')
+  assert.equal(poster.withPostFormat({ text: '第一段标题。\n\n后面一句。', mediaMode: 'text' }, 'premium').imageStyle, 'text-card')
   assert.deepEqual(poster.choosePostFormat(() => 0.99, 1, 'x'), { mediaMode: 'image', imageStyle: 'text-card', cardVariant: 'editorial', lengthMode: 'regular' })
   assert.equal(poster.withPostFormat({ text: '第一行判断。\n\n后面一句。', mediaMode: 'text' }, 'x').mediaMode, 'image')
   assert.equal(poster.withPostFormat({ text: '第一行判断。\n\n后面一句。', mediaMode: 'text' }, 'x').imageStyle, 'text-card')
-  assert.deepEqual(Array.from(poster.PREMIUM_SLOT_TIMES), ['08:00', '09:30', '12:00', '15:00', '19:00'])
-  assert.equal(poster.PREMIUM_DAILY_LIMIT, 5)
+  assert.deepEqual(Array.from(poster.PREMIUM_SLOT_TIMES), ['08:00', '14:00', '20:00'])
+  assert.equal(poster.PREMIUM_DAILY_LIMIT, 3)
+  assert.deepEqual(poster.cardSlotTimes(1), ['12:00'])
+  assert.deepEqual(poster.cardSlotTimes(10).length, 10)
+  assert.equal(poster.normalizeCardDailyQuota(7), 3)
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-28T09:30:00+08:00'), 3), Date.parse('2026-10-28T14:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-28T13:00:00+08:00'), 1), Date.parse('2026-10-29T12:00:00+08:00'))
   assert.equal(postImage.cardHeadline('第一句说明新闻。\n\n第二句表态。'), '第一句说明新闻。')
   assert.equal(postImage.cardBody('第一句说明新闻。\n\n第二句表态。'), '第二句表态。')
   assert.equal(poster.formatCompactPost('具体事件发生了。\n自己的观点。\n一句短评。'), '具体事件发生了。\n\n自己的观点。\n\n一句短评。')
@@ -119,12 +126,13 @@ test('scheduled post formats favor compact text and keep blank lines', async () 
 
 test('premium posting skips missed slots instead of publishing the daily quota in a burst', async () => {
   assert.equal(poster.shanghaiDateKey(Date.parse('2026-10-27T10:00:00+08:00')), '2026-10-27')
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T07:00:00+08:00')), Date.parse('2026-10-27T08:00:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:00:00+08:00')), Date.parse('2026-10-27T08:00:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:30:00+08:00')), Date.parse('2026-10-27T09:30:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T18:00:00+08:00')), Date.parse('2026-10-27T19:00:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T19:30:00+08:00')), Date.parse('2026-10-28T08:00:00+08:00'))
-  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T19:00:00+08:00') + 1), Date.parse('2026-10-28T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T07:00:00+08:00'), 3), Date.parse('2026-10-27T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:00:00+08:00'), 3), Date.parse('2026-10-27T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T08:30:00+08:00'), 3), Date.parse('2026-10-27T14:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T18:00:00+08:00'), 3), Date.parse('2026-10-27T20:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T20:30:00+08:00'), 3), Date.parse('2026-10-28T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T20:00:00+08:00') + 1, 3), Date.parse('2026-10-28T08:00:00+08:00'))
+  assert.equal(poster.nextPremiumPostAt(Date.parse('2026-10-27T12:30:00+08:00'), 1), Date.parse('2026-10-28T12:00:00+08:00'))
   const source = await readFile(new URL('poster.js', extensionDir), 'utf8')
   assert.match(source, /async function ensureSources\(\) \{[\s\S]*?if \(state\.postKind !== POST_KIND_PREMIUM\) state\.nextPostAt = 0;/)
   assert.match(source, /async function startNow\(\) \{[\s\S]*?state\.postKind === POST_KIND_PREMIUM/)
@@ -188,6 +196,7 @@ test('X theme cards draw exactly two centered lines', async () => {
 
 test('automation retries wait 10, 20, 30 minutes and keep increasing', () => {
   assert.deepEqual([1, 2, 3, 4].map(loop.automationCooldownMs), [600000, 1200000, 1800000, 2400000])
+  assert.deepEqual([1, 2, 3, 4, 5].map(loop.replyRiskCooldownMs), [1, 2, 4, 8, 8].map((hours) => hours * 3600000))
 })
 
 test('follow and post tasks stay active while their automation cooldown grows', async () => {
@@ -239,31 +248,25 @@ test('removed frequency settings stay out of the settings hub', async () => {
 
 test('task window hints distinguish opening, jumping, and current window', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const groupDefinition = source.match(/  function taskGroupTarget\(group,[\s\S]*?\n  \}/)?.[0]
-  const titleDefinition = source.match(/  function taskWindowTitle\(mode,[\s\S]*?\n  \}/)?.[0]
+  const hintDefinition = source.match(/  function taskTabHint\(mode\) \{[\s\S]*?\n  \}/)?.[0]
   const deskDefinition = source.match(/  function scheduleDashboardActive\(\) \{[\s\S]*?\n  \}/)?.[0]
-  assert.ok(groupDefinition)
-  assert.ok(titleDefinition)
+  assert.ok(hintDefinition)
   assert.ok(deskDefinition)
   const context = vm.createContext({
-    TASK_GROUP_MODES: { reply: ['timeline', 'notifications'], likes: ['likes-posts', 'likes-replies'] },
     TASK_MODE_LABELS: { timeline: '评论帖子', notifications: '回复评论', 'likes-posts': '点赞帖子' },
     openTaskTabs: {},
     taskSchedule: { enabled: false },
-    pluginRuntime: { tasks: {} },
+    pluginRuntime: { tasks: [] },
     currentTaskKey: () => 'timeline',
+    flowTaskOverview: () => ({ tasks: [] }),
   })
-  vm.runInContext(`${deskDefinition}\n${groupDefinition}\n${titleDefinition}\nglobalThis.target = taskGroupTarget; globalThis.title = taskWindowTitle`, context)
-  assert.equal(context.title('notifications', {}, 'timeline'), '打开回复评论窗口')
-  assert.equal(context.title('notifications', { notifications: 42 }, 'timeline'), '跳转到已打开的回复评论窗口')
-  assert.equal(context.title('timeline', { timeline: 12 }, 'timeline'), '当前评论帖子窗口')
+  vm.runInContext(`${deskDefinition}\n${hintDefinition}\nglobalThis.hint = taskTabHint`, context)
+  assert.equal(context.hint('notifications'), '尚未启动，点击打开回复评论页面')
+  context.openTaskTabs = { notifications: 42 }
+  assert.equal(context.hint('notifications'), '可以跳转到已打开的回复评论页面')
+  assert.equal(context.hint('timeline'), '当前评论帖子页面')
   context.taskSchedule.enabled = true
-  assert.equal(context.title('notifications', {}, 'timeline'), '查看回复评论详情，不改变排班')
-  context.taskSchedule.enabled = false
-  const target = context.target('reply', { timeline: 12, notifications: 42 }, 'timeline', { notifications: { phase: 'running' } })
-  assert.equal(target.mode, 'notifications')
-  assert.equal(target.openedElsewhere, true)
-  assert.equal(context.target('reply', { timeline: 12 }, 'timeline', {}).openedElsewhere, false)
+  assert.equal(context.hint('notifications'), '查看回复评论详情，不改变排班或执行页签')
   assert.match(source, /button\.title = taskTabHint\(button\.dataset\.xrcReplyTab\)/)
   assert.match(source, /button\.title = taskTabHint\(`likes-\$\{button\.dataset\.xrcLikeTab\}`\)/)
 })
@@ -940,6 +943,10 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const details = source.match(/  function paintFlowDetails\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePreview = source.match(/  function schedulePreview\(now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
   const taskActionCount = source.match(/  function taskActionCount\(mode, count\) \{[\s\S]*?\n  \}/)?.[0]
+  const taskCategories = source.match(/  const TASK_CATEGORIES = Object\.freeze\(\[[\s\S]*?\n  \]\);/)?.[0]
+  const taskCategoryByMode = source.match(/  const TASK_CATEGORY_BY_MODE = Object\.freeze\(\{[\s\S]*?\n  \}\);/)?.[0]
+  const todayTasks = source.match(/  const TODAY_TASKS = \[[\s\S]*?\n  \];/)?.[0]
+  const taskCategory = source.match(/  function taskCategory\(mode\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleBoard = source.match(/  function paintScheduleBoard\(dialog\) \{[\s\S]*?\n  \}/)?.[0]
   const scheduleDesk = source.match(/  function paintScheduleDesk\(panel = document\.getElementById\(PANEL_ID\)\) \{[\s\S]*?\n  \}/)?.[0]
   const schedulePulse = source.match(/  function scheduleItemPulse\(mode, preview, overviewTask\) \{[\s\S]*?\n  \}/)?.[0]
@@ -950,7 +957,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
     source.match(/  function defaultSchedulePriority\(mode\) \{[\s\S]*?\n  \}/)?.[0],
     source.match(/  function syncScheduleCardRuleControls\(row, mode\) \{[\s\S]*?\n  \}/)?.[0],
   ].join('\n')
-  assert.ok(overview && readable && cardNoteHelpers.includes('formatScheduleCardNote') && waitInfo && readiness && details && schedulePreview && taskActionCount && scheduleBoard && scheduleDesk && schedulePulse)
+  assert.ok(overview && readable && cardNoteHelpers.includes('formatScheduleCardNote') && waitInfo && readiness && details && schedulePreview && taskActionCount && taskCategories && taskCategoryByMode && todayTasks && taskCategory && scheduleBoard && scheduleDesk && schedulePulse)
   assert.doesNotMatch(source, /data-xrc-schedule-config-open/)
   assert.match(source, /data-xrc-task-schedule-config/)
   assert.match(source, /xrc-task-section-head/)
@@ -1182,7 +1189,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
       },
     },
   })
-  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${focusDeferred}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${readable}\n${cardNoteHelpers}\n${waitInfo}\n${focusDeferred}\n${readiness}\n${schedulePreview}\n${taskActionCount}\n${taskCategories}\n${taskCategoryByMode}\n${todayTasks}\n${taskCategory}\n${schedulePulse}\n${scheduleCardHelpers}\n${scheduleBoard}\n${scheduleDesk}\n${details}\nglobalThis.paint = paintFlowDetails; globalThis.countLabel = taskActionCount`, context)
   // USER_STATE_HELPERS stubs soonestWaitMs to 0; desk countdown needs a real wait.
   context.soonestWaitMs = () => 451000
   assert.equal(context.countLabel('timeline', 12), '12 条回复')
@@ -1269,8 +1276,14 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.equal(list.children[1].children[1].textContent, '已停止')
   assert.match(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-desk-home/)
-  assert.match(source, /data-xrc-timeline-current>正在读取排班状态/)
+  assert.doesNotMatch(source, /data-xrc-timeline-current/)
+  assert.match(source, /<h3>已加入 <small data-xrc-queue-count>/)
   assert.match(source, /data-xrc-schedule-desk/)
+  const deskStart = source.indexOf('class="xrc-body xrc-schedule-desk"')
+  const deskMarkup = source.slice(deskStart, source.indexOf('data-xrc-task-subnav data-xrc-task-subpage', deskStart))
+  assert.ok(deskStart >= 0 && deskMarkup.includes('data-xrc-schedule-subnav'))
+  assert.ok(deskMarkup.indexOf('data-xrc-execution-alerts') < deskMarkup.indexOf('data-xrc-library-toggle'))
+  assert.ok(deskMarkup.indexOf('data-xrc-execution-alerts') < deskMarkup.indexOf('data-xrc-schedule-list'))
   assert.match(source, /data-xrc-schedule-board aria-label="实时排班情况"/)
   assert.match(source, /data-xrc-inspect-task/)
   assert.doesNotMatch(source, /data-xrc-schedule-config-open/)
@@ -1291,8 +1304,7 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(source, /xrc-schedule-orbit-dot/)
   assert.match(source, /Upsert in place/)
   assert.ok(css.lastIndexOf('data-pulse="running"') > css.indexOf('.xrc-schedule-board .xrc-schedule-item {'))
-  assert.match(css, /\[data-desk="home"\] \.xrc-assistant-tabs/)
-  assert.match(css, /\[data-desk="task"\] \.xrc-assistant-tabs/)
+  assert.match(css, /\[data-desk="task"\]\[data-assistant-mode="poster-xhs"\] \.xrc-post-body/)
   assert.match(css, /\[data-desk="task"\]\[data-assistant-mode="timeline"\] \.xrc-reply-body/)
   assert.match(css, /\[data-desk="task"\]\[data-assistant-mode="poster"\] \.xrc-post-body/)
   assert.match(css, /\[data-desk="task"\] \.xrc-reply-tabs/)
@@ -1896,6 +1908,36 @@ test('a reserved schedule slot waits until its page confirms the loop', async ()
   assert.match(context.notice('timeline', now).detail, /到期后自动继续/)
 })
 
+test('a live reply loop stays running when storage still says the task is starting', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const overview = source.match(/  function flowTaskOverview\(runtime, now = Date\.now\(\)\) \{[\s\S]*?\n  \}/)?.[0]
+  const desk = source.match(/  function deskPluginRuntime\(\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(overview && desk)
+  const runtimeGet = backgroundSource.match(/if \(message\?\.type === "xrc-runtime-get"\) \{[\s\S]*?\n    \}/)?.[0]
+  assert.ok(runtimeGet)
+  assert.doesNotMatch(runtimeGet, /verifyTaskRuntime/)
+  const now = Date.now()
+  const context = vm.createContext({
+    FLOW_TASKS: [['timeline', '评论首页'], ['notifications', '评论回复']],
+    FLOW_STALE_MS: 90000,
+    taskSchedule: { enabled: true, current: 'timeline', rules: { timeline: { enabled: true }, notifications: { enabled: true } }, items: {} },
+    pluginRuntime: { tasks: { timeline: { phase: 'starting', updatedAt: now, detail: '等待执行页回报启动结果' } } },
+    spectatorTab: false,
+    currentTaskKey: () => 'timeline',
+    currentTaskPhase: () => 'running',
+    currentTaskDetail: () => '从首页推荐顶部开始，向下评论',
+    currentTaskWaitUntil: () => 0,
+  })
+  vm.runInContext(`${USER_STATE_HELPERS}\n${overview}\n${desk}\nglobalThis.painted = () => flowTaskOverview(deskPluginRuntime())`, context)
+  const painted = context.painted()
+  assert.equal(painted.tasks.find((task) => task.key === 'timeline').status, 'running')
+  assert.match(painted.text, /1 项运行中/)
+  context.currentTaskPhase = () => ''
+  context.pluginRuntime = { tasks: { timeline: { phase: 'starting', updatedAt: now } } }
+  assert.equal(context.painted().tasks.find((task) => task.key === 'timeline').status, 'waiting')
+})
+
 test('waiting copy explains queue, platform cooldown, and fixed posting slot', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
@@ -1924,7 +1966,7 @@ test('waiting copy explains queue, platform cooldown, and fixed posting slot', a
   assert.equal(context.waitInfo('timeline', now).remaining, 10 * 60000)
   context.taskSchedule.items.timeline = {}
   context.taskSchedule.timeline.future = [{ mode: 'poster-premium', readyAt: now + 3600000 }]
-  assert.equal(context.waitInfo('poster-premium', now).label, '等待精品档位')
+  assert.equal(context.waitInfo('poster-premium', now).label, '等待卡片档位')
   context.pluginRuntime.tasks.timeline = { phase: 'starting' }
   context.taskSchedule.startedAt = now - 30000
   const starting = context.waitInfo('timeline', now)
@@ -2402,6 +2444,8 @@ test('background status reports resident recovery as waiting but manual stops as
       poster: { enabled: true, priority: 6 },
     }),
     normalizedSliceSeconds: (value) => [20, 30, 45].includes(Number(value)) ? Number(value) : 30,
+    readableLimitCode: (reason) => reason === 'risk-blocked' ? 'X 提示疑似自动化或账号受限' : String(reason || ''),
+    STARTING_GRACE_MS: 90_000,
     scheduleTimeline: () => ({ history: [], future: [{ mode: 'notifications', status: 'scheduled', readyAt: Date.now() + 60000, reason: '等待自动恢复' }] }),
     readPluginRuntime: async () => ({
       tasks: {
@@ -2431,6 +2475,57 @@ test('background status reports resident recovery as waiting but manual stops as
   assert.equal(report.schedule.facing.waiting, 1)
   assert.equal(report.schedule.facing.needs, 1)
   assert.equal(report.schedule.facing.stopped, 2)
+})
+
+test('starting heartbeat keeps the confirmation deadline and translates a raw limit code', async () => {
+  const source = await readFile(new URL('background.js', extensionDir), 'utf8')
+  const provider = source.match(/globalThis\.XrcCommunityReceipt\?\.setRuntimeProvider\(async \(\) => \{[\s\S]*?\n\}\);/)?.[0]
+  const waitReason = source.match(/function isScheduleWaitReason\(reason\) \{[\s\S]*?\n\}/)?.[0]
+  assert.ok(provider && waitReason)
+  let readStatus
+  const startedAt = Date.now() - 42000
+  const context = vm.createContext({
+    globalThis: { XrcCommunityReceipt: { setRuntimeProvider(callback) { readStatus = callback } } },
+    RUNTIME_REPORT_MODES: ['timeline', 'poster'],
+    readSharedFollowTodayCount: async () => 0,
+    RUNTIME_REPORT_STALE_MS: 90_000,
+    STARTING_GRACE_MS: 90_000,
+    MAX_TASK_PRIORITY: 10,
+    SCHEDULE_PRIORITY_HINT: '按队列轮转；旧优先级分数不影响排班',
+    RESIDENT_TASKS: ['timeline'],
+    QUEUED_TASKS: ['poster'],
+    TASK_TITLE_LABELS: { timeline: '评论首页', poster: '热点发帖' },
+    defaultTaskPriority: () => 8,
+    normalizedTaskRules: () => ({
+      timeline: { enabled: true, priority: 8 },
+      poster: { enabled: true, priority: 7 },
+    }),
+    normalizedSliceSeconds: () => 30,
+    readableLimitCode: (reason) => reason === 'risk-blocked' ? 'X 提示疑似自动化或账号受限' : String(reason || ''),
+    scheduleTimeline: () => ({ history: [], future: [] }),
+    readPluginRuntime: async () => ({
+      tasks: { timeline: { phase: 'starting', updatedAt: Date.now(), detail: '排班已占用共享页签', waitUntil: 0 } },
+      flow: { phase: 'running' },
+    }),
+    verifyTaskRuntime: async (runtime) => runtime,
+    readTaskSchedule: async () => ({
+      enabled: true,
+      current: 'timeline',
+      startedAt,
+      items: { poster: { blocked: true, reason: 'risk-blocked' } },
+      rules: {},
+    }),
+  })
+  vm.runInContext(`${waitReason}\n${provider}`, context)
+  const report = await readStatus()
+  const timeline = report.tasks.find((task) => task.mode === 'timeline')
+  const poster = report.tasks.find((task) => task.mode === 'poster')
+  assert.equal(timeline.phase, 'starting')
+  assert.equal(timeline.detail, '排班已占用共享页签')
+  assert.equal(timeline.waitUntil, startedAt + 90_000)
+  assert.equal(poster.phase, 'unknown')
+  assert.match(poster.detail, /X 提示疑似自动化或账号受限/)
+  assert.doesNotMatch(poster.detail, /risk-blocked/)
 })
 
 test('global pause clears the local scheduler flag as soon as background confirms', async () => {
@@ -2811,9 +2906,12 @@ test('background reset clears task state while retaining API credentials and log
 
 test('task detail names the task that is actually running', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const copy = source.match(/  function occupantStatusCopy\(\{[\s\S]*?\n  \}/)?.[0]
+  const copy = source.match(/  function occupantStatusCopy\(\{[\s\S]*?\n  function occupantStatusSuffix/)?.[0]?.replace(/\n  function occupantStatusSuffix$/, '\n')
   assert.ok(copy)
   assert.match(source, /paintTaskOccupant\(panel\)/)
+  assert.match(source, /function occupantStatusSuffix\(/)
+  assert.match(source, /occupantStatusSuffix\(mode, \{ running: Boolean\(runningMode\), starting, now \}\)/)
+  assert.match(source, /剩余 \$\{formatClock\(wait\.remaining\)\}/)
   const context = vm.createContext({
     TASK_MODE_LABELS: { timeline: '评论首页', notifications: '评论回复' },
   })
@@ -2824,6 +2922,8 @@ test('task detail names the task that is actually running', async () => {
   assert.equal(context.copy({ runningMode: 'timeline', currentMode: 'notifications' }), '正在运行：评论首页')
   assert.equal(context.copy({ currentMode: 'notifications', starting: true }), '正在启动：评论回复')
   assert.equal(context.copy({ currentMode: 'notifications' }), '当前占用：评论回复')
+  assert.equal(context.copy({ currentMode: 'notifications', suffix: '等待下次运行 · 剩余 45:17' }), '当前占用：评论回复 · 等待下次运行 · 剩余 45:17')
+  assert.equal(context.copy({ runningMode: 'timeline', suffix: '第 2 轮 · 5/35' }), '正在运行：评论首页 · 第 2 轮 · 5/35')
 })
 
 test('main flow keeps only the start and details controls', async () => {
@@ -2832,22 +2932,68 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-desk-home/)
   assert.match(source, /data-xrc-schedule-desk/)
   assert.doesNotMatch(source, /xrc-desk-legend/)
-  assert.match(source, /data-xrc-task-subnav-label>任务子页<\/strong>\s*<button type="button" class="xrc-task-docs-link" data-xrc-task-docs/)
-  assert.match(source, /data-xrc-task-live-row[\s\S]{0,280}data-xrc-desk-back aria-label="返回排班台">← 返回排班台<\/button>\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务<\/button>/)
-  const subnav = source.match(/<div class="xrc-task-subnav"[\s\S]*?<\/div>/)?.[0]
+  assert.match(source, /<small>任务详情<\/small>\s*<strong data-xrc-task-subnav-label>任务子页<\/strong>/)
+  assert.match(source, /function scrollPanelToTaskSubpage\(panel\)/)
+  assert.match(source, /scrollPanelToTaskSubpage\(panel\)/)
+  assert.match(source, /data-xrc-task-live-row[\s\S]{0,480}\$\{plateHead\("03", "当前正在执行"\)\}\s*<div class="xrc-task-live-main">\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<\/div>\s*<div class="xrc-task-live-actions">\s*<button type="button" class="xrc-task-open-detail" data-xrc-open-home-task>查看详情 →<\/button>[\s\S]*?data-xrc-task-manual-pause>暂停当前任务<\/button>/)
+  assert.doesNotMatch(source, /data-xrc-home-detail-label/)
+  assert.match(source, /plateHead\("01", "今日大互动"\)/)
+  assert.match(source, /plateHead\("02", "任务详情数据"\)/)
+  assert.match(source, /plateHead\("03", "当前正在执行"\)[\s\S]*plateHead\("04", "排班与设置"\)/)
+  assert.doesNotMatch(source, /plateHead\("05"/)
+  assert.doesNotMatch(source, /data-xrc-home-detail[>\s]|class="[^"]*xrc-home-detail/)
+  assert.match(source, /class="xrc-plate xrc-home-schedule" data-xrc-home-schedule/)
+  assert.match(source, /data-xrc-task-subnav[\s\S]{0,520}data-xrc-task-subnav-label>任务子页<\/strong>/)
+  assert.doesNotMatch(source, /data-xrc-task-subnav[\s\S]{0,120}<b>0[45]<\/b>/)
+  assert.doesNotMatch(source, /六类今天做了多少|每一项今天做了多少，可以左右滑动|绿点在跑，黄点在等，红点要处理|这一页正在执行的事|点开看这一项怎么跑/)
+  assert.match(source, /class="xrc-task-open-detail" data-xrc-schedule-open>打开排班台 →/)
+  assert.match(source, /class="xrc-home-schedule-actions"/)
+  assert.match(source, /data-xrc-schedule-close/)
+  assert.match(source, /data-xrc-schedule-subnav/)
+  assert.match(source, /function openScheduleBoard\(\)/)
+  assert.match(source, /function scrollPanelToScheduleSubpage\(panel\)/)
+  assert.match(source, /scrollPanelToScheduleSubpage\(panel\)/)
+  assert.match(source, /scheduleDeskOpen \? "schedule"/)
+  assert.match(source, /<small>排班子页<\/small>\s*<strong>排班台<\/strong>/)
+  assert.match(source, /class="xrc-subpage-back" data-xrc-schedule-close[^>]*>← 返回首页<\/button>/)
+  assert.match(source, /class="xrc-subpage-body xrc-schedule-desk-body"/)
+  const refreshPage = source.match(/async function refreshOccupiedPage\(\) \{[\s\S]*?\n  \}/)?.[0] || ''
+  assert.match(refreshPage, /type: "xrc-task-page-refresh"/)
+  assert.match(refreshPage, /\["running", "starting", "occupied"\]/)
+  assert.doesNotMatch(refreshPage, /xrc-start-reload/)
+  const subnav = source.match(/<div class="xrc-task-subnav[^"]*"[\s\S]*?<\/div>/)?.[0]
   assert.ok(subnav)
-  assert.doesNotMatch(subnav, /data-xrc-desk-back|data-xrc-task-manual-pause|data-xrc-task-live/)
+  assert.match(subnav, /class="xrc-task-subnav-back xrc-subpage-back" data-xrc-desk-back[^>]*>← 返回首页<\/button>/)
+  assert.doesNotMatch(subnav, /data-xrc-task-manual-pause|data-xrc-task-live|data-xrc-task-page-refresh/)
+  assert.doesNotMatch(source, /class="xrc-task-back" data-xrc-desk-back/)
   assert.match(source, /type: "xrc-task-manual-stop", mode, stopTab: true/)
   assert.doesNotMatch(source, /xrc-task-docs-row/)
   assert.doesNotMatch(source, /data-xrc-reset-state|data-xrc-flow-help|data-xrc-reset-confirm/)
   assert.match(source, /data-xrc-header-reset/)
   assert.match(source, /重置本机任务记录？/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-live\s*\{[^}]*font-size: 13px;/)
+  assert.match(css, /#x-reply-clipboard-panel\s*\{[^}]*max-height: min\(560px, calc\(100vh - 36px\)\);/)
+  assert.match(css, /\.xrc-body\s*\{[^}]*max-height: none;[^}]*overflow: visible;/)
+  assert.match(css, /backdrop-filter: blur\(22px\)/)
+  assert.match(css, /\[data-desk="task"\] \.xrc-task-subnav:not\(\[hidden\]\)[\s\S]{0,480}border-radius: 14px 14px 0 0;/)
+  assert.match(css, /\[data-desk="task"\] \.xrc-home-schedule,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-today-strip,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-task-live-row,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-workspace-nav \{ display: none !important; \}/)
+  assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-today-strip,[\s\S]*?\.xrc-workspace-nav \{[\s\S]*?display: none !important;/)
+  assert.match(css, /\.xrc-subpage-title > small/)
+  assert.match(css, /\.xrc-task-subnav-title > small/)
+  assert.match(css, /--xrc-home-bg:\s*rgba\(255, 255, 255, 0\.92\);/)
+  assert.match(css, /--xrc-subpage-bg:\s*rgba\(255, 255, 255, 0\.96\);/)
+  assert.match(css, /--xrc-accent: #4caf2a;/)
   assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
   assert.match(source, /live\.dataset\.live/)
-  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*justify-content: center;/)
+  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*display: none;/)
+  assert.match(css, /\.xrc-task-live-row:not\(\[hidden\]\)\s*\{[^}]*display: grid;/)
+  assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-schedule-desk\s*\{[^}]*display: grid;/)
+  assert.match(css, /\.xrc-schedule-desk-body\s*\{[^}]*border-radius: 0 0 14px 14px;/)
   assert.match(css, /@keyframes xrc-live-pulse/)
-  assert.match(css, /\.xrc-task-live-row \.xrc-task-back,\s*[\s\S]*?\.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
+  assert.match(css, /\.xrc-home-schedule-actions \.xrc-task-open-detail,\s*#x-reply-clipboard-panel \.xrc-task-live-row \.xrc-task-open-detail\s*\{[^}]*text-decoration: none;/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-page-refresh,\s*#x-reply-clipboard-panel \.xrc-task-live-row \.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
+  assert.match(css, /\.xrc-subpage-back,\s*#x-reply-clipboard-panel \.xrc-task-subnav-back\s*\{/)
   assert.doesNotMatch(css, /\.xrc-task-manual-pause:hover[\s\S]{0,180}text-decoration: underline/)
 })
 
@@ -2995,6 +3141,9 @@ test('notification rounds advance once per inspected notification even when no r
   assert.match(source, /if \(state\.assistantMode !== "notifications"\) state\.pageCount \+= 1/)
   assert.match(source, /reloadDecision\.reason === "stalled" && state\.assistantMode === "timeline"/)
   assert.match(source, /正在处理最近 \$\{notificationWindowLabel\(\)\} 的回复，已成功 \$\{state\.total\} 条/)
+  assert.match(source, /正在核对\$\{scope\}内的通知原帖作者，\$\{checked\}/)
+  assert.doesNotMatch(source, /正在核对第 \$\{state\.pageCount\}\/\$\{currentRoundTarget\(\)\} 条通知/)
+  assert.match(source, /state\.assistantMode === "notifications" \|\| state\.pageCount < currentRoundTarget\(\)/)
 })
 
 test('settings expose four editable prompt fields without a clickbait preset', async () => {
@@ -3858,7 +4007,7 @@ test('a restricted reply clears its managed draft immediately and enters a timed
   const calls = { like: 0, mutual: 0, poster: 0, canceled: 0, saved: 0 }
   const acknowledgedAutomationNotices = new WeakMap()
   const sandbox = vm.createContext({
-    state, Date: { now: () => 1000 }, loopApi: { automationCooldownMs: (retries) => retries * 600000 },
+    state, Date: { now: () => 1000 }, loopApi: { replyRiskCooldownMs: (retries) => retries * 3600000 },
     automationWarningNodes: () => [], acknowledgedAutomationNotices,
     mutualApi: { coolDownForRisk() { calls.mutual += 1 } }, postApi: { coolDownForRisk() { calls.poster += 1 } },
     prepareReplyForTabSwitch: async () => true,
@@ -3869,7 +4018,7 @@ test('a restricted reply clears its managed draft immediately and enters a timed
   sandbox.cool()
   assert.equal(state.running, true)
   assert.equal(state.riskPaused, true)
-  assert.equal(state.riskCooldownUntil, 601000)
+  assert.equal(state.riskCooldownUntil, 3601000)
   assert.equal(sandbox.requested(), true)
   assert.equal(state.pendingReply, '尚未发出的回复')
   assert.equal(state.pendingTweetId, '123')
@@ -3885,7 +4034,7 @@ test('a restricted reply clears its managed draft immediately and enters a timed
   assert.equal(calls.canceled, 1)
   state.riskCooldownUntil = 0
   sandbox.cool()
-  assert.equal(state.riskCooldownUntil, 1201000)
+  assert.equal(state.riskCooldownUntil, 7201000)
   state.assistantMode = 'mutual'
   sandbox.cool()
   assert.equal(calls.mutual, 1)
@@ -4052,7 +4201,7 @@ test('an unreachable reply tab cannot hold the schedule slot', async () => {
   } finally { delete globalThis.chrome }
 })
 
-test('a failed reply cleanup lets the scheduler start the next due task', async () => {
+test('a running reply risk countdown releases the schedule slot even when cleanup fails', async () => {
   const firstId = 505
   const now = Date.now()
   const session = { xrcTaskTabs: { timeline: firstId } }
@@ -4063,11 +4212,12 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
       rules: { 'poster-premium': { enabled: false }, notifications: { enabled: false } },
     },
     xrcPluginRuntime: { flow: { phase: 'running', updatedAt: now }, tasks: {
-      timeline: { tabId: firstId, phase: 'paused', waitUntil: now + 3600000, detail: 'X 限制冷却', updatedAt: now },
+      timeline: { tabId: firstId, phase: 'running', waitUntil: now + 3600000, detail: 'X 限制冷却', updatedAt: now },
     } },
   }
   const tabs = new Map([[firstId, { id: firstId, windowId: firstId, url: 'https://x.com/home' }]])
   let nextId = firstId
+  const messages = []
   globalThis.chrome = {
     storage: {
       session: { async get(key) { return { [key]: session[key] } }, async set(value) { Object.assign(session, value) } },
@@ -4077,8 +4227,9 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
       async query() { return tabs.has(firstId) ? [tabs.get(firstId)] : [] },
       async get(id) { if (!tabs.has(id)) throw new Error('closed'); return tabs.get(id) },
       async sendMessage(id, message) {
+        messages.push(message.type)
         if (message.type === 'xrc-task-suspend') return { ok: false, errorCode: 'composer-cleanup-failed' }
-        return { ok: true, mode: id === firstId ? 'timeline' : 'notifications', phase: id === firstId ? 'paused' : 'running', waitUntil: id === firstId ? now + 3600000 : 0 }
+        return { ok: true, mode: id === firstId ? 'timeline' : 'notifications', phase: 'running', detail: id === firstId ? 'X 限制冷却' : '', waitUntil: id === firstId ? now + 3600000 : 0 }
       },
       async remove(id) { tabs.delete(id) },
       async update(id, options) { tabs.set(id, { ...tabs.get(id), ...options }) },
@@ -4089,8 +4240,11 @@ test('a failed reply cleanup lets the scheduler start the next due task', async 
   try {
     await background.runTaskSchedule()
     assert.equal(tabs.has(firstId), true)
-    assert.equal(local.xrcTaskSchedule.current, 'kol')
+    assert.ok(local.xrcTaskSchedule.current)
+    assert.equal(['timeline', 'notifications', 'kol'].includes(local.xrcTaskSchedule.current), false, JSON.stringify({ current: local.xrcTaskSchedule.current, items: local.xrcTaskSchedule.items, runtime: local.xrcPluginRuntime, messages }))
     assert.ok(local.xrcTaskSchedule.items.timeline.resumeAt > now)
+    assert.equal(local.xrcTaskSchedule.items.notifications.resumeAt, local.xrcTaskSchedule.items.timeline.resumeAt)
+    assert.equal(local.xrcTaskSchedule.items.kol.resumeAt, local.xrcTaskSchedule.items.timeline.resumeAt)
     assert.notEqual(local.xrcTaskSchedule.workTabId, firstId)
     assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [firstId])
   } finally { delete globalThis.chrome }
@@ -7853,10 +8007,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /已停止 · 点击启动/)
   assert.match(content, /dataset\.busy = "true"/)
   assert.match(content, /setTaskActionBusy\(/)
-  assert.match(content, /withNavBusy\(/)
-  assert.match(content, /data-xrc-assistant="mutual"/)
-  assert.match(content, /data-xrc-assistant="reply"/)
-  assert.match(content, /data-xrc-assistant="likes"/)
+  assert.doesNotMatch(content, /withNavBusy\(/)
+  assert.doesNotMatch(content, /data-xrc-assistant=/)
+  assert.match(content, /data-xrc-library-group/)
   assert.match(content, /data-xrc-reply-tab="timeline"/)
   assert.match(content, /data-xrc-reply-tab="notifications"/)
   assert.match(content, /data-xrc-like-tab="posts"/)
@@ -7864,9 +8017,11 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-hub-open aria-label="设置中心"/)
   assert.match(content, /data-xrc-hub hidden aria-label="设置中心"/)
   const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<section class="xrc-hub"/)?.[1] || ''
-  for (const category of ['comment', 'like', 'post', 'follow', 'clean']) {
-    assert.ok(todaySummary.includes(`"${category}"`), `today summary should show ${category}`)
+  const taskCategories = content.match(/const TASK_CATEGORIES = Object\.freeze\(\[[\s\S]*?\]\);/)?.[0] || ''
+  for (const category of ['comment', 'like', 'follow', 'post', 'community', 'clean']) {
+    assert.ok(taskCategories.includes(`"${category}"`), `task categories should include ${category}`)
   }
+  assert.match(todaySummary, /TASK_CATEGORIES\.map/)
   assert.match(todaySummary, /data-xrc-today-category/)
   assert.match(todaySummary, /TODAY_TASKS.map/)
   assert.match(todaySummary, /data-xrc-today-task/)
@@ -7899,7 +8054,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-monitor-current/)
   assert.match(content, /function syncMonitorMenu\(panel\)/)
   assert.match(content, /任务状态、风控倒计时及各项恢复规则，以站点文档中心为准/)
-  assert.match(content, /功能导航/)
+  assert.match(content, /aria-label="排班台。十八项任务由后台排班，共用一个执行页签"/)
+  assert.doesNotMatch(content, /功能导航/)
   assert.doesNotMatch(content, /当前助手/)
   assert.match(content, /通知回复/)
   assert.match(content, /关注管理/)
@@ -7966,8 +8122,9 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /wakeScheduledWait\?\.\(\)/)
   assert.doesNotMatch(content, /当前 AI 回复/)
   assert.doesNotMatch(content, /读取原帖后自动生成/)
-  assert.ok(content.indexOf('data-xrc-assistant="reply"') < content.indexOf('data-xrc-assistant="likes"'))
-  assert.ok(content.indexOf('data-xrc-assistant="likes"') < content.indexOf('data-xrc-assistant="mutual"'))
+  assert.ok(content.indexOf('id: "comment"') < content.indexOf('id: "like"'))
+  assert.ok(content.indexOf('id: "like"') < content.indexOf('id: "follow"'))
+  assert.ok(content.indexOf('id: "follow"') < content.indexOf('id: "post"'))
   assert.match(content, /NOTIFICATION_HISTORY_KEY = "xrcNotificationProcessedIds"/)
   assert.doesNotMatch(content, /最近 2 小时/)
   assert.match(content, /state\.assistantMode !== "notifications"/)
@@ -7991,7 +8148,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /function selectMutualMode\(mode\)\s*\{\s*return scheduleDashboardActive\(\) \? selectTaskForInspection\(mutualTaskKey\(mode\)\) : openTaskTab\(mutualTaskKey\(mode\)\)/)
   assert.match(content, /button\.title = taskTabHint\(mutualTaskKey\(button\.dataset\.xrcMutualTab\)\)/)
   assert.doesNotMatch(content, /data-xrc-timeline-past|data-xrc-desk-past-row/)
-  assert.match(content, /预计当前结束后|预计 \$\{formatScheduleTime/)
+  assert.match(content, /\["预计", nextEntry\?\.status === "ready"[\s\S]{0,80}当前空档结束后接入[\s\S]{0,160}formatScheduleTime\(nextEntry\.readyAt\)/)
   assert.match(content, /查看当前任务详情/)
   assert.match(content, /enter\.title = phase === "now" \? "查看当前任务详情"/)
   assert.match(content, /action === "inspect"/)
@@ -8128,7 +8285,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-embed/)
   assert.match(content, /xrcPanelPlacement/)
   assert.match(content, /panelPlacement: "float"/)
-  assert.match(content, /xrc-assistant-tabs/)
+  assert.doesNotMatch(content, /xrc-assistant-tabs/)
+  assert.doesNotMatch(content, /xrc-schedule-strip/)
   assert.doesNotMatch(content, /xrc-tab-index/)
   assert.match(resourcePage, /右侧搜索框下方/)
   assert.match(content, /data-xrc-docs-open/)
@@ -8143,7 +8301,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /post-unavailable/)
   assert.match(content, /原帖已删除或当前账号看不到，已跳过/)
   assert.match(content, /trying to reply to has been deleted or is not visible/)
-  assert.match(content, /openMutualWindows/)
+  assert.doesNotMatch(content, /openMutualWindows/)
   assert.match(content, /mutual-unfollow/)
   assert.match(content, /mutual-followBack/)
   assert.match(content, /mutual-targetFollow/)
@@ -8255,7 +8413,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /完成本次全部轮次后才让出共享执行页签|完成本次全部轮次后让出共享页签/)
   assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
   assert.match(docsPage, /绿边表示运行，黄边表示等待，红边表示已停止或需处理/)
-  assert.match(docsPage, /未参与的任务降饱和并排在后面/)
+  assert.match(docsPage, /还没加入的任务留在左侧任务库，按评论、点赞、关注、发帖、社群、清理分组/)
   assert.doesNotMatch(docsPage, /台底全局区/)
   assert.doesNotMatch(docsPage, /停止全部/)
   assert.match(docsPage, /SINGLE_BUTTON_ROWS[\s\S]*正在停止', '等待中 · 请稍候'/)
@@ -8269,17 +8427,20 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
   assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
-  assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 10 分钟，再次受限等待 20 分钟，第三次 30 分钟/)
-  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*到期后先执行评论回复，直到有一条评论成功再按原队列轮换/)
+  assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 1 小时，再次受限等待 2 小时，第三次 4 小时，第四次及以后 8 小时/)
+  assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*后台保存截止时间并立即让出执行位[\s\S]*有一条评论成功就清除连续受限计数/)
   assert.match(docsPage, /回关和关注候选看到速度限制，或页面已经写出超过限制、本次结束时，这次任务结束，两项一起进入 30 分钟共享冷却/)
-  assert.match(docsPage, /开局顺序固定：评论回复、评论首页、评论大V、精品发帖/)
+  assert.match(docsPage, /开局顺序固定：评论回复、评论首页、评论大V、卡片发帖/)
   assert.doesNotMatch(docsPage, /比较有效分/)
   assert.match(docsPage, /回关粉丝只处理昵称或简介含汉字的账号/)
   assert.match(docsPage, /评论首页默认用下面的边界测试/)
   assert.match(docsPage, /评论大V · 每个账号/)
   assert.match(docsPage, /id="daily-volume"/)
   assert.match(docsPage, /短友好多表情；只回别人对你帖子的留言/)
-  assert.match(docsPage, /插件不设每日回复总量/)
+  assert.match(docsPage, /900 到 1100/)
+  assert.match(docsPage, /20 到 30/)
+  assert.match(docsPage, /10 到 20/)
+  assert.doesNotMatch(docsPage, /插件不设每日回复总量/)
   assert.match(docsPage, /每日报告随心跳自动同步当日统计/)
   assert.doesNotMatch(docsPage, /同步历史/)
   assert.match(docsPage, /频率与设置/)
@@ -8291,7 +8452,10 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="reply-timeline"[\s\S]*一次任务会按所选速度档位生成多轮计划/)
   assert.match(docsPage, /每轮各有回复条数目标/)
   assert.match(docsPage, /正常情况下完成本次全部轮次后才让出共享执行页签/)
-  assert.match(docsPage, /id: 'poster', label: '发帖与清理', depth: 1/)
+  assert.match(docsPage, /id: 'poster', label: '发帖', depth: 1/)
+  assert.match(docsPage, /id: 'clean', label: '清理', depth: 1/)
+  assert.ok(docsPage.indexOf("id: 'poster'") < docsPage.indexOf("id: 'community-share'"))
+  assert.ok(docsPage.indexOf("id: 'community-share'") < docsPage.indexOf("id: 'clean'"))
   assert.match(docsPage, /id: 'part-1', heading: '第一篇 · 入门与运行'/)
   assert.match(docsPage, /id: 'part-4', heading: '第四篇 · 历史与观察'/)
   assert.match(docsPage, /id="poster-wave"/)
@@ -8313,7 +8477,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(waveTimeline, /07:00–10:00/)
   assert.match(waveTimeline, /12:30–13:30/)
   assert.match(waveTimeline, /18:00–22:00/)
-  assert.match(waveTimeline, /精品发帖固定档位/)
+  assert.match(waveTimeline, /卡片发帖默认档位/)
   assert.match(content, /currentTaskDetail|currentTaskWaitUntil/)
   assert.match(backgroundSource, /setCommandHandler|executeRemoteCommand|flow-start/)
   assert.match(backgroundSource, /ext-update/)
@@ -8527,7 +8691,16 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   const morningDue = background.dueTaskModes(plan, morning)
   assert.equal(morningDue[0], 'timeline')
   assert.ok(!morningDue.includes('notifications'))
-  assert.ok(morningDue.indexOf('kol') < morningDue.indexOf('poster-premium'))
+  assert.ok(!morningDue.includes('poster-premium'))
+  const slotMorning = Date.parse('2026-10-28T08:05:00+08:00')
+  const slotDue = background.dueTaskModes(plan, slotMorning)
+  assert.ok(slotDue.includes('poster-premium'))
+  assert.ok(slotDue.indexOf('kol') < slotDue.indexOf('poster-premium'))
+  const tenADay = { ...plan, rules: { ...plan.rules, 'poster-premium': { enabled: true, dailyQuota: 10 } } }
+  assert.ok(background.dueTaskModes(tenADay, morning).includes('poster-premium'))
+  const oneADay = { ...plan, rules: { ...plan.rules, 'poster-premium': { enabled: true, dailyQuota: 1 } } }
+  assert.ok(!background.dueTaskModes(oneADay, slotMorning).includes('poster-premium'))
+  assert.ok(background.dueTaskModes(oneADay, Date.parse('2026-10-28T12:05:00+08:00')).includes('poster-premium'))
   assert.ok(!morningDue.includes('likes-posts'))
   assert.ok(morningDue.includes('mutual-unfollow'))
   assert.ok(!background.dueTaskModes(plan, afternoon).includes('poster-premium'))
@@ -10198,6 +10371,51 @@ test('three unconfirmed reloads skip the task instead of starting the countdown 
     assert.equal(local.xrcTaskSchedule.items.notifications.blocked, true)
     assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 3)
     assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 3 次，已跳过这项任务/)
+    assert.match(local.xrcTaskSchedule.items.notifications.reason, /原因：执行页没有回报启动结果/)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a start that already shows a platform limit is recorded as 系统超限 and is not reloaded', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, replyRiskVersion: 2, current: 'mutual-targetFollow', workTabId: 11, startedAt: now - 95_000,
+      accountHandle: 'tarsixseveneig1',
+      items: { 'mutual-targetFollow': { reloadAttempts: 1, lastStartError: '执行页没有回报启动结果' } },
+    },
+    xrcPluginRuntime: {
+      tasks: { 'mutual-targetFollow': { tabId: 11, phase: 'starting', updatedAt: now - 95_000, detail: 'X 提示疑似自动化，当前关注任务等待后自动重试' } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async sendMessage() { return { ok: true, mode: 'mutual-targetFollow', phase: 'starting', detail: 'X 提示疑似自动化，当前关注任务等待后自动重试' } },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    const item = local.xrcTaskSchedule.items['mutual-targetFollow']
+    assert.equal(item.blocked, true)
+    assert.equal(item.reloadAttempts, 1)
+    assert.match(item.reason, /^系统超限。X 提示疑似自动化/)
+    assert.equal(updates.some((entry) => /followers|xrcAssistant=mutual-targetFollow/u.test(String(entry.url || ''))), false)
+    const alerts = local[background.EXECUTION_ALERTS_KEY] || []
+    const limitAlert = alerts.find((entry) => entry.task === 'mutual-targetFollow')
+    assert.equal(limitAlert?.kind, 'rate-limit')
+    assert.match(limitAlert?.message || '', /系统超限/)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10364,6 +10582,45 @@ test('a running task with no new action or error for three minutes reloads the s
     assert.equal(local.xrcTaskSchedule.items.timeline.reloadAttempts, 1)
     assert.match(local.xrcTaskSchedule.items.timeline.reason, /长时间没有动作或报错/)
     assert.equal(local.xrcTaskSchedule.current, 'timeline')
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a manual page refresh reloads the occupied tab without spending an automatic retry', async () => {
+  const previousChrome = globalThis.chrome
+  const updates = []
+  const reloads = []
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'timeline', workTabId: 11, startedAt: Date.now() - 1000,
+      items: { timeline: { reloadAttempts: 2, reason: '长时间没有动作或报错，已刷新（2/3）' } },
+    },
+    xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } },
+  }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
+      async update(id, info) { updates.push(info || {}); return { id } },
+      async reload(id) { reloads.push(id) },
+    },
+  }
+  try {
+    const refreshed = await background.refreshOccupiedTaskPage('timeline', 11)
+    assert.equal(refreshed.ok, true)
+    assert.equal(reloads.length, 0)
+    assert.match(updates[0]?.url || '', /xrcAssistant=timeline/)
+    assert.match(updates[0]?.url || '', /xrcStart=1/)
+    assert.equal(local.xrcTaskSchedule.current, 'timeline')
+    assert.equal(local.xrcTaskSchedule.items.timeline.reloadAttempts, 2)
+    assert.match(local.xrcTaskSchedule.items.timeline.reason, /已手动刷新页面，继续当前任务/)
+    const rejected = await background.refreshOccupiedTaskPage('timeline', 12)
+    assert.equal(rejected.ok, false)
+    assert.equal(updates.length, 1)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10937,7 +11194,7 @@ test('comment tasks share one growing cooldown and clear it together on success'
         const item = local.xrcTaskSchedule.items[mode]
         assert.equal(item.blocked, false)
         assert.equal(item.limitedStreak, index)
-        assert.ok(item.resumeAt >= before + index * 10 * 60000)
+        assert.ok(item.resumeAt >= before + Math.min(8, 2 ** (index - 1)) * 3600000)
         assert.match(item.reason, /评论三项共用/)
       }
     }
@@ -10946,6 +11203,67 @@ test('comment tasks share one growing cooldown and clear it together on success'
       assert.equal(local.xrcTaskSchedule.items[mode].limitedStreak, 0)
       assert.equal(local.xrcTaskSchedule.items[mode].resumeAt, 0)
     }
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('text posts wait and retry after repeated risk blocks', async () => {
+  const local = { xrcTaskSchedule: { enabled: true, current: '', items: {}, replyRiskVersion: 2, postRiskVersion: 1 } }
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} } },
+    },
+    tabs: { async sendMessage() {} },
+  }
+  try {
+    for (let index = 1; index <= 7; index += 1) {
+      const before = Date.now()
+      await background.noteScheduledAction({ task: 'tweet-post', result: 'limited', errorCode: 'risk-blocked' })
+      const item = local.xrcTaskSchedule.items.poster
+      const minutes = Math.min(60, index * 10)
+      assert.equal(item.blocked, false)
+      assert.equal(item.limitedStreak, index)
+      assert.ok(item.resumeAt >= before + minutes * 60000)
+      assert.ok(item.resumeAt < before + minutes * 60000 + 2000)
+      assert.match(item.reason, new RegExp(`第 ${index} 次冷却后自动重试`))
+    }
+    await background.noteScheduledAction({ task: 'tweet-post', result: 'success' })
+    assert.equal(local.xrcTaskSchedule.items.poster.limitedStreak, 0)
+    assert.equal(local.xrcTaskSchedule.items.poster.resumeAt, 0)
+    assert.equal(local.xrcTaskSchedule.items.poster.blocked, false)
+  } finally {
+    delete globalThis.chrome
+  }
+})
+
+test('a blocked text post migrates back to an automatic cooldown that manual start cannot skip', async () => {
+  const now = Date.now()
+  const schedule = {
+    enabled: true,
+    current: '',
+    replyRiskVersion: 2,
+    items: { poster: { blocked: true, limitedStreak: 3, resumeAt: 0, reason: 'risk-blocked', manualRequestedAt: now } },
+  }
+  globalThis.chrome = { storage: { local: {
+    async get() { return { xrcTaskSchedule: schedule } },
+    async set(value) { Object.assign(schedule, value.xrcTaskSchedule) },
+  } } }
+  try {
+    const plan = await background.readTaskSchedule()
+    assert.equal(plan.postRiskVersion, 1)
+    assert.equal(plan.items.poster.blocked, false)
+    assert.match(plan.items.poster.reason, /第 3 次冷却后自动重试/)
+    assert.ok(plan.items.poster.resumeAt >= now + 30 * 60000)
+    plan.rules.poster.enabled = true
+    assert.ok(!background.dueTaskModes(plan, now).includes('poster'))
+    const ordinaryWait = {
+      ...plan,
+      items: { ...plan.items, poster: { ...plan.items.poster, reason: '等待发帖' } },
+    }
+    assert.ok(background.dueTaskModes(ordinaryWait, now).includes('poster'))
+    assert.equal(plan.items.poster.manualRequestedAt, now)
   } finally {
     delete globalThis.chrome
   }
@@ -12336,6 +12654,252 @@ test('group chat sharing has one batch Send and no speed picker', async () => {
   assert.match(content, /选中所有可点击的群聊后，只点一次 Send；多选后页面显示 Send separately 时，同样只点这一次。选择窗关闭或出现新提示，且没有失败提示，就记成功/)
   assert.match(docs, /书签右侧的分享按钮/)
   assert.match(docs, /没有群聊速度设置/)
+})
+
+test('comment tasks share a daily cap drawn once from 900 to 1100', async () => {
+  assert.equal(receipt.COMMENT_DAILY_CAP_MIN, 900)
+  assert.equal(receipt.COMMENT_DAILY_CAP_MAX, 1100)
+  assert.equal(receipt.rollCommentDailyCap(0), 900)
+  assert.equal(receipt.rollCommentDailyCap(0.999999999), 1100)
+  const drawn = new Set()
+  for (let index = 0; index < 201; index += 1) {
+    const cap = receipt.rollCommentDailyCap(index / 201)
+    assert.ok(cap >= 900 && cap <= 1100)
+    drawn.add(cap)
+  }
+  assert.ok(drawn.size > 1)
+  const previousChrome = globalThis.chrome
+  const store = {}
+  globalThis.chrome = { storage: { local: {
+    async get(keys) {
+      const names = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(names.map((key) => [key, store[key]]))
+    },
+    async set(value) { Object.assign(store, value) },
+  } } }
+  try {
+    const now = Date.parse('2026-11-16T15:00:00+08:00')
+    store.xrcDailyReports = [{
+      date: '2026-11-16', accountHandle: 'tuaran',
+      counts: { timelineComments: 400, notificationComments: 300, kolComments: 199, comments: 899 },
+    }]
+    const first = await receipt.commentDailyBudget('tuaran', now, 0.2)
+    const second = await receipt.commentDailyBudget('tuaran', now, 0.9)
+    assert.equal(first.uncertain, false)
+    assert.equal(first.reached, false)
+    assert.equal(first.count, 899)
+    assert.equal(second.cap, first.cap)
+    assert.ok(first.cap >= 900 && first.cap <= 1100)
+    store.xrcDailyReports[0].counts = { timelineComments: 500, notificationComments: 400, kolComments: first.cap - 900, comments: first.cap }
+    const full = await receipt.commentDailyBudget('tuaran', now, 0)
+    assert.equal(full.reached, true)
+    assert.equal(full.cap, first.cap)
+    assert.equal(full.count, first.cap)
+    const tomorrow = await receipt.commentDailyBudget('tuaran', Date.parse('2026-11-17T00:10:00+08:00'), 0)
+    assert.equal(tomorrow.reached, false)
+    assert.equal(tomorrow.count, 0)
+    assert.equal(tomorrow.cap, 900)
+    const missing = await receipt.commentDailyBudget('', now, 0)
+    assert.equal(missing.reached, false)
+    assert.equal(missing.uncertain, true)
+    const resumeAt = Date.parse('2026-11-17T00:00:00+08:00')
+    const reason = `今日评论已到 ${first.cap}/${first.cap}，明天继续`
+    const plan = {
+      enabled: true,
+      items: {
+        notifications: { manualRequestedAt: now, resumeAt, reason },
+        timeline: { resumeAt, reason },
+        kol: { resumeAt, reason },
+        'likes-posts': { resumeAt: 0, reason: '' },
+      },
+      rules: {
+        notifications: { enabled: true, window: 'all' },
+        timeline: { enabled: true, window: 'all' },
+        kol: { enabled: true, window: 'all' },
+        'likes-posts': { enabled: true, window: 'all' },
+      },
+    }
+    const due = background.dueTaskModes(plan, now)
+    assert.equal(due.includes('notifications'), false)
+    assert.equal(due.includes('timeline'), false)
+    assert.equal(due.includes('kol'), false)
+    assert.equal(due.includes('likes-posts'), true)
+    const content = await readFile(new URL('content.js', extensionDir), 'utf8')
+    const sendAt = content.indexOf('const result = await replyOnce(next, phrase);')
+    const gateAt = content.lastIndexOf('commentDailyCapStop()', sendAt)
+    assert.ok(gateAt > 0 && gateAt < sendAt)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('post tasks share a daily cap drawn once from 20 to 30', async () => {
+  assert.equal(receipt.POST_DAILY_CAP_MIN, 20)
+  assert.equal(receipt.POST_DAILY_CAP_MAX, 30)
+  assert.equal(receipt.rollPostDailyCap(0), 20)
+  assert.equal(receipt.rollPostDailyCap(0.999999999), 30)
+  const drawn = new Set()
+  for (let index = 0; index < 11; index += 1) {
+    const cap = receipt.rollPostDailyCap(index / 11)
+    assert.ok(cap >= 20 && cap <= 30)
+    drawn.add(cap)
+  }
+  assert.equal(drawn.size, 11)
+  const previousChrome = globalThis.chrome
+  const store = {}
+  globalThis.chrome = { storage: { local: {
+    async get(keys) {
+      const names = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(names.map((key) => [key, store[key]]))
+    },
+    async set(value) { Object.assign(store, value) },
+  } } }
+  try {
+    const now = Date.parse('2026-11-16T15:00:00+08:00')
+    store.xrcDailyReports = [{
+      date: '2026-11-16', accountHandle: 'tuaran',
+      counts: { posts: 10, articleDrafts: 8, siteForwards: 1, comments: 5000 },
+    }]
+    const first = await receipt.postDailyBudget('tuaran', now, 0.2)
+    const second = await receipt.postDailyBudget('tuaran', now, 0.9)
+    assert.equal(first.uncertain, false)
+    assert.equal(first.reached, false)
+    assert.equal(first.count, 19)
+    assert.equal(second.cap, first.cap)
+    assert.ok(first.cap >= 20 && first.cap <= 30)
+    store.xrcDailyReports[0].counts = {
+      posts: first.cap - 2,
+      articleDrafts: 1,
+      siteForwards: 1,
+      comments: 0,
+    }
+    const full = await receipt.postDailyBudget('tuaran', now, 0)
+    assert.equal(full.reached, true)
+    assert.equal(full.cap, first.cap)
+    assert.equal(full.count, first.cap)
+    const tomorrow = await receipt.postDailyBudget('tuaran', Date.parse('2026-11-17T00:10:00+08:00'), 0)
+    assert.equal(tomorrow.reached, false)
+    assert.equal(tomorrow.count, 0)
+    assert.equal(tomorrow.cap, 20)
+    const missing = await receipt.postDailyBudget('', now, 0)
+    assert.equal(missing.reached, false)
+    assert.equal(missing.uncertain, true)
+    const resumeAt = Date.parse('2026-11-17T00:00:00+08:00')
+    const reason = `今日发帖已到 ${first.cap}/${first.cap}，明天继续`
+    const postModes = ['poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward']
+    const plan = {
+      enabled: true,
+      items: {
+        notifications: { resumeAt: 0, reason: '' },
+        'likes-posts': { resumeAt: 0, reason: '' },
+      },
+      rules: {
+        notifications: { enabled: true, window: 'all' },
+        'likes-posts': { enabled: true, window: 'all' },
+      },
+    }
+    for (const mode of postModes) {
+      plan.items[mode] = { manualRequestedAt: now, resumeAt, reason }
+      plan.rules[mode] = { enabled: true, window: 'all' }
+    }
+    const due = background.dueTaskModes(plan, now)
+    for (const mode of postModes) assert.equal(due.includes(mode), false, mode)
+    assert.equal(due.includes('notifications'), true)
+    assert.equal(due.includes('likes-posts'), true)
+    const poster = await readFile(new URL('poster.js', extensionDir), 'utf8')
+    const sendAt = poster.lastIndexOf('const result = await publishPost(state.currentPost, state.publishQueue[0]);')
+    const gateAt = poster.lastIndexOf('holdPostDailyCap()', sendAt)
+    assert.ok(gateAt > 0 && gateAt < sendAt)
+    const draftAt = poster.indexOf('await publishPost(item.text, item);')
+    const draftGate = poster.lastIndexOf('holdPostDailyCap()', draftAt)
+    assert.ok(draftGate > 0 && draftGate < draftAt)
+    const article = await readFile(new URL('articleDraft.js', extensionDir), 'utf8')
+    const writeAt = article.indexOf('await writeDraft(state.draft);')
+    const articleGate = article.lastIndexOf('holdPostDailyCap()', writeAt)
+    assert.ok(articleGate > 0 && articleGate < writeAt)
+    const forward = await readFile(new URL('siteForward.js', extensionDir), 'utf8')
+    const fetchAt = forward.indexOf('const payload = await fetchTask')
+    const forwardGate = forward.lastIndexOf('sharedPostBudget()', fetchAt)
+    assert.ok(forwardGate > 0 && forwardGate < fetchAt)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('community tasks share a daily cap drawn once from 10 to 20', async () => {
+  assert.equal(receipt.COMMUNITY_DAILY_CAP_MIN, 10)
+  assert.equal(receipt.COMMUNITY_DAILY_CAP_MAX, 20)
+  assert.equal(receipt.rollCommunityDailyCap(0), 10)
+  assert.equal(receipt.rollCommunityDailyCap(0.999999999), 20)
+  const drawn = new Set()
+  for (let index = 0; index < 11; index += 1) {
+    const cap = receipt.rollCommunityDailyCap(index / 11)
+    assert.ok(cap >= 10 && cap <= 20)
+    drawn.add(cap)
+  }
+  assert.equal(drawn.size, 11)
+  const previousChrome = globalThis.chrome
+  const store = {}
+  globalThis.chrome = { storage: { local: {
+    async get(keys) {
+      const names = Array.isArray(keys) ? keys : [keys]
+      return Object.fromEntries(names.map((key) => [key, store[key]]))
+    },
+    async set(value) { Object.assign(store, value) },
+  } } }
+  try {
+    const now = Date.parse('2026-11-16T15:00:00+08:00')
+    store.xrcDailyReports = [{
+      date: '2026-11-16', accountHandle: 'tuaran',
+      counts: { communityShares: 9, posts: 40, comments: 2000 },
+    }]
+    const first = await receipt.communityDailyBudget('tuaran', now, 0.2)
+    const second = await receipt.communityDailyBudget('tuaran', now, 0.9)
+    assert.equal(first.uncertain, false)
+    assert.equal(first.reached, false)
+    assert.equal(first.count, 9)
+    assert.equal(second.cap, first.cap)
+    assert.ok(first.cap >= 10 && first.cap <= 20)
+    store.xrcDailyReports[0].counts.communityShares = first.cap
+    const full = await receipt.communityDailyBudget('tuaran', now, 0)
+    assert.equal(full.reached, true)
+    assert.equal(full.cap, first.cap)
+    assert.equal(full.count, first.cap)
+    const tomorrow = await receipt.communityDailyBudget('tuaran', Date.parse('2026-11-17T00:10:00+08:00'), 0)
+    assert.equal(tomorrow.reached, false)
+    assert.equal(tomorrow.count, 0)
+    assert.equal(tomorrow.cap, 10)
+    const missing = await receipt.communityDailyBudget('', now, 0)
+    assert.equal(missing.reached, false)
+    assert.equal(missing.uncertain, true)
+    const resumeAt = Date.parse('2026-11-17T00:00:00+08:00')
+    const reason = `今日社群已到 ${first.cap}/${first.cap}，明天继续`
+    const plan = {
+      enabled: true,
+      items: {
+        'community-share': { manualRequestedAt: now, resumeAt, reason },
+        notifications: { resumeAt: 0, reason: '' },
+        'likes-posts': { resumeAt: 0, reason: '' },
+      },
+      rules: {
+        'community-share': { enabled: true, window: 'all' },
+        notifications: { enabled: true, window: 'all' },
+        'likes-posts': { enabled: true, window: 'all' },
+      },
+    }
+    const due = background.dueTaskModes(plan, now)
+    assert.equal(due.includes('community-share'), false)
+    assert.equal(due.includes('notifications'), true)
+    assert.equal(due.includes('likes-posts'), true)
+    const share = await readFile(new URL('communityShare.js', extensionDir), 'utf8')
+    const clickAt = share.indexOf('send.click();')
+    const gateAt = share.lastIndexOf('readCommunityDailyBudget()', clickAt)
+    assert.ok(gateAt > 0 && gateAt < clickAt)
+    assert.ok(share.indexOf('selected.size >= shareRoom') > 0)
+    assert.ok(share.indexOf('selected.size >= shareRoom') < clickAt)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
 })
 
 test('old 30-minute follow batch rest is pulled in to the current pace gap', async () => {

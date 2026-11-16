@@ -476,7 +476,7 @@ export default function XReplyClipboardResourcePage() {
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
-              评论、点赞、关注、社群分发、发帖与清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
+              评论、点赞、关注、发帖、社群和清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
             </p>
             <p className="mt-3 max-w-2xl text-xs leading-6 text-slate-400">以下功能说明对应本地源码 v{SOURCE_VERSION}。站内 ZIP 使用单独的下载包配置，未打包的功能不会随下载自动获得。</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">

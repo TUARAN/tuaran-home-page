@@ -4,6 +4,15 @@
   const PLATFORM = "x";
   const STORAGE_KEY = "xrcCommunityReport";
   const DAILY_KEY = "xrcDailyReports";
+  const COMMENT_DAILY_CAP_KEY = "xrcCommentDailyCap";
+  const COMMENT_DAILY_CAP_MIN = 900;
+  const COMMENT_DAILY_CAP_MAX = 1100;
+  const POST_DAILY_CAP_KEY = "xrcPostDailyCap";
+  const POST_DAILY_CAP_MIN = 20;
+  const POST_DAILY_CAP_MAX = 30;
+  const COMMUNITY_DAILY_CAP_KEY = "xrcCommunityDailyCap";
+  const COMMUNITY_DAILY_CAP_MIN = 10;
+  const COMMUNITY_DAILY_CAP_MAX = 20;
   const DAILY_SCHEDULE_KEY = "xrcDailyUploadSchedule";
   const LIMIT_KEY = "xrcLimitObservations";
   const HYPOTHESIS_KEY = "xrcLimitHypotheses";
@@ -71,6 +80,128 @@
       comments: 0, timelineComments: 0, notificationComments: 0, kolComments: 0,
       likes: 0, follows: 0, unfollows: 0, followBacks: 0, posts: 0, prunes: 0, replyPrunes: 0, articleDrafts: 0, siteForwards: 0, communityShares: 0
     };
+  }
+
+  function rollDailyCap(min, max, random = Math.random) {
+    const span = max - min + 1;
+    const sample = typeof random === "function" ? Number(random()) : Number(random);
+    const unit = Number.isFinite(sample) ? Math.min(Math.max(sample, 0), 0.999999999) : 0;
+    return min + Math.floor(unit * span);
+  }
+
+  function rollCommentDailyCap(random = Math.random) {
+    return rollDailyCap(COMMENT_DAILY_CAP_MIN, COMMENT_DAILY_CAP_MAX, random);
+  }
+
+  function rollPostDailyCap(random = Math.random) {
+    return rollDailyCap(POST_DAILY_CAP_MIN, POST_DAILY_CAP_MAX, random);
+  }
+
+  function rollCommunityDailyCap(random = Math.random) {
+    return rollDailyCap(COMMUNITY_DAILY_CAP_MIN, COMMUNITY_DAILY_CAP_MAX, random);
+  }
+
+  function nextShanghaiMidnight(now = Date.now()) {
+    const tomorrow = shanghaiDate(now + 24 * 60 * 60 * 1000);
+    const parsed = Date.parse(`${tomorrow}T00:00:00+08:00`);
+    return Number.isFinite(parsed) ? parsed : now + 24 * 60 * 60 * 1000;
+  }
+
+  function commentCountFromRow(row) {
+    const counts = row?.counts && typeof row.counts === "object" ? row.counts : {};
+    const split = Math.max(0, Number(counts.timelineComments) || 0)
+      + Math.max(0, Number(counts.notificationComments) || 0)
+      + Math.max(0, Number(counts.kolComments) || 0);
+    return Math.max(split, Math.max(0, Number(counts.comments) || 0));
+  }
+
+  function postCountFromRow(row) {
+    const counts = row?.counts && typeof row.counts === "object" ? row.counts : {};
+    return Math.max(0, Number(counts.posts) || 0)
+      + Math.max(0, Number(counts.articleDrafts) || 0)
+      + Math.max(0, Number(counts.siteForwards) || 0);
+  }
+
+  function communityCountFromRow(row) {
+    const counts = row?.counts && typeof row.counts === "object" ? row.counts : {};
+    return Math.max(0, Number(counts.communityShares) || 0);
+  }
+
+  async function storedDailyBudgetUnlocked({ storageKey, min, max, countFromRow, accountHandle, now = Date.now(), random = Math.random }) {
+    const handle = cleanHandle(accountHandle).toLowerCase();
+    const date = shanghaiDate(now);
+    const resumeAt = nextShanghaiMidnight(now);
+    if (!handle) return { ok: true, reached: false, uncertain: true, date, handle: "", count: 0, cap: 0, resumeAt };
+    const chrome = root.chrome;
+    if (!chrome?.storage?.local?.get) {
+      return { ok: true, reached: true, uncertain: true, date, handle, count: 0, cap: 0, resumeAt: now + 15 * 60 * 1000 };
+    }
+    const stored = await chrome.storage.local.get([storageKey, DAILY_KEY]);
+    const saved = stored?.[storageKey];
+    const accounts = saved?.date === date && saved.accounts && typeof saved.accounts === "object" ? { ...saved.accounts } : {};
+    let cap = Number(accounts[handle]);
+    let rolled = false;
+    if (!Number.isInteger(cap) || cap < min || cap > max) {
+      cap = rollDailyCap(min, max, random);
+      accounts[handle] = cap;
+      rolled = true;
+    }
+    if (rolled || saved?.date !== date) {
+      await chrome.storage.local.set({ [storageKey]: { date, accounts } });
+    }
+    const rows = Array.isArray(stored?.[DAILY_KEY]) ? stored[DAILY_KEY] : [];
+    const count = rows
+      .filter((row) => row?.date === date && String(row.accountHandle || "").toLowerCase() === handle)
+      .reduce((sum, row) => sum + countFromRow(row), 0);
+    return { ok: true, reached: count >= cap, uncertain: false, date, handle, count, cap, resumeAt };
+  }
+
+  function commentDailyBudgetUnlocked(accountHandle, now = Date.now(), random = Math.random) {
+    return storedDailyBudgetUnlocked({
+      storageKey: COMMENT_DAILY_CAP_KEY,
+      min: COMMENT_DAILY_CAP_MIN,
+      max: COMMENT_DAILY_CAP_MAX,
+      countFromRow: commentCountFromRow,
+      accountHandle,
+      now,
+      random
+    });
+  }
+
+  function postDailyBudgetUnlocked(accountHandle, now = Date.now(), random = Math.random) {
+    return storedDailyBudgetUnlocked({
+      storageKey: POST_DAILY_CAP_KEY,
+      min: POST_DAILY_CAP_MIN,
+      max: POST_DAILY_CAP_MAX,
+      countFromRow: postCountFromRow,
+      accountHandle,
+      now,
+      random
+    });
+  }
+
+  function communityDailyBudgetUnlocked(accountHandle, now = Date.now(), random = Math.random) {
+    return storedDailyBudgetUnlocked({
+      storageKey: COMMUNITY_DAILY_CAP_KEY,
+      min: COMMUNITY_DAILY_CAP_MIN,
+      max: COMMUNITY_DAILY_CAP_MAX,
+      countFromRow: communityCountFromRow,
+      accountHandle,
+      now,
+      random
+    });
+  }
+
+  function commentDailyBudget(accountHandle, now = Date.now(), random = Math.random) {
+    return enqueue(() => commentDailyBudgetUnlocked(accountHandle, now, random));
+  }
+
+  function postDailyBudget(accountHandle, now = Date.now(), random = Math.random) {
+    return enqueue(() => postDailyBudgetUnlocked(accountHandle, now, random));
+  }
+
+  function communityDailyBudget(accountHandle, now = Date.now(), random = Math.random) {
+    return enqueue(() => communityDailyBudgetUnlocked(accountHandle, now, random));
   }
 
   function syncCommentTotal(counts) {
@@ -772,6 +903,22 @@
     mergeAccountData,
     recordDailySuccess,
     shanghaiDate,
+    COMMENT_DAILY_CAP_KEY,
+    COMMENT_DAILY_CAP_MIN,
+    COMMENT_DAILY_CAP_MAX,
+    POST_DAILY_CAP_KEY,
+    POST_DAILY_CAP_MIN,
+    POST_DAILY_CAP_MAX,
+    COMMUNITY_DAILY_CAP_KEY,
+    COMMUNITY_DAILY_CAP_MIN,
+    COMMUNITY_DAILY_CAP_MAX,
+    rollCommentDailyCap,
+    rollPostDailyCap,
+    rollCommunityDailyCap,
+    nextShanghaiMidnight,
+    commentDailyBudget,
+    postDailyBudget,
+    communityDailyBudget,
     saveSecret,
     readSecret,
     queuePromptVote,

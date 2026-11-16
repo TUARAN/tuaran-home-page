@@ -18,6 +18,16 @@ test('deduplicates case-insensitively and keeps collected avatars on partial rer
   assert.equal(avatarUrl('https://evil.test/profile_images/a.jpg'), null)
   assert.equal(avatarUrl('https://pbs.twimg.com/media/post.jpg'), null)
 })
+test('operations tools use the same numbered settings section as the hub', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/experiments.js', import.meta.url), 'utf8')
+  const panel = await readFile(new URL('../../tools/x-reply-clipboard-extension/content.js', import.meta.url), 'utf8')
+  assert.match(panel, /<b>03<\/b><span><strong>运营辅助功能<\/strong><small>采集、归档与盘点<\/small><\/span>/)
+  assert.match(source, /xrc-docs-section/)
+  assert.match(source, /sectionTitle/)
+  assert.doesNotMatch(source, /<details/)
+  assert.doesNotMatch(source, /<summary>运营辅助功能<\/summary>/)
+})
 test('manifest loads experiment module after main panel and keeps existing permissions', async () => {
   const { readFile } = await import('node:fs/promises')
   const manifest = JSON.parse(await readFile(new URL('../../tools/x-reply-clipboard-extension/manifest.json', import.meta.url), 'utf8'))

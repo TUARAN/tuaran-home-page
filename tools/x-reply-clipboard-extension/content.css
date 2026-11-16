@@ -1789,20 +1789,23 @@
 #x-reply-clipboard-panel .xrc-post-flow [data-xrc-post-queue] { color: var(--xrc-text); font-weight: 800; }
 #x-reply-clipboard-panel .xrc-post-card { display: grid; gap: 12px; padding: 13px; }
 #x-reply-clipboard-panel .xrc-sent-posts { display: grid; gap: 8px; margin-top: 10px; }
-#x-reply-clipboard-panel .xrc-sent-head { display: grid; gap: 2px; }
-#x-reply-clipboard-panel .xrc-sent-head strong { font-size: 13px; }
-#x-reply-clipboard-panel .xrc-sent-head small,
-#x-reply-clipboard-panel .xrc-sent-empty { color: var(--xrc-muted, #667085); font-size: 12px; line-height: 1.5; }
-#x-reply-clipboard-panel .xrc-sent-row { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid rgba(15, 23, 42, 0.08); }
-#x-reply-clipboard-panel .xrc-sent-row p { margin: 0; font-size: 13px; line-height: 1.5; }
-#x-reply-clipboard-panel .xrc-sent-actions { display: flex; gap: 6px; }
-#x-reply-clipboard-panel .xrc-sent-actions button {
-  min-width: 36px; height: 26px; padding: 0 8px; border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.16); background: transparent; font-size: 12px;
+#x-reply-clipboard-panel .xrc-sent-empty { margin: 0; color: var(--xrc-muted, #667085); font-size: 12px; line-height: 1.5; }
+
+.xrc-page-mark { display: grid; gap: 6px; margin: 8px 0 2px; max-width: 100%; color: inherit; }
+.xrc-page-mark-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.xrc-page-mark button {
+  min-height: 28px; padding: 0 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(128, 128, 128, 0.45); background: transparent; color: inherit;
+  font: inherit; font-size: 12px;
 }
-#x-reply-clipboard-panel .xrc-sent-actions button[aria-pressed="true"] {
-  border-color: transparent; background: #111827; color: #fff;
+.xrc-page-mark button[aria-pressed="true"] { border-color: transparent; background: #111827; color: #fff; }
+.xrc-page-mark form { display: grid; gap: 6px; margin: 0; }
+.xrc-page-mark label { display: grid; gap: 2px; font-size: 12px; }
+.xrc-page-mark input {
+  width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.45); background: transparent; color: inherit; font: inherit; font-size: 13px;
 }
+.xrc-page-mark [data-xrc-dictate-status] { margin: 0; font-size: 12px; line-height: 1.4; opacity: 0.8; }
 #x-reply-clipboard-panel .xrc-post-card-head { display: flex; align-items: end; justify-content: space-between; gap: 10px; }
 #x-reply-clipboard-panel .xrc-post-card-head > span { display: grid; gap: 2px; }
 #x-reply-clipboard-panel .xrc-post-card-head small,

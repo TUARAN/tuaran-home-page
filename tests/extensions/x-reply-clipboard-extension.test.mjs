@@ -2788,6 +2788,10 @@ test('background reset clears task state while retaining API credentials and log
     assert.equal(result.ok, true)
     assert.deepEqual(prepared, [[11, 'xrc-reset-prepare'], [22, 'xrc-reset-prepare']])
     assert.deepEqual(reloaded, [22])
+    const resetContent = await readFile(new URL('content.js', extensionDir), 'utf8')
+    assert.match(resetContent, /已重置。模型配置仍在。刷新后从默认排班重新开始。[\s\S]{0,240}location\.reload\(\)/)
+    assert.match(resetContent, /xrcAssistant=notifications&xrcStart=1/)
+    assert.match(resetContent, /booting: true/)
     assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', mobileOfficeToken: 'office-token', replyPrompt: 'old custom prompt' })
     assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] })
     assert.deepEqual(saved.xrcDailyReports, [{ date: '2026-10-15', counts: { comments: 3 } }])
@@ -10549,6 +10553,150 @@ test('an open idle notifications page starts comment replies without waiting out
     assert.equal(local.xrcTaskSchedule.current, 'notifications')
     assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
     assert.equal(local.xrcTaskSchedule.items.notifications.recoveryAttempts, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a booting notifications page keeps the start instead of dropping it', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 5000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', detail: '正在装载执行页', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, booting: true }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'starting')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.booting, true)
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts || 0, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a default timeline probe does not drop a notifications start on the notifications page', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 5000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: {
+      tasks: { notifications: { tabId: 77, phase: 'starting', updatedAt: now } },
+      flow: { phase: 'running' },
+    },
+  }
+  const starts = []
+  const updates = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') return { ok: true, mode: 'timeline', phase: '', idle: false }
+        if (message.type === 'xrc-task-start') {
+          starts.push(message.mode)
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update(_id, update) { updates.push(update) },
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['notifications'])
+    assert.equal(updates.some((entry) => entry.url), false)
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
+    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts || 0, 0)
+  } finally {
+    globalThis.chrome = previousChrome
+  }
+})
+
+test('a dropped notifications runtime row still starts an idle notifications page', async () => {
+  const previousChrome = globalThis.chrome
+  const now = Date.now()
+  const local = {
+    xrcTaskSchedule: {
+      enabled: true, strategyVersion: 4, current: 'notifications', workTabId: 77, startedAt: now - 8000,
+      rules: {
+        timeline: { enabled: false }, kol: { enabled: false },
+        'likes-posts': { enabled: false }, 'likes-replies': { enabled: false },
+        'mutual-followBack': { enabled: false }, 'mutual-targetFollow': { enabled: false },
+      },
+      items: { notifications: {} },
+    },
+    xrcPluginRuntime: { tasks: {}, flow: { phase: 'running' } },
+  }
+  const starts = []
+  globalThis.chrome = {
+    storage: {
+      local: { async get(key) { return { [key]: local[key] } }, async set(value) { Object.assign(local, value) } },
+      session: { async get() { return {} }, async set() {} },
+    },
+    tabs: {
+      async get() { return { id: 77, windowId: 1, url: 'https://x.com/notifications' } },
+      async sendMessage(_id, message) {
+        if (message.type === 'xrc-task-state-probe') {
+          return { ok: true, mode: 'notifications', phase: '', idle: true, detail: '执行页已打开，回复循环还没开始' }
+        }
+        if (message.type === 'xrc-task-start') {
+          starts.push(message.mode)
+          return { ok: true, phase: 'running' }
+        }
+        return null
+      },
+      async update() {},
+    },
+    windows: { async update() {} },
+  }
+  try {
+    await background.runTaskSchedule()
+    assert.deepEqual(starts, ['notifications'])
+    assert.equal(local.xrcTaskSchedule.current, 'notifications')
+    assert.equal(local.xrcPluginRuntime.tasks.notifications.phase, 'running')
   } finally {
     globalThis.chrome = previousChrome
   }

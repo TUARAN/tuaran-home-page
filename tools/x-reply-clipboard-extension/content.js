@@ -357,6 +357,7 @@
   let taskSchedule = { enabled: false, items: {} };
   let tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
   let spectatorTab = true;
+  let panelBooted = false;
   let executionAlerts = [];
   const recentExecutionAlerts = (value) => Array.isArray(value)
     ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
@@ -1881,7 +1882,7 @@
 
   let scheduledReplyWakeToken = 0;
   function maybeRequestScheduledReplyStart() {
-    if (spectatorTab || !taskSchedule.enabled) return;
+    if (!panelBooted || spectatorTab || !taskSchedule.enabled) return;
     const mode = validTaskKey(taskSchedule.current);
     if (!["timeline", "notifications", "kol"].includes(mode)) return;
     if (state.running || state.loopPromise || anyLocalTaskRunning()) return;
@@ -1889,7 +1890,15 @@
     const token = Number(taskSchedule.startedAt) || 0;
     if (!token || token === scheduledReplyWakeToken) return;
     scheduledReplyWakeToken = token;
-    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {});
+    // Adopt the scheduled reply before the probe. A default timeline answer
+    // used to look like a handoff and the scheduler then waited out the window.
+    if (state.assistantMode !== assistantModeForTask(mode)) {
+      state.assistantMode = assistantModeForTask(mode);
+      try { sessionStorage.setItem("xrcAssignedTaskMode", mode); } catch (error) { /* Session storage may be unavailable. */ }
+    }
+    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {
+      scheduledReplyWakeToken = 0;
+    });
   }
 
   function refreshScheduleView() {
@@ -3838,6 +3847,9 @@
       state.reconnectReason = "";
       state.status = "已重置。模型配置仍在。刷新后从默认排班重新开始。";
       renderPanel();
+      // The sender tab used to keep the old content script. A later start then
+      // reported the default mode and never left 启动中. Reload this page too.
+      window.setTimeout(() => { window.location.reload(); }, 200);
     } catch (error) {
       state.status = error?.message || "重置没有完成";
       renderPanel();
@@ -6831,7 +6843,15 @@
       state.status = "通知回复需要在 X 通知页运行，正在打开通知页…";
       writeSaved({ running: true, total: state.total });
       renderPanel();
-      window.location.assign("/notifications");
+      // A bare /notifications load drops the start after reset: the new page
+      // clears the pre-reset session and never sees xrcStart.
+      await sendExtensionMessage({
+        type: "xrc-task-pending-remember",
+        mode: "notifications",
+        path: "/notifications",
+        start: true
+      }).catch(() => {});
+      window.location.assign("/notifications?xrcAssistant=notifications&xrcStart=1");
       return "reload";
     }
     if (state.assistantMode !== "notifications" && state.schedulePace === "boundary") {
@@ -10857,6 +10877,7 @@
     else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
+    panelBooted = true;
     maybeRequestScheduledReplyStart();
   }
 
@@ -10962,6 +10983,10 @@
       return true;
     }
     if (message?.type === "xrc-task-state-probe") {
+      if (!panelBooted) {
+        sendResponse({ ok: true, booting: true });
+        return false;
+      }
       const phase = currentTaskPhase();
       const idle = !spectatorTab && !phase;
       sendResponse({

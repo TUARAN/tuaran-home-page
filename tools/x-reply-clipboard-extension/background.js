@@ -2188,6 +2188,29 @@ function sameDocumentUrl(left, right) {
 
 // A person asked to reload the occupied tab. Continue the same task, and do not
 // spend one of the three automatic reloads that skip the task.
+async function forceReloadTaskTab(tabId, destination, currentUrl = "") {
+  const id = Number(tabId);
+  if (!Number.isInteger(id) || id <= 0) throw new Error("没有可刷新的任务页面");
+  const target = String(destination || "").trim();
+  if (!target) throw new Error("没有可刷新的任务页面");
+  if (sameDocumentUrl(currentUrl || "", target)) {
+    try {
+      if (typeof chrome.tabs?.reload === "function") {
+        await chrome.tabs.reload(id, { bypassCache: true });
+        return { ok: true, method: "reload" };
+      }
+    } catch (error) {
+      // Fall through to a cache-busted navigation when reload is denied.
+    }
+    const bust = new URL(target);
+    bust.searchParams.set("xrcRefresh", String(Date.now()));
+    await chrome.tabs.update(id, { url: bust.toString(), autoDiscardable: false });
+    return { ok: true, method: "bust" };
+  }
+  await chrome.tabs.update(id, { url: target, autoDiscardable: false });
+  return { ok: true, method: "navigate" };
+}
+
 async function refreshOccupiedTaskPage(mode, tabId) {
   const selected = validTaskMode(mode);
   const id = Number(tabId);
@@ -2213,10 +2236,10 @@ async function refreshOccupiedTaskPage(mode, tabId) {
     });
     if (!destination) return { ok: false, error: "没有可刷新的任务页面" };
     await rememberPendingLaunch(selected, destination, true, id);
-    if (sameDocumentUrl(live.url || "", destination)) {
-      if (chrome.tabs.reload) await chrome.tabs.reload(id);
-    } else {
-      await chrome.tabs.update(id, { url: destination, autoDiscardable: false });
+    try {
+      await forceReloadTaskTab(id, destination, live.url || "");
+    } catch (error) {
+      return { ok: false, error: error?.message || "刷新页面失败" };
     }
     const now = Date.now();
     plan.startedAt = now;

@@ -357,6 +357,7 @@
   let tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
   let spectatorTab = true;
   let pageRefreshPending = false;
+  let pageRefreshError = "";
   let panelBooted = false;
   let executionAlerts = [];
   const recentExecutionAlerts = (value) => Array.isArray(value)
@@ -366,9 +367,49 @@
   let lastScheduleReadAt = 0;
   let scheduleRefreshPromise = null;
   let selectedTaskMode = sessionStorage.getItem("xrcSelectedTaskMode") || "timeline";
-  let taskLibraryOpen = false;
+  let taskLibraryOpen = true;
   let deskHome = sessionStorage.getItem("xrcDeskHome") !== "0";
   let scheduleDeskOpen = false;
+  let alertsDeskOpen = false;
+  let homeLiveTab = "now";
+  let homeTodayCategory = "comment";
+  const ALERT_KIND_META = Object.freeze({
+    "rate-limit": {
+      label: "系统超限",
+      analysis: "X 写出了操作受限或疑似自动化。同类任务会一起等冷却，排班规则本身不变。",
+      advice: "等冷却结束再看同类任务；期间可先跑其他未受限项。不要连续手动重试同一项。",
+    },
+    "retry-exhausted": {
+      label: "重试耗尽",
+      analysis: "同一任务多次启动或定位控件失败后被记下。常见于页面加载慢、控件文案变化或停在非预期页。",
+      advice: "打开该任务详情，确认页面是否停在预期位置；必要时刷新执行页，再等排班轮到。",
+    },
+    "send-failed": {
+      label: "发送失败",
+      analysis: "发送动作已触发，但 X 明确返回失败或受限文案，插件未记成功。",
+      advice: "核对发帖框或社群选择窗是否仍打开；受限则等待冷却，非限制失败可稍后再试。",
+    },
+    unconfirmed: {
+      label: "结果未确认",
+      analysis: "动作发出后页面没有给出可确认的成功信号，插件未记成功。",
+      advice: "先在 X 页面人工确认有没有发出；确认后再决定是否重跑，避免重复发送。",
+    },
+    "storage-failed": {
+      label: "记录失败",
+      analysis: "页面侧可能已成功，但本机去重或进度写入失败。",
+      advice: "先人工核对 X 上的结果，再决定是否继续；不要立刻连点启动。",
+    },
+  });
+  const alertKindLabel = (kind) => ALERT_KIND_META[kind]?.label || "执行异常";
+  const formatAlertWhen = (occurredAt) => Number(occurredAt)
+    ? new Date(Number(occurredAt)).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "时间未知";
+  const formatAlertHeading = (item) => {
+    const task = TASK_MODE_LABELS[item.task] || item.task || "任务";
+    const account = item.accountHandle && item.accountHandle !== "default" ? ` · @${item.accountHandle}` : "";
+    const repeat = Number(item.count) > 1 ? ` · 重复 ${item.count} 次` : "";
+    return `${alertKindLabel(item.kind)} · ${task}${account} · ${formatAlertWhen(item.occurredAt)}${repeat}`;
+  };
   let localDevUpdate = null;
   let updateActionPending = false;
   let updateActionMessage = "";
@@ -1388,6 +1429,28 @@
     return `${scaled}${unit[1]}`;
   }
 
+  function syncHomeTodayTabs(panel, category = homeTodayCategory) {
+    const plate = panel?.querySelector("[data-xrc-today-plate]");
+    if (!plate) return;
+    const next = TASK_CATEGORIES.some((item) => item.id === category) ? category : "comment";
+    homeTodayCategory = next;
+    plate.dataset.todayCategory = next;
+    plate.querySelectorAll("[data-xrc-today-tab]").forEach((button) => {
+      const selected = button.dataset.xrcTodayTab === next;
+      button.setAttribute("aria-selected", String(selected));
+      button.classList.toggle("is-active", selected);
+      button.tabIndex = selected ? 0 : -1;
+    });
+    plate.querySelectorAll(".xrc-today-task").forEach((row) => {
+      row.hidden = row.dataset.category !== next;
+    });
+    const tasks = plate.querySelector("[data-xrc-today-tasks]");
+    const meta = TASK_CATEGORIES.find((item) => item.id === next);
+    if (tasks) {
+      tasks.setAttribute("aria-label", meta ? `${meta.label}类任务今日统计` : "所选类别的任务今日统计");
+    }
+  }
+
   function renderTodaySummary(panel) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
     const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "").toLowerCase();
@@ -1431,6 +1494,7 @@
       node.textContent = unknown ? `${value}+` : String(value);
       node.title = unknown ? "历史记录只有合计数，无法准确拆分到这一任务；数字为已明确归属的部分" : `${today} · ${scopeLabel} · 已确认 ${value}`;
     }
+    syncHomeTodayTabs(panel, homeTodayCategory);
   }
 
   function showDailyReport(panel) {
@@ -2109,6 +2173,7 @@
   function openScheduleDesk() {
     deskHome = true;
     scheduleDeskOpen = false;
+    alertsDeskOpen = false;
     sessionStorage.setItem("xrcDeskHome", "1");
     const dialog = document.querySelector("[data-xrc-flow-details]");
     if (dialog) dialog.hidden = true;
@@ -2119,6 +2184,7 @@
   function openScheduleBoard() {
     deskHome = true;
     scheduleDeskOpen = true;
+    alertsDeskOpen = false;
     sessionStorage.setItem("xrcDeskHome", "1");
     hubOpen = false;
     monitorOpen = false;
@@ -2142,6 +2208,44 @@
 
   function closeScheduleBoard() {
     scheduleDeskOpen = false;
+    renderPanel();
+  }
+
+  function openAlertsBoard() {
+    deskHome = true;
+    alertsDeskOpen = true;
+    scheduleDeskOpen = false;
+    sessionStorage.setItem("xrcDeskHome", "1");
+    hubOpen = false;
+    monitorOpen = false;
+    reportOpen = false;
+    toolboxOpen = false;
+    configOpen = false;
+    const dialog = document.querySelector("[data-xrc-flow-details]");
+    if (dialog) dialog.hidden = true;
+    renderPanel();
+    const panel = document.getElementById(PANEL_ID);
+    const scrollAlerts = () => {
+      if (!panel || !alertsDeskOpen) return;
+      const head = panel.querySelector("[data-xrc-alerts-subnav]");
+      if (!head || head.hidden) {
+        panel.scrollTop = 0;
+        return;
+      }
+      const headerH = panel.querySelector(".xrc-header")?.offsetHeight || 0;
+      const panelTop = panel.getBoundingClientRect().top;
+      const target = head.getBoundingClientRect().top - panelTop - headerH + panel.scrollTop;
+      panel.scrollTo({ top: Math.max(0, Math.round(target)), behavior: "auto" });
+    };
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => requestAnimationFrame(scrollAlerts));
+    } else {
+      scrollAlerts();
+    }
+  }
+
+  function closeAlertsBoard() {
+    alertsDeskOpen = false;
     renderPanel();
   }
 
@@ -2189,6 +2293,7 @@
     sessionStorage.setItem("xrcSelectedTaskMode", key);
     deskHome = false;
     scheduleDeskOpen = false;
+    alertsDeskOpen = false;
     sessionStorage.setItem("xrcDeskHome", "0");
     // Always refresh view-only fields for the card the user opened.
     if (key.startsWith("mutual-") && !(state.assistantMode === "mutual" && anyLocalTaskRunning())) {
@@ -2373,13 +2478,20 @@
 
   function flowTaskDot(task, alerts, accountHandle) {
     const account = String(accountHandle || "").replace(/^@/u, "").toLowerCase();
+    // Unscheduled stays grey even if an old alert remains for that task.
+    if (!task.inSchedule) return { state: "missing", title: `${task.label}：未排班` };
     const alert = (alerts || []).find((entry) => entry.task === task.key
       && (!entry.accountHandle || (account && String(entry.accountHandle).toLowerCase() === account)));
     if (alert) return { state: "alert", title: `${task.label}：执行报警 · ${alert.message}` };
-    if (!task.inSchedule) return { state: "missing", title: `${task.label}：未排班` };
-    const state = task.status === "blocked" || task.status === "unknown" ? "needs"
-      : task.status === "missing" ? "waiting" : task.status;
-    return { state, title: `${task.label}：${userStateLabelForTask(task.status)}` };
+    // waiting/running → green; needs → yellow; alert → red; missing → grey.
+    if (task.status === "blocked" || task.status === "unknown" || task.status === "needs") {
+      return { state: "needs", title: `${task.label}：${userStateLabelForTask(task.status)}` };
+    }
+    if (task.status === "running") {
+      return { state: "running", title: `${task.label}：${userStateLabelForTask(task.status)}` };
+    }
+    // Idle, stopped, stopping, and queued participants all read as waiting.
+    return { state: "waiting", title: `${task.label}：${userStateLabelForTask(task.status === "missing" ? "waiting" : task.status)}` };
   }
 
   function liveScheduleOccupant(now = Date.now()) {
@@ -3059,30 +3171,91 @@
   }
 
   function paintExecutionAlerts(panel) {
-    const count = panel?.querySelector('[data-xrc-execution-alert-count]');
-    const list = panel?.querySelector('[data-xrc-execution-alert-list]');
-    if (!count || !list) return;
-    count.textContent = `${executionAlerts.length} 条`;
-    const signature = executionAlerts.slice(0, 8).map((item) => `${item.id}:${item.count}`).join('|');
-    if (list.dataset.signature === signature) return;
-    list.dataset.signature = signature;
-    list.replaceChildren();
+    if (!panel) return;
+    const counts = panel.querySelectorAll("[data-xrc-execution-alert-count]");
+    for (const count of counts) count.textContent = `${executionAlerts.length} 条`;
+    const latest = panel.querySelector("[data-xrc-alerts-latest]");
+    if (latest) {
+      if (!executionAlerts.length) {
+        latest.textContent = "近 30 天暂无执行报警";
+        latest.dataset.state = "empty";
+      } else {
+        const item = executionAlerts[0];
+        const message = String(item.message || "执行失败").trim();
+        latest.textContent = `${formatAlertHeading(item)}${message ? ` · ${message}` : ""}`;
+        latest.dataset.state = item.kind || "alert";
+      }
+    }
+    const analysis = panel.querySelector("[data-xrc-alerts-analysis]");
+    const advice = panel.querySelector("[data-xrc-alerts-advice]");
+    const groups = panel.querySelector("[data-xrc-alerts-groups]");
+    if (!analysis || !advice || !groups) return;
+    const signature = executionAlerts.map((item) => `${item.id}:${item.count}`).join("|");
+    if (groups.dataset.signature === signature) return;
+    groups.dataset.signature = signature;
     if (!executionAlerts.length) {
-      const empty = document.createElement('li');
-      empty.textContent = '暂无执行报警';
-      list.append(empty);
+      analysis.textContent = "近 30 天本机没有执行报警。报警只留痕复核，不会暂停其他任务或改排班。";
+      advice.textContent = "保持排班运行即可。若某项任务反复打不开或发送无结果，再到这里查看分类记录。";
+      groups.replaceChildren();
+      const empty = document.createElement("p");
+      empty.className = "xrc-alerts-empty";
+      empty.textContent = "暂无执行报警";
+      groups.append(empty);
       return;
     }
-    for (const item of executionAlerts.slice(0, 8)) {
-      const row = document.createElement('li');
-      const heading = document.createElement('strong');
-      const when = Number(item.occurredAt) ? new Date(Number(item.occurredAt)).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '时间未知';
-      const kind = { 'rate-limit': '系统超限', 'retry-exhausted': '重试耗尽', 'send-failed': '发送失败', unconfirmed: '结果未确认', 'storage-failed': '记录失败' }[item.kind] || '执行异常';
-      heading.textContent = `${kind} · ${TASK_MODE_LABELS[item.task] || item.task || '任务'}${item.accountHandle && item.accountHandle !== 'default' ? ` · @${item.accountHandle}` : ''} · ${when}${Number(item.count) > 1 ? ` · 重复 ${item.count} 次` : ''}`;
-      const detail = document.createElement('span');
-      detail.textContent = String(item.message || '执行失败');
-      row.append(heading, detail);
-      list.append(row);
+    const byKind = new Map();
+    const byTask = new Map();
+    let eventCount = 0;
+    for (const item of executionAlerts) {
+      const count = Math.max(1, Number(item.count) || 1);
+      eventCount += count;
+      byKind.set(item.kind, (byKind.get(item.kind) || 0) + count);
+      const taskLabel = TASK_MODE_LABELS[item.task] || item.task || "任务";
+      byTask.set(taskLabel, (byTask.get(taskLabel) || 0) + count);
+    }
+    const kindParts = [...byKind.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .map(([kind, count]) => `${alertKindLabel(kind)} ${count} 次`);
+    const taskParts = [...byTask.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3)
+      .map(([task, count]) => `${task} ${count} 次`);
+    const newest = formatAlertWhen(executionAlerts[0]?.occurredAt);
+    const oldest = formatAlertWhen(executionAlerts[executionAlerts.length - 1]?.occurredAt);
+    analysis.textContent = `共 ${executionAlerts.length} 条记录（合并重复后），合计 ${eventCount} 次事件；时间跨度 ${oldest} 至 ${newest}。按类型：${kindParts.join("，")}。较多任务：${taskParts.join("，")}。`;
+    const topKinds = [...byKind.entries()].sort((left, right) => right[1] - left[1]).slice(0, 2);
+    advice.textContent = topKinds
+      .map(([kind]) => ALERT_KIND_META[kind]?.advice || "先核对 X 页面实际结果，再决定是否重跑。")
+      .filter((text, index, list) => list.indexOf(text) === index)
+      .join(" ");
+    groups.replaceChildren();
+    const kindOrder = ["rate-limit", "retry-exhausted", "send-failed", "unconfirmed", "storage-failed"];
+    const orderedKinds = [
+      ...kindOrder.filter((kind) => byKind.has(kind)),
+      ...[...byKind.keys()].filter((kind) => !kindOrder.includes(kind)),
+    ];
+    for (const kind of orderedKinds) {
+      const meta = ALERT_KIND_META[kind] || { label: alertKindLabel(kind), analysis: "执行过程中留下的异常记录。", advice: "先核对 X 页面实际结果，再决定是否重跑。" };
+      const section = document.createElement("section");
+      section.className = "xrc-alerts-group";
+      section.dataset.kind = kind;
+      const head = document.createElement("header");
+      head.innerHTML = `<strong>${meta.label}</strong><small>${byKind.get(kind)} 次</small>`;
+      const note = document.createElement("p");
+      note.className = "xrc-alerts-group-note";
+      note.textContent = `${meta.analysis} ${meta.advice}`;
+      const list = document.createElement("ul");
+      for (const item of executionAlerts.filter((entry) => entry.kind === kind).slice(0, 12)) {
+        const row = document.createElement("li");
+        const heading = document.createElement("strong");
+        heading.textContent = formatAlertHeading(item);
+        const detail = document.createElement("span");
+        detail.textContent = String(item.message || "执行失败");
+        row.append(heading, detail);
+        list.append(row);
+      }
+      section.append(head, note, list);
+      groups.append(section);
     }
   }
 
@@ -3226,38 +3399,95 @@
     return liveDetail;
   }
 
+  function homeLiveModes(now = Date.now()) {
+    const overview = flowTaskOverview(typeof deskPluginRuntime === "function" ? deskPluginRuntime() : pluginRuntime, now);
+    const runningMode = overview.tasks.find((task) => task.status === "running")?.key || "";
+    const currentMode = validTaskKey(taskSchedule.current);
+    const nowMode = runningMode || currentMode || "";
+    const wait = nowMode ? scheduledWaitInfo(nowMode, now) : null;
+    const starting = Boolean(nowMode) && wait?.kind === "starting";
+    const preview = schedulePreview(now);
+    const enabled = (mode) => taskSchedule.rules?.[mode]?.enabled !== false || taskSchedule.manualFocusMode === mode;
+    let nextMode = "";
+    if (preview.next && preview.next !== nowMode && enabled(preview.next)) nextMode = preview.next;
+    if (!nextMode) {
+      const future = Array.isArray(taskSchedule.timeline?.future) ? taskSchedule.timeline.future : [];
+      nextMode = future.find((entry) => ["ready", "scheduled"].includes(entry.status) && entry.mode !== nowMode && enabled(entry.mode))?.mode || "";
+    }
+    if (!nextMode) {
+      nextMode = (Array.isArray(taskSchedule.dueModes) ? taskSchedule.dueModes : [])
+        .find((mode) => mode !== nowMode && enabled(mode)) || "";
+    }
+    return { runningMode, currentMode, nowMode, nextMode, starting };
+  }
+
+  function nextOccupantStatusCopy(nextMode, now = Date.now()) {
+    if (!scheduleLoaded) return "下一个待执行：读取中";
+    if (!taskSchedule.enabled) return "排班已暂停，暂不安排下一项";
+    if (!nextMode) return "暂无下一个待执行任务";
+    const label = TASK_MODE_LABELS[nextMode] || nextMode;
+    const suffix = occupantStatusSuffix(nextMode, { running: false, starting: false, now });
+    return suffix ? `下一个待执行：${label} · ${suffix}` : `下一个待执行：${label}`;
+  }
+
+  function syncHomeLiveTabs(panel, tab = homeLiveTab) {
+    const row = panel?.querySelector("[data-xrc-task-live-row]");
+    if (!row) return;
+    const nextTab = tab === "next" ? "next" : "now";
+    homeLiveTab = nextTab;
+    row.dataset.liveTab = nextTab;
+    row.querySelectorAll("[data-xrc-live-tab]").forEach((button) => {
+      const selected = button.dataset.xrcLiveTab === nextTab;
+      button.setAttribute("aria-selected", String(selected));
+      button.classList.toggle("is-active", selected);
+      button.tabIndex = selected ? 0 : -1;
+    });
+  }
+
   function paintTaskOccupant(panel = document.getElementById(PANEL_ID)) {
     const live = panel?.querySelector("[data-xrc-task-live]");
     if (!live) return;
     const now = Date.now();
-    const overview = flowTaskOverview(typeof deskPluginRuntime === "function" ? deskPluginRuntime() : pluginRuntime);
-    const runningMode = overview.tasks.find((task) => task.status === "running")?.key || "";
-    const currentMode = validTaskKey(taskSchedule.current);
-    const wait = currentMode ? scheduledWaitInfo(currentMode, now) : null;
-    const starting = Boolean(currentMode) && wait?.kind === "starting";
-    const mode = runningMode || currentMode;
-    live.textContent = occupantStatusCopy({
-      loaded: scheduleLoaded,
-      enabled: Boolean(taskSchedule.enabled),
-      runningMode,
-      currentMode,
-      starting,
-      suffix: occupantStatusSuffix(mode, { running: Boolean(runningMode), starting, now })
-    });
-    live.dataset.live = !scheduleLoaded ? "loading"
-      : !taskSchedule.enabled ? "paused"
-        : runningMode ? "running"
-          : currentMode && starting ? "starting"
-            : currentMode ? "occupied"
-              : "idle";
+    const { runningMode, currentMode, nowMode, nextMode, starting } = homeLiveModes(now);
+    const showingNext = homeLiveTab === "next";
+    const mode = showingNext ? nextMode : (runningMode || currentMode);
+    const statusText = showingNext
+      ? nextOccupantStatusCopy(nextMode, now)
+      : occupantStatusCopy({
+        loaded: scheduleLoaded,
+        enabled: Boolean(taskSchedule.enabled),
+        runningMode,
+        currentMode,
+        starting,
+        suffix: occupantStatusSuffix(mode, { running: Boolean(runningMode), starting, now })
+      });
+    live.textContent = !showingNext && pageRefreshError ? `刷新失败：${pageRefreshError}` : statusText;
+    live.dataset.live = showingNext
+      ? (!scheduleLoaded ? "loading" : !taskSchedule.enabled ? "paused" : nextMode ? "waiting" : "idle")
+      : (!scheduleLoaded ? "loading"
+        : !taskSchedule.enabled ? "paused"
+          : runningMode ? "running"
+            : currentMode && starting ? "starting"
+              : currentMode ? "occupied"
+                : "idle");
+    syncHomeLiveTabs(panel, homeLiveTab);
+    const openHomeTask = panel.querySelector("[data-xrc-open-home-task]");
+    if (openHomeTask) {
+      const detailKey = validTaskKey(mode) || validTaskKey(nowMode) || validTaskKey(selectedTaskMode) || "timeline";
+      openHomeTask.dataset.xrcOpenHomeTask = detailKey;
+      openHomeTask.title = `查看${TASK_MODE_LABELS[detailKey] || "任务"}详情`;
+      openHomeTask.hidden = showingNext && !nextMode;
+    }
     const refreshButton = panel.querySelector("[data-xrc-task-page-refresh]");
     if (refreshButton) {
-      const occupiedHere = !spectatorTab && ["running", "starting", "occupied"].includes(live.dataset.live);
+      const occupiedHere = !showingNext && !spectatorTab && ["running", "starting", "occupied"].includes(live.dataset.live);
       refreshButton.hidden = !occupiedHere;
       refreshButton.disabled = !occupiedHere || pageRefreshPending;
       refreshButton.textContent = pageRefreshPending ? "正在刷新…" : "刷新页面";
-      refreshButton.title = "重载当前页，并继续正在执行的任务";
+      refreshButton.title = pageRefreshError || "重载当前页，并继续正在执行的任务";
     }
+    const pauseButton = panel.querySelector("[data-xrc-task-manual-pause]");
+    if (pauseButton) pauseButton.hidden = showingNext;
   }
 
   function formatScheduleTime(value) {
@@ -3551,7 +3781,7 @@
         if (!inOrder) for (const card of cards) list.append(card);
         section.hidden = !cards.some((card) => !card.hidden);
       }
-      desk.querySelector("[data-xrc-queue-count]").textContent = `${count} 项已加入`;
+      desk.querySelector("[data-xrc-queue-count]").textContent = `${count} 项已排班`;
       desk.querySelector("[data-xrc-library-empty]").hidden = [...library.querySelectorAll(".xrc-library-card")].some((card) => !card.hidden);
     }
     const empty = desk?.querySelector("[data-xrc-task-empty]");
@@ -3559,17 +3789,13 @@
   }
 
   function syncTaskLibrary(panel, open) {
-    panel.dataset.taskLibrary = open ? "open" : "closed";
+    // Schedule desk always shows both columns; there is no collapse/lock control.
+    const expanded = Boolean(open);
+    panel.dataset.taskLibrary = expanded ? "open" : "closed";
     const library = panel.querySelector(".xrc-library-column");
-    if (library) library.hidden = !open;
-    const toggle = panel.querySelector("[data-xrc-library-toggle]");
-    if (toggle) {
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.textContent = open ? "收起并锁定" : "增减任务";
-      toggle.title = open ? "收起任务库并锁定任务选择" : "展开任务库，增减排班任务";
-    }
+    if (library) library.hidden = !expanded;
     const feedback = panel.querySelector("[data-xrc-workspace-feedback]");
-    if (feedback) feedback.hidden = !open;
+    if (feedback) feedback.hidden = !expanded;
   }
 
   function syncDebugDraftTools(panel, mode) {
@@ -6944,21 +7170,43 @@
     return true;
   }
 
+  function paintRefreshFailure(message) {
+    pageRefreshError = String(message || "刷新页面失败").trim() || "刷新页面失败";
+    state.status = pageRefreshError;
+    renderPanel();
+  }
+
   async function refreshOccupiedPage() {
-    if (pageRefreshPending || spectatorTab) return;
+    if (pageRefreshPending) return;
     const mode = validTaskKey(taskSchedule.current);
     const live = document.getElementById(PANEL_ID)?.querySelector("[data-xrc-task-live]");
-    if (!mode || !["running", "starting", "occupied"].includes(live?.dataset.live || "")) return;
+    const liveState = live?.dataset.live || "";
+    if (spectatorTab) {
+      paintRefreshFailure("请在正在执行的页签刷新");
+      return;
+    }
+    if (!mode || !["running", "starting", "occupied"].includes(liveState)) {
+      paintRefreshFailure("当前没有可刷新的执行任务");
+      return;
+    }
     pageRefreshPending = true;
+    pageRefreshError = "";
     renderPanel();
     try {
-      if (findDialogComposer()) await closeReplyComposer({ forceClear: true });
-      await clearInlineReplyEditors();
+      await Promise.race([
+        (async () => {
+          if (findDialogComposer()) await closeReplyComposer({ forceClear: true });
+          await clearInlineReplyEditors();
+        })(),
+        sleep(2500)
+      ]);
       await sendExtensionMessage({ type: "xrc-task-page-refresh", mode });
+      // Background should reload this tab. If the document is still here, force it locally.
+      await sleep(900);
+      if (document.getElementById(PANEL_ID)) window.location.reload();
     } catch (error) {
       pageRefreshPending = false;
-      state.status = error?.message || "刷新页面失败";
-      renderPanel();
+      paintRefreshFailure(error?.message || "刷新页面失败");
     }
   }
 
@@ -8452,6 +8700,7 @@
     toolboxOpen = false;
     hubOpen = false;
     scheduleDeskOpen = false;
+    alertsDeskOpen = false;
     syncConfigMenu(panel);
     syncMonitorMenu(panel);
     syncReportPage(panel);
@@ -8716,7 +8965,6 @@
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <div class="xrc-quick-actions" aria-label="面板操作">
               <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
-              <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" aria-expanded="false" title="打开日历统计"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg></button>
               <button type="button" class="xrc-header-reset" data-xrc-header-reset aria-label="重置" title="清空本机任务记录，保留模型配置"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.15-3.15"></path><path d="M3.1 2.7v3.1h3.1"></path></svg></button>
               <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
               <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠成小方框"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M4.5 6 8 2.5 11.5 6M4.5 10 8 13.5 11.5 10"></path></svg></button>
@@ -8728,16 +8976,22 @@
         <div class="xrc-dev-update" data-xrc-dev-update role="status" hidden><strong></strong><span></span><button type="button" data-xrc-dev-update-now title="停止当前任务、加载本地新版后恢复原任务">立即更新</button></div>
         <div class="xrc-tab-role" data-xrc-tab-role role="status" hidden><span data-xrc-tab-role-text></span><button type="button" data-xrc-tab-owner-jump hidden>跳转查看</button></div>
         <div class="xrc-today-strip" data-xrc-today-summary aria-label="今日统计">
-          <section class="xrc-plate">
-            ${plateHead("01", "今日大互动")}
-            <div class="xrc-today-categories" aria-label="按任务类别统计">
-              ${TASK_CATEGORIES.map((category) => `<div class="xrc-today-category" data-category="${category.id}"><span class="xrc-today-category-name"><i aria-hidden="true">${category.icon}</i>${category.label}</span><b data-xrc-today-category="${category.id}">0</b></div>`).join("")}
+          <section class="xrc-plate xrc-today-plate" data-xrc-today-plate data-today-category="comment">
+            <header class="xrc-plate-head">
+              <b>01</b>
+              <span><strong>今日大互动</strong></span>
+              <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" aria-expanded="false" title="打开日历统计"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg></button>
+            </header>
+            <div class="xrc-today-categories" role="tablist" aria-label="今日类别">
+              ${TASK_CATEGORIES.map((category) => {
+                const selected = category.id === "comment";
+                return `<button type="button" role="tab" class="xrc-today-category${selected ? " is-active" : ""}" data-xrc-today-tab="${category.id}" data-category="${category.id}" aria-selected="${selected ? "true" : "false"}" tabindex="${selected ? "0" : "-1"}"><span class="xrc-today-category-name"><i aria-hidden="true">${category.icon}</i>${category.label}</span><b data-xrc-today-category="${category.id}">0</b></button>`;
+              }).join("")}
             </div>
-          </section>
-          <section class="xrc-plate">
-            ${plateHead("02", "任务详情数据")}
-            <div class="xrc-today-tasks" aria-label="各任务今日统计，左右滚动查看">
-            ${TODAY_TASKS.map(([mode, label, category]) => `<div class="xrc-today-task" data-category="${category}"><span>${label}</span><b data-xrc-today-task="${mode}">0</b></div>`).join("")}
+            <div class="xrc-today-detail">
+              <div class="xrc-today-tasks" data-xrc-today-tasks aria-label="评论类任务今日统计">
+                ${TODAY_TASKS.map(([mode, label, category]) => `<div class="xrc-today-task" data-category="${category}"${category === "comment" ? "" : " hidden"}><span>${label}</span><b data-xrc-today-task="${mode}">0</b></div>`).join("")}
+              </div>
             </div>
           </section>
         </div>
@@ -8948,8 +9202,14 @@
             <button class="xrc-key-guide" type="button" data-xrc-key-retry hidden>模型设置读取失败 · 点击重试</button>
           </div>
           <div class="xrc-flow-launch" data-role="status">
-            <section class="xrc-plate xrc-task-live-row" data-xrc-task-live-row>
-              ${plateHead("03", "当前正在执行")}
+            <section class="xrc-plate xrc-task-live-row" data-xrc-task-live-row data-live-tab="now">
+              <header class="xrc-plate-head">
+                <b>02</b>
+                <div class="xrc-live-tabs" role="tablist" aria-label="当前与下一项">
+                  <button type="button" class="is-active" role="tab" data-xrc-live-tab="now" aria-selected="true" tabindex="0">当前正在执行</button>
+                  <button type="button" role="tab" data-xrc-live-tab="next" aria-selected="false" tabindex="-1">下一个待执行</button>
+                </div>
+              </header>
               <div class="xrc-task-live-main">
                 <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
               </div>
@@ -8962,7 +9222,7 @@
               </div>
             </section>
             <section class="xrc-plate xrc-home-schedule" data-xrc-home-schedule>
-              ${plateHead("04", "排班与设置")}
+              ${plateHead("03", "排班与设置")}
               <div class="xrc-flow-status" data-xrc-flow-start role="status" data-role="status">
                 <span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span>
               </div>
@@ -8970,34 +9230,52 @@
                 <button type="button" class="xrc-task-open-detail" data-xrc-schedule-open>打开排班台 →</button>
               </div>
             </section>
+            <section class="xrc-plate xrc-home-alerts" data-xrc-home-alerts>
+              ${plateHead("04", "执行报警")}
+              <p class="xrc-home-alerts-latest" data-xrc-alerts-latest data-state="empty">近 30 天暂无执行报警</p>
+              <div class="xrc-home-schedule-actions">
+                <button type="button" class="xrc-task-open-detail" data-xrc-alerts-open>查看详情 →</button>
+              </div>
+            </section>
             <div class="xrc-flow-meta">
               <p class="xrc-flow-hint" data-xrc-flow-hint hidden></p>
             </div>
           </div>
         </div>
+        <div class="xrc-body xrc-alerts-desk" data-xrc-alerts-desk hidden aria-label="执行报警。按类型分类并给出建议">
+          <header class="xrc-subpage-head xrc-alerts-subnav" data-xrc-alerts-subnav>
+            <button type="button" class="xrc-subpage-back" data-xrc-alerts-close aria-label="返回首页">← 返回首页</button>
+            <span class="xrc-subpage-title" aria-label="执行报警 > 报警详情">
+              <b>执行报警</b><i aria-hidden="true">›</i><strong>报警详情</strong>
+            </span>
+            <small class="xrc-alerts-count" data-xrc-execution-alert-count>0 条</small>
+          </header>
+          <div class="xrc-subpage-body xrc-alerts-desk-body">
+            <section class="xrc-alerts-summary" aria-label="报警分析">
+              <h3>分析</h3>
+              <p data-xrc-alerts-analysis>近 30 天本机没有执行报警。报警只留痕复核，不会暂停其他任务或改排班。</p>
+            </section>
+            <section class="xrc-alerts-summary" aria-label="处理建议">
+              <h3>建议</h3>
+              <p data-xrc-alerts-advice>保持排班运行即可。若某项任务反复打不开或发送无结果，再到这里查看分类记录。</p>
+            </section>
+            <p class="xrc-alerts-note">只保存在本机，最多近 30 天 80 条；短时间重复合并计数。记录失败不影响排班切换。</p>
+            <div class="xrc-alerts-groups" data-xrc-alerts-groups></div>
+          </div>
+        </div>
         <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk hidden aria-label="排班台。十八项任务由后台排班，共用一个执行页签">
           <header class="xrc-subpage-head xrc-schedule-subnav" data-xrc-schedule-subnav>
             <button type="button" class="xrc-subpage-back" data-xrc-schedule-close aria-label="返回首页">← 返回首页</button>
-            <span class="xrc-subpage-title">
-              <small>排班子页</small>
-              <strong>排班台</strong>
+            <span class="xrc-subpage-title" aria-label="排班台 > 排班详情">
+              <b>排班台</b><i aria-hidden="true">›</i><strong>排班详情</strong>
             </span>
             <button type="button" class="xrc-desk-pause" data-xrc-schedule-toggle data-mode="pause">暂停全部</button>
           </header>
           <div class="xrc-subpage-body xrc-schedule-desk-body">
-            <details class="xrc-execution-alerts" data-xrc-execution-alerts>
-              <summary>执行报警记录 <small data-xrc-execution-alert-count>0 条</small></summary>
-              <p>只保存在本机。限制或重试耗尽会留痕；记录失败不影响排班切换。</p>
-              <ul data-xrc-execution-alert-list><li>暂无执行报警</li></ul>
-            </details>
-            <button type="button" class="xrc-library-toggle" data-xrc-library-toggle aria-expanded="false" aria-controls="xrc-task-library">增减任务</button>
-            <p class="xrc-workspace-feedback" data-xrc-workspace-feedback role="status" aria-live="polite">勾选或拖到右侧加入排班；拖回左侧移出。</p>
+            <p class="xrc-workspace-feedback" data-xrc-workspace-feedback role="status" aria-live="polite">勾选或拖到左侧加入排班；拖回右侧移出。</p>
             <div class="xrc-task-workspace" data-xrc-task-workspace>
-            <section id="xrc-task-library" class="xrc-library-column" data-xrc-drop="library" aria-label="任务库" hidden>
-            <h3>任务库 <small>勾选加入排班</small></h3>
-            <div data-xrc-library-list></div><p data-xrc-library-empty hidden>全部任务已加入排班。</p></section>
-            <section class="xrc-queue-column" data-xrc-drop="queue" aria-label="已加入排班"><h3>已加入 <small data-xrc-queue-count></small></h3>
-            <p data-xrc-task-empty hidden>还没有加入任务，从左侧勾选或拖入即可。</p>
+            <section class="xrc-queue-column" data-xrc-drop="queue" aria-label="已排班"><h3>已排班 <small data-xrc-queue-count></small></h3>
+            <p data-xrc-task-empty hidden>还没有加入任务，从右侧勾选或拖入即可。</p>
             <section class="xrc-schedule-board" data-xrc-schedule-board aria-label="实时排班情况">
               <ul class="xrc-desk-now-list" aria-label="当前任务">
                 <li class="xrc-schedule-item" data-phase="now" data-pulse="waiting" data-xrc-desk-now-row role="status" hidden>
@@ -9013,15 +9291,17 @@
               </ul>
               <ul data-xrc-schedule-list></ul>
             </section>
-            </section></div>
+            </section>
+            <section id="xrc-task-library" class="xrc-library-column" data-xrc-drop="library" aria-label="未排班">
+            <h3>未排班 <small>勾选加入排班</small></h3>
+            <div data-xrc-library-list></div><p data-xrc-library-empty hidden>全部任务已加入排班。</p></section></div>
           </div>
         </div>
         <div class="xrc-task-subnav xrc-subpage-head" data-xrc-task-subnav data-xrc-task-subpage hidden>
           <header class="xrc-plate-head xrc-task-subnav-head xrc-subpage-head-inner">
             <button type="button" class="xrc-task-subnav-back xrc-subpage-back" data-xrc-desk-back aria-label="返回首页">← 返回首页</button>
-            <span class="xrc-task-subnav-title xrc-subpage-title">
-              <small>任务详情</small>
-              <strong data-xrc-task-subnav-label>任务子页</strong>
+            <span class="xrc-task-subnav-title xrc-subpage-title" aria-label="任务详情">
+              <b>任务详情</b><i aria-hidden="true">›</i><strong data-xrc-task-subnav-label>任务</strong>
             </span>
             <button type="button" class="xrc-task-docs-link" data-xrc-task-docs data-xrc-docs-target="xrc-docs-reply-timeline" aria-label="查看任务说明" title="查看任务说明"><svg viewBox="0 0 16 16" width="10" height="10" aria-hidden="true" focusable="false"><circle cx="8" cy="4.2" r="1.15" fill="currentColor"/><path d="M8 7.15v5.15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
           </header>
@@ -9330,6 +9610,7 @@
           reportOpen = false;
           toolboxOpen = false;
           scheduleDeskOpen = false;
+          alertsDeskOpen = false;
           syncConfigMenu(panel);
           syncMonitorMenu(panel);
           syncReportPage(panel);
@@ -9366,6 +9647,7 @@
           monitorOpen = false;
           reportOpen = false;
           scheduleDeskOpen = false;
+          alertsDeskOpen = false;
           syncMonitorMenu(panel);
           syncReportPage(panel);
           toolboxOpen = false;
@@ -9388,6 +9670,7 @@
           reportOpen = false;
           hubOpen = false;
           scheduleDeskOpen = false;
+          alertsDeskOpen = false;
           syncConfigMenu(panel);
           syncToolboxMenu(panel);
           syncReportPage(panel);
@@ -9417,6 +9700,7 @@
         toolboxOpen = false;
         hubOpen = false;
         scheduleDeskOpen = false;
+        alertsDeskOpen = false;
         syncConfigMenu(panel);
         syncMonitorMenu(panel);
         syncToolboxMenu(panel);
@@ -9444,6 +9728,7 @@
           reportOpen = false;
           hubOpen = false;
           scheduleDeskOpen = false;
+          alertsDeskOpen = false;
           syncConfigMenu(panel);
           syncMonitorMenu(panel);
           syncReportPage(panel);
@@ -9578,10 +9863,6 @@
         button.addEventListener("click", () => openDocs(button.dataset.xrcDocsTarget));
       });
       panel.querySelector("[data-xrc-schedule-toggle]")?.addEventListener("click", onScheduleToggle);
-      panel.querySelector("[data-xrc-library-toggle]")?.addEventListener("click", () => {
-        taskLibraryOpen = !taskLibraryOpen;
-        syncTaskLibrary(panel, taskLibraryOpen && deskHome);
-      });
       const desk = panel.querySelector("[data-xrc-schedule-desk]");
       let participationSaving = false;
       const feedback = (text) => { desk.querySelector("[data-xrc-workspace-feedback]").textContent = text; };
@@ -9603,11 +9884,11 @@
       let draggingMode = "";
       desk.addEventListener("dragstart", (event) => {
         const row = event.target.closest("[data-mode][draggable='true']");
-        if (!row || !taskLibraryOpen) { event.preventDefault(); return; }
+        if (!row || !scheduleDeskOpen) { event.preventDefault(); return; }
         draggingMode = row.dataset.mode;
         event.dataTransfer.setData("text/plain", draggingMode);
         event.dataTransfer.effectAllowed = "move";
-        feedback("拖到右侧加入排班，拖回左侧移出。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。");
+        feedback("拖到左侧加入排班，拖回右侧移出。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。");
       });
       desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => {
         zone.addEventListener("dragover", (event) => { if (!draggingMode) return; event.preventDefault(); zone.classList.add("is-drag-over"); });
@@ -9624,9 +9905,22 @@
       });
       panel.querySelector("[data-xrc-schedule-open]")?.addEventListener("click", () => openScheduleBoard());
       panel.querySelector("[data-xrc-schedule-close]")?.addEventListener("click", () => closeScheduleBoard());
+      panel.querySelector("[data-xrc-alerts-open]")?.addEventListener("click", () => openAlertsBoard());
+      panel.querySelector("[data-xrc-alerts-close]")?.addEventListener("click", () => closeAlertsBoard());
       panel.querySelector("[data-xrc-open-home-task]")?.addEventListener("click", (event) => {
         const mode = event.currentTarget?.dataset?.xrcOpenHomeTask;
         if (mode) openTaskSubpage(mode);
+      });
+      panel.querySelectorAll("[data-xrc-live-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          syncHomeLiveTabs(panel, button.dataset.xrcLiveTab);
+          renderPanel();
+        });
+      });
+      panel.querySelectorAll("[data-xrc-today-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          syncHomeTodayTabs(panel, button.dataset.xrcTodayTab);
+        });
       });
       const openDeskTask = (mode) => {
         if (mode) openTaskSubpage(mode);
@@ -10539,15 +10833,21 @@
     panel.dataset.assistantMode = viewMode;
     panel.dataset.replyMode = state.replyMode;
     panel.dataset.desk = deskHome ? "home" : "task";
-    syncTaskLibrary(panel, taskLibraryOpen && deskHome && scheduleDeskOpen);
-    panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : hubOpen ? "hub" : scheduleDeskOpen ? "schedule" : "main";
+    taskLibraryOpen = true;
+    syncTaskLibrary(panel, deskHome && scheduleDeskOpen);
+    panel.dataset.xrcPage = reportOpen ? "report" : monitorOpen ? "monitor" : hubOpen ? "hub" : scheduleDeskOpen ? "schedule" : alertsDeskOpen ? "alerts" : "main";
     const desk = panel.querySelector("[data-xrc-schedule-desk]");
     if (desk) desk.hidden = !scheduleDeskOpen;
+    const alertsDesk = panel.querySelector("[data-xrc-alerts-desk]");
+    if (alertsDesk) alertsDesk.hidden = !alertsDeskOpen;
     const subnav = panel.querySelector("[data-xrc-task-subnav]");
     if (subnav) {
       subnav.hidden = deskHome;
       const subnavLabel = subnav.querySelector("[data-xrc-task-subnav-label]");
-      if (subnavLabel) subnavLabel.textContent = `${TASK_MODE_LABELS[viewKey] || TASK_MODE_LABELS[selectedTaskMode] || "任务子页"}${["poster-x", "poster-xhs"].includes(viewKey) ? " · 调试中" : ""}`;
+      const taskTitle = `${TASK_MODE_LABELS[viewKey] || TASK_MODE_LABELS[selectedTaskMode] || "任务"}${["poster-x", "poster-xhs"].includes(viewKey) ? " · 调试中" : ""}`;
+      if (subnavLabel) subnavLabel.textContent = taskTitle;
+      const titleWrap = subnav.querySelector(".xrc-subpage-title");
+      if (titleWrap) titleWrap.setAttribute("aria-label", `任务详情 > ${taskTitle}`);
       const docsLink = subnav.querySelector("[data-xrc-task-docs]");
       const docs = TASK_DOCS_TARGETS[viewKey] || TASK_DOCS_TARGETS[selectedTaskMode];
       if (docsLink && docs) {
@@ -10556,22 +10856,29 @@
         docsLink.title = docs[1];
       }
     }
-    const detailKey = validTaskKey(taskSchedule.current) || validTaskKey(selectedTaskMode) || "timeline";
+    const liveModes = homeLiveModes();
+    const detailKey = homeLiveTab === "next"
+      ? (validTaskKey(liveModes.nextMode) || validTaskKey(liveModes.nowMode) || validTaskKey(selectedTaskMode) || "timeline")
+      : (validTaskKey(liveModes.nowMode) || validTaskKey(taskSchedule.current) || validTaskKey(selectedTaskMode) || "timeline");
+    const homeSubpageOpen = scheduleDeskOpen || alertsDeskOpen;
     const openHomeTask = panel.querySelector("[data-xrc-open-home-task]");
     if (openHomeTask) {
-      openHomeTask.hidden = !deskHome || scheduleDeskOpen;
+      openHomeTask.hidden = !deskHome || homeSubpageOpen || (homeLiveTab === "next" && !liveModes.nextMode);
       openHomeTask.dataset.xrcOpenHomeTask = detailKey;
       openHomeTask.title = `查看${TASK_MODE_LABELS[detailKey] || "任务"}详情`;
     }
     const liveRow = panel.querySelector("[data-xrc-task-live-row]");
-    if (liveRow) liveRow.hidden = scheduleDeskOpen || !deskHome;
+    if (liveRow) liveRow.hidden = homeSubpageOpen || !deskHome;
+    syncHomeLiveTabs(panel, homeLiveTab);
     const pauseButton = panel.querySelector("[data-xrc-task-manual-pause]");
     if (pauseButton) {
-      const paused = Boolean(taskSchedule.items?.[viewKey]?.manualStopped);
-      const busy = isTaskActionBusy(viewKey);
+      const pauseMode = homeLiveTab === "next" ? liveModes.nextMode : (liveModes.nowMode || viewKey);
+      const paused = Boolean(taskSchedule.items?.[pauseMode]?.manualStopped);
+      const busy = isTaskActionBusy(pauseMode || viewKey);
+      pauseButton.hidden = homeLiveTab === "next";
       pauseButton.disabled = paused || busy;
       pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停当前任务";
-      pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[viewKey] || "当前任务"}`;
+      pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[pauseMode || viewKey] || "当前任务"}`;
     }
     syncAllTaskScheduleConfigs(panel);
     renderTodaySummary(panel);

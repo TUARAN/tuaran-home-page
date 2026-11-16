@@ -843,7 +843,7 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   assert.match(source, /Date\.now\(\) - Number\(task\.updatedAt \|\| 0\) < 30000/)
 })
 
-test('flow dots reserve red for current-account execution alerts and gray for unscheduled tasks', async () => {
+test('flow dots use green for waiting, yellow for needs, red for alerts, and gray for unscheduled', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   const definition = source.match(/  function flowTaskDot\(task, alerts, accountHandle\) \{[\s\S]*?\n  \}/)?.[0]
@@ -852,16 +852,22 @@ test('flow dots reserve red for current-account execution alerts and gray for un
   vm.runInContext(`${definition}\nglobalThis.indicator = flowTaskDot`, context)
   const missing = { key: 'timeline', label: '评论首页', status: 'missing', inSchedule: false }
   const blocked = { key: 'notifications', label: '评论回复', status: 'blocked', inSchedule: true }
+  const stopped = { key: 'poster', label: '热点发帖', status: 'stopped', inSchedule: true }
   assert.equal(context.indicator(missing, [], 'me').state, 'missing')
   assert.equal(context.indicator(blocked, [], 'me').state, 'needs')
   assert.equal(context.indicator({ ...missing, inSchedule: true }, [], 'me').state, 'waiting')
+  assert.equal(context.indicator(stopped, [], 'me').state, 'waiting')
   const alert = { task: 'timeline', accountHandle: 'me', message: '重试耗尽' }
-  assert.equal(context.indicator(missing, [alert], 'me').state, 'alert')
-  assert.match(context.indicator(missing, [alert], 'me').title, /执行报警 · 重试耗尽/)
-  assert.equal(context.indicator(missing, [alert], 'another').state, 'missing')
+  assert.equal(context.indicator(missing, [alert], 'me').state, 'missing')
+  assert.equal(context.indicator({ ...missing, inSchedule: true, status: 'waiting' }, [alert], 'me').state, 'alert')
+  assert.match(context.indicator({ ...missing, inSchedule: true, status: 'waiting' }, [alert], 'me').title, /执行报警 · 重试耗尽/)
+  assert.equal(context.indicator({ ...missing, inSchedule: true, status: 'waiting' }, [alert], 'another').state, 'waiting')
   assert.match(source, /flowTaskDot\(task, executionAlerts, currentAccountHandle\(\) \|\| lastKnownAccountHandle\)/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="running"\],\s*#x-reply-clipboard-panel \.xrc-flow-status \.xrc-flow-dots i\[data-state="waiting"\],\s*#x-reply-clipboard-panel \.xrc-flow-status \.xrc-flow-dots i\[data-state="stopping"\] \{\s*background: #16a34a;/)
+  assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="needs"\],\s*#x-reply-clipboard-panel \.xrc-flow-status \.xrc-flow-dots i\[data-state="blocked"\],\s*#x-reply-clipboard-panel \.xrc-flow-status \.xrc-flow-dots i\[data-state="unknown"\] \{\s*background: #eab308;/)
   assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="missing"\] \{\s*background: #94a3b8;/)
   assert.match(css, /\.xrc-flow-status \.xrc-flow-dots i\[data-state="alert"\] \{\s*background: #ef4444;/)
+  assert.match(css, /\.xrc-task-live-actions \{\s*[^}]*justify-content: flex-start;/)
 })
 
 test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', async () => {
@@ -1277,13 +1283,20 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.match(total.textContent, /全流程已暂停/)
   assert.match(source, /data-xrc-desk-home/)
   assert.doesNotMatch(source, /data-xrc-timeline-current/)
-  assert.match(source, /<h3>已加入 <small data-xrc-queue-count>/)
+  assert.match(source, /<h3>已排班 <small data-xrc-queue-count>/)
+  assert.match(source, /<h3>未排班 <small>勾选加入排班<\/small>/)
   assert.match(source, /data-xrc-schedule-desk/)
   const deskStart = source.indexOf('class="xrc-body xrc-schedule-desk"')
   const deskMarkup = source.slice(deskStart, source.indexOf('data-xrc-task-subnav data-xrc-task-subpage', deskStart))
   assert.ok(deskStart >= 0 && deskMarkup.includes('data-xrc-schedule-subnav'))
-  assert.ok(deskMarkup.indexOf('data-xrc-execution-alerts') < deskMarkup.indexOf('data-xrc-library-toggle'))
-  assert.ok(deskMarkup.indexOf('data-xrc-execution-alerts') < deskMarkup.indexOf('data-xrc-schedule-list'))
+  assert.doesNotMatch(deskMarkup, /data-xrc-library-toggle|收起并锁定|增减任务|data-xrc-execution-alerts|data-xrc-alerts-latest/)
+  assert.ok(deskMarkup.indexOf('aria-label="已排班"') < deskMarkup.indexOf('aria-label="未排班"'))
+  assert.match(source, /plateHead\("04", "执行报警"\)/)
+  assert.match(source, /data-xrc-alerts-desk/)
+  assert.match(source, /data-xrc-alerts-latest/)
+  assert.match(source, /data-xrc-alerts-analysis/)
+  assert.match(source, /data-xrc-alerts-advice/)
+  assert.match(source, /data-xrc-alerts-groups/)
   assert.match(source, /data-xrc-schedule-board aria-label="实时排班情况"/)
   assert.match(source, /data-xrc-inspect-task/)
   assert.doesNotMatch(source, /data-xrc-schedule-config-open/)
@@ -2932,35 +2945,51 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-desk-home/)
   assert.match(source, /data-xrc-schedule-desk/)
   assert.doesNotMatch(source, /xrc-desk-legend/)
-  assert.match(source, /<small>任务详情<\/small>\s*<strong data-xrc-task-subnav-label>任务子页<\/strong>/)
+  assert.match(source, /<b>任务详情<\/b><i aria-hidden="true">›<\/i><strong data-xrc-task-subnav-label>任务<\/strong>/)
   assert.match(source, /function scrollPanelToTaskSubpage\(panel\)/)
   assert.match(source, /scrollPanelToTaskSubpage\(panel\)/)
-  assert.match(source, /data-xrc-task-live-row[\s\S]{0,480}\$\{plateHead\("03", "当前正在执行"\)\}\s*<div class="xrc-task-live-main">\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<\/div>\s*<div class="xrc-task-live-actions">\s*<button type="button" class="xrc-task-open-detail" data-xrc-open-home-task>查看详情 →<\/button>[\s\S]*?data-xrc-task-manual-pause>暂停当前任务<\/button>/)
+  assert.match(source, /data-xrc-task-live-row[\s\S]{0,520}data-xrc-live-tab="now"[\s\S]{0,220}data-xrc-live-tab="next"[\s\S]{0,220}<div class="xrc-task-live-main">\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<\/div>\s*<div class="xrc-task-live-actions">\s*<button type="button" class="xrc-task-open-detail" data-xrc-open-home-task>查看详情 →<\/button>[\s\S]*?data-xrc-task-manual-pause>暂停当前任务<\/button>/)
   assert.doesNotMatch(source, /data-xrc-home-detail-label/)
-  assert.match(source, /plateHead\("01", "今日大互动"\)/)
-  assert.match(source, /plateHead\("02", "任务详情数据"\)/)
-  assert.match(source, /plateHead\("03", "当前正在执行"\)[\s\S]*plateHead\("04", "排班与设置"\)/)
-  assert.doesNotMatch(source, /plateHead\("05"/)
+  assert.match(source, /data-xrc-today-plate[\s\S]*data-xrc-today-tab="\$\{category\.id\}"[\s\S]*data-xrc-today-tasks/)
+  assert.match(source, /function syncHomeTodayTabs\(/)
+  assert.match(source, /homeTodayCategory = "comment"/)
+  assert.doesNotMatch(source, /plateHead\("01", "今日大互动"\)|plateHead\("02", "任务详情数据"\)/)
+  assert.match(source, /data-xrc-live-tab="now"[^>]*>当前正在执行<\/button>[\s\S]*data-xrc-live-tab="next"[^>]*>下一个待执行<\/button>[\s\S]*plateHead\("03", "排班与设置"\)[\s\S]*plateHead\("04", "执行报警"\)/)
+  assert.match(source, /function homeLiveModes\(/)
+  assert.match(source, /function nextOccupantStatusCopy\(/)
+  assert.match(source, /function syncHomeLiveTabs\(/)
   assert.doesNotMatch(source, /data-xrc-home-detail[>\s]|class="[^"]*xrc-home-detail/)
   assert.match(source, /class="xrc-plate xrc-home-schedule" data-xrc-home-schedule/)
-  assert.match(source, /data-xrc-task-subnav[\s\S]{0,520}data-xrc-task-subnav-label>任务子页<\/strong>/)
+  assert.match(source, /class="xrc-plate xrc-home-alerts" data-xrc-home-alerts/)
+  assert.match(source, /data-xrc-task-subnav[\s\S]{0,520}data-xrc-task-subnav-label>任务<\/strong>/)
   assert.doesNotMatch(source, /data-xrc-task-subnav[\s\S]{0,120}<b>0[45]<\/b>/)
   assert.doesNotMatch(source, /六类今天做了多少|每一项今天做了多少，可以左右滑动|绿点在跑，黄点在等，红点要处理|这一页正在执行的事|点开看这一项怎么跑/)
   assert.match(source, /class="xrc-task-open-detail" data-xrc-schedule-open>打开排班台 →/)
+  assert.match(source, /class="xrc-task-open-detail" data-xrc-alerts-open>查看详情 →/)
   assert.match(source, /class="xrc-home-schedule-actions"/)
   assert.match(source, /data-xrc-schedule-close/)
   assert.match(source, /data-xrc-schedule-subnav/)
+  assert.match(source, /data-xrc-alerts-desk/)
+  assert.match(source, /data-xrc-alerts-close/)
   assert.match(source, /function openScheduleBoard\(\)/)
+  assert.match(source, /function openAlertsBoard\(\)/)
   assert.match(source, /function scrollPanelToScheduleSubpage\(panel\)/)
   assert.match(source, /scrollPanelToScheduleSubpage\(panel\)/)
-  assert.match(source, /scheduleDeskOpen \? "schedule"/)
-  assert.match(source, /<small>排班子页<\/small>\s*<strong>排班台<\/strong>/)
+  assert.match(source, /scheduleDeskOpen \? "schedule" : alertsDeskOpen \? "alerts"/)
+  assert.match(source, /<b>排班台<\/b><i aria-hidden="true">›<\/i><strong>排班详情<\/strong>/)
+  assert.match(source, /<b>执行报警<\/b><i aria-hidden="true">›<\/i><strong>报警详情<\/strong>/)
+  assert.doesNotMatch(source, /排班子页|报警子页/)
   assert.match(source, /class="xrc-subpage-back" data-xrc-schedule-close[^>]*>← 返回首页<\/button>/)
   assert.match(source, /class="xrc-subpage-body xrc-schedule-desk-body"/)
   const refreshPage = source.match(/async function refreshOccupiedPage\(\) \{[\s\S]*?\n  \}/)?.[0] || ''
   assert.match(refreshPage, /type: "xrc-task-page-refresh"/)
   assert.match(refreshPage, /\["running", "starting", "occupied"\]/)
+  assert.match(refreshPage, /window\.location\.reload\(\)/)
+  assert.match(refreshPage, /paintRefreshFailure/)
   assert.doesNotMatch(refreshPage, /xrc-start-reload/)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /async function forceReloadTaskTab\(tabId, destination, currentUrl = ""\)/)
+  assert.match(backgroundSource, /bypassCache: true/)
   const subnav = source.match(/<div class="xrc-task-subnav[^"]*"[\s\S]*?<\/div>/)?.[0]
   assert.ok(subnav)
   assert.match(subnav, /class="xrc-task-subnav-back xrc-subpage-back" data-xrc-desk-back[^>]*>← 返回首页<\/button>/)
@@ -2972,26 +3001,34 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-header-reset/)
   assert.match(source, /重置本机任务记录？/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(css, /\.xrc-task-live-row \.xrc-task-live\s*\{[^}]*font-size: 13px;/)
+  assert.match(css, /\.xrc-live-tabs \[role="tab"\]\.is-active/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-live\s*\{[^}]*font-size: 12px;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-live::before\s*\{[^}]*display: inline-block;[^}]*vertical-align: middle;/)
   assert.match(css, /#x-reply-clipboard-panel\s*\{[^}]*max-height: min\(560px, calc\(100vh - 36px\)\);/)
   assert.match(css, /\.xrc-body\s*\{[^}]*max-height: none;[^}]*overflow: visible;/)
   assert.match(css, /backdrop-filter: blur\(22px\)/)
   assert.match(css, /\[data-desk="task"\] \.xrc-task-subnav:not\(\[hidden\]\)[\s\S]{0,480}border-radius: 14px 14px 0 0;/)
-  assert.match(css, /\[data-desk="task"\] \.xrc-home-schedule,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-today-strip,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-task-live-row,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-workspace-nav \{ display: none !important; \}/)
+  assert.match(css, /\[data-desk="task"\] \.xrc-home-schedule,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-home-alerts,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-today-strip,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-task-live-row,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-workspace-nav \{ display: none !important; \}/)
   assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-today-strip,[\s\S]*?\.xrc-workspace-nav \{[\s\S]*?display: none !important;/)
-  assert.match(css, /\.xrc-subpage-title > small/)
-  assert.match(css, /\.xrc-task-subnav-title > small/)
+  assert.match(css, /\[data-xrc-page="alerts"\] \.xrc-alerts-desk\s*\{[^}]*display: grid;/)
+  assert.match(css, /\.xrc-plate-head > \.xrc-subpage-title,\s*#x-reply-clipboard-panel \.xrc-plate-head > \.xrc-task-subnav-title/)
+  assert.match(css, /Beat `\.xrc-plate-head > span \{ display: grid \}`/)
+  assert.match(css, /\.xrc-plate-head > \.xrc-subpage-title[\s\S]{0,260}display: inline-flex;[\s\S]{0,80}flex-direction: row;/)
+  assert.match(css, /\.xrc-plate-head \.xrc-subpage-title > b[\s\S]{0,280}font-size: 15px;/)
+  assert.match(css, /\.xrc-plate-head \.xrc-subpage-title > strong[\s\S]{0,200}font-size: 13px;/)
+  assert.match(css, /\.xrc-subpage-title > i/)
+  assert.match(css, /\.xrc-task-subnav-title > b/)
   assert.match(css, /--xrc-home-bg:\s*rgba\(255, 255, 255, 0\.92\);/)
   assert.match(css, /--xrc-subpage-bg:\s*rgba\(255, 255, 255, 0\.96\);/)
   assert.match(css, /--xrc-accent: #4caf2a;/)
   assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
   assert.match(source, /live\.dataset\.live/)
-  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*display: none;/)
+  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*display: none;[^}]*background: color-mix\(in srgb, var\(--xrc-accent\) 7%, #fff\);/)
   assert.match(css, /\.xrc-task-live-row:not\(\[hidden\]\)\s*\{[^}]*display: grid;/)
   assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-schedule-desk\s*\{[^}]*display: grid;/)
-  assert.match(css, /\.xrc-schedule-desk-body\s*\{[^}]*border-radius: 0 0 14px 14px;/)
+  assert.match(css, /\.xrc-schedule-desk-body,\s*#x-reply-clipboard-panel \.xrc-alerts-desk-body\s*\{[^}]*border-radius: 0 0 14px 14px;/)
   assert.match(css, /@keyframes xrc-live-pulse/)
-  assert.match(css, /\.xrc-home-schedule-actions \.xrc-task-open-detail,\s*#x-reply-clipboard-panel \.xrc-task-live-row \.xrc-task-open-detail\s*\{[^}]*text-decoration: none;/)
+  assert.match(css, /\.xrc-home-schedule-actions \.xrc-task-open-detail,\s*#x-reply-clipboard-panel \.xrc-home-alerts \.xrc-task-open-detail,\s*#x-reply-clipboard-panel \.xrc-task-live-row \.xrc-task-open-detail\s*\{[^}]*text-decoration: none;/)
   assert.match(css, /\.xrc-task-live-row \.xrc-task-page-refresh,\s*#x-reply-clipboard-panel \.xrc-task-live-row \.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
   assert.match(css, /\.xrc-subpage-back,\s*#x-reply-clipboard-panel \.xrc-task-subnav-back\s*\{/)
   assert.doesNotMatch(css, /\.xrc-task-manual-pause:hover[\s\S]{0,180}text-decoration: underline/)
@@ -8016,33 +8053,38 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-like-tab="replies"/)
   assert.match(content, /data-xrc-hub-open aria-label="设置中心"/)
   assert.match(content, /data-xrc-hub hidden aria-label="设置中心"/)
-  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/div>\s*<section class="xrc-hub"/)?.[1] || ''
+  const todaySummary = content.match(/<div class="xrc-today-strip"[^>]*>([\s\S]*?)<\/section>\s*<\/div>\s*<section class="xrc-hub"/)?.[1] || ''
   const taskCategories = content.match(/const TASK_CATEGORIES = Object\.freeze\(\[[\s\S]*?\]\);/)?.[0] || ''
   for (const category of ['comment', 'like', 'follow', 'post', 'community', 'clean']) {
     assert.ok(taskCategories.includes(`"${category}"`), `task categories should include ${category}`)
   }
+  assert.match(todaySummary, /data-xrc-today-plate/)
   assert.match(todaySummary, /TASK_CATEGORIES\.map/)
+  assert.match(todaySummary, /data-xrc-today-tab/)
   assert.match(todaySummary, /data-xrc-today-category/)
   assert.match(todaySummary, /TODAY_TASKS.map/)
   assert.match(todaySummary, /data-xrc-today-task/)
   const todayCss = await readFile(new URL('content.css', extensionDir), 'utf8')
-  assert.match(todayCss, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/)
-  assert.doesNotMatch(todayCss, /xrc-today-strip::after[\s\S]*calc\(25%/)
+  assert.match(todayCss, /\.xrc-today-categories\s*\{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/)
+  assert.match(todayCss, /\.xrc-today-category\.is-active/)
+  assert.doesNotMatch(todayCss, /xrc-today-tabs|xrc-today-strip::after[\s\S]*calc\(25%/)
   assert.ok(content.indexOf('class="xrc-today-strip"') < content.indexOf('class="xrc-hub"'))
   assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
   const quickActions = content.match(/<div class="xrc-quick-actions"[^>]*>([\s\S]*?)<\/div>/)?.[1] || ''
   const header = content.match(/<div class="xrc-header">([\s\S]*?)<span class="xrc-mini-progress"/)?.[1] || ''
   assert.ok(header.includes('class="xrc-quick-actions"'))
   assert.ok(header.indexOf('class="xrc-quick-actions"') < header.indexOf('data-xrc-hub-open'))
-  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-report-open', 'class="xrc-close"', 'data-xrc-header-reset', 'data-xrc-hub-open']) {
+  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'class="xrc-close"', 'data-xrc-header-reset', 'data-xrc-hub-open']) {
     assert.ok(quickActions.includes(action), `${action} should remain visible outside the menu`)
   }
-  const headerOrder = ['data-xrc-docs-open', 'data-xrc-report-open', 'data-xrc-header-reset', 'data-xrc-hub-open', 'data-xrc-collapse', 'class="xrc-close"']
+  const headerOrder = ['data-xrc-docs-open', 'data-xrc-header-reset', 'data-xrc-hub-open', 'data-xrc-collapse', 'class="xrc-close"']
   headerOrder.reduce((previous, action) => {
     const index = quickActions.indexOf(action)
     assert.ok(index > previous, `${action} should follow the previous header control`)
     return index
   }, -1)
+  assert.doesNotMatch(quickActions, /data-xrc-report-open|xrc-today-report/)
+  assert.match(todaySummary, /今日大互动[\s\S]*class="xrc-today-report"[^>]*data-xrc-report-open[\s\S]*class="xrc-today-categories"/)
   assert.match(quickActions, /data-xrc-header-reset[\s\S]*<svg/)
   assert.match(quickActions, /aria-label="停止插件"/)
   assert.match(content, /停止插件？/)
@@ -8413,7 +8455,9 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /完成本次全部轮次后才让出共享执行页签|完成本次全部轮次后让出共享页签/)
   assert.match(docsPage, /运行中[\s\S]*等待中[\s\S]*需处理[\s\S]*已停止/)
   assert.match(docsPage, /绿边表示运行，黄边表示等待，红边表示已停止或需处理/)
-  assert.match(docsPage, /还没加入的任务留在左侧任务库，按评论、点赞、关注、发帖、社群、清理分组/)
+  assert.match(docsPage, /左侧「已排班」列出已加入的任务[\s\S]*右侧「未排班」按评论、点赞、关注、发帖、社群、清理分组/)
+  assert.match(docsPage, /首页 04「执行报警」只显示最近一条摘要[\s\S]*按系统超限、重试耗尽、发送失败、结果未确认、记录失败归类/)
+  assert.match(docsPage, /运行中与等待中为绿色、需处理为黄色、异常为红色、未排班为灰色/)
   assert.doesNotMatch(docsPage, /台底全局区/)
   assert.doesNotMatch(docsPage, /停止全部/)
   assert.match(docsPage, /SINGLE_BUTTON_ROWS[\s\S]*正在停止', '等待中 · 请稍候'/)
@@ -8501,17 +8545,25 @@ test('each subtask info link targets its own revealed documentation section', as
   assert.match(hashNavigation, /target\.scrollIntoView/)
 })
 
-test('today totals keep two data rows and place the calendar icon in header actions', async () => {
+test('today totals keep big category cards with filtered task rows and place the calendar icon beside 01', async () => {
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
   const styles = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(content, /class="xrc-today-report"[^>]*data-xrc-report-open[^>]*aria-label="打开日历统计"/)
-  assert.match(content, /class="xrc-quick-actions"[\s\S]*class="xrc-today-report"[\s\S]*class="xrc-today-strip"[\s\S]*class="xrc-today-categories"[\s\S]*class="xrc-today-tasks"/)
+  assert.match(content, /今日大互动[\s\S]*class="xrc-today-report"[\s\S]*class="xrc-today-categories"[\s\S]*class="xrc-today-tasks"/)
+  assert.doesNotMatch(content, /class="xrc-quick-actions"[\s\S]{0,900}class="xrc-today-report"/)
   assert.doesNotMatch(content, /<strong>今日合计<\/strong>/)
+  assert.doesNotMatch(content, /class="xrc-today-tabs"|plateHead\("02", "任务详情数据"\)/)
   assert.doesNotMatch(content, /data-xrc-expand/)
   assert.match(content, /TODAY_TASKS\.map/)
+  assert.match(content, /function syncHomeTodayTabs\(/)
+  assert.match(content, /data-xrc-today-tab="\$\{category\.id\}"/)
+  assert.match(content, /class="xrc-today-category/)
+  assert.match(content, /homeTodayCategory = "comment"/)
   assert.match(content, /strip\.removeAttribute\("title"\)/)
-  assert.match(styles, /\.xrc-quick-actions \.xrc-today-report \{/)
-  assert.match(styles, /\.xrc-today-category \{[^}]*flex-direction: column/)
+  assert.match(styles, /\.xrc-today-plate \.xrc-today-report \{/)
+  assert.match(styles, /\.xrc-today-category\.is-active/)
+  assert.match(styles, /\.xrc-today-categories\s*\{[^}]*grid-template-columns: repeat\(6/)
+  assert.match(styles, /\.xrc-today-detail/)
   assert.match(content, /querySelectorAll\("\[data-xrc-report-open\]"\)/)
 })
 
@@ -10606,7 +10658,7 @@ test('a manual page refresh reloads the occupied tab without spending an automat
     tabs: {
       async get(id) { return { id, windowId: 1, url: 'https://x.com/home' } },
       async update(id, info) { updates.push(info || {}); return { id } },
-      async reload(id) { reloads.push(id) },
+      async reload(id, info) { reloads.push({ id, info }) },
     },
   }
   try {
@@ -10621,6 +10673,17 @@ test('a manual page refresh reloads the occupied tab without spending an automat
     const rejected = await background.refreshOccupiedTaskPage('timeline', 12)
     assert.equal(rejected.ok, false)
     assert.equal(updates.length, 1)
+
+    globalThis.chrome.tabs.get = async (id) => ({
+      id,
+      windowId: 1,
+      url: 'https://x.com/home?xrcAssistant=timeline&xrcStart=1',
+    })
+    const samePage = await background.refreshOccupiedTaskPage('timeline', 11)
+    assert.equal(samePage.ok, true)
+    assert.equal(reloads.length, 1)
+    assert.equal(reloads[0].id, 11)
+    assert.equal(reloads[0].info?.bypassCache, true)
   } finally {
     globalThis.chrome = previousChrome
   }

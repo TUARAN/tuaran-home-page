@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises'
 const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/content.js', import.meta.url), 'utf8')
 
 test('plugin confirmation waits for a choice, rejects concurrent requests, and restores focus', async () => {
-  const definition = source.match(/  function pluginConfirm\(message, title = "确认操作"\) \{[\s\S]*?\n  \}/)[0]
+  const definition = source.match(/  function pluginConfirm\(message, title = "确认操作", okLabel = "确认"\) \{[\s\S]*?\n  \}/)[0]
   let overlay, restored = 0
   const previous = { focus: () => restored++ }
   const document = {
@@ -88,24 +88,24 @@ test('draft tools appear only on draft tasks and clear when switching to premium
   }
 })
 
-test('library toggle collapses and locks by default and expands without changing task settings', () => {
+test('schedule desk always expands both columns without a collapse lock control', () => {
   const definition = source.match(/  function syncTaskLibrary\(panel, open\) \{[\s\S]*?\n  \}/)[0]
-  const library = {}, feedback = {}, toggle = { setAttribute(key, value) { this[key] = value } }
-  const panel = { dataset: {}, querySelector: selector => ({ '.xrc-library-column': library, '[data-xrc-library-toggle]': toggle, '[data-xrc-workspace-feedback]': feedback })[selector] }
+  const library = {}, feedback = {}
+  const panel = { dataset: {}, querySelector: selector => ({ '.xrc-library-column': library, '[data-xrc-workspace-feedback]': feedback })[selector] }
   const context = vm.createContext({})
   vm.runInContext(`${definition}; globalThis.sync = syncTaskLibrary`, context)
-  assert.match(source, /let taskLibraryOpen = false;/)
-  context.sync(panel, false)
-  assert.equal(panel.dataset.taskLibrary, 'closed')
-  assert.equal(library.hidden, true)
-  assert.equal(toggle['aria-expanded'], 'false')
-  assert.equal(toggle.textContent, '增减任务')
+  assert.match(source, /let taskLibraryOpen = true;/)
+  assert.doesNotMatch(source, /data-xrc-library-toggle/)
+  assert.doesNotMatch(source, /收起并锁定|增减任务/)
+  assert.match(source, /aria-label="已排班"/)
+  assert.match(source, /aria-label="未排班"/)
+  assert.ok(source.indexOf('aria-label="已排班"') < source.indexOf('aria-label="未排班"'))
   context.sync(panel, true)
   assert.equal(panel.dataset.taskLibrary, 'open')
   assert.equal(library.hidden, false)
-  assert.equal(toggle['aria-expanded'], 'true')
   assert.equal(feedback.hidden, false)
   context.sync(panel, false)
+  assert.equal(panel.dataset.taskLibrary, 'closed')
   assert.equal(library.hidden, true)
   assert.equal(feedback.hidden, true)
 })

@@ -2393,6 +2393,16 @@ function rotateScheduleQueue(plan, mode) {
   return queue;
 }
 
+function commentReplyRestricted(plan, now = Date.now()) {
+  // A successful reply clears limitedStreak on all three. Until then, 评论回复
+  // takes the next comment turn ahead of 评论首页 and 评论大V.
+  return REPLY_TASKS.some((mode) => {
+    const item = plan.items?.[mode] || {};
+    if (Number(item.limitedStreak) > 0) return true;
+    return Number(item.resumeAt) > now && /疑似自动化|超过限制|操作受限|限制冷却/u.test(String(item.reason || ""));
+  });
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   const manualFocusMode = scheduledManualFocusMode(plan, now);
@@ -2416,6 +2426,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
+      if (commentReplyRestricted(plan, now) && (a.mode === "notifications" || b.mode === "notifications")) {
+        if (a.mode !== b.mode) return a.mode === "notifications" ? -1 : 1;
+      }
       const queueA = queue.indexOf(a.mode);
       const queueB = queue.indexOf(b.mode);
       return (queueA < 0 ? a.index : queueA) - (queueB < 0 ? b.index : queueB);
@@ -2442,6 +2455,9 @@ function scheduledManualFocusMode(plan, now = Date.now()) {
 function drawDueReplyTask(plan, due, random = Math.random) {
   const first = due[0];
   if (!REPLY_TASKS.includes(first) || Number(plan.items?.[first]?.manualRequestedAt) > 0) return due;
+  if (commentReplyRestricted(plan) && due.includes("notifications")) {
+    return ["notifications", ...due.filter((mode) => mode !== "notifications")];
+  }
   const rules = normalizedTaskRules(plan.rules);
   const candidates = due.filter((mode) => REPLY_TASKS.includes(mode)
     && rules[mode].priority === rules[first].priority
@@ -3000,6 +3016,23 @@ async function runTaskSchedule() {
     if (await finishTerminalTask(plan, current, task?.detail, now)) return runTaskSchedule();
     if (REPLY_TASKS.includes(current) && Number(item.resumeAt) > now && /疑似自动化/u.test(String(item.reason || ""))) {
       const reason = String(item.reason);
+      if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
+        plan = await readTaskSchedule();
+        recordScheduleSegment(plan, current, reason, now);
+        plan.current = "";
+        plan.startedAt = 0;
+        await saveTaskSchedule(plan);
+        return runTaskSchedule();
+      }
+    }
+    // Comment home or KOL already holding the shared tab must hand it to
+    // 评论回复 once the shared restriction is active and that task is due.
+    if ((current === "timeline" || current === "kol")
+      && commentReplyRestricted(plan, now)
+      && plan.manualFocusMode !== current
+      && !(Number(item.manualRequestedAt) > 0)
+      && dueTaskModes(plan, now)[0] === "notifications") {
+      const reason = "评论受限，优先执行评论回复";
       if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
         plan = await readTaskSchedule();
         recordScheduleSegment(plan, current, reason, now);

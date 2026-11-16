@@ -245,6 +245,14 @@
     }, { attempts: 15, delayMs: 1500 });
   }
 
+  async function sharedPostBudget() {
+    const receipt = globalThis.XrcCommunityReceipt;
+    if (typeof receipt?.postDailyBudget !== "function") return null;
+    const handle = typeof savedAccountHandle === "function" ? await savedAccountHandle() : "";
+    if (!handle) return { uncertain: true, reached: false, resumeAt: Date.now() + RETRY_MS };
+    return receipt.postDailyBudget(handle);
+  }
+
   async function execute({ workTabId, force = false } = {}) {
     const settings = await readSettings();
     const date = shanghaiDateKey();
@@ -268,6 +276,17 @@
       const detail = "今天已点击发布但没确认结果，已停止重发，避免重复文章";
       await setForwardState({ running: false, status: "uncertain", detail, uncertainDate: date });
       return { ok: true, uncertain: true, detail, resumeAt: nextSiteForwardSlot(), uncertainDate: date };
+    }
+    const postBudget = await sharedPostBudget();
+    if (postBudget?.uncertain) {
+      const detail = "今日发帖额度暂时读不到，稍后再核对";
+      await setForwardState({ running: false, status: "waiting", detail });
+      return { ok: true, skipped: "post-cap-unread", detail, resumeAt: Date.now() + RETRY_MS };
+    }
+    if (postBudget?.reached) {
+      const detail = `今日发帖已到 ${postBudget.count}/${postBudget.cap}，明天继续`;
+      await setForwardState({ running: false, status: "waiting", detail });
+      return { ok: true, skipped: "post-daily-cap", detail, resumeAt: Number(postBudget.resumeAt) || Date.now() + 24 * 60 * 60 * 1000 };
     }
     if (!Number.isInteger(workTabId)) {
       const detail = "请在 X 执行页签里启动站长转发";

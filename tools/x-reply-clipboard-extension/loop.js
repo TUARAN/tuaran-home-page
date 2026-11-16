@@ -455,8 +455,13 @@
     return Math.max(1, Math.floor(Number(retries) || 1)) * 10 * 60 * 1000;
   }
 
+  function replyRiskCooldownMs(retries) {
+    return Math.min(8, 2 ** (Math.max(1, Math.floor(Number(retries) || 1)) - 1)) * 60 * 60 * 1000;
+  }
+
   const api = {
     automationCooldownMs,
+    replyRiskCooldownMs,
     boundaryProbeCooldownMs,
     boundaryGearIndex,
     boundaryGearName,

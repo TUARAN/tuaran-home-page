@@ -4,7 +4,7 @@ const WAVE_WINDOWS = [
   { start: 18 * 60, end: 22 * 60, label: '晚高峰', range: '18:00–22:00' },
 ]
 
-const PREMIUM_SLOTS = ['08:00', '09:30', '12:00', '15:00', '19:00']
+const PREMIUM_SLOTS = ['08:00', '14:00', '20:00']
 
 const BANDS = [
   { key: 'peak', label: '高峰', hint: '间隔约 ×0.55', swatch: 'var(--site-green)' },
@@ -195,7 +195,7 @@ export default function PostWaveTimeline() {
               <g key={slot}>
                 <line x1={x} x2={x} y1={y + 5} y2={padY + innerH} stroke="color-mix(in srgb, var(--site-ink) 16%, transparent)" strokeDasharray="2 4" />
                 <circle cx={x} cy={y} r="4.2" fill="var(--site-panel)" stroke="var(--site-ink)" strokeWidth="1.5" />
-                <title>{`精品档位 ${slot}`}</title>
+                <title>{`卡片发帖默认档位 ${slot}`}</title>
               </g>
             )
           })}
@@ -229,7 +229,7 @@ export default function PostWaveTimeline() {
           <span>横轴为北京时间 24 小时</span>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--site-ink)] bg-[var(--site-panel)]" aria-hidden="true" />
-            圆点 = 精品发帖固定档位
+            圆点 = 卡片发帖默认档位
           </span>
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function PostWaveTimeline() {
         <ul className="list-disc space-y-1.5 pl-5">
           <li>曲线表示相对发帖密度，不是绝对条数；频率挡位（慢 / 中 / 快 / 超快）只改基础间隔，波浪形状不变。</li>
           <li>距高峰 1 小时内逐渐加密，1～3 小时过渡到日间低峰；22:00–07:00 更疏，但仍会发帖。</li>
-          <li>图中圆点是精品发帖的固定档位（每天最多 5 条），不走波浪系数；普通发帖与精品发帖各自独立窗口。</li>
+          <li>图中圆点是卡片发帖默认一天 3 条的钟点（08:00、14:00、20:00），不走波浪系数。改成 1、5 或 10 条时钟点不同。热点发帖仍走这条波浪。</li>
         </ul>
       </figcaption>
     </figure>

@@ -271,6 +271,34 @@
       try { Promise.resolve(env.reportAlert?.({ task: 'community-share', kind, message, attempts })).catch(() => {}); } catch (_) {}
       state.status = message; state.phase = 'done'; state.running = false; state.stopped = true; state.nextAt = 0; save();
     }
+    function readCommunityDailyBudget() {
+      if (typeof env.readDailyBudget === 'function') return Promise.resolve(env.readDailyBudget());
+      const runtime = root.chrome?.runtime;
+      if (!runtime?.sendMessage) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (budget) => { if (!settled) { settled = true; resolve(budget); } };
+        const unread = { uncertain: true, reached: true, resumeAt: Date.now() + 15 * 60 * 1000 };
+        try {
+          runtime.sendMessage({ type: 'xrc-community-daily-budget' }, (response) => {
+            void runtime.lastError;
+            finish(response?.ok && response.budget ? response.budget : unread);
+          });
+        } catch (_) { finish(unread); }
+      });
+    }
+    function pauseForCommunityCap(message, resumeAt) {
+      state.status = message;
+      state.phase = 'done';
+      state.running = false;
+      state.stopped = false;
+      state.nextAt = Number(resumeAt) || Date.now() + 15 * 60 * 1000;
+      save();
+    }
+    function communityRoom(budget) {
+      if (!budget || budget.uncertain) return null;
+      return Math.max(0, Number(budget.cap) - Number(budget.count));
+    }
     async function run() {
       const handle = state.handle;
       if (!/^[A-Za-z0-9_]{1,15}$/u.test(handle)) { finish('无法确认当前账号，未发送'); return; }
@@ -289,6 +317,19 @@
       try {
         if (await confirmedPost()) { finish('最新帖子已标记为已分发，跳过本轮'); return; }
       } catch (_) { halt('无法读取已分发记录，已停止以免重复发送'); return; }
+      const openingBudget = await readCommunityDailyBudget();
+      if (openingBudget?.uncertain) {
+        pauseForCommunityCap('今日社群额度暂时读不到，稍后再核对', openingBudget.resumeAt);
+        return;
+      }
+      let shareRoom = Infinity;
+      if (openingBudget) {
+        shareRoom = communityRoom(openingBudget);
+        if (openingBudget.reached || shareRoom <= 0) {
+          pauseForCommunityCap(`今日社群已到 ${openingBudget.count}/${openingBudget.cap}，明天继续`, openingBudget.resumeAt);
+          return;
+        }
+      }
       let dialog = shareDialog(doc());
       if (!dialog) {
         let share = null;
@@ -323,6 +364,7 @@
       for (let step = 0; step < 300 && !stopping; step++) {
         const alertText = toast(doc());
         if (LIMIT_RE.test(alertText)) { halt(`X 提示操作受限，已停止发送：${alertText.slice(0, 100)}`, 'rate-limit'); return; }
+        if (selected.size >= shareRoom) break;
         const currentDialog = shareDialog(doc()) || dialog;
         const rows = groupRows(currentDialog);
         for (const row of rows) if (!state.seen.includes(row.id)) state.seen.push(row.id);
@@ -362,6 +404,22 @@
       }
       if (stopping) return;
       if (!send) { halt(`已选 ${selected.size} 个群聊，24 次检查后仍未找到可点击的 Send 或 Send separately；请手动核对，未记录成功`, 'retry-exhausted', 24); return; }
+      const latestBudget = await readCommunityDailyBudget();
+      if (latestBudget?.uncertain) {
+        pauseForCommunityCap('今日社群额度暂时读不到，稍后再核对', latestBudget.resumeAt);
+        return;
+      }
+      if (latestBudget) {
+        const roomNow = communityRoom(latestBudget);
+        if (latestBudget.reached || roomNow <= 0) {
+          pauseForCommunityCap(`今日社群已到 ${latestBudget.count}/${latestBudget.cap}，明天继续`, latestBudget.resumeAt);
+          return;
+        }
+        if (selected.size > roomNow) {
+          pauseForCommunityCap(`今日社群额度只剩 ${roomNow} 个，已选 ${selected.size} 个，未发送`, Date.now() + 60 * 1000);
+          return;
+        }
+      }
       state.status = `正在一次发送到 ${selected.size} 个群聊`; save();
       send.click();
       let result = '';

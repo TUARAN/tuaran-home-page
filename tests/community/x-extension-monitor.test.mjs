@@ -96,31 +96,33 @@ test('status sentence keeps the live install and drops an older offline install 
   assert.deepEqual(picked.map((device) => device.id), ['live', 'other-old'])
 })
 
-test('runtime groups follow schedule priority order with idle fill-ins', () => {
+test('runtime groups follow the task shelf, with idle fill-ins', () => {
   const groups = presentXRuntimeGroups([
     { mode: 'timeline', phase: 'running', updatedAt: NOW, detail: '正在回复' },
     { mode: 'mutual-unfollow', phase: 'paused', updatedAt: NOW, detail: '风控等待中', waitUntil: NOW + 600000 },
   ])
-  assert.deepEqual(groups.map((group) => [group.id, group.phase]), [
-    ['reply', 'running'],
-    ['poster', 'idle'],
-    ['community', 'idle'],
-    ['likes', 'idle'],
-    ['mutual', 'waiting'],
+  assert.deepEqual(groups.map((group) => [group.id, group.label, group.phase]), [
+    ['reply', '评论', 'running'],
+    ['likes', '点赞', 'idle'],
+    ['mutual', '关注', 'waiting'],
+    ['poster', '发帖', 'idle'],
+    ['community', '社群', 'idle'],
+    ['clean', '清理', 'idle'],
   ])
   assert.deepEqual(groups[0].tasks.map((task) => [task.mode, task.phase, task.priority]), [
     ['notifications', 'idle', 8],
     ['timeline', 'running', 8],
     ['kol', 'idle', 8],
   ])
-  assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['poster-premium', 'poster', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'prune-posts', 'prune-replies'])
-  assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['community-share'])
-  assert.equal(groups[2].tasks[0].priority, 7)
-  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
-  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow', 'mutual-unfollowNonSc'])
-  assert.equal(groups[4].tasks[2].detail, '风控等待中')
-  assert.equal(groups[4].tasks[2].waitUntil, NOW + 600000)
-  assert.equal(groups[4].tasks[2].priority, 3)
+  assert.deepEqual(groups[1].tasks.map((task) => task.mode), ['likes-posts', 'likes-replies'])
+  assert.deepEqual(groups[2].tasks.map((task) => task.mode), ['mutual-followBack', 'mutual-targetFollow', 'mutual-unfollow', 'mutual-unfollowNonSc'])
+  assert.equal(groups[2].tasks[2].detail, '风控等待中')
+  assert.equal(groups[2].tasks[2].waitUntil, NOW + 600000)
+  assert.equal(groups[2].tasks[2].priority, 3)
+  assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['poster-premium', 'poster', 'poster-x', 'poster-xhs', 'article', 'site-forward'])
+  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['community-share'])
+  assert.equal(groups[4].tasks[0].priority, 7)
+  assert.deepEqual(groups[5].tasks.map((task) => task.mode), ['prune-posts', 'prune-replies'])
 })
 
 test('remote commands enqueue and return on the next heartbeat report', async () => {

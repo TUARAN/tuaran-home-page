@@ -665,3 +665,78 @@ test('renamed share menu opens the picker and then sends once', async () => {
   assert.equal(sent, true)
   assert.equal(controller.snapshot().shared, 1)
 })
+
+test('community daily cap sends only the remaining groups and stops when the cap is full', async () => {
+  function harness(budget) {
+    let response = ''
+    let sends = 0
+    const clicks = []
+    const rows = ['First Group 825 people', 'Second Group 267 people'].map((label) => ({
+      innerText: label,
+      click: () => { clicks.push(label); response = '' },
+      getAttribute: () => null,
+      getClientRects: () => [1],
+      closest: () => null,
+      contains: () => false,
+    }))
+    const send = {
+      innerText: 'Send',
+      click: () => { sends += 1; response = 'Message sent' },
+      getAttribute: () => null,
+      getClientRects: () => [1],
+      closest: () => null,
+      ownerDocument: { defaultView: { getComputedStyle: () => ({ opacity: '1', pointerEvents: 'auto' }) } },
+    }
+    const search = { placeholder: 'Search', matches: () => false }
+    const picker = {
+      innerText: 'Search First Group 825 people Second Group 267 people Send',
+      closest: () => null,
+      querySelectorAll: (selector) => {
+        if (selector.includes('cellInnerDiv')) return rows
+        if (selector.includes('input')) return [search]
+        if (selector.includes('data-testid="toast"')) return response ? [{ innerText: response }] : []
+        if (selector.includes('button')) return [send]
+        return []
+      },
+      scrollTop: 0,
+      clientHeight: 600,
+    }
+    search.parentElement = picker
+    send.parentElement = picker
+    const article = { parentElement: null, querySelector: () => null, querySelectorAll: () => [timeLink] }
+    const timeLink = { getAttribute: () => '/tuaran/status/321', querySelector: () => ({}), closest: () => article }
+    const doc = {
+      body: {},
+      querySelector: () => null,
+      querySelectorAll: (selector) => {
+        if (selector.includes('article[data-testid="tweet"]')) return [article]
+        if (selector.includes('xchatEmbedShare')) return [{ shadowRoot: picker }]
+        return []
+      },
+    }
+    const controller = createController({
+      document: doc,
+      window: {
+        location: { pathname: '/tuaran' },
+        sessionStorage: { getItem: () => null, setItem: () => {} },
+      },
+      wait: async () => {},
+      loadLedger: async () => ({ [LEDGER_KEY]: {} }),
+      saveLedger: async () => {},
+      readDailyBudget: async () => budget,
+    })
+    return { controller, clicks, sendCount: () => sends }
+  }
+
+  const room = harness({ reached: false, uncertain: false, count: 19, cap: 20, resumeAt: Date.parse('2026-11-17T00:00:00+08:00') })
+  await room.controller.start({ handle: 'tuaran' })
+  assert.deepEqual(room.clicks, ['First Group 825 people'])
+  assert.equal(room.sendCount(), 1)
+  assert.equal(room.controller.snapshot().shared, 1)
+
+  const full = harness({ reached: true, uncertain: false, count: 20, cap: 20, resumeAt: Date.parse('2026-11-17T00:00:00+08:00') })
+  await full.controller.start({ handle: 'tuaran' })
+  assert.deepEqual(full.clicks, [])
+  assert.equal(full.sendCount(), 0)
+  assert.match(full.controller.snapshot().status, /今日社群已到 20\/20/)
+})

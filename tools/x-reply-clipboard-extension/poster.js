@@ -7,9 +7,18 @@
   const POST_KIND_NORMAL = "normal";
   const POST_KIND_PREMIUM = "premium";
   const POST_KIND_X = "x";
-  const PREMIUM_DAILY_LIMIT = 5;
-  const PREMIUM_SLOT_TIMES = Object.freeze(["08:00", "09:30", "12:00", "15:00", "19:00"]);
+  const CARD_DAILY_QUOTAS = Object.freeze([1, 3, 5, 10]);
+  const DEFAULT_CARD_DAILY_QUOTA = 3;
+  const CARD_SLOT_TIMES = Object.freeze({
+    1: Object.freeze(["12:00"]),
+    3: Object.freeze(["08:00", "14:00", "20:00"]),
+    5: Object.freeze(["08:00", "11:00", "14:00", "17:00", "20:00"]),
+    10: Object.freeze(["08:00", "09:30", "11:00", "12:30", "14:00", "15:30", "17:00", "18:30", "20:00", "21:30"])
+  });
+  const PREMIUM_DAILY_LIMIT = DEFAULT_CARD_DAILY_QUOTA;
+  const PREMIUM_SLOT_TIMES = CARD_SLOT_TIMES[DEFAULT_CARD_DAILY_QUOTA];
   const PREMIUM_DAILY_KEY = "xrcPosterPremiumDaily";
+  const CARD_QUOTA_KEY = "xrcPosterCardQuota";
   // One scheduled posting turn prepares and sends one post.
   const POST_SCHEDULE_PROFILES = [
     { id: "slow", label: "慢", minBatch: 1, maxBatch: 1, minGapSeconds: 12, maxGapSeconds: 20, minCycleMinutes: 45, maxCycleMinutes: 70 },
@@ -50,6 +59,19 @@
     }).format(new Date(Number(at) || Date.now()));
   }
 
+  function normalizeCardDailyQuota(value) {
+    const quota = Number(value);
+    return CARD_DAILY_QUOTAS.includes(quota) ? quota : DEFAULT_CARD_DAILY_QUOTA;
+  }
+
+  function cardSlotTimes(quota = state.cardDailyQuota) {
+    return CARD_SLOT_TIMES[normalizeCardDailyQuota(quota)];
+  }
+
+  function premiumDailyLimit(quota = state.cardDailyQuota) {
+    return cardSlotTimes(quota).length;
+  }
+
   function premiumSlotAt(dateKey, time) {
     return Date.parse(`${dateKey}T${time}:00+08:00`);
   }
@@ -68,10 +90,7 @@
   function choosePostFormat(random = Math.random, cardIndex = 0, kind = POST_KIND_NORMAL) {
     const cardVariant = CARD_VARIANTS[Math.max(0, cardIndex) % CARD_VARIANTS.length];
     if (kind === POST_KIND_X) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
-    if (kind === POST_KIND_PREMIUM) {
-      if (random() < 0.5) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
-      return { mediaMode: "text", lengthMode: "regular" };
-    }
+    if (kind === POST_KIND_PREMIUM) return { mediaMode: "image", imageStyle: "text-card", cardVariant, lengthMode: "regular" };
     if (kind === "xhs") return { mediaMode: "text", lengthMode: "regular" };
     const draw = random();
     if (draw < 0.9) return { mediaMode: "text", lengthMode: "compact" };
@@ -86,14 +105,14 @@
       : item?.lengthMode === "compact" && kind !== POST_KIND_PREMIUM
       ? "compact"
       : item?.lengthMode === "regular" ? "regular" : fallback.lengthMode;
-    const mediaMode = kind === POST_KIND_NORMAL ? "text" : kind === POST_KIND_X
+    const mediaMode = kind === POST_KIND_NORMAL ? "text" : kind === POST_KIND_X || kind === POST_KIND_PREMIUM
       ? "image"
       : item?.mediaMode === "image" && item?.imageStyle === "text-card" ? "image" : "text";
     return {
       ...item,
       mediaMode,
       lengthMode,
-      ...(mediaMode === "image" ? { imageStyle: "text-card", cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : (kind === POST_KIND_X ? fallback.cardVariant : "paper") } : {}),
+      ...(mediaMode === "image" ? { imageStyle: "text-card", cardVariant: CARD_VARIANTS.includes(item?.cardVariant) ? item.cardVariant : fallback.cardVariant } : {}),
       text: lengthMode === "compact" ? formatCompactPost(item?.text) : item?.text
     };
   }
@@ -119,6 +138,7 @@
     schedulePace: DEFAULT_POST_PACE,
     unlimited: false,
     premiumDaily: { date: "", count: 0 },
+    cardDailyQuota: DEFAULT_CARD_DAILY_QUOTA,
     currentPost: "",
     lastPost: "",
     lastSentText: "",
@@ -134,26 +154,45 @@
   };
 
   function idleStatusForKind(kind = state.postKind) {
-    if (kind === POST_KIND_PREMIUM) return "待命。精品发帖每天最多 5 条，按 08:00 / 09:30 / 12:00 / 15:00 / 19:00（北京时间）发布。";
+    if (kind === POST_KIND_PREMIUM) return `待命。卡片发帖每天 ${premiumDailyLimit()} 条，按 ${cardSlotTimes().join(" / ")}（北京时间）发布，每条都是文字卡片。`;
     if (kind === POST_KIND_X) return "待命。X 主题发帖每次任务只发 1 张文字卡片。题材围绕 X、Grok/xAI、Tesla、SpaceX、Neuralink 和 The Boring Company。";
-    return "待命。每次发帖任务只准备并发送 1 条；发完进入下一次排班倒计时，高峰等待较短。";
+    return "待命。热点发帖每次任务只准备并发送 1 条；发完进入下一次排班倒计时，高峰等待较短。";
+  }
+
+  function setCardDailyQuota(value) {
+    state.cardDailyQuota = normalizeCardDailyQuota(value);
+    return state.cardDailyQuota;
+  }
+
+  async function loadCardQuota() {
+    try {
+      if (!globalThis.chrome?.storage?.local?.get) return state.cardDailyQuota;
+      const stored = await chrome.storage.local.get(CARD_QUOTA_KEY);
+      if (stored && Object.prototype.hasOwnProperty.call(stored, CARD_QUOTA_KEY)) {
+        state.cardDailyQuota = normalizeCardDailyQuota(stored[CARD_QUOTA_KEY]);
+      }
+    } catch (error) {
+      // Keep the quota already chosen in this tab.
+    }
+    return state.cardDailyQuota;
   }
 
   function premiumDailyCount(at = Date.now()) {
     const date = shanghaiDateKey(at);
     if (state.premiumDaily?.date !== date) return 0;
-    return Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(state.premiumDaily.count) || 0));
+    return Math.max(0, Math.min(premiumDailyLimit(), Number(state.premiumDaily.count) || 0));
   }
 
-  function nextPremiumPostAt(at = Date.now()) {
+  function nextPremiumPostAt(at = Date.now(), quota = state.cardDailyQuota) {
     const date = shanghaiDateKey(at);
+    const slots = cardSlotTimes(quota);
     const count = premiumDailyCount(at);
-    if (count >= PREMIUM_DAILY_LIMIT) {
-      return premiumSlotAt(nextShanghaiDateKey(date), PREMIUM_SLOT_TIMES[0]);
+    if (count >= slots.length) {
+      return premiumSlotAt(nextShanghaiDateKey(date), slots[0]);
     }
-    const nextSlot = PREMIUM_SLOT_TIMES.map((time) => premiumSlotAt(date, time))
+    const nextSlot = slots.map((time) => premiumSlotAt(date, time))
       .find((slotAt) => slotAt >= at);
-    return nextSlot ?? premiumSlotAt(nextShanghaiDateKey(date), PREMIUM_SLOT_TIMES[0]);
+    return nextSlot ?? premiumSlotAt(nextShanghaiDateKey(date), slots[0]);
   }
 
   async function loadPremiumDaily() {
@@ -164,7 +203,7 @@
       if (!saved || typeof saved !== "object") return;
       state.premiumDaily = {
         date: String(saved.date || ""),
-        count: Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(saved.count) || 0))
+        count: Math.max(0, Math.min(premiumDailyLimit(), Number(saved.count) || 0))
       };
     } catch (error) {
       // Keep in-memory daily count if storage is unavailable.
@@ -174,7 +213,7 @@
   async function bumpPremiumDaily(at = Date.now()) {
     const date = shanghaiDateKey(at);
     const count = premiumDailyCount(at) + 1;
-    state.premiumDaily = { date, count: Math.min(PREMIUM_DAILY_LIMIT, count) };
+    state.premiumDaily = { date, count: Math.min(premiumDailyLimit(), count) };
     try {
       if (globalThis.chrome?.storage?.local?.set) {
         await chrome.storage.local.set({ [PREMIUM_DAILY_KEY]: state.premiumDaily });
@@ -234,7 +273,8 @@
       schedulePace: state.schedulePace,
       premiumDaily: { ...state.premiumDaily },
       premiumTodayCount: premiumDailyCount(),
-      premiumDailyLimit: PREMIUM_DAILY_LIMIT,
+      premiumDailyLimit: premiumDailyLimit(),
+      cardDailyQuota: state.cardDailyQuota,
       currentPost: state.currentPost,
       lastPost: state.lastPost,
       lastSentText: state.lastSentText,
@@ -315,7 +355,7 @@
     if (saved.premiumDaily && typeof saved.premiumDaily === "object") {
       state.premiumDaily = {
         date: String(saved.premiumDaily.date || ""),
-        count: Math.max(0, Math.min(PREMIUM_DAILY_LIMIT, Number(saved.premiumDaily.count) || 0))
+        count: Math.max(0, Math.min(premiumDailyLimit(), Number(saved.premiumDaily.count) || 0))
       };
     }
     if (Array.isArray(saved.items) && saved.items.length && !state.publishQueue.length) {
@@ -1287,6 +1327,54 @@
     return result;
   }
 
+  function readPostDailyBudget() {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (budget) => {
+        if (settled) return;
+        settled = true;
+        resolve(budget);
+      };
+      const unread = { uncertain: true, reached: true, resumeAt: Date.now() + 15 * 60 * 1000 };
+      try {
+        if (!chrome?.runtime?.sendMessage) {
+          finish(unread);
+          return;
+        }
+        chrome.runtime.sendMessage({ type: "xrc-post-daily-budget" }, (response) => {
+          void chrome.runtime.lastError;
+          finish(response?.ok && response.budget ? response.budget : unread);
+        });
+      } catch (error) {
+        finish(unread);
+      }
+    });
+  }
+
+  async function holdPostDailyCap() {
+    const budget = await readPostDailyBudget();
+    if (budget && !budget.uncertain && !budget.reached) return "";
+    if (budget?.reached && !budget.uncertain) {
+      state.nextPostAt = Number(budget.resumeAt) || Date.now() + 24 * 60 * 60 * 1000;
+      state.running = false;
+      emit(`今日发帖已到 ${budget.count}/${budget.cap}，明天继续`);
+      return "stopped";
+    }
+    emit("今日发帖额度暂时读不到，稍后再核对");
+    await wait(15000);
+    const retry = await readPostDailyBudget();
+    if (retry && !retry.uncertain && !retry.reached) return "";
+    if (retry?.reached && !retry.uncertain) {
+      state.nextPostAt = Number(retry.resumeAt) || Date.now() + 24 * 60 * 60 * 1000;
+      state.running = false;
+      emit(`今日发帖已到 ${retry.count}/${retry.cap}，明天继续`);
+      return "stopped";
+    }
+    state.nextPostAt = Date.now() + 15 * 60 * 1000;
+    emit("今日发帖额度暂时读不到，稍后再核对");
+    return "retry";
+  }
+
   async function run() {
     while (state.running && !state.stopping && !await loadHistory()) {
       state.errors += 1;
@@ -1295,10 +1383,15 @@
       await wait(5000);
     }
     if (state.stopping) return;
-    if (state.postKind === POST_KIND_PREMIUM) await loadPremiumDaily();
+    if (state.postKind === POST_KIND_PREMIUM) {
+      await loadCardQuota();
+      await loadPremiumDaily();
+    }
     await loadPublishList();
     if (["x", "xhs"].includes(state.postKind)) {
       if (state.nextPostAt > Date.now()) { emit("图文草稿等待下次排班"); return; }
+      const held = await holdPostDailyCap();
+      if (held) return;
       try {
         if (!state.publishQueue.length) await collectNewsFallback();
         if (state.stopping) return;
@@ -1315,7 +1408,7 @@
     if (state.postKind === POST_KIND_PREMIUM) {
       state.nextPostAt = nextPremiumPostAt();
       const waitingForSlot = Number(state.nextPostAt) > Date.now();
-      emit(`精品发帖今日 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}${waitingForSlot ? "，等待下一档" : "，准备发布"}`);
+      emit(`卡片发帖今日 ${premiumDailyCount()}/${premiumDailyLimit()}${waitingForSlot ? "，等待下一档" : "，准备发布"}`);
     }
     filterPromotionalSources();
     while (state.running && !state.stopping) {
@@ -1407,7 +1500,7 @@
         continue;
       }
       if (queuedIsNew) {
-        emit("发帖框有未发送内容，请手动处理后继续热点发帖");
+        emit("发帖框有未发送内容，请手动处理后继续发帖");
         await wait(1500);
         continue;
       }
@@ -1417,7 +1510,7 @@
           ? `约 ${Math.ceil(remainMs / 60000)} 分钟`
           : `约 ${Math.max(1, Math.ceil(remainMs / 1000))} 秒`;
         const premiumProgress = state.postKind === POST_KIND_PREMIUM
-          ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
+          ? `今日卡片 ${premiumDailyCount()}/${premiumDailyLimit()}；`
           : "";
         emit(state.lastError
           ? `上次异常：${state.lastError}；${remainText}后再次尝试`
@@ -1465,6 +1558,9 @@
           if (state.publishQueue[0]) state.publishQueue[0].text = revisedCurrentPost;
           await savePublishList();
         }
+        const held = await holdPostDailyCap();
+        if (held === "stopped") break;
+        if (held) continue;
         const result = await publishPost(state.currentPost, state.publishQueue[0]);
         if (result === "draft-saved") {
           state.publishQueue.shift(); state.currentPost = ""; state.currentSourceId = "";
@@ -1531,7 +1627,7 @@
         await savePublishList();
         await rememberPublishedPost(publishedSourceId, publishedText, publishedItem?.topic, publishedItem);
         const premiumNote = state.postKind === POST_KIND_PREMIUM
-          ? `今日精品 ${premiumDailyCount()}/${PREMIUM_DAILY_LIMIT}；`
+          ? `今日卡片 ${premiumDailyCount()}/${premiumDailyLimit()}；`
           : "";
         emit(state.postKind === POST_KIND_PREMIUM
           ? `${premiumNote}第 ${state.count} 条已发送，等待下一档`
@@ -1573,7 +1669,7 @@
     } else {
       state.running = true;
       state.stopping = false;
-      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备精品待发列表" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
+      state.status = state.postKind === POST_KIND_PREMIUM ? "正在准备卡片待发列表" : state.postKind === POST_KIND_X ? "正在准备 X 主题文字卡片" : "正在准备待发列表";
       state.count = 0;
       state.errors = 0;
       state.startedAt = Date.now();
@@ -1711,6 +1807,14 @@
     POST_KIND_X,
     PREMIUM_DAILY_LIMIT,
     PREMIUM_SLOT_TIMES,
+    CARD_DAILY_QUOTAS,
+    DEFAULT_CARD_DAILY_QUOTA,
+    CARD_SLOT_TIMES,
+    CARD_QUOTA_KEY,
+    normalizeCardDailyQuota,
+    cardSlotTimes,
+    premiumDailyLimit,
+    setCardDailyQuota,
     POST_SCHEDULE_PROFILES,
     postScheduleProfile,
     postPaceIndex,

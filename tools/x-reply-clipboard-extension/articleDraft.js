@@ -307,6 +307,47 @@
       return true;
     }
 
+    function readPostDailyBudget() {
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (budget) => {
+          if (settled) return;
+          settled = true;
+          resolve(budget);
+        };
+        const unread = { uncertain: true, reached: true, resumeAt: Date.now() + 15 * 60 * 1000 };
+        try {
+          const runtime = window.chrome?.runtime;
+          if (!runtime?.sendMessage) {
+            finish(unread);
+            return;
+          }
+          runtime.sendMessage({ type: "xrc-post-daily-budget" }, (response) => {
+            void runtime.lastError;
+            finish(response?.ok && response.budget ? response.budget : unread);
+          });
+        } catch (error) {
+          finish(unread);
+        }
+      });
+    }
+
+    async function holdPostDailyCap() {
+      const budget = await readPostDailyBudget();
+      if (budget && !budget.uncertain && !budget.reached) return "";
+      if (budget?.reached && !budget.uncertain) {
+        state.nextAt = Number(budget.resumeAt) || nextShanghaiDay();
+        state.status = `今日发帖已到 ${budget.count}/${budget.cap}，明天继续`;
+        await persist();
+        await emit();
+        return "stopped";
+      }
+      state.status = "今日发帖额度暂时读不到，稍后再核对";
+      await emit();
+      await sleep(15000);
+      return "retry";
+    }
+
     async function run() {
       const requestedPace = state.pace;
       await restore();
@@ -320,9 +361,11 @@
         while (state.running && !state.stopping) {
           try {
           if (state.nextAt > Date.now()) {
-            state.status = dailyCount(state.daily) >= DAILY_LIMIT
-              ? "今天已写入 3 篇草稿，明天再写"
-              : "文章已保存至草稿，未发布；等待下一篇";
+            if (!/今日发帖已到|今日发帖额度暂时读不到/u.test(state.status)) {
+              state.status = dailyCount(state.daily) >= DAILY_LIMIT
+                ? "今天已写入 3 篇草稿，明天再写"
+                : "文章已保存至草稿，未发布；等待下一篇";
+            }
             await emit();
             while (state.running && !state.stopping && state.nextAt > Date.now()) await sleep(500);
             continue;
@@ -333,6 +376,9 @@
             await persist();
             continue;
           }
+          const held = await holdPostDailyCap();
+          if (held === "stopped") continue;
+          if (held) continue;
           const ready = await openFreshEditor();
           if (state.stopping) return;
           if (!ready) {

@@ -2843,7 +2843,8 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /live\.dataset\.live/)
   assert.match(css, /\.xrc-task-live-row\s*\{[^}]*justify-content: center;/)
   assert.match(css, /@keyframes xrc-live-pulse/)
-  assert.match(css, /\.xrc-task-live-row \.xrc-task-manual-pause\s*\{[^}]*border: 0;[^}]*background: transparent;/)
+  assert.match(css, /\.xrc-task-live-row \.xrc-task-back,\s*[\s\S]*?\.xrc-task-manual-pause\s*\{[^}]*text-decoration: none;/)
+  assert.doesNotMatch(css, /\.xrc-task-manual-pause:hover[\s\S]{0,180}text-decoration: underline/)
 })
 
 test('subpage pause marks only its task and stops the active task', async () => {
@@ -7849,9 +7850,21 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   const header = content.match(/<div class="xrc-header">([\s\S]*?)<span class="xrc-mini-progress"/)?.[1] || ''
   assert.ok(header.includes('class="xrc-quick-actions"'))
   assert.ok(header.indexOf('class="xrc-quick-actions"') < header.indexOf('data-xrc-hub-open'))
-  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-report-open', 'class="xrc-close"']) {
+  for (const action of ['data-xrc-docs-open', 'data-xrc-collapse', 'data-xrc-report-open', 'class="xrc-close"', 'data-xrc-header-reset', 'data-xrc-hub-open']) {
     assert.ok(quickActions.includes(action), `${action} should remain visible outside the menu`)
   }
+  const headerOrder = ['data-xrc-docs-open', 'data-xrc-report-open', 'data-xrc-header-reset', 'data-xrc-hub-open', 'data-xrc-collapse', 'class="xrc-close"']
+  headerOrder.reduce((previous, action) => {
+    const index = quickActions.indexOf(action)
+    assert.ok(index > previous, `${action} should follow the previous header control`)
+    return index
+  }, -1)
+  assert.match(quickActions, /data-xrc-header-reset[\s\S]*<svg/)
+  assert.match(quickActions, /aria-label="停止插件"/)
+  assert.match(content, /停止插件？/)
+  assert.match(content, /function expandCollapsedPanel/)
+  assert.match(todayCss, /\[data-view="collapsed"\][\s\S]*width: 40px/)
+  assert.match(todayCss, /\[data-view="collapsed"\] \.xrc-header-actions[\s\S]*display: none/)
   assert.match(content, /data-xrc-monitor-open aria-expanded="false">异常监控/)
   assert.match(content, /data-xrc-report-page hidden aria-label="每日报告"/)
   assert.match(content, /data-xrc-monitor-current/)

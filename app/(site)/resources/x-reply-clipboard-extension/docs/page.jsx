@@ -281,7 +281,7 @@ export default function XReplyClipboardDocsPage() {
               <li>点右上角「开始」启动排班。「全自动排班」负责勾选全部任务；单项暂停在任务子页，全停用「暂停全部」。</li>
               <li>能运行的任务按队列轮到就跑一次，然后回到队尾。还没到时间的先跳过。普通等待可通过「立即开启」排到队首；共享关注冷却、风控与每日额度继续生效。</li>
             </ol>
-            <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-14）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
+            <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-15）；站内下载包配置为 v{DOWNLOAD_VERSION}，实际交付以下载文件为准。本地尚未打包的功能不能据此推断已进入下载包；多配置后台长时间持续运行仍需验证。</p>
           </Section>
 
           <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">

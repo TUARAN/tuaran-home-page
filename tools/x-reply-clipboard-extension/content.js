@@ -4449,7 +4449,8 @@
     if (mode === "notifications") {
       const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === profile.id);
       const label = selected?.label || profile.label;
-      return profile.id === "fast" ? `${label}（默认）` : label;
+      const defaultId = loopApi.DEFAULT_NOTIFICATION_WINDOW || "boundary";
+      return profile.id === defaultId ? `${label}（默认）` : label;
     }
     const defaultId = mode === "kol" ? "slow" : "boundary";
     return profile.id === defaultId ? `${profile.label}（默认）` : profile.label;
@@ -4461,7 +4462,7 @@
       label: "评论回复时间",
       attr: "data-xrc-pace-label",
       profiles: windows,
-      defaultId: "fast",
+      defaultId: loopApi.DEFAULT_NOTIFICATION_WINDOW || "boundary",
       columns: [
         { label: "处理范围", value: (profile) => `只回复这 ${profile.hours} 小时内的评论` }
       ]
@@ -5877,7 +5878,7 @@
       .filter((tweet) => tweet.id && tweet.replyButton && tweet.authorHandle && tweet.authorHandle !== ownHandle)
       .filter((tweet) => !notificationMode || (
         loopApi.notificationWithinWindow(tweet.timestamp, Date.now(), loopApi.notificationWindowMs(
-          typeof notificationWindowPace === "function" ? notificationWindowPace() : (state.schedulePace || "fast")
+          typeof notificationWindowPace === "function" ? notificationWindowPace() : (state.schedulePace || loopApi.DEFAULT_NOTIFICATION_WINDOW || "boundary")
         )) &&
         tweet.authorHandle !== "grok" &&
         tweet.repliesToOwnAccount &&
@@ -5890,16 +5891,17 @@
   }
 
   function notificationWindowPace() {
+    const fallback = loopApi.DEFAULT_NOTIFICATION_WINDOW || "boundary";
     const rulePace = taskSchedule.rules?.notifications?.pace;
     const candidate = loopApi.NOTIFICATION_WINDOWS?.some((item) => item.id === rulePace)
       ? rulePace
-      : (state.schedulePace || "fast");
-    return loopApi.NOTIFICATION_WINDOWS?.some((item) => item.id === candidate) ? candidate : "fast";
+      : (state.schedulePace || fallback);
+    return loopApi.NOTIFICATION_WINDOWS?.some((item) => item.id === candidate) ? candidate : fallback;
   }
 
   function notificationWindowLabel() {
     const selected = loopApi.NOTIFICATION_WINDOWS?.find((item) => item.id === notificationWindowPace());
-    return selected?.label || "4 小时";
+    return selected?.label || "24 小时";
   }
 
   function notificationFeedReachedOldBoundary(now = Date.now()) {

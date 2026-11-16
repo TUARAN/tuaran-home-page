@@ -1600,40 +1600,63 @@
   background: color-mix(in srgb, var(--xrc-accent) 14%, #fff);
   box-shadow: inset 0 -2px 0 var(--xrc-accent);
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions {
+#x-reply-clipboard-panel .xrc-home-schedule-actions,
+#x-reply-clipboard-panel .xrc-home-actions {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
   padding-left: 30px;
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail {
+#x-reply-clipboard-panel .xrc-home-action {
   position: static;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  min-height: 30px;
+  box-sizing: border-box;
+  min-height: 28px;
   margin: 0;
-  padding: 0 10px;
-  border: 0;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
   border-radius: 8px;
-  background: transparent;
-  color: var(--xrc-accent);
+  background: color-mix(in srgb, var(--xrc-soft) 70%, #fff);
+  color: var(--xrc-text);
   white-space: nowrap;
-  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-decoration: none;
   cursor: pointer;
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail:focus-visible,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail:focus-visible {
-  background: rgba(15, 20, 25, 0.05);
+#x-reply-clipboard-panel .xrc-home-action:hover,
+#x-reply-clipboard-panel .xrc-home-action:focus-visible {
+  border-color: color-mix(in srgb, var(--xrc-accent) 36%, var(--xrc-line));
+  background: color-mix(in srgb, var(--xrc-accent) 8%, #fff);
+  color: var(--xrc-text);
   outline: none;
+}
+#x-reply-clipboard-panel .xrc-home-action.is-quiet {
+  color: var(--xrc-muted);
+}
+#x-reply-clipboard-panel .xrc-home-action.is-pause {
+  color: #8a3a40;
+  border-color: color-mix(in srgb, #9f2d34 16%, var(--xrc-line));
+  background: color-mix(in srgb, #9f2d34 4%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-action.is-pause:hover,
+#x-reply-clipboard-panel .xrc-home-action.is-pause:focus-visible {
+  border-color: color-mix(in srgb, #9f2d34 28%, var(--xrc-line));
+  background: color-mix(in srgb, #9f2d34 8%, #fff);
+  color: #7a3036;
+  outline: none;
+}
+#x-reply-clipboard-panel .xrc-home-action[hidden] {
+  display: none;
+}
+#x-reply-clipboard-panel .xrc-home-action:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 #x-reply-clipboard-panel .xrc-desk-back {
   margin: 0;
@@ -1656,23 +1679,6 @@
   display: grid;
   min-width: 0;
   padding-left: 30px;
-}
-#x-reply-clipboard-panel .xrc-task-live-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-  padding-left: 30px;
-}
-#x-reply-clipboard-panel .xrc-task-live-side {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 2px;
-  min-width: 0;
-  margin-left: 0;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live {
   display: block;
@@ -1872,52 +1878,6 @@
   color: var(--xrc-accent);
   background: transparent;
   outline: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
-  position: static;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  min-height: 30px;
-  margin: 0;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  white-space: nowrap;
-  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-decoration: none;
-  cursor: pointer;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail[hidden],
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh[hidden] {
-  display: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh { color: var(--xrc-muted); }
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #9f2d34; }
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail:focus-visible,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:focus-visible:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-  background: rgba(15, 20, 25, 0.05);
-  text-decoration: none;
-  outline: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-  background: rgba(159, 45, 52, 0.08);
-  color: #8a242b;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:disabled,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:disabled {
-  opacity: 0.45;
-  cursor: default;
-  background: transparent;
-  text-decoration: none;
 }
 #x-reply-clipboard-panel .xrc-task-subnav::before,
 #x-reply-clipboard-panel .xrc-task-subnav-title::before {
@@ -5030,9 +4990,28 @@
   #x-reply-clipboard-panel .xrc-report-page,
   #x-reply-clipboard-panel .xrc-schedule-desk,
   #x-reply-clipboard-panel .xrc-alerts-desk { background: rgba(0, 0, 0, 0.98); }
-  #x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail,
-  #x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail { color: #7ddea0; }
+  #x-reply-clipboard-panel .xrc-home-action {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.88);
+  }
+  #x-reply-clipboard-panel .xrc-home-action:hover,
+  #x-reply-clipboard-panel .xrc-home-action:focus-visible {
+    border-color: color-mix(in srgb, var(--xrc-accent) 42%, rgba(255, 255, 255, 0.18));
+    background: color-mix(in srgb, var(--xrc-accent) 14%, rgba(0, 0, 0, 0.35));
+    color: #fff;
+  }
+  #x-reply-clipboard-panel .xrc-home-action.is-quiet { color: rgba(255, 255, 255, 0.62); }
+  #x-reply-clipboard-panel .xrc-home-action.is-pause {
+    color: #ff9aa2;
+    border-color: color-mix(in srgb, #ff9aa2 28%, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, #ff9aa2 10%, rgba(0, 0, 0, 0.35));
+  }
+  #x-reply-clipboard-panel .xrc-home-action.is-pause:hover,
+  #x-reply-clipboard-panel .xrc-home-action.is-pause:focus-visible {
+    background: rgba(255, 154, 162, 0.14);
+    color: #ffb4ba;
+  }
   #x-reply-clipboard-panel[data-desk="task"] .xrc-task-subnav:not([hidden]),
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="timeline"] .xrc-reply-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="notifications"] .xrc-reply-body,
@@ -5078,16 +5057,6 @@
   #x-reply-clipboard-panel .xrc-task-live-row {
     border-color: color-mix(in srgb, var(--xrc-accent) 28%, rgba(255, 255, 255, 0.12));
     background: color-mix(in srgb, var(--xrc-accent) 14%, rgba(0, 0, 0, 0.55));
-  }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #ff9aa2; }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:hover,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:hover:not(:disabled),
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:focus-visible:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-    background: rgba(255, 154, 162, 0.12);
-    color: #ffb4ba;
   }
   #x-reply-clipboard-panel .xrc-workspace-nav { background: transparent; }
   #x-reply-clipboard-panel .xrc-key-guide { background: var(--xrc-soft); }

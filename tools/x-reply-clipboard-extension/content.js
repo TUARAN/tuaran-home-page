@@ -9213,12 +9213,10 @@
               <div class="xrc-task-live-main">
                 <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
               </div>
-              <div class="xrc-task-live-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-open-home-task>查看详情 →</button>
-                <span class="xrc-task-live-side">
-                  <button type="button" class="xrc-task-page-refresh" data-xrc-task-page-refresh hidden>刷新页面</button>
-                  <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
-                </span>
+              <div class="xrc-task-live-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-open-home-task>查看详情</button>
+                <button type="button" class="xrc-home-action is-quiet xrc-task-page-refresh" data-xrc-task-page-refresh hidden>刷新页面</button>
+                <button type="button" class="xrc-home-action is-pause xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
               </div>
             </section>
             <section class="xrc-plate xrc-home-schedule" data-xrc-home-schedule>
@@ -9226,15 +9224,16 @@
               <div class="xrc-flow-status" data-xrc-flow-start role="status" data-role="status">
                 <span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span>
               </div>
-              <div class="xrc-home-schedule-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-schedule-open>打开排班台 →</button>
+              <div class="xrc-home-schedule-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-schedule-open>打开排班台</button>
+                <button type="button" class="xrc-home-action" data-xrc-docs-target="xrc-docs-flow" title="打开文档中心 · 面板与排班">查看排班介绍</button>
               </div>
             </section>
             <section class="xrc-plate xrc-home-alerts" data-xrc-home-alerts>
               ${plateHead("04", "执行报警")}
               <p class="xrc-home-alerts-latest" data-xrc-alerts-latest data-state="empty">近 30 天暂无执行报警</p>
-              <div class="xrc-home-schedule-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-alerts-open>查看详情 →</button>
+              <div class="xrc-home-schedule-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-alerts-open>查看详情</button>
               </div>
             </section>
             <div class="xrc-flow-meta">

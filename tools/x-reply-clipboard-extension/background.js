@@ -2318,7 +2318,7 @@ function defaultTaskRules() {
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
       : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
-      : mode === "notifications" ? "fast"
+      : mode === "notifications" ? "boundary"
       : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
@@ -2444,6 +2444,16 @@ function rotateScheduleQueue(plan, mode) {
   return queue;
 }
 
+function commentReplyRestricted(plan, now = Date.now()) {
+  // A successful reply clears limitedStreak on all three. Until then, 评论回复
+  // takes the next comment turn ahead of 评论首页 and 评论大V.
+  return REPLY_TASKS.some((mode) => {
+    const item = plan.items?.[mode] || {};
+    if (Number(item.limitedStreak) > 0) return true;
+    return Number(item.resumeAt) > now && /疑似自动化|超过限制|操作受限|限制冷却/u.test(String(item.reason || ""));
+  });
+}
+
 function dueTaskModes(plan, now = Date.now()) {
   const rules = normalizedTaskRules(plan.rules);
   const manualFocusMode = scheduledManualFocusMode(plan, now);
@@ -2467,6 +2477,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const manualA = Number(a.item.manualRequestedAt) > 0;
       const manualB = Number(b.item.manualRequestedAt) > 0;
       if (manualA !== manualB) return manualA ? -1 : 1;
+      if (commentReplyRestricted(plan, now) && (a.mode === "notifications" || b.mode === "notifications")) {
+        if (a.mode !== b.mode) return a.mode === "notifications" ? -1 : 1;
+      }
       const queueA = queue.indexOf(a.mode);
       const queueB = queue.indexOf(b.mode);
       return (queueA < 0 ? a.index : queueA) - (queueB < 0 ? b.index : queueB);
@@ -2493,6 +2506,9 @@ function scheduledManualFocusMode(plan, now = Date.now()) {
 function drawDueReplyTask(plan, due, random = Math.random) {
   const first = due[0];
   if (!REPLY_TASKS.includes(first) || Number(plan.items?.[first]?.manualRequestedAt) > 0) return due;
+  if (commentReplyRestricted(plan) && due.includes("notifications")) {
+    return ["notifications", ...due.filter((mode) => mode !== "notifications")];
+  }
   const rules = normalizedTaskRules(plan.rules);
   const candidates = due.filter((mode) => REPLY_TASKS.includes(mode)
     && rules[mode].priority === rules[first].priority
@@ -2670,6 +2686,14 @@ async function readTaskSchedule() {
     // A saved 1, 8, or 24 hour choice stays.
     if (plan.rules.notifications.pace === "medium") plan.rules.notifications.pace = "fast";
     plan.notificationPaceDefaultVersion = 3;
+    scheduleMigrated = true;
+  }
+  if ((plan.notificationPaceDefaultVersion || 0) < 4) {
+    // The previous default window was 4 hours. Move that default to 24 hours.
+    // A saved 1, 2, or 8 hour choice stays. An already chosen 24 hour window stays.
+    // After this runs once, picking 4 hours again is left alone.
+    if (plan.rules.notifications.pace === "fast") plan.rules.notifications.pace = "boundary";
+    plan.notificationPaceDefaultVersion = 4;
     scheduleMigrated = true;
   }
   if (plan.followBackNightVersion !== 1) {
@@ -3044,13 +3068,33 @@ async function runTaskSchedule() {
     // Single shared tab: schedule occupancy must not depend on content having reported yet.
     if (!task && Number(plan.workTabId) > 0) {
       await seedRuntimeOccupancy(current, plan.workTabId, "starting", "排班已占用共享页签");
-      runtime = await readPluginRuntime();
+      // The row may have been dropped by an earlier probe. Ask the page again
+      // before deciding it is still booting, so an idle notifications tab starts now.
+      runtime = await verifyTaskRuntime(await readPluginRuntime(), now);
+      if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
       task = runtime.tasks?.[current];
     }
     const item = plan.items[current] || {};
     if (await finishTerminalTask(plan, current, task?.detail, now)) return runTaskSchedule();
     if (REPLY_TASKS.includes(current) && Number(item.resumeAt) > now && /疑似自动化/u.test(String(item.reason || ""))) {
       const reason = String(item.reason);
+      if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
+        plan = await readTaskSchedule();
+        recordScheduleSegment(plan, current, reason, now);
+        plan.current = "";
+        plan.startedAt = 0;
+        await saveTaskSchedule(plan);
+        return runTaskSchedule();
+      }
+    }
+    // Comment home or KOL already holding the shared tab must hand it to
+    // 评论回复 once the shared restriction is active and that task is due.
+    if ((current === "timeline" || current === "kol")
+      && commentReplyRestricted(plan, now)
+      && plan.manualFocusMode !== current
+      && !(Number(item.manualRequestedAt) > 0)
+      && dueTaskModes(plan, now)[0] === "notifications") {
+      const reason = "评论受限，优先执行评论回复";
       if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
         plan = await readTaskSchedule();
         recordScheduleSegment(plan, current, reason, now);
@@ -3090,9 +3134,22 @@ async function runTaskSchedule() {
     const unresponsiveMissing = missingTask && occupancyAge >= STARTING_GRACE_MS;
     const unresponsiveUnknown = unknownTask && unknownAge >= UNKNOWN_GRACE_MS;
     const pageIdle = Boolean(task?.pageIdle);
-    // An open execution page that is not looping should start now.
-    // The 90-second grace is only for a tab whose content script has not answered yet.
-    const unresponsiveStarting = startingTask && (pageIdle || occupancyAge >= STARTING_GRACE_MS);
+    // A page that has finished booting and is already on this task's URL can
+    // take the start now. The 90-second grace is only for a tab that has not
+    // answered, or that is still navigating onto the task path.
+    let settledOnPath = false;
+    if (startingTask && !task?.booting && Number(plan.workTabId) > 0) {
+      try {
+        const liveTab = await chrome.tabs.get(Number(plan.workTabId));
+        settledOnPath = onTaskPath(current, liveTab.url || "", {
+          accountHandle: plan.accountHandle || "",
+          currentUrl: liveTab.url || ""
+        });
+      } catch (error) {
+        settledOnPath = false;
+      }
+    }
+    const unresponsiveStarting = startingTask && (pageIdle || settledOnPath || occupancyAge >= STARTING_GRACE_MS);
     const progressAt = Number(task?.progressAt) || now;
     const stalled = task?.phase === "running"
       && !(Number(task.waitUntil) > now)
@@ -3156,6 +3213,9 @@ async function runTaskSchedule() {
             }
           }
           if (bootHold) return plan;
+          // Inside the confirmation window, a page that has not refused the start
+          // is still loading. Reloading here only restarts the countdown.
+          if (!stalled && occupancyAge < STARTING_GRACE_MS) return plan;
           const restarts = Number(item.reloadAttempts) || 0;
           if (restarts >= 3) {
             recordScheduleSegment(plan, current, "已重启 3 次，跳过这项任务", now);
@@ -3690,7 +3750,28 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       clearTimeout(timer);
     }
     if (reply?.ok) {
+      if (reply.booting) {
+        // The listener is up, but assistantMode is still the default. Reporting
+        // that default as a handoff deleted the start and left the panel waiting.
+        if (task.phase === "starting") {
+          const booting = { ...task, phase: "starting", booting: true, updatedAt: now };
+          delete booting.pageIdle;
+          tasks[mode] = booting;
+        }
+        return;
+      }
       if (reply.mode !== mode) {
+        const reported = String(reply.phase || "");
+        const otherLive = ["running", "paused", "stopping"].includes(reported);
+        if (!otherLive && task.phase === "starting") {
+          // The page has not adopted this task yet. Keep the slot so the next
+          // tick can start it once the tab is already on the task URL.
+          const pending = { ...task, phase: "starting", updatedAt: now };
+          delete pending.booting;
+          delete pending.pageIdle;
+          tasks[mode] = pending;
+          return;
+        }
         // Content already handed off to another task on this shared tab.
         delete tasks[mode];
         return;
@@ -3713,13 +3794,15 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
         }
         if (task.phase === "starting") {
           // A live page with no loop is idle. Keep the slot, but let the scheduler start it now.
-          tasks[mode] = {
+          const idleTask = {
             ...task,
             phase: "starting",
             pageIdle: Boolean(reply.idle),
             detail: String(reply.detail || (reply.idle ? "" : task.detail) || "").slice(0, 160),
             updatedAt: now
           };
+          delete idleTask.booting;
+          tasks[mode] = idleTask;
           return;
         }
         if (task.phase === "unknown") {
@@ -3750,6 +3833,7 @@ async function verifyTaskRuntime(runtime, now = Date.now()) {
       };
       delete next.unknownSince;
       delete next.pageIdle;
+      delete next.booting;
       tasks[mode] = next;
     } else if (task.phase === "starting") {
       // Content script may not be injectable yet during navigation; keep boot occupancy.

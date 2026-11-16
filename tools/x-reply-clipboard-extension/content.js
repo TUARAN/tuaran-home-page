@@ -357,6 +357,7 @@
   let taskSchedule = { enabled: false, items: {} };
   let tabRole = { owned: false, ownerTabId: 0, ownerMode: "", ownerActive: false };
   let spectatorTab = true;
+  let panelBooted = false;
   let executionAlerts = [];
   const recentExecutionAlerts = (value) => Array.isArray(value)
     ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
@@ -1881,7 +1882,7 @@
 
   let scheduledReplyWakeToken = 0;
   function maybeRequestScheduledReplyStart() {
-    if (spectatorTab || !taskSchedule.enabled) return;
+    if (!panelBooted || spectatorTab || !taskSchedule.enabled) return;
     const mode = validTaskKey(taskSchedule.current);
     if (!["timeline", "notifications", "kol"].includes(mode)) return;
     if (state.running || state.loopPromise || anyLocalTaskRunning()) return;
@@ -1889,7 +1890,15 @@
     const token = Number(taskSchedule.startedAt) || 0;
     if (!token || token === scheduledReplyWakeToken) return;
     scheduledReplyWakeToken = token;
-    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {});
+    // Adopt the scheduled reply before the probe. A default timeline answer
+    // used to look like a handoff and the scheduler then waited out the window.
+    if (state.assistantMode !== assistantModeForTask(mode)) {
+      state.assistantMode = assistantModeForTask(mode);
+      try { sessionStorage.setItem("xrcAssignedTaskMode", mode); } catch (error) { /* Session storage may be unavailable. */ }
+    }
+    sendExtensionMessage({ type: "xrc-task-page-idle", mode }).catch(() => {
+      scheduledReplyWakeToken = 0;
+    });
   }
 
   function refreshScheduleView() {
@@ -3838,6 +3847,9 @@
       state.reconnectReason = "";
       state.status = "已重置。模型配置仍在。刷新后从默认排班重新开始。";
       renderPanel();
+      // The sender tab used to keep the old content script. A later start then
+      // reported the default mode and never left 启动中. Reload this page too.
+      window.setTimeout(() => { window.location.reload(); }, 200);
     } catch (error) {
       state.status = error?.message || "重置没有完成";
       renderPanel();
@@ -3857,15 +3869,17 @@
   }
 
   async function pauseAllTasks() {
-    if (flowStopping || flowStarting) return;
+    if (flowStopping || flowStarting) return false;
     flowStopping = true;
     paintFlowButton();
+    let stopped = false;
     try {
       stopLocalTasks("全流程已暂停");
       const response = await sendExtensionMessage({ type: "xrc-flow-pause", reason: "全流程已暂停" });
       taskSchedule = { ...taskSchedule, enabled: false, current: "" };
       if (response?.runtime) pluginRuntime = response.runtime;
       else await loadPluginRuntime();
+      stopped = true;
     } catch (error) {
       state.status = error?.message || "全流程没有暂停";
     } finally {
@@ -3873,6 +3887,32 @@
       paintFlowButton();
       renderPanel();
     }
+    return stopped;
+  }
+
+  async function stopPluginFromHeader() {
+    if (flowStarting || flowStopping) {
+      state.status = "插件正在启动或停止，请稍后再关。";
+      renderPanel();
+      return;
+    }
+    const confirmed = await pluginConfirm(
+      "正在跑的任务会停，排班会暂停。点扩展图标可以重新打开。",
+      "停止插件？",
+      "停止"
+    );
+    if (!confirmed) return;
+    const stopped = await pauseAllTasks();
+    if (!stopped) return;
+    panelDismissed = true;
+    document.getElementById(PANEL_ID)?.remove();
+  }
+
+  function expandCollapsedPanel() {
+    if (state.panelView !== "collapsed") return;
+    state.panelView = "normal";
+    writeSaved({ running: state.running, total: state.total });
+    renderPanel();
   }
 
   async function startAllTasks() {
@@ -6805,7 +6845,15 @@
       state.status = "通知回复需要在 X 通知页运行，正在打开通知页…";
       writeSaved({ running: true, total: state.total });
       renderPanel();
-      window.location.assign("/notifications");
+      // A bare /notifications load drops the start after reset: the new page
+      // clears the pre-reset session and never sees xrcStart.
+      await sendExtensionMessage({
+        type: "xrc-task-pending-remember",
+        mode: "notifications",
+        path: "/notifications",
+        start: true
+      }).catch(() => {});
+      window.location.assign("/notifications?xrcAssistant=notifications&xrcStart=1");
       return "reload";
     }
     if (state.assistantMode !== "notifications" && state.schedulePace === "boundary") {
@@ -8539,12 +8587,12 @@
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <div class="xrc-quick-actions" aria-label="面板操作">
               <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
-              <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠面板"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M4.5 6 8 2.5 11.5 6M4.5 10 8 13.5 11.5 10"></path></svg></button>
               <button type="button" class="xrc-today-report" data-xrc-report-open aria-label="打开日历统计" aria-expanded="false" title="打开日历统计"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"></rect><path d="M5 2.5v3M11 2.5v3M2.5 7h11"></path></svg></button>
-              <button class="xrc-close" type="button" aria-label="关闭面板" title="关闭面板。点工具栏里的扩展图标可以重新打开"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
-            </div>
-              <button type="button" class="xrc-header-reset" data-xrc-header-reset title="清空本机任务记录，保留模型配置">重置</button>
+              <button type="button" class="xrc-header-reset" data-xrc-header-reset aria-label="重置" title="清空本机任务记录，保留模型配置"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.15-3.15"></path><path d="M3.1 2.7v3.1h3.1"></path></svg></button>
               <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
+              <button type="button" data-xrc-collapse aria-label="折叠面板" title="折叠成小方框"><svg class="xrc-icon-collapse" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12h10"></path></svg><svg class="xrc-icon-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M4.5 6 8 2.5 11.5 6M4.5 10 8 13.5 11.5 10"></path></svg></button>
+              <button class="xrc-close" type="button" aria-label="停止插件" title="停止插件。会先确认，正在跑的任务会停"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"></path></svg></button>
+            </div>
           </div>
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
@@ -9088,11 +9136,20 @@
       panel.addEventListener("wheel", pauseLikesForPanelInput);
       panel.addEventListener("input", pauseLikesForPanelInput);
       panel.addEventListener("pointerdown", (event) => event.stopPropagation());
-      panel.addEventListener("click", (event) => event.stopPropagation());
-      panel.querySelector(".xrc-close").addEventListener("click", () => {
-        if (anyTaskRunning()) return;
-        panelDismissed = true;
-        panel.remove();
+      panel.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (state.panelView !== "collapsed" || event.target.closest(".xrc-confirm, [data-xrc-collapse]")) return;
+        expandCollapsedPanel();
+      });
+      panel.addEventListener("keydown", (event) => {
+        if (state.panelView !== "collapsed") return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        expandCollapsedPanel();
+      });
+      panel.querySelector(".xrc-close").addEventListener("click", (event) => {
+        event.stopPropagation();
+        void stopPluginFromHeader();
       });
       panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
         if (updateActionPending) return;
@@ -10349,6 +10406,15 @@
     const displayedStatus = mutualSelected ? mutual?.status || "" : posterSelected ? poster?.status || "" : articleSelected ? articleState.status || "" : likeSelected ? likeState.status : state.status;
     const failed = !waitingForNextCycle && /(?:尚未|无法|没有发出|不可用|失败|需要先|没有加载|请先|请打开)/.test(displayedStatus);
     panel.dataset.view = state.panelView;
+    if (state.panelView === "collapsed") {
+      panel.tabIndex = 0;
+      panel.setAttribute("role", "button");
+      panel.setAttribute("aria-label", "展开面板");
+    } else {
+      panel.removeAttribute("role");
+      panel.removeAttribute("aria-label");
+      panel.removeAttribute("tabindex");
+    }
     // Body visibility follows the inspected card, not whichever task currently owns the tab.
     panel.dataset.assistantMode = viewMode;
     panel.dataset.replyMode = state.replyMode;
@@ -10813,6 +10879,7 @@
     else if (!spectatorTab && state.assistantMode === "mutual" && sessionStorage.getItem(MUTUAL_ACTIVE_KEY) === state.mutualMode) {
       void onMutualAction(state.mutualMode, { scheduledStart: true });
     }
+    panelBooted = true;
     maybeRequestScheduledReplyStart();
   }
 
@@ -10918,6 +10985,10 @@
       return true;
     }
     if (message?.type === "xrc-task-state-probe") {
+      if (!panelBooted) {
+        sendResponse({ ok: true, booting: true });
+        return false;
+      }
       const phase = currentTaskPhase();
       const idle = !spectatorTab && !phase;
       sendResponse({

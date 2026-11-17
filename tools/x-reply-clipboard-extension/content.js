@@ -9519,10 +9519,11 @@
             </div>
           </div>
           <div class="xrc-header-meta">
-            <div class="xrc-version-line" data-xrc-header-slide>版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
-            <div class="xrc-account" data-xrc-header-slide data-xrc-account hidden>账号：—</div>
-            <button type="button" class="xrc-egress-ip" data-xrc-header-slide data-xrc-egress-ip data-state="loading" title="正在检测出口 IP" hidden>IP：…</button>
-            <button type="button" class="xrc-header-meta-next" aria-label="切换下一项顶栏信息" title="切换下一项顶栏信息">›</button>
+            <div class="xrc-header-ticker">
+              <div class="xrc-version-line">版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
+              <div class="xrc-account" data-xrc-account>账号：—</div>
+              <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">IP：…</button>
+            </div>
           </div>
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
@@ -10160,25 +10161,6 @@
         event.stopPropagation();
         void stopPluginFromHeader();
       });
-      const headerMeta = panel.querySelector(".xrc-header-meta");
-      const headerSlides = Array.from(headerMeta.querySelectorAll("[data-xrc-header-slide]"));
-      let headerSlide = 0;
-      const advanceHeaderSlide = () => {
-        headerSlides[headerSlide].hidden = true;
-        headerSlide = (headerSlide + 1) % headerSlides.length;
-        headerSlides[headerSlide].hidden = false;
-      };
-      headerMeta.querySelector(".xrc-header-meta-next").addEventListener("click", advanceHeaderSlide);
-      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-      const headerSlideTimer = window.setInterval(() => {
-        if (!panel.isConnected) {
-          window.clearInterval(headerSlideTimer);
-          return;
-        }
-        if (document.hidden || state.panelView === "collapsed" || reducedMotion?.matches ||
-            headerMeta.matches(":hover, :focus-within")) return;
-        advanceHeaderSlide();
-      }, 4000);
       panel.querySelector("[data-xrc-egress-ip]")?.addEventListener("click", (event) => {
         event.stopPropagation();
         refreshEgressIp({ force: true }).catch(() => {});

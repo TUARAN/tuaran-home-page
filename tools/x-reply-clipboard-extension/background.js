@@ -2642,6 +2642,17 @@ function rotateScheduleQueue(plan, mode) {
   return queue;
 }
 
+function moveScheduleQueueTask(plan, mode, targetMode, after = false) {
+  const queue = scheduleQueue(plan);
+  if (!queue.includes(mode) || mode === plan.current || !plan.rules?.[mode]?.enabled ||
+      (targetMode && (!queue.includes(targetMode) || targetMode === mode ||
+        targetMode === plan.current || !plan.rules?.[targetMode]?.enabled))) return queue;
+  const order = queue.filter((item) => item !== mode);
+  const index = targetMode ? order.indexOf(targetMode) + Number(after) : order.length;
+  order.splice(index, 0, mode);
+  return order;
+}
+
 function commentReplyRestricted(plan, now = Date.now()) {
   // A successful reply clears limitedStreak on all three. Until then, 评论回复
   // takes the next comment turn ahead of 评论首页 and 评论大V.
@@ -5460,6 +5471,22 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((error) => sendResponse({ ok: false, error: error?.message || "排班设置读取失败" }));
       return true;
     }
+    if (message?.type === "xrc-schedule-queue-move") {
+      const work = scheduleWork.then(async () => {
+        const schedule = await readTaskSchedule();
+        schedule.queue = moveScheduleQueueTask(schedule, message.mode, message.targetMode, message.after === true);
+        await saveTaskSchedule(schedule);
+        return {
+          ok: true,
+          queue: schedule.queue,
+          dueModes: schedule.enabled ? dueTaskModes(schedule) : [],
+          timeline: scheduleTimeline(schedule)
+        };
+      });
+      scheduleWork = work.catch(() => {});
+      work.then(sendResponse, (error) => sendResponse({ ok: false, error: error?.message || "队列排序保存失败" }));
+      return true;
+    }
     if (message?.type === "xrc-schedule-config-set") {
       (async () => {
         const schedule = await readTaskSchedule();
@@ -5809,6 +5836,7 @@ if (typeof module === "object" && module.exports) {
     defaultTaskPriority,
     scheduleQueue,
     rotateScheduleQueue,
+    moveScheduleQueueTask,
     shouldShareFollowWait,
     normalizeTargetFollowHandles,
     readTargetFollowHandles,

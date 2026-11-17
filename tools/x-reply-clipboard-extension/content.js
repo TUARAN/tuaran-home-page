@@ -3690,27 +3690,18 @@
     const nowMode = runningMode || preview.current || "";
     const byMode = new Map(preview.pending.map((task) => [task.mode, task]));
     const readinessNow = Date.now();
+    const queueRanks = new Map((taskSchedule.queue || []).map((mode, index) => [mode, index]));
     const waitingQueue = [...byMode.values()]
       .filter((task) => task.mode !== nowMode)
-      .sort((a, b) => {
-        const aOff = a.rule?.enabled === false ? 1 : 0;
-        const bOff = b.rule?.enabled === false ? 1 : 0;
-        if (aOff !== bOff) return aOff - bOff;
-        const readyDiff = scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow);
-        if (readyDiff) return readyDiff;
-        const queue = Array.isArray(taskSchedule.queue) ? taskSchedule.queue : [];
-        const queueAt = (mode) => {
-          const index = queue.indexOf(mode);
-          return index < 0 ? 1000 : index;
-        };
-        return readyDiff || queueAt(a.mode) - queueAt(b.mode);
-      });
+      .sort((a, b) => (queueRanks.get(a.mode) ?? Infinity) - (queueRanks.get(b.mode) ?? Infinity));
     const nowTask = nowMode ? byMode.get(nowMode) : null;
-    // Who is ready soonest becomes「下一」; the rest follow as candidates by the same clock.
     const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
-    const firstReady = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
-      && scheduleReadinessAt(task.mode, readinessNow) < Number.POSITIVE_INFINITY);
-    const nextMode = firstReady?.mode || "";
+    // Who is ready soonest becomes「下一」when no queued task is due.
+    const dueMode = dueModes.find((mode) => mode !== nowMode && byMode.has(mode));
+    const nextMode = dueMode || waitingQueue
+      .filter((task) => scheduleRuleEnabled(task.mode, task.rule)
+        && scheduleReadinessAt(task.mode, readinessNow) < Infinity)
+      .sort((a, b) => scheduleReadinessAt(a.mode, readinessNow) - scheduleReadinessAt(b.mode, readinessNow))[0]?.mode || "";
     const commentLottery = false;
     const lotteryModes = [];
     const focusDeferred = scheduleManualFocusDeferred(readinessNow);
@@ -3875,7 +3866,8 @@
       }
       const desk = board.closest?.("[data-xrc-schedule-desk]");
       row.hidden = !enabled && task.mode !== nowMode;
-      row.draggable = phase !== "now";
+      row.draggable = enabled && phase !== "now";
+      row.title = row.draggable ? "拖拽调整排班顺序" : "";
       // Only move when order changed — appendChild every tick restarts CSS animations.
       const current = list.children[index];
       if (current !== row) list.insertBefore(row, current || null);
@@ -9332,23 +9324,13 @@
   }
 
   function paintEgressIp(panel) {
-    const button = panel?.querySelector?.("[data-xrc-egress-ip]");
-    if (!button) return;
-    if (egressIpPending) {
-      button.dataset.state = "loading";
-      button.textContent = "出口 …";
-      button.title = "正在检测出口 IP，点击可重试";
-      return;
+    for (const button of panel?.querySelectorAll("[data-xrc-egress-ip]") || []) {
+      button.dataset.state = egressIpPending ? "loading" : egressIp ? "ready" : "error";
+      button.textContent = egressIpPending ? "IP：…" : egressIp ? `IP：${egressIp}` : "IP：—";
+      button.title = egressIpPending ? "正在检测出口 IP，点击可重试"
+        : egressIp ? "当前浏览器出口 IP，点击刷新"
+          : egressIpError || "出口 IP 未检测到，点击重试";
     }
-    if (egressIp) {
-      button.dataset.state = "ready";
-      button.textContent = `出口 ${egressIp}`;
-      button.title = "当前浏览器出口 IP，点击刷新";
-      return;
-    }
-    button.dataset.state = "error";
-    button.textContent = "出口 —";
-    button.title = egressIpError || "出口 IP 未检测到，点击重试";
   }
 
   function refreshEgressIp({ force = false } = {}) {
@@ -9390,8 +9372,7 @@
     if (!banner) return;
     const version = String(localDevUpdate?.version || "");
     const phase = localDevUpdate?.phase;
-    const badge = panel.querySelector("[data-xrc-version-badge]");
-    if (badge) {
+    for (const badge of panel.querySelectorAll("[data-xrc-version-badge]")) {
       const newer = version && version !== EXTENSION_VERSION && !["latest", "updated"].includes(phase);
       badge.dataset.state = newer ? "new" : phase === "latest" || phase === "updated" ? "latest" : "checking";
       badge.textContent = newer ? "有新版本" : badge.dataset.state === "latest" ? "最新版" : "检查中";
@@ -9504,7 +9485,6 @@
               <div class="xrc-mark" aria-hidden="true"><img class="xrc-mark-img" src="${extensionIconUrl(48)}" alt="" width="36" height="36" decoding="async"></div>
               <div class="xrc-brand-copy">
                 <div class="xrc-title">X 大互动智能体</div>
-                <div class="xrc-account" data-xrc-account hidden></div>
               </div>
             </div>
             <div class="xrc-header-actions">
@@ -9520,8 +9500,14 @@
             </div>
           </div>
           <div class="xrc-header-meta">
-            <div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
-            <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button>
+            <div class="xrc-header-ticker">
+              ${[false, true].map((repeat) => `
+                <div class="xrc-header-ticker-group"${repeat ? ' aria-hidden="true"' : ""}>
+                  <div class="xrc-version-line">版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
+                  <div class="xrc-account" data-xrc-account>账号：—</div>
+                  <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP"${repeat ? ' tabindex="-1"' : ""}>IP：…</button>
+                </div>`).join("")}
+            </div>
           </div>
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
@@ -9832,7 +9818,7 @@
             <button type="button" class="xrc-desk-pause" data-xrc-schedule-toggle data-mode="pause">暂停全部</button>
           </header>
           <div class="xrc-subpage-body xrc-schedule-desk-body">
-            <p class="xrc-workspace-feedback" data-xrc-workspace-feedback role="status" aria-live="polite">勾选或拖到左侧加入排班；拖回右侧移出。</p>
+            <p class="xrc-workspace-feedback" data-xrc-workspace-feedback role="status" aria-live="polite">拖拽已排班卡片调整队列顺序，勾选任务加入排班。</p>
             <div class="xrc-task-workspace" data-xrc-task-workspace>
             <section class="xrc-queue-column" data-xrc-drop="queue" aria-label="已排班"><h3>已排班 <small data-xrc-queue-count></small></h3>
             <p data-xrc-task-empty hidden>还没有加入任务，从右侧勾选或拖入即可。</p>
@@ -10159,9 +10145,11 @@
         event.stopPropagation();
         void stopPluginFromHeader();
       });
-      panel.querySelector("[data-xrc-egress-ip]")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        refreshEgressIp({ force: true }).catch(() => {});
+      panel.querySelectorAll("[data-xrc-egress-ip]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          refreshEgressIp({ force: true }).catch(() => {});
+        });
       });
       panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
         if (updateActionPending) return;
@@ -10466,25 +10454,75 @@
       desk.addEventListener("change", (event) => {
         if (event.target.matches("[data-xrc-library-enable]")) void setParticipation(event.target.closest("[data-mode]").dataset.mode, event.target.checked);
       });
-      let draggingMode = "";
+      let draggingRow = null;
+      let dropRow = null;
+      const clearDropTarget = () => {
+        if (dropRow) delete dropRow.dataset.xrcQueueDrop;
+        dropRow = null;
+      };
+      const dropPosition = (row, event) => {
+        const bounds = row.getBoundingClientRect();
+        return event.clientY >= bounds.top + bounds.height / 2 ? "after" : "before";
+      };
       desk.addEventListener("dragstart", (event) => {
         const row = event.target.closest("[data-mode][draggable='true']");
-        if (!row || !scheduleDeskOpen) { event.preventDefault(); return; }
-        draggingMode = row.dataset.mode;
-        event.dataTransfer.setData("text/plain", draggingMode);
+        if (!row || !scheduleDeskOpen || participationSaving) { event.preventDefault(); return; }
+        draggingRow = row;
+        event.dataTransfer.setData("text/plain", row.dataset.mode);
         event.dataTransfer.effectAllowed = "move";
-        feedback("拖到左侧加入排班，拖回右侧移出。轮到的任务跑一次，然后回到队尾；还没到时间的先跳过。");
+        feedback("拖到卡片上半部插在前面，下半部插在后面。");
       });
       desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => {
-        zone.addEventListener("dragover", (event) => { if (!draggingMode) return; event.preventDefault(); zone.classList.add("is-drag-over"); });
-        zone.addEventListener("dragleave", (event) => { if (!zone.contains(event.relatedTarget)) zone.classList.remove("is-drag-over"); });
-        zone.addEventListener("drop", (event) => {
-          event.preventDefault(); zone.classList.remove("is-drag-over");
-          if (draggingMode) void setParticipation(draggingMode, zone.dataset.xrcDrop === "queue");
-          draggingMode = "";
+        const toQueue = zone.dataset.xrcDrop === "queue";
+        const targetRow = (event) => event.target.closest("[data-xrc-schedule-list] > [draggable='true']");
+        zone.addEventListener("dragover", (event) => {
+          if (!draggingRow) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          zone.classList.add("is-drag-over");
+          const row = toQueue && draggingRow.closest("[data-xrc-schedule-list]") ? targetRow(event) : null;
+          if (dropRow !== row) clearDropTarget();
+          if (row && row !== draggingRow) {
+            dropRow = row;
+            row.dataset.xrcQueueDrop = dropPosition(row, event);
+          }
+        });
+        zone.addEventListener("dragleave", (event) => {
+          if (zone.contains(event.relatedTarget)) return;
+          zone.classList.remove("is-drag-over");
+          clearDropTarget();
+        });
+        zone.addEventListener("drop", async (event) => {
+          event.preventDefault();
+          zone.classList.remove("is-drag-over");
+          clearDropTarget();
+          const source = draggingRow;
+          draggingRow = null;
+          if (!source || participationSaving) return;
+          const mode = source.dataset.mode;
+          if (!toQueue || !source.closest("[data-xrc-schedule-list]")) {
+            void setParticipation(mode, toQueue);
+            return;
+          }
+          const target = targetRow(event);
+          if (target === source || event.target.closest('[data-phase="now"]')) return;
+          participationSaving = true;
+          try {
+            const { queue, dueModes, timeline } = await sendExtensionMessage({
+              type: "xrc-schedule-queue-move", mode, targetMode: target?.dataset.mode,
+              after: target ? dropPosition(target, event) === "after" : false
+            });
+            taskSchedule = { ...taskSchedule, queue, dueModes, timeline };
+            feedback("排班顺序已保存，未到运行时间的任务会先跳过。");
+          } catch (error) { feedback(error?.message || "队列排序保存失败"); }
+          finally { participationSaving = false; renderPanel(); }
         });
       });
-      desk.addEventListener("dragend", () => { draggingMode = ""; desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => zone.classList.remove("is-drag-over")); });
+      desk.addEventListener("dragend", () => {
+        draggingRow = null;
+        clearDropTarget();
+        desk.querySelectorAll("[data-xrc-drop]").forEach((zone) => zone.classList.remove("is-drag-over"));
+      });
       panel.querySelectorAll("[data-xrc-desk-home], [data-xrc-desk-back]").forEach((button) => {
         button.addEventListener("click", () => openScheduleDesk());
       });
@@ -11580,11 +11618,9 @@
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");
     if (brand) brand.textContent = "X 大互动智能体";
-    const account = panel.querySelector("[data-xrc-account]");
-    if (account) {
-      const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
-      account.hidden = !handle;
-      account.textContent = handle ? `@${handle}` : "";
+    const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    for (const account of panel.querySelectorAll("[data-xrc-account]")) {
+      account.textContent = handle ? `账号：@${handle}` : "账号：—";
     }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);

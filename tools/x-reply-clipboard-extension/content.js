@@ -10,6 +10,7 @@
   const pruneApi = globalThis.XrcPrunePosts;
   const articleApi = globalThis.XrcArticleDraft;
   const communityApi = globalThis.XrcCommunityShare;
+  const communityCopyApi = globalThis.XrcCommunityCopy;
   const pdfApi = globalThis.XrcTweetPdf;
   const timerApi = globalThis.XInteractionTimer;
   const phrases = globalThis.XReplyClipboardPhrases;
@@ -24,7 +25,7 @@
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
     "mutual-unfollow": "清理未回关", "mutual-unfollowNonSc": "清理非简中", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "热点发帖", "poster-premium": "卡片发帖", "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
-    article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发",
+    article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发", "community-copy": "社群文案",
     "prune-posts": "清理低质帖", "prune-replies": "清理低质评论"
   };
   const TASK_DOCS_TARGETS = {
@@ -43,6 +44,7 @@
     article: ["xrc-docs-article", "查看普通发文说明"],
     "site-forward": ["xrc-docs-site-forward", "查看站长转发说明"],
     "community-share": ["xrc-docs-community-share", "查看社群分发说明"],
+    "community-copy": ["xrc-docs-community-copy", "查看社群文案说明"],
     "prune-posts": ["xrc-docs-prune-posts", "查看清理低质帖说明"],
     "prune-replies": ["xrc-docs-prune-replies", "查看清理低质评论说明"]
   };
@@ -272,6 +274,7 @@
     "xrc-docs-article": "article",
     "xrc-docs-site-forward": "site-forward",
     "xrc-docs-community-share": "community-share",
+    "xrc-docs-community-copy": "community-copy",
     "xrc-docs-prompt-feedback": "prompt-feedback",
     "xrc-docs-frequency": "frequency",
     "xrc-docs-rules": "rules",
@@ -282,7 +285,7 @@
   const DEFAULT_REPLY_PROVIDERS = [];
   const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
-  const ASSISTANT_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "mutual", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies"]);
+  const ASSISTANT_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "mutual", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy", "prune-posts", "prune-replies"]);
 
   const state = {
     running: false,
@@ -432,6 +435,8 @@
   let forwardState = { running: false, stopping: false, status: "待命。每天 14:00 后把一篇站内文章发布为 X Article。", nextAt: 0 };
   let communityState = { running: false, stopping: false, status: "待命。把当前账号最新帖子发送给可用群聊。", shared: 0, skipped: 0, total: 0, nextAt: 0, limited: false };
   let communityController = null;
+  let communityCopyState = { running: false, stopping: false, status: "待命。到点后发早安 / 午安 / 大互动推广 / 晚安，再发到群聊。", shared: 0, nextAt: 0, limited: false, slotId: "", text: "" };
+  let communityCopyController = null;
   const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
   const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
   let taskUnlimitedMap = {};
@@ -1092,6 +1097,94 @@
     await runPromise;
   }
 
+  function getCommunityCopyController() {
+    if (!communityCopyController && communityCopyApi?.createController) {
+      communityCopyController = communityCopyApi.createController({
+        document,
+        window,
+        posterApi: postApi,
+        shareApi: communityApi,
+        reportAlert: (alert) => { sendExtensionMessage({ type: "xrc-execution-alert", alert: { ...alert, accountHandle: currentAccountHandle() || taskSnapshotAccount } }).catch(() => {}); },
+        reportSuccess: (event) => reportCommunityAction({ ...event, accountHandle: currentAccountHandle() || lastKnownAccountHandle }),
+        reportSlotDone: (payload) => {
+          sendExtensionMessage({
+            type: "xrc-community-event",
+            event: {
+              task: "community-copy",
+              result: "success",
+              copySlotId: payload?.slotId || "",
+              successDate: communityCopyApi.shanghaiParts?.().dateKey || "",
+              targetId: String(payload?.sourceId || payload?.slotKey || "").slice(0, 80),
+              accountHandle: currentAccountHandle() || lastKnownAccountHandle,
+            },
+          }).catch(() => {});
+        },
+      });
+      communityCopyController.subscribe((snapshot) => {
+        const wasRunning = communityCopyState.running;
+        communityCopyState = {
+          ...communityCopyState,
+          running: Boolean(snapshot?.running),
+          stopping: Boolean(snapshot?.stopping),
+          status: snapshot?.status || communityCopyState.status,
+          shared: Number(snapshot?.shared) || 0,
+          nextAt: Number(snapshot?.nextAt) || 0,
+          limited: Boolean(snapshot?.limited),
+          slotId: snapshot?.slotId || communityCopyState.slotId,
+          text: snapshot?.text || communityCopyState.text,
+        };
+        const phase = snapshot?.stopping ? "stopping" : Number(snapshot?.nextAt) > Date.now() ? "paused" : snapshot?.running ? "running" : "";
+        if (snapshot?.running || snapshot?.stopping) {
+          setRuntimeTaskActive("community-copy", true, phase || "running").catch(() => {});
+        } else if (wasRunning && snapshot?.phase === "done") {
+          sendExtensionMessage({ type: "xrc-community-copy-finished", status: snapshot.status || "本轮已结束" }).catch(() => {});
+        }
+        renderPanel();
+      });
+    }
+    return communityCopyController;
+  }
+
+  async function onCommunityCopyToggle({ scheduledStart = false } = {}) {
+    if (!scheduledStart && await keepSpectatorOnOwner()) return;
+    if (!scheduledStart && await stopScheduledWaitingTask("community-copy", Boolean(communityCopyState.running))) return;
+    const controller = getCommunityCopyController();
+    if (!controller) {
+      communityCopyState = { ...communityCopyState, status: "社群文案模块没有加载，请刷新扩展后重试" };
+      renderPanel();
+      return;
+    }
+    if (communityCopyState.running && !communityCopyState.nextAt) {
+      if (!scheduledStart) sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "community-copy" }).catch(() => {});
+      controller.stop();
+      communityCopyState = { ...communityCopyState, running: false, stopping: true, status: "正在停止社群文案" };
+      renderPanel();
+      return;
+    }
+    if (communityCopyState.running && Number(communityCopyState.nextAt) > Date.now() && !scheduledStart) {
+      controller.stop();
+      communityCopyState = { ...communityCopyState, running: false, stopping: false, nextAt: 0, status: "已停止社群文案" };
+      renderPanel();
+      return;
+    }
+    if (!scheduledStart && !await resumeManuallyStoppedTask("community-copy")) return;
+    registerCurrentTaskTab("community-copy");
+    state.assistantMode = "community-copy";
+    const params = new URLSearchParams(location.search);
+    const slotId = String(params.get("xrcCopySlot") || "").trim();
+    const runPromise = controller.start({
+      handle: currentAccountHandle() || lastKnownAccountHandle || "",
+      slotId,
+    });
+    if (scheduledStart) {
+      const deadline = Date.now() + 15000;
+      while (Date.now() < deadline && !communityCopyState.running) await sleep(50);
+      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
+      return;
+    }
+    await runPromise;
+  }
+
   async function toggleLikes({ scheduledStart = false, requestedMode = "" } = {}) {
     if (!scheduledStart && await keepSpectatorOnOwner()) return;
     const targetMode = requestedMode ? validTaskKey(requestedMode) : currentTaskKey();
@@ -1395,6 +1488,7 @@
     "mutual-followBack": "follow", "mutual-targetFollow": "follow", "mutual-unfollow": "follow", "mutual-unfollowNonSc": "follow",
     poster: "post", "poster-premium": "post", "poster-x": "post", "poster-xhs": "post", article: "post", "site-forward": "post",
     "community-share": "community",
+    "community-copy": "community",
     "prune-posts": "clean", "prune-replies": "clean"
   });
   const TODAY_TASKS = [
@@ -1404,6 +1498,7 @@
     ["mutual-unfollow", "清理未回关", "follow", "unfollows"], ["mutual-unfollowNonSc", "清理非简中", "follow", "unfollows"],
     ["poster-premium", "卡片发帖", "post"], ["poster", "热点发帖", "post"], ["poster-x", "X主题发帖", "post"], ["poster-xhs", "小红书发帖", "post"], ["article", "普通发文", "post", "articleDrafts"], ["site-forward", "站长转发", "post", "siteForwards"],
     ["community-share", "社群分发", "community", "communityShares"],
+    ["community-copy", "社群文案", "community", "communityShares"],
     ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
   ];
   const metricDataName = (metric) => metric.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
@@ -1662,7 +1757,7 @@
       || pruneState.running || pruneState.stopping
       || articleState.running || articleState.stopping
       || forwardState.running || forwardState.stopping
-      || communityState.running || communityState.stopping);
+      || communityState.running || communityState.stopping || communityCopyState.running || communityCopyState.stopping);
   }
 
   // Desk card → subpage is view-only when another task still owns this shared tab.
@@ -1680,7 +1775,7 @@
   }
 
   function taskUsesModel(key) {
-    return ["timeline", "notifications", "kol", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(key);
+    return ["timeline", "notifications", "kol", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy"].includes(key);
   }
 
   function scheduleDashboardActive() {
@@ -2089,6 +2184,7 @@
     if (state.assistantMode === "article") return String(articleState.status || "").slice(0, 160);
     if (state.assistantMode === "site-forward") return String(forwardState.status || "").slice(0, 160);
     if (state.assistantMode === "community-share") return String(communityState.status || "").slice(0, 160);
+    if (state.assistantMode === "community-copy") return String(communityCopyState.status || "").slice(0, 160);
     return String(state.status || "").slice(0, 160);
   }
 
@@ -2099,6 +2195,7 @@
     if (state.assistantMode === "article") return Number(articleState.nextAt) || 0;
     if (state.assistantMode === "site-forward") return Number(forwardState.nextAt) || 0;
     if (state.assistantMode === "community-share") return Number(communityState.nextAt) || 0;
+    if (state.assistantMode === "community-copy") return Number(communityCopyState.nextAt) || 0;
     if (isPosterMode()) {
       const poster = state.poster || {};
       return Math.max(Number(poster.riskCooldownUntil) || 0, Number(poster.nextPostAt) || 0);
@@ -2170,7 +2267,7 @@
     const key = validTaskKey(mode);
     if (key.startsWith("likes-")) return key;
     if (key.startsWith("mutual-")) return "mutual";
-    if (key === "poster" || key === "poster-premium" || key === "poster-x" || key === "poster-xhs" || key === "article" || key === "site-forward" || key === "community-share" || key === "prune-posts" || key === "prune-replies") return key;
+    if (key === "poster" || key === "poster-premium" || key === "poster-x" || key === "poster-xhs" || key === "article" || key === "site-forward" || key === "community-share" || key === "community-copy" || key === "prune-posts" || key === "prune-replies") return key;
     if (key === "kol") return "kol";
     return key === "notifications" ? "notifications" : "timeline";
   }
@@ -2273,7 +2370,7 @@
     if (isPosterMode(mode)) return ".xrc-post-body";
     if (mode === "article") return ".xrc-article-body";
     if (mode === "site-forward") return ".xrc-forward-body";
-    if (mode === "community-share") return ".xrc-community-body";
+    if (mode === "community-share" || mode === "community-copy") return ".xrc-community-body";
     if (isPruneMode(mode)) return ".xrc-prune-body";
     return ".xrc-reply-body";
   }
@@ -2349,7 +2446,7 @@
   }
   const FLOW_TASKS = Object.freeze([
     ["notifications", "评论回复"], ["timeline", "评论首页"], ["kol", "评论大V"],
-    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理低质评论"],
+    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["community-copy", "社群文案"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理低质评论"],
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"], ["mutual-unfollowNonSc", "清理非简中"]
   ]);
@@ -3506,7 +3603,7 @@
     if (["likes-posts", "likes-replies"].includes(mode)) return `${amount} 个点赞`;
     if (["poster", "poster-premium", "poster-x", "poster-xhs"].includes(mode)) return `${amount} 条帖子`;
     if (mode === "article" || mode === "site-forward") return `${amount} 篇文章`;
-    if (mode === "community-share") return `${amount} 个群聊`;
+    if (mode === "community-share" || mode === "community-copy") return `${amount} 个群聊`;
     return `${amount} 个账号`;
   }
 
@@ -3849,6 +3946,12 @@
       if (!communityState.running) return "";
       if (communityState.stopping) return "stopping";
       if (Number(communityState.nextAt) > Date.now()) return "paused";
+      return "running";
+    }
+    if (state.assistantMode === "community-copy") {
+      if (!communityCopyState.running) return "";
+      if (communityCopyState.stopping) return "stopping";
+      if (Number(communityCopyState.nextAt) > Date.now()) return "paused";
       return "running";
     }
     if (!state.running && !state.loopPromise) return "";
@@ -4379,7 +4482,9 @@
     }
     if (communityState.running || communityState.stopping) {
       communityController?.stop?.();
+      communityCopyController?.stop?.();
       communityState = { ...communityState, running: false, stopping: false, status: reason || communityState.status };
+      communityCopyState = { ...communityCopyState, running: false, stopping: false, status: reason || communityCopyState.status };
     }
     if (state.loopPromise || state.running) {
       if (suspend) suspendingTask = true;
@@ -8828,7 +8933,7 @@
 
   function defaultSchedulePriority(mode) {
     return mode === "timeline" || mode === "notifications" || mode === "kol" || mode === "poster-premium" ? 8
-      : mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share" ? 7
+      : mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share" || mode === "community-copy" ? 7
       : ["likes-posts", "likes-replies"].includes(mode) ? 6
       : mode === "mutual-followBack" ? 7
       : mode === "mutual-targetFollow" ? 7
@@ -8839,7 +8944,7 @@
 
   function scheduleRuleEnabled(mode, rule) {
     if (typeof rule?.enabled === "boolean") return rule.enabled;
-    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode);
+    return !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy"].includes(mode);
   }
 
   function syncScheduleCardRuleControls(row, mode) {
@@ -9494,7 +9599,7 @@
             <div class="xrc-alerts-groups" data-xrc-alerts-groups></div>
           </div>
         </div>
-        <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk hidden aria-label="排班台。十八项任务由后台排班，共用一个执行页签">
+        <div class="xrc-body xrc-schedule-desk" data-xrc-schedule-desk hidden aria-label="排班台。十九项任务由后台排班，共用一个执行页签">
           <header class="xrc-subpage-head xrc-schedule-subnav" data-xrc-schedule-subnav>
             <button type="button" class="xrc-subpage-back" data-xrc-schedule-close aria-label="返回首页">← 返回首页</button>
             <span class="xrc-subpage-title" aria-label="排班台 > 排班详情">
@@ -9711,7 +9816,7 @@
           <div class="xrc-status" role="status" data-xrc-site-forward-status hidden></div>
         </div>
         <div class="xrc-body xrc-community-body">
-          <section class="xrc-post-flow" aria-label="社群分发">
+          <section class="xrc-post-flow" data-xrc-community-share-panel aria-label="社群分发">
             <div class="xrc-task-section">
               ${taskSectionHead("运行", "最新帖发送到可用群聊")}
               <p class="xrc-pace-now">选中所有可点击的群聊后，只点一次 Send；多选后页面显示 Send separately 时，同样只点这一次。选择窗关闭或出现新提示，且没有失败提示，就记成功。</p>
@@ -9723,7 +9828,21 @@
             </div>
             ${taskScheduleConfigMarkup("community-share", "社群分发")}
           </section>
+          <section class="xrc-post-flow" data-xrc-community-copy-panel aria-label="社群文案" hidden>
+            <div class="xrc-task-section">
+              ${taskSectionHead("运行", "定点文案再发到群聊")}
+              <p class="xrc-pace-now">北京时间 08:00 早安、12:00 午安、14:00 大互动推广、22:00 晚安；各档 15 分钟入队，错过不补。先发一条纯文字，再按社群分发同款链路发到可点群聊。</p>
+              <p class="xrc-pace-now" data-xrc-community-copy-slots></p>
+              <p class="xrc-pace-now" data-xrc-community-copy-now>当前尚未开始</p>
+              <div class="xrc-flow-end">
+                <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
+                <button class="xrc-inline-start" type="button" data-xrc-community-copy-toggle>已停止 · 点击启动</button>
+              </div>
+            </div>
+            ${taskScheduleConfigMarkup("community-copy", "社群文案")}
+          </section>
           <div class="xrc-status" role="status" data-xrc-community-status hidden></div>
+          <div class="xrc-status" role="status" data-xrc-community-copy-status hidden></div>
         </div>
         <div class="xrc-body xrc-prune-body">
           <section class="xrc-post-flow" aria-label="清理历史内容">
@@ -10258,6 +10377,7 @@
       panel.querySelector("[data-xrc-article-toggle]")?.addEventListener("click", () => onArticleToggle());
       panel.querySelector("[data-xrc-site-forward-toggle]")?.addEventListener("click", () => onSiteForwardToggle());
       panel.querySelector("[data-xrc-community-toggle]")?.addEventListener("click", () => onCommunityToggle());
+      panel.querySelector("[data-xrc-community-copy-toggle]")?.addEventListener("click", () => onCommunityCopyToggle());
       panel.querySelector("[data-xrc-site-forward-table]")?.addEventListener("change", (event) => {
         sendExtensionMessage({ type: "xrc-site-forward-settings-set", tableMode: event.target.checked ? "text" : "image" }).catch(() => {});
       });
@@ -10988,6 +11108,50 @@
       communityToggle.disabled = communityBusy;
       syncScheduledTaskButton(communityToggle, "community-share", communityState.running);
     }
+    const sharePanel = panel.querySelector("[data-xrc-community-share-panel]");
+    const copyPanel = panel.querySelector("[data-xrc-community-copy-panel]");
+    const viewingCopy = viewAssistantMode() === "community-copy";
+    if (sharePanel) sharePanel.hidden = viewingCopy;
+    if (copyPanel) copyPanel.hidden = !viewingCopy;
+    const communityCopyToggle = panel.querySelector("[data-xrc-community-copy-toggle]");
+    const communityCopyNow = panel.querySelector("[data-xrc-community-copy-now]");
+    const communityCopyStatus = panel.querySelector("[data-xrc-community-copy-status]");
+    const communityCopySlots = panel.querySelector("[data-xrc-community-copy-slots]");
+    if (communityCopySlots && communityCopyApi?.copySlots) {
+      const live = communityCopyApi.copySlotAt?.(Date.now());
+      communityCopySlots.textContent = communityCopyApi.copySlots().map((slot) => {
+        const hh = String(Math.floor(slot.minute / 60)).padStart(2, "0");
+        const mm = String(slot.minute % 60).padStart(2, "0");
+        const mark = live?.id === slot.id ? " · 当前窗" : "";
+        return `${hh}:${mm} ${slot.label}${mark}`;
+      }).join(" ｜ ");
+    }
+    if (communityCopyNow) {
+      const progress = communityCopyState.shared ? ` · 已发 ${communityCopyState.shared} 群` : "";
+      communityCopyNow.textContent = `${communityCopyState.status || "当前尚未开始"}${communityCopyState.running ? progress : ""}`;
+    }
+    if (communityCopyStatus) {
+      communityCopyStatus.hidden = !communityCopyState.status;
+      communityCopyStatus.textContent = communityCopyState.status || "";
+    }
+    if (communityCopyToggle) {
+      const copyBusy = Boolean(communityCopyState.stopping) || isTaskActionBusy("community-copy");
+      const copyWaiting = communityCopyState.running && Number(communityCopyState.nextAt) > Date.now();
+      communityCopyToggle.textContent = communityCopyState.stopping
+        ? formatUserStateAction(USER_STATE_LABELS.stopping, "请稍候")
+        : copyBusy
+          ? formatUserStateAction(USER_STATE_LABELS.starting, "请稍候")
+          : copyWaiting
+            ? formatUserStateAction(USER_STATE_LABELS.waiting, "点击停止")
+            : communityCopyState.running
+              ? formatUserStateAction(USER_STATE_LABELS.running, "点击停止")
+              : formatUserStateAction(USER_STATE_LABELS.stopped, "点击启动");
+      communityCopyToggle.dataset.running = communityCopyState.running ? "true" : "false";
+      if (copyBusy) communityCopyToggle.dataset.busy = "true";
+      else delete communityCopyToggle.dataset.busy;
+      communityCopyToggle.disabled = copyBusy;
+      syncScheduledTaskButton(communityCopyToggle, "community-copy", communityCopyState.running);
+    }
     void loadSiteForwardSettings(panel);
     const articlePace = currentArticlePace();
     panel.querySelectorAll("[data-xrc-article-pace-label]").forEach((label) => {
@@ -11335,7 +11499,7 @@
   }
 
   const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
-  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|清理低质帖|清理低质评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|社群文案|清理低质帖|清理低质评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -11353,6 +11517,7 @@
     if (state.assistantMode === "article") return "普通发文";
     if (state.assistantMode === "site-forward") return "站长转发";
     if (state.assistantMode === "community-share") return "社群分发";
+    if (state.assistantMode === "community-copy") return "社群文案";
     if (state.assistantMode === "prune-posts") return "清理低质帖";
     if (state.assistantMode === "prune-replies") return "清理低质评论";
     return "评论首页";
@@ -11880,3 +12045,10 @@
 
   window.addEventListener("online", () => { reconnectOnline = true; });
 })();
+    if (launch.assistantMode === "community-copy") {
+      if (communityCopyState.running && Number(communityCopyState.nextAt) <= Date.now()) return;
+      await onCommunityCopyToggle({ scheduledStart: true });
+      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
+      return;
+    }
+

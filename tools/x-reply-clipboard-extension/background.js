@@ -35,7 +35,7 @@ const RESERVED_X_PATHS = new Set([
   "home", "i", "explore", "notifications", "messages", "settings", "compose",
   "search", "hashtag", "login", "logout", "signup", "intent", "share", "jobs"
 ]);
-const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"]);
+const TASK_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy", "prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc", "mutual-followBack", "mutual-targetFollow"]);
 let runtimeMutation = Promise.resolve();
 let executionAlertWork = Promise.resolve();
 let resetPromise = null;
@@ -1260,7 +1260,7 @@ function pathsMatchTask(mode, expectedPath, actualPath) {
     return Boolean(expectedHandle && actualHandle && expectedHandle.toLowerCase() === actualHandle.toLowerCase());
   }
   if (selected === "article" || selected === "site-forward") return /^\/compose\/articles(?:\/|$)/iu.test(actual);
-  if (selected === "community-share") {
+  if (selected === "community-share" || selected === "community-copy") {
     if (actual === "/home" || actual === "/") return true;
     const segment = actual.match(/^\/([A-Za-z0-9_]{1,15})$/iu)?.[1] || "";
     return Boolean(segment && !RESERVED_X_PATHS.has(segment.toLowerCase()));
@@ -1297,6 +1297,7 @@ function taskPath(mode, { start = false, accountHandle = "", currentUrl = "", ta
     const picked = kolRoster.nextUnvisitedHandle(order, kolVisitedHandles) || order[0] || handles[0];
     return picked ? `/${picked}` : "";
   }
+  if (selected === "community-copy") return "/home";
   if (selected === "community-share") return handle ? `/${handle}` : "/home";
   if (selected === "poster" || selected === "poster-premium" || ["poster-x", "poster-xhs"].includes(selected)) return "/home";
   if (selected === "article" || selected === "site-forward") return "/compose/articles";
@@ -1546,6 +1547,7 @@ const TASK_TITLE_LABELS = {
   article: "普通发文",
   "site-forward": "站长转发",
   "community-share": "社群分发",
+  "community-copy": "社群文案",
   "prune-posts": "清理低质帖",
   "prune-replies": "清理低质评论",
   "mutual-unfollow": "清理未回关",
@@ -1916,10 +1918,10 @@ async function focusScheduledTask(mode, sender, { start = true, accountHandle = 
   return { ok: true, mode, tabId, reused: false };
 }
 
-const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc"];
+const FLOW_TASKS = ["notifications", "timeline", "kol", "poster-premium", "poster", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy", "prune-posts", "prune-replies", "likes-posts", "likes-replies", "mutual-followBack", "mutual-targetFollow", "mutual-unfollow", "mutual-unfollowNonSc"];
 const REPLY_TASKS = ["timeline", "notifications", "kol"];
 const POST_TASKS = ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"];
-const COMMUNITY_TASKS = ["community-share"];
+const COMMUNITY_TASKS = ["community-share", "community-copy"];
 const QUEUED_TASKS = [...FLOW_TASKS];
 const SLICE_SECONDS_OPTIONS = Object.freeze([20, 30, 45]);
 const DEFAULT_SLICE_SECONDS = 30;
@@ -2378,7 +2380,7 @@ function sliceMsForMode(mode, plan) {
   if (mode === "prune-posts" || mode === "prune-replies") return Math.max(base, PRUNE_SLICE_MS);
   if (mode === "article") return Math.max(base, ARTICLE_SLICE_MS);
   if (mode === "site-forward") return Math.max(base, SITE_FORWARD_SLICE_MS);
-  if (mode === "community-share") return Math.max(base, COMMUNITY_SHARE_SLICE_MS);
+  if (mode === "community-share" || mode === "community-copy") return Math.max(base, COMMUNITY_SHARE_SLICE_MS);
   return base;
 }
 
@@ -2410,7 +2412,7 @@ async function isTaskUnlimitedMode(mode) {
 function defaultTaskPriority(mode) {
   // 三项评论默认同为 8 分；同时到期时在排班启动前等概率抽选。
   if (mode === "timeline" || mode === "notifications" || mode === "kol" || mode === "poster-premium") return 8;
-  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share") return 7;
+  if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "site-forward" || mode === "community-share" || mode === "community-copy") return 7;
   if (["likes-posts", "likes-replies"].includes(mode)) return 6;
   if (mode === "mutual-followBack") return 7;
   if (mode === "mutual-targetFollow") return 7;
@@ -2461,18 +2463,39 @@ function cardSlotMinutes(quota) {
   return CARD_SLOT_MINUTES[normalizeCardDailyQuota(quota)];
 }
 
+const COMMUNITY_COPY_SLOT_MINUTES = Object.freeze([8 * 60, 12 * 60, 14 * 60, 22 * 60]);
+const COMMUNITY_COPY_SLOT_WINDOW_MINUTES = 15;
+
+function shanghaiMinutesOfDay(now = Date.now()) {
+  const shanghai = new Date(Number(now) + 8 * 60 * 60000);
+  return shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
+}
+
+function communityCopySlotId(minutes) {
+  const slot = COMMUNITY_COPY_SLOT_MINUTES.find((start) => minutes >= start && minutes < start + COMMUNITY_COPY_SLOT_WINDOW_MINUTES);
+  if (slot == null) return "";
+  if (slot === 8 * 60) return "morning";
+  if (slot === 12 * 60) return "noon";
+  if (slot === 14 * 60) return "theory";
+  return "evening";
+}
+
+function communityCopySlotOpen(now = Date.now()) {
+  return Boolean(communityCopySlotId(shanghaiMinutesOfDay(now)));
+}
+
 function defaultTaskRules() {
   return Object.fromEntries(QUEUED_TASKS.map((mode) => [mode, {
-    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share"].includes(mode),
+    enabled: !["mutual-unfollow", "mutual-unfollowNonSc", "prune-posts", "prune-replies", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy"].includes(mode),
     priority: defaultTaskPriority(mode),
     pace: ["prune-posts", "prune-replies", "mutual-unfollow", "mutual-unfollowNonSc"].includes(mode) ? "slow" : mode === "timeline" ? "boundary"
       : mode === "mutual-targetFollow" || mode === "mutual-followBack" ? "fast"
       : mode === "notifications" ? "boundary"
-      : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
+      : mode === "kol" || mode === "poster" || (mode === "poster-x" || mode === "poster-xhs") || mode === "article" || mode === "community-share" || mode === "community-copy" || ["likes-posts", "likes-replies"].includes(mode) ? "slow"
       : "medium",
     window: mode === "poster-premium" ? "day" : "all",
       minGapMs: mode === "site-forward" ? SITE_FORWARD_RETRY_MS
-      : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS
+      : mode === "community-share" || mode === "community-copy" ? COMMUNITY_SHARE_RETRY_MS
       : mode === "article" ? articleMinGapMs("slow")
       : mode === "prune-posts" || mode === "prune-replies" ? PRUNE_MIN_GAP_MS
       : mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
@@ -2492,7 +2515,7 @@ function normalizedTaskRules(value) {
       ? "slow"
       : ["slow", "medium", "fast", "turbo", "boundary"].includes(rule.pace) ? rule.pace : defaults[mode].pace;
     const likeMode = ["likes-posts", "likes-replies"].includes(mode);
-    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : mode === "site-forward" ? SITE_FORWARD_RETRY_MS : mode === "community-share" ? COMMUNITY_SHARE_RETRY_MS : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
+    const fallbackGap = mode === "article" ? articleMinGapMs(pace) : mode === "site-forward" ? SITE_FORWARD_RETRY_MS : mode === "community-share" || mode === "community-copy" ? COMMUNITY_SHARE_RETRY_MS : likeMode ? likeMinGapMs(pace) : (Number(defaults[mode].minGapMs) || 0);
     const requestedGap = Number(rule.minGapMs);
     const legacyLikeGap = likeMode && requestedGap === LEGACY_LIKE_GAP_MS;
     const legacyPruneGap = mode === "prune-posts" && requestedGap === LEGACY_PRUNE_GAP_MS;
@@ -2509,7 +2532,7 @@ function normalizedTaskRules(value) {
         : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
-        : mode === "community-share"
+        : mode === "community-share" || mode === "community-copy"
         ? COMMUNITY_SHARE_RETRY_MS
         : mode === "article"
         ? articleMinGapMs(pace)
@@ -2526,6 +2549,7 @@ function taskWindowOpen(mode, rule, now) {
   const shanghai = new Date(now + 8 * 60 * 60000);
   const minutes = shanghai.getUTCHours() * 60 + shanghai.getUTCMinutes();
   if (mode === "poster-premium" && !cardSlotMinutes(rule?.dailyQuota).some((slot) => minutes >= slot && minutes < slot + 15)) return false;
+  if (mode === "community-copy" && !communityCopySlotOpen(now)) return false;
   if (mode === "site-forward" && minutes < 14 * 60) return false;
   return true;
 }
@@ -2611,7 +2635,9 @@ function dueTaskModes(plan, now = Date.now()) {
       const mayBypassWait = manuallyRequested && !SHARED_FOLLOW_MODES.includes(mode) && !replyRiskWait && !commentCapWait && !postCapWait && !postRiskWait && !communityCapWait;
       const manualStopped = Boolean(item.manualStopped) && !isScheduleWaitReason(item.reason);
       const forwardedToday = mode === "site-forward" && (item.successDate === shanghaiDateKey(now) || item.uncertainDate === shanghaiDateKey(now));
-      return (rule.enabled || manualFocusMode === mode) && !item.blocked && !manualStopped && !forwardedToday
+      const copySlot = mode === "community-copy" ? communityCopySlotId(shanghaiMinutesOfDay(now)) : "";
+      const copyDone = mode === "community-copy" && copySlot && String(item.copySlots?.[copySlot] || "") === shanghaiDateKey(now);
+      return (rule.enabled || manualFocusMode === mode) && !item.blocked && !manualStopped && !forwardedToday && !copyDone
         && (mayBypassWait || Number(item.resumeAt || 0) <= now)
         && (mayBypassWait || gapUntil <= now)
         && (mayBypassWait || taskWindowOpen(mode, rule, now));
@@ -3387,7 +3413,7 @@ async function runTaskSchedule() {
     const sliceMs = sliceMsForMode(current, plan);
     // Replies and likes report a paused phase at the end of their full run plan.
     // A single confirmed action must never end their occupancy.
-    const actionDone = ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"].includes(current) && Number(item.sliceActions) > 0;
+    const actionDone = ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-copy"].includes(current) && Number(item.sliceActions) > 0;
     const waiting = task?.phase === "paused" && waitUntil > now + 10000;
     const runFinished = task?.phase === "stopped" || task?.phase === "idle";
     // Unlimited mode keeps the shared tab until the in-page run stops, or an
@@ -3737,7 +3763,7 @@ function tickTaskSchedule() {
   return work;
 }
 
-const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-unfollow-non-sc": "mutual-unfollowNonSc", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "reply-prune": "prune-replies" };
+const EVENT_TASK_MODES = { "timeline-reply": "timeline", "notification-reply": "notifications", "kol-reply": "kol", "post-like": "likes-posts", "reply-like": "likes-replies", "mutual-unfollow": "mutual-unfollow", "mutual-unfollow-non-sc": "mutual-unfollowNonSc", "mutual-follow-back": "mutual-followBack", "tweet-post": "poster", "article-draft": "article", "site-forward": "site-forward", "community-share": "community-share", "community-copy": "community-copy", "reply-prune": "prune-replies" };
 const SHARED_FOLLOW_MODES = ["mutual-followBack", "mutual-targetFollow"];
 
 function shouldShareFollowWait(reason) {
@@ -3768,6 +3794,9 @@ async function noteScheduledAction(event) {
     if (plan.current === mode) item.sliceActions = Math.max(0, Number(item.sliceActions) || 0) + 1;
     if (mode === "article" || mode === "site-forward") item.resumeAt = Math.max(Number(item.resumeAt) || 0, Number(event.resumeAt) || 0);
     if (mode === "site-forward" && event.successDate) item.successDate = String(event.successDate);
+    if (mode === "community-copy" && event.copySlotId) {
+      item.copySlots = { ...(item.copySlots || {}), [String(event.copySlotId)]: String(event.successDate || shanghaiDateKey(Date.now())) };
+    }
     item.lastActionAt = Date.now();
     const priorReason = String(item.reason || "");
     item.limitedStreak = 0;
@@ -3921,7 +3950,7 @@ async function noteScheduledAction(event) {
   // Posting releases after a confirmed post. Reply and like loops keep the tab
   // until all planned rounds finish or a real cooldown makes them yield.
   if (event.result === "success" && plan.enabled && plan.current === mode
-    && ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward"].includes(mode) && Number(item.sliceActions) > 0) {
+    && ["poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-copy"].includes(mode) && Number(item.sliceActions) > 0) {
     await tickTaskSchedule();
   }
 }
@@ -4608,13 +4637,14 @@ function updatePluginRuntime(message, sender) {
   return runtimeMutation;
 }
 
-async function completeCommunityShare(sender, status) {
+async function completeCommunityShare(sender, status, mode = "community-share") {
+  const taskMode = mode === "community-copy" ? "community-copy" : "community-share";
   const tabId = Number(sender?.tab?.id);
   const work = scheduleWork.then(async () => {
     const plan = await readTaskSchedule();
-    if (plan.enabled && plan.current === "community-share" && Number(plan.workTabId) === tabId) {
+    if (plan.enabled && plan.current === taskMode && Number(plan.workTabId) === tabId) {
       const now = Date.now();
-      const reason = String(status || "社群分发本轮已结束").slice(0, 160);
+      const reason = String(status || (taskMode === "community-copy" ? "社群文案本轮已结束" : "社群分发本轮已结束")).slice(0, 160);
       let resumeAt = now + COMMUNITY_SHARE_RETRY_MS;
       if (/今日社群已到/u.test(reason) && typeof globalThis.XrcCommunityReceipt?.communityDailyBudget === "function") {
         try {
@@ -4625,9 +4655,9 @@ async function completeCommunityShare(sender, status) {
           resumeAt = now + COMMUNITY_SHARE_RETRY_MS;
         }
       }
-      recordScheduleSegment(plan, "community-share", reason, now);
-      plan.items["community-share"] = {
-        ...(plan.items["community-share"] || {}),
+      recordScheduleSegment(plan, taskMode, reason, now);
+      plan.items[taskMode] = {
+        ...(plan.items[taskMode] || {}),
         lastRunAt: now,
         resumeAt,
         manualStopped: false,
@@ -4637,7 +4667,7 @@ async function completeCommunityShare(sender, status) {
       plan.startedAt = 0;
       await saveTaskSchedule(plan);
     }
-    await updatePluginRuntime({ mode: "community-share", active: false }, sender);
+    await updatePluginRuntime({ mode: taskMode, active: false }, sender);
     return { ok: true };
   });
   scheduleWork = work.catch(() => {});
@@ -5402,9 +5432,15 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (message?.type === "xrc-community-share-finished") {
-      completeCommunityShare(sender, message.status)
+      completeCommunityShare(sender, message.status, "community-share")
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "社群分发结束状态保存失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-community-copy-finished") {
+      completeCommunityShare(sender, message.status, "community-copy")
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "社群文案结束状态保存失败" }));
       return true;
     }
     if (message?.type === "xrc-mutual-scan-failed") {
@@ -5607,6 +5643,9 @@ if (typeof module === "object" && module.exports) {
     taskWindowOpen,
     normalizeCardDailyQuota,
     DEFAULT_CARD_DAILY_QUOTA,
+    communityCopySlotOpen,
+    communityCopySlotId,
+    COMMUNITY_COPY_SLOT_MINUTES,
     recordScheduleSegment,
     scheduleTimeline,
     markManualTaskStart,

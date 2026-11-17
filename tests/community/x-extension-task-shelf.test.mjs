@@ -7,6 +7,7 @@ import {
   X_EXTENSION_TASK_SHELF,
   deriveTaskBundle,
   listedShelfTasks,
+  taskShelfById,
 } from '../../lib/community/xExtensionTaskShelf.js'
 
 const require = createRequire(import.meta.url)
@@ -16,7 +17,10 @@ test('task shelf lists the same tasks the extension schedules', () => {
   const ids = X_EXTENSION_TASK_SHELF.map((task) => task.id)
   assert.equal(new Set(ids).size, ids.length)
   assert.deepEqual(new Set(ids), background.TASK_MODES)
-  assert.equal(listedShelfTasks().length, 18)
+  assert.equal(listedShelfTasks().length, 19)
+  assert.equal(taskShelfById('community-copy')?.label, '社群文案')
+  assert.equal(taskShelfById('community-copy')?.group, 'community')
+  assert.equal(taskShelfById('community-copy')?.queueDefault, false)
   assert.ok(X_EXTENSION_SHARED_MODULES.includes('background.js'))
   assert.ok(X_EXTENSION_SHARED_MODULES.includes('content.js'))
 })

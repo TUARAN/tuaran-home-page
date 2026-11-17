@@ -2306,7 +2306,7 @@ test('all seven task panels show the same blocked state with a readable reason',
   const restart = context.notice('timeline')
   assert.match(restart.title, /启动未确认/)
   assert.doesNotMatch(restart.title, /连续受限/)
-  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 11)
+  assert.equal((source.match(/data-xrc-button-note hidden/g) || []).length, 12)
   assert.doesNotMatch(source, /data-xrc-task-schedule-notice/)
   assert.match(source, /info\.status !== "waiting"/)
   assert.match(source, /paintTaskScheduleNotice\(panel\)/)
@@ -7926,7 +7926,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -8120,7 +8120,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-monitor-current/)
   assert.match(content, /function syncMonitorMenu\(panel\)/)
   assert.match(content, /任务状态、风控倒计时及各项恢复规则，以站点文档中心为准/)
-  assert.match(content, /aria-label="排班台。十八项任务由后台排班，共用一个执行页签"/)
+  assert.match(content, /aria-label="排班台。十九项任务由后台排班，共用一个执行页签"/)
   assert.doesNotMatch(content, /功能导航/)
   assert.doesNotMatch(content, /当前助手/)
   assert.match(content, /通知回复/)
@@ -8174,7 +8174,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /rootSettled: false/)
   assert.match(content, /ownPost: null,\s*reply: \{ id: tweet\.id, authorHandle: tweet\.authorHandle, text: replyText \}/)
   assert.match(content, /requestedLaunch/)
-  assert.match(content, /十八项任务由后台排班，共用一个执行页签/)
+  assert.match(content, /十九项任务由后台排班，共用一个执行页签/)
   assert.match(content, /设置中心/)
   assert.match(content, /xrc-hub/)
   assert.match(content, /data-xrc-target-follow-handles/)
@@ -9049,7 +9049,7 @@ test('cleanup defaults to bounded slow segments and keeps a longer occupancy pas
 test('default schedule ranks frequent actions first and allows follow-back all day', () => {
   const now = Date.parse('2026-10-28T23:00:00+08:00')
   const rules = background.normalizedTaskRules({})
-  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share', 'community-copy']) {
     assert.equal(rules[mode].enabled, false)
     assert.equal(background.normalizedTaskRules({ [mode]: { enabled: true } })[mode].enabled, true)
   }
@@ -9099,7 +9099,7 @@ test('cleanup and posting checkboxes start unchecked unless saved choices enable
   assert.ok(helper)
   const context = vm.createContext({})
   vm.runInContext(`${helper}\nglobalThis.enabled = scheduleRuleEnabled`, context)
-  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share']) {
+  for (const mode of ['mutual-unfollow', 'mutual-unfollowNonSc', 'prune-posts', 'prune-replies', 'poster', 'poster-premium', 'poster-x', 'poster-xhs', 'article', 'site-forward', 'community-share', 'community-copy']) {
     assert.equal(context.enabled(mode, {}), false)
     assert.equal(context.enabled(mode, { enabled: true }), true)
     assert.equal(context.enabled(mode, { enabled: false }), false)
@@ -12729,6 +12729,11 @@ test('group chat sharing stays off by default and runs on the own profile', () =
   const rules = background.normalizedTaskRules({})
   assert.equal(rules['community-share'].enabled, false)
   assert.equal(rules['community-share'].priority, 7)
+  assert.equal(rules['community-copy'].enabled, false)
+  assert.equal(rules['community-copy'].priority, 7)
+  assert.equal(background.communityCopySlotOpen(Date.parse('2026-11-16T08:05:00+08:00')), true)
+  assert.equal(background.communityCopySlotId(8 * 60 + 5), 'morning')
+  assert.equal(background.communityCopySlotOpen(Date.parse('2026-11-16T08:20:00+08:00')), false)
   assert.equal(background.onTaskPath('community-share', 'https://x.com/tuaran', { accountHandle: 'tuaran' }), true)
   assert.equal(background.onTaskPath('community-share', 'https://x.com/i/communities/11', { accountHandle: 'tuaran' }), false)
   assert.match(background.taskTabUrl('community-share', 'https://x.com/home', { accountHandle: 'tuaran', start: true }), /\/tuaran\?xrcAssistant=community-share&xrcStart=1/)

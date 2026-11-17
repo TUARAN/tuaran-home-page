@@ -2630,6 +2630,24 @@ test('header shows clickable egress IP beside the version badge', async () => {
   assert.deepEqual(fallback, { ok: true, ip: '2001:db8::1', source: 'cloudflare-trace' })
 })
 
+test('panel theme uses data-theme tokens and a scoped controller', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const themeSource = await readFile(new URL('panelTheme.js', extensionDir), 'utf8')
+  const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
+  const scripts = manifest.content_scripts[3].js
+  assert.ok(scripts.indexOf('panelTheme.js') < scripts.indexOf('content.js'))
+  assert.match(source, /data-xrc-theme-toggle/)
+  assert.match(source, /XrcPanelTheme/)
+  assert.match(themeSource, /STORAGE_KEY = "xrcPanelTheme"/)
+  assert.match(themeSource, /data-theme/)
+  assert.match(css, /#x-reply-clipboard-panel\[data-theme="dark"\]/)
+  assert.match(css, /--xrc-elevated:/)
+  assert.match(css, /--xrc-home-bg:\s*rgba\(8, 12, 18, 0\.92\)/)
+  assert.match(css, /background: var\(--xrc-elevated\)/)
+  assert.doesNotMatch(css, /@media \(prefers-color-scheme: dark\)/)
+})
+
 test('limit observations retain per-account windows and deduplicate receipts', async () => {
   const stored = {}
   globalThis.chrome = { storage: { local: {
@@ -7984,7 +8002,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))

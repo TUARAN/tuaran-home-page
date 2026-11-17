@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X 大互动智能体",
-  "version": "4.15.50",
+  "version": "4.16.0",
 
   "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
@@ -102,6 +102,7 @@
         "bigInteractionArchive.js",
         "interactionRecap.js",
         "postPageMarks.js",
+        "panelTheme.js",
         "content.js",
         "experiments.js"
       ],

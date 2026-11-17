@@ -18,6 +18,8 @@
   if (!loopApi || !Array.isArray(phrases) || phrases.length === 0) return;
 
   const kolRoster = globalThis.XrcKolRoster;
+  const panelThemeApi = globalThis.XrcPanelTheme;
+  if (!panelThemeApi?.createController) return;
 
   const PANEL_ID = "x-reply-clipboard-panel";
   const TASK_MODE_LABELS = {
@@ -373,6 +375,7 @@
   let pageRefreshPending = false;
   let pageRefreshError = "";
   let panelBooted = false;
+  let panelThemeController = null;
   let executionAlerts = [];
   const recentExecutionAlerts = (value) => Array.isArray(value)
     ? value.filter((item) => Date.now() - Number(item?.occurredAt) < 30 * 86400000).slice(0, 80) : [];
@@ -9415,6 +9418,8 @@
     if (!panel) {
       panel = document.createElement("section");
       panel.id = PANEL_ID;
+      panel.setAttribute("data-theme", "light");
+      panel.dataset.xrcThemePreference = "system";
       panel.innerHTML = `
         <div class="xrc-header">
           <div class="xrc-brand">
@@ -9427,6 +9432,7 @@
           <div class="xrc-header-actions">
             <div class="xrc-state" role="status" aria-label="待命" title="待命"><span class="xrc-state-dot"></span><span data-xrc-state-label>待命</span></div>
             <div class="xrc-quick-actions" aria-label="面板操作">
+              <button type="button" class="xrc-theme-toggle" data-xrc-theme-toggle data-theme="system" aria-label="外观：跟随，点击切换" title="外观：跟随（点击切换浅色 / 深色 / 跟随）"><svg class="xrc-theme-icon-light" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.1"></circle><path d="M8 1.6v1.6M8 12.8v1.6M1.6 8h1.6M12.8 8h1.6M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1"></path></svg><svg class="xrc-theme-icon-dark" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.6 10.2A5.2 5.2 0 0 1 5.8 3.4 5.4 5.4 0 1 0 12.6 10.2Z"></path></svg><svg class="xrc-theme-icon-system" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.2" y="3.2" width="11.6" height="8.2" rx="1.4"></rect><path d="M6 13.2h4M8 11.4v1.8"></path></svg></button>
               <button type="button" data-xrc-docs-open aria-label="说明文档" title="说明文档"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"></circle><path d="M8 7v4"></path><path d="M8 4.6h.01"></path></svg></button>
               <button type="button" class="xrc-header-reset" data-xrc-header-reset aria-label="重置" title="清空本机任务记录，保留模型配置"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.15-3.15"></path><path d="M3.1 2.7v3.1h3.1"></path></svg></button>
               <button class="xrc-view-button xrc-hub-open" type="button" data-xrc-hub-open aria-label="设置中心" aria-expanded="false" title="设置中心"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.6.24-1.15.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.24l2.39-.96c.48.39 1.03.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.8c.24 0 .45-.18.5-.42l.36-2.54c.6-.24 1.15-.55 1.63-.94l2.39.96c.25.1.54 0 .68-.24l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
@@ -10039,6 +10045,8 @@
         </div>
       `;
       placePanel(panel);
+      panelThemeController = panelThemeApi.createController(panel);
+      void panelThemeController.init();
       paintEgressIp(panel);
       refreshEgressIp().catch(() => {});
       refreshDailyReport(panel).catch(() => {
@@ -10089,6 +10097,9 @@
         }
       });
       panel.querySelector("[data-xrc-header-reset]")?.addEventListener("click", () => { void resetLocalTaskRecords(); });
+      panel.querySelector("[data-xrc-theme-toggle]")?.addEventListener("click", () => {
+        void panelThemeController?.cycle();
+      });
       panel.querySelector("[data-xrc-hub-open]").addEventListener("click", () => {
         if (state.panelView === "collapsed") {
           state.panelView = "normal";
@@ -11494,6 +11505,12 @@
     syncReportPage(panel);
     syncHubPage(panel);
     paintExecutionAlerts(panel);
+    if (!panelThemeController) {
+      panelThemeController = panelThemeApi.createController(panel);
+      void panelThemeController.init();
+    } else {
+      panelThemeController.refresh();
+    }
     placePanel(panel);
   }
 

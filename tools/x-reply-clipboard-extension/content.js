@@ -9441,7 +9441,7 @@
               <div class="xrc-task-live-actions xrc-home-actions">
                 <button type="button" class="xrc-home-action" data-xrc-open-home-task>查看详情</button>
                 <button type="button" class="xrc-home-action is-quiet xrc-task-page-refresh" data-xrc-task-page-refresh hidden>刷新页面</button>
-                <button type="button" class="xrc-home-action is-pause xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
+                <button type="button" class="xrc-home-action is-pause xrc-task-manual-pause" data-xrc-task-manual-pause>暂停任务</button>
               </div>
             </section>
             <section class="xrc-plate xrc-home-schedule" data-xrc-home-schedule>
@@ -11131,7 +11131,7 @@
       const busy = isTaskActionBusy(pauseMode || viewKey);
       pauseButton.hidden = homeLiveTab === "next";
       pauseButton.disabled = paused || busy;
-      pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停当前任务";
+      pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停任务";
       pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[pauseMode || viewKey] || "当前任务"}`;
     }
     syncAllTaskScheduleConfigs(panel);

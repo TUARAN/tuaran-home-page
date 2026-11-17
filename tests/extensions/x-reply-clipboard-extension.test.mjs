@@ -2971,7 +2971,7 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /<b>任务详情<\/b><i aria-hidden="true">›<\/i><strong data-xrc-task-subnav-label>任务<\/strong>/)
   assert.match(source, /function scrollPanelToTaskSubpage\(panel\)/)
   assert.match(source, /scrollPanelToTaskSubpage\(panel\)/)
-  assert.match(source, /data-xrc-task-live-row[\s\S]{0,520}data-xrc-live-tab="now"[\s\S]{0,220}data-xrc-live-tab="next"[\s\S]{0,220}<div class="xrc-task-live-main">\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<\/div>\s*<div class="xrc-task-live-actions xrc-home-actions">\s*<button type="button" class="xrc-home-action" data-xrc-open-home-task>查看详情<\/button>[\s\S]*?data-xrc-task-manual-pause>暂停当前任务<\/button>/)
+  assert.match(source, /data-xrc-task-live-row[\s\S]{0,520}data-xrc-live-tab="now"[\s\S]{0,220}data-xrc-live-tab="next"[\s\S]{0,220}<div class="xrc-task-live-main">\s*<p class="xrc-task-live" data-xrc-task-live>正在运行：读取中<\/p>\s*<\/div>\s*<div class="xrc-task-live-actions xrc-home-actions">\s*<button type="button" class="xrc-home-action" data-xrc-open-home-task>查看详情<\/button>[\s\S]*?data-xrc-task-manual-pause>暂停任务<\/button>/)
   assert.doesNotMatch(source, /data-xrc-home-detail-label/)
   assert.match(source, /data-xrc-today-plate[\s\S]*data-xrc-today-tab="\$\{category\.id\}"[\s\S]*data-xrc-today-tasks/)
   assert.match(source, /function syncHomeTodayTabs\(/)

@@ -21,6 +21,8 @@ test('task shelf lists the same tasks the extension schedules', () => {
   assert.equal(taskShelfById('community-copy')?.label, '社群文案')
   assert.equal(taskShelfById('community-copy')?.group, 'community')
   assert.equal(taskShelfById('community-copy')?.queueDefault, false)
+  assert.equal(X_EXTENSION_TASK_SHELF.find((task) => task.id === 'prune-replies')?.label, '清理差评论')
+
   assert.ok(X_EXTENSION_SHARED_MODULES.includes('background.js'))
   assert.ok(X_EXTENSION_SHARED_MODULES.includes('content.js'))
 })

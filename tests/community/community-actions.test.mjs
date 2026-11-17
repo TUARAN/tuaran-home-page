@@ -37,7 +37,7 @@ test('X monitor task labels match the extension task names', () => {
       'community-share': '社群分发',
       'community-copy': '社群文案',
       'post-prune': '清理低质帖',
-      'reply-prune': '清理低质评论',
+      'reply-prune': '清理差评论',
       'post-like': '点赞帖子',
       'reply-like': '点赞评论',
     },

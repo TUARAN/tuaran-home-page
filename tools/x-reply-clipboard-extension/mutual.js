@@ -390,7 +390,24 @@
         new Promise((resolve) => setTimeout(() => resolve([]), 4000))
       ])
       : [];
-    const planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
+    let planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, board);
+    if (!(planned.handles || []).map(cleanHandle).filter(Boolean).length) {
+      const roster = globalThis.XrcKolRoster || (typeof require === "function" ? require("./kolRoster.js") : null);
+      let discovered = [];
+      try {
+        const stored = await followStorage().get(roster?.KOL_DISCOVERY_KEY || "xrcKolDiscovery");
+        discovered = roster?.discoveryHandles?.(stored?.[roster.KOL_DISCOVERY_KEY], currentAccountHandle()) || [];
+      } catch (error) {
+        discovered = [];
+      }
+      const pool = roster?.taskCandidatePool?.({
+        custom: false,
+        boardHandles: board,
+        discoveryHandles: discovered,
+        now: Date.now()
+      }) || [];
+      planned = planTargetTaskBatch(targetPool, saved, TARGET_BATCH_SIZE, pool);
+    }
     if (planned.changed === false && saved?.locked) {
       const locked = planned.handles.map(cleanHandle).filter(Boolean);
       if (locked.length) {
@@ -1358,6 +1375,10 @@
       const batch = typeof TARGET_FOLLOW_HANDLES !== "undefined" && Array.isArray(TARGET_FOLLOW_HANDLES) ? TARGET_FOLLOW_HANDLES : null;
       const normalizedHandle = (value) => String(value || "").trim().replace(/^@/u, "").toLowerCase();
       const batchKnown = Array.isArray(batch) && batch.length > 0;
+      // Empty batch with no open followers source cannot navigate; an already-open list can still advance.
+      if (!followableNow && !batchKnown && !pathHandle && !openHandle) {
+        return { error: "暂时没有可用关注源头，交回排班" };
+      }
       const onBatch = batchKnown
         ? Boolean(pathHandle && batch.some((handle) => normalizedHandle(handle) === normalizedHandle(pathHandle)))
         : Boolean(pathHandle);

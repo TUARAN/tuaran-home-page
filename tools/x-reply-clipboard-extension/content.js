@@ -25,8 +25,10 @@
     "likes-posts": "点赞帖子", "likes-replies": "点赞评论",
     "mutual-unfollow": "清理未回关", "mutual-unfollowNonSc": "清理非简中", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "热点发帖", "poster-premium": "卡片发帖", "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
+
     article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发", "community-copy": "社群文案",
-    "prune-posts": "清理低质帖", "prune-replies": "清理低质评论"
+    "prune-posts": "清理低质帖", "prune-replies": "清理差评论"
+
   };
   const TASK_DOCS_TARGETS = {
     timeline: ["xrc-docs-reply-timeline", "查看评论首页说明"],
@@ -46,7 +48,7 @@
     "community-share": ["xrc-docs-community-share", "查看社群分发说明"],
     "community-copy": ["xrc-docs-community-copy", "查看社群文案说明"],
     "prune-posts": ["xrc-docs-prune-posts", "查看清理低质帖说明"],
-    "prune-replies": ["xrc-docs-prune-replies", "查看清理低质评论说明"]
+    "prune-replies": ["xrc-docs-prune-replies", "查看清理差评论说明"]
   };
   const STORAGE_KEY = "x-reply-clipboard-loop";
   const TASK_STATE_PREFIX = "xrcTaskSnapshot:";
@@ -251,6 +253,7 @@
   const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
+    "xrc-docs-schedule": "task-window-plan",
     "xrc-docs-states": "states",
     "xrc-docs-risk": "risk",
     "xrc-docs-tasks": "tasks",
@@ -1498,8 +1501,10 @@
     ["mutual-unfollow", "清理未回关", "follow", "unfollows"], ["mutual-unfollowNonSc", "清理非简中", "follow", "unfollows"],
     ["poster-premium", "卡片发帖", "post"], ["poster", "热点发帖", "post"], ["poster-x", "X主题发帖", "post"], ["poster-xhs", "小红书发帖", "post"], ["article", "普通发文", "post", "articleDrafts"], ["site-forward", "站长转发", "post", "siteForwards"],
     ["community-share", "社群分发", "community", "communityShares"],
+
     ["community-copy", "社群文案", "community", "communityShares"],
-    ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理低质评论", "clean", "replyPrunes"]
+    ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理差评论", "clean", "replyPrunes"]
+
   ];
   const metricDataName = (metric) => metric.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   const MUTUAL_ACTIVE_KEY = "xrcMutualActiveMode";
@@ -2167,7 +2172,11 @@
     } else if (!state.assistantMode.startsWith("likes-") && state.assistantMode !== "mutual" && !isPruneMode()) {
       if (Number(state.riskCooldownUntil) > now) return "风控等待中";
       if (Number(state.reconnectAt) > now) return "等待重连";
-      if (Number(state.nextCycleAt) > now) return "本次计划已完成";
+      if (Number(state.nextCycleAt) > now) {
+        return state.assistantMode === "kol" && !(Number(state.total) > 0)
+          ? "本轮未发出评论，等待后重试"
+          : "本次计划已完成";
+      }
       if (Number(state.nextRoundAt) > now) return "本次计划内等待下一轮";
       if (Number(state.waitUntil) > now) return "等待下一条";
     }
@@ -2283,7 +2292,18 @@
     void refreshScheduleView();
   }
 
-  function openScheduleBoard() {
+  function focusScheduleDeskTask(panel, mode) {
+    const key = String(mode || "").trim();
+    if (!panel || !key) return;
+    panel.querySelectorAll(".xrc-schedule-item.is-flash").forEach((row) => row.classList.remove("is-flash"));
+    const row = panel.querySelector(`[data-xrc-schedule-desk] .xrc-schedule-item[data-mode="${CSS.escape ? CSS.escape(key) : key}"]`);
+    if (!row || row.hidden) return;
+    row.classList.add("is-flash");
+    if (typeof row.scrollIntoView === "function") row.scrollIntoView({ block: "nearest", inline: "nearest" });
+    window.setTimeout(() => row.classList.remove("is-flash"), 1400);
+  }
+
+  function openScheduleBoard(focusMode = "") {
     deskHome = true;
     scheduleDeskOpen = true;
     alertsDeskOpen = false;
@@ -2297,15 +2317,18 @@
     if (dialog) dialog.hidden = true;
     renderPanel();
     const panel = document.getElementById(PANEL_ID);
-    if (typeof scrollPanelToScheduleSubpage === "function") {
-      const scrollSchedule = () => scrollPanelToScheduleSubpage(panel);
-      if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => requestAnimationFrame(scrollSchedule));
-      } else {
-        scrollSchedule();
-      }
+    const afterOpen = () => {
+      if (typeof scrollPanelToScheduleSubpage === "function") scrollPanelToScheduleSubpage(panel);
+      if (focusMode) focusScheduleDeskTask(panel, focusMode);
+    };
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => requestAnimationFrame(afterOpen));
+    } else {
+      afterOpen();
     }
-    void refreshScheduleView();
+    void Promise.resolve(refreshScheduleView()).then(() => {
+      if (focusMode) focusScheduleDeskTask(panel, focusMode);
+    });
   }
 
   function closeScheduleBoard() {
@@ -2446,7 +2469,9 @@
   }
   const FLOW_TASKS = Object.freeze([
     ["notifications", "评论回复"], ["timeline", "评论首页"], ["kol", "评论大V"],
-    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["community-copy", "社群文案"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理低质评论"],
+
+    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["community-copy", "社群文案"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理差评论"],
+
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"], ["mutual-unfollowNonSc", "清理非简中"]
   ]);
@@ -2574,8 +2599,20 @@
     const scheduledWaiting = scheduledTasks.length - scheduledRunning - scheduledNeeds;
     const scheduledDetails = [`${scheduledRunning} 项运行中`, `${scheduledWaiting} 项等待中`];
     if (scheduledNeeds) scheduledDetails.push(`${scheduledNeeds} 项需处理`);
-    const text = `${scheduledTasks.length} 项已排班（${scheduledDetails.join("，")}） · ${tasks.length - scheduledTasks.length} 项未排班`;
-    return { counts, facing, tasks, text };
+    const scheduledCount = scheduledTasks.length;
+    const unscheduledCount = tasks.length - scheduledCount;
+    const text = `${scheduledCount} 项已排班（${scheduledDetails.join("，")}） · ${unscheduledCount} 项未排班`;
+    return {
+      counts,
+      facing,
+      tasks,
+      text,
+      scheduledCount,
+      unscheduledCount,
+      scheduledRunning,
+      scheduledWaiting,
+      scheduledNeeds
+    };
   }
 
   function flowTaskDot(task, alerts, accountHandle) {
@@ -5166,12 +5203,14 @@
   }
 
   function kolPaceTableHtml() {
+    const handlesPerTask = Number(kolRoster?.KOL_DAILY_SIZE) || 5;
     return paceTableHtml({
       label: "评论大V速度",
       attr: "data-xrc-pace-label",
       profiles: orderedPaceProfiles(false),
       defaultId: "slow",
       columns: [
+        { label: "一次大V", value: () => `${handlesPerTask} 个` },
         { label: "每个大V", value: (profile) => `${KOL_REPLIES_PER_HANDLE[profile.id]} 条` }
       ]
     });
@@ -7439,8 +7478,32 @@
     return "stopped";
   }
 
+  async function endKolEmptyCycle(summary) {
+    state.running = false;
+    state.stopping = false;
+    state.nextCycleAt = 0;
+    state.reconnectAt = 0;
+    state.waitUntil = 0;
+    state.kolCycleRetired = true;
+    state.status = summary || "本轮没有可用大V名单或未发出评论，交回排班";
+    writeSaved({ running: false, total: state.total });
+    if (typeof renderPanel === "function") renderPanel();
+    return "stopped";
+  }
+
+  async function finishKolCycle(summary) {
+    const order = state.kolVisitOrder || [];
+    if (!order.length || !(Number(state.total) > 0)) {
+      return endKolEmptyCycle(summary || (order.length
+        ? `大V名单已走完，本次未发出评论，交回排班`
+        : "暂时没有可用大V名单，交回排班"));
+    }
+    return finishCycleAndScheduleNext(summary || `大V名单已扫完，本次共评论 ${state.total} 条`);
+  }
+
   async function rotateKolProfileAndResume(message) {
     const order = await ensureKolVisitOrder();
+    if (!order.length) return endKolEmptyCycle("暂时没有可用大V名单，交回排班");
     const current = currentKolHandleFromPath();
     const visited = new Set(state.kolVisitedHandles.map((handle) => handle.toLowerCase()));
     if (current) visited.add(current.toLowerCase());
@@ -7448,7 +7511,7 @@
     state.completedRounds = visited.size;
     await persistKolCycle(order, state.kolVisitedHandles, true);
     const nextHandle = kolRoster.nextUnvisitedHandle(order, state.kolVisitedHandles);
-    if (!nextHandle) return finishCycleAndScheduleNext(`大V名单已扫完，本次共评论 ${state.total} 条`);
+    if (!nextHandle) return finishKolCycle(`大V名单已扫完，本次共评论 ${state.total} 条`);
     state.pageCount = 0;
     state.status = message || `换到 @${nextHandle} 继续评论`;
     renderPanel();
@@ -7460,8 +7523,9 @@
 
   async function alignKolProfileToVisitOrder() {
     const order = await ensureKolVisitOrder();
+    if (!order.length) return endKolEmptyCycle("暂时没有可用大V名单，交回排班");
     const nextHandle = kolRoster.nextUnvisitedHandle(order, state.kolVisitedHandles);
-    if (!nextHandle) return finishCycleAndScheduleNext(`大V名单已扫完，本次共评论 ${state.total} 条`);
+    if (!nextHandle) return finishKolCycle(`大V名单已扫完，本次共评论 ${state.total} 条`);
     const current = currentKolHandleFromPath();
     if (current && current.toLowerCase() === nextHandle.toLowerCase()) return "";
     state.pageCount = 0;
@@ -8681,7 +8745,7 @@
 
   function kolRosterStatusText(decision) {
     if (decision?.custom) return "自定义名单会保留，每次只从里面换五个，不会清掉。";
-    return "每次任务直接换成五个新人；保存过自定义名单时只从里面换，不会清掉。";
+    return "每次任务直接换成五个新人；榜单不够时用当天发现或内置组。自定义名单只从里面换。";
   }
 
   async function loadKolRoster() {
@@ -8815,10 +8879,13 @@
       now
     });
     const board = decision.custom || !globalThis.XrcLeaderboard?.loadHandles ? [] : await globalThis.XrcLeaderboard.loadHandles();
+    const discovered = kolRoster.discoveryHandles(stored?.[kolRoster.KOL_DISCOVERY_KEY], taskSnapshotAccount);
     const pool = kolRoster.taskCandidatePool({
       custom: decision.custom,
       customHandles: decision.handles,
-      boardHandles: board
+      boardHandles: board,
+      discoveryHandles: discovered,
+      now
     });
     const selected = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, random);
     const meta = {
@@ -9320,7 +9387,7 @@
             </div>
             <div class="xrc-today-detail">
               <div class="xrc-today-tasks" data-xrc-today-tasks aria-label="评论类任务今日统计">
-                ${TODAY_TASKS.map(([mode, label, category]) => `<div class="xrc-today-task" data-category="${category}"${category === "comment" ? "" : " hidden"}><span>${label}</span><b data-xrc-today-task="${mode}">0</b></div>`).join("")}
+                ${TODAY_TASKS.map(([mode, label, category]) => `<button type="button" class="xrc-today-task" data-category="${category}" data-xrc-today-task-open="${mode}"${category === "comment" ? "" : " hidden"} title="打开任务详情 · ${label}"><span>${label}</span><b data-xrc-today-task="${mode}">0</b></button>`).join("")}
               </div>
             </div>
           </section>
@@ -9561,9 +9628,11 @@
                   </div>
                 </div>
               </div>
+
               <div class="xrc-home-schedule-actions xrc-home-actions">
                 <button type="button" class="xrc-home-action" data-xrc-schedule-open>打开排班台</button>
                 <button type="button" class="xrc-home-action" data-xrc-docs-target="xrc-docs-flow" title="打开文档中心 · 面板与排班">查看排班介绍</button>
+
               </div>
             </section>
             <section class="xrc-plate xrc-home-alerts" data-xrc-home-alerts>
@@ -9750,7 +9819,7 @@
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="premium"><b>02</b><span>卡片发帖</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="x"><b>03</b><span>X主题发帖</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
             <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="prune"><b>04</b><span>清理低质帖</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
-            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="prune-replies"><b>05</b><span>清理低质评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
+            <div class="xrc-subtask-slot"><button type="button" role="tab" data-xrc-post-tab="prune-replies"><b>05</b><span>清理差评论</span></button><button class="xrc-task-tab-close" type="button" data-xrc-task-close>×</button></div>
           <button type="button" role="tab" data-xrc-post-tab="xhs">小红书发帖 · 调试中</button></div>
           <div class="xrc-stats">
             <section class="xrc-level-card" aria-label="发帖速度">
@@ -9863,7 +9932,7 @@
               </div>
             </div>
             <div data-xrc-prune-post-schedule>${taskScheduleConfigMarkup("prune-posts", "清理低质帖")}</div>
-            <div data-xrc-prune-reply-schedule>${taskScheduleConfigMarkup("prune-replies", "清理低质评论")}</div>
+            <div data-xrc-prune-reply-schedule>${taskScheduleConfigMarkup("prune-replies", "清理差评论")}</div>
           </section>
           <div class="xrc-status" role="status" data-xrc-prune-status hidden></div>
         </div>
@@ -11499,7 +11568,8 @@
   }
 
   const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
-  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|社群文案|清理低质帖|清理低质评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|社群文案|清理低质帖|清理低质评论|清理差评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+
 
   function taskWindowLabel() {
     if (state.assistantMode === "mutual") {
@@ -11519,7 +11589,7 @@
     if (state.assistantMode === "community-share") return "社群分发";
     if (state.assistantMode === "community-copy") return "社群文案";
     if (state.assistantMode === "prune-posts") return "清理低质帖";
-    if (state.assistantMode === "prune-replies") return "清理低质评论";
+    if (state.assistantMode === "prune-replies") return "清理差评论";
     return "评论首页";
   }
 

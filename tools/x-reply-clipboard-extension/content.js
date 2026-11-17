@@ -8576,6 +8576,12 @@
       if (!communityState.running) throw new Error(communityState.status || "社群分发未能启动");
       return;
     }
+    if (launch.assistantMode === "community-copy") {
+      if (communityCopyState.running && Number(communityCopyState.nextAt) <= Date.now()) return;
+      await onCommunityCopyToggle({ scheduledStart: true });
+      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
+      return;
+    }
     if (state.running || state.loopPromise) return;
     await onToggle({
       scheduledStart: true,
@@ -12115,10 +12121,3 @@
 
   window.addEventListener("online", () => { reconnectOnline = true; });
 })();
-    if (launch.assistantMode === "community-copy") {
-      if (communityCopyState.running && Number(communityCopyState.nextAt) <= Date.now()) return;
-      await onCommunityCopyToggle({ scheduledStart: true });
-      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
-      return;
-    }
-

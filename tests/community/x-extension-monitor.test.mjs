@@ -96,6 +96,16 @@ test('status sentence keeps the live install and drops an older offline install 
   assert.deepEqual(picked.map((device) => device.id), ['live', 'other-old'])
 })
 
+test('field cards only keep current installs and drop superseded offline installs', () => {
+  const devices = [
+    { id: 'old', accountHandle: 'tarsixseveneig1', online: false, lastSeenAt: Date.parse('2026-11-04T07:08:07Z') },
+    { id: 'live', accountHandle: 'tarsixseveneig1', online: true, lastSeenAt: Date.parse('2026-11-17T09:43:26Z') },
+    { id: 'tuaranx-live', accountHandle: 'tuaranx', online: true, lastSeenAt: Date.parse('2026-11-17T09:40:00Z') },
+    { id: 'tuaran003-live', accountHandle: 'tuaran003', online: true, lastSeenAt: Date.parse('2026-11-17T09:41:00Z') },
+  ]
+  assert.deepEqual(selectXPluginSituationDevices(devices).map((device) => device.id), ['live', 'tuaranx-live', 'tuaran003-live'])
+})
+
 test('runtime groups follow the task shelf, with idle fill-ins', () => {
   const groups = presentXRuntimeGroups([
     { mode: 'timeline', phase: 'running', updatedAt: NOW, detail: '正在回复' },
@@ -369,8 +379,10 @@ test('monitor defaults X stats to tarsixseveneig1 and scopes day details by acco
   assert.deepEqual(sortMonitorDevices([
     { id: 'z', accountHandle: 'tuaranx' },
     { id: 'a', accountHandle: 'other' },
+    { id: 'c', accountHandle: 'tuaran003' },
     { id: 'b', accountHandle: 'tarsixseveneig1' },
-  ]).map((device) => device.id), ['b', 'z', 'a'])
+  ]).map((device) => device.id), ['b', 'z', 'c', 'a'])
+  assert.equal(compareMonitorAccountHandles('tuaran003', 'tuaranx') > 0, true)
   assert.equal(result.offset, 20)
   assert.equal(result.limit, 20)
   assert.deepEqual(calls.find((call) => call.sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')).values, ['x', 'tarsixseveneig1', start, start + 86400000, 20, 20])

@@ -54,6 +54,7 @@ import FestivalBanner from './components/FestivalBanner'
 import HomeAllianceBanner from './components/HomeAllianceBanner'
 import HomeDiarySeries from './components/HomeDiarySeries'
 import HomeYearSummaryCard from './components/HomeYearSummaryCard'
+import HomeGithubTrending from './components/HomeGithubTrending'
 import HomeSectionCouplet from './components/HomeSectionCouplet'
 import { articles } from './articles/articlesData'
 import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
@@ -818,6 +819,7 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
         <div className="home-masonry-item">
           <HomeYearSummaryCard />
         </div>
+        <HomeGithubTrending />
 
         <aside className="home-masonry-item home-side-stack hidden lg:block">
           <ProfileCard />

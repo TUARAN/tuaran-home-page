@@ -3082,6 +3082,61 @@
     color: var(--site-faint);
   }
 
+  .home-github-trending-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-github-trending-list > li + li {
+    border-top: 1px solid var(--site-line);
+  }
+
+  .home-github-trending-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.75rem;
+    row-gap: 0.12rem;
+    padding: 0.45rem 0;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .home-github-trending-item:hover .home-github-trending-name {
+    color: var(--site-accent-strong);
+  }
+
+  .home-github-trending-item:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 3px;
+  }
+
+  .home-github-trending-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .home-github-trending-stars {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--site-muted);
+  }
+
+  .home-github-trending-blurb {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--site-muted);
+  }
+
   .home-pr-card.is-featured {
     @apply block;
   }

@@ -46,6 +46,7 @@ const EXPECTED = {
   explore: '径路纷然，门庭自开，却不道一站虽小，天地颇宽。',
   contact: '远近无碍，一讯可通，却不道有缘来访，便是开始。',
   downloads: '善事利器，取用随心，却不道工具在手，事已近半。',
+  githubTrending: '一日所列，星标起伏，却不道热度易过，眼力长存。',
 }
 
 const PLACEMENTS = [
@@ -61,11 +62,12 @@ const PLACEMENTS = [
   ['app/(site)/components/HomeDiscoveryPanel.jsx', 'explore', 1],
   ['app/(site)/page.jsx', 'contact', 1],
   ['app/(site)/components/HomeWorkCards.jsx', 'downloads', 1],
+  ['app/(site)/components/HomeGithubTrending.jsx', 'githubTrending', 1],
 ]
 
 test('homepage section lines use the confirmed wording once', () => {
   assert.deepEqual(HOME_SECTION_COUPLETS, EXPECTED)
-  assert.equal(Object.keys(HOME_SECTION_COUPLETS).length, 12)
+  assert.equal(Object.keys(HOME_SECTION_COUPLETS).length, 13)
   for (const text of Object.values(EXPECTED)) {
     assert.equal(countText(text), 1, text)
     assert.match(text, /^[^，]{4}，[^，]{4}，却不道[^，]{4}，[^。]{4}。$/)
@@ -112,6 +114,7 @@ test('each homepage section renders its line under the existing title', () => {
     'contact',
     'downloads',
     'explore',
+    'githubTrending',
     'inspirations',
     'openSource',
     'opinion', 'opinion',

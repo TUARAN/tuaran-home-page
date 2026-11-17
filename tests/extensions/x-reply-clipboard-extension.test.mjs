@@ -1265,10 +1265,11 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   assert.ok(scheduleList.children[0].querySelector('[data-xrc-schedule-enabled]'))
   assert.equal(list.children[0].children[1].textContent, '等待中')
   assert.equal(list.children[3].children[1].textContent, '需处理')
-  // Desk order follows readiness clock, not fixed FLOW_TASKS / dueModes sequence.
+  // The desk shows queue order while highlighting the next task to become eligible.
   context.taskSchedule.current = ''
   context.pluginRuntime.tasks = {}
-  context.taskSchedule.dueModes = ['likes-posts', 'poster', 'notifications']
+  context.taskSchedule.queue = ['likes-posts', 'poster', 'notifications']
+  context.taskSchedule.dueModes = []
   context.taskSchedule.timeline = {
     history: [],
     future: [
@@ -1294,11 +1295,11 @@ test('flow detail dialog lists all seven tasks using the overview statuses', asy
   const waitingModes = scheduleList.children
     .filter((row) => row.dataset.phase === 'next' || row.dataset.phase === 'candidate')
     .map((row) => row.dataset.mode)
-  assert.deepEqual(waitingModes.slice(0, 3), ['poster', 'notifications', 'likes-posts'])
+  assert.deepEqual(waitingModes.slice(0, 3), ['likes-posts', 'poster', 'notifications'])
   assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'poster')?.dataset.phase, 'next')
   assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'poster')?.dataset.warmth, '0')
-  assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'notifications')?.dataset.warmth, '1')
-  assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'likes-posts')?.dataset.warmth, '2')
+  assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'notifications')?.dataset.warmth, '2')
+  assert.equal(scheduleList.children.find((row) => row.dataset.mode === 'likes-posts')?.dataset.warmth, '1')
   assert.equal(deskNowRow.hidden, false)
   assert.equal(deskNow.textContent, '正在调度中')
   assert.match(deskNowNote.textContent, /下一：/)
@@ -8938,6 +8939,25 @@ test('single tab scheduler honors time windows, cooldowns and the premium postin
   background.rotateScheduleQueue(queued, 'notifications')
   assert.equal(queued.queue.at(-1), 'notifications')
   assert.equal(background.dueTaskModes(queued, afternoon).filter((mode) => ['timeline', 'notifications', 'kol'].includes(mode))[0], 'timeline')
+})
+
+test('drag reorder changes the queue order used for due tasks', () => {
+  const now = Date.parse('2026-10-28T13:00:00+08:00')
+  const plan = {
+    current: 'kol',
+    queue: ['kol', 'notifications', 'timeline'],
+    items: {},
+    rules: background.normalizedTaskRules({}),
+  }
+  const original = background.scheduleQueue(plan)
+  assert.deepEqual(background.moveScheduleQueueTask(plan, 'kol', 'timeline'), original)
+  assert.deepEqual(background.moveScheduleQueueTask(plan, 'timeline', 'kol'), original)
+  plan.queue = background.moveScheduleQueueTask(plan, 'timeline', 'notifications')
+  assert.deepEqual(plan.queue.slice(0, 3), ['kol', 'timeline', 'notifications'])
+  assert.equal(background.dueTaskModes(plan, now).filter((mode) => ['timeline', 'notifications'].includes(mode))[0], 'timeline')
+  assert.deepEqual(background.moveScheduleQueueTask(plan, 'timeline', 'notifications', true).slice(0, 3),
+    ['kol', 'notifications', 'timeline'])
+  assert.equal(background.moveScheduleQueueTask(plan, 'timeline').at(-1), 'timeline')
 })
 
 test('due comment tasks keep queue order while manual starts and cooldowns apply', () => {

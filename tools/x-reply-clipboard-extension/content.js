@@ -177,9 +177,15 @@
     }
   }
   const EXTENSION_VERSION = readExtensionVersion();
+  const EGRESS_IP_CACHE_MS = 5 * 60 * 1000;
   let extensionContextRetired = false;
   let panelRenderTimer = 0;
   let viewsDismissTimer = 0;
+  let egressIp = "";
+  let egressIpError = "";
+  let egressIpAt = 0;
+  let egressIpPending = false;
+  let egressIpRequest = null;
 
   function extensionContextAlive() {
     if (extensionContextRetired) return false;
@@ -9245,6 +9251,60 @@
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
+  function paintEgressIp(panel) {
+    const button = panel?.querySelector?.("[data-xrc-egress-ip]");
+    if (!button) return;
+    if (egressIpPending) {
+      button.dataset.state = "loading";
+      button.textContent = "出口 …";
+      button.title = "正在检测出口 IP，点击可重试";
+      return;
+    }
+    if (egressIp) {
+      button.dataset.state = "ready";
+      button.textContent = `出口 ${egressIp}`;
+      button.title = "当前浏览器出口 IP，点击刷新";
+      return;
+    }
+    button.dataset.state = "error";
+    button.textContent = "出口 —";
+    button.title = egressIpError || "出口 IP 未检测到，点击重试";
+  }
+
+  function refreshEgressIp({ force = false } = {}) {
+    if (!extensionContextAlive()) return Promise.resolve({ ok: false, skipped: true });
+    const fresh = egressIp && egressIpAt > 0 && Date.now() - egressIpAt < EGRESS_IP_CACHE_MS;
+    if (!force && fresh) {
+      const panel = document.getElementById(PANEL_ID);
+      if (panel) paintEgressIp(panel);
+      return Promise.resolve({ ok: true, ip: egressIp, cached: true });
+    }
+    if (egressIpRequest) return egressIpRequest;
+    egressIpPending = true;
+    const panel = document.getElementById(PANEL_ID);
+    if (panel) paintEgressIp(panel);
+    egressIpRequest = sendExtensionMessage({ type: "xrc-detect-egress-ip" })
+      .then((response) => {
+        egressIp = String(response?.ip || "").trim();
+        egressIpError = egressIp ? "" : String(response?.error || "出口 IP 未检测到");
+        egressIpAt = egressIp ? Date.now() : 0;
+        return response;
+      })
+      .catch((error) => {
+        egressIp = "";
+        egressIpError = error?.message || "出口 IP 检测失败";
+        egressIpAt = 0;
+        return { ok: false, error: egressIpError };
+      })
+      .finally(() => {
+        egressIpPending = false;
+        egressIpRequest = null;
+        const current = document.getElementById(PANEL_ID);
+        if (current) paintEgressIp(current);
+      });
+    return egressIpRequest;
+  }
+
   function renderDevUpdateBanner(panel) {
     const banner = panel.querySelector("[data-xrc-dev-update]");
     if (!banner) return;
@@ -9361,7 +9421,7 @@
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
               <div class="xrc-title">X 大互动智能体</div>
-              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div></div>
+              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span><button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button></div></div>
             </div>
           </div>
           <div class="xrc-header-actions">
@@ -9979,6 +10039,8 @@
         </div>
       `;
       placePanel(panel);
+      paintEgressIp(panel);
+      refreshEgressIp().catch(() => {});
       refreshDailyReport(panel).catch(() => {
         panel.querySelector("[data-xrc-today-summary]")?.setAttribute("title", "今日统计读取失败，请稍后刷新页面");
       });
@@ -10005,6 +10067,10 @@
       panel.querySelector(".xrc-close").addEventListener("click", (event) => {
         event.stopPropagation();
         void stopPluginFromHeader();
+      });
+      panel.querySelector("[data-xrc-egress-ip]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        refreshEgressIp({ force: true }).catch(() => {});
       });
       panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
         if (updateActionPending) return;
@@ -11412,6 +11478,10 @@
     syncCurrentTaskPhase();
     paintFlowButton(panel);
     renderDevUpdateBanner(panel);
+    paintEgressIp(panel);
+    if (!egressIpPending && !(egressIp && egressIpAt > 0 && Date.now() - egressIpAt < EGRESS_IP_CACHE_MS)) {
+      refreshEgressIp().catch(() => {});
+    }
     paintTabRoleBanner(panel);
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");

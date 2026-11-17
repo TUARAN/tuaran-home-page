@@ -411,13 +411,13 @@
 }
 #x-reply-clipboard-panel .xrc-today-category,
 #x-reply-clipboard-panel .xrc-today-task {
-  min-width: 0;
   border: 1px solid var(--xrc-line);
   border-radius: 10px;
   background: var(--xrc-soft);
 }
 #x-reply-clipboard-panel .xrc-today-category {
   display: flex;
+  min-width: 0;
   min-height: 52px;
   flex-direction: column;
   align-items: center;
@@ -480,14 +480,23 @@
 @media (max-width: 340px) {
   #x-reply-clipboard-panel .xrc-today-category-name i { display: none; }
 }
-#x-reply-clipboard-panel .xrc-today-tasks { display: flex; gap: 5px; min-width: 0; overflow-x: auto; scrollbar-width: thin; padding-bottom: 3px; }
+#x-reply-clipboard-panel .xrc-today-tasks {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  padding-bottom: 3px;
+  -webkit-overflow-scrolling: touch;
+}
 #x-reply-clipboard-panel .xrc-today-task {
   display: flex;
-  flex: 1 1 0;
+  flex: 1 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  min-width: 0;
+  min-width: max-content;
   margin: 0;
   padding: 6px 7px;
   border-left: 3px solid var(--xrc-category);
@@ -503,7 +512,7 @@
   background: color-mix(in srgb, var(--xrc-category, var(--xrc-accent)) 10%, var(--xrc-soft));
   outline: none;
 }
-#x-reply-clipboard-panel .xrc-today-task span { overflow: hidden; color: var(--xrc-muted); font-size: 9px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+#x-reply-clipboard-panel .xrc-today-task span { flex: 0 0 auto; color: var(--xrc-muted); font-size: 9px; font-weight: 700; white-space: nowrap; }
 #x-reply-clipboard-panel .xrc-today-task b { flex: 0 0 auto; color: var(--xrc-category); font-size: 11px; font-weight: 900; }
 #x-reply-clipboard-panel .xrc-today-category[data-category="comment"], #x-reply-clipboard-panel .xrc-today-task[data-category="comment"] { --xrc-category: #1769bd; }
 #x-reply-clipboard-panel .xrc-today-category[data-category="like"], #x-reply-clipboard-panel .xrc-today-task[data-category="like"] { --xrc-category: #c72c69; }

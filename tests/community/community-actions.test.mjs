@@ -35,7 +35,7 @@ test('X monitor task labels match the extension task names', () => {
       'article-draft': '普通发文草稿',
       'site-forward': '站长转发',
       'community-share': '社群分发',
-      'community-copy': '社群文案',
+      'community-copy': '社群问安',
       'post-prune': '清理低质帖',
       'reply-prune': '清理差评论',
       'post-like': '点赞帖子',

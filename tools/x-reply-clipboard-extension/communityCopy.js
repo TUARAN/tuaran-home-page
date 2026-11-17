@@ -3,12 +3,10 @@
 
   const SESSION_KEY = "xrcCommunityCopyRunV1";
   const LEDGER_KEY = "xrcCommunityCopyLedgerV1";
-  const BIG_INTERACTION_URL = "https://2aran.com/resources/big-interaction-whitepaper";
   const SLOT_WINDOW_MINUTES = 15;
   const COPY_SLOTS = Object.freeze([
     { id: "morning", label: "早安", minute: 8 * 60 },
     { id: "noon", label: "午安", minute: 12 * 60 },
-    { id: "theory", label: "大互动推广", minute: 14 * 60 },
     { id: "evening", label: "晚安", minute: 22 * 60 },
   ]);
   const TEMPLATES = Object.freeze({
@@ -26,11 +24,6 @@
       "晚安。{date} 收工了就收工，明天的事先放到明天。",
       "晚安。{date} 今天做过的留下，没做完的明天再排。",
       "晚安。{date} 把屏幕亮度降下来，给睡眠留门口。",
-    ]),
-    theory: Object.freeze([
-      `大互动不是刷存在感，而是敢开口、听得进、带着反馈再行动。读本在这里：${BIG_INTERACTION_URL}`,
-      `想把交流做成可重复的练习：接触 → 表达 → 听取 → 调整。大互动理论绿皮书：${BIG_INTERACTION_URL}`,
-      `互动质量先于数量。愿意认真聊的人，比空转发更重要。入口：${BIG_INTERACTION_URL}`,
     ]),
   });
 
@@ -102,7 +95,7 @@
       text: "",
       sourceId: "",
       shared: 0,
-      status: "待命。到点后发一条社群文案，再发到可点群聊。",
+      status: "待命。到点后发布问候并分享到可用群聊。",
       nextAt: 0,
       limited: false,
     };
@@ -145,7 +138,7 @@
     }
     async function ledger() {
       const stored = await (env.loadLedger ? env.loadLedger() : root.chrome?.storage?.local?.get?.(LEDGER_KEY));
-      if (!stored) throw new Error("无法读取社群文案记录");
+      if (!stored) throw new Error("无法读取社群问安记录");
       return stored[LEDGER_KEY] || {};
     }
     async function rememberSlot(slotKey, payload) {
@@ -153,7 +146,7 @@
       const next = { ...data, [slotKey]: { ...(data[slotKey] || {}), ...payload, completedAt: Date.now() } };
       if (env.saveLedger) await env.saveLedger(next);
       else if (root.chrome?.storage?.local?.set) await root.chrome.storage.local.set({ [LEDGER_KEY]: next });
-      else throw new Error("无法保存社群文案标记");
+      else throw new Error("无法保存社群问安标记");
     }
     async function slotDone(slotKey) {
       const data = await ledger();
@@ -367,6 +360,10 @@
         return;
       }
       const forcedSlot = COPY_SLOTS.find((item) => item.id === options.slotId) || null;
+      if (options.slotId && !forcedSlot) {
+        finish("该问安时段已取消");
+        return;
+      }
       const liveSlot = copySlotAt(Date.now());
       const slot = forcedSlot
         ? { ...forcedSlot, dateKey: shanghaiParts().dateKey, slotKey: `${shanghaiParts().dateKey}:${forcedSlot.id}` }
@@ -374,7 +371,7 @@
       if (!slot) {
         const nextAt = nextCopySlotAt();
         state.nextAt = nextAt;
-        finish(`当前不在定点窗（08:00 / 12:00 / 14:00 / 22:00），下次约 ${new Date(nextAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" })}`);
+        finish(`当前不在定点窗（08:00 / 12:00 / 22:00），下次约 ${new Date(nextAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit" })}`);
         return;
       }
       state.slotId = slot.id;
@@ -385,7 +382,7 @@
           return;
         }
       } catch (_) {
-        halt("无法读取社群文案记录，已停止以免重复发送");
+        halt("无法读取社群问安记录，已停止以免重复发送");
         return;
       }
 
@@ -467,7 +464,7 @@
       state.running = false;
       state.stopped = true;
       state.nextAt = 0;
-      state.status = "已停止社群文案";
+      state.status = "已停止社群问安";
       save();
     }
 

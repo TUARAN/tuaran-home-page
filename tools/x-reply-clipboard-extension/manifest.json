@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X 大互动智能体",
-  "version": "4.16.1",
+  "version": "4.16.2",
 
   "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
@@ -117,7 +117,11 @@
       "resources": [
         "debugDrafts.html",
         "debugDrafts.js",
-        "dictateBridge.js"
+        "dictateBridge.js",
+        "icons/icon16.png",
+        "icons/icon32.png",
+        "icons/icon48.png",
+        "icons/icon128.png"
       ],
       "matches": [
         "https://x.com/*",

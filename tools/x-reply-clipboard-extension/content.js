@@ -171,6 +171,14 @@
   const RECONNECT_MAX_MS = 30000;
   const NOTIFICATION_CYCLE_POLICY_VERSION = 2;
   const GROK_REPLY_PROBABILITY = 0.05;
+  function extensionIconUrl(size = 48) {
+    try {
+      return chrome.runtime.getURL(`icons/icon${size}.png`);
+    } catch (error) {
+      return "";
+    }
+  }
+
   function readExtensionVersion() {
     try {
       return globalThis.chrome?.runtime?.getManifest?.().version || "4.3.13";
@@ -9423,9 +9431,10 @@
       panel.innerHTML = `
         <div class="xrc-header">
           <div class="xrc-brand">
-            <div class="xrc-mark" aria-hidden="true">X</div>
-            <div>
+            <div class="xrc-mark" aria-hidden="true"><img class="xrc-mark-img" src="${extensionIconUrl(48)}" alt="" width="36" height="36" decoding="async"></div>
+            <div class="xrc-brand-copy">
               <div class="xrc-title">X 大互动智能体</div>
+              <div class="xrc-account" data-xrc-account hidden></div>
               <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span><button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button></div></div>
             </div>
           </div>
@@ -11496,9 +11505,12 @@
     paintTabRoleBanner(panel);
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");
-    if (brand) {
+    if (brand) brand.textContent = "X 大互动智能体";
+    const account = panel.querySelector("[data-xrc-account]");
+    if (account) {
       const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
-      brand.textContent = handle ? `X 大互动智能体 · @${handle}` : "X 大互动智能体";
+      account.hidden = !handle;
+      account.textContent = handle ? `@${handle}` : "";
     }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);

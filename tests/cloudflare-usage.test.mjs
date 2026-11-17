@@ -7,6 +7,7 @@ import {
   collectCloudflareUsage,
   evaluateUsageAlerts,
   normalizeUsageData,
+  usageCollectFailureStatus,
   readUsageHistory,
   usageAlertPressureDays,
   usageObjectKey,
@@ -39,17 +40,50 @@ test('daily report keeps Workers invocations separate from zone path traffic', a
   assert.equal(report.collectedAt, 123)
 })
 
-test('collector queries a UTC calendar day with account and zone scope', async () => {
-  let body
+test('invocations fallback rows use sum.requests and stay separate from path traffic', () => {
+  const report = normalizeUsageData({ viewer: {
+    accounts: [{
+      workersInvocationsAdaptive: [
+        { sum: { requests: 80 }, dimensions: { scriptName: 'pages-public' } },
+        { sum: { requests: 20 }, dimensions: { scriptName: 'pages-admin' } },
+      ],
+      d1AnalyticsAdaptiveGroups: [],
+    }],
+    zones: [{ httpRequestsAdaptiveGroups: [
+      { count: 300, dimensions: { clientRequestPath: '/api/community-actions/report', edgeResponseStatus: 200 } },
+    ] }],
+  } }, { date: '2026-10-26', databaseId: 'db-1', collectedAt: 123 })
+  assert.equal(report.workers.total, 100)
+  assert.equal(report.topPaths[0].requests, 300)
+})
+
+function queryName(body) {
+  if (/workersOverviewRequestsAdaptiveGroups/.test(body.query)) return 'workers-overview'
+  if (/workersInvocationsAdaptive/.test(body.query)) return 'workers-invocations'
+  if (/d1AnalyticsAdaptiveGroups/.test(body.query)) return 'd1'
+  if (/httpRequestsAdaptiveGroups/.test(body.query)) return 'http'
+  return 'unknown'
+}
+
+test('collector splits GraphQL by dataset for a UTC calendar day', async () => {
+  const bodies = []
   const report = await collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (_, options) => {
-    body = JSON.parse(options.body)
+    bodies.push(JSON.parse(options.body))
     return { ok: true, json: async () => ({ data: { viewer: { accounts: [{ workersOverviewRequestsAdaptiveGroups: [], d1AnalyticsAdaptiveGroups: [] }], zones: [{ httpRequestsAdaptiveGroups: [] }] } } }) }
   })
-  assert.equal(body.variables.start, '2026-10-26T00:00:00Z')
-  assert.equal(body.variables.end, '2026-10-27T00:00:00.000Z')
-  assert.equal(body.variables.zoneTag, 'zone')
+  assert.deepEqual(bodies.map(queryName).sort(), ['d1', 'http', 'workers-overview'])
+  assert.equal(bodies.some((body) => queryName(body) === 'workers-invocations'), false)
+  for (const body of bodies) {
+    if (body.variables.start) {
+      assert.equal(body.variables.start, '2026-10-26T00:00:00Z')
+      assert.equal(body.variables.end, '2026-10-27T00:00:00.000Z')
+    }
+    if (body.variables.date) assert.equal(body.variables.date, '2026-10-26')
+    if (body.variables.zoneTag) assert.equal(body.variables.zoneTag, 'zone')
+    if (body.variables.accountTag) assert.equal(body.variables.accountTag, '4c0eea1ce5d93ebf856f6d5ee1d58bfb')
+  }
   assert.equal(report.workers.total, 0)
-  assert.equal(body.variables.accountTag, '4c0eea1ce5d93ebf856f6d5ee1d58bfb')
+  assert.equal(report.workersSource, 'workersOverviewRequestsAdaptiveGroups')
   assert.equal(utcDate(Date.parse('2026-10-26T23:59:59Z')), '2026-10-26')
 })
 
@@ -84,16 +118,89 @@ test('account authorization failure retries with the zone account id', async () 
     const target = String(url)
     if (target.endsWith('/graphql')) {
       const accountTag = JSON.parse(options.body).variables.accountTag
-      accounts.push(accountTag)
-      if (accountTag === 'acct-real') return jsonResponse(emptyUsage)
+      if (accountTag) accounts.push(accountTag)
+      if (!accountTag || accountTag === 'acct-real') return jsonResponse(emptyUsage)
       return jsonResponse({ data: null, errors: [{ message: 'not authorized for that account' }] })
     }
     if (target.endsWith('/zones/zone-1')) return jsonResponse({ success: true, result: { account: { id: 'acct-real' } } })
     throw new Error(`unexpected ${target}`)
   })
-  assert.deepEqual(accounts, ['4c0eea1ce5d93ebf856f6d5ee1d58bfb', 'acct-real'])
+  assert.deepEqual(accounts, ['4c0eea1ce5d93ebf856f6d5ee1d58bfb', 'acct-real', 'acct-real'])
   assert.equal(report.date, '2026-10-26')
   assert.equal(report.workers.total, 0)
+  assert.equal(report.workersSource, 'workersOverviewRequestsAdaptiveGroups')
+})
+
+test('overview workers query falls back to aggregated invocations by script', async () => {
+  const names = []
+  const report = await collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (_, options) => {
+    const body = JSON.parse(options.body)
+    const name = queryName(body)
+    names.push(name)
+    if (name === 'workers-overview') {
+      return jsonResponse({ errors: [{ message: 'workersOverviewRequestsAdaptiveGroups is not available for this account' }] }, { ok: false, status: 400 })
+    }
+    if (name === 'workers-invocations') {
+      assert.match(body.query, /sum \{ requests \}/)
+      assert.doesNotMatch(body.query, /dimensions \{[^}]*datetime/)
+      return jsonResponse({
+        data: {
+          viewer: {
+            accounts: [{
+              workersInvocationsAdaptive: [
+                { sum: { requests: 80 }, dimensions: { scriptName: 'pages-public' } },
+                { sum: { requests: 20 }, dimensions: { scriptName: 'pages-admin' } },
+              ],
+            }],
+          },
+        },
+      })
+    }
+    return jsonResponse(emptyUsage)
+  })
+  assert.equal(names.includes('workers-overview'), true)
+  assert.equal(names.includes('workers-invocations'), true)
+  assert.equal(report.workers.total, 100)
+  assert.deepEqual(report.workers.scripts.map((row) => row.name), ['pages-public', 'pages-admin'])
+  assert.equal(report.workersSource, 'workersInvocationsAdaptive')
+})
+
+test('collect fails when both workers datasets are unavailable', async () => {
+  await assert.rejects(
+    collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (_, options) => {
+      const name = queryName(JSON.parse(options.body))
+      if (name === 'workers-overview' || name === 'workers-invocations') {
+        return jsonResponse({ errors: [{ message: `${name} unavailable` }] }, { ok: false, status: 400 })
+      }
+      return jsonResponse(emptyUsage)
+    }),
+    /CLOUDFLARE_USAGE_WORKERS_UNAVAILABLE/,
+  )
+})
+
+test('a failed d1 query fails the whole collect instead of writing a partial report', async () => {
+  const names = []
+  await assert.rejects(
+    collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (_, options) => {
+      const name = queryName(JSON.parse(options.body))
+      names.push(name)
+      if (name === 'd1') return jsonResponse({ errors: [{ message: 'd1 analytics unauthorized' }] }, { ok: false, status: 403 })
+      return jsonResponse(emptyUsage)
+    }),
+    /CLOUDFLARE_USAGE_GRAPHQL:d1 analytics unauthorized/,
+  )
+  assert.equal(names.includes('workers-overview'), true)
+  assert.equal(names.includes('d1'), true)
+})
+
+test('collect failure status maps config errors to 503 and business errors to 500', () => {
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_CONFIG_MISSING:CLOUDFLARE_ANALYTICS_TOKEN')), 503)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_STORAGE_UNAVAILABLE')), 503)
+  assert.equal(usageCollectFailureStatus(new Error('CONTENT_FEED_NOT_CONFIGURED')), 503)
+  assert.equal(usageCollectFailureStatus(new Error('MONITOR_SECRET_NOT_CONFIGURED')), 503)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_GRAPHQL:not authorized for that account')), 500)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_WORKERS_UNAVAILABLE:overview failed')), 500)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_HTTP_403')), 500)
 })
 
 test('daily snapshot persists without D1 and history is newest first', async () => {

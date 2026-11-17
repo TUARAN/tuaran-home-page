@@ -13,11 +13,11 @@ Workers 调用、D1 读取行数、D1 写入行数任一达到 Free 参考额度
 3. 后台 Pages 项目配置 `SITE_STATUS_MONITOR_SECRET`（或已有 `AUTOMATION_ALERT_SECRET`），GitHub Actions 同名 Secret 填入相同值。
 4. 部署后台后，在 GitHub Actions 手动运行一次 `Cloudflare usage daily report`，检查接口返回 `ok: true`，再打开用量监控页。
 
-GitHub Actions 每天 00:20 UTC（北京时间 08:20）调用后台采集接口，用一次 GraphQL 查询归档前一个 UTC 日的完整快照，并在 Actions 运行摘要列出总量与最高请求路径；当天数据在站长打开页面时查询。错过的日期可在已登录的后台向 `POST /api/admin/cloudflare-usage?date=YYYY-MM-DD` 发请求补档。页面刷新失败时保留历史快照并显示错误。Cloudflare GraphQL 使用按查询成本计的限流预算，不要连续点击手动采集；等待平台限流窗口结束。
+GitHub Actions 每天 00:20 UTC（北京时间 08:20）调用后台采集接口，分别查询 Workers、D1 和区域 HTTP 用量，归档前一个 UTC 日的完整快照，并在 Actions 运行摘要列出总量与最高请求路径；当天数据在站长打开页面时查询。Workers 优先用 `workersOverviewRequestsAdaptiveGroups`；若该数据集不可用，再回退到按 `scriptName` 聚合的 `workersInvocationsAdaptive`（用 `sum.requests`，不按时间桶取 sample 行，以免少计）。任一数据集失败则整次采集失败，不写不完整报表。采集接口的业务/上游错误返回 JSON 和 HTTP 500，缺配置返回 JSON 和 HTTP 503，不再用 HTTP 502，以免和边缘 502 页混淆。错过的日期可在已登录的后台向 `POST /api/admin/cloudflare-usage?date=YYYY-MM-DD` 发请求补档。页面刷新失败时保留历史快照并显示错误。Cloudflare GraphQL 使用按查询成本计的限流预算，不要连续点击手动采集；等待平台限流窗口结束。
 
 ## 指标口径
 
-- Workers / Pages Functions：账号范围的 `workersOverviewRequestsAdaptiveGroups`，并按脚本列出调用量。
+- Workers / Pages Functions：账号范围优先查 `workersOverviewRequestsAdaptiveGroups`，不可用时回退到按脚本聚合的 `workersInvocationsAdaptive`，并按脚本列出调用量。
 - D1：`d1AnalyticsAdaptiveGroups` 对指定数据库的读写行数与查询次数。参考额度以 Free 套餐显示；其他套餐以 Cloudflare 控制台为准。
 - Free 套餐每日行读/写限额是**账号级**：主站 D1 与同账号其它库（如 `china-poetry`）共用。优化单库不够时，要一起看账号总用量。
 - 行读取按扫描计费：无索引过滤、`COUNT(*)`、`SUM(LENGTH)`、大 `LIMIT` 历史拉取都会快速消耗额度。后台库表详情默认不算文本量；需要时再带 `stats=full`。

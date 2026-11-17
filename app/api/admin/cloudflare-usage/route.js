@@ -1,6 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getIntegrationEnv } from '../../../../lib/site/integrationKeys'
-import { readUsageHistory, utcDate } from '../../../../lib/site/cloudflareUsage'
+import { readUsageHistory, usageCollectFailureStatus, utcDate } from '../../../../lib/site/cloudflareUsage'
 import { persistUsageReport, usageDashboardMeta } from '../../../../lib/site/cloudflareUsageOps'
 
 export const runtime = 'edge'
@@ -59,6 +59,6 @@ export async function POST(request) {
       notified: saved.notification.created,
     })
   } catch (error) {
-    return Response.json({ ok: false, error: String(error?.message || error) }, { status: 502 })
+    return Response.json({ ok: false, error: String(error?.message || error) }, { status: usageCollectFailureStatus(error) })
   }
 }

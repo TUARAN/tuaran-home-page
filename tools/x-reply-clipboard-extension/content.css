@@ -5610,6 +5610,35 @@
   border-color: #4ade80;
   background: linear-gradient(110deg, rgba(22, 101, 52, 0.55), rgba(15, 20, 25, 0.95));
 }
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item[data-phase="now"][data-pulse="running"] :is(.xrc-schedule-item-body strong, [data-xrc-desk-now], .xrc-schedule-item-status) {
+  color: #86efac;
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item:is([data-phase="next"], [data-phase="candidate"], [data-warmth="0"]) {
+  border-color: #765321;
+  background: #292015;
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item[data-phase="next"] {
+  border-color: #9a6b28;
+  background: #382812;
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item[data-phase="candidate"]:is([data-warmth="4"], [data-warmth="5"]) {
+  border-color: var(--xrc-line);
+  background: var(--xrc-elevated);
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item:is([data-phase="next"], [data-phase="candidate"]) .xrc-desk-phase-tag {
+  border-color: #765321;
+  background: #3a2a16;
+  color: #fcd58a;
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item:is([data-phase="next"], [data-phase="candidate"]) .xrc-schedule-item-status {
+  color: #fcd58a;
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-schedule-board .xrc-schedule-item[data-phase="candidate"]:is([data-warmth="4"], [data-warmth="5"]) .xrc-schedule-item-status {
+  color: var(--xrc-muted);
+}
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-post-flow {
+  background: var(--xrc-elevated-soft);
+}
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-plate-head > span,
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-plate-head strong,
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-header-meta,

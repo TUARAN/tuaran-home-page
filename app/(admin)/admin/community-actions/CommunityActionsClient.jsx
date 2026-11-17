@@ -58,14 +58,14 @@ const EXTENSION_TASKS = Object.freeze([
     id: 'xhs-assistant',
     platform: 'xhs',
     label: '小红书高频互动助手',
-    summary: '已归档。相关功能已合入 AI 分发大师；旧监控仅供查看历史数据。',
+    summary: '已归档。相关功能已合入 AI 分发大师；请先在插件台启用 AI 分发大师，再打开其监控。',
     archived: true,
   },
   {
     id: 'juejin-assistant',
     platform: 'juejin',
     label: '掘金高频互动助手',
-    summary: '已归档。相关功能已合入 AI 分发大师；旧监控仅供查看历史数据。',
+    summary: '已归档。相关功能已合入 AI 分发大师；请先在插件台启用 AI 分发大师，再打开其监控。',
     archived: true,
   },
 ])
@@ -263,7 +263,7 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
       ) : null}
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dbe3dd] bg-[#f3f8f5] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
-        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师和 X 的设备状态与回执在插件监控查看；已归档的小红书、掘金插件监控保留历史数据。</p>
+        <p className="m-0 text-[13px] leading-6 text-[#315748] dark:text-emerald-200">AI 分发大师和 X 的设备状态与回执在插件监控查看。小红书、掘金独立监控已收回；跨平台分发请启用 AI 分发大师。</p>
         <div className="flex flex-wrap gap-2"><AdminButton href="/admin/community-actions/monitor" variant="primary">插件监控</AdminButton><AdminButton onClick={onRefresh} disabled={loading}>刷新</AdminButton></div>
       </div>
 
@@ -298,8 +298,11 @@ function ReceiptsPanel({ center, loading, error, notice, rotating, onRefresh, on
               <p className="mb-0 mt-2 break-words text-[12px] leading-5 text-[#7a7c70] dark:text-gray-400">{item.summary}</p>
               {['x-assistant', 'syncblog-download'].includes(item.id) ? <ExtensionPackagePanel pluginId={item.id === 'x-assistant' ? 'x' : 'ai-distributor'} /> : (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {item.id !== 'article-distribution' ? <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>{item.archived ? '查看历史监控' : '查看监控'}</AdminButton> : null}
-                  {item.archived ? <AdminButton size="sm" variant="ghost" href="/admin/community-actions/monitor?platform=ai-distributor">查看 AI 分发大师监控</AdminButton> : null}
+                  {item.archived ? (
+                    <AdminButton size="sm" variant="primary" href="/admin/community-actions/monitor?platform=ai-distributor">去启用 AI 分发大师监控</AdminButton>
+                  ) : item.id !== 'article-distribution' ? (
+                    <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${item.platform}`}>查看监控</AdminButton>
+                  ) : null}
                   {item.href ? <AdminButton size="sm" variant="ghost" href={item.href}>{item.id === 'article-distribution' ? '打开分发页面' : '插件下载页'}</AdminButton> : null}
                 </div>
               )}
@@ -334,8 +337,7 @@ function OverviewPanel({ onOpenMode }) {
           <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
           <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>
           <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
-          <li>小红书高频互动助手：已归档，功能已合入 AI 分发大师</li>
-          <li>掘金高频互动助手：已归档，功能已合入 AI 分发大师</li>
+          <li>小红书 / 掘金旧助手：已归档；监控顶栏已收回，请到插件台启用 AI 分发大师</li>
         </ul>
       </Section>
 

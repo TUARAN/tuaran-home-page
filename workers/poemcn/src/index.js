@@ -9,7 +9,8 @@ import {
   getStaticReleaseObject,
 } from "./database.js";
 import { quotes } from "./data.js";
-import { SITE_URL, SITEMAP_SIZE, renderHome, renderPoem, renderMissing, sitemapIndex, sitemapUrls } from "./seo.js";
+import { getCollection } from "./collections.js";
+import { SITE_URL, SITEMAP_SIZE, renderHome, renderPoem, renderCollection, renderMissing, sitemapIndex, sitemapUrls } from "./seo.js";
 
 async function pageTemplate(env) {
   // Only buffer this known, small local template. Never forward session headers.
@@ -75,6 +76,17 @@ async function handlePage(request, url, env) {
     return pageResponse(request, renderHome(template, { poems, authors, stats, quotes, filters }), "text/html", 200,
       ["q", "dynasty", "genre", "page", "category"].some(key => url.searchParams.has(key)));
   }
+  const collectionPath = url.pathname.match(/^\/collections\/([A-Za-z0-9-]{1,80})(\/?)$/);
+  if (collectionPath) {
+    if (collectionPath[2]) return Response.redirect(`${SITE_URL}/collections/${collectionPath[1]}${url.search}`, 301);
+    const collection = getCollection(collectionPath[1]);
+    if (!collection) {
+      const template = await pageTemplate(env);
+      return pageResponse(request, renderMissing(template), "text/html", 404, true);
+    }
+    const template = await pageTemplate(env);
+    return pageResponse(request, renderCollection(template, collection));
+  }
   const path = url.pathname.match(/^\/poems\/([A-Za-z0-9_-]{1,160})(\/?)$/);
   if (path) {
     if (path[2]) return Response.redirect(`${SITE_URL}/poems/${path[1]}${url.search}`, 301);
@@ -122,7 +134,8 @@ export default {
     const url = new URL(request.url);
 
     if (["/", "/index.html", "/robots.txt", "/sitemap.xml"].includes(url.pathname)
-      || url.pathname.startsWith("/poems/") || url.pathname.startsWith("/sitemaps/")) {
+      || url.pathname.startsWith("/poems/") || url.pathname.startsWith("/collections/")
+      || url.pathname.startsWith("/sitemaps/")) {
       try {
         return await handlePage(request, url, env);
       } catch (error) {

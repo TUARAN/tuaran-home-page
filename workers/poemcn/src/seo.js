@@ -1,3 +1,4 @@
+import { collectionPath, listCollections } from "./collections.js";
 export const SITE_URL = "https://poemcn.2aran.com";
 export const SITE_NAME = "阿燃诗词";
 export const SITEMAP_SIZE = 1000;
@@ -40,6 +41,24 @@ function documentWith(template, main, title, description, path, entity) {
     .replace('<span id="year"></span>', `<span id="year">${new Date().getFullYear()}</span>`);
 }
 
+export function teachingHomeList() {
+  return listCollections().map((collection) => {
+    const items = collection.entries.map((entry) => {
+      const heading = entry.ownerTitle === entry.standardTitle
+        ? escapeHtml(entry.ownerTitle)
+        : `${escapeHtml(entry.ownerTitle)}<span>（${escapeHtml(entry.standardTitle)}）</span>`;
+      return `<li><a href="${collectionPath(collection.slug)}#${encodeURIComponent(entry.id)}">${heading}</a></li>`;
+    }).join("");
+    return `<div class="teaching-home-card" data-collection="${escapeHtml(collection.slug)}">
+      <p class="section-kicker">${escapeHtml(collection.kicker)}</p>
+      <h2 id="teachingCollectionTitle"><a href="${collectionPath(collection.slug)}">${escapeHtml(collection.title)}</a></h2>
+      <p class="teaching-home-lead">${escapeHtml(collection.summary)}</p>
+      <ul class="teaching-home-list">${items}</ul>
+      <p class="teaching-home-more"><a href="${collectionPath(collection.slug)}">打开专集 →</a></p>
+    </div>`;
+  }).join("");
+}
+
 export function renderHome(template, data) {
   const cards = data.poems.slice(0, 6).map((poem) => `<article class="poem-card">
     <div class="poem-title-wrap"><h3><a href="${poemPath(poem.id)}">${escapeHtml(poem.title)}</a></h3>
@@ -48,6 +67,7 @@ export function renderHome(template, data) {
     <a href="${poemPath(poem.id)}">阅读原文 →</a></article>`).join("");
   return template.replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/, () => metadata(`${SITE_NAME}｜古诗词与文言文`, DESCRIPTION, "/"))
     .replace('<div class="loading-card">正在翻开诗卷…</div>', () => cards)
+    .replace(/<div id="teachingCollectionMount">[\s\S]*?<\/div>/, () => `<div id="teachingCollectionMount">${teachingHomeList()}</div>`)
     .replace('</body>', () => `<script id="poemInitialData" type="application/json">${jsonScript(data)}</script></body>`);
 }
 
@@ -71,6 +91,81 @@ export function renderPoem(template, poem) {
   });
 }
 
+
+function renderSources(sources) {
+  if (!sources?.length) return "";
+  const items = sources.map((item) => item.url
+    ? `<li><a href="${escapeHtml(item.url)}" rel="noopener noreferrer">${escapeHtml(item.label)}</a></li>`
+    : `<li>${escapeHtml(item.label)}</li>`).join("");
+  return `<section class="reading-notes teaching-sources"><h2>出处与依据</h2><ul>${items}</ul></section>`;
+}
+
+function renderLibraryLinks(poems) {
+  if (!poems?.length) return "";
+  const items = poems.map((poem) => {
+    const note = poem.note ? `：${escapeHtml(poem.note)}` : "";
+    return `<li><a href="${poemPath(poem.id)}">${escapeHtml(poem.author)}《${escapeHtml(poem.title)}》</a>${note}</li>`;
+  }).join("");
+  return `<section class="reading-notes"><h2>本站库里的记录</h2><ul>${items}</ul></section>`;
+}
+
+function renderEntry(collection, entry) {
+  const standard = entry.ownerTitle === entry.standardTitle
+    ? `${escapeHtml(entry.author)}《${escapeHtml(entry.standardTitle)}》`
+    : `站长叫法「${escapeHtml(entry.ownerTitle)}」，通行题名是${escapeHtml(entry.author)}《${escapeHtml(entry.standardTitle)}》`;
+  const texts = entry.texts.map((text) => `<div class="teaching-text">
+      <h3>${escapeHtml(text.label)}</h3>
+      <div class="poem-lines">${text.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>
+    </div>`).join("");
+  const notes = entry.notes?.length
+    ? `<section class="reading-notes"><h2>注释</h2><dl>${entry.notes.map((note) => `<dt>${escapeHtml(note.term)}</dt><dd>${escapeHtml(note.text)}</dd>`).join("")}</dl></section>`
+    : "";
+  return `<article class="poem-card reading-poem teaching-entry" id="${escapeHtml(entry.id)}">
+    <header>
+      <p class="eyebrow">${escapeHtml(entry.dynasty)} · ${escapeHtml(entry.author)}</p>
+      <h2>${escapeHtml(entry.ownerTitle)}</h2>
+      <p class="teaching-standard">${standard}</p>
+      <p>${escapeHtml(entry.titleNote)}</p>
+    </header>
+    ${texts}
+    <section class="reading-notes"><h2>白话大意</h2><p>${escapeHtml(entry.vernacular)}</p></section>
+    <section class="reading-notes"><h2>寓意</h2><p>${escapeHtml(entry.meaning)}</p></section>
+    <section class="reading-notes"><h2>诗人与创作背景</h2><p>${escapeHtml(entry.background)}</p></section>
+    ${notes}
+    ${renderLibraryLinks(entry.libraryPoems)}
+    ${renderSources(entry.sources)}
+  </article>`;
+}
+
+export function renderCollection(template, collection) {
+  const path = collectionPath(collection.slug);
+  const entries = collection.entries.map((entry) => renderEntry(collection, entry)).join("");
+  const main = `<nav class="reading-breadcrumb" aria-label="面包屑"><a href="/">${SITE_NAME}</a> / ${escapeHtml(collection.title)}</nav>
+    <header class="teaching-collection-head">
+      <p class="eyebrow">${escapeHtml(collection.kicker)}</p>
+      <h1>${escapeHtml(collection.title)}</h1>
+      <p>${escapeHtml(collection.summary)}</p>
+    </header>
+    ${entries}
+    <p><a href="/">返回诗词库 →</a></p>`;
+  return documentWith(template, main, `${collection.title}｜${SITE_NAME}`, collection.description, path, {
+    "@type": "CollectionPage",
+    "@id": `${SITE_URL}${path}#collection`,
+    name: collection.title,
+    description: collection.description,
+    inLanguage: "zh-CN",
+    url: SITE_URL + path,
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    hasPart: collection.entries.map((entry) => ({
+      "@type": "CreativeWork",
+      name: `${entry.author}《${entry.standardTitle}》`,
+      alternateName: entry.ownerTitle !== entry.standardTitle ? entry.ownerTitle : undefined,
+      author: { "@type": "Person", name: entry.author },
+      url: `${SITE_URL}${path}#${entry.id}`,
+    })),
+  });
+}
+
 export function renderMissing(template) {
   return documentWith(template, '<h1>没有找到这篇诗文</h1><p><a href="/">返回阿燃诗词，搜索诗名或作者。</a></p>',
     `诗文未找到｜${SITE_NAME}`, "这篇诗文不存在。", "/");
@@ -82,7 +177,10 @@ export function sitemapIndex(buckets) {
 }
 
 export function sitemapUrls(rows = null) {
-  const entries = rows === null ? `<url><loc>${SITE_URL}/</loc></url>` : rows.map(row => {
+  const staticPages = rows === null
+    ? [`/`, ...listCollections().map((item) => collectionPath(item.slug))].map((path) => `<url><loc>${SITE_URL}${path === "/" ? "/" : path}</loc></url>`).join("")
+    : null;
+  const entries = rows === null ? staticPages : rows.map(row => {
     // D1 timestamps are UTC. Omit invalid dates instead of claiming freshness.
     const value = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(row.updated_at || "") ? row.updated_at.replace(" ", "T") + "Z" : row.updated_at;
     const time = value ? new Date(value) : null;

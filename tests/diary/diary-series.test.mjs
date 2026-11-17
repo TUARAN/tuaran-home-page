@@ -58,6 +58,31 @@ test('浮生日记 starts on the earliest timeline entry and keeps that framing'
   assert.equal(DIARY_SERIES_TITLE, '浮生日记')
 })
 
+test('每天接受检验 keeps the reviewed oral draft verbatim', () => {
+  const { heading, blocks } = diaryEntry(diaryArticle(), '每天接受检验')
+  const text = blocks.join('\n\n')
+  assert.equal(heading.date, '2026-11-17')
+  assert.equal(heading.category, '内容与增长')
+  assert.equal(heading.sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  assert.equal(
+    text,
+    [
+      '最近一个多月，或许一个半月，除了睡觉，除了生活带娃，再除了工作，剩下来的时间其实已经不多了，几乎都给了 X 大互动——多半是每天晚上。现在的工作，很多时候也是在驱动 AI 来做。它现在安在一个智能体里：浏览器插件接上大模型，把评论、点赞、发帖、关注，还有社群，一环一环编排起来，做成高频的互动。',
+      '规则很多，多到后来写成了一份大互动的文档，也就是黄皮书。可大模型也一直在旁边帮着。这套东西，本来就是用大模型开发出来的；到了具体环节，它的介入往往又简单得惊人。平台有平台的规矩，生活有生活的节律，账号有它当时的状态——这些都不是并列的条款，是要揉在一起的。整个生态都得活起来，才叫把这件事做成。',
+      '我想，X 大互动其实是一套大互动的理论。第一要义是大健康：人要健康，账号也要健康，两头都轻不得。第二要义是拥抱 AI，而且要充分地拥抱。以后人和智能体的边界，大概会越来越模糊；有时候人不太愿意再跟人打交道，人跟这一类「人」说话，智能体跟智能体来往，或许就是这样的趋势。反正，全面用 AI，是一定的。第三要义是保持规律，再慢慢拓展边界，去试那些规则允许的地方。先记下这三条，其余的，我一时也记不全了，过一阵再补。',
+      '做到现在，一个账号已经可以很快摸到五百万的流量。评论这条路，基本上走通了；评论和关注，也会回赠一些真切的反馈。',
+      '我在自己的站点上，记过出版社出的那些书。写到这里忽然觉得，那种书更像计划经济里的产物。而眼前这套理论，这个智能体，这种插件的形态，才是市场经济——它每天都要被检验一次，无处可躲。短期的愿望并不复杂：先等到创作者收益，再让关注的人，一点点多起来。',
+    ].join('\n\n'),
+  )
+  assert.doesNotMatch(text, /本文由站长口述/)
+  assert.doesNotMatch(text, /2026-11-17 口述，Bots 整理/)
+  assert.doesNotMatch(text, /每天接受检验/)
+  assert.deepEqual(
+    diaryContentFromMarkdown(legacyArticleToMarkdown({ content: [heading, ...blocks] })),
+    [heading, ...blocks],
+  )
+})
+
 test('下班的时候 keeps the reviewed oral draft verbatim', () => {
   const { heading, blocks } = diaryEntry(diaryArticle(), '下班的时候')
   const text = blocks.join('\n\n')
@@ -93,7 +118,7 @@ test('异世界的冲击 keeps the oral account and stays within the public draf
   assert.equal(heading.date, '2026-11-12')
   assert.equal(heading.sourceNote, DIARY_ORAL_SOURCE_NOTE)
   const marked = diaryArticle().content.filter((block) => block?.sourceNote)
-  assert.deepEqual(marked.map((block) => block.label), ['下班的时候', '异世界的冲击'])
+  assert.deepEqual(marked.map((block) => block.label), ['每天接受检验', '下班的时候', '异世界的冲击'])
   assert.match(text, /异世界的冲击/)
   assert.match(text, /这里的「异」是异同的异/)
   assert.match(text, /腿部手术已经住院/)
@@ -111,17 +136,20 @@ test('homepage preview uses the same series and leads with the latest record', (
   const preview = previewFromDiary(diaryArticle())
   assert.equal(preview.title, '浮生日记')
   assert.equal(preview.startedOn, '2026-01-05')
-  assert.equal(preview.entries[0].label, '下班的时候')
-  assert.equal(preview.entries[0].span, '2026-11-16')
-  assert.match(preview.entries[0].lead, /可能真的待不久了/)
-  assert.match(preview.entries[0].closing, /不能总等到下一年/)
+  assert.equal(preview.entries[0].label, '每天接受检验')
+  assert.equal(preview.entries[0].span, '2026-11-17')
+  assert.match(preview.entries[0].lead, /最近一个多月/)
+  assert.match(preview.entries[0].closing, /才是市场经济/)
   assert.equal(preview.entries[0].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.equal(preview.entries[1].label, '异世界的冲击')
-  assert.equal(preview.entries[1].span, '2026-11-06～2026-11-12')
+  assert.equal(preview.entries[1].label, '下班的时候')
+  assert.equal(preview.entries[1].span, '2026-11-16')
   assert.equal(preview.entries[1].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.match(preview.entries[1].detail, /小茉莉没带波西/)
-  assert.doesNotMatch(preview.entries[1].detail, /小猫利|没带娃娃/)
-  assert.ok(preview.entries.slice(2).every((entry) => !entry.sourceNote))
+  assert.equal(preview.entries[2].label, '异世界的冲击')
+  assert.equal(preview.entries[2].span, '2026-11-06～2026-11-12')
+  assert.equal(preview.entries[2].sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  assert.match(preview.entries[2].detail, /小茉莉没带波西/)
+  assert.doesNotMatch(preview.entries[2].detail, /小猫利|没带娃娃/)
+  assert.ok(preview.entries.slice(3).every((entry) => !entry.sourceNote))
   assert.equal(preview.entries[0].href, `/diary#${preview.entries[0].id}`)
   assert.ok(preview.entries.length >= 2)
   assert.ok(preview.entries[1].date < preview.entries[0].date)
@@ -129,11 +157,11 @@ test('homepage preview uses the same series and leads with the latest record', (
 
 test('an older published snapshot does not hide a later repository entry', () => {
   const archived = diaryArticle()
-  assert.equal(archived.content[0].label, '下班的时候')
+  assert.equal(archived.content[0].label, '每天接受检验')
   const older = {
     title: archived.title,
     summary: '旧摘要',
-    content: archived.content.slice(11),
+    content: archived.content.slice(17),
   }
   assert.equal(selectDiarySeries(archived, older), archived)
 

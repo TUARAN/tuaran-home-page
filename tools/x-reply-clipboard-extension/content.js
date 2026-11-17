@@ -2521,7 +2521,7 @@
   function isScheduleWaitReason(reason) {
     const text = String(reason || "").trim();
     if (!text || /已手动停止|未参与排班|站长后台已停止/u.test(text)) return false;
-    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待卡片|等待每周|点赞短轮|今日评论已到|今日评论额度暂时读不到|今日发帖已到|今日发帖额度暂时读不到|今日社群已到|今日社群额度暂时读不到/u.test(text);
+    return /等待下次排班|等待间隔|短轮已结束|本轮动作已完成|已转入单页签排班|更高优先级|安全轮换|等待下次运行|排队中|等待安排|夜间回关|等待精品|等待卡片|等待每周|点赞短轮|今日评论已到|今日评论额度暂时读不到|日发帖上限|今日发帖已到|今日发帖额度暂时读不到|今日社群已到|今日社群额度暂时读不到/u.test(text);
   }
 
   function formatUserStateAction(stateLabel, actionLabel) {
@@ -2935,6 +2935,7 @@
     const value = String(reason || "").trim();
     if (["risk-blocked", "automation-restricted"].includes(value)) return "X 提示疑似自动化或账号受限";
     if (value === "rate-limited") return "X 提示操作次数受限";
+    if (value === "daily-post-limit") return "X 提示日发帖上限";
     return value || "X 操作受限";
   }
 
@@ -3046,8 +3047,13 @@
     if (Number(queued.resumeAt) > now && /疑似自动化|限制冷却/u.test(queuedReason)) {
       return { kind: "cooldown", label: "X 限制冷却", detail: queuedReason, remaining: Number(queued.resumeAt) - now };
     }
-    if (Number(queued.resumeAt) > now && /今日评论已到|今日评论额度暂时读不到/u.test(queuedReason)) {
-      return { kind: "comment-cap", label: "今日评论额度已满", detail: queuedReason, remaining: Number(queued.resumeAt) - now };
+    if (Number(queued.resumeAt) > now && /今日评论已到|今日评论额度暂时读不到|日发帖上限/u.test(queuedReason)) {
+      return {
+        kind: "comment-cap",
+        label: /日发帖上限/u.test(queuedReason) ? "X 日发帖上限" : "今日评论额度已满",
+        detail: queuedReason,
+        remaining: Number(queued.resumeAt) - now
+      };
     }
     if (Number(queued.resumeAt) > now && /今日发帖已到|今日发帖额度暂时读不到/u.test(queuedReason)) {
       return { kind: "post-cap", label: "今日发帖额度已满", detail: queuedReason, remaining: Number(queued.resumeAt) - now };
@@ -3086,8 +3092,8 @@
       const currentLabel = FLOW_TASKS.find(([key]) => key === taskSchedule.current)?.[1];
       return { kind: "queue", label: "已到期", detail: currentLabel ? "等待当前任务跑完，再按队列继续" : "等待队列轮到", waitingFor: currentLabel || "", remaining: 0 };
     }
-    if (/疑似自动化|账号受限|操作受限|次数受限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
-      return { kind: "cooldown", label: "X 限制冷却", detail: "到期自动重试", remaining };
+    if (/疑似自动化|账号受限|操作受限|次数受限|日发帖上限|rate.limit|风控|限制冷却|X 限制/iu.test(reason)) {
+      return { kind: "cooldown", label: /日发帖上限/u.test(reason) ? "X 日发帖上限" : "X 限制冷却", detail: "到期自动重试", remaining };
     }
     if (remaining && ["mutual-followBack", "mutual-targetFollow"].includes(mode) && /批次冷却|共享.*冷却|共享频率限制|每确认 (?:15|100) 个|关注满 100 个|回关.*冷却/iu.test(reason)) {
       return { kind: "cooldown", label: "关注批次冷却", detail: "每确认 100 个后按速度档休息", remaining };
@@ -6978,6 +6984,8 @@
 
   const SUCCESS_NOTICE_RE = /(?:Your (?:post|reply) was sent\.?|(?:Post|Reply)(?: was)? sent\.?|你的?(?:帖子|回复)已发送|(?:帖子|回复)已发送(?:成功)?|(?:已成功发送|发送成功))/i;
   const AUTOMATION_WARNING_RE = /(?:Your account may not be allowed to perform this action|This request looks like it might be automated|can(?:not|’t|'t) complete this action right now|请求似乎可能是自动化操作|无法立即完成此操作)/i;
+  // Free-tier replies count toward X's daily post quota; this banner is not the automation warning.
+  const DAILY_POST_LIMIT_RE = /(?:You(?:['’]ve| have) hit the daily post limit|hit the daily post limit|Subscribe to Plus for higher limits|daily post limit|已达到?(?:每日)?发帖(?:上限|限制)|今日发帖(?:已满|已达上限|次数已用完)|发帖次数已达(?:到)?上限|订阅\s*(?:Plus|Premium).{0,24}(?:提高|提升|更高).{0,12}上限)/i;
   const TRANSIENT_ERROR_RE = /(?:Something went wrong(?:, but don(?:’t|'t) fret)?|give it another shot|出了点问题|请重试)/i;
   const DUPLICATE_REPLY_RE = /(?:Whoops!\s*)?You already said that\.?|你已经说过(?:这句话|这个了|了)?|已经发布过相同内容/i;
   const RECENT_REPLY_COOLDOWN_MS = 45 * 60 * 1000;
@@ -7041,6 +7049,24 @@
       .filter((node) => AUTOMATION_WARNING_RE.test(textOf(node)));
   }
 
+  function dailyPostLimitNodes() {
+    return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"], [data-testid="inlineError"], #layers'))
+      .filter((node) => !node.closest(`#${PANEL_ID}`) && DAILY_POST_LIMIT_RE.test(textOf(node)));
+  }
+
+  function dailyPostLimitVisible() {
+    return dailyPostLimitNodes().length > 0;
+  }
+
+  function nextDailyPostLimitResumeAt(now = Date.now()) {
+    const fromReceipt = globalThis.XrcCommunityReceipt?.nextShanghaiMidnight?.(now);
+    if (Number(fromReceipt) > now) return Number(fromReceipt);
+    const tomorrow = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" })
+      .format(now + 24 * 60 * 60 * 1000);
+    const parsed = Date.parse(`${tomorrow}T00:00:00+08:00`);
+    return Number.isFinite(parsed) ? parsed : now + 24 * 60 * 60 * 1000;
+  }
+
   function transientErrorNodes() {
     return Array.from(document.querySelectorAll('[data-testid="toast"], [role="alert"], [role="status"], [role="dialog"]'))
       .filter((node) => !node.closest(`#${PANEL_ID}`) && TRANSIENT_ERROR_RE.test(textOf(node)));
@@ -7101,6 +7127,29 @@
       state.pendingGrokInvite = false;
       writeSaved({ running: true, total: state.total });
     }).catch(() => {});
+  }
+
+  function applyDailyPostLimitStop() {
+    if (state.stopping) return false;
+    for (const node of dailyPostLimitNodes()) acknowledgedAutomationNotices.set(node, textOf(node));
+    if (!["timeline", "notifications", "kol"].includes(state.assistantMode)) return false;
+    if (!state.running || state.riskCooldownUntil > Date.now()) return false;
+    const resumeAt = nextDailyPostLimitResumeAt();
+    state.riskCooldownUntil = resumeAt;
+    state.riskPaused = true;
+    riskRoundRequested = true;
+    cancelActiveAiRequest();
+    writeSaved({ running: true, total: state.total });
+    state.status = "X 提示日发帖上限，评论任务等到明天";
+    renderPanel();
+    void prepareReplyForTabSwitch().then((cleared) => {
+      if (!cleared) return;
+      state.pendingReply = "";
+      state.pendingTweetId = "";
+      state.pendingGrokInvite = false;
+      writeSaved({ running: true, total: state.total });
+    }).catch(() => {});
+    return true;
   }
 
   async function advanceRoundAfterRisk(summary = "X 提示疑似自动化") {
@@ -7190,6 +7239,7 @@
     if (result === "reply-disabled") return "评论按钮不可用";
     if (result === "post-unavailable") return "原帖已删除或当前账号看不到";
     if (result === "reply-restricted") return "当前账号没有这条帖子的回复权限";
+    if (result === "daily-post-limit") return "X 提示日发帖上限";
     if (result === "like-disabled") return "点赞按钮不可用";
     if (result === "like-unconfirmed") return "点赞结果未确认";
     return result;
@@ -7238,16 +7288,18 @@
     if (state.stopping) return "stopped";
     if (findReplyRestrictionDialog()) return "reply-restricted";
     if (unavailablePostInDialog()) return "post-unavailable";
+    if (dailyPostLimitVisible()) return "daily-post-limit";
     if (transientErrorVisible()) return "transient-error";
     const phrase = String(replyText || "").trim();
     if (!phrase) return "compose-failed";
     const filled = await ensureReplyComposerText(composer, phrase);
     if (state.stopping) return "stopped";
     if (unavailablePostInDialog()) return "post-unavailable";
+    if (dailyPostLimitVisible()) return "daily-post-limit";
     if (!filled) return "compose-failed";
 
     const enabled = await waitUntil(() => {
-      if (unavailablePostInDialog()) return true;
+      if (unavailablePostInDialog() || dailyPostLimitVisible()) return true;
       const current = composer.dialog ? findDialogComposer() : findComposer(composer.textbox.closest("article"), false);
       const submit = current?.submit || composer.submit;
       return loopApi.isSubmitEnabled(submit);
@@ -7255,6 +7307,7 @@
 
     if (state.stopping) return "stopped";
     if (unavailablePostInDialog()) return "post-unavailable";
+    if (dailyPostLimitVisible()) return "daily-post-limit";
     if (!enabled) return "submit-disabled";
 
     // Mention completion can mutate the DraftJS editor after the first fill.
@@ -7263,7 +7316,8 @@
 
     const current = composer.dialog ? findDialogComposer() : composer;
     const submit = current?.submit || composer.submit;
-    if (!await waitUntil(() => loopApi.isSubmitEnabled(current?.submit || composer.submit), SUBMIT_TIMEOUT_MS)) return "submit-disabled";
+    if (!await waitUntil(() => dailyPostLimitVisible() || loopApi.isSubmitEnabled(current?.submit || composer.submit), SUBMIT_TIMEOUT_MS)) return "submit-disabled";
+    if (dailyPostLimitVisible()) return "daily-post-limit";
     if (loopApi.normalizePhraseText(loopApi.composerText(current?.textbox || composer.textbox)) !== loopApi.normalizePhraseText(phrase)) return "compose-failed";
     const successNoticesBefore = new Set(successNoticeNodes());
     const toastsBefore = new Set(unavailablePostToasts());
@@ -7276,6 +7330,7 @@
       : !composer.textbox.isConnected || !loopApi.composerText(composer.textbox));
     const receiptFailure = () => {
       if (unavailableAfterClick()) return "post-unavailable";
+      if (dailyPostLimitVisible()) return "daily-post-limit";
       if (automationWarningNodes().length > 0) return "risk-blocked";
       if (transientAfterClick() && !hasNewSuccessNotice()) return "transient-error";
       if (duplicateReplyWarningVisible()) return "duplicate-reply";
@@ -7395,12 +7450,14 @@
     if (browse === "risk-yield" || browse === "stopped") return "stopped";
     if (browse) return browse;
     if (state.stopping || !state.running || riskRoundPending()) return "stopped";
+    if (dailyPostLimitVisible()) return "daily-post-limit";
     if (state.assistantMode === "notifications" && loopApi.hasVisibleReplyCount(tweet.replyButton)) return "already-replied";
     if (!composer) {
       state.status = "正在打开评论框…";
       renderPanel();
       composer = await openComposer(tweet);
       if (!composer) return findReplyRestrictionDialog() ? "reply-restricted" : "no-composer";
+      if (dailyPostLimitVisible()) return "daily-post-limit";
       if (state.assistantMode === "notifications" && composer.dialog && dialogConflictsWithTweet(composer.dialog, tweet)) {
         await closeReplyComposer({ forceClear: true });
         return "wrong-target";
@@ -7418,6 +7475,7 @@
       && result !== "post-unavailable"
       && result !== "reply-restricted"
       && result !== "risk-blocked"
+      && result !== "daily-post-limit"
       && result !== "transient-error"
       && result !== "duplicate-reply"
       && result !== "compose-failed"
@@ -7432,6 +7490,7 @@
     const blocked = () => {
       if (state.stopping || !state.running) return "stopped";
       if (riskRoundPending()) return "risk-yield";
+      if (dailyPostLimitVisible()) return "daily-post-limit";
       if (findReplyRestrictionDialog()) return "reply-restricted";
       return "";
     };
@@ -8082,6 +8141,16 @@
         });
         applyRiskStop();
         return advanceRoundAfterRisk();
+      }
+      if (result === "daily-post-limit") {
+        reportCommunityAction({
+          task: replyCommunityTask(),
+          result: "limited",
+          targetId: next.id,
+          errorCode: "daily-post-limit"
+        });
+        applyDailyPostLimitStop();
+        return advanceRoundAfterRisk("X 提示日发帖上限");
       }
       if (result === "composer-already-open") {
         const closed = await closeReplyComposer({ forceClear: true });
@@ -12206,8 +12275,18 @@
       const confirmingStart = Boolean(confirmingStartCopy(taskSchedule.current || ""));
       const waitingDeadline = soonestWaitMs() > 0 || confirmingStart;
       const warnings = automationWarningNodes();
-      if (!warnings.length) acknowledgedAutomationNotices = new WeakMap();
-      if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
+      const dailyLimits = dailyPostLimitNodes();
+      if (!warnings.length && !dailyLimits.length) acknowledgedAutomationNotices = new WeakMap();
+      if (!state.stopping && state.running && dailyLimits.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) {
+        if (applyDailyPostLimitStop()) {
+          reportCommunityAction({
+            task: replyCommunityTask(),
+            result: "limited",
+            targetId: state.pendingTweetId || "",
+            errorCode: "daily-post-limit"
+          });
+        }
+      } else if (!state.stopping && (state.running || state.mutual?.running || state.poster?.running)
         && warnings.some((node) => acknowledgedAutomationNotices.get(node) !== textOf(node))) applyRiskStop();
       idleRenderTicks = active || waitingDeadline ? 0 : idleRenderTicks + 1;
       const panelMissing = !panelDismissed && !document.getElementById(PANEL_ID);

@@ -9435,7 +9435,10 @@
             <div class="xrc-brand-copy">
               <div class="xrc-title">X 大互动智能体</div>
               <div class="xrc-account" data-xrc-account hidden></div>
-              <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span><button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button></div></div>
+              <div class="xrc-subtitle">
+                <div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
+                <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button>
+              </div>
             </div>
           </div>
           <div class="xrc-header-actions">

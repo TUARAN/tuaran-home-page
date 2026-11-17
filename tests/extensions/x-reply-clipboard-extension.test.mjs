@@ -2610,6 +2610,8 @@ test('header shows clickable egress IP beside the version badge', async () => {
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   assert.match(source, /data-xrc-egress-ip/)
+  assert.match(source, /xrc-version-line[\s\S]*?<\/div>\s*<button[^>]*data-xrc-egress-ip/)
+  assert.match(css, /\.xrc-subtitle\s*\{[\s\S]*?display: grid/)
   assert.match(source, /xrc-detect-egress-ip/)
   assert.match(source, /function refreshEgressIp/)
   assert.match(source, /function paintEgressIp/)

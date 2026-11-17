@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 246,
+    "routes": 247,
     "redirects": 22,
     "private": 63,
-    "registeredStatic": 117,
-    "indexable": 138,
-    "canonical": 157,
-    "openGraph": 91,
-    "jsonLd": 66,
+    "registeredStatic": 118,
+    "indexable": 139,
+    "canonical": 158,
+    "openGraph": 92,
+    "jsonLd": 67,
     "errors": 9,
     "warnings": 138
   },
@@ -3676,6 +3676,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/github-trending",
+      "file": "app/(site)/tools/github-trending/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/github-trending"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/tools/github-trending"
+        ]
       }
     },
     {

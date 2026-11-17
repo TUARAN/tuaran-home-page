@@ -15,7 +15,7 @@
   const FOLLOW_DAILY_LIMIT = 400;
   const RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
   const RESCAN_INTERVAL_MS = 30 * 60 * 1000;
-  const FOLLOW_BACK_LIST_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+  const FOLLOW_BACK_LIST_GAP_MS = 5 * 60 * 1000;
   const TARGET_SEED_REFRESH_MS = 6 * 60 * 60 * 1000;
   const TARGET_EXPANSION_LIMIT = 30;
   const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);

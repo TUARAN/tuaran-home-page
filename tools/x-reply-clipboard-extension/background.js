@@ -1997,14 +1997,15 @@ const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
 const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
 const UNFOLLOW_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const UNFOLLOW_SLICE_MS = 10 * 60 * 1000;
-// Once a week, same cadence as 清理未回关. 关注候选 keeps the short session gap.
-const FOLLOW_BACK_MIN_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+// Same short session gap as 关注候选. Cleanup unfollow tasks keep the weekly gap.
 const FOLLOW_DAILY_TARGET = 300;
 const COMMENT_TURN_MS = 10 * 60 * 1000;
 const FOLLOW_RATE_STORAGE_KEY = "xrcTargetFollowDaily";
 // A follow session stays on the tab until 100 confirms. The slice is only a stuck-loop cap.
 const FOLLOW_BACK_SLICE_MS = 3 * 60 * 60 * 1000;
 const TARGET_FOLLOW_MIN_GAP_MS = 5 * 60 * 1000;
+const FOLLOW_BACK_MIN_GAP_MS = TARGET_FOLLOW_MIN_GAP_MS;
+const LEGACY_FOLLOW_BACK_WEEKLY_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const LEGACY_FOLLOW_BACK_GAP_MS = 24 * 60 * 60 * 1000;
 const LEGACY_TARGET_FOLLOW_GAP_MS = 7 * 24 * 60 * 60 * 1000;
 const LEGACY_FOLLOW_BATCH_GAP_MS = 30 * 60 * 1000;
@@ -2563,11 +2564,10 @@ function normalizedTaskRules(value) {
       pace,
       window: ["all", "day", "peak", "overnight"].includes(rule.window) ? rule.window : defaults[mode].window,
       // Unfollow stays on the weekly constant. Pace segments apply to post/reply cleanup only.
-      // Follow-back uses the weekly gap; target-follow keeps the short session gap.
+      // Follow-back and target-follow share the short session gap.
       minGapMs: mode === "mutual-unfollow" || mode === "mutual-unfollowNonSc" ? UNFOLLOW_MIN_GAP_MS
         : ["prune-posts", "prune-replies"].includes(mode) ? cleanupMinGapMs(pace)
-        : mode === "mutual-followBack" ? FOLLOW_BACK_MIN_GAP_MS
-        : mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
+        : mode === "mutual-followBack" || mode === "mutual-targetFollow" ? TARGET_FOLLOW_MIN_GAP_MS
         : mode === "site-forward"
         ? SITE_FORWARD_RETRY_MS
         : mode === "community-share" || mode === "community-copy"
@@ -2950,15 +2950,16 @@ async function readTaskSchedule() {
     scheduleMigrated = true;
   }
   if ((plan.followBackWeeklyGapVersion || 0) < 2) {
-    if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
+    // Historical weekly bump. Later followBackSessionGapVersion shortens it again.
+    if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = LEGACY_FOLLOW_BACK_WEEKLY_GAP_MS;
     const item = plan.items?.["mutual-followBack"];
     if (item && !item.manualStopped && !item.blocked) {
       const reason = String(item.reason || "");
       const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
       const batchRest = /每确认|共享关注冷却|关注满 100|本批已完成/u.test(reason);
       const resumeAt = Number(item.resumeAt) || 0;
-      if (!risk && !batchRest && resumeAt > Date.now() && resumeAt < Date.now() + FOLLOW_BACK_MIN_GAP_MS) {
-        item.resumeAt = (Number(item.lastRunAt) || Date.now()) + FOLLOW_BACK_MIN_GAP_MS;
+      if (!risk && !batchRest && resumeAt > Date.now() && resumeAt < Date.now() + LEGACY_FOLLOW_BACK_WEEKLY_GAP_MS) {
+        item.resumeAt = (Number(item.lastRunAt) || Date.now()) + LEGACY_FOLLOW_BACK_WEEKLY_GAP_MS;
         item.reason = "回关粉丝按每周间隔等待下次排班";
       }
     }
@@ -2977,6 +2978,24 @@ async function readTaskSchedule() {
     if (plan.rules?.["mutual-followBack"] && pace !== "slow") plan.rules["mutual-followBack"].pace = "fast";
     if (plan.rules?.["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = FOLLOW_BACK_MIN_GAP_MS;
     plan.followBackCountVersion = 1;
+    scheduleMigrated = true;
+  }
+  if ((plan.followBackSessionGapVersion || 0) < 1) {
+    if (plan.rules["mutual-followBack"]) plan.rules["mutual-followBack"].minGapMs = TARGET_FOLLOW_MIN_GAP_MS;
+    const item = plan.items?.["mutual-followBack"];
+    if (item && !item.manualStopped && !item.blocked) {
+      const reason = String(item.reason || "");
+      const risk = /受限|疑似自动化|风险|rate-limited|risk-blocked/iu.test(reason);
+      const batchRest = /每确认|共享关注冷却|关注满 100|本批已完成/u.test(reason);
+      const resumeAt = Number(item.resumeAt) || 0;
+      const weeklyWait = /每周间隔|等待下次回关|粉丝列表已检查/u.test(reason)
+        || resumeAt > Date.now() + TARGET_FOLLOW_MIN_GAP_MS * 2;
+      if (!risk && !batchRest && weeklyWait && resumeAt > Date.now()) {
+        item.resumeAt = Date.now() + TARGET_FOLLOW_MIN_GAP_MS;
+        item.reason = "回关粉丝等待下次扫描或共享关注冷却";
+      }
+    }
+    plan.followBackSessionGapVersion = 1;
     scheduleMigrated = true;
   }
   if ((plan.cautiousQueueVersion || 0) < 1) {
@@ -3673,13 +3692,12 @@ async function runTaskSchedule() {
     const minGapMs = Number(currentRule.minGapMs) || 0;
     const baseResumeAt = waiting ? waitUntil : now + ((premiumDue || higherPriorityDue) ? 60000 : SLICE_YIELD_COOLDOWN_MS);
     const sharedFollow = current === "mutual-followBack" || current === "mutual-targetFollow";
-    // 回关's weekly gap is enforced by lastRunAt, not by stretching this yield.
-    // A stored multi-day resume must not be copied onto 关注候选.
-    const scheduleGapFloor = current === "mutual-followBack" ? 0 : (minGapMs ? now + minGapMs : 0);
+    // Do not copy a leftover multi-day weekly resume onto the sibling follow task.
+    const scheduleGapFloor = minGapMs ? now + minGapMs : 0;
     const computedResumeAt = Math.max(baseResumeAt, scheduleGapFloor);
     const heldResumeAt = current === "article" ? Number(item.resumeAt) || 0 : 0;
     const previousResume = Number(item.resumeAt) || 0;
-    const carryResume = sharedFollow && !(current === "mutual-followBack" && previousResume - now >= 12 * 60 * 60 * 1000)
+    const carryResume = sharedFollow && previousResume - now < 12 * 60 * 60 * 1000
       ? previousResume
       : 0;
     const shortPruneRetry = ["prune-posts", "prune-replies"].includes(current) && waiting && /搜索加载失败/u.test(String(task?.detail || ""));
@@ -3690,9 +3708,9 @@ async function runTaskSchedule() {
       ? Math.max(Number(item.resumeAt) || 0, Number(task?.waitUntil) || 0)
       : 0;
     item.resumeAt = shortPruneRetry ? waitUntil : Math.max(computedResumeAt, heldResumeAt, carryResume, dailyCapFloor);
-    const targetDailyCap = current === "mutual-targetFollow" && /额度已用完/.test(`${task?.detail || ""} ${item.reason || ""}`);
-    const targetTurnCapped = current === "mutual-targetFollow" && !targetDailyCap && item.resumeAt > now + TARGET_FOLLOW_MIN_GAP_MS;
-    if (targetTurnCapped) item.resumeAt = now + TARGET_FOLLOW_MIN_GAP_MS;
+    const followDailyCap = SHARED_FOLLOW_MODES.includes(current) && /额度已用完/.test(`${task?.detail || ""} ${item.reason || ""}`);
+    const followTurnCapped = SHARED_FOLLOW_MODES.includes(current) && !followDailyCap && item.resumeAt > now + TARGET_FOLLOW_MIN_GAP_MS;
+    if (followTurnCapped) item.resumeAt = now + TARGET_FOLLOW_MIN_GAP_MS;
     // An explicit start may reach a real X cooldown; do not keep bypassing its
     // persisted deadline after the page has confirmed it is still paused.
     if (waiting) item.manualRequestedAt = 0;
@@ -3722,14 +3740,16 @@ async function runTaskSchedule() {
               ? "等待每周清理非简中"
             : current === "mutual-unfollow" && minGapMs
               ? "等待每周清理"
-              : current === "mutual-targetFollow" && targetTurnCapped
+              : current === "mutual-targetFollow" && followTurnCapped
                 ? "本批已看完，下次排班再换五个新人"
               : current === "mutual-targetFollow" && minGapMs
                 ? "关注候选等待下次扫描或共享关注冷却"
               : ["likes-posts", "likes-replies"].includes(current) && minGapMs
                 ? "点赞短轮已结束，等待间隔后再排"
+              : current === "mutual-followBack" && followTurnCapped
+                ? "粉丝列表已检查，下次排班再回关"
               : current === "mutual-followBack" && minGapMs
-                ? "回关粉丝按每周间隔等待下次排班"
+                ? "回关粉丝等待下次扫描或共享关注冷却"
               : actionDone
                 ? "本轮动作已完成，等待下次轮班"
                 : "占用超时，轮换到下一项任务";

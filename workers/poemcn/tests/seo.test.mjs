@@ -117,3 +117,62 @@ test("HTML and JSON metadata escape imported content; missing extras are not adv
   assert.doesNotMatch(home, /<img src=x/);
   assert.match(home, /\\u003c\/script>/);
 });
+
+test("teaching collection is a public, extensible page with owner names, standard titles and sources", async t => {
+  const { get } = fixture(t);
+  const response = await get("/collections/jiaoxue-xiaomoli");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("X-Robots-Tag"), null);
+  const html = await response.text();
+  assert.match(html, /<title>教小茉莉的诗词｜阿燃诗词<\/title>/);
+  assert.match(html, /rel="canonical" href="https:\/\/poemcn\.2aran\.com\/collections\/jiaoxue-xiaomoli"/);
+  assert.match(html, /把教过的篇目用网站记下来/);
+  assert.match(html, /不是一次写死的六首展板/);
+  assert.match(html, /id="jiang-xue"/);
+  assert.match(html, /柳宗元《江雪》/);
+  assert.match(html, /千山鸟飞绝，万径人踪灭。/);
+  assert.match(html, /id="chun-xiao"/);
+  assert.match(html, /孟浩然《春晓》/);
+  assert.doesNotMatch(html, /欧阳修《春晓》|歐陽修《春曉》/);
+  assert.match(html, /id="min-nong"/);
+  assert.match(html, /站长叫法「悯农」/);
+  assert.match(html, /李绅《悯农二首》/);
+  assert.match(html, /春种一粒粟，秋收万颗子。/);
+  assert.match(html, /锄禾日当午，汗滴禾下土。/);
+  assert.match(html, /古風二首/);
+  assert.match(html, /id="e-e-e"/);
+  assert.match(html, /站长叫法「鹅鹅鹅」/);
+  assert.match(html, /骆宾王《咏鹅》/);
+  assert.match(html, /id="jing-ye-si"/);
+  assert.match(html, /床前明月光，疑是地上霜。/);
+  assert.match(html, /床前看月光，疑是地上霜。/);
+  assert.match(html, /id="deng-guan-que-lou"/);
+  assert.match(html, /登鹳鹊楼/);
+  assert.match(html, /王之涣《登鹳雀楼》/);
+  assert.match(html, /href="\/poems\/seed-jiang-xue"/);
+  assert.match(html, /出处与依据/);
+  assert.match(html, /待补出处/);
+  assert.doesNotMatch(html, /<script src="\/app.js"|poemInitialData/);
+  assert.match(html, /<script src="\/account.js" defer>/);
+});
+
+test("home shows the teaching collection entry without relying on search", async t => {
+  const { get } = fixture(t);
+  const html = await (await get("/")).text();
+  assert.match(html, /id="teachingCollectionMount"/);
+  assert.match(html, /<a href="\/collections\/jiaoxue-xiaomoli">教小茉莉的诗词<\/a>/);
+  assert.match(html, /href="\/collections\/jiaoxue-xiaomoli#jiang-xue"/);
+  assert.match(html, /href="\/collections\/jiaoxue-xiaomoli#min-nong"/);
+  assert.match(html, /鹅鹅鹅<span>（咏鹅）<\/span>/);
+  assert.match(html, /登鹳鹊楼<span>（登鹳雀楼）<\/span>/);
+});
+
+test("unknown collections 404, trailing slashes redirect, and sitemap lists the page", async t => {
+  const { get } = fixture(t);
+  assert.equal((await get("/collections/missing")).status, 404);
+  assert.match((await get("/collections/missing")).headers.get("X-Robots-Tag"), /noindex/);
+  assert.equal((await get("/collections/jiaoxue-xiaomoli/")).headers.get("Location"), "https://poemcn.2aran.com/collections/jiaoxue-xiaomoli");
+  const pages = await (await get("/sitemaps/pages.xml")).text();
+  assert.match(pages, /<loc>https:\/\/poemcn\.2aran\.com\/<\/loc>/);
+  assert.match(pages, /<loc>https:\/\/poemcn\.2aran\.com\/collections\/jiaoxue-xiaomoli<\/loc>/);
+});

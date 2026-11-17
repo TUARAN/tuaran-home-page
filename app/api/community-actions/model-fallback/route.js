@@ -55,7 +55,7 @@ export async function POST(request) {
         source: 'x-extension',
         taskType: 'reply-fallback',
         title: 'X 扩展回复 · DeepSeek 临时故障回退',
-        actorName: 'X 高频互动助手',
+        actorName: 'X 大互动智能体',
         inputSummary: `账号 ${input.accountHandle || '未提供'}；只记录长度 ${input.messages[1].content.length}，不保存回复上下文。`,
         metadata: { reason: 'deepseek-transient-failure' },
       },

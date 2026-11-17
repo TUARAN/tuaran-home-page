@@ -32,10 +32,10 @@ const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clip
 const SOURCE_VERSION = X_EXTENSION_LATEST_VERSION
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || ''
 
-const title = 'X高频互动助手：评论、点赞、关注与定时发帖'
+const title = 'X 大互动智能体：评论、点赞、关注与定时发帖'
 const description =
-  'X高频互动助手是本地运行的 Chrome 扩展，提供评论、点赞、关注管理和定时发帖；全流程按任务状态调度。'
-const shareText = 'X高频互动助手：在本地面板查看评论、点赞、关注和定时发帖的任务进度。'
+  'X 大互动智能体通过 Chrome 扩展在本地运行，按任务状态调度评论、点赞、关注管理和定时发帖。'
+const shareText = 'X 大互动智能体：在本地面板查看评论、点赞、关注和定时发帖的任务进度。'
 
 const VERSION_HISTORY = [
   {
@@ -286,7 +286,7 @@ const VERSION_HISTORY = [
   },
   {
     version: '3.1.2',
-    title: '重建助手导航层级',
+    title: '重建任务导航层级',
     description: '顶部改为明确的功能导航，开始按钮移动到工作区首位；回复方式与频率限制合并为可折叠的运行设置。',
   },
   {
@@ -301,8 +301,8 @@ const VERSION_HISTORY = [
   },
   {
     version: '3.0.0',
-    title: '升级为 X高频互动助手',
-    description: '增加时间线回复与通知回复双助手；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
+    title: '加入通知回复',
+    description: '增加时间线回复与通知回复两类任务；通知模式识别别人对当前账号的回复，确认点赞后再发送回复。',
   },
   {
     version: '2.1.0',
@@ -361,7 +361,7 @@ export const metadata = {
   description,
   keywords: [
     'X 评论回复',
-    'X高频互动助手',
+    'X 大互动智能体',
     'Twitter 回复插件',
     'Chrome 浏览器插件',
     'X 时间线',
@@ -469,10 +469,10 @@ export default function XReplyClipboardResourcePage() {
                 <IconBrandX size={15} aria-hidden="true" />
                 X Interaction Copilot
               </span>
-              <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-300/15 px-3 py-1.5 text-xs font-bold text-amber-200">VIP 工具 · 密码领取</span>
+              <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-amber-300/15 px-3 py-1.5 text-xs font-bold text-amber-200">VIP 智能体 · 密码领取</span>
             </div>
             <h1 className="text-[36px] font-black leading-[1.12] tracking-[-0.04em] text-white sm:text-[46px] lg:text-[50px]">
-              X 高频互动助手
+              X 大互动智能体
               <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">查看任务，掌握进度</span>
             </h1>
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
@@ -487,7 +487,7 @@ export default function XReplyClipboardResourcePage() {
               >
                 黄皮书
               </Link>
-              <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享插件" />
+              <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享智能体" />
               <ArticleActionsDropdown label="更多">
                 <DistributeContentButton
                   title={title}
@@ -495,8 +495,8 @@ export default function XReplyClipboardResourcePage() {
                   url={`/resources/${RESOURCE_SLUG}`}
                   category="tools"
                   slug={RESOURCE_SLUG}
-                  tags={['X 平台', 'Chrome 插件', '工具']}
-                  kindLabel="工具"
+                  tags={['X 平台', 'Chrome 插件', '智能体']}
+                  kindLabel="智能体"
                 />
               </ArticleActionsDropdown>
             </div>
@@ -512,7 +512,7 @@ export default function XReplyClipboardResourcePage() {
             <div className="relative aspect-[2974/1844] overflow-hidden rounded-[20px] border border-white/20 shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
               <Image
                 src="/images/x-reply-clipboard-extension/panel-dual-account.webp"
-                alt="X 高频互动助手同时开在 @tarsixseveneig1 与 @tuaranx：左侧评论首页正在执行，右侧排班台显示当前任务和等待安排"
+                alt="X 大互动智能体同时开在 @tarsixseveneig1 与 @tuaranx：左侧评论首页正在执行，右侧排班台显示当前任务和等待安排"
                 width={2974}
                 height={1844}
                 sizes="(min-width: 1120px) 1008px, calc(100vw - 72px)"
@@ -609,7 +609,7 @@ export default function XReplyClipboardResourcePage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 via-blue-50 to-violet-50 px-6 py-5 dark:border-white/10 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-violet-950/30 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300">Changelog</p>
-              <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到完整互动工具</h3>
+              <h3 className="m-0 mt-1 text-lg font-semibold text-[var(--site-ink)]">从时间线回复到多任务排班</h3>
             </div>
             <span className="w-fit rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
               本地源码 v{SOURCE_VERSION} · 下载包配置 v{DOWNLOAD_VERSION || '待核对'}

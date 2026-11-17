@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const PLUGIN_OPTIONS = [
   { id: 'ai-distributor', label: 'AI 分发大师' },
-  { id: 'x', label: 'X 高频互动助手' },
+  { id: 'x', label: 'X 大互动智能体' },
 ]
 
 export const ARCHIVED_PLUGIN_PLATFORMS = new Set(['xhs', 'juejin'])

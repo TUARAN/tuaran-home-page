@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "小红书高频互动助手",
-  "version": "0.7.0",
+  "name": "小红书大互动智能体",
+  "version": "0.7.1",
   "description": "在小红书推荐页写评论、创作服务平台发图文笔记，并按点赞和评论数管理笔记可见范围。",
   "icons": {
     "16": "icons/icon16.png",

@@ -9360,7 +9360,7 @@
           <div class="xrc-brand">
             <div class="xrc-mark" aria-hidden="true">X</div>
             <div>
-              <div class="xrc-title">X高频互动助手</div>
+              <div class="xrc-title">X 大互动智能体</div>
               <div class="xrc-subtitle"><div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div></div>
             </div>
           </div>
@@ -11417,7 +11417,7 @@
     const brand = panel.querySelector(".xrc-title");
     if (brand) {
       const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
-      brand.textContent = handle ? `X高频互动助手 · @${handle}` : "X高频互动助手";
+      brand.textContent = handle ? `X 大互动智能体 · @${handle}` : "X 大互动智能体";
     }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);

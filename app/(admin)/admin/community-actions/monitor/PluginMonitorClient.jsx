@@ -38,7 +38,7 @@ function Metric({ label, value, detail, tone = 'default' }) {
 }
 
 function ArchivedPluginRedirect({ platform }) {
-  const label = platform === 'juejin' ? '掘金助手' : '小红书助手'
+  const label = platform === 'juejin' ? '掘金大互动智能体' : '小红书大互动智能体'
   return (
     <AdminPage title="插件监控" description="已归档插件不再占用监控顶栏。先到插件台查看说明，跨平台分发请启用 AI 分发大师。">
       <PluginPicker selected="" />

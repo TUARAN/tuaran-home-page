@@ -49,7 +49,7 @@ function errorMessage(data, credentialLabel = '邀请码') {
   }
 }
 
-export default function ExtensionDownloadButton({ href, version, className = '', title = 'X高频互动助手', buttonLabel, credentialLabel = '邀请码', downloadHint = '输入邀请码即可下载；ZIP 会内置回执密钥，安装后自动写入本机。' }) {
+export default function ExtensionDownloadButton({ href, version, className = '', title = 'X 大互动智能体', buttonLabel, credentialLabel = '邀请码', downloadHint = '输入邀请码即可下载；ZIP 会内置回执密钥，安装后自动写入本机。' }) {
   const passwordId = useId()
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState('')

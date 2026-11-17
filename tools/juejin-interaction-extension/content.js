@@ -366,7 +366,7 @@
     const brand = element("div", "jjia-brand");
     brand.append(element("div", "jjia-mark", "掘"));
     const identity = element("div", "jjia-identity");
-    identity.append(element("strong", "jjia-title", "掘金高频互动助手"), element("small", "jjia-version", `v${chrome.runtime.getManifest().version} · 本地插件`));
+    identity.append(element("strong", "jjia-title", "掘金大互动智能体"), element("small", "jjia-version", `v${chrome.runtime.getManifest().version} · 本地插件`));
     brand.append(identity);
     const actions = element("div", "jjia-header-actions");
     const stateBadge = element("span", "jjia-state");

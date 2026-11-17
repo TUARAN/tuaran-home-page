@@ -146,13 +146,13 @@ const nextConfig = {
         permanent: true,
       },
       {
-        // 原「X 互关清理助手」已并入 X高频互动助手
+        // 原「X 互关清理助手」已并入 X 大互动智能体
         source: '/resources/x-mutual-cleaner-extension',
         destination: '/resources/x-reply-clipboard-extension',
         permanent: true,
       },
       {
-        // 原「X Article 自动发布」已并入高频互动助手的发帖任务「站长转发」
+        // 原「X Article 自动发布」已并入X 大互动智能体的发帖任务「站长转发」
         source: '/resources/x-article-autopublisher-extension',
         destination: '/resources/x-reply-clipboard-extension/docs#site-forward',
         permanent: true,

@@ -133,7 +133,7 @@ test('pin editor receives visible paragraph nodes before publishing', async () =
 
 test('manifest, page selectors and receipt task names cover all three actions', async () => {
   const content = await readFile(new URL('content.js', root), 'utf8')
-  assert.equal(extensionManifest.name, '掘金高频互动助手')
+  assert.equal(extensionManifest.name, '掘金大互动智能体')
   assert.match(extensionManifest.version, /^\d+\.\d+\.\d+$/)
   assert.equal(extensionManifest.action.default_title, extensionManifest.name)
   for (const [size, path] of Object.entries(extensionManifest.icons)) {

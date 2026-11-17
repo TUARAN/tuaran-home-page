@@ -5,7 +5,7 @@
 
   const PANEL_ID = "xhs-interaction-panel";
   const SECTION_ID = "xhs-private-manager";
-  const VERSION = "0.7.0";
+  const VERSION = "0.7.1";
   const BATCH_SIZE = 10;
   const RANGE_LABELS = { week: "最近 7 天", month: "最近 1 个月", "three-months": "最近 3 个月", all: "全部笔记" };
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

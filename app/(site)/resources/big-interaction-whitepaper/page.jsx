@@ -150,13 +150,13 @@ export default function BigInteractionWhitepaperPage() {
         </header>
 
         <div className={styles.entryGrid}>
-        <aside className={styles.toolGuide} aria-label="X 高频互动助手入口">
+        <aside className={styles.toolGuide} aria-label="X 大互动智能体入口">
           <div>
             <p className={styles.toolGuideEyebrow}>把交流方法用在 X 上</p>
-            <h2>X 高频互动助手</h2>
+            <h2>X 大互动智能体</h2>
             <p>用本地 Chrome 扩展管理评论、点赞、关注与定时发帖，查看进度，调整互动节奏。</p>
           </div>
-          <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看工具与获取方式 <span aria-hidden="true">→</span></Link>
+          <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看智能体与获取方式 <span aria-hidden="true">→</span></Link>
         </aside>
 
         <aside className={styles.toolGuide} aria-label="圆桌大会入口">

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "X Interaction Assistant",
-  "version": "4.15.48",
+  "name": "X 大互动智能体",
+  "version": "4.15.49",
 
-  "description": "Schedule X replies, likes, follows, and posts through one shared execution tab per profile.",
+  "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -11,7 +11,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "重新打开 X 高频互动助手面板",
+    "default_title": "重新打开 X 大互动智能体面板",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

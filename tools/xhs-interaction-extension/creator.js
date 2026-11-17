@@ -5,7 +5,7 @@
   if (!posterApi) return;
 
   const PANEL_ID = "xhs-interaction-panel";
-  const VERSION = "0.7.0";
+  const VERSION = "0.7.1";
 
   function reportCommunityAction(event) {
     try {
@@ -640,7 +640,7 @@
           <div class="xhsia-brand">
             <div class="xhsia-mark" aria-hidden="true"><svg viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#FFF4F1"/><rect x="88" y="25" width="20" height="87" rx="5" fill="#FFE1DC"/><rect x="94" y="28" width="12" height="78" rx="3" fill="#FFFFFF"/><rect x="23" y="17" width="76" height="93" rx="10" fill="#FF2442"/><path d="M33 17h9v93h-9c-6 0-10-4-10-10V27c0-6 4-10 10-10Z" fill="#CB1737"/><path d="M74 17h13v32l-6.5-5-6.5 5V17Z" fill="#FFF4F1"/><path d="M53 65h27M53 78h20" stroke="#FFF4F1" stroke-width="5" stroke-linecap="round"/></svg></div>
             <div>
-              <div class="xhsia-title">小红书高频互动助手</div>
+              <div class="xhsia-title">小红书大互动智能体</div>
               <div class="xhsia-subtitle">v${VERSION}</div>
             </div>
           </div>

@@ -59,7 +59,7 @@ GitHub Issue 是唯一台账。PR 是唯一合入入口。非琐碎改动开 PR 
 
 本机 Mac、Codex 插件和 `codex/*` 分支是正式贡献路径，与云端助手同级。Issue 优先照走。本地改插件很常见；PR 正文要写对关闭关键词，合并后 GitHub 才会关掉对应 Issue。
 
-- 本 PR 做完了某条 Issue 的建议动作：该条写 `Closes #N`。做完几条就写几条，一行一个。一个 PR 可以关闭多条 Issue。X 高频互动助手插件的本地批次经常一次交付多条，每条做完的都要 `Closes`。
+- 本 PR 做完了某条 Issue 的建议动作：该条写 `Closes #N`。做完几条就写几条，一行一个。一个 PR 可以关闭多条 Issue。X 大互动智能体插件的本地批次经常一次交付多条，每条做完的都要 `Closes`。
 - 已经做完的 Issue 不要写成 `Related: #N`。`Related` 不会在合并时关闭 Issue。
 - `Related: #N` 只用于合并之后这条 Issue 仍应保持打开：只推进了一部分、存在依赖，或留下后续动作。
 - 合并后若某条已经做完的 Issue 仍开着，原因是正文只写了 `Related`：Issues 助手或站长按已完成关闭，评论里引用该 PR。

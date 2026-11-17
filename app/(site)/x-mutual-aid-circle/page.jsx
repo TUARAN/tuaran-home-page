@@ -31,7 +31,7 @@ export const metadata = createRichPageMetadata('x-mutual-aid-circle')
 const TOOLKIT = [
   {
     step: '01 · 清理关系',
-    name: 'X高频互动助手',
+    name: 'X 大互动智能体',
     desc: '本地运行的 Chrome 插件。互关浇友可在 Following 列表取消没有回关的人，也可在粉丝列表按节奏回关；时间线回复、通知回复和定时发推在同一个扩展里。不要账号密码，不上传数据。',
     href: '/resources/x-reply-clipboard-extension',
     action: '打开说明与下载',

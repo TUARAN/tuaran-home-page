@@ -50,21 +50,21 @@ const EXTENSION_TASKS = Object.freeze([
   {
     id: 'x-assistant',
     platform: 'x',
-    label: 'X 高频互动助手',
+    label: 'X 大互动智能体',
     summary: '评论首页、评论回复、评论大V、关注管理、定时发帖。开始和频率在插件里设置；运行状态与确认结果在插件监控查看。',
     href: '/resources/x-reply-clipboard-extension',
   },
   {
     id: 'xhs-assistant',
     platform: 'xhs',
-    label: '小红书高频互动助手',
+    label: '小红书大互动智能体',
     summary: '已归档。相关功能已合入 AI 分发大师；请先在插件台启用 AI 分发大师，再打开其监控。',
     archived: true,
   },
   {
     id: 'juejin-assistant',
     platform: 'juejin',
-    label: '掘金高频互动助手',
+    label: '掘金大互动智能体',
     summary: '已归档。相关功能已合入 AI 分发大师；请先在插件台启用 AI 分发大师，再打开其监控。',
     archived: true,
   },
@@ -177,7 +177,7 @@ function PersonInvitesPanel() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="m-0 text-[13px] font-semibold text-[#25261f] dark:text-gray-100">人员码（一人一码）</p>
-          <p className="mb-0 mt-1 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">X 助手和 AI 分发大师共用这套领取规则。每个插件安装实例分别使用一个人员码；下载时写入 ZIP，首次心跳后绑定设备并禁止再下载。站长总密钥不受影响。</p>
+          <p className="mb-0 mt-1 text-[12px] leading-5 text-[#6d7066] dark:text-gray-400">X 大互动智能体和 AI 分发大师共用这套领取规则。每个插件安装实例分别使用一个人员码；下载时写入 ZIP，首次心跳后绑定设备并禁止再下载。站长总密钥不受影响。</p>
         </div>
       </div>
       <div className="mt-3 flex min-w-0 flex-wrap gap-2">
@@ -336,8 +336,8 @@ function OverviewPanel({ onOpenMode }) {
         <ul className="mb-0 mt-4 grid gap-2 p-0 text-[13px] leading-6 text-[#5f6156] dark:text-gray-300">
           <li>站内文章分发插件：把站内文章写入多个平台草稿</li>
           <li>AI 分发大师：整理多种内容并准备跨平台草稿</li>
-          <li>X 高频互动助手：评论、点赞、关注管理、定时发帖</li>
-          <li>小红书 / 掘金旧助手：已归档；监控顶栏已收回，请到插件台启用 AI 分发大师</li>
+          <li>X 大互动智能体：评论、点赞、关注管理、定时发帖</li>
+          <li>小红书 / 掘金大互动智能体：已归档；监控顶栏已收回，请到插件台启用 AI 分发大师</li>
         </ul>
       </Section>
 

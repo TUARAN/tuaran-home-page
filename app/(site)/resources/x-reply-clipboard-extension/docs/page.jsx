@@ -24,9 +24,9 @@ const RESOURCE_PATH = `/resources/${RESOURCE_SLUG}`
 const DOCS_URL = `https://2aran.com${DOCS_PATH}`
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || '待核对'
 
-const title = 'X 高频互动助手黄皮书'
+const title = 'X 大互动智能体黄皮书'
 const description =
-  'X 高频互动助手使用手册：快速开始、十九项任务、排班设置、异常恢复、数据维护与版本记录。'
+  'X 大互动智能体使用手册：快速开始、十九项任务、排班设置、异常恢复、数据维护与版本记录。'
 
 export const metadata = {
   title,
@@ -87,7 +87,7 @@ const VERSION_ERAS = [
     version: 'v3',
     title: '多任务并行',
     span: '3.0–3.32',
-    oneLiner: '改名高频互动助手；多页签各跑一类任务。',
+    oneLiner: '加入通知回复；多页签各跑一类任务。',
     points: [
       '3.0 起：时间线回复 + 通知回复；随后并入互关三项、点赞、定时发帖。',
       '3.3 起四类任务各占独立 X 页签并行；长期循环、四挡频率、风控冷却与文档中心成型。',
@@ -247,7 +247,7 @@ export default function XReplyClipboardDocsPage() {
         <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--site-faint)]">
           <Link href="/tools" className="no-underline transition hover:text-[var(--site-ink)]">工具库</Link>
           <span aria-hidden="true">/</span>
-          <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X高频互动助手</Link>
+          <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X 大互动智能体</Link>
           <span aria-hidden="true">/</span>
           <span className="text-[var(--site-ink)]">黄皮书</span>
         </div>
@@ -292,7 +292,7 @@ export default function XReplyClipboardDocsPage() {
               <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 18 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
               <figure className="m-0">
                 <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
-                  <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 高频互动助手的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
+                  <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 大互动智能体的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
                 </a>
                 <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据当前本地 v4 源码梳理的组件与数据流。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
               </figure>
@@ -823,7 +823,7 @@ export default function XReplyClipboardDocsPage() {
             <h3 className="mb-0 mt-4 text-[15px] font-semibold text-[var(--site-ink)]">阶段时间线（事实）</h3>
             <ul className="mb-0 list-disc space-y-2 pl-5 text-[14px] leading-7">
               <li>更早：互关 + 高频发帖；规则改成更看重原创后，手工日回约五六百条开始有起色。</li>
-              <li>近约三周：助手运行后曝光曾冲到约 5M（站长侧观测）。</li>
+              <li>近约三周：智能体运行后曝光曾冲到约 5M（站长侧观测）。</li>
               <li>截至 2026-10-30：降量账号从单日接近约 100 万落到不到 5 千，已连续三天。当天又发出七百多条评论，曝光没有回来。本机面板今日合计仍可能偏高，X 后台可见评论更少（口径待核实）。</li>
               <li>2026-10-30：对照账号此前浏览大约几百，当天到三十多 K。评论一发出，消息和数据就上来。</li>
               <li>约 2026-10-28～29：本地到 v4 排班；昨天仍可见约 1000 条评论级动作——因此「单纯 v3→v4 bug」未证实。</li>

@@ -219,7 +219,7 @@ function TaskControl({ task, deviceId, canControl, busyKey, flowBusy, send }) {
   return null
 }
 
-export default function XPluginStatusDeck({ device, now, latestExtensionVersion, onCommand, busyKey }) {
+export default function XPluginStatusDeck({ device, now, latestExtensionVersion, onCommand, busyKey, compact = false }) {
   const [label, tone] = DEVICE_PHASE[device.phase] || DEVICE_PHASE.unknown
   const quiet = device.phase === 'running' && (!device.lastAction || now - Number(device.lastAction.occurred_at) > 30 * 60 * 1000)
   const groups = Array.isArray(device.groups) ? device.groups : []
@@ -234,6 +234,7 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
   const [updateResult, setUpdateResult] = useState('')
   const updateLock = useRef(false)
   const [updateNow, setUpdateNow] = useState(Date.now)
+  const [deskOpen, setDeskOpen] = useState(!compact)
   useEffect(() => {
     const timer = window.setInterval(() => setUpdateNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
@@ -373,10 +374,10 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
       </header>
 
       <div className="border-t border-[#e5e9e2] bg-[#fafbf8] px-4 py-4 text-[13px] dark:border-[#263142] dark:bg-[#101820]">
-        <div className={`mb-4 overflow-hidden rounded-2xl border px-4 py-3 ${updateAvailable ? 'border-[#f0d0a8] bg-[#fff8ef] dark:border-amber-900/60 dark:bg-amber-950/20' : 'border-[#d7e3f4] bg-white dark:border-[#263142] dark:bg-[#0d141c]'}`}>
+        <div className={`mb-4 overflow-hidden rounded-2xl border px-4 py-3 ${updateAvailable ? 'border-[#f0d0a8] bg-[#fff8ef] dark:border-amber-900/60 dark:bg-amber-950/20' : 'border-[#cfe3d4] bg-white dark:border-[#244238] dark:bg-[#0d141c]'}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1d9bf0]">插件版本</p>
+              <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4caf2a]">插件版本</p>
               <p className="mb-0 mt-1 text-[13px] font-semibold text-[#0f1419] dark:text-gray-100">
                 {updateAvailable ? `本地可更新至 v${siteVersion}` : installedVersion ? `当前 v${installedVersion}` : '等待版本上报'}
               </p>
@@ -397,125 +398,155 @@ export default function XPluginStatusDeck({ device, now, latestExtensionVersion,
         </div>
 
         {device.telemetry ? (
-          <div className={`${styles.panel} ${libraryOpen && configured ? styles.panelWide : ''}`}>
-            <div className={styles.head}>
-              <div className={styles.start}>
-                {configured ? (
-                  <button type="button" className={libraryOpen ? styles.libraryToggleOn : styles.libraryToggle} aria-expanded={libraryOpen} onClick={toggleLibrary}>增减任务</button>
-                ) : null}
-              </div>
-              <strong className={styles.title}>排班台</strong>
-              <div className={styles.corner}>
-                {canControl ? (
-                  schedule?.enabled ? (
-                    <button type="button" className={styles.flow} disabled={flowBusy} onClick={() => send('flow-pause')}>暂停</button>
-                  ) : (
-                    <button type="button" className={`${styles.flow} ${styles.flowStart}`} disabled={flowBusy} onClick={() => send('flow-start')}>开始</button>
-                  )
-                ) : null}
+          <>
+            <div className="mb-4 overflow-hidden rounded-2xl border border-[#cfe3d4] bg-[#f7fbf7] px-4 py-3 dark:border-[#244238] dark:bg-[#10251f]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4caf2a]">当前正在执行</p>
+                  <p className="mb-0 mt-1 text-[14px] font-semibold text-[#0f1419] dark:text-gray-100">
+                    {desk.nowTask?.label || MODE_LABEL[desk.nowTask?.mode] || (schedule?.enabled ? '正在调度中' : '排班已暂停')}
+                  </p>
+                  <p className="mb-0 mt-1 text-[12px] leading-5 text-[#536471] dark:text-gray-400">
+                    {[desk.nowTask ? taskNote(desk.nowTask, now) : facingSummary(facing), desk.nextTask && joined(desk.nextTask) ? `下一：${desk.nextTask.label || MODE_LABEL[desk.nextTask.mode]}` : ''].filter(Boolean).join(' · ') || '等待下一次心跳'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {canControl ? (
+                    schedule?.enabled ? (
+                      <AdminButton size="sm" variant="danger" disabled={flowBusy} onClick={() => send('flow-pause')}>暂停全部</AdminButton>
+                    ) : (
+                      <AdminButton size="sm" variant="primary" disabled={flowBusy} onClick={() => send('flow-start')}>全流程启动</AdminButton>
+                    )
+                  ) : null}
+                  <AdminButton size="sm" variant="ghost" aria-expanded={deskOpen} onClick={() => setDeskOpen((open) => !open)}>
+                    {deskOpen ? '收起排班台' : '打开排班台'}
+                  </AdminButton>
+                </div>
               </div>
             </div>
-            <div className={styles.overview}>
-              <span className={styles.flowDots} aria-hidden="true">
-                {desk.ordered.map((task) => (
-                  <i key={task.mode} data-state={dotState(task)} title={`${task.label} · ${statusText(task)}`} />
-                ))}
-              </span>
-              <p className={styles.hint}>{facingSummary(facing)}</p>
-            </div>
-            {libraryOpen && configured ? <p className={styles.feedback}>勾选加入排班，或取消勾选移出。</p> : null}
-            <div className={libraryOpen && configured ? styles.workspace : undefined}>
-              {libraryOpen && configured ? (
-                <section className={styles.library} aria-label="任务库">
-                  <h3>任务库 <small>勾选加入排班</small></h3>
-                  {libraryTasks.length ? (
+
+            {deskOpen ? (
+              <div className={`${styles.panel} ${libraryOpen && configured ? styles.panelWide : ''}`}>
+                <div className={styles.head}>
+                  <div className={styles.start}>
+                    {configured ? (
+                      <button type="button" className={libraryOpen ? styles.libraryToggleOn : styles.libraryToggle} aria-expanded={libraryOpen} onClick={toggleLibrary}>增减任务</button>
+                    ) : null}
+                  </div>
+                  <strong className={styles.title}>排班台</strong>
+                  <div className={styles.corner}>
+                    {canControl ? (
+                      schedule?.enabled ? (
+                        <button type="button" className={styles.flow} disabled={flowBusy} onClick={() => send('flow-pause')}>暂停</button>
+                      ) : (
+                        <button type="button" className={`${styles.flow} ${styles.flowStart}`} disabled={flowBusy} onClick={() => send('flow-start')}>开始</button>
+                      )
+                    ) : null}
+                  </div>
+                </div>
+                <div className={styles.overview}>
+                  <span className={styles.flowDots} aria-hidden="true">
+                    {desk.ordered.map((task) => (
+                      <i key={task.mode} data-state={dotState(task)} title={`${task.label} · ${statusText(task)}`} />
+                    ))}
+                  </span>
+                  <p className={styles.hint}>{facingSummary(facing)}</p>
+                </div>
+                {libraryOpen && configured ? <p className={styles.feedback}>勾选加入排班，或取消勾选移出。</p> : null}
+                <div className={libraryOpen && configured ? styles.workspace : undefined}>
+                  {libraryOpen && configured ? (
+                    <section className={styles.library} aria-label="任务库">
+                      <h3>任务库 <small>勾选加入排班</small></h3>
+                      {libraryTasks.length ? (
+                        <ul className={styles.board}>
+                          {libraryTasks.map((task) => {
+                            const chrome = taskChrome(task)
+                            return (
+                              <DeskCard
+                                key={task.mode}
+                                leading={chrome.leading}
+                                title={task.label || MODE_LABEL[task.mode] || task.mode}
+                                note="未加入自动排班"
+                                status="可添加"
+                                action={chrome.action}
+                              />
+                            )
+                          })}
+                        </ul>
+                      ) : <p className={styles.note}>全部任务已加入排班。</p>}
+                    </section>
+                  ) : null}
+                  <section aria-label="已加入排班">
+                    {libraryOpen && configured ? <h3 className={styles.queueTitle}>排班台 <small>{desk.ordered.filter((task) => joined(task)).length} 项已加入</small></h3> : null}
                     <ul className={styles.board}>
-                      {libraryTasks.map((task) => {
+                      <DeskCard
+                        phase="past"
+                        tag="上一任务"
+                        title={schedule?.past?.label || '暂无轮班记录'}
+                        note={pastNote(schedule?.past)}
+                        status={schedule?.past ? '已结束' : '暂无'}
+                      />
+                      {desk.nowTask ? (
+                        <DeskCard
+                          phase="now"
+                          pulse={cardPulse(desk.nowTask)}
+                          leading={taskChrome(desk.nowTask).leading}
+                          tag="当前任务"
+                          title={desk.nowTask.label || MODE_LABEL[desk.nowTask.mode]}
+                          note={[taskNote(desk.nowTask, now), Number(schedule?.now?.actions) ? `本次已确认 ${actionCount(desk.nowTask.mode, schedule.now.actions)}` : ''].filter(Boolean).join(' · ')}
+                          status={statusText(desk.nowTask)}
+                          action={taskChrome(desk.nowTask).action}
+                        />
+                      ) : (
+                        <DeskCard
+                          phase="now"
+                          pulse={schedule?.enabled ? 'waiting' : ''}
+                          tag="当前任务"
+                          title={schedule?.enabled ? '正在调度中' : '排班已暂停'}
+                          note={schedule?.enabled ? '等待下一任务到期后自动切换' : '恢复排班后继续自动切换'}
+                          status={schedule?.enabled ? '调度中' : '已暂停'}
+                        />
+                      )}
+                      {desk.nextTask && joined(desk.nextTask) ? (
+                        <DeskCard
+                          phase="next"
+                          pulse={cardPulse(desk.nextTask)}
+                          leading={taskChrome(desk.nextTask).leading}
+                          tag="下一任务"
+                          title={desk.nextTask.label || MODE_LABEL[desk.nextTask.mode]}
+                          note={taskNote(desk.nextTask, now)}
+                          status={statusText(desk.nextTask)}
+                          action={taskChrome(desk.nextTask).action}
+                        />
+                      ) : null}
+                      {desk.rest.filter(joined).map((task) => {
+                        const pulse = cardPulse(task)
+                        const waiting = pulse === 'waiting'
+                        const warmth = waiting ? String(Math.min(candidateWarmth += 1, 5)) : ''
                         const chrome = taskChrome(task)
                         return (
                           <DeskCard
                             key={task.mode}
+                            phase={waiting ? 'candidate' : ''}
+                            warmth={warmth}
+                            pulse={pulse}
                             leading={chrome.leading}
+                            disabled={optedOut(task) || (task.phase === 'idle' && !manualStop(task))}
+                            tag={waiting ? '候选任务' : ''}
                             title={task.label || MODE_LABEL[task.mode] || task.mode}
-                            note="未加入自动排班"
-                            status="可添加"
+                            note={taskNote(task, now)}
+                            status={statusText(task)}
                             action={chrome.action}
                           />
                         )
                       })}
                     </ul>
-                  ) : <p className={styles.note}>全部任务已加入排班。</p>}
-                </section>
-              ) : null}
-              <section aria-label="已加入排班">
-                {libraryOpen && configured ? <h3 className={styles.queueTitle}>排班台 <small>{desk.ordered.filter((task) => joined(task)).length} 项已加入</small></h3> : null}
-            <ul className={styles.board}>
-              <DeskCard
-                phase="past"
-                tag="上一任务"
-                title={schedule?.past?.label || '暂无轮班记录'}
-                note={pastNote(schedule?.past)}
-                status={schedule?.past ? '已结束' : '暂无'}
-              />
-              {desk.nowTask ? (
-                <DeskCard
-                  phase="now"
-                  pulse={cardPulse(desk.nowTask)}
-                  leading={taskChrome(desk.nowTask).leading}
-                  tag="当前任务"
-                  title={desk.nowTask.label || MODE_LABEL[desk.nowTask.mode]}
-                  note={[taskNote(desk.nowTask, now), Number(schedule?.now?.actions) ? `本次已确认 ${actionCount(desk.nowTask.mode, schedule.now.actions)}` : ''].filter(Boolean).join(' · ')}
-                  status={statusText(desk.nowTask)}
-                  action={taskChrome(desk.nowTask).action}
-                />
-              ) : (
-                <DeskCard
-                  phase="now"
-                  pulse={schedule?.enabled ? 'waiting' : ''}
-                  tag="当前任务"
-                  title={schedule?.enabled ? '正在调度中' : '排班已暂停'}
-                  note={schedule?.enabled ? '等待下一任务到期后自动切换' : '恢复排班后继续自动切换'}
-                  status={schedule?.enabled ? '调度中' : '已暂停'}
-                />
-              )}
-              {desk.nextTask && joined(desk.nextTask) ? (
-                <DeskCard
-                  phase="next"
-                  pulse={cardPulse(desk.nextTask)}
-                  leading={taskChrome(desk.nextTask).leading}
-                  tag="下一任务"
-                  title={desk.nextTask.label || MODE_LABEL[desk.nextTask.mode]}
-                  note={taskNote(desk.nextTask, now)}
-                  status={statusText(desk.nextTask)}
-                  action={taskChrome(desk.nextTask).action}
-                />
-              ) : null}
-              {desk.rest.filter(joined).map((task) => {
-                const pulse = cardPulse(task)
-                const waiting = pulse === 'waiting'
-                const warmth = waiting ? String(Math.min(candidateWarmth += 1, 5)) : ''
-                const chrome = taskChrome(task)
-                return (
-                  <DeskCard
-                    key={task.mode}
-                    phase={waiting ? 'candidate' : ''}
-                    warmth={warmth}
-                    pulse={pulse}
-                    leading={chrome.leading}
-                    disabled={optedOut(task) || (task.phase === 'idle' && !manualStop(task))}
-                    tag={waiting ? '候选任务' : ''}
-                    title={task.label || MODE_LABEL[task.mode] || task.mode}
-                    note={taskNote(task, now)}
-                    status={statusText(task)}
-                    action={chrome.action}
-                  />
-                )
-              })}
-            </ul>
-              </section>
-            </div>
-            <p className={styles.note}>{configured ? '增减任务随下次心跳写入插件本机（通常 1 分钟内），插件面板会一起更新。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</p>
-          </div>
+                  </section>
+                </div>
+                <p className={styles.note}>{configured ? '增减任务随下次心跳写入插件本机（通常 1 分钟内），插件面板会一起更新。' : '指令随下次心跳下发（通常 1 分钟内），执行后回写结果。'}</p>
+              </div>
+            ) : null}
+          </>
         ) : (
           <p className="m-0 text-[#697268] dark:text-gray-400">插件尚未上报任务状态；请更新到支持远程操控的版本并配置回执密钥。</p>
         )}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
 import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, presentXTaskFace, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
-import { describeXPluginSituation, selectXPluginSituationDevices } from '../../lib/community/xExtensionMonitorShared.js'
+import { describeXPluginSituation, selectXPluginSituationDevices, summarizeXTodayByCategory } from '../../lib/community/xExtensionMonitorShared.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -120,8 +120,9 @@ test('runtime groups follow the task shelf, with idle fill-ins', () => {
   assert.equal(groups[2].tasks[2].waitUntil, NOW + 600000)
   assert.equal(groups[2].tasks[2].priority, 3)
   assert.deepEqual(groups[3].tasks.map((task) => task.mode), ['poster-premium', 'poster', 'poster-x', 'poster-xhs', 'article', 'site-forward'])
-  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['community-share'])
+  assert.deepEqual(groups[4].tasks.map((task) => task.mode), ['community-share', 'community-copy'])
   assert.equal(groups[4].tasks[0].priority, 7)
+  assert.equal(groups[4].tasks[1].priority, 7)
   assert.deepEqual(groups[5].tasks.map((task) => task.mode), ['prune-posts', 'prune-replies'])
 })
 
@@ -520,6 +521,17 @@ test('account monitor reuses the event aggregate for two minutes', async () => {
   assert.equal(first.tasks.find((task) => task.task === 'timeline-reply').success, 3)
   assert.equal(second.tasks.find((task) => task.task === 'timeline-reply').success, 3)
   assert.equal(grouped, 2)
+})
+
+test('summarizeXTodayByCategory groups confirmation counts like the local home panel', () => {
+  const categories = summarizeXTodayByCategory([
+    { task: 'timeline', label: '评论首页', success: 2, failed: 0, skipped: 0, limited: 0 },
+    { task: 'notifications', label: '评论回复', success: 3, failed: 1, skipped: 0, limited: 0 },
+    { task: 'likes-posts', label: '点赞帖子', success: 4, failed: 0, skipped: 0, limited: 0 },
+  ])
+  assert.equal(categories.find((item) => item.id === 'reply')?.success, 5)
+  assert.equal(categories.find((item) => item.id === 'likes')?.success, 4)
+  assert.equal(categories.find((item) => item.id === 'mutual')?.success, 0)
 })
 
 test('extension heartbeat includes a task snapshot in the authenticated request', async () => {

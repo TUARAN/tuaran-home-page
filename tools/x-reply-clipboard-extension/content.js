@@ -9336,18 +9336,18 @@
     if (!button) return;
     if (egressIpPending) {
       button.dataset.state = "loading";
-      button.textContent = "出口 …";
+      button.textContent = "IP：…";
       button.title = "正在检测出口 IP，点击可重试";
       return;
     }
     if (egressIp) {
       button.dataset.state = "ready";
-      button.textContent = `出口 ${egressIp}`;
+      button.textContent = `IP：${egressIp}`;
       button.title = "当前浏览器出口 IP，点击刷新";
       return;
     }
     button.dataset.state = "error";
-    button.textContent = "出口 —";
+    button.textContent = "IP：—";
     button.title = egressIpError || "出口 IP 未检测到，点击重试";
   }
 
@@ -9504,7 +9504,6 @@
               <div class="xrc-mark" aria-hidden="true"><img class="xrc-mark-img" src="${extensionIconUrl(48)}" alt="" width="36" height="36" decoding="async"></div>
               <div class="xrc-brand-copy">
                 <div class="xrc-title">X 大互动智能体</div>
-                <div class="xrc-account" data-xrc-account hidden></div>
               </div>
             </div>
             <div class="xrc-header-actions">
@@ -9520,8 +9519,10 @@
             </div>
           </div>
           <div class="xrc-header-meta">
-            <div class="xrc-version-line">v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
-            <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">出口 …</button>
+            <div class="xrc-version-line" data-xrc-header-slide>版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
+            <div class="xrc-account" data-xrc-header-slide data-xrc-account hidden>账号：—</div>
+            <button type="button" class="xrc-egress-ip" data-xrc-header-slide data-xrc-egress-ip data-state="loading" title="正在检测出口 IP" hidden>IP：…</button>
+            <button type="button" class="xrc-header-meta-next" aria-label="切换下一项顶栏信息" title="切换下一项顶栏信息">›</button>
           </div>
         </div>
         <span class="xrc-mini-progress" data-xrc-mini-progress hidden>第 1 轮 · 0/35</span>
@@ -10159,6 +10160,25 @@
         event.stopPropagation();
         void stopPluginFromHeader();
       });
+      const headerMeta = panel.querySelector(".xrc-header-meta");
+      const headerSlides = Array.from(headerMeta.querySelectorAll("[data-xrc-header-slide]"));
+      let headerSlide = 0;
+      const advanceHeaderSlide = () => {
+        headerSlides[headerSlide].hidden = true;
+        headerSlide = (headerSlide + 1) % headerSlides.length;
+        headerSlides[headerSlide].hidden = false;
+      };
+      headerMeta.querySelector(".xrc-header-meta-next").addEventListener("click", advanceHeaderSlide);
+      const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+      const headerSlideTimer = window.setInterval(() => {
+        if (!panel.isConnected) {
+          window.clearInterval(headerSlideTimer);
+          return;
+        }
+        if (document.hidden || state.panelView === "collapsed" || reducedMotion?.matches ||
+            headerMeta.matches(":hover, :focus-within")) return;
+        advanceHeaderSlide();
+      }, 4000);
       panel.querySelector("[data-xrc-egress-ip]")?.addEventListener("click", (event) => {
         event.stopPropagation();
         refreshEgressIp({ force: true }).catch(() => {});
@@ -11583,8 +11603,7 @@
     const account = panel.querySelector("[data-xrc-account]");
     if (account) {
       const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
-      account.hidden = !handle;
-      account.textContent = handle ? `@${handle}` : "";
+      account.textContent = handle ? `账号：@${handle}` : "账号：—";
     }
     syncConfigMenu(panel);
     syncMonitorMenu(panel);

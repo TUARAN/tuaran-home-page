@@ -2031,7 +2031,7 @@ function systemLimitText(...parts) {
   for (const part of parts) {
     const text = String(part || "").trim();
     if (!text || /已重启\s*\d+\s*次/u.test(text)) continue;
-    if (/疑似自动化|超过限制|操作受限|次数受限|系统超限|rate-limited|risk-blocked|automation-restricted/iu.test(text)) {
+    if (/疑似自动化|超过限制|操作受限|次数受限|系统超限|日发帖上限|rate-limited|risk-blocked|daily-post-limit|automation-restricted/iu.test(text)) {
       return readableLimitCode(text).slice(0, 120);
     }
   }
@@ -2317,6 +2317,7 @@ function readableLimitCode(reason) {
   const value = String(reason || "").trim();
   if (value === "risk-blocked" || value === "automation-restricted") return "X 提示疑似自动化或账号受限";
   if (value === "rate-limited") return "X 提示操作次数受限";
+  if (value === "daily-post-limit") return "X 提示日发帖上限";
   return value;
 }
 /** Single-tab boot / SPA navigation often exceeds one slice; do not declare missing yet. */
@@ -2663,7 +2664,7 @@ function dueTaskModes(plan, now = Date.now()) {
       const replyRiskWait = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > now
         && /疑似自动化|限制冷却/u.test(String(item.reason || ""));
       const commentCapWait = REPLY_TASKS.includes(mode) && Number(item.resumeAt) > now
-        && /今日评论已到|今日评论额度暂时读不到/u.test(String(item.reason || ""));
+        && /今日评论已到|今日评论额度暂时读不到|日发帖上限/u.test(String(item.reason || ""));
       const postCapWait = POST_TASKS.includes(mode) && Number(item.resumeAt) > now
         && /今日发帖已到|今日发帖额度暂时读不到/u.test(String(item.reason || ""));
       const postRiskWait = POST_TASKS.includes(mode) && Number(item.resumeAt) > now
@@ -3425,20 +3426,23 @@ async function runTaskSchedule() {
     const item = plan.items[current] || {};
     if (await finishTerminalTask(plan, current, task?.detail, now)) return runTaskSchedule();
     const observedReplyRiskUntil = REPLY_TASKS.includes(current)
-      && /疑似自动化|X 限制冷却|风控等待中/u.test(String(task?.detail || ""))
+      && /疑似自动化|X 限制冷却|风控等待中|日发帖上限/u.test(String(task?.detail || ""))
       ? Number(task?.waitUntil) || 0 : 0;
     if (observedReplyRiskUntil > now && (Number(item.resumeAt) || 0) < observedReplyRiskUntil) {
       const streak = Math.max(1, Number(item.limitedStreak) || 0);
+      const dailyLimit = /日发帖上限/u.test(String(task?.detail || ""));
       applySharedReplyRisk(plan, {
         streak,
         resumeAt: observedReplyRiskUntil,
         provisional: true,
-        reason: `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`
+        reason: dailyLimit
+          ? "X 提示日发帖上限，明天再试（评论三项共用）"
+          : `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`
       });
       await saveTaskSchedule(plan);
     }
     const coolingItem = plan.items[current] || item;
-    if ((REPLY_TASKS.includes(current) || POST_TASKS.includes(current)) && Number(coolingItem.resumeAt) > now && /疑似自动化|冷却后自动重试/u.test(String(coolingItem.reason || ""))) {
+    if ((REPLY_TASKS.includes(current) || POST_TASKS.includes(current)) && Number(coolingItem.resumeAt) > now && /疑似自动化|冷却后自动重试|日发帖上限/u.test(String(coolingItem.reason || ""))) {
       const reason = String(coolingItem.reason);
       if (await suspendScheduledTask(current, reason, { keepTab: true, releaseOnFailure: true })) {
         plan = await readTaskSchedule();
@@ -3887,9 +3891,19 @@ async function noteScheduledAction(event) {
       const priorDeadline = Math.max(0, ...REPLY_TASKS.map((replyMode) => Number(plan.items?.[replyMode]?.resumeAt) || 0));
       const provisional = REPLY_TASKS.some((replyMode) => plan.items?.[replyMode]?.provisionalRisk);
       const streak = provisional && priorDeadline > Date.now() ? Math.max(1, priorStreak) : priorStreak + 1;
-      const resumeAt = Math.max(priorDeadline, Date.now() + replyRiskCooldownMs(streak));
-      const reason = `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`;
-      applySharedReplyRisk(plan, { streak, resumeAt, reason });
+      if (String(event.errorCode || "") === "daily-post-limit") {
+        const midnight = globalThis.XrcCommunityReceipt?.nextShanghaiMidnight?.(Date.now());
+        const resumeAt = Math.max(priorDeadline, Number(midnight) > Date.now() ? Number(midnight) : Date.now() + 24 * 60 * 60 * 1000);
+        applySharedReplyRisk(plan, {
+          streak: Math.max(1, streak),
+          resumeAt,
+          reason: "X 提示日发帖上限，明天再试（评论三项共用）"
+        });
+      } else {
+        const resumeAt = Math.max(priorDeadline, Date.now() + replyRiskCooldownMs(streak));
+        const reason = `X 提示疑似自动化，第 ${streak} 次冷却后自动重试（评论三项共用）`;
+        applySharedReplyRisk(plan, { streak, resumeAt, reason });
+      }
     } else if (SHARED_FOLLOW_MODES.includes(mode)) {
       const streak = Math.max(0, ...SHARED_FOLLOW_MODES.map((followMode) => Number(plan.items?.[followMode]?.limitedStreak) || 0)) + 1;
       const delay = event.errorCode === "risk-blocked" ? Math.min(60, streak * 10) * 60000 : 30 * 60000;
@@ -4879,11 +4893,11 @@ async function markManualTaskStart(mode, sender) {
   if (REPLY_TASKS.includes(mode)) {
     const riskUntil = Math.max(0, ...REPLY_TASKS.map((replyMode) => {
       const item = plan.items?.[replyMode] || {};
-      return /疑似自动化|限制冷却/u.test(String(item.reason || "")) ? Number(item.resumeAt) || 0 : 0;
+      return /疑似自动化|限制冷却|日发帖上限/u.test(String(item.reason || "")) ? Number(item.resumeAt) || 0 : 0;
     }));
     const riskActive = riskUntil > Date.now();
     const riskReason = REPLY_TASKS.map((replyMode) => plan.items?.[replyMode])
-      .find((item) => Number(item?.resumeAt) === riskUntil && /疑似自动化|限制冷却/u.test(String(item?.reason || "")))?.reason
+      .find((item) => Number(item?.resumeAt) === riskUntil && /疑似自动化|限制冷却|日发帖上限/u.test(String(item?.reason || "")))?.reason
       || "X 限制冷却，到期后自动重试（评论三项共用）";
     let capBudget = null;
     try {

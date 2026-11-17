@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   describeXPluginSituation,
-  selectXPluginSituationDevices,
+  partitionXPluginFieldDevices,
   summarizeXTodayByCategory,
   X_RUNTIME_MODE_LABELS,
 } from '../../../../../lib/community/xExtensionMonitorShared'
@@ -163,8 +163,7 @@ function XPluginMonitorClient() {
   const accountTabs = [{ value: '__all__', label: '全部账号' }, ...accountOptions.map((handle) => ({ value: handle, label: `@${handle}` }))]
   const deviceAccount = account === '__all__' ? '' : account
   const devices = (visibleData?.devices || []).filter((device) => !deviceAccount || device.accountHandle?.toLowerCase() === deviceAccount.toLowerCase())
-  const recentDevices = devices.slice(0, 3)
-  const olderDevices = devices.slice(3)
+  const { primary: recentDevices, older: olderDevices } = partitionXPluginFieldDevices(devices)
   const tasks = visibleData?.tasks || []
   const todayCategories = summarizeXTodayByCategory(tasks)
   const activeToday = todayCategories.find((item) => item.id === todayCategory) || todayCategories[0]
@@ -184,8 +183,8 @@ function XPluginMonitorClient() {
   const latestVersion = visibleData?.latestExtensionVersion || data?.latestExtensionVersion
   const situationLines = !visibleData
     ? [{ id: 'loading', line: '正在读取这个账号的插件状态。' }]
-    : devices.length
-      ? selectXPluginSituationDevices(devices).map((device) => ({ id: device.id, line: describeXPluginSituation(device, visibleData.now || Date.now()) }))
+    : recentDevices.length
+      ? recentDevices.map((device) => ({ id: device.id, line: describeXPluginSituation(device, visibleData.now || Date.now()) }))
       : [{ id: 'empty', line: account && account !== '__all__' ? `@${account}还没有上报过插件实例，现在看不到任务状态。` : '还没有上报过插件实例，现在看不到任务状态。' }]
 
   const accountSwitcher = (
@@ -275,7 +274,7 @@ function XPluginMonitorClient() {
 
       <Section
         title="02 现场"
-        description="远程启停、更新与排班台留在这里。默认精简卡片；需要完整排班时再展开。"
+        description="远程启停、更新与排班台留在这里。默认每个账号只留当前安装；被替换的离线旧实例在较早记录里。需要完整排班时再展开。"
         className="mt-5"
       >
         {devices.length ? (
@@ -286,7 +285,7 @@ function XPluginMonitorClient() {
             {olderDevices.length ? (
               <>
                 <button type="button" onClick={() => setShowOlderDevices((value) => !value)} aria-expanded={showOlderDevices} className="w-full border-t border-[#e5e9e2] px-4 py-3 text-left text-[12px] font-medium text-[#48634b] hover:bg-[#f7faf6] dark:border-[#263142] dark:text-emerald-300 dark:hover:bg-[#141d26]">
-                  {showOlderDevices ? '收起较早记录' : `查看较早记录（${olderDevices.length} 条）`}
+                  {showOlderDevices ? '收起较早记录' : `查看较早记录（${olderDevices.length} 条离线旧实例）`}
                 </button>
                 {showOlderDevices ? olderDevices.map((device) => (
                   <XPluginStatusDeck key={device.id} compact device={device} now={visibleData.now} latestExtensionVersion={latestVersion} onCommand={sendCommand} busyKey={busyKey} />

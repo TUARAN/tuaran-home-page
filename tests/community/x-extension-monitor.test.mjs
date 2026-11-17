@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createRequire } from 'node:module'
 import { DEFAULT_X_MONITOR_ACCOUNT, X_EXTENSION_LATEST_VERSION, buildXMonitorTrend, compareMonitorAccountHandles, enqueueXRemoteCommand, isExtensionVersionOutdated, normalizeCommunityActionReport, normalizeXRemoteCommand, normalizeXRuntime, presentXExtensionMonitor, presentXRuntimeGroups, presentXTaskFace, readCommunityActionCenter, readExtensionLive, readExtensionMonitor, readXExtensionLive, readXExtensionMonitor, recordCommunityActionReport, resolveMonitorAccountHandle, sortMonitorDevices, xMonitorDateRange } from '../../lib/community/communityActions.js'
-import { describeXPluginSituation, selectXPluginSituationDevices, summarizeXTodayByCategory } from '../../lib/community/xExtensionMonitorShared.js'
+import { describeXPluginSituation, partitionXPluginFieldDevices, selectXPluginSituationDevices, summarizeXTodayByCategory } from '../../lib/community/xExtensionMonitorShared.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -94,6 +94,18 @@ test('status sentence keeps the live install and drops an older offline install 
     { id: 'other-old', accountHandle: 'tuaranx', online: false, lastSeenAt: Date.parse('2026-11-01T00:00:00Z') },
   ])
   assert.deepEqual(picked.map((device) => device.id), ['live', 'other-old'])
+})
+
+test('field cards keep current installs up front and park superseded offline installs under earlier records', () => {
+  const devices = [
+    { id: 'old', accountHandle: 'tarsixseveneig1', online: false, lastSeenAt: Date.parse('2026-11-04T07:08:07Z') },
+    { id: 'live', accountHandle: 'tarsixseveneig1', online: true, lastSeenAt: Date.parse('2026-11-17T09:43:26Z') },
+    { id: 'tuaranx-live', accountHandle: 'tuaranx', online: true, lastSeenAt: Date.parse('2026-11-17T09:40:00Z') },
+    { id: 'tuaran003-live', accountHandle: 'tuaran003', online: true, lastSeenAt: Date.parse('2026-11-17T09:41:00Z') },
+  ]
+  const { primary, older } = partitionXPluginFieldDevices(devices)
+  assert.deepEqual(primary.map((device) => device.id), ['live', 'tuaranx-live', 'tuaran003-live'])
+  assert.deepEqual(older.map((device) => device.id), ['old'])
 })
 
 test('runtime groups follow the task shelf, with idle fill-ins', () => {
@@ -369,8 +381,10 @@ test('monitor defaults X stats to tarsixseveneig1 and scopes day details by acco
   assert.deepEqual(sortMonitorDevices([
     { id: 'z', accountHandle: 'tuaranx' },
     { id: 'a', accountHandle: 'other' },
+    { id: 'c', accountHandle: 'tuaran003' },
     { id: 'b', accountHandle: 'tarsixseveneig1' },
-  ]).map((device) => device.id), ['b', 'z', 'a'])
+  ]).map((device) => device.id), ['b', 'z', 'c', 'a'])
+  assert.equal(compareMonitorAccountHandles('tuaran003', 'tuaranx') > 0, true)
   assert.equal(result.offset, 20)
   assert.equal(result.limit, 20)
   assert.deepEqual(calls.find((call) => call.sql.includes('ORDER BY occurred_at DESC LIMIT ? OFFSET ?')).values, ['x', 'tarsixseveneig1', start, start + 86400000, 20, 20])

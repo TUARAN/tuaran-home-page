@@ -75,6 +75,7 @@ test('content script stops the render loop and storage listener when the context
     'let extensionContextRetired = false',
     'let panelRenderTimer = 11',
     'let viewsDismissTimer = 12',
+    'let homeScheduleCarouselTimer = 0',
     'let updateNoticeTimer = 13',
     extractFunction(source, 'extensionContextAlive'),
     extractFunction(source, 'isExtensionContextInvalidatedError'),
@@ -166,12 +167,12 @@ test('toolbar click asks the active X tab to reopen the panel', async () => {
   assert.equal(background.XRC_PANEL_REOPEN, 'xrc-panel-reopen')
 })
 
-test('extension source version is 4.15.41 and the context helper loads before the panel script', async () => {
+test('extension source version is 4.15.42 and the context helper loads before the panel script', async () => {
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '4.15.41')
+  assert.equal(manifest.version, '4.15.42')
   assert.equal(X_EXTENSION_LATEST_VERSION, manifest.version)
   assert.ok(scripts.indexOf('extensionContext.js') < scripts.indexOf('content.js'))
   assert.match(manifest.action.default_title, /重新打开/)

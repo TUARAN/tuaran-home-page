@@ -2645,6 +2645,9 @@ test('panel theme uses data-theme tokens and a scoped controller', async () => {
   assert.match(css, /--xrc-elevated:/)
   assert.match(css, /--xrc-home-bg:\s*rgba\(8, 12, 18, 0\.92\)/)
   assert.match(css, /background: var\(--xrc-elevated\)/)
+  assert.match(css, /\[data-theme="dark"\] \.xrc-live-tabs \[role="tab"\]\.is-active/)
+  assert.match(css, /--xrc-category: #5ee4c4/)
+  assert.match(css, /--xrc-muted: #c5ced6/)
   assert.doesNotMatch(css, /@media \(prefers-color-scheme: dark\)/)
 })
 

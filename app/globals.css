@@ -3716,7 +3716,7 @@
   }
 
   .home-social-priority-grid {
-    @apply grid grid-cols-3 gap-2;
+    @apply grid grid-cols-2 gap-2;
   }
 
   .home-social-secondary-grid {

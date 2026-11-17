@@ -142,8 +142,8 @@ const SOCIAL_MEDIA_LINKS = [
     label: '掘金',
     labelEn: 'Juejin',
     followers: '1.2w',
-    followersCount: 12000,
-    reads: '300w+',
+    followersCount: 12003,
+    reads: '251w',
     icon: IconBrandJuejin,
   },
   {
@@ -159,21 +159,25 @@ const SOCIAL_MEDIA_LINKS = [
     href: 'https://x.com/tarsixseveneig1',
     label: 'X 平台',
     labelEn: 'X',
-    followers: '5.1k',
-    followersCount: 5100,
+    followers: '1.3w',
+    followersCount: 12640,
     reads: '200w',
     icon: IconBrandX,
+    accounts: [
+      { label: 'tarsixseveneig1', href: 'https://x.com/tarsixseveneig1' },
+      { label: 'TuaranX', href: 'https://x.com/TuaranX' },
+    ],
   },
   {
     href: 'https://blog.csdn.net/aifs2025',
     label: 'CSDN',
     labelEn: 'CSDN',
-    followers: '5k',
-    followersCount: 5000,
-    reads: '28.4w',
+    followers: '6.3k',
+    followersCount: 6278,
+    reads: '55.6w',
     icon: IconCode,
     accounts: [
-      { label: 'aifs2025', href: 'https://blog.csdn.net/aifs2025?spm=1003.2018.3001.10640' },
+      { label: 'aifs2025', href: 'https://blog.csdn.net/aifs2025' },
       { label: 'Anthony1453', href: 'https://blog.csdn.net/Anthony1453' },
     ],
   },
@@ -278,14 +282,16 @@ const SOCIAL_MEDIA_LINKS = [
   },
 ]
 
-const ORDERED_SOCIAL_MEDIA_LINKS = SOCIAL_MEDIA_LINKS
-  .map((item, index) => ({ ...item, priority: index < 3, rank: index + 1 }))
+const PRIMARY_SOCIAL_COUNT = 4
 
-const PRIMARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(0, 3)
+const ORDERED_SOCIAL_MEDIA_LINKS = SOCIAL_MEDIA_LINKS
+  .map((item, index) => ({ ...item, priority: index < PRIMARY_SOCIAL_COUNT, rank: index + 1 }))
+
+const PRIMARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(0, PRIMARY_SOCIAL_COUNT)
 
 const SOCIAL_MEDIA_TOTALS = {
-  followers: '3.5w+',
-  reads: '600w+',
+  followers: '4.3w+',
+  reads: '700w+',
 }
 
 const CLASSIC_SITE_HERO_TAGLINE = `${SITE_HERO_TITLE}：${SITE_HERO_TAGLINE}`
@@ -406,13 +412,19 @@ function SocialMediaCard({ item }) {
 
   if (item.accounts) {
     return (
-      <div className="home-social-card" aria-label={ariaLabel} tabIndex={0}>
+      <div
+        className={item.priority ? 'home-social-card is-priority' : 'home-social-card'}
+        aria-label={ariaLabel}
+        tabIndex={0}
+      >
         {content}
-        <div className="home-social-account-picker">
-          <div className="home-social-account-summary" aria-hidden="true">
+        {(showFollowers || showReads) ? (
+          <span className="home-social-metrics" aria-hidden="true">
             {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
             {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
-          </div>
+          </span>
+        ) : null}
+        <div className="home-social-account-picker">
           <div className="home-social-account-links">
             {item.accounts.map((account) => (
               <a

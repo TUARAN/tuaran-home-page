@@ -185,6 +185,7 @@
 }
 
 #x-reply-clipboard-panel .xrc-header-meta {
+  container-type: inline-size;
   overflow: hidden;
   min-width: 0;
   color: var(--xrc-muted);
@@ -193,12 +194,19 @@
 }
 #x-reply-clipboard-panel .xrc-header-ticker {
   display: flex;
-  align-items: center;
-  gap: 20px;
   width: max-content;
-  min-width: 100%;
+  animation: xrc-header-ticker-scroll 12s linear infinite;
+}
+#x-reply-clipboard-panel .xrc-header-ticker-group {
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 100cqw;
   min-height: 22px;
-  animation: xrc-header-ticker-scroll 18s linear -9s infinite;
+  padding-inline-end: 20px;
 }
 #x-reply-clipboard-panel .xrc-header-meta:hover .xrc-header-ticker {
   animation-play-state: paused;
@@ -209,13 +217,16 @@
 #x-reply-clipboard-panel .xrc-header-meta:has(:focus-visible) .xrc-header-ticker {
   animation: none;
 }
+#x-reply-clipboard-panel .xrc-header-meta:has(:focus-visible) .xrc-header-ticker-group[aria-hidden="true"] {
+  display: none;
+}
 @keyframes xrc-header-ticker-scroll {
-  from { transform: translateX(100%); }
-  to { transform: translateX(-100%); }
+  to { transform: translateX(-50%); }
 }
 @media (prefers-reduced-motion: reduce) {
   #x-reply-clipboard-panel .xrc-header-meta { overflow-x: auto; }
   #x-reply-clipboard-panel .xrc-header-ticker { animation: none; }
+  #x-reply-clipboard-panel .xrc-header-ticker-group[aria-hidden="true"] { display: none; }
 }
 
 #x-reply-clipboard-panel .xrc-version-line {

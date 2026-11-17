@@ -9332,23 +9332,13 @@
   }
 
   function paintEgressIp(panel) {
-    const button = panel?.querySelector?.("[data-xrc-egress-ip]");
-    if (!button) return;
-    if (egressIpPending) {
-      button.dataset.state = "loading";
-      button.textContent = "IP：…";
-      button.title = "正在检测出口 IP，点击可重试";
-      return;
+    for (const button of panel?.querySelectorAll("[data-xrc-egress-ip]") || []) {
+      button.dataset.state = egressIpPending ? "loading" : egressIp ? "ready" : "error";
+      button.textContent = egressIpPending ? "IP：…" : egressIp ? `IP：${egressIp}` : "IP：—";
+      button.title = egressIpPending ? "正在检测出口 IP，点击可重试"
+        : egressIp ? "当前浏览器出口 IP，点击刷新"
+          : egressIpError || "出口 IP 未检测到，点击重试";
     }
-    if (egressIp) {
-      button.dataset.state = "ready";
-      button.textContent = `IP：${egressIp}`;
-      button.title = "当前浏览器出口 IP，点击刷新";
-      return;
-    }
-    button.dataset.state = "error";
-    button.textContent = "IP：—";
-    button.title = egressIpError || "出口 IP 未检测到，点击重试";
   }
 
   function refreshEgressIp({ force = false } = {}) {
@@ -9390,8 +9380,7 @@
     if (!banner) return;
     const version = String(localDevUpdate?.version || "");
     const phase = localDevUpdate?.phase;
-    const badge = panel.querySelector("[data-xrc-version-badge]");
-    if (badge) {
+    for (const badge of panel.querySelectorAll("[data-xrc-version-badge]")) {
       const newer = version && version !== EXTENSION_VERSION && !["latest", "updated"].includes(phase);
       badge.dataset.state = newer ? "new" : phase === "latest" || phase === "updated" ? "latest" : "checking";
       badge.textContent = newer ? "有新版本" : badge.dataset.state === "latest" ? "最新版" : "检查中";
@@ -9520,9 +9509,12 @@
           </div>
           <div class="xrc-header-meta">
             <div class="xrc-header-ticker">
-              <div class="xrc-version-line">版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
-              <div class="xrc-account" data-xrc-account>账号：—</div>
-              <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP">IP：…</button>
+              ${[false, true].map((repeat) => `
+                <div class="xrc-header-ticker-group"${repeat ? ' aria-hidden="true"' : ""}>
+                  <div class="xrc-version-line">版本：v${EXTENSION_VERSION} <span class="xrc-version-badge" data-xrc-version-badge data-state="checking">检查中</span></div>
+                  <div class="xrc-account" data-xrc-account>账号：—</div>
+                  <button type="button" class="xrc-egress-ip" data-xrc-egress-ip data-state="loading" title="正在检测出口 IP"${repeat ? ' tabindex="-1"' : ""}>IP：…</button>
+                </div>`).join("")}
             </div>
           </div>
         </div>
@@ -10161,9 +10153,11 @@
         event.stopPropagation();
         void stopPluginFromHeader();
       });
-      panel.querySelector("[data-xrc-egress-ip]")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        refreshEgressIp({ force: true }).catch(() => {});
+      panel.querySelectorAll("[data-xrc-egress-ip]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          refreshEgressIp({ force: true }).catch(() => {});
+        });
       });
       panel.querySelector("[data-xrc-dev-update-now]").addEventListener("click", async () => {
         if (updateActionPending) return;
@@ -11582,9 +11576,8 @@
     applyTaskTitle();
     const brand = panel.querySelector(".xrc-title");
     if (brand) brand.textContent = "X 大互动智能体";
-    const account = panel.querySelector("[data-xrc-account]");
-    if (account) {
-      const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "");
+    for (const account of panel.querySelectorAll("[data-xrc-account]")) {
       account.textContent = handle ? `账号：@${handle}` : "账号：—";
     }
     syncConfigMenu(panel);

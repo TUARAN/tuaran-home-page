@@ -26,7 +26,7 @@
     "mutual-unfollow": "清理未回关", "mutual-unfollowNonSc": "清理非简中", "mutual-followBack": "回关粉丝",
     "mutual-targetFollow": "关注候选", poster: "热点发帖", "poster-premium": "卡片发帖", "poster-x": "X主题发帖", "poster-xhs": "小红书发帖",
 
-    article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发", "community-copy": "社群文案",
+    article: "普通发文", "site-forward": "站长转发", "community-share": "社群分发", "community-copy": "社群问安",
     "prune-posts": "清理低质帖", "prune-replies": "清理差评论"
 
   };
@@ -46,7 +46,7 @@
     article: ["xrc-docs-article", "查看普通发文说明"],
     "site-forward": ["xrc-docs-site-forward", "查看站长转发说明"],
     "community-share": ["xrc-docs-community-share", "查看社群分发说明"],
-    "community-copy": ["xrc-docs-community-copy", "查看社群文案说明"],
+    "community-copy": ["xrc-docs-community-copy", "查看社群问安说明"],
     "prune-posts": ["xrc-docs-prune-posts", "查看清理低质帖说明"],
     "prune-replies": ["xrc-docs-prune-replies", "查看清理差评论说明"]
   };
@@ -438,7 +438,7 @@
   let forwardState = { running: false, stopping: false, status: "待命。每天 14:00 后把一篇站内文章发布为 X Article。", nextAt: 0 };
   let communityState = { running: false, stopping: false, status: "待命。把当前账号最新帖子发送给可用群聊。", shared: 0, skipped: 0, total: 0, nextAt: 0, limited: false };
   let communityController = null;
-  let communityCopyState = { running: false, stopping: false, status: "待命。到点后发早安 / 午安 / 大互动推广 / 晚安，再发到群聊。", shared: 0, nextAt: 0, limited: false, slotId: "", text: "" };
+  let communityCopyState = { running: false, stopping: false, status: "待命。到点后发早安 / 午安 / 晚安，再发到群聊。", shared: 0, nextAt: 0, limited: false, slotId: "", text: "" };
   let communityCopyController = null;
   const TASK_UNLIMITED_KEY = "xrcTaskUnlimited";
   const PRUNE_UNLIMITED_LEGACY_KEY = "xrcPruneUnlimited";
@@ -1153,20 +1153,20 @@
     if (!scheduledStart && await stopScheduledWaitingTask("community-copy", Boolean(communityCopyState.running))) return;
     const controller = getCommunityCopyController();
     if (!controller) {
-      communityCopyState = { ...communityCopyState, status: "社群文案模块没有加载，请刷新扩展后重试" };
+      communityCopyState = { ...communityCopyState, status: "社群问安模块没有加载，请刷新扩展后重试" };
       renderPanel();
       return;
     }
     if (communityCopyState.running && !communityCopyState.nextAt) {
       if (!scheduledStart) sendExtensionMessage({ type: "xrc-task-manual-stop", mode: "community-copy" }).catch(() => {});
       controller.stop();
-      communityCopyState = { ...communityCopyState, running: false, stopping: true, status: "正在停止社群文案" };
+      communityCopyState = { ...communityCopyState, running: false, stopping: true, status: "正在停止社群问安" };
       renderPanel();
       return;
     }
     if (communityCopyState.running && Number(communityCopyState.nextAt) > Date.now() && !scheduledStart) {
       controller.stop();
-      communityCopyState = { ...communityCopyState, running: false, stopping: false, nextAt: 0, status: "已停止社群文案" };
+      communityCopyState = { ...communityCopyState, running: false, stopping: false, nextAt: 0, status: "已停止社群问安" };
       renderPanel();
       return;
     }
@@ -1182,7 +1182,7 @@
     if (scheduledStart) {
       const deadline = Date.now() + 15000;
       while (Date.now() < deadline && !communityCopyState.running) await sleep(50);
-      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
+      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群问安未能启动");
       return;
     }
     await runPromise;
@@ -1502,7 +1502,7 @@
     ["poster-premium", "卡片发帖", "post"], ["poster", "热点发帖", "post"], ["poster-x", "X主题发帖", "post"], ["poster-xhs", "小红书发帖", "post"], ["article", "普通发文", "post", "articleDrafts"], ["site-forward", "站长转发", "post", "siteForwards"],
     ["community-share", "社群分发", "community", "communityShares"],
 
-    ["community-copy", "社群文案", "community", "communityShares"],
+    ["community-copy", "社群问安", "community", "communityShares"],
     ["prune-posts", "清理低质帖", "clean", "prunes"], ["prune-replies", "清理差评论", "clean", "replyPrunes"]
 
   ];
@@ -2470,7 +2470,7 @@
   const FLOW_TASKS = Object.freeze([
     ["notifications", "评论回复"], ["timeline", "评论首页"], ["kol", "评论大V"],
 
-    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["community-copy", "社群文案"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理差评论"],
+    ["poster-premium", "卡片发帖"], ["poster", "热点发帖"], ["poster-x", "X主题发帖"], ["poster-xhs", "小红书发帖"], ["article", "普通发文"], ["site-forward", "站长转发"], ["community-share", "社群分发"], ["community-copy", "社群问安"], ["prune-posts", "清理低质帖"], ["prune-replies", "清理差评论"],
 
     ["likes-posts", "点赞帖子"], ["likes-replies", "点赞评论"],
     ["mutual-followBack", "回关粉丝"], ["mutual-targetFollow", "关注候选"], ["mutual-unfollow", "清理未回关"], ["mutual-unfollowNonSc", "清理非简中"]
@@ -8579,7 +8579,7 @@
     if (launch.assistantMode === "community-copy") {
       if (communityCopyState.running && Number(communityCopyState.nextAt) <= Date.now()) return;
       await onCommunityCopyToggle({ scheduledStart: true });
-      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群文案未能启动");
+      if (!communityCopyState.running) throw new Error(communityCopyState.status || "社群问安未能启动");
       return;
     }
     if (state.running || state.loopPromise) return;
@@ -9903,18 +9903,18 @@
             </div>
             ${taskScheduleConfigMarkup("community-share", "社群分发")}
           </section>
-          <section class="xrc-post-flow" data-xrc-community-copy-panel aria-label="社群文案" hidden>
+          <section class="xrc-post-flow" data-xrc-community-copy-panel aria-label="社群问安" hidden>
             <div class="xrc-task-section">
-              ${taskSectionHead("运行", "定点文案再发到群聊")}
-              <p class="xrc-pace-now">北京时间 08:00 早安、12:00 午安、14:00 大互动推广、22:00 晚安；各档 15 分钟入队，错过不补。先发一条纯文字，再按社群分发同款链路发到可点群聊。</p>
-              <p class="xrc-pace-now" data-xrc-community-copy-slots></p>
+              ${taskSectionHead("运行", "定时问安")}
+              <p class="xrc-pace-now">北京时间每档开放 15 分钟，错过不补。问候先发布为纯文字帖，再分享到可用群聊。</p>
+              <p class="xrc-pace-now" data-xrc-community-copy-slots>08:00 早安 ｜ 12:00 午安 ｜ 22:00 晚安</p>
               <p class="xrc-pace-now" data-xrc-community-copy-now>当前尚未开始</p>
               <div class="xrc-flow-end">
                 <p class="xrc-button-note" data-xrc-button-note hidden><strong></strong><span></span></p>
                 <button class="xrc-inline-start" type="button" data-xrc-community-copy-toggle>已停止 · 点击启动</button>
               </div>
             </div>
-            ${taskScheduleConfigMarkup("community-copy", "社群文案")}
+            ${taskScheduleConfigMarkup("community-copy", "社群问安")}
           </section>
           <div class="xrc-status" role="status" data-xrc-community-status hidden></div>
           <div class="xrc-status" role="status" data-xrc-community-copy-status hidden></div>
@@ -11574,7 +11574,7 @@
   }
 
   const ACCOUNT_TITLE_RE = /^@[A-Za-z0-9_]{1,40} · /u;
-  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|社群文案|清理低质帖|清理低质评论|清理差评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
+  const TASK_TITLE_RE = /^(?:评论首页|评论回复|回复评论|评论大V|评论通知|首页互动|通知互动|点赞帖子|点赞评论|首页帖子|帖子评论|自动点赞|时间线回复|通知回复|定时发帖|普通发帖|热点发帖|纯文字帖|卡片发帖|精品发帖|X主题发帖|普通发文|站长转发|社群分发|社群问安|社群文案|清理低质帖|清理低质评论|清理差评论|推文浇给|清理未回关|回关粉丝|关注候选) · /u;
 
 
   function taskWindowLabel() {
@@ -11593,7 +11593,7 @@
     if (state.assistantMode === "article") return "普通发文";
     if (state.assistantMode === "site-forward") return "站长转发";
     if (state.assistantMode === "community-share") return "社群分发";
-    if (state.assistantMode === "community-copy") return "社群文案";
+    if (state.assistantMode === "community-copy") return "社群问安";
     if (state.assistantMode === "prune-posts") return "清理低质帖";
     if (state.assistantMode === "prune-replies") return "清理差评论";
     return "评论首页";

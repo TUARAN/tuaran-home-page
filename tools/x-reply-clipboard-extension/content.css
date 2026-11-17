@@ -1546,6 +1546,7 @@
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="article"] .xrc-article-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="site-forward"] .xrc-forward-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="community-share"] .xrc-community-body,
+#x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="community-copy"] .xrc-community-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-posts"] .xrc-prune-body,
 #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-replies"] .xrc-prune-body {
   display: grid !important;
@@ -5236,6 +5237,7 @@
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="article"] .xrc-article-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="site-forward"] .xrc-forward-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="community-share"] .xrc-community-body,
+  #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="community-copy"] .xrc-community-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-posts"] .xrc-prune-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="prune-replies"] .xrc-prune-body {
     background: rgba(255, 255, 255, 0.04);

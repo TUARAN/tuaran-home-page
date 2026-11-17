@@ -1581,7 +1581,7 @@ const TASK_TITLE_LABELS = {
   article: "普通发文",
   "site-forward": "站长转发",
   "community-share": "社群分发",
-  "community-copy": "社群文案",
+  "community-copy": "社群问安",
   "prune-posts": "清理低质帖",
   "prune-replies": "清理差评论",
   "mutual-unfollow": "清理未回关",
@@ -2502,7 +2502,7 @@ function cardSlotMinutes(quota) {
   return CARD_SLOT_MINUTES[normalizeCardDailyQuota(quota)];
 }
 
-const COMMUNITY_COPY_SLOT_MINUTES = Object.freeze([8 * 60, 12 * 60, 14 * 60, 22 * 60]);
+const COMMUNITY_COPY_SLOT_MINUTES = Object.freeze([8 * 60, 12 * 60, 22 * 60]);
 const COMMUNITY_COPY_SLOT_WINDOW_MINUTES = 15;
 
 function shanghaiMinutesOfDay(now = Date.now()) {
@@ -2515,7 +2515,6 @@ function communityCopySlotId(minutes) {
   if (slot == null) return "";
   if (slot === 8 * 60) return "morning";
   if (slot === 12 * 60) return "noon";
-  if (slot === 14 * 60) return "theory";
   return "evening";
 }
 
@@ -4683,7 +4682,7 @@ async function completeCommunityShare(sender, status, mode = "community-share") 
     const plan = await readTaskSchedule();
     if (plan.enabled && plan.current === taskMode && Number(plan.workTabId) === tabId) {
       const now = Date.now();
-      const reason = String(status || (taskMode === "community-copy" ? "社群文案本轮已结束" : "社群分发本轮已结束")).slice(0, 160);
+      const reason = String(status || (taskMode === "community-copy" ? "社群问安本轮已结束" : "社群分发本轮已结束")).slice(0, 160);
       let resumeAt = now + COMMUNITY_SHARE_RETRY_MS;
       if (/今日社群已到/u.test(reason) && typeof globalThis.XrcCommunityReceipt?.communityDailyBudget === "function") {
         try {
@@ -5479,7 +5478,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     if (message?.type === "xrc-community-copy-finished") {
       completeCommunityShare(sender, message.status, "community-copy")
         .then(sendResponse)
-        .catch((error) => sendResponse({ ok: false, error: error?.message || "社群文案结束状态保存失败" }));
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "社群问安结束状态保存失败" }));
       return true;
     }
     if (message?.type === "xrc-mutual-scan-failed") {

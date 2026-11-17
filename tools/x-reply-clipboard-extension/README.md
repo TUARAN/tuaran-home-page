@@ -14,7 +14,9 @@
 
 文档中心：<https://2aran.com/resources/x-reply-clipboard-extension/docs>。面板中的规则入口会打开对应章节。
 
-版本规则与发版记录格式见 [VERSIONING.md](VERSIONING.md)。当前本地源码为 v4.15.45；站内下载包仍可能是上一版，下载要求联系站长获取邀请码。
+版本规则与发版记录格式见 [VERSIONING.md](VERSIONING.md)。当前本地源码为 v4.15.46（2026-11-17，本地测试）修复「社群问安」任务详情空白。排班保留北京时间 08:00 早安、12:00 午安和 22:00 晚安，移除 14:00 推广档。重新加载扩展并刷新 X 页面。
+
+v4.15.45；站内下载包仍可能是上一版，下载要求联系站长获取邀请码。
 
 v4.15.45（2026-11-17，本地测试）修复 content.js 在 IIFE 外残留「社群文案」启动块导致的 `Illegal return statement`，扩展恢复可加载；把该分支放回 `startLaunchedTask`。重新加载扩展后刷新已打开的 X 页面。未打包、未发布。
 

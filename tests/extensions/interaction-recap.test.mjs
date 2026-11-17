@@ -418,7 +418,8 @@ test('manifest declares 2aran.com and loads the recap outside the daily task lis
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '4.15.44')
+  const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
+  assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
 
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(scripts.indexOf('poster.js') < scripts.indexOf('interactionRecap.js'))

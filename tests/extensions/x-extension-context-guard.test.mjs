@@ -167,16 +167,16 @@ test('toolbar click asks the active X tab to reopen the panel', async () => {
   assert.equal(background.XRC_PANEL_REOPEN, 'xrc-panel-reopen')
 })
 
-test('extension source version is 4.15.44 and the context helper loads before the panel script', async () => {
+test('extension source version matches site latest and the context helper loads before the panel script', async () => {
 
   const manifest = JSON.parse(await readFile(new URL('manifest.json', extensionDir), 'utf8'))
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '4.15.44')
+  assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
 
-  assert.equal(X_EXTENSION_LATEST_VERSION, manifest.version)
   assert.ok(scripts.indexOf('extensionContext.js') < scripts.indexOf('content.js'))
+  assert.ok(scripts.indexOf('panelTheme.js') < scripts.indexOf('content.js'))
   assert.match(manifest.action.default_title, /重新打开/)
   assert.match(readme, /v4\.9\.10（2026-11-04，本地测试）/)
   assert.match(readme, /工具栏里的扩展图标可以重新打开/)

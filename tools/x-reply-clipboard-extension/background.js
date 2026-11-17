@@ -5241,6 +5241,47 @@ async function readDailyTopTransport(target, fetchImpl = globalThis.fetch) {
   }
 }
 
+const EGRESS_IP_RE = /^(?:\d{1,3}(?:\.\d{1,3}){3}|[0-9a-f:]{2,39})$/iu;
+
+function normalizeEgressIp(value) {
+  const ip = String(value || "").trim();
+  return EGRESS_IP_RE.test(ip) ? ip : "";
+}
+
+async function detectEgressIp(fetchImpl = globalThis.fetch) {
+  const tryIpify = async () => {
+    const response = await fetchImpl("https://api.ipify.org?format=json", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!response?.ok) throw new Error(`ipify ${response?.status || 0}`);
+    const data = typeof response.json === "function" ? await response.json() : null;
+    const ip = normalizeEgressIp(data?.ip);
+    if (!ip) throw new Error("ipify empty");
+    return { ok: true, ip, source: "ipify" };
+  };
+  const tryTrace = async () => {
+    const response = await fetchImpl("https://cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
+    if (!response?.ok) throw new Error(`trace ${response?.status || 0}`);
+    const body = typeof response.text === "function" ? await response.text() : "";
+    const ip = normalizeEgressIp(String(body || "").match(/^ip=([^\r\n]+)$/mu)?.[1]);
+    if (!ip) throw new Error("trace empty");
+    return { ok: true, ip, source: "cloudflare-trace" };
+  };
+  try {
+    return await tryIpify();
+  } catch (firstError) {
+    try {
+      return await tryTrace();
+    } catch (secondError) {
+      return {
+        ok: false,
+        error: String(firstError?.message || secondError?.message || "出口 IP 检测失败"),
+      };
+    }
+  }
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.action?.onClicked?.addListener((tab) => {
     reopenExtensionPanel(tab).catch(() => {});
@@ -5448,6 +5489,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       applyLocalDevUpdate()
         .then(sendResponse)
         .catch((error) => sendResponse({ ok: false, error: error?.message || "手动更新失败" }));
+      return true;
+    }
+    if (message?.type === "xrc-detect-egress-ip") {
+      detectEgressIp()
+        .then(sendResponse)
+        .catch((error) => sendResponse({ ok: false, error: error?.message || "出口 IP 检测失败" }));
       return true;
     }
     if (message?.type === "xrc-reset-state") {
@@ -5787,6 +5834,8 @@ if (typeof module === "object" && module.exports) {
     reopenExtensionPanel,
     scheduleBackgroundTimer,
     deliverBackgroundTimer,
+    detectEgressIp,
+    normalizeEgressIp,
     REPLY_SYSTEM_PROMPT,
     REPLY_TIMELINE_PROMPT,
     REPLY_COMMENT_PROMPT,

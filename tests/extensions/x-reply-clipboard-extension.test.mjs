@@ -2605,6 +2605,31 @@ test('header keeps version badge and omits the runtime status line under it', as
   assert.doesNotMatch(css, /xrc-runtime-line/)
 })
 
+test('header shows clickable egress IP beside the version badge', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(source, /data-xrc-egress-ip/)
+  assert.match(source, /xrc-detect-egress-ip/)
+  assert.match(source, /function refreshEgressIp/)
+  assert.match(source, /function paintEgressIp/)
+  assert.match(css, /\.xrc-egress-ip/)
+  assert.match(backgroundSource, /xrc-detect-egress-ip/)
+  assert.match(backgroundSource, /async function detectEgressIp/)
+  assert.equal(background.normalizeEgressIp('203.0.113.9'), '203.0.113.9')
+  assert.equal(background.normalizeEgressIp('not-an-ip'), '')
+  const ok = await background.detectEgressIp(async () => ({
+    ok: true,
+    async json() { return { ip: '198.51.100.24' } },
+  }))
+  assert.deepEqual(ok, { ok: true, ip: '198.51.100.24', source: 'ipify' })
+  const fallback = await background.detectEgressIp(async (url) => {
+    if (String(url).includes('ipify')) throw new Error('ipify down')
+    return { ok: true, async text() { return 'fl=1\nip=2001:db8::1\n' } }
+  })
+  assert.deepEqual(fallback, { ok: true, ip: '2001:db8::1', source: 'cloudflare-trace' })
+})
+
 test('limit observations retain per-account windows and deduplicate receipts', async () => {
   const stored = {}
   globalThis.chrome = { storage: { local: {

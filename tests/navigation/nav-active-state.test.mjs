@@ -57,6 +57,7 @@ test('public opinion and Codex reset select their own analysis entries', () => {
   assert.equal(SITE_CHANNELS.find((channel) => channel.key === 'tools').direct, true)
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/public-opinion'), '/public-opinion')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/codex-reset'), '/codex-reset')
+  assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/github-trending'), '/tools/github-trending')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools'), '/tools')
   assert.equal(getActiveNavHref(sectionsFor('tools'), '/tools/multi-ip'), '/tools')
 })

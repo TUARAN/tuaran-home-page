@@ -187,6 +187,27 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // 「腾讯八爪鱼」名实核对已改写为数阔「八爪鱼」专题
+        source: '/articles/research/topics/tencent-bajiaoyu',
+        destination: '/articles/research/topics/bazhuayu',
+        permanent: true,
+      },
+      {
+        source: '/articles/research/topics/2026-11-17-tencent-bajiaoyu',
+        destination: '/articles/research/topics/bazhuayu',
+        permanent: true,
+      },
+      {
+        source: '/articles/tencent-bajiaoyu',
+        destination: '/articles/research/topics/bazhuayu',
+        permanent: true,
+      },
+      {
+        source: '/articles/2026-11-17-tencent-bajiaoyu',
+        destination: '/articles/research/topics/bazhuayu',
+        permanent: true,
+      },
+      {
         // Codex 学习链接帖归档从事项调研调整为资源收集页
         source: '/articles/research/topics/codex-learning-resource-map-yichen',
         destination: '/resources/codex-learning-resource-map-yichen',

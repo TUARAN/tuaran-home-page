@@ -1103,13 +1103,40 @@ let kolHandlesCache = [];
 
 async function readTargetFollowHandles() {
   try {
-    const stored = await chrome.storage.local.get([TARGET_FOLLOW_HANDLES_KEY, "xrcTargetFollowLive", "xrcTargetFollowPool", leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]);
+    const cacheKey = leaderboard?.CACHE_KEY || "xrcLeaderboardCache";
+    const stored = await chrome.storage.local.get([
+      TARGET_FOLLOW_HANDLES_KEY,
+      "xrcTargetFollowLive",
+      "xrcTargetFollowPool",
+      cacheKey,
+      kolRoster?.KOL_DISCOVERY_KEY || "xrcKolDiscovery"
+    ]);
     const dropRetired = (value) => leaderboard?.withoutRetired ? leaderboard.withoutRetired(value) : normalizeTargetFollowHandles(value);
     const live = dropRetired(stored?.xrcTargetFollowLive?.current);
     const batch = dropRetired(stored?.xrcTargetFollowPool?.batch);
-    const board = leaderboard?.parseLeaderboardHandles?.(stored?.[leaderboard.CACHE_KEY]?.handles) || [];
+    let board = leaderboard?.parseLeaderboardHandles?.(stored?.[cacheKey]?.handles) || [];
+    if (!board.length && leaderboard?.loadHandles) {
+      try {
+        board = dropRetired(await leaderboard.loadHandles({ force: true, storage: chrome.storage.local })) || [];
+      } catch (error) {
+        board = [];
+      }
+    }
     const previous = normalizeTargetFollowHandles(stored?.xrcTargetFollowPool?.lastBatch);
-    const rotated = leaderboard?.selectBatch ? leaderboard.selectBatch(board, previous, 5).handles : [];
+    let rotated = leaderboard?.selectBatch ? leaderboard.selectBatch(board, previous, 5).handles : [];
+    if (!rotated.length) {
+      const account = await savedAccountHandle();
+      const discovered = kolRoster?.discoveryHandles?.(stored?.[kolRoster.KOL_DISCOVERY_KEY], account) || [];
+      const pool = kolRoster?.taskCandidatePool?.({
+        custom: false,
+        boardHandles: board,
+        discoveryHandles: discovered,
+        now: Date.now()
+      }) || [];
+      rotated = leaderboard?.selectBatch
+        ? leaderboard.selectBatch(pool, previous, 5).handles
+        : normalizeTargetFollowHandles(pool).slice(0, 5);
+    }
     const picked = live.length ? live : batch.length ? batch : rotated;
     targetFollowHandlesCache = normalizeTargetFollowHandles(picked);
     return targetFollowHandlesCache;
@@ -1152,7 +1179,14 @@ async function readKolHandles(now = Date.now(), accountHandle = "") {
     else {
       const boardStored = await chrome.storage.local.get(leaderboard?.CACHE_KEY || "xrcLeaderboardCache");
       const board = leaderboard?.parseLeaderboardHandles?.(boardStored?.[leaderboard?.CACHE_KEY || "xrcLeaderboardCache"]?.handles) || [];
-      kolHandlesCache = kolRoster.selectTaskBatch(board, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, () => 0).handles;
+      const discovered = kolRoster.discoveryHandles?.(stored?.[kolRoster.KOL_DISCOVERY_KEY], account) || [];
+      const pool = kolRoster.taskCandidatePool({
+        custom: false,
+        boardHandles: board,
+        discoveryHandles: discovered,
+        now
+      });
+      kolHandlesCache = kolRoster.selectTaskBatch(pool, kolRoster.taskBatchAvoid(decision.meta), kolRoster.KOL_DAILY_SIZE, () => 0).handles;
     }
     if (decision.persist && decision.custom) {
       try {
@@ -1549,7 +1583,7 @@ const TASK_TITLE_LABELS = {
   "community-share": "社群分发",
   "community-copy": "社群文案",
   "prune-posts": "清理低质帖",
-  "prune-replies": "清理低质评论",
+  "prune-replies": "清理差评论",
   "mutual-unfollow": "清理未回关",
   "mutual-unfollowNonSc": "清理非简中",
   "mutual-followBack": "回关粉丝",
@@ -1786,7 +1820,12 @@ async function createSharedExecTab(destination, sender, activate, { mode = "", s
 }
 
 async function focusScheduledTask(mode, sender, { start = true, accountHandle = "", activate, preferSenderTab = false } = {}) {
-  if (validTaskMode(mode) === "mutual-targetFollow") await readTargetFollowHandles();
+  if (validTaskMode(mode) === "mutual-targetFollow") {
+    await readTargetFollowHandles();
+    if (start && !targetFollowHandlesCache.length) {
+      throw new Error("暂时没有可用关注源头，交回排班");
+    }
+  }
   if (validTaskMode(mode) === "kol") await readKolHandles();
   const pruneSearchStart = validTaskMode(mode) === "prune-posts" && await readPruneSearchStart();
   const shouldActivate = activate == null ? !start : Boolean(activate);

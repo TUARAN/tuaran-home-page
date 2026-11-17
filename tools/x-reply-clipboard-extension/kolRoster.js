@@ -3,7 +3,7 @@
 
   // 评论大V名单。
   // 每一轮（一次扫完当前名单）开始时打乱一次；轮内按这次抽出的顺序访问还没去过的账号，不再重抽剩余名单。
-  // 内置总名单拆成 KOL_POOLS。按北京时间每 KOL_POOL_DAYS 天换一组，下一轮才用新组；进行中的一轮仍走完已抽出的顺序。
+  // 自动人选优先外部榜单，其次当天首页发现（满 5 个才用），再回退 KOL_POOLS（按北京时间每 KOL_POOL_DAYS 天换一组）。
   // 排班设置里的名单：清空、与总名单相同、或与任一组内置名单相同，继续换组。其他内容视为自定义名单，只打乱、不换组。
   // 本轮顺序按账号句柄分桶存在当前 Chrome 配置文件，不写死某一个账号。
 
@@ -136,9 +136,20 @@
       .map((item) => parseKolHandles([item.handle])[0]);
   }
 
-  function taskCandidatePool({ custom = false, customHandles = [], boardHandles = [] } = {}) {
+  function taskCandidatePool({
+    custom = false,
+    customHandles = [],
+    boardHandles = [],
+    discoveryHandles: discovered = [],
+    now = Date.now()
+  } = {}) {
     if (custom) return parseKolHandles(customHandles);
-    return parseKolHandles(boardHandles);
+    const board = parseKolHandles(boardHandles);
+    if (board.length) return board;
+    const fromDiscovery = parseKolHandles(discovered);
+    // Need a full five-handle batch; otherwise use the built-in weekly pool.
+    if (fromDiscovery.length >= KOL_DAILY_SIZE) return fromDiscovery;
+    return poolHandles(poolIndex(now));
   }
 
   function selectTaskBatch(candidates, previous, size = KOL_DAILY_SIZE, random = Math.random) {
@@ -160,7 +171,7 @@
     const source = custom ? "custom" : "leaderboard";
     const dailyByAccount = { ...(meta?.dailyByAccount || {}) };
     const nextMeta = { custom, poolEpoch: custom && meta?.poolEpoch != null ? Number(meta.poolEpoch) : epoch,
-      poolIndex: -1, dailyByAccount };
+      poolIndex: custom ? -1 : poolIndex(now), dailyByAccount };
     if (meta?.taskBatch) nextMeta.taskBatch = meta.taskBatch;
     const persist = !sameHandleSet(parsed, handles) || explicit !== custom
       || meta?.poolEpoch !== nextMeta.poolEpoch || meta?.poolIndex !== nextMeta.poolIndex

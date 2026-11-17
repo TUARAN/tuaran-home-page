@@ -838,6 +838,11 @@ test('flow overview distinguishes executing, waiting, missing, and stale tasks',
   } }, now)
   assert.deepEqual(JSON.parse(JSON.stringify(result.counts)), { running: 2, waiting: 1, missing: 4, stopping: 0, unknown: 1, blocked: 0 })
   assert.equal(result.text, '4 项已排班（2 项运行中，1 项等待中，1 项需处理） · 4 项未排班')
+  assert.equal(result.scheduledCount, 4)
+  assert.equal(result.unscheduledCount, 4)
+  assert.equal(result.scheduledRunning, 2)
+  assert.equal(result.scheduledWaiting, 1)
+  assert.equal(result.scheduledNeeds, 1)
   assert.match(source, /data-xrc-flow-overview hidden/)
   assert.match(source, /function paintHomeScheduleCards\(/)
   assert.match(source, /if \(overview\) overview\.hidden = false/)
@@ -887,10 +892,15 @@ test('home schedule uses compact task-card carousel with unscheduled cards', asy
   assert.match(css, /\.xrc-home-schedule-card\[data-phase="now"\]/)
   assert.match(css, /\.xrc-home-schedule-card\[data-phase="off"\]/)
   assert.match(css, /\.xrc-home-actions \{\s*[^}]*padding-left: 0;/)
+  assert.match(css, /\.xrc-task-live-main \{\s*[^}]*padding-left: 0;/)
+  assert.match(css, /\.xrc-task-live-actions \{\s*[^}]*padding-left: 0;/)
   assert.match(css, /\.xrc-flow-status \{\s*[^}]*padding: 2px 0 0;/)
+  assert.match(css, /\.xrc-home-schedule-actions[\s\S]{0,80}\{\s*[^}]*padding-left: 0;/)
   assert.doesNotMatch(source, /data-xrc-schedule-on/)
   assert.doesNotMatch(source, /xrc-home-schedule-total/)
   assert.doesNotMatch(source, /xrc-home-schedule-states/)
+  assert.match(css, /\.xrc-task-live-actions \{\s*[^}]*justify-content: flex-start;/)
+
 })
 
 test('schedule-enabled idle and gap-wait tasks face as waiting, not stopped', async () => {
@@ -2987,15 +2997,18 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-task-subnav[\s\S]{0,520}data-xrc-task-subnav-label>任务<\/strong>/)
   assert.doesNotMatch(source, /data-xrc-task-subnav[\s\S]{0,120}<b>0[45]<\/b>/)
   assert.doesNotMatch(source, /六类今天做了多少|每一项今天做了多少，可以左右滑动|绿点在跑，黄点在等，红点要处理|这一页正在执行的事|点开看这一项怎么跑/)
+
   assert.match(source, /class="xrc-home-action" data-xrc-schedule-open>打开排班台</)
   assert.match(source, /data-xrc-docs-target="xrc-docs-flow"[^>]*>查看排班介绍</)
   assert.match(source, /class="xrc-home-action" data-xrc-alerts-open>查看详情</)
   assert.match(source, /class="xrc-home-schedule-actions xrc-home-actions"/)
+
   assert.match(source, /data-xrc-schedule-close/)
   assert.match(source, /data-xrc-schedule-subnav/)
   assert.match(source, /data-xrc-alerts-desk/)
   assert.match(source, /data-xrc-alerts-close/)
-  assert.match(source, /function openScheduleBoard\(\)/)
+  assert.match(source, /function openScheduleBoard\(focusMode = ""\)/)
+  assert.match(source, /function focusScheduleDeskTask\(/)
   assert.match(source, /function openAlertsBoard\(\)/)
   assert.match(source, /function scrollPanelToScheduleSubpage\(panel\)/)
   assert.match(source, /scrollPanelToScheduleSubpage\(panel\)/)
@@ -3025,6 +3038,7 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /data-xrc-header-reset/)
   assert.match(source, /重置本机任务记录？/)
   const css = await readFile(new URL('content.css', extensionDir), 'utf8')
+  assert.match(css, /\.xrc-home-action\s*\{/)
   assert.match(css, /\.xrc-live-tabs \[role="tab"\]\.is-active/)
   assert.match(css, /\.xrc-task-live-row \.xrc-task-live\s*\{[^}]*font-size: 12px;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/)
   assert.match(css, /\.xrc-task-live-row \.xrc-task-live::before\s*\{[^}]*display: inline-block;[^}]*vertical-align: middle;/)
@@ -3032,6 +3046,10 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(css, /\.xrc-body\s*\{[^}]*max-height: none;[^}]*overflow: visible;/)
   assert.match(css, /backdrop-filter: blur\(22px\)/)
   assert.match(css, /\[data-desk="task"\] \.xrc-task-subnav:not\(\[hidden\]\)[\s\S]{0,480}border-radius: 14px 14px 0 0;/)
+  assert.match(css, /\[data-desk="task"\] \.xrc-task-subnav:not\(\[hidden\]\)\s*\{[^}]*width: auto;[^}]*margin: 8px 12px 0;/)
+  assert.match(css, /Horizontal margin must not stack with width:100%/)
+  assert.match(css, /\[data-desk="task"\]\[data-view="expanded"\] \.xrc-stats\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
+  assert.match(css, /\[data-desk="task"\]\[data-view="expanded"\] \.xrc-stats > \.xrc-level-card/)
   assert.match(css, /\[data-desk="task"\] \.xrc-home-schedule,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-home-alerts,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-today-strip,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-task-live-row,\s*#x-reply-clipboard-panel\[data-desk="task"\] \.xrc-workspace-nav \{ display: none !important; \}/)
   assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-today-strip,[\s\S]*?\.xrc-workspace-nav \{[\s\S]*?display: none !important;/)
   assert.match(css, /\[data-xrc-page="alerts"\] \.xrc-alerts-desk\s*\{[^}]*display: grid;/)
@@ -3047,7 +3065,8 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(css, /--xrc-accent: #4caf2a;/)
   assert.match(css, /\.xrc-flow-launch\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
   assert.match(source, /live\.dataset\.live/)
-  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*display: none;[^}]*background: color-mix\(in srgb, var\(--xrc-accent\) 7%, #fff\);/)
+  assert.match(css, /\.xrc-task-live-row\s*\{[^}]*display: none;[^}]*background: var\(--xrc-plate-bg\);/)
+  assert.match(css, /\.xrc-task-live-row:has\(\.xrc-task-live\[data-live="running"\]\)\s*\{[^}]*background: var\(--xrc-plate-bg\);/)
   assert.match(css, /\.xrc-task-live-row:not\(\[hidden\]\)\s*\{[^}]*display: grid;/)
   assert.match(css, /\[data-xrc-page="schedule"\] \.xrc-schedule-desk\s*\{[^}]*display: grid;/)
   assert.match(css, /\.xrc-schedule-desk-body,\s*#x-reply-clipboard-panel \.xrc-alerts-desk-body\s*\{[^}]*border-radius: 0 0 14px 14px;/)
@@ -5560,6 +5579,9 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   assert.match(source, /KOL_REPLIES_PER_HANDLE = Object\.freeze\(\{ slow: 3, medium: 5, fast: 7, turbo: 11/)
   assert.match(source, /state\.assistantMode === "kol" && state\.pageCount >= currentRoundTarget\(\)/)
   assert.match(source, /data-xrc-reply-pace-kol>\$\{kolPaceTableHtml\(\)\}/)
+  assert.match(source, /const handlesPerTask = Number\(kolRoster\?\.KOL_DAILY_SIZE\) \|\| 5/)
+  assert.match(source, /label: "一次大V", value: \(\) => `\$\{handlesPerTask\} 个`/)
+  assert.match(source, /label: "每个大V", value: \(profile\) => `\$\{KOL_REPLIES_PER_HANDLE\[profile\.id\]\} 条`/)
   assert.match(source, /if \(state\.assistantMode === "kol"\) \{\s*const aligned = await alignKolProfileToVisitOrder\(\)/)
   const definition = source.match(/  async function rotateKolProfileAndResume\(message\) \{[\s\S]*?\n  \}/)?.[0]
   assert.ok(definition)
@@ -5574,7 +5596,8 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
     ensureKolVisitOrder: async () => ['c', 'a', 'b'],
     persistKolCycle: async () => {},
     currentKolHandleFromPath: () => current,
-    finishCycleAndScheduleNext: async () => 'complete',
+    finishKolCycle: async () => 'complete',
+    endKolEmptyCycle: async () => 'stopped',
     renderPanel: () => {},
     writeSaved: () => {},
     window: { location: { origin: 'https://x.com', assign: (url) => destinations.push(url) } },
@@ -8087,10 +8110,16 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(todaySummary, /data-xrc-today-tab/)
   assert.match(todaySummary, /data-xrc-today-category/)
   assert.match(todaySummary, /TODAY_TASKS.map/)
+  assert.match(todaySummary, /data-xrc-today-task-open="\$\{mode\}"/)
+  assert.match(todaySummary, /title="打开任务详情 · \$\{label\}"/)
   assert.match(todaySummary, /data-xrc-today-task/)
+  assert.match(content, /\[data-xrc-today-tasks\]"\)\?\.addEventListener\("click"[\s\S]{0,280}openTaskSubpage\(mode\)/)
+  assert.match(content, /function focusScheduleDeskTask\(/)
   const todayCss = await readFile(new URL('content.css', extensionDir), 'utf8')
   assert.match(todayCss, /\.xrc-today-categories\s*\{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/)
   assert.match(todayCss, /\.xrc-today-category\.is-active/)
+  assert.match(todayCss, /\.xrc-today-task\s*\{[^}]*flex: 1 1 0;/)
+  assert.match(todayCss, /\.xrc-schedule-board \.xrc-schedule-item\.is-flash/)
   assert.doesNotMatch(todayCss, /xrc-today-tabs|xrc-today-strip::after[\s\S]*calc\(25%/)
   assert.ok(content.indexOf('class="xrc-today-strip"') < content.indexOf('class="xrc-hub"'))
   assert.match(content, /if \(panel\) \{\s*renderTodaySummary\(panel\)/)
@@ -12316,7 +12345,28 @@ test('each target-follow task can switch to a new batch without following the se
   assert.deepEqual(require('../../tools/x-reply-clipboard-extension/leaderboard.js').withoutRetired(seeds), [])
   const leaderboard = require('../../tools/x-reply-clipboard-extension/leaderboard.js')
   assert.deepEqual(leaderboard.parseLeaderboardHandles('快来寒季吧@AvelyraX7点击查看详情 https://x.com/home @disonyyds'), ['AvelyraX7', 'disonyyds'])
-  assert.deepEqual(leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], ['one', 'two', 'three', 'four', 'five'], 5).handles, ['six', 'seven'])
+  const wrap = leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five', 'six', 'seven'], ['one', 'two', 'three', 'four', 'five'], 5)
+  assert.deepEqual(wrap.handles, ['six', 'seven', 'one', 'two', 'three'])
+  assert.equal(wrap.reused, true)
+  const recycle = leaderboard.selectBatch(['one', 'two', 'three', 'four', 'five'], ['one', 'two', 'three', 'four', 'five'], 5)
+  assert.deepEqual(recycle.handles, ['one', 'two', 'three', 'four', 'five'])
+  assert.equal(recycle.reused, true)
+})
+
+test('target-follow falls back to discovery or built-in pool when the leaderboard is empty', async () => {
+  const leaderboard = require('../../tools/x-reply-clipboard-extension/leaderboard.js')
+  const kol = require('../../tools/x-reply-clipboard-extension/kolRoster.js')
+  assert.deepEqual(leaderboard.selectBatch([], [], 5).handles, [])
+  const pool = kol.taskCandidatePool({ custom: false, boardHandles: [], discoveryHandles: [], now: Date.parse('2026-11-16T12:00:00+08:00') })
+  assert.equal(pool.length >= 5, true)
+  const batch = leaderboard.selectBatch(pool, [], 5)
+  assert.equal(batch.handles.length, 5)
+  const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(backgroundSource, /暂时没有可用关注源头，交回排班/)
+  assert.match(backgroundSource, /taskCandidatePool\?\.\(\{[\s\S]*boardHandles: board,[\s\S]*discoveryHandles: discovered/)
+  const mutualSource = await readFile(new URL('mutual.js', extensionDir), 'utf8')
+  assert.match(mutualSource, /暂时没有可用关注源头，交回排班/)
+  assert.match(mutualSource, /XrcKolRoster/)
 })
 
 test('each KOL task batch avoids the previous batch and keeps a custom list intact', async () => {
@@ -12344,7 +12394,19 @@ test('each KOL task batch avoids the previous batch and keeps a custom list inta
   const pool = kol.taskCandidatePool({ custom: true, customHandles: custom })
   assert.deepEqual(pool, custom)
   assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: ['board_a', 'board_b'] }), ['board_a', 'board_b'])
-  assert.deepEqual(kol.taskCandidatePool({ custom: false, boardHandles: [] }), [])
+  assert.deepEqual(
+    kol.taskCandidatePool({ custom: false, boardHandles: [], now: Date.parse('2026-01-05T12:00:00+08:00') }),
+    kol.poolHandles(0)
+  )
+  assert.deepEqual(
+    kol.taskCandidatePool({
+      custom: false,
+      boardHandles: [],
+      discoveryHandles: ['disc_a', 'disc_b', 'disc_c', 'disc_d', 'disc_e'],
+      now: Date.parse('2026-01-05T12:00:00+08:00')
+    }),
+    ['disc_a', 'disc_b', 'disc_c', 'disc_d', 'disc_e']
+  )
   const resumed = kol.resumeActiveKolCycle({ active: true, order: ['alpha', 'beta'], visited: ['alpha'], createdAt: 5 })
   assert.deepEqual(resumed.order, ['alpha', 'beta'])
   assert.deepEqual(resumed.visited, ['alpha'])
@@ -12378,9 +12440,12 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   assert.match(context.kolStatus({ custom: true, handles: ['mine_a', 'mine_b', 'mine_c', 'mine_d', 'mine_e', 'mine_f'], meta: { taskBatch: { handles: ['mine_f'] } } }), /不会清掉/)
   assert.doesNotMatch(context.kolStatus({ custom: true, handles: ['mine'], meta: { taskBatch: { handles: ['mine'] } } }, ['mine']), /@mine/)
   assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /五个新人/)
+  assert.match(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /内置组/)
   assert.doesNotMatch(context.kolStatus({ custom: false, handles: seeds, meta: { taskBatch: { handles: ['fresh_a'] } } }), /@fresh_a/)
   assert.match(source, /data-xrc-target-follow-status/)
   assert.match(source, /每次任务直接换成五个新人/)
+  assert.match(source, /function endKolEmptyCycle\(/)
+  assert.match(source, /function finishKolCycle\(/)
   assert.match(source, /echoSavedModelSettings\(panel\)/)
   assert.doesNotMatch(source, /<span>起始种子<\/span>/)
   const sync = source.slice(source.indexOf('async function syncKolHandlesField'), source.indexOf('async function saveKolHandlesFromField'))
@@ -12390,7 +12455,6 @@ test('the panel shows the live target-follow list and a visible KOL roster statu
   assert.doesNotMatch(ensure, /loadKolHandles\(/)
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   assert.match(readme, /每次任务直接换成五个新人/)
-  assert.match(readme, /不写默认名单/)
   assert.match(readme, /约每周一次/)
 })
 

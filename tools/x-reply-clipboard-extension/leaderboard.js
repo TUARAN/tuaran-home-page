@@ -1,8 +1,8 @@
 (function (root) {
   "use strict";
 
-  // 关注候选和评论大V的自动人选只从外部榜单读取。
-  // 这里不写默认账号，也不把某一组内置名单当作回退。
+  // 关注候选和评论大V的自动人选优先从外部榜单读取。
+  // 榜单为空时，两边都由调用方回退到当天发现或内置组；本模块只负责榜单解析与抽批。
   const CACHE_KEY = "xrcLeaderboardCache";
   const CACHE_MS = 6 * 60 * 60 * 1000;
   const BOARDS = Object.freeze([
@@ -61,14 +61,27 @@
       if (index >= 0) start = (index + 1) % pool.length;
     }
     const chosen = [];
+    const seen = new Set();
     for (let step = 0; step < pool.length && chosen.length < limit; step += 1) {
       const handle = pool[(start + step) % pool.length];
-      if (avoid.has(handle.toLowerCase())) continue;
+      const key = handle.toLowerCase();
+      if (avoid.has(key) || seen.has(key)) continue;
+      seen.add(key);
       chosen.push(handle);
+    }
+    const reused = chosen.length < Math.min(limit, pool.length);
+    if (chosen.length < limit) {
+      for (let step = 0; step < pool.length && chosen.length < limit; step += 1) {
+        const handle = pool[(start + step) % pool.length];
+        const key = handle.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        chosen.push(handle);
+      }
     }
     const changed = chosen.length > 0 && (chosen.length !== prevList.length
       || chosen.some((handle, index) => handle.toLowerCase() !== String(prevList[index] || "").toLowerCase()));
-    return { handles: chosen, changed, reused: false };
+    return { handles: chosen, changed, reused };
   }
 
   async function readCache(storage) {

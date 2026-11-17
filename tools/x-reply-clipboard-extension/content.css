@@ -121,14 +121,19 @@
   top: 0;
   z-index: 6;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 10px 12px;
+  gap: 8px;
   padding: 12px 12px 11px;
   border-bottom: 1px solid var(--xrc-line);
   background: var(--xrc-header-bg);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   backdrop-filter: blur(16px) saturate(1.2);
+}
+#x-reply-clipboard-panel .xrc-header-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 12px;
+  min-width: 0;
 }
 
 #x-reply-clipboard-panel .xrc-brand {
@@ -178,17 +183,18 @@
 }
 #x-reply-clipboard-panel .xrc-account[hidden] { display: none !important; }
 
-#x-reply-clipboard-panel .xrc-subtitle {
-  display: grid;
-  gap: 3px;
-  margin-top: 2px;
+#x-reply-clipboard-panel .xrc-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
   color: var(--xrc-muted);
   font-size: 11px;
   font-weight: 650;
-  overflow-wrap: anywhere;
 }
 #x-reply-clipboard-panel .xrc-version-line {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -3844,7 +3850,20 @@
 }
 #x-reply-clipboard-panel[data-view="collapsed"] > :not(.xrc-header),
 #x-reply-clipboard-panel[data-view="collapsed"] .xrc-header-actions,
+#x-reply-clipboard-panel[data-view="collapsed"] .xrc-header-meta,
 #x-reply-clipboard-panel[data-view="collapsed"] .xrc-brand-copy { display: none; }
+#x-reply-clipboard-panel[data-view="collapsed"] .xrc-header-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+#x-reply-clipboard-panel[data-view="collapsed"] .xrc-brand {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
 #x-reply-clipboard-panel[data-view="collapsed"] .xrc-brand,
 #x-reply-clipboard-panel[data-view="collapsed"] .xrc-mark {
   width: 100%;
@@ -5558,7 +5577,7 @@
 }
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-plate-head > span,
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-plate-head strong,
-#x-reply-clipboard-panel[data-theme="dark"] .xrc-subtitle,
+#x-reply-clipboard-panel[data-theme="dark"] .xrc-header-meta,
 #x-reply-clipboard-panel[data-theme="dark"] .xrc-version-badge {
   color: #d0d7de;
 }

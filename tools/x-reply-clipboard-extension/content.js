@@ -1297,7 +1297,7 @@
     if (mode === "prune-replies") return "只删发布满 30 天且没有点赞、回复、转帖或收藏的自己评论；占住页签，直到 X 提示受限或手动暂停";
     if (mode === "mutual-unfollow") return "默认手动模式：只记录没有回关的人，由你逐个核对并取关";
     if (mode === "mutual-unfollowNonSc") return "默认手动模式：只记录名字或简介没有简体字的账号";
-    if (mode === "mutual-followBack") return "约每周一次。一次回关 5、10 或 15 人，默认 15 人，满了就交回队列";
+    if (mode === "mutual-followBack") return "和关注候选同频。一次回关 5、10 或 15 人，默认 15 人，满了就交回队列";
     if (mode === "poster" || (mode === "poster-x" || mode === "poster-xhs")) return "跳过批次间隔；占住页签连续取材发送，其他任务排队";
     if (String(mode).startsWith("likes-")) return "跳过轮次与间隔；占住页签连续点赞，其他任务排队";
     return "跳过轮次与间隔；占住页签连续执行，其他任务排队";
@@ -9763,11 +9763,11 @@
               ${taskScheduleConfigMarkup("mutual-unfollowNonSc", "清理非简中")}
             </section>
             <section class="xrc-mutual-card" data-xrc-mutual-card="followBack">
-              <div><b>03</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，约每周一次</small></span></div>
+              <div><b>03</b><span><strong>回关粉丝</strong><small>自己的 Followers 页，和关注候选同频</small></span></div>
               <div class="xrc-task-section">
                 ${taskSectionHead("运行", "速度与启停")}
                 <div data-xrc-follow-pace>${followPaceTableHtml()}</div>
-                <p class="xrc-config-note">一次回关 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。约每周一次。</p>
+                <p class="xrc-config-note">一次回关 15 人，X 会提示超过限制。想避开这次提示，选 5 人或 10 人。排班间隔和关注候选一样。</p>
                 <p class="xrc-pace-now" data-xrc-follow-now>当前尚未开始</p>
                 <div class="xrc-flow-end">
                   <div class="xrc-mutual-stats" data-xrc-mutual-stats="followBack" hidden>本次回关 0</div>
@@ -11040,7 +11040,7 @@
       if (followNow) {
         const followConfirming = confirmingStartCopy("mutual-followBack");
         const followQuota = mutualApi?.followBackQuota?.(currentFollowPace()) || 15;
-        followNow.textContent = followConfirming || `本次回关 ${mutual.followedBack || 0}/${followQuota} 人，约每周一次`;
+        followNow.textContent = followConfirming || `本次回关 ${mutual.followedBack || 0}/${followQuota} 人，和关注候选同频`;
       }
       const notBackCount = (mutual.unfollowReview || []).filter((item) => item.reason !== "nonSimplified" && item.reason !== "nonChinese").length;
       const nonScCount = (mutual.unfollowReview || []).filter((item) => item.reason === "nonSimplified" || item.reason === "nonChinese").length;

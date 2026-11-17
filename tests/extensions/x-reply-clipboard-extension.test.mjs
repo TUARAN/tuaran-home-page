@@ -8528,7 +8528,7 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /只关页签不会关掉后台排班|只关执行页签不会关掉后台排班/)
   assert.match(docsPage, /右上角在「暂停全部」和「开始」之间切换/)
   assert.match(docsPage, /排班启动与状态[\s\S]*四类状态/)
-  assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*约每周一次/)
+  assert.match(docsPage, /一次回关 15 人，X 会提示超过限制[\s\S]*排班间隔和关注候选一样/)
   assert.match(docsPage, /从旧版多窗口扩展切到当前本地源码/)
   assert.match(docsPage, /共用同一套评论限制冷却[\s\S]*第一次等待 1 小时，再次受限等待 2 小时，第三次 4 小时，第四次及以后 8 小时/)
   assert.match(docsPage, /其中一个撞到限制，三项一起等待[\s\S]*后台保存截止时间并立即让出执行位[\s\S]*有一条评论成功就清除连续受限计数/)
@@ -9092,6 +9092,7 @@ test('default schedule ranks frequent actions first and allows follow-back all d
   assert.equal(rules.notifications.pace, 'boundary')
   assert.equal(background.normalizedTaskRules({ notifications: { pace: 'slow' } }).notifications.pace, 'slow')
   assert.equal(background.normalizedTaskRules({ 'likes-posts': { pace: 'slow' } })['likes-posts'].pace, 'slow')
+  assert.equal(rules['mutual-followBack'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
   assert.equal(rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
   assert.equal(rules['mutual-followBack'].window, 'all')
   assert.equal(rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
@@ -9103,11 +9104,11 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     'likes-posts', 'likes-replies',
   ])
   const recent = { enabledAt: now - 60000, rules: {}, items: { 'mutual-followBack': { lastRunAt: now - 23 * 60 * 60 * 1000 } } }
-  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
   recent.items['mutual-followBack'].lastRunAt = now - 2 * 60000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
   recent.items['mutual-followBack'].lastRunAt = now - 6 * 60000
-  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), false)
+  assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
   recent.items['mutual-followBack'].lastRunAt = now - 8 * 24 * 60 * 60 * 1000
   assert.equal(background.dueTaskModes(recent, now).includes('mutual-followBack'), true)
   assert.equal(background.dueTaskModes(recent, Date.parse('2026-10-29T13:00:00+08:00')).includes('mutual-followBack'), true)
@@ -9116,7 +9117,8 @@ test('default schedule ranks frequent actions first and allows follow-back all d
     lastRunAt: now, followBackSessionUntil: background.followBackNightEndsAt(now), resumeAt: now + 30 * 60000,
   } } }
   assert.equal(background.dueTaskModes(nightSession, now + 20 * 60000).includes('mutual-followBack'), false)
-  assert.equal(background.dueTaskModes(nightSession, now + 31 * 60000).includes('mutual-followBack'), false)
+  // resumeAt has cleared; session gap is only 5 minutes, so follow-back is due again.
+  assert.equal(background.dueTaskModes(nightSession, now + 31 * 60000).includes('mutual-followBack'), true)
   assert.equal(background.followBackNightEndsAt(now), Date.parse('2026-10-29T06:00:00+08:00'))
   assert.equal(background.followBackNightEndsAt(Date.parse('2026-10-29T05:00:00+08:00')), Date.parse('2026-10-29T06:00:00+08:00'))
   const dawnStart = Date.parse('2026-10-29T05:00:00+08:00')
@@ -9406,7 +9408,7 @@ test('follow-back and target-follow share the pace rest after 100 confirms', asy
     assert.equal(local.xrcTaskSchedule.items['mutual-targetFollow'].resumeAt, now + 5 * 60000)
     assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].manualRequestedAt, 0)
     assert.equal(local.xrcTaskSchedule.items['mutual-followBack'].followBackSessionUntil, undefined)
-    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-followBack'), false)
+    assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-followBack'), true)
     assert.equal(background.dueTaskModes(local.xrcTaskSchedule, now + 6 * 60000).includes('mutual-targetFollow'), true)
   } finally {
     globalThis.chrome = previousChrome
@@ -9507,7 +9509,7 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
   assert.ok(due.indexOf('notifications') < due.indexOf('mutual-targetFollow'))
   assert.ok(due.indexOf('timeline') < due.indexOf('mutual-targetFollow'))
   assert.ok(due.indexOf('mutual-targetFollow') < due.indexOf('likes-posts'))
-  assert.equal(due.includes('mutual-followBack'), false)
+  assert.equal(due.includes('mutual-followBack'), true)
   const premiumNow = Date.parse('2026-10-29T09:35:00+08:00')
   const premiumPlan = { ...plan, rules: { 'mutual-targetFollow': { window: 'all' } } }
   const premiumDue = background.dueTaskModes(premiumPlan, premiumNow)
@@ -9519,7 +9521,7 @@ test('follow tasks get a free slot ahead of likes while below the shared daily g
   assert.ok(!cooling.includes('timeline') && !cooling.includes('notifications') && !cooling.includes('kol'))
   assert.ok(cooling.includes('mutual-targetFollow'))
   assert.ok(cooling.indexOf('mutual-targetFollow') < cooling.indexOf('likes-posts'))
-  assert.ok(!cooling.includes('mutual-followBack'))
+  assert.ok(cooling.includes('mutual-followBack'))
 })
 
 test('X follow restrictions pause both follow modes without a 24-hour or permanent block', async () => {
@@ -9613,7 +9615,7 @@ test('stored priority does not override the queue or follow cooldown', () => {
   plan.rules.timeline.priority = 1
   const due = background.dueTaskModes(plan, now)
   assert.ok(due.indexOf('timeline') < due.indexOf('mutual-targetFollow'))
-  assert.ok(!due.includes('mutual-followBack'))
+  assert.ok(due.includes('mutual-followBack'))
   plan.sharedFollowTodayCount = 300
   assert.deepEqual(background.dueTaskModes(plan, now), due)
 })
@@ -12223,7 +12225,7 @@ test('source rescan waits do not pause the other follow task', () => {
   assert.equal(background.shouldShareFollowWait('X 关注受限，回关与关注候选共用冷却 30 分钟'), true)
 })
 
-test('follow-back weekly gap migrates a short cadence wait and leaves target-follow on the session gap', async () => {
+test('follow-back session gap migrates weekly waits down to the target-follow cadence', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const stored = { xrcTaskSchedule: {
@@ -12232,10 +12234,11 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     priorityScoreVersion: background.PRIORITY_SCORE_VERSION,
     followBackNightVersion: 1, followBackAllDayVersion: 1,
     sharedFollowCadenceVersion: 1, followSessionVersion: 1,
+    followBackWeeklyGapVersion: 2,
     cleanupPaceVersion: 1,
     likeDetectionVersion: 2, replyRiskVersion: 2,
     rules: {
-      'mutual-followBack': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
+      'mutual-followBack': { minGapMs: 7 * 24 * 60 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
       'mutual-targetFollow': { minGapMs: 5 * 60 * 1000, pace: 'medium', priority: 7, window: 'all', enabled: true },
       'mutual-unfollow': { minGapMs: 240 * 60 * 1000, pace: 'slow', priority: 3, window: 'all', enabled: true },
       poster: { minGapMs: 0, pace: 'slow', priority: 7, window: 'all', enabled: true },
@@ -12243,7 +12246,7 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
       article: { minGapMs: 50 * 60000, pace: 'slow', priority: 7, window: 'all', enabled: true },
     },
     items: {
-      'mutual-followBack': { resumeAt: now + 5 * 60 * 1000, lastRunAt: now - 60 * 1000, reason: '回关批次结束，等待共享冷却后继续' },
+      'mutual-followBack': { resumeAt: now + 3 * 24 * 60 * 60 * 1000, lastRunAt: now - 60 * 1000, reason: '回关粉丝按每周间隔等待下次排班' },
       'mutual-targetFollow': { resumeAt: now + 5 * 60 * 1000, lastRunAt: now - 10 * 60 * 1000, reason: '关注候选等待下次扫描或共享关注冷却' },
       'mutual-unfollow': { resumeAt: now + 4 * 60 * 60 * 1000, lastRunAt: now - 60 * 60 * 1000, reason: '清理未回关按速度档等待下次排班' },
     },
@@ -12255,8 +12258,9 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
   try {
     const plan = await background.readTaskSchedule()
     assert.equal(plan.followBackWeeklyGapVersion, 2)
+    assert.equal(plan.followBackSessionGapVersion, 1)
     assert.equal(plan.unfollowWeeklyGapVersion, 1)
-    assert.equal(plan.rules['mutual-followBack'].minGapMs, background.FOLLOW_BACK_MIN_GAP_MS)
+    assert.equal(plan.rules['mutual-followBack'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-targetFollow'].minGapMs, background.TARGET_FOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-targetFollow'].pace, 'fast')
     assert.equal(plan.targetFollowCountVersion, 1)
@@ -12270,12 +12274,11 @@ test('follow-back weekly gap migrates a short cadence wait and leaves target-fol
     assert.equal(plan.rules['mutual-unfollowNonSc'].enabled, false)
     assert.equal(plan.rules['mutual-unfollowNonSc'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
     assert.equal(plan.rules['mutual-unfollow'].minGapMs, background.UNFOLLOW_MIN_GAP_MS)
-    assert.ok(plan.items['mutual-followBack'].resumeAt >= now + background.FOLLOW_BACK_MIN_GAP_MS - 120000)
+    assert.ok(plan.items['mutual-followBack'].resumeAt <= Date.now() + background.TARGET_FOLLOW_MIN_GAP_MS + 5000)
+    assert.match(plan.items['mutual-followBack'].reason, /同频|下次扫描或共享关注冷却/)
     assert.equal(plan.items['mutual-targetFollow'].resumeAt, now + 5 * 60 * 1000)
     assert.ok(plan.items['mutual-unfollow'].resumeAt >= now + background.UNFOLLOW_MIN_GAP_MS - 2 * 60 * 60 * 1000)
-    assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), false)
-    plan.sharedFollowTodayCount = 10
-    assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), false)
+    assert.equal(background.dueTaskModes(plan, now + 10 * 60 * 1000).includes('mutual-followBack'), true)
     const again = await background.readTaskSchedule()
     assert.equal(again.items['mutual-followBack'].resumeAt, plan.items['mutual-followBack'].resumeAt)
     plan.targetFollowTurnVersion = 0
@@ -12313,7 +12316,7 @@ test('target-follow seeds expand to accounts followed in this run and skip self,
   assert.equal(mutual.expansionCount(full, seeds), mutual.constants.TARGET_EXPANSION_LIMIT)
   assert.ok(mutual.constants.TARGET_SEED_REFRESH_MS > mutual.constants.RESCAN_INTERVAL_MS)
   assert.equal(mutual.constants.FOLLOW_BACK_LIST_GAP_MS, background.FOLLOW_BACK_MIN_GAP_MS)
-  assert.equal(background.FOLLOW_BACK_MIN_GAP_MS, 7 * 24 * 60 * 60 * 1000)
+  assert.equal(background.FOLLOW_BACK_MIN_GAP_MS, background.TARGET_FOLLOW_MIN_GAP_MS)
   assert.equal(background.TARGET_FOLLOW_MIN_GAP_MS, 5 * 60 * 1000)
 })
 

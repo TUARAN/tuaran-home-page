@@ -199,8 +199,10 @@
     extensionContextRetired = true;
     if (panelRenderTimer) window.clearInterval(panelRenderTimer);
     if (viewsDismissTimer) window.clearInterval(viewsDismissTimer);
+    if (homeScheduleCarouselTimer) window.clearInterval(homeScheduleCarouselTimer);
     panelRenderTimer = 0;
     viewsDismissTimer = 0;
+    homeScheduleCarouselTimer = 0;
     if (updateNoticeTimer) window.clearTimeout(updateNoticeTimer);
     try { globalThis.chrome?.storage?.onChanged?.removeListener?.(onExtensionStorageChanged); } catch (error) { /* The invalidated runtime no longer accepts listener removal. */ }
     try { globalThis.chrome?.runtime?.onMessage?.removeListener?.(onExtensionRuntimeMessage); } catch (error) { /* The invalidated runtime no longer accepts listener removal. */ }
@@ -373,6 +375,9 @@
   let alertsDeskOpen = false;
   let homeLiveTab = "now";
   let homeTodayCategory = "comment";
+  let homeScheduleCarouselPage = 0;
+  let homeScheduleCarouselTimer = 0;
+  const HOME_SCHEDULE_VISIBLE = 3;
   const ALERT_KIND_META = Object.freeze({
     "rate-limit": {
       label: "系统超限",
@@ -4043,26 +4048,246 @@
     }
   }
 
+  function homeScheduleCarouselPageCount(total = 1) {
+    return Math.max(1, Math.ceil(Math.max(1, total) / HOME_SCHEDULE_VISIBLE));
+  }
+
+  function stopHomeScheduleCarousel() {
+    if (homeScheduleCarouselTimer) {
+      window.clearInterval(homeScheduleCarouselTimer);
+      homeScheduleCarouselTimer = 0;
+    }
+  }
+
+  function listHomeScheduleCardModels(now = Date.now()) {
+    if (!scheduleLoaded) {
+      return [{ key: "placeholder", placeholder: true, title: "正在读取…", status: "读取中", phase: "", pulse: "", warmth: "" }];
+    }
+    const preview = schedulePreview(now);
+    const overviewByMode = Object.fromEntries(
+      flowTaskOverview(typeof deskPluginRuntime === "function" ? deskPluginRuntime() : pluginRuntime, now)
+        .tasks.map((task) => [task.key, task])
+    );
+    const runningMode = preview.pending.find((task) => overviewByMode[task.mode]?.status === "running")?.mode || "";
+    const nowMode = runningMode || preview.current || "";
+    const byMode = new Map(preview.pending.map((task) => [task.mode, task]));
+    const waitingQueue = [...byMode.values()]
+      .filter((task) => task.mode !== nowMode)
+      .sort((a, b) => {
+        const aOff = a.rule?.enabled === false ? 1 : 0;
+        const bOff = b.rule?.enabled === false ? 1 : 0;
+        if (aOff !== bOff) return aOff - bOff;
+        const readyDiff = scheduleReadinessAt(a.mode, now) - scheduleReadinessAt(b.mode, now);
+        if (readyDiff) return readyDiff;
+        const queue = Array.isArray(taskSchedule.queue) ? taskSchedule.queue : [];
+        const queueAt = (mode) => {
+          const index = queue.indexOf(mode);
+          return index < 0 ? 1000 : index;
+        };
+        return queueAt(a.mode) - queueAt(b.mode);
+      });
+    const nowTask = nowMode ? byMode.get(nowMode) : null;
+    const ordered = nowTask ? [nowTask, ...waitingQueue] : waitingQueue;
+    const firstReady = waitingQueue.find((task) => scheduleRuleEnabled(task.mode, task.rule)
+      && scheduleReadinessAt(task.mode, now) < Number.POSITIVE_INFINITY);
+    const nextMode = firstReady?.mode || "";
+    const focusDeferred = scheduleManualFocusDeferred(now);
+    const candidateModes = waitingQueue
+      .map((task) => task.mode)
+      .filter((mode) => mode && mode !== nextMode && scheduleRuleEnabled(mode, byMode.get(mode)?.rule));
+    const cards = [];
+    for (const task of ordered) {
+      const enabled = scheduleRuleEnabled(task.mode, task.rule) || taskSchedule.manualFocusMode === task.mode;
+      const overviewStatus = overviewByMode[task.mode]?.status;
+      const pulse = enabled || task.mode === nowMode
+        ? scheduleItemPulse(task.mode, preview, overviewByMode[task.mode])
+        : "";
+      const candidateRank = candidateModes.indexOf(task.mode);
+      const phase = !enabled && task.mode !== nowMode ? "off"
+        : task.mode === nowMode ? "now"
+        : task.mode === nextMode ? "next"
+        : candidateRank >= 0 ? "candidate" : "off";
+      const phaseLabel = phase === "off" ? "未排班"
+        : phase === "now" ? (pulse === "running" ? "执行中" : pulse === "stopped" ? "已暂停" : "占用中")
+        : taskSchedule.manualFocusMode && !focusDeferred && task.mode !== taskSchedule.manualFocusMode ? "等手动"
+        : phase === "next" ? "下一"
+        : phase === "candidate" ? "候选" : "未排班";
+      const status = phase === "off"
+        ? "可添加"
+        : userStateLabelForTask(
+          pulse === "running" || overviewStatus === "running" ? "running"
+            : pulse === "waiting" || overviewStatus === "waiting" || overviewStatus === "stopping"
+              || (taskSchedule.enabled && pulse !== "stopped") ? "waiting"
+            : overviewStatus === "blocked" || overviewStatus === "unknown" ? "blocked"
+            : "missing"
+        );
+      cards.push({
+        key: task.mode,
+        placeholder: false,
+        title: task.label,
+        status,
+        phase,
+        phaseLabel,
+        pulse,
+        warmth: phase === "next" ? "0"
+          : phase === "candidate" && pulse !== "stopped" ? String(Math.min(candidateRank + 1, 5))
+          : "",
+        category: taskCategory(task.mode)
+      });
+    }
+    if (!cards.length) {
+      return [{ key: "placeholder", placeholder: true, title: "暂无任务", status: "去排班台", phase: "", pulse: "", warmth: "" }];
+    }
+    return cards;
+  }
+
+  function paintHomeScheduleCards(panel) {
+    const track = panel?.querySelector("[data-xrc-schedule-track]");
+    if (!track) return;
+    const models = listHomeScheduleCardModels();
+    const keep = new Set(models.map((item) => item.key));
+    for (const stale of [...track.querySelectorAll(".xrc-home-schedule-card")]) {
+      if (!keep.has(stale.dataset.mode || stale.dataset.key)) stale.remove();
+    }
+    models.forEach((model, index) => {
+      const key = model.key;
+      let card = [...track.querySelectorAll(".xrc-home-schedule-card")]
+        .find((node) => (node.dataset.mode || node.dataset.key) === key);
+      if (!card) {
+        card = document.createElement("button");
+        card.type = "button";
+        card.className = "xrc-home-schedule-card";
+        card.innerHTML = `<strong></strong><span class="xrc-home-schedule-card-status"></span>`;
+      }
+      card.dataset.key = key;
+      if (model.placeholder || key === "placeholder") {
+        delete card.dataset.mode;
+        card.dataset.placeholder = "1";
+      } else {
+        // Keep mode for off / 未排班 cards so the whole card (and category badge) opens task detail.
+        card.dataset.mode = key;
+        delete card.dataset.placeholder;
+      }
+      if (model.phase) card.dataset.phase = model.phase;
+      else delete card.dataset.phase;
+      if (model.pulse) card.dataset.pulse = model.pulse;
+      else delete card.dataset.pulse;
+      if (model.warmth) card.dataset.warmth = model.warmth;
+      else delete card.dataset.warmth;
+      const title = card.querySelector("strong");
+      const status = card.querySelector(".xrc-home-schedule-card-status");
+      if (title) {
+        const signature = `${model.phaseLabel}|${model.title}|${model.category?.id || ""}|${model.placeholder ? "1" : "0"}`;
+        if (title.dataset.xrcHomeCardSignature !== signature) {
+          title.replaceChildren();
+          if (model.phaseLabel) {
+            const tag = document.createElement("span");
+            tag.className = "xrc-desk-phase-tag";
+            tag.textContent = model.phaseLabel;
+            title.append(tag);
+          }
+          title.append(document.createTextNode(model.title));
+          if (model.category) {
+            const badge = document.createElement("span");
+            badge.className = "xrc-task-category-badge";
+            badge.dataset.category = model.category.id;
+            const icon = document.createElement("span");
+            icon.className = "xrc-task-category-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = model.category.icon;
+            badge.append(icon, document.createTextNode(model.category.label));
+            title.append(badge);
+          }
+          title.dataset.xrcHomeCardSignature = signature;
+        }
+      }
+      if (status) status.textContent = model.status;
+      const opensDetail = Boolean(model.key && model.key !== "placeholder" && !model.placeholder);
+      card.title = opensDetail ? `打开任务详情 · ${model.title}` : (model.status || model.title);
+      card.setAttribute("aria-label", opensDetail
+        ? `${model.phaseLabel || "任务"} ${model.title}，${model.status}，打开任务详情`
+        : model.title);
+      const current = track.children[index];
+      if (current !== card) track.insertBefore(card, current || null);
+    });
+    syncHomeScheduleCarousel(panel, homeScheduleCarouselPage);
+  }
+
+  function syncHomeScheduleCarousel(panel, page = homeScheduleCarouselPage, retry = 0) {
+    const carousel = panel?.querySelector("[data-xrc-schedule-carousel]");
+    const viewport = carousel?.querySelector(".xrc-home-schedule-viewport");
+    const track = carousel?.querySelector("[data-xrc-schedule-track]");
+    const dots = carousel?.querySelector("[data-xrc-schedule-dots]");
+    if (!carousel || !track || !viewport) return;
+    const cards = [...track.querySelectorAll(".xrc-home-schedule-card")];
+    const total = cards.length || 1;
+    const pages = homeScheduleCarouselPageCount(total);
+    const nextPage = ((Number(page) % pages) + pages) % pages;
+    homeScheduleCarouselPage = nextPage;
+    const gap = 5;
+    const visible = HOME_SCHEDULE_VISIBLE;
+    const viewportWidth = Math.max(0, viewport.clientWidth || 0);
+    const cardWidth = viewportWidth > 0
+      ? Math.floor((viewportWidth - gap * (visible - 1)) / visible)
+      : 0;
+    if (cardWidth > 0) {
+      viewport.style.setProperty("--xrc-schedule-card-width", `${cardWidth}px`);
+      cards.forEach((card) => {
+        card.style.flex = `0 0 ${cardWidth}px`;
+        card.style.width = `${cardWidth}px`;
+        card.style.maxWidth = `${cardWidth}px`;
+      });
+    }
+    const offset = Math.min(nextPage * visible, Math.max(0, total - visible));
+    const step = cardWidth > 0 ? cardWidth + gap : 0;
+    track.style.transform = step ? `translateX(-${offset * step}px)` : "translateX(0)";
+    carousel.dataset.page = String(nextPage);
+    if (dots) {
+      if (dots.childElementCount !== pages) {
+        dots.replaceChildren(...Array.from({ length: pages }, (_, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.xrcScheduleDot = String(index);
+          button.setAttribute("aria-label", `第 ${index + 1} 组`);
+          return button;
+        }));
+      }
+      dots.querySelectorAll("[data-xrc-schedule-dot]").forEach((button, index) => {
+        const active = index === nextPage;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-current", active ? "true" : "false");
+      });
+    }
+    if (!cardWidth && retry < 2 && typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => syncHomeScheduleCarousel(panel, nextPage, retry + 1));
+    }
+  }
+
+  function startHomeScheduleCarousel(panel) {
+    stopHomeScheduleCarousel();
+    const carousel = panel?.querySelector("[data-xrc-schedule-carousel]");
+    if (!carousel || carousel.hidden) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    homeScheduleCarouselTimer = window.setInterval(() => {
+      const live = document.getElementById(PANEL_ID);
+      if (!live?.querySelector("[data-xrc-schedule-carousel]")) {
+        stopHomeScheduleCarousel();
+        return;
+      }
+      syncHomeScheduleCarousel(live, homeScheduleCarouselPage + 1);
+    }, 3600);
+  }
+
   function paintFlowButtonNow(panel) {
     const status = panel?.querySelector("[data-xrc-flow-start]");
     if (!status) return;
     const model = flowButtonModel();
     const overview = status.querySelector("[data-xrc-flow-overview]");
-    const count = status.querySelector("[data-xrc-flow-count]");
-    const dots = status.querySelector("[data-xrc-flow-dots]");
     const hint = panel?.querySelector("[data-xrc-flow-hint]");
     if (overview) overview.hidden = false;
     const summary = flowTaskOverview(typeof deskPluginRuntime === "function" ? deskPluginRuntime() : pluginRuntime);
-    if (count) count.textContent = summary.text;
-    if (dots && dots.childElementCount !== FLOW_TASKS.length) {
-      dots.replaceChildren(...FLOW_TASKS.map(() => document.createElement("i")));
-    }
-    dots?.querySelectorAll("i").forEach((dot, index) => {
-      const task = summary.tasks[index];
-      const indicator = flowTaskDot(task, executionAlerts, currentAccountHandle() || lastKnownAccountHandle);
-      dot.dataset.state = indicator.state;
-      dot.title = indicator.title;
-    });
+    paintHomeScheduleCards(panel);
+    if (!homeScheduleCarouselTimer) startHomeScheduleCarousel(panel);
     if (hint) {
       if (Date.now() < modelSaveNoticeUntil) {
         hint.hidden = false;
@@ -9213,28 +9438,34 @@
               <div class="xrc-task-live-main">
                 <p class="xrc-task-live" data-xrc-task-live>正在运行：读取中</p>
               </div>
-              <div class="xrc-task-live-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-open-home-task>查看详情 →</button>
-                <span class="xrc-task-live-side">
-                  <button type="button" class="xrc-task-page-refresh" data-xrc-task-page-refresh hidden>刷新页面</button>
-                  <button type="button" class="xrc-task-manual-pause" data-xrc-task-manual-pause>暂停当前任务</button>
-                </span>
+              <div class="xrc-task-live-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-open-home-task>查看详情</button>
+                <button type="button" class="xrc-home-action is-quiet xrc-task-page-refresh" data-xrc-task-page-refresh hidden>刷新页面</button>
+                <button type="button" class="xrc-home-action is-pause xrc-task-manual-pause" data-xrc-task-manual-pause>暂停任务</button>
               </div>
             </section>
             <section class="xrc-plate xrc-home-schedule" data-xrc-home-schedule>
               ${plateHead("03", "排班与设置")}
               <div class="xrc-flow-status" data-xrc-flow-start role="status" data-role="status">
-                <span class="xrc-flow-overview" data-xrc-flow-overview hidden><span class="xrc-flow-dots" data-xrc-flow-dots aria-hidden="true"></span><small data-xrc-flow-count></small></span>
+                <div class="xrc-home-schedule-summary xrc-flow-overview" data-xrc-flow-overview hidden>
+                  <div class="xrc-home-schedule-carousel" data-xrc-schedule-carousel data-page="0">
+                    <div class="xrc-home-schedule-viewport">
+                      <div class="xrc-home-schedule-track" data-xrc-schedule-track aria-label="已排班任务"></div>
+                    </div>
+                    <div class="xrc-home-schedule-dots" data-xrc-schedule-dots role="tablist" aria-label="排班任务分页"></div>
+                  </div>
+                </div>
               </div>
-              <div class="xrc-home-schedule-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-schedule-open>打开排班台 →</button>
+              <div class="xrc-home-schedule-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-schedule-open>打开排班台</button>
+                <button type="button" class="xrc-home-action" data-xrc-docs-target="xrc-docs-flow" title="打开文档中心 · 面板与排班">查看排班介绍</button>
               </div>
             </section>
             <section class="xrc-plate xrc-home-alerts" data-xrc-home-alerts>
               ${plateHead("04", "执行报警")}
               <p class="xrc-home-alerts-latest" data-xrc-alerts-latest data-state="empty">近 30 天暂无执行报警</p>
-              <div class="xrc-home-schedule-actions">
-                <button type="button" class="xrc-task-open-detail" data-xrc-alerts-open>查看详情 →</button>
+              <div class="xrc-home-schedule-actions xrc-home-actions">
+                <button type="button" class="xrc-home-action" data-xrc-alerts-open>查看详情</button>
               </div>
             </section>
             <div class="xrc-flow-meta">
@@ -9922,6 +10153,29 @@
           syncHomeTodayTabs(panel, button.dataset.xrcTodayTab);
         });
       });
+      panel.querySelector("[data-xrc-today-tasks]")?.addEventListener("click", (event) => {
+        const chip = event.target.closest?.("[data-xrc-today-task-open]");
+        const mode = chip?.dataset?.xrcTodayTaskOpen;
+        if (!mode || chip?.hidden) return;
+        openTaskSubpage(mode);
+      });
+      const scheduleCarousel = panel.querySelector("[data-xrc-schedule-carousel]");
+      scheduleCarousel?.querySelector("[data-xrc-schedule-dots]")?.addEventListener("click", (event) => {
+        const dot = event.target.closest?.("[data-xrc-schedule-dot]");
+        if (!dot) return;
+        syncHomeScheduleCarousel(panel, Number(dot.dataset.xrcScheduleDot) || 0);
+        startHomeScheduleCarousel(panel);
+      });
+      scheduleCarousel?.querySelector("[data-xrc-schedule-track]")?.addEventListener("click", (event) => {
+        const card = event.target.closest?.(".xrc-home-schedule-card");
+        if (!card) return;
+        const mode = card.dataset.mode;
+        // 未排班 / 可添加卡也保留 mode，整卡与分类徽章都进对应任务详情；排班台只用页脚链接。
+        if (mode) openTaskSubpage(mode);
+      });
+      scheduleCarousel?.addEventListener("pointerenter", () => stopHomeScheduleCarousel());
+      scheduleCarousel?.addEventListener("pointerleave", () => startHomeScheduleCarousel(panel));
+      window.addEventListener("resize", () => syncHomeScheduleCarousel(panel, homeScheduleCarouselPage), { passive: true });
       const openDeskTask = (mode) => {
         if (mode) openTaskSubpage(mode);
       };
@@ -10877,7 +11131,7 @@
       const busy = isTaskActionBusy(pauseMode || viewKey);
       pauseButton.hidden = homeLiveTab === "next";
       pauseButton.disabled = paused || busy;
-      pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停当前任务";
+      pauseButton.textContent = busy ? "正在暂停…" : paused ? "已手动暂停" : "暂停任务";
       pauseButton.title = paused ? "重新启动请使用本页的启动按钮" : `只暂停${TASK_MODE_LABELS[pauseMode || viewKey] || "当前任务"}`;
     }
     syncAllTaskScheduleConfigs(panel);

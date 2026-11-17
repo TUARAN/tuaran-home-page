@@ -1600,40 +1600,63 @@
   background: color-mix(in srgb, var(--xrc-accent) 14%, #fff);
   box-shadow: inset 0 -2px 0 var(--xrc-accent);
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions {
+#x-reply-clipboard-panel .xrc-home-schedule-actions,
+#x-reply-clipboard-panel .xrc-home-actions {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
-  padding-left: 30px;
+  padding-left: 0;
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail {
+#x-reply-clipboard-panel .xrc-home-action {
   position: static;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  min-height: 30px;
+  box-sizing: border-box;
+  min-height: 28px;
   margin: 0;
-  padding: 0 10px;
-  border: 0;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 88%, transparent);
   border-radius: 8px;
-  background: transparent;
-  color: var(--xrc-accent);
+  background: color-mix(in srgb, var(--xrc-soft) 70%, #fff);
+  color: var(--xrc-text);
   white-space: nowrap;
-  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-decoration: none;
   cursor: pointer;
 }
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail:focus-visible,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail:focus-visible {
-  background: rgba(15, 20, 25, 0.05);
+#x-reply-clipboard-panel .xrc-home-action:hover,
+#x-reply-clipboard-panel .xrc-home-action:focus-visible {
+  border-color: color-mix(in srgb, var(--xrc-accent) 36%, var(--xrc-line));
+  background: color-mix(in srgb, var(--xrc-accent) 8%, #fff);
+  color: var(--xrc-text);
   outline: none;
+}
+#x-reply-clipboard-panel .xrc-home-action.is-quiet {
+  color: var(--xrc-muted);
+}
+#x-reply-clipboard-panel .xrc-home-action.is-pause {
+  color: #8a3a40;
+  border-color: color-mix(in srgb, #9f2d34 16%, var(--xrc-line));
+  background: color-mix(in srgb, #9f2d34 4%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-action.is-pause:hover,
+#x-reply-clipboard-panel .xrc-home-action.is-pause:focus-visible {
+  border-color: color-mix(in srgb, #9f2d34 28%, var(--xrc-line));
+  background: color-mix(in srgb, #9f2d34 8%, #fff);
+  color: #7a3036;
+  outline: none;
+}
+#x-reply-clipboard-panel .xrc-home-action[hidden] {
+  display: none;
+}
+#x-reply-clipboard-panel .xrc-home-action:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 #x-reply-clipboard-panel .xrc-desk-back {
   margin: 0;
@@ -1655,24 +1678,7 @@
 #x-reply-clipboard-panel .xrc-task-live-main {
   display: grid;
   min-width: 0;
-  padding-left: 30px;
-}
-#x-reply-clipboard-panel .xrc-task-live-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-  padding-left: 30px;
-}
-#x-reply-clipboard-panel .xrc-task-live-side {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 2px;
-  min-width: 0;
-  margin-left: 0;
+  padding-left: 0;
 }
 #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-live {
   display: block;
@@ -1872,52 +1878,6 @@
   color: var(--xrc-accent);
   background: transparent;
   outline: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause {
-  position: static;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  min-height: 30px;
-  margin: 0;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  white-space: nowrap;
-  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-decoration: none;
-  cursor: pointer;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail[hidden],
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh[hidden] {
-  display: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh { color: var(--xrc-muted); }
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #9f2d34; }
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail:hover,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail:focus-visible,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:focus-visible:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-  background: rgba(15, 20, 25, 0.05);
-  text-decoration: none;
-  outline: none;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-  background: rgba(159, 45, 52, 0.08);
-  color: #8a242b;
-}
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:disabled,
-#x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:disabled {
-  opacity: 0.45;
-  cursor: default;
-  background: transparent;
-  text-decoration: none;
 }
 #x-reply-clipboard-panel .xrc-task-subnav::before,
 #x-reply-clipboard-panel .xrc-task-subnav-title::before {
@@ -4011,51 +3971,177 @@
   justify-content: flex-start;
   gap: 8px;
   min-width: 0;
-  padding: 2px 0 0 30px;
+  padding: 2px 0 0;
 }
+#x-reply-clipboard-panel .xrc-flow-status .xrc-home-schedule-summary,
 #x-reply-clipboard-panel .xrc-flow-status .xrc-flow-overview {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 4px;
+  display: grid;
+  gap: 8px;
   width: 100%;
+  min-width: 0;
   color: var(--xrc-text);
+  white-space: normal;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-overview small {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--xrc-muted);
-  letter-spacing: 0.01em;
-  text-align: left;
+#x-reply-clipboard-panel .xrc-home-schedule-carousel {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots {
-  height: 10px;
+#x-reply-clipboard-panel .xrc-home-schedule-viewport {
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-track {
+  display: flex;
+  align-items: stretch;
   gap: 5px;
+  width: max-content;
+  min-width: 0;
+  transform: translateX(0);
+  transition: transform 0.35s ease;
+  will-change: transform;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i {
-  width: 7px;
-  height: 7px;
-  background: #94a3b8;
+#x-reply-clipboard-panel .xrc-home-schedule-card {
+  display: grid;
+  flex: 0 0 var(--xrc-schedule-card-width, 30%);
+  box-sizing: border-box;
+  width: var(--xrc-schedule-card-width, 30%);
+  max-width: var(--xrc-schedule-card-width, 30%);
+  min-width: 0;
+  align-content: start;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 7px 5px;
+  border: 1px solid color-mix(in srgb, var(--xrc-line) 90%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, #fff 92%, var(--xrc-soft));
+  color: var(--xrc-text);
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="running"],
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="waiting"],
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="stopping"] {
-  background: #16a34a;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+#x-reply-clipboard-panel .xrc-home-schedule-card:hover,
+#x-reply-clipboard-panel .xrc-home-schedule-card:focus-visible {
+  border-color: color-mix(in srgb, var(--xrc-accent) 28%, var(--xrc-line));
+  outline: none;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="missing"] {
-  background: #94a3b8;
-  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.12);
+#x-reply-clipboard-panel .xrc-home-schedule-card > strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 4px;
+  min-width: 0;
+  color: var(--xrc-text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="needs"],
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="blocked"],
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="unknown"] {
-  background: #eab308;
-  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.14);
+#x-reply-clipboard-panel .xrc-home-schedule-card .xrc-desk-phase-tag {
+  font-size: 8px;
+  padding: 1px 4px;
 }
-#x-reply-clipboard-panel .xrc-flow-status .xrc-flow-dots i[data-state="alert"] {
-  background: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
+#x-reply-clipboard-panel .xrc-home-schedule-card .xrc-task-category-badge {
+  gap: 2px;
+  padding: 0 4px 0 1px;
+  font-size: 8px;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card .xrc-task-category-icon {
+  width: 11px;
+  height: 11px;
+  font-size: 7px;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card-status {
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="now"],
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="now"][data-pulse="running"] {
+  border-color: color-mix(in srgb, #16a34a 42%, var(--xrc-line));
+  background: color-mix(in srgb, #dcfce7 48%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="now"] .xrc-home-schedule-card-status,
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-pulse="running"] .xrc-home-schedule-card-status {
+  color: #15803d;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="next"],
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-warmth="0"] {
+  border-color: color-mix(in srgb, #ca8a04 58%, var(--xrc-line));
+  background: color-mix(in srgb, #fde68a 42%, #fffbeb);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="next"] .xrc-home-schedule-card-status,
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-warmth="0"] .xrc-home-schedule-card-status,
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-pulse="waiting"] .xrc-home-schedule-card-status {
+  color: #a16207;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="candidate"][data-warmth="1"] {
+  border-color: color-mix(in srgb, #ca8a04 52%, var(--xrc-line));
+  background: color-mix(in srgb, #fde68a 46%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="candidate"][data-warmth="2"] {
+  border-color: color-mix(in srgb, #d97706 34%, var(--xrc-line));
+  background: color-mix(in srgb, #fef3c7 38%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="candidate"][data-warmth="3"] {
+  border-color: color-mix(in srgb, #eab308 22%, var(--xrc-line));
+  background: color-mix(in srgb, #fefce8 28%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="candidate"][data-warmth="4"],
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="candidate"][data-warmth="5"],
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="off"],
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-placeholder="1"] {
+  border-color: color-mix(in srgb, #cbd5e1 55%, var(--xrc-line));
+  background: color-mix(in srgb, #f8fafc 70%, #fff);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="off"] .xrc-desk-phase-tag {
+  border-color: color-mix(in srgb, #94a3b8 35%, var(--xrc-line));
+  background: color-mix(in srgb, #f1f5f9 70%, #fff);
+  color: #64748b;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-phase="off"] .xrc-home-schedule-card-status {
+  color: #64748b;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-card[data-pulse="stopped"] .xrc-home-schedule-card-status {
+  color: #b91c1c;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 10px;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-dots [data-xrc-schedule-dot] {
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--xrc-muted) 45%, transparent);
+  cursor: pointer;
+}
+#x-reply-clipboard-panel .xrc-home-schedule-dots [data-xrc-schedule-dot].is-active,
+#x-reply-clipboard-panel .xrc-home-schedule-dots [data-xrc-schedule-dot][aria-current="true"] {
+  background: var(--xrc-accent);
+  transform: scale(1.15);
+}
+#x-reply-clipboard-panel .xrc-home-schedule-dots [data-xrc-schedule-dot]:hover,
+#x-reply-clipboard-panel .xrc-home-schedule-dots [data-xrc-schedule-dot]:focus-visible {
+  background: color-mix(in srgb, var(--xrc-accent) 70%, var(--xrc-muted));
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #x-reply-clipboard-panel .xrc-home-schedule-track {
+    transition: none;
+  }
 }
 #x-reply-clipboard-panel .xrc-flow-meta {
   display: none;
@@ -5030,9 +5116,28 @@
   #x-reply-clipboard-panel .xrc-report-page,
   #x-reply-clipboard-panel .xrc-schedule-desk,
   #x-reply-clipboard-panel .xrc-alerts-desk { background: rgba(0, 0, 0, 0.98); }
-  #x-reply-clipboard-panel .xrc-home-schedule-actions .xrc-task-open-detail,
-  #x-reply-clipboard-panel .xrc-home-alerts .xrc-task-open-detail,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-open-detail { color: #7ddea0; }
+  #x-reply-clipboard-panel .xrc-home-action {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.88);
+  }
+  #x-reply-clipboard-panel .xrc-home-action:hover,
+  #x-reply-clipboard-panel .xrc-home-action:focus-visible {
+    border-color: color-mix(in srgb, var(--xrc-accent) 42%, rgba(255, 255, 255, 0.18));
+    background: color-mix(in srgb, var(--xrc-accent) 14%, rgba(0, 0, 0, 0.35));
+    color: #fff;
+  }
+  #x-reply-clipboard-panel .xrc-home-action.is-quiet { color: rgba(255, 255, 255, 0.62); }
+  #x-reply-clipboard-panel .xrc-home-action.is-pause {
+    color: #ff9aa2;
+    border-color: color-mix(in srgb, #ff9aa2 28%, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, #ff9aa2 10%, rgba(0, 0, 0, 0.35));
+  }
+  #x-reply-clipboard-panel .xrc-home-action.is-pause:hover,
+  #x-reply-clipboard-panel .xrc-home-action.is-pause:focus-visible {
+    background: rgba(255, 154, 162, 0.14);
+    color: #ffb4ba;
+  }
   #x-reply-clipboard-panel[data-desk="task"] .xrc-task-subnav:not([hidden]),
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="timeline"] .xrc-reply-body,
   #x-reply-clipboard-panel[data-desk="task"][data-assistant-mode="notifications"] .xrc-reply-body,
@@ -5078,16 +5183,6 @@
   #x-reply-clipboard-panel .xrc-task-live-row {
     border-color: color-mix(in srgb, var(--xrc-accent) 28%, rgba(255, 255, 255, 0.12));
     background: color-mix(in srgb, var(--xrc-accent) 14%, rgba(0, 0, 0, 0.55));
-  }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause { color: #ff9aa2; }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:hover,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-back:focus-visible,
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:hover:not(:disabled),
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-page-refresh:focus-visible:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:hover:not(:disabled),
-  #x-reply-clipboard-panel .xrc-task-live-row .xrc-task-manual-pause:focus-visible:not(:disabled) {
-    background: rgba(255, 154, 162, 0.12);
-    color: #ffb4ba;
   }
   #x-reply-clipboard-panel .xrc-workspace-nav { background: transparent; }
   #x-reply-clipboard-panel .xrc-key-guide { background: var(--xrc-soft); }

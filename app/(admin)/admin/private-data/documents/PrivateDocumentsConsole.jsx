@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import AdminPage from '../../../components/ui/AdminPage'
 import PrivateTextNotes from './PrivateTextNotes'
+import ShareAdminClient from '../../share/ShareConsole'
 
 function formatSize(bytes) {
   return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`
 }
 
 export default function PrivateDocumentsConsole() {
-  const [view, setView] = useState('notes')
+  const [view, setView] = useState('files')
   const [items, setItems] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [status, setStatus] = useState('loading')
@@ -20,6 +21,7 @@ export default function PrivateDocumentsConsole() {
   const fileRef = useRef(null)
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view') === 'shares') setView('shares')
     const initialRecordId = new URLSearchParams(window.location.search).get('recordId') || ''
     setRecordId(initialRecordId)
     const url = initialRecordId ? `/api/admin/private-documents?recordId=${encodeURIComponent(initialRecordId)}` : '/api/admin/private-documents'
@@ -61,12 +63,17 @@ export default function PrivateDocumentsConsole() {
 
   const selected = items.find((item) => item.id === selectedId)
   return (
-    <AdminPage title="私密文档" description="在后台写私人文字记录，也可保存仅站长能预览的 PDF。">
+    <AdminPage title="私密文档与分享" description="保存和预览 PDF、记录私人文字，并管理密码保护的分享链接。PDF 与文字默认仅站长可见，分享需单独创建。">
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="私密文档类型">
-        <button type="button" role="tab" aria-selected={view === 'notes'} onClick={() => setView('notes')} className={`rounded-lg px-4 py-2 text-sm font-medium ${view === 'notes' ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#10161f]' : 'border border-[#d5d7cd] dark:border-[#343d48]'}`}>文字记录</button>
-        <button type="button" role="tab" aria-selected={view === 'files'} onClick={() => setView('files')} className={`rounded-lg px-4 py-2 text-sm font-medium ${view === 'files' ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#10161f]' : 'border border-[#d5d7cd] dark:border-[#343d48]'}`}>PDF 文件</button>
+        {[
+          { id: 'files', label: 'PDF 文件' },
+          { id: 'notes', label: '文字记录' },
+          { id: 'shares', label: '密码分享' },
+        ].map((tab) => (
+          <button key={tab.id} type="button" role="tab" aria-selected={view === tab.id} onClick={() => setView(tab.id)} className={`rounded-lg px-4 py-2 text-sm font-medium ${view === tab.id ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#10161f]' : 'border border-[#d5d7cd] dark:border-[#343d48]'}`}>{tab.label}</button>
+        ))}
       </div>
-      {view === 'notes' ? <PrivateTextNotes /> : <>
+      {view === 'shares' ? <ShareAdminClient embedded /> : view === 'notes' ? <PrivateTextNotes /> : <>
       <form onSubmit={upload} className="mb-6 grid gap-3 rounded-xl border border-[#d5d7cd] bg-white p-4 dark:border-[#252e39] dark:bg-[#10161f] sm:grid-cols-2">
         <label className="text-sm">标题<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="留空使用文件名" className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-[#10161f]" /></label>
         <label className="text-sm">关联私密记录 ID<input value={recordId} onChange={(event) => setRecordId(event.target.value)} inputMode="numeric" placeholder="可留空" className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-[#10161f]" /></label>

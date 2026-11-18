@@ -452,6 +452,92 @@
   outline: none;
 }
 
+#x-reply-clipboard-panel .xrc-idle-window-alert {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(244, 33, 46, 0.35);
+  border-radius: 10px;
+  background: rgba(244, 33, 46, 0.12);
+  color: var(--xrc-text);
+}
+#x-reply-clipboard-panel .xrc-idle-window-alert[hidden] {
+  display: none;
+}
+#x-reply-clipboard-panel .xrc-idle-window-track {
+  position: relative;
+  min-width: 0;
+}
+#x-reply-clipboard-panel .xrc-idle-window-slide {
+  display: none;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+#x-reply-clipboard-panel .xrc-idle-window-slide.is-active {
+  display: grid;
+}
+#x-reply-clipboard-panel .xrc-idle-window-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+#x-reply-clipboard-panel .xrc-idle-window-copy strong {
+  color: var(--xrc-danger, #f4212e);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+#x-reply-clipboard-panel .xrc-idle-window-copy span {
+  color: var(--xrc-text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+#x-reply-clipboard-panel .xrc-idle-window-actions {
+  display: grid;
+  gap: 6px;
+}
+#x-reply-clipboard-panel .xrc-idle-window-open,
+#x-reply-clipboard-panel .xrc-idle-window-dismiss {
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+#x-reply-clipboard-panel .xrc-idle-window-open {
+  border: 0;
+  background: var(--xrc-danger, #f4212e);
+  color: #fff;
+}
+#x-reply-clipboard-panel .xrc-idle-window-dismiss {
+  border: 1px solid var(--xrc-line);
+  background: transparent;
+  color: var(--xrc-muted);
+}
+#x-reply-clipboard-panel .xrc-idle-window-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+#x-reply-clipboard-panel .xrc-idle-window-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(244, 33, 46, 0.28);
+}
+#x-reply-clipboard-panel .xrc-idle-window-dots i.is-active {
+  background: var(--xrc-danger, #f4212e);
+}
+#x-reply-clipboard-panel .xrc-idle-window-note {
+  margin: 0;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 #x-reply-clipboard-panel .xrc-plate-head {
   display: flex;
   align-items: center;

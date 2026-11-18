@@ -37,6 +37,7 @@ const DAILY = {
     {
       full_name: 'ag-ui-protocol/ag-ui',
       description: 'AG-UI protocol',
+      description_zh: 'AG-UI：Agent 与用户交互协议，把 Agent 接入前端应用。',
       language: 'TypeScript',
       stars: 19644,
       url: 'https://github.com/ag-ui-protocol/ag-ui',
@@ -87,6 +88,25 @@ test('item normalization tolerates empty description and missing language, and r
   }), null)
   assert.equal(formatStarCount(19644), '19,644')
   assert.equal(formatStarCount(null), '—')
+})
+
+test('description_zh is normalized and preferred for display blurbs with English fallback', () => {
+  const withZh = normalizeTrendingItem(DAILY.items[0])
+  assert.equal(withZh.descriptionZh, 'AG-UI：Agent 与用户交互协议，把 Agent 接入前端应用。')
+  assert.equal(withZh.description, 'AG-UI protocol')
+  assert.equal(homeGithubTrendingBlurb(withZh), 'AG-UI：Agent 与用户交互协议，把 Agent 接入前端应用。')
+
+  const withoutZh = normalizeTrendingItem(DAILY.items[1])
+  assert.equal(withoutZh.descriptionZh, '')
+  assert.equal(homeGithubTrendingBlurb(withoutZh), '近 14 日新建仓库，星标较多')
+
+  const englishFallback = normalizeTrendingItem({
+    full_name: 'owner/repo',
+    description: 'English only',
+    description_zh: '',
+    url: 'https://github.com/owner/repo',
+  })
+  assert.equal(homeGithubTrendingBlurb(englishFallback), 'English only')
 })
 
 test('resolveSelectedDate prefers today when listed, otherwise latest, and keeps an explicit requested date', () => {

@@ -131,8 +131,13 @@ export default async function GitHubTrendingPage({ searchParams }) {
                       <span>{formatStarCount(item.stars)} 星标</span>
                     </div>
                   </div>
-                  {item.description ? (
-                    <p className="mt-1 pl-8 text-sm leading-6 text-[var(--site-muted)]">{item.description}</p>
+                  {item.descriptionZh || item.description ? (
+                    <p className="mt-1 pl-8 text-sm leading-6 text-[var(--site-muted)]">
+                      {item.descriptionZh || item.description}
+                    </p>
+                  ) : null}
+                  {item.descriptionZh && item.description ? (
+                    <p className="mt-1 pl-8 text-xs leading-5 text-[var(--site-faint)]">{item.description}</p>
                   ) : null}
                   {item.reason ? (
                     <p className="mt-1 pl-8 text-xs leading-5 text-[var(--site-faint)]">

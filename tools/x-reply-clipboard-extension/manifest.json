@@ -103,6 +103,7 @@
         "interactionRecap.js",
         "postPageMarks.js",
         "panelTheme.js",
+        "idleTaskWindowAlert.js",
         "content.js",
         "experiments.js"
       ],

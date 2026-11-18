@@ -179,7 +179,11 @@ test('homepage and diary page share the series module and the public title', asy
     fs.promises.readFile(path.join(root, 'app/(site)/diary/page.jsx'), 'utf8'),
     fs.promises.readFile(path.join(root, 'app/(site)/components/HomeDiarySeries.jsx'), 'utf8'),
   ])
-  assert.match(home, /previewFromDiary\(findDiaryArticle\(articles\)\)/)
+  assert.match(home, /previewFromDiary\(archivedDiary\)/)
+  assert.match(home, /public\/data\/article-archive\/diary-self-reflection\.json/)
+  assert.doesNotMatch(home, /articles\/articlesData/)
+  assert.match(diary, /readArchivedArticle/)
+  assert.doesNotMatch(diary, /articles\/articlesData/)
   assert.match(home, /<HomeDiarySeries preview=\{diaryPreview\} \/>/)
   assert.match(diary, /selectDiarySeries\(archived, published\)/)
   assert.match(diary, /publishedTime: toIsoDate\(DIARY_SERIES_STARTED_ON\)/)

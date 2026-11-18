@@ -240,11 +240,6 @@ export default async function ArticleDetailPage({ params }) {
   const proofCredential = getContentProofCredential(`article:${article.slug}`)
   const articleUrl = `${SITE_URL}/articles/${article.slug}`
   const articleMarkdown = articleContentToMarkdown(article, articleUrl)
-  const xArticleHtml = renderMarkdown(articleMarkdown, {
-    images: article.cover ? [{ src: article.cover, alt: `${article.title} 封面` }] : [],
-    seed: `article:${article.slug}`,
-    title: article.title,
-  })
   const articleMarkdownHtml = article.markdown
     ? renderMarkdown(normalizeArticleMarkdown(article.markdown), { seed: `article:${article.slug}`, title: article.title })
     : ''
@@ -354,7 +349,6 @@ export default async function ArticleDetailPage({ params }) {
               title={article.title}
               summary={article.summary}
               markdown={articleMarkdown}
-              html={xArticleHtml}
               images={article.cover ? [article.cover] : []}
               url={articleUrl}
               category="article"

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import ImageViewer from './ImageViewer'
+import { buildStandaloneSvgMarkup } from '../../../../lib/research/svgEmbedStyle'
 
 const MEDIA_SELECTOR = '[data-research-lightbox="true"]'
 
@@ -26,7 +27,10 @@ function getMediaFromElement(element) {
     element.querySelector('figcaption')?.textContent?.trim() ||
     '文章图表'
   const svgMarkup = new XMLSerializer().serializeToString(svg)
-  const src = URL.createObjectURL(new Blob([svgMarkup], { type: 'image/svg+xml' }))
+  // blob 独立文档拿不到站点 CSS，注入一份内嵌语义配色，否则「在新标签打开」全黑
+  const src = URL.createObjectURL(
+    new Blob([buildStandaloneSvgMarkup(svgMarkup)], { type: 'image/svg+xml' }),
+  )
 
   return { src, alt, svgMarkup, objectUrl: src }
 }

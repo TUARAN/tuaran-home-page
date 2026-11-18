@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import ZoomableResearchMedia from '../../../../components/ZoomableResearchMedia'
+import TableScrollHint from '../../../../components/TableScrollHint'
 import ArticleToc, { ArticleReadingLayout } from '../../../../components/ArticleToc'
 import ReadAloudButton from '../../../../components/ReadAloudButton'
 
@@ -81,6 +82,8 @@ export default function ResearchBody({ variants, rail = null }) {
           </div>
         ) : null}
         <ReadAloudButton markdown={active.content} portal />
+        {/* key 随变体切换重挂，重新检测新 HTML 里的表格溢出 */}
+        <TableScrollHint key={active.id} />
         <ZoomableResearchMedia contentKey={active.id} html={active.html} />
       </div>
     </ArticleReadingLayout>

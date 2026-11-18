@@ -1,24 +1,10 @@
-import AdminPageGate from '../../components/AdminPageGate'
-import ShareAdminClient from './ShareConsole'
+import { redirect } from 'next/navigation'
 
 export const metadata = {
-  title: '加密分享',
-  description: '后台明文管理，公开链接密码保护分享。',
-  robots: {
-    index: false,
-    follow: false,
-    googleBot: { index: false, follow: false },
-  },
+  title: '私密文档与分享',
+  robots: { index: false, follow: false },
 }
 
-export default async function AdminSharePage() {
-  return (
-    <AdminPageGate
-      label="加密分享"
-      returnTo="/admin/share"
-      description="后台明文管理，公开链接仅返回密文，仅站长本人可见。"
-    >
-      <ShareAdminClient />
-    </AdminPageGate>
-  )
+export default function AdminSharePage() {
+  redirect('/admin/private-data/documents?view=shares')
 }

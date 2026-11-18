@@ -57,7 +57,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/archives').map((item) => item.label), ['内容', '存档管理'])
   assert.deepEqual(resolveAdminTrail('/admin/personal-profile').map((item) => item.label), ['私密数据', '个人画像'])
   assert.deepEqual(resolveAdminTrail('/admin/contract-renewal').map((item) => item.label), ['私密数据', '续签述职'])
-  assert.deepEqual(resolveAdminTrail('/admin/share').map((item) => item.label), ['私密数据', '加密分享'])
+  assert.deepEqual(resolveAdminTrail('/admin/private-data/documents').map((item) => item.label), ['私密数据', '文档分享'])
   assert.deepEqual(resolveAdminTrail('/admin/self-regulation').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/person-strawberry').map((item) => item.label), ['私密数据'])
   assert.deepEqual(resolveAdminTrail('/admin/nsfw').map((item) => item.label), ['私密数据', '私密媒体'])
@@ -68,7 +68,7 @@ test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '加密分享', '交易分析', '私密媒体', '私密文档', '书签导航', '壁纸资源'])
+  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '交易分析', '私密媒体', '文档分享', '书签导航', '壁纸资源'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
 })
 
@@ -98,7 +98,7 @@ test('operations directory separates live tools from review records', () => {
 
 test('previously hidden admin routes have explicit child entries', () => {
   const hrefs = new Set(ADMIN_NAV_CHILD_ITEMS.map((item) => item.matchPath || item.href))
-  for (const href of ['/admin/share', '/admin/wallpapers', '/admin/personal-profile', '/admin/contract-renewal']) {
+  for (const href of ['/admin/private-data/documents', '/admin/wallpapers', '/admin/personal-profile', '/admin/contract-renewal']) {
     assert.ok(hrefs.has(href), `${href} should be present in the admin navigation registry`)
   }
   assert.equal(hrefs.has('/admin/research-style'), false)

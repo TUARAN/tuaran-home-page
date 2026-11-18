@@ -151,7 +151,31 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 持续验证只保留会改变结论的缺项，短列表即可。
 ```
 
-普通文章直接从核心结论、文章原文、具体问题 / 事实或作者亲历场景开始。不要在顶部放“写在前面：资料口径与观察立场”或“信息来源说明”。
+普通文章直接从核心结论、文章原文、具体问题 / 事实或作者亲历场景开始。不要在顶部放"写在前面：资料口径与观察立场"或"信息来源说明"。
+
+### 可视化图表（沿用既有组件）
+
+站点已内置内嵌 SVG 图表组件，**写调研时复用，不要新建组件或引入图表库**。在正文需要位置插入一个带 `research-inline-diagram` 类的 `figure`，内含 `svg`，可选 `figcaption`：
+
+```markdown
+<figure class="research-inline-diagram">
+<svg viewBox="0 0 720 320" role="img" aria-label="图表内容概述">
+<rect x="24" y="40" width="200" height="60" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+<text x="124" y="76" text-anchor="middle" font-size="13">节点文字</text>
+</svg>
+<figcaption>图 1：这张图说明什么</figcaption>
+</figure>
+```
+
+渲染器会给这类 `figure` 自动加点击放大，明暗主题各有样式，无需额外脚本。约束与理由：
+
+- **标签、属性走安全白名单**，实现见 `lib/research/markdown.js` 的 `SAFE_DIAGRAM_TAGS` / `SAFE_DIAGRAM_ATTRS`。可用 `svg / g / rect / circle / ellipse / line / path / polyline / text / marker / defs / figure / figcaption`。`style`、`href`、`src`、任何 `on*` 事件属性、`<title>`/`<desc>`、`font-family`、`dominant-baseline`、`xmlns` 都不在白名单，带这些的整块图会被当成转义文本显示。
+- **文字垂直定位用 `y` 基线加估算偏移**，不要依赖 `dominant-baseline`；对齐用 `text-anchor`，字号用 `font-size`，字重用 `font-weight`。多字节中文按约 13px `font-size` ≈ 13px 宽估算框宽，宁宽勿窄。
+- **颜色保证明暗主题都可读**：整套配色写进内联 `fill` / `stroke`；优先浅色填充（如 `#E6F1FB`）配深色文字（如 `#0C447C`），避免深色填充配深色文字。箭头用 `<marker>` + `marker-end="url(#id)"`，`defs` 放在 `figure` 内。
+- **图和正文共用一个事实口径**：图里的数字、日期、名称与正文及信息来源一致；不确定的推断标为推断，不把估算值画成确定结构。
+- **一图一结论**：每幅图配 `figcaption` 讲清判断，`aria-label` 给读屏与放大视图简述；一张图只表达一层关系（结构、分工、时间线、流程择一），复杂关系拆成多张，别堆成一张大图。
+- **先写能站住的事实，再决定要不要配图**。图服务于判断，缺图不影响结论时可不配；用来承载关键判断的图才值得做。
+- **正文有内嵌图表时关掉自动氛围图**。frontmatter 设 `auto_images: false`，避免渲染层再从氛围图池抽一张无关的 Unsplash 图插进正文，与图表重复；这类外链图加载失败还会显示裂图。已有 `research-inline-diagram` 的调研按此处理。
 
 ### 边界说明
 

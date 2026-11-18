@@ -56,8 +56,8 @@ import HomeDiarySeries from './components/HomeDiarySeries'
 import HomeYearSummaryCard from './components/HomeYearSummaryCard'
 import HomeGithubTrending from './components/HomeGithubTrending'
 import HomeSectionCouplet from './components/HomeSectionCouplet'
-import { articles } from './articles/articlesData'
-import { findDiaryArticle, previewFromDiary } from '../../lib/diary/diarySeries.mjs'
+import archivedDiary from '../../public/data/article-archive/diary-self-reflection.json'
+import { previewFromDiary } from '../../lib/diary/diarySeries.mjs'
 
 const weeklySite = SECONDARY_SITES.find((site) => site.id === 'weekly')
 const syncblogSite = SECONDARY_SITES.find((site) => site.id === 'syncblog')
@@ -870,7 +870,7 @@ function PolishedHomePage({ featuredPicks, inspirations, diaryPreview }) {
 export default function HomePage() {
   const featuredPicks = getHomeRecommendationCatalog()
   const inspirations = getLatestFeedItems(8)
-  const diaryPreview = previewFromDiary(findDiaryArticle(articles))
+  const diaryPreview = previewFromDiary(archivedDiary)
 
   return (
     <SitePresenceProvider>

@@ -2,7 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
 import { notFound } from 'next/navigation'
-import { articles } from '../articles/articlesData'
+import { cache } from 'react'
+import { readArchivedArticle } from '../../../lib/article/articleArchiveRuntime'
 import { Timeline } from '../components/aceternity/timeline'
 import { YEAR_SUMMARY_COLUMN } from '../articles/year-summary/yearSummaryData'
 import { avatarAbsoluteUrl } from '../../../lib/auth/avatar'
@@ -15,7 +16,6 @@ import {
   DIARY_SLUG,
   buildDiaryTimelineEntries,
   diaryDescription,
-  findDiaryArticle,
   formatDiarySpan,
   latestDiaryDate,
   selectDiarySeries,
@@ -53,10 +53,10 @@ function parseMarkdownBlockquote(text) {
   return match[1]
 }
 
-async function readDiary() {
-  const archived = findDiaryArticle(articles)
+const loadDiarySources = cache(async () => {
+  const archived = await readArchivedArticle(DIARY_SLUG)
   const post = await getPublishedArticlePostBySlug(DIARY_SLUG)
-  if (!post) return selectDiarySeries(archived, null)
+  if (!post) return { archived, diary: selectDiarySeries(archived, null) }
   const markdown = isMarkdownDocument(post.content) ? post.content.markdown : post.contentText
   const published = {
     slug: post.slug,
@@ -66,7 +66,11 @@ async function readDiary() {
     date: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 10) : '',
     content: diaryContentFromMarkdown(markdown),
   }
-  return selectDiarySeries(archived, published)
+  return { archived, diary: selectDiarySeries(archived, published) }
+})
+
+async function readDiary() {
+  return (await loadDiarySources()).diary
 }
 
 function splitIsoDate(value) {
@@ -209,13 +213,13 @@ export async function generateMetadata() {
 }
 
 export default async function DiaryPage() {
-  const diary = await readDiary()
+  const { diary, archived } = await loadDiarySources()
 
   if (!diary) {
     notFound()
   }
 
-  const diaryEntries = withArchivedSourceNotes(buildDiaryTimelineEntries(diary), findDiaryArticle(articles))
+  const diaryEntries = withArchivedSourceNotes(buildDiaryTimelineEntries(diary), archived)
 
   const articleStructuredData = {
     '@context': 'https://schema.org',

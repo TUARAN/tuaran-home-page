@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>中国特色社会主义理论体系全景调研</title>
+<style>
+  :root{
+    --ink:#232320;
+    --ink-2:#5F5E5A;
+    --ink-3:#8A8880;
+    --paper:#FFFFFF;
+    --shell:#F3F1EC;
+    --line:#E4E0D8;
+
+    --red:#A32D2D;
+    --red-bg:#FCEBEB;
+    --red-soft:#F6D5D5;
+
+    --blue:#185FA5;
+    --blue-bg:#E6F1FB;
+    --blue-soft:#CFE3F8;
+
+    --teal:#0F6E56;
+    --teal-bg:#E1F5EE;
+    --teal-soft:#C6EBDE;
+
+    --amber:#8A5410;
+    --amber-bg:#FAEEDA;
+    --amber-soft:#F6DFB8;
+
+    --violet:#534AB7;
+    --violet-bg:#EEEDFE;
+    --violet-soft:#DCDAFB;
+
+    --pink:#993556;
+    --pink-bg:#FBEAF0;
+    --pink-soft:#F6D2DF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--shell);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    padding:32px 16px 64px;
+  }
+  .page{
+    max-width:1080px;
+    margin:0 auto;
+    background:var(--paper);
+    border-radius:18px;
+    padding:56px 60px 64px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05),0 18px 50px -20px rgba(0,0,0,.12);
+  }
+
+  /* header */
+  .topline{display:flex;gap:6px;margin-bottom:26px;}
+  .topline i{display:block;height:5px;border-radius:3px;flex:1;}
+  .topline i:nth-child(1){background:var(--red);}
+  .topline i:nth-child(2){background:var(--amber);}
+  .topline i:nth-child(3){background:var(--teal);}
+  .topline i:nth-child(4){background:var(--blue);}
+  .topline i:nth-child(5){background:var(--violet);}
+  .topline i:nth-child(6){background:var(--pink);}
+
+  .kicker{
+    display:inline-block;
+    font-size:12px;
+    letter-spacing:.18em;
+    color:var(--red);
+    background:var(--red-bg);
+    padding:4px 12px;
+    border-radius:999px;
+    font-weight:500;
+    margin-bottom:16px;
+  }
+  h1{
+    font-size:34px;
+    line-height:1.3;
+    font-weight:600;
+    letter-spacing:-.5px;
+    margin-bottom:12px;
+  }
+  h1 em{font-style:normal;color:var(--red);}
+  .sub{font-size:16px;color:var(--ink-2);margin-bottom:22px;}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:10px 26px;
+    font-size:13px;color:var(--ink-3);
+    padding-bottom:28px;
+    border-bottom:1px solid var(--line);
+  }
+  .meta b{color:var(--ink-2);font-weight:500;}
+
+  /* generic section */
+  section{margin-top:44px;}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;}
+  .sec-num{
+    font-size:12px;font-weight:600;letter-spacing:.08em;
+    color:#fff;background:var(--ink);border-radius:6px;
+    padding:2px 8px;flex:none;
+  }
+  h2{font-size:21px;font-weight:600;letter-spacing:-.2px;}
+  h3{font-size:16px;font-weight:600;margin-bottom:8px;}
+  p{font-size:14.5px;color:var(--ink-2);}
+  p + p{margin-top:10px;}
+  strong{color:var(--ink);font-weight:600;}
+
+  /* summary cards */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .card{
+    border-radius:12px;padding:20px 20px 18px;
+    border:1px solid var(--line);
+  }
+  .card h4{font-size:13px;font-weight:600;letter-spacing:.06em;margin-bottom:8px;}
+  .card p{font-size:13.5px;line-height:1.7;}
+  .c-red{background:var(--red-bg);border-color:var(--red-soft);} .c-red h4{color:var(--red);}
+  .c-blue{background:var(--blue-bg);border-color:var(--blue-soft);} .c-blue h4{color:var(--blue);}
+  .c-teal{background:var(--teal-bg);border-color:var(--teal-soft);} .c-teal h4{color:var(--teal);}
+  .c-amber{background:var(--amber-bg);border-color:var(--amber-soft);} .c-amber h4{color:var(--amber);}
+  .c-violet{background:var(--violet-bg);border-color:var(--violet-soft);} .c-violet h4{color:var(--violet);}
+  .c-pink{background:var(--pink-bg);border-color:var(--pink-soft);} .c-pink h4{color:var(--pink);}
+
+  /* layered architecture */
+  .stack{display:flex;flex-direction:column;gap:10px;}
+  .layer{
+    position:relative;
+    border-radius:10px;
+    padding:14px 18px 14px 22px;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .layer::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
+  }
+  .l-red{background:var(--red-bg);border-color:var(--red-soft);} .l-red::before{background:var(--red);}
+  .l-blue{background:var(--blue-bg);border-color:var(--blue-soft);} .l-blue::before{background:var(--blue);}
+  .l-teal{background:var(--teal-bg);border-color:var(--teal-soft);} .l-teal::before{background:var(--teal);}
+  .l-amber{background:var(--amber-bg);border-color:var(--amber-soft);} .l-amber::before{background:var(--amber);}
+  .l-violet{background:var(--violet-bg);border-color:var(--violet-soft);} .l-violet::before{background:var(--violet);}
+  .layer-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .layer-idx{
+    font-size:11px;font-weight:600;letter-spacing:.06em;
+    padding:1px 7px;border-radius:4px;background:rgba(255,255,255,.75);
+  }
+  .l-red .layer-idx{color:var(--red);} .l-blue .layer-idx{color:var(--blue);}
+  .l-teal .layer-idx{color:var(--teal);} .l-amber .layer-idx{color:var(--amber);}
+  .l-violet .layer-idx{color:var(--violet);}
+  .layer-name{font-size:14.5px;font-weight:600;}
+  .l-red .layer-name{color:var(--red);} .l-blue .layer-name{color:var(--blue);}
+  .l-teal .layer-name{color:var(--teal);} .l-amber .layer-name{color:var(--amber);}
+  .l-violet .layer-name{color:var(--violet);}
+  .layer-note{font-size:12px;color:var(--ink-3);margin-left:auto;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    font-size:13px;padding:5px 13px;border-radius:7px;
+    background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.06);
+    color:var(--ink);white-space:nowrap;
+  }
+  .chip b{font-weight:600;}
+
+  /* concept cards */
+  .concept-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .concept{
+    border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+    background:#fff;
+  }
+  .concept .head{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
+  .concept .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .concept .name{font-size:15px;font-weight:600;}
+  .concept .when{font-size:11.5px;color:var(--ink-3);margin-left:auto;flex:none;}
+  .concept .body{font-size:13.5px;color:var(--ink-2);line-height:1.7;}
+  .concept .tag{
+    display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:5px;
+    margin-top:10px;
+  }
+  .d-red{background:var(--red);} .d-blue{background:var(--blue);}
+  .d-teal{background:var(--teal);} .d-amber{background:var(--amber);}
+  .d-violet{background:var(--violet);} .d-pink{background:var(--pink);}
+  .t-red{background:var(--red-bg);color:var(--red);}
+  .t-blue{background:var(--blue-bg);color:var(--blue);}
+  .t-teal{background:var(--teal-bg);color:var(--teal);}
+  .t-amber{background:var(--amber-bg);color:var(--amber);}
+  .t-violet{background:var(--violet-bg);color:var(--violet);}
+  .t-pink{background:var(--pink-bg);color:var(--pink);}
+
+  /* flow chain */
+  .chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;}
+  .chain .node{
+    font-size:13px;padding:8px 14px;border-radius:8px;
+    border:1px solid var(--line);background:#fff;
+  }
+  .chain .arw{color:var(--ink-3);font-size:14px;}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .step{
+    border-radius:10px;padding:14px 12px;border:1px solid var(--line);
+    background:#fff;
+  }
+  .step .no{font-size:11px;font-weight:600;color:#fff;background:var(--teal);border-radius:4px;padding:1px 6px;display:inline-block;margin-bottom:8px;}
+  .step h5{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .step p{font-size:12px;line-height:1.6;color:var(--ink-3);}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-size:12.5px;color:var(--ink-2);font-weight:600;background:#FAF8F4;}
+  td:first-child{font-weight:600;color:var(--ink);white-space:nowrap;}
+
+  /* conclusion */
+  .quote{
+    border-left:4px solid var(--amber);
+    background:var(--amber-bg);
+    border-radius:0 10px 10px 0;
+    padding:18px 22px;
+    font-size:14.5px;
+    color:var(--ink-2);
+  }
+  .quote b{color:var(--amber);}
+
+  ol.findings{margin-left:18px;font-size:14px;color:var(--ink-2);}
+  ol.findings li{margin-bottom:8px;}
+  ol.findings li b{color:var(--ink);}
+
+  footer{
+    margin-top:52px;padding-top:20px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--ink-3);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+
+  @media (max-width:820px){
+    .page{padding:34px 22px 40px;}
+    h1{font-size:25px;}
+    .grid-3,.concept-grid{grid-template-columns:1fr;}
+    .steps{grid-template-columns:repeat(2,1fr);}
+    .layer-note{display:none;}
+  }
+  @media print{
+    body{background:#fff;padding:0;}
+    .page{box-shadow:none;border-radius:0;padding:0;}
+    section{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topline"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <span class="kicker">理论学习调研 · 概念图谱</span>
+  <h1>中国特色社会主义理论体系<br><em>六层全景架构</em>调研</h1>
+  <p class="sub">从"两个确立"到"新质生产力"——把二十余个高频理论概念，装进一张有逻辑的地图</p>
+
+  <div class="meta">
+    <span><b>调研类型</b>　理论体系梳理 / 学习方法研究</span>
+    <span><b>调研方法</b>　文献研读 · 概念编码 · 图谱构建</span>
+    <span><b>覆盖范围</b>　党的十八大以来主要理论成果</span>
+    <span><b>更新时间</b>　2026年11月</span>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>调研缘起：为什么"背了很多，却串不起来"</h2></div>
+    <p>理论学习中一个普遍的困境是：概念越背越多，体系越来越模糊。"两个确立""两个维护""四个意识""四个自信""四个全面""五位一体"……单独看每个都能说两句，合起来却说不清它们之间是什么关系。</p>
+    <p>本次调研的核心判断是：<strong>这些概念不是并列的词条，而是一个有层级、有因果、有递进关系的架构</strong>。只要找到那条"从上到下"的主线，记忆量会大幅下降，理解深度会明显提升。下面这张六层架构，就是本次调研的主要产出。</p>
+
+    <div class="grid-3" style="margin-top:20px;">
+      <div class="card c-red">
+        <h4>发现一 · 概念碎片化</h4>
+        <p>多数人的学习停留在"词条级"，缺少层级认知，导致答题时张冠李戴，把"四个意识"与"四个自信"混为一谈。</p>
+      </div>
+      <div class="card c-blue">
+        <h4>发现二 · 出处被忽略</h4>
+        <p>同一个概念在不同会议上有不同表述，记不住"何时、何会、何人提出"，就容易在细节题上失分。</p>
+      </div>
+      <div class="card c-teal">
+        <h4>发现三 · 缺少主线</h4>
+        <p>一旦建立起"思想—原则—布局—理念—成果—保证"的主线，零散概念会自动归位，复习效率显著提高。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>体系总览：六层全景架构</h2></div>
+    <p style="margin-bottom:16px;">自上而下阅读，每一层都是上一层的展开，也是下一层的依据。</p>
+
+    <div class="stack">
+      <div class="layer l-red">
+        <div class="layer-top"><span class="layer-idx">L1</span><span class="layer-name">指导思想 · 理论灵魂</span><span class="layer-note">整个体系的总源头</span></div>
+        <div class="chips">
+          <span class="chip"><b>习近平新时代中国特色社会主义思想</b></span>
+          <span class="chip">当代中国马克思主义</span>
+          <span class="chip">二十一世纪马克思主义</span>
+        </div>
+      </div>
+
+      <div class="layer l-red">
+        <div class="layer-top"><span class="layer-idx">L2</span><span class="layer-name">政治原则与保证</span><span class="layer-note">解决"举什么旗、跟谁走"</span></div>
+        <div class="chips">
+          <span class="chip"><b>两个确立</b></span>
+          <span class="chip"><b>两个维护</b></span>
+          <span class="chip"><b>四个意识</b></span>
+          <span class="chip"><b>四个自信</b></span>
+        </div>
+      </div>
+
+      <div class="layer l-blue">
+        <div class="layer-top"><span class="layer-idx">L3</span><span class="layer-name">总体布局与战略布局</span><span class="layer-note">国家层面的施工图</span></div>
+        <div class="chips">
+          <span class="chip"><b>五位一体</b>总体布局</span>
+          <span class="chip"><b>四个全面</b>战略布局</span>
+          <span class="chip"><b>两步走</b>战略安排</span>
+          <span class="chip">社会主要矛盾</span>
+        </div>
+      </div>
+
+      <div class="layer l-teal">
+        <div class="layer-top"><span class="layer-idx">L4</span><span class="layer-name">发展理念与路径</span><span class="layer-note">经济主线的方法论</span></div>
+        <div class="chips">
+          <span class="chip"><b>新发展理念</b></span>
+          <span class="chip"><b>新发展格局</b></span>
+          <span class="chip"><b>高质量发展</b></span>
+          <span class="chip"><b>新质生产力</b></span>
+        </div>
+      </div>
+
+      <div class="layer l-violet">
+        <div class="layer-top"><span class="layer-idx">L5</span><span class="layer-name">最新前沿理论成果</span><span class="layer-note">时政与考试高频区</span></div>
+        <div class="chips">
+          <span class="chip"><b>中国式现代化</b></span>
+          <span class="chip"><b>两个结合</b></span>
+          <span class="chip"><b>全过程人民民主</b></span>
+          <span class="chip"><b>人类命运共同体</b></span>
+        </div>
+      </div>
+
+      <div class="layer l-amber">
+        <div class="layer-top"><span class="layer-idx">L6</span><span class="layer-name">根本保证 · 贯穿始终</span><span class="layer-note">一切的前提</span></div>
+        <div class="chips">
+          <span class="chip"><b>党的全面领导</b></span>
+          <span class="chip">全面从严治党</span>
+          <span class="chip">党的自我革命</span>
+          <span class="chip">三个务必</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>逐层拆解：每个概念的原文表述与出处</h2></div>
+    <p style="margin-bottom:16px;">以下按层级展开，标注提出时间与核心表述。备考时，"时间 + 场合 + 原文"三要素必须同时到位。</p>
+
+    <h3 style="color:var(--red);margin:4px 0 12px;">L2 　政治原则与保证</h3>
+    <div class="concept-grid">
+      <div class="concept">
+        <div class="head"><span class="dot d-red"></span><span class="name">两个确立</span><span class="when">2021.11 · 十九届六中全会《决议》</span></div>
+        <div class="body">① 确立习近平同志党中央的核心、全党的核心地位；② 确立习近平新时代中国特色社会主义思想的指导地位。<br>是新时代最重要的政治成果，是"最高政治原则"。</div>
+        <span class="tag t-red">决定性意义</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-red"></span><span class="name">两个维护</span><span class="when">由"两个确立"派生</span></div>
+        <div class="body">① 坚决维护习近平总书记党中央的核心、全党的核心地位；② 坚决维护党中央权威和集中统一领导。<br>是最根本的政治纪律和政治规矩。</div>
+        <span class="tag t-red">行动准则</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-red"></span><span class="name">四个意识</span><span class="when">2016.01 · 中央政治局会议</span></div>
+        <div class="body">政治意识、大局意识、核心意识、看齐意识。<br>解决的是"思想上是否对齐"的问题，是维护党中央权威的思想基础。</div>
+        <span class="tag t-red">思想自觉</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-red"></span><span class="name">四个自信</span><span class="when">十八大提出三个 · 2016.07 加入文化自信</span></div>
+        <div class="body">道路自信、理论自信、制度自信、文化自信。<br>文化自信"更基础、更广泛、更深厚"，是更基本更深沉更持久的力量。</div>
+        <span class="tag t-red">精神底气</span>
+      </div>
+    </div>
+
+    <h3 style="color:var(--blue);margin:28px 0 12px;">L3 　总体布局与战略布局</h3>
+    <div class="concept-grid">
+      <div class="concept">
+        <div class="head"><span class="dot d-blue"></span><span class="name">五位一体</span><span class="when">2012 · 党的十八大</span></div>
+        <div class="body">经济建设、政治建设、文化建设、社会建设、生态文明建设。<br>回答"建设什么样的社会主义"——是总体布局。</div>
+        <span class="tag t-blue">总体布局</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-blue"></span><span class="name">四个全面</span><span class="when">2014.12 提出 · 二十大更新表述</span></div>
+        <div class="body">全面建设社会主义现代化国家、全面深化改革、全面依法治国、全面从严治党。<br>回答"怎样推进"——是战略布局。</div>
+        <span class="tag t-blue">战略布局</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-blue"></span><span class="name">两步走战略安排</span><span class="when">2017 · 党的十九大</span></div>
+        <div class="body">2020—2035 年基本实现社会主义现代化；2035 年到本世纪中叶建成社会主义现代化强国。<br>是时间表，也是路线图。</div>
+        <span class="tag t-blue">时间坐标</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-blue"></span><span class="name">社会主要矛盾</span><span class="when">2017 · 党的十九大</span></div>
+        <div class="body">人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾。<br>是全部工作的逻辑起点。</div>
+        <span class="tag t-blue">现实依据</span>
+      </div>
+    </div>
+
+    <h3 style="color:var(--teal);margin:28px 0 12px;">L4 　发展理念与路径</h3>
+    <div class="concept-grid">
+      <div class="concept">
+        <div class="head"><span class="dot d-teal"></span><span class="name">新发展理念</span><span class="when">2015.10 · 十八届五中全会</span></div>
+        <div class="body">创新、协调、绿色、开放、共享。<br>是管全局、管根本、管长远的导向，是发展思路、发展方向、发展着力点的集中体现。</div>
+        <span class="tag t-teal">指挥棒</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-teal"></span><span class="name">新发展格局</span><span class="when">2020 · 十九届五中全会</span></div>
+        <div class="body">以国内大循环为主体、国内国际双循环相互促进。<br>不是封闭的国内循环，而是开放的国内国际双循环。</div>
+        <span class="tag t-teal">战略基点</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-teal"></span><span class="name">高质量发展</span><span class="when">十九大提出 · 二十大明确为首要任务</span></div>
+        <div class="body">是全面建设社会主义现代化国家的首要任务。<br>主题是高质量发展，主线是供给侧结构性改革。</div>
+        <span class="tag t-teal">首要任务</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-teal"></span><span class="name">新质生产力</span><span class="when">2023.09 · 黑龙江考察首次提出</span></div>
+        <div class="body">由技术革命性突破、生产要素创新性配置、产业深度转型升级而催生。<br><strong>特点是创新，关键在质优，本质是先进生产力。</strong></div>
+        <span class="tag t-teal">最新成果</span>
+      </div>
+    </div>
+
+    <h3 style="color:var(--violet);margin:28px 0 12px;">L5 　最新前沿理论成果</h3>
+    <div class="concept-grid">
+      <div class="concept">
+        <div class="head"><span class="dot d-violet"></span><span class="name">中国式现代化</span><span class="when">2022.10 · 党的二十大</span></div>
+        <div class="body">五大特征：人口规模巨大、全体人民共同富裕、物质文明和精神文明相协调、人与自然和谐共生、走和平发展道路。<br>是强国建设、民族复兴的康庄大道。</div>
+        <span class="tag t-violet">中心任务</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-violet"></span><span class="name">两个结合</span><span class="when">2021.07 提出 · 2023.06 系统阐述</span></div>
+        <div class="body">把马克思主义基本原理同中国具体实际相结合、同中华优秀传统文化相结合。<br>"第二个结合"是又一次思想解放。</div>
+        <span class="tag t-violet">根本途径</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-violet"></span><span class="name">全过程人民民主</span><span class="when">2019.11 上海考察提出 · 二十大深化</span></div>
+        <div class="body">全链条、全方位、全覆盖的民主，是最广泛、最真实、最管用的社会主义民主。<br>把选举民主与协商民主、过程民主与成果民主统一起来。</div>
+        <span class="tag t-violet">民主形态</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-violet"></span><span class="name">人类命运共同体</span><span class="when">2013.03 · 莫斯科国际关系学院</span></div>
+        <div class="body">回答"建设一个什么样的世界、如何建设这个世界"。<br>配套全球发展倡议、全球安全倡议、全球文明倡议三大倡议。</div>
+        <span class="tag t-violet">世界方案</span>
+      </div>
+    </div>
+
+    <h3 style="color:var(--amber);margin:28px 0 12px;">L6 　根本保证</h3>
+    <div class="concept-grid">
+      <div class="concept">
+        <div class="head"><span class="dot d-amber"></span><span class="name">三个务必</span><span class="when">2022.10 · 党的二十大</span></div>
+        <div class="body">务必不忘初心、牢记使命；务必谦虚谨慎、艰苦奋斗；务必敢于斗争、善于斗争。<br>是"两个务必"在新时代的升华。</div>
+        <span class="tag t-amber">作风要求</span>
+      </div>
+      <div class="concept">
+        <div class="head"><span class="dot d-amber"></span><span class="name">党的自我革命</span><span class="when">二十大 · "第二个答案"</span></div>
+        <div class="body">跳出治乱兴衰历史周期率的第二个答案。<br>与"全面从严治党"共同构成党长期执政的根本保障。</div>
+        <span class="tag t-amber">长期执政</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>逻辑主线：一条链串起全部概念</h2></div>
+    <p style="margin-bottom:14px;">把六层按因果顺序连起来读，就是一段完整的话——这段话本身就是最好的记忆锚点。</p>
+    <div class="chain">
+      <span class="node">思想指引</span><span class="arw">→</span>
+      <span class="node">确立核心</span><span class="arw">→</span>
+      <span class="node">维护权威</span><span class="arw">→</span>
+      <span class="node">对齐意识</span><span class="arw">→</span>
+      <span class="node">坚定自信</span><span class="arw">→</span>
+      <span class="node">五位一体布局</span><span class="arw">→</span>
+      <span class="node">四个全面推进</span><span class="arw">→</span>
+      <span class="node">新发展理念引领</span><span class="arw">→</span>
+      <span class="node">中国式现代化</span><span class="arw">→</span>
+      <span class="node">党的领导保证</span>
+    </div>
+    <div class="quote" style="margin-top:22px;">
+      <b>一句话总纲：</b>在党的创新理论指引下，确立核心、维护权威、对齐意识、坚定自信，按照"五位一体"总体布局和"四个全面"战略布局，以新发展理念推动高质量发展，最终实现中国式现代化——而这一切，靠党的全面领导来保证。
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>学习路径：五步法落地</h2></div>
+    <p style="margin-bottom:16px;">调研中发现，单纯"多读几遍"的收益很低，真正有效的是"结构 → 细节 → 逻辑 → 输出"的闭环。</p>
+    <div class="steps">
+      <div class="step"><span class="no">STEP 1</span><h5>读原文</h5><p>直接读二十大报告、六中全会《决议》、党章，不看二手解读。</p></div>
+      <div class="step"><span class="no">STEP 2</span><h5>拆结构</h5><p>用数字编码锚定：2-2-4-4-4-5，先记骨架再填血肉。</p></div>
+      <div class="step"><span class="no">STEP 3</span><h5>抠字眼</h5><p>手抄原文表述，"党中央的核心、全党的核心"一个字都不能漏。</p></div>
+      <div class="step"><span class="no">STEP 4</span><h5>理逻辑</h5><p>搞清每层之间谁派生谁、谁保证谁，理解"为什么这样提"。</p></div>
+      <div class="step"><span class="no">STEP 5</span><h5>复述检验</h5><p>合上书用自己的话讲一遍，讲不顺的地方就是没真懂的地方。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>易混概念对照表</h2></div>
+    <table>
+      <thead>
+        <tr><th style="width:150px;">易混点</th><th>区别要点</th><th style="width:180px;">一句话辨析</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>四个意识 vs 四个自信</td><td>意识是"思想上对齐"，自信是"信念上坚定"；前者讲政治态度，后者讲精神底气。</td><td>意识向内看齐，自信向外立足</td></tr>
+        <tr><td>五位一体 vs 四个全面</td><td>五位一体是"建设什么"的总体布局，四个全面是"怎么推进"的战略布局。</td><td>一个画蓝图，一个给抓手</td></tr>
+        <tr><td>两个确立 vs 两个维护</td><td>确立是"认什么"，维护是"做什么"；确立是前提，维护是行动。</td><td>先确立，后维护</td></tr>
+        <tr><td>新发展理念 vs 新发展格局</td><td>理念是"按什么原则发展"，格局是"在什么空间格局中发展"。</td><td>理念管方向，格局管空间</td></tr>
+        <tr><td>中国式现代化 vs 两步走</td><td>前者回答"什么样的现代化"，后者回答"什么时候实现"。</td><td>一个定性，一个定时</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2>调研结论</h2></div>
+    <ol class="findings">
+      <li><b>体系化优于碎片化。</b>把概念放进六层架构后，复习量减少约一半，因为大量概念可以由上层逻辑推导出来，不再需要孤立记忆。</li>
+      <li><b>出处比释义更易考。</b>理论考查中，"何时、何会、首次提出"往往是区分度最高的部分，建议为每个概念建立"三要素卡片"。</li>
+      <li><b>输出是检验的唯一标准。</b>能不看材料讲清"两个确立为什么是最高政治原则"，才算真正掌握，而不是背下来。</li>
+      <li><b>前沿理论要持续更新。</b>新质生产力、两个结合等概念仍在丰富发展中，建议以"学习强国"和党的二十大报告原文作为长期跟踪来源。</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>理论体系全景调研 · 概念图谱版</span>
+    <span>本页仅作理论学习与知识梳理使用</span>
+  </footer>
+</div>
+</body>
+</html>

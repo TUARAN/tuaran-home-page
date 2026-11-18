@@ -1,0 +1,1019 @@
+{
+  "schemaVersion": 1,
+  "documentType": "grokbot_execution_records",
+  "actor": "Grokbot",
+  "timezone": "Asia/Shanghai",
+  "asOfAsiaShanghai": "2026-11-18 08:22:41 Asia/Shanghai",
+  "ownerAccount": {
+    "username": "tarsixseveneig1",
+    "displayName": "矿工阿三",
+    "profileUrl": "https://x.com/tarsixseveneig1",
+    "id": "1059979808292069376"
+  },
+  "method": "在确认对方未回关后，先拉黑再立即解除拉黑，以断开关注。解除后关注不会自动恢复，对方粉丝数不会因此减少。不能只把接口成功当作取关成功，需再用实时关注关系或完整关注列表核验。解除失败会立即重试一次，仍失败则停止并告警，不得把人留在黑名单。",
+  "hanziDetection": "汉字检测只看昵称和简介是否出现 CJK 表意文字（统一汉字及扩展/兼容区）。不能用它判定地区、国籍，也不能区分简体和繁体。日文汉字算「有汉字」；仅有假名、韩文、拉丁字母、符号或空白，算「无汉字」。空简介且昵称无汉字仍会入选。",
+  "privacyNote": "本台账只收录已公开的账号链接、规则、时间、计数和核验状态。不含完整关注或粉丝列表、关系图、简介原文、密钥，也不列出待执行账号名单（待执行只写计数）。",
+  "series": [
+    {
+      "id": "year-inactive-no-followback",
+      "title": "一年未更新且未回关",
+      "actor": "Grokbot",
+      "status": "completed",
+      "rule": "当时已关注、对方未回关，且近一年没有可见更新；排除当时 18 个有帖子但接口读不到正文、无法确认是否停更的账号。已回关的未动。批准 84 人，未扩大。",
+      "method": "对未回关账号先拉黑再立即解除拉黑，以断开关注且不把对方留在黑名单。",
+      "rate": "每小时最多 10 个，间隔随机 5–15 秒。",
+      "startedAtAsiaShanghai": "2026-11-17 23:52:39 Asia/Shanghai",
+      "completedAtAsiaShanghai": "2026-11-18 07:11:36 Asia/Shanghai",
+      "counts": {
+        "approved": 84,
+        "attempted": 84,
+        "succeeded": 84,
+        "skipped": 0,
+        "failed": 0,
+        "pending": 0,
+        "leftBlocked": 0
+      },
+      "verification": {
+        "status": "verified",
+        "verifiedAtAsiaShanghai": "2026-11-18 08:15:02 Asia/Shanghai",
+        "summary": "完整分页的实时关注列表核验：84 个账号全部不再出现在列表中。完整拉黑列表 78 人，这 84 人中 0 人仍留在拉黑。不能只凭当时接口返回成功就宣称取关成功。"
+      },
+      "followingCountReconciliation": {
+        "priorSnapshotAtAsiaShanghai": "2026-11-17 23:18 Asia/Shanghai",
+        "priorCount": 9112,
+        "verificationAtAsiaShanghai": "2026-11-18 08:11 Asia/Shanghai",
+        "verificationCount": 9090,
+        "netChange": -22,
+        "unfollowedInSeries": 84,
+        "nonSeriesDepartures": 3,
+        "newFollows": 65,
+        "formula": "9112 - 84 - 3 + 65 = 9090",
+        "note": "公开关注数净少 22，不是净少 84。另外 3 个非本批次账号离开的原因未查，不作猜测。名单核验仍确认这 84 人已取关。"
+      },
+      "batches": [
+        {
+          "index": 1,
+          "date": "2026-11-17",
+          "startedAtAsiaShanghai": "2026-11-17 23:52:39 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-17 23:56:06 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "tanen64461601",
+              "profileUrl": "https://x.com/tanen64461601",
+              "completedAtAsiaShanghai": "2026-11-17 23:52:39 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "Mrboruk",
+              "profileUrl": "https://x.com/Mrboruk",
+              "completedAtAsiaShanghai": "2026-11-17 23:53:04 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "K_2_4_C",
+              "profileUrl": "https://x.com/K_2_4_C",
+              "completedAtAsiaShanghai": "2026-11-17 23:53:22 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "River0089",
+              "profileUrl": "https://x.com/River0089",
+              "completedAtAsiaShanghai": "2026-11-17 23:53:41 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "mountwwrm",
+              "profileUrl": "https://x.com/mountwwrm",
+              "completedAtAsiaShanghai": "2026-11-17 23:54:07 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "bigfishmi",
+              "profileUrl": "https://x.com/bigfishmi",
+              "completedAtAsiaShanghai": "2026-11-17 23:54:29 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "Will9303gmy",
+              "profileUrl": "https://x.com/Will9303gmy",
+              "completedAtAsiaShanghai": "2026-11-17 23:54:55 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "long_jing12279",
+              "profileUrl": "https://x.com/long_jing12279",
+              "completedAtAsiaShanghai": "2026-11-17 23:55:23 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "F8kurc",
+              "profileUrl": "https://x.com/F8kurc",
+              "completedAtAsiaShanghai": "2026-11-17 23:55:41 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "liuliu0666",
+              "profileUrl": "https://x.com/liuliu0666",
+              "completedAtAsiaShanghai": "2026-11-17 23:56:06 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 00:10:55 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 00:14:11 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "PGCAaron",
+              "profileUrl": "https://x.com/PGCAaron",
+              "completedAtAsiaShanghai": "2026-11-18 00:10:55 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "Alwainw197420",
+              "profileUrl": "https://x.com/Alwainw197420",
+              "completedAtAsiaShanghai": "2026-11-18 00:11:18 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "didiao54188",
+              "profileUrl": "https://x.com/didiao54188",
+              "completedAtAsiaShanghai": "2026-11-18 00:11:39 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "heyijieyou_lab",
+              "profileUrl": "https://x.com/heyijieyou_lab",
+              "completedAtAsiaShanghai": "2026-11-18 00:12:06 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "lid2029737",
+              "profileUrl": "https://x.com/lid2029737",
+              "completedAtAsiaShanghai": "2026-11-18 00:12:32 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "CaiRen70617",
+              "profileUrl": "https://x.com/CaiRen70617",
+              "completedAtAsiaShanghai": "2026-11-18 00:12:49 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "PadameCc",
+              "profileUrl": "https://x.com/PadameCc",
+              "completedAtAsiaShanghai": "2026-11-18 00:13:08 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "3H0iGBr8r535896",
+              "profileUrl": "https://x.com/3H0iGBr8r535896",
+              "completedAtAsiaShanghai": "2026-11-18 00:13:31 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "Yulanda39952948",
+              "profileUrl": "https://x.com/Yulanda39952948",
+              "completedAtAsiaShanghai": "2026-11-18 00:13:50 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            },
+            {
+              "username": "qilin2007888",
+              "profileUrl": "https://x.com/qilin2007888",
+              "completedAtAsiaShanghai": "2026-11-18 00:14:11 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 01:09:35 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 01:12:36 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "lijnji364813",
+              "profileUrl": "https://x.com/lijnji364813",
+              "completedAtAsiaShanghai": "2026-11-18 01:09:35 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "testgamesdev",
+              "profileUrl": "https://x.com/testgamesdev",
+              "completedAtAsiaShanghai": "2026-11-18 01:09:59 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "K2479334235079",
+              "profileUrl": "https://x.com/K2479334235079",
+              "completedAtAsiaShanghai": "2026-11-18 01:10:13 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "GWpJS4tRui86645",
+              "profileUrl": "https://x.com/GWpJS4tRui86645",
+              "completedAtAsiaShanghai": "2026-11-18 01:10:40 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "Meiwfx0",
+              "profileUrl": "https://x.com/Meiwfx0",
+              "completedAtAsiaShanghai": "2026-11-18 01:10:58 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "myx3841",
+              "profileUrl": "https://x.com/myx3841",
+              "completedAtAsiaShanghai": "2026-11-18 01:11:14 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "PuBstNaLEr98148",
+              "profileUrl": "https://x.com/PuBstNaLEr98148",
+              "completedAtAsiaShanghai": "2026-11-18 01:11:35 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "Ibananax716",
+              "profileUrl": "https://x.com/Ibananax716",
+              "completedAtAsiaShanghai": "2026-11-18 01:11:56 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "Maitian95619981",
+              "profileUrl": "https://x.com/Maitian95619981",
+              "completedAtAsiaShanghai": "2026-11-18 01:12:13 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            },
+            {
+              "username": "ChnWnjunaoa",
+              "profileUrl": "https://x.com/ChnWnjunaoa",
+              "completedAtAsiaShanghai": "2026-11-18 01:12:36 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 3
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 02:14:08 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 02:17:20 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "lokokolo1110068",
+              "profileUrl": "https://x.com/lokokolo1110068",
+              "completedAtAsiaShanghai": "2026-11-18 02:14:08 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "Treponema_dent",
+              "profileUrl": "https://x.com/Treponema_dent",
+              "completedAtAsiaShanghai": "2026-11-18 02:14:30 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "aeoe202",
+              "profileUrl": "https://x.com/aeoe202",
+              "completedAtAsiaShanghai": "2026-11-18 02:14:50 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "yufy357883",
+              "profileUrl": "https://x.com/yufy357883",
+              "completedAtAsiaShanghai": "2026-11-18 02:15:13 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "ljiwi132747",
+              "profileUrl": "https://x.com/ljiwi132747",
+              "completedAtAsiaShanghai": "2026-11-18 02:15:34 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "yangdaoq1rmo5",
+              "profileUrl": "https://x.com/yangdaoq1rmo5",
+              "completedAtAsiaShanghai": "2026-11-18 02:15:56 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "wx17726292648",
+              "profileUrl": "https://x.com/wx17726292648",
+              "completedAtAsiaShanghai": "2026-11-18 02:16:14 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "craneCC192611",
+              "profileUrl": "https://x.com/craneCC192611",
+              "completedAtAsiaShanghai": "2026-11-18 02:16:33 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "taowangstella",
+              "profileUrl": "https://x.com/taowangstella",
+              "completedAtAsiaShanghai": "2026-11-18 02:16:52 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            },
+            {
+              "username": "whyliuhe",
+              "profileUrl": "https://x.com/whyliuhe",
+              "completedAtAsiaShanghai": "2026-11-18 02:17:20 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 4
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 03:12:08 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 03:14:58 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "gab3570",
+              "profileUrl": "https://x.com/gab3570",
+              "completedAtAsiaShanghai": "2026-11-18 03:12:08 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "lizhngx65581205",
+              "profileUrl": "https://x.com/lizhngx65581205",
+              "completedAtAsiaShanghai": "2026-11-18 03:12:27 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "guoguo31565236",
+              "profileUrl": "https://x.com/guoguo31565236",
+              "completedAtAsiaShanghai": "2026-11-18 03:12:49 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "AlexTao10625054",
+              "profileUrl": "https://x.com/AlexTao10625054",
+              "completedAtAsiaShanghai": "2026-11-18 03:13:07 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "homura910905",
+              "profileUrl": "https://x.com/homura910905",
+              "completedAtAsiaShanghai": "2026-11-18 03:13:27 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "UniverseThe4",
+              "profileUrl": "https://x.com/UniverseThe4",
+              "completedAtAsiaShanghai": "2026-11-18 03:13:42 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "Yuosi5x",
+              "profileUrl": "https://x.com/Yuosi5x",
+              "completedAtAsiaShanghai": "2026-11-18 03:14:05 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "kNKsNVi5zC46474",
+              "profileUrl": "https://x.com/kNKsNVi5zC46474",
+              "completedAtAsiaShanghai": "2026-11-18 03:14:20 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "NPjqcXdbTg60Ayz",
+              "profileUrl": "https://x.com/NPjqcXdbTg60Ayz",
+              "completedAtAsiaShanghai": "2026-11-18 03:14:40 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            },
+            {
+              "username": "FKajj8y1NzIUrrk",
+              "profileUrl": "https://x.com/FKajj8y1NzIUrrk",
+              "completedAtAsiaShanghai": "2026-11-18 03:14:58 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 5
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 04:11:35 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 04:17:15 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "Asuna_3929",
+              "profileUrl": "https://x.com/Asuna_3929",
+              "completedAtAsiaShanghai": "2026-11-18 04:11:35 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "Wasddwasdda",
+              "profileUrl": "https://x.com/Wasddwasdda",
+              "completedAtAsiaShanghai": "2026-11-18 04:11:52 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "1swfob",
+              "profileUrl": "https://x.com/1swfob",
+              "completedAtAsiaShanghai": "2026-11-18 04:12:12 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "fan__xue",
+              "profileUrl": "https://x.com/fan__xue",
+              "completedAtAsiaShanghai": "2026-11-18 04:12:31 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "yngzhngrn164180",
+              "profileUrl": "https://x.com/yngzhngrn164180",
+              "completedAtAsiaShanghai": "2026-11-18 04:14:04 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "lhl031021",
+              "profileUrl": "https://x.com/lhl031021",
+              "completedAtAsiaShanghai": "2026-11-18 04:14:27 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "liaoxin2015",
+              "profileUrl": "https://x.com/liaoxin2015",
+              "completedAtAsiaShanghai": "2026-11-18 04:15:41 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "Jacketkkk555",
+              "profileUrl": "https://x.com/Jacketkkk555",
+              "completedAtAsiaShanghai": "2026-11-18 04:16:30 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "32c1c34",
+              "profileUrl": "https://x.com/32c1c34",
+              "completedAtAsiaShanghai": "2026-11-18 04:16:48 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            },
+            {
+              "username": "ronga91921280",
+              "profileUrl": "https://x.com/ronga91921280",
+              "completedAtAsiaShanghai": "2026-11-18 04:17:15 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 6
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 05:10:00 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 05:14:35 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "Jinphen1",
+              "profileUrl": "https://x.com/Jinphen1",
+              "completedAtAsiaShanghai": "2026-11-18 05:10:00 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "chanshi9527",
+              "profileUrl": "https://x.com/chanshi9527",
+              "completedAtAsiaShanghai": "2026-11-18 05:10:22 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "ivanson63884599",
+              "profileUrl": "https://x.com/ivanson63884599",
+              "completedAtAsiaShanghai": "2026-11-18 05:10:40 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "BUTERZeRo",
+              "profileUrl": "https://x.com/BUTERZeRo",
+              "completedAtAsiaShanghai": "2026-11-18 05:12:21 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "Craftin36200015",
+              "profileUrl": "https://x.com/Craftin36200015",
+              "completedAtAsiaShanghai": "2026-11-18 05:12:43 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "miezans1",
+              "profileUrl": "https://x.com/miezans1",
+              "completedAtAsiaShanghai": "2026-11-18 05:12:59 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "SAKARAYAMADA",
+              "profileUrl": "https://x.com/SAKARAYAMADA",
+              "completedAtAsiaShanghai": "2026-11-18 05:13:20 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "Yuki_evangelens",
+              "profileUrl": "https://x.com/Yuki_evangelens",
+              "completedAtAsiaShanghai": "2026-11-18 05:13:44 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "z1659121421",
+              "profileUrl": "https://x.com/z1659121421",
+              "completedAtAsiaShanghai": "2026-11-18 05:14:10 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            },
+            {
+              "username": "dokaiko",
+              "profileUrl": "https://x.com/dokaiko",
+              "completedAtAsiaShanghai": "2026-11-18 05:14:35 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 7
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 06:14:28 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 06:17:00 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "lolli_lover705",
+              "profileUrl": "https://x.com/lolli_lover705",
+              "completedAtAsiaShanghai": "2026-11-18 06:14:28 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "Adhya46",
+              "profileUrl": "https://x.com/Adhya46",
+              "completedAtAsiaShanghai": "2026-11-18 06:14:46 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "RNuggly",
+              "profileUrl": "https://x.com/RNuggly",
+              "completedAtAsiaShanghai": "2026-11-18 06:15:04 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "m_hhs29859",
+              "profileUrl": "https://x.com/m_hhs29859",
+              "completedAtAsiaShanghai": "2026-11-18 06:15:14 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "nick870213",
+              "profileUrl": "https://x.com/nick870213",
+              "completedAtAsiaShanghai": "2026-11-18 06:15:36 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "toshichan_spo",
+              "profileUrl": "https://x.com/toshichan_spo",
+              "completedAtAsiaShanghai": "2026-11-18 06:15:48 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "rosecatcross",
+              "profileUrl": "https://x.com/rosecatcross",
+              "completedAtAsiaShanghai": "2026-11-18 06:16:01 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "Evuy3Y",
+              "profileUrl": "https://x.com/Evuy3Y",
+              "completedAtAsiaShanghai": "2026-11-18 06:16:20 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "HfevRn",
+              "profileUrl": "https://x.com/HfevRn",
+              "completedAtAsiaShanghai": "2026-11-18 06:16:35 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            },
+            {
+              "username": "yjiho45208203",
+              "profileUrl": "https://x.com/yjiho45208203",
+              "completedAtAsiaShanghai": "2026-11-18 06:17:00 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 8
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 07:10:28 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 07:11:36 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 4,
+            "succeeded": 4,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0
+          },
+          "verificationStatus": "verified",
+          "accounts": [
+            {
+              "username": "sakuramochi1228",
+              "profileUrl": "https://x.com/sakuramochi1228",
+              "completedAtAsiaShanghai": "2026-11-18 07:10:28 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 9
+            },
+            {
+              "username": "AustinTang26",
+              "profileUrl": "https://x.com/AustinTang26",
+              "completedAtAsiaShanghai": "2026-11-18 07:10:46 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 9
+            },
+            {
+              "username": "XieJacki",
+              "profileUrl": "https://x.com/XieJacki",
+              "completedAtAsiaShanghai": "2026-11-18 07:11:04 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 9
+            },
+            {
+              "username": "yuan_han89661",
+              "profileUrl": "https://x.com/yuan_han89661",
+              "completedAtAsiaShanghai": "2026-11-18 07:11:36 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "no-cjk-name-bio-no-followback",
+      "title": "昵称和简介均无汉字且未回关",
+      "actor": "Grokbot",
+      "status": "in_progress",
+      "rule": "只做未回关这一支；已回关不在本队列。在已关注对象中，昵称和简介都没有 CJK 表意文字，且对方未回关。候选按既有 id 锁定，不扩大到同期新增的关注对象。操作前若不再满足规则则跳过，不从名单外补人。汉字检测不能判定地区、国籍，也不能区分简繁。",
+      "method": "对未回关账号先拉黑再立即解除拉黑。解除失败立即重试一次，仍失败则停止并告警，不得遗留拉黑。接口成功后还需用实时关注关系核验是否真正断开。",
+      "rate": "每小时最多 10 个，间隔随机 5–15 秒。",
+      "queue": {
+        "snapshotCandidates": 268,
+        "excluded": 4,
+        "exclusionReasonCounts": {
+          "noLongerFollowing": 1,
+          "nowFollowsBack": 2,
+          "nameOrBioHasHanzi": 1
+        },
+        "startSize": 264,
+        "done": 10,
+        "pending": 254,
+        "note": "快照候选 268 个；实时核验后排除 4 个，锁定队列 264。候选按 id 锁定，未扩大到同期新增的 65 个关注对象。待执行只记计数，不公布名单。"
+      },
+      "counts": {
+        "attempted": 10,
+        "succeeded": 10,
+        "skipped": 0,
+        "failed": 0,
+        "pending": 254
+      },
+      "verification": {
+        "status": "pending",
+        "summary": "已完成并核验的只有第 1 批 10 人。系列仍在进行中，后续批次核验后按同样结构追加。未核验的进行中批次不写入本台账。"
+      },
+      "batches": [
+        {
+          "index": 1,
+          "date": "2026-11-18",
+          "startedAtAsiaShanghai": "2026-11-18 08:17:00 Asia/Shanghai",
+          "completedAtAsiaShanghai": "2026-11-18 08:22:41 Asia/Shanghai",
+          "status": "completed",
+          "counts": {
+            "attempted": 10,
+            "succeeded": 10,
+            "skipped": 0,
+            "failed": 0,
+            "pending": 0,
+            "leftBlocked": 0,
+            "confirmedUnfollowed": 10
+          },
+          "followingCountBefore": 9090,
+          "followingCountAfter": 9080,
+          "verificationStatus": "verified",
+          "verificationSummary": "操作前确认仍在关注且未回关；操作后实时关系核验已断开关注。完整拉黑列表 78 人中不含本批 10 人。公开关注数 9090 → 9080。",
+          "accounts": [
+            {
+              "username": "0xasten",
+              "profileUrl": "https://x.com/0xasten",
+              "completedAtAsiaShanghai": "2026-11-18 08:17:16 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xbenpham",
+              "profileUrl": "https://x.com/0xbenpham",
+              "completedAtAsiaShanghai": "2026-11-18 08:17:39 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xbvlgari",
+              "profileUrl": "https://x.com/0xbvlgari",
+              "completedAtAsiaShanghai": "2026-11-18 08:17:59 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xcoinwhale",
+              "profileUrl": "https://x.com/0xcoinwhale",
+              "completedAtAsiaShanghai": "2026-11-18 08:18:19 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xDrRick",
+              "profileUrl": "https://x.com/0xDrRick",
+              "completedAtAsiaShanghai": "2026-11-18 08:18:54 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xMaxon",
+              "profileUrl": "https://x.com/0xMaxon",
+              "completedAtAsiaShanghai": "2026-11-18 08:19:49 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xnirjon7",
+              "profileUrl": "https://x.com/0xnirjon7",
+              "completedAtAsiaShanghai": "2026-11-18 08:20:14 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "0xsmalldas",
+              "profileUrl": "https://x.com/0xsmalldas",
+              "completedAtAsiaShanghai": "2026-11-18 08:20:46 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "1581266455John",
+              "profileUrl": "https://x.com/1581266455John",
+              "completedAtAsiaShanghai": "2026-11-18 08:21:12 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            },
+            {
+              "username": "17J55J",
+              "profileUrl": "https://x.com/17J55J",
+              "completedAtAsiaShanghai": "2026-11-18 08:21:32 Asia/Shanghai",
+              "resultStatus": "success",
+              "verificationStatus": "verified",
+              "batchIndex": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

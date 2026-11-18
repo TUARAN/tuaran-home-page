@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import AdminPage from '../../../components/ui/AdminPage'
-import PrivateTextNotes from './PrivateTextNotes'
 import ShareAdminClient from '../../share/ShareConsole'
 
 function formatSize(bytes) {
@@ -63,17 +62,16 @@ export default function PrivateDocumentsConsole() {
 
   const selected = items.find((item) => item.id === selectedId)
   return (
-    <AdminPage title="私密文档与分享" description="保存和预览 PDF、记录私人文字，并管理密码保护的分享链接。PDF 与文字默认仅站长可见，分享需单独创建。">
+    <AdminPage title="私密文档与分享" description="保存和预览 PDF，并管理密码保护的分享链接。PDF 默认仅站长可见，分享需单独创建。">
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="私密文档类型">
         {[
           { id: 'files', label: 'PDF 文件' },
-          { id: 'notes', label: '文字记录' },
           { id: 'shares', label: '密码分享' },
         ].map((tab) => (
           <button key={tab.id} type="button" role="tab" aria-selected={view === tab.id} onClick={() => setView(tab.id)} className={`rounded-lg px-4 py-2 text-sm font-medium ${view === tab.id ? 'bg-[#15140f] text-white dark:bg-gray-100 dark:text-[#10161f]' : 'border border-[#d5d7cd] dark:border-[#343d48]'}`}>{tab.label}</button>
         ))}
       </div>
-      {view === 'shares' ? <ShareAdminClient embedded /> : view === 'notes' ? <PrivateTextNotes /> : <>
+      {view === 'shares' ? <ShareAdminClient embedded /> : <>
       <form onSubmit={upload} className="mb-6 grid gap-3 rounded-xl border border-[#d5d7cd] bg-white p-4 dark:border-[#252e39] dark:bg-[#10161f] sm:grid-cols-2">
         <label className="text-sm">标题<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} placeholder="留空使用文件名" className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-[#10161f]" /></label>
         <label className="text-sm">关联私密记录 ID<input value={recordId} onChange={(event) => setRecordId(event.target.value)} inputMode="numeric" placeholder="可留空" className="mt-1 w-full rounded-lg border px-3 py-2 dark:bg-[#10161f]" /></label>

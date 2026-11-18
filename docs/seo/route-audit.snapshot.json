@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "summary": {
     "routes": 247,
-    "redirects": 22,
-    "private": 63,
+    "redirects": 23,
+    "private": 62,
     "registeredStatic": 118,
     "indexable": 139,
     "canonical": 158,
@@ -985,7 +985,8 @@
     {
       "path": "/admin/share",
       "file": "app/(admin)/admin/share/page.jsx",
-      "kind": "private",
+      "kind": "redirect",
+      "redirect": "/admin/private-data/documents?view=shares",
       "registered": false,
       "indexable": false,
       "sitemap": false,

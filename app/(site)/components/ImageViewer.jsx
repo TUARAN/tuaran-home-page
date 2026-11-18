@@ -69,7 +69,8 @@ export default function ImageViewer({ image, onClose, title = '查看图片' }) 
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#f4f3ed] p-3 dark:bg-[#0b1119] sm:p-5">
           {image.svgMarkup ? (
-            <div className="prose-tuaran research-media-viewer flex min-h-0 w-full items-center justify-center">
+            /* 块级流 + CSS 居中：flex 容器里无 width/height 的 SVG 在 Safari 会塌陷成空白 */
+            <div className="prose-tuaran research-media-viewer min-h-0 w-full">
               <figure
                 className="research-inline-diagram"
                 aria-label={alt}

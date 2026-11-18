@@ -9113,9 +9113,10 @@
 
   .research-media-viewer .research-inline-diagram svg {
     display: block;
-    width: auto;
-    max-width: 100%;
+    width: 100%;
+    height: auto;
     max-height: calc(100dvh - 10rem);
+    margin: 0 auto;
   }
 
   /* 宽表格在 H5 下横向滚动：用块级容器承载滚动，切断 table min-content 对父级宽度的传导 */
@@ -9132,6 +9133,17 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-color: var(--site-line-strong) transparent;
     scrollbar-width: thin;
+  }
+
+  /* 移动端溢出提示：横向溢出的 table-scroll 右缘渐隐，滚动到尽头自动收起。
+     渐变画在容器背景上（默认 attachment 不随内容滚动），由 TableScrollHint 开关。 */
+  .prose-tuaran .table-scroll.is-scrollable {
+    background-image: linear-gradient(
+      to right,
+      transparent calc(100% - 2.75rem),
+      color-mix(in srgb, var(--page-bg) 72%, transparent) 100%
+    );
+    background-repeat: no-repeat;
   }
 
   .prose-tuaran .table-scroll > table {

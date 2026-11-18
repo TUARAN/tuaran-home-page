@@ -111,6 +111,34 @@ test('下班的时候 keeps the reviewed oral draft verbatim', () => {
   )
 })
 
+test('Token 不够用 keeps the reviewed oral draft verbatim', () => {
+  const article = diaryArticle()
+  const { heading, blocks } = diaryEntry(article, 'Token 不够用')
+  const text = blocks.join('\n\n')
+  assert.equal(heading.date, '2026-11-18')
+  assert.equal(heading.category, 'AI 与工程')
+  assert.equal(heading.sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  assert.equal(
+    text,
+    [
+      '我越来越觉得，token 这种东西，对个人来说根本不够用。一直在花钱，换一套方案，还是不够用。',
+      '先前充的是 Codex。Plus 原价大约一百四一个月，交上手续费，大概一百五、一百六。一个号不够，就开两个号。后来开始充 Pro——Pro 是 Plus 的五倍，大约七百多。',
+      '再后来转到 Grok Bot。一开始订的是 Cursor Plus，也差不多二十刀一个月；现在充的是 Pro，好像是六十刀。充了之后感觉，Grok Bot 的周用量大约一两天就没了；Cursor 一个月的额度，也就十天左右，不到半个月，一样用完。现在又去用 WorkBuddy，两千七百分，大概也是一两天的事情。',
+      '不管换哪一套，整个方案都不够用。',
+      '原因里有一部分是铺张浪费：一些简单的任务，结果用了比较复杂的模型。但大部分时候，其实还是对业务的理解、对工作的处理，有很多冗余。',
+      '我想先把这个现象记下。',
+    ].join('\n\n'),
+  )
+  assert.doesNotMatch(text, /^# Token 不够用/)
+  assert.doesNotMatch(text, /2026年11月18日/)
+  assert.doesNotMatch(text, /本文由站长口述/)
+  assert.equal(article.content[0].label, 'Token 不够用')
+  assert.deepEqual(
+    diaryContentFromMarkdown(legacyArticleToMarkdown({ content: [heading, ...blocks] })),
+    [heading, ...blocks],
+  )
+})
+
 test('异世界的冲击 keeps the oral account and stays within the public draft', () => {
   const { heading, blocks } = shockEntry(diaryArticle())
   const text = blocks.join('\n')
@@ -118,7 +146,7 @@ test('异世界的冲击 keeps the oral account and stays within the public draf
   assert.equal(heading.date, '2026-11-12')
   assert.equal(heading.sourceNote, DIARY_ORAL_SOURCE_NOTE)
   const marked = diaryArticle().content.filter((block) => block?.sourceNote)
-  assert.deepEqual(marked.map((block) => block.label), ['每天接受检验', '下班的时候', '异世界的冲击'])
+  assert.deepEqual(marked.map((block) => block.label), ['Token 不够用', '每天接受检验', '下班的时候', '异世界的冲击'])
   assert.match(text, /异世界的冲击/)
   assert.match(text, /这里的「异」是异同的异/)
   assert.match(text, /腿部手术已经住院/)
@@ -136,20 +164,24 @@ test('homepage preview uses the same series and leads with the latest record', (
   const preview = previewFromDiary(diaryArticle())
   assert.equal(preview.title, '浮生日记')
   assert.equal(preview.startedOn, '2026-01-05')
-  assert.equal(preview.entries[0].label, '每天接受检验')
-  assert.equal(preview.entries[0].span, '2026-11-17')
-  assert.match(preview.entries[0].lead, /最近一个多月/)
-  assert.match(preview.entries[0].closing, /才是市场经济/)
+  assert.equal(preview.entries[0].label, 'Token 不够用')
+  assert.equal(preview.entries[0].span, '2026-11-18')
+  assert.match(preview.entries[0].lead, /我越来越觉得/)
+  assert.match(preview.entries[0].closing, /我想先把这个现象记下/)
   assert.equal(preview.entries[0].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.equal(preview.entries[1].label, '下班的时候')
-  assert.equal(preview.entries[1].span, '2026-11-16')
+  assert.equal(preview.entries[0].detail, '')
+  assert.equal(preview.entries[1].label, '每天接受检验')
+  assert.equal(preview.entries[1].span, '2026-11-17')
   assert.equal(preview.entries[1].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.equal(preview.entries[2].label, '异世界的冲击')
-  assert.equal(preview.entries[2].span, '2026-11-06～2026-11-12')
+  assert.equal(preview.entries[2].label, '下班的时候')
+  assert.equal(preview.entries[2].span, '2026-11-16')
   assert.equal(preview.entries[2].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.match(preview.entries[2].detail, /小茉莉没带波西/)
-  assert.doesNotMatch(preview.entries[2].detail, /小猫利|没带娃娃/)
-  assert.ok(preview.entries.slice(3).every((entry) => !entry.sourceNote))
+  assert.equal(preview.entries[3].label, '异世界的冲击')
+  assert.equal(preview.entries[3].span, '2026-11-06～2026-11-12')
+  assert.equal(preview.entries[3].sourceNote, DIARY_ORAL_SOURCE_NOTE)
+  assert.match(preview.entries[3].detail, /小茉莉没带波西/)
+  assert.doesNotMatch(preview.entries[3].detail, /小猫利|没带娃娃/)
+  assert.ok(preview.entries.slice(4).every((entry) => !entry.sourceNote))
   assert.equal(preview.entries[0].href, `/diary#${preview.entries[0].id}`)
   assert.ok(preview.entries.length >= 2)
   assert.ok(preview.entries[1].date < preview.entries[0].date)
@@ -157,11 +189,13 @@ test('homepage preview uses the same series and leads with the latest record', (
 
 test('an older published snapshot does not hide a later repository entry', () => {
   const archived = diaryArticle()
-  assert.equal(archived.content[0].label, '每天接受检验')
+  assert.equal(archived.content[0].label, 'Token 不够用')
+  const firstOldEntry = archived.content.findIndex((block) => block?.label === '异世界的冲击')
+  assert.ok(firstOldEntry > 0)
   const older = {
     title: archived.title,
     summary: '旧摘要',
-    content: archived.content.slice(17),
+    content: archived.content.slice(firstOldEntry),
   }
   assert.equal(selectDiarySeries(archived, older), archived)
 

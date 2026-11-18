@@ -9,6 +9,7 @@ tldr: 二十届五中全会聚焦全面从严治党，通过三板块七任务�
 topic_type: thesis
 subjects: [humanities_history]
 content_type: analysis
+auto_images: false
 assistance: workbuddy
 show_assistance: false
 review_ready: false

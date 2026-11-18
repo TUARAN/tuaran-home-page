@@ -1617,6 +1617,103 @@
       node.title = unknown ? "历史记录只有合计数，无法准确拆分到这一任务；数字为已明确归属的部分" : `${today} · ${scopeLabel} · 已确认 ${value}`;
     }
     syncHomeTodayTabs(panel, homeTodayCategory);
+    renderIdleTaskWindowAlert(panel);
+    if (!idleWindowDismissLoaded) void loadIdleWindowDismiss().then(() => renderIdleTaskWindowAlert(panel));
+  }
+
+  const IDLE_DISMISS_KEY = "xrcIdleTaskWindowDismiss";
+  let idleWindowDismiss = {};
+  let idleWindowDismissLoaded = false;
+  let idleWindowRotateTimer = 0;
+  let idleWindowSlide = 0;
+
+  async function loadIdleWindowDismiss() {
+    try {
+      const stored = await globalThis.chrome.storage.local.get(IDLE_DISMISS_KEY);
+      const raw = stored?.[IDLE_DISMISS_KEY];
+      idleWindowDismiss = raw && typeof raw === "object" ? raw : {};
+    } catch (error) {
+      idleWindowDismiss = {};
+    }
+    idleWindowDismissLoaded = true;
+  }
+
+  async function persistIdleWindowDismiss(next) {
+    const api = globalThis.XrcIdleTaskWindowAlert;
+    idleWindowDismiss = api ? api.pruneDismissMap(next) : next;
+    try {
+      await globalThis.chrome.storage.local.set({ [IDLE_DISMISS_KEY]: idleWindowDismiss });
+    } catch (error) {
+      /* keep the in-memory map even if storage is unavailable */
+    }
+  }
+
+  function collectIdleWindowReceipts(rows) {
+    const times = {};
+    const counts = {};
+    for (const row of rows) {
+      for (const [mode, value] of Object.entries(row.taskCounts || {})) {
+        counts[mode] = (counts[mode] || 0) + Math.max(0, Number(value) || 0);
+      }
+      for (const [mode, list] of Object.entries(row.confirmedTimesByTask || {})) {
+        times[mode] = [...(times[mode] || []), ...(Array.isArray(list) ? list : [])];
+      }
+    }
+    return { times, counts };
+  }
+
+  function stopIdleWindowRotate() {
+    if (idleWindowRotateTimer) {
+      window.clearInterval(idleWindowRotateTimer);
+      idleWindowRotateTimer = 0;
+    }
+  }
+
+  function startIdleWindowRotate(host, count) {
+    stopIdleWindowRotate();
+    if (count <= 1) return;
+    idleWindowRotateTimer = window.setInterval(() => {
+      idleWindowSlide = (idleWindowSlide + 1) % count;
+      host.querySelectorAll("[data-xrc-idle-slide]").forEach((slide) => {
+        slide.classList.toggle("is-active", Number(slide.dataset.xrcIdleSlide) === idleWindowSlide);
+      });
+      host.querySelectorAll("[data-xrc-idle-dot]").forEach((dot) => {
+        dot.classList.toggle("is-active", Number(dot.dataset.xrcIdleDot) === idleWindowSlide);
+      });
+    }, 4500);
+  }
+
+  function renderIdleTaskWindowAlert(panel) {
+    const api = globalThis.XrcIdleTaskWindowAlert;
+    const host = panel?.querySelector?.("[data-xrc-idle-window-alert]");
+    if (!api || !host) return;
+    const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "").toLowerCase();
+    const today = api.shanghaiDateKey();
+    const todayRows = dailyReports.filter((report) => report.date === today);
+    const scoped = handle
+      ? todayRows.filter((report) => String(report.accountHandle || "").toLowerCase() === handle)
+      : todayRows;
+    const { times, counts } = collectIdleWindowReceipts(scoped.length ? scoped : todayRows);
+    const alerts = api.listAlerts({
+      now: Date.now(),
+      scheduleEnabled: Boolean(taskSchedule.enabled),
+      rules: taskSchedule.rules || {},
+      items: taskSchedule.items || {},
+      confirmedTimesByTask: times,
+      dailyCountsByTask: counts,
+      dismissed: idleWindowDismiss,
+      accountHandle: handle
+    });
+    if (!alerts.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      stopIdleWindowRotate();
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML = api.bannerInnerHtml(alerts);
+    idleWindowSlide = 0;
+    startIdleWindowRotate(host, alerts.length);
   }
 
   function showDailyReport(panel) {
@@ -9531,6 +9628,7 @@
                 ${TODAY_TASKS.map(([mode, label, category]) => `<button type="button" class="xrc-today-task" data-category="${category}" data-xrc-today-task-open="${mode}"${category === "comment" ? "" : " hidden"} title="打开任务详情 · ${label}"><span>${label}</span><b data-xrc-today-task="${mode}">0</b></button>`).join("")}
               </div>
             </div>
+            <div class="xrc-idle-window-alert" data-xrc-idle-window-alert hidden aria-live="polite"></div>
           </section>
         </div>
         <section class="xrc-hub" data-xrc-hub hidden aria-label="设置中心">
@@ -10550,6 +10648,21 @@
         const mode = chip?.dataset?.xrcTodayTaskOpen;
         if (!mode || chip?.hidden) return;
         openTaskSubpage(mode);
+      });
+      panel.querySelector("[data-xrc-idle-window-alert]")?.addEventListener("click", (event) => {
+        const open = event.target.closest?.("[data-xrc-idle-open]");
+        if (open?.dataset?.xrcIdleOpen) {
+          openTaskSubpage(open.dataset.xrcIdleOpen);
+          return;
+        }
+        const dismiss = event.target.closest?.("[data-xrc-idle-dismiss]");
+        const mode = dismiss?.dataset?.xrcIdleDismiss;
+        const windowId = dismiss?.dataset?.windowId;
+        if (!mode || !windowId) return;
+        const handle = String(currentAccountHandle() || lastKnownAccountHandle || "").replace(/^@/u, "").toLowerCase();
+        void persistIdleWindowDismiss(globalThis.XrcIdleTaskWindowAlert.rememberDismiss(idleWindowDismiss, windowId, mode, handle)).then(() => {
+          renderIdleTaskWindowAlert(panel);
+        });
       });
       const scheduleCarousel = panel.querySelector("[data-xrc-schedule-carousel]");
       scheduleCarousel?.querySelector("[data-xrc-schedule-dots]")?.addEventListener("click", (event) => {
@@ -12279,6 +12392,13 @@
         renderTodaySummary(panel);
         if (reportOpen) showDailyReport(panel);
       }
+    }
+    if (changes.xrcIdleTaskWindowDismiss) {
+      const raw = changes.xrcIdleTaskWindowDismiss.newValue;
+      idleWindowDismiss = raw && typeof raw === "object" ? raw : {};
+      idleWindowDismissLoaded = true;
+      const panel = document.getElementById(PANEL_ID);
+      if (panel) renderIdleTaskWindowAlert(panel);
     }
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule || changes[DEV_UPDATE_KEY]) renderPanel();
     if (changes[PLUGIN_RUNTIME_KEY] || changes.xrcTaskSchedule) void loadTabRole();

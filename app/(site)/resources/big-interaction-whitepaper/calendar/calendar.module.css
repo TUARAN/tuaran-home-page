@@ -69,6 +69,40 @@
 .ownMetric span { display: block; color: #5d7364; font-size: 11px; font-weight: 700; line-height: 1.4; }
 .ownMetric strong { display: block; margin-top: 2px; color: #173d2a; font-size: 18px; font-variant-numeric: tabular-nums; line-height: 1.2; }
 
+
+.executions { margin-top: 18px; border: 1px solid #c6dac7; border-radius: 16px; background: linear-gradient(160deg, #f3f8f0, #fbfcf8); padding: 18px 16px 16px; }
+.execHead h2 { margin: 4px 0 8px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 28px; line-height: 1.2; }
+.execLead, .execNote, .execMeta, .execAppend { margin: 0 0 8px; color: #425f4b; font-size: 13px; font-weight: 600; line-height: 1.7; }
+.execLead { color: #203f2f; font-size: 15px; }
+.execNote { color: #5d7364; font-weight: 500; }
+.execToday, .execSeries { margin-top: 16px; padding-top: 14px; border-top: 1px solid #d5e4d2; }
+.execToday h3, .execSeries h3 { margin: 0 0 8px; color: #173d2a; font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif; font-size: 20px; line-height: 1.3; }
+.execStatusLive, .execStatusDone { margin: 0 0 10px; font-size: 13px; font-weight: 800; }
+.execStatusLive { color: #1d6840; }
+.execStatusDone { color: #234a32; }
+.execCounts { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; padding: 0; list-style: none; }
+.execCounts li { border: 1px solid #d5e4d2; border-radius: 12px; background: #fff; padding: 8px 10px; min-width: 88px; }
+.execCounts span { display: block; color: #5d7364; font-size: 11px; font-weight: 700; }
+.execCounts strong { display: block; margin-top: 2px; color: #173d2a; font-size: 18px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.execBatch { margin: 8px 0; border: 1px solid #c6dac7; border-radius: 12px; background: #fff; padding: 8px 12px 10px; }
+.execBatch summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; color: #173d2a; }
+.execBatch summary strong { font-size: 14px; }
+.execBatch summary span { color: #5d7364; font-size: 12px; font-weight: 600; }
+.execBatch summary:focus-visible { outline: 3px solid #a6d6ae; outline-offset: 2px; }
+.execTableWrap { overflow: auto; max-height: 320px; margin-top: 8px; }
+.executions table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.55; }
+.executions th, .executions td { border-bottom: 1px solid #d5e4d2; padding: 8px; text-align: left; vertical-align: top; }
+.executions th { color: #234a32; font-size: 12px; white-space: nowrap; position: sticky; top: 0; background: #fff; }
+.executions td:first-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.executions td a { color: #1d6840; font-weight: 700; text-decoration: none; }
+.executions td a:hover { text-decoration: underline; }
+.execDayList { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.execDayList li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.execDayList a { color: #1d6840; font-size: 13px; font-weight: 700; text-decoration: none; }
+.execDayList a:hover { text-decoration: underline; }
+.execDayList span { color: #5d7364; font-size: 12px; font-weight: 600; }
+.execAppend { margin-top: 10px; }
+
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .picker { max-width: 420px; }

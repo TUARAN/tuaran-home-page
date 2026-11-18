@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import ImageViewer from './ImageViewer'
-import { buildStandaloneSvgMarkup } from '../../../../lib/research/svgEmbedStyle'
+import { buildStandaloneSvgMarkup } from '../../../lib/research/svgEmbedStyle'
 
 const MEDIA_SELECTOR = '[data-research-lightbox="true"]'
 

@@ -2104,6 +2104,7 @@ async function countUnconfirmedRestart(plan, mode, accountHandle = "") {
   if (!restartAlreadyCounted(item)) return { ok: true, ignored: true };
   const restarts = Number(item.reloadAttempts) || 0;
   if (restarts >= 3) {
+    if (await recoverExhaustedStart(plan, mode)) return { ok: true, recovered: true };
     plan.current = "";
     plan.startedAt = 0;
     plan.items[mode] = {
@@ -2162,6 +2163,35 @@ function alertOnExhaustedStart(mode, item, accountHandle = "") {
 
 // The page reloaded itself during start confirmation. Count that refresh even when
 // the scheduler has not yet marked the attempt as a failed start.
+// Rebuild the request on the resident tab once, then yield before another cycle.
+async function recoverExhaustedStart(plan, mode, now = Date.now()) {
+  const item = plan.items[mode] || {};
+  if (item.manualStopped || !plan.enabled) return false;
+  const waiting = Number(item.autoStartRecoveredAt) > 0;
+  plan.current = "";
+  plan.startedAt = 0;
+  plan.items[mode] = {
+    ...item, blocked: false, recoveryAttempts: 0, reloadAttempts: 0,
+    manualRequestedAt: waiting ? 0 : now,
+    autoStartRecoveredAt: waiting ? 0 : now,
+    resumeAt: Math.max(Number(item.resumeAt) || 0, waiting ? now + 5 * 60000 : 0),
+    reason: waiting ? "自动恢复仍未确认，5 分钟后重新排班" : "已自动重新请求启动当前任务",
+    lastStartError: item.lastStartError || "执行页没有回报启动结果"
+  };
+  if (!waiting) {
+    plan.manualFocusMode = mode;
+    plan.manualStartTabId = Number(plan.workTabId) || 0;
+  }
+  await saveTaskSchedule(plan);
+  if (!waiting && Number(plan.workTabId) > 0) {
+    try {
+      const tab = await chrome.tabs.get(Number(plan.workTabId));
+      await activateTabIfNeeded(tab.id, tab.windowId, true);
+    } catch (error) { /* The scheduler handles a missing execution tab. */ }
+  }
+  return true;
+}
+
 async function noteUnconfirmedReload(mode, tabId, accountHandle = "") {
   const selected = validTaskMode(mode);
   if (!FLOW_TASKS.includes(selected)) return { ok: true, ignored: true };
@@ -2181,6 +2211,7 @@ async function noteUnconfirmedReload(mode, tabId, accountHandle = "") {
     const item = plan.items[selected] || {};
     const restarts = Number(item.reloadAttempts) || 0;
     if (restarts >= 3) {
+      if (await recoverExhaustedStart(plan, selected)) return { ok: true, recovered: true };
       plan.current = "";
       plan.startedAt = 0;
       plan.items[selected] = {
@@ -3614,6 +3645,7 @@ async function runTaskSchedule() {
           if (!stalled && occupancyAge < STARTING_GRACE_MS) return plan;
           const restarts = Number(item.reloadAttempts) || 0;
           if (restarts >= 3) {
+            if (await recoverExhaustedStart(plan, current, now)) return runTaskSchedule();
             recordScheduleSegment(plan, current, "已重启 3 次，跳过这项任务", now);
             plan.current = "";
             plan.startedAt = 0;
@@ -4893,6 +4925,7 @@ async function markManualTaskStop(mode, stopTab = false) {
 async function markManualTaskStart(mode, sender) {
   if (!FLOW_TASKS.includes(mode)) return { ok: false, error: "无法识别目标任务" };
   const plan = await readTaskSchedule();
+  plan.items[mode] = { ...plan.items[mode], autoStartRecoveredAt: 0 };
   plan.manualFocusMode = mode;
   const requestedId = Number(sender?.tab?.id);
   plan.manualStartTabId = Number.isInteger(requestedId) && requestedId > 0 ? requestedId : 0;

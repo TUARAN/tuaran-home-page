@@ -2903,28 +2903,14 @@
       font-size: 16px;
     }
 
-    .home-side-stack .home-social-card.is-priority {
-      gap: 0.25rem;
-      min-height: 48px;
-      padding: 0.375rem;
+    .home-side-stack .home-platform-row {
+      gap: 0.5rem;
+      padding: 0.5rem 0.6rem;
     }
 
-    .home-side-stack .home-social-card.is-priority .home-social-icon {
+    .home-side-stack .home-platform-icon {
       width: 28px;
       height: 28px;
-    }
-
-    .home-side-stack .home-social-card.is-priority .home-social-main strong {
-      font-size: 11px;
-      line-height: 1rem;
-    }
-
-    .home-side-stack .home-social-main small {
-      display: none;
-    }
-
-    .home-side-stack .home-social-priority-grid {
-      grid-template-columns: 1fr;
     }
 
     .home-side-stack .home-achievement-proof,
@@ -3766,145 +3752,78 @@
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--site-accent) 28%, var(--site-line));
   }
 
-  .home-social-grid {
-    @apply space-y-2;
+  .home-platform-list {
+    @apply grid gap-2;
   }
 
-  .home-social-priority-grid {
-    @apply grid grid-cols-2 gap-2;
-  }
-
-  .home-social-secondary-grid {
-    @apply grid grid-cols-4 gap-1.5;
-  }
-
-  .home-social-total {
-    @apply mb-2 grid grid-cols-2 gap-2;
-  }
-
-  .home-social-total span {
-    @apply inline-flex min-w-0 items-center justify-center gap-1 rounded-lg border px-2.5 py-2 font-mono text-[11px] font-semibold no-underline;
+  .home-platform-row {
+    @apply flex min-w-0 items-center gap-2.5 rounded-xl border px-2.5 py-2 no-underline transition;
     border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-accent) 8%, transparent);
+    background: color-mix(in srgb, var(--site-panel-strong) 26%, transparent);
     color: var(--site-ink);
   }
 
-  .home-social-card {
-    @apply relative flex min-w-0 items-center gap-1.5 rounded-lg border px-1.5 py-1.5 no-underline transition;
-    min-height: 36px;
-    border-color: var(--site-line);
-    background: color-mix(in srgb, var(--site-panel-strong) 16%, transparent);
-    color: var(--site-ink);
-  }
-
-  .home-social-card:hover {
+  .home-platform-row:hover,
+  .home-platform-row:focus-within {
     @apply no-underline;
-    border-color: var(--site-line-strong);
-    background: color-mix(in srgb, var(--site-panel-strong) 44%, transparent);
+    border-color: color-mix(in srgb, var(--site-accent) 38%, var(--site-line));
+    background: color-mix(in srgb, var(--site-panel-strong) 48%, transparent);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--site-shadow) 22%, transparent);
   }
 
-  .home-social-card:visited,
-  .dark .home-social-card {
+  .home-platform-row:visited,
+  .dark .home-platform-row {
     color: var(--site-ink);
   }
 
-  .home-social-card.is-priority {
-    @apply gap-2 px-2.5 py-2;
-    min-height: 58px;
-    border-color: color-mix(in srgb, var(--site-accent) 34%, var(--site-line));
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--site-accent) 13%, transparent), transparent 58%),
-      color-mix(in srgb, var(--site-panel-strong) 32%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent);
-  }
-
-  .home-social-icon {
+  .home-platform-icon {
     @apply flex shrink-0 items-center justify-center rounded-lg;
-    width: 24px;
-    height: 24px;
-    background: color-mix(in srgb, var(--site-accent) 10%, transparent);
+    width: 32px;
+    height: 32px;
+    background: color-mix(in srgb, var(--site-accent) 12%, transparent);
     color: var(--site-accent);
   }
 
-  .home-social-card.is-priority .home-social-icon {
-    width: 36px;
-    height: 36px;
-    background: color-mix(in srgb, var(--site-accent) 18%, transparent);
+  .home-platform-body {
+    @apply flex min-w-0 flex-1 flex-col gap-1;
   }
 
-  .home-social-main {
-    @apply flex min-w-0 flex-1 flex-col;
+  .home-platform-head {
+    @apply flex min-w-0 items-center gap-2;
   }
 
-  .home-social-main strong {
-    @apply truncate text-[11.5px] font-semibold leading-4;
+  .home-platform-name {
+    @apply min-w-0 flex-1 truncate text-[13px] font-semibold leading-4;
   }
 
-  .home-social-main small {
-    @apply font-mono text-[9px] font-semibold uppercase leading-3 tracking-[0.14em];
-    color: var(--site-accent);
+  .home-platform-accounts {
+    @apply flex flex-wrap items-center gap-1;
   }
 
-  .home-social-card.is-priority .home-social-main strong {
-    @apply text-[14px] leading-5;
-  }
-
-  .home-social-card.is-priority .home-social-metrics {
-    @apply static z-auto ml-auto translate-x-0 border-0 bg-transparent p-0 opacity-100 shadow-none;
-  }
-
-  .home-social-account-picker {
-    @apply invisible pointer-events-none absolute left-0 z-30 min-w-[150px] rounded-lg border p-2 opacity-0 shadow-xl transition;
-    top: calc(100% - 1px);
-    border-color: var(--site-line-strong);
-    background: color-mix(in srgb, var(--site-panel-strong) 96%, transparent);
-    color: var(--site-muted);
-  }
-
-  .home-social-card:hover .home-social-account-picker,
-  .home-social-card:focus-within .home-social-account-picker {
-    @apply visible pointer-events-auto opacity-100;
-  }
-
-  .home-social-account-summary {
-    @apply mb-1.5 flex items-center gap-2 border-b pb-1.5 font-mono text-[9px] leading-none;
-    border-color: var(--site-line);
-  }
-
-  .home-social-account-summary span {
-    @apply inline-flex items-center gap-0.5 whitespace-nowrap;
-  }
-
-  .home-social-account-links {
-    @apply grid gap-1 font-mono text-[9px] leading-4;
-  }
-
-  .home-social-account-links a {
-    @apply truncate rounded border px-1.5 py-1 no-underline transition;
+  .home-platform-account {
+    @apply inline-flex max-w-full items-center truncate rounded-md border px-1.5 py-0.5 font-mono text-[10px] leading-3 no-underline transition;
     border-color: var(--site-line);
     color: var(--site-muted);
   }
 
-  .home-social-account-links a:hover {
-    border-color: var(--site-line-strong);
-    color: var(--site-ink);
+  .home-platform-account:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 46%, var(--site-line));
+    background: color-mix(in srgb, var(--site-accent) 12%, transparent);
+    color: var(--site-accent-strong);
   }
 
-  .home-social-metrics {
-    @apply pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg border px-2 py-1.5 font-mono text-[10px] leading-none opacity-0 shadow-lg transition;
-    border-color: var(--site-line-strong);
-    background: color-mix(in srgb, var(--site-panel-strong) 92%, transparent);
+  .home-platform-row:hover .home-platform-account,
+  .home-platform-row:focus-within .home-platform-account {
+    border-color: color-mix(in srgb, var(--site-accent) 30%, var(--site-line));
+  }
+
+  .home-platform-metrics {
+    @apply inline-flex shrink-0 items-center gap-2 font-mono text-[10px] leading-none;
     color: var(--site-muted);
-    white-space: nowrap;
   }
 
-  .home-social-card:hover .home-social-metrics,
-  .home-social-card:focus-visible .home-social-metrics {
-    @apply opacity-100;
-  }
-
-  .home-social-metrics > span {
-    @apply inline-flex items-center gap-0.5 whitespace-nowrap;
+  .home-platform-metrics > span {
+    @apply inline-flex items-center gap-1 whitespace-nowrap;
   }
 
   .home-builder-panel {
@@ -4435,16 +4354,6 @@
 
   .home-achievement-modal-foot a {
     @apply ml-auto text-white transition hover:bg-white/10;
-  }
-
-  @media (max-width: 420px) {
-    .home-social-priority-grid {
-      @apply grid-cols-1;
-    }
-
-    .home-social-secondary-grid {
-      @apply grid-cols-2;
-    }
   }
 
   .home-contact-panel {

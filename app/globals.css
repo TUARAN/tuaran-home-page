@@ -445,6 +445,67 @@
   to { -webkit-mask-position: -100% 0; mask-position: -100% 0; }
 }
 
+/* 站内导航进度：点击链接立即起条，地址变化后淡出。交互同 NProgress，实现只用 CSS。 */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 160;
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms linear;
+}
+
+.nav-progress[data-active='true'] {
+  opacity: 1;
+  transition: none;
+}
+
+.nav-progress__bar {
+  display: block;
+  height: 100%;
+  background: var(--site-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--site-accent) 45%, transparent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.nav-progress[data-active='true'] .nav-progress__bar {
+  animation: nav-progress-advance 10s cubic-bezier(0.1, 0.7, 0.25, 1) forwards;
+}
+
+.nav-progress[data-active='false'] .nav-progress__bar {
+  transform: scaleX(1);
+}
+
+@keyframes nav-progress-advance {
+  0% { transform: scaleX(0.06); }
+  20% { transform: scaleX(0.42); }
+  55% { transform: scaleX(0.68); }
+  100% { transform: scaleX(0.9); }
+}
+
+/* 列表条目被点击后的挂起态：整行淡底，标题转强调色，等待文案在 meta 行内。
+   按压态写在这里而不是 Tailwind 的 active: 变体，因为移动端样式会给 .h5-feed-row
+   的 background 加 !important。 */
+.h5-feed-row-body {
+  transition: background-color 120ms linear;
+}
+
+/* 行自带按压底色，关掉 iOS 的系统灰色高亮，避免两层反馈叠加。 */
+.h5-feed-row {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.h5-feed-row:active .h5-feed-row-body,
+.h5-feed-row-body[data-pending='true'] {
+  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
+}
+
+.h5-feed-row-body[data-pending='true'] .h5-feed-title {
+  color: var(--site-accent-strong);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner svg,
   .loading-dots > span,
@@ -452,6 +513,11 @@
   .loading-skeleton::after,
   .loading-skeleton-scope :where(.loading-skeleton-item)::after {
     animation: none;
+  }
+
+  .nav-progress[data-active='true'] .nav-progress__bar {
+    animation: none;
+    transform: scaleX(0.6);
   }
 
   .loading-dots > span { opacity: 0.58; transform: none; }

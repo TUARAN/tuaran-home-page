@@ -2,6 +2,15 @@
 
 import { usePathname } from 'next/navigation'
 import { Skeleton } from '../components/loading/LoadingPrimitives'
+import ArticleReadingSkeleton from './components/ArticleReadingSkeleton'
+
+// 目录类路径本身有完整首屏 HTML，落到通用骨架即可。
+const DIRECTORY_PATHS = new Set([
+  '/articles',
+  '/articles/published',
+  '/articles/creation-calendar',
+  '/articles/year-summary',
+])
 
 function ReadingRows({ count = 6 }) {
   return Array.from({ length: count }, (_, index) => (
@@ -93,5 +102,15 @@ function GenericLoading() {
 }
 
 export default function Loading() {
-  return usePathname() === '/' ? <HomeLoading /> : <GenericLoading />
+  const pathname = usePathname()
+
+  if (pathname === '/') return <HomeLoading />
+
+  // Next 对动态路由的预取只到最近的 loading 边界，这里是最外层边界。
+  // 详情类路径在这一层就用文章骨架，预取命中时点开不会先闪通用骨架再换成文章结构。
+  if (pathname.startsWith('/articles/') && !DIRECTORY_PATHS.has(pathname)) {
+    return <ArticleReadingSkeleton label={pathname.startsWith('/articles/research/') ? '正在打开调研' : '正在打开文章'} />
+  }
+
+  return <GenericLoading />
 }

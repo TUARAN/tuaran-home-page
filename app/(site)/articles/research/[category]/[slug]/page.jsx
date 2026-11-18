@@ -126,7 +126,6 @@ export default async function ResearchDetailPage({ params }) {
     title: entry.title,
     intro: AUTHOR_INTRO_MARKDOWN,
   })
-  const xArticleHtml = markdownDoc ? renderMarkdown(markdownDoc) : ''
   const categoryLabel = entry.contentTypeLabel || CATEGORY_META[entry.category]?.label || entry.category
   const isAShareResearch = isAShareResearchEntry(entry)
   const isCryptoResearch = isCryptoAssetObservation(entry)
@@ -322,7 +321,6 @@ export default async function ResearchDetailPage({ params }) {
                   title={entry.title}
                   summary={entry.tldr || entry.summary || ''}
                   markdown={markdownDoc}
-                  html={xArticleHtml}
                   images={entry.images || []}
                   url={url}
                   category={entry.category}

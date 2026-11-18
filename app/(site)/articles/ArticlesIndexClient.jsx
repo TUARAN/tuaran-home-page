@@ -24,6 +24,7 @@ import {
 import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
 
 const PAGE_SIZE = 24
+const CATALOG_REFRESH_DELAY_MS = 4000
 
 const SEARCH_SUGGESTIONS = ['AI Agent', '资源', '公司调研', '工程实践']
 
@@ -91,20 +92,25 @@ export default function ArticlesIndexClient({
 
   useEffect(() => {
     let alive = true
-    fetch('/api/content?view=knowledge', { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => {
-        if (!alive || !Array.isArray(data?.items)) return
-        setItems((current) => (
-          catalogSignature(current) === catalogSignature(data.items) ? current : data.items
-        ))
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (alive) setCatalogReady(true)
-      })
+    // 首屏 HTML 已带完整目录，这里只补一次最新数据。
+    // 延后到首屏空闲再请求：该接口约 500 KB / 5s，立即发起会和用户点击详情页的导航请求抢带宽。
+    const timer = window.setTimeout(() => {
+      fetch('/api/content?view=knowledge', { cache: 'no-store' })
+        .then((response) => response.ok ? response.json() : null)
+        .then((data) => {
+          if (!alive || !Array.isArray(data?.items)) return
+          setItems((current) => (
+            catalogSignature(current) === catalogSignature(data.items) ? current : data.items
+          ))
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (alive) setCatalogReady(true)
+        })
+    }, CATALOG_REFRESH_DELAY_MS)
     return () => {
       alive = false
+      window.clearTimeout(timer)
     }
   }, [staticItems])
 

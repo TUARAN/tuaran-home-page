@@ -37,6 +37,14 @@
 - 使用 `LoadingSpinner size="sm"`，按钮进入禁用状态并保留原始宽度。
 - 不用无限闪烁的文字替代操作反馈。
 
+### 5. 导航级：顶部进度条与行内挂起态
+
+- 用在站内整页跳转：内容列表进入详情、跨栏目切换、浏览器前进后退。
+- 顶部进度条由 `app/(site)/components/NavigationProgress.jsx` 提供，挂在主站 layout：点击站内链接立即起条，`history` 提交后淡出，12 秒无结果自动收起。外链、下载、新标签、锚点和带修饰键的点击不触发。
+- 进度条只承担「点中了」的即时反馈，不能替代目标路由的 `loading.jsx` 骨架。详情类路由必须同时提供结构骨架。
+- 列表条目用 Next 的 `useLinkStatus` 给出挂起态：整行淡底色、标题转强调色、meta 行显示「正在打开」与 `LoadingDots`，不额外叠加第二个圆环。
+- 进度条长度是未知进度，保持单调递增，不来回摆动；地址提交后直接淡出，不补一条「100% 再消失」的假动画。
+
 ## 动效令牌
 
 | 令牌 | 默认值 | 用途 |
@@ -67,5 +75,7 @@
 - `LoadingText`：短状态文案的克制微光。
 - `LoadingState`：圆环、文案和可选说明的组合。
 - `Skeleton`：页面与列表的结构占位。
+
+导航进度条单独从 `app/(site)/components/NavigationProgress.jsx` 引入，只在主站 layout 挂载一次。文章详情骨架从 `app/(site)/components/ArticleReadingSkeleton.jsx` 复用。
 
 新页面不得自行添加 `animate-spin`、`animate-pulse` 或新的无限循环 keyframes；需要新的等待形态时，先扩展统一组件并更新这份规范。

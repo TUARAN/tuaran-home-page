@@ -1,6 +1,7 @@
 import Script from 'next/script'
 
 import LayoutChrome from './components/LayoutChrome'
+import NavigationProgress from './components/NavigationProgress'
 import { listContactSameAs } from '../../lib/site/contactChannels'
 import { LocaleProvider } from './components/LocaleProvider'
 import { SessionProvider } from './components/SessionProvider'
@@ -39,6 +40,7 @@ export default function SiteLayout({ children }) {
       <ThemeProvider>
         <LocaleProvider>
           <SessionProvider pointsEndpoint="/api/points/me">
+            <NavigationProgress />
             <SiteBehaviorAnalytics />
             <MermaidRenderer />
             <SiteStatusBanner />

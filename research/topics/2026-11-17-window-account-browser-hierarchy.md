@@ -12,6 +12,7 @@ tldr: 管理员不等于不受约束的最高权限。登录态和 Cookie 的常
 assistance: cursor
 model: grok
 show_assistance: false
+auto_images: false
 review_ready: false
 ad_eligible: false
 pv: 0
@@ -30,6 +31,68 @@ pv: 0
 3. **用来整理窗口的「桌面 / Spaces」，和可安全隔离的桌面对象，不是自动等同的一层。** Windows 开发者文档里的窗口工作站和 Desktop，是可设置安全性的对象：窗口消息只能在同一桌面的进程之间发送。Windows 10/11 面向用户的「多个桌面」，以及 macOS 的 Spaces，官方都写成整理应用窗口的工作区。官方材料没有把后者写成账户隔离，也没有写成 Cookie 或登录态隔离。
 4. **浏览器里，登录态和 Cookie 的常用隔离单位是 profile（配置 / 账号），不是单个页签。** Chrome / Chromium、Safari、Edge 都把 profile 写成一套相对独立的浏览数据。同一 profile 内的多个页签，落在这套数据上；不同 profile 之间，各家都把主要浏览数据写成分开存储。页签或站点级的多进程隔离，处理的是渲染进程的稳定和安全，并不等于再拆一套登录态。各家对 Cookie、扩展、密码是否随 profile 分开，表述并不完全相同，需要并陈。
 5. **如果 Agent 与人共用已经登录的本地浏览器，这是产品设计上的一层边界，不能从操作系统的桌面或 Space 自动推出来。** [ego(lite) Space 文档](https://lite.ego.app/document/en/docs/space) 写明：Space 组织任务和页面；不要把不同的 Space 名称当成单独的登录账户、不同的 Profile，或受限制的网站权限。
+
+<figure class="research-inline-diagram">
+<svg viewBox="0 0 720 516" role="img" aria-label="七层结构汇总：系统账户、登录会话、浏览器配置三层写明数据隔离；系统保护与窗口容器是权限或进程边界；窗口组织与页签进程落在共享层">
+<defs>
+<linearGradient id="semBand" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0%" stop-color="#E6F1FB" class="sem-grad-start"/>
+<stop offset="100%" stop-color="#185FA5" class="sem-grad-end"/>
+</linearGradient>
+</defs>
+<rect x="24" y="18" width="672" height="7" rx="3.5" fill="url(#semBand)"/>
+<text x="24" y="46" font-size="12" font-weight="600" class="sem-mute-ink">按官方材料分出的七层 · 自上而下</text>
+
+<rect x="24" y="64" width="672" height="52" rx="8" class="sem-warn"/>
+<text x="40" y="86" font-size="13" font-weight="600" class="sem-warn-ink">L1 系统保护</text>
+<text x="40" y="104" font-size="11" class="sem-warn-ink">UAC · 完整性级别 · SIP：限制权限与受保护路径写入</text>
+<text x="676" y="95" text-anchor="end" font-size="11" class="sem-warn-ink">有限边界</text>
+<polygon points="352,116 368,116 360,124" class="sem-mute"/>
+
+<rect x="24" y="124" width="672" height="52" rx="8" class="sem-core"/>
+<text x="40" y="146" font-size="13" font-weight="600" class="sem-core-ink">L2 系统账户</text>
+<text x="40" y="164" font-size="11" class="sem-core-ink">Administrator · Standard · Guest：不同用户各有配置与文件边界</text>
+<text x="676" y="155" text-anchor="end" font-size="11" class="sem-core-ink">隔离边界</text>
+<polygon points="352,176 368,176 360,184" class="sem-mute"/>
+
+<rect x="24" y="184" width="672" height="52" rx="8" class="sem-core"/>
+<text x="40" y="206" font-size="13" font-weight="600" class="sem-core-ink">L3 登录会话</text>
+<text x="40" y="224" font-size="11" class="sem-core-ink">Fast User Switching：被切走的会话保留应用状态与网络连接</text>
+<text x="676" y="215" text-anchor="end" font-size="11" class="sem-core-ink">隔离边界</text>
+<polygon points="352,236 368,236 360,244" class="sem-mute"/>
+
+<rect x="24" y="244" width="672" height="52" rx="8" class="sem-warn"/>
+<text x="40" y="266" font-size="13" font-weight="600" class="sem-warn-ink">L4 窗口容器</text>
+<text x="40" y="284" font-size="11" class="sem-warn-ink">WinSta0 · Desktop：窗口消息与钩子以同一桌面为界</text>
+<text x="676" y="275" text-anchor="end" font-size="11" class="sem-warn-ink">有限边界</text>
+<polygon points="352,296 368,296 360,304" class="sem-mute"/>
+
+<rect x="24" y="304" width="672" height="52" rx="8" class="sem-mute"/>
+<text x="40" y="326" font-size="13" font-weight="600" class="sem-mute-ink">L5 窗口组织</text>
+<text x="40" y="344" font-size="11" class="sem-mute-ink">多个桌面 · Spaces：官方写成整理应用窗口的工作区</text>
+<text x="676" y="335" text-anchor="end" font-size="11" class="sem-mute-ink">仅组织</text>
+<polygon points="352,356 368,356 360,364" class="sem-mute"/>
+
+<rect x="24" y="364" width="672" height="52" rx="8" class="sem-core"/>
+<text x="40" y="386" font-size="13" font-weight="600" class="sem-core-ink">L6 浏览器配置</text>
+<text x="40" y="404" font-size="11" class="sem-core-ink">Chrome · Safari · Edge profile：主要浏览数据分开存储</text>
+<text x="676" y="395" text-anchor="end" font-size="11" class="sem-core-ink">隔离边界</text>
+<polygon points="352,416 368,416 360,424" class="sem-mute"/>
+
+<rect x="24" y="424" width="672" height="52" rx="8" class="sem-mute"/>
+<text x="40" y="446" font-size="13" font-weight="600" class="sem-mute-ink">L7 页签与进程</text>
+<text x="40" y="462" font-size="11" class="sem-mute-ink"><tspan x="40" dy="0">tab · WebContents · Site Isolation：进程与站点数据访问隔离</tspan><tspan x="40" dy="16">同一 profile 内的页签仍共用该配置下的 Cookie 与站点数据</tspan></text>
+<text x="676" y="455" text-anchor="end" font-size="11" class="sem-mute-ink">共享层</text>
+
+<rect x="24" y="490" width="14" height="14" rx="3" class="sem-core"/>
+<text x="44" y="502" font-size="11" class="sem-mute-ink">写明数据隔离</text>
+<rect x="176" y="490" width="14" height="14" rx="3" class="sem-warn"/>
+<text x="196" y="502" font-size="11" class="sem-mute-ink">权限或进程边界</text>
+<rect x="330" y="490" width="14" height="14" rx="3" class="sem-mute"/>
+<text x="350" y="502" font-size="11" class="sem-mute-ink">整理窗口或共享同一配置</text>
+</svg>
+<figcaption>图 1：写明数据隔离的是系统账户、登录会话与浏览器配置三层；系统保护与窗口容器给出权限或进程边界；窗口组织与页签进程落在已共享的那部分。颜色区分三类，判断仍以各层官方口径为准。</figcaption>
+</figure>
 
 ## 二、事实层
 
@@ -125,6 +188,18 @@ WebKit 官方架构说明可用来对照 Safari 所用的引擎层。[WebKit2](h
 | 窗口组织 | Windows 多个桌面；macOS Spaces / Mission Control | 工作在某个空间时，只显示该空间中的窗口；可把应用固定到某一桌面 | 窗口可在桌面或空间之间移动；Windows 可选择在所有桌面的任务栏显示窗口；macOS 应用可被指定到所有桌面；删除空间时窗口移到其他空间 | Microsoft Support 多个桌面；Apple 多个空间、Mac 桌面 |
 | 浏览器配置 | Chrome / Edge / Safari profile | 不同 profile 的主要浏览数据分开；Chromium 写明不同 profile 的文档不能共用同一渲染进程；Safari 写明历史、Cookie、网站数据、标签页组不共享 | 同一 profile 内的窗口和页签使用该配置的数据；Chromium 还写有跨 profile 的单一网络栈和图形栈；Safari 在各 profile 间共享自动填充、密码、安全 / 网站 / 隐私设置，扩展可在各 profile 中分别开关 | Chrome 帮助、Chromium 设计文档；Safari 配置说明；Edge 支持页与隐私文档 |
 | 页签与进程 | tab、`WebContents`；Site Isolation；WebContent 进程 | 不同站点或不同 profile 可进入不同渲染进程；扩展通常不与网页共用进程 | 同一 profile 内的页签共用该配置下的 Cookie 等站点数据（Safari 对跨 profile 不共享有直接表述；Chrome / Edge 见上表各家原文）；多个无痕或 InPrivate 窗口可属于同一临时会话，直到全部关闭 | Chromium 进程模型；Chrome 无痕说明；Edge 隐私文档；WebKit2 |
+
+换个方向读这张表，把用途落到具体层，判定按各层官方口径给出：
+
+| 要隔开的 | 该看的层 | 官方写明的依据 | 判定 |
+|---|---|---|---|
+| 不同的人 | 系统账户 / 登录会话 | 桌面设置、文件、收藏和历史属于该用户，其他用户不能访问 | [!good]可用[/!good] |
+| 同一人的工作与个人登录态 | 浏览器 profile | 历史、Cookie 和网站数据不在配置之间共享 | [!good]可用[/!good] |
+| 应用窗口的显示范围 | 虚拟桌面 / Spaces | 工作在某个空间时，只显示该空间中的窗口 | [!warn]仅整理窗口[/!warn] |
+| 网页代码能碰到什么 | 进程模型 / 完整性策略 | 站点隔离限制跨站点数据访问，UAC 按完整性级别标记进程 | [!core]按策略层核对[/!core] |
+| Agent 的授权边界 | 无对应层 | Space 名称不等于单独登录、独立 Profile 或受限制的网站权限 | [!risk]不能据此隔离[/!risk] |
+
+标签给出的是该层能否承担这一用途，文字写明判定；颜色只作辅助，读屏与灰度打印下结论仍在。
 
 ### 2.7 和「Agent 共用登录态」只作边界对照
 

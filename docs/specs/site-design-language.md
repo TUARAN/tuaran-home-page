@@ -37,6 +37,33 @@
 - 后台使用 `--admin-*` 令牌，不把主站硬编码颜色复制进后台控件。
 - 深色模式需要单独验证层级、边界和对比度，不依靠透明度自动推导全部颜色。
 
+### 内容图表与彩色契约
+
+生效版本：2026-11-18。适用于 `/articles` 下的调研文章与普通文章正文里的内嵌 SVG 图、Mermaid 图和表格。写作约定见 `research/README.md`；实现见 `lib/research/markdown.js`、`app/globals.css`；方案来龙去脉见 `docs/context/content-visualization-alignment.md`。
+
+**色板令牌**：`--sem-*` 系列，浅色定义在 `:root`，深色在 `.dark` 单独定义，不从浅色靠透明度推导。每类三个值——`*-bg`（形状浅填充 / 标签底）、`*-ink`（文字）、`*-line`（描边 / 标签边 / 色条）。另有 `--sem-surface`（中性面）与 `--sem-edge`（连线）。全部低饱和，取自站点纸张感与冷灰基调。装饰性强调色在同一张图内不超过一主一辅；确需按类别区分时走下面这张语义色板，并在文字或图例里写明类别，不靠颜色单独表意。
+
+| 语义类 | 用途 | 令牌组 |
+|---|---|---|
+| `sem-core` | 核心判断、主节点 | `--sem-core-*` |
+| `sem-good` | 正向 / 已核验 | `--sem-good-*` |
+| `sem-warn` | 提示 / 待核 | `--sem-warn-*` |
+| `sem-risk` | 风险 / 否定 | `--sem-risk-*` |
+| `sem-mute` | 次要 / 中性 | `--sem-mute-*` |
+
+**内嵌 SVG 图**：作者在 `research-inline-diagram` 的 `figure` 内写语义类，形状用 `sem-core` 等，文字用对应的 `sem-*-ink`，中性底板用 `sem-surface`，连线与箭头用 `sem-edge`。配色由 CSS 统一维护，SVG 的 `fill`/`stroke` 属性优先级低于类规则，因此类会覆盖内联配色。渐变、多边形、多行文字可用，但标签与属性必须过 `SAFE_DIAGRAM_TAGS` / `SAFE_DIAGRAM_ATTRS` 白名单；`style`、`href`、`src`、`on*`、`<foreignObject>`、`<filter>`、`<script>` 一律拒绝。
+
+**彩色表格**：单元格与正文用 `[!core]…[/!core]` 这类成对语义标签，渲染成 `sem-tag--*` 胶囊。`.table-scroll` 里带标签的单元格补一条左侧色条。颜色只作辅助，状态词必须直接写在标签文字里（如「已核验」「待核」「高风险」），保证读屏、灰度打印和深色模式下判断仍成立。一表一类语义，避免同一张表既标状态又标量级。
+
+**硬性要求**：
+
+- 每幅图配 `figcaption` 讲清判断，`svg` 带 `aria-label` 给读屏与放大视图；装饰图形对辅助技术隐藏。
+- 明暗两套主题都要复核文字与填充的对比度，浅填充配深文字；不能只靠颜色表达状态。
+- 图、表与正文共用同一套事实口径，图里的数字、日期、名称与信息来源一致。
+- 一图一结论；汇总大图只表达同一层关系下的完整清单，跨层派生、时间线、流程拆成各自的图。
+- 正文有内嵌图时 frontmatter 设 `auto_images: false`，避免氛围图与图表重复。
+- 两条渲染链路共用 `.prose-tuaran` 容器：调研正文走 `renderMarkdown`，普通文章走 Tiptap JSON（`ArticlePostBody.jsx`）。语义色类在 CSS 层对两条链路生效，但语义标签与内嵌 SVG 图只在 markdown 链路可用；改渲染链路时两条一起核。
+
 ### 排版
 
 - 长文标题与编辑性标题优先使用站点衬线字体；控件、导航和数据使用无衬线字体；编号、时间与短标签可使用等宽字体。

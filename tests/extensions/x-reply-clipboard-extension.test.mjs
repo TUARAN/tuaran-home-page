@@ -10548,7 +10548,7 @@ test('a never-started shared tab is reloaded in place after the boot grace', asy
   }
 })
 
-test('three unconfirmed reloads skip the task instead of starting the countdown again', async () => {
+test('three unconfirmed reloads rebuild the start request on the resident tab', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const local = {
@@ -10584,12 +10584,10 @@ test('three unconfirmed reloads skip the task instead of starting the countdown 
   }
   try {
     await background.runTaskSchedule()
-    assert.equal(updates.some((entry) => entry.url), false)
-    assert.equal(local.xrcTaskSchedule.current, '')
-    assert.equal(local.xrcTaskSchedule.items.notifications.blocked, true)
-    assert.equal(local.xrcTaskSchedule.items.notifications.reloadAttempts, 3)
-    assert.match(local.xrcTaskSchedule.items.notifications.reason, /已重启 3 次，已跳过这项任务/)
-    assert.match(local.xrcTaskSchedule.items.notifications.reason, /原因：执行页没有回报启动结果/)
+    assert.equal(local.xrcTaskSchedule.items.notifications.blocked, false)
+    assert.ok(local.xrcTaskSchedule.items.notifications.reloadAttempts <= 1)
+    assert.ok(local.xrcTaskSchedule.items.notifications.autoStartRecoveredAt > 0)
+    assert.ok(updates.some((entry) => entry.active === true))
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10902,7 +10900,7 @@ test('a follow page that already hit the rate limit skips instead of restarting'
   }
 })
 
-test('a follow start reload uses the same three-restart skip as the other tasks', async () => {
+test('a follow start reload recovers once then yields for five minutes', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const local = {
@@ -10928,10 +10926,23 @@ test('a follow start reload uses the same three-restart skip as the other tasks'
     assert.equal(local.xrcTaskSchedule.current, 'mutual-targetFollow')
     local.xrcTaskSchedule.items['mutual-targetFollow'].reloadAttempts = 3
     local.xrcPluginRuntime.tasks['mutual-targetFollow'].phase = 'starting'
-    const skipped = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
-    assert.equal(skipped.skipped, true)
+    const recovered = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
+    assert.equal(recovered.recovered, true)
+    const item = local.xrcTaskSchedule.items['mutual-targetFollow']
+    assert.equal(item.blocked, false)
+    assert.equal(item.reloadAttempts, 0)
+    assert.ok(item.manualRequestedAt > 0)
+    local.xrcTaskSchedule.current = 'mutual-targetFollow'
+    local.xrcTaskSchedule.startedAt = Date.now()
+    item.reloadAttempts = 3
+    const again = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
+    assert.equal(again.recovered, true)
     assert.equal(local.xrcTaskSchedule.current, '')
-    assert.match(local.xrcTaskSchedule.items['mutual-targetFollow'].reason, /已重启 3 次，已跳过这项任务/)
+    const deferred = local.xrcTaskSchedule.items['mutual-targetFollow']
+    assert.equal(deferred.manualRequestedAt, 0)
+    assert.equal(deferred.autoStartRecoveredAt, 0)
+    assert.ok(deferred.resumeAt >= now + 5 * 60000)
+    assert.equal(deferred.blocked, false)
   } finally {
     globalThis.chrome = previousChrome
   }

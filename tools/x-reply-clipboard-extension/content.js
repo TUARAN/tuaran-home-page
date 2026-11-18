@@ -7620,6 +7620,7 @@
 
   async function commitPageReload() {
     const noted = await noteUnconfirmedPageReload();
+    if (noted?.recovered) return false;
     if (noted?.skipped) {
       state.running = false;
       state.stopping = false;

@@ -146,6 +146,7 @@ const SOCIAL_MEDIA_LINKS = [
     followersCount: 12003,
     reads: '251w',
     icon: IconBrandJuejin,
+    accounts: [{ label: '掘金安东尼', href: 'https://juejin.cn/user/1521379823340792' }],
   },
   {
     href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e',
@@ -155,6 +156,7 @@ const SOCIAL_MEDIA_LINKS = [
     followersCount: 12000,
     reads: '200w+',
     icon: IconFileText,
+    accounts: [{ label: '掘金安东尼', href: 'https://www.xiaohongshu.com/user/profile/68b313f9000000001901d07e' }],
   },
   {
     href: 'https://x.com/tarsixseveneig1',
@@ -165,8 +167,8 @@ const SOCIAL_MEDIA_LINKS = [
     reads: '200w',
     icon: IconBrandX,
     accounts: [
-      { label: 'tarsixseveneig1', href: 'https://x.com/tarsixseveneig1' },
-      { label: 'TuaranX', href: 'https://x.com/TuaranX' },
+      { label: '矿工阿三', href: 'https://x.com/tarsixseveneig1' },
+      { label: '矿长阿富', href: 'https://x.com/TuaranX' },
     ],
   },
   {
@@ -178,8 +180,8 @@ const SOCIAL_MEDIA_LINKS = [
     reads: '55.6w',
     icon: IconCode,
     accounts: [
-      { label: 'aifs2025', href: 'https://blog.csdn.net/aifs2025' },
-      { label: 'Anthony1453', href: 'https://blog.csdn.net/Anthony1453' },
+      { label: '掘金安东尼', href: 'https://blog.csdn.net/aifs2025' },
+      { label: '安东尼与AI', href: 'https://blog.csdn.net/Anthony1453' },
     ],
   },
   {
@@ -283,12 +285,7 @@ const SOCIAL_MEDIA_LINKS = [
   },
 ]
 
-const PRIMARY_SOCIAL_COUNT = 4
-
-const ORDERED_SOCIAL_MEDIA_LINKS = SOCIAL_MEDIA_LINKS
-  .map((item, index) => ({ ...item, priority: index < PRIMARY_SOCIAL_COUNT, rank: index + 1 }))
-
-const PRIMARY_SOCIAL_MEDIA_LINKS = ORDERED_SOCIAL_MEDIA_LINKS.slice(0, PRIMARY_SOCIAL_COUNT)
+const PRIMARY_PLATFORM_LINKS = SOCIAL_MEDIA_LINKS.slice(0, 4)
 
 const SOCIAL_MEDIA_TOTALS = {
   followers: '4.3w+',
@@ -384,76 +381,68 @@ function ClassicFeaturedSection({ items }) {
   )
 }
 
-function SocialMediaCard({ item }) {
+function SocialPlatformRow({ item }) {
   const Icon = item.icon
+  const accounts = item.accounts?.length ? item.accounts : [{ label: item.label, href: item.href }]
+  const singleAccount = accounts.length === 1
   const showFollowers = !item.followers.startsWith('<')
   const showReads = !item.reads.startsWith('<')
-  const ariaLabel = [
-    item.label,
-    showFollowers ? `${item.followers} followers` : null,
-    showReads ? `${item.reads} views` : null,
-  ].filter(Boolean).join(', ')
-  const content = (
-    <>
-      <span className="home-social-icon" aria-hidden="true">
-        <Icon size={item.priority ? 24 : 18} stroke={1.8} />
-      </span>
-      <span className="home-social-main">
-        {item.priority ? <small>TOP {item.rank}</small> : null}
-        <strong><T zh={item.label} en={item.labelEn} /></strong>
-      </span>
-      {!item.accounts && (showFollowers || showReads) ? (
-        <span className="home-social-metrics" aria-hidden="true">
-          {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
-          {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
-        </span>
-      ) : null}
-    </>
-  )
+  const ariaLabel = [item.label, ...accounts.map((account) => account.label)].join(' · ')
 
-  if (item.accounts) {
-    return (
-      <div
-        className={item.priority ? 'home-social-card is-priority' : 'home-social-card'}
-        aria-label={ariaLabel}
-        tabIndex={0}
-      >
-        {content}
-        {(showFollowers || showReads) ? (
-          <span className="home-social-metrics" aria-hidden="true">
-            {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
-            {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
-          </span>
-        ) : null}
-        <div className="home-social-account-picker">
-          <div className="home-social-account-links">
-            {item.accounts.map((account) => (
+  const row = (
+    <>
+      <span className="home-platform-icon" aria-hidden="true">
+        <Icon size={20} stroke={1.7} />
+      </span>
+      <span className="home-platform-body">
+        <span className="home-platform-head">
+          <span className="home-platform-name"><T zh={item.label} en={item.labelEn} /></span>
+          {showFollowers || showReads ? (
+            <span className="home-platform-metrics" aria-hidden="true">
+              {showFollowers ? <span><IconUsers size={11} stroke={1.8} />{item.followers}</span> : null}
+              {showReads ? <span><IconEye size={11} stroke={1.8} />{item.reads}</span> : null}
+            </span>
+          ) : null}
+        </span>
+        <span className="home-platform-accounts">
+          {accounts.map((account) => (
+            singleAccount ? (
+              <span key={account.href} className="home-platform-account">{account.label}</span>
+            ) : (
               <a
                 key={account.href}
                 href={account.href}
                 target="_blank"
                 rel="noreferrer"
-                className="no-external-arrow"
+                className="home-platform-account no-external-arrow"
               >
                 {account.label}
               </a>
-            ))}
-          </div>
-        </div>
-      </div>
+            )
+          ))}
+        </span>
+      </span>
+    </>
+  )
+
+  if (singleAccount) {
+    return (
+      <a
+        href={accounts[0].href}
+        target="_blank"
+        rel="noreferrer"
+        className="home-platform-row no-external-arrow"
+        aria-label={ariaLabel}
+      >
+        {row}
+      </a>
     )
   }
 
   return (
-    <a
-      href={item.href}
-      target="_blank"
-      rel="noreferrer"
-      className={item.priority ? 'home-social-card is-priority no-external-arrow group' : 'home-social-card no-external-arrow group'}
-      aria-label={ariaLabel}
-    >
-      {content}
-    </a>
+    <div className="home-platform-row is-multi" role="group" aria-label={ariaLabel}>
+      {row}
+    </div>
   )
 }
 
@@ -478,12 +467,10 @@ function BuilderPanel() {
           </Link>
         </div>
         <HomeSectionCouplet section="platforms" />
-        <div className="home-social-grid">
-          <div className="home-social-priority-grid">
-            {PRIMARY_SOCIAL_MEDIA_LINKS.map((item) => (
-              <SocialMediaCard key={item.label} item={item} />
-            ))}
-          </div>
+        <div className="home-platform-list">
+          {PRIMARY_PLATFORM_LINKS.map((item) => (
+            <SocialPlatformRow key={item.label} item={item} />
+          ))}
         </div>
       </div>
     </section>

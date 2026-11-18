@@ -16,6 +16,9 @@ import {
   normalizeTrendingIndex,
   normalizeTrendingItem,
   resolveSelectedDate,
+  HOME_GITHUB_TRENDING_LIMIT,
+  homeGithubTrendingBlurb,
+  selectHomeGithubTrendingItems,
   trendingJsonUrl,
 } from '../lib/page-data/githubTrending.js'
 
@@ -178,4 +181,52 @@ test('the public page is a server-rendered read-only tool entry', async () => {
   assert.equal(TOOL_ITEMS.some((item) => item.id === 'github-trending' && item.type === 'analysis' && item.href === GITHUB_TRENDING_PATH), true)
   assert.ok(STATIC_PAGE_REGISTRY.some((pageEntry) => pageEntry.path === GITHUB_TRENDING_PATH && pageEntry.indexable && pageEntry.sitemap))
   assert.throws(() => trendingJsonUrl('../secrets.json'))
+})
+
+test('homepage preview keeps at most five compact items and a quiet empty state', () => {
+  const extra = Array.from({ length: 6 }, (_, index) => ({
+    fullName: `owner/repo-${index + 1}`,
+    url: `https://github.com/owner/repo-${index + 1}`,
+    description: index === 1 ? '' : `Desc ${index + 1}`,
+    reason: `Reason ${index + 1}`,
+    stars: 10 + index,
+  }))
+  const preview = selectHomeGithubTrendingItems({
+    status: 'ok',
+    daily: { items: extra },
+  })
+  assert.equal(HOME_GITHUB_TRENDING_LIMIT, 5)
+  assert.equal(preview.length, 5)
+  assert.equal(preview[0].fullName, 'owner/repo-1')
+  assert.equal(preview.at(-1).fullName, 'owner/repo-5')
+  assert.equal(homeGithubTrendingBlurb(preview[0]), 'Desc 1')
+  assert.equal(homeGithubTrendingBlurb(preview[1]), 'Reason 2')
+  assert.deepEqual(selectHomeGithubTrendingItems({ status: 'index-unavailable', daily: null }), [])
+  assert.deepEqual(selectHomeGithubTrendingItems({ status: 'unavailable', daily: { items: extra } }), [])
+  assert.deepEqual(selectHomeGithubTrendingItems({ status: 'ok', daily: { items: [] } }), [])
+})
+
+test('homepage hosts a compact read-only GitHub trending section after the year notes', async () => {
+  const [page, component, helper] = await Promise.all([
+    readFile(new URL('../app/(site)/page.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/(site)/components/HomeGithubTrending.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/page-data/githubTrending.js', import.meta.url), 'utf8'),
+  ])
+  const yearIndex = page.indexOf('<HomeYearSummaryCard')
+  const trendingIndex = page.indexOf('<HomeGithubTrending')
+  const asideIndex = page.indexOf('home-side-stack hidden lg:block')
+  assert.ok(yearIndex >= 0 && trendingIndex > yearIndex)
+  assert.ok(asideIndex > trendingIndex)
+  assert.match(page, /<HomeGithubTrending \/>/)
+  assert.doesNotMatch(page, /hidden lg:block[\s\S]*<HomeGithubTrending/)
+  assert.doesNotMatch(component, /['"]use client['"]/)
+  assert.match(component, /loadGithubTrending/)
+  assert.match(component, /selectHomeGithubTrendingItems/)
+  assert.match(component, /查看全部/)
+  assert.match(component, /href=\{GITHUB_TRENDING_PATH\}/)
+  assert.match(component, /className="home-masonry-item"/)
+  assert.doesNotMatch(component, /hidden lg:block|home-side-stack/)
+  assert.doesNotMatch(component, /raw\.githubusercontent\.com|api\.github\.com/)
+  assert.doesNotMatch(component, /putStar|addStar|watchRepo|followUser|<button/)
+  assert.doesNotMatch(helper, /putStar|addStar|watchRepo|followUser|api\.github\.com/)
 })

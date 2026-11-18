@@ -253,9 +253,9 @@ export default function ShareAdminClient({ embedded = false }) {
     <AdminPage
       title="加密分享"
       embedded={embedded}
-      description="后台保存正文，读者使用密码打开分享链接。可设置有效期或撤销分享；私密 PDF 与文字不会自动生成分享链接。"
+      description="后台保存正文，读者使用密码打开分享链接。可设置有效期或撤销分享；私密 PDF 不会自动生成分享链接。"
     >
-      <p className="mb-5 rounded-xl border border-[#d5d7cd] bg-white p-4 text-sm leading-6 dark:border-[#252e39] dark:bg-[#10161f]">分享链接需使用密码解锁，可设置有效期或随时撤销。创建分享前请确认正文内容；私密 PDF 与文字记录仍仅站长可见。</p>
+      <p className="mb-5 rounded-xl border border-[#d5d7cd] bg-white p-4 text-sm leading-6 dark:border-[#252e39] dark:bg-[#10161f]">分享链接需使用密码解锁，可设置有效期或随时撤销。创建分享前请确认正文内容；私密 PDF 仍仅站长可见。</p>
       {/* 列表 */}
       <section className="mb-8">
         <div className="mb-3 flex items-baseline justify-between">

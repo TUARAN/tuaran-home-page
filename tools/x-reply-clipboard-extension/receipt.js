@@ -247,6 +247,15 @@
     if (taskMode) {
       row.taskCounts = row.taskCounts && typeof row.taskCounts === "object" ? row.taskCounts : {};
       row.taskCounts[taskMode] = Math.max(0, Number(row.taskCounts[taskMode]) || 0) + 1;
+      const occurredAt = Number(event.occurredAt) || Date.now();
+      const floor = Date.now() - 3 * 24 * 60 * 60 * 1000;
+      row.confirmedTimesByTask = row.confirmedTimesByTask && typeof row.confirmedTimesByTask === "object" ? row.confirmedTimesByTask : {};
+      const existing = Array.isArray(row.confirmedTimesByTask[taskMode]) ? row.confirmedTimesByTask[taskMode] : [];
+      row.confirmedTimesByTask[taskMode] = [...existing, occurredAt]
+        .map((at) => Number(at))
+        .filter((at) => Number.isFinite(at) && at >= floor)
+        .sort((a, b) => a - b)
+        .slice(-80);
     }
     syncCommentTotal(row.counts);
     row.eventIds = [...row.eventIds, event.id].slice(-300);

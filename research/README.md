@@ -153,9 +153,11 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 
 普通文章直接从核心结论、文章原文、具体问题 / 事实或作者亲历场景开始。不要在顶部放"写在前面：资料口径与观察立场"或"信息来源说明"。
 
-### 可视化图表（沿用既有组件）
+### 可视化图表
 
-站点已内置内嵌 SVG 图表组件，**写调研时复用，不要新建组件或引入图表库**。在正文需要位置插入一个带 `research-inline-diagram` 类的 `figure`，内含 `svg`，可选 `figcaption`：
+站点已内置内嵌 SVG 图表组件，写调研时可以直接复用。既有组件覆盖不到的可视化形态，**可以新建组件或引入图表库**；新增部分仍遵守 `docs/specs/site-design-language.md` 的明暗主题与可访问性要求，以及 `AGENTS.md` 的运行时约束。
+
+内嵌 SVG 图表的写法是在正文需要位置插入一个带 `research-inline-diagram` 类的 `figure`，内含 `svg`，可选 `figcaption`：
 
 ```markdown
 <figure class="research-inline-diagram">
@@ -167,15 +169,38 @@ pv: 0                        # 阅读量（可选，列表页与详情页展示�
 </figure>
 ```
 
-渲染器会给这类 `figure` 自动加点击放大，明暗主题各有样式，无需额外脚本。约束与理由：
+渲染器会给这类 `figure` 自动加点击放大，明暗主题各有样式，无需额外脚本。内嵌 SVG 图表的约束与理由：
 
-- **标签、属性走安全白名单**，实现见 `lib/research/markdown.js` 的 `SAFE_DIAGRAM_TAGS` / `SAFE_DIAGRAM_ATTRS`。可用 `svg / g / rect / circle / ellipse / line / path / polyline / text / marker / defs / figure / figcaption`。`style`、`href`、`src`、任何 `on*` 事件属性、`<title>`/`<desc>`、`font-family`、`dominant-baseline`、`xmlns` 都不在白名单，带这些的整块图会被当成转义文本显示。
-- **文字垂直定位用 `y` 基线加估算偏移**，不要依赖 `dominant-baseline`；对齐用 `text-anchor`，字号用 `font-size`，字重用 `font-weight`。多字节中文按约 13px `font-size` ≈ 13px 宽估算框宽，宁宽勿窄。
-- **颜色保证明暗主题都可读**：整套配色写进内联 `fill` / `stroke`；优先浅色填充（如 `#E6F1FB`）配深色文字（如 `#0C447C`），避免深色填充配深色文字。箭头用 `<marker>` + `marker-end="url(#id)"`，`defs` 放在 `figure` 内。
+- **标签、属性走安全白名单**，实现见 `lib/research/markdown.js` 的 `SAFE_DIAGRAM_TAGS` / `SAFE_DIAGRAM_ATTRS`。可用 `svg / g / defs / rect / circle / ellipse / line / polyline / polygon / path / text / tspan / marker / linearGradient / radialGradient / stop / figure / figcaption`。渐变与多边形所需的 `points`、`offset`、`stop-color`、`stop-opacity`、`gradientUnits`、`gradientTransform`、`spreadMethod`、`fx`、`fy`、`fr`、`dx`、`dy`、`fill-opacity`、`stroke-opacity`、`fill-rule` 等属性已在白名单内。`style`、`href`、`xlink:href`、`src`、任何 `on*` 事件属性、`<title>`/`<desc>`/`<foreignObject>`/`<filter>`/`<script>`、`font-family`、`dominant-baseline`、`xmlns` 都不在白名单，带这些的整块图会被当成转义文本显示。`fill` 值可以是 `url(#id)` 引用 `defs` 里的渐变，但不能是 `javascript:` / `data:` / `vbscript:`。
+- **统一色板优先用语义类**：`figure` 内可用 `sem-*` 系列语义色类（如 `sem-core`、`sem-good`、`sem-warn`、`sem-risk`、`sem-mute`、`sem-surface`、`sem-edge`），配色由 `app/globals.css` 统一维护，明暗各一套，契约见 `docs/specs/site-design-language.md`。需要精确控制时仍可用内联 `fill` / `stroke`，但要自行保证明暗两套都可读。
+- **文字垂直定位用 `y` 基线加估算偏移**，不要依赖 `dominant-baseline`；对齐用 `text-anchor`，字号用 `font-size`，字重用 `font-weight`。多行文字用 `<tspan x="…" dy="…">`，不要用 `<foreignObject>`。多字节中文按约 13px `font-size` ≈ 13px 宽估算框宽，宁宽勿窄。
+- **颜色保证明暗主题都可读**：优先浅色填充（如 `#E6F1FB`）配深色文字（如 `#0C447C`），避免深色填充配深色文字。箭头用 `<marker>` + `marker-end="url(#id)"`，`defs` 放在 `figure` 内。
 - **图和正文共用一个事实口径**：图里的数字、日期、名称与正文及信息来源一致；不确定的推断标为推断，不把估算值画成确定结构。
 - **一图一结论**：每幅图配 `figcaption` 讲清判断，`aria-label` 给读屏与放大视图简述；一张图只表达一层关系（结构、分工、时间线、流程择一），复杂关系拆成多张，别堆成一张大图。
 - **先写能站住的事实，再决定要不要配图**。图服务于判断，缺图不影响结论时可不配；用来承载关键判断的图才值得做。
 - **正文有内嵌图表时关掉自动氛围图**。frontmatter 设 `auto_images: false`，避免渲染层再从氛围图池抽一张无关的 Unsplash 图插进正文，与图表重复；这类外链图加载失败还会显示裂图。已有 `research-inline-diagram` 的调研按此处理。
+
+#### 彩色语义标签与彩色表格
+
+表格和正文里的分类、状态、量级用**成对语义标签**标注，写法与 `[!red]…[/!red]` 一致，颜色由站点统一维护，明暗主题各一套：
+
+```markdown
+| 层次 | 状态 | 判断 |
+|---|---|---|
+| 数据来源 | [!good]已核验[/!good] | 一手公开文本 |
+| 估算值 | [!warn]待核[/!warn] | 区间口径，引用前回查 |
+| 单点转述 | [!risk]高风险[/!risk] | 未见原始出处 |
+
+关键结论落在 [!core]核心判断[/!core]，补充说明用 [!mute]次要[/!mute]。
+```
+
+可用类别只有 `core`（核心）、`good`（正向 / 已核验）、`warn`（提示 / 待核）、`risk`（风险 / 否定）、`mute`（次要 / 中性）。渲染成 `<span class="sem-tag sem-tag--类别">文字</span>`，标签内容会被转义，不解析内嵌 HTML；类别名不在清单内时整段按普通文本输出。配套样式见 `app/globals.css` 的 `.sem-tag` 与 `docs/specs/site-design-language.md`。
+
+约束：
+
+- **状态不能只靠颜色表达**。标签文字里要直接写出「已核验」「待核」「高风险」这类状态词；颜色只作辅助，读屏、灰度打印和深色模式下判断仍要成立。
+- **一表一类语义**。一张表里语义标签承担的维度保持单一（都表示状态，或都表示分类），避免同一张表既标状态又标量级，读者无法从颜色反推含义。
+- **汇总图仍守「一图一结论」**。信息密度更高的汇总大图挂 `research-inline-diagram`，表达的是同一层关系下的完整清单；跨层的派生、时间线、流程仍拆成各自的图，别把所有关系压进一张图。汇总图配一张语义表格承载逐项明细，图和表共用同一套事实口径。
 
 ### 边界说明
 

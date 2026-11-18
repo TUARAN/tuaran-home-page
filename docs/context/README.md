@@ -15,6 +15,7 @@
 | [content-layer-refactor-plan.md](content-layer-refactor-plan.md) | 内容层抽象重构工作底稿（2026-05-30） | 多周渐进计划，推进状态以文内勾选为准 |
 | [content-information-architecture.md](content-information-architecture.md) | 内容分类契约、治理规则与新访客起点指标 | 修改导航、目录、分类或行为埋点前引用 |
 | [content-proof-prototype.md](content-proof-prototype.md) | 内容指纹、副本、锚定和开放验证器 | 维护内容证明时引用 |
+| [content-visualization-alignment.md](content-visualization-alignment.md) | 内容可视化方案与 WorkBuddy 的对照、彩色契约与分阶段落地 | 2026-11-18 记录；阶段 0–2 已落地（彩色契约、试点大图与彩色表格），阶段 3–4 待排期；改动内容渲染链路前引用 |
 | [seo-geo-growth-roadmap.md](seo-geo-growth-roadmap.md) | SEO / GEO 现状审计、内容增长方向、分阶段任务与验收标准 | 2026-09-08 基线；后台 `/admin/seo` 直接读取，进度以文内清单为准 |
 | [ui-ux-audit-roadmap.md](ui-ux-audit-roadmap.md) | UI / 交互页面问题、证据边界、10 项改造任务与复测矩阵 | 2026-09-08 首轮记录；后台 `/admin/design` 直接读取。视觉规范沿用 [docs/specs/site-design-language.md](../specs/site-design-language.md) |
 | [site-health-audit.md](site-health-audit.md) | 流量、错误率、缓存与运行负载 | 后台 `/admin/site-health` 直接读取 |

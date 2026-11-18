@@ -683,6 +683,26 @@
   --kb-heat-4: #d97706;
   --site-header-height: 53px;
   --site-tabbar-height: 52px;
+
+  /* 内容可视化语义色板（浅色）：供内嵌 SVG 汇总图与彩色表格共用。
+     低饱和，形状用浅填充配深文字，状态同时写在文字里，颜色只作辅助。 */
+  --sem-core-bg: #e6f1fb;
+  --sem-core-ink: #0c447c;
+  --sem-core-line: #185fa5;
+  --sem-good-bg: #e1f5ee;
+  --sem-good-ink: #0b5a45;
+  --sem-good-line: #0f6e56;
+  --sem-warn-bg: #fbf0dc;
+  --sem-warn-ink: #7a4b12;
+  --sem-warn-line: #b07a2a;
+  --sem-risk-bg: #fbe9e7;
+  --sem-risk-ink: #8a2f27;
+  --sem-risk-line: #b0433a;
+  --sem-mute-bg: #eef0ed;
+  --sem-mute-ink: #4b514b;
+  --sem-mute-line: #a6aca4;
+  --sem-surface: #ffffff;
+  --sem-edge: #c7ccc4;
 }
 
 .dark {
@@ -740,6 +760,25 @@
   --kb-heat-4: #fbbf24;
   --site-header-height: 53px;
   --site-tabbar-height: 52px;
+
+  /* 内容可视化语义色板（深色）：单独定义，不靠透明度从浅色自动推导。 */
+  --sem-core-bg: #16293b;
+  --sem-core-ink: #bcd8f2;
+  --sem-core-line: #5b8fc4;
+  --sem-good-bg: #152b23;
+  --sem-good-ink: #b3e2c9;
+  --sem-good-line: #4a9d77;
+  --sem-warn-bg: #2e2412;
+  --sem-warn-ink: #ecd6a6;
+  --sem-warn-line: #bd944a;
+  --sem-risk-bg: #301b19;
+  --sem-risk-ink: #f0c4bd;
+  --sem-risk-line: #c47066;
+  --sem-mute-bg: #222420;
+  --sem-mute-ink: #c3c7be;
+  --sem-mute-line: #6b7067;
+  --sem-surface: #171512;
+  --sem-edge: #4a4841;
 }
 
 :root[data-ui='classic'] {
@@ -9171,6 +9210,57 @@
       box-shadow: none;
     }
   }
+
+  /* 内容可视化彩色契约：内嵌 SVG 汇总图的语义形状类。
+     作者只写语义（core/good/warn/risk/mute），配色由 --sem-* 令牌统一维护，明暗各一套。
+     SVG 的 fill/stroke 属性是 presentation attribute，优先级低于这里的类规则，
+     所以类会覆盖内联配色，保证站点统一；需要精确控制时仍可改用属性写法。
+     契约与写法见 docs/specs/site-design-language.md 与 research/README.md。 */
+  .prose-tuaran .research-inline-diagram .sem-core { fill: var(--sem-core-bg); stroke: var(--sem-core-line); }
+  .prose-tuaran .research-inline-diagram .sem-good { fill: var(--sem-good-bg); stroke: var(--sem-good-line); }
+  .prose-tuaran .research-inline-diagram .sem-warn { fill: var(--sem-warn-bg); stroke: var(--sem-warn-line); }
+  .prose-tuaran .research-inline-diagram .sem-risk { fill: var(--sem-risk-bg); stroke: var(--sem-risk-line); }
+  .prose-tuaran .research-inline-diagram .sem-mute { fill: var(--sem-mute-bg); stroke: var(--sem-mute-line); }
+
+  .prose-tuaran .research-inline-diagram .sem-core-ink { fill: var(--sem-core-ink); stroke: none; }
+  .prose-tuaran .research-inline-diagram .sem-good-ink { fill: var(--sem-good-ink); stroke: none; }
+  .prose-tuaran .research-inline-diagram .sem-warn-ink { fill: var(--sem-warn-ink); stroke: none; }
+  .prose-tuaran .research-inline-diagram .sem-risk-ink { fill: var(--sem-risk-ink); stroke: none; }
+  .prose-tuaran .research-inline-diagram .sem-mute-ink { fill: var(--sem-mute-ink); stroke: none; }
+
+  .prose-tuaran .research-inline-diagram .sem-surface { fill: var(--sem-surface); stroke: var(--sem-edge); }
+  .prose-tuaran .research-inline-diagram .sem-edge { fill: none; stroke: var(--sem-edge); }
+  .prose-tuaran .research-inline-diagram .sem-grad-start { stop-color: var(--sem-core-bg); }
+  .prose-tuaran .research-inline-diagram .sem-grad-end { stop-color: var(--sem-core-line); }
+
+  /* 彩色语义标签：正文与表格单元格共用。状态词本身写在文字里，颜色只作辅助。 */
+  .prose-tuaran .sem-tag {
+    display: inline-block;
+    padding: 0.08rem 0.42rem;
+    border: 1px solid var(--sem-mute-line);
+    border-radius: 0.4rem;
+    background: var(--sem-mute-bg);
+    color: var(--sem-mute-ink);
+    font-size: 0.78em;
+    font-weight: 650;
+    line-height: 1.6;
+    vertical-align: baseline;
+    white-space: nowrap;
+  }
+
+  .prose-tuaran .sem-tag--core { border-color: var(--sem-core-line); background: var(--sem-core-bg); color: var(--sem-core-ink); }
+  .prose-tuaran .sem-tag--good { border-color: var(--sem-good-line); background: var(--sem-good-bg); color: var(--sem-good-ink); }
+  .prose-tuaran .sem-tag--warn { border-color: var(--sem-warn-line); background: var(--sem-warn-bg); color: var(--sem-warn-ink); }
+  .prose-tuaran .sem-tag--risk { border-color: var(--sem-risk-line); background: var(--sem-risk-bg); color: var(--sem-risk-ink); }
+  .prose-tuaran .sem-tag--mute { border-color: var(--sem-mute-line); background: var(--sem-mute-bg); color: var(--sem-mute-ink); }
+
+  /* 表格里带语义标签的单元格补一条左侧色条，形成可扫读的彩色列。
+     用 inset 阴影而非背景色，避免覆盖斑马纹与 hover；不支持 :has() 的浏览器仍有彩色标签。 */
+  .prose-tuaran .table-scroll > table tbody td:has(> .sem-tag--core) { box-shadow: inset 3px 0 0 var(--sem-core-line); }
+  .prose-tuaran .table-scroll > table tbody td:has(> .sem-tag--good) { box-shadow: inset 3px 0 0 var(--sem-good-line); }
+  .prose-tuaran .table-scroll > table tbody td:has(> .sem-tag--warn) { box-shadow: inset 3px 0 0 var(--sem-warn-line); }
+  .prose-tuaran .table-scroll > table tbody td:has(> .sem-tag--risk) { box-shadow: inset 3px 0 0 var(--sem-risk-line); }
+  .prose-tuaran .table-scroll > table tbody td:has(> .sem-tag--mute) { box-shadow: inset 3px 0 0 var(--sem-mute-line); }
 
   /* 公共数据表：正文 Markdown 与手写页面共用同一套表格语言。
      role=grid 的热力图、棋盘等可视化，以及显式 custom 的表格不参与。 */

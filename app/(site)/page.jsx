@@ -180,8 +180,8 @@ const SOCIAL_MEDIA_LINKS = [
     reads: '55.6w',
     icon: IconCode,
     accounts: [
-      { label: '掘金安东尼', href: 'https://blog.csdn.net/aifs2025' },
-      { label: '安东尼与AI', href: 'https://blog.csdn.net/Anthony1453' },
+      { label: '掘金安东尼', href: 'https://blog.csdn.net/Anthony1453' },
+      { label: '安东尼与AI', href: 'https://blog.csdn.net/aifs2025' },
     ],
   },
   {

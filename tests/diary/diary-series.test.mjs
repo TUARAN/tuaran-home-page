@@ -163,6 +163,45 @@ test('下班的时候 keeps the reviewed oral draft verbatim', () => {
   )
 })
 
+test('全面拥抱 xAI：从多订阅到一个池 keeps the confirmed draft verbatim', () => {
+  const article = diaryArticle()
+  const { heading, blocks } = diaryEntry(article, '全面拥抱 xAI：从多订阅到一个池')
+  const text = blocks.join('\n\n')
+  assert.equal(heading.date, '2026-11-19')
+  assert.equal(heading.category, 'AI 与工程')
+  assert.equal(heading.sourceNote, undefined)
+  assert.equal(
+    text,
+    [
+      '今天正式从旧的 Cursor Pro+ + X Premium 切到 The X Subscription 的 Super。',
+      '**背景**',
+      '过去一段时间，Cursor、Grok、Grok Bot、X Premium 是四套独立的东西。Cursor 有自己的月度额度，Grok Bot 有自己的周额度，两边经常错峰用完。用得深的时候，两边同时撞墙的情况越来越频繁。官方把新计划推出来之后，旧计划还能继续用，但分账、分额度、分重置时间的体验已经开始显得别扭。',
+      '**决策**',
+      '切到 Super 主要看三点：',
+      '1. **统一**。Grok Chat、Grok Bot、Cursor 的 first-party 模型共用一个每周池。不再需要在两个产品之间计算“这边还剩多少、那边还能撑几天”。',
+      '2. **用量**。官方对应关系是旧 Pro+ → Super。15x 的池子比原来分开的两个额度更可控，也更适合同时跑代码和 Agent。',
+      '3. **方向**。xAI 把 Grok、Cursor、X 绑在一起，不是简单的套餐捆绑，而是把模型、工具、分发放在同一个体系里。继续在旧计划上，等于主动把一部分能力留在外面。',
+      '第三方模型不再包含，需要单独买 Credits。这点是明确的取舍：如果日常主要用 Grok 系列，共享池的效率更高；如果重度依赖 Claude / GPT，成本会上升。我的用法偏前者，所以这个取舍可以接受。',
+      '**现在的状态**',
+      '- 计划：Super（Renews Dec 19）',
+      '- 额度：0% used，本周重置 Nov 26',
+      '- 旧计划按剩余时间比例退款，单独退回原支付方式',
+      '从今天开始，代码、Agent、对话、内容分发，都在同一个池子里跑。不再为“哪个产品还有额度”分心，直接用。',
+      '全面拥抱 xAI，不是因为新计划一定更便宜，而是因为方向已经清楚了。',
+      '**补记**',
+      '大约 7、8 月，Claude 被封。之后冲了 2 个 Codex 账号，再升级冲 Pro Codex 大概 2、3 次，Cursor 大概 1、2 次。这段期间，WorkBuddy 订阅也升级了 2 次以上。再到现在：冲过 60 美元的 Cursor，冲过 Codex Plus，再到冲 Super。感觉光在花钱，而且切来切去，很烦，苦模型不够久矣。',
+      '*补记由站长口述，Bots 整理。*',
+    ].join('\n\n'),
+  )
+  assert.doesNotMatch(text, /^# 全面拥抱 xAI/)
+  assert.doesNotMatch(text, /2026年11月19日/)
+  assert.equal(article.content[0].label, '全面拥抱 xAI：从多订阅到一个池')
+  assert.deepEqual(
+    diaryContentFromMarkdown(legacyArticleToMarkdown({ content: [heading, ...blocks] })),
+    [heading, ...blocks],
+  )
+})
+
 test('Token 不够用 keeps the reviewed oral draft verbatim', () => {
   const article = diaryArticle()
   const { heading, blocks } = diaryEntry(article, 'Token 不够用')
@@ -184,7 +223,7 @@ test('Token 不够用 keeps the reviewed oral draft verbatim', () => {
   assert.doesNotMatch(text, /^# Token 不够用/)
   assert.doesNotMatch(text, /2026年11月18日/)
   assert.doesNotMatch(text, /本文由站长口述/)
-  assert.equal(article.content[0].label, 'Token 不够用')
+  assert.equal(article.content[0].label, '全面拥抱 xAI：从多订阅到一个池')
   assert.deepEqual(
     diaryContentFromMarkdown(legacyArticleToMarkdown({ content: [heading, ...blocks] })),
     [heading, ...blocks],
@@ -216,21 +255,22 @@ test('homepage preview uses the same series and leads with the latest record', (
   const preview = previewFromDiary(diaryArticle())
   assert.equal(preview.title, '浮生日记')
   assert.equal(preview.startedOn, '2026-01-05')
-  assert.equal(preview.entries[0].label, 'Token 不够用')
-  assert.equal(preview.entries[0].span, '2026-11-18')
-  assert.match(preview.entries[0].lead, /我越来越觉得/)
-  assert.match(preview.entries[0].closing, /我想先把这个现象记下/)
-  assert.equal(preview.entries[0].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.equal(preview.entries[1].label, '避而不谈的问题')
+  assert.equal(preview.entries[0].label, '全面拥抱 xAI：从多订阅到一个池')
+  assert.equal(preview.entries[0].span, '2026-11-19')
+  assert.match(preview.entries[0].lead, /今天正式从旧的 Cursor Pro\+ \+ X Premium 切到/)
+  assert.match(preview.entries[0].closing, /补记由站长口述，Bots 整理/)
+  assert.equal(preview.entries[0].sourceNote, '')
+  assert.equal(preview.entries[1].label, 'Token 不够用')
   assert.equal(preview.entries[1].span, '2026-11-18')
-  assert.match(preview.entries[1].lead, /有什么问题，是在我和你的对话当中/)
-  assert.equal(preview.entries[1].sourceNote, '我的问题 · 豆包的回答 · 原文照录')
+  assert.match(preview.entries[1].lead, /我越来越觉得/)
+  assert.equal(preview.entries[1].sourceNote, DIARY_ORAL_SOURCE_NOTE)
   assert.equal(preview.entries[0].detail, '')
-  assert.equal(preview.entries[2].label, '每天接受检验')
-  assert.equal(preview.entries[2].span, '2026-11-17')
-  assert.equal(preview.entries[2].sourceNote, DIARY_ORAL_SOURCE_NOTE)
-  assert.equal(preview.entries[3].label, '下班的时候')
-  assert.equal(preview.entries[3].span, '2026-11-16')
+  assert.equal(preview.entries[2].label, '避而不谈的问题')
+  assert.equal(preview.entries[2].span, '2026-11-18')
+  assert.match(preview.entries[2].lead, /有什么问题，是在我和你的对话当中/)
+  assert.equal(preview.entries[2].sourceNote, '我的问题 · 豆包的回答 · 原文照录')
+  assert.equal(preview.entries[3].label, '每天接受检验')
+  assert.equal(preview.entries[3].span, '2026-11-17')
   assert.equal(preview.entries[3].sourceNote, DIARY_ORAL_SOURCE_NOTE)
   assert.equal(preview.entries.length, 4)
   assert.ok(preview.entries.slice(4).every((entry) => !entry.sourceNote))
@@ -241,7 +281,7 @@ test('homepage preview uses the same series and leads with the latest record', (
 
 test('an older published snapshot does not hide a later repository entry', () => {
   const archived = diaryArticle()
-  assert.equal(archived.content[0].label, 'Token 不够用')
+  assert.equal(archived.content[0].label, '全面拥抱 xAI：从多订阅到一个池')
   assert.ok(archived.content.some((block) => block?.label === '避而不谈的问题'))
   const firstOldEntry = archived.content.findIndex((block) => block?.label === '异世界的冲击')
   assert.ok(firstOldEntry > 0)

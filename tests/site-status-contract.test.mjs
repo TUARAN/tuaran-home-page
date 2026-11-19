@@ -34,16 +34,26 @@ test('status banner can dismiss one incident without hiding future updates', asy
 })
 
 test('monitor route is secret protected and status storage is independent from D1', async () => {
-  const [monitor, store, workflow] = await Promise.all([
+  const [monitor, store, workflow, runbook, wrangler, worker] = await Promise.all([
     read('../app/api/site-status/monitor/route.js'),
     read('../lib/site/siteStatusStore.js'),
     read('../.github/workflows/site-status-monitor.yml'),
+    read('../docs/runbooks/site-status-automation.md'),
+    read('../workers/site-status-scheduler/wrangler.jsonc'),
+    read('../workers/site-status-scheduler/src/index.js'),
   ])
   assert.match(monitor, /x-site-status-secret/)
   assert.match(monitor, /safeEqual/)
   assert.match(store, /CONTENT_FEED/)
   assert.doesNotMatch(store, /env\?\.DB|getD1/)
-  assert.match(workflow, /cron: '\*\/5 \* \* \* \*'/)
+  assert.doesNotMatch(workflow, /cron: '\*\/5 \* \* \* \*'/)
+  assert.match(workflow, /cron: '17,47 \* \* \* \*'/)
+  assert.match(workflow, /备份探活，不是主心跳/)
+  assert.match(wrangler, /"crons": \["\*\/5 \* \* \* \*"\]/)
+  assert.match(worker, /runIndependentProbes/)
+  assert.match(runbook, /主跑手.*site-status-scheduler/s)
+  assert.match(runbook, /现在还没有上线/)
+  assert.match(runbook, /每 30 分钟/)
 })
 
 test('admin navigation exposes incidents through the unified operations center', async () => {

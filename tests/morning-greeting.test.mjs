@@ -497,3 +497,12 @@ test('joke similarity guard ignores rotating hooks and blocks exact or near dupl
   ), true)
   assert.equal(isXJokeTooSimilar('突然发现：\n咖啡买得很及时\n工作还是没醒', [recent]), false)
 })
+
+test('X 自动发帖工作流已去掉 schedule，只保留手动触发', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/morning-greeting.yml', import.meta.url), 'utf8')
+  assert.doesNotMatch(workflow, /cron:/)
+  assert.match(workflow, /workflow_dispatch:/)
+  assert.match(workflow, /2026-11-19 站长停掉自动发帖。保留手动入口，恢复时再加回 schedule。/)
+  assert.match(workflow, /node scripts\/run-x-auto-posts.mjs/)
+})
+

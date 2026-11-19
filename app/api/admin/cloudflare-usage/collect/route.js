@@ -1,6 +1,6 @@
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 import { safeEqual } from '../../../../../lib/auth/ownerAuth'
-import { usageCollectFailureStatus } from '../../../../../lib/site/cloudflareUsage'
+import { annotateUsageCollectError, usageCollectFailureStatus } from '../../../../../lib/site/cloudflareUsage'
 import { collectScheduledUsage } from '../../../../../lib/site/cloudflareUsageOps'
 
 export const runtime = 'edge'
@@ -19,6 +19,7 @@ export async function POST(request) {
     const result = await collectScheduledUsage(env)
     return Response.json({ ok: true, ...result })
   } catch (error) {
-    return Response.json({ ok: false, error: String(error?.message || error) }, { status: usageCollectFailureStatus(error) })
+    const annotated = annotateUsageCollectError(error)
+    return Response.json({ ok: false, error: String(annotated.message || annotated) }, { status: usageCollectFailureStatus(annotated) })
   }
 }

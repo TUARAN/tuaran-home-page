@@ -322,7 +322,7 @@ test('missing Send retries, records an alert, and finishes without marking the p
 
 test('a completed batch releases the scheduled task slot', async () => {
   const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
-  const start = source.indexOf('async function completeCommunityShare(sender, status) {')
+  const start = source.indexOf('async function completeCommunityShare(sender, status, mode = "community-share") {')
   const end = source.indexOf('async function removeRuntimeTab(', start)
   assert.ok(start >= 0 && end > start)
   const plan = { enabled: true, current: 'community-share', workTabId: 7, startedAt: 123, items: { 'community-share': {} } }

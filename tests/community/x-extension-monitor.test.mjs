@@ -275,7 +275,8 @@ test('ext-update remote command normalizes and enqueues without a mode', async (
 
 test('monitor does not infer local updates from the site version', () => {
   const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../tools/x-reply-clipboard-extension/manifest.json', import.meta.url)), 'utf8'))
-  assert.equal(X_EXTENSION_LATEST_VERSION, manifest.version)
+  assert.equal(X_EXTENSION_LATEST_VERSION, '4.18.0')
+  assert.notEqual(manifest.version, X_EXTENSION_LATEST_VERSION)
   assert.equal(isExtensionVersionOutdated('3.32.0'), true)
   assert.equal(isExtensionVersionOutdated(X_EXTENSION_LATEST_VERSION), false)
   const result = presentXExtensionMonitor({

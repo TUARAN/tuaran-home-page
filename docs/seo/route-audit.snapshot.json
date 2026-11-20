@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 246,
+    "routes": 247,
     "redirects": 23,
-    "private": 61,
+    "private": 62,
     "registeredStatic": 118,
     "indexable": 139,
     "canonical": 158,
@@ -310,6 +310,22 @@
     {
       "path": "/admin/bookmark-nav",
       "file": "app/(admin)/admin/bookmark-nav/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/branch-rules",
+      "file": "app/(admin)/admin/branch-rules/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,

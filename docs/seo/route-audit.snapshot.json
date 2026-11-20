@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 247,
+    "routes": 246,
     "redirects": 23,
-    "private": 62,
+    "private": 61,
     "registeredStatic": 118,
     "indexable": 139,
     "canonical": 158,
@@ -808,22 +808,6 @@
     {
       "path": "/admin/projects",
       "file": "app/(admin)/admin/projects/page.jsx",
-      "kind": "private",
-      "registered": false,
-      "indexable": false,
-      "sitemap": false,
-      "signals": {
-        "canonical": false,
-        "canonicalValues": [],
-        "noindex": "inherited",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
-      }
-    },
-    {
-      "path": "/admin/quotes",
-      "file": "app/(admin)/admin/quotes/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,

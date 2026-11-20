@@ -1,9 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import Link from 'next/link'
 import tableStyles from '../../../components/book-reader/bookDataTable.module.css'
 import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
-import { X_EXTENSION_LATEST_VERSION } from '../../../../../lib/community/xExtensionVersion'
 import { getResourceDelivery } from '../../../../../lib/content/resourceCatalog'
 import ManualPaper from '../../../components/book-reader/ManualPaper'
 import PageContainer from '../../../components/PageContainer'
@@ -23,6 +24,8 @@ const DOCS_PATH = `/resources/${RESOURCE_SLUG}/docs`
 const RESOURCE_PATH = `/resources/${RESOURCE_SLUG}`
 const DOCS_URL = `https://2aran.com${DOCS_PATH}`
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || '待核对'
+// 本地源码版本以 manifest 为准；未打包前不等于下载包版本。
+const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
 
 const title = 'X 大互动智能体黄皮书'
 const description =
@@ -107,6 +110,19 @@ const VERSION_ERAS = [
       '长时间没有动作或报错会在原页签刷新。右上角「重置」清任务记录，模型配置和回执密钥留下。',
     ],
   },
+  {
+    id: 'era-v5',
+    version: 'v5',
+    title: '对话主界面',
+    span: '5.0 起 · 本地测试',
+    oneLiner: '主界面改成对话框，排班台成为高级入口；执行底座仍是 v4 的单页签排班。',
+    points: [
+      '对话里的大互动智能体读真实运行状态回答，今天做了多少、哪里报警、下一项是谁，读不到就说读不到。',
+      '左侧分组图标：模型、提示词、频率、名单、报告、监控、工具、排班；会话列只在对话页出现。',
+      '5.1 起调度判断抽成任务引擎 v6，执行器改为有界循环；对话接入 Harness v2，只读工具自动查询，暂停全部、开始全部只给确认按钮。',
+      '评论、发帖、关注上限与冷却不变，不绕开 X 的自动化检测。',
+    ],
+  },
 ]
 
 const TOC = [
@@ -172,7 +188,7 @@ const SINGLE_BUTTON_ROWS = [
   ['连续受限', '需处理 · 点击启动', '仅适用于点赞、关注和发帖；确认账号状态后可单独重新启动。评论任务继续显示等待倒计时。'],
   ['已经手动停止 / 空闲', '已停止 · 点击启动', '单独恢复或启动该任务，不重启其他任务。'],
   ['正在停止', '等待中 · 请稍候', '暂不可点击；正在停止归入等待中。'],
-  ['正在确认页内启动', '启动中 · 约 X · 请稍候', '子页按钮不可点，并显示确认剩余时间；手动任务会先尝试在执行页启动。仍未确认时自动重试，任何排班任务连续三次未确认都会跳过并显示最近原因。页面已经回报超过限制或本次结束时，不再进入这次确认。'],
+  ['正在确认页内启动', '启动中 · 约 X · 请稍候', '子页按钮不可点，并显示确认剩余时间；手动任务会先尝试在执行页启动。仍未确认时自动重试；连续三次未确认后，自动重新请求启动一次并切回原执行页签，仍未确认就至少等 5 分钟再排班，并显示最近原因。页面已经回报超过限制或本次结束时，不再进入这次确认。'],
 ]
 
 function Section({ id, index, title: sectionTitle, summary, children }) {
@@ -283,20 +299,21 @@ export default function XReplyClipboardDocsPage() {
               <li>点右上角「开始」启动排班。「全自动排班」负责勾选全部任务；单项暂停在任务子页，全停用「暂停全部」。</li>
               <li>能运行的任务按队列轮到就跑一次，然后回到队尾。还没到时间的先跳过。普通等待可通过「立即开启」排到队首；共享关注冷却、风控与每日额度继续生效。</li>
             </ol>
-            <p>当前说明核对至本地源码 v{X_EXTENSION_LATEST_VERSION}（2026-11-17）；站内下载包配置为 v{DOWNLOAD_VERSION}，与当前源码版本对齐，实际交付以下载文件为准。多配置后台长时间持续运行仍需验证。</p>
+            <p>当前说明核对至本地源码 v{SOURCE_VERSION}（2026-11-20）。站内下载包是 v{DOWNLOAD_VERSION}，实际交付以下载文件为准；标为「本地测试」的功能还没有打包，下载包里没有。多配置后台长时间持续运行仍需验证。</p>
+            <p className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 text-[13px] leading-6">本地测试 v5：打开面板先看到对话框。可以直接问「今天评论了多少」「最近有报警吗」「下一项是什么」，大互动智能体读插件记录后回答；需要暂停全部或开始全部时，对话只给确认按钮，点了才执行。排班台改为左侧图标栏里的「排班」，模型、提示词、频率、名单从图标栏进入设置。上面五步在 v5 里照样适用，入口位置不同。</p>
           </Section>
 
           <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">
             <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
-              <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">当前系统结构图 · 本地 v4 源码</h3>
-              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 18 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
+              <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">系统结构图 · v4 单页签底座</h3>
+              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 19 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
               <figure className="m-0">
                 <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
                   <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 大互动智能体的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
                 </a>
-                <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据当前本地 v4 源码梳理的组件与数据流。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
+                <figcaption className="mt-2 text-[12px] leading-6 text-[var(--site-faint)]">图 1 · 依据 v4 源码梳理的组件与数据流。本地 v5 在这层底座上加了对话主界面；v5.1 把调度判断抽成任务引擎 v6，对话经 Harness v2 只读排班、今日数据、报警和调度记录，图中的数据流不变。箭头表示调用或回传路径，不表示所有动作都经过模型，也不表示站内下载包已包含本地开发功能。窄屏可横向滚动，点击可查看原图。</figcaption>
               </figure>
-              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 4 项、发帖 6 项、社群 1 项、清理 2 项，共 18 项。关注里包含回关、关注候选、清理未回关和清理非简中。它们按队列占用执行页签，不会同时在这一页签执行。</p>
+              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">评论 3 项、点赞 2 项、关注 4 项、发帖 6 项、社群 2 项、清理 2 项，共 19 项。社群包含社群分发和社群问安。关注里包含回关、关注候选、清理未回关和清理非简中。它们按队列占用执行页签，不会同时在这一页签执行。</p>
             </div>
             <h3 className="pt-2 text-[15px] font-semibold text-[var(--site-ink)]">v4 怎么跑</h3>
             <p className="text-[var(--site-ink)]">后台按队列安排十九项任务。能运行的就上，跑完一次回到队尾。没有可运行任务时保留共享页签，倒计时结束后在原页签继续。旧版若已清掉页签记录，会先核对并复用当前激活的同账号 X 页签；找不到可用页签时才新建。</p>
@@ -306,7 +323,7 @@ export default function XReplyClipboardDocsPage() {
               <li>卡片左侧勾选是否参与自动排班。默认不勾选的是：清理未回关、清理非简中、清理低质帖、清理差评论、热点发帖、卡片发帖、X主题发帖、小红书发帖、普通发文、站长转发、社群分发和社群问安。需要时再勾上。已经勾上的清理任务保持原样。卡片只显示排班状态，不显示分数。X主题发帖卡片标注「调试中」。右侧「查看」打开任务子页。子页放速度表、启停，以及这项自己的一句操作说明。队列规则写在任务货架，不在每个任务底下重复。点「查看」不新开或切换浏览器页签。在当前页点「立即开启当前任务」，任务就在这一页执行，不另开页签。整卡不再一点就进子页。</li>
 
               <li>排班台左上角「全自动排班」会勾选全部任务；排班已暂停时还需点「开始」。排班开着时，右上角是「暂停全部」，点一下关掉排班并结束各任务；停完后同一位置变成「开始」。只关页签不会关掉后台排班。风控等待不会暂停其他任务。</li>
-              <li>详情和十九项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。任务详情里，状态点下面先是浅色的排班说明，再一行左边是「← 返回排班台」，正在执行的任务居中，「暂停任务」在这一行右侧，写成红色文字，没有边框和底色；运行和启动时这一行有轻微呼吸。这一行只在打开任务详情时出现，只手动暂停正在查看的这项；重新开启使用该页的启动按钮。打开别的卡片时，这一行仍写实际正在执行的任务。评论首页、评论回复、评论大V遇到疑似自动化提示时，优先显示实际原因和共享冷却剩余时间；启动确认的约 90 秒只用于判断执行页是否回报，不代表限制已解除。每次重新装载记一次，面板写「已重启 x 次」；满 3 次就跳过这项任务。所有已排班任务都用这一套计数。页面已经回报超过限制或本次结束时，不再刷新启动倒计时，直接跳过；关注和回关进入 30 分钟共享冷却。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
+              <li>详情和十九项子功能顶部共用四类状态：运行中、等待中、需处理、已停止。任务详情里，状态点下面先是浅色的排班说明，再一行左边是「← 返回排班台」，正在执行的任务居中，「暂停任务」在这一行右侧，写成红色文字，没有边框和底色；运行和启动时这一行有轻微呼吸。这一行只在打开任务详情时出现，只手动暂停正在查看的这项；重新开启使用该页的启动按钮。打开别的卡片时，这一行仍写实际正在执行的任务。评论首页、评论回复、评论大V遇到疑似自动化提示时，优先显示实际原因和共享冷却剩余时间；启动确认的约 90 秒只用于判断执行页是否回报，不代表限制已解除。每次重新装载记一次，面板写「已重启 x 次」；满 3 次后自动重新请求启动一次并切回原执行页签，再满 3 次仍未确认就至少等 5 分钟再排班。这项已手动停止或排班已关时直接跳过。所有已排班任务都用这一套计数。页面已经回报超过限制或本次结束时，不再刷新启动倒计时，直接跳过；关注和回关进入 30 分钟共享冷却。点赞、关注、发帖连续受限后的需处理状态会在子功能和详情中同步显示。打开详情刷新后台状态后，整个面板会同步更新；停止超过 15 秒可点击重试停止。</li>
               <li>排班台打开即展开双列：左侧「已排班」列出已加入的任务，标注「当前任务 / 下一任务 / 候选任务」。绿边表示运行，黄边表示等待，红边表示已停止或需处理。右侧「未排班」按评论、点赞、关注、发帖、社群、清理分组。「查看」只进入详情，不改变排班。</li>
               <li>能运行的任务按队列轮到就跑。自己的冷却和间隔没到就先跳过。评论完成本次后让位；热点发帖和 X主题发帖每次只发 1 条，随后等待下一周期。具体数值见「速度与排班设置」。</li>
               <li>关注候选和回关粉丝一次任务都是 5、10 或 15 人，默认 15 人，满了就交回队列。一次 15 人，X 会提示超过限制。页面出现「抱歉，你受到速度限制。请稍等片刻，然后再试一次。」，或 “You are unable to follow more people at this time” 时，这次不记成已完成，关注或回关结束。回关与关注候选同频（短会话间隔）。清理未回关只处理没回关的人。清理非简中单独处理没有简体字的资料。两项都约每周一次，默认不进队列。</li>
@@ -366,10 +383,13 @@ export default function XReplyClipboardDocsPage() {
               等待中的任务会说明正在等什么：前一项任务完成、下一次运行时间、X 限制冷却或固定发帖档位。有截止时间时显示剩余倒计时；排班卡、详情和任务子页使用同一份后台状态。等待动效仅用于提示状态，系统开启“减少动态效果”后不播放。
             </p>
             <p className="rounded-xl border border-[color-mix(in_srgb,var(--site-green)_20%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
-              顶部“详情”汇总 18 项任务；概览显示已排班总数及其中运行、等待、需处理的数量，再显示未排班数量。全流程暂停时，仍按任务配置统计已排班。界面只显示上述四类；“启动中 / 停止中”是短暂过渡。状态只反映扩展记录；X 页面是否完成动作，以页面反馈和已确认的统计为准。
+              顶部“详情”汇总 19 项任务；概览显示已排班总数及其中运行、等待、需处理的数量，再显示未排班数量。全流程暂停时，仍按任务配置统计已排班。界面只显示上述四类；“启动中 / 停止中”是短暂过渡。状态只反映扩展记录；X 页面是否完成动作，以页面反馈和已确认的统计为准。
             </p>
             <p className="rounded-xl border border-[color-mix(in_srgb,#d97706_25%,var(--site-line))] bg-[color-mix(in_srgb,#f59e0b_7%,var(--site-panel))] px-4 py-3 text-[13px] leading-6">
               首页 04「执行报警」只显示最近一条摘要；点「查看详情」进入子页，按系统超限、重试耗尽、发送失败、结果未确认、记录失败归类，并给出简要分析与建议。记录保存在本机：X 明确限制、社群发送失败或结果未确认，以及评论任务连续启动失败。最多保留最近 30 天的 80 条，短时间重复报警合并计数。顶部圆点中，运行中与等待中为绿色、需处理为黄色、异常为红色、未排班为灰色；未排班不会因历史报警变红，已排班且当前账号有执行报警时才显示红色，悬停可看原因。报警只用于复核，不会暂停其他任务、延长原定等待或阻止排班切换。
+            </p>
+            <p className="rounded-xl border border-[var(--site-line)] bg-[var(--site-panel)] px-4 py-3 text-[13px] leading-6">
+              本地测试 v5.1 起，对话里可以直接问状态。大互动智能体每轮最多查 4 步、45 秒内结束，只读插件内部记录：当前排班、今日评论 / 发帖 / 社群 / 关注数量、最近 24 小时报警、最近的调度记录，不读 X 页面正文。排班开着却没有任务占用、也没有到期项，且下一项要等 30 分钟以上时，会提示空转；有任务已停、评论或发帖到当日上限时也会提示。它只能建议「暂停全部」或「开始全部」，并给出确认按钮；不会调高上限、缩短冷却，也不会自己执行写操作。规划模型都没返回、结果读不懂或超时时，对话只列出读到的状态和这两个按钮。
             </p>
           </Section>
 
@@ -397,7 +417,7 @@ export default function XReplyClipboardDocsPage() {
                     <strong className="text-[var(--site-ink)]">评论回复：维护自己帖子的对话</strong>
                     <p>主要目标是及时回应别人对自己原帖的留言，延续自己帖子的讨论，提高自己帖子的互动率。任务只对当前登录账号自己的原帖继续接话，不去别人帖子的评论区反复对话；互动率是目标，不保证每条回复都能带来更多互动。</p>
                     <ol className="list-decimal space-y-1 pl-5">
-                      <li>从通知页往下看，只回复所选时间内、时间明确、还没回过的评论。可选 1 小时、2 小时、4 小时、8 小时、24 小时，默认 24 小时。刷到窗口外就停止，条数不够也停止。第一屏已经能看到窗口外的通知时直接结束，不再重新装载；已经往下翻过或回复过，才刷新一次复核最新回复，然后把页签交回队列。回复间隔仍用中档。计时用这条通知自己的回复时间，不用引用里旧帖的时间。打开会话后，只有同时读到这三项才继续接话：最上方帖子属于当前登录账号、该帖的会话编号与帖子编号一致、并且它没有父帖。页面上缺少「正在回复」不能单独当作原帖。祖先链里出现别人的原帖，或会话编号与所认原帖不一致时，不再接话。换账号后按新账号重新判断。原帖还未加载出来，或上述证据读不全时，本轮暂缓，下次再核对，不会当作别人的帖子永久跳过。核对页签后台加载停滞时会自动激活；读完回到任务页，用户主动切走后不抢焦点。</li>
+                      <li>从通知页往下看，只回复所选时间内、时间明确、还没回过的评论。可选 1 小时、2 小时、4 小时、8 小时、24 小时，默认 24 小时。刷到窗口外就停止，条数不够也停止。第一屏已经能看到窗口外的通知时直接结束，不再重新装载；已经往下翻过或回复过，才刷新一次复核最新回复，然后把页签交回队列。回复间隔仍用中档。计时用这条通知自己的回复时间，不用引用里旧帖的时间。打开会话后，只有同时读到这三项才继续接话：最上方帖子属于当前登录账号、该帖的会话编号与帖子编号一致、并且它没有父帖。页面上缺少「正在回复」不能单独当作原帖。祖先链里出现别人的原帖，或会话编号与所认原帖不一致时，不再接话。换账号后按新账号重新判断。原帖还未加载出来，或上述证据读不全时，本轮暂缓，下次再核对，不会当作别人的帖子永久跳过。核对页签后台加载停滞时会自动激活；读完回到任务页，用户主动切走后不抢焦点。本地测试 v5.0.12 起，手动启动评论回复会在新页签后台执行，不切走正在看的页签。</li>
                       <li>AI 模式把页面读取到的会话按时间顺序交给已启用的回复模型：我的原帖 → 对方第一次回复 → 我的第一次回复 → 对方第二次回复，依此类推。提示词注明每句是谁说的，要求只回应对方最新一句，不重复自己的原话，也不把自己的话当作对方说的。生成的回复以短、友好、自然为先，可用表情；具体问题才简短答要点。模板模式按已选话术发送，不调用模型生成这段回复。</li>
                       <li>同一段对话最多由我接话 3 次，自己的原帖不计入次数。第三次接话后，对方即使再次回复，也跳过并提示「这段对话已回复 3 轮」；该通知记为已处理。候选评论自身的回复按钮只要显示非零数字，也会跳过；原帖或引用帖的回复数不用于这个判断。@grok 发来的通知直接跳过。</li>
                       <li>已处理通知持续去重，任务不顺手点赞。两条回复之间仍按速度档等待，默认中档大约 5～15 秒。窗口扫完就结束，不等待凑满条数。排班按队列轮流：评论三项先排在前面，轮到就跑大约 10 分钟，然后回到队尾。评论回复页的 @Grok 开关默认关闭；打开后约 5% 的 AI 回复会带一次 @grok。</li>
@@ -409,7 +429,7 @@ export default function XReplyClipboardDocsPage() {
                     <ul className="list-disc space-y-1 pl-5">
                       <li>同一轮仍按抽出的顺序访问，主页换人时沿用这一轮的顺序，不因为重新加载再抽一批。</li>
                       <li>在排班设置里增删账号后，使用这份自定义名单，每次任务只从里面换五个，不会清掉其余账号。清空后回到榜单自动拉取。名单保存在当前 Chrome 配置文件。</li>
-                      <li>逐个打开名单里的账号主页，优先评论当天的帖子。慢、中、快、超快分别在每个主页最多评论 3、5、7、11 条；达到上限或当天没有可评帖子就换下一个。换人时接着本轮已经抽出的顺序评论，不重新打乱。名单扫完后休息，下一轮再换五个并打乱。连续 3 次无法确认启动时停止自动重试并显示原因，检查执行页和模型设置后可手动重启。</li>
+                      <li>逐个打开名单里的账号主页，优先评论当天的帖子。慢、中、快、超快分别在每个主页最多评论 3、5、7、11 条；达到上限或当天没有可评帖子就换下一个。换人时接着本轮已经抽出的顺序评论，不重新打乱。名单扫完后休息，下一轮再换五个并打乱。账号已停用、不存在或打不开时（本地测试 v5.0.34 起），立即换下一位，整项任务不因此标成需处理。连续 3 次无法确认启动时停止自动重试并显示原因，检查执行页和模型设置后可手动重启。</li>
                     </ul>
                   </li>
                   <li>三项轮流占用同一个执行页签，分别保留去重进度。评论首页与评论回复完成本次全部轮次后休息；评论大V扫完名单后休息。通知页没有更多待处理内容时也会结束本次任务。</li>
@@ -475,7 +495,7 @@ export default function XReplyClipboardDocsPage() {
           </Section>
 
           <Section id="schedule-order" index="五" title="排序" summary="空档出现时，谁先拿到共享页签">
-            <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">空档出现时，只在已经可以跑的任务里按队列往后排。可以跑的条件：已参与排班，没有手动停止，自己的冷却和间隔已经到点。站长转发当天已经发过不再入队。卡片发帖只在所选每天条数对应的北京时间档位的 15 分钟内入队。社群问安只在 08:00 / 12:00 / 14:00 / 22:00 各 15 分钟内入队。点「立即开启」可以跳过普通等待；共享关注冷却和卡片发帖档位不能靠手动跳过。</p>
+            <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">空档出现时，只在已经可以跑的任务里按队列往后排。可以跑的条件：已参与排班，没有手动停止，自己的冷却和间隔已经到点。站长转发当天已经发过不再入队。卡片发帖只在所选每天条数对应的北京时间档位的 15 分钟内入队。社群问安只在 08:00 / 12:00 / 22:00 各 15 分钟内入队。点「立即开启」可以跳过普通等待；共享关注冷却和卡片发帖档位不能靠手动跳过。</p>
             <p className="m-0 text-[13px] leading-6 text-[var(--site-ink)]">队列按下面三步走。</p>
             <ol className="list-decimal space-y-2 pl-5 text-[13px] leading-6 text-[var(--site-ink)]">
 
@@ -674,7 +694,7 @@ export default function XReplyClipboardDocsPage() {
                 <ul className="mt-3 list-disc space-y-2 pl-5">
                   <li>回关和关注候选看到速度限制，或页面已经写出超过限制、本次结束时，这次任务结束，两项一起进入 30 分钟共享冷却。手动点「立即开启」也不能跳过这段冷却。页面出现 “You are unable to follow more people at this time” 时，这次关注不记成功。</li>
                   <li>评论首页顶部的 “What&apos;s happening?” 发帖框不当成评论框。空评论框对不上当前帖子就关闭并重连，只用于评论回复的弹窗。上次页面脚本报错留下的重连记录不会在刷新后继续每秒重连。</li>
-                  <li>任务显示在跑，但连续 3 分钟没有新的动作、状态或报错，就在当前页签刷新并继续原任务。页面已经不回答时，大约 90 秒后同样刷新；关注名单也不再停在原页。同一项刷新满 3 次仍没有恢复，就跳过这项。</li>
+                  <li>任务显示在跑，但连续 3 分钟没有新的动作、状态或报错，就在当前页签刷新并继续原任务。页面已经不回答时，大约 90 秒后同样刷新；关注名单也不再停在原页。同一项刷新满 3 次仍没有恢复，先自动重新请求启动一次并切回原执行页签；再不恢复就至少等 5 分钟再排班。这项已手动停止或排班已关时直接跳过。</li>
                   <li>点赞普通次数限制：依次等待 1、2、6 小时，之后每次 24 小时；到时只重试当前点赞任务。</li>
                   <li>评论或发帖遇到临时错误，会跳过当前内容、短暂重试或重连；无法安全关闭的草稿和缺失的配置会给出具体提示。</li>
                   <li>验证码、手机号验证或账号状态异常需要按 X 页面提示人工处理；倒计时不能代替账号验证。</li>
@@ -699,6 +719,7 @@ export default function XReplyClipboardDocsPage() {
 
           <Section id="rules" index="八" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
             <p>X 的公开自动化、账户限制和真实性规则适用于这些操作。扩展的频率挡位与倒计时只是本地调度参数，不代表 X 认可的安全阈值。</p>
+            <p>节奏按少而准安排：挑能接上话的对象，写具体的回应，看对方有没有回声。<Link href="/resources/big-interaction-whitepaper#quality" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">大互动理论绿皮书</Link>里的次数、深度、对象、内容价值和持续性，用来复盘这些动作留下了什么。各任务的上限与冷却不随版本调高或缩短，扩展也不绕开 X 的自动化检测。</p>
             <p>公开的每日数量、账户状态和更短时间窗口是不同约束；发生限制时，应以 X 页面给出的验证或限制提示为准。</p>
             <div className="flex flex-wrap gap-2 pt-1">
               <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 text-[12px] font-semibold text-[var(--site-ink)] no-underline">自动化规则 ↗</a>
@@ -717,7 +738,8 @@ export default function XReplyClipboardDocsPage() {
               <li>从旧版多窗口扩展切到当前本地源码时，首次启动会把旧多窗口任务安全收敛到单执行页签；排班与冷却状态保留在扩展本地，不需要手动清数据。下载包与本地开发版分别核对版本号，不根据文档截图推断下载包版本。</li>
               <li>主操作区只保留全流程按钮、排班台和任务详情。旧的清理与说明按钮已移除；各任务状态、限制倒计时和恢复规则在本文档对应章节查看。</li>
               <li>面板的今日数据分两行：上行按评论、点赞、发帖、关注、清理五类汇总，下行可横向查看每项任务的成功数。日历图标在面板右上角；放大/缩小入口暂时停用。点赞帖子与点赞评论、热点发帖与卡片及 X 主题发帖从新版回执起分别计数；旧记录无法拆分时显示已明确归属数加「+」。普通发文统计已保存的草稿，不算已发布帖子。</li>
-              <li>每日报告随心跳自动同步当日统计，并在每天北京时间 09:00 补传前一天；休眠或关闭浏览器错过时间后，下次启动会继续同步。确认删除的原创帖和评论分别计入「删帖」「删评论」；云端新增字段需应用 0128 迁移，迁移前本地保留待上传报告。逐任务明细目前保存在本机，云端日报仍保存合计。</li>
+              <li>每日报告随心跳自动同步当日统计，并在每天北京时间 09:00 补传前一天；休眠或关闭浏览器错过时间后，下次启动会继续同步。确认删除的原创帖和评论分别计入「删帖」「删评论」；云端新增字段需应用 0128 迁移，迁移前本地保留待上传报告。逐任务明细目前保存在本机，云端日报仍保存合计。本地测试 v5.0.22 起，每日报告只统计当前登录账号，统计卡片排成四列。</li>
+              <li>运行事实（本地测试 v5.1.0）：后台把当前排班、今日评论 / 发帖 / 社群 / 关注数量、最近 24 小时报警和最近 12 条调度记录合成一份，对话按需读取。今日数量只读插件已有的回执记录，上限沿用各任务原值，关注目标仍为每天 300。每日报告与巡检页改读这份记录还没做。</li>
             </ul>
           </Section>
 
@@ -725,7 +747,7 @@ export default function XReplyClipboardDocsPage() {
           <Section id="history" index="十" title="版本演进与迁移" summary="历史行为仅供版本对照，不作为当前操作指南">
             <div id="version-path" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">来时路 · v0 → v4</h3>
+                <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">来时路 · v0 → v5</h3>
                 <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">世代摘要；逐条补丁见周总结与仓库 README</p>
               </div>
               <ol className="m-0 flex list-none flex-col gap-3 p-0">
@@ -754,7 +776,7 @@ export default function XReplyClipboardDocsPage() {
                 ))}
               </ol>
               <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">
-                一句话：v0 能发 → v1 看得清 → v2 会写话 → v3 多任务并行占多页签 → v4 收成单页签按到期轮班。
+                一句话：v0 能发 → v1 看得清 → v2 会写话 → v3 多任务并行占多页签 → v4 收成单页签按到期轮班 → v5 用对话查看和启停（本地测试）。
               </p>
             </div>
             <div id="v3-to-v4" className="scroll-mt-24 space-y-3 rounded-2xl border border-[color-mix(in_srgb,var(--site-green)_28%,var(--site-line))] bg-[color-mix(in_srgb,var(--site-green)_6%,var(--site-panel))] p-4 md:p-5">
@@ -783,7 +805,7 @@ export default function XReplyClipboardDocsPage() {
                   </ul>
                 </div>
               </div>
-              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">当前本地源码与站内下载包均为 v{X_EXTENSION_LATEST_VERSION} / v{DOWNLOAD_VERSION}，交付版本以实际文件为准。加载新版后，旧多窗口会在首次启动时收敛到单页签。</p>
+              <p className="m-0 text-[12px] leading-6 text-[var(--site-faint)]">站内下载包为 v{DOWNLOAD_VERSION}，本地源码为 v{SOURCE_VERSION}（未打包），交付版本以实际文件为准。加载新版后，旧多窗口会在首次启动时收敛到单页签。</p>
             </div>
           </Section>
 

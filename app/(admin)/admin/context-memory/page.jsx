@@ -2,9 +2,14 @@ import AdminPageGate from '../../components/AdminPageGate'
 import MemoryVault from '../../../(site)/context-memory/MemoryVault'
 import { AdminPage } from '../../components/ui'
 
+// 标题与描述只在这里维护一次，metadata 与页面头部共用。
+const PAGE_TITLE = '上下文库'
+const PAGE_DESCRIPTION =
+  '加密保存的上下文快照：Claude Code 项目记忆与仓库 docs/context 文档。输入密码在本机解密，按版本时间线查看。'
+
 export const metadata = {
-  title: '上下文库',
-  description: 'Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线。',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   robots: {
     index: false,
     follow: false,
@@ -14,32 +19,27 @@ export const metadata = {
 
 export default async function AdminContextMemoryPage() {
   return (
-    <AdminPageGate
-      label="上下文库"
-      returnTo="/admin/context-memory"
-      description="Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线，仅站长本人可解密。"
-    >
-      <AdminPage
-        title="上下文库"
-        description="Claude Code 项目记忆与仓库 docs/context 的加密快照、版本时间线。"
-      >
+    <AdminPageGate>
+      <AdminPage title={PAGE_TITLE} description={PAGE_DESCRIPTION}>
         <section className="rounded-2xl border border-[#dfe2da] bg-white/80 p-4 shadow-sm dark:border-[#1b2836] dark:bg-[#101820]/90 md:p-5">
-          <div className="grid gap-5 xl:grid-cols-[18rem_minmax(0,1fr)]">
+          <div className="grid gap-5 xl:grid-cols-[15rem_minmax(0,1fr)]">
             <aside className="border-b border-[#e6e7df] pb-4 dark:border-[#1b2836] xl:border-b-0 xl:border-r xl:pb-0 xl:pr-5">
-              <span className="inline-flex rounded-lg bg-[#e8eaec] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#3a4450] dark:bg-[#1f2935] dark:text-[#aebcce]">
-                L5
+              <span className="inline-flex rounded-lg bg-[#e2f1ec] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#22715c] dark:bg-[#14332b] dark:text-[#83d0bb]">
+                本机解密
               </span>
               <h2 className="mt-4 text-xl font-semibold text-[#15140f] dark:text-gray-100">
-                实际运行中的记忆样本
+                解密查看
               </h2>
-              <p className="mt-4 text-sm leading-8 text-[#5a5a53] dark:text-gray-300">
-                这一层是 Claude Code 项目记忆和仓库 docs/context/ 里写下的内容快照。AES-GCM 加密上传，带版本时间线，密码只在本人浏览器里解密。
+              <ol className="mt-4 space-y-2 text-sm leading-7 text-[#5a5a53] dark:text-gray-300">
+                <li>1. 在右侧文件树选一份快照</li>
+                <li>2. 输入密码，正文自动解密</li>
+                <li>3. 沿版本时间线切换历史版本</li>
+              </ol>
+              <p className="mt-5 border-t border-[#e6e7df] pt-4 text-xs leading-6 text-[#767869] dark:border-[#1b2836] dark:text-gray-400">
+                密码只在本机浏览器使用，不上传。仓库保存的是密文，未授权方读到的只是 base64 噪声。
               </p>
             </aside>
-            <div className="space-y-4">
-              <div className="rounded-lg border border-dashed border-[#c2c6b8] bg-[#f1f2ec] px-4 py-3 text-sm leading-7 text-[#575a43] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#a9b3c4]">
-                本板块现在收敛到后台管理：公开站点不再展示记忆文件清单；后台可看到文件数、版本数并输入密码解密。密文已随仓库 push，未授权方读到的只是 base64 噪声。
-              </div>
+            <div>
               <MemoryVault />
             </div>
           </div>

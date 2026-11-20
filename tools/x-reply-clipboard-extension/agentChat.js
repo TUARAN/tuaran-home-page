@@ -11,6 +11,19 @@
   const PANEL_LARGE = 920;
   const MAX_TURNS = 40;
   const MAX_THREADS = 30;
+  const MAX_ACTIVITY = 60;
+  // Harness v3 context management (see docs/specs/x-agent-harness-v3.md).
+  const PROFILE_KEY = "xrcAgentProfilesV1";
+  const MAX_MEMORY = 30;
+  const MEMORY_TEXT = 120;
+  const PERSONA_LIMITS = Object.freeze({ role: 120, goal: 120, tone: 80 });
+  const COMPACT_AT = 30;
+  const KEEP_RECENT = 12;
+  const SUMMARY_MAX = 900;
+  const RECENT_TURNS = 8;
+  const MEMORY_TYPE_TAGS = Object.freeze({ account: "账号", preference: "偏好", rule: "约定" });
+  const MEMORY_TYPE_NAMES = Object.freeze({ account: "账号事实", preference: "站长偏好", rule: "协作约定" });
+  const LOCAL_INTENTS = new Set(["remember", "forget", "memory-list", "compact", "open-profile"]);
   const sessions = new WeakMap();
 
   function plannerApi() {
@@ -20,10 +33,25 @@
     };
   }
 
+  function memoryTypeOf(tag) {
+    if (tag === "账号") return "account";
+    if (tag === "约定") return "rule";
+    return "preference";
+  }
+
   function routeCommand(text) {
-    const raw = String(text || "").replace(/\s+/gu, "");
+    const said = String(text || "").trim();
+    const raw = said.replace(/\s+/gu, "");
     const base = { protocol: PROTOCOL };
     if (!raw) return { ...base, intent: "empty" };
+    // Memory and context commands come first: "记住：暂停全部前先问我" must not pause.
+    const remember = /^(?:请|帮我)?(?:记住|记一下|记下)(?:\s*[（(]\s*(账号|偏好|约定)\s*[）)])?\s*[:：，,]?\s*([\s\S]*)$/u.exec(said);
+    if (remember) return { ...base, intent: "remember", type: memoryTypeOf(remember[1]), text: remember[2].replace(/\s+/gu, " ").trim() };
+    const forget = /^(?:忘掉|忘记|删除记忆|删掉记忆)\s*[:：，,]?\s*([\s\S]*)$/u.exec(said);
+    if (forget) return { ...base, intent: "forget", text: forget[1].replace(/\s+/gu, " ").trim() };
+    if (/^(?:\/memory|记忆|看看记忆|查看记忆|你记得什么|你记住了什么|记住了什么)[?？]?$/u.test(raw)) return { ...base, intent: "memory-list" };
+    if (/^(?:\/compact|压缩上下文|压缩对话|压缩会话)$/u.test(raw)) return { ...base, intent: "compact" };
+    if (/^(?:\/persona|人格|账号人格|账号设定|人格设置|打开人格)$/u.test(raw)) return { ...base, intent: "open-profile" };
     if (/(?:暂停全部|全部暂停|暂停所有|停掉全部|全都暂停|^全停$)/u.test(raw)) {
       return { ...base, intent: "pause-all", tool: "xrc-flow-pause" };
     }
@@ -144,18 +172,28 @@
     "schedule.pauseAll": "暂停全部",
     "schedule.startAll": "开始全部"
   });
+  const MEMORY_TOOL = "memory.remember";
   const TOOL_LABELS = Object.freeze({
     "schedule.now": "排班",
     "facts.today": "今日数据",
     "alerts.recent": "执行报警",
-    "engine.trace": "调度记录"
+    "engine.trace": "调度记录",
+    "memory.remember": "记忆"
   });
 
-  function plannerContext(text, store) {
-    const recent = (activeThread(store)?.turns || []).slice(-6)
-      .map((turn) => `${turn.role === "user" ? "用户" : "助手"}：${String(turn.text || "").slice(0, 120)}`)
-      .join("\n");
-    return { text: String(text || "").slice(0, 400), memory: String(store?.memory || "").slice(0, 400), recent };
+  // What the harness sees: the current account's persona and memory, the thread's
+  // compacted summary and the last few turns. The planner clamps it to its budget.
+  function plannerContext(text, store, profile, account) {
+    const turns = activeThread(store)?.turns || [];
+    const earlier = turns[turns.length - 1]?.role === "user" ? turns.slice(0, -1) : turns;
+    return {
+      text: String(text || "").slice(0, 400),
+      account: account || "",
+      persona: { ...(profile?.persona || {}) },
+      memory: (profile?.memory || []).map((entry) => ({ type: entry.type, text: entry.text })),
+      summary: String(activeThread(store)?.summary || ""),
+      recent: earlier.slice(-RECENT_TURNS).map((turn) => ({ role: turn.role === "user" ? "user" : "assistant", text: String(turn.text || "") }))
+    };
   }
 
   function harnessSteps(steps) {
@@ -168,13 +206,23 @@
 
   function harnessConfirm(pending) {
     return (Array.isArray(pending) ? pending : [])
-      .map((entry) => CONFIRM_COMMANDS[entry?.tool])
+      .map((entry) => {
+        if (entry?.tool === MEMORY_TOOL) {
+          const text = String(entry.memory?.text || "").replace(/\s+/gu, " ").trim().slice(0, MEMORY_TEXT);
+          return text ? `记住（${MEMORY_TYPE_TAGS[entry.memory.type] || "偏好"}）：${text}` : "";
+        }
+        return CONFIRM_COMMANDS[entry?.tool];
+      })
       .filter(Boolean)
       .filter((command, index, list) => list.indexOf(command) === index);
   }
 
   async function handleTurn(text, host, context) {
     const route = routeCommand(text);
+    if (LOCAL_INTENTS.has(route.intent)) {
+      // Memory and compaction need the panel's session and profile store; accept() runs them.
+      return assistantTurn(route, { text: "记忆和压缩要在对话面板里处理。" });
+    }
     if (route.intent === "empty") {
       return assistantTurn(route, { text: "要看状态，直接问现在在干什么。", showActions: true, view: host.snapshot ? describeRuntime(host.snapshot()) : null });
     }
@@ -297,7 +345,10 @@
   }
 
   function copyThread(thread) {
-    const turns = Array.isArray(thread?.turns) ? thread.turns.slice(-MAX_TURNS) : [];
+    // Threads hold only what the person and the agent said; run notices live in store.activity.
+    const turns = Array.isArray(thread?.turns)
+      ? thread.turns.filter((turn) => turn && turn.kind !== "status").slice(-MAX_TURNS)
+      : [];
     const kind = thread?.kind === "main" ? "main" : "chat";
     const title = kind === "main" ? "大互动智能体" : (String(thread?.title || "").trim() || threadTitle(turns));
     return {
@@ -306,13 +357,50 @@
       kind,
       createdAt: Number(thread?.createdAt) || Number(thread?.updatedAt) || Date.now(),
       updatedAt: Number(thread?.updatedAt) || Date.now(),
-      turns
+      turns,
+      summary: String(thread?.summary || "").slice(-SUMMARY_MAX),
+      compacted: Math.max(0, Number(thread?.compacted) || 0)
     };
   }
 
   function emptyStore() {
     const thread = blankThread("大互动智能体", "main");
-    return { activeId: thread.id, threads: [thread], memory: "" };
+    return { activeId: thread.id, threads: [thread], activity: [], seenAt: 0 };
+  }
+
+  function copyActivity(entry) {
+    const text = String(entry?.text || "").trim();
+    if (!text) return null;
+    const at = Number(entry?.at) || Date.now();
+    return {
+      id: String(entry?.id || `a-${at.toString(36)}`),
+      at,
+      since: Number(entry?.since) || at,
+      key: String(entry?.key || ""),
+      state: entry?.state === "paused" || entry?.state === "running" ? entry.state : "unknown",
+      task: String(entry?.task || "").slice(0, 40),
+      text: text.slice(0, 280),
+      updates: Math.max(1, Number(entry?.updates) || 1)
+    };
+  }
+
+  // Older sessions kept run notices as status turns inside the main thread. They move
+  // to the activity feed once, so the conversation keeps every turn it can hold.
+  function readActivity(value) {
+    const moved = (Array.isArray(value?.threads) ? value.threads : [])
+      .flatMap((thread) => (Array.isArray(thread?.turns) ? thread.turns : []))
+      .filter((turn) => turn?.kind === "status")
+      .map((turn) => ({ at: turn.at, text: turn.text, task: turn.view?.taskName, state: turn.view?.paused === true ? "paused" : turn.view?.paused === false ? "running" : "unknown" }));
+    return [...(Array.isArray(value?.activity) ? value.activity : []), ...moved]
+      .map(copyActivity)
+      .filter(Boolean)
+      .sort((left, right) => left.at - right.at)
+      .slice(-MAX_ACTIVITY);
+  }
+
+  function unreadCount(store) {
+    const seen = Number(store?.seenAt) || 0;
+    return (store?.activity || []).filter((entry) => (Number(entry.since) || entry.at) > seen).length;
   }
 
   function normalizeStore(value) {
@@ -325,13 +413,18 @@
         threads = threads.slice(0, MAX_THREADS);
       }
       const activeId = threads.some((thread) => thread.id === value.activeId) ? value.activeId : threads[0].id;
-      return { activeId, threads: orderedThreads(threads), memory: String(value.memory || "").slice(0, 280) };
+      return {
+        activeId,
+        threads: orderedThreads(threads),
+        activity: readActivity(value),
+        seenAt: Number(value.seenAt) || 0
+      };
     }
     const turns = Array.isArray(value?.turns) ? value.turns.slice(-MAX_TURNS) : [];
     const thread = blankThread(turns.length ? threadTitle(turns) : "当前会话");
     if (value?.id) thread.id = String(value.id);
-    thread.turns = turns;
-    return { activeId: thread.id, threads: [thread], memory: "" };
+    thread.turns = turns.filter((turn) => turn?.kind !== "status");
+    return { activeId: thread.id, threads: [thread], activity: [], seenAt: 0 };
   }
 
   function activeThread(store) {
@@ -365,6 +458,215 @@
 
   function hasTurns(store) {
     return (store?.threads || []).some((thread) => thread?.turns?.length);
+  }
+
+  function clip(value, limit) {
+    const text = String(value ?? "").replace(/\s+/gu, " ").trim();
+    return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+  }
+
+  // Rolling summary of turns that leave the thread. One line per exchange, oldest
+  // lines drop first, so the summary stays inside SUMMARY_MAX however long the chat runs.
+  function digestTurns(turns) {
+    const lines = [];
+    for (const turn of turns) {
+      if (turn?.role === "user") {
+        lines.push(`问：${clip(turn.text, 40)}`);
+        continue;
+      }
+      let answer = `答：${clip(turn?.text, 60)}`;
+      if (Array.isArray(turn?.confirm) && turn.confirm.length) {
+        answer += !turn.resolved ? "（未确认）" : turn.resolved === "dismissed" ? "（未执行）" : `（确认：${clip(turn.resolved, 30)}）`;
+      }
+      if (lines.length && lines[lines.length - 1].startsWith("问：") && !lines[lines.length - 1].includes("→")) {
+        lines[lines.length - 1] += `→${answer}`;
+      } else {
+        lines.push(answer);
+      }
+    }
+    return lines;
+  }
+
+  function compactThread(thread, keep = KEEP_RECENT) {
+    if (!thread) return 0;
+    const turns = Array.isArray(thread.turns) ? thread.turns : [];
+    const cut = Math.max(0, turns.length - Math.max(0, keep));
+    if (!cut) return 0;
+    const lines = [
+      ...String(thread.summary || "").split("\n").filter((line) => line && line !== "…"),
+      ...digestTurns(turns.slice(0, cut))
+    ];
+    let trimmed = false;
+    while (lines.length > 1 && lines.join("\n").length > SUMMARY_MAX - 2) {
+      lines.shift();
+      trimmed = true;
+    }
+    thread.summary = `${trimmed ? "…\n" : ""}${lines.join("\n")}`.slice(-SUMMARY_MAX);
+    thread.compacted = (Number(thread.compacted) || 0) + cut;
+    thread.turns = turns.slice(cut);
+    return cut;
+  }
+
+  function autoCompact(thread) {
+    return thread?.turns?.length > COMPACT_AT ? compactThread(thread, KEEP_RECENT) : 0;
+  }
+
+  // Per-account persona and memory. The key is the X handle; nothing is shared
+  // between accounts and nothing is written without a handle.
+  function accountKey(handle) {
+    const key = String(handle || "").trim().replace(/^@/u, "").toLowerCase();
+    return key && key !== "default" ? key.slice(0, 40) : "";
+  }
+
+  function conflictOf(text) {
+    const check = root.XrcAgentPlanner?.principleConflict;
+    if (typeof check !== "function") return "规划模块没有加载，暂时不能核对原则";
+    return check(text);
+  }
+
+  function copyMemory(entry) {
+    const text = clip(entry?.text, MEMORY_TEXT);
+    if (!text) return null;
+    const at = Number(entry?.at) || Date.now();
+    return {
+      id: String(entry?.id || `m-${at.toString(36)}`),
+      type: Object.prototype.hasOwnProperty.call(MEMORY_TYPE_TAGS, entry?.type) ? entry.type : "preference",
+      text,
+      source: entry?.source === "agent" ? "agent" : "user",
+      at
+    };
+  }
+
+  function copyProfile(value) {
+    const persona = value?.persona || {};
+    return {
+      persona: {
+        role: clip(persona.role, PERSONA_LIMITS.role),
+        goal: clip(persona.goal, PERSONA_LIMITS.goal),
+        tone: clip(persona.tone, PERSONA_LIMITS.tone)
+      },
+      memory: (Array.isArray(value?.memory) ? value.memory : []).map(copyMemory).filter(Boolean).slice(-MAX_MEMORY),
+      updatedAt: Number(value?.updatedAt) || 0
+    };
+  }
+
+  function normalizeProfiles(value) {
+    const accounts = {};
+    for (const [handle, profile] of Object.entries(value?.accounts || {})) {
+      const key = accountKey(handle);
+      if (key) accounts[key] = copyProfile(profile);
+    }
+    return { accounts };
+  }
+
+  function profileOf(profiles, account) {
+    const key = accountKey(account);
+    if (!key) return copyProfile(null);
+    return profiles?.accounts?.[key] || copyProfile(null);
+  }
+
+  function addMemory(profiles, account, entry, now = Date.now()) {
+    const key = accountKey(account);
+    if (!key) return { ok: false, error: "读不到当前账号，记忆没有写入。" };
+    const text = clip(entry?.text, MEMORY_TEXT);
+    if (!text) return { ok: false, error: "要记住什么？说「记住：……」。" };
+    const conflict = conflictOf(text);
+    if (conflict) return { ok: false, error: `这条和原则冲突（${conflict}），没有写入。` };
+    const profile = profileOf(profiles, key);
+    const known = profile.memory.find((item) => item.text === text);
+    if (known) return { ok: true, entry: known, duplicate: true };
+    if (profile.memory.length >= MAX_MEMORY) return { ok: false, error: `@${key} 的记忆已满 ${MAX_MEMORY} 条，先忘掉一条再记。` };
+    const saved = copyMemory({ ...entry, text, at: now, id: `m-${now.toString(36)}-${Math.random().toString(36).slice(2, 5)}` });
+    profile.memory.push(saved);
+    profile.updatedAt = now;
+    profiles.accounts[key] = profile;
+    return { ok: true, entry: saved };
+  }
+
+  function forgetMemory(profiles, account, query) {
+    const key = accountKey(account);
+    if (!key) return { ok: false, error: "读不到当前账号。" };
+    const profile = profileOf(profiles, key);
+    const wanted = String(query || "").trim();
+    if (!wanted) return { ok: false, error: "要忘掉哪一条？说「忘掉 2」或「忘掉：关键词」。" };
+    const number = /^\d+$/u.test(wanted) ? Number(wanted) : 0;
+    const found = number
+      ? profile.memory[number - 1]
+      : profile.memory.find((item) => item.id === wanted) || profile.memory.find((item) => item.text.includes(wanted));
+    if (!found) return { ok: false, error: `@${key} 的记忆里没有「${clip(wanted, 30)}」。` };
+    profile.memory = profile.memory.filter((item) => item !== found);
+    profile.updatedAt = Date.now();
+    profiles.accounts[key] = profile;
+    return { ok: true, entry: found };
+  }
+
+  function savePersona(profiles, account, persona, now = Date.now()) {
+    const key = accountKey(account);
+    if (!key) return { ok: false, error: "读不到当前账号，人格没有保存。" };
+    const next = {
+      role: clip(persona?.role, PERSONA_LIMITS.role),
+      goal: clip(persona?.goal, PERSONA_LIMITS.goal),
+      tone: clip(persona?.tone, PERSONA_LIMITS.tone)
+    };
+    for (const [field, label] of [["role", "账号定位"], ["goal", "当前目标"], ["tone", "回复方式"]]) {
+      const conflict = next[field] && conflictOf(next[field]);
+      if (conflict) return { ok: false, error: `${label}和原则冲突（${conflict}），没有保存。` };
+    }
+    const profile = profileOf(profiles, key);
+    profile.persona = next;
+    profile.updatedAt = now;
+    profiles.accounts[key] = profile;
+    return { ok: true, persona: next };
+  }
+
+  async function loadProfiles(storage) {
+    if (!storage?.get) return normalizeProfiles(null);
+    const stored = await storage.get(PROFILE_KEY);
+    return normalizeProfiles(stored?.[PROFILE_KEY]);
+  }
+
+  async function saveProfiles(storage, profiles) {
+    if (!storage?.set) return;
+    await storage.set({ [PROFILE_KEY]: normalizeProfiles(profiles) });
+  }
+
+  function memoryLines(profile) {
+    return profile.memory.map((item, index) => `${index + 1}. [${MEMORY_TYPE_TAGS[item.type]}] ${item.text}`).join("\n");
+  }
+
+  // Memory, compaction and the profile page run here, without the planner: they change
+  // only this panel's own stores, and every memory write names the account it lands in.
+  function localTurn(route, { thread, profiles, account, confirmed }) {
+    const key = accountKey(account);
+    if (route.intent === "compact") {
+      const current = thread.turns.pop();
+      const folded = compactThread(thread, 0);
+      if (current) thread.turns.push(current);
+      return {
+        text: folded ? `已把前面 ${folded} 条压缩成摘要，之后的规划会带上摘要和最近的对话。` : "还没有可以压缩的对话。",
+        changedSession: folded > 0
+      };
+    }
+    if (route.intent === "open-profile") {
+      return { text: key ? `已打开 @${key} 的人格与记忆。` : "读不到当前账号，打开 X 并登录后再设置人格。", openProfile: true };
+    }
+    if (!key) return { text: "读不到当前账号，记忆没有写入。", ok: false };
+    const profile = profileOf(profiles, key);
+    if (route.intent === "memory-list") {
+      return {
+        text: profile.memory.length
+          ? `@${key} 记着 ${profile.memory.length} 条：\n${memoryLines(profile)}\n说「忘掉 2」可以删掉一条。`
+          : `@${key} 还没有记忆。说「记住：……」写一条，类型可以写成「记住（约定）：……」。`
+      };
+    }
+    if (route.intent === "forget") {
+      const result = forgetMemory(profiles, key, route.text);
+      return result.ok ? { text: `已从 @${key} 的记忆里删掉「${result.entry.text}」。`, changedProfiles: true } : { text: result.error, ok: false };
+    }
+    const result = addMemory(profiles, key, { type: route.type, text: route.text, source: confirmed ? "agent" : "user" });
+    if (!result.ok) return { text: result.error, ok: false };
+    if (result.duplicate) return { text: `@${key} 已经记着这一条。` };
+    return { text: `已记住（${MEMORY_TYPE_NAMES[result.entry.type]}），只用于 @${key}：${result.entry.text}`, changedProfiles: true };
   }
 
   async function loadSession(storage) {
@@ -475,13 +777,19 @@
     "xrc-flow-pause": "暂停全部",
     "xrc-flow-start": "开始全部",
     "open-settings": "打开设置",
-    "open-advanced": "打开排班"
+    "open-advanced": "打开排班",
+    "memory:remember": "写入记忆",
+    "memory:forget": "删除记忆",
+    "memory:memory-list": "读取记忆",
+    "memory:compact": "压缩上下文",
+    "memory:open-profile": "打开人格与记忆"
   });
   // Read-only openers for an empty thread. Writes stay behind typed text or a confirm card.
   const STARTERS = Object.freeze(["现在在干什么", "今天做了多少", "最近有报警吗", "下一项是什么"]);
 
   function thinkingLabel(text) {
     const intent = routeCommand(text).intent;
+    if (LOCAL_INTENTS.has(intent)) return "正在整理记忆与上下文";
     if (intent === "status") return "正在读取运行状态";
     if (intent === "pause-all") return "正在暂停全部";
     if (intent === "start-all") return "正在开始全部";
@@ -528,7 +836,8 @@
     if (ROUTE_TOOLS[name]) {
       const ok = name === "xrc-runtime-get"
         ? turn.view?.ok !== false
-        : name.startsWith("xrc-flow-") ? !turn.showActions : true;
+        : name.startsWith("xrc-flow-") ? !turn.showActions
+          : name.startsWith("memory:") ? turn.tool.ok !== false : true;
       rows.push({ label: ROUTE_TOOLS[name], ok });
     }
     return rows;
@@ -572,7 +881,10 @@
       card.append(el("p", "xrc-agent-confirm-state", turn.resolved === "dismissed" ? "已取消，没有执行。" : `已确认：${turn.resolved}`));
     } else {
       const actions = el("div", "xrc-agent-run-actions");
-      for (const command of turn.confirm) actions.append(commandButton(`确认${command}`, command, "xrc-agent-command is-confirm"));
+      for (const command of turn.confirm) {
+        const label = command.startsWith("记住") ? "确认记住" : `确认${command}`;
+        actions.append(commandButton(label, command, "xrc-agent-command is-confirm"));
+      }
       const dismiss = el("button", "xrc-agent-command is-dismiss", "先不");
       dismiss.type = "button";
       dismiss.dataset.xrcAgentAction = "dismiss-confirm";
@@ -584,7 +896,6 @@
   }
 
   function paintRun(parent, turn, index) {
-    if (turn.kind === "status") return;
     const confirm = Array.isArray(turn.confirm) ? turn.confirm : [];
     if (confirm.length) {
       paintConfirm(parent, turn, index);
@@ -663,26 +974,176 @@
     log.append(hero);
   }
 
-  function paintEvent(log, turn) {
-    const row = el("div", "xrc-agent-event");
-    row.title = turn.text || "";
-    row.append(el("i", "xrc-agent-event-dot"), el("span", "xrc-agent-event-text", turn.text || ""), el("time", "xrc-agent-time", clockOf(turn.at)));
-    log.append(row);
+  function activityStamp(value, now = Date.now()) {
+    const date = new Date(Number(value) || now);
+    const today = new Date(now);
+    const sameDay = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+    return sameDay ? clockOf(value) : formatStamp(value);
+  }
+
+  function activityOpen(rootNode) {
+    const drawer = rootNode?.querySelector?.("[data-xrc-agent-activity]");
+    return Boolean(drawer && drawer.hidden !== true);
+  }
+
+  function paintActivity(rootNode, store) {
+    const unread = unreadCount(store);
+    for (const badge of nodesOf(rootNode, "[data-xrc-agent-unread]")) {
+      badge.textContent = unread > 99 ? "99+" : String(unread || "");
+      setHidden(badge, unread === 0);
+    }
+    const bell = rootNode.querySelector?.("[data-xrc-agent-action='activity']");
+    if (bell) {
+      const label = unread ? `运行动态（${unread} 条未读）` : "运行动态";
+      bell.title = label;
+      bell.setAttribute?.("aria-label", label);
+      bell.setAttribute?.("aria-expanded", activityOpen(rootNode) ? "true" : "false");
+    }
+    const list = rootNode.querySelector?.("[data-xrc-agent-activity-list]");
+    if (!list) return;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    const entries = [...(store?.activity || [])].reverse();
+    const count = rootNode.querySelector?.("[data-xrc-agent-activity-count]");
+    if (count) count.textContent = entries.length ? `${entries.length} 条` : "";
+    if (!entries.length) {
+      list.append(el("li", "xrc-agent-activity-empty", "排班开始或暂停、切换任务时会记在这里，不会打断对话。"));
+      return;
+    }
+    const seen = Number(store?.seenAt) || 0;
+    for (const entry of entries) {
+      const fresh = (Number(entry.since) || entry.at) > seen;
+      const item = el("li", `xrc-agent-activity-item is-${entry.state}${fresh ? " is-unread" : ""}`);
+      const copy = el("div", "xrc-agent-activity-copy");
+      copy.append(el("p", "xrc-agent-activity-text", entry.text));
+      const meta = el("span", "xrc-agent-activity-meta", activityStamp(entry.at));
+      if (entry.updates > 1) meta.textContent += ` · 自 ${activityStamp(entry.since)} 更新 ${entry.updates} 次`;
+      copy.append(meta);
+      item.append(el("i", "xrc-agent-activity-dot"), copy);
+      list.append(item);
+    }
+  }
+
+  function activityDrawer() {
+    const drawer = el("section", "xrc-agent-drawer xrc-agent-activity");
+    drawer.setAttribute("data-xrc-agent-activity", "");
+    drawer.setAttribute("aria-label", "运行动态");
+    setHidden(drawer, true);
+    const head = el("header", "xrc-agent-activity-head");
+    const count = el("small", "xrc-agent-activity-count", "");
+    count.setAttribute("data-xrc-agent-activity-count", "");
+    const title = el("div", "xrc-agent-activity-title");
+    title.append(el("strong", "", "运行动态"), count);
+    const clear = actionButton("清空", "clear-activity", "xrc-agent-meta-button", "trash");
+    const close = actionButton("关闭动态", "activity", "xrc-agent-tool", "close");
+    close.title = "关闭动态";
+    head.append(title, clear, close);
+    const list = el("ol", "xrc-agent-activity-list");
+    list.setAttribute("data-xrc-agent-activity-list", "");
+    drawer.append(head, list);
+    return drawer;
+  }
+
+  function profileOpen(rootNode) {
+    const drawer = rootNode?.querySelector?.("[data-xrc-agent-profile]");
+    return Boolean(drawer && drawer.hidden !== true);
+  }
+
+  function profileDrawer() {
+    const drawer = el("section", "xrc-agent-drawer xrc-agent-profile");
+    drawer.setAttribute("data-xrc-agent-profile", "");
+    drawer.setAttribute("aria-label", "账号人格与记忆");
+    setHidden(drawer, true);
+    const head = el("header", "xrc-agent-activity-head");
+    const account = el("small", "xrc-agent-activity-count", "");
+    account.setAttribute("data-xrc-agent-profile-account", "");
+    const title = el("div", "xrc-agent-activity-title");
+    title.append(el("strong", "", "账号人格与记忆"), account);
+    const close = actionButton("关闭", "profile", "xrc-agent-tool", "close");
+    close.title = "关闭";
+    head.append(title, close);
+    const body = el("div", "xrc-agent-profile-body");
+    body.append(el("p", "xrc-agent-profile-lead", "只作用于当前账号。原则写在代码里，这里的内容排在原则和角色提示词之后。"));
+    for (const [field, label, hint] of [
+      ["role", "账号定位", "例如：中文 AI 工具圈，主做开发者互动"],
+      ["goal", "当前目标", "例如：这周先把评论回复做稳"],
+      ["tone", "回复方式", "例如：先给结论，一两句话"]
+    ]) {
+      const row = el("label", "xrc-agent-profile-field");
+      const input = el("textarea", "xrc-agent-profile-input");
+      input.setAttribute("data-xrc-agent-persona", field);
+      input.rows = 2;
+      input.placeholder = hint;
+      input.maxLength = PERSONA_LIMITS[field];
+      row.append(el("span", "", label), input);
+      body.append(row);
+    }
+    const save = actionButton("保存人格", "save-persona", "xrc-agent-command is-confirm", "check");
+    const note = el("p", "xrc-agent-profile-note", "");
+    note.setAttribute("data-xrc-agent-profile-note", "");
+    const memoryHead = el("div", "xrc-agent-profile-memory-head");
+    const count = el("small", "", "");
+    count.setAttribute("data-xrc-agent-memory-count", "");
+    memoryHead.append(el("strong", "", "记忆"), count);
+    const list = el("ol", "xrc-agent-memory-list");
+    list.setAttribute("data-xrc-agent-memory-list", "");
+    body.append(save, note, memoryHead, list);
+    drawer.append(head, body);
+    return drawer;
+  }
+
+  function paintProfile(rootNode, profiles, account, { fields = true, note = "" } = {}) {
+    const key = accountKey(account);
+    const profile = profileOf(profiles, key);
+    const tag = rootNode.querySelector?.("[data-xrc-agent-profile-account]");
+    if (tag) tag.textContent = key ? `@${key}` : "未读到账号";
+    if (fields) {
+      for (const field of ["role", "goal", "tone"]) {
+        const input = rootNode.querySelector?.(`[data-xrc-agent-persona="${field}"]`);
+        if (input) {
+          input.value = profile.persona[field] || "";
+          input.disabled = !key;
+        }
+      }
+    }
+    const message = rootNode.querySelector?.("[data-xrc-agent-profile-note]");
+    if (message) message.textContent = note || (key ? "" : "读不到当前账号，打开 X 并登录后再设置。");
+    const count = rootNode.querySelector?.("[data-xrc-agent-memory-count]");
+    if (count) count.textContent = `${profile.memory.length}/${MAX_MEMORY}`;
+    const list = rootNode.querySelector?.("[data-xrc-agent-memory-list]");
+    if (!list) return;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    if (!profile.memory.length) {
+      list.append(el("li", "xrc-agent-activity-empty", "说「记住：……」，或确认智能体提议的记忆，会按账号保存在这里。"));
+      return;
+    }
+    for (const item of profile.memory) {
+      const row = el("li", "xrc-agent-memory-item");
+      const copy = el("div", "xrc-agent-activity-copy");
+      copy.append(
+        el("p", "xrc-agent-activity-text", item.text),
+        el("span", "xrc-agent-activity-meta", `${MEMORY_TYPE_NAMES[item.type]} · ${item.source === "agent" ? "智能体提议、你确认" : "你写入"} · ${activityStamp(item.at)}`)
+      );
+      const drop = actionButton("忘掉这条", "forget-memory", "xrc-agent-tool", "trash");
+      drop.title = "忘掉这条";
+      drop.dataset.xrcAgentMemory = item.id;
+      row.append(el("span", "xrc-agent-memory-tag", MEMORY_TYPE_TAGS[item.type]), copy, drop);
+      list.append(row);
+    }
   }
 
   function paintLog(log, session, state = {}) {
     if (!log) return;
     while (log.firstChild) log.removeChild(log.firstChild);
     const turns = session?.turns || [];
-    // Status notes alone do not make a conversation: keep the openers until someone asks.
-    if (!state.replying && !turns.some((turn) => turn.kind !== "status")) paintWelcome(log);
+    if (session?.summary) {
+      const folded = el("details", "xrc-agent-compacted");
+      folded.setAttribute("data-xrc-agent-compacted", "");
+      folded.append(el("summary", "", `已压缩 ${Number(session.compacted) || 0} 条早前对话`), el("p", "xrc-agent-compacted-text", session.summary));
+      log.append(folded);
+    }
+    if (!state.replying && !turns.length && !session?.summary) paintWelcome(log);
     let previousAssistant = false;
     turns.forEach((turn, index) => {
-      if (turn.kind === "status") {
-        paintEvent(log, turn);
-        previousAssistant = false;
-        return;
-      }
       const assistant = turn.role !== "user";
       const continued = assistant && previousAssistant;
       const fresh = state.freshAt && String(turn.at) === String(state.freshAt);
@@ -732,6 +1193,8 @@
     report: '<path d="M3.2 12.6V8M8 12.6V3.4M12.8 12.6V6.2"/>',
     monitor: '<path d="M1.8 8s2.3-3.8 6.2-3.8S14.2 8 14.2 8s-2.3 3.8-6.2 3.8S1.8 8 1.8 8z"/><circle cx="8" cy="8" r="1.5"/>',
     toolbox: '<path d="M9.4 3.2a2.1 2.1 0 0 0-2.6 2.5L3.4 9.1l1.6 1.6 3.4-3.4a2.1 2.1 0 0 0 2.5-2.6L9.2 6.4 7.6 4.8l1.8-1.6z"/>',
+    persona: '<circle cx="8" cy="5.6" r="2.4"/><path d="M3.4 13.4c.6-2.4 2.4-3.7 4.6-3.7s4 1.3 4.6 3.7"/>',
+    bell: '<path d="M4.2 11.4V7.3a3.8 3.8 0 0 1 7.6 0v4.1l1.2 1.2H3l1.2-1.2z"/><path d="M6.6 13.6a1.5 1.5 0 0 0 2.8 0"/>',
     more: '<circle cx="4" cy="8" r=".9"/><circle cx="8" cy="8" r=".9"/><circle cx="12" cy="8" r=".9"/>',
     send: '<path d="M8 13V3.4M3.8 7.4 8 3.2l4.2 4.2"/>',
     copy: '<rect x="5.2" y="5.2" width="8" height="8" rx="1.4"/><path d="M10.8 5.2V3.9a1.1 1.1 0 0 0-1.1-1.1H3.9a1.1 1.1 0 0 0-1.1 1.1v5.8a1.1 1.1 0 0 0 1.1 1.1h1.3"/>',
@@ -865,8 +1328,9 @@
       thinking: rootNode.dataset.xrcAgentThinking || "",
       freshAt: rootNode.dataset.xrcAgentFresh || ""
     });
-    // The entrance animation plays once; later repaints (status notes) stay still.
+    // The entrance animation plays once; later repaints stay still.
     delete rootNode.dataset.xrcAgentFresh;
+    paintActivity(rootNode, store);
   }
 
   function chromeReadout(className) {
@@ -903,9 +1367,17 @@
     const row = el("div");
     row.append(el("small", "", kicker), pageTitle, statusStrip());
     const tools = el("div", "xrc-agent-head-tools");
+    const bell = actionButton("运行动态", "activity", "xrc-agent-tool xrc-agent-bell", "bell");
+    bell.title = "运行动态";
+    const badge = el("span", "xrc-agent-badge", "");
+    badge.setAttribute("data-xrc-agent-unread", "");
+    setHidden(badge, true);
+    bell.append(badge);
     const fresh = actionButton("新会话", "new", "xrc-agent-tool", "new");
     fresh.title = "新会话";
-    tools.append(fresh);
+    const persona = actionButton("账号人格与记忆", "profile", "xrc-agent-tool", "persona");
+    persona.title = "账号人格与记忆";
+    tools.append(persona, bell, fresh);
     head.append(row, tools);
     return head;
   }
@@ -1001,7 +1473,7 @@
     log.setAttribute("data-xrc-agent-log", "");
     log.setAttribute("role", "log");
     log.setAttribute("aria-live", "polite");
-    main.append(log, composer());
+    main.append(activityDrawer(), profileDrawer(), log, composer());
     const stage = el("div", "xrc-agent-stage");
     stage.append(threads, main);
     rootNode.append(rail, head, stage, more);
@@ -1025,10 +1497,11 @@
     rootNode.dataset.xrcAgentBusy = "1";
     rootNode.dataset.xrcAgentThinking = thinkingLabel(trimmed);
     // A typed or pressed command that answers an open confirm card closes that card.
-    const asking = [...thread.turns].reverse().find((turn) => turn.role !== "user" && turn.kind !== "status");
-    if (asking && !asking.resolved && Array.isArray(asking.confirm) && asking.confirm.includes(trimmed)) asking.resolved = trimmed;
+    const asking = [...thread.turns].reverse().find((turn) => turn.role !== "user");
+    const confirmed = Boolean(asking && !asking.resolved && Array.isArray(asking.confirm) && asking.confirm.includes(trimmed));
+    if (confirmed) asking.resolved = trimmed;
     thread.turns.push({ protocol: PROTOCOL, role: "user", text: trimmed, at: Date.now() });
-    thread.turns = thread.turns.slice(-MAX_TURNS);
+    autoCompact(thread);
     thread.title = threadTitle(thread.turns, thread.title, thread);
     thread.updatedAt = Date.now();
     paintStore(rootNode, store);
@@ -1041,11 +1514,24 @@
       : null;
     timer?.unref?.();
     try {
-      const reply = await handleTurn(trimmed, host, plannerContext(trimmed, store));
+      const account = currentAccount(host);
+      const profiles = await profilesOf(rootNode, host);
+      const route = routeCommand(trimmed);
+      let reply;
+      if (LOCAL_INTENTS.has(route.intent)) {
+        const local = localTurn(route, { thread, profiles, account, confirmed });
+        if (local.changedProfiles) {
+          await saveProfiles(storageOf(host), profiles);
+          if (profileOpen(rootNode)) paintProfile(rootNode, profiles, account, { fields: false });
+        }
+        if (local.openProfile) openProfile(rootNode, profiles, account);
+        reply = assistantTurn(route, { text: local.text, tool: { name: `memory:${route.intent}`, ok: local.ok !== false } });
+      } else {
+        reply = await handleTurn(trimmed, host, plannerContext(trimmed, store, profileOf(profiles, account), account));
+      }
       thread.turns.push(reply);
-      thread.turns = thread.turns.slice(-MAX_TURNS);
+      autoCompact(thread);
       thread.updatedAt = Date.now();
-      if (reply.view?.ok && reply.view.sentence) store.memory = String(reply.view.sentence).slice(0, 280);
       delete rootNode.dataset.xrcAgentBusy;
       delete rootNode.dataset.xrcAgentThinking;
       rootNode.dataset.xrcAgentFresh = String(reply.at);
@@ -1061,6 +1547,67 @@
         if (current?.threads) paintStore(rootNode, current);
       }
     }
+  }
+
+  function currentAccount(host) {
+    let handle = "";
+    try { handle = host?.accountHandle?.() || ""; } catch (error) { handle = ""; }
+    if (!accountKey(handle) && host?.snapshot) handle = describeRuntime(host.snapshot())?.account || "";
+    return accountKey(handle);
+  }
+
+  const profileStores = new WeakMap();
+
+  async function profilesOf(rootNode, host) {
+    let entry = profileStores.get(rootNode);
+    if (!entry) {
+      entry = loadProfiles(storageOf(host)).catch(() => normalizeProfiles(null));
+      profileStores.set(rootNode, entry);
+    }
+    return entry;
+  }
+
+  // The two drawers share one overlay slot; opening one closes the other.
+  function openProfile(rootNode, profiles, account) {
+    setHidden(rootNode.querySelector("[data-xrc-agent-activity]"), true);
+    setHidden(rootNode.querySelector("[data-xrc-agent-profile]"), false);
+    paintProfile(rootNode, profiles, account);
+    paintProfileButton(rootNode);
+    const store = sessions.get(rootNode);
+    if (store?.threads) paintActivity(rootNode, store);
+  }
+
+  function paintProfileButton(rootNode) {
+    const button = rootNode.querySelector?.("[data-xrc-agent-action='profile']");
+    button?.setAttribute?.("aria-expanded", profileOpen(rootNode) ? "true" : "false");
+  }
+
+  async function profileAction(rootNode, host, button, action) {
+    const account = currentAccount(host);
+    const profiles = await profilesOf(rootNode, host);
+    if (action === "profile") {
+      if (profileOpen(rootNode)) {
+        setHidden(rootNode.querySelector("[data-xrc-agent-profile]"), true);
+        paintProfileButton(rootNode);
+        return "profile-closed";
+      }
+      openProfile(rootNode, profiles, account);
+      return "profile-open";
+    }
+    if (action === "save-persona") {
+      const persona = {};
+      for (const field of ["role", "goal", "tone"]) {
+        persona[field] = rootNode.querySelector?.(`[data-xrc-agent-persona="${field}"]`)?.value || "";
+      }
+      const result = savePersona(profiles, account, persona);
+      if (result.ok) await saveProfiles(storageOf(host), profiles);
+      paintProfile(rootNode, profiles, account, { fields: result.ok, note: result.ok ? `已保存，只用于 @${account}。` : result.error });
+      return result.ok ? "persona-saved" : "persona-refused";
+    }
+    const result = forgetMemory(profiles, account, button.dataset.xrcAgentMemory);
+    if (result.ok) await saveProfiles(storageOf(host), profiles);
+    paintProfile(rootNode, profiles, account, { fields: false, note: result.ok ? `已忘掉「${result.entry.text}」。` : result.error });
+    return result.ok ? "memory-forgotten" : null;
   }
 
   async function enlargePanel(rootNode, host) {
@@ -1146,6 +1693,27 @@
       return action;
     }
     setHidden(rootNode.querySelector("[data-xrc-agent-more]"), true);
+    if (action === "profile" || action === "save-persona" || action === "forget-memory") {
+      return profileAction(rootNode, host, button, action);
+    }
+    if (action === "activity" || action === "clear-activity") {
+      const store = sessions.get(rootNode);
+      if (!store?.threads) return null;
+      const drawer = rootNode.querySelector("[data-xrc-agent-activity]");
+      if (action === "activity") {
+        const opening = !activityOpen(rootNode);
+        setHidden(drawer, !opening);
+        if (opening) {
+          setHidden(rootNode.querySelector("[data-xrc-agent-profile]"), true);
+          paintProfileButton(rootNode);
+        }
+      }
+      else store.activity = [];
+      if (activityOpen(rootNode) || action === "clear-activity") store.seenAt = Date.now();
+      paintActivity(rootNode, store);
+      await saveSession(storageOf(host), store);
+      return activityOpen(rootNode) ? "activity-open" : action === "clear-activity" ? "cleared" : "activity-closed";
+    }
     if (action === "copy" || action === "retry" || action === "dismiss-confirm") {
       return turnAction(rootNode, host, button, action);
     }
@@ -1345,27 +1913,42 @@
     noteMainStatus(rootNode, host);
   }
 
+  // Run notices never enter a thread. A task's progress ticks fold into one entry;
+  // only a new task or a pause/start change opens a new entry and counts as unread.
+  function noteActivity(store, view, now = Date.now()) {
+    if (!store || !view?.ok || !view.sentence) return false;
+    const list = Array.isArray(store.activity) ? store.activity : [];
+    const state = view.paused === true ? "paused" : view.paused === false ? "running" : "unknown";
+    const key = `${view.mode || ""}|${state}`;
+    const last = list[list.length - 1];
+    if (last?.text === view.sentence) return false;
+    if (last && last.key === key) {
+      last.text = String(view.sentence).slice(0, 280);
+      last.at = now;
+      last.updates = (Number(last.updates) || 1) + 1;
+    } else {
+      list.push({
+        id: `a-${now.toString(36)}-${Math.random().toString(36).slice(2, 5)}`,
+        at: now,
+        since: now,
+        key,
+        state,
+        task: String(view.taskName || "").slice(0, 40),
+        text: String(view.sentence).slice(0, 280),
+        updates: 1
+      });
+    }
+    store.activity = list.slice(-MAX_ACTIVITY);
+    return true;
+  }
+
   function noteMainStatus(rootNode, host) {
     const store = sessions.get(rootNode);
     if (!store?.threads || store.loading) return;
-    const main = store.threads.find((thread) => thread.kind === "main");
     const view = host?.snapshot ? describeRuntime(host.snapshot()) : null;
-    if (!main || !view?.ok || !view.sentence) return;
-    const last = [...main.turns].reverse().find((turn) => turn.kind === "status");
-    if (last?.text === view.sentence) return;
-    main.turns.push({
-      protocol: PROTOCOL,
-      role: "assistant",
-      kind: "status",
-      at: Date.now(),
-      text: view.sentence,
-      view
-    });
-    main.turns = main.turns.slice(-MAX_TURNS);
-    main.updatedAt = Date.now();
-    store.memory = String(view.sentence).slice(0, 280);
-    if (store.activeId === main.id) paintStore(rootNode, store);
-    else paintThreads(rootNode, store);
+    if (!noteActivity(store, view)) return;
+    if (activityOpen(rootNode)) store.seenAt = Date.now();
+    paintActivity(rootNode, store);
     void saveSession(storageOf(host), store);
   }
 
@@ -1412,6 +1995,14 @@
     rootNode.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         setHidden(rootNode.querySelector("[data-xrc-agent-more]"), true);
+        if (activityOpen(rootNode)) {
+          setHidden(rootNode.querySelector("[data-xrc-agent-activity]"), true);
+          paintActivity(rootNode, sessions.get(rootNode));
+        }
+        if (profileOpen(rootNode)) {
+          setHidden(rootNode.querySelector("[data-xrc-agent-profile]"), true);
+          paintProfileButton(rootNode);
+        }
         return null;
       }
       const field = event.target?.closest?.("[data-xrc-agent-input]");
@@ -1440,6 +2031,10 @@
   const api = {
     PROTOCOL,
     SESSION_KEY,
+    PROFILE_KEY,
+    COMPACT_AT,
+    KEEP_RECENT,
+    SUMMARY_MAX,
     SHELL_KEY,
     FRAME_KEY,
     THREAD_DOCK_WIDTH,
@@ -1454,7 +2049,18 @@
     clampFrame,
     applyFrame,
     mount,
-    sync
+    sync,
+    noteActivity,
+    unreadCount,
+    plannerContext,
+    compactThread,
+    accountKey,
+    normalizeProfiles,
+    profileOf,
+    addMemory,
+    forgetMemory,
+    savePersona,
+    loadProfiles
   };
   root.XrcAgentChat = api;
   if (typeof module === "object" && module.exports) module.exports = api;

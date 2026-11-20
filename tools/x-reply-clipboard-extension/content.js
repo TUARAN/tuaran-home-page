@@ -9653,13 +9653,13 @@
           renderPanel();
         }
       },
-      // Harness v2 runs in the service worker; only read tools run there.
+      // Harness v3 runs in the service worker; only read tools run there. The planner
+      // clamps the context (persona, memory, summary, recent) to its budget.
       async harness(context) {
+        const planner = globalThis.XrcAgentPlanner;
         return sendExtensionMessage({
           type: "xrc-agent-harness",
-          text: String(context?.text || "").slice(0, 400),
-          memory: String(context?.memory || "").slice(0, 400),
-          recent: String(context?.recent || "").slice(0, 800)
+          context: planner?.readHarnessContext ? planner.readHarnessContext(context) : { text: String(context?.text || "").slice(0, 400) }
         });
       },
       readFacts() {

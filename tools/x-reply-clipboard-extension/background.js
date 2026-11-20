@@ -3997,10 +3997,9 @@ async function runAgentHarness(message) {
   const planner = globalThis.XrcAgentPlanner;
   if (!planner?.runHarnessTurn) return { ok: false, fallback: "status-buttons", error: "规划模块没有加载" };
   const settings = await readAiSettings();
+  // The planner owns the context budget; the message is clamped there, not here.
   return planner.runHarnessTurn({
-    text: String(message?.text || "").slice(0, 400),
-    memory: String(message?.memory || "").slice(0, 400),
-    recent: String(message?.recent || "").slice(0, 800),
+    ...planner.readHarnessContext(message?.context),
     tools: agentHarnessTools(),
     settings,
     callModel: async (system, user) => {

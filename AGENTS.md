@@ -96,6 +96,7 @@
 
 ## Git 发布规则
 
+- 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
 - 用户说“开 PR”或“建分支”时，创建 `codex/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。
 - 非琐碎需求即使站长说「开 PR」，也先完成「Issue 优先」里的 Issue 和分诊，除非命中该节的例外。

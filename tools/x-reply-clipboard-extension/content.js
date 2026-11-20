@@ -425,6 +425,11 @@
       analysis: "动作发出后页面没有给出可确认的成功信号，插件未记成功。",
       advice: "先在 X 页面人工确认有没有发出；确认后再决定是否重跑，避免重复发送。",
     },
+    "self-healed": {
+      label: "自动修复",
+      analysis: "任务启动一直没被确认，插件关掉了旧执行页签，轮到时在新页签重新启动。每项任务每天最多 2 次，X 的限制提示不在此列。",
+      advice: "不用处理；同一项一天里修了 2 次仍没启动，再看任务详情里的原因。",
+    },
     "storage-failed": {
       label: "记录失败",
       analysis: "页面侧可能已成功，但本机去重或进度写入失败。",
@@ -3281,7 +3286,7 @@
         detail: restartSkip
           ? (/系统超限|疑似自动化|超过限制|操作受限|次数受限/u.test(String(queued.reason || ""))
             ? `已停止自动重试。${String(queued.reason)}。检查账号后可用单项按钮重新启动。`
-            : `已停止自动重试。${String(queued.reason || "原因：执行页没有回报启动结果")}。这是启动没有确认，不是系统超限。检查页面后可重新启动。`)
+            : `已停止自动重试。${String(queued.reason || "原因：执行页没有回报启动结果")}。这是启动没有确认，与 X 的次数限制无关。`)
           : `已停止自动重试。原因：${readableTaskLimitReason(queued.reason)}。下方进度仅属于当前窗口；检查账号后可用单项按钮重新启动。`
       };
     }
@@ -3481,7 +3486,7 @@
       .filter((text, index, list) => list.indexOf(text) === index)
       .join(" ");
     groups.replaceChildren();
-    const kindOrder = ["rate-limit", "retry-exhausted", "send-failed", "unconfirmed", "storage-failed"];
+    const kindOrder = ["rate-limit", "retry-exhausted", "send-failed", "unconfirmed", "storage-failed", "self-healed"];
     const orderedKinds = [
       ...kindOrder.filter((kind) => byKind.has(kind)),
       ...[...byKind.keys()].filter((kind) => !kindOrder.includes(kind)),
@@ -6325,7 +6330,8 @@
       .filter((textbox) => !textbox.closest(`#${PANEL_ID}`) && Boolean(loopApi.composerText(textbox)));
     for (const textbox of editors) {
       try {
-        textbox.focus();
+        await waitPanelTypingPause();
+        if (!panelField()) textbox.focus();
         await requestDraftClear();
         await sleep(120);
         if (loopApi.composerText(textbox)) {
@@ -6572,10 +6578,61 @@
     return String(node?.innerText || node?.textContent || "").trim();
   }
 
+  // Task actions run in the tab where the panel is open. While the user types
+  // in the panel, X buttons and editors must not keep the focus or the caret.
+  const PANEL_TYPING_QUIET_MS = 1200;
+  const PANEL_TYPING_WAIT_MS = 5000;
+  let panelTypedAt = 0;
+  let panelTypingSentAt = 0;
+
+  function panelField() {
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.closest?.(`#${PANEL_ID}`)) return null;
+    return /^(?:INPUT|TEXTAREA|SELECT)$/u.test(active.tagName || "") || active.isContentEditable ? active : null;
+  }
+
+  function holdPanelFocus() {
+    const field = panelField();
+    if (!field) return null;
+    const caret = typeof field.selectionStart === "number"
+      ? { start: field.selectionStart, end: field.selectionEnd, direction: field.selectionDirection }
+      : null;
+    return { field, caret };
+  }
+
+  function returnPanelFocus(held) {
+    if (!held?.field?.isConnected || document.activeElement === held.field) return;
+    try {
+      held.field.focus({ preventScroll: true });
+      if (held.caret && typeof held.field.setSelectionRange === "function") {
+        held.field.setSelectionRange(held.caret.start, held.caret.end, held.caret.direction || "none");
+      }
+    } catch (error) {
+      // The field changed while the action ran; leave focus where it is.
+    }
+  }
+
+  function notePanelTyping() {
+    const now = Date.now();
+    panelTypedAt = now;
+    if (now - panelTypingSentAt < 2000) return;
+    panelTypingSentAt = now;
+    sendExtensionMessage({ type: "xrc-panel-typing" }).catch(() => {});
+  }
+
+  async function waitPanelTypingPause() {
+    const started = Date.now();
+    while (panelField() && Date.now() - panelTypedAt < PANEL_TYPING_QUIET_MS
+      && Date.now() - started < PANEL_TYPING_WAIT_MS && !state.stopping) {
+      await sleep(150);
+    }
+  }
+
   function realClick(element) {
     if (!element) return;
+    const held = holdPanelFocus();
     element.scrollIntoView({ block: "center", inline: "nearest" });
-    element.focus?.({ preventScroll: true });
+    if (!held) element.focus?.({ preventScroll: true });
     const rect = element.getBoundingClientRect();
     const init = {
       bubbles: true,
@@ -6589,6 +6646,7 @@
       element.dispatchEvent(new EventClass(type, init));
     }
     element.click();
+    returnPanelFocus(held);
   }
 
   function getScroller() {
@@ -7336,6 +7394,7 @@
   async function fillComposer(textbox, text, options) {
     const phrase = String(text || "").trim();
     if (!phrase || !textbox) return "";
+    await waitPanelTypingPause();
     const result = await requestDraftFill(phrase, options);
     if (!result?.ok) return "";
     await sleep(200);
@@ -7352,8 +7411,12 @@
       return { dialog: null, textbox: inline, submit };
     }
     const hadInline = Boolean(inline);
+    await waitPanelTypingPause();
+    const held = holdPanelFocus();
     realClick(tweet.replyButton);
     const opened = await waitUntil(() => findReplyRestrictionDialog() || findComposer(tweet.article, hadInline), COMPOSER_TIMEOUT_MS);
+    // X focuses the editor of a dialog it opens; give the caret back to the panel.
+    returnPanelFocus(held);
     if (findReplyRestrictionDialog()) return null;
     return opened ? findComposer(tweet.article, hadInline) : null;
   }
@@ -10410,6 +10473,8 @@
       panel.addEventListener("keydown", pauseLikesForPanelInput, true);
       panel.addEventListener("wheel", pauseLikesForPanelInput);
       panel.addEventListener("input", pauseLikesForPanelInput);
+      panel.addEventListener("keydown", notePanelTyping, true);
+      panel.addEventListener("input", notePanelTyping);
       panel.addEventListener("pointerdown", (event) => event.stopPropagation());
       panel.addEventListener("click", (event) => {
         event.stopPropagation();

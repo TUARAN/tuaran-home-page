@@ -280,7 +280,25 @@
     };
   }
 
-  const api = { ENGINE_VERSION, MAX_PASSES, createTaskEngine, createEngineTrace };
+  // What the person can do about a start that was not confirmed. Matched on the
+  // cause that background.js records; the old generic text maps to the last entry.
+  const START_HELP = Object.freeze([
+    [/插件脚本没有响应/u, "刷新执行页签；还不行就关掉它，插件会重开一个"],
+    [/跳转或刷新了/u, "页面在启动时自己刷新了，插件会再试；反复出现就刷新执行页签"],
+    [/停在.*不在|不在任务页面/u, "看看执行页是否要求登录、验证或打开了错误页，处理后再启动"],
+    [/拒绝启动|页内启动失败|任务未能启动|启动未获确认/u, "按页面给的原因处理后，用单项按钮重新启动"],
+    [/长时间没有动作/u, "页面卡住了，刷新执行页签后重新启动"],
+    [/没有确认开始|没有回报启动结果|没有回复/u, "页面打开了，但插件没等到开始信号。常见于插件更新后页签没刷新，或页签在后台被浏览器冻结；刷新执行页签后重新启动"]
+  ]);
+
+  function startFailureHelp(text) {
+    const cause = String(text || "");
+    if (!cause) return "";
+    const found = START_HELP.find(([pattern]) => pattern.test(cause));
+    return found ? found[1] : "";
+  }
+
+  const api = { ENGINE_VERSION, MAX_PASSES, createTaskEngine, createEngineTrace, startFailureHelp };
   root.XrcTaskEngine = api;
   if (typeof module === "object" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

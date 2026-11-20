@@ -80,8 +80,9 @@ test('planner failure, bad JSON, timeout and step budget all fall back to status
   assert.deepEqual([down.stopReason, down.fallback, down.error], ['planner-failed', 'status-buttons', '全部失败'])
   const thrown = await planner.runHarnessTurn({ text: 'x', tools: tools(), callModel: async () => { throw new Error('网络断了') } })
   assert.equal(thrown.stopReason, 'planner-failed')
-  const prose = await planner.runHarnessTurn({ text: 'x', tools: tools(), callModel: scripted(['我觉得挺好']).callModel })
-  assert.match(prose.error, /不是约定的 JSON/)
+  const prose = await planner.runHarnessTurn({ text: 'x', tools: tools(), callModel: scripted(['我觉得挺好', '还是觉得挺好']).callModel })
+  assert.equal(prose.stopReason, 'planner-failed')
+  assert.match(prose.error, /不是约定的 JSON（收到：「还是觉得挺好」）/)
 
   let t = 0
   const slow = await planner.runHarnessTurn({
@@ -280,4 +281,123 @@ test('content script and service worker forward one context object through the p
   assert.match(content, /type: "xrc-agent-harness",\s*context: planner\?\.readHarnessContext/)
   assert.doesNotMatch(background, /memory: String\(message\?\.memory/)
   assert.equal(planner.HARNESS_PROTOCOL, 'xrc-harness/v3')
+})
+
+// Planning that ran out of room: tool results were cut off at the end of a 4000-character
+// message, so the model kept re-reading and the owner only saw "规划没有完成".
+test('tool results survive a full context; summary and old turns give way first', () => {
+  const context = planner.readHarnessContext({
+    text: '为啥关注没成功',
+    summary: '摘'.repeat(2000),
+    recent: Array.from({ length: 8 }, (_, index) => ({ role: index % 2 ? 'assistant' : 'user', text: `第${index}句`.padEnd(200, '话') })),
+  })
+  const big = { reason: '关'.repeat(3000) }
+  const steps = ['schedule.now', 'tasks.detail', 'alerts.recent'].map((tool) => ({ call: { tool, args: {} }, result: { ok: true, data: big } }))
+  const message = planner.harnessUserMessage(context, steps, { last: true })
+  assert.ok(message.length <= planner.CONTEXT_BUDGET.message, `message is ${message.length}`)
+  for (const tool of ['schedule.now', 'tasks.detail', 'alerts.recent']) assert.match(message, new RegExp(tool.replace('.', '\\.')))
+  assert.doesNotMatch(message, /早前对话摘要/)
+  assert.match(message, /站长现在说：为啥关注没成功/)
+  assert.match(message, /最后一步：只能回 \{"answer"/)
+  const roomy = planner.harnessUserMessage(context, steps.slice(0, 1))
+  assert.match(roomy, /早前对话摘要/)
+  assert.doesNotMatch(roomy, /最后一步/)
+})
+
+test('only the last step is told to answer, and a repeated read does not run again', async () => {
+  const log = []
+  const model = scripted(['{"tool":"facts.today"}', '{"tool":"facts.today"}', '{"answer":"今天评论 12 条。"}'])
+  const result = await planner.runHarnessTurn({ text: '今天做了多少', tools: tools(log), callModel: model.callModel })
+  assert.equal(result.stopReason, 'answer')
+  assert.deepEqual(log, ['facts.today'])
+  assert.match(result.steps[1].result.error, /已经读过/)
+  assert.doesNotMatch(model.seen[0].user, /最后一步/)
+
+  const last = scripted(['{"tool":"facts.today"}', '{"answer":"好"}'])
+  await planner.runHarnessTurn({ text: 'x', tools: tools(), limits: { maxSteps: 2 }, callModel: last.callModel })
+  assert.doesNotMatch(last.seen[0].user, /最后一步/)
+  assert.match(last.seen[1].user, /最后一步/)
+})
+
+test('a failed planning turn tells the owner why, with each provider error', async () => {
+  globalThis.document = { createElement: () => ({}) }
+  const chat = require('../../tools/x-reply-clipboard-extension/agentChat.js')
+  const base = { accountHandle: () => 'tuaran', snapshot: () => ({ ok: false }), async readRuntime() { return { ok: true, runtime: { tasks: {} }, schedule: { enabled: true, queue: [] } } } }
+  const keyless = await chat.handleTurn('为啥关注没成功', { ...base, async harness() { return { ok: false, stopReason: 'planner-failed', error: '规划模型没有返回（DeepSeek：未配置 API Key）' } } })
+  assert.match(keyless.text, /^规划没有完成：规划模型没有返回（DeepSeek：未配置 API Key）。/)
+  const slow = await chat.handleTurn('为啥关注没成功', { ...base, async harness() { return { ok: false, stopReason: 'timeout', error: '这一轮规划超时' } } })
+  assert.match(slow.text, /^规划没有完成：这一轮超过 45 秒。/)
+
+  const background = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.doesNotMatch(background, /String\(user \|\| ""\)\.slice\(0, 4000\)/)
+  assert.match(background, /max_tokens: 480/)
+  assert.match(background, /finish_reason === "length"/)
+  assert.match(background, /规划模型没有返回（\$\{why/)
+  assert.equal(planner.PROVIDER_NAMES.deepseek, 'DeepSeek')
+})
+
+test('tasks.detail answers why one task did not run, matched by name', async () => {
+  const now = Date.now()
+  const data = {
+    xrcTaskSchedule: {
+      enabled: true,
+      current: '',
+      sharedFollowCadenceVersion: 1,
+      rules: { 'mutual-targetFollow': { enabled: true }, timeline: { enabled: true } },
+      items: { 'mutual-targetFollow': { resumeAt: now + 3600000, reason: 'X 提示关注受限，按共享冷却等待', limitedStreak: 2 } },
+    },
+  }
+  const previous = globalThis.chrome
+  globalThis.chrome = { runtime: { id: 'me' }, storage: { local: {
+    async get(key) { if (typeof key === 'string') return { [key]: data[key] }; if (Array.isArray(key)) return Object.fromEntries(key.map((k) => [k, data[k]])); return { ...data } },
+    async set(values) { Object.assign(data, values) },
+  } } }
+  try {
+    const background = require('../../tools/x-reply-clipboard-extension/background.js')
+    const tool = background.agentHarnessTools()['tasks.detail']
+    assert.equal(tool.kind, 'read')
+    const follow = await tool.run({ task: '关注' })
+    const row = follow.tasks.find((entry) => entry.task === '关注候选')
+    assert.ok(row, JSON.stringify(follow))
+    assert.ok(['等待', '已停', '到期待派', '空闲', '执行中', '手动停止'].includes(row.state))
+    assert.match(row.followsToday, /^\d+\/300$/)
+    assert.equal(follow.tasks.some((entry) => entry.task === '评论首页'), false)
+    const none = await tool.run({ task: '不存在的任务' })
+    assert.deepEqual(none.tasks, [])
+    assert.match(none.note, /没有名字含/)
+    assert.ok(JSON.stringify(await tool.run({})).length <= planner.CONTEXT_BUDGET.fact * 4)
+  } finally {
+    if (previous) globalThis.chrome = previous
+    else delete globalThis.chrome
+  }
+})
+
+test('readStep finds the step inside a code fence, prose, or next to another object', () => {
+  assert.deepEqual(planner.readStep('好的\n```json\n{"answer":"关注受限 {x} \\"引号\\""}\n```'), { kind: 'answer', text: '关注受限 {x} "引号"' })
+  assert.deepEqual(planner.readStep('{"thought":"先看任务"} {"tool":"tasks.detail","args":{"task":"关注"}}'), { kind: 'tool', tool: 'tasks.detail', args: { task: '关注' } })
+  assert.deepEqual(planner.jsonObjects('a {"x":"}"} b {"y":{"z":1}}'), ['{"x":"}"}', '{"y":{"z":1}}'])
+})
+
+test('one unreadable reply gets a correction without using up a step', async () => {
+  const model = scripted(['我觉得挺好', '{"tool":"facts.today"}', '{"answer":"今天评论 12 条。"}'])
+  const turn = await planner.runHarnessTurn({ text: '今天怎么样', tools: tools(), limits: { maxSteps: 2 }, callModel: model.callModel })
+  assert.equal(turn.stopReason, 'answer')
+  assert.equal(turn.answer, '今天评论 12 条。')
+  assert.match(model.seen[1].user, /上一条回复不是约定的 JSON（收到：「我觉得挺好」）/)
+  assert.doesNotMatch(model.seen[2].user, /上一条回复不是约定的 JSON/)
+  assert.match(model.seen[2].user, /这是本轮最后一步/)
+})
+
+test('the same read tool with different arguments still runs', async () => {
+  const asked = []
+  const detail = { 'tasks.detail': { kind: 'read', describe: '任务详情', run: async (args) => { asked.push(args.task); return { task: args.task } } } }
+  const model = scripted(['{"tool":"tasks.detail","args":{"task":"关注"}}', '{"tool":"tasks.detail","args":{"task":"评论大V"}}', '{"answer":"两个都读到了。"}'])
+  const turn = await planner.runHarnessTurn({ text: '关注和评论大V', tools: detail, callModel: model.callModel })
+  assert.equal(turn.stopReason, 'answer')
+  assert.deepEqual(asked, ['关注', '评论大V'])
+})
+
+test('DeepSeek planning asks for JSON mode', async () => {
+  const background = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.match(background, /max_tokens: 480,\s*\/\/[^\n]*\n\s*response_format: \{ type: "json_object" \}/)
 })

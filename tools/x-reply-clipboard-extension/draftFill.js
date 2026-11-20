@@ -5,6 +5,7 @@
   const HANDLER_KEY = "__xReplyClipboardDraftMessageHandlerV2";
   const PLACEHOLDER_RE = /^(Post your reply|发布你的回复|写回复|Tweet your reply|What’s happening\?|What's happening\?|有什么新鲜事？)$/i;
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
+  const PANEL_SELECTOR = "#x-reply-clipboard-panel";
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,7 +64,7 @@
     if (strict) return strict;
     const candidates = document.querySelectorAll('[contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"]');
     for (const editor of candidates) {
-      if (!visibleEditor(editor)) continue;
+      if (!visibleEditor(editor) || editor.closest?.(PANEL_SELECTOR)) continue;
       let current = editor;
       for (let depth = 0; current && depth < 8; depth += 1) {
         if (current === document.body || current === document.documentElement) break;
@@ -210,13 +211,44 @@
     selection.addRange(range);
   }
 
-  function insertWithCommand(editor, phrase) {
+  // execCommand needs the X editor focused. When the user is typing in the
+  // extension panel, borrow focus for one synchronous command and give it back
+  // with the caret, so no keystroke lands in the X editor.
+  function panelFocus() {
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.closest?.(PANEL_SELECTOR)) return null;
+    const caret = typeof active.selectionStart === "number"
+      ? { start: active.selectionStart, end: active.selectionEnd, direction: active.selectionDirection }
+      : null;
+    return { active, caret };
+  }
+
+  function returnFocus(held) {
+    if (!held?.active?.isConnected || document.activeElement === held.active) return;
+    try {
+      held.active.focus({ preventScroll: true });
+      if (held.caret && typeof held.active.setSelectionRange === "function") {
+        held.active.setSelectionRange(held.caret.start, held.caret.end, held.caret.direction || "none");
+      }
+    } catch (error) {
+      // The field may have been removed or changed type; leave focus where it is.
+    }
+  }
+
+  function withEditorFocus(editor, command) {
+    const held = panelFocus();
     focusEditor(editor);
     try {
-      return document.execCommand("insertText", false, phrase);
+      return command();
     } catch (error) {
       return false;
+    } finally {
+      returnFocus(held);
     }
+  }
+
+  function insertWithCommand(editor, phrase) {
+    return withEditorFocus(editor, () => document.execCommand("insertText", false, phrase));
   }
 
   async function clearReplyComposer(scope = "reply") {
@@ -232,13 +264,7 @@
       await sleep(80);
       return { ok: comparableDraftText(editor, scope) === "", via: "draft" };
     }
-    focusEditor(editor);
-    let deleted = false;
-    try {
-      deleted = document.execCommand("delete", false, null);
-    } catch (error) {
-      deleted = false;
-    }
+    const deleted = Boolean(withEditorFocus(editor, () => document.execCommand("delete", false, null)));
     await sleep(80);
     return comparableDraftText(editor, scope) === ""
       ? { ok: true, via: deleted ? "delete" : "empty" }
@@ -379,7 +405,8 @@
     characterSample,
     writeReplyDraft,
     fillReplyComposer,
-    clearReplyComposer
+    clearReplyComposer,
+    withEditorFocus
   };
 
   if (typeof module === "object" && module.exports) {

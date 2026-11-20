@@ -178,6 +178,7 @@
     "facts.today": "今日数据",
     "alerts.recent": "执行报警",
     "engine.trace": "调度记录",
+    "tasks.detail": "任务详情",
     "memory.remember": "记忆"
   });
 
@@ -215,6 +216,13 @@
       })
       .filter(Boolean)
       .filter((command, index, list) => list.indexOf(command) === index);
+  }
+
+  // Say why planning stopped, in words the owner can act on.
+  function plannerStopText(planner) {
+    if (planner?.stopReason === "timeout") return "这一轮超过 45 秒";
+    const error = String(planner?.error || "").trim();
+    return error || "规划模型没有给出结论";
   }
 
   async function handleTurn(text, host, context) {
@@ -302,7 +310,7 @@
         });
       }
       const lead = planner.used
-        ? "规划没有完成，先只显示读到的状态。"
+        ? `规划没有完成：${plannerStopText(planner)}。先只显示读到的状态。`
         : "这句还不能交给规划模型。下面是读到的状态。";
       return assistantTurn(route, {
         text: `${lead}${view.sentence}`,
@@ -1109,6 +1117,7 @@
     if (message) message.textContent = note || (key ? "" : "读不到当前账号，打开 X 并登录后再设置。");
     const count = rootNode.querySelector?.("[data-xrc-agent-memory-count]");
     if (count) count.textContent = `${profile.memory.length}/${MAX_MEMORY}`;
+    paintMemoryCard(rootNode, profiles, key);
     const list = rootNode.querySelector?.("[data-xrc-agent-memory-list]");
     if (!list) return;
     while (list.firstChild) list.removeChild(list.firstChild);
@@ -1129,6 +1138,46 @@
       row.append(el("span", "xrc-agent-memory-tag", MEMORY_TYPE_TAGS[item.type]), copy, drop);
       list.append(row);
     }
+  }
+
+  // The current account's memory, always visible under the thread list.
+  function memoryCard() {
+    const card = el("button", "xrc-agent-memory-card");
+    card.type = "button";
+    card.dataset.xrcAgentAction = "profile";
+    card.setAttribute("data-xrc-agent-memory-card", "");
+    const head = el("span", "xrc-agent-memory-card-head");
+    const count = el("small", "", "");
+    count.setAttribute("data-xrc-agent-memory-card-count", "");
+    head.append(icon("persona"), el("strong", "", "本账号记忆"), count);
+    const list = el("span", "xrc-agent-memory-card-list");
+    list.setAttribute("data-xrc-agent-memory-card-list", "");
+    card.append(head, list);
+    return card;
+  }
+
+  function paintMemoryCard(rootNode, profiles, account) {
+    const card = rootNode.querySelector?.("[data-xrc-agent-memory-card]");
+    if (!card) return;
+    const key = accountKey(account);
+    const profile = profileOf(profiles, key);
+    rootNode.dataset.xrcAgentMemoryAccount = key;
+    const count = card.querySelector("[data-xrc-agent-memory-card-count]");
+    if (count) count.textContent = key ? `${profile.memory.length}/${MAX_MEMORY}` : "";
+    const list = card.querySelector("[data-xrc-agent-memory-card-list]");
+    if (!list) return;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    const persona = ["role", "goal", "tone"].filter((field) => profile.persona[field]).length;
+    const lines = !key
+      ? ["读不到当前账号"]
+      : [
+        `@${key} · 人格${persona ? `已设 ${persona}/3 项` : "未设置"}`,
+        ...(profile.memory.length
+          ? profile.memory.slice(-3).reverse().map((item) => `${MEMORY_TYPE_TAGS[item.type]}｜${item.text}`)
+          : ["还没有记忆。说「记住：……」写入"])
+      ];
+    for (const line of lines) list.append(el("span", "xrc-agent-memory-card-line", line));
+    card.setAttribute("aria-label", key ? `打开 @${key} 的人格与记忆，共 ${profile.memory.length} 条` : "打开人格与记忆");
   }
 
   function paintLog(log, session, state = {}) {
@@ -1456,7 +1505,7 @@
     threads.setAttribute("data-xrc-agent-thread-column", "");
     const list = el("div", "xrc-agent-threads");
     list.setAttribute("data-xrc-agent-threads", "");
-    threads.append(list);
+    threads.append(list, memoryCard());
     const more = el("div", "xrc-agent-more");
     more.setAttribute("data-xrc-agent-more", "");
     setHidden(more, true);
@@ -1523,6 +1572,7 @@
         if (local.changedProfiles) {
           await saveProfiles(storageOf(host), profiles);
           if (profileOpen(rootNode)) paintProfile(rootNode, profiles, account, { fields: false });
+          else paintMemoryCard(rootNode, profiles, account);
         }
         if (local.openProfile) openProfile(rootNode, profiles, account);
         reply = assistantTurn(route, { text: local.text, tool: { name: `memory:${route.intent}`, ok: local.ok !== false } });
@@ -1911,6 +1961,11 @@
     paintRailToggle(rootNode);
     restoreFrame(panelOf(rootNode));
     noteMainStatus(rootNode, host);
+    // Switching X accounts switches the memory card with it.
+    const account = currentAccount(host);
+    if (rootNode.dataset.xrcAgentMemoryAccount !== account) {
+      profilesOf(rootNode, host).then((profiles) => paintMemoryCard(rootNode, profiles, account)).catch(() => {});
+    }
   }
 
   // Run notices never enter a thread. A task's progress ticks fold into one entry;

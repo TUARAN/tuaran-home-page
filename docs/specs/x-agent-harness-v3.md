@@ -1,6 +1,6 @@
 # X 大互动智能体 Harness v3：原则、账号人格、记忆与上下文
 
-2026-11-20 · 分支 `feat/x-agent-v5-453` · 扩展版本 v5.4.0（本地测试，未打包）· 协议 `xrc-harness/v3`
+2026-11-20 · 分支 `feat/x-agent-v5-453` · 扩展版本 v5.4.0 起，v5.5.0、v5.5.1、v5.6.0、v5.7.0、v5.7.1 修订（本地测试，未打包）· 协议 `xrc-harness/v3`
 
 面向读者的说明在黄皮书第七章「智能体规则」（`/resources/x-reply-clipboard-extension/docs#agent-rules`）。规则以代码为准，对应位置见文末。
 
@@ -82,6 +82,7 @@
 | 摘要 | 900，超出保留尾部并以「…」开头 |
 | 最近对话 | 每条 220、合计 1400，从最新往前填 |
 | 单个工具结果 | 1600 |
+| 整条消息（v5.5） | 7000：工具结果优先；超出先去摘要，再去最早的对话 |
 
 面板只取最近 8 条（不含本轮）交给后台；后台 `runAgentHarness` 用 `readHarnessContext` 再裁一次，以后台为准。轮次限制沿用 v2：最多 4 步、45 秒，每个工具 10 秒。
 
@@ -109,6 +110,109 @@
 - 一个账号一个执行页签；一个面板同一时间一轮对话。
 - 评论 / 发帖链路与规划链路分开，互不读取提示词、人格与记忆。
 - 失败、超时、步数用尽时如实说明，不猜测结果，不执行写操作。
+
+## v5.5.0：规划失败可自查
+
+**现象**：问「为啥关注没成功」，回复只有「规划没有完成，先只显示读到的状态」，看不到原因，也没有工具能读单个任务的状态。
+
+**原因**
+
+- 后台把发给模型的用户消息截在 4000 字。工具结果排在末尾，最先被截掉；模型看不到刚读到的事实，只能反复读，直到 4 步用完。
+- DeepSeek `max_tokens` 为 240，三句中文加 JSON 外壳可能被截断，解析失败。
+- 各模型的失败原因在后台被合并成「规划模型没有返回」，面板也只显示固定文案。
+
+**修订**
+
+- `harnessUserMessage` 按 `CONTEXT_BUDGET.message`（7000）组装：工具结果和本句优先，超出先去摘要，再去最早的对话；后台的截断只作兜底，取同一个预算。
+- 最后一步附「只能回 answer」；同一轮已成功读过的工具不再重跑，记为失败步骤提示直接作答。
+- DeepSeek `max_tokens` 480；`finish_reason === "length"` 报「回复被截断」。
+- 后台把每个模型的失败原因拼进错误（`规划模型没有返回（DeepSeek：未配置 API Key）`）；面板回复写「规划没有完成：原因。」，超时写「这一轮超过 45 秒」。
+- 新只读工具 `tasks.detail`（`args.task` 按任务名或 mode 匹配）：状态、原因、恢复时间、最近启动错误、X 限制连续次数、上次运行、执行页详情，关注类附今日关注数。
+- 会话列表下方常驻「本账号记忆」卡片（`[data-xrc-agent-memory-card]`）：账号、人格设置项数、记忆条数与最近三条；点开人格抽屉；切换账号时在 `sync` 里重画。
+
+## v5.5.1：步骤解析与面板焦点
+
+**现象一**：v5.5.0 之后仍出现「规划结果不是约定的 JSON」。`readStep` 用 `/\{[\s\S]*\}/` 从第一个 `{` 截到最后一个 `}`，模型回复带代码块、说明文字或两个对象时整段 `JSON.parse` 失败，本轮立即结束。
+
+**修订**
+
+- `jsonObjects` 按括号配对逐个取出完整对象（跳过字符串里的括号和转义），`readStep` 取第一个能解析且合规的步骤；先去掉 Markdown 代码块标记。
+- 读不出时纠正一次：把收到的前 40 字放进下一条用户消息（「上一条回复不是约定的 JSON（收到：「…」）」），这次不占步数；第二次仍读不出，错误里附上收到的内容。
+- DeepSeek 请求加 `response_format: { type: "json_object" }`。
+- 重复读取的判断加上参数：同一工具、同一参数才拦。
+
+**现象二**：任务在面板所在的执行页签运行时，面板输入框的焦点被抢走，正在打的字可能进到 X 评论框。
+
+**原因**
+
+- `realClick` 点击前先 `element.focus()`，点赞、关注、回复每次都会抢焦点。
+- `draftFill.js` 的 `focusEditor` 把焦点和选区移到 X 编辑框，填写结束不归还；`clearInlineReplyEditors` 直接 `textbox.focus()`。
+- X 打开回复弹窗时自己聚焦编辑框。
+- 通知任务读会话上下文时，后台会把当前窗口切到会话页签。
+
+**修订**
+
+- `content.js` 新增 `panelField` / `holdPanelFocus` / `returnPanelFocus`：面板里的输入框、文本框或可编辑元素有焦点时，`realClick` 不聚焦目标按钮，点击后归还焦点与光标；`openComposer` 在弹窗打开后归还。
+- `waitPanelTypingPause`：打开、填写、清空评论框前，若面板输入框有焦点且 1.2 秒内有按键或输入，最多等 5 秒。上限与冷却不变。
+- `draftFill.js` `withEditorFocus`：执行 `insertText` / `delete` 时借用焦点，同步执行完立即还给面板（含选区），中间不会插入按键；没有面板焦点时行为不变。`replyEditor` 的兜底查找排除面板。
+- 面板按键与输入每 2 秒最多发一次 `xrc-panel-typing`；后台 `panelTypingRecently(tabId)` 8 秒内不把执行页签所在窗口切到通知会话页签，停手后再切。
+
+测试：`tests/extensions/agent-harness.test.mjs`（代码块与多对象解析、纠正一次、换参数可重读、JSON 模式）；`tests/extensions/panel-focus.test.mjs`（焦点借用与归还、点击与评论框的守卫、后台不切页签）。
+
+## v5.6.0：启动未确认写明原因
+
+**现象**：`tasks.detail` 对关注候选报「已停」，原因「单项启动时安全轮换」，最近启动错误「执行页没有回报启动结果」。站长看不出该做什么。
+
+**原因**
+
+- `recoverCurrentTask` 在刷新或跳过时只沿用旧的 `lastStartError`，没有就填固定的「执行页没有回报启动结果」。探测时已知的情况都没记：执行页不在任务页面、`chrome.tabs.sendMessage` 失败（脚本未加载）、页面没回结果。
+- `recoveryAfterTab` 只对评论类任务处理「页面拒绝启动」；关注等任务的拒绝原因在刷新时丢失。
+- 单项启动让位（`reason: "单项启动时安全轮换"`）对已停任务也改写原因，盖掉了停止原因。
+
+**修订**
+
+- `tryInPageTaskStart(tabId, mode, handle, note)` 把没收到结果的原因写进 `note.cause`：脚本没有响应、启动时页面跳转或刷新、收到请求没回结果、不在任务页面正在跳转。
+- `recoverCurrentTask` 记下这次探测看到的原因：停在哪个路径、页面拒绝的原文、或「在任务页面但 90 秒内没有确认开始」；刷新（`reloadItem`）和跳过都用它作为 `lastStartError`，引擎记录里也带上。
+- `taskEngine.js` `startFailureHelp(cause)`：按原因给一句处理办法；旧的固定文案也有对应。`restartSkipCopy` 在跳过说明后附「处理：…」，上限 240 字。
+- 让位时已停任务保持原样。
+- `tasks.detail` 每项多 `whatToDo`；工具说明要求回答时照着说。
+
+测试：`tests/extensions/start-failure-cause.test.mjs`。
+
+## v5.7.0：启动未确认的任务自动修复
+
+**现象**：v5.6.0 之后智能体能说清「刷新执行页签后重新启动」，但仍要站长动手。站长要求：写明了的处理办法由插件自己执行。
+
+**修订**
+
+- `recoverExhaustedStart` 只在同一页签重建一次启动请求；第二次耗尽返回 false，调用方按原逻辑停下任务（`blocked`）。原先的「5 分钟后重新排班」同页签循环取消。
+- `selfHealStartFailure(plan, now)`：`schedulePass` 在派发前调用，只在 `plan.current` 为空时运行。条件：排班开启、规则开启、任务已停且非手动停止、停止属于当前账号、原因是启动没被确认（脚本没响应、没回结果、重启耗尽等）。X 限制、页面拒绝启动、登录或验证页不修。
+- 修复动作：关掉旧执行页签（`abandonScheduledTab`），`workTabId` 清零，任务解除停止、计数清零、`lastStartError` 清空（新页签首次打开不算重启），不设 `manualRequestedAt`，启动照常等间隔、时间窗和冷却。
+- 次数：`item.selfHeal = { date, count, cause, at }`，上海日期，每项每天 2 次（`SELF_HEAL_DAILY_LIMIT`）。用完后原因前加「今天已自动换页签修复 2 次仍未启动，明天会再自动试；也可以手动启动」，只写一次并记 `retry-exhausted` 报警。
+- 每次修复记 `self-healed` 执行报警（面板标签「自动修复」）和引擎记录 `self-heal`。
+- 面板 8 秒内有输入时不关页签，下一次闹钟再试。
+- `tasks.detail` 的 `whatToDo` 在可修复时写「插件会自己处理…」，并给 `selfHealToday`。修复由后台执行，智能体仍不执行写操作，原则 2 不变。
+
+测试：`tests/extensions/self-heal.test.mjs`。
+
+## v5.7.1：旧执行页签越积越多
+
+**现象**：浏览器里出现一排标题为「@账号 · 任务名」的 X 页签。只有当过执行页签的页面才带这个标题前缀。
+
+**原因**
+
+- `openNotificationsInBackground`：评论回复在非通知页触发时，每次 `createSharedExecTab` 新开页签并改写 `workTabId`，原执行页签不关。
+- `abandonScheduledTab`：`chrome.tabs.remove` 2.5 秒没完成（如「离开网站？」提示）时放弃句柄，页签留在浏览器里，之后没有任何逻辑再处理它。
+- v5.7.0 `selfHealStartFailure` 关旧页签也走 `abandonScheduledTab`，同样可能留下。
+
+**修订**
+
+- `openNotificationsInBackground` 先用 `liveExecTabId(plan, senderTabId)` 找现有执行页签（存在、在 X 上、不是发起的页签），有就跳转复用，没有才新开。
+- `xrcCreatedExecTabs`（storage.local，最多 40 个）：`createSharedExecTab`、任务窗口创建、会话读取页创建时记录；关不掉的页签重新记入。
+- `closeStrayExecTabs(plan)`：`schedulePass` 在自动修复和派发前调用。保留：`workTabId`、运行时处于 running/paused/starting/stopping 的任务页、`detachedReplyTabIds`、`contextTabs`、前台页签、8 秒内有面板输入的页签；已关闭或已离开 X 的移出名单；其余关闭，关不掉留到下一轮。
+- 一次性迁移（`strayTabSweepVersion` 1）：按标题前缀 `@当前账号 · ` 找出旧版本留下的任务页签，同样按上面的条件关闭。别的账号和普通 X 页面不动。
+
+测试：`tests/extensions/stray-tabs.test.mjs`。
 
 ## 实现位置
 

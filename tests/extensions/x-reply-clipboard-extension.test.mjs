@@ -10941,7 +10941,7 @@ test('a follow page that already hit the rate limit skips instead of restarting'
   }
 })
 
-test('a follow start reload recovers once then yields for five minutes', async () => {
+test('a follow start reload recovers once on the same tab, then stops for the new-tab repair', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const local = {
@@ -10977,13 +10977,11 @@ test('a follow start reload recovers once then yields for five minutes', async (
     local.xrcTaskSchedule.startedAt = Date.now()
     item.reloadAttempts = 3
     const again = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
-    assert.equal(again.recovered, true)
+    assert.notEqual(again.recovered, true)
     assert.equal(local.xrcTaskSchedule.current, '')
-    const deferred = local.xrcTaskSchedule.items['mutual-targetFollow']
-    assert.equal(deferred.manualRequestedAt, 0)
-    assert.equal(deferred.autoStartRecoveredAt, 0)
-    assert.ok(deferred.resumeAt >= now + 5 * 60000)
-    assert.equal(deferred.blocked, false)
+    const stopped = local.xrcTaskSchedule.items['mutual-targetFollow']
+    assert.equal(stopped.blocked, true)
+    assert.match(stopped.reason, /^已重启 3 次，已跳过这项任务/)
   } finally {
     globalThis.chrome = previousChrome
   }

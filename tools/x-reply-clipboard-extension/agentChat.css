@@ -393,6 +393,55 @@
   min-width: 0;
 }
 
+/* Current account memory, pinned under the thread list. */
+#x-reply-clipboard-panel .xrc-agent-memory-card {
+  display: grid;
+  flex: none;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--xrc-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+#x-reply-clipboard-panel .xrc-agent-memory-card:hover { background: var(--xrc-soft); }
+
+#x-reply-clipboard-panel .xrc-agent-memory-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+#x-reply-clipboard-panel .xrc-agent-memory-card-head .xrc-agent-icon { color: var(--xrc-accent); }
+
+#x-reply-clipboard-panel .xrc-agent-memory-card-head small {
+  margin-left: auto;
+  color: var(--xrc-muted);
+  font-size: 11px;
+}
+
+#x-reply-clipboard-panel .xrc-agent-memory-card-list {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#x-reply-clipboard-panel .xrc-agent-memory-card-line {
+  overflow: hidden;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #x-reply-clipboard-panel .xrc-agent-thread-time {
   color: var(--xrc-muted);
   font-size: 11px;

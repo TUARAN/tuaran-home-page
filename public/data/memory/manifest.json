@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T12:58:06.270Z",
+  "generatedAt": "2026-11-20T07:58:43.934Z",
   "kdf": {
     "algorithm": "PBKDF2-SHA256",
     "iterations": 200000,
@@ -356,6 +356,12 @@
               "hash": "a5224a74f159385b6279efdd63d9a1da7e520093a21dd9260c6cd2f78a5b896a",
               "path": "ai-context/README/2026-11-02T12-58-06-225Z.enc.json",
               "bytes": 2787
+            },
+            {
+              "ts": "2026-11-20T07:58:43.864Z",
+              "hash": "d6b85dc0b6dbf56433c08360f573afa8a9a443ff1ff2253e14f9b74c181e7a8d",
+              "path": "ai-context/README/2026-11-20T07-58-43-881Z.enc.json",
+              "bytes": 2975
             }
           ]
         },
@@ -788,6 +794,24 @@
               "hash": "6b02027487d6ef1ac915940964a5d1f448277627d67431015fed51fe4119bbec",
               "path": "ai-context/cloudflare-usage-incidents/2026-11-02T12-58-06-266Z.enc.json",
               "bytes": 4671
+            },
+            {
+              "ts": "2026-11-20T07:58:43.891Z",
+              "hash": "87c6c4817a2a0be56dcb60494df7600e707064b87c8314112ada2c7e34a39fb6",
+              "path": "ai-context/cloudflare-usage-incidents/2026-11-20T07-58-43-909Z.enc.json",
+              "bytes": 4783
+            }
+          ]
+        },
+        "content-visualization-alignment": {
+          "title": "content-visualization-alignment",
+          "description": "",
+          "versions": [
+            {
+              "ts": "2026-11-20T07:58:43.911Z",
+              "hash": "558d941262368f38b0d3e8fc924960e2245b797c8052eb236d402b8e882700a6",
+              "path": "ai-context/content-visualization-alignment/2026-11-20T07-58-43-931Z.enc.json",
+              "bytes": 11128
             }
           ]
         }

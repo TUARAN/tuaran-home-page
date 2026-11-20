@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const apiSource = await readFile(new URL('../../app/api/admin/quotes/route.js', import.meta.url), 'utf8')
-const consoleSource = await readFile(
-  new URL('../../app/(admin)/admin/quotes/QuotesConsole.jsx', import.meta.url),
+const adminPageDir = new URL('../../app/(admin)/admin/quotes/', import.meta.url)
+const adminApiDir = new URL('../../app/api/admin/quotes/', import.meta.url)
+const adminRoutesSource = await readFile(
+  new URL('../../lib/admin/adminRoutes.js', import.meta.url),
   'utf8',
 )
 const contentCenterSource = await readFile(
@@ -21,19 +22,23 @@ const poolMigrationSource = await readFile(new URL('../../migrations/0080_quote_
 const cronSource = await readFile(new URL('../../app/api/cron/quotes/route.js', import.meta.url), 'utf8')
 const workflowSource = await readFile(new URL('../../.github/workflows/quote-generation.yml', import.meta.url), 'utf8')
 
-test('manual quote generation remains owner-only but is paused', () => {
-  assert.match(apiSource, /getOwnerOrReject/)
-  for (const method of ['GET', 'POST']) {
-    assert.match(apiSource, new RegExp(`export async function ${method}`))
+async function doesNotExist(target) {
+  try {
+    await access(target)
+    return false
+  } catch {
+    return true
   }
-  assert.doesNotMatch(apiSource, /export async function (PATCH|DELETE)/)
-  assert.match(consoleSource, /短句存档/)
-  assert.doesNotMatch(consoleSource, /method: 'POST'|<form|生成并入库/)
-  assert.match(apiSource, /QUOTE_GENERATION_PAUSED/)
-  assert.match(apiSource, /QUOTE_GENERATION_PAUSED'.*status: 423|QUOTE_GENERATION_PAUSED[\s\S]*status: 423/)
-  assert.doesNotMatch(consoleSource, /候选|新增名言|编辑名言|核验来源/)
-  assert.match(automationCenterSource, /getWorkspaceHubProps\('\/admin\/automation'\)/)
+}
+
+test('quotes admin page and its owner-only api are retired', async () => {
+  assert.ok(await doesNotExist(adminPageDir), 'admin quotes page directory should be removed')
+  assert.ok(await doesNotExist(adminApiDir), 'admin quotes api directory should be removed')
+  const mentions = adminRoutesSource.match(/\/admin\/quotes/g) || []
+  assert.equal(mentions.length, 1, 'only the legacy redirect should mention /admin/quotes')
+  assert.match(adminRoutesSource, /'\/admin\/quotes': '\/admin\/archives'/)
   assert.doesNotMatch(contentCenterSource, /href: '\/admin\/quotes'/)
+  assert.match(automationCenterSource, /getWorkspaceHubProps\('\/admin\/automation'\)/)
 })
 
 test('quote table retains generated history with automation metadata', () => {
@@ -44,19 +49,6 @@ test('quote table retains generated history with automation metadata', () => {
   assert.match(poolMigrationSource, /generation_prompt TEXT/)
   assert.match(poolMigrationSource, /generation_trigger TEXT/)
   assert.match(poolMigrationSource, /generation_model TEXT/)
-  assert.match(apiSource, /insertGeneratedQuote/)
-  assert.doesNotMatch(apiSource, /DELETE FROM famous_quotes/)
-  assert.match(consoleSource, /生成记录/)
-  assert.match(consoleSource, /自动生成/)
-})
-
-test('quote generation has a finite local-first fallback chain', () => {
-  assert.match(apiSource, /QUOTE_GENERATION_MODELS\.primary/)
-  assert.match(apiSource, /QUOTE_GENERATION_MODELS\.secondary/)
-  assert.match(apiSource, /callDeepSeek/)
-  assert.match(apiSource, /maxAttempts: 3/)
-  assert.match(apiSource, /addToPool: true/)
-  assert.doesNotMatch(apiSource, /manualReviewRequired/)
 })
 
 test('quote automation is authenticated and paused without a schedule', () => {

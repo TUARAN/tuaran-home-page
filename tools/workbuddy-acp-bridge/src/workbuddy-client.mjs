@@ -88,15 +88,24 @@ export class WorkBuddyClient {
   }
   async request(path, init = {}, retry = true) {
     const token = await this.accessToken();
-    const response = await this.fetch(this.config.apiBaseUrl + path, {
-      ...init,
-      headers: {
-        accept: 'application/json',
-        ...(init.body ? { 'content-type': 'application/json' } : {}),
-        ...init.headers,
-        authorization: 'Bearer ' + token,
-      },
-    });
+    let response;
+    try {
+      response = await this.fetch(this.config.apiBaseUrl + path, {
+        signal: AbortSignal.timeout(30_000),
+        ...init,
+        headers: {
+          accept: 'application/json',
+          ...(init.body ? { 'content-type': 'application/json' } : {}),
+          ...init.headers,
+          authorization: 'Bearer ' + token,
+        },
+      });
+    } catch (error) {
+      if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+        throw new Error('WorkBuddy 接口请求超时（30 秒）：' + path.split('?')[0]);
+      }
+      throw error;
+    }
     if (response.status === 401 && retry) {
       const saved = await this.tokenStore.read();
       if (saved?.refresh_token) { await this.refresh(saved.refresh_token); return this.request(path, init, false); }

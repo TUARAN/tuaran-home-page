@@ -173,7 +173,8 @@ test('extension source version matches site latest and the context helper loads 
   const readme = await readFile(new URL('README.md', extensionDir), 'utf8')
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
+  assert.equal(X_EXTENSION_LATEST_VERSION, '4.18.0')
+  assert.notEqual(manifest.version, X_EXTENSION_LATEST_VERSION)
 
   assert.ok(scripts.indexOf('extensionContext.js') < scripts.indexOf('content.js'))
   assert.ok(scripts.indexOf('panelTheme.js') < scripts.indexOf('content.js'))

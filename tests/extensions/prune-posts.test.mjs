@@ -175,7 +175,7 @@ test('prune plans use the same round counts as the speed profiles, with 15 posts
     const slow = prune.createPrunePlan('slow', () => 0)
     assert.equal(slow.rounds, 2)
     assert.equal(slow.roundSize, 15)
-    assert.equal(slow.roundIntervalMs, 15000)
+    assert.equal(slow.roundIntervalMs, 300000)
     assert.equal(prune.createPrunePlan('medium', () => 0.999).rounds, 5)
     assert.equal(prune.createPrunePlan('turbo', () => 0.999).rounds, 8)
     const boundary = prune.createPrunePlan('boundary', () => 0)
@@ -254,7 +254,7 @@ test('a prune session keeps deleting after 15 posts until the planned rounds fin
   try {
     const result = await controller.start({ pace: 'slow', random: () => 0 })
     assert.equal(result.deleted, 30)
-    assert.equal(waits.filter((ms) => ms === 15000).length, 1)
+    assert.equal(waits.filter((ms) => ms === 300000).length, 1)
     assert.equal(result.running, false)
   } finally {
     if (previousLoop) globalThis.XReplyClipboardLoop = previousLoop
@@ -645,7 +645,13 @@ test('a failed month search keeps its five-minute retry instead of the weekly pr
   const item = { lastRunAt: now, resumeAt: now + 5 * 60 * 1000 }
   assert.equal(gapReadyAt(item, rule, now), now + 7 * DAY)
   assert.equal(gapReadyAt({ ...item, retryKind: 'prune-search-load' }, rule, now), 0)
-  assert.match(source, /item\.resumeAt = shortPruneRetry \? waitUntil/)
+  const { createTaskEngine } = require('../../tools/x-reply-clipboard-extension/taskEngine.js')
+  const engine = createTaskEngine({ replyModes: [], postModes: [], communityModes: [] })
+  const retryAt = now + 5 * 60 * 1000
+  const flags = { waiting: true, waitUntil: retryAt }
+  const yielded = engine.yieldItem(flags, { mode: 'prune-posts', item: {}, task: { detail: '搜索加载失败，5 分钟后重试', waitUntil: retryAt }, now, minGapMs: 7 * DAY })
+  assert.equal(yielded.item.resumeAt, retryAt)
+  assert.equal(yielded.item.retryKind, 'prune-search-load')
 })
 
 test('search-month prune advances after a short empty pass even if the page keeps growing', async () => {

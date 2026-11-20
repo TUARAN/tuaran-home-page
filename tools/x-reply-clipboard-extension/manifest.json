@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X 大互动智能体",
-  "version": "4.18.1",
+  "version": "5.7.1",
 
   "description": "在 Chrome 本地运行，按任务状态调度 X 评论、点赞、关注管理和定时发帖。",
   "icons": {
@@ -35,7 +35,9 @@
     "https://www.toutiao.com/*",
     "https://www.zhihu.com/*",
     "https://hn.algolia.com/*",
-    "https://*/*"
+    "https://pbs.twimg.com/*",
+    "https://api.ipify.org/*",
+    "https://cloudflare.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -104,11 +106,14 @@
         "postPageMarks.js",
         "panelTheme.js",
         "idleTaskWindowAlert.js",
+        "agentPlanner.js",
+        "agentChat.js",
         "content.js",
         "experiments.js"
       ],
       "css": [
-        "content.css"
+        "content.css",
+        "agentChat.css"
       ],
       "run_at": "document_idle"
     }

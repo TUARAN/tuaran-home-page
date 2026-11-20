@@ -21,7 +21,7 @@ const title = '大互动理论'
 const bookTitle = '大互动理论绿皮书'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
-const updated = '2026-11-05'
+const updated = '2026-11-20'
 const archiveImageCount = archive.posts.reduce((count, post) => count + (Array.isArray(post.images) ? post.images.length : 0), 0)
 const archivePostsWithoutImages = archive.posts.filter((post) => !post.images?.length).length
 
@@ -154,7 +154,7 @@ export default function BigInteractionWhitepaperPage() {
           <div>
             <p className={styles.toolGuideEyebrow}>把交流方法用在 X 上</p>
             <h2>X 大互动智能体</h2>
-            <p>用本地 Chrome 扩展管理评论、点赞、关注与定时发帖，查看进度，调整互动节奏。</p>
+            <p>用本地 Chrome 扩展在 X 上安排评论、点赞、关注与发帖，查看进度。每项任务有每日上限和冷却，X 提示限制就停下等待，节奏按少而准来定。</p>
           </div>
           <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看智能体与获取方式 <span aria-hidden="true">→</span></Link>
         </aside>
@@ -298,7 +298,7 @@ export default function BigInteractionWhitepaperPage() {
             </section>
 
             <section id="boundaries" className={styles.section}>
-              <p className={styles.sectionIndex}>CHAPTER 05 / 第四章</p>
+              <p className={styles.sectionIndex}>CHAPTER 04 / 第四章</p>
               <h2>边界与局限</h2>
               <h3 id="choice">4.1 自愿与退出</h3>
               <p>互动需要自愿、尊重和时间边界。独处、拒绝无效交流、暂停高消耗关系，都是合理的选择。面对冒犯或骚扰，结束接触优先于「继续互动」。</p>
@@ -307,6 +307,7 @@ export default function BigInteractionWhitepaperPage() {
               <p>不怕冲突指的是把分歧留在事实和条件上。对方开始侮辱、骚扰、威胁，或者你因为身份、工作、年龄处在说不的代价很高的位置，退出是这套方法的一部分。</p>
               <h3 id="scope">4.3 方法的适用范围</h3>
               <p>互动机会受到工作、照护责任、健康和资源条件影响。评论、点赞、关注和发帖不能衡量人的价值或关系质量。行动循环那张图的下半部是图书推广，不属于理论内容。</p>
+              <p>持续练习那张图里的 1000 条评论、2000 个点赞、200 个关注和 200 条发帖是画面设定，不作为每日目标。用 X 大互动智能体时，一个账号一天大约能做多少、各项上限和冷却怎么定，以<Link href="/resources/x-reply-clipboard-extension/docs#daily-volume">黄皮书「频率与设置」</Link>为准；X 页面提示限制时停下等待，不为凑数调高上限或缩短冷却。</p>
               <p>这套方法适合自我观察与小范围实践。目前没有足以证明它具有普遍因果效果的研究数据。睡好、喝够、多互动之间也不存在可照搬的医学顺序。</p>
             </section>
 

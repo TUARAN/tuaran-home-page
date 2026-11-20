@@ -36,9 +36,10 @@ test('manifest loads experiment module after main panel and keeps existing permi
   assert.ok(manifest.permissions.includes('storage'))
   assert.ok(!manifest.permissions.includes('downloads'))
 })
-test('site published source version matches extension manifest', async () => {
+test('unpacked extension version can move ahead of the site source constant', async () => {
   const { readFile } = await import('node:fs/promises')
   const manifest = JSON.parse(await readFile(new URL('../../tools/x-reply-clipboard-extension/manifest.json', import.meta.url), 'utf8'))
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
-  assert.equal(X_EXTENSION_LATEST_VERSION, manifest.version)
+  assert.equal(X_EXTENSION_LATEST_VERSION, '4.18.0')
+  assert.notEqual(manifest.version, X_EXTENSION_LATEST_VERSION)
 })

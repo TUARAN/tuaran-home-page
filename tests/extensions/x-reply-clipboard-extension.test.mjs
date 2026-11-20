@@ -412,7 +412,7 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js", "agentPlanner\.js", "taskEngine\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -3017,7 +3017,7 @@ test('background reset clears task state while retaining API credentials and log
     assert.deepEqual(reloaded, [22])
     const resetContent = await readFile(new URL('content.js', extensionDir), 'utf8')
     assert.match(resetContent, /已重置。模型配置仍在。刷新后从默认排班重新开始。[\s\S]{0,240}location\.reload\(\)/)
-    assert.match(resetContent, /xrcAssistant=notifications&xrcStart=1/)
+    assert.match(resetContent, /xrc-notifications-background-open/)
     assert.match(resetContent, /booting: true/)
     assert.deepEqual(saved.xrcAiSettings, { apiKey: 'sk-12345678', baiApiKey: 'sk-bai-test-key', mobileOfficeToken: 'office-token', replyPrompt: 'old custom prompt' })
     assert.deepEqual(saved.xrcCommunityReport, { secret: 'receipt-secret', deviceId: 'device-123', queue: [{ id: 'old-event' }] })
@@ -3099,10 +3099,10 @@ test('main flow keeps only the start and details controls', async () => {
   assert.match(source, /function scrollPanelToScheduleSubpage\(panel\)/)
   assert.match(source, /scrollPanelToScheduleSubpage\(panel\)/)
   assert.match(source, /scheduleDeskOpen \? "schedule" : alertsDeskOpen \? "alerts"/)
-  assert.match(source, /<b>排班台<\/b><i aria-hidden="true">›<\/i><strong>排班详情<\/strong>/)
+  assert.match(source, /<small>SCHEDULE<\/small>\s*<strong>排班台<\/strong>\s*<span data-xrc-workspace-feedback/)
   assert.match(source, /<b>执行报警<\/b><i aria-hidden="true">›<\/i><strong>报警详情<\/strong>/)
   assert.doesNotMatch(source, /排班子页|报警子页/)
-  assert.match(source, /class="xrc-subpage-back" data-xrc-schedule-close[^>]*>← 返回首页<\/button>/)
+  assert.match(source, /data-xrc-schedule-close aria-label="关闭排班台">×<\/button>/)
   assert.match(source, /class="xrc-subpage-body xrc-schedule-desk-body"/)
   const refreshPage = source.match(/async function refreshOccupiedPage\(\) \{[\s\S]*?\n  \}/)?.[0] || ''
   assert.match(refreshPage, /type: "xrc-task-page-refresh"/)
@@ -4132,7 +4132,7 @@ test('reply submission detects an X error inside the existing composer dialog', 
     SUBMIT_TIMEOUT_MS: 5000, SEND_START_TIMEOUT_MS: 2500, SEND_CONFIRM_TIMEOUT_MS: 5000,
     loopApi: { composerText: () => '待发送回复', normalizePhraseText: (text) => text, isSubmitEnabled: () => true },
     ensureReplyComposerText: async () => true,
-    findReplyRestrictionDialog: () => false, unavailablePostInDialog: () => false,
+    findReplyRestrictionDialog: () => false, unavailablePostInDialog: () => false, dailyPostLimitVisible: () => false,
     transientErrorVisible: () => Boolean(alert.text),
     transientErrorNodes: () => alert.text ? [alert] : [],
     textOf: (node) => node.text,
@@ -5590,6 +5590,7 @@ test('browse pause waits on the post and cancels before a comment is sent', asyn
     article,
     riskRoundPending: () => false,
     findReplyRestrictionDialog: () => false,
+    dailyPostLimitVisible: () => false,
     renderPanel() { renders += 1 },
     loopApi: { randomCommentBrowsePauseMs: () => 1000 },
     sleep: async (ms) => { now += ms },
@@ -5705,6 +5706,40 @@ test('commenting on KOL accounts uses four per-account limits and finishes after
   assert.equal(await context.rotate(), 'complete')
   assert.equal(destinations.length, 2)
   assert.equal(state.completedRounds, 3)
+})
+
+test('an unreachable KOL profile is skipped immediately and the whole task stays unblocked', async () => {
+  const source = await readFile(new URL('content.js', extensionDir), 'utf8')
+  const definition = source.match(/  function kolUnreachableReason\(root = document\) \{[\s\S]*?\n  \}/)?.[0]
+  assert.ok(definition)
+  assert.match(source, /已跳过，换下一位/)
+  assert.match(source, /账号已停用/)
+  assert.match(source, /if \(mode === "kol" && \(kolHandoff \|\| noteUnreachableKol\(\)\)\) return \{ ok: true, phase: "running" \}/)
+  assert.doesNotMatch(source.match(/  function noteUnreachableKol\(\) \{[\s\S]*?\n  \}/)?.[0] || '', /blocked:\s*true/)
+  const context = vm.createContext({})
+  vm.runInContext(`${definition}\nglobalThis.reason = kolUnreachableReason`, context)
+  const page = ({ name = '', headings = '', tweets = false, body = '' } = {}) => ({
+    querySelector(selector) {
+      if (selector !== '[data-testid="primaryColumn"]') return null
+      return {
+        innerText: body,
+        querySelector(inner) {
+          if (inner === 'article[data-testid="tweet"]') return tweets ? { innerText: 'tweet' } : null
+          if (inner === '[data-testid="UserName"]') return name ? { innerText: name } : null
+          return null
+        },
+        querySelectorAll() {
+          return headings ? [{ innerText: headings }] : []
+        }
+      }
+    }
+  })
+  assert.equal(context.reason(page({ name: 'Account suspended' })), '账号已停用')
+  assert.equal(context.reason(page({ headings: '账号已被停用' })), '账号已停用')
+  assert.equal(context.reason(page({ headings: "This account doesn’t exist" })), '账号不存在')
+  assert.equal(context.reason(page({ headings: '此账号不存在' })), '账号不存在')
+  assert.equal(context.reason(page({ name: 'Account suspended', tweets: true })), '')
+  assert.equal(context.reason(page({ name: 'Ada', headings: 'Posts' })), '')
 })
 
 test('KOL rounds shuffle once and built-in rosters rotate every seven Beijing days', () => {
@@ -8023,7 +8058,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.name, 'X 大互动智能体')
   const { X_EXTENSION_LATEST_VERSION } = await import('../../lib/community/xExtensionVersion.js')
-  assert.equal(manifest.version, X_EXTENSION_LATEST_VERSION)
+  assert.equal(X_EXTENSION_LATEST_VERSION, '4.18.0')
+  assert.notEqual(manifest.version, X_EXTENSION_LATEST_VERSION)
   assert.match(content, /\$\{score\}分/)
   assert.match(backgroundSource, /SCHEDULE_PRIORITY_HINT = "按队列轮转；旧优先级分数不影响排班"/)
   assert.match(backgroundSource, /MAX_TASK_PRIORITY = 10/)
@@ -8035,7 +8071,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))
@@ -8163,7 +8199,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /taskWindowLabel/)
   assert.match(content, /stripManagedTaskTitle/)
   assert.match(content, /@\$\{handle\} · \$\{label\}/)
-  assert.match(content, /account\.textContent = handle \? `@\$\{handle\}` : ""/)
+  assert.match(content, /account\.textContent = handle \? `账号：@\$\{handle\}` : "账号：—"/)
   assert.match(content, /brand\.textContent = "X 大互动智能体"/)
   assert.match(content, /当前已在\$\{label\}页面，任务已停止；点击下方启动/)
   assert.match(content, /document\.title/)
@@ -8453,7 +8489,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /scheduleRuleRowsMarkup/)
   assert.match(content, /data-xrc-hub-open[\s\S]*?M19\.14 12\.94/)
   assert.doesNotMatch(content, /data-xrc-desk-home>排班台/)
-  assert.doesNotMatch(content, /data-xrc-config-open="pace"/)
+  assert.match(content, /data-xrc-config-open="pace"/)
   assert.doesNotMatch(content, /跑完一次回到队尾/)
   assert.doesNotMatch(content, /data-xrc-schedule-window/)
   assert.doesNotMatch(content, /xrc-schedule-card-config-go/)
@@ -8553,7 +8589,8 @@ test('documentation center opens the 2aran.com docs route with section hashes', 
   assert.match(docsPage, /id="maintenance"/)
   assert.match(docsPage, /id="releases"/)
   assert.match(docsPage, /id="version-path"/)
-  assert.match(docsPage, /来时路 · v0 → v4/)
+  assert.match(docsPage, /来时路 · v0 → v5/)
+  assert.match(docsPage, /id: 'era-v5'/)
   assert.match(docsPage, /VERSION_ERAS/)
   assert.match(docsPage, /id: 'era-v0'/)
   assert.match(docsPage, /title: '原型闭环'/)
@@ -10590,7 +10627,8 @@ test('three unconfirmed reloads rebuild the start request on the resident tab', 
     assert.equal(local.xrcTaskSchedule.items.notifications.blocked, false)
     assert.ok(local.xrcTaskSchedule.items.notifications.reloadAttempts <= 1)
     assert.ok(local.xrcTaskSchedule.items.notifications.autoStartRecoveredAt > 0)
-    assert.ok(updates.some((entry) => entry.active === true))
+    // Notification replies run in a background tab and must not steal focus.
+    assert.equal(updates.some((entry) => entry.active === true), false)
   } finally {
     globalThis.chrome = previousChrome
   }
@@ -10903,7 +10941,7 @@ test('a follow page that already hit the rate limit skips instead of restarting'
   }
 })
 
-test('a follow start reload recovers once then yields for five minutes', async () => {
+test('a follow start reload recovers once on the same tab, then stops for the new-tab repair', async () => {
   const previousChrome = globalThis.chrome
   const now = Date.now()
   const local = {
@@ -10939,13 +10977,11 @@ test('a follow start reload recovers once then yields for five minutes', async (
     local.xrcTaskSchedule.startedAt = Date.now()
     item.reloadAttempts = 3
     const again = await background.noteUnconfirmedReload('mutual-targetFollow', 11)
-    assert.equal(again.recovered, true)
+    assert.notEqual(again.recovered, true)
     assert.equal(local.xrcTaskSchedule.current, '')
-    const deferred = local.xrcTaskSchedule.items['mutual-targetFollow']
-    assert.equal(deferred.manualRequestedAt, 0)
-    assert.equal(deferred.autoStartRecoveredAt, 0)
-    assert.ok(deferred.resumeAt >= now + 5 * 60000)
-    assert.equal(deferred.blocked, false)
+    const stopped = local.xrcTaskSchedule.items['mutual-targetFollow']
+    assert.equal(stopped.blocked, true)
+    assert.match(stopped.reason, /^已重启 3 次，已跳过这项任务/)
   } finally {
     globalThis.chrome = previousChrome
   }

@@ -133,6 +133,7 @@
       view: extra.view || null,
       steps: Array.isArray(extra.steps) ? extra.steps : [],
       confirm: Array.isArray(extra.confirm) ? extra.confirm : [],
+      ...(extra.why ? { why: String(extra.why).slice(0, 200) } : {}),
       showActions: Boolean(extra.showActions)
     };
   }
@@ -248,6 +249,7 @@
           planner,
           steps: harnessSteps(result.steps),
           confirm,
+          why: confirm.length ? (result.pending || []).map((entry) => entry?.why).find(Boolean) : "",
           showActions: view.ok === false
         });
       }
@@ -467,49 +469,131 @@
     return node;
   }
 
+  const PROVIDER_NAMES = Object.freeze({ deepseek: "DeepSeek", bai: "B.AI", mobileoffice: "MobileOffice", nas: "NAS" });
+  const ROUTE_TOOLS = Object.freeze({
+    "xrc-runtime-get": "读取运行状态",
+    "xrc-flow-pause": "暂停全部",
+    "xrc-flow-start": "开始全部",
+    "open-settings": "打开设置",
+    "open-advanced": "打开排班"
+  });
+  // Read-only openers for an empty thread. Writes stay behind typed text or a confirm card.
+  const STARTERS = Object.freeze(["现在在干什么", "今天做了多少", "最近有报警吗", "下一项是什么"]);
+
+  function thinkingLabel(text) {
+    const intent = routeCommand(text).intent;
+    if (intent === "status") return "正在读取运行状态";
+    if (intent === "pause-all") return "正在暂停全部";
+    if (intent === "start-all") return "正在开始全部";
+    if (intent === "open-settings" || intent === "open-advanced") return "正在打开";
+    return "正在规划并读取工具";
+  }
+
+  function clockOf(value) {
+    const date = new Date(Number(value) || Date.now());
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
+
   function paintStrip(strip, view) {
     if (!strip) return;
     const account = strip.querySelector("[data-xrc-agent-account]");
     const task = strip.querySelector("[data-xrc-agent-task]");
     const flow = strip.querySelector("[data-xrc-agent-flow]");
-    if (account) account.textContent = view?.account ? `账号 @${view.account}` : "账号 —";
-    if (task) task.textContent = view?.taskName ? view.taskName : (view?.ok === false ? "当前 —" : "当前无任务");
+    if (account) account.textContent = view?.account ? `@${view.account}` : "";
+    if (task) task.textContent = view?.taskName ? view.taskName : (view?.ok === false ? "状态未读到" : "当前无任务");
     if (flow) {
       flow.textContent = view?.paused === true ? "已暂停" : view?.paused === false ? "运行中" : "状态未知";
       flow.dataset.state = view?.paused === true ? "paused" : view?.paused === false ? "running" : "unknown";
     }
   }
 
-  function paintSteps(parent, turn) {
-    const steps = Array.isArray(turn.steps) ? turn.steps : [];
-    if (!steps.length) return;
-    const list = el("p", "xrc-agent-steps");
-    list.textContent = `已读：${steps.map((step) => `${step.label}${step.ok ? "" : "（失败）"}`).join(" · ")}`;
-    parent.append(list);
+  function statusStrip() {
+    const strip = el("span", "xrc-agent-strip");
+    const flow = el("span", "xrc-agent-flow", "状态未知");
+    flow.setAttribute("data-xrc-agent-flow", "");
+    flow.dataset.state = "unknown";
+    const task = el("span", "xrc-agent-task", "");
+    task.setAttribute("data-xrc-agent-task", "");
+    const account = el("span", "xrc-agent-account", "");
+    account.setAttribute("data-xrc-agent-account", "");
+    strip.append(flow, task, account);
+    return strip;
   }
 
-  function paintRun(parent, turn) {
-    paintSteps(parent, turn);
-    if (turn.kind === "status" || !turn.view) return;
-    const view = turn.view;
-    const actions = el("div", "xrc-agent-run-actions");
+  // Every tool the turn really touched: Harness reads first, then the routed command.
+  function traceOf(turn) {
+    const rows = (Array.isArray(turn.steps) ? turn.steps : [])
+      .map((step) => ({ label: step.label || step.tool || "工具", ok: step.ok === true }));
+    const name = turn.tool?.name;
+    if (ROUTE_TOOLS[name]) {
+      const ok = name === "xrc-runtime-get"
+        ? turn.view?.ok !== false
+        : name.startsWith("xrc-flow-") ? !turn.showActions : true;
+      rows.push({ label: ROUTE_TOOLS[name], ok });
+    }
+    return rows;
+  }
+
+  function paintTrace(parent, turn) {
+    const rows = traceOf(turn);
+    if (!rows.length) return;
+    const failed = rows.filter((row) => !row.ok).length;
+    const box = el("details", `xrc-agent-trace${failed ? " has-failed" : ""}`);
+    const summary = el("summary", "xrc-agent-trace-summary");
+    summary.append(
+      icon("spark"),
+      el("span", "", failed ? `调用 ${rows.length} 个工具 · ${failed} 个失败` : `调用 ${rows.length} 个工具`),
+      icon("chevron")
+    );
+    const list = el("ol", "xrc-agent-trace-list");
+    for (const row of rows) {
+      const item = el("li", row.ok ? "is-ok" : "is-failed");
+      item.append(icon(row.ok ? "check" : "cross"), el("span", "", row.ok ? row.label : `${row.label}（失败）`));
+      list.append(item);
+    }
+    box.append(summary, list);
+    parent.append(box);
+  }
+
+  function commandButton(label, command, className) {
+    const button = el("button", className, label);
+    button.type = "button";
+    button.dataset.xrcAgentCommand = command;
+    return button;
+  }
+
+  function paintConfirm(parent, turn, index) {
+    const card = el("div", `xrc-agent-confirm${turn.resolved ? " is-resolved" : ""}`);
+    const head = el("div", "xrc-agent-confirm-head");
+    head.append(icon("shield"), el("strong", "", turn.resolved ? "确认已处理" : "需要你确认"));
+    card.append(head);
+    if (turn.why) card.append(el("p", "xrc-agent-confirm-why", turn.why));
+    if (turn.resolved) {
+      card.append(el("p", "xrc-agent-confirm-state", turn.resolved === "dismissed" ? "已取消，没有执行。" : `已确认：${turn.resolved}`));
+    } else {
+      const actions = el("div", "xrc-agent-run-actions");
+      for (const command of turn.confirm) actions.append(commandButton(`确认${command}`, command, "xrc-agent-command is-confirm"));
+      const dismiss = el("button", "xrc-agent-command is-dismiss", "先不");
+      dismiss.type = "button";
+      dismiss.dataset.xrcAgentAction = "dismiss-confirm";
+      dismiss.dataset.xrcAgentTurn = String(index);
+      actions.append(dismiss);
+      card.append(actions);
+    }
+    parent.append(card);
+  }
+
+  function paintRun(parent, turn, index) {
+    if (turn.kind === "status") return;
     const confirm = Array.isArray(turn.confirm) ? turn.confirm : [];
     if (confirm.length) {
-      for (const command of confirm) {
-        const button = el("button", "xrc-agent-command is-confirm", `确认${command}`);
-        button.type = "button";
-        button.dataset.xrcAgentCommand = command;
-        actions.append(button);
-      }
-      parent.append(actions);
+      paintConfirm(parent, turn, index);
       return;
     }
-    const add = (label) => {
-      const button = el("button", "xrc-agent-command", label);
-      button.type = "button";
-      button.dataset.xrcAgentCommand = label;
-      actions.append(button);
-    };
+    if (!turn.view) return;
+    const view = turn.view;
+    const actions = el("div", "xrc-agent-run-actions");
+    const add = (label) => actions.append(commandButton(label, label, "xrc-agent-command"));
     if (turn.showActions || view.paused == null) {
       add("暂停全部");
       add("开始全部");
@@ -518,59 +602,109 @@
     parent.append(actions);
   }
 
-  function botAvatar() {
-    const avatar = el("span", "xrc-agent-avatar");
+  function metaButton(label, action, iconName, index) {
+    const button = actionButton(label, action, "xrc-agent-meta-button", iconName);
+    button.title = label;
+    button.dataset.xrcAgentTurn = String(index);
+    return button;
+  }
+
+  function paintMeta(parent, turn, index, retryable) {
+    const meta = el("div", "xrc-agent-meta");
+    meta.append(el("time", "xrc-agent-time", clockOf(turn.at)));
+    const provider = turn.planner?.used && turn.planner?.ok
+      ? (PROVIDER_NAMES[turn.planner.provider] || turn.planner.provider || "")
+      : "";
+    if (provider) meta.append(el("span", "xrc-agent-provider", provider));
+    meta.append(metaButton("复制", "copy", "copy", index));
+    if (retryable) meta.append(metaButton("重试", "retry", "reset", index));
+    parent.append(meta);
+  }
+
+  function botAvatar(large) {
+    const avatar = el("span", `xrc-agent-avatar${large ? " is-large" : ""}`);
     avatar.setAttribute("aria-hidden", "true");
     avatar.append(icon("bot"));
     return avatar;
   }
 
-  function paintTyping(log, continued) {
+  function paintTyping(log, continued, label) {
     const item = el("article", `xrc-agent-msg is-assistant is-typing${continued ? " is-continued" : ""}`);
     item.setAttribute("aria-live", "polite");
-    item.setAttribute("aria-label", "大互动智能体正在回复");
+    item.setAttribute("aria-label", `大互动智能体${label || "正在回复"}`);
     const body = el("div", "xrc-agent-msg-body");
     item.append(botAvatar());
     if (!continued) body.append(el("strong", "xrc-agent-name", "大互动智能体"));
+    const line = el("div", "xrc-agent-thinking");
     const dots = el("span", "xrc-agent-typing");
     dots.append(el("i", ""), el("i", ""), el("i", ""));
-    body.append(dots);
+    const elapsed = el("span", "xrc-agent-elapsed", "");
+    elapsed.setAttribute("data-xrc-agent-elapsed", "");
+    line.append(dots, el("span", "xrc-agent-thinking-label", label || "正在思考"), elapsed);
+    body.append(line);
     item.append(body);
     log.append(item);
   }
 
-  function paintLog(log, session, replying) {
+  function paintWelcome(log) {
+    const hero = el("div", "xrc-agent-welcome");
+    hero.append(
+      botAvatar(true),
+      el("strong", "xrc-agent-welcome-title", "大互动智能体"),
+      el("p", "xrc-agent-empty", "看着当前账号的互动进度，按排班继续执行。可以问状态、今日数据和报警；暂停或开始全部会先给你确认。")
+    );
+    const starters = el("div", "xrc-agent-starters");
+    for (const text of STARTERS) {
+      const button = commandButton("", text, "xrc-agent-starter");
+      button.append(el("span", "", text), icon("arrow"));
+      starters.append(button);
+    }
+    hero.append(starters);
+    log.append(hero);
+  }
+
+  function paintEvent(log, turn) {
+    const row = el("div", "xrc-agent-event");
+    row.title = turn.text || "";
+    row.append(el("i", "xrc-agent-event-dot"), el("span", "xrc-agent-event-text", turn.text || ""), el("time", "xrc-agent-time", clockOf(turn.at)));
+    log.append(row);
+  }
+
+  function paintLog(log, session, state = {}) {
     if (!log) return;
     while (log.firstChild) log.removeChild(log.firstChild);
     const turns = session?.turns || [];
-    if (!turns.length) {
-      const blank = el("div", "xrc-agent-who");
-      const hint = el("div", "xrc-agent-msg-body");
-      hint.append(el("strong", "xrc-agent-name", "大互动智能体"));
-      hint.append(el("p", "xrc-agent-empty", "问现在在干什么，或直接暂停全部、开始全部。"));
-      blank.append(botAvatar(), hint);
-      log.append(blank);
-      return;
-    }
+    // Status notes alone do not make a conversation: keep the openers until someone asks.
+    if (!state.replying && !turns.some((turn) => turn.kind !== "status")) paintWelcome(log);
     let previousAssistant = false;
-    for (const turn of turns) {
+    turns.forEach((turn, index) => {
+      if (turn.kind === "status") {
+        paintEvent(log, turn);
+        previousAssistant = false;
+        return;
+      }
       const assistant = turn.role !== "user";
       const continued = assistant && previousAssistant;
-      const item = el("article", `xrc-agent-msg is-${assistant ? "assistant" : "user"}${continued ? " is-continued" : ""}`);
-      const body = assistant ? el("div", "xrc-agent-msg-body") : item;
+      const fresh = state.freshAt && String(turn.at) === String(state.freshAt);
+      const item = el("article", `xrc-agent-msg is-${assistant ? "assistant" : "user"}${continued ? " is-continued" : ""}${fresh ? " is-fresh" : ""}`);
       if (assistant) {
+        const body = el("div", "xrc-agent-msg-body");
         item.append(botAvatar());
         if (!continued) body.append(el("strong", "xrc-agent-name", "大互动智能体"));
-      }
-      body.append(el("p", "", turn.text || ""));
-      if (assistant) {
-        paintRun(body, turn);
+        paintTrace(body, turn);
+        body.append(el("p", "xrc-agent-text", turn.text || ""));
+        paintRun(body, turn, index);
+        const asked = turns[index - 1]?.role === "user";
+        const retryable = asked && (turn.route?.intent === "status" || turn.route?.intent === "unknown");
+        paintMeta(body, turn, index, retryable);
         item.append(body);
+      } else {
+        item.append(el("p", "xrc-agent-text", turn.text || ""));
       }
       log.append(item);
       previousAssistant = assistant;
-    }
-    if (replying) paintTyping(log, previousAssistant);
+    });
+    if (state.replying) paintTyping(log, previousAssistant, state.thinking);
     log.scrollTop = log.scrollHeight;
   }
 
@@ -599,6 +733,14 @@
     monitor: '<path d="M1.8 8s2.3-3.8 6.2-3.8S14.2 8 14.2 8s-2.3 3.8-6.2 3.8S1.8 8 1.8 8z"/><circle cx="8" cy="8" r="1.5"/>',
     toolbox: '<path d="M9.4 3.2a2.1 2.1 0 0 0-2.6 2.5L3.4 9.1l1.6 1.6 3.4-3.4a2.1 2.1 0 0 0 2.5-2.6L9.2 6.4 7.6 4.8l1.8-1.6z"/>',
     more: '<circle cx="4" cy="8" r=".9"/><circle cx="8" cy="8" r=".9"/><circle cx="12" cy="8" r=".9"/>',
+    send: '<path d="M8 13V3.4M3.8 7.4 8 3.2l4.2 4.2"/>',
+    copy: '<rect x="5.2" y="5.2" width="8" height="8" rx="1.4"/><path d="M10.8 5.2V3.9a1.1 1.1 0 0 0-1.1-1.1H3.9a1.1 1.1 0 0 0-1.1 1.1v5.8a1.1 1.1 0 0 0 1.1 1.1h1.3"/>',
+    check: '<path d="m3.4 8.4 3 3 6.2-6.6"/>',
+    cross: '<path d="m4.6 4.6 6.8 6.8M11.4 4.6l-6.8 6.8"/>',
+    chevron: '<path d="m6 4 4 4-4 4"/>',
+    arrow: '<path d="M3.4 8h9.2M9 4.4 12.6 8 9 11.6"/>',
+    spark: '<path d="M8 2.4 9.3 6.7 13.6 8 9.3 9.3 8 13.6 6.7 9.3 2.4 8 6.7 6.7 8 2.4z"/>',
+    shield: '<path d="M8 2 3.2 3.8v3.6c0 3 2 5.2 4.8 6.6 2.8-1.4 4.8-3.6 4.8-6.6V3.8L8 2z"/><path d="M8 6v3M8 11h.01"/>',
     ip: '<circle cx="8" cy="8" r="6"/><path d="M2.2 8h11.6M8 2.2c1.5 1.7 2.3 3.6 2.3 5.8s-.8 4.1-2.3 5.8C6.5 12.1 5.7 10.2 5.7 8s.8-4.1 2.3-5.8"/>'
   };
 
@@ -718,7 +860,13 @@
     const pageTitle = rootNode.querySelector("[data-xrc-agent-page-title]");
     if (pageTitle) pageTitle.textContent = thread?.kind === "main" ? "大互动智能体" : (thread?.title || "新会话");
     paintThreads(rootNode, store);
-    paintLog(rootNode.querySelector("[data-xrc-agent-log]"), thread, rootNode.dataset.xrcAgentBusy === "1");
+    paintLog(rootNode.querySelector("[data-xrc-agent-log]"), thread, {
+      replying: rootNode.dataset.xrcAgentBusy === "1",
+      thinking: rootNode.dataset.xrcAgentThinking || "",
+      freshAt: rootNode.dataset.xrcAgentFresh || ""
+    });
+    // The entrance animation plays once; later repaints (status notes) stay still.
+    delete rootNode.dataset.xrcAgentFresh;
   }
 
   function chromeReadout(className) {
@@ -748,14 +896,58 @@
     return group;
   }
 
-  function pageHead(kicker, title, caption) {
+  function pageHead(kicker, title) {
     const head = el("header", "xrc-docs-head xrc-page-head xrc-agent-page-head");
     const pageTitle = el("strong", "xrc-agent-page-title", title);
     pageTitle.setAttribute("data-xrc-agent-page-title", "");
     const row = el("div");
-    row.append(el("small", "", kicker), pageTitle, el("span", "", caption));
-    head.append(row);
+    row.append(el("small", "", kicker), pageTitle, statusStrip());
+    const tools = el("div", "xrc-agent-head-tools");
+    const fresh = actionButton("新会话", "new", "xrc-agent-tool", "new");
+    fresh.title = "新会话";
+    tools.append(fresh);
+    head.append(row, tools);
     return head;
+  }
+
+  function composer() {
+    const form = el("form", "xrc-agent-form");
+    const box = el("div", "xrc-agent-composer");
+    const field = el("textarea", "xrc-agent-input");
+    field.setAttribute("data-xrc-agent-input", "");
+    field.setAttribute("aria-label", "给大互动智能体发消息");
+    field.setAttribute("enterkeyhint", "send");
+    field.rows = 1;
+    field.placeholder = "问状态、今日数据或报警，也可以说暂停全部";
+    const send = el("button", "xrc-agent-send");
+    send.type = "submit";
+    send.title = "发送（Enter）";
+    send.setAttribute("aria-label", "发送");
+    send.append(icon("send"), el("span", "xrc-agent-label", "发送"));
+    box.append(field, send);
+    form.append(box, el("p", "xrc-agent-hint", "Enter 发送 · Shift+Enter 换行 · 暂停或开始全部会先请你确认"));
+    return form;
+  }
+
+  function fitComposer(field) {
+    if (!field) return;
+    if (field.style) {
+      field.style.height = "auto";
+      field.style.height = `${Math.min(Number(field.scrollHeight) || 0, 140)}px`;
+    }
+    const form = field.closest?.(".xrc-agent-form");
+    if (form?.dataset) form.dataset.xrcAgentFilled = String(field.value || "").trim() ? "1" : "";
+  }
+
+  function submitDraft(rootNode, host) {
+    if (rootNode.dataset.xrcAgentBusy === "1") return null;
+    const field = rootNode.querySelector("[data-xrc-agent-input]");
+    const text = field?.value || "";
+    if (field) {
+      field.value = "";
+      fitComposer(field);
+    }
+    return accept(rootNode, host, text);
   }
 
   function build(rootNode) {
@@ -804,19 +996,12 @@
     );
 
     const main = el("div", "xrc-agent-main");
-    const head = pageHead("AGENT", "大互动智能体", "看着当前账号的互动进度，并按排班继续执行。");
+    const head = pageHead("AGENT", "大互动智能体");
     const log = el("div", "xrc-agent-log");
     log.setAttribute("data-xrc-agent-log", "");
     log.setAttribute("role", "log");
-    const form = el("form", "xrc-agent-form");
-    const field = el("textarea", "xrc-agent-input");
-    field.setAttribute("data-xrc-agent-input", "");
-    field.rows = 2;
-    field.placeholder = "问现在在干什么，或说暂停全部、开始全部";
-    const send = el("button", "xrc-agent-send", "发送");
-    send.type = "submit";
-    form.append(field, send);
-    main.append(log, form);
+    log.setAttribute("aria-live", "polite");
+    main.append(log, composer());
     const stage = el("div", "xrc-agent-stage");
     stage.append(threads, main);
     rootNode.append(rail, head, stage, more);
@@ -838,11 +1023,23 @@
     const trimmed = String(text || "").trim();
     if (!trimmed || rootNode.dataset.xrcAgentBusy === "1") return null;
     rootNode.dataset.xrcAgentBusy = "1";
+    rootNode.dataset.xrcAgentThinking = thinkingLabel(trimmed);
+    // A typed or pressed command that answers an open confirm card closes that card.
+    const asking = [...thread.turns].reverse().find((turn) => turn.role !== "user" && turn.kind !== "status");
+    if (asking && !asking.resolved && Array.isArray(asking.confirm) && asking.confirm.includes(trimmed)) asking.resolved = trimmed;
     thread.turns.push({ protocol: PROTOCOL, role: "user", text: trimmed, at: Date.now() });
     thread.turns = thread.turns.slice(-MAX_TURNS);
     thread.title = threadTitle(thread.turns, thread.title, thread);
     thread.updatedAt = Date.now();
     paintStore(rootNode, store);
+    const started = Date.now();
+    const timer = typeof root.setInterval === "function"
+      ? root.setInterval(() => {
+        const node = rootNode.querySelector?.("[data-xrc-agent-elapsed]");
+        if (node) node.textContent = `${Math.floor((Date.now() - started) / 1000)} 秒`;
+      }, 1000)
+      : null;
+    timer?.unref?.();
     try {
       const reply = await handleTurn(trimmed, host, plannerContext(trimmed, store));
       thread.turns.push(reply);
@@ -850,10 +1047,14 @@
       thread.updatedAt = Date.now();
       if (reply.view?.ok && reply.view.sentence) store.memory = String(reply.view.sentence).slice(0, 280);
       delete rootNode.dataset.xrcAgentBusy;
+      delete rootNode.dataset.xrcAgentThinking;
+      rootNode.dataset.xrcAgentFresh = String(reply.at);
       await remember(rootNode, host, store);
       if (reply.view) paintStrip(rootNode.querySelector(".xrc-agent-strip"), reply.view);
       return reply;
     } finally {
+      if (timer != null) root.clearInterval?.(timer);
+      delete rootNode.dataset.xrcAgentThinking;
       if (rootNode.dataset.xrcAgentBusy === "1") {
         delete rootNode.dataset.xrcAgentBusy;
         const current = sessions.get(rootNode);
@@ -882,6 +1083,36 @@
       compactWidth: panel.dataset.xrcAgentCompact,
       largeWidth: panel.dataset.xrcAgentLarge
     });
+  }
+
+  async function turnAction(rootNode, host, button, action) {
+    const store = sessions.get(rootNode);
+    const thread = activeThread(store);
+    const index = Number(button.dataset.xrcAgentTurn);
+    const turn = thread.turns[index];
+    if (!turn) return null;
+    if (action === "copy") {
+      try { await root.navigator?.clipboard?.writeText?.(String(turn.text || "")); }
+      catch (error) { return null; }
+      const label = button.querySelector?.(".xrc-agent-label");
+      if (label) label.textContent = "已复制";
+      button.dataset.xrcAgentCopied = "1";
+      root.setTimeout?.(() => {
+        if (label) label.textContent = "复制";
+        delete button.dataset.xrcAgentCopied;
+      }, 1400);
+      return "copy";
+    }
+    if (action === "dismiss-confirm") {
+      if (!Array.isArray(turn.confirm) || !turn.confirm.length || turn.resolved) return null;
+      turn.resolved = "dismissed";
+      await remember(rootNode, host, store);
+      return "dismissed";
+    }
+    // Retry only re-asks a read: the button is painted for status and Harness replies.
+    const asked = thread.turns[index - 1];
+    if (asked?.role !== "user") return null;
+    return accept(rootNode, host, asked.text);
   }
 
   async function runAction(rootNode, host, button) {
@@ -915,6 +1146,9 @@
       return action;
     }
     setHidden(rootNode.querySelector("[data-xrc-agent-more]"), true);
+    if (action === "copy" || action === "retry" || action === "dismiss-confirm") {
+      return turnAction(rootNode, host, button, action);
+    }
     if (action === "threads") {
       await host.showChat?.();
       if (panel.dataset.xrcAgentFrame !== "dock") {
@@ -1173,10 +1407,22 @@
     paintStore(rootNode, placeholder);
     rootNode.addEventListener("submit", (event) => {
       event.preventDefault();
-      const field = rootNode.querySelector("[data-xrc-agent-input]");
-      const text = field?.value || "";
-      if (field) field.value = "";
-      return accept(rootNode, host, text);
+      return submitDraft(rootNode, host);
+    });
+    rootNode.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setHidden(rootNode.querySelector("[data-xrc-agent-more]"), true);
+        return null;
+      }
+      const field = event.target?.closest?.("[data-xrc-agent-input]");
+      // Enter sends; Shift+Enter breaks the line; an IME still composing keeps the key.
+      if (!field || event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return null;
+      event.preventDefault?.();
+      return submitDraft(rootNode, host);
+    });
+    rootNode.addEventListener("input", (event) => {
+      const field = event.target?.closest?.("[data-xrc-agent-input]");
+      if (field) fitComposer(field);
     });
     rootNode.addEventListener("click", (event) => {
       const action = event.target?.closest?.("[data-xrc-agent-action]");

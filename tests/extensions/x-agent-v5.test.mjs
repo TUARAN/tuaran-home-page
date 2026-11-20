@@ -308,14 +308,14 @@ test('v5 home is wired without publishing or changing the writing provider order
   const catalog = await readFile(new URL('../../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
   const siteVersion = await readFile(new URL('../../lib/community/xExtensionVersion.js', import.meta.url), 'utf8')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '5.1.0')
+  assert.equal(manifest.version, '5.2.0')
   assert.equal(manifest.name, 'X 大互动智能体')
   assert.ok(scripts.indexOf('agentPlanner.js') < scripts.indexOf('agentChat.js'))
   assert.ok(scripts.indexOf('agentChat.js') < scripts.indexOf('content.js'))
   assert.ok(scripts.indexOf('experiments.js') > scripts.indexOf('content.js'))
   assert.ok(manifest.content_scripts[3].css.includes('agentChat.css'))
-  assert.match(readme, /当前本地源码为 v5\.1\.0/)
-  assert.match(readme, /v5\.1\.0（2026-11-20，本地测试）/)
+  assert.match(readme, /当前本地源码为 v5\.2\.0/)
+  assert.match(readme, /v5\.2\.0（2026-11-20，本地测试）/)
   assert.match(chat, /大互动智能体/)
   assert.match(chat, /xrc-agent-typing/)
   assert.match(chat, /大互动智能体/)
@@ -346,4 +346,102 @@ test('v5 home is wired without publishing or changing the writing provider order
   assert.match(siteVersion, /X_EXTENSION_LATEST_VERSION = '4\.18\.0'/)
   assert.doesNotMatch(catalog, /x-reply-clipboard-extension-v5\.0\.0/)
   assert.doesNotMatch(siteVersion, /X_EXTENSION_LATEST_VERSION = '5\.0\.0'/)
+})
+
+function textOf(node) {
+  return `${node.textContent || ''}${(node.children || []).map(textOf).join('')}`
+}
+
+function findAll(node, className, out = []) {
+  if (String(node.className || '').split(/\s+/u).includes(className)) out.push(node)
+  for (const child of node.children || []) findAll(child, className, out)
+  return out
+}
+
+async function mountedHome(host) {
+  installDocument()
+  const chat = require('../../tools/x-reply-clipboard-extension/agentChat.js')
+  const panel = new MiniNode('section')
+  const home = new MiniNode('div')
+  home.attrs['data-xrc-agent-home'] = ''
+  panel.append(home)
+  chat.mount(panel, host)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  return { chat, panel, home }
+}
+
+test('an empty thread offers read-only starters and the header carries live run state', async () => {
+  const host = runtimeHost({ snapshot: () => ({ ok: true, accountHandle: 'tuaran', runtime: { tasks: {} }, schedule: { enabled: false, current: '' } }) })
+  const { home } = await mountedHome(host)
+  const log = home.querySelector('[data-xrc-agent-log]')
+  const starters = findAll(log, 'xrc-agent-starter').map((node) => node.dataset.xrcAgentCommand)
+  assert.deepEqual(starters, ['现在在干什么', '今天做了多少', '最近有报警吗', '下一项是什么'])
+  assert.equal(starters.some((text) => /暂停|开始/u.test(text)), false)
+  assert.equal(home.querySelector('[data-xrc-agent-flow]').dataset.state, 'paused')
+  assert.equal(home.querySelector('[data-xrc-agent-flow]').textContent, '已暂停')
+  assert.equal(home.querySelector('[data-xrc-agent-account]').textContent, '@tuaran')
+  await home.listeners.click[0]({ target: log.querySelector('[data-xrc-agent-command="现在在干什么"]') })
+  assert.equal(log.querySelector('.xrc-agent-welcome'), null)
+  assert.match(textOf(log.querySelector('.xrc-agent-trace')), /调用 1 个工具/)
+  assert.match(textOf(log.querySelector('.xrc-agent-trace')), /读取运行状态/)
+  assert.ok(log.querySelector('[data-xrc-agent-action="retry"]'))
+  assert.equal(home.querySelector('.xrc-agent-chips'), null)
+})
+
+test('a proposed write becomes a confirm card that can be declined without running anything', async () => {
+  const host = runtimeHost({
+    async harness() {
+      return { ok: true, provider: 'deepseek', stopReason: 'confirm', answer: '最近报警 6 次，建议先暂停。', steps: [{ call: { tool: 'alerts.recent' }, result: { ok: true } }, { call: { tool: 'facts.today' }, result: { ok: false } }], pending: [{ tool: 'schedule.pauseAll', label: '暂停全部', why: '报警连续出现' }] }
+    },
+  })
+  const { chat, home } = await mountedHome(host)
+  const field = home.querySelector('[data-xrc-agent-input]')
+  field.value = '报警这么多要不要停'
+  await home.listeners.submit[0]({ preventDefault() {} })
+  const log = home.querySelector('[data-xrc-agent-log]')
+  const card = log.querySelector('.xrc-agent-confirm')
+  assert.match(textOf(card), /需要你确认/)
+  assert.match(textOf(card), /报警连续出现/)
+  assert.equal(card.querySelector('[data-xrc-agent-command="暂停全部"]').textContent, '确认暂停全部')
+  assert.match(textOf(log.querySelector('.xrc-agent-trace')), /调用 2 个工具 · 1 个失败/)
+  assert.match(textOf(log.querySelector('.xrc-agent-meta')), /DeepSeek/)
+  await home.listeners.click[0]({ target: card.querySelector('[data-xrc-agent-action="dismiss-confirm"]') })
+  assert.equal(host.calls.includes('xrc-flow-pause'), false)
+  const saved = host.storage.data[chat.SESSION_KEY]
+  const reply = saved.threads[0].turns.find((turn) => turn.confirm?.length)
+  assert.equal(reply.resolved, 'dismissed')
+  assert.equal(reply.why, '报警连续出现')
+  assert.match(textOf(home.querySelector('[data-xrc-agent-log]').querySelector('.xrc-agent-confirm')), /已取消，没有执行/)
+})
+
+test('pressing a confirm button runs the command once and closes the card', async () => {
+  const host = runtimeHost({
+    async harness() {
+      return { ok: true, stopReason: 'confirm', answer: '建议先暂停。', steps: [], pending: [{ tool: 'schedule.pauseAll', label: '暂停全部' }] }
+    },
+  })
+  const { chat, home } = await mountedHome(host)
+  home.querySelector('[data-xrc-agent-input]').value = '要不要停'
+  await home.listeners.submit[0]({ preventDefault() {} })
+  const button = home.querySelector('[data-xrc-agent-log]').querySelector('[data-xrc-agent-command="暂停全部"]')
+  await home.listeners.click[0]({ target: button })
+  assert.deepEqual(host.calls.filter((call) => call === 'xrc-flow-pause'), ['xrc-flow-pause'])
+  const turns = host.storage.data[chat.SESSION_KEY].threads[0].turns
+  assert.equal(turns.find((turn) => turn.confirm?.length).resolved, '暂停全部')
+})
+
+test('Enter sends, Shift+Enter and an IME still composing do not', async () => {
+  const host = runtimeHost()
+  const { chat, home } = await mountedHome(host)
+  const field = home.querySelector('[data-xrc-agent-input]')
+  const press = (extra) => home.listeners.keydown[0]({ key: 'Enter', target: field, preventDefault() {}, ...extra })
+  field.value = '现在在干什么'
+  assert.equal(await press({ shiftKey: true }), null)
+  assert.equal(await press({ isComposing: true }), null)
+  assert.equal(await press({ keyCode: 229 }), null)
+  assert.equal(field.value, '现在在干什么')
+  const reply = await press({})
+  assert.equal(reply.tool.name, 'xrc-runtime-get')
+  assert.equal(field.value, '')
+  assert.equal(host.storage.data[chat.SESSION_KEY].threads[0].turns.length, 2)
 })

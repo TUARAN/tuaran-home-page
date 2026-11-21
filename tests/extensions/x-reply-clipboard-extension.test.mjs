@@ -8452,7 +8452,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /慢、中、快、超快/)
   const downloadVersion = catalog.match(/objectKey: 'downloads\/x-reply-clipboard-extension-v([\d.]+)\.zip'/)?.[1]
   assert.ok(downloadVersion)
-  assert.match(resourcePage, /SOURCE_VERSION = X_EXTENSION_LATEST_VERSION/)
+  assert.match(resourcePage, /SOURCE_VERSION = JSON\.parse\(readFileSync\(join\(process\.cwd\(\), 'tools\/x-reply-clipboard-extension\/manifest\.json'\)/)
   assert.match(resourcePage, /DOWNLOAD_VERSION = getResourceDelivery\('resource:x-reply-clipboard-extension', 'extension-zip'\)/)
   assert.match(resourcePage, /X 大互动智能体/)
   assert.match(resourcePage, /互关浇友/)

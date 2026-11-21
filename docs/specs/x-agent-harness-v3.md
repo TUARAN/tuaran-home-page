@@ -1,6 +1,6 @@
 # X 大互动智能体 Harness v3：原则、账号人格、记忆与上下文
 
-2026-11-20 · 分支 `feat/x-agent-v5-453` · 扩展版本 v5.4.0 起，v5.5.0、v5.5.1、v5.6.0、v5.7.0、v5.7.1 修订（本地测试，未打包）· 协议 `xrc-harness/v3`
+2026-11-20 · 分支 `feat/x-agent-v5-453` · 扩展版本 v5.4.0 起，v5.5.0、v5.5.1、v5.6.0、v5.7.0、v5.7.1、v5.7.2、v5.7.3 修订（本地测试，未打包）· 协议 `xrc-harness/v3`
 
 面向读者的说明在黄皮书第七章「智能体规则」（`/resources/x-reply-clipboard-extension/docs#agent-rules`）。规则以代码为准，对应位置见文末。
 
@@ -214,6 +214,25 @@
 
 测试：`tests/extensions/stray-tabs.test.mjs`。
 
+## v5.7.2：执行页签最多一个，过程中最多再多一个
+
+**现象**：v5.7.1 之后仍出现多个「@账号 · 任务名」页签。
+
+**原因**
+
+- `schedulePass` 在 `settleCurrentTask` 之后才调用 `closeStrayExecTabs`；有任务运行时 `settleCurrentTask` 多半直接返回，清理很少执行。
+- `suspendScheduledTask` 对评论三项停止超时（8 秒）或未确认时走 `releaseBlockedReplyTab`：页签留在浏览器、记入 `detachedReplyTabIds`（最多 16 个），`workTabId` 清零，下一项另开新页签；清理时这些页签全部保留。
+- 「前台」只看 `tab.active`，每个窗口都有一个活动页签，任务窗口里的页签因此永远不关。
+
+**修订**
+
+- `closeStrayExecTabs` 移到 `settleCurrentTask` 之前，每一轮都执行。
+- `detachedReplyTabIds` 只保留最新 1 个（`DETACHED_REPLY_TABS_KEPT`），更早的关掉并移出名单；`releaseBlockedReplyTab` 把页签记入 `xrcCreatedExecTabs`。
+- 前台只认 `chrome.windows.getLastFocused()` 窗口里的活动页签。
+- `STRAY_TAB_SWEEP_VERSION` 升到 2，升级后按标题再清一次。
+
+测试：`tests/extensions/stray-tabs.test.mjs`。
+
 ## 实现位置
 
 | 部分 | 位置 |
@@ -228,3 +247,21 @@
 
 - `tests/extensions/agent-harness.test.mjs`：原则排首位、冲突检查、预算裁剪、摘要与记忆的提示词结构、`remember` 提议与拒绝、后台转发协议版本。
 - `tests/extensions/x-agent-v5.test.mjs`：命令路由、账号隔离、规划上下文与记忆确认、压缩、人格页。
+
+## v5.7.3：插件页签硬上限 1+1，新版本在任务之间加载
+
+**现象**：v5.7.2 之后仍有多个「@账号 · 任务名」页签。
+
+**原因**
+
+- `closeStrayExecTabs` 只处理 `xrcCreatedExecTabs`。登记在 `xrcTaskTabs` 里、排班已换走的页签不在名单上；按标题查找只在升级后做一次。
+- 保留条件里，运行时表中任何 running/paused/starting 的行都保留其页签；残留行指向旧页签时，旧页签一直不关。
+- `devUpdate.check` 在运行时表非空时只记 `waiting`；排班连续运行时几乎没有空档，新版本一直没有加载，浏览器里跑的仍是旧代码。
+
+**修订**
+
+- 候选页签 = `xrcCreatedExecTabs` ∪ `detachedReplyTabIds` ∪ `xrcTaskTabs` 的值 ∪ 运行时表各行的 `tabId` ∪ 标题以 `@当前账号 · ` 开头的 X 页签（每轮查询）。
+- 保留：`workTabId`；`plan.current` 那一行处于 running/paused/starting 的页签；任一 stopping 行的页签；一个额外页签（`contextTabs` 优先，否则最新的 `detachedReplyTabIds`，`EXTRA_TABS_KEPT = 1`）；聚焦窗口里的活动页签；8 秒内有面板输入的页签。其余关闭。去掉 `strayTabSweepVersion`。
+- `schedulePass`：没有当前任务时，若 `localUpdateDue`（状态为 waiting，或 available 已满 60 秒）为真，记引擎说明 `local-update`，异步调用 `applyLocalDevUpdate()` 并结束本轮；`applyNow` 记下排班开启状态，重载后 `finishReload` 恢复排班。
+
+测试：`tests/extensions/stray-tabs.test.mjs`、`tests/extensions/self-heal.test.mjs`。

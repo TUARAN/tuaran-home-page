@@ -2330,13 +2330,15 @@ async function recoverExhaustedStart(plan, mode, now = Date.now()) {
   return true;
 }
 
-// Close plugin-opened X tabs that are no longer the execution tab. Kept: the
-// execution tab, tabs a task is running or starting in, reply tabs left with a
-// draft, conversation tabs being read, the tab in front, and a tab whose panel
-// is being typed in. A tab the person navigated off X is no longer ours.
-// Version 1 also picks up tabs left before this list existed: X tabs titled
-// "@当前账号 · 任务名", which only task tabs carry.
-const STRAY_TAB_SWEEP_VERSION = 1;
+// The plugin keeps one execution tab, plus at most one extra while work is in
+// progress: a conversation tab being read, or else the newest reply tab left
+// with a draft. Every other tab the plugin owns is closed on each pass: tabs on
+// the created list, tabs registered for a task, tabs a stale runtime row points
+// at, and X tabs titled "@当前账号 · 任务名" (only task tabs carry that title, and
+// it stays after the tab loses its task or its script is orphaned by a reload).
+// Never closed: the tab in front in the focused window, a tab whose panel is
+// being typed in, and a tab the person navigated off X.
+const EXTRA_TABS_KEPT = 1;
 
 // Only task tabs carry this prefix; X's own titles never start with "@账号 · ".
 function managedTaskTitle(title, handle) {
@@ -2346,39 +2348,56 @@ function managedTaskTitle(title, handle) {
   return Boolean(match) && match[1].toLowerCase() === own.toLowerCase();
 }
 
-async function legacyTaskTabIds(plan) {
-  if (!chrome.tabs?.query || !accountHandleFrom(plan.accountHandle)) return null;
+async function titledTaskTabIds(plan) {
+  if (!chrome.tabs?.query || !accountHandleFrom(plan.accountHandle)) return [];
   try {
     const tabs = await chrome.tabs.query({ url: ["https://x.com/*", "https://twitter.com/*"] });
     return (tabs || []).filter((tab) => managedTaskTitle(tab?.title, plan.accountHandle)).map((tab) => Number(tab.id));
+  } catch (error) {
+    return [];
+  }
+}
+
+async function focusedWindowId() {
+  try {
+    const win = await chrome.windows?.getLastFocused?.();
+    return Number.isInteger(win?.id) ? win.id : null;
   } catch (error) {
     return null;
   }
 }
 
+function validTabIds(ids) {
+  return [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
+}
+
 async function closeStrayExecTabs(plan, now = Date.now()) {
   if (!chrome.storage?.local || !chrome.tabs?.get) return 0;
+  const detached = validTabIds(plan.detachedReplyTabIds || []);
+  const reading = validTabIds([...contextTabs]);
+  const extra = (reading.length ? reading : detached).slice(-EXTRA_TABS_KEPT);
   const stored = (await chrome.storage.local.get(CREATED_EXEC_TABS_KEY))?.[CREATED_EXEC_TABS_KEY];
-  let tracked = (Array.isArray(stored) ? stored : []).map(Number);
-  if ((Number(plan.strayTabSweepVersion) || 0) < STRAY_TAB_SWEEP_VERSION) {
-    const legacy = await legacyTaskTabIds(plan);
-    if (legacy) {
-      tracked = [...tracked, ...legacy];
-      plan.strayTabSweepVersion = STRAY_TAB_SWEEP_VERSION;
-      await saveTaskSchedule(plan);
-    }
-  }
-  tracked = [...new Set(tracked.filter((id) => Number.isInteger(id) && id > 0))];
-  if (!tracked.length) return 0;
   const runtime = await readPluginRuntime();
-  const keep = new Set([
-    Number(plan.workTabId),
-    ...Object.values(runtime.tasks || {})
-      .filter((task) => ["running", "paused", "starting", "stopping"].includes(task?.phase))
-      .map((task) => Number(task.tabId)),
-    ...(plan.detachedReplyTabIds || []).map(Number),
-    ...contextTabs
+  const runtimeRows = Object.entries(runtime.tasks || {});
+  const tracked = validTabIds([
+    ...(Array.isArray(stored) ? stored : []),
+    ...detached,
+    ...Object.values(await readTaskTabs()),
+    ...runtimeRows.map(([, task]) => task?.tabId),
+    ...await titledTaskTabIds(plan)
   ]);
+  if (!tracked.length) return 0;
+  const workTabId = Number(plan.workTabId);
+  const keep = new Set([
+    workTabId,
+    ...extra,
+    // Only the task the schedule is on owns a tab; a tab mid-stop is left to finish.
+    ...runtimeRows
+      .filter(([mode, task]) => (mode === plan.current && ["running", "paused", "starting"].includes(task?.phase))
+        || task?.phase === "stopping")
+      .map(([, task]) => Number(task.tabId))
+  ]);
+  const frontWindow = await focusedWindowId();
   const gone = new Set();
   let closed = 0;
   for (const id of tracked) {
@@ -2386,11 +2405,19 @@ async function closeStrayExecTabs(plan, now = Date.now()) {
     let tab;
     try { tab = await chrome.tabs.get(id); } catch (error) { gone.add(id); continue; }
     if (!/^(?:https:\/\/(?:x\.com|twitter\.com)\/|about:blank)/iu.test(tab?.url || "")) { gone.add(id); continue; }
-    if (tab.active || panelTypingRecently(id, now)) continue;
+    // Only the tab in front of the person counts; every window has an active tab.
+    const inFront = tab.active && (frontWindow == null || Number(tab.windowId) === frontWindow);
+    if (inFront || panelTypingRecently(id, now)) continue;
     const result = await abandonScheduledTab(id);
     if (result.closed) { gone.add(id); closed += 1; }
   }
   await updateCreatedExecTabs((ids) => [...ids, ...tracked].filter((id) => !gone.has(id)));
+  if (detached.some((id) => gone.has(id))) {
+    const latest = await readTaskSchedule();
+    latest.detachedReplyTabIds = (latest.detachedReplyTabIds || []).filter((id) => !gone.has(Number(id)));
+    plan.detachedReplyTabIds = latest.detachedReplyTabIds;
+    await saveTaskSchedule(latest);
+  }
   if (closed) noteEngine("", "close-stray-tabs", `关掉 ${closed} 个不再使用的执行页签`);
   return closed;
 }
@@ -3543,6 +3570,8 @@ async function releaseBlockedReplyTab(tabId) {
     plan.workTabId = 0;
   }
   await saveTaskSchedule(plan);
+  // Only the newest such tab is kept; closeStrayExecTabs closes the older ones.
+  await noteCreatedExecTab(tabId);
 }
 
 async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFailure = false } = {}) {
@@ -3763,13 +3792,20 @@ async function schedulePass() {
   // Persist probe outcomes so unknownSince / starting survive across alarm ticks.
   // Without this, every tick re-reads a stale "running/starting" row, resets grace, and never recovers.
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+  await closeStrayExecTabs(plan, now);
   if (plan.current) {
     const settled = await settleCurrentTask(plan, runtime, now);
     if (settled.done !== undefined) return settled.done;
     plan = settled.plan;
   }
-  await closeStrayExecTabs(plan, now);
   if (await selfHealStartFailure(plan, now)) return ENGINE_AGAIN;
+  if (!plan.current && await localUpdateDue(now)) {
+    // Between two tasks: load the newer local build now. Waiting for an idle moment
+    // never comes while the schedule runs back to back. The schedule resumes after it.
+    noteEngine("", "local-update", "两项任务之间加载本地新版本");
+    setTimeout(() => { applyLocalDevUpdate().catch(() => {}); }, 0);
+    return plan;
+  }
   return dispatchNextTask(plan, now);
 }
 
@@ -4972,6 +5008,15 @@ async function applyRemoteScheduleConfig(raw) {
   return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班";
 }
 
+// A newer local build was seen at least a minute ago and is waiting for tasks to end.
+async function localUpdateDue(now = Date.now()) {
+  if (manualUpdatePromise) return false;
+  const update = await globalThis.XrcLocalDevUpdate?.status?.();
+  if (!update) return false;
+  if (update.phase === "waiting") return true;
+  return update.phase === "available" && now - Number(update.firstSeenAt) >= 60 * 1000;
+}
+
 function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
   if (!manualUpdatePromise) {
     manualUpdatePromise = globalThis.XrcLocalDevUpdate?.applyNow?.({
@@ -5075,7 +5120,7 @@ async function executeRemoteCommand(command) {
     // Longer delay so the command-result heartbeat can finish before the SW reloads.
     const result = await applyLocalDevUpdate({ reloadDelayMs: 1500 });
     if (!result?.ok) throw new Error(result?.error || "远程更新失败");
-    if (result.phase === "waiting") return `已排队更新到 v${result.version}，等待任务结束后加载`;
+    if (result.phase === "waiting") return `已排队更新到 v${result.version}，在两项任务之间加载`;
     return `正在加载本地新版 v${result.version || ""}`.trim();
   }
   throw new Error("不支持的远程指令");
@@ -6260,6 +6305,7 @@ if (typeof module === "object" && module.exports) {
     restartSkipCopy,
     selfHealStartFailure,
     closeStrayExecTabs,
+    localUpdateDue,
     openNotificationsInBackground,
     agentHarnessTools,
     cleanReply,

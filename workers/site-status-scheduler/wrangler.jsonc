@@ -1,0 +1,32 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "site-status-scheduler",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "2aran.com/_internal/site-status/*",
+      "zone_name": "2aran.com"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "CONTENT_FEED",
+      "bucket_name": "tuaran-content-feed"
+    }
+  ],
+  "vars": {
+    "SITE_STATUS_TARGET_ORIGIN": "https://2aran.com",
+    "SITE_STATUS_MONITOR_URL": "https://2aran.com/api/site-status/monitor"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  }
+}

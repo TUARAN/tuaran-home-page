@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFile } from 'node:fs/promises'
 
 import {
   buildCloudflareUsageAlertExcerpt,
@@ -8,6 +9,8 @@ import {
   evaluateUsageAlerts,
   normalizeUsageData,
   usageCollectFailureStatus,
+  annotateUsageCollectError,
+  CLOUDFLARE_USAGE_TOKEN_PERMISSION_HINT,
   readUsageHistory,
   usageAlertPressureDays,
   usageObjectKey,
@@ -108,8 +111,47 @@ test('graphql authorization errors are read from a non-200 json body', async () 
       if (String(url).includes('/graphql')) return jsonResponse({ errors: [{ message: 'not authorized for that account' }] }, { ok: false, status: 403 })
       return jsonResponse({ success: false, errors: [{ message: 'no access' }] }, { ok: false, status: 403 })
     }),
-    /CLOUDFLARE_USAGE_GRAPHQL:not authorized for that account/,
+    (error) => {
+      assert.match(String(error), /CLOUDFLARE_USAGE_GRAPHQL:not authorized for that account/)
+      assert.match(String(error), /TOKEN_PERMISSIONS/)
+      assert.match(String(error), /Account Analytics: Read/)
+      assert.match(String(error), /2aran\.com zone Analytics/)
+      assert.doesNotMatch(String(error), /test-token/)
+      assert.equal(usageCollectFailureStatus(error), 500)
+      return true
+    },
   )
+})
+
+test('authorization denied is not CONFIG_MISSING and tells the owner which token permissions to grant', async () => {
+  await assert.rejects(
+    collectCloudflareUsage({ CLOUDFLARE_ANALYTICS_TOKEN: 'test-token', CLOUDFLARE_ZONE_ID: 'zone' }, '2026-10-26', async (_, options) => {
+      const body = JSON.parse(options.body)
+      if (/workersOverviewRequestsAdaptiveGroups|workersInvocationsAdaptive/.test(body.query)) {
+        return jsonResponse({ errors: [{ message: 'authorization denied' }] }, { ok: false, status: 403 })
+      }
+      return jsonResponse(emptyUsage)
+    }),
+    (error) => {
+      const message = String(error)
+      assert.match(message, /CLOUDFLARE_USAGE_WORKERS_UNAVAILABLE/)
+      assert.match(message, /CLOUDFLARE_USAGE_GRAPHQL:authorization denied/)
+      assert.match(message, /TOKEN_PERMISSIONS: existing CLOUDFLARE_ANALYTICS_TOKEN needs Account Analytics: Read and 2aran.com zone Analytics/)
+      assert.doesNotMatch(message, /CONFIG_MISSING/)
+      assert.doesNotMatch(message, /test-token/)
+      assert.equal(usageCollectFailureStatus(error), 500)
+      return true
+    },
+  )
+})
+
+test('usage collect error annotation is idempotent and never includes the token value', () => {
+  const first = annotateUsageCollectError(new Error('CLOUDFLARE_USAGE_GRAPHQL:authorization denied'))
+  const second = annotateUsageCollectError(first)
+  assert.match(first.message, new RegExp(CLOUDFLARE_USAGE_TOKEN_PERMISSION_HINT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  assert.equal(first.message, second.message)
+  assert.equal((first.message.match(/TOKEN_PERMISSIONS:/g) || []).length, 1)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_CONFIG_MISSING:CLOUDFLARE_ANALYTICS_TOKEN')), 503)
 })
 
 test('account authorization failure retries with the zone account id', async () => {
@@ -199,6 +241,7 @@ test('collect failure status maps config errors to 503 and business errors to 50
   assert.equal(usageCollectFailureStatus(new Error('CONTENT_FEED_NOT_CONFIGURED')), 503)
   assert.equal(usageCollectFailureStatus(new Error('MONITOR_SECRET_NOT_CONFIGURED')), 503)
   assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_GRAPHQL:not authorized for that account')), 500)
+  assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_GRAPHQL:authorization denied | ' + CLOUDFLARE_USAGE_TOKEN_PERMISSION_HINT)), 500)
   assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_WORKERS_UNAVAILABLE:overview failed')), 500)
   assert.equal(usageCollectFailureStatus(new Error('CLOUDFLARE_USAGE_HTTP_403')), 500)
 })
@@ -247,3 +290,19 @@ test('usage alert notifications open the usage monitor', () => {
   assert.equal(notificationDestinationLabel('automation_monitor', 'Cloudflare', key), '查看用量监控')
   assert.equal(notificationTitle('automation_monitor', 'Cloudflare 用量 · D1 读取行数 达 80%', key), 'Cloudflare 用量 · D1 读取行数 达 80%')
 })
+
+test('usage workflow and runbook spell out GraphQL authorization-denied permissions', async () => {
+  const [workflow, runbook] = await Promise.all([
+    readFile(new URL('../.github/workflows/cloudflare-usage-monitor.yml', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/runbooks/cloudflare-usage-monitor.md', import.meta.url), 'utf8'),
+  ])
+  assert.match(workflow, /authorization denied/)
+  assert.match(workflow, /Account Analytics: Read/)
+  assert.match(workflow, /2aran.com zone Analytics/)
+  assert.match(workflow, /do not change the secret in the repo/)
+  assert.match(runbook, /GraphQL 授权失败/)
+  assert.match(runbook, /44390895940/)
+  assert.match(runbook, /TOKEN_PERMISSIONS/)
+  assert.match(runbook, /不要在仓库、工作流或 Pages Secret 里改写/)
+})
+

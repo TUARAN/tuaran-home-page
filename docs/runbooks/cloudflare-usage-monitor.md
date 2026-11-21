@@ -25,3 +25,15 @@ GitHub Actions 每天 00:20 UTC（北京时间 08:20）调用后台采集接口�
 - Cloudflare Analytics 为采样/汇总数据，最近数分钟可能延迟。当天数值会变化；每日 08:20 的前一天快照供复盘。
 
 监控本身依赖后台 Pages Functions。如果整个账号的 Workers 免费额度已耗尽，当天后台可能也无法打开；GitHub Actions 采集会失败并留下运行记录，次日重试。需要独立于 Cloudflare 的告警通道时，另设外部监控。
+
+## GraphQL 授权失败（令牌权限不足）
+
+定时采集返回 HTTP 500 JSON、错误里出现 `CLOUDFLARE_USAGE_GRAPHQL:authorization denied`（有时包在 `CLOUDFLARE_USAGE_WORKERS_UNAVAILABLE` 里）时，说明 **令牌已经配置**，不是 `CONFIG_MISSING`，也不是边缘 502 HTML 页。当前已知例子：GitHub Actions run [44390895940](https://github.com/TUARAN/tuaran-home-page/actions/runs/44390895940)（2026-11-19 04:25 Asia/Shanghai）。
+
+处理口径：
+
+1. 不要在仓库、工作流或 Pages Secret 里改写 / 轮换 `CLOUDFLARE_ANALYTICS_TOKEN` 的值。
+2. 由站长在 Cloudflare 控制台给**现有** `CLOUDFLARE_ANALYTICS_TOKEN` 补齐权限：Account Analytics: Read，以及读取 `2aran.com` 区域 Analytics。
+3. 权限生效后，再手动跑一次 `Cloudflare usage daily report`，确认接口返回 `ok: true`。
+4. 接口会在该类错误信息中附加 `TOKEN_PERMISSIONS: ...` 提示；工作流失败日志也会打印同样口径。错误信息不会包含令牌本身。
+

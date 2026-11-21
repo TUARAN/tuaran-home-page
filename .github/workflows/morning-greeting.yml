@@ -1,9 +1,7 @@
 name: High-frequency text posts to X
 
 on:
-  schedule:
-    # 每 5 分钟检查当天均匀排程；API 按上海日与时段去重。
-    - cron: '*/5 * * * *'
+  # 2026-11-19 站长停掉自动发帖。保留手动入口，恢复时再加回 schedule。
   workflow_dispatch:
     inputs:
       period:

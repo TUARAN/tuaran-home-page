@@ -37,10 +37,13 @@ jobs:
           echo "HTTP ${status:-000}"
           cat "$body_file"
           echo
+          result=$(cat "$body_file" 2>/dev/null || true)
+          if echo "$result" | grep -qiE 'authorization denied|not authorized|TOKEN_PERMISSIONS'; then
+            echo "::error::Cloudflare GraphQL authorization denied. This is not CONFIG_MISSING or an edge 502. The existing CLOUDFLARE_ANALYTICS_TOKEN needs Account Analytics: Read and 2aran.com zone Analytics. Grant those permissions on the current token in the Cloudflare dashboard; do not change the secret in the repo."
+          fi
           if [ "$curl_exit" -ne 0 ]; then
             exit "$curl_exit"
           fi
-          result=$(cat "$body_file")
           echo "$result" | jq -e '.ok == true' >/dev/null
           {
             echo '## Cloudflare 用量（UTC）'

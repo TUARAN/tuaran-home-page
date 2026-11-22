@@ -83,7 +83,7 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts }) {
   )
 }
 
-export default function RadarTab({ keyword, onKeyword, onRewrite, onPoster }) {
+export default function RadarTab({ keyword, onKeyword, onPoster }) {
   const [heroRows, setHeroRows] = useState([])
   const [watch, setWatch] = useState([])
   const [watchOnly, setWatchOnly] = useState(false)
@@ -117,7 +117,6 @@ export default function RadarTab({ keyword, onKeyword, onRewrite, onPoster }) {
 
   const acts = (i) => (
     <>
-      <button type="button" className={s.link} onClick={() => onRewrite(i.text)}>AI 改写</button>
       <button type="button" className={s.link} onClick={() => onPoster(i)}>做海报</button>
       {!i.watched && <button type="button" className={s.link} onClick={() => addWatch(i.handle)}>+ 监控</button>}
       <a className={s.link} href={i.url} target="_blank" rel="noreferrer noopener">原帖</a>

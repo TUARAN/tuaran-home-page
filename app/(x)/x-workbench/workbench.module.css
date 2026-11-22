@@ -2,16 +2,18 @@
   min-height: 100vh; background: var(--paper); color: var(--ink);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
 .bar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid var(--line); }
-.barInner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 24px; }
+.barInner { max-width: 1280px; margin: 0 auto; padding: 8px 24px; min-height: 64px; height: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; }
 .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--blue), #7a5cff); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
 .brandName { font-weight: 800; font-size: 18px; line-height: 1.1; }
 .brandSub { display: block; font-size: 11px; font-weight: 400; color: var(--sub); }
-.tabs { display: flex; gap: 2px; align-self: stretch; overflow-x: auto; min-width: 0; flex: 1; }
-.tab { border: 0; background: none; padding: 0 16px; cursor: pointer; font: inherit; font-size: 16px; color: #3b4450; white-space: nowrap; position: relative; text-decoration: none; display: inline-flex; align-items: center; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; align-self: center; min-width: 0; flex: 1 1 320px; }
+.menuGroup { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+.groupLabel { font-size: 12px; font-weight: 800; color: var(--sub); padding-right: 6px; white-space: nowrap; }
+.tab { border: 0; background: none; padding: 0 12px; height: 40px; cursor: pointer; font: inherit; font-size: 16px; color: #3b4450; white-space: nowrap; position: relative; text-decoration: none; display: inline-flex; align-items: center; }
 .tab:hover { color: var(--blue); }
 .tabOn { color: var(--blue); font-weight: 700; }
-.tabOn::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--blue); }
+.tabOn::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--blue); }
 .tab:focus-visible, .btn:focus-visible, .input:focus-visible, .pill:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .spacer { flex: 1; }
 .search { display: flex; align-items: center; background: var(--paper); border-radius: 999px; padding: 4px 4px 4px 14px; gap: 6px; min-width: 240px; }
@@ -88,5 +90,5 @@
 .error { color: #b42318; }
 .preview { max-width: 100%; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .two { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-@media (max-width: 960px) { .cols, .two { grid-template-columns: 1fr; } .search { display: none; } .cta { display: none; } .barInner { gap: 12px; padding: 0 12px; } }
+@media (max-width: 960px) { .cols, .two { grid-template-columns: 1fr; } .search { display: none; } .cta { display: none; } .barInner { gap: 8px 12px; padding: 8px 12px; } .tabs, .menuGroup { flex-basis: 100%; } }
 @media (prefers-reduced-motion: no-preference) { .btn, .tab, .pill { transition: background .15s, border-color .15s, color .15s; } }

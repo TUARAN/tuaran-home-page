@@ -6,20 +6,23 @@ import AgentTab from './AgentTab'
 import BoardTab from './BoardTab'
 import PosterTab from './PosterTab'
 import RadarTab from './RadarTab'
-import RewriteTab from './RewriteTab'
 import ScheduleTab from './ScheduleTab'
 import { call } from './api'
-import { WORKBENCH_PAGE_TABS, WORKBENCH_TOOL_TABS } from './tabs'
+import { WORKBENCH_MENU_GROUPS } from './tabs'
 import s from './workbench.module.css'
 
 function TabBar({ tab, onTab }) {
   return (
     <nav className={s.tabs} aria-label="功能">
-      {WORKBENCH_TOOL_TABS.map((item) => (
-        <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}</button>
-      ))}
-      {WORKBENCH_PAGE_TABS.map((item) => (
-        <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}</a>
+      {WORKBENCH_MENU_GROUPS.map((group) => (
+        <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
+          <span className={s.groupLabel}>{group.label}</span>
+          {group.items.map((item) => (
+            item.href
+              ? <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}</a>
+              : <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}</button>
+          ))}
+        </div>
       ))}
     </nav>
   )
@@ -31,9 +34,7 @@ export default function WorkbenchClient() {
   const [accounts, setAccounts] = useState([])
   const [handle, setHandle] = useState('')
   const [usage, setUsage] = useState(null)
-  const [rewriteSeed, setRewriteSeed] = useState('')
   const [posterSeed, setPosterSeed] = useState(null)
-  const [draftSeed, setDraftSeed] = useState('')
   const [keyword, setKeyword] = useState('')
   const [query, setQuery] = useState('')
 
@@ -54,9 +55,7 @@ export default function WorkbenchClient() {
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
 
-  const goRewrite = (text) => { setRewriteSeed(text); setTab('rewrite') }
   const goPoster = (seed) => { setPosterSeed({ ...seed, at: Date.now() }); setTab('poster') }
-  const goDraft = (text) => { setDraftSeed(text); setTab('schedule') }
   const ready = state === 'ready'
 
   let body = <p>加载中…</p>
@@ -66,7 +65,7 @@ export default function WorkbenchClient() {
     body = (
       <>
         <h1>看见爆点，写出自己的版本</h1>
-        <p className={s.hint}>爆文雷达、AI 改写和智能体需要登录。理论、黄皮书、日历、圆桌和 AI分发大师可以直接打开。</p>
+        <p className={s.hint}>推文榜、账号榜和智能体需要登录。理论、黄皮书、日历、圆桌和 AI分发大师可以直接打开。</p>
         <a className={`${s.btn} ${s.primary}`} href={`https://2aran.com/login?returnTo=${back}`}>登录</a>
       </>
     )
@@ -74,11 +73,10 @@ export default function WorkbenchClient() {
   if (ready) {
     body = (
       <>
-        {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onRewrite={goRewrite} onPoster={goPoster} />}
+        {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onPoster={goPoster} />}
         {tab === 'board' && <BoardTab />}
-        {tab === 'rewrite' && <RewriteTab seed={rewriteSeed} handle={handle} onUsed={loadUsage} onDraft={goDraft} onPoster={goPoster} />}
         {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
-        {tab === 'schedule' && <ScheduleTab handle={handle} seed={draftSeed} />}
+        {tab === 'schedule' && <ScheduleTab handle={handle} seed="" />}
         {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
       </>
     )

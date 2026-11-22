@@ -412,7 +412,7 @@ test('a manually opened X tab stays a spectator while the registered tab owns th
 test('local extension update waits for idle tasks, then reloads registered X tabs once', async () => {
   const backgroundSource = await readFile(new URL('background.js', extensionDir), 'utf8')
   const contentSource = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.match(backgroundSource, /importScripts\("leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js", "agentPlanner\.js", "taskEngine\.js"\)/)
+  assert.match(backgroundSource, /importScripts\("workbenchBridge\.js", "leaderboard\.js", "kolRoster\.js", "receipt\.js", "devUpdate\.js", "articleDraft\.js", "replyHistory\.js", "vendor\/x-article\/format-core\.js", "siteForward\.js", "agentPlanner\.js", "taskEngine\.js"\)/)
   assert.match(backgroundSource, /XrcLocalDevUpdate\?\.install\?\.\(\{ readRuntime: readPluginRuntime, taskTabs: getOpenTaskTabs \}\)/)
   assert.match(contentSource, /data-xrc-dev-update/)
   assert.match(contentSource, /data-xrc-dev-update-now/)
@@ -8071,7 +8071,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.deepEqual(manifest.content_scripts[0].js, ['threadProof.js', 'draftFill.js', 'vendor/x-article/main-world.js'])
   assert.deepEqual(manifest.content_scripts[1].js, ['vendor/x-article/format-core.js', 'vendor/x-article/site-content.js'])
   assert.deepEqual(manifest.content_scripts[2].js, ['context.js'])
-  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
+  assert.deepEqual(manifest.content_scripts[3].js, ['vendor/x-article/format-core.js', 'vendor/x-article/x-content.js', 'receipt.js', 'phrases.js', 'loop.js', 'timer.js', 'postImage.js', 'vendor/xhs-textcard/bundle.js', 'poster.js', 'leaderboard.js', 'mutual.js', 'tweetPdf.js', 'autoLike.js', 'prunePosts.js', 'articleDraft.js', 'communityShare.js', 'communityCopy.js', 'kolRoster.js', 'workbenchCollector.js', 'extensionContext.js', 'bigInteractionArchive.js', 'interactionRecap.js', 'postPageMarks.js', 'panelTheme.js', 'idleTaskWindowAlert.js', 'agentPlanner.js', 'agentChat.js', 'content.js', 'experiments.js'])
   assert.deepEqual(manifest.permissions, ['storage', 'offscreen', 'alarms'])
   assert.ok(manifest.host_permissions.includes('https://2aran.com/*'))
   assert.ok(manifest.host_permissions.includes('https://aihot.news/*'))

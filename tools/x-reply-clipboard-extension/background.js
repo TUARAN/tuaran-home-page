@@ -1,6 +1,6 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js", "agentPlanner.js", "taskEngine.js");
+if (typeof importScripts === "function") importScripts("workbenchBridge.js", "leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js", "agentPlanner.js", "taskEngine.js");
 
 const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
 const taskEngineApi = globalThis.XrcTaskEngine || (typeof require === "function" ? require("./taskEngine.js") : null);
@@ -4542,6 +4542,7 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "", { tick 
   runtime.flow = { phase: "starting", updatedAt: Date.now() };
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
+  syncWorkbenchProfile(handle).catch(() => {});
   const plan = await readTaskSchedule();
   if (plan.accountHandle && handle && plan.accountHandle !== handle) {
     if (plan.enabled) throw new Error("当前 X 账号与排班账号不一致，请先暂停全流程并确认账号");
@@ -5828,11 +5829,132 @@ async function detectEgressIp(fetchImpl = globalThis.fetch) {
   }
 }
 
+// 与本地排班共用串行锁。拒绝领取时，云端条目保持 queued。
+async function runWorkbenchSchedule() {
+  const bridge = globalThis.XrcWorkbenchBridge;
+  const stored = await chrome.storage.local.get(["xrcWorkbenchCredential", "xrcWorkbenchPendingReport"]);
+  const credential = stored.xrcWorkbenchCredential;
+  if (!bridge || !credential?.token || credential.expiresAt <= Date.now()) return;
+  const request = (action, payload) => bridge.pluginRequest(fetch, action, payload, credential.token);
+  const pending = stored.xrcWorkbenchPendingReport;
+  if (pending) {
+    // Worker 重启后只回报未知结果，绝不再次发送同一条推文。
+    const result = await request("report", pending);
+    if (result.ok || result.status === 404) await chrome.storage.local.remove("xrcWorkbenchPendingReport");
+    return;
+  }
+  const plan = await readTaskSchedule();
+  const handle = await savedAccountHandle();
+  const now = Date.now();
+  if (!plan.enabled || !handle || plan.accountHandle !== handle || plan.current) return;
+  if (!dueTaskModes(plan, now).includes("poster") || Number(plan.items?.poster?.manualRequestedAt) > 0) return;
+  const savedPoster = (await chrome.storage.local.get("xrcPosterPublishList")).xrcPosterPublishList;
+  if (savedPoster?.running || savedPoster?.items?.length || savedPoster?.currentPost
+    || Number(savedPoster?.nextPostAt) > now || Number(savedPoster?.riskCooldownUntil) > now) return;
+  for (const mode of POST_TASKS) {
+    const item = plan.items?.[mode] || {};
+    if (Number(item.resumeAt) > now || scheduleEngine().coolingHoldReason({ mode, item, now })) return;
+  }
+  const runtime = await readPluginRuntime();
+  if (Object.values(runtime?.tasks || {}).some(t => ["running", "starting", "stopping"].includes(t?.phase))) return;
+  const budget = await globalThis.XrcCommunityReceipt?.postDailyBudget?.(handle);
+  if (!budget || budget.uncertain || budget.reached) return;
+  const tabs = await chrome.tabs.query({ url: ["https://x.com/home", "https://twitter.com/home"] });
+  const tab = tabs.find(t => Number(t.id) > 0);
+  if (!tab) return;
+  const ready = await chrome.tabs.sendMessage(tab.id, { type: "xrc-workbench-ready", handle }).catch(() => null);
+  if (!ready?.ok) return;
+  const claimed = await request("claim", { handle });
+  if (!claimed.ok || !claimed.schedule) return;
+  const schedule = claimed.schedule;
+  const attemptedKey = "xrcWorkbenchAttemptedSchedules";
+  const attempted = (await chrome.storage.local.get(attemptedKey))[attemptedKey] || {};
+  if (attempted[schedule.id]) {
+    await request("report", { id: schedule.id, ok: false, result: "此排期已尝试执行，避免重复发送，请核对 X" });
+    return;
+  }
+  attempted[schedule.id] = Date.now();
+  const report = { id: schedule.id, ok: false, result: "执行结果未确认，请在 X 中核对" };
+  await chrome.storage.local.set({ xrcWorkbenchPendingReport: report, [attemptedKey]: attempted });
+  const fresh = await readTaskSchedule();
+  if (!fresh.enabled || fresh.current || !dueTaskModes(fresh).includes("poster") || await savedAccountHandle() !== handle) {
+    report.result = "本地排班或账号已改变，未执行";
+  } else {
+    const result = await chrome.tabs.sendMessage(tab.id, { type: "xrc-workbench-publish", handle, text: schedule.text }).catch(() => null);
+    report.ok = result?.ok === true;
+    report.result = result?.result || report.result;
+    // 把成功和失败都写入本地间隔，下一次不能绕过普通发帖轮次。
+    const latest = await readTaskSchedule();
+    latest.items.poster = { ...latest.items.poster, lastRunAt: Date.now(), resumeAt: Date.now() + SLICE_YIELD_COOLDOWN_MS };
+    if (!report.ok) {
+      for (const mode of POST_TASKS) latest.items[mode] = { ...latest.items[mode], resumeAt: Math.max(Number(latest.items[mode]?.resumeAt) || 0, Date.now() + 15 * 60000), reason: "工作台执行结果未确认，冷却后请核对 X" };
+    }
+    await saveTaskSchedule(latest);
+  }
+  await chrome.storage.local.set({ xrcWorkbenchPendingReport: report });
+  const result = await request("report", report);
+  if (result.ok || result.status === 404) await chrome.storage.local.remove("xrcWorkbenchPendingReport");
+}
+function tickWorkbenchSchedule() {
+  const work = scheduleWork.then(runWorkbenchSchedule);
+  scheduleWork = work.catch(() => {});
+  return work;
+}
+
+// 配对令牌同步不读取站点 Cookie；异步响应不得覆盖同步期间的新本地编辑。
+let workbenchSyncWork = null;
+function syncWorkbenchProfile(handle) {
+  if (workbenchSyncWork) return workbenchSyncWork;
+  workbenchSyncWork = (async () => {
+    const bridge = globalThis.XrcWorkbenchBridge;
+    const key = bridge?.accountKey(handle || await savedAccountHandle());
+    if (!key) return;
+    const stored = await chrome.storage.local.get(["xrcWorkbenchCredential", "xrcAgentProfilesV1"]);
+    const credential = stored.xrcWorkbenchCredential;
+    if (!credential?.token || credential.expiresAt <= Date.now()) return;
+    const local = stored.xrcAgentProfilesV1?.accounts?.[key] || {};
+    const result = await bridge.syncPluginProfile(fetch, credential.token, key, local);
+    if (result.status === 401) { await chrome.storage.local.remove("xrcWorkbenchCredential"); return; }
+    if (!result.ok || result.direction === "none") return;
+    const fresh = await chrome.storage.local.get("xrcAgentProfilesV1");
+    const profiles = fresh.xrcAgentProfilesV1 || { accounts: {} };
+    if (JSON.stringify(profiles.accounts?.[key] || {}) !== JSON.stringify(local)) return;
+    profiles.accounts = { ...profiles.accounts, [key]: result.profile };
+    await chrome.storage.local.set({ xrcAgentProfilesV1: profiles });
+  })().finally(() => { workbenchSyncWork = null; });
+  return workbenchSyncWork;
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.action?.onClicked?.addListener((tab) => {
     reopenExtensionPanel(tab).catch(() => {});
   });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (["xrc-workbench-pair", "xrc-workbench-ingest", "xrc-workbench-disconnect"].includes(message?.type)) {
+      const validPage = /^https:\/\/(?:x\.com|twitter\.com)\//.test(sender?.tab?.url || "");
+      if (!validPage || sender.id !== chrome.runtime.id) { sendResponse({ ok: false, error: "INVALID_SENDER" }); return false; }
+      (async () => {
+        const key = "xrcWorkbenchCredential";
+        if (message.type === "xrc-workbench-disconnect") {
+          await chrome.storage.local.remove(key);
+          return { ok: true };
+        }
+        const bridge = globalThis.XrcWorkbenchBridge;
+        if (message.type === "xrc-workbench-pair") {
+          const result = await bridge.pluginRequest(fetch, "pair", { code: String(message.code || "").trim() });
+          if (!result.ok) return { ok: false, error: result.error };
+          await chrome.storage.local.set({ [key]: { token: result.token, expiresAt: result.expiresAt } });
+          syncWorkbenchProfile().catch(() => {});
+          return { ok: true };
+        }
+        const credential = (await chrome.storage.local.get(key))?.[key];
+        if (!credential?.token || credential.expiresAt <= Date.now()) return { ok: false, error: "请先配对工作台" };
+        const result = await bridge.pluginRequest(fetch, "ingest", { items: (Array.isArray(message.items) ? message.items : []).slice(0, 50) }, credential.token);
+        if (result.status === 401) await chrome.storage.local.remove(key);
+        return { ok: result.ok, accepted: result.accepted, error: result.error };
+      })().then(sendResponse).catch(() => sendResponse({ ok: false, error: "工作台连接失败" }));
+      return true;
+    }
     if (message?.type?.startsWith("xrc-reply-history-")) {
       const action = message.type.slice("xrc-reply-history-".length);
       const operation = action === "needs-migration" ? replyHistory?.needsMigration(message.accountHandle)
@@ -6275,10 +6397,13 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   globalThis.XrcCommunityReceipt?.install?.();
   chrome.alarms?.onAlarm?.addListener((alarm) => {
     if (alarm?.name === TASK_SCHEDULE_ALARM || alarm?.name === TASK_SLICE_ALARM) {
+      syncWorkbenchProfile().catch(() => {});
+      tickWorkbenchSchedule().catch(() => {});
       tickTaskSchedule().catch(() => {});
     }
   });
   chrome.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName === "local" && changes?.xrcAgentSessionV1) syncWorkbenchProfile().catch(() => {});
     if (areaName !== "local" || !changes?.[TASK_SCHEDULE_KEY]) return;
     const before = Boolean(changes[TASK_SCHEDULE_KEY].oldValue?.enabled);
     const after = Boolean(changes[TASK_SCHEDULE_KEY].newValue?.enabled);
@@ -6287,6 +6412,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       tickTaskSchedule().catch(() => {});
     }
   });
+  syncWorkbenchProfile().catch(() => {});
   readTaskSchedule().then((plan) => {
     if (plan.enabled) return saveTaskSchedule(plan).then(tickTaskSchedule);
     return null;
@@ -6300,6 +6426,8 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 
 if (typeof module === "object" && module.exports) {
   module.exports = {
+    runWorkbenchSchedule,
+    syncWorkbenchProfile,
     readRunFacts,
     readTaskDetails,
     restartSkipCopy,

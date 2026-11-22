@@ -57,7 +57,7 @@ export default function BoardTab() {
   return (
     <section>
       <h2 className={s.h2}>账号榜</h2>
-      <p className={s.hint}>统计日以北京时间每天 8 点为界。榜单只覆盖工作台采集到的推文，不代表全站数据；评论数按公开指标汇总，仅供参考。</p>
+      <p className={s.hint}>统计日以北京时间每天 8 点为界。榜单只覆盖「X大互动」采集到的推文，不代表全站数据；评论数按公开指标汇总，仅供参考。</p>
       <div className={s.row}>
         {WINDOWS.map(([k, label]) => (
           <button key={k} type="button" className={`${s.btn} ${win === k ? s.primary : ''}`} onClick={() => setWin(k)}>{label}</button>

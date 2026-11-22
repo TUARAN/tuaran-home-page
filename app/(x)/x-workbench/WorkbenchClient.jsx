@@ -65,7 +65,7 @@ export default function WorkbenchClient() {
     <div className={s.app}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X 工作台<span className={s.brandSub}>爆点、改写、发布</span></span></span>
+          <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>爆点、改写、发布</span></span></span>
           <nav className={s.tabs} aria-label="功能">
             {TABS.map(([k, label]) => (
               <button key={k} type="button" className={`${s.tab} ${tab === k ? s.tabOn : ''}`} aria-current={tab === k ? 'page' : undefined} onClick={() => setTab(k)}>{label}</button>

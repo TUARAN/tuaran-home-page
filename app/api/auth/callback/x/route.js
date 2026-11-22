@@ -125,7 +125,7 @@ export async function GET(req) {
     return new Response(null, { status: 302, headers })
   }
 
-  const fallbackUser = { id: `google:${providerAccountId}`, ...profile }
+  const fallbackUser = { id: `x:${providerAccountId}`, ...profile }
   let resolved = await resolveIdentityForLogin({ provider: 'x', providerAccountId, profile, fallbackUser })
   if (!resolved.ok) return Response.json({ error: resolved.error }, { status: resolved.status || 500 })
   let user = resolved.user

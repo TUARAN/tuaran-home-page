@@ -173,23 +173,25 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
           </div>
         </div>
       )}
-      {signedIn && <details className={s.card} style={{ marginTop: 18 }} open={empty}>
-        <summary>手动收录一条推文</summary>
-        <form onSubmit={submitManual} style={{ marginTop: 12 }}>
-          <div className={s.row}>
-            <input className={s.input} style={{ flex: 1 }} placeholder="推文链接 https://x.com/…/status/…" value={manual.url} onChange={(e) => setManual({ ...manual, url: e.target.value })} />
-          </div>
-          <textarea className={`${s.input} ${s.area}`} style={{ minHeight: 80 }} placeholder="正文" value={manual.text} onChange={(e) => setManual({ ...manual, text: e.target.value })} />
-          <div className={s.row} style={{ marginTop: 8 }}>
-            <input className={s.input} style={{ width: 110 }} inputMode="numeric" placeholder="点赞数" value={manual.likes} onChange={(e) => setManual({ ...manual, likes: e.target.value })} />
-            <input className={s.input} style={{ width: 110 }} inputMode="numeric" placeholder="展示量" value={manual.views} onChange={(e) => setManual({ ...manual, views: e.target.value })} />
-            <select className={s.input} value={manual.media} onChange={(e) => setManual({ ...manual, media: e.target.value })}>
-              <option value="none">纯文本</option><option value="image">图文</option><option value="video">视频</option>
-            </select>
-            <button type="submit" className={`${s.btn} ${s.primary}`}>收录</button>
-          </div>
-        </form>
-      </details>
+      {signedIn && (
+        <details className={s.card} style={{ marginTop: 18 }} open={empty}>
+          <summary>手动收录一条推文</summary>
+          <form onSubmit={submitManual} style={{ marginTop: 12 }}>
+            <div className={s.row}>
+              <input className={s.input} style={{ flex: 1 }} placeholder="推文链接 https://x.com/…/status/…" value={manual.url} onChange={(e) => setManual({ ...manual, url: e.target.value })} />
+            </div>
+            <textarea className={`${s.input} ${s.area}`} style={{ minHeight: 80 }} placeholder="正文" value={manual.text} onChange={(e) => setManual({ ...manual, text: e.target.value })} />
+            <div className={s.row} style={{ marginTop: 8 }}>
+              <input className={s.input} style={{ width: 110 }} inputMode="numeric" placeholder="点赞数" value={manual.likes} onChange={(e) => setManual({ ...manual, likes: e.target.value })} />
+              <input className={s.input} style={{ width: 110 }} inputMode="numeric" placeholder="展示量" value={manual.views} onChange={(e) => setManual({ ...manual, views: e.target.value })} />
+              <select className={s.input} value={manual.media} onChange={(e) => setManual({ ...manual, media: e.target.value })}>
+                <option value="none">纯文本</option><option value="image">图文</option><option value="video">视频</option>
+              </select>
+              <button type="submit" className={`${s.btn} ${s.primary}`}>收录</button>
+            </div>
+          </form>
+        </details>
+      )}
       {note && <p role="status" className={s.note}>{note}</p>}
     </section>
   )

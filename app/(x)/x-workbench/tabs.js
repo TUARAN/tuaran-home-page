@@ -7,6 +7,7 @@ export const WORKBENCH_MENU_GROUPS = [
       { id: 'radar', label: '推文榜' },
       { id: 'board', label: '账号榜' },
       { id: 'agent', label: '智能体' },
+      { id: 'yellowbook', label: '黄皮书', href: '/docs' },
     ],
   },
   {
@@ -14,16 +15,15 @@ export const WORKBENCH_MENU_GROUPS = [
     label: '理论',
     items: [
       { id: 'theory', label: '大互动理论', href: '/theory' },
-      { id: 'yellowbook', label: '黄皮书', href: '/docs' },
       { id: 'calendar', label: '大互动日历', href: '/calendar' },
-      { id: 'roundtable', label: '圆桌大会', href: '/roundtable' },
+      { id: 'roundtable', label: '大互动圆桌', href: '/roundtable' },
     ],
   },
   {
     id: 'distribute',
     label: '分发',
     items: [
-      { id: 'distributor', label: 'AI分发大师', href: 'https://syncblog.cn/', external: true },
+      { id: 'distributor', label: 'AI分发大师', href: 'https://syncblog.cn/', external: true, beta: true },
     ],
   },
 ]

@@ -10,7 +10,8 @@
 .tabs { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; align-self: center; min-width: 0; flex: 1 1 320px; }
 .menuGroup { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
 .groupLabel { font-size: 12px; font-weight: 800; color: var(--sub); padding-right: 6px; white-space: nowrap; }
-.tab { border: 0; background: none; padding: 0 12px; height: 40px; cursor: pointer; font: inherit; font-size: 16px; color: #3b4450; white-space: nowrap; position: relative; text-decoration: none; display: inline-flex; align-items: center; }
+.tab { border: 0; background: none; padding: 0 12px; height: 40px; cursor: pointer; font: inherit; font-size: 16px; color: #3b4450; white-space: nowrap; position: relative; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.beta { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; line-height: 16px; padding: 0 5px; border-radius: 999px; border: 1px solid currentColor; color: var(--blue); }
 .tab:hover { color: var(--blue); }
 .tabOn { color: var(--blue); font-weight: 700; }
 .tabOn::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--blue); }

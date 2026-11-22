@@ -19,8 +19,8 @@ function TabBar({ tab, onTab }) {
           <span className={s.groupLabel}>{group.label}</span>
           {group.items.map((item) => (
             item.href
-              ? <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}</a>
-              : <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}</button>
+              ? <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</a>
+              : <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</button>
           ))}
         </div>
       ))}

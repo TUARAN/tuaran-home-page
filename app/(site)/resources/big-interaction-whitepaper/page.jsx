@@ -149,32 +149,6 @@ export default function BigInteractionWhitepaperPage() {
           </p>
         </header>
 
-        <div className={styles.entryGrid}>
-        <aside className={styles.toolGuide} aria-label="X 大互动智能体入口">
-          <div>
-            <p className={styles.toolGuideEyebrow}>把交流方法用在 X 上</p>
-            <h2>X 大互动智能体</h2>
-            <p>用本地 Chrome 扩展在 X 上安排评论、点赞、关注与发帖，查看进度。每项任务有每日上限和冷却，X 提示限制就停下等待，节奏按少而准来定。</p>
-          </div>
-          <Link href="/resources/x-reply-clipboard-extension" className={styles.toolGuideLink}>查看智能体与获取方式 <span aria-hidden="true">→</span></Link>
-        </aside>
-
-        <aside className={styles.toolGuide} aria-label="圆桌大会入口">
-          <div><p className={styles.toolGuideEyebrow}>认识交流伙伴</p><h2>大互动 · 圆桌大会</h2><p>围着圆桌认识 X 认证粉丝列表中的交流伙伴，从不同的视角讨论表达、倾听与反馈。</p></div>
-          <Link href="/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
-        </aside>
-
-        <aside className={styles.toolGuide} aria-label="大互动日历入口">
-          <div>
-            <p className={styles.toolGuideEyebrow}>按日回看互动前十</p>
-            <h2>大互动日历</h2>
-            <p>选择日期，查看前一天双向公开互动最多的十个账号。</p>
-          </div>
-          <Link href="/calendar" className={styles.toolGuideLink}>打开日历 <span aria-hidden="true">→</span></Link>
-        </aside>
-
-        </div>
-
         <div className={styles.readingLayout}>
           <ChapterNav chapters={chapters} />
 

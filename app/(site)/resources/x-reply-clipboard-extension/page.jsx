@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -19,7 +22,6 @@ import ContentPvBeacon from '../../components/ContentPvBeacon'
 import DistributeContentButton from '../../components/DistributeContentButton'
 import PageContainer from '../../components/PageContainer'
 import { WECHAT_CONTACT } from '../../../../lib/site/contactChannels'
-import { X_EXTENSION_LATEST_VERSION } from '../../../../lib/community/xExtensionVersion'
 import { getResourceDelivery } from '../../../../lib/content/resourceCatalog'
 import SharePageButton from '../../components/SharePageButton'
 import ExtensionDownloadButton from './ExtensionDownloadButton'
@@ -29,7 +31,8 @@ export const dynamic = 'force-static'
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-const SOURCE_VERSION = X_EXTENSION_LATEST_VERSION
+// 本地源码版本以 manifest 为准，与黄皮书一致；下载包版本以资源交付配置为准，打包前二者可以不同。
+const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || ''
 
 const title = 'X 大互动智能体：评论、点赞、关注与定时发帖'
@@ -40,9 +43,14 @@ const shareText = 'X 大互动智能体：在本地面板查看评论、点赞�
 const VERSION_HISTORY = [
   {
     version: SOURCE_VERSION,
-    title: '下载包：顶栏出口 IP',
-    description: '顶栏版本行旁显示当前浏览器出口 IP，点击可刷新；多账号或代理切换时便于核对。站内 ZIP 已与此版本对齐。',
+    title: 'v5 本地测试：对话主界面与执行页签收敛',
+    description: '打开面板先看到对话框，可直接问排班、今日数据和报警；启动没被确认的任务自动修复，执行页签最多一个，过程中最多再多一个。尚未打包，下载包里没有。',
     current: true,
+  },
+  {
+    version: DOWNLOAD_VERSION || '4.18.0',
+    title: '下载包：顶栏出口 IP',
+    description: '顶栏版本行旁显示当前浏览器出口 IP，点击可刷新；多账号或代理切换时便于核对。站内 ZIP 为此版本。',
   },
   {
     version: '4.9.99',
@@ -478,7 +486,7 @@ export default function XReplyClipboardResourcePage() {
             <p className="mt-6 max-w-2xl text-[15px] leading-7 text-slate-300 sm:text-base sm:leading-8">
               评论、点赞、关注、发帖、社群和清理任务集中在本地面板。同一账号共用一个执行页签，任务按排班状态轮换；手动开启的任务保持优先。取关默认先生成清单，由你核对后操作。
             </p>
-            <p className="mt-3 max-w-2xl text-xs leading-6 text-slate-400">以下功能说明对应本地源码 v{SOURCE_VERSION}。站内 ZIP 下载包配置为 v{DOWNLOAD_VERSION || '待核对'}，与当前源码版本对齐。</p>
+            <p className="mt-3 max-w-2xl text-xs leading-6 text-slate-400">以下功能说明对应本地源码 v{SOURCE_VERSION}。站内 ZIP 下载包配置为 v{DOWNLOAD_VERSION || '待核对'}；标为本地测试的 v5 功能尚未打包，交付版本以实际文件为准。</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <DownloadButton />
               <Link

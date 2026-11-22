@@ -1,6 +1,6 @@
 "use strict";
 
-if (typeof importScripts === "function") importScripts("leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js", "agentPlanner.js", "taskEngine.js");
+if (typeof importScripts === "function") importScripts("workbenchBridge.js", "leaderboard.js", "kolRoster.js", "receipt.js", "devUpdate.js", "articleDraft.js", "replyHistory.js", "vendor/x-article/format-core.js", "siteForward.js", "agentPlanner.js", "taskEngine.js");
 
 const leaderboard = globalThis.XrcLeaderboard || (typeof require === "function" ? require("./leaderboard.js") : null);
 const taskEngineApi = globalThis.XrcTaskEngine || (typeof require === "function" ? require("./taskEngine.js") : null);
@@ -2330,13 +2330,15 @@ async function recoverExhaustedStart(plan, mode, now = Date.now()) {
   return true;
 }
 
-// Close plugin-opened X tabs that are no longer the execution tab. Kept: the
-// execution tab, tabs a task is running or starting in, reply tabs left with a
-// draft, conversation tabs being read, the tab in front, and a tab whose panel
-// is being typed in. A tab the person navigated off X is no longer ours.
-// Version 1 also picks up tabs left before this list existed: X tabs titled
-// "@当前账号 · 任务名", which only task tabs carry.
-const STRAY_TAB_SWEEP_VERSION = 1;
+// The plugin keeps one execution tab, plus at most one extra while work is in
+// progress: a conversation tab being read, or else the newest reply tab left
+// with a draft. Every other tab the plugin owns is closed on each pass: tabs on
+// the created list, tabs registered for a task, tabs a stale runtime row points
+// at, and X tabs titled "@当前账号 · 任务名" (only task tabs carry that title, and
+// it stays after the tab loses its task or its script is orphaned by a reload).
+// Never closed: the tab in front in the focused window, a tab whose panel is
+// being typed in, and a tab the person navigated off X.
+const EXTRA_TABS_KEPT = 1;
 
 // Only task tabs carry this prefix; X's own titles never start with "@账号 · ".
 function managedTaskTitle(title, handle) {
@@ -2346,39 +2348,56 @@ function managedTaskTitle(title, handle) {
   return Boolean(match) && match[1].toLowerCase() === own.toLowerCase();
 }
 
-async function legacyTaskTabIds(plan) {
-  if (!chrome.tabs?.query || !accountHandleFrom(plan.accountHandle)) return null;
+async function titledTaskTabIds(plan) {
+  if (!chrome.tabs?.query || !accountHandleFrom(plan.accountHandle)) return [];
   try {
     const tabs = await chrome.tabs.query({ url: ["https://x.com/*", "https://twitter.com/*"] });
     return (tabs || []).filter((tab) => managedTaskTitle(tab?.title, plan.accountHandle)).map((tab) => Number(tab.id));
+  } catch (error) {
+    return [];
+  }
+}
+
+async function focusedWindowId() {
+  try {
+    const win = await chrome.windows?.getLastFocused?.();
+    return Number.isInteger(win?.id) ? win.id : null;
   } catch (error) {
     return null;
   }
 }
 
+function validTabIds(ids) {
+  return [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
+}
+
 async function closeStrayExecTabs(plan, now = Date.now()) {
   if (!chrome.storage?.local || !chrome.tabs?.get) return 0;
+  const detached = validTabIds(plan.detachedReplyTabIds || []);
+  const reading = validTabIds([...contextTabs]);
+  const extra = (reading.length ? reading : detached).slice(-EXTRA_TABS_KEPT);
   const stored = (await chrome.storage.local.get(CREATED_EXEC_TABS_KEY))?.[CREATED_EXEC_TABS_KEY];
-  let tracked = (Array.isArray(stored) ? stored : []).map(Number);
-  if ((Number(plan.strayTabSweepVersion) || 0) < STRAY_TAB_SWEEP_VERSION) {
-    const legacy = await legacyTaskTabIds(plan);
-    if (legacy) {
-      tracked = [...tracked, ...legacy];
-      plan.strayTabSweepVersion = STRAY_TAB_SWEEP_VERSION;
-      await saveTaskSchedule(plan);
-    }
-  }
-  tracked = [...new Set(tracked.filter((id) => Number.isInteger(id) && id > 0))];
-  if (!tracked.length) return 0;
   const runtime = await readPluginRuntime();
-  const keep = new Set([
-    Number(plan.workTabId),
-    ...Object.values(runtime.tasks || {})
-      .filter((task) => ["running", "paused", "starting", "stopping"].includes(task?.phase))
-      .map((task) => Number(task.tabId)),
-    ...(plan.detachedReplyTabIds || []).map(Number),
-    ...contextTabs
+  const runtimeRows = Object.entries(runtime.tasks || {});
+  const tracked = validTabIds([
+    ...(Array.isArray(stored) ? stored : []),
+    ...detached,
+    ...Object.values(await readTaskTabs()),
+    ...runtimeRows.map(([, task]) => task?.tabId),
+    ...await titledTaskTabIds(plan)
   ]);
+  if (!tracked.length) return 0;
+  const workTabId = Number(plan.workTabId);
+  const keep = new Set([
+    workTabId,
+    ...extra,
+    // Only the task the schedule is on owns a tab; a tab mid-stop is left to finish.
+    ...runtimeRows
+      .filter(([mode, task]) => (mode === plan.current && ["running", "paused", "starting"].includes(task?.phase))
+        || task?.phase === "stopping")
+      .map(([, task]) => Number(task.tabId))
+  ]);
+  const frontWindow = await focusedWindowId();
   const gone = new Set();
   let closed = 0;
   for (const id of tracked) {
@@ -2386,11 +2405,19 @@ async function closeStrayExecTabs(plan, now = Date.now()) {
     let tab;
     try { tab = await chrome.tabs.get(id); } catch (error) { gone.add(id); continue; }
     if (!/^(?:https:\/\/(?:x\.com|twitter\.com)\/|about:blank)/iu.test(tab?.url || "")) { gone.add(id); continue; }
-    if (tab.active || panelTypingRecently(id, now)) continue;
+    // Only the tab in front of the person counts; every window has an active tab.
+    const inFront = tab.active && (frontWindow == null || Number(tab.windowId) === frontWindow);
+    if (inFront || panelTypingRecently(id, now)) continue;
     const result = await abandonScheduledTab(id);
     if (result.closed) { gone.add(id); closed += 1; }
   }
   await updateCreatedExecTabs((ids) => [...ids, ...tracked].filter((id) => !gone.has(id)));
+  if (detached.some((id) => gone.has(id))) {
+    const latest = await readTaskSchedule();
+    latest.detachedReplyTabIds = (latest.detachedReplyTabIds || []).filter((id) => !gone.has(Number(id)));
+    plan.detachedReplyTabIds = latest.detachedReplyTabIds;
+    await saveTaskSchedule(latest);
+  }
   if (closed) noteEngine("", "close-stray-tabs", `关掉 ${closed} 个不再使用的执行页签`);
   return closed;
 }
@@ -3543,6 +3570,8 @@ async function releaseBlockedReplyTab(tabId) {
     plan.workTabId = 0;
   }
   await saveTaskSchedule(plan);
+  // Only the newest such tab is kept; closeStrayExecTabs closes the older ones.
+  await noteCreatedExecTab(tabId);
 }
 
 async function suspendScheduledTask(mode, reason, { keepTab = false, releaseOnFailure = false } = {}) {
@@ -3763,13 +3792,20 @@ async function schedulePass() {
   // Persist probe outcomes so unknownSince / starting survive across alarm ticks.
   // Without this, every tick re-reads a stale "running/starting" row, resets grace, and never recovers.
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
+  await closeStrayExecTabs(plan, now);
   if (plan.current) {
     const settled = await settleCurrentTask(plan, runtime, now);
     if (settled.done !== undefined) return settled.done;
     plan = settled.plan;
   }
-  await closeStrayExecTabs(plan, now);
   if (await selfHealStartFailure(plan, now)) return ENGINE_AGAIN;
+  if (!plan.current && await localUpdateDue(now)) {
+    // Between two tasks: load the newer local build now. Waiting for an idle moment
+    // never comes while the schedule runs back to back. The schedule resumes after it.
+    noteEngine("", "local-update", "两项任务之间加载本地新版本");
+    setTimeout(() => { applyLocalDevUpdate().catch(() => {}); }, 0);
+    return plan;
+  }
   return dispatchNextTask(plan, now);
 }
 
@@ -4506,6 +4542,7 @@ async function openAllTasks(sender, accountHandle = "", sourceMode = "", { tick 
   runtime.flow = { phase: "starting", updatedAt: Date.now() };
   if (chrome.storage?.local) await chrome.storage.local.set({ [PLUGIN_RUNTIME_KEY]: runtime });
   const handle = accountHandleFrom(accountHandle) || await savedAccountHandle();
+  syncWorkbenchProfile(handle).catch(() => {});
   const plan = await readTaskSchedule();
   if (plan.accountHandle && handle && plan.accountHandle !== handle) {
     if (plan.enabled) throw new Error("当前 X 账号与排班账号不一致，请先暂停全流程并确认账号");
@@ -4972,6 +5009,15 @@ async function applyRemoteScheduleConfig(raw) {
   return skipped.length ? `已保存排班；${skipped.join("、")}正在执行，未移出` : "已保存排班";
 }
 
+// A newer local build was seen at least a minute ago and is waiting for tasks to end.
+async function localUpdateDue(now = Date.now()) {
+  if (manualUpdatePromise) return false;
+  const update = await globalThis.XrcLocalDevUpdate?.status?.();
+  if (!update) return false;
+  if (update.phase === "waiting") return true;
+  return update.phase === "available" && now - Number(update.firstSeenAt) >= 60 * 1000;
+}
+
 function applyLocalDevUpdate({ reloadDelayMs = 750 } = {}) {
   if (!manualUpdatePromise) {
     manualUpdatePromise = globalThis.XrcLocalDevUpdate?.applyNow?.({
@@ -5075,7 +5121,7 @@ async function executeRemoteCommand(command) {
     // Longer delay so the command-result heartbeat can finish before the SW reloads.
     const result = await applyLocalDevUpdate({ reloadDelayMs: 1500 });
     if (!result?.ok) throw new Error(result?.error || "远程更新失败");
-    if (result.phase === "waiting") return `已排队更新到 v${result.version}，等待任务结束后加载`;
+    if (result.phase === "waiting") return `已排队更新到 v${result.version}，在两项任务之间加载`;
     return `正在加载本地新版 v${result.version || ""}`.trim();
   }
   throw new Error("不支持的远程指令");
@@ -5783,11 +5829,132 @@ async function detectEgressIp(fetchImpl = globalThis.fetch) {
   }
 }
 
+// 与本地排班共用串行锁。拒绝领取时，云端条目保持 queued。
+async function runWorkbenchSchedule() {
+  const bridge = globalThis.XrcWorkbenchBridge;
+  const stored = await chrome.storage.local.get(["xrcWorkbenchCredential", "xrcWorkbenchPendingReport"]);
+  const credential = stored.xrcWorkbenchCredential;
+  if (!bridge || !credential?.token || credential.expiresAt <= Date.now()) return;
+  const request = (action, payload) => bridge.pluginRequest(fetch, action, payload, credential.token);
+  const pending = stored.xrcWorkbenchPendingReport;
+  if (pending) {
+    // Worker 重启后只回报未知结果，绝不再次发送同一条推文。
+    const result = await request("report", pending);
+    if (result.ok || result.status === 404) await chrome.storage.local.remove("xrcWorkbenchPendingReport");
+    return;
+  }
+  const plan = await readTaskSchedule();
+  const handle = await savedAccountHandle();
+  const now = Date.now();
+  if (!plan.enabled || !handle || plan.accountHandle !== handle || plan.current) return;
+  if (!dueTaskModes(plan, now).includes("poster") || Number(plan.items?.poster?.manualRequestedAt) > 0) return;
+  const savedPoster = (await chrome.storage.local.get("xrcPosterPublishList")).xrcPosterPublishList;
+  if (savedPoster?.running || savedPoster?.items?.length || savedPoster?.currentPost
+    || Number(savedPoster?.nextPostAt) > now || Number(savedPoster?.riskCooldownUntil) > now) return;
+  for (const mode of POST_TASKS) {
+    const item = plan.items?.[mode] || {};
+    if (Number(item.resumeAt) > now || scheduleEngine().coolingHoldReason({ mode, item, now })) return;
+  }
+  const runtime = await readPluginRuntime();
+  if (Object.values(runtime?.tasks || {}).some(t => ["running", "starting", "stopping"].includes(t?.phase))) return;
+  const budget = await globalThis.XrcCommunityReceipt?.postDailyBudget?.(handle);
+  if (!budget || budget.uncertain || budget.reached) return;
+  const tabs = await chrome.tabs.query({ url: ["https://x.com/home", "https://twitter.com/home"] });
+  const tab = tabs.find(t => Number(t.id) > 0);
+  if (!tab) return;
+  const ready = await chrome.tabs.sendMessage(tab.id, { type: "xrc-workbench-ready", handle }).catch(() => null);
+  if (!ready?.ok) return;
+  const claimed = await request("claim", { handle });
+  if (!claimed.ok || !claimed.schedule) return;
+  const schedule = claimed.schedule;
+  const attemptedKey = "xrcWorkbenchAttemptedSchedules";
+  const attempted = (await chrome.storage.local.get(attemptedKey))[attemptedKey] || {};
+  if (attempted[schedule.id]) {
+    await request("report", { id: schedule.id, ok: false, result: "此排期已尝试执行，避免重复发送，请核对 X" });
+    return;
+  }
+  attempted[schedule.id] = Date.now();
+  const report = { id: schedule.id, ok: false, result: "执行结果未确认，请在 X 中核对" };
+  await chrome.storage.local.set({ xrcWorkbenchPendingReport: report, [attemptedKey]: attempted });
+  const fresh = await readTaskSchedule();
+  if (!fresh.enabled || fresh.current || !dueTaskModes(fresh).includes("poster") || await savedAccountHandle() !== handle) {
+    report.result = "本地排班或账号已改变，未执行";
+  } else {
+    const result = await chrome.tabs.sendMessage(tab.id, { type: "xrc-workbench-publish", handle, text: schedule.text }).catch(() => null);
+    report.ok = result?.ok === true;
+    report.result = result?.result || report.result;
+    // 把成功和失败都写入本地间隔，下一次不能绕过普通发帖轮次。
+    const latest = await readTaskSchedule();
+    latest.items.poster = { ...latest.items.poster, lastRunAt: Date.now(), resumeAt: Date.now() + SLICE_YIELD_COOLDOWN_MS };
+    if (!report.ok) {
+      for (const mode of POST_TASKS) latest.items[mode] = { ...latest.items[mode], resumeAt: Math.max(Number(latest.items[mode]?.resumeAt) || 0, Date.now() + 15 * 60000), reason: "工作台执行结果未确认，冷却后请核对 X" };
+    }
+    await saveTaskSchedule(latest);
+  }
+  await chrome.storage.local.set({ xrcWorkbenchPendingReport: report });
+  const result = await request("report", report);
+  if (result.ok || result.status === 404) await chrome.storage.local.remove("xrcWorkbenchPendingReport");
+}
+function tickWorkbenchSchedule() {
+  const work = scheduleWork.then(runWorkbenchSchedule);
+  scheduleWork = work.catch(() => {});
+  return work;
+}
+
+// 配对令牌同步不读取站点 Cookie；异步响应不得覆盖同步期间的新本地编辑。
+let workbenchSyncWork = null;
+function syncWorkbenchProfile(handle) {
+  if (workbenchSyncWork) return workbenchSyncWork;
+  workbenchSyncWork = (async () => {
+    const bridge = globalThis.XrcWorkbenchBridge;
+    const key = bridge?.accountKey(handle || await savedAccountHandle());
+    if (!key) return;
+    const stored = await chrome.storage.local.get(["xrcWorkbenchCredential", "xrcAgentProfilesV1"]);
+    const credential = stored.xrcWorkbenchCredential;
+    if (!credential?.token || credential.expiresAt <= Date.now()) return;
+    const local = stored.xrcAgentProfilesV1?.accounts?.[key] || {};
+    const result = await bridge.syncPluginProfile(fetch, credential.token, key, local);
+    if (result.status === 401) { await chrome.storage.local.remove("xrcWorkbenchCredential"); return; }
+    if (!result.ok || result.direction === "none") return;
+    const fresh = await chrome.storage.local.get("xrcAgentProfilesV1");
+    const profiles = fresh.xrcAgentProfilesV1 || { accounts: {} };
+    if (JSON.stringify(profiles.accounts?.[key] || {}) !== JSON.stringify(local)) return;
+    profiles.accounts = { ...profiles.accounts, [key]: result.profile };
+    await chrome.storage.local.set({ xrcAgentProfilesV1: profiles });
+  })().finally(() => { workbenchSyncWork = null; });
+  return workbenchSyncWork;
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.action?.onClicked?.addListener((tab) => {
     reopenExtensionPanel(tab).catch(() => {});
   });
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (["xrc-workbench-pair", "xrc-workbench-ingest", "xrc-workbench-disconnect"].includes(message?.type)) {
+      const validPage = /^https:\/\/(?:x\.com|twitter\.com)\//.test(sender?.tab?.url || "");
+      if (!validPage || sender.id !== chrome.runtime.id) { sendResponse({ ok: false, error: "INVALID_SENDER" }); return false; }
+      (async () => {
+        const key = "xrcWorkbenchCredential";
+        if (message.type === "xrc-workbench-disconnect") {
+          await chrome.storage.local.remove(key);
+          return { ok: true };
+        }
+        const bridge = globalThis.XrcWorkbenchBridge;
+        if (message.type === "xrc-workbench-pair") {
+          const result = await bridge.pluginRequest(fetch, "pair", { code: String(message.code || "").trim() });
+          if (!result.ok) return { ok: false, error: result.error };
+          await chrome.storage.local.set({ [key]: { token: result.token, expiresAt: result.expiresAt } });
+          syncWorkbenchProfile().catch(() => {});
+          return { ok: true };
+        }
+        const credential = (await chrome.storage.local.get(key))?.[key];
+        if (!credential?.token || credential.expiresAt <= Date.now()) return { ok: false, error: "请先配对工作台" };
+        const result = await bridge.pluginRequest(fetch, "ingest", { items: (Array.isArray(message.items) ? message.items : []).slice(0, 50) }, credential.token);
+        if (result.status === 401) await chrome.storage.local.remove(key);
+        return { ok: result.ok, accepted: result.accepted, error: result.error };
+      })().then(sendResponse).catch(() => sendResponse({ ok: false, error: "工作台连接失败" }));
+      return true;
+    }
     if (message?.type?.startsWith("xrc-reply-history-")) {
       const action = message.type.slice("xrc-reply-history-".length);
       const operation = action === "needs-migration" ? replyHistory?.needsMigration(message.accountHandle)
@@ -6230,10 +6397,13 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   globalThis.XrcCommunityReceipt?.install?.();
   chrome.alarms?.onAlarm?.addListener((alarm) => {
     if (alarm?.name === TASK_SCHEDULE_ALARM || alarm?.name === TASK_SLICE_ALARM) {
+      syncWorkbenchProfile().catch(() => {});
+      tickWorkbenchSchedule().catch(() => {});
       tickTaskSchedule().catch(() => {});
     }
   });
   chrome.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName === "local" && changes?.xrcAgentSessionV1) syncWorkbenchProfile().catch(() => {});
     if (areaName !== "local" || !changes?.[TASK_SCHEDULE_KEY]) return;
     const before = Boolean(changes[TASK_SCHEDULE_KEY].oldValue?.enabled);
     const after = Boolean(changes[TASK_SCHEDULE_KEY].newValue?.enabled);
@@ -6242,6 +6412,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       tickTaskSchedule().catch(() => {});
     }
   });
+  syncWorkbenchProfile().catch(() => {});
   readTaskSchedule().then((plan) => {
     if (plan.enabled) return saveTaskSchedule(plan).then(tickTaskSchedule);
     return null;
@@ -6255,11 +6426,14 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
 
 if (typeof module === "object" && module.exports) {
   module.exports = {
+    runWorkbenchSchedule,
+    syncWorkbenchProfile,
     readRunFacts,
     readTaskDetails,
     restartSkipCopy,
     selfHealStartFailure,
     closeStrayExecTabs,
+    localUpdateDue,
     openNotificationsInBackground,
     agentHarnessTools,
     cleanReply,

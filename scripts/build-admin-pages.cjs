@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..')
 const appRoot = path.join(root, 'app')
 const siteRoot = path.join(appRoot, '(site)')
 const apiRoot = path.join(appRoot, 'api')
+const xWorkbenchRoot = path.join(appRoot, '(x)')
 const webLlmRoot = path.join(appRoot, '(web-llm)')
 const wellKnownRoot = path.join(appRoot, '.well-known')
 const socialCardRoot = path.join(appRoot, 'social-card')
@@ -79,6 +80,12 @@ function restoreTree(stashDirectory, targetDirectory) {
 function restoreMovedPaths() {
   restoreTree(path.join(stashRoot, 'site'), siteRoot)
   restoreTree(path.join(stashRoot, 'api'), apiRoot)
+
+  const stashedWorkbench = path.join(stashRoot, 'x-workbench')
+  if (fs.existsSync(stashedWorkbench)) {
+    if (fs.existsSync(xWorkbenchRoot)) throw new Error('Cannot restore app/(x): target exists')
+    fs.renameSync(stashedWorkbench, xWorkbenchRoot)
+  }
 
   const stashedWebLlm = path.join(stashRoot, 'web-llm')
   if (fs.existsSync(stashedWebLlm)) {
@@ -166,6 +173,7 @@ function excludePublicPaths() {
     }
   }
 
+  moveEntry(xWorkbenchRoot, path.join(stashRoot, 'x-workbench'), 'app/(x)')
   moveEntry(webLlmRoot, path.join(stashRoot, 'web-llm'), 'app/(web-llm)')
   moveEntry(wellKnownRoot, path.join(stashRoot, 'well-known'), 'app/.well-known')
   moveEntry(socialCardRoot, path.join(stashRoot, 'social-card'), 'app/social-card')

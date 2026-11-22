@@ -6790,6 +6790,16 @@
     } catch (error) {}
   }
 
+  // 自动采集默认关闭；开关与配对状态都在后台和 storage 里校验，这里只负责启动扫描。
+  const workbenchAuto = globalThis.XrcWorkbenchCollector?.startAuto({
+    send: (message) => sendExtensionMessage(message),
+    storage: globalThis.chrome?.storage?.local
+  });
+  globalThis.chrome?.storage?.onChanged?.addListener?.((changes, area) => {
+    const key = globalThis.XrcWorkbenchCollector?.AUTO_KEY;
+    if (area === "local" && key && changes[key]) workbenchAuto?.apply(changes[key].newValue === true);
+  });
+
   function collectTweets() {
     const ownHandle = currentAccountHandle();
     if (!ownHandle) return [];
@@ -10066,6 +10076,17 @@
           </div>
           <div class="xrc-docs-content">
             <section class="xrc-docs-section">
+              <strong>X 工作台</strong>
+              <p class="xrc-config-note">在 x.2aran.com 的智能体标签生成配对码。提交会将当前页面推文正文及公开指标加入共享雷达。</p>
+              <input type="password" autocomplete="off" data-xrc-workbench-code placeholder="一次性配对码">
+              <button type="button" data-xrc-workbench-pair>配对</button>
+              <button type="button" data-xrc-workbench-ingest>提交当前页面推文</button>
+              <button type="button" data-xrc-workbench-disconnect>断开本机连接</button>
+              <label class="xrc-config-note"><input type="checkbox" data-xrc-workbench-auto> 浏览时自动提交高互动推文（点赞 ≥ 50 或展示 ≥ 5000，不含受保护账号，默认关闭）</label>
+              <p class="xrc-config-note" role="status" data-xrc-workbench-status></p>
+            </section>
+
+            <section class="xrc-docs-section">
               <div class="xrc-docs-title"><b>PDF</b><span><strong>推文转 PDF</strong><small>只读取当前打开的单条推文</small></span></div>
               <label class="xrc-config-row">
                 <span><strong>启用导出</strong><small>在浏览器本地排版，再用打印窗口保存为 PDF</small></span>
@@ -10673,6 +10694,31 @@
           panel.querySelector("[data-xrc-toolbox-status]").textContent = "设置保存失败，请重试";
         }
       });
+      const autoBox = panel.querySelector("[data-xrc-workbench-auto]");
+      const collectorKey = globalThis.XrcWorkbenchCollector?.AUTO_KEY;
+      if (autoBox && collectorKey) {
+        chrome.storage.local.get(collectorKey).then((v) => { autoBox.checked = v?.[collectorKey] === true; }).catch(() => {});
+        autoBox.addEventListener("change", async () => {
+          await chrome.storage.local.set({ [collectorKey]: autoBox.checked }).catch(() => {});
+          workbenchAuto?.apply(autoBox.checked);
+          panel.querySelector("[data-xrc-workbench-status]").textContent = autoBox.checked ? "已开启自动提交（需先配对）" : "已关闭自动提交";
+        });
+      }
+      for (const action of ["pair", "ingest", "disconnect"]) {
+        panel.querySelector(`[data-xrc-workbench-${action}]`).addEventListener("click", async (event) => {
+          const status = panel.querySelector("[data-xrc-workbench-status]");
+          const code = panel.querySelector("[data-xrc-workbench-code]");
+          const button = event.currentTarget;
+          button.disabled = true;
+          try {
+            const items = action === "ingest" ? (globalThis.XrcWorkbenchCollector?.collectVisible() || []).slice(0, 50) : [];
+            const result = await sendExtensionMessage({ type: `xrc-workbench-${action}`, code: code.value, items });
+            status.textContent = result?.ok ? action === "ingest" ? `已收录 ${result.accepted || 0} 条` : action === "pair" ? "配对成功" : "本机已断开；可在工作台撤销全部凭证" : result?.error || "连接失败";
+            if (action === "pair" && result?.ok) code.value = "";
+          } catch { status.textContent = "连接失败，请重试"; }
+          finally { button.disabled = false; }
+        });
+      }
       panel.querySelector("[data-xrc-pdf-export]").addEventListener("click", async () => {
         const status = panel.querySelector("[data-xrc-toolbox-status]");
         if (!toolboxPdfEnabled || !pdfApi || toolboxExporting) return;
@@ -12498,6 +12544,29 @@
       }
       sendResponse({ ok: true, shown: Boolean(document.getElementById(PANEL_ID)) });
       return false;
+    }
+    if (["xrc-workbench-ready", "xrc-workbench-publish"].includes(message?.type)) {
+      if (sender?.id !== chrome.runtime.id) { sendResponse({ ok: false }); return false; }
+      (async () => {
+        const account = String(currentAccountHandle() || "").replace(/^@/, "").toLowerCase();
+        const snapshot = postApi?.snapshot?.();
+        const composer = document.querySelector('[data-testid="tweetTextarea_0"][contenteditable="true"]');
+        if (!account || account !== message.handle || !/^\/home\/?$/.test(location.pathname)
+          || !composer || composer.textContent.trim() || snapshot?.running || state.running
+          || snapshot?.riskCooldownUntil > Date.now() || snapshot?.nextPostAt > Date.now()) return { ok: false, result: "账号、发帖框或本地冷却不满足执行条件" };
+        if (message.type === "xrc-workbench-ready") return { ok: true };
+        const budget = await sendExtensionMessage({ type: "xrc-post-daily-budget", accountHandle: account });
+        if (!budget?.ok || !budget.budget || budget.budget.uncertain || budget.budget.reached) return { ok: false, result: "本地发帖额度不可用" };
+        const text = String(message.text || "").trim();
+        if (!text || text.length > 1000) return { ok: false, result: "排期正文无效" };
+        const persisted = (await chrome.storage.local.get("xrcPosterPublishList")).xrcPosterPublishList;
+        if (persisted?.running || persisted?.items?.length || persisted?.currentPost || persisted?.riskCooldownUntil > Date.now() || persisted?.nextPostAt > Date.now()) return { ok: false, result: "本机发帖队列或冷却尚未结束" };
+        if (composer.textContent.trim() || postApi.snapshot()?.running || state.running || String(currentAccountHandle() || "").replace(/^@/, "").toLowerCase() !== account) return { ok: false, result: "执行条件已改变" };
+        const result = await postApi.publishPost(text);
+        if (result === "ok") await reportCommunityAction({ task: "tweet-post", result: "success", accountHandle: account });
+        return { ok: result === "ok", result: String(result) };
+      })().then(sendResponse, () => sendResponse({ ok: false, result: "执行结果未确认，请在 X 中核对" }));
+      return true;
     }
     if (message?.type === "xrc-task-start") {
       (async () => {

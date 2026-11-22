@@ -29,6 +29,7 @@ function applyDefaultLocaleCookie(request, response) {
 const CANONICAL_HOST = '2aran.com'
 const RANK_HOST = 'rank.2aran.com'
 const BOOKMARKS_HOST = 'bookmarks.2aran.com'
+const X_WORKBENCH_HOST = 'x.2aran.com'
 const OPS_LEGACY_HOST = 'ops.2aran.com'
 const LEGACY_HOSTS = new Set(['tuaran.me', 'www.tuaran.me', 'tuaran.pages.dev'])
 const ADS_TXT = 'google.com, pub-7037125126940820, DIRECT, f08c47fec0942fa0\n'
@@ -60,6 +61,12 @@ export async function middleware(request) {
   if (host === RANK_HOST && pathname === '/') {
     const url = request.nextUrl.clone()
     url.pathname = '/rank'
+    return NextResponse.rewrite(url)
+  }
+
+  if (host === X_WORKBENCH_HOST && pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/x-workbench'
     return NextResponse.rewrite(url)
   }
 

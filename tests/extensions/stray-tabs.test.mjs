@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const require = createRequire(import.meta.url)
@@ -30,7 +31,7 @@ function browser({ tabs, local = {}, plan = {}, runtime = { tasks: {}, flow: {} 
       async create(options) { const id = 900 + created.length; created.push(options); tabs.push({ id, url: 'about:blank' }); return { id, windowId: 1 } },
     },
   }
-  return { chrome, local, removed, updates, created }
+  return { chrome, local, removed, updates, created, tabs }
 }
 
 async function using(setup, run) {
@@ -39,7 +40,7 @@ async function using(setup, run) {
   try { return await run(setup) } finally { globalThis.chrome = previousChrome }
 }
 
-test('old execution tabs the plugin opened are closed; the live one and the one in front stay', async () => {
+test('old execution tabs and stale task rows are closed; the live one and the one in front stay', async () => {
   const setup = browser({
     tabs: [
       { id: 11, url: 'https://x.com/notifications', active: false },
@@ -51,19 +52,33 @@ test('old execution tabs the plugin opened are closed; the live one and the one 
       { id: 17, url: 'https://x.com/a/status/1', active: false },
     ],
     local: { xrcCreatedExecTabs: [11, 12, 13, 14, 15, 16, 17, 99] },
-    plan: { workTabId: 11, strayTabSweepVersion: 1, detachedReplyTabIds: [15] },
+    plan: { workTabId: 11, detachedReplyTabIds: [15] },
     runtime: { tasks: { 'likes-posts': { tabId: 17, phase: 'starting' } }, flow: {} },
   })
   await using(setup, async ({ local, removed }) => {
     const closed = await background.closeStrayExecTabs(local.xrcTaskSchedule)
-    assert.equal(closed, 2)
-    assert.deepEqual(removed.sort(), [12, 13])
+    // 17 has a runtime row, but the schedule is not on that task: a second tab is not allowed.
+    assert.equal(closed, 3)
+    assert.deepEqual(removed.sort((a, b) => a - b), [12, 13, 17])
     // Gone, navigated off X, and closed tabs leave the list; kept ones stay for a later pass.
-    assert.deepEqual([...local.xrcCreatedExecTabs].sort((a, b) => a - b), [11, 14, 15, 17])
+    assert.deepEqual([...local.xrcCreatedExecTabs].sort((a, b) => a - b), [11, 14, 15])
   })
 })
 
-test('tabs left before the list existed are found once by their task title', async () => {
+test('the task running in the execution tab keeps its tab', async () => {
+  const setup = browser({
+    tabs: [{ id: 11, url: 'https://x.com/home', active: false }, { id: 17, url: 'https://x.com/home', active: false }],
+    local: { xrcCreatedExecTabs: [11, 17] },
+    plan: { workTabId: 17, current: 'likes-posts' },
+    runtime: { tasks: { 'likes-posts': { tabId: 17, phase: 'running' } }, flow: {} },
+  })
+  await using(setup, async ({ local, removed }) => {
+    assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 1)
+    assert.deepEqual(removed, [11])
+  })
+})
+
+test('tabs the list never knew are found by their task title on every pass', async () => {
   const setup = browser({
     tabs: [
       { id: 11, url: 'https://x.com/notifications', title: '@me · 评论回复 · Notifications', active: false },
@@ -78,9 +93,9 @@ test('tabs left before the list existed are found once by their task title', asy
   await using(setup, async ({ local, removed }) => {
     assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 2)
     assert.deepEqual(removed.sort(), [21, 22], 'another account and ordinary X pages are left alone')
-    assert.equal(local.xrcTaskSchedule.strayTabSweepVersion, 1)
-    setup.chrome.tabs.query = async () => { throw new Error('the title sweep runs once') }
-    await background.closeStrayExecTabs(local.xrcTaskSchedule)
+    setup.tabs.push({ id: 26, url: 'https://x.com/home', title: '@me · 回关 · Home', active: false })
+    assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 1, 'a tab titled later is closed on the next pass')
+    assert.ok(removed.includes(26))
   })
 })
 
@@ -88,7 +103,7 @@ test('a tab that would not close is retried on a later pass', async () => {
   const setup = browser({
     tabs: [{ id: 11, url: 'https://x.com/home' }, { id: 12, url: 'https://x.com/home', active: false }],
     local: { xrcCreatedExecTabs: [12] },
-    plan: { workTabId: 11, strayTabSweepVersion: 1 },
+    plan: { workTabId: 11 },
   })
   setup.chrome.tabs.remove = async () => { throw new Error('beforeunload') }
   await using(setup, async ({ local }) => {
@@ -121,4 +136,75 @@ test('with no execution tab, the new comment-reply tab goes on the created list'
     assert.equal(opened.reused, false)
     assert.deepEqual(local.xrcCreatedExecTabs, [opened.tabId])
   })
+})
+
+test('only the newest reply tab left with a draft is kept; older ones are closed', async () => {
+  const setup = browser({
+    tabs: [
+      { id: 11, url: 'https://x.com/home', active: false },
+      { id: 31, url: 'https://x.com/home', active: false },
+      { id: 32, url: 'https://x.com/home', active: false },
+      { id: 33, url: 'https://x.com/home', active: false },
+    ],
+    plan: { workTabId: 11, detachedReplyTabIds: [31, 32, 33] },
+  })
+  await using(setup, async ({ local, removed }) => {
+    assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 2)
+    assert.deepEqual(removed.sort(), [31, 32], 'one execution tab plus one extra')
+    assert.deepEqual(local.xrcTaskSchedule.detachedReplyTabIds, [33])
+  })
+})
+
+test('the active tab of a window behind is not the tab in front and is closed', async () => {
+  const setup = browser({
+    tabs: [
+      { id: 11, url: 'https://x.com/home', active: false, windowId: 1 },
+      { id: 41, url: 'https://x.com/home', active: true, windowId: 2 },
+      { id: 42, url: 'https://x.com/home', active: true, windowId: 1 },
+    ],
+    local: { xrcCreatedExecTabs: [41, 42] },
+    plan: { workTabId: 11 },
+  })
+  setup.chrome.windows = { async getLastFocused() { return { id: 1 } } }
+  await using(setup, async ({ local, removed }) => {
+    assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 1)
+    assert.deepEqual(removed, [41])
+  })
+})
+
+test('the sweep runs on every pass, also while a task is running', async () => {
+  const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
+  assert.match(source, /await closeStrayExecTabs\(plan, now\);\n  if \(plan\.current\) \{\n    const settled = await settleCurrentTask/)
+  assert.match(source, /await saveTaskSchedule\(plan\);\n  \/\/ Only the newest such tab is kept; closeStrayExecTabs closes the older ones\.\n  await noteCreatedExecTab\(tabId\);/)
+})
+
+test('tabs registered for a task the schedule moved off are closed too', async () => {
+  const setup = browser({
+    tabs: [{ id: 11, url: 'https://x.com/home', active: false }, { id: 51, url: 'https://x.com/notifications', active: false }],
+    plan: { workTabId: 11 },
+  })
+  setup.chrome.storage.session.get = async () => ({ xrcTaskTabs: { notifications: 51, timeline: 11 } })
+  await using(setup, async ({ local, removed }) => {
+    assert.equal(await background.closeStrayExecTabs(local.xrcTaskSchedule), 1)
+    assert.deepEqual(removed, [51])
+  })
+})
+
+test('a newer local build loads between two tasks instead of waiting for an idle moment', async () => {
+  const previous = globalThis.XrcLocalDevUpdate
+  const now = Date.now()
+  try {
+    globalThis.XrcLocalDevUpdate = { async status() { return { phase: 'waiting', version: '9.9.9' } } }
+    assert.equal(await background.localUpdateDue(now), true)
+    globalThis.XrcLocalDevUpdate = { async status() { return { phase: 'available', firstSeenAt: now - 10_000 } } }
+    assert.equal(await background.localUpdateDue(now), false, 'a build seen seconds ago may still be mid-save')
+    globalThis.XrcLocalDevUpdate = { async status() { return { phase: 'available', firstSeenAt: now - 61_000 } } }
+    assert.equal(await background.localUpdateDue(now), true)
+    globalThis.XrcLocalDevUpdate = { async status() { return { phase: 'latest' } } }
+    assert.equal(await background.localUpdateDue(now), false)
+  } finally {
+    globalThis.XrcLocalDevUpdate = previous
+  }
+  const source = await readFile(new URL('../../tools/x-reply-clipboard-extension/background.js', import.meta.url), 'utf8')
+  assert.match(source, /if \(!plan\.current && await localUpdateDue\(now\)\) \{[\s\S]{0,400}setTimeout\(\(\) => \{ applyLocalDevUpdate\(\)\.catch\(\(\) => \{\}\); \}, 0\);\n    return plan;\n  \}\n  return dispatchNextTask\(plan, now\);/)
 })

@@ -118,7 +118,7 @@ test('whitepaper entry row links the calendar beside the roundtable', async () =
   const calendar = page.indexOf('>大互动日历<')
   assert.ok(roundtable > 0)
   assert.ok(calendar > roundtable)
-  assert.match(page, /href="\/resources\/big-interaction-whitepaper\/calendar"/)
+  assert.match(page, /href="\/calendar"/)
   assert.match(css, /\.entryGrid \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
 })
 
@@ -127,7 +127,7 @@ test('calendar page renders the five ranking columns and an empty state', async 
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/InteractionCalendar.jsx', import.meta.url), 'utf8'),
   ])
-  assert.match(page, /const canonicalUrl = 'https:\/\/2aran\.com\/resources\/big-interaction-whitepaper\/calendar'/)
+  assert.match(page, /const canonicalUrl = 'https:\/\/x\.2aran\.com\/calendar'/)
   assert.match(page, /公开地址 <a href=\{path\}>\{canonicalUrl\}<\/a>/)
   assert.match(page, /canonical: path/)
   assert.match(page, /application\/ld\+json/)

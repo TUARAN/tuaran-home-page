@@ -29,7 +29,7 @@ function TabBar({ tab, onTab }) {
 }
 
 export default function WorkbenchClient() {
-  const [state, setState] = useState('loading')
+  const [signedIn, setSignedIn] = useState(false)
   const [tab, setTab] = useState('radar')
   const [accounts, setAccounts] = useState([])
   const [handle, setHandle] = useState('')
@@ -43,64 +43,61 @@ export default function WorkbenchClient() {
     if (u.ok) setUsage(u.data)
   }, [])
 
+  const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
+
   const loadAccounts = useCallback(async () => {
     const res = await call('/accounts')
-    if (res.status === 401) return setState('anonymous')
-    if (!res.ok) return setState('error')
+    if (!res.ok) {
+      setSignedIn(false)
+      setAccounts([])
+      return
+    }
     setAccounts(res.data.accounts || [])
     setHandle((cur) => (res.data.accounts.some((a) => a.handle === cur) ? cur : res.data.accounts[0]?.handle || ''))
-    setState('ready')
+    setSignedIn(true)
     loadUsage()
   }, [loadUsage])
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
+  useEffect(() => { setReturnTo(window.location.href) }, [])
 
   const goPoster = (seed) => { setPosterSeed({ ...seed, at: Date.now() }); setTab('poster') }
-  const ready = state === 'ready'
+  const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
+  const needsLogin = !signedIn && (tab === 'agent' || tab === 'poster' || tab === 'schedule')
 
-  let body = <p>加载中…</p>
-  if (state === 'error') body = <p>服务暂时不可用，请稍后刷新。</p>
-  if (state === 'anonymous') {
-    const back = encodeURIComponent('https://x.2aran.com/')
-    body = (
-      <>
-        <h1>看见爆点，写出自己的版本</h1>
-        <p className={s.hint}>推文榜、账号榜和智能体需要登录。理论、黄皮书、日历、圆桌和 AI分发大师可以直接打开。</p>
-        <a className={`${s.btn} ${s.primary}`} href={`https://2aran.com/login?returnTo=${back}`}>登录</a>
-      </>
-    )
-  }
-  if (ready) {
-    body = (
-      <>
-        {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onPoster={goPoster} />}
-        {tab === 'board' && <BoardTab />}
-        {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
-        {tab === 'schedule' && <ScheduleTab handle={handle} seed="" />}
-        {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
-      </>
-    )
-  }
+  const body = needsLogin ? (
+    <>
+      <h1>登录后使用智能体</h1>
+      <p className={s.hint}>推文榜和账号榜不用登录。绑定账号、额度和写操作在登录后可用。</p>
+      <a className={`${s.btn} ${s.primary}`} href={loginHref}>登录</a>
+    </>
+  ) : (
+    <>
+      {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onPoster={signedIn ? goPoster : undefined} signedIn={signedIn} />}
+      {tab === 'board' && <BoardTab />}
+      {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
+      {tab === 'schedule' && <ScheduleTab handle={handle} seed="" />}
+      {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
+    </>
+  )
 
   return (
     <div className={s.app}>
       <header className={s.bar}>
         <div className={s.barInner}>
           <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>爆点、改写、发布</span></span></span>
-          <TabBar tab={ready ? tab : ''} onTab={setTab} />
-          {ready ? (
-            <>
-              <form className={s.search} onSubmit={(e) => { e.preventDefault(); setKeyword(query.trim()); setTab('radar') }}>
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜账号、推文关键词" aria-label="搜索" />
-                <button type="submit" className={s.searchBtn}>搜索</button>
-              </form>
-              <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
-              <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
-                {accounts.length === 0 && <option value="">未绑定账号</option>}
-                {accounts.map((a) => <option key={a.handle} value={a.handle}>@{a.handle}</option>)}
-              </select>
-            </>
-          ) : null}
+          <TabBar tab={tab} onTab={setTab} />
+          <form className={s.search} onSubmit={(e) => { e.preventDefault(); setKeyword(query.trim()); setTab('radar') }}>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜账号、推文关键词" aria-label="搜索" />
+            <button type="submit" className={s.searchBtn}>搜索</button>
+          </form>
+          <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
+          {signedIn ? (
+            <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
+              {accounts.length === 0 && <option value="">未绑定账号</option>}
+              {accounts.map((a) => <option key={a.handle} value={a.handle}>@{a.handle}</option>)}
+            </select>
+          ) : <a className={s.btn} href={loginHref}>登录</a>}
         </div>
       </header>
       <main className={s.main}>{body}</main>

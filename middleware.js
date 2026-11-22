@@ -5,6 +5,7 @@ import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed, isRevertDra
 import { getUserFromRequest } from './lib/auth/edgeSession'
 import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/site/i18n'
 import { getLegacyPathRedirect, shouldNoindexPath } from './lib/site/indexingPolicy'
+import { xRouteDecision } from './lib/site/xSiteRoutes'
 import { isAdminLocalPreviewEnabled } from './lib/admin/adminLocalPreview'
 import { isOwnerUser } from './lib/auth/ownerAuth'
 
@@ -68,6 +69,20 @@ export async function middleware(request) {
     const url = request.nextUrl.clone()
     url.pathname = '/x-workbench'
     return NextResponse.rewrite(url)
+  }
+
+  const xDecision = xRouteDecision(host, pathname)
+  if (xDecision?.action === 'rewrite') {
+    const url = request.nextUrl.clone()
+    url.pathname = xDecision.pathname
+    return NextResponse.rewrite(url)
+  }
+  if (xDecision?.action === 'redirect') {
+    const url = xDecision.location.startsWith('http')
+      ? new URL(xDecision.location)
+      : new URL(xDecision.location, request.url)
+    url.search = request.nextUrl.search
+    return NextResponse.redirect(url, xDecision.status)
   }
 
   const isBookmarkNavPath = pathname === '/bookmark-nav' || pathname.startsWith('/bookmark-nav/')

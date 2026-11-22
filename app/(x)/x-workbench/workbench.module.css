@@ -90,5 +90,5 @@
 .error { color: #b42318; }
 .preview { max-width: 100%; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .two { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-@media (max-width: 960px) { .cols, .two { grid-template-columns: 1fr; } .search { display: none; } .cta { display: none; } .barInner { gap: 8px 12px; padding: 8px 12px; } .tabs, .menuGroup { flex-basis: 100%; } }
+@media (max-width: 960px) { .cols, .two { grid-template-columns: 1fr; } .cta { display: none; } .barInner { gap: 8px 12px; padding: 8px 12px; } .tabs, .menuGroup, .search { flex-basis: 100%; } .search { min-width: 0; } }
 @media (prefers-reduced-motion: no-preference) { .btn, .tab, .pill { transition: background .15s, border-color .15s, color .15s; } }

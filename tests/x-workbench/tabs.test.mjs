@@ -15,10 +15,10 @@ test('X大互动顶部按组显示，不再单列 AI 改写、排期和海报', 
     assert.equal(labels.includes(removed), false)
   }
   assert.deepEqual(WORKBENCH_MENU_ITEMS.filter((item) => item.href).map((item) => [item.label, item.href, Boolean(item.external)]), [
-    ['大互动理论', '/resources/big-interaction-whitepaper', false],
-    ['黄皮书', '/resources/x-reply-clipboard-extension/docs', false],
-    ['大互动日历', '/resources/big-interaction-whitepaper/calendar', false],
-    ['圆桌大会', '/resources/big-interaction-whitepaper/roundtable', false],
+    ['大互动理论', '/theory', false],
+    ['黄皮书', '/docs', false],
+    ['大互动日历', '/calendar', false],
+    ['圆桌大会', '/roundtable', false],
     ['AI分发大师', 'https://syncblog.cn/', true],
   ])
 })
@@ -38,9 +38,10 @@ test('工作台渲染分组菜单，旧公开地址仍指向原页面', async ()
   assert.match(client, /group\.label/)
   assert.doesNotMatch(client, /import RewriteTab|tab === 'rewrite'/)
   assert.match(client, /rel: 'noopener noreferrer'/)
-  assert.match(header, /href: '\/x-workbench', label: 'X大互动'/)
+  assert.match(header, /href: 'https:\/\/x\.2aran\.com\/', label: 'X大互动'/)
+  assert.doesNotMatch(client, /推文榜、账号榜和智能体需要登录/)
   assert.match(shortRoute, /code === 'x'/)
-  assert.match(shortRoute, /\/resources\/big-interaction-whitepaper/)
+  assert.match(shortRoute, /https:\/\/x\.2aran\.com\/theory/)
   assert.match(whitepaper, /const title = '大互动理论'/)
   assert.match(calendar, /const title = '大互动日历'/)
   assert.match(calendar, /export const runtime = 'edge'/)

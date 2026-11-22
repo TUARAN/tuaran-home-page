@@ -27,8 +27,8 @@ function edgeBindings() {
   return { bucket: env?.CONTENT_FEED || null, db }
 }
 
-const path = '/resources/big-interaction-whitepaper/calendar'
-const canonicalUrl = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
+const path = '/calendar'
+const canonicalUrl = 'https://x.2aran.com/calendar'
 const title = '大互动日历'
 const description = '按 Asia/Shanghai 选择日期，查看前一自然日与他人的互动前十、本账号各任务完成次数，以及 Grokbot 批次取关执行记录。'
 const jsonLd = {
@@ -41,7 +41,7 @@ const jsonLd = {
   isPartOf: {
     '@type': 'WebPage',
     name: '大互动理论绿皮书',
-    url: 'https://2aran.com/resources/big-interaction-whitepaper',
+    url: 'https://x.2aran.com/theory',
   },
 }
 
@@ -73,7 +73,7 @@ export default async function BigInteractionCalendarPage() {
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link className={styles.back} href="/resources/big-interaction-whitepaper">← 绿皮书</Link>
+      <Link className={styles.back} href="/theory">← 绿皮书</Link>
       <header className={styles.masthead}>
         <p className={styles.kicker}>绿皮书 · 每日前十</p>
         <h1>{title}</h1>

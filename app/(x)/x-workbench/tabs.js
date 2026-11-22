@@ -13,10 +13,10 @@ export const WORKBENCH_MENU_GROUPS = [
     id: 'theory',
     label: '理论',
     items: [
-      { id: 'theory', label: '大互动理论', href: '/resources/big-interaction-whitepaper' },
-      { id: 'yellowbook', label: '黄皮书', href: '/resources/x-reply-clipboard-extension/docs' },
-      { id: 'calendar', label: '大互动日历', href: '/resources/big-interaction-whitepaper/calendar' },
-      { id: 'roundtable', label: '圆桌大会', href: '/resources/big-interaction-whitepaper/roundtable' },
+      { id: 'theory', label: '大互动理论', href: '/theory' },
+      { id: 'yellowbook', label: '黄皮书', href: '/docs' },
+      { id: 'calendar', label: '大互动日历', href: '/calendar' },
+      { id: 'roundtable', label: '圆桌大会', href: '/roundtable' },
     ],
   },
   {

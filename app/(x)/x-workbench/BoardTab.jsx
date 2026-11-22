@@ -28,7 +28,8 @@ export default function BoardTab() {
     let live = true
     call(`/leaderboard?window=${win}&dim=${dim}`).then((res) => {
       if (!live) return
-      if (res.ok) { setRows(res.data.rows); setFrom(res.data.from); setNote('') } else setNote(message(res.data))
+      if (res.ok) { setRows(res.data.rows || []); setFrom(res.data.from); setNote('') }
+      else { setRows([]); setNote(res.status === 503 || res.status === 0 ? '账号榜暂时不可用，请稍后再试。' : message(res.data)) }
     })
     call(`/leaderboard?history=1&dim=${dim}`).then(res => { if (live) setDays(res.ok ? res.data.days : []) })
     return () => { live = false }
@@ -68,7 +69,7 @@ export default function BoardTab() {
         ))}
       </div>
       <button type="button" className={s.btn} disabled={!rows.length} onClick={shareBoard}>下载榜单分享图</button>
-      {rows.length === 0 && <div className={s.card}>这个时间段还没有收录数据。</div>}
+      {rows.length === 0 && !note && <div className={s.card}>这个时间段还没有收录数据。</div>}
       {top && (
         <div className={s.champ} style={{ marginBottom: 12 }}>
           <div className={s.champNo}>No.1</div>

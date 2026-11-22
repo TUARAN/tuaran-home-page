@@ -8,8 +8,8 @@ test('whitepaper share uses the fixed short URL and its route redirects to the d
     readFile(new URL('../../app/(site)/[code]/route.js', import.meta.url), 'utf8'),
   ])
 
-  assert.match(whitepaper, /const shareUrl = 'https:\/\/2aran\.com\/x'/)
+  assert.match(whitepaper, /const shareUrl = 'https:\/\/x\.2aran\.com\/theory'/)
   assert.match(whitepaper, /<SharePageButton[^>]*url=\{shareUrl\} exactUrl shorten=\{false\}/)
   assert.match(shortRoute, /code === 'x'/)
-  assert.match(shortRoute, /Response\.redirect\(new URL\('\/resources\/big-interaction-whitepaper', request\.url\), 308\)/)
+  assert.match(shortRoute, /Response\.redirect\(new URL\('https:\/\/x\.2aran\.com\/theory'\), 308\)/)
 })

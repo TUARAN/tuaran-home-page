@@ -5,15 +5,15 @@ import RoundtableHall from './RoundtableHall'
 import styles from './roundtable.module.css'
 
 export const dynamic = 'force-static'
-const canonical = '/resources/big-interaction-whitepaper/roundtable'
-const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: '圆桌大会 · 大互动理论', url: `https://2aran.com${canonical}`, description: '认证粉丝名录的圆桌可视化展示' }
-export const metadata = { alternates: { canonical: '/resources/big-interaction-whitepaper/roundtable' }, openGraph: { type: 'website', title: '圆桌大会 · 大互动理论', url: 'https://2aran.com/resources/big-interaction-whitepaper/roundtable' }, title: '圆桌大会 · 大互动理论', description: '从矿工阿三的 X 认证粉丝列表出发，围绕大互动理论认识交流伙伴。' }
+const canonical = '/roundtable'
+const jsonLd = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: '圆桌大会 · 大互动理论', url: 'https://x.2aran.com/roundtable', description: '认证粉丝名录的圆桌可视化展示' }
+export const metadata = { alternates: { canonical: '/roundtable' }, openGraph: { type: 'website', title: '圆桌大会 · 大互动理论', url: 'https://x.2aran.com/roundtable' }, title: '圆桌大会 · 大互动理论', description: '从矿工阿三的 X 认证粉丝列表出发，围绕大互动理论认识交流伙伴。' }
 
 export default function RoundtablePage() {
   const updated = new Date(snapshot.updatedAt || snapshot.capturedAt).toISOString().replace('T', ' ').slice(0, 16)
   return <main className={styles.page}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-    <Link className={styles.back} href="/resources/big-interaction-whitepaper">← 绿皮书</Link>
+    <Link className={styles.back} href="/theory">← 绿皮书</Link>
     <header className={styles.header}>
       <p className={styles.eyebrow}>绿皮书 · 圆桌大会</p>
       <h1>大互动理论，开会了。</h1>

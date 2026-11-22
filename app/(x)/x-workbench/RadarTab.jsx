@@ -31,11 +31,12 @@ function Pills({ label, value, options, onChange }) {
   )
 }
 
-function Panel({ title, sort, metric, keyword, watchOnly, reload, acts }) {
+function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn }) {
   const [topic, setTopic] = useState('')
   const [topics, setTopics] = useState([])
   const [tagNote, setTagNote] = useState('')
-  useEffect(() => { call('/topics').then(res => { if (res.ok) setTopics(res.data.topics) }) }, [])
+  const [problem, setProblem] = useState('')
+  useEffect(() => { call('/topics').then(res => { if (res.ok) setTopics(res.data.topics || []) }) }, [])
   async function tag(tweetId) {
     const chosen = window.prompt('选择或填写话题，提交后由站长审核：' + topics.join('、'))
     if (!chosen?.trim()) return
@@ -49,7 +50,11 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts }) {
   useEffect(() => {
     let live = true
     const q = new URLSearchParams({ sort, hours: String(hours), media, limit: '20', topic, q: keyword, watch: watchOnly ? '1' : '0' })
-    call(`/radar?${q}`).then((res) => { if (live) setItems(res.ok ? res.data.items : []) })
+    call(`/radar?${q}`).then((res) => {
+      if (!live) return
+      if (res.ok) { setItems(res.data.items || []); setProblem('') }
+      else { setItems([]); setProblem(res.status === 401 ? '' : '推文榜暂时不可用，请稍后再试。') }
+    })
     return () => { live = false }
   }, [sort, hours, media, keyword, watchOnly, reload, topic])
 
@@ -62,10 +67,11 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts }) {
       {tagNote && <p role="status" className={s.note}>{tagNote}</p>}
       <Pills label="形式" value={media} options={MEDIA} onChange={setMedia} />
       <Pills label="时间" value={hours} options={HOURS} onChange={setHours} />
-      {items && list.length === 0 && <div className={s.empty}>这个时间段还没有收录。</div>}
+      {problem && <div className={s.empty}>{problem}</div>}
+      {items && !problem && list.length === 0 && <div className={s.empty}>这个时间段还没有收录。</div>}
       {shown.map((i, n) => (
         <article key={i.id} className={s.item}>
-          <button type="button" className={s.btn} onClick={() => tag(i.id)}>标注话题</button>
+          {signedIn && <button type="button" className={s.btn} onClick={() => tag(i.id)}>标注话题</button>}
           <span className={`${s.no} ${n < 3 ? s[`no${n + 1}`] : ''}`}>{n + 1}</span>
           <div className={s.itemBody}>
             <p className={s.itemText}>{i.text || '（无文字）'}</p>
@@ -83,7 +89,8 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts }) {
   )
 }
 
-export default function RadarTab({ keyword, onKeyword, onPoster }) {
+export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = false }) {
+  const [heroState, setHeroState] = useState('loading')
   const [heroRows, setHeroRows] = useState([])
   const [watch, setWatch] = useState([])
   const [watchOnly, setWatchOnly] = useState(false)
@@ -93,8 +100,9 @@ export default function RadarTab({ keyword, onKeyword, onPoster }) {
 
   const loadSide = useCallback(async () => {
     const [h, w] = await Promise.all([call('/leaderboard?window=today&dim=posts'), call('/radar?limit=1&hours=1')])
-    if (h.ok) setHeroRows(h.data.rows.slice(0, 10))
-    if (w.ok) setWatch(w.data.watch)
+    if (h.ok) { setHeroRows((h.data.rows || []).slice(0, 10)); setHeroState('ok') }
+    else setHeroState(h.status === 503 || h.status === 0 ? 'down' : 'empty')
+    if (w.ok) setWatch(w.data.watch || [])
   }, [])
 
   useEffect(() => { loadSide() }, [loadSide, reload])
@@ -117,17 +125,18 @@ export default function RadarTab({ keyword, onKeyword, onPoster }) {
 
   const acts = (i) => (
     <>
-      <button type="button" className={s.link} onClick={() => onPoster(i)}>做海报</button>
-      {!i.watched && <button type="button" className={s.link} onClick={() => addWatch(i.handle)}>+ 监控</button>}
+      {signedIn && onPoster && <button type="button" className={s.link} onClick={() => onPoster(i)}>做海报</button>}
+      {signedIn && !i.watched && <button type="button" className={s.link} onClick={() => addWatch(i.handle)}>+ 监控</button>}
       <a className={s.link} href={i.url} target="_blank" rel="noreferrer noopener">原帖</a>
     </>
   )
-  const empty = heroRows.length === 0
+  const empty = heroState !== 'down' && heroRows.length === 0
   return (
     <section>
       <div className={s.pageTitle}><h1>推文榜</h1><span className={s.note}>爆发指数 = 加权互动量 ÷ 发布时长；统计日以北京时间 8 点为界</span></div>
       <div className={s.hero}>
         <div className={s.heroTitle}>热门贡献榜</div>
+        {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>推文榜暂时不可用，请稍后再试。</div>}
         {empty && <div className={s.empty} style={{ flex: 1, padding: 14 }}>今天还没有收录。</div>}
         {heroRows.map((r, n) => (
           <a key={r.handle} className={`${s.heroCard} ${n < 3 ? `${s.heroTop} ${s[`top${n + 1}`]}` : ''}`} href={`https://x.com/${r.handle}`} target="_blank" rel="noreferrer noopener">
@@ -144,17 +153,17 @@ export default function RadarTab({ keyword, onKeyword, onPoster }) {
       </div>
 
       <div className={s.row}>
-        <label><input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} /> 只看监控账号</label>
+        {signedIn && <label><input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} /> 只看监控账号</label>}
         {keyword && <button type="button" className={s.pill} onClick={() => onKeyword('')}>搜索：{keyword} ×</button>}
         {watch.map((w) => <span key={w.handle} className={s.chip}>@{w.handle}{w.note ? `（${w.note}）` : ''}</span>)}
       </div>
 
       <div className={s.cols}>
-        <Panel title="增速最快" sort="score" metric={(i) => <>{compact(Math.round(perHour(i)))}<small> 曝光/时</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} />
-        <Panel title="曝光最高" sort="views" metric={(i) => <>{compact(i.views)}<small> 曝光</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} />
+        <Panel title="增速最快" sort="score" metric={(i) => <>{compact(Math.round(perHour(i)))}<small> 曝光/时</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} signedIn={signedIn} />
+        <Panel title="曝光最高" sort="views" metric={(i) => <>{compact(i.views)}<small> 曝光</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} signedIn={signedIn} />
       </div>
 
-      {empty && (
+      {signedIn && empty && (
         <div className={s.card} style={{ marginTop: 18 }}>
           <strong>榜单还是空的，三种方式让它有数据</strong>
           <div className={s.steps}>
@@ -164,7 +173,7 @@ export default function RadarTab({ keyword, onKeyword, onPoster }) {
           </div>
         </div>
       )}
-      <details className={s.card} style={{ marginTop: 18 }} open={empty}>
+      {signedIn && <details className={s.card} style={{ marginTop: 18 }} open={empty}>
         <summary>手动收录一条推文</summary>
         <form onSubmit={submitManual} style={{ marginTop: 12 }}>
           <div className={s.row}>

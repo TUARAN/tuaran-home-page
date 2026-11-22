@@ -53,7 +53,7 @@ const NAV_GROUPS = [
 
 const HEADER_RECOMMENDATIONS = [
   { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', tone: 'book', kind: 'page' },
-  { href: '/x-workbench', label: 'X大互动', labelEn: 'X大互动', tone: 'green', kind: 'page' },
+  { href: 'https://x.2aran.com/', label: 'X大互动', labelEn: 'X大互动', tone: 'green', kind: 'page' },
 ]
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))

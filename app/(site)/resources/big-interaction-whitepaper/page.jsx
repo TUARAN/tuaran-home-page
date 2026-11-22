@@ -14,9 +14,9 @@ import styles from './whitepaper.module.css'
 
 export const dynamic = 'force-static'
 
-const path = '/resources/big-interaction-whitepaper'
-const url = `https://2aran.com${path}`
-const shareUrl = 'https://2aran.com/x'
+const path = '/theory'
+const url = 'https://x.2aran.com/theory'
+const shareUrl = 'https://x.2aran.com/theory'
 const title = '大互动理论'
 const bookTitle = '大互动理论绿皮书'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
@@ -161,7 +161,7 @@ export default function BigInteractionWhitepaperPage() {
 
         <aside className={styles.toolGuide} aria-label="圆桌大会入口">
           <div><p className={styles.toolGuideEyebrow}>认识交流伙伴</p><h2>大互动 · 圆桌大会</h2><p>围着圆桌认识 X 认证粉丝列表中的交流伙伴，从不同的视角讨论表达、倾听与反馈。</p></div>
-          <Link href="/resources/big-interaction-whitepaper/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
+          <Link href="/roundtable" className={styles.toolGuideLink}>走进圆桌会场 <span aria-hidden="true">→</span></Link>
         </aside>
 
         <aside className={styles.toolGuide} aria-label="大互动日历入口">
@@ -170,7 +170,7 @@ export default function BigInteractionWhitepaperPage() {
             <h2>大互动日历</h2>
             <p>选择日期，查看前一天双向公开互动最多的十个账号。</p>
           </div>
-          <Link href="/resources/big-interaction-whitepaper/calendar" className={styles.toolGuideLink}>打开日历 <span aria-hidden="true">→</span></Link>
+          <Link href="/calendar" className={styles.toolGuideLink}>打开日历 <span aria-hidden="true">→</span></Link>
         </aside>
 
         </div>
@@ -307,7 +307,7 @@ export default function BigInteractionWhitepaperPage() {
               <p>不怕冲突指的是把分歧留在事实和条件上。对方开始侮辱、骚扰、威胁，或者你因为身份、工作、年龄处在说不的代价很高的位置，退出是这套方法的一部分。</p>
               <h3 id="scope">4.3 方法的适用范围</h3>
               <p>互动机会受到工作、照护责任、健康和资源条件影响。评论、点赞、关注和发帖不能衡量人的价值或关系质量。行动循环那张图的下半部是图书推广，不属于理论内容。</p>
-              <p>持续练习那张图里的 1000 条评论、2000 个点赞、200 个关注和 200 条发帖是画面设定，不作为每日目标。用 X 大互动智能体时，一个账号一天大约能做多少、各项上限和冷却怎么定，以<Link href="/resources/x-reply-clipboard-extension/docs#daily-volume">黄皮书「频率与设置」</Link>为准；X 页面提示限制时停下等待，不为凑数调高上限或缩短冷却。</p>
+              <p>持续练习那张图里的 1000 条评论、2000 个点赞、200 个关注和 200 条发帖是画面设定，不作为每日目标。用 X 大互动智能体时，一个账号一天大约能做多少、各项上限和冷却怎么定，以<Link href="/docs#daily-volume">黄皮书「频率与设置」</Link>为准；X 页面提示限制时停下等待，不为凑数调高上限或缩短冷却。</p>
               <p>这套方法适合自我观察与小范围实践。目前没有足以证明它具有普遍因果效果的研究数据。睡好、喝够、多互动之间也不存在可照搬的医学顺序。</p>
             </section>
 

@@ -17,6 +17,8 @@ test('X callback verifies state, sends PKCE verifier and binds by numeric X id',
   assert.match(callback, /code_verifier: verifier/)
   assert.match(callback, /api\.x\.com\/2\/oauth2\/token/)
   assert.match(callback, /providerAccountId = String\(xUser\.id\)/)
+  assert.match(callback, /id: `x:\$\{providerAccountId\}`/)
+  assert.doesNotMatch(callback, /id: `google:/)
 })
 
 test('PKCE helper and X secrets are exposed by edgeSession', () => {

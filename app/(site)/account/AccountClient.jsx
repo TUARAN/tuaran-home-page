@@ -17,6 +17,7 @@ const PROVIDER_LABELS = {
   wechat: '微信',
   github: 'GitHub',
   google: 'Google',
+  x: 'X',
   email: '邮箱密码',
   supabase: '邮箱密码',
   credential: '登录凭证',
@@ -94,10 +95,11 @@ export default function AccountClient({ supabaseEmailEnabled = false }) {
     return () => { cancelled = true }
   }, [user?.id])
 
-  const result = typeof window === 'undefined' ? '' : ['github', 'google', 'wechat'].map((key) => new URLSearchParams(window.location.search).get(key)).find(Boolean)
+  const result = typeof window === 'undefined' ? '' : ['github', 'google', 'x', 'wechat'].map((key) => new URLSearchParams(window.location.search).get(key)).find(Boolean)
   const boundProviders = new Set(identities.map((identity) => identity.provider))
   const githubBound = boundProviders.has('github')
   const googleBound = boundProviders.has('google')
+  const xBound = boundProviders.has('x')
   const wechatBound = boundProviders.has('wechat')
   const supabaseBound = boundProviders.has('supabase')
 
@@ -311,6 +313,7 @@ export default function AccountClient({ supabaseEmailEnabled = false }) {
             {!identitiesLoaded ? <p className="py-4 text-sm text-[var(--site-muted)]">正在读取可添加方式…</p> : <>
               {!githubBound ? <Link href="/api/auth/login?provider=github&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>GitHub</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {!googleBound ? <Link href="/api/auth/login?provider=google&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>Google</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
+              {!xBound ? <Link href="/api/auth/login?provider=x&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>X</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {!wechatBound && WECHAT_LOGIN_ENABLED ? <Link href="/api/auth/login?provider=wechat&intent=bind&returnTo=%2Faccount" className="flex items-center justify-between border-b border-[var(--site-line)] py-4 text-[14px] font-medium text-[var(--site-ink)] no-underline"><span>微信</span><span className="text-[12px] text-[var(--site-muted)]">绑定 →</span></Link> : null}
               {supabaseEmailEnabled && !supabaseBound ? <form onSubmit={bindSupabaseEmail} className="space-y-3 border-b border-[var(--site-line)] py-4">
                 <p className="text-sm font-medium text-[var(--site-ink)]">绑定邮箱登录</p>
@@ -320,7 +323,7 @@ export default function AccountClient({ supabaseEmailEnabled = false }) {
                 <button type="submit" disabled={bindingSupabase} className="rounded-lg bg-[var(--site-ink)] px-4 py-2 text-sm text-[var(--page-bg)] disabled:opacity-50">{bindingSupabase ? '绑定中…' : '验证并绑定'}</button>
                 <Link href="/register" className="ml-3 text-xs underline">还没有邮箱账号？先注册</Link>
               </form> : null}
-              {githubBound && googleBound && (wechatBound || !WECHAT_LOGIN_ENABLED) ? <p className="py-4 text-[13px] text-[var(--site-muted)]">当前可用的登录方式均已添加。</p> : null}
+              {githubBound && googleBound && xBound && (wechatBound || !WECHAT_LOGIN_ENABLED) ? <p className="py-4 text-[13px] text-[var(--site-muted)]">当前可用的登录方式均已添加。</p> : null}
             </>}
           </div>
         </section>

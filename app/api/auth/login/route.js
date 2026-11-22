@@ -1,6 +1,7 @@
 import {
   cookieNames,
   cookiesConfig,
+  createPkcePair,
   getSecrets,
   getUserFromRequest,
   parseCookies,
@@ -31,15 +32,16 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export async function GET(req) {
-  const { githubId, googleId, wechatAppId, wechatAppSecret, wechatLoginEnabled, appUrl } = getSecrets()
+  const { githubId, googleId, xClientId, wechatAppId, wechatAppSecret, wechatLoginEnabled, appUrl } = getSecrets()
   const url = new URL(req.url)
   const provider = url.searchParams.get('provider') || 'github'
   const isGoogle = provider === 'google'
   const isGithub = provider === 'github'
   const isWechat = provider === 'wechat'
+  const isX = provider === 'x'
   const wantsBind = url.searchParams.get('intent') === 'bind'
 
-  if (!isGithub && !isGoogle && !isWechat) {
+  if (!isGithub && !isGoogle && !isWechat && !isX) {
     return Response.json({ error: 'UNSUPPORTED_AUTH_PROVIDER' }, { status: 400 })
   }
 
@@ -59,6 +61,9 @@ export async function GET(req) {
       { status: 500 }
     )
   }
+  if (isX && !xClientId) {
+    return Response.json({ error: 'MISSING_X_OAUTH_CONFIG', missing: ['X_CLIENT_ID'] }, { status: 500 })
+  }
   if (isWechat && (!wechatLoginEnabled || !wechatAppId || !wechatAppSecret)) {
     return Response.json(
       { error: 'UNSUPPORTED_AUTH_PROVIDER' },
@@ -73,14 +78,16 @@ export async function GET(req) {
   const redirectUri = `${origin}/api/auth/callback/${provider}`
   const authUrl = isGoogle
     ? new URL('https://accounts.google.com/o/oauth2/v2/auth')
+    : isX
+      ? new URL('https://x.com/i/oauth2/authorize')
     : isWechat
       ? new URL('https://open.weixin.qq.com/connect/qrconnect')
       : new URL('https://github.com/login/oauth/authorize')
 
   if (isWechat) authUrl.searchParams.set('appid', wechatAppId)
-  else authUrl.searchParams.set('client_id', isGoogle ? googleId : githubId)
+  else authUrl.searchParams.set('client_id', isGoogle ? googleId : isX ? xClientId : githubId)
   authUrl.searchParams.set('redirect_uri', redirectUri)
-  authUrl.searchParams.set('scope', isGoogle ? 'openid profile email' : isWechat ? 'snsapi_login' : 'read:user user:email')
+  authUrl.searchParams.set('scope', isGoogle ? 'openid profile email' : isX ? 'users.read tweet.read' : isWechat ? 'snsapi_login' : 'read:user user:email')
   authUrl.searchParams.set('state', state)
   if (isGoogle) {
     authUrl.searchParams.set('response_type', 'code')
@@ -90,6 +97,16 @@ export async function GET(req) {
 
   const { secure } = cookiesConfig()
   const headers = new Headers()
+  if (isX) {
+    const { verifier, challenge } = await createPkcePair()
+    authUrl.searchParams.set('response_type', 'code')
+    authUrl.searchParams.set('code_challenge', challenge)
+    authUrl.searchParams.set('code_challenge_method', 'S256')
+    headers.append(
+      'Set-Cookie',
+      serializeCookie(cookieNames.oauthVerifier, verifier, { maxAge: 10 * 60, secure })
+    )
+  }
   headers.append(
     'Set-Cookie',
     serializeCookie(cookieNames.oauthState, state, { maxAge: 10 * 60, secure })

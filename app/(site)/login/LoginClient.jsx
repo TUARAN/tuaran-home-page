@@ -5,6 +5,7 @@ import {
   IconBrandGithub,
   IconBrandGoogle,
   IconBrandWechat,
+  IconBrandX,
   IconChevronDown,
   IconEye,
   IconEyeOff,
@@ -30,6 +31,7 @@ const WECHAT_LOGIN_ENABLED = process.env.NEXT_PUBLIC_WECHAT_LOGIN_ENABLED === 't
 const LOGIN_METHOD_LABELS = {
   google: 'Google',
   github: 'GitHub',
+  x: 'X',
   wechat: '微信',
   email: '邮箱',
   credential: '凭证',
@@ -201,6 +203,12 @@ export default function LoginClient() {
             icon={<IconBrandGoogle size={20} stroke={2.2} className="shrink-0 text-[#4285f4]" aria-hidden="true" />}
             label="Google"
             lastUsed={lastLoginMethod === 'google'}
+          />
+          <SocialLogin
+            href={`/api/auth/login?provider=x&returnTo=${encodeURIComponent(oauthReturnTo)}`}
+            icon={<IconBrandX size={20} stroke={1.8} className="shrink-0" aria-hidden="true" />}
+            label="X"
+            lastUsed={lastLoginMethod === 'x'}
           />
         </div>
 

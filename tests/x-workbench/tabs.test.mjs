@@ -24,8 +24,9 @@ test('X大互动顶部按组显示，不再单列 AI 改写、排期和海报', 
 })
 
 test('工作台渲染分组菜单，旧公开地址仍指向原页面', async () => {
-  const [client, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
+  const [client, frame, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
     readFile(new URL('../../app/(x)/x-workbench/WorkbenchClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(x)/x-workbench/XSiteFrame.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/[code]/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8'),
@@ -34,6 +35,9 @@ test('工作台渲染分组菜单，旧公开地址仍指向原页面', async ()
     readFile(new URL('../../app/(site)/resources/x-reply-clipboard-extension/docs/page.jsx', import.meta.url), 'utf8'),
   ])
 
+  assert.match(client, /观察、跟进、智能/)
+  assert.match(frame, /观察、跟进、智能/)
+  assert.doesNotMatch(`${client}\n${frame}`, /爆点、改写、发布/)
   assert.match(client, /WORKBENCH_MENU_GROUPS/)
   assert.match(client, /group\.label/)
   assert.doesNotMatch(client, /import RewriteTab|tab === 'rewrite'/)

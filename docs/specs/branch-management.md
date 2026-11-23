@@ -42,8 +42,8 @@ Cloudflare Pages 的跳过方式只有一种：提交说明以 `[CF-Pages-Skip]`
 
 1. 从最新的 `main` 开分支。
 2. 在分支上提交，推送，开 PR。PR 正文按 Issue 优先工作流写 `Closes #N` 或 `Related: #N`。
-3. CI 通过后等站长说“合”，再 squash 合并。
-4. 合并后当天清理：远端分支由 GitHub 自动删除，本地分支和 worktree 由本机清理。
+3. CI 通过后等站长说“合”，在 **squash 合并之前** 给 PR 分支 tip 打 `archive/*` tag（见下文「合并前归档」），再 squash 合并。
+4. 合并后当天清理：远端分支由 GitHub 自动删除，本地分支和 worktree 由本机清理；本机新打的 `archive/*` 推送到 `origin`。
 5. 分支超过 7 天没有新提交：要么推进，要么按“归档”处理后删除。
 
 ## 数量上限
@@ -80,24 +80,53 @@ git worktree remove <路径>
 
 worktree 里有未提交文件时 git 会拒绝。先用 `git -C <路径> status` 看清楚：自动生成的快照可以加 `--force` 丢弃，手写内容先提交或备份。
 
+## 合并前归档
+
+本仓库 squash 合并后，`main` 历史呈一条线，分支名会从图谱里消失。为了在 SourceTree 等工具里仍能指回「合并前的 worktree / 分支线」，**每次 squash 合并前**都给该 PR 分支 tip 打 `archive/*` tag。tag 不占分支名额，也不替代 Issue / PR 正文里的任务说明。
+
+推荐顺序（站长说「合」之后、执行 `gh pr merge` 之前）：
+
+```bash
+# 1) 取 PR 分支最后一次提交的 SHA（示例：PR #540）
+SHA=$(gh pr view 540 --json commits --jq '.commits[-1].oid')
+BRANCH=$(gh pr view 540 --json headRefName --jq .headRefName)
+
+# 2) tag 名：去掉 feat/fix/research/content/chore 及历史 codex|cursor|claude 前缀
+#    feat/x-home-reading-nav → archive/x-home-reading-nav
+
+git tag archive/<名称> "$SHA"
+# 可选：附 PR / Issue，便于在标签列表里辨认
+# git tag -a archive/<名称> "$SHA" -m "PR #540 · $BRANCH · Closes #539"
+
+# 3) 再 squash 合并并删远端分支；随后本地 worktree / gone 分支照旧清理
+
+# 4) 批量合并后推送 tag（避免 tag 只留在本机）
+git push origin --tags
+```
+
+若分支已删、只剩 GitHub 记录，可从已合并 PR 的 commits 最后一项取 `oid` 补打 tag（与上表相同）。
+
+恢复临时查看线（不长期占分支名额）：
+
+```bash
+git branch <分支名> archive/<名称>
+# 看完可删：git branch -D <分支名>
+```
+
+- **与 PR 的对应关系**：权威叙事仍在 GitHub PR / Issue；`archive/*` 是合并前代码状态的 SHA 书签。
+- **不做的事**：不为「图上好看」长期保留已合并的远程分支；不把执行工具名写进 tag（与分支命名一致）。
+
 ## 归档
 
-不确定是否还有用的分支，打 tag 后再删。tag 不占分支名额，恢复只要一条命令。
+除「合并前归档」外，对**尚未合并**、但超过 7 天无提交或不确定是否还要用的分支，也可先打 `archive/*` 再删本地分支：
 
 ```bash
 git tag archive/<名称> <分支名>
 git branch -D <分支名>
 ```
 
-恢复：
-
-```bash
-git branch <分支名> archive/<名称>
-```
-
-- tag 名去掉任务类型前缀，例如 `archive/add-image-hosting`。
-- `archive/*` tag 默认只在本地。需要跨机器保留时执行 `git push origin --tags`。
-- 删除分支前，先记录它的 SHA，防止 tag 也漏打。
+- tag 名去掉任务类型前缀，例如 `content/weekly-rss` → `archive/weekly-rss`。
+- 删除分支前确认 tag 已指向预期提交；已合并的 PR 优先用「合并前归档」流程，避免漏打。
 
 ## 工作区卫生
 
@@ -118,6 +147,7 @@ git branch <分支名> archive/<名称>
 每周或每次合并一批 PR 后执行一次：
 
 1. `git fetch --prune`
-2. 按“合并后清理”处理远端已删除的分支。
-3. `git branch | wc -l` 与 `git worktree list`，确认没有超过上限。
-4. 对超过 7 天没动的分支，二选一：推进，或归档后删除。
+2. 核对刚合并的 PR 是否都有对应 `archive/*` tag；缺则从 PR commits 补打并 `git push origin --tags`。
+3. 按“合并后清理”处理远端已删除的分支。
+4. `git branch | wc -l` 与 `git worktree list`，确认没有超过上限。
+5. 对超过 7 天没动的分支，二选一：推进，或归档后删除。

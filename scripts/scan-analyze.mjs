@@ -81,7 +81,7 @@ async function runAnalysis(model) {
       reason: String(action.reason || '').slice(0, 80),
       suggestedAction: String(action.suggestedAction || '').slice(0, 120),
       prTitle: `[${type} 巡检] ${String(action.suggestedAction || '修复').slice(0, 48)}`,
-      branch: `codex/${type}-scan-${report.generatedAt.slice(0, 10)}`,
+      branch: `chore/${type}-scan-${report.generatedAt.slice(0, 10)}`,
     })),
     noiseIds: Array.isArray(json.noiseIds) ? json.noiseIds.slice(0, 60) : [],
     recommendedPrCount: Number(json.recommendedPrCount) || 0,

@@ -46,7 +46,7 @@ try {
       evidence: ['npm audit --json'],
       fix: {
         kind: 'investigate',
-        suggestedBranch: `codex/security-scan-${stamp}`,
+        suggestedBranch: `chore/security-scan-${stamp}`,
       },
       tags: ['dependencies'],
     })
@@ -73,7 +73,7 @@ try {
       evidence: ['npm audit --json', `range: ${v.range ?? '未知'}`],
       fix: {
         kind: 'dependency-bump',
-        suggestedBranch: `codex/security-scan-${stamp}`,
+        suggestedBranch: `chore/security-scan-${stamp}`,
       },
       tags: ['dependencies'],
     })
@@ -87,7 +87,7 @@ try {
     evidence: ['npm audit --json'],
     fix: {
       kind: 'investigate',
-      suggestedBranch: `codex/security-scan-${stamp}`,
+      suggestedBranch: `chore/security-scan-${stamp}`,
     },
     tags: ['dependencies'],
   })
@@ -138,7 +138,7 @@ for (const file of trackedFiles) {
       evidence: ['git ls-files'],
       fix: {
         kind: 'code-change',
-        suggestedBranch: `codex/security-scan-${stamp}`,
+        suggestedBranch: `chore/security-scan-${stamp}`,
       },
       tags: ['secrets'],
     })
@@ -158,7 +158,7 @@ for (const file of ['next.config.js', 'middleware.js']) {
       evidence: [`${file}（静态检查）`],
       fix: {
         kind: 'config-change',
-        suggestedBranch: `codex/security-scan-${stamp}`,
+        suggestedBranch: `chore/security-scan-${stamp}`,
       },
       tags: ['headers'],
     })
@@ -172,7 +172,7 @@ for (const file of ['next.config.js', 'middleware.js']) {
       evidence: [`${file}（静态检查）`],
       fix: {
         kind: 'config-change',
-        suggestedBranch: `codex/security-scan-${stamp}`,
+        suggestedBranch: `chore/security-scan-${stamp}`,
       },
       tags: ['headers'],
     })

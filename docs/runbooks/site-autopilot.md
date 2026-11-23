@@ -12,9 +12,9 @@
 
 | 任务 | 频率 | 扫描范围 | 修复 PR 示例 | 分支前缀 |
 | --- | --- | --- | --- | --- |
-| security-scan | 每周一 09:17（北京） | npm audit 依赖漏洞、被 Git 跟踪的敏感文件、安全响应头静态检查 | 升级依赖、清理敏感文件、补 HSTS/CSP 配置 | `codex/security-scan-<日期>` |
-| perf-scan | 每两周周三 09:17（北京，偶数 ISO 周；手动触发不受周次限制） | public/ 资源体积、超大源文件/内联数据、本地构建 chunk | 压缩图片、数据外移 JSON/R2、拆包、调缓存 | `codex/perf-scan-<日期>` |
-| design-scan | 每月 1 日 09:17（北京） | Tailwind 透明度类与主题 token、img alt 可访问性启发式 | 修透明度类、补 alt、统一设计 token | `codex/design-scan-<日期>` |
+| security-scan | 每周一 09:17（北京） | npm audit 依赖漏洞、被 Git 跟踪的敏感文件、安全响应头静态检查 | 升级依赖、清理敏感文件、补 HSTS/CSP 配置 | `chore/security-scan-<日期>` |
+| perf-scan | 每两周周三 09:17（北京，偶数 ISO 周；手动触发不受周次限制） | public/ 资源体积、超大源文件/内联数据、本地构建 chunk | 压缩图片、数据外移 JSON/R2、拆包、调缓存 | `chore/perf-scan-<日期>` |
+| design-scan | 每月 1 日 09:17（北京） | Tailwind 透明度类与主题 token、img alt 可访问性启发式 | 修透明度类、补 alt、统一设计 token | `chore/design-scan-<日期>` |
 
 错峰原因：三个任务共用同一仓库，同一天并发会抢分支、制造冲突。三个任务都支持 `workflow_dispatch` 手动触发。
 
@@ -80,7 +80,7 @@ flowchart LR
       "evidence": ["npm audit --json", "range: <4.17.21"],
       "fix": {
         "kind": "dependency-bump",
-        "suggestedBranch": "codex/security-scan-2026-08-03"
+        "suggestedBranch": "chore/security-scan-2026-08-03"
       },
       "tags": ["dependencies"]
     }
@@ -94,7 +94,7 @@ severity 四级：`high` / `medium` / `low` / `info`。只有 high/medium 会触
 
 `scripts/scan-handoff.mjs` 在存在 high/medium 发现时创建（或复用）标题为 `[autopilot] <type> 巡检 <日期>：N 个待处理项` 的 Issue。Issue 内嵌完整发现列表与修复协议。该 Issue 就是 Agent 的「任务单」：
 
-- 每个主题一个分支，前缀 `codex/<type>-scan-<日期>`。
+- 每个主题一个分支，前缀 `chore/<type>-scan-<日期>`。
 - 修复后运行相关测试与 `npm run build:check`。
 - 开 Draft PR，描述引用对应 Issue；merge 由站长人工完成。
 - 完成后在 Issue 勾选对应项；与巡检无关的改动一律不混入。
@@ -109,7 +109,7 @@ severity 四级：`high` / `medium` / `low` / `info`。只有 high/medium 会触
 
 流程约束：
 
-- 分支统一为 `codex/<type>-scan-<日期>`；同名分支已有开放 PR 时跳过；
+- 分支统一为 `chore/<type>-scan-<日期>`；同名分支已有开放 PR 时跳过；
 - 必须通过 `npm run build:check` 才推送并开 PR；失败则不开 PR、工作流标红，提示人工处理；
 - PR 一律是 **Draft**，merge 永远由站长人工完成；
 - `npm audit fix` 只做非破坏性升级，涉及 major 升级或架构调整的问题仍留在 Issue 中由 Agent/人工处理。

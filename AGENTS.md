@@ -84,7 +84,7 @@
 站长在聊天或助手侧提出的非琐碎需求，按 `docs/runbooks/issue-first-workflow.md` 执行。
 
 - 先搜索 open/closed Issue 与相关 PR，开新 Issue 或复用已有 Issue，再开 PR。
-- 本机 Mac、Codex 与 `codex/*` 分支是正式贡献路径，同样先走 Issue 优先。
+- 本机 Mac、Codex 与本机助手开的分支是正式贡献路径，同样先走 Issue 优先；分支名按任务类型选前缀，见「Git 发布规则」。
 - 本地 Codex 与聊天助手并行时，同一条 Issue 只走一条落地路径。细则见 `docs/runbooks/issue-first-workflow.md` 的「本地 Codex 与助手协同」。
 - 本 PR 做完某 Issue 的建议动作时，每条写一行 `Closes #N`（可多条；一个 PR 可以关闭多条）。做完的不要写成 `Related`。
 - `Related: #N` 只用于合并后仍应打开的 Issue：部分推进、依赖或后续。
@@ -96,10 +96,10 @@
 
 ## Git 发布规则
 
-- **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工（`git worktree add -b codex/<任务名> <路径> origin/main`），不在主工作区直接写文件或提交。主工作区由多个智能体共享，在其中 `checkout` 新分支**不算隔离**——目录相同，他人未提交改动仍混在一起；判断标准是目录（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交。站长明确要求在主工作区直接提交的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
+- **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工（`git worktree add -b <类型>/<任务名> <路径> origin/main`，前缀按任务类型选），不在主工作区直接写文件或提交。主工作区由多个智能体共享，在其中 `checkout` 新分支**不算隔离**——目录相同，他人未提交改动仍混在一起；判断标准是目录（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交。站长明确要求在主工作区直接提交的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
 - 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
-- 用户说“开 PR”或“建分支”时，创建 `codex/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。
+- 用户说“开 PR”或“建分支”时，按任务类型选前缀，创建 `<类型>/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。前缀白名单与选型见 `docs/specs/branch-management.md`。
 - 非琐碎需求即使站长说「开 PR」，也先完成「Issue 优先」里的 Issue 和分诊，除非命中该节的例外。
 - 工作区混有其他改动时，默认只暂存当前任务相关文件；只有用户明确要求提交全部待提交改动时，才一并提交。
 - 用户对本次发布方式的明确指令优先于默认工作流或工具建议。

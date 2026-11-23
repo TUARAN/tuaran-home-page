@@ -66,7 +66,7 @@ const body = [
   fullMarkdown,
   '',
   '## 修复协议',
-  `- 每个主题一个分支：\`codex/${type}-scan-${date}\`。`,
+  `- 每个主题一个分支：\`chore/${type}-scan-${date}\`。`,
   '- 修复后运行相关测试与 `npm run build:check`，再开 Draft PR。',
   '- PR 描述引用本 Issue，merge 由站长人工完成。',
   '- 完整协议见 docs/runbooks/site-autopilot.md。',

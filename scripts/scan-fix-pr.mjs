@@ -5,7 +5,7 @@
 // 行为：
 //   1. 读最近一份报告；无 high/medium 发现直接退出；
 //   2. 同名分支已有开放 PR 则跳过；
-//   3. 建分支 codex/<type>-scan-<日期>；
+//   3. 建分支 chore/<type>-scan-<日期>；
 //   4. 按类型应用保守修复：
 //      - security：npm audit fix（只做向后兼容的安全升级）；
 //      - design：为同行的 <img> 补 alt=""（仅处理扫描标记的行）；
@@ -42,7 +42,7 @@ if (!actionable.length) {
 }
 
 const date = report.generatedAt.slice(0, 10)
-const branch = `codex/${type}-scan-${date}`
+const branch = `chore/${type}-scan-${date}`
 const prTitle = `[autopilot] ${type} 巡检 ${date}：自动修复`
 const npmRegistry = process.env.NPM_REGISTRY || ''
 

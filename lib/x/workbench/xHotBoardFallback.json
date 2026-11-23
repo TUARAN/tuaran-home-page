@@ -1,0 +1,55 @@
+{
+  "tweets": [
+    {
+      "id": "fallback-1",
+      "handle": "laowang_ai",
+      "displayName": "AI 独立开发老王",
+      "text": "不会编程，我用 Cursor + Claude 在周末肝出了一个垂直领域的 SEO 内容生成小工具，刚刚收到了第一笔 $49 的 Stripe 付款。",
+      "url": "https://x.com",
+      "category": "AI实战",
+      "views": 128500,
+      "likes": 1420,
+      "reposts": 385,
+      "replies": null,
+      "score": 92,
+      "rank": 1
+    },
+    {
+      "id": "fallback-2",
+      "handle": "growth_hacker_cn",
+      "displayName": "出海增长笔记",
+      "text": "研究了简中区最近 30 天涨粉最快的 20 个新号，把这套起号 SOP 毫无保留地开源出来。",
+      "url": "https://x.com",
+      "category": "X做号经验",
+      "views": 95200,
+      "likes": 980,
+      "reposts": 260,
+      "replies": null,
+      "score": 88,
+      "rank": 2
+    }
+  ],
+  "accounts": [
+    {
+      "handle": "laowang_ai",
+      "displayName": "AI 独立开发老王",
+      "views": 128500,
+      "index": 91.2,
+      "tweetCount": 3,
+      "rank": 1
+    },
+    {
+      "handle": "growth_hacker_cn",
+      "displayName": "出海增长笔记",
+      "views": 95200,
+      "index": 84.5,
+      "tweetCount": 2,
+      "rank": 2
+    }
+  ],
+  "meta": {
+    "source": "bundled",
+    "updatedAt": "2026-11-23T08:00:00.000Z",
+    "apiProject": "https://github.com/xiongma0-at/x-bangdan"
+  }
+}

@@ -8,10 +8,10 @@ import RadarTab from './RadarTab'
 import XSiteFrame from './XSiteFrame'
 import { call, compact } from './api'
 import {
-  ACCOUNT_HOME_NOTE,
   ACTION_LABELS,
+  HOT_BOARD_ACCOUNT_NOTE,
+  HOT_BOARD_TWEET_NOTE,
   OBSERVED_AGENTS,
-  TWEET_BOARD_NOTE,
   agentFootnote,
 } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -22,14 +22,28 @@ function Metric({ ready, value }) {
   return compact(value)
 }
 
+function rowMetric(row, kind) {
+  if (kind === 'tweet') {
+    if (row.score != null) return { value: row.score, suffix: '热度' }
+    return { value: row.views, suffix: '曝光' }
+  }
+  if (row.index != null) return { value: row.index, suffix: '指数' }
+  return { value: row.views, suffix: '曝光' }
+}
+
 function MiniBoard({ title, note, rows, kind }) {
-  const max = rows.reduce((m, r) => Math.max(m, Number(r.views) || 0), 0) || 1
+  const max = rows.reduce((m, row) => {
+    const metric = rowMetric(row, kind)
+    return Math.max(m, Number(metric.value) || 0)
+  }, 0) || 1
   return (
     <div className={s.panel}>
       <div className={s.panelHead}><h2>{title}</h2><span>{rows.length ? `${rows.length} 条` : '读取中'}</span></div>
-      {!rows.length && <div className={s.empty}>今日还没有收录。</div>}
+      {!rows.length && <div className={s.empty}>今日还没有数据。</div>}
       {rows.map((row, index) => {
+        const metric = rowMetric(row, kind)
         const name = kind === 'tweet' ? (row.handle ? `@${row.handle}` : '未采集') : (row.displayName || `@${row.handle}`)
+        const tag = kind === 'tweet' ? (row.category || row.topic || '') : ''
         return (
           <article key={kind === 'tweet' ? row.id : row.handle} className={s.rank}>
             <span className={`${s.rankNo} ${index === 0 ? s.no1 : ''}`}>{index + 1}</span>
@@ -37,10 +51,11 @@ function MiniBoard({ title, note, rows, kind }) {
               <a href={kind === 'tweet' ? row.url : `https://x.com/${row.handle}`} target="_blank" rel="noreferrer noopener" style={{ color: 'inherit' }}>
                 <strong>{name}</strong>
               </a>
-              {kind === 'tweet' && row.topic && <div className={s.note}>{row.topic}</div>}
-              <div className={s.boardBar}><i style={{ width: `${Math.max(2, Math.round((Number(row.views) || 0) / max * 100))}%` }} /></div>
+              {kind === 'tweet' && tag && <div className={s.note}>{tag}</div>}
+              {kind === 'tweet' && row.text && <div className={s.note}>{row.text}</div>}
+              <div className={s.boardBar}><i style={{ width: `${Math.max(2, Math.round((Number(metric.value) || 0) / max * 100))}%` }} /></div>
             </div>
-            <strong>{compact(row.views)}</strong>
+            <strong>{compact(metric.value)}</strong>
           </article>
         )
       })}
@@ -63,17 +78,24 @@ export default function WorkbenchClient() {
 
   const ready = Boolean(observe)
   const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS
-  const tweetConclusion = !observe ? '' : observe.unavailable ? '今日曝光结论暂时读不到。' : observe.tweetConclusion
-  const accountConclusion = !observe ? '' : observe.unavailable ? '今日账号榜暂时读不到。' : observe.accountConclusion
+  const hotUnavailable = observe?.radarUnavailable && !(observe?.tweets?.length)
+  const tweetConclusion = !observe ? '' : hotUnavailable ? '今日热榜暂时读不到。' : observe.tweetConclusion
+  const accountConclusion = !observe ? '' : hotUnavailable ? '今日涨粉榜暂时读不到。' : observe.accountConclusion
 
   return (
     <XSiteFrame active="/x-workbench">
-      <section id="market" className={s.section}>
+      <section id="hot" className={s.section}>
         <div className={s.sectionHead}>
           <span className={s.sectionMark} aria-hidden="true" />
-          <h2 className={s.sectionTitle}>流量</h2>
-          <span className={s.sectionQ}>今天流量去哪了。</span>
+          <h2 className={s.sectionTitle}>热榜</h2>
+          <span className={s.sectionQ}>简中区今天在聊什么、谁在想稳定出爆款。</span>
         </div>
+        {observe?.hotBoardSource && (
+          <p className={s.hint}>
+            数据源：{observe.hotBoardSource}
+            {observe.hotBoardUpdatedAt ? ` · 更新 ${observe.hotBoardUpdatedAt.slice(0, 16).replace('T', ' ')}` : ''}
+          </p>
+        )}
         {(tweetConclusion || accountConclusion) && (
           <div className={s.noteCard}>
             {tweetConclusion && <p>{tweetConclusion}</p>}
@@ -81,8 +103,8 @@ export default function WorkbenchClient() {
           </div>
         )}
         <div className={s.cols}>
-          <MiniBoard title="推文曝光榜" note={TWEET_BOARD_NOTE} rows={observe?.tweets || []} kind="tweet" />
-          <MiniBoard title="账号曝光榜" note={ACCOUNT_HOME_NOTE} rows={observe?.accounts || []} kind="account" />
+          <MiniBoard title="推文热榜" note={HOT_BOARD_TWEET_NOTE} rows={observe?.tweets || []} kind="tweet" />
+          <MiniBoard title="涨粉潜力" note={HOT_BOARD_ACCOUNT_NOTE} rows={observe?.accounts || []} kind="account" />
         </div>
         <p><Link href="/calendar">往日记录</Link></p>
       </section>
@@ -107,10 +129,7 @@ export default function WorkbenchClient() {
                     <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
                   </div>
                 ))}
-                <div><dt>推文曝光</dt><dd><Metric ready={ready} value={agent.views ?? null} /></dd></div>
-                <div><dt>推文互动</dt><dd><Metric ready={ready} value={agent.interactions ?? null} /></dd></div>
               </dl>
-              {ready && agent.tweets != null && <p className={s.note}>已收录推文 {agent.tweets} 条</p>}
             </article>
           ))}
         </div>

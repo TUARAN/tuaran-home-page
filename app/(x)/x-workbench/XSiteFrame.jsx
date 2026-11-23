@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { WORKBENCH_MENU_GROUPS } from './tabs'
@@ -13,7 +14,7 @@ export default function XSiteFrame({ active, children }) {
     <div className={`${s.app} ${s.xFrame}`}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <a className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>爆点、改写、发布</span></span></a>
+          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>爆点、改写、发布</span></span></Link>
           <nav className={s.tabs} aria-label="功能">
             {WORKBENCH_MENU_GROUPS.map((group) => (
               <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
@@ -21,11 +22,11 @@ export default function XSiteFrame({ active, children }) {
                 {group.items.map((item) => {
                   const href = item.href || '/x-workbench'
                   const on = href === active
-                  return (
-                    <a key={item.id} className={`${s.tab} ${on ? s.tabOn : ''}`} href={href} aria-current={on ? 'page' : undefined} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-                      {item.label}{item.beta ? <span className={s.beta}>beta</span> : null}
-                    </a>
-                  )
+                  const className = `${s.tab} ${on ? s.tabOn : ''}`
+                  const label = <>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</>
+                  return item.external
+                    ? <a key={item.id} className={className} href={href} target="_blank" rel="noopener noreferrer">{label}</a>
+                    : <Link key={item.id} className={className} href={href} aria-current={on ? 'page' : undefined}>{label}</Link>
                 })}
               </div>
             ))}

@@ -1,5 +1,6 @@
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../lib/db/d1'
+import { readThroughEdgeCache } from '../../../../lib/db/edgeCache.mjs'
 import { listSiteUsers } from '../../../../lib/auth/userDirectory'
 import { getD1QuickStatus } from '../../../../lib/admin/dbAdmin'
 import { RESEARCH_STYLE_TEMPLATES } from '../../../../lib/research/researchStyleTemplates'
@@ -48,59 +49,66 @@ export async function GET(req) {
   }
 
   try {
-    const [users, dbSnap, pvTotalRow, pvTodayRow, uvRow] = await Promise.all([
-      listSiteUsers(db).catch(() => []),
-      getD1QuickStatus(db).catch(() => ({ status: 'error', tableCount: null })),
-      db.prepare("SELECT COUNT(*) AS total FROM research_pv_hits WHERE quality = 'qualified'").first().catch(() => null),
-      db
-        .prepare("SELECT COUNT(*) AS today FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1")
-        .bind(startOfShanghaiTodayMs())
-        .first()
-        .catch(() => null),
-      db
-        .prepare(
-          `SELECT
-             COUNT(DISTINCT CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END) AS total,
-             COUNT(DISTINCT CASE
-               WHEN created_at >= ?1
-               THEN CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END
-             END) AS today
-           FROM research_pv_hits WHERE quality = 'qualified'`
-        )
-        .bind(startOfShanghaiTodayMs())
-        .first()
-        .catch(() => null),
-    ])
+    const payload = await readThroughEdgeCache(
+      `admin:overview:${startOfShanghaiTodayMs()}`,
+      60,
+      async () => {
+        const [users, dbSnap, pvTotalRow, pvTodayRow, uvRow] = await Promise.all([
+          listSiteUsers(db).catch(() => []),
+          getD1QuickStatus(db).catch(() => ({ status: 'error', tableCount: null })),
+          db.prepare("SELECT COUNT(*) AS total FROM research_pv_hits WHERE quality = 'qualified'").first().catch(() => null),
+          db
+            .prepare("SELECT COUNT(*) AS today FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1")
+            .bind(startOfShanghaiTodayMs())
+            .first()
+            .catch(() => null),
+          db
+            .prepare(
+              `SELECT
+                 COUNT(DISTINCT CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END) AS total,
+                 COUNT(DISTINCT CASE
+                   WHEN created_at >= ?1
+                   THEN CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END
+                 END) AS today
+               FROM research_pv_hits WHERE quality = 'qualified'`
+            )
+            .bind(startOfShanghaiTodayMs())
+            .first()
+            .catch(() => null),
+        ])
 
-    const recentUsers = users.slice(0, 5).map((u) => ({
-      id: u.id,
-      name: u.name || u.login || u.id,
-      image: u.image || null,
-      provider: u.provider || '',
-      role: u.role,
-      lastSeenAt: u.lastSeenAt,
-    }))
+        const recentUsers = users.slice(0, 5).map((u) => ({
+          id: u.id,
+          name: u.name || u.login || u.id,
+          image: u.image || null,
+          provider: u.provider || '',
+          role: u.role,
+          lastSeenAt: u.lastSeenAt,
+        }))
 
-    return Response.json({
-      status: 'ok',
-      generatedAt: Date.now(),
-      badges: { users: users.length },
-      users: { count: users.length },
-      pv: {
-        total: Math.max(0, Number(pvTotalRow?.total) || 0),
-        today: Math.max(0, Number(pvTodayRow?.today) || 0),
+        return {
+          status: 'ok',
+          generatedAt: Date.now(),
+          badges: { users: users.length },
+          users: { count: users.length },
+          pv: {
+            total: Math.max(0, Number(pvTotalRow?.total) || 0),
+            today: Math.max(0, Number(pvTodayRow?.today) || 0),
+          },
+          uv: {
+            total: Math.max(0, Number(uvRow?.total) || 0),
+            today: Math.max(0, Number(uvRow?.today) || 0),
+          },
+          db: {
+            status: dbSnap?.status || 'unknown',
+            tables: dbSnap?.tableCount ?? null,
+            name: null,
+          },
+          recent: { users: recentUsers, style },
+        }
       },
-      uv: {
-        total: Math.max(0, Number(uvRow?.total) || 0),
-        today: Math.max(0, Number(uvRow?.today) || 0),
-      },
-      db: {
-        status: dbSnap?.status || 'unknown',
-        tables: dbSnap?.tableCount ?? null,
-        name: null,
-      },
-      recent: { users: recentUsers, style },
-    })
+    )
+    return Response.json(payload)
   } catch (error) {
     return Response.json(
       {

@@ -7823,6 +7823,112 @@
     font-size: 10px;
   }
 
+  .community-xh-pay {
+    display: flex;
+    width: min(14rem, 100%);
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .community-xh-pay-button {
+    width: 100%;
+    border-radius: 0.7rem;
+    background: #07a956;
+    padding: 0.7rem 1rem;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    transition: opacity 0.2s ease;
+  }
+  .community-xh-pay-button:hover { opacity: 0.88; }
+  .community-xh-pay-button:disabled { opacity: 0.6; }
+
+  .community-xh-pay-qr {
+    display: flex;
+    width: 12rem;
+    aspect-ratio: 1;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 0.45rem solid #fff;
+    border-radius: 0.7rem;
+    background: #fff;
+  }
+  .community-xh-pay-qr img { width: 100%; height: 100%; object-fit: contain; }
+
+  .community-xh-pay-link {
+    color: #07a956;
+    font-size: 13px;
+    text-decoration: underline;
+  }
+
+  .community-xh-pay-note {
+    margin: 0.65rem 0 0;
+    color: var(--site-faint);
+    font-size: 9px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .community-xh-pay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+  }
+  .community-xh-pay-refresh {
+    border: 1px solid color-mix(in srgb, #07c160 40%, var(--site-line));
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    color: #07a956;
+    font-size: 10px;
+  }
+  .community-xh-pay-cancel {
+    color: var(--site-faint);
+    font-size: 10px;
+  }
+
+  .community-xh-pay-order {
+    margin: 0.5rem 0 0;
+    color: var(--site-faint);
+    font-family: monospace;
+    font-size: 9px;
+    word-break: break-all;
+  }
+
+  .community-xh-pay-done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    color: #07a956;
+  }
+  .community-xh-pay-done span {
+    display: flex;
+    width: 2.4rem;
+    height: 2.4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, #07c160 14%, transparent);
+    font-size: 20px;
+  }
+  .community-xh-pay-done strong { font-size: 13px; }
+
+  .community-xh-pay-error {
+    margin: 0.5rem 0 0;
+    color: #b4402f;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .community-membership.is-compact .community-xh-pay { width: 10rem; }
+  .community-membership.is-compact .community-xh-pay-qr { width: 10rem; }
+
   .community-membership-steps {
     display: grid;
     grid-column: 1 / -1;
@@ -8221,6 +8327,11 @@
     .community-membership.is-compact .community-membership-payment-qr {
       width: 11.5rem;
     }
+
+    .community-xh-pay,
+    .community-membership.is-compact .community-xh-pay { width: 11.5rem; }
+    .community-xh-pay-qr,
+    .community-membership.is-compact .community-xh-pay-qr { width: 11.5rem; }
 
     .community-membership-pay-head,
     .community-membership.is-compact .community-membership-pay-head { width: 11.5rem; }

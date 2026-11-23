@@ -2,6 +2,23 @@
 
 用量监控页 `/admin/site-health?tab=usage` 在当日指标下方展示「最近几次事故时间线」（日期、现象、主因、已做），并附有「先稳住，再改插件」的短提示。这里保留核对过的口径、未完成项和数据来源。
 
+## 2026-11-23：额度在一天内被吃穿，poemcn 整站 503
+
+- **现象**：03:50、05:50 收到 83% / 90% 告警；08:35 UTC 起 D1 报 `7500 exceeded free tier daily row read limit`，`poemcn.2aran.com` 整站 503、`/api/stats` 500，主站 `/api/content` 返回空数组。额度只能等 00:00 UTC（北京 08:00）重置。
+- **口径**：11-23 00:00–09:00 UTC（配额日已重置 9 小时）主库 `tuaran-me` 读取 **6,596,918** 行、26,350 次读查询，超过免费版每日 500 万行；其中 07:00–08:00 UTC 单独 **3,939,919 行 / 3,985 次查询**，平均每次扫 989 行。11-22 全天主库约 480 万行，`china-poetry` 约 22 万行。
+- **11-22 深夜的增量是爬虫**：`china-poetry` 从 23:00 起由约 100 请求/小时涨到约 1800，一小时 1,797 个诗文页、每页重复约 10 次，UA 为 `meta-webindexer/1.1`（Meta 网页索引）。poemcn 每个页面请求跑 `getDatasetState` + `getPoem` 两条查询，响应头写了 `Cache-Control` 但 Worker 不走边缘缓存，抓一次算一次读。
+- **11-23 的爆发是后台统计**（用 `d1QueriesAdaptiveGroups.query` 维度核对到 SQL）：
+  1. `SELECT COUNT(*) / SUM(balance) FROM user_points`：22 次 × 约 4.8 万行 ≈ 110 万行。来自 `getRanbiSupplySummary`，公开页 `/ranbi`（edge + force-dynamic）每次访问都跑。
+  2. `research_pv_hits` 各类聚合：`/api/admin/overview` 41 次约 28 万行，`/api/admin/content-weekly` 与 `/reader` 十几条 `SUM(CASE…)` 约 70 万行。`quality` 索引存在，但 `COUNT(*)`/`SUM` 仍要扫完所有匹配行。
+  3. `content_documents ORDER BY content_key LIMIT 500 OFFSET ?`：294 次约 14 万行，来自调研 override 列表；只有 isolate 内内存缓存，跨 isolate 各扫一遍。
+  4. 该小时 `admin.2aran.com` 有 965 次请求，对照小时没有后台流量，说明是后台面板高频刷新。
+- **已改**：新增 `lib/db/edgeCache.mjs`（Cache API 跨 isolate 缓存，不可用时退回进程内 Map），接入 `/ranbi` 供应量（60 秒）、`/api/admin/overview`（60 秒）、`/api/admin/content-weekly` 与 `/reader`（60 秒）、调研 override 列表（5 分钟）；poemcn Worker 对详情页做 5 分钟、接口 60 秒的 Cache API 缓存，只缓存 200。11-02 条目里「燃币余额要落到单行汇总」这次先以缓存止血，见下方未完成项。
+- **还没动**：`user_points` 物化计数器（写入时维护 identities / circulating，彻底摆脱 `COUNT` + `SUM` 全表）、`research_pv_hits` 日汇总表与合格阅读计数器、后台面板默认刷新频率下调、poemcn 对 meta-webindexer 是否需要 robots/限流。
+- **复盘**：
+  - 为什么没有提前拦住：80% 预警按「当天累计」算，而告警时段已接近 UTC 日尾声；11-02 的复盘已经把燃币余额和阅读计数列为未完成，但没有排期，这次原样复发。
+  - 判断失误：把「公开目录 5 分钟缓存」当成了缓存治理完成，实际那只是单个 isolate 内的变量，多实例、爬虫会绕开。
+  - 下次的默认动作：任何公开页或后台面板的取数，先回答「一次请求扫多少行、谁在重复请求」；读多写少的聚合直接用 60 秒 Cache API，计数器类数据落单行汇总；纯读子站默认开 Cache API 再允许被索引。
+
 ## 2026-11-02：D1 行读取到免费额度的 86%
 
 - **口径**：2026-11-02 20:10 +0800 用账号 Analytics 核对 UTC 日 `2026-11-02`（北京时间 08:00 起）。账号合计读取 **4,301,922** 行、写入 18,158 行，占 Workers Free「每日 500 万行读取」的 **86.0%**。主库 `tuaran-me` 为 4,301,751 行；同账号其他库合计不到 200 行。查询分解来自 D1 Insights 最近 12 小时，和这个 UTC 日基本重合。

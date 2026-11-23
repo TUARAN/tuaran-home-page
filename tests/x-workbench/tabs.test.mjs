@@ -4,30 +4,30 @@ import test from 'node:test'
 
 import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-workbench/tabs.js'
 
-test('X大互动顶部按今天和读本展示，公开菜单没有站长工具', () => {
+test('X大互动顶部按今日看板和读本展示，公开菜单没有站长工具', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
-    ['今天', ['流量', '大互动智能体']],
-    ['读本', ['大互动理论', '智能体手册', '大互动日历', '大互动圆桌']],
+    ['今日看板', ['热榜', '大互动智能体']],
+    ['读本', ['大互动理论', '大互动日历', '大互动圆桌']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
   for (const removed of ['AI 改写', '排期', '海报', '推文榜', '账号榜', '绿皮书', '黄皮书', 'AI分发大师']) {
     assert.equal(labels.includes(removed), false)
   }
   assert.deepEqual(WORKBENCH_MENU_ITEMS.filter((item) => item.href).map((item) => [item.label, item.href, Boolean(item.external)]), [
-    ['流量', '/x-workbench#market', false],
+    ['热榜', '/x-workbench#hot', false],
     ['大互动智能体', '/x-workbench#agents', false],
     ['大互动理论', '/theory', false],
-    ['智能体手册', '/docs', false],
     ['大互动日历', '/calendar', false],
     ['大互动圆桌', '/roundtable', false],
   ])
   assert.equal(WORKBENCH_MENU_GROUPS.some((group) => ['工作', '实践', '理论'].includes(group.label)), false)
 })
 
-test('公开首页是流量和智能体，配对和排期留在登录后的二级页', async () => {
-  const [client, operator, frame, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
+test('公开首页是热榜和智能体，配对和排期留在登录后的二级页', async () => {
+  const [client, operator, agentTab, frame, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
     readFile(new URL('../../app/(x)/x-workbench/WorkbenchClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/OperatorClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(x)/x-workbench/AgentTab.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/XSiteFrame.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/[code]/route.js', import.meta.url), 'utf8'),
@@ -43,13 +43,13 @@ test('公开首页是流量和智能体，配对和排期留在登录后的二�
   assert.match(frame, /group\.label/)
   assert.match(frame, /item\.beta/)
   assert.match(frame, /noopener noreferrer/)
-  assert.match(client, /id="market"/)
+  assert.match(client, /id="hot"/)
   assert.match(client, /id="agents"/)
   assert.doesNotMatch(client, /id="basis"/)
-  assert.match(client, /今天流量去哪了/)
+  assert.match(client, /简中区今天在聊什么/)
   assert.match(client, /使用了智能体插件的账号/)
-  assert.match(client, /TWEET_BOARD_NOTE/)
-  assert.match(client, /ACCOUNT_HOME_NOTE/)
+  assert.match(client, /HOT_BOARD_TWEET_NOTE|推文热榜/)
+  assert.match(client, /HOT_BOARD_ACCOUNT_NOTE|涨粉潜力/)
   assert.match(client, /往日记录/)
   assert.match(client, /未采集/)
   assert.doesNotMatch(client, /绿皮书|黄皮书|理论基础/)
@@ -57,6 +57,7 @@ test('公开首页是流量和智能体，配对和排期留在登录后的二�
   assert.doesNotMatch(client, /import RewriteTab|import AgentTab|import ScheduleTab|import PosterTab|生成配对码/)
   assert.match(operator, /登录后继续/)
   assert.match(operator, /AgentTab/)
+  assert.match(agentTab, /href="\/docs"[^>]*>智能体手册</)
   assert.match(operator, /signedIn &&/)
   assert.doesNotMatch(whitepaper, /查看智能体与获取方式|走进圆桌会场|打开日历/)
   assert.match(whitepaper, /href="\/roundtable"/)
@@ -72,8 +73,10 @@ test('公开首页是流量和智能体，配对和排期留在登录后的二�
   assert.match(shortRoute, /https:\/\/x\.2aran\.com\/theory/)
   assert.match(whitepaper, /const title = '互动理论'/)
   assert.match(calendar, /const title = '大互动日历'/)
-  assert.match(calendar, /href="\/x-workbench#market"/)
+  assert.match(calendar, /href="\/x-workbench#hot"/)
   assert.match(calendar, /export const runtime = 'edge'/)
   assert.match(yellowbook, /const title = '智能体手册'/)
   assert.match(roundtable, /← 互动理论/)
+  assert.match(roundtable, /ManualPaper tone="green"/)
+  assert.match(roundtable, /PageContainer/)
 })

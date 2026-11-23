@@ -25,6 +25,8 @@ R2_PUBLIC_BASE = "https://pub-09012f26768b4d39908a8a574af8fde1.r2.dev"
 # 2026 世界杯数据源:openfootball/worldcup.json (无 key、无限流)。
 # 采集只需 D1 binding;手动触发鉴权用的 WC_COLLECT_SECRET 走 Secret,不在这里。
 WC_DATA_SOURCE = "openfootball"
+# x.2aran.com 热榜：指向自部署 x-bangdan 根地址（不含尾斜杠），例如 https://your-x-bangdan.example
+# X_HOT_BOARD_API_BASE =
 
 # 付费解锁（虎皮椒）：XUNHUPAY_APPID / XUNHUPAY_SECRET 作为 Secret 配置，
 # 金额按后台「价格表」匹配，因此改价必须先在虎皮椒后台建好对应金额。

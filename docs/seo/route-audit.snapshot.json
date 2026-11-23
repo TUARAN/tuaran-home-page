@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 249,
+    "routes": 251,
     "redirects": 23,
-    "private": 62,
-    "registeredStatic": 120,
-    "indexable": 139,
-    "canonical": 160,
-    "openGraph": 92,
-    "jsonLd": 67,
+    "private": 63,
+    "registeredStatic": 121,
+    "indexable": 140,
+    "canonical": 161,
+    "openGraph": 93,
+    "jsonLd": 68,
     "errors": 9,
     "warnings": 138
   },
@@ -615,6 +615,22 @@
     {
       "path": "/admin/integrations",
       "file": "app/(admin)/admin/integrations/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/life",
+      "file": "app/(admin)/admin/life/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,
@@ -3599,6 +3615,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/2fa",
+      "file": "app/(site)/tools/2fa/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/2fa"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/tools/2fa"
+        ]
       }
     },
     {

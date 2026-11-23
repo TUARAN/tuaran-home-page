@@ -13,8 +13,8 @@ Closes #
 ## 验证
 
 - [ ] CI
-- [ ] 不需要预览（纯文档、模板、内容稿，或提交说明带 `[CF-Pages-Skip]`）
-- [ ] 界面改动：已附 Cloudflare Pages 分支预览（公开站 `tuaran`，后台站 `tuaran-admin-git`）。站长看过预览再说「合」
+- [ ] 不需要预览（纯文档、进度说明、中间变基、同分支连推、模板或内容稿）。提交说明以 `[CF-Pages-Skip]` 开头；合入 `main` 的 squash 说明同样加该标记，不作为完整的预览式生产部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`
+- [ ] 需要站长看过官方预览再说「合」的页面改动：已附 Cloudflare Pages 分支预览（公开站 `tuaran`，后台站 `tuaran-admin-git`）。不是每个 Issue、PR 或推送都要预览。站长看过预览再说「合」
 
 ## 合并
 

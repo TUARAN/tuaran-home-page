@@ -107,7 +107,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
     {
       icon: IconReceipt,
       title: '选择方案并在线支付',
-      desc: `选好方案后微信/支付宝扫码付 ¥${selectedPrice}，支付成功本页自动识别。`,
+      desc: `选好方案后微信扫码付 ¥${selectedPrice}，支付成功本页自动识别。`,
     },
     {
       icon: IconMessageCircleCheck,
@@ -191,7 +191,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
 
       <div className="community-membership-payment">
         <div className="community-membership-pay-head">
-          <span>虎皮椒支付 · {selectedPlan.name}</span>
+          <span>微信支付 · {selectedPlan.name}</span>
           <strong>¥{selectedPrice}.00</strong>
         </div>
         <CommunityPayPanel key={selectedPlan.resourceKey} plan={selectedPlan} />

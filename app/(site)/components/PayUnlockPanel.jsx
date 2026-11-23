@@ -137,7 +137,7 @@ export default function PayUnlockPanel({ resourceKey, priceFen, unitLabel = '内
             </a>
           )}
           <p className="text-xs text-[#8a7a55] dark:text-amber-300/80">
-            微信/支付宝扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功后本页自动解锁
+            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功后本页自动解锁
           </p>
           <div className="flex items-center gap-3">
             <button

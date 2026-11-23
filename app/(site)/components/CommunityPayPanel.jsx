@@ -16,7 +16,7 @@ function fenLabel(fen) {
 }
 
 /**
- * 社群方案的虎皮椒支付面板。
+ * 社群方案的在线支付面板。
  * - 只认登录账号：付款权益挂账号，建单 401 时先登录再回来。
  * - 下单拿网关二维码，3 秒轮询本人订单状态；支付回调写 resource_unlocks。
  * - 已支付（本次轮询命中或再次进入查到 unlock）→ 展示加微信进群引导，不再发截图。
@@ -163,7 +163,7 @@ export default function CommunityPayPanel({ plan }) {
             )}
           </div>
           <p className="community-xh-pay-note">
-            微信 / 支付宝扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功本页自动识别。
+            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功本页自动识别。
           </p>
           <div className="community-xh-pay-actions">
             <button type="button" onClick={() => poll(order.orderNo)} className="community-xh-pay-refresh">
@@ -189,7 +189,7 @@ export default function CommunityPayPanel({ plan }) {
             {phase === 'creating' ? '正在下单…' : `¥${fenLabel(priceFen)} 立即支付`}
           </button>
           <p className="community-xh-pay-note">
-            微信 / 支付宝扫码，付款后自动识别，无需发截图。
+            微信扫码，付款后自动识别，无需发截图。
           </p>
           {phase === 'error' && message ? <p className="community-xh-pay-error">{message}</p> : null}
         </>

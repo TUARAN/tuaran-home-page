@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { DatabaseSync } from 'node:sqlite'
 
 import { readingVisitorName } from '../../lib/auth/readingVisitorIdentity.mjs'
+import { READER_USER_PREFIX } from '../../lib/automation/engagementBot.js'
 import { readFile } from 'node:fs/promises'
 
 const beaconSource = await readFile(
@@ -87,4 +89,38 @@ test('active readers expand into a per-reader detail behind the owner guard', ()
   assert.match(readerDetailRouteSource, /readingVisitorName/)
   assert.match(analyticsDashboardSource, /content-weekly\/reader/)
   assert.match(analyticsDashboardSource, /toggleReader/)
+})
+
+test('engagement feedback excludes in-site bot comments from both the list and totals', () => {
+  assert.match(contentAnalyticsRouteSource, /READER_USER_PREFIX/)
+  assert.match(contentAnalyticsRouteSource, /BOT_COMMENT_USER_PATTERN/)
+  assert.match(contentAnalyticsRouteSource, /FROM article_comments\s+WHERE user_id NOT LIKE \?1/)
+  assert.match(contentAnalyticsRouteSource, /FROM article_comments\s+WHERE user_id NOT LIKE \?2/)
+  assert.match(contentAnalyticsRouteSource, /bind\(periodStart, BOT_COMMENT_USER_PATTERN\)/)
+})
+
+test('reader: exclusion keeps real reader comments and drops only bot rows', () => {
+  const db = new DatabaseSync(':memory:')
+  db.exec(`CREATE TABLE article_comments (
+    id INTEGER PRIMARY KEY, article_key TEXT NOT NULL, user_id TEXT NOT NULL, created_at INTEGER NOT NULL
+  )`)
+  db.exec(`INSERT INTO article_comments VALUES
+    (1, 'article:a', 'reader:qingshi', 40),
+    (2, 'article:b', 'reader:nanan', 30),
+    (3, 'article:a', 'github:123', 20),
+    (4, 'article:c', 'guest:abc', 10)`)
+  const pattern = `${READER_USER_PREFIX}%`
+  const rows = db.prepare(
+    `SELECT id FROM article_comments WHERE user_id NOT LIKE ? ORDER BY created_at DESC`,
+  ).all(pattern)
+  assert.deepEqual(rows.map((row) => row.id), [3, 4])
+  const total = db.prepare(
+    `SELECT COUNT(*) AS total_comments, COUNT(DISTINCT article_key) AS article_count,
+            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_comments
+     FROM article_comments WHERE user_id NOT LIKE ?2`,
+  ).get(10, pattern)
+  assert.equal(Number(total.total_comments), 2)
+  assert.equal(Number(total.article_count), 2)
+  assert.equal(Number(total.period_comments), 2)
+  db.close()
 })

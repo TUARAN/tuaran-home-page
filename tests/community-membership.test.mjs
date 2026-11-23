@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
-import { access, readFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPaymentQr, getCommunityPlanPrice } from '../lib/auth/communityMembership.js'
+import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPlanPrice, getCommunityPlanResourceKey } from '../lib/auth/communityMembership.js'
 
 const membershipCard = await readFile(new URL('../app/(site)/components/CommunityMembershipCard.jsx', import.meta.url), 'utf8')
+const payPanel = await readFile(new URL('../app/(site)/components/CommunityPayPanel.jsx', import.meta.url), 'utf8')
 
 test('community membership exposes distinct circle and personal service tiers', () => {
   assert.deepEqual(
@@ -25,24 +26,40 @@ test('topic circle annual price is always 69', () => {
   assert.equal(getCommunityPlanPrice(COMMUNITY_MEMBERSHIP.plans[1]), 199)
 })
 
-test('each plan uses its own fixed-amount WeChat code and can reserve Alipay', async () => {
+test('each plan maps to its own xunhupay resource key', () => {
   assert.deepEqual(
-    COMMUNITY_MEMBERSHIP.plans.map((plan) => [plan.price, getCommunityPaymentQr(plan), plan.paymentQrAlipay]),
+    COMMUNITY_MEMBERSHIP.plans.map((plan) => [plan.price, getCommunityPlanResourceKey(plan)]),
     [
-      [69, '/donate-wechat-69.jpg', ''],
-      [199, '/donate-wechat-199.jpg', ''],
-      [699, '/donate-wechat-699.jpg', ''],
+      [69, 'community:topic-circle'],
+      [199, 'community:all-circles'],
+      [699, 'community:personal-service'],
     ],
   )
-  assert.equal(getCommunityPaymentQr({}), COMMUNITY_MEMBERSHIP.paymentQr)
+  assert.equal(getCommunityPlanResourceKey({}), '')
   for (const plan of COMMUNITY_MEMBERSHIP.plans) {
-    const fileUrl = new URL(`../public${getCommunityPaymentQr(plan)}`, import.meta.url)
-    await access(fileUrl)
+    assert.match(getCommunityPlanResourceKey(plan), /^community:[a-z-]+$/)
   }
-  assert.match(membershipCard, /请扫码支付固定金额 ¥/)
-  assert.match(membershipCard, /getCommunityPaymentQr\(plan\)/)
-  assert.match(membershipCard, /paymentQrAlipay/)
-  assert.doesNotMatch(membershipCard, /手动填写/)
+})
+
+test('membership card uses xunhupay panel instead of static QR codes', () => {
+  assert.match(membershipCard, /CommunityPayPanel/)
+  assert.match(membershipCard, /虎皮椒支付/)
+  assert.doesNotMatch(membershipCard, /getCommunityPaymentQr/)
+  assert.doesNotMatch(membershipCard, /paymentQrAlipay/)
+  assert.doesNotMatch(membershipCard, /扫码支付固定金额/)
+  assert.doesNotMatch(membershipCard, /发送付款截图/)
+})
+
+test('xunhupay panel creates order by resource key and polls own order status', () => {
+  assert.match(payPanel, /\/api\/pay\/create/)
+  assert.match(payPanel, /\/api\/pay\/status/)
+  assert.match(payPanel, /\/api\/points\/unlock/)
+  assert.match(payPanel, /resourceKey/)
+  assert.match(payPanel, /支付成功/)
+  assert.doesNotMatch(payPanel, /付款截图/)
+  // 付款权益必须挂登录账号，401 时先登录
+  assert.match(payPanel, /res\.status === 401/)
+  assert.match(payPanel, /\/login\?returnTo=/)
 })
 
 test('seven-day countdown starts a new cycle at each boundary', () => {

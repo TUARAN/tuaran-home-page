@@ -11,33 +11,8 @@ import {
   IconShieldCheck,
 } from '@tabler/icons-react'
 
-import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPaymentQr, getCommunityPlanPrice } from '../../../lib/auth/communityMembership'
-
-function PlanPaymentQr({ plan, compact }) {
-  const dedicated = getCommunityPaymentQr(plan)
-  const fallback = COMMUNITY_MEMBERSHIP.paymentQr
-  const [src, setSrc] = useState(dedicated)
-
-  useEffect(() => {
-    setSrc(dedicated)
-  }, [dedicated])
-
-  return (
-    <Image
-      key={src}
-      src={src}
-      alt={`微信收款码，${plan.name}，固定金额 ${getCommunityPlanPrice(plan)} 元`}
-      width={828}
-      height={1124}
-      sizes={compact ? '180px' : '240px'}
-      unoptimized
-      className="h-full w-full object-contain"
-      onError={() => {
-        if (src !== fallback) setSrc(fallback)
-      }}
-    />
-  )
-}
+import { COMMUNITY_MEMBERSHIP, getCommunityCountdown, getCommunityPlanPrice } from '../../../lib/auth/communityMembership'
+import CommunityPayPanel from './CommunityPayPanel'
 
 function ActivityCountdown({ countdown }) {
   const parts = [
@@ -130,18 +105,18 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
   const steps = [
     {
       icon: IconReceipt,
-      title: '选择方案并扫码付款',
-      desc: `请扫码支付固定金额 ¥${selectedPrice}，并备注“${selectedPlan.name} + 你的微信昵称”。`,
+      title: '选择方案并在线支付',
+      desc: `选好方案后微信/支付宝扫码付 ¥${selectedPrice}，支付成功本页自动识别。`,
     },
     {
       icon: IconMessageCircleCheck,
       title: '添加作者微信',
-      desc: '发送付款截图；需要发票时一并提供抬头和税号。',
+      desc: '说明所选方案，不用发付款截图；需要发票时一并提供抬头和税号。',
     },
     {
       icon: IconShieldCheck,
       title: '核对后交付',
-      desc: selectedPlan.id === 'personal-service' ? '确认信息后安排加入，并预约一对一交流时间。' : '确认信息后，按圈子所在平台邀请加入。',
+      desc: selectedPlan.id === 'personal-service' ? '核对订单后安排加入，并预约一对一交流时间。' : '核对订单后，按圈子所在平台邀请加入。',
     },
   ]
 
@@ -215,26 +190,10 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
 
       <div className="community-membership-payment">
         <div className="community-membership-pay-head">
-          <span>微信支付 · {selectedPlan.name}</span>
+          <span>虎皮椒支付 · {selectedPlan.name}</span>
           <strong>¥{selectedPrice}.00</strong>
         </div>
-        <div className="community-membership-payment-qr">
-          <PlanPaymentQr plan={selectedPlan} compact={compact} />
-        </div>
-        {selectedPlan.paymentQrAlipay ? (
-          <div className="community-membership-payment-qr">
-            <Image
-              src={selectedPlan.paymentQrAlipay}
-              alt={`支付宝收款码，${selectedPlan.name}，固定金额 ${selectedPrice} 元`}
-              width={1279}
-              height={1743}
-              sizes={compact ? '180px' : '240px'}
-              unoptimized
-              className="h-full w-full object-contain"
-            />
-          </div>
-        ) : null}
-        <p>请扫码支付固定金额 ¥{selectedPrice}。备注「{selectedPlan.name} + 你的微信昵称」，并保留付款截图。</p>
+        <CommunityPayPanel key={selectedPlan.resourceKey} plan={selectedPlan} />
         <div className="community-membership-invoice">
           <IconFileInvoice size={16} aria-hidden="true" />
           <span><strong>支持开具电子发票</strong>{COMMUNITY_MEMBERSHIP.invoice}</span>
@@ -278,17 +237,17 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
         <div className="community-membership-contact-copy">
           <strong>付款后添加作者微信</strong>
           <p>作者微信号：<b>{COMMUNITY_MEMBERSHIP.wechatId}</b></p>
-          <p>发送付款截图，并说明所选服务。</p>
+          <p>说明所选方案即可，不用发付款截图。</p>
           <span className="community-membership-owner-qr-hint">点击二维码可查看原图</span>
         </div>
         <aside className="community-membership-contact-guide" aria-label="添加作者微信消息示例">
           <p className="community-membership-contact-guide-kicker">添加时这样说</p>
           <blockquote>
-            你好，我已支付 {selectedPrice} 元，选择「{selectedPlan.name}」，微信昵称是 ______。{selectedPlan.id === 'personal-service' ? '我想梳理的问题是 ______。' : '想加入 ______ 主题圈子。'}
+            你好，我已在线支付 {selectedPrice} 元，选择「{selectedPlan.name}」，微信昵称是 ______。{selectedPlan.id === 'personal-service' ? '我想梳理的问题是 ______。' : '想加入 ______ 主题圈子。'}
           </blockquote>
           <ul>
-            <li>附上付款截图</li>
-            <li>写清付款备注或微信昵称</li>
+            <li>说明所选方案，无需付款截图</li>
+            <li>写清微信昵称</li>
             <li>需要发票请提供抬头和税号</li>
           </ul>
           <div className="community-membership-contact-benefits">

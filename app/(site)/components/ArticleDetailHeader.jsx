@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { AuthorByline } from './ArticleAuthorIntro'
+import PaidUnlockBadge from './PaidUnlockBadge'
 import { CONTENT_GROUP_META, SUBJECT_META, getContentGroup } from '../../../lib/content/contentTaxonomy'
 
 export default function ArticleDetailHeader({
@@ -17,6 +18,7 @@ export default function ArticleDetailHeader({
   summary,
   summaryLabel = '',
   tags = [],
+  paid = false,
   taxonomy,
 }) {
   const subjectId = taxonomy?.subjects?.[0]
@@ -82,7 +84,10 @@ export default function ArticleDetailHeader({
         {actions}
       </div>
 
-      <h1 className="research-article-title mt-3 text-2xl leading-snug">{title}</h1>
+      <h1 className="research-article-title mt-3 text-2xl leading-snug">
+        {title}
+        {paid ? <PaidUnlockBadge className="ml-2 align-middle" /> : null}
+      </h1>
 
       <aside className="research-summary-box mt-4 border-l-2 px-4 py-3 text-sm leading-7">
         <AuthorByline />

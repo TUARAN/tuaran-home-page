@@ -17,13 +17,15 @@ async function safeJson(res) {
 }
 
 /**
- * 燃币墙（软墙 · 自动使用燃币）。调研、资料/资源主题页共用。
+ * 内容墙（软墙）。调研、资料/资源主题页共用。
  *
- * 行为：
- *  - 余额够时进入内容即自动解锁；已解锁后永久可读，不重复使用燃币。
- *  - 已解锁（之前付过）→ 直接看，不再扣、不提示。
- *  - 余额不足 → 截断正文 + 「燃币不足」挂卡（游客引导注册得 100）。
- *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因燃币系统故障挡内容。
+ * 现金与燃币互斥（由 D1 gated_resources.price_fen 决定，改价走后台内容定价）：
+ *  - 配了现金价（price_fen > 0）→ 只显示现金购买面板，不提供燃币旁路，避免注册送的燃币绕过定价。
+ *  - 没配现金价 → 只走燃币：余额够自动解锁，不足则截断正文 + 「燃币不足」挂卡。
+ *
+ * 其它行为：
+ *  - 已解锁（含历史用燃币或现金付过）→ 直接看，不再扣、不提示。
+ *  - 资源未配置 / 无 D1 / 任何异常 → 直接放行（fail-open），绝不因付费系统故障挡内容。
  *  - 使用幂等：unlockResource 以 resource_unlocks 兜底，重复打开不会重复使用燃币。
  *
  * @param {string} resourceKey 资源标识（文字内容默认 5；工具包可显式设为 10）
@@ -90,7 +92,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       setInfo(data)
       if (data.unlocked) return setPhase('content')
 
-      // 配了现金价的内容不自动扣燃币：先把付费墙亮出来，燃币作为次选
+      // 配了现金价的内容不自动扣燃币：只亮现金购买，不给燃币旁路
       if (Number(data.priceFen || 0) > 0) {
         setPhase('wall')
         return
@@ -143,6 +145,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
 
       {wall ? (
         <div className="mx-auto mt-6 max-w-2xl">
+          {/* 现金与燃币互斥：配了现金价就只走现金购买，不给燃币旁路绕过定价 */}
           {priceFen > 0 ? (
             <PayUnlockPanel
               resourceKey={resourceKey}
@@ -150,50 +153,50 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
               unitLabel={unitLabel}
               onUnlocked={() => setPhase('content')}
             />
-          ) : null}
-          <div className="mx-auto mt-4 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
-          <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
-            {priceFen > 0 ? `也可以使用燃币解锁（${cost} 枚）` : `🔥 燃币不足，还差 ${need} 枚`}
-          </p>
-          <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            {priceFen > 0 ? `用燃币需 ${cost} 枚 · 当前余额 ` : `自动解锁此${unitLabel}需 ${cost} 燃币 · 当前余额 `}
-            <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
-          </p>
-          <div className="mt-4 flex flex-col items-center gap-2">
-            {isGuest ? (
-              <>
-                <button
-                  type="button"
-                  onClick={goToLogin}
-                  className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
-                >
-                  注册 / 登录，立得 100 燃币
-                </button>
-                <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">
-                  绑定后之前解锁过的内容仍免费可读
-                </span>
-              </>
-            ) : (
-              <div className="flex flex-wrap justify-center gap-2">
-                <a
-                  href="#comments"
-                  className="rounded-full border border-[#caa86a] bg-white px-5 py-2 text-sm font-medium text-[#7a5b1e] hover:bg-[#fffdf7] dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                >
-                  评论 / 每日签到补燃币
-                </a>
-                <Link
-                  href="/ranbi#earn"
-                  className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-5 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
-                >
-                  免费获取 / 联系站长补充
-                </Link>
-              </div>
-            )}
-          </div>
-          <p className="mt-3 text-xs text-[#8a7a55] dark:text-amber-300/80">
-            燃币不支持充值，领取与补充无需捐助或赞助。
-          </p>
-          </div>
+          ) : (
+            <div className="mx-auto rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
+            <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
+              🔥 燃币不足，还差 {need} 枚
+            </p>
+            <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
+              自动解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
+            </p>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              {isGuest ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={goToLogin}
+                    className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-6 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+                  >
+                    注册 / 登录，立得 100 燃币
+                  </button>
+                  <span className="text-xs text-[#8a7a55] dark:text-amber-300/70">
+                    绑定后之前解锁过的内容仍免费可读
+                  </span>
+                </>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <a
+                    href="#comments"
+                    className="rounded-full border border-[#caa86a] bg-white px-5 py-2 text-sm font-medium text-[#7a5b1e] hover:bg-[#fffdf7] dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                  >
+                    评论 / 每日签到补燃币
+                  </a>
+                  <Link
+                    href="/ranbi#earn"
+                    className="rounded-full border border-[#caa86a] bg-[#7a5b1e] px-5 py-2 text-sm font-medium text-white hover:bg-[#6a4f19] dark:border-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+                  >
+                    免费获取 / 联系站长补充
+                  </Link>
+                </div>
+              )}
+            </div>
+            <p className="mt-3 text-xs text-[#8a7a55] dark:text-amber-300/80">
+              燃币不支持充值，领取与补充无需捐助或赞助。
+            </p>
+            </div>
+          )}
         </div>
       ) : null}
 

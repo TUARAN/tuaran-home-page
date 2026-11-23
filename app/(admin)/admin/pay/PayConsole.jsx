@@ -490,7 +490,7 @@ export default function PayConsole() {
         <div className="space-y-5">
           <Section
             title="内容现金定价"
-            description="price_fen 为 0 表示只走燃币；大于 0 时前台显示现金购买按钮。改价走 upsertResource，立即生效。"
+            description="现金与燃币互斥：price_fen > 0 只显示现金购买并自动挂「付费解锁」角标；为 0 时只走燃币。改价走 upsertResource，立即生效。"
           >
             {prices.length ? (
               <DataTable
@@ -501,6 +501,23 @@ export default function PayConsole() {
                     render: (row) => (
                       <span className="break-all font-mono text-[12px]">{row.resourceKey}</span>
                     ),
+                  },
+                  {
+                    key: 'accessMode',
+                    header: '状态',
+                    render: (row) => {
+                      const label = row.priceFen > 0 ? '现金解锁' : row.costPoints > 0 ? '燃币解锁' : '免费'
+                      const tone = row.priceFen > 0
+                        ? 'border-[#d8bd86] bg-[#fbf3de] text-[#7a5b1e] dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200'
+                        : row.costPoints > 0
+                          ? 'border-[#d8d5ce] bg-transparent text-[#6f6b63] dark:border-[#373d48] dark:text-[#aeb5c0]'
+                          : 'border-[var(--site-line)] bg-transparent text-[var(--site-faint)]'
+                      return (
+                        <span className={`inline-flex rounded-full border px-2 py-[2px] text-[11px] whitespace-nowrap ${tone}`}>
+                          {label}
+                        </span>
+                      )
+                    },
                   },
                   {
                     key: 'costPoints',
@@ -621,6 +638,10 @@ export default function PayConsole() {
             <li>
               现金价必须写进 D1 <code className="font-mono text-[12px]">gated_resources.price_fen</code>。
               research/resource 系列是代码按前缀合成的默认价，不在表里，需要先插入一行才会显示购买按钮。
+            </li>
+            <li>
+              现金与燃币互斥：配了现金价的内容只显示现金购买，不给燃币旁路（否则注册送的燃币会绕过定价）；
+              文章列表与详情页会自动挂「付费解锁」角标，无需改文章标签。
             </li>
             <li>
               改价走本页「内容定价」，它调用 upsertResource 让 60 秒资源缓存立即失效；直接改数据库要等缓存过期。

@@ -71,8 +71,10 @@ function DirectorySearchParamsSync({ onChange }) {
 
 export default function ArticlesIndexClient({
   items: staticItems,
+  paidKeys = [],
   initialFilters = EMPTY_DIRECTORY_FILTERS,
 }) {
+  const paidKeySet = useMemo(() => new Set(paidKeys), [paidKeys])
   const router = useRouter()
   const [items, setItems] = useState(staticItems)
   const [catalogReady, setCatalogReady] = useState(false)
@@ -459,6 +461,7 @@ export default function ArticlesIndexClient({
                     <ArticleListItem
                       key={item.id || `${item.kind}:${item.href}:${item.title}`}
                       item={nextItem}
+                      paid={paidKeySet.has(item.id)}
                       position={index + 1}
                       fromSearch={Boolean(filters.query)}
                       selectedSubject={filters.subject}

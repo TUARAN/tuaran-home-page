@@ -5,6 +5,8 @@ import Script from 'next/script'
 import { CATEGORY_META, COMPANY_TYPE_META, RESEARCH_CATEGORIES } from '../../../../../../lib/research/categories'
 import { getRuntimeResearchEntry, listRuntimeResearchByCategory } from '../../../../../../lib/research/researchRuntime'
 import { readContentAsset } from '../../../../../../lib/content/contentCatalogRuntime'
+import { getD1 } from '../../../../../../lib/db/d1'
+import { readPaidResourceKeys } from '../../../../../../lib/pay/publicPrices.mjs'
 import { avatarAbsoluteUrl } from '../../../../../../lib/auth/avatar'
 import { buildArticleOgUrl } from '../../../../../../lib/article/articleOg'
 import { buildResearchMarkdownDocument, extractToc, renderMarkdown } from '../../../../../../lib/research/markdown'
@@ -148,6 +150,8 @@ export default async function ResearchDetailPage({ params }) {
     ? shareTitle
     : entry.summary || entry.tldr || entry.title
   const articleKey = `research:${entry.category}:${entry.slug}`
+  const paidKeys = await readPaidResourceKeys(getD1)
+  const isPaidUnlock = paidKeys.includes(articleKey)
   const researchTaxonomy = taxonomyForResearch(entry)
   const disclaimerKind = topicDisclaimerKind({
     ...researchTaxonomy,
@@ -344,6 +348,7 @@ export default async function ResearchDetailPage({ params }) {
         summary={entry.tldr || entry.summary}
         summaryLabel={entry.tldr ? 'TL;DR' : ''}
         tags={entry.tags || []}
+        paid={isPaidUnlock}
       />
 
       <TopicDisclaimer kind={disclaimerKind} />

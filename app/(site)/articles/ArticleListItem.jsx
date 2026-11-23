@@ -3,6 +3,7 @@
 import Link, { useLinkStatus } from 'next/link'
 
 import CanvasOriginBadge from '../components/CanvasOriginBadge'
+import PaidUnlockBadge from '../components/PaidUnlockBadge'
 import { LoadingDots } from '../../components/loading/LoadingPrimitives'
 import {
   CONTENT_GROUP_META,
@@ -32,7 +33,7 @@ function formatPv(pv) {
   return String(number)
 }
 
-function RowBody({ item, external, group, displaySubject }) {
+function RowBody({ item, external, group, displaySubject, paid }) {
   const { pending } = useLinkStatus()
 
   return (
@@ -62,9 +63,11 @@ function RowBody({ item, external, group, displaySubject }) {
             {CONTENT_GROUP_META[group]?.label || '内容'}
           </span>
           <CanvasOriginBadge canvasId={item.canvasId} href={item.href} size="sm" />
+          {paid ? <PaidUnlockBadge /> : null}
         </div>
         <h2 className="h5-feed-title line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:ml-5 md:text-[17px] md:leading-7">
           {item.title}
+          {paid ? <PaidUnlockBadge className="ml-2 align-middle md:hidden" /> : null}
         </h2>
         {item.summary ? (
           <p className="h5-feed-summary mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] transition-colors md:ml-5 md:mt-2 md:line-clamp-2 md:text-sm md:leading-relaxed">
@@ -115,7 +118,7 @@ function RowBody({ item, external, group, displaySubject }) {
  * 点击后由 `useLinkStatus` 立即给出挂起态，服务端渲染阶段保持静态。
  * @param {{ item: object, position?: number, fromSearch?: boolean, selectedSubject?: string }} props
  */
-export default function ArticleListItem({ item, position, fromSearch = false, selectedSubject = 'all' }) {
+export default function ArticleListItem({ item, paid = false, position, fromSearch = false, selectedSubject = 'all' }) {
   const external = isExternalHref(item.href)
   const group = getContentGroup(item.contentKind)
   const displaySubject = getDisplaySubject(item.subjects, selectedSubject)
@@ -139,7 +142,7 @@ export default function ArticleListItem({ item, position, fromSearch = false, se
       data-analytics-position={position}
       className="h5-feed-row article-row group block touch-manipulation border-b border-[var(--site-line)] bg-transparent no-underline transition-colors duration-100 last:border-b-0 hover:bg-white/80 hover:no-underline dark:hover:bg-[#151d27]"
     >
-      <RowBody item={item} external={external} group={group} displaySubject={displaySubject} />
+      <RowBody item={item} external={external} group={group} displaySubject={displaySubject} paid={paid} />
     </Link>
   )
 }

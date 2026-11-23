@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 import { md5 } from '../lib/pay/md5.mjs'
 import { buildSign, verifySign, fenToYuan } from '../lib/pay/gateways/xunhupay.js'
@@ -141,4 +142,51 @@ test('订单汇总在无 D1 或空结果时返回全零', async () => {
     await summarizePaidOrders(emptyDb),
     { total: 0, paid: 0, pending: 0, abnormal: 0, revenueFen: 0 }
   )
+})
+
+test('付费墙现金与燃币互斥：配了现金价不再并列展示燃币解锁', () => {
+  const source = readFileSync(
+    new URL('../app/(site)/components/RanbiPaywall.jsx', import.meta.url),
+    'utf8',
+  )
+  // 现金面板与燃币卡片必须是三元表达式的两个分支，而不是各自独立渲染
+  assert.match(source, /priceFen > 0 \? \([\s\S]*?<PayUnlockPanel[\s\S]*?\) : \([\s\S]*?燃币不足/)
+  assert.doesNotMatch(source, /也可以使用燃币解锁/)
+  assert.doesNotMatch(source, /燃币作为次选/)
+  // 燃币卡片不再带 mt-4 上边距（现金面板已移除，它现在是唯一面板）
+  assert.doesNotMatch(source, /mx-auto mt-4 rounded-xl/)
+})
+
+test('付费解锁角标由价格自动派生：直读 D1 且 D1 不可用时不报错', async () => {
+  const { readPaidResourceKeys } = await import('../lib/pay/publicPrices.mjs')
+  const fakeDb = {
+    prepare(sql) {
+      assert.match(sql, /SELECT resource_key FROM gated_resources WHERE price_fen > 0/)
+      return { async all() { return { results: [
+        { resource_key: 'research:people:elon-musk' },
+        { resource_key: '  ' },
+        { resource_key: 'community:topic-circle' },
+      ] } } }
+    },
+  }
+  assert.deepEqual(await readPaidResourceKeys(fakeDb), [
+    'research:people:elon-musk',
+    'community:topic-circle',
+  ])
+  const brokenDb = { prepare() { throw new Error('D1 binding DB is missing') } }
+  assert.deepEqual(await readPaidResourceKeys(brokenDb), [])
+})
+
+test('角标复用同一组件，列表与详情都按 paid 派生而非硬编码标签', () => {
+  const badge = readFileSync(new URL('../app/(site)/components/PaidUnlockBadge.jsx', import.meta.url), 'utf8')
+  const item = readFileSync(new URL('../app/(site)/articles/ArticleListItem.jsx', import.meta.url), 'utf8')
+  const header = readFileSync(new URL('../app/(site)/components/ArticleDetailHeader.jsx', import.meta.url), 'utf8')
+  const listClient = readFileSync(new URL('../app/(site)/articles/ArticlesIndexClient.jsx', import.meta.url), 'utf8')
+  assert.match(badge, /付费解锁/)
+  assert.match(item, /paid \? <PaidUnlockBadge/)
+  assert.match(header, /paid \? <PaidUnlockBadge/)
+  assert.match(listClient, /paidKeySet\.has\(item\.id\)/)
+  // 角标只做展示，不读文章元数据、不写 SEO keywords
+  const badgeCode = badge.replace(/\/\*[\s\S]*?\*\//g, '')
+  assert.doesNotMatch(badgeCode, /frontmatter|tags|keywords|metadata/)
 })

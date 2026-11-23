@@ -354,10 +354,28 @@ function SourceList({ rows, loading }) {
   ))}</ol>
 }
 
-function AudiencePanel({ data, loading }) {
+function AudiencePanel({ data, loading, days = 7 }) {
   const breakdown = data?.breakdown || []
   const visitors = data?.visitors || []
   const totalPv = breakdown.reduce((sum, row) => sum + row.pv, 0)
+  const [openKey, setOpenKey] = useState(null)
+  const [detail, setDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
+
+  useEffect(() => { setOpenKey(null); setDetail(null); setDetailError('') }, [days])
+
+  const toggleReader = useCallback(async (visitor) => {
+    if (openKey === visitor.key) { setOpenKey(null); setDetail(null); setDetailError(''); return }
+    setOpenKey(visitor.key); setDetail(null); setDetailError(''); setDetailLoading(true)
+    try {
+      const res = await fetch(`/api/admin/content-weekly/reader?days=${encodeURIComponent(days)}&key=${encodeURIComponent(visitor.key)}`, { cache: 'no-store', credentials: 'same-origin' })
+      const json = await safeJson(res)
+      if (!res.ok) throw new Error(json?.detail || json?.error || `HTTP_${res.status}`)
+      setDetail(json)
+    } catch (e) { setDetailError(e?.message || 'READER_DETAIL_FAILED') } finally { setDetailLoading(false) }
+  }, [days, openKey])
+
   return (
     <div className="space-y-5">
       {loading ? <LoadingRows /> : breakdown.length ? (
@@ -366,7 +384,7 @@ function AudiencePanel({ data, loading }) {
           <div className="mt-3 grid grid-cols-3 gap-2">{breakdown.map((row) => <div key={row.type}><p className="text-[10px] text-[#8f9187] dark:text-gray-600">{AUDIENCE_LABELS[row.type] || row.type}</p><p className="mt-0.5 text-sm font-semibold text-[#171611] dark:text-gray-100">{row.uv} <span className="text-[10px] font-normal text-[#9a9b92]">UV</span></p></div>)}</div>
         </div>
       ) : <EmptyState title="暂无受众数据" description="新访问会区分登录用户、稳定游客和匿名访客。" />}
-      {visitors.length ? <div><h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">活跃读者</h3><ol className="divide-y divide-[#ecece5] dark:divide-[#202a37]">{visitors.slice(0, 8).map((visitor) => <li key={visitor.key} className="flex items-center justify-between gap-3 py-2.5"><div className="min-w-0"><p className="truncate text-xs font-medium text-[#171611] dark:text-gray-100">{visitor.name}</p><p className="mt-0.5 text-[10px] text-[#9a9b92] dark:text-gray-600">{AUDIENCE_LABELS[visitor.type] || visitor.type} · {visitor.contentCount} 篇 · {formatDateTime(visitor.lastSeen)}</p></div><span className="shrink-0 text-xs font-semibold">{visitor.pv} <span className="font-normal text-[#9a9b92]">PV</span></span></li>)}</ol></div> : null}
+      {visitors.length ? <div><h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.13em] text-[#8f9187] dark:text-gray-600">活跃读者</h3><ol className="divide-y divide-[#ecece5] dark:divide-[#202a37]">{visitors.slice(0, 8).map((visitor) => <li key={visitor.key || visitor.name}><button type="button" onClick={() => toggleReader(visitor)} aria-expanded={openKey === visitor.key} className="flex w-full items-center justify-between gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-[#f4f4ee] dark:hover:bg-[#182230]"><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-[#171611] dark:text-gray-100">{visitor.name}</span><span className="mt-0.5 block text-[10px] text-[#9a9b92] dark:text-gray-600">{AUDIENCE_LABELS[visitor.type] || visitor.type} · {visitor.contentCount} 篇 · {formatDateTime(visitor.lastSeen)}</span></span><span className="flex shrink-0 items-center gap-2"><span className="text-xs font-semibold">{visitor.pv} <span className="font-normal text-[#9a9b92]">PV</span></span><span className={`text-[#9a9b92] transition-transform ${openKey === visitor.key ? 'rotate-180' : ''}`}>▾</span></span></button>{openKey === visitor.key ? <div className="pb-3 pt-1">{detailLoading ? <p className="text-[11px] text-[#9a9b92]">正在加载阅读明细…</p> : detailError ? <p className="text-[11px] text-rose-600">读取失败：{detailError}</p> : detail?.reader ? (<div><p className="text-[11px] text-[#77796f] dark:text-gray-500">该周期 {number(detail.reader.pv)} PV · {detail.reader.contentCount} 篇 · 首次 {formatDateTime(detail.reader.firstSeen)} · 最近 {formatDateTime(detail.reader.lastSeen)}</p>{detail.content?.length ? <ul className="mt-2 space-y-1.5">{detail.content.map((item) => <li key={item.key} className="flex items-center justify-between gap-3 text-[11px]"><span className="min-w-0 truncate">{item.href ? <a href={item.href} target="_blank" rel="noreferrer" className="text-[#59736a] hover:underline dark:text-emerald-400">{item.title}</a> : <span className="text-[#171611] dark:text-gray-100">{item.title}</span>}</span><span className="shrink-0 text-[#9a9b92]">{item.pv} PV · {formatDateTime(item.lastSeen)}</span></li>)}</ul> : <p className="mt-2 text-[11px] text-[#9a9b92]">该周期没有内容明细。</p>}</div>) : <p className="text-[11px] text-[#9a9b92]">该周期没有读到内容。</p>}</div> : null}</li>)}</ol></div> : null}
     </div>
   )
 }
@@ -519,7 +537,7 @@ export default function ContentWeeklyClient() {
           <ContentTable rows={data?.topContent} loading={loading} showDelta={!cumulative} />
         </Section>
         <Section title="读者结构" description="登录用户可识别账号；游客使用站内稳定昵称，不展示原始指纹。" className="min-w-0">
-          <AudiencePanel data={data?.audience} loading={loading} />
+          <AudiencePanel data={data?.audience} loading={loading} days={days} />
         </Section>
       </div>
 
@@ -539,7 +557,7 @@ export default function ContentWeeklyClient() {
         <div className="grid gap-4 p-4 md:p-5 xl:grid-cols-[1.4fr_0.9fr_0.9fr]">
           <div className="min-w-0 rounded-xl bg-white p-4 dark:bg-[#111a24]"><h3 className="mb-3 text-sm font-semibold">今日文章排行</h3><ContentTable rows={today.topContent} loading={loading} emptyTitle="今天还没有阅读" showDelta={false} /></div>
           <div className="rounded-xl bg-white p-4 dark:bg-[#111a24]"><h3 className="mb-3 text-sm font-semibold">今日来源</h3><SourceList rows={today.sources} loading={loading} /></div>
-          <div className="rounded-xl bg-white p-4 dark:bg-[#111a24]"><h3 className="mb-3 text-sm font-semibold">今日读者 / 游客</h3><AudiencePanel data={todayAudience} loading={loading} /></div>
+          <div className="rounded-xl bg-white p-4 dark:bg-[#111a24]"><h3 className="mb-3 text-sm font-semibold">今日读者 / 游客</h3><AudiencePanel data={todayAudience} loading={loading} days={1} /></div>
         </div>
       </section>
       </details>

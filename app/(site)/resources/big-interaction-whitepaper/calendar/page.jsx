@@ -41,8 +41,8 @@ const jsonLd = {
   inLanguage: 'zh-CN',
   isPartOf: {
     '@type': 'WebPage',
-    name: '热榜',
-    url: 'https://x.2aran.com/x-workbench#hot',
+    name: '智能体',
+    url: 'https://x.2aran.com/x-workbench#agents',
   },
 }
 
@@ -71,11 +71,11 @@ export default async function BigInteractionCalendarPage() {
     activities = []
   }
   return (
-    <XSiteFrame active="/x-workbench#hot">
+    <XSiteFrame active="/x-workbench#agents">
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link className={styles.back} href="/x-workbench#hot">← 热榜</Link>
+      <Link className={styles.back} href="/x-workbench#agents">← 智能体</Link>
       <header className={styles.masthead}>
         <p className={styles.kicker}>往日记录</p>
         <h1>{title}</h1>

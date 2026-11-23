@@ -7,10 +7,10 @@
 公开首页展示简中区 X 热榜，并对照正在使用智能体插件的账号当天动作。
 
 ```
-热榜 → 智能体
+智能体 → 插件 → 读本
 ```
 
-热榜是全站 X 内容：首页通过开源 [x-bangdan](https://github.com/xiongma0-at/x-bangdan) 兼容接口 `GET /api/tweets` 与 `GET /api/creators` 读取推文爆款与涨粉潜力，不混用三个插件账号的雷达收录。环境变量 `X_HOT_BOARD_API_BASE` 指向自部署的 x-bangdan 根地址；未配置时使用仓库内置示例数据并提示配置。智能体区仍是矿工阿三 @tarsixseveneig1、矿长阿富 @TuaranX、矿工小十三 @tuaran003 的插件日报动作。公开读本为互动理论（`/theory`）；智能体手册（`/docs`）从登录后的智能体后台进入。日历从热榜进入，圆桌从互动理论进入。
+公开首页只展示站长智能体 @TuaranX 的插件日报动作，不展示第三方推文榜、涨粉榜或收录账号。读本为互动理论（`/theory`）、日历与圆桌；智能体手册（`/docs`）与排期、海报在登录后的 `/x-workbench/ops`。
 
 配对、排期、改写、海报在 `/x-workbench/ops`，登录后使用。核心产品仍是「X 大互动智能体」。
 
@@ -95,7 +95,7 @@
 | 雷达（爆发指数、筛选、监控备注、手动收录）、账号榜（今日/昨日/7 天 × 发帖/评论/曝光/互动，北京时间 8 点为界） | 已写并有测试 | `lib/x/workbench/radar*.js`、`app/api/x-workbench/{radar,leaderboard}` |
 | AI 改写、找角度（扣额度，失败退回；带账号人格与记忆） | 已写并有测试，需要 `DEEPSEEK_API_KEY` | `lib/x/workbench/rewrite*.js`、`llm.js` |
 | 海报（浏览器内 SVG 转 PNG，下载与复制） | 已写 | `posterCore.js`、`PosterTab.jsx` |
-| 公开首页（开源热榜前十、插件日报）；读本为互动理论；智能体手册在 ops 智能体后台；站长工具在 `/x-workbench/ops` | 已写 | `app/(x)/x-workbench/`、`lib/x/workbench/xHotBoard.js` |
+| 公开首页（@TuaranX 插件日报）；读本为互动理论；智能体手册在 ops；运营在 `/x-workbench/ops`（智能体 / 排期 / 海报） | 已写 | `app/(x)/x-workbench/` |
 | 插件桥模块（同步人格记忆、领取与回报排期、提交采集推文） | 已接入 `background.js`，使用 Bearer 配对令牌；有本地门禁与重启测试 | `tools/x-reply-clipboard-extension/workbenchBridge.js` |
 | 测试 | `tests/x-workbench/`、`tests/extensions/workbench-bridge.test.mjs` | |
 

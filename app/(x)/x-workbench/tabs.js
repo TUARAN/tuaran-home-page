@@ -1,11 +1,10 @@
-// 公开导航。今日看板两栏在首页展开；读本打开短地址。智能体手册在登录后的智能体后台。
+// 公开导航：产品入口 + 读本。运营工具在登录后的 /x-workbench/ops。
 export const WORKBENCH_MENU_GROUPS = [
   {
-    id: 'today',
-    label: '今日看板',
+    id: 'product',
+    label: '产品',
     items: [
-      { id: 'hot', label: '热榜', href: '/x-workbench#hot' },
-      { id: 'agents', label: '大互动智能体', href: '/x-workbench#agents' },
+      { id: 'agents', label: '智能体', href: '/x-workbench#agents' },
     ],
   },
   {

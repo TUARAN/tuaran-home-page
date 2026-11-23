@@ -138,6 +138,7 @@
 .fold summary { cursor: pointer; }
 .agentGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .agentCard { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.agentCardSolo { max-width: 28rem; }
 .agentMain { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 12px; }
 .agentMain b { font-size: 30px; font-weight: 800; color: var(--accentInk); line-height: 1; font-variant-numeric: tabular-nums; }
 .theoryGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }

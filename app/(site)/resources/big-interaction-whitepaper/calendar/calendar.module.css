@@ -64,6 +64,8 @@
 .board td span { display: block; color: #425f4b; font-weight: 600; }
 .board td.empty { padding: 28px 8px; color: #425f4b; font-size: 14px; line-height: 1.7; }
 .ownActivity { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d5e4d2; }
+.ownAccountStack { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.ownAccountBlock { border: 1px solid #d5e4d2; border-radius: 12px; background: #fff; padding: 10px 12px 12px; }
 .ownGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; margin-top: 10px; }
 .ownMetric { border: 1px solid #d5e4d2; border-radius: 12px; background: #fff; padding: 8px 10px; }
 .ownMetric span { display: block; color: #5d7364; font-size: 11px; font-weight: 700; line-height: 1.4; }

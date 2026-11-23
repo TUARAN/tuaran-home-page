@@ -21,7 +21,7 @@ export default function XSiteFrame({ active, children }) {
     <div className={`${s.app} ${s.xFrame}`}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>观察、跟进、智能</span></span></Link>
+          <Link className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>智能体 · 插件 · 读本</span></span></Link>
           <nav className={s.tabs} aria-label="功能">
             {WORKBENCH_MENU_GROUPS.map((group) => (
               <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
@@ -29,7 +29,7 @@ export default function XSiteFrame({ active, children }) {
                 {group.items.map((item) => {
                   const href = item.href || '/x-workbench'
                   const section = href.includes('#')
-                  const on = href === active || (active === '/x-workbench' && section && href.endsWith(hash || '#hot'))
+                  const on = href === active || (active === '/x-workbench' && section && href.endsWith(hash || '#agents'))
                   const className = `${s.tab} ${on ? s.tabOn : ''}`
                   const label = <>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</>
                   return item.external
@@ -39,10 +39,6 @@ export default function XSiteFrame({ active, children }) {
               </div>
             ))}
           </nav>
-          <form className={s.search} action="/x-workbench">
-            <input name="q" placeholder="搜账号、推文关键词" aria-label="搜索" />
-            <button type="submit" className={s.searchBtn}>搜索</button>
-          </form>
           <Link className={s.cta} href="/extension">获取插件</Link>
           <a className={s.btn} href={loginHref}>登录</a>
         </div>

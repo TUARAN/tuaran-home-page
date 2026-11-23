@@ -18,12 +18,8 @@ import { observeHome } from '../../lib/x/workbench/observeStore.js'
 
 const BANNED = /不是.+而是|本页|本篇|下面|接下来/
 
-test('三个被观察账号固定，理论结论对得到卡片指标', () => {
-  assert.deepEqual(OBSERVED_AGENTS.map((agent) => [agent.name, agent.handle]), [
-    ['矿工阿三', 'tarsixseveneig1'],
-    ['矿长阿富', 'TuaranX'],
-    ['矿工小十三', 'tuaran003'],
-  ])
+test('公开站只观察站长智能体，理论结论对得到卡片指标', () => {
+  assert.deepEqual(OBSERVED_AGENTS.map((agent) => [agent.name, agent.handle]), [['矿长阿富', 'TuaranX']])
   const metricKeys = new Set([...ACTION_LABELS.map(([key]) => key), 'views', 'interactions'])
   for (const point of THEORY_POINTS) {
     assert.equal(BANNED.test(point.text), false)
@@ -31,6 +27,7 @@ test('三个被观察账号固定，理论结论对得到卡片指标', () => {
   }
   assert.equal(BANNED.test(agentFootnote({ reportDate: '2026-11-23' })), false)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /2026-11-23/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@TuaranX/)
   assert.doesNotMatch(agentFootnote({ reportDate: '2026-11-23' }), /推文曝光/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
 })
@@ -138,7 +135,7 @@ test('热榜结论与涨粉榜结论', () => {
   assert.equal(hotBoardAccountConclusion([{ handle: 'demo', index: 88.2 }]), '今日涨粉潜力最高的是 @demo，指数 88.2。')
 })
 
-test('首页热榜走开源接口，智能体只保留日报动作', async () => {
+test('首页只返回自有智能体日报动作', async () => {
   const now = Date.UTC(2026, 10, 23, 6)
   const db = {
     prepare(sql) {
@@ -147,22 +144,20 @@ test('首页热榜走开源接口，智能体只保留日报动作', async () =>
         async all() {
           const text = String(sql)
           if (text.includes('x_extension_daily_reports')) {
-            return { results: [{ handle: 'tarsixseveneig1', comments: 3, likes: 1, follows: 2, unfollows: 0, followBacks: 1, posts: 4, timelineComments: null, notificationComments: null, kolComments: null }] }
+            return { results: [{ handle: 'TuaranX', comments: 3, likes: 1, follows: 2, unfollows: 0, followBacks: 1, posts: 4, timelineComments: null, notificationComments: null, kolComments: null }] }
           }
           throw new Error(`unexpected sql ${text}`)
         },
       }
     },
   }
-  const home = await observeHome(db, { hotBoardApiBase: '' }, now)
+  const home = await observeHome(db, {}, now)
   assert.equal(home.reportDate, '2026-11-23')
-  assert.equal(home.tweets.length >= 1, true)
-  assert.equal(home.accounts.length >= 1, true)
-  assert.deepEqual(home.agents.map((agent) => agent.handle), ['tarsixseveneig1', 'TuaranX', 'tuaran003'])
+  assert.equal(home.tweets, undefined)
+  assert.equal(home.accounts, undefined)
+  assert.deepEqual(home.agents.map((agent) => agent.handle), ['TuaranX'])
   assert.equal(home.agents[0].actions.posts, 4)
   assert.equal(home.agents[0].actions.follows, 2)
-  assert.equal(home.agents[0].views, undefined)
-  assert.equal(home.agents[1].actions.posts, null)
   assert.match(home.footnote, /2026-11-23/)
   assert.doesNotMatch(home.footnote, /8:00/)
 })

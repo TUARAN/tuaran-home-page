@@ -3,15 +3,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import AgentTab from './AgentTab'
-import BoardTab from './BoardTab'
 import PosterTab from './PosterTab'
-import RadarTab from './RadarTab'
 import ScheduleTab from './ScheduleTab'
 import XSiteFrame from './XSiteFrame'
 import { call } from './api'
 import s from './workbench.module.css'
 
-const PANELS = [['radar', '收录'], ['board', '账号观察'], ['agent', '智能体'], ['schedule', '排期'], ['poster', '海报']]
+const PANELS = [['agent', '智能体'], ['schedule', '排期'], ['poster', '海报']]
 
 export default function OperatorClient() {
   const [signedIn, setSignedIn] = useState(false)
@@ -68,8 +66,6 @@ export default function OperatorClient() {
               {accounts.map((account) => <option key={account.handle} value={account.handle}>@{account.handle}</option>)}
             </select>
           </div>
-          {panel === 'radar' && <RadarTab keyword="" onKeyword={() => {}} onPoster={(seed) => { setPosterSeed({ ...seed, at: Date.now() }); setPanel('poster') }} signedIn operator />}
-          {panel === 'board' && <BoardTab operator />}
           {panel === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
           {panel === 'schedule' && <ScheduleTab handle={handle} seed="" />}
           {panel === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}

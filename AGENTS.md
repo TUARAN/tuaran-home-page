@@ -104,6 +104,17 @@
 - 工作区混有其他改动时，默认只暂存当前任务相关文件；只有用户明确要求提交全部待提交改动时，才一并提交。
 - 用户对本次发布方式的明确指令优先于默认工作流或工具建议。
 
+## Cloudflare Pages 预览与部署
+
+只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。
+
+- 纯文档、进度说明、中间变基、同分支连推：提交说明以 `[CF-Pages-Skip]` 开头，跳过 Pages 预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
+- 合入 `main` 后看同一标记。squash 提交说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。
+- 跳过方式只有提交说明开头的 `[CF-Pages-Skip]`。不另造标记，不改 `wrangler.toml`、GitHub Actions、钩子或 Cloudflare 控制台。
+- 细则见 `docs/runbooks/issue-first-workflow.md` 的「预览、内容与合并」和 `docs/specs/branch-management.md`。
+
+未听到站长说「合」之前，不 squash、不合并、不发布。
+
 ## Codex 协助署名
 
 - Codex 实质参与编写、且由 Codex 创建的提交，在提交说明末尾留空行后添加 `Co-authored-by: Codex <noreply@openai.com>`。仅审阅、解释、检索或运行检查时不添加；不得把其他工具的工作记到 Codex 名下。

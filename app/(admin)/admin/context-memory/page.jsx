@@ -3,9 +3,9 @@ import MemoryVault from '../../../(site)/context-memory/MemoryVault'
 import { AdminPage } from '../../components/ui'
 
 // 标题与描述只在这里维护一次，metadata 与页面头部共用。
-const PAGE_TITLE = '上下文库'
+const PAGE_TITLE = '站点记忆'
 const PAGE_DESCRIPTION =
-  '加密保存的上下文快照：Claude Code 项目记忆与仓库 docs/context 文档。输入密码在本机解密，按版本时间线查看。'
+  '站点记忆保存加密的项目快照：Claude Code 项目记忆与仓库 docs/context 文档。输入密码在本机解密，按版本时间线查看。'
 
 export const metadata = {
   title: PAGE_TITLE,

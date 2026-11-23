@@ -1,44 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { LoadingState } from '../../components/loading/LoadingPrimitives'
 
 import { renderMarkdown } from '../../../lib/research/markdown'
-
-// 与 scripts/snapshot-memory.mjs 严格一致的解密
-async function deriveKey(passphrase, salt, iterations) {
-  const enc = new TextEncoder()
-  const baseKey = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(passphrase),
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey'],
-  )
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-    baseKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt'],
-  )
-}
-
-function b64ToBytes(b64) {
-  const bin = atob(b64)
-  const out = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-  return out
-}
-
-async function decryptBlob(blob, passphrase) {
-  const salt = b64ToBytes(blob.kdf.salt)
-  const iv = b64ToBytes(blob.iv)
-  const ct = b64ToBytes(blob.ciphertext)
-  const key = await deriveKey(passphrase, salt, blob.kdf.iter)
-  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
-  return new TextDecoder().decode(pt)
-}
 
 function formatTs(iso) {
   if (!iso) return ''
@@ -51,47 +16,50 @@ function formatTs(iso) {
   return `${y}-${m}-${day} ${h}:${min}`
 }
 
+const SOURCE_META = {
+  claude: { label: 'Claude Code 项目记忆' },
+  'ai-context': { label: '仓库 docs/context/' },
+}
+
 export default function MemoryVault() {
-  const [manifest, setManifest] = useState(null)
+  const [versions, setVersions] = useState(null)
   const [manifestError, setManifestError] = useState('')
-  const [passphrase, setPassphrase] = useState('')
-  const [unlocked, setUnlocked] = useState(false)
   const [active, setActive] = useState(null) // { sourceId, slug }
   const [versionIdx, setVersionIdx] = useState(-1)
-  const [decryptedHtml, setDecryptedHtml] = useState('')
-  const [decryptError, setDecryptError] = useState('')
+  const [contentHtml, setContentHtml] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [revealPwd, setRevealPwd] = useState(false)
-  const decryptTimer = useRef(null)
 
   useEffect(() => {
-    fetch('/data/memory/manifest.json', { cache: 'no-cache' })
+    fetch('/api/admin/site-memory', { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
       })
-      .then(setManifest)
+      .then((data) => setVersions(data.versions || []))
       .catch((e) => setManifestError(String(e?.message || e)))
   }, [])
 
-  // 按源分组的文件列表（保留 manifest 里的顺序，源内按标题排）
   const grouped = useMemo(() => {
-    if (!manifest?.sources) return []
-    return Object.entries(manifest.sources).map(([sid, src]) => ({
-      sourceId: sid,
-      label: src.label,
-      description: src.description,
-      files: Object.entries(src.files || {})
-        .map(([slug, file]) => ({
-          sourceId: sid,
-          slug,
-          title: file.title,
-          description: file.description,
-          versions: file.versions || [],
-        }))
-        .sort((a, b) => a.title.localeCompare(b.title)),
+    if (!versions) return []
+    const sources = new Map()
+    for (const v of versions) {
+      if (!sources.has(v.source_id)) sources.set(v.source_id, new Map())
+      const files = sources.get(v.source_id)
+      if (!files.has(v.slug)) {
+        files.set(v.slug, { sourceId: v.source_id, slug: v.slug, title: v.title, description: v.description, versions: [] })
+      }
+      const file = files.get(v.slug)
+      file.title = v.title
+      file.description = v.description
+      file.versions.push({ id: v.id, ts: v.created_at, hash: v.hash, bytes: v.bytes })
+    }
+    return [...sources.entries()].map(([sourceId, files]) => ({
+      sourceId,
+      label: SOURCE_META[sourceId]?.label || sourceId,
+      files: [...files.values()].sort((x, y) => x.title.localeCompare(y.title)),
     }))
-  }, [manifest])
+  }, [versions])
 
   const findFile = (sourceId, slug) => {
     for (const g of grouped) {
@@ -103,31 +71,19 @@ export default function MemoryVault() {
 
   const activeFile = active ? findFile(active.sourceId, active.slug) : null
 
-  async function decryptVersion(file, idx, pwd) {
-    const passToUse = pwd ?? passphrase
-    if (!passToUse) return
+  async function loadVersion(file, idx) {
     const version = file.versions[idx]
     if (!version) return
     setBusy(true)
-    setDecryptError('')
+    setLoadError('')
     try {
-      const res = await fetch(`/data/memory/${version.path}`, {
-        cache: 'force-cache',
-      })
+      const res = await fetch(`/api/admin/site-memory?id=${version.id}`, { cache: 'no-store' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const blob = await res.json()
-      const plaintext = await decryptBlob(blob, passToUse)
-      const html = renderMarkdown(plaintext, { breaks: true })
-      setDecryptedHtml(html)
-      setUnlocked(true)
+      const data = await res.json()
+      setContentHtml(renderMarkdown(data.content || '', { breaks: true }))
     } catch (err) {
-      const msg = String(err?.message || err)
-      if (msg.includes('OperationError') || msg.includes('decrypt')) {
-        setDecryptError('解密失败，密码错误或密文损坏')
-      } else {
-        setDecryptError(msg)
-      }
-      setDecryptedHtml('')
+      setLoadError(String(err?.message || err))
+      setContentHtml('')
     } finally {
       setBusy(false)
     }
@@ -137,55 +93,41 @@ export default function MemoryVault() {
     setActive({ sourceId: file.sourceId, slug: file.slug })
     const latestIdx = file.versions.length - 1
     setVersionIdx(latestIdx)
-    setDecryptedHtml('')
-    setDecryptError('')
-    if (passphrase && latestIdx >= 0) decryptVersion(file, latestIdx)
+    setContentHtml('')
+    setLoadError('')
+    if (latestIdx >= 0) loadVersion(file, latestIdx)
   }
 
   function selectVersion(file, idx) {
     setVersionIdx(idx)
-    setDecryptedHtml('')
-    setDecryptError('')
-    if (passphrase) decryptVersion(file, idx)
+    setContentHtml('')
+    setLoadError('')
+    loadVersion(file, idx)
   }
-
-  // 密码变了 + 已选文件 → 防抖自动尝试解密
-  useEffect(() => {
-    if (decryptTimer.current) clearTimeout(decryptTimer.current)
-    if (!passphrase || !activeFile || versionIdx < 0) return
-    decryptTimer.current = setTimeout(() => {
-      decryptVersion(activeFile, versionIdx)
-    }, 300)
-    return () => {
-      if (decryptTimer.current) clearTimeout(decryptTimer.current)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [passphrase])
 
   if (manifestError) {
     return (
       <div className="rounded-md border border-dashed border-[#b0b1a3] bg-[#f1f2ec] p-4 text-sm text-[#575a43] dark:border-[#3a4554] dark:bg-[#161d27] dark:text-[#a9b3c4]">
-        manifest 读取失败：{manifestError}。先在本地跑一次 <code className="font-mono">pnpm snapshot-memory</code> 并 commit。
+        站点记忆读取失败：{manifestError}。确认已登录后台，并已执行 migration 0132。
       </div>
     )
   }
 
-  if (!manifest) {
+  if (!versions) {
     return (
       <LoadingState label="正在加载记忆索引" compact />
     )
   }
 
-  const generatedAt = manifest.generatedAt ? formatTs(manifest.generatedAt) : '—'
+  const generatedAt = versions.length
+    ? formatTs(versions.reduce((m, v) => (v.created_at > m ? v.created_at : m), ''))
+    : '—'
   const totalFiles = grouped.reduce((a, g) => a + g.files.length, 0)
-  const totalVersions = grouped.reduce(
-    (a, g) => a + g.files.reduce((b, f) => b + f.versions.length, 0),
-    0,
-  )
+  const totalVersions = versions.length
 
   return (
     <div className="space-y-3">
-      {/* Header: meta + password 一行搞定 */}
+      {/* Header: meta */}
       <div className="rounded-md border border-[#cdcfc5] bg-[#f3f4ee] p-3 dark:border-[#2b3744] dark:bg-[#0f1722]">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#67695d] dark:text-[#9aa6b7]">
           <span>更新 {generatedAt}</span>
@@ -193,53 +135,16 @@ export default function MemoryVault() {
           <span>文件 {totalFiles}</span>
           <span className="opacity-50">·</span>
           <span>版本累计 {totalVersions}</span>
-          <span className="opacity-50">·</span>
-          <span>PBKDF2-200k / AES-GCM-256</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            type={revealPwd ? 'text' : 'password'}
-            value={passphrase}
-            onChange={(e) => {
-              setPassphrase(e.target.value)
-              if (!e.target.value) {
-                setUnlocked(false)
-                setDecryptedHtml('')
-              }
-              setDecryptError('')
-            }}
-            placeholder="输入密码自动解密"
-            autoComplete="off"
-            className="min-w-[14rem] flex-1 rounded border border-[#c2c6b8] bg-white px-2 py-1.5 font-mono text-sm text-[#15140f] dark:border-[#33425a] dark:bg-[#091018] dark:text-gray-100"
-          />
-          <button
-            type="button"
-            onClick={() => setRevealPwd((v) => !v)}
-            className="rounded border border-[#c2c6b8] bg-white px-2 py-1.5 text-xs text-[#505247] hover:bg-[#f1f2ec] dark:border-[#33425a] dark:bg-[#091018] dark:text-[#a9b3c4] dark:hover:bg-[#10202e]"
-          >
-            {revealPwd ? '隐藏' : '显示'}
-          </button>
-          {unlocked && (
-            <span className="rounded bg-[#e2f1ec] px-2 py-1 font-mono text-[10px] text-[#22715c] dark:bg-[#14332b] dark:text-[#83d0bb]">
-              ✓ 已解密
-            </span>
-          )}
-          {busy && (
-            <span className="font-mono text-[10px] text-[#67695d] dark:text-[#9aa6b7]">解密中…</span>
-          )}
-          {decryptError && (
-            <span className="font-mono text-[10px] text-[#a14545] dark:text-[#b89f9f]">{decryptError}</span>
-          )}
         </div>
       </div>
 
-      {/* 两栏：左侧紧凑文件树，右侧解密视图 */}
+      {/* 两栏：左侧紧凑文件树，右侧内容视图 */}
       <div className="grid gap-3 md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* Left: grouped file tree */}
         <aside className="rounded-md border border-[#cdcfc5] bg-white/70 p-2 text-sm dark:border-[#2b3744] dark:bg-[#0f1722]">
           {grouped.length === 0 && (
             <p className="px-2 py-3 text-xs text-[#767869] dark:text-[#8ea0b7]">
-              暂无记录。本地跑 <code className="font-mono">pnpm snapshot-memory</code>。
+              暂无记录。本地跑 <code className="font-mono">pnpm snapshot-memory</code> 写入。
             </p>
           )}
           <div className="space-y-3">
@@ -293,9 +198,9 @@ export default function MemoryVault() {
             <div className="flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 text-sm text-[#767869] dark:text-[#8ea0b7]">
               <div className="font-mono text-[11px] uppercase tracking-[0.18em]">empty state</div>
               <p className="max-w-sm text-center text-[13px] leading-7">
-                左侧选一个文件后，在密码框输入即可自动解密。
+                左侧选一个文件查看内容。
                 <br />
-                公开元信息：{totalFiles} 个文件 · {totalVersions} 个版本。
+                当前共 {totalFiles} 个文件 · {totalVersions} 个版本。
               </p>
             </div>
           ) : (
@@ -324,7 +229,7 @@ export default function MemoryVault() {
                 </span>
                 {activeFile.versions.map((v, i) => (
                   <button
-                    key={v.path}
+                    key={v.id}
                     type="button"
                     onClick={() => selectVersion(activeFile, i)}
                     className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
@@ -340,18 +245,14 @@ export default function MemoryVault() {
               </div>
 
               {/* Content */}
-              {decryptedHtml ? (
+              {contentHtml ? (
                 <article
                   className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-serif prose-pre:bg-[#1a1f28] prose-pre:text-[#dadcd3]"
-                  dangerouslySetInnerHTML={{ __html: decryptedHtml }}
+                  dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
               ) : (
                 <div className="rounded border border-dashed border-[#c2c6b8] bg-[#f1f2ec] px-3 py-8 text-center text-xs text-[#575a43] dark:border-[#33425a] dark:bg-[#0a1119] dark:text-[#9aa6b7]">
-                  {passphrase
-                    ? busy
-                      ? '解密中…'
-                      : decryptError || '等待解密'
-                    : '上方密码框输入密码即自动解密'}
+                  {busy ? '加载中…' : loadError || '等待加载'}
                 </div>
               )}
             </div>

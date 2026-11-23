@@ -16,15 +16,9 @@ fi
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-echo "[pre-push] snapshot-memory --if-changed …"
-# 缺密码会静默跳过，不阻断 push
-node scripts/snapshot-memory.mjs --if-changed || true
-
-# 如果快照产出了新文件，提示但不阻断（commit 在另一边手动）
-if ! git diff --quiet -- public/data/memory 2>/dev/null; then
-  echo "[pre-push] ⚠ public/data/memory 有未提交变化（新加密快照）。push 不会带上它，"
-  echo "          回头记得 git add public/data/memory && git commit。"
-fi
+# 站点记忆已迁到 D1：快照写入是显式操作，pre-push 不再自动写远程生产库。
+# 需要更新记忆时，站长手动执行 pnpm snapshot-memory（会写远程 D1）。
+echo "[pre-push] site-memory snapshot: skipped (manual pnpm snapshot-memory)"
 
 echo "[pre-push] public asset size check …"
 node scripts/check-public-asset-size.mjs

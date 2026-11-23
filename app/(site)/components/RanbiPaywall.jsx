@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { balanceWithGuestTrial } from '../../../lib/ledger/guestTrial'
+import PayUnlockPanel from './PayUnlockPanel'
 
 async function safeJson(res) {
   const text = await res.text()
@@ -89,6 +90,12 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       setInfo(data)
       if (data.unlocked) return setPhase('content')
 
+      // 配了现金价的内容不自动扣燃币：先把付费墙亮出来，燃币作为次选
+      if (Number(data.priceFen || 0) > 0) {
+        setPhase('wall')
+        return
+      }
+
       const cost = Number(data.cost || 0)
       if (balanceWithGuestTrial(data) >= cost) {
         // 内容页只有这一个受控入口；服务端以 resource_unlocks 幂等，重复进入不重复扣款。
@@ -120,6 +127,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
   const balance = Number(info.balance || 0)
   const isGuest = !info.authed
   const need = Number(info.need ?? Math.max(0, cost - balance))
+  const priceFen = Number(info.priceFen || 0)
 
   return (
     <div>
@@ -134,12 +142,22 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
       </div>
 
       {wall ? (
-        <div className="mx-auto mt-6 max-w-2xl rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
+        <div className="mx-auto mt-6 max-w-2xl">
+          {priceFen > 0 ? (
+            <PayUnlockPanel
+              resourceKey={resourceKey}
+              priceFen={priceFen}
+              unitLabel={unitLabel}
+              onUnlocked={() => setPhase('content')}
+            />
+          ) : null}
+          <div className="mx-auto mt-4 rounded-xl border border-[#e2d9c4] bg-[#fbf7ee] p-6 text-center dark:border-amber-900/40 dark:bg-amber-950/20">
           <p className="text-base font-semibold text-[#7a5b1e] dark:text-amber-200">
-            🔥 燃币不足，还差 {need} 枚
+            {priceFen > 0 ? `也可以使用燃币解锁（${cost} 枚）` : `🔥 燃币不足，还差 ${need} 枚`}
           </p>
           <p className="mt-1.5 text-sm text-[#8a7a55] dark:text-amber-300/80">
-            自动解锁此{unitLabel}需 {cost} 燃币 · 当前余额 <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
+            {priceFen > 0 ? `用燃币需 ${cost} 枚 · 当前余额 ` : `自动解锁此${unitLabel}需 ${cost} 燃币 · 当前余额 `}
+            <span className="font-semibold">{balance}</span> 燃币 · 解锁后永久有效
           </p>
           <div className="mt-4 flex flex-col items-center gap-2">
             {isGuest ? (
@@ -175,6 +193,7 @@ export default function RanbiPaywall({ resourceKey, children, unitLabel = '内�
           <p className="mt-3 text-xs text-[#8a7a55] dark:text-amber-300/80">
             燃币不支持充值，领取与补充无需捐助或赞助。
           </p>
+          </div>
         </div>
       ) : null}
 

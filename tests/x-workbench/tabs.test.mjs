@@ -7,7 +7,7 @@ import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-wor
 test('X大互动顶部按今天和读本展示，公开菜单没有站长工具', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
     ['今天', ['流量', '大互动智能体']],
-    ['读本', ['大互动理论', '智能体手册']],
+    ['读本', ['大互动理论', '智能体手册', '大互动日历', '大互动圆桌']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
   for (const removed of ['AI 改写', '排期', '海报', '推文榜', '账号榜', '绿皮书', '黄皮书', 'AI分发大师']) {
@@ -18,6 +18,8 @@ test('X大互动顶部按今天和读本展示，公开菜单没有站长工具'
     ['大互动智能体', '/x-workbench#agents', false],
     ['大互动理论', '/theory', false],
     ['智能体手册', '/docs', false],
+    ['大互动日历', '/calendar', false],
+    ['大互动圆桌', '/roundtable', false],
   ])
   assert.equal(WORKBENCH_MENU_GROUPS.some((group) => ['工作', '实践', '理论'].includes(group.label)), false)
 })

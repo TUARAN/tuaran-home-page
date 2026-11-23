@@ -14,6 +14,8 @@ export const WORKBENCH_MENU_GROUPS = [
     items: [
       { id: 'theory', label: '大互动理论', href: '/theory' },
       { id: 'manual', label: '智能体手册', href: '/docs' },
+      { id: 'calendar', label: '大互动日历', href: '/calendar' },
+      { id: 'roundtable', label: '大互动圆桌', href: '/roundtable' },
     ],
   },
 ]

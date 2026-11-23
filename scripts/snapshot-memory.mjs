@@ -1,28 +1,21 @@
 #!/usr/bin/env node
-// 加密快照本地的 Claude / 仓库 docs/context 记忆，输出到 public/data/memory/。
-// 每次内容变化才写一份新版本（按 SHA-256 比对），密文用 AES-GCM-256 + PBKDF2-SHA256 派生密钥。
-// 密码来源：环境变量 TUARAN_MEMORY_KEY，或 ~/.tuaran-memory-key 文件。
-// 浏览器端解密用 Web Crypto API，与 Node 端的密文格式严格对齐（ct||tag 拼接）。
+// 把本地的 Claude 项目记忆 / 仓库 docs/context 快照写入 D1 表 site_memory_versions（明文）。
+// 后台「站点记忆」页通过 owner 鉴权的 /api/admin/site-memory 读取；内容不再进仓库或公开静态目录。
+// 每次内容变化才追加一个版本（按 SHA-256 与该文件最新版本比对）。
+// 依赖 wrangler 已登录；本机代理会掐断连接时，先清空 HTTP_PROXY / HTTPS_PROXY。
 //
 // 用法：
-//   pnpm snapshot-memory                  # 缺密码会报错退出
-//   pnpm snapshot-memory --if-changed     # pre-push 钩子用：缺密码静默跳过
+//   pnpm snapshot-memory                  # 写入远程 D1（显式手动执行）
+//   pnpm snapshot-memory --if-changed     # 容错模式：失败只警告不退出非 0
 
-import {
-  readFileSync,
-  writeFileSync,
-  readdirSync,
-  existsSync,
-  mkdirSync,
-  statSync,
-} from 'node:fs'
-import { homedir } from 'node:os'
+import { readFileSync, readdirSync, existsSync, statSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import crypto from 'node:crypto'
 
 const REPO_ROOT = process.cwd()
-const OUT_DIR = path.join(REPO_ROOT, 'public/data/memory')
-const MANIFEST_PATH = path.join(OUT_DIR, 'manifest.json')
+const DB_NAME = 'tuaran-me'
 
 const SOURCES = [
   {
@@ -35,56 +28,13 @@ const SOURCES = [
     ),
   },
   {
-    // id 继续用 ai-context：密文路径是 ai-context/<slug>/<时间>.enc.json，改 id 会另起一套版本线。
+    // id 继续用 ai-context：改 id 会另起一套版本线。
     id: 'ai-context',
     label: '仓库 docs/context/',
     description: '仓库内长期保存的架构 / 规划 / 审查文档',
     dir: path.join(REPO_ROOT, 'docs/context'),
   },
 ]
-
-// 加密参数（与 MemoryVault.jsx 必须一致）
-const KDF_ITER = 200000
-const KEY_BYTES = 32 // AES-256
-const SALT_BYTES = 16
-const IV_BYTES = 12 // AES-GCM 标准 IV
-const MIN_PASSPHRASE_LENGTH = 24
-
-function readPassphrase() {
-  const env = process.env.TUARAN_MEMORY_KEY
-  if (env && env.length > 0) return env.trim()
-  const keyfile = path.join(homedir(), '.tuaran-memory-key')
-  if (existsSync(keyfile)) {
-    const v = readFileSync(keyfile, 'utf8').trim()
-    if (v) return v
-  }
-  return null
-}
-
-function deriveKey(passphrase, salt) {
-  return crypto.pbkdf2Sync(passphrase, salt, KDF_ITER, KEY_BYTES, 'sha256')
-}
-
-function encryptBlob(plaintext, passphrase) {
-  const salt = crypto.randomBytes(SALT_BYTES)
-  const iv = crypto.randomBytes(IV_BYTES)
-  const key = deriveKey(passphrase, salt)
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
-  const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
-  const tag = cipher.getAuthTag()
-  return {
-    v: 1,
-    kdf: {
-      alg: 'PBKDF2-SHA256',
-      iter: KDF_ITER,
-      salt: salt.toString('base64'),
-    },
-    cipher: 'AES-GCM',
-    iv: iv.toString('base64'),
-    // Web Crypto subtle.decrypt(AES-GCM) 要求 ct||tag 串在一起
-    ciphertext: Buffer.concat([ct, tag]).toString('base64'),
-  }
-}
 
 function sha256Hex(s) {
   return crypto.createHash('sha256').update(s).digest('hex')
@@ -101,58 +51,36 @@ function parseFrontmatter(md) {
   return meta
 }
 
-function tsForPath() {
-  return new Date().toISOString().replace(/[:.]/g, '-')
+function sqlStr(v) {
+  return `'${String(v).replace(/'/g, "''")}'`
 }
 
-function loadManifest() {
-  if (!existsSync(MANIFEST_PATH)) {
-    return {
-      generatedAt: null,
-      kdf: { algorithm: 'PBKDF2-SHA256', iterations: KDF_ITER, keyBits: 256 },
-      cipher: 'AES-GCM',
-      sources: {},
-    }
-  }
-  try {
-    return JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'))
-  } catch {
-    console.error('[snapshot-memory] manifest corrupted, refusing to overwrite')
-    process.exit(2)
-  }
+function wrangler(args) {
+  return execFileSync('npx', ['wrangler', 'd1', 'execute', DB_NAME, '--remote', ...args], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  })
 }
 
-function saveManifest(manifest) {
-  mkdirSync(OUT_DIR, { recursive: true })
-  manifest.generatedAt = new Date().toISOString()
-  writeFileSync(
-    MANIFEST_PATH,
-    JSON.stringify(manifest, null, 2) + '\n',
-    'utf8',
-  )
-}
-
-// 取除 generatedAt 之外的部分作为「实质内容」指纹
-function manifestFingerprint(manifest) {
-  const { generatedAt: _ignored, ...rest } = manifest
-  return JSON.stringify(rest, null, 2)
+function latestHashes() {
+  const out = wrangler([
+    '--json',
+    '--command',
+    'SELECT source_id, slug, hash FROM site_memory_versions WHERE id IN (SELECT MAX(id) FROM site_memory_versions GROUP BY source_id, slug)',
+  ])
+  const parsed = JSON.parse(out.slice(out.indexOf('[')))
+  const map = new Map()
+  for (const row of parsed?.[0]?.results || []) map.set(`${row.source_id}/${row.slug}`, row.hash)
+  return map
 }
 
 function main() {
   const ifChanged = process.argv.includes('--if-changed')
-  const passphrase = readPassphrase()
-  if (!passphrase) {
-    if (ifChanged) {
-      console.log('[snapshot-memory] no passphrase set, skipping (pre-push soft mode).')
-      process.exit(0)
-    }
-    console.error('[snapshot-memory] no passphrase found.')
-    console.error('  Set env: export TUARAN_MEMORY_KEY="your-long-passphrase"')
-    console.error('  Or write to ~/.tuaran-memory-key (chmod 600).')
-    process.exit(1)
-  }
-  if (passphrase.length < MIN_PASSPHRASE_LENGTH) {
-    const message = `[snapshot-memory] passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters; refusing to publish offline-guessable ciphertext.`
+  try {
+    run()
+  } catch (error) {
+    const message = `[snapshot-memory] failed: ${String(error?.message || error).split('\n')[0]}`
     if (ifChanged) {
       console.warn(message)
       process.exit(0)
@@ -160,91 +88,53 @@ function main() {
     console.error(message)
     process.exit(1)
   }
+}
 
-  const manifest = loadManifest()
-  const fingerprintBefore = manifestFingerprint(manifest)
-  let writes = 0
+function run() {
+  const known = latestHashes()
+  const now = new Date().toISOString()
+  const statements = []
 
   for (const source of SOURCES) {
     if (!existsSync(source.dir)) {
       console.warn(`[snapshot-memory] source dir missing, skip: ${source.dir}`)
       continue
     }
-    if (!manifest.sources[source.id]) {
-      manifest.sources[source.id] = {
-        label: source.label,
-        description: source.description,
-        files: {},
-      }
-    } else {
-      // Always refresh label/description from script source-of-truth
-      manifest.sources[source.id].label = source.label
-      manifest.sources[source.id].description = source.description
-    }
-    const srcEntry = manifest.sources[source.id]
-
     const files = readdirSync(source.dir)
       .filter((f) => f.endsWith('.md'))
-      .filter((f) => {
-        const st = statSync(path.join(source.dir, f))
-        return st.isFile()
-      })
+      .filter((f) => statSync(path.join(source.dir, f)).isFile())
       .sort()
-
     for (const filename of files) {
-      const fullPath = path.join(source.dir, filename)
-      const content = readFileSync(fullPath, 'utf8')
+      const content = readFileSync(path.join(source.dir, filename), 'utf8')
       const slug = filename.replace(/\.md$/, '')
       const hash = sha256Hex(content)
+      if (known.get(`${source.id}/${slug}`) === hash) continue
       const meta = parseFrontmatter(content)
-
-      if (!srcEntry.files[slug]) {
-        srcEntry.files[slug] = {
-          title: meta.name || meta.title || slug,
-          description: meta.description || '',
-          versions: [],
-        }
-      }
-      const fileEntry = srcEntry.files[slug]
-      // Title / description 公开（用于导航），可被覆盖
-      fileEntry.title = meta.name || meta.title || slug
-      fileEntry.description = meta.description || ''
-
-      const last = fileEntry.versions[fileEntry.versions.length - 1]
-      if (last && last.hash === hash) {
-        continue // 内容未变
-      }
-
-      const ts = new Date().toISOString()
-      const blob = encryptBlob(content, passphrase)
-      const relPath = `${source.id}/${slug}/${tsForPath()}.enc.json`
-      const absPath = path.join(OUT_DIR, relPath)
-      mkdirSync(path.dirname(absPath), { recursive: true })
-      writeFileSync(absPath, JSON.stringify(blob) + '\n', 'utf8')
-
-      fileEntry.versions.push({
-        ts,
-        hash,
-        path: relPath,
-        bytes: content.length,
-      })
-      writes++
-      console.log(`[snapshot-memory] + ${source.id}/${slug} @ ${ts}`)
+      statements.push(
+        `INSERT INTO site_memory_versions (source_id, slug, title, description, hash, content, bytes, created_at) VALUES (${[
+          source.id,
+          slug,
+          meta.name || meta.title || slug,
+          meta.description || '',
+          hash,
+          content,
+        ]
+          .map(sqlStr)
+          .join(', ')}, ${Buffer.byteLength(content, 'utf8')}, ${sqlStr(now)});`,
+      )
+      console.log(`[snapshot-memory] + ${source.id}/${slug}`)
     }
   }
 
-  const fingerprintAfter = manifestFingerprint(manifest)
-  if (fingerprintBefore !== fingerprintAfter) {
-    saveManifest(manifest)
+  if (statements.length === 0) {
+    console.log('[snapshot-memory] nothing changed.')
+    return
   }
-
-  if (writes === 0 && fingerprintBefore === fingerprintAfter) {
-    console.log('[snapshot-memory] nothing changed, manifest left untouched.')
-  } else if (writes === 0) {
-    console.log('[snapshot-memory] metadata-only update written.')
-  } else {
-    console.log(`[snapshot-memory] done. ${writes} new version(s) written.`)
-  }
+  const dir = mkdtempSync(path.join(tmpdir(), 'site-memory-'))
+  const file = path.join(dir, 'snapshot.sql')
+  writeFileSync(file, statements.join('\n') + '\n', 'utf8')
+  wrangler(['--file', file])
+  console.log(`[snapshot-memory] done. ${statements.length} new version(s) written to D1.`)
 }
 
 main()

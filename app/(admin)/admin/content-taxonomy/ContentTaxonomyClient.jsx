@@ -76,26 +76,30 @@ export default function ContentTaxonomyClient() {
           </div>
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{SUBJECT_GOVERNANCE_LIST.length} 个启用主题</span>
         </div>
-        <div className="mt-3 grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
-          {SUBJECT_GOVERNANCE_LIST.map((item) => (
-            <article key={item.id} className="rounded-lg border border-[#e1e1d6] bg-white p-3 dark:border-[#2d3744] dark:bg-[#10161f]">
-              <div className="flex items-start justify-between gap-2">
+        <div className="mt-3 overflow-hidden rounded-xl border border-[#e1e1d6] bg-white dark:border-[#2d3744] dark:bg-[#10161f]">
+          <div className="hidden gap-3 border-b border-[#e9e9df] bg-[#fafaf6] px-3 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#858779] md:grid md:grid-cols-[minmax(140px,0.85fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] dark:border-[#2d3744] dark:bg-[#0e131c]">
+            <span>主题 / 别名</span>
+            <span>定义</span>
+            <span className="text-emerald-700 dark:text-emerald-300">纳入</span>
+            <span className="text-rose-700 dark:text-rose-300">排除</span>
+          </div>
+          <div className="divide-y divide-[#e9e9df] dark:divide-[#2d3744]">
+            {SUBJECT_GOVERNANCE_LIST.map((item) => (
+              <div key={item.id} className="grid gap-1.5 px-3 py-2.5 md:grid-cols-[minmax(140px,0.85fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] md:items-start md:gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-[14px] font-semibold leading-5 text-[#15140f] dark:text-gray-100">{item.label}</h3>
-                  <code className="block truncate text-[9px] leading-4 text-[#858779]">{item.id}</code>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-[#15140f] dark:text-gray-100">{item.label}</span>
+                    <span className="shrink-0 rounded-full bg-[#f0efe7] px-1.5 font-mono text-[9px] text-[#51514a] dark:bg-[#202936] dark:text-gray-300">{subjectCounts[item.id].total} 条</span>
+                  </div>
+                  <code className="block truncate text-[9px] text-[#858779]">{item.id}</code>
+                  <p className="mb-0 mt-0.5 truncate text-[9px] text-[#858779]" title={`别名：${item.aliases.join('、')}`}>别名：{item.aliases.join('、')}</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-[#f0efe7] px-2 py-0.5 font-mono text-[9px] text-[#51514a] dark:bg-[#202936] dark:text-gray-300">
-                  {subjectCounts[item.id].total} 条
-                </span>
+                <p className="m-0 text-[11px] leading-5 text-[#51514a] dark:text-gray-300">{item.definition}</p>
+                <p className="m-0 text-[11px] leading-5 text-[#51514a] dark:text-gray-300"><span className="mr-1 font-semibold text-emerald-700 dark:text-emerald-300">纳入</span>{item.includes.join('、')}</p>
+                <p className="m-0 text-[11px] leading-5 text-[#51514a] dark:text-gray-300"><span className="mr-1 font-semibold text-rose-700 dark:text-rose-300">排除</span>{item.excludes.join('、')}</p>
               </div>
-              <p className="mt-2 text-[11px] leading-5 text-[#51514a] dark:text-gray-300">{item.definition}</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[#efefe8] pt-2 dark:border-[#27313d]">
-                <div><p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">纳入</p><p className="mt-0.5 text-[10px] leading-[1.45] text-[#73746a] dark:text-[#9aa3b3]">{item.includes.join('、')}</p></div>
-                <div><p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">排除</p><p className="mt-0.5 text-[10px] leading-[1.45] text-[#73746a] dark:text-[#9aa3b3]">{item.excludes.join('、')}</p></div>
-              </div>
-              <p className="mb-0 mt-2 truncate text-[9px] text-[#858779]" title={`别名：${item.aliases.join('、')}`}>别名：{item.aliases.join('、')}</p>
-            </article>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 

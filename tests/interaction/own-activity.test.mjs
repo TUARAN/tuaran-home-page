@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { loadOwnActivityDays, ownActivityMetrics } from '../../lib/interaction/dailyTop/ownActivity.js'
+import { interactionAgentHandles } from '../../lib/interaction/agentPool.js'
+import { loadOwnActivityDays, loadOwnActivityDaysForPool, ownActivityMetrics } from '../../lib/interaction/dailyTop/ownActivity.js'
 
 function row(reportDate, counts) {
   return { report_date: reportDate, ...counts }
@@ -77,4 +78,28 @@ test('missing optional columns fall back, and a missing table returns no days', 
   }
   assert.deepEqual(await loadOwnActivityDays(missing, { today: '2026-11-15' }), [])
   assert.deepEqual(await loadOwnActivityDays(null, { today: '2026-11-15' }), [])
+})
+
+test('pool loader merges each account on the same calendar date', async () => {
+  const db = {
+    prepare() {
+      return {
+        bind(_from, _to, handle) {
+          this.handle = handle
+          return this
+        },
+        async all() {
+          if (this.handle === 'TuaranX') {
+            return { results: [{ report_date: '2026-11-14', comments: 2, likes: 0, follows: 0, unfollows: 0, follow_backs: 0, posts: 1, prunes: 0, timeline_comments: 0, notification_comments: 0, kol_comments: 0 }] }
+          }
+          return { results: [{ report_date: '2026-11-14', comments: 5, likes: 1, follows: 0, unfollows: 0, follow_backs: 0, posts: 0, prunes: 0, timeline_comments: 0, notification_comments: 0, kol_comments: 0 }] }
+        },
+      }
+    },
+  }
+  const days = await loadOwnActivityDaysForPool(db, { today: '2026-11-15', handles: ['tarsixseveneig1', 'TuaranX'] })
+  assert.equal(days.length, 2)
+  assert.deepEqual(days.map((day) => day.accountHandle).sort(), ['TuaranX', 'tarsixseveneig1'].sort())
+  assert.deepEqual(new Set(days.map((day) => day.date)), new Set(['2026-11-15']))
+  assert.equal(interactionAgentHandles().length, 3)
 })

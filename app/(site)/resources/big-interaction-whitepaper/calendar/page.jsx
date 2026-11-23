@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { getOptionalRequestContext } from '@cloudflare/next-on-pages'
 
 import { getD1 } from '../../../../../lib/db/d1.js'
-import { loadOwnActivityDays } from '../../../../../lib/interaction/dailyTop/ownActivity.js'
+import { interactionAgentHandles } from '../../../../../lib/interaction/agentPool.js'
+import { loadOwnActivityDaysForPool } from '../../../../../lib/interaction/dailyTop/ownActivity.js'
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
 import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
 import { loadGrokbotExecutions } from '../../../../../lib/interaction/grokbotExecutions/load.js'
@@ -66,7 +67,7 @@ export default async function BigInteractionCalendarPage() {
   const executions = loadGrokbotExecutions()
   let activities = []
   try {
-    activities = await loadOwnActivityDays(db, { today })
+    activities = await loadOwnActivityDaysForPool(db, { today })
   } catch {
     activities = []
   }
@@ -79,7 +80,9 @@ export default async function BigInteractionCalendarPage() {
       <header className={styles.masthead}>
         <p className={styles.kicker}>往日记录</p>
         <h1>{title}</h1>
-        <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及本账号各任务完成了多少次。页内另有独立的 Grokbot 执行记录台账。</p>
+        <p className={styles.deck}>
+          选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及智能体账号池（当前 {interactionAgentHandles().length} 个：{interactionAgentHandles().map((h) => `@${h}`).join('、')}）各任务完成了多少次。页内另有独立的 Grokbot 执行记录台账。
+        </p>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>
         <p className={styles.permalink}>公开地址 <a href={path}>{canonicalUrl}</a></p>
       </header>

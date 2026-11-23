@@ -39,7 +39,8 @@ function ActivityCountdown({ countdown }) {
 
 export default function CommunityMembershipCard({ compact = false, id, waitlist = false, topicName = '' }) {
   const [selectedPlanId, setSelectedPlanId] = useState(COMMUNITY_MEMBERSHIP.plans[0].id)
-  const [countdown, setCountdown] = useState(() => getCommunityCountdown())
+  // 倒计时只在客户端刷新，避免 SSR 与 hydration 时刻不一致触发 React #418。
+  const [countdown, setCountdown] = useState(null)
 
   useEffect(() => {
     const update = () => setCountdown(getCommunityCountdown())
@@ -135,7 +136,7 @@ export default function CommunityMembershipCard({ compact = false, id, waitlist 
           </div>
         </div>
 
-        <ActivityCountdown countdown={countdown} />
+        {countdown ? <ActivityCountdown countdown={countdown} /> : null}
 
         <div className="community-membership-plans" role="radiogroup" aria-label="选择圈子或个人服务方案">
           {COMMUNITY_MEMBERSHIP.plans.map((plan) => {

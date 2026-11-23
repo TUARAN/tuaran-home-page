@@ -48,12 +48,11 @@ export default function CommunityPayPanel({ plan }) {
     let cancelled = false
     settledRef.current = false
     if (!resourceKey || !user?.id) return () => { cancelled = true }
-    safeJson(
-      fetch(`/api/points/unlock?resourceKey=${encodeURIComponent(resourceKey)}`, {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      })
-    )
+    fetch(`/api/points/unlock?resourceKey=${encodeURIComponent(resourceKey)}`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+      .then(safeJson)
       .then((data) => {
         if (cancelled) return
         if (data?.unlocked) {

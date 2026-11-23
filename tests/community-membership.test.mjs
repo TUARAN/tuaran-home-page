@@ -51,16 +51,29 @@ test('membership card uses xunhupay panel instead of static QR codes', () => {
   assert.doesNotMatch(membershipCard, /发送付款截图/)
 })
 
-test('xunhupay panel creates order by resource key and polls own order status', () => {
+test('membership card collects an email instead of asking buyers to add WeChat', () => {
+  assert.match(membershipCard, /付款后留下邮箱/)
+  assert.match(membershipCard, /留下联系邮箱/)
+  assert.match(membershipCard, /is-email/)
+  assert.doesNotMatch(membershipCard, /付款后添加作者微信/)
+  assert.doesNotMatch(membershipCard, /添加时这样说/)
+  assert.doesNotMatch(membershipCard, /写清微信昵称/)
+})
+
+test('pay panel lets guests pay and collects an email after payment', () => {
   assert.match(payPanel, /\/api\/pay\/create/)
   assert.match(payPanel, /\/api\/pay\/status/)
-  assert.match(payPanel, /\/api\/points\/unlock/)
+  assert.match(payPanel, /\/api\/pay\/contact/)
   assert.match(payPanel, /resourceKey/)
   assert.match(payPanel, /支付成功/)
+  assert.match(payPanel, /type="email"/)
+  assert.match(payPanel, /提交邮箱/)
   assert.doesNotMatch(payPanel, /付款截图/)
-  // 付款权益必须挂登录账号，401 时先登录
-  assert.match(payPanel, /res\.status === 401/)
-  assert.match(payPanel, /\/login\?returnTo=/)
+  // 免登录：不再跳登录页，也不再依赖账号解锁记录
+  assert.doesNotMatch(payPanel, /\/login\?returnTo=/)
+  assert.doesNotMatch(payPanel, /useSessionAccount/)
+  assert.doesNotMatch(payPanel, /\/api\/points\/unlock/)
+  assert.doesNotMatch(payPanel, /加作者微信/)
 })
 
 test('public payment copy names only the signed WeChat channel', () => {

@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
-import { useSessionAccount } from './SessionProvider'
+const STORAGE_PREFIX = 'community:pay:'
+const REMEMBER_MS = 7 * 24 * 60 * 60 * 1000
 
 function safeJson(res) {
   return res
@@ -15,22 +16,52 @@ function fenLabel(fen) {
   return (Number(fen || 0) / 100).toFixed(Number(fen) % 100 === 0 ? 0 : 2)
 }
 
+function readStored(resourceKey) {
+  if (!resourceKey || typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${resourceKey}`)
+    const data = raw ? JSON.parse(raw) : null
+    if (!data?.orderNo || Date.now() - Number(data.at || 0) > REMEMBER_MS) return null
+    return data
+  } catch {
+    return null
+  }
+}
+
+function writeStored(resourceKey, data) {
+  if (!resourceKey || typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(`${STORAGE_PREFIX}${resourceKey}`, JSON.stringify({ ...data, at: Date.now() }))
+  } catch {
+    // 隐私模式下写不了本地存储，不影响本次付款
+  }
+}
+
+function validEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim())
+}
+
 /**
  * 社群方案的在线支付面板。
- * - 只认登录账号：付款权益挂账号，建单 401 时先登录再回来。
- * - 下单拿网关二维码，3 秒轮询本人订单状态；支付回调写 resource_unlocks。
- * - 已支付（本次轮询命中或再次进入查到 unlock）→ 展示加微信进群引导，不再发截图。
+ * - 不用登录：圈子订单由服务端签发游客身份，登录用户仍按账号记录。
+ * - 下单拿网关二维码，3 秒轮询本人订单状态；支付回调写订单。
+ * - 已支付 → 请用户留邮箱，作为站长核对订单后的联系方式。
  * - 支付网关未配置 / 价格未设 → 给出可读提示，不暴露接口细节。
  */
 export default function CommunityPayPanel({ plan }) {
   const resourceKey = plan?.resourceKey || ''
   const priceFen = Math.round(Number(plan?.price || 0) * 100)
   const planName = plan?.name || '所选方案'
-  const { user } = useSessionAccount()
+  const emailInputId = useId()
 
   const [phase, setPhase] = useState('idle') // idle | creating | qr | paid | error
   const [order, setOrder] = useState(null)
+  const [paidOrderNo, setPaidOrderNo] = useState('')
   const [message, setMessage] = useState('')
+  const [email, setEmail] = useState('')
+  const [emailSaved, setEmailSaved] = useState(false)
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailError, setEmailError] = useState('')
   const pollRef = useRef(null)
   const settledRef = useRef(false)
 
@@ -43,34 +74,39 @@ export default function CommunityPayPanel({ plan }) {
 
   useEffect(() => stopPolling, [stopPolling])
 
-  // 再次进入时识别已支付状态：只有登录账号的 unlock 记录算数
+  const markPaid = useCallback(
+    (orderNo) => {
+      if (settledRef.current) return
+      settledRef.current = true
+      stopPolling()
+      setOrder(null)
+      setPaidOrderNo(String(orderNo || ''))
+      const stored = readStored(resourceKey)
+      setEmail(String(stored?.email || ''))
+      setEmailSaved(Boolean(stored?.email))
+      setPhase('paid')
+    },
+    [stopPolling, resourceKey]
+  )
+
+  // 再次进入时凭本地记住的订单号认已支付，不依赖登录账号的解锁记录
   useEffect(() => {
     let cancelled = false
     settledRef.current = false
-    if (!resourceKey || !user?.id) return () => { cancelled = true }
-    fetch(`/api/points/unlock?resourceKey=${encodeURIComponent(resourceKey)}`, {
+    const stored = readStored(resourceKey)
+    if (!resourceKey || !stored?.orderNo) return () => { cancelled = true }
+    fetch(`/api/pay/status?orderNo=${encodeURIComponent(stored.orderNo)}`, {
       cache: 'no-store',
       credentials: 'same-origin',
     })
       .then(safeJson)
       .then((data) => {
         if (cancelled) return
-        if (data?.unlocked) {
-          settledRef.current = true
-          setPhase('paid')
-        }
+        if (data?.unlocked || data?.status === 'paid') markPaid(stored.orderNo)
       })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [resourceKey, user?.id])
-
-  const markPaid = useCallback(() => {
-    if (settledRef.current) return
-    settledRef.current = true
-    stopPolling()
-    setOrder(null)
-    setPhase('paid')
-  }, [stopPolling])
+  }, [resourceKey, markPaid])
 
   const poll = useCallback(
     async (orderNo) => {
@@ -79,13 +115,19 @@ export default function CommunityPayPanel({ plan }) {
           cache: 'no-store',
           credentials: 'same-origin',
         })
+        if (res.status === 401) {
+          stopPolling()
+          setPhase('error')
+          setMessage('浏览器没有保存订单身份，请允许 Cookie 后重新下单。')
+          return
+        }
         const data = await safeJson(res)
-        if (data?.unlocked || data?.status === 'paid') markPaid()
+        if (data?.unlocked || data?.status === 'paid') markPaid(orderNo)
       } catch {
-        // 网络抖动继续轮询，由总时长兜底
+        // 网络抖动继续轮询
       }
     },
-    [markPaid]
+    [markPaid, stopPolling]
   )
 
   useEffect(() => {
@@ -98,24 +140,22 @@ export default function CommunityPayPanel({ plan }) {
     setPhase('creating')
     setMessage('')
     try {
+      const returnTo = `${window.location.pathname}${window.location.search || ''}`
       const res = await fetch('/api/pay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ resourceKey }),
+        body: JSON.stringify({ resourceKey, returnTo }),
       })
       const data = await safeJson(res)
-      if (res.status === 401) {
-        const returnTo = `${window.location.pathname}${window.location.search || ''}`
-        window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`
-        return
-      }
       if (data?.error === 'ALREADY_UNLOCKED') {
-        markPaid()
+        markPaid('')
         return
       }
       if (!res.ok || data?.ok === false) {
         const map = {
+          UNAUTHORIZED: '下单需要保存订单身份，请允许 Cookie 后重试。',
+          GUEST_UNAVAILABLE: '订单身份暂时不可用，请稍后再试。',
           PRICE_NOT_SET: '这个方案还没开放在线支付，请联系站长。',
           GATEWAY_NOT_CONFIGURED: '支付通道正在配置，稍后再试或联系站长。',
           GATEWAY_REQUEST_FAILED: '支付网关暂时不可用，稍后再试。',
@@ -126,10 +166,55 @@ export default function CommunityPayPanel({ plan }) {
         return
       }
       setOrder(data)
+      setPaidOrderNo(String(data?.orderNo || ''))
+      writeStored(resourceKey, { orderNo: data?.orderNo || '', email: '' })
       setPhase('qr')
     } catch (e) {
       setPhase('error')
       setMessage(String(e?.message || e))
+    }
+  }
+
+  async function submitEmail(event) {
+    event.preventDefault()
+    const value = email.trim()
+    if (!validEmail(value)) {
+      setEmailError('请填写有效的邮箱地址')
+      return
+    }
+    if (!paidOrderNo) {
+      setEmailError('没找到订单号，请刷新页面后重试')
+      return
+    }
+    setEmailBusy(true)
+    setEmailError('')
+    try {
+      const res = await fetch('/api/pay/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ orderNo: paidOrderNo, email: value }),
+      })
+      const data = await safeJson(res)
+      if (!res.ok || data?.ok === false) {
+        const map = {
+          INVALID_EMAIL: '邮箱格式不对，请检查后再提交。',
+          ORDER_NOT_FOUND: '没找到这笔订单，请刷新页面后重试。',
+          ORDER_NOT_PAID: '订单还没确认支付成功，稍等几秒再试。',
+          UNAUTHORIZED: '浏览器没有保存订单身份，请允许 Cookie 后重新下单。',
+          CONTACT_UNAVAILABLE: '联系方式暂时无法保存，请稍后再试。',
+        }
+        setEmailError(map[data?.error] || `提交失败（HTTP ${res.status}）`)
+        return
+      }
+      const saved = String(data?.email || value).toLowerCase()
+      setEmail(saved)
+      setEmailSaved(true)
+      writeStored(resourceKey, { orderNo: paidOrderNo, email: saved })
+    } catch (e) {
+      setEmailError(String(e?.message || e))
+    } finally {
+      setEmailBusy(false)
     }
   }
 
@@ -141,8 +226,42 @@ export default function CommunityPayPanel({ plan }) {
           <strong>支付成功</strong>
         </div>
         <p className="community-xh-pay-note">
-          请加作者微信，说明「{planName}」已付款。站长按后台订单核对后拉你进群。
+          {emailSaved
+            ? `已收到 ${email}，站长核对订单后会通过这个邮箱联系你。`
+            : `请留下邮箱作为联系方式，站长核对「${planName}」订单后通过邮件联系你。`}
         </p>
+        {!emailSaved ? (
+          paidOrderNo ? (
+            <form className="community-xh-pay-email" onSubmit={submitEmail}>
+              <label htmlFor={emailInputId}>联系邮箱</label>
+              <input
+                id={emailInputId}
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setEmailError('')
+                }}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
+              <button type="submit" disabled={emailBusy || !paidOrderNo} className="community-xh-pay-button">
+                {emailBusy ? '提交中…' : '提交邮箱'}
+              </button>
+            </form>
+          ) : (
+            <p className="community-xh-pay-note">这个方案此前已购买，无需重复付款。</p>
+          )
+        ) : (
+          <div className="community-xh-pay-actions">
+            <button type="button" onClick={() => setEmailSaved(false)} className="community-xh-pay-cancel">
+              修改邮箱
+            </button>
+          </div>
+        )}
+        {emailError ? <p className="community-xh-pay-error">{emailError}</p> : null}
+        {paidOrderNo ? <p className="community-xh-pay-order">订单号 {paidOrderNo}</p> : null}
       </div>
     )
   }
@@ -163,7 +282,7 @@ export default function CommunityPayPanel({ plan }) {
             )}
           </div>
           <p className="community-xh-pay-note">
-            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，支付成功本页自动识别。
+            微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，无需登录，支付成功本页自动识别。
           </p>
           <div className="community-xh-pay-actions">
             <button type="button" onClick={() => poll(order.orderNo)} className="community-xh-pay-refresh">
@@ -189,7 +308,7 @@ export default function CommunityPayPanel({ plan }) {
             {phase === 'creating' ? '正在下单…' : `¥${fenLabel(priceFen)} 立即支付`}
           </button>
           <p className="community-xh-pay-note">
-            微信扫码，付款后自动识别，无需发截图。
+            微信扫码，无需登录；付款后留个邮箱，站长会联系你。
           </p>
           {phase === 'error' && message ? <p className="community-xh-pay-error">{message}</p> : null}
         </>

@@ -9,6 +9,8 @@ import {
   accountBoardConclusion,
   agentFootnote,
   blankActions,
+  hotBoardAccountConclusion,
+  hotBoardTweetConclusion,
   presentRadarPerformance,
   tweetBoardConclusion,
 } from '../../lib/x/workbench/observeCore.js'
@@ -28,8 +30,8 @@ test('三个被观察账号固定，理论结论对得到卡片指标', () => {
     for (const key of point.metrics) assert.equal(metricKeys.has(key), true)
   }
   assert.equal(BANNED.test(agentFootnote({ reportDate: '2026-11-23' })), false)
-  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /8:00/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /2026-11-23/)
+  assert.doesNotMatch(agentFootnote({ reportDate: '2026-11-23' }), /推文曝光/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
 })
 
@@ -128,7 +130,15 @@ test('没有收录推文时曝光与互动是未采集，有推文时 0 保留',
   })
 })
 
-test('首页汇总把三个账号放在同一统计日，缺日报显示空动作', async () => {
+test('热榜结论与涨粉榜结论', () => {
+  assert.match(hotBoardTweetConclusion([
+    { category: 'AI实战', score: 80 },
+    { category: 'AI实战', score: 20 },
+  ]), /AI实战/)
+  assert.equal(hotBoardAccountConclusion([{ handle: 'demo', index: 88.2 }]), '今日涨粉潜力最高的是 @demo，指数 88.2。')
+})
+
+test('首页热榜走开源接口，智能体只保留日报动作', async () => {
   const now = Date.UTC(2026, 10, 23, 6)
   const db = {
     prepare(sql) {
@@ -136,18 +146,6 @@ test('首页汇总把三个账号放在同一统计日，缺日报显示空动�
         bind() { return this },
         async all() {
           const text = String(sql)
-          if (text.includes('x_radar_topic_suggestions')) {
-            return { results: [{ tweet_id: '1', topic: '电路' }] }
-          }
-          if (text.includes('GROUP BY lower(handle)')) {
-            return { results: [{ handle: 'tarsixseveneig1', tweets: 1, views: 100, likes: 4, reposts: 1, replies: 2 }] }
-          }
-          if (text.includes('GROUP BY handle')) {
-            return { results: [{ handle: 'bob', display_name: 'Bob', views: 40 }, { handle: 'alice', display_name: 'A', views: 60 }] }
-          }
-          if (text.includes('x_radar_items')) {
-            return { results: [{ id: '1', handle: 'alice', display_name: 'A', text: 'hello', url: 'https://x.com/alice/status/1', media: 'image', views: 100, likes: 4, reposts: 1, replies: 2 }] }
-          }
           if (text.includes('x_extension_daily_reports')) {
             return { results: [{ handle: 'tarsixseveneig1', comments: 3, likes: 1, follows: 2, unfollows: 0, followBacks: 1, posts: 4, timelineComments: null, notificationComments: null, kolComments: null }] }
           }
@@ -156,17 +154,15 @@ test('首页汇总把三个账号放在同一统计日，缺日报显示空动�
       }
     },
   }
-  const home = await observeHome(db, now)
+  const home = await observeHome(db, { hotBoardApiBase: '' }, now)
   assert.equal(home.reportDate, '2026-11-23')
+  assert.equal(home.tweets.length >= 1, true)
+  assert.equal(home.accounts.length >= 1, true)
   assert.deepEqual(home.agents.map((agent) => agent.handle), ['tarsixseveneig1', 'TuaranX', 'tuaran003'])
   assert.equal(home.agents[0].actions.posts, 4)
   assert.equal(home.agents[0].actions.follows, 2)
-  assert.equal(home.agents[0].views, 100)
-  assert.equal(home.agents[0].interactions, 7)
+  assert.equal(home.agents[0].views, undefined)
   assert.equal(home.agents[1].actions.posts, null)
-  assert.equal(home.agents[1].views, null)
-  assert.match(home.tweetConclusion, /电路/)
-  assert.deepEqual(home.accounts.map((row) => row.handle), ['bob', 'alice'])
-  assert.match(home.accountConclusion, /@alice/)
   assert.match(home.footnote, /2026-11-23/)
+  assert.doesNotMatch(home.footnote, /8:00/)
 })

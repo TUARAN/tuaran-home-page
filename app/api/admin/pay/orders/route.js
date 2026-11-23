@@ -1,6 +1,7 @@
 import { getOwnerOrReject } from '../../../../../lib/admin/adminAuth'
 import { getD1 } from '../../../../../lib/db/d1'
 import { grantPaidOrder, listPaidOrders, readPriceFen } from '../../../../../lib/pay/orders'
+import { summarizePaidOrders } from '../../../../../lib/pay/summary.mjs'
 import { getPointRules, upsertResource } from '../../../../../lib/ledger/points'
 
 export const runtime = 'edge'
@@ -25,8 +26,11 @@ export async function GET(req) {
   const url = new URL(req.url)
   const status = String(url.searchParams.get('status') || '').trim()
   const limit = Number(url.searchParams.get('limit') || 100)
-  const orders = await listPaidOrders(db, { status, limit })
-  return Response.json({ ok: true, orders })
+  const [orders, summary] = await Promise.all([
+    listPaidOrders(db, { status, limit }),
+    summarizePaidOrders(db),
+  ])
+  return Response.json({ ok: true, orders, summary })
 }
 
 /**

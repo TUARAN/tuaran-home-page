@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { md5 } from '../lib/pay/md5.mjs'
 import { buildSign, verifySign, fenToYuan } from '../lib/pay/gateways/xunhupay.js'
 import { newOrderNo, isAmountMatch, normalizeResourceKey, canReuseOrder } from '../lib/pay/rules.mjs'
+import { summarizePaidOrders } from '../lib/pay/summary.mjs'
 
 test('md5 与 node:crypto 对齐（含 UTF-8）', () => {
   const samples = [
@@ -105,4 +106,39 @@ test('分转元不丢精度', () => {
   assert.equal(fenToYuan(1000), '10.00')
   assert.equal(fenToYuan(1999), '19.99')
   assert.equal(fenToYuan(0), '0.00')
+})
+
+test('订单汇总只把已支付计入营收，并分别统计待支付与异常', async () => {
+  let seenSql = ''
+  const fakeDb = {
+    prepare(sql) {
+      seenSql = sql
+      return {
+        bind() { return this },
+        async first() {
+          return { total: 5, paid: 2, pending: 2, abnormal: 1, revenue_fen: 3500 }
+        },
+      }
+    },
+  }
+  const out = await summarizePaidOrders(fakeDb)
+  assert.deepEqual(out, { total: 5, paid: 2, pending: 2, abnormal: 1, revenueFen: 3500 })
+  assert.match(seenSql, /FROM paid_orders/)
+  assert.match(seenSql, /status = 'paid'/)
+})
+
+test('订单汇总在无 D1 或空结果时返回全零', async () => {
+  assert.deepEqual(
+    await summarizePaidOrders(null),
+    { total: 0, paid: 0, pending: 0, abnormal: 0, revenueFen: 0 }
+  )
+  const emptyDb = {
+    prepare() {
+      return { bind() { return this }, async first() { return null } }
+    },
+  }
+  assert.deepEqual(
+    await summarizePaidOrders(emptyDb),
+    { total: 0, paid: 0, pending: 0, abnormal: 0, revenueFen: 0 }
+  )
 })

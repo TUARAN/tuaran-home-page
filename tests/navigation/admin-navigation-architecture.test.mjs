@@ -39,6 +39,7 @@ test('admin trails retain workspace context for deep routes', () => {
   assert.deepEqual(resolveAdminTrail('/admin/morning-greeting').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/x-replies').map((item) => item.label), ['自动化', '社区动作'])
   assert.deepEqual(resolveAdminTrail('/admin/points').map((item) => item.label), ['用户与权限', '燃币与权益'])
+  assert.deepEqual(resolveAdminTrail('/admin/pay').map((item) => item.label), ['用户与权限', '支付订单'])
   assert.deepEqual(resolveAdminTrail('/admin/access/grants').map((item) => item.label), ['用户与权限', '授权管理'])
   assert.deepEqual(resolveAdminTrail('/admin/security-self-check').map((item) => item.label), ['工程与运维', '涉密自检'])
   assert.deepEqual(resolveAdminTrail('/admin/design').map((item) => item.label), ['工程与运维', 'UI 设计'])

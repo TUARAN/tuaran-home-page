@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 把 git 的 hooksPath 指向 scripts/hooks/，让仓库里的 pre-push 等钩子生效。
+// 把 git 的 hooksPath 指向 scripts/hooks/，让仓库里的 pre-commit / pre-push 钩子生效。
 // 由 package.json 的 `prepare` 脚本在 npm install 后自动执行。
 // 跳过：CI 环境（CI=true）或非 git 仓库时不动。
 
@@ -20,8 +20,9 @@ if (!existsSync(path.join(repoRoot, '.git'))) {
 try {
   execSync('git config core.hooksPath scripts/hooks', { stdio: 'ignore', cwd: repoRoot })
   // 确保钩子可执行
+  execSync('chmod +x scripts/hooks/pre-commit', { stdio: 'ignore', cwd: repoRoot })
   execSync('chmod +x scripts/hooks/pre-push', { stdio: 'ignore', cwd: repoRoot })
-  console.log('[setup-hooks] core.hooksPath → scripts/hooks (pre-push lint guard active)')
+  console.log('[setup-hooks] core.hooksPath → scripts/hooks (pre-commit worktree guard + pre-push lint guard active)')
 } catch {
   // 无 git 或 chmod 不支持时静默退出
 }

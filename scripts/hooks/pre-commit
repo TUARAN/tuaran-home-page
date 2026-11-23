@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit: 主工作区 main 禁止直接提交，逼迫所有改动先在独立 worktree 开工。
+# 主工作区由多个智能体共享，直接落笔会混入他人半成品且无法区分归属。
+#
+# Bypass: ALLOW_MAIN_COMMIT=1 git commit ...   （站长明确要求直推 main 的小改动）
+# Disable: git config --unset core.hooksPath
+# 注意：钩子只在本机 clone（core.hooksPath=scripts/hooks）生效，云端 VM 不受约束。
+
+set -e
+
+if [ -n "$ALLOW_MAIN_COMMIT" ]; then
+  echo "[pre-commit] ALLOW_MAIN_COMMIT set, allowing commit on main."
+  exit 0
+fi
+
+BRANCH="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
+if [ "$BRANCH" = "main" ]; then
+  echo "[pre-commit] ✗ 拒绝在主工作区 main 上直接提交。" >&2
+  echo >&2
+  echo "本站合并即部署，PR 是唯一合入入口。请先开独立 worktree：" >&2
+  echo "  git worktree add -b codex/<任务名> <路径> origin/main" >&2
+  echo "在 worktree 里提交、推送、开 PR，合并后当天移除 worktree。" >&2
+  echo >&2
+  echo "站长明确要求直推 main 时：ALLOW_MAIN_COMMIT=1 git commit ..." >&2
+  exit 1
+fi
+
+exit 0

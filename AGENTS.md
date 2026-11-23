@@ -96,6 +96,7 @@
 
 ## Git 发布规则
 
+- **开工隔离（强制）**：任何代码、配置或文档改动，先在独立 worktree 的短分支上开工（`git worktree add -b codex/<任务名> <路径> origin/main`），不在主工作区 `main` 直接写文件或提交。主工作区由多个智能体共享，直接写入会混入他人未提交改动且无法区分归属；`pre-commit` 钩子会拒绝对 `main` 的提交。站长明确要求直推 `main` 的小改动用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。云端 VM 的 clone 不带本机钩子配置，仍须按本条自觉开工。
 - 分支命名、数量上限、合并后清理与归档，以 `docs/specs/branch-management.md` 为准（后台 `/admin/branch-rules`）。
 - 用户说“push”时，只提交当前任务范围内的改动并推送当前分支；如果当前分支是 `main`，就直接推送 `main`。不要因此自动创建分支或 Pull Request。
 - 用户说“开 PR”或“建分支”时，创建 `codex/<简短任务名>` 分支，提交任务范围内的改动，推送分支并创建 Pull Request。

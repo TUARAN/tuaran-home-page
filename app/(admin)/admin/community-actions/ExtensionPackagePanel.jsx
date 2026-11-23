@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, StatusPill } from '../../components/ui'
 const OPTIONS = {
-  x: { href: 'https://x.2aran.com/extension', docs: 'https://x.2aran.com/docs' },
-  'ai-distributor': { href: '/tools/syncblog-publisher', docs: '/tools/syncblog-publisher/docs' },
+  x: { href: 'https://x.2aran.com/extension', docs: 'https://x.2aran.com/docs', docsLabel: '智能体手册' },
+  'ai-distributor': { href: '/tools/syncblog-publisher', docs: '/tools/syncblog-publisher/docs', docsLabel: '黄皮书' },
 }
 export default function ExtensionPackagePanel({ pluginId }) {
   const [release, setRelease] = useState(null), [error, setError] = useState('')
@@ -24,7 +24,7 @@ export default function ExtensionPackagePanel({ pluginId }) {
       {release?.ready ? <AdminButton size="sm" variant="primary" href={`${endpoint}&download=1`} download={release.fileName} prefetch={false}>站长下载</AdminButton> : <AdminButton size="sm" variant="primary" disabled>站长下载</AdminButton>}
       <AdminButton size="sm" href={`/admin/community-actions/monitor?platform=${pluginId}`}>查看监控</AdminButton>
       <AdminButton size="sm" variant="ghost" href={links.href}>插件下载页</AdminButton>
-      <AdminButton size="sm" variant="ghost" href={links.docs}>黄皮书</AdminButton>
+      <AdminButton size="sm" variant="ghost" href={links.docs}>{links.docsLabel}</AdminButton>
     </div>
     <p className="m-0 text-xs leading-5 text-[#6d7066] dark:text-gray-400">安装包已自动打包。站长直接下载；分发给其他人时，提供上方生成的人员码，下载时会自动写入安装包，首次心跳后绑定设备。</p>
     {error && <p role="alert" className="text-xs text-rose-700">{error}</p>}

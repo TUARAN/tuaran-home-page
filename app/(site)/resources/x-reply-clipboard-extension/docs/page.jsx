@@ -28,7 +28,7 @@ const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extensi
 // 本地源码版本以 manifest 为准；未打包前不等于下载包版本。
 const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
 
-const title = 'X 大互动智能体黄皮书'
+const title = '智能体手册'
 const description =
   'X 大互动智能体使用手册：快速开始、十九项任务、排班设置、异常恢复、数据维护与版本记录。'
 
@@ -273,7 +273,7 @@ export default function XReplyClipboardDocsPage() {
           <span aria-hidden="true">/</span>
           <Link href={RESOURCE_PATH} className="no-underline transition hover:text-[var(--site-ink)]">X 大互动智能体</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-[var(--site-ink)]">黄皮书</span>
+          <span className="text-[var(--site-ink)]">智能体手册</span>
         </div>
         <h1 className="mt-4 text-[28px] font-semibold tracking-[-0.03em] text-[var(--site-ink)] md:text-[34px]">{title}</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--site-muted)]">
@@ -677,7 +677,7 @@ export default function XReplyClipboardDocsPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>插件里的速度表和这里同一套栏目。评论任务运行中点另一档会先确认，当前操作完成后按新档继续，累计已完成条数保留，已有风控冷却不会跳过。速度与排班参数在对应任务子页调整；设置中心已移除独立的频率设置和排班台入口。</li>
               <li>热点发帖和 X主题发帖默认“慢”。原先停在“中”的热点发帖会自动改成“慢”，手选过快或超快的保持原样。卡片发帖默认一天 3 条，也可选 1、5、10 条，钟点见任务说明。热点发帖、卡片发帖、X主题发帖、小红书发帖、普通发文、站长转发共用每天 20 到 30 条里抽中的额度，确认成功的发帖、文章草稿和站长转发加在一起，到了就停到北京时间次日；各自原来的条数限制仍然有效。</li>
-              <li>回复模型的启用顺序、MobileOffice 本地桥接、DeepSeek / NAS / B.AI 配置，以及评论首页 / 评论回复 / 热点发帖 / 卡片发帖 / X主题发帖五份提示词，在设置中心的「模型」里管理。配置读取完成且没有可用模型时，首页才显示设置引导；保存可用密钥会同步启用对应模型，手动关闭的选择保留。发帖正文每行之间留一个空行；精简稿开头后目标约 35～60 字、2～3 行。抓人开头与措辞由提示词控制，本地不按字数或风格退稿。正反例和修改记录写在文档中心「提示词反馈台账」。已发出的帖子在 X 页面上直接赞或踩；点「别这么说」可以口述或写下不要说的话和改法，之后发帖会避开。</li>
+              <li>回复模型的启用顺序、MobileOffice 本地桥接、DeepSeek / NAS / B.AI 配置，以及评论首页 / 评论回复 / 热点发帖 / 卡片发帖 / X主题发帖五份提示词，在设置中心的「模型」里管理。配置读取完成且没有可用模型时，首页才显示设置引导；保存可用密钥会同步启用对应模型，手动关闭的选择保留。发帖正文每行之间留一个空行；精简稿开头后目标约 35～60 字、2～3 行。抓人开头与措辞由提示词控制，本地不按字数或风格退稿。正反例和修改记录写在文档中心「提示词反馈台账」。已发出的帖子在 X 页面上直接赞或踩。</li>
               <li>评论回复、评论首页、评论大V 共用每天 900 到 1100 条里抽中的额度，到了就停到北京时间次日。社群分发按确认成功的群聊计数，每天在 10 到 20 个里抽一个整数，一次发送不超过剩余额度，到了就停到北京时间次日。清理未回关的手动模式只记录候选，不会自动点击取关。切换到自动模式后才按速度档执行取关。</li>
             </ul>
           </Section>
@@ -814,7 +814,7 @@ export default function XReplyClipboardDocsPage() {
 
           <Section id="rules" index="九" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
             <p>X 的公开自动化、账户限制和真实性规则适用于这些操作。扩展的频率挡位与倒计时只是本地调度参数，不代表 X 认可的安全阈值。</p>
-            <p>节奏按少而准安排：挑能接上话的对象，写具体的回应，看对方有没有回声。<Link href="/theory#quality" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">大互动理论绿皮书</Link>里的次数、深度、对象、内容价值和持续性，用来复盘这些动作留下了什么。各任务的上限与冷却不随版本调高或缩短，扩展也不绕开 X 的自动化检测。</p>
+            <p>节奏按少而准安排：挑能接上话的对象，写具体的回应，看对方有没有回声。<Link href="/theory#quality" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">互动理论</Link>里的次数、深度、对象、内容价值和持续性，用来复盘这些动作留下了什么。各任务的上限与冷却不随版本调高或缩短，扩展也不绕开 X 的自动化检测。</p>
             <p>公开的每日数量、账户状态和更短时间窗口是不同约束；发生限制时，应以 X 页面给出的验证或限制提示为准。</p>
             <div className="flex flex-wrap gap-2 pt-1">
               <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 text-[12px] font-semibold text-[var(--site-ink)] no-underline">自动化规则 ↗</a>

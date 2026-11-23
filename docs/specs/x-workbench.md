@@ -4,13 +4,15 @@
 
 ## 定位
 
-从 X 上的爆点出发，写出自己的版本、发出去，再由智能体带着互动跑起来。
+公开首页验证三个智能体在 X 上的表现，回答今天流量去哪了。
 
 ```
-雷达(FIND) → 创作台(THINK) → 发布(SHIP) → 智能体(GROW)
+市场流量 → 智能体表现 → 理论基础
 ```
 
-核心产品是「X 大互动智能体」。雷达、改写、海报、排期是围绕它的配套。
+市场流量用推文观察和账号观察。智能体表现对照矿工阿三 @tarsixseveneig1、矿长阿富 @TuaranX、矿工小十三 @tuaran003。理论基础链到绿皮书和圆桌，不在首页重复长文。
+
+配对、排期、改写、海报在 `/x-workbench/ops`，登录后使用。核心产品仍是「X 大互动智能体」。
 
 ## 已确定
 
@@ -85,15 +87,15 @@
 
 | 项 | 状态 | 位置 |
 | --- | --- | --- |
-| P0 表：账号、人格记忆、额度 | 已写，迁移未执行 | `migrations/0130_x_workbench.sql` |
-| P1/P4 表：草稿、排期 | 已写，迁移未执行 | `migrations/0131_x_workbench_drafts.sql` |
+| P0 表：账号、人格记忆、额度 | 已在远程 D1 执行，结构与文件一致 | `migrations/0130_x_workbench.sql` |
+| P1/P4 表：草稿、排期 | 已在远程 D1 执行，结构与文件一致 | `migrations/0131_x_workbench_drafts.sql` |
 | 纯逻辑、D1 读写、排期队列 | 已写并有测试 | `lib/x/workbench/` |
 | API：accounts / profile / usage / drafts / schedules | 已写 | `app/api/x-workbench/` |
-| 雷达与监控表 | 已写，迁移未执行 | `migrations/0134_x_workbench_radar.sql` |
+| 雷达与监控表 | 已在远程 D1 执行；2026-11-23 补上当时缺失的 `x_radar_topic_suggestions` | `migrations/0134_x_workbench_radar.sql` |
 | 雷达（爆发指数、筛选、监控备注、手动收录）、账号榜（今日/昨日/7 天 × 发帖/评论/曝光/互动，北京时间 8 点为界） | 已写并有测试 | `lib/x/workbench/radar*.js`、`app/api/x-workbench/{radar,leaderboard}` |
 | AI 改写、找角度（扣额度，失败退回；带账号人格与记忆） | 已写并有测试，需要 `DEEPSEEK_API_KEY` | `lib/x/workbench/rewrite*.js`、`llm.js` |
 | 海报（浏览器内 SVG 转 PNG，下载与复制） | 已写 | `posterCore.js`、`PosterTab.jsx` |
-| 子域改写与六个标签页（雷达、榜、改写、海报、排期、智能体） | 已写，公开站 Pages 构建通过；未在浏览器验证 | `middleware.js`、`app/(x)/x-workbench/` |
+| 公开首页三栏（市场流量、智能体表现、理论基础）；站长工具在 `/x-workbench/ops` | 已写，未提交，未在浏览器验证 | `app/(x)/x-workbench/`、`lib/x/workbench/observeCore.js` |
 | 插件桥模块（同步人格记忆、领取与回报排期、提交采集推文） | 已接入 `background.js`，使用 Bearer 配对令牌；有本地门禁与重启测试 | `tools/x-reply-clipboard-extension/workbenchBridge.js` |
 | 测试 | `tests/x-workbench/`、`tests/extensions/workbench-bridge.test.mjs` | |
 
@@ -105,7 +107,7 @@
 
 **需要站长在 Cloudflare / 本机操作**
 
-1. 在 Cloudflare 手动执行工作台迁移 0130、0131、0133、0134。0132 属于独立记忆库，不属于工作台。
+1. 工作台迁移 0130、0131、0133、0134 已在远程库 `tuaran-me` 执行。0132 属于独立记忆库，这次没有执行。
 2. 给 Pages 项目添加自定义域 `x.2aran.com` 并配置 DNS。
 3. 重新核对 `lib/site/subsiteOrigins.js` 中新增的 `https://x.2aran.com`，它同时放行了登录回跳。
 4. 本机已有他人未提交的改动（`app/api/auth/callback/x/`、`LoginClient.jsx`、`edgeSession.js` 等，疑似 X 登录）。提交工作台前要分开暂存，避免混入。

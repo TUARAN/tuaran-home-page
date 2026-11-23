@@ -3,19 +3,24 @@
 import { useEffect, useState } from 'react'
 
 import { call, compact, message, post } from './api'
+import { ACCOUNT_BOARD_NOTE, accountBoardConclusion, boardDayLabel } from '../../../lib/x/workbench/observeCore'
 import { buildBoardSvg } from '../../../lib/x/workbench/posterCore'
 import s from './workbench.module.css'
 
 const WINDOWS = [['auto', '最近有收录'], ['today', '今日榜'], ['yesterday', '昨日榜'], ['7d', '7 天榜']]
 const DIMS = [['posts', '发帖', '帖'], ['replies', '评论', '条'], ['views', '曝光', ''], ['likes', '获赞', '赞']]
 
-export default function BoardTab() {
-  const [win, setWin] = useState('auto')
+export default function BoardTab({ operator = false, heading = '账号观察' }) {
+  const [win, setWin] = useState('today')
   const [dim, setDim] = useState('views')
   const [rows, setRows] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [suggestions, setSuggestions] = useState(null)
-  useEffect(() => { call('/topics?review=1').then(res => { if (res.ok) setSuggestions(res.data.suggestions) }) }, [])
+  useEffect(() => {
+    if (!operator) return undefined
+    call('/topics?review=1').then(res => { if (res.ok) setSuggestions(res.data.suggestions) })
+    return undefined
+  }, [operator])
   async function review(id, decision) {
     const res = await post('/topics', { action: 'review', id, decision })
     if (res.ok) setSuggestions(items => items.filter(i => i.id !== id))
@@ -30,7 +35,7 @@ export default function BoardTab() {
     call(`/leaderboard?window=${win}&dim=${dim}`).then((res) => {
       if (!live) return
       if (res.ok) { setRows(res.data.rows || []); setFrom(res.data.from); setNote(''); setLoaded(true) }
-      else { setRows([]); setLoaded(true); setNote(res.status === 503 || res.status === 0 ? '账号榜暂时不可用，请稍后再试。' : message(res.data)) }
+      else { setRows([]); setLoaded(true); setNote(res.status === 503 || res.status === 0 ? '账号观察暂时不可用，请稍后再试。' : message(res.data)) }
     })
     call(`/leaderboard?history=1&dim=${dim}`).then(res => { if (live) setDays(res.ok ? res.data.days : []) })
     return () => { live = false }
@@ -58,8 +63,9 @@ export default function BoardTab() {
   const top = rows[0]
   return (
     <section>
-      <h2 className={s.h2}>账号榜</h2>
-      <p className={s.hint}>统计日以北京时间每天 8 点为界。榜单只覆盖「X大互动」采集到的推文，不代表全站数据；评论数按公开指标汇总，仅供参考。</p>
+      <h2 className={s.h2}>{heading}</h2>
+      {loaded && dim === 'views' && <p className={s.conclusion}>{accountBoardConclusion(rows, boardDayLabel(win, from))}</p>}
+      <p className={s.hint}>{ACCOUNT_BOARD_NOTE} 评论数按公开指标汇总。</p>
       <div className={s.row}>
         {WINDOWS.map(([k, label]) => (
           <button key={k} type="button" className={`${s.btn} ${win === k ? s.primary : ''}`} onClick={() => setWin(k)}>{label}</button>
@@ -93,7 +99,7 @@ export default function BoardTab() {
       <h3>近 7 日冠军</h3>
       <p className={s.hint}>按当前已采集指标重算，每日北京时间 8 点起算，后续采集可能改变排名。</p>
       {days.map(day => <div className={s.rank} key={day.from}><span>{new Date(day.from).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}</span>{day.champion ? <a href={`https://x.com/${day.champion.handle}`} target="_blank" rel="noreferrer noopener">@{day.champion.handle}</a> : <span>尚无数据</span>}</div>)}
-      {suggestions && <section><h3>话题审核（站长）</h3>{suggestions.length === 0 && <p>暂无待审核话题。</p>}{suggestions.map(item => <div className={s.rank} key={item.id}><a href={`https://x.com/i/status/${item.tweet_id}`} target="_blank" rel="noreferrer noopener">查看推文</a><span>{item.topic}</span><button type="button" className={s.btn} onClick={() => review(item.id, 'approved')}>通过</button><button type="button" className={s.btn} onClick={() => review(item.id, 'rejected')}>拒绝</button></div>)}</section>}
+      {operator && suggestions && <section><h3>话题审核（站长）</h3>{suggestions.length === 0 && <p>暂无待审核话题。</p>}{suggestions.map(item => <div className={s.rank} key={item.id}><a href={`https://x.com/i/status/${item.tweet_id}`} target="_blank" rel="noreferrer noopener">查看推文</a><span>{item.topic}</span><button type="button" className={s.btn} onClick={() => review(item.id, 'approved')}>通过</button><button type="button" className={s.btn} onClick={() => review(item.id, 'rejected')}>拒绝</button></div>)}</section>}
       {note && <p role="status" className={s.error}>{note}</p>}
     </section>
   )

@@ -31,7 +31,7 @@ function Pills({ label, value, options, onChange }) {
   )
 }
 
-function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn }) {
+function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, operator }) {
   const [topic, setTopic] = useState('')
   const [topics, setTopics] = useState([])
   const [tagNote, setTagNote] = useState('')
@@ -53,7 +53,7 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn
     call(`/radar?${q}`).then((res) => {
       if (!live) return
       if (res.ok) { setItems(res.data.items || []); setProblem('') }
-      else { setItems([]); setProblem(res.status === 401 ? '' : '推文榜暂时不可用，请稍后再试。') }
+      else { setItems([]); setProblem(res.status === 401 ? '' : '推文观察暂时不可用，请稍后再试。') }
     })
     return () => { live = false }
   }, [sort, hours, media, keyword, watchOnly, reload, topic])
@@ -71,7 +71,7 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn
       {items && !problem && list.length === 0 && <div className={s.empty}>这个时间段还没有收录。</div>}
       {shown.map((i, n) => (
         <article key={i.id} className={s.item}>
-          {signedIn && <button type="button" className={s.btn} onClick={() => tag(i.id)}>标注话题</button>}
+          {operator && <button type="button" className={s.btn} onClick={() => tag(i.id)}>标注话题</button>}
           <span className={`${s.no} ${n < 3 ? s[`no${n + 1}`] : ''}`}>{n + 1}</span>
           <div className={s.itemBody}>
             <p className={s.itemText}>{i.text || '（无文字）'}</p>
@@ -89,7 +89,7 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn
   )
 }
 
-export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = false }) {
+export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = false, operator = false, heading = '推文观察' }) {
   const [heroState, setHeroState] = useState('loading')
   const [heroRows, setHeroRows] = useState([])
   const [heroWindow, setHeroWindow] = useState('auto')
@@ -133,15 +133,15 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
 
   const acts = (i) => (
     <>
-      {signedIn && onPoster && <button type="button" className={s.link} onClick={() => onPoster(i)}>做海报</button>}
-      {signedIn && !i.watched && <button type="button" className={s.link} onClick={() => addWatch(i.handle)}>+ 监控</button>}
+      {operator && signedIn && onPoster && <button type="button" className={s.link} onClick={() => onPoster(i)}>做海报</button>}
+      {operator && signedIn && !i.watched && <button type="button" className={s.link} onClick={() => addWatch(i.handle)}>+ 监控</button>}
       <a className={s.link} href={i.url} target="_blank" rel="noreferrer noopener">原帖</a>
     </>
   )
   const empty = heroState === 'ok' && heroRows.length === 0
   return (
     <section>
-      <div className={s.pageTitle}><h1>推文榜</h1><span className={s.note}>爆发指数 = 加权互动量 ÷ 发布时长；统计日以北京时间 8 点为界</span></div>
+      <div className={s.pageTitle}><h2 className={s.h2}>{heading}</h2><span className={s.note}>爆发指数 = 加权互动量 ÷ 发布时长；统计日以北京时间 8 点为界</span></div>
       <div className={s.row}>
         <button type="button" className={`${s.pill} ${heroWindow === 'today' ? s.pillOn : ''}`} onClick={() => setHeroWindow('today')}>今天</button>
         {heroDays.filter((day) => day.from !== Math.floor(Date.now() / 86_400_000) * 86_400_000).map((day) => (
@@ -152,7 +152,7 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
       </div>
       <div className={s.hero}>
         <div className={s.heroTitle}>热门贡献榜</div>
-        {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>推文榜暂时不可用，请稍后再试。</div>}
+        {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>推文观察暂时不可用，请稍后再试。</div>}
         {empty && <div className={s.empty} style={{ flex: 1, padding: 14 }}>今天还没有收录。</div>}
         {heroRows.map((r, n) => (
           <a key={r.handle} className={`${s.heroCard} ${n < 3 ? `${s.heroTop} ${s[`top${n + 1}`]}` : ''}`} href={`https://x.com/${r.handle}`} target="_blank" rel="noreferrer noopener">
@@ -169,17 +169,17 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
       </div>
 
       <div className={s.row}>
-        {signedIn && <label><input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} /> 只看监控账号</label>}
+        {operator && signedIn && <label><input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} /> 只看监控账号</label>}
         {keyword && <button type="button" className={s.pill} onClick={() => onKeyword('')}>搜索：{keyword} ×</button>}
         {watch.map((w) => <span key={w.handle} className={s.chip}>@{w.handle}{w.note ? `（${w.note}）` : ''}</span>)}
       </div>
 
       <div className={s.cols}>
-        <Panel title="增速最快" sort="score" metric={(i) => <>{compact(Math.round(perHour(i)))}<small> 曝光/时</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} signedIn={signedIn} />
-        <Panel title="曝光最高" sort="views" metric={(i) => <>{compact(i.views)}<small> 曝光</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} signedIn={signedIn} />
+        <Panel title="增速最快" sort="score" metric={(i) => <>{compact(Math.round(perHour(i)))}<small> 曝光/时</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} operator={operator} />
+        <Panel title="曝光最高" sort="views" metric={(i) => <>{compact(i.views)}<small> 曝光</small></>} keyword={keyword} watchOnly={watchOnly} reload={reload} acts={acts} operator={operator} />
       </div>
 
-      {signedIn && empty && (
+      {operator && signedIn && empty && (
         <div className={s.card} style={{ marginTop: 18 }}>
           <strong>榜单还是空的，三种方式让它有数据</strong>
           <div className={s.steps}>
@@ -189,7 +189,7 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
           </div>
         </div>
       )}
-      {signedIn && (
+      {operator && signedIn && (
         <details className={s.card} style={{ marginTop: 18 }} open={empty}>
           <summary>手动收录一条推文</summary>
           <form onSubmit={submitManual} style={{ marginTop: 12 }}>

@@ -1,20 +1,20 @@
-// X大互动顶部菜单。工具在本页切换；内容标签打开现有页面，不复制正文。
+// 公开导航。首页三栏用锚点展开；长文仍打开原来的短地址。
 export const WORKBENCH_MENU_GROUPS = [
   {
-    id: 'happening',
-    label: '正在发生',
+    id: 'observe',
+    label: '观察',
     items: [
-      { id: 'radar', label: '推文榜' },
-      { id: 'board', label: '账号榜' },
-      { id: 'agent', label: '智能体' },
-      { id: 'yellowbook', label: '黄皮书', href: '/docs' },
+      { id: 'market', label: '市场流量', href: '/x-workbench#market' },
+      { id: 'agents', label: '智能体表现', href: '/x-workbench#agents' },
+      { id: 'basis', label: '理论基础', href: '/x-workbench#basis' },
     ],
   },
   {
-    id: 'operations',
-    label: '大互动运营',
+    id: 'library',
+    label: '资料',
     items: [
-      { id: 'theory', label: '大互动理论', href: '/theory' },
+      { id: 'green', label: '绿皮书', href: '/theory' },
+      { id: 'yellowbook', label: '黄皮书', href: '/docs' },
       { id: 'calendar', label: '大互动日历', href: '/calendar' },
       { id: 'roundtable', label: '大互动圆桌', href: '/roundtable' },
     ],

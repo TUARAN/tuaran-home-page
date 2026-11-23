@@ -1,111 +1,136 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import AgentTab from './AgentTab'
 import BoardTab from './BoardTab'
-import PosterTab from './PosterTab'
 import RadarTab from './RadarTab'
-import ScheduleTab from './ScheduleTab'
-import { call } from './api'
-import { WORKBENCH_MENU_GROUPS } from './tabs'
+import XSiteFrame from './XSiteFrame'
+import { call, compact } from './api'
+import {
+  ACTION_LABELS,
+  METRIC_LABELS,
+  OBSERVED_AGENTS,
+  THEORY_POINTS,
+  TWEET_BOARD_NOTE,
+  agentFootnote,
+} from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
 
-function TabBar({ tab, onTab }) {
+function Metric({ ready, value }) {
+  if (!ready) return <span className={s.note}>读取中</span>
+  if (value == null) return <span className={s.missing}>未采集</span>
+  return compact(value)
+}
+
+function TweetBoard({ items }) {
+  if (!items.length) return null
   return (
-    <nav className={s.tabs} aria-label="功能">
-      {WORKBENCH_MENU_GROUPS.map((group) => (
-        <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
-          <span className={s.groupLabel}>{group.label}</span>
-          {group.items.map((item) => (
-            item.href
-              ? <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</a>
-              : <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</button>
-          ))}
-        </div>
+    <div className={s.card}>
+      {items.map((item, index) => (
+        <article key={item.id} className={s.rank}>
+          <span className={s.rankNo}>{index + 1}</span>
+          <a href={item.url} target="_blank" rel="noreferrer noopener" style={{ flex: 1, color: 'inherit' }}>
+            <strong>@{item.handle}</strong>
+            <span className={s.note}> {item.topic || '未采集'}</span>
+            <div>{item.text || '（无文字）'}</div>
+          </a>
+          <strong>{compact(item.views)} 曝光</strong>
+        </article>
       ))}
-    </nav>
+    </div>
   )
 }
 
 export default function WorkbenchClient() {
-  const [signedIn, setSignedIn] = useState(false)
-  const [tab, setTab] = useState('radar')
-  const [accounts, setAccounts] = useState([])
-  const [handle, setHandle] = useState('')
-  const [usage, setUsage] = useState(null)
-  const [posterSeed, setPosterSeed] = useState(null)
+  const [view, setView] = useState('tweets')
   const [keyword, setKeyword] = useState('')
-  const [query, setQuery] = useState('')
+  const [observe, setObserve] = useState(null)
+  const [signedIn, setSignedIn] = useState(false)
 
-  const loadUsage = useCallback(async () => {
-    const u = await call('/usage')
-    if (u.ok) setUsage(u.data)
-  }, [])
-
-  const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
-
-  const loadAccounts = useCallback(async () => {
-    const res = await call('/accounts')
-    if (!res.ok) {
-      setSignedIn(false)
-      setAccounts([])
-      return
-    }
-    setAccounts(res.data.accounts || [])
-    setHandle((cur) => (res.data.accounts.some((a) => a.handle === cur) ? cur : res.data.accounts[0]?.handle || ''))
-    setSignedIn(true)
-    loadUsage()
-  }, [loadUsage])
-
-  useEffect(() => { loadAccounts() }, [loadAccounts])
   useEffect(() => {
-    setReturnTo(window.location.href)
     const q = new URLSearchParams(window.location.search).get('q') || ''
-    if (q) { setQuery(q); setKeyword(q); setTab('radar') }
+    if (q) { setKeyword(q); setView('tweets') }
+    call('/accounts').then((res) => setSignedIn(Boolean(res.ok)))
+    call('/observe').then((res) => setObserve(res.ok ? res.data : { unavailable: true, agents: [], tweets: [], gaps: [] }))
   }, [])
 
-  const goPoster = (seed) => { setPosterSeed({ ...seed, at: Date.now() }); setTab('poster') }
-  const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
-  const needsLogin = !signedIn && (tab === 'agent' || tab === 'poster' || tab === 'schedule')
-
-  const body = needsLogin ? (
-    <>
-      <h1>登录后使用智能体</h1>
-      <p className={s.hint}>推文榜和账号榜不用登录。绑定账号、额度和写操作在登录后可用。</p>
-      <a className={`${s.btn} ${s.primary}`} href={loginHref}>登录</a>
-    </>
-  ) : (
-    <>
-      {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onPoster={signedIn ? goPoster : undefined} signedIn={signedIn} />}
-      {tab === 'board' && <BoardTab />}
-      {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
-      {tab === 'schedule' && <ScheduleTab handle={handle} seed="" />}
-      {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
-    </>
-  )
+  const ready = Boolean(observe)
+  const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS
+  const tweetConclusion = !observe ? '' : observe.unavailable ? '今日曝光结论暂时读不到。' : observe.tweetConclusion
 
   return (
-    <div className={s.app}>
-      <header className={s.bar}>
-        <div className={s.barInner}>
-          <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>观察、跟进、智能</span></span></span>
-          <TabBar tab={tab} onTab={setTab} />
-          <form className={s.search} onSubmit={(e) => { e.preventDefault(); setKeyword(query.trim()); setTab('radar') }}>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜账号、推文关键词" aria-label="搜索" />
-            <button type="submit" className={s.searchBtn}>搜索</button>
-          </form>
-          <Link className={s.cta} href="/extension">获取插件</Link>
-          {signedIn ? (
-            <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
-              {accounts.length === 0 && <option value="">未绑定账号</option>}
-              {accounts.map((a) => <option key={a.handle} value={a.handle}>@{a.handle}</option>)}
-            </select>
-          ) : <a className={s.btn} href={loginHref}>登录</a>}
+    <XSiteFrame active="/x-workbench">
+      <section id="market" className={s.section}>
+        <h2 className={s.h2}>市场流量</h2>
+        <p className={s.question}>今天流量去哪了。</p>
+        <div className={s.row}>
+          <button type="button" className={`${s.btn} ${view === 'tweets' ? s.primary : ''}`} onClick={() => setView('tweets')}>推文观察</button>
+          <button type="button" className={`${s.btn} ${view === 'accounts' ? s.primary : ''}`} onClick={() => setView('accounts')}>账号观察</button>
         </div>
-      </header>
-      <main className={s.main}>{body}</main>
-    </div>
+        {view === 'tweets' && (
+          <>
+            {tweetConclusion && <p className={s.conclusion}>{tweetConclusion}</p>}
+            {observe && !observe.unavailable && <p className={s.hint}>{TWEET_BOARD_NOTE}</p>}
+            <TweetBoard items={observe?.tweets || []} />
+            <RadarTab keyword={keyword} onKeyword={setKeyword} operator={false} heading="按发布时间继续看" />
+          </>
+        )}
+        {view === 'accounts' && <BoardTab operator={false} />}
+      </section>
+
+      <section id="agents" className={s.section}>
+        <h2 className={s.h2}>智能体表现</h2>
+        <p className={s.question}>矿工阿三、矿长阿富、矿工小十三今天的发帖、互动和推文表现。</p>
+        <div className={s.agentGrid}>
+          {agents.map((agent) => (
+            <article key={agent.handle} className={s.card}>
+              <h3 style={{ margin: '0 0 4px' }}>{agent.name || agent.handle}</h3>
+              <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener">@{agent.handle}</a>
+              <dl className={s.metricList}>
+                {ACTION_LABELS.map(([key, label]) => (
+                  <div key={key}>
+                    <dt>{label}</dt>
+                    <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
+                  </div>
+                ))}
+                <div>
+                  <dt>推文曝光</dt>
+                  <dd><Metric ready={ready} value={agent.views ?? null} /></dd>
+                </div>
+                <div>
+                  <dt>推文互动</dt>
+                  <dd><Metric ready={ready} value={agent.interactions ?? null} /></dd>
+                </div>
+              </dl>
+              {ready && agent.tweets != null && <p className={s.note}>已收录推文 {agent.tweets} 条</p>}
+            </article>
+          ))}
+        </div>
+        <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>
+        {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
+      </section>
+
+      <section id="basis" className={s.section}>
+        <h2 className={s.h2}>理论基础</h2>
+        <p className={s.question}>大互动理论把一次交流收成可以核对的过程：主动接触，说出判断，听见回应，再按反馈调整。</p>
+        <div className={s.theoryGrid}>
+          {THEORY_POINTS.map((point) => (
+            <article key={point.title} className={s.card}>
+              <h3 style={{ margin: '0 0 8px' }}>{point.title}</h3>
+              <p style={{ margin: '0 0 8px' }}>{point.text}</p>
+              <p className={s.note}>对照智能体表现：{point.metrics.map((key) => METRIC_LABELS[key]).join('、')}</p>
+              <a href={point.href}>{point.hrefLabel}</a>
+            </article>
+          ))}
+        </div>
+        <p>
+          <a href="https://2aran.com/resources/big-interaction-whitepaper">大互动理论绿皮书</a>
+          {' · '}
+          <a href="https://2aran.com/resources/big-interaction-whitepaper/roundtable">大互动圆桌</a>
+        </p>
+      </section>
+      {signedIn && <p><Link href="/x-workbench/ops">账号与插件</Link></p>}
+    </XSiteFrame>
   )
 }

@@ -119,7 +119,7 @@ test('a repair never closes the tab of a task that is running', async () => {
 
 test('the scheduler repairs before dispatching and waits while the panel is being typed in', async () => {
   const source = await readFile(new URL('background.js', extensionDir), 'utf8')
-  assert.match(source, /if \(await selfHealStartFailure\(plan, now\)\) return ENGINE_AGAIN;\n  return dispatchNextTask\(plan, now\);/)
+  assert.match(source, /if \(await selfHealStartFailure\(plan, now\)\) return ENGINE_AGAIN;\n  if \(!plan\.current && await localUpdateDue\(now\)\) \{[\s\S]{0,400}\n  return dispatchNextTask\(plan, now\);/)
   assert.match(source, /if \(!mode \|\| \(oldTabId > 0 && panelTypingRecently\(oldTabId, now\)\)\) \{/)
   // The same-tab rebuild runs once; a second exhaustion stops the task for the repair.
   assert.match(source, /if \(item\.manualStopped \|\| !plan\.enabled \|\| Number\(item\.autoStartRecoveredAt\) > 0\) return false;/)

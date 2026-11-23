@@ -106,12 +106,15 @@ const COMMUNITY_NOTE_PROMPT = [
 ].join("\n");
 
 const POST_NORMAL_PROMPT = [
-  "依据热点标题和摘要，写一条可发的 X 中文短帖。只输出正文。",
-  "普通帖第一行必须用一个抓人的口语开头，随后空一行，紧接具体事件和观点。可参考：我真的很好奇、说个暴论、卧槽卧槽卧槽、讲真、说句难听的、我有点想不通、这事真离谱、等等，这就有意思了、我突然意识到一件事、我越想越不对劲、这回我站这一边、我是真没想到、先说结论、别急，先看这件事、说实话我不服、这点太关键了。按话题选自然的一句，不要空喊情绪，也不要编造亲历。",
+  "依据热点标题和摘要，写一条像真人刷到后随手发的 X 中文短帖。只输出正文。",
+  "第一行必须用一个抓人的口语开头，随后空一行，紧接具体事件和观点。可参考：我真的很好奇、说个暴论、卧槽卧槽卧槽、讲真、说句难听的、我有点想不通、这事真离谱、等等，这就有意思了、我突然意识到一件事、我越想越不对劲、这回我站这一边、我是真没想到、先说结论、别急，先看这件事、说实话我不服、这点太关键了。按话题选自然的一句，本次若指定了开头就照用；不空喊情绪，不编造亲历。",
+  "网感：名词要具体，写清谁做了什么，句里留一个读者能脑补出画面的细节。像在群里转发时顺口的一句吐槽、疑问或小算账，别像发公告。",
+  "每次换一种写法，不要连着用同一种：先抛一个具体槽点再下判断；直接问一个读者想问的问题；用素材里已有的数字小算一笔；一句反应加一句补刀；站在使用者或打工人的位置说句实在话；先给结论再补一个细节。",
+  "去 AI 味：不写总结收尾和金句拔高，不用「首先、其次、综上」，不用三段并列和凑整的排比；不用「赋能、生态、底层逻辑、范式、颠覆、值得关注、见仁见智、引发热议、让我们、不妨」；不加话题标签，不堆 emoji，少用破折号和冒号引出。",
+  "句子长短不齐，一句可以只有几个字；允许口语不齐、略冲、半句话收尾。有真情绪再说，别空喊「我服了」。",
   "短一点，说够就停；整条只站一边，不需要客观、中立、理性平衡。",
-  "有真情绪再说，别表演「我服了」这类空赞；允许口语不齐、略冲，小瑕疵没关系。",
   "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
-  "禁止：不是…而是…；本文/这条推文/下面聊聊；值得关注/见仁见智；编造素材没有的人物数字经历。",
+  "禁止：不是…而是…；本文/这条推文/下面聊聊；编造素材没有的人物数字经历。",
   "不写币、代币、合约、$。"
 ].join("\n");
 
@@ -119,7 +122,9 @@ const POST_PREMIUM_PROMPT = [
   "依据热点标题和摘要，写一条偏「观点精剖」的 X 中文短帖。只输出正文。",
   "发出去时做成文字卡片：第一段是卡片标题，后面是卡片正文。",
   "目标：选一个切口，把判断说透一点——为什么成立、卡在哪、和常见说法差在哪。可大胆、可反常识，但必须贴素材里的具体事，不编事实。",
+  "每次换一种切口：钱从哪来到哪去、谁受益谁付账、一个被忽略的细节、一个能验证的小预测、站在普通使用者的位置。标题像人起的，不用「深度解析」「全面拆解」这类标题腔。",
   "可比普通帖稍完整（大约 60～120 字，2～4 短段，段间空行），仍忌空话和意义拔高。",
+  "去 AI 味：不写总结收尾和金句，不用「综上、本质上、底层逻辑、赋能、范式」，不做三段并列；句子长短不齐，口语一点。",
   "可用钩子开头，但钩子后必须进入剖析，不要只喊情绪。",
   "整条有明确立场，不必两边讨好；禁止假对比套话和自我指涉写作过程。",
   "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
@@ -130,7 +135,9 @@ const POST_X_PROMPT = [
   "依据给出的主题，写一条 X 中文短帖，发出去时会做成文字卡片。只输出正文。",
   "题材只限：X 的时间线和社交功能、Grok 与 xAI、Tesla 的电动车储能和机器人、SpaceX 的火箭与星链、Neuralink、The Boring Company。",
   "只写两行，发出去时两行都在文字卡片里居中。每行一个完整短句，大约 8～16 个字，两行之间空一行。不要第三行。",
+  "每次换一种两行结构：一个具体动作加一个使用场景；一个小细节加一句反应；一个问题加一个已公开的事实。像产品爱好者随口一说，不像发布会文案。",
   "只写已经公开的产品和使用方式。不编造财报、发射次数、销量和未宣布的能力。",
+  "去 AI 味：不用「赋能、颠覆、重塑、开启新篇章、未来已来」，不写口号和金句，不加话题标签和 emoji。",
   "不要用「说个暴论」「我真心觉得」「卧槽」当开头。禁止假对比和自我指涉写作过程。",
   "承认对方有道理时，不要写「这话我认」。改成「……，我觉得是有一定道理的」，或「该说不说，其实……也有道理」。",
   "不写币、代币、合约、$。"
@@ -1697,6 +1704,23 @@ async function findUnregisteredTaskTab(mode, tabs) {
   }) || null;
 }
 
+const MAX_TASK_WINDOWS = 3;
+
+async function taskWindowCount(tabs) {
+  const windows = new Set();
+  for (const savedTabId of Object.values(tabs || {})) {
+    const tabId = Number(savedTabId);
+    if (!Number.isInteger(tabId)) continue;
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (Number.isInteger(tab?.windowId)) windows.add(tab.windowId);
+    } catch (error) {
+      // A closed tab is removed by the tab listener.
+    }
+  }
+  return windows.size;
+}
+
 async function sharedTaskWindow(windowId, tabs, exceptMode) {
   for (const [mode, savedTabId] of Object.entries(tabs)) {
     if (mode === exceptMode) continue;
@@ -1712,12 +1736,11 @@ async function sharedTaskWindow(windowId, tabs, exceptMode) {
   return false;
 }
 
-async function ensureOwnWindow(tab, tabs, mode) {
-  const windowId = Number(tab?.windowId);
-  if (!Number.isInteger(tab?.id) || !Number.isInteger(windowId)) return windowId;
-  if (!await sharedTaskWindow(windowId, tabs, mode)) return windowId;
-  const moved = await chrome.windows.create({ tabId: tab.id, focused: true, type: "normal" });
-  return Number(moved?.id) || windowId;
+// Never pull an existing tab into a new window with windows.create({ tabId }):
+// moving a loading or frozen tab between windows is a browser-process path that
+// has crashed Chromium forks. A shared window is acceptable; keep the tab where it is.
+async function ensureOwnWindow(tab) {
+  return Number(tab?.windowId);
 }
 
 async function focusTaskTab(mode, sender, { start = false, accountHandle = "", activate } = {}) {
@@ -1748,7 +1771,7 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   if (Number.isInteger(existingId)) {
     try {
       const existing = await chrome.tabs.get(existingId);
-      const windowId = await ensureOwnWindow(existing, tabs, selected);
+      const windowId = await ensureOwnWindow(existing);
       const stayBack = start && selected === "notifications";
       const update = stayBack ? {} : { active: true };
       const pageUrl = existing.url || "";
@@ -1804,6 +1827,13 @@ async function focusTaskTab(mode, sender, { start = false, accountHandle = "", a
   }
   const destination = await launchTaskTabUrl(selected, sender?.tab?.url, { start, accountHandle: handle, pruneSearchStart });
   const url = destination || `${pageOrigin(sender?.tab?.url)}/home?xrcAssistant=${encodeURIComponent(selected)}`;
+  if (await taskWindowCount(tabs) >= MAX_TASK_WINDOWS) {
+    // Too many execution windows already: open a tab in an existing window instead.
+    const shared = await createSharedExecTab(url, sender, !(start && selected === "notifications"), { mode: selected, start });
+    tabs[selected] = shared.tabId;
+    await writeTaskTabs(tabs);
+    return { ok: true, mode: selected, tabId: shared.tabId, reused: false };
+  }
   const createdWindow = await chrome.windows.create({
     url: "about:blank",
     focused: !(start && selected === "notifications"),
@@ -2161,7 +2191,7 @@ function restartAlreadyCounted(item) {
 }
 
 function terminalRunReason(text) {
-  return /超过限制，本次结束|操作受限，本次先停下|疑似自动化，本次先停下|本次已关注|本次已回关|本批已看完|粉丝列表已检查/u.test(String(text || ""));
+  return /超过限制，本次结束|操作受限，本次先停下|疑似自动化，本次先停下|本次已关注|本次已回关|本批已看完|粉丝列表已检查|粉丝列表显示 Retry，本批没有下一个可换的人/u.test(String(text || ""));
 }
 
 function limitRunReason(text) {
@@ -3529,7 +3559,19 @@ async function saveTaskSchedule(value) {
   }
 }
 
-async function abandonScheduledTab(tabId) {
+const abandonInFlight = new Map();
+
+function abandonScheduledTab(tabId) {
+  const id = Number(tabId);
+  // One remove per tab at a time: repeated remove calls on a tab that is still
+  // closing race inside the browser process.
+  if (Number.isInteger(id) && abandonInFlight.has(id)) return abandonInFlight.get(id);
+  const work = abandonScheduledTabOnce(tabId).finally(() => abandonInFlight.delete(id));
+  if (Number.isInteger(id)) abandonInFlight.set(id, work);
+  return work;
+}
+
+async function abandonScheduledTabOnce(tabId) {
   const id = Number(tabId);
   if (!Number.isInteger(id) || id <= 0) return { abandoned: true, closed: true };
   let exists = true;
@@ -5565,8 +5607,11 @@ async function resetExtensionState(sender) {
       const sessionKeys = Object.keys(stored || {}).filter((key) => key === TASK_TABS_KEY || key.startsWith("xrcPendingTab:"));
       if (sessionKeys.length) await session.remove(sessionKeys);
     }
-    await Promise.allSettled(tabs.filter((tab) => Number.isInteger(tab.id) && tab.id !== sender?.tab?.id)
-      .map((tab) => chrome.tabs.reload(tab.id)));
+    // Reload one at a time so many X tabs do not all reload at the same instant.
+    for (const tab of tabs.filter((item) => Number.isInteger(item.id) && item.id !== sender?.tab?.id)) {
+      await chrome.tabs.reload(tab.id).catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
     return { ok: true, tabs: tabs.length };
   })().finally(() => { resetPromise = null; });
   return resetPromise;

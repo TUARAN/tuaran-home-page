@@ -24,7 +24,7 @@ export default function WorkbenchClient() {
   }, [])
 
   const ready = Boolean(observe)
-  const agent = observe?.agents?.[0] || { ...OBSERVED_AGENTS[0], actions: {} }
+  const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS.map((agent) => ({ ...agent, actions: {} }))
 
   return (
     <XSiteFrame active="/x-workbench">
@@ -33,24 +33,28 @@ export default function WorkbenchClient() {
           <span className={s.sectionMark} aria-hidden="true" />
           <h2 className={s.sectionTitle}>大互动智能体</h2>
         </div>
-        <p className={s.question}>@TuaranX 今日通过插件执行的动作。</p>
-        <p className={s.hint}>安装 Chrome 插件并配对后，日报会汇总到此处；数据只反映本账号，不含其他 X 用户。</p>
-        <article className={`${s.agentCard} ${s.agentCardSolo}`}>
-          <h3 style={{ margin: 0 }}>{agent.name || agent.handle}</h3>
-          <a href="https://x.com/TuaranX" target="_blank" rel="noreferrer noopener" className={s.note}>@TuaranX</a>
-          <div className={s.agentMain}>
-            <b><Metric ready={ready} value={agent.actions?.posts ?? null} /></b>
-            <span className={s.note}>发帖</span>
-          </div>
-          <dl className={s.metricList}>
-            {ACTION_LABELS.filter(([key]) => key !== 'posts').map(([key, label]) => (
-              <div key={key}>
-                <dt>{label}</dt>
-                <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
+        <p className={s.question}>帮更多智能体拿到 X 创作者收益</p>
+        <p className={s.hint}>使用智能体插件的账号，今天各自通过插件执行了哪些动作。数据来自插件日报，只统计自有账号。</p>
+        <div className={s.agentGrid}>
+          {agents.map((agent) => (
+            <article key={agent.handle} className={s.agentCard}>
+              <h3 style={{ margin: 0 }}>{agent.name || agent.handle}</h3>
+              <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener" className={s.note}>@{agent.handle}</a>
+              <div className={s.agentMain}>
+                <b><Metric ready={ready} value={agent.actions?.posts ?? null} /></b>
+                <span className={s.note}>发帖</span>
               </div>
-            ))}
-          </dl>
-        </article>
+              <dl className={s.metricList}>
+                {ACTION_LABELS.filter(([key]) => key !== 'posts').map(([key, label]) => (
+                  <div key={key}>
+                    <dt>{label}</dt>
+                    <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
         <details className={s.fold}>
           <summary>统计口径</summary>
           <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>

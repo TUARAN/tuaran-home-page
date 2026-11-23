@@ -4,15 +4,15 @@
 
 ## 定位
 
-公开首页展示简中区 X 热榜，并对照正在使用智能体插件的账号当天动作。
+公开首页展示使用智能体插件的自有账号当天动作。
 
 ```
 智能体 → 插件 → 读本
 ```
 
-公开首页只展示站长智能体 @TuaranX 的插件日报动作，不展示第三方推文榜、涨粉榜或收录账号。智能体账号池（日历等）在 `lib/interaction/agentPool.js` 维护，当前三个账号，可扩至更多。读本为大互动理论（`/theory`）、日历与圆桌；智能体手册（`/docs`）与排期、海报在登录后的 `/x-workbench/ops`。
+公开首页展示共享账号池里全部智能体的插件日报动作，不展示第三方推文榜、涨粉榜或收录账号。账号池在 `lib/interaction/agentPool.js` 维护，当前三个账号；新增账号只改这一处，首页卡片与统计口径会跟着变。首页 slogan 为「帮更多智能体拿到 X 创作者收益」。读本为大互动理论（`/theory`）、日历与圆桌；智能体手册（`/docs`）保持原入口。
 
-配对、排期、改写、海报在 `/x-workbench/ops`，登录后使用。核心产品仍是「X 大互动智能体」。
+账号绑定、人格与记忆、浏览器插件配对在 `/x-workbench/ops`，登录后使用。排期与海报的操作面板已下线，账号选择保留；对应的 API 与插件领取排期链路不受影响。核心产品仍是「X 大互动智能体」。
 
 ## 已确定
 
@@ -94,8 +94,8 @@
 | 雷达与监控表 | 已在远程 D1 执行；2026-11-23 补上当时缺失的 `x_radar_topic_suggestions` | `migrations/0134_x_workbench_radar.sql` |
 | 雷达（爆发指数、筛选、监控备注、手动收录）、账号榜（今日/昨日/7 天 × 发帖/评论/曝光/互动，北京时间 8 点为界） | 已写并有测试 | `lib/x/workbench/radar*.js`、`app/api/x-workbench/{radar,leaderboard}` |
 | AI 改写、找角度（扣额度，失败退回；带账号人格与记忆） | 已写并有测试，需要 `DEEPSEEK_API_KEY` | `lib/x/workbench/rewrite*.js`、`llm.js` |
-| 海报（浏览器内 SVG 转 PNG，下载与复制） | 已写 | `posterCore.js`、`PosterTab.jsx` |
-| 公开首页（@TuaranX 插件日报）；读本为大互动理论；智能体手册在 ops；运营在 `/x-workbench/ops`（智能体 / 排期 / 海报） | 已写 | `app/(x)/x-workbench/` |
+| 海报（浏览器内 SVG 转 PNG，下载与复制） | 已写，ops 面板已下线 | `posterCore.js`、`PosterTab.jsx` |
+| 公开首页（账号池全部智能体的插件日报卡片 + slogan）；读本为大互动理论；账号与插件配对在 ops（只剩智能体） | 已写 | `app/(x)/x-workbench/` |
 | 插件桥模块（同步人格记忆、领取与回报排期、提交采集推文） | 已接入 `background.js`，使用 Bearer 配对令牌；有本地门禁与重启测试 | `tools/x-reply-clipboard-extension/workbenchBridge.js` |
 | 测试 | `tests/x-workbench/`、`tests/extensions/workbench-bridge.test.mjs` | |
 

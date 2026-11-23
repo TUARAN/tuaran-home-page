@@ -3,22 +3,16 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import AgentTab from './AgentTab'
-import PosterTab from './PosterTab'
-import ScheduleTab from './ScheduleTab'
 import XSiteFrame from './XSiteFrame'
 import { call } from './api'
 import s from './workbench.module.css'
 
-const PANELS = [['agent', '智能体'], ['schedule', '排期'], ['poster', '海报']]
-
 export default function OperatorClient() {
   const [signedIn, setSignedIn] = useState(false)
   const [ready, setReady] = useState(false)
-  const [panel, setPanel] = useState('agent')
   const [accounts, setAccounts] = useState([])
   const [handle, setHandle] = useState('')
   const [usage, setUsage] = useState(null)
-  const [posterSeed, setPosterSeed] = useState(null)
   const [returnTo, setReturnTo] = useState('https://x.2aran.com/x-workbench/ops')
 
   const loadUsage = useCallback(async () => {
@@ -58,17 +52,12 @@ export default function OperatorClient() {
       {ready && signedIn && (
         <>
           <div className={s.row}>
-            {PANELS.map(([id, label]) => (
-              <button key={id} type="button" className={`${s.btn} ${panel === id ? s.primary : ''}`} onClick={() => setPanel(id)}>{label}</button>
-            ))}
             <select className={s.input} value={handle} onChange={(event) => setHandle(event.target.value)} aria-label="当前 X 账号">
               {accounts.length === 0 && <option value="">未绑定账号</option>}
               {accounts.map((account) => <option key={account.handle} value={account.handle}>@{account.handle}</option>)}
             </select>
           </div>
-          {panel === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
-          {panel === 'schedule' && <ScheduleTab handle={handle} seed="" />}
-          {panel === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
+          <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />
         </>
       )}
     </XSiteFrame>

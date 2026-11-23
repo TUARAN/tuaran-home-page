@@ -41,6 +41,11 @@ test('static registry has unique canonicals and keeps noindex routes out of site
   assert.ok(!sitemapUrls.has('https://2aran.com/downloads'))
   assert.ok(!sitemapUrls.has('https://2aran.com/account'))
   assert.ok(!sitemapUrls.has('https://2aran.com/rank'))
+  assert.ok(!sitemapUrls.has('https://2aran.com/x-workbench/ops'))
+  const ops = STATIC_PAGE_REGISTRY.find((page) => page.path === '/x-workbench/ops')
+  assert.equal(ops?.indexable, false)
+  assert.equal(ops?.sitemap, false)
+  assert.equal(ops?.canonical, '/x-workbench/ops')
 })
 
 test('SEO registry stays on the server side and cannot enter a client route bundle', () => {

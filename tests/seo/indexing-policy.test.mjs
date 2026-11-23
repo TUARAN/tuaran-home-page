@@ -16,6 +16,8 @@ test('private, authentication, API, and raw PDF routes are excluded from indexin
     '/login?returnTo=%2Farticles',
     '/register',
     '/account',
+    '/x-workbench',
+    '/x-workbench/ops',
     '/admin/seo',
     '/api/auth/login',
     '/share/private-note',

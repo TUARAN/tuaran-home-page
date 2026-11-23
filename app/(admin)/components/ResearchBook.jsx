@@ -23,6 +23,11 @@ export function chapterLabel(index, title) {
   return `第${chapterNumber(index)}章 · ${title}`
 }
 
+/** 书籍根容器：CSS 变量（纸色、墨色、金线）都挂在这个类上，必须包住封面与内页。 */
+export function BookShell({ children }) {
+  return <div className={styles.book}>{children}</div>
+}
+
 export function BookSpread({ children }) {
   return <div className={styles.spread}>{children}</div>
 }

@@ -130,8 +130,9 @@
 /* 目录 --------------------------------------------------------------- */
 .toc {
   position: sticky;
-  top: 16px;
-  max-height: calc(100dvh - 7rem);
+  /* 让开 AdminPage stickyHeader：顶栏 56px + 标题区约 92px。 */
+  top: 148px;
+  max-height: calc(100dvh - 164px);
   overflow-y: auto;
   padding: 20px 16px 22px;
   border: 1px solid var(--rb-line);

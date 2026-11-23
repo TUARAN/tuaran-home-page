@@ -12,6 +12,7 @@ import { AdminButton, AdminPage } from '../../components/ui'
 import {
   BookCover,
   BookProse,
+  BookShell,
   BookSpread,
   BookToc,
   ChapterCards,
@@ -217,20 +218,22 @@ export default function ResearchMethodsConsole() {
       description="写作规范、调研风格和各类对象的现行方法都在这里。这些页面只给站长查阅，不作为前台调研文章发布。"
       stickyHeader
     >
-      <BookCover />
-      <BookSpread>
-        <BookToc
-          groups={RESEARCH_METHOD_NAV}
-          method={method}
-          onSelect={setMethod}
-          onOverview={() => setMethod('')}
-        />
-        <div className="min-w-0">
-          {!selected ? <Overview onSelect={setMethod} /> : null}
-          {selected?.kind === 'embed' ? <ResearchStyleClient embedded view={selected.view} book /> : null}
-          {selected?.kind === 'method' ? <MethodDetail method={selected} /> : null}
-        </div>
-      </BookSpread>
+      <BookShell>
+        <BookCover />
+        <BookSpread>
+          <BookToc
+            groups={RESEARCH_METHOD_NAV}
+            method={method}
+            onSelect={setMethod}
+            onOverview={() => setMethod('')}
+          />
+          <div className="min-w-0">
+            {!selected ? <Overview onSelect={setMethod} /> : null}
+            {selected?.kind === 'embed' ? <ResearchStyleClient embedded view={selected.view} book /> : null}
+            {selected?.kind === 'method' ? <MethodDetail method={selected} /> : null}
+          </div>
+        </BookSpread>
+      </BookShell>
     </AdminPage>
   )
 }

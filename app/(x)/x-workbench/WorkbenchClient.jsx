@@ -58,7 +58,7 @@ export default function WorkbenchClient() {
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
         <div className={s.row} style={{ marginTop: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Link href="/extension" className={`${s.btn} ${s.primary}`}>获取插件</Link>
-          <Link href="/theory" className={s.btn}>互动理论</Link>
+          <Link href="/theory" className={s.btn}>大互动理论</Link>
           <Link href="/docs" className={s.btn}>智能体手册</Link>
           {signedIn ? <Link href="/x-workbench/ops" className={s.btn}>登录后台</Link> : null}
         </div>

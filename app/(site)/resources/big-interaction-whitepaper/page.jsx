@@ -18,8 +18,8 @@ export const dynamic = 'force-static'
 const path = '/theory'
 const url = 'https://x.2aran.com/theory'
 const shareUrl = 'https://x.2aran.com/theory'
-const title = '互动理论'
-const bookTitle = '互动理论'
+const title = '大互动理论'
+const bookTitle = '大互动理论'
 const description = '一本关于主动交流、认真倾听、接收反馈与守住边界的实践读本。循着三层日常台阶、五段行动循环、互动质量整理、退出边界，建立自己的互动方法。'
 const published = '2026-10-20'
 const updated = '2026-11-20'
@@ -311,7 +311,7 @@ export default function BigInteractionWhitepaperPage() {
         </div>
 
         <footer className={styles.footer}>
-          <span>互动理论 · TUARAN · {published.slice(0, 4)} 年 10 月</span>
+          <span>大互动理论 · TUARAN · {published.slice(0, 4)} 年 10 月</span>
           <div className={styles.footerActions}>
             <Link href="/roundtable">大互动圆桌</Link>
             <a href="#foreword">返回序言 ↑</a>

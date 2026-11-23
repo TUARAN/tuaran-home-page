@@ -814,7 +814,7 @@ export default function XReplyClipboardDocsPage() {
 
           <Section id="rules" index="九" title="平台边界与官方来源" summary="技术上限不代表账号可用频率">
             <p>X 的公开自动化、账户限制和真实性规则适用于这些操作。扩展的频率挡位与倒计时只是本地调度参数，不代表 X 认可的安全阈值。</p>
-            <p>节奏按少而准安排：挑能接上话的对象，写具体的回应，看对方有没有回声。<Link href="/theory#quality" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">互动理论</Link>里的次数、深度、对象、内容价值和持续性，用来复盘这些动作留下了什么。各任务的上限与冷却不随版本调高或缩短，扩展也不绕开 X 的自动化检测。</p>
+            <p>节奏按少而准安排：挑能接上话的对象，写具体的回应，看对方有没有回声。<Link href="/theory#quality" className="font-semibold text-[var(--site-ink)] underline-offset-2 hover:underline">大互动理论</Link>里的次数、深度、对象、内容价值和持续性，用来复盘这些动作留下了什么。各任务的上限与冷却不随版本调高或缩短，扩展也不绕开 X 的自动化检测。</p>
             <p>公开的每日数量、账户状态和更短时间窗口是不同约束；发生限制时，应以 X 页面给出的验证或限制提示为准。</p>
             <div className="flex flex-wrap gap-2 pt-1">
               <a href="https://help.x.com/en/rules-and-policies/x-automation" target="_blank" rel="noopener noreferrer" className="inline-flex rounded-full border border-[var(--site-line)] bg-[var(--site-panel)] px-3 py-1.5 text-[12px] font-semibold text-[var(--site-ink)] no-underline">自动化规则 ↗</a>

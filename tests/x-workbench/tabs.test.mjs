@@ -52,6 +52,7 @@ test('公开首页只有自有智能体，配对和排期留在登录后的二�
   assert.match(client, /@TuaranX/)
   assert.doesNotMatch(client, /矿工阿三|tarsixseveneig1|涨粉潜力|推文热榜/)
   assert.doesNotMatch(client, /RadarTab|BoardTab/)
+  assert.match(client, /大互动理论/)
   assert.match(client, /未采集/)
   assert.doesNotMatch(client, /绿皮书|黄皮书/)
   assert.doesNotMatch(client, /import RewriteTab|import AgentTab|import ScheduleTab|import PosterTab|生成配对码/)

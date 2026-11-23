@@ -216,6 +216,12 @@ const friendLinks = [
     tag: '技术 / 周刊',
   },
   {
+    label: '虎皮椒 XunhuPay',
+    href: 'https://www.xunhupay.com/',
+    desc: '面向个人站的微信、支付宝收款接口，本站付费内容解锁通过它完成付款。',
+    tag: '支付 / 服务',
+  },
+  {
     label: '我的 RSS 订阅墙',
     href: '/rss.xml',
     desc: '订阅本站最新的工程实践、专题分析和原创文章。',
@@ -669,7 +675,7 @@ export default function AboutPage() {
                 <span className="text-[#5cd6c8]">$</span> friends
               </h2>
               <p className="mt-2 max-w-[680px] text-[13px] leading-6 text-[#8ea3bb]">
-                这里放长期阅读、互相知道、或者值得推荐给本站读者的个人站和博客。
+                这里放长期阅读、互相知道、或者值得推荐给本站读者的个人站、博客，以及本站长期在用的服务。
               </p>
             </div>
             <a

@@ -2867,15 +2867,11 @@
       "sitemap": true,
       "signals": {
         "canonical": true,
-        "canonicalValues": [
-          "/resources/big-interaction-whitepaper/roundtable"
-        ],
+        "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": true,
         "jsonLd": true,
-        "ogUrls": [
-          "https://2aran.com/resources/big-interaction-whitepaper/roundtable"
-        ]
+        "ogUrls": []
       }
     },
     {
@@ -3281,9 +3277,7 @@
       "sitemap": true,
       "signals": {
         "canonical": true,
-        "canonicalValues": [
-          "/resources/${RESOURCE_SLUG}"
-        ],
+        "canonicalValues": [],
         "noindex": "inherited",
         "openGraph": true,
         "jsonLd": false,

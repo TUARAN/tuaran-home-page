@@ -2,7 +2,7 @@
   "use strict";
 
   const DAILY_TOP_ENDPOINT = "https://2aran.com/api/interaction/daily-top";
-  const CALENDAR_URL = "https://2aran.com/resources/big-interaction-whitepaper/calendar";
+  const CALENDAR_URL = "https://x.2aran.com/calendar";
   const HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const RANK_RE = /(?:^|\s)(?:\d{1,2}[\.、．]|第\s*\d{1,2}\s*[名位]?|#\d{1,2}|\d{1,2})(?=\s*@)/u;

@@ -35,7 +35,7 @@ export default function XSiteFrame({ active, children }) {
             <input name="q" placeholder="搜账号、推文关键词" aria-label="搜索" />
             <button type="submit" className={s.searchBtn}>搜索</button>
           </form>
-          <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
+          <Link className={s.cta} href="/extension">获取插件</Link>
           <a className={s.btn} href={loginHref}>登录</a>
         </div>
       </header>

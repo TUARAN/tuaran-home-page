@@ -13,7 +13,8 @@ import { getRichPageByPath, getRichPagePresentation } from '../../../lib/site/en
 
 const HIDE_CHROME_PATHS = new Set([
   '/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup',
-  '/docs', '/theory', '/calendar', '/roundtable',
+  '/docs', '/theory', '/calendar', '/roundtable', '/extension',
+  '/resources/x-reply-clipboard-extension',
   '/resources/x-reply-clipboard-extension/docs',
   '/resources/big-interaction-whitepaper',
   '/resources/big-interaction-whitepaper/calendar',

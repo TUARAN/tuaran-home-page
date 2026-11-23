@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import AgentTab from './AgentTab'
@@ -95,7 +96,7 @@ export default function WorkbenchClient() {
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜账号、推文关键词" aria-label="搜索" />
             <button type="submit" className={s.searchBtn}>搜索</button>
           </form>
-          <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
+          <Link className={s.cta} href="/extension">获取插件</Link>
           {signedIn ? (
             <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
               {accounts.length === 0 && <option value="">未绑定账号</option>}

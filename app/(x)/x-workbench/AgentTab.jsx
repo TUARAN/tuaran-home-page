@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { call, message, post } from './api'
@@ -149,7 +150,7 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
           </div>
         </div>
       )}
-      <p className={s.note}>浏览器插件在 <a href="https://2aran.com/resources/x-reply-clipboard-extension">X 大互动智能体插件页</a> 获取。</p>
+      <p className={s.note}>浏览器插件在 <Link href="/extension">X 大互动智能体插件页</Link> 获取。</p>
       {note && <p role="status" className={s.note}>{note}</p>}
     </section>
   )

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import Link from 'next/link'
+import XSiteFrame from '../../../(x)/x-workbench/XSiteFrame'
 import Image from 'next/image'
 import {
   IconArrowRight,
@@ -29,7 +30,8 @@ import ExtensionDownloadButton from './ExtensionDownloadButton'
 export const dynamic = 'force-static'
 
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
-const RESOURCE_URL = `https://2aran.com/resources/${RESOURCE_SLUG}`
+const PUBLIC_PATH = '/extension'
+const RESOURCE_URL = 'https://x.2aran.com/extension'
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
 // 本地源码版本以 manifest 为准，与黄皮书一致；下载包版本以资源交付配置为准，打包前二者可以不同。
 const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
@@ -378,7 +380,7 @@ export const metadata = {
     '本地运行',
   ],
   alternates: {
-    canonical: `/resources/${RESOURCE_SLUG}`,
+    canonical: PUBLIC_PATH,
   },
   openGraph: {
     title,
@@ -452,6 +454,7 @@ const TECH_NOTES = [
 
 export default function XReplyClipboardResourcePage() {
   return (
+    <XSiteFrame active="/extension">
     <PageContainer className="py-6 md:py-10">
       <ContentPvBeacon category="resource" slug={RESOURCE_SLUG} />
       <header className="relative isolate overflow-hidden rounded-[28px] border border-slate-800 bg-[#050814] px-5 py-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.28)] sm:px-8 sm:py-8 md:rounded-[36px] md:px-10 md:py-10">
@@ -689,5 +692,6 @@ export default function XReplyClipboardResourcePage() {
       </article>
       <ArticleFooterCta />
     </PageContainer>
+    </XSiteFrame>
   )
 }

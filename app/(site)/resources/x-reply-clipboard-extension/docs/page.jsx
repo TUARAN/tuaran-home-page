@@ -22,7 +22,7 @@ const RELEASE_WEEKS = loadXExtensionReleaseWeeks()
 
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const DOCS_PATH = '/docs'
-const RESOURCE_PATH = `/resources/${RESOURCE_SLUG}`
+const RESOURCE_PATH = '/extension'
 const DOCS_URL = 'https://x.2aran.com/docs'
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || '待核对'
 // 本地源码版本以 manifest 为准；未打包前不等于下载包版本。

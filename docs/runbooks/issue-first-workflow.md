@@ -14,7 +14,7 @@
 4. 打分诊标签。类型至少一个，优先级恰好一个。规则见「分诊标签」。
 5. `priority:now` 且没有任何 `needs:*`：开 PR。正文按「关闭关键词」列出每条 `Closes #N` 或 `Related: #N`，并套用 `.github/pull_request_template.md`。
 6. 带 `needs:design`、`needs:decision` 或 `needs:assets`：停在 Issue。把缺什么写进评论。不直接开 PR。`priority:now` 不能压过 `needs:*`；now 只表示阻塞一解除就开工。
-7. 站长说「合」之后才 squash。在那之前助手不 squash、不 merge。界面改动先看 Cloudflare Pages 分支预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
+7. 站长说「合」之后才 squash。在那之前助手不 squash、不 merge。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览；纯文档、进度说明、中间变基和同分支连推以 `[CF-Pages-Skip]` 跳过预览。内容稿可以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
 本地 Codex 与聊天助手同时在场时，落地路径见「本地 Codex 与助手协同」。
 
@@ -44,7 +44,7 @@ GitHub Issue 是唯一台账。PR 是唯一合入入口。非琐碎改动开 PR 
 
 **合并**
 
-合并策略不随路径改变。界面改动先看 Cloudflare Pages 分支预览，站长说「合」之后才 squash。内容稿可以以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
+合并策略不随路径改变。需要站长看过官方预览再说「合」的页面改动，先看对应 Cloudflare Pages 项目的官方预览，站长说「合」之后才 squash。纯文档、进度说明、中间变基和同分支连推不打预览。内容稿可以以 `review_ready: false` 入库，不自动发布。细节见「预览、内容与合并」。
 
 **分工**
 
@@ -114,12 +114,16 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 ## 开 PR
 
 - 分支只包含这些 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `<任务类型>/<简短任务名>`，前缀按改动性质从 `feat/`、`fix/`、`research/`、`content/`、`chore/` 里选。云端代理使用当次指定的分支模板。
-- 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、每条已完成 Issue 的 `Closes #N`、仍应打开的 `Related: #N`、界面是否要预览后再合。关键词见「关闭关键词」。
-- 纯文档、模板、标签说明的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 构建。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
+- 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、每条已完成 Issue 的 `Closes #N`、仍应打开的 `Related: #N`、这次是否要官方预览后再合。关键词见「关闭关键词」。
+- 纯文档、进度说明、中间变基、同分支连推的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 预览和部署。合入 `main` 的 squash 说明同样以该标记开头时，不作为完整的预览式生产部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。只有需要站长看过官方预览再说「合」的页面改动才不加这个标记。细则见「预览、内容与合并」。
 
 ## 预览、内容与合并
 
-界面改动（带 `type:ui`，或访客、站长能看见的页面、布局、样式、交互）先留在 PR 上。公开站 Pages 项目是 `tuaran`，后台站是 `tuaran-admin-git`。分支推送后，从对应项目的 Preview 部署取得 `*.pages.dev` 链接，写进 PR。站长看过预览再说「合」。预览链接还没有时，PR 保持打开，不 squash。
+只有需要站长看过官方预览再说「合」的页面改动，才触发 Cloudflare Pages 预览构建。公开站官方预览是 `tuaran`，后台站是 `tuaran-admin-git`。不是每个 Issue、PR 或推送都要预览。这类改动先留在 PR 上，那一次需要看的提交不加 `[CF-Pages-Skip]`。推送后从对应项目的 Preview 取得 `*.pages.dev` 链接，写进 PR。站长看过预览再说「合」。预览链接还没有时，PR 保持打开，不 squash。
+
+纯文档、进度说明、中间变基、同分支连推不打预览。这些提交说明以 `[CF-Pages-Skip]` 开头，Pages 略过该次预览和部署。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。同分支上，只有需要站长看过新的官方预览再说「合」的那一次页面提交不加标记；进度说明、中间变基和其余连推都加标记，避免每次推送再排队一次构建。
+
+合入 `main` 后，Pages 看 squash 提交说明开头的同一标记。说明以 `[CF-Pages-Skip]` 开头时，这次合入不作为完整的预览式生产部署，Pages 略过该次部署。需要站长看过再合的页面改动，squash 说明不加该标记，合入后才走生产构建。跳过方式只有这一个标记。不改 Cloudflare 控制台，也不另造跳过机制。
 
 内容稿可以以 `review_ready: false` 进入 Git。助手不把该字段改成 `true`，也不调用后台发布或审批接口。`review_ready` 标记人工复核是否完成，不代替发布动作。调研的创作正本、后台审批和 72 小时待审批写入 D1 的规则，以 [research/README.md](../../research/README.md) 和 [content-storage-rollout.md](content-storage-rollout.md) 为准。未得到站长「合」之前，内容稿留在 PR 上，不直接推 `main`，避免启动那段计时。普通文章仍只通过 `/admin/articles` 或对应管理 API 发布。
 

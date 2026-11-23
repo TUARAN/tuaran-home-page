@@ -272,7 +272,7 @@ git commit -m "[CF-Pages-Skip] research: add <slug>"
 git push
 ```
 
-上述跳过构建前缀仅用于纯内容提交；代码变更仍按正常流程部署。Git 提交用于保存创作正本。新版部署后，打开 `/admin/articles/research-import` 审批发布，无需等待 Pages 重建，也不用再导出 JSON；已部署的 A 股/加密资产专用发布入口会同步写入 D1。发布成功后访问：
+调研纯内容提交用 `[CF-Pages-Skip]`，不触发 Pages 部署。何时构建、何时跳过，以 `AGENTS.md` 与 `docs/runbooks/issue-first-workflow.md` 为准；含页面或运行时代码、且需要站长看过官方预览再说「合」的提交不加该标记。Git 提交用于保存创作正本。新版部署后，打开 `/admin/articles/research-import` 审批发布，无需等待 Pages 重建，也不用再导出 JSON；已部署的 A 股/加密资产专用发布入口会同步写入 D1。发布成功后访问：
 
 - 列表页：<https://2aran.com/articles>（「文章与分析」入口）
 - 详情页：`https://2aran.com/articles/research/<category>/<slug>`

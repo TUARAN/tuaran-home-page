@@ -7,7 +7,7 @@ import { AdminPagination, StatusPill } from '../../components/ui'
 const TYPE_FILTERS = [
   { key: 'all', label: '全部' },
   { key: 'rich-page', label: '多维页面' },
-  { key: 'article', label: '精选文章' },
+  { key: 'article', label: '原创文章' },
   { key: 'research', label: '分析' },
   { key: 'resource', label: '资源' },
 ]

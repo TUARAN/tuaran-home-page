@@ -178,7 +178,7 @@ test('homepage cards use public type and subject, not research folder names', ()
   const bitcoin = catalog.find((item) => item.id === 'research:topics:crypto-bitcoin')
   const movie = catalog.find((item) => item.href === '/resources/niu-lai-movie')
 
-  assert.equal(diary.sectionLabel, '精选')
+  assert.equal(diary.sectionLabel, '原创')
   assert.equal(diary.tagLabel, '生活与家庭')
   assert.equal(workbuddy.sectionLabel, '实践')
   assert.equal(workbuddy.tagLabel, 'WorkBuddy')

@@ -42,7 +42,7 @@ test('public card labels use content group and subject, not research folders', (
   )
   assert.deepEqual(
     publicTaxonomyLabels({ contentKind: 'article', subjects: ['life_family'] }),
-    { group: 'article', groupLabel: '精选', subject: 'life_family', subjectLabel: '生活与家庭' },
+    { group: 'article', groupLabel: '原创', subject: 'life_family', subjectLabel: '生活与家庭' },
   )
   assert.deepEqual(
     publicTaxonomyLabels({ contentKind: 'resource', subjects: ['humanities_history'] }),
@@ -54,9 +54,9 @@ test('taxonomy uses one hierarchy and orthogonal controlled facets', () => {
   assert.deepEqual(CONTENT_GROUP_KEYS, ['all', 'article', 'analysis', 'practice', 'interactive', 'resource'])
   assert.deepEqual(
     CONTENT_GROUP_KEYS.filter((key) => key !== 'all').map((key) => CONTENT_GROUP_META[key].label),
-    ['精选', '分析', '实践', '互动', '资源'],
+    ['原创', '分析', '实践', '互动', '资源'],
   )
-  assert.equal(CONTENT_GROUP_META.article.label, '精选')
+  assert.equal(CONTENT_GROUP_META.article.label, '原创')
   assert.ok(CONTENT_KIND_KEYS.includes('interactive'))
   assert.ok(SUBJECT_KEYS.includes('workbuddy'))
   assert.ok(SUBJECT_KEYS.includes('ai_dev'))

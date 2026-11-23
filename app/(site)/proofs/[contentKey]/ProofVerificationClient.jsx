@@ -82,7 +82,7 @@ export default function ProofVerificationClient({ credential }) {
             <CheckRow done={state.verification?.proofIdMatches} pending={!state.verification} title="2. 核对 Proof ID" copy="重算未签名凭证载荷，确认凭证本身没有被改写。" value={state.proof?.proofId} />
             <CheckRow done={state.verification?.signatureValid} pending={!state.verification} title="3. 验证站点签名" copy="用 2aran.com 公开的 P-256 公钥验证发布身份。" value={state.proof?.siteSignature?.keyId} />
             <CheckRow done={state.batch?.membershipValid && state.batch?.anchor?.chainId === credential.network.chainId && Boolean(state.batch?.anchor?.transactionHash)} pending={!state.batch} title="4. 核对 Merkle 批次与链上记录" copy={`使用逐篇 Merkle Path 重算 Root，再核对 chainId、EAS attestation 与 ${credential.network.name} 交易。`} value={state.batch?.merkleRoot} />
-            <CheckRow done={Boolean(credential.replica?.replicaUrl)} pending={false} title="5. 打开独立副本入口" copy={credential.replica?.cid ? '同一 CID 可通过两个独立 IPFS 网关回读，哈希应与本地副本一致。' : '精选文章先提供站点副本；完成 pinning 后可从两个独立网关回读。'} value={credential.replica?.cid || credential.replica?.replicaUrl} />
+            <CheckRow done={Boolean(credential.replica?.replicaUrl)} pending={false} title="5. 打开独立副本入口" copy={credential.replica?.cid ? '同一 CID 可通过两个独立 IPFS 网关回读，哈希应与本地副本一致。' : '原创文章先提供站点副本；完成 pinning 后可从两个独立网关回读。'} value={credential.replica?.cid || credential.replica?.replicaUrl} />
           </ol>
         </div>
 

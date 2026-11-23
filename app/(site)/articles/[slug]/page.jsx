@@ -310,7 +310,7 @@ export default async function ArticleDetailPage({ params }) {
       <ArticleDetailHeader
         taxonomy={articleTaxonomy}
         categoryHref="/articles?tab=posts"
-        categoryLabel="精选文章"
+        categoryLabel="原创文章"
         dateLabel={article.date}
         dateTime={publishedTime || article.date}
         version={resolveContentVersion(article)}

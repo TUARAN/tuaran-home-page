@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 250,
+    "routes": 249,
     "redirects": 23,
-    "private": 63,
+    "private": 62,
     "registeredStatic": 120,
     "indexable": 139,
     "canonical": 160,
@@ -615,22 +615,6 @@
     {
       "path": "/admin/integrations",
       "file": "app/(admin)/admin/integrations/page.jsx",
-      "kind": "private",
-      "registered": false,
-      "indexable": false,
-      "sitemap": false,
-      "signals": {
-        "canonical": false,
-        "canonicalValues": [],
-        "noindex": "inherited",
-        "openGraph": false,
-        "jsonLd": false,
-        "ogUrls": []
-      }
-    },
-    {
-      "path": "/admin/life",
-      "file": "app/(admin)/admin/life/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,

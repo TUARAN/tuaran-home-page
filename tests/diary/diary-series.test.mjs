@@ -251,6 +251,27 @@ test('异世界的冲击 keeps the oral account and stays within the public draf
   )
 })
 
+test('国庆三日 keeps the 2026 holiday journal summary in the public diary', () => {
+  const article = diaryArticle()
+  const { heading, blocks } = diaryEntry(article, '国庆三日')
+  const text = blocks.join('\n\n')
+  assert.equal(heading.date, '2026-10-01')
+  assert.equal(heading.category, '生活与家庭')
+  assert.equal(heading.sourceNote, undefined)
+  assert.equal(blocks.length, 4)
+  assert.match(text, /10 月 1 日.*山姆和宜家.*新疆杏干.*虫子.*维权后拿到 1000 元/)
+  assert.match(text, /小茉莉发烧，喝了药.*推特也重新活跃起来/)
+  assert.match(text, /10 月 2 日.*二手茶几.*喝奶、换尿片、换衣服、喝水、看书、在床上跳/)
+  assert.match(text, /10 月 3 日.*白云 T5 商场.*免费的儿童游乐设施/)
+  assert.match(text, /白云儿童公园坐了自动船.*晚上吃了太二.*遗失的车钥匙/)
+  assert.match(text, /三天没走远，都在家附近/)
+  assert.doesNotMatch(text, /站长口述|本文由站长|Bots 整理|生活记录|后台|私密/)
+  assert.deepEqual(
+    diaryContentFromMarkdown(legacyArticleToMarkdown({ content: [heading, ...blocks] })),
+    [heading, ...blocks],
+  )
+})
+
 test('homepage preview uses the same series and leads with the latest record', () => {
   const preview = previewFromDiary(diaryArticle())
   assert.equal(preview.title, '浮生日记')

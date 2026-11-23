@@ -68,8 +68,9 @@ test('private data navigation titles use four Chinese characters', () => {
   const privateData = ADMIN_CONSOLE_ITEMS.find((item) => item.href === '/admin/private-data')
   const titles = privateData.sections.flatMap((section) => section.items.map((item) => item.label))
 
-  assert.deepEqual(titles, ['个人画像', '生活记录', '续签述职', '信息金库', '软贴空间', '交易分析', '私密媒体', '文档分享', '书签导航', '壁纸资源'])
+  assert.deepEqual(titles, ['个人画像', '续签述职', '信息金库', '软贴空间', '交易分析', '私密媒体', '文档分享', '书签导航', '壁纸资源'])
   assert.ok(titles.every((title) => Array.from(title).length === 4))
+  assert.equal(ADMIN_LEGACY_REDIRECTS['/admin/life'], '/admin/private-data')
 })
 
 test('engineering workspace groups each tool by responsibility without repeated section titles', () => {
@@ -126,6 +127,7 @@ test('merged admin tools redirect in middleware without dedicated edge pages', a
       '/admin/blogger-eye': '/admin/site-health?tab=probe',
       '/admin/logs': '/admin/ops?tab=runs',
       '/admin/quotes': '/admin/archives',
+      '/admin/life': '/admin/private-data',
     }
   )
   const middlewareSource = await readFile(new URL('../../middleware.js', import.meta.url), 'utf8')

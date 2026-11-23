@@ -4244,6 +4244,18 @@
 
   .codex-reset-page {
     background: var(--page-bg);
+    min-height: calc(100dvh - var(--site-header-height));
+  }
+
+  /* H5：给底部固定标签栏与安全区留出空间，桌面端收回常规留白。 */
+  main.codex-reset-page > .codex-reset-page-content {
+    padding-bottom: calc(var(--site-tabbar-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  }
+
+  @media (min-width: 1024px) {
+    main.codex-reset-page > .codex-reset-page-content {
+      padding-bottom: 2.5rem;
+    }
   }
 
   .codex-reset-day-panel {
@@ -4281,13 +4293,38 @@
       0 0 1px color-mix(in srgb, #000000 92%, transparent);
   }
 
+  /* H5 详情卡不再铺背景插画，帖子卡用实底保证正文对比度。 */
   .codex-reset-post-card {
-    background: color-mix(in srgb, #ffffff 68%, transparent);
-    backdrop-filter: blur(12px);
+    background: #ffffff;
   }
 
   .dark .codex-reset-post-card {
-    background: color-mix(in srgb, #111923 70%, transparent);
+    background: #16202b;
+  }
+
+  @media (max-width: 639px) {
+    .codex-reset-day-caption {
+      text-shadow: none;
+    }
+
+    .codex-reset-cell {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .codex-reset-cell:active {
+      transform: scale(0.94);
+    }
+  }
+
+  @media (min-width: 640px) {
+    .codex-reset-post-card {
+      background: color-mix(in srgb, #ffffff 68%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    .dark .codex-reset-post-card {
+      background: color-mix(in srgb, #111923 70%, transparent);
+    }
   }
 
   .home-achievement-card:hover {

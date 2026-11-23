@@ -247,7 +247,8 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.match(client, /不猜测下一次重置/)
   assert.match(home, /title: 'Codex 重置'/)
   assert.match(home, /<HomeCodexResetCard/)
-  assert.match(home, /舆情分析/)
+  // 板块文案已下沉到 HomeOpinionSignals，首页只保留组件挂载点。
+  assert.match(home, /<HomeOpinionPanel\s*\/>/)
   assert.doesNotMatch(primary, /<HomeCodexResetCard/)
   assert.match(primary, /HomeFeaturedReadingClient/)
   const card = await readFile(new URL('../../app/(site)/components/HomeCodexResetCard.jsx', import.meta.url), 'utf8')
@@ -256,13 +257,46 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.match(card, /homeStripHeadline|homeStripSubline/)
   assert.match(card, /if \(!model\.featured\) return null/)
   assert.doesNotMatch(card, /home-opinion-heading|home-builder-panel/)
-  assert.match(home, /<HomeCodexResetCard\s*\/>\s*\n\s*<BuilderAndSignalsPanel/)
+  // 侧欄已拆成独立 aside，Codex 卡片仍排在 BuilderPanel 之前。
+  assert.match(home, /<HomeCodexResetCard\s*\/>\s*<\/aside>[\s\S]{0,240}<BuilderPanel\s*\/>/)
   assert.match(nav, /href: '\/codex-reset'[\s\S]*label: 'Codex 重置'/)
   assert.match(nav, /title: '分析'[\s\S]*href: '\/codex-reset'/)
   assert.match(api, /AIHOT_CODEX_RESETS_URL/)
   assert.match(api, /AIHOT_CODEX_RESETS_RECENT_URL/)
   assert.match(api, /caches\?\.default/)
   assert.match(api, /source: 'fallback'/)
+})
+
+test('codex reset page has a phone-first calendar and keeps the desktop two-column view', async () => {
+  const [client, css] = await Promise.all([
+    readFile(new URL('../../app/(site)/codex-reset/CodexResetClient.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/globals.css', import.meta.url), 'utf8'),
+  ])
+
+  // 手机日历矮方块 + 事件圆点，避免 41px 宽的格子里把「重置预告」挤成竖排。
+  assert.match(client, /codex-reset-cell[\s\S]*?h-\[46px\]/)
+  assert.match(client, /KIND_DOT_CLASS/)
+  assert.match(client, /h-\[5px\] w-\[5px\] rounded-full/)
+  assert.match(client, /点日期看当天原帖/)
+
+  // 单列轨道锁成 minmax(0,1fr)，否则日历与详情卡的 min-content 会撑出横向滚动。
+  assert.match(client, /grid-cols-\[minmax\(0,1fr\)\]/)
+  assert.match(client, /codex-reset-day-panel relative min-w-0/)
+
+  // 44px 触控目标；桌面恢复紧凑导航与文字标签。
+  assert.match(client, /h-11 w-11 items-center justify-center/)
+  assert.match(client, /sm:h-\[76px\]/)
+  assert.match(client, /mt-2 hidden text-\[10px\] leading-4 sm:block/)
+  assert.match(client, /lg:grid-cols-\[minmax\(0,1\.15fr\)/)
+
+  // 竖版插画在手机改成缩略图，不再用 cover 铺满详情卡。
+  assert.match(client, /codex-reset-day-panel-bg hidden sm:block/)
+  assert.match(client, /center 22%/)
+
+  // 底部固定标签栏与安全区留白，桌面收回；点按有缩放反馈。
+  assert.match(css, /main\.codex-reset-page > \.codex-reset-page-content/)
+  assert.match(css, /var\(--site-tabbar-height\) \+ env\(safe-area-inset-bottom/)
+  assert.match(css, /\.codex-reset-cell:active/)
 })
 
 test('recent increments overlay the cached history without shrinking it', () => {

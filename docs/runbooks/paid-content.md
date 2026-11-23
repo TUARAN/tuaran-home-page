@@ -6,6 +6,7 @@
 
 - 给任意 `resourceKey` 配现金价（分）：`gated_resources.price_fen`
 - 已登录用户下单 → 网关二维码 → 支付成功 → 回调验签 → 写权益 → 页面自动解锁
+- 圈子方案（`community:*`）游客免登录下单 → 支付成功页留邮箱 → 站长按后台订单交付（见第八节）
 - **现金与燃币互斥**：`price_fen > 0` 时只显示现金购买，不提供燃币旁路（否则注册赠送的燃币可绕过定价）；`price_fen = 0` 时只走燃币。已用燃币解锁过的历史权益仍放行。
 - 后台可按订单号补单，覆盖回调丢失、到账延迟
 
@@ -60,7 +61,8 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 ## 五、验收清单
 
 - [ ] `GET /api/points/unlock?resourceKey=...` 返回 `priceFen` 与 `unlocked`
-- [ ] 未登录点购买会跳登录，登录后回到原页
+- [ ] 付费文章未登录点购买会跳登录，登录后回到原页
+- [ ] 圈子方案无需登录即可下单；支付成功页可提交邮箱，后台订单能看到
 - [ ] 二维码能在页面内展示（PC 端用 `url_qrcode`，不再跳外站）
 - [ ] 支付成功后 3 秒内自动解锁，不用手动刷新
 - [ ] 已购用户换设备/换浏览器仍可读
@@ -74,7 +76,17 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 
 要真正防白看，第二步做「付费段构建期加密 + 解锁后下发」：复用 `RESEARCH_ENCRYPTION_PASSWORD` 与 `lib/longCompass/crypto.js` 的 AES-GCM 管道，密码只在 Worker 里，`GET /api/content/full` 校验权益后返回明文。这一步需要改内容构建管线，建议只对试点那 10 篇做。
 
-## 七、坑
+## 七、圈子方案：免登录支付与联系邮箱
+
+`community:*` 的权益由站长按订单人工交付，不依赖站内解锁，因此不要求登录：
+
+- `/api/pay/create` 对未登录且资源为 `community:*` 的请求，用 `getOrIssueGuest` 签发 `guest:<gid>` 签名 Cookie（与游客评论同一套身份），订单 `user_id` 记该 gid。付费文章等资源仍只认登录账号。
+- 游客订单不写 `resource_unlocks`：`guest:*` 会触发访客目录统计，把一笔付款算成免费解锁。
+- 支付成功页调 `POST /api/pay/contact`，body 为 `{orderNo, email}`；接口只接受本人且状态为 `paid` 的订单。邮箱落在 `paid_orders.contact_email`，后台 `/admin/pay` 订单列表、详情与搜索可见。
+- 上线前先执行 `migrations/0136_paid_order_contact.sql`（加列，对旧代码向后兼容），再部署新版本。未执行迁移时只有留邮箱接口返回 `CONTACT_UNAVAILABLE`，下单与回调不受影响。
+- 游客清 Cookie 即可换 gid，因此下单限流按 IP 收紧（15 分钟 12 次）。
+
+## 八、坑
 
 - **IP 白名单**：Cloudflare Workers 出口是轮换的海外 IP，虎皮椒要求填服务器 IP 时，直连会 403。解法是国内小 VPS 做一层固定 IP 中转，或换只校验域名的通道。
 - **金额必须精确**：价格表匹配到账，10.0 和 10.00 视为不同；改价先在网关后台建好金额。

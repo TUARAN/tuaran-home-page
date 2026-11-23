@@ -7926,6 +7926,39 @@
     text-align: center;
   }
 
+  .community-xh-pay-email {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.85rem;
+  }
+
+  .community-xh-pay-email label {
+    color: var(--site-ink);
+    font-size: 10px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .community-xh-pay-email input {
+    width: 100%;
+    border: 1px solid var(--site-line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--site-panel);
+    color: var(--site-ink);
+    font-size: 12px;
+    outline: none;
+  }
+
+  .community-xh-pay-email input:focus { border-color: #07a956; }
+
+  .community-xh-pay-email .community-xh-pay-button {
+    padding: 0.5rem 1rem;
+    font-size: 12px;
+  }
+
   .community-membership.is-compact .community-xh-pay { width: 10rem; }
   .community-membership.is-compact .community-xh-pay-qr { width: 10rem; }
 
@@ -7990,6 +8023,11 @@
     border-top: 1px solid var(--site-line);
     padding: 1.25rem 1.4rem;
     background: color-mix(in srgb, var(--community-warm, #d9b66f) 7%, transparent);
+  }
+
+  /* 改成邮箱联系后不再放二维码，收成两栏 */
+  .community-membership-contact.is-email {
+    grid-template-columns: minmax(13rem, 0.8fr) minmax(20rem, 1.2fr);
   }
 
   .community-membership-owner-qr {
@@ -8135,6 +8173,11 @@
   .community-membership.is-compact .community-membership-contact {
     grid-template-columns: 8.5rem minmax(10rem, 0.65fr) minmax(18rem, 1.35fr);
     align-items: center;
+  }
+
+  .community-membership.is-compact .community-membership-contact.is-email,
+  .community-join-panel > .community-membership.is-compact .community-membership-contact.is-email {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   }
 
   .community-membership.is-compact .community-membership-owner-qr {
@@ -8355,6 +8398,12 @@
       align-items: flex-start;
       gap: 1rem;
       padding: 1rem;
+    }
+
+    .community-membership-contact.is-email,
+    .community-membership.is-compact .community-membership-contact.is-email,
+    .community-join-panel > .community-membership.is-compact .community-membership-contact.is-email {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .community-membership-owner-qr { width: 8.5rem; }

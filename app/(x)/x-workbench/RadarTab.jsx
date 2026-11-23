@@ -138,7 +138,7 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
       <a className={s.link} href={i.url} target="_blank" rel="noreferrer noopener">原帖</a>
     </>
   )
-  const empty = heroState !== 'down' && heroRows.length === 0
+  const empty = heroState === 'ok' && heroRows.length === 0
   return (
     <section>
       <div className={s.pageTitle}><h1>推文榜</h1><span className={s.note}>爆发指数 = 加权互动量 ÷ 发布时长；统计日以北京时间 8 点为界</span></div>

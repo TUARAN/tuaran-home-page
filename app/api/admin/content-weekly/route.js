@@ -13,9 +13,10 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 // 互动反馈只统计真实读者。站内互动机器人（/admin/engagement-bots）以 reader:<slug>
-// 写入 article_comments，属于站内自测活跃，不进入运营看板；口径与 engagementBotRun.js
-// 的 loadRecentCommentPairs 一致。历史记录与前台评论区保持原样。
+// 写入 article_comments、以 user:reader:<slug> 写入 article_likes，属于站内自测活跃，
+// 不进入运营看板；口径与 engagementBotRun.js 一致。历史记录、前台评论区与前台点赞数保持原样。
 const BOT_COMMENT_USER_PATTERN = `${READER_USER_PREFIX}%`
+const BOT_VOTER_KEY_PATTERN = `user:${READER_USER_PREFIX}%`
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
@@ -208,16 +209,18 @@ async function buildWeeklyAnalytics(db, { days, cumulative }) {
       `SELECT
          SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
          SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
-       FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3`,
-    ).bind(periodStart, previousStart, now).first(),
+       FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+         AND voter_key NOT LIKE ?4`,
+    ).bind(periodStart, previousStart, now, BOT_VOTER_KEY_PATTERN).first(),
     db.prepare(
       `SELECT article_key,
          SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
          SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
        FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+         AND voter_key NOT LIKE ?4
        GROUP BY article_key HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
-       ORDER BY total DESC LIMIT ?4`,
-    ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
+       ORDER BY total DESC LIMIT ?5`,
+    ).bind(periodStart, previousStart, now, BOT_VOTER_KEY_PATTERN, LIMIT).all().then((r) => r.results || []),
     db.prepare(
       `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
        FROM article_comments

@@ -20,6 +20,10 @@ const contentAnalyticsRouteSource = await readFile(
   new URL('../../app/api/admin/content-weekly/route.js', import.meta.url),
   'utf8',
 )
+const readerDetailRouteSource = await readFile(
+  new URL('../../app/api/admin/content-weekly/reader/route.js', import.meta.url),
+  'utf8',
+)
 
 test('anonymous readers receive a privacy-safe marker from their visitor hash', () => {
   assert.equal(readingVisitorName({
@@ -73,4 +77,14 @@ test('admin analytics exposes a true cumulative history range', () => {
   assert.match(analyticsRouteSource, /requestedRange === 'all'/)
   assert.match(contentAnalyticsRouteSource, /requestedRange === 'all'/)
   assert.match(contentAnalyticsRouteSource, /cumulativeAnalyticsWindow/)
+})
+
+test('active readers expand into a per-reader detail behind the owner guard', () => {
+  assert.match(readerDetailRouteSource, /getOwnerOrReject/)
+  assert.match(readerDetailRouteSource, /CASE WHEN user_id <> '' THEN user_id ELSE visitor_hash END/)
+  assert.match(readerDetailRouteSource, /quality = 'qualified'/)
+  assert.match(readerDetailRouteSource, /first_seen/)
+  assert.match(readerDetailRouteSource, /readingVisitorName/)
+  assert.match(analyticsDashboardSource, /content-weekly\/reader/)
+  assert.match(analyticsDashboardSource, /toggleReader/)
 })

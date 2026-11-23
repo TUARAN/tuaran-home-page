@@ -109,17 +109,11 @@ test('validator rejects a self-account and a window outside the publication day'
   }, '2026-11-05.json').window, expectedWindow('2026-11-05'))
 })
 
-test('whitepaper entry row links the calendar beside the roundtable', async () => {
-  const [page, css] = await Promise.all([
-    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/whitepaper.module.css', import.meta.url), 'utf8'),
-  ])
-  const roundtable = page.indexOf('大互动 · 圆桌大会')
-  const calendar = page.indexOf('>大互动日历<')
-  assert.ok(roundtable > 0)
-  assert.ok(calendar > roundtable)
-  assert.match(page, /href="\/resources\/big-interaction-whitepaper\/calendar"/)
-  assert.match(css, /\.entryGrid \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/)
+test('theory page keeps the body and drops the three entry cards', async () => {
+  const page = await readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(page, /查看智能体与获取方式|走进圆桌会场|打开日历|大互动 · 圆桌大会/)
+  assert.match(page, /href="https:\/\/x\.2aran\.com\/docs#daily-volume"/)
+  assert.match(page, /ChapterNav/)
 })
 
 test('calendar page renders the five ranking columns and an empty state', async () => {
@@ -127,7 +121,7 @@ test('calendar page renders the five ranking columns and an empty state', async 
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/page.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/calendar/InteractionCalendar.jsx', import.meta.url), 'utf8'),
   ])
-  assert.match(page, /const canonicalUrl = 'https:\/\/2aran\.com\/resources\/big-interaction-whitepaper\/calendar'/)
+  assert.match(page, /const canonicalUrl = 'https:\/\/x\.2aran\.com\/calendar'/)
   assert.match(page, /公开地址 <a href=\{path\}>\{canonicalUrl\}<\/a>/)
   assert.match(page, /canonical: path/)
   assert.match(page, /application\/ld\+json/)

@@ -268,7 +268,7 @@
       sent.catch((error) => { noteExtensionContextFailure(error); });
     }
   }
-  const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
+  const DOCS_BASE_URL = "https://x.2aran.com/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
     "xrc-docs-schedule": "task-window-plan",
@@ -10076,7 +10076,7 @@
           </div>
           <div class="xrc-docs-content">
             <section class="xrc-docs-section">
-              <strong>X 工作台</strong>
+              <strong>X大互动</strong>
               <p class="xrc-config-note">在 x.2aran.com 的智能体标签生成配对码。提交会将当前页面推文正文及公开指标加入共享雷达。</p>
               <input type="password" autocomplete="off" data-xrc-workbench-code placeholder="一次性配对码">
               <button type="button" data-xrc-workbench-pair>配对</button>
@@ -10713,7 +10713,7 @@
           try {
             const items = action === "ingest" ? (globalThis.XrcWorkbenchCollector?.collectVisible() || []).slice(0, 50) : [];
             const result = await sendExtensionMessage({ type: `xrc-workbench-${action}`, code: code.value, items });
-            status.textContent = result?.ok ? action === "ingest" ? `已收录 ${result.accepted || 0} 条` : action === "pair" ? "配对成功" : "本机已断开；可在工作台撤销全部凭证" : result?.error || "连接失败";
+            status.textContent = result?.ok ? action === "ingest" ? `已收录 ${result.accepted || 0} 条` : action === "pair" ? "配对成功" : "本机已断开；可在「X大互动」撤销全部凭证" : result?.error || "连接失败";
             if (action === "pair" && result?.ok) code.value = "";
           } catch { status.textContent = "连接失败，请重试"; }
           finally { button.disabled = false; }

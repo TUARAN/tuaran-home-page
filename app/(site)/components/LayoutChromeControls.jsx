@@ -11,7 +11,15 @@ import SiteHeader from './SiteHeader'
 import SiteMobileTabBar from './SiteMobileTabBar'
 import { getRichPageByPath, getRichPagePresentation } from '../../../lib/site/engineeringWorks'
 
-const HIDE_CHROME_PATHS = new Set(['/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup'])
+const HIDE_CHROME_PATHS = new Set([
+  '/about', '/about/resume', '/web-llm', '/web-llm/embed', '/archives/agent-world-cup',
+  '/docs', '/theory', '/calendar', '/roundtable', '/extension',
+  '/resources/x-reply-clipboard-extension',
+  '/resources/x-reply-clipboard-extension/docs',
+  '/resources/big-interaction-whitepaper',
+  '/resources/big-interaction-whitepaper/calendar',
+  '/resources/big-interaction-whitepaper/roundtable',
+])
 const HIDE_HEADER_PATHS = new Set(['/spacex', '/tools/workbuddy-acp-bridge'])
 
 function isOnchainBlogPath(pathname) {

@@ -1,27 +1,41 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import AgentTab from './AgentTab'
 import BoardTab from './BoardTab'
 import PosterTab from './PosterTab'
 import RadarTab from './RadarTab'
-import RewriteTab from './RewriteTab'
 import ScheduleTab from './ScheduleTab'
 import { call } from './api'
+import { WORKBENCH_MENU_GROUPS } from './tabs'
 import s from './workbench.module.css'
 
-const TABS = [['radar', '推文榜'], ['board', '账号榜'], ['rewrite', 'AI 改写'], ['poster', '海报'], ['schedule', '排期'], ['agent', '智能体']]
+function TabBar({ tab, onTab }) {
+  return (
+    <nav className={s.tabs} aria-label="功能">
+      {WORKBENCH_MENU_GROUPS.map((group) => (
+        <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
+          <span className={s.groupLabel}>{group.label}</span>
+          {group.items.map((item) => (
+            item.href
+              ? <a key={item.id} className={s.tab} href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</a>
+              : <button key={item.id} type="button" className={`${s.tab} ${tab === item.id ? s.tabOn : ''}`} aria-current={tab === item.id ? 'page' : undefined} onClick={() => onTab(item.id)}>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</button>
+          ))}
+        </div>
+      ))}
+    </nav>
+  )
+}
 
 export default function WorkbenchClient() {
-  const [state, setState] = useState('loading')
+  const [signedIn, setSignedIn] = useState(false)
   const [tab, setTab] = useState('radar')
   const [accounts, setAccounts] = useState([])
   const [handle, setHandle] = useState('')
   const [usage, setUsage] = useState(null)
-  const [rewriteSeed, setRewriteSeed] = useState('')
   const [posterSeed, setPosterSeed] = useState(null)
-  const [draftSeed, setDraftSeed] = useState('')
   const [keyword, setKeyword] = useState('')
   const [query, setQuery] = useState('')
 
@@ -30,66 +44,68 @@ export default function WorkbenchClient() {
     if (u.ok) setUsage(u.data)
   }, [])
 
+  const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
+
   const loadAccounts = useCallback(async () => {
     const res = await call('/accounts')
-    if (res.status === 401) return setState('anonymous')
-    if (!res.ok) return setState('error')
+    if (!res.ok) {
+      setSignedIn(false)
+      setAccounts([])
+      return
+    }
     setAccounts(res.data.accounts || [])
     setHandle((cur) => (res.data.accounts.some((a) => a.handle === cur) ? cur : res.data.accounts[0]?.handle || ''))
-    setState('ready')
+    setSignedIn(true)
     loadUsage()
   }, [loadUsage])
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
+  useEffect(() => {
+    setReturnTo(window.location.href)
+    const q = new URLSearchParams(window.location.search).get('q') || ''
+    if (q) { setQuery(q); setKeyword(q); setTab('radar') }
+  }, [])
 
-  if (state === 'loading') return <div className={s.app}><main className={s.main}>加载中…</main></div>
-  if (state === 'error') return <div className={s.app}><main className={s.main}>服务暂时不可用，请稍后刷新。</main></div>
-  if (state === 'anonymous') {
-    const back = encodeURIComponent('https://x.2aran.com/')
-    return (
-      <div className={s.app}>
-        <main className={s.main}>
-          <h1>看见爆点，写出自己的版本</h1>
-          <p className={s.hint}>爆文雷达、AI 改写、海报、定时发布，加一个会按你的账号习惯做互动的智能体。使用 2aran.com 账号登录。</p>
-          <a className={`${s.btn} ${s.primary}`} href={`https://2aran.com/login?returnTo=${back}`}>登录</a>
-        </main>
-      </div>
-    )
-  }
-
-  const goRewrite = (text) => { setRewriteSeed(text); setTab('rewrite') }
   const goPoster = (seed) => { setPosterSeed({ ...seed, at: Date.now() }); setTab('poster') }
-  const goDraft = (text) => { setDraftSeed(text); setTab('schedule') }
+  const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
+  const needsLogin = !signedIn && (tab === 'agent' || tab === 'poster' || tab === 'schedule')
+
+  const body = needsLogin ? (
+    <>
+      <h1>登录后使用智能体</h1>
+      <p className={s.hint}>推文榜和账号榜不用登录。绑定账号、额度和写操作在登录后可用。</p>
+      <a className={`${s.btn} ${s.primary}`} href={loginHref}>登录</a>
+    </>
+  ) : (
+    <>
+      {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onPoster={signedIn ? goPoster : undefined} signedIn={signedIn} />}
+      {tab === 'board' && <BoardTab />}
+      {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
+      {tab === 'schedule' && <ScheduleTab handle={handle} seed="" />}
+      {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
+    </>
+  )
 
   return (
     <div className={s.app}>
       <header className={s.bar}>
         <div className={s.barInner}>
-          <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X 工作台<span className={s.brandSub}>爆点、改写、发布</span></span></span>
-          <nav className={s.tabs} aria-label="功能">
-            {TABS.map(([k, label]) => (
-              <button key={k} type="button" className={`${s.tab} ${tab === k ? s.tabOn : ''}`} aria-current={tab === k ? 'page' : undefined} onClick={() => setTab(k)}>{label}</button>
-            ))}
-          </nav>
+          <span className={s.brand}><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>观察、跟进、智能</span></span></span>
+          <TabBar tab={tab} onTab={setTab} />
           <form className={s.search} onSubmit={(e) => { e.preventDefault(); setKeyword(query.trim()); setTab('radar') }}>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜账号、推文关键词" aria-label="搜索" />
             <button type="submit" className={s.searchBtn}>搜索</button>
           </form>
-          <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
-          <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
-            {accounts.length === 0 && <option value="">未绑定账号</option>}
-            {accounts.map((a) => <option key={a.handle} value={a.handle}>@{a.handle}</option>)}
-          </select>
+          <Link className={s.cta} href="/extension">获取插件</Link>
+          {signedIn ? (
+            <select className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} aria-label="当前 X 账号">
+              {accounts.length === 0 && <option value="">未绑定账号</option>}
+              {accounts.map((a) => <option key={a.handle} value={a.handle}>@{a.handle}</option>)}
+            </select>
+          ) : <a className={s.btn} href={loginHref}>登录</a>}
         </div>
       </header>
-      <main className={s.main}>
-        {tab === 'radar' && <RadarTab keyword={keyword} onKeyword={(k) => { setKeyword(k); setQuery(k) }} onRewrite={goRewrite} onPoster={goPoster} />}
-        {tab === 'board' && <BoardTab />}
-        {tab === 'rewrite' && <RewriteTab seed={rewriteSeed} handle={handle} onUsed={loadUsage} onDraft={goDraft} onPoster={goPoster} />}
-        {tab === 'poster' && <PosterTab seed={posterSeed} handle={handle} />}
-        {tab === 'schedule' && <ScheduleTab handle={handle} seed={draftSeed} />}
-        {tab === 'agent' && <AgentTab accounts={accounts} usage={usage} onAccounts={loadAccounts} />}
-      </main>
+      <main className={s.main}>{body}</main>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
 import { call, message, post } from './api'
@@ -125,7 +126,7 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
         <strong>连接浏览器插件</strong>
         <p className={s.note}>配对后，插件可以把你在 X 上看到的公开推文（正文和点赞、转发、评论、展示数）提交到推文榜，榜单对所有用户共享。受保护账号的推文不会提交。配对码 10 分钟内有效，只能用一次。</p>
         <ol className={s.note} style={{ paddingLeft: 18 }}>
-          <li>在 X 页面打开插件面板，进入工具箱的「X 工作台」。</li>
+          <li>在 X 页面打开插件面板，进入工具箱的「X大互动」。</li>
           <li>点下面的按钮生成配对码，粘贴到插件里点「配对」。</li>
           <li>要自动收录，勾选「浏览时自动提交高互动推文」。</li>
         </ol>
@@ -149,7 +150,7 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
           </div>
         </div>
       )}
-      <p className={s.note}>浏览器插件在 <a href="https://2aran.com/resources/x-reply-clipboard-extension">X 大互动智能体插件页</a> 获取。</p>
+      <p className={s.note}>浏览器插件在 <Link href="/extension">X 大互动智能体插件页</Link> 获取。</p>
       {note && <p role="status" className={s.note}>{note}</p>}
     </section>
   )

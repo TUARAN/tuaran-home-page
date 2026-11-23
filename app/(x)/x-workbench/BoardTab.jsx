@@ -6,13 +6,14 @@ import { call, compact, message, post } from './api'
 import { buildBoardSvg } from '../../../lib/x/workbench/posterCore'
 import s from './workbench.module.css'
 
-const WINDOWS = [['today', '今日榜'], ['yesterday', '昨日榜'], ['7d', '7 天榜']]
+const WINDOWS = [['auto', '最近有收录'], ['today', '今日榜'], ['yesterday', '昨日榜'], ['7d', '7 天榜']]
 const DIMS = [['posts', '发帖', '帖'], ['replies', '评论', '条'], ['views', '曝光', ''], ['likes', '获赞', '赞']]
 
 export default function BoardTab() {
-  const [win, setWin] = useState('today')
+  const [win, setWin] = useState('auto')
   const [dim, setDim] = useState('views')
   const [rows, setRows] = useState([])
+  const [loaded, setLoaded] = useState(false)
   const [suggestions, setSuggestions] = useState(null)
   useEffect(() => { call('/topics?review=1').then(res => { if (res.ok) setSuggestions(res.data.suggestions) }) }, [])
   async function review(id, decision) {
@@ -28,7 +29,8 @@ export default function BoardTab() {
     let live = true
     call(`/leaderboard?window=${win}&dim=${dim}`).then((res) => {
       if (!live) return
-      if (res.ok) { setRows(res.data.rows); setFrom(res.data.from); setNote('') } else setNote(message(res.data))
+      if (res.ok) { setRows(res.data.rows || []); setFrom(res.data.from); setNote(''); setLoaded(true) }
+      else { setRows([]); setLoaded(true); setNote(res.status === 503 || res.status === 0 ? '账号榜暂时不可用，请稍后再试。' : message(res.data)) }
     })
     call(`/leaderboard?history=1&dim=${dim}`).then(res => { if (live) setDays(res.ok ? res.data.days : []) })
     return () => { live = false }
@@ -57,7 +59,7 @@ export default function BoardTab() {
   return (
     <section>
       <h2 className={s.h2}>账号榜</h2>
-      <p className={s.hint}>统计日以北京时间每天 8 点为界。榜单只覆盖工作台采集到的推文，不代表全站数据；评论数按公开指标汇总，仅供参考。</p>
+      <p className={s.hint}>统计日以北京时间每天 8 点为界。榜单只覆盖「X大互动」采集到的推文，不代表全站数据；评论数按公开指标汇总，仅供参考。</p>
       <div className={s.row}>
         {WINDOWS.map(([k, label]) => (
           <button key={k} type="button" className={`${s.btn} ${win === k ? s.primary : ''}`} onClick={() => setWin(k)}>{label}</button>
@@ -68,7 +70,7 @@ export default function BoardTab() {
         ))}
       </div>
       <button type="button" className={s.btn} disabled={!rows.length} onClick={shareBoard}>下载榜单分享图</button>
-      {rows.length === 0 && <div className={s.card}>这个时间段还没有收录数据。</div>}
+      {loaded && rows.length === 0 && !note && <div className={s.card}>这个时间段还没有收录数据。</div>}
       {top && (
         <div className={s.champ} style={{ marginBottom: 12 }}>
           <div className={s.champNo}>No.1</div>

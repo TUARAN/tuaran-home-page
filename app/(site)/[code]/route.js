@@ -8,10 +8,7 @@ const RESERVED_CODES = new Set(['poetry', 'x'])
 export async function GET(request, { params }) {
   const { code } = await params
   if (code === 'x') {
-    return new Response(null, {
-      status: 308,
-      headers: { location: new URL('/resources/big-interaction-whitepaper', request.url).toString() },
-    })
+    return Response.redirect(new URL('https://x.2aran.com/theory'), 308)
   }
   return handleShortLinkRedirect(request, params, { reservedCodes: RESERVED_CODES })
 }

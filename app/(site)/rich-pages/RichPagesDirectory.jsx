@@ -80,7 +80,7 @@ export default function RichPagesDirectory({ works, categories }) {
       config={CONFIG}
       featured={
         <Link
-          href="/resources/big-interaction-whitepaper"
+          href="https://x.2aran.com/theory"
           className="group grid overflow-hidden rounded-2xl border border-emerald-300/70 bg-[#102c25] text-white no-underline transition hover:border-emerald-200 hover:shadow-[0_14px_32px_rgba(17,63,41,0.18)] dark:border-emerald-700 sm:grid-cols-[minmax(0,1fr)_190px]"
           data-analytics-event="entry_click"
           data-analytics-surface="interactive_directory"

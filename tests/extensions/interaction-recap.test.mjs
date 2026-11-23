@@ -8,8 +8,8 @@ const require = createRequire(import.meta.url)
 const recap = require('../../tools/x-reply-clipboard-extension/interactionRecap.js')
 const background = require('../../tools/x-reply-clipboard-extension/background.js')
 const extensionDir = new URL('../../tools/x-reply-clipboard-extension/', import.meta.url)
-const CALENDAR_URL = 'https://2aran.com/resources/big-interaction-whitepaper/calendar'
-const SAMPLE_TEXT = '感谢过去一天的互动，谢谢 @VicentYip @xiaqingfeng666 @AlanShao111 @JMkernt @DISONYYDS @fngmn134813 @daniel_w_zj @ynggu2548245 @DearYoung28 @grok 愿意一起聊天。往期可以来大互动日历翻翻：https://2aran.com/resources/big-interaction-whitepaper/calendar'
+const CALENDAR_URL = 'https://x.2aran.com/calendar'
+const SAMPLE_TEXT = '感谢过去一天的互动，谢谢 @VicentYip @xiaqingfeng666 @AlanShao111 @JMkernt @DISONYYDS @fngmn134813 @daniel_w_zj @ynggu2548245 @DearYoung28 @grok 愿意一起聊天。往期可以来大互动日历翻翻：https://x.2aran.com/calendar'
 
 const sampleDay = JSON.parse(await readFile(new URL('../../lib/interaction/dailyTop/days/2026-11-05.json', import.meta.url), 'utf8'))
 

@@ -10,8 +10,10 @@ import { PUBLISHED_WORKS } from '../lib/site/publishedWorks.js'
 test('书架目录的每本书都有唯一且可打开的站内页面', () => {
   assert.equal(RESOURCE_BOOKS.length, RESOURCE_BOOK_HREFS.size)
   for (const book of RESOURCE_BOOKS) {
-    assert.match(book.href, /^\/(resources|tools)\//)
-    const route = join(process.cwd(), 'app/(site)', book.href.slice(1))
+    const routePath = book.sourcePath || book.href
+    assert.match(routePath, /^\/(resources|tools)\//)
+    if (book.href.startsWith('http')) assert.equal(book.href, 'https://x.2aran.com/docs')
+    const route = join(process.cwd(), 'app/(site)', routePath.slice(1))
     assert.ok(
       ['page.jsx', 'page.js', 'page.mdx'].some((file) => existsSync(join(route, file))),
       `${book.href} 缺少页面`,

@@ -3,24 +3,19 @@ import { NextResponse } from 'next/server'
 
 import { ADMIN_HOST, ADMIN_LEGACY_REDIRECTS, isAdminHostPathAllowed, isRevertDraftApi, revertDraftCorsHeaders, revertDraftCorsOrigin } from './lib/admin/adminRoutes'
 import { getUserFromRequest } from './lib/auth/edgeSession'
-import { LOCALE_COOKIE, localeFromAcceptLanguage, localeFromCountry } from './lib/site/i18n'
+import { DEFAULT_LOCALE, LOCALE_COOKIE } from './lib/site/i18n'
 import { getLegacyPathRedirect, shouldNoindexPath } from './lib/site/indexingPolicy'
 import { xRouteDecision } from './lib/site/xSiteRoutes'
 import { isAdminLocalPreviewEnabled } from './lib/admin/adminLocalPreview'
 import { isOwnerUser } from './lib/auth/ownerAuth'
 
 /**
- * 首次访问按 IP 国家码（Cloudflare 的 cf-ipcountry）决定默认语言：
- * 中国大陆 → 中文，海外 → 英文；无国家码时退回 Accept-Language。
+ * 默认语言固定为中文，不跟随访客 IP 国家或浏览器语言。
  * 仅在 cookie 不存在时写入，之后以用户在站内的手动选择为准。
  */
 function applyDefaultLocaleCookie(request, response) {
   if (request.cookies.get(LOCALE_COOKIE)) return
-  const country = request.headers.get('cf-ipcountry') || ''
-  const locale = country
-    ? localeFromCountry(country)
-    : localeFromAcceptLanguage(request.headers.get('accept-language'))
-  response.cookies.set(LOCALE_COOKIE, locale, {
+  response.cookies.set(LOCALE_COOKIE, DEFAULT_LOCALE, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',

@@ -28,10 +28,9 @@ export const metadata = {
 }
 
 export default async function ArticlesPage({ searchParams }) {
-  const [items, paidKeys] = await Promise.all([
-    readRuntimeKnowledgeItems(),
-    readPaidResourceKeys(getD1),
-  ])
+  // 保持审计要求的字面形式：const items = await readRuntimeKnowledgeItems()
+  const items = await readRuntimeKnowledgeItems()
+  const paidKeys = await readPaidResourceKeys(getD1)
   const initialFilters = filtersFromParams(toUrlSearchParams(await searchParams))
 
   return (

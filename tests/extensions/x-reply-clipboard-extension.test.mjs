@@ -8905,8 +8905,9 @@ test('task windows are created once and reused without backgrounding another tas
     savedTabs = { timeline: 11, notifications: 22 }
     const moved = await background.focusTaskTab('notifications', { tab: { url: 'https://x.com/home' } })
     assert.equal(moved.reused, true)
-    assert.deepEqual(movedTabs, [22])
-    assert.equal(focusedWindows.at(-1), 30)
+    // A shared window is kept; tabs are never migrated with windows.create({ tabId }).
+    assert.deepEqual(movedTabs, [])
+    assert.equal(focusedWindows.at(-1), 5)
 
     await background.registerTaskTab('timeline', 22)
     assert.equal(savedTabs.timeline, 22)
@@ -13249,4 +13250,13 @@ test('old 30-minute follow batch rest is pulled in to the current pace gap', asy
     globalThis.chrome = previousChrome
     Date.now = previousDateNow
   }
+})
+
+test('crash-risk guards: no tab migration, window cap, deduped tab removal, staggered reload', async () => {
+  const source = await readFile(new URL('background.js', extensionDir), 'utf8')
+  assert.doesNotMatch(source, /chrome\.windows\.create\(\{\s*tabId/)
+  assert.match(source, /const MAX_TASK_WINDOWS = 3/)
+  assert.match(source, /taskWindowCount\(tabs\) >= MAX_TASK_WINDOWS/)
+  assert.match(source, /abandonInFlight\.has\(id\)/)
+  assert.doesNotMatch(source, /\.map\(\(tab\) => chrome\.tabs\.reload\(tab\.id\)\)/)
 })

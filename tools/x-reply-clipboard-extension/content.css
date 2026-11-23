@@ -2570,13 +2570,6 @@
   font: inherit; font-size: 12px;
 }
 .xrc-page-mark button[aria-pressed="true"] { border-color: transparent; background: #111827; color: #fff; }
-.xrc-page-mark form { display: grid; gap: 6px; margin: 0; }
-.xrc-page-mark label { display: grid; gap: 2px; font-size: 12px; }
-.xrc-page-mark input {
-  width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px;
-  border: 1px solid rgba(128, 128, 128, 0.45); background: transparent; color: inherit; font: inherit; font-size: 13px;
-}
-.xrc-page-mark [data-xrc-dictate-status] { margin: 0; font-size: 12px; line-height: 1.4; opacity: 0.8; }
 #x-reply-clipboard-panel .xrc-post-card-head { display: flex; align-items: end; justify-content: space-between; gap: 10px; }
 #x-reply-clipboard-panel .xrc-post-card-head > span { display: grid; gap: 2px; }
 #x-reply-clipboard-panel .xrc-post-card-head small,

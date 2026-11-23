@@ -1488,3 +1488,61 @@
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Header: today's counts for the six task categories. */
+#x-reply-clipboard-panel[data-xrc-home="agent"] .xrc-docs-head.xrc-agent-page-head {
+  flex-wrap: wrap;
+  height: auto;
+  max-height: none;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  row-gap: 4px;
+}
+
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head > div:first-child { flex: 1 1 0; min-width: 0; }
+
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head > .xrc-agent-today {
+  display: flex;
+  flex: 1 0 100%;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  order: 3;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head .xrc-agent-today > .xrc-agent-today-title {
+  flex: none;
+  color: var(--xrc-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head .xrc-agent-today-chip {
+  display: inline-flex;
+  flex: 0 1 76px;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border: 1px solid color-mix(in srgb, var(--xrc-category, var(--xrc-accent)) 30%, var(--xrc-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--xrc-category, var(--xrc-accent)) 9%, transparent);
+  color: var(--xrc-category, var(--xrc-muted));
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head .xrc-agent-today-chip > span { color: inherit; font-size: inherit; font-weight: inherit; }
+#x-reply-clipboard-panel .xrc-docs-head.xrc-agent-page-head .xrc-agent-today-chip > b { font-variant-numeric: tabular-nums; font-weight: 800; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="comment"] { --xrc-category: #1769bd; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="like"] { --xrc-category: #c72c69; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="post"] { --xrc-category: #aa5c0b; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="follow"] { --xrc-category: #087b67; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="clean"] { --xrc-category: #7048aa; }
+#x-reply-clipboard-panel .xrc-agent-today-chip[data-category="community"] { --xrc-category: #0b6e8a; }

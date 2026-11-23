@@ -1409,6 +1409,25 @@
     return group;
   }
 
+  // Today's confirmed actions per category; content.js renderTodaySummary fills the numbers.
+  const TODAY_CHIPS = [["comment", "评论"], ["like", "点赞"], ["follow", "关注"], ["post", "发帖"], ["community", "社群"], ["clean", "清理"]];
+
+  function todayChips() {
+    const box = el("div", "xrc-agent-today");
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", "今日汇总");
+    box.append(el("span", "xrc-agent-today-title", "今日汇总"));
+    for (const [id, label] of TODAY_CHIPS) {
+      const chip = el("span", "xrc-agent-today-chip");
+      chip.dataset.category = id;
+      const count = el("b", "", "0");
+      count.setAttribute("data-xrc-agent-today", id);
+      chip.append(el("span", "", label), count);
+      box.append(chip);
+    }
+    return box;
+  }
+
   function pageHead(kicker, title) {
     const head = el("header", "xrc-docs-head xrc-page-head xrc-agent-page-head");
     const pageTitle = el("strong", "xrc-agent-page-title", title);
@@ -1427,7 +1446,7 @@
     const persona = actionButton("账号人格与记忆", "profile", "xrc-agent-tool", "persona");
     persona.title = "账号人格与记忆";
     tools.append(persona, bell, fresh);
-    head.append(row, tools);
+    head.append(row, tools, todayChips());
     return head;
   }
 

@@ -5,6 +5,15 @@ import { useMemo, useState } from 'react'
 import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib/research/researchStyleTemplates'
 import { RESEARCH_STYLE_AUDIT } from '../../../../lib/research/styleAudit'
 import { AdminPage } from '../../components/ui'
+import {
+  BookProse,
+  LeafGrid,
+  LeafTitle,
+  PaperPage,
+  chapterLabel,
+  chapterNumber,
+  folioFor,
+} from '../../components/ResearchBook'
 
 function ResearchStyleFrame({ embedded, children }) {
   if (embedded) return children
@@ -68,6 +77,25 @@ function StylePill({ style, active, onClick }) {
         </span>
         <span className={`truncate font-mono text-[9px] ${active ? 'opacity-70' : 'text-[#858779] dark:text-[#8e9ab0]'}`}>{style.id}</span>
       </span>
+    </button>
+  )
+}
+
+/** 书页左叶的「本章目录」条目：序号 +  dotted leader + 状态。 */
+function BookStyleItem({ style, active, onClick, index }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? 'true' : undefined}
+      className="flex w-full items-baseline gap-2 rounded-sm px-2 py-2 text-left text-[#514c41] transition hover:bg-[#f4f1e7] dark:text-[#b9b3a4] dark:hover:bg-[#121417]"
+    >
+      <span className="shrink-0 font-mono text-[10px] text-[#977637] dark:text-[#d6b46b]">{chapterNumber(index)}</span>
+      <span className={`shrink-0 font-serif text-[13px] ${active ? 'font-bold text-[#6d3b33] dark:text-[#d89184]' : 'font-semibold'}`}>
+        {style.label}
+      </span>
+      <span className="min-w-[8px] flex-1 border-b border-dotted border-[#b8ae94] dark:border-[#55584f]" aria-hidden="true" />
+      <span className="shrink-0 font-mono text-[9px] text-[#8c8777] dark:text-[#8b8577]">{STATUS_LABEL[style.status] || style.status}</span>
     </button>
   )
 }
@@ -142,7 +170,7 @@ function TextList({ items, ordered = false }) {
   )
 }
 
-function RulesPanel({ defaultOpen = false }) {
+function RulesContent({ defaultOpen = false }) {
   const [showRules, setShowRules] = useState(defaultOpen)
   const auditById = useMemo(() => new Map(RESEARCH_STYLE_AUDIT.rules.map((rule) => [rule.id, rule])), [])
   const totalFindings = RESEARCH_STYLE_AUDIT.fixCount + RESEARCH_STYLE_AUDIT.reviewCount
@@ -208,11 +236,71 @@ function RulesPanel({ defaultOpen = false }) {
   )
 }
 
-function StylesPanel() {
+function RulesPanel({ defaultOpen = false }) {
+  return <RulesContent defaultOpen={defaultOpen} />
+}
+
+function BookRulesPanel({ defaultOpen = false }) {
+  return (
+    <PaperPage
+      chapter={chapterLabel(0, '写作规范')}
+      title="写作规范"
+      summary="所有调研共同遵守的措辞底线。机器负责扫出候选句，是否要改由人结合上下文判断。"
+      folio={folioFor(0)}
+    >
+      <BookProse>
+        <RulesContent defaultOpen={defaultOpen} />
+      </BookProse>
+    </PaperPage>
+  )
+}
+
+function StylesPanel({ book = false }) {
   const styles = useMemo(() => [...RESEARCH_STYLE_TEMPLATES], [])
   const initial = styles.find((t) => t.status === 'active') || styles[0]
   const [selectedId, setSelectedId] = useState(initial?.id)
   const selected = styles.find((t) => t.id === selectedId) || initial
+
+  const orderNote = (
+    <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-3 text-[11px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
+      <p className="mb-1 font-semibold text-[#51514a] dark:text-gray-300">写作顺序</p>
+      <p className="m-0">
+        选风格 → 先列事实 → 写判断 → 跑一次措辞审计。规则正本在 <code>researchStyleTemplates.js</code>。
+      </p>
+    </div>
+  )
+
+  if (book) {
+    return (
+      <PaperPage
+        chapter={chapterLabel(1, '调研风格')}
+        title="调研风格"
+        summary="先定写法，再写内容。同一组事实用不同风格写出来，取舍仍由人做。"
+        folio={folioFor(1)}
+      >
+        <LeafGrid
+          left={
+            <>
+              <LeafTitle>本章目录 · {styles.length} 种写法</LeafTitle>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {styles.map((style, index) => (
+                  <BookStyleItem
+                    key={style.id}
+                    style={style}
+                    index={index}
+                    active={style.id === selectedId}
+                    onClick={() => setSelectedId(style.id)}
+                  />
+                ))}
+              </div>
+              {orderNote}
+            </>
+          }
+          right={<StyleCard style={selected} book />}
+        />
+      </PaperPage>
+    )
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
@@ -230,13 +318,7 @@ function StylesPanel() {
             ))}
           </ol>
         </div>
-
-        <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-3 text-[11px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
-          <p className="mb-1 font-semibold text-[#51514a] dark:text-gray-300">写作顺序</p>
-          <p className="m-0">
-            选风格 → 先列事实 → 写判断 → 跑一次措辞审计。规则正本在 <code>researchStyleTemplates.js</code>。
-          </p>
-        </div>
+        {orderNote}
       </aside>
 
       <section>
@@ -246,9 +328,18 @@ function StylesPanel() {
   )
 }
 
-export default function ResearchStyleClient({ embedded = false, view = 'all' }) {
+export default function ResearchStyleClient({ embedded = false, view = 'all', book = false }) {
   const showRules = view === 'all' || view === 'rules'
   const showStyles = view === 'all' || view === 'styles'
+
+  if (book) {
+    return (
+      <>
+        {showRules ? <BookRulesPanel defaultOpen={view === 'rules'} /> : null}
+        {showStyles ? <StylesPanel book /> : null}
+      </>
+    )
+  }
 
   return (
     <ResearchStyleFrame embedded={embedded}>
@@ -258,16 +349,17 @@ export default function ResearchStyleClient({ embedded = false, view = 'all' }) 
   )
 }
 
-function StyleCard({ style }) {
+function StyleCard({ style, book = false }) {
   if (!style) return null
-  return (
-    <article className="rounded-2xl border border-[#caccc0] bg-white p-6 shadow-sm dark:border-[#2d3744] dark:bg-[#10161f] md:p-8">
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#e6e6dc] pb-4 dark:border-[#2d3744]">
+
+  const card = (
+    <article className={book ? '' : 'rounded-2xl border border-[#caccc0] bg-white p-6 shadow-sm dark:border-[#2d3744] dark:bg-[#10161f] md:p-8'}>
+      <header className={`mb-5 border-b border-[#e6e6dc] pb-4 dark:border-[#2d3744] ${book ? '' : 'flex flex-wrap items-center justify-between gap-3'}`}>
         <div>
           <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-[#858779] dark:text-[#8e9ab0]">
             {style.category} · {style.id}
           </p>
-          <h2 className="font-serif text-[1.5rem] font-semibold text-[#15140f] dark:text-gray-100 md:text-[1.75rem]">
+          <h2 className={`font-serif font-semibold text-[#15140f] dark:text-gray-100 ${book ? 'text-[1.3rem]' : 'text-[1.5rem] md:text-[1.75rem]'}`}>
             {style.label}
           </h2>
           <p className="mt-1 text-[14px] leading-7 text-[#51514a] dark:text-gray-300">
@@ -350,4 +442,6 @@ function StyleCard({ style }) {
       </div>
     </article>
   )
+
+  return book ? <BookProse>{card}</BookProse> : card
 }

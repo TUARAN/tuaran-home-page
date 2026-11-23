@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 250,
+    "routes": 251,
     "redirects": 23,
     "private": 63,
-    "registeredStatic": 120,
-    "indexable": 139,
-    "canonical": 160,
-    "openGraph": 92,
-    "jsonLd": 67,
+    "registeredStatic": 121,
+    "indexable": 140,
+    "canonical": 161,
+    "openGraph": 93,
+    "jsonLd": 68,
     "errors": 9,
     "warnings": 138
   },
@@ -3615,6 +3615,26 @@
         "openGraph": false,
         "jsonLd": false,
         "ogUrls": []
+      }
+    },
+    {
+      "path": "/tools/2fa",
+      "file": "app/(site)/tools/2fa/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": true,
+      "sitemap": true,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/tools/2fa"
+        ],
+        "noindex": "inherited",
+        "openGraph": true,
+        "jsonLd": true,
+        "ogUrls": [
+          "/tools/2fa"
+        ]
       }
     },
     {

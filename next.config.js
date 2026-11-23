@@ -12,12 +12,31 @@ const webLlmHeaders = [
   },
 ]
 
+// Nextra 注册了一条不带 resourceQuery 条件的 .md/.mdx loader 规则，会和本站
+// `*.md?raw` 的 asset/source 规则同时命中：MDX 编译器先把文档编译成 JS，
+// asset/source 再把编译结果当字符串导出，后台文档页就显示成一段 JS 源码。
+// Nextra 在自己的 webpack 包装器里先 push 规则，再调用本配置的 webpack，
+// 因此这里能把 `?raw` 从它的规则中排除，让 ?raw 导入拿到文档原文。
+function excludeRawQueryFromNextraMarkdown(rules) {
+  for (const rule of rules || []) {
+    if (!rule || !Array.isArray(rule.oneOf)) continue
+    const usesNextraLoader = rule.oneOf.some((branch) =>
+      Array.isArray(branch?.use) && branch.use.some((entry) =>
+        entry && typeof entry.loader === 'string' && entry.loader.includes('nextra'),
+      ),
+    )
+    if (!usesNextraLoader) continue
+    rule.resourceQuery = { not: /^\?raw$/ }
+  }
+}
+
 const nextConfig = {
   reactStrictMode: true,
   // 隔离构建用 NEXT_DIST_DIR=.next-<name>。验证结束后跑 npm run clean:next-dist，只删 .next-*，保留默认 .next。
   distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@huggingface/transformers'],
   webpack: (config, { isServer, nextRuntime }) => {
+    excludeRawQueryFromNextraMarkdown(config.module.rules)
     // Static pages keep their build-time data. Edge functions load catalog data from ASSETS/D1.
     if (nextRuntime === 'edge') {
       // PPT export runs only after a browser click; its Node dependencies cannot enter Edge SSR.

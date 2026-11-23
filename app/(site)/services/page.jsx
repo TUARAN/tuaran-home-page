@@ -59,7 +59,7 @@ const sampleLinks = [
   { href: '/articles?tab=tech', label: '技术' },
   { href: '/articles?tab=other', label: '其他' },
   { href: '/articles?tab=companies', label: '公司观察' },
-  { href: '/articles?tab=posts', label: '精选文章' },
+  { href: '/articles?tab=posts', label: '原创文章' },
   { href: '/works', label: '项目记录' },
 ]
 

@@ -312,7 +312,7 @@ export default function RssFeedConsole() {
 // 本站 /rss.xml 覆盖口径——改了 app/(site)/rss.xml/route.js 的 buildItems() 后同步更新这张表
 const SITE_RSS_COVERAGE = [
   {
-    section: '精选文章',
+    section: '原创文章',
     path: '/articles?tab=posts',
     status: 'in',
     note: 'articlesData 内链文章全文进 content:encoded；外链型文章剔除。',

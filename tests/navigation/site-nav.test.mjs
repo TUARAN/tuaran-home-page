@@ -23,7 +23,7 @@ test('public content navigation browses by form and time while topics stay on th
   assert.match(source, /href: '\/editorial'[\s\S]*label: '内容说明'/)
   assert.match(source, /href: '\/topics\/ai-agents'/)
   assert.doesNotMatch(source, /p\?\.startsWith\('\/topics'\)/)
-  assert.match(source, /title: '按体裁'[\s\S]*href: '\/articles\?group=article'[^}\n]*label: '精选'/)
+  assert.match(source, /title: '按体裁'[\s\S]*href: '\/articles\?group=article'[^}\n]*label: '原创'/)
   assert.match(source, /title: '按体裁'[\s\S]*href: '\/articles\?group=analysis'[^}\n]*label: '分析'/)
   assert.match(source, /title: '按体裁'[\s\S]*href: '\/rich-pages'[^}\n]*label: '互动'/)
   assert.match(source, /title: '按体裁'[\s\S]*href: '\/resources', label: '资源'/)

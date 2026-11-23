@@ -95,34 +95,23 @@ function ContentSourceGuide({ counts }) {
   const sources = [
     {
       index: '01',
-      title: '原创精选',
-      count: counts ? counts.editor + counts.historical : null,
+      title: '原创',
+      count: counts ? counts.editor + counts.historical + counts.research : null,
       countSub: counts
-        ? `已发布 ${formatCount(counts.editorPublished + counts.historical)} · 草稿 ${formatCount(counts.editorDraft)}`
-        : 'D1 article_posts',
-      storage: 'D1 article_posts',
-      route: '/articles/[slug]',
-      editing: '使用右上角“写文章”创建，历史文章与新文章都可在列表中继续编辑。',
-    },
-    {
-      index: '02',
-      title: '原创调研',
-      count: counts?.research,
-      countSub: counts
-        ? `公司 ${formatCount(counts.researchCompanies)} · 专题 ${formatCount(counts.researchTopics)} · 人物 ${formatCount(counts.researchPeople)}${counts.researchDraft ? ` · 草稿 ${formatCount(counts.researchDraft)}` : ''}`
-        : 'research/*.md + D1 发布覆盖',
-      storage: 'research/*.md + D1 发布覆盖',
-      route: '/articles/research/[category]/[slug]',
-      editing: 'Git 调研在“审批调研”处核对；A 股和加密调研使用各自自动化工作台。',
+        ? `已发布 ${formatCount(counts.editorPublished + counts.researchPublished + counts.historical)} · 草稿 ${formatCount(counts.editorDraft + counts.researchDraft)}`
+        : 'D1 article_posts · research/*.md',
+      storage: 'D1 article_posts · research/*.md',
+      route: '/articles/[slug] · /articles/research/[category]/[slug]',
+      editing: '全部内容由站长定题、判断并逐篇审核后发布，AI 仅作辅助。使用右上角“写文章”创建，历史文章与新文章都可在列表中继续编辑。',
     },
   ]
 
   return (
     <Section
       title="站内文章来源"
-      description={`普通文章统一在后台编辑，调研文章保留独立的资料与审批流程。当前共 ${formatCount(counts?.all)} 条，下方“全部内容”合并展示。`}
+      description={`站内内容统一记为原创，由站长定题、判断并审核后发布，AI 仅作辅助。当前共 ${formatCount(counts?.all)} 条，下方“全部内容”合并展示。`}
     >
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3">
         {sources.map((source) => (
           <article key={source.index} className="rounded-lg border border-[#e2e5da] bg-[#fafbf7] p-4 dark:border-[#2b3745] dark:bg-[#111923]">
             <div className="flex items-start justify-between gap-3">
@@ -266,7 +255,7 @@ function ArticlesConsoleBody() {
   return (
     <AdminPage
       title="内容管理"
-      description="统一管理普通文章和调研文章：普通文章在后台编辑，调研文章按调研发布流程管理。"
+      description="统一管理站内原创内容：由站长定题、判断并审核后发布，AI 仅作辅助。"
       stickyHeader
       actions={(
         <AdminButton href="/admin/articles/new" variant="primary">

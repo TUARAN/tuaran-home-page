@@ -40,7 +40,7 @@ test('content dropdown browses by form and time, and leaves topics to the mainli
   assert.equal(content.match('/topics/ai-agents', new URLSearchParams()), false)
   assert.deepEqual(
     Array.from(itemsIn(visible, '按体裁'), (item) => item.label),
-    ['精选', '分析', '实践', '互动', '资源'],
+    ['原创', '分析', '实践', '互动', '资源'],
   )
   assert.deepEqual(
     Array.from(itemsIn(visible, '按时间'), (item) => item.label),

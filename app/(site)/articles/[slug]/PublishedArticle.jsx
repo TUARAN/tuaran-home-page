@@ -86,7 +86,7 @@ export default function PublishedArticle({ article, siteUrl }) {
       <ArticleDetailHeader
         taxonomy={articleTaxonomy}
         categoryHref="/articles?tab=posts"
-        categoryLabel="精选文章"
+        categoryLabel="原创文章"
         dateLabel={dateLabel(article.publishedAt)}
         dateTime={publishedTime}
         version={resolveContentVersion(article)}

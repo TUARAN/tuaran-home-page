@@ -117,7 +117,7 @@ export default async function SeoManagementConsole() {
       <Section
         className="mt-5"
         title="全站内容 SEO 注册表"
-        description="统一汇总多维页面、精选文章、分析和资源。支持按类型筛选与搜索；状态来自注册数据和实际页面模板，缺失项会如实标记。"
+        description="统一汇总多维页面、原创文章、分析和资源。支持按类型筛选与搜索；状态来自注册数据和实际页面模板，缺失项会如实标记。"
       >
         <SeoRegistryTable pages={pages} />
       </Section>

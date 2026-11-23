@@ -129,7 +129,7 @@ function buildItems() {
         link: `${SITE_URL}${path}`,
         description: a.summary,
         pubDate: toRfc822(a.date),
-        category: '精选文章',
+        category: '原创文章',
         contentHtml: absolutize(postContentHtml(a)),
       }
     })

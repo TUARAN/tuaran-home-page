@@ -96,5 +96,15 @@
 .error { color: #b42318; }
 .preview { max-width: 100%; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .two { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
-@media (max-width: 960px) { .cols, .two { grid-template-columns: 1fr; } .cta { display: none; } .barInner { gap: 8px 12px; padding: 8px 12px; } .tabs, .menuGroup, .search { flex-basis: 100%; } .search { min-width: 0; } }
+.section { margin: 0 0 48px; scroll-margin-top: 88px; }
+.question { font-size: 18px; font-weight: 700; line-height: 1.5; margin: 0 0 12px; }
+.conclusion { font-size: 18px; line-height: 1.6; margin: 0 0 8px; }
+.agentGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.theoryGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.metricList { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 12px 0 0; }
+.metricList div { min-width: 0; }
+.metricList dt { color: var(--sub); font-size: 13px; }
+.metricList dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.missing { color: var(--sub); font-weight: 600; }
+@media (max-width: 960px) { .cols, .two, .agentGrid, .theoryGrid { grid-template-columns: 1fr; } .cta { display: none; } .barInner { gap: 8px 12px; padding: 8px 12px; } .tabs, .menuGroup, .search { flex-basis: 100%; } .search { min-width: 0; } }
 @media (prefers-reduced-motion: no-preference) { .btn, .tab, .pill { transition: background .15s, border-color .15s, color .15s; } }

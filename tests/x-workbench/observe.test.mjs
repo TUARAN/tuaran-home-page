@@ -1,0 +1,167 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { loadObservedActions, presentObservedActions } from '../../lib/interaction/dailyTop/ownActivity.js'
+import {
+  ACTION_LABELS,
+  OBSERVED_AGENTS,
+  THEORY_POINTS,
+  accountBoardConclusion,
+  agentFootnote,
+  blankActions,
+  presentRadarPerformance,
+  tweetBoardConclusion,
+} from '../../lib/x/workbench/observeCore.js'
+import { observeHome } from '../../lib/x/workbench/observeStore.js'
+
+const BANNED = /不是.+而是|本页|本篇|下面|接下来/
+
+test('三个被观察账号固定，理论结论对得到卡片指标', () => {
+  assert.deepEqual(OBSERVED_AGENTS.map((agent) => [agent.name, agent.handle]), [
+    ['矿工阿三', 'tarsixseveneig1'],
+    ['矿长阿富', 'TuaranX'],
+    ['矿工小十三', 'tuaran003'],
+  ])
+  const metricKeys = new Set([...ACTION_LABELS.map(([key]) => key), 'views', 'interactions'])
+  for (const point of THEORY_POINTS) {
+    assert.equal(BANNED.test(point.text), false)
+    for (const key of point.metrics) assert.equal(metricKeys.has(key), true)
+  }
+  assert.equal(BANNED.test(agentFootnote({ reportDate: '2026-11-23' })), false)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /8:00/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /2026-11-23/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
+})
+
+test('关注与回关分列；没有行或没有字段时保持空', () => {
+  const actions = presentObservedActions({
+    comments: 4,
+    likes: 2,
+    follows: 1,
+    followBacks: 3,
+    unfollows: 0,
+    posts: 5,
+    timelineComments: 1,
+    notificationComments: 2,
+    kolComments: 2,
+  })
+  assert.equal(actions.follows, 1)
+  assert.equal(actions.followBacks, 3)
+  assert.equal(actions.comments, 5)
+  assert.equal(actions.unfollows, 0)
+  assert.equal(presentObservedActions(null), null)
+  assert.equal(presentObservedActions({ comments: 1, posts: null }).posts, null)
+  assert.deepEqual(blankActions(), {
+    posts: null, comments: null, likes: null, follows: null, followBacks: null, unfollows: null,
+  })
+})
+
+test('没有日报行时动作是空，缺列不补零', async () => {
+  const calls = []
+  const db = {
+    prepare(sql) {
+      calls.push(sql)
+      return {
+        bind() { return this },
+        async all() {
+          if (String(sql).includes('SUM(posts)')) throw new Error('no such column: posts')
+          return {
+            results: [{
+              handle: 'tuaranx',
+              comments: 2,
+              likes: 0,
+              follows: 1,
+              unfollows: 0,
+              followBacks: 4,
+              posts: null,
+              timelineComments: null,
+              notificationComments: null,
+              kolComments: null,
+            }],
+          }
+        },
+      }
+    },
+  }
+  const found = await loadObservedActions(db, {
+    handles: ['TuaranX', 'tuaran003'],
+    reportDate: '2026-11-23',
+  })
+  assert.equal(found.get('tuaranx').posts, null)
+  assert.equal(found.get('tuaranx').likes, 0)
+  assert.equal(found.get('tuaranx').followBacks, 4)
+  assert.equal(found.get('tuaran003'), null)
+  assert.match(calls[0], /SUM\(posts\)/)
+  assert.match(calls[1], /NULL AS posts/)
+})
+
+test('推文结论按曝光榜计算；没有话题时不编造占比', () => {
+  assert.equal(tweetBoardConclusion([]), '今日还没有收录推文。')
+  assert.equal(tweetBoardConclusion([], { unavailable: true }), '推文收录暂时读不到。')
+  const items = [
+    { views: 80, media: 'image', topic: '' },
+    { views: 20, media: 'none', topic: '' },
+  ]
+  assert.equal(tweetBoardConclusion(items), '话题分类未采集。今日曝光集中在图文，占曝光榜 80%。')
+  const tagged = [
+    { views: 70, media: 'video', topic: '电路' },
+    { views: 30, media: 'image', topic: '日常' },
+  ]
+  assert.equal(tweetBoardConclusion(tagged), '今日曝光集中在电路，占曝光榜 70%。形式集中在视频，占曝光榜 70%。')
+})
+
+test('账号结论用当前榜的曝光，不把空榜写成 0%', () => {
+  assert.equal(accountBoardConclusion([]), '今日还没有收录账号。')
+  assert.equal(accountBoardConclusion([{ handle: 'a', views: 0 }, { handle: 'b', views: 0 }]), '今日账号榜收录 2 个账号，展示合计为 0。')
+  assert.equal(
+    accountBoardConclusion([{ handle: 'alice', views: 75 }, { handle: 'bob', views: 25 }], '昨日'),
+    '昨日曝光集中在 @alice，占账号榜 75%。',
+  )
+})
+
+test('没有收录推文时曝光与互动是未采集，有推文时 0 保留', () => {
+  assert.deepEqual(presentRadarPerformance(null), { views: null, interactions: null, tweets: null })
+  assert.deepEqual(presentRadarPerformance({ tweets: 2, views: 0, likes: 0, reposts: 1, replies: 2 }), {
+    views: 0,
+    interactions: 3,
+    tweets: 2,
+  })
+})
+
+test('首页汇总把三个账号放在同一统计日，缺日报显示空动作', async () => {
+  const now = Date.UTC(2026, 10, 23, 6)
+  const db = {
+    prepare(sql) {
+      return {
+        bind() { return this },
+        async all() {
+          const text = String(sql)
+          if (text.includes('x_radar_topic_suggestions')) {
+            return { results: [{ tweet_id: '1', topic: '电路' }] }
+          }
+          if (text.includes('GROUP BY lower(handle)')) {
+            return { results: [{ handle: 'tarsixseveneig1', tweets: 1, views: 100, likes: 4, reposts: 1, replies: 2 }] }
+          }
+          if (text.includes('x_radar_items')) {
+            return { results: [{ id: '1', handle: 'alice', display_name: 'A', text: 'hello', url: 'https://x.com/alice/status/1', media: 'image', views: 100, likes: 4, reposts: 1, replies: 2 }] }
+          }
+          if (text.includes('x_extension_daily_reports')) {
+            return { results: [{ handle: 'tarsixseveneig1', comments: 3, likes: 1, follows: 2, unfollows: 0, followBacks: 1, posts: 4, timelineComments: null, notificationComments: null, kolComments: null }] }
+          }
+          throw new Error(`unexpected sql ${text}`)
+        },
+      }
+    },
+  }
+  const home = await observeHome(db, now)
+  assert.equal(home.reportDate, '2026-11-23')
+  assert.deepEqual(home.agents.map((agent) => agent.handle), ['tarsixseveneig1', 'TuaranX', 'tuaran003'])
+  assert.equal(home.agents[0].actions.posts, 4)
+  assert.equal(home.agents[0].actions.follows, 2)
+  assert.equal(home.agents[0].views, 100)
+  assert.equal(home.agents[0].interactions, 7)
+  assert.equal(home.agents[1].actions.posts, null)
+  assert.equal(home.agents[1].views, null)
+  assert.match(home.tweetConclusion, /电路/)
+  assert.match(home.footnote, /2026-11-23/)
+})

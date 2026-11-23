@@ -8,7 +8,14 @@ import s from './workbench.module.css'
 
 export default function XSiteFrame({ active, children }) {
   const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
-  useEffect(() => { setReturnTo(window.location.href) }, [])
+  const [hash, setHash] = useState('')
+  useEffect(() => {
+    setReturnTo(window.location.href)
+    const read = () => setHash(window.location.hash || '')
+    read()
+    window.addEventListener('hashchange', read)
+    return () => window.removeEventListener('hashchange', read)
+  }, [])
   const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
   return (
     <div className={`${s.app} ${s.xFrame}`}>
@@ -21,7 +28,8 @@ export default function XSiteFrame({ active, children }) {
                 <span className={s.groupLabel}>{group.label}</span>
                 {group.items.map((item) => {
                   const href = item.href || '/x-workbench'
-                  const on = href === active
+                  const section = href.includes('#')
+                  const on = href === active || (active === '/x-workbench' && section && (href.endsWith(hash) || (!hash && href.endsWith('#market'))))
                   const className = `${s.tab} ${on ? s.tabOn : ''}`
                   const label = <>{item.label}{item.beta ? <span className={s.beta}>beta</span> : null}</>
                   return item.external

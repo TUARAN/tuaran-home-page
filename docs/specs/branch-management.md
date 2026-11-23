@@ -6,7 +6,7 @@
 
 - 只有一条长期分支：`main`。不建 `develop`、`release` 等长期分支。
 - 所有改动走短命分支，PR 经 squash 合回 `main`，分支寿命以天计。
-- **开工隔离**：任务一开始就 `git worktree add -b codex/<任务名> <路径> origin/main`，在独立目录里写文件、提交、推送；不在主工作区 `main` 直接写文件或提交。主工作区常被多个智能体共享，直接落笔会混入他人未提交改动，提交后也无法区分归属。`pre-commit` 钩子会拒绝对 `main` 的提交；站长明确要求直推 `main` 的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
+- **开工隔离**：任务一开始就 `git worktree add -b codex/<任务名> <路径> origin/main`，在独立目录里写文件、提交、推送；不在主工作区直接写文件或提交。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起；判断标准是目录形态（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
 - 合并即部署（Cloudflare Pages），因此合并动作只由站长发出。助手不 squash、不 merge。
 - 非琐碎改动不直接推 `main`。
 

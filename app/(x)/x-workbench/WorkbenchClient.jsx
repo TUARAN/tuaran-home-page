@@ -59,7 +59,11 @@ export default function WorkbenchClient() {
   }, [loadUsage])
 
   useEffect(() => { loadAccounts() }, [loadAccounts])
-  useEffect(() => { setReturnTo(window.location.href) }, [])
+  useEffect(() => {
+    setReturnTo(window.location.href)
+    const q = new URLSearchParams(window.location.search).get('q') || ''
+    if (q) { setQuery(q); setKeyword(q); setTab('radar') }
+  }, [])
 
   const goPoster = (seed) => { setPosterSeed({ ...seed, at: Date.now() }); setTab('poster') }
   const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`

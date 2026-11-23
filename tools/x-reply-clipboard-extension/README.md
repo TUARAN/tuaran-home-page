@@ -12,7 +12,7 @@
 
 站内入口：<https://2aran.com/resources/x-reply-clipboard-extension>。工具集的「推特工具」和下载中心都会链到这一页。
 
-文档中心：<https://2aran.com/resources/x-reply-clipboard-extension/docs>。面板中的规则入口会打开对应章节。
+文档中心：<https://x.2aran.com/docs>。面板中的规则入口会打开对应章节。
 
 版本规则与发版记录格式见 [VERSIONING.md](VERSIONING.md)。当前本地源码为 v5.7.3。站内下载要求联系站长获取邀请码。
 

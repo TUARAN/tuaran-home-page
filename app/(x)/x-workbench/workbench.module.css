@@ -1,6 +1,11 @@
 .app { --ink: #0f1419; --sub: #6e7681; --paper: #f3f6fb; --line: #e6ebf2; --blue: #2f6bff; --blue2: #5b8cff; --blueSoft: #eaf1ff;
   min-height: 100vh; background: var(--paper); color: var(--ink);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.xFrame :global([data-x-desk]) { background: transparent; padding: 0; color: var(--ink); }
+.xFrame :global([data-x-sheet]) { width: 100%; background: #fff; box-shadow: none; border: 1px solid var(--line); border-radius: 18px; padding: 12px 8px 24px; }
+.xFrame :global([data-x-sheet] h1),
+.xFrame :global([data-x-sheet] h2) { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.xFrame :global(.max-w-\[1120px\]) { max-width: 1280px; }
 .bar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid var(--line); }
 .barInner { max-width: 1280px; margin: 0 auto; padding: 8px 24px; min-height: 64px; height: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; }
 .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }

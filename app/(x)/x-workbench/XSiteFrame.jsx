@@ -1,0 +1,44 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
+import { WORKBENCH_MENU_GROUPS } from './tabs'
+import s from './workbench.module.css'
+
+export default function XSiteFrame({ active, children }) {
+  const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
+  useEffect(() => { setReturnTo(window.location.href) }, [])
+  const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
+  return (
+    <div className={`${s.app} ${s.xFrame}`}>
+      <header className={s.bar}>
+        <div className={s.barInner}>
+          <a className={s.brand} href="/x-workbench"><span className={s.logo}>X</span><span className={s.brandName}>X大互动<span className={s.brandSub}>爆点、改写、发布</span></span></a>
+          <nav className={s.tabs} aria-label="功能">
+            {WORKBENCH_MENU_GROUPS.map((group) => (
+              <div key={group.id} className={s.menuGroup} role="group" aria-label={group.label}>
+                <span className={s.groupLabel}>{group.label}</span>
+                {group.items.map((item) => {
+                  const href = item.href || '/x-workbench'
+                  const on = href === active
+                  return (
+                    <a key={item.id} className={`${s.tab} ${on ? s.tabOn : ''}`} href={href} aria-current={on ? 'page' : undefined} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                      {item.label}{item.beta ? <span className={s.beta}>beta</span> : null}
+                    </a>
+                  )
+                })}
+              </div>
+            ))}
+          </nav>
+          <form className={s.search} action="/x-workbench">
+            <input name="q" placeholder="搜账号、推文关键词" aria-label="搜索" />
+            <button type="submit" className={s.searchBtn}>搜索</button>
+          </form>
+          <a className={s.cta} href="https://2aran.com/resources/x-reply-clipboard-extension">获取插件</a>
+          <a className={s.btn} href={loginHref}>登录</a>
+        </div>
+      </header>
+      <main className={s.main}>{children}</main>
+    </div>
+  )
+}

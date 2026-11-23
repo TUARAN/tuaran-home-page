@@ -268,7 +268,7 @@
       sent.catch((error) => { noteExtensionContextFailure(error); });
     }
   }
-  const DOCS_BASE_URL = "https://2aran.com/resources/x-reply-clipboard-extension/docs";
+  const DOCS_BASE_URL = "https://x.2aran.com/docs";
   const DOCS_SECTION_HASH = {
     "xrc-docs-flow": "flow",
     "xrc-docs-schedule": "task-window-plan",

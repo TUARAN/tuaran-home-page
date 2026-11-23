@@ -6,11 +6,11 @@ import { call, compact, message, post } from './api'
 import { buildBoardSvg } from '../../../lib/x/workbench/posterCore'
 import s from './workbench.module.css'
 
-const WINDOWS = [['today', '今日榜'], ['yesterday', '昨日榜'], ['7d', '7 天榜']]
+const WINDOWS = [['auto', '最近有收录'], ['today', '今日榜'], ['yesterday', '昨日榜'], ['7d', '7 天榜']]
 const DIMS = [['posts', '发帖', '帖'], ['replies', '评论', '条'], ['views', '曝光', ''], ['likes', '获赞', '赞']]
 
 export default function BoardTab() {
-  const [win, setWin] = useState('today')
+  const [win, setWin] = useState('auto')
   const [dim, setDim] = useState('views')
   const [rows, setRows] = useState([])
   const [suggestions, setSuggestions] = useState(null)

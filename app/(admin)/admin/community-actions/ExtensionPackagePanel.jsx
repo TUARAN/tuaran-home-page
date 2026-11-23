@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminButton, StatusPill } from '../../components/ui'
 const OPTIONS = {
-  x: { href: '/resources/x-reply-clipboard-extension', docs: '/resources/x-reply-clipboard-extension/docs' },
+  x: { href: '/resources/x-reply-clipboard-extension', docs: 'https://x.2aran.com/docs' },
   'ai-distributor': { href: '/tools/syncblog-publisher', docs: '/tools/syncblog-publisher/docs' },
 }
 export default function ExtensionPackagePanel({ pluginId }) {

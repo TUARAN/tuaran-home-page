@@ -6,6 +6,7 @@ import Image from 'next/image'
 
 import { loadXExtensionReleaseWeeks } from '../../../../../lib/community/xExtensionReleaseWeeks'
 import { getResourceDelivery } from '../../../../../lib/content/resourceCatalog'
+import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
 import ManualPaper from '../../../components/book-reader/ManualPaper'
 import PageContainer from '../../../components/PageContainer'
 import DocsHashNavigation from './DocsHashNavigation'
@@ -20,9 +21,9 @@ export const dynamic = 'force-static'
 const RELEASE_WEEKS = loadXExtensionReleaseWeeks()
 
 const RESOURCE_SLUG = 'x-reply-clipboard-extension'
-const DOCS_PATH = `/resources/${RESOURCE_SLUG}/docs`
+const DOCS_PATH = '/docs'
 const RESOURCE_PATH = `/resources/${RESOURCE_SLUG}`
-const DOCS_URL = `https://2aran.com${DOCS_PATH}`
+const DOCS_URL = 'https://x.2aran.com/docs'
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || '待核对'
 // 本地源码版本以 manifest 为准；未打包前不等于下载包版本。
 const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
@@ -262,6 +263,7 @@ function TaskBlock({ id, badge, title: blockTitle, summary, children }) {
 
 export default function XReplyClipboardDocsPage() {
   return (
+    <XSiteFrame active="/docs">
     <ManualPaper tone="yellow">
     <PageContainer className="pb-16 pt-5 md:pb-24 md:pt-8">
       <DocsHashNavigation />
@@ -993,5 +995,6 @@ export default function XReplyClipboardDocsPage() {
       </div>
     </PageContainer>
     </ManualPaper>
+    </XSiteFrame>
   )
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
 import snapshot from '../../../../../lib/interaction/roundtableSummary.json'
 import RoundtableGuestbook from './RoundtableGuestbook'
 import RoundtableHall from './RoundtableHall'
@@ -11,7 +12,7 @@ export const metadata = { alternates: { canonical: '/resources/big-interaction-w
 
 export default function RoundtablePage() {
   const updated = new Date(snapshot.updatedAt || snapshot.capturedAt).toISOString().replace('T', ' ').slice(0, 16)
-  return <main className={styles.page}>
+  return <XSiteFrame active="/roundtable"><main className={styles.page}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
     <Link className={styles.back} href="/theory">← 绿皮书</Link>
     <header className={styles.header}>
@@ -23,5 +24,5 @@ export default function RoundtablePage() {
     <RoundtableHall />
     <RoundtableGuestbook />
     <aside className={styles.note}><h2>认证粉丝名录</h2><p>采集更新：{updated} UTC。已收录本次采集结果；连续无新增后暂停，尚未确认名单完整。缺失或加载失败的头像使用昵称占位。</p><p>圆桌是认证粉丝关系的可视化展示。所列账号不代表实际参会、发言或认可会议主题。点击头像可查看其 X 主页。</p></aside>
-  </main>
+  </main></XSiteFrame>
 }

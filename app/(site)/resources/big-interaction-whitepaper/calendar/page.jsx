@@ -6,6 +6,7 @@ import { loadOwnActivityDays } from '../../../../../lib/interaction/dailyTop/own
 import { DAILY_TOP_METRIC_LABEL, DAILY_TOP_SUBJECT, shanghaiDateKey } from '../../../../../lib/interaction/dailyTop/model.js'
 import { loadCombinedDailyTopDays } from '../../../../../lib/interaction/dailyTop/store.js'
 import { loadGrokbotExecutions } from '../../../../../lib/interaction/grokbotExecutions/load.js'
+import XSiteFrame from '../../../../(x)/x-workbench/XSiteFrame'
 import ManualPaper from '../../../components/book-reader/ManualPaper'
 import PageContainer from '../../../components/PageContainer'
 import InteractionCalendar from './InteractionCalendar'
@@ -70,6 +71,7 @@ export default async function BigInteractionCalendarPage() {
     activities = []
   }
   return (
+    <XSiteFrame active="/calendar">
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
@@ -84,5 +86,6 @@ export default async function BigInteractionCalendarPage() {
       <InteractionCalendar days={days} activities={activities} initialToday={today} executions={executions} />
     </PageContainer>
     </ManualPaper>
+    </XSiteFrame>
   )
 }

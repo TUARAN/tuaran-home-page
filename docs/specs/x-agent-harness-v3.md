@@ -2,7 +2,7 @@
 
 2026-11-20 · 分支 `feat/x-agent-v5-453` · 扩展版本 v5.4.0 起，v5.5.0、v5.5.1、v5.6.0、v5.7.0、v5.7.1、v5.7.2、v5.7.3 修订（本地测试，未打包）· 协议 `xrc-harness/v3`
 
-面向读者的说明在黄皮书第七章「智能体规则」（`/resources/x-reply-clipboard-extension/docs#agent-rules`）。规则以代码为准，对应位置见文末。
+面向读者的说明在黄皮书第七章「智能体规则」（`https://x.2aran.com/docs#agent-rules`）。规则以代码为准，对应位置见文末。
 
 ## Issue 草稿
 

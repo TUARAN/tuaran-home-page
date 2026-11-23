@@ -92,6 +92,9 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, signedIn
 export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = false }) {
   const [heroState, setHeroState] = useState('loading')
   const [heroRows, setHeroRows] = useState([])
+  const [heroWindow, setHeroWindow] = useState('auto')
+  const [heroFrom, setHeroFrom] = useState(0)
+  const [heroDays, setHeroDays] = useState([])
   const [watch, setWatch] = useState([])
   const [watchOnly, setWatchOnly] = useState(false)
   const [reload, setReload] = useState(0)
@@ -99,11 +102,16 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
   const [manual, setManual] = useState({ url: '', text: '', likes: '', views: '', media: 'none' })
 
   const loadSide = useCallback(async () => {
-    const [h, w] = await Promise.all([call('/leaderboard?window=today&dim=posts'), call('/radar?limit=1&hours=1')])
-    if (h.ok) { setHeroRows((h.data.rows || []).slice(0, 10)); setHeroState('ok') }
+    const [h, w] = await Promise.all([call(`/leaderboard?window=${heroWindow}&dim=posts`), call('/radar?limit=1&hours=1')])
+    if (h.ok) {
+      setHeroRows((h.data.rows || []).slice(0, 10))
+      setHeroFrom(h.data.from || 0)
+      setHeroDays(h.data.days || [])
+      setHeroState('ok')
+    }
     else setHeroState(h.status === 503 || h.status === 0 ? 'down' : 'empty')
     if (w.ok) setWatch(w.data.watch || [])
-  }, [])
+  }, [heroWindow])
 
   useEffect(() => { loadSide() }, [loadSide, reload])
 
@@ -134,6 +142,14 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
   return (
     <section>
       <div className={s.pageTitle}><h1>推文榜</h1><span className={s.note}>爆发指数 = 加权互动量 ÷ 发布时长；统计日以北京时间 8 点为界</span></div>
+      <div className={s.row}>
+        <button type="button" className={`${s.pill} ${heroWindow === 'today' ? s.pillOn : ''}`} onClick={() => setHeroWindow('today')}>今天</button>
+        {heroDays.filter((day) => day.from !== Math.floor(Date.now() / 86_400_000) * 86_400_000).map((day) => (
+          <button key={day.from} type="button" className={`${s.pill} ${heroFrom === day.from && heroWindow !== 'today' ? s.pillOn : ''}`} onClick={() => setHeroWindow(String(day.from))}>
+            {new Date(day.from).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric' })}
+          </button>
+        ))}
+      </div>
       <div className={s.hero}>
         <div className={s.heroTitle}>热门贡献榜</div>
         {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>推文榜暂时不可用，请稍后再试。</div>}

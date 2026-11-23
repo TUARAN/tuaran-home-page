@@ -6,8 +6,8 @@ import { WORKBENCH_MENU_GROUPS, WORKBENCH_MENU_ITEMS } from '../../app/(x)/x-wor
 
 test('X大互动顶部按组显示，不再单列 AI 改写、排期和海报', () => {
   assert.deepEqual(WORKBENCH_MENU_GROUPS.map((group) => [group.label, group.items.map((item) => item.label)]), [
-    ['工作', ['推文榜', '账号榜', '智能体', '黄皮书']],
-    ['理论', ['大互动理论', '大互动日历', '大互动圆桌']],
+    ['正在发生', ['推文榜', '账号榜', '智能体', '黄皮书']],
+    ['大互动运营', ['大互动理论', '大互动日历', '大互动圆桌']],
     ['分发', ['AI分发大师']],
   ])
   const labels = WORKBENCH_MENU_ITEMS.map((item) => item.label)
@@ -40,7 +40,11 @@ test('工作台渲染分组菜单，旧公开地址仍指向原页面', async ()
   assert.match(client, /rel: 'noopener noreferrer'/)
   assert.match(client, /item\.beta/)
   assert.doesNotMatch(whitepaper, /查看智能体与获取方式|走进圆桌会场|打开日历/)
-  assert.match(whitepaper, /href="\/docs#daily-volume"/)
+  assert.match(whitepaper, /href="https:\/\/x\.2aran\.com\/docs#daily-volume"/)
+  assert.match(yellowbook, /https:\/\/x\.2aran\.com\/docs/)
+  assert.match(yellowbook, /XSiteFrame active="\/docs"/)
+  assert.equal(WORKBENCH_MENU_GROUPS.some((group) => ['工作', '实践', '理论'].includes(group.label)), false)
+  assert.equal(WORKBENCH_MENU_ITEMS.some((item) => item.label === '大互动理论'), true)
   assert.match(roundtable, /大互动圆桌/)
   assert.match(header, /href: 'https:\/\/x\.2aran\.com\/', label: 'X大互动'/)
   assert.doesNotMatch(client, /推文榜、账号榜和智能体需要登录/)

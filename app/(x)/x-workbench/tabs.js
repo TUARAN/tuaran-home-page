@@ -1,8 +1,8 @@
 // X大互动顶部菜单。工具在本页切换；内容标签打开现有页面，不复制正文。
 export const WORKBENCH_MENU_GROUPS = [
   {
-    id: 'work',
-    label: '工作',
+    id: 'happening',
+    label: '正在发生',
     items: [
       { id: 'radar', label: '推文榜' },
       { id: 'board', label: '账号榜' },
@@ -11,8 +11,8 @@ export const WORKBENCH_MENU_GROUPS = [
     ],
   },
   {
-    id: 'theory',
-    label: '理论',
+    id: 'operations',
+    label: '大互动运营',
     items: [
       { id: 'theory', label: '大互动理论', href: '/theory' },
       { id: 'calendar', label: '大互动日历', href: '/calendar' },

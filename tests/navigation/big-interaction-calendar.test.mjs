@@ -112,7 +112,7 @@ test('validator rejects a self-account and a window outside the publication day'
 test('theory page keeps the body and drops the three entry cards', async () => {
   const page = await readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8')
   assert.doesNotMatch(page, /查看智能体与获取方式|走进圆桌会场|打开日历|大互动 · 圆桌大会/)
-  assert.match(page, /href="\/docs#daily-volume"/)
+  assert.match(page, /href="https:\/\/x\.2aran\.com\/docs#daily-volume"/)
   assert.match(page, /ChapterNav/)
 })
 

@@ -8,7 +8,7 @@ import s from './workbench.module.css'
 
 const HOURS = [[3, '3小时内'], [6, '6小时内'], [12, '12小时内'], [24, '24小时']]
 const MEDIA = [['', '全部'], ['none', '文字'], ['image', '图文'], ['video', '视频']]
-const COLORS = ['#2f6bff', '#7a5cff', '#23b0d6', '#f08a24', '#e5484d', '#30a46c', '#8e4ec6', '#d6409f']
+const COLORS = ['#0f1419', '#273340', '#3d4a57', '#536471', '#1c2732', '#4a5865']
 
 export function Avatar({ handle, name, small }) {
   const text = String(name || handle || '?').trim()

@@ -6,9 +6,15 @@ import { getD1 } from '../../../../lib/db/d1'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/content/contentRegistry'
 import { readingVisitorName } from '../../../../lib/auth/readingVisitorIdentity.mjs'
 import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../lib/site/analyticsSources.mjs'
+import { READER_USER_PREFIX } from '../../../../lib/automation/engagementBot'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
+
+// 互动反馈只统计真实读者。站内互动机器人（/admin/engagement-bots）以 reader:<slug>
+// 写入 article_comments，属于站内自测活跃，不进入运营看板；口径与 engagementBotRun.js
+// 的 loadRecentCommentPairs 一致。历史记录与前台评论区保持原样。
+const BOT_COMMENT_USER_PATTERN = `${READER_USER_PREFIX}%`
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const SHANGHAI_TZ_OFFSET_MS = 8 * 60 * 60 * 1000
@@ -229,13 +235,16 @@ export async function GET(req) {
       ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
       db.prepare(
         `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
-         FROM article_comments ORDER BY created_at DESC LIMIT 20`,
-      ).all().then((r) => r.results || []),
+         FROM article_comments
+         WHERE user_id NOT LIKE ?1
+         ORDER BY created_at DESC LIMIT 20`,
+      ).bind(BOT_COMMENT_USER_PATTERN).all().then((r) => r.results || []),
       db.prepare(
         `SELECT COUNT(*) AS total_comments, COUNT(DISTINCT article_key) AS article_count,
            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_comments
-         FROM article_comments`,
-      ).bind(periodStart).first(),
+         FROM article_comments
+         WHERE user_id NOT LIKE ?2`,
+      ).bind(periodStart, BOT_COMMENT_USER_PATTERN).first(),
       db.prepare(
         `SELECT COUNT(*) AS active,
            SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_total

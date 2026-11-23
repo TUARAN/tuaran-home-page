@@ -9,6 +9,7 @@ import {
   buildEngagementCommentMessages,
   contentMatchesPrefixes,
   filterPublishedContent,
+  isReaderUserId,
   normalizeBotInput,
   normalizeEngagementBotSettings,
   parseStoredEngagementBotSettings,
@@ -105,4 +106,12 @@ test('bot input rejects empty names and normalizes slug', () => {
   const ok = normalizeBotInput({ slug: 'Wan-Feng', displayName: '晚风', voicePrompt: '短句，不恭维。' })
   assert.equal(ok.bot.slug, 'wan-feng')
   assert.equal(ok.bot.displayName, '晚风')
+})
+
+test('reader user ids identify only in-site bot comments, not real readers', () => {
+  assert.equal(isReaderUserId(readerUserId('qingshi')), true)
+  assert.equal(isReaderUserId(readerUserId('nanan')), true)
+  assert.equal(isReaderUserId('github:123'), false)
+  assert.equal(isReaderUserId('guest:abc'), false)
+  assert.equal(isReaderUserId(''), false)
 })

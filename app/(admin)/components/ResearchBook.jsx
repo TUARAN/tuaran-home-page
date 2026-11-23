@@ -156,7 +156,7 @@ export function PrefaceLead({ children }) {
   return <p className={styles.prefaceLead}>{children}</p>
 }
 
-export function ChapterCards({ items, onSelect }) {
+export function ChapterCards({ items, onSelect, startIndex = 0 }) {
   return (
     <div className={styles.chapterCards}>
       {items.map((item, index) => (
@@ -167,7 +167,7 @@ export function ChapterCards({ items, onSelect }) {
           onClick={() => onSelect(item.id)}
         >
           <span className={styles.chapterCardHead}>
-            <span className={styles.chapterCardNum}>{chapterNumber(index)}</span>
+            <span className={styles.chapterCardNum}>{chapterNumber(startIndex + index)}</span>
             <span className={styles.chapterCardTitle}>{item.title}</span>
           </span>
           <span className={styles.chapterCardSummary}>{item.summary}</span>

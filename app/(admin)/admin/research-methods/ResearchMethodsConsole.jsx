@@ -68,7 +68,7 @@ function Overview({ onSelect }) {
       summary="一份给站长查阅的调研手册。它说明每类对象该摊开哪些材料，以及人在哪一步接手判断。"
       folio="00"
     >
-      <PullQuote cite={BOOK.title}>{BOOK.line}</PullQuote>
+      <PullQuote cite="题记">{BOOK.line}</PullQuote>
       <PrefaceLead>
         AI 擅长把公开材料找齐、排成表、按模板起草。它能缩短翻材料的时间，却不能替人决定哪些事实足以支撑结论。
         这里收录的写法和对象方法，都按这条分工编排：机器负责摊开事实，人负责判断与取舍。
@@ -100,7 +100,11 @@ function Overview({ onSelect }) {
                 {PART_PREFACE[group.id]}
               </p>
             </div>
-            <ChapterCards items={group.items} onSelect={onSelect} />
+            <ChapterCards
+              items={group.items}
+              startIndex={METHOD_INDEX.get(group.items[0].id) ?? 0}
+              onSelect={onSelect}
+            />
           </section>
         ))}
       </div>

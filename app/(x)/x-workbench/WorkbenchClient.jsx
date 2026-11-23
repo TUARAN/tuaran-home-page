@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import XSiteFrame from './XSiteFrame'
+import { useSharedSession } from './sharedSession'
 import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
@@ -16,10 +17,9 @@ function Metric({ ready, value }) {
 
 export default function WorkbenchClient() {
   const [observe, setObserve] = useState(null)
-  const [signedIn, setSignedIn] = useState(false)
+  const { signedIn } = useSharedSession()
 
   useEffect(() => {
-    call('/accounts').then((res) => setSignedIn(Boolean(res.ok)))
     call('/observe').then((res) => setObserve(res.ok ? res.data : { agents: [], gaps: ['暂时读不到，请稍后再试。'] }))
   }, [])
 

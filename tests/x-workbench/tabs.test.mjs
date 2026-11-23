@@ -23,11 +23,12 @@ test('X大互动导航收束为智能体产品与读本', () => {
 })
 
 test('公开首页只有自有智能体，配对和排期留在登录后的二级页', async () => {
-  const [client, operator, agentTab, frame, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
+  const [client, operator, agentTab, frame, xLayout, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
     readFile(new URL('../../app/(x)/x-workbench/WorkbenchClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/OperatorClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/AgentTab.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/XSiteFrame.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../app/(x)/x-workbench/layout.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/[code]/route.js', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(site)/resources/big-interaction-whitepaper/page.jsx', import.meta.url), 'utf8'),
@@ -41,6 +42,10 @@ test('公开首页只有自有智能体，配对和排期留在登录后的二�
   assert.match(frame, /WORKBENCH_MENU_GROUPS/)
   assert.match(frame, /group\.label/)
   assert.match(frame, /noopener noreferrer/)
+  assert.match(xLayout, /SharedSessionProvider/)
+  assert.match(frame, /useSharedSession/)
+  assert.match(frame, /2aran\.com\/account/)
+  assert.match(frame, /api\/auth\/logout/)
   assert.doesNotMatch(frame, /name="q"/)
   assert.match(client, /id="agents"/)
   assert.doesNotMatch(client, /id="hot"/)

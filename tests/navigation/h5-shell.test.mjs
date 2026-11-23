@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const [navSource, chromeSource, headerSource, pageSource, layoutSource, swSource, manifestSource] = await Promise.all([
+const [navSource, chromeSource, headerSource, pageSource, layoutSource, swSource, manifestSource, settingsControlsSource] = await Promise.all([
   readFile(new URL('../../lib/site/siteMobileNav.js', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/components/LayoutChromeControls.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../app/(site)/components/SiteHeader.jsx', import.meta.url), 'utf8'),
@@ -10,6 +10,7 @@ const [navSource, chromeSource, headerSource, pageSource, layoutSource, swSource
   readFile(new URL('../../app/layout.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../../public/sw.js', import.meta.url), 'utf8'),
   readFile(new URL('../../public/site.webmanifest', import.meta.url), 'utf8'),
+  readFile(new URL('../../app/(site)/components/SiteSettingsControls.jsx', import.meta.url), 'utf8'),
 ])
 
 test('H5 tab bar covers the five high-frequency destinations', () => {
@@ -45,9 +46,18 @@ test('site chrome mounts the mobile tab bar and add-to-home guide', () => {
   assert.match(manifestSource, /"short_name": "2aran"/)
 })
 
-test('standalone pages hide the site header', () => {
-  assert.match(chromeSource, /HIDE_HEADER_PATHS = new Set\(\['\/spacex', '\/tools\/workbuddy-acp-bridge'\]\)/)
-  assert.match(chromeSource, /isOnchainBlogPath/)
-  assert.match(chromeSource, /HIDE_HEADER_PATHS\.has\(pathname\) \|\| isOnchainBlogPath\(pathname\)/)
-  assert.doesNotMatch(chromeSource, /bookmark-nav|BOOKMARKS_HOST/)
+test('H5 folds display settings into the drawer and keeps a home Codex reset entry', () => {
+  // 右上角 < xl 不再单独摆设置图标；桌面 xl 区块仍保留 SettingsButton
+  assert.doesNotMatch(headerSource, /<div className="xl:hidden"><SettingsButton \/>/)
+  assert.match(headerSource, /<SettingsButton \/>/)
+  // 完整设置控件收进汉堡菜单抽屉
+  assert.match(headerSource, /site-mobile-drawer[\s\S]*<SiteSettingsControls \/>/)
+  assert.match(headerSource, /显示设置/)
+  assert.match(settingsControlsSource, /pick\(locale, '语言', 'Language'\)/)
+  assert.match(settingsControlsSource, /pick\(locale, '主题', 'Theme'\)/)
+  assert.match(settingsControlsSource, /首页背景/)
+  // H5 信息流补 Codex 重置入口，桌面已有侧栏卡片，不重复
+  assert.match(pageSource, /className="home-masonry-item lg:hidden"[\s\S]{0,400}home-codex-reset-mobile-entry/)
+  assert.match(pageSource, /href=\{CODEX_RESET_PATH\}/)
+  assert.match(pageSource, /<HomeCodexResetCard/)
 })

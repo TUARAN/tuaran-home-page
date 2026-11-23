@@ -3,6 +3,7 @@ import { loadContentKeyMeta } from '../../../../lib/content/contentKeyLite'
 import { getOwnerOrReject } from '../../../../lib/admin/adminAuth'
 import { resolveArticleKey, resolveContentKey } from '../../../../lib/article/articleLinks'
 import { getD1 } from '../../../../lib/db/d1'
+import { readThroughEdgeCache } from '../../../../lib/db/edgeCache.mjs'
 import { CONTENT_TYPE_GROUP } from '../../../../lib/content/contentRegistry'
 import { readingVisitorName } from '../../../../lib/auth/readingVisitorIdentity.mjs'
 import { cumulativeAnalyticsWindow, equalComparisonWindow } from '../../../../lib/site/analyticsSources.mjs'
@@ -93,6 +94,241 @@ function unavailable(days, cumulative = false) {
   })
 }
 
+async function buildWeeklyAnalytics(db, { days, cumulative }) {
+  const now = Date.now()
+  const todayStart = shanghaiDayStart(now)
+  const comparisonWindow = cumulative ? cumulativeAnalyticsWindow(now) : equalComparisonWindow(days, now)
+  const periodStart = comparisonWindow.currentStart
+  const previousStart = comparisonWindow.previousStart
+  const visitorKey = visitorKeySql()
+
+  const [
+    overviewRow,
+    returningRow,
+    seriesRows,
+    contentRows,
+    categoryRows,
+    sourceRows,
+    audienceRows,
+    visitorRows,
+    todayOverview,
+    todayContentRows,
+    todaySourceRows,
+    todayVisitorRows,
+    likeTotal,
+    likeRows,
+    commentRows,
+    commentTotal,
+    newsletterTotal,
+    coverageRow,
+  ] = await Promise.all([
+    db.prepare(
+      `SELECT
+         SUM(CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+         SUM(CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
+         COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN ${visitorKey} END) AS uv,
+         COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN ${visitorKey} END) AS previous_uv,
+         SUM(CASE WHEN quality <> 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS excluded_pv
+       FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3`,
+    ).bind(periodStart, previousStart, now).first(),
+    db.prepare(
+      `SELECT COUNT(*) AS returning_count FROM (
+         SELECT ${visitorKey} AS visitor_key
+         FROM research_pv_hits
+         WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+         GROUP BY visitor_key
+         HAVING COUNT(DISTINCT CAST((created_at + ?3) / ?4 AS INTEGER)) >= 2
+       )`,
+    ).bind(periodStart, now, SHANGHAI_TZ_OFFSET_MS, DAY_MS).first(),
+    db.prepare(
+      `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?3 AND created_at <= ?4
+       GROUP BY day_key ORDER BY day_key ASC`,
+    ).bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, periodStart, now).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT category, slug,
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+         SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
+         COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3
+       GROUP BY category, slug
+       HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
+       ORDER BY pv DESC, uv DESC LIMIT ?4`,
+    ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT category,
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
+         SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3 GROUP BY category`,
+    ).bind(periodStart, previousStart, now).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
+         COUNT(DISTINCT ${visitorKey}) AS uv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY source, medium, campaign, referrer_host
+       ORDER BY pv DESC, uv DESC LIMIT ?3`,
+    ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT visitor_type, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY visitor_type ORDER BY pv DESC`,
+    ).bind(periodStart, now).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT ${visitorKey} AS visitor_key,
+         MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
+         MAX(user_name) AS user_name, COUNT(*) AS pv,
+         COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY visitor_key ORDER BY pv DESC, last_seen DESC LIMIT ?3`,
+    ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2`,
+    ).bind(todayStart, now).first(),
+    db.prepare(
+      `SELECT category, slug, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv, 0 AS previous_pv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY category, slug ORDER BY pv DESC, uv DESC LIMIT ?3`,
+    ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
+         COUNT(DISTINCT ${visitorKey}) AS uv
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY source, medium, campaign, referrer_host ORDER BY pv DESC LIMIT 8`,
+    ).bind(todayStart, now).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT ${visitorKey} AS visitor_key,
+         MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
+         MAX(user_name) AS user_name, COUNT(*) AS pv,
+         COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
+       FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
+       GROUP BY visitor_key ORDER BY last_seen DESC LIMIT ?3`,
+    ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
+         SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
+       FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3`,
+    ).bind(periodStart, previousStart, now).first(),
+    db.prepare(
+      `SELECT article_key,
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
+         SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
+       FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
+       GROUP BY article_key HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
+       ORDER BY total DESC LIMIT ?4`,
+    ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
+       FROM article_comments
+       WHERE user_id NOT LIKE ?1
+       ORDER BY created_at DESC LIMIT 20`,
+    ).bind(BOT_COMMENT_USER_PATTERN).all().then((r) => r.results || []),
+    db.prepare(
+      `SELECT COUNT(*) AS total_comments, COUNT(DISTINCT article_key) AS article_count,
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_comments
+       FROM article_comments
+       WHERE user_id NOT LIKE ?2`,
+    ).bind(periodStart, BOT_COMMENT_USER_PATTERN).first(),
+    db.prepare(
+      `SELECT COUNT(*) AS active,
+         SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_total
+       FROM newsletter_subscribers WHERE status = 'active'`,
+    ).bind(periodStart).first().catch(() => null),
+    db.prepare("SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits WHERE quality = 'qualified'").first(),
+  ])
+
+  const archived = await readContentCatalog()
+  const metadata = new Map(archived.entries.map((entry) => [entry.contentKey, { title: entry.title, href: entry.href }]))
+  const keys = [...contentRows, ...todayContentRows].map((row) => ['companies', 'topics', 'people'].includes(row.category) ? `research:${row.category}:${row.slug}` : `${row.category}:${row.slug}`)
+  keys.push(...likeRows.map((row) => row.article_key), ...commentRows.map((row) => row.article_key))
+  for (let offset = 0; offset < keys.length; offset += 100) {
+    for (const [key, value] of await loadContentKeyMeta(db, keys.slice(offset, offset + 100))) metadata.set(key, value)
+  }
+
+  const pv = Number(overviewRow?.pv) || 0
+  const uv = Number(overviewRow?.uv) || 0
+  const returning = Number(returningRow?.returning_count) || 0
+  const mapSource = (row) => ({
+    source: row.source || 'direct',
+    medium: row.medium || 'none',
+    campaign: row.campaign || '',
+    referrerHost: row.referrer_host || '',
+    pv: Number(row.pv) || 0,
+    uv: Number(row.uv) || 0,
+  })
+  const mapVisitor = (row) => {
+    const key = row.visitor_key || ''
+    const type = row.visitor_type || 'anonymous'
+    return {
+      key,
+      type,
+      provider: row.user_provider || '',
+      name: readingVisitorName({ visitorType: type, visitorKey: key, userName: row.user_name || '' }),
+      pv: Number(row.pv) || 0,
+      contentCount: Number(row.content_count) || 0,
+      lastSeen: Number(row.last_seen) || 0,
+    }
+  }
+  const likes = likeRows.map((row) => {
+    const resolved = resolveArticleKey(row.article_key, metadata)
+    const total = Number(row.total) || 0
+    const previousTotal = Number(row.previous_total) || 0
+    return { key: row.article_key, title: resolved.title, href: resolved.href, total, previousTotal, delta: total - previousTotal }
+  })
+  const comments = commentRows.map((row) => {
+    const resolved = resolveArticleKey(row.article_key, metadata)
+    return {
+      id: Number(row.id), articleKey: row.article_key || '', articleTitle: resolved.title,
+      href: resolved.href ? `${resolved.href}#comments` : null,
+      userId: row.user_id || '', userProvider: row.user_provider || '',
+      userName: row.user_name || '', userImage: row.user_image || '',
+      message: row.message || '', createdAt: Number(row.created_at) || 0,
+    }
+  })
+  const availableFrom = Number(coverageRow?.available_from) || 0
+
+  return {
+    status: 'ok',
+    generatedAt: now,
+    window: {
+      days, cumulative, periodStart, previousStart, todayStart, timezone: 'Asia/Shanghai',
+      availableFrom, availableTo: Number(coverageRow?.available_to) || 0,
+      complete: cumulative || Boolean(availableFrom && availableFrom <= periodStart),
+    },
+    overview: {
+      pv, previousPv: Number(overviewRow?.previous_pv) || 0,
+      uv, previousUv: Number(overviewRow?.previous_uv) || 0,
+      returning, returnRate: uv ? returning / uv : 0,
+      viewsPerVisitor: uv ? pv / uv : 0,
+      excludedLegacyPv: Number(overviewRow?.excluded_pv) || 0,
+    },
+    series: cumulative && availableFrom
+      ? buildSeries(seriesRows, shanghaiDayStart(availableFrom), Math.floor((todayStart - shanghaiDayStart(availableFrom)) / DAY_MS) + 1)
+      : buildSeries(seriesRows, periodStart, days),
+    topContent: resolveReadRows(contentRows, metadata),
+    byType: typeRows(categoryRows),
+    sources: sourceRows.map(mapSource),
+    audience: {
+      breakdown: audienceRows.map((row) => ({ type: row.visitor_type || 'anonymous', pv: Number(row.pv) || 0, uv: Number(row.uv) || 0 })),
+      visitors: visitorRows.map(mapVisitor),
+    },
+    today: {
+      pv: Number(todayOverview?.pv) || 0,
+      uv: Number(todayOverview?.uv) || 0,
+      topContent: resolveReadRows(todayContentRows, metadata),
+      sources: todaySourceRows.map(mapSource),
+      visitors: todayVisitorRows.map(mapVisitor),
+    },
+    likes: { total: Number(likeTotal?.total) || 0, previousTotal: Number(likeTotal?.previous_total) || 0, top: likes },
+    comments: {
+      recent: comments,
+      total: { all: Number(commentTotal?.total_comments) || 0, period: Number(commentTotal?.period_comments) || 0, articles: Number(commentTotal?.article_count) || 0 },
+    },
+    newsletter: { active: Number(newsletterTotal?.active) || 0, period: Number(newsletterTotal?.period_total) || 0 },
+  }
+}
+
 export async function GET(req) {
   const guard = await getOwnerOrReject(req)
   if (!guard.ok) return guard.response
@@ -109,240 +345,14 @@ export async function GET(req) {
     return unavailable(days, cumulative)
   }
 
-  const now = Date.now()
-  const todayStart = shanghaiDayStart(now)
-  const comparisonWindow = cumulative ? cumulativeAnalyticsWindow(now) : equalComparisonWindow(days, now)
-  const periodStart = comparisonWindow.currentStart
-  const previousStart = comparisonWindow.previousStart
-  const visitorKey = visitorKeySql()
-
   try {
-    const [
-      overviewRow,
-      returningRow,
-      seriesRows,
-      contentRows,
-      categoryRows,
-      sourceRows,
-      audienceRows,
-      visitorRows,
-      todayOverview,
-      todayContentRows,
-      todaySourceRows,
-      todayVisitorRows,
-      likeTotal,
-      likeRows,
-      commentRows,
-      commentTotal,
-      newsletterTotal,
-      coverageRow,
-    ] = await Promise.all([
-      db.prepare(
-        `SELECT
-           SUM(CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
-           SUM(CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
-           COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?1 THEN ${visitorKey} END) AS uv,
-           COUNT(DISTINCT CASE WHEN quality = 'qualified' AND created_at >= ?2 AND created_at < ?1 THEN ${visitorKey} END) AS previous_uv,
-           SUM(CASE WHEN quality <> 'qualified' AND created_at >= ?1 THEN 1 ELSE 0 END) AS excluded_pv
-         FROM research_pv_hits WHERE created_at >= ?2 AND created_at <= ?3`,
-      ).bind(periodStart, previousStart, now).first(),
-      db.prepare(
-        `SELECT COUNT(*) AS returning_count FROM (
-           SELECT ${visitorKey} AS visitor_key
-           FROM research_pv_hits
-           WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-           GROUP BY visitor_key
-           HAVING COUNT(DISTINCT CAST((created_at + ?3) / ?4 AS INTEGER)) >= 2
-         )`,
-      ).bind(periodStart, now, SHANGHAI_TZ_OFFSET_MS, DAY_MS).first(),
-      db.prepare(
-        `SELECT CAST((created_at + ?1) / ?2 AS INTEGER) AS day_key, COUNT(*) AS pv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?3 AND created_at <= ?4
-         GROUP BY day_key ORDER BY day_key ASC`,
-      ).bind(SHANGHAI_TZ_OFFSET_MS, DAY_MS, periodStart, now).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT category, slug,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
-           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv,
-           COUNT(DISTINCT CASE WHEN created_at >= ?1 THEN ${visitorKey} END) AS uv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3
-         GROUP BY category, slug
-         HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
-         ORDER BY pv DESC, uv DESC LIMIT ?4`,
-      ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT category,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS pv,
-           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_pv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?2 AND created_at <= ?3 GROUP BY category`,
-      ).bind(periodStart, previousStart, now).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
-           COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY source, medium, campaign, referrer_host
-         ORDER BY pv DESC, uv DESC LIMIT ?3`,
-      ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT visitor_type, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY visitor_type ORDER BY pv DESC`,
-      ).bind(periodStart, now).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT ${visitorKey} AS visitor_key,
-           MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
-           MAX(user_name) AS user_name, COUNT(*) AS pv,
-           COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY visitor_key ORDER BY pv DESC, last_seen DESC LIMIT ?3`,
-      ).bind(periodStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2`,
-      ).bind(todayStart, now).first(),
-      db.prepare(
-        `SELECT category, slug, COUNT(*) AS pv, COUNT(DISTINCT ${visitorKey}) AS uv, 0 AS previous_pv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY category, slug ORDER BY pv DESC, uv DESC LIMIT ?3`,
-      ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT source, medium, campaign, referrer_host, COUNT(*) AS pv,
-           COUNT(DISTINCT ${visitorKey}) AS uv
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY source, medium, campaign, referrer_host ORDER BY pv DESC LIMIT 8`,
-      ).bind(todayStart, now).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT ${visitorKey} AS visitor_key,
-           MAX(visitor_type) AS visitor_type, MAX(user_provider) AS user_provider,
-           MAX(user_name) AS user_name, COUNT(*) AS pv,
-           COUNT(DISTINCT category || '/' || slug) AS content_count, MAX(created_at) AS last_seen
-         FROM research_pv_hits WHERE quality = 'qualified' AND created_at >= ?1 AND created_at <= ?2
-         GROUP BY visitor_key ORDER BY last_seen DESC LIMIT ?3`,
-      ).bind(todayStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
-           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
-         FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3`,
-      ).bind(periodStart, previousStart, now).first(),
-      db.prepare(
-        `SELECT article_key,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS total,
-           SUM(CASE WHEN created_at >= ?2 AND created_at < ?1 THEN 1 ELSE 0 END) AS previous_total
-         FROM article_likes WHERE created_at >= ?2 AND created_at <= ?3
-         GROUP BY article_key HAVING SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) > 0
-         ORDER BY total DESC LIMIT ?4`,
-      ).bind(periodStart, previousStart, now, LIMIT).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT id, article_key, user_id, user_provider, user_name, user_image, message, created_at
-         FROM article_comments
-         WHERE user_id NOT LIKE ?1
-         ORDER BY created_at DESC LIMIT 20`,
-      ).bind(BOT_COMMENT_USER_PATTERN).all().then((r) => r.results || []),
-      db.prepare(
-        `SELECT COUNT(*) AS total_comments, COUNT(DISTINCT article_key) AS article_count,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_comments
-         FROM article_comments
-         WHERE user_id NOT LIKE ?2`,
-      ).bind(periodStart, BOT_COMMENT_USER_PATTERN).first(),
-      db.prepare(
-        `SELECT COUNT(*) AS active,
-           SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS period_total
-         FROM newsletter_subscribers WHERE status = 'active'`,
-      ).bind(periodStart).first().catch(() => null),
-      db.prepare("SELECT MIN(created_at) AS available_from, MAX(created_at) AS available_to FROM research_pv_hits WHERE quality = 'qualified'").first(),
-    ])
-
-    const archived = await readContentCatalog()
-    const metadata = new Map(archived.entries.map((entry) => [entry.contentKey, { title: entry.title, href: entry.href }]))
-    const keys = [...contentRows, ...todayContentRows].map((row) => ['companies', 'topics', 'people'].includes(row.category) ? `research:${row.category}:${row.slug}` : `${row.category}:${row.slug}`)
-    keys.push(...likeRows.map((row) => row.article_key), ...commentRows.map((row) => row.article_key))
-    for (let offset = 0; offset < keys.length; offset += 100) {
-      for (const [key, value] of await loadContentKeyMeta(db, keys.slice(offset, offset + 100))) metadata.set(key, value)
-    }
-
-    const pv = Number(overviewRow?.pv) || 0
-    const uv = Number(overviewRow?.uv) || 0
-    const returning = Number(returningRow?.returning_count) || 0
-    const mapSource = (row) => ({
-      source: row.source || 'direct',
-      medium: row.medium || 'none',
-      campaign: row.campaign || '',
-      referrerHost: row.referrer_host || '',
-      pv: Number(row.pv) || 0,
-      uv: Number(row.uv) || 0,
-    })
-    const mapVisitor = (row) => {
-      const key = row.visitor_key || ''
-      const type = row.visitor_type || 'anonymous'
-      return {
-        key,
-        type,
-        provider: row.user_provider || '',
-        name: readingVisitorName({ visitorType: type, visitorKey: key, userName: row.user_name || '' }),
-        pv: Number(row.pv) || 0,
-        contentCount: Number(row.content_count) || 0,
-        lastSeen: Number(row.last_seen) || 0,
-      }
-    }
-    const likes = likeRows.map((row) => {
-      const resolved = resolveArticleKey(row.article_key, metadata)
-      const total = Number(row.total) || 0
-      const previousTotal = Number(row.previous_total) || 0
-      return { key: row.article_key, title: resolved.title, href: resolved.href, total, previousTotal, delta: total - previousTotal }
-    })
-    const comments = commentRows.map((row) => {
-      const resolved = resolveArticleKey(row.article_key, metadata)
-      return {
-        id: Number(row.id), articleKey: row.article_key || '', articleTitle: resolved.title,
-        href: resolved.href ? `${resolved.href}#comments` : null,
-        userId: row.user_id || '', userProvider: row.user_provider || '',
-        userName: row.user_name || '', userImage: row.user_image || '',
-        message: row.message || '', createdAt: Number(row.created_at) || 0,
-      }
-    })
-    const availableFrom = Number(coverageRow?.available_from) || 0
-
-    return Response.json({
-      status: 'ok',
-      generatedAt: now,
-      window: {
-        days, cumulative, periodStart, previousStart, todayStart, timezone: 'Asia/Shanghai',
-        availableFrom, availableTo: Number(coverageRow?.available_to) || 0,
-        complete: cumulative || Boolean(availableFrom && availableFrom <= periodStart),
-      },
-      overview: {
-        pv, previousPv: Number(overviewRow?.previous_pv) || 0,
-        uv, previousUv: Number(overviewRow?.previous_uv) || 0,
-        returning, returnRate: uv ? returning / uv : 0,
-        viewsPerVisitor: uv ? pv / uv : 0,
-        excludedLegacyPv: Number(overviewRow?.excluded_pv) || 0,
-      },
-      series: cumulative && availableFrom
-        ? buildSeries(seriesRows, shanghaiDayStart(availableFrom), Math.floor((todayStart - shanghaiDayStart(availableFrom)) / DAY_MS) + 1)
-        : buildSeries(seriesRows, periodStart, days),
-      topContent: resolveReadRows(contentRows, metadata),
-      byType: typeRows(categoryRows),
-      sources: sourceRows.map(mapSource),
-      audience: {
-        breakdown: audienceRows.map((row) => ({ type: row.visitor_type || 'anonymous', pv: Number(row.pv) || 0, uv: Number(row.uv) || 0 })),
-        visitors: visitorRows.map(mapVisitor),
-      },
-      today: {
-        pv: Number(todayOverview?.pv) || 0,
-        uv: Number(todayOverview?.uv) || 0,
-        topContent: resolveReadRows(todayContentRows, metadata),
-        sources: todaySourceRows.map(mapSource),
-        visitors: todayVisitorRows.map(mapVisitor),
-      },
-      likes: { total: Number(likeTotal?.total) || 0, previousTotal: Number(likeTotal?.previous_total) || 0, top: likes },
-      comments: {
-        recent: comments,
-        total: { all: Number(commentTotal?.total_comments) || 0, period: Number(commentTotal?.period_comments) || 0, articles: Number(commentTotal?.article_count) || 0 },
-      },
-      newsletter: { active: Number(newsletterTotal?.active) || 0, period: Number(newsletterTotal?.period_total) || 0 },
-    })
+    const payload = await readThroughEdgeCache(
+      `admin:content-weekly:${cumulative ? 'all' : days}`,
+      60,
+      () => buildWeeklyAnalytics(db, { days, cumulative }),
+    )
+    return Response.json(payload)
   } catch (error) {
-    return Response.json({ status: 'error', generatedAt: now, error: 'CONTENT_ANALYTICS_FAILED', detail: String(error?.message || error) }, { status: 500 })
+    return Response.json({ status: 'error', generatedAt: Date.now(), error: 'CONTENT_ANALYTICS_FAILED', detail: String(error?.message || error) }, { status: 500 })
   }
 }

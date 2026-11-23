@@ -12,6 +12,45 @@ import { quotes } from "./data.js";
 import { getCollection } from "./collections.js";
 import { SITE_URL, SITEMAP_SIZE, renderHome, renderPoem, renderCollection, renderMissing, sitemapIndex, sitemapUrls } from "./seo.js";
 
+// 每个诗文页都要读 D1（dataset state + 诗文详情）。Worker 的响应不会自动进
+// Cloudflare 边缘缓存，所以爬虫重复抓同一页时会反复打到库上。
+// 这里显式用 Cache API 做一层：详情页 5 分钟，接口 60 秒，只缓存 200 响应。
+const PAGE_CACHE_TTL_SEC = 300;
+const API_CACHE_TTL_SEC = 60;
+
+function cacheStore() {
+  try {
+    return globalThis.caches?.default || null;
+  } catch {
+    return null;
+  }
+}
+
+async function readEdgeCache(request) {
+  if (request.method !== "GET") return null;
+  const cache = cacheStore();
+  if (!cache) return null;
+  try {
+    return (await cache.match(request)) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeEdgeCache(request, response, ttlSeconds) {
+  if (request.method !== "GET" || response.status !== 200) return response;
+  const cache = cacheStore();
+  if (!cache) return response;
+  try {
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", `public, max-age=${ttlSeconds}`);
+    await cache.put(request, new Response(response.clone().body, { status: 200, headers }));
+  } catch {
+    // 写缓存失败不影响本次响应。
+  }
+  return response;
+}
+
 async function pageTemplate(env) {
   // Only buffer this known, small local template. Never forward session headers.
   const response = await env.ASSETS.fetch(new Request(`${SITE_URL}/`));
@@ -136,8 +175,10 @@ export default {
     if (["/", "/index.html", "/robots.txt", "/sitemap.xml"].includes(url.pathname)
       || url.pathname.startsWith("/poems/") || url.pathname.startsWith("/collections/")
       || url.pathname.startsWith("/sitemaps/")) {
+      const cached = await readEdgeCache(request);
+      if (cached) return cached;
       try {
-        return await handlePage(request, url, env);
+        return await writeEdgeCache(request, await handlePage(request, url, env), PAGE_CACHE_TTL_SEC);
       } catch (error) {
         console.error("page_error", error);
         return pageResponse(request, "诗文服务暂时不可用，请稍后重试。", "text/plain", 503, true);
@@ -145,8 +186,10 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/")) {
+      const cached = await readEdgeCache(request);
+      if (cached) return cached;
       try {
-        return await handleApi(url, env);
+        return await writeEdgeCache(request, await handleApi(url, env), API_CACHE_TTL_SEC);
       } catch (error) {
         console.error("api_error", error);
         return json({ error: "数据服务暂时不可用" }, { status: 500 });

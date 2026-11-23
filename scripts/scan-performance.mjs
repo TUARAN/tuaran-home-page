@@ -44,7 +44,7 @@ for (const file of await walk('public')) {
         evidence: [`${rel}（${sizeMiB.toFixed(1)} MiB）`],
         fix: {
           kind: 'config-change',
-          suggestedBranch: `codex/perf-scan-${stamp}`,
+          suggestedBranch: `chore/perf-scan-${stamp}`,
         },
         tags: ['assets'],
       })
@@ -58,7 +58,7 @@ for (const file of await walk('public')) {
       evidence: [`${rel}（${sizeMiB.toFixed(1)} MiB）`],
       fix: {
         kind: 'code-change',
-        suggestedBranch: `codex/perf-scan-${stamp}`,
+        suggestedBranch: `chore/perf-scan-${stamp}`,
       },
       tags: ['assets'],
     })
@@ -71,7 +71,7 @@ for (const file of await walk('public')) {
       evidence: [`${rel}（${sizeMiB.toFixed(1)} MiB）`],
       fix: {
         kind: 'code-change',
-        suggestedBranch: `codex/perf-scan-${stamp}`,
+        suggestedBranch: `chore/perf-scan-${stamp}`,
       },
       tags: ['assets'],
     })
@@ -84,7 +84,7 @@ if (totalPublicBytes > 100 * 1024 * 1024) {
     title: `public/ 总量 ${(totalPublicBytes / 1024 / 1024).toFixed(0)} MiB（${publicCount} 个文件）`,
     detail: '超过 100 MiB 时优先评估把大文件迁往 R2，保持构建产物轻量。',
     evidence: ['public/ 全量统计'],
-    fix: { kind: 'investigate', suggestedBranch: `codex/perf-scan-${stamp}` },
+    fix: { kind: 'investigate', suggestedBranch: `chore/perf-scan-${stamp}` },
     tags: ['assets'],
   })
 }
@@ -106,7 +106,7 @@ for (const root of sourceRoots) {
         evidence: [`${rel}（${lines} 行）`],
         fix: {
           kind: 'refactor',
-          suggestedBranch: `codex/perf-scan-${stamp}`,
+          suggestedBranch: `chore/perf-scan-${stamp}`,
         },
         tags: ['bundle', 'maintainability'],
       })
@@ -119,7 +119,7 @@ for (const root of sourceRoots) {
         evidence: [`${rel}（${lines} 行）`],
         fix: {
           kind: 'refactor',
-          suggestedBranch: `codex/perf-scan-${stamp}`,
+          suggestedBranch: `chore/perf-scan-${stamp}`,
         },
         tags: ['bundle', 'maintainability'],
       })
@@ -144,7 +144,7 @@ for (const chunk of chunkSizes.slice(0, 8)) {
     title: `较大 chunk：${chunk.file}（${chunk.sizeMiB.toFixed(2)} MiB）`,
     detail: '本地构建产物参考；确认大 chunk 是否包含可懒加载的路由或依赖。',
     evidence: [`${chunk.file}（${chunk.sizeMiB.toFixed(2)} MiB）`],
-    fix: { kind: 'investigate', suggestedBranch: `codex/perf-scan-${stamp}` },
+    fix: { kind: 'investigate', suggestedBranch: `chore/perf-scan-${stamp}` },
     tags: ['bundle'],
   })
 }

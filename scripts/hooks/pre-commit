@@ -24,7 +24,7 @@ if [ -d "$REPO_ROOT/.git" ]; then
   echo "Creating a new branch in the main workspace is not isolation: same directory," >&2
   echo "other agents' uncommitted changes stay mixed in. This repo deploys on merge," >&2
   echo "so PR is the only merge path. Start a separate worktree first:" >&2
-  echo "  git worktree add -b codex/<task> <path> origin/main" >&2
+  echo "  git worktree add -b <type>/<task> <path> origin/main" >&2
   echo "Commit, push and open a PR there; remove the worktree the day it merges." >&2
   echo >&2
   echo "Owner override: ALLOW_MAIN_COMMIT=1 git commit ..." >&2

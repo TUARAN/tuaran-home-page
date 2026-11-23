@@ -57,7 +57,7 @@ GitHub Issue 是唯一台账。PR 是唯一合入入口。非琐碎改动开 PR 
 
 ## 关闭关键词
 
-本机 Mac、Codex 插件和 `codex/*` 分支是正式贡献路径，与云端助手同级。Issue 优先照走。本地改插件很常见；PR 正文要写对关闭关键词，合并后 GitHub 才会关掉对应 Issue。
+本机 Mac、Codex 插件和本地助手开的分支是正式贡献路径，与云端助手同级；分支前缀按任务类型取，见分支管理规范。Issue 优先照走。本地改插件很常见；PR 正文要写对关闭关键词，合并后 GitHub 才会关掉对应 Issue。
 
 - 本 PR 做完了某条 Issue 的建议动作：该条写 `Closes #N`。做完几条就写几条，一行一个。一个 PR 可以关闭多条 Issue。X 大互动智能体插件的本地批次经常一次交付多条，每条做完的都要 `Closes`。
 - 已经做完的 Issue 不要写成 `Related: #N`。`Related` 不会在合并时关闭 Issue。
@@ -113,7 +113,7 @@ gh search prs --repo TUARAN/tuaran-home-page --state closed --limit 20 "关键�
 
 ## 开 PR
 
-- 分支只包含这些 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `codex/<简短任务名>`。云端代理使用当次指定的分支模板。
+- 分支只包含这些 Issue 范围内的改动。站长本机说「开 PR」时，分支名用 `<任务类型>/<简短任务名>`，前缀按改动性质从 `feat/`、`fix/`、`research/`、`content/`、`chore/` 里选。云端代理使用当次指定的分支模板。
 - 标题说明这次解决的问题。正文按模板写：问题（链到 Issue）、改了什么、没改什么、验证、每条已完成 Issue 的 `Closes #N`、仍应打开的 `Related: #N`、界面是否要预览后再合。关键词见「关闭关键词」。
 - 纯文档、模板、标签说明的提交说明以 `[CF-Pages-Skip]` 开头，跳过 Cloudflare Pages 构建。GitHub Actions 的 CI 仍会跑。不要写成 `[skip ci]`。
 

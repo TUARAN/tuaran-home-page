@@ -32,7 +32,7 @@ try {
         evidence: [`${match[1]}:${match[2]}`],
         fix: {
           kind: 'code-change',
-          suggestedBranch: `codex/design-scan-${stamp}`,
+          suggestedBranch: `chore/design-scan-${stamp}`,
         },
         tags: ['design-tokens'],
       })
@@ -47,7 +47,7 @@ try {
       evidence: ['scripts/check-tailwind-opacity-classes.mjs'],
       fix: {
         kind: 'code-change',
-        suggestedBranch: `codex/design-scan-${stamp}`,
+        suggestedBranch: `chore/design-scan-${stamp}`,
       },
       tags: ['design-tokens'],
     })
@@ -86,7 +86,7 @@ for (const file of await listJsx('app')) {
           evidence: [`${rel}:${index + 1}`],
           fix: {
             kind: 'code-change',
-            suggestedBranch: `codex/design-scan-${stamp}`,
+            suggestedBranch: `chore/design-scan-${stamp}`,
           },
           tags: ['a11y'],
         })
@@ -101,7 +101,7 @@ if (imgWithoutAlt > 30) {
     title: `img 缺少 alt 的疑似项共 ${imgWithoutAlt} 处（已展示前 30 处）`,
     detail: '建议先人工确认误报率，再决定是否批量处理。',
     evidence: ['app/ 全量行级检查'],
-    fix: { kind: 'investigate', suggestedBranch: `codex/design-scan-${stamp}` },
+    fix: { kind: 'investigate', suggestedBranch: `chore/design-scan-${stamp}` },
     tags: ['a11y'],
   })
 }

@@ -1,23 +1,30 @@
 # 分支管理规范
 
-适用于本仓库所有分支、PR 与 worktree，包括站长本机、Codex 和聊天助手。后台 `/admin/branch-rules`（工程与运维 → 规划与交付 → 分支规范）直接读取本文件。与 [Issue 优先工作流](../runbooks/issue-first-workflow.md) 配合使用：该文件管“能不能开工、怎么合”，本文件管“分支怎么开、怎么收”。
+适用于本仓库所有分支、PR 与 worktree，无论由站长本机、哪个 AI 工具还是聊天助手执行。后台 `/admin/branch-rules`（工程与运维 → 规划与交付 → 分支规范）直接读取本文件。与 [Issue 优先工作流](../runbooks/issue-first-workflow.md) 配合使用：该文件管“能不能开工、怎么合”，本文件管“分支怎么开、怎么收”。
+
+分支名表达任务性质，不记录由哪个工具创建。同一件事的分支无论由 Codex、Cursor、Claude 还是助手开，前缀都按任务类型取，便于检索和归档。
 
 ## 基本模型
 
 - 只有一条长期分支：`main`。不建 `develop`、`release` 等长期分支。
 - 所有改动走短命分支，PR 经 squash 合回 `main`，分支寿命以天计。
-- **开工隔离**：任务一开始就 `git worktree add -b codex/<任务名> <路径> origin/main`，在独立目录里写文件、提交、推送；不在主工作区直接写文件或提交。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起；判断标准是目录形态（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
+- **开工隔离**：任务一开始就 `git worktree add -b <类型>/<任务名> <路径> origin/main`，在独立目录里写文件、提交、推送；不在主工作区直接写文件或提交。主工作区常被多个智能体共享，在其中 `checkout` 新分支不算隔离——目录相同，他人未提交改动仍混在一起；判断标准是目录形态（`.git` 为目录即主工作区），不是分支名。`pre-commit` 钩子拒绝主工作区的任何提交；站长明确要求在主工作区直接提交的小改动可用 `ALLOW_MAIN_COMMIT=1 git commit ...` 绕过。钩子只在本机 clone（`core.hooksPath=scripts/hooks`）生效，云端 VM 靠本条自觉。
 - 合并即部署（Cloudflare Pages），因此合并动作只由站长发出。助手不 squash、不 merge。
 - 非琐碎改动不直接推 `main`。
 
 ## 命名
 
+前缀白名单只有下面五个，按任务性质取，不按执行工具取：
+
 | 前缀 | 用途 | 示例 |
 | --- | --- | --- |
-| `codex/<任务名>` | Codex 或本机助手的单项任务 | `codex/fix-csdn-account-links` |
-| `feat/<任务>-<Issue 号>` | 跨多次提交的功能 | `feat/x-agent-v5-453` |
+| `feat/<任务名>` | 新功能、体验调整 | `feat/x-home-reading-nav` |
+| `fix/<任务名>` | 缺陷修复 | `fix/csdn-account-links` |
 | `research/<主题>` | 单篇调研 | `research/bitverse` |
-| `cursor/…`、`claude/…` | 对应工具自动生成 | 合并后同样删除 |
+| `content/<任务名>` | 文章、资料稿、内容资产 | `content/weekly-rss` |
+| `chore/<任务名>` | 运维、构建、依赖、巡检、文档 | `chore/security-scan-2026-11-23` |
+
+历史遗留的 `codex/*`、`cursor/*`、`claude/*` 等工具前缀分支不再新开；已存在的按生命周期正常清理，不必改名。需要区分同一任务的多条分支时，用任务名区分，不要退回工具前缀。
 
 - 一件事一个分支，一个分支一个 PR。几篇调研各开各的，不合并到同一个分支。
 - 名称只写任务，不加 `-backup`、`-done`、`-v2` 之类后缀。需要保留旧版本时打 tag。
@@ -79,7 +86,7 @@ git branch -D <分支名>
 git branch <分支名> archive/<名称>
 ```
 
-- tag 名去掉 `codex/` 前缀，例如 `archive/add-image-hosting`。
+- tag 名去掉任务类型前缀，例如 `archive/add-image-hosting`。
 - `archive/*` tag 默认只在本地。需要跨机器保留时执行 `git push origin --tags`。
 - 删除分支前，先记录它的 SHA，防止 tag 也漏打。
 

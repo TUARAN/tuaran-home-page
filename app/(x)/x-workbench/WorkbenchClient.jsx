@@ -22,39 +22,29 @@ function Metric({ ready, value }) {
   return compact(value)
 }
 
-function TweetBoard({ items }) {
-  if (!items.length) return null
+function MiniBoard({ title, note, rows, kind }) {
+  const max = rows.reduce((m, r) => Math.max(m, Number(r.views) || 0), 0) || 1
   return (
-    <div className={s.card}>
-      {items.map((item, index) => (
-        <article key={item.id} className={s.rank}>
-          <span className={s.rankNo}>{index + 1}</span>
-          <a href={item.url} target="_blank" rel="noreferrer noopener" style={{ flex: 1, color: 'inherit' }}>
-            <strong>@{item.handle}</strong>
-            <span className={s.note}> {item.topic || '未采集'}</span>
-            <div>{item.text || '（无文字）'}</div>
-          </a>
-          <strong>{compact(item.views)} 曝光</strong>
-        </article>
-      ))}
-    </div>
-  )
-}
-
-function AccountBoard({ rows }) {
-  if (!rows.length) return null
-  return (
-    <div className={s.card}>
-      {rows.map((row, index) => (
-        <article key={row.handle} className={s.rank}>
-          <span className={s.rankNo}>{index + 1}</span>
-          <a href={`https://x.com/${row.handle}`} target="_blank" rel="noreferrer noopener" style={{ flex: 1, color: 'inherit' }}>
-            <strong>{row.displayName || `@${row.handle}`}</strong>
-            <span className={s.note}> @{row.handle}</span>
-          </a>
-          <strong>{compact(row.views)} 曝光</strong>
-        </article>
-      ))}
+    <div className={s.panel}>
+      <div className={s.panelHead}><h2>{title}</h2><span>{rows.length ? `${rows.length} 条` : '读取中'}</span></div>
+      {!rows.length && <div className={s.empty}>今日还没有收录。</div>}
+      {rows.map((row, index) => {
+        const name = kind === 'tweet' ? (row.handle ? `@${row.handle}` : '未采集') : (row.displayName || `@${row.handle}`)
+        return (
+          <article key={kind === 'tweet' ? row.id : row.handle} className={s.rank}>
+            <span className={`${s.rankNo} ${index === 0 ? s.no1 : ''}`}>{index + 1}</span>
+            <div className={s.rankMain}>
+              <a href={kind === 'tweet' ? row.url : `https://x.com/${row.handle}`} target="_blank" rel="noreferrer noopener" style={{ color: 'inherit' }}>
+                <strong>{name}</strong>
+              </a>
+              {kind === 'tweet' && row.topic && <div className={s.note}>{row.topic}</div>}
+              <div className={s.boardBar}><i style={{ width: `${Math.max(2, Math.round((Number(row.views) || 0) / max * 100))}%` }} /></div>
+            </div>
+            <strong>{compact(row.views)}</strong>
+          </article>
+        )
+      })}
+      <details className={s.fold}><summary>统计口径</summary><p className={s.hint}>{note}</p></details>
     </div>
   )
 }
@@ -79,54 +69,60 @@ export default function WorkbenchClient() {
   return (
     <XSiteFrame active="/x-workbench">
       <section id="market" className={s.section}>
-        <h2 className={s.h2}>流量</h2>
-        <p className={s.question}>今天流量去哪了。</p>
-        <h3 className={s.h2} style={{ fontSize: 18 }}>推文</h3>
-        {tweetConclusion && <p className={s.conclusion}>{tweetConclusion}</p>}
-        {observe && !observe.unavailable && <p className={s.hint}>{TWEET_BOARD_NOTE}</p>}
-        <TweetBoard items={observe?.tweets || []} />
-        <h3 className={s.h2} style={{ fontSize: 18, marginTop: 28 }}>账号</h3>
-        {accountConclusion && <p className={s.conclusion}>{accountConclusion}</p>}
-        {observe && !observe.unavailable && <p className={s.hint}>{ACCOUNT_HOME_NOTE}</p>}
-        <AccountBoard rows={observe?.accounts || []} />
+        <div className={s.sectionHead}>
+          <span className={s.sectionMark} aria-hidden="true" />
+          <h2 className={s.sectionTitle}>流量</h2>
+          <span className={s.sectionQ}>今天流量去哪了。</span>
+        </div>
+        {(tweetConclusion || accountConclusion) && (
+          <div className={s.noteCard}>
+            {tweetConclusion && <p>{tweetConclusion}</p>}
+            {accountConclusion && <p>{accountConclusion}</p>}
+          </div>
+        )}
+        <div className={s.cols}>
+          <MiniBoard title="推文曝光榜" note={TWEET_BOARD_NOTE} rows={observe?.tweets || []} kind="tweet" />
+          <MiniBoard title="账号曝光榜" note={ACCOUNT_HOME_NOTE} rows={observe?.accounts || []} kind="account" />
+        </div>
         <p><Link href="/calendar">往日记录</Link></p>
       </section>
 
       <section id="agents" className={s.section}>
-        <h2 className={s.h2}>智能体</h2>
+        <div className={s.sectionHead}>
+          <span className={s.sectionMark} aria-hidden="true" />
+          <h2 className={s.sectionTitle}>大互动智能体</h2>
+        </div>
         <p className={s.question}>使用了智能体插件的账号，今天做了什么。</p>
         <p className={s.hint}>目前是矿工阿三、矿长阿富、矿工小十三。</p>
         <div className={s.agentGrid}>
           {agents.map((agent) => (
-            <article key={agent.handle} className={s.card}>
-              <h3 style={{ margin: '0 0 4px' }}>{agent.name || agent.handle}</h3>
-              <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener">@{agent.handle}</a>
+            <article key={agent.handle} className={s.agentCard}>
+              <h3 style={{ margin: 0 }}>{agent.name || agent.handle}</h3>
+              <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener" className={s.note}>@{agent.handle}</a>
+              <div className={s.agentMain}><b><Metric ready={ready} value={agent.actions?.posts ?? null} /></b><span className={s.note}>发帖</span></div>
               <dl className={s.metricList}>
-                {ACTION_LABELS.map(([key, label]) => (
+                {ACTION_LABELS.filter(([key]) => key !== 'posts').map(([key, label]) => (
                   <div key={key}>
                     <dt>{label}</dt>
                     <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
                   </div>
                 ))}
-                <div>
-                  <dt>推文曝光</dt>
-                  <dd><Metric ready={ready} value={agent.views ?? null} /></dd>
-                </div>
-                <div>
-                  <dt>推文互动</dt>
-                  <dd><Metric ready={ready} value={agent.interactions ?? null} /></dd>
-                </div>
+                <div><dt>推文曝光</dt><dd><Metric ready={ready} value={agent.views ?? null} /></dd></div>
+                <div><dt>推文互动</dt><dd><Metric ready={ready} value={agent.interactions ?? null} /></dd></div>
               </dl>
               {ready && agent.tweets != null && <p className={s.note}>已收录推文 {agent.tweets} 条</p>}
             </article>
           ))}
         </div>
-        <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>
+        <details className={s.fold}><summary>统计口径</summary><p className={s.hint}>{observe?.footnote || agentFootnote()}</p></details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
 
       <section id="more" className={s.section}>
-        <h2 className={s.h2}>继续看</h2>
+        <div className={s.sectionHead}>
+          <span className={s.sectionMark} aria-hidden="true" />
+          <h2 className={s.sectionTitle}>继续看</h2>
+        </div>
         <RadarTab keyword={keyword} onKeyword={setKeyword} operator={false} heading="按发布时间" />
         <BoardTab operator={false} heading="按时间和指标" />
       </section>

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 248,
+    "routes": 249,
     "redirects": 23,
     "private": 62,
-    "registeredStatic": 119,
+    "registeredStatic": 120,
     "indexable": 139,
-    "canonical": 159,
+    "canonical": 160,
     "openGraph": 92,
     "jsonLd": 67,
     "errors": 9,
@@ -4245,6 +4245,24 @@
         "canonical": true,
         "canonicalValues": [
           "/"
+        ],
+        "noindex": "explicit",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/x-workbench/ops",
+      "file": "app/(x)/x-workbench/ops/page.jsx",
+      "kind": "static",
+      "registered": true,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": true,
+        "canonicalValues": [
+          "/x-workbench/ops"
         ],
         "noindex": "explicit",
         "openGraph": false,

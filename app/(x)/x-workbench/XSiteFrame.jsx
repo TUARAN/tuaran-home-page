@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+import { sessionUserLabel, useSharedSession } from './sharedSession'
 import { WORKBENCH_MENU_GROUPS } from './tabs'
 import s from './workbench.module.css'
 
 export default function XSiteFrame({ active, children }) {
+  const { loading, user, signedIn } = useSharedSession()
   const [returnTo, setReturnTo] = useState('https://x.2aran.com/')
   const [hash, setHash] = useState('')
   useEffect(() => {
@@ -17,6 +19,8 @@ export default function XSiteFrame({ active, children }) {
     return () => window.removeEventListener('hashchange', read)
   }, [])
   const loginHref = `https://2aran.com/login?returnTo=${encodeURIComponent(returnTo)}`
+  const logoutHref = `https://2aran.com/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
+  const accountLabel = sessionUserLabel(user)
   return (
     <div className={`${s.app} ${s.xFrame}`}>
       <header className={s.bar}>
@@ -40,7 +44,17 @@ export default function XSiteFrame({ active, children }) {
             ))}
           </nav>
           <Link className={s.cta} href="/extension">获取插件</Link>
-          <a className={s.btn} href={loginHref}>登录</a>
+          <div className={s.accountBar}>
+            {loading ? <span className={s.accountHint} aria-hidden="true">…</span> : null}
+            {!loading && signedIn ? (
+              <>
+                <a className={s.accountLink} href="https://2aran.com/account" title={accountLabel}>{accountLabel}</a>
+                <Link className={s.btn} href="/x-workbench/ops">后台</Link>
+                <a className={s.btn} href={logoutHref}>退出</a>
+              </>
+            ) : null}
+            {!loading && !signedIn ? <a className={s.btn} href={loginHref}>登录</a> : null}
+          </div>
         </div>
       </header>
       <main className={s.main}>{children}</main>

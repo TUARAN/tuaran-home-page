@@ -17,7 +17,7 @@
 ## 已确定
 
 - 面向外部用户，需要多租户、额度、付费与滥用防护。
-- 账号沿用主站登录态：`lib/auth/edgeSession.js` 已支持 `Domain=.2aran.com` Cookie。
+- 账号沿用主站登录态：`lib/auth/edgeSession.js` 已支持 `Domain=.2aran.com` Cookie；`x.2aran.com` 通过 `/api/me` 与 `SharedSessionProvider` 展示与主站同一账号，未登录时跳转 `2aran.com/login?returnTo=`。
 - 云端负责规划、改写、排期和数据；操作 X 页面的动作全部由 Chrome 插件执行。
 
 ## 已采用的决策（站长 2026-11-22 确认按推荐方案）

@@ -37,6 +37,10 @@
 .searchBtn:hover { background: var(--accentInk); }
 .cta { background: var(--accent); color: #fff !important; border-radius: 999px; padding: 8px 18px; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .cta:hover { background: var(--accentInk); }
+.accountBar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.accountHint { color: var(--faint); font-size: 14px; padding: 0 8px; }
+.accountLink { font-size: 14px; font-weight: 600; color: var(--sub); text-decoration: none; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accountLink:hover { color: var(--ink); }
 
 /* 主体 */
 .main { max-width: 1280px; margin: 0 auto; padding: 28px 24px 80px; }

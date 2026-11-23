@@ -80,3 +80,27 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 - **金额必须精确**：价格表匹配到账，10.0 和 10.00 视为不同；改价先在网关后台建好金额。
 - **退款**：虎皮椒个人版没有退款接口，页面已写明「数字内容，解锁后不支持退款」。真需要退，走微信/支付宝手动转。
 - **合规**：个人收款码做经营性收款不合规；有执照优先走官方商户号，本适配器只换 `lib/pay/gateways/` 一个文件。
+
+## 八、进度快照（2026-11-23）
+
+### 已完成
+
+- 代码：`paid_orders` 订单链路、`/api/pay/create|notify|status`、`/api/admin/pay/orders`、`PayUnlockPanel` 扫码面板、`RanbiPaywall` 现金优先分支、`lib/ledger/points.js` 的 `priceFen` 透传。
+- 迁移：`0135_paid_content.sql` 及历史遗留的 `0129_plugin_monitor.sql`、`0132_site_memory.sql` 已在线上应用；`paid_orders` 存在，`resource_unlocks` 有 `source`/`order_ref`，`gated_resources` 有 `price_fen`，28117 条燃币权益未受影响。
+- 提交：`8f606ed feat(pay): 接入虎皮椒，支持单篇内容现金解锁`，已推送 `main`，`tuaran` 与 `tuaran-admin-git` 两个 Pages 项目均记录了该提交。
+- 虎皮椒应用：AppID `201906190303`，店铺 `2aran`，域名 `https://2aran.com`，通道「官方微信支付-不支持微信内支付」。
+
+### 待做
+
+1. **虎皮椒签约（需本人）**：后台签约状态停在 `待提交`，需完成资料提交 + 微信扫码签约，AppSecret 才在「我的支付渠道」的 `AppID/AppSecret` 列出现。
+2. **Cloudflare Secret**：拿到 AppSecret 后配 `XUNHUPAY_APPID`、`XUNHUPAY_SECRET`（走 Pages 环境变量/Secret，不落文件）。
+3. **线上路由核验**：`https://2aran.com/api/pay/create` 目前返回 404，同站 `/api/points/unlock` 返回 400 业务错误。需确认 Pages 产物是否包含 `/api/pay/*`，必要时手动 `wrangler pages deploy`。
+4. **试点定价**：现有 11 条 workbuddy 资源 `price_fen` 全为 0，先给 1 篇配 `1000`（推荐 `workbuddy:workbuddy-complete-guide` 或 `workbuddy-workplace-video-course`），确认现金入口出现。
+5. **真实支付验证**：用 1 元以下金额走一遍扫码 → 回调 → 解锁，核对订单 `status=paid`、权益 `source='paid'`。
+6. **IP 白名单方案**：若后台强制填服务器 IP，需国内小 VPS 固定 IP 中转，或换只校验域名的通道。
+7. 可选：后台可视化订单列表与补单按钮（当前只有 API）；正文加密第二版（构建期加密 + `/api/content/full` 下发）。
+
+### 已知问题
+
+- 本地 `npm run pages:build:public` 失败在 `spawn pnpm ENOENT`：仓库有 `pnpm-lock.yaml`，Vercel CLI 会切到 pnpm，本机未装。排障前先装 pnpm，或用 `corepack enable`。
+- 线上 404 与上面这条无必然关系，Cloudflare 构建环境自带 pnpm，需以 Pages 构建日志为准。

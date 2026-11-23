@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "summary": {
-    "routes": 249,
+    "routes": 250,
     "redirects": 23,
-    "private": 62,
+    "private": 63,
     "registeredStatic": 120,
     "indexable": 139,
     "canonical": 160,
@@ -712,6 +712,22 @@
     {
       "path": "/admin/ops",
       "file": "app/(admin)/admin/ops/page.jsx",
+      "kind": "private",
+      "registered": false,
+      "indexable": false,
+      "sitemap": false,
+      "signals": {
+        "canonical": false,
+        "canonicalValues": [],
+        "noindex": "inherited",
+        "openGraph": false,
+        "jsonLd": false,
+        "ogUrls": []
+      }
+    },
+    {
+      "path": "/admin/pay",
+      "file": "app/(admin)/admin/pay/page.jsx",
       "kind": "private",
       "registered": false,
       "indexable": false,

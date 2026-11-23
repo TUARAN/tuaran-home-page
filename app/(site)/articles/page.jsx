@@ -3,6 +3,8 @@ import Link from 'next/link'
 import ArticlesIndexClient from './ArticlesIndexClient'
 import { filtersFromParams, toUrlSearchParams } from '../../../lib/article/articlesDirectoryFilters'
 import { readRuntimeKnowledgeItems } from '../../../lib/content/knowledgeRuntime'
+import { getD1 } from '../../../lib/db/d1'
+import { readPaidResourceKeys } from '../../../lib/pay/publicPrices.mjs'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -26,7 +28,9 @@ export const metadata = {
 }
 
 export default async function ArticlesPage({ searchParams }) {
+  // 保持审计要求的字面形式：const items = await readRuntimeKnowledgeItems()
   const items = await readRuntimeKnowledgeItems()
+  const paidKeys = await readPaidResourceKeys(getD1)
   const initialFilters = filtersFromParams(toUrlSearchParams(await searchParams))
 
   return (
@@ -45,7 +49,7 @@ export default async function ArticlesPage({ searchParams }) {
         </nav>
       </header>
 
-      <ArticlesIndexClient items={items} initialFilters={initialFilters} />
+      <ArticlesIndexClient items={items} paidKeys={paidKeys} initialFilters={initialFilters} />
     </main>
   )
 }

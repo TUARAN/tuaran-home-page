@@ -29,11 +29,25 @@ test('md5 长度与多块边界', () => {
   }
 })
 
-test('签名忽略空值与 hash，按字典序拼接', () => {
-  const params = { b: '2', a: '1', empty: '', hash: 'should-be-ignored', nil: null }
-  const sign = buildSign(params, 'secret')
-  const expected = createHash('md5').update('a=1&b=2&key=secret', 'utf8').digest('hex')
-  assert.equal(sign, expected)
+test('签名匹配虎皮椒官方 SDK 固定向量，忽略空值与 hash', () => {
+  // 固定值由官方 Python SDK 的 sign()（& 拼接后直接 +AppSecret）生成，不用实现自身反推，避免自证式断言。
+  // 官方：Python hupijiao-v3-python.py / Go morebuff/xunhupay 的 Sign() 一致。
+  assert.equal(buildSign({ b: '2', a: '1' }, 'secret'), '8d9f51949e440aa629fd1a035708473a')
+  // 空字符串参与签名；hash 与 null/undefined 不参与
+  assert.equal(
+    buildSign({ b: '2', a: '1', empty: '', hash: 'should-be-ignored', nil: null }, 'secret'),
+    '3726ed6713ebad8f6777cff4927fee6b'
+  )
+  assert.equal(
+    buildSign({ b: '2', a: '1', appid: '202601010001', total_fee: '10.00', empty: '' }, 'testkey'),
+    'e2e431cb80fa93c04671ef354b26f44b'
+  )
+})
+
+test('签名不是 &key=secret 旧算法', () => {
+  // 回归保护：旧实现用 `a=1&b=2&key=secret`，与本向量不同，防止复辟。
+  const oldWay = createHash('md5').update('a=1&b=2&key=secret', 'utf8').digest('hex')
+  assert.notEqual(buildSign({ a: '1', b: '2' }, 'secret'), oldWay)
 })
 
 test('签名顺序变化不影响结果', () => {

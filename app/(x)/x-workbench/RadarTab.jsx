@@ -53,7 +53,7 @@ function Panel({ title, sort, metric, keyword, watchOnly, reload, acts, operator
     call(`/radar?${q}`).then((res) => {
       if (!live) return
       if (res.ok) { setItems(res.data.items || []); setProblem('') }
-      else { setItems([]); setProblem(res.status === 401 ? '' : '推文观察暂时不可用，请稍后再试。') }
+      else { setItems([]); setProblem(res.status === 401 ? '' : '暂时读不到，请稍后再试。') }
     })
     return () => { live = false }
   }, [sort, hours, media, keyword, watchOnly, reload, topic])
@@ -152,7 +152,7 @@ export default function RadarTab({ keyword, onKeyword, onPoster, signedIn = fals
       </div>
       <div className={s.hero}>
         <div className={s.heroTitle}>热门贡献榜</div>
-        {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>推文观察暂时不可用，请稍后再试。</div>}
+        {heroState === 'down' && <div className={s.empty} style={{ flex: 1, padding: 14 }}>暂时读不到，请稍后再试。</div>}
         {empty && <div className={s.empty} style={{ flex: 1, padding: 14 }}>今天还没有收录。</div>}
         {heroRows.map((r, n) => (
           <a key={r.handle} className={`${s.heroCard} ${n < 3 ? `${s.heroTop} ${s[`top${n + 1}`]}` : ''}`} href={`https://x.com/${r.handle}`} target="_blank" rel="noreferrer noopener">

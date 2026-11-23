@@ -8,10 +8,9 @@ import RadarTab from './RadarTab'
 import XSiteFrame from './XSiteFrame'
 import { call, compact } from './api'
 import {
+  ACCOUNT_HOME_NOTE,
   ACTION_LABELS,
-  METRIC_LABELS,
   OBSERVED_AGENTS,
-  THEORY_POINTS,
   TWEET_BOARD_NOTE,
   agentFootnote,
 } from '../../../lib/x/workbench/observeCore'
@@ -42,46 +41,61 @@ function TweetBoard({ items }) {
   )
 }
 
+function AccountBoard({ rows }) {
+  if (!rows.length) return null
+  return (
+    <div className={s.card}>
+      {rows.map((row, index) => (
+        <article key={row.handle} className={s.rank}>
+          <span className={s.rankNo}>{index + 1}</span>
+          <a href={`https://x.com/${row.handle}`} target="_blank" rel="noreferrer noopener" style={{ flex: 1, color: 'inherit' }}>
+            <strong>{row.displayName || `@${row.handle}`}</strong>
+            <span className={s.note}> @{row.handle}</span>
+          </a>
+          <strong>{compact(row.views)} 曝光</strong>
+        </article>
+      ))}
+    </div>
+  )
+}
+
 export default function WorkbenchClient() {
-  const [view, setView] = useState('tweets')
   const [keyword, setKeyword] = useState('')
   const [observe, setObserve] = useState(null)
   const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('q') || ''
-    if (q) { setKeyword(q); setView('tweets') }
+    if (q) setKeyword(q)
     call('/accounts').then((res) => setSignedIn(Boolean(res.ok)))
-    call('/observe').then((res) => setObserve(res.ok ? res.data : { unavailable: true, agents: [], tweets: [], gaps: [] }))
+    call('/observe').then((res) => setObserve(res.ok ? res.data : { unavailable: true, agents: [], tweets: [], accounts: [], gaps: [] }))
   }, [])
 
   const ready = Boolean(observe)
   const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS
   const tweetConclusion = !observe ? '' : observe.unavailable ? '今日曝光结论暂时读不到。' : observe.tweetConclusion
+  const accountConclusion = !observe ? '' : observe.unavailable ? '今日账号榜暂时读不到。' : observe.accountConclusion
 
   return (
     <XSiteFrame active="/x-workbench">
       <section id="market" className={s.section}>
-        <h2 className={s.h2}>市场流量</h2>
+        <h2 className={s.h2}>流量</h2>
         <p className={s.question}>今天流量去哪了。</p>
-        <div className={s.row}>
-          <button type="button" className={`${s.btn} ${view === 'tweets' ? s.primary : ''}`} onClick={() => setView('tweets')}>推文观察</button>
-          <button type="button" className={`${s.btn} ${view === 'accounts' ? s.primary : ''}`} onClick={() => setView('accounts')}>账号观察</button>
-        </div>
-        {view === 'tweets' && (
-          <>
-            {tweetConclusion && <p className={s.conclusion}>{tweetConclusion}</p>}
-            {observe && !observe.unavailable && <p className={s.hint}>{TWEET_BOARD_NOTE}</p>}
-            <TweetBoard items={observe?.tweets || []} />
-            <RadarTab keyword={keyword} onKeyword={setKeyword} operator={false} heading="按发布时间继续看" />
-          </>
-        )}
-        {view === 'accounts' && <BoardTab operator={false} />}
+        <h3 className={s.h2} style={{ fontSize: 18 }}>推文</h3>
+        {tweetConclusion && <p className={s.conclusion}>{tweetConclusion}</p>}
+        {observe && !observe.unavailable && <p className={s.hint}>{TWEET_BOARD_NOTE}</p>}
+        <TweetBoard items={observe?.tweets || []} />
+        <h3 className={s.h2} style={{ fontSize: 18, marginTop: 28 }}>账号</h3>
+        {accountConclusion && <p className={s.conclusion}>{accountConclusion}</p>}
+        {observe && !observe.unavailable && <p className={s.hint}>{ACCOUNT_HOME_NOTE}</p>}
+        <AccountBoard rows={observe?.accounts || []} />
+        <p><Link href="/calendar">往日记录</Link></p>
       </section>
 
       <section id="agents" className={s.section}>
-        <h2 className={s.h2}>智能体表现</h2>
-        <p className={s.question}>矿工阿三、矿长阿富、矿工小十三今天的发帖、互动和推文表现。</p>
+        <h2 className={s.h2}>智能体</h2>
+        <p className={s.question}>使用了智能体插件的账号，今天做了什么。</p>
+        <p className={s.hint}>目前是矿工阿三、矿长阿富、矿工小十三。</p>
         <div className={s.agentGrid}>
           {agents.map((agent) => (
             <article key={agent.handle} className={s.card}>
@@ -111,24 +125,10 @@ export default function WorkbenchClient() {
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
       </section>
 
-      <section id="basis" className={s.section}>
-        <h2 className={s.h2}>理论基础</h2>
-        <p className={s.question}>大互动理论把一次交流收成可以核对的过程：主动接触，说出判断，听见回应，再按反馈调整。</p>
-        <div className={s.theoryGrid}>
-          {THEORY_POINTS.map((point) => (
-            <article key={point.title} className={s.card}>
-              <h3 style={{ margin: '0 0 8px' }}>{point.title}</h3>
-              <p style={{ margin: '0 0 8px' }}>{point.text}</p>
-              <p className={s.note}>对照智能体表现：{point.metrics.map((key) => METRIC_LABELS[key]).join('、')}</p>
-              <a href={point.href}>{point.hrefLabel}</a>
-            </article>
-          ))}
-        </div>
-        <p>
-          <a href="https://2aran.com/resources/big-interaction-whitepaper">大互动理论绿皮书</a>
-          {' · '}
-          <a href="https://2aran.com/resources/big-interaction-whitepaper/roundtable">大互动圆桌</a>
-        </p>
+      <section id="more" className={s.section}>
+        <h2 className={s.h2}>继续看</h2>
+        <RadarTab keyword={keyword} onKeyword={setKeyword} operator={false} heading="按发布时间" />
+        <BoardTab operator={false} heading="按时间和指标" />
       </section>
       {signedIn && <p><Link href="/x-workbench/ops">账号与插件</Link></p>}
     </XSiteFrame>

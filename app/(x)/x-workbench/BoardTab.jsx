@@ -35,7 +35,7 @@ export default function BoardTab({ operator = false, heading = '账号观察' })
     call(`/leaderboard?window=${win}&dim=${dim}`).then((res) => {
       if (!live) return
       if (res.ok) { setRows(res.data.rows || []); setFrom(res.data.from); setNote(''); setLoaded(true) }
-      else { setRows([]); setLoaded(true); setNote(res.status === 503 || res.status === 0 ? '账号观察暂时不可用，请稍后再试。' : message(res.data)) }
+      else { setRows([]); setLoaded(true); setNote(res.status === 503 || res.status === 0 ? '暂时读不到，请稍后再试。' : message(res.data)) }
     })
     call(`/leaderboard?history=1&dim=${dim}`).then(res => { if (live) setDays(res.ok ? res.data.days : []) })
     return () => { live = false }

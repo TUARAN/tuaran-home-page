@@ -33,7 +33,7 @@ const RESOURCE_SLUG = 'x-reply-clipboard-extension'
 const PUBLIC_PATH = '/extension'
 const RESOURCE_URL = 'https://x.2aran.com/extension'
 const DOWNLOAD_URL = '/api/resources/deliver?resourceKey=resource%3Ax-reply-clipboard-extension&file=extension-zip'
-// 本地源码版本以 manifest 为准，与黄皮书一致；下载包版本以资源交付配置为准，打包前二者可以不同。
+// 本地源码版本以 manifest 为准，与智能体手册一致；下载包版本以资源交付配置为准，打包前二者可以不同。
 const SOURCE_VERSION = JSON.parse(readFileSync(join(process.cwd(), 'tools/x-reply-clipboard-extension/manifest.json'), 'utf8')).version
 const DOWNLOAD_VERSION = getResourceDelivery('resource:x-reply-clipboard-extension', 'extension-zip')?.fileName?.match(/-v([\d.]+)\.zip$/)?.[1] || ''
 
@@ -496,7 +496,7 @@ export default function XReplyClipboardResourcePage() {
                 href={`/resources/${RESOURCE_SLUG}/docs`}
                 className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15"
               >
-                黄皮书
+                智能体手册
               </Link>
               <SharePageButton title={title} text={shareText} url={RESOURCE_URL} size="md" idleLabel="分享智能体" />
               <ArticleActionsDropdown label="更多">

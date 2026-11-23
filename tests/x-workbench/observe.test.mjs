@@ -142,6 +142,9 @@ test('首页汇总把三个账号放在同一统计日，缺日报显示空动�
           if (text.includes('GROUP BY lower(handle)')) {
             return { results: [{ handle: 'tarsixseveneig1', tweets: 1, views: 100, likes: 4, reposts: 1, replies: 2 }] }
           }
+          if (text.includes('GROUP BY handle')) {
+            return { results: [{ handle: 'bob', display_name: 'Bob', views: 40 }, { handle: 'alice', display_name: 'A', views: 60 }] }
+          }
           if (text.includes('x_radar_items')) {
             return { results: [{ id: '1', handle: 'alice', display_name: 'A', text: 'hello', url: 'https://x.com/alice/status/1', media: 'image', views: 100, likes: 4, reposts: 1, replies: 2 }] }
           }
@@ -163,5 +166,7 @@ test('首页汇总把三个账号放在同一统计日，缺日报显示空动�
   assert.equal(home.agents[1].actions.posts, null)
   assert.equal(home.agents[1].views, null)
   assert.match(home.tweetConclusion, /电路/)
+  assert.deepEqual(home.accounts.map((row) => row.handle), ['bob', 'alice'])
+  assert.match(home.accountConclusion, /@alice/)
   assert.match(home.footnote, /2026-11-23/)
 })

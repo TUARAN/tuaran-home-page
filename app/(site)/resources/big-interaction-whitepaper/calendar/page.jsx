@@ -35,24 +35,24 @@ const description = '按 Asia/Shanghai 选择日期，查看前一自然日与�
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: `${title} · 绿皮书`,
+  name: title,
   description,
   url: canonicalUrl,
   inLanguage: 'zh-CN',
   isPartOf: {
     '@type': 'WebPage',
-    name: '大互动理论绿皮书',
-    url: 'https://x.2aran.com/theory',
+    name: '流量',
+    url: 'https://x.2aran.com/x-workbench#market',
   },
 }
 
 export const metadata = {
-  title: `${title} · 绿皮书`,
+  title,
   description,
   alternates: { canonical: path },
   openGraph: {
     type: 'website',
-    title: `${title} · 绿皮书`,
+    title,
     description,
     url: canonicalUrl,
     locale: 'zh_CN',
@@ -71,13 +71,13 @@ export default async function BigInteractionCalendarPage() {
     activities = []
   }
   return (
-    <XSiteFrame active="/calendar">
+    <XSiteFrame active="/x-workbench#market">
     <ManualPaper tone="green">
     <PageContainer width="standard" className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <Link className={styles.back} href="/theory">← 绿皮书</Link>
+      <Link className={styles.back} href="/x-workbench#market">← 流量</Link>
       <header className={styles.masthead}>
-        <p className={styles.kicker}>绿皮书 · 每日前十</p>
+        <p className={styles.kicker}>往日记录</p>
         <h1>{title}</h1>
         <p className={styles.deck}>选择日期，查看前一天与 @{DAILY_TOP_SUBJECT} 互动最多的十个账号，以及本账号各任务完成了多少次。页内另有独立的 Grokbot 执行记录台账。</p>
         <p className={styles.metric}>{DAILY_TOP_METRIC_LABEL}。任务次数只计本账号确认完成的动作。</p>

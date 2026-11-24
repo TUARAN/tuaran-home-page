@@ -349,9 +349,10 @@ export async function GET(req) {
   }
 
   try {
+    // 周报是按周口径的统计，60 秒刷新没有意义；300 秒把 18 条聚合的重复扫描压到 1/5。
     const payload = await readThroughEdgeCache(
       `admin:content-weekly:${cumulative ? 'all' : days}`,
-      60,
+      300,
       () => buildWeeklyAnalytics(db, { days, cumulative }),
     )
     return Response.json(payload)

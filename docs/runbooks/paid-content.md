@@ -6,7 +6,7 @@
 
 - 给任意 `resourceKey` 配现金价（分）：`gated_resources.price_fen`
 - 已登录用户下单 → 网关二维码 → 支付成功 → 回调验签 → 写权益 → 页面自动解锁
-- 圈子方案（`community:*`）游客免登录下单 → 支付成功页留邮箱 → 站长按后台订单交付（见第八节）
+- 圈子方案与付费文章统一：游客免登录下单 → 付款当场解锁 + 支付成功页留邮箱（见第七节）
 - **现金与燃币互斥**：`price_fen > 0` 时只显示现金购买，不提供燃币旁路（否则注册赠送的燃币可绕过定价）；`price_fen = 0` 时只走燃币。已用燃币解锁过的历史权益仍放行。
 - 后台可按订单号补单，覆盖回调丢失、到账延迟
 
@@ -61,7 +61,7 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 ## 五、验收清单
 
 - [ ] `GET /api/points/unlock?resourceKey=...` 返回 `priceFen` 与 `unlocked`
-- [ ] 付费文章未登录点购买会跳登录，登录后回到原页
+- [ ] 付费文章未登录点购买不会跳登录，直接出二维码；付完当场可读
 - [ ] 圈子方案无需登录即可下单；支付成功页可提交邮箱，后台订单能看到
 - [ ] 二维码能在页面内展示（PC 端用 `url_qrcode`，不再跳外站）
 - [ ] 支付成功后 3 秒内自动解锁，不用手动刷新
@@ -76,15 +76,17 @@ curl -X POST https://2aran.com/api/admin/pay/orders \
 
 要真正防白看，第二步做「付费段构建期加密 + 解锁后下发」：复用 `RESEARCH_ENCRYPTION_PASSWORD` 与 `lib/longCompass/crypto.js` 的 AES-GCM 管道，密码只在 Worker 里，`GET /api/content/full` 校验权益后返回明文。这一步需要改内容构建管线，建议只对试点那 10 篇做。
 
-## 七、圈子方案：免登录支付与联系邮箱
+## 七、现金内容统一免登录：当场解锁 + 联系邮箱
 
-`community:*` 的权益由站长按订单人工交付，不依赖站内解锁，因此不要求登录：
+圈子方案和付费文章走同一套规则：**后台给这条内容配了现金价（`gated_resources.price_fen > 0`），未登录也能下单**。燃币墙（`price_fen = 0`）保持先登录，现金与燃币互斥不变。
 
-- `/api/pay/create` 对未登录且资源为 `community:*` 的请求，用 `getOrIssueGuest` 签发 `guest:<gid>` 签名 Cookie（与游客评论同一套身份），订单 `user_id` 记该 gid。付费文章等资源仍只认登录账号。
-- 游客订单不写 `resource_unlocks`：`guest:*` 会触发访客目录统计，把一笔付款算成免费解锁。
-- 支付成功页调 `POST /api/pay/contact`，body 为 `{orderNo, email}`；接口只接受本人且状态为 `paid` 的订单。邮箱落在 `paid_orders.contact_email`，后台 `/admin/pay` 订单列表、详情与搜索可见。
-- 上线前先执行 `migrations/0136_paid_order_contact.sql`（加列，对旧代码向后兼容），再部署新版本。未执行迁移时只有留邮箱接口返回 `CONTACT_UNAVAILABLE`，下单与回调不受影响。
+- `/api/pay/create` 先读 `readPriceFen`，未登录且 `isGuestPayResource(resourceKey, priceFen)` 为真时，用 `getOrIssueGuest` 签发 `guest:<gid>` 签名 Cookie（与游客评论同一套身份），订单 `user_id` 记该 gid。后台新配价的内容自动适用，不必改代码加白名单。
+- 游客付完**当场解锁**：`grantEntitlement` 同样对 `guest:*` 写 `resource_unlocks`（`source = paid`），`/api/points/unlock` 用同一 guest 身份查到 `unlocked: true`，内容墙立即放行。登录时 `mergeGuestFromRequest` 把这条权益迁到正式账号，跨设备继续有效。
+- 副作用：`resource_unlocks` 插入会触发 `0088` 的访客目录触发器，该游客计入「已解锁」段位。这里的语义是「付过费或有解锁行为的游客」，统计文案按此理解，不再当污染处理。
+- 支付成功页（`PayUnlockPanel`）停在「支付成功，内容已解锁」，可选填邮箱；`POST /api/pay/contact`（`{orderNo, email}`）只接受本人且 `status = paid` 的订单，邮箱落在 `paid_orders.contact_email`。不填也能点「直接阅读」，不挡阅读。
+- 网关 `returnTo` 传当前页路径，游客付完回跳不再落到需要登录的 `/account`。
 - 游客清 Cookie 即可换 gid，因此下单限流按 IP 收紧（15 分钟 12 次）。
+- `0136_paid_order_contact.sql` 已于 2026-11-24 在线上执行；未执行时只有留邮箱接口返回 `CONTACT_UNAVAILABLE`，下单与回调不受影响。
 
 ## 八、坑
 

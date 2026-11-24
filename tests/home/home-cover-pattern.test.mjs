@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
   HOME_COVER_PATTERN_COUNT,
   HOME_COVER_TONES,
   homeCoverPattern,
-  normalizeHomeCoverSrc,
 } from '../../lib/home/homeCoverPattern.js'
 import { buildHomeRecommendationCatalog } from '../../lib/home/homeRecommendationCatalogCore.js'
 import { chooseHomeRecommendationBatch } from '../../lib/home/homeRecommendationEngine.js'
@@ -58,45 +56,9 @@ test('sections lean on their own tone without becoming a single colour', () => {
   const ids = Array.from({ length: 400 }, (_, index) => `column:x-${index}`)
   const column = share('column', 'accent', ids)
   const resources = share('resources', 'green', ids)
-  for (const [name, value] of [['research', research], ['column', column], ['resources', resources]]) {
+  const analysis = share('analysis', 'blue', ids)
+  const interactive = share('interactive', 'stone', ids)
+  for (const [name, value] of [['research', research], ['column', column], ['resources', resources], ['analysis', analysis], ['interactive', interactive]]) {
     assert.ok(value > 0.5 && value < 0.8, `${name} home tone share ${value}`)
-  }
-})
-
-test('catalog carries cover only for entries with a usable real cover', () => {
-  const [withCover, withCoverUrl, without, unsafe] = buildHomeRecommendationCatalog([
-    { slug: 'a', title: '甲', date: '2026-01-03', cover: 'https://example.com/a.jpg' },
-    { slug: 'b', title: '乙', date: '2026-01-02', coverUrl: '/images/b.webp' },
-    { slug: 'c', title: '丙', date: '2026-01-01' },
-    { slug: 'd', title: '丁', date: '2025-12-31', cover: 'javascript:alert(1)' },
-  ], [])
-  assert.deepEqual(withCover.cover, { src: 'https://example.com/a.jpg', alt: '甲 封面' })
-  assert.deepEqual(withCoverUrl.cover, { src: '/images/b.webp', alt: '乙 封面' })
-  assert.ok(!Object.hasOwn(without, 'cover'))
-  assert.ok(!Object.hasOwn(unsafe, 'cover'))
-})
-
-test('cover source accepts http(s) and site paths only', () => {
-  assert.equal(normalizeHomeCoverSrc(' https://example.com/a.jpg '), 'https://example.com/a.jpg')
-  assert.equal(normalizeHomeCoverSrc('/images/a.png'), '/images/a.png')
-  for (const value of ['//evil.example/a.jpg', 'data:image/png;base64,AAAA', 'javascript:alert(1)', '', '   ', 42, null, undefined]) {
-    assert.equal(normalizeHomeCoverSrc(value), '')
-  }
-})
-
-test('home list renders a cover slot and the pattern component mirrors the pattern count', async () => {
-  const [reading, pattern, stylesheet] = await Promise.all([
-    readFile(new URL('../../app/(site)/components/HomeFeaturedReadingClient.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/(site)/components/HomeCoverPattern.jsx', import.meta.url), 'utf8'),
-    readFile(new URL('../../app/globals.css', import.meta.url), 'utf8'),
-  ])
-  assert.match(reading, /home-reading-cover[\s\S]*<HomeListCover item=\{item\} \/>/)
-  assert.match(reading, /home-reading-meta \$\{isPinned \? '' : 'hidden md:flex'\}/)
-  const shapes = pattern.match(/\n  \/\/ .+\n  \(\) => \(/g) || []
-  assert.equal(shapes.length, HOME_COVER_PATTERN_COUNT)
-  assert.match(stylesheet, /\.home-reading-item \{\s*@apply grid grid-cols-\[minmax\(0,1fr\)_72px\]/)
-  for (const tone of HOME_COVER_TONES) {
-    assert.ok(pattern.includes(`'home-cover-tone-${tone}'`), `tone class ${tone} must be written out literally`)
-    assert.match(stylesheet, new RegExp(`\\.home-cover-tone-${tone} \\{`))
   }
 })

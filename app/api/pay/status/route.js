@@ -2,6 +2,7 @@ import { getD1 } from '../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import { GUEST_USER_PREFIX, getGuestId } from '../../../../lib/auth/guestSession'
 import { getPaidOrderForUser } from '../../../../lib/pay/orders'
+import { settleFromGateway } from '../../../../lib/pay/settle'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -25,8 +26,17 @@ export async function GET(req) {
     if (!orderNo) return Response.json({ error: 'INVALID_ORDER' }, { status: 400 })
 
     const db = getD1()
-    const order = await getPaidOrderForUser(db, orderNo, userId)
+    let order = await getPaidOrderForUser(db, orderNo, userId)
     if (!order) return Response.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 })
+
+    // 回调可能丢失（网关重试失败、验签被拒）：还没解锁的订单主动向网关查一次，
+    // 查到已支付则落库并写权益，与回调同一套幂等逻辑
+    if (!order.unlocked) {
+      const settled = await settleFromGateway(db, orderNo)
+      if (settled?.paid) {
+        order = (await getPaidOrderForUser(db, orderNo, userId)) || order
+      }
+    }
 
     return Response.json({ ok: true, ...order }, { headers: { 'Cache-Control': 'no-store' } })
   } catch {

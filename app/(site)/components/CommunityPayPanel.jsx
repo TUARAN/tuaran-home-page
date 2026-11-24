@@ -62,6 +62,8 @@ export default function CommunityPayPanel({ plan }) {
   const [emailSaved, setEmailSaved] = useState(false)
   const [emailBusy, setEmailBusy] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [refreshNote, setRefreshNote] = useState('')
   const pollRef = useRef(null)
   const settledRef = useRef(false)
 
@@ -108,8 +110,13 @@ export default function CommunityPayPanel({ plan }) {
     return () => { cancelled = true }
   }, [resourceKey, markPaid])
 
-  const poll = useCallback(
-    async (orderNo) => {
+  // silent=true 供 3 秒自动轮询使用，不出提示；手动点「刷新状态」时给出可见反馈
+  const checkStatus = useCallback(
+    async (orderNo, { silent = false } = {}) => {
+      if (!silent) {
+        setChecking(true)
+        setRefreshNote('')
+      }
       try {
         const res = await fetch(`/api/pay/status?orderNo=${encodeURIComponent(orderNo)}`, {
           cache: 'no-store',
@@ -119,12 +126,24 @@ export default function CommunityPayPanel({ plan }) {
           stopPolling()
           setPhase('error')
           setMessage('浏览器没有保存订单身份，请允许 Cookie 后重新下单。')
-          return
+          return 'unauthorized'
         }
         const data = await safeJson(res)
-        if (data?.unlocked || data?.status === 'paid') markPaid(orderNo)
+        if (data?.unlocked || data?.status === 'paid') {
+          markPaid(orderNo)
+          return 'paid'
+        }
+        if (!silent) {
+          if (res.status === 404) setRefreshNote('订单不存在或已失效，请取消后重新下单。')
+          else if (!res.ok) setRefreshNote('查询失败，请稍后再试。')
+          else setRefreshNote('还未查到支付结果。刚付款可能有几秒延迟，稍等再点一次。')
+        }
+        return 'unpaid'
       } catch {
-        // 网络抖动继续轮询
+        if (!silent) setRefreshNote('网络异常，请稍后再试。')
+        return 'error'
+      } finally {
+        if (!silent) setChecking(false)
       }
     },
     [markPaid, stopPolling]
@@ -132,9 +151,9 @@ export default function CommunityPayPanel({ plan }) {
 
   useEffect(() => {
     if (phase !== 'qr' || !order?.orderNo) return undefined
-    pollRef.current = setInterval(() => poll(order.orderNo), 3000)
+    pollRef.current = setInterval(() => checkStatus(order.orderNo, { silent: true }), 3000)
     return stopPolling
-  }, [phase, order?.orderNo, poll, stopPolling])
+  }, [phase, order?.orderNo, checkStatus, stopPolling])
 
   async function create() {
     setPhase('creating')
@@ -285,8 +304,13 @@ export default function CommunityPayPanel({ plan }) {
             微信扫码支付 ¥{order.amountLabel || fenLabel(priceFen)}，无需登录，支付成功本页自动识别。
           </p>
           <div className="community-xh-pay-actions">
-            <button type="button" onClick={() => poll(order.orderNo)} className="community-xh-pay-refresh">
-              我已支付，刷新状态
+            <button
+              type="button"
+              onClick={() => checkStatus(order.orderNo)}
+              disabled={checking}
+              className="community-xh-pay-refresh"
+            >
+              {checking ? '正在查询…' : '我已支付，刷新状态'}
             </button>
             <button
               type="button"
@@ -294,12 +318,14 @@ export default function CommunityPayPanel({ plan }) {
                 stopPolling()
                 setPhase('idle')
                 setOrder(null)
+                setRefreshNote('')
               }}
               className="community-xh-pay-cancel"
             >
               取消
             </button>
           </div>
+          {refreshNote ? <p className="community-xh-pay-status">{refreshNote}</p> : null}
           <p className="community-xh-pay-order">订单号 {order.orderNo}</p>
         </>
       ) : (

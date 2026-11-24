@@ -136,7 +136,6 @@
 .subHead { font-size: 17px; font-weight: 800; margin: 0 0 12px; }
 .question { font-size: 18px; font-weight: 700; line-height: 1.5; margin: 0 0 14px; }
 .slogan { font-size: 26px; font-weight: 800; line-height: 1.35; letter-spacing: -.02em; margin: 0 0 22px; }
-.slogan::after { content: ""; display: block; width: 46px; height: 4px; border-radius: 2px; background: var(--accent); margin-top: 14px; }
 .conclusion { font-size: 18px; line-height: 1.6; margin: 0 0 8px; }
 .noteCard { background: var(--accentSoft); border: 1px solid var(--accentLine); border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; }
 .noteCard p { margin: 0; font-size: 15px; line-height: 1.6; }
@@ -199,13 +198,13 @@
   .logo { width: 30px; height: 30px; font-size: 16px; }
   .brandName { font-size: 16px; }
   .brandSub { font-size: 10px; }
-  .cta { order: 2; padding: 7px 13px; font-size: 13px; min-height: 38px; }
+  .cta { order: 2; margin-left: auto; padding: 7px 13px; font-size: 13px; min-height: 38px; }
   .accountBar { order: 3; gap: 6px; }
   .tabs { order: 4; flex: 0 0 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: 12px; gap: 0;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%); }
   .tabs::-webkit-scrollbar { display: none; }
   .menuGroup { flex-wrap: nowrap; flex: none; }
-  .menuGroup + .menuGroup { margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--line); }
+  .menuGroup + .menuGroup { margin-left: 10px; }
   .groupLabel { display: none; }
   .tab { padding: 0 12px; }
   .search { flex-basis: 100%; min-width: 0; }
@@ -220,13 +219,12 @@
 /* 手机：卡片横排压缩高度，触控目标与安全区按 H5 标准 */
 @media (max-width: 640px) {
   .barInner { padding: 5px 12px 0; }
-  .main { padding: 16px 12px calc(36px + env(safe-area-inset-bottom, 0px)); }
+  .main { padding: 16px 12px calc(96px + env(safe-area-inset-bottom, 0px)); }
   .section { margin-bottom: 28px; scroll-margin-top: 100px; }
   .sectionHead { gap: 10px; margin-bottom: 14px; }
   .sectionMark { height: 22px; }
   .sectionTitle { font-size: 21px; }
   .slogan { font-size: 21px; margin-bottom: 18px; }
-  .slogan::after { width: 40px; height: 3px; margin-top: 12px; }
   .hint { font-size: 13.5px; line-height: 1.65; margin-bottom: 14px; }
   .h2 { font-size: 20px; }
   .card { padding: 14px; border-radius: 14px; margin-bottom: 12px; }
@@ -241,11 +239,11 @@
   .agentCard:hover { box-shadow: none; }
   .agentCardHead { grid-area: head; }
   .agentName { font-size: 16px; }
-  .agentMain { grid-area: main; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0; }
+  .agentMain { grid-area: main; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; }
   .heroValue, .heroMissing { font-size: 34px; }
   .agentMainLabel { font-size: 12px; }
   .metricList { grid-area: metrics; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  .metricList div { padding: 6px 8px; border-radius: 8px; }
+  .metricList div { padding: 6px 8px; border-radius: 8px; border: 0; }
   .metricList div:last-child { grid-column: span 2; }
   .metricList dt { font-size: 11px; }
   .metricList dd { font-size: 15px; margin-top: 1px; }

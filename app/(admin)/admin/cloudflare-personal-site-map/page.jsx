@@ -1,8 +1,8 @@
+import AdminBook, { AdminBookChapter } from '../../components/AdminBook'
 import Link from 'next/link'
 
 import { DOMAIN_REGISTRY, DOMAIN_REGISTRY_UPDATED_AT } from '../../../../lib/site/domainRegistry'
 import AdminPageGate from '../../components/AdminPageGate'
-import AdminSubnav from '../../components/AdminSubnav'
 import { AdminPage } from '../../components/ui'
 import {
   AI_PRODUCTS,
@@ -80,17 +80,7 @@ function VerdictPill({ verdict }) {
   )
 }
 
-function Section({ id, title, description, children }) {
-  return (
-    <section id={id} className="mt-10 scroll-mt-24">
-      <div className="mb-4">
-        <h2 className="font-serif text-[22px] font-semibold text-[#15140f] dark:text-gray-100">{title}</h2>
-        {description ? <p className="mt-1 text-[13px] leading-6 text-[#63655f] dark:text-gray-500">{description}</p> : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+function Section(props) { return <AdminBookChapter {...props} /> }
 
 function DataTable({ headers, rows }) {
   return (
@@ -188,9 +178,7 @@ function CloudflarePersonalSiteMapContent() {
         </div>
       </div>
 
-      <div className="mt-5">
-        <AdminSubnav label="站点架构章节" items={SECTIONS.map((section) => ({ ...section, href: `#${section.id}` }))} />
-      </div>
+      <AdminBook title="站点架构" description="Cloudflare 架构与运行时边界" groups={[{ id: 'architecture', items: SECTIONS.map(section => ({ id: section.id, title: section.label })) }]}>
 
       <Section id="overview" title="概览">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -398,6 +386,7 @@ function CloudflarePersonalSiteMapContent() {
           判定基于 wrangler.toml、next-on-pages 构建日志与本次 public/admin/API 拆分记录（2026-07 快照）
         </p>
       </section>
+      </AdminBook>
     </AdminPage>
   )
 }

@@ -209,7 +209,8 @@ test('homepage announcement expires after its scheduled window', () => {
   assert.equal(expiredCard.featured, null)
   assert.equal(expiredCard.kicker, '查看历史')
   assert.equal(homeStripHeadline(expiredCard, '2026-09-24'), '暂无新预告')
-  assert.equal(homeStripSubline(expiredCard), '')
+  // 常驻卡片：空态保留一句固定副标题，避免只剩一行
+  assert.match(homeStripSubline(expiredCard), /Tibo 原帖/)
 })
 
 test('page uses rich-page infrastructure but belongs only to the tools directory', async () => {
@@ -255,7 +256,8 @@ test('page uses rich-page infrastructure but belongs only to the tools directory
   assert.match(card, /home-codex-reset-panel/)
   assert.match(card, /home-codex-reset-strip/)
   assert.match(card, /homeStripHeadline|homeStripSubline/)
-  assert.match(card, /if \(!model\.featured\) return null/)
+  // 常驻卡片：没有有效预告时也要渲染，不再整块隐藏
+  assert.doesNotMatch(card, /if \(!model\.featured\) return null/)
   assert.doesNotMatch(card, /home-opinion-heading|home-builder-panel/)
   // 侧欄已拆成独立 aside，Codex 卡片仍排在 BuilderPanel 之前。
   assert.match(home, /<HomeCodexResetCard\s*\/>\s*<\/aside>[\s\S]{0,240}<BuilderPanel\s*\/>/)

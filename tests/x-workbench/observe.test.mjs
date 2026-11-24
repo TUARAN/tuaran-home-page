@@ -23,6 +23,8 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
     ['矿工阿三', 'tarsixseveneig1'],
     ['矿长阿富', 'TuaranX'],
     ['矿工小十三', 'tuaran003'],
+    ['矿工阿柒', 'DrBenjamin81269'],
+    ['灯下掘行者', 'DrBenjamin5102'],
   ])
   const metricKeys = new Set([...ACTION_LABELS.map(([key]) => key), 'views', 'interactions'])
   for (const point of THEORY_POINTS) {
@@ -31,7 +33,7 @@ test('公开站观察账号池全部智能体，理论结论对得到卡片指�
   }
   assert.equal(BANNED.test(agentFootnote({ reportDate: '2026-11-23' })), false)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /2026-11-23/)
-  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@tarsixseveneig1、@TuaranX、@tuaran003/)
+  assert.match(agentFootnote({ reportDate: '2026-11-23' }), /@tarsixseveneig1、@TuaranX、@tuaran003、@DrBenjamin81269、@DrBenjamin5102/)
   assert.doesNotMatch(agentFootnote({ reportDate: '2026-11-23' }), /推文曝光/)
   assert.match(agentFootnote({ reportDate: '2026-11-23' }), /未采集/)
 })
@@ -159,7 +161,13 @@ test('首页返回账号池全部智能体的日报动作', async () => {
   assert.equal(home.reportDate, '2026-11-23')
   assert.equal(home.tweets, undefined)
   assert.equal(home.accounts, undefined)
-  assert.deepEqual(home.agents.map((agent) => agent.handle), ['tarsixseveneig1', 'TuaranX', 'tuaran003'])
+  assert.deepEqual(home.agents.map((agent) => agent.handle), [
+    'tarsixseveneig1',
+    'TuaranX',
+    'tuaran003',
+    'DrBenjamin81269',
+    'DrBenjamin5102',
+  ])
   const reported = home.agents.find((agent) => agent.handle === 'TuaranX')
   assert.equal(reported.actions.posts, 4)
   assert.equal(reported.actions.follows, 2)

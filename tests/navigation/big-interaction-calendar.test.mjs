@@ -14,6 +14,7 @@ import {
   profileUrlFor,
   latestRecordedDate,
   legacyPublicationWindow,
+  legacyRecordingWindow,
   resolveSelectedDate,
   shanghaiDateKey,
   validateDailyTopDay,
@@ -92,7 +93,7 @@ test('Shanghai date key follows the Asia/Shanghai calendar date', () => {
   assert.equal(november.length % 7, 0)
 })
 
-test('validator rejects a self-account and a window outside the publication day', () => {
+test('validator rejects a self-account and a window outside accepted ranges', () => {
   const day = loadDailyTopDays()[0]
   assert.throws(() => validateDailyTopDay({
     ...day,
@@ -101,12 +102,42 @@ test('validator rejects a self-account and a window outside the publication day'
   assert.throws(() => validateDailyTopDay({
     ...day,
     window: { start: '2026-11-04T00:00:00+08:00', end: '2026-11-04T21:00:00+08:00' },
-  }, '2026-11-05.json'), /window/)
+  }, '2026-11-05.json'), (error) => {
+    assert.match(error.message, /window/)
+    assert.match(error.message, /2026-11-05T00:00:00\+08:00 → 2026-11-06T00:00:00\+08:00/)
+    assert.match(error.message, /2026-11-04T00:00:00\+08:00 → 2026-11-05T00:00:00\+08:00/)
+    assert.match(error.message, /2026-11-04T21:00:00\+08:00 → 2026-11-05T21:00:00\+08:00/)
+    return true
+  })
   assert.deepEqual(validateDailyTopDay({
     ...day,
     window: expectedWindow('2026-11-05'),
     top: day.top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown })),
   }, '2026-11-05.json').window, expectedWindow('2026-11-05'))
+})
+
+test('validator accepts counted-day, legacy recording-day, and 21:00 windows for the same date', () => {
+  const day = loadDailyTopDays()[0]
+  const top = day.top.map(({ rank, handle, displayName, count, breakdown }) => ({ rank, handle, displayName, count, breakdown }))
+  const base = {
+    schemaVersion: day.schemaVersion,
+    date: '2026-11-24',
+    timezone: day.timezone,
+    metric: day.metric,
+    metricLabel: day.metricLabel,
+    subject: day.subject,
+    excludedHandles: [...day.excludedHandles],
+    opponents: 1,
+    events: 1,
+    top: [top[0]],
+  }
+  for (const windowFor of [expectedWindow, legacyRecordingWindow, legacyPublicationWindow]) {
+    assert.deepEqual(
+      validateDailyTopDay({ ...base, window: windowFor('2026-11-24') }, '2026-11-24.json').window,
+      windowFor('2026-11-24'),
+    )
+  }
+  assert.deepEqual(validateDailyTopDay(day, '2026-11-05.json').window, legacyPublicationWindow('2026-11-05'))
 })
 
 test('theory page keeps the body and drops the three entry cards', async () => {

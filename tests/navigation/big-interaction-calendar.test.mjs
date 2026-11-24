@@ -14,6 +14,7 @@ import {
   profileUrlFor,
   latestRecordedDate,
   legacyPublicationWindow,
+  resolveCalendarSelectedDate,
   resolveSelectedDate,
   shanghaiDateKey,
   validateDailyTopDay,
@@ -65,7 +66,16 @@ test('invalid query falls back to today when no day catalog is provided', () => 
   assert.equal(emptyStateCopy('2026-11-05', ['2026-11-05']), '这一天还没有收录互动前十。')
 })
 
-test('default day is today when that JSON exists, otherwise the latest day file', () => {
+test('calendar default day is yesterday in Shanghai, even when today or a newer file exists', () => {
+  assert.equal(resolveCalendarSelectedDate(null, '2026-11-11'), '2026-11-10')
+  assert.equal(resolveCalendarSelectedDate(null, '2026-11-07'), '2026-11-06')
+  assert.equal(resolveCalendarSelectedDate(undefined, '2026-11-13'), '2026-11-12')
+  assert.equal(resolveCalendarSelectedDate('not-a-date', '2026-11-07'), '2026-11-06')
+  assert.equal(resolveCalendarSelectedDate('2026-11-05', '2026-11-11'), '2026-11-05')
+  assert.equal(resolveCalendarSelectedDate(null, '2026-11-05'), '2026-11-04')
+})
+
+test('API default day is today when that JSON exists, otherwise the latest day file', () => {
   const shipped = loadDailyTopDays().map((day) => day.date)
   assert.deepEqual(shipped, ['2026-11-05', '2026-11-10', '2026-11-11'])
   assert.equal(latestRecordedDate(shipped), '2026-11-11')
@@ -136,8 +146,8 @@ test('calendar page renders the five ranking columns and an empty state', async 
   assert.match(view, /activityDates/)
   assert.match(page, /loadOwnActivityDaysForPool/)
   assert.match(page, /interactionAgentHandles/)
-  assert.match(view, /resolveSelectedDate\(null, initialToday, availableDates\)/)
-  assert.match(view, /resolveSelectedDate\(query, liveToday, availableDates\)/)
+  assert.match(view, /resolveCalendarSelectedDate\(null, initialToday\)/)
+  assert.match(view, /resolveCalendarSelectedDate\(query, liveToday\)/)
   assert.match(view, /function choose\(date\)/)
   assert.match(view, /x\.com\/\{row\.handle\}/)
   assert.doesNotMatch(view, /错误|加载失败/)

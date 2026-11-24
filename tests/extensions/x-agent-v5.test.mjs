@@ -121,13 +121,13 @@ function runtimeHost(overrides = {}) {
   return host
 }
 
-test('planner prompt stays separate and falls back DeepSeek, B.AI, MobileOffice, NAS', async () => {
+test('planner prompt stays separate and falls back DeepSeek, B.AI, NAS, MobileOffice', async () => {
   const planner = require('../../tools/x-reply-clipboard-extension/agentPlanner.js')
   const background = await readFile(new URL('background.js', extensionDir), 'utf8')
   const content = await readFile(new URL('content.js', extensionDir), 'utf8')
-  assert.deepEqual([...planner.PROVIDER_ORDER], ['deepseek', 'bai', 'mobileoffice', 'nas'])
-  assert.match(background, /const REPLY_PROVIDER_ORDER = \["mobileoffice", "deepseek", "nas", "bai"\]/)
-  assert.match(content, /const REPLY_PROVIDER_ORDER = \["mobileoffice", "deepseek", "nas", "bai"\]/)
+  assert.deepEqual([...planner.PROVIDER_ORDER], ['deepseek', 'bai', 'nas', 'mobileoffice'])
+  assert.match(background, /const REPLY_PROVIDER_ORDER = \["deepseek", "bai", "nas", "mobileoffice"\]/)
+  assert.match(content, /const REPLY_PROVIDER_ORDER = \["deepseek", "bai", "nas", "mobileoffice"\]/)
   assert.equal(planner.readPlannerPrompt({
     replyTimelinePrompt: '写得幽默一点',
     postNormalPrompt: '发帖风格',
@@ -151,7 +151,7 @@ test('planner prompt stays separate and falls back DeepSeek, B.AI, MobileOffice,
     assert.equal(prompt, planner.DEFAULT_PROMPT)
     return { ok: false, error: `${provider} down` }
   })
-  assert.deepEqual(calls, ['deepseek', 'bai', 'mobileoffice', 'nas'])
+  assert.deepEqual(calls, ['deepseek', 'bai', 'nas', 'mobileoffice'])
   assert.equal(failed.ok, false)
   assert.equal(failed.fallback, 'status-buttons')
 
@@ -308,14 +308,14 @@ test('v5 home is wired without publishing or changing the writing provider order
   const catalog = await readFile(new URL('../../lib/content/resourceCatalog.js', import.meta.url), 'utf8')
   const siteVersion = await readFile(new URL('../../lib/community/xExtensionVersion.js', import.meta.url), 'utf8')
   const scripts = manifest.content_scripts[3].js
-  assert.equal(manifest.version, '5.7.3')
+  assert.equal(manifest.version, '5.8.1')
   assert.equal(manifest.name, 'X 大互动智能体')
   assert.ok(scripts.indexOf('agentPlanner.js') < scripts.indexOf('agentChat.js'))
   assert.ok(scripts.indexOf('agentChat.js') < scripts.indexOf('content.js'))
   assert.ok(scripts.indexOf('experiments.js') > scripts.indexOf('content.js'))
   assert.ok(manifest.content_scripts[3].css.includes('agentChat.css'))
-  assert.match(readme, /当前本地源码为 v5\.7\.3/)
-  assert.match(readme, /v5\.7\.3（2026-11-21，本地测试）/)
+  assert.match(readme, /当前本地源码为 v5\.8\.1/)
+  assert.match(readme, /v5\.8\.1（2026-11-24，本地测试）/)
   assert.match(chat, /大互动智能体/)
   assert.match(chat, /xrc-agent-typing/)
   assert.match(chat, /大互动智能体/)

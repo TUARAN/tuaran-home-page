@@ -147,9 +147,15 @@
     if (install.bound || !root.document?.body) return;
     install.bound = true;
     let timer = 0;
+    // X 时间线一直在改 DOM，这里先合并成一次，再等浏览器空闲时扫，避免每次滚动都全量遍历推文。
+    const run = () => {
+      timer = 0;
+      const idle = root.requestIdleCallback || ((fn) => root.setTimeout(fn, 120));
+      idle(() => refresh(false), { timeout: 1200 });
+    };
     const schedule = () => {
       root.clearTimeout(timer);
-      timer = root.setTimeout(() => { refresh(false); }, 280);
+      timer = root.setTimeout(run, 600);
     };
     const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });

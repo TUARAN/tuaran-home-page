@@ -309,9 +309,10 @@
     "xrc-docs-maintenance": "maintenance",
     "xrc-docs-releases": "releases"
   };
-  const REPLY_PROVIDER_ORDER = ["mobileoffice", "deepseek", "nas", "bai"];
+  // 写作与规划共用的回退顺序：DeepSeek → B.AI → NAS → 本地桥接（MobileOffice）。
+  const REPLY_PROVIDER_ORDER = ["deepseek", "bai", "nas", "mobileoffice"];
   const DEFAULT_REPLY_PROVIDERS = [];
-  const REPLY_PROVIDERS_DEFAULT_VERSION = 2;
+  const REPLY_PROVIDERS_DEFAULT_VERSION = 3;
   const REPLY_EDITOR_SELECTOR = '[data-testid^="tweetTextarea_"][contenteditable="true"][role="textbox"]';
   const ASSISTANT_MODES = new Set(["timeline", "notifications", "kol", "likes-posts", "likes-replies", "mutual", "poster", "poster-premium", "poster-x", "poster-xhs", "article", "site-forward", "community-share", "community-copy", "prune-posts", "prune-replies"]);
 
@@ -4812,13 +4813,10 @@
     return /^\/notifications(?:\/|$)/.test(window.location.pathname);
   }
 
+  // 保存即启用：密钥可用就算启用，不需要另外勾选；「停用」把该来源写进 replyProvidersDisabled。
+  // NAS 与社区回执共用一条密钥，仍要显式保存过一次才参与回退。
   function resolveReplyProviders(settings) {
-    const hasList = Array.isArray(settings?.replyProviders);
-    const explicit = settings?.replyProvidersManual === true;
-    const autoNasOnly = hasList && !explicit && settings.replyProviders.length === 1 && settings.replyProviders[0] === "nas";
-    const stored = !hasList || autoNasOnly
-      ? []
-      : REPLY_PROVIDER_ORDER.filter((provider) => settings.replyProviders.includes(provider));
+    const saved = Array.isArray(settings?.replyProviders) ? settings.replyProviders : null;
     const disabled = Array.isArray(settings?.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
     const configured = REPLY_PROVIDER_ORDER.filter((provider) => provider === "deepseek"
       ? validDeepSeekApiKey(String(settings?.apiKey || "").trim())
@@ -4827,8 +4825,11 @@
         : provider === "nas"
           ? settings?.nasSecretAvailable === true
           : provider === "mobileoffice" && Boolean(String(settings?.mobileOfficeToken || "").trim()));
-    const providers = REPLY_PROVIDER_ORDER.filter((provider) => stored.includes(provider) && configured.includes(provider) && !disabled.includes(provider));
-    return { providers, persist: autoNasOnly };
+    const providers = REPLY_PROVIDER_ORDER.filter((provider) => configured.includes(provider)
+      && !disabled.includes(provider)
+      && (provider !== "nas" || (saved || []).includes("nas")));
+    const persist = Boolean(providers.length) && !Array.isArray(settings?.replyProviders);
+    return { providers, persist };
   }
 
   function showModelSaveNotice(message) {
@@ -5432,10 +5433,31 @@
     return `${hour}:${minute}`;
   }
 
+  function providerLabel(which) {
+    return { bai: "B.AI", nas: "NAS", mobileoffice: "MobileOffice 本地桥接" }[which] || "DeepSeek";
+  }
+
+  // 停用：只写 replyProvidersDisabled，密钥留在本机，下次保存即可重新启用。
+  async function stopReplyProvider(panel, which) {
+    const status = panel.querySelector("[data-xrc-config-status]");
+    if (!globalThis.chrome?.storage?.local) {
+      if (status) status.textContent = "当前环境无法保存扩展配置";
+      return false;
+    }
+    const stored = await chrome.storage.local.get("xrcAiSettings");
+    const settings = stored?.xrcAiSettings || {};
+    const replyProviders = (Array.isArray(settings.replyProviders) ? settings.replyProviders : []).filter((provider) => provider !== which);
+    const disabled = Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [];
+    if (!disabled.includes(which)) disabled.push(which);
+    await chrome.storage.local.set({ xrcAiSettings: { ...settings, replyProviders, replyProvidersDisabled: disabled } });
+    await loadAiSettings();
+    renderPanel();
+    return true;
+  }
+
+  // 保存即启用：密钥校验通过就写进 replyProviders，不再需要单独勾选。
   async function saveSingleApiKey(panel, which) {
     const status = panel.querySelector("[data-xrc-config-status]");
-    const checkbox = panel.querySelector(`[data-xrc-reply-provider="${which}"]`);
-    const checked = Boolean(checkbox?.checked);
     const value = String((which === "bai"
       ? panel.querySelector("[data-xrc-config-bai-key]")?.value
       : which === "mobileoffice"
@@ -5443,28 +5465,20 @@
         : which === "nas"
           ? panel.querySelector("[data-xrc-nas-secret]")?.value
           : panel.querySelector("[data-xrc-config-key]")?.value) || "").trim();
-    if (checked && which === "deepseek" && !validDeepSeekApiKey(value)) {
-      if (status) status.textContent = "勾选 DeepSeek 后，先填写 sk- 密钥再保存";
+    if (!value) {
+      if (status) status.textContent = "请先填写密钥或连接码再保存；只想停用就点「停用」";
       return false;
     }
-    if (checked && which === "bai" && !/^sk-\S{8,}$/u.test(value)) {
-      if (status) status.textContent = "勾选 B.AI 后，先填写 sk- 密钥再保存";
-      return false;
-    }
-    if (checked && which === "nas" && !value) {
-      if (status) status.textContent = "勾选 NAS 后，先填写回执密钥再保存";
-      return false;
-    }
-    if (checked && which === "mobileoffice" && (!value || state.mobileOfficeVerified !== true || value !== String(state.mobileOfficeToken || "").trim())) {
-      if (status) status.textContent = "勾选 MobileOffice 后，先填写连接码并测试通过，再保存";
-      return false;
-    }
-    if (which === "deepseek" && value && !validDeepSeekApiKey(value)) {
+    if (which === "deepseek" && !validDeepSeekApiKey(value)) {
       if (status) status.textContent = "请输入以 sk- 开头的 DeepSeek API Key，不要填写 X 登录密码";
       return false;
     }
-    if (which === "bai" && value && !/^sk-\S{8,}$/u.test(value)) {
+    if (which === "bai" && !/^sk-\S{8,}$/u.test(value)) {
       if (status) status.textContent = "请输入有效的 B.AI API Key";
+      return false;
+    }
+    if (which === "mobileoffice" && (state.mobileOfficeVerified !== true || value !== String(state.mobileOfficeToken || "").trim())) {
+      if (status) status.textContent = "先点「测试连接」，连接码通过后再保存并启用";
       return false;
     }
     if (!globalThis.chrome?.storage?.local) {
@@ -5477,10 +5491,8 @@
     }
     const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
-    const selected = new Set(settings.replyProvidersManual === true && Array.isArray(settings.replyProviders) ? settings.replyProviders : []);
-    const enabled = checked && Boolean(value) && (which !== "mobileoffice" || state.mobileOfficeVerified === true);
-    if (enabled) selected.add(which);
-    else selected.delete(which);
+    const selected = new Set(Array.isArray(settings.replyProviders) ? settings.replyProviders : []);
+    selected.add(which);
     const replyProvidersDisabled = Array.isArray(settings.replyProvidersDisabled)
       ? settings.replyProvidersDisabled.filter((provider) => provider !== which)
       : [];
@@ -5490,15 +5502,10 @@
         ...settings,
         ...(which === "bai" ? { baiApiKey: value } : which === "deepseek" ? { apiKey: value } : which === "mobileoffice" ? { mobileOfficeToken: value, mobileOfficeVerified: value === state.mobileOfficeToken && state.mobileOfficeVerified === true } : {}),
         replyProviders,
-        replyProvidersManual: true,
         replyProvidersDisabled
       }
     });
     await loadAiSettings();
-    if (checkbox) {
-      if (checkbox.dataset) delete checkbox.dataset.xrcProviderDraft;
-      checkbox.checked = state.replyProviders.includes(which);
-    }
     renderPanel();
     return true;
   }
@@ -5571,8 +5578,7 @@
         mobileOfficeVerified: formReady
           ? mobileOfficeToken === state.mobileOfficeToken && state.mobileOfficeVerified === true
           : settings.mobileOfficeVerified === true,
-        replyProviders,
-        replyProvidersManual: settings.replyProvidersManual === true,
+        ...(Array.isArray(settings.replyProviders) ? { replyProviders: settings.replyProviders } : {}),
         replyProvidersDisabled: Array.isArray(settings.replyProvidersDisabled) ? settings.replyProvidersDisabled : [],
         replyProvidersDefaultVersion: REPLY_PROVIDERS_DEFAULT_VERSION,
         replyMode: state.replyMode,
@@ -9635,6 +9641,20 @@
     button.textContent = updateActionPending ? "正在处理…" : phase === "failed" ? "重试并恢复" : "立即更新";
   }
 
+  // 每个模型来源的启用状态：已启用的显示「已启用」和「停用」，未启用的显示「未启用」。
+  function paintProviderStates(panel) {
+    REPLY_PROVIDER_ORDER.forEach((which) => {
+      const enabled = state.replyProviders.includes(which);
+      const chip = panel.querySelector(`[data-xrc-provider-state="${which}"]`);
+      if (chip) {
+        chip.textContent = enabled ? "已启用" : "未启用";
+        chip.dataset.state = enabled ? "on" : "off";
+      }
+      const off = panel.querySelector(`[data-xrc-provider-off="${which}"]`);
+      if (off) off.hidden = !enabled;
+    });
+  }
+
   function renderPanel() {
     if (!ensureExtensionContext()) return;
     try {
@@ -9668,10 +9688,7 @@
     write("[data-xrc-post-premium-prompt]", state.postPremiumPrompt || DEFAULT_POST_PREMIUM_PROMPT);
     write("[data-xrc-post-x-prompt]", state.postXPrompt || DEFAULT_POST_X_PROMPT);
     write("[data-xrc-planner-prompt]", state.plannerSystemPrompt || DEFAULT_PLANNER_PROMPT);
-    panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
-      if (document.activeElement === input || input.dataset.xrcProviderDraft === "1") return;
-      input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
-    });
+    paintProviderStates(panel);
     const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
     if (mobileOfficeStatus && /^(?:|尚未测试|已测试通过)$/u.test(mobileOfficeStatus.textContent || "")) {
       mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
@@ -9998,55 +10015,67 @@
               </label>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="model">
-              <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>勾选、填写密钥并保存后才生效</small></span></div>
-              <div class="xrc-provider-list" role="group" aria-label="启用的回复模型">
+              <div class="xrc-docs-title"><b>01</b><span><strong>模型来源</strong><small>填写密钥并保存即启用，顺序固定</small></span></div>
+              <div class="xrc-provider-list" role="group" aria-label="模型来源与回退顺序">
                 <div class="xrc-provider">
-                  <label class="xrc-config-row"><span><strong>1 · MobileOffice 本地桥接</strong><small>测试通过并保存后优先使用</small></span><input type="checkbox" data-xrc-reply-provider="mobileoffice"></label>
-                  <div class="xrc-provider-key" data-xrc-mobileoffice-connection>
-                    <label class="xrc-field"><span>连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
-                    <div class="xrc-mobileoffice-test-row">
-                      <button class="xrc-mobileoffice-test" type="button" data-xrc-mobileoffice-test>测试连接</button>
-                      <span class="xrc-mobileoffice-status" data-xrc-mobileoffice-status role="status"></span>
-                      <button type="button" class="xrc-key-save" data-xrc-key-save="mobileoffice">保存</button>
-                    </div>
-                    <p class="xrc-config-note" data-xrc-mobileoffice-note>勾选、测试通过、再点保存，才会使用。连接码只保存在当前浏览器扩展里。</p>
+                  <div class="xrc-config-row">
+                    <span><strong>1 · DeepSeek</strong><small>首选；不可用时按顺序往下回退</small></span>
+                    <div class="xrc-provider-actions"><span class="xrc-provider-state" data-xrc-provider-state="deepseek">未启用</span><button type="button" class="xrc-provider-off" data-xrc-provider-off="deepseek" hidden>停用</button></div>
                   </div>
-                </div>
-                <div class="xrc-provider">
-                  <label class="xrc-config-row"><span><strong>2 · DeepSeek</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="deepseek"></label>
                   <label class="xrc-field xrc-provider-key">
                     <span>DeepSeek API Key <small data-xrc-config-key-hint>尚未配置</small></span>
                     <span class="xrc-key-line">
                       <input type="text" name="xrc-deepseek-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 sk-..." data-xrc-secret-input data-xrc-config-key>
                       <button type="button" data-xrc-config-key-reveal>显示</button>
-                      <button type="button" class="xrc-key-save" data-xrc-key-save="deepseek">保存</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="deepseek">保存并启用</button>
                     </span>
                   </label>
                 </div>
                 <div class="xrc-provider">
-                  <label class="xrc-config-row"><span><strong>3 · NAS</strong><small>前一项不可用时尝试</small></span><input type="checkbox" data-xrc-reply-provider="nas"></label>
-                  <label class="xrc-field xrc-provider-key">
-                    <span>社区回执密钥</span>
-                    <span class="xrc-key-line">
-                      <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="从社区动作页复制" data-xrc-secret-input data-xrc-nas-secret>
-                      <button type="button" data-xrc-nas-secret-reveal>显示</button>
-                      <button type="button" class="xrc-key-save" data-xrc-key-save="nas">保存</button>
-                    </span>
-                  </label>
-                </div>
-                <div class="xrc-provider">
-                  <label class="xrc-config-row"><span><strong>4 · B.AI</strong><small>最后尝试，按用量计费</small></span><input type="checkbox" data-xrc-reply-provider="bai"></label>
+                  <div class="xrc-config-row">
+                    <span><strong>2 · B.AI</strong><small>第二顺位，按用量计费</small></span>
+                    <div class="xrc-provider-actions"><span class="xrc-provider-state" data-xrc-provider-state="bai">未启用</span><button type="button" class="xrc-provider-off" data-xrc-provider-off="bai" hidden>停用</button></div>
+                  </div>
                   <label class="xrc-field xrc-provider-key">
                     <span>B.AI API Key</span>
                     <span class="xrc-key-line">
                       <input type="text" name="xrc-bai-settings-token" autocomplete="off" autocapitalize="none" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="粘贴 B.AI 的 sk-..." data-xrc-secret-input data-xrc-config-bai-key>
                       <button type="button" data-xrc-config-bai-key-reveal>显示</button>
-                      <button type="button" class="xrc-key-save" data-xrc-key-save="bai">保存</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="bai">保存并启用</button>
                     </span>
                   </label>
                 </div>
+                <div class="xrc-provider">
+                  <div class="xrc-config-row">
+                    <span><strong>3 · NAS</strong><small>第三顺位，与社区回执共用密钥</small></span>
+                    <div class="xrc-provider-actions"><span class="xrc-provider-state" data-xrc-provider-state="nas">未启用</span><button type="button" class="xrc-provider-off" data-xrc-provider-off="nas" hidden>停用</button></div>
+                  </div>
+                  <label class="xrc-field xrc-provider-key">
+                    <span>社区回执密钥</span>
+                    <span class="xrc-key-line">
+                      <input type="text" autocomplete="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" data-form-type="other" placeholder="从社区动作页复制" data-xrc-secret-input data-xrc-nas-secret>
+                      <button type="button" data-xrc-nas-secret-reveal>显示</button>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="nas">保存并启用</button>
+                    </span>
+                  </label>
+                </div>
+                <div class="xrc-provider">
+                  <div class="xrc-config-row">
+                    <span><strong>4 · MobileOffice 本地桥接</strong><small>最后尝试；连接码测试通过后才能启用</small></span>
+                    <div class="xrc-provider-actions"><span class="xrc-provider-state" data-xrc-provider-state="mobileoffice">未启用</span><button type="button" class="xrc-provider-off" data-xrc-provider-off="mobileoffice" hidden>停用</button></div>
+                  </div>
+                  <div class="xrc-provider-key" data-xrc-mobileoffice-connection>
+                    <label class="xrc-field"><span>连接码</span><input type="password" autocomplete="off" data-xrc-mobileoffice-token placeholder="粘贴本地桥接连接码"></label>
+                    <div class="xrc-mobileoffice-test-row">
+                      <button class="xrc-mobileoffice-test" type="button" data-xrc-mobileoffice-test>测试连接</button>
+                      <span class="xrc-mobileoffice-status" data-xrc-mobileoffice-status role="status"></span>
+                      <button type="button" class="xrc-key-save" data-xrc-key-save="mobileoffice">保存并启用</button>
+                    </div>
+                    <p class="xrc-config-note" data-xrc-mobileoffice-note>先测试连接，再点保存并启用。连接码只保存在当前浏览器扩展里。</p>
+                  </div>
+                </div>
               </div>
-              <p class="xrc-config-note">每一项都要勾选、填写密钥，再点该项的保存，勾选才生效。只保存密钥、没有勾选，不会使用。NAS 与下方社区回执用同一条密钥。B.AI 按用量计费。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
+              <p class="xrc-config-note">保存即启用，不需要另外勾选；想停用点该项的「停用」。回退顺序是 DeepSeek、B.AI、NAS、本地桥接。NAS 与下方社区回执用同一条密钥，只配了回执、没按过 NAS 的保存，不会把生成请求发到自家服务。B.AI 按用量计费。只发送当前回复所需上下文，不会发送 X 登录 Cookie。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="prompts">
               <div class="xrc-docs-title"><b>01</b><span><strong>写作提示词</strong><small>评论首页 / 评论回复 / 热点发帖 / 卡片发帖 / X主题发帖 分开配置</small></span></div>
@@ -10060,7 +10089,7 @@
             <section class="xrc-docs-section" data-xrc-config-section="prompts">
               <div class="xrc-docs-title"><b>02</b><span><strong>规划提示词</strong><small>只决定下一步动作，不参与写评论或发帖</small></span></div>
               <label class="xrc-field"><span>规划</span><textarea data-xrc-planner-prompt rows="5"></textarea></label>
-              <p class="xrc-config-note">单独保存在模型设置里，不会替换上面的写作提示词。之后的规划调用按 DeepSeek、B.AI、MobileOffice、NAS 回退。写作仍按上一页的顺序。</p>
+              <p class="xrc-config-note">单独保存在模型设置里，不会替换上面的写作提示词。之后的规划调用按 DeepSeek、B.AI、NAS、本地桥接回退，与写作同一条顺序。</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="lists">
               <div class="xrc-docs-title"><b>01</b><span><strong>名单</strong><small>评论大V 与关注候选</small></span></div>
@@ -10790,9 +10819,7 @@
         const input = panel.querySelector(selector);
         if (input) input.dataset.xrcEchoValue = input.value;
       });
-      panel.querySelectorAll("[data-xrc-reply-provider]").forEach((input) => {
-        input.checked = state.replyProviders.includes(input.dataset.xrcReplyProvider);
-      });
+      paintProviderStates(panel);
       const mobileOfficeStatus = panel.querySelector("[data-xrc-mobileoffice-status]");
       mobileOfficeStatus.textContent = state.mobileOfficeVerified ? "已测试通过" : "尚未测试";
       mobileOfficeStatus.dataset.result = state.mobileOfficeVerified ? "success" : "idle";
@@ -10811,7 +10838,7 @@
           state.mobileOfficeVerified = true;
           const stored = await chrome.storage.local.get("xrcAiSettings");
           await chrome.storage.local.set({ xrcAiSettings: { ...(stored.xrcAiSettings || {}), mobileOfficeToken: token, mobileOfficeVerified: true } });
-          status.textContent = "连接成功，可以勾选使用";
+          status.textContent = "连接成功，点保存并启用";
           status.dataset.result = "success";
         } catch (error) {
           state.mobileOfficeVerified = false;
@@ -11248,15 +11275,11 @@
           selectCardQuota(label.dataset.xrcCardQuota);
         });
       });
-      panel.querySelectorAll("[data-xrc-mobileoffice-token], [data-xrc-reply-provider], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-post-x-prompt], [data-xrc-planner-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
+      panel.querySelectorAll("[data-xrc-mobileoffice-token], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-post-x-prompt], [data-xrc-planner-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
         input.addEventListener("input", () => {
-          if (!input.matches("[data-xrc-reply-provider]")) scheduleConfigSave(panel);
+          scheduleConfigSave(panel);
         });
         input.addEventListener("change", () => {
-          if (input.matches("[data-xrc-reply-provider]")) {
-            input.dataset.xrcProviderDraft = "1";
-            return;
-          }
           scheduleConfigSave(panel, true);
         });
       });
@@ -11274,12 +11297,35 @@
               panel.querySelector("[data-xrc-config-status]")?.scrollIntoView?.({ block: "nearest" });
               return;
             }
-            const label = { bai: "B.AI", nas: "NAS", mobileoffice: "MobileOffice" }[which] || "DeepSeek";
+            const label = providerLabel(which);
             const enabled = state.replyProviders.includes(which);
-            returnHomeAfterModelSave(enabled ? `${label} 已勾选并保存` : `${label} 密钥已保存，尚未勾选，不会使用`);
+            returnHomeAfterModelSave(enabled ? `${label} 已保存并启用` : `${label} 密钥已保存，但还差启用条件（密钥格式或连接测试）`);
           } catch (error) {
             const status = panel.querySelector("[data-xrc-config-status]");
             if (status) status.textContent = error?.message || "保存失败，请重试";
+          } finally {
+            if (button.isConnected) button.disabled = false;
+          }
+        });
+      });
+      panel.querySelectorAll("[data-xrc-provider-off]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          if (button.disabled) return;
+          button.disabled = true;
+          window.clearTimeout(configSaveTimer);
+          configSaveTimer = 0;
+          const which = button.dataset.xrcProviderOff || "deepseek";
+          try {
+            await configSavePromise.catch(() => false);
+            const stopped = await stopReplyProvider(panel, which);
+            if (!stopped) {
+              panel.querySelector("[data-xrc-config-status]")?.scrollIntoView?.({ block: "nearest" });
+              return;
+            }
+            returnHomeAfterModelSave(`${providerLabel(which)} 已停用，不参与回退`);
+          } catch (error) {
+            const status = panel.querySelector("[data-xrc-config-status]");
+            if (status) status.textContent = error?.message || "停用失败，请重试";
           } finally {
             if (button.isConnected) button.disabled = false;
           }
@@ -12788,7 +12834,7 @@
     try { likeApi?.dismissViewsDialog?.(document); } catch (error) {
       noteExtensionContextFailure(error);
     }
-  }, 400);
+  }, 1500);
 
   let idleRenderTicks = 0;
   panelRenderTimer = window.setInterval(() => {

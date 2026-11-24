@@ -78,6 +78,8 @@
     "workbuddy:validate": "node scripts/build-workbuddy-marketplace.mjs --check",
     "x-intelligence:check": "node scripts/test-x-platform-intelligence-model.mjs && node scripts/test-x-platform-intelligence-filters.mjs && node scripts/test-x-platform-intelligence-selectors.mjs",
     "test:planning": "node --test tests/planning/*.test.mjs",
+    "test:extensions": "node --test tests/extensions/*.mjs",
+    "ext:version:check": "node scripts/check-extension-version.mjs",
     "articles:assets": "node scripts/generate-article-assets.mjs",
     "content-proof:test": "node --test tests/content-proof.test.mjs tests/content-ledger.test.mjs tests/content-proof-verifier.test.mjs",
     "content-proof:verify": "node tools/content-proof-verifier/cli.mjs",

@@ -1060,6 +1060,50 @@
   background: transparent;
 }
 
+#x-reply-clipboard-panel .xrc-provider .xrc-config-row {
+  cursor: default;
+}
+
+#x-reply-clipboard-panel .xrc-provider-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+#x-reply-clipboard-panel .xrc-provider-state {
+  padding: 2px 8px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 999px;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+#x-reply-clipboard-panel .xrc-provider-state[data-state="on"] {
+  border-color: var(--xrc-accent);
+  color: var(--xrc-accent);
+}
+
+#x-reply-clipboard-panel .xrc-provider-off {
+  padding: 2px 9px;
+  border: 1px solid var(--xrc-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--xrc-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+#x-reply-clipboard-panel .xrc-provider-off:hover {
+  border-color: var(--xrc-accent);
+  color: var(--xrc-text);
+}
+
 #x-reply-clipboard-panel .xrc-provider-list .xrc-config-row.is-inactive {
   opacity: 0.48;
   cursor: default;

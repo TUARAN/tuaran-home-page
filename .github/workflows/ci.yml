@@ -60,3 +60,24 @@ jobs:
           NEXTAUTH_URL: https://2aran.com
           # CI 只验证构建链路，加密文章用占位密码生成临时 payload；生产环境使用 Cloudflare Pages 中配置的真实值
           RESEARCH_ENCRYPTION_PASSWORD: ci-placeholder-not-for-runtime
+
+  extension-tests:
+    name: Browser Extension Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      # 扩展测试只用 Node 内置模块和仓库里的源码，不需要 npm ci
+      - name: Run extension tests
+        run: npm run test:extensions
+
+      - name: Check extension version consistency
+        run: npm run ext:version:check

@@ -314,7 +314,7 @@ export default function XReplyClipboardDocsPage() {
           <Section id="flow" index="二" title="运行与任务窗口" summary="共享执行页签、排班台与真实界面">
             <div id="system-architecture" className="scroll-mt-24 space-y-3 rounded-2xl border border-[var(--site-line)] bg-[var(--site-panel)] p-4 md:p-5">
               <h3 className="m-0 text-[15px] font-semibold text-[var(--site-ink)]">系统结构图 · v4 单页签底座</h3>
-              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 19 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按已启用顺序尝试 MobileOffice、DeepSeek、NAS 或 B.AI。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
+              <p className="m-0 text-[13px] leading-6">使用者在 X 页面内操作面板；扩展后台保存 19 项任务的排班状态与闹钟，安排同一账号的共享执行页签。执行页签读取 X 页面内容并执行已启动的任务；AI 回复按固定顺序尝试 DeepSeek、B.AI、NAS 或本地桥接 MobileOffice。动作结果先记在本地，再经 2aran.com 回执 API 写入 D1；站长后台可通过回执链路下发启动、暂停和更新等指令。</p>
               <figure className="m-0">
                 <a href="/images/x-reply-clipboard-extension/system-architecture-v4.png" target="_blank" rel="noopener noreferrer" className="block overflow-x-auto rounded-xl border border-[var(--site-line)] bg-white" aria-label="打开当前系统结构图原图">
                   <Image src="/images/x-reply-clipboard-extension/system-architecture-v4.png" alt="X 大互动智能体的面板、扩展后台、任务排班、X 执行页签、模型服务、本地回执、站点 API、D1 与站长后台之间的数据流" width={2984} height={804} className="h-auto w-full min-w-[840px]" sizes="(min-width: 1024px) 900px, 100vw" />
@@ -677,7 +677,7 @@ export default function XReplyClipboardDocsPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li>插件里的速度表和这里同一套栏目。评论任务运行中点另一档会先确认，当前操作完成后按新档继续，累计已完成条数保留，已有风控冷却不会跳过。速度与排班参数在对应任务子页调整；设置中心已移除独立的频率设置和排班台入口。</li>
               <li>热点发帖和 X主题发帖默认“慢”。原先停在“中”的热点发帖会自动改成“慢”，手选过快或超快的保持原样。卡片发帖默认一天 3 条，也可选 1、5、10 条，钟点见任务说明。热点发帖、卡片发帖、X主题发帖、小红书发帖、普通发文、站长转发共用每天 20 到 30 条里抽中的额度，确认成功的发帖、文章草稿和站长转发加在一起，到了就停到北京时间次日；各自原来的条数限制仍然有效。</li>
-              <li>回复模型的启用顺序、MobileOffice 本地桥接、DeepSeek / NAS / B.AI 配置，以及评论首页 / 评论回复 / 热点发帖 / 卡片发帖 / X主题发帖五份提示词，在设置中心的「模型」里管理。配置读取完成且没有可用模型时，首页才显示设置引导；保存可用密钥会同步启用对应模型，手动关闭的选择保留。发帖正文每行之间留一个空行；精简稿开头后目标约 35～60 字、2～3 行。抓人开头与措辞由提示词控制，本地不按字数或风格退稿。正反例和修改记录写在文档中心「提示词反馈台账」。已发出的帖子在 X 页面上直接赞或踩。</li>
+              <li>回复模型的回退顺序固定为 DeepSeek、B.AI、NAS、本地桥接 MobileOffice，各自的密钥与连接码在设置中心的「模型」里管理，同处还有评论首页 / 评论回复 / 热点发帖 / 卡片发帖 / X主题发帖五份提示词。填写密钥点「保存并启用」即生效，不需要另外勾选；同一行的「停用」把该项移出回退，密钥仍留在这台机器上。本地桥接要先测试连接通过再保存。配置读取完成且没有可用模型时，首页才显示设置引导。发帖正文每行之间留一个空行；精简稿开头后目标约 35～60 字、2～3 行。抓人开头与措辞由提示词控制，本地不按字数或风格退稿。正反例和修改记录写在文档中心「提示词反馈台账」。已发出的帖子在 X 页面上直接赞或踩。</li>
               <li>评论回复、评论首页、评论大V 共用每天 900 到 1100 条里抽中的额度，到了就停到北京时间次日。社群分发按确认成功的群聊计数，每天在 10 到 20 个里抽一个整数，一次发送不超过剩余额度，到了就停到北京时间次日。清理未回关的手动模式只记录候选，不会自动点击取关。切换到自动模式后才按速度档执行取关。</li>
             </ul>
           </Section>

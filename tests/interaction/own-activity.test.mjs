@@ -101,5 +101,5 @@ test('pool loader merges each account on the same calendar date', async () => {
   assert.equal(days.length, 2)
   assert.deepEqual(days.map((day) => day.accountHandle).sort(), ['TuaranX', 'tarsixseveneig1'].sort())
   assert.deepEqual(new Set(days.map((day) => day.date)), new Set(['2026-11-15']))
-  assert.equal(interactionAgentHandles().length, 3)
+  assert.equal(interactionAgentHandles().length, 5)
 })

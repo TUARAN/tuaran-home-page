@@ -68,14 +68,14 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
       <p className={s.hint}>每个 X 账号一份人格和记忆。改写会读取它们，插件里的智能体也会同步同一份。写入前会按固定原则检查，要求调高上限、缩短冷却、绕开检测的内容会被拒绝。</p>
       <p className={s.note}><Link href="/docs">智能体手册</Link>：安装、十九项任务、频率与异常恢复。</p>
       <div className={s.card}>
-        <div className={s.row}>
+        <div className={s.accountChips}>
           {accounts.map((a) => (
-            <span key={a.handle}>
-              <button type="button" className={`${s.btn} ${active === a.handle ? s.primary : ''}`} onClick={() => open(a.handle)}>@{a.handle}</button>{' '}
+            <span key={a.handle} className={s.accountChip}>
+              <button type="button" className={`${s.btn} ${active === a.handle ? s.primary : ''}`} onClick={() => open(a.handle)}>@{a.handle}</button>
               <button type="button" className={s.btn} aria-label={`解绑 ${a.handle}`} onClick={() => unbind(a.handle)}>×</button>
             </span>
           ))}
-          <form onSubmit={bind} className={s.row} style={{ marginBottom: 0 }}>
+          <form onSubmit={bind} className={s.bindForm}>
             <input className={s.input} value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="绑定 X 账号名" maxLength={16} />
             <button type="submit" className={s.btn}>绑定</button>
           </form>
@@ -95,14 +95,14 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
           if (res.ok) { setPairing(null); setNote('所有插件连接已撤销') }
           else setNote(message(res.data))
         }}>撤销所有插件连接</button>
-        {pairing && <p><label>复制到插件工具箱<input className={s.input} style={{ width: '100%' }} readOnly value={pairing.code} onFocus={e => e.target.select()} /></label></p>}
+        {pairing && <p><label>复制到插件工具箱<input className={`${s.input} ${s.fieldInput} ${s.pairCode}`} readOnly value={pairing.code} onFocus={e => e.target.select()} /></label></p>}
       </div>
       {active && (
         <div className={s.card}>
           <h3 style={{ marginTop: 0 }}>@{active}</h3>
           {[['role', '定位', 120], ['goal', '目标', 120], ['tone', '回复方式', 80]].map(([key, label, max]) => (
-            <label key={key} style={{ display: 'block', marginBottom: 8 }}>{label}
-              <input className={s.input} style={{ display: 'block', width: '100%', boxSizing: 'border-box' }} value={persona[key]} maxLength={max}
+            <label key={key} className={s.fieldLabel}>{label}
+              <input className={`${s.input} ${s.fieldInput}`} value={persona[key]} maxLength={max}
                 onChange={(e) => setPersona({ ...persona, [key]: e.target.value })} />
             </label>
           ))}
@@ -113,11 +113,11 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
               <button type="button" className={s.btn} onClick={() => setMemory(memory.filter((_, j) => j !== i))}>删除</button>
             </div>
           ))}
-          <form className={s.row} style={{ marginTop: 8 }} onSubmit={(e) => {
+          <form className={s.memoryRow} onSubmit={(e) => {
             e.preventDefault()
             if (draft.trim()) { setMemory([...memory, { type: 'account', text: draft.trim(), source: 'user', at: Date.now() }]); setDraft('') }
           }}>
-            <input className={s.input} style={{ flex: 1 }} value={draft} maxLength={120} onChange={(e) => setDraft(e.target.value)} placeholder="新增一条记忆，例如：不用感叹号" />
+            <input className={`${s.input} ${s.memoryInput}`} value={draft} maxLength={120} onChange={(e) => setDraft(e.target.value)} placeholder="新增一条记忆，例如：不用感叹号" />
             <button type="submit" className={s.btn}>添加</button>
           </form>
           <button type="button" className={`${s.btn} ${s.primary}`} onClick={save}>保存</button>
@@ -136,10 +136,10 @@ export default function AgentTab({ accounts, usage, onAccounts }) {
           <button type="button" className={s.btn} onClick={revokeAll}>撤销全部插件连接</button>
         </div>
         {pair && (
-          <div className={s.row}>
-            <input className={s.input} style={{ flex: 1, fontFamily: 'monospace' }} readOnly value={pair.code} onFocus={(e) => e.target.select()} aria-label="配对码" />
+          <div className={s.pairRow}>
+            <input className={`${s.input} ${s.pairCode}`} readOnly value={pair.code} onFocus={(e) => e.target.select()} aria-label="配对码" />
             <button type="button" className={s.btn} onClick={() => navigator.clipboard?.writeText(pair.code)}>复制</button>
-            <span className={s.note}>{new Date(pair.expiresAt).toLocaleTimeString()} 前有效</span>
+            <span className={`${s.note} ${s.pairNote}`}>{new Date(pair.expiresAt).toLocaleTimeString()} 前有效</span>
           </div>
         )}
       </div>

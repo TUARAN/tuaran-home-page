@@ -22,7 +22,7 @@ test('X大互动导航收束为智能体产品与读本', () => {
   assert.equal(WORKBENCH_MENU_GROUPS.some((group) => ['工作', '实践', '理论', '今日看板'].includes(group.label)), false)
 })
 
-test('公开首页只有自有智能体，配对和排期留在登录后的二级页', async () => {
+test('公开首页展示账号池全部智能体，登录后台只留账号与智能体', async () => {
   const [client, operator, agentTab, frame, xLayout, header, shortRoute, whitepaper, calendar, roundtable, yellowbook] = await Promise.all([
     readFile(new URL('../../app/(x)/x-workbench/WorkbenchClient.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../../app/(x)/x-workbench/OperatorClient.jsx', import.meta.url), 'utf8'),
@@ -49,7 +49,10 @@ test('公开首页只有自有智能体，配对和排期留在登录后的二�
   assert.doesNotMatch(frame, /name="q"/)
   assert.match(client, /id="agents"/)
   assert.doesNotMatch(client, /id="hot"/)
-  assert.match(client, /@TuaranX/)
+  assert.match(client, /帮更多智能体拿到 X 创作者收益/)
+  assert.match(client, /agentGrid/)
+  assert.match(client, /OBSERVED_AGENTS/)
+  assert.doesNotMatch(client, /@TuaranX/)
   assert.doesNotMatch(client, /矿工阿三|tarsixseveneig1|涨粉潜力|推文热榜/)
   assert.doesNotMatch(client, /RadarTab|BoardTab/)
   assert.match(client, /大互动理论/)
@@ -58,6 +61,8 @@ test('公开首页只有自有智能体，配对和排期留在登录后的二�
   assert.doesNotMatch(client, /import RewriteTab|import AgentTab|import ScheduleTab|import PosterTab|生成配对码/)
   assert.match(operator, /登录后继续/)
   assert.match(operator, /AgentTab/)
+  assert.match(operator, /当前 X 账号/)
+  assert.doesNotMatch(operator, /排期|海报|ScheduleTab|PosterTab/)
   assert.doesNotMatch(operator, /RadarTab|BoardTab/)
   assert.match(agentTab, /href="\/docs"[^>]*>智能体手册</)
   assert.match(operator, /signedIn &&/)

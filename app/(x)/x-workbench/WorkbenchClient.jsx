@@ -9,10 +9,12 @@ import { call, compact } from './api'
 import { ACTION_LABELS, OBSERVED_AGENTS, agentFootnote } from '../../../lib/x/workbench/observeCore'
 import s from './workbench.module.css'
 
-function Metric({ ready, value }) {
-  if (!ready) return <span className={s.note}>读取中</span>
-  if (value == null) return <span className={s.missing}>未采集</span>
-  return compact(value)
+function Metric({ ready, value, hero = false }) {
+  if (!ready) return hero
+    ? <span className={s.heroSkeleton} aria-hidden="true" />
+    : <span className={s.skeleton} aria-hidden="true" />
+  if (value == null) return hero ? <span className={s.heroMissing}>—</span> : <span className={s.missing}>—</span>
+  return hero ? <b className={s.heroValue}>{compact(value)}</b> : compact(value)
 }
 
 export default function WorkbenchClient() {
@@ -24,7 +26,7 @@ export default function WorkbenchClient() {
   }, [])
 
   const ready = Boolean(observe)
-  const agent = observe?.agents?.[0] || { ...OBSERVED_AGENTS[0], actions: {} }
+  const agents = observe?.agents?.length ? observe.agents : OBSERVED_AGENTS.map((agent) => ({ ...agent, actions: {} }))
 
   return (
     <XSiteFrame active="/x-workbench">
@@ -33,30 +35,44 @@ export default function WorkbenchClient() {
           <span className={s.sectionMark} aria-hidden="true" />
           <h2 className={s.sectionTitle}>大互动智能体</h2>
         </div>
-        <p className={s.question}>@TuaranX 今日通过插件执行的动作。</p>
-        <p className={s.hint}>安装 Chrome 插件并配对后，日报会汇总到此处；数据只反映本账号，不含其他 X 用户。</p>
-        <article className={`${s.agentCard} ${s.agentCardSolo}`}>
-          <h3 style={{ margin: 0 }}>{agent.name || agent.handle}</h3>
-          <a href="https://x.com/TuaranX" target="_blank" rel="noreferrer noopener" className={s.note}>@TuaranX</a>
-          <div className={s.agentMain}>
-            <b><Metric ready={ready} value={agent.actions?.posts ?? null} /></b>
-            <span className={s.note}>发帖</span>
-          </div>
-          <dl className={s.metricList}>
-            {ACTION_LABELS.filter(([key]) => key !== 'posts').map(([key, label]) => (
-              <div key={key}>
-                <dt>{label}</dt>
-                <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
-              </div>
-            ))}
-          </dl>
-        </article>
+        <p className={s.slogan}>帮更多智能体拿到 X 创作者收益</p>
+        <p className={s.hint}>使用智能体插件的账号，今天各自通过插件执行了哪些动作。数据来自插件日报，只统计自有账号。</p>
+        <div className={s.agentGrid}>
+          {agents.map((agent) => {
+            const hasReport = ready && Object.values(agent.actions || {}).some((value) => value != null)
+            return (
+              <article key={agent.handle} className={s.agentCard}>
+                <div className={s.agentCardHead}>
+                  <div className={s.agentIdentity}>
+                    <h3 className={s.agentName}>{agent.name || agent.handle}</h3>
+                    <a href={`https://x.com/${agent.handle}`} target="_blank" rel="noreferrer noopener" className={s.agentHandle}>@{agent.handle}</a>
+                  </div>
+                  <span className={`${s.statusChip} ${hasReport ? s.statusOk : ''}`}>
+                    {!ready ? '读取中' : hasReport ? '今日已汇总' : '未采集'}
+                  </span>
+                </div>
+                <div className={s.agentMain}>
+                  <Metric ready={ready} value={agent.actions?.posts ?? null} hero />
+                  <span className={s.agentMainLabel}>发帖</span>
+                </div>
+                <dl className={s.metricList}>
+                  {ACTION_LABELS.filter(([key]) => key !== 'posts').map(([key, label]) => (
+                    <div key={key}>
+                      <dt>{label}</dt>
+                      <dd><Metric ready={ready} value={agent.actions?.[key] ?? null} /></dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            )
+          })}
+        </div>
         <details className={s.fold}>
           <summary>统计口径</summary>
           <p className={s.hint}>{observe?.footnote || agentFootnote()}</p>
         </details>
         {(observe?.gaps || []).map((gap) => <p key={gap} className={s.hint}>{gap}</p>)}
-        <div className={s.row} style={{ marginTop: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className={s.actionRow}>
           <Link href="/extension" className={`${s.btn} ${s.primary}`}>获取插件</Link>
           <Link href="/theory" className={s.btn}>大互动理论</Link>
           <Link href="/docs" className={s.btn}>智能体手册</Link>

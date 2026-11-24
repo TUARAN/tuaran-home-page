@@ -2,7 +2,7 @@ import { getD1 } from '../../../../lib/db/d1'
 import { getUserFromRequest } from '../../../../lib/auth/edgeSession'
 import { GUEST_USER_PREFIX, getOrIssueGuest } from '../../../../lib/auth/guestSession'
 import { getClientIp, enforceRateLimits, cleanupRateLimits } from '../../../../lib/auth/abuseControls'
-import { createPaidOrder } from '../../../../lib/pay/orders'
+import { createPaidOrder, readPriceFen } from '../../../../lib/pay/orders'
 import { readGatewayConfig } from '../../../../lib/pay/gateways/xunhupay'
 import { workerEnv } from '../../../../lib/pay/runtimeEnv'
 import { isGuestPayResource, normalizeReturnPath } from '../../../../lib/pay/contact.mjs'
@@ -43,9 +43,11 @@ function reply(body, status = 200, setCookie = null, extraHeaders = {}) {
 
 /**
  * 创建现金支付订单。
- * - 付费文章等资源仍只认登录账号：权益挂在账号上，游客付完丢设备等于丢单。
- * - 圈子方案（community:*）允许游客下单：复用游客评论的签名 guest cookie，
- *   订单归属该 gid，支付成功后由 /api/pay/contact 收集联系邮箱。
+ * - 圈子和付费文章统一规则：只要后台给这条内容配了现金价（gated_resources.price_fen > 0），
+ *   未登录也允许下单。复用游客评论的签名 guest cookie，订单归属该 gid。
+ * - 游客付完当场在 guest:<gid> 名下写权益，可立即阅读；登录后 mergeGuestFromRequest
+ *   会把权益迁到正式账号，跨设备继续有效。
+ * - 联系邮箱由支付成功后的 /api/pay/contact 收集，落到 paid_orders.contact_email。
  */
 export async function POST(req) {
   try {
@@ -58,12 +60,16 @@ export async function POST(req) {
     const resourceKey = normalizeKey(body?.resourceKey)
     if (!resourceKey) return reply({ error: 'INVALID_RESOURCE' }, 400)
 
+    const db = getD1()
+    // 先读实配现金价：它决定这条内容是否走现金购买，也就决定游客能否下单
+    const priceFen = await readPriceFen(db, resourceKey)
+
     const user = await getUserFromRequest(req)
     let userId = user?.id ? String(user.id) : ''
     let setCookie = null
     let isGuest = false
     if (!userId) {
-      if (!isGuestPayResource(resourceKey)) return reply({ error: 'UNAUTHORIZED' }, 401)
+      if (!isGuestPayResource(resourceKey, priceFen)) return reply({ error: 'UNAUTHORIZED' }, 401)
       const guest = await getOrIssueGuest(req).catch(() => null)
       if (!guest?.gid) return reply({ error: 'GUEST_UNAVAILABLE' }, 503)
       userId = `${GUEST_USER_PREFIX}${guest.gid}`
@@ -71,7 +77,6 @@ export async function POST(req) {
       isGuest = true
     }
 
-    const db = getD1()
     const ip = getClientIp(req)
     // 游客清 cookie 即可换 gid，按 IP 主导收紧下单频率
     const limit = await enforceRateLimits(

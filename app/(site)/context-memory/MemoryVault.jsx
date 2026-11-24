@@ -17,6 +17,8 @@ function formatTs(iso) {
 }
 
 const SOURCE_META = {
+  codex: { label: 'Codex 项目规则与记忆' },
+  'codex-memory': { label: 'Codex 项目记忆文件' },
   claude: { label: 'Claude Code 项目记忆' },
   'ai-context': { label: '仓库 docs/context/' },
 }

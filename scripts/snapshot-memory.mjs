@@ -19,6 +19,18 @@ const DB_NAME = 'tuaran-me'
 
 const SOURCES = [
   {
+    id: 'codex',
+    label: 'Codex 项目规则与记忆',
+    description: '本项目 AGENTS.md 与 .codex/memories/，不读取全局跨项目记忆',
+    dir: REPO_ROOT,
+    files: ['AGENTS.md', 'docs/specs/branch-management.md', 'docs/runbooks/issue-first-workflow.md'],
+  },
+  {
+    id: 'codex-memory',
+    label: 'Codex 项目记忆文件',
+    dir: path.join(REPO_ROOT, '.codex/memories'),
+  },
+  {
     id: 'claude',
     label: 'Claude Code 项目记忆',
     description: '~/.claude/projects/…/memory/ 下的跨会话项目级记忆',
@@ -100,13 +112,13 @@ function run() {
       console.warn(`[snapshot-memory] source dir missing, skip: ${source.dir}`)
       continue
     }
-    const files = readdirSync(source.dir)
+    const files = source.files || readdirSync(source.dir)
       .filter((f) => f.endsWith('.md'))
       .filter((f) => statSync(path.join(source.dir, f)).isFile())
       .sort()
     for (const filename of files) {
       const content = readFileSync(path.join(source.dir, filename), 'utf8')
-      const slug = filename.replace(/\.md$/, '')
+      const slug = filename.replace(/\.md$/, '').replaceAll('/', '--')
       const hash = sha256Hex(content)
       if (known.get(`${source.id}/${slug}`) === hash) continue
       const meta = parseFrontmatter(content)

@@ -11,11 +11,14 @@ import {
 import { AdminButton, AdminPage } from '../../components/ui'
 import {
   BookCover,
+  BookPara,
+  BookPoints,
   BookProse,
+  BookSection,
   BookShell,
   BookSpread,
+  BookTable,
   BookToc,
-  ChapterCards,
   PaperPage,
   PrefaceLead,
   PullQuote,
@@ -60,7 +63,11 @@ function methodMeta(method) {
   }
 }
 
+const CN_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+
 function Overview({ onSelect }) {
+  const allItems = RESEARCH_METHOD_NAV.flatMap((group) => group.items)
+
   return (
     <PaperPage
       chapter="序 · 全书概览"
@@ -73,41 +80,37 @@ function Overview({ onSelect }) {
         AI 擅长把公开材料找齐、排成表、按模板起草。它能缩短翻材料的时间，却不能替人决定哪些事实足以支撑结论。
         这里收录的写法和对象方法，都按这条分工编排：机器负责摊开事实，人负责判断与取舍。
       </PrefaceLead>
-      <ol className="mb-6 grid gap-2 sm:grid-cols-3">
-        {[
-          ['01', '摊开材料', 'AI 找齐公开来源，按模板排成表。'],
-          ['02', '标出缺口', '哪些结论缺证据，明确写「写不上」。'],
-          ['03', '落下判断', '取舍、结论、是否跟进，由人定。'],
-        ].map(([num, title, desc]) => (
-          <li
-            key={num}
-            className="rounded-lg border border-[#e6e1d2] bg-[#faf8f0] px-3 py-2.5 dark:border-[#33363a] dark:bg-[#121417]"
-          >
-            <p className="m-0 mb-1 font-mono text-[10px] tracking-[0.16em] text-[#977637] dark:text-[#d6b46b]">{num}</p>
-            <p className="m-0 font-serif text-[13px] font-semibold text-[#22201a] dark:text-[#eae5d7]">{title}</p>
-            <p className="m-0 mt-1 text-[12px] leading-6 text-[#7b776b] dark:text-[#9c9688]">{desc}</p>
-          </li>
-        ))}
-      </ol>
-      <div className="space-y-6">
-        {RESEARCH_METHOD_NAV.map((group) => (
-          <section key={group.id}>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h3 className="m-0 font-serif text-[15px] font-semibold text-[#22201a] dark:text-[#eae5d7]">
-                {group.label}
-              </h3>
-              <p className="m-0 max-w-[34em] text-[12px] leading-6 text-[#7b776b] dark:text-[#9c9688]">
-                {PART_PREFACE[group.id]}
-              </p>
-            </div>
-            <ChapterCards
-              items={group.items}
-              startIndex={METHOD_INDEX.get(group.items[0].id) ?? 0}
-              onSelect={onSelect}
+
+      <BookSection num="第一节" title="三步分工">
+        <BookPoints
+          ordered
+          items={[
+            '摊开材料：AI 找齐公开来源，按模板排成表。',
+            '标出缺口：哪些结论缺证据，明确写「写不上」。',
+            '落下判断：取舍、结论、是否跟进，由人决定。',
+          ]}
+        />
+      </BookSection>
+
+      <BookSection num="第二节" title="全书篇目">
+        <BookPara>全书分两卷。卷一讲写法，卷二按对象分章。选中一行即可展开对应章节。</BookPara>
+        {RESEARCH_METHOD_NAV.map((group, groupIndex) => (
+          <div key={group.id}>
+            <BookPara><strong>卷{'一二'[groupIndex] || groupIndex + 1} · {group.label}</strong>　{PART_PREFACE[group.id]}</BookPara>
+            <BookTable
+              label={`表${CN_NUM[groupIndex] || groupIndex + 1}`}
+              title={`卷${'一二'[groupIndex] || groupIndex + 1} · ${group.label}`}
+              head={['章', '篇名', '内容']}
+              rows={group.items.map((item) => [
+                CN_NUM[METHOD_INDEX.get(item.id)] || String(METHOD_INDEX.get(item.id) + 1),
+                item.title,
+                item.summary,
+              ])}
+              onSelect={(row) => onSelect(group.items[row].id)}
             />
-          </section>
+          </div>
         ))}
-      </div>
+      </BookSection>
     </PaperPage>
   )
 }
@@ -129,83 +132,61 @@ function MethodDetail({ method }) {
   return (
     <PaperPage chapter={chapter} title={method.title} summary={method.summary} folio={folio}>
       <BookProse>
-        <p className="m-0 mb-5 font-mono text-[10px] uppercase tracking-[0.18em] text-[#977637] dark:text-[#d6b46b]">
-          {method.styleId} · {method.version === '现行风格' ? '跟随现行风格' : `v${method.version}`}
-          {method.updated ? ` · ${method.updated}` : ''}
-        </p>
+        <BookSection num="第一节" title="出处与版本">
+          <BookTable
+            label="表一"
+            title="本法的来源与去向"
+            head={['项', '内容']}
+            rows={[
+              ['适用风格', method.styleId],
+              ['版本', method.version === '现行风格' ? '跟随现行风格' : `v${method.version}`],
+              ['更新', method.updated || '—'],
+              ['正本', method.sourcePath],
+              ['成稿位置', method.outputPath],
+            ]}
+          />
+          {method.workbenchHref ? (
+            <div className="mt-3">
+              <AdminButton href={method.workbenchHref} size="sm" variant="primary">{method.workbenchLabel}</AdminButton>
+            </div>
+          ) : null}
+        </BookSection>
 
-        <dl className="mb-5 grid gap-3 text-[12.5px] leading-6 sm:grid-cols-2">
-          <div className="rounded-lg border border-[#e6e1d2] bg-[#faf8f0] px-3 py-2 dark:border-[#33363a] dark:bg-[#121417]">
-            <dt className="text-[#8a8577] dark:text-[#8b8577]">正本</dt>
-            <dd className="font-mono text-[#22201a] dark:text-gray-200">{method.sourcePath}</dd>
-          </div>
-          <div className="rounded-lg border border-[#e6e1d2] bg-[#faf8f0] px-3 py-2 dark:border-[#33363a] dark:bg-[#121417]">
-            <dt className="text-[#8a8577] dark:text-[#8b8577]">成稿位置</dt>
-            <dd className="font-mono text-[#22201a] dark:text-gray-200">{method.outputPath}</dd>
-          </div>
-        </dl>
-
-        {method.workbenchHref ? (
-          <div className="mb-6">
-            <AdminButton href={method.workbenchHref} size="sm" variant="primary">{method.workbenchLabel}</AdminButton>
-          </div>
-        ) : null}
-
-        <section className="mb-6">
-          <h3>现行步骤</h3>
-          <ol className="space-y-2">
-            {method.steps.map((step, index) => (
-              <li key={step} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-lg border border-[#e6e1d2] px-3 py-2.5 dark:border-[#33363a]">
-                <span className="font-mono text-[12px] text-[#8a8577]">{String(index + 1).padStart(2, '0')}</span>
-                <span className="text-[13.5px] leading-6 text-[#3a382f] dark:text-gray-200">{step}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <BookSection num="第二节" title="现行步骤">
+          <BookPoints ordered items={method.steps} />
+        </BookSection>
 
         {method.platforms?.length ? (
-          <section className="mb-6">
-            <h3>要打开的平台</h3>
-            <ul className="flex flex-wrap gap-2">
-              {method.platforms.map((platform) => (
-                <li key={platform} className="rounded-full border border-[#ded9c9] bg-[#faf8f0] px-3 py-1 text-[12px] text-[#4a463d] dark:border-[#33363a] dark:bg-[#121417] dark:text-gray-300">
-                  {platform}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <BookSection num="第三节" title="要打开的平台">
+            <BookPoints items={method.platforms} />
+          </BookSection>
         ) : null}
 
         {method.sections?.length ? (
-          <section className="mb-6">
-            <h3>成稿章节</h3>
-            <ol className="grid gap-2 sm:grid-cols-2">
-              {method.sections.map((section, index) => (
-                <li key={section} className="rounded-lg border border-[#e6e1d2] px-3 py-2 text-[13px] text-[#3a382f] dark:border-[#33363a] dark:text-gray-200">
-                  <span className="mr-2 font-mono text-[11px] text-[#8a8577]">{String(index + 1).padStart(2, '0')}</span>
-                  {section}
-                </li>
-              ))}
-            </ol>
-          </section>
+          <BookSection num={method.platforms?.length ? '第四节' : '第三节'} title="成稿章节">
+            <BookPoints ordered items={method.sections} />
+          </BookSection>
         ) : null}
 
         {method.prompt ? (
-          <section>
+          <BookSection
+            num={method.platforms?.length && method.sections?.length ? '第五节' : method.platforms?.length || method.sections?.length ? '第四节' : '第三节'}
+            title="提示词全文"
+          >
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="m-0 font-serif text-[12px] font-semibold tracking-[0.16em] text-[#977637] dark:text-[#d6b46b]">只有姓名时的提示词</p>
+              <p className="m-0 font-serif text-[12px] tracking-[0.08em] text-[#8a8577] dark:text-[#8b8577]">可整段复制，替换其中的占位项。</p>
               <button
                 type="button"
                 onClick={copyPrompt}
-                className="rounded-full border border-[#ded9c9] px-3 py-1 text-[12px] text-[#3a382f] hover:border-[#977637] dark:border-[#33363a] dark:text-gray-200"
+                className="rounded border border-[#b8ae94] px-2.5 py-1 text-[11px] text-[#514c41] transition hover:border-[#977637] dark:border-[#55584f] dark:text-[#b9b3a4]"
               >
                 {copied ? '已复制' : '复制提示词'}
               </button>
             </div>
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-xl border border-[#e6e1d2] bg-[#faf8f0] p-4 font-mono text-[12px] leading-6 text-[#2c2a23] dark:border-[#33363a] dark:bg-[#121417] dark:text-gray-200">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded border border-[#b8ae94] bg-[#faf8f0] p-4 font-mono text-[12px] leading-6 text-[#2c2a23] dark:border-[#55584f] dark:bg-[#121417] dark:text-gray-200">
               {method.prompt}
             </pre>
-          </section>
+          </BookSection>
         ) : null}
       </BookProse>
     </PaperPage>

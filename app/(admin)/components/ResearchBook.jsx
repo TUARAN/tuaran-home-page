@@ -181,3 +181,91 @@ export function ChapterCards({ items, onSelect, startIndex = 0 }) {
 export function BookProse({ children }) {
   return <div className={styles.bookProse}>{children}</div>
 }
+
+/* 章内体例：节 / 段 / 点 / 表 / 图 -------------------------------------- */
+
+/** 节：章下面的分节，用中文数字编号。 */
+export function BookSection({ num, title, children }) {
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionHead}>
+        <span className={styles.sectionNum}>{num}</span>
+        <span className={styles.sectionTitle}>{title}</span>
+      </h3>
+      <div className={styles.sectionBody}>{children}</div>
+    </section>
+  )
+}
+
+/** 段：书页正文段落，首行缩进。 */
+export function BookPara({ children }) {
+  return <p className={styles.para}>{children}</p>
+}
+
+/** 点：分条列举，ordered 用汉字序号，否则用圆点。 */
+export function BookPoints({ items, ordered = false }) {
+  const Tag = ordered ? 'ol' : 'ul'
+  return (
+    <Tag className={`${styles.points} ${ordered ? styles.pointsOrdered : styles.pointsPlain}`}>
+      {items.map((item, index) => <li key={index}>{item}</li>)}
+    </Tag>
+  )
+}
+
+/**
+ * 表：书页表格，带「表一 · 标题」题注。rows 为二维数组；
+ * 传 onSelect 时整行可点（用于切换写法），activeRow 高亮当前行。
+ */
+export function BookTable({ label, title, head, rows, onSelect, activeRow, note }) {
+  const interactive = typeof onSelect === 'function'
+  return (
+    <figure className={styles.tableFigure}>
+      <figcaption className={styles.figureCaption}>
+        {label ? <span className={styles.figureLabel}>{label}</span> : null}
+        <span>{title}</span>
+      </figcaption>
+      <div className={styles.tableScroll}>
+        <table className={styles.table}>
+          <thead>
+            <tr>{head.map((cell, i) => <th key={i} scope="col">{cell}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.map((row, r) => (
+              <tr
+                key={r}
+                className={`${interactive ? styles.tableRowButton : ''} ${activeRow === r ? styles.tableRowActive : ''}`}
+                role={interactive ? 'button' : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                aria-pressed={interactive ? activeRow === r : undefined}
+                onClick={interactive ? () => onSelect(r) : undefined}
+                onKeyDown={interactive ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onSelect(r)
+                  }
+                } : undefined}
+              >
+                {row.map((cell, c) => <td key={c}>{cell}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {note ? <p className={styles.figureNote}>{note}</p> : null}
+    </figure>
+  )
+}
+
+/** 图：书页插图，带「图一 · 标题」题注。 */
+export function BookFigure({ label, title, children, note }) {
+  return (
+    <figure className={styles.figure}>
+      <div className={styles.figureArt}>{children}</div>
+      <figcaption className={styles.figureCaption}>
+        {label ? <span className={styles.figureLabel}>{label}</span> : null}
+        <span>{title}</span>
+      </figcaption>
+      {note ? <p className={styles.figureNote}>{note}</p> : null}
+    </figure>
+  )
+}

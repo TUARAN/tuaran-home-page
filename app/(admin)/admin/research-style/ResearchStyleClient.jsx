@@ -6,12 +6,14 @@ import { RESEARCH_STYLE_TEMPLATES, UNIVERSAL_BAN_PHRASES } from '../../../../lib
 import { RESEARCH_STYLE_AUDIT } from '../../../../lib/research/styleAudit'
 import { AdminPage } from '../../components/ui'
 import {
+  BookFigure,
+  BookPara,
+  BookPoints,
   BookProse,
-  LeafGrid,
-  LeafTitle,
+  BookSection,
+  BookTable,
   PaperPage,
   chapterLabel,
-  chapterNumber,
   folioFor,
 } from '../../components/ResearchBook'
 
@@ -38,6 +40,8 @@ const STATUS_LABEL = {
   available: '可选风格',
   draft: '草稿',
 }
+
+const CN_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二']
 
 function StatusChip({ status }) {
   const tone = STATUS_TONE[status] || STATUS_TONE.available
@@ -77,25 +81,6 @@ function StylePill({ style, active, onClick }) {
         </span>
         <span className={`truncate font-mono text-[9px] ${active ? 'opacity-70' : 'text-[#858779] dark:text-[#8e9ab0]'}`}>{style.id}</span>
       </span>
-    </button>
-  )
-}
-
-/** 书页左叶的「本章目录」条目：序号 +  dotted leader + 状态。 */
-function BookStyleItem({ style, active, onClick, index }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? 'true' : undefined}
-      className="flex w-full items-baseline gap-2 rounded-sm px-2 py-2 text-left text-[#514c41] transition hover:bg-[#f4f1e7] dark:text-[#b9b3a4] dark:hover:bg-[#121417]"
-    >
-      <span className="shrink-0 font-mono text-[10px] text-[#977637] dark:text-[#d6b46b]">{chapterNumber(index)}</span>
-      <span className={`shrink-0 font-serif text-[13px] ${active ? 'font-bold text-[#6d3b33] dark:text-[#d89184]' : 'font-semibold'}`}>
-        {style.label}
-      </span>
-      <span className="min-w-[8px] flex-1 border-b border-dotted border-[#b8ae94] dark:border-[#55584f]" aria-hidden="true" />
-      <span className="shrink-0 font-mono text-[9px] text-[#8c8777] dark:text-[#8b8577]">{STATUS_LABEL[style.status] || style.status}</span>
     </button>
   )
 }
@@ -170,6 +155,162 @@ function TextList({ items, ordered = false }) {
   )
 }
 
+/* ── 书页体例：篇 / 章 / 节 / 段 / 点 / 表 / 图 ───────────────────────── */
+
+function BookRulesContent() {
+  const auditById = useMemo(() => new Map(RESEARCH_STYLE_AUDIT.rules.map((rule) => [rule.id, rule])), [])
+  const rows = UNIVERSAL_BAN_PHRASES.map((it, idx) => {
+    const count = auditById.get(it.id)?.occurrences || 0
+    const disposal = count
+      ? `存量 ${count} 处，${it.severity === 'review' ? '待人工判断' : '待修改'}`
+      : '暂未发现存量'
+    return [CN_NUM[idx] || String(idx + 1), it.phrase, it.why, disposal]
+  })
+
+  return (
+    <>
+      <BookSection num="第一节" title="规则的来源">
+        <BookPara>
+          措辞规则分成两层。通用禁语对所有风格生效，各风格自己的禁用表达是补充。构建之前先扫描稿件的
+          Markdown，强制禁语直接列为待改，其余候选句由人结合上下文判断。
+        </BookPara>
+      </BookSection>
+
+      <BookSection num="第二节" title="通用禁语一览">
+        <BookPara>
+          「不是 X，而是 Y」属于强制禁语，需要表达对照时拆成两句具体事实。其余候选表达由规则扫出，是否改动由人决定。
+        </BookPara>
+        <BookTable
+          label="表一"
+          title="所有风格通用的禁语"
+          head={['序', '禁语', '为什么禁', '处置']}
+          rows={rows}
+        />
+      </BookSection>
+
+      <BookSection num="第三节" title="存量处置">
+        <BookPara>
+          本次共扫描 {RESEARCH_STYLE_AUDIT.scannedFiles} 篇稿件，其中待修改{' '}
+          {RESEARCH_STYLE_AUDIT.fixCount} 处，待人工判断 {RESEARCH_STYLE_AUDIT.reviewCount} 处。
+          数字随稿件增减，以规则库和审计快照为准。
+        </BookPara>
+      </BookSection>
+    </>
+  )
+}
+
+const WRITING_ORDER = [
+  ['选风格', '先定写法'],
+  ['列事实', '摊开材料'],
+  ['写判断', '人做取舍'],
+  ['审措辞', '跑一次规则'],
+]
+
+function WritingOrderFigure() {
+  const boxW = 112
+  const boxH = 44
+  const gap = 30
+  const y = 12
+  const totalW = WRITING_ORDER.length * boxW + (WRITING_ORDER.length - 1) * gap
+
+  return (
+    <svg
+      viewBox={`0 0 ${totalW} 72`}
+      width="100%"
+      role="img"
+      aria-label="写作顺序：选风格，列事实，写判断，审措辞"
+      style={{ display: 'block', height: 'auto' }}
+    >
+      <defs>
+        <marker id="book-order-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="currentColor" />
+        </marker>
+      </defs>
+      {WRITING_ORDER.map(([name, sub], i) => {
+        const x = i * (boxW + gap)
+        return (
+          <g key={name}>
+            <rect x={x} y={y} width={boxW} height={boxH} rx="2" fill="none" stroke="currentColor" strokeWidth="1" />
+            <text x={x + boxW / 2} y={y + 19} textAnchor="middle" fontSize="12.5" fontWeight="600" fill="currentColor">
+              {name}
+            </text>
+            <text x={x + boxW / 2} y={y + 35} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.68">
+              {sub}
+            </text>
+            {i < WRITING_ORDER.length - 1 ? (
+              <line
+                x1={x + boxW + 5}
+                y1={y + boxH / 2}
+                x2={x + boxW + gap - 6}
+                y2={y + boxH / 2}
+                stroke="currentColor"
+                strokeWidth="1"
+                markerEnd="url(#book-order-arrow)"
+              />
+            ) : null}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function BookStyleDetail({ style }) {
+  if (!style) return null
+  const toRows = (items) => (items || []).map((it) => [it.phrase, it.why])
+
+  return (
+    <>
+      <BookSection num="第三节" title={`${style.label} · 定位`}>
+        <BookPara>{style.summary}</BookPara>
+        <BookPara>{style.whyItMatters}</BookPara>
+        {style.sourceSkills?.length ? (
+          <BookPara>关联技能：{style.sourceSkills.join('、')}。</BookPara>
+        ) : null}
+      </BookSection>
+
+      <BookSection num="第四节" title="适用场景">
+        <BookPara>{style.trigger}</BookPara>
+      </BookSection>
+
+      <BookSection num="第五节" title="调用指令">
+        <BookPoints items={style.commandHints} />
+      </BookSection>
+
+      <BookSection num="第六节" title="核心原则">
+        <BookPoints items={style.principles} />
+      </BookSection>
+
+      <BookSection num="第七节" title="结构骨架">
+        <BookPoints items={style.structure} ordered />
+      </BookSection>
+
+      <BookSection num="第八节" title="禁用表达">
+        <BookTable
+          label="表二"
+          title={`${style.label} · 禁用表达`}
+          head={['表达', '为什么禁']}
+          rows={toRows(style.badPhrases)}
+          note="通用禁语见表一；此处只列本风格补充的条目。"
+        />
+      </BookSection>
+
+      <BookSection num="第九节" title="建议表达">
+        <BookTable
+          label="表三"
+          title={`${style.label} · 建议表达`}
+          head={['表达', '为什么用']}
+          rows={toRows(style.goodPhrases)}
+        />
+      </BookSection>
+
+      <BookSection num="第十节" title="落地清单">
+        <BookPoints items={style.howToApply} ordered />
+      </BookSection>
+    </>
+  )
+}
+
 function RulesContent({ defaultOpen = false }) {
   const [showRules, setShowRules] = useState(defaultOpen)
   const auditById = useMemo(() => new Map(RESEARCH_STYLE_AUDIT.rules.map((rule) => [rule.id, rule])), [])
@@ -240,7 +381,7 @@ function RulesPanel({ defaultOpen = false }) {
   return <RulesContent defaultOpen={defaultOpen} />
 }
 
-function BookRulesPanel({ defaultOpen = false }) {
+function BookRulesPanel() {
   return (
     <PaperPage
       chapter={chapterLabel(0, '写作规范')}
@@ -249,7 +390,7 @@ function BookRulesPanel({ defaultOpen = false }) {
       folio={folioFor(0)}
     >
       <BookProse>
-        <RulesContent defaultOpen={defaultOpen} />
+        <BookRulesContent />
       </BookProse>
     </PaperPage>
   )
@@ -260,6 +401,7 @@ function StylesPanel({ book = false }) {
   const initial = styles.find((t) => t.status === 'active') || styles[0]
   const [selectedId, setSelectedId] = useState(initial?.id)
   const selected = styles.find((t) => t.id === selectedId) || initial
+  const activeRow = Math.max(0, styles.findIndex((s) => s.id === selected?.id))
 
   const orderNote = (
     <div className="rounded-xl border border-dashed border-[#caccc0] bg-transparent p-3 text-[11px] leading-relaxed text-[#73746a] dark:border-[#2d3744] dark:text-[#9aa3b3]">
@@ -278,26 +420,36 @@ function StylesPanel({ book = false }) {
         summary="先定写法，再写内容。同一组事实用不同风格写出来，取舍仍由人做。"
         folio={folioFor(1)}
       >
-        <LeafGrid
-          left={
-            <>
-              <LeafTitle>本章目录 · {styles.length} 种写法</LeafTitle>
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {styles.map((style, index) => (
-                  <BookStyleItem
-                    key={style.id}
-                    style={style}
-                    index={index}
-                    active={style.id === selectedId}
-                    onClick={() => setSelectedId(style.id)}
-                  />
-                ))}
-              </div>
-              {orderNote}
-            </>
-          }
-          right={<StyleCard style={selected} book />}
-        />
+        <BookSection num="第一节" title="六种写法">
+          <BookPara>
+            写法决定材料的取舍和语气。选中一种，下文展开它的定位、原则与骨架。
+          </BookPara>
+          <BookTable
+            label="表一"
+            title="六种写法对照"
+            head={['序', '写法', '类别']}
+            rows={styles.map((style, i) => [
+              CN_NUM[i] || String(i + 1),
+              style.label,
+              STATUS_LABEL[style.status] || style.status,
+            ])}
+            onSelect={(i) => setSelectedId(styles[i].id)}
+            activeRow={activeRow}
+            note="选中一行，下文展开该写法的完整体例。"
+          />
+        </BookSection>
+
+        <BookSection num="第二节" title="写作顺序">
+          <BookFigure
+            label="图一"
+            title="从选风格到审计措辞"
+            note="先定写法，再摊开事实、落下判断，最后跑一次措辞审计。"
+          >
+            <WritingOrderFigure />
+          </BookFigure>
+        </BookSection>
+
+        <BookStyleDetail style={selected} />
       </PaperPage>
     )
   }
@@ -335,7 +487,7 @@ export default function ResearchStyleClient({ embedded = false, view = 'all', bo
   if (book) {
     return (
       <>
-        {showRules ? <BookRulesPanel defaultOpen={view === 'rules'} /> : null}
+        {showRules ? <BookRulesPanel /> : null}
         {showStyles ? <StylesPanel book /> : null}
       </>
     )

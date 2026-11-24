@@ -43,23 +43,11 @@ function PublishChannels() {
   return (
     <Section
       title="新内容怎样上线"
-      description="选择编辑器、Git 调研审批或自动化工作台。"
+      description="选择 Git 调研审批或自动化工作台。"
     >
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-2">
         <article className="flex flex-col rounded-lg border border-[#eceee6] p-4 dark:border-[#243041]">
           <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道一</p>
-          <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">后台文章编辑器</h3>
-          <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
-            打开编辑器写作，点发布后立刻出现在目录。
-          </p>
-          <div className="mt-3">
-            <AdminButton href="/admin/articles/new" size="sm" variant="primary">
-              <IconPlus size={15} />写文章
-            </AdminButton>
-          </div>
-        </article>
-        <article className="flex flex-col rounded-lg border border-[#eceee6] p-4 dark:border-[#243041]">
-          <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道二</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">Git 调研</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
             正本在 GitHub 的 <code>research/*.md</code>。push 之后打开「审批调研」，核对正文再发布。commit 加上 <code>[CF-Pages-Skip]</code>。写法在 <Link href="/admin/research-methods" className="underline">调研方法</Link>。
@@ -71,7 +59,7 @@ function PublishChannels() {
           </div>
         </article>
         <article className="flex flex-col rounded-lg border border-[#eceee6] p-4 dark:border-[#243041]">
-          <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道三</p>
+          <p className="mb-1 font-mono text-[11px] tracking-wide text-[#8b8d82]">通道二</p>
           <h3 className="font-serif text-[1.02rem] font-semibold text-[#15140f] dark:text-gray-100">A 股 / 加密观察</h3>
           <p className="mt-2 flex-1 text-[13px] leading-6 text-[#55574f] dark:text-gray-400">
             定时任务起草。复核、退回和自动发布都在自动化工作台。

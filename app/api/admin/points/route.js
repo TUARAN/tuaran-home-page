@@ -11,6 +11,7 @@ import {
   listResources,
   reconcileUnlockLedgerForAccounts,
   reconcileUnlockLedgerForUser,
+  reconcileUserPointsSummary,
   reverseLedgerEntry,
   updatePointRules,
   upsertResource,
@@ -269,6 +270,13 @@ export async function POST(req) {
     if (action === 'reconcile') {
       const result = await reconcileUnlockLedgerForUser(db, body?.userId)
       if (!result.ok) return Response.json(result, { status: result.status || 400 })
+      return Response.json({ ok: true, ...result })
+    }
+
+    // 供应量计数器与全表聚合对账：返回差额并就地修复。
+    if (action === 'reconcileSupply') {
+      const result = await reconcileUserPointsSummary(db)
+      if (!result.ok) return Response.json(result, { status: 400 })
       return Response.json({ ok: true, ...result })
     }
 

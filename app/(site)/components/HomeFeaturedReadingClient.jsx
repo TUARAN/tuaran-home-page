@@ -28,6 +28,7 @@ import {
 } from '../../../lib/home/homeRecommendationEngine'
 import { HOME_OBSERVATION_ENTRY_LINKS } from '../../../lib/home/homeAuthority'
 import { trackSiteEvent } from '../../../lib/site/siteAnalytics'
+import HomeListCover from './HomeListCover'
 import HomeSectionCouplet from './HomeSectionCouplet'
 import H5PullToRefresh from './H5PullToRefresh'
 import { T } from './LocaleProvider'
@@ -50,15 +51,20 @@ const SECTION_BADGE_CLASS = {
 function FeaturedLink({ item, isPinned, desktopOnly = false, position = 0, surface = 'home_recommendation' }) {
   const content = (
     <>
-      <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
-        {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
-        <span className={`hidden md:inline-flex ${SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}`}>{item.sectionLabel}</span>
-        {item.tagLabel ? <span className="home-badge home-badge-muted hidden md:inline-flex">{item.tagLabel}</span> : null}
-        {item.date ? <time className="home-item-date hidden md:inline">{item.date}</time> : null}
+      <div className="home-reading-body min-w-0">
+        <div className={`home-reading-meta ${isPinned ? '' : 'hidden md:flex'}`}>
+          {isPinned ? <span className="home-badge home-badge-pinned"><T zh="置顶" en="Pinned" /></span> : null}
+          <span className={`hidden md:inline-flex ${SECTION_BADGE_CLASS[item.section] || SECTION_BADGE_CLASS.column}`}>{item.sectionLabel}</span>
+          {item.tagLabel ? <span className="home-badge home-badge-muted hidden md:inline-flex">{item.tagLabel}</span> : null}
+          {item.date ? <time className="home-item-date hidden md:inline">{item.date}</time> : null}
+        </div>
+        <p className="h5-feed-title mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:text-[20px] md:leading-7">{item.title}</p>
+        {item.summary ? <p className="h5-feed-summary mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}
+        {item.date ? <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden">{item.date}</time> : null}
       </div>
-      <p className="h5-feed-title mb-0 line-clamp-2 text-[16px] font-semibold leading-snug text-[var(--site-ink)] transition-colors group-hover:text-[var(--site-accent-strong)] md:text-[20px] md:leading-7">{item.title}</p>
-      {item.summary ? <p className="h5-feed-summary mb-0 mt-1 line-clamp-1 text-[13px] leading-5 text-[var(--site-muted)] md:mt-1.5 md:line-clamp-2 md:text-[15px] md:leading-6">{item.summary}</p> : null}
-      {item.date ? <time className="h5-feed-meta mt-1 block text-[11px] text-[var(--site-faint)] md:hidden">{item.date}</time> : null}
+      <div className="home-reading-cover">
+        <HomeListCover item={item} />
+      </div>
     </>
   )
   const className = `h5-feed-row home-reading-item group no-underline${desktopOnly ? ' max-lg:hidden' : ''}`

@@ -3732,7 +3732,40 @@
   }
 
   .home-reading-item {
-    @apply block px-0 py-3.5 last:pb-0;
+    @apply grid grid-cols-[minmax(0,1fr)_72px] items-start gap-3 px-0 py-3.5 last:pb-0 md:grid-cols-[minmax(0,1fr)_136px] md:gap-4;
+  }
+
+  .home-reading-cover {
+    @apply relative h-[72px] w-[72px] overflow-hidden rounded-[4px] border md:h-24 md:w-[136px] md:rounded-md;
+    border-color: var(--site-line);
+    background: var(--site-panel);
+  }
+
+  .home-reading-cover img,
+  .home-reading-cover svg {
+    @apply block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04];
+  }
+
+  .home-cover-tone-accent {
+    --home-cover-base: var(--site-accent);
+  }
+
+  .home-cover-tone-blue {
+    --home-cover-base: var(--site-blue);
+  }
+
+  .home-cover-tone-green {
+    --home-cover-base: var(--site-green);
+  }
+
+  .home-cover-tone-stone {
+    --home-cover-base: var(--site-ink);
+  }
+
+  .home-cover-pattern {
+    --home-cover-bg: color-mix(in srgb, var(--home-cover-base) 12%, var(--site-panel-strong));
+    --home-cover-soft: color-mix(in srgb, var(--home-cover-base) 34%, var(--site-panel-strong));
+    --home-cover-ink: color-mix(in srgb, var(--home-cover-base) 68%, var(--site-ink));
   }
 
   .home-reading-skeleton {

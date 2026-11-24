@@ -66,9 +66,10 @@ export default function AdminShell({ children }) {
   }, [mobileOpen])
 
   // 侧栏徽标计数（best-effort，端点未就绪时静默）
+  // 只取 badges：完整总览会顺带聚合 1.5 万行阅读明细，切页面时白扫。
   useEffect(() => {
     let alive = true
-    fetch('/api/admin/overview', { cache: 'no-store', credentials: 'same-origin' })
+    fetch('/api/admin/overview?fields=badges', { cache: 'no-store', credentials: 'same-origin' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (alive && data?.badges) setBadges(data.badges)

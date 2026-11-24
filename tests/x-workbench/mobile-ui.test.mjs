@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import test from 'node:test'
+
+const cssUrl = new URL('../../app/(x)/x-workbench/workbench.module.css', import.meta.url)
+const homeUrl = new URL('../../app/(x)/x-workbench/WorkbenchClient.jsx', import.meta.url)
+const operatorUrl = new URL('../../app/(x)/x-workbench/OperatorClient.jsx', import.meta.url)
+const agentTabUrl = new URL('../../app/(x)/x-workbench/AgentTab.jsx', import.meta.url)
+
+const read = () => Promise.all([
+  readFile(cssUrl, 'utf8'),
+  readFile(homeUrl, 'utf8'),
+  readFile(operatorUrl, 'utf8'),
+  readFile(agentTabUrl, 'utf8'),
+])
+
+test('H5 有统一盒模型、三层断点与刘海屏安全区', async () => {
+  const [css] = await read()
+  assert.match(css, /\.app, \.app \*, \.app \*::before, \.app \*::after \{ box-sizing: border-box; \}/)
+  for (const width of [960, 640, 380]) assert.match(css, new RegExp(`@media \\(max-width: ${width}px\\)`))
+  assert.match(css, /env\(safe-area-inset-top/)
+  assert.match(css, /env\(safe-area-inset-bottom/)
+})
+
+test('H5 触控目标与表单按手机标准，卡片改为紧凑横排', async () => {
+  const [css] = await read()
+  const phone = css.slice(css.indexOf('@media (max-width: 640px)'), css.indexOf('@media (max-width: 380px)'))
+  assert.match(phone, /\.btn \{ min-height: 44px;/)
+  assert.match(phone, /\.input \{ font-size: 16px; min-height: 44px;/)
+  assert.match(phone, /\.agentCard \{[^}]*grid-template-areas: "head head" "main metrics"/)
+  assert.match(phone, /\.metricList div:last-child \{ grid-column: span 2; \}/)
+  assert.match(phone, /\.actionRow \{ display: grid; grid-template-columns: 1fr 1fr;/)
+})
+
+test('首页加载态用骨架条，状态由卡片 chip 统一表达', async () => {
+  const [, home] = await read()
+  assert.match(home, /s\.heroSkeleton/)
+  assert.match(home, /s\.skeleton/)
+  assert.match(home, /s\.statusChip/)
+  assert.match(home, /未采集/)
+  assert.match(home, /s\.slogan.*帮更多智能体拿到 X 创作者收益/)
+  assert.match(home, /s\.actionRow/)
+})
+
+test('后台手机布局有独立表单类，账号选择与智能体保留', async () => {
+  const [, , operator, agentTab] = await read()
+  assert.match(operator, /s\.accountRow/)
+  assert.match(operator, /s\.accountSelect/)
+  assert.match(operator, /当前 X 账号/)
+  assert.match(agentTab, /s\.accountChips/)
+  assert.match(agentTab, /s\.bindForm/)
+  assert.match(agentTab, /s\.fieldInput/)
+  assert.match(agentTab, /s\.pairRow/)
+  assert.doesNotMatch(`${operator}\n${agentTab}`, /ScheduleTab|PosterTab/)
+})

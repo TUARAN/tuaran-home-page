@@ -19,6 +19,8 @@
 - 面向外部用户，需要多租户、额度、付费与滥用防护。
 - 账号沿用主站登录态：`lib/auth/edgeSession.js` 已支持 `Domain=.2aran.com` Cookie；`x.2aran.com` 通过 `/api/me` 与 `SharedSessionProvider` 展示与主站同一账号，未登录时跳转 `2aran.com/login?returnTo=`。
 - 云端负责规划、改写、排期和数据；操作 X 页面的动作全部由 Chrome 插件执行。
+- H5（手机端）版式统一在 `app/(x)/x-workbench/workbench.module.css` 的三层断点（960 / 640 / 380px）里维护：统一 `box-sizing: border-box` 避免 padding 把内容顶出视口；顶栏收成「品牌 + 操作」一行与「可横滑导航」一行；按钮、下拉、输入框最小 44px，输入框 16px 防 iOS 自动缩放；账号卡在 380–640px 横排压缩高度、≤380px 改单列；底部留 `env(safe-area-inset-bottom)`。加载态用骨架条，缺日报显示 `—` 并由卡片右上角 chip 标注「未采集」。回归断言在 `tests/x-workbench/mobile-ui.test.mjs`。
+- `/theory`、`/calendar`、`/roundtable`、`/docs` 由主站 `app/(site)` 版式渲染，移动端断点在各自 CSS module 里维护，不受 `workbench.module.css` 影响。
 
 ## 已采用的决策（站长 2026-11-22 确认按推荐方案）
 

@@ -44,15 +44,15 @@ export default function OperatorClient() {
     <XSiteFrame active="/x-workbench">
       {!ready && <p className={s.hint}>读取中</p>}
       {ready && !signedIn && (
-        <>
+        <section className={s.card}>
           <h1 className={s.h2}>登录后继续</h1>
           <a className={`${s.btn} ${s.primary}`} href={loginHref}>登录</a>
-        </>
+        </section>
       )}
       {ready && signedIn && (
         <>
-          <div className={s.row}>
-            <select className={s.input} value={handle} onChange={(event) => setHandle(event.target.value)} aria-label="当前 X 账号">
+          <div className={s.accountRow}>
+            <select className={`${s.input} ${s.accountSelect}`} value={handle} onChange={(event) => setHandle(event.target.value)} aria-label="当前 X 账号">
               {accounts.length === 0 && <option value="">未绑定账号</option>}
               {accounts.map((account) => <option key={account.handle} value={account.handle}>@{account.handle}</option>)}
             </select>

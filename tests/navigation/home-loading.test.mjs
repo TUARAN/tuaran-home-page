@@ -5,7 +5,6 @@ import test from 'node:test'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import * as engine from '../../lib/home/homeRecommendationEngine.js'
-import * as coverPattern from '../../lib/home/homeCoverPattern.js'
 
 const require = createRequire(import.meta.url)
 const { transform } = require('next/dist/build/swc')
@@ -17,7 +16,6 @@ const dependencies = {
   'next/navigation': { useRouter: () => ({ push() {} }) },
   '@tabler/icons-react': new Proxy({}, { get: () => () => null }),
   '../../../lib/home/homeRecommendationEngine': engine,
-  '../../../lib/home/homeCoverPattern': coverPattern,
   '../../../lib/site/siteAnalytics': { trackSiteEvent() {} },
   '../../../lib/home/homeAuthority': { HOME_OBSERVATION_ENTRY_LINKS: [] },
   './H5PullToRefresh': ({ children }) => children,
@@ -39,9 +37,6 @@ async function loadComponent(name) {
   return loadedModule.exports
 }
 
-const CoverPattern = (await loadComponent('HomeCoverPattern')).default
-dependencies['./HomeCoverPattern'] = CoverPattern
-dependencies['./HomeListCover'] = (await loadComponent('HomeListCover')).default
 const Reading = (await loadComponent('HomeFeaturedReadingClient')).default
 dependencies['./HomeFeaturedReadingClient'] = Reading
 const { default: Columns, HomeInspirations } = await loadComponent('HomePrimaryColumnsClient')
@@ -136,36 +131,6 @@ test('home article list keeps the latest tab and does not render a latest badge'
   assert.match(html, />AI</)
   assert.match(html, /home-article-scope-observation/)
   assert.doesNotMatch(html, /home-badge-latest/)
-})
-
-test('server HTML paints one cover per recommendation row before hydration', () => {
-  const html = renderToStaticMarkup(React.createElement(Reading, { catalog }))
-  const rows = html.match(/class="h5-feed-row home-reading-item group/g) || []
-  const covers = html.match(/class="home-reading-cover"><svg class="home-cover-pattern home-cover-tone-(?:accent|blue|green|stone)"/g) || []
-  assert.ok(rows.length >= 6, `rows ${rows.length}`)
-  assert.equal(covers.length, rows.length)
-  assert.match(html, /viewBox="0 0 136 96"/)
-})
-
-test('a row with a real cover renders the image instead of a pattern', () => {
-  const html = renderToStaticMarkup(React.createElement(Reading, {
-    catalog: [
-      {
-        id: 'column:with-cover',
-        section: 'column',
-        sectionLabel: '创作',
-        title: '带封面的文章',
-        href: '/articles/with-cover',
-        date: '2026-10-01',
-        sortKey: '2026-10-01T00:00:00',
-        cover: { src: 'https://example.com/cover.jpg', alt: '带封面的文章 封面' },
-      },
-      ...catalog,
-    ],
-  }))
-  const row = html.slice(html.indexOf('with-cover"'), html.indexOf('</a>', html.indexOf('with-cover"')))
-  assert.match(row, /<img src="https:\/\/example\.com\/cover\.jpg" alt="" loading="lazy"/)
-  assert.doesNotMatch(row, /home-cover-pattern/)
 })
 
 test('home featured reading keeps the first painted batch after the recommendation API returns', async () => {

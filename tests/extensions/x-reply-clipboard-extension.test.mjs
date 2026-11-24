@@ -4668,21 +4668,15 @@ test('short DOM polling stays local instead of flooding the offscreen timer chan
   assert.equal(sent, 0)
 })
 
-test('post pace editor uses real POST_SCHEDULE_PROFILES fields, not undefined minutes', async () => {
+test('settings page shows pace as read-only text instead of editable numbers', async () => {
   const source = await readFile(new URL('content.js', extensionDir), 'utf8')
-  const paceNumber = source.match(/  function paceNumberValue\(value, fallback\) \{[\s\S]*?\n  \}/)?.[0]
-  const paceRange = source.match(/  function paceRange\(inputs\) \{[\s\S]*?\n  \}/)?.[0]
-  const postPaceInput = source.match(/  function postPaceInput\(profile, field\) \{[\s\S]*?\n  \}/)?.[0]
-  const postHtml = source.match(/  function postPaceEditorHtml\(\) \{[\s\S]*?\n  \}/)?.[0]
-  const limits = source.match(/  const POST_PACE_LIMITS = \{[\s\S]*?\n  \};/)?.[0]
-  const pairs = source.match(/  const POST_PACE_PAIRS = \[[\s\S]*?\];/)?.[0]
-  assert.ok(paceNumber && paceRange && postPaceInput && postHtml && limits && pairs)
-  const sandbox = vm.createContext({ postApi: poster })
-  vm.runInContext(`${limits}\n${pairs}\n${paceNumber}\n${paceRange}\n${postPaceInput}\n${postHtml}\nglobalThis.html = postPaceEditorHtml()`, sandbox)
-  assert.doesNotMatch(sandbox.html, /value="undefined"/)
-  assert.match(sandbox.html, /data-field="minCycleMinutes"/)
-  assert.match(sandbox.html, /data-field="minBatch"/)
-  assert.match(sandbox.html, /value="45"/)
+  assert.match(source, /function paceSummaryHtml\(\)/)
+  assert.match(source, /data-xrc-pace-summary/)
+  assert.doesNotMatch(source, /data-xrc-reply-pace-input/)
+  assert.doesNotMatch(source, /data-xrc-post-pace-input/)
+  assert.doesNotMatch(source, /function readReplyPaceForm|function readPostPaceForm|function replyPaceEditorHtml|function postPaceEditorHtml/)
+  assert.doesNotMatch(source, /PACE_SETTINGS_KEY|xrcPaceSettings/)
+  assert.doesNotMatch(source, /loadPaceSettings|applyStoredReplyPaces|applyStoredPostPaces/)
 })
 
 test('AI poster sends one post per turn and keeps the time-of-day interval', async () => {
@@ -8386,7 +8380,8 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.doesNotMatch(content, /data-xrc-runtime/)
   assert.match(content, /randomReplyDelaySeconds\(Math\.random, replyCadencePace\(\), state\.assistantMode === "notifications" \? 1 : state\.boundaryLevel\)/)
   assert.match(content, /DEFAULT_ROUND_INTERVAL_SECONDS = 5/)
-  assert.match(content, /每条间隔/)
+  assert.match(content, /data-xrc-pace-summary/)
+  assert.doesNotMatch(content, /每轮条数/)
   assert.match(content, /data-xrc-wait/)
   assert.doesNotMatch(content, /data-xrc-post-wait/)
   assert.match(content, /data-xrc-reply-timeline-prompt/)
@@ -8448,7 +8443,7 @@ test('content script keeps the randomized reply loop wired to the reply popup', 
   assert.match(content, /data-xrc-pace/)
   assert.match(content, /重启任务/)
   assert.match(content, /运行中不能改频率/)
-  assert.match(content, /慢、中、快、超快/)
+  assert.match(content, /在对应任务页点慢、中、快或超快/)
   const downloadVersion = catalog.match(/objectKey: 'downloads\/x-reply-clipboard-extension-v([\d.]+)\.zip'/)?.[1]
   assert.ok(downloadVersion)
   assert.match(resourcePage, /SOURCE_VERSION = JSON\.parse\(readFileSync\(join\(process\.cwd\(\), 'tools\/x-reply-clipboard-extension\/manifest\.json'\)/)

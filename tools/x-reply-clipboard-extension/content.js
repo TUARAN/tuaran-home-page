@@ -78,7 +78,6 @@
   const CARD_QUOTA_KEY = postApi?.CARD_QUOTA_KEY || "xrcPosterCardQuota";
   const POSTER_PACE_DEFAULT_VERSION_KEY = "xrcPosterPaceDefaultVersion";
   const POSTER_PACE_DEFAULT_VERSION = 1;
-  const PACE_SETTINGS_KEY = "xrcPaceSettings";
   const TOOLBOX_SETTINGS_KEY = "xrcToolboxSettings";
   const DEFAULT_REPLY_TIMELINE_PROMPT = [
     "你在 X 上随手回别人的帖子。只输出回复正文，不要解释。",
@@ -134,37 +133,7 @@
   // agentPlanner.js loads before content.js and owns the default planner prompt.
   const DEFAULT_PLANNER_PROMPT = globalThis.XrcAgentPlanner?.DEFAULT_PROMPT || "";
   const CLICKBAIT_POST_PROMPT = DEFAULT_POST_NORMAL_PROMPT;
-  const REPLY_PACE_LIMITS = {
-    minReplyDelaySeconds: [1, 180],
-    maxReplyDelaySeconds: [1, 180],
-    minRepliesPerRound: [1, 80],
-    maxRepliesPerRound: [1, 80],
-    minRoundsPerRun: [1, 12],
-    maxRoundsPerRun: [1, 12],
-    minCycleDelayMinutes: [1, 1440],
-    maxCycleDelayMinutes: [1, 1440],
-    roundIntervalSeconds: [1, 300]
-  };
-  const REPLY_PACE_PAIRS = [
-    ["minReplyDelaySeconds", "maxReplyDelaySeconds", "每条间隔（秒）"],
-    ["minRepliesPerRound", "maxRepliesPerRound", "每轮条数"],
-    ["minRoundsPerRun", "maxRoundsPerRun", "每次轮数"],
-    ["minCycleDelayMinutes", "maxCycleDelayMinutes", "执行后休息（分钟）"]
-  ];
   const KOL_REPLIES_PER_HANDLE = Object.freeze({ slow: 3, medium: 5, fast: 7, turbo: 11, boundary: 3 });
-  const POST_PACE_LIMITS = {
-    minBatch: [1, 1],
-    maxBatch: [1, 1],
-    minGapSeconds: [1, 120],
-    maxGapSeconds: [1, 120],
-    minCycleMinutes: [1, 240],
-    maxCycleMinutes: [1, 240]
-  };
-  const POST_PACE_PAIRS = [
-    ["minBatch", "maxBatch", "每次任务条数"],
-    ["minGapSeconds", "maxGapSeconds", "条间间隔（秒）"],
-    ["minCycleMinutes", "maxCycleMinutes", "批次间隔（分钟）"]
-  ];
   const PANEL_PLACEMENT_KEY = "xrcPanelPlacement";
   const MAX_ROUND_INTERVAL_SECONDS = 3600;
   const COMPOSER_TIMEOUT_MS = 5000;
@@ -5052,92 +5021,6 @@
     postApi?.setSchedulePace?.(profile.id);
   }
 
-  function applyStoredReplyPaces(replyPaces) {
-    if (!replyPaces || typeof replyPaces !== "object") return;
-    for (const profile of loopApi.SCHEDULE_PROFILES) {
-      const custom = replyPaces[profile.id];
-      if (!custom || typeof custom !== "object") continue;
-      for (const [field, limits] of Object.entries(REPLY_PACE_LIMITS)) {
-        const number = Math.round(Number(custom[field]));
-        if (Number.isInteger(number) && number >= limits[0] && number <= limits[1]) profile[field] = number;
-      }
-    }
-  }
-
-  function applyStoredPostPaces(postPaces) {
-    if (!postPaces || typeof postPaces !== "object" || !postApi?.POST_SCHEDULE_PROFILES) return;
-    for (const profile of postApi.POST_SCHEDULE_PROFILES) {
-      const custom = postPaces[profile.id];
-      if (!custom || typeof custom !== "object") continue;
-      const legacy = {
-        ...custom,
-        minCycleMinutes: custom.minCycleMinutes ?? custom.minMinutes,
-        maxCycleMinutes: custom.maxCycleMinutes ?? custom.maxMinutes
-      };
-      for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
-        const number = Math.round(Number(legacy[field]));
-        if (Number.isInteger(number) && number >= limits[0] && number <= limits[1]) profile[field] = number;
-      }
-    }
-  }
-
-  async function loadPaceSettings() {
-    if (!globalThis.chrome?.storage?.local) return;
-    try {
-      const stored = await chrome.storage.local.get(PACE_SETTINGS_KEY);
-      const value = stored?.[PACE_SETTINGS_KEY] || {};
-      applyStoredReplyPaces(value.reply);
-      applyStoredPostPaces(value.post);
-      applySchedulePace(state.schedulePace);
-      applyPosterPace(state.posterPace);
-    } catch (error) {
-      // Keep the built-in pace definitions.
-    }
-  }
-
-  function readPaceNumber(input, limits) {
-    const number = Math.round(Number(input?.value));
-    if (!Number.isInteger(number) || number < limits[0] || number > limits[1]) return null;
-    return number;
-  }
-
-  function readReplyPaceForm(panel) {
-    const value = {};
-    for (const profile of loopApi.SCHEDULE_PROFILES) {
-      const next = {};
-      for (const [field, limits] of Object.entries(REPLY_PACE_LIMITS)) {
-        const input = panel.querySelector(`[data-xrc-reply-pace-input][data-pace="${profile.id}"][data-field="${field}"]`);
-        const number = readPaceNumber(input, limits);
-        if (number === null) return { error: `${profile.label}的数字需要在 ${limits[0]} 到 ${limits[1]} 之间` };
-        next[field] = number;
-      }
-      for (const [minField, maxField, label] of REPLY_PACE_PAIRS) {
-        if (next[minField] > next[maxField]) return { error: `${profile.label}的${label}，左边不能大于右边` };
-      }
-      value[profile.id] = next;
-    }
-    return { value };
-  }
-
-  function readPostPaceForm(panel) {
-    const profiles = postApi?.POST_SCHEDULE_PROFILES || [];
-    const value = {};
-    for (const profile of profiles) {
-      const next = {};
-      for (const [field, limits] of Object.entries(POST_PACE_LIMITS)) {
-        const input = panel.querySelector(`[data-xrc-post-pace-input][data-pace="${profile.id}"][data-field="${field}"]`);
-        const number = readPaceNumber(input, limits);
-        if (number === null) return { error: `发推「${profile.label}」的数字需要在 ${limits[0]} 到 ${limits[1]} 之间` };
-        next[field] = number;
-      }
-      for (const [minField, maxField, label] of POST_PACE_PAIRS) {
-        if (next[minField] > next[maxField]) return { error: `发推「${profile.label}」的${label}，左边不能大于右边` };
-      }
-      value[profile.id] = next;
-    }
-    return { value };
-  }
-
   function paceNumberValue(value, fallback) {
     const number = Math.round(Number(value));
     return Number.isFinite(number) ? String(number) : String(fallback);
@@ -5180,44 +5063,17 @@
     return `<div class="${tableClass}" role="radiogroup" aria-label="${label}" style="--xrc-pace-cols:${brief ? 1 : columns.length + 1}"><div class="xrc-pace-table-head" role="row">${head}</div>${rows}${unlimitedRow}</div>`;
   }
 
-  function replyPaceInput(profile, field) {
-    const limits = REPLY_PACE_LIMITS[field];
-    return `<input type="number" data-xrc-reply-pace-input data-pace="${profile.id}" data-field="${field}" value="${paceNumberValue(profile[field], limits[0])}" min="${limits[0]}" max="${limits[1]}">`;
-  }
-
-  function postPaceInput(profile, field) {
-    const limits = POST_PACE_LIMITS[field];
-    return `<input type="number" data-xrc-post-pace-input data-pace="${profile.id}" data-field="${field}" value="${paceNumberValue(profile[field], limits[0])}" min="${limits[0]}" max="${limits[1]}">`;
-  }
-
-  function paceRange(inputs) {
-    return `<span class="xrc-pace-range">${inputs[0]}<i>～</i>${inputs[1]}</span>`;
-  }
-
-  function replyPaceEditorHtml() {
-    const rows = loopApi.SCHEDULE_PROFILES.map((profile) => `
-      <tr>
-        <th scope="row">${profile.label}</th>
-        <td>${paceRange([replyPaceInput(profile, "minRoundsPerRun"), replyPaceInput(profile, "maxRoundsPerRun")])}</td>
-        <td>${paceRange([replyPaceInput(profile, "minRepliesPerRound"), replyPaceInput(profile, "maxRepliesPerRound")])}</td>
-        <td>${paceRange([replyPaceInput(profile, "minReplyDelaySeconds"), replyPaceInput(profile, "maxReplyDelaySeconds")])} 秒</td>
-        <td>${replyPaceInput(profile, "roundIntervalSeconds")} 秒</td>
-        <td>${paceRange([replyPaceInput(profile, "minCycleDelayMinutes"), replyPaceInput(profile, "maxCycleDelayMinutes")])} 分钟</td>
-      </tr>
-    `).join("");
-    return `<div class="xrc-pace-table-scroll"><table class="xrc-pace-edit"><thead><tr><th>速度</th><th>每次轮数</th><th>一轮条数</th><th>条与条之间</th><th>轮与轮之间</th><th>做完休息</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  }
-
-  function postPaceEditorHtml() {
-    const rows = (postApi?.POST_SCHEDULE_PROFILES || []).map((profile) => `
-      <tr>
-        <th scope="row">${profile.label}</th>
-        <td>${paceRange([postPaceInput(profile, "minBatch"), postPaceInput(profile, "maxBatch")])}</td>
-        <td>${paceRange([postPaceInput(profile, "minGapSeconds"), postPaceInput(profile, "maxGapSeconds")])} 秒</td>
-        <td>${paceRange([postPaceInput(profile, "minCycleMinutes"), postPaceInput(profile, "maxCycleMinutes")])} 分钟</td>
-      </tr>
-    `).join("");
-    return `<div class="xrc-pace-table-scroll"><table class="xrc-pace-edit"><thead><tr><th>速度</th><th>每次任务</th><th>旧稿间隔</th><th>下次间隔</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  // 节奏只读展示：档位在任务页切换，具体数字由代码里的默认档位决定，不再让面板手改。
+  function paceSummaryHtml() {
+    const reply = orderedPaceProfiles(true)
+      .filter((profile) => profile.minRepliesPerRound != null && profile.minCycleDelayMinutes != null)
+      .map((profile) => `${profile.label} ${paceSpan(profile.minRepliesPerRound, profile.maxRepliesPerRound)} 条/轮、做完休息 ${paceSpan(profile.minCycleDelayMinutes, profile.maxCycleDelayMinutes)} 分`)
+      .join("；");
+    const post = (postApi?.POST_SCHEDULE_PROFILES || [])
+      .filter((profile) => profile.minBatch != null && profile.minCycleMinutes != null)
+      .map((profile) => `${profile.label} ${paceSpan(profile.minBatch, profile.maxBatch)} 条、下次间隔 ${paceSpan(profile.minCycleMinutes, profile.maxCycleMinutes)} 分`)
+      .join("；");
+    return `回复：${reply}。发帖：${post}。需要更慢或更快时，在对应任务页点慢、中、快或超快；这里只显示当前口径，不接受手动改数字。`;
   }
 
   function followRoundGapMinutes(pace) {
@@ -5516,9 +5372,8 @@
       status.textContent = "当前环境无法保存扩展配置";
       return false;
     }
-    const stored = await chrome.storage.local.get(["xrcAiSettings", PACE_SETTINGS_KEY]);
+    const stored = await chrome.storage.local.get("xrcAiSettings");
     const settings = stored?.xrcAiSettings || {};
-    const paceSettings = stored?.[PACE_SETTINGS_KEY] || {};
     const typedKey = String(panel.querySelector("[data-xrc-config-key]")?.value || "").trim();
     const typedBai = String(panel.querySelector("[data-xrc-config-bai-key]")?.value || "").trim();
     const typedToken = String(panel.querySelector("[data-xrc-mobileoffice-token]")?.value || "").trim();
@@ -5552,18 +5407,6 @@
       status.textContent = "提示词请控制在 2000 字以内";
       return false;
     }
-    const replyLocked = Boolean(state.running || state.loopPromise);
-    const postLocked = Boolean(state.poster?.running);
-    const replyPaces = replyLocked ? null : readReplyPaceForm(panel);
-    const postPaces = postLocked ? null : readPostPaceForm(panel);
-    if (replyPaces?.error) {
-      status.textContent = replyPaces.error;
-      return false;
-    }
-    if (postPaces?.error) {
-      status.textContent = postPaces.error;
-      return false;
-    }
     const storedReplyTimeline = replyTimelinePrompt === DEFAULT_REPLY_TIMELINE_PROMPT ? "" : replyTimelinePrompt;
     const storedReplyComment = replyCommentPrompt === DEFAULT_REPLY_COMMENT_PROMPT ? "" : replyCommentPrompt;
     const storedPostNormal = postNormalPrompt === DEFAULT_POST_NORMAL_PROMPT ? "" : postNormalPrompt;
@@ -5592,11 +5435,6 @@
         plannerSystemPrompt,
         replyPrompt: storedReplyTimeline,
         postPrompt: storedPostNormal
-      },
-      [PACE_SETTINGS_KEY]: {
-        ...paceSettings,
-        ...(replyPaces ? { reply: replyPaces.value } : {}),
-        ...(postPaces ? { post: postPaces.value } : {})
       }
     });
     state.aiKey = key;
@@ -5616,19 +5454,7 @@
     state.replyPrompt = storedReplyTimeline;
     state.postPrompt = storedPostNormal;
     await loadAiSettings();
-    if (replyPaces) {
-      applyStoredReplyPaces(replyPaces.value);
-      applySchedulePace(state.schedulePace, { replaceIdlePlan: true });
-    }
-    if (postPaces) {
-      applyStoredPostPaces(postPaces.value);
-      applyPosterPace(state.posterPace);
-    }
-    const locked = [
-      replyLocked ? "回复频率要等任务停下再改" : "",
-      postLocked ? "发推频率要等任务停下再改" : ""
-    ].filter(Boolean);
-    status.textContent = locked.length ? `已保存。${locked.join("；")}。` : "已保存";
+    status.textContent = "已保存";
     renderPanel();
     return true;
   }
@@ -8990,7 +8816,7 @@
     const pageMeta = {
       model: ["模型与密钥", "写作模型的密钥和回退顺序"],
       prompts: ["提示词", "写作提示词与规划提示词分开保存"],
-      pace: ["频率", "回复与发帖的间隔和轮次"],
+      pace: ["节奏", "回复与发帖的档位，数字由内置档位决定"],
       lists: ["名单", "评论大V 与关注候选"],
       other: ["其他设置", "显示与社区回执"],
     }[configPage] || ["其他设置", "显示与社区回执"];
@@ -9927,11 +9753,11 @@
               </div>
             </section>
             <section class="xrc-docs-section">
-              <div class="xrc-docs-title"><b>02</b><span><strong>设置</strong><small>模型、提示词、频率与名单</small></span></div>
+              <div class="xrc-docs-title"><b>02</b><span><strong>设置</strong><small>模型、提示词、名单与节奏</small></span></div>
               <div class="xrc-menu-grid">
                 <button type="button" data-xrc-config-open="model" aria-expanded="false">模型与密钥</button>
                 <button type="button" data-xrc-config-open="prompts" aria-expanded="false">提示词</button>
-                <button type="button" data-xrc-config-open="pace" aria-expanded="false">频率</button>
+                <button type="button" data-xrc-config-open="pace" aria-expanded="false">节奏</button>
                 <button type="button" data-xrc-config-open="lists" aria-expanded="false">名单</button>
                 <button type="button" data-xrc-config-open="other" aria-expanded="false">其他设置</button>
                 <button type="button" data-xrc-schedule-open>排班</button>
@@ -10099,13 +9925,9 @@
               </div>
               <p class="xrc-config-note">名单仍在对应运行详情里编辑。从这里进入，不必先在首页找卡片。</p>
             </section>
-            <section class="xrc-docs-section" data-xrc-config-section="pace">
-              <div class="xrc-docs-title"><b>01</b><span><strong>回复频率</strong><small>边界测试与慢、中、快、超快各自的数字</small></span></div>
-              <div class="xrc-pace-editor">${replyPaceEditorHtml()}</div>
-            </section>
-            <section class="xrc-docs-section" data-xrc-config-section="pace">
-              <div class="xrc-docs-title"><b>02</b><span><strong>发推频率</strong><small>每次任务条数与下次间隔分钟</small></span></div>
-              <div class="xrc-pace-editor">${postPaceEditorHtml()}</div>
+            <section class="xrc-docs-section" data-xrc-config-section="other">
+              <div class="xrc-docs-title"><b>01</b><span><strong>节奏</strong><small>档位在任务页切换，数字不再在这里改</small></span></div>
+              <p class="xrc-config-note" data-xrc-pace-summary>${paceSummaryHtml()}</p>
             </section>
             <section class="xrc-docs-section" data-xrc-config-section="other">
               <div class="xrc-docs-title"><b>02</b><span><strong>社区回执</strong><small>上报到站长后台，不上传正文</small></span></div>
@@ -11275,7 +11097,7 @@
           selectCardQuota(label.dataset.xrcCardQuota);
         });
       });
-      panel.querySelectorAll("[data-xrc-mobileoffice-token], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-post-x-prompt], [data-xrc-planner-prompt], [data-xrc-reply-pace-input], [data-xrc-post-pace-input]").forEach((input) => {
+      panel.querySelectorAll("[data-xrc-mobileoffice-token], [data-xrc-reply-timeline-prompt], [data-xrc-reply-comment-prompt], [data-xrc-post-normal-prompt], [data-xrc-post-premium-prompt], [data-xrc-post-x-prompt], [data-xrc-planner-prompt]").forEach((input) => {
         input.addEventListener("input", () => {
           scheduleConfigSave(panel);
         });
@@ -11483,9 +11305,6 @@
       if (configKeyHint) configKeyHint.textContent = state.aiKeySaved ? state.aiKeyHint : "尚未配置";
       const replyPaceLocked = viewingLiveReply && (state.stopping || Boolean(state.loopPromise && !state.running));
       const replyUnlimitedOn = isTaskUnlimited(viewTaskKey());
-      panel.querySelectorAll("[data-xrc-reply-pace-input]").forEach((input) => {
-        input.disabled = replyPaceLocked;
-      });
       const viewedPace = viewingLiveReply && (state.running || state.loopPromise)
         ? state.schedulePace
         : taskSchedule.rules?.[replyViewKey]?.pace || "medium";
@@ -11578,9 +11397,6 @@
             ? `一天 ${cardQuota} 条，${premiumTomorrow ? "次日" : "下一档"} ${premiumClock}，今日已发 ${premiumToday} 条`
             : `每次任务 ${paceSpan(postProfile?.minBatch, postProfile?.maxBatch, "条")}，下次间隔 ${paceSpan(postProfile?.minCycleMinutes, postProfile?.maxCycleMinutes, "分钟")}，已发送 ${poster.count || 0} 条，待发 ${queuedPosts} 条`);
       }
-      panel.querySelectorAll("[data-xrc-post-pace-input]").forEach((input) => {
-        input.disabled = Boolean(poster.running);
-      });
       const postUnlimitedOn = isTaskUnlimited(viewTaskKey());
       panel.querySelectorAll("[data-xrc-post-pace-label]").forEach((label) => {
         const active = label.dataset.xrcPostPaceLabel === postSchedule.id;
@@ -12439,7 +12255,6 @@
     await loadSchedulePace();
     await loadPosterPace();
     await loadCardQuota();
-    await loadPaceSettings();
     await loadTaskUnlimited();
     try {
       pruneSearchStart = Boolean((await chrome.storage.local.get(PRUNE_SEARCH_START_KEY))?.[PRUNE_SEARCH_START_KEY]);

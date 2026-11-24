@@ -5631,6 +5631,17 @@
     color: var(--pick-ink);
   }
 
+  .site-header-pick-shop,
+  .site-header-pick-shop:visited {
+    --pick-edge: #e6d7b8;
+    --pick-hover-edge: #cfb479;
+    --pick-background: #faf6ea;
+    --pick-hover-background: #f5eeda;
+    --pick-dot: #c99a2e;
+    --pick-ink: #8a6a1f;
+    color: var(--pick-ink);
+  }
+
   .dark .site-header-pick-book,
   .dark .site-header-pick-book:visited {
     --pick-edge: #574638;
@@ -5648,6 +5659,16 @@
     --pick-hover-background: #294134;
     --pick-dot: #8abf9a;
     --pick-ink: #b8dfc2;
+  }
+
+  .dark .site-header-pick-shop,
+  .dark .site-header-pick-shop:visited {
+    --pick-edge: #5a4d2e;
+    --pick-hover-edge: #8a7444;
+    --pick-background: #2a2417;
+    --pick-hover-background: #352c1a;
+    --pick-dot: #d9b45c;
+    --pick-ink: #d9b45c;
   }
 
   @media (prefers-reduced-motion: reduce) {

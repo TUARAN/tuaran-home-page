@@ -56,13 +56,14 @@ const NAV_GROUPS = [
 const HEADER_RECOMMENDATIONS = [
   { href: '/books/llm-underlying-logic', label: '新书出版发售', labelEn: 'New book on sale', tone: 'book', kind: 'page' },
   { href: 'https://x.2aran.com/', label: 'X大互动', labelEn: 'X大互动', tone: 'green', kind: 'page' },
+  { href: '/shop', label: '甄选小店', labelEn: 'Shop', tone: 'shop', kind: 'page' },
 ]
 
 const MOBILE_PRIMARY_CHANNELS = SITE_CHANNELS.filter((channel) => ['community', 'checkin', 'about'].includes(channel.key))
 
 function RecommendationLink({ item, onNavigate }) {
   const { locale } = useLocale()
-  const toneClass = item.tone === 'book' ? 'site-header-pick-book' : 'site-header-pick-green'
+  const toneClass = item.tone === 'book' ? 'site-header-pick-book' : item.tone === 'shop' ? 'site-header-pick-shop' : 'site-header-pick-green'
   return <Link
     href={item.href}
     onClick={onNavigate}
